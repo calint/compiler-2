@@ -2,7 +2,7 @@
 #include"statement.hpp"
 class statement_def:public statement{
 public:
-	inline statement_def(unique_ptr<token>t,tokenizer&st):statement(move(t)){
+	statement_def(unique_ptr<token>t,tokenizer&st):statement(move(t)){
 		identifier=st.next_token();
 		if(!st.is_next_char_data_open())
 			throw 1;
@@ -11,10 +11,10 @@ public:
 			data_tokens.push_back(st.next_token());
 		}
 	}
-	inline void compiled_to_stdout()override{
+	void compiled_to_stdout(toc&tc)override{
 //		section .data
-//		msg     db  'Hello, world!',0xa                 ;our dear string
-//		msg.len equ $ - msg                             ;length of our dear string
+//		msg     db  'Hello, world!',0xa                 ;string
+//		msg.len equ $ - msg                             ;length of string
 //		section .text
 		puts("section .data");
 		printf("%s     db  '",identifier->get_name());
@@ -24,8 +24,9 @@ public:
 		printf("'\n");
 		printf("%s.len equ $-%s\n",identifier->get_name(),identifier->get_name());
 		puts("section .text");
+		tc.put_def(identifier->get_name());
 	}
-	inline void source_to_stdout()override{
+	void source_to_stdout()override{
 		statement::source_to_stdout();
 		identifier->source_to_stdout();
 		printf("{");

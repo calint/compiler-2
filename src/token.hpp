@@ -18,4 +18,6 @@ public:
 	inline void compiled_to_stdout()const{source_to_stdout();}
 	inline bool is_name(const char*str)const{return !strcmp(name.get(),str);}
 	inline const char*get_name()const{return name.get();}
+	inline size_t get_nchar()const{return token_start_nchar;}
+	inline size_t get_nchar_end()const{return token_end_nchar;}
 };

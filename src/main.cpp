@@ -5,6 +5,8 @@ using namespace std;
 #include"statement_exit.hpp"
 #include"statement_print.hpp"
 #include"statement_def.hpp"
+using ustatementp=unique_ptr<statement>;
+using vustatementp=vector<unique_ptr<statement>>;
 int main(){
 	tokenizer br{R"(
     print(hello)
@@ -14,12 +16,11 @@ int main(){
     def hello{hello world\n}
     def info{compiler to nasm for linux kernel\n}
 )"};
-
-	vector<unique_ptr<statement>>statements;
+	vustatementp statements;
 	while(true){
 		if(br.is_eos())break;
-		unique_ptr<token>tk=br.next_token();
-		unique_ptr<statement>stmt;
+		utokenp tk=br.next_token();
+		ustatementp stmt;
 		if(tk->is_name("exit")){
 			stmt=make_unique<statement_exit>(move(tk),br);
 		}else if(tk->is_name("print")){
@@ -37,8 +38,17 @@ int main(){
 //	}
 //	printf(">>>> compiled:\n");
 	printf("section .text\nglobal _start\n_start:\n");
+	toc tc;
 	for(auto&s:statements){
-		s->compiled_to_stdout();
+		s->compiled_to_stdout(tc);
 	}
+	try{
+		for(auto&s:statements){
+			s->link(tc);
+		}
+	}catch(...){
+		return 1;
+	}
+//	tc.print_to_stdout();
 	return 0;
 }

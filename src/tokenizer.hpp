@@ -1,12 +1,20 @@
 #pragma once
 #include"token.hpp"
+using utokenp=unique_ptr<token>;
 class tokenizer{
 public:
 	inline tokenizer(const char*string):ptr(string){}
 	inline bool is_eos()const{return !last_char;}
-	inline unique_ptr<token>next_token(){
+	inline utokenp next_token(){
 		assert(!is_eos());
-		return make_unique<token>(next_whitespace(),nchar_bm,next_token_str(),nchar,next_whitespace());
+		auto wspre=next_whitespace();
+		auto bgn=nchar;
+		auto tkn=next_token_str();
+		auto end=nchar;
+		auto wsaft=next_whitespace();
+		auto p=make_unique<token>(move(wspre),bgn,move(tkn),end,move(wsaft));
+//		printf("%zu:%zu %s\n",a->get_nchar(),a->get_nchar_end(),a->get_name());
+		return p;
 	}
 	inline bool is_next_char_expression_open(){
 		if(*ptr!='(')return false;
@@ -45,7 +53,7 @@ private:
 	inline bool is_char_whitespace(const char ch){
 		return ch==' '||ch=='\t'||ch=='\r'||ch=='\n';
 	}
-	inline unique_ptr<const char[]>next_whitespace(){
+	ucharp next_whitespace(){
 		if(is_eos())
 			return unique_ptr<const char[]>(new char[1]{0});
 		nchar_bm=nchar;
@@ -62,7 +70,7 @@ private:
 		str[len]=0;
 		return unique_ptr<const char[]>(str);
 	}
-	inline unique_ptr<const char[]>next_token_str(){
+	ucharp next_token_str(){
 		if(is_eos())
 			return unique_ptr<const char[]>(new char[1]{0});
 		nchar_bm=nchar;
