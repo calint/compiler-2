@@ -1,11 +1,11 @@
 #pragma once
 #include"token.hpp"
-using utokenp=unique_ptr<token>;
+using up_token=unique_ptr<token>;
 class tokenizer{
 public:
 	inline tokenizer(const char*string):ptr(string){}
 	inline bool is_eos()const{return !last_char;}
-	inline utokenp next_token(){
+	inline up_token next_token(){
 		assert(!is_eos());
 		auto wspre=next_whitespace();
 		auto bgn=nchar;
@@ -32,6 +32,26 @@ public:
 		return true;
 	}
 	inline bool is_next_char_data_close(){
+		if(*ptr!='}')return false;
+		next_char();
+		return true;
+	}
+	inline bool is_next_char_args_open(){
+		if(*ptr!='(')return false;
+		next_char();
+		return true;
+	}
+	inline bool is_next_char_args_close(){
+		if(*ptr!=')')return false;
+		next_char();
+		return true;
+	}
+	inline bool is_next_char_block_open(){
+		if(*ptr!='{')return false;
+		next_char();
+		return true;
+	}
+	inline bool is_next_char_block_close(){
 		if(*ptr!='}')return false;
 		next_char();
 		return true;

@@ -1,10 +1,10 @@
 #pragma once
 #include"statement.hpp"
 #include<vector>
-using vutokenp=vector<unique_ptr<token>>;
+using vup_tokens=vector<unique_ptr<token>>;
 class data:public statement{
 public:
-	data(statement*parent,utokenp t,tokenizer&st):statement{parent,move(t)}{
+	data(statement*parent,up_token t,tokenizer&st):statement{parent,move(t)}{
 		identifier=st.next_token();
 		if(!st.is_next_char_data_open())throw 1;
 		while(true){
@@ -36,6 +36,6 @@ public:
 	}
 
 private:
-	utokenp identifier;
-	vutokenp tokens;
+	up_token identifier;
+	vup_tokens tokens;
 };

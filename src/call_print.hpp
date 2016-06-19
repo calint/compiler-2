@@ -3,7 +3,7 @@
 using allocs=std::vector<const char*>;
 class call_print:public call{
 public:
-	call_print(statement*parent,utokenp t,tokenizer&st):call{parent,move(t),st}{}
+	call_print(statement*parent,up_token t,tokenizer&st):call{parent,move(t),st}{}
 	void compile(toc&tc)override{
 		const statement&e=argument(0);
 		allocs regs{"edx","ecx","ebx","eax"};

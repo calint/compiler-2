@@ -8,10 +8,12 @@ using namespace std;
 #include"statement.hpp"
 #include"data.hpp"
 #include"func.hpp"
-using ustatementp=std::unique_ptr<statement>;
+using up_statement=std::unique_ptr<statement>;
 #include<vector>
 #include"decouple.hpp"
-using vustatementp=std::vector<ustatementp>;
+using vup_statement=std::vector<up_statement>;
+using namespace std;
+#include"program.hpp"
 int main(){
 //	tokenizer br{R"(
 //  print(read(hello),hello)
@@ -39,47 +41,33 @@ int main(){
 //    int(0x80)
 //  }
 //)"};
-	tokenizer br{R"(
+	tokenizer st{R"(
   read(hello)
   print(hello)
   exit()
   
   data hello {hello world\n}
   data info {compiler to nasm for linux kernel\n}
-  func buf.write(buf,len,src)
+  func buf.write(buf,len,src)   {
+  }
 )"};
 
-	vustatementp statements;
-	while(true){
-		if(br.is_eos())break;
-		utokenp tk=br.next_token();
-		ustatementp stmt;
-		if(tk->is_name("data")){
-			stmt=make_unique<data>(nullptr,move(tk),br);
-		}else if(tk->is_name("func")){
-			stmt=make_unique<func>(nullptr,move(tk),br);
-		}else{
-			stmt=create_call_func(tk->name(),nullptr,move(tk),br);
-		}
-		statements.push_back(move(stmt));
-	}
-	printf(">>>> source:\n");
-	for(auto&s:statements){
-		s->source_to_stdout();
-	}
-	printf(">>>> compiled:\n");
+	up_program prg=make_unique<program>(st);
+//	printf(">>>> source:\n");
+//	prg->source_to_stdout();
+//	printf(">>>> compiled:\n");
 	printf("section .text\nglobal _start\n_start:\n");
 	toc tc;
 	try{
-		for(auto&s:statements)s->compile(tc);
-		for(auto&s:statements)s->link(tc);
+		prg->compile(tc);
+		prg->link(tc);
 	}catch(...){
 		return 1;
 	}
 //	tc.print_to_stdout();
 	return 0;
 }
-std::unique_ptr<statement>create_call_func(const char*funcname,statement*parent,utokenp tk,tokenizer&br){
+std::unique_ptr<statement>create_call_func(const char*funcname,statement*parent,up_token tk,tokenizer&br){
 	if(!strcmp("exit",funcname))return make_unique<call_exit>(parent,move(tk),br);
 	if(!strcmp("print",funcname))return make_unique<call_print>(parent,move(tk),br);
 	if(!strcmp("read",funcname))return make_unique<call_read>(parent,move(tk),br);

@@ -4,12 +4,12 @@
 #include"tokenizer.hpp"
 using namespace std;
 using allocs=vector<const char*>;
-using vuexpressionp=vector<uexpressionp>;
-using vustatementp=vector<ustatementp>;
+using vuexpressionp=vector<up_expression>;
+using vup_statement=vector<up_statement>;
 class call:public expression{
 public:
-	static ustatementp read_expression(statement*parent,tokenizer&st){
-		utokenp t=st.next_token();
+	static up_statement read_expression(statement*parent,tokenizer&st){
+		up_token t=st.next_token();
 //		printf("[%s]\n",t->get_name());
 		if(!st.is_next_char_expression_open()){
 			return make_unique<expression>(parent,move(t));
@@ -19,11 +19,11 @@ public:
 	}
 
 
-	call(statement*parent,utokenp t,tokenizer&st):expression{parent,move(t)}{
-		assert(!st.is_next_char_expression_open());
+	call(statement*parent,up_token t,tokenizer&st):expression{parent,move(t)}{
+		assert(st.is_next_char_args_open());
 		while(true){
-			if(st.is_next_char_expression_close())break;
-			ustatementp e=call::read_expression(this,st);
+			if(st.is_next_char_args_close())break;
+			up_statement e=call::read_expression(this,st);
 			args.push_back(move(e));
 		}
 	}
@@ -36,5 +36,5 @@ public:
 	inline const statement&argument(int ix)const{return*(args[ix].get());}
 
 private:
-	vustatementp args;
+	vup_statement args;
 };

@@ -21,4 +21,4 @@ public:
 	inline size_t token_start_char()const{return token_start_char_;}
 	inline size_t token_end_char()const{return token_end_char_;}
 };
-using utokenp=unique_ptr<token>;
+using up_token=unique_ptr<token>;
