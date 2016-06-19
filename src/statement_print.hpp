@@ -1,13 +1,13 @@
 #pragma once
 #include"statement.hpp"
+#include<vector>
+using allocs=std::vector<const char*>;
 class statement_print:public statement{
 public:
-	statement_print(unique_ptr<token>t,tokenizer&st):statement(move(t)){
-		if(!st.is_next_char_expression_open())
-			throw 1;
+	statement_print(utokenp t,tokenizer&st):statement(move(t)){
+		if(!st.is_next_char_expression_open())throw 1;
 		tk=st.next_token();
-		if(!st.is_next_char_expression_close())
-			throw 2;
+		if(!st.is_next_char_expression_close())throw 2;
 	}
 	void print_source()override{
 		statement::print_source();
@@ -16,13 +16,13 @@ public:
 		printf(")");
 	}
 	void compile(toc&tc)override{
-		// alloc edx, ecx, ebx, eax
-		printf("    mov     edx,%s.len\n",tk->get_name());// length of text
-		printf("    mov     ecx,%s\n",tk->get_name());// pointer to text
-		puts("    mov     ebx,1");// file descriptor (stdout)
-		puts("    mov     eax,4");// system call number (sys_write)
-		puts("    int     0x80");// call kernel
-		// free edx, ecx, ebx, eax
+		allocs regs{"edx","ecx","ebx","eax"};
+		printf("  mov edx,%s.len\n",tk->get_name());// length of text
+		printf("  mov ecx,%s\n",tk->get_name());// pointer to text
+		printf("  mov ebx,1\n");// file descriptor (stdout)
+		printf("  mov eax,4\n");// system call number (sys_write)
+		printf("  int 0x80\n");// call kernel
+		// allocs.free()
 	}
 	void link(toc&tc)override{
 		if(!tc.has_def(tk->get_name())){
@@ -34,5 +34,5 @@ public:
 
 
 private:
-	unique_ptr<token>tk;
+	utokenp tk;
 };

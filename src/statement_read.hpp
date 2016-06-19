@@ -17,13 +17,12 @@ public:
 		printf(")");
 	}
 	void compile(toc&tc)override{
-		// alloc eax edi esi edx
 		allocs all{"eax","edi","esi","edx"};
-		printf("    xor eax,eax\n");// 0 (write syscall number)
-		printf("    xor edi,edi\n");// 0 (stdin file descriptor)
-		printf("    mov esi,%s\n",tk->get_name());// address of the buffer
-		printf("    mov edx,%s.len\n",tk->get_name());// size of the buffer
-		printf("    syscall\n");
+		printf("  xor eax,eax\n");// 0 (write syscall number)
+		printf("  xor edi,edi\n");// 0 (stdin file descriptor)
+		printf("  mov esi,%s\n",tk->get_name());// address of the buffer
+		printf("  mov edx,%s.len\n",tk->get_name());// size of the buffer
+		printf("  syscall\n");// call kernel
 		// allocs.free
 	}
 	void link(toc&tc)override{
@@ -34,7 +33,6 @@ public:
 		}
 	}
 
-
 private:
-	unique_ptr<token>tk;
+	utokenp tk;
 };
