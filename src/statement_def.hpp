@@ -11,7 +11,7 @@ public:
 			data_tokens.push_back(st.next_token());
 		}
 	}
-	void compiled_to_stdout(toc&tc)override{
+	void compile_to_stdout(toc&tc)override{
 //		section .data
 //		msg     db  'Hello, world!',0xa                 ;string
 //		msg.len equ $ - msg                             ;length of string

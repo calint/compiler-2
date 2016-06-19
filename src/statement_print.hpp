@@ -15,7 +15,7 @@ public:
 		tk->source_to_stdout();
 		printf(")");
 	}
-	void compiled_to_stdout(toc&tc)override{
+	void compile_to_stdout(toc&tc)override{
 		// alloc edx, ecx, ebx, eax
 		printf("    mov     edx,%s.len\n",tk->get_name());// length of text
 		printf("    mov     ecx,%s\n",tk->get_name());// pointer to text

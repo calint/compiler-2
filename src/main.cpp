@@ -39,13 +39,9 @@ int main(){
 //	printf(">>>> compiled:\n");
 	printf("section .text\nglobal _start\n_start:\n");
 	toc tc;
-	for(auto&s:statements){
-		s->compiled_to_stdout(tc);
-	}
 	try{
-		for(auto&s:statements){
-			s->link(tc);
-		}
+		for(auto&s:statements)s->compile_to_stdout(tc);
+		for(auto&s:statements)s->link(tc);
 	}catch(...){
 		return 1;
 	}
