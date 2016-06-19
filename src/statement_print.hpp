@@ -8,7 +8,10 @@ public:
 		if(!st.is_next_char_expression_close())
 			throw 1;
 	}
-
+	inline void source_to_stdout()override{
+		statement::source_to_stdout();
+		printf("()");
+	}
 	inline void to_asm()override{
 		puts("    mov     edx,msg.len                         ;message length");
 		puts("    mov     ecx,msg                             ;message to write");

@@ -12,4 +12,7 @@ public:
 	inline virtual void to_asm(){
 		tk->to_asm();
 	}
+	inline virtual void source_to_stdout(){
+		tk->to_asm();
+	}
 };

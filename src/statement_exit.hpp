@@ -8,9 +8,13 @@ public:
 		if(!st.is_next_char_expression_close())
 			throw 1;
 	}
-
 	inline void to_asm()override{
 		puts("    mov     eax,1");
 		puts("    int     0x80");
 	}
+	inline void source_to_stdout()override{
+		statement::source_to_stdout();
+		printf("()");
+	}
+
 };

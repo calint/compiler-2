@@ -20,12 +20,14 @@ int main(){
 		}else if(tk->is_name("print")){
 			unique_ptr<statement_print>stmt=make_unique<statement_print>(move(tk),br);
 			statements.push_back(move(stmt));
+		}else{
+			unique_ptr<statement>stmt=make_unique<statement>(move(tk));
+			statements.push_back(move(stmt));
 		}
-
 	}
-//	for(auto&s:tokens){
-//		s.to_stdout();
-//	}
+	for(auto&s:statements){
+		s->source_to_stdout();
+	}
 //	puts("");
 //	for(auto&s:tokens){
 //		s.to_stdout2();
