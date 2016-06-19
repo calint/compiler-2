@@ -1,5 +1,8 @@
 #pragma once
 #include"statement.hpp"
+#include<vector>
+using utokenp=unique_ptr<token>;
+using vutokenp=vector<unique_ptr<token>>;
 class statement_def:public statement{
 public:
 	statement_def(unique_ptr<token>t,tokenizer&st):statement(move(t)){
@@ -11,7 +14,7 @@ public:
 			data_tokens.push_back(st.next_token());
 		}
 	}
-	void compile_to_stdout(toc&tc)override{
+	void compile(toc&tc)override{
 //		section .data
 //		msg     db  'Hello, world!',0xa                 ;string
 //		msg.len equ $ - msg                             ;length of string
@@ -26,17 +29,15 @@ public:
 		puts("section .text");
 		tc.put_def(identifier->get_name());
 	}
-	void source_to_stdout()override{
-		statement::source_to_stdout();
+	void print_source()override{
+		statement::print_source();
 		identifier->source_to_stdout();
 		printf("{");
-		for(auto&s:data_tokens){
-			s->source_to_stdout();
-		}
+		for(auto&s:data_tokens)s->source_to_stdout();
 		printf("}");
 	}
 
 private:
-	unique_ptr<token>identifier;
-	vector<unique_ptr<token>>data_tokens;
+	utokenp identifier;
+	vutokenp data_tokens;
 };

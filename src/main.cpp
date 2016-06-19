@@ -1,14 +1,16 @@
-#include<vector>
-using namespace std;
 #include"tokenizer.hpp"
 #include"statement.hpp"
 #include"statement_exit.hpp"
 #include"statement_print.hpp"
 #include"statement_def.hpp"
-using ustatementp=unique_ptr<statement>;
-using vustatementp=vector<unique_ptr<statement>>;
+#include"statement_read.hpp"
+using ustatementp=std::unique_ptr<statement>;
+#include<vector>
+using vustatementp=std::vector<ustatementp>;
 int main(){
 	tokenizer br{R"(
+    print(hello)
+    read(hello)
     print(hello)
     print(info)
     exit()
@@ -27,6 +29,8 @@ int main(){
 			stmt=make_unique<statement_print>(move(tk),br);
 		}else if(tk->is_name("def")){
 			stmt=make_unique<statement_def>(move(tk),br);
+		}else if(tk->is_name("read")){
+			stmt=make_unique<statement_read>(move(tk),br);
 		}else{
 			stmt=make_unique<statement>(move(tk));
 		}
@@ -40,7 +44,7 @@ int main(){
 	printf("section .text\nglobal _start\n_start:\n");
 	toc tc;
 	try{
-		for(auto&s:statements)s->compile_to_stdout(tc);
+		for(auto&s:statements)s->compile(tc);
 		for(auto&s:statements)s->link(tc);
 	}catch(...){
 		return 1;
