@@ -2,9 +2,9 @@
 #include"statement.hpp"
 #include<vector>
 using vutokenp=vector<unique_ptr<token>>;
-class def:public statement{
+class data:public statement{
 public:
-	def(statement*parent,utokenp t,tokenizer&st):statement{parent,move(t)}{
+	data(statement*parent,utokenp t,tokenizer&st):statement{parent,move(t)}{
 		identifier=st.next_token();
 		if(!st.is_next_char_data_open())throw 1;
 		while(true){

@@ -6,10 +6,11 @@ using namespace std;
 #include "call_read.hpp"
 #include"tokenizer.hpp"
 #include"statement.hpp"
-#include"def.hpp"
+#include"data.hpp"
 #include"func.hpp"
 using ustatementp=std::unique_ptr<statement>;
 #include<vector>
+#include"decouple.hpp"
 using vustatementp=std::vector<ustatementp>;
 int main(){
 //	tokenizer br{R"(
@@ -43,8 +44,8 @@ int main(){
   print(hello)
   exit()
   
-  def hello {hello world\n}
-  def info {compiler to nasm for linux kernel\n}
+  data hello {hello world\n}
+  data info {compiler to nasm for linux kernel\n}
   func buf.write(buf,len,src)
 )"};
 
@@ -53,30 +54,20 @@ int main(){
 		if(br.is_eos())break;
 		utokenp tk=br.next_token();
 		ustatementp stmt;
-		if(tk->is_name("def")){
-			stmt=make_unique<def>(nullptr,move(tk),br);
+		if(tk->is_name("data")){
+			stmt=make_unique<data>(nullptr,move(tk),br);
 		}else if(tk->is_name("func")){
 			stmt=make_unique<func>(nullptr,move(tk),br);
-
-
-		}else if(tk->is_name("exit")){
-			stmt=make_unique<call_exit>(nullptr,move(tk),br);
-		}else if(tk->is_name("print")){
-			stmt=make_unique<call_print>(nullptr,move(tk),br);
-		}else if(tk->is_name("read")){
-			stmt=make_unique<call_read>(nullptr,move(tk),br);
-
-
 		}else{
-			stmt=make_unique<statement>(nullptr,move(tk));
+			stmt=create_call_func(tk->name(),nullptr,move(tk),br);
 		}
 		statements.push_back(move(stmt));
 	}
-//	printf(">>>> source:\n");
-//	for(auto&s:statements){
-//		s->source_to_stdout();
-//	}
-//	printf(">>>> compiled:\n");
+	printf(">>>> source:\n");
+	for(auto&s:statements){
+		s->source_to_stdout();
+	}
+	printf(">>>> compiled:\n");
 	printf("section .text\nglobal _start\n_start:\n");
 	toc tc;
 	try{
@@ -87,4 +78,10 @@ int main(){
 	}
 //	tc.print_to_stdout();
 	return 0;
+}
+std::unique_ptr<statement>create_call_func(const char*funcname,statement*parent,utokenp tk,tokenizer&br){
+	if(!strcmp("exit",funcname))return make_unique<call_exit>(parent,move(tk),br);
+	if(!strcmp("print",funcname))return make_unique<call_print>(parent,move(tk),br);
+	if(!strcmp("read",funcname))return make_unique<call_read>(parent,move(tk),br);
+	return make_unique<statement>(parent,move(tk));
 }
