@@ -1,12 +1,12 @@
 #include<vector>
 using namespace std;
-#include"string_tokenizer.hpp"
+#include"tokenizer.hpp"
 #include"statement.hpp"
 #include"statement_exit.hpp"
 #include"statement_print.hpp"
 #include"statement_def.hpp"
 int main(){
-	string_tokenizer br{R"(
+	tokenizer br{R"(
     print(hello)
     print(info)
     exit()
@@ -19,19 +19,17 @@ int main(){
 	while(true){
 		if(br.is_eos())break;
 		unique_ptr<token>tk=br.next_token();
+		unique_ptr<statement>stmt;
 		if(tk->is_name("exit")){
-			unique_ptr<statement_exit>stmt=make_unique<statement_exit>(move(tk),br);
-			statements.push_back(move(stmt));
+			stmt=make_unique<statement_exit>(move(tk),br);
 		}else if(tk->is_name("print")){
-			unique_ptr<statement_print>stmt=make_unique<statement_print>(move(tk),br);
-			statements.push_back(move(stmt));
+			stmt=make_unique<statement_print>(move(tk),br);
 		}else if(tk->is_name("def")){
-			unique_ptr<statement_def>stmt=make_unique<statement_def>(move(tk),br);
-			statements.push_back(move(stmt));
+			stmt=make_unique<statement_def>(move(tk),br);
 		}else{
-			unique_ptr<statement>stmt=make_unique<statement>(move(tk));
-			statements.push_back(move(stmt));
+			stmt=make_unique<statement>(move(tk));
 		}
+		statements.push_back(move(stmt));
 	}
 //	printf(">>>> source:\n");
 //	for(auto&s:statements){

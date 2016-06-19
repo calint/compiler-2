@@ -1,8 +1,8 @@
 #pragma once
 #include"token.hpp"
-class string_tokenizer{
+class tokenizer{
 public:
-	inline string_tokenizer(const char*string):ptr(string){}
+	inline tokenizer(const char*string):ptr(string){}
 	inline bool is_eos()const{return !last_char;}
 	inline unique_ptr<token>next_token(){
 		assert(!is_eos());

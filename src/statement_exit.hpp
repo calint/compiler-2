@@ -2,7 +2,7 @@
 #include"statement.hpp"
 class statement_exit:public statement{
 public:
-	inline statement_exit(unique_ptr<token>t,string_tokenizer&st):statement(move(t)){
+	inline statement_exit(unique_ptr<token>t,tokenizer&st):statement(move(t)){
 		if(!st.is_next_char_expression_open())
 			throw 1;
 		if(!st.is_next_char_expression_close())

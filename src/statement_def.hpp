@@ -2,7 +2,7 @@
 #include"statement.hpp"
 class statement_def:public statement{
 public:
-	inline statement_def(unique_ptr<token>t,string_tokenizer&st):statement(move(t)){
+	inline statement_def(unique_ptr<token>t,tokenizer&st):statement(move(t)){
 		identifier=st.next_token();
 		if(!st.is_next_char_data_open())
 			throw 1;
