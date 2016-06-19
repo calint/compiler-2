@@ -8,7 +8,7 @@ public:
 		if(!st.is_next_char_expression_close())
 			throw 1;
 	}
-	inline void to_asm()override{
+	inline void compiled_to_stdout()override{
 		puts("    mov     eax,1");
 		puts("    int     0x80");
 	}

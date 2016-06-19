@@ -1,8 +1,4 @@
 #pragma once
-#include<memory>
-using namespace std;
-#include<string.h>
-#include<cassert>
 #include"token.hpp"
 class string_tokenizer{
 public:
@@ -13,19 +9,27 @@ public:
 		return make_unique<token>(next_whitespace(),nchar_bm,next_token_str(),nchar,next_whitespace());
 	}
 	inline bool is_next_char_expression_open(){
-		if(*ptr=='('){
-			next_char();
-			return true;
-		}
-		return false;
+		if(*ptr!='(')return false;
+		next_char();
+		return true;
 	}
 	inline bool is_next_char_expression_close(){
-		if(*ptr==')'){
-			next_char();
-			return true;
-		}
-		return false;
+		if(*ptr!=')')return false;
+		next_char();
+		return true;
 	}
+	inline bool is_next_char_data_open(){
+		if(*ptr!='{')return false;
+		next_char();
+		return true;
+	}
+	inline bool is_next_char_data_close(){
+		if(*ptr!='}')return false;
+		next_char();
+		return true;
+	}
+
+
 private:
 	const char*ptr{nullptr};
 	size_t nchar_bm{0};
@@ -64,7 +68,7 @@ private:
 		nchar_bm=nchar;
 		while(true){
 			const char ch=next_char();
-			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'){
+			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'){
 				unsafe_seek(-1);
 				break;
 			}

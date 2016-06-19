@@ -1,3 +1,5 @@
-/hello
-/hello.o
 /Debug/
+/bin
+/compi
+/gen.o
+/gen.s
