@@ -3,22 +3,27 @@
 using namespace std;
 #include<string.h>
 #include<cassert>
+using ucharp=unique_ptr<const char[]>;
 class token{
-public:
-	unique_ptr<const char[]>ws_before;
+	ucharp ws_before;
 	size_t token_start_nchar;
-	unique_ptr<const char[]>token;
+	ucharp name;
 	size_t token_end_nchar;
-	unique_ptr<const char[]>ws_after;
-
+	ucharp ws_after;
+public:
+	inline token(ucharp wb, size_t n, ucharp tk, size_t n2, ucharp wa)
+		:ws_before(move(wb)),token_start_nchar(n),name(move(tk)),token_end_nchar(n2),ws_after(move(wa)){}
 	inline void to_stdout(){
-		printf("%s%s%s",ws_before.get(),token.get(),ws_after.get());
+		printf("%s%s%s",ws_before.get(),name.get(),ws_after.get());
 	}
 	inline void to_stdout2(){
-		printf("[%zu]%s[%zu]\n",token_start_nchar,token.get(),token_end_nchar);
+		printf("[%zu]%s[%zu]\n",token_start_nchar,name.get(),token_end_nchar);
 	}
 	inline void to_asm(){
 //		printf("dd %s\n",token.get());
 		to_stdout();
+	}
+	inline bool is_name(const char*str)const{
+		return !strcmp(name.get(),str);
 	}
 };
