@@ -12,7 +12,7 @@ public:
 	inline void source_to_stdout()override{
 		statement::source_to_stdout();
 		printf("(");
-		tk->to_stdout();
+		tk->source_to_stdout();
 		printf(")");
 	}
 	inline void compiled_to_stdout()override{

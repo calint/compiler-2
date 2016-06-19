@@ -11,8 +11,8 @@ int main(){
     print(info)
     exit()
 
-    def hello{ "hello_world" }
-    def info{ "compiler_to_nasm_for_linux_kernel" }
+    def hello{hello world\n}
+    def info{compiler to nasm for linux kernel\n}
 )"};
 
 	vector<unique_ptr<statement>>statements;

@@ -6,9 +6,10 @@ public:
 		identifier=st.next_token();
 		if(!st.is_next_char_data_open())
 			throw 1;
-		data=st.next_token();
-		if(!st.is_next_char_data_close())
-			throw 1;
+		while(true){
+			if(st.is_next_char_data_close())break;
+			data_tokens.push_back(st.next_token());
+		}
 	}
 	inline void compiled_to_stdout()override{
 //		section .data
@@ -16,19 +17,25 @@ public:
 //		msg.len equ $ - msg                             ;length of our dear string
 //		section .text
 		puts("section .data");
-		printf("%s     db  %s\n",identifier->get_name(),data->get_name());
+		printf("%s     db  '",identifier->get_name());
+		for(auto&s:data_tokens){
+			s->compiled_to_stdout();
+		}
+		printf("'\n");
 		printf("%s.len equ $-%s\n",identifier->get_name(),identifier->get_name());
 		puts("section .text");
 	}
 	inline void source_to_stdout()override{
 		statement::source_to_stdout();
-		identifier->to_stdout();
+		identifier->source_to_stdout();
 		printf("{");
-		data->to_stdout();
+		for(auto&s:data_tokens){
+			s->source_to_stdout();
+		}
 		printf("}");
 	}
 
 private:
 	unique_ptr<token>identifier;
-	unique_ptr<token>data;
+	vector<unique_ptr<token>>data_tokens;
 };
