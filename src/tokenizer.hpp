@@ -36,6 +36,9 @@ public:
 		next_char();
 		return true;
 	}
+	inline void unread(){
+		unsafe_seek(-1);
+	}
 
 
 private:

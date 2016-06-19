@@ -1,9 +1,12 @@
+#include<vector>
+#include<memory>
+using namespace std;
+#include "call_exit.hpp"
+#include "call_print.hpp"
+#include "call_read.hpp"
 #include"tokenizer.hpp"
 #include"statement.hpp"
-#include"statement_exit.hpp"
-#include"statement_print.hpp"
-#include"statement_def.hpp"
-#include"statement_read.hpp"
+#include"def.hpp"
 using ustatementp=std::unique_ptr<statement>;
 #include<vector>
 using vustatementp=std::vector<ustatementp>;
@@ -24,13 +27,13 @@ int main(){
 		utokenp tk=br.next_token();
 		ustatementp stmt;
 		if(tk->is_name("exit")){
-			stmt=make_unique<statement_exit>(move(tk),br);
+			stmt=make_unique<call_exit>(move(tk),br);
 		}else if(tk->is_name("print")){
-			stmt=make_unique<statement_print>(move(tk),br);
+			stmt=make_unique<call_print>(move(tk),br);
 		}else if(tk->is_name("def")){
-			stmt=make_unique<statement_def>(move(tk),br);
+			stmt=make_unique<def>(move(tk),br);
 		}else if(tk->is_name("read")){
-			stmt=make_unique<statement_read>(move(tk),br);
+			stmt=make_unique<call_read>(move(tk),br);
 		}else{
 			stmt=make_unique<statement>(move(tk));
 		}

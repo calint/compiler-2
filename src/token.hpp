@@ -21,3 +21,4 @@ public:
 	inline size_t get_nchar()const{return token_start_nchar;}
 	inline size_t get_nchar_end()const{return token_end_nchar;}
 };
+using utokenp=unique_ptr<token>;

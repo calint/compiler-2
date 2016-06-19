@@ -1,11 +1,10 @@
 #pragma once
 #include"statement.hpp"
 #include<vector>
-using utokenp=unique_ptr<token>;
 using vutokenp=vector<unique_ptr<token>>;
-class statement_def:public statement{
+class def:public statement{
 public:
-	statement_def(unique_ptr<token>t,tokenizer&st):statement(move(t)){
+	def(utokenp t,tokenizer&st):statement(move(t)){
 		identifier=st.next_token();
 		if(!st.is_next_char_data_open())
 			throw 1;
