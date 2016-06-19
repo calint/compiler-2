@@ -4,13 +4,12 @@
 using vutokenp=vector<unique_ptr<token>>;
 class def:public statement{
 public:
-	def(utokenp t,tokenizer&st):statement(move(t)){
+	def(statement*parent,utokenp t,tokenizer&st):statement{parent,move(t)}{
 		identifier=st.next_token();
-		if(!st.is_next_char_data_open())
-			throw 1;
+		if(!st.is_next_char_data_open())throw 1;
 		while(true){
 			if(st.is_next_char_data_close())break;
-			data_tokens.push_back(st.next_token());
+			tokens.push_back(st.next_token());
 		}
 	}
 	void compile(toc&tc)override{
@@ -19,24 +18,24 @@ public:
 //		msg.len equ $ - msg                             ;length of string
 //		section .text
 		puts("section .data");
-		printf("%s     db  '",identifier->get_name());
-		for(auto&s:data_tokens){
+		printf("%s     db  '",identifier->name());
+		for(auto&s:tokens){
 			s->compiled_to_stdout();
 		}
 		printf("'\n");
-		printf("%s.len equ $-%s\n",identifier->get_name(),identifier->get_name());
+		printf("%s.len equ $-%s\n",identifier->name(),identifier->name());
 		puts("section .text");
-		tc.put_def(identifier->get_name());
+		tc.put_def(identifier->name());
 	}
-	void print_source()override{
-		statement::print_source();
+	void source_to_stdout()override{
+		statement::source_to_stdout();
 		identifier->source_to_stdout();
 		printf("{");
-		for(auto&s:data_tokens)s->source_to_stdout();
+		for(auto&s:tokens)s->source_to_stdout();
 		printf("}");
 	}
 
 private:
 	utokenp identifier;
-	vutokenp data_tokens;
+	vutokenp tokens;
 };
