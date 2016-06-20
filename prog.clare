@@ -8,4 +8,5 @@ file info{compiler to nasm for linux kernel\n}
 func exit(){
 }
 func file.read(ident) {
+	// comment
 }

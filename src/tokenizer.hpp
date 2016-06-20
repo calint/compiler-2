@@ -6,6 +6,7 @@
 #include <cstring>
 #include <memory>
 
+using namespace std;
 #include "token.hpp"
 
 class tokenizer{public:

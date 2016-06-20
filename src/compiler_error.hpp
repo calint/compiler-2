@@ -1,4 +1,9 @@
 #pragma once
+
+#include <stddef.h>
+
+class statement;
+
 class compiler_error final{public:
 	statement&stmt;
 	const char*msg{nullptr};

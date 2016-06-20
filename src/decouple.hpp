@@ -1,7 +1,5 @@
 #pragma once
-#include<memory>
-#include<vector>
-#include<cassert>
+#include "token.hpp"
 using namespace std;
 #include"statement.hpp"
 #include"tokenizer.hpp"

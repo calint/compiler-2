@@ -1,5 +1,11 @@
 #pragma once
-#include<unordered_set>
+
+#include <cstring>
+#include <iostream>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+
 using namespace std;
 class toc{public:
 	inline bool has_file(const char*identifier)const{

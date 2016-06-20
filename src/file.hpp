@@ -1,10 +1,7 @@
 #pragma once
 
 #include <algorithm>
-#include <cstdio>
 #include <iostream>
-#include <memory>
-#include <vector>
 
 #include "statement.hpp"
 #include "toc.hpp"

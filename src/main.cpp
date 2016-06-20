@@ -1,19 +1,12 @@
-#include <algorithm>
-#include <cstdio>
-#include <cstring>
-#include <iostream>
+#include <fstream>
 #include <memory>
-#include <string>
-
-#include "call_exit.hpp"
-#include "call_print.hpp"
-#include "call_read.hpp"
-#include "compiler_error.hpp"
-#include "program.hpp"
-#include "statement.hpp"
-#include "token.hpp"
-#include "tokenizer.hpp"
-
+#include"program.hpp"
+#include"compiler_error.hpp"
+#include<string.h>
+using namespace std;
+#include"call_exit.hpp"
+#include"call_print.hpp"
+#include"call_read.hpp"
 static string file_read_to_string(const char *filename){
 	FILE*f=fopen(filename,"rb");
 	if(!f)throw 1;
@@ -31,19 +24,23 @@ int main(){
 	tokenizer t{s.data()};
 	try{
 		up_program p=make_unique<program>(t);
-
-//		ofstream fo("diff.clare");
-//		p->source_to(fo);
-//		fo.close();
-//		if(file_read_to_string("prog.clare")!=file_read_to_string("diff.clare")){
-//			throw 1;
-//		}
+//		p->source_to(cerr);
+		ofstream fo("diff.clare");
+		p->source_to(fo);
+		fo.close();
+		if(file_read_to_string("prog.clare")!=file_read_to_string("diff.clare")){
+			throw "generated source differs";
+		}
 		p->build(cout);
 	}catch(compiler_error&e){
 		cout<<" *** compiler error at "<<e.start_char<<":"<<e.end_char<<"  "<<e.msg<<endl;
 		return 1;
+	}catch(const char*msg){
+		cout<<" *** exception: "<<msg<<endl;
+		return 1;
 	}catch(...){
-		return 2;
+		cout<<" *** exception caught"<<endl;
+		return 1;
 	}
 	return 0;
 }
