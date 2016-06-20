@@ -3,7 +3,7 @@
 #include"call_exit.hpp"
 #include"call_read.hpp"
 #include"call_print.hpp"
-#include"data.hpp"
+#include "file.hpp"
 #include"func.hpp"
 #include"program.hpp"
 int main(){
@@ -38,8 +38,8 @@ int main(){
   print(hello)
   exit()
   
-  data hello {hello world\n}
-  data info {compiler to nasm for linux kernel\n}
+  file hello {hello world\n}
+  file info {compiler to nasm for linux kernel\n}
   func exit(){
   }
   func data.read(ident) {

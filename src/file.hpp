@@ -1,7 +1,7 @@
 #pragma once
-class data:public statement{
+class file:public statement{
 public:
-	data(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+	file(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
 		if(!t.is_next_char_data_open())throw 1;
 		while(true){

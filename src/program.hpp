@@ -6,8 +6,8 @@ public:
 			if(t.is_eos())break;
 			up_token tk=t.next_token();
 			up_statement stmt;
-			if(tk->is_name("data")){
-				stmt=make_unique<data>(nullptr,move(tk),t);
+			if(tk->is_name("file")){
+				stmt=make_unique<file>(nullptr,move(tk),t);
 			}else if(tk->is_name("func")){
 				stmt=make_unique<func>(nullptr,move(tk),t);
 			}else{
