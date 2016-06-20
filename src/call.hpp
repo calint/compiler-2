@@ -26,7 +26,7 @@ class call:public expression{public:
 
 
 	call(statement*parent,up_token tkn,tokenizer&t):expression{parent,move(tkn)}{
-		if(!t.is_next_char_args_open())throw compiler_error(*this,"expected ( and arguments");
+		if(!t.is_next_char_args_open())throw compiler_error(*this,"expected ( and arguments");//? object invalid
 //		assert(t.is_next_char_args_open());
 		while(!t.is_next_char_args_close()){
 			args.push_back(call::read_statement(this,t));

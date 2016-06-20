@@ -116,8 +116,10 @@ private:
 		str[len]=0;
 		return unique_ptr<const char[]>(str);
 	}
-	inline void unsafe_seek(const off_t nbr_of_chars){
-		ptr+=nbr_of_chars;
-		nchar=size_t(ssize_t(nchar)+nbr_of_chars);
+	inline void unsafe_seek(const off_t nch){
+//		if(nch>0){off_t n=nch;while(n--)assert(*ptr++);}
+//		else{off_t n=-nch;while(n--)assert(*ptr--);}
+		ptr+=nch;
+		nchar=size_t(ssize_t(nchar)+nch);
 	}
 };

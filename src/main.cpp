@@ -22,9 +22,9 @@ static string file_read_to_string(const char *filename){
 int main(int argc,char**args){
 	string s=file_read_to_string("prog.clare");
 	tokenizer t{s.data()};
+	up_program p;
 	try{
-		up_program p=make_unique<program>(t);
-
+		p=make_unique<program>(t);
 		ofstream fo("diff.clare");
 		p->source_to(fo);
 		fo.close();
@@ -32,7 +32,7 @@ int main(int argc,char**args){
 
 		p->build(cout);
 	}catch(compiler_error&e){
-		cout<<" *** compiler error at "<<e.start_char<<":"<<e.end_char<<"  "<<e.msg<<endl;
+		cout<<" *** error at "<<e.start_char<<":"<<e.end_char<<"  "<<e.msg<<": "<<e.ident<<endl;
 		return 1;
 	}catch(const char*msg){
 		cout<<" *** exception: "<<msg<<endl;

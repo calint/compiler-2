@@ -23,8 +23,6 @@ class call_read:public call{public:
 	}
 	void link(toc&tc,ostream&os)override{
 		const statement&e=argument(0);
-		if(!tc.has_file(e.token().name())){
-			throw compiler_error(*this,"cannot find file");
-		}
+		if(!tc.has_file(e.token().name()))throw compiler_error(e,"cannot find file");
 	}
 };
