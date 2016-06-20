@@ -26,7 +26,7 @@ class file:public statement{public:
 //		msg.len equ $ - msg                             ;length of string
 //		section .text
 		os<<"section .data\n";
-		os<<identifier->name()<<" db '";
+		os<<identifier->name()<<"     db '";
 		for(auto&s:tokens)s->compiled_to(os);
 		os<<"'\n";
 		os<<identifier->name()<<".len equ $-"<<identifier->name()<<endl;

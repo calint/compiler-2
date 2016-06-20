@@ -35,15 +35,16 @@ int main(){
 //		ofstream fo("diff.clare");
 //		p->source_to(fo);
 //		fo.close();
-
+//		if(file_read_to_string("prog.clare")!=file_read_to_string("diff.clare")){
+//			throw 1;
+//		}
 		p->build(cout);
 	}catch(compiler_error&e){
-		cout<<" *** compiler error at "<<e.start_char<<":"<<e.end_char<<"  "<<e.msg;
+		cout<<" *** compiler error at "<<e.start_char<<":"<<e.end_char<<"  "<<e.msg<<endl;
 		return 1;
 	}catch(...){
 		return 2;
 	}
-//	tc.print_to_stdout();
 	return 0;
 }
 up_statement create_statement(const char*funcname,statement*parent,up_token tk,tokenizer&t){
