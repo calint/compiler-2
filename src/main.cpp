@@ -50,7 +50,6 @@ int main(){
 	try{up_program p=make_unique<program>(t);
 //		printf(">>>> source:\n");
 //		p->source_to_stdout();
-//		printf(">>>> compiled:\n");
 	}catch(...){
 		return 1;
 	}

@@ -15,7 +15,8 @@ public:
 			}
 			statements.push_back(move(stmt));
 		}
-		build();
+		compile(tc);
+		link(tc);
 	}
 	void compile(toc&tc)override final{
 		printf("section .text\nglobal _start\n_start:\n");
@@ -26,11 +27,8 @@ public:
 	void source_to_stdout()override final{
 		for(auto&s:statements)s->source_to_stdout();
 	}
+	const toc&get_toc()const{return tc;}
 private:
-	void build(){
-		compile(tc);
-		link(tc);
-	}
 	vup_statement statements;
 	toc tc;
 };

@@ -1,8 +1,7 @@
 #pragma once
 class func_statements:public statement{
 public:
-	func_statements(statement*parent,tokenizer&t):statement{parent,nullptr}{
-		ws=t.next_token();
+	func_statements(statement*parent,tokenizer&t):statement{parent,t.next_token()}{
 		assert(t.is_next_char_block_open());
 		while(true){
 			if(t.is_eos())throw 1;
@@ -18,7 +17,7 @@ public:
 		}
 	}
 	void source_to_stdout()override{
-		ws->source_to_stdout();
+		statement::source_to_stdout();
 		printf("{");
 		for(auto&s:statements){
 			s->source_to_stdout();
@@ -27,7 +26,6 @@ public:
 	}
 
 private:
-	up_token ws;
 	vup_statement statements;
 };
 using up_func_statements=unique_ptr<func_statements>;
