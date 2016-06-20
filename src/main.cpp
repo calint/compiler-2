@@ -18,8 +18,8 @@ int main(){
 //     int(0x80)
 //  }
 //  func read(dst):nread{
-//    xor(eax)
-//    xor(edi)
+//    zero(eax)
+//    zero(edi)
 //    mov(esi,dst)
 //    mov(edx,dst.len)
 //    syscall
@@ -42,7 +42,7 @@ int main(){
   file info {compiler to nasm for linux kernel\n}
   func exit(){
   }
-  func data.read(ident) {
+  func file.read(ident) {
     read(ident)
   }
 )"};
