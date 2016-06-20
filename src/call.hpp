@@ -16,8 +16,7 @@ class call:public expression{public:
 		assert(t.is_next_char_args_open());
 		while(true){
 			if(t.is_next_char_args_close())break;
-			auto e=call::read_statement(this,t);
-			args.push_back(move(e));
+			args.push_back(call::read_statement(this,t));
 		}
 	}
 	void source_to_stdout()override{
