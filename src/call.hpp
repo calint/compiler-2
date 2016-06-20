@@ -4,7 +4,6 @@ using vup_statement=vector<up_statement>;
 class call:public expression{public:
 	static up_statement read_expression(statement*parent,tokenizer&t){
 		up_token tkn=t.next_token();
-//		printf("[%s]\n",t->get_name());
 		if(!t.is_next_char_expression_open()){
 			return make_unique<expression>(parent,move(tkn));
 		}
