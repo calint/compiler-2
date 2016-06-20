@@ -24,6 +24,9 @@ class program:public statement{public:
 	void source_to_stdout()override final{
 		for(auto&s:statements)s->source_to_stdout();
 	}
+	void link(toc&tc)override final{
+		for(auto&s:statements)s->link(tc);
+	}
 	const toc&get_toc()const{return tc;}
 private:
 	vup_statement statements;

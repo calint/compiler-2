@@ -11,16 +11,12 @@ class func_statements:public statement{public:
 		}
 	}
 	void compile(toc&tc)override{
-		for(auto&s:statements){
-			s->compile(tc);
-		}
+		for(auto&s:statements)s->compile(tc);
 	}
 	void source_to_stdout()override{
 		statement::source_to_stdout();
 		printf("{");
-		for(auto&s:statements){
-			s->source_to_stdout();
-		}
+		for(auto&s:statements)s->source_to_stdout();
 		printf("}");
 	}
 
