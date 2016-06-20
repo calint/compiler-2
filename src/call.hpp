@@ -2,7 +2,7 @@
 #include"expression.hpp"
 using vup_statement=vector<up_statement>;
 class call:public expression{public:
-	static up_statement read_expression(statement*parent,tokenizer&t){
+	static up_statement read_statement(statement*parent,tokenizer&t){
 		up_token tkn=t.next_token();
 		if(!t.is_next_char_expression_open()){
 			return make_unique<expression>(parent,move(tkn));
@@ -16,7 +16,7 @@ class call:public expression{public:
 		assert(t.is_next_char_args_open());
 		while(true){
 			if(t.is_next_char_args_close())break;
-			up_statement e=call::read_expression(this,t);
+			up_statement e=call::read_statement(this,t);
 			args.push_back(move(e));
 		}
 	}
