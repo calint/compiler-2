@@ -20,9 +20,7 @@ public:
 	}
 	void compile(toc&tc)override final{
 		printf("section .text\nglobal _start\n_start:\n");
-		for(auto&s:statements){
-			s->compile(tc);
-		}
+		for(auto&s:statements)s->compile(tc);
 	}
 	void source_to_stdout()override final{
 		for(auto&s:statements)s->source_to_stdout();
