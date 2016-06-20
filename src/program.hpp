@@ -15,21 +15,22 @@ public:
 			}
 			statements.push_back(move(stmt));
 		}
+		build();
 	}
-	void compile(toc&tc)override{
+	void compile(toc&tc)override final{
 		printf("section .text\nglobal _start\n_start:\n");
 		for(auto&s:statements){
 			s->compile(tc);
 		}
 	}
-	void source_to_stdout()override{
+	void source_to_stdout()override final{
 		for(auto&s:statements)s->source_to_stdout();
 	}
+private:
 	void build(){
 		compile(tc);
 		link(tc);
 	}
-private:
 	vup_statement statements;
 	toc tc;
 };
