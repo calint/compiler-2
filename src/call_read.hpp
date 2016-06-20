@@ -2,7 +2,7 @@
 #include"call.hpp"
 class call_read:public call{
 public:
-	call_read(statement*parent,up_token t,tokenizer&st):call{parent,move(t),st}{}
+	call_read(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
 	void compile(toc&tc)override{
 		allocs all{"eax","edi","esi","edx"};
 		const statement&e=argument(0);

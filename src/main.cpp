@@ -48,22 +48,18 @@ int main(){
 )"};
 
 	up_program p=make_unique<program>(t);
-	printf(">>>> source:\n");
-	p->source_to_stdout();
-	printf(">>>> compiled:\n");
-	toc tc;
-	try{
-		p->compile(tc);
-		p->link(tc);
-	}catch(...){
+//	printf(">>>> source:\n");
+//	p->source_to_stdout();
+//	printf(">>>> compiled:\n");
+	try{p->build();}catch(...){
 		return 1;
 	}
 //	tc.print_to_stdout();
 	return 0;
 }
-up_statement create_statement(const char*funcname,statement*parent,up_token tk,tokenizer&br){
-	if(!strcmp("exit",funcname))return make_unique<call_exit>(parent,move(tk),br);
-	if(!strcmp("print",funcname))return make_unique<call_print>(parent,move(tk),br);
-	if(!strcmp("read",funcname))return make_unique<call_read>(parent,move(tk),br);
+up_statement create_statement(const char*funcname,statement*parent,up_token tk,tokenizer&t){
+	if(!strcmp("exit",funcname))return make_unique<call_exit>(parent,move(tk),t);
+	if(!strcmp("print",funcname))return make_unique<call_print>(parent,move(tk),t);
+	if(!strcmp("read",funcname))return make_unique<call_read>(parent,move(tk),t);
 	return make_unique<statement>(parent,move(tk));
 }

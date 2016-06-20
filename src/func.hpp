@@ -2,14 +2,14 @@
 #include"func_statements.hpp"
 class func:public statement{
 public:
-	func(statement*parent,up_token t,tokenizer&st):statement{parent,move(t)}{
-		identifier=st.next_token();
-		if(!st.is_next_char_expression_open())throw 1;
+	func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+		identifier=t.next_token();
+		if(!t.is_next_char_expression_open())throw 1;
 		while(true){
-			if(st.is_next_char_expression_close())break;
-			params.push_back(st.next_token());
+			if(t.is_next_char_expression_close())break;
+			params.push_back(t.next_token());
 		}
-		stmts=make_unique<func_statements>(parent,st);
+		stmts=make_unique<func_statements>(parent,t);
 	}
 	void compile(toc&tc)override{
 		tc.put_func(identifier->name());

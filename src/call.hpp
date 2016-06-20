@@ -3,22 +3,22 @@
 using vup_statement=vector<up_statement>;
 class call:public expression{
 public:
-	static up_statement read_expression(statement*parent,tokenizer&st){
-		up_token t=st.next_token();
+	static up_statement read_expression(statement*parent,tokenizer&t){
+		up_token tkn=t.next_token();
 //		printf("[%s]\n",t->get_name());
-		if(!st.is_next_char_expression_open()){
-			return make_unique<expression>(parent,move(t));
+		if(!t.is_next_char_expression_open()){
+			return make_unique<expression>(parent,move(tkn));
 		}
-		st.unread();
-		return create_statement(t->name(),parent,move(t),st);
+		t.unread();
+		return create_statement(tkn->name(),parent,move(tkn),t);
 	}
 
 
-	call(statement*parent,up_token t,tokenizer&st):expression{parent,move(t)}{
-		assert(st.is_next_char_args_open());
+	call(statement*parent,up_token tkn,tokenizer&t):expression{parent,move(tkn)}{
+		assert(t.is_next_char_args_open());
 		while(true){
-			if(st.is_next_char_args_close())break;
-			up_statement e=call::read_expression(this,st);
+			if(t.is_next_char_args_close())break;
+			up_statement e=call::read_expression(this,t);
 			args.push_back(move(e));
 		}
 	}

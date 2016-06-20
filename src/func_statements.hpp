@@ -1,14 +1,14 @@
 #pragma once
 class func_statements:public statement{
 public:
-	func_statements(statement*parent,tokenizer&st):statement{parent,nullptr}{
-		ws=st.next_token();
-		assert(st.is_next_char_block_open());
+	func_statements(statement*parent,tokenizer&t):statement{parent,nullptr}{
+		ws=t.next_token();
+		assert(t.is_next_char_block_open());
 		while(true){
-			if(st.is_eos())throw 1;
-			if(st.is_next_char_block_close())break;
-			up_token t=st.next_token();
-			up_statement stmt=create_statement(t->name(),parent,move(t),st);
+			if(t.is_eos())throw 1;
+			if(t.is_next_char_block_close())break;
+			up_token tkn=t.next_token();
+			up_statement stmt=create_statement(tkn->name(),parent,move(tkn),t);
 			statements.push_back(move(stmt));
 		}
 	}

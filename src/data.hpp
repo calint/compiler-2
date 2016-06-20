@@ -1,12 +1,12 @@
 #pragma once
 class data:public statement{
 public:
-	data(statement*parent,up_token t,tokenizer&st):statement{parent,move(t)}{
-		identifier=st.next_token();
-		if(!st.is_next_char_data_open())throw 1;
+	data(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+		identifier=t.next_token();
+		if(!t.is_next_char_data_open())throw 1;
 		while(true){
-			if(st.is_next_char_data_close())break;
-			tokens.push_back(st.next_token());
+			if(t.is_next_char_data_close())break;
+			tokens.push_back(t.next_token());
 		}
 	}
 	void compile(toc&tc)override{

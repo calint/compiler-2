@@ -25,8 +25,12 @@ public:
 	void source_to_stdout()override{
 		for(auto&s:statements)s->source_to_stdout();
 	}
-
+	void build(){
+		compile(tc);
+		link(tc);
+	}
 private:
 	vup_statement statements;
+	toc tc;
 };
 using up_program=unique_ptr<program>;
