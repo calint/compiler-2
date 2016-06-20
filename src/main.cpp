@@ -22,9 +22,10 @@ static string file_read_to_string(const char *filename){
 int main(int argc,char**args){
 	string s=file_read_to_string("prog.clare");
 	tokenizer t{s.data()};
-	up_program p;
+	up_program p;// to keep valid in case of exception
 	try{
 		p=make_unique<program>(t);
+
 		ofstream fo("diff.clare");
 		p->source_to(fo);
 		fo.close();
@@ -43,7 +44,7 @@ int main(int argc,char**args){
 	}
 	return 0;
 }
-up_statement create_statement(const char*funcname,statement*parent,up_token tk,tokenizer&t){
+inline up_statement create_statement(const char*funcname,statement*parent,up_token tk,tokenizer&t){
 	if(!strcmp("exit",funcname))return make_unique<call_exit>(parent,move(tk),t);
 	if(!strcmp("print",funcname))return make_unique<call_print>(parent,move(tk),t);
 	if(!strcmp("read",funcname))return make_unique<call_read>(parent,move(tk),t);

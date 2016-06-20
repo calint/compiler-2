@@ -9,9 +9,9 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include"compiler_error.hpp"
-class call_print:public call{public:
-	call_print(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
-	void compile(toc&tc,ostream&os)override{
+class call_print final:public call{public:
+	inline call_print(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
+	inline void compile(toc&tc,ostream&os)override{
 		const statement&e=argument(0);
 		allocs regs{"edx","ecx","ebx","eax"};
 		os<<"  mov edx,"<<e.token().name()<<".len\n";// length of text
@@ -21,7 +21,7 @@ class call_print:public call{public:
 		os<<"  int 0x80\n";// call kernel
 		// allocs.free()
 	}
-	void link(toc&tc,ostream&os)override{
+	inline void link(toc&tc,ostream&os)override{
 		const statement&e=argument(0);
 		if(!tc.has_file(e.token().name()))throw compiler_error(e,"cannot find file");
 	}

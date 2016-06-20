@@ -7,7 +7,7 @@
 using namespace std;
 #include "token.hpp"
 
-class tokenizer{public:
+class tokenizer final{public:
 	inline tokenizer(const char*string):ptr(string){}
 	inline bool is_eos()const{return !last_char;}
 	inline up_token next_token(){
@@ -81,7 +81,7 @@ private:
 	inline bool is_char_whitespace(const char ch){
 		return ch==' '||ch=='\t'||ch=='\r'||ch=='\n';
 	}
-	ua_char next_whitespace(){
+	inline ua_char next_whitespace(){
 		if(is_eos())
 			return unique_ptr<const char[]>(new char[1]{0});
 		nchar_bm=nchar;
@@ -98,7 +98,7 @@ private:
 		str[len]=0;
 		return unique_ptr<const char[]>(str);
 	}
-	ua_char next_token_str(){
+	inline ua_char next_token_str(){
 		if(is_eos())
 			return unique_ptr<const char[]>(new char[1]{0});
 		nchar_bm=nchar;

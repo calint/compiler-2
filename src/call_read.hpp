@@ -9,9 +9,9 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 
-class call_read:public call{public:
-	call_read(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
-	void compile(toc&tc,ostream&os)override{
+class call_read final:public call{public:
+	inline call_read(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
+	inline void compile(toc&tc,ostream&os)override{
 		allocs all{"eax","edi","esi","edx"};
 		const statement&e=argument(0);
 		os<<"  xor eax,eax\n";// 0 (write syscall number)
@@ -21,7 +21,7 @@ class call_read:public call{public:
 		os<<"  syscall\n";// call kernel
 		// allocs.free
 	}
-	void link(toc&tc,ostream&os)override{
+	inline void link(toc&tc,ostream&os)override{
 		const statement&e=argument(0);
 		if(!tc.has_file(e.token().name()))throw compiler_error(e,"cannot find file");
 	}
