@@ -10,7 +10,7 @@ public:
 			return make_unique<expression>(parent,move(t));
 		}
 		st.unread();
-		return create_call_func(t->name(),parent,move(t),st);
+		return create_statement(t->name(),parent,move(t),st);
 	}
 
 

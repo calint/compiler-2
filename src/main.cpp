@@ -61,7 +61,7 @@ int main(){
 //	tc.print_to_stdout();
 	return 0;
 }
-std::unique_ptr<statement>create_call_func(const char*funcname,statement*parent,up_token tk,tokenizer&br){
+up_statement create_statement(const char*funcname,statement*parent,up_token tk,tokenizer&br){
 	if(!strcmp("exit",funcname))return make_unique<call_exit>(parent,move(tk),br);
 	if(!strcmp("print",funcname))return make_unique<call_print>(parent,move(tk),br);
 	if(!strcmp("read",funcname))return make_unique<call_read>(parent,move(tk),br);

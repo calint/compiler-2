@@ -8,7 +8,7 @@ public:
 			if(st.is_eos())throw 1;
 			if(st.is_next_char_block_close())break;
 			up_token t=st.next_token();
-			up_statement stmt=create_call_func(t->name(),parent,move(t),st);
+			up_statement stmt=create_statement(t->name(),parent,move(t),st);
 			statements.push_back(move(stmt));
 		}
 	}
