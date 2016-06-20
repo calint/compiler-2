@@ -21,11 +21,9 @@ class program:public statement{public:
 		printf("section .text\nglobal _start\n_start:\n");
 		for(auto&s:statements)s->compile(tc);
 	}
+	void link(toc&tc)override final{for(auto&s:statements)s->link(tc);}
 	void source_to_stdout()override final{
 		for(auto&s:statements)s->source_to_stdout();
-	}
-	void link(toc&tc)override final{
-		for(auto&s:statements)s->link(tc);
 	}
 	const toc&get_toc()const{return tc;}
 private:

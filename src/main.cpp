@@ -43,7 +43,6 @@ int main(){
   func exit(){
   }
   func file.read(ident) {
-    read(ident)
   }
 )"};
 

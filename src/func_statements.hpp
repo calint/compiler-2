@@ -10,9 +10,9 @@ class func_statements:public statement{public:
 			statements.push_back(move(stmt));
 		}
 	}
-	void compile(toc&tc)override{
-		for(auto&s:statements)s->compile(tc);
-	}
+	void compile(toc&tc)override{for(auto&s:statements)s->compile(tc);}
+	void link(toc&tc)override final{for(auto&s:statements)s->link(tc);}
+
 	void source_to_stdout()override{
 		statement::source_to_stdout();
 		printf("{");
