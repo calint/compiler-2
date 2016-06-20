@@ -1,10 +1,5 @@
 #pragma once
-#include"decouple.hpp"
 #include"expression.hpp"
-#include"tokenizer.hpp"
-using namespace std;
-using allocs=vector<const char*>;
-using vuexpressionp=vector<up_expression>;
 using vup_statement=vector<up_statement>;
 class call:public expression{
 public:
@@ -38,3 +33,5 @@ public:
 private:
 	vup_statement args;
 };
+using allocs=vector<const char*>;
+

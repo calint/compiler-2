@@ -1,18 +1,10 @@
-#include<vector>
-#include<memory>
-using namespace std;
-#include "call_exit.hpp"
-#include "call_print.hpp"
-#include "call_read.hpp"
+#include"decouple.hpp"
 #include"tokenizer.hpp"
-#include"statement.hpp"
+#include"call_exit.hpp"
+#include"call_read.hpp"
+#include"call_print.hpp"
 #include"data.hpp"
 #include"func.hpp"
-using up_statement=std::unique_ptr<statement>;
-#include<vector>
-#include"decouple.hpp"
-using vup_statement=std::vector<up_statement>;
-using namespace std;
 #include"program.hpp"
 int main(){
 //	tokenizer br{R"(
@@ -41,26 +33,28 @@ int main(){
 //    int(0x80)
 //  }
 //)"};
-	tokenizer st{R"(
+	tokenizer t{R"(
   read(hello)
   print(hello)
   exit()
   
   data hello {hello world\n}
   data info {compiler to nasm for linux kernel\n}
-  func buf.write(buf,len,src)   {
+  func exit(){
+  }
+  func data.read(ident) {
+    read(ident)
   }
 )"};
 
-	up_program prg=make_unique<program>(st);
-//	printf(">>>> source:\n");
-//	prg->source_to_stdout();
-//	printf(">>>> compiled:\n");
-	printf("section .text\nglobal _start\n_start:\n");
+	up_program p=make_unique<program>(t);
+	printf(">>>> source:\n");
+	p->source_to_stdout();
+	printf(">>>> compiled:\n");
 	toc tc;
 	try{
-		prg->compile(tc);
-		prg->link(tc);
+		p->compile(tc);
+		p->link(tc);
 	}catch(...){
 		return 1;
 	}

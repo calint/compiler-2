@@ -1,8 +1,5 @@
 #pragma once
-#include"statement.hpp"
-#include<vector>
-#include"block_func.hpp"
-using vup_tokens=vector<unique_ptr<token>>;
+#include"func_statements.hpp"
 class func:public statement{
 public:
 	func(statement*parent,up_token t,tokenizer&st):statement{parent,move(t)}{
@@ -12,7 +9,7 @@ public:
 			if(st.is_next_char_expression_close())break;
 			params.push_back(st.next_token());
 		}
-		stmts=make_unique<block_func>(parent,st);
+		stmts=make_unique<func_statements>(parent,st);
 	}
 	void compile(toc&tc)override{
 		tc.put_func(identifier->name());
@@ -29,5 +26,5 @@ public:
 private:
 	up_token identifier;
 	vup_tokens params;
-	up_block_func stmts;
+	up_func_statements stmts;
 };

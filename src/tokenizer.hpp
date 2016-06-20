@@ -1,6 +1,4 @@
 #pragma once
-#include"token.hpp"
-using up_token=unique_ptr<token>;
 class tokenizer{
 public:
 	inline tokenizer(const char*string):ptr(string){}
@@ -76,7 +74,7 @@ private:
 	inline bool is_char_whitespace(const char ch){
 		return ch==' '||ch=='\t'||ch=='\r'||ch=='\n';
 	}
-	ucharp next_whitespace(){
+	ua_char next_whitespace(){
 		if(is_eos())
 			return unique_ptr<const char[]>(new char[1]{0});
 		nchar_bm=nchar;
@@ -93,7 +91,7 @@ private:
 		str[len]=0;
 		return unique_ptr<const char[]>(str);
 	}
-	ucharp next_token_str(){
+	ua_char next_token_str(){
 		if(is_eos())
 			return unique_ptr<const char[]>(new char[1]{0});
 		nchar_bm=nchar;

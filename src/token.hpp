@@ -1,17 +1,15 @@
 #pragma once
-#include<memory>
-using namespace std;
+#include"decouple.hpp"
 #include<string.h>
-#include<cassert>
-using ucharp=unique_ptr<const char[]>;
+using ua_char=unique_ptr<const char[]>;
 class token{
-	ucharp ws_before;
+	ua_char ws_before;
 	size_t token_start_char_;
-	ucharp name_;
+	ua_char name_;
 	size_t token_end_char_;
-	ucharp ws_after;
+	ua_char ws_after;
 public:
-	inline token(ucharp wb,size_t n,ucharp tk,size_t n2,ucharp wa)
+	inline token(ua_char wb,size_t n,ua_char tk,size_t n2,ua_char wa)
 		:ws_before(move(wb)),token_start_char_(n),name_(move(tk)),token_end_char_(n2),ws_after(move(wa)){}
 	inline void source_to_stdout()const{printf("%s%s%s",ws_before.get(),name_.get(),ws_after.get());}
 	inline void to_stdout2()const{printf("[%zu]%s[%zu]\n",token_start_char_,name_.get(),token_end_char_);}
@@ -22,3 +20,4 @@ public:
 	inline size_t token_end_char()const{return token_end_char_;}
 };
 using up_token=unique_ptr<token>;
+using vup_tokens=vector<up_token>;

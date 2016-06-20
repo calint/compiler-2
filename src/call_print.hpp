@@ -1,6 +1,5 @@
 #pragma once
 #include"call.hpp"
-using allocs=std::vector<const char*>;
 class call_print:public call{
 public:
 	call_print(statement*parent,up_token t,tokenizer&st):call{parent,move(t),st}{}

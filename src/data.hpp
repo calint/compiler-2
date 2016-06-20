@@ -1,7 +1,4 @@
 #pragma once
-#include"statement.hpp"
-#include<vector>
-using vup_tokens=vector<unique_ptr<token>>;
 class data:public statement{
 public:
 	data(statement*parent,up_token t,tokenizer&st):statement{parent,move(t)}{

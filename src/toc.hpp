@@ -2,8 +2,6 @@
 #include<unordered_set>
 using namespace std;
 class toc{
-	unordered_set<const char*>defs;
-	unordered_set<const char*>funcs;
 public:
 	inline bool has_def(const char*identifier)const{
 		for(auto&e:defs)if(!strcmp(e,identifier))return true;
@@ -25,4 +23,7 @@ public:
 		for(auto&e:defs)
 			puts(e);
 	}
+private:
+	unordered_set<const char*>defs;
+	unordered_set<const char*>funcs;
 };

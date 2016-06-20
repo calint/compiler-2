@@ -1,15 +1,12 @@
 #pragma once
-#include"decouple.hpp"
-#include"statement.hpp"
-#include"func.hpp"
-class block_func:public statement{
+class func_statements:public statement{
 public:
-	block_func(statement*parent,tokenizer&st):statement{parent,nullptr}{
+	func_statements(statement*parent,tokenizer&st):statement{parent,nullptr}{
 		ws=st.next_token();
 		assert(st.is_next_char_block_open());
 		while(true){
-			if(st.is_next_char_block_close())break;
 			if(st.is_eos())throw 1;
+			if(st.is_next_char_block_close())break;
 			up_token t=st.next_token();
 			up_statement stmt=create_call_func(t->name(),parent,move(t),st);
 			statements.push_back(move(stmt));
@@ -33,4 +30,4 @@ private:
 	up_token ws;
 	vup_statement statements;
 };
-using up_block_func=unique_ptr<block_func>;
+using up_func_statements=unique_ptr<func_statements>;
