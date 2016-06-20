@@ -1,7 +1,6 @@
 #pragma once
 #include"call.hpp"
-class call_print:public call{
-public:
+class call_print:public call{public:
 	call_print(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
 	void compile(toc&tc)override{
 		const statement&e=argument(0);

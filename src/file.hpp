@@ -1,6 +1,5 @@
 #pragma once
-class file:public statement{
-public:
+class file:public statement{public:
 	file(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
 		if(!t.is_next_char_data_open())throw 1;

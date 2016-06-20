@@ -1,6 +1,5 @@
 #pragma once
-class program:public statement{
-public:
+class program:public statement{public:
 	program(tokenizer&t):statement{nullptr,nullptr}{
 		while(true){
 			if(t.is_eos())break;

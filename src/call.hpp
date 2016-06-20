@@ -1,8 +1,7 @@
 #pragma once
 #include"expression.hpp"
 using vup_statement=vector<up_statement>;
-class call:public expression{
-public:
+class call:public expression{public:
 	static up_statement read_expression(statement*parent,tokenizer&t){
 		up_token tkn=t.next_token();
 //		printf("[%s]\n",t->get_name());

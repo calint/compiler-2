@@ -1,8 +1,7 @@
 #pragma once
 #include<unordered_set>
 using namespace std;
-class toc{
-public:
+class toc{public:
 	inline bool has_def(const char*identifier)const{
 		for(auto&e:defs)if(!strcmp(e,identifier))return true;
 		return false;

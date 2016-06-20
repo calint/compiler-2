@@ -1,6 +1,5 @@
 #pragma once
-class tokenizer{
-public:
+class tokenizer{public:
 	inline tokenizer(const char*string):ptr(string){}
 	inline bool is_eos()const{return !last_char;}
 	inline up_token next_token(){

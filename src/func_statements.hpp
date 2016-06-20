@@ -1,6 +1,5 @@
 #pragma once
-class func_statements:public statement{
-public:
+class func_statements:public statement{public:
 	func_statements(statement*parent,tokenizer&t):statement{parent,t.next_token()}{
 		assert(t.is_next_char_block_open());
 		while(true){

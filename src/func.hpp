@@ -1,7 +1,6 @@
 #pragma once
 #include"func_statements.hpp"
-class func:public statement{
-public:
+class func:public statement{public:
 	func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
 		if(!t.is_next_char_expression_open())throw 1;

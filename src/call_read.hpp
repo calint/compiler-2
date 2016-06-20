@@ -1,7 +1,6 @@
 #pragma once
 #include"call.hpp"
-class call_read:public call{
-public:
+class call_read:public call{public:
 	call_read(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
 	void compile(toc&tc)override{
 		allocs all{"eax","edi","esi","edx"};
