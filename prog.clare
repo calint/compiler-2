@@ -1,5 +1,5 @@
 read(hello)
-print(hello)
+print(fhello)
 exit()
 
 file hello{hello world\n}

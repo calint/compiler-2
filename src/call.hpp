@@ -11,6 +11,7 @@
 #include "statement.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
+#include"compiler_error.hpp"
 
 using vup_statement=vector<up_statement>;
 class call:public expression{public:
@@ -25,7 +26,8 @@ class call:public expression{public:
 
 
 	call(statement*parent,up_token tkn,tokenizer&t):expression{parent,move(tkn)}{
-		assert(t.is_next_char_args_open());
+		if(!t.is_next_char_args_open())throw compiler_error(*this,"expected ( and arguments");
+//		assert(t.is_next_char_args_open());
 		while(!t.is_next_char_args_close()){
 			args.push_back(call::read_statement(this,t));
 		}
@@ -36,7 +38,7 @@ class call:public expression{public:
 		for(auto&e:args)e->source_to(os);
 		os<<")";
 	}
-	inline const statement&argument(int ix)const{return*(args[ix].get());}
+	inline const statement&argument(size_t ix)const{return*(args[ix].get());}
 
 private:
 	vup_statement args;

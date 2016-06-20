@@ -10,5 +10,5 @@ class compiler_error final{public:
 	size_t start_char{0};
 	size_t end_char{0};
 
-	compiler_error(statement&s,const char*str,size_t bgn,size_t end):stmt{s},msg{str},start_char{bgn},end_char{end}{}
+	compiler_error(statement&s,const char*str):stmt{s},msg{str},start_char{s.token().token_start_char()},end_char{s.token().token_end_char()}{}
 };

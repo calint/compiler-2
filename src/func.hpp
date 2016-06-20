@@ -9,11 +9,11 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-
+#include "compiler_error.hpp"
 class func final:public statement{public:
 	func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
-		if(!t.is_next_char_expression_open())throw 1;
+		if(!t.is_next_char_expression_open())throw compiler_error(*this,"expected ( and arguments");
 		while(!t.is_next_char_expression_close())params.push_back(t.next_token());
 		code=make_unique<block>(parent,t);
 	}

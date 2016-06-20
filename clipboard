@@ -1,0 +1,42 @@
+//try{up_program p=make_unique<program>(t);
+////		printf(">>>> source:\n");
+////		p->source_to_stdout();
+
+//	tokenizer br{R"(
+//  print(read(hello),hello)
+//  exit()
+//  data hello{hello world\n}
+//  data info{compiler to nasm for linux kernel\n}
+//  data console(32KB,0xb8000){"hello"}
+//  func exit(){
+//     mov(eax,1)
+//     int(0x80)
+//  }
+//  func read(dst):nread{
+//    zero(eax)
+//    zero(edi)
+//    mov(esi,dst)
+//    mov(edx,dst.len)
+//    syscall
+//    ret(edx)
+//  }
+//  func print(len,src){
+//    mov(edx,len)
+//    mov(ecx,src)
+//    mov(ebx,1)
+//    mov(eax,4)
+//    int(0x80)
+//  }
+//)"};
+//tokenizer t{R"(
+//read(hello)
+//print(hello)
+//exit()
+//
+//file hello {hello world\n}
+//file info {compiler to nasm for linux kernel\n}
+//func exit(){
+//}
+//func file.read(ident) {
+//}
+//)"};

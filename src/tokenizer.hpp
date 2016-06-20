@@ -1,11 +1,9 @@
 #pragma once
-
-#include <stddef.h>
-#include <algorithm>
-#include <cassert>
-#include <cstring>
-#include <memory>
-
+#include<stddef.h>
+#include<algorithm>
+#include<cassert>
+#include<cstring>
+#include<memory>
 using namespace std;
 #include "token.hpp"
 
@@ -106,7 +104,7 @@ private:
 		nchar_bm=nchar;
 		while(true){
 			const char ch=next_char();
-			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'){
+			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||ch=='['||ch==']'){
 				unsafe_seek(-1);
 				break;
 			}
@@ -118,8 +116,8 @@ private:
 		str[len]=0;
 		return unique_ptr<const char[]>(str);
 	}
-	inline void unsafe_seek(const int nbr_of_chars){
+	inline void unsafe_seek(const off_t nbr_of_chars){
 		ptr+=nbr_of_chars;
-		nchar+=nbr_of_chars;
+		nchar=size_t(ssize_t(nchar)+nbr_of_chars);
 	}
 };
