@@ -1,5 +1,18 @@
 #pragma once
-#include"expression.hpp"
+
+#include <algorithm>
+#include <cassert>
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <vector>
+
+#include "decouple.hpp"
+#include "expression.hpp"
+#include "statement.hpp"
+#include "token.hpp"
+#include "tokenizer.hpp"
+
 using vup_statement=vector<up_statement>;
 class call:public expression{public:
 	static up_statement read_statement(statement*parent,tokenizer&t){
@@ -18,11 +31,11 @@ class call:public expression{public:
 			args.push_back(call::read_statement(this,t));
 		}
 	}
-	void source_to_stdout()override{
-		statement::source_to_stdout();
-		printf("(");
-		for(auto&e:args)e->source_to_stdout();
-		printf(")");
+	void source_to(ostream&os)override{
+		statement::source_to(os);
+		os<<"(";
+		for(auto&e:args)e->source_to(os);
+		os<<")";
 	}
 	inline const statement&argument(int ix)const{return*(args[ix].get());}
 

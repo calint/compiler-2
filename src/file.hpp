@@ -1,4 +1,16 @@
 #pragma once
+
+#include <algorithm>
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <vector>
+
+#include "statement.hpp"
+#include "toc.hpp"
+#include "token.hpp"
+#include "tokenizer.hpp"
+
 class file:public statement{public:
 	file(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
@@ -8,27 +20,25 @@ class file:public statement{public:
 			tokens.push_back(t.next_token());
 		}
 	}
-	void compile(toc&tc)override{
+	void compile(toc&tc,ostream&os)override{
 //		section .data
 //		msg     db  'Hello, world!',0xa                 ;string
 //		msg.len equ $ - msg                             ;length of string
 //		section .text
-		puts("section .data");
-		printf("%s     db  '",identifier->name());
-		for(auto&s:tokens){
-			s->compiled_to_stdout();
-		}
-		printf("'\n");
-		printf("%s.len equ $-%s\n",identifier->name(),identifier->name());
-		puts("section .text");
+		os<<"section .data\n";
+		os<<identifier->name()<<" db '";
+		for(auto&s:tokens)s->compiled_to(os);
+		os<<"'\n";
+		os<<identifier->name()<<".len equ $-"<<identifier->name()<<endl;
+		os<<"section .text\n";
 		tc.put_def(identifier->name());
 	}
-	void source_to_stdout()override{
-		statement::source_to_stdout();
-		identifier->source_to_stdout();
-		printf("{");
-		for(auto&s:tokens)s->source_to_stdout();
-		printf("}");
+	void source_to(ostream&os)override{
+		statement::source_to(os);
+		identifier->source_to(os);
+		os<<"{";
+		for(auto&s:tokens)s->source_to(os);
+		os<<"}";
 	}
 
 private:

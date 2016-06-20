@@ -1,10 +1,16 @@
 #pragma once
-#include"call.hpp"
+
+#include <algorithm>
+
+#include "call.hpp"
+#include "token.hpp"
+#include "tokenizer.hpp"
+
 class call_exit:public call{public:
 	call_exit(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
-	void compile(toc&tc)override{
+	void compile(toc&tc,ostream&os)override{
 //		assure_arg_count(0);
-		puts("  mov eax,1");
-		puts("  int 0x80");
+		os<<"  mov eax,1\n";
+		os<<"  int 0x80\n";
 	}
 };

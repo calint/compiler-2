@@ -1,5 +1,21 @@
 #pragma once
-class program:public statement{public:
+
+#include <algorithm>
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <vector>
+
+#include "call.hpp"
+#include "decouple.hpp"
+#include "file.hpp"
+#include "func.hpp"
+#include "statement.hpp"
+#include "toc.hpp"
+#include "token.hpp"
+#include "tokenizer.hpp"
+
+class program final:public statement{public:
 	program(tokenizer&t):statement{nullptr,nullptr}{
 		while(true){
 			if(t.is_eos())break;
@@ -14,17 +30,19 @@ class program:public statement{public:
 			}
 			statements.push_back(move(stmt));
 		}
-		compile(tc);
-		link(tc);
+//		compile(tc);
+//		link(tc);
 	}
-	void compile(toc&tc)override final{
-		printf("section .text\nglobal _start\n_start:\n");
-		for(auto&s:statements)s->compile(tc);
+	void build(ostream&os){
+		compile(tc,os);
+		link(tc,os);
 	}
-	void link(toc&tc)override final{for(auto&s:statements)s->link(tc);}
-	void source_to_stdout()override final{
-		for(auto&s:statements)s->source_to_stdout();
+	void compile(toc&tc,ostream&os)override{
+		os<<"section .text\nglobal _start\n_start:\n";
+		for(auto&s:statements)s->compile(tc,os);
 	}
+	void link(toc&tc,ostream&os)override{for(auto&s:statements)s->link(tc,os);}
+	void source_to(ostream&os)override{for(auto&s:statements)s->source_to(os);}
 	const toc&get_toc()const{return tc;}
 private:
 	vup_statement statements;

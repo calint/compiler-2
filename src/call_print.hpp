@@ -1,22 +1,32 @@
 #pragma once
-#include"call.hpp"
+
+#include <algorithm>
+#include <cstdio>
+#include <iostream>
+
+#include "call.hpp"
+#include "statement.hpp"
+#include "toc.hpp"
+#include "token.hpp"
+#include "tokenizer.hpp"
+
 class call_print:public call{public:
 	call_print(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
-	void compile(toc&tc)override{
+	void compile(toc&tc,ostream&os)override{
 		const statement&e=argument(0);
 		allocs regs{"edx","ecx","ebx","eax"};
-		printf("  mov edx,%s.len\n",e.token().name());// length of text
-		printf("  mov ecx,%s\n",e.token().name());// pointer to text
-		printf("  mov ebx,1\n");// file descriptor (stdout)
-		printf("  mov eax,4\n");// system call number (sys_write)
-		printf("  int 0x80\n");// call kernel
+		os<<"  mov edx,"<<e.token().name()<<".len\n";// length of text
+		os<<"  mov ecx,"<<e.token().name()<<"\n";// pointer to text
+		os<<"  mov ebx,1\n";// file descriptor (stdout)
+		os<<"  mov eax,4\n";// system call number (sys_write)
+		os<<"  int 0x80\n";// call kernel
 		// allocs.free()
 	}
-	void link(toc&tc)override{
+	void link(toc&tc,ostream&os)override{
 		const statement&e=argument(0);
-		if(!tc.has_def(e.token().name())){
-			printf("%zu:%zu identifier '%s' not found\n",e.token().token_start_char(),e.token().token_end_char(),e.token().name());
-			tc.print_to_stdout();
+		if(!tc.has_file(e.token().name())){
+			os<<e.token().token_start_char()<<":"<<e.token().token_end_char()<<"cannot find file '"<<e.token().name()<<"'\n";
+			tc.print_to(os);
 			throw 1;
 		}
 	}

@@ -1,4 +1,13 @@
 #pragma once
+
+#include <stddef.h>
+#include <algorithm>
+#include <cassert>
+#include <cstring>
+#include <memory>
+
+#include "token.hpp"
+
 class tokenizer{public:
 	inline tokenizer(const char*string):ptr(string){}
 	inline bool is_eos()const{return !last_char;}
