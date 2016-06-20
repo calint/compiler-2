@@ -14,8 +14,7 @@ class call:public expression{public:
 
 	call(statement*parent,up_token tkn,tokenizer&t):expression{parent,move(tkn)}{
 		assert(t.is_next_char_args_open());
-		while(true){
-			if(t.is_next_char_args_close())break;
+		while(!t.is_next_char_args_close()){
 			args.push_back(call::read_statement(this,t));
 		}
 	}
