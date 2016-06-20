@@ -1,9 +1,12 @@
-read(hello)
-print(hello)
+print(info)
+read(name)
+print(reply)
+print(name)
 exit()
 
-file hello{hello world\n}
-file info{compiler to nasm for linux kernel\n}
+file info{enter name: }
+file name{....................}
+file reply{hello }
 
 func exit(){
 }
