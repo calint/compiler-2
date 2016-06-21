@@ -1,18 +1,11 @@
-print(prompt.len prompt)
-read(name.len name)
-print(hello.len hello)
-print(name.len name)
-exit()
-
-
 func exit(){
     mov(eax 1)
     int(0x80)
 }
 
-file prompt{enter name: }
+file prompt{enter_name_ }
 file name  {......................}
-file hello {hello }
+file hello {hello_ }
 
 func print(len ptr){
     mov(ecx ptr)
@@ -29,3 +22,10 @@ func read(len ptr){
     xor(edi edi)
     syscall()
 }
+
+
+print(prompt.len prompt)
+read(name.len name)
+print(hello.len hello)
+print(name.len name)
+exit()

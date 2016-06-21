@@ -17,7 +17,7 @@ class file final:public statement{public:
 			tokens.push_back(t.next_token());
 		}
 	}
-	inline virtual bool is_in_data_section()const{return true;}
+	inline bool is_in_data_section()const override{return true;}
 	inline void compile(toc&tc,ostream&os)override{
 //		section .data
 //		msg     db  'Hello, world!',0xa                 ;string

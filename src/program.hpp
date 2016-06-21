@@ -11,10 +11,10 @@ using namespace std;
 #include"file.hpp"
 class program final:public statement{public:
 	inline program(tokenizer&t):statement{nullptr,make_unique<class token>()}{
-		tc.put_func("mov");
-		tc.put_func("int");
-		tc.put_func("xor");
-		tc.put_func("syscall");
+		tc.put_func("mov",nullptr);
+		tc.put_func("int",nullptr);
+		tc.put_func("xor",nullptr);
+		tc.put_func("syscall",nullptr);
 		while(!t.is_eos()){
 			up_token tk=t.next_token();
 			up_statement stmt;

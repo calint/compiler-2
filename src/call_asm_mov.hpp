@@ -13,10 +13,11 @@ class call_asm_mov final:public call{public:
 	inline void compile(toc&tc,ostream&os)override{// mov(eax 1)
 		const statement&dst=argument(0);
 		const statement&src=argument(1);
-		os<<"  mov "<<dst.token().name()<<","<<src.token().name()<<endl;
+
+		const char*alias_dst=tc.stack_getalias(dst.token().name());
+		const char*alias_src=tc.stack_getalias(src.token().name());
+
+		os<<"  mov "<<(alias_dst?alias_dst:dst.token().name())<<","<<(alias_src?alias_src:src.token().name())<<endl;
 	}
-	inline void link(toc&tc,ostream&os)override{
-		const statement&dst=argument(0);
-		const statement&src=argument(1);
-	}
+	inline void link(toc&tc,ostream&os)override{}
 };

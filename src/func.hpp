@@ -3,13 +3,15 @@
 #include <algorithm>
 #include <iostream>
 #include <memory>
+#include <vector>
 
 #include "block.hpp"
+#include "compiler_error.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-#include "compiler_error.hpp"
+
 class func final:public statement{public:
 	inline func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
@@ -18,18 +20,24 @@ class func final:public statement{public:
 		code=make_unique<block>(parent,t);
 	}
 	inline void compile(toc&tc,ostream&os)override{
-		tc.put_func(identifier->name());
+		tc.put_func(identifier->name(),this);
+		if(is_inline())
+			return;
+
 		os<<identifier->name()<<":\n";
-		for (unsigned i=params.size();i-->0;)
+		for (size_t i=params.size();i-->0;)
 			os<<"  pop "<<params[i].get()->name()<<endl;
+
 		code->compile(tc,os);
 		os<<"  ret\n";
 	}
 	inline void link(toc&tc,ostream&os)override final{code->link(tc,os);}
-	inline void source_to(ostream&os)const override{statement::source_to(os);identifier->source_to(os);os<<"(";for(auto&s:params)s->source_to(os);os<<")";code->source_to(os);
-	}
-private:
-	up_token identifier;
+	inline void source_to(ostream&os)const override{statement::source_to(os);identifier->source_to(os);os<<"(";for(auto&s:params)s->source_to(os);os<<")";code->source_to(os);}
+//	inline const vup_tokens&getparams()const{return params;}
+	inline bool is_inline()const{return true;}
+
 	vup_tokens params;
 	up_block code;
+private:
+	up_token identifier;
 };

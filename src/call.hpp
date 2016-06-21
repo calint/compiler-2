@@ -9,12 +9,12 @@
 #include "compiler_error.hpp"
 #include "decouple.hpp"
 #include "expression.hpp"
+#include "func.hpp"
 #include "statement.hpp"
+#include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-#include "toc.hpp"
 
-using vup_statement=vector<up_statement>;
 class call:public expression{public:
 	inline static up_statement read_statement(statement*parent,tokenizer&t){
 		up_token tkn=t.next_token();
@@ -31,15 +31,38 @@ class call:public expression{public:
 	}
 	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"(";for(auto&e:args)e->source_to(os);os<<")";}
 	inline void compile(toc&tc,ostream&os)override{
-		for(auto&a:args)os<<"  push "<<a.get()->token().name()<<endl;
-		os<<"  call "<<token().name()<<endl;
+		if(!is_inline()){
+			os<<"; "<<token().name()<<"(";
+			const size_t n=args.size();
+			const size_t nn=n-1;
+			for(size_t i=0;i<n;i++){
+				const char*s=args[i].get()->token().name();
+				os<<s;
+				if(i<nn)os<<" ";
+			}
+			os<<")\n";
+			for(auto&a:args)os<<"  push "<<a.get()->token().name()<<endl;
+			os<<"  call "<<token().name()<<endl;
+			return;
+		}
+
+		const char*nm=token().name();
+		tc.stack_pushfunc(nm);
+		size_t i=0;
+		const func*f=tc.get_func(nm);
+		if(!f)throw compiler_error(*this,"function not found",token().copy_name());
+		for(auto&a:args){
+			const char*tkn=a->token().name();
+			const char*param=f->params[i++]->name();
+			tc.stack_alias(param,tkn);
+		}
+		f->code->compile(tc,os);
 	}
 	inline void link(toc&tc,ostream&os)override{
-		if(!tc.has_func(token().name()))
-			throw compiler_error(*this,"function not found",token().copy_name());
 	}
 
 	inline const statement&argument(size_t ix)const{return*(args[ix].get());}
+	inline bool is_inline()const{return true;}
 
 private:
 	vup_statement args;

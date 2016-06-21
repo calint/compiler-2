@@ -41,13 +41,13 @@ int main(int argc,char**args){
 	}catch(const char*msg){
 		cout<<" *** exception: "<<msg<<endl;
 		return 1;
-//	}catch(...){
-//		cout<<" *** exception caught"<<endl;
-//		return 1;
+	}catch(...){
+		cout<<" *** exception"<<endl;
+		return 1;
 	}
 	return 0;
 }
-inline unique_ptr<call>create_call(const char*funcname,statement*parent,up_token tk,tokenizer&t){
+inline up_statement create_call(const char*funcname,statement*parent,unique_ptr<token>tk,tokenizer&t){
 //	if(!strcmp("exit",funcname))return make_unique<call_exit>(parent,move(tk),t);
 //	if(!strcmp("print",funcname))return make_unique<call_print>(parent,move(tk),t);
 //	if(!strcmp("read",funcname))return make_unique<call_read>(parent,move(tk),t);

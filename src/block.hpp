@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstdio>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -14,6 +13,7 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 
+using vup_statement=vector<up_statement>;
 class block final:public statement{public:
 	inline block(statement*parent,tokenizer&t):statement{parent,t.next_token()}{
 		assert(t.is_next_char_block_open());
