@@ -30,8 +30,10 @@ class call:public expression{public:
 		while(!t.is_next_char_args_close())args.push_back(call::read_statement(this,t));
 	}
 	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"(";for(auto&e:args)e->source_to(os);os<<")";}
-	inline void compile(toc&tc,ostream&os)override{
-		os<<"; "<<token().name()<<"(";
+	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
+		os<<";";for(size_t i=0;i<indent_level;i++)cout<<"  ";
+
+		os<<token().name()<<"(";
 		const size_t n=args.size();
 		const size_t nn=n-1;
 		for(size_t i=0;i<n;i++){
@@ -39,7 +41,8 @@ class call:public expression{public:
 			os<<s;
 			if(i<nn)os<<" ";
 		}
-		os<<")\n";
+		os<<"){\n";
+
 		if(!is_inline()){
 			for(auto&a:args)os<<"  push "<<a.get()->token().name()<<endl;
 			os<<"  call "<<token().name()<<endl;
@@ -56,9 +59,10 @@ class call:public expression{public:
 			const char*param=f->params[i++]->name();
 			tc.stack_alias(param,tkn);
 		}
-		f->code->compile(tc,os);
-	}
-	inline void link(toc&tc,ostream&os)override{
+		f->code->compile(tc,os,indent_level+1);
+		tc.stack_pop();
+
+		os<<";";for(size_t i=0;i<indent_level;i++)cout<<"  ";os<<"}\n";
 	}
 
 	inline const statement&argument(size_t ix)const{return*(args[ix].get());}

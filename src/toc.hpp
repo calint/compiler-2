@@ -30,6 +30,9 @@ class toc final{
 		inline const char*getalias(const char*local_name)const{
 			return frames.back().aliases.get(local_name);
 		}
+		inline void pop(){
+			frames.pop_back();
+		}
 	private:
 		vector<stackframe>frames;
 	};
@@ -57,6 +60,9 @@ public:
 		const char*alias=stack_getalias(defval);
 		if(alias)return alias;
 		return defval;
+	}
+	inline void stack_pop(){
+		stk.pop();
 	}
 
 private:

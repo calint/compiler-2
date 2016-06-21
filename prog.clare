@@ -23,9 +23,17 @@ func read(len ptr){
     syscall()
 }
 
+func test(){
+	print(prompt.len prompt)
+	read(name.len name)
+	print(hello.len hello)
+	print(name.len name)
+}
 
-print(prompt.len prompt)
-read(name.len name)
-print(hello.len hello)
-print(name.len name)
+func test2(){
+	print(hello.len hello)
+	test()
+}
+
+test2()
 exit()

@@ -19,7 +19,7 @@ class func final:public statement{public:
 		while(!t.is_next_char_expression_close())params.push_back(t.next_token());
 		code=make_unique<block>(parent,t);
 	}
-	inline void compile(toc&tc,ostream&os)override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
 		tc.put_func(identifier->name(),this);
 		if(is_inline())
 			return;
@@ -28,7 +28,7 @@ class func final:public statement{public:
 		for (size_t i=params.size();i-->0;)
 			os<<"  pop "<<params[i].get()->name()<<endl;
 
-		code->compile(tc,os);
+		code->compile(tc,os,indent_level+1);
 		os<<"  ret\n";
 	}
 	inline void link(toc&tc,ostream&os)override final{code->link(tc,os);}

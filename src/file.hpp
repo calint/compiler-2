@@ -18,15 +18,18 @@ class file final:public statement{public:
 		}
 	}
 	inline bool is_in_data_section()const override{return true;}
-	inline void compile(toc&tc,ostream&os)override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
 //		section .data
 //		msg     db  'Hello, world!',0xa                 ;string
 //		msg.len equ $ - msg                             ;length of string
 //		section .text
 //		os<<"section .data\n";
+		for(size_t i=0;i<indent_level;i++)cout<<"  ";
 		os<<identifier->name()<<"     db '";
-		for(auto&s:tokens)s->compiled_to(os);
+		for(auto&s:tokens)s->compile_to(os);
 		os<<"'\n";
+
+		for(size_t i=0;i<indent_level;i++)cout<<"  ";
 		os<<identifier->name()<<".len equ $-"<<identifier->name()<<endl;
 //		os<<"section .text\n";
 		tc.put_def(identifier->name());

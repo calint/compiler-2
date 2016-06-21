@@ -11,7 +11,7 @@ class toc;
 class statement{public:
 	inline statement(statement*parent,up_token t):tk{move(t)},pt{parent}{}
 	inline virtual~statement(){}
-	inline virtual void compile(toc&tc,ostream&os){tk->compiled_to(os);}
+	inline virtual void compile(toc&tc,ostream&os,size_t indent_level){tk->compile_to(os);}
 	inline virtual void link(toc&tc,ostream&os){}
 	inline virtual void source_to(ostream&os)const{tk->source_to(os);}
 	inline const token&token()const{return*tk;}
