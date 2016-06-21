@@ -1,15 +1,31 @@
-print(info)
-read(name)
-print(reply)
-print(name)
+print(prompt.len prompt)
+read(name.len name)
+print(hello.len hello)
+print(name.len name)
 exit()
 
-file info{enter name: }
-file name{....................}
-file reply{hello }
 
 func exit(){
+    mov(eax 1)
+    int(0x80)
 }
-func file.read(ident) {
-	// comment
+
+file prompt{enter name: }
+file name  {......................}
+file hello {hello }
+
+func print(len ptr){
+    mov(ecx ptr)
+    mov(edx len)
+    mov(ebx 1)
+    mov(eax 4)
+    int(0x80)
+}
+
+func read(len ptr){
+    mov(esi ptr)
+    mov(edx len)
+    xor(eax eax)
+    xor(edi edi)
+    syscall()
 }

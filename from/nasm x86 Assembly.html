@@ -1,0 +1,301 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!-- saved from url=(0060)https://www.cs.uaf.edu/2005/fall/cs301/support/x86/nasm.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <title>nasm x86 Assembly</title>
+  
+  <meta content="Orion Sky Lawlor, olawlor@acm.org" name="author"></head>
+<body>
+<h1>nasm x86 Assembly Quick Reference ("Cheat Sheet")</h1>
+
+
+<table style="width: 100%; text-align: left;" border="1" cellpadding="2" cellspacing="2">
+
+  <tbody>
+    <tr>
+      <td style="vertical-align: top;">
+      <h2>Instructions</h2>
+      
+      <table style="text-align: left;" border="1" cellpadding="2" cellspacing="2">
+
+  <tbody>
+    <tr>
+      <td style="vertical-align: top;">Mnemonic<br>
+      </td>
+      <td style="vertical-align: top;">Purpose<br>
+      </td>
+      <td style="vertical-align: top;">Examples<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">mov <span style="font-style: italic;">dest,src</span><br>
+      </td>
+      <td style="vertical-align: top;">Move data between registers, load immediate data into registers, move data between registers and memory.<br>
+      </td>
+      <td style="vertical-align: top;">mov eax,4&nbsp; ; Load constant into eax<br>
+mov ebx,eax&nbsp; ; Copy eax into ebx<br>
+mov ebx,[123] ;&nbsp; Copy ebx to memory address 123<br>
+      </td>
+    </tr>
+    <tr>
+            <td style="vertical-align: top;">push <span style="font-style: italic;">src</span><br>
+            </td>
+            <td style="vertical-align: top;">Insert a value onto the stack.&nbsp; Useful for passing arguments, saving registers, etc.<br>
+            </td>
+            <td style="vertical-align: top;">push ebp<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">pop <span style="font-style: italic;">dest</span><br>
+            </td>
+            <td style="vertical-align: top;">Remove topmost value from the stack.&nbsp; Equivalent to "mov <span style="font-style: italic;">dest,</span>[esp]&nbsp;&nbsp;&nbsp;&nbsp; add esp,4"<br>
+            </td>
+            <td style="vertical-align: top;">pop ebp<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">call <span style="font-style: italic;">func</span><br>
+            </td>
+            <td style="vertical-align: top;">Push the address of the next instruction and start executing func.<br>
+            </td>
+            <td style="vertical-align: top;">call print_int<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">ret<br>
+            </td>
+            <td style="vertical-align: top;">Pop the return program counter, and jump there.&nbsp; Ends a subroutine.<br>
+            </td>
+            <td style="vertical-align: top;">ret<br>
+            </td>
+          </tr>
+<tr>
+      <td style="vertical-align: top;">add <span style="font-style: italic;">src,dest</span><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">dest=dest+src</span><br>
+      </td>
+      <td style="vertical-align: top;">add eax,ebx # Add ebx to eax<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">mul <span style="font-style: italic;">src</span><br>
+      </td>
+      <td style="vertical-align: top;">Multiply eax and <span style="font-style: italic;">src</span> as unsigned integers, and put the result in eax.&nbsp; High 32 bits of product go into eax.<br>
+      </td>
+      <td style="vertical-align: top;">mul ebx #Multiply eax by ebx<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">jmp <span style="font-style: italic;">label</span></td>
+      <td style="vertical-align: top;">Goto the instruction <span style="font-style: italic;">label</span>:.&nbsp; Skips anything else in the way.</td>
+      <td style="vertical-align: top;">jmp post_mem<br>&nbsp;...<br>
+post_mem:<br>
+</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">cmp <span style="font-style: italic;">a,b</span><br>
+      <br>
+      <span style="font-style: italic;"></span></td>
+      <td style="vertical-align: top;">Compare two values.&nbsp; Sets
+flags that are used by the conditional jumps (below).&nbsp; <br>
+ </td>
+      <td style="vertical-align: top;">cmp eax,10&nbsp;  <br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">
+jl <span style="font-style: italic;">label</span></td>
+      <td style="vertical-align: top;">Goto <span style="font-style: italic;">label</span>
+if previous comparison came out as less-than.&nbsp; Other conditionals
+available are: jle (&lt;=), je (==), jge (&gt;=), jg (&gt;), jne (!=),
+and many others.</td>
+      <td style="vertical-align: top;">jl loop_start&nbsp; ; Jump if eax&lt;10<br>
+      </td>
+    </tr>
+  </tbody>
+      </table>
+      <br>
+      </td>
+      <td style="width: 30%; vertical-align: top;">
+      <h2>Stack Frame </h2>
+(example without ebp or local variables)<br>
+      <table style="width: 100%; text-align: left;" border="1" cellpadding="2" cellspacing="2">
+
+        <tbody>
+          <tr>
+            <td style="vertical-align: top; font-weight: bold;">Contents<br>
+            </td>
+            
+            <td style="vertical-align: top; font-weight: bold;">off esp<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">caller's variables<br>
+            </td>
+            
+            <td style="vertical-align: top;">[esp+12]<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">Argument 2<br>
+            </td>
+            
+            <td style="vertical-align: top;">[esp+8]<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">Argument 1<br>
+            </td>
+            
+            <td style="vertical-align: top;">[esp+4]<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">Caller Return Address<br>
+            </td>
+            
+            <td style="vertical-align: top;">[esp]<br>
+            </td>
+          </tr>
+          
+          
+          
+        </tbody>
+      
+      </table>
+      <br>
+my_sub: # Returns first argument<br>
+&nbsp; mov eax,[esp+4]<br>
+&nbsp; ret<br>
+<br>(example when using ebp and two local variables)
+      <table style="width: 100%; text-align: left;" border="1" cellpadding="2" cellspacing="2">
+        <tbody>
+          <tr>
+            <td style="vertical-align: top; font-weight: bold;">Contents<br>
+            </td>
+            <td style="vertical-align: top; font-weight: bold;">off ebp<br>
+            </td>
+            <td style="vertical-align: top; font-weight: bold;">off esp<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">caller's variables<br>
+            </td>
+            <td style="vertical-align: top;">[ebp+16]<br>
+            </td>
+            <td style="vertical-align: top;">[esp+24]<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">Argument 2<br>
+            </td>
+            <td style="vertical-align: top;">[ebp+12]<br>
+            </td>
+            <td style="vertical-align: top;">[esp+20]<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">Argument 1<br>
+            </td>
+            <td style="vertical-align: top;">[ebp+8]<br>
+            </td>
+            <td style="vertical-align: top;">[esp+16]<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">Caller Return Address<br>
+            </td>
+            <td style="vertical-align: top;">[ebp+4]<br>
+            </td>
+            <td style="vertical-align: top;">[esp+12]<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">Saved ebp<br>
+            </td>
+            <td style="vertical-align: top;">[ebp]<br>
+            </td>
+            <td style="vertical-align: top;">[esp+8]<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">Local variable 1<br>
+            </td>
+            <td style="vertical-align: top;">[ebp-4]<br>
+            </td>
+            <td style="vertical-align: top;">[esp+4]<br>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top;">Local variable 2<br>
+            </td>
+            <td style="vertical-align: top;">[ebp-8]</td>
+            <td style="vertical-align: top;">[esp]<br>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <br>
+my_sub2: # Returns first argument<br>
+&nbsp; push ebp&nbsp; # Prologue<br>
+&nbsp; mov ebp, esp<br>
+
+&nbsp; mov eax, [ebp+8]<br>
+&nbsp; mov esp, ebp&nbsp; # Epilogue<br>
+&nbsp; pop ebp<br>
+
+&nbsp; ret
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">
+      <h2>Constants, Registers, Memory</h2>
+"12" means decimal 12;
+"0xF0" is hex.&nbsp; "some_function" is the address of the first
+instruction of a label.<br>
+Memory access (use register as pointer): "[esp]".&nbsp; Same as C "*esp".<br>
+Memory access with offset (use register + offset as pointer): "[esp+4]".&nbsp; Same as C 
+"*(esp+4)".<br>
+Memory access with scaled index (register + another register * scale): "[eax + 4*ebx]".&nbsp; 
+Same as C "*(eax+ebx*4)".<br>
+      </td>
+      <td style="vertical-align: top;">
+      <h2>Registers</h2>esp is the stack pointer<br>
+ebp is the stack frame pointer<br>
+Return value in eax<br>
+Arguments are on the stack<br>
+Free for use (no save needed):<br>
+&nbsp;&nbsp; eax, ebx, ecx, edx<br>
+Must be saved:<br>
+&nbsp;&nbsp; esi, edi, ebp, esp<br>
+8 bit: ah (high 8 bits) and al (low 8 bits)<br>
+16 bit: ax<br>
+32 bit: eax<br>
+64 bit: rax<br>
+      </td>
+    </tr>
+
+  </tbody>
+</table>
+
+<br>
+
+The Intel <a href="http://www.intel.com/design/pentium4/manuals/index_new.htm">Software
+Developer's Manuals</a> are incredibly long, boring, and complete--they
+give all the nitty-gritty details. <a href="https://www.cs.uaf.edu/2005/fall/cs301/support/x86/architecture.pdf">Volume
+1</a> lists the processor registers in Section 3.4.1.
+<a href="https://www.cs.uaf.edu/2005/fall/cs301/support/x86/reference.pdf">Volume 2</a> 
+lists all the x86 instructions in Section 3.2.&nbsp; <a href="https://www.cs.uaf.edu/2005/fall/cs301/support/x86/os.pdf">Volume 3</a> gives the performance monitoring registers in Section. For Linux, the <a href="https://www.cs.uaf.edu/2005/fall/cs301/support/x86/sysV-abi.pdf">System V ABI</a> gives the calling convention on page 39. Also see the Intel <a href="http://www.intel.com/museum/online/hist_micro/hof/index.htm">hall of
+fame</a> for historical info.&nbsp; <a href="http://www.sandpile.org/ia32/index.htm">Sandpile.org</a> has a good opcode table.&nbsp; <a href="http://www.ctyme.com/rbrown.htm">Ralph Brown's Interrupt List</a> is the definitive reference for all interrupt functions.&nbsp; See just the <a href="http://www.ctyme.com/intr/cat-003.htm">BIOS interrupts</a> for interrupt-time code.<br>
+
+<br>
+
+
+
+
+<hr>
+<div style="text-align: right;"><i =""=""><a href="http://lawlor.cs.uaf.edu/~olawlor/">O. Lawlor</a>, <a href="mailto:ffosl@uaf.edu">ffosl@uaf.edu</a></i><br>
+<i =""="">
+Up to: <a href="file:///home/olawlor/docs/work/uaf/2005/cs301/www/">Class Site</a>, <a href="http://www.cs.uaf.edu/">CS</a>, <a href="http://www.uaf.edu/">UAF</a></i></div>
+
+
+</body></html>

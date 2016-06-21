@@ -7,6 +7,10 @@ using namespace std;
 #include"call_exit.hpp"
 #include"call_print.hpp"
 #include"call_read.hpp"
+#include"call_asm_mov.hpp"
+#include"call_asm_int.hpp"
+#include"call_asm_xor.hpp"
+#include"call_asm_syscall.hpp"
 static string file_read_to_string(const char *filename){
 	FILE*f=fopen(filename,"rb");
 	if(!f)throw "cannot open file";
@@ -25,7 +29,6 @@ int main(int argc,char**args){
 	up_program p;// to keep valid in case of exception
 	try{
 		p=make_unique<program>(t);
-
 		ofstream fo("diff.clare");
 		p->source_to(fo);
 		fo.close();
@@ -33,20 +36,24 @@ int main(int argc,char**args){
 
 		p->build(cout);
 	}catch(compiler_error&e){
-		cout<<" *** error at "<<e.start_char<<":"<<e.end_char<<"  "<<e.msg<<": "<<e.ident<<endl;
+		cout<<" *** error at "<<e.start_char<<":"<<e.end_char<<"  "<<e.msg<<": "<<e.ident.get()<<endl;
 		return 1;
 	}catch(const char*msg){
 		cout<<" *** exception: "<<msg<<endl;
 		return 1;
-	}catch(...){
-		cout<<" *** exception caught"<<endl;
-		return 1;
+//	}catch(...){
+//		cout<<" *** exception caught"<<endl;
+//		return 1;
 	}
 	return 0;
 }
-inline up_statement create_statement(const char*funcname,statement*parent,up_token tk,tokenizer&t){
-	if(!strcmp("exit",funcname))return make_unique<call_exit>(parent,move(tk),t);
-	if(!strcmp("print",funcname))return make_unique<call_print>(parent,move(tk),t);
-	if(!strcmp("read",funcname))return make_unique<call_read>(parent,move(tk),t);
-	return make_unique<statement>(parent,move(tk));
+inline unique_ptr<call>create_call(const char*funcname,statement*parent,up_token tk,tokenizer&t){
+//	if(!strcmp("exit",funcname))return make_unique<call_exit>(parent,move(tk),t);
+//	if(!strcmp("print",funcname))return make_unique<call_print>(parent,move(tk),t);
+//	if(!strcmp("read",funcname))return make_unique<call_read>(parent,move(tk),t);
+	if(!strcmp("mov",funcname))return make_unique<call_asm_mov>(parent,move(tk),t);
+	if(!strcmp("int",funcname))return make_unique<call_asm_int>(parent,move(tk),t);
+	if(!strcmp("xor",funcname))return make_unique<call_asm_xor>(parent,move(tk),t);
+	if(!strcmp("syscall",funcname))return make_unique<call_asm_syscall>(parent,move(tk),t);
+	return make_unique<call>(parent,move(tk),t);
 }

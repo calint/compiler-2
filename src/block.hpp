@@ -19,14 +19,22 @@ class block final:public statement{public:
 		assert(t.is_next_char_block_open());
 		while(true){
 			if(t.is_eos())throw compiler_error(*this,"unexpected end of string");
-			if(t.is_next_char_block_close())break;
+			if(t.is_next_char_block_close())
+				break;
 			up_token tkn=t.next_token();
-			statements.push_back(create_statement(tkn->name(),parent,move(tkn),t));
+			if(tkn->is_name("")){
+				statements.push_back(make_unique<statement>(parent,move(tkn)));
+			}else{
+				statements.push_back(create_call(tkn->name(),parent,move(tkn),t));
+			}
 		}
 	}
-	inline void compile(toc&tc,ostream&os)override{for(auto&s:statements)s->compile(tc,os);}
+	inline void compile(toc&tc,ostream&os)override{
+		for(auto&s:statements)
+			s->compile(tc,os);
+	}
 	inline void link(toc&tc,ostream&os)override{for(auto&s:statements)s->link(tc,os);}
-	inline void source_to(ostream&os)override{statement::source_to(os);os<<"{";for(auto&s:statements)s->source_to(os);os<<"}";}
+	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"{";for(auto&s:statements)s->source_to(os);os<<"}";}
 
 private:
 	vup_statement statements;

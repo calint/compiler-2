@@ -3,4 +3,5 @@
 using namespace std;
 #include"statement.hpp"
 #include"tokenizer.hpp"
-inline up_statement create_statement(const char*,statement*,up_token,tokenizer&);
+class call;
+inline unique_ptr<call>create_call(const char*,statement*,up_token,tokenizer&);

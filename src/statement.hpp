@@ -13,9 +13,10 @@ class statement{public:
 	inline virtual~statement(){}
 	inline virtual void compile(toc&tc,ostream&os){tk->compiled_to(os);}
 	inline virtual void link(toc&tc,ostream&os){}
-	inline virtual void source_to(ostream&os){tk->source_to(os);}
+	inline virtual void source_to(ostream&os)const{tk->source_to(os);}
 	inline const token&token()const{return*tk;}
 	inline statement*parent()const{return pt;}
+	inline virtual bool is_in_data_section()const{return false;}
 private:
 	up_token tk;
 	statement*pt;

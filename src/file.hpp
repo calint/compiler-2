@@ -17,20 +17,21 @@ class file final:public statement{public:
 			tokens.push_back(t.next_token());
 		}
 	}
+	inline virtual bool is_in_data_section()const{return true;}
 	inline void compile(toc&tc,ostream&os)override{
 //		section .data
 //		msg     db  'Hello, world!',0xa                 ;string
 //		msg.len equ $ - msg                             ;length of string
 //		section .text
-		os<<"section .data\n";
+//		os<<"section .data\n";
 		os<<identifier->name()<<"     db '";
 		for(auto&s:tokens)s->compiled_to(os);
 		os<<"'\n";
 		os<<identifier->name()<<".len equ $-"<<identifier->name()<<endl;
-		os<<"section .text\n";
+//		os<<"section .text\n";
 		tc.put_def(identifier->name());
 	}
-	inline void source_to(ostream&os)override{
+	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		identifier->source_to(os);
 		os<<"{";
