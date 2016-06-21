@@ -32,10 +32,10 @@ class program final:public statement{public:
 	}
 	inline void build(ostream&os){compile(tc,os);link(tc,os);}
 	inline void compile(toc&tc,ostream&os)override{
-		os<<"section .text\nglobal _start\n_start:\n";
+		os<<"section .text\nglobal _start:\n";
 		for(auto&s:statements)
 			if(!s->is_in_data_section())s->compile(tc,os);
-		os<<"section .data\n";
+		os<<"\nsection .data\n";
 		for(auto&s:statements)
 			if(s->is_in_data_section())s->compile(tc,os);
 	}
