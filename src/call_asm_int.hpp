@@ -11,10 +11,6 @@
 class call_asm_int final:public call{public:
 	inline call_asm_int(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
 	inline void compile(toc&tc,ostream&os)override{// mov(eax 1)
-		const statement&dst=argument(0);
-		os<<"  int "<<dst.token().name()<<endl;
-	}
-	inline void link(toc&tc,ostream&os)override{
-		const statement&dst=argument(0);
+		os<<"  int "<<tc.alias_or(argument(0).token().name())<<endl;
 	}
 };

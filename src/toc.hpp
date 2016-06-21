@@ -53,6 +53,11 @@ public:
 	}
 	inline void stack_alias(const char*local_name,const char*outside_name){stk.alias(local_name,outside_name);}
 	inline const char*stack_getalias(const char*local_name)const{return stk.getalias(local_name);}
+	inline const char*alias_or(const char*defval)const{
+		const char*alias=stack_getalias(defval);
+		if(alias)return alias;
+		return defval;
+	}
 
 private:
 	unordered_set<const char*>files;

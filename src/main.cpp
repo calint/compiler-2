@@ -4,9 +4,6 @@
 using namespace std;
 #include"program.hpp"
 #include"compiler_error.hpp"
-#include"call_exit.hpp"
-#include"call_print.hpp"
-#include"call_read.hpp"
 #include"call_asm_mov.hpp"
 #include"call_asm_int.hpp"
 #include"call_asm_xor.hpp"
@@ -48,9 +45,6 @@ int main(int argc,char**args){
 	return 0;
 }
 inline up_statement create_call(const char*funcname,statement*parent,unique_ptr<token>tk,tokenizer&t){
-//	if(!strcmp("exit",funcname))return make_unique<call_exit>(parent,move(tk),t);
-//	if(!strcmp("print",funcname))return make_unique<call_print>(parent,move(tk),t);
-//	if(!strcmp("read",funcname))return make_unique<call_read>(parent,move(tk),t);
 	if(!strcmp("mov",funcname))return make_unique<call_asm_mov>(parent,move(tk),t);
 	if(!strcmp("int",funcname))return make_unique<call_asm_int>(parent,move(tk),t);
 	if(!strcmp("xor",funcname))return make_unique<call_asm_xor>(parent,move(tk),t);
