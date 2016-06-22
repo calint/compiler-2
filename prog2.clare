@@ -24,11 +24,28 @@ func read(len ptr):nchars{
 	mov(nchars eax)
 }
 
+func test(){
+	print(prompt.len prompt)
+	var ln=read(name.len name)
+	print(hello.len hello)
+	print(ln name)
+}
+
+func test2(){
+	print(hello.len hello)
+	test()
+}
+
+func plus(a b):sum{
+	mov(sum a)
+	add(sum b)
+}
+
 func main(){
 	loop(){
-		print(prompt.len prompt)
-		var ln=read(name.len name)
-		print(hello.len hello)
-		print(ln name)
+		test2()
 	}
+	var c=plus(plus(2 4) 2)
+	mov(c plus(plus(2 4) 3))
+	exit()
 }
