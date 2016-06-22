@@ -36,14 +36,16 @@ func test2(){
 	test()
 }
 
-func op_plus(a b):sum{
+func plus(a b):sum{
 	mov(sum a)
 	add(sum b)
 }
 
 func main(){
-	test2()
-	var c=op_plus(op_plus(2 4) 2)
-	mov(c op_plus(op_plus(2 4) 3))
+	loop(){
+		test2()
+	}
+	var c=plus(plus(2 4) 2)
+	mov(c plus(plus(2 4) 3))
 	exit()
 }
