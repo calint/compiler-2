@@ -47,10 +47,11 @@ class func final:public statement{public:
 		code->source_to(os);}
 //	inline const vup_tokens&getparams()const{return params;}
 	inline bool is_inline()const{return true;}
+	inline const class token*getret()const{return ret.get();}
 
 	vup_tokens params;
 	up_block code;
-	up_token ret;
 private:
+	up_token ret;
 	up_token identifier;
 };

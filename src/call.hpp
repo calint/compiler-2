@@ -20,7 +20,7 @@ class call:public expression{public:
 	inline static up_statement read_statement(statement*parent,tokenizer&t){
 		up_token tkn=t.next_token();
 		if(!t.is_next_char_expression_open())
-			return make_unique<expression>(parent,move(tkn));// ie  0x80
+			return make_unique<statement>(parent,move(tkn));// ie  0x80
 		t.unread();
 		return create_call(tkn->name(),parent,move(tkn),t); // ie  f(...)
 	}
@@ -50,14 +50,19 @@ class call:public expression{public:
 		}
 
 		const char*nm=token().name();
-		tc.stack_pushfunc(nm);
+		tc.stack_push_func(nm);
 		size_t i=0;
 		const func*f=tc.get_func(nm);
 		if(!f)throw compiler_error(*this,"function not found",token().copy_name());
+		if(dest){
+			const class token*ret=f->getret();
+			if(!ret)throw compiler_error(*this,"cannot assign from call without return",token().copy_name());
+			tc.stack_add_alias(ret->name(),dest);
+		}
 		for(auto&a:args){
 			const char*tkn=a->token().name();
 			const char*param=f->params[i++]->name();
-			tc.stack_alias(param,tkn);
+			tc.stack_add_alias(param,tkn);
 		}
 		f->code->compile(tc,os,indent_level+1);
 		tc.stack_pop();
@@ -65,7 +70,7 @@ class call:public expression{public:
 		indent(os,indent_level,true);os<<"}\n";
 	}
 
-	inline const statement&argument(size_t ix)const{return*(args[ix].get());}
+	inline statement&argument(size_t ix)const{return*(args[ix].get());}
 	inline bool is_inline()const{return true;}
 
 private:

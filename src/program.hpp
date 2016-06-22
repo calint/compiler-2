@@ -38,7 +38,7 @@ class program final:public statement{public:
 		func*main=tc.get_func("main");
 		if(!main)throw"function 'main' not found";
 
-		tc.stack_pushfunc("main");
+		tc.stack_push_func("main");
 		indent(os,indent_level,true);os<<"main(){  ["<<token().token_start_char()<<"]"<<endl;
 		main->code->compile(tc,os,indent_level);
 		indent(os,indent_level,true);os<<"}\n\n";

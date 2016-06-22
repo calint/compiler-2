@@ -36,7 +36,7 @@ class frame final{public:
 		char*str=(char*)malloc(len);
 		memcpy(str,buf,len);
 //		avar*a=new avar{nm,stack_index,nullptr,str};
-		vars.put(name, avar{nm,stack_index,nullptr,str});//? str leak
+		vars.put(nm, avar{nm,stack_index,nullptr,str});//? str leak
 		stack_index++;
 	}
 };
@@ -68,8 +68,8 @@ class framestack final{public:
 		return frames.back().vars.get(name).resolv;
 	}
 
-private:
 	vector<frame>frames;
+private:
 };
 
 class toc final{public:
@@ -87,16 +87,30 @@ class toc final{public:
 			return nullptr;
 		return funcs2.get(name);
 	}
-	inline void stack_pushfunc(const char*name){framestk.push_func(name);}
-	inline void stack_alias(const char*local_name,const char*outside_name){framestk.alias(local_name,outside_name);}
-	inline const char*stack_getalias(const char*local_name)const{return framestk.getalias(local_name);}
-	inline void stack_var(const char*local_name){framestk.var(local_name,"");}
+	inline void stack_push_func(const char*name){framestk.push_func(name);}
+	inline void stack_add_alias(const char*local_name,const char*outside_name){framestk.alias(local_name,outside_name);}
+	inline const char*stack_get_alias(const char*local_name)const{return framestk.getalias(local_name);}
+	inline void stack_add_var(const char*local_name){
+		cerr<<"add var "<<local_name<<endl;
+		framestk.var(local_name,"");
+	}
 	inline void stack_pop(){framestk.pop();}
 	inline const char*resolve_argument(const char*defval)const{
-		const char*alias=stack_getalias(defval);
-		if(alias)return alias;
-		return defval;
+		size_t i=framestk.frames.size()-1;// recurse until aliased var found
+		const char*als=defval;
+		while(true){
+			if(!framestk.frames[i].aliases.has(als))
+				break;
+			als=framestk.frames[i].aliases.get(als);
+			i--;
+		}
+		if(!framestk.frames[i].vars.has(als)){// assume constant
+			return als;
+		}
+		const char*resolved=framestk.frames[i].vars.get(als).resolv;
+		return resolved;
 	}
+	inline const char*alloc_scratch_register(){return "scrtchreg";}
 
 private:
 	unordered_set<const char*>files;
