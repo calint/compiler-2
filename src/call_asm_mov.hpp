@@ -11,6 +11,7 @@
 class call_asm_mov final:public call{public:
 	inline call_asm_mov(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
 	inline void compile(toc&tc,ostream&os,size_t indent_level)override{// mov(eax 1)
+//		indent(os,indent_level,true);source_to(os);os<<endl;
 		indent(os,indent_level);
 		const char*reg{nullptr};
 		if(argument(1).is_expression()){

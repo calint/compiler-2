@@ -29,7 +29,7 @@ class frame final{public:
 	frame(const char*nm):name{nm}{}
 	inline void add_var(const char*nm,const size_t stkix,const char*flags){
 		char buf[256];
-		const int n=snprintf(buf,sizeof buf,"dword[esp-%zu]",stkix<<2);
+		const int n=snprintf(buf,sizeof buf,"dword[ebp+%zu]",stkix<<2);
 		if(n<0||n==sizeof buf)throw"??";
 		const size_t len=size_t(n)+1;
 		char*str=(char*)malloc(len);
@@ -68,7 +68,7 @@ class framestack final{public:
 
 	vector<frame>frames;
 private:
-	size_t stkix{1};
+	size_t stkix{0};
 };
 
 class toc final{public:

@@ -32,7 +32,7 @@ class program final:public statement{public:
 	}
 	inline void build(ostream&os){compile(tc,os,0);link(tc,os);}
 	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
-		os<<"section .text\nglobal _start:\n";
+		os<<"section .text\nglobal _start\n_start:\n  mov ebp,stk\n";
 		for(auto&s:statements)
 			if(!s->is_in_data_section())s->compile(tc,os,indent_level);
 		func*main=tc.get_func("main");
@@ -45,6 +45,7 @@ class program final:public statement{public:
 		os<<"\nsection .data\n";
 		for(auto&s:statements)
 			if(s->is_in_data_section())s->compile(tc,os,indent_level);
+		os<<"\nsection .bss\nstk resd 64\n";
 	}
 	inline void link(toc&tc,ostream&os)override{for(auto&s:statements)s->link(tc,os);}
 	inline void source_to(ostream&os)const override{statement::source_to(os);for(auto&s:statements)s->source_to(os);}

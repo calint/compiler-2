@@ -1,5 +1,7 @@
 section .text
-global _start:
+global _start
+_start:
+mov ebp,stk
 ; main(){  [0]
 ;  test2(){  [586]
 ;    print(hello.len hello){  [488]
@@ -24,7 +26,7 @@ global _start:
           xor eax,eax
           xor edi,edi
           syscall
-          mov dword[esp-4],eax
+          mov dword[ebp+0],eax
 ;       }
 ;      print(hello.len hello){  [431]
          mov ecx,hello
@@ -35,7 +37,8 @@ global _start:
 ;      }
 ;      print(ln name){  [455]
          mov ecx,name
-         mov edx,dword[esp-4]
+         mov edx,dword[ebp+0]
+;         mov edx,3
          mov ebx,1
          mov eax,4
          int 0x80
@@ -44,14 +47,14 @@ global _start:
 ;  }
 ;  var c=
 ;   op_plus(1 2):c{  [601]
-      mov dword[esp-8],1
-      add dword[esp-8],2
+      mov dword[ebp+4],1
+      add dword[ebp+4],2
 ;   }
    ;  op_plus(1 3):eax{  [621]
      mov eax,1
      add eax,3
 ;  }
-mov dword[esp-8],eax
+mov dword[ebp+8],eax
 ;  exit(){  [636]
      mov eax,1
      int 0x80
@@ -66,3 +69,6 @@ name     db '......................'
 name.len equ $-name
 hello     db 'hello_'
 hello.len equ $-hello
+
+section .bss
+stk resd 64
