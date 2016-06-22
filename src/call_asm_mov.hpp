@@ -18,7 +18,7 @@ class call_asm_mov final:public call{public:
 			argument(1).set_expression_dest_nasm_identifier(reg);
 			argument(1).compile(tc,os,indent_level);
 			os<<"mov "<<tc.resolve_argument(argument(0).token().name())<<","<<reg<<endl;
-//			tc.free_scratch_reg(reg);
+			tc.free_scratch_reg(reg);
 			return;
 		}
 		os<<"mov "<<tc.resolve_argument(argument(0).token().name())<<","<<tc.resolve_argument(argument(1).token().name())<<endl;

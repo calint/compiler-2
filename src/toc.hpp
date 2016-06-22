@@ -24,20 +24,18 @@ class avar{public:
 
 class frame final{public:
 	const char*name{""};
-	size_t stack_index{0};
 	lut<const char*>aliases;
 	lut<avar>vars;
 	frame(const char*nm):name{nm}{}
-	inline void add_var(const char*nm,const char*flags){
+	inline void add_var(const char*nm,const size_t stkix,const char*flags){
 		char buf[256];
-		const int n=snprintf(buf,sizeof buf,"ebp+%zu",stack_index<<2);
+		const int n=snprintf(buf,sizeof buf,"dword[esp-%zu]",stkix<<2);
 		if(n<0||n==sizeof buf)throw"??";
 		const size_t len=size_t(n)+1;
 		char*str=(char*)malloc(len);
 		memcpy(str,buf,len);
 //		avar*a=new avar{nm,stack_index,nullptr,str};
-		vars.put(nm, avar{nm,stack_index,nullptr,str});//? str leak
-		stack_index++;
+		vars.put(nm, avar{nm,stkix,nullptr,str});//? str leak
 	}
 };
 
@@ -54,8 +52,8 @@ class framestack final{public:
 	inline void pop(){
 		frames.pop_back();
 	}
-	inline void var(const char*name,const char*flags){
-		frames.back().add_var(name,flags);
+	inline void add_var(const char*name,const char*flags){
+		frames.back().add_var(name,stkix++,flags);
 	}
 	inline const char*resolve_identifier(const char*name)const{
 		if(!frames.back().aliases.has(name)){
@@ -70,9 +68,18 @@ class framestack final{public:
 
 	vector<frame>frames;
 private:
+	size_t stkix{1};
 };
 
 class toc final{public:
+	inline toc(){
+		free_registers.push_back("edi");
+		free_registers.push_back("esi");
+		free_registers.push_back("edx");
+		free_registers.push_back("ecx");
+		free_registers.push_back("ebx");
+		free_registers.push_back("eax");
+	}
 	inline bool has_file(const char*identifier)const{for(auto&e:files)if(!strcmp(e,identifier))return true;return false;}
 	inline void put_def(const char*identifier){if(has_file(identifier))throw"data already defined";files.insert(identifier);}
 	inline bool has_func(const char*identifier)const{for(auto&e:funcs)if(!strcmp(e,identifier))return true;return false;}
@@ -91,8 +98,8 @@ class toc final{public:
 	inline void stack_add_alias(const char*local_name,const char*outside_name){framestk.alias(local_name,outside_name);}
 	inline const char*stack_get_alias(const char*local_name)const{return framestk.getalias(local_name);}
 	inline void stack_add_var(const char*local_name){
-		cerr<<"add var "<<local_name<<endl;
-		framestk.var(local_name,"");
+//		cerr<<"add var "<<local_name<<endl;
+		framestk.add_var(local_name,"");
 	}
 	inline void stack_pop(){framestk.pop();}
 	inline const char*resolve_argument(const char*defval)const{
@@ -110,9 +117,17 @@ class toc final{public:
 		const char*resolved=framestk.frames[i].vars.get(als).resolv;
 		return resolved;
 	}
-	inline const char*alloc_scratch_register(){return "scrtchreg";}
+	inline const char*alloc_scratch_register(){
+		const char*r=free_registers[free_registers.size()-1];
+		free_registers.pop_back();
+		return r;
+	}
+	inline void free_scratch_reg(const char*reg){
+		free_registers.push_back(reg);
+	}
 
 private:
+	vector<const char*>free_registers;
 	unordered_set<const char*>files;
 	unordered_set<const char*>funcs;
 	lut<func*>funcs2;

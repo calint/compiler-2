@@ -22,11 +22,11 @@ class var final:public statement{public:
 		else throw"uninitialized var";
 	}
 	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
-		indent(os,indent_level,true);os<<"var "<<identifier->name()<<endl;
+		indent(os,indent_level,true);os<<"var "<<identifier->name()<<"="<<endl;
 
 		tc.stack_add_var(identifier->name());
 		initial_value->set_expression_dest_nasm_identifier(identifier->name());
-		if(initial_value)initial_value->compile(tc,os,0);
+		if(initial_value)initial_value->compile(tc,os,indent_level+1);
 	}
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);

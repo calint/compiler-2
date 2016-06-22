@@ -41,7 +41,10 @@ class call:public expression{public:
 			os<<s;
 			if(i<nn)os<<" ";
 		}
-		os<<"){  ["<<token().token_start_char()<<"]"<<endl;
+		os<<")";
+		if(dest)
+			os<<":"<<dest;
+		os<<"{  ["<<token().token_start_char()<<"]"<<endl;
 
 		if(!is_inline()){
 			for(auto&a:args)os<<"  push "<<a.get()->token().name()<<endl;
