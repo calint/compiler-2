@@ -32,6 +32,7 @@ class call:public expression{public:
 	}
 	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"(";for(auto&e:args)e->source_to(os);os<<")";}
 	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
+		//-- comment
 		indent(os,indent_level,true);
 		os<<token().name()<<"(";
 		const size_t n=args.size();
@@ -45,6 +46,7 @@ class call:public expression{public:
 		if(dest)
 			os<<":"<<dest;
 		os<<"{  ["<<token().token_start_char()<<"]"<<endl;
+		//--- - - - -- - - - -
 
 		if(!is_inline()){
 			for(auto&a:args)os<<"  push "<<a.get()->token().name()<<endl;
@@ -54,20 +56,32 @@ class call:public expression{public:
 
 		const char*nm=token().name();
 		tc.stack_push_func(nm);
-		size_t i=0;
 		const func*f=tc.get_func(nm);
 		if(!f)throw compiler_error(*this,"function not found",token().copy_name());
+		size_t i=0;
 		if(dest){
 			const class token*ret=f->getret();
 			if(!ret)throw compiler_error(*this,"cannot assign from call without return",token().copy_name());
 			tc.stack_add_alias(ret->name(),dest);
 		}
+		vector<const char*>allocated_registers;
 		for(auto&a:args){
-			const char*tkn=a->token().name();
 			const char*param=f->params[i++]->name();
+			const char*reg{nullptr};
+			if(a->is_expression()){
+				reg=tc.alloc_scratch_register();
+				allocated_registers.push_back(reg);
+				a->set_expression_dest_nasm_identifier(reg);
+				a->compile(tc,os,indent_level);
+				tc.stack_add_alias(param,reg);
+				continue;
+			}
+			const char*tkn=a->token().name();
 			tc.stack_add_alias(param,tkn);
 		}
 		f->code->compile(tc,os,indent_level+1);
+		for(auto r:allocated_registers)
+			tc.free_scratch_reg(r);
 		tc.stack_pop();
 
 		indent(os,indent_level,true);os<<"}\n";

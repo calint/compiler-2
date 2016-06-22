@@ -1,18 +1,18 @@
 section .text
 global _start
 _start:
-mov ebp,stk
+  mov ebp,stk
 ; main(){  [0]
-;  test2(){  [586]
-;    print(hello.len hello){  [488]
+;  test2(){  [556]
+;    print(hello.len hello){  [458]
        mov ecx,hello
        mov edx,hello.len
        mov ebx,1
        mov eax,4
        int 0x80
 ;    }
-;    test(){  [512]
-;      print(prompt.len prompt){  [377]
+;    test(){  [482]
+;      print(prompt.len prompt){  [347]
          mov ecx,prompt
          mov edx,prompt.len
          mov ebx,1
@@ -20,7 +20,7 @@ mov ebp,stk
          int 0x80
 ;      }
 ;      var ln=
-;       read(name.len name):ln{  [410]
+;       read(name.len name):ln{  [380]
           mov esi,name
           mov edx,name.len
           xor eax,eax
@@ -28,17 +28,16 @@ mov ebp,stk
           syscall
           mov dword[ebp+0],eax
 ;       }
-;      print(hello.len hello){  [431]
+;      print(hello.len hello){  [401]
          mov ecx,hello
          mov edx,hello.len
          mov ebx,1
          mov eax,4
          int 0x80
 ;      }
-;      print(ln name){  [455]
+;      print(ln name){  [425]
          mov ecx,name
          mov edx,dword[ebp+0]
-;         mov edx,3
          mov ebx,1
          mov eax,4
          int 0x80
@@ -46,16 +45,24 @@ mov ebp,stk
 ;    }
 ;  }
 ;  var c=
-;   op_plus(1 2):c{  [601]
-      mov dword[ebp+4],1
+;   op_plus(op_plus 2):c{  [571]
+;   op_plus(2 4):eax{  [579]
+      mov eax,2
+      add eax,4
+;   }
+      mov dword[ebp+4],eax
       add dword[ebp+4],2
 ;   }
-   ;  op_plus(1 3):eax{  [621]
-     mov eax,1
+   ;  op_plus(op_plus 3):eax{  [602]
+;  op_plus(2 4):ebx{  [610]
+     mov ebx,2
+     add ebx,4
+;  }
+     mov eax,ebx
      add eax,3
 ;  }
-mov dword[ebp+8],eax
-;  exit(){  [636]
+mov dword[ebp+4],eax
+;  exit(){  [628]
      mov eax,1
      int 0x80
 ;  }
@@ -71,4 +78,4 @@ hello     db 'hello_'
 hello.len equ $-hello
 
 section .bss
-stk resd 64
+stk resd 256

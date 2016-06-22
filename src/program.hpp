@@ -45,7 +45,7 @@ class program final:public statement{public:
 		os<<"\nsection .data\n";
 		for(auto&s:statements)
 			if(s->is_in_data_section())s->compile(tc,os,indent_level);
-		os<<"\nsection .bss\nstk resd 64\n";
+		os<<"\nsection .bss\nstk resd 256\n";
 	}
 	inline void link(toc&tc,ostream&os)override{for(auto&s:statements)s->link(tc,os);}
 	inline void source_to(ostream&os)const override{statement::source_to(os);for(auto&s:statements)s->source_to(os);}
