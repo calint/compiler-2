@@ -4,9 +4,17 @@ template<class T>class lut{public:
 		for(auto e:elems)
 			if(e.is_key(key))
 				return e.data;
-		return nullptr;
+		throw "element not found";
 	}
-	inline void put(const char*key,T data){elems.push_back(el{key,data});}
+	inline bool has(const char*key)const{
+		for(auto e:elems)
+			if(e.is_key(key))//? check this e first at next get
+				return true;
+		return false;
+	}
+	inline void put(const char*key,T data){
+		elems.push_back(el{key,data});
+	}
 	inline void clear(){elems.clear();}
 
 private:

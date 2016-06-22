@@ -12,6 +12,7 @@
 #include "statement.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
+#include"var.hpp"
 
 using vup_statement=vector<up_statement>;
 class block final:public statement{public:
@@ -19,14 +20,17 @@ class block final:public statement{public:
 		assert(t.is_next_char_block_open());
 		while(true){
 			if(t.is_eos())throw compiler_error(*this,"unexpected end of string");
-			if(t.is_next_char_block_close())
-				break;
+			if(t.is_next_char_block_close())break;
 			up_token tkn=t.next_token();
 			if(tkn->is_name("")){
 				statements.push_back(make_unique<statement>(parent,move(tkn)));
-			}else{
-				statements.push_back(create_call(tkn->name(),parent,move(tkn),t));
+				continue;
 			}
+			if(tkn->is_name("var")){
+				statements.push_back(make_unique<var>(parent,move(tkn),t));
+				continue;
+			}
+			statements.push_back(create_call(tkn->name(),parent,move(tkn),t));
 		}
 	}
 	inline void compile(toc&tc,ostream&os,size_t indent_level)override{

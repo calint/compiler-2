@@ -8,6 +8,7 @@ using namespace std;
 #include"call_asm_int.hpp"
 #include"call_asm_xor.hpp"
 #include"call_asm_syscall.hpp"
+#include"call_asm_add.hpp"
 static string file_read_to_string(const char *filename){
 	FILE*f=fopen(filename,"rb");
 	if(!f)throw "cannot open file";
@@ -49,5 +50,6 @@ inline up_statement create_call(const char*funcname,statement*parent,unique_ptr<
 	if(!strcmp("int",funcname))return make_unique<call_asm_int>(parent,move(tk),t);
 	if(!strcmp("xor",funcname))return make_unique<call_asm_xor>(parent,move(tk),t);
 	if(!strcmp("syscall",funcname))return make_unique<call_asm_syscall>(parent,move(tk),t);
+	if(!strcmp("add",funcname))return make_unique<call_asm_add>(parent,move(tk),t);
 	return make_unique<call>(parent,move(tk),t);
 }

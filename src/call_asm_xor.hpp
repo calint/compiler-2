@@ -11,7 +11,7 @@
 class call_asm_xor final:public call{public:
 	inline call_asm_xor(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
 	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
-		for(size_t i=0;i<indent_level;i++)cout<<"  ";
-		os<<"xor "<<tc.alias_or(argument(0).token().name())<<","<<tc.alias_or(argument(1).token().name())<<endl;
+		indent(os,indent_level);
+		os<<"xor "<<tc.resolve_argument(argument(0).token().name())<<","<<tc.resolve_argument(argument(1).token().name())<<endl;
 	}
 };

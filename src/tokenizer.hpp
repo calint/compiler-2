@@ -21,6 +21,11 @@ class tokenizer final{public:
 //		printf("%zu:%zu %s\n",a->get_nchar(),a->get_nchar_end(),a->get_name());
 		return p;
 	}
+	inline bool is_next_char(const char ch){
+		if(*ptr!=ch)return false;
+		next_char();
+		return true;
+	}
 	inline bool is_next_char_expression_open(){
 		if(*ptr!='(')return false;
 		next_char();
@@ -104,7 +109,7 @@ private:
 		nchar_bm=nchar;
 		while(true){
 			const char ch=next_char();
-			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||ch=='['||ch==']'){
+			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||ch=='['||ch==']'||ch=='='){
 				unsafe_seek(-1);
 				break;
 			}

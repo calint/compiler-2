@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 
+#include "block.hpp"
 #include "compiler_error.hpp"
 #include "decouple.hpp"
 #include "expression.hpp"
@@ -31,8 +32,7 @@ class call:public expression{public:
 	}
 	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"(";for(auto&e:args)e->source_to(os);os<<")";}
 	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
-		os<<";";for(size_t i=0;i<indent_level;i++)cout<<"  ";
-
+		indent(os,indent_level,true);
 		os<<token().name()<<"(";
 		const size_t n=args.size();
 		const size_t nn=n-1;
@@ -41,7 +41,7 @@ class call:public expression{public:
 			os<<s;
 			if(i<nn)os<<" ";
 		}
-		os<<"){\n";
+		os<<"){  ["<<token().token_start_char()<<"]"<<endl;
 
 		if(!is_inline()){
 			for(auto&a:args)os<<"  push "<<a.get()->token().name()<<endl;
@@ -62,7 +62,7 @@ class call:public expression{public:
 		f->code->compile(tc,os,indent_level+1);
 		tc.stack_pop();
 
-		os<<";";for(size_t i=0;i<indent_level;i++)cout<<"  ";os<<"}\n";
+		indent(os,indent_level,true);os<<"}\n";
 	}
 
 	inline const statement&argument(size_t ix)const{return*(args[ix].get());}

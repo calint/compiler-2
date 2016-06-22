@@ -35,6 +35,13 @@ class program final:public statement{public:
 		os<<"section .text\nglobal _start:\n";
 		for(auto&s:statements)
 			if(!s->is_in_data_section())s->compile(tc,os,indent_level);
+		func*main=tc.get_func("main");
+		if(!main)throw"function 'main' not found";
+
+		tc.stack_pushfunc("main");
+		indent(os,indent_level,true);os<<"main(){  ["<<token().token_start_char()<<"]"<<endl;
+		main->code->compile(tc,os,indent_level);
+		indent(os,indent_level,true);os<<"}\n\n";
 		os<<"\nsection .data\n";
 		for(auto&s:statements)
 			if(s->is_in_data_section())s->compile(tc,os,indent_level);
@@ -42,6 +49,7 @@ class program final:public statement{public:
 	inline void link(toc&tc,ostream&os)override{for(auto&s:statements)s->link(tc,os);}
 	inline void source_to(ostream&os)const override{statement::source_to(os);for(auto&s:statements)s->source_to(os);}
 	inline const toc&get_toc()const{return tc;}
+	inline bool is_inline()const{return true;}
 private:
 	vup_statement statements;
 	toc tc;

@@ -17,9 +17,18 @@ class statement{public:
 	inline const token&token()const{return*tk;}
 	inline statement*parent()const{return pt;}
 	inline virtual bool is_in_data_section()const{return false;}
+
+	inline static void indent(ostream&os,size_t level,bool comment=false){os<<(comment?"; ":"  ");for(size_t i=0;i<level;i++)os<<" ";}
+
+
+
+	inline void set_expression_dest_nasm_identifier(const char*identifier){
+		ident=identifier;
+	}
 private:
 	up_token tk;
 	statement*pt;
+	const char*ident{nullptr};
 };
 using up_statement=unique_ptr<statement>;
 

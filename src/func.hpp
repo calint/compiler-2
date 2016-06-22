@@ -15,8 +15,11 @@
 class func final:public statement{public:
 	inline func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
-		if(!t.is_next_char_expression_open())throw compiler_error(*this,"expected ( and arguments",identifier->copy_name());
+		if(!t.is_next_char_expression_open())throw compiler_error(*this,"expected '(' followed by function arguments",identifier->copy_name());
 		while(!t.is_next_char_expression_close())params.push_back(t.next_token());
+		if(t.is_next_char(':')){// returns
+			ret=t.next_token();
+		}
 		code=make_unique<block>(parent,t);
 	}
 	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
@@ -32,12 +35,22 @@ class func final:public statement{public:
 		os<<"  ret\n";
 	}
 	inline void link(toc&tc,ostream&os)override final{code->link(tc,os);}
-	inline void source_to(ostream&os)const override{statement::source_to(os);identifier->source_to(os);os<<"(";for(auto&s:params)s->source_to(os);os<<")";code->source_to(os);}
+	inline void source_to(ostream&os)const override{
+		statement::source_to(os);
+		identifier->source_to(os);
+		os<<"(";
+		for(auto&s:params)
+			s->source_to(os);
+		os<<")";
+		if(ret)
+			os<<":"<<ret->name();
+		code->source_to(os);}
 //	inline const vup_tokens&getparams()const{return params;}
 	inline bool is_inline()const{return true;}
 
 	vup_tokens params;
 	up_block code;
+	up_token ret;
 private:
 	up_token identifier;
 };
