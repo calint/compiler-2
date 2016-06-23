@@ -38,12 +38,12 @@ class stmt_if final:public statement{public:
 		bool_expr->compile(tc,os,indent_level);
 
 		indent(os,indent_level,false);os<<"cmp "<<reg<<",1\n";
-		indent(os,indent_level,false);os<<"jne _end_"<<name<<"\n";
+		indent(os,indent_level,false);os<<"jne _end"<<name<<"\n";
 
 
 		code->compile(tc,os,indent_level+1);
 
-		indent(os,indent_level,false);os<<"_end_"<<name<<":\n";
+		indent(os,indent_level,false);os<<"_end"<<name<<":\n";
 
 		tc.framestk().pop_if(name.data());
 	}
