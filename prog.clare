@@ -58,9 +58,7 @@ func main{
 		if(orl(eq(ln,1),eq(ln,2)))
 			continue
 		
-		if(eq(ln,3)){
-			break
-		}
+		if(eq(ln,3))break
 		
 		print(hello.len,hello)
 		print(ln,name)

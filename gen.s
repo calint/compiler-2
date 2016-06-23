@@ -50,26 +50,26 @@ _start:
      jne _end__if_722
        jmp _end_loop_614
      _end__if_722:
-;    print(hello.len hello){  [754]
+;    print(hello.len hello){  [745]
        mov ecx,hello
        mov edx,hello.len
        mov ebx,1
        mov eax,4
        int 0x80
-     _end_print_754:
-;    print(ln name){  [779]
+     _end_print_745:
+;    print(ln name){  [770]
        mov ecx,name
        mov edx,dword[ebp+0]
        mov ebx,1
        mov eax,4
        int 0x80
-     _end_print_779:
+     _end_print_770:
    jmp _loop_614
    _end_loop_614:
-;  exit(){  [798]
+;  exit(){  [789]
      mov eax,1
      int 0x80
-   _end_exit_798:
+   _end_exit_789:
 ; }
 
 
