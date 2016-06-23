@@ -26,8 +26,11 @@ func read(len ptr):nchars,valid{
 
 func main(){
 	loop(){
+		tag(readname)
 		print(prompt.len prompt)
 		var ln=read(name.len name)
+		cmp(ln 1)
+		je(readname)
 		print(hello.len hello)
 		print(ln name)
 	}

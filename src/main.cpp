@@ -12,6 +12,9 @@ using namespace std;
 #include"stmt_loop.hpp"
 #include"stmt_break.hpp"
 #include"stmt_continue.hpp"
+#include"call_asm_cmp.hpp"
+#include"call_asm_je.hpp"
+#include"call_asm_tag.hpp"
 static string file_read_to_string(const char *filename){
 	FILE*f=fopen(filename,"rb");
 	if(!f)throw "cannot open file";
@@ -57,5 +60,8 @@ inline up_statement create_call(const char*funcname,statement*parent,unique_ptr<
 	if(!strcmp("loop",funcname))return make_unique<stmt_loop>(parent,move(tk),t);
 	if(!strcmp("break",funcname))return make_unique<stmt_break>(parent,move(tk),t);
 	if(!strcmp("continue",funcname))return make_unique<stmt_continue>(parent,move(tk),t);
+	if(!strcmp("tag",funcname))return make_unique<call_asm_tag>(parent,move(tk),t);
+	if(!strcmp("cmp",funcname))return make_unique<call_asm_cmp>(parent,move(tk),t);
+	if(!strcmp("je",funcname))return make_unique<call_asm_je>(parent,move(tk),t);
 	return make_unique<stmt_call>(parent,move(tk),t);
 }

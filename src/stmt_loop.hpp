@@ -30,7 +30,7 @@ class stmt_loop final:public statement{public:
 
 		code->compile(tc,os,indent_level+1);
 		indent(os,indent_level,false);os<<"jmp _loop_"<<token().token_start_char()<<endl;
-		indent(os,indent_level,false);os<<"_loop_"<<token().token_start_char()<<"_end:\n";
+		indent(os,indent_level,false);os<<"_end_loop_"<<token().token_start_char()<<":\n";
 
 		tc.framestk().pop_loop(name.data());
 	}

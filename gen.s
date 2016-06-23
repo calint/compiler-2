@@ -4,42 +4,45 @@ _start:
   mov ebp,stk
 ; main(){  [0]
    _loop_353:
-;    print(prompt.len prompt){  [363]
+     readname:
+;    print(prompt.len prompt){  [379]
        mov ecx,prompt
        mov edx,prompt.len
        mov ebx,1
        mov eax,4
        int 0x80
-     _end_print_363:
+     _end_print_379:
 ;    var ln=
-;     read(name.len name):ln{  [397]
+;     read(name.len name):ln{  [413]
         mov esi,name
         mov edx,name.len
         xor eax,eax
         xor edi,edi
         syscall
         mov dword[ebp+0],eax
-      _end_read_397:
-;    print(hello.len hello){  [419]
+      _end_read_413:
+     cmp dword[ebp+0],1
+     je readname
+;    print(hello.len hello){  [462]
        mov ecx,hello
        mov edx,hello.len
        mov ebx,1
        mov eax,4
        int 0x80
-     _end_print_419:
-;    print(ln name){  [444]
+     _end_print_462:
+;    print(ln name){  [487]
        mov ecx,name
        mov edx,dword[ebp+0]
        mov ebx,1
        mov eax,4
        int 0x80
-     _end_print_444:
+     _end_print_487:
    jmp _loop_353
-   _loop_353_end:
-;  exit(){  [463]
+   _end_loop_353:
+;  exit(){  [506]
      mov eax,1
      int 0x80
-   _end_exit_463:
+   _end_exit_506:
 ; }
 
 

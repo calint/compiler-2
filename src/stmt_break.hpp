@@ -23,7 +23,7 @@ class stmt_break final:public statement{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		//? break(2)
 		const char*loop_name=tc.framestk().find_parent_loop_name();
-		indent(os,indent_level,false);os<<"jmp "<<loop_name<<"_end\n";
+		indent(os,indent_level,false);os<<"jmp _end_"<<loop_name<<"\n";
 	}
 
 	inline void source_to(ostream&os)const override{
