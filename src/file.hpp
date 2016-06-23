@@ -18,7 +18,7 @@ class file final:public statement{public:
 		}
 	}
 	inline bool is_in_data_section()const override{return true;}
-	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 //		section .data
 //		msg     db  'Hello, world!',0xa                 ;string
 //		msg.len equ $ - msg                             ;length of string

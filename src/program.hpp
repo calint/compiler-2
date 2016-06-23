@@ -31,15 +31,19 @@ class program final:public statement{public:
 		}
 	}
 	inline void build(ostream&os){compile(tc,os,0);link(tc,os);}
-	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		os<<"section .text\nglobal _start\n_start:\n  mov ebp,stk\n";
 		for(auto&s:statements)
 			if(!s->is_in_data_section())s->compile(tc,os,indent_level);
-		func*main=tc.get_func_or_break(*this,"main");
+
+		const func*main=tc.get_func_or_break(*this,"main");
 		tc.framestk().push_func("main");
 		indent(os,indent_level,true);os<<"main(){  ["<<token().token_start_char()<<"]"<<endl;
+
 		main->code->compile(tc,os,indent_level);
+
 		indent(os,indent_level,true);os<<"}\n\n";
+
 		os<<"\nsection .data\n";
 		for(auto&s:statements)
 			if(s->is_in_data_section())s->compile(tc,os,indent_level);

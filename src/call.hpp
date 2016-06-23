@@ -31,7 +31,7 @@ class call:public expression{public:
 		while(!t.is_next_char_args_close())args.push_back(call::read_statement(this,t));
 	}
 	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"(";for(auto&e:args)e->source_to(os);os<<")";}
-	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		//-- comment
 		indent(os,indent_level,true);
 		os<<token().name()<<"(";

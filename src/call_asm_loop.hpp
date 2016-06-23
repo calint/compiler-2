@@ -19,7 +19,7 @@ class call_asm_loop final:public statement{public:
 		while(!t.is_next_char_expression_close())params.push_back(t.next_token());
 		code=make_unique<block>(parent,t);
 	}
-	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level,false);os<<"_loop_"<<token().token_start_char()<<":\n";
 
 		code->compile(tc,os,indent_level+1);

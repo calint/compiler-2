@@ -21,7 +21,7 @@ class var final:public statement{public:
 		}
 		else throw"uninitialized var";
 	}
-	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level,true);os<<"var "<<identifier->name()<<"="<<endl;
 
 		tc.framestk().add_var(identifier->name(),"");

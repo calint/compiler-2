@@ -22,7 +22,7 @@ class func final:public statement{public:
 		}
 		code=make_unique<block>(parent,t);
 	}
-	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		tc.put_func(*this,identifier->name(),this);//? in constructor for forward ref
 		if(is_inline())
 			return;

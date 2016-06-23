@@ -33,7 +33,7 @@ class block final:public statement{public:
 			statements.push_back(create_call(tkn->name(),parent,move(tkn),t));
 		}
 	}
-	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		for(auto&s:statements)
 			s->compile(tc,os,indent_level+1);
 	}

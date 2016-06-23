@@ -126,24 +126,22 @@ private:
 class toc final{public:
 	inline toc(){
 	}
-	inline bool has_file(const char*identifier)const{return files_.has(identifier);}
-	inline void put_file(const statement&s,const char*identifier,file*f){
+	inline void put_file(const statement&s,const char*identifier,const file*f){
 		if(has_file(identifier)){
 			throw compiler_error(s,"file already defined at ...",copy_string_to_unique_pointer(identifier));
 		}
 		files_.put(identifier,f);
 	}
-	inline bool has_func(const char*identifier)const{return funcs_.has(identifier);}
-	inline void put_func(statement&s,const char*identifier,func*ref){
+	inline void put_func(const statement&s,const char*identifier,const func*ref){
 		if(has_func(identifier)){
 			throw compiler_error(s,"function already defined at ...",copy_string_to_unique_pointer(identifier));
 		}
 		funcs_.put(identifier,ref);
 	}
 //	inline void print_to(ostream&os){for(auto&e:files)os<<e;}
-	inline func*get_func_or_break(statement&stmt,const char*name)const{
+	inline const func*get_func_or_break(const statement&stmt,const char*name)const{
 		bool valid;
-		func*f=funcs_.get_valid(name,valid);
+		const func*f=funcs_.get_valid(name,valid);
 		if(!valid){
 			throw compiler_error(stmt,"function not found",copy_string_to_unique_pointer(name));
 		}
@@ -160,7 +158,9 @@ class toc final{public:
 		return unique_ptr<const char[]>(cpy);
 	}
 private:
-	lut<file*>files_;
-	lut<func*>funcs_;
+	inline bool has_func(const char*identifier)const{return funcs_.has(identifier);}
+	inline bool has_file(const char*identifier)const{return files_.has(identifier);}
+	lut<const file*>files_;
+	lut<const func*>funcs_;
 	framestack framestk_;
 };

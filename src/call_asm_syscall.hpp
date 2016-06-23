@@ -10,7 +10,7 @@
 
 class call_asm_syscall final:public call{public:
 	inline call_asm_syscall(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
-	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level);
 		os<<"syscall\n";
 	}

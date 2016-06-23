@@ -10,7 +10,7 @@
 
 class call_asm_add final:public call{public:
 	inline call_asm_add(statement*parent,up_token tkn,tokenizer&t):call{parent,move(tkn),t}{}
-	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level);
 		framestack&fs=tc.framestk();
 		os<<"add "<<fs.resolve_func_arg(argument(0).token().name())<<","<<fs.resolve_func_arg(argument(1).token().name())<<endl;

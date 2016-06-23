@@ -1,11 +1,11 @@
 
-Thu Jun 23 16:28:31 ICT 2016
+Thu Jun 23 16:36:46 ICT 2016
 
-==2339== Memcheck, a memory error detector
-==2339== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
-==2339== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
-==2339== Command: ./compi
-==2339== 
+==6082== Memcheck, a memory error detector
+==6082== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
+==6082== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
+==6082== Command: ./compi
+==6082== 
 section .text
 global _start
 _start:
@@ -52,21 +52,21 @@ hello.len equ $-hello
 
 section .bss
 stk resd 256
-==2339== 
-==2339== HEAP SUMMARY:
-==2339==     in use at exit: 72,704 bytes in 1 blocks
-==2339==   total heap usage: 500 allocs, 499 frees, 110,110 bytes allocated
-==2339== 
-==2339== LEAK SUMMARY:
-==2339==    definitely lost: 0 bytes in 0 blocks
-==2339==    indirectly lost: 0 bytes in 0 blocks
-==2339==      possibly lost: 0 bytes in 0 blocks
-==2339==    still reachable: 72,704 bytes in 1 blocks
-==2339==         suppressed: 0 bytes in 0 blocks
-==2339== Rerun with --leak-check=full to see details of leaked memory
-==2339== 
-==2339== For counts of detected and suppressed errors, rerun with: -v
-==2339== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==6082== 
+==6082== HEAP SUMMARY:
+==6082==     in use at exit: 72,704 bytes in 1 blocks
+==6082==   total heap usage: 500 allocs, 499 frees, 110,110 bytes allocated
+==6082== 
+==6082== LEAK SUMMARY:
+==6082==    definitely lost: 0 bytes in 0 blocks
+==6082==    indirectly lost: 0 bytes in 0 blocks
+==6082==      possibly lost: 0 bytes in 0 blocks
+==6082==    still reachable: 72,704 bytes in 1 blocks
+==6082==         suppressed: 0 bytes in 0 blocks
+==6082== Rerun with --leak-check=full to see details of leaked memory
+==6082== 
+==6082== For counts of detected and suppressed errors, rerun with: -v
+==6082== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 
-Thu Jun 23 16:28:31 ICT 2016
+Thu Jun 23 16:36:47 ICT 2016
 
