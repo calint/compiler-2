@@ -178,10 +178,26 @@ class framestack final{public:
 		// try in if context, cannot be first frame
 		i=exported_frame_ix;
 		while(true){
-			if(!frames[i].has_alias(name))
-				break;
-			name=frames[i].get_alias(name);
-			i--;
+			if(frames[i].has_var(name))
+				return frames[i].get_var(name).asm_op_param();
+
+			if(frames[i].has_alias(name)){
+				name=frames[i].get_alias(name);
+				i--;
+				continue;
+			}
+
+			if(!frames[i].is_func()){
+				i--;
+				continue;
+			}
+
+			break;
+//
+//			if(!frames[i].has_alias(name))
+//				break;
+//			name=frames[i].get_alias(name);
+//			i--;
 		}
 		if(!frames[i].has_var(name)){// assume constant ie  0xb8000
 			return name;
