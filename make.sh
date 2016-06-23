@@ -14,9 +14,13 @@ ld -s -o binary gen.o &&
 ls --color -la gen.s &&
 ls --color -la binary &&
 echo &&
-echo -n '       src: ' && cat src/*|wc &&
-echo -n '   gzipped: ' && cat src/*|gzip|wc &&
-echo -n ' generated: ' && sh pgen.sh|wc &&
+echo -e "                \tlines\twords\tchars"
+echo -n '   compiler source: ' && cat src/*|wc &&
+echo -n '           gzipped: ' && cat src/*|gzip|wc &&
+echo -n '        baz source: ' && cat prog.clare|wc &&
+echo -n '           gzipped: ' && cat prog.clare|gzip|wc &&
+echo -n '    x86 asm source: ' && sh pgen.sh|wc &&
+echo -n '           gzipped: ' && sh pgen.sh|gzip|wc &&
 echo &&
 ./binary
 
