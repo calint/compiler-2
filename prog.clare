@@ -15,7 +15,7 @@ func print(nchars ptr){
 	int(0x80)
 }
 
-func read(len ptr):nchars{
+func read(len ptr):nchars,valid{
 	mov(esi ptr)
 	mov(edx len)
 	xor(eax eax)

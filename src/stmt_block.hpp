@@ -10,12 +10,13 @@
 #include "decouple.hpp"
 #include "statement.hpp"
 #include "stmt_call.hpp"
-#include "stmt_var.hpp"
+#include "stmt_def_var.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 
 using vup_statement=vector<up_statement>;
 class stmt_block final:public statement{public:
+
 	inline stmt_block(statement*parent,tokenizer&t):statement{parent,t.next_token()}{
 		assert(t.is_next_char_block_open());
 		while(true){
@@ -27,17 +28,20 @@ class stmt_block final:public statement{public:
 				continue;
 			}
 			if(tkn->is_name("var")){
-				statements.push_back(make_unique<stmt_var>(parent,move(tkn),t));
+				statements.push_back(make_unique<stmt_def_var>(parent,move(tkn),t));
 				continue;
 			}
 			statements.push_back(create_call(tkn->name(),parent,move(tkn),t));
 		}
 	}
+
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		for(auto&s:statements)
 			s->compile(tc,os,indent_level+1);
 	}
+
 	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements)s->link(tc,os);}
+
 	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"{";for(auto&s:statements)s->source_to(os);os<<"}";}
 
 private:

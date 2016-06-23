@@ -7,8 +7,8 @@ using namespace std;
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-#include"stmt_func.hpp"
-#include"stmt_file.hpp"
+#include"stmt_def_func.hpp"
+#include"stmt_def_file.hpp"
 class stmt_program final:public statement{public:
 
 	inline stmt_program(tokenizer&t):statement{nullptr,make_unique<class token>()}{
@@ -19,8 +19,8 @@ class stmt_program final:public statement{public:
 		while(!t.is_eos()){
 			up_token tk=t.next_token();
 			up_statement stmt;
-			if(tk->is_name("file")){stmt=make_unique<stmt_file>(this,move(tk),t);}
-			else if(tk->is_name("func")){stmt=make_unique<stmt_func>(this,move(tk),t);}
+			if(tk->is_name("file")){stmt=make_unique<stmt_def_file>(this,move(tk),t);}
+			else if(tk->is_name("func")){stmt=make_unique<stmt_def_func>(this,move(tk),t);}
 			else{
 				if(tk->is_name("")){
 					stmt=make_unique<statement>(this,move(tk));
@@ -42,7 +42,7 @@ class stmt_program final:public statement{public:
 		for(auto&s:statements)
 			if(!s->is_in_data_section())s->compile(tc,os,indent_level);
 
-		const stmt_func*main=tc.get_func_or_break(*this,"main");
+		const stmt_def_func*main=tc.get_func_or_break(*this,"main");
 		tc.framestk().push_func("main");
 		indent(os,indent_level,true);os<<"main(){  ["<<token().token_start_char()<<"]"<<endl;
 

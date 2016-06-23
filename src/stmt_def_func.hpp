@@ -12,14 +12,18 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 
-class stmt_func final:public statement{public:
+class stmt_def_func final:public statement{public:
 
-	inline stmt_func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+	inline stmt_def_func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
 		if(!t.is_next_char_expression_open())throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
 		while(!t.is_next_char_expression_close())params.push_back(t.next_token());
 		if(t.is_next_char(':')){// returns
-			ret=t.next_token();
+			while(true){
+				returns.push_back(t.next_token());
+				if(t.is_next_char(','))continue;
+				break;
+			}
 		}
 		code=make_unique<stmt_block>(parent,t);
 	}
@@ -46,13 +50,20 @@ class stmt_func final:public statement{public:
 		for(auto&s:params)
 			s->source_to(os);
 		os<<")";
-		if(ret)
-			os<<":"<<ret->name();
+		if(!returns.empty()){
+			os<<":";
+			const size_t sz=returns.size()-1;
+			size_t i{0};
+			for(auto&t:returns){
+				t->source_to(os);
+				if(i++!=sz)os<<",";
+			}
+		}
 		code->source_to(os);}
 
 	inline bool is_inline()const{return true;}
 
-	inline const class token*getret()const{return ret.get();}
+	inline const vup_tokens&getreturns()const{return returns;}
 
 	inline const up_token&get_param(const size_t ix)const{return params[ix];}
 
@@ -60,7 +71,7 @@ class stmt_func final:public statement{public:
 
 private:
 	up_token identifier;
-	up_token ret;
+	vup_tokens returns;
 	vup_tokens params;
 	up_block code;
 };

@@ -8,15 +8,15 @@
 
 #include "compiler_error.hpp"
 #include "decouple.hpp"
+#include "expression.hpp"
 #include "statement.hpp"
 #include "stmt_block.hpp"
-#include "stmt_expr.hpp"
-#include "stmt_func.hpp"
+#include "stmt_def_func.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 
-class stmt_call:public stmt_expr{public:
+class stmt_call:public expression{public:
 
 	inline static up_statement read_statement(statement*parent,tokenizer&t){
 		up_token tkn=t.next_token();
@@ -28,7 +28,7 @@ class stmt_call:public stmt_expr{public:
 	}
 
 
-	inline stmt_call(statement*parent,up_token tkn,tokenizer&t):stmt_expr{parent,move(tkn)}{
+	inline stmt_call(statement*parent,up_token tkn,tokenizer&t):expression{parent,move(tkn)}{
 		if(!t.is_next_char_args_open())throw compiler_error(*this,"expected ( and arguments",token().name_copy());//? object invalid
 		while(!t.is_next_char_args_close())args.push_back(stmt_call::read_statement(this,t));
 	}
@@ -36,9 +36,12 @@ class stmt_call:public stmt_expr{public:
 	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"(";for(auto&e:args)e->source_to(os);os<<")";}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
+		const char*nm=token().name();
+
+
 		//-- comment
 		indent(os,indent_level,true);
-		os<<token().name()<<"(";
+		os<<nm<<"(";
 		const size_t n=args.size();
 		const size_t nn=n-1;
 		for(size_t i=0;i<n;i++){
@@ -58,17 +61,18 @@ class stmt_call:public stmt_expr{public:
 			return;
 		}
 
-		const char*nm=token().name();
+		const stmt_def_func*f=tc.get_func_or_break(*this,nm);
 		framestack&fs=tc.framestk();
 		fs.push_func(nm);
-		const stmt_func*f=tc.get_func_or_break(*this,nm);
-		size_t i=0;
 		if(expr_dest){
-			const class token*ret=f->getret();
-			if(!ret)throw compiler_error(*this,"cannot assign from call without return",token().name_copy());
-			fs.add_alias(ret->name(),expr_dest);
+			if(f->getreturns().empty())throw compiler_error(*this,"cannot assign from call without return",token().name_copy());
+//			for(auto&e:f->getreturns()){
+//				fs.add_alias(e->name(),expr_dest);
+//			}
+			fs.add_alias(f->getreturns()[0]->name(),expr_dest);
 		}
 		vector<const char*>allocated_registers;
+		size_t i=0;
 		for(auto&a:args){
 			const char*param=f->get_param(i++)->name();
 			const char*reg{nullptr};
@@ -83,7 +87,11 @@ class stmt_call:public stmt_expr{public:
 			const char*tkn=a->token().name();
 			fs.add_alias(param,tkn);
 		}
+
 		f->code_block()->compile(tc,os,indent_level+1);
+
+		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<token().token_start_char()<<":\n";
+
 		for(auto r:allocated_registers)
 			fs.free_scratch_reg(r);
 		fs.pop_func(nm);

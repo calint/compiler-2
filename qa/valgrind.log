@@ -1,44 +1,53 @@
 
-Thu Jun 23 16:36:46 ICT 2016
+Thu Jun 23 18:08:20 ICT 2016
 
-==6082== Memcheck, a memory error detector
-==6082== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
-==6082== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
-==6082== Command: ./compi
-==6082== 
+==13952== Memcheck, a memory error detector
+==13952== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
+==13952== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
+==13952== Command: ./compi
+==13952== 
 section .text
 global _start
 _start:
   mov ebp,stk
 ; main(){  [0]
-   _loop_347:
-;    print(prompt.len prompt){  [357]
+   _loop_353:
+;    print(prompt.len prompt){  [363]
        mov ecx,prompt
        mov edx,prompt.len
        mov ebx,1
        mov eax,4
        int 0x80
+     _end_print_363:
 ;    var ln=
-;     read(name.len name):ln{  [391]
+;     read(name.len name):ln{  [397]
         mov esi,name
         mov edx,name.len
         xor eax,eax
         xor edi,edi
         syscall
         mov dword[ebp+0],eax
-;    print(hello.len hello){  [413]
+      _end_read_397:
+;    print(hello.len hello){  [419]
        mov ecx,hello
        mov edx,hello.len
        mov ebx,1
        mov eax,4
        int 0x80
-;    print(ln name){  [438]
+     _end_print_419:
+;    print(ln name){  [444]
        mov ecx,name
        mov edx,dword[ebp+0]
        mov ebx,1
        mov eax,4
        int 0x80
-   jmp _loop_347
+     _end_print_444:
+   jmp _loop_353
+   _loop_353_end:
+;  exit(){  [463]
+     mov eax,1
+     int 0x80
+   _end_exit_463:
 ; }
 
 
@@ -52,21 +61,21 @@ hello.len equ $-hello
 
 section .bss
 stk resd 256
-==6082== 
-==6082== HEAP SUMMARY:
-==6082==     in use at exit: 72,704 bytes in 1 blocks
-==6082==   total heap usage: 500 allocs, 499 frees, 110,110 bytes allocated
-==6082== 
-==6082== LEAK SUMMARY:
-==6082==    definitely lost: 0 bytes in 0 blocks
-==6082==    indirectly lost: 0 bytes in 0 blocks
-==6082==      possibly lost: 0 bytes in 0 blocks
-==6082==    still reachable: 72,704 bytes in 1 blocks
-==6082==         suppressed: 0 bytes in 0 blocks
-==6082== Rerun with --leak-check=full to see details of leaked memory
-==6082== 
-==6082== For counts of detected and suppressed errors, rerun with: -v
-==6082== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==13952== 
+==13952== HEAP SUMMARY:
+==13952==     in use at exit: 72,704 bytes in 1 blocks
+==13952==   total heap usage: 513 allocs, 512 frees, 110,841 bytes allocated
+==13952== 
+==13952== LEAK SUMMARY:
+==13952==    definitely lost: 0 bytes in 0 blocks
+==13952==    indirectly lost: 0 bytes in 0 blocks
+==13952==      possibly lost: 0 bytes in 0 blocks
+==13952==    still reachable: 72,704 bytes in 1 blocks
+==13952==         suppressed: 0 bytes in 0 blocks
+==13952== Rerun with --leak-check=full to see details of leaked memory
+==13952== 
+==13952== For counts of detected and suppressed errors, rerun with: -v
+==13952== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 
-Thu Jun 23 16:36:47 ICT 2016
+Thu Jun 23 18:08:21 ICT 2016
 

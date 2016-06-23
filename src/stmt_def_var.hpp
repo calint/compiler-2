@@ -11,9 +11,9 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 
-class stmt_var final:public statement{public:
+class stmt_def_var final:public statement{public:
 
-	inline stmt_var(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+	inline stmt_def_var(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
 //		cout<<identifier->name()<<endl;
 		if(t.is_next_char('=')){
