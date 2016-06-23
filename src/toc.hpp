@@ -172,10 +172,10 @@ class framestack final{public:
 			break;
 		}
 
-		if(!exported_frame_ix)// assume constant ie  0xb8000
+		if(!exported_frame_ix)// ie  0xb8000
 			return name;
 
-		// try in if context, cannot be first frame
+		// try in exported frame and up
 		i=exported_frame_ix;
 		while(true){
 			if(frames[i].has_var(name))
@@ -193,14 +193,9 @@ class framestack final{public:
 			}
 
 			break;
-//
-//			if(!frames[i].has_alias(name))
-//				break;
-//			name=frames[i].get_alias(name);
-//			i--;
 		}
 
-		// assume constant ie  0xb8000
+		// ie  0xb8000
 		return name;
 	}
 
