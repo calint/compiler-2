@@ -17,8 +17,8 @@ echo &&
 echo -e "                \tlines\twords\tchars"
 echo -n '   compiler source: ' && cat src/*|wc &&
 echo -n '           gzipped: ' && cat src/*|gzip|wc &&
-echo -n '        baz source: ' && cat prog.clare|wc &&
-echo -n '           gzipped: ' && cat prog.clare|gzip|wc &&
+echo -n '        baz source: ' && cat prog.clare|cat prog.clare |grep -v -e '^\s*$' -e'^\s*field\s.*$'|wc &&
+echo -n '           gzipped: ' && cat prog.clare|cat prog.clare |grep -v -e '^\s*$' -e'^\s*field\s.*$'|gzip|wc &&
 echo -n '    x86 asm source: ' && sh pgen.sh|wc &&
 echo -n '           gzipped: ' && sh pgen.sh|gzip|wc &&
 echo &&
