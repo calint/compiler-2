@@ -6,17 +6,17 @@
 #include <memory>
 #include <vector>
 
-#include "block.hpp"
 #include "compiler_error.hpp"
 #include "decouple.hpp"
-#include "expression.hpp"
-#include "func.hpp"
 #include "statement.hpp"
+#include "stmt_block.hpp"
+#include "stmt_expr.hpp"
+#include "stmt_func.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 
-class call:public expression{public:
+class stmt_call:public stmt_expr{public:
 
 	inline static up_statement read_statement(statement*parent,tokenizer&t){
 		up_token tkn=t.next_token();
@@ -28,9 +28,9 @@ class call:public expression{public:
 	}
 
 
-	inline call(statement*parent,up_token tkn,tokenizer&t):expression{parent,move(tkn)}{
+	inline stmt_call(statement*parent,up_token tkn,tokenizer&t):stmt_expr{parent,move(tkn)}{
 		if(!t.is_next_char_args_open())throw compiler_error(*this,"expected ( and arguments",token().name_copy());//? object invalid
-		while(!t.is_next_char_args_close())args.push_back(call::read_statement(this,t));
+		while(!t.is_next_char_args_close())args.push_back(stmt_call::read_statement(this,t));
 	}
 
 	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"(";for(auto&e:args)e->source_to(os);os<<")";}
@@ -61,7 +61,7 @@ class call:public expression{public:
 		const char*nm=token().name();
 		framestack&fs=tc.framestk();
 		fs.push_func(nm);
-		const func*f=tc.get_func_or_break(*this,nm);
+		const stmt_func*f=tc.get_func_or_break(*this,nm);
 		size_t i=0;
 		if(expr_dest){
 			const class token*ret=f->getret();
@@ -99,6 +99,6 @@ class call:public expression{public:
 private:
 	vup_statement args;
 };
-using up_call=unique_ptr<call>;
+using up_call=unique_ptr<stmt_call>;
 using allocs=vector<const char*>;
 

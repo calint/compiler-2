@@ -5,9 +5,9 @@
 #include <memory>
 #include <vector>
 
-#include "block.hpp"
 #include "compiler_error.hpp"
 #include "statement.hpp"
+#include "stmt_block.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"

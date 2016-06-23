@@ -5,23 +5,23 @@
 #include <memory>
 #include <vector>
 
-#include "block.hpp"
+#include "stmt_block.hpp"
 #include "compiler_error.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 
-class func final:public statement{public:
+class stmt_func final:public statement{public:
 
-	inline func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+	inline stmt_func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
 		if(!t.is_next_char_expression_open())throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
 		while(!t.is_next_char_expression_close())params.push_back(t.next_token());
 		if(t.is_next_char(':')){// returns
 			ret=t.next_token();
 		}
-		code=make_unique<block>(parent,t);
+		code=make_unique<stmt_block>(parent,t);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
@@ -56,7 +56,7 @@ class func final:public statement{public:
 
 	inline const up_token&get_param(const size_t ix)const{return params[ix];}
 
-	inline const block*code_block()const{return code.get();}
+	inline const stmt_block*code_block()const{return code.get();}
 
 private:
 	up_token identifier;

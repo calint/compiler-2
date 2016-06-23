@@ -2,7 +2,7 @@
 #include<memory>
 #include<cstring>
 using namespace std;
-#include"program.hpp"
+#include"stmt_program.hpp"
 #include"compiler_error.hpp"
 #include"call_asm_mov.hpp"
 #include"call_asm_int.hpp"
@@ -29,7 +29,7 @@ int main(int argc,char**args){
 	tokenizer t{s.data()};
 	up_program p;// to keep valid in case of exception
 	try{
-		p=make_unique<program>(t);
+		p=make_unique<stmt_program>(t);
 		ofstream fo("diff.clare");
 		p->source_to(fo);
 		fo.close();
@@ -57,5 +57,5 @@ inline up_statement create_call(const char*funcname,statement*parent,unique_ptr<
 	if(!strcmp("loop",funcname))return make_unique<stmt_loop>(parent,move(tk),t);
 	if(!strcmp("break",funcname))return make_unique<stmt_break>(parent,move(tk),t);
 	if(!strcmp("continue",funcname))return make_unique<stmt_continue>(parent,move(tk),t);
-	return make_unique<call>(parent,move(tk),t);
+	return make_unique<stmt_call>(parent,move(tk),t);
 }

@@ -5,9 +5,9 @@
 #include <memory>
 #include <vector>
 
-#include "block.hpp"
 #include "compiler_error.hpp"
 #include "statement.hpp"
+#include "stmt_block.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
@@ -18,7 +18,7 @@ class stmt_loop final:public statement{public:
 		if(!t.is_next_char_expression_open())
 			throw compiler_error(*this,"loop expects '(' followed by function arguments",token().name_copy());
 		while(!t.is_next_char_expression_close())params.push_back(t.next_token());
-		code=make_unique<block>(parent,t);
+		code=make_unique<stmt_block>(parent,t);
 		name="_loop_"+to_string(token().token_start_char());
 	}
 

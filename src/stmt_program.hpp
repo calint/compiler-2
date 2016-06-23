@@ -1,17 +1,17 @@
 #pragma once
 #include<memory>
 using namespace std;
-#include "call.hpp"
+#include "stmt_call.hpp"
 #include "decouple.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-#include"func.hpp"
-#include"file.hpp"
-class program final:public statement{public:
+#include"stmt_func.hpp"
+#include"stmt_file.hpp"
+class stmt_program final:public statement{public:
 
-	inline program(tokenizer&t):statement{nullptr,make_unique<class token>()}{
+	inline stmt_program(tokenizer&t):statement{nullptr,make_unique<class token>()}{
 		tc.add_func(*this,"mov",nullptr);
 		tc.add_func(*this,"int",nullptr);
 		tc.add_func(*this,"xor",nullptr);
@@ -19,8 +19,8 @@ class program final:public statement{public:
 		while(!t.is_eos()){
 			up_token tk=t.next_token();
 			up_statement stmt;
-			if(tk->is_name("file")){stmt=make_unique<file>(this,move(tk),t);}
-			else if(tk->is_name("func")){stmt=make_unique<func>(this,move(tk),t);}
+			if(tk->is_name("file")){stmt=make_unique<stmt_file>(this,move(tk),t);}
+			else if(tk->is_name("func")){stmt=make_unique<stmt_func>(this,move(tk),t);}
 			else{
 				if(tk->is_name("")){
 					stmt=make_unique<statement>(this,move(tk));
@@ -42,7 +42,7 @@ class program final:public statement{public:
 		for(auto&s:statements)
 			if(!s->is_in_data_section())s->compile(tc,os,indent_level);
 
-		const func*main=tc.get_func_or_break(*this,"main");
+		const stmt_func*main=tc.get_func_or_break(*this,"main");
 		tc.framestk().push_func("main");
 		indent(os,indent_level,true);os<<"main(){  ["<<token().token_start_char()<<"]"<<endl;
 
@@ -70,4 +70,4 @@ private:
 	vup_statement statements;
 	toc tc;
 };
-using up_program=unique_ptr<program>;
+using up_program=unique_ptr<stmt_program>;

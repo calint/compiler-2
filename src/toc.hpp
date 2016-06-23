@@ -9,8 +9,8 @@
 #include"lut.hpp"
 
 class token;
-class func;
-class file;
+class stmt_func;
+class stmt_file;
 
 
 using namespace std;
@@ -166,23 +166,23 @@ private:
 
 class toc final{public:
 
-	inline void add_file(const statement&s,const char*identifier,const file*f){
+	inline void add_file(const statement&s,const char*identifier,const stmt_file*f){
 		if(has_file(identifier)){
 			throw compiler_error(s,"file already defined at ...",copy_string_to_unique_pointer(identifier));
 		}
 		files_.put(identifier,f);
 	}
 
-	inline void add_func(const statement&s,const char*identifier,const func*ref){
+	inline void add_func(const statement&s,const char*identifier,const stmt_func*ref){
 		if(has_func(identifier)){
 			throw compiler_error(s,"function already defined at ...",copy_string_to_unique_pointer(identifier));
 		}
 		funcs_.put(identifier,ref);
 	}
 
-	inline const func*get_func_or_break(const statement&stmt,const char*name)const{
+	inline const stmt_func*get_func_or_break(const statement&stmt,const char*name)const{
 		bool valid;
-		const func*f=funcs_.get_valid(name,valid);
+		const stmt_func*f=funcs_.get_valid(name,valid);
 		if(!valid){
 			throw compiler_error(stmt,"function not found",copy_string_to_unique_pointer(name));
 		}
@@ -206,6 +206,6 @@ private:
 	inline bool has_file(const char*name)const{return files_.has(name);}
 
 	framestack framestk_;
-	lut<const file*>files_;
-	lut<const func*>funcs_;
+	lut<const stmt_file*>files_;
+	lut<const stmt_func*>funcs_;
 };

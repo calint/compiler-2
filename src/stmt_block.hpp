@@ -6,17 +6,17 @@
 #include <memory>
 #include <vector>
 
-#include "call.hpp"
 #include "compiler_error.hpp"
 #include "decouple.hpp"
 #include "statement.hpp"
+#include "stmt_call.hpp"
+#include "stmt_var.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-#include"var.hpp"
 
 using vup_statement=vector<up_statement>;
-class block final:public statement{public:
-	inline block(statement*parent,tokenizer&t):statement{parent,t.next_token()}{
+class stmt_block final:public statement{public:
+	inline stmt_block(statement*parent,tokenizer&t):statement{parent,t.next_token()}{
 		assert(t.is_next_char_block_open());
 		while(true){
 			if(t.is_eos())throw compiler_error(*this,"unexpected end of string",parent->token().name_copy());
@@ -27,7 +27,7 @@ class block final:public statement{public:
 				continue;
 			}
 			if(tkn->is_name("var")){
-				statements.push_back(make_unique<var>(parent,move(tkn),t));
+				statements.push_back(make_unique<stmt_var>(parent,move(tkn),t));
 				continue;
 			}
 			statements.push_back(create_call(tkn->name(),parent,move(tkn),t));
@@ -43,4 +43,4 @@ class block final:public statement{public:
 private:
 	vup_statement statements;
 };
-using up_block=unique_ptr<block>;
+using up_block=unique_ptr<stmt_block>;
