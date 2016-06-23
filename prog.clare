@@ -7,9 +7,9 @@ func exit{
 	int(0x80)
 }
 
-func print(nchars,ptr){
+func print(len,ptr){
 	mov(ecx,ptr)
-	mov(edx,nchars)
+	mov(edx,len)
 	mov(ebx,1)
 	mov(eax,4)
 	int(0x80)
