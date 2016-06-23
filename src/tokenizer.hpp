@@ -83,9 +83,6 @@ private:
 		ptr++;
 		return last_char;
 	}
-	inline bool is_char_whitespace(const char ch){
-		return ch==' '||ch=='\t'||ch=='\r'||ch=='\n';
-	}
 	inline ua_char next_whitespace(){
 		if(is_eos())
 			return unique_ptr<const char[]>(new char[1]{0});
@@ -126,5 +123,8 @@ private:
 //		else{off_t n=-nch;while(n--)assert(*ptr--);}
 		ptr+=nch;
 		nchar=size_t(ssize_t(nchar)+nch);
+	}
+	inline static bool is_char_whitespace(const char ch){
+		return ch==' '||ch=='\t'||ch=='\r'||ch=='\n';
 	}
 };

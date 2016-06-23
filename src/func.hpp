@@ -13,6 +13,7 @@
 #include "tokenizer.hpp"
 
 class func final:public statement{public:
+
 	inline func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
 		if(!t.is_next_char_expression_open())throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
@@ -22,8 +23,9 @@ class func final:public statement{public:
 		}
 		code=make_unique<block>(parent,t);
 	}
+
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		tc.put_func(*this,identifier->name(),this);//? in constructor for forward ref
+		tc.add_func(*this,identifier->name(),this);//? in constructor for forward ref
 		if(is_inline())
 			return;
 
@@ -34,7 +36,9 @@ class func final:public statement{public:
 		code->compile(tc,os,indent_level+1);
 		os<<"  ret\n";
 	}
-	inline void link(toc&tc,ostream&os)override final{code->link(tc,os);}
+
+	inline void link(toc&tc,ostream&os)const override{code->link(tc,os);}
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		identifier->source_to(os);
@@ -45,13 +49,18 @@ class func final:public statement{public:
 		if(ret)
 			os<<":"<<ret->name();
 		code->source_to(os);}
-//	inline const vup_tokens&getparams()const{return params;}
+
 	inline bool is_inline()const{return true;}
+
 	inline const class token*getret()const{return ret.get();}
 
+	inline const up_token&get_param(const size_t ix)const{return params[ix];}
+
+	inline const block*code_block()const{return code.get();}
+
+private:
+	up_token identifier;
+	up_token ret;
 	vup_tokens params;
 	up_block code;
-private:
-	up_token ret;
-	up_token identifier;
 };

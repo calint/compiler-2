@@ -18,19 +18,25 @@ _start:
         xor edi,edi
         syscall
         mov dword[ebp+0],eax
-;    print(hello.len hello){  [413]
+     jmp _loop_347
+;    print(hello.len hello){  [426]
        mov ecx,hello
        mov edx,hello.len
        mov ebx,1
        mov eax,4
        int 0x80
-;    print(ln name){  [438]
+;    print(ln name){  [451]
        mov ecx,name
        mov edx,dword[ebp+0]
        mov ebx,1
        mov eax,4
        int 0x80
+     jmp _loop_347_end
    jmp _loop_347
+   _loop_347_end:
+;  exit(){  [480]
+     mov eax,1
+     int 0x80
 ; }
 
 

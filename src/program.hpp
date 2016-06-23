@@ -10,11 +10,12 @@ using namespace std;
 #include"func.hpp"
 #include"file.hpp"
 class program final:public statement{public:
+
 	inline program(tokenizer&t):statement{nullptr,make_unique<class token>()}{
-		tc.put_func(*this,"mov",nullptr);
-		tc.put_func(*this,"int",nullptr);
-		tc.put_func(*this,"xor",nullptr);
-		tc.put_func(*this,"syscall",nullptr);
+		tc.add_func(*this,"mov",nullptr);
+		tc.add_func(*this,"int",nullptr);
+		tc.add_func(*this,"xor",nullptr);
+		tc.add_func(*this,"syscall",nullptr);
 		while(!t.is_eos()){
 			up_token tk=t.next_token();
 			up_statement stmt;
@@ -30,7 +31,12 @@ class program final:public statement{public:
 			statements.push_back(move(stmt));
 		}
 	}
-	inline void build(ostream&os){compile(tc,os,0);link(tc,os);}
+
+	inline void build(ostream&os){
+		compile(tc,os,0);
+		link(tc,os);
+	}
+
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		os<<"section .text\nglobal _start\n_start:\n  mov ebp,stk\n";
 		for(auto&s:statements)
@@ -40,7 +46,7 @@ class program final:public statement{public:
 		tc.framestk().push_func("main");
 		indent(os,indent_level,true);os<<"main(){  ["<<token().token_start_char()<<"]"<<endl;
 
-		main->code->compile(tc,os,indent_level);
+		main->code_block()->compile(tc,os,indent_level);
 
 		indent(os,indent_level,true);os<<"}\n\n";
 
@@ -50,10 +56,16 @@ class program final:public statement{public:
 		os<<"\nsection .bss\nstk resd 256\n";
 		tc.framestk().pop_func("main");
 	}
-	inline void link(toc&tc,ostream&os)override{for(auto&s:statements)s->link(tc,os);}
+
+	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements)s->link(tc,os);}
+
 	inline void source_to(ostream&os)const override{statement::source_to(os);for(auto&s:statements)s->source_to(os);}
+
 	inline const toc&get_toc()const{return tc;}
+
 	inline bool is_inline()const{return true;}
+
+
 private:
 	vup_statement statements;
 	toc tc;

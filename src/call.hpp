@@ -17,10 +17,12 @@
 #include "tokenizer.hpp"
 
 class call:public expression{public:
+
 	inline static up_statement read_statement(statement*parent,tokenizer&t){
 		up_token tkn=t.next_token();
-		if(!t.is_next_char_expression_open())
+		if(!t.is_next_char_expression_open()){
 			return make_unique<statement>(parent,move(tkn));// ie  0x80
+		}
 		t.unread();
 		return create_call(tkn->name(),parent,move(tkn),t); // ie  f(...)
 	}
@@ -30,7 +32,9 @@ class call:public expression{public:
 		if(!t.is_next_char_args_open())throw compiler_error(*this,"expected ( and arguments",token().name_copy());//? object invalid
 		while(!t.is_next_char_args_close())args.push_back(call::read_statement(this,t));
 	}
+
 	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"(";for(auto&e:args)e->source_to(os);os<<")";}
+
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		//-- comment
 		indent(os,indent_level,true);
@@ -43,8 +47,8 @@ class call:public expression{public:
 			if(i<nn)os<<" ";
 		}
 		os<<")";
-		if(dest)
-			os<<":"<<dest;
+		const char*expr_dest=expression_dest_nasm_identifier();
+		if(expr_dest)os<<":"<<expr_dest;
 		os<<"{  ["<<token().token_start_char()<<"]"<<endl;
 		//--- - - - -- - - - -
 
@@ -59,14 +63,14 @@ class call:public expression{public:
 		fs.push_func(nm);
 		const func*f=tc.get_func_or_break(*this,nm);
 		size_t i=0;
-		if(dest){
+		if(expr_dest){
 			const class token*ret=f->getret();
 			if(!ret)throw compiler_error(*this,"cannot assign from call without return",token().name_copy());
-			fs.add_alias(ret->name(),dest);
+			fs.add_alias(ret->name(),expr_dest);
 		}
 		vector<const char*>allocated_registers;
 		for(auto&a:args){
-			const char*param=f->params[i++]->name();
+			const char*param=f->get_param(i++)->name();
 			const char*reg{nullptr};
 			if(a->is_expression()){
 				reg=fs.alloc_scratch_register();
@@ -79,7 +83,7 @@ class call:public expression{public:
 			const char*tkn=a->token().name();
 			fs.add_alias(param,tkn);
 		}
-		f->code->compile(tc,os,indent_level+1);
+		f->code_block()->compile(tc,os,indent_level+1);
 		for(auto r:allocated_registers)
 			fs.free_scratch_reg(r);
 		fs.pop_func(nm);
@@ -88,7 +92,9 @@ class call:public expression{public:
 	}
 
 	inline statement&argument(size_t ix)const{return*(args[ix].get());}
+
 	inline bool is_inline()const{return true;}
+
 
 private:
 	vup_statement args;

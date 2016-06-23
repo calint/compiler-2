@@ -9,6 +9,7 @@
 #include "tokenizer.hpp"
 
 class file final:public statement{public:
+
 	inline file(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
 		if(!t.is_next_char_data_open())throw compiler_error(*this,"expected { to open file",identifier->name_copy());
@@ -17,7 +18,9 @@ class file final:public statement{public:
 			tokens.push_back(t.next_token());
 		}
 	}
+
 	inline bool is_in_data_section()const override{return true;}
+
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 //		section .data
 //		msg     db  'Hello, world!',0xa                 ;string
@@ -32,8 +35,9 @@ class file final:public statement{public:
 		for(size_t i=0;i<indent_level;i++)cout<<"  ";
 		os<<identifier->name()<<".len equ $-"<<identifier->name()<<endl;
 //		os<<"section .text\n";
-		tc.put_file(*this,identifier->name(),this);
+		tc.add_file(*this,identifier->name(),this);
 	}
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		identifier->source_to(os);
@@ -41,6 +45,7 @@ class file final:public statement{public:
 		for(auto&s:tokens)s->source_to(os);
 		os<<"}";
 	}
+
 
 private:
 	up_token identifier;

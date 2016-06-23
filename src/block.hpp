@@ -37,7 +37,7 @@ class block final:public statement{public:
 		for(auto&s:statements)
 			s->compile(tc,os,indent_level+1);
 	}
-	inline void link(toc&tc,ostream&os)override{for(auto&s:statements)s->link(tc,os);}
+	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements)s->link(tc,os);}
 	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"{";for(auto&s:statements)s->source_to(os);os<<"}";}
 
 private:

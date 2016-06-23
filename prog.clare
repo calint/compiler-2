@@ -31,4 +31,5 @@ func main(){
 		print(hello.len hello)
 		print(ln name)
 	}
+	exit()
 }
