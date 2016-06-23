@@ -51,10 +51,6 @@ func plus(a b):int{
 	add(int b)
 }
 
-func set(a b){
-	mov(a b)
-}
-
 func main(){
 	loop(){
 		print(prompt.len prompt)

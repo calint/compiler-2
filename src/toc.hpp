@@ -125,18 +125,28 @@ class framestack final{public:
 		frames.pop_back();
 	}
 
-	size_t if_frame_ix{0};
+	size_t exported_frame_ix{0};
 	inline void push_if(const char*name){
-		if_frame_ix=frames.size()-1;
+		exported_frame_ix=frames.size()-1;
+//		export_varspace_at_current_frame_in_subcalls(true);
 		frames.push_back(frame{name,8});
 	}
+
+//	inline void export_varspace_at_current_frame_in_subcalls(bool b){
+//		if(b){
+//			exported_frame_ix=frames.size()-1;
+//			return;
+//		}
+//		exported_frame_ix=0;
+//	}
 
 	inline void pop_if(const char*name){
 		frame&f=frames.back();
 		if(not f.is_if() or not f.is_name(name))throw __LINE__;
 		stkix-=frames.back().allocated_stack_size();
 		frames.pop_back();
-		if_frame_ix=0;
+		exported_frame_ix=0;
+//		export_varspace_at_current_frame_in_subcalls(false);
 	}
 
 	inline void add_var(const char*name,const char*flags){
@@ -156,11 +166,11 @@ class framestack final{public:
 			return frames[i].get_var(name).asm_op_param();
 		}
 
-		if(!if_frame_ix)// assume constant ie  0xb8000
+		if(!exported_frame_ix)// assume constant ie  0xb8000
 			return name;
 
 		// try in if context, cannot be first frame
-		i=if_frame_ix;
+		i=exported_frame_ix;
 		while(true){
 			if(!frames[i].has_alias(name))
 				break;

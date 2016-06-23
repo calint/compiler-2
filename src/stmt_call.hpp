@@ -63,6 +63,9 @@ class stmt_call:public expression{public:
 
 		const stmt_def_func*f=tc.get_func_or_break(*this,nm);
 		framestack&fs=tc.framestk();
+//		if(*token().name()=='_'){
+//			tc.framestk().export_varspace_at_current_frame_in_subcalls(true);
+//		}
 		fs.push_func(nm);
 		if(expr_dest){
 			if(f->getreturns().empty())throw compiler_error(*this,"cannot assign from call without return",token().name_copy());
@@ -97,6 +100,7 @@ class stmt_call:public expression{public:
 			fs.free_scratch_reg(r);
 
 		fs.pop_func(nm);
+//		tc.framestk().export_varspace_at_current_frame_in_subcalls(false);
 
 //		indent(os,indent_level,true);os<<"}\n";
 	}
