@@ -17,7 +17,16 @@ class stmt_def_func final:public statement{public:
 	inline stmt_def_func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
 		if(!t.is_next_char_expression_open())throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
-		while(!t.is_next_char_expression_close())params.push_back(t.next_token());
+		while(true){
+			if(t.is_next_char(')'))break;
+			up_token tk=t.next_token();
+			if(t.is_next_char(')')){
+				params.push_back(move(tk));
+				break;
+			}
+			if(!t.is_next_char(','))throw compiler_error(*this,"expected ',' after parameter at ",tk->name_copy());
+			params.push_back(move(tk));
+		}
 		if(t.is_next_char(':')){// returns
 			while(true){
 				returns.push_back(t.next_token());
@@ -47,8 +56,12 @@ class stmt_def_func final:public statement{public:
 		statement::source_to(os);
 		identifier->source_to(os);
 		os<<"(";
-		for(auto&s:params)
+		const size_t nparam=params.size()-1;
+		size_t ii{0};
+		for(auto&s:params){
 			s->source_to(os);
+			if(ii++!=nparam)os<<",";
+		}
 		os<<")";
 		if(!returns.empty()){
 			os<<":";

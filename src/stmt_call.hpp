@@ -30,10 +30,24 @@ class stmt_call:public expression{public:
 
 	inline stmt_call(statement*parent,up_token tkn,tokenizer&t):expression{parent,move(tkn)}{
 		if(!t.is_next_char_args_open())throw compiler_error(*this,"expected ( and arguments",token().name_copy());//? object invalid
-		while(!t.is_next_char_args_close())args.push_back(stmt_call::read_statement(this,t));
+		while(!t.is_next_char_args_close()){
+			if(t.is_next_char(')'))break;
+			args.push_back(stmt_call::read_statement(this,t));
+			if(t.is_next_char(')'))break;
+			if(!t.is_next_char(','))throw compiler_error(*this,"expected ',' after argument at ",token().name_copy());
+		}
 	}
 
-	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"(";for(auto&e:args)e->source_to(os);os<<")";}
+	inline void source_to(ostream&os)const override{
+		statement::source_to(os);
+		os<<"(";
+		size_t i=args.size()-1;
+		for(auto&e:args){
+			e->source_to(os);
+			if(i--)os<<",";
+		}
+		os<<")";
+	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		const char*nm=token().name();
