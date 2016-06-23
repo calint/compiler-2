@@ -13,6 +13,6 @@ class call_asm_add final:public call{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
 		indent(os,indent_level);
 		framestack&fs=tc.framestk();
-		os<<"add "<<fs.resolve_argument(argument(0).token().name())<<","<<fs.resolve_argument(argument(1).token().name())<<endl;
+		os<<"add "<<fs.resolve_func_arg(argument(0).token().name())<<","<<fs.resolve_func_arg(argument(1).token().name())<<endl;
 	}
 };

@@ -15,39 +15,55 @@ class file;
 
 using namespace std;
 
-class avar{public:
-	const char*name{""};
-	size_t stkix{0};
-	const char*reg{nullptr};
-//				unique_ptr<char>resolv;
-	const char*resolv;
+class allocated_var{public:
+	inline allocated_var(const char*name,size_t stkix,const char*in_register,const char*asm_op_param,char bits):
+			name_{name},stkix_{stkix},in_register_{in_register},asm_op_param_{asm_op_param},bits_{bits}{}
+	inline bool is_const()const{return bits_&1;}
+//	inline const char*asm_op_param()const{return asm_op_param_.get();}
+	inline const char*asm_op_param()const{return asm_op_param_;}
+private:
+	const char*name_{""};
+	size_t stkix_{0};
+	const char*in_register_{nullptr};
+	const char*asm_op_param_{nullptr};
+//	unique_ptr<const char>asm_op_param_;
+	char bits_{0}; // 1: const     2: isloop
 };
 
 class frame final{public:
-	frame(const char*nm,bool isfunc):name{nm},bits{isfunc?1:0}{}
+	frame(const char*name,char bits):name_{name},bits_{bits}{}
 	inline void add_var(const char*nm,const size_t stkix,const char*flags){
 		char buf[256];
 		const int n=snprintf(buf,sizeof buf,"dword[ebp+%zu]",stkix<<2);
 		if(n<0||n==sizeof buf)throw"??";
 		const size_t len=size_t(n)+1;
-		char*str=(char*)malloc(len);
+
+		char*str=new char[len];
+		to_be_deleted.push_back(unique_ptr<const char>(str));
+
 		memcpy(str,buf,len);
-//		avar*a=new avar{nm,stack_index,nullptr,str};
-		vars_.put(nm, avar{nm,stkix,nullptr,str});//? str leak
+		vars_.put(nm, allocated_var{nm,stkix,nullptr,str,0});
 		stkix_++;
 	}
 	inline size_t stack_index()const{return stkix_;}
-	inline const lut<avar>&vars()const{return vars_;}
-	inline const lut<const char*>&aliases()const{return aliases_;}
-	inline void add_alias(const char*local_name,const char*outside_name){aliases_.put(local_name,outside_name);}
-	inline bool is_func()const{return(bits&1)!=0;}
-	inline bool is_name(const char*nm)const{return!strcmp(name,nm);}
+//	inline const lut<allocated_var>&vars()const{return vars_;}
+	inline bool has_var(const char*name)const{return vars_.has(name);}
+	inline const allocated_var vars_get(const char*name)const{return vars_.get(name);}
+//	inline const lut<const char*>&aliases()const{return aliases_;}
+	inline void add_alias(const char*ident,const char*outside_ident){aliases_.put(ident,outside_ident);}
+	inline bool is_func()const{return bits_&1;}
+	inline bool is_block()const{return bits_&2;}
+	inline bool is_loop()const{return bits_&4;}
+	inline bool is_name(const char*nm)const{return!strcmp(name_,nm);}
+	inline bool aliases_has(const char*name)const{return aliases_.has(name);}
+	inline const char*aliases_get(const char*name)const{return aliases_.get(name);}
 private:
-	const char*name{""};
-	int bits{0}; // 1 is func
+	vector<unique_ptr<const char>>to_be_deleted;
+	const char*name_{""};
 	size_t stkix_{0};
-	lut<avar>vars_;
+	lut<allocated_var>vars_;
 	lut<const char*>aliases_;
+	char bits_{0}; // 1 is func
 };
 
 class framestack final{public:
@@ -59,16 +75,14 @@ class framestack final{public:
 		free_registers.push_back("ebx");
 		free_registers.push_back("eax");
 	}
-	inline void push_func(const char*name){
-		frames.push_back(frame{name,true});
-	}
-	inline void add_alias(const char*ident,const char*parent_frame_ident){
-		frames.back().add_alias(ident,parent_frame_ident);
-	}
+	inline void push_func(const char*name){frames.push_back(frame{name,1});}
+	inline void push_block(const char*name){frames.push_back(frame{name,2});}
+	inline void push_loop(const char*name){frames.push_back(frame{name,4});}
+	inline void add_alias(const char*ident,const char*parent_frame_ident){frames.back().add_alias(ident,parent_frame_ident);}
 	inline const char*alias_for_identifier(const char*ident)const{
-		if(!frames.back().aliases().has(ident))
+		if(!frames.back().aliases_has(ident))
 			return nullptr;
-		return frames.back().aliases().get(ident);
+		return frames.back().aliases_get(ident);
 	}
 	inline void pop_func(const char*name){
 		frame&f=frames.back();
@@ -81,29 +95,19 @@ class framestack final{public:
 	inline void add_var(const char*name,const char*flags){
 		frames.back().add_var(name,stkix++,flags);
 	}
-	inline const char*resolve_identifier(const char*name)const{
-		if(!frames.back().aliases().has(name)){
-			const char*alias=frames.back().aliases().get(name);
-			if(alias){
-				// recurse
-				return alias;
-			}
-		}
-		return frames.back().vars().get(name).resolv;
-	}
-	inline const char*resolve_argument(const char*ident)const{
+	inline const char*resolve_func_arg(const char*ident)const{
 		size_t i=frames.size()-1;// recurse until aliased var found
-		const char*s=ident;
+		const char*name=ident;
 		while(true){
-			if(!frames[i].aliases().has(s))
+			if(!frames[i].aliases_has(name))
 				break;
-			s=frames[i].aliases().get(s);
+			name=frames[i].aliases_get(name);
 			i--;
 		}
-		if(!frames[i].vars().has(s)){// assume constant
-			return s;
+		if(!frames[i].has_var(name)){// assume constant ie  0xb8000
+			return name;
 		}
-		const char*resolved=frames[i].vars().get(s).resolv;
+		const char*resolved=frames[i].vars_get(name).asm_op_param();
 		return resolved;
 	}
 	inline const char*alloc_scratch_register(){
@@ -111,9 +115,7 @@ class framestack final{public:
 		free_registers.pop_back();
 		return r;
 	}
-	inline void free_scratch_reg(const char*reg){
-		free_registers.push_back(reg);
-	}
+	inline void free_scratch_reg(const char*reg){free_registers.push_back(reg);}
 
 private:
 	vector<const char*>free_registers;
