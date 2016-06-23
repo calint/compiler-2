@@ -14,8 +14,9 @@ ld -s -o binary gen.o &&
 ls --color -la gen.s &&
 ls --color -la binary &&
 echo &&
-echo -n '     src: ' && cat src/*|wc &&
-echo -n ' gzipped: ' && cat src/*|gzip|wc && 
+echo -n '       src: ' && cat src/*|wc &&
+echo -n '   gzipped: ' && cat src/*|gzip|wc &&
+echo -n ' generated: ' && sh pgen.sh|wc &&
 echo &&
 ./binary
 
