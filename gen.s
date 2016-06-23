@@ -22,51 +22,47 @@ _start:
           syscall
           mov dword[ebp+0],eax
         _end_read_701:
-;      ln=
-;       plus(ln 1):ln{  [727]
-          add dword[ebp+0],1
-        _end_plus_727:
-;      if [741]
-;      orl(eq eq):eax{  [744]
-;      eq(ln 1):ebx{  [748]
+;      if [724]
+;      orl(eq eq):eax{  [727]
+;      eq(ln 1):ebx{  [731]
          cmp dword[ebp+0],1
          cmove ebx,[mem1]
          cmovne ebx,[mem0]
-       _end_eq_748:
-;      eq(ln 2):ecx{  [757]
+       _end_eq_731:
+;      eq(ln 2):ecx{  [740]
          cmp dword[ebp+0],2
          cmove ecx,[mem1]
          cmovne ecx,[mem0]
-       _end_eq_757:
+       _end_eq_740:
          mov eax,ebx
          or eax,ecx
-       _end_orl_744:
+       _end_orl_727:
        cmp eax,1
-       jne _end__if_741
+       jne _end__if_724
          jmp _loop_655
-       _end__if_741:
-;      print(hello.len hello){  [792]
+       _end__if_724:
+;      print(hello.len hello){  [775]
          mov ecx,hello
          mov edx,hello.len
          mov ebx,1
          mov eax,4
          int 0x80
-       _end_print_792:
-;      print(ln name){  [818]
+       _end_print_775:
+;      print(ln name){  [801]
          mov ecx,name
          mov edx,dword[ebp+0]
          mov ebx,1
          mov eax,4
          int 0x80
-       _end_print_818:
+       _end_print_801:
      jmp _loop_655
      _end_loop_655:
    jmp _loop_645
    _end_loop_645:
-;  exit(){  [841]
+;  exit(){  [824]
      mov eax,1
      int 0x80
-   _end_exit_841:
+   _end_exit_824:
 ; }
 
 

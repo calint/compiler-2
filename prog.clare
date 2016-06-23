@@ -60,7 +60,6 @@ func main(){
 		loop(){
 			print(prompt.len prompt)
 			var ln=read(name.len name)
-			ln=plus(ln 1)
 			if(orl(eq(ln 1) eq(ln 2))){
 				continue()
 			}
