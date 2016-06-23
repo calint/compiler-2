@@ -103,6 +103,8 @@ class stmt_call:public expression{public:
 
 	inline statement&argument(size_t ix)const{return*(args[ix].get());}
 
+	inline size_t argument_count()const{return args.size();}
+
 	inline bool is_inline()const{return true;}
 
 

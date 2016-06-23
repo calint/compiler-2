@@ -30,16 +30,25 @@ func eq(a b):bool{
 	cmovne(bool mem0)
 }
 
+fun orl(a b):bool{
+	mov(bool a)
+	or(a b)
+}
 
 func main(){
 	loop(){
-		print(prompt.len prompt)
-		var ln=read(name.len name)
-		if(eq(ln 1)){
-			continue()
+		loop(){
+			print(prompt.len prompt)
+			var ln=read(name.len name)
+			if(orl(eq(ln 1) eq(ln 2)){
+				continue()
+			}
+			if(eq(ln 1)){
+				continue()
+			}
+			print(hello.len hello)
+			print(ln name)
 		}
-		print(hello.len hello)
-		print(ln name)
 	}
 	exit()
 }

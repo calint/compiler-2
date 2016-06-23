@@ -12,7 +12,7 @@ using namespace std;
 class stmt_program final:public statement{public:
 
 	inline stmt_program(tokenizer&t):statement{nullptr,make_unique<class token>()}{
-		vector<const char*>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if"};
+		vector<const char*>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if","cmove","cmovne","or"};
 		for(auto s:assem)tc.add_func(*this,s,nullptr);
 		while(!t.is_eos()){
 			up_token tk=t.next_token();
@@ -51,6 +51,10 @@ class stmt_program final:public statement{public:
 		os<<"\nsection .data\n";
 		for(auto&s:statements)
 			if(s->is_in_data_section())s->compile(tc,os,indent_level);
+
+		os<<"mem1 dd 1\n";
+		os<<"mem0 dd 0\n";
+
 		os<<"\nsection .bss\nstk resd 256\n";
 		tc.framestk().pop_func("main");
 	}

@@ -18,6 +18,9 @@ using namespace std;
 #include"call_asm_jmp.hpp"
 #include"call_asm_jne.hpp"
 #include"stmt_if.hpp"
+#include"call_asm_cmove.hpp"
+#include"call_asm_cmovne.hpp"
+#include"call_asm_or.hpp"
 static string file_read_to_string(const char *filename){
 	FILE*f=fopen(filename,"rb");
 	if(!f)throw "cannot open file";
@@ -69,5 +72,8 @@ inline up_statement create_call(const char*funcname,statement*parent,unique_ptr<
 	if(!strcmp("jmp",funcname))return make_unique<call_asm_jmp>(parent,move(tk),t);
 	if(!strcmp("jne",funcname))return make_unique<call_asm_jne>(parent,move(tk),t);
 	if(!strcmp("if",funcname))return make_unique<stmt_if>(parent,move(tk),t);
+	if(!strcmp("cmove",funcname))return make_unique<call_asm_cmove>(parent,move(tk),t);
+	if(!strcmp("cmovne",funcname))return make_unique<call_asm_cmovne>(parent,move(tk),t);
+	if(!strcmp("or",funcname))return make_unique<call_asm_or>(parent,move(tk),t);
 	return make_unique<stmt_call>(parent,move(tk),t);
 }
