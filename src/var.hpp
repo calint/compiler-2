@@ -24,7 +24,7 @@ class var final:public statement{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level)override{
 		indent(os,indent_level,true);os<<"var "<<identifier->name()<<"="<<endl;
 
-		tc.stack_add_var(identifier->name());
+		tc.framestk().add_var(identifier->name(),"");
 		initial_value->set_expression_dest_nasm_identifier(identifier->name());
 		if(initial_value)initial_value->compile(tc,os,indent_level+1);
 	}

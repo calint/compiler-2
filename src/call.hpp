@@ -27,7 +27,7 @@ class call:public expression{public:
 
 
 	inline call(statement*parent,up_token tkn,tokenizer&t):expression{parent,move(tkn)}{
-		if(!t.is_next_char_args_open())throw compiler_error(*this,"expected ( and arguments",token().copy_name());//? object invalid
+		if(!t.is_next_char_args_open())throw compiler_error(*this,"expected ( and arguments",token().name_copy());//? object invalid
 		while(!t.is_next_char_args_close())args.push_back(call::read_statement(this,t));
 	}
 	inline void source_to(ostream&os)const override{statement::source_to(os);os<<"(";for(auto&e:args)e->source_to(os);os<<")";}
@@ -55,36 +55,37 @@ class call:public expression{public:
 		}
 
 		const char*nm=token().name();
-		tc.stack_push_func(nm);
+		framestack&fs=tc.framestk();
+		fs.push_func(nm);
 		const func*f=tc.get_func(nm);
-		if(!f)throw compiler_error(*this,"function not found",token().copy_name());
+		if(!f)throw compiler_error(*this,"function not found",token().name_copy());
 		size_t i=0;
 		if(dest){
 			const class token*ret=f->getret();
-			if(!ret)throw compiler_error(*this,"cannot assign from call without return",token().copy_name());
-			tc.stack_add_alias(ret->name(),dest);
+			if(!ret)throw compiler_error(*this,"cannot assign from call without return",token().name_copy());
+			fs.add_alias(ret->name(),dest);
 		}
 		vector<const char*>allocated_registers;
 		for(auto&a:args){
 			const char*param=f->params[i++]->name();
 			const char*reg{nullptr};
 			if(a->is_expression()){
-				reg=tc.alloc_scratch_register();
+				reg=fs.alloc_scratch_register();
 				allocated_registers.push_back(reg);
 				a->set_expression_dest_nasm_identifier(reg);
+				fs.add_alias(param,reg);
 				a->compile(tc,os,indent_level);
-				tc.stack_add_alias(param,reg);
 				continue;
 			}
 			const char*tkn=a->token().name();
-			tc.stack_add_alias(param,tkn);
+			fs.add_alias(param,tkn);
 		}
 		f->code->compile(tc,os,indent_level+1);
 		for(auto r:allocated_registers)
-			tc.free_scratch_reg(r);
-		tc.stack_pop();
+			fs.free_scratch_reg(r);
+		fs.pop_func(nm);
 
-		indent(os,indent_level,true);os<<"}\n";
+//		indent(os,indent_level,true);os<<"}\n";
 	}
 
 	inline statement&argument(size_t ix)const{return*(args[ix].get());}

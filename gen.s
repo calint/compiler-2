@@ -10,7 +10,6 @@ _start:
        mov ebx,1
        mov eax,4
        int 0x80
-;    }
 ;    var ln=
 ;     read(name.len name):ln{  [391]
         mov esi,name
@@ -19,21 +18,18 @@ _start:
         xor edi,edi
         syscall
         mov dword[ebp+0],eax
-;     }
 ;    print(hello.len hello){  [413]
        mov ecx,hello
        mov edx,hello.len
        mov ebx,1
        mov eax,4
        int 0x80
-;    }
 ;    print(ln name){  [438]
        mov ecx,name
        mov edx,dword[ebp+0]
        mov ebx,1
        mov eax,4
        int 0x80
-;    }
    jmp _loop_347
 ; }
 

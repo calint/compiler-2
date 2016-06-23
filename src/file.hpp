@@ -32,7 +32,7 @@ class file final:public statement{public:
 		for(size_t i=0;i<indent_level;i++)cout<<"  ";
 		os<<identifier->name()<<".len equ $-"<<identifier->name()<<endl;
 //		os<<"section .text\n";
-		tc.put_def(identifier->name());
+		tc.put_file(*this,identifier->name(),this);
 	}
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);

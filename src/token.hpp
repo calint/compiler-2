@@ -20,7 +20,7 @@ class token final{public:
 	inline size_t token_start_char()const{return token_start_char_;}
 	inline size_t token_end_char()const{return token_end_char_;}
 
-	inline ua_char copy_name()const{
+	inline ua_char name_copy()const{
 		const size_t ln=strlen(name_.get())+1;//? unsafe
 		char*str=new char[ln];
 		memcpy((void*)str,name_.get(),ln);

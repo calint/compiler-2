@@ -15,7 +15,7 @@
 class func final:public statement{public:
 	inline func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
-		if(!t.is_next_char_expression_open())throw compiler_error(*this,"expected '(' followed by function arguments",identifier->copy_name());
+		if(!t.is_next_char_expression_open())throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
 		while(!t.is_next_char_expression_close())params.push_back(t.next_token());
 		if(t.is_next_char(':')){// returns
 			ret=t.next_token();
