@@ -88,3 +88,12 @@ inline up_statement create_call(const char*funcname,statement*parent,unique_ptr<
 	if(!strcmp("and",funcname))return make_unique<call_asm_and>(parent,move(tk),t);
 	return make_unique<stmt_call>(parent,move(tk),t);
 }
+inline up_statement read_stmt(statement*parent,tokenizer&t){
+	up_token tkn=t.next_token();
+	if(!t.is_next_char_expression_open()){
+		return make_unique<statement>(parent,move(tkn));// ie  0x80
+	}
+	t.unread();
+	return create_call(tkn->name(),parent,move(tkn),t); // ie  f(...)
+}
+
