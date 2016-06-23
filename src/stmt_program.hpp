@@ -12,7 +12,7 @@ using namespace std;
 class stmt_program final:public statement{public:
 
 	inline stmt_program(tokenizer&t):statement{nullptr,make_unique<class token>()}{
-		vector<const char*>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if","cmove","cmovne","or"};
+		vector<const char*>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if","cmove","cmovne","or","and"};
 		for(auto s:assem)tc.add_func(*this,s,nullptr);
 		while(!t.is_eos()){
 			up_token tk=t.next_token();

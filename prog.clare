@@ -30,10 +30,14 @@ func eq(a b):bool{
 	cmovne(bool mem0)
 }
 
-
 func orl(a b):bool{
 	mov(bool a)
 	or(bool b)
+}
+
+func andl(a b):bool{
+	mov(bool a)
+	and(bool b)
 }
 
 func main(){
