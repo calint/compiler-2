@@ -12,13 +12,9 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 
-class stmt_break final:public statement{public:
+class stmt_break final:public stmt_call{public:
 
-	inline stmt_break(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
-		if(!t.is_next_char_expression_open())
-			throw compiler_error(*this,"break expects '(' followed by function arguments",token().name_copy());
-		while(!t.is_next_char_expression_close())params.push_back(t.next_token());
-	}
+	inline stmt_break(statement*parent,up_token tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		//? break(2)
@@ -26,15 +22,4 @@ class stmt_break final:public statement{public:
 		indent(os,indent_level,false);os<<"jmp _end"<<loop_name<<"\n";
 	}
 
-	inline void source_to(ostream&os)const override{
-		statement::source_to(os);
-		os<<"(";
-		for(auto&s:params)
-			s->source_to(os);
-		os<<")";
-	}
-
-
-private:
-	vup_tokens params;
 };

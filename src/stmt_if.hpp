@@ -24,6 +24,7 @@ class stmt_if final:public statement{public:
 			throw compiler_error(*this,"if expects ')' after the boolean expression",token().name_copy());
 
 		code=make_unique<stmt_block>(parent,t);
+
 		name="_if_"+to_string(token().token_start_char());
 	}
 

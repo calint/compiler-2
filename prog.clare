@@ -2,7 +2,7 @@ field prompt {enter_name_ }
 field   name {......................}
 field  hello {hello_ }
 
-func exit(){
+func exit{
 	mov(eax,1)
 	int(0x80)
 }
@@ -20,7 +20,7 @@ func read(len,ptr):int{
 	mov(edx,len)
 	xor(eax)
 	xor(edi)
-	syscall()
+	syscall
 	mov(int,eax)
 }
 
@@ -51,18 +51,19 @@ func plus(a,b):int{
 	add(int,b)
 }
 
-func main(){
-	loop(){
+func main{
+	loop{
 		print(prompt.len,prompt)
 		var ln=read(name.len,name)
-		if(orl(eq(ln,1),eq(ln,2))){
-			continue()
-		}
+		if(orl(eq(ln,1),eq(ln,2)))
+			continue
+		
 		if(eq(ln,3)){
-			break()
+			break
 		}
+		
 		print(hello.len,hello)
 		print(ln,name)
 	}
-	exit()
+	exit
 }

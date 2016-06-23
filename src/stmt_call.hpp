@@ -29,7 +29,10 @@ class stmt_call:public expression{public:
 
 
 	inline stmt_call(statement*parent,up_token tkn,tokenizer&t):expression{parent,move(tkn)}{
-		if(!t.is_next_char_args_open())throw compiler_error(*this,"expected ( and arguments",token().name_copy());//? object invalid
+		if(!t.is_next_char('(')){
+			no_args=true;
+			return;
+		}
 		while(!t.is_next_char_args_close()){
 			if(t.is_next_char(')'))break;
 			args.push_back(stmt_call::read_statement(this,t));
@@ -40,6 +43,8 @@ class stmt_call:public expression{public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
+		if(no_args)
+			return;
 		os<<"(";
 		size_t i=args.size()-1;
 		for(auto&e:args){
@@ -128,6 +133,7 @@ class stmt_call:public expression{public:
 
 private:
 	vup_statement args;
+	bool no_args{false};
 };
 using up_call=unique_ptr<stmt_call>;
 using allocs=vector<const char*>;

@@ -12,12 +12,9 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 
-class stmt_loop final:public statement{public:
+class stmt_loop final:public stmt_call{public:
 
-	inline stmt_loop(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
-		if(!t.is_next_char_expression_open())
-			throw compiler_error(*this,"loop expects '(' followed by function arguments",token().name_copy());
-		while(!t.is_next_char_expression_close())params.push_back(t.next_token());
+	inline stmt_loop(statement*parent,up_token tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{
 		code=make_unique<stmt_block>(parent,t);
 		name="_loop_"+to_string(token().token_start_char());
 	}
@@ -38,17 +35,12 @@ class stmt_loop final:public statement{public:
 	inline void link(toc&tc,ostream&os)const override final{code->link(tc,os);}
 
 	inline void source_to(ostream&os)const override{
-		statement::source_to(os);
-		os<<"(";
-		for(auto&s:params)
-			s->source_to(os);
-		os<<")";
+		stmt_call::source_to(os);
 		code->source_to(os);
 	}
 
 
 private:
-	vup_tokens params;
-	up_block code;
 	string name;
+	up_block code;
 };
