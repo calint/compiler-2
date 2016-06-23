@@ -13,6 +13,7 @@
 #include "stmt_def_var.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
+#include"stmt_assign_var.hpp"
 
 using vup_statement=vector<up_statement>;
 class stmt_block final:public statement{public:
@@ -29,6 +30,10 @@ class stmt_block final:public statement{public:
 			}
 			if(tkn->is_name("var")){
 				statements.push_back(make_unique<stmt_def_var>(parent,move(tkn),t));
+				continue;
+			}
+			if(t.is_next_char('=')){// assign  ie   a=0x80
+				statements.push_back(make_unique<stmt_assign_var>(parent,move(tkn),t));
 				continue;
 			}
 			statements.push_back(create_call(tkn->name(),parent,move(tkn),t));

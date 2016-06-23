@@ -15,19 +15,25 @@ func print(nchars ptr){
 	int(0x80)
 }
 
-func read(len ptr):nchars{
+func read(len ptr):int{
 	mov(esi ptr)
 	mov(edx len)
 	xor(eax)
 	xor(edi)
 	syscall()
-	mov(nchars eax)
+	mov(int eax)
 }
 
 func eq(a b):bool{
 	cmp(a b)
 	cmove(bool mem1)
 	cmovne(bool mem0)
+}
+
+func neq(a b):bool{
+	cmp(a b)
+	cmove(bool mem0)
+	cmovne(bool mem1)
 }
 
 func orl(a b):bool{
@@ -40,11 +46,21 @@ func andl(a b):bool{
 	and(bool b)
 }
 
+func plus(a b):int{
+	mov(int a)
+	add(int b)
+}
+
+func set(a b){
+	mov(a b)
+}
+
 func main(){
 	loop(){
 		loop(){
 			print(prompt.len prompt)
 			var ln=read(name.len name)
+			ln=plus(ln 1)
 			if(orl(eq(ln 1) eq(ln 2))){
 				continue()
 			}
