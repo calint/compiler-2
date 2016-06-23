@@ -57,8 +57,7 @@ class call:public expression{public:
 		const char*nm=token().name();
 		framestack&fs=tc.framestk();
 		fs.push_func(nm);
-		const func*f=tc.get_func(nm);
-		if(!f)throw compiler_error(*this,"function not found",token().name_copy());
+		const func*f=tc.get_func_or_break(*this,nm);
 		size_t i=0;
 		if(dest){
 			const class token*ret=f->getret();

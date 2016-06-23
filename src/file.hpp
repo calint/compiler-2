@@ -11,7 +11,7 @@
 class file final:public statement{public:
 	inline file(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
-		if(!t.is_next_char_data_open())throw compiler_error(*this,"expected { to open file");
+		if(!t.is_next_char_data_open())throw compiler_error(*this,"expected { to open file",identifier->name_copy());
 		while(true){
 			if(t.is_next_char_data_close())break;
 			tokens.push_back(t.next_token());

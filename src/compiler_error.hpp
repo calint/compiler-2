@@ -14,7 +14,7 @@ class compiler_error final{public:
 	size_t start_char{0};
 	size_t end_char{0};
 
-	inline compiler_error(const statement&s,const char*str,unique_ptr<const char[]>token_name=unique_ptr<const char[]>(new char[1]{0}))
-		:stmt{s},msg{str},ident{move(token_name)},
+	inline compiler_error(const statement&s,const char*message,unique_ptr<const char[]>identifier)
+		:stmt{s},msg{message},ident{move(identifier)},
 		 start_char{s.token().token_start_char()},end_char{s.token().token_end_char()}{}
 };

@@ -11,10 +11,10 @@ using namespace std;
 #include"file.hpp"
 class program final:public statement{public:
 	inline program(tokenizer&t):statement{nullptr,make_unique<class token>()}{
-		tc.put_func("mov",nullptr);
-		tc.put_func("int",nullptr);
-		tc.put_func("xor",nullptr);
-		tc.put_func("syscall",nullptr);
+		tc.put_func(*this,"mov",nullptr);
+		tc.put_func(*this,"int",nullptr);
+		tc.put_func(*this,"xor",nullptr);
+		tc.put_func(*this,"syscall",nullptr);
 		while(!t.is_eos()){
 			up_token tk=t.next_token();
 			up_statement stmt;
@@ -35,9 +35,7 @@ class program final:public statement{public:
 		os<<"section .text\nglobal _start\n_start:\n  mov ebp,stk\n";
 		for(auto&s:statements)
 			if(!s->is_in_data_section())s->compile(tc,os,indent_level);
-		func*main=tc.get_func("main");
-		if(!main)throw"function 'main' not found";
-
+		func*main=tc.get_func_or_break(*this,"main");
 		tc.framestk().push_func("main");
 		indent(os,indent_level,true);os<<"main(){  ["<<token().token_start_char()<<"]"<<endl;
 		main->code->compile(tc,os,indent_level);

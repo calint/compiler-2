@@ -14,7 +14,8 @@
 
 class call_asm_loop final:public statement{public:
 	inline call_asm_loop(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
-		if(!t.is_next_char_expression_open())throw compiler_error(*this,"loop expects '(' followed by function arguments");
+		if(!t.is_next_char_expression_open())
+			throw compiler_error(*this,"loop expects '(' followed by function arguments",token().name_copy());
 		while(!t.is_next_char_expression_close())params.push_back(t.next_token());
 		code=make_unique<block>(parent,t);
 	}

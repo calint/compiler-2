@@ -9,6 +9,19 @@ template<class T>class lut{public:
 				return e.data;
 		throw "element not found";
 	}
+	inline T get_valid(const char*key,bool&is_valid)const{
+//		if(last_has_found)
+//			if(last_has_found->is_key(key))
+//				return last_has_found->data;
+		for(auto e:elems){
+			if(e.is_key(key)){
+				is_valid=true;
+				return e.data;
+			}
+		}
+		is_valid=false;
+		return T();
+	}
 	inline bool has(const char*key)const{
 		for(auto e:elems)
 			if(e.is_key(key)){//? check this e first at next get

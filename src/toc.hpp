@@ -21,6 +21,7 @@ class allocated_var{public:
 	inline bool is_const()const{return bits_&1;}
 //	inline const char*asm_op_param()const{return asm_op_param_.get();}
 	inline const char*asm_op_param()const{return asm_op_param_;}
+	inline bool is_name(const char*name)const{return!strcmp(name_,name);}
 private:
 	const char*name_{""};
 	size_t stkix_{0};
@@ -37,11 +38,10 @@ class frame final{public:
 		const int n=snprintf(buf,sizeof buf,"dword[ebp+%zu]",stkix<<2);
 		if(n<0||n==sizeof buf)throw"??";
 		const size_t len=size_t(n)+1;
-
 		char*str=new char[len];
-		to_be_deleted.push_back(unique_ptr<const char>(str));
-
+//		char*str=(char*)malloc(len);
 		memcpy(str,buf,len);
+		to_be_deleted.push_back(unique_ptr<const char[]>(str));
 		vars_.put(nm, allocated_var{nm,stkix,nullptr,str,0});
 		stkix_++;
 	}
@@ -58,12 +58,12 @@ class frame final{public:
 	inline bool aliases_has(const char*name)const{return aliases_.has(name);}
 	inline const char*aliases_get(const char*name)const{return aliases_.get(name);}
 private:
-	vector<unique_ptr<const char>>to_be_deleted;
 	const char*name_{""};
 	size_t stkix_{0};
+	char bits_{0}; // 1 is func
 	lut<allocated_var>vars_;
 	lut<const char*>aliases_;
-	char bits_{0}; // 1 is func
+	vector<unique_ptr<const char[]>>to_be_deleted;
 };
 
 class framestack final{public:
@@ -118,9 +118,9 @@ class framestack final{public:
 	inline void free_scratch_reg(const char*reg){free_registers.push_back(reg);}
 
 private:
-	vector<const char*>free_registers;
-	vector<frame>frames;
 	size_t stkix{0};
+	vector<frame>frames;
+	vector<const char*>free_registers;
 };
 
 class toc final{public:
@@ -129,22 +129,36 @@ class toc final{public:
 	inline bool has_file(const char*identifier)const{return files_.has(identifier);}
 	inline void put_file(const statement&s,const char*identifier,file*f){
 		if(has_file(identifier)){
-			throw compiler_error(s,"file already defined at ...",s.token().name_copy());
+			throw compiler_error(s,"file already defined at ...",copy_string_to_unique_pointer(identifier));
 		}
 		files_.put(identifier,f);
 	}
 	inline bool has_func(const char*identifier)const{return funcs_.has(identifier);}
-	inline void put_func(const char*identifier,func*ref){
-		if(has_func(identifier))throw"function already defined";
+	inline void put_func(statement&s,const char*identifier,func*ref){
+		if(has_func(identifier)){
+			throw compiler_error(s,"function already defined at ...",copy_string_to_unique_pointer(identifier));
+		}
 		funcs_.put(identifier,ref);
 	}
 //	inline void print_to(ostream&os){for(auto&e:files)os<<e;}
-	inline func*get_func(const char*name)const{
-		if(!funcs_.has(name))
-			return nullptr;
-		return funcs_.get(name);
+	inline func*get_func_or_break(statement&stmt,const char*name)const{
+		bool valid;
+		func*f=funcs_.get_valid(name,valid);
+		if(!valid){
+			throw compiler_error(stmt,"function not found",copy_string_to_unique_pointer(name));
+		}
+		return f;
 	}
 	inline framestack&framestk(){return framestk_;}
+
+
+
+	inline static unique_ptr<const char[]>copy_string_to_unique_pointer(const char*str){
+		const size_t len=strlen(str)+1;//? unsafe
+		char*cpy=new char[len];
+		memcpy(cpy,str,len);
+		return unique_ptr<const char[]>(cpy);
+	}
 private:
 	lut<file*>files_;
 	lut<func*>funcs_;

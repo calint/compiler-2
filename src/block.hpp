@@ -19,7 +19,7 @@ class block final:public statement{public:
 	inline block(statement*parent,tokenizer&t):statement{parent,t.next_token()}{
 		assert(t.is_next_char_block_open());
 		while(true){
-			if(t.is_eos())throw compiler_error(*this,"unexpected end of string");
+			if(t.is_eos())throw compiler_error(*this,"unexpected end of string",parent->token().name_copy());
 			if(t.is_next_char_block_close())break;
 			up_token tkn=t.next_token();
 			if(tkn->is_name("")){
