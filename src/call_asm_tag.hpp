@@ -14,7 +14,6 @@ class call_asm_tag final:public stmt_call{public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level);
-		framestack&fs=tc.framestk();
 		os<<argument(0).token().name()<<":"<<endl;
 	}
 

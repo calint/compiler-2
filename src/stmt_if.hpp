@@ -29,6 +29,9 @@ class stmt_if final:public statement{public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level,true);os<<"if ["<<token().token_start_char()<<"]\n";
+
+		tc.framestk().push_if(name.data());
+
 		const char*reg=tc.framestk().alloc_scratch_register();
 		bool_expr->set_expression_dest_nasm_identifier(reg);
 		bool_expr->compile(tc,os,indent_level);
@@ -36,7 +39,6 @@ class stmt_if final:public statement{public:
 		indent(os,indent_level,false);os<<"cmp "<<reg<<",1\n";
 		indent(os,indent_level,false);os<<"jne _end_"<<name<<"\n";
 
-		tc.framestk().push_if(name.data());
 
 		code->compile(tc,os,indent_level+1);
 

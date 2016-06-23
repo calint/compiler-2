@@ -15,7 +15,7 @@ class call_asm_or final:public stmt_call{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level);
 		framestack&fs=tc.framestk();
-		os<<"xor "<<fs.resolve_func_arg(argument(0).token().name())<<",";
+		os<<"or "<<fs.resolve_func_arg(argument(0).token().name())<<",";
 		os<<fs.resolve_func_arg(argument(1).token().name());
 		os<<endl;
 	}

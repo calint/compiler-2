@@ -101,9 +101,11 @@ class framestack final{public:
 
 	inline void push_loop(const char*name){frames.push_back(frame{name,4});}
 
-	inline void push_if(const char*name){frames.push_back(frame{name,8});}
 
-	inline void add_alias(const char*ident,const char*parent_frame_ident){frames.back().add_alias(ident,parent_frame_ident);}
+	inline void add_alias(const char*ident,const char*parent_frame_ident){
+//		cerr<<"   ++++++++++   "<<ident<<" -> "<<parent_frame_ident<<endl;
+		frames.back().add_alias(ident,parent_frame_ident);
+	}
 
 	inline void pop_func(const char*name){
 		frame&f=frames.back();
@@ -123,13 +125,18 @@ class framestack final{public:
 		frames.pop_back();
 	}
 
+	size_t if_frame_ix{0};
+	inline void push_if(const char*name){
+		if_frame_ix=frames.size()-1;
+		frames.push_back(frame{name,8});
+	}
+
 	inline void pop_if(const char*name){
 		frame&f=frames.back();
-		if(f.is_if())
-			if(!f.is_name(name))
-				throw __LINE__;
+		if(not f.is_if() or not f.is_name(name))throw __LINE__;
 		stkix-=frames.back().allocated_stack_size();
 		frames.pop_back();
+		if_frame_ix=0;
 	}
 
 	inline void add_var(const char*name,const char*flags){
@@ -145,11 +152,25 @@ class framestack final{public:
 			name=frames[i].get_alias(name);
 			i--;
 		}
+		if(frames[i].has_var(name)){// assume constant ie  0xb8000
+			return frames[i].get_var(name).asm_op_param();
+		}
+
+		if(!if_frame_ix)// assume constant ie  0xb8000
+			return name;
+
+		// try in if context, cannot be first frame
+		i=if_frame_ix;
+		while(true){
+			if(!frames[i].has_alias(name))
+				break;
+			name=frames[i].get_alias(name);
+			i--;
+		}
 		if(!frames[i].has_var(name)){// assume constant ie  0xb8000
 			return name;
 		}
-		const char*resolved=frames[i].get_var(name).asm_op_param();
-		return resolved;
+		return frames[i].get_var(name).asm_op_param();
 	}
 
 	inline const char*alloc_scratch_register(){
