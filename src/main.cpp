@@ -15,6 +15,9 @@ using namespace std;
 #include"call_asm_cmp.hpp"
 #include"call_asm_je.hpp"
 #include"call_asm_tag.hpp"
+#include"call_asm_jmp.hpp"
+#include"call_asm_jne.hpp"
+#include"stmt_if.hpp"
 static string file_read_to_string(const char *filename){
 	FILE*f=fopen(filename,"rb");
 	if(!f)throw "cannot open file";
@@ -63,5 +66,8 @@ inline up_statement create_call(const char*funcname,statement*parent,unique_ptr<
 	if(!strcmp("tag",funcname))return make_unique<call_asm_tag>(parent,move(tk),t);
 	if(!strcmp("cmp",funcname))return make_unique<call_asm_cmp>(parent,move(tk),t);
 	if(!strcmp("je",funcname))return make_unique<call_asm_je>(parent,move(tk),t);
+	if(!strcmp("jmp",funcname))return make_unique<call_asm_jmp>(parent,move(tk),t);
+	if(!strcmp("jne",funcname))return make_unique<call_asm_jne>(parent,move(tk),t);
+	if(!strcmp("if",funcname))return make_unique<stmt_if>(parent,move(tk),t);
 	return make_unique<stmt_call>(parent,move(tk),t);
 }

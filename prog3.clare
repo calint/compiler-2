@@ -42,9 +42,9 @@ func main(){
 			if(eq(ln 1)){
 				continue()
 			}
-			print(hello.len hello)
-			print(ln name)
 		}
+		print(hello.len hello)
+		print(ln name)
 	}
 	exit()
 }

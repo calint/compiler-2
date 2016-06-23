@@ -65,6 +65,8 @@ class frame final{public:
 
 	inline bool is_loop()const{return bits_&4;}
 
+	inline bool is_if()const{return bits_&8;}
+
 	inline bool is_name(const char*nm)const{return!strcmp(name_,nm);}
 
 	inline bool has_alias(const char*name)const{return aliases_.has(name);}
@@ -99,6 +101,8 @@ class framestack final{public:
 
 	inline void push_loop(const char*name){frames.push_back(frame{name,4});}
 
+	inline void push_if(const char*name){frames.push_back(frame{name,8});}
+
 	inline void add_alias(const char*ident,const char*parent_frame_ident){frames.back().add_alias(ident,parent_frame_ident);}
 
 	inline void pop_func(const char*name){
@@ -113,6 +117,15 @@ class framestack final{public:
 	inline void pop_loop(const char*name){
 		frame&f=frames.back();
 		if(f.is_loop())
+			if(!f.is_name(name))
+				throw __LINE__;
+		stkix-=frames.back().allocated_stack_size();
+		frames.pop_back();
+	}
+
+	inline void pop_if(const char*name){
+		frame&f=frames.back();
+		if(f.is_if())
 			if(!f.is_name(name))
 				throw __LINE__;
 		stkix-=frames.back().allocated_stack_size();
