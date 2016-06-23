@@ -1,6 +1,6 @@
-file prompt {enter_name_ }
-file   name {......................}
-file  hello {hello_ }
+field prompt {enter_name_ }
+field   name {......................}
+field  hello {hello_ }
 
 func exit(){
 	mov(eax 1)

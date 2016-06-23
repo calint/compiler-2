@@ -10,7 +10,7 @@
 
 class token;
 class stmt_def_func;
-class stmt_def_file;
+class stmt_def_field;
 
 
 using namespace std;
@@ -200,7 +200,7 @@ private:
 
 class toc final{public:
 
-	inline void add_file(const statement&s,const char*identifier,const stmt_def_file*f){
+	inline void add_file(const statement&s,const char*identifier,const stmt_def_field*f){
 		if(has_file(identifier)){
 			throw compiler_error(s,"file already defined at ...",copy_string_to_unique_pointer(identifier));
 		}
@@ -240,6 +240,6 @@ private:
 	inline bool has_file(const char*name)const{return files_.has(name);}
 
 	framestack framestk_;
-	lut<const stmt_def_file*>files_;
+	lut<const stmt_def_field*>files_;
 	lut<const stmt_def_func*>funcs_;
 };

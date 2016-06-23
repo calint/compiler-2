@@ -4,65 +4,65 @@ _start:
   mov ebp,stk
   mov esp,stkend
 ; main(){  [0]
-   _loop_645:
-     _loop_655:
-;      print(prompt.len prompt){  [666]
+   _loop_648:
+     _loop_658:
+;      print(prompt.len prompt){  [669]
          mov ecx,prompt
          mov edx,prompt.len
          mov ebx,1
          mov eax,4
          int 0x80
-       _end_print_666:
+       _end_print_669:
 ;      var ln=
-;       read(name.len name):ln{  [701]
+;       read(name.len name):ln{  [704]
           mov esi,name
           mov edx,name.len
           xor eax,eax
           xor edi,edi
           syscall
           mov dword[ebp+0],eax
-        _end_read_701:
-;      if [724]
-;      orl(eq eq):eax{  [727]
-;      eq(ln 1):ebx{  [731]
+        _end_read_704:
+;      if [727]
+;      orl(eq eq):eax{  [730]
+;      eq(ln 1):ebx{  [734]
          cmp dword[ebp+0],1
          cmove ebx,[mem1]
          cmovne ebx,[mem0]
-       _end_eq_731:
-;      eq(ln 2):ecx{  [740]
+       _end_eq_734:
+;      eq(ln 2):ecx{  [743]
          cmp dword[ebp+0],2
          cmove ecx,[mem1]
          cmovne ecx,[mem0]
-       _end_eq_740:
+       _end_eq_743:
          mov eax,ebx
          or eax,ecx
-       _end_orl_727:
+       _end_orl_730:
        cmp eax,1
-       jne _end__if_724
-         jmp _loop_655
-       _end__if_724:
-;      print(hello.len hello){  [775]
+       jne _end__if_727
+         jmp _loop_658
+       _end__if_727:
+;      print(hello.len hello){  [778]
          mov ecx,hello
          mov edx,hello.len
          mov ebx,1
          mov eax,4
          int 0x80
-       _end_print_775:
-;      print(ln name){  [801]
+       _end_print_778:
+;      print(ln name){  [804]
          mov ecx,name
          mov edx,dword[ebp+0]
          mov ebx,1
          mov eax,4
          int 0x80
-       _end_print_801:
-     jmp _loop_655
-     _end_loop_655:
-   jmp _loop_645
-   _end_loop_645:
-;  exit(){  [824]
+       _end_print_804:
+     jmp _loop_658
+     _end_loop_658:
+   jmp _loop_648
+   _end_loop_648:
+;  exit(){  [827]
      mov eax,1
      int 0x80
-   _end_exit_824:
+   _end_exit_827:
 ; }
 
 

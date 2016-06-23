@@ -8,9 +8,9 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 
-class stmt_def_file final:public statement{public:
+class stmt_def_field final:public statement{public:
 
-	inline stmt_def_file(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+	inline stmt_def_field(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
 		if(!t.is_next_char_data_open())throw compiler_error(*this,"expected { to open file",identifier->name_copy());
 		while(true){

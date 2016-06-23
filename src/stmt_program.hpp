@@ -8,7 +8,7 @@ using namespace std;
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include"stmt_def_func.hpp"
-#include"stmt_def_file.hpp"
+#include"stmt_def_field.hpp"
 class stmt_program final:public statement{public:
 
 	inline stmt_program(tokenizer&t):statement{nullptr,make_unique<class token>()}{
@@ -17,7 +17,7 @@ class stmt_program final:public statement{public:
 		while(!t.is_eos()){
 			up_token tk=t.next_token();
 			up_statement stmt;
-			if(tk->is_name("file")){stmt=make_unique<stmt_def_file>(this,move(tk),t);}
+			if(tk->is_name("field")){stmt=make_unique<stmt_def_field>(this,move(tk),t);}
 			else if(tk->is_name("func")){stmt=make_unique<stmt_def_func>(this,move(tk),t);}
 			else{
 				if(tk->is_name("")){
