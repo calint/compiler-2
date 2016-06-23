@@ -15,7 +15,7 @@
 class stmt_loop final:public stmt_call{public:
 
 	inline stmt_loop(statement*parent,up_token tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{
-		code=make_unique<stmt_block>(parent,t);
+		code=make_unique<stmt_block>(parent,unique_ptr<class token>(new class token),t);
 		name="_loop_"+to_string(token().token_start_char());
 	}
 

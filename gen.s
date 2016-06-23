@@ -2,7 +2,7 @@ section .text
 global _start
 _start:
   mov ebp,stk
-  mov esp,stkend
+  mov esp,stk.end
 ; main(){  [0]
    _loop_608:
 ;    print(prompt.len prompt){  [616]
@@ -13,7 +13,7 @@ _start:
        int 0x80
      _end_print_616:
 ;    var ln=
-;     read(name.len name):ln{  [650]
+;     read(name.len name):dword[ebp+0]{  [650]
         mov esi,name
         mov edx,name.len
         xor eax,eax
@@ -85,4 +85,4 @@ mem0 dd 0
 
 section .bss
 stk resd 256
-stkend:
+stk.end:

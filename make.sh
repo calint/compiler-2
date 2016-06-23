@@ -1,6 +1,6 @@
 #for o in s 0 1 2 3;do
-for o in 3;do
-#  echo " * optimiziation option: $o "
+for o in s;do
+  echo " * optimiziation option: $o "
   clang++ -std=c++14 -O$o -S src/main.cpp &&
   echo -n 'callqs: ' 
   cat main.s|grep callq|sort -u|wc|awk '{print $1}' &&

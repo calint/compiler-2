@@ -39,7 +39,7 @@ class stmt_def_func final:public statement{public:
 				break;
 			}
 		}
-		code=make_unique<stmt_block>(parent,t);
+		code=make_unique<stmt_block>(parent,unique_ptr<class token>(new class token()),t);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{

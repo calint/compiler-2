@@ -97,16 +97,6 @@ class framestack final{public:
 
 	inline void push_func(const char*name){frames.push_back(frame{name,1});}
 
-	inline void push_block(const char*name){frames.push_back(frame{name,2});}
-
-	inline void push_loop(const char*name){frames.push_back(frame{name,4});}
-
-
-	inline void add_alias(const char*ident,const char*parent_frame_ident){
-//		cerr<<"   ++++++++++   "<<ident<<" -> "<<parent_frame_ident<<endl;
-		frames.back().add_alias(ident,parent_frame_ident);
-	}
-
 	inline void pop_func(const char*name){
 		frame&f=frames.back();
 		if(f.is_func())
@@ -115,6 +105,21 @@ class framestack final{public:
 		stkix-=frames.back().allocated_stack_size();
 		frames.pop_back();
 	}
+
+	inline void push_block(const char*name){
+		frames.push_back(frame{name,2});
+	}
+
+	inline void pop_block(const char*name){
+		frame&f=frames.back();
+		if(f.is_block())
+			if(!f.is_name(name))
+				throw __LINE__;
+		stkix-=frames.back().allocated_stack_size();
+		frames.pop_back();
+	}
+
+	inline void push_loop(const char*name){frames.push_back(frame{name,4});}
 
 	inline void pop_loop(const char*name){
 		frame&f=frames.back();
@@ -125,20 +130,10 @@ class framestack final{public:
 		frames.pop_back();
 	}
 
-	size_t exported_frame_ix{0};
 	inline void push_if(const char*name){
 		exported_frame_ix=frames.size()-1;
-//		export_varspace_at_current_frame_in_subcalls(true);
 		frames.push_back(frame{name,8});
 	}
-
-//	inline void export_varspace_at_current_frame_in_subcalls(bool b){
-//		if(b){
-//			exported_frame_ix=frames.size()-1;
-//			return;
-//		}
-//		exported_frame_ix=0;
-//	}
 
 	inline void pop_if(const char*name){
 		frame&f=frames.back();
@@ -146,7 +141,10 @@ class framestack final{public:
 		stkix-=frames.back().allocated_stack_size();
 		frames.pop_back();
 		exported_frame_ix=0;
-//		export_varspace_at_current_frame_in_subcalls(false);
+	}
+
+	inline void add_alias(const char*ident,const char*parent_frame_ident){
+		frames.back().add_alias(ident,parent_frame_ident);
 	}
 
 	inline void add_var(const char*name,const char*flags){
@@ -157,13 +155,21 @@ class framestack final{public:
 		size_t i=frames.size()-1;// recurse until aliased var found
 		const char*name=ident;
 		while(true){
-			if(!frames[i].has_alias(name))
-				break;
-			name=frames[i].get_alias(name);
-			i--;
-		}
-		if(frames[i].has_var(name)){// assume constant ie  0xb8000
-			return frames[i].get_var(name).asm_op_param();
+			if(frames[i].has_var(name))
+				return frames[i].get_var(name).asm_op_param();
+
+			if(frames[i].has_alias(name)){
+				name=frames[i].get_alias(name);
+				i--;
+				continue;
+			}
+
+			if(!frames[i].is_func()){
+				i--;
+				continue;
+			}
+
+			break;
 		}
 
 		if(!exported_frame_ix)// assume constant ie  0xb8000
@@ -204,6 +210,7 @@ class framestack final{public:
 
 private:
 	size_t stkix{0};
+	size_t exported_frame_ix{0};
 	vector<frame>frames;
 	vector<const char*>free_registers;
 };

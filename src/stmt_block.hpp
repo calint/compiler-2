@@ -18,7 +18,7 @@
 using vup_statement=vector<up_statement>;
 class stmt_block final:public statement{public:
 
-	inline stmt_block(statement*parent,tokenizer&t):statement{parent,unique_ptr<class token>(new class token())}{
+	inline stmt_block(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		if(!t.is_next_char('{'))
 			is_one_statement=true;
 
@@ -45,8 +45,10 @@ class stmt_block final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
+		tc.framestk().push_block("");
 		for(auto&s:statements)
 			s->compile(tc,os,indent_level+1);
+		tc.framestk().pop_block("");
 	}
 
 	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements)s->link(tc,os);}

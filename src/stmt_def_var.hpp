@@ -27,7 +27,8 @@ class stmt_def_var final:public statement{public:
 
 		if(initial_value){
 			if(initial_value->is_expression()){
-				initial_value->set_expression_dest_nasm_identifier(identifier->name());
+				const char*resolv=tc.framestk().resolve_func_arg(identifier->name());
+				initial_value->set_expression_dest_nasm_identifier(resolv);
 				initial_value->compile(tc,os,indent_level+1);
 			}else{
 				indent(os,indent_level,false);
