@@ -199,10 +199,9 @@ class framestack final{public:
 //			name=frames[i].get_alias(name);
 //			i--;
 		}
-		if(!frames[i].has_var(name)){// assume constant ie  0xb8000
-			return name;
-		}
-		return frames[i].get_var(name).asm_op_param();
+
+		// assume constant ie  0xb8000
+		return name;
 	}
 
 	inline const char*alloc_scratch_register(){
