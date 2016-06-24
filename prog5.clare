@@ -53,7 +53,15 @@ func plus(a,b):int{
 
 func main{
 	loop{
-		print(read(name.len,name),name)
+		print(prompt.len,prompt)
+		var ln=read(name.len,name)
+		if(orl(eq(ln,1),eq(ln,2)))
+			continue
+		
+		if(eq(ln,3))break
+		
+		print(hello.len,hello)
+		print(ln,name)
 	}
 	exit
 }

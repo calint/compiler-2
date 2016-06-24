@@ -61,7 +61,7 @@ class frame final{public:
 
 	inline bool is_func()const{return bits_&1;}
 
-	inline bool is_block()const{return bits_&2;}
+//	inline bool is_block()const{return bits_&2;}
 
 	inline bool is_loop()const{return bits_&4;}
 
