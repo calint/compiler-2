@@ -1,51 +1,71 @@
-baz{
-	func exit(){
-		mov(eax,1)
-		int(0x80)
-	}
-	func read(ptr,len,fd=0):nchars{  // system code validated
-		mov(esi,ptr)
-		mov(edx,len)
-		mov(eax,fd)
-		xor(edi,edi)
-		syscall()
-		mov(nchars eax)
-	}
-	func print(ptr,len,fd=1){
-		mov(ecx,ptr)
-		mov(edx,len)
-		mov(ebx,fd)
+class field{
+	func print(ident){
+		mov(ecx,ident)
+		mov(edx,ident.len)
+		mov(ebx,1)
 		mov(eax,4)
 		int(0x80)
 	}
+	
+	func input(ident):int{
+		mov(esi,ident)
+		mov(edx,ident.len)
+		xor(eax)
+		xor(edi)
+		syscall
+		mov(int,eax)
+	}
 }
+class baz{
 
+	field name{__________}
+	field email{__________}
 
-// user code, no asm
+	func exit{
+		mov(eax,1)
+		int(0x80)
+	}
 
+	func print(len,ptr){
+		mov(ecx,ptr)
+		mov(edx,len)
+		mov(ebx,1)
+		mov(eax,4)
+		int(0x80)
+	}
+	
+	func read(len,ptr):int{
+		field last_read{____}
+		mov(esi,ptr)
+		mov(edx,len)
+		xor(eax)
+		xor(edi)
+		syscall
+		mov(int,eax)
+	}
+	
 
-field:baz{
-	field f{.................................}
-	func p(len,fd=1){print(f,f:len,fd)}
-	func p(fd=1){p(f:len,fd)}
-	func r(fd=0):nchars{nchars=read(f,f:len,fd)}
-//	func r(fd=0):nchars=read(f,f:len,fd)
-}
+	func main{
+		field.print(ln,name)
+		exit
+	}
 
-
-main:baz{
-	field prompt{enter_name_ }
-	field   name  // default value
-	field  hello{hello_ }
-
-	func main(){
-		info.print()
-		loop(){
-			prompt.p()
-			var ln=name.r() // validates ln
-		//	valid(add(ln,-1),name)
-			hello.p()
-			name.p(ln) // error if 'ln' is not validated within 'name'
+	class bar:baz{
+		field fld1{____}
+		func f1(b):c{
+			field fld2{_______}
+			func f2(b):c{
+				field fld3{_______}
+				
+			}
 		}
 	}
 }
+
+
+class foo:baz{
+	func main{
+	}
+}
+
+

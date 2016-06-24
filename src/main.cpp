@@ -58,17 +58,17 @@ static size_t line_number_for_char_index(size_t ix,const char*str){
 	return lineno;
 }
 int main(int argc,char**args){
-	string s=file_read_to_string("prog.clare");
+	string s=file_read_to_string("prog.baz");
 	tokenizer t{s.data()};
 	unique_ptr<def_program>p;// to keep valid in case of exception
 	try{
 		p=make_unique<def_program>(t);
 //		p->source_to(cout);
 
-		ofstream fo("diff.clare");
+		ofstream fo("diff.baz");
 		p->source_to(fo);
 		fo.close();
-		if(file_read_to_string("prog.clare")!=file_read_to_string("diff.clare"))
+		if(file_read_to_string("prog.baz")!=file_read_to_string("diff.baz"))
 			throw "generated source differs";
 
 		p->build(cout);
