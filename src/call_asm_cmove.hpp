@@ -23,11 +23,11 @@ class call_asm_cmove final:public stmt_call{public:
 			reg=tc.framestk().alloc_scratch_register();
 			argument(1).set_expression_dest_nasm_identifier(reg);
 			argument(1).compile(tc,os,indent_level);
-			os<<"cmove "<<fs.resolve_func_arg(argument(0).token().name())<<","<<reg<<endl;
+			os<<"cmove "<<fs.resolve_func_arg(argument(0).tok().name())<<","<<reg<<endl;
 			tc.framestk().free_scratch_reg(reg);
 			return;
 		}
-		os<<"cmove "<<fs.resolve_func_arg(argument(0).token().name())<<",["<<fs.resolve_func_arg(argument(1).token().name())<<"]"<<endl;
+		os<<"cmove "<<fs.resolve_func_arg(argument(0).tok().name())<<",["<<fs.resolve_func_arg(argument(1).tok().name())<<"]"<<endl;
 	}
 
 };

@@ -17,7 +17,7 @@ class call_asm_jne final:public stmt_call{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level);
 		framestack&fs=tc.framestk();
-		os<<"jne "<<fs.resolve_func_arg(argument(0).token().name())<<endl;
+		os<<"jne "<<fs.resolve_func_arg(argument(0).tok().name())<<endl;
 	}
 
 };

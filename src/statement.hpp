@@ -23,7 +23,7 @@ class statement{public:
 
 	inline virtual void source_to(ostream&os)const{tk->source_to(os);}
 
-	inline const token&token()const{return*tk;}
+	inline const token&tok()const{return*tk;}
 
 	inline const statement*parent()const{return pt;}
 
@@ -31,11 +31,20 @@ class statement{public:
 
 	inline virtual bool is_expression()const{return false;}
 
+
+	inline virtual bool is_func()const{return false;}
+	inline virtual bool is_class()const{return false;}
+	inline virtual bool is_block()const{return false;}
+
+	inline virtual const char*identifier()const{return"";}
+
+
+
 	inline void set_expression_dest_nasm_identifier(const char*destination){dest=destination;}
 
 	inline const char*expression_dest_nasm_identifier()const{return dest;}
 
-	inline virtual void ev(int type,statement*s){if(pt)pt->ev(type,s);}
+	inline virtual void ev(int type,const statement*s){if(pt)pt->ev(type,s);}
 
 
 	inline static void indent(ostream&os,size_t level,bool comment=false){os<<(comment?"; ":"  ");for(size_t i=0;i<level;i++)os<<" ";}
@@ -46,10 +55,13 @@ class statement{public:
 		memcpy(ca,str,len);
 		return unique_ptr<const char[]>(ca);
 	}
+
+protected:
+	statement*pt;
+
 private:
 	const char*dest{nullptr};
 	unique_ptr<class token>tk;
-	statement*pt;
 
 	/// for debugger
 	const char*token_str;

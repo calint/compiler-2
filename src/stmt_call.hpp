@@ -20,24 +20,24 @@ class stmt_call:public expression{public:
 
 	inline stmt_call(toc&tc,statement*parent,unique_ptr<class token>tkn,tokenizer&t):expression{tc,parent,move(tkn)}{
 		if(!t.is_next_char('(')){
-			no_args=true;
+			no_args_=true;
 			return;
 		}
 		while(!t.is_next_char_args_close()){
 			if(t.is_next_char(')'))break;
-			args.push_back(read_next_statement(tc,this,t));
+			args_.push_back(read_next_statement(tc,this,t));
 			if(t.is_next_char(')'))break;
-			if(!t.is_next_char(','))throw compiler_error(*this,"expected ',' after argument at ",token().name_copy());
+			if(!t.is_next_char(','))throw compiler_error(*this,"expected ',' after argument at ",tok().name_copy());
 		}
 	}
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		if(no_args)
+		if(no_args_)
 			return;
 		os<<"(";
-		size_t i=args.size()-1;
-		for(auto&e:args){
+		size_t i=args_.size()-1;
+		for(auto&e:args_){
 			e->source_to(os);
 			if(i--)os<<",";
 		}
@@ -45,28 +45,28 @@ class stmt_call:public expression{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		const char*nm=token().name();
+		const char*nm=tok().name();
 
 
 		//-- comment
 		indent(os,indent_level,true);
 		os<<nm<<"(";
-		const size_t n=args.size();
+		const size_t n=args_.size();
 		const size_t nn=n-1;
 		for(size_t i=0;i<n;i++){
-			const char*s=args[i].get()->token().name();
+			const char*s=args_[i].get()->tok().name();
 			os<<s;
 			if(i<nn)os<<" ";
 		}
 		os<<")";
 		const char*expr_dest=expression_dest_nasm_identifier();
 		if(expr_dest)os<<":"<<expr_dest;
-		os<<"{  ["<<token().token_start_char()<<"]"<<endl;
+		os<<"{  ["<<tok().token_start_char()<<"]"<<endl;
 		//--- - - - -- - - - -
 
 		if(!is_inline()){
-			for(auto&a:args)os<<"  push "<<a.get()->token().name()<<endl;
-			os<<"  call "<<token().name()<<endl;
+			for(auto&a:args_)os<<"  push "<<a.get()->tok().name()<<endl;
+			os<<"  call "<<tok().name()<<endl;
 			return;
 		}
 
@@ -77,16 +77,16 @@ class stmt_call:public expression{public:
 //		}
 		fs.push_func(nm);
 		if(expr_dest){
-			if(f->returns.empty())throw compiler_error(*this,"cannot assign from call without return",token().name_copy());
+			if(f->returns_.empty())throw compiler_error(*this,"cannot assign from call without return",tok().name_copy());
 //			for(auto&e:f->getreturns()){
 //				fs.add_alias(e->name(),expr_dest);
 //			}
-			fs.add_alias(f->returns[0]->name(),expr_dest);
+			fs.add_alias(f->returns_[0]->name(),expr_dest);
 		}
 		vector<const char*>allocated_registers;
 		size_t i=0;
-		for(auto&a:args){
-			const char*param=f->params[i]->name();
+		for(auto&a:args_){
+			const char*param=f->params_[i]->name();
 			i++;
 			const char*reg{nullptr};
 			if(a->is_expression()){
@@ -97,13 +97,13 @@ class stmt_call:public expression{public:
 				a->compile(tc,os,indent_level);
 				continue;
 			}
-			const char*tkn=a->token().name();
+			const char*tkn=a->tok().name();
 			fs.add_alias(param,tkn);
 		}
 
-		f->code->compile(tc,os,indent_level+1);
+		f->code_->compile(tc,os,indent_level+1);
 
-		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<token().token_start_char()<<":\n";
+		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<tok().token_start_char()<<":\n";
 
 		for(auto r:allocated_registers)
 			fs.free_scratch_reg(r);
@@ -114,15 +114,16 @@ class stmt_call:public expression{public:
 //		indent(os,indent_level,true);os<<"}\n";
 	}
 
-	inline statement&argument(size_t ix)const{return*(args[ix].get());}
+	inline statement&argument(size_t ix)const{return*(args_[ix].get());}
 
-	inline size_t argument_count()const{return args.size();}
+	inline size_t argument_count()const{return args_.size();}
 
 	inline bool is_inline()const{return true;}
 
 
 private:
-	vector<unique_ptr<statement>>args;
-	bool no_args{false};
+	bool no_args_{false};
+	vector<unique_ptr<statement>>args_;
+	unique_ptr<token>ident_;
 };
 

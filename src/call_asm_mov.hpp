@@ -21,7 +21,7 @@ class call_asm_mov final:public stmt_call{public:
 			reg=tc.framestk().alloc_scratch_register();
 			argument(1).set_expression_dest_nasm_identifier(reg);
 			argument(1).compile(tc,os,indent_level);
-			const char*ra=fs.resolve_func_arg(argument(0).token().name());
+			const char*ra=fs.resolve_func_arg(argument(0).tok().name());
 			if(!strcmp(ra,reg)){// ie  mov eax,eax
 				return;
 			}
@@ -30,8 +30,8 @@ class call_asm_mov final:public stmt_call{public:
 			tc.framestk().free_scratch_reg(reg);
 			return;
 		}
-		const char*ra=fs.resolve_func_arg(argument(0).token().name());
-		const char*rb=fs.resolve_func_arg(argument(1).token().name());
+		const char*ra=fs.resolve_func_arg(argument(0).tok().name());
+		const char*rb=fs.resolve_func_arg(argument(1).tok().name());
 		if(!strcmp(ra,rb)){// ie  mov eax,eax
 			return;
 		}

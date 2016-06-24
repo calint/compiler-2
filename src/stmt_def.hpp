@@ -77,7 +77,7 @@ class stmt_def:public statement{public:
 	}
 
 
-	inline void ev(int type,statement*s)override{
+	inline void ev(int type,const statement*s)override{
 		if(type==1){
 			fields_.push_back((def_field*)s);
 			return;

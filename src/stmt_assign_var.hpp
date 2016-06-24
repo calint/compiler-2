@@ -19,15 +19,15 @@ class stmt_assign_var final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		indent(os,indent_level,true);os<<token().name()<<"="<<endl;
+		indent(os,indent_level,true);os<<tok().name()<<"="<<endl;
 		if(expr->is_expression()){
-			expr->set_expression_dest_nasm_identifier(token().name());
+			expr->set_expression_dest_nasm_identifier(tok().name());
 			expr->compile(tc,os,indent_level+1);
 			return;
 		}
 		indent(os,indent_level,false);
-		const char*ra=tc.framestk().resolve_func_arg(token().name());
-		const char*rb=tc.framestk().resolve_func_arg(expr->token().name());
+		const char*ra=tc.framestk().resolve_func_arg(tok().name());
+		const char*rb=tc.framestk().resolve_func_arg(expr->tok().name());
 		os<<"mov "<<ra<<","<<rb<<endl;
 	}
 

@@ -18,20 +18,20 @@ class stmt_if final:public statement{public:
 		:statement{tc,parent,move(tkn)}
 	{
 		if(!t.is_next_char_expression_open())
-			throw compiler_error(*this,"if expects '(' followed by boolean expression",token().name_copy());
+			throw compiler_error(*this,"if expects '(' followed by boolean expression",tok().name_copy());
 
 		bool_expr=read_next_statement(tc,this,t);
 
 		if(!t.is_next_char_expression_close())
-			throw compiler_error(*this,"if expects ')' after the boolean expression",token().name_copy());
+			throw compiler_error(*this,"if expects ')' after the boolean expression",tok().name_copy());
 
 		code=read_next_statement(tc,parent,t);
 
-		name="_if_"+to_string(token().token_start_char());
+		name="_if_"+to_string(tok().token_start_char());
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		indent(os,indent_level,true);os<<"if ["<<token().token_start_char()<<"]\n";
+		indent(os,indent_level,true);os<<"if ["<<tok().token_start_char()<<"]\n";
 
 		tc.framestk().push_if(name.data());
 

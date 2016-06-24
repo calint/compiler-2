@@ -17,7 +17,7 @@ class stmt_loop final:public stmt_call{public:
 	inline stmt_loop(toc&tc,statement*parent,unique_ptr<class token>tkn,tokenizer&t)
 		:stmt_call{tc,parent,move(tkn),t}
 	{
-		name="_loop_"+to_string(token().token_start_char());
+		name="_loop_"+to_string(tok().token_start_char());
 		code=read_next_statement(tc,parent,t);
 	}
 
@@ -28,8 +28,8 @@ class stmt_loop final:public stmt_call{public:
 		tc.framestk().push_loop(name.data());
 
 		code->compile(tc,os,indent_level+1);
-		indent(os,indent_level,false);os<<"jmp _loop_"<<token().token_start_char()<<endl;
-		indent(os,indent_level,false);os<<"_end_loop_"<<token().token_start_char()<<":\n";
+		indent(os,indent_level,false);os<<"jmp _loop_"<<tok().token_start_char()<<endl;
+		indent(os,indent_level,false);os<<"_end_loop_"<<tok().token_start_char()<<":\n";
 
 		tc.framestk().pop_loop(name.data());
 	}
