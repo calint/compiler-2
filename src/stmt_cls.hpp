@@ -9,21 +9,27 @@ using namespace std;
 #include "tokenizer.hpp"
 #include"stmt_def_func.hpp"
 #include"stmt_def_field.hpp"
-#include"stmt_cls.hpp"
-class stmt_program final:public statement{public:
+class stmt_cls final:public statement{public:
 
-	inline stmt_program(tokenizer&t):statement{nullptr,make_unique<class token>()}{
+	inline stmt_cls(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+		if(!t.is_next_char('{'))
+			throw compiler_error(*this,"expected '{' followed by class definition and '}'",token().name_copy());
 		while(!t.is_eos()){
+			if(t.is_next_char('}'))
+				break;
+			up_statement stmt;
 			up_token tk=t.next_token();
-			if(tk->is_name("")){
-				up_statement stmt=make_unique<statement>(this,move(tk));
-				statements.push_back(move(stmt));
-				return;
+			if(tk->is_name("field")){
+				stmt=make_unique<stmt_def_field>(this,move(tk),t);
+			}else if(tk->is_name("func")){
+				stmt=make_unique<stmt_def_func>(this,move(tk),t);
+			}else{
+				if(tk->is_name("")){
+					stmt=make_unique<statement>(this,move(tk));
+				}else{
+					stmt=create_call(tk->name(),this,move(tk),t);
+				}
 			}
-			if(!t.is_next_char('{'))
-				throw compiler_error(*this,"expected '{' to open class declaration",tk->name_copy());
-			t.unread();
-			up_statement stmt=make_unique<stmt_cls>(this,move(tk),t);
 			statements.push_back(move(stmt));
 		}
 	}
@@ -34,16 +40,14 @@ class stmt_program final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		vector<const char*>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if","cmove","cmovne","or","and"};
-		for(auto s:assem)tc.add_func(*this,s,nullptr);
-
-		os<<"section .text\nglobal _start\n_start:\n  mov ebp,stk\n  mov esp,stk.end\n";
 		for(auto&s:statements)
 			if(!s->is_in_data_section())
 				s->compile(tc,os,indent_level);
 
 		const stmt_def_func*main=tc.get_func_or_break(*this,"main");
+
 		tc.framestk().push_func("main");
+
 		indent(os,indent_level,true);os<<"main(){  ["<<token().token_start_char()<<"]"<<endl;
 
 		main->code_block()->compile(tc,os,indent_level);
@@ -54,16 +58,18 @@ class stmt_program final:public statement{public:
 		for(auto&s:statements)
 			if(s->is_in_data_section())s->compile(tc,os,indent_level);
 
-		os<<"mem1 dd 1\n";
-		os<<"mem0 dd 0\n";
-
-		os<<"\nsection .bss\nstk resd 256\nstk.end:\n";
 		tc.framestk().pop_func("main");
 	}
 
 	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements)s->link(tc,os);}
 
-	inline void source_to(ostream&os)const override{statement::source_to(os);for(auto&s:statements)s->source_to(os);}
+	inline void source_to(ostream&os)const override{
+		statement::source_to(os);
+		os<<"{";
+		for(auto&s:statements)
+			s->source_to(os);
+		os<<"}";
+	}
 
 	inline const toc&get_toc()const{return tc;}
 
@@ -74,4 +80,4 @@ private:
 	vup_statement statements;
 	toc tc;
 };
-using up_program=unique_ptr<stmt_program>;
+using up_cls=unique_ptr<stmt_cls>;
