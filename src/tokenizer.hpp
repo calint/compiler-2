@@ -26,46 +26,46 @@ class tokenizer final{public:
 		next_char();
 		return true;
 	}
-	inline bool is_next_char_expression_open(){
-		if(*ptr!='(')return false;
-		next_char();
-		return true;
-	}
-	inline bool is_next_char_expression_close(){
-		if(*ptr!=')')return false;
-		next_char();
-		return true;
-	}
-	inline bool is_next_char_data_open(){
-		if(*ptr!='{')return false;
-		next_char();
-		return true;
-	}
-	inline bool is_next_char_data_close(){
-		if(*ptr!='}')return false;
-		next_char();
-		return true;
-	}
-	inline bool is_next_char_args_open(){
-		if(*ptr!='(')return false;
-		next_char();
-		return true;
-	}
-	inline bool is_next_char_args_close(){
-		if(*ptr!=')')return false;
-		next_char();
-		return true;
-	}
-	inline bool is_next_char_block_open(){
-		if(*ptr!='{')return false;
-		next_char();
-		return true;
-	}
-	inline bool is_next_char_block_close(){
-		if(*ptr!='}')return false;
-		next_char();
-		return true;
-	}
+//	inline bool is_next_char_expression_open(){
+//		if(*ptr!='(')return false;
+//		next_char();
+//		return true;
+//	}
+//	inline bool is_next_char_expression_close(){
+//		if(*ptr!=')')return false;
+//		next_char();
+//		return true;
+//	}
+//	inline bool is_next_char_data_open(){
+//		if(*ptr!='{')return false;
+//		next_char();
+//		return true;
+//	}
+//	inline bool is_next_char_data_close(){
+//		if(*ptr!='}')return false;
+//		next_char();
+//		return true;
+//	}
+//	inline bool is_next_char_args_open(){
+//		if(*ptr!='(')return false;
+//		next_char();
+//		return true;
+//	}
+//	inline bool is_next_char_args_close(){
+//		if(*ptr!=')')return false;
+//		next_char();
+//		return true;
+//	}
+//	inline bool is_next_char_block_open(){
+//		if(*ptr!='{')return false;
+//		next_char();
+//		return true;
+//	}
+//	inline bool is_next_char_block_close(){
+//		if(*ptr!='}')return false;
+//		next_char();
+//		return true;
+//	}
 	inline void unread(){
 		unsafe_seek(-1);
 	}

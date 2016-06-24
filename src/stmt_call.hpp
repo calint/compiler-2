@@ -20,7 +20,7 @@ class stmt_call:public expression{public:
 
 	inline static up_statement read_statement(statement*parent,tokenizer&t){
 		up_token tkn=t.next_token();
-		if(!t.is_next_char_expression_open()){
+		if(!t.is_next_char('(')){
 			return make_unique<statement>(parent,move(tkn));// ie  0x80
 		}
 		t.unread();
@@ -33,7 +33,7 @@ class stmt_call:public expression{public:
 			no_args=true;
 			return;
 		}
-		while(!t.is_next_char_args_close()){
+		while(true){
 			if(t.is_next_char(')'))break;
 			args.push_back(stmt_call::read_statement(this,t));
 			if(t.is_next_char(')'))break;

@@ -1,6 +1,5 @@
-field prompt {enter_name_ }
-field   name {......................}
-field  hello {hello_ }
+field prompt {echo__type_new_line}
+field   name {............................................................}
 
 func exit{
 	mov(eax,1)
@@ -52,6 +51,7 @@ func plus(a,b):int{
 }
 
 func main{
+	print(prompt.len,prompt)
 	loop{
 		print(read(name.len,name),name)
 	}

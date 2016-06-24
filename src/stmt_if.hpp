@@ -15,12 +15,12 @@
 class stmt_if final:public statement{public:
 
 	inline stmt_if(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
-		if(!t.is_next_char_expression_open())
+		if(!t.is_next_char('('))
 			throw compiler_error(*this,"if expects '(' followed by boolean expression",token().name_copy());
 
 		bool_expr=stmt_call::read_statement(this,t);
 
-		if(!t.is_next_char_expression_close())
+		if(!t.is_next_char(')'))
 			throw compiler_error(*this,"if expects ')' after the boolean expression",token().name_copy());
 
 		code=make_unique<stmt_block>(parent,t);

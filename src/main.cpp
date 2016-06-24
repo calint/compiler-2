@@ -90,7 +90,7 @@ inline up_statement create_call(const char*funcname,statement*parent,unique_ptr<
 }
 inline up_statement read_stmt(statement*parent,tokenizer&t){
 	up_token tkn=t.next_token();
-	if(!t.is_next_char_expression_open()){
+	if(!t.is_next_char('(')){
 		return make_unique<statement>(parent,move(tkn));// ie  0x80
 	}
 	t.unread();

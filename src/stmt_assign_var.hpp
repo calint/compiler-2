@@ -16,7 +16,7 @@ class stmt_assign_var final:public statement{public:
 
 	inline stmt_assign_var(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		up_token tk=t.next_token();
-		if(!t.is_next_char_expression_open()){
+		if(!t.is_next_char('(')){
 			expr=make_unique<statement>(parent,move(tk));// ie  0x80
 			return;
 		}

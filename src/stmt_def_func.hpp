@@ -16,7 +16,7 @@ class stmt_def_func final:public statement{public:
 
 	inline stmt_def_func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
-		if(!t.is_next_char_expression_open()){
+		if(!t.is_next_char('(')){
 			no_args=true;
 //			throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
 		}
