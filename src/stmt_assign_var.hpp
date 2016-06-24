@@ -14,16 +14,8 @@
 
 class stmt_assign_var final:public statement{public:
 
-	inline stmt_assign_var(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
-		up_token tk=t.next_token();
-		if(!t.is_next_char_expression_open()){
-			expr=make_unique<statement>(parent,move(tk));// ie  0x80
-			return;
-		}
-		t.unread();
-		expr=create_call(tk->name(),parent,move(tk),t); // ie  f(...)
-
-//		expr=stmt_call::read_statement(this,t);
+	inline stmt_assign_var(statement*parent,unique_ptr<class token>tkn,tokenizer&t):statement{parent,move(tkn)}{
+		expr=read_next_statement(this,t);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
@@ -46,5 +38,5 @@ class stmt_assign_var final:public statement{public:
 	}
 
 private:
-	up_statement expr;
+	unique_ptr<statement>expr;
 };

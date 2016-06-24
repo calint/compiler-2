@@ -13,11 +13,11 @@
 
 class stmt_def_var final:public statement{public:
 
-	inline stmt_def_var(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+	inline stmt_def_var(statement*parent,unique_ptr<class token>tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
 		if(!t.is_next_char('='))
 			return;
-		initial_value=read_stmt(this,t);
+		initial_value=read_next_statement(this,t);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
@@ -49,6 +49,6 @@ class stmt_def_var final:public statement{public:
 	}
 
 private:
-	up_token identifier;
-	up_statement initial_value;
+	unique_ptr<class token>identifier;
+	unique_ptr<statement>initial_value;
 };

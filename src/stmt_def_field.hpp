@@ -10,7 +10,7 @@
 
 class stmt_def_field final:public statement{public:
 
-	inline stmt_def_field(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+	inline stmt_def_field(statement*parent,unique_ptr<class token>tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
 		if(!t.is_next_char_data_open())throw compiler_error(*this,"expected { to open file",identifier->name_copy());
 		while(true){
@@ -35,7 +35,7 @@ class stmt_def_field final:public statement{public:
 		for(size_t i=0;i<indent_level;i++)cout<<"  ";
 		os<<identifier->name()<<".len equ $-"<<identifier->name()<<endl;
 //		os<<"section .text\n";
-		tc.add_file(*this,identifier->name(),this);
+		tc.framestk().current_frame().add_file(*this,identifier->name(),this);
 	}
 
 	inline void source_to(ostream&os)const override{
@@ -48,6 +48,6 @@ class stmt_def_field final:public statement{public:
 
 
 private:
-	up_token identifier;
-	vup_tokens tokens;
+	unique_ptr<class token>identifier;
+	vector<unique_ptr<class token>>tokens;
 };

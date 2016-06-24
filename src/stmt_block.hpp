@@ -6,39 +6,29 @@
 #include <memory>
 #include <vector>
 
-#include "compiler_error.hpp"
-#include "decouple.hpp"
-#include "statement.hpp"
-#include "stmt_call.hpp"
-#include "stmt_def_var.hpp"
-#include "token.hpp"
-#include "tokenizer.hpp"
-#include"stmt_assign_var.hpp"
+#include"compiler_error.hpp"
+#include"decouple.hpp"
+#include"statement.hpp"
+#include"token.hpp"
+#include"tokenizer.hpp"
+#include"decouple.hpp"
 
-using vup_statement=vector<up_statement>;
-class stmt_block final:public statement{public:
+class stmt_def_var;
+class stmt_def_field;
+class stmt_def_func;
+class stmt_def_class;
 
-	inline stmt_block(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+class stmt_block:public statement{public:
+
+	inline stmt_block(statement*parent,unique_ptr<class token>tkn,tokenizer&t):statement{parent,move(tkn)}{
 		if(!t.is_next_char('{'))
 			is_one_statement=true;
 
 		while(true){
-			if(t.is_eos())throw compiler_error(*this,"unexpected end of string",parent->token().name_copy());
+			if(t.is_eos())throw compiler_error(*this,"unexpected end of string",token().name_copy());
 			if(not is_one_statement and t.is_next_char_block_close())break;
-			up_token tkn=t.next_token();
-			if(tkn->is_name("")){
-				statements.push_back(make_unique<statement>(parent,move(tkn)));
-				continue;
-			}
-			if(tkn->is_name("var")){
-				statements.push_back(make_unique<stmt_def_var>(parent,move(tkn),t));
-				continue;
-			}
-			if(t.is_next_char('=')){// assign  ie   a=0x80
-				statements.push_back(make_unique<stmt_assign_var>(parent,move(tkn),t));
-				continue;
-			}
-			statements.push_back(create_call(tkn->name(),parent,move(tkn),t));
+			unique_ptr<statement>stmt=read_next_statement(parent,t);
+			statements.push_back(move(stmt));
 			if(is_one_statement)
 				break;
 		}
@@ -61,8 +51,11 @@ class stmt_block final:public statement{public:
 		if(!is_one_statement)os<<"}";
 	}
 
-private:
-	vup_statement statements;
 	bool is_one_statement{false};
+	vector<unique_ptr<statement>>statements;
+	vector<stmt_def_var*>vars_;
+	vector<stmt_def_field*>fields_;
+	vector<stmt_def_func*>funcs_;
+	vector<stmt_def_class*>classes_;
+private:
 };
-using up_block=unique_ptr<stmt_block>;

@@ -1,6 +1,5 @@
 #pragma once
+#include <memory>
 class tokenizer;
 class statement;
-class token;
-inline up_statement create_call(const char*,statement*,unique_ptr<token>,tokenizer&);
-inline up_statement read_stmt(statement*parent,tokenizer&t);
+inline unique_ptr<statement>read_next_statement(statement*parent,tokenizer&t);

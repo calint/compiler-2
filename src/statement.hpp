@@ -9,7 +9,7 @@
 class toc;
 
 class statement{public:
-	inline statement(statement*parent,up_token t):tk{move(t)},pt{parent}{}
+	inline statement(statement*parent,unique_ptr<class token>t):tk{move(t)},pt{parent}{}
 
 	inline virtual~statement(){}
 
@@ -37,8 +37,7 @@ class statement{public:
 
 private:
 	const char*dest{nullptr};
-	up_token tk;
+	unique_ptr<class token>tk;
 	statement*pt;
 };
-using up_statement=unique_ptr<statement>;
 

@@ -10,7 +10,7 @@ using namespace std;
 class tokenizer final{public:
 	inline tokenizer(const char*string):ptr(string){}
 	inline bool is_eos()const{return !last_char;}
-	inline up_token next_token(){
+	inline unique_ptr<class token>next_token(){
 		assert(!is_eos());
 		auto wspre=next_whitespace();
 		auto bgn=nchar;

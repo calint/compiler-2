@@ -14,11 +14,11 @@
 
 class stmt_if final:public statement{public:
 
-	inline stmt_if(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+	inline stmt_if(statement*parent,unique_ptr<class token>tkn,tokenizer&t):statement{parent,move(tkn)}{
 		if(!t.is_next_char_expression_open())
 			throw compiler_error(*this,"if expects '(' followed by boolean expression",token().name_copy());
 
-		bool_expr=stmt_call::read_statement(this,t);
+		bool_expr=read_next_statement(this,t);
 
 		if(!t.is_next_char_expression_close())
 			throw compiler_error(*this,"if expects ')' after the boolean expression",token().name_copy());
@@ -60,7 +60,7 @@ class stmt_if final:public statement{public:
 
 
 private:
-	up_statement bool_expr;
-	up_block code;
 	string name;
+	unique_ptr<statement>bool_expr;
+	unique_ptr<stmt_block>code;
 };

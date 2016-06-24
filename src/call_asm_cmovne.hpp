@@ -10,7 +10,7 @@
 
 class call_asm_cmovne final:public stmt_call{public:
 
-	inline call_asm_cmovne(statement*parent,up_token tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{}
+	inline call_asm_cmovne(statement*parent,unique_ptr<class token>tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{// mov(eax 1)
 //		indent(os,indent_level,true);source_to(os);os<<endl;

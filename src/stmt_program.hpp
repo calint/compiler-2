@@ -9,21 +9,22 @@ using namespace std;
 #include "tokenizer.hpp"
 #include"stmt_def_func.hpp"
 #include"stmt_def_field.hpp"
-#include"stmt_cls.hpp"
+#include"stmt_def_class.hpp"
 class stmt_program final:public statement{public:
 
 	inline stmt_program(tokenizer&t):statement{nullptr,make_unique<class token>()}{
 		while(!t.is_eos()){
-			up_token tk=t.next_token();
+			unique_ptr<class token>tk=t.next_token();
 			if(tk->is_name("")){
-				up_statement stmt=make_unique<statement>(this,move(tk));
+//				throw compiler_error(*this,"expected class name and definition   baz{..}",tk->name_copy());
+				unique_ptr<statement>stmt=make_unique<statement>(this,move(tk));
 				statements.push_back(move(stmt));
 				return;
 			}
 			if(!t.is_next_char('{'))
 				throw compiler_error(*this,"expected '{' to open class declaration",tk->name_copy());
 			t.unread();
-			up_statement stmt=make_unique<stmt_cls>(this,move(tk),t);
+			unique_ptr<statement>stmt=make_unique<stmt_def_class>(this,move(tk),t);
 			statements.push_back(move(stmt));
 		}
 	}
@@ -34,17 +35,26 @@ class stmt_program final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
+		framestack&fs=tc.framestk();
+
+		fs.push_class("program");
+		frame&f=fs.current_frame();
+
 		vector<const char*>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if","cmove","cmovne","or","and"};
-		for(auto s:assem)tc.add_func(*this,s,nullptr);
+		for(auto s:assem)f.add_func(*this,s,nullptr);
 
 		os<<"section .text\nglobal _start\n_start:\n  mov ebp,stk\n  mov esp,stk.end\n";
 		for(auto&s:statements)
 			if(!s->is_in_data_section())
 				s->compile(tc,os,indent_level);
 
-		const stmt_def_func*main=tc.get_func_or_break(*this,"main");
-		tc.framestk().push_func("main");
-		indent(os,indent_level,true);os<<"main(){  ["<<token().token_start_char()<<"]"<<endl;
+		const stmt_def_class*cls=f.get_class_or_break(*this,"baz");
+		const stmt_def_func*main=cls->get_func_or_break(*this,"main");
+
+		fs.push_func("baz.main");
+
+		indent(os,indent_level,true);
+		os<<"baz.main{  ["<<token().token_start_char()<<"]"<<endl;
 
 		main->code_block()->compile(tc,os,indent_level);
 
@@ -52,13 +62,17 @@ class stmt_program final:public statement{public:
 
 		os<<"\nsection .data\n";
 		for(auto&s:statements)
-			if(s->is_in_data_section())s->compile(tc,os,indent_level);
+			if(s->is_in_data_section())
+				s->compile(tc,os,indent_level);
 
 		os<<"mem1 dd 1\n";
 		os<<"mem0 dd 0\n";
 
 		os<<"\nsection .bss\nstk resd 256\nstk.end:\n";
-		tc.framestk().pop_func("main");
+
+		fs.pop_func("baz.main");
+
+		fs.pop_class("program");
 	}
 
 	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements)s->link(tc,os);}
@@ -71,7 +85,7 @@ class stmt_program final:public statement{public:
 
 
 private:
-	vup_statement statements;
+	vector<unique_ptr<statement>>statements;
 	toc tc;
 };
 using up_program=unique_ptr<stmt_program>;

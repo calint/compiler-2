@@ -15,27 +15,17 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-
+#include"decouple.hpp"
 class stmt_call:public expression{public:
 
-	inline static up_statement read_statement(statement*parent,tokenizer&t){
-		up_token tkn=t.next_token();
-		if(!t.is_next_char_expression_open()){
-			return make_unique<statement>(parent,move(tkn));// ie  0x80
-		}
-		t.unread();
-		return create_call(tkn->name(),parent,move(tkn),t); // ie  f(...)
-	}
-
-
-	inline stmt_call(statement*parent,up_token tkn,tokenizer&t):expression{parent,move(tkn)}{
+	inline stmt_call(statement*parent,unique_ptr<class token>tkn,tokenizer&t):expression{parent,move(tkn)}{
 		if(!t.is_next_char('(')){
 			no_args=true;
 			return;
 		}
 		while(!t.is_next_char_args_close()){
 			if(t.is_next_char(')'))break;
-			args.push_back(stmt_call::read_statement(this,t));
+			args.push_back(read_next_statement(this,t));
 			if(t.is_next_char(')'))break;
 			if(!t.is_next_char(','))throw compiler_error(*this,"expected ',' after argument at ",token().name_copy());
 		}
@@ -80,7 +70,7 @@ class stmt_call:public expression{public:
 			return;
 		}
 
-		const stmt_def_func*f=tc.get_func_or_break(*this,nm);
+		const stmt_def_func*f=tc.framestk().current_frame().get_func_or_break(*this,nm);
 		framestack&fs=tc.framestk();
 //		if(*token().name()=='_'){
 //			tc.framestk().export_varspace_at_current_frame_in_subcalls(true);
@@ -96,7 +86,7 @@ class stmt_call:public expression{public:
 		vector<const char*>allocated_registers;
 		size_t i=0;
 		for(auto&a:args){
-			const char*param=f->get_param(i)->name();
+			const char*param=f->get_param(i).name();
 			i++;
 			const char*reg{nullptr};
 			if(a->is_expression()){
@@ -132,9 +122,7 @@ class stmt_call:public expression{public:
 
 
 private:
-	vup_statement args;
+	vector<unique_ptr<statement>>args;
 	bool no_args{false};
 };
-using up_call=unique_ptr<stmt_call>;
-using allocs=vector<const char*>;
 
