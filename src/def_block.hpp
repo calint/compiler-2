@@ -51,13 +51,13 @@ class def_block:public statement{public:
 	inline bool is_block()const override{return true;}
 
 
-	inline void ev(int type,const statement*s)override{
-		if(type==2){
-			classes_.push_back((def_class*)s);
-		}else if(type==3){
-			funcs_.push_back((def_func*)s);
-		}else if(pt)pt->ev(type,s);
-	}
+//	inline void ev(int type,const statement*s)override{
+//		if(type==2){
+//			classes_.push_back((def_class*)s);
+//		}else if(type==3){
+//			funcs_.push_back((def_func*)s);
+//		}else if(pt)pt->ev(type,s);
+//	}
 
 	vector<def_field*>fields_;
 	vector<def_func*>funcs_;

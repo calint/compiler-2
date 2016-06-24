@@ -87,26 +87,24 @@ class def_func final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		framestack&fs=tc.framestk();
+//		framestack&fs=tc.framestk();
 
-		const char*nm=ident_->name();
+//		const char*nm=ident_->name();
 
-		fs.current_frame().add_func(*this,nm,this);
-
-		fs.push_class(nm);
 
 //		if(!is_inline()){
-		os<<"_bgn_"<<nm<<":\n";
-		code_->compile(tc,os,indent_level);
-		os<<"_end_"<<nm<<":\n";
+//			fs.current_frame().add_func(*this,nm,this);
+//			fs.push_func(nm);
+//			os<<"_bgn_"<<nm<<":\n";
+//			code_->compile(tc,os,indent_level);
+//			os<<"_end_"<<nm<<":\n";
+//			fs.pop_func(nm);
 //		}
-
-		fs.pop_class(nm);
 	}
 
 	inline bool is_func()const override{return true;}
 
-	inline virtual const char*identifier()const{return ident_->name();}
+	inline virtual const char*identifier()const override{return ident_->name();}
 
 	inline void ev(int type,const statement*s)override{
 		if(type==1){

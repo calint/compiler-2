@@ -10,7 +10,7 @@ class toc;
 
 class statement{public:
 	inline statement(toc&tc,statement*parent,unique_ptr<class token>t)
-		:tk{move(t)},pt{parent}
+		:pt{parent},tk{move(t)}
 	{
 		token_str=tk->name();
 	}

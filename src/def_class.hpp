@@ -67,7 +67,9 @@ class def_class final:public statement{public:
 		for(auto f:fields_){
 			f->compile(tc,os,indent_level);
 		}
-
+		for(auto f:funcs_){
+			f->compile(tc,os,indent_level);
+		}
 		for(auto f:classes_){
 			f->compile_fields_recurse(tc,os,indent_level);
 		}
@@ -90,6 +92,11 @@ class def_class final:public statement{public:
 		indent(os,indent_level,false);
 		os<<"_end_"<<ident_->name()<<":"<<endl;
 
+		for(auto&e:funcs_){
+			indent(os,indent_level,true);
+			os<<e->identifier()<<endl;
+		}
+
 //		code_->compile(tc,os,indent_level);
 
 		fs.pop_class(nm);
@@ -101,10 +108,10 @@ class def_class final:public statement{public:
 	inline const char*identifier()const override{return ident_->name();}
 
 	inline const def_func*get_func_or_break(const statement&s,const char*nm)const{
-//		for(auto e:funcs_){
-//			if(e->is_identifier(nm))
-//					return e;
-//		}
+		for(auto e:funcs_){
+			if(!strcmp(e->identifier(),nm))
+					return e;
+		}
 		throw compiler_error(s,"cannot find function in class",copy_to_unique_pointer(nm));
 	}
 

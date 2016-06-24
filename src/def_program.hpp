@@ -36,40 +36,35 @@ class def_program final:public statement{public:
 		framestack&fs=tc.framestk();
 
 		fs.push_class("program");
-		frame&f=fs.current_frame();
 
 		vector<const char*>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if","cmove","cmovne","or","and"};
-		for(auto s:assem)f.add_func(*this,s,nullptr);
+		{	frame&f=fs.current_frame();
+			for(auto s:assem)f.add_func(*this,s,nullptr);
+		}
 
 		os<<"\nsection .data\n";
 		for(auto&s:statements_)
 			if(s->is_in_data_section())
 				s->compile(tc,os,indent_level);
-
-		os<<"mem1 dd 1\n";
-		os<<"mem0 dd 0\n";
+		os<<"\n";
+		os<<"dd1 dd 1\n";
+		os<<"dd0 dd 0\n";
 
 		os<<"\nsection .bss\nstk resd 256\nstk.end:\n";
 
-//		os<<"\nsection .text\nglobal _start\n_start:\n  mov ebp,stk\n  mov esp,stk.end\n";
+		os<<"\nsection .text\nglobal _start\n_start:\n  mov ebp,stk\n  mov esp,stk.end\n";
 //		for(auto&s:statements)
 //			if(!s->is_in_data_section())
 //				s->compile(tc,os,indent_level);
 //
-//		const def_class*cls=f.get_class_or_break(*this,"baz");
-//		const def_func*main=cls->get_func_or_break(*this,"main");
-//
-//		fs.push_func("baz.main");
-//
-//		indent(os,indent_level,true);
-//		os<<"baz.main{  ["<<token().token_start_char()<<"]"<<endl;
-//
-//		main->code->compile(tc,os,indent_level);
-//
+		const def_class*cls=tc.framestk().current_frame().get_class_or_break(*this,"baz");
+		const def_func*main=cls->get_func_or_break(*this,"main");
+		fs.push_func("baz.main");
+		indent(os,indent_level,true);
+		os<<"baz.main{  ["<<token().token_start_char()<<"]"<<endl;
+		main->code_->compile(tc,os,indent_level);
 //		indent(os,indent_level,true);os<<"}\n\n";
-//
-//		fs.pop_func("baz.main");
-
+		fs.pop_func("baz.main");
 		fs.pop_class("program");
 	}
 

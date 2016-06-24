@@ -1,25 +1,7 @@
-class field{
-	func print(ident){
-		mov(ecx,ident)
-		mov(edx,ident.len)
-		mov(ebx,1)
-		mov(eax,4)
-		int(0x80)
-	}
-	
-	func input(ident):int{
-		mov(esi,ident)
-		mov(edx,ident.len)
-		xor(eax)
-		xor(edi)
-		syscall
-		mov(int,eax)
-	}
-}
 class baz{
-
 	field name{__________}
 	field email{__________}
+	field info{__________}
 
 	func exit{
 		mov(eax,1)
@@ -35,7 +17,6 @@ class baz{
 	}
 	
 	func read(len,ptr):int{
-		field last_read{____}
 		mov(esi,ptr)
 		mov(edx,len)
 		xor(eax)
@@ -43,29 +24,12 @@ class baz{
 		syscall
 		mov(int,eax)
 	}
-	
 
 	func main{
-		field.print(ln,name)
+		loop{
+			print(read(name.len,name),name)
+		}
 		exit
 	}
-
-	class bar:baz{
-		field fld1{____}
-		func f1(b):c{
-			field fld2{_______}
-			func f2(b):c{
-				field fld3{_______}
-				
-			}
-		}
-	}
 }
-
-
-class foo:baz{
-	func main{
-	}
-}
-
 
