@@ -14,8 +14,8 @@
 
 class stmt_assign_var final:public statement{public:
 
-	inline stmt_assign_var(statement*parent,unique_ptr<class token>tkn,tokenizer&t):statement{parent,move(tkn)}{
-		expr=read_next_statement(this,t);
+	inline stmt_assign_var(toc&tc,statement*parent,unique_ptr<class token>tkn,tokenizer&t):statement{tc,parent,move(tkn)}{
+		expr=read_next_statement(tc,this,t);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{

@@ -1,21 +1,30 @@
 #pragma once
 
+#include <stddef.h>
 #include <algorithm>
 #include <iostream>
 #include <memory>
 #include <vector>
 
-#include "stmt_block.hpp"
 #include "compiler_error.hpp"
+#include "decouple.hpp"
+class def_field;
+class def_func;
+class def_class;
+
+using namespace std;
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
+class stmt_def:public statement{public:
 
-class stmt_def_func final:public statement{public:
-
-	inline stmt_def_func(statement*parent,unique_ptr<class token>tkn,tokenizer&t):statement{parent,move(tkn)}{
+	inline stmt_def(toc&tc,statement*parent,unique_ptr<class token>tkn,tokenizer&t)
+		:statement{tc,parent,move(tkn)}
+	{
 		identifier=t.next_token();
+		identifier_str=identifier->name();
+
 		if(!t.is_next_char_expression_open()){
 			no_args=true;
 //			throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
@@ -39,24 +48,7 @@ class stmt_def_func final:public statement{public:
 				break;
 			}
 		}
-		code=make_unique<stmt_block>(parent,unique_ptr<class token>(new class token()),t);
-	}
-
-	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		tc.framestk().current_frame().add_func(*this,identifier->name(),this);//? in constructor for forward ref
-		if(is_inline())
-			return;
-
-		os<<identifier->name()<<":\n";
-		for (size_t i=params.size();i-->0;)
-			os<<"  pop "<<params[i].get()->name()<<endl;
-
-		code->compile(tc,os,indent_level+1);
-		os<<"  ret\n";
-	}
-
-	inline void link(toc&tc,ostream&os)const override{
-		code->link(tc,os);
+		code=read_next_statement(tc,parent,t);
 	}
 
 	inline void source_to(ostream&os)const override{
@@ -81,20 +73,33 @@ class stmt_def_func final:public statement{public:
 				if(i++!=sz)os<<",";
 			}
 		}
-		code->source_to(os);}
+		code->source_to(os);
+	}
 
-	inline bool is_inline()const{return true;}
 
-	inline const vector<unique_ptr<class token>>&getreturns()const{return returns;}
+	inline void ev(int type,statement*s)override{
+		if(type==1){
+			fields_.push_back((def_field*)s);
+			return;
+		}
+		if(type==2){
+			funcs_.push_back((def_func*)s);
+			return;
+		}
+		if(type==3){
+			classes_.push_back((def_class*)s);
+			return;
+		}
+	}
 
-	inline const class token&get_param(const size_t ix)const{return *(params[ix].get());}
-
-	inline const stmt_block*code_block()const{return code.get();}
-
-private:
 	unique_ptr<class token>identifier;
-	vector<unique_ptr<class token>>returns;
-	vector<unique_ptr<class token>>params;
-	unique_ptr<stmt_block>code;
+	const char*identifier_str{nullptr};
 	bool no_args{false};
+	vector<unique_ptr<class token>>params;
+	vector<unique_ptr<class token>>returns;
+	unique_ptr<statement>code;
+
+	vector<def_field*>fields_;
+	vector<def_func*>funcs_;
+	vector<def_class*>classes_;
 };

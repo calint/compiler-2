@@ -6,17 +6,19 @@
 #include <vector>
 
 #include "compiler_error.hpp"
+#include "def_block.hpp"
 #include "statement.hpp"
-#include "stmt_block.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 
 class stmt_loop final:public stmt_call{public:
 
-	inline stmt_loop(statement*parent,unique_ptr<class token>tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{
-		code=make_unique<stmt_block>(parent,unique_ptr<class token>(new class token),t);
+	inline stmt_loop(toc&tc,statement*parent,unique_ptr<class token>tkn,tokenizer&t)
+		:stmt_call{tc,parent,move(tkn),t}
+	{
 		name="_loop_"+to_string(token().token_start_char());
+		code=read_next_statement(tc,parent,t);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
@@ -42,5 +44,5 @@ class stmt_loop final:public stmt_call{public:
 
 private:
 	string name;
-	unique_ptr<stmt_block>code;
+	unique_ptr<statement>code;
 };

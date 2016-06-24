@@ -6,24 +6,26 @@
 #include <vector>
 
 #include "compiler_error.hpp"
+#include "def_block.hpp"
 #include "statement.hpp"
-#include "stmt_block.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 
 class stmt_if final:public statement{public:
 
-	inline stmt_if(statement*parent,unique_ptr<class token>tkn,tokenizer&t):statement{parent,move(tkn)}{
+	inline stmt_if(toc&tc,statement*parent,unique_ptr<class token>tkn,tokenizer&t)
+		:statement{tc,parent,move(tkn)}
+	{
 		if(!t.is_next_char_expression_open())
 			throw compiler_error(*this,"if expects '(' followed by boolean expression",token().name_copy());
 
-		bool_expr=read_next_statement(this,t);
+		bool_expr=read_next_statement(tc,this,t);
 
 		if(!t.is_next_char_expression_close())
 			throw compiler_error(*this,"if expects ')' after the boolean expression",token().name_copy());
 
-		code=make_unique<stmt_block>(parent,unique_ptr<class token>(new class token),t);
+		code=read_next_statement(tc,parent,t);
 
 		name="_if_"+to_string(token().token_start_char());
 	}
@@ -62,5 +64,5 @@ class stmt_if final:public statement{public:
 private:
 	string name;
 	unique_ptr<statement>bool_expr;
-	unique_ptr<stmt_block>code;
+	unique_ptr<statement>code;
 };

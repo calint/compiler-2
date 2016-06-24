@@ -7,13 +7,13 @@
 #include <memory>
 #include <string>
 
-#include "statement.hpp"
+#include "def_block.hpp"
 #include "stmt_assign_var.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 
 using namespace std;
-#include"stmt_program.hpp"
+#include"def_program.hpp"
 #include"compiler_error.hpp"
 #include"call_asm_mov.hpp"
 #include"call_asm_int.hpp"
@@ -33,10 +33,10 @@ using namespace std;
 #include"call_asm_cmovne.hpp"
 #include"call_asm_or.hpp"
 #include"call_asm_and.hpp"
-#include"stmt_def_var.hpp"
-#include"stmt_def_field.hpp"
-#include"stmt_def_func.hpp"
-#include"stmt_def_class.hpp"
+#include"def_var.hpp"
+#include"def_field.hpp"
+#include"def_func.hpp"
+#include"def_class.hpp"
 static string file_read_to_string(const char *filename){
 	FILE*f=fopen(filename,"rb");
 	if(!f)throw "cannot open file";
@@ -60,13 +60,22 @@ static size_t line_number_for_char_index(size_t ix,const char*str){
 int main(int argc,char**args){
 	string s=file_read_to_string("prog.clare");
 	tokenizer t{s.data()};
-	up_program p;// to keep valid in case of exception
+	unique_ptr<def_program>p;// to keep valid in case of exception
 	try{
-		p=make_unique<stmt_program>(t);
-		ofstream fo("diff.clare");
-		p->source_to(fo);
-		fo.close();
-		if(file_read_to_string("prog.clare")!=file_read_to_string("diff.clare"))throw "generated source differs";
+		toc tc;
+		unique_ptr<statement>stmt=read_next_statement(tc,nullptr,t);
+//		p=make_unique<def_program>(t);
+
+		for(auto&e:p->classes_)
+			cout<<"class "<<e->identifier->name()<<endl;
+
+
+		p->source_to(cout);
+
+//		ofstream fo("diff.clare");
+//		p->source_to(cout);
+//		fo.close();
+//		if(file_read_to_string("prog.clare")!=file_read_to_string("diff.clare"))throw "generated source differs";
 
 		p->build(cout);
 	}catch(compiler_error&e){
@@ -82,57 +91,43 @@ int main(int argc,char**args){
 	}
 	return 0;
 }
-inline unique_ptr<statement>create_call(const char*funcname,statement*parent,unique_ptr<token>tk,tokenizer&t){
-	if(!strcmp("mov",funcname))return make_unique<call_asm_mov>(parent,move(tk),t);
-	if(!strcmp("int",funcname))return make_unique<call_asm_int>(parent,move(tk),t);
-	if(!strcmp("xor",funcname))return make_unique<call_asm_xor>(parent,move(tk),t);
-	if(!strcmp("syscall",funcname))return make_unique<call_asm_syscall>(parent,move(tk),t);
-	if(!strcmp("add",funcname))return make_unique<call_asm_add>(parent,move(tk),t);
-	if(!strcmp("loop",funcname))return make_unique<stmt_loop>(parent,move(tk),t);
-	if(!strcmp("break",funcname))return make_unique<stmt_break>(parent,move(tk),t);
-	if(!strcmp("continue",funcname))return make_unique<stmt_continue>(parent,move(tk),t);
-	if(!strcmp("tag",funcname))return make_unique<call_asm_tag>(parent,move(tk),t);
-	if(!strcmp("cmp",funcname))return make_unique<call_asm_cmp>(parent,move(tk),t);
-	if(!strcmp("je",funcname))return make_unique<call_asm_je>(parent,move(tk),t);
-	if(!strcmp("jmp",funcname))return make_unique<call_asm_jmp>(parent,move(tk),t);
-	if(!strcmp("jne",funcname))return make_unique<call_asm_jne>(parent,move(tk),t);
-	if(!strcmp("if",funcname))return make_unique<stmt_if>(parent,move(tk),t);
-	if(!strcmp("cmove",funcname))return make_unique<call_asm_cmove>(parent,move(tk),t);
-	if(!strcmp("cmovne",funcname))return make_unique<call_asm_cmovne>(parent,move(tk),t);
-	if(!strcmp("or",funcname))return make_unique<call_asm_or>(parent,move(tk),t);
-	if(!strcmp("and",funcname))return make_unique<call_asm_and>(parent,move(tk),t);
-	return make_unique<stmt_call>(parent,move(tk),t);
-}
 
-inline unique_ptr<statement>read_next_statement(statement*parent,tokenizer&t){
-	unique_ptr<class token>tk=t.next_token();
-	if(tk->is_name(""))return make_unique<statement>(parent,move(tk));
-	if(tk->is_name("var"))return make_unique<stmt_def_var>(parent,move(tk),t);
-	if(t.is_next_char('='))return make_unique<stmt_assign_var>(parent,move(tk),t);
-	if(tk->is_name("field"))return make_unique<stmt_def_field>(parent,move(tk),t);
-	if(tk->is_name("func"))return make_unique<stmt_def_func>(parent,move(tk),t);
-	if(t.is_next_char('{'))return make_unique<stmt_def_class>(parent,move(tk),t);
-	if(tk->is_name(""))return make_unique<statement>(parent,move(tk));
+inline unique_ptr<statement>read_next_statement(toc&tc,statement*parent,tokenizer&t){
+	if(t.is_next_char('{')){
+		t.unread();
+		return make_unique<def_block>(tc,parent,t.next_token(),t);
+	}
 
-	const char*funcname=tk->name();
-	if(!strcmp("mov",funcname))return make_unique<call_asm_mov>(parent,move(tk),t);
-	if(!strcmp("int",funcname))return make_unique<call_asm_int>(parent,move(tk),t);
-	if(!strcmp("xor",funcname))return make_unique<call_asm_xor>(parent,move(tk),t);
-	if(!strcmp("syscall",funcname))return make_unique<call_asm_syscall>(parent,move(tk),t);
-	if(!strcmp("add",funcname))return make_unique<call_asm_add>(parent,move(tk),t);
-	if(!strcmp("loop",funcname))return make_unique<stmt_loop>(parent,move(tk),t);
-	if(!strcmp("break",funcname))return make_unique<stmt_break>(parent,move(tk),t);
-	if(!strcmp("continue",funcname))return make_unique<stmt_continue>(parent,move(tk),t);
-	if(!strcmp("tag",funcname))return make_unique<call_asm_tag>(parent,move(tk),t);
-	if(!strcmp("cmp",funcname))return make_unique<call_asm_cmp>(parent,move(tk),t);
-	if(!strcmp("je",funcname))return make_unique<call_asm_je>(parent,move(tk),t);
-	if(!strcmp("jmp",funcname))return make_unique<call_asm_jmp>(parent,move(tk),t);
-	if(!strcmp("jne",funcname))return make_unique<call_asm_jne>(parent,move(tk),t);
-	if(!strcmp("if",funcname))return make_unique<stmt_if>(parent,move(tk),t);
-	if(!strcmp("cmove",funcname))return make_unique<call_asm_cmove>(parent,move(tk),t);
-	if(!strcmp("cmovne",funcname))return make_unique<call_asm_cmovne>(parent,move(tk),t);
-	if(!strcmp("or",funcname))return make_unique<call_asm_or>(parent,move(tk),t);
-	if(!strcmp("and",funcname))return make_unique<call_asm_and>(parent,move(tk),t);
-	return make_unique<stmt_call>(parent,move(tk),t);
+	unique_ptr<class token>tkn=t.next_token();
+	if(tkn->is_name("class"))
+		return make_unique<def_class>(tc,parent,move(tkn),t);
+	if(tkn->is_name(""))return make_unique<statement>(tc,parent,move(tkn));
+	if(tkn->is_name("var"))return make_unique<def_var>(tc,parent,move(tkn),t);
+	if(tkn->is_name("field"))return make_unique<def_field>(tc,parent,move(tkn),t);
+	if(tkn->is_name("func"))return make_unique<def_func>(tc,parent,move(tkn),t);
+	if(t.is_next_char('='))return make_unique<stmt_assign_var>(tc,parent,move(tkn),t);
+
+	unique_ptr<class token>ident=t.next_token();
+	const char*funcname=ident->name();
+	if(!strcmp("mov",funcname))return make_unique<call_asm_mov>(tc,parent,move(ident),t);
+	if(!strcmp("int",funcname))return make_unique<call_asm_int>(tc,parent,move(ident),t);
+	if(!strcmp("xor",funcname))return make_unique<call_asm_xor>(tc,parent,move(ident),t);
+	if(!strcmp("syscall",funcname))return make_unique<call_asm_syscall>(tc,parent,move(ident),t);
+	if(!strcmp("add",funcname))return make_unique<call_asm_add>(tc,parent,move(ident),t);
+	if(!strcmp("loop",funcname))return make_unique<stmt_loop>(tc,parent,move(ident),t);
+	if(!strcmp("break",funcname))return make_unique<stmt_break>(tc,parent,move(ident),t);
+	if(!strcmp("continue",funcname))return make_unique<stmt_continue>(tc,parent,move(ident),t);
+	if(!strcmp("tag",funcname))return make_unique<call_asm_tag>(tc,parent,move(ident),t);
+	if(!strcmp("cmp",funcname))return make_unique<call_asm_cmp>(tc,parent,move(ident),t);
+	if(!strcmp("je",funcname))return make_unique<call_asm_je>(tc,parent,move(ident),t);
+	if(!strcmp("jmp",funcname))return make_unique<call_asm_jmp>(tc,parent,move(ident),t);
+	if(!strcmp("jne",funcname))return make_unique<call_asm_jne>(tc,parent,move(ident),t);
+	if(!strcmp("if",funcname))return make_unique<stmt_if>(tc,parent,move(ident),t);
+	if(!strcmp("cmove",funcname))return make_unique<call_asm_cmove>(tc,parent,move(ident),t);
+	if(!strcmp("cmovne",funcname))return make_unique<call_asm_cmovne>(tc,parent,move(ident),t);
+	if(!strcmp("or",funcname))return make_unique<call_asm_or>(tc,parent,move(ident),t);
+	if(!strcmp("and",funcname))return make_unique<call_asm_and>(tc,parent,move(ident),t);
+
+	return make_unique<stmt_call>(tc,parent,move(ident),t);
 
 }

@@ -11,10 +11,10 @@
 
 
 class token;
-class stmt_def_func;
-class stmt_def_field;
-class stmt_def_class;
-
+class def_func;
+class def_field;
+class def_class;
+class def_var;
 using namespace std;
 
 class allocated_var{public:
@@ -40,7 +40,7 @@ class frame final{public:
 
 	frame(const char*name,char bits):name_{name},bits_{bits}{}
 
-	inline void add_var(const char*nm,const size_t stkix,const char*flags){
+	inline void add_alloc_var(const char*nm,const size_t stkix,const char*flags){
 		char buf[256];
 		const int n=snprintf(buf,sizeof buf,"dword[ebp+%zu]",stkix<<2);
 		if(n<0||n==sizeof buf)throw"??";
@@ -49,15 +49,15 @@ class frame final{public:
 //		char*str=(char*)malloc(len);
 		memcpy(str,buf,len);
 		to_be_deleted.push_back(unique_ptr<const char[]>(str));
-		vars_.put(nm, allocated_var{nm,stkix,nullptr,str,0});
+		alloc_vars_.put(nm, allocated_var{nm,stkix,nullptr,str,0});
 		allocated_stack_++;
 	}
 
 	inline size_t allocated_stack_size()const{return allocated_stack_;}
 
-	inline bool has_var(const char*name)const{return vars_.has(name);}
+	inline bool has_alloc_var(const char*name)const{return alloc_vars_.has(name);}
 
-	inline const allocated_var get_var(const char*name)const{return vars_.get(name);}
+	inline const allocated_var get_allocated_var(const char*name)const{return alloc_vars_.get(name);}
 
 	inline void add_alias(const char*ident,const char*outside_ident){args_.put(ident,outside_ident);}
 
@@ -79,40 +79,47 @@ class frame final{public:
 
 	inline const char*name()const{return name_;}
 
-	inline void add_file(const statement&s,const char*identifier,const stmt_def_field*f){
-		if(has_file(identifier)){
-			throw compiler_error(s,"file already defined at ...",copy_string_to_unique_pointer(identifier));
+	inline void add_field(const statement&s,const char*identifier,const def_field*f){
+		if(fields_.has(identifier)){
+			throw compiler_error(s,"field already defined at ...",copy_string_to_unique_pointer(identifier));
 		}
 		fields_.put(identifier,f);
 	}
 
-	inline void add_func(const statement&s,const char*identifier,const stmt_def_func*ref){
-		if(has_func(identifier)){
+	inline void add_func(const statement&s,const char*identifier,const def_func*ref){
+		if(funcs_.has(identifier)){
 			throw compiler_error(s,"function already defined at ...",copy_string_to_unique_pointer(identifier));
 		}
 		funcs_.put(identifier,ref);
 	}
 
-	inline const stmt_def_func*get_func_or_break(const statement&stmt,const char*name)const{
+	inline void add_class(const statement&s,const char*identifier,const def_class*ref){
+		if(classes_.has(identifier)){
+			throw compiler_error(s,"class already defined at ...",copy_string_to_unique_pointer(identifier));
+		}
+		classes_.put(identifier,ref);
+	}
+
+	inline void add_var(const statement&s,const char*identifier,const def_var*ref){
+		if(alloc_vars_.has(identifier)){
+			throw compiler_error(s,"var already defined at ...",copy_string_to_unique_pointer(identifier));
+		}
+		vars_.put(identifier,ref);
+	}
+
+
+	inline const def_func*get_func_or_break(const statement&stmt,const char*name)const{
 		bool valid;
-		const stmt_def_func*f=funcs_.get_valid(name,valid);
+		const def_func*f=funcs_.get_valid(name,valid);
 		if(!valid){
 			throw compiler_error(stmt,"function not found",copy_string_to_unique_pointer(name));
 		}
 		return f;
 	}
 
-	inline void add_class(const statement&s,const char*identifier,const stmt_def_class*ref){
-		if(has_func(identifier)){
-			throw compiler_error(s,"function already defined at ...",copy_string_to_unique_pointer(identifier));
-		}
-		classes_.put(identifier,ref);
-	}
-
-
-	inline const stmt_def_class*get_class_or_break(const statement&stmt,const char*name)const{
+	inline const def_class*get_class_or_break(const statement&stmt,const char*name)const{
 		bool valid;
-		const stmt_def_class*c=classes_.get_valid(name,valid);
+		const def_class*c=classes_.get_valid(name,valid);
 		if(!valid){
 			throw compiler_error(stmt,"class not found",copy_string_to_unique_pointer(name));
 		}
@@ -129,17 +136,16 @@ class frame final{public:
 
 
 private:
-	inline bool has_func(const char*name)const{return funcs_.has(name);}
-	inline bool has_file(const char*name)const{return fields_.has(name);}
-
 	const char*name_{""};
 	size_t allocated_stack_{0};
 	char bits_{0}; // 1 is func   2:block   4:loop   8:if   16:cls
 	lut<const char*>args_;
-	lut<allocated_var>vars_;
-	lut<const stmt_def_field*>fields_;
-	lut<const stmt_def_func*>funcs_;
-	lut<const stmt_def_class*>classes_;
+	lut<allocated_var>alloc_vars_;
+
+	lut<const def_field*>fields_;
+	lut<const def_func*>funcs_;
+	lut<const def_class*>classes_;
+	lut<const def_var*>vars_;
 
 	vector<unique_ptr<const char[]>>to_be_deleted;
 };
@@ -224,17 +230,17 @@ class framestack final{public:
 		frames.back().add_alias(ident,parent_frame_ident);
 	}
 
-	inline void add_var(const char*name,const char*flags){
+	inline void add_alloc_var(const char*name,const char*flags){
 		cerr<<"  "<<name<<endl;
-		frames.back().add_var(name,stkix++,flags);
+		frames.back().add_alloc_var(name,stkix++,flags);
 	}
 
 	inline const char*resolve_func_arg(const char*ident)const{
 		size_t i=frames.size()-1;// recurse until aliased var found
 		const char*name=ident;
 		while(true){
-			if(frames[i].has_var(name))
-				return frames[i].get_var(name).asm_op_param();
+			if(frames[i].has_alloc_var(name))
+				return frames[i].get_allocated_var(name).asm_op_param();
 
 			if(frames[i].has_alias(name)){
 				name=frames[i].get_alias(name);
@@ -256,8 +262,8 @@ class framestack final{public:
 		// try in exported frame and up
 		i=exported_frame_ix;
 		while(true){
-			if(frames[i].has_var(name))
-				return frames[i].get_var(name).asm_op_param();
+			if(frames[i].has_alloc_var(name))
+				return frames[i].get_allocated_var(name).asm_op_param();
 
 			if(frames[i].has_alias(name)){
 				name=frames[i].get_alias(name);
@@ -305,65 +311,9 @@ private:
 
 class toc final{public:
 
-//	inline void add_file(const statement&s,const char*identifier,const stmt_def_field*f){
-//		if(has_file(identifier)){
-//			throw compiler_error(s,"file already defined at ...",copy_string_to_unique_pointer(identifier));
-//		}
-//		fields_.put(identifier,f);
-//	}
-//
-//	inline void add_func(const statement&s,const char*identifier,const stmt_def_func*ref){
-//		if(has_func(identifier)){
-//			throw compiler_error(s,"function already defined at ...",copy_string_to_unique_pointer(identifier));
-//		}
-//		funcs_.put(identifier,ref);
-//	}
-//
-//	inline const stmt_def_func*get_func_or_break(const statement&stmt,const char*name)const{
-//		bool valid;
-//		const stmt_def_func*f=funcs_.get_valid(name,valid);
-//		if(!valid){
-//			throw compiler_error(stmt,"function not found",copy_string_to_unique_pointer(name));
-//		}
-//		return f;
-//	}
-//
-//	inline void add_class(const statement&s,const char*identifier,const stmt_def_class*ref){
-//		if(has_func(identifier)){
-//			throw compiler_error(s,"function already defined at ...",copy_string_to_unique_pointer(identifier));
-//		}
-//		classes_.put(identifier,ref);
-//	}
-//
-//
-//	inline const stmt_def_class*get_class_or_break(const statement&stmt,const char*name)const{
-//		bool valid;
-//		const stmt_def_class*c=classes_.get_valid(name,valid);
-//		if(!valid){
-//			throw compiler_error(stmt,"class not found",copy_string_to_unique_pointer(name));
-//		}
-//		return c;
-//	}
-
-
 	inline framestack&framestk(){return framestk_;}
-
-
-//
-//	inline static unique_ptr<const char[]>copy_string_to_unique_pointer(const char*str){
-//		const size_t len=strlen(str)+1;//? unsafe
-//		char*cpy=new char[len];
-//		memcpy(cpy,str,len);
-//		return unique_ptr<const char[]>(cpy);
-//	}
-
+	inline frame&frame(){return framestk_.current_frame();}
 
 private:
-//	inline bool has_func(const char*name)const{return funcs_.has(name);}
-//	inline bool has_file(const char*name)const{return fields_.has(name);}
-
 	framestack framestk_;
-//	lut<const stmt_def_field*>fields_;
-//	lut<const stmt_def_func*>funcs_;
-//	lut<const stmt_def_class*>classes_;
 };

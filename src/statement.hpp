@@ -9,7 +9,11 @@
 class toc;
 
 class statement{public:
-	inline statement(statement*parent,unique_ptr<class token>t):tk{move(t)},pt{parent}{}
+	inline statement(toc&tc,statement*parent,unique_ptr<class token>t)
+		:tk{move(t)},pt{parent}
+	{
+		token_str=tk->name();
+	}
 
 	inline virtual~statement(){}
 
@@ -31,13 +35,23 @@ class statement{public:
 
 	inline const char*expression_dest_nasm_identifier()const{return dest;}
 
+	inline virtual void ev(int type,statement*s){if(pt)pt->ev(type,s);}
 
 
 	inline static void indent(ostream&os,size_t level,bool comment=false){os<<(comment?"; ":"  ");for(size_t i=0;i<level;i++)os<<" ";}
 
+	inline static unique_ptr<const char[]>copy_to_unique_pointer(const char*str){
+		const size_t len=strlen(str)+1;
+		char*ca=new char[len];
+		memcpy(ca,str,len);
+		return unique_ptr<const char[]>(ca);
+	}
 private:
 	const char*dest{nullptr};
 	unique_ptr<class token>tk;
 	statement*pt;
+
+	/// for debugger
+	const char*token_str;
 };
 
