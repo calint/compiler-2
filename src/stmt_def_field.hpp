@@ -30,9 +30,11 @@ class stmt_def_field final:public statement{public:
 		for(size_t i=0;i<indent_level;i++)cout<<"  ";
 		os<<identifier->name()<<"     db '";
 		for(auto&s:tokens)s->compile_to(os);
+//		os<<"'";
 		os<<"'\n";
 
 		for(size_t i=0;i<indent_level;i++)cout<<"  ";
+//		os<<" ";
 		os<<identifier->name()<<".len equ $-"<<identifier->name()<<endl;
 //		os<<"section .text\n";
 		tc.add_file(*this,identifier->name(),this);

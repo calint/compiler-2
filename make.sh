@@ -14,8 +14,15 @@ ld -s -o binary gen.o &&
 ls --color -la gen.s &&
 ls --color -la binary &&
 echo &&
-echo -n '     src: ' && cat src/*|wc &&
-echo -n ' gzipped: ' && cat src/*|gzip|wc && 
+echo -n '   compi source: ' && cat src/*|wc &&
+echo -n '        gzipped: ' && cat src/*|gzip|wc && 
+echo -n '     baz source: ' && cat prog.baz|grep -v -e'^\s*$'|wc &&
+echo -n '        gzipped: ' && cat prog.baz|grep -v -e'^\s*$'|gzip|wc &&
+echo -n ' x86 asm source: ' && cat src/*|sh pgen.sh|wc &&
+echo -n '        gzipped: ' && cat src/*|sh pgen.sh|gzip|wc &&
+
+echo &&
+cat gen.s &&
 echo &&
 ./binary
 

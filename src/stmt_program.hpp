@@ -36,7 +36,7 @@ class stmt_program final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		os<<"section .text\nglobal _start\n_start:\n  mov ebp,stk\n  mov esp,stkend\n";
+		os<<"section .text\nglobal _start\n_start:\n  mov ebp,stk\n  mov esp,stk.end\n";
 		for(auto&s:statements)
 			if(!s->is_in_data_section())s->compile(tc,os,indent_level);
 
@@ -52,10 +52,10 @@ class stmt_program final:public statement{public:
 		for(auto&s:statements)
 			if(s->is_in_data_section())s->compile(tc,os,indent_level);
 
-		os<<"mem1 dd 1\n";
-		os<<"mem0 dd 0\n";
+		os<<"dd1 dd 1\n";
+		os<<"dd0 dd 0\n";
 
-		os<<"\nsection .bss\nstk resd 256\nstkend:\n";
+		os<<"\nsection .bss\nstk resd 256\nstk.end\n";
 		tc.framestk().pop_func("main");
 	}
 

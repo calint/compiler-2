@@ -53,7 +53,7 @@ func plus(a,b):int{
 func main{
 	print(prompt.len,prompt)
 	loop{
-		print(read(name.len,name),name)
+		print(plus(read(name.len,name),-2),name)
 	}
 	exit
 }
