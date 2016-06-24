@@ -4,39 +4,39 @@ _start:
   mov ebp,stk
   mov esp,stkend
 ; main(){  [0]
-;  print(prompt.len prompt){  [630]
+;  print(prompt.len prompt){  [652]
      mov ecx,prompt
      mov edx,prompt.len
      mov ebx,1
      mov eax,4
      int 0x80
-   _end_print_630:
-   _loop_656:
-;    print(read name){  [664]
-;    read(name.len name):eax{  [670]
+   _end_print_652:
+   _loop_678:
+;    print(read name){  [686]
+;    read(name.len name):eax{  [692]
        mov esi,name
        mov edx,name.len
        xor eax,eax
        xor edi,edi
        syscall
-     _end_read_670:
+     _end_read_692:
        mov ecx,name
        mov edx,eax
        mov ebx,1
        mov eax,4
        int 0x80
-     _end_print_664:
-   jmp _loop_656
-   _end_loop_656:
-;  exit(){  [700]
+     _end_print_686:
+   jmp _loop_678
+   _end_loop_678:
+;  exit(){  [722]
      mov eax,1
      int 0x80
-   _end_exit_700:
+   _end_exit_722:
 ; }
 
 
 section .data
-prompt     db 'echo__type_new_line'
+prompt     db 'echo__type_new_line__ctrl_c__to_break____'
 prompt.len equ $-prompt
 name     db '............................................................'
 name.len equ $-name

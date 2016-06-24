@@ -43,15 +43,15 @@ static size_t line_number_for_char_index(size_t ix,const char*str){
 	return lineno;
 }
 int main(int argc,char**args){
-	string s=file_read_to_string("prog.clare");
+	string s=file_read_to_string("prog.baz");
 	tokenizer t{s.data()};
 	up_program p;// to keep valid in case of exception
 	try{
 		p=make_unique<stmt_program>(t);
-		ofstream fo("diff.clare");
+		ofstream fo("diff.baz");
 		p->source_to(fo);
 		fo.close();
-		if(file_read_to_string("prog.clare")!=file_read_to_string("diff.clare"))throw "generated source differs";
+		if(file_read_to_string("prog.baz")!=file_read_to_string("diff.baz"))throw "generated source differs";
 
 		p->build(cout);
 	}catch(compiler_error&e){

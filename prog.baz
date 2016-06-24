@@ -1,51 +1,59 @@
-baz{
-	func exit(){
-		mov(eax,1)
-		int(0x80)
-	}
-	func read(ptr,len,fd=0):nchars{  // system code validated
-		mov(esi,ptr)
-		mov(edx,len)
-		mov(eax,fd)
-		xor(edi,edi)
-		syscall()
-		mov(nchars eax)
-	}
-	func print(ptr,len,fd=1){
-		mov(ecx,ptr)
-		mov(edx,len)
-		mov(ebx,fd)
-		mov(eax,4)
-		int(0x80)
-	}
+field prompt {echo__type_new_line__ctrl_c__to_break____}
+field   name {............................................................}
+
+func exit{
+	mov(eax,1)
+	int(0x80)
 }
 
-
-// user code, no asm
-
-
-field:baz{
-	field f{.................................}
-	func p(len,fd=1){print(f,f:len,fd)}
-	func p(fd=1){p(f:len,fd)}
-	func r(fd=0):nchars{nchars=read(f,f:len,fd)}
-//	func r(fd=0):nchars=read(f,f:len,fd)
+func print(len,ptr){
+	mov(ecx,ptr)
+	mov(edx,len)
+	mov(ebx,1)
+	mov(eax,4)
+	int(0x80)
 }
 
+func read(len,ptr):int{
+	mov(esi,ptr)
+	mov(edx,len)
+	xor(eax)
+	xor(edi)
+	syscall
+	mov(int,eax)
+}
 
-main:baz{
-	field prompt{enter_name_ }
-	field   name  // default value
-	field  hello{hello_ }
+func eq(a,b):bool{
+	cmp(a,b)
+	cmove(bool,mem1)
+	cmovne(bool,mem0)
+}
 
-	func main(){
-		info.print()
-		loop(){
-			prompt.p()
-			var ln=name.r() // validates ln
-		//	valid(add(ln,-1),name)
-			hello.p()
-			name.p(ln) // error if 'ln' is not validated within 'name'
-		}
+func neq(a,b):bool{
+	cmp(a,b)
+	cmove(bool,mem0)
+	cmovne(bool,mem1)
+}
+
+func orl(a,b):bool{
+	mov(bool,a)
+	or(bool,b)
+}
+
+func andl(a,b):bool{
+	mov(bool,a)
+	and(bool,b)
+}
+
+func plus(a,b):int{
+	mov(int,a)
+	add(int,b)
+}
+
+func main{
+	print(prompt.len,prompt)
+	loop{
+		print(read(name.len,name),name)
 	}
+	exit
 }
