@@ -1,0 +1,51 @@
+file prompt {enter_name_ }
+file   name {......................}
+file  hello {hello_ }
+
+func exit(){
+	mov(eax 1)
+	int(0x80)
+}
+
+func print(nchars ptr){
+	mov(ecx ptr)
+	mov(edx nchars)
+	mov(ebx 1)
+	mov(eax 4)
+	int(0x80)
+}
+
+func read(len ptr):nchars{
+	mov(esi ptr)
+	mov(edx len)
+	xor(eax eax)
+	xor(edi edi)
+	syscall()
+	mov(nchars eax)
+}
+
+func test(){
+	print(prompt.len prompt)
+	var ln=read(name.len name)
+	print(hello.len hello)
+	print(ln name)
+}
+
+func test2(){
+	print(hello.len hello)
+	test()
+}
+
+func plus(a b):sum{
+	mov(sum a)
+	add(sum b)
+}
+
+func main(){
+	loop(){
+		test2()
+	}
+	var c=plus(plus(2 4) 2)
+	mov(c plus(plus(2 4) 3))
+	exit()
+}

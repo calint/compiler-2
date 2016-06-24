@@ -10,18 +10,16 @@
 
 class call_asm_xor final:public stmt_call{public:
 
-	inline call_asm_xor(toc&tc,statement*parent,unique_ptr<class token>tkn,tokenizer&t)
-		:stmt_call{tc,parent,move(tkn),t}
-	{}
+	inline call_asm_xor(statement*parent,up_token tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level);
 		framestack&fs=tc.framestk();
-		os<<"xor "<<fs.resolve_func_arg(argument(0).tok().name())<<",";
+		os<<"xor "<<fs.resolve_func_arg(argument(0).token().name())<<",";
 		if(argument_count()==1){
-			os<<fs.resolve_func_arg(argument(0).tok().name());
+			os<<fs.resolve_func_arg(argument(0).token().name());
 		}else{
-			os<<fs.resolve_func_arg(argument(1).tok().name());
+			os<<fs.resolve_func_arg(argument(1).token().name());
 		}
 		os<<endl;
 	}

@@ -10,13 +10,11 @@
 
 class call_asm_tag final:public stmt_call{public:
 
-	inline call_asm_tag(toc&tc,statement*parent,unique_ptr<class token>tkn,tokenizer&t)
-		:stmt_call{tc,parent,move(tkn),t}
-	{}
+	inline call_asm_tag(statement*parent,up_token tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level);
-		os<<argument(0).tok().name()<<":"<<endl;
+		os<<argument(0).token().name()<<":"<<endl;
 	}
 
 };

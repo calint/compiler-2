@@ -20,7 +20,7 @@ template<class T>class lut{public:
 	}
 
 	inline bool has(const char*key)const{
-		for(auto&e:elems)
+		for(auto e:elems)
 			if(e.is_key(key)){
 				return true;
 			}
@@ -38,7 +38,8 @@ private:
 	class el{public:
 		const char*key{nullptr};
 		T data{nullptr};
-		inline bool is_key(const char*k)const{return!strcmp(key,k);}
+		inline bool is_key(const char*k)const{return !strcmp(key,k);}
 	};
 	vector<el>elems{};
+//	el*last_has_found{nullptr}
 };

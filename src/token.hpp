@@ -43,3 +43,5 @@ private:
 	size_t token_end_char_;
 	ua_char ws_after;
 };
+using up_token=unique_ptr<token>;
+using vup_tokens=vector<up_token>;

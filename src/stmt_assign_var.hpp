@@ -14,20 +14,28 @@
 
 class stmt_assign_var final:public statement{public:
 
-	inline stmt_assign_var(toc&tc,statement*parent,unique_ptr<class token>tkn,tokenizer&t):statement{tc,parent,move(tkn)}{
-		expr=read_next_statement(tc,this,t);
+	inline stmt_assign_var(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+		up_token tk=t.next_token();
+		if(!t.is_next_char_expression_open()){
+			expr=make_unique<statement>(parent,move(tk));// ie  0x80
+			return;
+		}
+		t.unread();
+		expr=create_call(tk->name(),parent,move(tk),t); // ie  f(...)
+
+//		expr=stmt_call::read_statement(this,t);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		indent(os,indent_level,true);os<<tok().name()<<"="<<endl;
+		indent(os,indent_level,true);os<<token().name()<<"="<<endl;
 		if(expr->is_expression()){
-			expr->set_expression_dest_nasm_identifier(tok().name());
+			expr->set_expression_dest_nasm_identifier(token().name());
 			expr->compile(tc,os,indent_level+1);
 			return;
 		}
 		indent(os,indent_level,false);
-		const char*ra=tc.framestk().resolve_func_arg(tok().name());
-		const char*rb=tc.framestk().resolve_func_arg(expr->tok().name());
+		const char*ra=tc.framestk().resolve_func_arg(token().name());
+		const char*rb=tc.framestk().resolve_func_arg(expr->token().name());
 		os<<"mov "<<ra<<","<<rb<<endl;
 	}
 
@@ -38,5 +46,5 @@ class stmt_assign_var final:public statement{public:
 	}
 
 private:
-	unique_ptr<statement>expr;
+	up_statement expr;
 };

@@ -1,30 +1,21 @@
 #pragma once
 
-#include <stddef.h>
 #include <algorithm>
 #include <iostream>
 #include <memory>
 #include <vector>
 
+#include "stmt_block.hpp"
 #include "compiler_error.hpp"
-#include "decouple.hpp"
-class def_field;
-class def_func;
-class def_class;
-
-using namespace std;
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-class stmt_def:public statement{public:
 
-	inline stmt_def(toc&tc,statement*parent,unique_ptr<class token>tkn,tokenizer&t)
-		:statement{tc,parent,move(tkn)}
-	{
+class stmt_def_func final:public statement{public:
+
+	inline stmt_def_func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
-		identifier_str=identifier->name();
-
 		if(!t.is_next_char_expression_open()){
 			no_args=true;
 //			throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
@@ -32,7 +23,7 @@ class stmt_def:public statement{public:
 		if(!no_args){
 			while(true){
 				if(t.is_next_char(')'))break;
-				unique_ptr<class token>tk=t.next_token();
+				up_token tk=t.next_token();
 				if(t.is_next_char(')')){
 					params.push_back(move(tk));
 					break;
@@ -48,8 +39,23 @@ class stmt_def:public statement{public:
 				break;
 			}
 		}
-		code=read_next_statement(tc,parent,t);
+		code=make_unique<stmt_block>(parent,t);
 	}
+
+	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
+		tc.add_func(*this,identifier->name(),this);//? in constructor for forward ref
+		if(is_inline())
+			return;
+
+		os<<identifier->name()<<":\n";
+		for (size_t i=params.size();i-->0;)
+			os<<"  pop "<<params[i].get()->name()<<endl;
+
+		code->compile(tc,os,indent_level+1);
+		os<<"  ret\n";
+	}
+
+	inline void link(toc&tc,ostream&os)const override{code->link(tc,os);}
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
@@ -73,33 +79,20 @@ class stmt_def:public statement{public:
 				if(i++!=sz)os<<",";
 			}
 		}
-		code->source_to(os);
-	}
+		code->source_to(os);}
 
+	inline bool is_inline()const{return true;}
 
-	inline void ev(int type,const statement*s)override{
-		if(type==1){
-			fields_.push_back((def_field*)s);
-			return;
-		}
-		if(type==2){
-			funcs_.push_back((def_func*)s);
-			return;
-		}
-		if(type==3){
-			classes_.push_back((def_class*)s);
-			return;
-		}
-	}
+	inline const vup_tokens&getreturns()const{return returns;}
 
-	unique_ptr<class token>identifier;
-	const char*identifier_str{nullptr};
+	inline const up_token&get_param(const size_t ix)const{return params[ix];}
+
+	inline const stmt_block*code_block()const{return code.get();}
+
+private:
+	up_token identifier;
+	vup_tokens returns;
+	vup_tokens params;
+	up_block code;
 	bool no_args{false};
-	vector<unique_ptr<class token>>params;
-	vector<unique_ptr<class token>>returns;
-	unique_ptr<statement>code;
-
-	vector<def_field*>fields_;
-	vector<def_func*>funcs_;
-	vector<def_class*>classes_;
 };

@@ -9,11 +9,7 @@
 class toc;
 
 class statement{public:
-	inline statement(toc&tc,statement*parent,unique_ptr<class token>t)
-		:pt{parent},tk{move(t)}
-	{
-		token_str=tk->name();
-	}
+	inline statement(statement*parent,up_token t):tk{move(t)},pt{parent}{}
 
 	inline virtual~statement(){}
 
@@ -23,7 +19,7 @@ class statement{public:
 
 	inline virtual void source_to(ostream&os)const{tk->source_to(os);}
 
-	inline const token&tok()const{return*tk;}
+	inline const token&token()const{return*tk;}
 
 	inline const statement*parent()const{return pt;}
 
@@ -31,39 +27,18 @@ class statement{public:
 
 	inline virtual bool is_expression()const{return false;}
 
-
-	inline virtual bool is_func()const{return false;}
-	inline virtual bool is_class()const{return false;}
-	inline virtual bool is_block()const{return false;}
-
-	inline virtual const char*identifier()const{return"";}
-
-
-
 	inline void set_expression_dest_nasm_identifier(const char*destination){dest=destination;}
 
 	inline const char*expression_dest_nasm_identifier()const{return dest;}
 
-	inline virtual void ev(int type,const statement*s){if(pt)pt->ev(type,s);}
 
 
 	inline static void indent(ostream&os,size_t level,bool comment=false){os<<(comment?"; ":"  ");for(size_t i=0;i<level;i++)os<<" ";}
 
-	inline static unique_ptr<const char[]>copy_to_unique_pointer(const char*str){
-		const size_t len=strlen(str)+1;
-		char*ca=new char[len];
-		memcpy(ca,str,len);
-		return unique_ptr<const char[]>(ca);
-	}
-
-protected:
-	statement*pt;
-
 private:
 	const char*dest{nullptr};
-	unique_ptr<class token>tk;
-
-	/// for debugger
-	const char*token_str;
+	up_token tk;
+	statement*pt;
 };
+using up_statement=unique_ptr<statement>;
 

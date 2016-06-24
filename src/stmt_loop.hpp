@@ -6,19 +6,17 @@
 #include <vector>
 
 #include "compiler_error.hpp"
-#include "def_block.hpp"
 #include "statement.hpp"
+#include "stmt_block.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 
 class stmt_loop final:public stmt_call{public:
 
-	inline stmt_loop(toc&tc,statement*parent,unique_ptr<class token>tkn,tokenizer&t)
-		:stmt_call{tc,parent,move(tkn),t}
-	{
-		name="_loop_"+to_string(tok().token_start_char());
-		code=read_next_statement(tc,parent,t);
+	inline stmt_loop(statement*parent,up_token tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{
+		code=make_unique<stmt_block>(parent,t);
+		name="_loop_"+to_string(token().token_start_char());
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
@@ -28,8 +26,8 @@ class stmt_loop final:public stmt_call{public:
 		tc.framestk().push_loop(name.data());
 
 		code->compile(tc,os,indent_level+1);
-		indent(os,indent_level,false);os<<"jmp _loop_"<<tok().token_start_char()<<endl;
-		indent(os,indent_level,false);os<<"_end_loop_"<<tok().token_start_char()<<":\n";
+		indent(os,indent_level,false);os<<"jmp _loop_"<<token().token_start_char()<<endl;
+		indent(os,indent_level,false);os<<"_end_loop_"<<token().token_start_char()<<":\n";
 
 		tc.framestk().pop_loop(name.data());
 	}
@@ -44,5 +42,5 @@ class stmt_loop final:public stmt_call{public:
 
 private:
 	string name;
-	unique_ptr<statement>code;
+	up_block code;
 };

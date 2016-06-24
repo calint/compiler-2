@@ -1,0 +1,50 @@
+file prompt {enter_name_ }
+file   name {......................}
+file  hello {hello_ }
+
+func exit(){
+	mov(eax 1)
+	int(0x80)
+}
+
+func print(nchars ptr){
+	mov(ecx ptr)
+	mov(edx nchars)
+	mov(ebx 1)
+	mov(eax 4)
+	int(0x80)
+}
+
+func read(len ptr):nchars{
+	mov(esi ptr)
+	mov(edx len)
+	xor(eax eax)
+	xor(edi edi)
+	syscall()
+	mov(nchars eax)
+}
+
+func eq(a b):bool{
+	cmp(a b)
+	jne(else)
+		mov(bool 1)
+		jmp(endif)
+	tag(else)
+		xor(bool bool)
+	tag(endif)
+}
+
+func main(){
+	loop(){
+		loop(){
+			print(prompt.len prompt)
+			var ln=read(name.len name)
+			if(eq(ln 1)){
+				continue()
+			}
+		}
+		print(hello.len hello)
+		print(ln name)
+	}
+	exit()
+}

@@ -6,32 +6,30 @@
 #include <vector>
 
 #include "compiler_error.hpp"
-#include "def_block.hpp"
 #include "statement.hpp"
+#include "stmt_block.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 
 class stmt_if final:public statement{public:
 
-	inline stmt_if(toc&tc,statement*parent,unique_ptr<class token>tkn,tokenizer&t)
-		:statement{tc,parent,move(tkn)}
-	{
+	inline stmt_if(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		if(!t.is_next_char_expression_open())
-			throw compiler_error(*this,"if expects '(' followed by boolean expression",tok().name_copy());
+			throw compiler_error(*this,"if expects '(' followed by boolean expression",token().name_copy());
 
-		bool_expr=read_next_statement(tc,this,t);
+		bool_expr=stmt_call::read_statement(this,t);
 
 		if(!t.is_next_char_expression_close())
-			throw compiler_error(*this,"if expects ')' after the boolean expression",tok().name_copy());
+			throw compiler_error(*this,"if expects ')' after the boolean expression",token().name_copy());
 
-		code=read_next_statement(tc,parent,t);
+		code=make_unique<stmt_block>(parent,t);
 
-		name="_if_"+to_string(tok().token_start_char());
+		name="_if_"+to_string(token().token_start_char());
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		indent(os,indent_level,true);os<<"if ["<<tok().token_start_char()<<"]\n";
+		indent(os,indent_level,true);os<<"if ["<<token().token_start_char()<<"]\n";
 
 		tc.framestk().push_if(name.data());
 
@@ -40,12 +38,12 @@ class stmt_if final:public statement{public:
 		bool_expr->compile(tc,os,indent_level);
 
 		indent(os,indent_level,false);os<<"cmp "<<reg<<",1\n";
-		indent(os,indent_level,false);os<<"jne _end"<<name<<"\n";
+		indent(os,indent_level,false);os<<"jne _end_"<<name<<"\n";
 
 
 		code->compile(tc,os,indent_level+1);
 
-		indent(os,indent_level,false);os<<"_end"<<name<<":\n";
+		indent(os,indent_level,false);os<<"_end_"<<name<<":\n";
 
 		tc.framestk().pop_if(name.data());
 	}
@@ -62,7 +60,7 @@ class stmt_if final:public statement{public:
 
 
 private:
+	up_statement bool_expr;
+	up_block code;
 	string name;
-	unique_ptr<statement>bool_expr;
-	unique_ptr<statement>code;
 };
