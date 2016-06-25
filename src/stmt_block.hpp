@@ -16,15 +16,12 @@
 #include"stmt_assign_var.hpp"
 #include"stmt_comment.hpp"
 
-using vup_statement=vector<up_statement>;
 class stmt_block final:public statement{public:
 
 	inline stmt_block(const statement&parent,tokenizer&t):
-		statement{parent,token{}}
+		statement{parent,token{}},
+		is_one_statement_{not t.is_next_char('{')}
 	{
-		if(!t.is_next_char('{'))
-			is_one_statement_=true;
-
 		while(true){
 			if(t.is_eos())
 				break;
@@ -32,25 +29,16 @@ class stmt_block final:public statement{public:
 			if(not is_one_statement_ and t.is_next_char('}'))
 				break;
 
-			token tkn=t.next_token();
+			token tk=t.next_token();
 
-			if(tkn.is_blank())
-				throw compiler_error(tkn,"unexpected end of string");
+			if(tk.is_blank())
+				throw compiler_error(tk,"unexpected end of string");
 
-			if(tkn.is_name("var")){
-				statements_.push_back(make_unique<stmt_def_var>(*this,tkn,t));
-			}else
-			if(t.is_next_char('=')){// assign  ie   a=0x80
-				statements_.push_back(make_unique<stmt_assign_var>(parent,tkn,t));
-			}else
-			if(tkn.is_name("//")){
-				statements_.push_back(make_unique<stmt_comment>(parent,tkn,t));
-			}else
-			if(tkn.is_name("")){
-				statements_.push_back(make_unique<statement>(parent,tkn));
-			}else{
-				statements_.push_back(create_call_statement_from_tokenizer(tkn.name(),*this,tkn,t));
-			}
+			if(tk.is_name("var")){statements_.push_back(make_unique<stmt_def_var>(*this,move(tk),t));
+			}else if(t.is_next_char('=')){statements_.push_back(make_unique<stmt_assign_var>(*this,move(tk),t));
+			}else if(tk.is_name("//")){statements_.push_back(make_unique<stmt_comment>(*this,move(tk),t));
+			}else if(tk.is_name("")){statements_.push_back(make_unique<statement>(*this,move(tk)));
+			}else{statements_.push_back(create_call_statement_from_tokenizer(*this,move(tk),t));}
 
 			if(is_one_statement_)
 				break;
@@ -73,7 +61,6 @@ class stmt_block final:public statement{public:
 	}
 
 private:
-	vup_statement statements_;
 	bool is_one_statement_{false};
+	vector<up_statement>statements_;
 };
-using up_stmt_block=unique_ptr<stmt_block>;

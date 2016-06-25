@@ -14,8 +14,8 @@
 
 class stmt_continue final:public stmt_call{public:
 
-	inline stmt_continue(const statement&parent,const token&tkn,tokenizer&t):
-		stmt_call{parent,tkn,t}
+	inline stmt_continue(const statement&parent,const token&tk,tokenizer&t):
+		stmt_call{parent,tk,t}
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{

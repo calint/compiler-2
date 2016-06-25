@@ -10,8 +10,8 @@
 
 class stmt_def_field final:public statement{public:
 
-	inline stmt_def_field(const statement&parent,const token&tkn,tokenizer&t):
-		statement{parent,tkn},
+	inline stmt_def_field(const statement&parent,const token&tk,tokenizer&t):
+		statement{parent,tk},
 		ident_{t.next_token()}
 	{
 		if(ident_.is_name(""))

@@ -59,11 +59,19 @@ func plus(a,b):int{
 
 func main{
 //	prompt.print()
-	print(prompt.len,prompt)
+	var a=7
+	print(a,prompt)
+	a=10
+	print(a,prompt)
+	var b
+	b=15
+	print(b,prompt)
+//	print(prompt.len,prompt)
 	loop{
 //		name.print(name.read-2)
 //		name.print(plus(name.read,-2))
 		print(plus(read(name.len,name),-2),name)
+		exit
 	}
 	exit
 }

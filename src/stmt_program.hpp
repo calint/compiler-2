@@ -10,6 +10,9 @@ using namespace std;
 #include"stmt_def_field.hpp"
 #include"stmt_def_table.hpp"
 #include"stmt_comment.hpp"
+
+
+
 class stmt_program final:public statement{public:
 
 	inline stmt_program(const string&source):
@@ -20,29 +23,30 @@ class stmt_program final:public statement{public:
 		vector<string>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if","cmove","cmovne","or","and"};
 		for(auto&s:assem)tc.add_func(*this,s,nullptr);
 		while(true){
-			token tkn=t.next_token();
-			if(tkn.is_blank() and t.is_eos())
+			token tk=t.next_token();
+
+			if(tk.is_blank() and t.is_eos())
 				break;
 
-			if(tkn.is_blank())
-				throw compiler_error(tkn,"unexpected character",to_string(t.peek_char()));
+			if(tk.is_blank())
+				throw compiler_error(tk,"unexpected character",to_string(t.peek_char()));
 
-			if(tkn.is_name("field")){
-				statements.push_back(make_unique<stmt_def_field>(*this,tkn,t));
+			if(tk.is_name("field")){
+				statements.push_back(make_unique<stmt_def_field>(*this,tk,t));
 			}else
-			if(tkn.is_name("func")){
-				statements.push_back(make_unique<stmt_def_func>(*this,tkn,t));
+			if(tk.is_name("func")){
+				statements.push_back(make_unique<stmt_def_func>(*this,tk,t));
 			}else
-			if(tkn.is_name("table")){
-				statements.push_back(make_unique<stmt_def_table>(*this,tkn,t));
+			if(tk.is_name("table")){
+				statements.push_back(make_unique<stmt_def_table>(*this,tk,t));
 			}else
-			if(tkn.is_name("//")){
-				statements.push_back(make_unique<stmt_comment>(*this,tkn,t));
+			if(tk.is_name("//")){
+				statements.push_back(make_unique<stmt_comment>(*this,tk,t));
 			}else
-			if(tkn.is_name("")){// whitespace
-				statements.push_back(make_unique<statement>(*this,tkn));
+			if(tk.is_name("")){// whitespace
+				statements.push_back(make_unique<statement>(*this,tk));
 			}else{
-				throw compiler_error(tkn,"unexpected keyword",tkn.name());
+				throw compiler_error(tk,"unexpected keyword",tk.name());
 			}
 		}
 	}
@@ -84,8 +88,7 @@ class stmt_program final:public statement{public:
 
 
 private:
-	vup_statement statements;
+	vector<up_statement>statements;
 	toc tc;
 	tokenizer t;
 };
-using up_program=unique_ptr<stmt_program>;

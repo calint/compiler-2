@@ -14,8 +14,8 @@
 #include"stmt_def_func_param.hpp"
 class stmt_def_func final:public statement{public:
 
-	inline stmt_def_func(const statement&parent,const token&tkn,tokenizer&t):
-		statement{parent,tkn},
+	inline stmt_def_func(const statement&parent,const token&tk,tokenizer&t):
+		statement{parent,tk},
 		ident_{t.next_token()}
 	{
 		if(!t.is_next_char('(')){
@@ -99,5 +99,5 @@ private:
 	bool no_args_{false};
 	vector<token>returns_;
 	vector<unique_ptr<stmt_def_func_param>>params_;
-	up_stmt_block code_;
+	unique_ptr<stmt_block>code_;
 };

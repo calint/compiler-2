@@ -14,8 +14,8 @@
 
 class stmt_if final:public statement{public:
 
-	inline stmt_if(const statement&parent,const token&tkn,tokenizer&t):
-		statement{parent,tkn}
+	inline stmt_if(const statement&parent,const token&tk,tokenizer&t):
+		statement{parent,tk}
 	{
 		if(!t.is_next_char('('))
 			throw compiler_error(*this,"if expects '(' followed by boolean expression",tok().name_copy());
@@ -27,7 +27,7 @@ class stmt_if final:public statement{public:
 
 		code=make_unique<stmt_block>(parent,t);
 
-		name="_if_"+to_string(tok().char_index_in_source());
+		name="_if_"+to_string(tk.char_index_in_source());
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
@@ -50,7 +50,9 @@ class stmt_if final:public statement{public:
 		tc.framestk().pop_if(name.data());
 	}
 
-	inline void link(toc&tc,ostream&os)const override final{code->link(tc,os);}
+	inline void link(toc&tc,ostream&os)const override final{
+		code->link(tc,os);
+	}
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
@@ -62,7 +64,7 @@ class stmt_if final:public statement{public:
 
 
 private:
-	up_statement bool_expr;
-	up_stmt_block code;
 	string name;
+	up_statement bool_expr;
+	unique_ptr<stmt_block>code;
 };

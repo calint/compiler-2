@@ -49,14 +49,6 @@ class frame final{public:
 
 	inline void add_var(const string&nm,const size_t stkix,const string&flags){
 		string str="dword[ebp+"+to_string(stkix<<2)+"]";
-//		char buf[256];
-//		const int n=snprintf(buf,sizeof buf,"dword[ebp+%zu]",stkix<<2);
-//		if(n<0||n==sizeof buf)throw"??";
-//		const size_t len=size_t(n)+1;
-//		char*str=new char[len];
-////		char*str=(char*)malloc(len);
-//		memcpy(str,buf,len);
-//		to_be_deleted_.push_back(unique_ptr<const char[]>(str));
 		vars_.put(nm,allocated_var{nm,stkix,"",str,0});
 		allocated_stack_++;
 	}
@@ -143,14 +135,6 @@ class framestack final{public:
 		frames_.push_back(frame{name,8});
 	}
 
-//	inline void export_varspace_at_current_frame_in_subcalls(bool b){
-//		if(b){
-//			exported_frame_ix=frames.size()-1;
-//			return;
-//		}
-//		exported_frame_ix=0;
-//	}
-
 	inline void pop_if(const string&name){
 		frame&f=frames_.back();
 		if(not f.is_if() or not f.is_name(name))throw __LINE__;
@@ -163,49 +147,6 @@ class framestack final{public:
 	inline void add_var(const string&name,const string&flags){
 		frames_.back().add_var(name,stkix_++,flags);
 	}
-
-//	inline const char*resolve_ident_to_nasm(const char*ident)const{
-//		size_t i=frames_.size()-1;// recurse until aliased var found
-//		const char*name=ident;
-//		while(true){
-//			if(!frames_[i].has_alias(name))break;
-//			name=frames_[i].get_alias(name);
-//			i--;
-//		}
-//
-//		if(frames_[i].has_var(name))
-//			return frames_[i].get_var(name).nasm_ident();
-//
-//		if(!exported_frame_ix_){// no additional frame to look from
-//
-//			for(auto e:all_registers_)
-//				if(!strcmp(e,name))
-//					return name;
-//
-//
-//			return name;
-//		}
-//
-//		// try to find from a different frame   i e   var a=1 var d=plus(plus(a b),(c d);
-//		i=exported_frame_ix_;
-//		while(true){
-//			if(!frames_[i].has_alias(name))break;
-//			name=frames_[i].get_alias(name);
-//			i--;
-//		}
-//
-//		if(frames_[i].has_var(name))
-//			return frames_[i].get_var(name).nasm_ident();
-//
-//		for(auto e:all_registers_)
-//			if(!strcmp(e,name))
-//				return name;
-//
-//		//? throw if ident does not match a field or table or const or register
-//		//? ie prompt.len -> len implicit for field, table
-//
-//		return name;
-//	}
 
 	inline const string&alloc_scratch_register(){
 		const string&r=free_registers_[free_registers_.size()-1];

@@ -8,11 +8,11 @@
 
 class expression:public statement{public:
 
-	inline expression(const statement&parent,token tkn):
-		statement{parent,tkn}
+	inline expression(const statement&parent,token tk):
+		statement{parent,tk}
 	{}
 
 	inline bool is_expression()const override{return true;}
 
 };
-using up_expression=unique_ptr<expression>;
+//using up_expression=unique_ptr<expression>;

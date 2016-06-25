@@ -14,16 +14,10 @@
 
 class stmt_assign_var final:public statement{public:
 
-	inline stmt_assign_var(const statement&parent,const token&tkn,tokenizer&t):
-		statement{parent,tkn}
-	{
-		token tk=t.next_token();
-		if(!t.is_peek_char('(')){
-			expr=make_unique<statement>(parent,move(tk));// ie  0x80
-			return;
-		}
-		expr=create_call_statement_from_tokenizer(tk.name(),*this,tk,t); // ie  f(...)
-	}
+	inline stmt_assign_var(const statement&parent,const token&tk,tokenizer&t):
+		statement{parent,tk},
+		expr{create_statement_from_tokenizer(*this,t)}
+	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level,true);os<<tok().name()<<"="<<endl;

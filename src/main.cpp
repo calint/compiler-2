@@ -43,40 +43,36 @@ static size_t line_number_for_char_index(size_t ix,const char*str){
 	}
 	return lineno;
 }
-statement next_stmt(const statement&parent){
-	statement s1{parent,token{"s1"}};
-	return s1;
-}
-statement next_stmt2(const statement&parent){
-	return statement{parent,token{"s1"}};
-}
-statement next_stmt3(const statement&parent){
-	return move(statement{parent,token{"s1"}});
-}
+//statement next_stmt(const statement&parent){
+//	statement s1{parent,token{"s1"}};
+//	return s1;
+//}
+//statement next_stmt2(const statement&parent){
+//	return statement{parent,token{"s1"}};
+//}
+//statement next_stmt3(const statement&parent){
+//	return move(statement{parent,token{"s1"}});
+//}
 int main(int argc,char**args){
 
 	auto src=file_read_to_string("prog.baz");
 
 	try{
-
 		stmt_program p(src);
-
-		token tk1{"s1"};
-		token tk2{"s2"};
-		statement s1{p,tk1};
-		statement s2{p,tk2};
-		statement s3=s1;
-		statement s4{s1};
-		statement s5=next_stmt(p);
-		statement s6=next_stmt2(p);
-		statement s7=next_stmt3(p);
+//
+//		token tk1{"s1"};
+//		token tk2{"s2"};
+//		statement s1{p,tk1};
+//		statement s2{p,tk2};
+//		statement s3=s1;
+//		statement s4{s1};
+//		statement s5=next_stmt(p);
+//		statement s6=next_stmt2(p);
+//		statement s7=next_stmt3(p);
 
 		ofstream fo("diff.baz");
-
 		p.source_to(fo);
-
 		fo.close();
-
 		if(file_read_to_string("prog.baz")!=file_read_to_string("diff.baz"))
 			throw "generated source differs";
 
@@ -96,31 +92,32 @@ int main(int argc,char**args){
 //	}
 	return 0;
 }
-inline up_statement create_call_statement_from_tokenizer(const string&func_name,statement&parent,const token&tk,tokenizer&t){
-	if("mov"==func_name)return make_unique<call_asm_mov>(parent,tk,t);
-	if("int"==func_name)return make_unique<call_asm_int>(parent,tk,t);
-	if("xor"==func_name)return make_unique<call_asm_xor>(parent,tk,t);
-	if("syscall"==func_name)return make_unique<call_asm_syscall>(parent,tk,t);
-	if("add"==func_name)return make_unique<call_asm_add>(parent,tk,t);
-	if("loop"==func_name)return make_unique<stmt_loop>(parent,tk,t);
-	if("break"==func_name)return make_unique<stmt_break>(parent,tk,t);
-	if("continue"==func_name)return make_unique<stmt_continue>(parent,tk,t);
-	if("tag"==func_name)return make_unique<call_asm_tag>(parent,tk,t);
-	if("cmp"==func_name)return make_unique<call_asm_cmp>(parent,tk,t);
-	if("je"==func_name)return make_unique<call_asm_je>(parent,tk,t);
-	if("jmp"==func_name)return make_unique<call_asm_jmp>(parent,tk,t);
-	if("jne"==func_name)return make_unique<call_asm_jne>(parent,tk,t);
-	if("if"==func_name)return make_unique<stmt_if>(parent,tk,t);
-	if("cmove"==func_name)return make_unique<call_asm_cmove>(parent,tk,t);
-	if("cmovne"==func_name)return make_unique<call_asm_cmovne>(parent,tk,t);
-	if("or"==func_name)return make_unique<call_asm_or>(parent,tk,t);
-	if("and"==func_name)return make_unique<call_asm_and>(parent,tk,t);
+inline up_statement create_call_statement_from_tokenizer(statement&parent,const token&tk,tokenizer&t){
+	const string&func=tk.name();
+	if("mov"==func)return make_unique<call_asm_mov>(parent,move(tk),t);
+	if("int"==func)return make_unique<call_asm_int>(parent,move(tk),t);
+	if("xor"==func)return make_unique<call_asm_xor>(parent,move(tk),t);
+	if("syscall"==func)return make_unique<call_asm_syscall>(parent,move(tk),t);
+	if("add"==func)return make_unique<call_asm_add>(parent,move(tk),t);
+	if("loop"==func)return make_unique<stmt_loop>(parent,move(tk),t);
+	if("break"==func)return make_unique<stmt_break>(parent,move(tk),t);
+	if("continue"==func)return make_unique<stmt_continue>(parent,move(tk),t);
+	if("tag"==func)return make_unique<call_asm_tag>(parent,move(tk),t);
+	if("cmp"==func)return make_unique<call_asm_cmp>(parent,move(tk),t);
+	if("je"==func)return make_unique<call_asm_je>(parent,move(tk),t);
+	if("jmp"==func)return make_unique<call_asm_jmp>(parent,move(tk),t);
+	if("jne"==func)return make_unique<call_asm_jne>(parent,move(tk),t);
+	if("if"==func)return make_unique<stmt_if>(parent,move(tk),t);
+	if("cmove"==func)return make_unique<call_asm_cmove>(parent,move(tk),t);
+	if("cmovne"==func)return make_unique<call_asm_cmovne>(parent,move(tk),t);
+	if("or"==func)return make_unique<call_asm_or>(parent,move(tk),t);
+	if("and"==func)return make_unique<call_asm_and>(parent,tk,t);
 	return make_unique<stmt_call>(parent,move(tk),t);
 }
 inline up_statement create_statement_from_tokenizer(statement&parent,tokenizer&t){
 	auto tk=t.next_token();
-	if(tk.is_name("//"))return make_unique<stmt_comment>(parent,tk,t);// ie    print("hello") // comment
-	if(!t.is_peek_char('('))return make_unique<statement>(parent,tk);// ie  0x80
-	return create_call_statement_from_tokenizer(tk.name(),parent,tk,t); // ie  f(...)
+	if(tk.is_name("//"))return make_unique<stmt_comment>(parent,move(tk),t);// ie    print("hello") // comment
+	if(!t.is_peek_char('('))return make_unique<statement>(parent,move(tk));// ie  0x80
+	return create_call_statement_from_tokenizer(parent,move(tk),t); // ie  f(...)
 }
 

@@ -18,8 +18,8 @@
 
 class stmt_call:public expression{public:
 
-	inline stmt_call(const statement&parent,const token&tkn,tokenizer&t):
-		expression{parent,tkn}
+	inline stmt_call(const statement&parent,const token&tk,tokenizer&t):
+		expression{parent,tk}
 	{
 		if(!t.is_next_char('(')){
 			no_args_=true;
@@ -129,6 +129,6 @@ class stmt_call:public expression{public:
 
 private:
 	bool no_args_{false};
-	vup_statement args_;
+	vector<up_statement>args_;
 };
 

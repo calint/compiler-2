@@ -15,9 +15,9 @@
 
 class stmt_loop final:public stmt_call{public:
 
-	inline stmt_loop(const statement&parent,const token&tkn,tokenizer&t):
-		stmt_call{parent,tkn,t},
-		name{"_loop_"+to_string(tok().char_index_in_source())},
+	inline stmt_loop(const statement&parent,const token&tk,tokenizer&t):
+		stmt_call{parent,tk,t},
+		name{"_loop_"+to_string(tk.char_index_in_source())},
 		code{stmt_block{parent,t}}
 	{}
 

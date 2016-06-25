@@ -14,28 +14,28 @@
 
 class stmt_def_table final:public statement{public:
 
-	inline stmt_def_table(const statement&parent,const token&tkn,tokenizer&t):
-		statement{parent,tkn},
+	inline stmt_def_table(const statement&parent,const token&tk,tokenizer&t):
+		statement{parent,tk},
 		ident_{t.next_token()}
 	{
 		if(ident_.is_name(""))
 			throw compiler_error(ident_,"expected table name");
 
 		if(!t.is_next_char('(')){
-			no_args_=true;
+			noargs_=true;
 //			throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
 		}
-		if(!no_args_){
+		if(!noargs_){
 			while(true){
 				if(t.is_next_char(')'))break;
-				token tk=t.next_token();
+				token ta=t.next_token();
 				if(t.is_next_char(')')){
-					params_.push_back(tk);
+					params_.push_back(ta);
 					break;
 				}
 				if(!t.is_next_char(','))
-					throw compiler_error(tkn,"expected ',' after parameter at ",tkn.name());
-				params_.push_back(tk);
+					throw compiler_error(ta,"expected ',' after parameter at ",tk.name());
+				params_.push_back(ta);
 			}
 		}
 	}
@@ -43,7 +43,7 @@ class stmt_def_table final:public statement{public:
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		ident_.source_to(os);
-		if(!no_args_){
+		if(!noargs_){
 			os<<"(";
 			const size_t nparam=params_.size()-1;
 			size_t ii{0};
@@ -71,6 +71,6 @@ class stmt_def_table final:public statement{public:
 
 private:
 	token ident_;
-	bool no_args_{false};
+	bool noargs_{false};
 	vector<token>params_;
 };
