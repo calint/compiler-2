@@ -62,8 +62,8 @@ func main{
 //	prompt.print()
 	print(prompt.len,prompt)
 	loop{
-//		name.print(name.read()-2)
-//		name.print(plus(name.read(),-2))
+//		name.print(name.read-2)
+//		name.print(plus(name.read,-2))
 		print(plus(read(name.len,name),-2),name)
 	}
 	exit
