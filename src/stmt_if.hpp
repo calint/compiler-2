@@ -27,11 +27,11 @@ class stmt_if final:public statement{public:
 
 		code=make_unique<stmt_block>(parent,t);
 
-		name="_if_"+to_string(tok().token_start_char());
+		name="_if_"+to_string(tok().char_index_in_source());
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		indent(os,indent_level,true);os<<"if ["<<tok().token_start_char()<<"]\n";
+		indent(os,indent_level,true);os<<"if ["<<tok().char_index_in_source()<<"]\n";
 
 		tc.framestk().push_if(name.data());
 

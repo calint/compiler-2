@@ -14,7 +14,6 @@ class stmt_def_field final:public statement{public:
 		statement{parent,tkn},
 		ident_{t.next_token()}
 	{
-//		ident_=t.next_token();
 		if(ident_.is_name(""))
 			throw compiler_error(ident_,"expected field name");
 
@@ -30,18 +29,16 @@ class stmt_def_field final:public statement{public:
 	inline bool is_in_data_section()const override{return true;}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		os<<"; --- field "<<ident_.name()<<"  ";
+		os<<"; -- field "<<ident_.name()<<"  ";
 		tc.source_location_to_stream(os,ident_);
 		os<<endl;
 		os<<ident_.name()<<" db '";
 		for(auto&s:tokens_)s.compile_to(os);
-//		os<<"'";
 		os<<"'\n";
 
 		for(size_t i=0;i<indent_level;i++)cout<<"  ";
-//		os<<" ";
 		os<<ident_.name()<<".len equ $-"<<ident_.name()<<"\n\n";
-//		os<<"section .text\n";
+
 		tc.add_field(*this,ident_.name(),this);
 	}
 
@@ -49,7 +46,8 @@ class stmt_def_field final:public statement{public:
 		statement::source_to(os);
 		ident_.source_to(os);
 		os<<"{";
-		for(auto&s:tokens_)s.source_to(os);
+		for(auto&s:tokens_)
+			s.source_to(os);
 		os<<"}";
 	}
 

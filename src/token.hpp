@@ -62,7 +62,7 @@ class token final{public:
 
 	inline const string&name()const{return name_;}
 
-	inline size_t token_start_char()const{return start_char_;}
+	inline size_t char_index_in_source()const{return start_char_;}
 
 	inline size_t token_end_char()const{return end_char_;}
 

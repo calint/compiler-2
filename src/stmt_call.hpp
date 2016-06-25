@@ -105,7 +105,7 @@ class stmt_call:public expression{public:
 
 		f->code_block()->compile(tc,os,indent_level+1);
 
-		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<tok().token_start_char()<<":";
+		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<tok().char_index_in_source()<<":";
 //		os<<"  ;  ";
 //		tc.source_location_to_stream(os,);
 		os<<endl;

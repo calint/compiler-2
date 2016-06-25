@@ -1,9 +1,9 @@
 section .data
-; --- field prompt  [1:6]
+; -- field prompt  [1:6]
 prompt db '___echo__type_new_line__ctrl_c__to_break____'
 prompt.len equ $-prompt
 
-; --- field name  [2:9]
+; -- field name  [2:9]
 name db '............................................................'
 name.len equ $-name
 

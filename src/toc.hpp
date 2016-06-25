@@ -277,13 +277,13 @@ class toc final{public:
 
 	inline void source_location_to_stream(ostream&os,const token&t){
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(t.token_start_char(),source_str_,char_in_line);
+		const size_t n=line_number_for_char_index(t.char_index_in_source(),source_str_,char_in_line);
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
 	}
 
 	inline void source_location_for_identifier_to_stream(ostream&os,const token&t){
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(t.token_start_char(),source_str_,char_in_line);
+		const size_t n=line_number_for_char_index(t.char_index_in_source(),source_str_,char_in_line);
 		os<<"_"<<to_string(n)<<"_"<<char_in_line<<"_";
 	}
 
