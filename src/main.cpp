@@ -44,18 +44,26 @@ static size_t line_number_for_char_index(size_t ix,const char*str){
 	return lineno;
 }
 int main(int argc,char**args){
-	string src=file_read_to_string("prog.baz");
-	up_program p;// to keep valid in case of exception
-	try{
-		p=make_unique<stmt_program>(src);
-		ofstream fo("diff.baz");
-		p->source_to(fo);
-		fo.close();
-		if(file_read_to_string("prog.baz")!=file_read_to_string("diff.baz"))throw "generated source differs";
 
-		p->build(cout);
+	auto src=file_read_to_string("prog.baz");
+
+	try{
+
+		auto p=stmt_program(src);
+
+		auto fo=ofstream("diff.baz");
+
+		p.source_to(fo);
+
+		fo.close();
+
+		if(file_read_to_string("prog.baz")!=file_read_to_string("diff.baz"))
+			throw "generated source differs";
+
+		p.build(cout);
+
 	}catch(compiler_error&e){
-		const size_t lineno=line_number_for_char_index(e.start_char,src.c_str());
+		auto lineno=line_number_for_char_index(e.start_char,src.c_str());
 		cout<<" *** error at "<<lineno<<":"<<e.start_char<<".."<<e.end_char<<"  "<<e.msg<<": "<<e.ident<<endl;
 		return 1;
 	}catch(string&s){
@@ -90,7 +98,7 @@ inline up_statement create_call_statement_from_tokenizer(const string&func_name,
 	return make_unique<stmt_call>(parent,move(tk),t);
 }
 inline up_statement create_statement_from_tokenizer(statement&parent,tokenizer&t){
-	token tk=t.next_token();
+	auto tk=t.next_token();
 	if(tk.is_name("//"))return make_unique<stmt_comment>(parent,tk,t);// ie    print("hello") // comment
 	if(!t.is_peek_char('('))return make_unique<statement>(parent,tk);// ie  0x80
 	return create_call_statement_from_tokenizer(tk.name(),parent,tk,t); // ie  f(...)

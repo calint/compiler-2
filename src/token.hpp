@@ -27,6 +27,14 @@ class token final{public:
 			ws_after{""}
 	{}
 
+//	inline token(const token&&tk):
+//		ws_before{tk.ws_before},
+//		token_start_char_{tk.token_start_char_},
+//		name_{tk.name_},
+//		token_end_char_{tk.token_end_char_},
+//		ws_after{tk.ws_after}
+//	{}
+
 	inline void source_to(ostream&os)const{os<<ws_before<<name_<<ws_after;}
 
 	inline void compile_to(ostream&os)const{os<<name_;}

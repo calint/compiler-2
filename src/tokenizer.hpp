@@ -70,16 +70,11 @@ private:
 			const char ch=next_char();
 			if(is_char_whitespace(ch))
 				continue;
-			unsafe_seek(-1);
+			seek(-1);
 			break;
 		}
 		const size_t len=nchar-nchar_bm;
 		return string{ptr-len,len};
-//		char*str=new char[len+1];
-//		if(len)memcpy(str,ptr-len,len);
-//		str[len]=0;
-//		return unique_ptr<const char[]>(str);
-//		return str;
 	}
 	inline string next_token_str(){
 		if(is_eos())return"";
@@ -87,21 +82,16 @@ private:
 		while(true){
 			const char ch=next_char();
 			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||ch=='['||ch==']'||ch=='='||ch==','||ch==':'){
-				unsafe_seek(-1);
+				seek(-1);
 				break;
 			}
 			continue;
 		}
 		const size_t len=nchar-nchar_bm;
-//		char*str=new char[len+1];
-//		if(len)memcpy(str,ptr-len,len);
-//		str[len]=0;
-//		return unique_ptr<const char[]>(str);
-		return string(ptr-len,len);
+		return string{ptr-len,len};
 	}
-	inline void unsafe_seek(const off_t nch){
-//		if(nch>0){off_t n=nch;while(n--)assert(*ptr++);}
-//		else{off_t n=-nch;while(n--)assert(*ptr--);}
+	inline void seek(const off_t nch){
+		assert(ssize_t(source.size())>=(ssize_t(nchar)+nch) and (ssize_t(nchar)+nch)>=0);
 		ptr+=nch;
 		nchar=size_t(ssize_t(nchar)+nch);
 	}
