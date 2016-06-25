@@ -34,8 +34,8 @@ class stmt_assign_var final:public statement{public:
 			return;
 		}
 		indent(os,indent_level,false);
-		const char*ra=tc.framestk().resolve_func_arg(tok().name());
-		const char*rb=tc.framestk().resolve_func_arg(expr->tok().name());
+		const char*ra=tc.resolve_ident_to_nasm(*this,tok().name());
+		const char*rb=tc.resolve_ident_to_nasm(*expr,expr->tok().name());
 		os<<"mov "<<ra<<","<<rb<<endl;
 	}
 

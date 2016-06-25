@@ -79,6 +79,7 @@ class tokenizer final{public:
 		}
 		string s{bgn,size_t(ptr-bgn)};
 		ptr++;
+		nchar+=size_t(ptr-bgn);
 		return s;
 	}
 

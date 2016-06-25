@@ -14,7 +14,7 @@ class call_asm_and final:public stmt_call{public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level);
-		framestack&fs=tc.framestk();
-		os<<"and "<<fs.resolve_func_arg(argument(0).tok().name())<<","<<fs.resolve_func_arg(argument(1).tok().name())<<endl;
+		os<<"and "<<tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name())
+				<<","<<tc.resolve_ident_to_nasm(argument(1),argument(1).tok().name())<<endl;
 	}
 };

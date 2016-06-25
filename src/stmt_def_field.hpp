@@ -37,7 +37,7 @@ class stmt_def_field final:public statement{public:
 //		os<<" ";
 		os<<identifier->name()<<".len equ $-"<<identifier->name()<<"\n\n";
 //		os<<"section .text\n";
-		tc.add_file(*this,identifier->name(),this);
+		tc.add_field(*this,identifier->name(),this);
 	}
 
 	inline void source_to(ostream&os)const override{

@@ -22,18 +22,17 @@ class stmt_program final:public statement{public:
 		while(!t.is_eos()){
 			up_token tk=t.next_token();
 			up_statement stmt;
-			if(tk->is_name("//")){
-				stmt=make_unique<stmt_comment>(this,move(tk),t);
-			}else if(tk->is_name("field")){stmt=make_unique<stmt_def_field>(this,move(tk),t);}
+			if(tk->is_name("//")){stmt=make_unique<stmt_comment>(this,move(tk),t);}
+			else if(tk->is_name("field")){stmt=make_unique<stmt_def_field>(this,move(tk),t);}
 			else if(tk->is_name("func")){stmt=make_unique<stmt_def_func>(this,move(tk),t);}
 			else if(tk->is_name("table")){stmt=make_unique<stmt_def_table>(this,move(tk),t);}
-			else{
-				if(tk->is_name("")){
-					stmt=make_unique<statement>(this,move(tk));
-				}else{
-					stmt=create_call_statement_from_tokenizer(tk->name(),this,move(tk),t);
-				}
-			}
+			else if(t.is_next_char('(')){
+				t.unread();
+				stmt=create_call_statement_from_tokenizer(tk->name(),this,move(tk),t);
+			}else if(tk->is_name("")){stmt=make_unique<statement>(this,move(tk));}
+			else
+				throw compiler_error(tk.get(),"unexpected keyword",tk->name_copy());
+
 			statements.push_back(move(stmt));
 		}
 	}
@@ -44,7 +43,13 @@ class stmt_program final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		os<<"section .text\nglobal _start\n_start:\n  mov ebp,stk\n  mov esp,stk.end\n";
+		os<<"section .data\n";
+		for(auto&s:statements)
+			if(s->is_in_data_section())s->compile(tc,os,indent_level);
+		os<<"\ndd1 dd 1\ndd0 dd 0\n";
+		os<<"\nsection .bss\nstk resd 256\nstk.end\n\n";
+
+		os<<"\nsection .text\nglobal _start\n_start:\n  mov ebp,stk\n  mov esp,stk.end\n";
 		for(auto&s:statements)
 			if(!s->is_in_data_section())s->compile(tc,os,indent_level);
 
@@ -56,12 +61,6 @@ class stmt_program final:public statement{public:
 
 //		indent(os,indent_level,true);os<<"}\n\n";
 
-		os<<"\nsection .data\n";
-		os<<"dd1 dd 1\ndd0 dd 0\n\n";
-		for(auto&s:statements)
-			if(s->is_in_data_section())s->compile(tc,os,indent_level);
-
-		os<<"\nsection .bss\nstk resd 256\nstk.end\n";
 		tc.framestk().pop_func("main");
 	}
 

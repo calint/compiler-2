@@ -15,17 +15,16 @@ class call_asm_cmovne final:public stmt_call{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{// mov(eax 1)
 //		indent(os,indent_level,true);source_to(os);os<<endl;
 		indent(os,indent_level);
-		framestack&fs=tc.framestk();
 		const char*reg{nullptr};
 		if(argument(1).is_expression()){
 			reg=tc.framestk().alloc_scratch_register();
 			argument(1).set_expression_dest_nasm_identifier(reg);
 			argument(1).compile(tc,os,indent_level);
-			os<<"cmovne "<<fs.resolve_func_arg(argument(0).tok().name())<<","<<reg<<endl;
+			os<<"cmovne "<<tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name())<<","<<reg<<endl;
 			tc.framestk().free_scratch_reg(reg);
 			return;
 		}
-		os<<"cmovne "<<fs.resolve_func_arg(argument(0).tok().name())<<",["<<fs.resolve_func_arg(argument(1).tok().name())<<"]"<<endl;
+		os<<"cmovne "<<tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name())<<",["<<tc.resolve_ident_to_nasm(argument(1),argument(1).tok().name())<<"]"<<endl;
 	}
 
 };

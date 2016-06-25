@@ -12,8 +12,7 @@ class call_asm_add final:public stmt_call{public:
 	inline call_asm_add(statement*parent,up_token tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{}
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level);
-		framestack&fs=tc.framestk();
-		os<<"add "<<fs.resolve_func_arg(argument(0).tok().name())<<","<<fs.resolve_func_arg(argument(1).tok().name());
+		os<<"add "<<tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name())<<","<<tc.resolve_ident_to_nasm(argument(1),argument(1).tok().name());
 		os<<"  ;  ";
 		tc.source_location_to_stream(os,tok());
 		os<<endl;

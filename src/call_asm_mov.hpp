@@ -15,7 +15,6 @@ class call_asm_mov final:public stmt_call{public:
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{// mov(eax 1)
-		framestack&fs=tc.framestk();
 //		const char*reg{nullptr};
 //		if(argument(1).is_expression()){
 //			reg=tc.framestk().alloc_scratch_register();
@@ -33,11 +32,14 @@ class call_asm_mov final:public stmt_call{public:
 //			tc.framestk().free_scratch_reg(reg);
 //			return;
 //		}
-		const char*ra=fs.resolve_func_arg(argument(0).tok().name());
-		const char*rb=fs.resolve_func_arg(argument(1).tok().name());
+		const char*ra=tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name());
+		const char*rb=tc.resolve_ident_to_nasm(argument(1),argument(1).tok().name());
 		if(!strcmp(ra,rb)){// ie  mov eax,eax
 			return;
 		}
+		//? check illegal op comb
+
+
 		indent(os,indent_level);
 		os<<"mov "<<ra<<","<<rb<<"  ;  ";
 		tc.source_location_to_stream(os,tok());

@@ -1,8 +1,7 @@
-// comment field
 field prompt {___echo__type_new_line__ctrl_c__to_break____}
 field   name {............................................................}
 
-table name_to_prompt(name,prompt)   // table comment
+table name_to_prompt(name,prompt)
 
 func table.find(tbl,lamda):ref{
 }

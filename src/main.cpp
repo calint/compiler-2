@@ -44,10 +44,10 @@ static size_t line_number_for_char_index(size_t ix,const char*str){
 	return lineno;
 }
 int main(int argc,char**args){
-	string s=file_read_to_string("prog.baz");
+	string src=file_read_to_string("prog.baz");
 	up_program p;// to keep valid in case of exception
 	try{
-		p=make_unique<stmt_program>(s.data());
+		p=make_unique<stmt_program>(src.c_str());
 		ofstream fo("diff.baz");
 		p->source_to(fo);
 		fo.close();
@@ -55,11 +55,14 @@ int main(int argc,char**args){
 
 		p->build(cout);
 	}catch(compiler_error&e){
-		const size_t lineno=line_number_for_char_index(e.start_char,s.data());
+		const size_t lineno=line_number_for_char_index(e.start_char,src.c_str());
 		cout<<" *** error at "<<lineno<<":"<<e.start_char<<".."<<e.end_char<<"  "<<e.msg<<": "<<e.ident.get()<<endl;
 		return 1;
 	}catch(const char*msg){
 		cout<<" *** exception: "<<msg<<endl;
+		return 1;
+	}catch(string&s){
+		cout<<" *** exception: "<<s<<endl;
 		return 1;
 	}catch(...){
 		cout<<" *** exception"<<endl;
