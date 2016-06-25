@@ -1,5 +1,7 @@
-field prompt {echo__type_new_line__ctrl_c__to_break____}
+field prompt {___echo__type_new_line__ctrl_c__to_break____}
 field   name {............................................................}
+
+table names
 
 func exit{
 	mov(eax,1)
@@ -25,8 +27,8 @@ func read(len,ptr):int{
 
 func eq(a,b):bool{
 	cmp(a,b)
-	cmove(bool,mem1)
-	cmovne(bool,mem0)
+	cmove(bool,dd1)
+	cmovne(bool,dd0)
 }
 
 func neq(a,b):bool{

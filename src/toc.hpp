@@ -11,7 +11,7 @@
 class token;
 class stmt_def_func;
 class stmt_def_field;
-
+class stmt_def_table;
 
 using namespace std;
 
@@ -210,17 +210,19 @@ private:
 
 class toc final{public:
 
+	inline toc(const char*source):source_str(source){}
+
 	inline void add_file(const statement&s,const char*identifier,const stmt_def_field*f){
-		if(has_file(identifier)){
+		if(files_.has(identifier)){
 			throw compiler_error(s,"file already defined at ...",copy_string_to_unique_pointer(identifier));
 		}
 		files_.put(identifier,f);
 	}
 
 	inline void add_func(const statement&s,const char*identifier,const stmt_def_func*ref){
-		if(has_func(identifier)){
+		if(funcs_.has(identifier))
 			throw compiler_error(s,"function already defined at ...",copy_string_to_unique_pointer(identifier));
-		}
+
 		funcs_.put(identifier,ref);
 	}
 
@@ -233,8 +235,20 @@ class toc final{public:
 		return f;
 	}
 
+	inline void add_table(const statement&s,const char*identifier,const stmt_def_table*f){
+		if(tables_.has(identifier))
+			throw compiler_error(s,"table already defined at ...",copy_string_to_unique_pointer(identifier));
+
+		tables_.put(identifier,f);
+	}
+
 	inline framestack&framestk(){return framestk_;}
 
+	inline void source_location_to_stream(ostream&os,const token&t){
+		size_t char_in_line;
+		const size_t n=line_number_for_char_index(t.token_start_char(),source_str,char_in_line);
+		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
+	}
 
 
 	inline static unique_ptr<const char[]>copy_string_to_unique_pointer(const char*str){
@@ -246,10 +260,26 @@ class toc final{public:
 
 
 private:
-	inline bool has_func(const char*name)const{return funcs_.has(name);}
-	inline bool has_file(const char*name)const{return files_.has(name);}
+	static size_t line_number_for_char_index(const size_t char_index,const char*str,size_t&char_in_line){
+		size_t ix{0};
+		size_t lix{0};
+		size_t lineno{1};
+		while(true){
+			if(ix==char_index)
+				break;
+			if(*str++=='\n'){
+				lineno++;
+				lix=ix;
+			}
+			ix++;
+		}
+		char_in_line=ix-lix;
+		return lineno;
+	}
 
+	const char*source_str{""};
 	framestack framestk_;
 	lut<const stmt_def_field*>files_;
 	lut<const stmt_def_func*>funcs_;
+	lut<const stmt_def_table*>tables_;
 };

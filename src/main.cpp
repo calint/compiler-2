@@ -44,10 +44,9 @@ static size_t line_number_for_char_index(size_t ix,const char*str){
 }
 int main(int argc,char**args){
 	string s=file_read_to_string("prog.baz");
-	tokenizer t{s.data()};
 	up_program p;// to keep valid in case of exception
 	try{
-		p=make_unique<stmt_program>(t);
+		p=make_unique<stmt_program>(s.data());
 		ofstream fo("diff.baz");
 		p->source_to(fo);
 		fo.close();

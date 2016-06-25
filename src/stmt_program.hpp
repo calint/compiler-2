@@ -1,17 +1,21 @@
 #pragma once
 #include<memory>
 using namespace std;
-#include "stmt_call.hpp"
-#include "decouple.hpp"
-#include "statement.hpp"
-#include "toc.hpp"
-#include "token.hpp"
-#include "tokenizer.hpp"
+#include"stmt_call.hpp"
+#include"decouple.hpp"
+#include"toc.hpp"
+#include"token.hpp"
+#include"tokenizer.hpp"
 #include"stmt_def_func.hpp"
 #include"stmt_def_field.hpp"
+#include"stmt_def_table.hpp"
 class stmt_program final:public statement{public:
 
-	inline stmt_program(tokenizer&t):statement{nullptr,make_unique<class token>()}{
+	inline stmt_program(const char*source):
+		statement{nullptr,make_unique<class token>()},
+		tc{source},
+		t{source}
+	{
 		vector<const char*>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if","cmove","cmovne","or","and"};
 		for(auto s:assem)tc.add_func(*this,s,nullptr);
 		while(!t.is_eos()){
@@ -19,6 +23,7 @@ class stmt_program final:public statement{public:
 			up_statement stmt;
 			if(tk->is_name("field")){stmt=make_unique<stmt_def_field>(this,move(tk),t);}
 			else if(tk->is_name("func")){stmt=make_unique<stmt_def_func>(this,move(tk),t);}
+			else if(tk->is_name("table")){stmt=make_unique<stmt_def_table>(this,move(tk),t);}
 			else{
 				if(tk->is_name("")){
 					stmt=make_unique<statement>(this,move(tk));
@@ -42,18 +47,16 @@ class stmt_program final:public statement{public:
 
 		const stmt_def_func*main=tc.get_func_or_break(*this,"main");
 		tc.framestk().push_func("main");
-		indent(os,indent_level,true);os<<"main(){  ["<<token().token_start_char()<<"]"<<endl;
+//		indent(os,indent_level,true);os<<"main(){  ["<<token().token_start_char()<<"]"<<endl;
 
 		main->code_block()->compile(tc,os,indent_level);
 
-		indent(os,indent_level,true);os<<"}\n\n";
+//		indent(os,indent_level,true);os<<"}\n\n";
 
 		os<<"\nsection .data\n";
+		os<<"dd1 dd 1\ndd0 dd 0\n\n";
 		for(auto&s:statements)
 			if(s->is_in_data_section())s->compile(tc,os,indent_level);
-
-		os<<"dd1 dd 1\n";
-		os<<"dd0 dd 0\n";
 
 		os<<"\nsection .bss\nstk resd 256\nstk.end\n";
 		tc.framestk().pop_func("main");
@@ -71,5 +74,6 @@ class stmt_program final:public statement{public:
 private:
 	vup_statement statements;
 	toc tc;
+	tokenizer t;
 };
 using up_program=unique_ptr<stmt_program>;

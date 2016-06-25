@@ -71,13 +71,16 @@ class stmt_call:public expression{public:
 		os<<")";
 		const char*expr_dest=expression_dest_nasm_identifier();
 		if(expr_dest)os<<":"<<expr_dest;
-		os<<"{  ["<<token().token_start_char()<<"]"<<endl;
+		os<<"{  ";
+		tc.source_location_to_stream(os,token());
+		os<<endl;
 		//--- - - - -- - - - -
 
 		if(!is_inline()){
-			for(auto&a:args)os<<"  push "<<a.get()->token().name()<<endl;
-			os<<"  call "<<token().name()<<endl;
-			return;
+			throw"?";
+//			for(auto&a:args)os<<"  push "<<a.get()->token().name()<<endl;
+//			os<<"  call "<<token().name()<<endl;
+//			return;
 		}
 
 		const stmt_def_func*f=tc.get_func_or_break(*this,nm);
@@ -87,7 +90,8 @@ class stmt_call:public expression{public:
 //		}
 		fs.push_func(nm);
 		if(expr_dest){
-			if(f->getreturns().empty())throw compiler_error(*this,"cannot assign from call without return",token().name_copy());
+			if(f->getreturns().empty())
+				throw compiler_error(*this,"cannot assign from call without return",token().name_copy());
 //			for(auto&e:f->getreturns()){
 //				fs.add_alias(e->name(),expr_dest);
 //			}
@@ -104,7 +108,7 @@ class stmt_call:public expression{public:
 				allocated_registers.push_back(reg);
 				a->set_expression_dest_nasm_identifier(reg);
 				fs.add_alias(param,reg);
-				a->compile(tc,os,indent_level);
+				a->compile(tc,os,indent_level+1);
 				continue;
 			}
 			const char*tkn=a->token().name();

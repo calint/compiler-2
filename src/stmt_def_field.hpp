@@ -12,6 +12,9 @@ class stmt_def_field final:public statement{public:
 
 	inline stmt_def_field(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		identifier=t.next_token();
+		if(identifier->is_name(""))
+			throw compiler_error(*this,"expected field name");
+
 		if(!t.is_next_char('{'))throw compiler_error(*this,"expected { to open file",identifier->name_copy());
 		while(true){
 			if(t.is_next_char('}'))break;
@@ -22,20 +25,17 @@ class stmt_def_field final:public statement{public:
 	inline bool is_in_data_section()const override{return true;}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-//		section .data
-//		msg     db  'Hello, world!',0xa                 ;string
-//		msg.len equ $ - msg                             ;length of string
-//		section .text
-//		os<<"section .data\n";
-		for(size_t i=0;i<indent_level;i++)cout<<"  ";
-		os<<identifier->name()<<"     db '";
+		os<<"; --- field "<<identifier->name()<<"  ";
+		tc.source_location_to_stream(os,*identifier);
+		os<<endl;
+		os<<identifier->name()<<":    db '";
 		for(auto&s:tokens)s->compile_to(os);
 //		os<<"'";
 		os<<"'\n";
 
 		for(size_t i=0;i<indent_level;i++)cout<<"  ";
 //		os<<" ";
-		os<<identifier->name()<<".len equ $-"<<identifier->name()<<endl;
+		os<<identifier->name()<<".len equ $-"<<identifier->name()<<"\n\n";
 //		os<<"section .text\n";
 		tc.add_file(*this,identifier->name(),this);
 	}

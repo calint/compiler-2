@@ -47,6 +47,8 @@ class stmt_def_func final:public statement{public:
 		if(is_inline())
 			return;
 
+		throw"?";
+
 		os<<identifier->name()<<":\n";
 		for (size_t i=params.size();i-->0;)
 			os<<"  pop "<<params[i].get()->name()<<endl;
@@ -91,8 +93,8 @@ class stmt_def_func final:public statement{public:
 
 private:
 	up_token identifier;
+	bool no_args{false};
 	vup_tokens returns;
 	vup_tokens params;
 	up_block code;
-	bool no_args{false};
 };

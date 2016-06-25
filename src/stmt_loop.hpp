@@ -21,13 +21,18 @@ class stmt_loop final:public stmt_call{public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level,false);
-		os<<name<<":\n";
+		os<<name<<":  ; ";
+		tc.source_location_to_stream(os,token());
+		os<<endl;
 
 		tc.framestk().push_loop(name.data());
 
 		code->compile(tc,os,indent_level+1);
-		indent(os,indent_level,false);os<<"jmp _loop_"<<token().token_start_char()<<endl;
-		indent(os,indent_level,false);os<<"_end_loop_"<<token().token_start_char()<<":\n";
+		indent(os,indent_level+1,false);os<<"jmp _loop_"<<token().token_start_char()<<endl;
+		indent(os,indent_level,false);os<<"_end_loop_"<<token().token_start_char()<<":  ; ";
+		tc.source_location_to_stream(os,token());
+		os<<endl;
+
 
 		tc.framestk().pop_loop(name.data());
 	}
