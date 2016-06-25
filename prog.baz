@@ -65,6 +65,7 @@ func main{
 	print(a,prompt)
 	var b
 	b=15
+	a=b
 	print(b,prompt)
 //	print(prompt.len,prompt)
 	loop{

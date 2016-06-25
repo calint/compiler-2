@@ -172,9 +172,9 @@ class framestack final{public:
 	vector<frame>frames_;
 	size_t exported_frame_ix_{0};
 	vector<string>all_registers_;
+	vector<string>free_registers_;
 private:
 	size_t stkix_{0};
-	vector<string>free_registers_;
 };
 
 
@@ -262,7 +262,9 @@ class toc final{public:
 		}
 		throw compiler_error(stmt.tok(),"cannot resolve identifier",ident);
 	}
-
+	inline void finish(){
+		assert(framestk_.all_registers_.size()==framestk_.free_registers_.size());
+	}
 
 private:
 	string source_str_{""};
