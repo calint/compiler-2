@@ -32,7 +32,7 @@ class stmt_def_var final:public statement{public:
 			}else{
 				indent(os,indent_level,false);
 				const char*ra=tc.framestk().resolve_func_arg(identifier->name());
-				const char*rb=tc.framestk().resolve_func_arg(initial_value->token().name());
+				const char*rb=tc.framestk().resolve_func_arg(initial_value->tok().name());
 				os<<"mov "<<ra<<","<<rb<<endl;
 			}
 		}

@@ -11,7 +11,7 @@ class compiler_error final{public:
 
 	inline compiler_error(const statement&s,const char*message,unique_ptr<const char[]>identifier=unique_ptr<const char[]>(new char[1]{0})):
 		msg{message},ident{move(identifier)},
-		 start_char{s.token().token_start_char()},end_char{s.token().token_end_char()}{}
+		 start_char{s.tok().token_start_char()},end_char{s.tok().token_end_char()}{}
 
 	const char*msg{""};
 	unique_ptr<const char[]>ident;

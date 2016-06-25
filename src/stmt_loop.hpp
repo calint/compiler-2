@@ -11,26 +11,34 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
+#include<sstream>
 
 class stmt_loop final:public stmt_call{public:
 
 	inline stmt_loop(statement*parent,up_token tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{
 		code=make_unique<stmt_block>(parent,t);
-		name="_loop_"+to_string(token().token_start_char());
+		name="_loop_"+to_string(tok().token_start_char());
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level,false);
 		os<<name<<":  ; ";
-		tc.source_location_to_stream(os,token());
+		tc.source_location_to_stream(os,tok());
 		os<<endl;
 
 		tc.framestk().push_loop(name.data());
 
 		code->compile(tc,os,indent_level+1);
-		indent(os,indent_level+1,false);os<<"jmp _loop_"<<token().token_start_char()<<endl;
-		indent(os,indent_level,false);os<<"_end_loop_"<<token().token_start_char()<<":  ; ";
-		tc.source_location_to_stream(os,token());
+		indent(os,indent_level+1,false);
+		os<<"jmp "<<name<<endl;
+//		os<<"jmp _loop";
+//		tc.source_location_for_identifier_to_stream(os,tok());
+//		os<<token().token_start_char();
+//		os<<endl;
+
+		indent(os,indent_level,false);
+		os<<"_end"<<name<<":  ; ";
+		tc.source_location_to_stream(os,tok());
 		os<<endl;
 
 

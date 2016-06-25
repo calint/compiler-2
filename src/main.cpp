@@ -55,7 +55,7 @@ int main(int argc,char**args){
 		p->build(cout);
 	}catch(compiler_error&e){
 		const size_t lineno=line_number_for_char_index(e.start_char,s.data());
-		cout<<" *** error at "<<lineno<<":"<<e.start_char<<":"<<e.end_char<<"  "<<e.msg<<": "<<e.ident.get()<<endl;
+		cout<<" *** error at "<<lineno<<":"<<e.start_char<<".."<<e.end_char<<"  "<<e.msg<<": "<<e.ident.get()<<endl;
 		return 1;
 	}catch(const char*msg){
 		cout<<" *** exception: "<<msg<<endl;

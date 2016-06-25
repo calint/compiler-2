@@ -13,6 +13,9 @@ class call_asm_int final:public stmt_call{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{// mov(eax 1)
 		indent(os,indent_level);
 		framestack&fs=tc.framestk();
-		os<<"int "<<fs.resolve_func_arg(argument(0).token().name())<<endl;
+		os<<"int "<<fs.resolve_func_arg(argument(0).tok().name());
+		os<<"  ;  ";
+		tc.source_location_to_stream(os,tok());
+		os<<endl;
 	}
 };

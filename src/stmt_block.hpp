@@ -23,7 +23,7 @@ class stmt_block final:public statement{public:
 			is_one_statement=true;
 
 		while(true){
-			if(t.is_eos())throw compiler_error(*this,"unexpected end of string",parent->token().name_copy());
+			if(t.is_eos())throw compiler_error(*this,"unexpected end of string",parent->tok().name_copy());
 			if(not is_one_statement and t.is_next_char('}'))break;
 			up_token tkn=t.next_token();
 			if(tkn->is_name("")){

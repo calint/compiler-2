@@ -19,7 +19,7 @@ class statement{public:
 
 	inline virtual void source_to(ostream&os)const{tk->source_to(os);}
 
-	inline const token&token()const{return*tk;}
+	inline const token&tok()const{return*tk;}
 
 	inline const statement*parent()const{return pt;}
 

@@ -60,7 +60,8 @@ class stmt_def_table final:public statement{public:
 //		os<<token().name()<<"_"<<identifier->name()<<":\n";
 //		os<<token().name()<<"_"<<identifier->name()<<"_end:\n\n";
 		os<<identifier->name()<<":\n";
-		os<<identifier->name()<<"_end:\n\n";
+		os<<identifier->name()<<".end:\n";
+		os<<identifier->name()<<".len equ $-"<<identifier->name()<<"\n\n";
 		tc.add_table(*this,identifier->name(),this);//? in constructor for forward ref
 	}
 

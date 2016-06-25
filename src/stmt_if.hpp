@@ -16,20 +16,20 @@ class stmt_if final:public statement{public:
 
 	inline stmt_if(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		if(!t.is_next_char('('))
-			throw compiler_error(*this,"if expects '(' followed by boolean expression",token().name_copy());
+			throw compiler_error(*this,"if expects '(' followed by boolean expression",tok().name_copy());
 
 		bool_expr=stmt_call::read_statement(this,t);
 
 		if(!t.is_next_char(')'))
-			throw compiler_error(*this,"if expects ')' after the boolean expression",token().name_copy());
+			throw compiler_error(*this,"if expects ')' after the boolean expression",tok().name_copy());
 
 		code=make_unique<stmt_block>(parent,t);
 
-		name="_if_"+to_string(token().token_start_char());
+		name="_if_"+to_string(tok().token_start_char());
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		indent(os,indent_level,true);os<<"if ["<<token().token_start_char()<<"]\n";
+		indent(os,indent_level,true);os<<"if ["<<tok().token_start_char()<<"]\n";
 
 		tc.framestk().push_if(name.data());
 

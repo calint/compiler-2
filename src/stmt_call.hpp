@@ -37,7 +37,7 @@ class stmt_call:public expression{public:
 			if(t.is_next_char(')'))break;
 			args.push_back(stmt_call::read_statement(this,t));
 			if(t.is_next_char(')'))break;
-			if(!t.is_next_char(','))throw compiler_error(*this,"expected ',' after argument at ",token().name_copy());
+			if(!t.is_next_char(','))throw compiler_error(*this,"expected ',' after argument at ",tok().name_copy());
 		}
 	}
 
@@ -55,7 +55,7 @@ class stmt_call:public expression{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		const char*nm=token().name();
+		const char*nm=tok().name();
 
 
 		//-- comment
@@ -64,7 +64,7 @@ class stmt_call:public expression{public:
 		const size_t n=args.size();
 		const size_t nn=n-1;
 		for(size_t i=0;i<n;i++){
-			const char*s=args[i].get()->token().name();
+			const char*s=args[i].get()->tok().name();
 			os<<s;
 			if(i<nn)os<<" ";
 		}
@@ -72,7 +72,7 @@ class stmt_call:public expression{public:
 		const char*expr_dest=expression_dest_nasm_identifier();
 		if(expr_dest)os<<":"<<expr_dest;
 		os<<"{  ";
-		tc.source_location_to_stream(os,token());
+		tc.source_location_to_stream(os,tok());
 		os<<endl;
 		//--- - - - -- - - - -
 
@@ -91,7 +91,7 @@ class stmt_call:public expression{public:
 		fs.push_func(nm);
 		if(expr_dest){
 			if(f->getreturns().empty())
-				throw compiler_error(*this,"cannot assign from call without return",token().name_copy());
+				throw compiler_error(*this,"cannot assign from call without return",tok().name_copy());
 //			for(auto&e:f->getreturns()){
 //				fs.add_alias(e->name(),expr_dest);
 //			}
@@ -111,13 +111,17 @@ class stmt_call:public expression{public:
 				a->compile(tc,os,indent_level+1);
 				continue;
 			}
-			const char*tkn=a->token().name();
+			const char*tkn=a->tok().name();
 			fs.add_alias(param,tkn);
 		}
 
 		f->code_block()->compile(tc,os,indent_level+1);
 
-		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<token().token_start_char()<<":\n";
+		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<tok().token_start_char()<<":";
+//		os<<"  ;  ";
+//		tc.source_location_to_stream(os,);
+		os<<endl;
+
 
 		for(auto r:allocated_registers)
 			fs.free_scratch_reg(r);
