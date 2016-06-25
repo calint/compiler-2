@@ -36,10 +36,6 @@ class tokenizer final{public:
 
 	inline char peek_char()const{return *ptr;}
 
-	inline void unread(){
-		unsafe_seek(-1);
-	}
-
 	inline string read_rest_of_line(){
 		const char*bgn=ptr;
 		while(true){

@@ -9,7 +9,7 @@
 class toc;
 
 class statement{public:
-	inline statement(statement&parent,const token&t):
+	inline statement(const statement&parent,const token&t):
 		tk{t},
 		pt{parent}
 	{}
@@ -41,6 +41,6 @@ class statement{public:
 private:
 	string dest;
 	token tk;
-	statement&pt;
+	const statement&pt;
 };
 using up_statement=unique_ptr<statement>;

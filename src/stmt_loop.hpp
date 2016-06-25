@@ -15,7 +15,7 @@
 
 class stmt_loop final:public stmt_call{public:
 
-	inline stmt_loop(statement&parent,const token&tkn,tokenizer&t):
+	inline stmt_loop(const statement&parent,const token&tkn,tokenizer&t):
 		stmt_call{parent,tkn,t}
 	{
 		code=make_unique<stmt_block>(parent,t);

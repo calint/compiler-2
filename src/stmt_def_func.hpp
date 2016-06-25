@@ -14,7 +14,7 @@
 #include"stmt_def_func_param.hpp"
 class stmt_def_func final:public statement{public:
 
-	inline stmt_def_func(statement&parent,const token&tkn,tokenizer&t):
+	inline stmt_def_func(const statement&parent,const token&tkn,tokenizer&t):
 		statement{parent,tkn}
 	{
 		ident_=t.next_token();

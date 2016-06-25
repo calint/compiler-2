@@ -10,7 +10,7 @@
 
 class call_asm_mov final:public stmt_call{public:
 
-	inline call_asm_mov(statement&parent,const token&tkn,tokenizer&t):
+	inline call_asm_mov(const statement&parent,const token&tkn,tokenizer&t):
 		stmt_call{parent,tkn,t}
 	{}
 

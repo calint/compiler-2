@@ -14,7 +14,7 @@
 
 class stmt_if final:public statement{public:
 
-	inline stmt_if(statement&parent,const token&tkn,tokenizer&t):
+	inline stmt_if(const statement&parent,const token&tkn,tokenizer&t):
 		statement{parent,tkn}
 	{
 		if(!t.is_next_char('('))

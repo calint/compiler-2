@@ -8,7 +8,7 @@
 
 class expression:public statement{public:
 
-	inline expression(statement&parent,token tkn):
+	inline expression(const statement&parent,token tkn):
 		statement{parent,tkn}
 	{}
 

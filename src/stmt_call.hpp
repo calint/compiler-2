@@ -18,7 +18,7 @@
 
 class stmt_call:public expression{public:
 
-	inline stmt_call(statement&parent,const token&tkn,tokenizer&t):
+	inline stmt_call(const statement&parent,const token&tkn,tokenizer&t):
 		expression{parent,tkn}
 	{
 		if(!t.is_next_char('(')){

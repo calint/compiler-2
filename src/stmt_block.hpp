@@ -19,7 +19,7 @@
 using vup_statement=vector<up_statement>;
 class stmt_block final:public statement{public:
 
-	inline stmt_block(statement&parent,tokenizer&t):
+	inline stmt_block(const statement&parent,tokenizer&t):
 		statement{parent,token{}}
 	{
 		if(!t.is_next_char('{'))

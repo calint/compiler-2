@@ -10,7 +10,7 @@
 
 class call_asm_jne final:public stmt_call{public:
 
-	inline call_asm_jne(statement&parent,const token&tkn,tokenizer&t):
+	inline call_asm_jne(const statement&parent,const token&tkn,tokenizer&t):
 		stmt_call{parent,tkn,t}
 	{}
 
