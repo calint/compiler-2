@@ -54,7 +54,7 @@ class stmt_program final:public statement{public:
 	inline void build(ostream&os){
 		compile(tc,os,0);
 		link(tc,os);
-		tc.finish();
+		tc.finish(tc,os);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{

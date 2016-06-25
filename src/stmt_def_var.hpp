@@ -16,7 +16,9 @@ class stmt_def_var final:public statement{public:
 	inline stmt_def_var(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk},
 		ident_{t.next_token()},
-		initial_expression_{t.is_next_char('=')?create_statement_from_tokenizer(*this,t):make_unique<statement>(*this,token{})}
+		initial_expression_{t.is_next_char('=')?
+				create_statement_from_tokenizer(*this,t)  :  make_unique<statement>(*this,token{})
+		}
 	{}
 
 	inline void source_to(ostream&os)const override{
@@ -43,9 +45,27 @@ class stmt_def_var final:public statement{public:
 			return;
 		}
 
-		indent(os,indent_level,false);
 		const string&ra=tc.resolve_ident_to_nasm(*this,ident_.name());
 		const string&rb=tc.resolve_ident_to_nasm(*initial_expression_,initial_expression_->tok().name());
+
+		if(ra==rb)
+			return;
+
+		if(!ra.find("dword[") and !rb.find("dword[")){
+			const string&r=tc.framestk().alloc_scratch_register();
+			indent(os,indent_level,false);
+			os<<"mov "<<r<<","<<rb<<"  ;  ";
+			tc.source_location_to_stream(os,tok());
+			os<<endl;
+			indent(os,indent_level,false);
+			os<<"mov "<<ra<<","<<r<<"  ;  ";
+			tc.source_location_to_stream(os,tok());
+			os<<endl;
+			tc.framestk().free_scratch_reg(r);
+			return;
+		}
+
+		indent(os,indent_level,false);
 		os<<"mov "<<ra<<","<<rb<<endl;
 	}
 

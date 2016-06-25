@@ -18,6 +18,9 @@ class call_asm_mov final:public stmt_call{public:
 		const string&ra=tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name());
 		const string&rb=tc.resolve_ident_to_nasm(argument(1),argument(1).tok().name());
 
+		if(ra==rb)
+			return;
+
 		if(!ra.find("dword[") and !rb.find("dword[")){
 			const string&r=tc.framestk().alloc_scratch_register();
 			indent(os,indent_level,false);

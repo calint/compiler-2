@@ -58,14 +58,18 @@ func plus(a,b):int{
 }
 
 func main{
+	var c=c
 //	prompt.print()
 	var a=7
+	a=a
 	print(a,prompt)
 	a=10
 	print(a,prompt)
 	var b
 	b=15
 	a=b
+//  c=b=a
+	var d=a
 	print(b,prompt)
 //	print(prompt.len,prompt)
 	loop{

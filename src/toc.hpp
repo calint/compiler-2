@@ -99,11 +99,11 @@ class framestack final{public:
 		free_registers_{all_registers_}
 	{}
 
-	inline void push_func(const string&name){frames_.push_back(frame{name,1});}
+	inline void push_func(const string&name){frames_.push_back(frame{name,1});check();}
 
-	inline void push_block(const string&name){frames_.push_back(frame{name,2});}
+	inline void push_block(const string&name){frames_.push_back(frame{name,2});check();}
 
-	inline void push_loop(const string&name){frames_.push_back(frame{name,4});}
+	inline void push_loop(const string&name){frames_.push_back(frame{name,4});check();}
 
 
 	inline void add_alias(const string&ident,const string&parent_frame_ident){
@@ -129,10 +129,19 @@ class framestack final{public:
 		frames_.pop_back();
 	}
 
+	inline void check(){
+		if(frames_.size()>max_frame_count_)
+			max_frame_count_=frames_.size();
+
+		if(stkix_>max_stack_usage_)
+			max_stack_usage_=stkix_;
+	}
+
 	inline void push_if(const char*name){
 		exported_frame_ix_=frames_.size()-1;
 //		export_varspace_at_current_frame_in_subcalls(true);
 		frames_.push_back(frame{name,8});
+		check();
 	}
 
 	inline void pop_if(const string&name){
@@ -151,6 +160,11 @@ class framestack final{public:
 	inline const string&alloc_scratch_register(){
 		const string&r=free_registers_[free_registers_.size()-1];
 		free_registers_.pop_back();
+
+		const size_t n=all_registers_.size()-free_registers_.size();
+		if(n>max_usage_scratch_regs_)
+			max_usage_scratch_regs_=n;
+
 		return r;
 	}
 
@@ -173,8 +187,11 @@ class framestack final{public:
 	size_t exported_frame_ix_{0};
 	vector<string>all_registers_;
 	vector<string>free_registers_;
-private:
+	size_t max_usage_scratch_regs_{0};
+	size_t max_frame_count_{0};
+	size_t max_stack_usage_{0};
 	size_t stkix_{0};
+private:
 };
 
 
@@ -262,8 +279,12 @@ class toc final{public:
 		}
 		throw compiler_error(stmt.tok(),"cannot resolve identifier",ident);
 	}
-	inline void finish(){
+	inline void finish(const toc&tc,ostream&os){
 		assert(framestk_.all_registers_.size()==framestk_.free_registers_.size());
+		assert(framestk_.stkix_==0);
+		os<<"\n;   max scratch regs in use: "<<tc.framestk_.max_usage_scratch_regs_<<endl;
+		os<<";         max frames in use: "<<tc.framestk_.max_frame_count_<<endl;
+		os<<";          max stack in use: "<<tc.framestk_.max_stack_usage_<<endl;
 	}
 
 private:

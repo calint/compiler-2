@@ -32,13 +32,18 @@ class stmt_assign_var final:public statement{public:
 		const string&ra=tc.resolve_ident_to_nasm(*this,tok().name());
 		const string&rb=tc.resolve_ident_to_nasm(*expr,expr->tok().name());
 
+		if(ra==rb){
+			//? compiler log
+			return;
+		}
+
 		if(!ra.find("dword[") and !rb.find("dword[")){
 			const string&r=tc.framestk().alloc_scratch_register();
-			indent(os,indent_level,false);
+			indent(os,indent_level+1,false);
 			os<<"mov "<<r<<","<<rb<<"  ;  ";
 			tc.source_location_to_stream(os,tok());
 			os<<endl;
-			indent(os,indent_level,false);
+			indent(os,indent_level+1,false);
 			os<<"mov "<<ra<<","<<r<<"  ;  ";
 			tc.source_location_to_stream(os,tok());
 			os<<endl;

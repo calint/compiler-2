@@ -26,64 +26,73 @@ global _start
 _start:
   mov ebp,stk
   mov esp,stk.end
+;   var c=
 ;   var a=
-    mov dword[ebp+0],7
-;   print(a prompt){  [63:2]
-        mov ecx,prompt  ;  [10:2]
-        mov edx,dword[ebp+0]  ;  [11:2]
-        mov ebx,1  ;  [12:2]
-        mov eax,4  ;  [13:2]
-        int 0x80  ;  [14:2]
-    _end_print_871:
-;   a=10
-    mov dword[ebp+0],10
+    mov dword[ebp+4],7
+;   a=a
 ;   print(a prompt){  [65:2]
-        mov ecx,prompt  ;  [10:2]
-        mov edx,dword[ebp+0]  ;  [11:2]
-        mov ebx,1  ;  [12:2]
-        mov eax,4  ;  [13:2]
-        int 0x80  ;  [14:2]
-    _end_print_894:
-;   var b=
-;   b=15
-    mov dword[ebp+4],15
-;   a=b
-    mov edi,dword[ebp+4]  ;  [68:2]
-    mov dword[ebp+0],edi  ;  [68:2]
-;   print(b prompt){  [69:2]
         mov ecx,prompt  ;  [10:2]
         mov edx,dword[ebp+4]  ;  [11:2]
         mov ebx,1  ;  [12:2]
         mov eax,4  ;  [13:2]
         int 0x80  ;  [14:2]
-    _end_print_929:
-    _loop_974:  ; [71:2]
-;       print(plus name){  [74:3]
-;         plus(read -2):edi{  [74:9]
-;           read(name.len name):esi{  [74:14]
+    _end_print_885:
+;   a=10
+    mov dword[ebp+4],10
+;   print(a prompt){  [67:2]
+        mov ecx,prompt  ;  [10:2]
+        mov edx,dword[ebp+4]  ;  [11:2]
+        mov ebx,1  ;  [12:2]
+        mov eax,4  ;  [13:2]
+        int 0x80  ;  [14:2]
+    _end_print_908:
+;   var b=
+;   b=15
+    mov dword[ebp+8],15
+;   a=b
+      mov edi,dword[ebp+8]  ;  [70:2]
+      mov dword[ebp+4],edi  ;  [70:2]
+;   var d=
+    mov edi,dword[ebp+4]  ;  [72:2]
+    mov dword[ebp+12],edi  ;  [72:2]
+;   print(b prompt){  [73:2]
+        mov ecx,prompt  ;  [10:2]
+        mov edx,dword[ebp+8]  ;  [11:2]
+        mov ebx,1  ;  [12:2]
+        mov eax,4  ;  [13:2]
+        int 0x80  ;  [14:2]
+    _end_print_962:
+    _loop_1007:  ; [75:2]
+;       print(plus name){  [78:3]
+;         plus(read -2):edi{  [78:9]
+;           read(name.len name):esi{  [78:14]
                 mov esi,name  ;  [18:2]
                 mov edx,name.len  ;  [19:2]
                 xor eax,eax  ;  [20:2]
                 xor edi,edi  ;  [21:2]
                 syscall  ;  [22:2]
                 mov esi,eax  ;  [23:2]
-            _end_read_1056:
+            _end_read_1089:
               mov edi,esi  ;  [56:2]
               add edi,-2  ;  [57:2]
-          _end_plus_1051:
+          _end_plus_1084:
             mov ecx,name  ;  [10:2]
             mov edx,edi  ;  [11:2]
             mov ebx,1  ;  [12:2]
             mov eax,4  ;  [13:2]
             int 0x80  ;  [14:2]
-        _end_print_1045:
-;       exit(){  [75:3]
+        _end_print_1078:
+;       exit(){  [79:3]
             mov eax,1  ;  [29:2]
             int 0x80  ;  [30:2]
-        _end_exit_1088:
-      jmp _loop_974
-    _end_loop_974:  ; [71:2]
-;   exit(){  [77:2]
+        _end_exit_1121:
+      jmp _loop_1007
+    _end_loop_1007:  ; [75:2]
+;   exit(){  [81:2]
         mov eax,1  ;  [29:2]
         int 0x80  ;  [30:2]
-    _end_exit_1097:
+    _end_exit_1130:
+
+;   max scratch regs in use: 2
+;         max frames in use: 5
+;          max stack in use: 4
