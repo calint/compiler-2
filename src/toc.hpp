@@ -269,11 +269,12 @@ class toc final{public:
 		return lineno;
 	}
 	inline const string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
-		string name=_resolve_ident_to_nasm(stmt,ident,framestk_.frames_.size()-1);
+		const size_t frameix=framestk_.frames_.size()-1;
+		string name=_resolve_ident_to_nasm(stmt,ident,frameix);
 		if(not name.empty())
 			return name;//? keep name on stack
-		if(framestk_.exported_frame_ix_){
-			name=_resolve_ident_to_nasm(stmt,name,framestk_.exported_frame_ix_);
+		if(framestk_.exported_frame_ix_!=frameix){
+			name=_resolve_ident_to_nasm(stmt,ident,framestk_.exported_frame_ix_);
 			if(not name.empty())
 				return name;
 		}
@@ -337,9 +338,11 @@ private:
 		if(!*ep)// decimal number
 			return name;
 
-		strtol(name.c_str(),&ep,16);
-		if(!*ep)// hex number
-			return name;
+//		if(!name.find("0x")){
+			strtol(name.c_str()+2,&ep,16);
+			if(!*ep)// hex number
+				return name;
+//		}
 
 		return"";
 //		if(!framestk_.exported_frame_ix_)

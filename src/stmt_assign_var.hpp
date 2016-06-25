@@ -24,8 +24,10 @@ class stmt_assign_var final:public statement{public:
 		os<<tok().name()<<"="<<expr->tok().name()<<endl;
 
 		if(expr->is_expression()){
+			tc.framestk().exported_frame_ix_=tc.framestk().frames_.size()-1;
 			expr->set_dest_to_nasm_ident(tok().name());
 			expr->compile(tc,os,indent_level+1);
+			tc.framestk().exported_frame_ix_=0;
 			return;
 		}
 

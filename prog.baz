@@ -58,8 +58,13 @@ func plus(a,b):int{
 }
 
 func main{
+	var a=1
+	var b=2
+	var c=3
+	var d=4
+	d=plus(d,plus(c,plus(a,b)))
+
 	var c=c
-//	prompt.print()
 	var a=7
 	a=a
 	print(a,prompt)
@@ -70,9 +75,10 @@ func main{
 	a=b
 //  c=b=a
 	var d=a
-//	d=plus(d,plus(c,plus(a,b)))
+
 	print(b,prompt)
 //	print(prompt.len,prompt)
+//	prompt.print()
 	loop{
 //		name.print(name.read-2)
 //		name.print(plus(name.read,-2))
