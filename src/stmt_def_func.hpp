@@ -14,7 +14,7 @@
 #include"stmt_def_func_param.hpp"
 class stmt_def_func final:public statement{public:
 
-	inline stmt_def_func(statement*parent,const token&tkn,tokenizer&t):
+	inline stmt_def_func(statement&parent,const token&tkn,tokenizer&t):
 		statement{parent,tkn}
 	{
 		ident_=t.next_token();
@@ -25,7 +25,7 @@ class stmt_def_func final:public statement{public:
 		if(!no_args_){
 			while(true){
 				if(t.is_next_char(')'))break;
-				unique_ptr<stmt_def_func_param>fp=make_unique<stmt_def_func_param>(this,t);
+				unique_ptr<stmt_def_func_param>fp=make_unique<stmt_def_func_param>(*this,t);
 				if(t.is_next_char(')')){
 					params_.push_back(move(fp));
 					break;

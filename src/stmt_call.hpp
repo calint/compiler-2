@@ -18,7 +18,7 @@
 
 class stmt_call:public expression{public:
 
-	inline stmt_call(statement*parent,const token&tkn,tokenizer&t):
+	inline stmt_call(statement&parent,const token&tkn,tokenizer&t):
 		expression{parent,tkn}
 	{
 		if(!t.is_next_char('(')){
@@ -27,9 +27,9 @@ class stmt_call:public expression{public:
 		}
 		while(true){
 			if(t.is_next_char(')'))break;
-			args_.push_back(create_statement_from_tokenizer(this,t));
+			args_.push_back(create_statement_from_tokenizer(*this,t));
 			if(t.is_next_char(')'))break;
-			if(!t.is_next_char(','))throw compiler_error(*this,"expected ',' after argument at ",tok().name_copy());
+			if(!t.is_next_char(','))throw compiler_error(*args_.back(),"expected ',' after argument at ",tok().name_copy());
 		}
 	}
 

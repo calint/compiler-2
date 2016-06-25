@@ -14,7 +14,7 @@
 
 class stmt_continue final:public stmt_call{public:
 
-	inline stmt_continue(statement*parent,const token&tkn,tokenizer&t):
+	inline stmt_continue(statement&parent,const token&tkn,tokenizer&t):
 		stmt_call{parent,tkn,t}
 	{}
 

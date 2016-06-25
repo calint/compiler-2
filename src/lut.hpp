@@ -41,5 +41,4 @@ private:
 		inline bool is_key(const string&k)const{return k==key;}
 	};
 	vector<el>elems_{};
-//	el*last_has_found{nullptr}
 };

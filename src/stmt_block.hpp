@@ -19,7 +19,7 @@
 using vup_statement=vector<up_statement>;
 class stmt_block final:public statement{public:
 
-	inline stmt_block(statement*parent,tokenizer&t):
+	inline stmt_block(statement&parent,tokenizer&t):
 		statement{parent,token{}}
 	{
 		if(!t.is_next_char('{'))
@@ -38,7 +38,7 @@ class stmt_block final:public statement{public:
 				throw compiler_error(tkn,"unexpected end of string");
 
 			if(tkn.is_name("var")){
-				statements_.push_back(make_unique<stmt_def_var>(this,tkn,t));
+				statements_.push_back(make_unique<stmt_def_var>(*this,tkn,t));
 			}else
 			if(t.is_next_char('=')){// assign  ie   a=0x80
 				statements_.push_back(make_unique<stmt_assign_var>(parent,tkn,t));
@@ -49,7 +49,7 @@ class stmt_block final:public statement{public:
 			if(tkn.is_name("")){
 				statements_.push_back(make_unique<statement>(parent,tkn));
 			}else{
-				statements_.push_back(create_call_statement_from_tokenizer(tkn.name(),this,tkn,t));
+				statements_.push_back(create_call_statement_from_tokenizer(tkn.name(),*this,tkn,t));
 			}
 
 			if(is_one_statement_)

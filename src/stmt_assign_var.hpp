@@ -14,7 +14,7 @@
 
 class stmt_assign_var final:public statement{public:
 
-	inline stmt_assign_var(statement*parent,const token&tkn,tokenizer&t):
+	inline stmt_assign_var(statement&parent,const token&tkn,tokenizer&t):
 		statement{parent,tkn}
 	{
 		token tk=t.next_token();
@@ -22,7 +22,7 @@ class stmt_assign_var final:public statement{public:
 			expr=make_unique<statement>(parent,move(tk));// ie  0x80
 			return;
 		}
-		expr=create_call_statement_from_tokenizer(tk.name(),this,tk,t); // ie  f(...)
+		expr=create_call_statement_from_tokenizer(tk.name(),*this,tk,t); // ie  f(...)
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{

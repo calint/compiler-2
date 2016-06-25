@@ -9,7 +9,7 @@
 class toc;
 
 class statement{public:
-	inline statement(statement*parent,const token&t):
+	inline statement(statement&parent,const token&t):
 		tk{t},
 		pt{parent}
 	{}
@@ -24,7 +24,7 @@ class statement{public:
 
 	inline const token&tok()const{return tk;}
 
-	inline const statement*parent()const{return pt;}
+	inline const statement&parent()const{return pt;}
 
 	inline virtual bool is_in_data_section()const{return false;}
 
@@ -41,6 +41,6 @@ class statement{public:
 private:
 	string dest;
 	token tk;
-	statement*pt;
+	statement&pt;
 };
 using up_statement=unique_ptr<statement>;

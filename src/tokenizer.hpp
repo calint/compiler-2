@@ -9,7 +9,10 @@ using namespace std;
 
 class tokenizer final{public:
 
-	inline tokenizer(const string&str):ptr{str.c_str()}{}
+	inline tokenizer(const string&str):
+		source{str},
+		ptr{source.c_str()}
+	{}
 
 	inline bool is_eos()const{return !last_char;}
 
@@ -52,7 +55,8 @@ class tokenizer final{public:
 
 
 private:
-	const char*ptr{nullptr};
+	string source;
+	const char*ptr;
 	size_t nchar_bm{0};
 	size_t nchar{0};
 	char last_char{-1};

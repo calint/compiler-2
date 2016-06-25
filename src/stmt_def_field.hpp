@@ -10,7 +10,7 @@
 
 class stmt_def_field final:public statement{public:
 
-	inline stmt_def_field(statement*parent,const token&tkn,tokenizer&t):
+	inline stmt_def_field(statement&parent,const token&tkn,tokenizer&t):
 		statement{parent,tkn}
 	{
 		ident_=t.next_token();

@@ -14,7 +14,7 @@
 
 class stmt_comment final:public statement{public:
 
-	inline stmt_comment(statement*parent,const token&tkn,tokenizer&t):
+	inline stmt_comment(statement&parent,const token&tkn,tokenizer&t):
 		statement{parent,tkn}
 	{
 		comment_line_=t.read_rest_of_line();

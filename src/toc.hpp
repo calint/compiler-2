@@ -57,7 +57,7 @@ class frame final{public:
 ////		char*str=(char*)malloc(len);
 //		memcpy(str,buf,len);
 //		to_be_deleted_.push_back(unique_ptr<const char[]>(str));
-		vars_.put(nm,allocated_var{nm,stkix,nullptr,str,0});
+		vars_.put(nm,allocated_var{nm,stkix,"",str,0});
 		allocated_stack_++;
 	}
 

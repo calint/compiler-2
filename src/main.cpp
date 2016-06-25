@@ -68,7 +68,7 @@ int main(int argc,char**args){
 //	}
 	return 0;
 }
-inline up_statement create_call_statement_from_tokenizer(const string&func_name,statement*parent,const token&tk,tokenizer&t){
+inline up_statement create_call_statement_from_tokenizer(const string&func_name,statement&parent,const token&tk,tokenizer&t){
 	if("mov"==func_name)return make_unique<call_asm_mov>(parent,tk,t);
 	if("int"==func_name)return make_unique<call_asm_int>(parent,tk,t);
 	if("xor"==func_name)return make_unique<call_asm_xor>(parent,tk,t);
@@ -89,7 +89,7 @@ inline up_statement create_call_statement_from_tokenizer(const string&func_name,
 	if("and"==func_name)return make_unique<call_asm_and>(parent,tk,t);
 	return make_unique<stmt_call>(parent,move(tk),t);
 }
-inline up_statement create_statement_from_tokenizer(statement*parent,tokenizer&t){
+inline up_statement create_statement_from_tokenizer(statement&parent,tokenizer&t){
 	token tk=t.next_token();
 	if(tk.is_name("//"))return make_unique<stmt_comment>(parent,tk,t);// ie    print("hello") // comment
 	if(!t.is_peek_char('('))return make_unique<statement>(parent,tk);// ie  0x80

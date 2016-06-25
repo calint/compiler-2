@@ -14,7 +14,7 @@
 
 class stmt_break final:public stmt_call{public:
 
-	inline stmt_break(statement*parent,const token&tkn,tokenizer&t):
+	inline stmt_break(statement&parent,const token&tkn,tokenizer&t):
 		stmt_call{parent,tkn,t}
 	{}
 

@@ -13,7 +13,7 @@ using namespace std;
 class stmt_program final:public statement{public:
 
 	inline stmt_program(const string&source):
-		statement{nullptr,token{}},
+		statement{*this,token{}},
 		tc{source},
 		t{source}
 	{
@@ -28,19 +28,19 @@ class stmt_program final:public statement{public:
 				throw compiler_error(tkn,"unexpected character",to_string(t.peek_char()));
 
 			if(tkn.is_name("field")){
-				statements.push_back(make_unique<stmt_def_field>(this,tkn,t));
+				statements.push_back(make_unique<stmt_def_field>(*this,tkn,t));
 			}else
 			if(tkn.is_name("func")){
-				statements.push_back(make_unique<stmt_def_func>(this,tkn,t));
+				statements.push_back(make_unique<stmt_def_func>(*this,tkn,t));
 			}else
 			if(tkn.is_name("table")){
-				statements.push_back(make_unique<stmt_def_table>(this,tkn,t));
+				statements.push_back(make_unique<stmt_def_table>(*this,tkn,t));
 			}else
 			if(tkn.is_name("//")){
-				statements.push_back(make_unique<stmt_comment>(this,tkn,t));
+				statements.push_back(make_unique<stmt_comment>(*this,tkn,t));
 			}else
 			if(tkn.is_name("")){// whitespace
-				statements.push_back(make_unique<statement>(this,tkn));
+				statements.push_back(make_unique<statement>(*this,tkn));
 			}else{
 				throw compiler_error(tkn,"unexpected keyword",tkn.name());
 			}
