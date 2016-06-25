@@ -270,12 +270,13 @@ class toc final{public:
 	}
 	inline const string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
 		const size_t frameix=framestk_.frames_.size()-1;
-		string name=_resolve_ident_to_nasm(stmt,ident,frameix);
-		if(not name.empty())
+		bool resolved{false};
+		string name=_resolve_ident_to_nasm(stmt,ident,frameix,resolved);
+		if(resolved)
 			return name;//? keep name on stack
 		if(framestk_.exported_frame_ix_!=frameix){
-			name=_resolve_ident_to_nasm(stmt,ident,framestk_.exported_frame_ix_);
-			if(not name.empty())
+			name=_resolve_ident_to_nasm(stmt,name,framestk_.exported_frame_ix_,resolved);
+			if(resolved)
 				return name;
 		}
 		throw compiler_error(stmt.tok(),"cannot resolve identifier",ident);
@@ -295,7 +296,7 @@ private:
 	lut<const stmt_def_func*>funcs_;
 	lut<const stmt_def_table*>tables_;
 
-	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i)const{//? tidy duplicate code
+	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&resolved)const{//? tidy duplicate code
 //		size_t i=framestk_.frames_.size()-1;// recurse until aliased var found
 		string name=ident;
 		while(true){
@@ -305,15 +306,17 @@ private:
 			i--;
 		}
 
-		if(framestk_.frames_[i].has_var(name))
+		if(framestk_.frames_[i].has_var(name)){
+			resolved=true;
 			return framestk_.frames_[i].get_var(name).nasm_ident();
+		}
 
-		for(auto e:framestk_.all_registers_)
-			if(e==name)
-				return name;
+		for(auto e:framestk_.all_registers_)if(e==name){resolved=true;return name;}
 
-		if(fields_.has(name))
+		if(fields_.has(name)){
+			resolved=true;
 			return name;
+		}
 
 		// ie  prompt.len //?
 		const char*p=name.c_str();
@@ -328,6 +331,7 @@ private:
 			const size_t ln=name.size()-size_t(p-name.c_str());
 			string after_dot=string(p,ln);//? utf8
 			if(after_dot=="len"){
+				resolved=true;
 				return name;
 			}
 			throw compiler_error(stmt.tok(),"unknown implicit field constant",string(name));
@@ -335,16 +339,20 @@ private:
 
 		char*ep;
 		strtol(name.c_str(),&ep,10);
-		if(!*ep)// decimal number
+		if(!*ep){// decimal number
+			resolved=true;
 			return name;
+		}
 
-//		if(!name.find("0x")){
+		if(!name.find("0x")){
 			strtol(name.c_str()+2,&ep,16);
-			if(!*ep)// hex number
+			if(!*ep){// hex number{
+				resolved=true;
 				return name;
-//		}
+			}
+		}
 
-		return"";
+		return name;
 //		if(!framestk_.exported_frame_ix_)
 //			throw "cannot resolve "+string(name);
 	}

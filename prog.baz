@@ -58,11 +58,12 @@ func plus(a,b):int{
 }
 
 func main{
-	var a=1
-	var b=2
-	var c=3
-	var d=4
-	d=plus(d,plus(c,plus(a,b)))
+	var aa=1
+	var ba=2
+	var ca=3
+	var da=4
+	var ea=5
+	ea=plus(da,plus(ca,plus(aa,ba)))
 
 	var c=c
 	var a=7
