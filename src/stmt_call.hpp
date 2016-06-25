@@ -18,17 +18,9 @@
 
 class stmt_call:public expression{public:
 
-//	inline static up_statement read_statement(statement*parent,tokenizer&t){
-//		up_token tkn=t.next_token();
-//		if(!t.is_next_char('(')){
-//			return make_unique<statement>(parent,move(tkn));// ie  0x80
-//		}
-//		t.unread();
-//		return create_call_statement_from_tokenizer(tkn->name(),parent,move(tkn),t); // ie  f(...)
-//	}
-
-
-	inline stmt_call(statement*parent,up_token tkn,tokenizer&t):expression{parent,move(tkn)}{
+	inline stmt_call(statement*parent,const token&tkn,tokenizer&t):
+		expression{parent,tkn}
+	{
 		if(!t.is_next_char('(')){
 			no_args=true;
 			return;
@@ -55,7 +47,7 @@ class stmt_call:public expression{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		const char*nm=tok().name();
+		const string&nm=tok().name();
 
 
 		//-- comment
@@ -64,13 +56,12 @@ class stmt_call:public expression{public:
 		const size_t n=args.size();
 		const size_t nn=n-1;
 		for(size_t i=0;i<n;i++){
-			const char*s=args[i].get()->tok().name();
-			os<<s;
+			os<<args[i].get()->tok().name();
 			if(i<nn)os<<" ";
 		}
 		os<<")";
-		const char*expr_dest=expression_dest_nasm_identifier();
-		if(expr_dest)os<<":"<<expr_dest;
+		const string&expr_dest=expression_dest_nasm_identifier();
+		if(not expr_dest.empty())os<<":"<<expr_dest;
 		os<<"{  ";
 		tc.source_location_to_stream(os,tok());
 		os<<endl;
@@ -88,30 +79,28 @@ class stmt_call:public expression{public:
 //			tc.framestk().export_varspace_at_current_frame_in_subcalls(true);
 //		}
 		fs.push_func(nm);
-		if(expr_dest){
+		if(not expr_dest.empty()){
 			if(f->getreturns().empty())
 				throw compiler_error(*this,"cannot assign from call without return",tok().name_copy());
 //			for(auto&e:f->getreturns()){
 //				fs.add_alias(e->name(),expr_dest);
 //			}
-			fs.add_alias(f->getreturns()[0]->name(),expr_dest);
+			fs.add_alias(f->getreturns()[0].name(),expr_dest);
 		}
-		vector<const char*>allocated_registers;
+		vector<string>allocated_registers;
 		size_t i=0;
 		for(auto&a:args){
-			const char*param=f->get_param(i).name();
+			auto param=f->get_param(i).name();
 			i++;
-			const char*reg{nullptr};
 			if(a->is_expression()){
-				reg=fs.alloc_scratch_register();
+				const string reg=fs.alloc_scratch_register();
 				allocated_registers.push_back(reg);
 				a->set_expression_dest_nasm_identifier(reg);
 				fs.add_alias(param,reg);
 				a->compile(tc,os,indent_level+1);
 				continue;
 			}
-			const char*tkn=a->tok().name();
-			fs.add_alias(param,tkn);
+			fs.add_alias(param,a->tok().name());
 		}
 
 		f->code_block()->compile(tc,os,indent_level+1);
@@ -139,9 +128,7 @@ class stmt_call:public expression{public:
 
 
 private:
-	vup_statement args;
 	bool no_args{false};
+	vup_statement args;
 };
-using up_call=unique_ptr<stmt_call>;
-using allocs=vector<const char*>;
 

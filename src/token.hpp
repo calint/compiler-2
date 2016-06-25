@@ -9,31 +9,37 @@
 
 using namespace std;
 #include<string.h>
-using ua_char=unique_ptr<const char[]>;
 class token final{public:
 
-	inline token(ua_char wb,size_t n,ua_char tk,size_t n2,ua_char wa):ws_before{move(wb)},token_start_char_{n},name_{move(tk)},token_end_char_{n2},ws_after{move(wa)}{}
+	inline token(string wb,size_t n,string tk,size_t n2,string wa):
+		ws_before{wb},
+		token_start_char_{n},
+		name_{tk},
+		token_end_char_{n2},
+		ws_after{wa}
+	{}
 
-	inline token():ws_before{unique_ptr<const char[]>(new char[1]{0})},token_start_char_{0},name_{unique_ptr<const char[]>(new char[1]{0})},token_end_char_{0},ws_after{unique_ptr<const char[]>(new char[1]{0})}{}
+	inline token():
+			ws_before{""},
+			token_start_char_{0},
+			name_{""},
+			token_end_char_{0},
+			ws_after{""}
+	{}
 
-	inline void source_to(ostream&os)const{os<<ws_before.get()<<name_.get()<<ws_after.get();}
+	inline void source_to(ostream&os)const{os<<ws_before<<name_<<ws_after;}
 
-	inline void compile_to(ostream&os)const{os<<name_.get();}
+	inline void compile_to(ostream&os)const{os<<name_;}
 
-	inline bool is_name(const char*str)const{return !strcmp(name_.get(),str);}
+	inline bool is_name(const string&s)const{return!strcmp(name_.c_str(),s.c_str());}
 
-	inline const char*name()const{return name_.get();}
+	inline const string&name()const{return name_;}
 
 	inline size_t token_start_char()const{return token_start_char_;}
 
 	inline size_t token_end_char()const{return token_end_char_;}
 
-	inline ua_char name_copy()const{
-		const size_t ln=strlen(name_.get())+1;//? unsafe
-		char*str=new char[ln];
-		memcpy((void*)str,name_.get(),ln);
-		return unique_ptr<const char[]>(str);
-	}
+	inline string name_copy()const{return name_;}
 
 	inline bool is_blank()const{
 		const char a=ws_before[0];
@@ -47,11 +53,11 @@ class token final{public:
 
 private:
 //	inline void to_stdout2()const{printf("[%zu]%s[%zu]\n",token_start_char_,name_.get(),token_end_char_);}
-	ua_char ws_before;
+	string ws_before;
 	size_t token_start_char_;
-	ua_char name_;
+	string name_;
 	size_t token_end_char_;
-	ua_char ws_after;
+	string ws_after;
 };
-using up_token=unique_ptr<token>;
-using vup_tokens=vector<up_token>;
+//using up_token=unique_ptr<token>;
+//using vup_tokens=vector<up_token>;

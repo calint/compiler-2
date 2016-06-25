@@ -12,37 +12,37 @@ using namespace std;
 #include"stmt_comment.hpp"
 class stmt_program final:public statement{public:
 
-	inline stmt_program(const char*source):
-		statement{nullptr,make_unique<class token>()},
+	inline stmt_program(const string&source):
+		statement{nullptr,token{}},
 		tc{source},
 		t{source}
 	{
-		vector<const char*>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if","cmove","cmovne","or","and"};
-		for(auto s:assem)tc.add_func(*this,s,nullptr);
+		vector<string>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if","cmove","cmovne","or","and"};
+		for(auto&s:assem)tc.add_func(*this,s,nullptr);
 		while(true){
-			up_token tkn=t.next_token();
-			if(tkn->is_blank() and t.is_eos())
+			token tkn=t.next_token();
+			if(tkn.is_blank() and t.is_eos())
 				break;
 
-			if(tkn->is_blank())
-				throw compiler_error(*tkn,"unexpected character",ua_char(new char[2]{t.peek_char(),0}));
+			if(tkn.is_blank())
+				throw compiler_error(tkn,"unexpected character",to_string(t.peek_char()));
 
-			if(tkn->is_name("field")){
-				statements.push_back(make_unique<stmt_def_field>(this,move(tkn),t));
+			if(tkn.is_name("field")){
+				statements.push_back(make_unique<stmt_def_field>(this,tkn,t));
 			}else
-			if(tkn->is_name("func")){
-				statements.push_back(make_unique<stmt_def_func>(this,move(tkn),t));
+			if(tkn.is_name("func")){
+				statements.push_back(make_unique<stmt_def_func>(this,tkn,t));
 			}else
-			if(tkn->is_name("table")){
-				statements.push_back(make_unique<stmt_def_table>(this,move(tkn),t));
+			if(tkn.is_name("table")){
+				statements.push_back(make_unique<stmt_def_table>(this,tkn,t));
 			}else
-			if(tkn->is_name("//")){
-				statements.push_back(make_unique<stmt_comment>(this,move(tkn),t));
+			if(tkn.is_name("//")){
+				statements.push_back(make_unique<stmt_comment>(this,tkn,t));
 			}else
-			if(tkn->is_name("")){// whitespace
-				statements.push_back(make_unique<statement>(this,move(tkn)));
+			if(tkn.is_name("")){// whitespace
+				statements.push_back(make_unique<statement>(this,tkn));
 			}else{
-				throw compiler_error(*tkn,"unexpected keyword",tkn->name_copy());
+				throw compiler_error(tkn,"unexpected keyword",tkn.name());
 			}
 		}
 	}

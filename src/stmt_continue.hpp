@@ -14,10 +14,12 @@
 
 class stmt_continue final:public stmt_call{public:
 
-	inline stmt_continue(statement*parent,up_token tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{}
+	inline stmt_continue(statement*parent,const token&tkn,tokenizer&t):
+		stmt_call{parent,tkn,t}
+	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		const char*loop_name=tc.framestk().find_parent_loop_name();
+		const string&loop_name=tc.framestk().find_parent_loop_name();
 		indent(os,indent_level,false);os<<"jmp "<<loop_name<<"\n";
 	}
 

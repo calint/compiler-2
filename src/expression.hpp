@@ -8,7 +8,9 @@
 
 class expression:public statement{public:
 
-	inline expression(statement*parent,up_token tkn):statement{parent,move(tkn)}{}
+	inline expression(statement*parent,token tkn):
+		statement{parent,tkn}
+	{}
 
 	inline bool is_expression()const override{return true;}
 

@@ -9,17 +9,20 @@
 class toc;
 
 class statement{public:
-	inline statement(statement*parent,up_token t):tk{move(t)},pt{parent}{}
+	inline statement(statement*parent,const token&t):
+		tk{t},
+		pt{parent}
+	{}
 
 	inline virtual~statement(){}
 
-	inline virtual void compile(toc&tc,ostream&os,size_t indent_level)const{tk->compile_to(os);}
+	inline virtual void compile(toc&tc,ostream&os,size_t indent_level)const{tk.compile_to(os);}
 
 	inline virtual void link(toc&tc,ostream&os)const{}
 
-	inline virtual void source_to(ostream&os)const{tk->source_to(os);}
+	inline virtual void source_to(ostream&os)const{tk.source_to(os);}
 
-	inline const token&tok()const{return*tk;}
+	inline const token&tok()const{return tk;}
 
 	inline const statement*parent()const{return pt;}
 
@@ -27,17 +30,17 @@ class statement{public:
 
 	inline virtual bool is_expression()const{return false;}
 
-	inline void set_expression_dest_nasm_identifier(const char*destination){dest=destination;}
+	inline void set_expression_dest_nasm_identifier(const string&destination){dest=destination;}
 
-	inline const char*expression_dest_nasm_identifier()const{return dest;}
+	inline const string&expression_dest_nasm_identifier()const{return dest;}
 
 
 
 	inline static void indent(ostream&os,size_t indent_level,bool comment=false){os<<(comment?"; ":"  ");for(size_t i=0;i<indent_level;i++)os<<"  ";}
 
 private:
-	const char*dest{nullptr};
-	up_token tk;
+	string dest;
+	token tk;
 	statement*pt;
 };
 using up_statement=unique_ptr<statement>;

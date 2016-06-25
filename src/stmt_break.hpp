@@ -14,11 +14,13 @@
 
 class stmt_break final:public stmt_call{public:
 
-	inline stmt_break(statement*parent,up_token tkn,tokenizer&t):stmt_call{parent,move(tkn),t}{}
+	inline stmt_break(statement*parent,const token&tkn,tokenizer&t):
+		stmt_call{parent,tkn,t}
+	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		//? break(2)
-		const char*loop_name=tc.framestk().find_parent_loop_name();
+		const string&loop_name=tc.framestk().find_parent_loop_name();
 		indent(os,indent_level,false);os<<"jmp _end"<<loop_name<<"\n";
 	}
 

@@ -18,20 +18,25 @@ using namespace std;
 
 class allocated_var{public:
 
-	inline allocated_var(const char*name,size_t stkix,const char*in_register,const char*asm_op_param,char bits):
-		name_{name},stkix_{stkix},in_register_{in_register},nasm_ident_{asm_op_param},bits_{bits}{}
+	inline allocated_var(const string&name,size_t stkix,const string&in_register,const string&asm_op_param,char bits):
+		name_{name},
+		stkix_{stkix},
+		in_register_{in_register},
+		nasm_ident_{asm_op_param},
+		bits_{bits}
+	{}
 
 	inline bool is_const()const{return bits_&1;}
 
-	inline const char*nasm_ident()const{return nasm_ident_;}
+	inline const string&nasm_ident()const{return nasm_ident_;}
 
-	inline bool is_name(const char*name)const{return!strcmp(name_,name);}
+	inline bool is_name(const string&varname)const{return varname==name_;}
 
 private:
-	const char*name_{""};
+	string name_;
 	size_t stkix_{0};
-	const char*in_register_{nullptr};
-	const char*nasm_ident_{nullptr};
+	string in_register_;
+	string nasm_ident_;
 	char bits_{0}; // 1: const     2: isloop
 };
 
@@ -40,28 +45,31 @@ private:
 
 class frame final{public:
 
-	frame(const char*name,char bits):name_{name},bits_{bits}{}
+	frame(const string&name,char bits):name_{name},bits_{bits}{}
 
-	inline void add_var(const char*nm,const size_t stkix,const char*flags){
-		char buf[256];
-		const int n=snprintf(buf,sizeof buf,"dword[ebp+%zu]",stkix<<2);
-		if(n<0||n==sizeof buf)throw"??";
-		const size_t len=size_t(n)+1;
-		char*str=new char[len];
-//		char*str=(char*)malloc(len);
-		memcpy(str,buf,len);
-		to_be_deleted_.push_back(unique_ptr<const char[]>(str));
-		vars_.put(nm, allocated_var{nm,stkix,nullptr,str,0});
+	inline void add_var(const string&nm,const size_t stkix,const string&flags){
+		string str="dword[ebp+"+to_string(stkix<<2)+"]";
+//		char buf[256];
+//		const int n=snprintf(buf,sizeof buf,"dword[ebp+%zu]",stkix<<2);
+//		if(n<0||n==sizeof buf)throw"??";
+//		const size_t len=size_t(n)+1;
+//		char*str=new char[len];
+////		char*str=(char*)malloc(len);
+//		memcpy(str,buf,len);
+//		to_be_deleted_.push_back(unique_ptr<const char[]>(str));
+		vars_.put(nm,allocated_var{nm,stkix,nullptr,str,0});
 		allocated_stack_++;
 	}
 
 	inline size_t allocated_stack_size()const{return allocated_stack_;}
 
-	inline bool has_var(const char*name)const{return vars_.has(name);}
+	inline bool has_var(const string&name)const{return vars_.has(name);}
 
-	inline const allocated_var get_var(const char*name)const{return vars_.get(name);}
+	inline const allocated_var get_var(const string&name)const{return vars_.get(name);}
 
-	inline void add_alias(const char*ident,const char*outside_ident){aliases_.put(ident,outside_ident);}
+	inline void add_alias(const string&ident,const string&outside_ident){
+		aliases_.put(ident,outside_ident);
+	}
 
 	inline bool is_func()const{return bits_&1;}
 
@@ -71,21 +79,21 @@ class frame final{public:
 
 	inline bool is_if()const{return bits_&8;}
 
-	inline bool is_name(const char*nm)const{return!strcmp(name_,nm);}
+	inline bool is_name(const string&nm)const{return name_==nm;}
 
-	inline bool has_alias(const char*name)const{return aliases_.has(name);}
+	inline bool has_alias(const string&name)const{return aliases_.has(name);}
 
-	inline const char*get_alias(const char*name)const{return aliases_.get(name);}
+	inline const string get_alias(const string&name)const{return aliases_.get(name);}
 
-	inline const char*name()const{return name_;}
+	inline const string&name()const{return name_;}
 
 private:
-	const char*name_{""};
+	const string name_;
 	size_t allocated_stack_{0};
 	char bits_{0}; // 1 is func
 	lut<allocated_var>vars_;
-	lut<const char*>aliases_;
-	vector<unique_ptr<const char[]>>to_be_deleted_;
+	lut<string>aliases_;
+//	vector<string>to_be_deleted_;
 
 };
 
@@ -99,19 +107,19 @@ class framestack final{public:
 		free_registers_{all_registers_}
 	{}
 
-	inline void push_func(const char*name){frames_.push_back(frame{name,1});}
+	inline void push_func(const string&name){frames_.push_back(frame{name,1});}
 
-	inline void push_block(const char*name){frames_.push_back(frame{name,2});}
+	inline void push_block(const string&name){frames_.push_back(frame{name,2});}
 
-	inline void push_loop(const char*name){frames_.push_back(frame{name,4});}
+	inline void push_loop(const string&name){frames_.push_back(frame{name,4});}
 
 
-	inline void add_alias(const char*ident,const char*parent_frame_ident){
+	inline void add_alias(const string&ident,const string&parent_frame_ident){
 //		cerr<<"   ++++++++++   "<<ident<<" -> "<<parent_frame_ident<<endl;
 		frames_.back().add_alias(ident,parent_frame_ident);
 	}
 
-	inline void pop_func(const char*name){
+	inline void pop_func(const string&name){
 		frame&f=frames_.back();
 		if(f.is_func())
 			if(!f.is_name(name))
@@ -120,7 +128,7 @@ class framestack final{public:
 		frames_.pop_back();
 	}
 
-	inline void pop_loop(const char*name){
+	inline void pop_loop(const string&name){
 		frame&f=frames_.back();
 		if(f.is_loop())
 			if(!f.is_name(name))
@@ -143,7 +151,7 @@ class framestack final{public:
 //		exported_frame_ix=0;
 //	}
 
-	inline void pop_if(const char*name){
+	inline void pop_if(const string&name){
 		frame&f=frames_.back();
 		if(not f.is_if() or not f.is_name(name))throw __LINE__;
 		stkix_-=frames_.back().allocated_stack_size();
@@ -152,7 +160,7 @@ class framestack final{public:
 //		export_varspace_at_current_frame_in_subcalls(false);
 	}
 
-	inline void add_var(const char*name,const char*flags){
+	inline void add_var(const string&name,const string&flags){
 		frames_.back().add_var(name,stkix_++,flags);
 	}
 
@@ -199,17 +207,17 @@ class framestack final{public:
 //		return name;
 //	}
 
-	inline const char*alloc_scratch_register(){
-		const char*r=free_registers_[free_registers_.size()-1];
+	inline const string&alloc_scratch_register(){
+		const string&r=free_registers_[free_registers_.size()-1];
 		free_registers_.pop_back();
 		return r;
 	}
 
-	inline void free_scratch_reg(const char*reg){
+	inline void free_scratch_reg(const string&reg){
 		free_registers_.push_back(reg);
 	}
 
-	inline const char*find_parent_loop_name()const{
+	inline const string&find_parent_loop_name()const{
 		size_t i=frames_.size()-1;// recurse until aliased var found
 		while(true){
 			if(frames_[i].is_loop())
@@ -222,10 +230,10 @@ class framestack final{public:
 
 	vector<frame>frames_;
 	size_t exported_frame_ix_{0};
-	vector<const char*>all_registers_;
+	vector<string>all_registers_;
 private:
 	size_t stkix_{0};
-	vector<const char*>free_registers_;
+	vector<string>free_registers_;
 };
 
 
@@ -233,34 +241,34 @@ private:
 
 class toc final{public:
 
-	inline toc(const char*source):source_str_(source){}
+	inline toc(const string&source):source_str_(source){}
 
-	inline void add_field(const statement&s,const char*identifier,const stmt_def_field*f){
+	inline void add_field(const statement&s,const string&identifier,const stmt_def_field*f){
 		if(fields_.has(identifier)){
-			throw compiler_error(s,"field already defined at <line:col>",copy_string_to_unique_pointer(identifier));
+			throw compiler_error(s.tok(),"field already defined at <line:col>",identifier);
 		}
 		fields_.put(identifier,f);
 	}
 
-	inline void add_func(const statement&s,const char*identifier,const stmt_def_func*ref){
-		if(funcs_.has(identifier))
-			throw compiler_error(s,"function already defined at <line:col>",copy_string_to_unique_pointer(identifier));
+	inline void add_func(const statement&s,const string&ident,const stmt_def_func*ref){
+		if(funcs_.has(ident))
+			throw compiler_error(s.tok(),"function already defined at <line:col>",ident);
 
-		funcs_.put(identifier,ref);
+		funcs_.put(ident,ref);
 	}
 
-	inline const stmt_def_func*get_func_or_break(const statement&stmt,const char*name)const{
+	inline const stmt_def_func*get_func_or_break(const statement&s,const string&name)const{
 		bool valid;
 		const stmt_def_func*f=funcs_.get_valid(name,valid);
 		if(!valid){
-			throw compiler_error(stmt,"function not found",copy_string_to_unique_pointer(name));
+			throw compiler_error(s.tok(),"function not found",name);
 		}
 		return f;
 	}
 
-	inline void add_table(const statement&s,const char*identifier,const stmt_def_table*f){
+	inline void add_table(const statement&s,const string&identifier,const stmt_def_table*f){
 		if(tables_.has(identifier))
-			throw compiler_error(s,"table already defined at <line:col>",copy_string_to_unique_pointer(identifier));
+			throw compiler_error(s.tok(),"table already defined at <line:col>",identifier);
 
 		tables_.put(identifier,f);
 	}
@@ -286,13 +294,14 @@ class toc final{public:
 		return unique_ptr<const char[]>(cpy);
 	}
 
-	inline static size_t line_number_for_char_index(const size_t char_index,const char*str,size_t&char_in_line){
+	inline static size_t line_number_for_char_index(const size_t char_index,const string&str,size_t&char_in_line){
 		size_t ix{0};
 		size_t lix{0};
 		size_t lineno{1};
+		const char*p=str.c_str();
 		while(true){
 			if(ix==char_index)break;
-			if(*str++=='\n'){
+			if(*p++=='\n'){
 				lineno++;
 				lix=ix;
 			}
@@ -301,29 +310,32 @@ class toc final{public:
 		char_in_line=ix-lix;
 		return lineno;
 	}
-	inline const char*resolve_ident_to_nasm(const statement&stmt,const char*ident)const{//? tidy duplicate code
-		const char*name=_resolve_ident_to_nasm(stmt,ident,framestk_.frames_.size()-1);
-		if(name)return name;
+	inline const string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
+		string name=_resolve_ident_to_nasm(stmt,ident,framestk_.frames_.size()-1);
+		if(not name.empty())
+			return name;//? keep name on stack
 		if(framestk_.exported_frame_ix_){
 			name=_resolve_ident_to_nasm(stmt,name,framestk_.exported_frame_ix_);
-			if(name)return name;
+			if(not name.empty())
+				return name;
 		}
-		throw compiler_error(stmt,"cannot resolve identifier",copy_string_to_unique_pointer(ident));
+		throw compiler_error(stmt.tok(),"cannot resolve identifier",ident);
 	}
 
 
 private:
-	const char*source_str_{""};
+	string source_str_{""};
 	framestack framestk_;
 	lut<const stmt_def_field*>fields_;
 	lut<const stmt_def_func*>funcs_;
 	lut<const stmt_def_table*>tables_;
 
-	inline const char*_resolve_ident_to_nasm(const statement&stmt,const char*ident,size_t i)const{//? tidy duplicate code
+	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i)const{//? tidy duplicate code
 //		size_t i=framestk_.frames_.size()-1;// recurse until aliased var found
-		const char*name=ident;
+		string name=ident;
 		while(true){
-			if(!framestk_.frames_[i].has_alias(name))break;
+			if(!framestk_.frames_[i].has_alias(name))
+				break;
 			name=framestk_.frames_[i].get_alias(name);
 			i--;
 		}
@@ -332,40 +344,40 @@ private:
 			return framestk_.frames_[i].get_var(name).nasm_ident();
 
 		for(auto e:framestk_.all_registers_)
-			if(!strcmp(e,name))
+			if(e==name)
 				return name;
 
 		if(fields_.has(name))
 			return name;
 
-		// ie  prompt.len
-		const char*p=name;
+		// ie  prompt.len //?
+		const char*p=name.c_str();
 		while(true){
 			if(!*p)break;
 			if(*p=='.')break;
 			p++;
 		}
-		string s=string(name,size_t(p-name));
-		if(fields_.has(s.c_str())){
+		string s=string(name.c_str(),size_t(p-name.c_str()));
+		if(fields_.has(s)){//? tidy
 			p++;
-			const size_t ln=strlen(name)-size_t(p-name);
+			const size_t ln=name.size()-size_t(p-name.c_str());
 			string after_dot=string(p,ln);//? utf8
-			if(!strcmp(after_dot.c_str(),"len")){
+			if(after_dot=="len"){
 				return name;
 			}
-			throw compiler_error(stmt,"unknown implicit field constant",copy_string_to_unique_pointer(name));
+			throw compiler_error(stmt.tok(),"unknown implicit field constant",string(name));
 		}
 
 		char*ep;
-		strtol(name,&ep,10);
+		strtol(name.c_str(),&ep,10);
 		if(!*ep)// decimal number
 			return name;
 
-		strtol(name,&ep,16);
+		strtol(name.c_str(),&ep,16);
 		if(!*ep)// hex number
 			return name;
 
-		return nullptr;
+		return"";
 //		if(!framestk_.exported_frame_ix_)
 //			throw "cannot resolve "+string(name);
 	}

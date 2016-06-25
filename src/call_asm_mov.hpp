@@ -10,8 +10,8 @@
 
 class call_asm_mov final:public stmt_call{public:
 
-	inline call_asm_mov(statement*parent,up_token tkn,tokenizer&t):
-		stmt_call{parent,move(tkn),t}
+	inline call_asm_mov(statement*parent,const token&tkn,tokenizer&t):
+		stmt_call{parent,tkn,t}
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{// mov(eax 1)
@@ -32,9 +32,9 @@ class call_asm_mov final:public stmt_call{public:
 //			tc.framestk().free_scratch_reg(reg);
 //			return;
 //		}
-		const char*ra=tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name());
-		const char*rb=tc.resolve_ident_to_nasm(argument(1),argument(1).tok().name());
-		if(!strcmp(ra,rb)){// ie  mov eax,eax
+		const string&ra=tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name());
+		const string&rb=tc.resolve_ident_to_nasm(argument(1),argument(1).tok().name());
+		if(ra==rb){// ie  mov eax,eax
 			return;
 		}
 		//? check illegal op comb

@@ -14,7 +14,9 @@
 
 class stmt_if final:public statement{public:
 
-	inline stmt_if(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+	inline stmt_if(statement*parent,const token&tkn,tokenizer&t):
+		statement{parent,tkn}
+	{
 		if(!t.is_next_char('('))
 			throw compiler_error(*this,"if expects '(' followed by boolean expression",tok().name_copy());
 
@@ -33,7 +35,7 @@ class stmt_if final:public statement{public:
 
 		tc.framestk().push_if(name.data());
 
-		const char*reg=tc.framestk().alloc_scratch_register();
+		const string&reg=tc.framestk().alloc_scratch_register();
 		bool_expr->set_expression_dest_nasm_identifier(reg);
 		bool_expr->compile(tc,os,indent_level);
 

@@ -19,35 +19,37 @@
 using vup_statement=vector<up_statement>;
 class stmt_block final:public statement{public:
 
-	inline stmt_block(statement*parent,tokenizer&t):statement{parent,unique_ptr<class token>(new class token())}{
+	inline stmt_block(statement*parent,tokenizer&t):
+		statement{parent,token{}}
+	{
 		if(!t.is_next_char('{'))
 			is_one_statement=true;
 
 		while(true){
+			if(t.is_eos())
+				break;
+
 			if(not is_one_statement and t.is_next_char('}'))
 				break;
 
-			up_token tkn=t.next_token();
+			token tkn=t.next_token();
 
-			if(tkn->is_blank() and t.is_eos())
-				break;
+			if(tkn.is_blank())
+				throw compiler_error(tkn,"unexpected end of string");
 
-			if(tkn->is_blank())
-				throw compiler_error(*this,"unexpected end of string",parent->tok().name_copy());
-
-			if(tkn->is_name("var")){
-				statements.push_back(make_unique<stmt_def_var>(parent,move(tkn),t));
+			if(tkn.is_name("var")){
+				statements.push_back(make_unique<stmt_def_var>(this,tkn,t));
 			}else
 			if(t.is_next_char('=')){// assign  ie   a=0x80
-				statements.push_back(make_unique<stmt_assign_var>(parent,move(tkn),t));
+				statements.push_back(make_unique<stmt_assign_var>(parent,tkn,t));
 			}else
-			if(tkn->is_name("//")){
-				statements.push_back(make_unique<stmt_comment>(parent,move(tkn),t));
+			if(tkn.is_name("//")){
+				statements.push_back(make_unique<stmt_comment>(parent,tkn,t));
 			}else
-			if(tkn->is_name("")){
-				statements.push_back(make_unique<statement>(parent,move(tkn)));
+			if(tkn.is_name("")){
+				statements.push_back(make_unique<statement>(parent,tkn));
 			}else{
-				statements.push_back(create_call_statement_from_tokenizer(tkn->name(),parent,move(tkn),t));
+				statements.push_back(create_call_statement_from_tokenizer(tkn.name(),this,tkn,t));
 			}
 
 			if(is_one_statement)

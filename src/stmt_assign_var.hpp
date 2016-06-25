@@ -14,13 +14,15 @@
 
 class stmt_assign_var final:public statement{public:
 
-	inline stmt_assign_var(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
-		up_token tk=t.next_token();
+	inline stmt_assign_var(statement*parent,token tkn,tokenizer&t):
+		statement{parent,tkn}
+	{
+		token tk=t.next_token();
 		if(!t.is_peek_char('(')){
 			expr=make_unique<statement>(parent,move(tk));// ie  0x80
 			return;
 		}
-		expr=create_call_statement_from_tokenizer(tk->name(),parent,move(tk),t); // ie  f(...)
+		expr=create_call_statement_from_tokenizer(tk.name(),this,tk,t); // ie  f(...)
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
@@ -31,8 +33,8 @@ class stmt_assign_var final:public statement{public:
 			return;
 		}
 		indent(os,indent_level,false);
-		const char*ra=tc.resolve_ident_to_nasm(*this,tok().name());
-		const char*rb=tc.resolve_ident_to_nasm(*expr,expr->tok().name());
+		const string&ra=tc.resolve_ident_to_nasm(*this,tok().name());
+		const string&rb=tc.resolve_ident_to_nasm(*expr,expr->tok().name());
 		os<<"mov "<<ra<<","<<rb<<endl;
 	}
 

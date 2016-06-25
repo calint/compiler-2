@@ -14,7 +14,9 @@
 #include"stmt_def_func_param.hpp"
 class stmt_def_func final:public statement{public:
 
-	inline stmt_def_func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
+	inline stmt_def_func(statement*parent,token tkn,tokenizer&t):
+		statement{parent,tkn}
+	{
 		identifier=t.next_token();
 		if(!t.is_next_char('(')){
 			no_args=true;
@@ -44,13 +46,13 @@ class stmt_def_func final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		tc.add_func(*this,identifier->name(),this);//? in constructor for forward ref
+		tc.add_func(*this,identifier.name(),this);//? in constructor for forward ref
 		if(is_inline())
 			return;
 
 		throw"?";
 
-		os<<identifier->name()<<":\n";
+		os<<identifier.name()<<":\n";
 		for (size_t i=params.size();i-->0;)
 			os<<"  pop "<<params[i]->tok().name()<<endl;
 
@@ -62,7 +64,7 @@ class stmt_def_func final:public statement{public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		identifier->source_to(os);
+		identifier.source_to(os);
 		if(!no_args){
 			os<<"(";
 			const size_t nparam=params.size()-1;
@@ -78,7 +80,7 @@ class stmt_def_func final:public statement{public:
 			const size_t sz=returns.size()-1;
 			size_t i{0};
 			for(auto&t:returns){
-				t->source_to(os);
+				t.source_to(os);
 				if(i++!=sz)os<<",";
 			}
 		}
@@ -86,16 +88,16 @@ class stmt_def_func final:public statement{public:
 
 	inline bool is_inline()const{return true;}
 
-	inline const vup_tokens&getreturns()const{return returns;}
+	inline const vector<token>&getreturns()const{return returns;}
 
-	inline const token&get_param(const size_t ix)const{return params[ix]->tok();}
+	inline token get_param(const size_t ix)const{return params[ix]->tok();}
 
 	inline const stmt_block*code_block()const{return code.get();}
 
 private:
-	up_token identifier;
+	token identifier;
 	bool no_args{false};
-	vup_tokens returns;
+	vector<token>returns;
 	vector<unique_ptr<stmt_def_func_param>>params;
 	up_block code;
 };

@@ -9,20 +9,18 @@ using namespace std;
 
 class tokenizer final{public:
 
-	inline tokenizer(const char*string):ptr(string){}
+	inline tokenizer(const string&str):ptr{str.c_str()}{}
 
 	inline bool is_eos()const{return !last_char;}
 
-	inline up_token next_token(){
+	inline token next_token(){
 		assert(!is_eos());
 		auto wspre=next_whitespace();
 		auto bgn=nchar;
 		auto tkn=next_token_str();
 		auto end=nchar;
 		auto wsaft=next_whitespace();
-		auto p=make_unique<token>(move(wspre),bgn,move(tkn),end,move(wsaft));
-//		printf("%zu:%zu %s\n",a->get_nchar(),a->get_nchar_end(),a->get_name());
-		return p;
+		return token(wspre,bgn,tkn,end,wsaft);//? move
 	}
 
 	inline bool is_next_char(const char ch){
@@ -65,9 +63,8 @@ private:
 		ptr++;
 		return last_char;
 	}
-	inline ua_char next_whitespace(){
-		if(is_eos())
-			return unique_ptr<const char[]>(new char[1]{0});
+	inline string next_whitespace(){
+		if(is_eos())return"";
 		nchar_bm=nchar;
 		while(true){
 			const char ch=next_char();
@@ -77,14 +74,15 @@ private:
 			break;
 		}
 		const size_t len=nchar-nchar_bm;
-		char*str=new char[len+1];
-		if(len)memcpy(str,ptr-len,len);
-		str[len]=0;
-		return unique_ptr<const char[]>(str);
+		return string{ptr-len,len};
+//		char*str=new char[len+1];
+//		if(len)memcpy(str,ptr-len,len);
+//		str[len]=0;
+//		return unique_ptr<const char[]>(str);
+//		return str;
 	}
-	inline ua_char next_token_str(){
-		if(is_eos())
-			return unique_ptr<const char[]>(new char[1]{0});
+	inline string next_token_str(){
+		if(is_eos())return"";
 		nchar_bm=nchar;
 		while(true){
 			const char ch=next_char();
@@ -95,10 +93,11 @@ private:
 			continue;
 		}
 		const size_t len=nchar-nchar_bm;
-		char*str=new char[len+1];
-		if(len)memcpy(str,ptr-len,len);
-		str[len]=0;
-		return unique_ptr<const char[]>(str);
+//		char*str=new char[len+1];
+//		if(len)memcpy(str,ptr-len,len);
+//		str[len]=0;
+//		return unique_ptr<const char[]>(str);
+		return string(ptr-len,len);
 	}
 	inline void unsafe_seek(const off_t nch){
 //		if(nch>0){off_t n=nch;while(n--)assert(*ptr++);}
