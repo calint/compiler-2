@@ -27,31 +27,23 @@ class stmt_program final:public statement{public:
 			if(tkn->is_blank())
 				throw compiler_error(*tkn,"unexpected character",ua_char(new char[2]{t.peek_char(),0}));
 
-			up_statement stmt;
-//			if(t.is_peek_char('(')){stmt=create_call_statement_from_tokenizer(tkn->name(),this,move(tkn),t);}
-//			else
 			if(tkn->is_name("field")){
 				statements.push_back(make_unique<stmt_def_field>(this,move(tkn),t));
-				continue;
-			}
+			}else
 			if(tkn->is_name("func")){
 				statements.push_back(make_unique<stmt_def_func>(this,move(tkn),t));
-				continue;
-			}
+			}else
 			if(tkn->is_name("table")){
 				statements.push_back(make_unique<stmt_def_table>(this,move(tkn),t));
-				continue;
-			}
+			}else
 			if(tkn->is_name("//")){
 				statements.push_back(make_unique<stmt_comment>(this,move(tkn),t));
-				continue;
-			}
+			}else
 			if(tkn->is_name("")){// whitespace
 				statements.push_back(make_unique<statement>(this,move(tkn)));
-				continue;
+			}else{
+				throw compiler_error(*tkn,"unexpected keyword",tkn->name_copy());
 			}
-
-			throw compiler_error(*tkn,"unexpected keyword",tkn->name_copy());
 		}
 	}
 

@@ -37,34 +37,21 @@ class stmt_block final:public statement{public:
 
 			if(tkn->is_name("var")){
 				statements.push_back(make_unique<stmt_def_var>(parent,move(tkn),t));
-				if(is_one_statement)break;
-				continue;
-			}
-
+			}else
 			if(t.is_next_char('=')){// assign  ie   a=0x80
 				statements.push_back(make_unique<stmt_assign_var>(parent,move(tkn),t));
-				if(is_one_statement)break;
-				continue;
-			}
-
+			}else
 			if(tkn->is_name("//")){
 				statements.push_back(make_unique<stmt_comment>(parent,move(tkn),t));
-				if(is_one_statement)break;
-				continue;
-			}
-
-			if(tkn->is_blank())
-				throw compiler_error(*tkn,"unexpected character",ua_char(new char[2]{t.peek_char(),0}));
-
+			}else
 			if(tkn->is_name("")){
 				statements.push_back(make_unique<statement>(parent,move(tkn)));
-				if(is_one_statement)break;//? throw
-				continue;
+			}else{
+				statements.push_back(create_call_statement_from_tokenizer(tkn->name(),parent,move(tkn),t));
 			}
 
-			// assume call
-			statements.push_back(create_call_statement_from_tokenizer(tkn->name(),parent,move(tkn),t));
-			if(is_one_statement)break;
+			if(is_one_statement)
+				break;
 		}
 	}
 

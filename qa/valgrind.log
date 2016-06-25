@@ -1,105 +1,87 @@
 
-Thu Jun 23 20:52:45 ICT 2016
+Sat Jun 25 22:28:15 ICT 2016
 
-==18868== Memcheck, a memory error detector
-==18868== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
-==18868== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
-==18868== Command: ./compi
-==18868== 
+==29829== Memcheck, a memory error detector
+==29829== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
+==29829== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
+==29829== Command: ./compi
+==29829== 
+section .data
+; --- field prompt  [1:6]
+prompt db '___echo__type_new_line__ctrl_c__to_break____'
+prompt.len equ $-prompt
+
+; --- field name  [2:9]
+name db '............................................................'
+name.len equ $-name
+
+; --- table name_to_prompt [4:7]
+name_to_prompt:
+name_to_prompt.end:
+name_to_prompt.len equ $-name_to_prompt
+
+
+dd1 dd 1
+dd0 dd 0
+
+section .bss
+stk resd 256
+stk.end
+
+
 section .text
 global _start
 _start:
   mov ebp,stk
-; main(){  [0]
-   _loop_506:
-     _loop_516:
-;      print(prompt.len prompt){  [527]
-         mov ecx,prompt
-         mov edx,prompt.len
-         mov ebx,1
-         mov eax,4
-         int 0x80
-       _end_print_527:
-;      var ln=
-;       read(name.len name):ln{  [562]
-          mov esi,name
-          mov edx,name.len
-          xor eax,eax
-          xor edi,edi
-          syscall
-          mov dword[ebp+0],eax
-        _end_read_562:
-;      if [585]
-;      orl(eq eq):eax{  [588]
-;      eq(ln 1):ebx{  [592]
-         cmp dword[ebp+0],1
-         cmove ebx,[mem1]
-         cmovne ebx,[mem0]
-       _end_eq_592:
-;      eq(ln 2):ecx{  [601]
-         cmp dword[ebp+0],2
-         cmove ecx,[mem1]
-         cmovne ecx,[mem0]
-       _end_eq_601:
-         mov eax,ebx
-         or eax,ecx
-       _end_orl_588:
-       cmp eax,1
-       jne _end__if_585
-         jmp _loop_516
-       _end__if_585:
-;      print(hello.len hello){  [636]
-         mov ecx,hello
-         mov edx,hello.len
-         mov ebx,1
-         mov eax,4
-         int 0x80
-       _end_print_636:
-;      print(ln name){  [662]
-         mov ecx,name
-         mov edx,dword[ebp+0]
-         mov ebx,1
-         mov eax,4
-         int 0x80
-       _end_print_662:
-     jmp _loop_516
-     _end_loop_516:
-   jmp _loop_506
-   _end_loop_506:
-;  exit(){  [685]
-     mov eax,1
-     int 0x80
-   _end_exit_685:
-; }
+  mov esp,stk.end
+;   print(prompt.len prompt){  [62:2]
+        mov ecx,prompt  ;  [10:2]
+        mov edx,prompt.len  ;  [11:2]
+        mov ebx,1  ;  [12:2]
+        mov eax,4  ;  [13:2]
+        int 0x80  ;  [14:2]
+    _end_print_862:
+    _loop_888:  ; [63:2]
+;       print(plus name){  [66:3]
+;         plus(read -2):edi{  [66:9]
+;           read(name.len name):esi{  [66:14]
+                mov esi,name  ;  [18:2]
+                mov edx,name.len  ;  [19:2]
+                xor eax,eax  ;  [20:2]
+                xor edi,edi  ;  [21:2]
+                syscall  ;  [22:2]
+                mov esi,eax  ;  [23:2]
+            _end_read_970:
+              mov edi,esi  ;  [56:2]
+              add edi,-2  ;  [57:2]
+          _end_plus_965:
+            mov ecx,name  ;  [10:2]
+            mov edx,edi  ;  [11:2]
+            mov ebx,1  ;  [12:2]
+            mov eax,4  ;  [13:2]
+            int 0x80  ;  [14:2]
+        _end_print_959:
+      jmp _loop_888
+    _end_loop_888:  ; [63:2]
+;   exit(){  [68:2]
+        mov eax,1  ;  [29:2]
+        int 0x80  ;  [30:2]
+    _end_exit_1004:
+==29829== 
+==29829== HEAP SUMMARY:
+==29829==     in use at exit: 72,704 bytes in 1 blocks
+==29829==   total heap usage: 1,013 allocs, 1,012 frees, 123,703 bytes allocated
+==29829== 
+==29829== LEAK SUMMARY:
+==29829==    definitely lost: 0 bytes in 0 blocks
+==29829==    indirectly lost: 0 bytes in 0 blocks
+==29829==      possibly lost: 0 bytes in 0 blocks
+==29829==    still reachable: 72,704 bytes in 1 blocks
+==29829==         suppressed: 0 bytes in 0 blocks
+==29829== Rerun with --leak-check=full to see details of leaked memory
+==29829== 
+==29829== For counts of detected and suppressed errors, rerun with: -v
+==29829== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 
-
-section .data
-prompt     db 'enter_name_'
-prompt.len equ $-prompt
-name     db '......................'
-name.len equ $-name
-hello     db 'hello_'
-hello.len equ $-hello
-mem1 dd 1
-mem0 dd 0
-
-section .bss
-stk resd 256
-==18868== 
-==18868== HEAP SUMMARY:
-==18868==     in use at exit: 72,704 bytes in 1 blocks
-==18868==   total heap usage: 822 allocs, 821 frees, 118,640 bytes allocated
-==18868== 
-==18868== LEAK SUMMARY:
-==18868==    definitely lost: 0 bytes in 0 blocks
-==18868==    indirectly lost: 0 bytes in 0 blocks
-==18868==      possibly lost: 0 bytes in 0 blocks
-==18868==    still reachable: 72,704 bytes in 1 blocks
-==18868==         suppressed: 0 bytes in 0 blocks
-==18868== Rerun with --leak-check=full to see details of leaked memory
-==18868== 
-==18868== For counts of detected and suppressed errors, rerun with: -v
-==18868== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
-
-Thu Jun 23 20:52:45 ICT 2016
+Sat Jun 25 22:28:16 ICT 2016
 
