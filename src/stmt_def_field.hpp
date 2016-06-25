@@ -28,7 +28,7 @@ class stmt_def_field final:public statement{public:
 		os<<"; --- field "<<identifier->name()<<"  ";
 		tc.source_location_to_stream(os,*identifier);
 		os<<endl;
-		os<<identifier->name()<<":    db '";
+		os<<identifier->name()<<" db '";
 		for(auto&s:tokens)s->compile_to(os);
 //		os<<"'";
 		os<<"'\n";
