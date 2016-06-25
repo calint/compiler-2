@@ -18,14 +18,14 @@
 
 class stmt_call:public expression{public:
 
-	inline static up_statement read_statement(statement*parent,tokenizer&t){
-		up_token tkn=t.next_token();
-		if(!t.is_next_char('(')){
-			return make_unique<statement>(parent,move(tkn));// ie  0x80
-		}
-		t.unread();
-		return create_call(tkn->name(),parent,move(tkn),t); // ie  f(...)
-	}
+//	inline static up_statement read_statement(statement*parent,tokenizer&t){
+//		up_token tkn=t.next_token();
+//		if(!t.is_next_char('(')){
+//			return make_unique<statement>(parent,move(tkn));// ie  0x80
+//		}
+//		t.unread();
+//		return create_call_statement_from_tokenizer(tkn->name(),parent,move(tkn),t); // ie  f(...)
+//	}
 
 
 	inline stmt_call(statement*parent,up_token tkn,tokenizer&t):expression{parent,move(tkn)}{
@@ -35,7 +35,7 @@ class stmt_call:public expression{public:
 		}
 		while(true){
 			if(t.is_next_char(')'))break;
-			args.push_back(stmt_call::read_statement(this,t));
+			args.push_back(create_statement_from_tokenizer(this,t));
 			if(t.is_next_char(')'))break;
 			if(!t.is_next_char(','))throw compiler_error(*this,"expected ',' after argument at ",tok().name_copy());
 		}
@@ -82,7 +82,6 @@ class stmt_call:public expression{public:
 //			os<<"  call "<<token().name()<<endl;
 //			return;
 		}
-
 		const stmt_def_func*f=tc.get_func_or_break(*this,nm);
 		framestack&fs=tc.framestk();
 //		if(*token().name()=='_'){

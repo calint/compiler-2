@@ -17,7 +17,7 @@ class stmt_def_var final:public statement{public:
 		identifier=t.next_token();
 		if(!t.is_next_char('='))
 			return;
-		initial_value=read_stmt(this,t);
+		initial_value=create_statement_from_tokenizer(this,t);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{

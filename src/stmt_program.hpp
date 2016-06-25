@@ -9,6 +9,7 @@ using namespace std;
 #include"stmt_def_func.hpp"
 #include"stmt_def_field.hpp"
 #include"stmt_def_table.hpp"
+#include"stmt_comment.hpp"
 class stmt_program final:public statement{public:
 
 	inline stmt_program(const char*source):
@@ -21,14 +22,16 @@ class stmt_program final:public statement{public:
 		while(!t.is_eos()){
 			up_token tk=t.next_token();
 			up_statement stmt;
-			if(tk->is_name("field")){stmt=make_unique<stmt_def_field>(this,move(tk),t);}
+			if(tk->is_name("//")){
+				stmt=make_unique<stmt_comment>(this,move(tk),t);
+			}else if(tk->is_name("field")){stmt=make_unique<stmt_def_field>(this,move(tk),t);}
 			else if(tk->is_name("func")){stmt=make_unique<stmt_def_func>(this,move(tk),t);}
 			else if(tk->is_name("table")){stmt=make_unique<stmt_def_table>(this,move(tk),t);}
 			else{
 				if(tk->is_name("")){
 					stmt=make_unique<statement>(this,move(tk));
 				}else{
-					stmt=create_call(tk->name(),this,move(tk),t);
+					stmt=create_call_statement_from_tokenizer(tk->name(),this,move(tk),t);
 				}
 			}
 			statements.push_back(move(stmt));

@@ -14,6 +14,7 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include"stmt_assign_var.hpp"
+#include"stmt_comment.hpp"
 
 using vup_statement=vector<up_statement>;
 class stmt_block final:public statement{public:
@@ -26,6 +27,10 @@ class stmt_block final:public statement{public:
 			if(t.is_eos())throw compiler_error(*this,"unexpected end of string",parent->tok().name_copy());
 			if(not is_one_statement and t.is_next_char('}'))break;
 			up_token tkn=t.next_token();
+			if(tkn->is_name("//")){
+				statements.push_back(make_unique<stmt_comment>(parent,move(tkn),t));
+				continue;
+			}
 			if(tkn->is_name("")){
 				statements.push_back(make_unique<statement>(parent,move(tkn)));
 				continue;
@@ -38,7 +43,7 @@ class stmt_block final:public statement{public:
 				statements.push_back(make_unique<stmt_assign_var>(parent,move(tkn),t));
 				continue;
 			}
-			statements.push_back(create_call(tkn->name(),parent,move(tkn),t));
+			statements.push_back(create_call_statement_from_tokenizer(tkn->name(),parent,move(tkn),t));
 			if(is_one_statement)
 				break;
 		}

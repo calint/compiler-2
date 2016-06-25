@@ -18,7 +18,7 @@ class stmt_if final:public statement{public:
 		if(!t.is_next_char('('))
 			throw compiler_error(*this,"if expects '(' followed by boolean expression",tok().name_copy());
 
-		bool_expr=stmt_call::read_statement(this,t);
+		bool_expr=create_statement_from_tokenizer(this,t);
 
 		if(!t.is_next_char(')'))
 			throw compiler_error(*this,"if expects ')' after the boolean expression",tok().name_copy());

@@ -70,6 +70,18 @@ class tokenizer final{public:
 		unsafe_seek(-1);
 	}
 
+	inline string read_rest_of_line(){
+		const char*bgn=ptr;
+		while(true){
+			if(*ptr=='\n')break;
+			if(*ptr=='\0')break;
+			ptr++;
+		}
+		string s{bgn,size_t(ptr-bgn)};
+		ptr++;
+		return s;
+	}
+
 
 private:
 	const char*ptr{nullptr};

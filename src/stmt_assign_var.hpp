@@ -21,7 +21,7 @@ class stmt_assign_var final:public statement{public:
 			return;
 		}
 		t.unread();
-		expr=create_call(tk->name(),parent,move(tk),t); // ie  f(...)
+		expr=create_call_statement_from_tokenizer(tk->name(),parent,move(tk),t); // ie  f(...)
 
 //		expr=stmt_call::read_statement(this,t);
 	}

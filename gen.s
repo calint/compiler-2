@@ -3,56 +3,56 @@ global _start
 _start:
   mov ebp,stk
   mov esp,stk.end
-;   print(prompt.len prompt){  [56:2]
-        mov ecx,prompt  ;  [12:2]
-        mov edx,prompt.len  ;  [13:2]
-        mov ebx,1  ;  [14:2]
-        mov eax,4  ;  [15:2]
-        int 0x80  ;  [16:2]
-    _end_print_666:
-    _loop_692:  ; [57:2]
-;       print(plus name){  [58:3]
-;         plus(read -2):eax{  [58:9]
-;           read(name.len name):ebx{  [58:14]
-                mov esi,name  ;  [20:2]
-                mov edx,name.len  ;  [21:2]
-                xor eax,eax  ;  [22:2]
-                xor edi,edi  ;  [23:2]
-                syscall  ;  [24:2]
-                mov ebx,eax  ;  [25:2]
-            _end_read_711:
-              mov eax,ebx  ;  [51:2]
-              add eax,-2
-          _end_plus_706:
-            mov ecx,name  ;  [12:2]
-            mov edx,eax  ;  [13:2]
-            mov ebx,1  ;  [14:2]
-            mov eax,4  ;  [15:2]
-            int 0x80  ;  [16:2]
-        _end_print_700:
-      jmp _loop_692
-    _end_loop_692:  ; [57:2]
-;   exit(){  [60:2]
-        mov eax,1  ;  [7:2]
-        int 0x80  ;  [8:2]
-    _end_exit_745:
+;   print(prompt.len prompt){  [58:3]
+        mov ecx,prompt  ;  [7:30]
+        mov edx,prompt.len  ;  [10:9]
+        mov ebx,1  ;  [11:2]
+        mov eax,4  ;  [11:14]
+        int 0x80  ;  [12:12]
+    _end_print_771:
+    _loop_797:  ; [62:3]
+;       print(plus name){  [63:1]
+;         plus(read -2):eax{  [63:7]
+;           read(name.len name):ebx{  [63:12]
+                mov esi,name  ;  [16:1]
+                mov edx,name.len  ;  [18:12]
+                xor eax,eax  ;  [19:2]
+                xor edi,edi  ;  [19:12]
+                syscall  ;  [20:8]
+                mov ebx,eax  ;  [21:3]
+            _end_read_824:
+              mov eax,ebx  ;  [53:10]
+              add eax,-2  ;  [56:6]
+          _end_plus_819:
+            mov ecx,name  ;  [7:30]
+            mov edx,eax  ;  [10:9]
+            mov ebx,1  ;  [11:2]
+            mov eax,4  ;  [11:14]
+            int 0x80  ;  [12:12]
+        _end_print_813:
+      jmp _loop_797
+    _end_loop_797:  ; [62:3]
+;   exit(){  [65:13]
+        mov eax,1  ;  [27:22]
+        int 0x80  ;  [27:34]
+    _end_exit_858:
 
 section .data
 dd1 dd 1
 dd0 dd 0
 
-; --- field prompt  [1:6]
+; --- field prompt  [1:9]
 prompt db '___echo__type_new_line__ctrl_c__to_break____'
 prompt.len equ $-prompt
 
-; --- field name  [2:9]
+; --- field name  [2:55]
 name db '............................................................'
 name.len equ $-name
 
-; --- table names [4:7]
-names:
-names.end:
-names.len equ $-names
+; --- table name_to_prompt [3:70]
+name_to_prompt:
+name_to_prompt.end:
+name_to_prompt.len equ $-name_to_prompt
 
 
 section .bss

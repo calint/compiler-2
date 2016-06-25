@@ -22,6 +22,7 @@ using namespace std;
 #include"call_asm_cmovne.hpp"
 #include"call_asm_or.hpp"
 #include"call_asm_and.hpp"
+#include"stmt_comment.hpp"
 static string file_read_to_string(const char *filename){
 	FILE*f=fopen(filename,"rb");
 	if(!f)throw "cannot open file";
@@ -66,7 +67,7 @@ int main(int argc,char**args){
 	}
 	return 0;
 }
-inline up_statement create_call(const char*funcname,statement*parent,unique_ptr<token>tk,tokenizer&t){
+inline up_statement create_call_statement_from_tokenizer(const char*funcname,statement*parent,unique_ptr<token>tk,tokenizer&t){
 	if(!strcmp("mov",funcname))return make_unique<call_asm_mov>(parent,move(tk),t);
 	if(!strcmp("int",funcname))return make_unique<call_asm_int>(parent,move(tk),t);
 	if(!strcmp("xor",funcname))return make_unique<call_asm_xor>(parent,move(tk),t);
@@ -87,12 +88,11 @@ inline up_statement create_call(const char*funcname,statement*parent,unique_ptr<
 	if(!strcmp("and",funcname))return make_unique<call_asm_and>(parent,move(tk),t);
 	return make_unique<stmt_call>(parent,move(tk),t);
 }
-inline up_statement read_stmt(statement*parent,tokenizer&t){
+inline up_statement create_statement_from_tokenizer(statement*parent,tokenizer&t){
 	up_token tkn=t.next_token();
-	if(!t.is_next_char('(')){
-		return make_unique<statement>(parent,move(tkn));// ie  0x80
-	}
+	if(tkn->is_name("//"))return make_unique<stmt_comment>(parent,move(tkn),t);// ie    print("hello") // comment
+	if(!t.is_next_char('('))return make_unique<statement>(parent,move(tkn));// ie  0x80
 	t.unread();
-	return create_call(tkn->name(),parent,move(tkn),t); // ie  f(...)
+	return create_call_statement_from_tokenizer(tkn->name(),parent,move(tkn),t); // ie  f(...)
 }
 
