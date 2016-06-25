@@ -37,7 +37,7 @@ class stmt_if final:public statement{public:
 
 		tc.framestk().push_if(name.data());
 
-		const string&reg=tc.framestk().alloc_scratch_register();
+		const string&reg=tc.framestk().alloc_scratch_register(token());
 		bool_expr->set_dest_to_nasm_ident(reg);
 		bool_expr->compile(tc,os,indent_level);
 

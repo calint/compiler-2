@@ -63,7 +63,8 @@ func main{
 	var ca=3
 	var da=4
 	var ea=5
-	ea=plus(da,plus(ca,plus(aa,ba)))
+//	ea=plus(plus(plus(ca,da),plus(plus(ea,da),ba)),plus(plus(ca,da),plus(plus(plus(ca,da),plus(ca,da)),ba)))
+	ea=plus(plus(plus(ca,da),plus(aa,ba)),plus(plus(ca,da),plus(plus(plus(ca,da),aa),ba)))
 
 	var c=c
 	var a=7

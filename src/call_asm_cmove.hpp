@@ -18,7 +18,7 @@ class call_asm_cmove final:public stmt_call{public:
 //		indent(os,indent_level,true);source_to(os);os<<endl;
 		indent(os,indent_level);
 		if(argument(1).is_expression()){
-			const string&reg=tc.framestk().alloc_scratch_register();
+			const string&reg=tc.framestk().alloc_scratch_register(token());
 			argument(1).set_dest_to_nasm_ident(reg);
 			argument(1).compile(tc,os,indent_level);
 			os<<"cmove "<<tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name())<<","<<reg<<endl;

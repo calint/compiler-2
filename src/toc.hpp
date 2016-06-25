@@ -157,7 +157,11 @@ class framestack final{public:
 		frames_.back().add_var(name,stkix_++,flags);
 	}
 
-	inline const string&alloc_scratch_register(){
+	inline const string&alloc_scratch_register(const token&tk){
+		if(free_registers_.empty()){
+			throw compiler_error(tk,"out of scratch registers  reduce expression complexity");
+		}
+
 		const string&r=free_registers_[free_registers_.size()-1];
 		free_registers_.pop_back();
 
@@ -169,6 +173,7 @@ class framestack final{public:
 	}
 
 	inline void free_scratch_reg(const string&reg){
+//		assert(all_registers_
 		free_registers_.push_back(reg);
 	}
 

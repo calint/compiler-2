@@ -90,17 +90,17 @@ class stmt_call:public expression{public:
 		vector<string>allocated_registers;
 		size_t i=0;
 		for(auto&a:args_){
-			auto param=f->get_param(i).name();
+			auto param=f->get_param(i);
 			i++;
 			if(a->is_expression()){
-				const string reg=fs.alloc_scratch_register();
+				const string reg=fs.alloc_scratch_register(param);
 				allocated_registers.push_back(reg);
 				a->set_dest_to_nasm_ident(reg);
-				fs.add_alias(param,reg);
+				fs.add_alias(param.name(),reg);
 				a->compile(tc,os,indent_level+1);
 				continue;
 			}
-			fs.add_alias(param,a->tok().name());
+			fs.add_alias(param.name(),a->tok().name());
 		}
 
 		f->code_block()->compile(tc,os,indent_level+1);

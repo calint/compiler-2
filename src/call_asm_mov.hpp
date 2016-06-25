@@ -22,7 +22,7 @@ class call_asm_mov final:public stmt_call{public:
 			return;
 
 		if(!ra.find("dword[") and !rb.find("dword[")){
-			const string&r=tc.framestk().alloc_scratch_register();
+			const string&r=tc.framestk().alloc_scratch_register(token());
 			indent(os,indent_level,false);
 			os<<"mov "<<r<<","<<rb<<"  ;  ";
 			tc.source_location_to_stream(os,tok());
