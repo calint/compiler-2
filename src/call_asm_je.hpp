@@ -14,6 +14,7 @@ class call_asm_je final:public stmt_call{public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level);
+		//? forward decl label or resolve labels after compiler done
 		os<<"je "<<tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name())<<endl;
 	}
 
