@@ -14,9 +14,9 @@ class compiler_error final{public:
 		start_char{s.tok().token_start_char()},end_char{s.tok().token_end_char()}
 	{}
 
-	inline compiler_error(const token*tk,const char*message,unique_ptr<const char[]>identifier=unique_ptr<const char[]>(new char[1]{0})):
+	inline compiler_error(const token&tk,const char*message,unique_ptr<const char[]>identifier=unique_ptr<const char[]>(new char[1]{0})):
 		msg{message},ident{move(identifier)},
-		start_char{tk->token_start_char()},end_char{tk->token_end_char()}
+		start_char{tk.token_start_char()},end_char{tk.token_end_char()}
 	{}
 
 	const char* msg;

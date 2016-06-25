@@ -11,7 +11,7 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-
+#include"stmt_def_func_param.hpp"
 class stmt_def_func final:public statement{public:
 
 	inline stmt_def_func(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
@@ -23,13 +23,14 @@ class stmt_def_func final:public statement{public:
 		if(!no_args){
 			while(true){
 				if(t.is_next_char(')'))break;
-				up_token tk=t.next_token();
+				unique_ptr<stmt_def_func_param>fp=make_unique<stmt_def_func_param>(this,t);
 				if(t.is_next_char(')')){
-					params.push_back(move(tk));
+					params.push_back(move(fp));
 					break;
 				}
-				if(!t.is_next_char(','))throw compiler_error(*this,"expected ',' after parameter at ",tk->name_copy());
-				params.push_back(move(tk));
+				if(!t.is_next_char(','))
+					throw compiler_error(*fp,"expected ',' after parameter at ",fp->tok().name_copy());
+				params.push_back(move(fp));
 			}
 		}
 		if(t.is_next_char(':')){// returns
@@ -51,7 +52,7 @@ class stmt_def_func final:public statement{public:
 
 		os<<identifier->name()<<":\n";
 		for (size_t i=params.size();i-->0;)
-			os<<"  pop "<<params[i].get()->name()<<endl;
+			os<<"  pop "<<params[i]->tok().name()<<endl;
 
 		code->compile(tc,os,indent_level+1);
 		os<<"  ret\n";
@@ -87,7 +88,7 @@ class stmt_def_func final:public statement{public:
 
 	inline const vup_tokens&getreturns()const{return returns;}
 
-	inline const up_token&get_param(const size_t ix)const{return params[ix];}
+	inline const token&get_param(const size_t ix)const{return params[ix]->tok();}
 
 	inline const stmt_block*code_block()const{return code.get();}
 
@@ -95,6 +96,6 @@ private:
 	up_token identifier;
 	bool no_args{false};
 	vup_tokens returns;
-	vup_tokens params;
+	vector<unique_ptr<stmt_def_func_param>>params;
 	up_block code;
 };

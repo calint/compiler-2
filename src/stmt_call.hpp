@@ -99,7 +99,7 @@ class stmt_call:public expression{public:
 		vector<const char*>allocated_registers;
 		size_t i=0;
 		for(auto&a:args){
-			const char*param=f->get_param(i)->name();
+			const char*param=f->get_param(i).name();
 			i++;
 			const char*reg{nullptr};
 			if(a->is_expression()){

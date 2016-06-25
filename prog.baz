@@ -3,10 +3,10 @@ field   name {............................................................}
 
 table name_to_prompt(name,prompt)
 
-func table.find(tbl,lamda):ref{
-}
+func table.find(tbl,lambda):ref{} // ref validated within tbl
+func table.foreach(tbl,lamda){}
 
-func print(len,ptr){
+func print(len:const,ptr:const){
 	mov(ecx,ptr)
 	mov(edx,len)
 	mov(ebx,1)
@@ -14,7 +14,7 @@ func print(len,ptr){
 	int(0x80)
 }
 
-func read(len,ptr):int{
+func read(len:const,ptr:const):int{
 	mov(esi,ptr)
 	mov(edx,len)
 	xor(eax)

@@ -19,21 +19,39 @@ class stmt_program final:public statement{public:
 	{
 		vector<const char*>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if","cmove","cmovne","or","and"};
 		for(auto s:assem)tc.add_func(*this,s,nullptr);
-		while(!t.is_eos()){
-			up_token tk=t.next_token();
-			up_statement stmt;
-			if(tk->is_name("//")){stmt=make_unique<stmt_comment>(this,move(tk),t);}
-			else if(tk->is_name("field")){stmt=make_unique<stmt_def_field>(this,move(tk),t);}
-			else if(tk->is_name("func")){stmt=make_unique<stmt_def_func>(this,move(tk),t);}
-			else if(tk->is_name("table")){stmt=make_unique<stmt_def_table>(this,move(tk),t);}
-			else if(t.is_next_char('(')){
-				t.unread();
-				stmt=create_call_statement_from_tokenizer(tk->name(),this,move(tk),t);
-			}else if(tk->is_name("")){stmt=make_unique<statement>(this,move(tk));}
-			else
-				throw compiler_error(tk.get(),"unexpected keyword",tk->name_copy());
+		while(true){
+			up_token tkn=t.next_token();
+			if(tkn->is_blank() and t.is_eos())
+				break;
 
-			statements.push_back(move(stmt));
+			if(tkn->is_blank())
+				throw compiler_error(*tkn,"unexpected character",ua_char(new char[2]{t.peek_char(),0}));
+
+			up_statement stmt;
+//			if(t.is_peek_char('(')){stmt=create_call_statement_from_tokenizer(tkn->name(),this,move(tkn),t);}
+//			else
+			if(tkn->is_name("field")){
+				statements.push_back(make_unique<stmt_def_field>(this,move(tkn),t));
+				continue;
+			}
+			if(tkn->is_name("func")){
+				statements.push_back(make_unique<stmt_def_func>(this,move(tkn),t));
+				continue;
+			}
+			if(tkn->is_name("table")){
+				statements.push_back(make_unique<stmt_def_table>(this,move(tkn),t));
+				continue;
+			}
+			if(tkn->is_name("//")){
+				statements.push_back(make_unique<stmt_comment>(this,move(tkn),t));
+				continue;
+			}
+			if(tkn->is_name("")){// whitespace
+				statements.push_back(make_unique<statement>(this,move(tkn)));
+				continue;
+			}
+
+			throw compiler_error(*tkn,"unexpected keyword",tkn->name_copy());
 		}
 	}
 

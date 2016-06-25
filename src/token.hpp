@@ -35,6 +35,16 @@ class token final{public:
 		return unique_ptr<const char[]>(str);
 	}
 
+	inline bool is_blank()const{
+		const char a=ws_before[0];
+		const char b=name_[0];
+		const char c=ws_after[0];
+		if(a==0 and b==0 and c==0)
+			return true;
+		return false;
+//		return!(ws_before[0]==name_[0]==ws_after[0]==0);
+	}
+
 private:
 //	inline void to_stdout2()const{printf("[%zu]%s[%zu]\n",token_start_char_,name_.get(),token_end_char_);}
 	ua_char ws_before;

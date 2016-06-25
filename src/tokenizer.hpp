@@ -8,8 +8,11 @@ using namespace std;
 #include "token.hpp"
 
 class tokenizer final{public:
+
 	inline tokenizer(const char*string):ptr(string){}
+
 	inline bool is_eos()const{return !last_char;}
+
 	inline up_token next_token(){
 		assert(!is_eos());
 		auto wspre=next_whitespace();
@@ -21,51 +24,17 @@ class tokenizer final{public:
 //		printf("%zu:%zu %s\n",a->get_nchar(),a->get_nchar_end(),a->get_name());
 		return p;
 	}
+
 	inline bool is_next_char(const char ch){
 		if(*ptr!=ch)return false;
 		next_char();
 		return true;
 	}
-//	inline bool is_next_char_expression_open(){
-//		if(*ptr!='(')return false;
-//		next_char();
-//		return true;
-//	}
-//	inline bool is_next_char_expression_close(){
-//		if(*ptr!=')')return false;
-//		next_char();
-//		return true;
-//	}
-//	inline bool is_next_char_data_open(){
-//		if(*ptr!='{')return false;
-//		next_char();
-//		return true;
-//	}
-//	inline bool is_next_char_data_close(){
-//		if(*ptr!='}')return false;
-//		next_char();
-//		return true;
-//	}
-//	inline bool is_next_char_args_open(){
-//		if(*ptr!='(')return false;
-//		next_char();
-//		return true;
-//	}
-//	inline bool is_next_char_args_close(){
-//		if(*ptr!=')')return false;
-//		next_char();
-//		return true;
-//	}
-//	inline bool is_next_char_block_open(){
-//		if(*ptr!='{')return false;
-//		next_char();
-//		return true;
-//	}
-//	inline bool is_next_char_block_close(){
-//		if(*ptr!='}')return false;
-//		next_char();
-//		return true;
-//	}
+
+	inline bool is_peek_char(const char ch){return *ptr==ch;}
+
+	inline char peek_char()const{return *ptr;}
+
 	inline void unread(){
 		unsafe_seek(-1);
 	}

@@ -16,14 +16,11 @@ class stmt_assign_var final:public statement{public:
 
 	inline stmt_assign_var(statement*parent,up_token tkn,tokenizer&t):statement{parent,move(tkn)}{
 		up_token tk=t.next_token();
-		if(!t.is_next_char('(')){
+		if(!t.is_peek_char('(')){
 			expr=make_unique<statement>(parent,move(tk));// ie  0x80
 			return;
 		}
-		t.unread();
 		expr=create_call_statement_from_tokenizer(tk->name(),parent,move(tk),t); // ie  f(...)
-
-//		expr=stmt_call::read_statement(this,t);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{

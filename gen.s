@@ -32,8 +32,8 @@ _start:
         mov ebx,1  ;  [12:2]
         mov eax,4  ;  [13:2]
         int 0x80  ;  [14:2]
-    _end_print_778:
-    _loop_804:  ; [63:2]
+    _end_print_862:
+    _loop_888:  ; [63:2]
 ;       print(plus name){  [66:3]
 ;         plus(read -2):edi{  [66:9]
 ;           read(name.len name):esi{  [66:14]
@@ -43,19 +43,19 @@ _start:
                 xor edi,edi  ;  [21:2]
                 syscall  ;  [22:2]
                 mov esi,eax  ;  [23:2]
-            _end_read_886:
+            _end_read_970:
               mov edi,esi  ;  [56:2]
               add edi,-2  ;  [57:2]
-          _end_plus_881:
+          _end_plus_965:
             mov ecx,name  ;  [10:2]
             mov edx,edi  ;  [11:2]
             mov ebx,1  ;  [12:2]
             mov eax,4  ;  [13:2]
             int 0x80  ;  [14:2]
-        _end_print_875:
-      jmp _loop_804
-    _end_loop_804:  ; [63:2]
+        _end_print_959:
+      jmp _loop_888
+    _end_loop_888:  ; [63:2]
 ;   exit(){  [68:2]
         mov eax,1  ;  [29:2]
         int 0x80  ;  [30:2]
-    _end_exit_920:
+    _end_exit_1004:

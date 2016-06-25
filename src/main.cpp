@@ -94,8 +94,7 @@ inline up_statement create_call_statement_from_tokenizer(const char*funcname,sta
 inline up_statement create_statement_from_tokenizer(statement*parent,tokenizer&t){
 	up_token tkn=t.next_token();
 	if(tkn->is_name("//"))return make_unique<stmt_comment>(parent,move(tkn),t);// ie    print("hello") // comment
-	if(!t.is_next_char('('))return make_unique<statement>(parent,move(tkn));// ie  0x80
-	t.unread();
+	if(!t.is_peek_char('('))return make_unique<statement>(parent,move(tkn));// ie  0x80
 	return create_call_statement_from_tokenizer(tkn->name(),parent,move(tkn),t); // ie  f(...)
 }
 
