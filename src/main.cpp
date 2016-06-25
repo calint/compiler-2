@@ -74,7 +74,7 @@ int main(int argc,char**args){
 		p.source_to(fo);
 		fo.close();
 		if(file_read_to_string("prog.baz")!=file_read_to_string("diff.baz"))
-			throw "generated source differs";
+			throw string("generated source differs");
 
 		p.build(cout);
 

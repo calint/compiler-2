@@ -19,7 +19,7 @@ class call_asm_cmovne final:public stmt_call{public:
 		indent(os,indent_level);
 		if(argument(1).is_expression()){
 			const string&reg=tc.framestk().alloc_scratch_register();
-			argument(1).set_expression_dest_nasm_identifier(reg);
+			argument(1).set_dest_to_nasm_ident(reg);
 			argument(1).compile(tc,os,indent_level);
 			os<<"cmovne "<<tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name())<<","<<reg<<endl;
 			tc.framestk().free_scratch_reg(reg);

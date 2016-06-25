@@ -30,13 +30,15 @@ class stmt_if final:public statement{public:
 		name="_if_"+to_string(tk.char_index_in_source());
 	}
 
+
+
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level,true);os<<"if ["<<tok().char_index_in_source()<<"]\n";
 
 		tc.framestk().push_if(name.data());
 
 		const string&reg=tc.framestk().alloc_scratch_register();
-		bool_expr->set_expression_dest_nasm_identifier(reg);
+		bool_expr->set_dest_to_nasm_ident(reg);
 		bool_expr->compile(tc,os,indent_level);
 
 		indent(os,indent_level,false);os<<"cmp "<<reg<<",1\n";
@@ -50,9 +52,13 @@ class stmt_if final:public statement{public:
 		tc.framestk().pop_if(name.data());
 	}
 
-	inline void link(toc&tc,ostream&os)const override final{
+
+
+	inline void link(toc&tc,ostream&os)const override{
 		code->link(tc,os);
 	}
+
+
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
@@ -64,7 +70,11 @@ class stmt_if final:public statement{public:
 
 
 private:
+
 	string name;
+
 	up_statement bool_expr;
+
 	unique_ptr<stmt_block>code;
+
 };

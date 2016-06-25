@@ -22,7 +22,7 @@ class stmt_assign_var final:public statement{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level,true);os<<tok().name()<<"="<<endl;
 		if(expr->is_expression()){
-			expr->set_expression_dest_nasm_identifier(tok().name());
+			expr->set_dest_to_nasm_ident(tok().name());
 			expr->compile(tc,os,indent_level+1);
 			return;
 		}

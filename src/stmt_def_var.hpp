@@ -15,17 +15,14 @@ class stmt_def_var final:public statement{public:
 
 	inline stmt_def_var(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk},
-		ident_{t.next_token()}
-	{
-		if(!t.is_next_char('='))
-			return;
-		initial_expression_=create_statement_from_tokenizer(*this,t);
-	}
+		ident_{t.next_token()},
+		initial_expression_{t.is_next_char('=')?create_statement_from_tokenizer(*this,t):make_unique<statement>(*this,token{})}
+	{}
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		ident_.source_to(os);
-		if(initial_expression_){
+		if(not initial_expression_->is_empty()){
 			os<<"=";
 			return initial_expression_->source_to(os);
 		}
@@ -37,17 +34,19 @@ class stmt_def_var final:public statement{public:
 
 		tc.framestk().add_var(ident_.name(),"");
 
-		if(initial_expression_){
-			if(initial_expression_->is_expression()){
-				initial_expression_->set_expression_dest_nasm_identifier(ident_.name());
-				initial_expression_->compile(tc,os,indent_level+1);
-			}else{
-				indent(os,indent_level,false);
-				const string&ra=tc.resolve_ident_to_nasm(*this,ident_.name());
-				const string&rb=tc.resolve_ident_to_nasm(*initial_expression_,initial_expression_->tok().name());
-				os<<"mov "<<ra<<","<<rb<<endl;
-			}
+		if(initial_expression_->is_empty())
+			return;
+
+		if(initial_expression_->is_expression()){
+			initial_expression_->set_dest_to_nasm_ident(ident_.name());
+			initial_expression_->compile(tc,os,indent_level+1);
+			return;
 		}
+
+		indent(os,indent_level,false);
+		const string&ra=tc.resolve_ident_to_nasm(*this,ident_.name());
+		const string&rb=tc.resolve_ident_to_nasm(*initial_expression_,initial_expression_->tok().name());
+		os<<"mov "<<ra<<","<<rb<<endl;
 	}
 
 private:

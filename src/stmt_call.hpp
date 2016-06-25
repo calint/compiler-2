@@ -95,7 +95,7 @@ class stmt_call:public expression{public:
 			if(a->is_expression()){
 				const string reg=fs.alloc_scratch_register();
 				allocated_registers.push_back(reg);
-				a->set_expression_dest_nasm_identifier(reg);
+				a->set_dest_to_nasm_ident(reg);
 				fs.add_alias(param,reg);
 				a->compile(tc,os,indent_level+1);
 				continue;
