@@ -43,15 +43,35 @@ static size_t line_number_for_char_index(size_t ix,const char*str){
 	}
 	return lineno;
 }
+statement next_stmt(const statement&parent){
+	statement s1{parent,token{"s1"}};
+	return s1;
+}
+statement next_stmt2(const statement&parent){
+	return statement{parent,token{"s1"}};
+}
+statement next_stmt3(const statement&parent){
+	return move(statement{parent,token{"s1"}});
+}
 int main(int argc,char**args){
 
 	auto src=file_read_to_string("prog.baz");
 
 	try{
 
-		auto p=stmt_program(src);
+		stmt_program p(src);
 
-		auto fo=ofstream("diff.baz");
+		token tk1{"s1"};
+		token tk2{"s2"};
+		statement s1{p,tk1};
+		statement s2{p,tk2};
+		statement s3=s1;
+		statement s4{s1};
+		statement s5=next_stmt(p);
+		statement s6=next_stmt2(p);
+		statement s7=next_stmt3(p);
+
+		ofstream fo("diff.baz");
 
 		p.source_to(fo);
 

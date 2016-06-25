@@ -19,21 +19,38 @@ class token final{public:
 		ws_after{wa}
 	{}
 
-	inline token():
-			ws_before{""},
-			token_start_char_{0},
-			name_{""},
-			token_end_char_{0},
-			ws_after{""}
+	inline token(const string&name):
+		token{"",0,name,name.size()," "}
 	{}
 
-//	inline token(const token&&tk):
-//		ws_before{tk.ws_before},
-//		token_start_char_{tk.token_start_char_},
-//		name_{tk.name_},
-//		token_end_char_{tk.token_end_char_},
-//		ws_after{tk.ws_after}
-//	{}
+	inline token():
+		token{"",0,"",0,""}
+	{}
+
+	inline token(const token&tk):
+		ws_before{tk.ws_before},
+		token_start_char_{tk.token_start_char_},
+		name_{tk.name_},
+		token_end_char_{tk.token_end_char_},
+		ws_after{tk.ws_after}
+	{}
+
+	inline token(const token&&tk):
+		ws_before{move(tk.ws_before)},
+		token_start_char_{tk.token_start_char_},
+		name_{move(tk.name_)},
+		token_end_char_{tk.token_end_char_},
+		ws_after{move(tk.ws_after)}
+	{}
+
+	inline token&operator=(const token&other){
+		ws_before=other.ws_before;
+		token_start_char_=other.token_start_char_;
+		name_=other.name_;
+		token_end_char_=other.token_end_char_;
+		ws_after=other.ws_after;
+		return*this;
+	}
 
 	inline void source_to(ostream&os)const{os<<ws_before<<name_<<ws_after;}
 

@@ -14,6 +14,26 @@ class statement{public:
 		pt{parent}
 	{}
 
+	// statement a=b   a{b}
+	inline statement(const statement&other):
+		dest{other.dest},
+		tk{other.tk},
+		pt{other.pt}
+	{}
+
+	inline statement(const statement&&other):
+		dest{move(other.dest)},
+		tk{move(other.tk)},
+		pt{other.pt}
+	{}
+
+//	inline statement&operator=(const statement&other){
+//		dest=other.dest;
+//		tk=other.tk;
+//		pt=other.pt;
+//		return*this;
+//	}
+
 	inline virtual~statement(){}
 
 	inline virtual void compile(toc&tc,ostream&os,size_t indent_level)const{tk.compile_to(os);}

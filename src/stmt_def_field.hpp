@@ -11,9 +11,10 @@
 class stmt_def_field final:public statement{public:
 
 	inline stmt_def_field(const statement&parent,const token&tkn,tokenizer&t):
-		statement{parent,tkn}
+		statement{parent,tkn},
+		ident_{t.next_token()}
 	{
-		ident_=t.next_token();
+//		ident_=t.next_token();
 		if(ident_.is_name(""))
 			throw compiler_error(ident_,"expected field name");
 

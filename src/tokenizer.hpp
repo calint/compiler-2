@@ -17,13 +17,12 @@ class tokenizer final{public:
 	inline bool is_eos()const{return !last_char;}
 
 	inline token next_token(){
-		assert(!is_eos());
 		auto wspre=next_whitespace();
 		auto bgn=nchar;
 		auto tkn=next_token_str();
 		auto end=nchar;
 		auto wsaft=next_whitespace();
-		return token(wspre,bgn,tkn,end,wsaft);//? move
+		return move(token{wspre,bgn,tkn,end,wsaft});
 	}
 
 	inline bool is_next_char(const char ch){

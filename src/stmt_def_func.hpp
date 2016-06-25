@@ -15,9 +15,9 @@
 class stmt_def_func final:public statement{public:
 
 	inline stmt_def_func(const statement&parent,const token&tkn,tokenizer&t):
-		statement{parent,tkn}
+		statement{parent,tkn},
+		ident_{t.next_token()}
 	{
-		ident_=t.next_token();
 		if(!t.is_next_char('(')){
 			no_args_=true;
 //			throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
