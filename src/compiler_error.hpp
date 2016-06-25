@@ -13,9 +13,11 @@ class compiler_error final{public:
 		msg{message},ident{identifier},
 		start_char{tk.token_start_char()},end_char{tk.token_end_char()}
 	{}
+
 	inline compiler_error(const statement&s,const string&message,const string&identifier=""):
 		compiler_error{s.tok(),message,identifier}
 	{}
+
 	const string msg;
 	const string ident;
 	size_t start_char{0};

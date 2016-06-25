@@ -14,7 +14,7 @@
 
 class stmt_assign_var final:public statement{public:
 
-	inline stmt_assign_var(statement*parent,token tkn,tokenizer&t):
+	inline stmt_assign_var(statement*parent,const token&tkn,tokenizer&t):
 		statement{parent,tkn}
 	{
 		token tk=t.next_token();

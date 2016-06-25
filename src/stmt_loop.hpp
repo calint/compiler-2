@@ -57,5 +57,5 @@ class stmt_loop final:public stmt_call{public:
 
 private:
 	string name;
-	up_block code;
+	up_stmt_block code;
 };

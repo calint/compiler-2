@@ -44,4 +44,3 @@ private:
 	statement*pt;
 };
 using up_statement=unique_ptr<statement>;
-

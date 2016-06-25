@@ -26,4 +26,5 @@ class call_asm_xor final:public stmt_call{public:
 		tc.source_location_to_stream(os,tok());
 		os<<endl;
 	}
+
 };

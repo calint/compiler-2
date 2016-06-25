@@ -17,12 +17,12 @@ class stmt_comment final:public statement{public:
 	inline stmt_comment(statement*parent,const token&tkn,tokenizer&t):
 		statement{parent,tkn}
 	{
-		comment_line=t.read_rest_of_line();
+		comment_line_=t.read_rest_of_line();
 	}
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		os<<comment_line<<endl;
+		os<<comment_line_<<endl;
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
@@ -32,5 +32,5 @@ class stmt_comment final:public statement{public:
 	}
 
 private:
-	string comment_line;
+	string comment_line_;
 };

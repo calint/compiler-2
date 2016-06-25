@@ -2,14 +2,14 @@
 template<class T>class lut{public:
 
 	inline T get(const string&key)const{
-		for(auto e:elems)
+		for(auto e:elems_)
 			if(e.is_key(key))
 				return e.data;
 		throw "element not found";
 	}
 
 	inline T get_valid(const string&key,bool&is_valid)const{
-		for(auto e:elems){
+		for(auto e:elems_){
 			if(e.is_key(key)){
 				is_valid=true;
 				return e.data;
@@ -20,7 +20,7 @@ template<class T>class lut{public:
 	}
 
 	inline bool has(const string&key)const{
-		for(auto e:elems)
+		for(auto e:elems_)
 			if(e.is_key(key)){
 				return true;
 			}
@@ -28,10 +28,10 @@ template<class T>class lut{public:
 	}
 
 	inline void put(const string&key,T data){
-		elems.push_back(el{key,data});
+		elems_.push_back(el{key,data});
 	}
 
-	inline void clear(){elems.clear();}
+	inline void clear(){elems_.clear();}
 
 
 private:
@@ -40,6 +40,6 @@ private:
 		T data;
 		inline bool is_key(const string&k)const{return k==key;}
 	};
-	vector<el>elems{};
+	vector<el>elems_{};
 //	el*last_has_found{nullptr}
 };

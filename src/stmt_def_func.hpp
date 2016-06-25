@@ -14,90 +14,90 @@
 #include"stmt_def_func_param.hpp"
 class stmt_def_func final:public statement{public:
 
-	inline stmt_def_func(statement*parent,token tkn,tokenizer&t):
+	inline stmt_def_func(statement*parent,const token&tkn,tokenizer&t):
 		statement{parent,tkn}
 	{
-		identifier=t.next_token();
+		ident_=t.next_token();
 		if(!t.is_next_char('(')){
-			no_args=true;
+			no_args_=true;
 //			throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
 		}
-		if(!no_args){
+		if(!no_args_){
 			while(true){
 				if(t.is_next_char(')'))break;
 				unique_ptr<stmt_def_func_param>fp=make_unique<stmt_def_func_param>(this,t);
 				if(t.is_next_char(')')){
-					params.push_back(move(fp));
+					params_.push_back(move(fp));
 					break;
 				}
 				if(!t.is_next_char(','))
 					throw compiler_error(*fp,"expected ',' after parameter at ",fp->tok().name_copy());
-				params.push_back(move(fp));
+				params_.push_back(move(fp));
 			}
 		}
 		if(t.is_next_char(':')){// returns
 			while(true){
-				returns.push_back(t.next_token());
+				returns_.push_back(t.next_token());
 				if(t.is_next_char(','))continue;
 				break;
 			}
 		}
-		code=make_unique<stmt_block>(parent,t);
+		code_=make_unique<stmt_block>(parent,t);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		tc.add_func(*this,identifier.name(),this);//? in constructor for forward ref
+		tc.add_func(*this,ident_.name(),this);//? in constructor for forward ref
 		if(is_inline())
 			return;
 
 		throw"?";
 
-		os<<identifier.name()<<":\n";
-		for (size_t i=params.size();i-->0;)
-			os<<"  pop "<<params[i]->tok().name()<<endl;
+		os<<ident_.name()<<":\n";
+		for (size_t i=params_.size();i-->0;)
+			os<<"  pop "<<params_[i]->tok().name()<<endl;
 
-		code->compile(tc,os,indent_level+1);
+		code_->compile(tc,os,indent_level+1);
 		os<<"  ret\n";
 	}
 
-	inline void link(toc&tc,ostream&os)const override{code->link(tc,os);}
+	inline void link(toc&tc,ostream&os)const override{code_->link(tc,os);}
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		identifier.source_to(os);
-		if(!no_args){
+		ident_.source_to(os);
+		if(!no_args_){
 			os<<"(";
-			const size_t nparam=params.size()-1;
+			const size_t nparam=params_.size()-1;
 			size_t ii{0};
-			for(auto&s:params){
+			for(auto&s:params_){
 				s->source_to(os);
 				if(ii++!=nparam)os<<",";
 			}
 			os<<")";
 		}
-		if(!returns.empty()){
+		if(!returns_.empty()){
 			os<<":";
-			const size_t sz=returns.size()-1;
+			const size_t sz=returns_.size()-1;
 			size_t i{0};
-			for(auto&t:returns){
+			for(auto&t:returns_){
 				t.source_to(os);
 				if(i++!=sz)os<<",";
 			}
 		}
-		code->source_to(os);}
+		code_->source_to(os);}
 
 	inline bool is_inline()const{return true;}
 
-	inline const vector<token>&getreturns()const{return returns;}
+	inline const vector<token>&getreturns()const{return returns_;}
 
-	inline token get_param(const size_t ix)const{return params[ix]->tok();}
+	inline token get_param(const size_t ix)const{return params_[ix]->tok();}
 
-	inline const stmt_block*code_block()const{return code.get();}
+	inline const stmt_block*code_block()const{return code_.get();}
 
 private:
-	token identifier;
-	bool no_args{false};
-	vector<token>returns;
-	vector<unique_ptr<stmt_def_func_param>>params;
-	up_block code;
+	token ident_;
+	bool no_args_{false};
+	vector<token>returns_;
+	vector<unique_ptr<stmt_def_func_param>>params_;
+	up_stmt_block code_;
 };

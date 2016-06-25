@@ -23,13 +23,13 @@ class stmt_block final:public statement{public:
 		statement{parent,token{}}
 	{
 		if(!t.is_next_char('{'))
-			is_one_statement=true;
+			is_one_statement_=true;
 
 		while(true){
 			if(t.is_eos())
 				break;
 
-			if(not is_one_statement and t.is_next_char('}'))
+			if(not is_one_statement_ and t.is_next_char('}'))
 				break;
 
 			token tkn=t.next_token();
@@ -38,42 +38,42 @@ class stmt_block final:public statement{public:
 				throw compiler_error(tkn,"unexpected end of string");
 
 			if(tkn.is_name("var")){
-				statements.push_back(make_unique<stmt_def_var>(this,tkn,t));
+				statements_.push_back(make_unique<stmt_def_var>(this,tkn,t));
 			}else
 			if(t.is_next_char('=')){// assign  ie   a=0x80
-				statements.push_back(make_unique<stmt_assign_var>(parent,tkn,t));
+				statements_.push_back(make_unique<stmt_assign_var>(parent,tkn,t));
 			}else
 			if(tkn.is_name("//")){
-				statements.push_back(make_unique<stmt_comment>(parent,tkn,t));
+				statements_.push_back(make_unique<stmt_comment>(parent,tkn,t));
 			}else
 			if(tkn.is_name("")){
-				statements.push_back(make_unique<statement>(parent,tkn));
+				statements_.push_back(make_unique<statement>(parent,tkn));
 			}else{
-				statements.push_back(create_call_statement_from_tokenizer(tkn.name(),this,tkn,t));
+				statements_.push_back(create_call_statement_from_tokenizer(tkn.name(),this,tkn,t));
 			}
 
-			if(is_one_statement)
+			if(is_one_statement_)
 				break;
 		}
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		for(auto&s:statements)
+		for(auto&s:statements_)
 			s->compile(tc,os,indent_level+1);
 	}
 
-	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements)s->link(tc,os);}
+	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements_)s->link(tc,os);}
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		if(!is_one_statement)os<<"{";
-		for(auto&s:statements)
+		if(!is_one_statement_)os<<"{";
+		for(auto&s:statements_)
 			s->source_to(os);
-		if(!is_one_statement)os<<"}";
+		if(!is_one_statement_)os<<"}";
 	}
 
 private:
-	vup_statement statements;
-	bool is_one_statement{false};
+	vup_statement statements_;
+	bool is_one_statement_{false};
 };
-using up_block=unique_ptr<stmt_block>;
+using up_stmt_block=unique_ptr<stmt_block>;

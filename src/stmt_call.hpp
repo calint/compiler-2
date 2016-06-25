@@ -22,12 +22,12 @@ class stmt_call:public expression{public:
 		expression{parent,tkn}
 	{
 		if(!t.is_next_char('(')){
-			no_args=true;
+			no_args_=true;
 			return;
 		}
 		while(true){
 			if(t.is_next_char(')'))break;
-			args.push_back(create_statement_from_tokenizer(this,t));
+			args_.push_back(create_statement_from_tokenizer(this,t));
 			if(t.is_next_char(')'))break;
 			if(!t.is_next_char(','))throw compiler_error(*this,"expected ',' after argument at ",tok().name_copy());
 		}
@@ -35,11 +35,11 @@ class stmt_call:public expression{public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		if(no_args)
+		if(no_args_)
 			return;
 		os<<"(";
-		size_t i=args.size()-1;
-		for(auto&e:args){
+		size_t i=args_.size()-1;
+		for(auto&e:args_){
 			e->source_to(os);
 			if(i--)os<<",";
 		}
@@ -53,10 +53,10 @@ class stmt_call:public expression{public:
 		//-- comment
 		indent(os,indent_level,true);
 		os<<nm<<"(";
-		const size_t n=args.size();
+		const size_t n=args_.size();
 		const size_t nn=n-1;
 		for(size_t i=0;i<n;i++){
-			os<<args[i].get()->tok().name();
+			os<<args_[i].get()->tok().name();
 			if(i<nn)os<<" ";
 		}
 		os<<")";
@@ -89,7 +89,7 @@ class stmt_call:public expression{public:
 		}
 		vector<string>allocated_registers;
 		size_t i=0;
-		for(auto&a:args){
+		for(auto&a:args_){
 			auto param=f->get_param(i).name();
 			i++;
 			if(a->is_expression()){
@@ -120,15 +120,15 @@ class stmt_call:public expression{public:
 //		indent(os,indent_level,true);os<<"}\n";
 	}
 
-	inline statement&argument(size_t ix)const{return*(args[ix].get());}
+	inline statement&argument(size_t ix)const{return*(args_[ix].get());}
 
-	inline size_t argument_count()const{return args.size();}
+	inline size_t argument_count()const{return args_.size();}
 
 	inline bool is_inline()const{return true;}
 
 
 private:
-	bool no_args{false};
-	vup_statement args;
+	bool no_args_{false};
+	vup_statement args_;
 };
 

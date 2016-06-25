@@ -13,7 +13,7 @@
 
 class stmt_def_var final:public statement{public:
 
-	inline stmt_def_var(statement*parent,token tkn,tokenizer&t):
+	inline stmt_def_var(statement*parent,const token&tkn,tokenizer&t):
 		statement{parent,tkn}
 	{
 		identifier=t.next_token();

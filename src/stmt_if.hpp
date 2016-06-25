@@ -63,6 +63,6 @@ class stmt_if final:public statement{public:
 
 private:
 	up_statement bool_expr;
-	up_block code;
+	up_stmt_block code;
 	string name;
 };
