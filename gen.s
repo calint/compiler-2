@@ -55,43 +55,43 @@ _start:
 ;   var d=
     mov edi,dword[ebp+4]  ;  [72:2]
     mov dword[ebp+12],edi  ;  [72:2]
-;   print(b prompt){  [73:2]
+;   print(b prompt){  [74:2]
         mov ecx,prompt  ;  [10:2]
         mov edx,dword[ebp+8]  ;  [11:2]
         mov ebx,1  ;  [12:2]
         mov eax,4  ;  [13:2]
         int 0x80  ;  [14:2]
-    _end_print_962:
-    _loop_1007:  ; [75:2]
-;       print(plus name){  [78:3]
-;         plus(read -2):edi{  [78:9]
-;           read(name.len name):esi{  [78:14]
+    _end_print_993:
+    _loop_1038:  ; [76:2]
+;       print(plus name){  [79:3]
+;         plus(read -2):edi{  [79:9]
+;           read(name.len name):esi{  [79:14]
                 mov esi,name  ;  [18:2]
                 mov edx,name.len  ;  [19:2]
                 xor eax,eax  ;  [20:2]
                 xor edi,edi  ;  [21:2]
                 syscall  ;  [22:2]
                 mov esi,eax  ;  [23:2]
-            _end_read_1089:
+            _end_read_1120:
               mov edi,esi  ;  [56:2]
               add edi,-2  ;  [57:2]
-          _end_plus_1084:
+          _end_plus_1115:
             mov ecx,name  ;  [10:2]
             mov edx,edi  ;  [11:2]
             mov ebx,1  ;  [12:2]
             mov eax,4  ;  [13:2]
             int 0x80  ;  [14:2]
-        _end_print_1078:
-;       exit(){  [79:3]
+        _end_print_1109:
+;       exit(){  [80:3]
             mov eax,1  ;  [29:2]
             int 0x80  ;  [30:2]
-        _end_exit_1121:
-      jmp _loop_1007
-    _end_loop_1007:  ; [75:2]
-;   exit(){  [81:2]
+        _end_exit_1152:
+      jmp _loop_1038
+    _end_loop_1038:  ; [76:2]
+;   exit(){  [82:2]
         mov eax,1  ;  [29:2]
         int 0x80  ;  [30:2]
-    _end_exit_1130:
+    _end_exit_1161:
 
 ;   max scratch regs in use: 2
 ;         max frames in use: 5

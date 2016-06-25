@@ -70,6 +70,7 @@ func main{
 	a=b
 //  c=b=a
 	var d=a
+//	d=plus(d,plus(c,plus(a,b)))
 	print(b,prompt)
 //	print(prompt.len,prompt)
 	loop{
