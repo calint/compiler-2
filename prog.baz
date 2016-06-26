@@ -1,4 +1,5 @@
-field prompt {___echo__type_new_line__ctrl_c__to_break____}
+// field prompt {___echo__type_new_line__ctrl_c__to_break____}
+field prompt{"  hello    enter name: "}
 field   name {............................................................}
 
 table name_to_prompt(name,prompt)
@@ -72,8 +73,12 @@ func main{
 //		var bb=2
 //		print(plus(read(name.len,name),plus(plus(plus(bb,aa),plus(bb,aa)),plus(1,2))),name)
 		
-		var a=1
+		var aaa=1
+		var a=3
 		var b=2
+//		if(eq(aaa,b)){
+//			exit
+//		}
 		print(plus(read(name.len,name),plus(plus(plus(b,a),plus(b,a)),plus(1,2))),name)
 		
 		exit

@@ -69,14 +69,14 @@ class stmt_program final:public statement{public:
 			if(!s->is_in_data_section())s->compile(tc,os,indent_level);
 
 		const stmt_def_func*main=tc.get_func_or_break(*this,"main");
-		tc.framestk().push_func("main");
+		tc.push_func("main");
 //		indent(os,indent_level,true);os<<"main(){  ["<<token().token_start_char()<<"]"<<endl;
 
 		main->code_block()->compile(tc,os,indent_level);
 
 //		indent(os,indent_level,true);os<<"}\n\n";
 
-		tc.framestk().pop_func("main");
+		tc.pop_func("main");
 	}
 
 	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements)s->link(tc,os);}

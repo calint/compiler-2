@@ -32,9 +32,11 @@ class stmt_def_var final:public statement{public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level,true);
-		os<<"var "<<ident_.name()<<"="<<endl;
+		os<<"var "<<ident_.name()<<"="<<initial_expression_->tok().name()<<"  ";
+		tc.source_location_to_stream(os,ident_);
+		os<<endl;
 
-		tc.framestk().add_var(ident_.name(),"");
+		tc.add_var(ident_.name(),"");
 
 		if(initial_expression_->is_empty())
 			return;
@@ -52,7 +54,7 @@ class stmt_def_var final:public statement{public:
 			return;
 
 		if(!ra.find("dword[") and !rb.find("dword[")){
-			const string&r=tc.framestk().alloc_scratch_register(token());
+			const string&r=tc.alloc_scratch_register(token());
 			indent(os,indent_level,false);
 			os<<"mov "<<r<<","<<rb<<"  ;  ";
 			tc.source_location_to_stream(os,tok());
@@ -61,7 +63,7 @@ class stmt_def_var final:public statement{public:
 			os<<"mov "<<ra<<","<<r<<"  ;  ";
 			tc.source_location_to_stream(os,tok());
 			os<<endl;
-			tc.framestk().free_scratch_reg(r);
+			tc.free_scratch_reg(r);
 			return;
 		}
 

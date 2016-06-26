@@ -11,12 +11,13 @@ using namespace std;
 #include<string.h>
 class token final{public:
 
-	inline token(string wb,size_t n,string tk,size_t n2,string wa):
+	inline token(string wb,size_t n,string tk,size_t n2,string wa,bool is_string=false):
 		ws_left_{wb},
 		start_char_{n},
 		name_{tk},
 		end_char_{n2},
-		ws_right_{wa}
+		ws_right_{wa},
+		is_str{is_string}
 	{}
 
 	inline token(const string&name):
@@ -33,7 +34,8 @@ class token final{public:
 		start_char_{tk.start_char_},
 		name_{tk.name_},
 		end_char_{tk.end_char_},
-		ws_right_{tk.ws_right_}
+		ws_right_{tk.ws_right_},
+		is_str{tk.is_str}
 	{}
 
 	// return move(token{})
@@ -42,7 +44,8 @@ class token final{public:
 		start_char_{tk.start_char_},
 		name_{move(tk.name_)},
 		end_char_{tk.end_char_},
-		ws_right_{move(tk.ws_right_)}
+		ws_right_{move(tk.ws_right_)},
+		is_str{tk.is_str}
 	{}
 
 //	inline token&operator=(const token&other){
@@ -54,9 +57,21 @@ class token final{public:
 //		return*this;
 //	}
 
-	inline void source_to(ostream&os)const{os<<ws_left_<<name_<<ws_right_;}
+	inline void source_to(ostream&os)const{
+		if(!is_str){
+			os<<ws_left_<<name_<<ws_right_;
+			return;
+		}
+		os<<ws_left_<<'\"'<<name_<<'\"'<<ws_right_;
+	}
 
-	inline void compile_to(ostream&os)const{os<<name_;}
+	inline void compile_to(ostream&os)const{
+		if(!is_str){
+			os<<name_;
+			return;
+		}
+		os<<name_;
+	}
 
 	inline bool is_name(const string&s)const{return!strcmp(name_.c_str(),s.c_str());}
 
@@ -81,10 +96,11 @@ class token final{public:
 private:
 //	inline void to_stdout2()const{printf("[%zu]%s[%zu]\n",token_start_char_,name_.get(),token_end_char_);}
 	string ws_left_;
-	size_t start_char_;
+	size_t start_char_{0};
 	string name_;
-	size_t end_char_;
+	size_t end_char_{0};
 	string ws_right_;
+	bool is_str{false};
 };
 //using up_token=unique_ptr<token>;
 //using vup_tokens=vector<up_token>;

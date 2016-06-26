@@ -42,7 +42,7 @@ class stmt_assign_var final:public statement{public:
 		}
 
 		if(!ra.find("dword[") and !rb.find("dword[")){
-			const string&r=tc.framestk().alloc_scratch_register(token());
+			const string&r=tc.alloc_scratch_register(token());
 			indent(os,indent_level+1,false);
 			os<<"mov "<<r<<","<<rb<<"  ;  ";
 			tc.source_location_to_stream(os,tok());
@@ -51,7 +51,7 @@ class stmt_assign_var final:public statement{public:
 			os<<"mov "<<ra<<","<<r<<"  ;  ";
 			tc.source_location_to_stream(os,tok());
 			os<<endl;
-			tc.framestk().free_scratch_reg(r);
+			tc.free_scratch_reg(r);
 			return;
 
 //			const string&r=tc.framestk().alloc_scratch_register();

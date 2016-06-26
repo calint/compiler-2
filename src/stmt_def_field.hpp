@@ -33,7 +33,8 @@ class stmt_def_field final:public statement{public:
 		tc.source_location_to_stream(os,ident_);
 		os<<endl;
 		os<<ident_.name()<<" db '";
-		for(auto&s:tokens_)s.compile_to(os);
+		for(auto&s:tokens_)
+			s.compile_to(os);
 		os<<"'\n";
 
 		for(size_t i=0;i<indent_level;i++)cout<<"  ";

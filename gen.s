@@ -1,13 +1,13 @@
 section .data
-; -- field prompt  [1:6]
-prompt db '___echo__type_new_line__ctrl_c__to_break____'
+; -- field prompt  [2:7]
+prompt db '  hello    enter name: '
 prompt.len equ $-prompt
 
-; -- field name  [2:9]
+; -- field name  [3:9]
 name db '............................................................'
 name.len equ $-name
 
-; --- table name_to_prompt [4:7]
+; --- table name_to_prompt [5:7]
 name_to_prompt:
 name_to_prompt.end:
 name_to_prompt.len equ $-name_to_prompt
@@ -26,68 +26,70 @@ global _start
 _start:
   mov ebp,stk
   mov esp,stk.end
-;   print(prompt.len prompt)  [64:2]
-        mov ecx,prompt  ;  [10:2]
-        mov edx,prompt.len  ;  [11:2]
-        mov ebx,1  ;  [12:2]
-        mov eax,4  ;  [13:2]
-        int 0x80  ;  [14:2]
-    _end_print_976:
-    _loop_1020:  ; [66:2]
-;       var aa=
+;   print(prompt.len prompt)  [65:2]
+        mov ecx,prompt  ;  [11:2]
+        mov edx,prompt.len  ;  [12:2]
+        mov ebx,1  ;  [13:2]
+        mov eax,4  ;  [14:2]
+        int 0x80  ;  [15:2]
+    _end_print_1019:
+    _loop_1063:  ; [67:2]
+;       var aaa=1  [76:7]
         mov dword[ebp+0],1
-;       var bb=
-        mov dword[ebp+4],2
-;       print(plus name)  [73:3]
-;         plus(read plus):edi  [73:9]
-;           read(name.len name):esi  [73:14]
-                mov esi,name  ;  [18:2]
-                mov edx,name.len  ;  [19:2]
-                xor eax,eax  ;  [20:2]
-                xor edi,edi  ;  [21:2]
-                syscall  ;  [22:2]
-                mov esi,eax  ;  [23:2]
-            _end_read_1172:
-;           plus(plus plus):edx  [73:34]
-;             plus(plus plus):ecx  [73:39]
-;               plus(bb aa):ebx  [73:44]
-                    mov ebx,dword[ebp+4]  ;  [56:2]
-                    add ebx,dword[ebp+0]  ;  [57:2]
-                _end_plus_1202:
-;               plus(bb aa):eax  [73:56]
-                    mov eax,dword[ebp+4]  ;  [56:2]
-                    add eax,dword[ebp+0]  ;  [57:2]
-                _end_plus_1214:
-                  mov ecx,ebx  ;  [56:2]
-                  add ecx,eax  ;  [57:2]
-              _end_plus_1197:
-;             plus(1 2):eax  [73:69]
-                  mov eax,1  ;  [56:2]
-                  add eax,2  ;  [57:2]
-              _end_plus_1227:
-                mov edx,ecx  ;  [56:2]
-                add edx,eax  ;  [57:2]
-            _end_plus_1192:
-              mov edi,esi  ;  [56:2]
-              add edi,edx  ;  [57:2]
-          _end_plus_1167:
-            mov ecx,name  ;  [10:2]
-            mov edx,edi  ;  [11:2]
-            mov ebx,1  ;  [12:2]
-            mov eax,4  ;  [13:2]
-            int 0x80  ;  [14:2]
-        _end_print_1161:
-;       exit()  [75:3]
-            mov eax,1  ;  [29:2]
-            int 0x80  ;  [30:2]
-        _end_exit_1250:
-      jmp _loop_1020
-    _end_loop_1020:  ; [66:2]
-;   exit()  [77:2]
-        mov eax,1  ;  [29:2]
-        int 0x80  ;  [30:2]
-    _end_exit_1259:
+;       var a=3  [77:7]
+        mov dword[ebp+4],3
+;       var b=2  [78:7]
+        mov dword[ebp+8],2
+;       print(plus name)  [82:3]
+;         plus(read plus):edi  [82:9]
+;           read(name.len name):esi  [82:14]
+                mov esi,name  ;  [19:2]
+                mov edx,name.len  ;  [20:2]
+                xor eax,eax  ;  [21:2]
+                xor edi,edi  ;  [22:2]
+                syscall  ;  [23:2]
+                mov esi,eax  ;  [24:2]
+            _end_read_1377:
+;           plus(plus plus):edx  [82:34]
+;             plus(plus plus):ecx  [82:39]
+;               plus(b a):ebx  [82:44]
+                    mov ebx,dword[ebp+8]  ;  [57:2]
+                    add ebx,dword[ebp+4]  ;  [58:2]
+                _end_plus_1407:
+;               plus(b a):eax  [82:54]
+                    mov eax,dword[ebp+8]  ;  [57:2]
+                    add eax,dword[ebp+4]  ;  [58:2]
+                _end_plus_1417:
+                  mov ecx,ebx  ;  [57:2]
+                  add ecx,eax  ;  [58:2]
+              _end_plus_1402:
+;             plus(1 2):eax  [82:65]
+                  mov eax,1  ;  [57:2]
+                  add eax,2  ;  [58:2]
+              _end_plus_1428:
+                mov edx,ecx  ;  [57:2]
+                add edx,eax  ;  [58:2]
+            _end_plus_1397:
+              mov edi,esi  ;  [57:2]
+              add edi,edx  ;  [58:2]
+          _end_plus_1372:
+            mov ecx,name  ;  [11:2]
+            mov edx,edi  ;  [12:2]
+            mov ebx,1  ;  [13:2]
+            mov eax,4  ;  [14:2]
+            int 0x80  ;  [15:2]
+        _end_print_1366:
+;       exit()  [84:3]
+            mov eax,1  ;  [30:2]
+            int 0x80  ;  [31:2]
+        _end_exit_1451:
+      jmp _loop_1063
+    _end_loop_1063:  ; [67:2]
+;   exit()  [86:2]
+        mov eax,1  ;  [30:2]
+        int 0x80  ;  [31:2]
+    _end_exit_1460:
 
-;   max scratch regs in use: 6
+;           max regs in use: 6
 ;         max frames in use: 3
-;          max stack in use: 2
+;          max stack in use: 3

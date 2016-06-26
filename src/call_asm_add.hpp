@@ -19,7 +19,7 @@ class call_asm_add final:public stmt_call{public:
 		const string&rb=tc.resolve_ident_to_nasm(arg(1),arg(1).tok().name());
 
 		if(!ra.find("dword[") and !rb.find("dword[")){
-			const string&r=tc.framestk().alloc_scratch_register(token());
+			const string&r=tc.alloc_scratch_register(token());
 			indent(os,indent_level,false);
 			os<<"mov "<<r<<","<<rb<<"  ;  ";
 			tc.source_location_to_stream(os,tok());
@@ -28,7 +28,7 @@ class call_asm_add final:public stmt_call{public:
 			os<<"add "<<ra<<","<<r<<"  ;  ";
 			tc.source_location_to_stream(os,tok());
 			os<<endl;
-			tc.framestk().free_scratch_reg(r);
+			tc.free_scratch_reg(r);
 			return;
 		}
 

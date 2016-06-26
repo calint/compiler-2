@@ -19,6 +19,36 @@ class tokenizer final{public:
 	inline token next_token(){
 		auto wspre=next_whitespace();
 		auto bgn=nchar;
+		if(is_next_char('"')){
+			string s;
+			while(true){
+				if(is_next_char('"')){
+					auto end=nchar;
+					auto wsaft=next_whitespace();
+					return move(token{wspre,bgn,s,end,wsaft,true});
+					break;
+				}
+				const char ch=next_char();
+				if(ch!='\\'){
+					s.push_back(ch);
+					continue;
+				}
+				if(is_next_char('\\')){//  \\  //
+					s.push_back('\\');
+					continue;
+				}
+				const char esc_ch=next_char();
+				if(esc_ch=='n'){
+					s.push_back('\n');
+					continue;
+				}
+				throw string("unknown escaped character ["+to_string(esc_ch)+"]");
+			}
+			auto tkn=next_token_str();
+			auto end=nchar;
+			auto wsaft=next_whitespace();
+			return move(token{wspre,bgn,tkn,end,wsaft,false});
+		}
 		auto tkn=next_token_str();
 		auto end=nchar;
 		auto wsaft=next_whitespace();

@@ -92,12 +92,212 @@ private:
 
 
 
-class framestack final{public:
+//class framestack final{public:
+//
+//	framestack():
+//		all_registers_{"eax","ebx","ecx","edx","esi","edi"},
+//		free_registers_{all_registers_}
+//	{}
+//
+//	inline void push_func(const string&name){frames_.push_back(frame{name,1});check();}
+//
+//	inline void push_block(const string&name){frames_.push_back(frame{name,2});check();}
+//
+//	inline void push_loop(const string&name){frames_.push_back(frame{name,4});check();}
+//
+//
+//	inline void add_alias(const string&ident,const string&parent_frame_ident){
+////		cerr<<"   ++++++++++   "<<ident<<" -> "<<parent_frame_ident<<endl;
+//		frames_.back().add_alias(ident,parent_frame_ident);
+//	}
+//
+//	inline void pop_func(const string&name){
+//		frame&f=frames_.back();
+//		if(f.is_func())
+//			if(!f.is_name(name))
+//				throw __LINE__;
+//		stkix_-=frames_.back().allocated_stack_size();
+//		frames_.pop_back();
+//	}
+//
+//	inline void pop_loop(const string&name){
+//		frame&f=frames_.back();
+//		if(f.is_loop())
+//			if(!f.is_name(name))
+//				throw __LINE__;
+//		stkix_-=frames_.back().allocated_stack_size();
+//		frames_.pop_back();
+//	}
+//
+//	inline void check(){
+//		if(frames_.size()>max_frame_count_)
+//			max_frame_count_=frames_.size();
+//
+//		if(stkix_>max_stack_usage_)
+//			max_stack_usage_=stkix_;
+//	}
+//
+//	inline void push_if(const char*name){
+////		import_frames_.push_back(frames_.size()-1);
+////		export_varspace_at_current_frame_in_subcalls(true);
+//		frames_.push_back(frame{name,8});
+//		check();
+//	}
+//
+//	inline void pop_if(const string&name){
+//		frame&f=frames_.back();
+//		if(not f.is_if() or not f.is_name(name))throw __LINE__;
+//		stkix_-=frames_.back().allocated_stack_size();
+//		frames_.pop_back();
+////		import_frames_.pop_back();
+////		export_varspace_at_current_frame_in_subcalls(false);
+//	}
+//
+//	inline void add_var(const string&name,const string&flags){
+//		frames_.back().add_var(name,stkix_++,flags);
+//	}
+//
+//	inline const string&alloc_scratch_register(const token&tk){
+//		if(free_registers_.empty()){
+//			throw compiler_error(tk,"out of scratch registers  reduce expression complexity");
+//		}
+//
+//		const string&r=free_registers_[free_registers_.size()-1];
+//		free_registers_.pop_back();
+//
+//		const size_t n=all_registers_.size()-free_registers_.size();
+//		if(n>max_usage_scratch_regs_)
+//			max_usage_scratch_regs_=n;
+//
+//		return r;
+//	}
+//
+//	inline void free_scratch_reg(const string&reg){
+////		assert(all_registers_
+//		free_registers_.push_back(reg);
+//	}
+//
+//	inline const string&find_parent_loop_name()const{
+//		size_t i=frames_.size()-1;// recurse until aliased var found
+//		while(true){
+//			if(frames_[i].is_loop())
+//				return frames_[i].name();
+//			if(frames_[i].is_func())
+//				throw"cannot find loop start";
+//			i--;
+//		}
+//	}
+//
+//	vector<frame>frames_;
+////	vector<size_t>import_frames_;
+//	vector<string>all_registers_;
+//	vector<string>free_registers_;
+//	size_t max_usage_scratch_regs_{0};
+//	size_t max_frame_count_{0};
+//	size_t max_stack_usage_{0};
+//	size_t stkix_{0};
+//private:
+//};
 
-	framestack():
+
+
+
+class toc final{public:
+
+	inline toc(const string&source):
 		all_registers_{"eax","ebx","ecx","edx","esi","edi"},
-		free_registers_{all_registers_}
+		free_registers_{all_registers_},
+		source_str_(source)
 	{}
+
+	inline void add_field(const statement&s,const string&identifier,const stmt_def_field*f){
+		if(fields_.has(identifier)){
+			throw compiler_error(s.tok(),"field already defined at <line:col>",identifier);
+		}
+		fields_.put(identifier,f);
+	}
+
+	inline void add_func(const statement&s,const string&ident,const stmt_def_func*ref){
+		if(funcs_.has(ident))
+			throw compiler_error(s.tok(),"function already defined at <line:col>",ident);
+
+		funcs_.put(ident,ref);
+	}
+
+	inline const stmt_def_func*get_func_or_break(const statement&s,const string&name)const{
+		bool valid;
+		const stmt_def_func*f=funcs_.get_valid(name,valid);
+		if(!valid){
+			throw compiler_error(s.tok(),"function not found",name);
+		}
+		return f;
+	}
+
+	inline void add_table(const statement&s,const string&identifier,const stmt_def_table*f){
+		if(tables_.has(identifier))
+			throw compiler_error(s.tok(),"table already defined at <line:col>",identifier);
+
+		tables_.put(identifier,f);
+	}
+
+//	inline framestack&framestk(){return framestk_;}
+
+	inline void source_location_to_stream(ostream&os,const token&t){
+		size_t char_in_line;
+		const size_t n=line_number_for_char_index(t.char_index_in_source(),source_str_,char_in_line);
+		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
+	}
+
+	inline void source_location_for_identifier_to_stream(ostream&os,const token&t){
+		size_t char_in_line;
+		const size_t n=line_number_for_char_index(t.char_index_in_source(),source_str_,char_in_line);
+		os<<"_"<<to_string(n)<<"_"<<char_in_line<<"_";
+	}
+
+//	inline static unique_ptr<const char[]>copy_string_to_unique_pointer(const char*str){
+//		const size_t len=strlen(str)+1;//? unsafe
+//		char*cpy=new char[len];
+//		memcpy(cpy,str,len);
+//		return unique_ptr<const char[]>(cpy);
+//	}
+
+	inline static size_t line_number_for_char_index(const size_t char_index,const string&str,size_t&char_in_line){
+		size_t ix{0};
+		size_t lix{0};
+		size_t lineno{1};
+		const char*p=str.c_str();
+		while(true){
+			if(ix==char_index)break;
+			if(*p++=='\n'){
+				lineno++;
+				lix=ix;
+			}
+			ix++;
+		}
+		char_in_line=ix-lix;
+		return lineno;
+	}
+	inline void finish(const toc&tc,ostream&os){
+		assert(all_registers_.size()==free_registers_.size());
+		assert(stkix_==0);
+//		assert(framestk_.import_frames_.size()==0);
+		os<<"\n;           max regs in use: "<<tc.max_usage_scratch_regs_<<endl;
+		os<<";         max frames in use: "<<tc.max_frame_count_<<endl;
+		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
+	}
+
+	inline string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
+		const size_t frameix=frames_.size()-1;
+
+		bool ok{false};
+//		bool isnumb{false};
+		string nasm_ident=_resolve_ident_to_nasm(stmt,ident,frameix,ok);
+		if(ok)
+			return nasm_ident;
+
+		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'",nasm_ident);
+	}
+
 
 	inline void push_func(const string&name){frames_.push_back(frame{name,1});check();}
 
@@ -196,106 +396,10 @@ class framestack final{public:
 	size_t max_frame_count_{0};
 	size_t max_stack_usage_{0};
 	size_t stkix_{0};
-private:
-};
-
-
-
-
-class toc final{public:
-
-	inline toc(const string&source):source_str_(source){}
-
-	inline void add_field(const statement&s,const string&identifier,const stmt_def_field*f){
-		if(fields_.has(identifier)){
-			throw compiler_error(s.tok(),"field already defined at <line:col>",identifier);
-		}
-		fields_.put(identifier,f);
-	}
-
-	inline void add_func(const statement&s,const string&ident,const stmt_def_func*ref){
-		if(funcs_.has(ident))
-			throw compiler_error(s.tok(),"function already defined at <line:col>",ident);
-
-		funcs_.put(ident,ref);
-	}
-
-	inline const stmt_def_func*get_func_or_break(const statement&s,const string&name)const{
-		bool valid;
-		const stmt_def_func*f=funcs_.get_valid(name,valid);
-		if(!valid){
-			throw compiler_error(s.tok(),"function not found",name);
-		}
-		return f;
-	}
-
-	inline void add_table(const statement&s,const string&identifier,const stmt_def_table*f){
-		if(tables_.has(identifier))
-			throw compiler_error(s.tok(),"table already defined at <line:col>",identifier);
-
-		tables_.put(identifier,f);
-	}
-
-	inline framestack&framestk(){return framestk_;}
-
-	inline void source_location_to_stream(ostream&os,const token&t){
-		size_t char_in_line;
-		const size_t n=line_number_for_char_index(t.char_index_in_source(),source_str_,char_in_line);
-		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
-	}
-
-	inline void source_location_for_identifier_to_stream(ostream&os,const token&t){
-		size_t char_in_line;
-		const size_t n=line_number_for_char_index(t.char_index_in_source(),source_str_,char_in_line);
-		os<<"_"<<to_string(n)<<"_"<<char_in_line<<"_";
-	}
-
-	inline static unique_ptr<const char[]>copy_string_to_unique_pointer(const char*str){
-		const size_t len=strlen(str)+1;//? unsafe
-		char*cpy=new char[len];
-		memcpy(cpy,str,len);
-		return unique_ptr<const char[]>(cpy);
-	}
-
-	inline static size_t line_number_for_char_index(const size_t char_index,const string&str,size_t&char_in_line){
-		size_t ix{0};
-		size_t lix{0};
-		size_t lineno{1};
-		const char*p=str.c_str();
-		while(true){
-			if(ix==char_index)break;
-			if(*p++=='\n'){
-				lineno++;
-				lix=ix;
-			}
-			ix++;
-		}
-		char_in_line=ix-lix;
-		return lineno;
-	}
-	inline void finish(const toc&tc,ostream&os){
-		assert(framestk_.all_registers_.size()==framestk_.free_registers_.size());
-		assert(framestk_.stkix_==0);
-//		assert(framestk_.import_frames_.size()==0);
-		os<<"\n;   max scratch regs in use: "<<tc.framestk_.max_usage_scratch_regs_<<endl;
-		os<<";         max frames in use: "<<tc.framestk_.max_frame_count_<<endl;
-		os<<";          max stack in use: "<<tc.framestk_.max_stack_usage_<<endl;
-	}
-
-	inline const string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
-		const size_t frameix=framestk_.frames_.size()-1;
-
-		bool ok{false};
-//		bool isnumb{false};
-		string nasm_ident=_resolve_ident_to_nasm(stmt,ident,frameix,ok);
-		if(ok)return nasm_ident;
-
-		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'",nasm_ident);
-	}
 
 private:
 	string source_str_{""};
-	framestack framestk_;
+//	framestack framestk_;
 	lut<const stmt_def_field*>fields_;
 	lut<const stmt_def_func*>funcs_;
 	lut<const stmt_def_table*>tables_;
@@ -303,17 +407,17 @@ private:
 	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&ok)const{//? tidy duplicate code
 		string name=ident;
 		while(true){
-			if(!framestk_.frames_[i].has_alias(name))break;
-			name=framestk_.frames_[i].get_alias(name);
+			if(!frames_[i].has_alias(name))break;
+			name=frames_[i].get_alias(name);
 			i--;
 		}
-		if(framestk_.frames_[i].has_var(name)){
+		if(frames_[i].has_var(name)){
 			ok=true;
 //			is_const_litteral=false;
-			return framestk_.frames_[i].get_var(name).nasm_ident();
+			return frames_[i].get_var(name).nasm_ident();
 		}
 
-		for(auto e:framestk_.all_registers_)if(e==name){
+		for(auto e:all_registers_)if(e==name){
 			ok=true;
 //			is_const_litteral=false;
 			return name;

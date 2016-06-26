@@ -27,7 +27,7 @@ class stmt_loop final:public stmt_call{public:
 		tc.source_location_to_stream(os,tok());
 		os<<endl;
 
-		tc.framestk().push_loop(name.data());
+		tc.push_loop(name.data());
 
 		code.compile(tc,os,indent_level+1);
 		indent(os,indent_level+1,false);
@@ -38,7 +38,7 @@ class stmt_loop final:public stmt_call{public:
 		tc.source_location_to_stream(os,tok());
 		os<<endl;
 
-		tc.framestk().pop_loop(name.data());
+		tc.pop_loop(name.data());
 	}
 
 	inline void link(toc&tc,ostream&os)const override final{

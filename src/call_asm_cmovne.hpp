@@ -18,11 +18,11 @@ class call_asm_cmovne final:public stmt_call{public:
 //		indent(os,indent_level,true);source_to(os);os<<endl;
 		indent(os,indent_level);
 		if(arg(1).is_expression()){
-			const string&reg=tc.framestk().alloc_scratch_register(token());
+			const string&reg=tc.alloc_scratch_register(token());
 			arg(1).set_dest_nasm_ident(reg);
 			arg(1).compile(tc,os,indent_level);
 			os<<"cmovne "<<tc.resolve_ident_to_nasm(arg(0),arg(0).tok().name())<<","<<reg<<endl;
-			tc.framestk().free_scratch_reg(reg);
+			tc.free_scratch_reg(reg);
 			return;
 		}
 		os<<"cmovne "<<tc.resolve_ident_to_nasm(arg(0),arg(0).tok().name())<<",["<<tc.resolve_ident_to_nasm(arg(1),arg(1).tok().name())<<"]"<<endl;

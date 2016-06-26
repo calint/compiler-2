@@ -22,7 +22,7 @@ class call_asm_mov final:public stmt_call{public:
 			return;
 
 		if(!ra.find("dword[") and !rb.find("dword[")){
-			const string&r=tc.framestk().alloc_scratch_register(token());
+			const string&r=tc.alloc_scratch_register(token());
 			indent(os,indent_level,false);
 			os<<"mov "<<r<<","<<rb<<"  ;  ";
 			tc.source_location_to_stream(os,tok());
@@ -31,7 +31,7 @@ class call_asm_mov final:public stmt_call{public:
 			os<<"mov "<<ra<<","<<r<<"  ;  ";
 			tc.source_location_to_stream(os,tok());
 			os<<endl;
-			tc.framestk().free_scratch_reg(r);
+			tc.free_scratch_reg(r);
 			return;
 		}
 

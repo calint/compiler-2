@@ -35,21 +35,22 @@ class stmt_if final:public statement{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
 		indent(os,indent_level,true);os<<"if ["<<tok().char_index_in_source()<<"]\n";
 
-		tc.framestk().push_if(name.data());
 
-		const string&reg=tc.framestk().alloc_scratch_register(token());
+		const string&reg=tc.alloc_scratch_register(token());
+
 		bool_expr->set_dest_nasm_ident(reg);
 		bool_expr->compile(tc,os,indent_level);
 
 		indent(os,indent_level,false);os<<"cmp "<<reg<<",1\n";
 		indent(os,indent_level,false);os<<"jne _end_"<<name<<"\n";
 
+		tc.push_if(name.data());
 
 		code->compile(tc,os,indent_level+1);
 
 		indent(os,indent_level,false);os<<"_end_"<<name<<":\n";
 
-		tc.framestk().pop_if(name.data());
+		tc.pop_if(name.data());
 	}
 
 

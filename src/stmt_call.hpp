@@ -72,7 +72,7 @@ class stmt_call:public expression{public:
 
 
 		const stmt_def_func*f=tc.get_func_or_break(*this,nm);
-		framestack&fs=tc.framestk();
+//		framestack&fs=tc.framestk();
 		vector<tuple<string,string>>aliases_to_add;
 		if(not expr_dest.empty()){
 			if(f->getreturns().empty())
@@ -91,7 +91,7 @@ class stmt_call:public expression{public:
 			auto param=f->get_param(i);
 			i++;
 			if(a->is_expression()){
-				const string reg=fs.alloc_scratch_register(param);
+				string reg=tc.alloc_scratch_register(param);
 				allocated_registers.push_back(reg);
 				a->set_dest_nasm_ident(reg);
 				a->compile(tc,os,indent_level+1);
@@ -101,19 +101,19 @@ class stmt_call:public expression{public:
 			aliases_to_add.push_back(make_tuple(param.name(),a->tok().name()));
 		}
 
-		fs.push_func(nm);
+		tc.push_func(nm);
 
 		for(auto&e:aliases_to_add)
-			fs.add_alias(get<0>(e),get<1>(e));
+			tc.add_alias(get<0>(e),get<1>(e));
 
 		f->code_block()->compile(tc,os,indent_level+1);
 
 		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<tok().char_index_in_source()<<":"<<endl;
 
 		for(auto r:allocated_registers)
-			fs.free_scratch_reg(r);
+			tc.free_scratch_reg(r);
 
-		fs.pop_func(nm);
+		tc.pop_func(nm);
 	}
 
 	inline statement&arg(size_t ix)const{return*(args_[ix].get());}

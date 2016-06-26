@@ -19,7 +19,7 @@ class stmt_continue final:public stmt_call{public:
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		const string&loop_name=tc.framestk().find_parent_loop_name();
+		const string&loop_name=tc.find_parent_loop_name();
 		indent(os,indent_level,false);os<<"jmp "<<loop_name<<"\n";
 	}
 
