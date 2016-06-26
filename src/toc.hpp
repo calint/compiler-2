@@ -138,7 +138,7 @@ class framestack final{public:
 	}
 
 	inline void push_if(const char*name){
-		import_frame_ix_=frames_.size()-1;
+		import_frames_.push_back(frames_.size()-1);
 //		export_varspace_at_current_frame_in_subcalls(true);
 		frames_.push_back(frame{name,8});
 		check();
@@ -149,7 +149,7 @@ class framestack final{public:
 		if(not f.is_if() or not f.is_name(name))throw __LINE__;
 		stkix_-=frames_.back().allocated_stack_size();
 		frames_.pop_back();
-		import_frame_ix_=0;
+		import_frames_.pop_back();
 //		export_varspace_at_current_frame_in_subcalls(false);
 	}
 
@@ -189,7 +189,7 @@ class framestack final{public:
 	}
 
 	vector<frame>frames_;
-	size_t import_frame_ix_{0};
+	vector<size_t>import_frames_;
 	vector<string>all_registers_;
 	vector<string>free_registers_;
 	size_t max_usage_scratch_regs_{0};
@@ -276,69 +276,81 @@ class toc final{public:
 	inline void finish(const toc&tc,ostream&os){
 		assert(framestk_.all_registers_.size()==framestk_.free_registers_.size());
 		assert(framestk_.stkix_==0);
+		assert(framestk_.import_frames_.size()==0);
 		os<<"\n;   max scratch regs in use: "<<tc.framestk_.max_usage_scratch_regs_<<endl;
 		os<<";         max frames in use: "<<tc.framestk_.max_frame_count_<<endl;
 		os<<";          max stack in use: "<<tc.framestk_.max_stack_usage_<<endl;
 	}
 
 	inline const string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
-		string from_import;
-		const size_t frameix=framestk_.frames_.size()-1;
+		// scan namespace for ambiguous
+//		for(auto i:framestk_.import_frames_){
+//			bool found{false};
+//			bool is_number{false};
+//			auto ident_nasm=_resolve_ident_to_nasm(stmt,ident,i,found,is_number);
+//			if(found){
+//				return ident_nasm;
+//			}
+//		}
 
-		bool resolved_from_import{false};
-		bool resolved_from_import_is_number{false};
-		if(framestk_.import_frame_ix_!=frameix){
-			from_import=_resolve_ident_to_nasm(stmt,ident,framestk_.import_frame_ix_,resolved_from_import,resolved_from_import_is_number);
-		}
+
+//		string from_import;
+		const size_t frameix=framestk_.frames_.size()-1;
+//
+//		bool resolved_from_import{false};
+//		bool resolved_from_import_is_number{false};
+//		if(framestk_.import_frames_.back()!=frameix){
+//			from_import=_resolve_ident_to_nasm(stmt,ident,framestk_.import_frames_.back(),resolved_from_import,resolved_from_import_is_number);
+//		}
 
 		bool resolved_from_frame{false};
 		bool resolved_from_frame_is_number{false};
 		string from_frame=_resolve_ident_to_nasm(stmt,ident,frameix,resolved_from_frame,resolved_from_frame_is_number);
 
-		if(resolved_from_import and resolved_from_frame){
-			if(find(framestk_.all_registers_.begin(),framestk_.all_registers_.end(),from_frame)!=framestk_.all_registers_.end()){
-				// register //? allocated
-				return from_frame;
-			}
-			if(resolved_from_import_is_number and resolved_from_frame_is_number){
-				return from_frame;
-			}
-			const frame&frame_context=framestk_.frames_[frameix];
-			throw compiler_error(stmt,"identifier '"+ident+"' ambigious in frame '"+frame_context.name()+"' and '"+framestk_.frames_[framestk_.import_frame_ix_].name()+"'");
-		}
-
-		if(resolved_from_import)
-			return from_import;
+//		if(resolved_from_import and resolved_from_frame){
+//			if(find(framestk_.all_registers_.begin(),framestk_.all_registers_.end(),from_frame)!=framestk_.all_registers_.end()){
+//				// register //? allocated
+//				return from_frame;
+//			}
+//			if(resolved_from_import_is_number and resolved_from_frame_is_number){
+//				return from_frame;
+//			}
+//			const frame&frame_context=framestk_.frames_[frameix];
+//			throw compiler_error(stmt,"identifier '"+ident+"' ambigious in frame '"+frame_context.name()+"' and '"+framestk_.frames_[framestk_.import_frames_.back()].name()+"'");
+//		}
+//
+//		if(resolved_from_import)
+//			return from_import;
 
 		if(resolved_from_frame)
 			return from_frame;
 
-		if(framestk_.import_frame_ix_!=frameix){
-			// in case argument referers to identifier in imported frame
-			// ...
-			// <---- imported frame ---------.
-			// var bb=2                      |
-			// var aa=                       |
-			// -----> (sets imported frame) -
-			//        plus(plus(bb,aa),plus(1,2))
-			// <---- plus(plus plus)
-			// var int
-			// var a
-			// var b
-			// <---- plus(bb bb)
-			// var int
-			// var a
-			// var b
-			// <---- plus(1 2)
-			// var int
-			// var a
-			// var b
-			//
-			const frame&frame_import=framestk_.frames_[framestk_.import_frame_ix_];
-			if(frame_import.has_var(from_frame)){
-				return frame_import.get_var(from_frame).nasm_ident();
-			}
-		}
+//		if(framestk_.import_frames_.back()!=frameix){
+//			// in case argument referers to identifier in imported frame
+//			// ...
+//			// <---- imported frame ---------.
+//			// var bb=2                      |
+//			// var aa=                       |
+//			// -----> (sets imported frame) -
+//			//        plus(plus(bb,aa),plus(1,2))
+//			// <---- plus(plus plus)
+//			// var int
+//			// var a
+//			// var b
+//			// <---- plus(bb bb)
+//			// var int
+//			// var a
+//			// var b
+//			// <---- plus(1 2)
+//			// var int
+//			// var a
+//			// var b
+//			//
+//			const frame&frame_import=framestk_.frames_[framestk_.import_frames_.back()];
+//			if(frame_import.has_var(from_frame)){
+//				return frame_import.get_var(from_frame).nasm_ident();
+//			}
+//		}
 
 		throw compiler_error(stmt.tok(),"cannot resolve identifier",ident);
 	}
@@ -415,6 +427,7 @@ private:
 			}
 		}
 
+		resolved=false;
 		return name;
 //		if(!framestk_.exported_frame_ix_)
 //			throw "cannot resolve "+string(name);

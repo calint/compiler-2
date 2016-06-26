@@ -68,25 +68,24 @@ class stmt_call:public expression{public:
 		//--- - - - -- - - - -
 
 		if(!is_inline()){
-			throw"?";
-//			for(auto&a:args)os<<"  push "<<a.get()->token().name()<<endl;
-//			os<<"  call "<<token().name()<<endl;
-//			return;
+			throw string("not inlined");
 		}
+
 		const stmt_def_func*f=tc.get_func_or_break(*this,nm);
 		framestack&fs=tc.framestk();
-//		if(*token().name()=='_'){
-//			tc.framestk().export_varspace_at_current_frame_in_subcalls(true);
-//		}
-		fs.push_func(nm);
+
+		vector<tuple<string,string>>aliases_to_add;
 		if(not expr_dest.empty()){
 			if(f->getreturns().empty())
 				throw compiler_error(*this,"cannot assign from call without return",tok().name_copy());
 //			for(auto&e:f->getreturns()){
 //				fs.add_alias(e->name(),expr_dest);
 //			}
-			fs.add_alias(f->getreturns()[0].name(),expr_dest);
+			const string&from=f->getreturns()[0].name();
+			const string&to=expr_dest;
+			aliases_to_add.push_back(make_tuple(from,to));
 		}
+
 		vector<string>allocated_registers;
 		size_t i=0;
 		for(auto&a:args_){
@@ -96,13 +95,18 @@ class stmt_call:public expression{public:
 				const string reg=fs.alloc_scratch_register(param);
 				allocated_registers.push_back(reg);
 				a->set_dest_to_nasm_ident(reg);
-				fs.add_alias(param.name(),reg);
 				a->compile(tc,os,indent_level+1);
+				aliases_to_add.push_back(make_tuple(param.name(),reg));
 				continue;
 			}
-			fs.add_alias(param.name(),a->tok().name());
+			aliases_to_add.push_back(make_tuple(param.name(),a->tok().name()));
 		}
 
+		fs.push_func(nm);
+
+		for(auto&e:aliases_to_add){
+			fs.add_alias(get<0>(e),get<1>(e));
+		}
 		f->code_block()->compile(tc,os,indent_level+1);
 
 		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<tok().char_index_in_source()<<":";

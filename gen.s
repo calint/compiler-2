@@ -26,44 +26,60 @@ global _start
 _start:
   mov ebp,stk
   mov esp,stk.end
-;   print(prompt.len prompt){  [62:2]
+;   print(prompt.len prompt)  [64:2]
         mov ecx,prompt  ;  [10:2]
         mov edx,prompt.len  ;  [11:2]
         mov ebx,1  ;  [12:2]
         mov eax,4  ;  [13:2]
         int 0x80  ;  [14:2]
-    _end_print_888:
-    _loop_932:  ; [64:2]
-;       print(plus name){  [67:3]
-;         plus(read -2):edi{  [67:9]
-;           read(name.len name):esi{  [67:14]
+    _end_print_976:
+    _loop_1020:  ; [66:2]
+;       var aa=
+        mov dword[ebp+0],1
+;       var bb=
+        mov dword[ebp+4],2
+;       print(plus name)  [73:3]
+;         plus(read plus):edi  [73:9]
+;           read(name.len name):esi  [73:14]
                 mov esi,name  ;  [18:2]
                 mov edx,name.len  ;  [19:2]
                 xor eax,eax  ;  [20:2]
                 xor edi,edi  ;  [21:2]
                 syscall  ;  [22:2]
                 mov esi,eax  ;  [23:2]
-            _end_read_1014:
+            _end_read_1172:
+;           plus(plus plus):edx  [73:34]
+;             plus(bb aa):ecx  [73:39]
+                  mov ecx,dword[ebp+4]  ;  [56:2]
+                  add ecx,dword[ebp+0]  ;  [57:2]
+              _end_plus_1197:
+;             plus(1 2):ebx  [73:51]
+                  mov ebx,1  ;  [56:2]
+                  add ebx,2  ;  [57:2]
+              _end_plus_1209:
+                mov edx,ecx  ;  [56:2]
+                add edx,ebx  ;  [57:2]
+            _end_plus_1192:
               mov edi,esi  ;  [56:2]
-              add edi,-2  ;  [57:2]
-          _end_plus_1009:
+              add edi,edx  ;  [57:2]
+          _end_plus_1167:
             mov ecx,name  ;  [10:2]
             mov edx,edi  ;  [11:2]
             mov ebx,1  ;  [12:2]
             mov eax,4  ;  [13:2]
             int 0x80  ;  [14:2]
-        _end_print_1003:
-;       exit(){  [68:3]
+        _end_print_1161:
+;       exit()  [75:3]
             mov eax,1  ;  [29:2]
             int 0x80  ;  [30:2]
-        _end_exit_1046:
-      jmp _loop_932
-    _end_loop_932:  ; [64:2]
-;   exit(){  [70:2]
+        _end_exit_1232:
+      jmp _loop_1020
+    _end_loop_1020:  ; [66:2]
+;   exit()  [77:2]
         mov eax,1  ;  [29:2]
         int 0x80  ;  [30:2]
-    _end_exit_1055:
+    _end_exit_1241:
 
-;   max scratch regs in use: 2
-;         max frames in use: 5
-;          max stack in use: 0
+;   max scratch regs in use: 5
+;         max frames in use: 3
+;          max stack in use: 2
