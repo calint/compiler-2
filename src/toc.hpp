@@ -284,11 +284,13 @@ class toc final{public:
 	inline const string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
 		string from_import;
 		const size_t frameix=framestk_.frames_.size()-1;
+
 		bool resolved_from_import{false};
 		bool resolved_from_import_is_number{false};
 		if(framestk_.import_frame_ix_!=frameix){
 			from_import=_resolve_ident_to_nasm(stmt,ident,framestk_.import_frame_ix_,resolved_from_import,resolved_from_import_is_number);
 		}
+
 		bool resolved_from_frame{false};
 		bool resolved_from_frame_is_number{false};
 		string from_frame=_resolve_ident_to_nasm(stmt,ident,frameix,resolved_from_frame,resolved_from_frame_is_number);
@@ -301,7 +303,8 @@ class toc final{public:
 			if(resolved_from_import_is_number and resolved_from_frame_is_number){
 				return from_frame;
 			}
-			throw compiler_error(stmt,"identifier '"+ident+"' ambigious in frame '"+framestk_.frames_[frameix].name()+"' and '"+framestk_.frames_[framestk_.import_frame_ix_].name()+"'");
+			const frame&frame_context=framestk_.frames_[frameix];
+			throw compiler_error(stmt,"identifier '"+ident+"' ambigious in frame '"+frame_context.name()+"' and '"+framestk_.frames_[framestk_.import_frame_ix_].name()+"'");
 		}
 
 		if(resolved_from_import)
@@ -310,10 +313,31 @@ class toc final{public:
 		if(resolved_from_frame)
 			return from_frame;
 
-		// in case alias links to context frame
-		const frame&f=framestk_.frames_[framestk_.import_frame_ix_];
-		if(f.has_var(from_frame)){
-			return f.get_var(from_frame).nasm_ident();
+		if(framestk_.import_frame_ix_!=frameix){
+			// in case argument referers to identifier in imported frame
+			// ...
+			// <---- imported frame ---------.
+			// var bb=2                      |
+			// var aa=                       |
+			// -----> (sets imported frame) -
+			//        plus(plus(bb,aa),plus(1,2))
+			// <---- plus(plus plus)
+			// var int
+			// var a
+			// var b
+			// <---- plus(bb bb)
+			// var int
+			// var a
+			// var b
+			// <---- plus(1 2)
+			// var int
+			// var a
+			// var b
+			//
+			const frame&frame_import=framestk_.frames_[framestk_.import_frame_ix_];
+			if(frame_import.has_var(from_frame)){
+				return frame_import.get_var(from_frame).nasm_ident();
+			}
 		}
 
 		throw compiler_error(stmt.tok(),"cannot resolve identifier",ident);
