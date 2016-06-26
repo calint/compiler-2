@@ -23,16 +23,17 @@ using namespace std;
 #include"call_asm_or.hpp"
 #include"call_asm_and.hpp"
 #include"stmt_comment.hpp"
+#include <streambuf>
+
+
 static string file_read_to_string(const char *filename){
-	FILE*f=fopen(filename,"rb");
-	if(!f)throw "cannot open file";
-	string s;
-	fseek(f,0,SEEK_END);
-	s.resize(size_t(ftell(f)));
-	rewind(f);
-	fread(&s[0],1,s.size(),f);
-	fclose(f);
-	return(s);
+	ifstream t(filename);
+	string str;
+	t.seekg(0,ios::end);
+	str.reserve(size_t(t.tellg()));
+	t.seekg(0,ios::beg);
+	str.assign(istreambuf_iterator<char>(t),istreambuf_iterator<char>());
+	return str;
 }
 
 static size_t line_number_for_char_index(size_t ix,const char*str){
