@@ -28,7 +28,9 @@ class stmt_assign_var final:public statement{public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);
-		os<<tok().name()<<"="<<ex_.tok().name()<<endl;
+		os<<tok().name()<<"="<<ex_.tok().name()<<"    ";
+		tc.source_location_to_stream(os,tok());
+		os<<endl;
 
 		const string&reg=tc.alloc_scratch_register(tok()); //? overrallocates in simplests cases ie a=1
 

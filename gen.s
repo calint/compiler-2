@@ -32,10 +32,11 @@ _start:
     mov dword[ebp+4],1
 ;   var c=3  [64:6]
     mov dword[ebp+8],3
-;   a=
-;     =(1+(a+2)-b-c)
+;   a=    [65:2]
+;     =(1+(a+2)-b-c)      [65:4]
       mov edi,1  ;  [65:5]
-;       (a+2)
+;       (a+2)      [65:7]
+        add edi,dword[ebp+4]  ;  [65:8]
         add edi,2  ;  [65:10]
       sub edi,dword[ebp+0]  ;  [65:13]
       sub edi,dword[ebp+8]  ;  [65:15]

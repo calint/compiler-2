@@ -89,7 +89,52 @@ class expr_ops_list:public expression{public:
 			os<<")";
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident)const override{
+	inline void _asm_op(toc&tc,ostream&os,size_t indent_level,const statement*st,const char op,const string&dest_resolved)const{
+		if(op=='+'){// order1op
+			if(st->is_expression()){
+				if(presedence_==0){
+					st->compile(tc,os,indent_level+1,dest_resolved);
+					return;
+				}
+				auto r=tc.alloc_scratch_register(st->tok());
+				st->compile(tc,os,indent_level+1,r);
+				_asm("add",*st,tc,os,indent_level,dest_resolved,r);
+				tc.free_scratch_reg(r);
+				return;
+			}
+			_asm("add",*st,tc,os,indent_level+1,dest_resolved,tc.resolve_ident_to_nasm(*st));
+			return;
+		}
+		if(op=='-'){// order1op
+			if(st->is_expression()){
+				if(presedence_==0){
+					st->compile(tc,os,indent_level+1,dest_resolved);
+					return;
+				}
+				auto r=tc.alloc_scratch_register(*st);
+				st->compile(tc,os,indent_level+1,r);
+				_asm("sub",*st,tc,os,indent_level,dest_resolved,r);
+				tc.free_scratch_reg(r);
+				return;
+			}
+			_asm("sub",*st,tc,os,indent_level+1,dest_resolved,tc.resolve_ident_to_nasm(*st));
+			return;
+		}
+		if(op_=='='){
+			if(st->is_expression()){
+				st->compile(tc,os,indent_level+1,dest_resolved);
+			}else{
+				_asm("mov",*st,tc,os,indent_level+1,dest_resolved,tc.resolve_ident_to_nasm(*st));
+			}
+			return;
+		}
+//			if(op=='*'){// order2op
+//				os<<"mul "<<reg<<","<<resolv<<endl;
+//				continue;
+//			}
+	}
+
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest)const override{
 		indent(os,indent_level+1,true);
 		source_to(os);
 		os<<"      ";
@@ -99,63 +144,22 @@ class expr_ops_list:public expression{public:
 		if(expressions_.empty())
 			return;
 
-		string reg;
+		string dest_resolved=tc.resolve_ident_to_nasm(*this,dest);
 		if(op_=='='){
-			reg=tc.resolve_ident_to_nasm(*this,dest_ident);
 			auto st=expressions_[0].get();
-			if(st->is_expression()){
-				st->compile(tc,os,indent_level+1,reg);
-			}else{
-				_asm("mov",*st,tc,os,indent_level+1,reg,tc.resolve_ident_to_nasm(*st));
-			}
+			_asm_op(tc,os,indent_level,st,'=',dest_resolved);
 		}else{
-			//? if previous same presedence
-			reg=tc.resolve_ident_to_nasm(*this,dest_ident);
+			auto st=expressions_[0].get();
+			_asm_op(tc,os,indent_level,st,op_,dest_resolved);
 		}
 
-		auto len=expressions_.size();
+		auto len=ops_.size();
 		for(size_t i{0};i<len;i++){
 			auto op=ops_[i];
 			auto st=expressions_[i+1].get();
-			if(op=='+'){// order1op
-				if(st->is_expression()){
-					if(presedence_==0){
-						st->compile(tc,os,indent_level+1,reg);
-						continue;
-					}
-					auto r=tc.alloc_scratch_register(st->tok());
-					st->compile(tc,os,indent_level+1,r);
-					_asm("add",*st,tc,os,indent_level,reg,r);
-					tc.free_scratch_reg(r);
-					continue;
-				}
-				_asm("add",*st,tc,os,indent_level+1,reg,tc.resolve_ident_to_nasm(*st));
-				continue;
-			}
-			if(op=='-'){// order1op
-				if(st->is_expression()){
-					if(presedence_==0){
-						st->compile(tc,os,indent_level+1,reg);
-						continue;
-					}
-					auto r=tc.alloc_scratch_register(*st);
-					st->compile(tc,os,indent_level+1,r);
-					_asm("sub",*st,tc,os,indent_level,reg,r);
-					tc.free_scratch_reg(r);
-					continue;
-				}
-				_asm("sub",*st,tc,os,indent_level+1,reg,tc.resolve_ident_to_nasm(*st));
-				continue;
-			}
-//			if(op=='*'){// order2op
-//				os<<"mul "<<reg<<","<<resolv<<endl;
-//				continue;
-//			}
+			_asm_op(tc,os,indent_level,st,op,dest_resolved);
 		}
-//		const string&dest_resolved=tc.resolve_ident_to_nasm(*this,dest_ident);
-//		os<<"mov "<<dest_resolved<<","<<reg<<endl;
 
-//		tc.free_scratch_reg(reg);
 	}
 	inline static void _asm(const string&op,const statement&s,toc&tc,ostream&os,size_t indent_level,const string&ra,const string&rb){
 		if(ra==rb){
