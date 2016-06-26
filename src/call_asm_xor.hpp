@@ -7,11 +7,11 @@
 #include "stmt_call.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-
-class call_asm_xor final:public stmt_call{public:
+#include "call_asm.hpp"
+class call_asm_xor final:public call_asm{public:
 
 	inline call_asm_xor(const statement&parent,const token&tkn,tokenizer&t):
-		stmt_call{parent,tkn,t}
+		call_asm{parent,tkn,t}
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{

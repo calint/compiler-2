@@ -119,7 +119,7 @@ private:
 			const char ch=next_char();
 			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||
 					ch=='='||ch==','||ch==':'||
-					ch=='+'||ch=='-'||ch=='*'){
+					ch=='+'||ch=='-'||ch=='*'||ch==';'){
 				seek(-1);
 				break;
 			}

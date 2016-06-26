@@ -26,8 +26,10 @@ class expr_ops_list:public expression{public:
 
 	inline expr_ops_list(const statement&parent,tokenizer&t,const char op):
 		expression{parent,t.next_whitespace_token()},
+		presedence_(_presedence_for_op(op)),
 		op_{op}
 	{
+
 		if(t.is_next_char('(')){
 			enclosed_=true;
 		}
@@ -45,21 +47,31 @@ class expr_ops_list:public expression{public:
 				continue;
 			}
 
-			if(enclosed_ and t.is_next_char(')')){
+			if(t.is_next_char(')')){
+				if(not enclosed_)
+					throw compiler_error(*expressions_.back(),"unexpected ')'");
 				break;
 			}
+			if(t.is_next_char(';')){
+				break;
+			}
+
+			const char next_presedence=_presedence_for_op(t.peek_char());
+			if(next_presedence>presedence_){
+				// subexpression
+				throw compiler_error(expressions_.back()->tok(),"expression presedence");
+			}
+
 			if(t.is_next_char('+')){
 				ops_.push_back('+');
-				continue;
-			}
+			}else
 			if(t.is_next_char('-')){
 				ops_.push_back('-');
-				continue;
-			}
+			}else
 			if(t.is_next_char('*')){
 				ops_.push_back('*');
-				continue;
-			}
+			}else
+				throw compiler_error(*expressions_.back(),"unknown operator",to_string(t.peek_char()));
 
 			unique_ptr<statement>stmt=create_statement_from_tokenizer(*this,t);
 			if(stmt->tok().is_blank())
@@ -87,6 +99,16 @@ class expr_ops_list:public expression{public:
 		}
 		if(enclosed_)
 			os<<")";
+	}
+
+	inline static char _presedence_for_op(const char ch){
+		if(ch=='+'||ch=='-')
+			return 1;
+		if(ch=='*'||ch=='/')
+			return 2;
+		if(ch=='=')
+			return 3;
+		throw 0;
 	}
 
 	inline void _asm_op(toc&tc,ostream&os,size_t indent_level,const statement*st,const char op,const string&dest_resolved)const{
@@ -120,6 +142,21 @@ class expr_ops_list:public expression{public:
 			_asm("sub",*st,tc,os,indent_level+1,dest_resolved,tc.resolve_ident_to_nasm(*st));
 			return;
 		}
+		if(op=='*'){// order2op
+			if(st->is_expression()){
+				if(presedence_==0){
+					st->compile(tc,os,indent_level+1,dest_resolved);
+					return;
+				}
+				auto r=tc.alloc_scratch_register(*st);
+				st->compile(tc,os,indent_level+1,r);
+				_asm("imul",*st,tc,os,indent_level,dest_resolved,r);
+				tc.free_scratch_reg(r);
+				return;
+			}
+			_asm("imul",*st,tc,os,indent_level+1,dest_resolved,tc.resolve_ident_to_nasm(*st));
+			return;
+		}
 		if(op_=='='){
 			if(st->is_expression()){
 				st->compile(tc,os,indent_level+1,dest_resolved);
@@ -128,10 +165,6 @@ class expr_ops_list:public expression{public:
 			}
 			return;
 		}
-//			if(op=='*'){// order2op
-//				os<<"mul "<<reg<<","<<resolv<<endl;
-//				continue;
-//			}
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest)const override{

@@ -62,7 +62,7 @@ class stmt_program final:public statement{public:
 		for(auto&s:statements)
 			if(s->is_in_data_section())s->compile(tc,os,indent_level);
 		os<<"\ndd1 dd 1\ndd0 dd 0\n";
-		os<<"\nsection .bss\nstk resd 256\nstk.end\n\n";
+		os<<"\nsection .bss\nstk resd 256\nstk.end:\n\n";
 
 		os<<"\nsection .text\nglobal _start\n_start:\n  mov ebp,stk\n  mov esp,stk.end\n";
 		for(auto&s:statements)
