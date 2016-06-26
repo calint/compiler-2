@@ -1,12 +1,15 @@
 #pragma once
 
-#include <cstring>
-#include <iostream>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-#include <vector>
+#include<cstring>
+#include<iostream>
+#include<unordered_map>
+#include<unordered_set>
+#include<utility>
+#include<vector>
 #include<algorithm>
+#include<cassert>
+using namespace std;
+
 #include"lut.hpp"
 
 class token;
@@ -16,7 +19,7 @@ class stmt_def_table;
 
 using namespace std;
 
-class allocated_var{public:
+class allocated_var final{public:
 
 	inline allocated_var(const string&name,size_t stkix,const string&in_register,const string&asm_op_param,char bits):
 		name_{name},
@@ -26,18 +29,18 @@ class allocated_var{public:
 		bits_{bits}
 	{}
 
+	inline bool is_name(const string&varname)const{return varname==name_;}
+
 	inline bool is_const()const{return bits_&1;}
 
 	inline const string&nasm_ident()const{return nasm_ident_;}
-
-	inline bool is_name(const string&varname)const{return varname==name_;}
 
 private:
 	string name_;
 	size_t stkix_{0};
 	string in_register_;
 	string nasm_ident_;
-	char bits_{0}; // 1: const     2: isloop
+	char bits_{0}; // 1: const
 };
 
 
@@ -45,7 +48,10 @@ private:
 
 class frame final{public:
 
-	frame(const string&name,char bits):name_{name},bits_{bits}{}
+	frame(const string&name,char bits):
+		name_{name},
+		bits_{bits}
+	{}
 
 	inline void add_var(const string&nm,const size_t stkix,const string&flags){
 		string str="dword[ebp+"+to_string(stkix<<2)+"]";
@@ -80,7 +86,7 @@ class frame final{public:
 	inline const string&name()const{return name_;}
 
 private:
-	const string name_;
+	string name_;
 	size_t allocated_stack_{0};
 	char bits_{0}; // 1 is func
 	lut<allocated_var>vars_;
@@ -98,11 +104,11 @@ class toc final{public:
 		source_str_(source)
 	{}
 
-	inline void add_field(const statement&s,const string&identifier,const stmt_def_field*f){
-		if(fields_.has(identifier)){
-			throw compiler_error(s.tok(),"field already defined at <line:col>",identifier);
+	inline void add_field(const statement&s,const string&ident,const stmt_def_field*f){
+		if(fields_.has(ident)){
+			throw compiler_error(s.tok(),"field already defined at <line:col>",ident);
 		}
-		fields_.put(identifier,f);
+		fields_.put(ident,f);
 	}
 
 	inline void add_func(const statement&s,const string&ident,const stmt_def_func*ref){
@@ -121,22 +127,22 @@ class toc final{public:
 		return f;
 	}
 
-	inline void add_table(const statement&s,const string&identifier,const stmt_def_table*f){
-		if(tables_.has(identifier))
-			throw compiler_error(s.tok(),"table already defined at <line:col>",identifier);
+	inline void add_table(const statement&s,const string&ident,const stmt_def_table*f){
+		if(tables_.has(ident))
+			throw compiler_error(s.tok(),"table already defined at <line:col>",ident);
 
-		tables_.put(identifier,f);
+		tables_.put(ident,f);
 	}
 
 	inline void source_location_to_stream(ostream&os,const token&t){
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(t.char_index_in_source(),source_str_,char_in_line);
+		const size_t n=line_number_for_char_index(t.char_index(),source_str_,char_in_line);
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
 	}
 
 	inline void source_location_for_identifier_to_stream(ostream&os,const token&t){
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(t.char_index_in_source(),source_str_,char_in_line);
+		const size_t n=line_number_for_char_index(t.char_index(),source_str_,char_in_line);
 		os<<"_"<<to_string(n)<<"_"<<char_in_line<<"_";
 	}
 
@@ -170,19 +176,17 @@ class toc final{public:
 		const size_t frameix=frames_.size()-1;
 
 		bool ok{false};
-//		bool isnumb{false};
 		string nasm_ident=_resolve_ident_to_nasm(stmt,ident,frameix,ok);
-		if(ok)
-			return nasm_ident;
+		if(ok)return nasm_ident;
 
 		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'",nasm_ident);
 	}
 
-	inline void push_func(const string&name){frames_.push_back(frame{name,1});check();}
+	inline void push_func(const string&name){frames_.push_back(frame{name,1});check_usage();}
 
-	inline void push_block(const string&name){frames_.push_back(frame{name,2});check();}
+	inline void push_block(const string&name){frames_.push_back(frame{name,2});check_usage();}
 
-	inline void push_loop(const string&name){frames_.push_back(frame{name,4});check();}
+	inline void push_loop(const string&name){frames_.push_back(frame{name,4});check_usage();}
 
 	inline void add_alias(const string&ident,const string&parent_frame_ident){
 		frames_.back().add_alias(ident,parent_frame_ident);
@@ -190,31 +194,26 @@ class toc final{public:
 
 	inline void pop_func(const string&name){
 		frame&f=frames_.back();
-		if(f.is_func())
-			if(!f.is_name(name))
-				throw __LINE__;
+		assert(f.is_func() and f.is_name(name));
 		stkix_-=frames_.back().allocated_stack_size();
 		frames_.pop_back();
 	}
 
 	inline void pop_loop(const string&name){
 		frame&f=frames_.back();
-		if(f.is_loop())
-			if(!f.is_name(name))
-				throw __LINE__;
+		assert(f.is_loop() and f.is_name(name));
 		stkix_-=frames_.back().allocated_stack_size();
 		frames_.pop_back();
 	}
 
 	inline void push_if(const char*name){
 		frames_.push_back(frame{name,8});
-		check();
+		check_usage();
 	}
 
 	inline void pop_if(const string&name){
 		frame&f=frames_.back();
 		assert(f.is_if() and f.is_name(name));
-
 		stkix_-=frames_.back().allocated_stack_size();
 		frames_.pop_back();
 	}
@@ -239,12 +238,11 @@ class toc final{public:
 	}
 
 	inline void free_scratch_reg(const string&reg){
-//		assert(all_registers_
 		free_registers_.push_back(reg);
 	}
 
 	inline const string&find_parent_loop_name()const{
-		size_t i=frames_.size()-1;// recurse until aliased var found
+		size_t i=frames_.size()-1;
 		while(true){
 			if(frames_[i].is_loop())
 				return frames_[i].name();
@@ -253,8 +251,15 @@ class toc final{public:
 			i--;
 		}
 	}
-
-
+//
+//	inline void set_nasm_dest(const string&dst){
+//		dst_=dst;
+//	}
+//	string dst_;
+//
+//	inline const string&get_evaluation_destination_nasm_identifier()const{
+//		return dst_;
+//	}
 private:
 	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&ok)const{//? tidy duplicate code
 		string name=ident;
@@ -324,7 +329,7 @@ private:
 //			throw "cannot resolve "+string(name);
 	}
 
-	inline void check(){
+	inline void check_usage(){
 		if(frames_.size()>max_frame_count_)
 			max_frame_count_=frames_.size();
 
@@ -340,7 +345,6 @@ private:
 	size_t max_frame_count_{0};
 	size_t max_stack_usage_{0};
 	string source_str_;
-//	framestack framestk_;
 	lut<const stmt_def_field*>fields_;
 	lut<const stmt_def_func*>funcs_;
 	lut<const stmt_def_table*>tables_;

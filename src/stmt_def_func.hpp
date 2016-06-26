@@ -12,6 +12,7 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include"stmt_def_func_param.hpp"
+#include"stmt_block.hpp"
 class stmt_def_func final:public statement{public:
 
 	inline stmt_def_func(const statement&parent,const token&tk,tokenizer&t):
@@ -45,7 +46,7 @@ class stmt_def_func final:public statement{public:
 		code_=make_unique<stmt_block>(parent,t);
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.add_func(*this,ident_.name(),this);//? in constructor for forward ref
 		if(is_inline())
 			return;

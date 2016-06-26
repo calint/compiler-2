@@ -11,7 +11,7 @@ class compiler_error final{public:
 
 	inline compiler_error(const token&tk,const string&message,const string&identifier=""):
 		msg{message},ident{identifier},
-		start_char{tk.char_index_in_source()},end_char{tk.token_end_char()}
+		start_char{tk.char_index()},end_char{tk.char_index_end()}
 	{}
 
 	inline compiler_error(const statement&s,const string&message,const string&identifier=""):

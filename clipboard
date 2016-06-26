@@ -40,3 +40,109 @@
 //func file.read(ident) {
 //}
 //)"};
+
+
+
+
+//statement next_stmt(const statement&parent){
+//	statement s1{parent,token{"s1"}};
+//	return s1;
+//}
+//statement next_stmt2(const statement&parent){
+//	return statement{parent,token{"s1"}};
+//}
+//statement next_stmt3(const statement&parent){
+//	return move(statement{parent,token{"s1"}});
+//}
+int main(int argc,char**args){
+
+	auto src=file_read_to_string("prog.baz");
+
+	try{
+		stmt_program p(src);
+//
+//		token tk1{"s1"};
+//		token tk2{"s2"};
+//		statement s1{p,tk1};
+//		statement s2{p,tk2};
+//		statement s3=s1;
+//		statement s4{s1};
+//		statement s5=next_stmt(p);
+//		statement s6=next_stmt2(p);
+//		statement s7=next_stmt3(p);
+
+
+
+
+
+
+
+
+
+
+
+	inline token():
+		token{"",0,"",0,""}
+	{}
+
+	// token{othertoken}
+	inline token(const token&tk):
+		ws_left_{tk.ws_left_},
+		start_char_{tk.start_char_},
+		name_{tk.name_},
+		end_char_{tk.end_char_},
+		ws_right_{tk.ws_right_},
+		is_str{tk.is_str}
+	{}
+
+	// return move(token{})
+	inline token(const token&&tk):
+		ws_left_{move(tk.ws_left_)},
+		start_char_{tk.start_char_},
+		name_{move(tk.name_)},
+		end_char_{tk.end_char_},
+		ws_right_{move(tk.ws_right_)},
+		is_str{tk.is_str}
+	{}
+
+//	inline token&operator=(const token&other){
+//		ws_left_=other.ws_left_;
+//		start_char_=other.start_char_;
+//		name_=other.name_;
+//		end_char_=other.end_char_;
+//		ws_right_=other.ws_right_;
+//		return*this;
+//	}
+
+
+
+
+/	var bb=4
+//	var aa=plus(plus(bb,aa),plus(1,2)) //?   var 'aa' is used uninitialized
+//	print(b,prompt) //? msg:  cannot find 'b'
+	print(prompt.len,prompt)
+//	prompt.print()
+	loop{
+//		name.print(name.read-2)
+//		name.print(plus(name.read,-2))
+//		print(plus(read(name.len,name),-2),name)
+		
+//		var aa=1
+//		var bb=2
+//		print(plus(read(name.len,name),plus(plus(plus(bb,aa),plus(bb,aa)),plus(1,2))),name)
+		
+		var aaa=1
+		var a=3
+		var b=2
+//		if(eq(aaa,b)){
+//			exit
+//		}
+		print(plus(read(name.len,name),plus(plus(plus(b,a),plus(b,a)),plus(1,2))),name)
+		
+		exit
+	}
+	exit
+}
+
+
+

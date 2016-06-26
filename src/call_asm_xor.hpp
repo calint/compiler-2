@@ -14,7 +14,7 @@ class call_asm_xor final:public stmt_call{public:
 		stmt_call{parent,tkn,t}
 	{}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level);
 		os<<"xor "<<tc.resolve_ident_to_nasm(arg(0),arg(0).tok().name())<<",";
 		if(arg_count()==1){

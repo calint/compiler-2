@@ -46,7 +46,7 @@ class stmt_call:public expression{public:
 		os<<")";
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		const string&nm=tok().name();
 
 
@@ -60,8 +60,10 @@ class stmt_call:public expression{public:
 			if(i<nn)os<<" ";
 		}
 		os<<")";
-		const string&expr_dest=expression_dest_nasm_identifier();
-		if(not expr_dest.empty())os<<":"<<expr_dest;
+//		const string&expr_dest=expression_dest_nasm_identifier();
+		if(not dest_ident.empty())
+			os<<":"<<dest_ident;
+
 		os<<"  ";
 		tc.source_location_to_stream(os,tok());
 		os<<endl;
@@ -74,14 +76,14 @@ class stmt_call:public expression{public:
 		const stmt_def_func*f=tc.get_func_or_break(*this,nm);
 //		framestack&fs=tc.framestk();
 		vector<tuple<string,string>>aliases_to_add;
-		if(not expr_dest.empty()){
+		if(not dest_ident.empty()){
 			if(f->getreturns().empty())
 				throw compiler_error(*this,"cannot assign from call without return",tok().name_copy());
 //			for(auto&e:f->getreturns()){
 //				fs.add_alias(e->name(),expr_dest);
 //			}
 			const string&from=f->getreturns()[0].name();
-			const string&to=expr_dest;
+			const string&to=dest_ident;
 			aliases_to_add.push_back(make_tuple(from,to));
 		}
 
@@ -93,8 +95,7 @@ class stmt_call:public expression{public:
 			if(a->is_expression()){
 				string reg=tc.alloc_scratch_register(param);
 				allocated_registers.push_back(reg);
-				a->set_dest_nasm_ident(reg);
-				a->compile(tc,os,indent_level+1);
+				a->compile(tc,os,indent_level+1,reg);
 				aliases_to_add.push_back(make_tuple(param.name(),reg));
 				continue;
 			}
@@ -108,7 +109,7 @@ class stmt_call:public expression{public:
 
 		f->code_block()->compile(tc,os,indent_level+1);
 
-		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<tok().char_index_in_source()<<":"<<endl;
+		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<tok().char_index()<<":"<<endl;
 
 		for(auto r:allocated_registers)
 			tc.free_scratch_reg(r);

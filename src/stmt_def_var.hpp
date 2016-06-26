@@ -30,7 +30,7 @@ class stmt_def_var final:public statement{public:
 		}
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);
 		os<<"var "<<ident_.name()<<"="<<initial_expression_->tok().name()<<"  ";
 		tc.source_location_to_stream(os,ident_);
@@ -42,8 +42,7 @@ class stmt_def_var final:public statement{public:
 			return;
 
 		if(initial_expression_->is_expression()){
-			initial_expression_->set_dest_nasm_ident(ident_.name());
-			initial_expression_->compile(tc,os,indent_level+1);
+			initial_expression_->compile(tc,os,indent_level+1,ident_.name());
 			return;
 		}
 

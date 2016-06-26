@@ -6,13 +6,13 @@
 #include <memory>
 #include <vector>
 
-#include "compiler_error.hpp"
-#include "decouple.hpp"
-#include "statement.hpp"
-#include "stmt_call.hpp"
-#include "stmt_def_var.hpp"
-#include "token.hpp"
-#include "tokenizer.hpp"
+#include"compiler_error.hpp"
+#include"decouple.hpp"
+#include"tokenizer.hpp"
+#include"token.hpp"
+#include"statement.hpp"
+#include"stmt_call.hpp"
+#include"stmt_def_var.hpp"
 #include"stmt_assign_var.hpp"
 #include"stmt_comment.hpp"
 
@@ -45,7 +45,7 @@ class stmt_block final:public statement{public:
 		}
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		for(auto&s:statements_)
 			s->compile(tc,os,indent_level+1);
 	}

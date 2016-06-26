@@ -57,7 +57,7 @@ class stmt_def_table final:public statement{public:
 
 	inline bool is_in_data_section()const override{return true;}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		os<<"; --- table "<<ident_.name()<<" ";
 		tc.source_location_to_stream(os,ident_);
 		os<<endl;

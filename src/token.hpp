@@ -65,21 +65,15 @@ class token final{public:
 		os<<ws_left_<<'\"'<<name_<<'\"'<<ws_right_;
 	}
 
-	inline void compile_to(ostream&os)const{
-		if(!is_str){
-			os<<name_;
-			return;
-		}
-		os<<name_;
-	}
+	inline void compile_to(ostream&os)const{os<<name_;}
 
 	inline bool is_name(const string&s)const{return!strcmp(name_.c_str(),s.c_str());}
 
 	inline const string&name()const{return name_;}
 
-	inline size_t char_index_in_source()const{return start_char_;}
+	inline size_t char_index()const{return start_char_;}
 
-	inline size_t token_end_char()const{return end_char_;}
+	inline size_t char_index_end()const{return end_char_;}
 
 	inline string name_copy()const{return name_;}
 

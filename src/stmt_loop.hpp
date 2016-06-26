@@ -17,11 +17,11 @@ class stmt_loop final:public stmt_call{public:
 
 	inline stmt_loop(const statement&parent,const token&tk,tokenizer&t):
 		stmt_call{parent,tk,t},
-		name{"_loop_"+to_string(tk.char_index_in_source())},
+		name{"_loop_"+to_string(tk.char_index())},
 		code{stmt_block{parent,t}}
 	{}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,false);
 		os<<name<<":  ; ";
 		tc.source_location_to_stream(os,tok());

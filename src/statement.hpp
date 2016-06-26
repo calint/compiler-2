@@ -17,13 +17,11 @@ class statement{public:
 
 	// statement a=b   a{b}
 	inline statement(const statement&other):
-		nasm_dst_ident_{other.nasm_dst_ident_},
 		token_{other.token_},
 		parent_{other.parent_}
 	{}
 
 	inline statement(const statement&&other):
-		nasm_dst_ident_{move(other.nasm_dst_ident_)},
 		token_{move(other.token_)},
 		parent_{other.parent_}
 	{}
@@ -37,7 +35,16 @@ class statement{public:
 
 	inline virtual~statement(){}
 
-	inline virtual void compile(toc&tc,ostream&os,size_t indent_level)const{token_.compile_to(os);}
+	inline virtual void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const{
+//		if(not dest_ident.empty()){
+//			indent(os,indent_level,false);
+//			os<<"mov "<<dest_ident<<",";
+//			token_.compile_to(os);
+//			os<<endl;
+//			return;
+//		}
+		token_.compile_to(os);
+	}
 
 	inline virtual void link(toc&tc,ostream&os)const{}
 
@@ -53,16 +60,9 @@ class statement{public:
 
 	inline virtual bool is_empty()const{return token_.is_blank();}
 
-	inline void set_dest_nasm_ident(const string&destination){nasm_dst_ident_=destination;}
-
-	inline const string&expression_dest_nasm_identifier()const{return nasm_dst_ident_;}
-
-
-
 	inline static void indent(ostream&os,size_t indent_level,bool comment=false){os<<(comment?"; ":"  ");for(size_t i=0;i<indent_level;i++)os<<"  ";}
 
 private:
-	string nasm_dst_ident_;
 	token token_;
 	const statement&parent_;
 };

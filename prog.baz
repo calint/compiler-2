@@ -59,29 +59,15 @@ func plus(a,b):int{
 }
 
 func main{
-//	var bb=4
-//	var aa=plus(plus(bb,aa),plus(1,2)) //?   var 'aa' is used uninitialized
+	var b=2
+	var a=1
+	var c=3
+	a=(1+b-c)
 //	print(b,prompt) //? msg:  cannot find 'b'
 	print(prompt.len,prompt)
 //	prompt.print()
 	loop{
-//		name.print(name.read-2)
-//		name.print(plus(name.read,-2))
-//		print(plus(read(name.len,name),-2),name)
-		
-//		var aa=1
-//		var bb=2
-//		print(plus(read(name.len,name),plus(plus(plus(bb,aa),plus(bb,aa)),plus(1,2))),name)
-		
-		var aaa=1
-		var a=3
-		var b=2
-//		if(eq(aaa,b)){
-//			exit
-//		}
-		print(plus(read(name.len,name),plus(plus(plus(b,a),plus(b,a)),plus(1,2))),name)
-		
-		exit
+		print(read(name.len,name),name)
 	}
 	exit
 }

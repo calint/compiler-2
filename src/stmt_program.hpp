@@ -57,7 +57,7 @@ class stmt_program final:public statement{public:
 		tc.finish(tc,os);
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		os<<"section .data\n";
 		for(auto&s:statements)
 			if(s->is_in_data_section())s->compile(tc,os,indent_level);
