@@ -31,12 +31,19 @@ class expr_ops_list:public expression{public:
 		if(t.is_next_char('(')){
 			enclosed_=true;
 		}
-		while(true){// +a  +3
-			unique_ptr<statement>stmt=create_statement_from_tokenizer(*this,t);
-			if(stmt->tok().is_blank())
-				break;
 
-			ex_.push_back(move(stmt));
+		unique_ptr<statement>stmt=create_statement_from_tokenizer(*this,t);
+		if(stmt->tok().is_blank())
+			return;
+
+		expressions_.push_back(move(stmt));
+
+
+		while(true){// +a  +3
+			if(t.is_peek_char('(')){
+				expressions_.push_back(make_unique<expr_ops_list>(*this,t,ops_.back()));
+				continue;
+			}
 
 			if(enclosed_ and t.is_next_char(')')){
 				break;
@@ -53,25 +60,29 @@ class expr_ops_list:public expression{public:
 				ops_.push_back('*');
 				continue;
 			}
-			if(t.is_next_char('(')){
-				ex_.push_back(make_unique<expr_ops_list>(*this,t,ops_.back()));
-				continue;
-			}
-			break;
+
+			unique_ptr<statement>stmt=create_statement_from_tokenizer(*this,t);
+			if(stmt->tok().is_blank())
+				break;
+
+			expressions_.push_back(move(stmt));
 		}
 	}
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		os<<op_;
+		if(op_=='=')
+			os<<op_;
 		if(enclosed_)
 			os<<"(";
-		if(!ex_.empty()){
-			ex_[0]->source_to(os);
-			const size_t len=ex_.size();
+		if(expressions_.size()>0){
+			expressions_[0]->source_to(os);
+			const size_t len=expressions_.size();
 			for(size_t i{1};i<len;i++){
 				os<<ops_[i-1];
-				ex_[i]->source_to(os);
+				os.flush();
+				expressions_[i]->source_to(os);
+				os.flush();
 			}
 		}
 		if(enclosed_)
@@ -79,11 +90,11 @@ class expr_ops_list:public expression{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident)const override{
-		indent(os,indent_level,true);
+		indent(os,indent_level+1,true);
 		source_to(os);
 		os<<endl;
 
-		if(ex_.empty())
+		if(expressions_.empty())
 			return;
 
 
@@ -91,41 +102,49 @@ class expr_ops_list:public expression{public:
 		string reg;
 		if(op_=='='){
 			reg=tc.resolve_ident_to_nasm(*this,dest_ident);
-			statement*st=ex_[0].get();
+			auto st=expressions_[0].get();
 			if(st->is_expression()){
 				st->compile(tc,os,indent_level+1,reg);
 			}else{
-				_asm("mov",*st,tc,os,indent_level,reg,tc.resolve_ident_to_nasm(*st,st->tok().name()));
+				_asm("mov",*st,tc,os,indent_level+1,reg,tc.resolve_ident_to_nasm(*st,st->tok().name()));
 			}
 		}else{
 			//? if previous same presedence
 			reg=tc.resolve_ident_to_nasm(*this,dest_ident);
 		}
 
-		size_t len=ex_.size();
+		auto len=expressions_.size();
 		for(size_t i{0};i<len;i++){
-			const char op=ops_[i];
-			statement*st=ex_[i+1].get();
+			auto op=ops_[i];
+			auto st=expressions_[i+1].get();
 			if(op=='+'){// order1op
 				if(st->is_expression()){
-					const string&r=tc.alloc_scratch_register(st->tok());
+					if(presedence_==0){
+						st->compile(tc,os,indent_level+1,reg);
+						continue;
+					}
+					auto r=tc.alloc_scratch_register(st->tok());
 					st->compile(tc,os,indent_level+1,r);
 					_asm("add",*st,tc,os,indent_level,reg,r);
 					tc.free_scratch_reg(r);
 					continue;
 				}
-				_asm("add",*st,tc,os,indent_level,reg,tc.resolve_ident_to_nasm(*st,st->tok().name()));
+				_asm("add",*st,tc,os,indent_level+1,reg,tc.resolve_ident_to_nasm(*st,st->tok().name()));
 				continue;
 			}
 			if(op=='-'){// order1op
 				if(st->is_expression()){
-					const string&r=tc.alloc_scratch_register(st->tok());
+					if(presedence_==0){
+						st->compile(tc,os,indent_level+1,reg);
+						continue;
+					}
+					auto r=tc.alloc_scratch_register(st->tok());
 					st->compile(tc,os,indent_level+1,r);
 					_asm("sub",*st,tc,os,indent_level,reg,r);
 					tc.free_scratch_reg(r);
 					continue;
 				}
-				_asm("sub",*st,tc,os,indent_level,reg,tc.resolve_ident_to_nasm(*ex_[i],st->tok().name()));
+				_asm("sub",*st,tc,os,indent_level+1,reg,tc.resolve_ident_to_nasm(*expressions_[i],st->tok().name()));
 				continue;
 			}
 //			if(op=='*'){// order2op
@@ -168,6 +187,6 @@ private:
 	bool enclosed_{false}; // ie   =(1+2)   vs  =1+2
 	char presedence_{0};
 	char op_{0};
-	vector<unique_ptr<statement>>ex_;
+	vector<unique_ptr<statement>>expressions_;
 	vector<char>ops_;
 };

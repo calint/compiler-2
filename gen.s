@@ -33,10 +33,12 @@ _start:
 ;   var c=3  [64:6]
     mov dword[ebp+8],3
 ;   a=
-;   =(1+b-c)
-    mov edi,1  ;  [65:5]
-    add edi,dword[ebp+0]  ;  [65:7]
-    sub edi,dword[ebp+8]  ;  [65:9]
+;     =(1+(a+2)-b-c)
+      mov edi,1  ;  [65:5]
+;       (a+2)
+        add edi,2  ;  [65:10]
+      sub edi,dword[ebp+0]  ;  [65:13]
+      sub edi,dword[ebp+8]  ;  [65:15]
     mov dword[ebp+4],edi  ;  [65:2]
 ;   print(prompt.len prompt)  [67:2]
         mov ecx,prompt  ;  [11:2]
@@ -44,8 +46,8 @@ _start:
         mov ebx,1  ;  [13:2]
         mov eax,4  ;  [14:2]
         int 0x80  ;  [15:2]
-    _end_print_970:
-    _loop_1014:  ; [69:2]
+    _end_print_976:
+    _loop_1020:  ; [69:2]
 ;       print(read name)  [70:3]
 ;         read(name.len name):edi  [70:9]
               mov esi,name  ;  [19:2]
@@ -54,19 +56,19 @@ _start:
               xor edi,edi  ;  [22:2]
               syscall  ;  [23:2]
               mov edi,eax  ;  [24:2]
-          _end_read_1028:
+          _end_read_1034:
             mov ecx,name  ;  [11:2]
             mov edx,edi  ;  [12:2]
             mov ebx,1  ;  [13:2]
             mov eax,4  ;  [14:2]
             int 0x80  ;  [15:2]
-        _end_print_1022:
-      jmp _loop_1014
-    _end_loop_1014:  ; [69:2]
+        _end_print_1028:
+      jmp _loop_1020
+    _end_loop_1020:  ; [69:2]
 ;   exit()  [72:2]
         mov eax,1  ;  [30:2]
         int 0x80  ;  [31:2]
-    _end_exit_1058:
+    _end_exit_1064:
 
 ;           max regs in use: 1
 ;         max frames in use: 3
