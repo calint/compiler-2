@@ -138,7 +138,7 @@ class framestack final{public:
 	}
 
 	inline void push_if(const char*name){
-		exported_frame_ix_=frames_.size()-1;
+		import_frame_ix_=frames_.size()-1;
 //		export_varspace_at_current_frame_in_subcalls(true);
 		frames_.push_back(frame{name,8});
 		check();
@@ -149,7 +149,7 @@ class framestack final{public:
 		if(not f.is_if() or not f.is_name(name))throw __LINE__;
 		stkix_-=frames_.back().allocated_stack_size();
 		frames_.pop_back();
-		exported_frame_ix_=0;
+		import_frame_ix_=0;
 //		export_varspace_at_current_frame_in_subcalls(false);
 	}
 
@@ -189,7 +189,7 @@ class framestack final{public:
 	}
 
 	vector<frame>frames_;
-	size_t exported_frame_ix_{0};
+	size_t import_frame_ix_{0};
 	vector<string>all_registers_;
 	vector<string>free_registers_;
 	size_t max_usage_scratch_regs_{0};
@@ -273,25 +273,40 @@ class toc final{public:
 		char_in_line=ix-lix;
 		return lineno;
 	}
-	inline const string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
-		const size_t frameix=framestk_.frames_.size()-1;
-		bool resolved{false};
-		string name=_resolve_ident_to_nasm(stmt,ident,frameix,resolved);
-		if(resolved)
-			return name;//? keep name on stack
-		if(framestk_.exported_frame_ix_!=frameix){
-			name=_resolve_ident_to_nasm(stmt,name,framestk_.exported_frame_ix_,resolved);
-			if(resolved)
-				return name;
-		}
-		throw compiler_error(stmt.tok(),"cannot resolve identifier",ident);
-	}
 	inline void finish(const toc&tc,ostream&os){
 		assert(framestk_.all_registers_.size()==framestk_.free_registers_.size());
 		assert(framestk_.stkix_==0);
 		os<<"\n;   max scratch regs in use: "<<tc.framestk_.max_usage_scratch_regs_<<endl;
 		os<<";         max frames in use: "<<tc.framestk_.max_frame_count_<<endl;
 		os<<";          max stack in use: "<<tc.framestk_.max_stack_usage_<<endl;
+	}
+
+	inline const string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
+		string from_import;
+		const size_t frameix=framestk_.frames_.size()-1;
+		bool resolved_from_import{false};
+		if(framestk_.import_frame_ix_!=frameix){
+			from_import=_resolve_ident_to_nasm(stmt,ident,framestk_.import_frame_ix_,resolved_from_import);
+		}
+		bool resolved_from_frame{false};
+		string from_frame=_resolve_ident_to_nasm(stmt,ident,frameix,resolved_from_frame);
+
+		if(resolved_from_import and resolved_from_frame){
+			if(find(framestk_.all_registers_.begin(),framestk_.all_registers_.end(),from_frame)!=framestk_.all_registers_.end()){
+				// register //? allocated
+				return from_frame;
+			}
+			throw compiler_error(stmt,"identifier '"+ident+"' ambigious in frame '"+framestk_.frames_[frameix].name()+"' and '"+framestk_.frames_[framestk_.import_frame_ix_].name()+"'");
+		}
+
+		if(resolved_from_import)
+			return from_import;
+
+		if(resolved_from_frame)
+			return from_frame;
+
+
+		throw compiler_error(stmt.tok(),"cannot resolve identifier",ident);
 	}
 
 private:

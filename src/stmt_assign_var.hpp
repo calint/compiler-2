@@ -23,11 +23,14 @@ class stmt_assign_var final:public statement{public:
 		indent(os,indent_level,true);
 		os<<tok().name()<<"="<<expr->tok().name()<<endl;
 
+		bool resolved{false};
+		tc.resolve_ident_to_nasm(*this,tok().name());
+
 		if(expr->is_expression()){
-			tc.framestk().exported_frame_ix_=tc.framestk().frames_.size()-1;
+			tc.framestk().import_frame_ix_=tc.framestk().frames_.size()-1;
 			expr->set_dest_to_nasm_ident(tok().name());
 			expr->compile(tc,os,indent_level+1);
-			tc.framestk().exported_frame_ix_=0;
+			tc.framestk().import_frame_ix_=0;
 			return;
 		}
 
