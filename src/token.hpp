@@ -94,7 +94,6 @@ class token final{public:
 	}
 
 private:
-//	inline void to_stdout2()const{printf("[%zu]%s[%zu]\n",token_start_char_,name_.get(),token_end_char_);}
 	string ws_left_;
 	size_t start_char_{0};
 	string name_;
@@ -102,5 +101,3 @@ private:
 	string ws_right_;
 	bool is_str{false};
 };
-//using up_token=unique_ptr<token>;
-//using vup_tokens=vector<up_token>;

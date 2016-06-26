@@ -85,120 +85,8 @@ private:
 	char bits_{0}; // 1 is func
 	lut<allocated_var>vars_;
 	lut<string>aliases_;
-//	vector<string>to_be_deleted_;
 
 };
-
-
-
-
-//class framestack final{public:
-//
-//	framestack():
-//		all_registers_{"eax","ebx","ecx","edx","esi","edi"},
-//		free_registers_{all_registers_}
-//	{}
-//
-//	inline void push_func(const string&name){frames_.push_back(frame{name,1});check();}
-//
-//	inline void push_block(const string&name){frames_.push_back(frame{name,2});check();}
-//
-//	inline void push_loop(const string&name){frames_.push_back(frame{name,4});check();}
-//
-//
-//	inline void add_alias(const string&ident,const string&parent_frame_ident){
-////		cerr<<"   ++++++++++   "<<ident<<" -> "<<parent_frame_ident<<endl;
-//		frames_.back().add_alias(ident,parent_frame_ident);
-//	}
-//
-//	inline void pop_func(const string&name){
-//		frame&f=frames_.back();
-//		if(f.is_func())
-//			if(!f.is_name(name))
-//				throw __LINE__;
-//		stkix_-=frames_.back().allocated_stack_size();
-//		frames_.pop_back();
-//	}
-//
-//	inline void pop_loop(const string&name){
-//		frame&f=frames_.back();
-//		if(f.is_loop())
-//			if(!f.is_name(name))
-//				throw __LINE__;
-//		stkix_-=frames_.back().allocated_stack_size();
-//		frames_.pop_back();
-//	}
-//
-//	inline void check(){
-//		if(frames_.size()>max_frame_count_)
-//			max_frame_count_=frames_.size();
-//
-//		if(stkix_>max_stack_usage_)
-//			max_stack_usage_=stkix_;
-//	}
-//
-//	inline void push_if(const char*name){
-////		import_frames_.push_back(frames_.size()-1);
-////		export_varspace_at_current_frame_in_subcalls(true);
-//		frames_.push_back(frame{name,8});
-//		check();
-//	}
-//
-//	inline void pop_if(const string&name){
-//		frame&f=frames_.back();
-//		if(not f.is_if() or not f.is_name(name))throw __LINE__;
-//		stkix_-=frames_.back().allocated_stack_size();
-//		frames_.pop_back();
-////		import_frames_.pop_back();
-////		export_varspace_at_current_frame_in_subcalls(false);
-//	}
-//
-//	inline void add_var(const string&name,const string&flags){
-//		frames_.back().add_var(name,stkix_++,flags);
-//	}
-//
-//	inline const string&alloc_scratch_register(const token&tk){
-//		if(free_registers_.empty()){
-//			throw compiler_error(tk,"out of scratch registers  reduce expression complexity");
-//		}
-//
-//		const string&r=free_registers_[free_registers_.size()-1];
-//		free_registers_.pop_back();
-//
-//		const size_t n=all_registers_.size()-free_registers_.size();
-//		if(n>max_usage_scratch_regs_)
-//			max_usage_scratch_regs_=n;
-//
-//		return r;
-//	}
-//
-//	inline void free_scratch_reg(const string&reg){
-////		assert(all_registers_
-//		free_registers_.push_back(reg);
-//	}
-//
-//	inline const string&find_parent_loop_name()const{
-//		size_t i=frames_.size()-1;// recurse until aliased var found
-//		while(true){
-//			if(frames_[i].is_loop())
-//				return frames_[i].name();
-//			if(frames_[i].is_func())
-//				throw"cannot find loop start";
-//			i--;
-//		}
-//	}
-//
-//	vector<frame>frames_;
-////	vector<size_t>import_frames_;
-//	vector<string>all_registers_;
-//	vector<string>free_registers_;
-//	size_t max_usage_scratch_regs_{0};
-//	size_t max_frame_count_{0};
-//	size_t max_stack_usage_{0};
-//	size_t stkix_{0};
-//private:
-//};
-
 
 
 
@@ -240,8 +128,6 @@ class toc final{public:
 		tables_.put(identifier,f);
 	}
 
-//	inline framestack&framestk(){return framestk_;}
-
 	inline void source_location_to_stream(ostream&os,const token&t){
 		size_t char_in_line;
 		const size_t n=line_number_for_char_index(t.char_index_in_source(),source_str_,char_in_line);
@@ -253,13 +139,6 @@ class toc final{public:
 		const size_t n=line_number_for_char_index(t.char_index_in_source(),source_str_,char_in_line);
 		os<<"_"<<to_string(n)<<"_"<<char_in_line<<"_";
 	}
-
-//	inline static unique_ptr<const char[]>copy_string_to_unique_pointer(const char*str){
-//		const size_t len=strlen(str)+1;//? unsafe
-//		char*cpy=new char[len];
-//		memcpy(cpy,str,len);
-//		return unique_ptr<const char[]>(cpy);
-//	}
 
 	inline static size_t line_number_for_char_index(const size_t char_index,const string&str,size_t&char_in_line){
 		size_t ix{0};
@@ -277,6 +156,7 @@ class toc final{public:
 		char_in_line=ix-lix;
 		return lineno;
 	}
+
 	inline void finish(const toc&tc,ostream&os){
 		assert(all_registers_.size()==free_registers_.size());
 		assert(stkix_==0);
@@ -298,16 +178,13 @@ class toc final{public:
 		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'",nasm_ident);
 	}
 
-
 	inline void push_func(const string&name){frames_.push_back(frame{name,1});check();}
 
 	inline void push_block(const string&name){frames_.push_back(frame{name,2});check();}
 
 	inline void push_loop(const string&name){frames_.push_back(frame{name,4});check();}
 
-
 	inline void add_alias(const string&ident,const string&parent_frame_ident){
-//		cerr<<"   ++++++++++   "<<ident<<" -> "<<parent_frame_ident<<endl;
 		frames_.back().add_alias(ident,parent_frame_ident);
 	}
 
@@ -329,28 +206,17 @@ class toc final{public:
 		frames_.pop_back();
 	}
 
-	inline void check(){
-		if(frames_.size()>max_frame_count_)
-			max_frame_count_=frames_.size();
-
-		if(stkix_>max_stack_usage_)
-			max_stack_usage_=stkix_;
-	}
-
 	inline void push_if(const char*name){
-//		import_frames_.push_back(frames_.size()-1);
-//		export_varspace_at_current_frame_in_subcalls(true);
 		frames_.push_back(frame{name,8});
 		check();
 	}
 
 	inline void pop_if(const string&name){
 		frame&f=frames_.back();
-		if(not f.is_if() or not f.is_name(name))throw __LINE__;
+		assert(f.is_if() and f.is_name(name));
+
 		stkix_-=frames_.back().allocated_stack_size();
 		frames_.pop_back();
-//		import_frames_.pop_back();
-//		export_varspace_at_current_frame_in_subcalls(false);
 	}
 
 	inline void add_var(const string&name,const string&flags){
@@ -388,22 +254,8 @@ class toc final{public:
 		}
 	}
 
-	vector<frame>frames_;
-//	vector<size_t>import_frames_;
-	vector<string>all_registers_;
-	vector<string>free_registers_;
-	size_t max_usage_scratch_regs_{0};
-	size_t max_frame_count_{0};
-	size_t max_stack_usage_{0};
-	size_t stkix_{0};
 
 private:
-	string source_str_{""};
-//	framestack framestk_;
-	lut<const stmt_def_field*>fields_;
-	lut<const stmt_def_func*>funcs_;
-	lut<const stmt_def_table*>tables_;
-
 	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&ok)const{//? tidy duplicate code
 		string name=ident;
 		while(true){
@@ -471,4 +323,26 @@ private:
 //		if(!framestk_.exported_frame_ix_)
 //			throw "cannot resolve "+string(name);
 	}
+
+	inline void check(){
+		if(frames_.size()>max_frame_count_)
+			max_frame_count_=frames_.size();
+
+		if(stkix_>max_stack_usage_)
+			max_stack_usage_=stkix_;
+	}
+
+	size_t stkix_{0};
+	vector<frame>frames_;
+	vector<string>all_registers_;
+	vector<string>free_registers_;
+	size_t max_usage_scratch_regs_{0};
+	size_t max_frame_count_{0};
+	size_t max_stack_usage_{0};
+	string source_str_;
+//	framestack framestk_;
+	lut<const stmt_def_field*>fields_;
+	lut<const stmt_def_func*>funcs_;
+	lut<const stmt_def_table*>tables_;
+
 };
