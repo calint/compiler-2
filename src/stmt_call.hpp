@@ -62,7 +62,7 @@ class stmt_call:public expression{public:
 		os<<")";
 		const string&expr_dest=expression_dest_nasm_identifier();
 		if(not expr_dest.empty())os<<":"<<expr_dest;
-		os<<"{  ";
+		os<<"  ";
 		tc.source_location_to_stream(os,tok());
 		os<<endl;
 		//--- - - - -- - - - -

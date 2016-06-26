@@ -58,29 +58,10 @@ func plus(a,b):int{
 }
 
 func main{
-	var aa=1
-	var ba=2
-	var ca=3
-	var da=4
-	var ea=5
-	ea=plus(aa,ba)
-//	ea=plus(plus(plus(ca,da),plus(plus(ea,da),ba)),plus(plus(ca,da),plus(plus(plus(ca,da),plus(ca,da)),ba)))
-//	ea=plus(plus(plus(ca,da),plus(aa,ba)),plus(plus(ca,da),plus(plus(plus(ca,da),aa),ba)))
-
-	var c=c
-	var a=7
-	a=a
-	print(a,prompt)
-	a=10
-	print(a,prompt)
-	var b
-	b=15
-	a=b
-//  c=b=a
-	var d=a
-
-	print(b,prompt)
-//	print(prompt.len,prompt)
+	var bb=2
+	var aa=plus(plus(bb,aa),plus(1,2))
+//	print(b,prompt) //? fix compiler message
+	print(prompt.len,prompt)
 //	prompt.print()
 	loop{
 //		name.print(name.read-2)

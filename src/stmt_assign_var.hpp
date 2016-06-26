@@ -23,7 +23,6 @@ class stmt_assign_var final:public statement{public:
 		indent(os,indent_level,true);
 		os<<tok().name()<<"="<<expr->tok().name()<<endl;
 
-		bool resolved{false};
 		tc.resolve_ident_to_nasm(*this,tok().name());
 
 		if(expr->is_expression()){

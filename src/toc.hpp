@@ -285,15 +285,20 @@ class toc final{public:
 		string from_import;
 		const size_t frameix=framestk_.frames_.size()-1;
 		bool resolved_from_import{false};
+		bool resolved_from_import_is_number{false};
 		if(framestk_.import_frame_ix_!=frameix){
-			from_import=_resolve_ident_to_nasm(stmt,ident,framestk_.import_frame_ix_,resolved_from_import);
+			from_import=_resolve_ident_to_nasm(stmt,ident,framestk_.import_frame_ix_,resolved_from_import,resolved_from_import_is_number);
 		}
 		bool resolved_from_frame{false};
-		string from_frame=_resolve_ident_to_nasm(stmt,ident,frameix,resolved_from_frame);
+		bool resolved_from_frame_is_number{false};
+		string from_frame=_resolve_ident_to_nasm(stmt,ident,frameix,resolved_from_frame,resolved_from_frame_is_number);
 
 		if(resolved_from_import and resolved_from_frame){
 			if(find(framestk_.all_registers_.begin(),framestk_.all_registers_.end(),from_frame)!=framestk_.all_registers_.end()){
 				// register //? allocated
+				return from_frame;
+			}
+			if(resolved_from_import_is_number and resolved_from_frame_is_number){
 				return from_frame;
 			}
 			throw compiler_error(stmt,"identifier '"+ident+"' ambigious in frame '"+framestk_.frames_[frameix].name()+"' and '"+framestk_.frames_[framestk_.import_frame_ix_].name()+"'");
@@ -305,6 +310,11 @@ class toc final{public:
 		if(resolved_from_frame)
 			return from_frame;
 
+		// in case alias links to context frame
+		const frame&f=framestk_.frames_[framestk_.import_frame_ix_];
+		if(f.has_var(from_frame)){
+			return f.get_var(from_frame).nasm_ident();
+		}
 
 		throw compiler_error(stmt.tok(),"cannot resolve identifier",ident);
 	}
@@ -316,7 +326,7 @@ private:
 	lut<const stmt_def_func*>funcs_;
 	lut<const stmt_def_table*>tables_;
 
-	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&resolved)const{//? tidy duplicate code
+	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&resolved,bool&is_number)const{//? tidy duplicate code
 //		size_t i=framestk_.frames_.size()-1;// recurse until aliased var found
 		string name=ident;
 		while(true){
@@ -328,13 +338,19 @@ private:
 
 		if(framestk_.frames_[i].has_var(name)){
 			resolved=true;
+			is_number=false;
 			return framestk_.frames_[i].get_var(name).nasm_ident();
 		}
 
-		for(auto e:framestk_.all_registers_)if(e==name){resolved=true;return name;}
+		for(auto e:framestk_.all_registers_)if(e==name){
+			resolved=true;
+			is_number=false;
+			return name;
+		}
 
 		if(fields_.has(name)){
 			resolved=true;
+			is_number=false;
 			return name;
 		}
 
@@ -351,6 +367,7 @@ private:
 			const size_t ln=name.size()-size_t(p-name.c_str());
 			string after_dot=string(p,ln);//? utf8
 			if(after_dot=="len"){
+				is_number=false;
 				resolved=true;
 				return name;
 			}
@@ -361,6 +378,7 @@ private:
 		strtol(name.c_str(),&ep,10);
 		if(!*ep){// decimal number
 			resolved=true;
+			is_number=true;
 			return name;
 		}
 
@@ -368,6 +386,7 @@ private:
 			strtol(name.c_str()+2,&ep,16);
 			if(!*ep){// hex number{
 				resolved=true;
+				is_number=true;
 				return name;
 			}
 		}
