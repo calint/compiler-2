@@ -140,6 +140,12 @@ class toc final{public:
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
 	}
 
+	inline void source_location_to_stream(ostream&os,size_t charix){
+		size_t char_in_line;
+		const size_t n=line_number_for_char_index(charix,source_str_,char_in_line);
+		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
+	}
+
 	inline void source_location_for_identifier_to_stream(ostream&os,const token&t){
 		size_t char_in_line;
 		const size_t n=line_number_for_char_index(t.char_index(),source_str_,char_in_line);
@@ -172,6 +178,9 @@ class toc final{public:
 		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
 	}
 
+	inline string resolve_ident_to_nasm(const statement&stmt)const{//? tidy duplicate code
+		return resolve_ident_to_nasm(stmt,stmt.tok().name());
+	}
 	inline string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
 		const size_t frameix=frames_.size()-1;
 
@@ -220,6 +229,9 @@ class toc final{public:
 
 	inline void add_var(const string&name,const string&flags){
 		frames_.back().add_var(name,stkix_++,flags);
+	}
+	inline const string&alloc_scratch_register(const statement&st){
+		return alloc_scratch_register(st.tok());
 	}
 
 	inline const string&alloc_scratch_register(const token&tk){

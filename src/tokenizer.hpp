@@ -55,6 +55,13 @@ class tokenizer final{public:
 		return move(token{wspre,bgn,tkn,end,wsaft});
 	}
 
+	inline token next_whitespace_token(){
+		auto wspre=next_whitespace();
+		auto bgn=nchar;
+		auto end=nchar;
+		return move(token{wspre,bgn,"",end,""});
+	}
+
 	inline bool is_next_char(const char ch){
 		if(*ptr!=ch)return false;
 		next_char();

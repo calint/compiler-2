@@ -25,7 +25,7 @@
 class expr_ops_list:public expression{public:
 
 	inline expr_ops_list(const statement&parent,tokenizer&t,const char op):
-		expression{parent,token{}},
+		expression{parent,t.next_whitespace_token()},
 		op_{op}
 	{
 		if(t.is_next_char('(')){
@@ -92,12 +92,12 @@ class expr_ops_list:public expression{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident)const override{
 		indent(os,indent_level+1,true);
 		source_to(os);
+		os<<"      ";
+		tc.source_location_to_stream(os,this->tok());
 		os<<endl;
 
 		if(expressions_.empty())
 			return;
-
-
 
 		string reg;
 		if(op_=='='){
@@ -106,7 +106,7 @@ class expr_ops_list:public expression{public:
 			if(st->is_expression()){
 				st->compile(tc,os,indent_level+1,reg);
 			}else{
-				_asm("mov",*st,tc,os,indent_level+1,reg,tc.resolve_ident_to_nasm(*st,st->tok().name()));
+				_asm("mov",*st,tc,os,indent_level+1,reg,tc.resolve_ident_to_nasm(*st));
 			}
 		}else{
 			//? if previous same presedence
@@ -129,7 +129,7 @@ class expr_ops_list:public expression{public:
 					tc.free_scratch_reg(r);
 					continue;
 				}
-				_asm("add",*st,tc,os,indent_level+1,reg,tc.resolve_ident_to_nasm(*st,st->tok().name()));
+				_asm("add",*st,tc,os,indent_level+1,reg,tc.resolve_ident_to_nasm(*st));
 				continue;
 			}
 			if(op=='-'){// order1op
@@ -138,13 +138,13 @@ class expr_ops_list:public expression{public:
 						st->compile(tc,os,indent_level+1,reg);
 						continue;
 					}
-					auto r=tc.alloc_scratch_register(st->tok());
+					auto r=tc.alloc_scratch_register(*st);
 					st->compile(tc,os,indent_level+1,r);
 					_asm("sub",*st,tc,os,indent_level,reg,r);
 					tc.free_scratch_reg(r);
 					continue;
 				}
-				_asm("sub",*st,tc,os,indent_level+1,reg,tc.resolve_ident_to_nasm(*expressions_[i],st->tok().name()));
+				_asm("sub",*st,tc,os,indent_level+1,reg,tc.resolve_ident_to_nasm(*st));
 				continue;
 			}
 //			if(op=='*'){// order2op
