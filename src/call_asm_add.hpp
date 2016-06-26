@@ -15,8 +15,8 @@ class call_asm_add final:public stmt_call{public:
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{
-		const string&ra=tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name());
-		const string&rb=tc.resolve_ident_to_nasm(argument(1),argument(1).tok().name());
+		const string&ra=tc.resolve_ident_to_nasm(arg(0),arg(0).tok().name());
+		const string&rb=tc.resolve_ident_to_nasm(arg(1),arg(1).tok().name());
 
 		if(!ra.find("dword[") and !rb.find("dword[")){
 			const string&r=tc.framestk().alloc_scratch_register(token());

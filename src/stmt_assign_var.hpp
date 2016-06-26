@@ -27,7 +27,7 @@ class stmt_assign_var final:public statement{public:
 
 		if(expr->is_expression()){
 //			tc.framestk().import_frames_.push_back(tc.framestk().frames_.size()-1);
-			expr->set_dest_to_nasm_ident(tok().name());
+			expr->set_dest_nasm_ident(tok().name());
 			expr->compile(tc,os,indent_level+1);
 //			tc.framestk().import_frames_.pop_back();
 			return;

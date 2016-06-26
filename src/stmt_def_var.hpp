@@ -40,7 +40,7 @@ class stmt_def_var final:public statement{public:
 			return;
 
 		if(initial_expression_->is_expression()){
-			initial_expression_->set_dest_to_nasm_ident(ident_.name());
+			initial_expression_->set_dest_nasm_ident(ident_.name());
 			initial_expression_->compile(tc,os,indent_level+1);
 			return;
 		}

@@ -67,13 +67,12 @@ class stmt_call:public expression{public:
 		os<<endl;
 		//--- - - - -- - - - -
 
-		if(!is_inline()){
+		if(!is_inline())
 			throw string("not inlined");
-		}
+
 
 		const stmt_def_func*f=tc.get_func_or_break(*this,nm);
 		framestack&fs=tc.framestk();
-
 		vector<tuple<string,string>>aliases_to_add;
 		if(not expr_dest.empty()){
 			if(f->getreturns().empty())
@@ -94,7 +93,7 @@ class stmt_call:public expression{public:
 			if(a->is_expression()){
 				const string reg=fs.alloc_scratch_register(param);
 				allocated_registers.push_back(reg);
-				a->set_dest_to_nasm_ident(reg);
+				a->set_dest_nasm_ident(reg);
 				a->compile(tc,os,indent_level+1);
 				aliases_to_add.push_back(make_tuple(param.name(),reg));
 				continue;
@@ -104,29 +103,22 @@ class stmt_call:public expression{public:
 
 		fs.push_func(nm);
 
-		for(auto&e:aliases_to_add){
+		for(auto&e:aliases_to_add)
 			fs.add_alias(get<0>(e),get<1>(e));
-		}
+
 		f->code_block()->compile(tc,os,indent_level+1);
 
-		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<tok().char_index_in_source()<<":";
-//		os<<"  ;  ";
-//		tc.source_location_to_stream(os,);
-		os<<endl;
-
+		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<tok().char_index_in_source()<<":"<<endl;
 
 		for(auto r:allocated_registers)
 			fs.free_scratch_reg(r);
 
 		fs.pop_func(nm);
-//		tc.framestk().export_varspace_at_current_frame_in_subcalls(false);
-
-//		indent(os,indent_level,true);os<<"}\n";
 	}
 
-	inline statement&argument(size_t ix)const{return*(args_[ix].get());}
+	inline statement&arg(size_t ix)const{return*(args_[ix].get());}
 
-	inline size_t argument_count()const{return args_.size();}
+	inline size_t arg_count()const{return args_.size();}
 
 	inline bool is_inline()const{return true;}
 

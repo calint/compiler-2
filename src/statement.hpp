@@ -53,7 +53,7 @@ class statement{public:
 
 	inline virtual bool is_empty()const{return token_.is_blank();}
 
-	inline void set_dest_to_nasm_ident(const string&destination){nasm_dst_ident_=destination;}
+	inline void set_dest_nasm_ident(const string&destination){nasm_dst_ident_=destination;}
 
 	inline const string&expression_dest_nasm_identifier()const{return nasm_dst_ident_;}
 

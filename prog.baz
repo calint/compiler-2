@@ -68,9 +68,13 @@ func main{
 //		name.print(plus(name.read,-2))
 //		print(plus(read(name.len,name),-2),name)
 		
-		var aa=1
-		var bb=2
-		print(plus(read(name.len,name),plus(plus(bb,aa),plus(1,2))),name)
+//		var aa=1
+//		var bb=2
+//		print(plus(read(name.len,name),plus(plus(plus(bb,aa),plus(bb,aa)),plus(1,2))),name)
+		
+		var a=1
+		var b=2
+		print(plus(read(name.len,name),plus(plus(plus(b,a),plus(b,a)),plus(1,2))),name)
 		
 		exit
 	}

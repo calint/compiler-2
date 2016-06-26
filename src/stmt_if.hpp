@@ -38,7 +38,7 @@ class stmt_if final:public statement{public:
 		tc.framestk().push_if(name.data());
 
 		const string&reg=tc.framestk().alloc_scratch_register(token());
-		bool_expr->set_dest_to_nasm_ident(reg);
+		bool_expr->set_dest_nasm_ident(reg);
 		bool_expr->compile(tc,os,indent_level);
 
 		indent(os,indent_level,false);os<<"cmp "<<reg<<",1\n";

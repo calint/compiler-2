@@ -49,16 +49,24 @@ _start:
                 mov esi,eax  ;  [23:2]
             _end_read_1172:
 ;           plus(plus plus):edx  [73:34]
-;             plus(bb aa):ecx  [73:39]
-                  mov ecx,dword[ebp+4]  ;  [56:2]
-                  add ecx,dword[ebp+0]  ;  [57:2]
+;             plus(plus plus):ecx  [73:39]
+;               plus(bb aa):ebx  [73:44]
+                    mov ebx,dword[ebp+4]  ;  [56:2]
+                    add ebx,dword[ebp+0]  ;  [57:2]
+                _end_plus_1202:
+;               plus(bb aa):eax  [73:56]
+                    mov eax,dword[ebp+4]  ;  [56:2]
+                    add eax,dword[ebp+0]  ;  [57:2]
+                _end_plus_1214:
+                  mov ecx,ebx  ;  [56:2]
+                  add ecx,eax  ;  [57:2]
               _end_plus_1197:
-;             plus(1 2):ebx  [73:51]
-                  mov ebx,1  ;  [56:2]
-                  add ebx,2  ;  [57:2]
-              _end_plus_1209:
+;             plus(1 2):eax  [73:69]
+                  mov eax,1  ;  [56:2]
+                  add eax,2  ;  [57:2]
+              _end_plus_1227:
                 mov edx,ecx  ;  [56:2]
-                add edx,ebx  ;  [57:2]
+                add edx,eax  ;  [57:2]
             _end_plus_1192:
               mov edi,esi  ;  [56:2]
               add edi,edx  ;  [57:2]
@@ -72,14 +80,14 @@ _start:
 ;       exit()  [75:3]
             mov eax,1  ;  [29:2]
             int 0x80  ;  [30:2]
-        _end_exit_1232:
+        _end_exit_1250:
       jmp _loop_1020
     _end_loop_1020:  ; [66:2]
 ;   exit()  [77:2]
         mov eax,1  ;  [29:2]
         int 0x80  ;  [30:2]
-    _end_exit_1241:
+    _end_exit_1259:
 
-;   max scratch regs in use: 5
+;   max scratch regs in use: 6
 ;         max frames in use: 3
 ;          max stack in use: 2

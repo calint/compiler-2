@@ -17,15 +17,15 @@ class call_asm_cmove final:public stmt_call{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{// mov(eax 1)
 //		indent(os,indent_level,true);source_to(os);os<<endl;
 		indent(os,indent_level);
-		if(argument(1).is_expression()){
+		if(arg(1).is_expression()){
 			const string&reg=tc.framestk().alloc_scratch_register(token());
-			argument(1).set_dest_to_nasm_ident(reg);
-			argument(1).compile(tc,os,indent_level);
-			os<<"cmove "<<tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name())<<","<<reg<<endl;
+			arg(1).set_dest_nasm_ident(reg);
+			arg(1).compile(tc,os,indent_level);
+			os<<"cmove "<<tc.resolve_ident_to_nasm(arg(0),arg(0).tok().name())<<","<<reg<<endl;
 			tc.framestk().free_scratch_reg(reg);
 			return;
 		}
-		os<<"cmove "<<tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name())<<",["<<tc.resolve_ident_to_nasm(argument(1),argument(1).tok().name())<<"]"<<endl;
+		os<<"cmove "<<tc.resolve_ident_to_nasm(arg(0),arg(0).tok().name())<<",["<<tc.resolve_ident_to_nasm(arg(1),arg(1).tok().name())<<"]"<<endl;
 	}
 
 };

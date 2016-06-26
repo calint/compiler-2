@@ -16,7 +16,7 @@ class call_asm_int final:public stmt_call{public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level)const override{// mov(eax 1)
 		indent(os,indent_level);
-		os<<"int "<<tc.resolve_ident_to_nasm(argument(0),argument(0).tok().name());
+		os<<"int "<<tc.resolve_ident_to_nasm(arg(0),arg(0).tok().name());
 		os<<"  ;  ";
 		tc.source_location_to_stream(os,tok());
 		os<<endl;
