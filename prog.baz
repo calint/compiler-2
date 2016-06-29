@@ -63,7 +63,7 @@ func main{
 	a=b*c+d-5;
 	print(prompt.len,prompt)
 	loop{
-		print(read(name.len,name)-2,name)
+		print(read(name.len,name)-2,name+1*b)
 	}
 	exit
 }

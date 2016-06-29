@@ -110,8 +110,8 @@ inline unique_ptr<statement>create_call_statement_from_tokenizer(const statement
 
 inline unique_ptr<statement>create_statement_from_tokenizer(const statement&parent,tokenizer&t){
 	auto tk=t.next_token();
-	if(tk.is_name("") and t.is_next_char('('))
-		return make_unique<expr_ops_list>(parent,move(tk),t,'=',3,true,unique_ptr<statement>(create_statement_from_tokenizer(parent,t)),0);
+//	if(tk.is_name("") and t.is_next_char('('))
+//		return make_unique<expr_ops_list>(parent,move(tk),t,'=',3,true,unique_ptr<statement>(create_statement_from_tokenizer(parent,t)),0);
 	if(tk.is_name("#"))return make_unique<stmt_comment>(parent,move(tk),t);// ie    print("hello") // comment
 	if(t.is_peek_char('('))return create_call_statement_from_tokenizer(parent,move(tk),t); // ie  f(...)
 	return make_unique<statement>(parent,move(tk));// ie  0x80

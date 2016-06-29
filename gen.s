@@ -60,7 +60,13 @@ _start:
                 mov edi,eax  ;  [23:2]
             _end_read_848:
             sub edi,2  ;  [66:29]
-            mov ecx,name  ;  [10:2]
+;           name+1*b      [66:31]
+            mov esi,name  ;  [66:31]
+;             1*b      [66:37]
+              mov edx,1  ;  [66:36]
+              imul edx,dword[ebp+4]  ;  [66:38]
+            add esi,edx  ;  [66:37]
+            mov ecx,esi  ;  [10:2]
             mov edx,edi  ;  [11:2]
             mov ebx,1  ;  [12:2]
             mov eax,4  ;  [13:2]
@@ -71,8 +77,8 @@ _start:
 ;   exit()  [68:2]
         mov eax,1  ;  [27:2]
         int 0x80  ;  [28:2]
-    _end_exit_880:
+    _end_exit_884:
 
-;           max regs in use: 1
+;           max regs in use: 3
 ;         max frames in use: 3
 ;          max stack in use: 4

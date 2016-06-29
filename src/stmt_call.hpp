@@ -29,7 +29,7 @@ class stmt_call:public expression{public:
 		while(true){
 			if(t.is_next_char(')'))break;
 //			expr_ops_list(*this,t.next_whitespace_token(),t,'=',3,false,create_statement_from_tokenizer(*this,t),0);
-			auto arg=make_unique<expr_ops_list>(*this,t.next_whitespace_token(),t,'=',3,false,create_statement_from_tokenizer(*this,t),0,true);
+			auto arg=make_unique<expr_ops_list>(*this,t.next_whitespace_token(),t,'=',3,true,false,create_statement_from_tokenizer(*this,t));
 			args_.push_back(move(arg));
 			if(t.is_next_char(')'))break;
 			if(!t.is_next_char(','))throw compiler_error(*args_.back(),"expected ',' after argument at ",tok().name_copy());

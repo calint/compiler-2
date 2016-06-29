@@ -24,7 +24,7 @@
 
 class expr_ops_list:public expression{public:
 
-	inline expr_ops_list(const statement&parent,const token&tk,tokenizer&t,const char list_append_op='=',size_t presedence=3,bool enclosed=false,unique_ptr<statement>first_expression=unique_ptr<statement>(),char first_op=0,bool inargs=false):
+	inline expr_ops_list(const statement&parent,const token&tk,tokenizer&t,const char list_append_op='=',size_t presedence=3,bool inargs=false,bool enclosed=false,unique_ptr<statement>first_expression=unique_ptr<statement>(),char first_op=0):
 		expression{parent,tk},
 		enclosed_{enclosed},
 		presedence_{presedence},
@@ -43,18 +43,14 @@ class expr_ops_list:public expression{public:
 		while(true){// +a  +3
 			if(t.is_next_char('(')){
 //				expr_ops_list a(*this,t,'=',presedence,true,unique_ptr<statement>());
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t.next_whitespace_token(),t,'=',presedence,true));
+				expressions_.push_back(make_unique<expr_ops_list>(*this,t.next_whitespace_token(),t,'=',presedence,inargs,true));
 				continue;
 			}
 
 			if(t.is_peek_char(';')){
 				break;
 			}
-			if(inargs and t.is_peek_char(',')){
-				break;
-			}
-
-			if(inargs and t.is_peek_char(')')){
+			if(inargs and (t.is_peek_char(',') or t.is_peek_char(')'))){
 				break;
 			}
 
@@ -91,7 +87,7 @@ class expr_ops_list:public expression{public:
 //					ops_.pop_back();
 					unique_ptr<statement>prev=move(expressions_.back());
 					expressions_.erase(expressions_.end());
-					expressions_.push_back(make_unique<expr_ops_list>(*this,t.next_whitespace_token(),t,list_op,presedence_,enclosed_,move(prev),first_op));
+					expressions_.push_back(make_unique<expr_ops_list>(*this,t.next_whitespace_token(),t,list_op,presedence_,inargs,enclosed_,move(prev),first_op));
 				}
 			}else{
 				presedence_=next_presedence;
@@ -105,6 +101,9 @@ class expr_ops_list:public expression{public:
 				break;
 			}
 
+			if(inargs and (t.is_peek_char(',') or t.is_peek_char(')'))){
+				break;
+			}
 			if(t.is_next_char(')')){
 				if(not enclosed_)
 					throw compiler_error(*expressions_.back(),"unexpected ')'");

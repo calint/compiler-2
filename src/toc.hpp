@@ -276,8 +276,15 @@ private:
 	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&ok)const{//? tidy duplicate code
 		string name=ident;
 		while(true){
-			if(!frames_[i].has_alias(name))break;
-			name=frames_[i].get_alias(name);
+			if(frames_[i].is_func()){
+				if(!frames_[i].has_alias(name))
+					break;
+				name=frames_[i].get_alias(name);
+				i--;
+				continue;
+			}
+			if(frames_[i].has_var(name))
+				break;
 			i--;
 		}
 		if(frames_[i].has_var(name)){
