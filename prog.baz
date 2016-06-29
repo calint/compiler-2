@@ -6,7 +6,7 @@ table name_to_prompt(name,prompt)
 func table.find(tbl,lambda):ref{} 
 func table.foreach(tbl,lamda){}
 
-func print(len:const,ptr:const){
+func print(len:const:reg_edx,ptr:const:reg_ecx){
 	mov(ecx,ptr)
 	mov(edx,len)
 	mov(ebx,1)
@@ -14,7 +14,7 @@ func print(len:const,ptr:const){
 	int(0x80)
 }
 
-func read(len:const,ptr:const):int{
+func read(len:const:reg_edx,ptr:const:reg_esi):int{
 	mov(esi,ptr)
 	mov(edx,len)
 	xor(eax)

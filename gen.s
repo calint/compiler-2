@@ -47,37 +47,35 @@ _start:
         mov ebx,1  ;  [12:2]
         mov eax,4  ;  [13:2]
         int 0x80  ;  [14:2]
-    _end_print_808:
-    _loop_834:  ; [65:2]
+    _end_print_840:
+    _loop_866:  ; [65:2]
 ;       print(read name)  [66:3]
 ;           read(name.len,name)-2      [66:9]
-;           read(name.len name):edi  [66:9]
+;           read(name.len name):edx  [66:9]
                 mov esi,name  ;  [18:2]
                 mov edx,name.len  ;  [19:2]
                 xor eax,eax  ;  [20:2]
                 xor edi,edi  ;  [21:2]
                 syscall  ;  [22:2]
-                mov edi,eax  ;  [23:2]
-            _end_read_848:
-            sub edi,2  ;  [66:29]
+                mov edx,eax  ;  [23:2]
+            _end_read_880:
+            sub edx,2  ;  [66:29]
 ;           name+1*b      [66:31]
-            mov esi,name  ;  [66:31]
+            mov ecx,name  ;  [66:31]
 ;             1*b      [66:37]
-              mov edx,1  ;  [66:36]
-              imul edx,dword[ebp+4]  ;  [66:38]
-            add esi,edx  ;  [66:37]
-            mov ecx,esi  ;  [10:2]
-            mov edx,edi  ;  [11:2]
+              mov edi,1  ;  [66:36]
+              imul edi,dword[ebp+4]  ;  [66:38]
+            add ecx,edi  ;  [66:37]
             mov ebx,1  ;  [12:2]
             mov eax,4  ;  [13:2]
             int 0x80  ;  [14:2]
-        _end_print_842:
-      jmp _loop_834
-    _end_loop_834:  ; [65:2]
+        _end_print_874:
+      jmp _loop_866
+    _end_loop_866:  ; [65:2]
 ;   exit()  [68:2]
         mov eax,1  ;  [27:2]
         int 0x80  ;  [28:2]
-    _end_exit_884:
+    _end_exit_916:
 
 ;           max regs in use: 3
 ;         max frames in use: 3

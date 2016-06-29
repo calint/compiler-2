@@ -96,13 +96,23 @@ class stmt_call:public expression{public:
 			auto param=f->get_param(i);
 			i++;
 			if(a->is_expression()){
-				string reg=tc.alloc_scratch_register(param);
+				// in reg
+				string reg;
+				for(auto kw:param.keywords_){
+					if(kw.name().find("reg_")==0){
+						string nm=kw.name().substr(4,kw.name().size());
+						reg=tc.alloc_scratch_register(param,nm);
+						break;
+					}
+				}
+				if(reg=="")
+					reg=tc.alloc_scratch_register(param);
 				allocated_registers.push_back(reg);
 				a->compile(tc,os,indent_level+1,reg);
-				aliases_to_add.push_back(make_tuple(param.name(),reg));
+				aliases_to_add.push_back(make_tuple(param.identifier(),reg));
 				continue;
 			}
-			aliases_to_add.push_back(make_tuple(param.name(),a->identifier()));
+			aliases_to_add.push_back(make_tuple(param.identifier(),a->identifier()));
 		}
 
 		tc.push_func(nm);

@@ -91,7 +91,7 @@ class stmt_def_func final:public statement{public:
 
 	inline const vector<token>&getreturns()const{return returns_;}
 
-	inline token get_param(const size_t ix)const{return params_[ix]->tok();}
+	inline const stmt_def_func_param&get_param(const size_t ix)const{return*params_[ix];}
 
 	inline const stmt_block*code_block()const{return code_.get();}
 

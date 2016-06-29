@@ -230,13 +230,21 @@ class toc final{public:
 	inline void add_var(const string&name,const string&flags){
 		frames_.back().add_var(name,stkix_++,flags);
 	}
-	inline const string&alloc_scratch_register(const statement&st){
-		return alloc_scratch_register(st.tok());
+	inline const string alloc_scratch_register(const statement&st,const string&reg=""){
+		return alloc_scratch_register(st.tok(),reg);
 	}
 
-	inline const string&alloc_scratch_register(const token&tk){
+	inline const string alloc_scratch_register(const token&tk,const string&reg=""){
 		if(free_registers_.empty()){
 			throw compiler_error(tk,"out of scratch registers  reduce expression complexity");
+		}
+		if(reg!=""){
+			auto r=find(free_registers_.begin(),free_registers_.end(),reg);
+			if(r==free_registers_.end()){
+				throw compiler_error(tk,"register "+reg+" cannot be allocated");//?
+			}
+			free_registers_.erase(r);
+			return reg;
 		}
 
 		const string&r=free_registers_[free_registers_.size()-1];

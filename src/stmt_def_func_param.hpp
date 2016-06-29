@@ -39,7 +39,7 @@ class stmt_def_func_param final:public statement{public:
 			size_t i{0};
 			for(auto&t:keywords_){
 				t.source_to(os);
-				if(i++!=sz)os<<",";
+				if(i++!=sz)os<<":";
 			}
 		}
 	}
