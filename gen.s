@@ -35,11 +35,20 @@ _start:
 ;   var d=4  [62:6]
     mov dword[ebp+12],4
 ;   a=    [63:2]
-;     (b+c)*d      [63:4]
-;       (b+c)      [63:5]
-        mov edi,dword[ebp+4]  ;  [63:5]
-        add edi,dword[ebp+8]  ;  [63:7]
-      imul edi,dword[ebp+12]  ;  [63:10]
+;     (((b+c)*d+c*(a+b)))      [63:4]
+;       (((b+c)*d+c*(a+b)))      [63:5]
+;         ((b+c)*d+c*(a+b))      [63:6]
+;           (b+c)      [63:7]
+            mov edi,dword[ebp+4]  ;  [63:7]
+            add edi,dword[ebp+8]  ;  [63:9]
+          imul edi,dword[ebp+12]  ;  [63:12]
+;           c*(a+b)      [63:15]
+            mov esi,dword[ebp+8]  ;  [63:14]
+;             (a+b)      [63:17]
+              mov edx,dword[ebp+0]  ;  [63:17]
+              add edx,dword[ebp+4]  ;  [63:19]
+            imul esi,edx  ;  [63:17]
+          add edi,esi  ;  [63:15]
       mov dword[ebp+0],edi  ;  [63:2]
 ;   a=    [64:2]
 ;     b      [64:4]
@@ -69,8 +78,8 @@ _start:
         mov ebx,1  ;  [12:2]
         mov eax,4  ;  [13:2]
         int 0x80  ;  [14:2]
-    _end_print_892:
-    _loop_918:  ; [70:2]
+    _end_print_904:
+    _loop_930:  ; [70:2]
 ;       print(read name)  [71:3]
 ;           read(name.len,name)-2      [71:9]
 ;           read(name.len name):edx  [71:9]
@@ -80,7 +89,7 @@ _start:
                 xor edi,edi  ;  [21:2]
                 syscall  ;  [22:2]
                 mov edx,eax  ;  [23:2]
-            _end_read_932:
+            _end_read_944:
             sub edx,2  ;  [71:29]
 ;           name+1*b      [71:31]
             mov ecx,name  ;  [71:31]
@@ -91,13 +100,13 @@ _start:
             mov ebx,1  ;  [12:2]
             mov eax,4  ;  [13:2]
             int 0x80  ;  [14:2]
-        _end_print_926:
-      jmp _loop_918
-    _end_loop_918:  ; [70:2]
+        _end_print_938:
+      jmp _loop_930
+    _end_loop_930:  ; [70:2]
 ;   exit()  [73:2]
         mov eax,1  ;  [27:2]
         int 0x80  ;  [28:2]
-    _end_exit_968:
+    _end_exit_980:
 
 ;           max regs in use: 3
 ;         max frames in use: 3

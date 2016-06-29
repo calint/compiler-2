@@ -60,7 +60,7 @@ func main{
 	var b=2
 	var c=3
 	var d=4
-	a=((b+c)*d)+c;
+	a=(((b+c)*d+c*(a+b)));
 	a=b;
 	a=2;
 	a=name.len;
