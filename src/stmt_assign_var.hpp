@@ -17,7 +17,7 @@ class stmt_assign_var final:public statement{public:
 
 	inline stmt_assign_var(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk},
-		oplist_{expr_ops_list{*this,t.next_whitespace_token(),t,'=',3,false,false,create_statement_from_tokenizer(*this,t)}}
+		oplist_{expr_ops_list{*this,t.next_whitespace_token(),t,'=',3}}
 	{}
 
 
@@ -35,7 +35,7 @@ class stmt_assign_var final:public statement{public:
 		os<<endl;
 
 		if(!oplist_.is_expression()){
-			oplist_.compile(tc,os,indent_level,tok().name());
+			oplist_.compile(tc,os,indent_level,identifier());
 			return;
 		}
 

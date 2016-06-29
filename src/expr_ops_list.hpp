@@ -27,6 +27,7 @@ class expr_ops_list:public expression{public:
 	inline expr_ops_list(const statement&parent,const token&tk,tokenizer&t,const char list_append_op='=',size_t presedence=3,bool inargs=false,bool enclosed=false,unique_ptr<statement>first_expression=unique_ptr<statement>(),char first_op=0):
 		expression{parent,tk},
 		enclosed_{enclosed},
+		inargs_{inargs},
 		presedence_{presedence},
 		list_append_op_{list_append_op}
 	{
@@ -34,7 +35,12 @@ class expr_ops_list:public expression{public:
 		if(first_expression){// entry list
 			expressions_.push_back(move(first_expression));
 		}else{
-			expressions_.push_back(create_statement_from_tokenizer(*this,t));
+			if(t.is_next_char('(')){
+//				expr_ops_list a(*this,t,'=',presedence,true,unique_ptr<statement>());
+				expressions_.push_back(make_unique<expr_ops_list>(*this,t.next_whitespace_token(),t,'=',presedence,inargs,true));
+			}else{
+				expressions_.push_back(create_statement_from_tokenizer(*this,t));
+			}
 		}
 //		if(first_op){
 //			ops_.push_back(first_op);
@@ -272,7 +278,8 @@ class expr_ops_list:public expression{public:
 	}
 
 
-	size_t enclosed_{0}; // ie   =(1+2)   vs  =1+2
+	bool enclosed_{false}; // ie   =(1+2)   vs  =1+2
+	bool inargs_{false}; // ie   =func(1+2)
 	size_t presedence_{0};
 	char list_append_op_{0};
 	vector<unique_ptr<statement>>expressions_;
