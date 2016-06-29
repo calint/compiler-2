@@ -24,7 +24,7 @@
 
 class expr_ops_list:public expression{public:
 
-	inline expr_ops_list(const statement&parent,tokenizer&t,const char list_append_op,size_t presedence,bool enclosed,unique_ptr<statement>first_expression):
+	inline expr_ops_list(const statement&parent,tokenizer&t,const char list_append_op,size_t presedence,bool enclosed,unique_ptr<statement>first_expression,char first_op):
 		expression{parent,t.next_whitespace_token()},
 		enclosed_{enclosed},
 		presedence_{presedence},
@@ -34,12 +34,14 @@ class expr_ops_list:public expression{public:
 		if(first_expression){// entry list
 			expressions_.push_back(move(first_expression));
 		}
-
+//		if(first_op){
+//			ops_.push_back(first_op);
+//		}
 
 		while(true){// +a  +3
 			if(t.is_next_char('(')){
 //				expr_ops_list a(*this,t,'=',presedence,true,unique_ptr<statement>());
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,'=',presedence,true,unique_ptr<statement>()));
+				expressions_.push_back(make_unique<expr_ops_list>(*this,t,'=',presedence,true,unique_ptr<statement>(),0));
 				continue;
 			}
 
@@ -47,29 +49,36 @@ class expr_ops_list:public expression{public:
 				break;
 			}
 
-			if(t.is_next_char('+')){
+			if(t.is_peek_char('+')){
 				ops_.push_back('+');
 			}else
-			if(t.is_next_char('-')){
+			if(t.is_peek_char('-')){
 				ops_.push_back('-');
 			}else
-			if(t.is_next_char('*')){
+			if(t.is_peek_char('*')){
 				ops_.push_back('*');
 			}else
 				throw compiler_error(*expressions_.back(),"unknown operator",to_string(t.peek_char()));
 
-			char next_op=ops_.back();
-			const size_t next_presedence=_presedence_for_op(next_op);
+			const size_t next_presedence=_presedence_for_op(t.peek_char());
 			if(next_presedence>presedence_){
 				presedence_=next_presedence;
-				char listop=list_append_op;
 				if(!ops_.empty()){
-					listop=ops_.back();
+					char first_op=ops_.back();
 					ops_.pop_back();
+					char list_op=ops_.back();
+//					ops_.pop_back();
 					unique_ptr<statement>prev=move(expressions_.back());
 					expressions_.erase(expressions_.end());
-					expressions_.push_back(make_unique<expr_ops_list>(*this,t,listop,presedence_,enclosed_,move(prev)));
+					expressions_.push_back(make_unique<expr_ops_list>(*this,t,list_op,presedence_,enclosed_,move(prev),first_op));
 				}
+			}else{
+				presedence_=next_presedence;
+				t.next_char();// read the peek operator
+			}
+
+			if(t.is_peek_char(';')){
+				break;
 			}
 
 			if(t.is_next_char(')')){
@@ -119,26 +128,24 @@ class expr_ops_list:public expression{public:
 		if(expressions_.empty())
 			return;
 
+		statement*st=expressions_[0].get();
 		string dest_resolved=tc.resolve_ident_to_nasm(*this,dest);
-		if(list_append_op_=='='){
-			statement*st=expressions_[0].get();
-			if(st->is_expression()){
-				_asm_op(tc,os,indent_level,st,'=',dest,true);
-			}else{
-//				const string&src_ident=tc.resolve_ident_to_nasm(*st);
-				_asm("mov",*st,tc,os,indent_level,dest,st->tok().name());
-			}
-
-		}else{
-			auto st=expressions_[0].get();
-			_asm_op(tc,os,indent_level,st,list_append_op_,dest_resolved,true);
-		}
+		_asm_op(tc,os,indent_level,st,'=',dest_resolved,true);
 
 		auto len=ops_.size();
 		for(size_t i{0};i<len;i++){
 			auto op=ops_[i];
 			auto st=expressions_[i+1].get();
+
 			_asm_op(tc,os,indent_level,st,op,dest_resolved,false);
+
+//			if(st->is_expression()){
+//			}else{
+//				const string&src_resolved=tc.resolve_ident_to_nasm(*st);
+//				_asm("mov",*st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(*(expressions_[i].get())));
+//			}
+//
+//			_asm_op(tc,os,indent_level,st,op,dest_resolved,false);
 		}
 
 	}
@@ -168,7 +175,7 @@ class expr_ops_list:public expression{public:
 			if(st->is_expression()){
 				auto r=tc.alloc_scratch_register(st->tok());
 				st->compile(tc,os,indent_level+1,r);
-				_asm("add",*st,tc,os,indent_level,   dest_resolved,r);
+				_asm("add",*st,tc,os,indent_level+1,   dest_resolved,r);
 				tc.free_scratch_reg(r);
 				return;
 			}
@@ -179,7 +186,7 @@ class expr_ops_list:public expression{public:
 			if(st->is_expression()){
 				auto r=tc.alloc_scratch_register(*st);
 				st->compile(tc,os,indent_level+1,r);
-				_asm("sub",*st,tc,os,indent_level,    dest_resolved,r);
+				_asm("sub",*st,tc,os,indent_level+1,    dest_resolved,r);
 				tc.free_scratch_reg(r);
 				return;
 			}
@@ -190,7 +197,7 @@ class expr_ops_list:public expression{public:
 			if(st->is_expression()){
 				auto r=tc.alloc_scratch_register(*st);
 				st->compile(tc,os,indent_level+1,r);
-				_asm("imul",*st,tc,os,indent_level,dest_resolved,r);
+				_asm("imul",*st,tc,os,indent_level+1,dest_resolved,r);
 				tc.free_scratch_reg(r);
 				return;
 			}
@@ -201,7 +208,7 @@ class expr_ops_list:public expression{public:
 
 			return;
 		}
-		if(list_append_op_=='='){
+		if(op=='='){
 			if(st->is_expression()){
 				st->compile(tc,os,indent_level+1,dest_resolved);
 			}else{

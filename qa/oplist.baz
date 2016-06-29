@@ -1,8 +1,11 @@
 var a=1;
 var b=2;
+var c=3;
+
 a=1;
 a=b;
 a=b+1;
 a=a+b+c+1;
 a=read(name.len,name);
 a=read(name.len,name)+b+2;
+a=b*2+c;
