@@ -41,11 +41,18 @@ class expr_ops_list:public expression{public:
 		while(true){// +a  +3
 			if(t.is_next_char('(')){
 //				expr_ops_list a(*this,t,'=',presedence,true,unique_ptr<statement>());
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,'=',presedence,true,unique_ptr<statement>(),0));
+				unique_ptr<statement>nxtstmt=create_statement_from_tokenizer(*this,t);
+				expressions_.push_back(make_unique<expr_ops_list>(*this,t,'=',presedence,true,move(nxtstmt),0));
 				continue;
 			}
 
 			if(t.is_peek_char(';')){
+				break;
+			}
+
+			if(t.is_next_char(')')){
+				if(not enclosed_)
+					throw compiler_error(*expressions_.back(),"unexpected ')'");
 				break;
 			}
 
@@ -100,8 +107,8 @@ class expr_ops_list:public expression{public:
 
 	inline void source_to(ostream&os)const override{
 		expression::source_to(os);
-		if(list_append_op_=='=')
-			os<<list_append_op_;
+//		if(list_append_op_=='=')
+//			os<<list_append_op_;
 		if(enclosed_)
 			os<<"(";
 		if(expressions_.size()>0){
@@ -139,13 +146,6 @@ class expr_ops_list:public expression{public:
 
 			_asm_op(tc,os,indent_level,st,op,dest_resolved,false);
 
-//			if(st->is_expression()){
-//			}else{
-//				const string&src_resolved=tc.resolve_ident_to_nasm(*st);
-//				_asm("mov",*st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(*(expressions_[i].get())));
-//			}
-//
-//			_asm_op(tc,os,indent_level,st,op,dest_resolved,false);
 		}
 
 	}

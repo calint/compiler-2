@@ -23,6 +23,7 @@ class stmt_assign_var final:public statement{public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
+		os<<"=";
 		oplist_.source_to(os);
 		os<<";";
 	}
@@ -44,7 +45,7 @@ class stmt_assign_var final:public statement{public:
 
 		const string&resolv=tc.resolve_ident_to_nasm(*this,tok().name());
 
-		expr_ops_list::_asm("mov",*this,tc,os,indent_level,resolv,reg);
+		expr_ops_list::_asm("mov",*this,tc,os,indent_level+1,resolv,reg);
 
 		tc.free_scratch_reg(reg);
 	}

@@ -9,3 +9,5 @@ a=a+b+c+1;
 a=read(name.len,name);
 a=read(name.len,name)+b+2;
 a=b*2+c;
+a=c+b*2;
+a=c+b*2+c;
