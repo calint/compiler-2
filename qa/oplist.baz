@@ -11,3 +11,6 @@ a=read(name.len,name)+b+2;
 a=b*2+c;
 a=c+b*2;
 a=c+b*2+c;
+a=b*(c+1);
+a=c+(a+1)*(b+2);
+a=c-(a+1)*(b+2);
