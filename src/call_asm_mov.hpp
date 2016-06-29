@@ -18,8 +18,8 @@ class call_asm_mov final:public call_asm{public:
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{// mov(eax 1)
-		const string&ra=tc.resolve_ident_to_nasm(arg(0),arg(0).tok().name());
-		const string&rb=tc.resolve_ident_to_nasm(arg(1),arg(1).tok().name());
+		const string&ra=tc.resolve_ident_to_nasm(arg(0),arg(0).identifier());
+		const string&rb=tc.resolve_ident_to_nasm(arg(1),arg(1).identifier());
 
 		if(ra==rb)
 			return;

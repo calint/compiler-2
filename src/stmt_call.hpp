@@ -15,6 +15,7 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
+#include"expr_ops_list.hpp"
 
 class stmt_call:public expression{public:
 
@@ -27,7 +28,9 @@ class stmt_call:public expression{public:
 		}
 		while(true){
 			if(t.is_next_char(')'))break;
-			args_.push_back(create_statement_from_tokenizer(*this,t));
+//			expr_ops_list(*this,t.next_whitespace_token(),t,'=',3,false,create_statement_from_tokenizer(*this,t),0);
+			auto arg=make_unique<expr_ops_list>(*this,t.next_whitespace_token(),t,'=',3,false,create_statement_from_tokenizer(*this,t),0,true);
+			args_.push_back(move(arg));
 			if(t.is_next_char(')'))break;
 			if(!t.is_next_char(','))throw compiler_error(*args_.back(),"expected ',' after argument at ",tok().name_copy());
 		}
@@ -56,7 +59,7 @@ class stmt_call:public expression{public:
 		const size_t n=args_.size();
 		const size_t nn=n-1;
 		for(size_t i=0;i<n;i++){
-			os<<args_[i].get()->tok().name();
+			os<<args_[i].get()->identifier();
 			if(i<nn)os<<" ";
 		}
 		os<<")";
@@ -99,7 +102,7 @@ class stmt_call:public expression{public:
 				aliases_to_add.push_back(make_tuple(param.name(),reg));
 				continue;
 			}
-			aliases_to_add.push_back(make_tuple(param.name(),a->tok().name()));
+			aliases_to_add.push_back(make_tuple(param.name(),a->identifier()));
 		}
 
 		tc.push_func(nm);

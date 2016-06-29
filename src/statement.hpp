@@ -58,6 +58,10 @@ class statement{public:
 
 	inline virtual bool is_expression()const{return false;}
 
+	inline virtual bool is_ops_list()const{return false;}
+
+	inline virtual const string&identifier()const{return tok().name();}
+
 	inline virtual bool is_empty()const{return token_.is_blank();}
 
 	inline static void indent(ostream&os,size_t indent_level,bool comment=false){os<<(comment?"; ":"  ");for(size_t i=0;i<indent_level;i++)os<<"  ";}

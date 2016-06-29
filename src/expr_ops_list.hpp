@@ -24,8 +24,8 @@
 
 class expr_ops_list:public expression{public:
 
-	inline expr_ops_list(const statement&parent,tokenizer&t,const char list_append_op,size_t presedence,bool enclosed,unique_ptr<statement>first_expression,char first_op):
-		expression{parent,t.next_whitespace_token()},
+	inline expr_ops_list(const statement&parent,const token&tk,tokenizer&t,const char list_append_op='=',size_t presedence=3,bool enclosed=false,unique_ptr<statement>first_expression=unique_ptr<statement>(),char first_op=0,bool inargs=false):
+		expression{parent,tk},
 		enclosed_{enclosed},
 		presedence_{presedence},
 		list_append_op_{list_append_op}
@@ -33,6 +33,8 @@ class expr_ops_list:public expression{public:
 
 		if(first_expression){// entry list
 			expressions_.push_back(move(first_expression));
+		}else{
+			expressions_.push_back(create_statement_from_tokenizer(*this,t));
 		}
 //		if(first_op){
 //			ops_.push_back(first_op);
@@ -41,12 +43,18 @@ class expr_ops_list:public expression{public:
 		while(true){// +a  +3
 			if(t.is_next_char('(')){
 //				expr_ops_list a(*this,t,'=',presedence,true,unique_ptr<statement>());
-				unique_ptr<statement>nxtstmt=create_statement_from_tokenizer(*this,t);
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,'=',presedence,true,move(nxtstmt),0));
+				expressions_.push_back(make_unique<expr_ops_list>(*this,t.next_whitespace_token(),t,'=',presedence,true));
 				continue;
 			}
 
 			if(t.is_peek_char(';')){
+				break;
+			}
+			if(inargs and t.is_peek_char(',')){
+				break;
+			}
+
+			if(inargs and t.is_peek_char(')')){
 				break;
 			}
 
@@ -65,6 +73,12 @@ class expr_ops_list:public expression{public:
 			if(t.is_peek_char('*')){
 				ops_.push_back('*');
 			}else
+			if(t.is_peek_char('/')){
+				ops_.push_back('/');
+			}else
+			if(t.is_peek_char('%')){
+				ops_.push_back('%');
+			}else
 				throw compiler_error(*expressions_.back(),"unknown operator",to_string(t.peek_char()));
 
 			const size_t next_presedence=_presedence_for_op(t.peek_char());
@@ -77,7 +91,7 @@ class expr_ops_list:public expression{public:
 //					ops_.pop_back();
 					unique_ptr<statement>prev=move(expressions_.back());
 					expressions_.erase(expressions_.end());
-					expressions_.push_back(make_unique<expr_ops_list>(*this,t,list_op,presedence_,enclosed_,move(prev),first_op));
+					expressions_.push_back(make_unique<expr_ops_list>(*this,t.next_whitespace_token(),t,list_op,presedence_,enclosed_,move(prev),first_op));
 				}
 			}else{
 				presedence_=next_presedence;
@@ -85,6 +99,9 @@ class expr_ops_list:public expression{public:
 			}
 
 			if(t.is_peek_char(';')){
+				break;
+			}
+			if(t.is_peek_char(',')){
 				break;
 			}
 
@@ -137,28 +154,39 @@ class expr_ops_list:public expression{public:
 
 		statement*st=expressions_[0].get();
 		string dest_resolved=tc.resolve_ident_to_nasm(*this,dest);
-		_asm_op(tc,os,indent_level,st,'=',dest_resolved,true);
+		_asm_op(tc,os,indent_level,st,'=',dest,dest_resolved,true);
 
 		auto len=ops_.size();
 		for(size_t i{0};i<len;i++){
 			auto op=ops_[i];
 			auto st=expressions_[i+1].get();
 
-			_asm_op(tc,os,indent_level,st,op,dest_resolved,false);
+			_asm_op(tc,os,indent_level,st,op,dest,dest_resolved,false);
 
 		}
 
 	}
 
 	inline bool is_expression()const override{
-		if(expressions_.empty())
-			return false;
-
-		if(ops_.empty())
-			return false;
+		if(expressions_.size()==1){
+			return expressions_[0]->is_expression();
+		}
 
 		return true;
 	}
+
+
+	inline bool is_ops_list()const override{
+		return true;
+	}
+
+	inline const string&identifier()const override{
+		if(expressions_[0]->is_ops_list())
+			return expressions_[0]->identifier();
+		const statement*s=expressions_[0].get();
+		return s->identifier();
+	}
+
 
 	inline static size_t _presedence_for_op(const char ch){
 		if(ch=='+'||ch=='-')
@@ -170,7 +198,7 @@ class expr_ops_list:public expression{public:
 //		throw string(to_string(__LINE__)+" err");
 	}
 
-	inline void _asm_op(toc&tc,ostream&os,size_t indent_level,const statement*st,const char op,const string&dest_resolved,bool first_in_list)const{
+	inline void _asm_op(toc&tc,ostream&os,size_t indent_level,const statement*st,const char op,const string&dest,const string&dest_resolved,bool first_in_list)const{
 		if(op=='+'){// order1op
 			if(st->is_expression()){
 				auto r=tc.alloc_scratch_register(st->tok());
@@ -209,10 +237,11 @@ class expr_ops_list:public expression{public:
 			return;
 		}
 		if(op=='='){
+//			st->compile(tc,os,indent_level+1,dest);
 			if(st->is_expression()){
-				st->compile(tc,os,indent_level+1,dest_resolved);
+				st->compile(tc,os,indent_level+1,dest);
 			}else{
-				_asm("mov",*st,tc,os,indent_level+1,dest_resolved,tc.resolve_ident_to_nasm(*st));
+				_asm("mov",*st,tc,os,indent_level+1,dest_resolved,tc.resolve_ident_to_nasm(*st,st->identifier()));
 			}
 			return;
 		}

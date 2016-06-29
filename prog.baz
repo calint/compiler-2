@@ -59,10 +59,11 @@ func main{
 	var a=1
 	var b=2
 	var c=3
-	a=a-(b-c);
+	var d=4
+	a=b*c+d-5;
 	print(prompt.len,prompt)
 	loop{
-		print(read(name.len,name),name)
+		print(read(name.len,name)-2,name)
 	}
 	exit
 }
