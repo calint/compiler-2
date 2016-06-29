@@ -123,10 +123,10 @@ class expr_ops_list:public expression{public:
 		if(list_append_op_=='='){
 			statement*st=expressions_[0].get();
 			if(st->is_expression()){
-				_asm_op(tc,os,indent_level,st,'=',dest_resolved,true);
+				_asm_op(tc,os,indent_level,st,'=',dest,true);
 			}else{
-				const string&src_ident=tc.resolve_ident_to_nasm(*st);
-				_asm("mov",*st,tc,os,indent_level,dest_resolved,src_ident);
+//				const string&src_ident=tc.resolve_ident_to_nasm(*st);
+				_asm("mov",*st,tc,os,indent_level,dest,st->tok().name());
 			}
 
 		}else{

@@ -39,7 +39,8 @@ class stmt_block final:public statement{public:
 
 			if(tk.is_name("var")){statements_.push_back(make_unique<stmt_def_var>(*this,move(tk),t));
 			}else if(t.is_next_char('=')){statements_.push_back(make_unique<stmt_assign_var>(*this,move(tk),t));
-			}else if(tk.is_name("#")){statements_.push_back(make_unique<stmt_comment>(*this,move(tk),t));
+			}else if(tk.is_name("#")){
+				statements_.push_back(make_unique<stmt_comment>(*this,move(tk),t));
 			}else if(tk.is_name("")){statements_.push_back(make_unique<statement>(*this,move(tk)));
 			}else{statements_.push_back(create_call_statement_from_tokenizer(*this,move(tk),t));}
 
