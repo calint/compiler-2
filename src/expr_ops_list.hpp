@@ -24,49 +24,29 @@
 
 class expr_ops_list:public expression{public:
 
-	inline expr_ops_list(const statement&parent,tokenizer&t,const char op,unique_ptr<statement>first_expression=unique_ptr<statement>()):
+	inline expr_ops_list(const statement&parent,tokenizer&t,const char list_append_op,size_t presedence,bool enclosed,unique_ptr<statement>first_expression):
 		expression{parent,t.next_whitespace_token()},
-		presedence_(_presedence_for_op(op)),
-		op_{op}
+		enclosed_{enclosed},
+		presedence_{presedence},
+		list_append_op_{list_append_op}
 	{
-		if(!first_expression.get()){
-			if(t.is_next_char('(')){
-				enclosed_=true;
-			}
 
-			unique_ptr<statement>stmt=create_statement_from_tokenizer(*this,t);
-			if(stmt->tok().is_blank())
-				return;
-
-			expressions_.push_back(move(stmt));
-		}else{
+		if(first_expression){// entry list
 			expressions_.push_back(move(first_expression));
 		}
 
 
 		while(true){// +a  +3
-			if(t.is_peek_char('(')){
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,ops_.back()));
+			if(t.is_next_char('(')){
+//				expr_ops_list a(*this,t,'=',presedence,true,unique_ptr<statement>());
+				expressions_.push_back(make_unique<expr_ops_list>(*this,t,'=',presedence,true,unique_ptr<statement>()));
 				continue;
 			}
 
-			if(t.is_next_char(')')){
-				if(not enclosed_)
-					throw compiler_error(*expressions_.back(),"unexpected ')'");
-				break;
-			}
-			const char next_presedence=_presedence_for_op(t.peek_char());
-			if(next_presedence>presedence_){
-				unique_ptr<statement>prev=move(expressions_.back());
-				expressions_.erase(expressions_.end());
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,t.peek_char(),move(prev)));
-//				expressions_.
-			}else if(next_presedence<presedence_){
-				break;
-			}
 			if(t.is_peek_char(';')){
 				break;
 			}
+
 			if(t.is_next_char('+')){
 				ops_.push_back('+');
 			}else
@@ -78,6 +58,29 @@ class expr_ops_list:public expression{public:
 			}else
 				throw compiler_error(*expressions_.back(),"unknown operator",to_string(t.peek_char()));
 
+			char next_op=ops_.back();
+			const size_t next_presedence=_presedence_for_op(next_op);
+			if(next_presedence>presedence_){
+				presedence_=next_presedence;
+				char listop=list_append_op;
+				if(!ops_.empty()){
+					listop=ops_.back();
+					ops_.pop_back();
+					unique_ptr<statement>prev=move(expressions_.back());
+					expressions_.erase(expressions_.end());
+					expressions_.push_back(make_unique<expr_ops_list>(*this,t,listop,presedence_,enclosed_,move(prev)));
+				}
+			}
+
+			if(t.is_next_char(')')){
+				if(not enclosed_)
+					throw compiler_error(*expressions_.back(),"unexpected ')'");
+				break;
+			}
+
+			if(t.is_peek_char('('))
+				continue;
+
 			unique_ptr<statement>stmt=create_statement_from_tokenizer(*this,t);
 			if(stmt->tok().is_blank())
 				break;
@@ -87,9 +90,9 @@ class expr_ops_list:public expression{public:
 	}
 
 	inline void source_to(ostream&os)const override{
-		statement::source_to(os);
-		if(op_=='=')
-			os<<op_;
+		expression::source_to(os);
+		if(list_append_op_=='=')
+			os<<list_append_op_;
 		if(enclosed_)
 			os<<"(";
 		if(expressions_.size()>0){
@@ -117,12 +120,18 @@ class expr_ops_list:public expression{public:
 			return;
 
 		string dest_resolved=tc.resolve_ident_to_nasm(*this,dest);
-		if(op_=='='){
-			auto st=expressions_[0].get();
-			_asm_op(tc,os,indent_level,st,'=',dest_resolved,true);
+		if(list_append_op_=='='){
+			statement*st=expressions_[0].get();
+			if(st->is_expression()){
+				_asm_op(tc,os,indent_level,st,'=',dest_resolved,true);
+			}else{
+				const string&src_ident=tc.resolve_ident_to_nasm(*st);
+				_asm("mov",*st,tc,os,indent_level,dest_resolved,src_ident);
+			}
+
 		}else{
 			auto st=expressions_[0].get();
-			_asm_op(tc,os,indent_level,st,op_,dest_resolved,true);
+			_asm_op(tc,os,indent_level,st,list_append_op_,dest_resolved,true);
 		}
 
 		auto len=ops_.size();
@@ -134,7 +143,17 @@ class expr_ops_list:public expression{public:
 
 	}
 
-	inline static char _presedence_for_op(const char ch){
+	inline bool is_expression()const override{
+		if(expressions_.empty())
+			return false;
+
+		if(ops_.empty())
+			return false;
+
+		return true;
+	}
+
+	inline static size_t _presedence_for_op(const char ch){
 		if(ch=='+'||ch=='-')
 			return 1;
 		if(ch=='*'||ch=='/')
@@ -182,7 +201,7 @@ class expr_ops_list:public expression{public:
 
 			return;
 		}
-		if(op_=='='){
+		if(list_append_op_=='='){
 			if(st->is_expression()){
 				st->compile(tc,os,indent_level+1,dest_resolved);
 			}else{
@@ -218,10 +237,10 @@ class expr_ops_list:public expression{public:
 	}
 
 
-private:
-	bool enclosed_{false}; // ie   =(1+2)   vs  =1+2
-	char presedence_{0};
-	char op_{0};
+	size_t enclosed_{0}; // ie   =(1+2)   vs  =1+2
+	size_t presedence_{0};
+	char list_append_op_{0};
 	vector<unique_ptr<statement>>expressions_;
 	vector<char>ops_;
+private:
 };

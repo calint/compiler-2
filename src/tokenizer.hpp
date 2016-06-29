@@ -86,12 +86,6 @@ class tokenizer final{public:
 	}
 
 
-private:
-	string source;
-	const char*ptr;
-	size_t nchar_bm{0};
-	size_t nchar{0};
-	char last_char{-1};
 	inline char next_char(){
 		assert(last_char);
 		nchar++;
@@ -99,6 +93,14 @@ private:
 		ptr++;
 		return last_char;
 	}
+
+private:
+	string source;
+	const char*ptr;
+	size_t nchar_bm{0};
+	size_t nchar{0};
+	char last_char{-1};
+
 	inline string next_whitespace(){
 		if(is_eos())return"";
 		nchar_bm=nchar;
@@ -112,6 +114,7 @@ private:
 		const size_t len=nchar-nchar_bm;
 		return string{ptr-len,len};
 	}
+
 	inline string next_token_str(){
 		if(is_eos())return"";
 		nchar_bm=nchar;

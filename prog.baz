@@ -1,4 +1,3 @@
-
 field prompt{"  hello    enter name: "}
 field   name {............................................................}
 
@@ -23,8 +22,6 @@ func read(len:const,ptr:const):int{
 	syscall
 	mov(int,eax)
 }
-
-func field.print() print($len,$ptr)
 
 func exit{
 	mov(eax,1)
@@ -59,10 +56,10 @@ func plus(a,b):int{
 }
 
 func main{
-	var b=2
 	var a=1
+	var b=2
 	var c=3
-	a=a+b+c*2;
+	a=1;
 	print(prompt.len,prompt)
 	loop{
 		print(read(name.len,name),name)

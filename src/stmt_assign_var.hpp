@@ -17,25 +17,30 @@ class stmt_assign_var final:public statement{public:
 
 	inline stmt_assign_var(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk},
-		ex_{expr_ops_list{*this,t,'='}}
+		oplist_{expr_ops_list{*this,t,'=',3,false,create_statement_from_tokenizer(*this,t)}}
 	{}
 
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		ex_.source_to(os);
+		oplist_.source_to(os);
 		os<<";";
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);
-		os<<tok().name()<<"="<<ex_.tok().name()<<"    ";
+		os<<tok().name()<<"="<<oplist_.tok().name()<<"    ";
 		tc.source_location_to_stream(os,tok());
 		os<<endl;
 
+		if(!oplist_.is_expression()){
+			oplist_.compile(tc,os,indent_level,tok().name());
+			return;
+		}
+
 		const string&reg=tc.alloc_scratch_register(tok()); //? overrallocates in simplests cases ie a=1
 
-		ex_.compile(tc,os,indent_level,reg);
+		oplist_.compile(tc,os,indent_level,reg);
 
 		const string&resolv=tc.resolve_ident_to_nasm(*this,tok().name());
 
@@ -45,5 +50,5 @@ class stmt_assign_var final:public statement{public:
 	}
 
 private:
-	expr_ops_list ex_;
+	expr_ops_list oplist_;
 };
