@@ -14,30 +14,21 @@
 #include "tokenizer.hpp"
 
 
-
-//  var a=1
-//  var b=2
-//  var c=a+b+b+c*(1+a*(2+b)/a)*(1+2)-4-a*sqrt(2)
-//
-
-
-
 class expr_ops_list:public expression{public:
 
-	inline expr_ops_list(const statement&parent,tokenizer&t,bool inargs=false,bool enclosed=false,const char list_append_op='=',size_t presedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>(),char first_op=0):
+	inline expr_ops_list(const statement&parent,tokenizer&t,bool in_args=false,bool enclosed=false,const char list_append_op='=',size_t first_op_presedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>()):
 		expression{parent,t.next_whitespace_token()},
 		enclosed_{enclosed},
-		inargs_{inargs},
-		presedence_{presedence},
+		in_args_{in_args},
+		presedence_{first_op_presedence},
 		list_append_op_{list_append_op}
 	{
 
-		if(first_expression){// sub-expression
+		if(first_expression){
 			expressions_.push_back(move(first_expression));
 		}else{
 			if(t.is_next_char('(')){
-//				expr_ops_list a(*this,t,'=',presedence,true,unique_ptr<statement>());
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,inargs,true));
+				expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,true));
 			}else{
 				expressions_.push_back(create_statement_from_tokenizer(*this,t));
 			}
@@ -48,7 +39,7 @@ class expr_ops_list:public expression{public:
 				break;
 			}
 
-			if(inargs and (t.is_peek_char(',') or t.is_peek_char(')'))){
+			if(in_args and (t.is_peek_char(',') or t.is_peek_char(')'))){
 				break;
 			}
 
@@ -82,10 +73,10 @@ class expr_ops_list:public expression{public:
 				if(!ops_.empty()){
 					const size_t first_op_presedence=_presedence_for_op(ops_.back());
 					ops_.pop_back();
-					char list_op=ops_.back();
+					const char list_op=ops_.back();
 					unique_ptr<statement>prev=move(expressions_.back());
 					expressions_.erase(expressions_.end());
-					expressions_.push_back(make_unique<expr_ops_list>(*this,t,inargs,false,list_op,first_op_presedence,move(prev)));
+					expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,false,list_op,first_op_presedence,move(prev)));
 					continue;
 				}
 			}else{
@@ -94,7 +85,7 @@ class expr_ops_list:public expression{public:
 			}
 
 			if(t.is_next_char('(')){
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,inargs,true));
+				expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,true));
 				continue;
 			}
 
@@ -108,8 +99,6 @@ class expr_ops_list:public expression{public:
 
 	inline void source_to(ostream&os)const override{
 		expression::source_to(os);
-//		if(list_append_op_=='=')
-//			os<<list_append_op_;
 		if(enclosed_)
 			os<<"(";
 		if(expressions_.size()>0){
@@ -160,26 +149,47 @@ class expr_ops_list:public expression{public:
 	}
 
 
-	inline bool is_ops_list()const override{
-		return true;
-	}
+	inline bool is_ops_list()const override{return true;}
 
 	inline const string&identifier()const override{
 		if(expressions_[0]->is_ops_list())
 			return expressions_[0]->identifier();
-		const statement*s=expressions_[0].get();
-		return s->identifier();
+
+		return expressions_[0]->identifier();
 	}
 
+	inline static void _asm(const string&op,const statement&s,toc&tc,ostream&os,size_t indent_level,const string&ra,const string&rb){
+		if(ra==rb){
+			return;
+		}
 
+		if(!ra.find("dword[") and !rb.find("dword[")){
+			const string&r=tc.alloc_scratch_register(s.tok());
+			indent(os,indent_level,false);
+			os<<"mov "<<r<<","<<rb<<"  ;  ";
+			tc.source_location_to_stream(os,s.tok());
+			os<<endl;
+			indent(os,indent_level,false);
+			os<<op<<" "<<ra<<","<<r<<"  ;  ";
+			tc.source_location_to_stream(os,s.tok());
+			os<<endl;
+			tc.free_scratch_reg(r);
+			return;
+		}
+
+		indent(os,indent_level,false);
+		os<<op<<" "<<ra<<","<<rb<<"  ;  ";
+		tc.source_location_to_stream(os,s.tok());
+		os<<endl;
+	}
+
+private:
 	inline static size_t _presedence_for_op(const char ch){
 		if(ch=='+'||ch=='-')
 			return 1;
 		if(ch=='*'||ch=='/')
 			return 2;
-//		if(ch=='=')
-			return 1;
-//		throw string(to_string(__LINE__)+" err");
+		throw string(to_string(__LINE__)+" err");
 	}
 
 	inline void _asm_op(toc&tc,ostream&os,size_t indent_level,const statement*st,const char op,const string&dest,const string&dest_resolved,bool first_in_list)const{
@@ -221,7 +231,6 @@ class expr_ops_list:public expression{public:
 			return;
 		}
 		if(op=='='){
-//			st->compile(tc,os,indent_level+1,dest);
 			if(st->is_expression()){
 				st->compile(tc,os,indent_level+1,dest);
 			}else{
@@ -231,37 +240,12 @@ class expr_ops_list:public expression{public:
 		}
 	}
 
-	inline static void _asm(const string&op,const statement&s,toc&tc,ostream&os,size_t indent_level,const string&ra,const string&rb){
-		if(ra==rb){
-			return;
-		}
-
-		if(!ra.find("dword[") and !rb.find("dword[")){
-			const string&r=tc.alloc_scratch_register(s.tok());
-			indent(os,indent_level,false);
-			os<<"mov "<<r<<","<<rb<<"  ;  ";
-			tc.source_location_to_stream(os,s.tok());
-			os<<endl;
-			indent(os,indent_level,false);
-			os<<op<<" "<<ra<<","<<r<<"  ;  ";
-			tc.source_location_to_stream(os,s.tok());
-			os<<endl;
-			tc.free_scratch_reg(r);
-			return;
-		}
-
-		indent(os,indent_level,false);
-		os<<op<<" "<<ra<<","<<rb<<"  ;  ";
-		tc.source_location_to_stream(os,s.tok());
-		os<<endl;
-	}
 
 
 	bool enclosed_{false}; // ie   =(1+2)   vs  =1+2
-	bool inargs_{false}; // ie   =func(1+2)
+	bool in_args_{false}; // ie   =func(1+2)
 	size_t presedence_{0};
 	char list_append_op_{0};
 	vector<unique_ptr<statement>>expressions_;
 	vector<char>ops_;
-private:
 };
