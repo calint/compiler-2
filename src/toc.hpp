@@ -227,7 +227,7 @@ class toc final{public:
 		frames_.pop_back();
 	}
 
-	inline void add_var(const string&name,const string&flags){
+	inline void add_var(const string&name,const string&flags=""){
 		frames_.back().add_var(name,stkix_++,flags);
 	}
 	inline const string alloc_scratch_register(const statement&st,const string&reg=""){

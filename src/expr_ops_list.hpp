@@ -65,7 +65,8 @@ class expr_ops_list:public expression{public:
 			if(t.is_peek_char('%')){
 				ops_.push_back('%');
 			}else
-				throw compiler_error(*expressions_.back(),"unknown operator",to_string(t.peek_char()));
+//				throw compiler_error(*expressions_.back(),"unknown operator",to_string(t.peek_char()));
+				break;
 
 			const size_t next_presedence=_presedence_for_op(t.peek_char());
 			if(next_presedence>presedence_){
@@ -98,9 +99,11 @@ class expr_ops_list:public expression{public:
 	}
 
 	inline void source_to(ostream&os)const override{
-		expression::source_to(os);
 		if(enclosed_)
 			os<<"(";
+
+		expression::source_to(os);//?
+
 		if(expressions_.size()>0){
 			expressions_[0]->source_to(os);
 			const size_t len=expressions_.size();
