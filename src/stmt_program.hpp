@@ -40,7 +40,7 @@ class stmt_program final:public statement{public:
 			if(tk.is_name("table")){
 				statements.push_back(make_unique<stmt_def_table>(*this,tk,t));
 			}else
-			if(t.is_peek_char('#')){
+			if(tk.is_name("#")){
 				statements.push_back(make_unique<stmt_comment>(*this,tk,t));
 			}else
 			if(tk.is_name("")){// whitespace

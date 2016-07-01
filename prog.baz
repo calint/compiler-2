@@ -55,7 +55,10 @@ func plus(a,b):int{
 	add(int,b)
 }
 
+# comment
+
 func main{
+	# comment
 	var a=1;
 	var b=2;
 	var c=3;

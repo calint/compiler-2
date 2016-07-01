@@ -29,8 +29,11 @@ class stmt_block final:public statement{public:
 			if(t.is_next_char(';'))
 				continue;
 
-			if(not is_one_statement_ and t.is_next_char('}'))
-				break;
+			if(t.is_next_char('}')){
+				if(not is_one_statement_)
+					break;
+				throw compiler_error(*this,"unexpected '}' in single statement block");
+			}
 
 			token tk=t.next_token();
 
