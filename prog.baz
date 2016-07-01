@@ -60,12 +60,7 @@ func main{
 	var b=2
 	var c=3
 	var d=4
-	a=(((b+c)*d+c*(a+b)));
-	a=b;
-	a=2;
-	a=name.len;
-	a=name.len-1;
-	a=b*c+d-5;
+	a=((b+c)*d+c*(a+b))*2;
 	print(prompt.len,prompt)
 	loop{
 		print(read(name.len,name)-2,name+1*b)

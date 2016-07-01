@@ -17,7 +17,7 @@ class stmt_assign_var final:public statement{public:
 
 	inline stmt_assign_var(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk},
-		oplist_{expr_ops_list{*this,t.next_whitespace_token(),t,'=',3}}
+		oplist_{expr_ops_list{*this,t}}
 	{}
 
 
