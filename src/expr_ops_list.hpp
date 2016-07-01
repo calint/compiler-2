@@ -24,7 +24,7 @@
 
 class expr_ops_list:public expression{public:
 
-	inline expr_ops_list(const statement&parent,tokenizer&t,const char list_append_op='=',size_t presedence=3,bool inargs=false,bool enclosed=false,unique_ptr<statement>first_expression=unique_ptr<statement>(),char first_op=0):
+	inline expr_ops_list(const statement&parent,tokenizer&t,bool inargs=false,bool enclosed=false,const char list_append_op='=',size_t presedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>(),char first_op=0):
 		expression{parent,t.next_whitespace_token()},
 		enclosed_{enclosed},
 		inargs_{inargs},
@@ -37,7 +37,7 @@ class expr_ops_list:public expression{public:
 		}else{
 			if(t.is_next_char('(')){
 //				expr_ops_list a(*this,t,'=',presedence,true,unique_ptr<statement>());
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,'=',3,inargs,true));
+				expressions_.push_back(make_unique<expr_ops_list>(*this,t,inargs,true));
 			}else{
 				expressions_.push_back(create_statement_from_tokenizer(*this,t));
 			}
@@ -80,23 +80,21 @@ class expr_ops_list:public expression{public:
 			if(next_presedence>presedence_){
 				presedence_=next_presedence;
 				if(!ops_.empty()){
-					const char first_op_presedence=_presedence_for_op(ops_.back());
+					const size_t first_op_presedence=_presedence_for_op(ops_.back());
 					ops_.pop_back();
 					char list_op=ops_.back();
-//					ops_.pop_back();
 					unique_ptr<statement>prev=move(expressions_.back());
 					expressions_.erase(expressions_.end());
-					expressions_.push_back(make_unique<expr_ops_list>(*this,t,list_op,first_op_presedence,inargs,false,move(prev)));
+					expressions_.push_back(make_unique<expr_ops_list>(*this,t,inargs,false,list_op,first_op_presedence,move(prev)));
 					continue;
 				}
 			}else{
 				presedence_=next_presedence;
-				t.next_char();// read the peek operator
+				t.next_char();// read the peeked operator
 			}
 
 			if(t.is_next_char('(')){
-//				expr_ops_list a(*this,t,'=',presedence,true,unique_ptr<statement>());
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,'=',3,inargs,true));
+				expressions_.push_back(make_unique<expr_ops_list>(*this,t,inargs,true));
 				continue;
 			}
 
