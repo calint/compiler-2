@@ -41,15 +41,14 @@ class stmt_loop final:public stmt_call{public:
 		tc.pop_loop(name.data());
 	}
 
-	inline void link(toc&tc,ostream&os)const override final{
-		code.link(tc,os);
-	}
-
 	inline void source_to(ostream&os)const override{
 		stmt_call::source_to(os);
 		code.source_to(os);
 	}
 
+//	inline void link(toc&tc,ostream&os)const override final{
+//		code.link(tc,os);
+//	}
 
 private:
 	string name;

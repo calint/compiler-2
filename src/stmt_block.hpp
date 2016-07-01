@@ -52,13 +52,6 @@ class stmt_block final:public statement{public:
 		}
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		for(auto&s:statements_)
-			s->compile(tc,os,indent_level+1);
-	}
-
-	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements_)s->link(tc,os);}
-
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		if(!is_one_statement_)os<<"{";
@@ -66,6 +59,13 @@ class stmt_block final:public statement{public:
 			s->source_to(os);
 		if(!is_one_statement_)os<<"}";
 	}
+
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
+		for(auto&s:statements_)
+			s->compile(tc,os,indent_level+1);
+	}
+
+//	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements_)s->link(tc,os);}
 
 private:
 	bool is_one_statement_{false};

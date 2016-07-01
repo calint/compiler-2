@@ -55,8 +55,6 @@ class stmt_def_table final:public statement{public:
 		}
 	}
 
-	inline bool is_in_data_section()const override{return true;}
-
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		os<<"; --- table "<<ident_.name()<<" ";
 		tc.source_location_to_stream(os,ident_);
@@ -68,6 +66,8 @@ class stmt_def_table final:public statement{public:
 		os<<ident_.name()<<".len equ $-"<<ident_.name()<<"\n\n";
 		tc.add_table(*this,ident_.name(),this);//? in constructor for forward ref
 	}
+
+	inline bool is_in_data_section()const override{return true;}
 
 private:
 	token ident_;

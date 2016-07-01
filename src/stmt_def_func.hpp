@@ -46,23 +46,6 @@ class stmt_def_func final:public statement{public:
 		code_=make_unique<stmt_block>(parent,t);
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		tc.add_func(*this,ident_.name(),this);//? in constructor for forward ref
-		if(is_inline())
-			return;
-
-		throw"?";
-
-		os<<ident_.name()<<":\n";
-		for (size_t i=params_.size();i-->0;)
-			os<<"  pop "<<params_[i]->tok().name()<<endl;
-
-		code_->compile(tc,os,indent_level+1);
-		os<<"  ret\n";
-	}
-
-	inline void link(toc&tc,ostream&os)const override{code_->link(tc,os);}
-
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		ident_.source_to(os);
@@ -85,7 +68,26 @@ class stmt_def_func final:public statement{public:
 				if(i++!=sz)os<<",";
 			}
 		}
-		code_->source_to(os);}
+		code_->source_to(os);
+	}
+
+
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
+		tc.add_func(*this,ident_.name(),this);//? in constructor for forward ref
+		if(is_inline())
+			return;
+
+		throw"?";
+
+		os<<ident_.name()<<":\n";
+		for (size_t i=params_.size();i-->0;)
+			os<<"  pop "<<params_[i]->tok().name()<<endl;
+
+		code_->compile(tc,os,indent_level+1);
+		os<<"  ret\n";
+	}
+
+//	inline void link(toc&tc,ostream&os)const override{code_->link(tc,os);}
 
 	inline bool is_inline()const{return true;}
 

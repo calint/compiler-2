@@ -26,7 +26,15 @@ class stmt_def_field final:public statement{public:
 		}
 	}
 
-	inline bool is_in_data_section()const override{return true;}
+
+	inline void source_to(ostream&os)const override{
+		statement::source_to(os);
+		ident_.source_to(os);
+		os<<"{";
+		for(auto&s:tokens_)
+			s.source_to(os);
+		os<<"}";
+	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		os<<"; -- field "<<ident_.name()<<"  ";
@@ -43,15 +51,8 @@ class stmt_def_field final:public statement{public:
 		tc.add_field(*this,ident_.name(),this);
 	}
 
-	inline void source_to(ostream&os)const override{
-		statement::source_to(os);
-		ident_.source_to(os);
-		os<<"{";
-		for(auto&s:tokens_)
-			s.source_to(os);
-		os<<"}";
-	}
 
+	inline bool is_in_data_section()const override{return true;}
 
 private:
 	token ident_;
