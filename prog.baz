@@ -31,10 +31,10 @@ func exit{
 func main{
 	print(prompt.len,prompt)
 	loop{
-		var len=read(name.len,name);
-		if(len=1)
+#		var len=read(name.len,name);
+		if(read(name.len,name)=1)
 			break
-		print(len,name)
+#		print(len,name)
 	}
 	exit
 }

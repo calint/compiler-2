@@ -19,7 +19,7 @@ class stmt_if final:public statement{public:
 		statement{parent,tk},
 		name{"_if_"+to_string(tk.char_index())},
 		ch1{t.next_char()},
-		bool_expr{*this,t,false,ch1=='('},
+		bool_expr{*this,t,ch1=='('},
 		code{*this,t}
 	{
 //		if(!t.is_next_char('('))

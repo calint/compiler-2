@@ -26,45 +26,35 @@ global _start
 _start:
   mov ebp,stk
   mov esp,stk.end
-;   print(prompt.len prompt)  [61:2]
+;   print(prompt.len prompt)  [32:2]
         mov ecx,prompt  ;  [10:2]
         mov edx,prompt.len  ;  [11:2]
         mov ebx,1  ;  [12:2]
         mov eax,4  ;  [13:2]
         int 0x80  ;  [14:2]
-    _end_print_803:
-    _loop_829:  ; [62:2]
-;       var [63:7]
-;         len=    [63:7]
-;           read(name.len,name)      [63:11]
-;           read(name.len name):len  [63:11]
-                mov esi,name  ;  [18:2]
-                mov edx,name.len  ;  [19:2]
-                xor eax,eax  ;  [20:2]
-                xor edi,edi  ;  [21:2]
-                syscall  ;  [22:2]
-                mov dword[ebp+0],eax  ;  [23:2]
-            _end_read_845:
-;       if [868]
-;         (len=1)      [64:6]
-        cmp dword[ebp+0],1  ;  [1:0]
-        jne _end_if_868
-            jmp _end_loop_829
-        _end_if_868:
-;       print(len name)  [66:3]
-            mov ecx,name  ;  [10:2]
-            mov edx,dword[ebp+0]  ;  [11:2]
-            mov ebx,1  ;  [12:2]
-            mov eax,4  ;  [13:2]
-            int 0x80  ;  [14:2]
-        _end_print_889:
-      jmp _loop_829
-    _end_loop_829:  ; [62:2]
-;   exit()  [68:2]
+    _end_print_510:
+    _loop_536:  ; [33:2]
+;       if [576]
+;         (read(name.len,name)=1)      [35:6]
+;         read(name.len name):edi  [35:6]
+              mov esi,name  ;  [18:2]
+              mov edx,name.len  ;  [19:2]
+              xor eax,eax  ;  [20:2]
+              xor edi,edi  ;  [21:2]
+              syscall  ;  [22:2]
+              mov edi,eax  ;  [23:2]
+          _end_read_579:
+        cmp edi,1  ;  [1:0]
+        jne _end_if_576
+            jmp _end_loop_536
+        _end_if_576:
+      jmp _loop_536
+    _end_loop_536:  ; [33:2]
+;   exit()  [39:2]
         mov eax,1  ;  [27:2]
         int 0x80  ;  [28:2]
-    _end_exit_909:
+    _end_exit_634:
 
-;           max regs in use: 0
+;           max regs in use: 1
 ;         max frames in use: 3
-;          max stack in use: 1
+;          max stack in use: 0

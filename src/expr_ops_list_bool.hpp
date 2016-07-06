@@ -16,10 +16,9 @@
 
 class expr_ops_list_bool final:public expression{public:
 
-	inline expr_ops_list_bool(const statement&parent,tokenizer&t,bool in_args=false,bool enclosed=false,const char list_append_op=' ',size_t first_op_presedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>()):
+	inline expr_ops_list_bool(const statement&parent,tokenizer&t,bool enclosed=true,const char list_append_op=' ',size_t first_op_presedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>()):
 		expression{parent,t.next_whitespace_token()},
 		enclosed_{enclosed},
-		in_args_{in_args},
 		presedence_{first_op_presedence},
 		list_append_op_{list_append_op}
 	{
@@ -28,21 +27,13 @@ class expr_ops_list_bool final:public expression{public:
 			expressions_.push_back(move(first_expression));
 		}else{
 			if(t.is_next_char('(')){
-				expressions_.push_back(make_unique<expr_ops_list_bool>(*this,t,in_args,true));
+				expressions_.push_back(make_unique<expr_ops_list_bool>(*this,t));
 			}else{
 				expressions_.push_back(create_statement_from_tokenizer(*this,t));
 			}
 		}
 
 		while(true){// +a  +3
-			if(t.is_peek_char(';')){
-				break;
-			}
-
-			if(in_args and t.is_peek_char(')')){
-				break;
-			}
-
 			if(t.is_peek_char(')')){
 				if(enclosed_){
 					t.next_char();
@@ -77,7 +68,7 @@ class expr_ops_list_bool final:public expression{public:
 					const char list_op=ops_.back();
 					unique_ptr<statement>prev=move(expressions_.back());
 					expressions_.erase(expressions_.end());
-					expressions_.push_back(make_unique<expr_ops_list_bool>(*this,t,in_args,false,list_op,first_op_presedence,move(prev)));
+					expressions_.push_back(make_unique<expr_ops_list_bool>(*this,t,false,list_op,first_op_presedence,move(prev)));
 					continue;
 				}
 			}else{
@@ -86,7 +77,7 @@ class expr_ops_list_bool final:public expression{public:
 			}
 
 			if(t.is_next_char('(')){
-				expressions_.push_back(make_unique<expr_ops_list_bool>(*this,t,in_args,true));
+				expressions_.push_back(make_unique<expr_ops_list_bool>(*this,t));
 				continue;
 			}
 
@@ -124,27 +115,46 @@ class expr_ops_list_bool final:public expression{public:
 		tc.source_location_to_stream(os,this->tok());
 		os<<endl;
 
-		if(expressions_.empty())
-			return;
-
-		const statement&a=*expressions_[0].get();
-		auto a_resolved=tc.resolve_ident_to_nasm(a);
-		if(not ops_.empty()){
-			const statement&b=*expressions_[1].get();
-			auto b_resolved=tc.resolve_ident_to_nasm(b);
-			if(ops_[0]=='='){// a==b
-//				os<<"cmp "<<a_resolved<<","<<b_resolved<<endl;
-				_resolve("cmp",tc,os,indent_level,a_resolved,b_resolved);
-				indent(os,indent_level,false);
-				os<<"jne "<<dest<<endl;
-			}
-		}
-
+//		if(expressions_.empty())
+//			return;
+//
+//		const statement&a=*expressions_[0].get();
+//		auto a_resolved=tc.resolve_ident_to_nasm(a);
+//		if(not ops_.empty()){
+//			const statement&b=*expressions_[1].get();
+//			auto b_resolved=tc.resolve_ident_to_nasm(b);
+//			if(ops_[0]=='='){// a==b
+////				os<<"cmp "<<a_resolved<<","<<b_resolved<<endl;
+//				_resolve("cmp",tc,os,indent_level,a_resolved,b_resolved);
+//				indent(os,indent_level,false);
+//				os<<"jne "<<dest<<endl;
+//			}
+//		}
+		_resolve("cmp",tc,os,indent_level,*expressions_[0],*expressions_[1]);
+		indent(os,indent_level,false);
+		os<<"jne "<<dest<<endl;
 	}
 
 
 
-	inline void _resolve(const string&op,toc&tc,ostream&os,size_t indent_level,const string&ra,const string&rb)const{
+	inline void _resolve(const string&op,toc&tc,ostream&os,size_t indent_level,const statement&sa,const statement&sb)const{
+		string ra,rb;
+		vector<string>allocated_registers;
+		if(sa.is_expression()){
+			ra=tc.alloc_scratch_register(sa);
+			allocated_registers.push_back(ra);
+			sa.compile(tc,os,indent_level+1,ra);
+		}else{
+			ra=tc.resolve_ident_to_nasm(sa);
+		}
+		if(sb.is_expression()){
+			rb=tc.alloc_scratch_register(sb);
+			allocated_registers.push_back(rb);
+			sa.compile(tc,os,indent_level+1,rb);
+		}else{
+			rb=tc.resolve_ident_to_nasm(sb);
+		}
+
 		if(!ra.find("dword[") and !rb.find("dword[")){
 			const string&r=tc.alloc_scratch_register(identifier());
 			indent(os,indent_level,false);
@@ -163,6 +173,8 @@ class expr_ops_list_bool final:public expression{public:
 		os<<op<<" "<<ra<<","<<rb<<"  ;  ";
 		tc.source_location_to_stream(os,identifier());
 		os<<endl;
+
+		for(auto&r:allocated_registers)tc.free_scratch_reg(r);
 	}
 
 
@@ -268,7 +280,6 @@ private:
 
 
 	bool enclosed_{false}; // ie   =(1+2)   vs  =1+2
-	bool in_args_{false}; // ie   =func(1+2)
 	size_t presedence_{0};
 	char list_append_op_{0};
 	vector<unique_ptr<statement>>expressions_;
