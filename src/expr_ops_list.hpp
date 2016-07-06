@@ -160,6 +160,8 @@ class expr_ops_list final:public expression{public:
 		return expressions_[0]->identifier();
 	}
 
+	inline bool alloc_register()const{return!ops_.empty();}
+
 	inline static void _asm(const string&op,const statement&s,toc&tc,ostream&os,size_t indent_level,const string&ra,const string&rb){
 		if(ra==rb){
 			return;

@@ -37,15 +37,14 @@ _start:
 ;       var [63:7]
 ;         len=    [63:7]
 ;           read(name.len,name)      [63:11]
-;           read(name.len name):edi  [63:11]
+;           read(name.len name):len  [63:11]
                 mov esi,name  ;  [18:2]
                 mov edx,name.len  ;  [19:2]
                 xor eax,eax  ;  [20:2]
                 xor edi,edi  ;  [21:2]
                 syscall  ;  [22:2]
-                mov edi,eax  ;  [23:2]
+                mov dword[ebp+0],eax  ;  [23:2]
             _end_read_845:
-            mov dword[ebp+0],edi  ;  [63:7]
 ;       if [868]
 ;         (len=1)      [64:6]
         cmp dword[ebp+0],1  ;  [1:0]
@@ -66,6 +65,6 @@ _start:
         int 0x80  ;  [28:2]
     _end_exit_909:
 
-;           max regs in use: 1
+;           max regs in use: 0
 ;         max frames in use: 3
 ;          max stack in use: 1
