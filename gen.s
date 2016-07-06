@@ -47,8 +47,8 @@ _start:
             _end_read_845:
             mov dword[ebp+0],edi  ;  [63:7]
 ;       if [868]
-;         (len=3)      [64:6]
-        cmp dword[ebp+0],3  ;  [1:0]
+;         (len=1)      [64:6]
+        cmp dword[ebp+0],1  ;  [1:0]
         jne _end_if_868
             jmp _end_loop_829
         _end_if_868:

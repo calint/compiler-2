@@ -61,7 +61,7 @@ func main{
 	print(prompt.len,prompt)
 	loop{
 		var len=read(name.len,name);
-		if(len=3)
+		if(len=1)
 			break
 		print(len,name)
 	}
