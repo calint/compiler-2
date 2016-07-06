@@ -14,9 +14,9 @@
 #include "tokenizer.hpp"
 
 
-class expr_ops_list final:public expression{public:
+class expr_ops_list_bool final:public expression{public:
 
-	inline expr_ops_list(const statement&parent,tokenizer&t,bool in_args=false,bool enclosed=false,const char list_append_op='=',size_t first_op_presedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>()):
+	inline expr_ops_list_bool(const statement&parent,tokenizer&t,bool in_args=false,bool enclosed=false,const char list_append_op=' ',size_t first_op_presedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>()):
 		expression{parent,t.next_whitespace_token()},
 		enclosed_{enclosed},
 		in_args_{in_args},
@@ -28,7 +28,7 @@ class expr_ops_list final:public expression{public:
 			expressions_.push_back(move(first_expression));
 		}else{
 			if(t.is_next_char('(')){
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,true));
+				expressions_.push_back(make_unique<expr_ops_list_bool>(*this,t,in_args,true));
 			}else{
 				expressions_.push_back(create_statement_from_tokenizer(*this,t));
 			}
@@ -39,7 +39,7 @@ class expr_ops_list final:public expression{public:
 				break;
 			}
 
-			if(in_args and (t.is_peek_char(',') or t.is_peek_char(')'))){
+			if(in_args and t.is_peek_char(')')){
 				break;
 			}
 
@@ -50,20 +50,20 @@ class expr_ops_list final:public expression{public:
 				break;
 			}
 
-			if(t.is_peek_char('+')){
-				ops_.push_back('+');
-			}else
-			if(t.is_peek_char('-')){
-				ops_.push_back('-');
-			}else
-			if(t.is_peek_char('*')){
-				ops_.push_back('*');
-			}else
-			if(t.is_peek_char('/')){
-				ops_.push_back('/');
-			}else
-			if(t.is_peek_char('%')){
-				ops_.push_back('%');
+			if(t.is_peek_char('=')){
+				ops_.push_back('=');
+//			}else
+//			if(t.is_peek_char('&')){
+//				ops_.push_back('&');
+//			}else
+//			if(t.is_peek_char('|')){
+//				ops_.push_back('|');
+//			}else
+//			if(t.is_peek_char('^')){
+//				ops_.push_back('^');
+//			}else
+//			if(t.is_peek_char('!')){
+//				ops_.push_back('!');
 			}else
 				throw compiler_error(*expressions_.back(),"unknown operator",to_string(t.peek_char()));
 //				break;
@@ -77,7 +77,7 @@ class expr_ops_list final:public expression{public:
 					const char list_op=ops_.back();
 					unique_ptr<statement>prev=move(expressions_.back());
 					expressions_.erase(expressions_.end());
-					expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,false,list_op,first_op_presedence,move(prev)));
+					expressions_.push_back(make_unique<expr_ops_list_bool>(*this,t,in_args,false,list_op,first_op_presedence,move(prev)));
 					continue;
 				}
 			}else{
@@ -86,7 +86,7 @@ class expr_ops_list final:public expression{public:
 			}
 
 			if(t.is_next_char('(')){
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,true));
+				expressions_.push_back(make_unique<expr_ops_list_bool>(*this,t,in_args,true));
 				continue;
 			}
 
@@ -127,20 +127,44 @@ class expr_ops_list final:public expression{public:
 		if(expressions_.empty())
 			return;
 
-		statement*st=expressions_[0].get();
-		string dest_resolved=tc.resolve_ident_to_nasm(*this,dest);
-		_asm_op(tc,os,indent_level,st,'=',dest,dest_resolved,true);
-
-		auto len=ops_.size();
-		for(size_t i{0};i<len;i++){
-			auto op=ops_[i];
-			auto st=expressions_[i+1].get();
-
-			_asm_op(tc,os,indent_level,st,op,dest,dest_resolved,false);
-
+		const statement&a=*expressions_[0].get();
+		auto a_resolved=tc.resolve_ident_to_nasm(a);
+		if(not ops_.empty()){
+			const statement&b=*expressions_[1].get();
+			auto b_resolved=tc.resolve_ident_to_nasm(b);
+			if(ops_[0]=='='){// a==b
+//				os<<"cmp "<<a_resolved<<","<<b_resolved<<endl;
+				_resolve("cmp",tc,os,indent_level,a_resolved,b_resolved);
+				indent(os,indent_level,false);
+				os<<"jne "<<dest<<endl;
+			}
 		}
 
 	}
+
+
+
+	inline void _resolve(const string&op,toc&tc,ostream&os,size_t indent_level,const string&ra,const string&rb)const{
+		if(!ra.find("dword[") and !rb.find("dword[")){
+			const string&r=tc.alloc_scratch_register(identifier());
+			indent(os,indent_level,false);
+			os<<"mov "<<r<<","<<rb<<"  ;  ";
+			tc.source_location_to_stream(os,identifier());
+			os<<endl;
+			indent(os,indent_level,false);
+			os<<op<<" "<<ra<<","<<r<<"  ;  ";
+			tc.source_location_to_stream(os,identifier());
+			os<<endl;
+			tc.free_scratch_reg(r);
+			return;
+		}
+
+		indent(os,indent_level,false);
+		os<<op<<" "<<ra<<","<<rb<<"  ;  ";
+		tc.source_location_to_stream(os,identifier());
+		os<<endl;
+	}
+
 
 	inline bool is_expression()const override{
 		if(expressions_.size()==1){
@@ -187,10 +211,9 @@ class expr_ops_list final:public expression{public:
 
 private:
 	inline static size_t _presedence_for_op(const char ch){
-		if(ch=='+'||ch=='-')
-			return 1;
-		if(ch=='*'||ch=='/')
-			return 2;
+		if(ch=='=')return 3;
+		if(ch=='|')return 1;
+		if(ch=='&')return 2;
 		throw string(to_string(__LINE__)+" err");
 	}
 

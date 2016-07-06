@@ -58,15 +58,12 @@ func plus(a,b):int{
 # comment
 
 func main{
-	# comment
-	var a=1;
-	var b=2;
-	var c=3;
-	var d=4;
-	a=((b+c)*d+c*(a+b))*2;
 	print(prompt.len,prompt)
 	loop{
-		print(read(name.len,name)-2,name+1*b)
+		var len=read(name.len,name);
+		if(len=3)
+			break
+		print(len,name)
 	}
 	exit
 }

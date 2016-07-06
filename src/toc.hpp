@@ -234,14 +234,14 @@ class toc final{public:
 		return alloc_scratch_register(st.tok(),reg);
 	}
 
-	inline const string alloc_scratch_register(const token&tk,const string&reg=""){
+	inline const string alloc_scratch_register(const token&source,const string&reg=""){
 		if(free_registers_.empty()){
-			throw compiler_error(tk,"out of scratch registers  reduce expression complexity");
+			throw compiler_error(source,"out of scratch registers  reduce expression complexity");
 		}
 		if(reg!=""){
 			auto r=find(free_registers_.begin(),free_registers_.end(),reg);
 			if(r==free_registers_.end()){
-				throw compiler_error(tk,"register "+reg+" cannot be allocated");//?
+				throw compiler_error(source,"register "+reg+" cannot be allocated");//?
 			}
 			free_registers_.erase(r);
 			return reg;
