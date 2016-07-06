@@ -28,35 +28,6 @@ func exit{
 	int(0x80)
 }
 
-func eq(a,b):bool{
-	cmp(a,b)
-	cmove(bool,dd1)
-	cmovne(bool,dd0)
-}
-
-func neq(a,b):bool{
-	cmp(a,b)
-	cmove(bool,mem0)
-	cmovne(bool,mem1)
-}
-
-func orl(a,b):bool{
-	mov(bool,a)
-	or(bool,b)
-}
-
-func andl(a,b):bool{
-	mov(bool,a)
-	and(bool,b)
-}
-
-func plus(a,b):int{
-	mov(int,a)
-	add(int,b)
-}
-
-# comment
-
 func main{
 	print(prompt.len,prompt)
 	loop{
@@ -67,3 +38,5 @@ func main{
 	}
 	exit
 }
+
+# comment
