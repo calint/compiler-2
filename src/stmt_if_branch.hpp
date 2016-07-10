@@ -16,89 +16,71 @@
 
 class stmt_if_branch final:public statement{public:
 
-	inline stmt_if_branch(const statement&parent,tokenizer&t,bool enclosed=true,const char list_append_op=' ',size_t first_op_presedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>()):
-		statement{parent,t.next_whitespace_token()},
-		enclosed_{enclosed},
-		presedence_{first_op_presedence},
-		list_append_op_{list_append_op}
+	inline stmt_if_branch(const statement&parent,tokenizer&t):
+		statement{parent,token{}}
 	{
 
-		if(first_expression){
-			expressions_.push_back(move(first_expression));
-		}else{
-			if(t.is_next_char('(')){
-				expressions_.push_back(make_unique<stmt_if_branch>(*this,t));
-			}else{
-				bool isnot{false};
-				nots_.push_back(vector<token>{});
-				while(true){
-					token tk=t.next_token();
-					if(not tk.is_name("not")){
-						t.pushback_token(tk);
-						break;
-					}
-					isnot=not isnot;
-					nots_.back().push_back(tk);
-				}
-				isnot_.push_back(isnot);
-				expressions_.push_back(create_statement_from_tokenizer(*this,t));
+		boolbinaryops_.push_back(bool_binary_op(*this,t));
+		if(t.is_peek_char(')')){
+			if(enclosed_){
+				t.next_char();
 			}
+			return;
 		}
-
-		while(true){// a=3 and b=2 and not (c<3 or c>5) or d or not e
-			if(t.is_peek_char(')')){
-				if(enclosed_){
-					t.next_char();
-				}
-				break;
-			}
-
-			if(t.is_peek_char('=')){
-				ops_.push_back('=');
-//			}else
-//			if(t.is_peek_char('&')){
-//				ops_.push_back('&');
-//			}else
-//			if(t.is_peek_char('|')){
-//				ops_.push_back('|');
-//			}else
-//			if(t.is_peek_char('^')){
-//				ops_.push_back('^');
-//			}else
-//			if(t.is_peek_char('!')){
-//				ops_.push_back('!');
-			}else
-				throw compiler_error(*expressions_.back(),"unknown operator",to_string(t.peek_char()));
+//		while(true){// a=3 and b=2 and not (c<3 or c>5) or d or not e
+//			if(t.is_peek_char(')')){
+//				if(enclosed_){
+//					t.next_char();
+//				}
 //				break;
-
-			const size_t next_presedence=_presedence_for_op(t.peek_char());
-			if(next_presedence>presedence_){
-				presedence_=next_presedence;
-				if(!ops_.empty()){
-					const size_t first_op_presedence=_presedence_for_op(ops_.back());
-					ops_.pop_back();
-					const char list_op=ops_.back();
-					unique_ptr<statement>prev=move(expressions_.back());
-					expressions_.erase(expressions_.end());
-					expressions_.push_back(make_unique<stmt_if_branch>(*this,t,false,list_op,first_op_presedence,move(prev)));
-					continue;
-				}
-			}else{
-				presedence_=next_presedence;
-				t.next_char();// read the peeked operator
-			}
-
-			if(t.is_next_char('(')){
-				expressions_.push_back(make_unique<stmt_if_branch>(*this,t));
-				continue;
-			}
-
-			unique_ptr<statement>stmt=create_statement_from_tokenizer(*this,t);
-			if(stmt->tok().is_blank())
-				throw compiler_error(*stmt,"unexpected blank token");
-
-			expressions_.push_back(move(stmt));
-		}
+//			}
+//
+//			if(t.is_peek_char('=')){
+//				ops_.push_back('=');
+////			}else
+////			if(t.is_peek_char('&')){
+////				ops_.push_back('&');
+////			}else
+////			if(t.is_peek_char('|')){
+////				ops_.push_back('|');
+////			}else
+////			if(t.is_peek_char('^')){
+////				ops_.push_back('^');
+////			}else
+////			if(t.is_peek_char('!')){
+////				ops_.push_back('!');
+//			}else
+//				throw compiler_error(*expressions_.back(),"unknown operator",to_string(t.peek_char()));
+////				break;
+//
+//			const size_t next_presedence=_presedence_for_op(t.peek_char());
+//			if(next_presedence>presedence_){
+//				presedence_=next_presedence;
+//				if(!ops_.empty()){
+//					const size_t first_op_presedence=_presedence_for_op(ops_.back());
+//					ops_.pop_back();
+//					const char list_op=ops_.back();
+//					unique_ptr<statement>prev=move(expressions_.back());
+//					expressions_.erase(expressions_.end());
+//					expressions_.push_back(make_unique<stmt_if_branch>(*this,t,false,list_op,first_op_presedence,move(prev)));
+//					continue;
+//				}
+//			}else{
+//				presedence_=next_presedence;
+//				t.next_char();// read the peeked operator
+//			}
+//
+//			if(t.is_next_char('(')){
+//				expressions_.push_back(make_unique<stmt_if_branch>(*this,t));
+//				continue;
+//			}
+//
+//			unique_ptr<statement>stmt=create_statement_from_tokenizer(*this,t);
+//			if(stmt->tok().is_blank())
+//				throw compiler_error(*stmt,"unexpected blank token");
+//
+//			expressions_.push_back(move(stmt));
+//		}
 	}
 
 	inline void source_to(ostream&os)const override{
@@ -107,16 +89,8 @@ class stmt_if_branch final:public statement{public:
 		if(enclosed_)
 			os<<"(";
 
-		if(not expressions_.empty()){
-			for(auto&e:nots_[0]){
-				e.source_to(os);
-			}
-			expressions_[0]->source_to(os);
-			const size_t len=expressions_.size();
-			for(size_t i{1};i<len;i++){
-				os<<ops_[i-1];
-				expressions_[i]->source_to(os);
-			}
+		for(auto&e:boolbinaryops_){
+			e.source_to(os);
 		}
 
 		if(enclosed_)
@@ -130,13 +104,27 @@ class stmt_if_branch final:public statement{public:
 		tc.source_location_to_stream(os,this->tok());
 		os<<endl;
 
-		_resolve("cmp",tc,os,indent_level,*expressions_[0],*expressions_[1]);
+		const bool_binary_op&e=boolbinaryops_[0];
+		_resolve("cmp",tc,os,indent_level,*e.lhs_,*e.rhs_);
 		indent(os,indent_level,false);
-		if(isnot_[0]){
-			os<<"je "<<dest<<endl;
+		if(e.isnot_){
+			if(e.op_=="="){
+				os<<"je";
+			}else if(e.op_=="<"){
+				os<<"jl";
+			}else if(e.op_=="<="){
+				os<<"jle";
+			}
 		}else{
-			os<<"jne "<<dest<<endl;
+			if(e.op_=="="){
+				os<<"jne";
+			}else if(e.op_=="<"){
+				os<<"jge";
+			}else if(e.op_=="<="){
+				os<<"jg";
+			}
 		}
+		os<<" "<<dest<<endl;
 	}
 
 //	inline bool is_expression()const override{return true;}
@@ -199,11 +187,90 @@ private:
 		for(auto&r:allocated_registers)tc.free_scratch_reg(r);
 	}
 
-	bool enclosed_{false}; // ie   =(1+2)   vs  =1+2
-	size_t presedence_{0};
-	char list_append_op_{0};
-	vector<unique_ptr<statement>>expressions_;
-	vector<char>ops_;
-	vector<bool>isnot_;
-	vector<vector<token>>nots_;
+	bool enclosed_{true}; // ie   =(1+2)   vs  =1+2
+//	size_t presedence_{0};
+//	char list_append_op_{0};
+//	vector<unique_ptr<statement>>expressions_;
+//	vector<char>ops_;
+//	vector<bool>isnot_;
+//	vector<vector<token>>nots_;
+
+	class bool_binary_op:public statement{public:
+		inline bool_binary_op(const statement&parent,tokenizer&t):
+			statement(parent,t.next_whitespace_token())
+		{
+			// if(not not a=3)   if(a!=3)
+			bool isnot{false};
+			while(true){
+				token tk=t.next_token();
+				if(not tk.is_name("not")){
+					t.pushback_token(tk);
+					break;
+				}
+				isnot=not isnot;
+				nots_.push_back(tk);
+			}
+			isnot_=isnot;
+
+			if(t.is_next_char('(')){
+				subexpr_=make_unique<stmt_if_branch>(*this,t);
+				return;
+			}
+
+			lhs_=create_statement_from_tokenizer(parent,t);
+			if(lhs_->is_empty())
+				throw compiler_error(parent,"expected left hand side of boolean operation");
+
+			if(t.is_next_char('=')){
+				op_="=";
+			}else if(t.is_next_char('<')){
+				if(t.is_next_char('=')){
+					op_="<=";
+				}else{
+					op_="<";
+				}
+			}else{
+				throw compiler_error(parent,"expected boolean op");
+
+//			}else if(t.is_next_char('!')){
+//				if(t.is_next_char('=')){
+//					op_="!=";
+//				}else{
+//					throw compiler_error(parent,"expected !=");
+//				}
+			}
+
+			rhs_=create_statement_from_tokenizer(parent,t);
+			if(rhs_->is_empty())// unary
+				throw compiler_error(*lhs_,"expected right hand side of boolean operation");
+
+
+		}
+
+		inline void source_to(ostream&os)const override{
+			statement::source_to(os);
+
+			for(auto&e:nots_){
+				e.source_to(os);
+			}
+			if(subexpr_){
+				subexpr_->source_to(os);
+				return;
+			}
+
+			lhs_->source_to(os);
+			os<<op_;
+			rhs_->source_to(os);
+		}
+
+
+		vector<token>nots_;
+		bool isnot_{false};
+		unique_ptr<stmt_if_branch>subexpr_;
+
+		unique_ptr<statement>lhs_;
+		string op_;
+		unique_ptr<statement>rhs_;
+	};
+	vector<bool_binary_op>boolbinaryops_;
 };

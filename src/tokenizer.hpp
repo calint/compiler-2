@@ -61,7 +61,8 @@ class tokenizer final{public:
 	}
 
 	inline void pushback_token(const token t){
-		pushedback_tokens_.push_back(t);
+		seek(-t.total_length_in_chars());
+//		pushedback_tokens_.push_back(t);
 	}
 
 	inline token next_whitespace_token(){

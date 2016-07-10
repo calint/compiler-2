@@ -19,7 +19,7 @@ class stmt_if final:public statement{public:
 		statement{parent,tk},
 		name{"_if_"+to_string(tk.char_index())},
 		ch1{t.next_char()},
-		if_branch{*this,t,ch1=='('},
+		if_branch{*this,t},
 		if_true_code{*this,t}
 	{}
 

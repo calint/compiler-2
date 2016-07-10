@@ -87,6 +87,10 @@ class token final{public:
 //		return!(ws_before[0]==name_[0]==ws_after[0]==0);
 	}
 
+	inline size_t total_length_in_chars()const{
+		return ws_left_.length()+name_.length()+ws_right_.length();
+	}
+
 private:
 	string ws_left_;
 	size_t start_char_{0};
