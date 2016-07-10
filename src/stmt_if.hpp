@@ -33,13 +33,15 @@ class stmt_if final:public statement{public:
 		indent(os,indent_level,true);os<<"if ["<<tok().char_index()<<"]\n";
 
 		string jump_if_false="_end"+name;
+		string jump_if_else="_else"+name;
 
-		if_branch.compile(tc,os,indent_level,jump_if_false);
+		if_branch.compile(tc,os,indent_level,jump_if_else);
 
 		tc.push_if(name.data());
 
 		if_true_code.compile(tc,os,indent_level+1);
 
+		indent(os,indent_level,false);os<<jump_if_else<<":\n";
 		indent(os,indent_level,false);os<<jump_if_false<<":\n";
 
 		tc.pop_if(name.data());

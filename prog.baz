@@ -34,7 +34,7 @@ func main{
 		var len=read(name.len,name)-1;
 		if( not len <= 4 )
 			break
-		if(read(name.len,name)=1)
+		if(read(name.len,name)==1)
 			break
 		print(len,name)
 	}

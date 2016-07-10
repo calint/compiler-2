@@ -108,7 +108,7 @@ class stmt_if_branch final:public statement{public:
 		_resolve("cmp",tc,os,indent_level,*e.lhs_,*e.rhs_);
 		indent(os,indent_level,false);
 		if(e.isnot_){
-			if(e.op_=="="){
+			if(e.op_=="=="){
 				os<<"je";
 			}else if(e.op_=="<"){
 				os<<"jl";
@@ -116,7 +116,7 @@ class stmt_if_branch final:public statement{public:
 				os<<"jle";
 			}
 		}else{
-			if(e.op_=="="){
+			if(e.op_=="=="){
 				os<<"jne";
 			}else if(e.op_=="<"){
 				os<<"jge";
@@ -140,12 +140,12 @@ class stmt_if_branch final:public statement{public:
 
 
 private:
-	inline static size_t _presedence_for_op(const char ch){
-		if(ch=='=')return 3;
-		if(ch=='|')return 1;
-		if(ch=='&')return 2;
-		throw string(to_string(__LINE__)+" err");
-	}
+//	inline static size_t _presedence_for_op(const char ch){
+//		if(ch=='=')return 3;
+//		if(ch=='|')return 1;
+//		if(ch=='&')return 2;
+//		throw string(to_string(__LINE__)+" err");
+//	}
 
 	inline void _resolve(const string&op,toc&tc,ostream&os,size_t indent_level,const statement&sa,const statement&sb)const{
 		string ra,rb;
@@ -222,7 +222,11 @@ private:
 				throw compiler_error(parent,"expected left hand side of boolean operation");
 
 			if(t.is_next_char('=')){
-				op_="=";
+				if(t.is_next_char('=')){
+					op_="==";
+				}else{
+					compiler_error(*lhs_,"expected '=='");
+				}
 			}else if(t.is_next_char('<')){
 				if(t.is_next_char('=')){
 					op_="<=";
@@ -262,6 +266,30 @@ private:
 			os<<op_;
 			rhs_->source_to(os);
 		}
+
+//		inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest)const override{
+//			_resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
+//
+//			indent(os,indent_level,false);
+//			if(isnot_){
+//				if(op_=="=="){
+//					os<<"je";
+//				}else if(op_=="<"){
+//					os<<"jl";
+//				}else if(op_=="<="){
+//					os<<"jle";
+//				}
+//			}else{
+//				if(op_=="=="){
+//					os<<"jne";
+//				}else if(op_=="<"){
+//					os<<"jge";
+//				}else if(op_=="<="){
+//					os<<"jg";
+//				}
+//			}
+//			os<<" "<<dest<<endl;
+//		}
 
 
 		vector<token>nots_;
