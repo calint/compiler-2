@@ -1,5 +1,6 @@
 field prompt{"  hello    enter name: "}
 field   name {............................................................}
+field prompt2{"  not a name: "}
 
 table name_to_prompt(name,prompt)
 
@@ -32,11 +33,13 @@ func main{
 	print(prompt.len,prompt)
 	loop{
 		var len=read(name.len,name)-1;
-		if( not len <= 4 )
-			break
-		if(read(name.len,name)==1)
-			break
-		print(len,name)
+		if(len<=4){
+			print(prompt2.len,prompt2)
+		}else{
+			if(read(name.len,name)==1)
+				break
+			print(len,name)
+		}
 	}
 	exit
 }

@@ -17,11 +17,11 @@ class tokenizer final{public:
 	inline bool is_eos()const{return !last_char;}
 
 	inline token next_token(){
-		if(!pushedback_tokens_.empty()){
-			token tk=pushedback_tokens_.back();
-			pushedback_tokens_.pop_back();
-			return tk;
-		}
+//		if(!pushedback_tokens_.empty()){
+//			token tk=pushedback_tokens_.back();
+//			pushedback_tokens_.pop_back();
+//			return tk;
+//		}
 		auto wspre=next_whitespace();
 		auto bgn=nchar;
 		if(is_next_char('"')){
@@ -110,7 +110,7 @@ private:
 	size_t nchar_bm{0};
 	size_t nchar{0};
 	char last_char{-1};
-	vector<token>pushedback_tokens_;
+//	vector<token>pushedback_tokens_;
 
 	inline string next_whitespace(){
 		if(is_eos())return"";
@@ -133,7 +133,9 @@ private:
 			const char ch=next_char();
 			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||
 					ch=='='||ch==','||ch==':'||
-					ch=='+'||ch=='-'||ch=='*'||ch==';'){
+					ch=='+'||ch=='-'||ch=='*'||ch==';'||
+					ch=='<'||ch=='>'
+				){
 				seek(-1);
 				break;
 			}
