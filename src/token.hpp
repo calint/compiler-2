@@ -48,14 +48,14 @@ class token final{public:
 		is_str{tk.is_str}
 	{}
 
-//	inline token&operator=(const token&other){
-//		ws_left_=other.ws_left_;
-//		start_char_=other.start_char_;
-//		name_=other.name_;
-//		end_char_=other.end_char_;
-//		ws_right_=other.ws_right_;
-//		return*this;
-//	}
+	inline token&operator=(const token&other){
+		ws_left_=other.ws_left_;
+		start_char_=other.start_char_;
+		name_=other.name_;
+		end_char_=other.end_char_;
+		ws_right_=other.ws_right_;
+		return*this;
+	}
 
 	inline void source_to(ostream&os)const{
 		if(!is_str){

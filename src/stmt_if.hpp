@@ -27,6 +27,7 @@ class stmt_if final:public statement{public:
 			t.pushback_token(tkn);
 			return;
 		}
+		else_token_=tkn;
 
 		token tkn2=t.next_token();
 		if(!tkn2.is_name("if")){
@@ -45,12 +46,12 @@ class stmt_if final:public statement{public:
 		if_branch_.source_to(os);
 		if_true_code_.source_to(os);
 		if(else_if_){
-			os<<"else ";
+			else_token_.source_to(os);
 			else_if_->source_to(os);
 			return;
 		}
 		if(else_){
-			os<<"else";
+			else_token_.source_to(os);
 			else_->source_to(os);
 		}
 	}
@@ -87,5 +88,5 @@ private:
 	stmt_block if_true_code_;
 	unique_ptr<stmt_if>else_if_;
 	unique_ptr<stmt_block>else_;
-//	token else_token_;
+	token else_token_;
 };
