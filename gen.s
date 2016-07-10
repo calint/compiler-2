@@ -32,29 +32,55 @@ _start:
         mov ebx,1  ;  [12:2]
         mov eax,4  ;  [13:2]
         int 0x80  ;  [14:2]
-    _end_print_510:
-    _loop_536:  ; [33:2]
-;       if [576]
-;         (read(name.len,name)=1)      [35:6]
-;         read(name.len name):edi  [35:6]
+    _end_print_497:
+    _loop_523:  ; [33:2]
+;       var [34:7]
+;         len=    [34:7]
+;           read(name.len,name)-1      [34:11]
+;           read(name.len name):edi  [34:11]
+                mov esi,name  ;  [18:2]
+                mov edx,name.len  ;  [19:2]
+                xor eax,eax  ;  [20:2]
+                xor edi,edi  ;  [21:2]
+                syscall  ;  [22:2]
+                mov edi,eax  ;  [23:2]
+            _end_read_539:
+            sub edi,1  ;  [34:31]
+            mov dword[ebp+0],edi  ;  [34:7]
+;       if [564]
+;         (not len=3)      [35:6]
+        cmp dword[ebp+0],3  ;  [1:0]
+        je _end_if_564
+            jmp _end_loop_523
+        _end_if_564:
+;       if [589]
+;         (read(name.len,name)=1)      [37:6]
+;         read(name.len name):edi  [37:6]
               mov esi,name  ;  [18:2]
               mov edx,name.len  ;  [19:2]
               xor eax,eax  ;  [20:2]
               xor edi,edi  ;  [21:2]
               syscall  ;  [22:2]
               mov edi,eax  ;  [23:2]
-          _end_read_579:
+          _end_read_592:
         cmp edi,1  ;  [1:0]
-        jne _end_if_576
-            jmp _end_loop_536
-        _end_if_576:
-      jmp _loop_536
-    _end_loop_536:  ; [33:2]
-;   exit()  [39:2]
+        jne _end_if_589
+            jmp _end_loop_523
+        _end_if_589:
+;       print(len name)  [39:3]
+            mov ecx,name  ;  [10:2]
+            mov edx,dword[ebp+0]  ;  [11:2]
+            mov ebx,1  ;  [12:2]
+            mov eax,4  ;  [13:2]
+            int 0x80  ;  [14:2]
+        _end_print_626:
+      jmp _loop_523
+    _end_loop_523:  ; [33:2]
+;   exit()  [41:2]
         mov eax,1  ;  [27:2]
         int 0x80  ;  [28:2]
-    _end_exit_634:
+    _end_exit_646:
 
 ;           max regs in use: 1
 ;         max frames in use: 3
-;          max stack in use: 0
+;          max stack in use: 1

@@ -29,11 +29,23 @@ class stmt_if_branch final:public statement{public:
 			if(t.is_next_char('(')){
 				expressions_.push_back(make_unique<stmt_if_branch>(*this,t));
 			}else{
+				bool isnot{false};
+				nots_.push_back(vector<token>{});
+				while(true){
+					token tk=t.next_token();
+					if(not tk.is_name("not")){
+						t.pushback_token(tk);
+						break;
+					}
+					isnot=not isnot;
+					nots_.back().push_back(tk);
+				}
+				isnot_.push_back(isnot);
 				expressions_.push_back(create_statement_from_tokenizer(*this,t));
 			}
 		}
 
-		while(true){// +a  +3
+		while(true){// a=3 and b=2 and not (c<3 or c>5) or d or not e
 			if(t.is_peek_char(')')){
 				if(enclosed_){
 					t.next_char();
@@ -96,6 +108,9 @@ class stmt_if_branch final:public statement{public:
 			os<<"(";
 
 		if(not expressions_.empty()){
+			for(auto&e:nots_[0]){
+				e.source_to(os);
+			}
 			expressions_[0]->source_to(os);
 			const size_t len=expressions_.size();
 			for(size_t i{1};i<len;i++){
@@ -117,7 +132,11 @@ class stmt_if_branch final:public statement{public:
 
 		_resolve("cmp",tc,os,indent_level,*expressions_[0],*expressions_[1]);
 		indent(os,indent_level,false);
-		os<<"jne "<<dest<<endl;
+		if(isnot_[0]){
+			os<<"je "<<dest<<endl;
+		}else{
+			os<<"jne "<<dest<<endl;
+		}
 	}
 
 //	inline bool is_expression()const override{return true;}
@@ -185,4 +204,6 @@ private:
 	char list_append_op_{0};
 	vector<unique_ptr<statement>>expressions_;
 	vector<char>ops_;
+	vector<bool>isnot_;
+	vector<vector<token>>nots_;
 };

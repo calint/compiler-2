@@ -17,6 +17,11 @@ class tokenizer final{public:
 	inline bool is_eos()const{return !last_char;}
 
 	inline token next_token(){
+		if(!pushedback_tokens_.empty()){
+			token tk=pushedback_tokens_.back();
+			pushedback_tokens_.pop_back();
+			return tk;
+		}
 		auto wspre=next_whitespace();
 		auto bgn=nchar;
 		if(is_next_char('"')){
@@ -53,6 +58,10 @@ class tokenizer final{public:
 		auto end=nchar;
 		auto wsaft=next_whitespace();
 		return move(token{wspre,bgn,tkn,end,wsaft});
+	}
+
+	inline void pushback_token(const token t){
+		pushedback_tokens_.push_back(t);
 	}
 
 	inline token next_whitespace_token(){
@@ -100,6 +109,7 @@ private:
 	size_t nchar_bm{0};
 	size_t nchar{0};
 	char last_char{-1};
+	vector<token>pushedback_tokens_;
 
 	inline string next_whitespace(){
 		if(is_eos())return"";

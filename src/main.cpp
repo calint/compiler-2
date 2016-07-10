@@ -9,20 +9,20 @@ using namespace std;
 #include"call_asm_int.hpp"
 #include"call_asm_xor.hpp"
 #include"call_asm_syscall.hpp"
-#include"call_asm_add.hpp"
+//#include"call_asm_add.hpp"
 #include"stmt_loop.hpp"
 #include"stmt_break.hpp"
 #include"stmt_continue.hpp"
-#include"call_asm_cmp.hpp"
-#include"call_asm_je.hpp"
-#include"call_asm_tag.hpp"
-#include"call_asm_jmp.hpp"
-#include"call_asm_jne.hpp"
+//#include"call_asm_cmp.hpp"
+//#include"call_asm_je.hpp"
+//#include"call_asm_tag.hpp"
+//#include"call_asm_jmp.hpp"
+//#include"call_asm_jne.hpp"
 #include"stmt_if.hpp"
-#include"call_asm_cmove.hpp"
-#include"call_asm_cmovne.hpp"
-#include"call_asm_or.hpp"
-#include"call_asm_and.hpp"
+//#include"call_asm_cmove.hpp"
+//#include"call_asm_cmovne.hpp"
+//#include"call_asm_or.hpp"
+//#include"call_asm_and.hpp"
 #include"stmt_comment.hpp"
 #include"expr_ops_list.hpp"
 
@@ -90,20 +90,20 @@ inline unique_ptr<statement>create_call_statement_from_tokenizer(const statement
 	if("int"==func)        return make_unique<call_asm_int>(parent,move(tk),t);
 	if("xor"==func)        return make_unique<call_asm_xor>(parent,move(tk),t);
 	if("syscall"==func)return make_unique<call_asm_syscall>(parent,move(tk),t);
-	if("add"==func)        return make_unique<call_asm_add>(parent,move(tk),t);
+//	if("add"==func)        return make_unique<call_asm_add>(parent,move(tk),t);
 	if("loop"==func)          return make_unique<stmt_loop>(parent,move(tk),t);
 	if("break"==func)        return make_unique<stmt_break>(parent,move(tk),t);
 	if("continue"==func)  return make_unique<stmt_continue>(parent,move(tk),t);
-	if("tag"==func)        return make_unique<call_asm_tag>(parent,move(tk),t);
-	if("cmp"==func)        return make_unique<call_asm_cmp>(parent,move(tk),t);
-	if("je"==func)          return make_unique<call_asm_je>(parent,move(tk),t);
-	if("jmp"==func)        return make_unique<call_asm_jmp>(parent,move(tk),t);
-	if("jne"==func)        return make_unique<call_asm_jne>(parent,move(tk),t);
+//	if("tag"==func)        return make_unique<call_asm_tag>(parent,move(tk),t);
+//	if("cmp"==func)        return make_unique<call_asm_cmp>(parent,move(tk),t);
+//	if("je"==func)          return make_unique<call_asm_je>(parent,move(tk),t);
+//	if("jmp"==func)        return make_unique<call_asm_jmp>(parent,move(tk),t);
+//	if("jne"==func)        return make_unique<call_asm_jne>(parent,move(tk),t);
 	if("if"==func)              return make_unique<stmt_if>(parent,move(tk),t);
-	if("cmove"==func)    return make_unique<call_asm_cmove>(parent,move(tk),t);
-	if("cmovne"==func)  return make_unique<call_asm_cmovne>(parent,move(tk),t);
-	if("or"==func)          return make_unique<call_asm_or>(parent,move(tk),t);
-	if("and"==func)        return make_unique<call_asm_and>(parent,move(tk),t);
+//	if("cmove"==func)    return make_unique<call_asm_cmove>(parent,move(tk),t);
+//	if("cmovne"==func)  return make_unique<call_asm_cmovne>(parent,move(tk),t);
+//	if("or"==func)          return make_unique<call_asm_or>(parent,move(tk),t);
+//	if("and"==func)        return make_unique<call_asm_and>(parent,move(tk),t);
 	return                           make_unique<stmt_call>(parent,move(tk),t);
 }
 
