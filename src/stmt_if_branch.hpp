@@ -160,7 +160,7 @@ private:
 		if(sb.is_expression()){
 			rb=tc.alloc_scratch_register(sb);
 			allocated_registers.push_back(rb);
-			sa.compile(tc,os,indent_level+1,rb);
+			sb.compile(tc,os,indent_level+1,rb);
 		}else{
 			rb=tc.resolve_ident_to_nasm(sb);
 		}
@@ -217,7 +217,7 @@ private:
 				return;
 			}
 
-			lhs_=create_statement_from_tokenizer(parent,t);
+			lhs_=make_unique<expr_ops_list>(*this,t,true);
 			if(lhs_->is_empty())
 				throw compiler_error(parent,"expected left hand side of boolean operation");
 
@@ -244,7 +244,7 @@ private:
 //				}
 			}
 
-			rhs_=create_statement_from_tokenizer(parent,t);
+			rhs_=make_unique<expr_ops_list>(*this,t,true);
 			if(rhs_->is_empty())// unary
 				throw compiler_error(*lhs_,"expected right hand side of boolean operation");
 
@@ -296,9 +296,9 @@ private:
 		bool isnot_{false};
 		unique_ptr<stmt_if_branch>subexpr_;
 
-		unique_ptr<statement>lhs_;
+		unique_ptr<expr_ops_list>lhs_;
 		string op_;
-		unique_ptr<statement>rhs_;
+		unique_ptr<expr_ops_list>rhs_;
 	};
 	vector<bool_binary_op>boolbinaryops_;
 };

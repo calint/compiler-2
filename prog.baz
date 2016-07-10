@@ -33,11 +33,11 @@ func main{
 	print(prompt.len,prompt)
 	loop{
 		var len=read(name.len,name)-1;
-		if(len==0){
+		if(len==0)
 			print(prompt.len,prompt)
-		}else if(len<=4){
-			print(prompt2.len,prompt2)
-		}else{
+		else
+			if(len<=4)print(prompt2.len,prompt2)
+		else{
 			if(read(name.len,name)==1)
 				break
 			print(len,name)

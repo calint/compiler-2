@@ -179,7 +179,7 @@ class toc final{public:
 	}
 
 	inline string resolve_ident_to_nasm(const statement&stmt)const{//? tidy duplicate code
-		return resolve_ident_to_nasm(stmt,stmt.tok().name());
+		return resolve_ident_to_nasm(stmt,stmt.identifier());
 	}
 	inline string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
 		const size_t frameix=frames_.size()-1;

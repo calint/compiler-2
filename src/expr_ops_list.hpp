@@ -39,6 +39,14 @@ class expr_ops_list final:public expression{public:
 				break;
 			}
 
+			if(in_args){//? rewrite is_in_bool_expr
+				if(t.is_peek_char('<'))
+					break;
+				if(t.is_peek_char('='))
+					break;
+
+			}
+
 			if(in_args and (t.is_peek_char(',') or t.is_peek_char(')'))){
 				break;
 			}
@@ -186,6 +194,7 @@ class expr_ops_list final:public expression{public:
 		tc.source_location_to_stream(os,s.tok());
 		os<<endl;
 	}
+	inline bool is_empty()const override{return expressions_.empty();}
 
 private:
 	inline static size_t _presedence_for_op(const char ch){
