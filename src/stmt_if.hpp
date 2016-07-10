@@ -35,6 +35,7 @@ class stmt_if final:public statement{public:
 			return;
 		}
 
+//		else_token_=tkn;
 		else_if_=make_unique<stmt_if>(*this,tkn2,t);
 
 	}
@@ -44,7 +45,7 @@ class stmt_if final:public statement{public:
 		if_branch_.source_to(os);
 		if_true_code_.source_to(os);
 		if(else_if_){
-			os<<"else";
+			os<<"else ";
 			else_if_->source_to(os);
 			return;
 		}
@@ -86,4 +87,5 @@ private:
 	stmt_block if_true_code_;
 	unique_ptr<stmt_if>else_if_;
 	unique_ptr<stmt_block>else_;
+//	token else_token_;
 };
