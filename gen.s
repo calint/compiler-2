@@ -52,36 +52,33 @@ _start:
             sub edi,1  ;  [35:31]
             mov dword[ebp+0],edi  ;  [35:7]
 ;       if [596]
-;         (len==0+1)      [1:0]
-;           0+1      [36:11]
-            mov edi,0  ;  [36:11]
-            add edi,1  ;  [36:13]
-        cmp dword[ebp+0],edi  ;  [1:0]
-        jne _else_if_596
-;           print(prompt.len prompt)  [37:4]
-                mov ecx,prompt  ;  [11:2]
-                mov edx,prompt.len  ;  [12:2]
-                mov ebx,1  ;  [13:2]
-                mov eax,4  ;  [14:2]
-                int 0x80  ;  [15:2]
-            _end_print_612:
-          jmp _end_if_596
-        _else_if_596:
-;         if [647]
-;           (len<=4)      [1:0]
+          _if_bgn_598:
+          cmp dword[ebp+0],0  ;  [1:0]
+          jne _if_bgn_644
+;             print(prompt.len prompt)  [37:4]
+                  mov ecx,prompt  ;  [11:2]
+                  mov edx,prompt.len  ;  [12:2]
+                  mov ebx,1  ;  [13:2]
+                  mov eax,4  ;  [14:2]
+                  int 0x80  ;  [15:2]
+              _end_print_610:
+            jmp _if_end_596
+          _if_end_598:
+          _if_bgn_644:
           cmp dword[ebp+0],4  ;  [1:0]
-          jg _else_if_647
-;             print(prompt2.len prompt2)  [39:14]
+          jg _if_else_596
+;             print(prompt2.len prompt2)  [39:4]
                   mov ecx,prompt2  ;  [11:2]
                   mov edx,prompt2.len  ;  [12:2]
                   mov ebx,1  ;  [13:2]
                   mov eax,4  ;  [14:2]
                   int 0x80  ;  [15:2]
-              _end_print_657:
-            jmp _end_if_647
-          _else_if_647:
-;             if [695]
-;               (read(name.len,name)==1)      [1:0]
+              _end_print_656:
+            jmp _if_end_596
+          _if_end_644:
+        _if_else_596:
+;           if [694]
+              _if_bgn_696:
 ;                 read(name.len,name)      [41:7]
 ;                 read(name.len name):edi  [41:7]
                       mov esi,name  ;  [19:2]
@@ -90,28 +87,28 @@ _start:
                       xor edi,edi  ;  [22:2]
                       syscall  ;  [23:2]
                       mov edi,eax  ;  [24:2]
-                  _end_read_698:
+                  _end_read_697:
               cmp edi,1  ;  [1:0]
-              jne _else_if_695
+              jne _if_else_694
                   jmp _end_loop_555
-                jmp _end_if_695
-              _else_if_695:
-              _end_if_695:
-;             print(len name)  [43:4]
-                  mov ecx,name  ;  [11:2]
-                  mov edx,dword[ebp+0]  ;  [12:2]
-                  mov ebx,1  ;  [13:2]
-                  mov eax,4  ;  [14:2]
-                  int 0x80  ;  [15:2]
-              _end_print_735:
-          _end_if_647:
-        _end_if_596:
+                jmp _if_end_694
+              _if_end_696:
+            _if_else_694:
+            _if_end_694:
+;           print(len name)  [43:4]
+                mov ecx,name  ;  [11:2]
+                mov edx,dword[ebp+0]  ;  [12:2]
+                mov ebx,1  ;  [13:2]
+                mov eax,4  ;  [14:2]
+                int 0x80  ;  [15:2]
+            _end_print_734:
+        _if_end_596:
       jmp _loop_555
     _end_loop_555:  ; [34:2]
 ;   exit()  [46:2]
         mov eax,1  ;  [28:2]
         int 0x80  ;  [29:2]
-    _end_exit_759:
+    _end_exit_758:
 
 ;           max regs in use: 1
 ;         max frames in use: 4

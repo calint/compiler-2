@@ -14,17 +14,47 @@
 #include "tokenizer.hpp"
 
 
+
+#include <string>
+#include <sstream>
+#include <vector>
+
+using namespace std;
+
+vector<string> &split(const string &s, char delim, vector<string> &elems) {
+    stringstream ss(s);
+    string item;
+    while (getline(ss, item, delim)) {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
+
+vector<string> split(const string &s, char delim) {
+    vector<string> elems;
+    split(s, delim, elems);
+    return elems;
+}
+
+
+
 class stmt_if_branch final:public statement{public:
 
 	inline stmt_if_branch(const statement&parent,tokenizer&t):
-		statement{parent,token{}}
+		statement{parent,t.next_whitespace_token()}
 	{
+		if(t.is_next_char('(')){
+			enclosed_=true;
+		}
 
 		boolbinaryops_.push_back(bool_binary_op(*this,t));
+
 		if(t.is_peek_char(')')){
 			if(enclosed_){
 				t.next_char();
 			}
+			code_=make_unique<stmt_block>(*this,t);
 			return;
 		}
 //		while(true){// a=3 and b=2 and not (c<3 or c>5) or d or not e
@@ -95,14 +125,22 @@ class stmt_if_branch final:public statement{public:
 
 		if(enclosed_)
 			os<<")";
+
+		if(code_)
+			code_->source_to(os);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest)const override{
-		indent(os,indent_level+1,true);
-		source_to(os);
-		os<<"      ";
-		tc.source_location_to_stream(os,this->tok());
-		os<<endl;
+//		indent(os,indent_level+1,true);
+//		source_to(os);
+//		os<<"      ";
+//		tc.source_location_to_stream(os,this->tok());
+//		os<<endl;
+
+		vector<string>jmplabels=split(dest,':');
+
+		indent(os,indent_level,false);
+		os<<"_if_bgn_"<<to_string(tok().char_index())<<":"<<endl;
 
 		const bool_binary_op&e=boolbinaryops_[0];
 		_resolve("cmp",tc,os,indent_level,*e.lhs_,*e.rhs_);
@@ -124,7 +162,16 @@ class stmt_if_branch final:public statement{public:
 				os<<"jg";
 			}
 		}
-		os<<" "<<dest<<endl;
+
+		os<<" "<<jmplabels[0]<<endl;
+
+		code_->compile(tc,os,indent_level+1);
+		indent(os,indent_level+1,false);
+		os<<"jmp "<<jmplabels[1]<<endl;
+
+		indent(os,indent_level,false);
+		os<<"_if_end_"<<to_string(tok().char_index())<<":"<<endl;
+
 	}
 
 //	inline bool is_expression()const override{return true;}
@@ -187,7 +234,7 @@ private:
 		for(auto&r:allocated_registers)tc.free_scratch_reg(r);
 	}
 
-	bool enclosed_{true}; // ie   =(1+2)   vs  =1+2
+
 //	size_t presedence_{0};
 //	char list_append_op_{0};
 //	vector<unique_ptr<statement>>expressions_;
@@ -300,5 +347,8 @@ private:
 		string op_;
 		unique_ptr<expr_ops_list>rhs_;
 	};
+
+	bool enclosed_{false}; // ie   =(1+2)   vs  =1+2
 	vector<bool_binary_op>boolbinaryops_;
+	unique_ptr<stmt_block>code_;
 };
