@@ -136,4 +136,5 @@
 			<resource resourceType="PROJECT" workspacePath="/compiler-2"/>
 		</configuration>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 </cproject>
