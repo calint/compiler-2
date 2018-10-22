@@ -210,7 +210,7 @@ private:
 			if(st->is_expression()){
 				auto r=tc.alloc_scratch_register(st->tok());
 				st->compile(tc,os,indent_level+1,r);
-				_asm("add",*st,tc,os,indent_level+1,   dest_resolved,r);
+				_asm("add",*st,tc,os,indent_level+1,dest_resolved,r);
 				tc.free_scratch_reg(r);
 				return;
 			}
@@ -221,7 +221,7 @@ private:
 			if(st->is_expression()){
 				auto r=tc.alloc_scratch_register(*st);
 				st->compile(tc,os,indent_level+1,r);
-				_asm("sub",*st,tc,os,indent_level+1,    dest_resolved,r);
+				_asm("sub",*st,tc,os,indent_level+1,dest_resolved,r);
 				tc.free_scratch_reg(r);
 				return;
 			}
