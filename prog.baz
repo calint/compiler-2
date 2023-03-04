@@ -12,7 +12,12 @@ func main{
     var r=
       ((b+c)*d+
       c*(a+b))*2
-    exit(r)
+    if r=58
+        exit(0)
+    else if r=57
+        exit(1)
+    else
+        exit(r)
 }
 
 # comment

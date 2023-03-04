@@ -47,7 +47,7 @@ class stmt_if_branch final:public statement{public:
 			enclosed_=true;
 		}
 
-		boolbinaryops_.push_back(bool_binary_op(*this,t));
+		boolbinaryops_.push_back(bool_binary_op{*this,t});
 
 		if(t.is_peek_char(')')){
 			if(enclosed_){
@@ -56,6 +56,7 @@ class stmt_if_branch final:public statement{public:
 			code_=make_unique<stmt_block>(*this,t);
 			return;
 		}
+		code_=make_unique<stmt_block>(*this,t);
 //		while(true){// a=3 and b=2 and not (c<3 or c>5) or d or not e
 //			if(t.is_peek_char(')')){
 //				if(enclosed_){
@@ -145,7 +146,7 @@ class stmt_if_branch final:public statement{public:
 		_resolve("cmp",tc,os,indent_level,*e.lhs_,*e.rhs_);
 		indent(os,indent_level,false);
 		if(e.isnot_){
-			if(e.op_=="=="){
+			if(e.op_=="="){
 				os<<"je";
 			}else if(e.op_=="<"){
 				os<<"jl";
@@ -153,7 +154,7 @@ class stmt_if_branch final:public statement{public:
 				os<<"jle";
 			}
 		}else{
-			if(e.op_=="=="){
+			if(e.op_=="="){
 				os<<"jne";
 			}else if(e.op_=="<"){
 				os<<"jge";
@@ -166,7 +167,7 @@ class stmt_if_branch final:public statement{public:
 
 		code_->compile(tc,os,indent_level+1);
 		indent(os,indent_level+1,false);
-		os<<"jmp "<<jmplabels[1]<<endl;
+		os<<"jmp "<<jmplabels[1]<<endl; // jump to code after if else block
 
 		indent(os,indent_level,false);
 		os<<"_if_end_"<<to_string(tok().char_index())<<":"<<endl;
@@ -268,16 +269,18 @@ private:
 				throw compiler_error(parent,"expected left hand side of boolean operation");
 
 			if(t.is_next_char('=')){
-				if(t.is_next_char('=')){
-					op_="==";
-				}else{
-					compiler_error(*lhs_,"expected '=='");
-				}
+				op_="=";
 			}else if(t.is_next_char('<')){
 				if(t.is_next_char('=')){
 					op_="<=";
 				}else{
 					op_="<";
+				}
+			}else if(t.is_next_char('>')){
+				if(t.is_next_char('=')){
+					op_=">=";
+				}else{
+					op_=">";
 				}
 			}else{
 				throw compiler_error(parent,"expected boolean op");

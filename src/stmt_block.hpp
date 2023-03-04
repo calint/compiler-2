@@ -36,7 +36,7 @@ class stmt_block final:public statement{public:
 			token tk=t.next_token();
 
 			if(tk.is_blank()){
-				if(t.is_next_char(';')){
+				if(t.is_next_char(';')){ // in-case ; is used
 					statements_.push_back(make_unique<stmt_semicolon>(*this,move(tk),t));
 					continue;
 				}

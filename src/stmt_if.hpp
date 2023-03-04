@@ -20,7 +20,7 @@ class stmt_if final:public statement{public:
 		name_{"_if_"+to_string(tk.char_index())}
 	{
 		while(true){
-			conds_.push_back(stmt_if_branch{*this,t});
+			branches_.push_back(stmt_if_branch{*this,t});
 
 			token tkn=t.next_token();
 			if(!tkn.is_name("else")){
@@ -44,11 +44,11 @@ class stmt_if final:public statement{public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		const stmt_if_branch&cond=conds_[0];
+		const stmt_if_branch&cond=branches_[0];
 		cond.source_to(os);
-		const size_t n=conds_.size();
+		const size_t n=branches_.size();
 		for(size_t i=1;i<n;i++){
-			const stmt_if_branch&c=conds_[i];
+			const stmt_if_branch&c=branches_[i];
 			else_if_tokens_[((i-1)<<1)  ].source_to(os);
 			else_if_tokens_[((i-1)<<1)+1].source_to(os);
 			c.source_to(os);
@@ -60,19 +60,22 @@ class stmt_if final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		indent(os,indent_level,true);os<<"if ["<<tok().char_index()<<"]\n";
+		indent(os,indent_level,true);
+		os<<"if ";
+		tc.source_location_to_stream(os,tok());
+		os<<":["<<tok().char_index()<<"]\n";
 
-		string jump_to_end="_if_end_"+to_string(tok().char_index());
+		string jump_to_after_if="_if_end_"+to_string(tok().char_index());
 		string jump_to_else="_if_else_"+to_string(tok().char_index());
 
-		const size_t n=conds_.size();
+		const size_t n=branches_.size();
 		for(size_t i=0;i<n;i++){
-			const auto&e=conds_[i];
-			string elsejmp=jump_to_else;
+			const auto&e=branches_[i];
+			string jmp_to_else=jump_to_else;
 			if(i<(n-1)){
-				elsejmp="_if_bgn_"+to_string(conds_[i+1].tok().char_index());
+				jmp_to_else="_if_bgn_"+to_string(branches_[i+1].tok().char_index());
 			}
-			e.compile(tc,os,indent_level+1,elsejmp+":"+jump_to_end);
+			e.compile(tc,os,indent_level+1,jmp_to_else+":"+jump_to_after_if);
 		}
 
 		indent(os,indent_level,false);
@@ -80,12 +83,12 @@ class stmt_if final:public statement{public:
 		tc.push_if("else");
 		if(else_code_)else_code_->compile(tc,os,indent_level+1);
 		tc.pop_if("else");
-		indent(os,indent_level,false);os<<jump_to_end<<":\n";
+		indent(os,indent_level,false);os<<jump_to_after_if<<":\n";
 	}
 
 private:
 	string name_;
-	vector<stmt_if_branch>conds_;
+	vector<stmt_if_branch>branches_;
 	vector<token>else_if_tokens_;
 	unique_ptr<stmt_block>else_code_;
 };
