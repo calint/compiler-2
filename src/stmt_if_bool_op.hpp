@@ -79,7 +79,7 @@ class stmt_if_bool_op:public statement{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		throw compiler_error(tok(),"this code should not be reached");
 	}
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false_label,const string&jmp_to_if_true_label)const{
+	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false_label,const string&jmp_to_if_true_label)const{
 		_resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
 		indent(os,indent_level,false);
 		if(last_elem){
@@ -140,6 +140,70 @@ class stmt_if_bool_op:public statement{public:
 				}
 			}
 			os<<" "<<jmp_to_if_true_label<<endl;
+		}
+	}
+
+	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false_label,const string&jmp_to_if_true_label)const{
+		_resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
+		indent(os,indent_level,false);
+		if(last_elem){
+			// if last bool eval and false then jump to else label
+			// else continue to if block code
+			if(isnot_){
+				if(op_=="="){
+					os<<"je";
+				}else if(op_=="<"){
+					os<<"jl";
+				}else if(op_=="<="){
+					os<<"jle";
+				}else if(op_==">"){
+					os<<"jg";
+				}else if(op_==">="){
+					os<<"jge";
+				}
+			}else{
+				if(op_=="="){
+					os<<"jne";
+				}else if(op_=="<"){
+					os<<"jge";
+				}else if(op_=="<="){
+					os<<"jg";
+				}else if(op_==">"){
+					os<<"jle";
+				}else if(op_==">="){
+					os<<"jl";
+				}
+			}
+			os<<" "<<jmp_to_if_false_label<<endl;
+		}else{
+			// if not last bool eval and false then jump to "else"
+			// else continue to next bool eval
+			if(isnot_){
+				if(op_=="="){
+					os<<"je";
+				}else if(op_=="<"){
+					os<<"jl";
+				}else if(op_=="<="){
+					os<<"jle";
+				}else if(op_==">"){
+					os<<"jg";
+				}else if(op_==">="){
+					os<<"jge";
+				}
+			}else{
+				if(op_=="="){
+					os<<"jne";
+				}else if(op_=="<"){
+					os<<"jge";
+				}else if(op_=="<="){
+					os<<"jg";
+				}else if(op_==">"){
+					os<<"jle";
+				}else if(op_==">="){
+					os<<"jl";
+				}
+			}
+			os<<" "<<jmp_to_if_false_label<<endl;
 		}
 	}
 

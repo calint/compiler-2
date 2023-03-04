@@ -72,7 +72,8 @@ class stmt_if_branch final:public statement{public:
 		const size_t n=bool_ops_.size();
 		for(size_t i=0;i<n;i++){
 			const stmt_if_bool_op&e=bool_ops_[i];
-			e.compile(tc,os,indent_level,i==n-1,jmp_to_if_false_label,jmp_to_if_true_label);
+//			e.compile_or(tc,os,indent_level,i==n-1,jmp_to_if_false_label,jmp_to_if_true_label);
+			e.compile_and(tc,os,indent_level,i==n-1,jmp_to_if_false_label,jmp_to_if_true_label);
 		}
 		indent(os,indent_level,false);
 		os<<jmp_to_if_true_label<<":"<<endl;
