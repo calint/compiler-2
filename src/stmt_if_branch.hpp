@@ -51,7 +51,7 @@ class stmt_if_branch final:public statement{public:
 	}
 
 	inline string if_bgn_label_source_location(const toc&tc)const{
-		return "_if_"+tc.source_location(tok());
+		return "if_"+tc.source_location(tok());
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest)const override{

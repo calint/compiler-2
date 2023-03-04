@@ -47,37 +47,39 @@ _start:
         imul edi,2  ;  [12:29]
         mov dword[ebp+16],edi  ;  [12:9]
 ;   if [13:5]:[155]
-;   if r=58 or r=56 [13:8]
-    _if_13_8:
+;   if r=58 or r=56 or r=55 [13:8]
+    if_13_8:
     cmp dword[ebp+16],58  ;  [13:8]
-    je _if_13_8_code
+    je if_13_8_code
     cmp dword[ebp+16],56  ;  [13:16]
-    jne _if_15_13
-    _if_13_8_code:
-;     exit(0)  [14:9]
-          mov ebx,0  ;  [2:5]
-          mov eax,1  ;  [3:5]
-          int 0x80  ;  [4:5]
-      _end_exit_14_9:
-    jmp _if_end_13_5
-;   if r=57 [15:13]
-    _if_15_13:
-    cmp dword[ebp+16],57  ;  [15:13]
-    jne _if_else_13_5
-    _if_15_13_code:
-;     exit(1)  [16:9]
+    je if_13_8_code
+    cmp dword[ebp+16],55  ;  [13:24]
+    jne if_15_13
+    if_13_8_code:
+;     exit(1)  [14:9]
           mov ebx,1  ;  [2:5]
           mov eax,1  ;  [3:5]
           int 0x80  ;  [4:5]
-      _end_exit_16_9:
-    jmp _if_end_13_5
-    _if_else_13_5:
+      exit_end_14_9:
+    jmp if_end_13_5
+;   if r=57 [15:13]
+    if_15_13:
+    cmp dword[ebp+16],57  ;  [15:13]
+    jne if_else_13_5
+    if_15_13_code:
+;     exit(2)  [16:9]
+          mov ebx,2  ;  [2:5]
+          mov eax,1  ;  [3:5]
+          int 0x80  ;  [4:5]
+      exit_end_16_9:
+    jmp if_end_13_5
+    if_else_13_5:
 ;       exit(r)  [18:9]
             mov ebx,dword[ebp+16]  ;  [2:5]
             mov eax,1  ;  [3:5]
             int 0x80  ;  [4:5]
-        _end_exit_18_9:
-    _if_end_13_5:
+        exit_end_18_9:
+    if_end_13_5:
 
 ;           max regs in use: 3
 ;         max frames in use: 3

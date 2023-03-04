@@ -66,8 +66,8 @@ class stmt_if final:public statement{public:
 		os<<":["<<tok().char_index()<<"]\n";
 
 		const string source_loc=tc.source_location(tok());
-		string label_after_if="_if_end_"+source_loc;
-		string label_else_branch=else_code_?"_if_else_"+source_loc:label_after_if;
+		string label_after_if="if_end_"+source_loc;
+		string label_else_branch=else_code_?"if_else_"+source_loc:label_after_if;
 
 		const size_t n=branches_.size();
 		for(size_t i=0;i<n;i++){
