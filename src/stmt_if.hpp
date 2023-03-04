@@ -66,15 +66,15 @@ class stmt_if final:public statement{public:
 		os<<":["<<tok().char_index()<<"]\n";
 
 		const string source_loc=tc.source_location(tok());
-		string jump_to_after_if="_if_end_"+source_loc;
-		string jump_to_else=else_code_?"_if_else_"+source_loc:jump_to_after_if;
+		string label_after_if="_if_end_"+source_loc;
+		string label_else_branch=else_code_?"_if_else_"+source_loc:label_after_if;
 
 		const size_t n=branches_.size();
 		for(size_t i=0;i<n;i++){
 			const auto&e=branches_[i];
-			string jmp_if_false=jump_to_else;
-			string jmp_after_if=jump_to_after_if;
-			if(i<(n-1)){ // if branch false jump to next if
+			string jmp_if_false=label_else_branch;
+			string jmp_after_if=label_after_if;
+			if(i<(n-1)){ // if branch is false jump to next if
 				jmp_if_false=branches_[i+1].if_bgn_label_source_location(tc);
 			}else{
 				// if last branch and no "else" then don't jump to "after_if", just continue
@@ -86,12 +86,12 @@ class stmt_if final:public statement{public:
 		}
 
 		if(else_code_){
-			indent(os,indent_level,false);os<<jump_to_else<<":\n";
+			indent(os,indent_level,false);os<<label_else_branch<<":\n";
 			tc.push_if("else");
 			else_code_->compile(tc,os,indent_level+1);
 			tc.pop_if("else");
 		}
-		indent(os,indent_level,false);os<<jump_to_after_if<<":\n";
+		indent(os,indent_level,false);os<<label_after_if<<":\n";
 	}
 
 private:
