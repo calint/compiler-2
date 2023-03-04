@@ -98,7 +98,7 @@ class toc final{public:
 	inline toc(const string&source):
 		all_registers_{"eax","ebx","ecx","edx","esi","edi"},
 		free_registers_{all_registers_},
-		source_str_(source)
+		source_str_{source}
 	{}
 
 	inline void add_field(const statement&s,const string&ident,const stmt_def_field*f){

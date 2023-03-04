@@ -1,37 +1,11 @@
-field prompt{"  hello    enter name: "}
-field   name {............................................................}
-field prompt2{"  not a name: "}
-
-table name_to_prompt(name,prompt)
-
-func table.find(tbl):ref{} 
-func table.foreach(tbl){}
-
-func print(len:const:reg_edx,ptr:const:reg_ecx){
-	mov(ecx,ptr)
-	mov(edx,len)
-	mov(ebx,1)
-	mov(eax,4)
-	int(0x80)
-}
-
-func read(len:const:reg_edx,ptr:const:reg_esi):int{
-	mov(esi,ptr)
-	mov(edx,len)
-	xor(eax)
-	xor(edi)
-	syscall
-	mov(int,eax)
-}
-
 func exit(v){
-	mov(ebx,v)
-	mov(eax,1)
-	int(0x80)
+    mov(ebx,v)
+    mov(eax,1)
+    int(0x80)
 }
 
 func main{
-    var a=1
+    var a=1;
     var b=2
     var c=3
     var d=4

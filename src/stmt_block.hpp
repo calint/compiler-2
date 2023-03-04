@@ -15,6 +15,7 @@
 #include"stmt_def_var.hpp"
 #include"stmt_assign_var.hpp"
 #include"stmt_comment.hpp"
+#include"stmt_semicolon.hpp"
 
 class stmt_block final:public statement{public:
 
@@ -26,9 +27,6 @@ class stmt_block final:public statement{public:
 			if(t.is_eos())
 				break;
 
-			if(t.is_next_char(';'))
-				continue;
-
 			if(t.is_next_char('}')){
 				if(not is_one_statement_)
 					break;
@@ -37,15 +35,24 @@ class stmt_block final:public statement{public:
 
 			token tk=t.next_token();
 
-			if(tk.is_blank())
+			if(tk.is_blank()){
+				if(t.is_next_char(';')){
+					statements_.push_back(make_unique<stmt_semicolon>(*this,move(tk),t));
+					continue;
+				}
 				throw compiler_error(tk,"unexpected end of string");
-
-			if(tk.is_name("var")){statements_.push_back(make_unique<stmt_def_var>(*this,move(tk),t));
-			}else if(t.is_next_char('=')){statements_.push_back(make_unique<stmt_assign_var>(*this,move(tk),t));
+			}
+			if(tk.is_name("var")){
+				statements_.push_back(make_unique<stmt_def_var>(*this,move(tk),t));
+			}else if(t.is_next_char('=')){
+				statements_.push_back(make_unique<stmt_assign_var>(*this,move(tk),t));
 			}else if(tk.is_name("#")){
 				statements_.push_back(make_unique<stmt_comment>(*this,move(tk),t));
-			}else if(tk.is_name("")){statements_.push_back(make_unique<statement>(*this,move(tk)));
-			}else{statements_.push_back(create_call_statement_from_tokenizer(*this,move(tk),t));}
+			}else if(tk.is_name("")){
+				statements_.push_back(make_unique<statement>(*this,move(tk)));
+			}else{
+				statements_.push_back(create_call_statement_from_tokenizer(*this,move(tk),t));
+			}
 
 			if(is_one_statement_)
 				break;
