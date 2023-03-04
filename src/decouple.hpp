@@ -1,6 +1,5 @@
 #pragma once
 #include<memory>
-using namespace std;
 class tokenizer;
 class token;
 class statement;

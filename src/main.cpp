@@ -51,8 +51,8 @@ static size_t line_number_for_char_index(size_t ix,const char*str,size_t&start_c
 }
 
 int main(int argc,char**args){
-
-	auto src=file_read_to_string("prog.baz");
+	auto src_file_name=argc==1?"prog.baz":args[1];
+	auto src=file_read_to_string(src_file_name);
 
 	try{
 		stmt_program p(src);
@@ -63,7 +63,7 @@ int main(int argc,char**args){
 
 		fo.close();
 
-		if(file_read_to_string("prog.baz")!=file_read_to_string("diff.baz"))
+		if(file_read_to_string(src_file_name)!=file_read_to_string("diff.baz"))
 			throw string("generated source differs");
 
 		p.build(cout);

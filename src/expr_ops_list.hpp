@@ -5,6 +5,8 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <sstream>
+#include <regex>
 
 #include "compiler_error.hpp"
 #include "decouple.hpp"
@@ -35,9 +37,9 @@ class expr_ops_list final:public expression{public:
 		}
 
 		while(true){// +a  +3
-			if(t.is_peek_char(';')){
-				break;
-			}
+//			if(t.is_peek_char(';')){
+//				break;
+//			}
 
 			if(in_args){//? rewrite is_in_bool_expr
 				if(t.is_peek_char('<'))
@@ -73,8 +75,8 @@ class expr_ops_list final:public expression{public:
 			if(t.is_peek_char('%')){
 				ops_.push_back('%');
 			}else
-				throw compiler_error(*expressions_.back(),"unknown operator",to_string(t.peek_char()));
-//				break;
+//				throw compiler_error(*expressions_.back(),"unknown operator",to_string(t.peek_char()));
+				break;
 
 			const size_t next_presedence=_presedence_for_op(t.peek_char());
 			if(next_presedence>presedence_){
@@ -127,9 +129,14 @@ class expr_ops_list final:public expression{public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest)const override{
 		indent(os,indent_level+1,true);
-		source_to(os);
-		os<<"      ";
-		tc.source_location_to_stream(os,this->tok());
+		stringstream ss;
+		source_to(ss);
+		ss<<"      ";
+		tc.source_location_to_stream(ss,this->tok());
+		string s=ss.str();
+//		replace(s.begin(),s.end(),'\n',' ');
+		string res=regex_replace(s,regex("\\s+")," ");
+		os<<res;
 		os<<endl;
 
 		if(expressions_.empty())

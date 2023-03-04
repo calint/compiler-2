@@ -1,6 +1,5 @@
 #pragma once
 #include<memory>
-using namespace std;
 #include"stmt_call.hpp"
 #include"decouple.hpp"
 #include"toc.hpp"

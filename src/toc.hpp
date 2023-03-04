@@ -8,7 +8,6 @@
 #include<vector>
 #include<algorithm>
 #include<cassert>
-using namespace std;
 
 #include"lut.hpp"
 
@@ -16,8 +15,6 @@ class token;
 class stmt_def_func;
 class stmt_def_field;
 class stmt_def_table;
-
-using namespace std;
 
 class allocated_var final{public:
 

@@ -4,7 +4,6 @@
 #include<cassert>
 #include<cstring>
 #include<memory>
-using namespace std;
 #include "token.hpp"
 
 class tokenizer final{public:

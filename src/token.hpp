@@ -7,7 +7,6 @@
 #include <memory>
 #include <vector>
 
-using namespace std;
 #include<string.h>
 class token final{public:
 

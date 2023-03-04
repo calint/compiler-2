@@ -24,21 +24,26 @@ func read(len:const:reg_edx,ptr:const:reg_esi):int{
 	mov(int,eax)
 }
 
-func exit(v){
-	mov(ebx,v)
+func exit{
 	mov(eax,1)
 	int(0x80)
 }
 
 func main{
-    var a=1
-    var b=2
-    var c=3
-    var d=4
-    var r=
-      ((b+c)*d+
-      c*(a+b))*2
-    exit(r)
+	print(prompt.len,prompt)
+	loop{
+		var len=read(name.len,name)-1
+		if(len==0)
+			print(prompt.len,prompt)
+		else if(len<=4)
+			print(prompt2.len,prompt2)
+		else{
+			if(read(name.len,name)==1)
+				break
+			print(len,name)
+		}
+	}
+	exit
 }
 
 # comment

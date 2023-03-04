@@ -25,7 +25,7 @@ class stmt_assign_var final:public statement{public:
 		statement::source_to(os);
 		os<<"=";
 		oplist_.source_to(os);
-		os<<";";
+//		os<<";";
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
