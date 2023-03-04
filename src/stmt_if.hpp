@@ -82,7 +82,7 @@ class stmt_if final:public statement{public:
 					jmp_after_if="";
 				}
 			}
-			e.compile(tc,os,indent_level,jmp_if_false+":"+jmp_after_if);
+			e.compile(tc,os,indent_level,jmp_if_false,jmp_after_if);
 		}
 
 		if(else_code_){

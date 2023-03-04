@@ -54,14 +54,14 @@ class stmt_if_branch final:public statement{public:
 		return "if_"+tc.source_location(tok());
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest)const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst)const override{
+		throw compiler_error(tok(),"this code should not be reached");
+	}
+
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false_label,const string&jmp_to_after_code_label)const{
 		indent(os,indent_level,true);
 		os<<"if ";
 		bool_ops_source_to(tc,os);
-
-		vector<string>jmplabels=split(dest,':');
-		const string jmp_to_if_false_label=jmplabels[0];
-		const string jmp_to_after_code_label=jmplabels.size()>1?jmplabels[1]:"";
 
 		const string if_bgn_label=if_bgn_label_source_location(tc);
 		const string jmp_to_code_label=if_bgn_label+"_code";
@@ -74,7 +74,9 @@ class stmt_if_branch final:public statement{public:
 			const stmt_if_bool_op&e=bool_ops_[i];
 			_resolve("cmp",tc,os,indent_level,*e.lhs_,*e.rhs_);
 			indent(os,indent_level,false);
-			if(i==n-1){ // if last bool eval and false then jump to else label
+			if(i==n-1){
+				// if last bool eval and false then jump to else label
+				// else continue to if block code
 				if(e.isnot_){
 					if(e.op_=="="){
 						os<<"je";
@@ -101,7 +103,9 @@ class stmt_if_branch final:public statement{public:
 					}
 				}
 				os<<" "<<jmp_to_if_false_label<<endl;
-			}else{ // if not last bool eval and true then jump to code
+			}else{
+				// if not last bool eval and true then jump to code
+				// else continue to next bool eval
 				if(e.isnot_){
 					if(e.op_=="="){
 						os<<"jne";
@@ -141,18 +145,6 @@ class stmt_if_branch final:public statement{public:
 			os<<"jmp "<<jmp_to_after_code_label<<endl; // jump to code after if else block
 		}
 	}
-
-//	inline bool is_expression()const override{return true;}
-//
-//	inline bool is_ops_list()const override{return true;}
-//
-//	inline const string&identifier()const override{
-//		if(expressions_[0]->is_ops_list())
-//			return expressions_[0]->identifier();
-//
-//		return expressions_[0]->identifier();
-//	}
-
 
 private:
 	inline void bool_ops_source_to(toc&tc,ostream&os)const{
