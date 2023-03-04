@@ -76,9 +76,111 @@ class stmt_if_bool_op:public statement{public:
 		os<<op_;
 		rhs_->source_to(os);
 	}
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
+		throw compiler_error(tok(),"this code should not be reached");
+	}
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false_label,const string&jmp_to_if_true_label)const{
+		_resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
+		indent(os,indent_level,false);
+		if(last_elem){
+			// if last bool eval and false then jump to else label
+			// else continue to if block code
+			if(isnot_){
+				if(op_=="="){
+					os<<"je";
+				}else if(op_=="<"){
+					os<<"jl";
+				}else if(op_=="<="){
+					os<<"jle";
+				}else if(op_==">"){
+					os<<"jg";
+				}else if(op_==">="){
+					os<<"jge";
+				}
+			}else{
+				if(op_=="="){
+					os<<"jne";
+				}else if(op_=="<"){
+					os<<"jge";
+				}else if(op_=="<="){
+					os<<"jg";
+				}else if(op_==">"){
+					os<<"jle";
+				}else if(op_==">="){
+					os<<"jl";
+				}
+			}
+			os<<" "<<jmp_to_if_false_label<<endl;
+		}else{
+			// if not last bool eval and true then jump to if block code
+			// else continue to next bool eval
+			if(isnot_){
+				if(op_=="="){
+					os<<"jne";
+				}else if(op_=="<"){
+					os<<"jge";
+				}else if(op_=="<="){
+					os<<"jg";
+				}else if(op_==">"){
+					os<<"jle";
+				}else if(op_==">="){
+					os<<"jl";
+				}
+			}else{
+				if(op_=="="){
+					os<<"je";
+				}else if(op_=="<"){
+					os<<"jl";
+				}else if(op_=="<="){
+					os<<"jle";
+				}else if(op_==">"){
+					os<<"jg";
+				}else if(op_==">="){
+					os<<"jge";
+				}
+			}
+			os<<" "<<jmp_to_if_true_label<<endl;
+		}
+	}
 
-	inline string get_start_eval_label(toc&tc)const{
-		return "bool_op_"+tc.source_location(tok());
+	inline void _resolve(const string&op,toc&tc,ostream&os,size_t indent_level,const statement&sa,const statement&sb)const{
+		string ra,rb;
+		vector<string>allocated_registers;
+		if(sa.is_expression()){
+			ra=tc.alloc_scratch_register(sa);
+			allocated_registers.push_back(ra);
+			sa.compile(tc,os,indent_level+1,ra);
+		}else{
+			ra=tc.resolve_ident_to_nasm(sa);
+		}
+		if(sb.is_expression()){
+			rb=tc.alloc_scratch_register(sb);
+			allocated_registers.push_back(rb);
+			sb.compile(tc,os,indent_level+1,rb);
+		}else{
+			rb=tc.resolve_ident_to_nasm(sb);
+		}
+
+		if(!ra.find("dword[") and !rb.find("dword[")){
+			const string&r=tc.alloc_scratch_register(identifier());
+			indent(os,indent_level,false);
+			os<<"mov "<<r<<","<<rb<<"  ;  ";
+			tc.source_location_to_stream(os,identifier());
+			os<<endl;
+			indent(os,indent_level,false);
+			os<<op<<" "<<ra<<","<<r<<"  ;  ";
+			tc.source_location_to_stream(os,identifier());
+			os<<endl;
+			tc.free_scratch_reg(r);
+			return;
+		}
+
+		indent(os,indent_level,false);
+		os<<op<<" "<<ra<<","<<rb<<"  ;  ";
+		tc.source_location_to_stream(os,sa.tok());
+		os<<endl;
+
+		for(auto&r:allocated_registers)tc.free_scratch_reg(r);
 	}
 
 	vector<token>nots_;

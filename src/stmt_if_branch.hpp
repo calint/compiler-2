@@ -64,7 +64,7 @@ class stmt_if_branch final:public statement{public:
 		bool_ops_source_to(tc,os);
 
 		const string if_bgn_label=if_bgn_label_source_location(tc);
-		const string jmp_to_code_label=if_bgn_label+"_code";
+		const string jmp_to_if_true_label=if_bgn_label+"_code";
 
 		indent(os,indent_level,false);
 		os<<if_bgn_label<<":"<<endl;
@@ -72,71 +72,10 @@ class stmt_if_branch final:public statement{public:
 		const size_t n=bool_ops_.size();
 		for(size_t i=0;i<n;i++){
 			const stmt_if_bool_op&e=bool_ops_[i];
-			_resolve("cmp",tc,os,indent_level,*e.lhs_,*e.rhs_);
-			indent(os,indent_level,false);
-			if(i==n-1){
-				// if last bool eval and false then jump to else label
-				// else continue to if block code
-				if(e.isnot_){
-					if(e.op_=="="){
-						os<<"je";
-					}else if(e.op_=="<"){
-						os<<"jl";
-					}else if(e.op_=="<="){
-						os<<"jle";
-					}else if(e.op_==">"){
-						os<<"jg";
-					}else if(e.op_==">="){
-						os<<"jge";
-					}
-				}else{
-					if(e.op_=="="){
-						os<<"jne";
-					}else if(e.op_=="<"){
-						os<<"jge";
-					}else if(e.op_=="<="){
-						os<<"jg";
-					}else if(e.op_==">"){
-						os<<"jle";
-					}else if(e.op_==">="){
-						os<<"jl";
-					}
-				}
-				os<<" "<<jmp_to_if_false_label<<endl;
-			}else{
-				// if not last bool eval and true then jump to if block code
-				// else continue to next bool eval
-				if(e.isnot_){
-					if(e.op_=="="){
-						os<<"jne";
-					}else if(e.op_=="<"){
-						os<<"jge";
-					}else if(e.op_=="<="){
-						os<<"jg";
-					}else if(e.op_==">"){
-						os<<"jle";
-					}else if(e.op_==">="){
-						os<<"jl";
-					}
-				}else{
-					if(e.op_=="="){
-						os<<"je";
-					}else if(e.op_=="<"){
-						os<<"jl";
-					}else if(e.op_=="<="){
-						os<<"jle";
-					}else if(e.op_==">"){
-						os<<"jg";
-					}else if(e.op_==">="){
-						os<<"jge";
-					}
-				}
-				os<<" "<<jmp_to_code_label<<endl;
-			}
+			e.compile(tc,os,indent_level,i==n-1,jmp_to_if_false_label,jmp_to_if_true_label);
 		}
-
 		indent(os,indent_level,false);
-		os<<jmp_to_code_label<<":"<<endl;
+		os<<jmp_to_if_true_label<<":"<<endl;
 
 		code_->compile(tc,os,indent_level);
 
@@ -173,46 +112,6 @@ private:
 //		if(ch=='&')return 2;
 //		throw string(to_string(__LINE__)+" err");
 //	}
-
-	inline void _resolve(const string&op,toc&tc,ostream&os,size_t indent_level,const statement&sa,const statement&sb)const{
-		string ra,rb;
-		vector<string>allocated_registers;
-		if(sa.is_expression()){
-			ra=tc.alloc_scratch_register(sa);
-			allocated_registers.push_back(ra);
-			sa.compile(tc,os,indent_level+1,ra);
-		}else{
-			ra=tc.resolve_ident_to_nasm(sa);
-		}
-		if(sb.is_expression()){
-			rb=tc.alloc_scratch_register(sb);
-			allocated_registers.push_back(rb);
-			sb.compile(tc,os,indent_level+1,rb);
-		}else{
-			rb=tc.resolve_ident_to_nasm(sb);
-		}
-
-		if(!ra.find("dword[") and !rb.find("dword[")){
-			const string&r=tc.alloc_scratch_register(identifier());
-			indent(os,indent_level,false);
-			os<<"mov "<<r<<","<<rb<<"  ;  ";
-			tc.source_location_to_stream(os,identifier());
-			os<<endl;
-			indent(os,indent_level,false);
-			os<<op<<" "<<ra<<","<<r<<"  ;  ";
-			tc.source_location_to_stream(os,identifier());
-			os<<endl;
-			tc.free_scratch_reg(r);
-			return;
-		}
-
-		indent(os,indent_level,false);
-		os<<op<<" "<<ra<<","<<rb<<"  ;  ";
-		tc.source_location_to_stream(os,sa.tok());
-		os<<endl;
-
-		for(auto&r:allocated_registers)tc.free_scratch_reg(r);
-	}
 
 	vector<stmt_if_bool_op>bool_ops_;
 	vector<token>ops_;
