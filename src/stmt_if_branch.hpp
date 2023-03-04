@@ -104,7 +104,7 @@ class stmt_if_branch final:public statement{public:
 				}
 				os<<" "<<jmp_to_if_false_label<<endl;
 			}else{
-				// if not last bool eval and true then jump to code
+				// if not last bool eval and true then jump to if block code
 				// else continue to next bool eval
 				if(e.isnot_){
 					if(e.op_=="="){
