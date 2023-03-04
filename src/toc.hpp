@@ -131,10 +131,16 @@ class toc final{public:
 		tables_.put(ident,f);
 	}
 
-	inline void source_location_to_stream(ostream&os,const token&t){
+	inline void source_location_to_stream(ostream&os,const token&t)const{
 		size_t char_in_line;
 		const size_t n=line_number_for_char_index(t.char_index(),source_str_,char_in_line);
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
+	}
+
+	inline string source_location(const token&t)const{
+		size_t char_in_line;
+		const size_t n=line_number_for_char_index(t.char_index(),source_str_,char_in_line);
+		return to_string(n)+"_"+to_string(char_in_line);
 	}
 
 	inline void source_location_to_stream(ostream&os,size_t charix){

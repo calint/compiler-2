@@ -63,8 +63,6 @@ class stmt_if_bool_op:public statement{public:
 		rhs_=make_unique<expr_ops_list>(*this,t,true);
 		if(rhs_->is_empty())// unary
 			throw compiler_error(*lhs_,"expected right hand side of boolean operation");
-
-
 	}
 
 	inline void source_to(ostream&os)const override{
@@ -77,6 +75,10 @@ class stmt_if_bool_op:public statement{public:
 		lhs_->source_to(os);
 		os<<op_;
 		rhs_->source_to(os);
+	}
+
+	inline string get_start_eval_label(toc&tc)const{
+		return "bool_op_"+tc.source_location(tok());
 	}
 
 	vector<token>nots_;

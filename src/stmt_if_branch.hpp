@@ -21,81 +21,125 @@ class stmt_if_branch final:public statement{public:
 	inline stmt_if_branch(const statement&parent,tokenizer&t):
 		statement{parent,t.next_whitespace_token()}
 	{
-		if(t.is_next_char('(')){
-			enclosed_=true;
-		}
-
-		boolbinaryops_.push_back(stmt_if_bool_op{*this,t});
-
-		if(t.is_peek_char(')')){
-			if(enclosed_){
-				t.next_char();
+		while(true){
+			bool_ops_.push_back(stmt_if_bool_op{*this,t});
+			token tk=t.next_token();
+			if(tk.is_name("or")){
+				ops_.push_back(tk);
+			}else if(tk.is_name("and")){
+				ops_.push_back(tk);
+			}else{
+				t.pushback_token(tk);
+				break;
 			}
-			code_=make_unique<stmt_block>(*this,t);
-			return;
 		}
 		code_=make_unique<stmt_block>(*this,t);
 	}
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-
-		if(enclosed_)
-			os<<"(";
-
-		for(auto&e:boolbinaryops_){
-			e.source_to(os);
+		const size_t n=bool_ops_.size();
+		for(size_t i=0;i<n;i++){
+			const stmt_if_bool_op&bo=bool_ops_[i];
+			bo.source_to(os);
+			if(i<(n-1)){
+				const token&t=ops_[i];
+				t.source_to(os);
+			}
 		}
+		code_->source_to(os);
+	}
 
-		if(enclosed_)
-			os<<")";
-
-		if(code_)
-			code_->source_to(os);
+	inline string if_bgn_label_source_location(const toc&tc)const{
+		return "_if_"+tc.source_location(tok());
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest)const override{
-//		indent(os,indent_level+1,true);
-//		source_to(os);
-//		os<<"      ";
-//		tc.source_location_to_stream(os,this->tok());
-//		os<<endl;
+		indent(os,indent_level,true);
+		os<<"if ";
+		bool_ops_source_to(tc,os);
 
 		vector<string>jmplabels=split(dest,':');
+		const string jmp_to_if_false_label=jmplabels[0];
+		const string jmp_to_after_code_label=jmplabels.size()>1?jmplabels[1]:"";
+
+		const string if_bgn_label=if_bgn_label_source_location(tc);
+		const string jmp_to_code_label=if_bgn_label+"_code";
 
 		indent(os,indent_level,false);
-		os<<"_if_bgn_"<<to_string(tok().char_index())<<":"<<endl;
+		os<<if_bgn_label<<":"<<endl;
 
-		const stmt_if_bool_op&e=boolbinaryops_[0];
-		_resolve("cmp",tc,os,indent_level,*e.lhs_,*e.rhs_);
-		indent(os,indent_level,false);
-		if(e.isnot_){
-			if(e.op_=="="){
-				os<<"je";
-			}else if(e.op_=="<"){
-				os<<"jl";
-			}else if(e.op_=="<="){
-				os<<"jle";
-			}
-		}else{
-			if(e.op_=="="){
-				os<<"jne";
-			}else if(e.op_=="<"){
-				os<<"jge";
-			}else if(e.op_=="<="){
-				os<<"jg";
+		const size_t n=bool_ops_.size();
+		for(size_t i=0;i<n;i++){
+			const stmt_if_bool_op&e=bool_ops_[i];
+			_resolve("cmp",tc,os,indent_level,*e.lhs_,*e.rhs_);
+			indent(os,indent_level,false);
+			if(i==n-1){ // if last bool eval and false then jump to else label
+				if(e.isnot_){
+					if(e.op_=="="){
+						os<<"je";
+					}else if(e.op_=="<"){
+						os<<"jl";
+					}else if(e.op_=="<="){
+						os<<"jle";
+					}else if(e.op_==">"){
+						os<<"jg";
+					}else if(e.op_==">="){
+						os<<"jge";
+					}
+				}else{
+					if(e.op_=="="){
+						os<<"jne";
+					}else if(e.op_=="<"){
+						os<<"jge";
+					}else if(e.op_=="<="){
+						os<<"jg";
+					}else if(e.op_==">"){
+						os<<"jle";
+					}else if(e.op_==">="){
+						os<<"jl";
+					}
+				}
+				os<<" "<<jmp_to_if_false_label<<endl;
+			}else{ // if not last bool eval and true then jump to code
+				if(e.isnot_){
+					if(e.op_=="="){
+						os<<"jne";
+					}else if(e.op_=="<"){
+						os<<"jge";
+					}else if(e.op_=="<="){
+						os<<"jg";
+					}else if(e.op_==">"){
+						os<<"jle";
+					}else if(e.op_==">="){
+						os<<"jl";
+					}
+				}else{
+					if(e.op_=="="){
+						os<<"je";
+					}else if(e.op_=="<"){
+						os<<"jl";
+					}else if(e.op_=="<="){
+						os<<"jle";
+					}else if(e.op_==">"){
+						os<<"jg";
+					}else if(e.op_==">="){
+						os<<"jge";
+					}
+				}
+				os<<" "<<jmp_to_code_label<<endl;
 			}
 		}
 
-		os<<" "<<jmplabels[0]<<endl;
-
-		code_->compile(tc,os,indent_level+1);
-		indent(os,indent_level+1,false);
-		os<<"jmp "<<jmplabels[1]<<endl; // jump to code after if else block
-
 		indent(os,indent_level,false);
-		os<<"_if_end_"<<to_string(tok().char_index())<<":"<<endl;
+		os<<jmp_to_code_label<<":"<<endl;
 
+		code_->compile(tc,os,indent_level);
+
+		if(jmp_to_after_code_label!=""){
+			indent(os,indent_level,false);
+			os<<"jmp "<<jmp_to_after_code_label<<endl; // jump to code after if else block
+		}
 	}
 
 //	inline bool is_expression()const override{return true;}
@@ -111,6 +155,26 @@ class stmt_if_branch final:public statement{public:
 
 
 private:
+	inline void bool_ops_source_to(toc&tc,ostream&os)const{
+		stringstream ss;
+		statement::source_to(ss);
+		const size_t n=bool_ops_.size();
+		for(size_t i=0;i<n;i++){
+			const stmt_if_bool_op&bo=bool_ops_[i];
+			bo.source_to(ss);
+			if(i<(n-1)){
+				const token&t=ops_[i];
+				t.source_to(ss);
+			}
+		}
+
+		ss<<"      ";
+		tc.source_location_to_stream(ss,this->tok());
+		string s=ss.str();
+		string res=regex_replace(s,regex("\\s+")," ");
+		os<<res;
+		os<<endl;
+	}
 //	inline static size_t _presedence_for_op(const char ch){
 //		if(ch=='=')return 3;
 //		if(ch=='|')return 1;
@@ -152,13 +216,13 @@ private:
 
 		indent(os,indent_level,false);
 		os<<op<<" "<<ra<<","<<rb<<"  ;  ";
-		tc.source_location_to_stream(os,identifier());
+		tc.source_location_to_stream(os,sa.tok());
 		os<<endl;
 
 		for(auto&r:allocated_registers)tc.free_scratch_reg(r);
 	}
 
-	bool enclosed_{false}; // ie   =(1+2)   vs  =1+2
-	vector<stmt_if_bool_op>boolbinaryops_;
+	vector<stmt_if_bool_op>bool_ops_;
+	vector<token>ops_;
 	unique_ptr<stmt_block>code_;
 };

@@ -9,10 +9,8 @@ func main{
     var b=2
     var c=3
     var d=4
-    var r=
-      ((b+c)*d+
-      c*(a+b))*2
-    if r=58
+    var r=((b+c)*d+c*(a+b))*2
+    if r=58 or r=56
         exit(0)
     else if r=57
         exit(1)

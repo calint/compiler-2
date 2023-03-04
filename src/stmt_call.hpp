@@ -122,7 +122,7 @@ class stmt_call:public expression{public:
 
 		f->code_block()->compile(tc,os,indent_level+1);
 
-		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<tok().char_index()<<":"<<endl;
+		indent(os,indent_level,false);os<<"_end_"<<nm<<"_"<<tc.source_location(tok())<<":"<<endl;
 
 		for(auto r:allocated_registers)
 			tc.free_scratch_reg(r);
