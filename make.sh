@@ -1,10 +1,13 @@
 #for o in s 0 1 2 3;do
-for o in 3;do
-#  echo " * optimiziation option: $o " &&
-  clang++ -std=c++14 -O$o -S src/main.cpp &&
+CC="clang++ -std=c++2a"
+CF="-Os -g3 -Wfatal-errors"
+CW="-pedantic -pedantic-errors -Wall -Wextra -Werror -Wconversion -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wsign-conversion -Wsign-promo -Wswitch-default -Wundef -Wfloat-equal -Wsign-conversion -Wfloat-conversion -Wno-float-equal -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wold-style-cast -Wno-unqualified-std-cast-call -Wno-unused-private-field"
+for o in s;do
+  echo " * optimiziation option: $o " &&
+  $CC $CF $CW -O$o -S src/main.cpp &&
   echo -n 'callqs: ' &&
   cat main.s|grep callq|sort -u|wc|awk '{print $1}' &&
-  clang++ -std=c++14 -O$o -Wfatal-errors -o compi src/main.cpp &&
+  $CC $CF $CW -O$o -Wfatal-errors -o compi src/main.cpp &&
   ls --color -la compi
 done
 ./compi > gen.s &&
