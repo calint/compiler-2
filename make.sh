@@ -13,7 +13,7 @@ nasm -f elf64 gen.s &&
 ld -s -o gen gen.o &&
 #ls --color -la compi &&
 ls --color -la gen.s &&
-ls --color -la binary &&
+ls --color -la gen &&
 echo &&
 echo -n '         source: ' && cat src/*|wc &&
 echo -n '        gzipped: ' && cat src/*|gzip|wc && 
@@ -25,5 +25,4 @@ echo -n '        gzipped: ' && cat src/*|sh pgen.sh|gzip|wc &&
 echo &&
 cat gen.s &&
 echo &&
-./binary
-
+./gen

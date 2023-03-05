@@ -1,26 +1,6 @@
 #pragma once
-
 #include <vector>
-
 #include "statement.hpp"
-
-vector<string> &split(const string &s, char delim, vector<string> &elems);
-vector<string> &split(const string &s, char delim, vector<string> &elems) {
-    stringstream ss(s);
-    string item;
-    while (getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
-    return elems;
-}
-
-vector<string> split(const string &s, char delim);
-vector<string> split(const string &s, char delim) {
-    vector<string> elems;
-    split(s, delim, elems);
-    return elems;
-}
-
 
 class stmt_if_bool_op:public statement{public:
 	inline stmt_if_bool_op(const statement&parent,tokenizer&t,bool is_list):
@@ -30,17 +10,17 @@ class stmt_if_bool_op:public statement{public:
 		if(is_list)
 			return;
 		// if not a=3
-		bool isnot{false};
+		bool is_not{false};
 		while(true){
 			token tk=t.next_token();
 			if(not tk.is_name("not")){
 				t.pushback_token(tk);
 				break;
 			}
-			isnot=not isnot;
+			is_not=not is_not;
 			nots_.push_back(tk);
 		}
-		isnot_=isnot;
+		is_not_=is_not;
 
 		lhs_=make_unique<expr_ops_list>(*this,t,true);
 		if(lhs_->is_empty())
@@ -90,7 +70,7 @@ class stmt_if_bool_op:public statement{public:
 		if(last_elem){
 			// if last bool eval and false then jump to 'else'
 			// else continue to if code
-			if(isnot_){
+			if(is_not_){
 				if(op_=="="){
 					os<<"je";
 				}else if(op_=="<"){
@@ -119,7 +99,7 @@ class stmt_if_bool_op:public statement{public:
 		}else{
 			// if not last bool eval and true then jump to if block code
 			// else continue to next bool eval
-			if(isnot_){
+			if(is_not_){
 				if(op_=="="){
 					os<<"jne";
 				}else if(op_=="<"){
@@ -158,7 +138,7 @@ class stmt_if_bool_op:public statement{public:
 		if(last_elem){
 			// if last bool eval and false then jump to else label
 			// else continue to if block code
-			if(isnot_){
+			if(is_not_){
 				if(op_=="="){
 					os<<"je";
 				}else if(op_=="<"){
@@ -187,7 +167,7 @@ class stmt_if_bool_op:public statement{public:
 		}else{
 			// if not last bool eval and false then jump to "else"
 			// else continue to next bool eval
-			if(isnot_){
+			if(is_not_){
 				if(op_=="="){
 					os<<"je";
 				}else if(op_=="<"){
@@ -261,7 +241,7 @@ class stmt_if_bool_op:public statement{public:
 	}
 
 	vector<token>nots_;
-	bool isnot_;
+	bool is_not_;
 	bool is_list_;
 	unique_ptr<expr_ops_list>lhs_;
 	string op_;
