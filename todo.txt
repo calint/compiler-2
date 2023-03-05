@@ -1,12 +1,15 @@
 [ ] fix generated code of "if (a=1 and b=2) or (c=3 and d=4)"
+      ...
       jne cmp_14_26
       jmp if_14_8_code
       cmp_14_26:
       ...
     to
+      ...
       je if_14_8_code
       cmp_14_26:
       ...
     possibly with a post processor of nasm file
-[ ] review the ugly bool_op code
-[ ] variant instead of stmt_if_bool_op_list:stmt_if_bool_op
+[ ] review the ugly 'if' code
+[ ] variant instead of stmt_if_bool_op_list extends stmt_if_bool_op
+[ ] negated subexpression. i.e. not (a=1 and b=2)
