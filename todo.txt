@@ -10,6 +10,12 @@
       cmp_14_26:
       ...
     possibly with a post processor of nasm file
+[ ] fix generated code:
+      ...
+      je if_13_8_code
+      if_13_8_code:
+      ...
+      possibly with a post processor of nasm file
 [ ] review the ugly 'if' code
 [ ] variant instead of stmt_if_bool_op_list extends stmt_if_bool_op
 [ ] negated subexpression. i.e. not (a=1 and b=2)

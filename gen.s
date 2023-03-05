@@ -46,37 +46,36 @@ _start:
           add edi,esi
         imul edi,2
         mov dword[ebp+16],edi
-    if_14_8:
-;   [14:8] (a=1 and b=2) or (c=3 and d=4)
-;   [14:9] (a=1 and b=2)
-;   [14:9] a=1 
-    cmp_14_9:
-    cmp dword[ebp+0],1  ;  [14:9]
-    jne cmp_14_26
-;   [14:17] b=2
-    cmp_14_17:
-    cmp dword[ebp+4],2  ;  [14:17]
-    jne cmp_14_26
-    jmp if_14_8_code
-;   [14:26] (c=3 and d=4)
-;   [14:26] c=3 
-    cmp_14_26:
-    cmp dword[ebp+8],3  ;  [14:26]
-    jne if_end_14_5
-;   [14:34] d=4
-    cmp_14_34:
-    cmp dword[ebp+12],4  ;  [14:34]
-    jne if_end_14_5
-    if_14_8_code:
-;     [15:9] exit(1)
-;         [2:5] mov(ebx,v)
-          mov ebx,1
-;         [3:5] mov(eax,1)
-          mov eax,1
-;         [4:5] int(0x80)
-          int 0x80
-      exit_end_15_9:
-    if_end_14_5:
+    if_13_8:
+;   [13:8] (a=1 or b=2) and (c=3 or d=4)
+;   [13:9] (a=1 or b=2)
+;   [13:9] a=1 
+    cmp_13_9:
+    cmp dword[ebp+0],1  ;  [13:9]
+    je cmp_13_26
+;   [13:16] b=2
+    cmp_13_16:
+    cmp dword[ebp+4],2  ;  [13:16]
+    je cmp_13_26
+;   [13:26] (c=3 or d=4)
+;   [13:26] c=3 
+    cmp_13_26:
+    cmp dword[ebp+8],3  ;  [13:26]
+    je if_13_8_code
+;   [13:33] d=4
+    cmp_13_33:
+    cmp dword[ebp+12],4  ;  [13:33]
+    je if_13_8_code
+    if_13_8_code:
+    if_end_13_5:
+;   [15:9] exit(1)
+;       [2:5] mov(ebx,v)
+        mov ebx,1
+;       [3:5] mov(eax,1)
+        mov eax,1
+;       [4:5] int(0x80)
+        int 0x80
+    exit_end_15_9:
 ;   [16:5] exit(r)
 ;       [2:5] mov(ebx,v)
         mov ebx,dword[ebp+16]
