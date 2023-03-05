@@ -24,6 +24,7 @@ class stmt_block final:public statement{public:
 		is_one_statement_{not t.is_next_char('{')}
 	{
 		while(true){
+			bool last_statement_considered_no_statment=false;
 			if(t.is_eos())
 				break;
 
@@ -38,6 +39,7 @@ class stmt_block final:public statement{public:
 			if(tk.is_blank()){
 				if(t.is_next_char(';')){ // in-case ; is used
 					statements_.push_back(make_unique<stmt_semicolon>(*this,move(tk),t));
+					last_statement_considered_no_statment=true;
 					continue;
 				}
 				throw compiler_error(tk,"unexpected end of string");
@@ -48,13 +50,14 @@ class stmt_block final:public statement{public:
 				statements_.push_back(make_unique<stmt_assign_var>(*this,move(tk),t));
 			}else if(tk.is_name("#")){
 				statements_.push_back(make_unique<stmt_comment>(*this,move(tk),t));
+				last_statement_considered_no_statment=true;
 			}else if(tk.is_name("")){
 				statements_.push_back(make_unique<statement>(*this,move(tk)));
 			}else{
 				statements_.push_back(create_call_statement_from_tokenizer(*this,move(tk),t));
 			}
 
-			if(is_one_statement_)
+			if(is_one_statement_&&!last_statement_considered_no_statment)
 				break;
 		}
 	}

@@ -1,8 +1,5 @@
 /Debug/
-/binary
-/compi
+/gen
 /gen.o
 /diff.baz
-/main.s
 /baz
-
