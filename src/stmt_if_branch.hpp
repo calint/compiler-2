@@ -41,10 +41,6 @@ class stmt_if_branch final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false_label,const string&jmp_to_after_code_label)const{
-		indent(os,indent_level,true);
-		os<<"if ";
-		bol_.source_to_as_comment(tc,os);
-
 		const string if_bgn_label=if_bgn_label_source_location(tc);
 		const string jmp_to_if_true_label=if_bgn_label+"_code";
 
@@ -59,7 +55,7 @@ class stmt_if_branch final:public statement{public:
 		code_->compile(tc,os,indent_level);
 
 		if(jmp_to_after_code_label!=""){
-			indent(os,indent_level,false);
+			indent(os,indent_level+1,false);
 			os<<"jmp "<<jmp_to_after_code_label<<endl; // jump to code after if else block
 		}
 	}

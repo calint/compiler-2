@@ -8,6 +8,8 @@
 #include<vector>
 #include<algorithm>
 #include<cassert>
+#include<sstream>
+#include<regex>
 
 #include"lut.hpp"
 
@@ -274,15 +276,18 @@ class toc final{public:
 			i--;
 		}
 	}
-//
-//	inline void set_nasm_dest(const string&dst){
-//		dst_=dst;
-//	}
-//	string dst_;
-//
-//	inline const string&get_evaluation_destination_nasm_identifier()const{
-//		return dst_;
-//	}
+
+	inline void source_to_as_comment(ostream&os,const statement&stmt)const{
+		stringstream ss;
+		source_location_to_stream(ss,stmt.tok());
+		ss<<": ";
+		stmt.source_to(ss);
+		string s=ss.str();
+		string res=regex_replace(s,regex("\\s+")," ");
+		os<<res;
+		os<<endl;
+	}
+
 private:
 	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&ok)const{//? tidy duplicate code
 		string name=ident;
@@ -366,6 +371,7 @@ private:
 		if(stkix_>max_stack_usage_)
 			max_stack_usage_=stkix_;
 	}
+
 
 	size_t stkix_{0};
 	vector<frame>frames_;

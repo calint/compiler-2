@@ -42,7 +42,7 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 		for(size_t i=0;i<n;i++){
 			const stmt_if_bool_op&bo=*bool_ops_[i];
 			bo.source_to(os);
-			if(i<(n-1)){
+			if(i<n-1){
 				const token&t=ops_[i];
 				t.source_to(os);
 			}
@@ -54,14 +54,16 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		throw compiler_error(tok(),"this code should not be reached");
 	}
-	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false_label,const string&jmp_to_if_true_label,const bool is_last)const{
+	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool is_last)const{
+		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
+
 		const size_t n=bool_ops_.size();
 		for(size_t i=0;i<n;i++){
 			stmt_if_bool_op*e=bool_ops_[i].get();
 			if(e->is_list()){
 				stmt_if_bool_op_list*el=dynamic_cast<stmt_if_bool_op_list*>(e);
-				string jmp_false=jmp_to_if_false_label;
-				string jmp_true=jmp_to_if_true_label;
+				string jmp_false=jmp_to_if_false;
+				string jmp_true=jmp_to_if_true;
 				if(i<n-1){
 					// if not last element check if it is a 'or' or 'and' list
 					if(ops_[i].is_name("or")){
@@ -83,41 +85,21 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 			// a=1 and b=2   vs   a=1 or b=2
 			if(i<n-1){
 				if(ops_[i].is_name("or")){
-					e->compile_or(tc,os,indent_level,false,jmp_to_if_false_label,jmp_to_if_true_label);
+					e->compile_or(tc,os,indent_level,false,jmp_to_if_false,jmp_to_if_true);
 				}else if(ops_[i].is_name("and")){
-					e->compile_and(tc,os,indent_level,false,jmp_to_if_false_label,jmp_to_if_true_label);
+					e->compile_and(tc,os,indent_level,false,jmp_to_if_false,jmp_to_if_true);
 				}else{
 					throw "expected 'or' or 'and'";
 				}
 			}else{
 //				// if last eval in list
-				e->compile_or(tc,os,indent_level,true,jmp_to_if_false_label,jmp_to_if_true_label);
-				if(enclosed_&&!is_last){
+				e->compile_or(tc,os,indent_level,true,jmp_to_if_false,jmp_to_if_true);
+				if(!is_last){
 					indent(os,indent_level,false);
-					os<<"jmp "<<jmp_to_if_true_label<<"\n";
+					os<<"jmp "<<jmp_to_if_true<<"\n";
 				}
 			}
 		}
-	}
-	inline void source_to_as_comment(toc&tc,ostream&os)const{
-		stringstream ss;
-		statement::source_to(ss);
-		const size_t n=bool_ops_.size();
-		for(size_t i=0;i<n;i++){
-			const stmt_if_bool_op&bo=*bool_ops_[i];
-			bo.source_to(ss);
-			if(i<(n-1)){
-				const token&t=ops_[i];
-				t.source_to(ss);
-			}
-		}
-
-		ss<<"      ";
-		tc.source_location_to_stream(ss,this->tok());
-		string s=ss.str();
-		string res=regex_replace(s,regex("\\s+")," ");
-		os<<res;
-		os<<endl;
 	}
 
 private:

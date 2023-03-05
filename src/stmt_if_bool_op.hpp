@@ -82,15 +82,14 @@ class stmt_if_bool_op:public statement{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		throw compiler_error(tok(),"this code should not be reached");
 	}
-	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false_label,const string&jmp_to_if_true_label)const{
-		indent(os,indent_level,false);
-		os<<cmp_bgn_label(tc);
-		os<<":\n";
+	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false,const string&jmp_to_if_true)const{
+		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
+		indent(os,indent_level,false);os<<cmp_bgn_label(tc)<<":\n";
 		_resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
 		indent(os,indent_level,false);
 		if(last_elem){
-			// if last bool eval and false then jump to else label
-			// else continue to if block code
+			// if last bool eval and false then jump to 'else'
+			// else continue to if code
 			if(isnot_){
 				if(op_=="="){
 					os<<"je";
@@ -116,7 +115,7 @@ class stmt_if_bool_op:public statement{public:
 					os<<"jl";
 				}
 			}
-			os<<" "<<jmp_to_if_false_label<<endl;
+			os<<" "<<jmp_to_if_false<<endl;
 		}else{
 			// if not last bool eval and true then jump to if block code
 			// else continue to next bool eval
@@ -145,11 +144,12 @@ class stmt_if_bool_op:public statement{public:
 					os<<"jge";
 				}
 			}
-			os<<" "<<jmp_to_if_true_label<<endl;
+			os<<" "<<jmp_to_if_true<<endl;
 		}
 	}
 
-	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false_label,const string&jmp_to_if_true_label)const{
+	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false,const string&jmp_to_if_true_label)const{
+		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 		indent(os,indent_level,false);
 		os<<cmp_bgn_label(tc);
 		os<<":\n";
@@ -183,7 +183,7 @@ class stmt_if_bool_op:public statement{public:
 					os<<"jl";
 				}
 			}
-			os<<" "<<jmp_to_if_false_label<<endl;
+			os<<" "<<jmp_to_if_false<<endl;
 		}else{
 			// if not last bool eval and false then jump to "else"
 			// else continue to next bool eval
@@ -212,7 +212,7 @@ class stmt_if_bool_op:public statement{public:
 					os<<"jl";
 				}
 			}
-			os<<" "<<jmp_to_if_false_label<<endl;
+			os<<" "<<jmp_to_if_false<<endl;
 		}
 	}
 
@@ -259,7 +259,6 @@ class stmt_if_bool_op:public statement{public:
 	inline string cmp_bgn_label(const toc&tc)const{
 		return "cmp_"+tc.source_location(tok());
 	}
-
 
 	vector<token>nots_;
 	bool isnot_;

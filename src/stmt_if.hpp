@@ -60,11 +60,7 @@ class stmt_if final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		indent(os,indent_level,true);
-		os<<"if ";
-		tc.source_location_to_stream(os,tok());
-		os<<":["<<tok().char_index()<<"]\n";
-
+//		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 		const string source_loc=tc.source_location(tok());
 		string label_after_if="if_end_"+source_loc;
 		string label_else_branch=else_code_?"if_else_"+source_loc:label_after_if;
@@ -74,7 +70,7 @@ class stmt_if final:public statement{public:
 			const auto&e=branches_[i];
 			string jmp_if_false=label_else_branch;
 			string jmp_after_if=label_after_if;
-			if(i<(n-1)){ // if branch is false jump to next if
+			if(i<n-1){ // if branch is false jump to next if
 				jmp_if_false=branches_[i+1].if_bgn_label_source_location(tc);
 			}else{
 				// if last branch and no "else" then don't jump to "after_if", just continue
