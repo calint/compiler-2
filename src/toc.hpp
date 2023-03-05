@@ -280,7 +280,7 @@ class toc final{public:
 	inline void source_to_as_comment(ostream&os,const statement&stmt)const{
 		stringstream ss;
 		source_location_to_stream(ss,stmt.tok());
-		ss<<": ";
+		ss<<" ";
 		stmt.source_to(ss);
 		string s=ss.str();
 		string res=regex_replace(s,regex("\\s+")," ");

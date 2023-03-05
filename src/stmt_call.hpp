@@ -53,24 +53,26 @@ class stmt_call:public expression{public:
 		const string&nm=tok().name();
 
 
-		//-- comment
-		indent(os,indent_level,true);
-		os<<nm<<"(";
-		const size_t n=args_.size();
-		const size_t nn=n-1;
-		for(size_t i=0;i<n;i++){
-			os<<args_[i].get()->identifier();
-			if(i<nn)os<<" ";
-		}
-		os<<")";
-//		const string&expr_dest=expression_dest_nasm_identifier();
-		if(not dest_ident.empty())
-			os<<":"<<dest_ident;
+//		//-- comment
+//		indent(os,indent_level,true);
+//		os<<nm<<"(";
+//		const size_t n=args_.size();
+//		const size_t nn=n-1;
+//		for(size_t i=0;i<n;i++){
+//			os<<args_[i].get()->identifier();
+//			if(i<nn)os<<" ";
+//		}
+//		os<<")";
+////		const string&expr_dest=expression_dest_nasm_identifier();
+//		if(not dest_ident.empty())
+//			os<<":"<<dest_ident;
+//
+//		os<<"  ";
+//		tc.source_location_to_stream(os,tok());
+//		os<<endl;
+//		//--- - - - -- - - - -
+		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 
-		os<<"  ";
-		tc.source_location_to_stream(os,tok());
-		os<<endl;
-		//--- - - - -- - - - -
 
 		if(!is_inline())
 			throw string("not inlined");
