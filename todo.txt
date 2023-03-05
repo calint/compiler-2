@@ -9,3 +9,4 @@
       ...
     possibly with a post processor of nasm file
 [ ] review the ugly bool_op code
+[ ] variant instead of stmt_if_bool_op_list:stmt_if_bool_op
