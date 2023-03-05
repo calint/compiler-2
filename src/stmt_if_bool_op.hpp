@@ -23,10 +23,13 @@ vector<string> split(const string &s, char delim) {
 
 
 class stmt_if_bool_op:public statement{public:
-	inline stmt_if_bool_op(const statement&parent,tokenizer&t):
-		statement(parent,t.next_whitespace_token())
+	inline stmt_if_bool_op(const statement&parent,tokenizer&t,bool is_list):
+		statement(parent,t.next_whitespace_token()),
+		is_list_{is_list}
 	{
-		// if(not not a=3)   if(a!=3)
+		if(is_list)
+			return;
+		// if not a=3
 		bool isnot{false};
 		while(true){
 			token tk=t.next_token();
@@ -80,6 +83,9 @@ class stmt_if_bool_op:public statement{public:
 		throw compiler_error(tok(),"this code should not be reached");
 	}
 	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false_label,const string&jmp_to_if_true_label)const{
+		indent(os,indent_level,false);
+		os<<cmp_bgn_label_source_location(tc);
+		os<<":\n";
 		_resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
 		indent(os,indent_level,false);
 		if(last_elem){
@@ -144,6 +150,9 @@ class stmt_if_bool_op:public statement{public:
 	}
 
 	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false_label,const string&jmp_to_if_true_label)const{
+		indent(os,indent_level,false);
+		os<<cmp_bgn_label_source_location(tc);
+		os<<":\n";
 		_resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
 		indent(os,indent_level,false);
 		if(last_elem){
@@ -246,9 +255,15 @@ class stmt_if_bool_op:public statement{public:
 
 		for(auto&r:allocated_registers)tc.free_scratch_reg(r);
 	}
+	inline bool is_list()const{return is_list_;}
+	inline string cmp_bgn_label_source_location(const toc&tc)const{
+		return "cmp_"+tc.source_location(tok());
+	}
+
 
 	vector<token>nots_;
-	bool isnot_{false};
+	bool isnot_;
+	bool is_list_;
 	unique_ptr<expr_ops_list>lhs_;
 	string op_;
 	unique_ptr<expr_ops_list>rhs_;

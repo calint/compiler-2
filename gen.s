@@ -47,40 +47,5 @@ _start:
         imul edi,2  ;  [12:29]
         mov dword[ebp+16],edi  ;  [12:9]
 ;   if [13:5]:[155]
-;   if r=58 or r=56 or r=55 [13:8]
+;   if (r=58 and not a=2) or c=3 [13:8]
     if_13_8:
-    cmp dword[ebp+16],58  ;  [13:8]
-    je if_13_8_code
-    cmp dword[ebp+16],56  ;  [13:16]
-    je if_13_8_code
-    cmp dword[ebp+16],55  ;  [13:24]
-    jne if_15_13
-    if_13_8_code:
-;     exit(1)  [14:9]
-          mov ebx,1  ;  [2:5]
-          mov eax,1  ;  [3:5]
-          int 0x80  ;  [4:5]
-      exit_end_14_9:
-    jmp if_end_13_5
-;   if r=57 [15:13]
-    if_15_13:
-    cmp dword[ebp+16],57  ;  [15:13]
-    jne if_else_13_5
-    if_15_13_code:
-;     exit(2)  [16:9]
-          mov ebx,2  ;  [2:5]
-          mov eax,1  ;  [3:5]
-          int 0x80  ;  [4:5]
-      exit_end_16_9:
-    jmp if_end_13_5
-    if_else_13_5:
-;       exit(r)  [18:9]
-            mov ebx,dword[ebp+16]  ;  [2:5]
-            mov eax,1  ;  [3:5]
-            int 0x80  ;  [4:5]
-        exit_end_18_9:
-    if_end_13_5:
-
-;           max regs in use: 3
-;         max frames in use: 3
-;          max stack in use: 5
