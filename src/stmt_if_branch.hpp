@@ -51,7 +51,7 @@ class stmt_if_branch final:public statement{public:
 		indent(os,indent_level,false);
 		os<<if_bgn_label<<":"<<endl;
 
-		bol_.compile(tc, os, indent_level,jmp_to_if_false_label,jmp_to_if_true_label);
+		bol_.compile(tc, os, indent_level,jmp_to_if_false_label,jmp_to_if_true_label,true);
 
 		indent(os,indent_level,false);
 		os<<jmp_to_if_true_label<<":"<<endl;

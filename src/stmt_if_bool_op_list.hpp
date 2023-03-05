@@ -54,7 +54,7 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		throw compiler_error(tok(),"this code should not be reached");
 	}
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false_label,const string&jmp_to_if_true_label)const{
+	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false_label,const string&jmp_to_if_true_label,const bool is_last)const{
 		const size_t n=bool_ops_.size();
 		for(size_t i=0;i<n;i++){
 			stmt_if_bool_op*e=bool_ops_[i].get();
@@ -72,10 +72,10 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 					}else{
 						throw "expected 'or' or 'and'";
 					}
-					el->compile(tc,os,indent_level,jmp_false,jmp_true);
+					el->compile(tc,os,indent_level,jmp_false,jmp_true,false);
 				}else{
-					// if last in list jmp_false is next eval
-					el->compile(tc,os,indent_level,jmp_false,jmp_true);
+					// if last in list jmp_false is next bool eval
+					el->compile(tc,os,indent_level,jmp_false,jmp_true,true);
 				}
 				continue;
 			}
@@ -91,7 +91,14 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 			}else{
 				// if last eval in list
 				e->compile_or(tc,os,indent_level,true,jmp_to_if_false_label,jmp_to_if_true_label);
-				if(enclosed_){
+				if(enclosed_&&!is_last){
+//					indent(os,indent_level,false);
+//					os<<"if NextInstruction != "<<jmp_to_if_true_label<<"\n";
+//					indent(os,indent_level,false);
+//					os<<"    jmp "<<jmp_to_if_true_label<<"\n";
+//					indent(os,indent_level,false);
+//					os<<"endif\n";
+
 					indent(os,indent_level,false);
 					os<<"jmp "<<jmp_to_if_true_label<<"\n";
 				}
