@@ -71,8 +71,11 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 					}else{
 						throw "expected 'or' or 'and'";
 					}
+					el->compile(tc,os,indent_level,jmp_false,jmp_true);
+				}else{
+					// if last in list jmp_false is next eval
+					el->compile(tc,os,indent_level,jmp_false,jmp_true);
 				}
-				el->compile(tc,os,indent_level,jmp_false,jmp_true);
 				continue;
 			}
 			// a=1 and b=2   vs   a=1 or b=2
