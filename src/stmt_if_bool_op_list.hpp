@@ -5,7 +5,7 @@
 #include "statement.hpp"
 
 class stmt_if_bool_op_list:public stmt_if_bool_op{public:
-	inline stmt_if_bool_op_list(const statement&parent,tokenizer&t,bool enclosed):
+	inline stmt_if_bool_op_list(const statement&parent,tokenizer&t,bool enclosed=false):
 		stmt_if_bool_op(parent,t,true),
 		enclosed_{enclosed}
 	{
@@ -16,10 +16,11 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 			}else{
 				unique_ptr<stmt_if_bool_op>bool_op=make_unique<stmt_if_bool_op>(*this,t,false);
 				bool_ops_.push_back(move(bool_op));
-				if(t.is_next_char(')') and enclosed_){
-					return;
-				}
 			}
+			if(t.is_next_char(')')){
+				return;
+			}
+
 			token tk=t.next_token();
 			if(tk.is_name("or")){
 				ops_.push_back(tk);
