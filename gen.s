@@ -47,22 +47,21 @@ _start:
         imul edi,2  ;  [12:29]
         mov dword[ebp+16],edi  ;  [12:9]
 ;   if [13:5]:[155]
-;   if (a=1 and b=2) or (c=3 and d=4) [13:8]
+;   if (a=1 or b=2) and (c=3 or d=4) [13:8]
     if_13_8:
     cmp_13_9:
     cmp dword[ebp+0],1  ;  [13:9]
-    jne cmp_13_26
-    cmp_13_17:
-    cmp dword[ebp+4],2  ;  [13:17]
-    jne cmp_13_26
-    jmp if_13_8_code
+    je cmp_13_26
+    cmp_13_16:
+    cmp dword[ebp+4],2  ;  [13:16]
+    jne if_end_13_5
+    jmp cmp_13_26
     cmp_13_26:
     cmp dword[ebp+8],3  ;  [13:26]
+    je if_13_8_code
+    cmp_13_33:
+    cmp dword[ebp+12],4  ;  [13:33]
     jne if_end_13_5
-    cmp_13_34:
-    cmp dword[ebp+12],4  ;  [13:34]
-    jne if_end_13_5
-    jmp if_13_8_code
     if_13_8_code:
 ;     exit(0)  [14:9]
           mov ebx,0  ;  [2:5]
