@@ -128,16 +128,18 @@ class expr_ops_list final:public expression{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest)const override{
-		indent(os,indent_level+1,true);
-		stringstream ss;
-		source_to(ss);
-		ss<<"      ";
-		tc.source_location_to_stream(ss,this->tok());
-		string s=ss.str();
-//		replace(s.begin(),s.end(),'\n',' ');
-		string res=regex_replace(s,regex("\\s+")," ");
-		os<<res;
-		os<<endl;
+		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
+//
+//		indent(os,indent_level+1,true);
+//		stringstream ss;
+//		source_to(ss);
+//		ss<<"      ";
+//		tc.source_location_to_stream(ss,this->tok());
+//		string s=ss.str();
+////		replace(s.begin(),s.end(),'\n',' ');
+//		string res=regex_replace(s,regex("\\s+")," ");
+//		os<<res;
+//		os<<endl;
 
 		if(expressions_.empty())
 			return;
@@ -182,24 +184,20 @@ class expr_ops_list final:public expression{public:
 			return;
 		}
 
+//		indent(os,indent_level,true);tc.source_to_as_comment(os,s);
+
 		if(!ra.find("dword[") and !rb.find("dword[")){
 			const string&r=tc.alloc_scratch_register(s.tok());
 			indent(os,indent_level,false);
-			os<<"mov "<<r<<","<<rb<<"  ;  ";
-			tc.source_location_to_stream(os,s.tok());
-			os<<endl;
+			os<<"mov "<<r<<","<<rb<<endl;
 			indent(os,indent_level,false);
-			os<<op<<" "<<ra<<","<<r<<"  ;  ";
-			tc.source_location_to_stream(os,s.tok());
-			os<<endl;
+			os<<op<<" "<<ra<<","<<r<<endl;
 			tc.free_scratch_reg(r);
 			return;
 		}
 
 		indent(os,indent_level,false);
-		os<<op<<" "<<ra<<","<<rb<<"  ;  ";
-		tc.source_location_to_stream(os,s.tok());
-		os<<endl;
+		os<<op<<" "<<ra<<","<<rb<<endl;
 	}
 	inline bool is_empty()const override{return expressions_.empty();}
 
