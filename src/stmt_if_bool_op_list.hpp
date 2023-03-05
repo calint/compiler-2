@@ -81,15 +81,15 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 			// a=1 and b=2   vs   a=1 or b=2
 			if(i<n-1){
 				if(ops_[i].is_name("or")){
-					e->compile_or(tc,os,indent_level,i==n-1,jmp_to_if_false_label,jmp_to_if_true_label);
+					e->compile_or(tc,os,indent_level,false,jmp_to_if_false_label,jmp_to_if_true_label);
 				}else if(ops_[i].is_name("and")){
-					e->compile_and(tc,os,indent_level,i==n-1,jmp_to_if_false_label,jmp_to_if_true_label);
+					e->compile_and(tc,os,indent_level,false,jmp_to_if_false_label,jmp_to_if_true_label);
 				}else{
 					throw "expected 'or' or 'and'";
 				}
 			}else{
 				// if last eval in list either 'and' or 'or' is correct
-				e->compile_or(tc,os,indent_level,i==n-1,jmp_to_if_false_label,jmp_to_if_true_label);
+				e->compile_or(tc,os,indent_level,true,jmp_to_if_false_label,jmp_to_if_true_label);
 			}
 		}
 	}
