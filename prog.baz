@@ -10,7 +10,7 @@ func main{
     var c=3
     var d=4
     var r=((b+c)*d+c*(a+b))*2
-    if (a=1 and b=2) or c=3
+    if (a=1 and b=2) or (c=3 and d=4)
         exit(0)
     exit(r)
 }

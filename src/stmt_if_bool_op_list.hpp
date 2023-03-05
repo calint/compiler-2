@@ -64,10 +64,10 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 				string jmp_true=jmp_to_if_true_label;
 				if(i<n-1){
 					if(ops_[i].is_name("or")){
-						// if evaluation is false and op is "or" then jump_false is next eval in list
+						// if evaluation is false and next op is "or" then jump_false is next bool eval
 						jmp_false=bool_ops_[i+1]->cmp_bgn_label_source_location(tc);
 					}else if(ops_[i].is_name("and")){
-						// if evaluation is true and op is "and" then jump_true is next eval in list
+						// if evaluation is true and next op is "and" then jump_true is next bool eval
 						jmp_true=bool_ops_[i+1]->cmp_bgn_label_source_location(tc);
 					}else{
 						throw "expected 'or' or 'and'";
@@ -89,8 +89,12 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 					throw "expected 'or' or 'and'";
 				}
 			}else{
-				// if last eval in list either 'and' or 'or' is correct
+				// if last eval in list
 				e->compile_or(tc,os,indent_level,true,jmp_to_if_false_label,jmp_to_if_true_label);
+				if(enclosed_){
+					indent(os,indent_level,false);
+					os<<"jmp "<<jmp_to_if_true_label<<"\n";
+				}
 			}
 		}
 	}
