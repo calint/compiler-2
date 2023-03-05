@@ -4,11 +4,9 @@
       jmp if_14_8_code
       cmp_14_26:
     possibly with a post processor of nasm file
-[ ] fix generated code:
-      je if_13_8_code
-      if_13_8_code:
-      possibly with a post processor of nasm file
-[ ] fix
+      je if_14_8_code
+      cmp_14_26:
+[ ] fix generated code
       jmp cmp_13_26
       cmp_13_26:
 [ ] review the ugly 'if' code

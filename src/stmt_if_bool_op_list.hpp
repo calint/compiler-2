@@ -92,7 +92,6 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 					throw "expected 'or' or 'and'";
 				}
 			}else{
-//				// if last eval in list
 				e->compile_or(tc,os,indent_level,true,jmp_to_if_false,jmp_to_if_true);
 				if(!is_last){
 					indent(os,indent_level,false);
