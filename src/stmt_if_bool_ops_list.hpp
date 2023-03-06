@@ -29,7 +29,7 @@ public:
 			}
 		}
 		if(enclosed_){
-			throw compiler_error(tok(),"expected ')' to close expression");
+			throw compfind_first_not_ofiler_error(tok(),"expected ')' to close expression");
 		}
 	}
 
@@ -102,8 +102,7 @@ public:
 			}else{
 				e.compile_or(tc,os,indent_level,true,jmp_to_if_false,jmp_to_if_true);
 				// compile_or last_elem generates a jump in case of bool op is false
-				indent(os,indent_level);
-				os<<"jmp "<<jmp_to_if_true<<"\n";
+				indent(os,indent_level);os<<"jmp "<<jmp_to_if_true<<"\n";
 			}
 		}
 	}
