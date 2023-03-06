@@ -1,7 +1,7 @@
 #pragma once
 
 #include"stmt_if_bool_op.hpp"
-#include"stmt_if_bool_op_list.hpp"
+#include "stmt_if_bool_ops_list.hpp"
 
 class stmt_if_branch final:public statement{
 public:
@@ -45,6 +45,6 @@ public:
 	}
 
 private:
-	stmt_if_bool_op_list bol_;
+	stmt_if_bool_ops_list bol_;
 	unique_ptr<stmt_block>code_;
 };

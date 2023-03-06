@@ -4,15 +4,15 @@
 
 #include"statement.hpp"
 
-class stmt_if_bool_op_list final:public statement{
+class stmt_if_bool_ops_list final:public statement{
 public:
-	inline stmt_if_bool_op_list(const statement&parent,tokenizer&t,bool enclosed=false):
+	inline stmt_if_bool_ops_list(const statement&parent,tokenizer&t,bool enclosed=false):
 		statement(parent,t.next_whitespace_token()),
 		enclosed_{enclosed}
 	{
 		while(true){
 			if(t.is_next_char('(')){
-				bools_.push_back(stmt_if_bool_op_list(*this,t,true));
+				bools_.push_back(stmt_if_bool_ops_list(*this,t,true));
 			}else{
 				bools_.push_back(stmt_if_bool_op(*this,t));
 			}
@@ -45,7 +45,7 @@ public:
 			if(bools_[i].index()==0){
 				get<stmt_if_bool_op>(bools_[i]).source_to(os);
 			}else{
-				get<stmt_if_bool_op_list>(bools_[i]).source_to(os);
+				get<stmt_if_bool_ops_list>(bools_[i]).source_to(os);
 			}
 			if(i<n-1){
 				const token&t=ops_[i];
@@ -60,9 +60,9 @@ public:
 		throw compiler_error(tok(),"this code should not be reached");
 	}
 
-	inline static string cmp_label_from_variant(const toc&tc,const variant<stmt_if_bool_op,stmt_if_bool_op_list>&v){
+	inline static string cmp_label_from_variant(const toc&tc,const variant<stmt_if_bool_op,stmt_if_bool_ops_list>&v){
 		if(v.index()==1){
-			return get<stmt_if_bool_op_list>(v).cmp_bgn_label(tc);
+			return get<stmt_if_bool_ops_list>(v).cmp_bgn_label(tc);
 		}
 		return get<stmt_if_bool_op>(v).cmp_bgn_label(tc);
 	}
@@ -77,7 +77,7 @@ public:
 		const size_t n=bools_.size();
 		for(size_t i=0;i<n;i++){
 			if(bools_[i].index()==1){
-				const stmt_if_bool_op_list&el=get<stmt_if_bool_op_list>(bools_[i]);
+				const stmt_if_bool_ops_list&el=get<stmt_if_bool_ops_list>(bools_[i]);
 				string jmp_false=jmp_to_if_false;
 				string jmp_true=jmp_to_if_true;
 				if(i<n-1){
@@ -119,7 +119,7 @@ public:
 	}
 
 private:
-	vector<variant<stmt_if_bool_op,stmt_if_bool_op_list>>bools_;
+	vector<variant<stmt_if_bool_op,stmt_if_bool_ops_list>>bools_;
 	vector<token>ops_;
 	bool enclosed_;  // (a=b and c=d) vs a=b and c=d
 };
