@@ -1,15 +1,16 @@
 #!/bin/sh
 
+BIN=baz
 CC="clang++ -std=c++2a"
-CF="-Os -Wfatal-errors -fno-inline"
-CW="-Weverything -pedantic -pedantic-errors -Wall -Wextra -Werror -Wconversion -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wsign-conversion -Wsign-promo -Wswitch-default -Wundef -Wfloat-equal -Wsign-conversion -Wfloat-conversion -Wold-style-cast"
+CF="-Os -Werror -Wfatal-errors -fno-inline"
+CW="-Weverything -pedantic -pedantic-errors -Wall -Wextra -Wconversion -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wsign-conversion -Wsign-promo -Wswitch-default -Wundef -Wfloat-equal -Wsign-conversion -Wfloat-conversion -Wold-style-cast"
 CW="$CW -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-call -Wno-padded -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field"
 
-$CC $CF $CW -Wfatal-errors -o baz src/main.cpp &&
+$CC $CF $CW -o $BIN src/main.cpp &&
 
-./baz prog.baz > gen.s && nasm -f elf32 gen.s && ld -melf_i386 -s -o gen gen.o &&
+./$BIN prog.baz > gen.s && nasm -f elf32 gen.s && ld -melf_i386 -s -o gen gen.o &&
 
-ls --color -la baz gen.s gen &&
+ls --color -la $BIN gen.s gen &&
 
 ASM_LINES="cat gen.s|grep -v -e'^;.*$' -e'^\s*$'"
 
