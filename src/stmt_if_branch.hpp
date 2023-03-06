@@ -3,8 +3,8 @@
 #include"stmt_if_bool_op.hpp"
 #include"stmt_if_bool_op_list.hpp"
 
-class stmt_if_branch final:public statement{public:
-
+class stmt_if_branch final:public statement{
+public:
 	inline stmt_if_branch(const statement&parent,tokenizer&t):
 		statement{parent,t.next_whitespace_token()},
 		bol_{*this,t}

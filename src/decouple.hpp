@@ -1,4 +1,5 @@
 #pragma once
+
 class tokenizer;
 class token;
 class statement;

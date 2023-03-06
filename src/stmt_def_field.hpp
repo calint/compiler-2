@@ -1,7 +1,7 @@
 #pragma once
 
-class stmt_def_field final:public statement{public:
-
+class stmt_def_field final:public statement{
+public:
 	inline stmt_def_field(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk},
 		ident_{t.next_token()}
@@ -18,12 +18,11 @@ class stmt_def_field final:public statement{public:
 		}
 	}
 
-
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		ident_.source_to(os);
 		os<<"{";
-		for(auto&s:tokens_)
+		for(const auto&s:tokens_)
 			s.source_to(os);
 		os<<"}";
 	}
@@ -31,7 +30,7 @@ class stmt_def_field final:public statement{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 		os<<ident_.name()<<" db '";
-		for(auto&s:tokens_)
+		for(const auto&s:tokens_)
 			s.compile_to(os);
 		os<<"'\n";
 

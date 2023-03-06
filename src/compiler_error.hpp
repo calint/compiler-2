@@ -3,8 +3,8 @@
 #include"token.hpp"
 #include"statement.hpp"
 
-class compiler_error final{public:
-
+class compiler_error final{
+public:
 	inline compiler_error(const token&tk,const string&message,const string&identifier=""):
 		msg{message},ident{identifier},
 		start_char{tk.char_index()},end_char{tk.char_index_end()}
@@ -18,5 +18,4 @@ class compiler_error final{public:
 	const string ident;
 	size_t start_char{0};
 	size_t end_char{0};
-
 };

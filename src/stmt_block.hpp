@@ -5,8 +5,8 @@
 #include"stmt_def_var.hpp"
 #include"stmt_comment.hpp"
 
-class stmt_block final:public statement{public:
-
+class stmt_block final:public statement{
+public:
 	inline stmt_block(const statement&parent,tokenizer&t):
 		statement{parent,token{}},
 		is_one_statement_{not t.is_next_char('{')}
@@ -26,23 +26,23 @@ class stmt_block final:public statement{public:
 
 			if(tk.is_blank()){
 				if(t.is_next_char(';')){ // in-case ; is used
-					statements_.push_back(make_unique<stmt_semicolon>(*this,move(tk),t));
+					stmts_.push_back(make_unique<stmt_semicolon>(*this,move(tk),t));
 					last_statement_considered_no_statment=true;
 					continue;
 				}
 				throw compiler_error(tk,"unexpected end of string");
 			}
 			if(tk.is_name("var")){
-				statements_.push_back(make_unique<stmt_def_var>(*this,move(tk),t));
+				stmts_.push_back(make_unique<stmt_def_var>(*this,move(tk),t));
 			}else if(t.is_next_char('=')){
-				statements_.push_back(make_unique<stmt_assign_var>(*this,move(tk),t));
+				stmts_.push_back(make_unique<stmt_assign_var>(*this,move(tk),t));
 			}else if(tk.is_name("#")){
-				statements_.push_back(make_unique<stmt_comment>(*this,move(tk),t));
+				stmts_.push_back(make_unique<stmt_comment>(*this,move(tk),t));
 				last_statement_considered_no_statment=true;
 			}else if(tk.is_name("")){
-				statements_.push_back(make_unique<statement>(*this,move(tk)));
+				stmts_.push_back(make_unique<statement>(*this,move(tk)));
 			}else{
-				statements_.push_back(create_call_statement_from_tokenizer(*this,move(tk),t));
+				stmts_.push_back(create_call_statement_from_tokenizer(*this,move(tk),t));
 			}
 
 			if(is_one_statement_&&!last_statement_considered_no_statment)
@@ -53,19 +53,17 @@ class stmt_block final:public statement{public:
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		if(!is_one_statement_)os<<"{";
-		for(auto&s:statements_)
+		for(const auto&s:stmts_)
 			s->source_to(os);
 		if(!is_one_statement_)os<<"}";
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		for(auto&s:statements_)
+		for(const auto&s:stmts_)
 			s->compile(tc,os,indent_level+1);
 	}
 
-//	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements_)s->link(tc,os);}
-
 private:
 	bool is_one_statement_{false};
-	vector<unique_ptr<statement>>statements_;
+	vector<unique_ptr<statement>>stmts_;
 };

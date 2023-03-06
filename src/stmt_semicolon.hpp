@@ -1,8 +1,8 @@
 #pragma once
 
 // empty statement in case semi-colon is used
-class stmt_semicolon final:public statement{public:
-
+class stmt_semicolon final:public statement{
+public:
 	inline stmt_semicolon(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk}
 	{}

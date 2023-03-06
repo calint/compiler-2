@@ -3,8 +3,8 @@
 #include"stmt_def_func_param.hpp"
 #include"stmt_block.hpp"
 
-class stmt_def_func final:public statement{public:
-
+class stmt_def_func final:public statement{
+public:
 	inline stmt_def_func(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk},
 		ident_{t.next_token()}

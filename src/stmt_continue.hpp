@@ -1,7 +1,7 @@
 #pragma once
 
-class stmt_continue final:public stmt_call{public:
-
+class stmt_continue final:public stmt_call{
+public:
 	inline stmt_continue(const statement&parent,const token&tk,tokenizer&t):
 		stmt_call{parent,tk,t}
 	{}
@@ -11,5 +11,4 @@ class stmt_continue final:public stmt_call{public:
 		const string&loop_name=tc.find_parent_loop_name();
 		indent(os,indent_level,false);os<<"jmp "<<loop_name<<"\n";
 	}
-
 };

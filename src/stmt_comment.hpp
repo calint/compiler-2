@@ -1,7 +1,7 @@
 #pragma once
 
-class stmt_comment final:public statement{public:
-
+class stmt_comment final:public statement{
+public:
 	inline stmt_comment(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk}
 	{

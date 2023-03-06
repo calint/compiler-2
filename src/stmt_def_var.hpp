@@ -2,8 +2,8 @@
 
 #include"stmt_assign_var.hpp"
 
-class stmt_def_var final:public statement{public:
-
+class stmt_def_var final:public statement{
+public:
 	inline stmt_def_var(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk},
 		ident_{t.next_token()},

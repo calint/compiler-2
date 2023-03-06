@@ -7,8 +7,8 @@
 #include"stmt_def_func.hpp"
 #include"stmt_def_table.hpp"
 
-class stmt_program final:public statement{public:
-
+class stmt_program final:public statement{
+public:
 	inline stmt_program(const string&source):
 		statement{*this,token{}},
 		tc_{source}

@@ -2,8 +2,8 @@
 
 #include"call_asm.hpp"
 
-class call_asm_mov final:public call_asm{public:
-
+class call_asm_mov final:public call_asm{
+public:
 	inline call_asm_mov(const statement&parent,const token&tkn,tokenizer&t):
 		call_asm{parent,tkn,t}
 	{}
@@ -27,5 +27,4 @@ class call_asm_mov final:public call_asm{public:
 
 		indent(os,indent_level);os<<"mov "<<ra<<","<<rb<<endl;
 	}
-
 };

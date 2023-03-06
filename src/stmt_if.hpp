@@ -2,8 +2,8 @@
 
 #include"stmt_if_branch.hpp"
 
-class stmt_if final:public statement{public:
-
+class stmt_if final:public statement{
+public:
 	inline stmt_if(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk}
 	{

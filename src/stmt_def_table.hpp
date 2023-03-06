@@ -1,7 +1,7 @@
 #pragma once
 
-class stmt_def_table final:public statement{public:
-
+class stmt_def_table final:public statement{
+public:
 	inline stmt_def_table(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk},
 		ident_{t.next_token()}

@@ -2,7 +2,8 @@
 
 #include"statement.hpp"
 
-class stmt_if_bool_op final:public statement{public:
+class stmt_if_bool_op final:public statement{
+public:
 	inline stmt_if_bool_op(const statement&parent,tokenizer&t):
 		statement(parent,t.next_whitespace_token())
 	{
@@ -56,39 +57,11 @@ class stmt_if_bool_op final:public statement{public:
 		os<<op_;
 		rhs_->source_to(os);
 	}
+
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		throw compiler_error(tok(),"this code should not be reached");
 	}
-	inline static string asm_jxx_for_op(const string&op){
-		if(op=="="){
-			return "je";
-		}else if(op=="<"){
-			return "jl";
-		}else if(op=="<="){
-			return "jle";
-		}else if(op==">"){
-			return "jg";
-		}else if(op==">="){
-			return "jge";
-		}else{
-			throw "unknown op "+op;
-		}
-	}
-	inline static string asm_jxx_for_op_inv(const string&op){
-		if(op=="="){
-			return "jne";
-		}else if(op=="<"){
-			return "jge";
-		}else if(op=="<="){
-			return "jg";
-		}else if(op==">"){
-			return "jle";
-		}else if(op==">="){
-			return "jl";
-		}else{
-			throw "unknown op "+op;
-		}
-	}
+
 	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false,const string&jmp_to_if_true)const{
 		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 		indent(os,indent_level,false);os<<cmp_bgn_label(tc)<<":\n";
@@ -158,8 +131,43 @@ class stmt_if_bool_op final:public statement{public:
 
 		for(auto&r:allocated_registers)tc.free_scratch_reg(r);
 	}
+
 	inline string cmp_bgn_label(const toc&tc)const{
 		return "cmp_"+tc.source_location(tok());
+	}
+
+private:
+
+	inline static string asm_jxx_for_op(const string&op){
+		if(op=="="){
+			return "je";
+		}else if(op=="<"){
+			return "jl";
+		}else if(op=="<="){
+			return "jle";
+		}else if(op==">"){
+			return "jg";
+		}else if(op==">="){
+			return "jge";
+		}else{
+			throw "unknown op "+op;
+		}
+	}
+
+	inline static string asm_jxx_for_op_inv(const string&op){
+		if(op=="="){
+			return "jne";
+		}else if(op=="<"){
+			return "jge";
+		}else if(op=="<="){
+			return "jg";
+		}else if(op==">"){
+			return "jle";
+		}else if(op==">="){
+			return "jl";
+		}else{
+			throw "unknown op "+op;
+		}
 	}
 
 	vector<token>nots_;

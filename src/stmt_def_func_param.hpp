@@ -1,7 +1,7 @@
 #pragma once
 
-class stmt_def_func_param final:public statement{public:
-
+class stmt_def_func_param final:public statement{
+public:
 	inline stmt_def_func_param(const statement&parent,tokenizer&t):
 		statement{parent,t.next_token()}
 	{

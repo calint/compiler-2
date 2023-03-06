@@ -5,8 +5,8 @@
 #include"expr_ops_list.hpp"
 #include"stmt_def_func.hpp"
 
-class stmt_call:public expression{public:
-
+class stmt_call:public expression{
+public:
 	inline stmt_call(const statement&parent,const token&tk,tokenizer&t):
 		expression{parent,tk}
 	{
@@ -98,7 +98,6 @@ class stmt_call:public expression{public:
 	inline size_t arg_count()const{return args_.size();}
 
 	inline bool is_inline()const{return true;}
-
 
 private:
 	bool no_args_{false};

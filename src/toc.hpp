@@ -12,8 +12,8 @@ class stmt_def_func;
 class stmt_def_field;
 class stmt_def_table;
 
-class allocated_var final{public:
-
+class allocated_var final{
+public:
 	inline allocated_var(const string&name,size_t stkix,const string&in_register,const string&asm_op_param,char bits):
 		name_{name},
 		stkix_{stkix},
@@ -36,12 +36,9 @@ private:
 	char bits_{0}; // 1: const
 };
 
-
-
-
-class frame final{public:
-
-	frame(const string&name,char bits):
+class frame final{
+public:
+	inline frame(const string&name,char bits):
 		name_{name},
 		bits_{bits}
 	{}
@@ -84,13 +81,10 @@ private:
 	char bits_{0}; // 1 is func
 	lut<allocated_var>vars_;
 	lut<string>aliases_;
-
 };
 
-
-
-class toc final{public:
-
+class toc final{
+public:
 	inline toc(const string&source):
 		all_registers_{"eax","ebx","ecx","edx","esi","edi"},
 		free_registers_{all_registers_},
@@ -162,6 +156,7 @@ class toc final{public:
 	inline string resolve_ident_to_nasm(const statement&stmt)const{//? tidy duplicate code
 		return resolve_ident_to_nasm(stmt,stmt.identifier());
 	}
+
 	inline string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
 		const size_t frameix=frames_.size()-1;
 
@@ -211,6 +206,7 @@ class toc final{public:
 	inline void add_var(const string&name,const string&flags=""){
 		frames_.back().add_var(name,stkix_++,flags);
 	}
+
 	inline const string alloc_scratch_register(const statement&st,const string&reg=""){
 		return alloc_scratch_register(st.tok(),reg);
 	}
@@ -358,7 +354,6 @@ private:
 			max_stack_usage_=stkix_;
 	}
 
-
 	size_t stkix_{0};
 	vector<frame>frames_;
 	vector<string>all_registers_;
@@ -370,5 +365,4 @@ private:
 	lut<const stmt_def_field*>fields_;
 	lut<const stmt_def_func*>funcs_;
 	lut<const stmt_def_table*>tables_;
-
 };

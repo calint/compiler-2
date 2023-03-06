@@ -1,7 +1,7 @@
 #pragma once
 
-class stmt_break final:public stmt_call{public:
-
+class stmt_break final:public stmt_call{
+public:
 	inline stmt_break(const statement&parent,const token&tk,tokenizer&t):
 		stmt_call{parent,tk,t}
 	{}

@@ -2,8 +2,8 @@
 
 #include<iostream>
 
-class token final{public:
-
+class token final{
+public:
 	inline token(string wb,size_t n,string tk,size_t n2,string wa,bool is_string=false):
 		ws_left_{wb},
 		start_char_{n},

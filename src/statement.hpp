@@ -4,7 +4,8 @@
 
 class toc;
 
-class statement{public:
+class statement{
+public:
 	inline statement(const statement&parent,const token&tk):parent_{parent},token_{tk}{}
 
 	inline statement(const statement&other):parent_{other.parent_},token_{other.token_}{}

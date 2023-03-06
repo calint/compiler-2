@@ -5,8 +5,8 @@
 #include"toc.hpp"
 #include"expression.hpp"
 
-class expr_ops_list final:public expression{public:
-
+class expr_ops_list final:public expression{
+public:
 	inline expr_ops_list(const statement&parent,tokenizer&t,bool in_args=false,bool enclosed=false,const char list_append_op='=',size_t first_op_presedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>()):
 		expression{parent,t.next_whitespace_token()},
 		enclosed_{enclosed},
@@ -14,7 +14,6 @@ class expr_ops_list final:public expression{public:
 		presedence_{first_op_presedence},
 		list_append_op_{list_append_op}
 	{
-
 		if(first_expression){
 			expressions_.push_back(move(first_expression));
 		}else{
@@ -161,6 +160,7 @@ class expr_ops_list final:public expression{public:
 		indent(os,indent_level,false);
 		os<<op<<" "<<ra<<","<<rb<<endl;
 	}
+
 	inline bool is_empty()const override{return expressions_.empty();}
 
 private:

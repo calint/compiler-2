@@ -2,8 +2,8 @@
 
 #include"expr_ops_list.hpp"
 
-class stmt_assign_var final:public statement{public:
-
+class stmt_assign_var final:public statement{
+public:
 	inline stmt_assign_var(const statement&parent,const token&tk,tokenizer&t):
 		statement{parent,tk},
 		oplist_{expr_ops_list{*this,t}}
@@ -25,7 +25,6 @@ class stmt_assign_var final:public statement{public:
 			return;
 		}
 
-
 		if(oplist_.alloc_register()){
 
 			const string&reg=tc.alloc_scratch_register(tok()); //? overrallocates in simplests cases ie a=1
@@ -42,7 +41,7 @@ class stmt_assign_var final:public statement{public:
 		}
 
 		oplist_.compile(tc,os,indent_level,identifier());
-}
+	}
 
 private:
 	expr_ops_list oplist_;

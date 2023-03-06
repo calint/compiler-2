@@ -1,7 +1,7 @@
 #pragma once
 
-class tokenizer final{public:
-
+class tokenizer final{
+public:
 	inline tokenizer(const string&str):
 		source{str},
 		ptr{source.c_str()}
@@ -83,7 +83,6 @@ class tokenizer final{public:
 		return s;
 	}
 
-
 	inline char next_char(){
 		assert(last_char);
 		nchar++;
@@ -93,13 +92,6 @@ class tokenizer final{public:
 	}
 
 private:
-	string source;
-	const char*ptr;
-	size_t nchar_bm{0};
-	size_t nchar{0};
-	char last_char{-1};
-//	vector<token>pushedback_tokens_;
-
 	inline string next_whitespace(){
 		if(is_eos())return"";
 		nchar_bm=nchar;
@@ -132,12 +124,20 @@ private:
 		const size_t len=nchar-nchar_bm;
 		return string{ptr-len,len};
 	}
+
 	inline void seek(const off_t nch){
 		assert(ssize_t(source.size())>=(ssize_t(nchar)+nch) and (ssize_t(nchar)+nch)>=0);
 		ptr+=nch;
 		nchar=size_t(ssize_t(nchar)+nch);
 	}
+
 	inline static bool is_char_whitespace(const char ch){
 		return ch==' '||ch=='\t'||ch=='\r'||ch=='\n';
 	}
+
+	string source;
+	const char*ptr;
+	size_t nchar_bm{0};
+	size_t nchar{0};
+	char last_char{-1};
 };
