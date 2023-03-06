@@ -1,3 +1,4 @@
+#!/bin/sh
 CC="clang++ -std=c++2a"
 CF="-Os -Wfatal-errors -fno-inline"
 CW="-Weverything -pedantic -pedantic-errors -Wall -Wextra -Werror -Wconversion -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wsign-conversion -Wsign-promo -Wswitch-default -Wundef -Wfloat-equal -Wsign-conversion -Wfloat-conversion -Wold-style-cast"
@@ -19,7 +20,6 @@ echo -n 'baz source: ' && cat prog.baz|grep -v -e'^\s*$'|wc &&
 echo -n '   gzipped: ' && cat prog.baz|grep -v -e'^\s*$'|gzip|wc &&
 echo -n 'asm source: ' && cat src/*|sh pgen.sh|wc &&
 echo -n '   gzipped: ' && cat src/*|sh pgen.sh|gzip|wc &&
-
 echo &&
 cat gen.s &&
 echo &&
