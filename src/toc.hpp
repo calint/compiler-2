@@ -1,17 +1,11 @@
 #pragma once
 
-#include<cstring>
-#include<iostream>
-#include<unordered_map>
-#include<unordered_set>
-#include<utility>
-#include<vector>
-#include<algorithm>
 #include<cassert>
 #include<sstream>
 #include<regex>
 
 #include"lut.hpp"
+#include"compiler_error.hpp"
 
 class token;
 class stmt_def_func;

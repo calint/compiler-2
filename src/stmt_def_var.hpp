@@ -1,10 +1,5 @@
 #pragma once
 
-#include"decouple.hpp"
-#include"statement.hpp"
-#include"toc.hpp"
-#include"token.hpp"
-#include"tokenizer.hpp"
 #include"stmt_assign_var.hpp"
 
 class stmt_def_var final:public statement{public:

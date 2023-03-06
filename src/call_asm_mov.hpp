@@ -1,11 +1,6 @@
 #pragma once
 
 #include"call_asm.hpp"
-#include"statement.hpp"
-#include"stmt_call.hpp"
-#include"toc.hpp"
-#include"token.hpp"
-#include"tokenizer.hpp"
 
 class call_asm_mov final:public call_asm{public:
 

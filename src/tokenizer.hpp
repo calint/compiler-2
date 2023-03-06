@@ -1,10 +1,4 @@
 #pragma once
-#include<stddef.h>
-#include<algorithm>
-#include<cassert>
-#include<cstring>
-#include<memory>
-#include "token.hpp"
 
 class tokenizer final{public:
 

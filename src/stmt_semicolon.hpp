@@ -1,7 +1,5 @@
 #pragma once
 
-#include"statement.hpp"
-
 // empty statement in case semi-colon is used
 class stmt_semicolon final:public statement{public:
 

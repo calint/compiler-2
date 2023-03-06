@@ -1,12 +1,6 @@
 #pragma once
 
-#include"compiler_error.hpp"
-#include"statement.hpp"
-#include"stmt_block.hpp"
 #include"stmt_if_branch.hpp"
-#include"toc.hpp"
-#include"token.hpp"
-#include"tokenizer.hpp"
 
 class stmt_if final:public statement{public:
 

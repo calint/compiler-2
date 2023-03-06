@@ -1,7 +1,7 @@
 #pragma once
 
-#include"statement.hpp"
 #include"token.hpp"
+#include"statement.hpp"
 
 class compiler_error final{public:
 

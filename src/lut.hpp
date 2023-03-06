@@ -1,4 +1,5 @@
 #pragma once
+
 template<class T>class lut{public:
 
 	inline T get(const string&key)const{

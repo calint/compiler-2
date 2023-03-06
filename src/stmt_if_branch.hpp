@@ -1,11 +1,5 @@
 #pragma once
 
-#include"compiler_error.hpp"
-#include"decouple.hpp"
-#include"expression.hpp"
-#include"toc.hpp"
-#include"token.hpp"
-#include"tokenizer.hpp"
 #include"stmt_if_bool_op.hpp"
 #include"stmt_if_bool_op_list.hpp"
 

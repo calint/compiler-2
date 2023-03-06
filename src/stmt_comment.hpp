@@ -1,12 +1,5 @@
 #pragma once
 
-#include"compiler_error.hpp"
-#include"statement.hpp"
-#include"stmt_block.hpp"
-#include"toc.hpp"
-#include"token.hpp"
-#include"tokenizer.hpp"
-
 class stmt_comment final:public statement{public:
 
 	inline stmt_comment(const statement&parent,const token&tk,tokenizer&t):

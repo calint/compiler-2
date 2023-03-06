@@ -1,10 +1,5 @@
 #pragma once
 
-#include"statement.hpp"
-#include"toc.hpp"
-#include"token.hpp"
-#include"tokenizer.hpp"
-
 class stmt_def_field final:public statement{public:
 
 	inline stmt_def_field(const statement&parent,const token&tk,tokenizer&t):

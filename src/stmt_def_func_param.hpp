@@ -1,12 +1,5 @@
 #pragma once
 
-#include"stmt_block.hpp"
-#include"compiler_error.hpp"
-#include"statement.hpp"
-#include"toc.hpp"
-#include"token.hpp"
-#include"tokenizer.hpp"
-
 class stmt_def_func_param final:public statement{public:
 
 	inline stmt_def_func_param(const statement&parent,tokenizer&t):

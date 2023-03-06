@@ -1,13 +1,7 @@
 #pragma once
 
-#include <stddef.h>
-#include <algorithm>
-#include <cstdio>
-#include <iostream>
-#include <memory>
-#include <vector>
+#include<iostream>
 
-#include<string.h>
 class token final{public:
 
 	inline token(string wb,size_t n,string tk,size_t n2,string wa,bool is_string=false):

@@ -1,14 +1,11 @@
 #pragma once
 
-#include"stmt_call.hpp"
-#include"decouple.hpp"
+#include"statement.hpp"
 #include"toc.hpp"
-#include"token.hpp"
 #include"tokenizer.hpp"
-#include"stmt_def_func.hpp"
 #include"stmt_def_field.hpp"
+#include"stmt_def_func.hpp"
 #include"stmt_def_table.hpp"
-#include"stmt_comment.hpp"
 
 class stmt_program final:public statement{public:
 

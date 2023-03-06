@@ -1,12 +1,5 @@
 #pragma once
 
-#include"stmt_block.hpp"
-#include"compiler_error.hpp"
-#include"statement.hpp"
-#include"toc.hpp"
-#include"token.hpp"
-#include"tokenizer.hpp"
-
 class stmt_def_table final:public statement{public:
 
 	inline stmt_def_table(const statement&parent,const token&tk,tokenizer&t):

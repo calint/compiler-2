@@ -1,13 +1,8 @@
 #pragma once
 
-#include"stmt_block.hpp"
-#include"compiler_error.hpp"
-#include"statement.hpp"
-#include"toc.hpp"
-#include"token.hpp"
-#include"tokenizer.hpp"
 #include"stmt_def_func_param.hpp"
 #include"stmt_block.hpp"
+
 class stmt_def_func final:public statement{public:
 
 	inline stmt_def_func(const statement&parent,const token&tk,tokenizer&t):
