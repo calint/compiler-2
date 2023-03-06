@@ -79,5 +79,5 @@ class stmt_block final:public statement{public:
 
 private:
 	bool is_one_statement_{false};
-	vector<up_statement>statements_;
+	vector<unique_ptr<statement>>statements_;
 };

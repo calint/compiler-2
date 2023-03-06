@@ -95,7 +95,7 @@ class stmt_call:public expression{public:
 		vector<string>allocated_registers;
 		size_t i=0;
 		for(auto&a:args_){
-			auto param=f->get_param(i);
+			auto&param=f->get_param(i);
 			i++;
 			if(a->is_expression()){
 				// in reg
@@ -141,6 +141,6 @@ class stmt_call:public expression{public:
 
 private:
 	bool no_args_{false};
-	vector<up_statement>args_;
+	vector<unique_ptr<statement>>args_;
 };
 

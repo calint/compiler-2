@@ -85,7 +85,7 @@ class stmt_program final:public statement{public:
 
 
 private:
-	vector<up_statement>statements;
+	vector<unique_ptr<statement>>statements;
 	toc tc;
 	tokenizer t;
 };

@@ -9,39 +9,13 @@
 class toc;
 
 class statement{public:
-	inline statement(const statement&parent,const token&tk):
-		token_{tk},
-		parent_{parent}
-	{}
+	inline statement(const statement&parent,const token&tk):parent_{parent},token_{tk}{}
 
-	// statement a=b   a{b}
-	inline statement(const statement&other):
-		token_{other.token_},
-		parent_{other.parent_}
-	{}
-
-	inline statement(const statement&&other):
-		token_{move(other.token_)},
-		parent_{other.parent_}
-	{}
-
-//	inline statement&operator=(const statement&other){
-//		dest=other.dest;
-//		tk=other.tk;
-//		pt=other.pt;
-//		return*this;
-//	}
+	inline statement(const statement&other):parent_{other.parent_},token_{other.token_}{}
 
 	inline virtual~statement(){}
 
 	inline virtual void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const{
-//		if(not dest_ident.empty()){
-//			indent(os,indent_level,false);
-//			os<<"mov "<<dest_ident<<",";
-//			token_.compile_to(os);
-//			os<<endl;
-//			return;
-//		}
 		token_.compile_to(os);
 	}
 
@@ -66,7 +40,6 @@ class statement{public:
 	inline static void indent(ostream&os,size_t indent_level,bool comment=false){os<<(comment?"; ":"  ");for(size_t i=0;i<indent_level;i++)os<<"  ";}
 
 private:
-	token token_;
 	const statement&parent_;
+	const token token_;
 };
-using up_statement=unique_ptr<statement>;
