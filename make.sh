@@ -7,7 +7,7 @@ CW="$CW -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-call -Wno-
 
 $CC $CF $CW -Wfatal-errors -o baz src/main.cpp &&
 
-./baz prog.baz > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o &&
+./baz prog.baz > gen.s && nasm -f elf32 gen.s && ld -melf_i386 -s -o gen gen.o &&
 
 ls --color -la baz gen.s gen &&
 

@@ -5,6 +5,7 @@ stk resd 256
 stk.end:
 
 section .text
+[bits 32]
 global _start
 _start:
   mov ebp,stk
