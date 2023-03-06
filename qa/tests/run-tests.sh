@@ -1,7 +1,5 @@
 #/bin/sh
-
-RUN='echo -n "$SRC: " && $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o binary gen.o && ./binary; e=$?;if test $e -eq $EXP; then echo ok; else echo nok. expected $EXP got $e; exit 1; fi'
-
+RUN='echo -n "$SRC: " && $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen; e=$?;if test $e -eq $EXP; then echo ok; else echo nok. expected $EXP got $e; exit 1; fi'
 BIN=../../baz
 
 SRC=t1.baz
@@ -28,4 +26,4 @@ SRC=t6.baz
 EXP=0
 eval $RUN
 
-rm binary gen.o gen.s diff.baz
+rm gen gen.o gen.s diff.baz
