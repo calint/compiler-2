@@ -1,3 +1,5 @@
+#/bin/sh
+
 cd .. &&
 echo && echo $(date) && echo &&
 valgrind ./baz &&
