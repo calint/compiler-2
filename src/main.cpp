@@ -43,9 +43,9 @@ int main(int argc,char**args){
 	auto src=file_read_to_string(src_file_name);
 
 	try{
-		stmt_program p(src);
+		stmt_program p{src};
 
-		ofstream fo("diff.baz");
+		ofstream fo{"diff.baz"};
 
 		p.source_to(fo);
 
@@ -78,27 +78,17 @@ inline unique_ptr<statement>create_call_statement_from_tokenizer(const statement
 	if("int"==func)        return make_unique<call_asm_int>(parent,move(tk),t);
 	if("xor"==func)        return make_unique<call_asm_xor>(parent,move(tk),t);
 	if("syscall"==func)return make_unique<call_asm_syscall>(parent,move(tk),t);
-//	if("add"==func)        return make_unique<call_asm_add>(parent,move(tk),t);
 	if("loop"==func)          return make_unique<stmt_loop>(parent,move(tk),t);
 	if("break"==func)        return make_unique<stmt_break>(parent,move(tk),t);
 	if("continue"==func)  return make_unique<stmt_continue>(parent,move(tk),t);
-//	if("tag"==func)        return make_unique<call_asm_tag>(parent,move(tk),t);
-//	if("cmp"==func)        return make_unique<call_asm_cmp>(parent,move(tk),t);
-//	if("je"==func)          return make_unique<call_asm_je>(parent,move(tk),t);
-//	if("jmp"==func)        return make_unique<call_asm_jmp>(parent,move(tk),t);
-//	if("jne"==func)        return make_unique<call_asm_jne>(parent,move(tk),t);
 	if("if"==func)              return make_unique<stmt_if>(parent,move(tk),t);
-//	if("cmove"==func)    return make_unique<call_asm_cmove>(parent,move(tk),t);
-//	if("cmovne"==func)  return make_unique<call_asm_cmovne>(parent,move(tk),t);
-//	if("or"==func)          return make_unique<call_asm_or>(parent,move(tk),t);
-//	if("and"==func)        return make_unique<call_asm_and>(parent,move(tk),t);
 	return                           make_unique<stmt_call>(parent,move(tk),t);
 }
 
 
 inline unique_ptr<statement>create_statement_from_tokenizer(const statement&parent,tokenizer&t){
 	auto tk=t.next_token();
-	if(tk.is_name("#"))return make_unique<stmt_comment>(parent,move(tk),t);// ie    print("hello") // comment
+	if(tk.is_name("#"))return make_unique<stmt_comment>(parent,move(tk),t);// i.e.  print("hello") # comment
 	if(t.is_peek_char('('))return create_call_statement_from_tokenizer(parent,move(tk),t); // ie  f(...)
 	return make_unique<statement>(parent,move(tk));// ie  0x80
 }
