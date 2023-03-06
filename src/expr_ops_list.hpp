@@ -1,20 +1,11 @@
 #pragma once
 
-#include <stddef.h>
-#include <algorithm>
-#include <iostream>
-#include <memory>
-#include <vector>
-#include <sstream>
-#include <regex>
-
-#include "compiler_error.hpp"
-#include "decouple.hpp"
-#include "expression.hpp"
-#include "toc.hpp"
-#include "token.hpp"
-#include "tokenizer.hpp"
-
+#include"compiler_error.hpp"
+#include"decouple.hpp"
+#include"expression.hpp"
+#include"toc.hpp"
+#include"token.hpp"
+#include"tokenizer.hpp"
 
 class expr_ops_list final:public expression{public:
 

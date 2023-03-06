@@ -1,17 +1,11 @@
 #pragma once
 
-#include <algorithm>
-#include <iostream>
-#include <memory>
-#include <vector>
-
-#include "compiler_error.hpp"
-#include "statement.hpp"
-#include "stmt_block.hpp"
-#include "toc.hpp"
-#include "token.hpp"
-#include "tokenizer.hpp"
-#include<sstream>
+#include"compiler_error.hpp"
+#include"statement.hpp"
+#include"stmt_block.hpp"
+#include"toc.hpp"
+#include"token.hpp"
+#include"tokenizer.hpp"
 
 class stmt_loop final:public stmt_call{public:
 

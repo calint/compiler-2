@@ -1,16 +1,11 @@
 #pragma once
 
-#include <algorithm>
-#include <iostream>
-#include <memory>
-#include <vector>
-
-#include "stmt_block.hpp"
-#include "compiler_error.hpp"
-#include "statement.hpp"
-#include "toc.hpp"
-#include "token.hpp"
-#include "tokenizer.hpp"
+#include"stmt_block.hpp"
+#include"compiler_error.hpp"
+#include"statement.hpp"
+#include"toc.hpp"
+#include"token.hpp"
+#include"tokenizer.hpp"
 
 class stmt_def_table final:public statement{public:
 

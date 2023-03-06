@@ -1,10 +1,5 @@
 #pragma once
 
-#include<algorithm>
-#include<iostream>
-#include<memory>
-#include<vector>
-
 #include"stmt_block.hpp"
 #include"compiler_error.hpp"
 #include"statement.hpp"

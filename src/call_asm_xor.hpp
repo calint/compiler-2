@@ -1,13 +1,11 @@
 #pragma once
 
-#include <algorithm>
-#include <iostream>
+#include"statement.hpp"
+#include"stmt_call.hpp"
+#include"token.hpp"
+#include"tokenizer.hpp"
+#include"call_asm.hpp"
 
-#include "statement.hpp"
-#include "stmt_call.hpp"
-#include "token.hpp"
-#include "tokenizer.hpp"
-#include "call_asm.hpp"
 class call_asm_xor final:public call_asm{public:
 
 	inline call_asm_xor(const statement&parent,const token&tkn,tokenizer&t):

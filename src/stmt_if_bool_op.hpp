@@ -1,8 +1,8 @@
 #pragma once
-#include <vector>
-#include "statement.hpp"
 
-class stmt_if_bool_op:public statement{public:
+#include"statement.hpp"
+
+class stmt_if_bool_op final:public statement{public:
 	inline stmt_if_bool_op(const statement&parent,tokenizer&t):
 		statement(parent,t.next_whitespace_token())
 	{

@@ -1,5 +1,5 @@
 #pragma once
-#include<memory>
+
 #include"stmt_call.hpp"
 #include"decouple.hpp"
 #include"toc.hpp"
@@ -9,8 +9,6 @@
 #include"stmt_def_field.hpp"
 #include"stmt_def_table.hpp"
 #include"stmt_comment.hpp"
-
-
 
 class stmt_program final:public statement{public:
 

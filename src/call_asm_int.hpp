@@ -1,15 +1,11 @@
 #pragma once
 
-#include <stddef.h>
-#include <iostream>
-#include <string>
-
-#include "call_asm.hpp"
-#include "statement.hpp"
-#include "stmt_call.hpp"
-#include "toc.hpp"
-#include "token.hpp"
-#include "tokenizer.hpp"
+#include"call_asm.hpp"
+#include"statement.hpp"
+#include"stmt_call.hpp"
+#include"toc.hpp"
+#include"token.hpp"
+#include"tokenizer.hpp"
 
 class call_asm_int final:public call_asm{public:
 

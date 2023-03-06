@@ -1,20 +1,14 @@
 #pragma once
 
-#include <stddef.h>
-#include <algorithm>
-#include <iostream>
-#include <memory>
-#include <vector>
-
-#include "compiler_error.hpp"
-#include "decouple.hpp"
-#include "expression.hpp"
-#include "statement.hpp"
-#include "stmt_block.hpp"
-#include "stmt_def_func.hpp"
-#include "toc.hpp"
-#include "token.hpp"
-#include "tokenizer.hpp"
+#include"compiler_error.hpp"
+#include"decouple.hpp"
+#include"expression.hpp"
+#include"statement.hpp"
+#include"stmt_block.hpp"
+#include"stmt_def_func.hpp"
+#include"toc.hpp"
+#include"token.hpp"
+#include"tokenizer.hpp"
 #include"expr_ops_list.hpp"
 
 class stmt_call:public expression{public:

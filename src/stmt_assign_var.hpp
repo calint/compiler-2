@@ -1,15 +1,10 @@
 #pragma once
 
-#include <stddef.h>
-#include <algorithm>
-#include <iostream>
-#include <memory>
-
-#include "decouple.hpp"
-#include "statement.hpp"
-#include "toc.hpp"
-#include "token.hpp"
-#include "tokenizer.hpp"
+#include"decouple.hpp"
+#include"statement.hpp"
+#include"toc.hpp"
+#include"token.hpp"
+#include"tokenizer.hpp"
 #include"stmt_call.hpp"
 #include"expr_ops_list.hpp"
 

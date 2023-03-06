@@ -1,9 +1,5 @@
 #pragma once
 
-#include <algorithm>
-#include <iostream>
-#include <memory>
-
 #include "token.hpp"
 
 class toc;

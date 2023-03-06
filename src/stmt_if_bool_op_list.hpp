@@ -1,11 +1,10 @@
 #pragma once
 
-#include <vector>
 #include <variant>
 
-#include "statement.hpp"
+#include"statement.hpp"
 
-class stmt_if_bool_op_list:public statement{public:
+class stmt_if_bool_op_list final:public statement{public:
 	inline stmt_if_bool_op_list(const statement&parent,tokenizer&t,bool enclosed=false):
 		statement(parent,t.next_whitespace_token()),
 		enclosed_{enclosed}
