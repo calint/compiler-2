@@ -16,8 +16,7 @@
 class stmt_if final:public statement{public:
 
 	inline stmt_if(const statement&parent,const token&tk,tokenizer&t):
-		statement{parent,tk},
-		name_{"_if_"+to_string(tk.char_index())}
+		statement{parent,tk}
 	{
 		while(true){
 			branches_.push_back(stmt_if_branch{*this,t});
@@ -64,7 +63,7 @@ class stmt_if final:public statement{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 //		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 		const string source_loc=tc.source_location(tok());
-		string label_after_if="if_end_"+source_loc;
+		string label_after_if="if_"+source_loc+"_end";
 		string label_else_branch=else_code_?"if_else_"+source_loc:label_after_if;
 
 		const size_t n=branches_.size();
@@ -93,7 +92,6 @@ class stmt_if final:public statement{public:
 	}
 
 private:
-	string name_;
 	vector<stmt_if_branch>branches_;
 	vector<token>else_if_tokens_;
 	unique_ptr<stmt_block>else_code_;

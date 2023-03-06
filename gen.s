@@ -44,7 +44,7 @@ _start:
 ;   [14:34] d=4 
     cmp_14_34:
     cmp dword[ebp+12],4
-    jne if_end_14_5
+    jne if_14_5_end
     if_14_8_code:
 ;     [15:9] exit(0)
 ;         [2:5] mov(ebx,v)
@@ -53,8 +53,8 @@ _start:
           mov eax,1
 ;         [4:5] int(0x80)
           int 0x80
-      exit_end_15_9:
-    if_end_14_5:
+      exit_15_9_end:
+    if_14_5_end:
 ;   [16:5] exit(1)
 ;       [2:5] mov(ebx,v)
         mov ebx,1
@@ -62,7 +62,13 @@ _start:
         mov eax,1
 ;       [4:5] int(0x80)
         int 0x80
-    exit_end_16_5:
+    exit_16_5_end:
+;   [17:5] loop{ break }
+    loop_17_5:
+;       [18:7] break 
+        jmp loop_17_5_end
+    jmp loop_17_5
+    loop_17_5_end:
 
 ;           max regs in use: 0
 ;         max frames in use: 2

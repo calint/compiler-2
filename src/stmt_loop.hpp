@@ -17,37 +17,25 @@ class stmt_loop final:public stmt_call{public:
 
 	inline stmt_loop(const statement&parent,const token&tk,tokenizer&t):
 		stmt_call{parent,tk,t},
-		name{"_loop_"+to_string(tk.char_index())},
-		code{stmt_block{parent,t}}
+		code_{stmt_block{parent,t}}
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
-		indent(os,indent_level,false);
-		os<<name<<":"<<endl;
-
-		tc.push_loop(name.data());
-
-		code.compile(tc,os,indent_level+1);
-		indent(os,indent_level+1,false);
-		os<<"jmp "<<name<<endl;
-
-		indent(os,indent_level,false);
-		os<<"_end"<<name<<":"<<endl;
-
-		tc.pop_loop(name.data());
+		string lbl="loop_"+tc.source_location(tok());
+		indent(os,indent_level,false);os<<lbl<<":"<<endl;
+		tc.push_loop(lbl);
+		code_.compile(tc,os,indent_level+1);
+		indent(os,indent_level,false);os<<"jmp "<<lbl<<endl;
+		indent(os,indent_level,false);os<<lbl<<"_end:"<<endl;
+		tc.pop_loop(lbl);
 	}
 
 	inline void source_to(ostream&os)const override{
 		stmt_call::source_to(os);
-		code.source_to(os);
+		code_.source_to(os);
 	}
 
-//	inline void link(toc&tc,ostream&os)const override final{
-//		code.link(tc,os);
-//	}
-
 private:
-	string name;
-	stmt_block code;
+	stmt_block code_;
 };

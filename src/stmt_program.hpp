@@ -16,35 +16,35 @@ class stmt_program final:public statement{public:
 
 	inline stmt_program(const string&source):
 		statement{*this,token{}},
-		tc_{source},
-		t_{source}
+		tc_{source}
 	{
 		vector<string>assem{"mov","int","xor","syscall"};
 		for(auto&s:assem)
 			tc_.add_func(*this,s,nullptr);
-
+			
+		tokenizer t{source};
 		while(true){
-			if(t_.is_eos())
+			if(t.is_eos())
 				break;
 
-			const token tk=t_.next_token();
+			const token tk=t.next_token();
 
 			if(tk.is_blank()){
-				if(t_.is_eos())
+				if(t.is_eos())
 					break;
 				throw compiler_error(tk,"unexpected blank token");
 			}
 			if(tk.is_name("field")){
-				stmts_.push_back(make_unique<stmt_def_field>(*this,tk,t_));
+				stmts_.push_back(make_unique<stmt_def_field>(*this,tk,t));
 			}else
 			if(tk.is_name("func")){
-				stmts_.push_back(make_unique<stmt_def_func>(*this,tk,t_));
+				stmts_.push_back(make_unique<stmt_def_func>(*this,tk,t));
 			}else
 			if(tk.is_name("table")){
-				stmts_.push_back(make_unique<stmt_def_table>(*this,tk,t_));
+				stmts_.push_back(make_unique<stmt_def_table>(*this,tk,t));
 			}else
 			if(tk.is_name("#")){
-				stmts_.push_back(make_unique<stmt_comment>(*this,tk,t_));
+				stmts_.push_back(make_unique<stmt_comment>(*this,tk,t));
 			}else
 			if(tk.is_name("")){// whitespace
 				stmts_.push_back(make_unique<statement>(*this,tk));
@@ -86,5 +86,4 @@ class stmt_program final:public statement{public:
 private:
 	vector<unique_ptr<statement>>stmts_;
 	toc tc_;
-	tokenizer t_;
 };
