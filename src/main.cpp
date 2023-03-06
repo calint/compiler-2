@@ -59,13 +59,13 @@ int main(int argc,char**args){
 	}catch(compiler_error&e){
 		size_t start_char_in_line{0};
 		auto lineno=line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line);
-		cout<<"\n\n **  ["<<lineno<<":"<<start_char_in_line<<"]  "<<e.msg<<": "<<e.ident<<endl;
+		cout<<"\n"<<src_file_name<<":"<<lineno<<":"<<start_char_in_line<<": "<<e.msg<<" "<<e.ident<<endl;
 		return 1;
 	}catch(string&s){
-		cout<<"\n\n ** exception: "<<s<<endl;
+		cout<<"\nexception: "<<s<<endl;
 		return 1;
 	}catch(...){
-		cout<<" *** exception"<<endl;
+		cout<<"\nexception"<<endl;
 		return 1;
 	}
 	return 0;
