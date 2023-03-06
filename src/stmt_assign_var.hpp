@@ -30,11 +30,6 @@ class stmt_assign_var final:public statement{public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
-//
-//		indent(os,indent_level,true);
-//		os<<tok().name()<<"="<<oplist_.tok().name()<<"    ";
-//		tc.source_location_to_stream(os,tok());
-//		os<<endl;
 
 		if(!oplist_.is_expression()){
 			oplist_.compile(tc,os,indent_level,identifier());

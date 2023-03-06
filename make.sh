@@ -13,13 +13,14 @@ nasm -f elf64 gen.s &&
 ld -s -o gen gen.o &&
 ls --color -la gen.s &&
 ls --color -la gen &&
+ASM_LINES="cat gen.s|grep -v -e'^;.*$' -e'^\s*$'"
 echo &&
 echo -n '    source: ' && cat src/*|wc &&
 echo -n '   gzipped: ' && cat src/*|gzip|wc && 
 echo -n 'baz source: ' && cat prog.baz|grep -v -e'^\s*$'|wc &&
 echo -n '   gzipped: ' && cat prog.baz|grep -v -e'^\s*$'|gzip|wc &&
-echo -n 'asm source: ' && cat src/*|sh pgen.sh|wc &&
-echo -n '   gzipped: ' && cat src/*|sh pgen.sh|gzip|wc &&
+echo -n 'asm source: ' && cat src/*|eval $ASM_LINES|wc &&
+echo -n '   gzipped: ' && cat src/*|eval $ASM_LINES|gzip|wc &&
 echo &&
 cat gen.s &&
 echo &&

@@ -50,28 +50,28 @@ _start:
     jne if_14_5_end
     if_14_8_code:
 ;     [15:9] exit(0)
-;         [2:5] mov(ebx,v)
-          mov ebx,0
-;         [3:5] mov(eax,1)
-          mov eax,1
-;         [4:5] int(0x80)
-          int 0x80
-      exit_15_9_end:
-    if_14_5_end:
-;   [16:5] exit(1)
 ;       [2:5] mov(ebx,v)
-        mov ebx,1
+        mov ebx,0
 ;       [3:5] mov(eax,1)
         mov eax,1
 ;       [4:5] int(0x80)
         int 0x80
+      exit_15_9_end:
+    if_14_5_end:
+;   [16:5] exit(1)
+;     [2:5] mov(ebx,v)
+      mov ebx,1
+;     [3:5] mov(eax,1)
+      mov eax,1
+;     [4:5] int(0x80)
+      int 0x80
     exit_16_5_end:
 ;   [17:5] loop
     loop_17_5:
-;       [18:7] break 
-        jmp loop_17_5_end
-;       [19:7] continue 
-        jmp loop_17_5
+;     [18:7] break 
+      jmp loop_17_5_end
+;     [19:7] continue 
+      jmp loop_17_5
     jmp loop_17_5
     loop_17_5_end:
 

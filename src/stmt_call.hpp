@@ -95,7 +95,7 @@ class stmt_call:public expression{public:
 		for(auto&e:aliases_to_add)
 			tc.add_alias(get<0>(e),get<1>(e));
 
-		f->code_block()->compile(tc,os,indent_level+1);
+		f->code_block()->compile(tc,os,indent_level);
 
 		indent(os,indent_level,false);os<<nm<<"_"<<tc.source_location(tok())<<"_end:"<<endl;
 

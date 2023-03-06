@@ -25,7 +25,7 @@ class stmt_loop final:public stmt_call{public:
 		string lbl="loop_"+tc.source_location(tok());
 		indent(os,indent_level,false);os<<lbl<<":"<<endl;
 		tc.push_loop(lbl);
-		code_.compile(tc,os,indent_level+1);
+		code_.compile(tc,os,indent_level);
 		indent(os,indent_level,false);os<<"jmp "<<lbl<<endl;
 		indent(os,indent_level,false);os<<lbl<<"_end:"<<endl;
 		tc.pop_loop(lbl);
