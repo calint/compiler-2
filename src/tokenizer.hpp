@@ -66,7 +66,7 @@ public:
 		return true;
 	}
 
-	inline bool is_peek_char(const char ch){return *ptr_==ch;}
+	inline bool is_peek_char(const char ch)const{return *ptr_==ch;}
 
 	inline char peek_char()const{return *ptr_;}
 
