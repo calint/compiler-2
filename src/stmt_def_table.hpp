@@ -44,7 +44,7 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
+		indent(os,indent_level,true);tc.source_comment(os,*this);
 		os<<ident_.name()<<":\n";
 		os<<ident_.name()<<".end:\n";
 		os<<ident_.name()<<".len equ $-"<<ident_.name()<<"\n\n";
