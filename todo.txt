@@ -13,7 +13,7 @@
 [x] variant instead of stmt_if_bool_op_list extends stmt_if_bool_op
 [ ] negated subexpression. i.e. not (a=1 and b=2)
 [ ] non-inlined function calls
-[ ] why is the binary so big although in-line is turned of in make.sh?
+[ ] why is the binary so big although in-line is turned off in make.sh?
 [ ] tokenizer to keep track of line-number instead of counting it at every call
 [ ] implement division op
 [ ] assembler 64 bit code
