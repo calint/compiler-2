@@ -139,12 +139,6 @@ class toc final{public:
 		return to_string(n)+"_"+to_string(char_in_line);
 	}
 
-	inline void source_location_for_identifier_to_stream(ostream&os,const token&t){
-		size_t char_in_line;
-		const size_t n=line_number_for_char_index(t.char_index(),source_str_,char_in_line);
-		os<<"_"<<to_string(n)<<"_"<<char_in_line<<"_";
-	}
-
 	inline static size_t line_number_for_char_index(const size_t char_index,const string&str,size_t&char_in_line){
 		size_t ix{0};
 		size_t lix{0};

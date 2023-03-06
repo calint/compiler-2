@@ -66,7 +66,7 @@ _start:
 ;       [4:5] int(0x80)
         int 0x80
     exit_16_5_end:
-;   [17:5] loop{ break continue }
+;   [17:5] loop
     loop_17_5:
 ;       [18:7] break 
         jmp loop_17_5_end
