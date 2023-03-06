@@ -16,10 +16,8 @@ public:
 			}else{
 				bools_.push_back(stmt_if_bool_op{*this,t});
 			}
-			if(t.is_next_char(')')){
+			if(t.is_next_char(')'))
 				return;
-			}
-
 			token tk=t.next_token();
 			if(tk.is_name("or")){
 				ops_.push_back(tk);
