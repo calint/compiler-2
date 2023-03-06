@@ -43,12 +43,12 @@ public:
 		const string&nm=tok().name();
 		if(!is_inline())
 			throw string("not inlined");
-		const stmt_def_func*f=tc.get_func_or_break(*this,nm);
+		const stmt_def_func&f=tc.get_func_or_break(*this,nm);
 		vector<tuple<string,string>>aliases_to_add;
 		if(not dest_ident.empty()){
-			if(f->returns().empty())
+			if(f.returns().empty())
 				throw compiler_error(*this,"cannot assign from call without return",tok().name_copy());
-			const string&from=f->returns()[0].name();
+			const string&from=f.returns()[0].name();
 			const string&to=dest_ident;
 			aliases_to_add.push_back(make_tuple(from,to));
 		}
@@ -56,7 +56,7 @@ public:
 		vector<string>allocated_registers;
 		size_t i=0;
 		for(const auto&a:args_){
-			auto&param=f->param(i);
+			auto&param=f.param(i);
 			i++;
 			if(a->is_expression()){
 				// in reg
@@ -83,7 +83,7 @@ public:
 		for(const auto&e:aliases_to_add)
 			tc.add_alias(get<0>(e),get<1>(e));
 
-		f->code_block()->compile(tc,os,indent_level);
+		f.code_block().compile(tc,os,indent_level);
 
 		indent(os,indent_level);os<<nm<<"_"<<tc.source_location(tok())<<"_end:"<<endl;
 

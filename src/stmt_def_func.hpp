@@ -78,7 +78,7 @@ public:
 
 	inline const stmt_def_func_param&param(const size_t ix)const{return params_[ix];}
 
-	inline const stmt_block*code_block()const{return code_.get();}
+	inline const stmt_block&code_block()const{return*code_.get();}
 
 private:
 	token ident_;

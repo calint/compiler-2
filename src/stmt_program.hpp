@@ -62,14 +62,14 @@ public:
 				s->compile(tc,os,indent_level);
 
 		os<<"\nsection .bss\nstk resd 256\nstk.end:\n";
-		os<<"\nsection .text\nbits 32\nglobal _start\n_start:\n  mov ebp,stk\n  mov esp,stk.end\n";
+		os<<"\nsection .text\nbits 32\nglobal _start\n_start:\nmov ebp,stk\nmov esp,stk.end\n";
 		for(const auto&s:stmts_)
 			if(!s->is_in_data_section())
 				s->compile(tc,os,indent_level);
 
-		const stmt_def_func*main=tc.get_func_or_break(*this,"main");
+		const stmt_def_func&main=tc.get_func_or_break(*this,"main");
 		tc.push_func("main");
-		main->code_block()->compile(tc,os,indent_level);
+		main.code_block().compile(tc,os,indent_level);
 		tc.pop_func("main");
 	}
 

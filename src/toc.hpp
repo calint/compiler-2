@@ -105,13 +105,13 @@ public:
 		funcs_.put(ident,ref);
 	}
 
-	inline const stmt_def_func*get_func_or_break(const statement&s,const string&name)const{
+	inline const stmt_def_func&get_func_or_break(const statement&s,const string&name)const{
 		bool valid;
 		const stmt_def_func*f=funcs_.get_valid(name,valid);
 		if(!valid){
 			throw compiler_error(s.tok(),"function not found",name);
 		}
-		return f;
+		return*f;
 	}
 
 	inline void add_table(const statement&s,const string&ident,const stmt_def_table*f){
