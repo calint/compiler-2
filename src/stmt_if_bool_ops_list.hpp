@@ -29,7 +29,7 @@ public:
 			}
 		}
 		if(enclosed_){
-			throw compfind_first_not_ofiler_error(tok(),"expected ')' to close expression");
+			throw compiler_error(tok(),"expected ')' to close expression");
 		}
 	}
 
