@@ -30,6 +30,9 @@ class stmt_if_bool_op_list:public statement{public:
 				break;
 			}
 		}
+		if(enclosed_){
+			throw compiler_error(tok(),"expected ')' to close expression");
+		}
 	}
 
 	inline void source_to(ostream&os)const override{
