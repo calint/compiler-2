@@ -26,14 +26,10 @@ class stmt_def_func final:public statement{public:
 		if(!no_args_){
 			while(true){
 				if(t.is_next_char(')'))break;
-				stmt_def_func_param fp{*this,t};
-				if(t.is_next_char(')')){
-					params_.push_back(fp);
-					break;
-				}
+				params_.emplace_back(*this,t);
+				if(t.is_next_char(')'))break;
 				if(!t.is_next_char(','))
-					throw compiler_error(fp,"expected ',' after parameter at ",fp.tok().name_copy());
-				params_.push_back(fp);
+					throw compiler_error(params_.back(),"expected ',' after parameter at ",params_.back().tok().name_copy());
 			}
 		}
 		if(t.is_next_char(':')){// returns
@@ -96,8 +92,8 @@ class stmt_def_func final:public statement{public:
 
 private:
 	token ident_;
-	bool no_args_{false};
-	vector<token>returns_;
 	vector<stmt_def_func_param>params_;
+	vector<token>returns_;
 	unique_ptr<stmt_block>code_;
+	bool no_args_{false};
 };
