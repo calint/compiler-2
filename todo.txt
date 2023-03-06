@@ -20,6 +20,6 @@
 [ ] implement division op
 [ ] assembler 64 bit code
 [ ] make sub lists taking in account precedence of 'and' over 'or'
-      i.e. a or b and c or d -> a or (b and c) or d
+      i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [ ] return statement
 
