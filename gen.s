@@ -44,10 +44,12 @@ _start:
     cmp_14_25:
     cmp dword[ebp+8],3
     jne cmp_14_34
+    jmp if_14_8_code
 ;   [14:34] d=4 
     cmp_14_34:
     cmp dword[ebp+12],4
     jne if_14_5_end
+    jmp if_14_8_code
     if_14_8_code:
 ;     [15:9] exit(0)
 ;       [2:5] mov(ebx,v)

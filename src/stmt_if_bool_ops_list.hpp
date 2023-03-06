@@ -62,7 +62,7 @@ public:
 		return "cmp_"+tc.source_location(tok());
 	}
 
-	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool is_last)const{
+	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true)const{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 
 		const size_t n=bools_.size();
@@ -82,10 +82,10 @@ public:
 					}else{
 						throw "expected 'or' or 'and'";
 					}
-					el.compile(tc,os,indent_level,jmp_false,jmp_true,false);
+					el.compile(tc,os,indent_level,jmp_false,jmp_true);
 				}else{
 					// if last in list jmp_false is next bool eval
-					el.compile(tc,os,indent_level,jmp_false,jmp_true,true);
+					el.compile(tc,os,indent_level,jmp_false,jmp_true);
 				}
 				continue;
 			}
@@ -101,10 +101,9 @@ public:
 				}
 			}else{
 				e.compile_or(tc,os,indent_level,true,jmp_to_if_false,jmp_to_if_true);
-				if(!is_last){
-					indent(os,indent_level);
-					os<<"jmp "<<jmp_to_if_true<<"\n";
-				}
+				// compile_or last_elem generates a jump in case of bool op is false
+				indent(os,indent_level);
+				os<<"jmp "<<jmp_to_if_true<<"\n";
 			}
 		}
 	}

@@ -32,7 +32,7 @@ public:
 
 		indent(os,indent_level);os<<if_bgn_lbl<<":"<<endl;
 
-		bol_.compile(tc, os, indent_level,jmp_to_if_false_label,jmp_to_if_true_lbl,true);
+		bol_.compile(tc, os, indent_level,jmp_to_if_false_label,jmp_to_if_true_lbl);
 
 		indent(os,indent_level);os<<jmp_to_if_true_lbl<<":"<<endl;
 
