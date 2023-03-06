@@ -107,7 +107,7 @@ static string optimize_jumps_1(stringstream&ss){
 		}
 		// write the label without the preceding jmp
 		for(const auto&s:comments)sso<<s<<endl;
-		sso<<line2<<endl;
+		sso<<line2<<"  ; opt1"<<endl;
 	}
 	return sso.str();
 }
@@ -193,7 +193,7 @@ static string optimize_jumps_2(stringstream&ss){
 		//   je if_14_8_code
 		//   cmp_14_26:
 		const string ws=line1.substr(0,line1.find_first_not_of(" \t\n\r\f\v"));
-		sso<<ws<<jxx_inv<<" "<<jmp_split[1]<<endl;
+		sso<<ws<<jxx_inv<<" "<<jmp_split[1]<<"  ; opt2"<<endl;
 		for(const auto&s:comments)sso<<s<<endl;
 		sso<<line3<<endl;
 	}
