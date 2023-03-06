@@ -18,7 +18,7 @@ public:
 		code_->source_to(os);
 	}
 
-	inline string if_bgn_label_source_location(const toc&tc)const{
+	inline string if_bgn_label(const toc&tc)const{
 		return "if_"+tc.source_location(tok());
 	}
 
@@ -27,14 +27,14 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false_label,const string&jmp_to_after_code_label)const{
-		const string if_bgn_label=if_bgn_label_source_location(tc);
-		const string jmp_to_if_true_label=if_bgn_label+"_code";
+		const string if_bgn_lbl=if_bgn_label(tc);
+		const string jmp_to_if_true_lbl=if_bgn_lbl+"_code";
 
-		indent(os,indent_level);os<<if_bgn_label<<":"<<endl;
+		indent(os,indent_level);os<<if_bgn_lbl<<":"<<endl;
 
-		bol_.compile(tc, os, indent_level,jmp_to_if_false_label,jmp_to_if_true_label,true);
+		bol_.compile(tc, os, indent_level,jmp_to_if_false_label,jmp_to_if_true_lbl,true);
 
-		indent(os,indent_level);os<<jmp_to_if_true_label<<":"<<endl;
+		indent(os,indent_level);os<<jmp_to_if_true_lbl<<":"<<endl;
 
 		code_->compile(tc,os,indent_level);
 

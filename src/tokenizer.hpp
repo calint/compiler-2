@@ -3,20 +3,20 @@
 class tokenizer final{
 public:
 	inline tokenizer(const string&str):
-		source{str},
-		ptr{source.c_str()}
+		src_{str},
+		ptr_{src_.c_str()}
 	{}
 
-	inline bool is_eos()const{return !last_char;}
+	inline bool is_eos()const{return !last_char_;}
 
 	inline token next_token(){
 		auto wspre=next_whitespace();
-		auto bgn=nchar;
+		auto bgn=nchar_;
 		if(is_next_char('"')){
 			string s;
 			while(true){
 				if(is_next_char('"')){
-					auto end=nchar;
+					auto end=nchar_;
 					auto wsaft=next_whitespace();
 					return move(token{wspre,bgn,s,end,wsaft,true});
 					break;
@@ -38,12 +38,12 @@ public:
 				throw string("unknown escaped character ["+to_string(esc_ch)+"]");
 			}
 			auto tkn=next_token_str();
-			auto end=nchar;
+			auto end=nchar_;
 			auto wsaft=next_whitespace();
 			return move(token{wspre,bgn,tkn,end,wsaft,false});
 		}
 		auto tkn=next_token_str();
-		auto end=nchar;
+		auto end=nchar_;
 		auto wsaft=next_whitespace();
 		return move(token{wspre,bgn,tkn,end,wsaft});
 	}
@@ -55,46 +55,46 @@ public:
 
 	inline token next_whitespace_token(){
 		auto wspre=next_whitespace();
-		auto bgn=nchar;
-		auto end=nchar;
+		auto bgn=nchar_;
+		auto end=nchar_;
 		return move(token{wspre,bgn,"",end,""});
 	}
 
 	inline bool is_next_char(const char ch){
-		if(*ptr!=ch)return false;
+		if(*ptr_!=ch)return false;
 		next_char();
 		return true;
 	}
 
-	inline bool is_peek_char(const char ch){return *ptr==ch;}
+	inline bool is_peek_char(const char ch){return *ptr_==ch;}
 
-	inline char peek_char()const{return *ptr;}
+	inline char peek_char()const{return *ptr_;}
 
 	inline string read_rest_of_line(){
-		const char*bgn=ptr;
+		const char*bgn=ptr_;
 		while(true){
-			if(*ptr=='\n')break;
-			if(*ptr=='\0')break;
-			ptr++;
+			if(*ptr_=='\n')break;
+			if(*ptr_=='\0')break;
+			ptr_++;
 		}
-		string s{bgn,size_t(ptr-bgn)};
-		ptr++;
-		nchar+=size_t(ptr-bgn);
+		string s{bgn,size_t(ptr_-bgn)};
+		ptr_++;
+		nchar_+=size_t(ptr_-bgn);
 		return s;
 	}
 
 	inline char next_char(){
-		assert(last_char);
-		nchar++;
-		last_char=*ptr;
-		ptr++;
-		return last_char;
+		assert(last_char_);
+		nchar_++;
+		last_char_=*ptr_;
+		ptr_++;
+		return last_char_;
 	}
 
 private:
 	inline string next_whitespace(){
 		if(is_eos())return"";
-		nchar_bm=nchar;
+		nchar_bm_=nchar_;
 		while(true){
 			const char ch=next_char();
 			if(is_char_whitespace(ch))
@@ -102,13 +102,13 @@ private:
 			seek(-1);
 			break;
 		}
-		const size_t len=nchar-nchar_bm;
-		return string{ptr-len,len};
+		const size_t len=nchar_-nchar_bm_;
+		return string{ptr_-len,len};
 	}
 
 	inline string next_token_str(){
 		if(is_eos())return"";
-		nchar_bm=nchar;
+		nchar_bm_=nchar_;
 		while(true){
 			const char ch=next_char();
 			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||
@@ -121,23 +121,23 @@ private:
 			}
 			continue;
 		}
-		const size_t len=nchar-nchar_bm;
-		return string{ptr-len,len};
+		const size_t len=nchar_-nchar_bm_;
+		return string{ptr_-len,len};
 	}
 
 	inline void seek(const off_t nch){
-		assert(ssize_t(source.size())>=(ssize_t(nchar)+nch) and (ssize_t(nchar)+nch)>=0);
-		ptr+=nch;
-		nchar=size_t(ssize_t(nchar)+nch);
+		assert(ssize_t(src_.size())>=(ssize_t(nchar_)+nch) and (ssize_t(nchar_)+nch)>=0);
+		ptr_+=nch;
+		nchar_=size_t(ssize_t(nchar_)+nch);
 	}
 
 	inline static bool is_char_whitespace(const char ch){
 		return ch==' '||ch=='\t'||ch=='\r'||ch=='\n';
 	}
 
-	string source;
-	const char*ptr;
-	size_t nchar_bm{0};
-	size_t nchar{0};
-	char last_char{-1};
+	string src_;
+	const char*ptr_;
+	size_t nchar_bm_{0};
+	size_t nchar_{0};
+	char last_char_{-1};
 };

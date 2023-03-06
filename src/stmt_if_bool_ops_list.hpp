@@ -58,13 +58,6 @@ public:
 		throw compiler_error(tok(),"this code should not be reached");
 	}
 
-	inline static string cmp_label_from_variant(const toc&tc,const variant<stmt_if_bool_op,stmt_if_bool_ops_list>&v){
-		if(v.index()==1){
-			return get<stmt_if_bool_ops_list>(v).cmp_bgn_label(tc);
-		}
-		return get<stmt_if_bool_op>(v).cmp_bgn_label(tc);
-	}
-
 	inline string cmp_bgn_label(const toc&tc)const{
 		return "cmp_"+tc.source_location(tok());
 	}
@@ -117,6 +110,13 @@ public:
 	}
 
 private:
+	inline static string cmp_label_from_variant(const toc&tc,const variant<stmt_if_bool_op,stmt_if_bool_ops_list>&v){
+		if(v.index()==1){
+			return get<stmt_if_bool_ops_list>(v).cmp_bgn_label(tc);
+		}
+		return get<stmt_if_bool_op>(v).cmp_bgn_label(tc);
+	}
+
 	vector<variant<stmt_if_bool_op,stmt_if_bool_ops_list>>bools_;
 	vector<token>ops_;
 	bool enclosed_;  // (a=b and c=d) vs a=b and c=d

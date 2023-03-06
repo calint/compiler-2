@@ -74,9 +74,9 @@ public:
 
 	inline bool is_inline()const{return true;}
 
-	inline const vector<token>&get_returns()const{return returns_;}
+	inline const vector<token>&returns()const{return returns_;}
 
-	inline const stmt_def_func_param&get_param(const size_t ix)const{return params_[ix];}
+	inline const stmt_def_func_param&param(const size_t ix)const{return params_[ix];}
 
 	inline const stmt_block*code_block()const{return code_.get();}
 

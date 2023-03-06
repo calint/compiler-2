@@ -46,9 +46,9 @@ public:
 		const stmt_def_func*f=tc.get_func_or_break(*this,nm);
 		vector<tuple<string,string>>aliases_to_add;
 		if(not dest_ident.empty()){
-			if(f->get_returns().empty())
+			if(f->returns().empty())
 				throw compiler_error(*this,"cannot assign from call without return",tok().name_copy());
-			const string&from=f->get_returns()[0].name();
+			const string&from=f->returns()[0].name();
 			const string&to=dest_ident;
 			aliases_to_add.push_back(make_tuple(from,to));
 		}
@@ -56,12 +56,12 @@ public:
 		vector<string>allocated_registers;
 		size_t i=0;
 		for(const auto&a:args_){
-			auto&param=f->get_param(i);
+			auto&param=f->param(i);
 			i++;
 			if(a->is_expression()){
 				// in reg
 				string reg;
-				for(const auto&kw:param.get_keywords()){
+				for(const auto&kw:param.keywords()){
 					if(kw.name().find("reg_")==0){
 						string name=kw.name().substr(4,kw.name().size());
 						reg=tc.alloc_scratch_register(param,name);

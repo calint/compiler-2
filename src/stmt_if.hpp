@@ -61,7 +61,7 @@ public:
 			string jmp_if_false=label_else_branch;
 			string jmp_after_if=label_after_if;
 			if(i<n-1){ // if branch is false jump to next if
-				jmp_if_false=branches_[i+1].if_bgn_label_source_location(tc);
+				jmp_if_false=branches_[i+1].if_bgn_label(tc);
 			}else{
 				// if last branch and no "else" then don't jump to "after_if", just continue
 				if(!else_code_){

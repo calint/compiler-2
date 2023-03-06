@@ -32,7 +32,7 @@ public:
 		}
 	}
 
-	inline const vector<token>&get_keywords()const{return keywords_;}
+	inline const vector<token>&keywords()const{return keywords_;}
 
 private:
 	vector<token>keywords_;
