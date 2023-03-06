@@ -57,11 +57,11 @@ public:
 			}else
 				break;
 
-			const size_t next_presedence=_presedence_for_op(t.peek_char());
+			const size_t next_presedence=presedence_for_op(t.peek_char());
 			if(next_presedence>presedence_){
 				presedence_=next_presedence;
 				if(!ops_.empty()){
-					const size_t first_op_pres=_presedence_for_op(ops_.back());
+					const size_t first_op_pres=presedence_for_op(ops_.back());
 					ops_.pop_back();
 					const char list_op=ops_.back();
 					unique_ptr<statement>prev=move(expressions_.back());
@@ -112,15 +112,15 @@ public:
 		if(expressions_.empty())
 			return;
 
-		statement*st=expressions_[0].get();
+		const statement&st=*expressions_[0].get();
 		string dest_resolved=tc.resolve_ident_to_nasm(*this,dest);
 		asm_op(tc,os,indent_level,st,'=',dest,dest_resolved,true);
 
 		auto len=ops_.size();
 		for(size_t i{0};i<len;i++){
 			auto op=ops_[i];
-			const auto&exp=expressions_[i+1].get();
-			asm_op(tc,os,indent_level+1,exp,op,dest,dest_resolved,false);
+			const statement&stm=*expressions_[i+1].get();
+			asm_op(tc,os,indent_level,stm,op,dest,dest_resolved,false);
 		}
 	}
 
@@ -161,7 +161,7 @@ public:
 	}
 
 private:
-	inline static size_t _presedence_for_op(const char ch){
+	inline static size_t presedence_for_op(const char ch){
 		if(ch=='+'||ch=='-')
 			return 1;
 		if(ch=='*'||ch=='/')
@@ -169,49 +169,50 @@ private:
 		throw string(to_string(__LINE__)+" err");
 	}
 
-	inline void asm_op(toc&tc,ostream&os,size_t indent_level,const statement*st,const char op,const string&dest,const string&dest_resolved,bool first_in_list)const{
+	inline void asm_op(toc&tc,ostream&os,size_t indent_level,const statement&st,const char op,const string&dest,const string&dest_resolved,bool first_in_list)const{
+		indent(os,indent_level,true);tc.source_comment(os,st);
 		if(op=='+'){// order1op
-			if(st->is_expression()){
-				auto r=tc.alloc_scratch_register(st->tok());
-				st->compile(tc,os,indent_level,r);
-				asm_cmd("add",*st,tc,os,indent_level+1,dest_resolved,r);
+			if(st.is_expression()){
+				auto r=tc.alloc_scratch_register(st.tok());
+				st.compile(tc,os,indent_level,r);
+				asm_cmd("add",st,tc,os,indent_level+1,dest_resolved,r);
 				tc.free_scratch_reg(r);
 				return;
 			}
-			asm_cmd("add",*st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(*st));
+			asm_cmd("add",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st));
 			return;
 		}
 		if(op=='-'){// order1op
-			if(st->is_expression()){
-				auto r=tc.alloc_scratch_register(*st);
-				st->compile(tc,os,indent_level,r);
-				asm_cmd("sub",*st,tc,os,indent_level,dest_resolved,r);
+			if(st.is_expression()){
+				auto r=tc.alloc_scratch_register(st);
+				st.compile(tc,os,indent_level,r);
+				asm_cmd("sub",st,tc,os,indent_level,dest_resolved,r);
 				tc.free_scratch_reg(r);
 				return;
 			}
-			asm_cmd("sub",*st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(*st));
+			asm_cmd("sub",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st));
 			return;
 		}
 		if(op=='*'){// order2op
-			if(st->is_expression()){
-				auto r=tc.alloc_scratch_register(*st);
-				st->compile(tc,os,indent_level,r);
-				asm_cmd("imul",*st,tc,os,indent_level,dest_resolved,r);
+			if(st.is_expression()){
+				auto r=tc.alloc_scratch_register(st);
+				st.compile(tc,os,indent_level,r);
+				asm_cmd("imul",st,tc,os,indent_level,dest_resolved,r);
 				tc.free_scratch_reg(r);
 				return;
 			}
 			if(first_in_list){
-				asm_cmd("mov",*st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(*st));
+				asm_cmd("mov",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st));
 			}else
-				asm_cmd("imul",*st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(*st));
+				asm_cmd("imul",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st));
 
 			return;
 		}
 		if(op=='='){
-			if(st->is_expression()){
-				st->compile(tc,os,indent_level,dest);
+			if(st.is_expression()){
+				st.compile(tc,os,indent_level,dest);
 			}else{
-				asm_cmd("mov",*st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(*st,st->identifier()));
+				asm_cmd("mov",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st,st.identifier()));
 			}
 			return;
 		}

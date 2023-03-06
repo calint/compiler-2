@@ -22,4 +22,5 @@
 [ ] make sub lists taking in account precedence of 'and' over 'or'
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [ ] return statement
+[ ] op shift left and right
 

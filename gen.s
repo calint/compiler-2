@@ -13,17 +13,21 @@ _start:
 ;   [8:5] var a=1 
 ;   [8:9] a=1 
 ;   [8:11] 1 
+;   [8:11] 1 
     mov dword[ebp+0],1
 ;   [9:5] var b=2 
 ;   [9:9] b=2 
+;   [9:11] 2 
 ;   [9:11] 2 
     mov dword[ebp+4],2
 ;   [10:5] var c=3 
 ;   [10:9] c=3 
 ;   [10:11] 3 
+;   [10:11] 3 
     mov dword[ebp+8],3
 ;   [11:5] var d=4 
 ;   [11:9] d=4 
+;   [11:11] 4 
 ;   [11:11] 4 
     mov dword[ebp+12],4
 ;   [12:1] # if (a=1 or b=2) and (c=3 or d=4) 
@@ -61,6 +65,7 @@ _start:
 ;   [16:5] var n=10 
 ;   [16:9] n=10 
 ;   [16:11] 10 
+;   [16:11] 10 
     mov dword[ebp+16],10
 ;   [17:5] loop
     loop_17_5:
@@ -78,17 +83,26 @@ _start:
 ;     [19:11] r=((a+b)*c+d)*2 
 ;     [19:13] ((a+b)*c+d)*2 
 ;     [19:14] ((a+b)*c+d)
+;     [19:14] ((a+b)*c+d)
 ;     [19:15] (a+b)
+;     [19:15] (a+b)
+;     [19:15] a
       mov edi,dword[ebp+0]
-        add edi,dword[ebp+4]
-        imul edi,dword[ebp+8]
-        add edi,dword[ebp+12]
-        imul edi,2
+;     [19:17] b
+      add edi,dword[ebp+4]
+;     [19:20] c
+      imul edi,dword[ebp+8]
+;     [19:22] d
+      add edi,dword[ebp+12]
+;     [19:25] 2 
+      imul edi,2
       mov dword[ebp+20],edi
 ;     [20:7] n=n-1 
 ;     [20:9] n-1 
+;     [20:9] n
       mov edi,dword[ebp+16]
-        sub edi,1
+;     [20:11] 1 
+      sub edi,1
       mov dword[ebp+16],edi
 ;     [21:7] continue 
       jmp loop_17_5
