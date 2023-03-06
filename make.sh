@@ -1,4 +1,9 @@
 #!/bin/sh
+# tools:
+#   clang++: Ubuntu clang version 15.0.6 x86_64-pc-linux-gnu posix
+#      nasm: NASM version 2.15.05
+#        ld: GNU ld (GNU Binutils for Ubuntu) 2.39
+#       g++: g++ (Ubuntu 12.2.0-3ubuntu1) 12.2.0
 set -e
 
 BIN=baz
