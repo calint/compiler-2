@@ -37,9 +37,7 @@ class stmt_def_field final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		os<<"; -- field "<<ident_.name()<<"  ";
-		tc.source_location_to_stream(os,ident_);
-		os<<endl;
+		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 		os<<ident_.name()<<" db '";
 		for(auto&s:tokens_)
 			s.compile_to(os);

@@ -1,12 +1,8 @@
 section .data
 
-dd1 dd 1
-dd0 dd 0
-
 section .bss
 stk resd 256
 stk.end:
-
 
 section .text
 global _start
@@ -46,45 +42,44 @@ _start:
           add edi,esi
         imul edi,2
         mov dword[ebp+16],edi
-    if_13_8:
-;   [13:8] (a=1 or b=2) and (c=3 or d=4)
-;   [13:9] (a=1 or b=2)
-;   [13:9] a=1 
-    cmp_13_9:
-    cmp dword[ebp+0],1  ;  [13:9]
-    je cmp_13_26
-;   [13:16] b=2
-    cmp_13_16:
-    cmp dword[ebp+4],2  ;  [13:16]
-    jne if_end_13_5
-    jmp cmp_13_26
-;   [13:26] (c=3 or d=4)
-;   [13:26] c=3 
-    cmp_13_26:
-    cmp dword[ebp+8],3  ;  [13:26]
-    je if_13_8_code
-;   [13:33] d=4
-    cmp_13_33:
-    cmp dword[ebp+12],4  ;  [13:33]
-    jne if_end_13_5
-    if_13_8_code:
-;     [15:9] exit(1)
+    if_15_8:
+;   [15:8] (a=1 and (b=2 or c=3)) or d=4 
+;   [15:9] (a=1 and (b=2 or c=3))
+;   [15:9] a=1 
+    cmp_15_9:
+    cmp dword[ebp+0],1
+    jne cmp_15_34
+;   [15:18] (b=2 or c=3)
+;   [15:18] b=2 
+    cmp_15_18:
+    cmp dword[ebp+4],2
+    je if_15_8_code
+;   [15:25] c=3
+    cmp_15_25:
+    cmp dword[ebp+8],3
+    jne cmp_15_34
+;   [15:34] d=4 
+    cmp_15_34:
+    cmp dword[ebp+12],4
+    jne if_end_15_5
+    if_15_8_code:
+;     [16:9] exit(1)
 ;         [2:5] mov(ebx,v)
           mov ebx,1
 ;         [3:5] mov(eax,1)
           mov eax,1
 ;         [4:5] int(0x80)
           int 0x80
-      exit_end_15_9:
-    if_end_13_5:
-;   [16:5] exit(r)
+      exit_end_16_9:
+    if_end_15_5:
+;   [17:5] exit(r)
 ;       [2:5] mov(ebx,v)
         mov ebx,dword[ebp+16]
 ;       [3:5] mov(eax,1)
         mov eax,1
 ;       [4:5] int(0x80)
         int 0x80
-    exit_end_16_5:
+    exit_end_17_5:
 
 ;           max regs in use: 3
 ;         max frames in use: 2

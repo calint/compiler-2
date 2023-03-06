@@ -1,4 +1,3 @@
-#for o in s 0 1 2 3;do
 CC="clang++ -std=c++2a"
 CF="-Os -Wfatal-errors -fno-inline"
 CW="-Weverything -pedantic -pedantic-errors -Wall -Wextra -Werror -Wconversion -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wsign-conversion -Wsign-promo -Wswitch-default -Wundef -Wfloat-equal -Wsign-conversion -Wfloat-conversion -Wold-style-cast"
@@ -11,16 +10,15 @@ ls --color -la baz &&
 ./baz prog.baz > gen.s &&
 nasm -f elf64 gen.s && 
 ld -s -o gen gen.o &&
-#ls --color -la compi &&
 ls --color -la gen.s &&
 ls --color -la gen &&
 echo &&
-echo -n '         source: ' && cat src/*|wc &&
-echo -n '        gzipped: ' && cat src/*|gzip|wc && 
-echo -n '     baz source: ' && cat prog.baz|grep -v -e'^\s*$'|wc &&
-echo -n '        gzipped: ' && cat prog.baz|grep -v -e'^\s*$'|gzip|wc &&
-echo -n ' x86 asm source: ' && cat src/*|sh pgen.sh|wc &&
-echo -n '        gzipped: ' && cat src/*|sh pgen.sh|gzip|wc &&
+echo -n '    source: ' && cat src/*|wc &&
+echo -n '   gzipped: ' && cat src/*|gzip|wc && 
+echo -n 'baz source: ' && cat prog.baz|grep -v -e'^\s*$'|wc &&
+echo -n '   gzipped: ' && cat prog.baz|grep -v -e'^\s*$'|gzip|wc &&
+echo -n 'asm source: ' && cat src/*|sh pgen.sh|wc &&
+echo -n '   gzipped: ' && cat src/*|sh pgen.sh|gzip|wc &&
 
 echo &&
 cat gen.s &&

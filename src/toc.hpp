@@ -133,22 +133,10 @@ class toc final{public:
 		tables_.put(ident,f);
 	}
 
-	inline void source_location_to_stream(ostream&os,const token&t)const{
-		size_t char_in_line;
-		const size_t n=line_number_for_char_index(t.char_index(),source_str_,char_in_line);
-		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
-	}
-
 	inline string source_location(const token&t)const{
 		size_t char_in_line;
 		const size_t n=line_number_for_char_index(t.char_index(),source_str_,char_in_line);
 		return to_string(n)+"_"+to_string(char_in_line);
-	}
-
-	inline void source_location_to_stream(ostream&os,size_t charix){
-		size_t char_in_line;
-		const size_t n=line_number_for_char_index(charix,source_str_,char_in_line);
-		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
 	}
 
 	inline void source_location_for_identifier_to_stream(ostream&os,const token&t){
@@ -278,8 +266,11 @@ class toc final{public:
 	}
 
 	inline void source_to_as_comment(ostream&os,const statement&stmt)const{
+		size_t char_in_line;
+		const size_t n=line_number_for_char_index(stmt.tok().char_index(),source_str_,char_in_line);
+		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
+
 		stringstream ss;
-		source_location_to_stream(ss,stmt.tok());
 		ss<<" ";
 		stmt.source_to(ss);
 		string s=ss.str();

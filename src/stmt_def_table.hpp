@@ -56,11 +56,7 @@ class stmt_def_table final:public statement{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		os<<"; --- table "<<ident_.name()<<" ";
-		tc.source_location_to_stream(os,ident_);
-		os<<endl;
-//		os<<token().name()<<"_"<<identifier->name()<<":\n";
-//		os<<token().name()<<"_"<<identifier->name()<<"_end:\n\n";
+		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 		os<<ident_.name()<<":\n";
 		os<<ident_.name()<<".end:\n";
 		os<<ident_.name()<<".len equ $-"<<ident_.name()<<"\n\n";

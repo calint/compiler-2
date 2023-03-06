@@ -146,21 +146,15 @@ class stmt_if_bool_op:public statement{public:
 		if(!ra.find("dword[") and !rb.find("dword[")){
 			const string&r=tc.alloc_scratch_register(identifier());
 			indent(os,indent_level,false);
-			os<<"mov "<<r<<","<<rb<<"  ;  ";
-			tc.source_location_to_stream(os,identifier());
-			os<<endl;
+			os<<"mov "<<r<<","<<rb<<endl;
 			indent(os,indent_level,false);
-			os<<op<<" "<<ra<<","<<r<<"  ;  ";
-			tc.source_location_to_stream(os,identifier());
-			os<<endl;
+			os<<op<<" "<<ra<<","<<r<<endl;
 			tc.free_scratch_reg(r);
 			return;
 		}
 
 		indent(os,indent_level,false);
-		os<<op<<" "<<ra<<","<<rb<<"  ;  ";
-		tc.source_location_to_stream(os,sa.tok());
-		os<<endl;
+		os<<op<<" "<<ra<<","<<rb<<endl;
 
 		for(auto&r:allocated_registers)tc.free_scratch_reg(r);
 	}

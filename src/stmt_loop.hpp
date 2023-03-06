@@ -22,10 +22,9 @@ class stmt_loop final:public stmt_call{public:
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
+		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 		indent(os,indent_level,false);
-		os<<name<<":  ; ";
-		tc.source_location_to_stream(os,tok());
-		os<<endl;
+		os<<name<<":"<<endl;
 
 		tc.push_loop(name.data());
 
@@ -34,9 +33,7 @@ class stmt_loop final:public stmt_call{public:
 		os<<"jmp "<<name<<endl;
 
 		indent(os,indent_level,false);
-		os<<"_end"<<name<<":  ; ";
-		tc.source_location_to_stream(os,tok());
-		os<<endl;
+		os<<"_end"<<name<<":"<<endl;
 
 		tc.pop_loop(name.data());
 	}
