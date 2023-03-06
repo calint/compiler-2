@@ -279,6 +279,13 @@ class toc final{public:
 		os<<endl;
 	}
 
+	inline void token_to_as_comment(ostream&os,const token&tk)const{
+		size_t char_in_line;
+		const size_t n=line_number_for_char_index(tk.char_index(),source_str_,char_in_line);
+		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
+		os<<" "<<tk.name()<<endl;
+	}
+
 private:
 	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&ok)const{//? tidy duplicate code
 		string name=ident;

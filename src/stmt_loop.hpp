@@ -21,7 +21,7 @@ class stmt_loop final:public stmt_call{public:
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
+		indent(os,indent_level,true);tc.token_to_as_comment(os,this->tok());
 		string lbl="loop_"+tc.source_location(tok());
 		indent(os,indent_level,false);os<<lbl<<":"<<endl;
 		tc.push_loop(lbl);
