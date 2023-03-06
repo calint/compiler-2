@@ -1,7 +1,7 @@
 func exit(v){
-	mov(ebx,v)
-	mov(eax,1)
-	int(0x80)
+    mov(ebx,v)
+    mov(eax,1)
+    int(0x80)
 }
 
 func main{
