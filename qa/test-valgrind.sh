@@ -1,6 +1,6 @@
 cd .. &&
 echo && echo $(date) && echo &&
-valgrind ./compi &&
+valgrind ./baz &&
 echo && echo $(date) && echo &&
 cd qa
 
