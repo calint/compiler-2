@@ -15,3 +15,4 @@
 [ ] non-inlined function calls
 [ ] why is the binary so big although in-line is turned of in make.sh?
 [ ] tokenizer to keep track of line-number instead of counting it at every call
+[ ] implement division op

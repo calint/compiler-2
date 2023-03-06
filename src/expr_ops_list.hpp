@@ -37,21 +37,13 @@ class expr_ops_list final:public expression{public:
 		}
 
 		while(true){// +a  +3
-//			if(t.is_peek_char(';')){
-//				break;
-//			}
-
 			if(in_args){//? rewrite is_in_bool_expr
-				if(t.is_peek_char('<'))
-					break;
-				if(t.is_peek_char('='))
-					break;
-
+				if(t.is_peek_char('<'))break;
+				if(t.is_peek_char('='))break;
+				if(t.is_peek_char('>'))break;
 			}
-
-			if(in_args and (t.is_peek_char(',') or t.is_peek_char(')'))){
+			if(in_args and (t.is_peek_char(',') or t.is_peek_char(')')))
 				break;
-			}
 
 			if(t.is_peek_char(')')){
 				if(enclosed_){
@@ -75,7 +67,6 @@ class expr_ops_list final:public expression{public:
 			if(t.is_peek_char('%')){
 				ops_.push_back('%');
 			}else
-//				throw compiler_error(*expressions_.back(),"unknown operator",to_string(t.peek_char()));
 				break;
 
 			const size_t next_presedence=_presedence_for_op(t.peek_char());
@@ -129,17 +120,6 @@ class expr_ops_list final:public expression{public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest)const override{
 		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
-//
-//		indent(os,indent_level+1,true);
-//		stringstream ss;
-//		source_to(ss);
-//		ss<<"      ";
-//		tc.source_location_to_stream(ss,this->tok());
-//		string s=ss.str();
-////		replace(s.begin(),s.end(),'\n',' ');
-//		string res=regex_replace(s,regex("\\s+")," ");
-//		os<<res;
-//		os<<endl;
 
 		if(expressions_.empty())
 			return;
@@ -152,21 +132,16 @@ class expr_ops_list final:public expression{public:
 		for(size_t i{0};i<len;i++){
 			auto op=ops_[i];
 			auto exp=expressions_[i+1].get();
-
 			_asm_op(tc,os,indent_level,exp,op,dest,dest_resolved,false);
-
 		}
-
 	}
 
 	inline bool is_expression()const override{
 		if(expressions_.size()==1){
 			return expressions_[0]->is_expression();
 		}
-
 		return true;
 	}
-
 
 	inline bool is_ops_list()const override{return true;}
 
@@ -183,8 +158,6 @@ class expr_ops_list final:public expression{public:
 		if(ra==rb){
 			return;
 		}
-
-//		indent(os,indent_level,true);tc.source_to_as_comment(os,s);
 
 		if(!ra.find("dword[") and !rb.find("dword[")){
 			const string&r=tc.alloc_scratch_register(s.tok());
@@ -257,8 +230,6 @@ private:
 			return;
 		}
 	}
-
-
 
 	bool enclosed_{false}; // ie   =(1+2)   vs  =1+2
 	bool in_args_{false}; // ie   =func(1+2)
