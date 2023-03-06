@@ -94,7 +94,7 @@ public:
 private:
 	inline string next_whitespace(){
 		if(is_eos())return"";
-		nchar_bm_=nchar_;
+		const size_t nchar_bm_=nchar_;
 		while(true){
 			const char ch=next_char();
 			if(is_char_whitespace(ch))
@@ -108,7 +108,7 @@ private:
 
 	inline string next_token_str(){
 		if(is_eos())return"";
-		nchar_bm_=nchar_;
+		const size_t nchar_bm_=nchar_;
 		while(true){
 			const char ch=next_char();
 			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||
@@ -137,7 +137,6 @@ private:
 
 	string src_;
 	const char*ptr_;
-	size_t nchar_bm_{0};
 	size_t nchar_{0};
 	char last_char_{-1};
 };
