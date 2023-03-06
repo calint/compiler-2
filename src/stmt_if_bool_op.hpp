@@ -62,68 +62,50 @@ class stmt_if_bool_op:public statement{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		throw compiler_error(tok(),"this code should not be reached");
 	}
+	inline static string asm_jxx_for_op(const string&op){
+		if(op=="="){
+			return "je";
+		}else if(op=="<"){
+			return "jl";
+		}else if(op=="<="){
+			return "jle";
+		}else if(op==">"){
+			return "jg";
+		}else if(op==">="){
+			return "jge";
+		}else{
+			throw "unknown op "+op;
+		}
+	}
+	inline static string asm_jxx_for_op_inv(const string&op){
+		if(op=="="){
+			return "jne";
+		}else if(op=="<"){
+			return "jge";
+		}else if(op=="<="){
+			return "jg";
+		}else if(op==">"){
+			return "jle";
+		}else if(op==">="){
+			return "jl";
+		}else{
+			throw "unknown op "+op;
+		}
+	}
 	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false,const string&jmp_to_if_true)const{
 		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 		indent(os,indent_level,false);os<<cmp_bgn_label(tc)<<":\n";
 		_resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
 		indent(os,indent_level,false);
 		if(last_elem){
-			// if last bool eval and false then jump to 'else'
-			// else continue to if code
-			if(is_not_){
-				if(op_=="="){
-					os<<"je";
-				}else if(op_=="<"){
-					os<<"jl";
-				}else if(op_=="<="){
-					os<<"jle";
-				}else if(op_==">"){
-					os<<"jg";
-				}else if(op_==">="){
-					os<<"jge";
-				}
-			}else{
-				if(op_=="="){
-					os<<"jne";
-				}else if(op_=="<"){
-					os<<"jge";
-				}else if(op_=="<="){
-					os<<"jg";
-				}else if(op_==">"){
-					os<<"jle";
-				}else if(op_==">="){
-					os<<"jl";
-				}
-			}
+			// if last bool in list and false then jump to 'false' branch
+			// else continue to 'true' branch
+			os<<(is_not_?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
 			os<<" "<<jmp_to_if_false<<endl;
 		}else{
-			// if not last bool eval and true then jump to if block code
-			// else continue to next bool eval
-			if(is_not_){
-				if(op_=="="){
-					os<<"jne";
-				}else if(op_=="<"){
-					os<<"jge";
-				}else if(op_=="<="){
-					os<<"jg";
-				}else if(op_==">"){
-					os<<"jle";
-				}else if(op_==">="){
-					os<<"jl";
-				}
-			}else{
-				if(op_=="="){
-					os<<"je";
-				}else if(op_=="<"){
-					os<<"jl";
-				}else if(op_=="<="){
-					os<<"jle";
-				}else if(op_==">"){
-					os<<"jg";
-				}else if(op_==">="){
-					os<<"jge";
-				}
-			}
+			// if not last bool in list and true then jump to 'true' branch
+			// else continue to next bool
+			os<<(is_not_?asm_jxx_for_op_inv(op_):asm_jxx_for_op(op_));
 			os<<" "<<jmp_to_if_true<<endl;
 		}
 	}
@@ -136,62 +118,14 @@ class stmt_if_bool_op:public statement{public:
 		_resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
 		indent(os,indent_level,false);
 		if(last_elem){
-			// if last bool eval and false then jump to else label
-			// else continue to if block code
-			if(is_not_){
-				if(op_=="="){
-					os<<"je";
-				}else if(op_=="<"){
-					os<<"jl";
-				}else if(op_=="<="){
-					os<<"jle";
-				}else if(op_==">"){
-					os<<"jg";
-				}else if(op_==">="){
-					os<<"jge";
-				}
-			}else{
-				if(op_=="="){
-					os<<"jne";
-				}else if(op_=="<"){
-					os<<"jge";
-				}else if(op_=="<="){
-					os<<"jg";
-				}else if(op_==">"){
-					os<<"jle";
-				}else if(op_==">="){
-					os<<"jl";
-				}
-			}
+			// if last bool and false then jump to 'false' branch
+			// else continue to 'true' branch
+			os<<(is_not_?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
 			os<<" "<<jmp_to_if_false<<endl;
 		}else{
-			// if not last bool eval and false then jump to "else"
-			// else continue to next bool eval
-			if(is_not_){
-				if(op_=="="){
-					os<<"je";
-				}else if(op_=="<"){
-					os<<"jl";
-				}else if(op_=="<="){
-					os<<"jle";
-				}else if(op_==">"){
-					os<<"jg";
-				}else if(op_==">="){
-					os<<"jge";
-				}
-			}else{
-				if(op_=="="){
-					os<<"jne";
-				}else if(op_=="<"){
-					os<<"jge";
-				}else if(op_=="<="){
-					os<<"jg";
-				}else if(op_==">"){
-					os<<"jle";
-				}else if(op_==">="){
-					os<<"jl";
-				}
-			}
+			// if not last bool and false then jump to 'false' branch
+			// else continue to next bool
+			os<<(is_not_?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
 			os<<" "<<jmp_to_if_false<<endl;
 		}
 	}
