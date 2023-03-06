@@ -44,19 +44,17 @@ class stmt_if_branch final:public statement{public:
 		const string if_bgn_label=if_bgn_label_source_location(tc);
 		const string jmp_to_if_true_label=if_bgn_label+"_code";
 
-		indent(os,indent_level,false);
-		os<<if_bgn_label<<":"<<endl;
+		indent(os,indent_level,false);os<<if_bgn_label<<":"<<endl;
 
 		bol_.compile(tc, os, indent_level,jmp_to_if_false_label,jmp_to_if_true_label,true);
 
-		indent(os,indent_level,false);
-		os<<jmp_to_if_true_label<<":"<<endl;
+		indent(os,indent_level,false);os<<jmp_to_if_true_label<<":"<<endl;
 
 		code_->compile(tc,os,indent_level);
 
 		if(jmp_to_after_code_label!=""){
-			indent(os,indent_level+1,false);
-			os<<"jmp "<<jmp_to_after_code_label<<endl; // jump to code after if else block
+			// jump to code after if else block
+			indent(os,indent_level+1,false);os<<"jmp "<<jmp_to_after_code_label<<endl;
 		}
 	}
 

@@ -30,6 +30,7 @@ class stmt_if final:public statement{public:
 
 			token tkn2=t.next_token();
 			if(!tkn2.is_name("if")){
+				// if else ...
 				t.pushback_token(tkn2);
 				else_if_tokens_.push_back(tkn);
 				else_code_=make_unique<stmt_block>(*this,t);
@@ -38,6 +39,7 @@ class stmt_if final:public statement{public:
 
 			else_if_tokens_.push_back(tkn);
 			else_if_tokens_.push_back(tkn2);
+			// if else if ...
 		}
 
 	}

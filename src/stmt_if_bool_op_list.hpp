@@ -12,9 +12,9 @@ class stmt_if_bool_op_list:public statement{public:
 	{
 		while(true){
 			if(t.is_next_char('(')){
-				bool_ops_.push_back(stmt_if_bool_op_list(*this,t,true));
+				bools_.push_back(stmt_if_bool_op_list(*this,t,true));
 			}else{
-				bool_ops_.push_back(stmt_if_bool_op(*this,t));
+				bools_.push_back(stmt_if_bool_op(*this,t));
 			}
 			if(t.is_next_char(')')){
 				return;
@@ -37,12 +37,12 @@ class stmt_if_bool_op_list:public statement{public:
 		if(enclosed_){
 			os<<"(";
 		}
-		const size_t n=bool_ops_.size();
+		const size_t n=bools_.size();
 		for(size_t i=0;i<n;i++){
-			if(bool_ops_[i].index()==0){
-				get<stmt_if_bool_op>(bool_ops_[i]).source_to(os);
+			if(bools_[i].index()==0){
+				get<stmt_if_bool_op>(bools_[i]).source_to(os);
 			}else{
-				get<stmt_if_bool_op_list>(bool_ops_[i]).source_to(os);
+				get<stmt_if_bool_op_list>(bools_[i]).source_to(os);
 			}
 			if(i<n-1){
 				const token&t=ops_[i];
@@ -71,20 +71,20 @@ class stmt_if_bool_op_list:public statement{public:
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool is_last)const{
 		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 
-		const size_t n=bool_ops_.size();
+		const size_t n=bools_.size();
 		for(size_t i=0;i<n;i++){
-			if(bool_ops_[i].index()==1){
-				const stmt_if_bool_op_list&el=get<stmt_if_bool_op_list>(bool_ops_[i]);
+			if(bools_[i].index()==1){
+				const stmt_if_bool_op_list&el=get<stmt_if_bool_op_list>(bools_[i]);
 				string jmp_false=jmp_to_if_false;
 				string jmp_true=jmp_to_if_true;
 				if(i<n-1){
 					// if not last element check if it is a 'or' or 'and' list
 					if(ops_[i].is_name("or")){
 						// if evaluation is false and next op is "or" then jump_false is next bool eval
-						jmp_false=cmp_label_from_variant(tc,bool_ops_[i+1]);
+						jmp_false=cmp_label_from_variant(tc,bools_[i+1]);
 					}else if(ops_[i].is_name("and")){
 						// if evaluation is true and next op is "and" then jump_true is next bool eval
-						jmp_true=cmp_label_from_variant(tc,bool_ops_[i+1]);
+						jmp_true=cmp_label_from_variant(tc,bools_[i+1]);
 					}else{
 						throw "expected 'or' or 'and'";
 					}
@@ -96,7 +96,7 @@ class stmt_if_bool_op_list:public statement{public:
 				continue;
 			}
 			// a=1 and b=2   vs   a=1 or b=2
-			const stmt_if_bool_op&e=get<stmt_if_bool_op>(bool_ops_[i]);
+			const stmt_if_bool_op&e=get<stmt_if_bool_op>(bools_[i]);
 			if(i<n-1){
 				if(ops_[i].is_name("or")){
 					e.compile_or(tc,os,indent_level,false,jmp_to_if_false,jmp_to_if_true);
@@ -116,7 +116,7 @@ class stmt_if_bool_op_list:public statement{public:
 	}
 
 private:
-	vector<variant<stmt_if_bool_op,stmt_if_bool_op_list>>bool_ops_;
+	vector<variant<stmt_if_bool_op,stmt_if_bool_op_list>>bools_;
 	vector<token>ops_;
-	bool enclosed_;  // (a=b and c=d)  a=b and c=d
+	bool enclosed_;  // (a=b and c=d) vs a=b and c=d
 };
