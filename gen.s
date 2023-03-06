@@ -9,7 +9,6 @@ global _start
 _start:
   mov ebp,stk
   mov esp,stk.end
-; [23:1] # comment 
 ;   [8:5] var a=1 
 ;     [8:9] a=1 
 ;     [8:11] 1 
