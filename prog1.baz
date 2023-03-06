@@ -3,20 +3,20 @@ field    name{............................................................}
 field prompt2{"  not a name: "}
 
 func print(len:const:reg_edx,ptr:const:reg_ecx){
-	mov(ecx,ptr)
-	mov(edx,len)
-	mov(ebx,1)
-	mov(eax,4)
-	int(0x80)
+    mov(ecx,ptr)
+    mov(edx,len)
+    mov(ebx,1)
+    mov(eax,4)
+    int(0x80)
 }
 
 func read(len:const:reg_edx,ptr:const:reg_esi):int{
-	mov(esi,ptr)
-	mov(edx,len)
-	xor(eax)
-	xor(edi)
-	syscall
-	mov(int,eax)
+    mov(esi,ptr)
+    mov(edx,len)
+    xor(eax)
+    xor(edi)
+    syscall
+    mov(int,eax)
 }
 
 func exit(v){
@@ -40,5 +40,3 @@ func main{
         }
     }
 }
-
-# comment
