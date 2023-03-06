@@ -27,30 +27,28 @@ _start:
 ;     [11:11] 4 
         mov dword[ebp+12],4
 ;   [12:1] # if (a=1 or b=2) and (c=3 or d=4) 
-;   [13:1] # if (a=1 and b=2) or (c=3 and d=4) 
-    if_14_8:
-;   [14:8] (a=1 and (b=2 or c=3)) or d=4 
-;   [14:9] (a=1 and (b=2 or c=3))
-;   [14:9] a=1 
-    cmp_14_9:
+    if_13_8:
+;   [13:8] (a=1 and b=2) or (c=3 and d=4)
+;   [13:9] (a=1 and b=2)
+;   [13:9] a=1 
+    cmp_13_9:
     cmp dword[ebp+0],1
-    jne cmp_14_34
-;   [14:18] (b=2 or c=3)
-;   [14:18] b=2 
-    cmp_14_18:
+    jne cmp_13_26
+;   [13:17] b=2
+    cmp_13_17:
     cmp dword[ebp+4],2
-    je if_14_8_code
-;   [14:25] c=3
-    cmp_14_25:
+    je if_13_8_code
+;   [13:26] (c=3 and d=4)
+;   [13:26] c=3 
+    cmp_13_26:
     cmp dword[ebp+8],3
-    jne cmp_14_34
-    jmp if_14_8_code
-;   [14:34] d=4 
-    cmp_14_34:
+    jne if_13_5_end
+;   [13:34] d=4
+    cmp_13_34:
     cmp dword[ebp+12],4
-    jne if_14_5_end
-    jmp if_14_8_code
-    if_14_8_code:
+    jne if_13_5_end
+    if_13_8_code:
+;     [14:1] # if (a=1 and (b=2 or c=3)) or d=4 
 ;     [15:9] exit(0)
 ;       [2:5] mov(ebx,v)
         mov ebx,0
@@ -59,7 +57,7 @@ _start:
 ;       [4:5] int(0x80)
         int 0x80
       exit_15_9_end:
-    if_14_5_end:
+    if_13_5_end:
 ;   [16:5] exit(1)
 ;     [2:5] mov(ebx,v)
       mov ebx,1
@@ -80,3 +78,4 @@ _start:
 ;           max regs in use: 0
 ;         max frames in use: 2
 ;          max stack in use: 4
+

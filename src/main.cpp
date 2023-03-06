@@ -1,6 +1,7 @@
 #include<cstring>
 #include<fstream>
 #include<cassert>
+#include<sstream>
 
 using namespace std;
 
@@ -38,23 +39,184 @@ static size_t line_number_for_char_index(size_t ix,const char*str,size_t&start_c
 	return lineno;
 }
 
+static string trim(string s){
+	size_t start=0;
+	size_t end=s.length()-1;
+
+	while(start<end&&(s[start]==' '||s[start]=='\t')){
+		start++;
+	}
+	while(end>start&&(s[end]==' '||s[end]=='\t')){
+		end--;
+	}
+
+	return s.substr(start,end-start+1);
+}
+
+static vector<string>split(const string&s,char delimiter){
+	vector<string>tokens;
+	string token;
+	istringstream tokenStream(s);
+	while(getline(tokenStream,token,delimiter)){
+		tokens.push_back(token);
+	}
+	return tokens;
+}
+
+// example:
+//   jmp cmp_13_26
+//   cmp_13_26:
+// to
+//   cmp_13_26:
+static string optimize_jumps_1(stringstream&ss){
+	stringstream sso;
+	while(true){
+		string line1;
+		getline(ss,line1);
+		if(ss.eof())
+			break;
+		string jmp=trim(line1);
+		if(!jmp.starts_with("jmp")){
+			sso<<line1<<endl;
+			continue;
+		}
+		string line2;
+		vector<string>comments;
+		while(true){// read comments
+			getline(ss,line2);
+			if(line2.starts_with(';')){
+				comments.push_back(line2);
+				continue;
+			}
+			break;
+		}
+		string lbl=trim(line2);
+		if(!lbl.ends_with(':')){
+			sso<<line1<<endl;
+			for(const auto&s:comments)sso<<s<<endl;
+			sso<<line2<<endl;
+			continue;
+		}
+		lbl.pop_back();
+		vector<string>jxx_split=split(jmp,' ');
+		if(jxx_split[1]!=lbl){
+			sso<<line1<<endl;
+			for(const auto&s:comments)sso<<s<<endl;
+			sso<<line2<<endl;
+			continue;
+		}
+		// write the label without the preceding jmp
+		for(const auto&s:comments)sso<<s<<endl;
+		sso<<line2<<endl;
+	}
+	return sso.str();
+}
+
+// example:
+//   jne cmp_14_26
+//   jmp if_14_8_code
+//   cmp_14_26:
+// to
+//   je if_14_8_code
+//   cmp_14_26:
+static string optimize_jumps_2(stringstream&ss){
+	stringstream sso;
+	while(true){
+		string line1;
+		getline(ss,line1);
+		if(ss.eof())
+			break;
+		string jxx=trim(line1);
+		if(!jxx.starts_with("j")){
+			sso<<line1<<endl;
+			continue;
+		}
+		string line2;
+		getline(ss,line2);
+		string jmp=trim(line2);
+		if(!jmp.starts_with("jmp")){
+			sso<<line1<<endl;
+			sso<<line2<<endl;
+			continue;
+		}
+		string line3;
+		vector<string>comments;
+		while(true){// read comments
+			getline(ss,line3);
+			if(line3.starts_with(';')){
+				comments.push_back(line3);
+				continue;
+			}
+			break;
+		}
+		string lbl=trim(line3);
+		if(!lbl.ends_with(':')){
+			sso<<line1<<endl;
+			sso<<line2<<endl;
+			for(const auto&s:comments)sso<<s<<endl;
+			sso<<line3<<endl;
+			continue;
+		}
+		lbl.pop_back();
+		vector<string>jxx_split=split(jxx,' ');
+		if(jxx_split[1]!=lbl){
+			sso<<line1<<endl;
+			sso<<line2<<endl;
+			for(const auto&s:comments)sso<<s<<endl;
+			sso<<line3<<endl;
+			continue;
+		}
+		//   jne cmp_14_26
+		//   jmp if_14_8_code
+		//   cmp_14_26:
+		vector<string>jmp_split=split(jmp,' ');
+		string jxx_inv;
+		if(jxx_split[0]=="jne"){
+			jxx_inv="je";
+		}else if(jxx_split[0]=="je"){
+			jxx_inv="jne";
+		}else if(jxx_split[0]=="jg"){
+			jxx_inv="jle";
+		}else if(jxx_split[0]=="jge"){
+			jxx_inv="jl";
+		}else if(jxx_split[0]=="jl"){
+			jxx_inv="jge";
+		}else if(jxx_split[0]=="jle"){
+			jxx_inv="jg";
+		}else{
+			sso<<line1<<endl;
+			sso<<line2<<endl;
+			for(const auto&s:comments)sso<<s<<endl;
+			sso<<line3<<endl;
+			continue;
+		}
+		//   je if_14_8_code
+		//   cmp_14_26:
+		const string ws=line1.substr(0,line1.find_first_not_of(" \t\n\r\f\v"));
+		sso<<ws<<jxx_inv<<" "<<jmp_split[1]<<endl;
+		for(const auto&s:comments)sso<<s<<endl;
+		sso<<line3<<endl;
+	}
+	return sso.str();
+}
+
 int main(int argc,char**args){
 	auto src_file_name=argc==1?"prog.baz":args[1];
 	auto src=file_read_to_string(src_file_name);
 
 	try{
 		stmt_program p{src};
-
 		ofstream fo{"diff.baz"};
-
 		p.source_to(fo);
-
 		fo.close();
-
 		if(file_read_to_string(src_file_name)!=file_read_to_string("diff.baz"))
 			throw string("generated source differs");
-
-		p.build(cout);
+		stringstream ss1;
+		p.build(ss1);
+		string pass1=optimize_jumps_1(ss1);
+		stringstream ss2{pass1};
+		string pass2=optimize_jumps_2(ss2);
+		cout<<pass2<<endl;
 
 	}catch(compiler_error&e){
 		size_t start_char_in_line{0};
@@ -70,7 +232,6 @@ int main(int argc,char**args){
 	}
 	return 0;
 }
-
 
 inline unique_ptr<statement>create_call_statement_from_tokenizer(const statement&parent,const token&tk,tokenizer&t){
 	const string&func=tk.name();
