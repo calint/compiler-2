@@ -18,7 +18,7 @@ public:
 				if(is_next_char('"')){
 					auto end=nchar_;
 					auto wsaft=next_whitespace();
-					return move(token{wspre,bgn,s,end,wsaft,true});
+					return token{wspre,bgn,s,end,wsaft,true};
 					break;
 				}
 				const char ch=next_char();
@@ -40,12 +40,12 @@ public:
 			auto tkn=next_token_str();
 			auto end=nchar_;
 			auto wsaft=next_whitespace();
-			return move(token{wspre,bgn,tkn,end,wsaft,false});
+			return token{wspre,bgn,tkn,end,wsaft,false};
 		}
 		auto tkn=next_token_str();
 		auto end=nchar_;
 		auto wsaft=next_whitespace();
-		return move(token{wspre,bgn,tkn,end,wsaft});
+		return token{wspre,bgn,tkn,end,wsaft};
 	}
 
 	inline void pushback_token(const token t){
@@ -57,7 +57,7 @@ public:
 		auto wspre=next_whitespace();
 		auto bgn=nchar_;
 		auto end=nchar_;
-		return move(token{wspre,bgn,"",end,""});
+		return token{wspre,bgn,"",end,""};
 	}
 
 	inline bool is_next_char(const char ch){

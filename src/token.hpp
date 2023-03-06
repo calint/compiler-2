@@ -32,7 +32,7 @@ public:
 	{}
 
 	// return move(token{})
-	inline token(const token&&tk):
+	inline token(token&&tk):
 		ws_left_{move(tk.ws_left_)},
 		start_char_{tk.start_char_},
 		name_{move(tk.name_)},
