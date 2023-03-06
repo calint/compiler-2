@@ -49,7 +49,7 @@ public:
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 
-		for(auto&e:nots_){
+		for(const auto&e:nots_){
 			e.source_to(os);
 		}
 
@@ -129,7 +129,8 @@ public:
 		indent(os,indent_level,false);
 		os<<op<<" "<<ra<<","<<rb<<endl;
 
-		for(auto&r:allocated_registers)tc.free_scratch_reg(r);
+		for(const auto&r:allocated_registers)
+			tc.free_scratch_reg(r);
 	}
 
 	inline string cmp_bgn_label(const toc&tc)const{

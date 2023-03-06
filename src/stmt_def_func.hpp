@@ -49,7 +49,7 @@ public:
 			os<<":";
 			const size_t sz=returns_.size()-1;
 			size_t i{0};
-			for(auto&t:returns_){
+			for(const auto&t:returns_){
 				t.source_to(os);
 				if(i++!=sz)os<<",";
 			}

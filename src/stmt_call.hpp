@@ -55,13 +55,13 @@ public:
 
 		vector<string>allocated_registers;
 		size_t i=0;
-		for(auto&a:args_){
+		for(const auto&a:args_){
 			auto&param=f->get_param(i);
 			i++;
 			if(a->is_expression()){
 				// in reg
 				string reg;
-				for(auto kw:param.get_keywords()){
+				for(const auto&kw:param.get_keywords()){
 					if(kw.name().find("reg_")==0){
 						string name=kw.name().substr(4,kw.name().size());
 						reg=tc.alloc_scratch_register(param,name);
@@ -80,14 +80,14 @@ public:
 
 		tc.push_func(nm);
 
-		for(auto&e:aliases_to_add)
+		for(const auto&e:aliases_to_add)
 			tc.add_alias(get<0>(e),get<1>(e));
 
 		f->code_block()->compile(tc,os,indent_level);
 
 		indent(os,indent_level,false);os<<nm<<"_"<<tc.source_location(tok())<<"_end:"<<endl;
 
-		for(auto r:allocated_registers)
+		for(const auto&r:allocated_registers)
 			tc.free_scratch_reg(r);
 
 		tc.pop_func(nm);

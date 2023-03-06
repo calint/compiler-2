@@ -14,7 +14,7 @@ public:
 		tc_{source}
 	{
 		vector<string>assem{"mov","int","xor","syscall"};
-		for(auto&s:assem)
+		for(const auto&s:assem)
 			tc_.add_func(*this,s,nullptr);
 			
 		tokenizer t{source};
@@ -51,18 +51,19 @@ public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		for(auto&s:stmts_)
+		for(const auto&s:stmts_)
 			s->source_to(os);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		os<<"section .data\n";
-		for(auto&s:stmts_)
-			if(s->is_in_data_section())s->compile(tc,os,indent_level);
+		for(const auto&s:stmts_)
+			if(s->is_in_data_section())
+				s->compile(tc,os,indent_level);
 
 		os<<"\nsection .bss\nstk resd 256\nstk.end:\n";
 		os<<"\nsection .text\n[bits 32]\nglobal _start\n_start:\n  mov ebp,stk\n  mov esp,stk.end\n";
-		for(auto&s:stmts_)
+		for(const auto&s:stmts_)
 			if(!s->is_in_data_section())
 				s->compile(tc,os,indent_level);
 

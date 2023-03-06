@@ -291,10 +291,11 @@ private:
 			return frames_[i].get_var(name).nasm_ident();
 		}
 
-		for(auto e:all_registers_)if(e==name){
-			ok=true;
-//			is_const_litteral=false;
-			return name;
+		for(const auto&e:all_registers_){
+			if(e==name){
+				ok=true;
+				return name;
+			}
 		}
 
 		if(fields_.has(name)){

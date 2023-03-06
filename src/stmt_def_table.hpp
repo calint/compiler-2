@@ -34,10 +34,10 @@ public:
 		if(!noargs_){
 			os<<"(";
 			const size_t nparam=params_.size()-1;
-			size_t ii{0};
-			for(auto&s:params_){
+			size_t i{0};
+			for(const auto&s:params_){
 				s.source_to(os);
-				if(ii++!=nparam)os<<",";
+				if(i++!=nparam)os<<",";
 			}
 			os<<")";
 		}

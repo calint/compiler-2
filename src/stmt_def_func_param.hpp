@@ -25,7 +25,7 @@ public:
 			os<<":";
 			const size_t sz=keywords_.size()-1;
 			size_t i{0};
-			for(auto&t:keywords_){
+			for(const auto&t:keywords_){
 				t.source_to(os);
 				if(i++!=sz)os<<":";
 			}
