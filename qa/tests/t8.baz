@@ -1,0 +1,15 @@
+func exit(v){
+    mov(ebx,v)
+    mov(eax,1)
+    int(0x80)
+}
+
+func main{
+    var a=1
+    var b=1
+    var c=3
+    var d=3
+    if a=b and c=d
+        exit(0)
+    exit(1)
+}
