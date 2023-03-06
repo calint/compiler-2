@@ -1,3 +1,24 @@
+field  prompt{"  hello    enter name: "}
+field    name{............................................................}
+field prompt2{"  not a name: "}
+
+func print(len:const:reg_edx,ptr:const:reg_ecx){
+	mov(ecx,ptr)
+	mov(edx,len)
+	mov(ebx,1)
+	mov(eax,4)
+	int(0x80)
+}
+
+func read(len:const:reg_edx,ptr:const:reg_esi):int{
+	mov(esi,ptr)
+	mov(edx,len)
+	xor(eax)
+	xor(edi)
+	syscall
+	mov(int,eax)
+}
+
 func exit(v){
     mov(ebx,v)
     mov(eax,1)
@@ -5,6 +26,20 @@ func exit(v){
 }
 
 func main{
+    print(prompt.len,prompt)
+    loop{
+        var len=read(name.len,name)-1 # remove the \n
+        if len=0
+            print(prompt.len,prompt)
+        else if len<=4
+            print(prompt2.len,prompt2)
+        else{
+            if read(name.len,name)=1 # is only \n
+                break
+            print(len,name)
+        }
+    }
+
     var a=1
     var b=2
     var c=3
