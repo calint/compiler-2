@@ -1,21 +1,20 @@
 #pragma once
 
 #include <vector>
+#include <variant>
 
 #include "statement.hpp"
 
-class stmt_if_bool_op_list:public stmt_if_bool_op{public:
+class stmt_if_bool_op_list:public statement{public:
 	inline stmt_if_bool_op_list(const statement&parent,tokenizer&t,bool enclosed=false):
-		stmt_if_bool_op(parent,t,true),
+		statement(parent,t.next_whitespace_token()),
 		enclosed_{enclosed}
 	{
 		while(true){
 			if(t.is_next_char('(')){
-				unique_ptr<stmt_if_bool_op>bols=make_unique<stmt_if_bool_op_list>(*this,t,true);
-				bool_ops_.push_back(move(bols));
+				bool_ops_.push_back(stmt_if_bool_op_list(*this,t,true));
 			}else{
-				unique_ptr<stmt_if_bool_op>bool_op=make_unique<stmt_if_bool_op>(*this,t,false);
-				bool_ops_.push_back(move(bool_op));
+				bool_ops_.push_back(stmt_if_bool_op(*this,t));
 			}
 			if(t.is_next_char(')')){
 				return;
@@ -40,8 +39,11 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 		}
 		const size_t n=bool_ops_.size();
 		for(size_t i=0;i<n;i++){
-			const stmt_if_bool_op&bo=*bool_ops_[i];
-			bo.source_to(os);
+			if(bool_ops_[i].index()==0){
+				get<stmt_if_bool_op>(bool_ops_[i]).source_to(os);
+			}else{
+				get<stmt_if_bool_op_list>(bool_ops_[i]).source_to(os);
+			}
 			if(i<n-1){
 				const token&t=ops_[i];
 				t.source_to(os);
@@ -54,45 +56,57 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		throw compiler_error(tok(),"this code should not be reached");
 	}
+
+	inline static string cmp_label_from_variant(const toc&tc,const variant<stmt_if_bool_op,stmt_if_bool_op_list>&v){
+		if(v.index()==1){
+			return get<stmt_if_bool_op_list>(v).cmp_bgn_label(tc);
+		}
+		return get<stmt_if_bool_op>(v).cmp_bgn_label(tc);
+	}
+
+	inline string cmp_bgn_label(const toc&tc)const{
+		return "cmp_"+tc.source_location(tok());
+	}
+
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool is_last)const{
 		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 
 		const size_t n=bool_ops_.size();
 		for(size_t i=0;i<n;i++){
-			stmt_if_bool_op*e=bool_ops_[i].get();
-			if(e->is_list()){
-				stmt_if_bool_op_list*el=dynamic_cast<stmt_if_bool_op_list*>(e);
+			if(bool_ops_[i].index()==1){
+				const stmt_if_bool_op_list&el=get<stmt_if_bool_op_list>(bool_ops_[i]);
 				string jmp_false=jmp_to_if_false;
 				string jmp_true=jmp_to_if_true;
 				if(i<n-1){
 					// if not last element check if it is a 'or' or 'and' list
 					if(ops_[i].is_name("or")){
 						// if evaluation is false and next op is "or" then jump_false is next bool eval
-						jmp_false=bool_ops_[i+1]->cmp_bgn_label(tc);
+						jmp_false=cmp_label_from_variant(tc,bool_ops_[i+1]);
 					}else if(ops_[i].is_name("and")){
 						// if evaluation is true and next op is "and" then jump_true is next bool eval
-						jmp_true=bool_ops_[i+1]->cmp_bgn_label(tc);
+						jmp_true=cmp_label_from_variant(tc,bool_ops_[i+1]);
 					}else{
 						throw "expected 'or' or 'and'";
 					}
-					el->compile(tc,os,indent_level,jmp_false,jmp_true,false);
+					el.compile(tc,os,indent_level,jmp_false,jmp_true,false);
 				}else{
 					// if last in list jmp_false is next bool eval
-					el->compile(tc,os,indent_level,jmp_false,jmp_true,true);
+					el.compile(tc,os,indent_level,jmp_false,jmp_true,true);
 				}
 				continue;
 			}
 			// a=1 and b=2   vs   a=1 or b=2
+			const stmt_if_bool_op&e=get<stmt_if_bool_op>(bool_ops_[i]);
 			if(i<n-1){
 				if(ops_[i].is_name("or")){
-					e->compile_or(tc,os,indent_level,false,jmp_to_if_false,jmp_to_if_true);
+					e.compile_or(tc,os,indent_level,false,jmp_to_if_false,jmp_to_if_true);
 				}else if(ops_[i].is_name("and")){
-					e->compile_and(tc,os,indent_level,false,jmp_to_if_false,jmp_to_if_true);
+					e.compile_and(tc,os,indent_level,false,jmp_to_if_false,jmp_to_if_true);
 				}else{
 					throw "expected 'or' or 'and'";
 				}
 			}else{
-				e->compile_or(tc,os,indent_level,true,jmp_to_if_false,jmp_to_if_true);
+				e.compile_or(tc,os,indent_level,true,jmp_to_if_false,jmp_to_if_true);
 				if(!is_last){
 					indent(os,indent_level,false);
 					os<<"jmp "<<jmp_to_if_true<<"\n";
@@ -102,7 +116,7 @@ class stmt_if_bool_op_list:public stmt_if_bool_op{public:
 	}
 
 private:
-	vector<unique_ptr<stmt_if_bool_op>>bool_ops_;
+	vector<variant<stmt_if_bool_op,stmt_if_bool_op_list>>bool_ops_;
 	vector<token>ops_;
 	bool enclosed_;  // (a=b and c=d)  a=b and c=d
 };
