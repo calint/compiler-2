@@ -142,6 +142,8 @@ public:
 
 	inline bool alloc_register()const{return!ops_.empty();}
 
+	inline bool is_empty()const override{return expressions_.empty();}
+
 	inline static void _asm(const string&op,const statement&s,toc&tc,ostream&os,size_t indent_level,const string&ra,const string&rb){
 		if(ra==rb){
 			return;
@@ -149,19 +151,14 @@ public:
 
 		if(!ra.find("dword[") and !rb.find("dword[")){
 			const string&r=tc.alloc_scratch_register(s.tok());
-			indent(os,indent_level,false);
-			os<<"mov "<<r<<","<<rb<<endl;
-			indent(os,indent_level,false);
-			os<<op<<" "<<ra<<","<<r<<endl;
+			indent(os,indent_level);os<<"mov "<<r<<","<<rb<<endl;
+			indent(os,indent_level);os<<op<<" "<<ra<<","<<r<<endl;
 			tc.free_scratch_reg(r);
 			return;
 		}
 
-		indent(os,indent_level,false);
-		os<<op<<" "<<ra<<","<<rb<<endl;
+		indent(os,indent_level);os<<op<<" "<<ra<<","<<rb<<endl;
 	}
-
-	inline bool is_empty()const override{return expressions_.empty();}
 
 private:
 	inline static size_t _presedence_for_op(const char ch){

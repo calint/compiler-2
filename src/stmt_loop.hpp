@@ -10,11 +10,11 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.token_comment(os,this->tok());
 		string lbl="loop_"+tc.source_location(tok());
-		indent(os,indent_level,false);os<<lbl<<":"<<endl;
+		indent(os,indent_level);os<<lbl<<":"<<endl;
 		tc.push_loop(lbl);
 		code_.compile(tc,os,indent_level);
-		indent(os,indent_level,false);os<<"jmp "<<lbl<<endl;
-		indent(os,indent_level,false);os<<lbl<<"_end:"<<endl;
+		indent(os,indent_level);os<<"jmp "<<lbl<<endl;
+		indent(os,indent_level);os<<lbl<<"_end:"<<endl;
 		tc.pop_loop(lbl);
 	}
 

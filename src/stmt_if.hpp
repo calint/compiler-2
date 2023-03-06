@@ -72,12 +72,12 @@ public:
 		}
 
 		if(else_code_){
-			indent(os,indent_level,false);os<<label_else_branch<<":\n";
+			indent(os,indent_level);os<<label_else_branch<<":\n";
 			tc.push_if("else");
 			else_code_->compile(tc,os,indent_level+1);
 			tc.pop_if("else");
 		}
-		indent(os,indent_level,false);os<<label_after_if<<":\n";
+		indent(os,indent_level);os<<label_after_if<<":\n";
 	}
 
 private:

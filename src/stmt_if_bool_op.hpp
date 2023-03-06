@@ -64,9 +64,9 @@ public:
 
 	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false,const string&jmp_to_if_true)const{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
-		indent(os,indent_level,false);os<<cmp_bgn_label(tc)<<":\n";
+		indent(os,indent_level);os<<cmp_bgn_label(tc)<<":\n";
 		_resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
-		indent(os,indent_level,false);
+		indent(os,indent_level);
 		if(last_elem){
 			// if last bool in list and false then jump to 'false' branch
 			// else continue to 'true' branch
@@ -82,9 +82,9 @@ public:
 
 	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false,const string&jmp_to_if_true_label)const{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
-		indent(os,indent_level,false);os<<cmp_bgn_label(tc);os<<":\n";
+		indent(os,indent_level);os<<cmp_bgn_label(tc);os<<":\n";
 		_resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
-		indent(os,indent_level,false);
+		indent(os,indent_level);
 		if(last_elem){
 			// if last bool and false then jump to 'false' branch
 			// else continue to 'true' branch
@@ -118,15 +118,15 @@ public:
 
 		if(!ra.find("dword[") and !rb.find("dword[")){
 			const string&r=tc.alloc_scratch_register(identifier());
-			indent(os,indent_level,false);
+			indent(os,indent_level);
 			os<<"mov "<<r<<","<<rb<<endl;
-			indent(os,indent_level,false);
+			indent(os,indent_level);
 			os<<op<<" "<<ra<<","<<r<<endl;
 			tc.free_scratch_reg(r);
 			return;
 		}
 
-		indent(os,indent_level,false);
+		indent(os,indent_level);
 		os<<op<<" "<<ra<<","<<rb<<endl;
 
 		for(const auto&r:allocated_registers)

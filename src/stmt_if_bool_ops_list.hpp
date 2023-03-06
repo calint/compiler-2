@@ -109,7 +109,7 @@ public:
 			}else{
 				e.compile_or(tc,os,indent_level,true,jmp_to_if_false,jmp_to_if_true);
 				if(!is_last){
-					indent(os,indent_level,false);
+					indent(os,indent_level);
 					os<<"jmp "<<jmp_to_if_true<<"\n";
 				}
 			}

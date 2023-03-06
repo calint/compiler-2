@@ -85,7 +85,7 @@ public:
 
 		f->code_block()->compile(tc,os,indent_level);
 
-		indent(os,indent_level,false);os<<nm<<"_"<<tc.source_location(tok())<<"_end:"<<endl;
+		indent(os,indent_level);os<<nm<<"_"<<tc.source_location(tok())<<"_end:"<<endl;
 
 		for(const auto&r:allocated_registers)
 			tc.free_scratch_reg(r);
