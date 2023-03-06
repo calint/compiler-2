@@ -82,12 +82,12 @@ class expr_ops_list final:public expression{public:
 			if(next_presedence>presedence_){
 				presedence_=next_presedence;
 				if(!ops_.empty()){
-					const size_t first_op_presedence=_presedence_for_op(ops_.back());
+					const size_t first_op_pres=_presedence_for_op(ops_.back());
 					ops_.pop_back();
 					const char list_op=ops_.back();
 					unique_ptr<statement>prev=move(expressions_.back());
 					expressions_.erase(expressions_.end());
-					expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,false,list_op,first_op_presedence,move(prev)));
+					expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,false,list_op,first_op_pres,move(prev)));
 					continue;
 				}
 			}else{
@@ -151,9 +151,9 @@ class expr_ops_list final:public expression{public:
 		auto len=ops_.size();
 		for(size_t i{0};i<len;i++){
 			auto op=ops_[i];
-			auto st=expressions_[i+1].get();
+			auto exp=expressions_[i+1].get();
 
-			_asm_op(tc,os,indent_level,st,op,dest,dest_resolved,false);
+			_asm_op(tc,os,indent_level,exp,op,dest,dest_resolved,false);
 
 		}
 

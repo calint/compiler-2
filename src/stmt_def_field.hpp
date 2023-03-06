@@ -49,7 +49,6 @@ class stmt_def_field final:public statement{public:
 		tc.add_field(*this,ident_.name(),this);
 	}
 
-
 	inline bool is_in_data_section()const override{return true;}
 
 private:

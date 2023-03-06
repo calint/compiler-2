@@ -1,7 +1,7 @@
 CC="clang++ -std=c++2a"
 CF="-Os -Wfatal-errors -fno-inline"
 CW="-Weverything -pedantic -pedantic-errors -Wall -Wextra -Werror -Wconversion -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wsign-conversion -Wsign-promo -Wswitch-default -Wundef -Wfloat-equal -Wsign-conversion -Wfloat-conversion -Wold-style-cast"
-CW="$CW -Wno-c++98-compat -Wno-weak-vtables -Wno-shadow -Wno-unqualified-std-cast-call -Wno-padded -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field"
+CW="$CW -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-call -Wno-padded -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field"
 #$CC $CF $CW -S src/main.cpp &&
 #echo -n 'callqs: ' &&
 #cat main.s|grep callq|sort -u|wc|awk '{print $1}' &&

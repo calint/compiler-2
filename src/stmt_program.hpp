@@ -16,53 +16,60 @@ class stmt_program final:public statement{public:
 
 	inline stmt_program(const string&source):
 		statement{*this,token{}},
-		tc{source},
-		t{source}
+		tc_{source},
+		t_{source}
 	{
-		vector<string>assem{"mov","int","xor","syscall","cmp","je","tag","jmp","jne","if","cmove","cmovne","or","and"};
-		for(auto&s:assem)tc.add_func(*this,s,nullptr);
+		vector<string>assem{"mov","int","xor","syscall"};
+		for(auto&s:assem)
+			tc_.add_func(*this,s,nullptr);
+
 		while(true){
-			if(t.is_eos())
+			if(t_.is_eos())
 				break;
 
-			token tk=t.next_token();
+			const token tk=t_.next_token();
 
 			if(tk.is_blank()){
-				if(t.is_eos())
+				if(t_.is_eos())
 					break;
 				throw compiler_error(tk,"unexpected blank token");
 			}
 			if(tk.is_name("field")){
-				statements.push_back(make_unique<stmt_def_field>(*this,tk,t));
+				stmts_.push_back(make_unique<stmt_def_field>(*this,tk,t_));
 			}else
 			if(tk.is_name("func")){
-				statements.push_back(make_unique<stmt_def_func>(*this,tk,t));
+				stmts_.push_back(make_unique<stmt_def_func>(*this,tk,t_));
 			}else
 			if(tk.is_name("table")){
-				statements.push_back(make_unique<stmt_def_table>(*this,tk,t));
+				stmts_.push_back(make_unique<stmt_def_table>(*this,tk,t_));
 			}else
 			if(tk.is_name("#")){
-				statements.push_back(make_unique<stmt_comment>(*this,tk,t));
+				stmts_.push_back(make_unique<stmt_comment>(*this,tk,t_));
 			}else
 			if(tk.is_name("")){// whitespace
-				statements.push_back(make_unique<statement>(*this,tk));
+				stmts_.push_back(make_unique<statement>(*this,tk));
 			}else{
 				throw compiler_error(tk,"unexpected keyword",tk.name());
 			}
 		}
 	}
 
-	inline void source_to(ostream&os)const override{statement::source_to(os);for(auto&s:statements)s->source_to(os);}
+	inline void source_to(ostream&os)const override{
+		statement::source_to(os);
+		for(auto&s:stmts_)
+			s->source_to(os);
+	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		os<<"section .data\n";
-		for(auto&s:statements)
+		for(auto&s:stmts_)
 			if(s->is_in_data_section())s->compile(tc,os,indent_level);
 
 		os<<"\nsection .bss\nstk resd 256\nstk.end:\n";
 		os<<"\nsection .text\nglobal _start\n_start:\n  mov ebp,stk\n  mov esp,stk.end\n";
-		for(auto&s:statements)
-			if(!s->is_in_data_section())s->compile(tc,os,indent_level);
+		for(auto&s:stmts_)
+			if(!s->is_in_data_section())
+				s->compile(tc,os,indent_level);
 
 		const stmt_def_func*main=tc.get_func_or_break(*this,"main");
 		tc.push_func("main");
@@ -71,21 +78,13 @@ class stmt_program final:public statement{public:
 	}
 
 	inline void build(ostream&os){
-		compile(tc,os,0);
-		link(tc,os);
-		tc.finish(tc,os);
+		compile(tc_,os,0);
+		link(tc_,os);
+		tc_.finish(tc_,os);
 	}
 
-
-//	inline void link(toc&tc,ostream&os)const override{for(auto&s:statements)s->link(tc,os);}
-
-//	inline const toc&get_toc()const{return tc;}
-//
-//	inline bool is_inline()const{return true;}
-
-
 private:
-	vector<unique_ptr<statement>>statements;
-	toc tc;
-	tokenizer t;
+	vector<unique_ptr<statement>>stmts_;
+	toc tc_;
+	tokenizer t_;
 };

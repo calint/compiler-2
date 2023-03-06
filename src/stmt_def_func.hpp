@@ -87,11 +87,9 @@ class stmt_def_func final:public statement{public:
 		os<<"  ret\n";
 	}
 
-//	inline void link(toc&tc,ostream&os)const override{code_->link(tc,os);}
-
 	inline bool is_inline()const{return true;}
 
-	inline const vector<token>&getreturns()const{return returns_;}
+	inline const vector<token>&get_returns()const{return returns_;}
 
 	inline const stmt_def_func_param&get_param(const size_t ix)const{return*params_[ix];}
 

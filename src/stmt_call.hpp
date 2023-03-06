@@ -50,44 +50,17 @@ class stmt_call:public expression{public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		const string&nm=tok().name();
-
-
-//		//-- comment
-//		indent(os,indent_level,true);
-//		os<<nm<<"(";
-//		const size_t n=args_.size();
-//		const size_t nn=n-1;
-//		for(size_t i=0;i<n;i++){
-//			os<<args_[i].get()->identifier();
-//			if(i<nn)os<<" ";
-//		}
-//		os<<")";
-////		const string&expr_dest=expression_dest_nasm_identifier();
-//		if(not dest_ident.empty())
-//			os<<":"<<dest_ident;
-//
-//		os<<"  ";
-//		tc.source_location_to_stream(os,tok());
-//		os<<endl;
-//		//--- - - - -- - - - -
 		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 
-
+		const string&nm=tok().name();
 		if(!is_inline())
 			throw string("not inlined");
-
-
 		const stmt_def_func*f=tc.get_func_or_break(*this,nm);
-//		framestack&fs=tc.framestk();
 		vector<tuple<string,string>>aliases_to_add;
 		if(not dest_ident.empty()){
-			if(f->getreturns().empty())
+			if(f->get_returns().empty())
 				throw compiler_error(*this,"cannot assign from call without return",tok().name_copy());
-//			for(auto&e:f->getreturns()){
-//				fs.add_alias(e->name(),expr_dest);
-//			}
-			const string&from=f->getreturns()[0].name();
+			const string&from=f->get_returns()[0].name();
 			const string&to=dest_ident;
 			aliases_to_add.push_back(make_tuple(from,to));
 		}
@@ -102,8 +75,8 @@ class stmt_call:public expression{public:
 				string reg;
 				for(auto kw:param.keywords_){
 					if(kw.name().find("reg_")==0){
-						string nm=kw.name().substr(4,kw.name().size());
-						reg=tc.alloc_scratch_register(param,nm);
+						string name=kw.name().substr(4,kw.name().size());
+						reg=tc.alloc_scratch_register(param,name);
 						break;
 					}
 				}
