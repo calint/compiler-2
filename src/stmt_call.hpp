@@ -73,7 +73,7 @@ class stmt_call:public expression{public:
 			if(a->is_expression()){
 				// in reg
 				string reg;
-				for(auto kw:param.keywords_){
+				for(auto kw:param.get_keywords()){
 					if(kw.name().find("reg_")==0){
 						string name=kw.name().substr(4,kw.name().size());
 						reg=tc.alloc_scratch_register(param,name);

@@ -16,6 +16,7 @@ func main{
     exit(1)
     loop{
       break
+      continue
     }
 }
 

@@ -16,11 +16,6 @@ class tokenizer final{public:
 	inline bool is_eos()const{return !last_char;}
 
 	inline token next_token(){
-//		if(!pushedback_tokens_.empty()){
-//			token tk=pushedback_tokens_.back();
-//			pushedback_tokens_.pop_back();
-//			return tk;
-//		}
 		auto wspre=next_whitespace();
 		auto bgn=nchar;
 		if(is_next_char('"')){
@@ -60,8 +55,8 @@ class tokenizer final{public:
 	}
 
 	inline void pushback_token(const token t){
+		// ? validate token is same as source
 		seek(-off_t(t.total_length_in_chars()));
-//		pushedback_tokens_.push_back(t);
 	}
 
 	inline token next_whitespace_token(){
@@ -132,7 +127,7 @@ private:
 			const char ch=next_char();
 			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||
 					ch=='='||ch==','||ch==':'||
-					ch=='+'||ch=='-'||ch=='*'||ch==';'||
+					ch=='+'||ch=='-'||ch=='*'||ch=='/'||ch==';'||
 					ch=='<'||ch=='>'
 				){
 				seek(-1);

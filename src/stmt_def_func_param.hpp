@@ -26,7 +26,7 @@ class stmt_def_func_param final:public statement{public:
 			if(t.is_eos())throw compiler_error(*this,"unexpected end of stream",tok().name_copy());
 			keywords_.push_back(t.next_token());
 			if(t.is_next_char(':'))
-					continue;
+				continue;
 			break;
 		}
 	}
@@ -43,6 +43,9 @@ class stmt_def_func_param final:public statement{public:
 			}
 		}
 	}
-	vector<token>keywords_;
+
+	inline const vector<token>&get_keywords()const{return keywords_;}
+
 private:
+	vector<token>keywords_;
 };

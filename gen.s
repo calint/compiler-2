@@ -9,6 +9,7 @@ global _start
 _start:
   mov ebp,stk
   mov esp,stk.end
+; [23:1] # comment 
 ;   [8:5] var a=1 
 ;     [8:9] a=1 
 ;     [8:11] 1 
@@ -25,6 +26,8 @@ _start:
 ;     [11:9] d=4 
 ;     [11:11] 4 
         mov dword[ebp+12],4
+;   [12:1] # if (a=1 or b=2) and (c=3 or d=4) 
+;   [13:1] # if (a=1 and b=2) or (c=3 and d=4) 
     if_14_8:
 ;   [14:8] (a=1 and (b=2 or c=3)) or d=4 
 ;   [14:9] (a=1 and (b=2 or c=3))
@@ -63,10 +66,12 @@ _start:
 ;       [4:5] int(0x80)
         int 0x80
     exit_16_5_end:
-;   [17:5] loop{ break }
+;   [17:5] loop{ break continue }
     loop_17_5:
 ;       [18:7] break 
         jmp loop_17_5_end
+;       [19:7] continue 
+        jmp loop_17_5
     jmp loop_17_5
     loop_17_5_end:
 
