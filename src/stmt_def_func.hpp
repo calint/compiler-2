@@ -1,16 +1,16 @@
 #pragma once
 
-#include <algorithm>
-#include <iostream>
-#include <memory>
-#include <vector>
+#include<algorithm>
+#include<iostream>
+#include<memory>
+#include<vector>
 
-#include "stmt_block.hpp"
-#include "compiler_error.hpp"
-#include "statement.hpp"
-#include "toc.hpp"
-#include "token.hpp"
-#include "tokenizer.hpp"
+#include"stmt_block.hpp"
+#include"compiler_error.hpp"
+#include"statement.hpp"
+#include"toc.hpp"
+#include"token.hpp"
+#include"tokenizer.hpp"
 #include"stmt_def_func_param.hpp"
 #include"stmt_block.hpp"
 class stmt_def_func final:public statement{public:
@@ -26,14 +26,14 @@ class stmt_def_func final:public statement{public:
 		if(!no_args_){
 			while(true){
 				if(t.is_next_char(')'))break;
-				unique_ptr<stmt_def_func_param>fp=make_unique<stmt_def_func_param>(*this,t);
+				stmt_def_func_param fp{*this,t};
 				if(t.is_next_char(')')){
-					params_.push_back(move(fp));
+					params_.push_back(fp);
 					break;
 				}
 				if(!t.is_next_char(','))
-					throw compiler_error(*fp,"expected ',' after parameter at ",fp->tok().name_copy());
-				params_.push_back(move(fp));
+					throw compiler_error(fp,"expected ',' after parameter at ",fp.tok().name_copy());
+				params_.push_back(fp);
 			}
 		}
 		if(t.is_next_char(':')){// returns
@@ -52,10 +52,10 @@ class stmt_def_func final:public statement{public:
 		if(!no_args_){
 			os<<"(";
 			const size_t nparam=params_.size()-1;
-			size_t ii{0};
-			for(auto&s:params_){
-				s->source_to(os);
-				if(ii++!=nparam)os<<",";
+			size_t i{0};
+			for(const auto&s:params_){
+				s.source_to(os);
+				if(i++!=nparam)os<<",";
 			}
 			os<<")";
 		}
@@ -81,7 +81,7 @@ class stmt_def_func final:public statement{public:
 
 		os<<ident_.name()<<":\n";
 		for (size_t i=params_.size();i-->0;)
-			os<<"  pop "<<params_[i]->tok().name()<<endl;
+			os<<"  pop "<<params_[i].tok().name()<<endl;
 
 		code_->compile(tc,os,indent_level+1);
 		os<<"  ret\n";
@@ -91,7 +91,7 @@ class stmt_def_func final:public statement{public:
 
 	inline const vector<token>&get_returns()const{return returns_;}
 
-	inline const stmt_def_func_param&get_param(const size_t ix)const{return*params_[ix];}
+	inline const stmt_def_func_param&get_param(const size_t ix)const{return params_[ix];}
 
 	inline const stmt_block*code_block()const{return code_.get();}
 
@@ -99,6 +99,6 @@ private:
 	token ident_;
 	bool no_args_{false};
 	vector<token>returns_;
-	vector<unique_ptr<stmt_def_func_param>>params_;
+	vector<stmt_def_func_param>params_;
 	unique_ptr<stmt_block>code_;
 };
