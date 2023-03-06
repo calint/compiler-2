@@ -13,9 +13,12 @@ func main{
 #    if (a=1 and b=2) or (c=3 and d=4)
     if (a=1 and (b=2 or c=3)) or d=4
         exit(0)
-    exit(1)
+    var n=10
     loop{
-      break
+      if n=0 break
+      var r=((a+b)*c+d)*2
+      n=n-1
       continue
     }
+    exit(1)
 }

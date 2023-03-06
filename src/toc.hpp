@@ -164,7 +164,7 @@ public:
 		string nasm_ident=_resolve_ident_to_nasm(stmt,ident,frameix,ok);
 		if(ok)return nasm_ident;
 
-		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'",nasm_ident);
+		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'");
 	}
 
 	inline void push_func(const string&name){frames_.push_back(frame{name,1});check_usage();}

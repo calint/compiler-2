@@ -33,7 +33,7 @@ public:
 
 			const string&resolv=tc.resolve_ident_to_nasm(*this,tok().name());
 
-			expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level+1,resolv,reg);
+			expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,resolv,reg);
 
 			tc.free_scratch_reg(reg);
 

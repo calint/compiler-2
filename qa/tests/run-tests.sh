@@ -11,5 +11,7 @@ SRC=t5.baz && EXP=0 && eval $RUN
 SRC=t6.baz && EXP=0 && eval $RUN
 SRC=t7.baz && EXP=0 && eval $RUN
 SRC=t8.baz && EXP=0 && eval $RUN
+SRC=t9.baz && EXP=0 && eval $RUN
+SRC=t10.baz && EXP=0 && eval $RUN
 
 rm gen gen.o gen.s diff.baz

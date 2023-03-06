@@ -22,7 +22,7 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 		tc.add_var(ident_.name());
-		initial_value_.compile(tc,os,indent_level+1,ident_.name());
+		initial_value_.compile(tc,os,indent_level,ident_.name());
 	}
 
 private:
