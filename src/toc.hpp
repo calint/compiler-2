@@ -249,7 +249,7 @@ public:
 		}
 	}
 
-	inline void source_to_as_comment(ostream&os,const statement&stmt)const{
+	inline void source_comment(ostream&os,const statement&stmt)const{
 		size_t char_in_line;
 		const size_t n=line_number_for_char_index(stmt.tok().char_index(),source_str_,char_in_line);
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
@@ -263,7 +263,7 @@ public:
 		os<<endl;
 	}
 
-	inline void token_to_as_comment(ostream&os,const token&tk)const{
+	inline void token_comment(ostream&os,const token&tk)const{
 		size_t char_in_line;
 		const size_t n=line_number_for_char_index(tk.char_index(),source_str_,char_in_line);
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";

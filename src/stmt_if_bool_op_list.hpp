@@ -72,7 +72,7 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool is_last)const{
-		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
+		indent(os,indent_level,true);tc.source_comment(os,*this);
 
 		const size_t n=bools_.size();
 		for(size_t i=0;i<n;i++){
