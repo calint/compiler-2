@@ -1,30 +1,18 @@
 #include<cstring>
-#include<streambuf>
 #include<fstream>
-#include<memory>
+#include<cassert>
+
 using namespace std;
+
 #include"stmt_program.hpp"
-#include"compiler_error.hpp"
 #include"call_asm_mov.hpp"
 #include"call_asm_int.hpp"
 #include"call_asm_xor.hpp"
 #include"call_asm_syscall.hpp"
-//#include"call_asm_add.hpp"
 #include"stmt_loop.hpp"
 #include"stmt_break.hpp"
 #include"stmt_continue.hpp"
-//#include"call_asm_cmp.hpp"
-//#include"call_asm_je.hpp"
-//#include"call_asm_tag.hpp"
-//#include"call_asm_jmp.hpp"
-//#include"call_asm_jne.hpp"
 #include"stmt_if.hpp"
-//#include"call_asm_cmove.hpp"
-//#include"call_asm_cmovne.hpp"
-//#include"call_asm_or.hpp"
-//#include"call_asm_and.hpp"
-#include"stmt_comment.hpp"
-#include"expr_ops_list.hpp"
 
 static string file_read_to_string(const char *filename){
 	ifstream t(filename);
