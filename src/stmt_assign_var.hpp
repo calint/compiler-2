@@ -20,7 +20,7 @@ public:
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 		oplist_.compile(tc,os,indent_level,identifier());
 
-		// ? overrallocates in simplests cases ie a=1 but better at a=b+c+d
+		// ? over-allocates in simplest cases i.e. a=1, a=a-1 but better at a=b+c+d+...
 //		const string&reg=tc.alloc_scratch_register(tok());
 //		oplist_.compile(tc,os,indent_level,reg);
 //		const string&resolv=tc.resolve_ident_to_nasm(*this,identifier());
