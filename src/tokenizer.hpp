@@ -91,6 +91,8 @@ public:
 		return last_char_;
 	}
 
+	inline size_t current_char_index_in_source()const{return nchar_;}
+
 private:
 	inline string next_whitespace(){
 		if(is_eos())return"";
@@ -114,7 +116,7 @@ private:
 			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||
 					ch=='='||ch==','||ch==':'||
 					ch=='+'||ch=='-'||ch=='*'||ch=='/'||ch==';'||
-					ch=='<'||ch=='>'
+					ch=='<'||ch=='>'||ch=='.'
 				){
 				seek(-1);
 				break;

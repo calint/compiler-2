@@ -12,7 +12,15 @@ public:
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 
 		const string&ra=tc.resolve_ident_to_nasm(arg(0),arg(0).identifier());
-		const string&rb=tc.resolve_ident_to_nasm(arg(1),arg(1).identifier());
+		const statement&rbs=arg(1);
+		if(rbs.is_expression()){ // ? the assembler commands might not need this
+			const string&reg=tc.alloc_scratch_register(rbs);
+			rbs.compile(tc,os,indent_level+1,reg);
+			indent(os,indent_level);os<<"mov "<<ra<<","<<reg<<endl;
+			tc.free_scratch_reg(reg);
+			return;
+		}
+		const string&rb=tc.resolve_ident_to_nasm(rbs,rbs.identifier());
 
 		if(ra==rb)
 			return;

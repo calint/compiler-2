@@ -123,24 +123,25 @@ public:
 
 	inline string source_location(const token&t)const{
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(t.char_index(),source_str_,char_in_line);
+		const size_t n=line_number_for_char_index(t.char_index(),source_str_.c_str(),char_in_line);
 		return to_string(n)+"_"+to_string(char_in_line);
 	}
 
-	inline static size_t line_number_for_char_index(const size_t char_index,const string&str,size_t&char_in_line){
+	inline static size_t line_number_for_char_index(const size_t char_index,const char*ptr,size_t&char_in_line){
 		size_t ix{0};
 		size_t lix{0};
 		size_t lineno{1};
-		const char*p=str.c_str();
 		while(true){
 			if(ix==char_index)break;
-			if(*p++=='\n'){
+			if(*ptr++=='\n'){
 				lineno++;
+				ix++;
 				lix=ix;
+				continue;
 			}
 			ix++;
 		}
-		char_in_line=ix-lix;
+		char_in_line=ix-lix+1;
 		return lineno;
 	}
 
@@ -218,13 +219,13 @@ public:
 		if(reg!=""){
 			auto r=find(free_registers_.begin(),free_registers_.end(),reg);
 			if(r==free_registers_.end()){
-				throw compiler_error(source,"register "+reg+" cannot be allocated");//?
+				throw compiler_error(source,"register '"+reg+"' cannot be allocated");//?
 			}
 			free_registers_.erase(r);
 			return reg;
 		}
 
-		const string&r=free_registers_[free_registers_.size()-1];
+		const string&r=free_registers_.back();
 		free_registers_.pop_back();
 
 		const size_t n=all_registers_.size()-free_registers_.size();
@@ -251,7 +252,7 @@ public:
 
 	inline void source_comment(ostream&os,const statement&stmt)const{
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(stmt.tok().char_index(),source_str_,char_in_line);
+		const size_t n=line_number_for_char_index(stmt.tok().char_index(),source_str_.c_str(),char_in_line);
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
 
 		stringstream ss;
@@ -265,7 +266,7 @@ public:
 
 	inline void source_comment(ostream&os,const string&dest,const char op,const statement&stmt)const{
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(stmt.tok().char_index(),source_str_,char_in_line);
+		const size_t n=line_number_for_char_index(stmt.tok().char_index(),source_str_.c_str(),char_in_line);
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
 
 		stringstream ss;
@@ -279,7 +280,7 @@ public:
 
 	inline void token_comment(ostream&os,const token&tk)const{
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(tk.char_index(),source_str_,char_in_line);
+		const size_t n=line_number_for_char_index(tk.char_index(),source_str_.c_str(),char_in_line);
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
 		os<<" "<<tk.name()<<endl;
 	}

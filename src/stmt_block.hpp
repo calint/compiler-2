@@ -30,7 +30,7 @@ public:
 					last_statement_considered_no_statment=true;
 					continue;
 				}
-				throw compiler_error(tk,"unexpected end of string");
+				throw compiler_error(tk,"unexpected '"+string{t.peek_char()}+"'");
 			}
 			if(tk.is_name("var")){
 				stmts_.push_back(make_unique<stmt_def_var>(*this,move(tk),t));

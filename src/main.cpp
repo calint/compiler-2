@@ -25,20 +25,6 @@ static string file_read_to_string(const char *filename){
 	return str;
 }
 
-static size_t line_number_for_char_index(size_t ix,const char*str,size_t&start_char_in_line){
-	size_t lineno{1};
-	const char*start_of_line_ptr{str};
-	while(ix--){
-		if(*str++=='\n'){
-			start_of_line_ptr=str;
-			lineno++;
-		}
-	}
-	assert(str>=start_of_line_ptr);
-	start_char_in_line=size_t(str-start_of_line_ptr);
-	return lineno;
-}
-
 static string trim(string s){
 	size_t start=0;
 	size_t end=s.length()-1;
@@ -220,7 +206,7 @@ int main(int argc,char**args){
 
 	}catch(compiler_error&e){
 		size_t start_char_in_line{0};
-		auto lineno=line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line);
+		auto lineno=toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line);
 		cout<<"\n"<<src_file_name<<":"<<lineno<<":"<<start_char_in_line<<": "<<e.msg<<" "<<e.ident<<endl;
 		return 1;
 	}catch(string&s){

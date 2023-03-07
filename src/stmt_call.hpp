@@ -14,13 +14,22 @@ public:
 			no_args_=true;
 			return;
 		}
+		bool expect_arg{false};
 		while(true){
-			if(t.is_next_char(')'))break;
+			if(t.is_peek_char(')')){ // foo()
+				if(expect_arg)
+					throw compiler_error(t,"expected argument after ','");
+				t.next_char(); // consume the peeked char
+				break;
+			}
 //			expr_ops_list(*this,t.next_whitespace_token(),t,'=',3,false,create_statement_from_tokenizer(*this,t),0);
 			auto arg=make_unique<expr_ops_list>(*this,t,true);
 			args_.push_back(move(arg));
-			if(t.is_next_char(')'))break;
-			if(!t.is_next_char(','))throw compiler_error(*args_.back(),"expected ',' after argument at ",tok().name_copy());
+			if(t.is_next_char(')'))
+				break;
+			if(!t.is_next_char(','))
+				throw compiler_error(*args_.back(),"expected ',' after argument '"+args_.back()->identifier()+"'");
+			expect_arg=true;
 		}
 	}
 
