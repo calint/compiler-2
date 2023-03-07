@@ -28,14 +28,12 @@ static string file_read_to_string(const char *filename){
 static string trim(string s){
 	size_t start=0;
 	size_t end=s.length()-1;
-
 	while(start<end&&(s[start]==' '||s[start]=='\t')){
 		start++;
 	}
 	while(end>start&&(s[end]==' '||s[end]=='\t')){
 		end--;
 	}
-
 	return s.substr(start,end-start+1);
 }
 

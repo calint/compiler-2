@@ -111,7 +111,7 @@ public:
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 
 		if(expressions_.empty()) // ? can this happen?
-			return;
+			throw compiler_error(*this,"expressions is empty");
 
 		// first element is assigned to destination
 		const statement&st=*expressions_[0].get();

@@ -30,39 +30,45 @@ mov esp,stk.end
 ;  [11:11] 4 
 ;  [11:11] d=4 
    mov dword[ebp+12],4
-;  [12:1] # var r=a+b+c+d 
+;  [12:5] var r=a+b+c+d 
+;  [12:9] r=a+b+c+d 
+;  [12:11] a+b+c+d 
+;  [12:11] edi=a
+   mov edi,dword[ebp+0]
+;  [12:13] edi+b
+   add edi,dword[ebp+4]
+;  [12:15] edi+c
+   add edi,dword[ebp+8]
+;  [12:17] edi+d 
+   add edi,dword[ebp+12]
+   mov dword[ebp+16],edi
 ;  [13:1] # var r=a*b+c*d 
 ;  [14:5] var r=((b+c)*d+c*(a+b))*2 
 ;  [14:9] r=((b+c)*d+c*(a+b))*2 
 ;  [14:11] ((b+c)*d+c*(a+b))*2 
-;  [14:12] r=((b+c)*d+c*(a+b))
+;  [14:12] edi=((b+c)*d+c*(a+b))
 ;  [14:12] ((b+c)*d+c*(a+b))
-;  [14:13] r=(b+c)
+;  [14:13] edi=(b+c)
 ;  [14:13] (b+c)
-;  [14:13] r=b
+;  [14:13] edi=b
    mov edi,dword[ebp+4]
-   mov dword[ebp+16],edi
-;  [14:15] r+c
-   mov edi,dword[ebp+8]
-   add dword[ebp+16],edi
-;  [14:18] r*d
-   mov edi,dword[ebp+16]
+;  [14:15] edi+c
+   add edi,dword[ebp+8]
+;  [14:18] edi*d
    imul edi,dword[ebp+12]
-   mov dword[ebp+16],edi
-;  [14:21] r+c*(a+b)
+;  [14:21] edi+c*(a+b)
 ;  [14:21] c*(a+b)
-;  [14:20] edi=c
-   mov edi,dword[ebp+8]
-;  [14:23] edi*(a+b)
+;  [14:20] esi=c
+   mov esi,dword[ebp+8]
+;  [14:23] esi*(a+b)
 ;  [14:23] (a+b)
-;  [14:23] esi=a
-   mov esi,dword[ebp+0]
-;  [14:25] esi+b
-   add esi,dword[ebp+4]
-   imul edi,esi
-   add dword[ebp+16],edi
-;  [14:29] r*2 
-   mov edi,dword[ebp+16]
+;  [14:23] edx=a
+   mov edx,dword[ebp+0]
+;  [14:25] edx+b
+   add edx,dword[ebp+4]
+   imul esi,edx
+   add edi,esi
+;  [14:29] edi*2 
    imul edi,2
    mov dword[ebp+16],edi
 ;  [15:1] # if (a=1 or b=2) and (c=3 or d=4) 
@@ -101,14 +107,14 @@ mov esp,stk.end
 ;  [19:9] n=10 
 ;  [19:11] 10 
 ;  [19:11] n=10 
-   mov dword[ebp+20],10
+   mov dword[ebp+24],10
 ;  [20:5] loop
    loop_20_5:
      if_21_10:
 ;    [21:10] ? n=0 
 ;    [21:10] ? n=0 
      cmp_21_10:
-     cmp dword[ebp+20],0
+     cmp dword[ebp+24],0
      jne if_21_7_end
      if_21_10_code:  ; opt1
 ;      [21:14] break 
@@ -119,7 +125,7 @@ mov esp,stk.end
 ;    [23:9] n-1 
 ;    [23:9] n=n
 ;    [23:11] n-1 
-     sub dword[ebp+20],1
+     sub dword[ebp+24],1
 ;    [24:7] continue 
      jmp loop_20_5
    jmp loop_20_5
@@ -133,7 +139,7 @@ mov esp,stk.end
      int 0x80
    exit_26_5_end:
 
-;           max regs in use: 2
+;           max regs in use: 3
 ;         max frames in use: 2
-;          max stack in use: 6
+;          max stack in use: 7
 
