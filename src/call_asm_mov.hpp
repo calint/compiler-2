@@ -11,13 +11,11 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{// mov(eax 1)
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 
-		const string&ra=tc.resolve_ident_to_nasm(arg(0),arg(0).identifier());
+		const string&rai=arg(0).identifier();
+		const string&ra=tc.resolve_ident_to_nasm(arg(0),rai);
 		const statement&rbs=arg(1);
 		if(rbs.is_expression()){ // ? the assembler commands might not need this
-			const string&reg=tc.alloc_scratch_register(rbs);
-			rbs.compile(tc,os,indent_level+1,reg);
-			indent(os,indent_level);os<<"mov "<<ra<<","<<reg<<endl;
-			tc.free_scratch_reg(reg);
+			rbs.compile(tc,os,indent_level+1,rai);
 			return;
 		}
 		const string&rb=tc.resolve_ident_to_nasm(rbs,rbs.identifier());
