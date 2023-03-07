@@ -113,10 +113,12 @@ public:
 		if(expressions_.empty()) // ? can this happen?
 			return;
 
+		// first element is assigned to destination
 		const statement&st=*expressions_[0].get();
 		const string dest_resolved=tc.resolve_ident_to_nasm(*this,dest);
 		asm_op(tc,os,indent_level,st,'=',dest,dest_resolved);
 
+		// remaining elements are +,-,*,/
 		const size_t len=ops_.size();
 		for(size_t i{0};i<len;i++){
 			const char op=ops_[i];
