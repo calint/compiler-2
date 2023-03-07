@@ -18,8 +18,8 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
-		// compare generated instructions with and without allocated scratch register an select
-		// the method that produces least instructions
+		// compare generated instructions with and without allocated scratch register
+		// select the method that produces least instructions
 		stringstream ss1;
 		oplist_.compile(tc,ss1,indent_level,identifier());
 
