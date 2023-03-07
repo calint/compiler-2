@@ -80,7 +80,7 @@ public:
 
 	inline const vector<stmt_def_func_param>&params()const{return params_;}
 
-	inline const stmt_block&code_block()const{return*code_.get();}
+	inline const stmt_block&code()const{return*code_.get();}
 
 	inline const string&name()const{return ident_.name();}
 

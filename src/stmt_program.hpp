@@ -70,7 +70,7 @@ public:
 
 		const stmt_def_func&main=tc.get_func_or_break(*this,"main");
 		tc.push_func("main");
-		main.code_block().compile(tc,os,indent_level);
+		main.code().compile(tc,os,indent_level);
 		tc.pop_func("main");
 	}
 
