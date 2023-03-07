@@ -7,12 +7,12 @@
 
 class expr_ops_list final:public expression{
 public:
-	inline expr_ops_list(const statement&parent,tokenizer&t,bool in_args=false,bool enclosed=false,const char list_append_op='=',size_t first_op_presedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>()):
+	inline expr_ops_list(const statement&parent,tokenizer&t,const bool in_args=false,const bool enclosed=false,const char list_op='=',const int first_op_precedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>()):
 		expression{parent,t.next_whitespace_token()},
 		enclosed_{enclosed},
 		in_args_{in_args},
-		presedence_{first_op_presedence},
-		list_append_op_{list_append_op}
+		precedence_{first_op_precedence},
+		list_op_{list_op}
 	{
 		if(first_expression){
 			expressions_.push_back(move(first_expression));
@@ -24,8 +24,8 @@ public:
 			}
 		}
 
-		while(true){// +a  +3
-			if(in_args){//? rewrite is_in_bool_expr
+		while(true){ // +a  +3
+			if(in_args){ //? rewrite is_in_bool_expr
 				if(t.is_peek_char('<'))break;
 				if(t.is_peek_char('='))break;
 				if(t.is_peek_char('>'))break;
@@ -42,35 +42,37 @@ public:
 
 			if(t.is_peek_char('+')){
 				ops_.push_back('+');
-			}else
-			if(t.is_peek_char('-')){
+			}else if(t.is_peek_char('-')){
 				ops_.push_back('-');
-			}else
-			if(t.is_peek_char('*')){
+			}else if(t.is_peek_char('*')){
 				ops_.push_back('*');
-			}else
-			if(t.is_peek_char('/')){
+			}else if(t.is_peek_char('/')){
 				ops_.push_back('/');
-			}else
-			if(t.is_peek_char('%')){
+			}else if(t.is_peek_char('%')){
 				ops_.push_back('%');
-			}else
+			}else{
 				break;
+			}
 
-			const size_t next_presedence=presedence_for_op(t.peek_char());
-			if(next_presedence>presedence_){
-				presedence_=next_presedence;
+			const int next_precedence=precedence_for_op(t.peek_char());
+			if(next_precedence>precedence_){
+				// i.e. =a+b*c+1
+				// next op has higher precedence than current
+				// list is now (=a)(+b)
+				// move last op (b) to sub-expression [=a] +[(=b)(*c)(+1)]
+				precedence_=next_precedence;
 				if(!ops_.empty()){
-					const size_t first_op_pres=presedence_for_op(ops_.back());
+					const int first_op_prec=precedence_for_op(ops_.back());
 					ops_.pop_back();
-					const char list_op=ops_.back();
+					const char lst_op=ops_.back();
 					unique_ptr<statement>prev=move(expressions_.back());
-					expressions_.erase(expressions_.end());
-					expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,false,list_op,first_op_pres,move(prev)));
+//					expressions_.erase(expressions_.end());
+					expressions_.pop_back();
+					expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,false,lst_op,first_op_prec,move(prev)));
 					continue;
 				}
 			}else{
-				presedence_=next_presedence;
+				precedence_=next_precedence;
 				t.next_char();// read the peeked operator
 			}
 
@@ -161,7 +163,7 @@ public:
 	}
 
 private:
-	inline static size_t presedence_for_op(const char ch){
+	inline static int precedence_for_op(const char ch){
 		if(ch=='+'||ch=='-')
 			return 1;
 		if(ch=='*'||ch=='/')
@@ -220,8 +222,8 @@ private:
 
 	bool enclosed_{false}; // ie   =(1+2)   vs  =1+2
 	bool in_args_{false}; // ie   =func(1+2)
-	size_t presedence_{0};
-	char list_append_op_{0};
+	int precedence_{0};
+	char list_op_{0};
 	vector<unique_ptr<statement>>expressions_;
 	vector<char>ops_;
 };
