@@ -19,6 +19,13 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 		oplist_.compile(tc,os,indent_level,identifier());
+
+		// ? overrallocates in simplests cases ie a=1 but better at a=b+c+d
+//		const string&reg=tc.alloc_scratch_register(tok());
+//		oplist_.compile(tc,os,indent_level,reg);
+//		const string&resolv=tc.resolve_ident_to_nasm(*this,identifier());
+//		expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,resolv,reg);
+//		tc.free_scratch_reg(reg);
 	}
 
 private:
