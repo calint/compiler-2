@@ -23,7 +23,7 @@
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [ ] return statement
 [ ] op shift left and right
-[ ] optimize:
+[x] optimize:
         mov edi,dword[ebp+16]
         sub edi,1
         mov dword[ebp+16],edi
