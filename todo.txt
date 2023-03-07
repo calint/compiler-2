@@ -43,3 +43,6 @@
         mov edi,dword[ebp+12]
         add dword[ebp+16],edi
 [x] stmt_assign_var.compile see comments -> try both and select the one that generates fewest instructions
+[ ] type point{x,y} var p=point{1,2} p.x=1
+[ ] compile for pczero task
+[ ] var points=point[10] where points contains length of array and a pointer
