@@ -6,11 +6,11 @@ func exit(v){
 
 func main{
     var a=1
-    a=a+1
     var b=2
     var c=3
     var d=4
-    var r=((b+c)*d+c*(a+b))*2
+#    var r=a*b+c*d
+#    var r=((b+c)*d+c*(a+b))*2
 #    if (a=1 or b=2) and (c=3 or d=4)
 #    if (a=1 and b=2) or (c=3 and d=4)
     if (a=1 and (b=2 or c=3)) or d=4
@@ -18,7 +18,7 @@ func main{
     var n=10
     loop{
       if n=0 break
-      var r=((a+b)*c+d)*2
+#      var r=((a+b)*c+d)*2
       n=n-1
       continue
     }
