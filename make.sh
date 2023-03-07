@@ -19,18 +19,16 @@ ld -melf_i386 -s -o gen gen.o
 
 ls --color -la $BIN gen.s gen
 
-ASM_LINES="cat gen.s|grep -v -e'^\s*;.*$' -e'^\s*$'"
+cat gen.s|grep -v -e'^\s*;.*$' -e'^\s*$' > gen-without-comments.s
 
 echo
 echo -n '    source: ' && cat src/*|wc
 echo -n '   gzipped: ' && cat src/*|gzip|wc 
 echo -n 'baz source: ' && cat prog.baz|grep -v -e'^\s*$'|wc
 echo -n '   gzipped: ' && cat prog.baz|grep -v -e'^\s*$'|gzip|wc
-echo -n 'asm source: ' && cat src/*|eval $ASM_LINES|wc
-echo -n '   gzipped: ' && cat src/*|eval $ASM_LINES|gzip|wc
+echo -n 'asm source: ' && cat gen-without-comments.s|wc
+echo -n '   gzipped: ' && cat gen-without-comments.s|gzip|wc
 echo
 
-cat gen.s | grep -v -e'^\s*;.*$' -e'^\s*$' > gen-without-comments.s
 cat gen.s
-echo
 ./gen
