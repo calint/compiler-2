@@ -10,41 +10,22 @@ public:
 	inline bool is_eos()const{return !last_char_;}
 
 	inline token next_token(){
-		auto wspre=next_whitespace();
-		auto bgn=nchar_;
+		const string wspre=next_whitespace();
+		const size_t bgn=nchar_;
 		if(is_next_char('"')){
 			string s;
 			while(true){
 				if(is_next_char('"')){
-					auto end=nchar_;
-					auto wsaft=next_whitespace();
+					const size_t end=nchar_;
+					const string wsaft=next_whitespace();
 					return token{wspre,bgn,s,end,wsaft,true};
-					break;
 				}
-				const char ch=next_char();
-				if(ch!='\\'){
-					s.push_back(ch);
-					continue;
-				}
-				if(is_next_char('\\')){//  \\  //
-					s.push_back('\\');
-					continue;
-				}
-				const char esc_ch=next_char();
-				if(esc_ch=='n'){
-					s.push_back('\n');
-					continue;
-				}
-				throw string("unknown escaped character ["+to_string(esc_ch)+"]");
+				s.push_back(next_char());
 			}
-			auto tkn=next_token_str();
-			auto end=nchar_;
-			auto wsaft=next_whitespace();
-			return token{wspre,bgn,tkn,end,wsaft,false};
 		}
-		auto tkn=next_token_str();
-		auto end=nchar_;
-		auto wsaft=next_whitespace();
+		const string tkn=next_token_str();
+		const size_t end=nchar_;
+		const string wsaft=next_whitespace();
 		return token{wspre,bgn,tkn,end,wsaft};
 	}
 

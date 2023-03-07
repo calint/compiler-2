@@ -36,7 +36,7 @@ public:
 			os<<name_;
 			return;
 		}
-		os<<regex_replace(name_,regex("\n"),"',10,'");
+		os<<regex_replace(name_,regex("\\\\n"),"',10,'");
 	}
 
 	inline bool is_name(const string&s)const{return!strcmp(name_.c_str(),s.c_str());}
