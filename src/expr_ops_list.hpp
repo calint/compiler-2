@@ -184,7 +184,7 @@ private:
 			if(st.is_expression()){
 				const string r=tc.alloc_scratch_register(st.tok());
 				st.compile(tc,os,indent_level,r);
-				asm_cmd("add",st,tc,os,indent_level+1,dest_resolved,r);
+				asm_cmd("add",st,tc,os,indent_level,dest_resolved,r);
 				tc.free_scratch_reg(r);
 				return;
 			}
