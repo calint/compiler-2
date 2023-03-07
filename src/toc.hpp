@@ -263,6 +263,20 @@ public:
 		os<<endl;
 	}
 
+	inline void source_comment(ostream&os,const string&dest,const char op,const statement&stmt)const{
+		size_t char_in_line;
+		const size_t n=line_number_for_char_index(stmt.tok().char_index(),source_str_,char_in_line);
+		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
+
+		stringstream ss;
+		ss<<" "<<dest<<op;
+		stmt.source_to(ss);
+		string s=ss.str();
+		string res=regex_replace(s,regex("\\s+")," ");
+		os<<res;
+		os<<endl;
+	}
+
 	inline void token_comment(ostream&os,const token&tk)const{
 		size_t char_in_line;
 		const size_t n=line_number_for_char_index(tk.char_index(),source_str_,char_in_line);

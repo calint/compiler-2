@@ -109,7 +109,7 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest)const override{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 
-		if(expressions_.empty())
+		if(expressions_.empty()) // ? can this happen?
 			return;
 
 		const statement&st=*expressions_[0].get();
@@ -170,7 +170,7 @@ private:
 	}
 
 	inline void asm_op(toc&tc,ostream&os,size_t indent_level,const statement&st,const char op,const string&dest,const string&dest_resolved,bool first_in_list)const{
-		indent(os,indent_level,true);tc.source_comment(os,st);
+		indent(os,indent_level,true);tc.source_comment(os,dest,op,st);
 		if(op=='+'){// order1op
 			if(st.is_expression()){
 				auto r=tc.alloc_scratch_register(st.tok());
