@@ -215,10 +215,10 @@ private:
 		}
 	}
 
-	bool enclosed_{false}; // ie   =(1+2)   vs  =1+2
-	bool in_args_{false}; // ie   =func(1+2)
-	int precedence_{0};
-	char list_op_{0};
+	bool enclosed_{false}; //  =(a+b) vs =a+b
+	bool in_args_{false}; // foo(a+b)
+	int precedence_{0}; //
+	char list_op_{0}; // +[...]
 	vector<unique_ptr<statement>>expressions_;
 	vector<char>ops_;
 };
