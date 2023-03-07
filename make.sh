@@ -14,7 +14,9 @@ CW="$CW -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-call -Wno-
 
 $CC $CF $CW -o $BIN src/main.cpp
 
-./$BIN prog.baz > gen.s && nasm -f elf32 gen.s && ld -melf_i386 -s -o gen gen.o
+./$BIN prog.baz > gen.s
+nasm -f elf32 gen.s
+ld -melf_i386 -s -o gen gen.o
 
 ls --color -la $BIN gen.s gen
 

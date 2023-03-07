@@ -203,7 +203,7 @@ int main(int argc,char**args){
 		stringstream ss2{pass1};
 		string pass2=optimize_jumps_2(ss2);
 		cout<<pass2<<endl;
-
+//		p.build(cout);
 	}catch(compiler_error&e){
 		size_t start_char_in_line{0};
 		auto lineno=toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line);

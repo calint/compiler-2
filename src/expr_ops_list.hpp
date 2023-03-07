@@ -210,7 +210,18 @@ private:
 				tc.free_scratch_reg(r);
 				return;
 			}
-			asm_cmd("imul",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st));
+			// not an expression, either a register or memory location
+			// imul destination operand must be register
+			if(tc.is_identifier_register(dest_resolved)){
+				asm_cmd("imul",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st));
+				return;
+			}
+			// imul destination is not a register
+			const string&r=tc.alloc_scratch_register(st);
+			asm_cmd("mov",st,tc,os,indent_level,r,dest_resolved);
+			asm_cmd("imul",st,tc,os,indent_level,r,tc.resolve_ident_to_nasm(st));
+			asm_cmd("mov",st,tc,os,indent_level,dest_resolved,r);
+			tc.free_scratch_reg(r);
 			return;
 		}
 	}

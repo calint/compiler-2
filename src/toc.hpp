@@ -286,6 +286,9 @@ public:
 		os<<" "<<tk.name()<<endl;
 	}
 
+	inline bool is_identifier_register(const string&id)const{
+		return find(all_registers_.begin(),all_registers_.end(),id)!=all_registers_.end();
+	}
 private:
 	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&ok)const{//? tidy duplicate code
 		string name=ident;

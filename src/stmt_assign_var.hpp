@@ -19,21 +19,6 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
-
-		if(!oplist_.is_expression()){
-			oplist_.compile(tc,os,indent_level,identifier());
-			return;
-		}
-
-		if(oplist_.alloc_register()){
-			const string&reg=tc.alloc_scratch_register(tok()); //? overrallocates in simplests cases ie a=1
-			oplist_.compile(tc,os,indent_level,reg);
-			const string&resolv=tc.resolve_ident_to_nasm(*this,tok().name());
-			expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,resolv,reg);
-			tc.free_scratch_reg(reg);
-			return;
-		}
-
 		oplist_.compile(tc,os,indent_level,identifier());
 	}
 
