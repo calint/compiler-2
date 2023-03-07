@@ -1,10 +1,7 @@
-
 section .data
-
 section .bss
 stk resd 256
 stk.end:
-
 section .text
 bits 32
 global _start
@@ -66,5 +63,3 @@ mov esp,stk.end
      mov eax,1
      int 0x80
    exit_26_5_end:
-
-
