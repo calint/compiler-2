@@ -63,7 +63,7 @@ public:
 	}
 
 	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false,const string&jmp_to_if_true)const{
-		indent(os,indent_level,true);tc.source_comment(os,*this);
+		indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		indent(os,indent_level);os<<cmp_bgn_label(tc)<<":\n";
 		resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
 		indent(os,indent_level);
@@ -81,7 +81,7 @@ public:
 	}
 
 	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const bool last_elem,const string&jmp_to_if_false,const string&jmp_to_if_true_label)const{
-		indent(os,indent_level,true);tc.source_comment(os,*this);
+		indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		indent(os,indent_level);os<<cmp_bgn_label(tc);os<<":\n";
 		resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
 		indent(os,indent_level);
