@@ -31,6 +31,7 @@ echo -n 'asm source: ' && cat src/*|eval $ASM_LINES|wc
 echo -n '   gzipped: ' && cat src/*|eval $ASM_LINES|gzip|wc
 echo
 
+cat gen.s | grep -v '^;.*$' > gen-without-comments.s
 cat gen.s
 echo
 ./gen
