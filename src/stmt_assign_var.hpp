@@ -16,18 +16,6 @@ public:
 		oplist_.source_to(os);
 	}
 
-	inline static size_t count_instructions(stringstream&ss){
-		regex regex("^\\s*;.*$");
-		string line;
-		size_t n=0;
-		while(getline(ss,line)){
-			if(regex_search(line,regex))
-				continue;
-			n++;
-		}
-		return n;
-	}
-
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 		// compare generated instructions with and without allocated scratch register an select
@@ -52,5 +40,17 @@ public:
 	}
 
 private:
+	inline static size_t count_instructions(stringstream&ss){
+		regex regex("^\\s*;.*$");
+		string line;
+		size_t n=0;
+		while(getline(ss,line)){
+			if(regex_search(line,regex))
+				continue;
+			n++;
+		}
+		return n;
+	}
+
 	expr_ops_list oplist_;
 };
