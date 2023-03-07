@@ -18,9 +18,9 @@ public:
 			expressions_.push_back(move(first_expression));
 		}else{
 			if(t.is_next_char('(')){
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,true));
+				expressions_.emplace_back(make_unique<expr_ops_list>(*this,t,in_args,true));
 			}else{
-				expressions_.push_back(create_statement_from_tokenizer(*this,t));
+				expressions_.emplace_back(create_statement_from_tokenizer(*this,t));
 			}
 		}
 
@@ -66,9 +66,8 @@ public:
 					ops_.pop_back();
 					const char lst_op=ops_.back();
 					unique_ptr<statement>prev=move(expressions_.back());
-//					expressions_.erase(expressions_.end());
 					expressions_.pop_back();
-					expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,false,lst_op,first_op_prec,move(prev)));
+					expressions_.emplace_back(make_unique<expr_ops_list>(*this,t,in_args,false,lst_op,first_op_prec,move(prev)));
 					continue;
 				}
 			}else{
@@ -77,7 +76,7 @@ public:
 			}
 
 			if(t.is_next_char('(')){
-				expressions_.push_back(make_unique<expr_ops_list>(*this,t,in_args,true));
+				expressions_.emplace_back(make_unique<expr_ops_list>(*this,t,in_args,true));
 				continue;
 			}
 
@@ -116,13 +115,13 @@ public:
 
 		const statement&st=*expressions_[0].get();
 		const string dest_resolved=tc.resolve_ident_to_nasm(*this,dest);
-		asm_op(tc,os,indent_level,st,'=',dest,dest_resolved,true);
+		asm_op(tc,os,indent_level,st,'=',dest,dest_resolved);
 
 		const size_t len=ops_.size();
 		for(size_t i{0};i<len;i++){
 			const char op=ops_[i];
 			const statement&stm=*expressions_[i+1].get();
-			asm_op(tc,os,indent_level,stm,op,dest,dest_resolved,false);
+			asm_op(tc,os,indent_level,stm,op,dest,dest_resolved);
 		}
 	}
 
@@ -171,7 +170,7 @@ private:
 		throw string(to_string(__LINE__)+" err");
 	}
 
-	inline void asm_op(toc&tc,ostream&os,const size_t indent_level,const statement&st,const char op,const string&dest,const string&dest_resolved,const bool first_in_list)const{
+	inline void asm_op(toc&tc,ostream&os,const size_t indent_level,const statement&st,const char op,const string&dest,const string&dest_resolved)const{
 		indent(os,indent_level,true);tc.source_comment(os,dest,op,st);
 		if(op=='+'){// order1op
 			if(st.is_expression()){
@@ -203,19 +202,15 @@ private:
 				tc.free_scratch_reg(r);
 				return;
 			}
-			if(first_in_list){
-				asm_cmd("mov",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st));
-			}else
-				asm_cmd("imul",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st));
-
+			asm_cmd("imul",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st));
 			return;
 		}
 		if(op=='='){
 			if(st.is_expression()){
 				st.compile(tc,os,indent_level,dest);
-			}else{
-				asm_cmd("mov",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st,st.identifier()));
+				return;
 			}
+			asm_cmd("mov",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st,st.identifier()));
 			return;
 		}
 	}
