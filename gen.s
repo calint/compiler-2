@@ -82,14 +82,12 @@ mov esp,stk.end
 ;  [17:25] ? c=3
    cmp_17_25:
    cmp dword[ebp+8],3
-   jne cmp_17_34
-   jmp if_17_8_code
+   je if_17_8_code  ; opt2
 ;  [17:34] ? d=4 
    cmp_17_34:
    cmp dword[ebp+12],4
    jne if_17_5_end
-   jmp if_17_8_code
-   if_17_8_code:
+   if_17_8_code:  ; opt1
 ;    [18:9] exit(0)
 ;      [2:5] mov(ebx,v)
        mov ebx,0
@@ -112,8 +110,7 @@ mov esp,stk.end
      cmp_21_10:
      cmp dword[ebp+20],0
      jne if_21_7_end
-     jmp if_21_10_code
-     if_21_10_code:
+     if_21_10_code:  ; opt1
 ;      [21:14] break 
        jmp loop_20_5_end
      if_21_7_end:
@@ -139,3 +136,4 @@ mov esp,stk.end
 ;           max regs in use: 2
 ;         max frames in use: 2
 ;          max stack in use: 6
+
