@@ -172,6 +172,14 @@ private:
 
 	inline void asm_op(toc&tc,ostream&os,const size_t indent_level,const statement&st,const char op,const string&dest,const string&dest_resolved)const{
 		indent(os,indent_level,true);tc.source_comment(os,dest,op,st);
+		if(op=='='){
+			if(st.is_expression()){
+				st.compile(tc,os,indent_level,dest);
+				return;
+			}
+			asm_cmd("mov",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st,st.identifier()));
+			return;
+		}
 		if(op=='+'){// order1op
 			if(st.is_expression()){
 				const string r=tc.alloc_scratch_register(st.tok());
@@ -203,14 +211,6 @@ private:
 				return;
 			}
 			asm_cmd("imul",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st));
-			return;
-		}
-		if(op=='='){
-			if(st.is_expression()){
-				st.compile(tc,os,indent_level,dest);
-				return;
-			}
-			asm_cmd("mov",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st,st.identifier()));
 			return;
 		}
 	}
