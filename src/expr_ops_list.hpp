@@ -58,8 +58,8 @@ public:
 			if(next_precedence>precedence_){
 				// i.e. =a+b*c+1
 				// next op has higher precedence than current
-				// list is now (=a)(+b)
-				// move last op (b) to sub-expression [=a] +[(=b)(*c)(+1)]
+				// list is now =[(=a)(+b)]
+				// move last op (+b) to sub-expression =[(=a) +[(=b)(*c)(+1)]]
 				precedence_=next_precedence;
 				if(!ops_.empty()){
 					const int first_op_prec=precedence_for_op(ops_.back());
