@@ -132,7 +132,8 @@ public:
 		size_t lix{0};
 		size_t lineno{1};
 		while(true){
-			if(ix==char_index)break;
+			if(ix==char_index)
+				break;
 			if(*ptr++=='\n'){
 				lineno++;
 				ix++;
