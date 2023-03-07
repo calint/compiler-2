@@ -59,7 +59,7 @@ public:
 		vector<tuple<string,string>>aliases_to_add;
 		if(not dest_ident.empty()){
 			if(f.returns().empty())
-				throw compiler_error(*this,"cannot assign from call without return",tok().name_copy());
+				throw compiler_error(*this,"cannot assign from call without return");
 			const string&from=f.returns()[0].name();
 			const string&to=dest_ident;
 			aliases_to_add.push_back(make_tuple(from,to));

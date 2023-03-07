@@ -49,8 +49,6 @@ public:
 
 	inline size_t char_index_end()const{return end_char_;}
 
-	inline string name_copy()const{return name_;}
-
 	inline bool is_blank()const{
 		const char a=ws_left_[0];
 		const char b=name_[0];

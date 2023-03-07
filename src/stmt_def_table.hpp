@@ -22,7 +22,7 @@ public:
 					break;
 				}
 				if(!t.is_next_char(','))
-					throw compiler_error(ta,"expected ',' after parameter at ",tk.name());
+					throw compiler_error(ta,"expected ',' after parameter '"+tk.name()+"'");
 				params_.push_back(ta);
 			}
 		}

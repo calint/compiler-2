@@ -10,7 +10,7 @@ public:
 			throw compiler_error(ident_,"expected field name");
 
 		if(!t.is_next_char('{'))
-			throw compiler_error(ident_,"expected '{' initial value   then '}' ",ident_.name());
+			throw compiler_error(ident_,"expected '{' initial value   then '}'");
 
 		while(true){
 			if(t.is_next_char('}'))break;

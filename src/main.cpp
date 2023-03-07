@@ -207,7 +207,7 @@ int main(int argc,char**args){
 	}catch(compiler_error&e){
 		size_t start_char_in_line{0};
 		auto lineno=toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line);
-		cout<<"\n"<<src_file_name<<":"<<lineno<<":"<<start_char_in_line<<": "<<e.msg<<" "<<e.ident<<endl;
+		cout<<"\n"<<src_file_name<<":"<<lineno<<":"<<start_char_in_line<<": "<<e.msg<<endl;
 		return 1;
 	}catch(string&s){
 		cout<<"\nexception: "<<s<<endl;

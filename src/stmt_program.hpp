@@ -44,7 +44,7 @@ public:
 			if(tk.is_name("")){// whitespace
 				stmts_.push_back(make_unique<statement>(*this,tk));
 			}else{
-				throw compiler_error(tk,"unexpected keyword",tk.name());
+				throw compiler_error(tk,"unexpected keyword '"+tk.name()+"'");
 			}
 		}
 	}

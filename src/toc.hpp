@@ -93,14 +93,14 @@ public:
 
 	inline void add_field(const statement&s,const string&ident,const stmt_def_field*f){
 		if(fields_.has(ident)){
-			throw compiler_error(s.tok(),"field already defined at <line:col>",ident);
+			throw compiler_error(s.tok(),"field '"+ident+"' already defined");
 		}
 		fields_.put(ident,f);
 	}
 
 	inline void add_func(const statement&s,const string&ident,const stmt_def_func*ref){
 		if(funcs_.has(ident))
-			throw compiler_error(s.tok(),"function already defined at <line:col>",ident);
+			throw compiler_error(s.tok(),"function '"+ident+"' already defined");
 
 		funcs_.put(ident,ref);
 	}
@@ -116,7 +116,7 @@ public:
 
 	inline void add_table(const statement&s,const string&ident,const stmt_def_table*f){
 		if(tables_.has(ident))
-			throw compiler_error(s.tok(),"table already defined at <line:col>",ident);
+			throw compiler_error(s.tok(),"table '"+ident +"' already defined");
 
 		tables_.put(ident,f);
 	}
@@ -337,7 +337,7 @@ private:
 				ok=true;
 				return name;
 			}
-			throw compiler_error(stmt.tok(),"unknown implicit field constant",string(name));
+			throw compiler_error(stmt.tok(),"unknown implicit field constant '"+name+"'");
 		}
 
 		char*ep;
