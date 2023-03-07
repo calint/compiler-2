@@ -8,7 +8,7 @@
 class stmt_block final:public statement{
 public:
 	inline stmt_block(const statement&parent,tokenizer&t):
-		statement{parent,token{}},
+		statement{parent,t.next_whitespace_token()},
 		is_one_statement_{not t.is_next_char('{')}
 	{
 		while(true){

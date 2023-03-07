@@ -1,6 +1,7 @@
 #pragma once
 
 #include<iostream>
+#include<regex>
 
 class token final{
 public:
@@ -13,15 +14,6 @@ public:
 		is_str{is_string}
 	{}
 
-	inline token(const string&name):
-		token{"",0,name,name.size()," "}
-	{}
-
-	inline token():
-		token{"",0,"",0,""}
-	{}
-
-	// token{othertoken}
 	inline token(const token&tk):
 		ws_left_{tk.ws_left_},
 		start_char_{tk.start_char_},
@@ -36,10 +28,16 @@ public:
 			os<<ws_left_<<name_<<ws_right_;
 			return;
 		}
-		os<<ws_left_<<'\"'<<name_<<'\"'<<ws_right_;
+		os<<ws_left_<<'"'<<regex_replace(name_,regex("\n"),"\\n")<<'"'<<ws_right_;
 	}
 
-	inline void compile_to(ostream&os)const{os<<name_;}
+	inline void compile_to(ostream&os)const{
+		if(!is_str){
+			os<<name_;
+			return;
+		}
+		os<<regex_replace(name_,regex("\n"),"',10,'");
+	}
 
 	inline bool is_name(const string&s)const{return!strcmp(name_.c_str(),s.c_str());}
 

@@ -10,7 +10,7 @@
 class stmt_program final:public statement{
 public:
 	inline stmt_program(const string&source):
-		statement{*this,token{}},
+		statement{*this,token{"",0,"",0,""}},
 		tc_{source}
 	{
 		vector<string>assem{"mov","int","xor","syscall"};

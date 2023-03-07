@@ -24,7 +24,7 @@ public:
 			return;
 
 		if(!ra.find("dword[") and !rb.find("dword[")){
-			const string&r=tc.alloc_scratch_register(token());
+			const string&r=tc.alloc_scratch_register(tok());
 			indent(os,indent_level);os<<"mov "<<r<<","<<rb<<endl;
 			indent(os,indent_level);os<<"mov "<<ra<<","<<r<<endl;
 			tc.free_scratch_reg(r);

@@ -155,7 +155,7 @@ private:
 		}
 
 		if(!ra.find("dword[") and !rb.find("dword[")){
-			const string&r=tc.alloc_scratch_register(identifier());
+			const string&r=tc.alloc_scratch_register(tok());
 			indent(os,indent_level);os<<"mov "<<r<<","<<rb<<endl;
 			indent(os,indent_level);os<<op<<" "<<ra<<","<<r<<endl;
 			tc.free_scratch_reg(r);

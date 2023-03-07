@@ -4,7 +4,18 @@ func exit(v){
     int(0x80)
 }
 
+func print(len,ptr){
+    mov(ecx,ptr)
+    mov(edx,len)
+    mov(ebx,1)
+    mov(eax,4)
+    int(0x80)
+}
+
+field hello{"hello world\n"}
+
 func main{
+    print(hello.len,hello)
     var a=1
     var b=2
     var c=3

@@ -13,7 +13,8 @@ public:
 			throw compiler_error(ident_,"expected '{' initial value   then '}'");
 
 		while(true){
-			if(t.is_next_char('}'))break;
+			if(t.is_next_char('}'))
+				break;
 			tokens_.push_back(t.next_token());
 		}
 	}
@@ -35,7 +36,7 @@ public:
 		os<<"'\n";
 
 		for(size_t i=0;i<indent_level;i++)cout<<"  ";
-		os<<ident_.name()<<".len equ $-"<<ident_.name()<<"\n\n";
+		os<<ident_.name()<<".len equ $-"<<ident_.name()<<"\n";
 
 		tc.add_field(*this,ident_.name(),this);
 	}
