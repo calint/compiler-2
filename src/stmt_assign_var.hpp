@@ -14,7 +14,6 @@ public:
 		statement::source_to(os);
 		os<<"=";
 		oplist_.source_to(os);
-//		os<<";";
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
