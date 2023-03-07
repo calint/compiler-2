@@ -82,7 +82,7 @@ public:
 
 			unique_ptr<statement>stmt=create_statement_from_tokenizer(*this,t);
 			if(stmt->tok().is_blank())
-				throw compiler_error(*stmt,"unexpected blank token");
+				throw compiler_error(*stmt,"unexpected '"+string{t.peek_char()}+"'");
 
 			expressions_.push_back(move(stmt));
 		}

@@ -53,6 +53,9 @@ public:
 		if(!is_inline())
 			throw string("not inlined");
 		const stmt_def_func&f=tc.get_func_or_break(*this,nm);
+		if(f.params().size()!=args_.size()){
+			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
+		}
 		vector<tuple<string,string>>aliases_to_add;
 		if(not dest_ident.empty()){
 			if(f.returns().empty())

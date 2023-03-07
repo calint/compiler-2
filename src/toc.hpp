@@ -109,7 +109,7 @@ public:
 		bool valid;
 		const stmt_def_func*f=funcs_.get_valid(name,valid);
 		if(!valid){
-			throw compiler_error(s.tok(),"function not found",name);
+			throw compiler_error(s.tok(),"function '"+name+"' not found");
 		}
 		return*f;
 	}
