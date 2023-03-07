@@ -4,6 +4,9 @@ section .data
 ;[15:1] field hello{"hello world\n"}
 hello db 'hello world',10,''
 hello.len equ $-hello
+;[16:1] field one{"one\n"}
+one db 'one',10,''
+one.len equ $-one
 
 section .bss
 stk resd 256
@@ -15,7 +18,7 @@ global _start
 _start:
 mov ebp,stk
 mov esp,stk.end
-;  [18:5] print(hello.len,hello)
+;  [19:5] print(hello.len,hello)
 ;    [8:5] mov(ecx,ptr)
      mov ecx,hello
 ;    [9:5] mov(edx,len)
@@ -26,137 +29,101 @@ mov esp,stk.end
      mov eax,4
 ;    [12:5] int(0x80)
      int 0x80
-   print_18_5_end:
-;  [19:5] var a=1 
-;  [19:9] a=1 
-;  [19:11] 1 
-;  [19:11] a=1 
+   print_19_5_end:
+;  [20:5] var a=1 
+;  [20:9] a=1 
+;  [20:11] 1 
+;  [20:11] a=1 
    mov dword[ebp+0],1
-;  [20:5] var b=2 
-;  [20:9] b=2 
-;  [20:11] 2 
-;  [20:11] b=2 
+;  [21:5] var b=2 
+;  [21:9] b=2 
+;  [21:11] 2 
+;  [21:11] b=2 
    mov dword[ebp+4],2
-;  [21:5] var c=3 
-;  [21:9] c=3 
-;  [21:11] 3 
-;  [21:11] c=3 
+;  [22:5] var c=3 
+;  [22:9] c=3 
+;  [22:11] 3 
+;  [22:11] c=3 
    mov dword[ebp+8],3
-;  [22:5] var d=4 
-;  [22:9] d=4 
-;  [22:11] 4 
-;  [22:11] d=4 
+;  [23:5] var d=4 
+;  [23:9] d=4 
+;  [23:11] 4 
+;  [23:11] d=4 
    mov dword[ebp+12],4
-;  [23:5] var r=a+b+c+d 
-;  [23:9] r=a+b+c+d 
-;  [23:11] a+b+c+d 
-;  [23:11] edi=a
-   mov edi,dword[ebp+0]
-;  [23:13] edi+b
-   add edi,dword[ebp+4]
-;  [23:15] edi+c
-   add edi,dword[ebp+8]
-;  [23:17] edi+d 
-   add edi,dword[ebp+12]
-   mov dword[ebp+16],edi
-;  [24:1] # var r=a*b+c*d 
-;  [25:5] var r=((b+c)*d+c*(a+b))*2 
-;  [25:9] r=((b+c)*d+c*(a+b))*2 
-;  [25:11] ((b+c)*d+c*(a+b))*2 
-;  [25:12] edi=((b+c)*d+c*(a+b))
-;  [25:12] ((b+c)*d+c*(a+b))
-;  [25:13] edi=(b+c)
-;  [25:13] (b+c)
-;  [25:13] edi=b
-   mov edi,dword[ebp+4]
-;  [25:15] edi+c
-   add edi,dword[ebp+8]
-;  [25:18] edi*d
-   imul edi,dword[ebp+12]
-;  [25:21] edi+c*(a+b)
-;  [25:21] c*(a+b)
-;  [25:20] esi=c
-   mov esi,dword[ebp+8]
-;  [25:23] esi*(a+b)
-;  [25:23] (a+b)
-;  [25:23] edx=a
-   mov edx,dword[ebp+0]
-;  [25:25] edx+b
-   add edx,dword[ebp+4]
-   imul esi,edx
-   add edi,esi
-;  [25:29] edi*2 
-   imul edi,2
-   mov dword[ebp+16],edi
-;  [26:1] # if (a=1 or b=2) and (c=3 or d=4) 
-;  [27:1] # if (a=1 and b=2) or (c=3 and d=4) 
-   if_28_8:
-;  [28:8] ? (a=1 and (b=2 or c=3)) or d=4 
-;  [28:9] ? (a=1 and (b=2 or c=3))
-;  [28:9] ? a=1 
-   cmp_28_9:
-   cmp dword[ebp+0],1
-   jne cmp_28_34
-;  [28:18] ? (b=2 or c=3)
-;  [28:18] ? b=2 
-   cmp_28_18:
-   cmp dword[ebp+4],2
-   je if_28_8_code
-;  [28:25] ? c=3
-   cmp_28_25:
-   cmp dword[ebp+8],3
-   je if_28_8_code  ; opt2
-;  [28:34] ? d=4 
-   cmp_28_34:
-   cmp dword[ebp+12],4
-   jne if_28_5_end
-   if_28_8_code:  ; opt1
-;    [29:9] exit(0)
-;      [2:5] mov(ebx,v)
-       mov ebx,0
-;      [3:5] mov(eax,1)
-       mov eax,1
-;      [4:5] int(0x80)
+;  [24:5] var n=10 
+;  [24:9] n=10 
+;  [24:11] 10 
+;  [24:11] n=10 
+   mov dword[ebp+16],10
+;  [25:5] loop
+   loop_25_5:
+     if_26_10:
+;    [26:10] ? n=0 
+;    [26:10] ? n=0 
+     cmp_26_10:
+     cmp dword[ebp+16],0
+     jne if_26_7_end
+     if_26_10_code:  ; opt1
+;      [26:14] break 
+       jmp loop_25_5_end
+     if_26_7_end:
+;    [27:7] var r=((a+b)*c+d)*2 
+;    [27:11] r=((a+b)*c+d)*2 
+;    [27:13] ((a+b)*c+d)*2 
+;    [27:14] edi=((a+b)*c+d)
+;    [27:14] ((a+b)*c+d)
+;    [27:15] edi=(a+b)
+;    [27:15] (a+b)
+;    [27:15] edi=a
+     mov edi,dword[ebp+0]
+;    [27:17] edi+b
+     add edi,dword[ebp+4]
+;    [27:20] edi*c
+     imul edi,dword[ebp+8]
+;    [27:22] edi+d
+     add edi,dword[ebp+12]
+;    [27:25] edi*2 
+     imul edi,2
+     mov dword[ebp+20],edi
+;    [28:7] n=n-1 
+;    [28:9] n-1 
+;    [28:9] n=n
+;    [28:11] n-1 
+     sub dword[ebp+16],1
+     if_29_10:
+;    [29:10] ? not n=1 
+;    [29:10] ? not n=1 
+     cmp_29_10:
+     cmp dword[ebp+16],1
+     je if_29_7_end
+     if_29_10_code:  ; opt1
+;      [29:18] continue 
+       jmp loop_25_5
+     if_29_7_end:
+;    [30:7] print(one.len,one)
+;      [8:5] mov(ecx,ptr)
+       mov ecx,one
+;      [9:5] mov(edx,len)
+       mov edx,one.len
+;      [10:5] mov(ebx,1)
+       mov ebx,1
+;      [11:5] mov(eax,4)
+       mov eax,4
+;      [12:5] int(0x80)
        int 0x80
-     exit_29_9_end:
-   if_28_5_end:
-;  [30:5] var n=10 
-;  [30:9] n=10 
-;  [30:11] 10 
-;  [30:11] n=10 
-   mov dword[ebp+24],10
-;  [31:5] loop
-   loop_31_5:
-     if_32_10:
-;    [32:10] ? n=0 
-;    [32:10] ? n=0 
-     cmp_32_10:
-     cmp dword[ebp+24],0
-     jne if_32_7_end
-     if_32_10_code:  ; opt1
-;      [32:14] break 
-       jmp loop_31_5_end
-     if_32_7_end:
-;    [33:1] # var r=((a+b)*c+d)*2 
-;    [34:7] n=n-1 
-;    [34:9] n-1 
-;    [34:9] n=n
-;    [34:11] n-1 
-     sub dword[ebp+24],1
-;    [35:7] continue 
-     jmp loop_31_5
-   jmp loop_31_5
-   loop_31_5_end:
-;  [37:5] exit(1)
+     print_30_7_end:
+   jmp loop_25_5
+   loop_25_5_end:
+;  [32:5] exit(0)
 ;    [2:5] mov(ebx,v)
-     mov ebx,1
+     mov ebx,0
 ;    [3:5] mov(eax,1)
      mov eax,1
 ;    [4:5] int(0x80)
      int 0x80
-   exit_37_5_end:
+   exit_32_5_end:
 
-;           max regs in use: 3
-;         max frames in use: 2
-;          max stack in use: 7
+;           max regs in use: 1
+;         max frames in use: 3
+;          max stack in use: 6
 
