@@ -13,22 +13,22 @@ mov esp,stk.end
 ;  [8:5] var a=1 
 ;  [8:9] a=1 
 ;  [8:11] 1 
-;  [8:11] 1 
+;  [8:11] a=1 
    mov dword[ebp+0],1
 ;  [9:5] var b=2 
 ;  [9:9] b=2 
 ;  [9:11] 2 
-;  [9:11] 2 
+;  [9:11] b=2 
    mov dword[ebp+4],2
 ;  [10:5] var c=3 
 ;  [10:9] c=3 
 ;  [10:11] 3 
-;  [10:11] 3 
+;  [10:11] c=3 
    mov dword[ebp+8],3
 ;  [11:5] var d=4 
 ;  [11:9] d=4 
 ;  [11:11] 4 
-;  [11:11] 4 
+;  [11:11] d=4 
    mov dword[ebp+12],4
 ;  [12:1] # if (a=1 or b=2) and (c=3 or d=4) 
 ;  [13:1] # if (a=1 and b=2) or (c=3 and d=4) 
@@ -65,7 +65,7 @@ mov esp,stk.end
 ;  [16:5] var n=10 
 ;  [16:9] n=10 
 ;  [16:11] 10 
-;  [16:11] 10 
+;  [16:11] n=10 
    mov dword[ebp+16],10
 ;  [17:5] loop
    loop_17_5:
@@ -82,26 +82,26 @@ mov esp,stk.end
 ;    [19:7] var r=((a+b)*c+d)*2 
 ;    [19:11] r=((a+b)*c+d)*2 
 ;    [19:13] ((a+b)*c+d)*2 
+;    [19:14] edi=((a+b)*c+d)
 ;    [19:14] ((a+b)*c+d)
-;    [19:14] ((a+b)*c+d)
+;    [19:15] edi=(a+b)
 ;    [19:15] (a+b)
-;    [19:15] (a+b)
-;    [19:15] a
+;    [19:15] edi=a
      mov edi,dword[ebp+0]
-;    [19:17] b
+;    [19:17] edi+b
      add edi,dword[ebp+4]
-;    [19:20] c
+;    [19:20] edi*c
      imul edi,dword[ebp+8]
-;    [19:22] d
+;    [19:22] edi+d
      add edi,dword[ebp+12]
-;    [19:25] 2 
+;    [19:25] edi*2 
      imul edi,2
      mov dword[ebp+20],edi
 ;    [20:7] n=n-1 
 ;    [20:9] n-1 
-;    [20:9] n
+;    [20:9] edi=n
      mov edi,dword[ebp+16]
-;    [20:11] 1 
+;    [20:11] edi-1 
      sub edi,1
      mov dword[ebp+16],edi
 ;    [21:7] continue 
