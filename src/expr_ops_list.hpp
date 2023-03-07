@@ -108,19 +108,19 @@ public:
 			os<<")";
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest)const override{
+	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&dest)const override{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 
 		if(expressions_.empty()) // ? can this happen?
 			return;
 
 		const statement&st=*expressions_[0].get();
-		string dest_resolved=tc.resolve_ident_to_nasm(*this,dest);
+		const string dest_resolved=tc.resolve_ident_to_nasm(*this,dest);
 		asm_op(tc,os,indent_level,st,'=',dest,dest_resolved,true);
 
-		auto len=ops_.size();
+		const size_t len=ops_.size();
 		for(size_t i{0};i<len;i++){
-			auto op=ops_[i];
+			const char op=ops_[i];
 			const statement&stm=*expressions_[i+1].get();
 			asm_op(tc,os,indent_level,stm,op,dest,dest_resolved,false);
 		}
@@ -146,7 +146,7 @@ public:
 
 	inline bool is_empty()const override{return expressions_.empty();}
 
-	inline static void asm_cmd(const string&op,const statement&s,toc&tc,ostream&os,size_t indent_level,const string&ra,const string&rb){
+	inline static void asm_cmd(const string&op,const statement&s,toc&tc,ostream&os,const size_t indent_level,const string&ra,const string&rb){
 		if(ra==rb){
 			return;
 		}
@@ -171,11 +171,11 @@ private:
 		throw string(to_string(__LINE__)+" err");
 	}
 
-	inline void asm_op(toc&tc,ostream&os,size_t indent_level,const statement&st,const char op,const string&dest,const string&dest_resolved,bool first_in_list)const{
+	inline void asm_op(toc&tc,ostream&os,const size_t indent_level,const statement&st,const char op,const string&dest,const string&dest_resolved,const bool first_in_list)const{
 		indent(os,indent_level,true);tc.source_comment(os,dest,op,st);
 		if(op=='+'){// order1op
 			if(st.is_expression()){
-				auto r=tc.alloc_scratch_register(st.tok());
+				const string r=tc.alloc_scratch_register(st.tok());
 				st.compile(tc,os,indent_level,r);
 				asm_cmd("add",st,tc,os,indent_level+1,dest_resolved,r);
 				tc.free_scratch_reg(r);
@@ -186,7 +186,7 @@ private:
 		}
 		if(op=='-'){// order1op
 			if(st.is_expression()){
-				auto r=tc.alloc_scratch_register(st);
+				const string r=tc.alloc_scratch_register(st);
 				st.compile(tc,os,indent_level,r);
 				asm_cmd("sub",st,tc,os,indent_level,dest_resolved,r);
 				tc.free_scratch_reg(r);
@@ -197,7 +197,7 @@ private:
 		}
 		if(op=='*'){// order2op
 			if(st.is_expression()){
-				auto r=tc.alloc_scratch_register(st);
+				const string r=tc.alloc_scratch_register(st);
 				st.compile(tc,os,indent_level,r);
 				asm_cmd("imul",st,tc,os,indent_level,dest_resolved,r);
 				tc.free_scratch_reg(r);
