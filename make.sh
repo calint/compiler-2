@@ -9,8 +9,7 @@ set -e
 BIN=baz
 CC="clang++ -std=c++2a"
 CF="-Os -fno-inline -Werror -Wfatal-errors"
-CW="-Weverything -pedantic -pedantic-errors -Wall -Wextra -Wconversion -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wmissing-declarations -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wsign-conversion -Wsign-promo -Wswitch-default -Wundef -Wfloat-equal -Wsign-conversion -Wfloat-conversion -Wold-style-cast"
-CW="$CW -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-call -Wno-padded -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field"
+CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-call -Wno-padded -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field"
 
 $CC $CF $CW -o $BIN src/main.cpp
 
