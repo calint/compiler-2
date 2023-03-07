@@ -19,7 +19,7 @@ public:
 				params_.emplace_back(*this,t);
 				if(t.is_next_char(')'))break;
 				if(!t.is_next_char(','))
-					throw compiler_error(params_.back(),"expected ',' after parameter at ",params_.back().tok().name_copy());
+					throw compiler_error(params_.back(),"expected ',' after parameter '"+params_.back().tok().name()+"'");
 			}
 		}
 		if(t.is_next_char(':')){// returns
