@@ -35,6 +35,11 @@ public:
 	inline virtual bool is_empty()const{return token_.is_blank();}
 
 	inline static void indent(ostream&os,const size_t indent_level,const bool comment=false){
+		if(indent_level==0){
+			if(comment)
+				os<<";";
+			return;
+		}
 		os<<(comment?";":" ");
 		for(size_t i=0;i<indent_level;i++)
 			os<<"  ";

@@ -240,13 +240,13 @@ public:
 		free_registers_.push_back(reg);
 	}
 
-	inline const string&find_parent_loop_name()const{
+	inline const string&find_parent_loop_name(const statement&st)const{
 		size_t i=frames_.size()-1;
 		while(true){
 			if(frames_[i].is_loop())
 				return frames_[i].name();
 			if(frames_[i].is_func())
-				throw"cannot find loop start";
+				throw compiler_error(st,"not in a loop");
 			i--;
 		}
 	}

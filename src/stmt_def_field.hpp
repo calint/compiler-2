@@ -7,10 +7,10 @@ public:
 		ident_{t.next_token()}
 	{
 		if(ident_.is_name(""))
-			throw compiler_error(ident_,"expected field name");
+			throw compiler_error(t,"expected field name");
 
 		if(!t.is_next_char('{'))
-			throw compiler_error(ident_,"expected '{' initial value   then '}'");
+			throw compiler_error(t,"expected '{' initial value then '}'");
 
 		while(true){
 			if(t.is_next_char('}'))
@@ -35,7 +35,7 @@ public:
 			s.compile_to(os);
 		os<<"'\n";
 
-		for(size_t i=0;i<indent_level;i++)cout<<"  ";
+		indent(os,indent_level);
 		os<<ident_.name()<<".len equ $-"<<ident_.name()<<"\n";
 
 		tc.add_field(*this,ident_.name(),this);
