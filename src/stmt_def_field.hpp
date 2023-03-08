@@ -34,7 +34,7 @@ public:
 			tc.add_field(*this,ident_.name(),this,true);
 			return;
 		}
-		os<<" dd ";
+		os<<" dq ";
 		token_->compile_to(os);
 		os<<endl;
 		tc.add_field(*this,ident_.name(),this,false);

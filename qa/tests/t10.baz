@@ -1,6 +1,6 @@
 func exit(v){
-    mov(ebx,v)
-    mov(eax,1)
+    mov(rbx,v)
+    mov(rax,1)
     int(0x80)
 }
 

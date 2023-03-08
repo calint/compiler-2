@@ -13,7 +13,6 @@ CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-c
 $CC $CF $CW -o baz src/main.cpp
 
 ./baz prog.baz > gen.s
-#nasm -f elf32 gen.s && ld -melf_i386 -s -o gen gen.o
 nasm -f elf64 gen.s && ld -s -o gen gen.o
 
 ls --color -la baz gen.s gen

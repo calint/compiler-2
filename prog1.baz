@@ -2,7 +2,7 @@ field  prompt="  hello    enter name: "
 field    name="............................................................"
 field prompt2="  not a name: "
 
-func print(len:const:reg_edx,ptr:const:reg_ecx){
+func print(len:reg_edx,ptr:reg_ecx){
     mov(ecx,ptr)
     mov(edx,len)
     mov(ebx,1)
@@ -10,7 +10,7 @@ func print(len:const:reg_edx,ptr:const:reg_ecx){
     int(0x80)
 }
 
-func read(len:const:reg_edx,ptr:const:reg_esi):int{
+func read(len:reg_edx,ptr:reg_esi):int{
     mov(esi,ptr)
     mov(edx,len)
     xor(eax)
@@ -34,9 +34,10 @@ func main{
         else if len<=4
             print(prompt2.len,prompt2)
         else{
+            print(len+1,name)
             if read(name.len,name)=1 # is only \n
                 break
-            print(len,name)
         }
     }
+    exit(0)
 }

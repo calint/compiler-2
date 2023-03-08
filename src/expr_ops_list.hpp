@@ -152,7 +152,7 @@ public:
 			return;
 		}
 
-		if(!ra.find("dword[") and !rb.find("dword[")){
+		if(!ra.find("qword[") and !rb.find("qword[")){
 			const string&r=tc.alloc_scratch_register(s.tok());
 			indent(os,indent_level);os<<"mov "<<r<<","<<rb<<endl;
 			indent(os,indent_level);os<<op<<" "<<ra<<","<<r<<endl;

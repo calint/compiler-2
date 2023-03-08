@@ -1,31 +1,37 @@
 field  prompt="  hello    enter name: "
 field    name="............................................................"
 field prompt2="  not a name: "
+field     len=0
 
-func print(len:reg_edx,ptr:reg_ecx){
-    mov(ecx,ptr)
-    mov(edx,len)
-    mov(ebx,1)
-    mov(eax,4)
+func print(len:reg_rdx,ptr:reg_rcx){
+    mov(rcx,ptr)
+    mov(rdx,len)
+    mov(rbx,1)
+    mov(rax,4)
     int(0x80)
 }
 
-func read(len:reg_edx,ptr:reg_esi):int{
-    mov(esi,ptr)
-    mov(edx,len)
-    xor(eax)
-    xor(edi)
+func read(len:reg_rdx,ptr:reg_rsi):int{
+    mov(rsi,ptr)
+    mov(rdx,len)
+    xor(rax)
+    xor(rdi)
     syscall
-    mov(int,eax)
+    mov(int,rax)
 }
 
 func exit(v){
-    mov(ebx,v)
-    mov(eax,1)
+    mov(rbx,v)
+    mov(rax,1)
     int(0x80)
 }
 
 func main{
+    var a=1
+    var b=2
+    var c=3
+    var d=4
+    var r=a+b+c+d
     print(prompt.len,prompt)
     loop{
         var len=read(name.len,name)-1 # remove the \n

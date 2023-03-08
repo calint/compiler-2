@@ -154,7 +154,7 @@ private:
 			rb=tc.resolve_ident_to_nasm(sb);
 		}
 
-		if(!ra.find("dword[") and !rb.find("dword[")){
+		if(!ra.find("qword[") and !rb.find("qword[")){
 			const string&r=tc.alloc_scratch_register(tok());
 			indent(os,indent_level);os<<"mov "<<r<<","<<rb<<endl;
 			indent(os,indent_level);os<<op<<" "<<ra<<","<<r<<endl;
