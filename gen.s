@@ -12,6 +12,9 @@ prompt2 db '  not a name: '
 prompt2.len equ $-prompt2
 ;[4:1] field len=0 
 len dq 0
+;[5:1] field hello="hello\n" 
+hello db 'hello',10,''
+hello.len equ $-hello
 
 section .bss
 stk resd 256
@@ -24,124 +27,128 @@ global _start
 _start:
 mov rbp,stk
 mov rsp,stk.end
-;  [38:5] var a=1 
-;  [38:9] a=1 
-;  [38:11] 1 
-;  [38:11] a=1 
+;  [43:5] var a=1 
+;  [43:9] a=1 
+;  [43:11] 1 
+;  [43:11] a=1 
    mov qword[rbp+0],1
-;  [39:5] var b=2 
-;  [39:9] b=2 
-;  [39:11] 2 
-;  [39:11] b=2 
+;  [44:5] var b=2 
+;  [44:9] b=2 
+;  [44:11] 2 
+;  [44:11] b=2 
    mov qword[rbp+8],2
-;  [40:5] var c=3 
-;  [40:9] c=3 
-;  [40:11] 3 
-;  [40:11] c=3 
+;  [45:5] var c=3 
+;  [45:9] c=3 
+;  [45:11] 3 
+;  [45:11] c=3 
    mov qword[rbp+16],3
-;  [41:5] var d=4 
-;  [41:9] d=4 
-;  [41:11] 4 
-;  [41:11] d=4 
+;  [46:5] var d=4 
+;  [46:9] d=4 
+;  [46:11] 4 
+;  [46:11] d=4 
    mov qword[rbp+24],4
-;  [42:5] var r=a+b+c+d 
-;  [42:9] r=a+b+c+d 
-;  [42:11] a+b+c+d 
-;  [42:11] r15=a
+;  [47:5] var r=a+b+c+d 
+;  [47:9] r=a+b+c+d 
+;  [47:11] a+b+c+d 
+;  [47:11] r15=a
    mov r15,qword[rbp+0]
-;  [42:13] r15+b
+;  [47:13] r15+b
    add r15,qword[rbp+8]
-;  [42:15] r15+c
+;  [47:15] r15+c
    add r15,qword[rbp+16]
-;  [42:17] r15+d 
+;  [47:17] r15+d 
    add r15,qword[rbp+24]
    mov qword[rbp+32],r15
-;  [43:5] var x=2 
-;  [43:9] x=2 
-;  [43:11] 2 
-;  [43:11] x=2 
+;  [48:5] var x=2 
+;  [48:9] x=2 
+;  [48:11] 2 
+;  [48:11] x=2 
    mov qword[rbp+40],2
-;  [44:5] foo(x)
-;    [30:5] loop
-     loop_30_5_44_5:
-       if_31_12_44_5:
-;      [31:12] ? i=0 
-;      [31:12] ? i=0 
-       cmp_31_12_44_5:
+;  [49:5] foo(x)
+;    [35:5] loop
+     loop_35_5_49_5:
+       if_36_12_49_5:
+;      [36:12] ? i=0 
+;      [36:12] ? i=0 
+       cmp_36_12_49_5:
        cmp qword[rbp+40],0
-       jne if_31_9_44_5_end
-       jmp if_31_12_44_5_code
-       if_31_12_44_5_code:
-;        [31:16] return 
-         jmp foo_44_5_end
-       if_31_9_44_5_end:
-;      [32:9] print(prompt.len,prompt)
-;        [7:5] mov(rcx,ptr)
-         mov rcx,prompt
-;        [8:5] mov(rdx,len)
-         mov rdx,prompt.len
-;        [9:5] mov(rbx,1)
-         mov rbx,1
-;        [10:5] mov(rax,4)
-         mov rax,4
-;        [11:5] int(0x80)
-         int 0x80
-       print_32_9_44_5_end:
-;      [33:9] i=i-1 
-;      [33:11] i-1 
-;      [33:11] i=i
-;      [33:13] i-1 
+       jne if_36_9_49_5_end
+       jmp if_36_12_49_5_code
+       if_36_12_49_5_code:
+;        [36:16] return 
+         jmp foo_49_5_end
+       if_36_9_49_5_end:
+;      [37:9] bar()
+;        [31:5] print(hello.len,hello)
+;          [8:5] mov(rcx,ptr)
+           mov rcx,hello
+;          [9:5] mov(rdx,len)
+           mov rdx,hello.len
+;          [10:5] mov(rbx,1)
+           mov rbx,1
+;          [11:5] mov(rax,4)
+           mov rax,4
+;          [12:5] int(0x80)
+           int 0x80
+         print_31_5_37_9_49_5_end:
+       bar_37_9_49_5_end:
+;      [38:9] i=i-1 
+;      [38:11] i-1 
+;      [38:11] i=i
+;      [38:13] i-1 
        sub qword[rbp+40],1
-     jmp loop_30_5_44_5
-     loop_30_5_44_5_end:
-   foo_44_5_end:
-;  [45:5] x=1 
-;  [45:7] 1 
-;  [45:7] x=1 
+     jmp loop_35_5_49_5
+     loop_35_5_49_5_end:
+   foo_49_5_end:
+;  [50:5] x=1 
+;  [50:7] 1 
+;  [50:7] x=1 
    mov qword[rbp+40],1
-;  [46:5] foo(x)
-;    [30:5] loop
-     loop_30_5_46_5:
-       if_31_12_46_5:
-;      [31:12] ? i=0 
-;      [31:12] ? i=0 
-       cmp_31_12_46_5:
+;  [51:5] foo(x)
+;    [35:5] loop
+     loop_35_5_51_5:
+       if_36_12_51_5:
+;      [36:12] ? i=0 
+;      [36:12] ? i=0 
+       cmp_36_12_51_5:
        cmp qword[rbp+40],0
-       jne if_31_9_46_5_end
-       jmp if_31_12_46_5_code
-       if_31_12_46_5_code:
-;        [31:16] return 
-         jmp foo_46_5_end
-       if_31_9_46_5_end:
-;      [32:9] print(prompt.len,prompt)
-;        [7:5] mov(rcx,ptr)
-         mov rcx,prompt
-;        [8:5] mov(rdx,len)
-         mov rdx,prompt.len
-;        [9:5] mov(rbx,1)
-         mov rbx,1
-;        [10:5] mov(rax,4)
-         mov rax,4
-;        [11:5] int(0x80)
-         int 0x80
-       print_32_9_46_5_end:
-;      [33:9] i=i-1 
-;      [33:11] i-1 
-;      [33:11] i=i
-;      [33:13] i-1 
+       jne if_36_9_51_5_end
+       jmp if_36_12_51_5_code
+       if_36_12_51_5_code:
+;        [36:16] return 
+         jmp foo_51_5_end
+       if_36_9_51_5_end:
+;      [37:9] bar()
+;        [31:5] print(hello.len,hello)
+;          [8:5] mov(rcx,ptr)
+           mov rcx,hello
+;          [9:5] mov(rdx,len)
+           mov rdx,hello.len
+;          [10:5] mov(rbx,1)
+           mov rbx,1
+;          [11:5] mov(rax,4)
+           mov rax,4
+;          [12:5] int(0x80)
+           int 0x80
+         print_31_5_37_9_51_5_end:
+       bar_37_9_51_5_end:
+;      [38:9] i=i-1 
+;      [38:11] i-1 
+;      [38:11] i=i
+;      [38:13] i-1 
        sub qword[rbp+40],1
-     jmp loop_30_5_46_5
-     loop_30_5_46_5_end:
-   foo_46_5_end:
-;  [47:5] exit(0)
-;    [24:5] mov(rbx,v)
+     jmp loop_35_5_51_5
+     loop_35_5_51_5_end:
+   foo_51_5_end:
+;  [52:5] exit(0)
+;    [25:5] mov(rbx,v)
      mov rbx,0
-;    [25:5] mov(rax,1)
+;    [26:5] mov(rax,1)
      mov rax,1
-;    [26:5] int(0x80)
+;    [27:5] int(0x80)
      int 0x80
-   exit_47_5_end:
+   exit_52_5_end:
 
 ;           max regs in use: 1
-;         max frames in use: 4
+;         max frames in use: 5
 ;          max stack in use: 6

@@ -2,6 +2,7 @@ field  prompt="  hello    enter name: "
 field    name="............................................................"
 field prompt2="  not a name: "
 field     len=0
+field   hello="hello\n"
 
 func print(len:reg_rdx,ptr:reg_rcx){
     mov(rcx,ptr)
@@ -26,10 +27,14 @@ func exit(v){
     int(0x80)
 }
 
+func bar{
+    print(hello.len,hello)
+}
+
 func foo(i){
     loop{
         if i=0 return
-        print(prompt.len,prompt)
+        bar()
         i=i-1
     }
 }
