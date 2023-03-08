@@ -36,6 +36,7 @@ public:
 			os<<name_;
 			return;
 		}
+		// ? temporary fix
 		os<<regex_replace(name_,regex("\\\\n"),"',10,'");
 	}
 
@@ -48,13 +49,9 @@ public:
 	inline size_t char_index_end()const{return end_char_;}
 
 	inline bool is_blank()const{
-		const char a=ws_left_[0];
-		const char b=name_[0];
-		const char c=ws_right_[0];
-		if(a==0 and b==0 and c==0)
+		if(ws_left_=="" and name_=="" and ws_right_=="")
 			return true;
 		return false;
-//		return!(ws_before[0]==name_[0]==ws_after[0]==0);
 	}
 
 	inline size_t total_length_in_chars()const{
