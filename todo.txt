@@ -46,7 +46,8 @@
 [x] stmt_assign_var.compile see comments -> try both and select the one that generates fewest instructions
 [ ] var str="hello world"
 [ ] var len=str.len
-[ ] type point{x,y} var p=point{1,2} p.x=1
+[ ] type size{value} var s=size{1} s=2
+[ ] type point{x,y} var p=point{1,2} p.x=1 p=2
 [ ] var points=point[10] where points contains length of array and a pointer
 [ ] compile for pczero task
 
