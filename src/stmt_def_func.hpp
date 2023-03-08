@@ -63,13 +63,7 @@ public:
 		if(is_inline())
 			return;
 
-		throw"this code should not be reached";
-//		os<<ident_.name()<<":\n";
-//		for (size_t i=params_.size();i-->0;)
-//			os<<"  pop "<<params_[i].tok().name()<<endl;
-//
-//		code_->compile(tc,os,indent_level+1);
-//		os<<"  ret\n";
+		throw compiler_error(*this,"this code should not be reached");
 	}
 
 	inline bool is_inline()const{return true;}

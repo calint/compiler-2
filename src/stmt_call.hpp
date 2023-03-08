@@ -93,14 +93,21 @@ public:
 			aliases_to_add.push_back(make_tuple(param.identifier(),id));
 		}
 
-		tc.push_func(nm);
+		const string&call_loc=tc.get_func_call_location_or_break(tok());
+		const string&src_loc=tc.source_location(tok());
+		const string&new_call_loc=call_loc.empty()?src_loc:(call_loc+"_"+src_loc);
+		const string&ret_jmp_label=nm+"_"+new_call_loc+"_end";
+
+//		indent(os,indent_level,true);os<<"path "<<loc<<endl;
+
+		tc.push_func(nm,new_call_loc,ret_jmp_label);
 
 		for(const auto&e:aliases_to_add)
 			tc.add_alias(get<0>(e),get<1>(e));
 
 		f.code().compile(tc,os,indent_level);
 
-		indent(os,indent_level);os<<nm<<"_"<<tc.source_location(tok())<<"_end:"<<endl;
+		indent(os,indent_level);os<<ret_jmp_label<<":\n";
 
 		for(const auto&r:allocated_registers)
 			tc.free_scratch_reg(r);

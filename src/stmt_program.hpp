@@ -69,7 +69,7 @@ public:
 				s->compile(tc,os,indent_level);
 
 		const stmt_def_func&main=tc.get_func_or_break(*this,"main");
-		tc.push_func("main");
+		tc.push_func("main","","");
 		main.code().compile(tc,os,indent_level);
 		tc.pop_func("main");
 	}

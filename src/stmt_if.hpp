@@ -51,9 +51,10 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 //		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
+		const string call_loc=tc.get_func_call_location_or_break(tok());
 		const string source_loc=tc.source_location(tok());
-		string label_after_if="if_"+source_loc+"_end";
-		string label_else_branch=else_code_?"if_else_"+source_loc:label_after_if;
+		string label_after_if="if_"+source_loc+"_"+call_loc+"_end";
+		string label_else_branch=else_code_?"if_else_"+source_loc+"_"+call_loc:label_after_if;
 
 		const size_t n=branches_.size();
 		for(size_t i=0;i<n;i++){

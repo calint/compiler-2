@@ -38,8 +38,10 @@ private:
 
 class frame final{
 public:
-	inline frame(const string&name,char bits):
+	inline frame(const string&name,char bits,const string&call_loc,const string&ret):
 		name_{name},
+		call_loc_{call_loc},
+		ret_{ret},
 		bits_{bits}
 	{}
 
@@ -75,12 +77,18 @@ public:
 
 	inline const string&name()const{return name_;}
 
+	inline const string&ret_label()const{return ret_;}
+
+	inline const string&call_loc()const{return call_loc_;}
+
 private:
 	string name_;
+	string call_loc_;
 	size_t allocated_stack_{0};
-	char bits_{0}; // 1 is func
 	lut<allocated_var>vars_;
 	lut<string>aliases_;
+	string ret_;
+	char bits_{0}; // 1 is func
 };
 
 struct field_meta{
@@ -175,11 +183,14 @@ public:
 		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'");
 	}
 
-	inline void push_func(const string&name){frames_.push_back(frame{name,1});check_usage();}
+	inline void push_func(const string&name,const string&call_loc,const string&ret_jmp){
+		frames_.push_back(frame{name,1,call_loc,ret_jmp});
+		check_usage();
+	}
 
-	inline void push_block(const string&name){frames_.push_back(frame{name,2});check_usage();}
+	inline void push_block(const string&name){frames_.push_back(frame{name,2,"",""});check_usage();}
 
-	inline void push_loop(const string&name){frames_.push_back(frame{name,4});check_usage();}
+	inline void push_loop(const string&name){frames_.push_back(frame{name,4,"",""});check_usage();}
 
 	inline void add_alias(const string&ident,const string&parent_frame_ident){
 		frames_.back().add_alias(ident,parent_frame_ident);
@@ -200,7 +211,7 @@ public:
 	}
 
 	inline void push_if(const char*name){
-		frames_.push_back(frame{name,8});
+		frames_.push_back(frame{name,8,"",""});
 		check_usage();
 	}
 
@@ -255,6 +266,30 @@ public:
 				throw compiler_error(st,"not in a loop");
 			i--;
 		}
+	}
+
+	inline const string&get_func_call_location_or_break(const token&tk)const{
+		size_t i=frames_.size()-1;
+		while(true){
+			if(frames_[i].is_func())
+				return frames_[i].call_loc();
+			if(i==0) // ? can happen?
+				break;
+			i--;
+		}
+		throw compiler_error(tk,"not in a function");
+	}
+
+	inline const string&get_func_return_label_or_break(const statement&st)const{
+		size_t i=frames_.size()-1;
+		while(true){
+			if(frames_[i].is_func())
+				return frames_[i].ret_label();
+			if(i==0) // ? can happen?
+				break; 
+			i--;
+		}
+		throw compiler_error(st,"not in a function");
 	}
 
 	inline void source_comment(ostream&os,const statement&stmt)const{

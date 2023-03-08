@@ -27,11 +27,8 @@ func exit(v){
 }
 
 func foo(i){
-    loop{
-        if i=0 return
-        print(prompt.len,prompt)
-        i=i-1
-    }
+    if i=0 return
+    print(prompt.len,prompt)
 }
 
 func main{
@@ -40,9 +37,22 @@ func main{
     var c=3
     var d=4
     var r=a+b+c+d
-    var x=2
+    var x=1
     foo(x)
-    x=1
+    x=0
     foo(x)
+#    print(prompt.len,prompt)
+    loop{
+        var len=read(name.len,name)-1 # remove the \n
+        if len=0
+            print(prompt.len,prompt)
+        else if len<=4
+            print(prompt2.len,prompt2)
+        else{
+            print(len+1,name)
+            if read(name.len,name)=1 # is only \n
+                break
+        }
+    }
     exit(0)
 }

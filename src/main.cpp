@@ -14,6 +14,7 @@ using namespace std;
 #include"stmt_break.hpp"
 #include"stmt_continue.hpp"
 #include"stmt_if.hpp"
+#include"stmt_return.hpp"
 
 static string file_read_to_string(const char *filename){
 	ifstream t(filename);
@@ -195,13 +196,13 @@ int main(int argc,char**args){
 		fo.close();
 		if(file_read_to_string(src_file_name)!=file_read_to_string("diff.baz"))
 			throw string("generated source differs");
-		stringstream ss1;
-		p.build(ss1);
-		string pass1=optimize_jumps_1(ss1);
-		stringstream ss2{pass1};
-		string pass2=optimize_jumps_2(ss2);
-		cout<<pass2<<endl;
-//		p.build(cout);
+//		stringstream ss1;
+//		p.build(ss1);
+//		string pass1=optimize_jumps_1(ss1);
+//		stringstream ss2{pass1};
+//		string pass2=optimize_jumps_2(ss2);
+//		cout<<pass2<<endl;
+		p.build(cout);
 	}catch(compiler_error&e){
 		size_t start_char_in_line{0};
 		auto lineno=toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line);
@@ -217,6 +218,7 @@ int main(int argc,char**args){
 	return 0;
 }
 
+// circular dependencies
 inline unique_ptr<statement>create_call_statement_from_tokenizer(const statement&parent,const token&tk,tokenizer&t){
 	const string&func=tk.name();
 	if("mov"==func)        return make_unique<call_asm_mov>(parent,move(tk),t);
@@ -225,11 +227,11 @@ inline unique_ptr<statement>create_call_statement_from_tokenizer(const statement
 	if("syscall"==func)return make_unique<call_asm_syscall>(parent,move(tk),t);
 	if("loop"==func)          return make_unique<stmt_loop>(parent,move(tk),t);
 	if("break"==func)        return make_unique<stmt_break>(parent,move(tk),t);
+	if("return"==func)      return make_unique<stmt_return>(parent,move(tk),t);
 	if("continue"==func)  return make_unique<stmt_continue>(parent,move(tk),t);
 	if("if"==func)              return make_unique<stmt_if>(parent,move(tk),t);
 	return                           make_unique<stmt_call>(parent,move(tk),t);
 }
-
 
 inline unique_ptr<statement>create_statement_from_tokenizer(const statement&parent,tokenizer&t){
 	auto tk=t.next_token();
