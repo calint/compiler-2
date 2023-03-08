@@ -93,14 +93,14 @@ public:
 			aliases_to_add.push_back(make_tuple(param.identifier(),id));
 		}
 
-		const string&call_loc=tc.get_func_call_location_or_break(tok());
+		const string&call_path=tc.get_call_path(tok());
 		const string&src_loc=tc.source_location(tok());
-		const string&new_call_loc=call_loc.empty()?src_loc:(call_loc+"_"+src_loc);
-		const string&ret_jmp_label=nm+"_"+new_call_loc+"_end";
+		const string&new_call_path=call_path.empty()?src_loc:(src_loc+"_"+call_path);
+		const string&ret_jmp_label=nm+"_"+new_call_path+"_end";
 
 //		indent(os,indent_level,true);os<<"path "<<loc<<endl;
 
-		tc.push_func(nm,new_call_loc,ret_jmp_label);
+		tc.push_func(nm,new_call_path,ret_jmp_label);
 
 		for(const auto&e:aliases_to_add)
 			tc.add_alias(get<0>(e),get<1>(e));

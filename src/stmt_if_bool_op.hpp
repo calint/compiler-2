@@ -99,8 +99,7 @@ public:
 	}
 
 	inline string cmp_bgn_label(const toc&tc)const{
-		const string call_loc=tc.get_func_call_location_or_break(tok());
-		return "cmp_"+tc.source_location(tok())+"_"+call_loc;
+		return "cmp_"+tc.source_location(tok())+"_"+tc.get_call_path(tok());
 	}
 
 private:

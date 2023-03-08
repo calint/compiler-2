@@ -86,7 +86,7 @@ mov rsp,stk.end
          mov rax,4
 ;        [11:5] int(0x80)
          int 0x80
-       print_44_5_32_9_end:
+       print_32_9_44_5_end:
 ;      [33:9] i=i-1 
 ;      [33:11] i-1 
 ;      [33:11] i=i
@@ -124,7 +124,7 @@ mov rsp,stk.end
          mov rax,4
 ;        [11:5] int(0x80)
          int 0x80
-       print_46_5_32_9_end:
+       print_32_9_46_5_end:
 ;      [33:9] i=i-1 
 ;      [33:11] i-1 
 ;      [33:11] i=i

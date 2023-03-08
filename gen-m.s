@@ -40,7 +40,7 @@ mov rsp,stk.end
          mov rbx,1
          mov rax,4
          int 0x80
-       print_44_5_32_9_end:
+       print_32_9_44_5_end:
        sub qword[rbp+40],1
      jmp loop_30_5_44_5
      loop_30_5_44_5_end:
@@ -60,7 +60,7 @@ mov rsp,stk.end
          mov rbx,1
          mov rax,4
          int 0x80
-       print_46_5_32_9_end:
+       print_32_9_46_5_end:
        sub qword[rbp+40],1
      jmp loop_30_5_46_5
      loop_30_5_46_5_end:

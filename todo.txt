@@ -11,6 +11,7 @@
         jmp cmp_13_26
         cmp_13_26:
 [ ]   review fragile implementation
+[ ] fix 'cmp' two constants case
 [ ] short-hand boolean expression i.e. if a or b
 [x] review the ugly 'if' code
 [x] variant instead of stmt_if_bool_op_list extends stmt_if_bool_op

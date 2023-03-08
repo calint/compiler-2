@@ -38,9 +38,9 @@ private:
 
 class frame final{
 public:
-	inline frame(const string&name,char bits,const string&call_loc,const string&ret):
+	inline frame(const string&name,char bits,const string&call_path,const string&ret):
 		name_{name},
-		call_loc_{call_loc},
+		call_path_{call_path},
 		ret_{ret},
 		bits_{bits}
 	{}
@@ -79,11 +79,11 @@ public:
 
 	inline const string&ret_label()const{return ret_;}
 
-	inline const string&call_loc()const{return call_loc_;}
+	inline const string&call_path()const{return call_path_;}
 
 private:
 	string name_;
-	string call_loc_;
+	string call_path_;
 	size_t allocated_stack_{0};
 	lut<allocated_var>vars_;
 	lut<string>aliases_;
@@ -268,11 +268,11 @@ public:
 		}
 	}
 
-	inline const string&get_func_call_location_or_break(const token&tk)const{
+	inline const string&get_call_path(const token&tk)const{
 		size_t i=frames_.size()-1;
 		while(true){
 			if(frames_[i].is_func())
-				return frames_[i].call_loc();
+				return frames_[i].call_path();
 			if(i==0) // ? can happen?
 				break;
 			i--;
