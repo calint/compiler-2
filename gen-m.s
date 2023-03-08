@@ -8,6 +8,7 @@ stk resd 256
 stk.end:
 section .text
 bits 32
+align 4
 global _start
 _start:
 mov ebp,stk
