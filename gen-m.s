@@ -33,8 +33,7 @@ mov rsp,stk.end
        cmp_36_12_49_5:
        cmp qword[rbp+40],0
        jne if_36_9_49_5_end
-       jmp if_36_12_49_5_code
-       if_36_12_49_5_code:
+       if_36_12_49_5_code:  ; opt1
          jmp foo_49_5_end
        if_36_9_49_5_end:
            mov rcx,hello
@@ -54,8 +53,7 @@ mov rsp,stk.end
        cmp_36_12_51_5:
        cmp qword[rbp+40],0
        jne if_36_9_51_5_end
-       jmp if_36_12_51_5_code
-       if_36_12_51_5_code:
+       if_36_12_51_5_code:  ; opt1
          jmp foo_51_5_end
        if_36_9_51_5_end:
            mov rcx,hello

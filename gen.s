@@ -73,8 +73,7 @@ mov rsp,stk.end
        cmp_36_12_49_5:
        cmp qword[rbp+40],0
        jne if_36_9_49_5_end
-       jmp if_36_12_49_5_code
-       if_36_12_49_5_code:
+       if_36_12_49_5_code:  ; opt1
 ;        [36:16] return 
          jmp foo_49_5_end
        if_36_9_49_5_end:
@@ -113,8 +112,7 @@ mov rsp,stk.end
        cmp_36_12_51_5:
        cmp qword[rbp+40],0
        jne if_36_9_51_5_end
-       jmp if_36_12_51_5_code
-       if_36_12_51_5_code:
+       if_36_12_51_5_code:  ; opt1
 ;        [36:16] return 
          jmp foo_51_5_end
        if_36_9_51_5_end:
@@ -152,3 +150,4 @@ mov rsp,stk.end
 ;           max regs in use: 1
 ;         max frames in use: 5
 ;          max stack in use: 6
+
