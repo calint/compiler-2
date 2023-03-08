@@ -1,10 +1,8 @@
-func exit(v){
-    mov(ebx,v)
-    mov(eax,1)
-    int(0x80)
-}
+field  prompt="  hello    enter name: "
+field    name="............................................................"
+field prompt2="  not a name: "
 
-func print(len,ptr){
+func print(len:const:reg_edx,ptr:const:reg_ecx){
     mov(ecx,ptr)
     mov(edx,len)
     mov(ebx,1)
@@ -12,23 +10,34 @@ func print(len,ptr){
     int(0x80)
 }
 
-field hello="hello world\n"
-field one="one\n"
-field num=4
+func read(len:const:reg_edx,ptr:const:reg_esi):int{
+    mov(esi,ptr)
+    mov(edx,len)
+    xor(eax)
+    xor(edi)
+    syscall
+    mov(int,eax)
+}
+
+func exit(v){
+    mov(ebx,v)
+    mov(eax,1)
+    int(0x80)
+}
 
 func main{
-    print(hello.len,hello)
-    var a=1
-    var b=2
-    var c=3
-    var d=4
-    var n=10
+    print(prompt.len,prompt)
     loop{
-      if n=0 break
-      var r=((a+b)*c+d)*2
-      n=n-1
-      if not n=1 continue
-      print(num,one)
+        var len=read(name.len,name)-1 # remove the \n
+        if len=0
+            print(prompt.len,prompt)
+        else if len<=4
+            print(prompt2.len,prompt2)
+        else{
+            if read(name.len,name)=1 # is only \n
+                break
+            print(len,name)
+        }
     }
     exit(0)
 }

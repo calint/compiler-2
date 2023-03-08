@@ -1,48 +1,83 @@
 section .data
-hello db 'hello world',10,''
-hello.len equ $-hello
-one db 'one',10,''
-one.len equ $-one
-num dd 4
+prompt db '  hello    enter name: '
+prompt.len equ $-prompt
+name db '............................................................'
+name.len equ $-name
+prompt2 db '  not a name: '
+prompt2.len equ $-prompt2
 section .bss
 stk resd 256
 stk.end:
 section .text
-bits 32
 align 4
 global _start
 _start:
 mov ebp,stk
 mov esp,stk.end
-     mov ecx,hello
-     mov edx,hello.len
+     mov ecx,prompt
+     mov edx,prompt.len
      mov ebx,1
      mov eax,4
      int 0x80
-   print_20_5_end:
-   mov dword[ebp+0],1
-   mov dword[ebp+4],2
-   mov dword[ebp+8],3
-   mov dword[ebp+12],4
-   mov dword[ebp+16],10
-   loop_26_5:
-     if_27_10:
-     cmp_27_10:
-     cmp dword[num],0
-     jne if_27_7_end
-     if_27_10_code:  ; opt1
-       jmp loop_26_5_end
-     if_27_7_end:
-       mov ecx,one
-       mov edx,dword[num]
-       mov ebx,1
-       mov eax,4
-       int 0x80
-     print_28_7_end:
-     sub dword[num],1
-   jmp loop_26_5
-   loop_26_5_end:
+   print_29_5_end:
+   loop_30_5:
+       mov esi,name
+       mov edx,name.len
+       xor eax,eax
+       xor edi,edi
+       syscall
+       mov dword[ebp+0],eax
+     read_31_17_end:
+     sub dword[ebp+0],1
+     if_32_12:
+     cmp_32_12:
+     cmp dword[ebp+0],0
+     jne if_34_17
+     if_32_12_code:  ; opt1
+         mov ecx,prompt
+         mov edx,prompt.len
+         mov ebx,1
+         mov eax,4
+         int 0x80
+       print_33_13_end:
+       jmp if_32_9_end
+     if_34_17:
+     cmp_34_17:
+     cmp dword[ebp+0],4
+     jg if_else_32_9
+     if_34_17_code:  ; opt1
+         mov ecx,prompt2
+         mov edx,prompt2.len
+         mov ebx,1
+         mov eax,4
+         int 0x80
+       print_35_13_end:
+       jmp if_32_9_end
+     if_else_32_9:
+         if_37_16:
+         cmp_37_16:
+             mov esi,name
+             mov edx,name.len
+             xor eax,eax
+             xor edi,edi
+             syscall
+             mov edi,eax
+           read_37_16_end:
+         cmp edi,1
+         jne if_37_13_end
+         if_37_16_code:  ; opt1
+           jmp loop_30_5_end
+         if_37_13_end:
+           mov ecx,name
+           mov edx,dword[ebp+0]
+           mov ebx,1
+           mov eax,4
+           int 0x80
+         print_39_13_end:
+     if_32_9_end:
+   jmp loop_30_5
+   loop_30_5_end:
      mov ebx,0
      mov eax,1
      int 0x80
-   exit_31_5_end:
+   exit_42_5_end:
