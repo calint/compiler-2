@@ -1,0 +1,12 @@
+func exit(v){
+    mov(ebx,v)
+    mov(eax,1)
+    int(0x80)
+}
+
+field x=1
+
+func main{
+    x=2
+    exit(x)
+}

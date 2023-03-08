@@ -28,34 +28,21 @@ mov esp,stk.end
    loop_26_5:
      if_27_10:
      cmp_27_10:
-     cmp dword[ebp+16],0
+     cmp dword[num],0
      jne if_27_7_end
      if_27_10_code:  ; opt1
        jmp loop_26_5_end
      if_27_7_end:
-     mov edi,dword[ebp+0]
-     add edi,dword[ebp+4]
-     imul edi,dword[ebp+8]
-     add edi,dword[ebp+12]
-     imul edi,2
-     mov dword[ebp+20],edi
-     sub dword[ebp+16],1
-     if_30_10:
-     cmp_30_10:
-     cmp dword[ebp+16],1
-     je if_30_7_end
-     if_30_10_code:  ; opt1
-       jmp loop_26_5
-     if_30_7_end:
        mov ecx,one
        mov edx,dword[num]
        mov ebx,1
        mov eax,4
        int 0x80
-     print_31_7_end:
+     print_28_7_end:
+     sub dword[num],1
    jmp loop_26_5
    loop_26_5_end:
      mov ebx,0
      mov eax,1
      int 0x80
-   exit_33_5_end:
+   exit_31_5_end:

@@ -61,49 +61,16 @@ mov esp,stk.end
 ;  [26:5] loop
    loop_26_5:
      if_27_10:
-;    [27:10] ? n=0 
-;    [27:10] ? n=0 
+;    [27:10] ? num=0 
+;    [27:10] ? num=0 
      cmp_27_10:
-     cmp dword[ebp+16],0
+     cmp dword[num],0
      jne if_27_7_end
      if_27_10_code:  ; opt1
-;      [27:14] break 
+;      [27:16] break 
        jmp loop_26_5_end
      if_27_7_end:
-;    [28:7] var r=((a+b)*c+d)*2 
-;    [28:11] r=((a+b)*c+d)*2 
-;    [28:13] ((a+b)*c+d)*2 
-;    [28:14] edi=((a+b)*c+d)
-;    [28:14] ((a+b)*c+d)
-;    [28:15] edi=(a+b)
-;    [28:15] (a+b)
-;    [28:15] edi=a
-     mov edi,dword[ebp+0]
-;    [28:17] edi+b
-     add edi,dword[ebp+4]
-;    [28:20] edi*c
-     imul edi,dword[ebp+8]
-;    [28:22] edi+d
-     add edi,dword[ebp+12]
-;    [28:25] edi*2 
-     imul edi,2
-     mov dword[ebp+20],edi
-;    [29:7] n=n-1 
-;    [29:9] n-1 
-;    [29:9] n=n
-;    [29:11] n-1 
-     sub dword[ebp+16],1
-     if_30_10:
-;    [30:10] ? not n=1 
-;    [30:10] ? not n=1 
-     cmp_30_10:
-     cmp dword[ebp+16],1
-     je if_30_7_end
-     if_30_10_code:  ; opt1
-;      [30:18] continue 
-       jmp loop_26_5
-     if_30_7_end:
-;    [31:7] print(num,one)
+;    [28:7] print(num,one)
 ;      [8:5] mov(ecx,ptr)
        mov ecx,one
 ;      [9:5] mov(edx,len)
@@ -114,19 +81,24 @@ mov esp,stk.end
        mov eax,4
 ;      [12:5] int(0x80)
        int 0x80
-     print_31_7_end:
+     print_28_7_end:
+;    [29:7] num=num-1 
+;    [29:11] num-1 
+;    [29:11] num=num
+;    [29:15] num-1 
+     sub dword[num],1
    jmp loop_26_5
    loop_26_5_end:
-;  [33:5] exit(0)
+;  [31:5] exit(0)
 ;    [2:5] mov(ebx,v)
      mov ebx,0
 ;    [3:5] mov(eax,1)
      mov eax,1
 ;    [4:5] int(0x80)
      int 0x80
-   exit_33_5_end:
+   exit_31_5_end:
 
 ;           max regs in use: 1
 ;         max frames in use: 3
-;          max stack in use: 6
+;          max stack in use: 5
 
