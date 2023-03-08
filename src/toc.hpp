@@ -83,6 +83,11 @@ private:
 	lut<string>aliases_;
 };
 
+struct field_meta{
+	const stmt_def_field*def{nullptr};
+	bool is_str{false};
+};
+
 class toc final{
 public:
 	inline toc(const string&source):
@@ -91,11 +96,11 @@ public:
 		source_str_{source}
 	{}
 
-	inline void add_field(const statement&s,const string&ident,const stmt_def_field*f){
+	inline void add_field(const statement&s,const string&ident,const stmt_def_field*f,const bool is_str_field){
 		if(fields_.has(ident)){
 			throw compiler_error(s.tok(),"field '"+ident+"' already defined");
 		}
-		fields_.put(ident,f);
+		fields_.put(ident,{f,is_str_field});
 	}
 
 	inline void add_func(const statement&s,const string&ident,const stmt_def_func*ref){
@@ -164,7 +169,8 @@ public:
 
 		bool ok{false};
 		string nasm_ident=_resolve_ident_to_nasm(stmt,ident,frameix,ok);
-		if(ok)return nasm_ident;
+		if(ok)
+			return nasm_ident;
 
 		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'");
 	}
@@ -289,6 +295,7 @@ public:
 	inline bool is_identifier_register(const string&id)const{
 		return find(all_registers_.begin(),all_registers_.end(),id)!=all_registers_.end();
 	}
+
 private:
 	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&ok)const{//? tidy duplicate code
 		string name=ident;
@@ -304,9 +311,9 @@ private:
 				break;
 			i--;
 		}
+
 		if(frames_[i].has_var(name)){
 			ok=true;
-//			is_const_litteral=false;
 			return frames_[i].get_var(name).nasm_ident();
 		}
 
@@ -317,10 +324,11 @@ private:
 			}
 		}
 
-		if(fields_.has(name)){
-			ok=true;
-//			is_const_litteral=false;
-			return name;
+		const field_meta&fm=fields_.get_valid(name,ok);
+		if(ok){
+			if(fm.is_str)
+				return name;
+			return"dword["+name+"]";
 		}
 
 		// ie  prompt.len //?
@@ -362,8 +370,6 @@ private:
 
 		ok=false;
 		return name;
-//		if(!framestk_.exported_frame_ix_)
-//			throw "cannot resolve "+string(name);
 	}
 
 	inline void check_usage(){
@@ -382,7 +388,7 @@ private:
 	size_t max_frame_count_{0};
 	size_t max_stack_usage_{0};
 	string source_str_;
-	lut<const stmt_def_field*>fields_;
+	lut<field_meta>fields_;
 	lut<const stmt_def_func*>funcs_;
 	lut<const stmt_def_table*>tables_;
 };

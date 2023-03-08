@@ -58,6 +58,8 @@ public:
 		return ws_left_.length()+name_.length()+ws_right_.length();
 	}
 
+	inline bool is_string()const{return is_str;}
+
 private:
 	string ws_left_;
 	size_t start_char_{0};

@@ -12,8 +12,9 @@ func print(len,ptr){
     int(0x80)
 }
 
-field hello{"hello world\n"}
-field one{"one\n"}
+field hello="hello world\n"
+field one="one\n"
+field num=4
 
 func main{
     print(hello.len,hello)
@@ -27,7 +28,7 @@ func main{
       var r=((a+b)*c+d)*2
       n=n-1
       if not n=1 continue
-      print(one.len,one)
+      print(num,one)
     }
     exit(0)
 }

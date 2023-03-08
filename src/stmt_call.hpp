@@ -51,15 +51,16 @@ public:
 
 		const string&nm=tok().name();
 		if(!is_inline())
-			throw string("not inlined");
+			throw compiler_error(*this,"function not inlined");
+
 		const stmt_def_func&f=tc.get_func_or_break(*this,nm);
-		if(f.params().size()!=args_.size()){
+		if(f.params().size()!=args_.size())
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
-		}
+
 		vector<tuple<string,string>>aliases_to_add;
 		if(not dest_ident.empty()){
 			if(f.returns().empty())
-				throw compiler_error(*this,"cannot assign from call without return");
+				throw compiler_error(*this,"cannot assign from function without return");
 			const string&from=f.returns()[0].name();
 			const string&to=dest_ident;
 			aliases_to_add.push_back(make_tuple(from,to));
@@ -87,7 +88,9 @@ public:
 				aliases_to_add.push_back(make_tuple(param.identifier(),reg));
 				continue;
 			}
-			aliases_to_add.push_back(make_tuple(param.identifier(),a->identifier()));
+
+			const string&id=a->identifier();
+			aliases_to_add.push_back(make_tuple(param.identifier(),id));
 		}
 
 		tc.push_func(nm);
