@@ -26,7 +26,7 @@ public:
 		stringstream ss2;
 		const string&reg=tc.alloc_scratch_register(tok());
 		oplist_.compile(tc,ss2,indent_level,reg);
-		const string&resolv=tc.resolve_ident_to_nasm(*this,identifier());
+		const string&resolv=tc.resolve_ident_to_nasm(*this);
 		expr_ops_list::asm_cmd("mov",*this,tc,ss2,indent_level,resolv,reg);
 		tc.free_scratch_reg(reg);
 

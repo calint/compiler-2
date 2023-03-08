@@ -179,7 +179,7 @@ private:
 				st.compile(tc,os,indent_level,dest);
 				return;
 			}
-			asm_cmd("mov",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st,st.identifier()));
+			asm_cmd("mov",st,tc,os,indent_level,dest_resolved,tc.resolve_ident_to_nasm(st));
 			return;
 		}
 		if(op=='+'){// order1op
