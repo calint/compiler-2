@@ -54,26 +54,27 @@ mov esp,stk.end
        print_35_13_end:
        jmp if_32_9_end
      if_else_32_9:
-         if_37_16:
-         cmp_37_16:
+           mov edx,dword[ebp+0]
+           add edx,1
+           mov ecx,name
+           mov ebx,1
+           mov eax,4
+           int 0x80
+         print_37_13_end:
+         if_38_16:
+         cmp_38_16:
              mov esi,name
              mov edx,name.len
              xor eax,eax
              xor edi,edi
              syscall
-             mov edi,eax
-           read_37_16_end:
-         cmp edi,1
-         jne if_37_13_end
-         if_37_16_code:  ; opt1
+             mov edx,eax
+           read_38_16_end:
+         cmp edx,1
+         jne if_38_13_end
+         if_38_16_code:  ; opt1
            jmp loop_30_5_end
-         if_37_13_end:
-           mov ecx,name
-           mov edx,dword[ebp+0]
-           mov ebx,1
-           mov eax,4
-           int 0x80
-         print_39_13_end:
+         if_38_13_end:
      if_32_9_end:
    jmp loop_30_5
    loop_30_5_end:

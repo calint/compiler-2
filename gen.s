@@ -97,13 +97,29 @@ mov esp,stk.end
        print_35_13_end:
        jmp if_32_9_end
      if_else_32_9:
-         if_37_16:
-;        [37:16] ? read(name.len,name)=1 
-;        [37:16] ? read(name.len,name)=1 
-         cmp_37_16:
-;          [37:16] read(name.len,name)
-;          [37:16] edi=read(name.len,name)
-;          [37:16] read(name.len,name)
+;        [37:13] print(len+1,name)
+;          [37:19] len+1
+;          [37:19] edx=len
+           mov edx,dword[ebp+0]
+;          [37:23] edx+1
+           add edx,1
+;          [6:5] mov(ecx,ptr)
+           mov ecx,name
+;          [7:5] mov(edx,len)
+;          [8:5] mov(ebx,1)
+           mov ebx,1
+;          [9:5] mov(eax,4)
+           mov eax,4
+;          [10:5] int(0x80)
+           int 0x80
+         print_37_13_end:
+         if_38_16:
+;        [38:16] ? read(name.len,name)=1 
+;        [38:16] ? read(name.len,name)=1 
+         cmp_38_16:
+;          [38:16] read(name.len,name)
+;          [38:16] edx=read(name.len,name)
+;          [38:16] read(name.len,name)
 ;            [14:5] mov(esi,ptr)
              mov esi,name
 ;            [15:5] mov(edx,len)
@@ -115,27 +131,15 @@ mov esp,stk.end
 ;            [18:5] syscall 
              syscall
 ;            [19:5] mov(int,eax)
-             mov edi,eax
-           read_37_16_end:
-         cmp edi,1
-         jne if_37_13_end
-         if_37_16_code:  ; opt1
-;          [37:38] # is only \n 
-;          [38:17] break 
+             mov edx,eax
+           read_38_16_end:
+         cmp edx,1
+         jne if_38_13_end
+         if_38_16_code:  ; opt1
+;          [38:38] # is only \n 
+;          [39:17] break 
            jmp loop_30_5_end
-         if_37_13_end:
-;        [39:13] print(len,name)
-;          [6:5] mov(ecx,ptr)
-           mov ecx,name
-;          [7:5] mov(edx,len)
-           mov edx,dword[ebp+0]
-;          [8:5] mov(ebx,1)
-           mov ebx,1
-;          [9:5] mov(eax,4)
-           mov eax,4
-;          [10:5] int(0x80)
-           int 0x80
-         print_39_13_end:
+         if_38_13_end:
      if_32_9_end:
    jmp loop_30_5
    loop_30_5_end:
