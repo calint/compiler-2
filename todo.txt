@@ -19,7 +19,7 @@
 [ ] why is the binary so big although in-line is turned off in make.sh?
 [ ] tokenizer to keep track of line-number instead of counting it at every call
 [ ] implement division op
-[ ] assembler 64 bit code
+[x] assembler 64 bit code
 [ ] make sub lists taking in account precedence of 'and' over 'or'
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [ ] return statement
@@ -50,5 +50,3 @@
 [ ] type point{x,y} var p=point{1,2} p.x=1 p=2
 [ ] var points=point[10] where points contains length of array and a pointer
 [ ] compile for pczero task
-
-
