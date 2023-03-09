@@ -55,5 +55,5 @@
 [ ] type size{value} var s=size{1} s=2
 [ ] type point{x,y} var p=point{1,2} p.x=1 p=2
 [ ] var points=point[10] where points contains length of array and a pointer
-[ ] clang-format everything for less dess conde?
+[ ] clang-format everything for less dess code?
 [ ] compile for pczero task
