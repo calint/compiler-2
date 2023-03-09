@@ -1,3 +1,6 @@
+[ ] keyword 'inline'. func inline foo()...
+[ ] non-inlined function calls
+[ ] multiple return values assignment: var a,b=foo()  a,b=foo()
 [ ] token.compile assumes is_str is field
 [x] fix generated code of "if (a=1 and b=2) or (c=3 and d=4)"
         jne cmp_14_26
@@ -16,7 +19,6 @@
 [x] review the ugly 'if' code
 [x] variant instead of stmt_if_bool_op_list extends stmt_if_bool_op
 [ ] negated subexpression. i.e. 'not (a=1 and b=2)'
-[ ] non-inlined function calls
 [ ] why is the binary so big although in-line is turned off in make.sh?
 [ ] tokenizer to keep track of line-number instead of counting it at every call
 [ ] implement division op
@@ -44,10 +46,13 @@
      ;  [12:17] r+d 
         mov edi,dword[ebp+12]
         add dword[ebp+16],edi
-[x] stmt_assign_var.compile see comments -> try both and select the one that generates fewest instructions
+[x] stmt_assign_var.compile
+      -> try evaluation with scratch register and evaluation without scratch register
+         select the one that generates fewest instructions
 [ ] var str="hello world"
 [ ] var len=str.len
 [ ] type size{value} var s=size{1} s=2
 [ ] type point{x,y} var p=point{1,2} p.x=1 p=2
 [ ] var points=point[10] where points contains length of array and a pointer
+[ ] clang-format everything for less dess conde?
 [ ] compile for pczero task
