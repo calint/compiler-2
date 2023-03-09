@@ -58,6 +58,8 @@ static string optimize_jumps_1(stringstream&ss){
 	while(true){
 		string line1;
 		getline(ss,line1);
+		if(ss.eof())
+			break;
 		string jmp=trim(line1);
 		if(!jmp.starts_with("jmp")){
 			sso<<line1<<endl;
@@ -107,6 +109,8 @@ static string optimize_jumps_2(stringstream&ss){
 	while(true){
 		string line1;
 		getline(ss,line1);
+		if(ss.eof())
+			break;
 		string jxx=trim(line1);
 		if(!jxx.starts_with("j")){
 			sso<<line1<<endl;
