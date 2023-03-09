@@ -153,7 +153,7 @@ mov rsp,stk.end
      int 0x80
    exit_52_5_end:
 
-;           max regs in use: 1
+;      max registers in use: 1
 ;         max frames in use: 5
 ;          max stack in use: 6
 
