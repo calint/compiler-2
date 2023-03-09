@@ -94,15 +94,15 @@ public:
 			const stmt_if_bool_op&e=get<stmt_if_bool_op>(bools_[i]);
 			if(i<n-1){
 				if(ops_[i].is_name("or")){
-					e.compile_or(tc,os,indent_level,jmp_to_if_false,jmp_to_if_true);
+					e.compile_or(tc,os,indent_level,jmp_to_if_true);
 				}else if(ops_[i].is_name("and")){
-					e.compile_and(tc,os,indent_level,jmp_to_if_false,jmp_to_if_true);
+					e.compile_and(tc,os,indent_level,jmp_to_if_false);
 				}else{
 					throw "expected 'or' or 'and'";
 				}
 			}else{
-				e.compile_and(tc,os,indent_level,jmp_to_if_false,jmp_to_if_true);
-				// compile_or last_elem generates a jump in case of bool op is false
+				e.compile_and(tc,os,indent_level,jmp_to_if_false);
+				// if last element and not yet jumped to false then jump to true
 				indent(os,indent_level);os<<"jmp "<<jmp_to_if_true<<"\n";
 			}
 		}
