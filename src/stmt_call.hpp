@@ -49,10 +49,10 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 
-		const string&nm=tok().name();
 		if(!is_inline())
 			throw compiler_error(*this,"function not inlined");
 
+		const string&nm=tok().name();
 		const stmt_def_func&f=tc.get_func_or_break(*this,nm);
 		if(f.params().size()!=args_.size())
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
@@ -68,28 +68,31 @@ public:
 
 		vector<string>allocated_registers;
 		size_t i=0;
-		for(const auto&a:args_){
-			auto&param=f.param(i);
+		for(const auto&arg:args_){
+			const auto&param=f.param(i);
 			i++;
-			if(a->is_expression()){
+			if(arg->is_expression()){
 				// in reg
 				string reg;
 				for(const auto&kw:param.keywords()){
 					if(kw.name().find("reg_")==0){
-						string name=kw.name().substr(4,kw.name().size());
-						reg=tc.alloc_scratch_register(param,name);
+						// requested register for this argument
+						string reqreg=kw.name().substr(4,kw.name().size());
+						reg=tc.alloc_scratch_register(param,reqreg);
 						break;
 					}
 				}
-				if(reg=="")
+				if(reg==""){
+					// no particular register requested for the argument
 					reg=tc.alloc_scratch_register(param);
+				}
 				allocated_registers.push_back(reg);
-				a->compile(tc,os,indent_level+1,reg);
+				arg->compile(tc,os,indent_level+1,reg);
 				aliases_to_add.push_back(make_tuple(param.identifier(),reg));
 				continue;
 			}
 
-			const string&id=a->identifier();
+			const string&id=arg->identifier();
 			aliases_to_add.push_back(make_tuple(param.identifier(),id));
 		}
 

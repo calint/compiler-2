@@ -1,4 +1,13 @@
 section .data
+prompt db '  hello    enter name: '
+prompt.len equ $-prompt
+name db '............................................................'
+name.len equ $-name
+prompt2 db '  not a name: '
+prompt2.len equ $-prompt2
+len dq 0
+hello db 'hello',10,''
+hello.len equ $-hello
 section .bss
 stk resd 256
 stk.end:
@@ -13,26 +22,52 @@ mov rsp,stk.end
    mov qword[rbp+8],2
    mov qword[rbp+16],3
    mov qword[rbp+24],4
-   if_12_8:
-   cmp_12_9:
-   cmp qword[rbp+0],1
-   jne cmp_12_26
-   cmp_12_17:
-   cmp qword[rbp+8],2
-   je if_12_8_code  ; opt2
-   cmp_12_26:
-   cmp qword[rbp+16],3
-   jne if_12_5_end
-   cmp_12_34:
-   cmp qword[rbp+24],4
-   jne if_12_5_end
-   if_12_8_code:  ; opt1
-       mov rbx,0
-       mov rax,1
-       int 0x80
-     exit_13_9_end:
-   if_12_5_end:
-     mov rbx,1
+   mov r15,qword[rbp+0]
+   add r15,qword[rbp+8]
+   add r15,qword[rbp+16]
+   add r15,qword[rbp+24]
+   mov qword[rbp+32],r15
+   mov qword[rbp+40],2
+     loop_35_5_49_5:
+       if_36_12_49_5:
+       cmp_36_12_49_5:
+       cmp qword[rbp+40],0
+       jne if_36_9_49_5_end
+       if_36_12_49_5_code:  ; opt1
+         jmp foo_49_5_end
+       if_36_9_49_5_end:
+           mov rcx,hello
+           mov rdx,hello.len
+           mov rbx,1
+           mov rax,4
+           int 0x80
+         print_31_5_37_9_49_5_end:
+       bar_37_9_49_5_end:
+       sub qword[rbp+40],1
+     jmp loop_35_5_49_5
+     loop_35_5_49_5_end:
+   foo_49_5_end:
+   mov qword[rbp+40],1
+     loop_35_5_51_5:
+       if_36_12_51_5:
+       cmp_36_12_51_5:
+       cmp qword[rbp+40],0
+       jne if_36_9_51_5_end
+       if_36_12_51_5_code:  ; opt1
+         jmp foo_51_5_end
+       if_36_9_51_5_end:
+           mov rcx,hello
+           mov rdx,hello.len
+           mov rbx,1
+           mov rax,4
+           int 0x80
+         print_31_5_37_9_51_5_end:
+       bar_37_9_51_5_end:
+       sub qword[rbp+40],1
+     jmp loop_35_5_51_5
+     loop_35_5_51_5_end:
+   foo_51_5_end:
+     mov rbx,0
      mov rax,1
      int 0x80
-   exit_14_5_end:
+   exit_52_5_end:
