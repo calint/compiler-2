@@ -46,7 +46,7 @@ public:
 	{}
 
 	inline void add_var(const string&nm,const size_t stkix,const string&flags){
-		string str="qword[rsp-"+to_string(stkix<<3)+"]";
+		string str="qword[stk+"+to_string(stkix<<3)+"]";
 		vars_.put(nm,allocated_var{nm,stkix,"",str,0});
 		allocated_stack_++;
 	}
