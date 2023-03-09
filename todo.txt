@@ -1,3 +1,4 @@
+[ ] 'return' to pop frames until function context
 [x] keyword 'inline'. func inline foo()...
 [ ] non-inlined function calls
 [ ] multiple return values assignment: var a,b=foo()  a,b=foo()
