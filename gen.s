@@ -30,39 +30,39 @@ mov rsp,stk.end
 ;  [43:9] a=1 
 ;  [43:11] 1 
 ;  [43:11] a=1 
-   mov qword[rsp-0],1
+   mov qword[stk+0],1
 ;  [44:5] var b=2 
 ;  [44:9] b=2 
 ;  [44:11] 2 
 ;  [44:11] b=2 
-   mov qword[rsp-8],2
+   mov qword[stk+8],2
 ;  [45:5] var c=3 
 ;  [45:9] c=3 
 ;  [45:11] 3 
 ;  [45:11] c=3 
-   mov qword[rsp-16],3
+   mov qword[stk+16],3
 ;  [46:5] var d=4 
 ;  [46:9] d=4 
 ;  [46:11] 4 
 ;  [46:11] d=4 
-   mov qword[rsp-24],4
+   mov qword[stk+24],4
 ;  [47:5] var r=a+b+c+d 
 ;  [47:9] r=a+b+c+d 
 ;  [47:11] a+b+c+d 
 ;  [47:11] r15=a
-   mov r15,qword[rsp-0]
+   mov r15,qword[stk+0]
 ;  [47:13] r15+b
-   add r15,qword[rsp-8]
+   add r15,qword[stk+8]
 ;  [47:15] r15+c
-   add r15,qword[rsp-16]
+   add r15,qword[stk+16]
 ;  [47:17] r15+d 
-   add r15,qword[rsp-24]
-   mov qword[rsp-32],r15
+   add r15,qword[stk+24]
+   mov qword[stk+32],r15
 ;  [48:5] var x=2 
 ;  [48:9] x=2 
 ;  [48:11] 2 
 ;  [48:11] x=2 
-   mov qword[rsp-40],2
+   mov qword[stk+40],2
 ;  [49:5] foo(x)
 ;    inline: 49_5
 ;    [35:5] loop
@@ -71,7 +71,7 @@ mov rsp,stk.end
 ;      [36:12] ? i=0 
 ;      [36:12] ? i=0 
        cmp_36_12_49_5:
-       cmp qword[rsp-40],0
+       cmp qword[stk+40],0
        jne if_36_9_49_5_end
        if_36_12_49_5_code:  ; opt1
 ;        [36:16] return 
@@ -97,14 +97,14 @@ mov rsp,stk.end
 ;      [38:11] i-1 
 ;      [38:11] i=i
 ;      [38:13] i-1 
-       sub qword[rsp-40],1
+       sub qword[stk+40],1
      jmp loop_35_5_49_5
      loop_35_5_49_5_end:
    foo_49_5_end:
 ;  [50:5] x=1 
 ;  [50:7] 1 
 ;  [50:7] x=1 
-   mov qword[rsp-40],1
+   mov qword[stk+40],1
 ;  [51:5] foo(x)
 ;    inline: 51_5
 ;    [35:5] loop
@@ -113,7 +113,7 @@ mov rsp,stk.end
 ;      [36:12] ? i=0 
 ;      [36:12] ? i=0 
        cmp_36_12_51_5:
-       cmp qword[rsp-40],0
+       cmp qword[stk+40],0
        jne if_36_9_51_5_end
        if_36_12_51_5_code:  ; opt1
 ;        [36:16] return 
@@ -139,7 +139,7 @@ mov rsp,stk.end
 ;      [38:11] i-1 
 ;      [38:11] i=i
 ;      [38:13] i-1 
-       sub qword[rsp-40],1
+       sub qword[stk+40],1
      jmp loop_35_5_51_5
      loop_35_5_51_5_end:
    foo_51_5_end:
