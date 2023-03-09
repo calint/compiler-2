@@ -1,7 +1,42 @@
+field  prompt="  hello    enter name: "
+field    name="............................................................"
+field prompt2="  not a name: "
+field     len=0
+field   hello="hello\n"
+
+func print(len:reg_rdx,ptr:reg_rcx){
+    mov(rcx,ptr)
+    mov(rdx,len)
+    mov(rbx,1)
+    mov(rax,4)
+    int(0x80)
+}
+
+func read(len:reg_rdx,ptr:reg_rsi):ret{
+    mov(rsi,ptr)
+    mov(rdx,len)
+    xor(rax)
+    xor(rdi)
+    syscall
+    mov(ret,rax)
+}
+
 func exit(v){
     mov(rbx,v)
     mov(rax,1)
     int(0x80)
+}
+
+func bar{
+    print(hello.len,hello)
+}
+
+func foo(i){
+    loop{
+        if i=0 return
+        bar()
+        i=i-1
+    }
 }
 
 func main{
@@ -9,7 +44,10 @@ func main{
     var b=2
     var c=3
     var d=4
-    if (a=1 and b=2) or (c=3 and d=4)
-        exit(0)
-    exit(1)
+    var r=a+b+c+d
+    var x=2
+    foo(x)
+    x=1
+    foo(x)
+    exit(0)
 }
