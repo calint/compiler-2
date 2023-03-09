@@ -22,7 +22,7 @@ public:
 		bits_{bits}
 	{}
 
-	inline bool is_name(const string&varname)const{return varname==name_;}
+	inline bool is_name(const string&nm)const{return nm==name_;}
 
 	inline bool is_const()const{return bits_&1;}
 
@@ -46,7 +46,7 @@ public:
 	{}
 
 	inline void add_var(const string&nm,const size_t stkix,const string&flags){
-		string str="qword[rbp+"+to_string(stkix<<3)+"]";
+		string str="qword[rsp-"+to_string(stkix<<3)+"]";
 		vars_.put(nm,allocated_var{nm,stkix,"",str,0});
 		allocated_stack_++;
 	}
@@ -99,7 +99,7 @@ struct field_meta{
 class toc final{
 public:
 	inline toc(const string&source):
-		all_registers_{"rax","rbx","rcx","rdx","rsi","rdi","r8","r9","r10","r11","r12","r13","r14","r15"},
+		all_registers_{"rax","rbx","rcx","rdx","rsi","rdi","rbp","r8","r9","r10","r11","r12","r13","r14","r15"},
 		free_registers_{all_registers_},
 		source_str_{source}
 	{}

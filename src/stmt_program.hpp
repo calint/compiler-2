@@ -63,7 +63,7 @@ public:
 				s->compile(tc,os,indent_level);
 
 		os<<"\nsection .bss\nstk resd 256\nstk.end:\n";
-		os<<"\nsection .text\nalign 4\nbits 64\nglobal _start\n_start:\nmov rbp,stk\nmov rsp,stk.end\n";
+		os<<"\nsection .text\nalign 4\nbits 64\nglobal _start\n_start:\nmov rsp,stk.end\n";
 		for(const auto&s:stmts_)
 			if(!s->is_in_data_section())
 				s->compile(tc,os,indent_level);
