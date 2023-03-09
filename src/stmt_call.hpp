@@ -62,7 +62,7 @@ public:
 				throw compiler_error(*this,"cannot assign from function without return");
 			const string&from=f.returns()[0].name();
 			const string&to=dest_ident;
-			aliases_to_add.emplace_back(make_tuple(from,to));
+			aliases_to_add.emplace_back(from,to);
 		}
 
 		vector<string>allocated_registers;
@@ -86,12 +86,12 @@ public:
 
 				allocated_registers.push_back(reg);
 				arg->compile(tc,os,indent_level+1,reg);
-				aliases_to_add.emplace_back(make_tuple(param.identifier(),reg));
+				aliases_to_add.emplace_back(param.identifier(),reg);
 				continue;
 			}
 
 			const string&id=arg->identifier();
-			aliases_to_add.emplace_back(make_tuple(param.identifier(),id));
+			aliases_to_add.emplace_back(param.identifier(),id);
 		}
 
 		const string&call_path=tc.get_call_path(tok());
