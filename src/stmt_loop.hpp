@@ -9,7 +9,9 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.token_comment(os,this->tok());
-		string lbl="loop_"+tc.source_location(tok())+"_"+tc.get_call_path(tok());
+		const string&call_path=tc.get_call_path(tok());
+		const string&src_loc=tc.source_location(tok());
+		const string lbl="loop_"+(call_path.empty()?src_loc:(src_loc+"_"+call_path));
 		indent(os,indent_level);os<<lbl<<":"<<endl;
 		tc.push_loop(lbl);
 		code_.compile(tc,os,indent_level);

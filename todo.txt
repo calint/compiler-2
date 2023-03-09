@@ -1,9 +1,26 @@
-[ ] 'return' to pop frames until function context
-[x] keyword 'inline'. func inline foo()...
 [ ] non-inlined function calls
 [ ] multiple return values assignment: var a,b=foo()  a,b=foo()
 [ ] examine expression, expr_ops_list, stmt_call relation
 [ ] token.compile assumes is_str is field
+[ ]   review fragile implementation
+[ ] fix 'cmp' two constants case
+[ ] short-hand boolean expression i.e. if a or b
+[ ] negated subexpression. i.e. 'not (a=1 and b=2)'
+[ ] why is the binary so big although in-line is turned off in make.sh?
+[ ] tokenizer to keep track of line-number instead of counting it at every call
+[ ] implement division op
+[ ] make sub lists taking in account precedence of 'and' over 'or'
+      i.e. 'a or b and c or d' -> 'a or (b and c) or d'
+[ ] op shift left and right
+[ ] var str="hello world"
+[ ] var len=str.len
+[ ] type size{value} var s=size{1} s=2
+[ ] type point{x,y} var p=point{1,2} p.x=1 p=2
+[ ] var points=point[10] where points contains length of array and a pointer
+[ ] clang-format everything for less dess code?
+[ ] compile for pczero task
+-------------------------------------------------------------------------------
+[x] keyword 'inline'. func inline foo()...
 [x] fix generated code of "if (a=1 and b=2) or (c=3 and d=4)"
         jne cmp_14_26
         jmp if_14_8_code
@@ -15,20 +32,10 @@
 [x] fix generated code
         jmp cmp_13_26
         cmp_13_26:
-[ ]   review fragile implementation
-[ ] fix 'cmp' two constants case
-[ ] short-hand boolean expression i.e. if a or b
 [x] review the ugly 'if' code
 [x] variant instead of stmt_if_bool_op_list extends stmt_if_bool_op
-[ ] negated subexpression. i.e. 'not (a=1 and b=2)'
-[ ] why is the binary so big although in-line is turned off in make.sh?
-[ ] tokenizer to keep track of line-number instead of counting it at every call
-[ ] implement division op
 [x] assembler 64 bit code
-[ ] make sub lists taking in account precedence of 'and' over 'or'
-      i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [x] return statement for in-lined
-[ ] op shift left and right
 [x] optimize:
         mov edi,dword[ebp+16]
         sub edi,1
@@ -51,10 +58,3 @@
 [x] stmt_assign_var.compile
       -> try evaluation with scratch register and evaluation without scratch register
          select the one that generates fewest instructions
-[ ] var str="hello world"
-[ ] var len=str.len
-[ ] type size{value} var s=size{1} s=2
-[ ] type point{x,y} var p=point{1,2} p.x=1 p=2
-[ ] var points=point[10] where points contains length of array and a pointer
-[ ] clang-format everything for less dess code?
-[ ] compile for pczero task
