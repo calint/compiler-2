@@ -53,8 +53,9 @@ public:
 //		indent(os,indent_level,true);tc.source_to_as_comment(os,*this);
 		const string call_path=tc.get_call_path(tok());
 		const string src_loc=tc.source_location(tok());
-		string label_after_if="if_"+src_loc+"_"+call_path+"_end";
-		string label_else_branch=else_code_?"if_else_"+src_loc+"_"+call_path:label_after_if;
+		const string cp=call_path.empty()?"":"_"+call_path;
+		string label_after_if="if_"+src_loc+cp+"_end";
+		string label_else_branch=else_code_?"if_else_"+src_loc+cp:label_after_if;
 
 		const size_t n=branches_.size();
 		for(size_t i=0;i<n;i++){

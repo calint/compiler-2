@@ -59,7 +59,8 @@ public:
 	}
 
 	inline string cmp_bgn_label(const toc&tc)const{
-		return "cmp_"+tc.source_location(tok())+"_"+tc.get_call_path(tok());
+		const string&call_path=tc.get_call_path(tok());
+		return "cmp_"+tc.source_location(tok())+(call_path.empty()?"":"_"+call_path);
 	}
 
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true)const{
@@ -93,14 +94,14 @@ public:
 			const stmt_if_bool_op&e=get<stmt_if_bool_op>(bools_[i]);
 			if(i<n-1){
 				if(ops_[i].is_name("or")){
-					e.compile_or(tc,os,indent_level,false,jmp_to_if_false,jmp_to_if_true);
+					e.compile_or(tc,os,indent_level,jmp_to_if_false,jmp_to_if_true);
 				}else if(ops_[i].is_name("and")){
-					e.compile_and(tc,os,indent_level,false,jmp_to_if_false,jmp_to_if_true);
+					e.compile_and(tc,os,indent_level,jmp_to_if_false,jmp_to_if_true);
 				}else{
 					throw "expected 'or' or 'and'";
 				}
 			}else{
-				e.compile_or(tc,os,indent_level,true,jmp_to_if_false,jmp_to_if_true);
+				e.compile_and(tc,os,indent_level,jmp_to_if_false,jmp_to_if_true);
 				// compile_or last_elem generates a jump in case of bool op is false
 				indent(os,indent_level);os<<"jmp "<<jmp_to_if_true<<"\n";
 			}

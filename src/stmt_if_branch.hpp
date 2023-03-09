@@ -19,7 +19,8 @@ public:
 	}
 
 	inline string if_bgn_label(const toc&tc)const{
-		return "if_"+tc.source_location(tok())+"_"+tc.get_call_path(tok());
+		const string&call_path=tc.get_call_path(tok());
+		return "if_"+tc.source_location(tok())+(call_path.empty()?"":"_"+call_path);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst)const override{
@@ -32,7 +33,7 @@ public:
 
 		indent(os,indent_level);os<<if_bgn_lbl<<":"<<endl;
 
-		bol_.compile(tc, os, indent_level,jmp_to_if_false_label,jmp_to_if_true_lbl);
+		bol_.compile(tc,os,indent_level,jmp_to_if_false_label,jmp_to_if_true_lbl);
 
 		indent(os,indent_level);os<<jmp_to_if_true_lbl<<":"<<endl;
 
