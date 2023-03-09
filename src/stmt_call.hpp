@@ -82,10 +82,9 @@ public:
 						break;
 					}
 				}
-				if(reg==""){
-					// no particular register requested for the argument
+				if(reg=="") // no particular register requested for the argument
 					reg=tc.alloc_scratch_register(param);
-				}
+
 				allocated_registers.push_back(reg);
 				arg->compile(tc,os,indent_level+1,reg);
 				aliases_to_add.push_back(make_tuple(param.identifier(),reg));
@@ -101,7 +100,7 @@ public:
 		const string&new_call_path=call_path.empty()?src_loc:(src_loc+"_"+call_path);
 		const string&ret_jmp_label=nm+"_"+new_call_path+"_end";
 
-//		indent(os,indent_level,true);os<<"path "<<loc<<endl;
+		indent(os,indent_level+1,true);os<<"inline: "<<new_call_path<<endl;
 
 		tc.push_func(nm,new_call_path,ret_jmp_label);
 

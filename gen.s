@@ -65,6 +65,7 @@ mov rsp,stk.end
 ;  [48:11] x=2 
    mov qword[rbp+40],2
 ;  [49:5] foo(x)
+;    inline: 49_5
 ;    [35:5] loop
      loop_35_5_49_5:
        if_36_12_49_5:
@@ -78,7 +79,9 @@ mov rsp,stk.end
          jmp foo_49_5_end
        if_36_9_49_5_end:
 ;      [37:9] bar()
+;        inline: 37_9_49_5
 ;        [31:5] print(hello.len,hello)
+;          inline: 31_5_37_9_49_5
 ;          [8:5] mov(rcx,ptr)
            mov rcx,hello
 ;          [9:5] mov(rdx,len)
@@ -104,6 +107,7 @@ mov rsp,stk.end
 ;  [50:7] x=1 
    mov qword[rbp+40],1
 ;  [51:5] foo(x)
+;    inline: 51_5
 ;    [35:5] loop
      loop_35_5_51_5:
        if_36_12_51_5:
@@ -117,7 +121,9 @@ mov rsp,stk.end
          jmp foo_51_5_end
        if_36_9_51_5_end:
 ;      [37:9] bar()
+;        inline: 37_9_51_5
 ;        [31:5] print(hello.len,hello)
+;          inline: 31_5_37_9_51_5
 ;          [8:5] mov(rcx,ptr)
            mov rcx,hello
 ;          [9:5] mov(rdx,len)
@@ -139,6 +145,7 @@ mov rsp,stk.end
      loop_35_5_51_5_end:
    foo_51_5_end:
 ;  [52:5] exit(0)
+;    inline: 52_5
 ;    [25:5] mov(rbx,v)
      mov rbx,0
 ;    [26:5] mov(rax,1)
