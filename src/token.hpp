@@ -5,13 +5,22 @@
 
 class token final{
 public:
+	inline token():
+		ws_left_{},
+		start_char_{},
+		name_{},
+		end_char_{},
+		ws_right_{},
+		is_str_{}
+	{}
+
 	inline token(string wb,size_t n,string tk,size_t n2,string wa,bool is_string=false):
 		ws_left_{wb},
 		start_char_{n},
 		name_{tk},
 		end_char_{n2},
 		ws_right_{wa},
-		is_str{is_string}
+		is_str_{is_string}
 	{}
 
 	inline token(const token&tk):
@@ -20,11 +29,21 @@ public:
 		name_{tk.name_},
 		end_char_{tk.end_char_},
 		ws_right_{tk.ws_right_},
-		is_str{tk.is_str}
+		is_str_{tk.is_str_}
 	{}
 
+	token&operator=(const token&other){
+		ws_left_=other.ws_left_;
+		start_char_=other.start_char_;
+		name_=other.name_;
+		end_char_=other.end_char_;
+		ws_right_=other.ws_right_;
+		is_str_=other.is_str_;
+		return*this;
+	}
+
 	inline void source_to(ostream&os)const{
-		if(!is_str){
+		if(!is_str_){
 			os<<ws_left_<<name_<<ws_right_;
 			return;
 		}
@@ -32,7 +51,7 @@ public:
 	}
 
 	inline void compile_to(ostream&os)const{
-		if(!is_str){
+		if(!is_str_){
 			os<<name_;
 			return;
 		}
@@ -49,7 +68,7 @@ public:
 	inline size_t char_index_end()const{return end_char_;}
 
 	inline bool is_blank()const{
-		if(ws_left_=="" and name_=="" and ws_right_=="")
+		if(ws_left_.empty() and name_.empty() and ws_right_.empty())
 			return true;
 		return false;
 	}
@@ -58,7 +77,7 @@ public:
 		return ws_left_.length()+name_.length()+ws_right_.length();
 	}
 
-	inline bool is_string()const{return is_str;}
+	inline bool is_string()const{return is_str_;}
 
 private:
 	string ws_left_;
@@ -66,5 +85,5 @@ private:
 	string name_;
 	size_t end_char_{0};
 	string ws_right_;
-	bool is_str{false};
+	bool is_str_{false};
 };

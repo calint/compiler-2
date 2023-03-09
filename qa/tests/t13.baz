@@ -1,4 +1,4 @@
-func exit(v){
+func inline exit(v){
     mov(rbx,v)
     mov(rax,1)
     int(0x80)
@@ -6,7 +6,7 @@ func exit(v){
 
 field x=1
 
-func main{
+func inline main{
     x=2
     exit(x)
 }

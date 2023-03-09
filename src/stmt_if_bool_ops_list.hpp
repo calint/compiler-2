@@ -55,7 +55,7 @@ public:
 		}
 	}
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
-		throw compiler_error(tok(),"this code should not be reached");
+		throw compiler_error(tok(),"this code should not be reached: "+string{__FILE__}+":"+to_string(__LINE__));
 	}
 
 	inline string cmp_bgn_label(const toc&tc)const{

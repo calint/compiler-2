@@ -6,9 +6,13 @@
 class stmt_def_func final:public statement{
 public:
 	inline stmt_def_func(const statement&parent,const token&tk,tokenizer&t):
-		statement{parent,tk},
-		ident_{t.next_token()}
+		statement{parent,tk}
 	{
+		name_=t.next_token();
+		if(name_.is_name("inline")){
+			inline_tk_=name_;
+			name_=t.next_token();
+		}
 		if(!t.is_next_char('(')){
 			no_args_=true;
 //			throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
@@ -34,7 +38,8 @@ public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		ident_.source_to(os);
+		inline_tk_.source_to(os);
+		name_.source_to(os);
 		if(!no_args_){
 			os<<"(";
 			const size_t nparam=params_.size()-1;
@@ -59,14 +64,12 @@ public:
 
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		tc.add_func(*this,ident_.name(),this);//? in constructor for forward ref
+		tc.add_func(*this,name_.name(),this);//? in constructor for forward ref
 		if(is_inline())
 			return;
 
-		throw compiler_error(*this,"this code should not be reached");
+		throw compiler_error(*this,"this code should not be reached: "+string{__FILE__}+":"+to_string(__LINE__));
 	}
-
-	inline bool is_inline()const{return true;}
 
 	inline const vector<token>&returns()const{return returns_;}
 
@@ -76,12 +79,18 @@ public:
 
 	inline const stmt_block&code()const{return*code_.get();}
 
-	inline const string&name()const{return ident_.name();}
+	inline const string&name()const{return name_.name();}
+
+	inline bool is_inline()const{
+		const bool b=!inline_tk_.is_blank();
+		return b;
+	}
 
 private:
-	token ident_;
+	token name_;
 	vector<stmt_def_func_param>params_;
 	vector<token>returns_;
 	unique_ptr<stmt_block>code_;
+	token inline_tk_;
 	bool no_args_{false};
 };
