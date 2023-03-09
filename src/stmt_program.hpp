@@ -69,6 +69,7 @@ public:
 				s->compile(tc,os,indent_level);
 
 		const stmt_def_func&main=tc.get_func_or_break(*this,"main");
+//		indent(os,indent_level,true);os<<"["<<tc.source_location(main.tok())<<"] "<<main.name()<<endl;
 		tc.push_func("main","","");
 		main.code().compile(tc,os,indent_level);
 		tc.pop_func("main");

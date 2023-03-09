@@ -100,19 +100,13 @@ public:
 		const string&ret_jmp_label=nm+"_"+new_call_path+"_end";
 
 		indent(os,indent_level+1,true);os<<"inline: "<<new_call_path<<endl;
-
 		tc.push_func(nm,new_call_path,ret_jmp_label);
-
 		for(const auto&e:aliases_to_add)
 			tc.add_alias(get<0>(e),get<1>(e));
-
 		f.code().compile(tc,os,indent_level);
-
 		indent(os,indent_level);os<<ret_jmp_label<<":\n";
-
 		for(const auto&r:allocated_registers)
 			tc.free_scratch_reg(r);
-
 		tc.pop_func(nm);
 	}
 
