@@ -184,13 +184,13 @@ public:
 	}
 
 	inline void push_func(const string&name,const string&call_loc,const string&ret_jmp){
-		frames_.push_back(frame{name,1,call_loc,ret_jmp});
+		frames_.emplace_back(frame{name,1,call_loc,ret_jmp});
 		check_usage();
 	}
 
-	inline void push_block(const string&name){frames_.push_back(frame{name,2,"",""});check_usage();}
+	inline void push_block(const string&name){frames_.emplace_back(frame{name,2,"",""});check_usage();}
 
-	inline void push_loop(const string&name){frames_.push_back(frame{name,4,"",""});check_usage();}
+	inline void push_loop(const string&name){frames_.emplace_back(frame{name,4,"",""});check_usage();}
 
 	inline void add_alias(const string&ident,const string&parent_frame_ident){
 		frames_.back().add_alias(ident,parent_frame_ident);
@@ -211,7 +211,7 @@ public:
 	}
 
 	inline void push_if(const char*name){
-		frames_.push_back(frame{name,8,"",""});
+		frames_.emplace_back(frame{name,8,"",""});
 		check_usage();
 	}
 

@@ -28,7 +28,7 @@ public:
 		}
 		if(t.is_next_char(':')){// returns
 			while(true){
-				returns_.push_back(t.next_token());
+				returns_.emplace_back(t.next_token());
 				if(t.is_next_char(','))continue;
 				break;
 			}

@@ -30,19 +30,19 @@ public:
 				throw compiler_error(tk,"unexpected blank token");
 			}
 			if(tk.is_name("field")){
-				stmts_.push_back(make_unique<stmt_def_field>(*this,tk,t));
+				stmts_.emplace_back(make_unique<stmt_def_field>(*this,tk,t));
 			}else
 			if(tk.is_name("func")){
-				stmts_.push_back(make_unique<stmt_def_func>(*this,tk,t));
+				stmts_.emplace_back(make_unique<stmt_def_func>(*this,tk,t));
 			}else
 			if(tk.is_name("table")){
-				stmts_.push_back(make_unique<stmt_def_table>(*this,tk,t));
+				stmts_.emplace_back(make_unique<stmt_def_table>(*this,tk,t));
 			}else
 			if(tk.is_name("#")){
-				stmts_.push_back(make_unique<stmt_comment>(*this,tk,t));
+				stmts_.emplace_back(make_unique<stmt_comment>(*this,tk,t));
 			}else
 			if(tk.is_name("")){// whitespace
-				stmts_.push_back(make_unique<statement>(*this,tk));
+				stmts_.emplace_back(make_unique<statement>(*this,tk));
 			}else{
 				throw compiler_error(tk,"unexpected keyword '"+tk.name()+"'");
 			}

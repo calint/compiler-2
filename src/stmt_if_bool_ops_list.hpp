@@ -12,9 +12,9 @@ public:
 	{
 		while(true){
 			if(t.is_next_char('(')){
-				bools_.push_back(stmt_if_bool_ops_list{*this,t,true});
+				bools_.emplace_back(stmt_if_bool_ops_list{*this,t,true});
 			}else{
-				bools_.push_back(stmt_if_bool_op{*this,t});
+				bools_.emplace_back(stmt_if_bool_op{*this,t});
 			}
 			if(t.is_next_char(')'))
 				return;

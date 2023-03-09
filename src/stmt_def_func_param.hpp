@@ -13,7 +13,7 @@ public:
 		while(true){
 			if(t.is_eos())
 				throw compiler_error(*this,"unexpected end of stream in '"+tok().name()+"'");
-			keywords_.push_back(t.next_token());
+			keywords_.emplace_back(t.next_token());
 			if(t.is_next_char(':'))
 				continue;
 			break;

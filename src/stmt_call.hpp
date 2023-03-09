@@ -23,8 +23,7 @@ public:
 				break;
 			}
 //			expr_ops_list(*this,t.next_whitespace_token(),t,'=',3,false,create_statement_from_tokenizer(*this,t),0);
-			auto arg=make_unique<expr_ops_list>(*this,t,true);
-			args_.push_back(move(arg));
+			args_.emplace_back(make_unique<expr_ops_list>(*this,t,true));
 			if(t.is_next_char(')'))
 				break;
 			if(!t.is_next_char(','))
@@ -63,7 +62,7 @@ public:
 				throw compiler_error(*this,"cannot assign from function without return");
 			const string&from=f.returns()[0].name();
 			const string&to=dest_ident;
-			aliases_to_add.push_back(make_tuple(from,to));
+			aliases_to_add.emplace_back(make_tuple(from,to));
 		}
 
 		vector<string>allocated_registers;
@@ -87,12 +86,12 @@ public:
 
 				allocated_registers.push_back(reg);
 				arg->compile(tc,os,indent_level+1,reg);
-				aliases_to_add.push_back(make_tuple(param.identifier(),reg));
+				aliases_to_add.emplace_back(make_tuple(param.identifier(),reg));
 				continue;
 			}
 
 			const string&id=arg->identifier();
-			aliases_to_add.push_back(make_tuple(param.identifier(),id));
+			aliases_to_add.emplace_back(make_tuple(param.identifier(),id));
 		}
 
 		const string&call_path=tc.get_call_path(tok());

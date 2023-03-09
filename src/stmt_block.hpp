@@ -26,23 +26,23 @@ public:
 
 			if(tk.is_blank()){
 				if(t.is_next_char(';')){ // in-case ; is used
-					stmts_.push_back(make_unique<stmt_semicolon>(*this,move(tk),t));
+					stmts_.emplace_back(make_unique<stmt_semicolon>(*this,move(tk),t));
 					last_statement_considered_no_statment=true;
 					continue;
 				}
 				throw compiler_error(tk,"unexpected '"+string{t.peek_char()}+"'");
 			}
 			if(tk.is_name("var")){
-				stmts_.push_back(make_unique<stmt_def_var>(*this,move(tk),t));
+				stmts_.emplace_back(make_unique<stmt_def_var>(*this,move(tk),t));
 			}else if(t.is_next_char('=')){
-				stmts_.push_back(make_unique<stmt_assign_var>(*this,move(tk),t));
+				stmts_.emplace_back(make_unique<stmt_assign_var>(*this,move(tk),t));
 			}else if(tk.is_name("#")){
-				stmts_.push_back(make_unique<stmt_comment>(*this,move(tk),t));
+				stmts_.emplace_back(make_unique<stmt_comment>(*this,move(tk),t));
 				last_statement_considered_no_statment=true;
 			}else if(tk.is_name("")){
-				stmts_.push_back(make_unique<statement>(*this,move(tk)));
+				stmts_.emplace_back(make_unique<statement>(*this,move(tk)));
 			}else{
-				stmts_.push_back(create_call_statement_from_tokenizer(*this,move(tk),t));
+				stmts_.emplace_back(create_call_statement_from_tokenizer(*this,move(tk),t));
 			}
 
 			if(is_one_statement_&&!last_statement_considered_no_statment)

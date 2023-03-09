@@ -30,7 +30,7 @@ public:
 	}
 
 	inline void put(const string&key,T data){
-		elems_.push_back(el{key,data});
+		elems_.emplace_back(el{key,data});
 	}
 
 	inline void clear(){elems_.clear();}

@@ -1,6 +1,7 @@
 [ ] keyword 'inline'. func inline foo()...
 [ ] non-inlined function calls
 [ ] multiple return values assignment: var a,b=foo()  a,b=foo()
+[ ] examine expression, expr_ops_list, stmt_call relation
 [ ] token.compile assumes is_str is field
 [x] fix generated code of "if (a=1 and b=2) or (c=3 and d=4)"
         jne cmp_14_26

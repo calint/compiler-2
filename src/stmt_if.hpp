@@ -8,7 +8,7 @@ public:
 		statement{parent,tk}
 	{
 		while(true){
-			branches_.push_back(stmt_if_branch{*this,t});
+			branches_.emplace_back(stmt_if_branch{*this,t});
 
 			token tkn=t.next_token();
 			if(!tkn.is_name("else")){
