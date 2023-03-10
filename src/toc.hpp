@@ -14,7 +14,7 @@ class stmt_def_table;
 
 class allocated_var final{
 public:
-	inline allocated_var(const string&name,size_t stkix,const string&in_register,const string&asm_op_param,char bits):
+	inline allocated_var(const string&name,int stkix,const string&in_register,const string&asm_op_param,char bits):
 		name_{name},
 		stkix_{stkix},
 		in_register_{in_register},
@@ -30,7 +30,7 @@ public:
 
 private:
 	string name_;
-	size_t stkix_{0};
+	int stkix_{0};
 	string in_register_;
 	string nasm_ident_;
 	char bits_{0}; // 1: const
@@ -38,15 +38,23 @@ private:
 
 class frame final{
 public:
-	inline frame(const string&name,char bits,const string&call_path,const string&ret):
+	inline frame(const string&name,char bits,const string&call_path,const string&ret,const bool is_inline):
 		name_{name},
 		call_path_{call_path},
 		ret_{ret},
+		is_inline_{is_inline},
 		bits_{bits}
 	{}
 
-	inline void add_var(const string&nm,const size_t stkix,const string&flags){
-		string str="qword[stk+"+to_string(stkix<<3)+"]";
+	inline void add_var(const string&nm,const int stkix,const string&flags){
+		string str;
+		if(stkix>0){
+			str="qword[rsp+"+to_string(stkix<<3)+"]";
+		}else if(stkix<0){
+			str="qword[rsp"+to_string(stkix<<3)+"]";
+		}else{
+			str="qword[rsp]";
+		}
 		vars_.put(nm,allocated_var{nm,stkix,"",str,0});
 		allocated_stack_++;
 	}
@@ -81,6 +89,8 @@ public:
 
 	inline const string&call_path()const{return call_path_;}
 
+	inline bool is_func_inline()const{return is_inline_;}
+
 private:
 	string name_;
 	string call_path_;
@@ -88,6 +98,7 @@ private:
 	lut<allocated_var>vars_;
 	lut<string>aliases_;
 	string ret_;
+	bool is_inline_{false};
 	char bits_{0}; // 1 is func
 };
 
@@ -161,7 +172,7 @@ public:
 
 	inline void finish(const toc&tc,ostream&os){
 		assert(all_registers_.size()==free_registers_.size());
-		assert(stkix_==0);
+//		assert(stkix_==0);
 //		assert(framestk_.import_frames_.size()==0);
 		os<<"\n;      max registers in use: "<<tc.max_usage_scratch_regs_<<endl;
 		os<<";         max frames in use: "<<tc.max_frame_count_<<endl;
@@ -183,18 +194,18 @@ public:
 		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'");
 	}
 
-	inline void push_func(const string&name,const string&call_loc,const string&ret_jmp){
-		frames_.emplace_back(name,1,call_loc,ret_jmp);
+	inline void push_func(const string&name,const string&call_loc,const string&ret_jmp,const bool is_inline){
+		frames_.emplace_back(name,1,call_loc,ret_jmp,is_inline);
 		check_usage();
 	}
 
 	inline void push_block(const string&name){
-		frames_.emplace_back(name,2,"","");
+		frames_.emplace_back(name,2,"","",false);
 		check_usage();
 	}
 
 	inline void push_loop(const string&name){
-		frames_.emplace_back(name,4,"","");
+		frames_.emplace_back(name,4,"","",false);
 		check_usage();
 	}
 
@@ -205,31 +216,69 @@ public:
 	inline void pop_func(const string&name){
 		frame&f=frames_.back();
 		assert(f.is_func() and f.is_name(name));
-		stkix_-=frames_.back().allocated_stack_size();
+//		stkix_-=frames_.back().allocated_stack_size();
 		frames_.pop_back();
 	}
 
 	inline void pop_loop(const string&name){
 		frame&f=frames_.back();
 		assert(f.is_loop() and f.is_name(name));
-		stkix_-=frames_.back().allocated_stack_size();
+//		stkix_-=frames_.back().allocated_stack_size();
 		frames_.pop_back();
 	}
 
+	inline size_t get_current_stack_base(const statement&stmt)const{
+		size_t delta{0};
+		size_t frm_nbr=frames_.size()-1;
+		while(true){
+			const frame&frm=frames_[frm_nbr];
+			delta+=frm.allocated_stack_size();
+			if(!frm.is_func_inline())
+				break;
+			if(frm_nbr==0)
+				break;
+			frm_nbr--;
+		}
+		return delta;
+	}
+
 	inline void push_if(const char*name){
-		frames_.emplace_back(name,8,"","");
+		frames_.emplace_back(name,8,"","",false);
 		check_usage();
 	}
 
 	inline void pop_if(const string&name){
 		frame&f=frames_.back();
 		assert(f.is_if() and f.is_name(name));
-		stkix_-=frames_.back().allocated_stack_size();
+//		stkix_-=frames_.back().allocated_stack_size();
 		frames_.pop_back();
 	}
 
+	// find the current offset in the stack
+	inline size_t get_current_offset_in_stack(){
+		size_t i{frames_.size()-1};
+		size_t idx{0};
+		while(true){
+			const frame&frm=frames_[i];
+			idx+=frm.allocated_stack_size();
+			if(!frm.is_func_inline())
+				break; // found the base of current offset in stack
+			if(i==0)
+				break; // found the root
+			i--;
+		}
+		return idx;
+	}
+
 	inline void add_var(const string&name,const string&flags=""){
-		frames_.back().add_var(name,stkix_++,flags);
+		const size_t stkix=get_current_offset_in_stack()+1;
+		// offset by one since rsp points to most recently pushed value
+		//   allocate next free slot
+		frames_.back().add_var(name,-int(stkix),flags);
+	}
+
+	inline void add_var2(const string&name,const int stkix_delta,const string&flags=""){
+		frames_.back().add_var(name,stkix_delta,flags);
 	}
 
 	inline const string alloc_scratch_register(const statement&st,const string&reg=""){
@@ -417,17 +466,17 @@ private:
 		if(frames_.size()>max_frame_count_)
 			max_frame_count_=frames_.size();
 
-		if(stkix_>max_stack_usage_)
-			max_stack_usage_=stkix_;
+//		if(stkix_>max_stack_usage_)
+//			max_stack_usage_=stkix_;
 	}
 
-	size_t stkix_{0};
+//	int stkix_{0};
 	vector<frame>frames_;
 	vector<string>all_registers_;
 	vector<string>free_registers_;
 	size_t max_usage_scratch_regs_{0};
 	size_t max_frame_count_{0};
-	size_t max_stack_usage_{0};
+	int max_stack_usage_{0};
 	string source_str_;
 	lut<field_meta>fields_;
 	lut<const stmt_def_func*>funcs_;

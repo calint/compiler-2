@@ -35,6 +35,8 @@ public:
 
 	inline const vector<token>&keywords()const{return keywords_;}
 
+	inline const string&name()const{return tok().name();}
+
 private:
 	vector<token>keywords_;
 };

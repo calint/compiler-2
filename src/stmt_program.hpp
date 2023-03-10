@@ -63,14 +63,15 @@ public:
 				s->compile(tc,os,indent_level);
 
 		os<<"\nsection .bss\nstk resd 256\nstk.end:\n";
-		os<<"\nsection .text\nalign 4\nbits 64\nglobal _start\n_start:\nmov rsp,stk.end\n";
+		os<<"\nsection .text\nalign 4\nbits 64\nglobal _start\n_start:\nmov rsp,stk.end\njmp main\n";
 		for(const auto&s:stmts_)
 			if(!s->is_in_data_section())
 				s->compile(tc,os,indent_level);
 
 		const stmt_def_func&main=tc.get_func_or_break(*this,"main");
 //		indent(os,indent_level,true);os<<"["<<tc.source_location(main.tok())<<"] "<<main.name()<<endl;
-		tc.push_func("main","","");
+		os<<"main:"<<endl;
+		tc.push_func("main","","",true);
 		main.code().compile(tc,os,indent_level);
 		tc.pop_func("main");
 	}

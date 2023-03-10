@@ -50,12 +50,58 @@ public:
 
 		const string&nm=tok().name();
 		const stmt_def_func&f=tc.get_func_or_break(*this,nm);
-		if(!f.is_inline())
-			throw compiler_error(*this,"function '"+f.name()+"' is not declared 'inline'");
-
 		if(f.params().size()!=args_.size())
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
 
+		if(!f.is_inline()){
+			const size_t rsp_delta=tc.get_current_stack_base(*this);
+			// save the current stack pointer on the stack
+			const string&reg1=tc.alloc_scratch_register(tok());
+			expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,reg1,"rsp");
+			expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(rsp_delta<<3));
+			indent(os,indent_level);os<<"push "<<reg1<<endl;
+			// stack is now: ...,[prev sp]
+			tc.free_scratch_reg(reg1);
+			// push arguments
+			vector<string>allocated_registers;
+			const int n=int(args_.size());
+			for(int i=n-1;i>=0;i--){
+				const statement&arg=*args_[unsigned(i)];
+				const stmt_def_func_param&param=f.param(unsigned(i));
+				if(arg.is_expression()){
+					// in reg
+					string reg;
+					for(const auto&kw:param.keywords()){
+						if(kw.name().find("reg_")==0){
+							// requested register for this argument
+							string reqreg=kw.name().substr(4,kw.name().size());
+							reg=tc.alloc_scratch_register(param,reqreg);
+							break;
+						}
+					}
+					if(reg=="") // no particular register requested for the argument
+						reg=tc.alloc_scratch_register(param);
+
+					allocated_registers.push_back(reg);
+					arg.compile(tc,os,indent_level+1,reg);
+					indent(os,indent_level);os<<"push "<<reg<<endl;
+					continue;
+				}
+
+				const string&id=arg.identifier();
+				indent(os,indent_level);os<<"push "<<id<<endl;
+			}
+			// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1]
+			indent(os,indent_level);os<<"call "<<f.name()<<endl;
+			// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[current rip]
+			// function returns, restore state
+			// add to rsp number of arguments
+			indent(os,indent_level);os<<"add rsp,"<<(args_.size()<<3)<<endl;
+			// stack is now: ...,[prev sp]
+			indent(os,indent_level);os<<"pop rsp"<<endl;
+			// stack is now: ...
+			return;
+		}
 		vector<tuple<string,string>>aliases_to_add;
 		if(not dest_ident.empty()){
 			if(f.returns().empty())
@@ -100,7 +146,7 @@ public:
 		const string&ret_jmp_label=nm+"_"+new_call_path+"_end";
 
 		indent(os,indent_level+1,true);os<<"inline: "<<new_call_path<<endl;
-		tc.push_func(nm,new_call_path,ret_jmp_label);
+		tc.push_func(nm,new_call_path,ret_jmp_label,true);
 		for(const auto&e:aliases_to_add)
 			tc.add_alias(get<0>(e),get<1>(e));
 		f.code().compile(tc,os,indent_level);
@@ -113,8 +159,6 @@ public:
 	inline statement&arg(size_t ix)const{return*(args_[ix].get());}
 
 	inline size_t arg_count()const{return args_.size();}
-
-	inline bool is_inline()const{return true;}
 
 private:
 	bool no_args_{false};
