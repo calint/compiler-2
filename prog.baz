@@ -2,15 +2,15 @@ field hello="hello\n"
 field world="world\n"
 
 func print(len:reg_rdx,ptr:reg_rcx){
-#    mov(rcx,ptr)
-#    mov(rdx,len)
+    mov(rcx,ptr)
+    mov(rdx,len)
     mov(rbx,1)
     mov(rax,4)
     int(0x80)
 }
 
 func inline exit(v:reg_rbx){
-    mov(rbx,v)
+#    mov(rbx,v)
     mov(rax,1)
     int(0x80)
 }
@@ -42,5 +42,5 @@ func inline main{
     foo()
     var b=3
     bar(a+f(a),b)
-    exit(0)
+    exit(a+b)
 }

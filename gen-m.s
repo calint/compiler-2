@@ -88,7 +88,8 @@ main:
    push rdx
    call bar
    add rsp,32
-     mov rbx,0
+     mov rbx,qword[rbp-8]
+     add rbx,qword[rbp-16]
      mov rax,1
      int 0x80
    exit_45_5_end:

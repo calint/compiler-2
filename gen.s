@@ -25,8 +25,8 @@ print:
 ;  ptr: rcx
    push rbp
    mov rbp,rsp
-;  [5:1] # mov(rcx,ptr) 
-;  [6:1] # mov(rdx,len) 
+;  [5:5] mov(rcx,ptr)
+;  [6:5] mov(rdx,len)
 ;  [7:5] mov(rbx,1)
    mov rbx,1
 ;  [8:5] mov(rax,4)
@@ -162,10 +162,14 @@ main:
    push rdx
    call bar
    add rsp,32
-;  [45:5] exit(0)
+;  [45:5] exit(a+b)
+;    [45:10] a+b
+;    [45:10] rbx=a
+     mov rbx,qword[rbp-8]
+;    [45:12] rbx+b
+     add rbx,qword[rbp-16]
 ;    inline: 45_5
-;    [13:5] mov(rbx,v)
-     mov rbx,0
+;    [13:1] # mov(rbx,v) 
 ;    [14:5] mov(rax,1)
      mov rax,1
 ;    [15:5] int(0x80)

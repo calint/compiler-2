@@ -94,6 +94,7 @@ public:
 				stk_ix++;
 			}else{
 				indent(os,indent_level+1,true);os<<pm_nm<<": "<<reg<<endl;
+				tc.add_alias(pm_nm,reg);
 			}
 		}
 		indent(os,indent_level+1);os<<"push rbp\n";

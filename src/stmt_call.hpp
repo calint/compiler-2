@@ -100,11 +100,11 @@ public:
 					continue;
 				}
 				string id=tc.resolve_ident_to_nasm(arg);
-				if(!argument_passed_in_register){
+				if(argument_passed_in_register){
+					indent(os,indent_level);os<<"mov "<<arg_reg<<","<<id<<endl;
+				}else{
 					indent(os,indent_level);os<<"push "<<id<<endl;
 					nargs_on_stack++;
-				}else{
-					indent(os,indent_level);os<<"mov "<<arg_reg<<","<<id<<endl;
 				}
 			}
 
@@ -157,28 +157,29 @@ public:
 		for(const auto&arg:args_){
 			const auto&param=f.param(i);
 			i++;
+			string arg_reg=param.get_register_or_empty();
+			if(!arg_reg.empty()){
+				tc.alloc_scratch_register(*arg,arg_reg); // return ignored
+				allocated_registers.push_back(arg_reg);
+			}
 			if(arg->is_expression()){
 				// in reg
-				string reg;
-				for(const auto&kw:param.keywords()){
-					if(kw.name().find("reg_")==0){
-						// requested register for this argument
-						string reqreg=kw.name().substr(4,kw.name().size());
-						reg=tc.alloc_scratch_register(param,reqreg);
-						break;
-					}
+				if(arg_reg.empty()){ // no particular register requested for the argument
+					arg_reg=tc.alloc_scratch_register(param);
+					allocated_registers.push_back(arg_reg);
 				}
-				if(reg=="") // no particular register requested for the argument
-					reg=tc.alloc_scratch_register(param);
-
-				allocated_registers.push_back(reg);
-				arg->compile(tc,os,indent_level+1,reg);
-				aliases_to_add.emplace_back(param.identifier(),reg);
+				arg->compile(tc,os,indent_level+1,arg_reg);
+				aliases_to_add.emplace_back(param.identifier(),arg_reg);
 				continue;
 			}
-
-			const string&id=arg->identifier();
-			aliases_to_add.emplace_back(param.identifier(),id);
+			if(arg_reg.empty()){
+				const string&id=arg->identifier();
+				aliases_to_add.emplace_back(param.identifier(),id);
+			}else{
+				const string&id=arg->identifier();
+				aliases_to_add.emplace_back(param.identifier(),arg_reg);
+				indent(os,indent_level+1);os<<"mov "<<arg_reg<<","<<tc.resolve_ident_to_nasm(param,id)<<endl;
+			}
 		}
 
 		const string&call_path=tc.get_call_path(tok());
