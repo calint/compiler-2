@@ -15,11 +15,11 @@ func inline exit(v){
     int(0x80)
 }
 
-func bar(a,b,c){
+func bar(a,b){
     loop{
-        if c=0 return
+        if b=0 return
         print(hello.len,hello)
-        c=c-1
+        b=b-1
     }
 }
 
@@ -31,7 +31,7 @@ func inline main{
     var a=1
     var b=2
     var c=3
-    bar(a,b,c)
+    bar(a,b)
     foo()
     exit(0)
 }
