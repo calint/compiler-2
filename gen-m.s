@@ -17,8 +17,6 @@ jmp main
 print:
    push rbp
    mov rbp,rsp
-   mov rcx,qword[rbp+24]
-   mov rdx,qword[rbp+16]
    mov rbx,1
    mov rax,4
    int 0x80
@@ -29,33 +27,32 @@ foo:
    mov rbp,rsp
    mov qword[rbp-8],world.len
    sub rsp,8
-   push world
-     mov r15,qword[rbp-8]
-     sub r15,1
-   push r15
+   mov rcx,world
+     mov rdx,qword[rbp-8]
+     sub rdx,1
    call print
-   add rsp,24
+   add rsp,8
    pop rbp
    ret
 bar:
    push rbp
    mov rbp,rsp
-   mov r15,qword[rbp+24]
-   mov qword[rbp-8],r15
+   mov rdx,qword[rbp+24]
+   mov qword[rbp-8],rdx
    loop_25_5:
      mov qword[rbp-16],2
      sub rsp,16
-     push hello
-       mov r15,hello.len
-       sub r15,qword[rbp+16]
-     push r15
+     mov rcx,hello
+       mov rdx,hello.len
+       sub rdx,qword[rbp+16]
      call print
-     add rsp,32
+     add rsp,16
      if_28_12:
      cmp_28_12:
      cmp qword[rbp+16],0
      jne if_28_9_end
-     if_28_12_code:  ; opt1
+     jmp if_28_12_code
+     if_28_12_code:
        jmp loop_25_5_end
      if_28_9_end:
      sub qword[rbp+16],1
@@ -72,10 +69,9 @@ f:
    pop rbp
    ret
 main:
-   push hello
-   push hello.len
+   mov rcx,hello
+   mov rdx,hello.len
    call print
-   add rsp,16
    mov qword[rbp-8],2
    sub rsp,8
    call foo
@@ -83,13 +79,13 @@ main:
    mov qword[rbp-16],3
    sub rsp,16
    push qword[rbp-16]
-     mov r15,qword[rbp-8]
+     mov rdx,qword[rbp-8]
      push qword[rbp-8]
      call f
-     mov r14,rax
      add rsp,8
-     add r15,r14
-   push r15
+     mov rcx,rax
+     add rdx,rcx
+   push rdx
    call bar
    add rsp,32
      mov rbx,0

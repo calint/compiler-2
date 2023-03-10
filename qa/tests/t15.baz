@@ -1,8 +1,6 @@
 field  hello="hello\n"
 
 func print(len:reg_rdx,ptr:reg_rcx){
-    mov(rcx,ptr)
-    mov(rdx,len)
     mov(rbx,1)
     mov(rax,4)
     int(0x80)

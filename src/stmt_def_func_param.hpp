@@ -37,6 +37,16 @@ public:
 
 	inline const string&name()const{return tok().name();}
 
+	inline const string get_register_or_empty()const{
+		for(const auto&kw:keywords()){
+			if(kw.name().find("reg_"))
+				continue;
+			// requested register for this argument
+			return kw.name().substr(4,kw.name().size());
+		}
+		return"";
+	}
+
 private:
 	vector<token>keywords_;
 };

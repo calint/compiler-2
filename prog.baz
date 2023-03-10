@@ -1,15 +1,15 @@
 field hello="hello\n"
 field world="world\n"
 
-func print(len,ptr){
-    mov(rcx,ptr)
-    mov(rdx,len)
+func print(len:reg_rdx,ptr:reg_rcx){
+#    mov(rcx,ptr)
+#    mov(rdx,len)
     mov(rbx,1)
     mov(rax,4)
     int(0x80)
 }
 
-func inline exit(v){
+func inline exit(v:reg_rbx){
     mov(rbx,v)
     mov(rax,1)
     int(0x80)

@@ -68,7 +68,6 @@ public:
 		if(is_inline())
 			return;
 
-		os<<endl;
 		indent(os,indent_level);os<<name()<<":\n";
 		tc.push_func(name(),"","",false);
 
@@ -82,13 +81,20 @@ public:
 		// define variables in the called context by binding arguments to stack
 		//    x=[rsp+argnum<<3+8] (const 8 skips return address)
 		const int n=int(params_.size());
+		int stk_ix=2; // skip [rbp] and [return address] on stack
 		for(int i=0;i<n;i++){
 			const stmt_def_func_param&pm=params_[unsigned(i)];
 			const string&pm_nm=pm.name();
 			// (i+2)<<3 ?
 			// stack after push rbp is ...,[arg n],...[arg 1],[return address],[rbp],
-			indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<((i+2)<<3)<<endl;
-			tc.add_func_arg(pm_nm,i+2);
+			const string&reg=pm.get_register_or_empty();
+			if(reg.empty()){
+				indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<(stk_ix<<3)<<endl;
+				tc.add_func_arg(pm_nm,stk_ix);
+				stk_ix++;
+			}else{
+				indent(os,indent_level+1,true);os<<pm_nm<<": "<<reg<<endl;
+			}
 		}
 		indent(os,indent_level+1);os<<"push rbp\n";
 		indent(os,indent_level+1);os<<"mov rbp,rsp\n";
