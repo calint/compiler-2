@@ -227,7 +227,7 @@ public:
 		frames_.pop_back();
 	}
 
-	inline size_t get_current_stack_base(const statement&stmt)const{
+	inline size_t get_current_stack_base()const{
 		size_t delta{0};
 		size_t frm_nbr=frames_.size()-1;
 		while(true){
@@ -254,24 +254,8 @@ public:
 		frames_.pop_back();
 	}
 
-	// find the current offset in the stack
-	inline size_t get_current_offset_in_stack(){
-		size_t i{frames_.size()-1};
-		size_t idx{0};
-		while(true){
-			const frame&frm=frames_[i];
-			idx+=frm.allocated_stack_size();
-			if(!frm.is_func_inline())
-				break; // found the base of current offset in stack
-			if(i==0)
-				break; // found the root
-			i--;
-		}
-		return idx;
-	}
-
 	inline void add_var(const string&name,const string&flags=""){
-		const size_t stkix=get_current_offset_in_stack()+1;
+		const size_t stkix=get_current_stack_base()+1;
 		// offset by one since rsp points to most recently pushed value
 		//   allocate next free slot
 		frames_.back().add_var(name,-int(stkix),flags);

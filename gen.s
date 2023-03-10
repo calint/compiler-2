@@ -54,39 +54,44 @@ main:
    mov qword[rsp-16],2
 ;  [24:5] loop
    loop_24_5:
-     if_25_12:
-;    [25:12] ? a=0 
-;    [25:12] ? a=0 
-     cmp_25_12:
+;    [25:9] var c=1 
+;    [25:13] c=1 
+;    [25:15] 1 
+;    [25:15] c=1 
+     mov qword[rsp-24],1
+     if_26_12:
+;    [26:12] ? a=0 
+;    [26:12] ? a=0 
+     cmp_26_12:
      cmp qword[rsp-8],0
-     jne if_25_9_end
-     jmp if_25_12_code
-     if_25_12_code:
-;      [25:16] break 
+     jne if_26_9_end
+     jmp if_26_12_code
+     if_26_12_code:
+;      [26:16] break 
        jmp loop_24_5_end
-     if_25_9_end:
-;    [26:9] bar()
+     if_26_9_end:
+;    [27:9] bar()
      mov r15,rsp
-     sub rsp,16
+     sub rsp,24
      push r15
      call bar
      pop rsp
-;    [27:9] a=a-1 
-;    [27:11] a-1 
-;    [27:11] a=a
-;    [27:13] a-1 
+;    [28:9] a=a-1 
+;    [28:11] a-1 
+;    [28:11] a=a
+;    [28:13] a-1 
      sub qword[rsp-8],1
    jmp loop_24_5
    loop_24_5_end:
-;  [29:5] exit(0)
-;    inline: 29_5
+;  [30:5] exit(0)
+;    inline: 30_5
 ;    [12:5] mov(rbx,v)
      mov rbx,0
 ;    [13:5] mov(rax,1)
      mov rax,1
 ;    [14:5] int(0x80)
      int 0x80
-   exit_29_5_end:
+   exit_30_5_end:
 
 ;      max registers in use: 1
 ;         max frames in use: 2

@@ -54,7 +54,7 @@ public:
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
 
 		if(!f.is_inline()){
-			const size_t rsp_delta=tc.get_current_stack_base(*this);
+			const size_t rsp_delta=tc.get_current_stack_base();
 			// save the current stack pointer on the stack
 			if(rsp_delta!=0){
 				// adjust stack past the allocated vars

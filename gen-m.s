@@ -28,16 +28,17 @@ main:
    mov qword[rsp-8],3
    mov qword[rsp-16],2
    loop_24_5:
-     if_25_12:
-     cmp_25_12:
+     mov qword[rsp-24],1
+     if_26_12:
+     cmp_26_12:
      cmp qword[rsp-8],0
-     jne if_25_9_end
-     jmp if_25_12_code
-     if_25_12_code:
+     jne if_26_9_end
+     jmp if_26_12_code
+     if_26_12_code:
        jmp loop_24_5_end
-     if_25_9_end:
+     if_26_9_end:
      mov r15,rsp
-     sub rsp,16
+     sub rsp,24
      push r15
      call bar
      pop rsp
@@ -47,4 +48,4 @@ main:
      mov rbx,0
      mov rax,1
      int 0x80
-   exit_29_5_end:
+   exit_30_5_end:
