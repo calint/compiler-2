@@ -50,7 +50,9 @@ bar:
      if_27_9_end:
      sub rsp,16
      push hello
-     push hello.len
+       mov r15,hello.len
+       sub r15,qword[rbp+8]
+     push r15
      call print
      add rsp,32
      mov rbp,rsp
@@ -68,7 +70,7 @@ main:
    mov rbp,rsp
    sub rsp,8
      mov r15,qword[rbp-8]
-     add r15,1
+     add r15,2
    push r15
    call bar
    add rsp,16

@@ -87,10 +87,15 @@ bar:
 ;      [27:16] break 
        jmp loop_25_5_end
      if_27_9_end:
-;    [28:9] print(hello.len,hello)
+;    [28:9] print(hello.len-n,hello)
      sub rsp,16
      push hello
-     push hello.len
+;      [28:15] hello.len-n
+;      [28:15] r15=hello.len
+       mov r15,hello.len
+;      [28:25] r15-n
+       sub r15,qword[rbp+8]
+     push r15
      call print
      add rsp,32
      mov rbp,rsp
@@ -124,13 +129,13 @@ main:
    call foo
    add rsp,8
    mov rbp,rsp
-;  [38:5] bar(a+1)
+;  [38:5] bar(a+2)
    sub rsp,8
-;    [38:9] a+1
+;    [38:9] a+2
 ;    [38:9] r15=a
      mov r15,qword[rbp-8]
-;    [38:11] r15+1
-     add r15,1
+;    [38:11] r15+2
+     add r15,2
    push r15
    call bar
    add rsp,16
