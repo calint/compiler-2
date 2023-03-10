@@ -20,24 +20,45 @@ _start:
 mov rsp,stk.end
 jmp main
 
+foo:
+;  [19:5] var len=world.len 
+;  [19:9] len=world.len 
+;  [19:13] world.len 
+;  [19:13] len=world.len 
+   mov qword[rsp-8],world.len
+;  [20:5] print(len,world)
+;    inline: 20_5
+;    [5:5] mov(rcx,ptr)
+     mov rcx,world
+;    [6:5] mov(rdx,len)
+     mov rdx,qword[rsp-8]
+;    [7:5] mov(rbx,1)
+     mov rbx,1
+;    [8:5] mov(rax,4)
+     mov rax,4
+;    [9:5] int(0x80)
+     int 0x80
+   print_20_5_end:
+   ret
+
+
 bar:
-;  a rsp+8
-;  b rsp+16
-;  [19:5] loop
-   loop_19_5:
-     if_20_12:
-;    [20:12] ? b=0 
-;    [20:12] ? b=0 
-     cmp_20_12:
-     cmp qword[rsp+16],0
-     jne if_20_9_end
-     jmp if_20_12_code
-     if_20_12_code:
-;      [20:16] return 
-       ret
-     if_20_9_end:
-;    [21:9] print(hello.len,hello)
-;      inline: 21_9
+;  n rsp+8
+;  [24:5] loop
+   loop_24_5:
+     if_25_12:
+;    [25:12] ? n=0 
+;    [25:12] ? n=0 
+     cmp_25_12:
+     cmp qword[rsp+8],0
+     jne if_25_9_end
+     jmp if_25_12_code
+     if_25_12_code:
+;      [25:16] break 
+       jmp loop_24_5_end
+     if_25_9_end:
+;    [26:9] print(hello.len,hello)
+;      inline: 26_9
 ;      [5:5] mov(rcx,ptr)
        mov rcx,hello
 ;      [6:5] mov(rdx,len)
@@ -48,71 +69,47 @@ bar:
        mov rax,4
 ;      [9:5] int(0x80)
        int 0x80
-     print_21_9_end:
-;    [22:9] b=b-1 
-;    [22:11] b-1 
-;    [22:11] b=b
-;    [22:13] b-1 
-     sub qword[rsp+16],1
-   jmp loop_19_5
-   loop_19_5_end:
-   ret
-
-
-foo:
-;  [27:5] print(world.len,world)
-;    inline: 27_5
-;    [5:5] mov(rcx,ptr)
-     mov rcx,world
-;    [6:5] mov(rdx,len)
-     mov rdx,world.len
-;    [7:5] mov(rbx,1)
-     mov rbx,1
-;    [8:5] mov(rax,4)
-     mov rax,4
-;    [9:5] int(0x80)
-     int 0x80
-   print_27_5_end:
+     print_26_9_end:
+;    [27:9] n=n-1 
+;    [27:11] n-1 
+;    [27:11] n=n
+;    [27:13] n-1 
+     sub qword[rsp+8],1
+   jmp loop_24_5
+   loop_24_5_end:
    ret
 
 main:
-;  [31:5] var a=1 
-;  [31:9] a=1 
-;  [31:11] 1 
-;  [31:11] a=1 
-   mov qword[rsp-8],1
-;  [32:5] var b=2 
-;  [32:9] b=2 
+;  [32:5] var a=2 
+;  [32:9] a=2 
 ;  [32:11] 2 
-;  [32:11] b=2 
-   mov qword[rsp-16],2
-;  [33:5] var c=3 
-;  [33:9] c=3 
-;  [33:11] 3 
-;  [33:11] c=3 
-   mov qword[rsp-24],3
-;  [34:5] bar(a,b)
-   mov r15,rsp
-   sub rsp,24
-   push qword[r15-16]
-   push qword[r15-8]
-   call bar
-   add rsp,40
-;  [35:5] foo()
-   mov r15,rsp
-   sub rsp,24
+;  [32:11] a=2 
+   mov qword[rsp-8],2
+;  [33:5] foo()
+   sub rsp,8
    call foo
-   add rsp,24
-;  [36:5] exit(0)
-;    inline: 36_5
+   add rsp,8
+;  [34:5] bar(a+1)
+   mov r15,rsp
+   sub rsp,8
+;    [34:9] a+1
+;    [34:9] r14=a
+     mov r14,qword[rsp-8]
+;    [34:11] r14+1
+     add r14,1
+   push r14
+   call bar
+   add rsp,16
+;  [35:5] exit(0)
+;    inline: 35_5
 ;    [13:5] mov(rbx,v)
      mov rbx,0
 ;    [14:5] mov(rax,1)
      mov rax,1
 ;    [15:5] int(0x80)
      int 0x80
-   exit_36_5_end:
+   exit_35_5_end:
 
-;      max registers in use: 1
+;      max registers in use: 2
 ;         max frames in use: 3
 ;          max stack in use: 0

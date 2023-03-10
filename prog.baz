@@ -15,23 +15,22 @@ func inline exit(v){
     int(0x80)
 }
 
-func bar(a,b){
+func foo{
+    var len=world.len
+    print(len,world)
+}
+
+func bar(n){
     loop{
-        if b=0 return
+        if n=0 break
         print(hello.len,hello)
-        b=b-1
+        n=n-1
     }
 }
 
-func foo{
-    print(world.len,world)
-}
-
 func inline main{
-    var a=1
-    var b=2
-    var c=3
-    bar(a,b)
+    var a=2
     foo()
+    bar(a+1)
     exit(0)
 }

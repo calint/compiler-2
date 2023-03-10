@@ -63,26 +63,28 @@ public:
 		vector<string>allocated_registers;
 
 		if(!f.is_inline()){
-			size_t rsp_delta_with_args{0};
+			size_t nargs=args_.size();
 			const size_t rsp_delta=tc.get_current_stack_base();
-			rsp_delta_with_args+=rsp_delta;
-			// initial stack pointer is saved in scratch register
+			size_t rsp_delta_with_args{rsp_delta+nargs};
+			// initial stack pointer is saved in scratch register if there
+			//   are arguments to be pushed on the stack
 			string initial_rsp;
 			if(rsp_delta!=0){
 				// adjust stack past the allocated vars
-				initial_rsp=tc.alloc_scratch_register(tok());
-				allocated_registers.push_back(initial_rsp);
-				expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,initial_rsp,"rsp");
+				if(nargs){
+					// if there are arguments then save the initial rsp
+					//   because rsp will change while pushing arguments on the stack
+					initial_rsp=tc.alloc_scratch_register(tok());
+					allocated_registers.push_back(initial_rsp);
+					expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,initial_rsp,"rsp");
+				}
 				expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(rsp_delta<<3));
 			}
 			// stack is now: base,.. vars ..,
 			// push arguments
-			size_t n=args_.size();
-			// rsp will decrease n*8
-			rsp_delta_with_args+=n;
-			while(n--){
-				const statement&arg=*args_[n];
-				const stmt_def_func_param&param=f.param(n);
+			while(nargs--){
+				const statement&arg=*args_[nargs];
+				const stmt_def_func_param&param=f.param(nargs);
 				if(arg.is_expression()){
 					// in reg
 					string reg;
