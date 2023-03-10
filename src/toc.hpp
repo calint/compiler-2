@@ -428,7 +428,7 @@ private:
 			return"qword["+name+"]";
 		}
 
-		// ie  prompt.len //?
+		// i.e.  prompt.len // ?
 		const char*p=name.c_str();
 		while(true){
 			if(!*p)break;
