@@ -79,7 +79,7 @@ public:
 			const stmt_def_func_param&pm=params_[unsigned(i)];
 			const string&pm_nm=pm.name();
 			indent(os,indent_level+1,true);os<<pm_nm<<" rsp+"<<((i+1)<<3)<<endl;
-			tc.add_var2(pm_nm,i+1);
+			tc.add_func_arg(pm_nm,i+1);
 		}
 		code_->compile(tc,os,indent_level,"");
 		indent(os,indent_level+1);os<<"ret\n";

@@ -45,6 +45,13 @@ public:
 		os<<")";
 	}
 
+	static void replaceSubstring(string& original_string,const string& substring_to_replace,const string& replacement_string){
+		size_t start_pos=original_string.find(substring_to_replace);
+		if(start_pos!=string::npos){
+			original_string.replace(start_pos,substring_to_replace.length(),replacement_string);
+		}
+	}
+
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 
@@ -53,20 +60,23 @@ public:
 		if(f.params().size()!=args_.size())
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
 
+		vector<string>allocated_registers;
+
 		if(!f.is_inline()){
 			const size_t rsp_delta=tc.get_current_stack_base();
 			// save the current stack pointer on the stack
+			// initial stack pointer is saved in rbp
+			string initial_rsp;
 			if(rsp_delta!=0){
 				// adjust stack past the allocated vars
-				const string&reg1=tc.alloc_scratch_register(tok());
-				expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,reg1,"rsp");
+				initial_rsp=tc.alloc_scratch_register(tok());
+				expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,initial_rsp,"rsp");
 				expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(rsp_delta<<3));
-				indent(os,indent_level);os<<"push "<<reg1<<endl;
-				tc.free_scratch_reg(reg1);
+				indent(os,indent_level);os<<"push "<<initial_rsp<<endl;
+				allocated_registers.push_back(initial_rsp);
 			}
 			// stack is now: ...,[prev sp]
 			// push arguments
-			vector<string>allocated_registers;
 			const int n=int(args_.size());
 			for(int i=n-1;i>=0;i--){
 				const statement&arg=*args_[unsigned(i)];
@@ -91,9 +101,20 @@ public:
 					continue;
 				}
 
-				const string&id=arg.identifier();
+				string id=tc.resolve_ident_to_nasm(arg);
+				// ! replace rsp with register name of initial rsp
+				if(!initial_rsp.empty()){
+					// id uses rsp as base but rsp is changing while pushing
+					//   so use the saved inital rsp
+					replaceSubstring(id,string{"rsp"},initial_rsp);
+				}
 				indent(os,indent_level);os<<"push "<<id<<endl;
 			}
+			// free the allocated registers
+			for(const string&r:allocated_registers)
+				tc.free_scratch_reg(r);
+			allocated_registers.clear();
+
 			//     stack is: base,.. vars ..,[ptr to base],[arg n],[arg n-1],...,[arg 1]
 			// or (no vars): base,[arg n],[arg n-1],...,[arg 1]
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
@@ -114,6 +135,7 @@ public:
 				indent(os,indent_level);os<<"pop rsp"<<endl;
 			}
 			// stack is: base
+			assert(allocated_registers.size()==0);
 			return;
 		}
 
@@ -127,7 +149,6 @@ public:
 			aliases_to_add.emplace_back(from,to);
 		}
 
-		vector<string>allocated_registers;
 		size_t i=0;
 		for(const auto&arg:args_){
 			const auto&param=f.param(i);

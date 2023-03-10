@@ -4,6 +4,9 @@ section .data
 ;[1:1] field hello="hello\n" 
 hello db 'hello',10,''
 hello.len equ $-hello
+;[2:1] field world="world\n" 
+world db 'world',10,''
+world.len equ $-world
 
 section .bss
 stk resd 256
@@ -17,82 +20,104 @@ _start:
 mov rsp,stk.end
 jmp main
 
-print:
-;  len rsp+8
-;  ptr rsp+16
-;  [4:5] mov(rcx,ptr)
-   mov rcx,qword[rsp+16]
-;  [5:5] mov(rdx,len)
-   mov rdx,qword[rsp+8]
-;  [6:5] mov(rbx,1)
-   mov rbx,1
-;  [7:5] mov(rax,4)
-   mov rax,4
-;  [8:5] int(0x80)
-   int 0x80
+bar:
+;  a rsp+8
+;  b rsp+16
+;  c rsp+24
+;  [19:5] loop
+   loop_19_5:
+     if_20_12:
+;    [20:12] ? c=0 
+;    [20:12] ? c=0 
+     cmp_20_12:
+     cmp qword[rsp+24],0
+     jne if_20_9_end
+     jmp if_20_12_code
+     if_20_12_code:
+;      [20:16] return 
+       ret
+     if_20_9_end:
+;    [21:9] print(hello.len,hello)
+;      inline: 21_9
+;      [5:5] mov(rcx,ptr)
+       mov rcx,hello
+;      [6:5] mov(rdx,len)
+       mov rdx,hello.len
+;      [7:5] mov(rbx,1)
+       mov rbx,1
+;      [8:5] mov(rax,4)
+       mov rax,4
+;      [9:5] int(0x80)
+       int 0x80
+     print_21_9_end:
+;    [22:9] c=c-1 
+;    [22:11] c-1 
+;    [22:11] c=c
+;    [22:13] c-1 
+     sub qword[rsp+24],1
+   jmp loop_19_5
+   loop_19_5_end:
    ret
 
 
-bar:
-;  [18:5] print(hello.len,hello)
-   push hello
-   push hello.len
-   call print
-   add rsp,16
+foo:
+;  [27:5] print(world.len,world)
+;    inline: 27_5
+;    [5:5] mov(rcx,ptr)
+     mov rcx,world
+;    [6:5] mov(rdx,len)
+     mov rdx,world.len
+;    [7:5] mov(rbx,1)
+     mov rbx,1
+;    [8:5] mov(rax,4)
+     mov rax,4
+;    [9:5] int(0x80)
+     int 0x80
+   print_27_5_end:
    ret
 
 main:
-;  [22:5] var a=3 
-;  [22:9] a=3 
-;  [22:11] 3 
-;  [22:11] a=3 
-   mov qword[rsp-8],3
-;  [23:5] var b=2 
-;  [23:9] b=2 
-;  [23:11] 2 
-;  [23:11] b=2 
+;  [31:5] var a=1 
+;  [31:9] a=1 
+;  [31:11] 1 
+;  [31:11] a=1 
+   mov qword[rsp-8],1
+;  [32:5] var b=2 
+;  [32:9] b=2 
+;  [32:11] 2 
+;  [32:11] b=2 
    mov qword[rsp-16],2
-;  [24:5] loop
-   loop_24_5:
-;    [25:9] var c=1 
-;    [25:13] c=1 
-;    [25:15] 1 
-;    [25:15] c=1 
-     mov qword[rsp-24],1
-     if_26_12:
-;    [26:12] ? a=0 
-;    [26:12] ? a=0 
-     cmp_26_12:
-     cmp qword[rsp-8],0
-     jne if_26_9_end
-     jmp if_26_12_code
-     if_26_12_code:
-;      [26:16] break 
-       jmp loop_24_5_end
-     if_26_9_end:
-;    [27:9] bar()
-     mov r15,rsp
-     sub rsp,24
-     push r15
-     call bar
-     pop rsp
-;    [28:9] a=a-1 
-;    [28:11] a-1 
-;    [28:11] a=a
-;    [28:13] a-1 
-     sub qword[rsp-8],1
-   jmp loop_24_5
-   loop_24_5_end:
-;  [30:5] exit(0)
-;    inline: 30_5
-;    [12:5] mov(rbx,v)
+;  [33:5] var c=3 
+;  [33:9] c=3 
+;  [33:11] 3 
+;  [33:11] c=3 
+   mov qword[rsp-24],3
+;  [34:5] bar(a,b,c)
+   mov r15,rsp
+   sub rsp,24
+   push r15
+   push qword[r15-24]
+   push qword[r15-16]
+   push qword[r15-8]
+   call bar
+   add rsp,24
+   pop rsp
+;  [35:5] foo()
+   mov r15,rsp
+   sub rsp,24
+   push r15
+   call foo
+   pop rsp
+;  [36:5] exit(0)
+;    inline: 36_5
+;    [13:5] mov(rbx,v)
      mov rbx,0
-;    [13:5] mov(rax,1)
+;    [14:5] mov(rax,1)
      mov rax,1
-;    [14:5] int(0x80)
+;    [15:5] int(0x80)
      int 0x80
-   exit_30_5_end:
+   exit_36_5_end:
 
 ;      max registers in use: 1
-;         max frames in use: 2
+;         max frames in use: 3
 ;          max stack in use: 0

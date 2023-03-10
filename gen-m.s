@@ -1,6 +1,8 @@
 section .data
 hello db 'hello',10,''
 hello.len equ $-hello
+world db 'world',10,''
+world.len equ $-world
 section .bss
 stk resd 256
 stk.end:
@@ -11,41 +13,53 @@ global _start
 _start:
 mov rsp,stk.end
 jmp main
-print:
-   mov rcx,qword[rsp+16]
-   mov rdx,qword[rsp+8]
-   mov rbx,1
-   mov rax,4
-   int 0x80
-   ret
 bar:
-   push hello
-   push hello.len
-   call print
-   add rsp,16
+   loop_19_5:
+     if_20_12:
+     cmp_20_12:
+     cmp qword[rsp+24],0
+     jne if_20_9_end
+     jmp if_20_12_code
+     if_20_12_code:
+       ret
+     if_20_9_end:
+       mov rcx,hello
+       mov rdx,hello.len
+       mov rbx,1
+       mov rax,4
+       int 0x80
+     print_21_9_end:
+     sub qword[rsp+24],1
+   jmp loop_19_5
+   loop_19_5_end:
+   ret
+foo:
+     mov rcx,world
+     mov rdx,world.len
+     mov rbx,1
+     mov rax,4
+     int 0x80
+   print_27_5_end:
    ret
 main:
-   mov qword[rsp-8],3
+   mov qword[rsp-8],1
    mov qword[rsp-16],2
-   loop_24_5:
-     mov qword[rsp-24],1
-     if_26_12:
-     cmp_26_12:
-     cmp qword[rsp-8],0
-     jne if_26_9_end
-     jmp if_26_12_code
-     if_26_12_code:
-       jmp loop_24_5_end
-     if_26_9_end:
-     mov r15,rsp
-     sub rsp,24
-     push r15
-     call bar
-     pop rsp
-     sub qword[rsp-8],1
-   jmp loop_24_5
-   loop_24_5_end:
+   mov qword[rsp-24],3
+   mov r15,rsp
+   sub rsp,24
+   push r15
+   push qword[r15-24]
+   push qword[r15-16]
+   push qword[r15-8]
+   call bar
+   add rsp,24
+   pop rsp
+   mov r15,rsp
+   sub rsp,24
+   push r15
+   call foo
+   pop rsp
      mov rbx,0
      mov rax,1
      int 0x80
-   exit_30_5_end:
+   exit_36_5_end:

@@ -1,6 +1,7 @@
-field  hello="hello\n"
+field hello="hello\n"
+field world="world\n"
 
-func print(len:reg_rdx,ptr:reg_rcx){
+func inline print(len:reg_rdx,ptr:reg_rcx){
     mov(rcx,ptr)
     mov(rdx,len)
     mov(rbx,1)
@@ -14,18 +15,23 @@ func inline exit(v){
     int(0x80)
 }
 
-func bar{
-    print(hello.len,hello)
+func bar(a,b,c){
+    loop{
+        if c=0 return
+        print(hello.len,hello)
+        c=c-1
+    }
+}
+
+func foo{
+    print(world.len,world)
 }
 
 func inline main{
-    var a=3
+    var a=1
     var b=2
-    loop{
-        var c=1
-        if a=0 break
-        bar()
-        a=a-1
-    }
+    var c=3
+    bar(a,b,c)
+    foo()
     exit(0)
 }

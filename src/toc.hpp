@@ -261,7 +261,7 @@ public:
 		frames_.back().add_var(name,-int(stkix),flags);
 	}
 
-	inline void add_var2(const string&name,const int stkix_delta,const string&flags=""){
+	inline void add_func_arg(const string&name,const int stkix_delta,const string&flags=""){
 		frames_.back().add_var(name,stkix_delta,flags);
 	}
 
