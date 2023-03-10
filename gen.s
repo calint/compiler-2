@@ -82,8 +82,7 @@ bar:
      cmp_27_12:
      cmp qword[rbp+8],0
      jne if_27_9_end
-     jmp if_27_12_code
-     if_27_12_code:
+     if_27_12_code:  ; opt1
 ;      [27:16] break 
        jmp loop_25_5_end
      if_27_9_end:
@@ -152,3 +151,4 @@ main:
 
 ;      max registers in use: 1
 ;         max frames in use: 2
+
