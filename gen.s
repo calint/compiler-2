@@ -71,69 +71,79 @@ bar:
    mov qword[rbp-8],r15
 ;  [25:5] loop
    loop_25_5:
-     if_26_12:
-;    [26:12] ? n=0 
-;    [26:12] ? n=0 
-     cmp_26_12:
+;    [26:9] var b=2 
+;    [26:13] b=2 
+;    [26:15] 2 
+;    [26:15] b=2 
+     mov qword[rbp-16],2
+     if_27_12:
+;    [27:12] ? n=0 
+;    [27:12] ? n=0 
+     cmp_27_12:
      cmp qword[rbp+8],0
-     jne if_26_9_end
-     jmp if_26_12_code
-     if_26_12_code:
-;      [26:16] break 
+     jne if_27_9_end
+     jmp if_27_12_code
+     if_27_12_code:
+;      [27:16] break 
        jmp loop_25_5_end
-     if_26_9_end:
-;    [27:9] print(hello.len,hello)
-     sub rsp,8
+     if_27_9_end:
+;    [28:9] print(hello.len,hello)
+     sub rsp,16
      push hello
      push hello.len
      call print
-     add rsp,24
+     add rsp,32
      mov rbp,rsp
-;    [28:9] n=n-1 
-;    [28:11] n-1 
-;    [28:11] n=n
-;    [28:13] n-1 
+;    [29:9] n=n-1 
+;    [29:11] n-1 
+;    [29:11] n=n
+;    [29:13] n-1 
      sub qword[rbp+8],1
-;    [29:9] i=i-1 
-;    [29:11] i-1 
-;    [29:11] i=i
-;    [29:13] i-1 
+;    [30:9] i=i-1 
+;    [30:11] i-1 
+;    [30:11] i=i
+;    [30:13] i-1 
      sub qword[rbp-8],1
+;    [31:9] b=b-1 
+;    [31:11] b-1 
+;    [31:11] b=b
+;    [31:13] b-1 
+     sub qword[rbp-16],1
    jmp loop_25_5
    loop_25_5_end:
    ret
 
 main:
-;  [34:5] var a=2 
-;  [34:9] a=2 
-;  [34:11] 2 
-;  [34:11] a=2 
+;  [36:5] var a=2 
+;  [36:9] a=2 
+;  [36:11] 2 
+;  [36:11] a=2 
    mov qword[rbp-8],2
-;  [35:5] foo()
+;  [37:5] foo()
    sub rsp,8
    call foo
    add rsp,8
    mov rbp,rsp
-;  [36:5] bar(a+1)
+;  [38:5] bar(a+1)
    sub rsp,8
-;    [36:9] a+1
-;    [36:9] r15=a
+;    [38:9] a+1
+;    [38:9] r15=a
      mov r15,qword[rbp-8]
-;    [36:11] r15+1
+;    [38:11] r15+1
      add r15,1
    push r15
    call bar
    add rsp,16
    mov rbp,rsp
-;  [37:5] exit(0)
-;    inline: 37_5
+;  [39:5] exit(0)
+;    inline: 39_5
 ;    [13:5] mov(rbx,v)
      mov rbx,0
 ;    [14:5] mov(rax,1)
      mov rax,1
 ;    [15:5] int(0x80)
      int 0x80
-   exit_37_5_end:
+   exit_39_5_end:
 
 ;      max registers in use: 1
 ;         max frames in use: 2

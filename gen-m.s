@@ -39,22 +39,24 @@ bar:
    mov r15,qword[rbp+8]
    mov qword[rbp-8],r15
    loop_25_5:
-     if_26_12:
-     cmp_26_12:
+     mov qword[rbp-16],2
+     if_27_12:
+     cmp_27_12:
      cmp qword[rbp+8],0
-     jne if_26_9_end
-     jmp if_26_12_code
-     if_26_12_code:
+     jne if_27_9_end
+     jmp if_27_12_code
+     if_27_12_code:
        jmp loop_25_5_end
-     if_26_9_end:
-     sub rsp,8
+     if_27_9_end:
+     sub rsp,16
      push hello
      push hello.len
      call print
-     add rsp,24
+     add rsp,32
      mov rbp,rsp
      sub qword[rbp+8],1
      sub qword[rbp-8],1
+     sub qword[rbp-16],1
    jmp loop_25_5
    loop_25_5_end:
    ret
@@ -74,4 +76,4 @@ main:
      mov rbx,0
      mov rax,1
      int 0x80
-   exit_37_5_end:
+   exit_39_5_end:

@@ -89,6 +89,7 @@ public:
 					if(reg=="") // no particular register requested for the argument
 						reg=tc.alloc_scratch_register(param);
 					allocated_registers.push_back(reg);
+
 					arg.compile(tc,os,indent_level+1,reg);
 					indent(os,indent_level);os<<"push "<<reg<<endl;
 					continue;
