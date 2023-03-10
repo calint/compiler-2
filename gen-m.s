@@ -12,49 +12,66 @@ bits 64
 global _start
 _start:
 mov rsp,stk.end
+mov rbp,rsp
 jmp main
+print:
+   mov rbp,rsp
+   mov rcx,qword[rbp+16]
+   mov rdx,qword[rbp+8]
+   mov rbx,1
+   mov rax,4
+   int 0x80
+   ret
 foo:
-   mov qword[rsp-8],world.len
-     mov rcx,world
-     mov rdx,qword[rsp-8]
-     mov rbx,1
-     mov rax,4
-     int 0x80
-   print_20_5_end:
+   mov rbp,rsp
+   mov qword[rbp-8],world.len
+   sub rsp,8
+   push world
+     mov r15,qword[rbp-8]
+     sub r15,1
+   push r15
+   call print
+   add rsp,24
+   mov rbp,rsp
    ret
 bar:
-   loop_24_5:
-     if_25_12:
-     cmp_25_12:
-     cmp qword[rsp+8],0
-     jne if_25_9_end
-     jmp if_25_12_code
-     if_25_12_code:
-       jmp loop_24_5_end
-     if_25_9_end:
-       mov rcx,hello
-       mov rdx,hello.len
-       mov rbx,1
-       mov rax,4
-       int 0x80
-     print_26_9_end:
-     sub qword[rsp+8],1
-   jmp loop_24_5
-   loop_24_5_end:
+   mov rbp,rsp
+   mov r15,qword[rbp+8]
+   mov qword[rbp-8],r15
+   loop_25_5:
+     if_26_12:
+     cmp_26_12:
+     cmp qword[rbp+8],0
+     jne if_26_9_end
+     jmp if_26_12_code
+     if_26_12_code:
+       jmp loop_25_5_end
+     if_26_9_end:
+     sub rsp,8
+     push hello
+     push hello.len
+     call print
+     add rsp,24
+     mov rbp,rsp
+     sub qword[rbp+8],1
+     sub qword[rbp-8],1
+   jmp loop_25_5
+   loop_25_5_end:
    ret
 main:
-   mov qword[rsp-8],2
+   mov qword[rbp-8],2
    sub rsp,8
    call foo
    add rsp,8
-   mov r15,rsp
+   mov rbp,rsp
    sub rsp,8
-     mov r14,qword[rsp-8]
-     add r14,1
-   push r14
+     mov r15,qword[rbp-8]
+     add r15,1
+   push r15
    call bar
    add rsp,16
+   mov rbp,rsp
      mov rbx,0
      mov rax,1
      int 0x80
-   exit_35_5_end:
+   exit_37_5_end:

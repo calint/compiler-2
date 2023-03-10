@@ -78,9 +78,10 @@ public:
 		for(int i=0;i<n;i++){
 			const stmt_def_func_param&pm=params_[unsigned(i)];
 			const string&pm_nm=pm.name();
-			indent(os,indent_level+1,true);os<<pm_nm<<" rsp+"<<((i+1)<<3)<<endl;
+			indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<((i+1)<<3)<<endl;
 			tc.add_func_arg(pm_nm,i+1);
 		}
+		indent(os,indent_level+1);os<<"mov rbp,rsp\n";
 		code_->compile(tc,os,indent_level,"");
 		indent(os,indent_level+1);os<<"ret\n";
 		os<<endl;

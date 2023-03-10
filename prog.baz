@@ -1,7 +1,7 @@
 field hello="hello\n"
 field world="world\n"
 
-func inline print(len:reg_rdx,ptr:reg_rcx){
+func print(len,ptr){
     mov(rcx,ptr)
     mov(rdx,len)
     mov(rbx,1)
@@ -17,14 +17,16 @@ func inline exit(v){
 
 func foo{
     var len=world.len
-    print(len,world)
+    print(len-1,world)
 }
 
 func bar(n){
+    var i=n
     loop{
         if n=0 break
         print(hello.len,hello)
         n=n-1
+        i=i-1
     }
 }
 

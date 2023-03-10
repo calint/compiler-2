@@ -49,14 +49,16 @@ public:
 	inline void add_var(const string&nm,const int stkix,const string&flags){
 		string str;
 		if(stkix>0){
-			str="qword[rsp+"+to_string(stkix<<3)+"]";
+			// function argument
+			str="qword[rbp+"+to_string(stkix<<3)+"]";
 		}else if(stkix<0){
-			str="qword[rsp"+to_string(stkix<<3)+"]";
+			// variable
+			str="qword[rbp"+to_string(stkix<<3)+"]";
+			allocated_stack_++;
 		}else{
-			str="qword[rsp]";
+			throw "toc:fram:add_var";
 		}
 		vars_.put(nm,allocated_var{nm,stkix,"",str,0});
-		allocated_stack_++;
 	}
 
 	inline size_t allocated_stack_size()const{return allocated_stack_;}
@@ -110,7 +112,7 @@ struct field_meta{
 class toc final{
 public:
 	inline toc(const string&source):
-		all_registers_{"rax","rbx","rcx","rdx","rsi","rdi","rbp","r8","r9","r10","r11","r12","r13","r14","r15"},
+		all_registers_{"rax","rbx","rcx","rdx","rsi","rdi","r8","r9","r10","r11","r12","r13","r14","r15"},
 		free_registers_{all_registers_},
 		source_str_{source}
 	{}
@@ -176,7 +178,7 @@ public:
 //		assert(framestk_.import_frames_.size()==0);
 		os<<"\n;      max registers in use: "<<tc.max_usage_scratch_regs_<<endl;
 		os<<";         max frames in use: "<<tc.max_frame_count_<<endl;
-		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
+//		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
 	}
 
 	inline string resolve_ident_to_nasm(const statement&stmt)const{//? tidy duplicate code

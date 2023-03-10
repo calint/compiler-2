@@ -66,18 +66,8 @@ public:
 			size_t nargs=args_.size();
 			const size_t rsp_delta=tc.get_current_stack_base();
 			size_t rsp_delta_with_args{rsp_delta+nargs};
-			// initial stack pointer is saved in scratch register if there
-			//   are arguments to be pushed on the stack
-			string initial_rsp;
 			if(rsp_delta!=0){
 				// adjust stack past the allocated vars
-				if(nargs){
-					// if there are arguments then save the initial rsp
-					//   because rsp will change while pushing arguments on the stack
-					initial_rsp=tc.alloc_scratch_register(tok());
-					allocated_registers.push_back(initial_rsp);
-					expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,initial_rsp,"rsp");
-				}
 				expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(rsp_delta<<3));
 			}
 			// stack is now: base,.. vars ..,
@@ -98,7 +88,6 @@ public:
 					}
 					if(reg=="") // no particular register requested for the argument
 						reg=tc.alloc_scratch_register(param);
-
 					allocated_registers.push_back(reg);
 					arg.compile(tc,os,indent_level+1,reg);
 					indent(os,indent_level);os<<"push "<<reg<<endl;
@@ -106,12 +95,6 @@ public:
 				}
 
 				string id=tc.resolve_ident_to_nasm(arg);
-				// id uses rsp as base but rsp is changing while pushing
-				//   so use the saved inital rsp to refer arguments
-				if(!initial_rsp.empty()){
-					// replace rsp with register name of initial rsp
-					replaceSubstring(id,string{"rsp"},initial_rsp);
-				}
 				indent(os,indent_level);os<<"push "<<id<<endl;
 			}
 			// free the allocated registers
@@ -123,11 +106,14 @@ public:
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
 
 			//     stack is: base,.. vars ..,[arg n],[arg n-1],...,[arg 1]
+			// restore rsp
 			if(rsp_delta_with_args!=0){
 				// restore rsp to what it was before the call
 				indent(os,indent_level);os<<"add rsp,"<<(rsp_delta_with_args<<3)<<endl;
+				// stack is: base,
+				// reset rbp to stack base
+				indent(os,indent_level);os<<"mov rbp,rsp\n";
 			}
-			// stack is: base
 			assert(allocated_registers.size()==0);
 			return;
 		}
