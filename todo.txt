@@ -1,5 +1,9 @@
 [x] non-inlined function calls
 [ ]   review
+[ ]     rbp=rsp before pushing arguments and at the beginning of functions
+          can be optimized if nasm ident not hard-coded [rbp+...]
+        example: "rbp" or "rsp" as argument to toc.nasm_ident(ident,"rbp",displacement)
+          where displacement is used when pushing arguments to compensate for the moving rsp
 [ ] multiple return values assignment: var a,b=foo()  a,b=foo()
 [ ] examine expression, expr_ops_list, stmt_call relation
 [ ] token.compile assumes is_str is field
