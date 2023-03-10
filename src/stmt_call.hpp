@@ -79,14 +79,14 @@ public:
 					// in reg
 					string reg;
 					for(const auto&kw:param.keywords()){
-						if(kw.name().find("reg_")==0){
-							// requested register for this argument
-							string reqreg=kw.name().substr(4,kw.name().size());
-							reg=tc.alloc_scratch_register(param,reqreg);
-							break;
-						}
+						if(kw.name().find("reg_"))
+							continue;
+						// requested register for this argument
+						string reqreg=kw.name().substr(4,kw.name().size());
+						reg=tc.alloc_scratch_register(param,reqreg);
+						break;
 					}
-					if(reg=="") // no particular register requested for the argument
+					if(reg.empty()) // no particular register requested for the argument
 						reg=tc.alloc_scratch_register(param);
 					allocated_registers.push_back(reg);
 
@@ -98,10 +98,6 @@ public:
 				string id=tc.resolve_ident_to_nasm(arg);
 				indent(os,indent_level);os<<"push "<<id<<endl;
 			}
-			// free the allocated registers
-			for(const string&r:allocated_registers)
-				tc.free_scratch_reg(r);
-			allocated_registers.clear();
 
 			//     stack is: base,.. vars ..,[arg n],[arg n-1],...,[arg 1]
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
@@ -115,7 +111,10 @@ public:
 				// reset rbp to stack base
 				indent(os,indent_level);os<<"mov rbp,rsp\n";
 			}
-			assert(allocated_registers.size()==0);
+
+			// free allocated registers
+			for(const string&r:allocated_registers)
+				tc.free_scratch_reg(r);
 			return;
 		}
 

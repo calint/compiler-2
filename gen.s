@@ -118,37 +118,44 @@ bar:
    ret
 
 main:
-;  [36:5] var a=2 
-;  [36:9] a=2 
-;  [36:11] 2 
-;  [36:11] a=2 
+;  [40:5] var a=2 
+;  [40:9] a=2 
+;  [40:11] 2 
+;  [40:11] a=2 
    mov qword[rbp-8],2
-;  [37:5] foo()
+;  [41:5] foo()
    sub rsp,8
    call foo
    add rsp,8
    mov rbp,rsp
-;  [38:5] bar(a+2)
+;  [42:5] bar(a+f())
    sub rsp,8
-;    [38:9] a+2
-;    [38:9] r15=a
+;    [42:9] a+f()
+;    [42:9] r15=a
      mov r15,qword[rbp-8]
-;    [38:11] r15+2
-     add r15,2
+;    [42:11] r15+f()
+;    [42:11] f()
+;      inline: 42_11
+;      [36:5] res=1 
+;      [36:9] 1 
+;      [36:9] res=1 
+       mov r14,1
+     f_42_11_end:
+     add r15,r14
    push r15
    call bar
    add rsp,16
    mov rbp,rsp
-;  [39:5] exit(0)
-;    inline: 39_5
+;  [43:5] exit(0)
+;    inline: 43_5
 ;    [13:5] mov(rbx,v)
      mov rbx,0
 ;    [14:5] mov(rax,1)
      mov rax,1
 ;    [15:5] int(0x80)
      int 0x80
-   exit_39_5_end:
+   exit_43_5_end:
 
-;      max registers in use: 1
+;      max registers in use: 3
 ;         max frames in use: 2
 
