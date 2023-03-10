@@ -233,7 +233,7 @@ public:
 		while(true){
 			const frame&frm=frames_[frm_nbr];
 			delta+=frm.allocated_stack_size();
-			if(!frm.is_func_inline())
+			if(frm.is_func()&&!frm.is_func_inline())
 				break;
 			if(frm_nbr==0)
 				break;

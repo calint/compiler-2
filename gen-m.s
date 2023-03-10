@@ -1,11 +1,4 @@
 section .data
-prompt db '  hello    enter name: '
-prompt.len equ $-prompt
-name db '............................................................'
-name.len equ $-name
-prompt2 db '  not a name: '
-prompt2.len equ $-prompt2
-len dq 0
 hello db 'hello',10,''
 hello.len equ $-hello
 section .bss
@@ -25,17 +18,33 @@ print:
    mov rax,4
    int 0x80
    ret
-main:
-   mov qword[rsp-8],1
-   mov r15,rsp
-   sub rsp,8
-   push r15
+bar:
    push hello
    push hello.len
    call print
    add rsp,16
-   pop rsp
+   ret
+main:
+   mov qword[rsp-8],1
+   mov qword[rsp-16],2
+   loop_24_5:
+     if_25_12:
+     cmp_25_12:
+     cmp qword[rsp-8],0
+     jne if_25_9_end
+     jmp if_25_12_code
+     if_25_12_code:
+       jmp loop_24_5_end
+     if_25_9_end:
+     mov r15,rsp
+     sub rsp,16
+     push r15
+     call bar
+     pop rsp
+     sub qword[rsp-8],1
+   jmp loop_24_5
+   loop_24_5_end:
      mov rbx,0
      mov rax,1
      int 0x80
-   exit_24_5_end:
+   exit_29_5_end:

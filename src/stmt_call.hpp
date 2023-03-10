@@ -56,12 +56,15 @@ public:
 		if(!f.is_inline()){
 			const size_t rsp_delta=tc.get_current_stack_base(*this);
 			// save the current stack pointer on the stack
-			const string&reg1=tc.alloc_scratch_register(tok());
-			expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,reg1,"rsp");
-			expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(rsp_delta<<3));
-			indent(os,indent_level);os<<"push "<<reg1<<endl;
+			if(rsp_delta!=0){
+				// adjust stack past the allocated vars
+				const string&reg1=tc.alloc_scratch_register(tok());
+				expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,reg1,"rsp");
+				expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(rsp_delta<<3));
+				indent(os,indent_level);os<<"push "<<reg1<<endl;
+				tc.free_scratch_reg(reg1);
+			}
 			// stack is now: ...,[prev sp]
-			tc.free_scratch_reg(reg1);
 			// push arguments
 			vector<string>allocated_registers;
 			const int n=int(args_.size());
@@ -91,17 +94,30 @@ public:
 				const string&id=arg.identifier();
 				indent(os,indent_level);os<<"push "<<id<<endl;
 			}
-			// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1]
+			//     stack is: base,.. vars ..,[ptr to base],[arg n],[arg n-1],...,[arg 1]
+			// or (no vars): base,[arg n],[arg n-1],...,[arg 1]
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
-			// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[current rip]
-			// function returns, restore state
-			// add to rsp number of arguments
-			indent(os,indent_level);os<<"add rsp,"<<(args_.size()<<3)<<endl;
-			// stack is now: ...,[prev sp]
-			indent(os,indent_level);os<<"pop rsp"<<endl;
-			// stack is now: ...
+
+			//     stack is: base,.. vars ..,[ptr to base],[arg n],[arg n-1],...,[arg 1]
+			// or (no vars): base,[arg n],[arg n-1],...,[arg 1]
+			if(args_.size()!=0){
+				// if there were arguments pushed on the stack
+				//    restore rsp to what it was before pushing arguments
+				// add to rsp number of arguments*8
+				indent(os,indent_level);os<<"add rsp,"<<(args_.size()<<3)<<endl;
+				//     stack is: base,.. vars ..,[ptr to base]
+				// or (no vars): base
+			}
+			// if there are variables on stack then restore rsp to base
+			if(rsp_delta!=0){
+				// stack is now: base,.. vars ..,[base]
+				indent(os,indent_level);os<<"pop rsp"<<endl;
+			}
+			// stack is: base
 			return;
 		}
+
+		// inlined function
 		vector<tuple<string,string>>aliases_to_add;
 		if(not dest_ident.empty()){
 			if(f.returns().empty())

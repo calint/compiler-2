@@ -73,7 +73,7 @@ public:
 		tc.push_func(name(),"","",false);
 		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[ret address]
 		// define variables in the called context by binding arguments to stack
-		//    x=[sp+argnum<<3+8] (8 skips skip return address)
+		//    x=[sp+argnum<<3+8] (const 8 skips return address)
 		const int n=int(params_.size());
 		for(int i=0;i<n;i++){
 			const stmt_def_func_param&pm=params_[unsigned(i)];
