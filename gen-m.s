@@ -25,7 +25,7 @@ bar:
    add rsp,16
    ret
 main:
-   mov qword[rsp-8],1
+   mov qword[rsp-8],3
    mov qword[rsp-16],2
    loop_24_5:
      if_25_12:
