@@ -229,7 +229,7 @@ public:
 		frames_.pop_back();
 	}
 
-	inline size_t get_current_stack_base()const{
+	inline size_t get_current_stack_size()const{
 		size_t delta{0};
 		size_t frm_nbr=frames_.size()-1;
 		while(true){
@@ -257,7 +257,7 @@ public:
 	}
 
 	inline void add_var(const string&name,const string&flags=""){
-		const size_t stkix=get_current_stack_base()+1;
+		const size_t stkix=get_current_stack_size()+1;
 		// offset by one since rsp points to most recently pushed value
 		//   allocate next free slot
 		frames_.back().add_var(name,-int(stkix),flags);
@@ -372,6 +372,23 @@ public:
 		return find(all_registers_.begin(),all_registers_.end(),id)!=all_registers_.end();
 	}
 
+	// returns true if stack pointer needs to be positioned for func call
+	inline bool enter_func_call(){
+		if(func_call_nested_==0){
+			func_call_nested_++;
+			return true;
+		}
+		func_call_nested_++;
+		return false;
+	}
+	// returns true if stack pointer needs to be positioned at base
+	inline bool exit_func_call(){
+		func_call_nested_--;
+		if(func_call_nested_==0)
+			return true;
+		return false;
+	}
+
 private:
 	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&ok)const{//? tidy duplicate code
 		string name=ident;
@@ -380,10 +397,14 @@ private:
 				if(!frames_[i].has_alias(name))
 					break;
 				name=frames_[i].get_alias(name);
+				if(i==0)
+					break;
 				i--;
 				continue;
 			}
 			if(frames_[i].has_var(name))
+				break;
+			if(i==0)
 				break;
 			i--;
 		}
@@ -467,4 +488,5 @@ private:
 	lut<field_meta>fields_;
 	lut<const stmt_def_func*>funcs_;
 	lut<const stmt_def_table*>tables_;
+	size_t func_call_nested_{0};
 };

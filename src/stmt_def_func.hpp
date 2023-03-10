@@ -71,18 +71,29 @@ public:
 		os<<endl;
 		indent(os,indent_level);os<<name()<<":\n";
 		tc.push_func(name(),"","",false);
-		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[ret address]
+
+		// return binding
+		if(!returns().empty()){
+			const string&from=returns()[0].name();
+			tc.add_alias(from,"rax");
+		}
+
+		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[return address]
 		// define variables in the called context by binding arguments to stack
-		//    x=[sp+argnum<<3+8] (const 8 skips return address)
+		//    x=[rsp+argnum<<3+8] (const 8 skips return address)
 		const int n=int(params_.size());
 		for(int i=0;i<n;i++){
 			const stmt_def_func_param&pm=params_[unsigned(i)];
 			const string&pm_nm=pm.name();
-			indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<((i+1)<<3)<<endl;
-			tc.add_func_arg(pm_nm,i+1);
+			// (i+2)<<3 ?
+			// stack after push rbp is ...,[arg n],...[arg 1],[return address],[rbp],
+			indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<((i+2)<<3)<<endl;
+			tc.add_func_arg(pm_nm,i+2);
 		}
+		indent(os,indent_level+1);os<<"push rbp\n";
 		indent(os,indent_level+1);os<<"mov rbp,rsp\n";
 		code_->compile(tc,os,indent_level,"");
+		indent(os,indent_level+1);os<<"pop rbp\n";
 		indent(os,indent_level+1);os<<"ret\n";
 		os<<endl;
 		tc.pop_func(name());

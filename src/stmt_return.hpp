@@ -11,6 +11,7 @@ public:
 		const string&ret=tc.get_func_return_label_or_break(*this);
 		if(ret.empty()){
 			// not in-lined
+			indent(os,indent_level);os<<"pop rbp\n";
 			indent(os,indent_level);os<<"ret\n";
 			return;
 		}

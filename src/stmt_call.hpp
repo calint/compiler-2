@@ -64,13 +64,17 @@ public:
 
 		if(!f.is_inline()){
 			size_t nargs=args_.size();
-			const size_t rsp_delta=tc.get_current_stack_base();
-			size_t rsp_delta_with_args{rsp_delta+nargs};
-			if(rsp_delta!=0){
-				// adjust stack past the allocated vars
-				expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(rsp_delta<<3));
+			size_t rsp_delta_with_args{nargs};
+			if(tc.enter_func_call()){
+				// if true then this is not a call within arguments of another call
+				const size_t rsp_delta=tc.get_current_stack_size();
+				rsp_delta_with_args+=rsp_delta;
+				if(rsp_delta!=0){
+					// adjust stack past the allocated vars
+					expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(rsp_delta<<3));
+				}
+				// stack is now: base,.. vars ..,
 			}
-			// stack is now: base,.. vars ..,
 			// push arguments
 			while(nargs--){
 				const statement&arg=*args_[nargs];
@@ -99,17 +103,28 @@ public:
 				indent(os,indent_level);os<<"push "<<id<<endl;
 			}
 
-			//     stack is: base,.. vars ..,[arg n],[arg n-1],...,[arg 1]
+			//     stack is: base,.. vars ..,[arg n],[arg n-1],...,[arg 1],
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
 
-			//     stack is: base,.. vars ..,[arg n],[arg n-1],...,[arg 1]
+			if(not dest_ident.empty()){
+//				const string&id=tc.resolve_ident_to_nasm(dest_ident);
+				indent(os,indent_level);os<<"mov "<<dest_ident<<",rax"<<endl;
+			}
+			//     stack is: base,.. vars ..,[arg n],[arg n-1],...,[arg 1],
 			// restore rsp
-			if(rsp_delta_with_args!=0){
+			if(tc.exit_func_call()){
+				// this is not a call within the arguments of another call
 				// restore rsp to what it was before the call
 				indent(os,indent_level);os<<"add rsp,"<<(rsp_delta_with_args<<3)<<endl;
 				// stack is: base,
-				// reset rbp to stack base
-				indent(os,indent_level);os<<"mov rbp,rsp\n";
+			}else{
+				// this is a call nested in the arguments of a different call
+				// restore rsp past the arguments
+				// stack is: base,.. other func args ..,[arg n],[arg n-1],...,[arg 1],
+				if(!args_.empty()){
+					indent(os,indent_level);os<<"add rsp,"<<(args_.size()<<3)<<endl;
+					// stack is: base,.. other func args ..,
+				}
 			}
 
 			// free allocated registers
