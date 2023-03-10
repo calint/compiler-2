@@ -17,7 +17,7 @@ bar:
    loop_19_5:
      if_20_12:
      cmp_20_12:
-     cmp qword[rsp+24],0
+     cmp qword[rsp+16],0
      jne if_20_9_end
      jmp if_20_12_code
      if_20_12_code:
@@ -29,7 +29,7 @@ bar:
        mov rax,4
        int 0x80
      print_21_9_end:
-     sub qword[rsp+24],1
+     sub qword[rsp+16],1
    jmp loop_19_5
    loop_19_5_end:
    ret
@@ -48,11 +48,10 @@ main:
    mov r15,rsp
    sub rsp,24
    push r15
-   push qword[r15-24]
    push qword[r15-16]
    push qword[r15-8]
    call bar
-   add rsp,24
+   add rsp,16
    pop rsp
    mov r15,rsp
    sub rsp,24

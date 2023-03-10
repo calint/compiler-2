@@ -23,14 +23,13 @@ jmp main
 bar:
 ;  a rsp+8
 ;  b rsp+16
-;  c rsp+24
 ;  [19:5] loop
    loop_19_5:
      if_20_12:
-;    [20:12] ? c=0 
-;    [20:12] ? c=0 
+;    [20:12] ? b=0 
+;    [20:12] ? b=0 
      cmp_20_12:
-     cmp qword[rsp+24],0
+     cmp qword[rsp+16],0
      jne if_20_9_end
      jmp if_20_12_code
      if_20_12_code:
@@ -50,11 +49,11 @@ bar:
 ;      [9:5] int(0x80)
        int 0x80
      print_21_9_end:
-;    [22:9] c=c-1 
-;    [22:11] c-1 
-;    [22:11] c=c
-;    [22:13] c-1 
-     sub qword[rsp+24],1
+;    [22:9] b=b-1 
+;    [22:11] b-1 
+;    [22:11] b=b
+;    [22:13] b-1 
+     sub qword[rsp+16],1
    jmp loop_19_5
    loop_19_5_end:
    ret
@@ -92,15 +91,14 @@ main:
 ;  [33:11] 3 
 ;  [33:11] c=3 
    mov qword[rsp-24],3
-;  [34:5] bar(a,b,c)
+;  [34:5] bar(a,b)
    mov r15,rsp
    sub rsp,24
    push r15
-   push qword[r15-24]
    push qword[r15-16]
    push qword[r15-8]
    call bar
-   add rsp,24
+   add rsp,16
    pop rsp
 ;  [35:5] foo()
    mov r15,rsp
