@@ -63,24 +63,26 @@ public:
 		vector<string>allocated_registers;
 
 		if(!f.is_inline()){
+			size_t rsp_delta_with_args{0};
 			const size_t rsp_delta=tc.get_current_stack_base();
-			// save the current stack pointer on the stack
-			// initial stack pointer is saved in rbp
+			rsp_delta_with_args+=rsp_delta;
+			// initial stack pointer is saved in scratch register
 			string initial_rsp;
 			if(rsp_delta!=0){
 				// adjust stack past the allocated vars
 				initial_rsp=tc.alloc_scratch_register(tok());
+				allocated_registers.push_back(initial_rsp);
 				expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,initial_rsp,"rsp");
 				expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(rsp_delta<<3));
-				indent(os,indent_level);os<<"push "<<initial_rsp<<endl;
-				allocated_registers.push_back(initial_rsp);
 			}
-			// stack is now: ...,[prev sp]
+			// stack is now: base,.. vars ..,
 			// push arguments
-			const int n=int(args_.size());
-			for(int i=n-1;i>=0;i--){
-				const statement&arg=*args_[unsigned(i)];
-				const stmt_def_func_param&param=f.param(unsigned(i));
+			size_t n=args_.size();
+			// rsp will decrease n*8
+			rsp_delta_with_args+=n;
+			while(n--){
+				const statement&arg=*args_[n];
+				const stmt_def_func_param&param=f.param(n);
 				if(arg.is_expression()){
 					// in reg
 					string reg;
@@ -102,10 +104,10 @@ public:
 				}
 
 				string id=tc.resolve_ident_to_nasm(arg);
-				// ! replace rsp with register name of initial rsp
+				// id uses rsp as base but rsp is changing while pushing
+				//   so use the saved inital rsp to refer arguments
 				if(!initial_rsp.empty()){
-					// id uses rsp as base but rsp is changing while pushing
-					//   so use the saved inital rsp
+					// replace rsp with register name of initial rsp
 					replaceSubstring(id,string{"rsp"},initial_rsp);
 				}
 				indent(os,indent_level);os<<"push "<<id<<endl;
@@ -115,24 +117,13 @@ public:
 				tc.free_scratch_reg(r);
 			allocated_registers.clear();
 
-			//     stack is: base,.. vars ..,[ptr to base],[arg n],[arg n-1],...,[arg 1]
-			// or (no vars): base,[arg n],[arg n-1],...,[arg 1]
+			//     stack is: base,.. vars ..,[arg n],[arg n-1],...,[arg 1]
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
 
-			//     stack is: base,.. vars ..,[ptr to base],[arg n],[arg n-1],...,[arg 1]
-			// or (no vars): base,[arg n],[arg n-1],...,[arg 1]
-			if(args_.size()!=0){
-				// if there were arguments pushed on the stack
-				//    restore rsp to what it was before pushing arguments
-				// add to rsp number of arguments*8
-				indent(os,indent_level);os<<"add rsp,"<<(args_.size()<<3)<<endl;
-				//     stack is: base,.. vars ..,[ptr to base]
-				// or (no vars): base
-			}
-			// if there are variables on stack then restore rsp to base
-			if(rsp_delta!=0){
-				// stack is now: base,.. vars ..,[base]
-				indent(os,indent_level);os<<"pop rsp"<<endl;
+			//     stack is: base,.. vars ..,[arg n],[arg n-1],...,[arg 1]
+			if(rsp_delta_with_args!=0){
+				// restore rsp to what it was before the call
+				indent(os,indent_level);os<<"add rsp,"<<(rsp_delta_with_args<<3)<<endl;
 			}
 			// stack is: base
 			assert(allocated_registers.size()==0);

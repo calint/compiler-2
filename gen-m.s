@@ -47,17 +47,14 @@ main:
    mov qword[rsp-24],3
    mov r15,rsp
    sub rsp,24
-   push r15
    push qword[r15-16]
    push qword[r15-8]
    call bar
-   add rsp,16
-   pop rsp
+   add rsp,40
    mov r15,rsp
    sub rsp,24
-   push r15
    call foo
-   pop rsp
+   add rsp,24
      mov rbx,0
      mov rax,1
      int 0x80

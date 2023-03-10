@@ -94,18 +94,15 @@ main:
 ;  [34:5] bar(a,b)
    mov r15,rsp
    sub rsp,24
-   push r15
    push qword[r15-16]
    push qword[r15-8]
    call bar
-   add rsp,16
-   pop rsp
+   add rsp,40
 ;  [35:5] foo()
    mov r15,rsp
    sub rsp,24
-   push r15
    call foo
-   pop rsp
+   add rsp,24
 ;  [36:5] exit(0)
 ;    inline: 36_5
 ;    [13:5] mov(rbx,v)
