@@ -1,4 +1,5 @@
-[ ] non-inlined function calls
+[x] non-inlined function calls
+[ ]   review
 [ ] multiple return values assignment: var a,b=foo()  a,b=foo()
 [ ] examine expression, expr_ops_list, stmt_call relation
 [ ] token.compile assumes is_str is field
