@@ -196,13 +196,13 @@ int main(int argc,char**args){
 		fo.close();
 		if(file_read_to_string(src_file_name)!=file_read_to_string("diff.baz"))
 			throw string("generated source differs");
-//		stringstream ss1;
-//		p.build(ss1);
-//		string pass1=optimize_jumps_1(ss1);
-//		stringstream ss2{pass1};
-//		string pass2=optimize_jumps_2(ss2);
-//		cout<<pass2<<endl;
-		p.build(cout);
+		stringstream ss1;
+		p.build(ss1);
+		string pass1=optimize_jumps_1(ss1);
+		stringstream ss2{pass1};
+		string pass2=optimize_jumps_2(ss2);
+		cout<<pass2<<endl;
+//		p.build(cout);
 	}catch(compiler_error&e){
 		size_t start_char_in_line{0};
 		auto lineno=toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line);
@@ -235,6 +235,6 @@ inline unique_ptr<statement>create_statement_from_tokenizer(const statement&pare
 	auto tk=t.next_token();
 	if(tk.is_name("#"))return make_unique<stmt_comment>(parent,move(tk),t);// i.e.  print("hello") # comment
 	if(t.is_peek_char('('))return create_statement_from_tokenizer(parent,move(tk),t); // i.e.  f(...)
-	return make_unique<statement>(parent,move(tk));// ie  0x80
+	return make_unique<statement>(parent,move(tk));// i.e. 0x80
 }
 

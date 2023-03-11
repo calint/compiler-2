@@ -81,8 +81,7 @@ foo:
    cmp_30_8:
    cmp qword[rbp+16],0
    jne if_30_5_end
-   jmp if_30_8_code
-   if_30_8_code:
+   if_30_8_code:  ; opt1
 ;    [30:12] return 
      pop rbp
      ret
@@ -169,8 +168,7 @@ main:
      cmp_47_12:
      cmp qword[rbp-56],0
      jne if_49_17
-     jmp if_47_12_code
-     if_47_12_code:
+     if_47_12_code:  ; opt1
 ;      [48:13] print(prompt.len,prompt)
        sub rsp,56
        mov rcx,prompt
@@ -184,8 +182,7 @@ main:
      cmp_49_17:
      cmp qword[rbp-56],4
      jg if_else_47_9
-     jmp if_49_17_code
-     if_49_17_code:
+     if_49_17_code:  ; opt1
 ;      [50:13] print(prompt2.len,prompt2)
        sub rsp,56
        mov rcx,prompt2
@@ -219,8 +216,7 @@ main:
            mov r15,rax
          cmp r15,1
          jne if_53_13_end
-         jmp if_53_16_code
-         if_53_16_code:
+         if_53_16_code:  ; opt1
 ;          [53:38] # is only \n 
 ;          [54:17] break 
            jmp loop_45_5_end
@@ -236,3 +232,4 @@ main:
 
 ; max scratch registers in use: 1
 ;            max frames in use: 3
+
