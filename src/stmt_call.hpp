@@ -54,9 +54,8 @@ public:
 		if(f.params().size()!=args_.size())
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
 
-		vector<string>allocated_named_registers;
-
 		if(!f.is_inline()){
+			vector<string>allocated_named_registers;
 			size_t nargs{args_.size()};
 			const size_t rsp_delta{tc.get_current_stack_size()};
 			if(tc.enter_func_call()){
@@ -171,6 +170,8 @@ public:
 		}
 
 		// inlined function
+
+		vector<string>allocated_named_registers;
 		vector<string>allocated_scratch_registers;
 
 		// buffer the aliases of arguments
@@ -221,6 +222,7 @@ public:
 				const string&id=arg->identifier();
 				// alias parameter name to the register
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
+				// move argument to register
 				const string&src=tc.resolve_ident_to_nasm(param,id);
 				expr_ops_list::asm_cmd("mov",param,tc,os,indent_level+1,arg_reg,src);
 			}
