@@ -9,7 +9,6 @@ public:
 		oplist_{expr_ops_list{*this,t}}
 	{}
 
-
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		os<<"=";
@@ -24,18 +23,24 @@ public:
 
 		// compare generated instructions with and without allocated scratch register
 		// select the method that produces least instructions
+
+		// try without scratch register
 		stringstream ss1;
 		oplist_.compile(tc,ss1,indent_level,identifier());
 
+		// try with scratch register
 		stringstream ss2;
 		const string&reg=tc.alloc_scratch_register(tok());
 		oplist_.compile(tc,ss2,indent_level,reg);
-		const string&resolv=tc.resolve_ident_to_nasm(*this);
-		expr_ops_list::asm_cmd("mov",*this,tc,ss2,indent_level,resolv,reg);
+		const string&dest_resolved=tc.resolve_ident_to_nasm(*this);
+		expr_ops_list::asm_cmd("mov",*this,tc,ss2,indent_level,dest_resolved,reg);
 		tc.free_scratch_reg(reg);
 
+		// compare instruction count
 		const size_t ss1_count=count_instructions(ss1);
 		const size_t ss2_count=count_instructions(ss2);
+
+		// select version with least instructions
 		if(ss1_count<ss2_count){
 			os<<ss1.str();
 		}else{

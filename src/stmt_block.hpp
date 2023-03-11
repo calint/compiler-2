@@ -4,6 +4,7 @@
 #include"stmt_semicolon.hpp"
 #include"stmt_def_var.hpp"
 #include"stmt_comment.hpp"
+#include"stmt_whitespace.hpp"
 
 class stmt_block final:public statement{
 public:
@@ -12,10 +13,10 @@ public:
 		is_one_statement_{not t.is_next_char('{')}
 	{
 		while(true){
+			// comments, semi-colon not considered a statment
 			bool last_statement_considered_no_statment=false;
 			if(t.is_eos())
 				break;
-
 			if(t.is_next_char('}')){
 				if(not is_one_statement_)
 					break;
@@ -23,9 +24,8 @@ public:
 			}
 
 			token tk=t.next_token();
-
 			if(tk.is_blank()){
-				if(t.is_next_char(';')){ // in-case ; is used
+				if(t.is_next_char(';')){ // in-case ';' is used
 					stmts_.emplace_back(make_unique<stmt_semicolon>(*this,move(tk),t));
 					last_statement_considered_no_statment=true;
 					continue;
@@ -40,8 +40,9 @@ public:
 				stmts_.emplace_back(make_unique<stmt_comment>(*this,move(tk),t));
 				last_statement_considered_no_statment=true;
 			}else if(tk.is_name("")){
-				stmts_.emplace_back(make_unique<statement>(*this,move(tk)));
+				stmts_.emplace_back(make_unique<stmt_whitespace>(*this,move(tk)));
 			}else{
+				// circular reference resolver
 				stmts_.emplace_back(create_statement_from_tokenizer(*this,move(tk),t));
 			}
 

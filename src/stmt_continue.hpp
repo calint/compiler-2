@@ -2,7 +2,7 @@
 
 class stmt_continue final:public statement{
 public:
-	inline stmt_continue(const statement&parent,const token&tk,tokenizer&t):
+	inline stmt_continue(const statement&parent,const token&tk):
 		statement{parent,tk}
 	{}
 

@@ -2,7 +2,7 @@
 
 class stmt_break final:public statement{
 public:
-	inline stmt_break(const statement&parent,const token&tk,tokenizer&t):
+	inline stmt_break(const statement&parent,const token&tk):
 		statement{parent,tk}
 	{}
 

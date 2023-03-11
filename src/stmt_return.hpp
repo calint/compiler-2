@@ -2,7 +2,7 @@
 
 class stmt_return final:public statement{
 public:
-	inline stmt_return(const statement&parent,const token&tk,tokenizer&t):
+	inline stmt_return(const statement&parent,const token&tk):
 		statement{parent,tk}
 	{}
 

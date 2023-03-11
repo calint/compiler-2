@@ -147,20 +147,20 @@ public:
 
 	inline bool is_empty()const override{return expressions_.empty();}
 
-	inline static void asm_cmd(const string&op,const statement&s,toc&tc,ostream&os,const size_t indent_level,const string&reg_dest,const string&reg_src){
-		if(reg_dest==reg_src){
+	inline static void asm_cmd(const string&op,const statement&s,toc&tc,ostream&os,const size_t indent_level,const string&dest_resolved,const string&src_resolved){
+		if(dest_resolved==src_resolved){
 			return;
 		}
 
-		if(!reg_dest.find("qword[") and !reg_src.find("qword[")){
+		if(!dest_resolved.find("qword[") and !src_resolved.find("qword[")){
 			const string&r=tc.alloc_scratch_register(s.tok());
-			indent(os,indent_level);os<<"mov "<<r<<","<<reg_src<<endl;
-			indent(os,indent_level);os<<op<<" "<<reg_dest<<","<<r<<endl;
+			indent(os,indent_level);os<<"mov "<<r<<","<<src_resolved<<endl;
+			indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<r<<endl;
 			tc.free_scratch_reg(r);
 			return;
 		}
 
-		indent(os,indent_level);os<<op<<" "<<reg_dest<<","<<reg_src<<endl;
+		indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<src_resolved<<endl;
 	}
 
 private:
