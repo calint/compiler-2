@@ -1,5 +1,6 @@
 [ ] character type
-[ ] logical ops & | ^ ~
+[ ] pointers?
+[ ] bitwise logical ops: & | ^ ~
 [ ] bool type
 [ ] toc.allocate_named_register_or_break: if allocated then tell where
 [ ] toc.add_field: if defined tell where
