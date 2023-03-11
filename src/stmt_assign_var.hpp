@@ -30,7 +30,7 @@ public:
 
 		// try with scratch register
 		stringstream ss2;
-		const string&reg=tc.alloc_scratch_register(tok());
+		const string&reg=tc.alloc_scratch_register(*this);
 		oplist_.compile(tc,ss2,indent_level,reg);
 		const string&dest_resolved=tc.resolve_ident_to_nasm(*this);
 		expr_ops_list::asm_cmd("mov",*this,tc,ss2,indent_level,dest_resolved,reg);

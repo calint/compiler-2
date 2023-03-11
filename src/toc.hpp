@@ -264,17 +264,13 @@ public:
 	}
 
 	inline const string alloc_scratch_register(const statement&st,const string&reg=""){
-		return alloc_scratch_register(st.tok(),reg);
-	}
-
-	inline const string alloc_scratch_register(const token&source,const string&reg=""){
 		if(free_registers_.empty()){
-			throw compiler_error(source,"out of scratch registers  reduce expression complexity");
+			throw compiler_error(st,"out of scratch registers  reduce expression complexity");
 		}
 		if(reg!=""){
 			auto r=find(free_registers_.begin(),free_registers_.end(),reg);
 			if(r==free_registers_.end()){
-				throw compiler_error(source,"register '"+reg+"' cannot be allocated");//?
+				throw compiler_error(st,"register '"+reg+"' cannot be allocated");//?
 			}
 			free_registers_.erase(r);
 			return reg;
@@ -435,19 +431,9 @@ private:
 
 		// is 'id' an implicit identifier?
 		// i.e. 'prompt.len' of a string field 'prompt'
-		const char*p=id.c_str();
-		while(true){
-			if(!*p)break;
-			if(*p=='.')break;
-			p++;
-		}
-		// get the portion before the '.'
-		// i.e. prompt.len => prompt
-		string s{id.c_str(),size_t(p-id.c_str())};
-		if(fields_.has(s)){ // ? tidy
-			p++;
-			const size_t ln=id.size()-size_t(p-id.c_str());
-			string after_dot{p,ln}; // ? utf8
+		string subid=id.substr(0,id.find('.'));
+		if(fields_.has(subid)){ // ? tidy
+			string after_dot=id.substr(subid.size()+1);
 			if(after_dot=="len"){
 				return id;
 			}
@@ -455,22 +441,22 @@ private:
 		}
 
 		// is it decimal number?
-		char*ep;
-		strtol(id.c_str(),&ep,10);
-		if(!*ep)
+		size_t characters_read{0};
+		stoi(id,&characters_read,10); // return ignored
+		if(characters_read==id.size())
 			return id;
 
 		// is it hex number?
 		if(!id.find("0x")){
-			strtol(id.c_str()+2,&ep,16);
-			if(!*ep)
+			stoi(id.substr(2),&characters_read,16); // return ignored
+			if(characters_read==id.size()-2)
 				return id;
 		}
 
 		// is it binary number?
 		if(!id.find("0b")){
-			strtol(id.c_str()+2,&ep,2);
-			if(!*ep)
+			stoi(id.substr(2),&characters_read,2); // return ignored
+			if(characters_read==id.size()-2)
 				return id;
 		}
 
