@@ -1,0 +1,46 @@
+field hello="hello\n"
+field world="world\n"
+
+func print(len:reg_rdx,ptr:reg_rcx){
+    mov(rcx,ptr)
+    mov(rdx,len)
+    mov(rbx,1)
+    mov(rax,4)
+    int(0x80)
+}
+
+func inline exit(v:reg_rbx){
+#    mov(rbx,v)
+    mov(rax,1)
+    int(0x80)
+}
+
+func foo{
+    var len=world.len
+    print(len-1,world)
+}
+
+func bar(n,x){
+    var i=x
+    loop{
+        var b=2
+        print(hello.len-n,hello)
+        if n=0 break
+        n=n-1
+        i=i-1
+        b=b-1
+    }
+}
+
+func f(x):res{
+    res=x
+}
+
+func inline main{
+    print(hello.len,hello)
+    var a=2
+    foo()
+    var b=3
+    bar(a+f(a),b)
+    exit(a+b)
+}

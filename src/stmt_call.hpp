@@ -147,10 +147,15 @@ public:
 		}
 
 		// inlined function
+
+		// buffer the aliases of arguments
 		vector<tuple<string,string>>aliases_to_add;
+
+		// if function returns value
 		if(not dest_ident.empty()){
 			if(f.returns().empty())
 				throw compiler_error(*this,"cannot assign from function without return");
+			// alias 'from' identifier to 'dest_ident' identifier
 			const string&from=f.returns()[0].name();
 			const string&to=dest_ident;
 			aliases_to_add.emplace_back(from,to);
@@ -160,44 +165,66 @@ public:
 		for(const auto&arg:args_){
 			const auto&param=f.param(i);
 			i++;
+			// does the parameter want the value passed through a register?
 			string arg_reg=param.get_register_or_empty();
 			if(!arg_reg.empty()){
+				// argument is passed through register
 				tc.alloc_scratch_register(*arg,arg_reg); // return ignored
 				allocated_registers.push_back(arg_reg);
 			}
 			if(arg->is_expression()){
-				// in reg
-				if(arg_reg.empty()){ // no particular register requested for the argument
+				// argument is an expression, evaluate and store in arg_reg
+				if(arg_reg.empty()){
+					// no particular register requested for the argument
 					arg_reg=tc.alloc_scratch_register(param);
 					allocated_registers.push_back(arg_reg);
 				}
+				// compile expression and store result in 'arg_reg'
 				arg->compile(tc,os,indent_level+1,arg_reg);
+				// alias parameter name to the register containing its value
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
 				continue;
 			}
+			// argument is not an expression
 			if(arg_reg.empty()){
+				// no register allocated for the argument
+				// alias parameter name to the argument identifier
 				const string&id=arg->identifier();
 				aliases_to_add.emplace_back(param.identifier(),id);
 			}else{
+				// register allocated for the argument
 				const string&id=arg->identifier();
+				// alias parameter name to the register
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
-				indent(os,indent_level+1);os<<"mov "<<arg_reg<<","<<tc.resolve_ident_to_nasm(param,id)<<endl;
+				const string&src=tc.resolve_ident_to_nasm(param,id);
+				expr_ops_list::asm_cmd("mov",param,tc,os,indent_level+1,arg_reg,src);
 			}
 		}
 
+		// create unique labels for in-lined functions based on the location the source
+		// where the call occurred
 		const string&call_path=tc.get_call_path(tok());
 		const string&src_loc=tc.source_location(tok());
 		const string&new_call_path=call_path.empty()?src_loc:(src_loc+"_"+call_path);
 		const string&ret_jmp_label=nm+"_"+new_call_path+"_end";
 
 		indent(os,indent_level+1,true);os<<"inline: "<<new_call_path<<endl;
+
+		// enter functions
 		tc.push_func(nm,new_call_path,ret_jmp_label,true);
-		for(const auto&e:aliases_to_add)
+		// add the aliases to the context of this scope
+		for(const auto&e:aliases_to_add){
 			tc.add_alias(get<0>(e),get<1>(e));
+		}
+		// compile in-lined code
 		f.code().compile(tc,os,indent_level);
+		// provide an exit label for 'return' to use instead of assembler 'ret'
 		indent(os,indent_level);os<<ret_jmp_label<<":\n";
-		for(const auto&r:allocated_registers)
+		// free allocated registers
+		for(const auto&r:allocated_registers){
 			tc.free_scratch_reg(r);
+		}
+		// pop scope
 		tc.pop_func(nm);
 	}
 
