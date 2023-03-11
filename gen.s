@@ -20,102 +20,161 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
-bar:
-;  a: rsp+16
-;  b: rsp+24
+print:
+;  len: rdx
+;  ptr: rcx
    push rbp
    mov rbp,rsp
-;  [19:5] loop
-   loop_19_5:
-     if_20_12:
-;    [20:12] ? b=0 
-;    [20:12] ? b=0 
-     cmp_20_12:
-     cmp qword[rbp+24],0
-     jne if_20_9_end
-     jmp if_20_12_code
-     if_20_12_code:
-;      [20:16] return 
-       pop rbp
-       ret
-     if_20_9_end:
-;    [21:9] print(hello.len,hello)
-       mov rdx,hello.len
-       mov rcx,hello
-;      inline: 21_9
-;      [5:5] mov(rcx,ptr)
-;      [6:5] mov(rdx,len)
-;      [7:5] mov(rbx,1)
-       mov rbx,1
-;      [8:5] mov(rax,4)
-       mov rax,4
-;      [9:5] int(0x80)
-       int 0x80
-     print_21_9_end:
-;    [22:9] b=b-1 
-;    [22:11] b-1 
-;    [22:11] b=b
-;    [22:13] b-1 
-     sub qword[rbp+24],1
-   jmp loop_19_5
-   loop_19_5_end:
+;  [5:5] mov(rcx,ptr)
+;  [6:5] mov(rdx,len)
+;  [7:5] mov(rbx,1)
+   mov rbx,1
+;  [8:5] mov(rax,4)
+   mov rax,4
+;  [9:5] int(0x80)
+   int 0x80
    pop rbp
    ret
 
 foo:
    push rbp
    mov rbp,rsp
-;  [27:5] print(world.len,world)
-     mov rdx,world.len
-     mov rcx,world
-;    inline: 27_5
-;    [5:5] mov(rcx,ptr)
-;    [6:5] mov(rdx,len)
-;    [7:5] mov(rbx,1)
-     mov rbx,1
-;    [8:5] mov(rax,4)
-     mov rax,4
-;    [9:5] int(0x80)
-     int 0x80
-   print_27_5_end:
+;  [19:5] var len=world.len 
+;  [19:9] len=world.len 
+;  [19:13] world.len 
+;  [19:13] len=world.len 
+   mov qword[rbp-8],world.len
+;  [20:5] print(len-1,world)
+   sub rsp,8
+   mov rcx,world
+;    [20:11] len-1
+;    [20:11] rdx=len
+     mov rdx,qword[rbp-8]
+;    [20:15] rdx-1
+     sub rdx,1
+   call print
+   add rsp,8
+   pop rbp
+   ret
+
+bar:
+;  n: rsp+16
+;  x: rsp+24
+   push rbp
+   mov rbp,rsp
+;  [24:5] var i=x 
+;  [24:9] i=x 
+;  [24:11] x 
+;  [24:11] rdx=x 
+   mov rdx,qword[rbp+24]
+   mov qword[rbp-8],rdx
+;  [25:5] loop
+   loop_25_5:
+;    [26:9] var b=2 
+;    [26:13] b=2 
+;    [26:15] 2 
+;    [26:15] b=2 
+     mov qword[rbp-16],2
+;    [27:9] print(hello.len-n,hello)
+     sub rsp,16
+     mov rcx,hello
+;      [27:15] hello.len-n
+;      [27:15] rdx=hello.len
+       mov rdx,hello.len
+;      [27:25] rdx-n
+       sub rdx,qword[rbp+16]
+     call print
+     add rsp,16
+     if_28_12:
+;    [28:12] ? n=0 
+;    [28:12] ? n=0 
+     cmp_28_12:
+     cmp qword[rbp+16],0
+     jne if_28_9_end
+     jmp if_28_12_code
+     if_28_12_code:
+;      [28:16] break 
+       jmp loop_25_5_end
+     if_28_9_end:
+;    [29:9] n=n-1 
+;    [29:11] n-1 
+;    [29:11] n=n
+;    [29:13] n-1 
+     sub qword[rbp+16],1
+;    [30:9] i=i-1 
+;    [30:11] i-1 
+;    [30:11] i=i
+;    [30:13] i-1 
+     sub qword[rbp-8],1
+;    [31:9] b=b-1 
+;    [31:11] b-1 
+;    [31:11] b=b
+;    [31:13] b-1 
+     sub qword[rbp-16],1
+   jmp loop_25_5
+   loop_25_5_end:
+   pop rbp
+   ret
+
+f:
+;  x: rsp+16
+   push rbp
+   mov rbp,rsp
+;  [36:5] res=x 
+;  [36:9] x 
+;  [36:9] res=x 
+   mov rax,qword[rbp+16]
    pop rbp
    ret
 
 main:
-;  [31:5] var a=1 
-;  [31:9] a=1 
-;  [31:11] 1 
-;  [31:11] a=1 
-   mov qword[rbp-8],1
-;  [32:5] var b=2 
-;  [32:9] b=2 
-;  [32:11] 2 
-;  [32:11] b=2 
-   mov qword[rbp-16],2
-;  [33:5] var c=3 
-;  [33:9] c=3 
-;  [33:11] 3 
-;  [33:11] c=3 
-   mov qword[rbp-24],3
-;  [34:5] bar(a,b)
-   sub rsp,24
-   push qword[rbp-16]
-   push qword[rbp-8]
-   call bar
-   add rsp,40
-;  [35:5] foo()
-   sub rsp,24
+;  [40:5] print(hello.len,hello)
+   mov rcx,hello
+   mov rdx,hello.len
+   call print
+;  [41:5] var a=2 
+;  [41:9] a=2 
+;  [41:11] 2 
+;  [41:11] a=2 
+   mov qword[rbp-8],2
+;  [42:5] foo()
+   sub rsp,8
    call foo
-   add rsp,24
-;  [36:5] exit(0)
-;    inline: 36_5
-;    [13:5] mov(rbx,v)
-     mov rbx,0
+   add rsp,8
+;  [43:5] var b=3 
+;  [43:9] b=3 
+;  [43:11] 3 
+;  [43:11] b=3 
+   mov qword[rbp-16],3
+;  [44:5] bar(a+f(a),b)
+   sub rsp,16
+   push qword[rbp-16]
+;    [44:9] a+f(a)
+;    [44:9] rdx=a
+     mov rdx,qword[rbp-8]
+;    [44:11] rdx+f(a)
+;    [44:11] f(a)
+     push qword[rbp-8]
+     call f
+     add rsp,8
+     mov rcx,rax
+     add rdx,rcx
+   push rdx
+   call bar
+   add rsp,32
+;  [45:5] exit(a+b)
+;    [45:10] a+b
+;    [45:10] rbx=a
+     mov rbx,qword[rbp-8]
+;    [45:12] rbx+b
+     add rbx,qword[rbp-16]
+;    inline: 45_5
+;    [13:1] # mov(rbx,v) 
 ;    [14:5] mov(rax,1)
      mov rax,1
 ;    [15:5] int(0x80)
      int 0x80
-   exit_36_5_end:
+   exit_45_5_end:
 
-;      max registers in use: 1
-;         max frames in use: 3
+;      max registers in use: 2
+;         max frames in use: 2

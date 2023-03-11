@@ -298,7 +298,7 @@ public:
 		free_registers_.push_back(reg);
 	}
 
-	inline const string&get_loop_or_break(const statement&st)const{
+	inline const string&get_loop_label_or_break(const statement&st)const{
 		size_t i=frames_.size()-1;
 		while(true){
 			if(frames_[i].is_loop())

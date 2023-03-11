@@ -1,9 +1,9 @@
 #pragma once
 
-class stmt_return final:public stmt_call{
+class stmt_return final:public statement{
 public:
 	inline stmt_return(const statement&parent,const token&tk,tokenizer&t):
-		stmt_call{parent,tk,t}
+		statement{parent,tk}
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
