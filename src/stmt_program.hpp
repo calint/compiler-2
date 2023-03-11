@@ -10,20 +10,20 @@
 class stmt_program final:public statement{
 public:
 	inline stmt_program(const string&source):
-		statement{*this,token{"",0,"",0,""}},
+		statement{*this,token{}},
 		tc_{source}
 	{
+		// add built-in assembler calls
 		vector<string>assem{"mov","int","xor","syscall"};
 		for(const auto&s:assem)
 			tc_.add_func(*this,s,nullptr);
-			
+
 		tokenizer t{source};
 		while(true){
 			if(t.is_eos())
 				break;
 
 			const token tk=t.next_token();
-
 			if(tk.is_blank()){
 				if(t.is_eos())
 					break;
@@ -31,18 +31,14 @@ public:
 			}
 			if(tk.is_name("field")){
 				stmts_.emplace_back(make_unique<stmt_def_field>(*this,tk,t));
-			}else
-			if(tk.is_name("func")){
+			}else if(tk.is_name("func")){
 				stmts_.emplace_back(make_unique<stmt_def_func>(*this,tk,t));
-			}else
-			if(tk.is_name("table")){
+			}else if(tk.is_name("table")){
 				stmts_.emplace_back(make_unique<stmt_def_table>(*this,tk,t));
-			}else
-			if(tk.is_name("#")){
+			}else if(tk.is_name("#")){
 				stmts_.emplace_back(make_unique<stmt_comment>(*this,tk,t));
-			}else
-			if(tk.is_name("")){// whitespace
-				stmts_.emplace_back(make_unique<statement>(*this,tk));
+			}else if(tk.is_name("")){
+				stmts_.emplace_back(make_unique<stmt_whitespace>(*this,tk));
 			}else{
 				throw compiler_error(tk,"unexpected keyword '"+tk.name()+"'");
 			}
@@ -68,8 +64,8 @@ public:
 			if(!s->is_in_data_section())
 				s->compile(tc,os,indent_level);
 
+		// get the main function and compile
 		const stmt_def_func&main=tc.get_func_or_break(*this,"main");
-//		indent(os,indent_level,true);os<<"["<<tc.source_location(main.tok())<<"] "<<main.name()<<endl;
 		os<<"main:"<<endl;
 		tc.push_func("main","","",true);
 		main.code().compile(tc,os,indent_level);
