@@ -1,4 +1,5 @@
 section .data
+align 4
 prompt db '  hello    enter name: '
 prompt.len equ $-prompt
 name db '............................................................'
@@ -7,6 +8,7 @@ prompt2 db '  not a name: '
 prompt2.len equ $-prompt2
 len dq 0
 section .bss
+align 4
 stk resd 256
 stk.end:
 section .text
