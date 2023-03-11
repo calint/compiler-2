@@ -3,10 +3,9 @@
 class stmt_comment final:public statement{
 public:
 	inline stmt_comment(const statement&parent,const token&tk,tokenizer&t):
-		statement{parent,tk}
-	{
-		line_=t.read_rest_of_line();
-	}
+		statement{parent,tk},
+		line_{t.read_rest_of_line()}
+	{}
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
