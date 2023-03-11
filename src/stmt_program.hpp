@@ -5,7 +5,6 @@
 #include"tokenizer.hpp"
 #include"stmt_def_field.hpp"
 #include"stmt_def_func.hpp"
-#include"stmt_def_table.hpp"
 
 class stmt_program final:public statement{
 public:
@@ -33,8 +32,6 @@ public:
 				stmts_.emplace_back(make_unique<stmt_def_field>(*this,tk,t));
 			}else if(tk.is_name("func")){
 				stmts_.emplace_back(make_unique<stmt_def_func>(*this,tk,t));
-			}else if(tk.is_name("table")){
-				stmts_.emplace_back(make_unique<stmt_def_table>(*this,tk,t));
 			}else if(tk.is_name("#")){
 				stmts_.emplace_back(make_unique<stmt_comment>(*this,tk,t));
 			}else if(tk.is_name("")){
