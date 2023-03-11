@@ -38,12 +38,12 @@ private:
 
 class frame final{
 public:
-	inline frame(const string&name,char bits,const string&call_path,const string&ret,const bool is_inline):
+	inline frame(const string&name,const char bits,const string&call_path="",const string&ret_label="",const bool is_inline=false):
 		name_{name},
 		call_path_{call_path},
-		ret_{ret},
+		ret_label_{ret_label},
 		is_inline_{is_inline},
-		bits_{bits}
+		bits_{bits} // ? enum
 	{}
 
 	inline void add_var(const string&nm,const int stkix,const string&flags){
@@ -87,7 +87,7 @@ public:
 
 	inline const string&name()const{return name_;}
 
-	inline const string&ret_label()const{return ret_;}
+	inline const string&ret_label()const{return ret_label_;}
 
 	inline const string&call_path()const{return call_path_;}
 
@@ -99,9 +99,9 @@ private:
 	size_t allocated_stack_{0};
 	lut<allocated_var>vars_;
 	lut<string>aliases_;
-	string ret_;
+	string ret_label_;
 	bool is_inline_{false};
-	char bits_{0}; // 1 is func
+	char bits_{0}; // 1=func, 2=block, 4=loop, 8=if
 };
 
 struct field_meta{
@@ -200,12 +200,12 @@ public:
 	}
 
 	inline void push_block(const string&name){
-		frames_.emplace_back(name,2,"","",false);
+		frames_.emplace_back(name,2);
 		check_usage();
 	}
 
 	inline void push_loop(const string&name){
-		frames_.emplace_back(name,4,"","",false);
+		frames_.emplace_back(name,4);
 		check_usage();
 	}
 
@@ -243,7 +243,7 @@ public:
 	}
 
 	inline void push_if(const char*name){
-		frames_.emplace_back(name,8,"","",false);
+		frames_.emplace_back(name,8);
 		check_usage();
 	}
 
