@@ -9,18 +9,10 @@ func fib(i):res{
         res=1
         return
     }
-    res=i*fib(i-1)
+    var r=i*fib(i-1)
+    res=r
 }
 
 func inline main{
-    var a=1
-    var b=3
-    if a=1 {
-      var b=2
-    }else if a=2 {
-      var b=3
-    }else{
-      var b=4
-    }
     exit(fib(5))
 }

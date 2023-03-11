@@ -54,7 +54,6 @@ public:
 		if(f.params().size()!=args_.size())
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
 
-		vector<string>allocated_scratch_registers;
 		vector<string>allocated_named_registers;
 
 		if(!f.is_inline()){
@@ -67,7 +66,15 @@ public:
 					expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(rsp_delta<<3));
 					// stack is now: <base>,.. vars ..,
 				}
-				// stack is now: <base>,
+
+				// push allocated registers on the stack
+				const vector<string>&alloc_regs=tc.allocated_registers();
+				const size_t n=alloc_regs.size();
+				for(size_t i=0;i<n;i++){
+					const string&reg=alloc_regs[i];
+					indent(os,indent_level);os<<"push "<<reg<<endl;
+				}
+				// stack is now: <base>,.. vars ..,... allocated regs ...,
 			}
 			// push arguments starting with the last
 			size_t nargs_on_stack{0};
@@ -88,15 +95,17 @@ public:
 					if(!argument_passed_in_register){
 						// no particular register requested for the argument
 						arg_reg=tc.alloc_scratch_register(arg);
-						allocated_scratch_registers.push_back(arg_reg);
-					}
-					// compile expression with the result stored in arg_reg
-					arg.compile(tc,os,indent_level+1,arg_reg);
-					if(!argument_passed_in_register){
+						// compile expression with the result stored in arg_reg
+						arg.compile(tc,os,indent_level+1,arg_reg);
 						// argument is passed to function through the stack
 						indent(os,indent_level);os<<"push "<<arg_reg<<endl;
+						// free scratch register
+						tc.free_scratch_register(arg_reg);
 						// keep track of how many arguments are on the stack
 						nargs_on_stack++;
+					}else{
+						// compile expression with the result stored in arg_reg
+						arg.compile(tc,os,indent_level+1,arg_reg);
 					}
 					continue;
 				}
@@ -111,18 +120,31 @@ public:
 					nargs_on_stack++;
 				}
 			}
-			//     stack is: <base>,.. vars ..,[arg n],[arg n-1],...,[arg 1],
+			// stack is: <base>,..vars..,...allocated regs...,[arg n],[arg n-1],...,[arg 1],
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
-			//     stack is: <base>,.. vars ..,[arg n],[arg n-1],...,[arg 1],
+			// stack is: <base>,..vars..,...allocated regs...,[arg n],[arg n-1],...,[arg 1],
 
 			// restore stack pointer
 			if(tc.exit_func_call()){
 				// this is not a call within the arguments of another call
+				// restore rsp past the pushed arguments
+				if(nargs_on_stack){
+					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
+				}
+				// stack is: <base>,..vars..,...allocated regs...,
+
+				// pop allocated registers from the stack
+				const vector<string>&alloc_regs=tc.allocated_registers();
+				size_t i=alloc_regs.size();
+				while(i--){
+					const string&reg=alloc_regs[i];
+					indent(os,indent_level);os<<"pop "<<reg<<endl;
+				}
+				// stack is: <base>,..vars..,
+
 				// restore rsp to what it was before the call
-				const size_t rsp_offset_to_base{rsp_delta+nargs_on_stack};
-				if(rsp_offset_to_base){
-					// if rsp needs to be moved to <base>
-					indent(os,indent_level);os<<"add rsp,"<<(rsp_offset_to_base<<3)<<endl;
+				if(rsp_delta){
+					indent(os,indent_level);os<<"add rsp,"<<(rsp_delta<<3)<<endl;
 				}
 				// stack is: <base>,
 			}else{
@@ -142,9 +164,6 @@ public:
 			}
 
 			// free allocated registers
-			for(const string&r:allocated_scratch_registers){
-				tc.free_scratch_register(r);
-			}
 			for(const string&r:allocated_named_registers){
 				tc.free_named_register(r);
 			}
@@ -152,6 +171,7 @@ public:
 		}
 
 		// inlined function
+		vector<string>allocated_scratch_registers;
 
 		// buffer the aliases of arguments
 		vector<tuple<string,string>>aliases_to_add;

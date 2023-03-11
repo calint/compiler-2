@@ -222,7 +222,15 @@ private:
 			if(st.is_expression()){
 				const string r=tc.alloc_scratch_register(st);
 				st.compile(tc,os,indent_level,r);
-				asm_cmd("imul",st,tc,os,indent_level,dest_resolved,r);
+				// imul destination must be a register
+				if(tc.is_identifier_register(dest_resolved)){
+					asm_cmd("imul",st,tc,os,indent_level,dest_resolved,r);
+				}else{
+					// imul destination is not a register
+					asm_cmd("imul",st,tc,os,indent_level,r,dest_resolved);
+					asm_cmd("mov",st,tc,os,indent_level,dest_resolved,r);
+//					asm_cmd("imul",st,tc,os,indent_level,dest_resolved,r);
+				}
 				tc.free_scratch_register(r);
 				return;
 			}

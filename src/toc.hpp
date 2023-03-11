@@ -286,6 +286,7 @@ public:
 		if(n>max_usage_scratch_regs_)
 			max_usage_scratch_regs_=n;
 
+		allocated_registers_.push_back(r);
 		return r;
 	}
 
@@ -295,14 +296,19 @@ public:
 			throw compiler_error(st,"named register '"+reg+"' cannot be allocated");
 		}
 		named_registers_.erase(r);
+		allocated_registers_.push_back(reg);
 	}
 
 	inline void free_named_register(const string&reg){
 		named_registers_.push_back(reg);
+		auto r=find(allocated_registers_.begin(),allocated_registers_.end(),reg);
+		allocated_registers_.erase(r);
 	}
 
 	inline void free_scratch_register(const string&reg){
 		scratch_registers_.push_back(reg);
+		auto r=find(allocated_registers_.begin(),allocated_registers_.end(),reg);
+		allocated_registers_.erase(r);
 	}
 
 	inline const string&get_loop_label_or_break(const statement&st)const{
@@ -396,6 +402,8 @@ public:
 		return false;
 	}
 
+	inline const vector<string>&allocated_registers()const{return allocated_registers_;}
+
 private:
 	inline const string resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident)const{
 		string id=ident;
@@ -486,6 +494,7 @@ private:
 	vector<frame>frames_;
 	vector<string>all_registers_;
 	vector<string>scratch_registers_;
+	vector<string>allocated_registers_;
 	vector<string>named_registers_;
 	size_t max_usage_scratch_regs_{0};
 	size_t max_frame_count_{0};

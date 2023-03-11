@@ -24,40 +24,30 @@ fib:
      pop rbp
      ret
    if_8_5_end:
-   mov rax,qword[rbp+16]
+   mov r15,qword[rbp+16]
+   mov qword[rbp-8],r15
+   sub rsp,8
+   push r15
      mov r14,qword[rbp+16]
      sub r14,1
    push r14
    call fib
    add rsp,8
+   pop r15
+   add rsp,8
    mov r15,rax
-   imul rax,r15
+   imul r15,qword[rbp-8]
+   mov qword[rbp-8],r15
+   mov rax,qword[rbp-8]
    pop rbp
    ret
 main:
-   mov qword[rbp-8],1
-   if_17_8:
-   cmp_17_8:
-   cmp qword[rbp-8],1
-   jne if_19_14
-   if_17_8_code:  ; opt1
-     mov qword[rbp-16],2
-     jmp if_17_5_end
-   if_19_14:
-   cmp_19_14:
-   cmp qword[rbp-8],2
-   jne if_else_17_5
-   if_19_14_code:  ; opt1
-     mov qword[rbp-16],3
-     jmp if_17_5_end
-   if_else_17_5:
-       mov qword[rbp-16],3
-   if_17_5_end:
-     sub rsp,32
+     push rbx
      push 5
      call fib
-     add rsp,40
+     add rsp,8
+     pop rbx
      mov rbx,rax
      mov rax,1
      int 0x80
-   exit_24_5_end:
+   exit_17_5_end:
