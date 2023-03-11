@@ -1,7 +1,13 @@
 [ ] character type
+[ ] var str="hello world"
+[ ] var len=str.len
 [ ] pointers?
 [ ] bitwise logical ops: & | ^ ~
+[ ] op shift left and right
+[ ] implement division op
 [ ] bool type
+[ ] fix 'cmp' two constants case
+[ ] short-hand boolean expression i.e. if a or b
 [ ] toc.allocate_named_register_or_break: if allocated then tell where
 [ ] toc.add_field: if defined tell where
 [ ] toc.add_function: if defined tell where
@@ -11,17 +17,11 @@
 [ ] examine expression, expr_ops_list, stmt_call relation
 [ ] token.compile assumes is_str is field
 [ ]   review fragile implementation
-[ ] fix 'cmp' two constants case
-[ ] short-hand boolean expression i.e. if a or b
 [ ] negated subexpression. i.e. 'not (a=1 and b=2)'
 [ ] why is the binary so big although in-line is turned off in make.sh?
 [ ] tokenizer to keep track of line-number instead of counting it at every call
-[ ] implement division op
 [ ] make sub lists taking in account precedence of 'and' over 'or'
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
-[ ] op shift left and right
-[ ] var str="hello world"
-[ ] var len=str.len
 [ ] type size{value} var s=size{1} s=2
 [ ] type point{x,y} var p=point{1,2} p.x=1 p=2
 [ ] var points=point[10] where points contains length of array and a pointer
