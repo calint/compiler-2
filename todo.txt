@@ -1,4 +1,5 @@
 [ ] character type
+[ ] string type
 [ ] var str="hello world"
 [ ] var len=str.len
 [ ] pointers?
