@@ -120,32 +120,24 @@ private:
 	}
 
 	inline void resolve(const string&op,toc&tc,ostream&os,size_t indent_level,const statement&sa,const statement&sb)const{
-		string ra,rb;
+		string dest,src;
 		vector<string>allocated_registers;
 		if(sa.is_expression()){
-			ra=tc.alloc_scratch_register(sa);
-			allocated_registers.push_back(ra);
-			sa.compile(tc,os,indent_level+1,ra);
+			dest=tc.alloc_scratch_register(sa);
+			allocated_registers.push_back(dest);
+			sa.compile(tc,os,indent_level+1,dest);
 		}else{
-			ra=tc.resolve_ident_to_nasm(sa);
+			dest=tc.resolve_ident_to_nasm(sa);
 		}
 		if(sb.is_expression()){
-			rb=tc.alloc_scratch_register(sb);
-			allocated_registers.push_back(rb);
-			sb.compile(tc,os,indent_level+1,rb);
+			src=tc.alloc_scratch_register(sb);
+			allocated_registers.push_back(src);
+			sb.compile(tc,os,indent_level+1,src);
 		}else{
-			rb=tc.resolve_ident_to_nasm(sb);
+			src=tc.resolve_ident_to_nasm(sb);
 		}
 
-		if(!ra.find("qword[") and !rb.find("qword[")){
-			const string&r=tc.alloc_scratch_register(tok());
-			indent(os,indent_level);os<<"mov "<<r<<","<<rb<<endl;
-			indent(os,indent_level);os<<op<<" "<<ra<<","<<r<<endl;
-			tc.free_scratch_reg(r);
-			return;
-		}
-
-		indent(os,indent_level);os<<op<<" "<<ra<<","<<rb<<endl;
+		expr_ops_list::asm_cmd(op,*this,tc,os,indent_level,dest,src);
 
 		for(const auto&r:allocated_registers)
 			tc.free_scratch_reg(r);

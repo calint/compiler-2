@@ -14,22 +14,10 @@ public:
 		const string&dest=tc.resolve_ident_to_nasm(arg(0));
 		const statement&src_arg=arg(1);
 		if(src_arg.is_expression()){ // ? the assembler commands might not need this
-			src_arg.compile(tc,os,indent_level+1,arg(0).identifier());
+			src_arg.compile(tc,os,indent_level+1,dest);
 			return;
 		}
 		const string&src=tc.resolve_ident_to_nasm(src_arg);
-
-		if(dest==src)
-			return;
-
-		if(!dest.find("qword[") and !src.find("qword[")){
-			const string&r=tc.alloc_scratch_register(tok());
-			indent(os,indent_level);os<<"mov "<<r<<","<<src<<endl;
-			indent(os,indent_level);os<<"mov "<<dest<<","<<r<<endl;
-			tc.free_scratch_reg(r);
-			return;
-		}
-
-		indent(os,indent_level);os<<"mov "<<dest<<","<<src<<endl;
+		expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,dest,src);
 	}
 };

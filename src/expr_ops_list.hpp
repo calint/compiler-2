@@ -163,18 +163,17 @@ public:
 	inline bool is_empty()const override{return expressions_.empty();}
 
 	inline static void asm_cmd(const string&op,const statement&s,toc&tc,ostream&os,const size_t indent_level,const string&dest_resolved,const string&src_resolved){
-		if(dest_resolved==src_resolved){
+		if(op=="mov" && dest_resolved==src_resolved){
 			return;
 		}
-
-		if(!dest_resolved.find("qword[") and !src_resolved.find("qword[")){
+		// check if both source and destination are memory operations
+		if(dest_resolved.find_first_of('[')!=string::npos and src_resolved.find_first_of('[')!=string::npos){
 			const string&r=tc.alloc_scratch_register(s.tok());
 			indent(os,indent_level);os<<"mov "<<r<<","<<src_resolved<<endl;
 			indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<r<<endl;
 			tc.free_scratch_reg(r);
 			return;
 		}
-
 		indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<src_resolved<<endl;
 	}
 

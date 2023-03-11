@@ -103,7 +103,7 @@ public:
 				const string&id=tc.resolve_ident_to_nasm(arg);
 				if(argument_passed_in_register){
 					// move the identifier to the requested register
-					indent(os,indent_level);os<<"mov "<<arg_reg<<","<<id<<endl;
+					expr_ops_list::asm_cmd("mov",arg,tc,os,indent_level,arg_reg,id);
 				}else{
 					// push identifier on the stack
 					indent(os,indent_level);os<<"push "<<id<<endl;
@@ -136,7 +136,7 @@ public:
 
 			if(not dest_ident.empty()){
 				// function returns values in rax, copy return value to dest_ident
-				indent(os,indent_level);os<<"mov "<<dest_ident<<",rax"<<endl;
+				expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,dest_ident,"rax");
 			}
 
 			// free allocated registers
@@ -163,7 +163,7 @@ public:
 
 		size_t i=0;
 		for(const auto&arg:args_){
-			const auto&param=f.param(i);
+			const stmt_def_func_param&param=f.param(i);
 			i++;
 			// does the parameter want the value passed through a register?
 			string arg_reg=param.get_register_or_empty();
