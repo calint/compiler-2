@@ -80,6 +80,7 @@ public:
 		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[return address]
 		// define variables in the called context by binding arguments to stack
 		//    x=[rsp+argnum<<3+8] (const 8 skips return address)
+		vector<string>allocated_names_registers;
 		const int n=int(params_.size());
 		int stk_ix=2; // skip [rbp] and [return address] on stack
 		for(int i=0;i<n;i++){
@@ -94,6 +95,8 @@ public:
 				stk_ix++;
 			}else{
 				indent(os,indent_level+1,true);os<<pm_nm<<": "<<reg<<endl;
+				tc.alloc_named_register_or_break(pm,reg);
+				allocated_names_registers.push_back(reg);
 				tc.add_alias(pm_nm,reg);
 			}
 		}
@@ -104,6 +107,9 @@ public:
 		indent(os,indent_level+1);os<<"ret\n";
 		os<<endl;
 		tc.pop_func(name());
+		for(auto const&reg:allocated_names_registers){
+			tc.free_named_register(reg);
+		}
 	}
 
 	inline const vector<token>&returns()const{return returns_;}

@@ -140,7 +140,7 @@ private:
 		expr_ops_list::asm_cmd(op,*this,tc,os,indent_level,dest,src);
 
 		for(const auto&r:allocated_registers)
-			tc.free_scratch_reg(r);
+			tc.free_scratch_register(r);
 	}
 
 	vector<token>nots_;

@@ -113,7 +113,8 @@ class toc final{
 public:
 	inline toc(const string&source):
 		all_registers_{"rax","rbx","rcx","rdx","rsi","rdi","r8","r9","r10","r11","r12","r13","r14","r15"},
-		free_registers_{all_registers_},
+		scratch_registers_{"r8","r9","r10","r11","r12","r13","r14","r15"},
+		named_registers_{"rax","rbx","rcx","rdx","rsi","rdi"},
 		source_str_{source}
 	{}
 
@@ -172,7 +173,8 @@ public:
 	}
 
 	inline void finish(const toc&tc,ostream&os){
-		assert(all_registers_.size()==free_registers_.size());
+		assert(scratch_registers_.size()==8);
+		assert(named_registers_.size()==6);
 //		assert(stkix_==0);
 //		assert(framestk_.import_frames_.size()==0);
 		os<<"\n;      max registers in use: "<<tc.max_usage_scratch_regs_<<endl;
@@ -263,31 +265,35 @@ public:
 		frames_.back().add_var(name,stkix_delta,flags);
 	}
 
-	inline const string alloc_scratch_register(const statement&st,const string&reg=""){
-		if(free_registers_.empty()){
-			throw compiler_error(st,"out of scratch registers  reduce expression complexity");
-		}
-		if(!reg.empty()){
-			auto r=find(free_registers_.begin(),free_registers_.end(),reg);
-			if(r==free_registers_.end()){
-				throw compiler_error(st,"register '"+reg+"' cannot be allocated");//?
-			}
-			free_registers_.erase(r);
-			return reg;
+	inline const string alloc_scratch_register(const statement&st){
+		if(scratch_registers_.empty()){
+			throw compiler_error(st,"out of scratch registers. try to reduce expression complexity");
 		}
 
-		const string&r=free_registers_.back();
-		free_registers_.pop_back();
+		const string&r=scratch_registers_.back();
+		scratch_registers_.pop_back();
 
-		const size_t n=all_registers_.size()-free_registers_.size();
+		const size_t n=8-scratch_registers_.size();
 		if(n>max_usage_scratch_regs_)
 			max_usage_scratch_regs_=n;
 
 		return r;
 	}
 
-	inline void free_scratch_reg(const string&reg){
-		free_registers_.push_back(reg);
+	inline void alloc_named_register_or_break(const statement&st,const string&reg){
+		auto r=find(named_registers_.begin(),named_registers_.end(),reg);
+		if(r==named_registers_.end()){
+			throw compiler_error(st,"named register '"+reg+"' cannot be allocated");
+		}
+		named_registers_.erase(r);
+	}
+
+	inline void free_named_register(const string&reg){
+		named_registers_.push_back(reg);
+	}
+
+	inline void free_scratch_register(const string&reg){
+		scratch_registers_.push_back(reg);
 	}
 
 	inline const string&get_loop_label_or_break(const statement&st)const{
@@ -470,7 +476,8 @@ private:
 
 	vector<frame>frames_;
 	vector<string>all_registers_;
-	vector<string>free_registers_;
+	vector<string>scratch_registers_;
+	vector<string>named_registers_;
 	size_t max_usage_scratch_regs_{0};
 	size_t max_frame_count_{0};
 	string source_str_;

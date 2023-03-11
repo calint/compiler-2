@@ -31,7 +31,7 @@ func foo(i){
     print(prompt.len,prompt)
 }
 
-func main{
+func inline main{
     var a=0b1
     var b=2
     var c=3

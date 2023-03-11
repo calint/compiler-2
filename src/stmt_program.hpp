@@ -63,6 +63,8 @@ public:
 
 		// get the main function and compile
 		const stmt_def_func&main=tc.get_func_or_break(*this,"main");
+		if(!main.is_inline())
+			throw compiler_error(main,"main function must be declared inline");
 		os<<"main:"<<endl;
 		tc.push_func("main","","",true);
 		main.code().compile(tc,os,indent_level);

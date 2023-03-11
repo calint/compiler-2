@@ -54,7 +54,8 @@ public:
 		if(f.params().size()!=args_.size())
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
 
-		vector<string>allocated_registers;
+		vector<string>allocated_scratch_registers;
+		vector<string>allocated_named_registers;
 
 		if(!f.is_inline()){
 			size_t nargs{args_.size()};
@@ -78,16 +79,16 @@ public:
 				string arg_reg=param.get_register_or_empty();
 				if(!arg_reg.empty()){
 					// argument requests to be passed as a register
-					tc.alloc_scratch_register(param,arg_reg); // return ignored
-					allocated_registers.push_back(arg_reg);
+					tc.alloc_named_register_or_break(arg,arg_reg);
+					allocated_named_registers.push_back(arg_reg);
 					argument_passed_in_register=true;
 				}
 				if(arg.is_expression()){
 					// is the argument passed in through a register?
 					if(!argument_passed_in_register){
 						// no particular register requested for the argument
-						arg_reg=tc.alloc_scratch_register(param);
-						allocated_registers.push_back(arg_reg);
+						arg_reg=tc.alloc_scratch_register(arg);
+						allocated_scratch_registers.push_back(arg_reg);
 					}
 					// compile expression with the result stored in arg_reg
 					arg.compile(tc,os,indent_level+1,arg_reg);
@@ -136,12 +137,16 @@ public:
 
 			if(not dest_ident.empty()){
 				// function returns values in rax, copy return value to dest_ident
-				expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,dest_ident,"rax");
+				const string&dest_resolved=tc.resolve_ident_to_nasm(*this,dest_ident);
+				expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,dest_resolved,"rax");
 			}
 
 			// free allocated registers
-			for(const string&r:allocated_registers){
-				tc.free_scratch_reg(r);
+			for(const string&r:allocated_scratch_registers){
+				tc.free_scratch_register(r);
+			}
+			for(const string&r:allocated_named_registers){
+				tc.free_named_register(r);
 			}
 			return;
 		}
@@ -169,15 +174,15 @@ public:
 			string arg_reg=param.get_register_or_empty();
 			if(!arg_reg.empty()){
 				// argument is passed through register
-				tc.alloc_scratch_register(*arg,arg_reg); // return ignored
-				allocated_registers.push_back(arg_reg);
+				tc.alloc_named_register_or_break(*arg,arg_reg); // return ignored
+				allocated_named_registers.push_back(arg_reg);
 			}
 			if(arg->is_expression()){
 				// argument is an expression, evaluate and store in arg_reg
 				if(arg_reg.empty()){
 					// no particular register requested for the argument
-					arg_reg=tc.alloc_scratch_register(param);
-					allocated_registers.push_back(arg_reg);
+					arg_reg=tc.alloc_scratch_register(*arg);
+					allocated_scratch_registers.push_back(arg_reg);
 				}
 				// compile expression and store result in 'arg_reg'
 				arg->compile(tc,os,indent_level+1,arg_reg);
@@ -221,8 +226,11 @@ public:
 		// provide an exit label for 'return' to use instead of assembler 'ret'
 		indent(os,indent_level);os<<ret_jmp_label<<":\n";
 		// free allocated registers
-		for(const auto&r:allocated_registers){
-			tc.free_scratch_reg(r);
+		for(const auto&r:allocated_scratch_registers){
+			tc.free_scratch_register(r);
+		}
+		for(const auto&r:allocated_named_registers){
+			tc.free_named_register(r);
 		}
 		// pop scope
 		tc.pop_func(nm);
