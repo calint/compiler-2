@@ -15,11 +15,11 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 main:
-;  [8:5] var a=1 
-;  [8:9] a=1 
-;  [8:11] 1 
-;  [8:11] a=1 
-   mov qword[rbp-8],1
+;  [8:5] var a=0b1 
+;  [8:9] a=0b1 
+;  [8:11] 0b1 
+;  [8:11] a=0b1 
+   mov qword[rbp-8],0b1
 ;  [9:5] var b=2 
 ;  [9:9] b=2 
 ;  [9:11] 2 

@@ -134,9 +134,8 @@ public:
 	inline const stmt_def_func&get_func_or_break(const statement&s,const string&name)const{
 		bool valid;
 		const stmt_def_func*f=funcs_.get_valid(name,valid);
-		if(!valid){
+		if(!valid)
 			throw compiler_error(s.tok(),"function '"+name+"' not found");
-		}
 		return*f;
 	}
 
@@ -186,11 +185,8 @@ public:
 	}
 
 	inline string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
-		const size_t frameix=frames_.size()-1;
-
-		bool ok{false};
-		string nasm_ident=_resolve_ident_to_nasm(stmt,ident,frameix,ok);
-		if(ok)
+		string nasm_ident=resolve_ident_to_nasm_or_empty(stmt,ident);
+		if(!nasm_ident.empty())
 			return nasm_ident;
 
 		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'");
@@ -390,83 +386,95 @@ public:
 	}
 
 private:
-	inline const string _resolve_ident_to_nasm(const statement&stmt,const string&ident,size_t i,bool&ok)const{//? tidy duplicate code
-		string name=ident;
+	inline const string resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident)const{
+		string id=ident;
+		// traverse the frames and resolve the id (which might be an alias) to
+		// a variable, field, register or constant
+		size_t frame_idx=frames_.size()-1;
 		while(true){
-			if(frames_[i].is_func()){
-				if(!frames_[i].has_alias(name))
+			// is the frame a function?
+			if(frames_[frame_idx].is_func()){
+				// is it an alias defined by an argument in the function?
+				if(!frames_[frame_idx].has_alias(id))
 					break;
-				name=frames_[i].get_alias(name);
-				if(i==0)
+				// yes, continue resolving alias until it is
+				// a variable, field, register or constant
+				id=frames_[frame_idx].get_alias(id);
+				if(frame_idx==0)
 					break;
-				i--;
+				frame_idx--;
 				continue;
 			}
-			if(frames_[i].has_var(name))
+			// does scope contain the variable
+			if(frames_[frame_idx].has_var(id))
 				break;
-			if(i==0)
+			// was this the last frame in the stack?
+			if(frame_idx==0)
 				break;
-			i--;
+			// go 'up' in stack to next scope
+			frame_idx--;
 		}
 
-		if(frames_[i].has_var(name)){
-			ok=true;
-			return frames_[i].get_var(name).nasm_ident();
-		}
+		// is 'id' a variable?
+		if(frames_[frame_idx].has_var(id))
+			return frames_[frame_idx].get_var(id).nasm_ident();
 
+		// is 'id' a register?
 		for(const auto&e:all_registers_){
-			if(e==name){
-				ok=true;
-				return name;
-			}
+			if(e==id)
+				return id;
 		}
 
-		const field_meta&fm=fields_.get_valid(name,ok);
-		if(ok){
+		// is 'id' a field?
+		if(fields_.has(id)){
+			const field_meta&fm=fields_.get(id);
 			if(fm.is_str)
-				return name;
-			return"qword["+name+"]";
+				return id;
+			return"qword["+id+"]";
 		}
 
-		// i.e.  prompt.len // ?
-		const char*p=name.c_str();
+		// is 'id' an implicit identifier?
+		// i.e.  prompt.len of a string field 'prompt'
+		const char*p=id.c_str();
 		while(true){
 			if(!*p)break;
 			if(*p=='.')break;
 			p++;
 		}
-		string s=string(name.c_str(),size_t(p-name.c_str()));
-		if(fields_.has(s)){//? tidy
+		// get the portion before the '.'
+		// i.e. prompt.len => prompt
+		string s{id.c_str(),size_t(p-id.c_str())};
+		if(fields_.has(s)){ // ? tidy
 			p++;
-			const size_t ln=name.size()-size_t(p-name.c_str());
-			string after_dot=string(p,ln);//? utf8
+			const size_t ln=id.size()-size_t(p-id.c_str());
+			string after_dot{p,ln}; // ? utf8
 			if(after_dot=="len"){
-//				is_const_litteral=false;
-				ok=true;
-				return name;
+				return id;
 			}
-			throw compiler_error(stmt.tok(),"unknown implicit field constant '"+name+"'");
+			throw compiler_error(stmt.tok(),"unknown implicit field constant '"+id+"'");
 		}
 
+		// is it decimal number?
 		char*ep;
-		strtol(name.c_str(),&ep,10);
-		if(!*ep){// decimal number
-			ok=true;
-//			is_const_litteral=true;
-			return name;
+		strtol(id.c_str(),&ep,10);
+		if(!*ep)
+			return id;
+
+		// is it hex number?
+		if(!id.find("0x")){
+			strtol(id.c_str()+2,&ep,16);
+			if(!*ep)
+				return id;
 		}
 
-		if(!name.find("0x")){
-			strtol(name.c_str()+2,&ep,16);
-			if(!*ep){// hex number{
-				ok=true;
-//				is_const_litteral=true;
-				return name;
-			}
+		// is it binary number?
+		if(!id.find("0b")){
+			strtol(id.c_str()+2,&ep,2);
+			if(!*ep)
+				return id;
 		}
 
-		ok=false;
-		return name;
+		return"";
 	}
 
 	inline void check_usage(){

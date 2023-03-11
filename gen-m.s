@@ -11,7 +11,7 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 main:
-   mov qword[rbp-8],1
+   mov qword[rbp-8],0b1
    mov qword[rbp-16],2
    mov qword[rbp-24],3
    mov qword[rbp-32],4
