@@ -434,7 +434,7 @@ private:
 		}
 
 		// is 'id' an implicit identifier?
-		// i.e.  prompt.len of a string field 'prompt'
+		// i.e. 'prompt.len' of a string field 'prompt'
 		const char*p=id.c_str();
 		while(true){
 			if(!*p)break;
@@ -480,18 +480,13 @@ private:
 	inline void check_usage(){
 		if(frames_.size()>max_frame_count_)
 			max_frame_count_=frames_.size();
-
-//		if(stkix_>max_stack_usage_)
-//			max_stack_usage_=stkix_;
 	}
 
-//	int stkix_{0};
 	vector<frame>frames_;
 	vector<string>all_registers_;
 	vector<string>free_registers_;
 	size_t max_usage_scratch_regs_{0};
 	size_t max_frame_count_{0};
-	int max_stack_usage_{0};
 	string source_str_;
 	lut<field_meta>fields_;
 	lut<const stmt_def_func*>funcs_;
