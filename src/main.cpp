@@ -219,7 +219,7 @@ int main(int argc,char**args){
 }
 
 // circular dependencies
-inline unique_ptr<statement>create_call_statement_from_tokenizer(const statement&parent,const token&tk,tokenizer&t){
+inline unique_ptr<statement>create_statement_from_tokenizer(const statement&parent,const token&tk,tokenizer&t){
 	const string&func=tk.name();
 	if("mov"==func)        return make_unique<call_asm_mov>(parent,move(tk),t);
 	if("int"==func)        return make_unique<call_asm_int>(parent,move(tk),t);
@@ -236,7 +236,7 @@ inline unique_ptr<statement>create_call_statement_from_tokenizer(const statement
 inline unique_ptr<statement>create_statement_from_tokenizer(const statement&parent,tokenizer&t){
 	auto tk=t.next_token();
 	if(tk.is_name("#"))return make_unique<stmt_comment>(parent,move(tk),t);// i.e.  print("hello") # comment
-	if(t.is_peek_char('('))return create_call_statement_from_tokenizer(parent,move(tk),t); // ie  f(...)
+	if(t.is_peek_char('('))return create_statement_from_tokenizer(parent,move(tk),t); // i.e.  f(...)
 	return make_unique<statement>(parent,move(tk));// ie  0x80
 }
 

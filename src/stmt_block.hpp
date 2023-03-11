@@ -42,7 +42,7 @@ public:
 			}else if(tk.is_name("")){
 				stmts_.emplace_back(make_unique<statement>(*this,move(tk)));
 			}else{
-				stmts_.emplace_back(create_call_statement_from_tokenizer(*this,move(tk),t));
+				stmts_.emplace_back(create_statement_from_tokenizer(*this,move(tk),t));
 			}
 
 			if(is_one_statement_&&!last_statement_considered_no_statment)
