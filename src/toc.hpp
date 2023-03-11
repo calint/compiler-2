@@ -177,8 +177,8 @@ public:
 		assert(named_registers_.size()==6);
 //		assert(stkix_==0);
 //		assert(framestk_.import_frames_.size()==0);
-		os<<"\n;      max registers in use: "<<tc.max_usage_scratch_regs_<<endl;
-		os<<";         max frames in use: "<<tc.max_frame_count_<<endl;
+		os<<"\n; max scratch registers in use: "<<tc.max_usage_scratch_regs_<<endl;
+		os<<";            max frames in use: "<<tc.max_frame_count_<<endl;
 //		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
 	}
 

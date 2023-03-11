@@ -234,5 +234,5 @@ main:
    call exit
    add rsp,56
 
-;      max registers in use: 1
-;         max frames in use: 3
+; max scratch registers in use: 1
+;            max frames in use: 3
