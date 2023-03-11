@@ -267,7 +267,7 @@ public:
 		if(free_registers_.empty()){
 			throw compiler_error(st,"out of scratch registers  reduce expression complexity");
 		}
-		if(reg!=""){
+		if(!reg.empty()){
 			auto r=find(free_registers_.begin(),free_registers_.end(),reg);
 			if(r==free_registers_.end()){
 				throw compiler_error(st,"register '"+reg+"' cannot be allocated");//?
