@@ -22,7 +22,6 @@ public:
 				t.next_char(); // consume the peeked char
 				break;
 			}
-//			expr_ops_list(*this,t.next_whitespace_token(),t,'=',3,false,create_statement_from_tokenizer(*this,t),0);
 			args_.emplace_back(make_unique<expr_ops_list>(*this,t,true));
 			if(t.is_next_char(')'))
 				break;
@@ -40,16 +39,11 @@ public:
 		size_t i=args_.size()-1;
 		for(const auto&e:args_){
 			e->source_to(os);
-			if(i--)os<<",";
+			if(i--){
+				os<<",";
+			}
 		}
 		os<<")";
-	}
-
-	static void replaceSubstring(string& original_string,const string& substring_to_replace,const string& replacement_string){
-		size_t start_pos=original_string.find(substring_to_replace);
-		if(start_pos!=string::npos){
-			original_string.replace(start_pos,substring_to_replace.length(),replacement_string);
-		}
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
@@ -63,17 +57,18 @@ public:
 		vector<string>allocated_registers;
 
 		if(!f.is_inline()){
-			size_t nargs=args_.size();
-			const size_t rsp_delta=tc.get_current_stack_size();
+			size_t nargs{args_.size()};
+			const size_t rsp_delta{tc.get_current_stack_size()};
 			if(tc.enter_func_call()){
 				// if true then this is not a call within arguments of another call
 				if(rsp_delta!=0){
 					// adjust stack past the allocated vars
 					expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(rsp_delta<<3));
+					// stack is now: <base>,.. vars ..,
 				}
-				// stack is now: base,.. vars ..,
+				// stack is now: <base>,
 			}
-			// push arguments
+			// push arguments starting with the last
 			size_t nargs_on_stack{0};
 			while(nargs--){
 				const statement&arg=*args_[nargs];
@@ -82,64 +77,72 @@ public:
 				bool argument_passed_in_register{false};
 				string arg_reg=param.get_register_or_empty();
 				if(!arg_reg.empty()){
+					// argument requests to be passed as a register
 					tc.alloc_scratch_register(param,arg_reg); // return ignored
 					allocated_registers.push_back(arg_reg);
 					argument_passed_in_register=true;
 				}
 				if(arg.is_expression()){
 					// is the argument passed in through a register?
-					if(!argument_passed_in_register){ // no particular register requested for the argument
+					if(!argument_passed_in_register){
+						// no particular register requested for the argument
 						arg_reg=tc.alloc_scratch_register(param);
 						allocated_registers.push_back(arg_reg);
 					}
+					// compile expression with the result stored in arg_reg
 					arg.compile(tc,os,indent_level+1,arg_reg);
 					if(!argument_passed_in_register){
+						// argument is passed to function through the stack
 						indent(os,indent_level);os<<"push "<<arg_reg<<endl;
+						// keep track of how many arguments are on the stack
 						nargs_on_stack++;
 					}
 					continue;
 				}
-				string id=tc.resolve_ident_to_nasm(arg);
+				// not an expression, resolve identifier to nasm
+				const string&id=tc.resolve_ident_to_nasm(arg);
 				if(argument_passed_in_register){
+					// move the identifier to the requested register
 					indent(os,indent_level);os<<"mov "<<arg_reg<<","<<id<<endl;
 				}else{
+					// push identifier on the stack
 					indent(os,indent_level);os<<"push "<<id<<endl;
 					nargs_on_stack++;
 				}
 			}
-
-			//     stack is: base,.. vars ..,[arg n],[arg n-1],...,[arg 1],
+			//     stack is: <base>,.. vars ..,[arg n],[arg n-1],...,[arg 1],
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
+			//     stack is: <base>,.. vars ..,[arg n],[arg n-1],...,[arg 1],
 
-			//     stack is: base,.. vars ..,[arg n],[arg n-1],...,[arg 1],
-			// restore rsp
+			// restore stack pointer
 			if(tc.exit_func_call()){
 				// this is not a call within the arguments of another call
 				// restore rsp to what it was before the call
-				const size_t rsp_offset_to_base=rsp_delta+nargs_on_stack;
+				const size_t rsp_offset_to_base{rsp_delta+nargs_on_stack};
 				if(rsp_offset_to_base){
+					// if rsp needs to be moved to <base>
 					indent(os,indent_level);os<<"add rsp,"<<(rsp_offset_to_base<<3)<<endl;
 				}
-				// stack is: base,
+				// stack is: <base>,
 			}else{
-				// this is a call nested in the arguments of a different call
+				// this call is in the arguments of a different call
 				// restore rsp past the arguments
-				// stack is: base,.. other func args ..,[arg n],[arg n-1],...,[arg 1],
+				// stack is: <base>,.. other func args ..,[arg n],[arg n-1],...,[arg 1],
 				if(!args_.empty()){
 					indent(os,indent_level);os<<"add rsp,"<<(args_.size()<<3)<<endl;
-					// stack is: base,.. other func args ..,
+					// stack is: <base>,.. other func args ..,
 				}
 			}
 
 			if(not dest_ident.empty()){
-				// copy return value to dest_ident
-//				const string&id=tc.resolve_ident_to_nasm(dest_ident);
+				// function returns values in rax, copy return value to dest_ident
 				indent(os,indent_level);os<<"mov "<<dest_ident<<",rax"<<endl;
 			}
 
 			// free allocated registers
-			for(const string&r:allocated_registers)
+			for(const string&r:allocated_registers){
 				tc.free_scratch_reg(r);
+			}
 			return;
 		}
 

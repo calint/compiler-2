@@ -1,0 +1,7 @@
+	static void replaceSubstring(string& original_string,const string& substring_to_replace,const string& replacement_string){
+		size_t start_pos=original_string.find(substring_to_replace);
+		if(start_pos!=string::npos){
+			original_string.replace(start_pos,substring_to_replace.length(),replacement_string);
+		}
+	}
+
