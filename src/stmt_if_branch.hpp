@@ -7,10 +7,9 @@ class stmt_if_branch final:public statement{
 public:
 	inline stmt_if_branch(const statement&parent,tokenizer&t):
 		statement{parent,t.next_whitespace_token()},
-		bol_{*this,t}
-	{
-		code_=make_unique<stmt_block>(*this,t);
-	}
+		bol_{*this,t},
+		code_{make_unique<stmt_block>(*this,t)}
+	{}
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
