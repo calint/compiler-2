@@ -1,6 +1,10 @@
 [x] non-inlined function calls
 [ ]   review
 [ ] character type
+[ ] toc.allocate_named_register_or_break: if allocated then tell where
+[ ] toc.add_field: if defined tell where
+[ ] toc.add_function: if defined tell where
+[ ] toc.add_var: if defined tell where
 [ ] experiments with linking to the standard c library and using printf
 [ ] multiple return values assignment: var a,b=foo()  a,b=foo()
 [ ] examine expression, expr_ops_list, stmt_call relation
