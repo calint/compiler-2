@@ -35,10 +35,29 @@ fib:
    pop rbp
    ret
 main:
+   mov qword[rbp-8],1
+   if_17_8:
+   cmp_17_8:
+   cmp qword[rbp-8],1
+   jne if_19_14
+   if_17_8_code:  ; opt1
+     mov qword[rbp-16],2
+     jmp if_17_5_end
+   if_19_14:
+   cmp_19_14:
+   cmp qword[rbp-8],2
+   jne if_else_17_5
+   if_19_14_code:  ; opt1
+     mov qword[rbp-16],3
+     jmp if_17_5_end
+   if_else_17_5:
+       mov qword[rbp-16],3
+   if_17_5_end:
+     sub rsp,32
      push 5
      call fib
-     add rsp,8
+     add rsp,40
      mov rbx,rax
      mov rax,1
      int 0x80
-   exit_16_5_end:
+   exit_24_5_end:

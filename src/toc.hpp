@@ -40,12 +40,12 @@ class frame final{
 public:
 	enum class type{FUNC,BLOCK,LOOP,IF};
 
-	inline frame(const string&name,const type type,const string&call_path="",const string&ret_label="",const bool is_inline=false):
+	inline frame(const string&name,const type tpe,const string&call_path="",const string&ret_label="",const bool is_inline=false):
 		name_{name},
 		call_path_{call_path},
 		ret_label_{ret_label},
 		is_inline_{is_inline},
-		type_{type}
+		type_{tpe}
 	{}
 
 	inline void add_var(const string&nm,const int stkix,const string&flags){
@@ -196,13 +196,17 @@ public:
 		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'");
 	}
 
+	inline void add_alias(const string&ident,const string&parent_frame_ident){
+		frames_.back().add_alias(ident,parent_frame_ident);
+	}
+
 	inline void push_func(const string&name,const string&call_loc,const string&ret_jmp,const bool is_inline){
 		frames_.emplace_back(name,frame::type::FUNC,call_loc,ret_jmp,is_inline);
 		check_usage();
 	}
 
-	inline void push_block(const string&name){
-		frames_.emplace_back(name,frame::type::BLOCK);
+	inline void push_block(){
+		frames_.emplace_back("",frame::type::BLOCK);
 		check_usage();
 	}
 
@@ -211,21 +215,33 @@ public:
 		check_usage();
 	}
 
-	inline void add_alias(const string&ident,const string&parent_frame_ident){
-		frames_.back().add_alias(ident,parent_frame_ident);
-	}
+//		inline void push_if(const char*name){
+//			frames_.emplace_back(name,frame::type::IF);
+//			check_usage();
+//		}
+//
+//		inline void pop_if(const string&name){
+//			frame&f=frames_.back();
+//			assert(f.is_if() and f.is_name(name));
+//	//		stkix_-=frames_.back().allocated_stack_size();
+//			frames_.pop_back();
+//		}
 
 	inline void pop_func(const string&name){
 		frame&f=frames_.back();
 		assert(f.is_func() and f.is_name(name));
-//		stkix_-=frames_.back().allocated_stack_size();
 		frames_.pop_back();
 	}
 
 	inline void pop_loop(const string&name){
 		frame&f=frames_.back();
 		assert(f.is_loop() and f.is_name(name));
-//		stkix_-=frames_.back().allocated_stack_size();
+		frames_.pop_back();
+	}
+
+	inline void pop_block(){
+		frame&f=frames_.back();
+		assert(f.is_block());
 		frames_.pop_back();
 	}
 
@@ -244,22 +260,13 @@ public:
 		return delta;
 	}
 
-	inline void push_if(const char*name){
-		frames_.emplace_back(name,frame::type::IF);
-		check_usage();
-	}
-
-	inline void pop_if(const string&name){
-		frame&f=frames_.back();
-		assert(f.is_if() and f.is_name(name));
-//		stkix_-=frames_.back().allocated_stack_size();
-		frames_.pop_back();
-	}
-
-	inline void add_var(const string&name,const string&flags=""){
+	inline void add_var(const statement&st,const string&name,const string&flags=""){
 		const size_t stkix=get_current_stack_size()+1;
 		// offset by one since rsp points to most recently pushed value
 		//   allocate next free slot
+		if(frames_.back().has_var(name)){
+			throw compiler_error(st,"variable '"+name+"' already declared");
+		}
 		frames_.back().add_var(name,-int(stkix),flags);
 	}
 

@@ -13,5 +13,14 @@ func fib(i):res{
 }
 
 func inline main{
+    var a=1
+    var b=3
+    if a=1 {
+      var b=2
+    }else if a=2 {
+      var b=3
+    }else{
+      var b=4
+    }
     exit(fib(5))
 }
