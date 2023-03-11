@@ -10,6 +10,6 @@ public:
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 
 		indent(os,indent_level);
-		os<<"int "<<tc.resolve_ident_to_nasm(arg(0),arg(0).identifier())<<endl;
+		os<<"int "<<tc.resolve_ident_to_nasm(arg(0))<<endl;
 	}
 };

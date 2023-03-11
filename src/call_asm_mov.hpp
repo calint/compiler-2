@@ -8,29 +8,28 @@ public:
 		call_asm{parent,tkn,t}
 	{}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{// mov(eax 1)
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 
-		const string&ra=tc.resolve_ident_to_nasm(arg(0));
-		const statement&rbs=arg(1);
-		if(rbs.is_expression()){ // ? the assembler commands might not need this
-			const string&rai=arg(0).identifier();
-			rbs.compile(tc,os,indent_level+1,rai);
+		const string&dest=tc.resolve_ident_to_nasm(arg(0));
+		const statement&src_arg=arg(1);
+		if(src_arg.is_expression()){ // ? the assembler commands might not need this
+			src_arg.compile(tc,os,indent_level+1,arg(0).identifier());
 			return;
 		}
-		const string&rb=tc.resolve_ident_to_nasm(rbs);
+		const string&src=tc.resolve_ident_to_nasm(src_arg);
 
-		if(ra==rb)
+		if(dest==src)
 			return;
 
-		if(!ra.find("qword[") and !rb.find("qword[")){
+		if(!dest.find("qword[") and !src.find("qword[")){
 			const string&r=tc.alloc_scratch_register(tok());
-			indent(os,indent_level);os<<"mov "<<r<<","<<rb<<endl;
-			indent(os,indent_level);os<<"mov "<<ra<<","<<r<<endl;
+			indent(os,indent_level);os<<"mov "<<r<<","<<src<<endl;
+			indent(os,indent_level);os<<"mov "<<dest<<","<<r<<endl;
 			tc.free_scratch_reg(r);
 			return;
 		}
 
-		indent(os,indent_level);os<<"mov "<<ra<<","<<rb<<endl;
+		indent(os,indent_level);os<<"mov "<<dest<<","<<src<<endl;
 	}
 };

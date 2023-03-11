@@ -9,11 +9,12 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		indent(os,indent_level,true);tc.source_comment(os,*this);
 		indent(os,indent_level);
-		os<<"xor "<<tc.resolve_ident_to_nasm(arg(0),arg(0).identifier())<<",";
+		const string&dest=tc.resolve_ident_to_nasm(arg(0));
+		os<<"xor "<<dest<<",";
 		if(arg_count()==1){
-			os<<tc.resolve_ident_to_nasm(arg(0),arg(0).identifier());
+			os<<dest;
 		}else{
-			os<<tc.resolve_ident_to_nasm(arg(1),arg(1).identifier());
+			os<<tc.resolve_ident_to_nasm(arg(1));
 		}
 		os<<endl;
 	}
