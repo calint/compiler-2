@@ -5,6 +5,9 @@
 #include"stmt_def_var.hpp"
 #include"stmt_comment.hpp"
 #include"stmt_whitespace.hpp"
+#include"stmt_break.hpp"
+#include"stmt_return.hpp"
+#include"stmt_continue.hpp"
 
 class stmt_block final:public statement{
 public:
@@ -36,6 +39,12 @@ public:
 				stmts_.emplace_back(make_unique<stmt_def_var>(*this,move(tk),t));
 			}else if(t.is_next_char('=')){
 				stmts_.emplace_back(make_unique<stmt_assign_var>(*this,move(tk),t));
+			}else if(tk.is_name("break")){
+				stmts_.emplace_back(make_unique<stmt_break>(parent,move(tk)));
+			}else if(tk.is_name("continue")){
+				stmts_.emplace_back(make_unique<stmt_continue>(parent,move(tk)));
+			}else if(tk.is_name("return")){
+				stmts_.emplace_back(make_unique<stmt_return>(parent,move(tk)));
 			}else if(tk.is_name("#")){
 				stmts_.emplace_back(make_unique<stmt_comment>(*this,move(tk),t));
 				last_statement_considered_no_statment=true;

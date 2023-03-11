@@ -227,9 +227,6 @@ inline unique_ptr<statement>create_statement_from_tokenizer(const statement&pare
 	if("syscall"==func)return make_unique<call_asm_syscall>(parent,move(tk),t);
 	if("loop"==func)          return make_unique<stmt_loop>(parent,move(tk),t);
 	if("if"==func)              return make_unique<stmt_if>(parent,move(tk),t);
-	if("break"==func)        return make_unique<stmt_break>(parent,move(tk));
-	if("return"==func)      return make_unique<stmt_return>(parent,move(tk));
-	if("continue"==func)  return make_unique<stmt_continue>(parent,move(tk));
 	return                           make_unique<stmt_call>(parent,move(tk),t);
 }
 
