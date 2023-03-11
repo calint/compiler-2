@@ -59,11 +59,10 @@ read:
    ret
 
 exit:
-;  v: rsp+16
+;  v: rbx
    push rbp
    mov rbp,rsp
 ;  [24:5] mov(rbx,v)
-   mov rbx,qword[rbp+16]
 ;  [25:5] mov(rax,1)
    mov rax,1
 ;  [26:5] int(0x80)
@@ -226,9 +225,9 @@ main:
    loop_45_5_end:
 ;  [57:5] exit(0)
    sub rsp,48
-   push 0
+   mov rbx,0
    call exit
-   add rsp,56
+   add rsp,48
 
 ; max scratch registers in use: 1
 ;            max frames in use: 3

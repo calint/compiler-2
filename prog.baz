@@ -20,7 +20,7 @@ func read(len:reg_rdx,ptr:reg_rsi):ret{
     mov(ret,rax)
 }
 
-func exit(v){
+func exit(v:reg_rbx){
     mov(rbx,v)
     mov(rax,1)
     int(0x80)

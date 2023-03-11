@@ -36,7 +36,6 @@ read:
 exit:
    push rbp
    mov rbp,rsp
-   mov rbx,qword[rbp+16]
    mov rax,1
    int 0x80
    pop rbp
@@ -131,6 +130,6 @@ main:
    jmp loop_45_5
    loop_45_5_end:
    sub rsp,48
-   push 0
+   mov rbx,0
    call exit
-   add rsp,56
+   add rsp,48
