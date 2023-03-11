@@ -38,12 +38,14 @@ private:
 
 class frame final{
 public:
-	inline frame(const string&name,const char bits,const string&call_path="",const string&ret_label="",const bool is_inline=false):
+	enum class type{FUNC,BLOCK,LOOP,IF};
+
+	inline frame(const string&name,const type type,const string&call_path="",const string&ret_label="",const bool is_inline=false):
 		name_{name},
 		call_path_{call_path},
 		ret_label_{ret_label},
 		is_inline_{is_inline},
-		bits_{bits} // ? enum
+		type_{type}
 	{}
 
 	inline void add_var(const string&nm,const int stkix,const string&flags){
@@ -71,13 +73,13 @@ public:
 		aliases_.put(ident,outside_ident);
 	}
 
-	inline bool is_func()const{return bits_&1;}
+	inline bool is_func()const{return type_==type::FUNC;}
 
-//	inline bool is_block()const{return bits_&2;}
+	inline bool is_block()const{return type_==type::BLOCK;}
 
-	inline bool is_loop()const{return bits_&4;}
+	inline bool is_loop()const{return type_==type::LOOP;}
 
-	inline bool is_if()const{return bits_&8;}
+	inline bool is_if()const{return type_==type::IF;}
 
 	inline bool is_name(const string&nm)const{return name_==nm;}
 
@@ -101,7 +103,7 @@ private:
 	lut<string>aliases_;
 	string ret_label_;
 	bool is_inline_{false};
-	char bits_{0}; // 1=func, 2=block, 4=loop, 8=if
+	type type_{type::FUNC};
 };
 
 struct field_meta{
@@ -195,17 +197,17 @@ public:
 	}
 
 	inline void push_func(const string&name,const string&call_loc,const string&ret_jmp,const bool is_inline){
-		frames_.emplace_back(name,1,call_loc,ret_jmp,is_inline);
+		frames_.emplace_back(name,frame::type::FUNC,call_loc,ret_jmp,is_inline);
 		check_usage();
 	}
 
 	inline void push_block(const string&name){
-		frames_.emplace_back(name,2);
+		frames_.emplace_back(name,frame::type::BLOCK);
 		check_usage();
 	}
 
 	inline void push_loop(const string&name){
-		frames_.emplace_back(name,4);
+		frames_.emplace_back(name,frame::type::LOOP);
 		check_usage();
 	}
 
@@ -243,7 +245,7 @@ public:
 	}
 
 	inline void push_if(const char*name){
-		frames_.emplace_back(name,8);
+		frames_.emplace_back(name,frame::type::IF);
 		check_usage();
 	}
 
