@@ -14,25 +14,34 @@ public:
 		precedence_{first_op_precedence},
 		list_op_{list_op}
 	{
+		// if called in a recursion with a first expression passed
 		if(first_expression){
+			// put in list
 			expressions_.push_back(move(first_expression));
 		}else{
+			// if subexpression
 			if(t.is_next_char('(')){
+				// recurse
 				expressions_.emplace_back(make_unique<expr_ops_list>(*this,t,in_args,true));
 			}else{
+				// add first expression
 				expressions_.emplace_back(create_statement_from_tokenizer(*this,t));
 			}
 		}
 
 		while(true){ // +a  +3
-			if(in_args){ //? rewrite is_in_bool_expr
+			// if parsed in a function call argument list
+			if(in_args){ // ? rewrite is_in_bool_expr
+				// if in boolean expression exit when an operation is found
 				if(t.is_peek_char('<'))break;
 				if(t.is_peek_char('='))break;
 				if(t.is_peek_char('>'))break;
 			}
+			// if in a function argument return when ',' or ')' found
 			if(in_args and (t.is_peek_char(',') or t.is_peek_char(')')))
 				break;
 
+			// if end of subexpression
 			if(t.is_peek_char(')')){
 				if(enclosed_){
 					t.next_char();
@@ -40,6 +49,7 @@ public:
 				break;
 			}
 
+			// next operation
 			if(t.is_peek_char('+')){
 				ops_.push_back('+');
 			}else if(t.is_peek_char('-')){
@@ -51,15 +61,20 @@ public:
 			}else if(t.is_peek_char('%')){
 				ops_.push_back('%');
 			}else{
+				// no more operations
 				break;
 			}
 
+			// check if next operation precedence is same or lower
+			// if not then a new subexpression is added to the list with the last
+			// expression in this list as first expression
 			const int next_precedence=precedence_for_op(t.peek_char());
 			if(next_precedence>precedence_){
-				// i.e. =a+b*c+1
-				// next op has higher precedence than current
+				// i.e. =a+b*c+1 where the peeked char is '*'
+				// next operation has higher precedence than current
 				// list is now =[(=a)(+b)]
-				// move last op (+b) to sub-expression =[(=a) +[(=b)(*c)(+1)]]
+				// move last expression (+b) to subexpression
+				//   =[(=a) +[(=b)(*c)(+1)]]
 				precedence_=next_precedence;
 				if(!ops_.empty()){
 					const int first_op_prec=precedence_for_op(ops_.back());
@@ -96,7 +111,7 @@ public:
 
 		if(not expressions_.empty()){
 			expressions_[0]->source_to(os);
-			const size_t len=expressions_.size();
+			const size_t len{expressions_.size()};
 			for(size_t i{1};i<len;i++){
 				os<<ops_[i-1];
 				expressions_[i]->source_to(os);
