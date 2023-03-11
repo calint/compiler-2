@@ -133,9 +133,9 @@ public:
 
 	inline const stmt_def_func&get_func_or_break(const statement&s,const string&name)const{
 		bool valid;
-		const stmt_def_func*f=funcs_.get_valid(name,valid);
-		if(!valid)
+		if(!funcs_.has(name))
 			throw compiler_error(s.tok(),"function '"+name+"' not found");
+		const stmt_def_func*f=funcs_.get(name);
 		return*f;
 	}
 
