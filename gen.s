@@ -2,17 +2,6 @@
 
 section .data
 align 4
-;[1:1] field prompt=" hello enter name: " 
-prompt db '  hello    enter name: '
-prompt.len equ $-prompt
-;[2:1] field name="............................................................" 
-name db '............................................................'
-name.len equ $-name
-;[3:1] field prompt2=" not a name: " 
-prompt2 db '  not a name: '
-prompt2.len equ $-prompt2
-;[4:1] field len=0 
-len dq 0
 
 section .bss
 align 4
@@ -27,210 +16,61 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
-print:
-;  len: rdx
-;  ptr: rcx
-   push rbp
-   mov rbp,rsp
-;  [7:5] mov(rcx,ptr)
-;  [8:5] mov(rdx,len)
-;  [9:5] mov(rbx,1)
-   mov rbx,1
-;  [10:5] mov(rax,4)
-   mov rax,4
-;  [11:5] int(0x80)
-   int 0x80
-   pop rbp
-   ret
-
-read:
-;  len: rdx
-;  ptr: rsi
-   push rbp
-   mov rbp,rsp
-;  [15:5] mov(rsi,ptr)
-;  [16:5] mov(rdx,len)
-;  [17:5] xor(rax)
-   xor rax,rax
-;  [18:5] xor(rdi)
-   xor rdi,rdi
-;  [19:5] syscall 
-   syscall
-;  [20:5] mov(ret,rax)
-   pop rbp
-   ret
-
-exit:
-;  v: rbx
-   push rbp
-   mov rbp,rsp
-;  [24:5] mov(rbx,v)
-;  [25:5] mov(rax,1)
-   mov rax,1
-;  [26:5] int(0x80)
-   int 0x80
-   pop rbp
-   ret
-
-foo:
+fib:
 ;  i: rsp+16
    push rbp
    mov rbp,rsp
-   if_30_8:
-;  [30:8] ? i=0 
-;  [30:8] ? i=0 
-   cmp_30_8:
+   if_8_8:
+;  [8:8] ? i=0 
+;  [8:8] ? i=0 
+   cmp_8_8:
    cmp qword[rbp+16],0
-   jne if_30_5_end
-   if_30_8_code:  ; opt1
-;    [30:12] return 
+   jne if_8_5_end
+   if_8_8_code:  ; opt1
+;    [9:9] res=1 
+;    [9:13] 1 
+;    [9:13] res=1 
+     mov rax,1
+;    [10:9] return 
      pop rbp
      ret
-   if_30_5_end:
-;  [31:5] print(prompt.len,prompt)
-   mov rcx,prompt
-   mov rdx,prompt.len
-   call print
+   if_8_5_end:
+;  [12:5] res=i*fib(i-1)
+;  [12:9] i*fib(i-1)
+;  [12:9] res=i
+   mov rax,qword[rbp+16]
+;  [12:11] res*fib(i-1)
+;  [12:11] fib(i-1)
+;    [12:15] i-1
+;    [12:15] r14=i
+     mov r14,qword[rbp+16]
+;    [12:17] r14-1
+     sub r14,1
+   push r14
+   call fib
+   add rsp,8
+   mov r15,rax
+   imul rax,r15
    pop rbp
    ret
 
 main:
-;  [35:5] var a=0b1 
-;  [35:9] a=0b1 
-;  [35:11] 0b1 
-;  [35:11] a=0b1 
-   mov qword[rbp-8],0b1
-;  [36:5] var b=2 
-;  [36:9] b=2 
-;  [36:11] 2 
-;  [36:11] b=2 
-   mov qword[rbp-16],2
-;  [37:5] var c=3 
-;  [37:9] c=3 
-;  [37:11] 3 
-;  [37:11] c=3 
-   mov qword[rbp-24],3
-;  [38:5] var d=4 
-;  [38:9] d=4 
-;  [38:11] 4 
-;  [38:11] d=4 
-   mov qword[rbp-32],4
-;  [39:5] var r=a+b+c+d 
-;  [39:9] r=a+b+c+d 
-;  [39:11] a+b+c+d 
-;  [39:11] r15=a
-   mov r15,qword[rbp-8]
-;  [39:13] r15+b
-   add r15,qword[rbp-16]
-;  [39:15] r15+c
-   add r15,qword[rbp-24]
-;  [39:17] r15+d 
-   add r15,qword[rbp-32]
-   mov qword[rbp-40],r15
-;  [40:5] var x=1 
-;  [40:9] x=1 
-;  [40:11] 1 
-;  [40:11] x=1 
-   mov qword[rbp-48],1
-;  [41:5] foo(x)
-   sub rsp,48
-   push qword[rbp-48]
-   call foo
-   add rsp,56
-;  [42:5] x=0 
-;  [42:7] 0 
-;  [42:7] x=0 
-   mov qword[rbp-48],0
-;  [43:5] foo(x)
-   sub rsp,48
-   push qword[rbp-48]
-   call foo
-   add rsp,56
-;  [44:1] # print(prompt.len,prompt) 
-;  [45:5] loop
-   loop_45_5:
-;    [46:9] var len=read(name.len,name)-1 
-;    [46:13] len=read(name.len,name)-1 
-;    [46:17] read(name.len,name)-1 
-;    [46:17] len=read(name.len,name)
-;    [46:17] read(name.len,name)
-     sub rsp,56
-     mov rsi,name
-     mov rdx,name.len
-     call read
-     add rsp,56
-     mov qword[rbp-56],rax
-;    [46:37] len-1 
-     sub qword[rbp-56],1
-;    [46:39] # remove the \n 
-     if_47_12:
-;    [47:12] ? len=0 
-;    [47:12] ? len=0 
-     cmp_47_12:
-     cmp qword[rbp-56],0
-     jne if_49_17
-     if_47_12_code:  ; opt1
-;      [48:13] print(prompt.len,prompt)
-       sub rsp,56
-       mov rcx,prompt
-       mov rdx,prompt.len
-       call print
-       add rsp,56
-       jmp if_47_9_end
-     if_49_17:
-;    [49:17] ? len<=4 
-;    [49:17] ? len<=4 
-     cmp_49_17:
-     cmp qword[rbp-56],4
-     jg if_else_47_9
-     if_49_17_code:  ; opt1
-;      [50:13] print(prompt2.len,prompt2)
-       sub rsp,56
-       mov rcx,prompt2
-       mov rdx,prompt2.len
-       call print
-       add rsp,56
-       jmp if_47_9_end
-     if_else_47_9:
-;        [52:13] print(len+1,name)
-         sub rsp,56
-         mov rcx,name
-;          [52:19] len+1
-;          [52:19] rdx=len
-           mov rdx,qword[rbp-56]
-;          [52:23] rdx+1
-           add rdx,1
-         call print
-         add rsp,56
-         if_53_16:
-;        [53:16] ? read(name.len,name)=1 
-;        [53:16] ? read(name.len,name)=1 
-         cmp_53_16:
-;          [53:16] read(name.len,name)
-;          [53:16] r15=read(name.len,name)
-;          [53:16] read(name.len,name)
-           sub rsp,56
-           mov rsi,name
-           mov rdx,name.len
-           call read
-           add rsp,56
-           mov r15,rax
-         cmp r15,1
-         jne if_53_13_end
-         if_53_16_code:  ; opt1
-;          [53:38] # is only \n 
-;          [54:17] break 
-           jmp loop_45_5_end
-         if_53_13_end:
-     if_47_9_end:
-   jmp loop_45_5
-   loop_45_5_end:
-;  [57:5] exit(0)
-   sub rsp,48
-   mov rbx,0
-   call exit
-   add rsp,48
+;  [16:5] exit(fib(5))
+;    [16:10] fib(5)
+;    [16:10] rbx=fib(5)
+;    [16:10] fib(5)
+     push 5
+     call fib
+     add rsp,8
+     mov rbx,rax
+;    inline: 16_5
+;    [2:5] mov(rbx,v)
+;    [3:5] mov(rax,1)
+     mov rax,1
+;    [4:5] int(0x80)
+     int 0x80
+   exit_16_5_end:
 
-; max scratch registers in use: 1
-;            max frames in use: 3
+; max scratch registers in use: 3
+;            max frames in use: 2
 
