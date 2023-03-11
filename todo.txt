@@ -1,6 +1,7 @@
 [x] non-inlined function calls
 [ ]   review
 [ ] character type
+[ ] logical ops & | ^ ~
 [ ] bool type
 [ ] toc.allocate_named_register_or_break: if allocated then tell where
 [ ] toc.add_field: if defined tell where
