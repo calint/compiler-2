@@ -235,6 +235,6 @@ inline unique_ptr<statement>create_statement_from_tokenizer(const statement&pare
 	auto tk=t.next_token();
 	if(tk.is_name("#"))return make_unique<stmt_comment>(parent,move(tk),t);// i.e.  print("hello") # comment
 	if(t.is_peek_char('('))return create_statement_from_tokenizer(parent,move(tk),t); // i.e.  f(...)
-	return make_unique<statement>(parent,move(tk));// i.e. 0x80
+	return make_unique<statement>(parent,move(tk));// i.e. 0x80, rax, identifiers
 }
 
