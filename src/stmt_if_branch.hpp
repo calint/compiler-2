@@ -18,6 +18,7 @@ public:
 		code_->source_to(os);
 	}
 
+	// returns the label where the if branch begins evaluating the boolean expression
 	inline string if_bgn_label(const toc&tc)const{
 		const string&call_path=tc.get_call_path(tok());
 		return "if_"+tc.source_location(tok())+(call_path.empty()?"":"_"+call_path);
@@ -30,17 +31,19 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false_label,const string&jmp_to_after_code_label)const{
 		const string if_bgn_lbl=if_bgn_label(tc);
 		const string jmp_to_if_true_lbl=if_bgn_lbl+"_code";
-
+		// the begining of this branch
 		indent(os,indent_level);os<<if_bgn_lbl<<":"<<endl;
-
+		// compile boolean ops list
 		bol_.compile(tc,os,indent_level,jmp_to_if_false_label,jmp_to_if_true_lbl);
-
+		// the label where to jump if evaluation of boolean ops is true
 		indent(os,indent_level);os<<jmp_to_if_true_lbl<<":"<<endl;
-
+		// the code of the branch
 		code_->compile(tc,os,indent_level);
-
-		if(jmp_to_after_code_label!=""){
-			// jump to code after if else block
+		// after the code of the branch is executed jump to the end of
+		//   the 'if ... else if ... else ...'
+		//   if label not provided then there is no 'else' and this is the last 'if'
+		//   so just continue execution
+		if(!jmp_to_after_code_label.empty()){
 			indent(os,indent_level+1);os<<"jmp "<<jmp_to_after_code_label<<endl;
 		}
 	}
