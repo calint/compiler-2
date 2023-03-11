@@ -1,5 +1,6 @@
 [x] non-inlined function calls
 [ ]   review
+[ ] character type
 [ ] experiments with linking to the standard c library and using printf
 [ ] multiple return values assignment: var a,b=foo()  a,b=foo()
 [ ] examine expression, expr_ops_list, stmt_call relation
