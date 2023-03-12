@@ -67,7 +67,7 @@ public:
 			}
 
 			// push allocated registers on the stack
-			const vector<string>&alloc_regs=tc.allocated_registers();
+			const vector<string>&alloc_regs=tc.get_allocated_registers();
 			const size_t n=alloc_regs.size();
 			for(size_t i=0;i<n;i++){
 				const string&reg=alloc_regs[i];
@@ -84,7 +84,7 @@ public:
 				const stmt_def_func_param&param=f.param(nargs);
 				// is the argument passed through a register?
 				bool argument_passed_in_register{false};
-				string arg_reg=param.get_register_or_empty();
+				const string&arg_reg=param.get_register_or_empty();
 				if(!arg_reg.empty()){
 					// argument requests to be passed as a register
 					tc.alloc_named_register_or_break(arg,arg_reg,os,indent_level);
@@ -95,13 +95,13 @@ public:
 					// is the argument passed in through a register?
 					if(!argument_passed_in_register){
 						// no particular register requested for the argument
-						arg_reg=tc.alloc_scratch_register(arg,os,indent_level);
+						const string&sr=tc.alloc_scratch_register(arg,os,indent_level);
 						// compile expression with the result stored in arg_reg
-						arg.compile(tc,os,indent_level+1,arg_reg);
+						arg.compile(tc,os,indent_level+1,sr);
 						// argument is passed to function through the stack
-						indent(os,indent_level);os<<"push "<<arg_reg<<endl;
+						indent(os,indent_level);os<<"push "<<sr<<endl;
 						// free scratch register
-						tc.free_scratch_register(arg_reg,os,indent_level);
+						tc.free_scratch_register(sr,os,indent_level);
 						// keep track of how many arguments are on the stack
 						nargs_on_stack++;
 					}else{

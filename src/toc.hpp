@@ -423,7 +423,7 @@ public:
 		return false;
 	}
 
-	inline const vector<string>&allocated_registers()const{return allocated_registers_;}
+	inline const vector<string>&get_allocated_registers()const{return allocated_registers_;}
 
 private:
 	inline const string resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident)const{
