@@ -99,15 +99,15 @@ public:
 	inline const string&ret_var()const{return ret_var_;}
 
 private:
-	string name_;
-	string call_path_;
-	size_t allocated_stack_{0};
-	lut<allocated_var>vars_;
-	lut<string>aliases_;
-	string ret_label_;
-	string ret_var_;
+	string name_; // optional name
+	string call_path_; // a unique path of source locations of the inlined call
+	size_t allocated_stack_{0}; // number of slots used on the stack by this frame
+	lut<allocated_var>vars_; // vars declared in this frame
+	lut<string>aliases_; // aliases that refers to previous frame alias or var
+	string ret_label_; // the label to jump to when exiting an inlined function
+	string ret_var_; // the variable that contains the return value
 	bool is_inline_{false};
-	type type_{type::FUNC};
+	type type_{type::FUNC}; // frame type
 };
 
 struct field_meta{
