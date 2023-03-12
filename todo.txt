@@ -1,5 +1,5 @@
-[ ] when calling non-inlined functions the allocated register is pushed and poped
-    although it hasn't been modified. keep track of that in toc and optimize away
+[ ] when calling non-inlined functions the allocated register is pushed and popped
+    although it hasn't been assigned. keep track of that in toc and optimize away
     the push/pop
 [ ] character type
 [ ] string type
