@@ -55,7 +55,6 @@ public:
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
 
 		if(!f.is_inline()){
-			vector<string>allocated_named_registers;
 			size_t nargs{args_.size()};
 			const size_t rsp_delta{tc.get_current_stack_size()};
 			if(tc.enter_func_call()){
@@ -75,6 +74,8 @@ public:
 				}
 				// stack is now: <base>,.. vars ..,... allocated regs ...,
 			}
+
+			vector<string>allocated_args_registers;
 			// push arguments starting with the last
 			size_t nargs_on_stack{0};
 			while(nargs--){
@@ -86,7 +87,7 @@ public:
 				if(!arg_reg.empty()){
 					// argument requests to be passed as a register
 					tc.alloc_named_register_or_break(arg,arg_reg);
-					allocated_named_registers.push_back(arg_reg);
+					allocated_args_registers.push_back(arg_reg);
 					argument_passed_in_register=true;
 				}
 				if(arg.is_expression()){
@@ -137,7 +138,10 @@ public:
 				size_t i=alloc_regs.size();
 				while(i--){
 					const string&reg=alloc_regs[i];
-					indent(os,indent_level);os<<"pop "<<reg<<endl;
+					// don't pop registers used to pass params
+					if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
+						indent(os,indent_level);os<<"pop "<<reg<<endl;
+					}
 				}
 				// stack is: <base>,..vars..,
 
@@ -163,7 +167,7 @@ public:
 			}
 
 			// free allocated registers
-			for(const string&r:allocated_named_registers){
+			for(const string&r:allocated_args_registers){
 				tc.free_named_register(r);
 			}
 			return;
