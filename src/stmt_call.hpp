@@ -56,12 +56,12 @@ public:
 
 		if(!f.is_inline()){
 			size_t nargs{args_.size()};
-			const size_t rsp_delta{tc.get_current_stack_size()};
+			const size_t nvars_on_stack{tc.get_current_stack_size()};
 			if(tc.enter_func_call()){
 				// if true then this is not a call within arguments of another call
-				if(rsp_delta!=0){
+				if(nvars_on_stack!=0){
 					// adjust stack past the allocated vars
-					expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(rsp_delta<<3));
+					expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(nvars_on_stack<<3));
 					// stack is now: <base>,.. vars ..,
 				}
 
@@ -86,7 +86,7 @@ public:
 				string arg_reg=param.get_register_or_empty();
 				if(!arg_reg.empty()){
 					// argument requests to be passed as a register
-					tc.alloc_named_register_or_break(arg,arg_reg);
+					tc.alloc_named_register_or_break(arg,arg_reg,os,indent_level);
 					allocated_args_registers.push_back(arg_reg);
 					argument_passed_in_register=true;
 				}
@@ -127,29 +127,39 @@ public:
 			// restore stack pointer
 			if(tc.exit_func_call()){
 				// this is not a call within the arguments of another call
-				// restore rsp past the pushed arguments
-				if(nargs_on_stack){
-					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
-				}
-				// stack is: <base>,..vars..,...allocated regs...,
+				// restore rsp to what it was before the call
 
-				// pop allocated registers from the stack
+				// pop allocated registers from the stack if any
 				const vector<string>&alloc_regs=tc.allocated_registers();
 				size_t i=alloc_regs.size();
-				while(i--){
-					const string&reg=alloc_regs[i];
-					// don't pop registers used to pass params
-					if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
-						indent(os,indent_level);os<<"pop "<<reg<<endl;
+				if(i==0){
+					// no allocated register on the stack
+					// stack is: <base>,..vars..,[arg n],[arg n-1],...,[arg 1],
+					const size_t offset{nargs_on_stack+nvars_on_stack};
+					if(offset){
+						indent(os,indent_level);os<<"add rsp,"<<(offset<<3)<<endl;
 					}
+					// stack is: <base>,
+				}else{
+					// there are allocated registers on the stack
+					// stack is: <base>,..vars..,...allocated regs...,[arg n],[arg n-1],...,[arg 1],
+					if(nargs_on_stack){
+						indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
+					}
+					// stack is: <base>,..vars..,...allocated regs...,
+					while(i--){
+						const string&reg=alloc_regs[i];
+						// don't pop registers used to pass params
+						if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
+							indent(os,indent_level);os<<"pop "<<reg<<endl;
+						}
+					}
+					// stack is: <base>,..vars..,
+					if(nvars_on_stack){
+						indent(os,indent_level);os<<"add rsp,"<<(nvars_on_stack<<3)<<endl;
+					}
+					// stack is: <base>,
 				}
-				// stack is: <base>,..vars..,
-
-				// restore rsp to what it was before the call
-				if(rsp_delta){
-					indent(os,indent_level);os<<"add rsp,"<<(rsp_delta<<3)<<endl;
-				}
-				// stack is: <base>,
 			}else{
 				// this call is in the arguments of a different call
 				// restore rsp past the arguments
@@ -168,7 +178,7 @@ public:
 
 			// free allocated registers
 			for(const string&r:allocated_args_registers){
-				tc.free_named_register(r);
+				tc.free_named_register(r,os,indent_level);
 			}
 			return;
 		}
@@ -201,7 +211,7 @@ public:
 			string arg_reg=param.get_register_or_empty();
 			if(!arg_reg.empty()){
 				// argument is passed through register
-				tc.alloc_named_register_or_break(*arg,arg_reg); // return ignored
+				tc.alloc_named_register_or_break(*arg,arg_reg,os,indent_level);
 				allocated_named_registers.push_back(arg_reg);
 			}
 			if(arg->is_expression()){
@@ -262,7 +272,7 @@ public:
 			tc.free_scratch_register(r,os,indent_level);
 		}
 		for(const auto&r:allocated_named_registers){
-			tc.free_named_register(r);
+			tc.free_named_register(r,os,indent_level);
 		}
 		// pop scope
 		tc.pop_func(nm);

@@ -296,19 +296,21 @@ public:
 		return r;
 	}
 
-	inline void alloc_named_register_or_break(const statement&st,const string&reg){
+	inline void alloc_named_register_or_break(const statement&st,const string&reg,ostream&os,const size_t indent_level){
 		auto r=find(named_registers_.begin(),named_registers_.end(),reg);
 		if(r==named_registers_.end()){
 			throw compiler_error(st,"named register '"+reg+"' cannot be allocated");
 		}
 		named_registers_.erase(r);
 		allocated_registers_.push_back(reg);
+		statement::indent(os,indent_level,true);os<<"alloc "<<reg<<endl;
 	}
 
-	inline void free_named_register(const string&reg){
+	inline void free_named_register(const string&reg,ostream&os,const size_t indent_level){
 		named_registers_.push_back(reg);
 		auto r=find(allocated_registers_.begin(),allocated_registers_.end(),reg);
 		allocated_registers_.erase(r);
+		statement::indent(os,indent_level,true);os<<"free "<<reg<<endl;
 	}
 
 	inline void free_scratch_register(const string&reg,ostream&os,const size_t indent_level){

@@ -71,6 +71,7 @@ fib:
 
 main:
 ;  [16:5] exit(fib(5))
+;  alloc rbx
 ;    [16:10] fib(5)
 ;    [16:10] rbx=fib(5)
 ;    [16:10] fib(5)
@@ -87,6 +88,7 @@ main:
 ;    [4:5] int(0x80)
      int 0x80
    exit_16_5_end:
+;  free rbx
 
 ; max scratch registers in use: 3
 ;            max frames in use: 4

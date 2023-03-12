@@ -99,7 +99,7 @@ public:
 				stk_ix++;
 			}else{
 				indent(os,indent_level+1,true);os<<pm_nm<<": "<<reg<<endl;
-				tc.alloc_named_register_or_break(pm,reg);
+				tc.alloc_named_register_or_break(pm,reg,os,indent_level);
 				allocated_names_registers.push_back(reg);
 				tc.add_alias(pm_nm,reg);
 			}
@@ -117,7 +117,7 @@ public:
 		os<<endl;
 		tc.pop_func(name());
 		for(auto const&reg:allocated_names_registers){
-			tc.free_named_register(reg);
+			tc.free_named_register(reg,os,indent_level);
 		}
 	}
 
