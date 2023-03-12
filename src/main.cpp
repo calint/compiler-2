@@ -203,12 +203,12 @@ int main(int argc,char**args){
 		string pass2=optimize_jumps_2(ss2);
 		cout<<pass2<<endl;
 //		p.build(cout);
-	}catch(compiler_error&e){
+	}catch(const compiler_error&e){
 		size_t start_char_in_line{0};
 		auto lineno=toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line);
 		cout<<"\n"<<src_file_name<<":"<<lineno<<":"<<start_char_in_line<<": "<<e.msg<<endl;
 		return 1;
-	}catch(string&s){
+	}catch(const string&s){
 		cout<<"\nexception: "<<s<<endl;
 		return 1;
 	}catch(...){

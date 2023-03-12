@@ -229,7 +229,6 @@ private:
 					// imul destination is not a register
 					asm_cmd("imul",st,tc,os,indent_level,r,dest_resolved);
 					asm_cmd("mov",st,tc,os,indent_level,dest_resolved,r);
-//					asm_cmd("imul",st,tc,os,indent_level,dest_resolved,r);
 				}
 				tc.free_scratch_register(r,os,indent_level);
 				return;

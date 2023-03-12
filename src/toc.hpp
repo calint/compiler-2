@@ -118,7 +118,7 @@ struct field_meta{
 class toc final{
 public:
 	inline toc(const string&source):
-		all_registers_{"rax","rbx","rcx","rdx","rsi","rdi","r8","r9","r10","r11","r12","r13","r14","r15"},
+		all_registers_{"rax","rbx","rcx","rdx","rsi","rdi","rbp","rsp","r8","r9","r10","r11","r12","r13","r14","r15"},
 		scratch_registers_{"r8","r9","r10","r11","r12","r13","r14","r15"},
 		named_registers_{"rax","rbx","rcx","rdx","rsi","rdi"},
 		source_str_{source}
