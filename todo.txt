@@ -5,6 +5,7 @@
 [ ] string type
 [ ] var str="hello world"
 [ ] var len=str.len
+[ ] def table{a,b,c};
 [ ] pointers?
 [ ] bitwise logical ops: & | ^ ~
 [ ] op shift left and right
