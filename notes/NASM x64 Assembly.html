@@ -1,0 +1,671 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+    <meta content="text/html; charset=windows-1252" http-equiv="content-type">
+    <title>NASM x64 Assembly</title>
+    <meta content="Dr. Orion Lawlor, lawlor@alaska.edu" name="author">
+  </head>
+  <body>
+    <h1>x86_64 NASM Assembly Quick Reference ("Cheat Sheet")</h1>
+    <p>
+      <meta http-equiv="content-type" content="text/html; charset=windows-1252">
+    </p>
+    <p style="color: rgb(0, 0, 0); font-family: &quot;Times New
+      Roman&quot;; font-size: medium; font-style: normal;
+      font-variant-ligatures: normal; font-variant-caps: normal;
+      font-weight: normal; letter-spacing: normal; orphans: 2;
+      text-align: start; text-indent: 0px; text-transform: none;
+      white-space: normal; word-spacing: 0px; -webkit-text-stroke-width:
+      0px; text-decoration-style: initial; text-decoration-color:
+      initial; line-height: normal; widows: 1;">Here's the full list of
+      ordinary integer x86 registers.&nbsp; The 64 bit registers are
+      shown in red. &nbsp;"Scratch" registers any function is allowed to
+      overwrite, and use for anything you want without asking
+      anybody.&nbsp; "<em>Preserved</em>" registers have to be put back
+      ("save" the register) if you use them.</p>
+    <table style="font-family: &quot;Times New Roman&quot;;
+      letter-spacing: normal; orphans: 2; text-indent: 0px;
+      text-transform: none; word-spacing: 0px;
+      -webkit-text-stroke-width: 0px; text-decoration-style: initial;
+      text-decoration-color: initial; color: rgb(0, 0, 0); font-size:
+      medium; font-style: normal; font-variant-ligatures: normal;
+      font-variant-caps: normal; font-weight: normal; line-height:
+      normal; text-align: start; white-space: normal; widows: 1; width:
+      966.4px;" cellspacing="2" cellpadding="2" border="1">
+      <tbody>
+        <tr>
+          <td valign="top"><b>Name</b><br>
+          </td>
+          <td style="vertical-align: top; font-weight: bold;">Notes</td>
+          <td valign="top">Type<br>
+          </td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);
+            font-weight: bold;">64-bit<br>
+            long</td>
+          <td style="vertical-align: top; font-weight: bold;">32-bit<br>
+            int</td>
+          <td style="vertical-align: top; font-weight: bold;">16-bit<br>
+            short</td>
+          <td style="vertical-align: top; font-weight: bold;">8-bit<br>
+            char</td>
+        </tr>
+        <tr>
+          <td valign="top">rax<br>
+          </td>
+          <td style="vertical-align: top;">Values are returned from
+            functions in this register.&nbsp;<span>&nbsp;</span><br>
+          </td>
+          <td valign="top">scratch<br>
+          </td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">rax</td>
+          <td style="vertical-align: top;">eax</td>
+          <td style="vertical-align: top;">ax</td>
+          <td style="vertical-align: top;">ah and al</td>
+        </tr>
+        <tr>
+          <td valign="top">rcx<br>
+          </td>
+          <td style="vertical-align: top;">Typical scratch
+            register.&nbsp; Some instructions also use it as a counter.</td>
+          <td valign="top">scratch<br>
+          </td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">rcx</td>
+          <td style="vertical-align: top;">ecx</td>
+          <td style="vertical-align: top;">cx</td>
+          <td style="vertical-align: top;">ch and cl</td>
+        </tr>
+        <tr>
+          <td valign="top">rdx<br>
+          </td>
+          <td style="vertical-align: top;">Scratch register.</td>
+          <td valign="top">scratch<br>
+          </td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">rdx</td>
+          <td style="vertical-align: top;">edx</td>
+          <td style="vertical-align: top;">dx</td>
+          <td style="vertical-align: top;">dh and dl</td>
+        </tr>
+        <tr>
+          <td valign="top" bgcolor="#cccccc"><i>rbx</i><i><br>
+            </i></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>Preserved
+
+
+
+
+              register: don't use it without saving it!</em></td>
+          <td valign="top" bgcolor="#cccccc"><i>preserved</i><br>
+          </td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>rbx</em></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>ebx</em></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>bx</em></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>bh and
+              bl</em></td>
+        </tr>
+        <tr>
+          <td valign="top" bgcolor="#cccccc"><i>rsp</i><i><br>
+            </i></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>The
+              stack pointer.&nbsp; Points to the top of the stack
+              (details coming soon!)<br>
+            </em></td>
+          <td valign="top" bgcolor="#cccccc"><i>preserved</i></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>rsp</em></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>esp</em></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>sp</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>spl</em></td>
+        </tr>
+        <tr>
+          <td valign="top" bgcolor="#cccccc"><i>rbp</i><i><br>
+            </i></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>Preserved
+
+
+
+
+              register.&nbsp; Sometimes used to store the old value of
+              the stack pointer, or the "base".</em></td>
+          <td valign="top" bgcolor="#cccccc"><i>preserved</i></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>rbp</em></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>ebp</em></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>bp</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>bpl</em></td>
+        </tr>
+        <tr>
+          <td valign="top">rsi<br>
+          </td>
+          <td style="vertical-align: top;">Scratch register used to pass
+            function argument #2 in 64-bit Linux.&nbsp; In 64-bit
+            Windows, a preserved register.<br>
+          </td>
+          <td valign="top">scratch</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">rsi</td>
+          <td style="vertical-align: top;">esi</td>
+          <td style="vertical-align: top;">si</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">sil</td>
+        </tr>
+        <tr>
+          <td valign="top">rdi<br>
+          </td>
+          <td style="vertical-align: top;">Scratch register and function
+            argument #1 in 64-bit Linux.&nbsp; In 64-bit Windows, a
+            preserved register.<br>
+          </td>
+          <td valign="top">scratch</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">rdi</td>
+          <td style="vertical-align: top;">edi</td>
+          <td style="vertical-align: top;">di</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">dil</td>
+        </tr>
+        <tr>
+          <td valign="top"><font color="#ff0000">r8<br>
+            </font></td>
+          <td style="vertical-align: top;">Scratch register.&nbsp; These
+            were added in 64-bit mode, so they have numbers, not names.<br>
+          </td>
+          <td valign="top">scratch</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r8</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r8d</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r8w</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r8b</td>
+        </tr>
+        <tr>
+          <td valign="top"><font color="#ff0000">r9<br>
+            </font></td>
+          <td style="vertical-align: top;">Scratch register.</td>
+          <td valign="top">scratch</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r9</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r9d</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r9w</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r9b</td>
+        </tr>
+        <tr>
+          <td valign="top"><font color="#ff0000">r10<br>
+            </font></td>
+          <td style="vertical-align: top;">Scratch register.</td>
+          <td valign="top">scratch</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r10</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r10d</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r10w</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r10b</td>
+        </tr>
+        <tr>
+          <td valign="top"><font color="#ff0000">r11<br>
+            </font></td>
+          <td style="vertical-align: top;">Scratch register.</td>
+          <td valign="top">scratch</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r11</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r11d</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r11w</td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);">r11b</td>
+        </tr>
+        <tr>
+          <td valign="top" bgcolor="#cccccc"><i><font color="#ff0000">r12<br>
+              </font></i></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>Preserved
+
+
+
+
+              register.&nbsp; You can use it, but you need to save and
+              restore it.<br>
+            </em></td>
+          <td valign="top" bgcolor="#cccccc"><i>preserved</i></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r12</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r12d</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r12w</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r12b</em></td>
+        </tr>
+        <tr>
+          <td valign="top" bgcolor="#cccccc"><i><font color="#ff0000">r13<br>
+              </font></i></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>Preserved
+
+
+
+
+              register.</em></td>
+          <td valign="top" bgcolor="#cccccc"><i>preserved</i></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r13</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r13d</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r13w</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r13b</em></td>
+        </tr>
+        <tr>
+          <td valign="top" bgcolor="#cccccc"><i><font color="#ff0000">r14<br>
+              </font></i></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>Preserved
+
+
+
+
+              register.</em></td>
+          <td valign="top" bgcolor="#cccccc"><i>preserved</i></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r14</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r14d</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r14w</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r14b</em></td>
+        </tr>
+        <tr>
+          <td valign="top" bgcolor="#cccccc"><i><font color="#ff0000">r15<br>
+              </font></i></td>
+          <td style="vertical-align: top;" bgcolor="#cccccc"><em>Preserved
+
+
+
+
+              register.</em></td>
+          <td valign="top" bgcolor="#cccccc"><i>preserved</i></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r15</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r15d</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r15w</em></td>
+          <td style="vertical-align: top; color: rgb(255, 0, 0);" bgcolor="#cccccc"><em>r15b</em></td>
+        </tr>
+      </tbody>
+    </table>
+    <br>
+    <ul>
+      <li> A 64 bit linux machine <a href="https://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI">passes
+
+
+
+
+          function parameters</a> in rdi, rsi, rdx, rcx, r8, and
+        r9.&nbsp; Any additional parameters get pushed on the
+        stack.&nbsp; OS X in 64 bit uses the same parameter
+        scheme.&nbsp; Example function call:
+        <pre>extern putchar
+mov rdi,'H' ; function parameter: one char to print
+call putchar
+</pre>
+      </li>
+      <li> Windows in 64 bit is quite different:</li>
+      <ul>
+        <li>Win64 <a href="https://en.wikipedia.org/wiki/X86_calling_conventions#Microsoft_x64_calling_convention">function
+
+
+            parameters</a> go in registers rcx, rdx, r8, and r9.</li>
+        <li>Win64 functions assume you've allocated 32 bytes of stack
+          space to store the four parameter registers, plus another 8
+          bytes to align the stack to a 16-byte boundary.
+          <pre>sub rsp,32+8; parameter area, and stack alignment
+extern putchar
+mov rcx,'H' ; function parameter: one char to print
+call putchar
+add rsp,32+8 ; clean up stack
+</pre>
+        </li>
+        <li>Win64 treats the registers rdi and rsi as preserved.</li>
+        <li>Some function such as printf only get linked if they're
+          called from C/C++ code, so to call printf from assembly, you
+          need to include at least one call to printf from the C/C++
+          too.&nbsp; <br>
+        </li>
+        <li>If you use the MASM assembler, memory accesses must include
+          "PTR", like "DWORD PTR [rsp]".<br>
+        </li>
+      </ul>
+      <ul>
+        <li>See <a href="https://www.cs.uaf.edu/2017/fall/cs301/reference/nasm_vs/">NASM
+            assembly in 64-bit Windows in Visual Studio</a> to make
+          linking work.<br>
+        </li>
+      </ul>
+      <li> In <a>32 bit mode, </a>parameters are passed by pushing
+        them onto the stack in reverse order, so the function's first
+        parameter is on top of the stack before making the call.&nbsp;
+        In 32-bit mode Windows and OS X compilers also seem to add an
+        underscore before the name of a user-defined function, so if you
+        call a function foo from C/C++, you need to define it in
+        assembly as "_foo".<br>
+      </li>
+    </ul>
+    <br style="color: rgb(0, 0, 0); font-family: &quot;Times New
+      Roman&quot;; font-size: medium; font-style: normal;
+      font-variant-ligatures: normal; font-variant-caps: normal;
+      font-weight: normal; letter-spacing: normal; orphans: 2;
+      text-align: start; text-indent: 0px; text-transform: none;
+      white-space: normal; widows: 2; word-spacing: 0px;
+      -webkit-text-stroke-width: 0px; text-decoration-style: initial;
+      text-decoration-color: initial;">
+    <span style="color: rgb(0, 0, 0); font-family: &quot;Times New
+      Roman&quot;; font-size: medium; font-style: normal;
+      font-variant-ligatures: normal; font-variant-caps: normal;
+      font-weight: normal; letter-spacing: normal; orphans: 2;
+      text-align: start; text-indent: 0px; text-transform: none;
+      white-space: normal; widows: 2; word-spacing: 0px;
+      -webkit-text-stroke-width: 0px; text-decoration-style: initial;
+      text-decoration-color: initial; display: inline !important; float:
+      none;">You can convert values between different register sizes
+      using different mov instructions:</span><br style="color: rgb(0,
+      0, 0); font-family: &quot;Times New Roman&quot;; font-size:
+      medium; font-style: normal; font-variant-ligatures: normal;
+      font-variant-caps: normal; font-weight: normal; letter-spacing:
+      normal; orphans: 2; text-align: start; text-indent: 0px;
+      text-transform: none; white-space: normal; widows: 2;
+      word-spacing: 0px; -webkit-text-stroke-width: 0px;
+      text-decoration-style: initial; text-decoration-color: initial;">
+    <table style="font-family: &quot;Times New Roman&quot;;
+      letter-spacing: normal; orphans: 2; text-indent: 0px;
+      text-transform: none; widows: 2; word-spacing: 0px;
+      -webkit-text-stroke-width: 0px; text-decoration-style: initial;
+      text-decoration-color: initial;" cellspacing="2" cellpadding="2" border="1">
+      <tbody>
+        <tr>
+          <td valign="top"><br>
+          </td>
+          <td colspan="4" rowspan="1" valign="top" align="center">Source
+            Size<br>
+          </td>
+          <td valign="top"><br>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top"><br>
+          </td>
+          <td valign="top">64 bit rcx<br>
+          </td>
+          <td valign="top">32 bit ecx<br>
+          </td>
+          <td valign="top">16 bit cx<br>
+          </td>
+          <td valign="top">8 bit cl<br>
+          </td>
+          <td valign="top"><b>Notes</b><br>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top">64 bit rax<br>
+          </td>
+          <td valign="top">mov rax,rcx<br>
+          </td>
+          <td valign="top"><a href="https://lawlor.cs.uaf.edu/netrun/run?name=Testing&amp;code=mov%20rcx%2C0xaabbccddeeff0011%0D%0Amovsxd%20rax%2Cecx%0D%0Aret%0D%0A&amp;lang=Assembly-NASM&amp;mach=x64&amp;mode=frag&amp;input=&amp;linkwith=&amp;foo_ret=long&amp;foo_arg0=void&amp;orun=Run&amp;orun=Disassemble&amp;orun=Grade&amp;ocompile=Optimize&amp;ocompile=Warnings">movsxd</a><span>&nbsp;</span>rax,ecx<br>
+          </td>
+          <td valign="top"><a href="https://lawlor.cs.uaf.edu/netrun/run?name=Testing&amp;code=mov%20rcx%2C0xaaeeccddeeffaabb%0D%0Amovsx%20rax%2Ccx%0D%0Aret%0D%0A&amp;lang=Assembly-NASM&amp;mach=x64&amp;mode=frag&amp;input=&amp;linkwith=&amp;foo_ret=long&amp;foo_arg0=void&amp;orun=Run&amp;orun=Disassemble&amp;orun=Grade&amp;ocompile=Optimize&amp;ocompile=Warnings">movsx</a><span>&nbsp;</span>rax,cx<br>
+          </td>
+          <td valign="top"><a href="https://lawlor.cs.uaf.edu/netrun/run?name=Testing&amp;code=mov%20rcx%2C0xaaeeccddeeffaabb%0D%0Amovsx%20rax%2Ccl%0D%0Aret%0D%0A&amp;lang=Assembly-NASM&amp;mach=x64&amp;mode=frag&amp;input=&amp;linkwith=&amp;foo_ret=long&amp;foo_arg0=void&amp;orun=Run&amp;orun=Disassemble&amp;orun=Grade&amp;ocompile=Optimize&amp;ocompile=Warnings">movsx</a><span>&nbsp;</span>rax,cl<br>
+          </td>
+          <td valign="top">Writes to whole register<br>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top">32 bit eax<br>
+          </td>
+          <td valign="top">mov eax,ecx<br>
+          </td>
+          <td valign="top">mov eax,ecx<br>
+          </td>
+          <td valign="top"><a href="https://lawlor.cs.uaf.edu/netrun/run?name=Testing&amp;code=mov%20rax%2C0xeeeeeeeeeeeeeeee%0D%0Amov%20rcx%2C0xaaeeccddeeffaabb%0D%0Amovsx%20eax%2Ccx%0D%0Aret%0D%0A&amp;lang=Assembly-NASM&amp;mach=x64&amp;mode=frag&amp;input=&amp;linkwith=&amp;foo_ret=long&amp;foo_arg0=void&amp;orun=Run&amp;orun=Disassemble&amp;orun=Grade&amp;ocompile=Optimize&amp;ocompile=Warnings">movsx</a><span>&nbsp;</span>eax,cx<br>
+          </td>
+          <td valign="top"><a href="https://lawlor.cs.uaf.edu/netrun/run?name=Testing&amp;code=mov%20rax%2C0xeeeeeeeeeeeeeeee%0D%0Amov%20rcx%2C0xaaeeccddeeffaabb%0D%0Amovsx%20eax%2Ccl%0D%0Aret%0D%0A&amp;lang=Assembly-NASM&amp;mach=x64&amp;mode=frag&amp;input=&amp;linkwith=&amp;foo_ret=long&amp;foo_arg0=void&amp;orun=Run&amp;orun=Disassemble&amp;orun=Grade&amp;ocompile=Optimize&amp;ocompile=Warnings">movsx</a><span>&nbsp;</span>eax,cl<br>
+          </td>
+          <td valign="top">Top half of destination gets zeroed<br>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top">16 bit ax<br>
+          </td>
+          <td valign="top">mov ax,cx<br>
+          </td>
+          <td valign="top">mov ax,cx<br>
+          </td>
+          <td valign="top">mov ax,cx<br>
+          </td>
+          <td valign="top"><a href="https://lawlor.cs.uaf.edu/netrun/run?name=Testing&amp;code=mov%20rax%2C0xeeeeeeeeeeeeeeee%0D%0Amov%20rcx%2C0xaaeeccddeeffaabb%0D%0Amovsx%20ax%2Ccl%0D%0Aret%0D%0A&amp;lang=Assembly-NASM&amp;mach=x64&amp;mode=frag&amp;input=&amp;linkwith=&amp;foo_ret=long&amp;foo_arg0=void&amp;orun=Run&amp;orun=Disassemble&amp;orun=Grade&amp;ocompile=Optimize&amp;ocompile=Warnings">movsx</a><span>&nbsp;</span>ax,cl<br>
+          </td>
+          <td valign="top">Only affects low 16 bits, rest unchanged.<br>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top">8 bit al<br>
+          </td>
+          <td valign="top">mov al,cl<br>
+          </td>
+          <td valign="top">mov al,cl</td>
+          <td valign="top">mov al,cl</td>
+          <td valign="top">mov al,cl<br>
+          </td>
+          <td valign="top">Only affects low 8 bits, rest unchanged.<br>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <br>
+    <meta http-equiv="content-type" content="text/html; charset=windows-1252">
+    Memory access:<br class="Apple-interchange-newline">
+    <table style="font-family: &quot;Times New Roman&quot;;
+      letter-spacing: normal; orphans: 2; text-indent: 0px;
+      text-transform: none; word-spacing: 0px;
+      -webkit-text-stroke-width: 0px; text-decoration-style: initial;
+      text-decoration-color: initial; color: rgb(0, 0, 0); font-size:
+      medium; font-style: normal; font-variant-ligatures: normal;
+      font-variant-caps: normal; font-weight: normal; line-height:
+      normal; text-align: start; white-space: normal; widows: 1;" border="1">
+      <tbody>
+        <tr>
+          <td align="right"><strong>C/C++ datatype</strong></td>
+          <td><strong>Bits</strong></td>
+          <td><strong>Bytes</strong></td>
+          <td><strong>Register</strong></td>
+          <td><strong>Access memory</strong></td>
+          <td><strong>Allocate memory</strong></td>
+        </tr>
+        <tr>
+          <td align="right">char</td>
+          <td>8</td>
+          <td>1</td>
+          <td>al</td>
+          <td>BYTE [ptr]</td>
+          <td>db</td>
+        </tr>
+        <tr>
+          <td align="right">short</td>
+          <td>16</td>
+          <td>2</td>
+          <td>ax</td>
+          <td>WORD [ptr]</td>
+          <td>dw</td>
+        </tr>
+        <tr>
+          <td align="right">int</td>
+          <td>32</td>
+          <td>4</td>
+          <td>eax</td>
+          <td>DWORD [ptr]</td>
+          <td>dd</td>
+        </tr>
+        <tr>
+          <td align="right">long</td>
+          <td>64</td>
+          <td>8</td>
+          <td>rax</td>
+          <td>QWORD [ptr]</td>
+          <td>dq</td>
+        </tr>
+      </tbody>
+    </table>
+    <br class="Apple-interchange-newline">
+    <br>
+    <br class="Apple-interchange-newline">
+    <table style="width: 100%; text-align: left;" cellspacing="2" cellpadding="2" border="1">
+      <tbody>
+        <tr>
+          <td style="vertical-align: top;" colspan="1">
+            <h2>Instructions (basically identical to 32-bit x86)</h2>
+            For gory instruction set details, read this <a href="http://www.felixcloutier.com/x86/">per-instruction
+              reference</a>, or the full Intel PDFs: <a href="https://www.cs.uaf.edu/2017/fall/cs301/reference/instructionsAM.pdf">part 1 (A-M)</a> and <a href="https://www.cs.uaf.edu/2017/fall/cs301/reference/instructionsNZ.pdf">part 2 (N-Z)</a>.<br>
+            <table style="text-align: left;" cellspacing="2" cellpadding="2" border="1">
+              <tbody>
+                <tr>
+                  <td style="vertical-align: top;">Mnemonic<br>
+                  </td>
+                  <td style="vertical-align: top;">Purpose<br>
+                  </td>
+                  <td style="vertical-align: top;">Examples<br>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;">mov <span style="font-style: italic;">dest,src</span><br>
+                  </td>
+                  <td style="vertical-align: top;">Move data between
+                    registers, load immediate data into registers, move
+                    data between registers and memory.<br>
+                  </td>
+                  <td style="vertical-align: top;">mov rax,4&nbsp; ;
+                    Load constant into rax<br>
+                    mov rdx,rax&nbsp; ; Copy rax into rdx<br>
+                    mov rdx,[123]&nbsp; ; Copy rdx to memory address 123<br>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;">push <span style="font-style: italic;">src</span><br>
+                  </td>
+                  <td style="vertical-align: top;">Insert a value onto
+                    the stack.&nbsp; Useful for passing arguments,
+                    saving registers, etc.<br>
+                  </td>
+                  <td style="vertical-align: top;">push rbp<br>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;">pop <span style="font-style: italic;">dest</span><br>
+                  </td>
+                  <td style="vertical-align: top;">Remove topmost value
+                    from the stack.&nbsp; Equivalent to "mov <span style="font-style: italic;">dest</span>, [rsp];
+                    add 8,rsp"<br>
+                  </td>
+                  <td style="vertical-align: top;">pop rbp<br>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;">call <span style="font-style: italic;">func</span><br>
+                  </td>
+                  <td style="vertical-align: top;">Push the address of
+                    the next instruction and start executing func.<br>
+                  </td>
+                  <td style="vertical-align: top;">call print_int<br>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;">ret<br>
+                  </td>
+                  <td style="vertical-align: top;">Pop the return
+                    program counter, and jump there.&nbsp; Ends a
+                    subroutine.<br>
+                  </td>
+                  <td style="vertical-align: top;">ret<br>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;">add <span style="font-style: italic;">dest,src</span><br>
+                  </td>
+                  <td style="vertical-align: top;"><span style="font-style: italic;">dest=dest+src</span><br>
+                  </td>
+                  <td style="vertical-align: top;">add rax,rdx ; Add rbx
+                    to rax<br>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;">mul <span style="font-style: italic;">src</span><br>
+                  </td>
+                  <td style="vertical-align: top;">Multiply rax and <span style="font-style: italic;">src</span> as unsigned
+                    integers, and put the result in rax.&nbsp; High 64
+                    bits of product (usually zero) go into rdx.<br>
+                  </td>
+                  <td style="vertical-align: top;">mul rdx ; Multiply
+                    rax by rdx<br>
+                    ; rax=low bits, rdx overflow<br>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;">div <span style="font-style: italic;">src</span><br>
+                  </td>
+                  <td style="vertical-align: top;">Divide rax by <span style="font-style: italic;">src</span>, and put
+                    the ratio into rax, and the remainder into rdx.<br>
+                    Bizarrely, on input rdx must be zero, or you get a
+                    SIGFPE.<br>
+                  </td>
+                  <td style="vertical-align: top;">mov rdx,0 ; avoid
+                    error<br>
+                    div rcx ; compute rax/rcx<br>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;">shr <span style="font-style: italic;">val,bits</span><br>
+                  </td>
+                  <td style="vertical-align: top;">Bitshift a value
+                    right by a constant, or the low 8 bits of rcx
+                    ("cl").<br>
+                    Shift count MUST go in rcx, no other register will
+                    do!<br>
+                  </td>
+                  <td style="vertical-align: top;">add rcx,4<br>
+                    shr rax,cl ; shift by rcx </td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;">jmp <span style="font-style: italic;">label</span></td>
+                  <td style="vertical-align: top;">Goto the instruction
+                    <span style="font-style: italic;">label</span>:.&nbsp;
+
+
+
+
+                    Skips anything else in the way.</td>
+                  <td style="vertical-align: top;">jmp post_mem<br>
+                    mov [0],rax ; Write to NULL!<br>
+                    post_mem: ; OK here...</td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;">cmp <span style="font-style: italic;">a,b</span><br>
+                    <br>
+                    <span style="font-style: italic;"></span></td>
+                  <td style="vertical-align: top;">Compare two
+                    values.&nbsp; Sets flags that are used by the
+                    conditional jumps (below). <br>
+                  </td>
+                  <td style="vertical-align: top;">cmp
+                    rax,10&nbsp;&nbsp; <br>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="vertical-align: top;"> jl <span style="font-style: italic;">label</span></td>
+                  <td style="vertical-align: top;">Goto <span style="font-style: italic;">label</span> if
+                    previous comparison came out as less-than.&nbsp;
+                    Other conditionals available are: <br>
+                    jle (&lt;=), je (==), jge (&gt;=), jg (&gt;), jne
+                    (!=), and many others.<br>
+                    Also available in unsigned comparisons: jb (&lt;),
+                    jbe (&lt;=), ja (&gt;), jae (&gt;=).<br>
+                  </td>
+                  <td style="vertical-align: top;">jl loop_start&nbsp; ;
+                    Jump if rax&lt;10<br>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <br>
+          </td>
+        </tr>
+        <tr>
+          <td style="vertical-align: top;">
+            <h2>Constants, Registers, Memory</h2>
+            "12" means decimal 12; "0xF0" is hex.&nbsp; "some_function"
+            is the address of the first instruction of the
+            function.&nbsp; Memory access (use register as pointer):
+            "[rax]".&nbsp; Same as C "*rax".<br>
+            Memory access with offset (use register + offset as
+            pointer): "[rax+4]".&nbsp; Same as C "*(rax+4)".<br>
+            Memory access with scaled index (register + another register
+            * scale): "[rax+rbx*4]".&nbsp; Same as C "*(rax+rbx*4)".<br>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <br>
+    See <a href="http://www.sandpile.org/aa64/index.htm">sandpile.org</a>
+    for an opcode map.
+    <hr>
+    <div style="text-align: right;"><i =""=""><a href="http://lawlor.cs.uaf.edu/%7Eolawlor/">O. Lawlor</a>, <a href="https://www.cs.uaf.edu/2017/fall/cs301/reference/lawlor@alaska.edu">lawlor@alaska.edu</a></i><br>
+      <i =""=""> Up to: <a href="https://www.cs.uaf.edu/2017/">Class Site</a>, <a href="http://www.cs.uaf.edu/">CS</a>, <a href="http://www.uaf.edu/">UAF</a></i></div>
+  
+
+</body></html>
