@@ -59,7 +59,7 @@ public:
 			const size_t nvars_on_stack{tc.get_current_stack_size()};
 			if(tc.enter_func_call()){
 				// if true then this is not a call within arguments of another call
-				if(nvars_on_stack!=0){
+				if(nvars_on_stack){
 					// adjust stack past the allocated vars
 					expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(nvars_on_stack<<3));
 					// stack is now: <base>,.. vars ..,
@@ -164,8 +164,8 @@ public:
 				// this call is in the arguments of a different call
 				// restore rsp past the arguments
 				// stack is: <base>,.. other func args ..,[arg n],[arg n-1],...,[arg 1],
-				if(!args_.empty()){
-					indent(os,indent_level);os<<"add rsp,"<<(args_.size()<<3)<<endl;
+				if(nargs_on_stack){
+					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
 					// stack is: <base>,.. other func args ..,
 				}
 			}
