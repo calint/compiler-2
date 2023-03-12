@@ -26,8 +26,7 @@ fib:
    cmp_8_8:
    cmp qword[rbp+16],0
    jne if_8_5_end
-   jmp if_8_8_code
-   if_8_8_code:
+   if_8_8_code:  ; opt1
 ;    [9:9] res=1 
 ;    [9:13] 1 
 ;    [9:13] res=1 
@@ -92,3 +91,4 @@ main:
 
 ; max scratch registers in use: 3
 ;            max frames in use: 4
+

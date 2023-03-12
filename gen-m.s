@@ -19,8 +19,7 @@ fib:
    cmp_8_8:
    cmp qword[rbp+16],0
    jne if_8_5_end
-   jmp if_8_8_code
-   if_8_8_code:
+   if_8_8_code:  ; opt1
      mov qword[rbp-8],1
      mov rax,qword[rbp-8]
      pop rbp
