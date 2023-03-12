@@ -13,10 +13,7 @@ func b(i):res{
 }
 
 func c(i):res{
-    var a=1
-    var b=2
-    var c=a+b
-    res=i+c
+    res=i+3
 }
 
 func inline main{

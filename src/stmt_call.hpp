@@ -57,23 +57,24 @@ public:
 		if(!f.is_inline()){
 			size_t nargs{args_.size()};
 			const size_t nvars_on_stack{tc.get_current_stack_size()};
+			// stack is: <base>,
 			if(tc.enter_func_call()){
 				// if true then this is not a call within arguments of another call
 				if(nvars_on_stack){
 					// adjust stack past the allocated vars
 					expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(nvars_on_stack<<3));
-					// stack is now: <base>,.. vars ..,
+					// stack: <base>,.. vars ..,
 				}
-
-				// push allocated registers on the stack
-				const vector<string>&alloc_regs=tc.allocated_registers();
-				const size_t n=alloc_regs.size();
-				for(size_t i=0;i<n;i++){
-					const string&reg=alloc_regs[i];
-					indent(os,indent_level);os<<"push "<<reg<<endl;
-				}
-				// stack is now: <base>,.. vars ..,... allocated regs ...,
 			}
+
+			// push allocated registers on the stack
+			const vector<string>&alloc_regs=tc.allocated_registers();
+			const size_t n=alloc_regs.size();
+			for(size_t i=0;i<n;i++){
+				const string&reg=alloc_regs[i];
+				indent(os,indent_level);os<<"push "<<reg<<endl;
+			}
+			// stack is now: <base>,.. vars ..,... allocated regs ...,
 
 			vector<string>allocated_args_registers;
 			// push arguments starting with the last
@@ -120,54 +121,37 @@ public:
 					nargs_on_stack++;
 				}
 			}
+
 			// stack is: <base>,..vars..,...allocated regs...,[arg n],[arg n-1],...,[arg 1],
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
+
 			// stack is: <base>,..vars..,...allocated regs...,[arg n],[arg n-1],...,[arg 1],
+			if(nargs_on_stack){
+				indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
+			}
+			// stack is: <base>,..vars..,...allocated regs...,
+
+			// pop allocated registers from the stack if any
+			size_t nregs_on_stack=alloc_regs.size();
+			// stack is: <base>,..vars..,...allocated regs...,
+			while(nregs_on_stack--){
+				const string&reg=alloc_regs[nregs_on_stack];
+				// don't pop registers used to pass params
+				if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
+					indent(os,indent_level);os<<"pop "<<reg<<endl;
+				}
+			}
+			// stack is: <base>,..vars..,
 
 			// restore stack pointer
 			if(tc.exit_func_call()){
 				// this is not a call within the arguments of another call
 				// restore rsp to what it was before the call
-
-				// pop allocated registers from the stack if any
-				const vector<string>&alloc_regs=tc.allocated_registers();
-				size_t i=alloc_regs.size();
-				if(i==0){
-					// no allocated register on the stack
-					// stack is: <base>,..vars..,[arg n],[arg n-1],...,[arg 1],
-					const size_t offset{nargs_on_stack+nvars_on_stack};
-					if(offset){
-						indent(os,indent_level);os<<"add rsp,"<<(offset<<3)<<endl;
-					}
-					// stack is: <base>,
-				}else{
-					// there are allocated registers on the stack
-					// stack is: <base>,..vars..,...allocated regs...,[arg n],[arg n-1],...,[arg 1],
-					if(nargs_on_stack){
-						indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
-					}
-					// stack is: <base>,..vars..,...allocated regs...,
-					while(i--){
-						const string&reg=alloc_regs[i];
-						// don't pop registers used to pass params
-						if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
-							indent(os,indent_level);os<<"pop "<<reg<<endl;
-						}
-					}
-					// stack is: <base>,..vars..,
-					if(nvars_on_stack){
-						indent(os,indent_level);os<<"add rsp,"<<(nvars_on_stack<<3)<<endl;
-					}
-					// stack is: <base>,
+				// stack is: <base>,..vars..,
+				if(nvars_on_stack){
+					indent(os,indent_level);os<<"add rsp,"<<(nvars_on_stack<<3)<<endl;
 				}
-			}else{
-				// this call is in the arguments of a different call
-				// restore rsp past the arguments
-				// stack is: <base>,.. other func args ..,[arg n],[arg n-1],...,[arg 1],
-				if(nargs_on_stack){
-					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
-					// stack is: <base>,.. other func args ..,
-				}
+				// stack is: <base>,
 			}
 
 			if(not dest_ident.empty()){
