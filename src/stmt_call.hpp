@@ -58,7 +58,8 @@ public:
 			const size_t nvars_on_stack{tc.get_current_stack_size()};
 			// stack is: <base>,
 			if(tc.enter_func_call()){
-				// if true then this is not a call within arguments of another call
+				// this call is not nested within another call's arguments
+				// adjust stack past the vars
 				if(nvars_on_stack){
 					// adjust stack past the allocated vars
 					expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(nvars_on_stack<<3));
@@ -69,10 +70,11 @@ public:
 			// push allocated registers on the stack
 			const vector<string>&alloc_regs=tc.get_allocated_registers();
 			const size_t n=alloc_regs.size();
-			for(size_t i=0;i<n;i++){
+			for(size_t i=tc.get_func_call_alloc_reg_idx();i<n;i++){
 				const string&reg=alloc_regs[i];
 				indent(os,indent_level);os<<"push "<<reg<<endl;
 			}
+
 			// stack is now: <base>,.. vars ..,... allocated regs ...,
 
 			// push arguments starting with the last
@@ -86,10 +88,9 @@ public:
 				bool argument_passed_in_register{false};
 				const string&arg_reg=param.get_register_or_empty();
 				if(!arg_reg.empty()){
-					// argument requests to be passed as a register
+					argument_passed_in_register=true;
 					tc.alloc_named_register_or_break(arg,arg_reg,os,indent_level);
 					allocated_args_registers.push_back(arg_reg);
-					argument_passed_in_register=true;
 				}
 				if(arg.is_expression()){
 					// is the argument passed in through a register?
@@ -131,14 +132,20 @@ public:
 			}
 			// stack is: <base>,..vars..,...allocated regs...,
 
-			// pop allocated registers from the stack if any
-			size_t nregs_on_stack=alloc_regs.size();
-			// stack is: <base>,..vars..,...allocated regs...,
-			while(nregs_on_stack--){
-				const string&reg=alloc_regs[nregs_on_stack];
-				// don't pop registers used to pass params
-				if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
-					indent(os,indent_level);os<<"pop "<<reg<<endl;
+			const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_reg_idx();
+			if(alloc_regs.size()){
+				size_t i=alloc_regs.size()-1;
+				while(true){
+					const string&reg=alloc_regs[i];
+					// don't pop registers used to pass arguments
+					if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
+						indent(os,indent_level);os<<"pop "<<reg<<endl;
+					}else{
+						tc.free_named_register(reg,os,indent_level);
+					}
+					if(i==alloc_regs_pop_idx)
+						break;
+					i--;
 				}
 			}
 			// stack is: <base>,..vars..,
@@ -155,15 +162,15 @@ public:
 			}
 
 			if(not dest_ident.empty()){
-				// function returns values in rax, copy return value to dest_ident
+				// function returns value in rax, copy return value to dest_ident
 				const string&dest_resolved=tc.resolve_ident_to_nasm(*this,dest_ident);
 				expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,dest_resolved,"rax");
 			}
 
-			// free allocated registers
-			for(const string&r:allocated_args_registers){
-				tc.free_named_register(r,os,indent_level);
-			}
+//			// free allocated registers
+//			for(const string&r:allocated_args_registers){
+//				tc.free_named_register(r,os,indent_level);
+//			}
 			return;
 		}
 
@@ -173,6 +180,7 @@ public:
 
 		vector<string>allocated_named_registers;
 		vector<string>allocated_scratch_registers;
+		vector<string>allocated_registers_in_order;
 
 		// buffer the aliases of arguments
 		vector<tuple<string,string>>aliases_to_add;
@@ -197,6 +205,7 @@ public:
 				// argument is passed through register
 				tc.alloc_named_register_or_break(*arg,arg_reg,os,indent_level);
 				allocated_named_registers.push_back(arg_reg);
+				allocated_registers_in_order.push_back(arg_reg);
 			}
 			if(arg->is_expression()){
 				// argument is an expression, evaluate and store in arg_reg
@@ -204,6 +213,7 @@ public:
 					// no particular register requested for the argument
 					arg_reg=tc.alloc_scratch_register(*arg,os,indent_level);
 					allocated_scratch_registers.push_back(arg_reg);
+					allocated_registers_in_order.push_back(arg_reg);
 				}
 				// compile expression and store result in 'arg_reg'
 				arg->compile(tc,os,indent_level+1,arg_reg);
@@ -251,12 +261,18 @@ public:
 		f.code().compile(tc,os,indent_level);
 		// provide an exit label for 'return' to use instead of assembler 'ret'
 		indent(os,indent_level);os<<ret_jmp_label<<":\n";
-		// free allocated registers
-		for(const auto&r:allocated_scratch_registers){
-			tc.free_scratch_register(r,os,indent_level);
-		}
-		for(const auto&r:allocated_named_registers){
-			tc.free_named_register(r,os,indent_level);
+		// free allocated registers in reverse order of allocation
+		for(auto it=allocated_registers_in_order.rbegin();it!=allocated_registers_in_order.rend();++it) {
+			const string&reg=*it;
+			if(find(allocated_scratch_registers.begin(),allocated_scratch_registers.end(),reg)!=allocated_scratch_registers.end()){
+				tc.free_scratch_register(reg,os,indent_level);
+				continue;
+			}
+			if(find(allocated_named_registers.begin(),allocated_named_registers.end(),reg)!=allocated_named_registers.end()){
+				tc.free_named_register(reg,os,indent_level);
+				continue;
+			}
+			assert(false);
 		}
 		// pop scope
 		tc.pop_func(nm);

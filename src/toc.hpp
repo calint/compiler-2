@@ -307,17 +307,21 @@ public:
 	}
 
 	inline void free_named_register(const string&reg,ostream&os,const size_t indent_level){
-		named_registers_.push_back(reg);
-		auto r=find(allocated_registers_.begin(),allocated_registers_.end(),reg);
-		allocated_registers_.erase(r);
 		statement::indent(os,indent_level,true);os<<"free "<<reg<<endl;
+		assert(allocated_registers_.back()==reg);
+		allocated_registers_.pop_back();
+		named_registers_.push_back(reg);
+//		auto r=find(allocated_registers_.begin(),allocated_registers_.end(),reg);
+//		allocated_registers_.erase(r);
 	}
 
 	inline void free_scratch_register(const string&reg,ostream&os,const size_t indent_level){
 		statement::indent(os,indent_level,true);os<<"free "<<reg<<endl;
+		assert(allocated_registers_.back()==reg);
+		allocated_registers_.pop_back();
 		scratch_registers_.push_back(reg);
-		auto r=find(allocated_registers_.begin(),allocated_registers_.end(),reg);
-		allocated_registers_.erase(r);
+//		auto r=find(allocated_registers_.begin(),allocated_registers_.end(),reg);
+//		allocated_registers_.erase(r);
 	}
 
 	inline const string&get_loop_label_or_break(const statement&st)const{
@@ -406,21 +410,21 @@ public:
 		return find(all_registers_.begin(),all_registers_.end(),id)!=all_registers_.end();
 	}
 
-	// returns true if stack pointer needs to be positioned for func call
 	inline bool enter_func_call(){
-		if(func_call_nested_==0){
-			func_call_nested_++;
-			return true;
-		}
-		func_call_nested_++;
-		return false;
+		const bool b=call_allocated_regs_idx_.empty();
+		call_allocated_regs_idx_.push_back(allocated_registers_.size());
+		return b;
 	}
-	// returns true if stack pointer needs to be positioned at base
+
 	inline bool exit_func_call(){
-		func_call_nested_--;
-		if(func_call_nested_==0)
-			return true;
-		return false;
+		call_allocated_regs_idx_.pop_back();
+		return call_allocated_regs_idx_.empty();
+	}
+
+	inline size_t get_func_call_alloc_reg_idx()const{
+		if(call_allocated_regs_idx_.size()<2)
+			return 0;
+		return call_allocated_regs_idx_[call_allocated_regs_idx_.size()-2];
 	}
 
 	inline const vector<string>&get_allocated_registers()const{return allocated_registers_;}
@@ -523,5 +527,5 @@ private:
 	lut<field_meta>fields_;
 	lut<const stmt_def_func*>funcs_;
 	lut<const stmt_def_table*>tables_;
-	size_t func_call_nested_{0};
+	vector<size_t>call_allocated_regs_idx_;
 };

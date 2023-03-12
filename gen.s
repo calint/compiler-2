@@ -103,70 +103,33 @@ main:
 ;  [25:11] 3 
 ;  [25:11] z=3 
    mov qword[rbp-24],3
-;  [26:5] exit(a(b(z+c(1)+c(x+y))))
+;  [26:5] exit(a(b(c(1))))
 ;  alloc rbx
-;    [26:10] a(b(z+c(1)+c(x+y)))
-;    [26:10] rbx=a(b(z+c(1)+c(x+y)))
-;    [26:10] a(b(z+c(1)+c(x+y)))
+;    [26:10] a(b(c(1)))
+;    [26:10] rbx=a(b(c(1)))
+;    [26:10] a(b(c(1)))
      sub rsp,24
      push rbx
 ;    alloc r15
-;      [26:12] b(z+c(1)+c(x+y))
-;      [26:12] r15=b(z+c(1)+c(x+y))
-;      [26:12] b(z+c(1)+c(x+y))
-       push rbx
+;      [26:12] b(c(1))
+;      [26:12] r15=b(c(1))
+;      [26:12] b(c(1))
        push r15
 ;      alloc r14
-;        [26:14] z+c(1)+c(x+y)
-;        [26:14] r14=z
-         mov r14,qword[rbp-24]
-;        [26:16] r14+c(1)
-;        alloc r13
-;        [26:16] c(1)
-         push rbx
-         push r15
+;        [26:14] c(1)
+;        [26:14] r14=c(1)
+;        [26:14] c(1)
          push r14
-         push r13
          push 1
          call c
          add rsp,8
-         pop r13
          pop r14
-         pop r15
-         pop rbx
-         mov r13,rax
-         add r14,r13
-;        free r13
-;        [26:21] r14+c(x+y)
-;        alloc r13
-;        [26:21] c(x+y)
-         push rbx
-         push r15
-         push r14
-         push r13
-;        alloc r12
-;          [26:23] x+y
-;          [26:23] r12=x
-           mov r12,qword[rbp-8]
-;          [26:25] r12+y
-           add r12,qword[rbp-16]
-         push r12
-;        free r12
-         call c
-         add rsp,8
-         pop r13
-         pop r14
-         pop r15
-         pop rbx
-         mov r13,rax
-         add r14,r13
-;        free r13
+         mov r14,rax
        push r14
 ;      free r14
        call b
        add rsp,8
        pop r15
-       pop rbx
        mov r15,rax
      push r15
 ;    free r15
@@ -183,7 +146,7 @@ main:
      int 0x80
    exit_26_5_end:
 ;  free rbx
+;  [27:1] # exit(a(b(z+c(1)+c(x+y)))) 
 
-; max scratch registers in use: 4
+; max scratch registers in use: 2
 ;            max frames in use: 4
-

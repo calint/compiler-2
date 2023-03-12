@@ -116,8 +116,9 @@ public:
 		indent(os,indent_level+1);os<<"ret\n";
 		os<<endl;
 		tc.pop_func(name());
-		for(auto const&reg:allocated_names_registers){
-			tc.free_named_register(reg,os,indent_level);
+		size_t i=allocated_names_registers.size();
+		while(i--){
+			tc.free_named_register(allocated_names_registers[i],os,indent_level);
 		}
 	}
 
