@@ -69,12 +69,16 @@ public:
 			return;
 
 		indent(os,indent_level);os<<name()<<":\n";
-		tc.push_func(name(),"","",false);
-
+		if(returns().empty()){
+			tc.push_func(name(),"","",false,"");
+		}else{
+			tc.push_func(name(),"","",false,returns()[0].name());
+		}
 		// return binding
 		if(!returns().empty()){
 			const string&from=returns()[0].name();
-			tc.add_alias(from,"rax");
+			tc.add_var(*this,returns()[0].name());
+//			tc.add_alias(from,"rax");
 		}
 
 		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[return address]
@@ -103,6 +107,11 @@ public:
 		indent(os,indent_level+1);os<<"push rbp\n";
 		indent(os,indent_level+1);os<<"mov rbp,rsp\n";
 		code_->compile(tc,os,indent_level,"");
+		if(!returns().empty()){
+			const string&ret_name=returns()[0].name();
+			const string&ret_name_resolved=tc.resolve_ident_to_nasm(*this,ret_name);
+			expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level+1,"rax",ret_name_resolved);
+		}
 		indent(os,indent_level+1);os<<"pop rbp\n";
 		indent(os,indent_level+1);os<<"ret\n";
 		os<<endl;

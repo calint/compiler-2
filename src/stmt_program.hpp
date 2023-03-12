@@ -66,7 +66,7 @@ public:
 		if(!main.is_inline())
 			throw compiler_error(main,"main function must be declared inline");
 		os<<"main:"<<endl;
-		tc.push_func("main","","",true);
+		tc.push_func("main","","",true,"");
 		main.code().compile(tc,os,indent_level);
 		tc.pop_func("main");
 	}

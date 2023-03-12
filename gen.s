@@ -30,8 +30,9 @@ fib:
 ;    [9:9] res=1 
 ;    [9:13] 1 
 ;    [9:13] res=1 
-     mov rax,1
+     mov qword[rbp-8],1
 ;    [10:9] return 
+     mov rax,qword[rbp-8]
      pop rbp
      ret
    if_8_5_end:
@@ -40,10 +41,10 @@ fib:
 ;  [12:11] i*fib(i-1)
 ;  [12:11] r=i
    mov r15,qword[rbp+16]
-   mov qword[rbp-8],r15
+   mov qword[rbp-16],r15
 ;  [12:13] r*fib(i-1)
 ;  [12:13] fib(i-1)
-   sub rsp,8
+   sub rsp,16
    push r15
 ;    [12:17] i-1
 ;    [12:17] r14=i
@@ -54,13 +55,15 @@ fib:
    call fib
    add rsp,8
    pop r15
-   add rsp,8
+   add rsp,16
    mov r15,rax
-   imul r15,qword[rbp-8]
-   mov qword[rbp-8],r15
+   imul r15,qword[rbp-16]
+   mov qword[rbp-16],r15
 ;  [13:5] res=r 
 ;  [13:9] r 
-;  [13:9] res=r 
+;  [13:9] r15=r 
+   mov r15,qword[rbp-16]
+   mov qword[rbp-8],r15
    mov rax,qword[rbp-8]
    pop rbp
    ret

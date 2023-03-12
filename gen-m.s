@@ -20,13 +20,14 @@ fib:
    cmp qword[rbp+16],0
    jne if_8_5_end
    if_8_8_code:  ; opt1
-     mov rax,1
+     mov qword[rbp-8],1
+     mov rax,qword[rbp-8]
      pop rbp
      ret
    if_8_5_end:
    mov r15,qword[rbp+16]
-   mov qword[rbp-8],r15
-   sub rsp,8
+   mov qword[rbp-16],r15
+   sub rsp,16
    push r15
      mov r14,qword[rbp+16]
      sub r14,1
@@ -34,9 +35,11 @@ fib:
    call fib
    add rsp,8
    pop r15
-   add rsp,8
+   add rsp,16
    mov r15,rax
-   imul r15,qword[rbp-8]
+   imul r15,qword[rbp-16]
+   mov qword[rbp-16],r15
+   mov r15,qword[rbp-16]
    mov qword[rbp-8],r15
    mov rax,qword[rbp-8]
    pop rbp

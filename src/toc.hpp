@@ -40,10 +40,11 @@ class frame final{
 public:
 	enum class type{FUNC,BLOCK,LOOP,IF};
 
-	inline frame(const string&name,const type tpe,const string&call_path="",const string&ret_label="",const bool is_inline=false):
+	inline frame(const string&name,const type tpe,const string&call_path="",const string&ret_label="",const bool is_inline=false,const string&ret_var=""):
 		name_{name},
 		call_path_{call_path},
 		ret_label_{ret_label},
+		ret_var_{ret_var},
 		is_inline_{is_inline},
 		type_{tpe}
 	{}
@@ -95,6 +96,8 @@ public:
 
 	inline bool is_func_inline()const{return is_inline_;}
 
+	inline const string&ret_var()const{return ret_var_;}
+
 private:
 	string name_;
 	string call_path_;
@@ -102,6 +105,7 @@ private:
 	lut<allocated_var>vars_;
 	lut<string>aliases_;
 	string ret_label_;
+	string ret_var_;
 	bool is_inline_{false};
 	type type_{type::FUNC};
 };
@@ -200,8 +204,8 @@ public:
 		frames_.back().add_alias(ident,parent_frame_ident);
 	}
 
-	inline void push_func(const string&name,const string&call_loc,const string&ret_jmp,const bool is_inline){
-		frames_.emplace_back(name,frame::type::FUNC,call_loc,ret_jmp,is_inline);
+	inline void push_func(const string&name,const string&call_loc,const string&ret_jmp,const bool is_inline,const string&ret_var){
+		frames_.emplace_back(name,frame::type::FUNC,call_loc,ret_jmp,is_inline,ret_var);
 		check_usage();
 	}
 
@@ -341,6 +345,18 @@ public:
 				return frames_[i].ret_label();
 			if(i==0) // ? can happen?
 				break; 
+			i--;
+		}
+		throw compiler_error(st,"not in a function");
+	}
+
+	inline const string&get_func_return_var_name_or_break(const statement&st)const{
+		size_t i=frames_.size()-1;
+		while(true){
+			if(frames_[i].is_func())
+				return frames_[i].ret_var();
+			if(i==0) // ? can happen?
+				break;
 			i--;
 		}
 		throw compiler_error(st,"not in a function");

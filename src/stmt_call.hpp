@@ -169,7 +169,9 @@ public:
 			return;
 		}
 
+		//
 		// inlined function
+		//
 
 		vector<string>allocated_named_registers;
 		vector<string>allocated_scratch_registers;
@@ -237,8 +239,12 @@ public:
 
 		indent(os,indent_level+1,true);os<<"inline: "<<new_call_path<<endl;
 
-		// enter functions
-		tc.push_func(nm,new_call_path,ret_jmp_label,true);
+		// enter function
+		if(f.returns().empty()){
+			tc.push_func(nm,new_call_path,ret_jmp_label,true,"");
+		}else{
+			tc.push_func(nm,new_call_path,ret_jmp_label,true,f.returns()[0].name());
+		}
 		// add the aliases to the context of this scope
 		for(const auto&e:aliases_to_add){
 			tc.add_alias(get<0>(e),get<1>(e));
