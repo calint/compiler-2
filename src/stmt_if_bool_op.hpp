@@ -123,14 +123,14 @@ private:
 		string dest,src;
 		vector<string>allocated_registers;
 		if(sa.is_expression()){
-			dest=tc.alloc_scratch_register(sa);
+			dest=tc.alloc_scratch_register(sa,os,indent_level);
 			allocated_registers.push_back(dest);
 			sa.compile(tc,os,indent_level+1,dest);
 		}else{
 			dest=tc.resolve_ident_to_nasm(sa);
 		}
 		if(sb.is_expression()){
-			src=tc.alloc_scratch_register(sb);
+			src=tc.alloc_scratch_register(sb,os,indent_level);
 			allocated_registers.push_back(src);
 			sb.compile(tc,os,indent_level+1,src);
 		}else{
@@ -140,7 +140,7 @@ private:
 		expr_ops_list::asm_cmd(op,*this,tc,os,indent_level,dest,src);
 
 		for(const auto&r:allocated_registers)
-			tc.free_scratch_register(r);
+			tc.free_scratch_register(r,os,indent_level);
 	}
 
 	vector<token>nots_;

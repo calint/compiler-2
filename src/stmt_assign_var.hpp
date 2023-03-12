@@ -30,11 +30,11 @@ public:
 
 		// try with scratch register
 		stringstream ss2;
-		const string&reg=tc.alloc_scratch_register(*this);
+		const string&reg=tc.alloc_scratch_register(*this,ss2,indent_level);
 		oplist_.compile(tc,ss2,indent_level,reg);
 		const string&dest_resolved=tc.resolve_ident_to_nasm(*this);
 		expr_ops_list::asm_cmd("mov",*this,tc,ss2,indent_level,dest_resolved,reg);
-		tc.free_scratch_register(reg);
+		tc.free_scratch_register(reg,ss2,indent_level);
 
 		// compare instruction count
 		const size_t ss1_count=count_instructions(ss1);

@@ -1,28 +1,17 @@
-field  hello="hello\n"
-
-func print(len:reg_rdx,ptr:reg_rcx){
-    mov(rbx,1)
-    mov(rax,4)
-    int(0x80)
-}
-
-func inline exit(v){
+func inline exit(v:reg_rbx){
     mov(rbx,v)
     mov(rax,1)
     int(0x80)
 }
 
-func bar{
-    print(hello.len,hello)
+func fib(i):res{
+    if i=0 {
+        res=1
+        return
+    }
+    res=i*fib(i-1)
 }
 
 func inline main{
-    var a=3
-    var b=2
-    loop{
-        if a=0 break
-        bar()
-        a=a-1
-    }
-    exit(0)
+    exit(fib(5))
 }

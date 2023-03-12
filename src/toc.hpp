@@ -278,13 +278,15 @@ public:
 		frames_.back().add_var(name,stkix_delta,flags);
 	}
 
-	inline const string alloc_scratch_register(const statement&st){
+	inline const string&alloc_scratch_register(const statement&st,ostream&os,const size_t indent_level){
 		if(scratch_registers_.empty()){
 			throw compiler_error(st,"out of scratch registers. try to reduce expression complexity");
 		}
 
 		const string&r=scratch_registers_.back();
 		scratch_registers_.pop_back();
+
+		statement::indent(os,indent_level,true);os<<"alloc "<<r<<endl;
 
 		const size_t n=8-scratch_registers_.size();
 		if(n>max_usage_scratch_regs_)
@@ -309,7 +311,8 @@ public:
 		allocated_registers_.erase(r);
 	}
 
-	inline void free_scratch_register(const string&reg){
+	inline void free_scratch_register(const string&reg,ostream&os,const size_t indent_level){
+		statement::indent(os,indent_level,true);os<<"free "<<reg<<endl;
 		scratch_registers_.push_back(reg);
 		auto r=find(allocated_registers_.begin(),allocated_registers_.end(),reg);
 		allocated_registers_.erase(r);

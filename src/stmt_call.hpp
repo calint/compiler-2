@@ -94,13 +94,13 @@ public:
 					// is the argument passed in through a register?
 					if(!argument_passed_in_register){
 						// no particular register requested for the argument
-						arg_reg=tc.alloc_scratch_register(arg);
+						arg_reg=tc.alloc_scratch_register(arg,os,indent_level);
 						// compile expression with the result stored in arg_reg
 						arg.compile(tc,os,indent_level+1,arg_reg);
 						// argument is passed to function through the stack
 						indent(os,indent_level);os<<"push "<<arg_reg<<endl;
 						// free scratch register
-						tc.free_scratch_register(arg_reg);
+						tc.free_scratch_register(arg_reg,os,indent_level);
 						// keep track of how many arguments are on the stack
 						nargs_on_stack++;
 					}else{
@@ -208,7 +208,7 @@ public:
 				// argument is an expression, evaluate and store in arg_reg
 				if(arg_reg.empty()){
 					// no particular register requested for the argument
-					arg_reg=tc.alloc_scratch_register(*arg);
+					arg_reg=tc.alloc_scratch_register(*arg,os,indent_level);
 					allocated_scratch_registers.push_back(arg_reg);
 				}
 				// compile expression and store result in 'arg_reg'
@@ -259,7 +259,7 @@ public:
 		indent(os,indent_level);os<<ret_jmp_label<<":\n";
 		// free allocated registers
 		for(const auto&r:allocated_scratch_registers){
-			tc.free_scratch_register(r);
+			tc.free_scratch_register(r,os,indent_level);
 		}
 		for(const auto&r:allocated_named_registers){
 			tc.free_named_register(r);
