@@ -289,7 +289,7 @@ public:
 		statement::indent(os,indent_level,true);os<<"alloc "<<r<<endl;
 
 		const size_t n=8-scratch_registers_.size();
-		if(n>max_usage_scratch_regs_)
+		if(n>max_usage_scratch_regs_) // ? stmt_assign_var tries 2 different methods making this metric inaccurate if a discarded method uses more registers than the selected method
 			max_usage_scratch_regs_=n;
 
 		allocated_registers_.push_back(r);
