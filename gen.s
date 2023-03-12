@@ -123,6 +123,8 @@ main:
 ;        [26:16] r14+c(1)
 ;        alloc r13
 ;        [26:16] c(1)
+         push rbx
+         push r15
          push r14
          push r13
          push 1
@@ -130,12 +132,17 @@ main:
          add rsp,8
          pop r13
          pop r14
+         pop r15
+         pop rbx
          mov r13,rax
          add r14,r13
 ;        free r13
 ;        [26:21] r14+c(x+y)
 ;        alloc r13
 ;        [26:21] c(x+y)
+         push rbx
+         push r15
+         push r14
          push r13
 ;        alloc r12
 ;          [26:23] x+y
@@ -148,6 +155,9 @@ main:
          call c
          add rsp,8
          pop r13
+         pop r14
+         pop r15
+         pop rbx
          mov r13,rax
          add r14,r13
 ;        free r13

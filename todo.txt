@@ -1,4 +1,4 @@
-[ ] all allocated registers are pushed before a call not necessary
+[ ] all allocated registers pushed before a call not necessary
 [ ] when calling non-inlined functions the allocated register is pushed and popped
     although it hasn't been assigned. keep track of that in toc and optimize away
     the push/pop

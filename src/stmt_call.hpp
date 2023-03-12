@@ -55,7 +55,6 @@ public:
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
 
 		if(!f.is_inline()){
-			size_t nargs{args_.size()};
 			const size_t nvars_on_stack{tc.get_current_stack_size()};
 			// stack is: <base>,
 			if(tc.enter_func_call()){
@@ -76,9 +75,10 @@ public:
 			}
 			// stack is now: <base>,.. vars ..,... allocated regs ...,
 
-			vector<string>allocated_args_registers;
 			// push arguments starting with the last
+			vector<string>allocated_args_registers;
 			size_t nargs_on_stack{0};
+			size_t nargs{args_.size()};
 			while(nargs--){
 				const statement&arg=*args_[nargs];
 				const stmt_def_func_param&param=f.param(nargs);
