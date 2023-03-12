@@ -198,21 +198,21 @@ int main(int argc,char**args){
 			throw string("generated source differs");
 		stringstream ss1;
 		p.build(ss1);
-		string pass1=optimize_jumps_1(ss1);
+		const string&pass1=optimize_jumps_1(ss1);
 		stringstream ss2{pass1};
-		string pass2=optimize_jumps_2(ss2);
+		const string&pass2=optimize_jumps_2(ss2);
 		cout<<pass2<<endl;
 //		p.build(cout);
 	}catch(const compiler_error&e){
 		size_t start_char_in_line{0};
 		auto lineno=toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line);
-		cout<<"\n"<<src_file_name<<":"<<lineno<<":"<<start_char_in_line<<": "<<e.msg<<endl;
+		cerr<<"\n"<<src_file_name<<":"<<lineno<<":"<<start_char_in_line<<": "<<e.msg<<endl;
 		return 1;
 	}catch(const string&s){
-		cout<<"\nexception: "<<s<<endl;
+		cerr<<"\nexception: "<<s<<endl;
 		return 1;
 	}catch(...){
-		cout<<"\nexception"<<endl;
+		cerr<<"\nexception"<<endl;
 		return 1;
 	}
 	return 0;
