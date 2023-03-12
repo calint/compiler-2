@@ -17,5 +17,5 @@ func c(i):res{
 }
 
 func inline main{
-    exit(a(b(c(1)+c(2))))
+    exit(a(b(c(1))))
 }

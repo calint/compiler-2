@@ -12,43 +12,53 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
-fib:
+a:
    push rbp
    mov rbp,rsp
-   if_8_8:
-   cmp_8_8:
-   cmp qword[rbp+16],0
-   jne if_8_5_end
-   if_8_8_code:  ; opt1
-     mov qword[rbp-8],1
-     mov rax,qword[rbp-8]
-     pop rbp
-     ret
-   if_8_5_end:
    mov r15,qword[rbp+16]
+   add r15,1
    mov qword[rbp-8],r15
-   sub rsp,8
-   push r15
-     mov r14,qword[rbp+16]
-     sub r14,1
-   push r14
-   call fib
-   add rsp,8
-   pop r15
-   add rsp,8
-   mov r15,rax
-   imul r15,qword[rbp-8]
+   mov rax,qword[rbp-8]
+   pop rbp
+   ret
+b:
+   push rbp
+   mov rbp,rsp
+   mov r15,qword[rbp+16]
+   add r15,2
+   mov qword[rbp-8],r15
+   mov rax,qword[rbp-8]
+   pop rbp
+   ret
+c:
+   push rbp
+   mov rbp,rsp
+   mov r15,qword[rbp+16]
+   add r15,3
    mov qword[rbp-8],r15
    mov rax,qword[rbp-8]
    pop rbp
    ret
 main:
      push rbx
-     push 5
-     call fib
+         push 1
+         call c
+         add rsp,8
+         mov r14,rax
+         push 2
+         call c
+         add rsp,8
+         mov r13,rax
+         add r14,r13
+       push r14
+       call b
+       add rsp,8
+       mov r15,rax
+     push r15
+     call a
      add rsp,8
      pop rbx
      mov rbx,rax
      mov rax,1
      int 0x80
-   exit_16_5_end:
+   exit_20_5_end:
