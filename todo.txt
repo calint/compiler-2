@@ -1,3 +1,6 @@
+[ ] when calling non-inlined functions the allocated register is pushed and poped
+    although it hasn't been modified. keep track of that in toc and optimize away
+    the push/pop
 [ ] character type
 [ ] string type
 [ ] var str="hello world"
