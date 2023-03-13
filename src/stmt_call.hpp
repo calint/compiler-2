@@ -142,10 +142,14 @@ public:
 			if(nregs_pushed_on_stack==0){
 				// stack is: <base>,vars,args,
 				if(restore_rsp_to_base){
-					indent(os,indent_level);os<<"add rsp,"<<((nargs_on_stack+nvars_on_stack)<<3)<<endl;
+					const string&offset=to_string((nargs_on_stack+nvars_on_stack)<<3);
+					tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
+//					indent(os,indent_level);os<<"add rsp,"<<((nargs_on_stack+nvars_on_stack)<<3)<<endl;
 					// stack is: <base>,
 				}else{
-					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
+					const string&offset=to_string(nargs_on_stack<<3);
+					tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
+//					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
 					// stack is: <base>,vars,
 				}
 				// free named registers
@@ -166,7 +170,9 @@ public:
 			}else{
 				// stack is: <base>,vars,regs,args,
 				if(nargs_on_stack){
-					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
+					const string&offset=to_string(nargs_on_stack<<3);
+					tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
+//					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
 				}
 				// stack is: <base>,vars,regs,
 
@@ -196,7 +202,9 @@ public:
 					// this was not a call within the arguments of another call
 					// stack is: <base>,vars,
 					if(nvars_on_stack){
-						indent(os,indent_level);os<<"add rsp,"<<(nvars_on_stack<<3)<<endl;
+						const string&offset=to_string(nvars_on_stack<<3);
+						tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
+//						indent(os,indent_level);os<<"add rsp,"<<(nvars_on_stack<<3)<<endl;
 					}
 					// stack is: <base>,
 				}
