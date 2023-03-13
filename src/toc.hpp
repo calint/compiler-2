@@ -422,9 +422,9 @@ public:
 	}
 
 	inline size_t get_func_call_alloc_reg_idx()const{
-		if(call_allocated_regs_idx_.size()<2)
-			return 0;
-		return call_allocated_regs_idx_[call_allocated_regs_idx_.size()-2];
+		if(call_allocated_regs_idx_.size())
+			return call_allocated_regs_idx_.back();
+		return 0;
 	}
 
 	inline const vector<string>&get_allocated_registers()const{return allocated_registers_;}

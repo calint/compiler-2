@@ -57,6 +57,8 @@ public:
 		if(!f.is_inline()){
 			const size_t nvars_on_stack{tc.get_current_stack_size()};
 			// stack is: <base>,
+
+			const size_t alloc_regs_idx_cur_call_ctx=tc.get_func_call_alloc_reg_idx();
 			if(tc.enter_func_call()){
 				// this call is not nested within another call's arguments
 				// adjust stack past the vars
@@ -70,7 +72,7 @@ public:
 			// push allocated registers on the stack
 			const vector<string>&alloc_regs=tc.get_allocated_registers();
 			const size_t n=alloc_regs.size();
-			for(size_t i=tc.get_func_call_alloc_reg_idx();i<n;i++){
+			for(size_t i=alloc_regs_idx_cur_call_ctx;i<n;i++){
 				const string&reg=alloc_regs[i];
 				indent(os,indent_level);os<<"push "<<reg<<endl;
 			}
@@ -78,6 +80,7 @@ public:
 			// stack is now: <base>,.. vars ..,... allocated regs ...,
 
 			// push arguments starting with the last
+			//   some arguments might be passed through registers
 			vector<string>allocated_args_registers;
 			size_t nargs_on_stack{0};
 			size_t nargs{args_.size()};
@@ -132,8 +135,11 @@ public:
 			}
 			// stack is: <base>,..vars..,...allocated regs...,
 
-			const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_reg_idx();
+			const bool restore_rsp_to_base=tc.exit_func_call();
+
+			// pop register pushed prior to this call
 			if(alloc_regs.size()){
+				const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_reg_idx();
 				size_t i=alloc_regs.size()-1;
 				while(true){
 					const string&reg=alloc_regs[i];
@@ -150,10 +156,8 @@ public:
 			}
 			// stack is: <base>,..vars..,
 
-			// restore stack pointer
-			if(tc.exit_func_call()){
-				// this is not a call within the arguments of another call
-				// restore rsp to what it was before the call
+			if(restore_rsp_to_base){
+				// this is was not a call within the arguments of another call
 				// stack is: <base>,..vars..,
 				if(nvars_on_stack){
 					indent(os,indent_level);os<<"add rsp,"<<(nvars_on_stack<<3)<<endl;
@@ -167,10 +171,6 @@ public:
 				expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,dest_resolved,"rax");
 			}
 
-//			// free allocated registers
-//			for(const string&r:allocated_args_registers){
-//				tc.free_named_register(r,os,indent_level);
-//			}
 			return;
 		}
 
