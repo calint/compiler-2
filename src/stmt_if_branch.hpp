@@ -31,11 +31,13 @@ public:
 		const string if_bgn_lbl=if_bgn_label(tc);
 		const string jmp_to_if_true_lbl=if_bgn_lbl+"_code";
 		// the begining of this branch
-		toc::indent(os,indent_level);os<<if_bgn_lbl<<":"<<endl;
+		tc.asm_label(*this,os,indent_level,if_bgn_lbl);
+//		toc::indent(os,indent_level);os<<if_bgn_lbl<<":"<<endl;
 		// compile boolean ops list
 		bol_.compile(tc,os,indent_level,jmp_to_if_false_label,jmp_to_if_true_lbl);
 		// the label where to jump if evaluation of boolean ops is true
-		toc::indent(os,indent_level);os<<jmp_to_if_true_lbl<<":"<<endl;
+		tc.asm_label(*this,os,indent_level,jmp_to_if_true_lbl);
+//		toc::indent(os,indent_level);os<<jmp_to_if_true_lbl<<":"<<endl;
 		// the code of the branch
 		code_->compile(tc,os,indent_level);
 		// after the code of the branch is executed jump to the end of

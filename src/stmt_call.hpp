@@ -310,7 +310,8 @@ public:
 		// compile in-lined code
 		f.code().compile(tc,os,indent_level);
 		// provide an exit label for 'return' to use instead of assembler 'ret'
-		toc::indent(os,indent_level);os<<ret_jmp_label<<":\n";
+		tc.asm_label(*this,os,indent_level,ret_jmp_label);
+//		toc::indent(os,indent_level);os<<ret_jmp_label<<":\n";
 
 		// free allocated registers in reverse order of allocation
 		for(auto it=allocated_registers_in_order.rbegin();it!=allocated_registers_in_order.rend();++it) {

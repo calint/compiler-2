@@ -68,7 +68,8 @@ public:
 		if(is_inline())
 			return;
 
-		toc::indent(os,indent_level);os<<name()<<":\n";
+		tc.asm_label(*this,os,indent_level,name());
+//		toc::indent(os,indent_level);os<<name()<<":\n";
 		if(returns().empty()){
 			tc.push_func(name(),"","",false,"");
 		}else{

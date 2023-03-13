@@ -90,12 +90,14 @@ public:
 			e.compile(tc,os,indent_level,jmp_if_false,jmp_after_if);
 		}
 		if(else_code_){
-			toc::indent(os,indent_level);os<<label_else_branch<<":\n";
+			tc.asm_label(*this,os,indent_level,label_else_branch);
+//			toc::indent(os,indent_level);os<<label_else_branch<<":\n";
 //			tc.push_if("else");
 			else_code_->compile(tc,os,indent_level+1);
 //			tc.pop_if("else");
 		}
-		toc::indent(os,indent_level);os<<label_after_if<<":\n";
+		tc.asm_label(*this,os,indent_level,label_after_if);
+//		toc::indent(os,indent_level);os<<label_after_if<<":\n";
 	}
 
 private:

@@ -16,7 +16,8 @@ public:
 		const string&src_loc=tc.source_location(tok());
 		// the loop label
 		const string lbl="loop_"+(call_path.empty()?src_loc:(src_loc+"_"+call_path));
-		toc::indent(os,indent_level);os<<lbl<<":"<<endl;
+		tc.asm_label(*this,os,indent_level,lbl);
+//		toc::indent(os,indent_level);os<<lbl<<":"<<endl;
 		// enter loop scope
 		tc.push_loop(lbl);
 		code_.compile(tc,os,indent_level);
@@ -24,7 +25,8 @@ public:
 		tc.asm_jmp(*this,os,indent_level,lbl);
 //		toc::indent(os,indent_level);os<<"jmp "<<lbl<<endl;
 		// exit loop label
-		toc::indent(os,indent_level);os<<lbl<<"_end:"<<endl;
+		tc.asm_label(*this,os,indent_level,lbl+"_end");
+//		toc::indent(os,indent_level);os<<lbl<<"_end:"<<endl;
 		// exit loop scope
 		tc.pop_loop(lbl);
 	}
