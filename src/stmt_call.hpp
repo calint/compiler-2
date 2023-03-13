@@ -69,7 +69,7 @@ public:
 				}
 			}
 
-			// push allocated registers on the stack
+			// push allocated registers in this call context on the stack
 			const vector<string>&alloc_regs=tc.get_allocated_registers();
 			const size_t n=alloc_regs.size();
 			for(size_t i=alloc_regs_idx_cur_call_ctx;i<n;i++){
@@ -88,7 +88,7 @@ public:
 				const statement&arg=*args_[nargs];
 				const stmt_def_func_param&param=f.param(nargs);
 				// is the argument passed through a register?
-				bool argument_passed_in_register{false};
+				bool argument_passed_in_register=false;
 				const string&arg_reg=param.get_register_or_empty();
 				if(!arg_reg.empty()){
 					argument_passed_in_register=true;
@@ -96,7 +96,6 @@ public:
 					allocated_args_registers.push_back(arg_reg);
 				}
 				if(arg.is_expression()){
-					// is the argument passed in through a register?
 					if(!argument_passed_in_register){
 						// no particular register requested for the argument
 						const string&sr=tc.alloc_scratch_register(arg,os,indent_level);
@@ -157,7 +156,7 @@ public:
 			// stack is: <base>,..vars..,
 
 			if(restore_rsp_to_base){
-				// this is was not a call within the arguments of another call
+				// this was not a call within the arguments of another call
 				// stack is: <base>,..vars..,
 				if(nvars_on_stack){
 					indent(os,indent_level);os<<"add rsp,"<<(nvars_on_stack<<3)<<endl;
