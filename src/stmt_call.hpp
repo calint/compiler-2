@@ -63,7 +63,6 @@ public:
 			const size_t alloc_regs_idx=tc.get_func_call_alloc_regs_idx();
 			if(tc.enter_func_call()){
 				// this call is not nested within another call's arguments
-				// adjust stack past the vars
 				if(nvars_on_stack){
 					// adjust stack past the allocated vars
 					tc.asm_cmd(*this,os,indent_level,"sub","rsp",to_string(nvars_on_stack<<3));
@@ -71,7 +70,7 @@ public:
 				}
 			}
 
-			// push allocated registers in this call context on the stack
+			// push registers allocated prior to this call
 			const vector<string>&alloc_regs=tc.get_allocated_registers();
 			const size_t n=alloc_regs.size();
 			size_t nregs_pushed_on_stack=0;
@@ -84,10 +83,10 @@ public:
 				}
 			}
 
-			// stack is now: <base>,.. vars ..,... allocated regs ...,
+			// stack is: <base>,vars,regs,
 
 			// push arguments starting with the last
-			//   some arguments might be passed through registers
+			// some arguments might be passed through registers
 			vector<string>allocated_args_registers;
 			size_t nargs_on_stack=0;
 			size_t nargs=args_.size();
@@ -95,8 +94,8 @@ public:
 				const statement&arg=*args_[nargs];
 				const stmt_def_func_param&param=f.param(nargs);
 				// is the argument passed through a register?
-				bool argument_passed_in_register=false;
 				const string&arg_reg=param.get_register_or_empty();
+				bool argument_passed_in_register=false;
 				if(!arg_reg.empty()){
 					argument_passed_in_register=true;
 					tc.alloc_named_register_or_break(arg,arg_reg,os,indent_level);
@@ -106,7 +105,7 @@ public:
 					if(!argument_passed_in_register){
 						// no particular register requested for the argument
 						const string&sr=tc.alloc_scratch_register(arg,os,indent_level);
-						// compile expression with the result stored in arg_reg
+						// compile expression with the result stored in sr
 						arg.compile(tc,os,indent_level+1,sr);
 						// argument is passed to function through the stack
 						indent(os,indent_level);os<<"push "<<sr<<endl;
@@ -132,11 +131,10 @@ public:
 				}
 			}
 
-			// stack is: <base>,vars,regs,arguments,
+			// stack is: <base>,vars,regs,args,
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
-
+			// if this call is not withing the arguments of a previous call
 			const bool restore_rsp_to_base=tc.exit_func_call();
-
 			// optimization to adjust rsp only once can be done if no registers need to be popped
 			if(nregs_pushed_on_stack==0){
 				// stack is: <base>,vars,args,
@@ -171,7 +169,7 @@ public:
 
 				// pop registers pushed prior to this call
 				if(alloc_regs.size()){
-					size_t i=alloc_regs.size()-1; // ? might be unsafe since
+					size_t i=alloc_regs.size()-1;
 					const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_regs_idx();
 					while(true){
 						const string&reg=alloc_regs[i];
@@ -189,6 +187,7 @@ public:
 						i--;
 					}
 				}
+
 				// stack is: <base>,vars,
 				if(restore_rsp_to_base){
 					// this was not a call within the arguments of another call
