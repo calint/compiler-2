@@ -58,8 +58,9 @@ public:
 			// stack is: <base>,
 
 			const size_t nvars_on_stack{tc.get_current_stack_size()};
-			// the registers that have been allocated but not pushed on the stack
-			//   prior to call (that might clobber them)
+			// index in the allocated registers that have been allocated but not pushed
+			//   on the stack prior to this call
+			//     the call might clobber them
 			const size_t alloc_regs_idx=tc.get_func_call_alloc_regs_idx();
 			if(tc.enter_func_call()){
 				// this call is not nested within another call's arguments

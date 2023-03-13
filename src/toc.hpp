@@ -3,7 +3,7 @@
 #include<cassert>
 #include<sstream>
 #include<regex>
-#include<set>
+#include<unordered_set>
 
 #include"lut.hpp"
 #include"compiler_error.hpp"
@@ -550,5 +550,5 @@ private:
 	lut<const stmt_def_func*>funcs_;
 	lut<const stmt_def_table*>tables_;
 	vector<size_t>call_allocated_regs_idx_;
-	set<string>initiated_registers_;
+	unordered_set<string>initiated_registers_;
 };
