@@ -134,6 +134,7 @@ public:
 
 			// stack is: <base>,vars,regs,args,
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
+
 			// if this call is not withing the arguments of a previous call
 			const bool restore_rsp_to_base=tc.exit_func_call();
 			// optimization to adjust rsp only once can be done if no registers need to be popped
@@ -297,6 +298,7 @@ public:
 		f.code().compile(tc,os,indent_level);
 		// provide an exit label for 'return' to use instead of assembler 'ret'
 		indent(os,indent_level);os<<ret_jmp_label<<":\n";
+
 		// free allocated registers in reverse order of allocation
 		for(auto it=allocated_registers_in_order.rbegin();it!=allocated_registers_in_order.rend();++it) {
 			const string&reg=*it;
