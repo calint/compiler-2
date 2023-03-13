@@ -137,7 +137,7 @@ private:
 			src=tc.resolve_ident_to_nasm(sb);
 		}
 
-		expr_ops_list::asm_cmd(op,*this,tc,os,indent_level,dest,src);
+		tc.asm_cmd(*this,os,indent_level,op,dest,src);
 
 		for(const auto&r:allocated_registers)
 			tc.free_scratch_register(r,os,indent_level);

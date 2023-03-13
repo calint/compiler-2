@@ -110,7 +110,7 @@ public:
 		if(!returns().empty()){
 			const string&ret_name=returns()[0].name();
 			const string&ret_name_resolved=tc.resolve_ident_to_nasm(*this,ret_name);
-			expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level+1,"rax",ret_name_resolved);
+			tc.asm_cmd(*this,os,indent_level+1,"mov","rax",ret_name_resolved);
 		}
 		indent(os,indent_level+1);os<<"pop rbp\n";
 		indent(os,indent_level+1);os<<"ret\n";

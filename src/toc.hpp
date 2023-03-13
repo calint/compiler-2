@@ -429,6 +429,21 @@ public:
 
 	inline const vector<string>&get_allocated_registers()const{return allocated_registers_;}
 
+	inline void asm_cmd(const statement&st,ostream&os,const size_t indent_level,const string&op,const string&dest_resolved,const string&src_resolved){
+		if(op=="mov" && dest_resolved==src_resolved){
+			return;
+		}
+		// check if both source and destination are memory operations
+		if(dest_resolved.find_first_of('[')!=string::npos and src_resolved.find_first_of('[')!=string::npos){
+			const string&r=alloc_scratch_register(st,os,indent_level);
+			statement::indent(os,indent_level);os<<"mov "<<r<<","<<src_resolved<<endl;
+			statement::indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<r<<endl;
+			free_scratch_register(r,os,indent_level);
+			return;
+		}
+		statement::indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<src_resolved<<endl;
+	}
+
 private:
 	inline const string resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident)const{
 		string id=ident;

@@ -103,68 +103,75 @@ main:
 ;  [25:11] 3 
 ;  [25:11] z=3 
    mov qword[rbp-24],3
-;  [26:5] exit(a(b(z+c(1)+c(x+y))))
+;  [26:5] exit(1+a(b(z+c(1)+c(x+y))))
 ;  alloc rbx
-;    [26:10] a(b(z+c(1)+c(x+y)))
-;    [26:10] rbx=a(b(z+c(1)+c(x+y)))
-;    [26:10] a(b(z+c(1)+c(x+y)))
+;    [26:10] 1+a(b(z+c(1)+c(x+y)))
+;    [26:10] rbx=1
+     mov rbx,1
+;    [26:12] rbx+a(b(z+c(1)+c(x+y)))
+;    alloc r15
+;    [26:12] a(b(z+c(1)+c(x+y)))
      sub rsp,24
      push rbx
-;    alloc r15
-;      [26:12] b(z+c(1)+c(x+y))
-;      [26:12] r15=b(z+c(1)+c(x+y))
-;      [26:12] b(z+c(1)+c(x+y))
-       push r15
-;      alloc r14
-;        [26:14] z+c(1)+c(x+y)
-;        [26:14] r14=z
-         mov r14,qword[rbp-24]
-;        [26:16] r14+c(1)
-;        alloc r13
-;        [26:16] c(1)
-         push r14
+     push r15
+;    alloc r14
+;      [26:14] b(z+c(1)+c(x+y))
+;      [26:14] r14=b(z+c(1)+c(x+y))
+;      [26:14] b(z+c(1)+c(x+y))
+       push r14
+;      alloc r13
+;        [26:16] z+c(1)+c(x+y)
+;        [26:16] r13=z
+         mov r13,qword[rbp-24]
+;        [26:18] r13+c(1)
+;        alloc r12
+;        [26:18] c(1)
          push r13
+         push r12
          push 1
          call c
          add rsp,8
+         pop r12
          pop r13
-         pop r14
-         mov r13,rax
-         add r14,r13
-;        free r13
-;        [26:21] r14+c(x+y)
-;        alloc r13
-;        [26:21] c(x+y)
-         push r14
-         push r13
-;        alloc r12
-;          [26:23] x+y
-;          [26:23] r12=x
-           mov r12,qword[rbp-8]
-;          [26:25] r12+y
-           add r12,qword[rbp-16]
-         push r12
+         mov r12,rax
+         add r13,r12
 ;        free r12
+;        [26:23] r13+c(x+y)
+;        alloc r12
+;        [26:23] c(x+y)
+         push r13
+         push r12
+;        alloc r11
+;          [26:25] x+y
+;          [26:25] r11=x
+           mov r11,qword[rbp-8]
+;          [26:27] r11+y
+           add r11,qword[rbp-16]
+         push r11
+;        free r11
          call c
          add rsp,8
+         pop r12
          pop r13
-         pop r14
-         mov r13,rax
-         add r14,r13
-;        free r13
-       push r14
-;      free r14
+         mov r12,rax
+         add r13,r12
+;        free r12
+       push r13
+;      free r13
        call b
        add rsp,8
-       pop r15
-       mov r15,rax
-     push r15
-;    free r15
+       pop r14
+       mov r14,rax
+     push r14
+;    free r14
      call a
      add rsp,8
+     pop r15
      pop rbx
      add rsp,24
-     mov rbx,rax
+     mov r15,rax
+     add rbx,r15
+;    free r15
 ;    inline: 26_5
 ;    [2:5] mov(rbx,v)
 ;    [3:5] mov(rax,1)
@@ -175,5 +182,5 @@ main:
 ;  free rbx
 ;  [27:1] # exit(a(b(c(1)))) 
 
-; max scratch registers in use: 4
+; max scratch registers in use: 5
 ;            max frames in use: 4

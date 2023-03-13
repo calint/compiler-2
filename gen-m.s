@@ -48,41 +48,45 @@ main:
    mov qword[rbp-8],1
    mov qword[rbp-16],2
    mov qword[rbp-24],3
+     mov rbx,1
      sub rsp,24
      push rbx
-       push r15
-         mov r14,qword[rbp-24]
-         push r14
+     push r15
+       push r14
+         mov r13,qword[rbp-24]
          push r13
+         push r12
          push 1
          call c
          add rsp,8
+         pop r12
          pop r13
-         pop r14
-         mov r13,rax
-         add r14,r13
-         push r14
+         mov r12,rax
+         add r13,r12
          push r13
-           mov r12,qword[rbp-8]
-           add r12,qword[rbp-16]
          push r12
+           mov r11,qword[rbp-8]
+           add r11,qword[rbp-16]
+         push r11
          call c
          add rsp,8
+         pop r12
          pop r13
-         pop r14
-         mov r13,rax
-         add r14,r13
-       push r14
+         mov r12,rax
+         add r13,r12
+       push r13
        call b
        add rsp,8
-       pop r15
-       mov r15,rax
-     push r15
+       pop r14
+       mov r14,rax
+     push r14
      call a
      add rsp,8
+     pop r15
      pop rbx
      add rsp,24
-     mov rbx,rax
+     mov r15,rax
+     add rbx,r15
      mov rax,1
      int 0x80
    exit_26_5_end:

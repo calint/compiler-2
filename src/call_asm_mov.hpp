@@ -18,6 +18,6 @@ public:
 			return;
 		}
 		const string&src=tc.resolve_ident_to_nasm(src_arg);
-		expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,dest,src);
+		tc.asm_cmd(*this,os,indent_level,"mov",dest,src);
 	}
 };

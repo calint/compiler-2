@@ -64,7 +64,7 @@ public:
 				// adjust stack past the vars
 				if(nvars_on_stack){
 					// adjust stack past the allocated vars
-					expr_ops_list::asm_cmd("sub",*this,tc,os,indent_level,"rsp",to_string(nvars_on_stack<<3));
+					tc.asm_cmd(*this,os,indent_level,"sub","rsp",to_string(nvars_on_stack<<3));
 					// stack: <base>,.. vars ..,
 				}
 			}
@@ -117,7 +117,7 @@ public:
 				const string&id=tc.resolve_ident_to_nasm(arg);
 				if(argument_passed_in_register){
 					// move the identifier to the requested register
-					expr_ops_list::asm_cmd("mov",arg,tc,os,indent_level,arg_reg,id);
+					tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,id);
 				}else{
 					// push identifier on the stack
 					indent(os,indent_level);os<<"push "<<id<<endl;
@@ -167,7 +167,7 @@ public:
 			if(not dest_ident.empty()){
 				// function returns value in rax, copy return value to dest_ident
 				const string&dest_resolved=tc.resolve_ident_to_nasm(*this,dest_ident);
-				expr_ops_list::asm_cmd("mov",*this,tc,os,indent_level,dest_resolved,"rax");
+				tc.asm_cmd(*this,os,indent_level,"mov",dest_resolved,"rax");
 			}
 
 			return;
@@ -233,7 +233,7 @@ public:
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
 				// move argument to register
 				const string&src=tc.resolve_ident_to_nasm(param,id);
-				expr_ops_list::asm_cmd("mov",param,tc,os,indent_level+1,arg_reg,src);
+				tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,src);
 			}
 		}
 
