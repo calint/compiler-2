@@ -23,13 +23,13 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		indent(os,indent_level,true);tc.source_comment(os,*this);
+		toc::indent(os,indent_level,true);tc.source_comment(os,*this);
 		os<<ident_.name();
 		if(token_->is_string()){
 			os<<" db '";
 			token_->compile_to(os);
 			os<<"'\n";
-			indent(os,indent_level);
+			toc::indent(os,indent_level);
 			os<<ident_.name()<<".len equ $-"<<ident_.name()<<"\n";
 			tc.add_field(*this,ident_.name(),this,true);
 			return;

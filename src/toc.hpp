@@ -287,7 +287,7 @@ public:
 		const string&r=scratch_registers_.back();
 		scratch_registers_.pop_back();
 
-		statement::indent(os,indent_level,true);os<<"alloc "<<r<<endl;
+		indent(os,indent_level,true);os<<"alloc "<<r<<endl;
 
 		const size_t n=8-scratch_registers_.size();
 		if(n>max_usage_scratch_regs_) // ? stmt_assign_var tries 2 different methods making this metric inaccurate if a discarded method uses more registers than the selected method
@@ -304,11 +304,11 @@ public:
 		}
 		named_registers_.erase(r);
 		allocated_registers_.push_back(reg);
-		statement::indent(os,indent_level,true);os<<"alloc "<<reg<<endl;
+		indent(os,indent_level,true);os<<"alloc "<<reg<<endl;
 	}
 
 	inline void free_named_register(const string&reg,ostream&os,const size_t indent_level){
-		statement::indent(os,indent_level,true);os<<"free "<<reg<<endl;
+		indent(os,indent_level,true);os<<"free "<<reg<<endl;
 		assert(allocated_registers_.back()==reg);
 		allocated_registers_.pop_back();
 		named_registers_.push_back(reg);
@@ -316,7 +316,7 @@ public:
 	}
 
 	inline void free_scratch_register(const string&reg,ostream&os,const size_t indent_level){
-		statement::indent(os,indent_level,true);os<<"free "<<reg<<endl;
+		indent(os,indent_level,true);os<<"free "<<reg<<endl;
 		assert(allocated_registers_.back()==reg);
 		allocated_registers_.pop_back();
 		scratch_registers_.push_back(reg);
@@ -440,24 +440,35 @@ public:
 		// check if both source and destination are memory operations
 		if(dest_resolved.find_first_of('[')!=string::npos and src_resolved.find_first_of('[')!=string::npos){
 			const string&r=alloc_scratch_register(st,os,indent_level);
-			statement::indent(os,indent_level);os<<"mov "<<r<<","<<src_resolved<<endl;
-			statement::indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<r<<endl;
+			indent(os,indent_level);os<<"mov "<<r<<","<<src_resolved<<endl;
+			indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<r<<endl;
 			free_scratch_register(r,os,indent_level);
 			return;
 		}
-		statement::indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<src_resolved<<endl;
+		indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<src_resolved<<endl;
 	}
 
 	inline void asm_push(const statement&st,ostream&os,const size_t indent_level,const string&reg){
-		statement::indent(os,indent_level);os<<"push "<<reg<<endl;
+		indent(os,indent_level);os<<"push "<<reg<<endl;
 	}
 
 	inline void asm_pop(const statement&st,ostream&os,const size_t indent_level,const string&reg){
-		statement::indent(os,indent_level);os<<"pop "<<reg<<endl;
+		indent(os,indent_level);os<<"pop "<<reg<<endl;
 	}
 
 	inline bool is_register_initiated(const string&reg)const{
 		return initiated_registers_.contains(reg);
+	}
+
+	inline static void indent(ostream&os,const size_t indent_level,const bool comment=false){
+		if(indent_level==0){
+			if(comment)
+				os<<";";
+			return;
+		}
+		os<<(comment?";":" ");
+		for(size_t i=0;i<indent_level;i++)
+			os<<"  ";
 	}
 
 private:

@@ -90,12 +90,12 @@ public:
 			e.compile(tc,os,indent_level,jmp_if_false,jmp_after_if);
 		}
 		if(else_code_){
-			indent(os,indent_level);os<<label_else_branch<<":\n";
+			toc::indent(os,indent_level);os<<label_else_branch<<":\n";
 //			tc.push_if("else");
 			else_code_->compile(tc,os,indent_level+1);
 //			tc.pop_if("else");
 		}
-		indent(os,indent_level);os<<label_after_if<<":\n";
+		toc::indent(os,indent_level);os<<label_after_if<<":\n";
 	}
 
 private:

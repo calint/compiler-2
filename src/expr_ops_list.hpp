@@ -123,7 +123,7 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&dest)const override{
-		indent(os,indent_level,true);tc.source_comment(os,*this);
+		toc::indent(os,indent_level,true);tc.source_comment(os,*this);
 
 		if(expressions_.empty()) // ? can this happen?
 			throw compiler_error(*this,"expressions is empty");
@@ -187,7 +187,7 @@ private:
 	}
 
 	inline void asm_op(toc&tc,ostream&os,const size_t indent_level,const statement&st,const char op,const string&dest,const string&dest_resolved)const{
-		indent(os,indent_level,true);tc.source_comment(os,dest,op,st);
+		toc::indent(os,indent_level,true);tc.source_comment(os,dest,op,st);
 		if(op=='='){
 			if(st.is_expression()){
 				st.compile(tc,os,indent_level,dest);

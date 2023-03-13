@@ -7,10 +7,10 @@ public:
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		indent(os,indent_level,true);tc.source_comment(os,*this);
+		toc::indent(os,indent_level,true);tc.source_comment(os,*this);
 		// get loop label
 		const string&loop_label=tc.get_loop_label_or_break(*this);
 		// jump out of the loop
-		indent(os,indent_level);os<<"jmp "<<loop_label<<"_end\n";
+		toc::indent(os,indent_level);os<<"jmp "<<loop_label<<"_end\n";
 	}
 };

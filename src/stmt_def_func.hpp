@@ -68,7 +68,7 @@ public:
 		if(is_inline())
 			return;
 
-		indent(os,indent_level);os<<name()<<":\n";
+		toc::indent(os,indent_level);os<<name()<<":\n";
 		if(returns().empty()){
 			tc.push_func(name(),"","",false,"");
 		}else{
@@ -94,18 +94,18 @@ public:
 			// stack after push rbp is ...,[arg n],...[arg 1],[return address],[rbp],
 			const string&reg=pm.get_register_or_empty();
 			if(reg.empty()){
-				indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<(stk_ix<<3)<<endl;
+				toc::indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<(stk_ix<<3)<<endl;
 				tc.add_func_arg(pm_nm,stk_ix);
 				stk_ix++;
 			}else{
-				indent(os,indent_level+1,true);os<<pm_nm<<": "<<reg<<endl;
+				toc::indent(os,indent_level+1,true);os<<pm_nm<<": "<<reg<<endl;
 				tc.alloc_named_register_or_break(pm,reg,os,indent_level);
 				allocated_names_registers.push_back(reg);
 				tc.add_alias(pm_nm,reg);
 			}
 		}
-		indent(os,indent_level+1);os<<"push rbp\n";
-		indent(os,indent_level+1);os<<"mov rbp,rsp\n";
+		tc.asm_push(*this,os,indent_level+1,"rbp");
+		tc.asm_cmd(*this,os,indent_level+1,"mov","rbp","rsp");
 		code_->compile(tc,os,indent_level,"");
 		if(!returns().empty()){
 			const string&ret_name=returns()[0].name();
@@ -114,7 +114,7 @@ public:
 		}
 		tc.asm_pop(*this,os,indent_level+1,"rbp");
 //		indent(os,indent_level+1);os<<"pop rbp\n";
-		indent(os,indent_level+1);os<<"ret\n";
+		toc::indent(os,indent_level+1);os<<"ret\n";
 		os<<endl;
 		tc.pop_func(name());
 		size_t i=allocated_names_registers.size();

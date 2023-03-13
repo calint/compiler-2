@@ -47,7 +47,7 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		indent(os,indent_level,true);tc.source_comment(os,*this);
+		toc::indent(os,indent_level,true);tc.source_comment(os,*this);
 
 		const string&nm=tok().name();
 		const stmt_def_func&f=tc.get_func_or_break(*this,nm);
@@ -136,7 +136,7 @@ public:
 			}
 
 			// stack is: <base>,vars,regs,args,
-			indent(os,indent_level);os<<"call "<<f.name()<<endl;
+			toc::indent(os,indent_level);os<<"call "<<f.name()<<endl;
 
 			// if this call is not withing the arguments of a previous call
 			const bool restore_rsp_to_base=tc.exit_func_call();
@@ -295,7 +295,7 @@ public:
 		const string&new_call_path=call_path.empty()?src_loc:(src_loc+"_"+call_path);
 		const string&ret_jmp_label=nm+"_"+new_call_path+"_end";
 
-		indent(os,indent_level+1,true);os<<"inline: "<<new_call_path<<endl;
+		toc::indent(os,indent_level+1,true);os<<"inline: "<<new_call_path<<endl;
 
 		// enter function
 		if(f.returns().empty()){
@@ -310,7 +310,7 @@ public:
 		// compile in-lined code
 		f.code().compile(tc,os,indent_level);
 		// provide an exit label for 'return' to use instead of assembler 'ret'
-		indent(os,indent_level);os<<ret_jmp_label<<":\n";
+		toc::indent(os,indent_level);os<<ret_jmp_label<<":\n";
 
 		// free allocated registers in reverse order of allocation
 		for(auto it=allocated_registers_in_order.rbegin();it!=allocated_registers_in_order.rend();++it) {

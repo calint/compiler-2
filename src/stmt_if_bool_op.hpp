@@ -63,19 +63,19 @@ public:
 	}
 
 	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_true)const{
-		indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
-		indent(os,indent_level);os<<cmp_bgn_label(tc)<<":\n";
+		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
+		toc::indent(os,indent_level);os<<cmp_bgn_label(tc)<<":\n";
 		resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
-		indent(os,indent_level);
+		toc::indent(os,indent_level);
 		os<<(is_not_?asm_jxx_for_op_inv(op_):asm_jxx_for_op(op_));
 		os<<" "<<jmp_to_if_true<<endl;
 	}
 
 	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false)const{
-		indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
-		indent(os,indent_level);os<<cmp_bgn_label(tc);os<<":\n";
+		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
+		toc::indent(os,indent_level);os<<cmp_bgn_label(tc);os<<":\n";
 		resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
-		indent(os,indent_level);
+		toc::indent(os,indent_level);
 		os<<(is_not_?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
 		os<<" "<<jmp_to_if_false<<endl;
 	}

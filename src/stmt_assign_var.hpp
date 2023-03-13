@@ -16,7 +16,7 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		indent(os,indent_level,true);tc.source_comment(os,*this);
+		toc::indent(os,indent_level,true);tc.source_comment(os,*this);
 
 		// for the sake of clearer error message make sure identifier can be resolved
 		tc.resolve_ident_to_nasm(*this); // return is ignored

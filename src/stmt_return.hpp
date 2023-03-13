@@ -7,7 +7,7 @@ public:
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		indent(os,indent_level,true);tc.source_comment(os,*this);
+		toc::indent(os,indent_level,true);tc.source_comment(os,*this);
 		const string&ret=tc.get_func_return_label_or_break(*this);
 		if(ret.empty()){
 			// not in-lined
@@ -18,10 +18,10 @@ public:
 			}
 			tc.asm_pop(*this,os,indent_level,"rbp");
 //			indent(os,indent_level);os<<"pop rbp\n";
-			indent(os,indent_level);os<<"ret\n";
+			toc::indent(os,indent_level);os<<"ret\n";
 			return;
 		}
 		// in-lined
-		indent(os,indent_level);os<<"jmp "<<ret<<endl;
+		toc::indent(os,indent_level);os<<"jmp "<<ret<<endl;
 	}
 };

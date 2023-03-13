@@ -64,7 +64,7 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true)const{
-		indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
+		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 
 		const size_t n=bools_.size();
 		for(size_t i=0;i<n;i++){
@@ -103,7 +103,7 @@ public:
 			}else{
 				e.compile_and(tc,os,indent_level,jmp_to_if_false);
 				// if last element and not yet jumped to false then jump to true
-				indent(os,indent_level);os<<"jmp "<<jmp_to_if_true<<"\n";
+				toc::indent(os,indent_level);os<<"jmp "<<jmp_to_if_true<<"\n";
 			}
 		}
 	}
