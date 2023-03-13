@@ -137,6 +137,14 @@ public:
 
 			// optimization to adjust rsp only once can be done if no registers need to be popped
 			if(nregs_pushed_on_stack==0){
+				// stack is: <base>,vars,args,
+				if(restore_rsp_to_base){
+					indent(os,indent_level);os<<"add rsp,"<<((nargs_on_stack+nvars_on_stack)<<3)<<endl;
+					// stack is: <base>,
+				}else{
+					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
+					// stack is: <base>,vars,
+				}
 				// free named registers
 				if(alloc_regs.size()!=0){
 					const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_reg_idx();
@@ -151,15 +159,6 @@ public:
 							break;
 						i--;
 					}
-				}
-
-				// stack is: <base>,vars,regs,arguments,
-				if(restore_rsp_to_base){
-					indent(os,indent_level);os<<"add rsp,"<<((nargs_on_stack+nvars_on_stack)<<3)<<endl;
-					// stack is: <base>,
-				}else{
-					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
-					// stack is: <base>,vars,
 				}
 			}else{
 				// stack is: <base>,vars,regs,args,
@@ -187,7 +186,6 @@ public:
 					i--;
 				}
 				// stack is: <base>,vars,
-
 				if(restore_rsp_to_base){
 					// this was not a call within the arguments of another call
 					// stack is: <base>,vars,
