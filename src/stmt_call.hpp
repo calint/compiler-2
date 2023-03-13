@@ -55,9 +55,9 @@ public:
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
 
 		if(!f.is_inline()){
-			const size_t nvars_on_stack{tc.get_current_stack_size()};
 			// stack is: <base>,
 
+			const size_t nvars_on_stack{tc.get_current_stack_size()};
 			const size_t alloc_regs_idx_cur_call_ctx=tc.get_func_call_alloc_reg_idx();
 			if(tc.enter_func_call()){
 				// this call is not nested within another call's arguments
