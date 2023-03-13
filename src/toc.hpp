@@ -3,6 +3,7 @@
 #include<cassert>
 #include<sstream>
 #include<regex>
+#include<set>
 
 #include"lut.hpp"
 #include"compiler_error.hpp"
@@ -311,8 +312,7 @@ public:
 		assert(allocated_registers_.back()==reg);
 		allocated_registers_.pop_back();
 		named_registers_.push_back(reg);
-//		auto r=find(allocated_registers_.begin(),allocated_registers_.end(),reg);
-//		allocated_registers_.erase(r);
+		initiated_registers_.erase(reg);
 	}
 
 	inline void free_scratch_register(const string&reg,ostream&os,const size_t indent_level){
@@ -320,8 +320,7 @@ public:
 		assert(allocated_registers_.back()==reg);
 		allocated_registers_.pop_back();
 		scratch_registers_.push_back(reg);
-//		auto r=find(allocated_registers_.begin(),allocated_registers_.end(),reg);
-//		allocated_registers_.erase(r);
+		initiated_registers_.erase(reg);
 	}
 
 	inline const string&get_loop_label_or_break(const statement&st)const{
@@ -430,8 +429,13 @@ public:
 	inline const vector<string>&get_allocated_registers()const{return allocated_registers_;}
 
 	inline void asm_cmd(const statement&st,ostream&os,const size_t indent_level,const string&op,const string&dest_resolved,const string&src_resolved){
-		if(op=="mov" && dest_resolved==src_resolved){
-			return;
+		if(op=="mov"){
+			if(dest_resolved==src_resolved)
+				return;
+
+			if(is_identifier_register(dest_resolved)){
+				initiated_registers_.insert(dest_resolved);
+			}
 		}
 		// check if both source and destination are memory operations
 		if(dest_resolved.find_first_of('[')!=string::npos and src_resolved.find_first_of('[')!=string::npos){
@@ -444,6 +448,9 @@ public:
 		statement::indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<src_resolved<<endl;
 	}
 
+	inline bool is_register_initiated(const string&reg)const{
+		return initiated_registers_.contains(reg);
+	}
 private:
 	inline const string resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident)const{
 		string id=ident;
@@ -543,4 +550,5 @@ private:
 	lut<const stmt_def_func*>funcs_;
 	lut<const stmt_def_table*>tables_;
 	vector<size_t>call_allocated_regs_idx_;
+	set<string>initiated_registers_;
 };

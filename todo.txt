@@ -1,8 +1,4 @@
-[x] all allocated registers pushed before a call not necessary
-[ ]   review
-[ ] when calling non-inlined functions the allocated register is pushed and popped
-    although it hasn't been assigned. keep track of that in toc and optimize away
-    the push/pop
+[ ] review stmt_call
 [ ] character type
 [ ] string type
 [ ] var str="hello world"
@@ -35,6 +31,10 @@
 [ ] clang-format everything for less dess code?
 [ ] compile for pczero task
 -------------------------------------------------------------------------------
+[x] when calling non-inlined functions the allocated register is pushed and popped
+    although it hasn't been assigned. keep track of that in toc and optimize away
+    the push/pop
+[x] all allocated registers pushed before a call not necessary
 [x] registers get clobbered in non-inlined functions
 [x] rax gets clobbered in recursive functions
 [x] non-inlined function calls

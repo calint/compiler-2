@@ -113,12 +113,10 @@ main:
 ;    [26:12] a(b(z+c(1)+c(x+y)))
      sub rsp,24
      push rbx
-     push r15
 ;    alloc r14
 ;      [26:14] b(z+c(1)+c(x+y))
 ;      [26:14] r14=b(z+c(1)+c(x+y))
 ;      [26:14] b(z+c(1)+c(x+y))
-       push r14
 ;      alloc r13
 ;        [26:16] z+c(1)+c(x+y)
 ;        [26:16] r13=z
@@ -127,11 +125,9 @@ main:
 ;        alloc r12
 ;        [26:18] c(1)
          push r13
-         push r12
          push 1
          call c
          add rsp,8
-         pop r12
          pop r13
          mov r12,rax
          add r13,r12
@@ -140,7 +136,6 @@ main:
 ;        alloc r12
 ;        [26:23] c(x+y)
          push r13
-         push r12
 ;        alloc r11
 ;          [26:25] x+y
 ;          [26:25] r11=x
@@ -151,7 +146,6 @@ main:
 ;        free r11
          call c
          add rsp,8
-         pop r12
          pop r13
          mov r12,rax
          add r13,r12
@@ -160,13 +154,11 @@ main:
 ;      free r13
        call b
        add rsp,8
-       pop r14
        mov r14,rax
      push r14
 ;    free r14
      call a
      add rsp,8
-     pop r15
      pop rbx
      add rsp,24
      mov r15,rax

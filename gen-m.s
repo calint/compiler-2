@@ -51,38 +51,30 @@ main:
      mov rbx,1
      sub rsp,24
      push rbx
-     push r15
-       push r14
          mov r13,qword[rbp-24]
          push r13
-         push r12
          push 1
          call c
          add rsp,8
-         pop r12
          pop r13
          mov r12,rax
          add r13,r12
          push r13
-         push r12
            mov r11,qword[rbp-8]
            add r11,qword[rbp-16]
          push r11
          call c
          add rsp,8
-         pop r12
          pop r13
          mov r12,rax
          add r13,r12
        push r13
        call b
        add rsp,8
-       pop r14
        mov r14,rax
      push r14
      call a
      add rsp,8
-     pop r15
      pop rbx
      add rsp,24
      mov r15,rax

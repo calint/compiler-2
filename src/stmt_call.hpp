@@ -74,7 +74,10 @@ public:
 			const size_t n=alloc_regs.size();
 			for(size_t i=alloc_regs_idx_cur_call_ctx;i<n;i++){
 				const string&reg=alloc_regs[i];
-				indent(os,indent_level);os<<"push "<<reg<<endl;
+				if(tc.is_register_initiated(reg)){
+					// push only registers that contain a valid value
+					indent(os,indent_level);os<<"push "<<reg<<endl;
+				}
 			}
 
 			// stack is now: <base>,.. vars ..,... allocated regs ...,
@@ -144,7 +147,10 @@ public:
 					const string&reg=alloc_regs[i];
 					// don't pop registers used to pass arguments
 					if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
-						indent(os,indent_level);os<<"pop "<<reg<<endl;
+						if(tc.is_register_initiated(reg)){
+							// pop only registers that contained a valid value
+							indent(os,indent_level);os<<"pop "<<reg<<endl;
+						}
 					}else{
 						tc.free_named_register(reg,os,indent_level);
 					}
