@@ -9,6 +9,7 @@
 [ ] op shift left and right
 [ ] implement division op
 [ ] bool type
+[ ] inlined function call: if a named register is not available: push/pop?
 [ ] short-hand boolean expression i.e. if a or b
 [ ] fix 'cmp' two constants case
 [ ] toc.allocate_named_register_or_break: if allocated then tell where

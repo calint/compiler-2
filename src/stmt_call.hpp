@@ -87,8 +87,8 @@ public:
 			// push arguments starting with the last
 			//   some arguments might be passed through registers
 			vector<string>allocated_args_registers;
-			size_t nargs_on_stack{0};
-			size_t nargs{args_.size()};
+			size_t nargs_on_stack=0;
+			size_t nargs=args_.size();
 			while(nargs--){
 				const statement&arg=*args_[nargs];
 				const stmt_def_func_param&param=f.param(nargs);
@@ -130,7 +130,7 @@ public:
 				}
 			}
 
-			// stack is: <base>,..vars..,...allocated regs...,[arg n],[arg n-1],...,[arg 1],
+			// stack is: <base>,vars,regs,arguments,
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
 
 			const bool restore_rsp_to_base=tc.exit_func_call();
@@ -153,22 +153,22 @@ public:
 					}
 				}
 
-				// stack is: <base>,..vars..,[arg n],[arg n-1],...,[arg 1],
+				// stack is: <base>,vars,regs,arguments,
 				if(restore_rsp_to_base){
 					indent(os,indent_level);os<<"add rsp,"<<((nargs_on_stack+nvars_on_stack)<<3)<<endl;
 					// stack is: <base>,
 				}else{
 					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
-					// stack is: <base>,..vars..,
+					// stack is: <base>,vars,
 				}
 			}else{
-				// stack is: <base>,..vars..,...allocated regs...,[arg n],[arg n-1],...,[arg 1],
+				// stack is: <base>,vars,regs,args,
 				if(nargs_on_stack){
 					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
 				}
-				// stack is: <base>,..vars..,...allocated regs...,
+				// stack is: <base>,vars,regs,
 
-				// pop register pushed prior to this call
+				// pop registers pushed prior to this call
 				const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_reg_idx();
 				size_t i=alloc_regs.size()-1;
 				while(true){
@@ -186,11 +186,11 @@ public:
 						break;
 					i--;
 				}
-				// stack is: <base>,..vars..,
+				// stack is: <base>,vars,
 
 				if(restore_rsp_to_base){
 					// this was not a call within the arguments of another call
-					// stack is: <base>,..vars..,
+					// stack is: <base>,vars,
 					if(nvars_on_stack){
 						indent(os,indent_level);os<<"add rsp,"<<(nvars_on_stack<<3)<<endl;
 					}
