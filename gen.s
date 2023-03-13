@@ -16,6 +16,77 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
+a:
+;  i: rsp+16
+   push rbp
+   mov rbp,rsp
+;  [8:5] res=i+1 
+;  alloc r15
+;  [8:9] i+1 
+;  [8:9] r15=i
+   mov r15,qword[rbp+16]
+;  [8:11] r15+1 
+   add r15,1
+   mov qword[rbp-8],r15
+;  free r15
+   mov rax,qword[rbp-8]
+   pop rbp
+   ret
+
+b:
+;  i: rsp+16
+   push rbp
+   mov rbp,rsp
+;  [12:5] res=i+2 
+;  alloc r15
+;  [12:9] i+2 
+;  [12:9] r15=i
+   mov r15,qword[rbp+16]
+;  [12:11] r15+2 
+   add r15,2
+   mov qword[rbp-8],r15
+;  free r15
+   mov rax,qword[rbp-8]
+   pop rbp
+   ret
+
+c:
+;  i: rsp+16
+   push rbp
+   mov rbp,rsp
+;  [16:5] var a=1 
+;  [16:9] a=1 
+;  [16:11] 1 
+;  [16:11] a=1 
+   mov qword[rbp-16],1
+;  [17:5] var b=2 
+;  [17:9] b=2 
+;  [17:11] 2 
+;  [17:11] b=2 
+   mov qword[rbp-24],2
+;  [18:5] var c=a+b 
+;  [18:9] c=a+b 
+;  alloc r15
+;  [18:11] a+b 
+;  [18:11] r15=a
+   mov r15,qword[rbp-16]
+;  [18:13] r15+b 
+   add r15,qword[rbp-24]
+   mov qword[rbp-32],r15
+;  free r15
+;  [19:5] res=i+c 
+;  alloc r15
+;  [19:9] i+c 
+;  [19:9] r15=i
+   mov r15,qword[rbp+16]
+;  [19:11] r15+c 
+   add r15,qword[rbp-32]
+   mov qword[rbp-8],r15
+;  free r15
+   mov rax,qword[rbp-8]
+   pop rbp
+   ret
+
 main:
 ;  [23:5] var x=1 
 ;  [23:9] x=1 
@@ -38,6 +109,7 @@ main:
 ;    [27:10] a(b(c(1)))
 ;    [27:10] rbx=a(b(c(1)))
 ;    [27:10] a(b(c(1)))
+     sub rsp,24
 ;    alloc r15
 ;      [27:12] b(c(1))
 ;      [27:12] r15=b(c(1))
@@ -46,52 +118,20 @@ main:
 ;        [27:14] c(1)
 ;        [27:14] r14=c(1)
 ;        [27:14] c(1)
-;          inline: 27_14
-;          [16:5] var a=1 
-;          [16:9] a=1 
-;          [16:11] 1 
-;          [16:11] a=1 
-           mov qword[rbp-32],1
-;          [17:5] var b=2 
-;          [17:9] b=2 
-;          [17:11] 2 
-;          [17:11] b=2 
-           mov qword[rbp-40],2
-;          [18:5] var c=a+b 
-;          [18:9] c=a+b 
-;          alloc r13
-;          [18:11] a+b 
-;          [18:11] r13=a
-           mov r13,qword[rbp-32]
-;          [18:13] r13+b 
-           add r13,qword[rbp-40]
-           mov qword[rbp-48],r13
-;          free r13
-;          [19:5] res=i+c 
-;          [19:9] i+c 
-;          [19:9] res=i
-           mov r14,1
-;          [19:11] res+c 
-           add r14,qword[rbp-48]
-         c_27_14_end:
-;        inline: 27_12
-;        [12:5] res=i+2 
-;        [12:9] i+2 
-;        [12:9] res=i
-         mov r15,r14
-;        [12:11] res+2 
-         add r15,2
-       b_27_12_end:
+         push 1
+         call c
+         add rsp,8
+         mov r14,rax
+       push r14
 ;      free r14
-;      inline: 27_10
-;      [8:5] res=i+1 
-;      [8:9] i+1 
-;      [8:9] res=i
-       mov rbx,r15
-;      [8:11] res+1 
-       add rbx,1
-     a_27_10_end:
+       call b
+       add rsp,8
+       mov r15,rax
+     push r15
 ;    free r15
+     call a
+     add rsp,32
+     mov rbx,rax
 ;    inline: 27_5
 ;    [2:5] mov(rbx,v)
 ;    [3:5] mov(rax,1)
@@ -101,5 +141,5 @@ main:
    exit_27_5_end:
 ;  free rbx
 
-; max scratch registers in use: 3
+; max scratch registers in use: 2
 ;            max frames in use: 4

@@ -4,15 +4,15 @@ func inline exit(v:reg_rbx){
     int(0x80)
 }
 
-func inline a(i):res{
+func a(i):res{
     res=i+1
 }
 
-func inline b(i):res{
+func b(i):res{
     res=i+2
 }
 
-func inline c(i):res{
+func c(i):res{
     var a=1
     var b=2
     var c=a+b

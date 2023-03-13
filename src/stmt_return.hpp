@@ -16,8 +16,9 @@ public:
 				const string&src_resolved=tc.resolve_ident_to_nasm(*this,ret_var);
 				tc.asm_cmd(*this,os,indent_level,"mov","rax",src_resolved);
 			}
-			tc.asm_pop(*this,os,indent_level,"rbp");
-//			indent(os,indent_level);os<<"pop rbp\n";
+//			tc.asm_pop(*this,os,indent_level,"rbp");
+			// cannot use tc.asm_pop because the stmt_def_func does that at the end of function code
+			toc::indent(os,indent_level);os<<"pop rbp\n";
 			toc::indent(os,indent_level);os<<"ret\n";
 			return;
 		}

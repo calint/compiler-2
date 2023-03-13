@@ -236,6 +236,9 @@ public:
 		frame&f=frames_.back();
 		assert(f.is_func() and f.is_name(name));
 		frames_.pop_back();
+
+		// cannot assert because of inline functions
+//		assert(pushed_regs_.empty());
 	}
 
 	inline void pop_loop(const string&name){
