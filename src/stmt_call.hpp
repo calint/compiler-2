@@ -58,7 +58,9 @@ public:
 			// stack is: <base>,
 
 			const size_t nvars_on_stack{tc.get_current_stack_size()};
-			const size_t alloc_regs_idx_cur_call_ctx=tc.get_func_call_alloc_reg_idx();
+			// the registers that have been allocated but not pushed on the stack
+			//   prior to call (that might clobber them)
+			const size_t alloc_regs_idx=tc.get_func_call_alloc_regs_idx();
 			if(tc.enter_func_call()){
 				// this call is not nested within another call's arguments
 				// adjust stack past the vars
@@ -73,7 +75,7 @@ public:
 			const vector<string>&alloc_regs=tc.get_allocated_registers();
 			const size_t n=alloc_regs.size();
 			size_t nregs_pushed_on_stack=0;
-			for(size_t i=alloc_regs_idx_cur_call_ctx;i<n;i++){
+			for(size_t i=alloc_regs_idx;i<n;i++){
 				const string&reg=alloc_regs[i];
 				if(tc.is_register_initiated(reg)){
 					// push only registers that contain a valid value
@@ -147,7 +149,7 @@ public:
 				}
 				// free named registers
 				if(alloc_regs.size()!=0){
-					const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_reg_idx();
+					const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_regs_idx();
 					size_t i=alloc_regs.size()-1;
 					while(true){
 						const string&reg=alloc_regs[i];
@@ -168,22 +170,24 @@ public:
 				// stack is: <base>,vars,regs,
 
 				// pop registers pushed prior to this call
-				const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_reg_idx();
-				size_t i=alloc_regs.size()-1;
-				while(true){
-					const string&reg=alloc_regs[i];
-					// don't pop registers used to pass arguments
-					if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
-						if(tc.is_register_initiated(reg)){
-							// pop only registers that were pushed
-							indent(os,indent_level);os<<"pop "<<reg<<endl;
+				if(alloc_regs.size()){
+					size_t i=alloc_regs.size()-1; // ? might be unsafe since
+					const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_regs_idx();
+					while(true){
+						const string&reg=alloc_regs[i];
+						// don't pop registers used to pass arguments
+						if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
+							if(tc.is_register_initiated(reg)){
+								// pop only registers that were pushed
+								indent(os,indent_level);os<<"pop "<<reg<<endl;
+							}
+						}else{
+							tc.free_named_register(reg,os,indent_level);
 						}
-					}else{
-						tc.free_named_register(reg,os,indent_level);
+						if(i==alloc_regs_pop_idx)
+							break;
+						i--;
 					}
-					if(i==alloc_regs_pop_idx)
-						break;
-					i--;
 				}
 				// stack is: <base>,vars,
 				if(restore_rsp_to_base){
