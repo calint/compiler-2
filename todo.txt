@@ -1,3 +1,6 @@
+[ ] stmt_call: enable nested use of named registers
+[ ]   non-inlined
+[ ]   inlined
 [ ] review stmt_call
 [ ] character type
 [ ] string type

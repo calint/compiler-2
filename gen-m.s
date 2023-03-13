@@ -12,55 +12,24 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
-a:
-   push rbp
-   mov rbp,rsp
-   mov r15,qword[rbp+16]
-   add r15,1
-   mov qword[rbp-8],r15
-   mov rax,qword[rbp-8]
-   pop rbp
-   ret
-b:
-   push rbp
-   mov rbp,rsp
-   mov r15,qword[rbp+16]
-   add r15,2
-   mov qword[rbp-8],r15
-   mov rax,qword[rbp-8]
-   pop rbp
-   ret
-c:
-   push rbp
-   mov rbp,rsp
-   mov qword[rbp-16],1
-   mov qword[rbp-24],2
-   mov r15,qword[rbp-16]
-   add r15,qword[rbp-24]
-   mov qword[rbp-32],r15
-   mov r15,qword[rbp+16]
-   add r15,qword[rbp-32]
-   mov qword[rbp-8],r15
-   mov rax,qword[rbp-8]
-   pop rbp
-   ret
 main:
    mov qword[rbp-8],1
    mov qword[rbp-16],2
    mov qword[rbp-24],3
-     sub rsp,24
-         push 1
-         call c
-         add rsp,8
-         mov r14,rax
-       push r14
-       call b
-       add rsp,8
-       mov r15,rax
-     push r15
-     call a
-     add rsp,32
-     mov rbx,rax
+           mov qword[rbp-32],1
+           mov qword[rbp-40],2
+           mov r13,qword[rbp-32]
+           add r13,qword[rbp-40]
+           mov qword[rbp-48],r13
+           mov r14,1
+           add r14,qword[rbp-48]
+         c_27_14_end:
+         mov r15,r14
+         add r15,2
+       b_27_12_end:
+       mov rbx,r15
+       add rbx,1
+     a_27_10_end:
      mov rax,1
      int 0x80
    exit_27_5_end:

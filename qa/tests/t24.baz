@@ -23,6 +23,5 @@ func inline main{
     var x=1
     var y=2
     var z=3
-#    exit(1+a(b(z+c(1)+c(x+y))))
     exit(a(b(c(1))))
 }
