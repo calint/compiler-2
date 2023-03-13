@@ -21,7 +21,8 @@ public:
 		tc.push_loop(lbl);
 		code_.compile(tc,os,indent_level);
 		// jump to loop
-		toc::indent(os,indent_level);os<<"jmp "<<lbl<<endl;
+		tc.asm_jmp(*this,os,indent_level,lbl);
+//		toc::indent(os,indent_level);os<<"jmp "<<lbl<<endl;
 		// exit loop label
 		toc::indent(os,indent_level);os<<lbl<<"_end:"<<endl;
 		// exit loop scope

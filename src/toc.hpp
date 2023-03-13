@@ -459,6 +459,14 @@ public:
 		indent(os,indent_level);os<<"pop "<<reg<<endl;
 	}
 
+	inline void asm_ret(const statement&st,ostream&os,const size_t indent_level){
+		indent(os,indent_level);os<<"ret\n";
+	}
+
+	inline void asm_jmp(const statement&st,ostream&os,const size_t indent_level,const string&label){
+		indent(os,indent_level);os<<"jmp "<<label<<endl;
+	}
+
 	inline bool is_register_initiated(const string&reg)const{
 		return initiated_registers_.contains(reg);
 	}

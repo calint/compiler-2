@@ -43,7 +43,8 @@ public:
 		//   if label not provided then there is no 'else' and this is the last 'if'
 		//   so just continue execution
 		if(!jmp_to_after_code_label.empty()){
-			toc::indent(os,indent_level+1);os<<"jmp "<<jmp_to_after_code_label<<endl;
+			tc.asm_jmp(*this,os,indent_level,jmp_to_after_code_label);
+//			toc::indent(os,indent_level+1);os<<"jmp "<<jmp_to_after_code_label<<endl;
 		}
 	}
 

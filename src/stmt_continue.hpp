@@ -11,6 +11,7 @@ public:
 		// get current loop label
 		const string&loop_label=tc.get_loop_label_or_break(*this);
 		// jump to it
-		toc::indent(os,indent_level);os<<"jmp "<<loop_label<<"\n";
+		tc.asm_jmp(*this,os,indent_level,loop_label);
+//		toc::indent(os,indent_level);os<<"jmp "<<loop_label<<"\n";
 	}
 };
