@@ -137,7 +137,8 @@ public:
 
 			// if this call is not withing the arguments of a previous call
 			const bool restore_rsp_to_base=tc.exit_func_call();
-			// optimization to adjust rsp only once can be done if no registers need to be popped
+			// optimization can be done if no registers need to be popped
+			//   rsp is adjusted once
 			if(nregs_pushed_on_stack==0){
 				// stack is: <base>,vars,args,
 				if(restore_rsp_to_base){
