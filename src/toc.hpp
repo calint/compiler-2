@@ -448,9 +448,18 @@ public:
 		statement::indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<src_resolved<<endl;
 	}
 
+	inline void asm_push(const statement&st,ostream&os,const size_t indent_level,const string&reg){
+		statement::indent(os,indent_level);os<<"push "<<reg<<endl;
+	}
+
+	inline void asm_pop(const statement&st,ostream&os,const size_t indent_level,const string&reg){
+		statement::indent(os,indent_level);os<<"pop "<<reg<<endl;
+	}
+
 	inline bool is_register_initiated(const string&reg)const{
 		return initiated_registers_.contains(reg);
 	}
+
 private:
 	inline const string resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident)const{
 		string id=ident;

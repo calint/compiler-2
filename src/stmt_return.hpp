@@ -16,7 +16,8 @@ public:
 				const string&src_resolved=tc.resolve_ident_to_nasm(*this,ret_var);
 				tc.asm_cmd(*this,os,indent_level,"mov","rax",src_resolved);
 			}
-			indent(os,indent_level);os<<"pop rbp\n";
+			tc.asm_pop(*this,os,indent_level,"rbp");
+//			indent(os,indent_level);os<<"pop rbp\n";
 			indent(os,indent_level);os<<"ret\n";
 			return;
 		}

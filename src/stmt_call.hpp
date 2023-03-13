@@ -79,7 +79,8 @@ public:
 				const string&reg=alloc_regs[i];
 				if(tc.is_register_initiated(reg)){
 					// push only registers that contain a valid value
-					indent(os,indent_level);os<<"push "<<reg<<endl;
+					tc.asm_push(*this,os,indent_level,reg);
+//					indent(os,indent_level);os<<"push "<<reg<<endl;
 					nregs_pushed_on_stack++;
 				}
 			}
@@ -109,7 +110,8 @@ public:
 						// compile expression with the result stored in sr
 						arg.compile(tc,os,indent_level+1,sr);
 						// argument is passed to function through the stack
-						indent(os,indent_level);os<<"push "<<sr<<endl;
+						tc.asm_push(arg,os,indent_level,sr);
+//						indent(os,indent_level);os<<"push "<<sr<<endl;
 						// free scratch register
 						tc.free_scratch_register(sr,os,indent_level);
 						// keep track of how many arguments are on the stack
@@ -127,7 +129,8 @@ public:
 					tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,id);
 				}else{
 					// push identifier on the stack
-					indent(os,indent_level);os<<"push "<<id<<endl;
+					tc.asm_push(arg,os,indent_level,id);
+//					indent(os,indent_level);os<<"push "<<id<<endl;
 					nargs_on_stack++;
 				}
 			}
@@ -186,7 +189,8 @@ public:
 						if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
 							if(tc.is_register_initiated(reg)){
 								// pop only registers that were pushed
-								indent(os,indent_level);os<<"pop "<<reg<<endl;
+								tc.asm_pop(*this,os,indent_level,reg);
+//								indent(os,indent_level);os<<"pop "<<reg<<endl;
 							}
 						}else{
 							tc.free_named_register(reg,os,indent_level);

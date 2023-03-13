@@ -112,7 +112,8 @@ public:
 			const string&ret_name_resolved=tc.resolve_ident_to_nasm(*this,ret_name);
 			tc.asm_cmd(*this,os,indent_level+1,"mov","rax",ret_name_resolved);
 		}
-		indent(os,indent_level+1);os<<"pop rbp\n";
+		tc.asm_pop(*this,os,indent_level+1,"rbp");
+//		indent(os,indent_level+1);os<<"pop rbp\n";
 		indent(os,indent_level+1);os<<"ret\n";
 		os<<endl;
 		tc.pop_func(name());
