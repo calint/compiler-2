@@ -72,11 +72,13 @@ public:
 			// push allocated registers in this call context on the stack
 			const vector<string>&alloc_regs=tc.get_allocated_registers();
 			const size_t n=alloc_regs.size();
+			size_t nregs_pushed_on_stack=0;
 			for(size_t i=alloc_regs_idx_cur_call_ctx;i<n;i++){
 				const string&reg=alloc_regs[i];
 				if(tc.is_register_initiated(reg)){
 					// push only registers that contain a valid value
 					indent(os,indent_level);os<<"push "<<reg<<endl;
+					nregs_pushed_on_stack++;
 				}
 			}
 
@@ -131,16 +133,42 @@ public:
 			// stack is: <base>,..vars..,...allocated regs...,[arg n],[arg n-1],...,[arg 1],
 			indent(os,indent_level);os<<"call "<<f.name()<<endl;
 
-			// stack is: <base>,..vars..,...allocated regs...,[arg n],[arg n-1],...,[arg 1],
-			if(nargs_on_stack){
-				indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
-			}
-			// stack is: <base>,..vars..,...allocated regs...,
-
 			const bool restore_rsp_to_base=tc.exit_func_call();
 
-			// pop register pushed prior to this call
-			if(alloc_regs.size()){
+			// optimization to adjust rsp only once can be done if no registers need to be popped
+			if(nregs_pushed_on_stack==0){
+				// free named registers
+				if(alloc_regs.size()!=0){
+					const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_reg_idx();
+					size_t i=alloc_regs.size()-1;
+					while(true){
+						const string&reg=alloc_regs[i];
+						// don't pop registers used to pass arguments
+						if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)!=allocated_args_registers.end()){
+							tc.free_named_register(reg,os,indent_level);
+						}
+						if(i==alloc_regs_pop_idx)
+							break;
+						i--;
+					}
+				}
+
+				// stack is: <base>,..vars..,[arg n],[arg n-1],...,[arg 1],
+				if(restore_rsp_to_base){
+					indent(os,indent_level);os<<"add rsp,"<<((nargs_on_stack+nvars_on_stack)<<3)<<endl;
+					// stack is: <base>,
+				}else{
+					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
+					// stack is: <base>,..vars..,
+				}
+			}else{
+				// stack is: <base>,..vars..,...allocated regs...,[arg n],[arg n-1],...,[arg 1],
+				if(nargs_on_stack){
+					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
+				}
+				// stack is: <base>,..vars..,...allocated regs...,
+
+				// pop register pushed prior to this call
 				const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_reg_idx();
 				size_t i=alloc_regs.size()-1;
 				while(true){
@@ -148,7 +176,7 @@ public:
 					// don't pop registers used to pass arguments
 					if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
 						if(tc.is_register_initiated(reg)){
-							// pop only registers that contained a valid value
+							// pop only registers that were pushed
 							indent(os,indent_level);os<<"pop "<<reg<<endl;
 						}
 					}else{
@@ -158,18 +186,19 @@ public:
 						break;
 					i--;
 				}
-			}
-			// stack is: <base>,..vars..,
-
-			if(restore_rsp_to_base){
-				// this was not a call within the arguments of another call
 				// stack is: <base>,..vars..,
-				if(nvars_on_stack){
-					indent(os,indent_level);os<<"add rsp,"<<(nvars_on_stack<<3)<<endl;
+
+				if(restore_rsp_to_base){
+					// this was not a call within the arguments of another call
+					// stack is: <base>,..vars..,
+					if(nvars_on_stack){
+						indent(os,indent_level);os<<"add rsp,"<<(nvars_on_stack<<3)<<endl;
+					}
+					// stack is: <base>,
 				}
-				// stack is: <base>,
 			}
 
+			// handle return value
 			if(not dest_ident.empty()){
 				// function returns value in rax, copy return value to dest_ident
 				const string&dest_resolved=tc.resolve_ident_to_nasm(*this,dest_ident);
