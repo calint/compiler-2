@@ -412,13 +412,13 @@ public:
 		return find(all_registers_.begin(),all_registers_.end(),id)!=all_registers_.end();
 	}
 
-	inline bool enter_func_call(){
+	inline bool call_enter(){
 		const bool b=call_allocated_regs_idx_.empty();
 		call_allocated_regs_idx_.push_back(allocated_registers_.size());
 		return b;
 	}
 
-	inline bool exit_func_call(){
+	inline bool call_exit(){
 		call_allocated_regs_idx_.pop_back();
 		return call_allocated_regs_idx_.empty();
 	}

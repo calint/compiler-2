@@ -62,7 +62,7 @@ public:
 			//   on the stack prior to this call
 			//     the call might clobber them
 			const size_t alloc_regs_idx=tc.get_func_call_alloc_regs_idx();
-			if(tc.enter_func_call()){
+			if(tc.call_enter()){
 				// this call is not nested within another call's arguments
 				if(nvars_on_stack){
 					// adjust stack past the allocated vars
@@ -139,7 +139,7 @@ public:
 			toc::indent(os,indent_level);os<<"call "<<f.name()<<endl;
 
 			// if this call is not withing the arguments of a previous call
-			const bool restore_rsp_to_base=tc.exit_func_call();
+			const bool restore_rsp_to_base=tc.call_exit();
 			// optimization can be done if no registers need to be popped
 			//   rsp is adjusted once
 			if(nregs_pushed_on_stack==0){
