@@ -153,8 +153,6 @@ public:
 		return expressions_[0]->identifier();
 	}
 
-	inline bool alloc_register()const{return!ops_.empty();}
-
 	inline bool is_empty()const override{return expressions_.empty();}
 
 private:
