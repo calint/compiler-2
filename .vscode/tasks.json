@@ -4,7 +4,7 @@
 		{
 			"type": "cppbuild",
 			"label": "build baz",
-			"command": "/usr/bin/clang++-15",
+			"command": "/usr/bin/clang++",
 			"args": [
 				"-std=c++2a",
 				"-fcolor-diagnostics",
@@ -36,7 +36,7 @@
 				"kind": "build",
 				"isDefault": true
 			},
-			"detail": "compiler: /usr/bin/clang++-15"
+			"detail": "compiler: /usr/bin/clang++"
 		}
 	]
 }
