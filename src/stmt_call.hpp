@@ -146,12 +146,10 @@ public:
 				if(restore_rsp_to_base){
 					const string&offset=to_string((nargs_on_stack+nvars_on_stack)<<3);
 					tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
-//					indent(os,indent_level);os<<"add rsp,"<<((nargs_on_stack+nvars_on_stack)<<3)<<endl;
 					// stack is: <base>,
 				}else{
 					const string&offset=to_string(nargs_on_stack<<3);
 					tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
-//					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
 					// stack is: <base>,vars,
 				}
 				// free named registers
@@ -174,7 +172,6 @@ public:
 				if(nargs_on_stack){
 					const string&offset=to_string(nargs_on_stack<<3);
 					tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
-//					indent(os,indent_level);os<<"add rsp,"<<(nargs_on_stack<<3)<<endl;
 				}
 				// stack is: <base>,vars,regs,
 
@@ -189,7 +186,6 @@ public:
 							if(tc.is_register_initiated(reg)){
 								// pop only registers that were pushed
 								tc.asm_pop(*this,os,indent_level,reg);
-//								indent(os,indent_level);os<<"pop "<<reg<<endl;
 							}
 						}else{
 							tc.free_named_register(reg,os,indent_level);
@@ -207,7 +203,6 @@ public:
 					if(nvars_on_stack){
 						const string&offset=to_string(nvars_on_stack<<3);
 						tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
-//						indent(os,indent_level);os<<"add rsp,"<<(nvars_on_stack<<3)<<endl;
 					}
 					// stack is: <base>,
 				}
