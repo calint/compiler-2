@@ -423,7 +423,7 @@ public:
 		return call_allocated_regs_idx_.empty();
 	}
 
-	inline size_t get_func_call_alloc_regs_idx()const{
+	inline size_t get_call_alloc_regs_idx()const{
 		if(call_allocated_regs_idx_.size())
 			return call_allocated_regs_idx_.back();
 		return 0;

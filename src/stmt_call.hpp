@@ -59,9 +59,8 @@ public:
 
 			const size_t nvars_on_stack{tc.get_current_stack_size()};
 			// index in the allocated registers that have been allocated but not pushed
-			//   on the stack prior to this call
-			//     the call might clobber them
-			const size_t alloc_regs_idx=tc.get_func_call_alloc_regs_idx();
+			// prior to this call (that might clobber them)
+			const size_t alloc_regs_idx=tc.get_call_alloc_regs_idx();
 			if(tc.call_enter()){
 				// this call is not nested within another call's arguments
 				if(nvars_on_stack){
@@ -157,7 +156,7 @@ public:
 				}
 				// free named registers
 				if(alloc_regs.size()!=0){
-					const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_regs_idx();
+					const size_t alloc_regs_pop_idx=tc.get_call_alloc_regs_idx();
 					size_t i=alloc_regs.size()-1;
 					while(true){
 						const string&reg=alloc_regs[i];
@@ -182,7 +181,7 @@ public:
 				// pop registers pushed prior to this call
 				if(alloc_regs.size()){
 					size_t i=alloc_regs.size()-1;
-					const size_t alloc_regs_pop_idx=tc.get_func_call_alloc_regs_idx();
+					const size_t alloc_regs_pop_idx=tc.get_call_alloc_regs_idx();
 					while(true){
 						const string&reg=alloc_regs[i];
 						// don't pop registers used to pass arguments
