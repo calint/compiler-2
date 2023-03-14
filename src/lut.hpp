@@ -1,7 +1,7 @@
 #pragma once
 
 template<class T>
-class lut{
+class lut final{
 public:
 	inline T get(const string&key)const{
 		if(last_has_el){

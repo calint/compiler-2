@@ -73,7 +73,6 @@ public:
 
 	inline void build(ostream&os){
 		compile(tc_,os,0);
-		link(tc_,os);
 		tc_.finish(tc_,os);
 	}
 

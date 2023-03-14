@@ -112,7 +112,7 @@ private:
 	type type_{type::FUNC}; // frame type
 };
 
-struct field_meta{
+struct field_meta final{
 	const stmt_def_field*def{nullptr};
 	bool is_str{false};
 };
