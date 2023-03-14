@@ -17,15 +17,15 @@ public:
 		// if called in a recursion with a first expression passed
 		if(first_expression){
 			// put in list
-			expressions_.push_back(move(first_expression));
+			exps_.push_back(move(first_expression));
 		}else{
 			// if subexpression
 			if(t.is_next_char('(')){
 				// recurse
-				expressions_.emplace_back(make_unique<expr_ops_list>(*this,t,in_args,true));
+				exps_.emplace_back(make_unique<expr_ops_list>(*this,t,in_args,true));
 			}else{
 				// add first expression
-				expressions_.emplace_back(create_statement_from_tokenizer(*this,t));
+				exps_.emplace_back(create_statement_from_tokenizer(*this,t));
 			}
 		}
 
@@ -80,9 +80,9 @@ public:
 					const int first_op_prec=precedence_for_op(ops_.back());
 					ops_.pop_back();
 					const char lst_op=ops_.back();
-					unique_ptr<statement>prev=move(expressions_.back());
-					expressions_.pop_back();
-					expressions_.emplace_back(make_unique<expr_ops_list>(*this,t,in_args,false,lst_op,first_op_prec,move(prev)));
+					unique_ptr<statement>prev=move(exps_.back());
+					exps_.pop_back();
+					exps_.emplace_back(make_unique<expr_ops_list>(*this,t,in_args,false,lst_op,first_op_prec,move(prev)));
 					continue;
 				}
 			}else{
@@ -91,7 +91,7 @@ public:
 			}
 
 			if(t.is_next_char('(')){
-				expressions_.emplace_back(make_unique<expr_ops_list>(*this,t,in_args,true));
+				exps_.emplace_back(make_unique<expr_ops_list>(*this,t,in_args,true));
 				continue;
 			}
 
@@ -99,7 +99,7 @@ public:
 			if(stmt->tok().is_blank())
 				throw compiler_error(*stmt,"unexpected '"+string{t.peek_char()}+"'");
 
-			expressions_.push_back(move(stmt));
+			exps_.push_back(move(stmt));
 		}
 	}
 
@@ -109,12 +109,12 @@ public:
 		if(enclosed_)
 			os<<"(";
 
-		if(not expressions_.empty()){
-			expressions_[0]->source_to(os);
-			const size_t len{expressions_.size()};
+		if(not exps_.empty()){
+			exps_[0]->source_to(os);
+			const size_t len{exps_.size()};
 			for(size_t i{1};i<len;i++){
 				os<<ops_[i-1];
-				expressions_[i]->source_to(os);
+				exps_[i]->source_to(os);
 			}
 		}
 
@@ -125,11 +125,11 @@ public:
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&dest)const override{
 		tc.source_comment(*this,os,indent_level);
 
-		if(expressions_.empty()) // ? can this happen?
+		if(exps_.empty()) // ? can this happen?
 			throw compiler_error(*this,"expressions is empty");
 
 		// first element is assigned to destination
-		const statement&st=*expressions_[0].get();
+		const statement&st=*exps_[0].get();
 		const string dest_resolved=tc.resolve_ident_to_nasm(*this,dest);
 		asm_op(tc,os,indent_level,st,'=',dest,dest_resolved);
 
@@ -137,23 +137,23 @@ public:
 		const size_t len=ops_.size();
 		for(size_t i{0};i<len;i++){
 			const char op=ops_[i];
-			const statement&stm=*expressions_[i+1].get();
+			const statement&stm=*exps_[i+1].get();
 			asm_op(tc,os,indent_level,stm,op,dest,dest_resolved);
 		}
 	}
 
 	inline bool is_expression()const override{
-		if(expressions_.size()==1){
-			return expressions_[0]->is_expression();
+		if(exps_.size()==1){
+			return exps_[0]->is_expression();
 		}
 		return true;
 	}
 
 	inline const string&identifier()const override{
-		return expressions_[0]->identifier();
+		return exps_[0]->identifier();
 	}
 
-	inline bool is_empty()const override{return expressions_.empty();}
+	inline bool is_empty()const override{return exps_.empty();}
 
 private:
 	inline static int precedence_for_op(const char ch){
@@ -231,6 +231,6 @@ private:
 	bool in_args_{false}; // foo(a+b)
 	int precedence_{0}; //
 	char list_op_{0}; // +[...]
-	vector<unique_ptr<statement>>expressions_;
+	vector<unique_ptr<statement>>exps_;
 	vector<char>ops_;
 };
