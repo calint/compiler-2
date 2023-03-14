@@ -4,6 +4,7 @@
 #include<sstream>
 #include<regex>
 #include<unordered_set>
+#include <optional>
 
 #include"lut.hpp"
 #include"compiler_error.hpp"
@@ -551,23 +552,20 @@ private:
 			throw compiler_error(stmt.tok(),"unknown implicit field constant '"+id+"'");
 		}
 
-		// is it decimal number?
-		size_t characters_read{0};
-		stoi(id,&characters_read,10); // return ignored
-		if(characters_read==id.size())
+		char*ep;
+		strtol(id.c_str(),&ep,10); // return ignored
+		if(!*ep)
 			return id;
 
-		// is it hex number?
-		if(!id.find("0x")){
-			stoi(id.substr(2),&characters_read,16); // return ignored
-			if(characters_read==id.size()-2)
+		if(id.find("0x")==0){ // hex
+			strtol(id.c_str()+2,&ep,16); // return ignored
+			if(!*ep)
 				return id;
 		}
 
-		// is it binary number?
-		if(!id.find("0b")){
-			stoi(id.substr(2),&characters_read,2); // return ignored
-			if(characters_read==id.size()-2)
+		if(id.find("0b")==0){ // binary
+			strtol(id.c_str()+2,&ep,2); // return ignored
+			if(!*ep)
 				return id;
 		}
 

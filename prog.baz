@@ -5,11 +5,11 @@ func inline exit(v:reg_rbx){
 }
 
 func a(i):res{
-    res=i+1
+    res=i+0x1
 }
 
 func b(i):res{
-    res=i+2
+    res=i+0b10
 }
 
 func c(i):res{

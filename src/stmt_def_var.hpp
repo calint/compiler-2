@@ -22,6 +22,8 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.source_comment(*this,os,indent_level);
 		tc.add_var(*this,ident_.name());
+		const string&dest_resolved=tc.resolve_ident_to_nasm(*this,ident_.name());
+		tc.indent(os,indent_level+1,true);os<<dest_resolved<<endl;
 		initial_value_.compile(tc,os,indent_level,ident_.name());
 	}
 
