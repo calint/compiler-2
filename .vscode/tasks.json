@@ -37,6 +37,14 @@
 				"isDefault": true
 			},
 			"detail": "compiler: /usr/bin/clang++"
+		},
+		{
+			"label": "test baz",
+			"command": "run-tests.sh",
+			"options": {
+				"cwd": "${workspaceFolder}/qa/tests"
+			},
+			"problemMatcher": []
 		}
 	]
 }
