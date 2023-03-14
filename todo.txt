@@ -1,4 +1,6 @@
 [ ] stmt_call: enable nested use of named registers
+      example: f(x+1,x) where x is argument that was passed through register and the
+      first argument to f is the same register then the second argument is clobbered
 [ ]   non-inlined
 [ ]   inlined
 [ ] review stmt_call
@@ -14,6 +16,15 @@
 [ ] bool type
 [ ] inlined function call: if a named register is not available: push/pop?
 [ ] short-hand boolean expression i.e. if a or b
+[ ] optimize return pattern:
+       mov qword[rbp-8],r15
+       mov rax,qword[rbp-8]
+       pop rbp
+       ret
+    to
+       mov rax,r15
+       pop rbp
+       ret
 [ ] fix 'cmp' two constants case
 [ ] toc.allocate_named_register_or_break: if allocated then tell where
 [ ] toc.add_field: if defined tell where
