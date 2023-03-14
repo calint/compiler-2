@@ -11,9 +11,9 @@ public:
 		expression{parent,t.next_whitespace_token()},
 		enclosed_{enclosed},
 		in_args_{in_args},
-		precedence_{first_op_precedence},
 		list_op_{list_op}
 	{
+		int precedence=first_op_precedence;
 		// if called in a recursion with a first expression passed
 		if(first_expression){
 			// put in list
@@ -69,13 +69,13 @@ public:
 			// if not then a new subexpression is added to the list with the last
 			// expression in this list as first expression
 			const int next_precedence=precedence_for_op(t.peek_char());
-			if(next_precedence>precedence_){
+			if(next_precedence>precedence){
 				// i.e. =a+b*c+1 where the peeked char is '*'
 				// next operation has higher precedence than current
 				// list is now =[(=a)(+b)]
 				// move last expression (+b) to subexpression
 				//   =[(=a) +[(=b)(*c)(+1)]]
-				precedence_=next_precedence;
+				precedence=next_precedence;
 				if(!ops_.empty()){
 					const int first_op_prec=precedence_for_op(ops_.back());
 					ops_.pop_back();
@@ -86,7 +86,7 @@ public:
 					continue;
 				}
 			}else{
-				precedence_=next_precedence;
+				precedence=next_precedence;
 				t.next_char();// read the peeked operator
 			}
 
@@ -229,7 +229,6 @@ private:
 
 	bool enclosed_{false}; //  =(a+b) vs =a+b
 	bool in_args_{false}; // foo(a+b)
-	int precedence_{0}; //
 	char list_op_{0}; // +[...]
 	vector<unique_ptr<statement>>exps_;
 	vector<char>ops_;
