@@ -16,11 +16,10 @@ class stmt_def_table;
 
 class allocated_var final{
 public:
-	inline allocated_var(const string&name,int stkix,const string&in_register,const string&asm_op_param,char bits):
+	inline allocated_var(const string&name,int stkix,const string&nasm_ident,char bits):
 		name_{name},
 		stkix_{stkix},
-		in_register_{in_register},
-		nasm_ident_{asm_op_param},
+		nasm_ident_{nasm_ident},
 		bits_{bits}
 	{}
 
@@ -33,7 +32,6 @@ public:
 private:
 	string name_;
 	int stkix_{0};
-	string in_register_;
 	string nasm_ident_;
 	char bits_{0}; // 1: const
 };
@@ -52,18 +50,18 @@ public:
 	{}
 
 	inline void add_var(const string&nm,const int stkix,const string&flags){
-		string str;
+		string ident;
 		if(stkix>0){
 			// function argument
-			str="qword[rbp+"+to_string(stkix<<3)+"]";
+			ident="qword[rbp+"+to_string(stkix<<3)+"]";
 		}else if(stkix<0){
 			// variable
-			str="qword[rbp"+to_string(stkix<<3)+"]";
+			ident="qword[rbp"+to_string(stkix<<3)+"]";
 			allocated_stack_++;
 		}else{
 			throw "toc:fram:add_var";
 		}
-		vars_.put(nm,allocated_var{nm,stkix,"",str,0});
+		vars_.put(nm,allocated_var{nm,stkix,ident,0});
 	}
 
 	inline size_t allocated_stack_size()const{return allocated_stack_;}
