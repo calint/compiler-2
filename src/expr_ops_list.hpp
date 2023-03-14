@@ -123,7 +123,7 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&dest)const override{
-		toc::indent(os,indent_level,true);tc.source_comment(os,*this);
+		tc.source_comment(*this,os,indent_level);
 
 		if(expressions_.empty()) // ? can this happen?
 			throw compiler_error(*this,"expressions is empty");

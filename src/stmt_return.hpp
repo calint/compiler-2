@@ -7,7 +7,7 @@ public:
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		toc::indent(os,indent_level,true);tc.source_comment(os,*this);
+		tc.source_comment(*this,os,indent_level);
 		const string&ret=tc.get_func_return_label_or_break(*this);
 		if(ret.empty()){
 			// not in-lined

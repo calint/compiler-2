@@ -373,14 +373,16 @@ public:
 		throw compiler_error(st,"not in a function");
 	}
 
-	inline void source_comment(ostream&os,const statement&stmt)const{
+	inline void source_comment(const statement&st,ostream&os,const size_t indent_level)const{
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(stmt.tok().char_index(),source_str_.c_str(),char_in_line);
+		const size_t n=line_number_for_char_index(st.tok().char_index(),source_str_.c_str(),char_in_line);
+
+		indent(os,indent_level,true);
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
 
 		stringstream ss;
 		ss<<" ";
-		stmt.source_to(ss);
+		st.source_to(ss);
 		string s=ss.str();
 		string res=regex_replace(s,regex("\\s+")," ");
 		os<<res;
