@@ -281,6 +281,7 @@ public:
 	}
 
 	inline void add_func_arg(const statement&st,ostream&os,size_t indent_level,const string&name,const int stkix_delta,const string&flags=""){
+		assert(frames_.back().is_func()&&!frames_.back().is_func_inline());
 		frames_.back().add_var(name,stkix_delta,flags);
 		// comment the resolved name
 		const string&dest_resolved=resolve_ident_to_nasm(st,name);

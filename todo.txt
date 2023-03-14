@@ -1,3 +1,4 @@
+[ ] toc.add_var(...) check if name shadows
 [ ] stmt_call: enable nested use of named registers
       example: f(x+1,x) where x is argument that was passed through register and the
       first argument to f is the same register then the second argument is clobbered
