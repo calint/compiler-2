@@ -20,13 +20,13 @@ a:
 ;  i: rsp+16
    push rbp
    mov rbp,rsp
-;  [8:5] res=i+1 
+;  [8:5] res=i+0x1 
 ;  alloc r15
-;  [8:9] i+1 
+;  [8:9] i+0x1 
 ;  [8:9] r15=i
    mov r15,qword[rbp+16]
-;  [8:11] r15+1 
-   add r15,1
+;  [8:11] r15+0x1 
+   add r15,0x1
    mov qword[rbp-8],r15
 ;  free r15
    mov rax,qword[rbp-8]
@@ -37,13 +37,13 @@ b:
 ;  i: rsp+16
    push rbp
    mov rbp,rsp
-;  [12:5] res=i+2 
+;  [12:5] res=i+0b10 
 ;  alloc r15
-;  [12:9] i+2 
+;  [12:9] i+0b10 
 ;  [12:9] r15=i
    mov r15,qword[rbp+16]
-;  [12:11] r15+2 
-   add r15,2
+;  [12:11] r15+0b10 
+   add r15,0b10
    mov qword[rbp-8],r15
 ;  free r15
    mov rax,qword[rbp-8]
@@ -55,16 +55,19 @@ c:
    push rbp
    mov rbp,rsp
 ;  [16:5] var a=1 
+;    qword[rbp-16]
 ;  [16:9] a=1 
 ;  [16:11] 1 
 ;  [16:11] a=1 
    mov qword[rbp-16],1
 ;  [17:5] var b=2 
+;    qword[rbp-24]
 ;  [17:9] b=2 
 ;  [17:11] 2 
 ;  [17:11] b=2 
    mov qword[rbp-24],2
 ;  [18:5] var c=a+b 
+;    qword[rbp-32]
 ;  [18:9] c=a+b 
 ;  alloc r15
 ;  [18:11] a+b 
@@ -89,16 +92,19 @@ c:
 
 main:
 ;  [23:5] var x=1 
+;    qword[rbp-8]
 ;  [23:9] x=1 
 ;  [23:11] 1 
 ;  [23:11] x=1 
    mov qword[rbp-8],1
 ;  [24:5] var y=2 
+;    qword[rbp-16]
 ;  [24:9] y=2 
 ;  [24:11] 2 
 ;  [24:11] y=2 
    mov qword[rbp-16],2
 ;  [25:5] var z=3 
+;    qword[rbp-24]
 ;  [25:9] z=3 
 ;  [25:11] 3 
 ;  [25:11] z=3 

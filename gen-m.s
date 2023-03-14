@@ -16,7 +16,7 @@ a:
    push rbp
    mov rbp,rsp
    mov r15,qword[rbp+16]
-   add r15,1
+   add r15,0x1
    mov qword[rbp-8],r15
    mov rax,qword[rbp-8]
    pop rbp
@@ -25,7 +25,7 @@ b:
    push rbp
    mov rbp,rsp
    mov r15,qword[rbp+16]
-   add r15,2
+   add r15,0b10
    mov qword[rbp-8],r15
    mov rax,qword[rbp-8]
    pop rbp
