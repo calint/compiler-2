@@ -269,7 +269,7 @@ public:
 		return delta;
 	}
 
-	inline void add_var(const statement&st,const string&name,const string&flags=""){
+	inline void add_var(const statement&st,ostream&os,size_t indent_level,const string&name,const string&flags=""){
 		const size_t stkix=get_current_stack_size()+1;
 		// offset by one since rsp points to most recently pushed value
 		//   allocate next free slot
@@ -277,10 +277,16 @@ public:
 			throw compiler_error(st,"variable '"+name+"' already declared");
 		}
 		frames_.back().add_var(name,-int(stkix),flags);
+		// comment the resolved name
+		const string&dest_resolved=resolve_ident_to_nasm(st,name);
+		indent(os,indent_level,true);os<<name<<": "<<dest_resolved<<endl;
 	}
 
-	inline void add_func_arg(const string&name,const int stkix_delta,const string&flags=""){
+	inline void add_func_arg(const statement&st,ostream&os,size_t indent_level,const string&name,const int stkix_delta,const string&flags=""){
 		frames_.back().add_var(name,stkix_delta,flags);
+		// comment the resolved name
+		const string&dest_resolved=resolve_ident_to_nasm(st,name);
+		indent(os,indent_level,true);os<<name<<": "<<dest_resolved<<endl;
 	}
 
 	inline const string&alloc_scratch_register(const statement&st,ostream&os,const size_t indent_level){
@@ -302,13 +308,13 @@ public:
 	}
 
 	inline void alloc_named_register_or_break(const statement&st,const string&reg,ostream&os,const size_t indent_level){
+		indent(os,indent_level,true);os<<"alloc "<<reg<<endl;
 		auto r=find(named_registers_.begin(),named_registers_.end(),reg);
 		if(r==named_registers_.end()){
 			throw compiler_error(st,"named register '"+reg+"' cannot be allocated");
 		}
 		named_registers_.erase(r);
 		allocated_registers_.push_back(reg);
-		indent(os,indent_level,true);os<<"alloc "<<reg<<endl;
 	}
 
 	inline void free_named_register(const string&reg,ostream&os,const size_t indent_level){

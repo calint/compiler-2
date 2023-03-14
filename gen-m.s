@@ -15,9 +15,8 @@ jmp main
 a:
    push rbp
    mov rbp,rsp
-   mov r15,qword[rbp+16]
-   add r15,0x1
-   mov qword[rbp-8],r15
+   mov qword[rbp-8],rsi
+   add qword[rbp-8],0x1
    mov rax,qword[rbp-8]
    pop rbp
    ret
@@ -52,14 +51,13 @@ main:
          push 1
          call c
          add rsp,8
-         mov r14,rax
-       push r14
+         mov r15,rax
+       push r15
        call b
        add rsp,8
-       mov r15,rax
-     push r15
+       mov rsi,rax
      call a
-     add rsp,32
+     add rsp,24
      mov rbx,rax
      mov rax,1
      int 0x80

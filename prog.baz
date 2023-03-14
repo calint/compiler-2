@@ -4,7 +4,7 @@ func inline exit(v:reg_rbx){
     int(0x80)
 }
 
-func a(i):res{
+func a(i:reg_rsi):res{
     res=i+0x1
 }
 

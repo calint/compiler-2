@@ -78,7 +78,7 @@ public:
 		// return binding
 		if(!returns().empty()){
 			const string&from=returns()[0].name();
-			tc.add_var(*this,returns()[0].name());
+			tc.add_var(*this,os,indent_level+1,returns()[0].name());
 //			tc.add_alias(from,"rax");
 		}
 
@@ -95,12 +95,12 @@ public:
 			// stack after push rbp is ...,[arg n],...[arg 1],[return address],[rbp],
 			const string&reg=pm.get_register_or_empty();
 			if(reg.empty()){
-				toc::indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<(stk_ix<<3)<<endl;
-				tc.add_func_arg(pm_nm,stk_ix);
+//				toc::indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<(stk_ix<<3)<<endl;
+				tc.add_func_arg(*this,os,indent_level+1,pm_nm,stk_ix);
 				stk_ix++;
 			}else{
 				toc::indent(os,indent_level+1,true);os<<pm_nm<<": "<<reg<<endl;
-				tc.alloc_named_register_or_break(pm,reg,os,indent_level);
+				tc.alloc_named_register_or_break(pm,reg,os,indent_level+1);
 				allocated_names_registers.push_back(reg);
 				tc.add_alias(pm_nm,reg);
 			}
@@ -115,12 +115,12 @@ public:
 		}
 		tc.asm_pop(*this,os,indent_level+1,"rbp");
 		tc.asm_ret(*this,os,indent_level+1);
-		os<<endl;
-		tc.pop_func(name());
 		size_t i=allocated_names_registers.size();
 		while(i--){
-			tc.free_named_register(allocated_names_registers[i],os,indent_level);
+			tc.free_named_register(allocated_names_registers[i],os,indent_level+1);
 		}
+		os<<endl;
+		tc.pop_func(name());
 	}
 
 	inline const vector<token>&returns()const{return returns_;}
