@@ -149,33 +149,13 @@ public:
 		return true;
 	}
 
-	// inline bool is_ops_list()const override{return true;}
-
 	inline const string&identifier()const override{
-		// if(expressions_[0]->is_ops_list())
-		// 	return expressions_[0]->identifier();
-
 		return expressions_[0]->identifier();
 	}
 
 	inline bool alloc_register()const{return!ops_.empty();}
 
 	inline bool is_empty()const override{return expressions_.empty();}
-
-//	inline static void asm_cmd(const string&op,const statement&st,toc&tc,ostream&os,const size_t indent_level,const string&dest_resolved,const string&src_resolved){
-//		if(op=="mov" && dest_resolved==src_resolved){
-//			return;
-//		}
-//		// check if both source and destination are memory operations
-//		if(dest_resolved.find_first_of('[')!=string::npos and src_resolved.find_first_of('[')!=string::npos){
-//			const string&r=tc.alloc_scratch_register(st,os,indent_level);
-//			indent(os,indent_level);os<<"mov "<<r<<","<<src_resolved<<endl;
-//			indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<r<<endl;
-//			tc.free_scratch_register(r,os,indent_level);
-//			return;
-//		}
-//		indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<src_resolved<<endl;
-//	}
 
 private:
 	inline static int precedence_for_op(const char ch){
