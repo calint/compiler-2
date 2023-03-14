@@ -22,8 +22,7 @@
                     "text": "-gdb-set disassembly-flavor intel",
                     "ignoreFailures": true
                 }
-            ],
-            "preLaunchTask": "build baz"
+            ]
         }
     ],
     "version": "2.0.0"
