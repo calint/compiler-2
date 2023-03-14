@@ -1,0 +1,42 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "build baz",
+			"command": "/usr/bin/clang++-15",
+			"args": [
+				"-std=c++2a",
+				"-fcolor-diagnostics",
+				"-fansi-escape-codes",
+				"-g3",
+				"src/main.cpp",
+				"-fno-inline",
+				"-Werror",
+				"-Wfatal-errors",
+				"-Weverything",
+				"-Wno-c++98-compat",
+				"-Wno-weak-vtables",
+				"-Wno-unqualified-std-cast-call",
+				"-Wno-padded",
+				"-Wno-unused-function",
+				"-Wno-unused-variable",
+				"-Wno-unused-parameter",
+				"-Wno-unused-private-field",
+				"-o",
+				"baz"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "compiler: /usr/bin/clang++-15"
+		}
+	]
+}

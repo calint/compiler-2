@@ -17,7 +17,9 @@ using namespace std;
 #include"stmt_return.hpp"
 
 static string file_read_to_string(const char *filename){
-	ifstream t(filename);
+	ifstream t{filename};
+	if(!t.is_open())
+		throw "cannot open field '"+string{filename}+"'";
 	string str;
 	t.seekg(0,ios::end);
 	str.reserve(size_t(t.tellg()));
