@@ -151,12 +151,12 @@ public:
 
 	// inline bool is_ops_list()const override{return true;}
 
-	// inline const string&identifier()const override{
-	// 	if(expressions_[0]->is_ops_list())
-	// 		return expressions_[0]->identifier();
+	inline const string&identifier()const override{
+		// if(expressions_[0]->is_ops_list())
+		// 	return expressions_[0]->identifier();
 
-	// 	return expressions_[0]->identifier();
-	// }
+		return expressions_[0]->identifier();
+	}
 
 	inline bool alloc_register()const{return!ops_.empty();}
 
