@@ -219,25 +219,10 @@ public:
 		check_usage();
 	}
 
-//		inline void push_if(const char*name){
-//			frames_.emplace_back(name,frame::type::IF);
-//			check_usage();
-//		}
-//
-//		inline void pop_if(const string&name){
-//			frame&f=frames_.back();
-//			assert(f.is_if() and f.is_name(name));
-//	//		stkix_-=frames_.back().allocated_stack_size();
-//			frames_.pop_back();
-//		}
-
 	inline void pop_func(const string&name){
 		frame&f=frames_.back();
 		assert(f.is_func() and f.is_name(name));
 		frames_.pop_back();
-
-		// cannot assert because of inline functions
-//		assert(pushed_regs_.empty());
 	}
 
 	inline void pop_loop(const string&name){
@@ -253,6 +238,7 @@ public:
 	}
 
 	inline size_t get_current_stack_size()const{
+		assert(frames_.size()>0);
 		size_t delta{0};
 		size_t frm_nbr=frames_.size()-1;
 		while(true){
@@ -306,7 +292,7 @@ public:
 		return r;
 	}
 
-	inline void alloc_named_register_or_break(const statement&st,const string&reg,ostream&os,const size_t indent_level){
+	inline void alloc_named_register_or_break(const statement&st,ostream&os,const size_t indent_level,const string&reg){
 		indent(os,indent_level,true);os<<"alloc "<<reg<<endl;
 		auto r=find(named_registers_.begin(),named_registers_.end(),reg);
 		if(r==named_registers_.end()){
@@ -316,7 +302,7 @@ public:
 		allocated_registers_.push_back(reg);
 	}
 
-	inline void free_named_register(const string&reg,ostream&os,const size_t indent_level){
+	inline void free_named_register(ostream&os,const size_t indent_level,const string&reg){
 		indent(os,indent_level,true);os<<"free "<<reg<<endl;
 		assert(allocated_registers_.back()==reg);
 		allocated_registers_.pop_back();
@@ -324,7 +310,7 @@ public:
 		initiated_registers_.erase(reg);
 	}
 
-	inline void free_scratch_register(const string&reg,ostream&os,const size_t indent_level){
+	inline void free_scratch_register(ostream&os,const size_t indent_level,const string&reg){
 		indent(os,indent_level,true);os<<"free "<<reg<<endl;
 		assert(allocated_registers_.back()==reg);
 		allocated_registers_.pop_back();
@@ -453,7 +439,7 @@ public:
 			const string&r=alloc_scratch_register(st,os,indent_level);
 			indent(os,indent_level);os<<"mov "<<r<<","<<src_resolved<<endl;
 			indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<r<<endl;
-			free_scratch_register(r,os,indent_level);
+			free_scratch_register(os,indent_level,r);
 			return;
 		}
 		indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<src_resolved<<endl;

@@ -179,7 +179,7 @@ private:
 				const string r=tc.alloc_scratch_register(st,os,indent_level);
 				st.compile(tc,os,indent_level,r);
 				tc.asm_cmd(st,os,indent_level,"add",dest_resolved,r);
-				tc.free_scratch_register(r,os,indent_level);
+				tc.free_scratch_register(os,indent_level,r);
 				return;
 			}
 			tc.asm_cmd(st,os,indent_level,"add",dest_resolved,tc.resolve_ident_to_nasm(st));
@@ -190,7 +190,7 @@ private:
 				const string r=tc.alloc_scratch_register(st,os,indent_level);
 				st.compile(tc,os,indent_level,r);
 				tc.asm_cmd(st,os,indent_level,"sub",dest_resolved,r);
-				tc.free_scratch_register(r,os,indent_level);
+				tc.free_scratch_register(os,indent_level,r);
 				return;
 			}
 			tc.asm_cmd(st,os,indent_level,"sub",dest_resolved,tc.resolve_ident_to_nasm(st));
@@ -208,7 +208,7 @@ private:
 					tc.asm_cmd(st,os,indent_level,"imul",r,dest_resolved);
 					tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,r);
 				}
-				tc.free_scratch_register(r,os,indent_level);
+				tc.free_scratch_register(os,indent_level,r);
 				return;
 			}
 			// not an expression, either a register or memory location
@@ -222,7 +222,7 @@ private:
 			tc.asm_cmd(st,os,indent_level,"mov",r,dest_resolved);
 			tc.asm_cmd(st,os,indent_level,"imul",r,tc.resolve_ident_to_nasm(st));
 			tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,r);
-			tc.free_scratch_register(r,os,indent_level);
+			tc.free_scratch_register(os,indent_level,r);
 			return;
 		}
 	}

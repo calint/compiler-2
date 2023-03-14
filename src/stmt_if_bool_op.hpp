@@ -142,7 +142,7 @@ private:
 		tc.asm_cmd(*this,os,indent_level,op,dest,src);
 
 		for(const auto&r:allocated_registers)
-			tc.free_scratch_register(r,os,indent_level);
+			tc.free_scratch_register(os,indent_level,r);
 	}
 
 	vector<token>nots_;

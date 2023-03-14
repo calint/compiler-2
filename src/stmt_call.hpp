@@ -98,7 +98,7 @@ public:
 				bool argument_passed_in_register=false;
 				if(!arg_reg.empty()){
 					argument_passed_in_register=true;
-					tc.alloc_named_register_or_break(arg,arg_reg,os,indent_level);
+					tc.alloc_named_register_or_break(arg,os,indent_level,arg_reg);
 					allocated_args_registers.push_back(arg_reg);
 				}
 				if(arg.is_expression()){
@@ -110,7 +110,7 @@ public:
 						// argument is passed to function through the stack
 						tc.asm_push(arg,os,indent_level,sr);
 						// free scratch register
-						tc.free_scratch_register(sr,os,indent_level);
+						tc.free_scratch_register(os,indent_level,sr);
 						// keep track of how many arguments are on the stack
 						nargs_on_stack++;
 					}else{
@@ -157,7 +157,7 @@ public:
 						const string&reg=alloc_regs[i];
 						// don't pop registers used to pass arguments
 						if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)!=allocated_args_registers.end()){
-							tc.free_named_register(reg,os,indent_level);
+							tc.free_named_register(os,indent_level,reg);
 						}
 						if(i==alloc_regs_pop_idx)
 							break;
@@ -185,7 +185,7 @@ public:
 								tc.asm_pop(*this,os,indent_level,reg);
 							}
 						}else{
-							tc.free_named_register(reg,os,indent_level);
+							tc.free_named_register(os,indent_level,reg);
 						}
 						if(i==alloc_regs_pop_idx)
 							break;
@@ -244,7 +244,7 @@ public:
 			string arg_reg=param.get_register_or_empty();
 			if(!arg_reg.empty()){
 				// argument is passed through register
-				tc.alloc_named_register_or_break(*arg,arg_reg,os,indent_level);
+				tc.alloc_named_register_or_break(*arg,os,indent_level,arg_reg);
 				allocated_named_registers.push_back(arg_reg);
 				allocated_registers_in_order.push_back(arg_reg);
 			}
@@ -308,11 +308,11 @@ public:
 		for(auto it=allocated_registers_in_order.rbegin();it!=allocated_registers_in_order.rend();++it) {
 			const string&reg=*it;
 			if(find(allocated_scratch_registers.begin(),allocated_scratch_registers.end(),reg)!=allocated_scratch_registers.end()){
-				tc.free_scratch_register(reg,os,indent_level);
+				tc.free_scratch_register(os,indent_level,reg);
 				continue;
 			}
 			if(find(allocated_named_registers.begin(),allocated_named_registers.end(),reg)!=allocated_named_registers.end()){
-				tc.free_named_register(reg,os,indent_level);
+				tc.free_named_register(os,indent_level,reg);
 				continue;
 			}
 			assert(false);

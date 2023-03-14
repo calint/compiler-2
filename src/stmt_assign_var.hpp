@@ -34,7 +34,7 @@ public:
 		oplist_.compile(tc,ss2,indent_level,reg);
 		const string&dest_resolved=tc.resolve_ident_to_nasm(*this);
 		tc.asm_cmd(*this,ss2,indent_level,"mov",dest_resolved,reg);
-		tc.free_scratch_register(reg,ss2,indent_level);
+		tc.free_scratch_register(ss2,indent_level,reg);
 
 		// compare instruction count
 		const size_t ss1_count=count_instructions(ss1);
