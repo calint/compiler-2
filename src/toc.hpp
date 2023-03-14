@@ -471,6 +471,10 @@ public:
 		indent(os,indent_level);os<<label<<":"<<endl;
 	}
 
+	inline void asm_call(const statement&st,ostream&os,const size_t indent_level,const string&label){
+		indent(os,indent_level);os<<"call "<<label<<endl;
+	}
+
 	inline bool is_register_initiated(const string&reg)const{
 		return initiated_registers_.contains(reg);
 	}

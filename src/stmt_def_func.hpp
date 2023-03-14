@@ -114,8 +114,7 @@ public:
 			tc.asm_cmd(*this,os,indent_level+1,"mov","rax",ret_name_resolved);
 		}
 		tc.asm_pop(*this,os,indent_level+1,"rbp");
-//		indent(os,indent_level+1);os<<"pop rbp\n";
-		toc::indent(os,indent_level+1);os<<"ret\n";
+		tc.asm_ret(*this,os,indent_level+1);
 		os<<endl;
 		tc.pop_func(name());
 		size_t i=allocated_names_registers.size();

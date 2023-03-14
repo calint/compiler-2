@@ -79,7 +79,6 @@ public:
 				if(tc.is_register_initiated(reg)){
 					// push only registers that contain a valid value
 					tc.asm_push(*this,os,indent_level,reg);
-//					indent(os,indent_level);os<<"push "<<reg<<endl;
 					nregs_pushed_on_stack++;
 				}
 			}
@@ -110,7 +109,6 @@ public:
 						arg.compile(tc,os,indent_level+1,sr);
 						// argument is passed to function through the stack
 						tc.asm_push(arg,os,indent_level,sr);
-//						indent(os,indent_level);os<<"push "<<sr<<endl;
 						// free scratch register
 						tc.free_scratch_register(sr,os,indent_level);
 						// keep track of how many arguments are on the stack
@@ -129,13 +127,12 @@ public:
 				}else{
 					// push identifier on the stack
 					tc.asm_push(arg,os,indent_level,id);
-//					indent(os,indent_level);os<<"push "<<id<<endl;
 					nargs_on_stack++;
 				}
 			}
 
 			// stack is: <base>,vars,regs,args,
-			toc::indent(os,indent_level);os<<"call "<<f.name()<<endl;
+			tc.asm_call(*this,os,indent_level,f.name());
 
 			// if this call is not withing the arguments of a previous call
 			const bool restore_rsp_to_base=tc.call_exit();
