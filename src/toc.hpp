@@ -12,7 +12,7 @@
 class token;
 class stmt_def_func;
 class stmt_def_field;
-class stmt_def_table;
+class stmt_def_type;
 
 class allocated_var final{
 public:
@@ -135,7 +135,7 @@ public:
 
 	inline void add_func(const statement&s,const string&ident,const stmt_def_func*ref){
 		if(funcs_.has(ident))
-			throw compiler_error(s.tok(),"function '"+ident+"' already defined");
+			throw compiler_error(s,"function '"+ident+"' already defined");
 
 		funcs_.put(ident,ref);
 	}
@@ -143,16 +143,16 @@ public:
 	inline const stmt_def_func&get_func_or_break(const statement&s,const string&name)const{
 		bool valid;
 		if(!funcs_.has(name))
-			throw compiler_error(s.tok(),"function '"+name+"' not found");
+			throw compiler_error(s,"function '"+name+"' not found");
 		const stmt_def_func*f=funcs_.get(name);
 		return*f;
 	}
 
-	inline void add_table(const statement&s,const string&ident,const stmt_def_table*f){
-		if(tables_.has(ident))
-			throw compiler_error(s.tok(),"table '"+ident +"' already defined");
+	inline void add_type(const statement&s,const string&ident,const stmt_def_type*f){
+		if(types_.has(ident))
+			throw compiler_error(s,"type '"+ident +"' already defined");
 
-		tables_.put(ident,f);
+		types_.put(ident,f);
 	}
 
 	inline string source_location(const token&t)const{
@@ -580,7 +580,7 @@ private:
 	string source_str_;
 	lut<field_meta>fields_;
 	lut<const stmt_def_func*>funcs_;
-	lut<const stmt_def_table*>tables_;
+	lut<const stmt_def_type*>types_;
 	vector<size_t>call_allocated_regs_idx_;
 	unordered_set<string>initiated_registers_;
 };

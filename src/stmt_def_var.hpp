@@ -29,4 +29,5 @@ private:
 	token ident_;
 	char op_{0};
 	stmt_assign_var initial_value_;
+	stmt_def_type*type_;
 };

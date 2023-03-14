@@ -91,43 +91,43 @@ foo:
    ret
 
 main:
-;  [31:5] var a=1 
+;  [36:5] var a=1 
 ;  a: qword[rbp-8]
-;  [31:9] a=1 
-;  [31:11] 1 
-;  [31:11] a=1 
+;  [36:9] a=1 
+;  [36:11] 1 
+;  [36:11] a=1 
    mov qword[rbp-8],1
-;  [32:5] var b=2 
+;  [37:5] var b=2 
 ;  b: qword[rbp-16]
-;  [32:9] b=2 
-;  [32:11] 2 
-;  [32:11] b=2 
+;  [37:9] b=2 
+;  [37:11] 2 
+;  [37:11] b=2 
    mov qword[rbp-16],2
-;  [33:5] var c=3 
+;  [38:5] var c=3 
 ;  c: qword[rbp-24]
-;  [33:9] c=3 
-;  [33:11] 3 
-;  [33:11] c=3 
+;  [38:9] c=3 
+;  [38:11] 3 
+;  [38:11] c=3 
    mov qword[rbp-24],3
-;  [34:5] bar(a,b)
+;  [39:5] bar(a,b)
    sub rsp,24
    push qword[rbp-16]
    push qword[rbp-8]
    call bar
    add rsp,40
-;  [35:5] foo()
+;  [40:5] foo()
    sub rsp,24
    call foo
    add rsp,24
-;  [36:5] exit(0)
-;    inline: 36_5
+;  [41:5] exit(0)
+;    inline: 41_5
 ;    [13:5] mov(rbx,v)
      mov rbx,0
 ;    [14:5] mov(rax,1)
      mov rax,1
 ;    [15:5] int(0x80)
      int 0x80
-   exit_36_5_end:
+   exit_41_5_end:
 
 ; max scratch registers in use: 1
 ;            max frames in use: 6

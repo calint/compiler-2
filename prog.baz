@@ -27,6 +27,11 @@ func foo{
     print(world.len,world)
 }
 
+type dq{8}
+type dd{4}
+type dw{2}
+type db{1}
+
 func inline main{
     var a=1
     var b=2

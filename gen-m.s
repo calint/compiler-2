@@ -65,4 +65,4 @@ main:
      mov rbx,0
      mov rax,1
      int 0x80
-   exit_36_5_end:
+   exit_41_5_end:
