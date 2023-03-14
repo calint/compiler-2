@@ -57,15 +57,15 @@ public:
 		if(!f.is_inline()){
 			// stack is: <base>,
 
-			const size_t nvars_on_stack{tc.get_current_stack_size()};
+			const size_t nbytes_of_vars_on_stack{tc.get_current_stack_size()};
 			// index in the allocated registers that have been allocated but not pushed
 			// prior to this call (that might clobber them)
 			const size_t alloc_regs_idx=tc.get_call_alloc_regs_idx();
 			if(tc.call_enter()){
 				// this call is not nested within another call's arguments
-				if(nvars_on_stack){
+				if(nbytes_of_vars_on_stack){
 					// adjust stack past the allocated vars
-					tc.asm_cmd(*this,os,indent_level,"sub","rsp",to_string(nvars_on_stack<<3));
+					tc.asm_cmd(*this,os,indent_level,"sub","rsp",to_string(nbytes_of_vars_on_stack));
 					// stack: <base>,.. vars ..,
 				}
 			}
@@ -141,7 +141,7 @@ public:
 			if(nregs_pushed_on_stack==0){
 				// stack is: <base>,vars,args,
 				if(restore_rsp_to_base){
-					const string&offset=to_string((nargs_on_stack+nvars_on_stack)<<3);
+					const string&offset=to_string((nargs_on_stack<<3)+nbytes_of_vars_on_stack);
 					tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
 					// stack is: <base>,
 				}else{
@@ -197,8 +197,8 @@ public:
 				if(restore_rsp_to_base){
 					// this was not a call within the arguments of another call
 					// stack is: <base>,vars,
-					if(nvars_on_stack){
-						const string&offset=to_string(nvars_on_stack<<3);
+					if(nbytes_of_vars_on_stack){
+						const string&offset=to_string(nbytes_of_vars_on_stack);
 						tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
 					}
 					// stack is: <base>,

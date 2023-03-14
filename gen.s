@@ -2,6 +2,12 @@
 
 section .data
 align 4
+;[1:1] field hello="hello\n" 
+hello db 'hello',10,''
+hello.len equ $-hello
+;[2:1] field world="world\n" 
+world db 'world',10,''
+world.len equ $-world
 
 section .bss
 align 4
@@ -16,138 +22,113 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
-a:
-;  res: qword[rbp-8]
-;  i: rsi
-;  alloc rsi
+bar:
+;  a: qword[rbp+16]
+;  b: qword[rbp+24]
    push rbp
    mov rbp,rsp
-;  [8:5] res=i+0x1 
-;  [8:9] i+0x1 
-;  [8:9] res=i
-   mov qword[rbp-8],rsi
-;  [8:11] res+0x1 
-   add qword[rbp-8],0x1
-   mov rax,qword[rbp-8]
+;  [19:5] loop
+   loop_19_5:
+     if_20_12:
+;    [20:12] ? b=0 
+;    [20:12] ? b=0 
+     cmp_20_12:
+     cmp qword[rbp+24],0
+     jne if_20_9_end
+     if_20_12_code:  ; opt1
+;      [20:16] return 
+       pop rbp
+       ret
+     if_20_9_end:
+;    [21:9] print(hello.len,hello)
+;    alloc rdx
+       mov rdx,hello.len
+;    alloc rcx
+       mov rcx,hello
+;      inline: 21_9
+;      [5:5] mov(rcx,ptr)
+;      [6:5] mov(rdx,len)
+;      [7:5] mov(rbx,1)
+       mov rbx,1
+;      [8:5] mov(rax,4)
+       mov rax,4
+;      [9:5] int(0x80)
+       int 0x80
+     print_21_9_end:
+;    free rcx
+;    free rdx
+;    [22:9] b=b-1 
+;    [22:11] b-1 
+;    [22:11] b=b
+;    [22:13] b-1 
+     sub qword[rbp+24],1
+   jmp loop_19_5
+   loop_19_5_end:
    pop rbp
    ret
-;  free rsi
 
-b:
-;  res: qword[rbp-8]
-;  i: qword[rbp+16]
+foo:
    push rbp
    mov rbp,rsp
-;  [12:5] res=i+0b10 
-;  alloc r15
-;  [12:9] i+0b10 
-;  [12:9] r15=i
-   mov r15,qword[rbp+16]
-;  [12:11] r15+0b10 
-   add r15,0b10
-   mov qword[rbp-8],r15
-;  free r15
-   mov rax,qword[rbp-8]
-   pop rbp
-   ret
-
-c:
-;  res: qword[rbp-8]
-;  i: qword[rbp+16]
-   push rbp
-   mov rbp,rsp
-;  [16:5] var a=1 
-;  a: qword[rbp-16]
-;  [16:9] a=1 
-;  [16:11] 1 
-;  [16:11] a=1 
-   mov qword[rbp-16],1
-;  [17:5] var b=2 
-;  b: qword[rbp-24]
-;  [17:9] b=2 
-;  [17:11] 2 
-;  [17:11] b=2 
-   mov qword[rbp-24],2
-;  [18:5] var c=a+b 
-;  c: qword[rbp-32]
-;  [18:9] c=a+b 
-;  alloc r15
-;  [18:11] a+b 
-;  [18:11] r15=a
-   mov r15,qword[rbp-16]
-;  [18:13] r15+b 
-   add r15,qword[rbp-24]
-   mov qword[rbp-32],r15
-;  free r15
-;  [19:5] res=i+c 
-;  alloc r15
-;  [19:9] i+c 
-;  [19:9] r15=i
-   mov r15,qword[rbp+16]
-;  [19:11] r15+c 
-   add r15,qword[rbp-32]
-   mov qword[rbp-8],r15
-;  free r15
-   mov rax,qword[rbp-8]
+;  [27:5] print(world.len,world)
+;  alloc rdx
+     mov rdx,world.len
+;  alloc rcx
+     mov rcx,world
+;    inline: 27_5
+;    [5:5] mov(rcx,ptr)
+;    [6:5] mov(rdx,len)
+;    [7:5] mov(rbx,1)
+     mov rbx,1
+;    [8:5] mov(rax,4)
+     mov rax,4
+;    [9:5] int(0x80)
+     int 0x80
+   print_27_5_end:
+;  free rcx
+;  free rdx
    pop rbp
    ret
 
 main:
-;  [23:5] var x=1 
-;  x: qword[rbp-8]
-;  [23:9] x=1 
-;  [23:11] 1 
-;  [23:11] x=1 
+;  [31:5] var a=1 
+;  a: qword[rbp-8]
+;  [31:9] a=1 
+;  [31:11] 1 
+;  [31:11] a=1 
    mov qword[rbp-8],1
-;  [24:5] var y=2 
-;  y: qword[rbp-16]
-;  [24:9] y=2 
-;  [24:11] 2 
-;  [24:11] y=2 
+;  [32:5] var b=2 
+;  b: qword[rbp-16]
+;  [32:9] b=2 
+;  [32:11] 2 
+;  [32:11] b=2 
    mov qword[rbp-16],2
-;  [25:5] var z=3 
-;  z: qword[rbp-24]
-;  [25:9] z=3 
-;  [25:11] 3 
-;  [25:11] z=3 
+;  [33:5] var c=3 
+;  c: qword[rbp-24]
+;  [33:9] c=3 
+;  [33:11] 3 
+;  [33:11] c=3 
    mov qword[rbp-24],3
-;  [26:1] # exit(1+a(b(z+c(1)+c(x+y)))) 
-;  [27:5] exit(a(b(c(1))))
-;  alloc rbx
-;    [27:10] a(b(c(1)))
-;    [27:10] rbx=a(b(c(1)))
-;    [27:10] a(b(c(1)))
-     sub rsp,24
-;    alloc rsi
-;      [27:12] b(c(1))
-;      [27:12] rsi=b(c(1))
-;      [27:12] b(c(1))
-;      alloc r15
-;        [27:14] c(1)
-;        [27:14] r15=c(1)
-;        [27:14] c(1)
-         push 1
-         call c
-         add rsp,8
-         mov r15,rax
-       push r15
-;      free r15
-       call b
-       add rsp,8
-       mov rsi,rax
-     call a
-     add rsp,24
-;    free rsi
-     mov rbx,rax
-;    inline: 27_5
-;    [2:5] mov(rbx,v)
-;    [3:5] mov(rax,1)
+;  [34:5] bar(a,b)
+   sub rsp,24
+   push qword[rbp-16]
+   push qword[rbp-8]
+   call bar
+   add rsp,40
+;  [35:5] foo()
+   sub rsp,24
+   call foo
+   add rsp,24
+;  [36:5] exit(0)
+;    inline: 36_5
+;    [13:5] mov(rbx,v)
+     mov rbx,0
+;    [14:5] mov(rax,1)
      mov rax,1
-;    [4:5] int(0x80)
+;    [15:5] int(0x80)
      int 0x80
-   exit_27_5_end:
-;  free rbx
+   exit_36_5_end:
 
 ; max scratch registers in use: 1
-;            max frames in use: 4
+;            max frames in use: 6
 

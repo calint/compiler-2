@@ -87,7 +87,7 @@ public:
 		//    x=[rsp+argnum<<3+8] (const 8 skips return address)
 		vector<string>allocated_names_registers;
 		const int n=int(params_.size());
-		int stk_ix=2; // skip [rbp] and [return address] on stack
+		int stk_ix=2<<3; // skip [rbp] and [return address] on stack
 		for(int i=0;i<n;i++){
 			const stmt_def_func_param&pm=params_[unsigned(i)];
 			const string&pm_nm=pm.name();
@@ -97,7 +97,7 @@ public:
 			if(reg.empty()){
 //				toc::indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<(stk_ix<<3)<<endl;
 				tc.add_func_arg(*this,os,indent_level+1,pm_nm,stk_ix);
-				stk_ix++;
+				stk_ix+=8;
 			}else{
 				toc::indent(os,indent_level+1,true);os<<pm_nm<<": "<<reg<<endl;
 				tc.alloc_named_register_or_break(pm,os,indent_level+1,reg);

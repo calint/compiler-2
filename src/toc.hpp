@@ -53,11 +53,11 @@ public:
 		string ident;
 		if(stkix>0){
 			// function argument
-			ident="qword[rbp+"+to_string(stkix<<3)+"]";
+			ident="qword[rbp+"+to_string(stkix)+"]";
 		}else if(stkix<0){
 			// variable
-			ident="qword[rbp"+to_string(stkix<<3)+"]";
-			allocated_stack_++;
+			ident="qword[rbp"+to_string(stkix)+"]";
+			allocated_stack_+=8;
 		}else{
 			throw "toc:fram:add_var";
 		}
@@ -254,12 +254,12 @@ public:
 	}
 
 	inline void add_var(const statement&st,ostream&os,size_t indent_level,const string&name,const string&flags=""){
-		const size_t stkix=get_current_stack_size()+1;
-		// offset by one since rsp points to most recently pushed value
-		//   allocate next free slot
 		if(frames_.back().has_var(name)){
 			throw compiler_error(st,"variable '"+name+"' already declared");
 		}
+		// offset by one since rsp points to most recently pushed value
+		//   allocate next free slot
+		const size_t stkix=get_current_stack_size()+8;
 		frames_.back().add_var(name,-int(stkix),flags);
 		// comment the resolved name
 		const string&dest_resolved=resolve_ident_to_nasm(st,name);
