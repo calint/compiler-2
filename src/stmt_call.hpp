@@ -88,7 +88,7 @@ public:
 			// push arguments starting with the last
 			// some arguments might be passed through registers
 			vector<string>allocated_args_registers;
-			size_t nargs_on_stack=0;
+			size_t nbytes_of_args_on_stack=0;
 			size_t nargs=args_.size();
 			while(nargs--){
 				const statement&arg=*args_[nargs];
@@ -112,7 +112,7 @@ public:
 						// free scratch register
 						tc.free_scratch_register(os,indent_level,sr);
 						// keep track of how many arguments are on the stack
-						nargs_on_stack++;
+						nbytes_of_args_on_stack+=8;
 					}else{
 						// compile expression with the result stored in arg_reg
 						arg.compile(tc,os,indent_level+1,arg_reg);
@@ -127,7 +127,7 @@ public:
 				}else{
 					// push identifier on the stack
 					tc.asm_push(arg,os,indent_level,id);
-					nargs_on_stack++;
+					nbytes_of_args_on_stack+=8;
 				}
 			}
 
@@ -141,11 +141,11 @@ public:
 			if(nregs_pushed_on_stack==0){
 				// stack is: <base>,vars,args,
 				if(restore_rsp_to_base){
-					const string&offset=to_string((nargs_on_stack<<3)+nbytes_of_vars_on_stack);
+					const string&offset=to_string(nbytes_of_args_on_stack+nbytes_of_vars_on_stack);
 					tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
 					// stack is: <base>,
 				}else{
-					const string&offset=to_string(nargs_on_stack<<3);
+					const string&offset=to_string(nbytes_of_args_on_stack);
 					tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
 					// stack is: <base>,vars,
 				}
@@ -166,8 +166,8 @@ public:
 				}
 			}else{
 				// stack is: <base>,vars,regs,args,
-				if(nargs_on_stack){
-					const string&offset=to_string(nargs_on_stack<<3);
+				if(nbytes_of_args_on_stack){
+					const string&offset=to_string(nbytes_of_args_on_stack);
 					tc.asm_cmd(*this,os,indent_level,"add","rsp",offset);
 				}
 				// stack is: <base>,vars,regs,
