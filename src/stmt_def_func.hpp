@@ -78,7 +78,7 @@ public:
 		// return binding
 		if(!returns().empty()){
 			const string&from=returns()[0].name();
-			tc.add_var(*this,os,indent_level+1,returns()[0].name());
+			tc.add_var(*this,os,indent_level+1,returns()[0].name(),8);
 //			tc.add_alias(from,"rax");
 		}
 
@@ -96,7 +96,7 @@ public:
 			const string&reg=pm.get_register_or_empty();
 			if(reg.empty()){
 //				toc::indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<(stk_ix<<3)<<endl;
-				tc.add_func_arg(*this,os,indent_level+1,pm_nm,stk_ix);
+				tc.add_func_arg(*this,os,indent_level+1,pm_nm,8,stk_ix);
 				stk_ix+=8;
 			}else{
 				toc::indent(os,indent_level+1,true);os<<pm_nm<<": "<<reg<<endl;

@@ -16,8 +16,9 @@ class stmt_def_table;
 
 class allocated_var final{
 public:
-	inline allocated_var(const string&name,int stkix,const string&nasm_ident,char bits):
+	inline allocated_var(const string&name,const size_t size,const int stkix,const string&nasm_ident,char bits):
 		name_{name},
+		size_{size},
 		stkix_{stkix},
 		nasm_ident_{nasm_ident},
 		bits_{bits}
@@ -31,6 +32,7 @@ public:
 
 private:
 	string name_;
+	size_t size_{0};
 	int stkix_{0};
 	string nasm_ident_;
 	char bits_{0}; // 1: const
@@ -49,7 +51,7 @@ public:
 		type_{tpe}
 	{}
 
-	inline void add_var(const string&nm,const int stkix,const string&flags){
+	inline void add_var(const string&nm,const size_t size,const int stkix,const string&flags){
 		string ident;
 		if(stkix>0){
 			// function argument
@@ -57,11 +59,11 @@ public:
 		}else if(stkix<0){
 			// variable
 			ident="qword[rbp"+to_string(stkix)+"]";
-			allocated_stack_+=8;
+			allocated_stack_+=size;
 		}else{
 			throw "toc:fram:add_var";
 		}
-		vars_.put(nm,allocated_var{nm,stkix,ident,0});
+		vars_.put(nm,allocated_var{nm,size,stkix,ident,0});
 	}
 
 	inline size_t allocated_stack_size()const{return allocated_stack_;}
@@ -253,22 +255,22 @@ public:
 		return delta;
 	}
 
-	inline void add_var(const statement&st,ostream&os,size_t indent_level,const string&name,const string&flags=""){
+	inline void add_var(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size){
 		if(frames_.back().has_var(name)){
 			throw compiler_error(st,"variable '"+name+"' already declared");
 		}
 		// offset by one since rsp points to most recently pushed value
 		//   allocate next free slot
 		const size_t stkix=get_current_stack_size()+8;
-		frames_.back().add_var(name,-int(stkix),flags);
+		frames_.back().add_var(name,size,-int(stkix),"");
 		// comment the resolved name
 		const string&dest_resolved=resolve_ident_to_nasm(st,name);
 		indent(os,indent_level,true);os<<name<<": "<<dest_resolved<<endl;
 	}
 
-	inline void add_func_arg(const statement&st,ostream&os,size_t indent_level,const string&name,const int stkix_delta,const string&flags=""){
+	inline void add_func_arg(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size,const int stkix_delta){
 		assert(frames_.back().is_func()&&!frames_.back().is_func_inline());
-		frames_.back().add_var(name,stkix_delta,flags);
+		frames_.back().add_var(name,size,stkix_delta,"");
 		// comment the resolved name
 		const string&dest_resolved=resolve_ident_to_nasm(st,name);
 		indent(os,indent_level,true);os<<name<<": "<<dest_resolved<<endl;
