@@ -77,8 +77,8 @@ public:
 		}
 		// return binding
 		if(!returns().empty()){
-			const string&from=returns()[0].name();
-			tc.add_var(*this,os,indent_level+1,returns()[0].name(),8);
+			const string&nm=returns()[0].name();
+			tc.add_var(*this,os,indent_level+1,nm,8);
 //			tc.add_alias(from,"rax");
 		}
 

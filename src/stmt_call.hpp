@@ -127,6 +127,15 @@ public:
 		// inlined function
 		//
 
+		// create unique labels for in-lined functions based on the location the source
+		// where the call occurred
+		const string&call_path=tc.get_call_path(tok());
+		const string&src_loc=tc.source_location(tok());
+		const string&new_call_path=call_path.empty()?src_loc:(src_loc+"_"+call_path);
+		const string&ret_jmp_label=nm+"_"+new_call_path+"_end";
+
+		toc::indent(os,indent_level+1,true);os<<"inline: "<<new_call_path<<endl;
+
 		vector<string>allocated_named_registers;
 		vector<string>allocated_scratch_registers;
 		vector<string>allocated_registers_in_order;
@@ -142,6 +151,7 @@ public:
 			const string&from=f.returns()[0].name();
 			const string&to=dest_ident;
 			aliases_to_add.emplace_back(from,to);
+			tc.indent(os,indent_level+1,true);os<<from<<" -> "<<to<<endl;
 		}
 
 		size_t i=0;
@@ -152,7 +162,7 @@ public:
 			string arg_reg=param.get_register_or_empty();
 			if(!arg_reg.empty()){
 				// argument is passed through register
-				tc.alloc_named_register_or_break(*arg,os,indent_level,arg_reg);
+				tc.alloc_named_register_or_break(*arg,os,indent_level+1,arg_reg);
 				allocated_named_registers.push_back(arg_reg);
 				allocated_registers_in_order.push_back(arg_reg);
 			}
@@ -160,7 +170,7 @@ public:
 				// argument is an expression, evaluate and store in arg_reg
 				if(arg_reg.empty()){
 					// no particular register requested for the argument
-					arg_reg=tc.alloc_scratch_register(*arg,os,indent_level);
+					arg_reg=tc.alloc_scratch_register(*arg,os,indent_level+1);
 					allocated_scratch_registers.push_back(arg_reg);
 					allocated_registers_in_order.push_back(arg_reg);
 				}
@@ -168,6 +178,7 @@ public:
 				arg->compile(tc,os,indent_level+1,arg_reg);
 				// alias parameter name to the register containing its value
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
+				tc.indent(os,indent_level+1,true);os<<param.identifier()<<" -> "<<arg_reg<<endl;
 				continue;
 			}
 			// argument is not an expression
@@ -176,25 +187,18 @@ public:
 				// alias parameter name to the argument identifier
 				const string&id=arg->identifier();
 				aliases_to_add.emplace_back(param.identifier(),id);
+				tc.indent(os,indent_level+1,true);os<<param.identifier()<<" -> "<<id<<endl;				
 			}else{
 				// register allocated for the argument
 				const string&id=arg->identifier();
 				// alias parameter name to the register
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
+				tc.indent(os,indent_level+1,true);os<<param.identifier()<<" -> "<<arg_reg<<endl;				
 				// move argument to register
 				const string&src=tc.resolve_ident_to_nasm(param,id);
 				tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,src);
 			}
 		}
-
-		// create unique labels for in-lined functions based on the location the source
-		// where the call occurred
-		const string&call_path=tc.get_call_path(tok());
-		const string&src_loc=tc.source_location(tok());
-		const string&new_call_path=call_path.empty()?src_loc:(src_loc+"_"+call_path);
-		const string&ret_jmp_label=nm+"_"+new_call_path+"_end";
-
-		toc::indent(os,indent_level+1,true);os<<"inline: "<<new_call_path<<endl;
 
 		// enter function
 		if(f.returns().empty()){
@@ -204,27 +208,30 @@ public:
 		}
 		// add the aliases to the context of this scope
 		for(const auto&e:aliases_to_add){
-			tc.add_alias(get<0>(e),get<1>(e));
+			const string&from=get<0>(e);
+			const string&to=get<1>(e);
+			tc.add_alias(from,to);
 		}
 		// compile in-lined code
 		f.code().compile(tc,os,indent_level);
-		// provide an exit label for 'return' to use instead of assembler 'ret'
-		tc.asm_label(*this,os,indent_level,ret_jmp_label);
-//		toc::indent(os,indent_level);os<<ret_jmp_label<<":\n";
 
 		// free allocated registers in reverse order of allocation
 		for(auto it=allocated_registers_in_order.rbegin();it!=allocated_registers_in_order.rend();++it) {
 			const string&reg=*it;
 			if(find(allocated_scratch_registers.begin(),allocated_scratch_registers.end(),reg)!=allocated_scratch_registers.end()){
-				tc.free_scratch_register(os,indent_level,reg);
+				tc.free_scratch_register(os,indent_level+1,reg);
 				continue;
 			}
 			if(find(allocated_named_registers.begin(),allocated_named_registers.end(),reg)!=allocated_named_registers.end()){
-				tc.free_named_register(os,indent_level,reg);
+				tc.free_named_register(os,indent_level+1,reg);
 				continue;
 			}
 			assert(false);
 		}
+
+		// provide an exit label for 'return' to use instead of assembler 'ret'
+		tc.asm_label(*this,os,indent_level,ret_jmp_label);
+
 		// pop scope
 		tc.pop_func(nm);
 	}

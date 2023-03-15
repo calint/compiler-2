@@ -30,6 +30,8 @@ public:
 
 	inline const string&nasm_ident()const{return nasm_ident_;}
 
+	inline size_t get_size()const{return size_;}
+
 private:
 	string name_;
 	size_t size_{0};
@@ -110,6 +112,7 @@ private:
 	string ret_var_; // the variable that contains the return value
 	bool is_inline_{false};
 	type type_{type::FUNC}; // frame type
+	size_t last_added_var_size{0};
 };
 
 struct field_meta final{
@@ -189,18 +192,17 @@ public:
 	inline void finish(const toc&tc,ostream&os){
 		assert(scratch_registers_.size()==8);
 		assert(named_registers_.size()==5);
-//		assert(stkix_==0);
-//		assert(framestk_.import_frames_.size()==0);
+		assert(frames_.empty());
 		os<<"\n; max scratch registers in use: "<<tc.max_usage_scratch_regs_<<endl;
 		os<<";            max frames in use: "<<tc.max_frame_count_<<endl;
 //		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
 	}
 
-	inline string resolve_ident_to_nasm(const statement&stmt)const{//? tidy duplicate code
+	inline string resolve_ident_to_nasm(const statement&stmt)const{
 		return resolve_ident_to_nasm(stmt,stmt.identifier());
 	}
 
-	inline string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{//? tidy duplicate code
+	inline string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{
 		string nasm_ident=resolve_ident_to_nasm_or_empty(stmt,ident);
 		if(!nasm_ident.empty())
 			return nasm_ident;
@@ -249,9 +251,10 @@ public:
 		if(frames_.back().has_var(name)){
 			throw compiler_error(st,"variable '"+name+"' already declared");
 		}
-		// offset by one since rsp points to most recently pushed value
-		//   allocate next free slot
+		// offset by 8 since if stkix is 0 then rsp points at return address
+		//   or past the end of stack (if no function has been called)
 		const size_t stkix=get_current_stack_size()+8;
+		assert(size<=8);
 		frames_.back().add_var(name,size,-int(stkix),"");
 		// comment the resolved name
 		const string&dest_resolved=resolve_ident_to_nasm(st,name);

@@ -24,9 +24,9 @@ bar:
      cmp_20_12:
      cmp qword[rbp+24],0
      jne if_20_9_end
-     if_20_12_code:  ; opt1
-       pop rbp
-       ret
+     jmp if_20_12_code
+     if_20_12_code:
+       jmp loop_19_5_end
      if_20_9_end:
        mov rdx,hello.len
        mov rcx,hello
@@ -37,6 +37,9 @@ bar:
      sub qword[rbp+24],1
    jmp loop_19_5
    loop_19_5_end:
+   mov r15,qword[rbp+16]
+   mov qword[rbp-8],r15
+   mov rax,qword[rbp-8]
    pop rbp
    ret
 foo:
@@ -47,7 +50,7 @@ foo:
      mov rbx,1
      mov rax,4
      int 0x80
-   print_27_5_end:
+   print_28_5_end:
    pop rbp
    ret
 main:
@@ -65,4 +68,4 @@ main:
      mov rbx,0
      mov rax,1
      int 0x80
-   exit_41_5_end:
+   exit_42_5_end:
