@@ -203,18 +203,21 @@ public:
 			}
 		}
 
-		// enter function
+		// enter function creating a new scope from which 
+		//   prior variables are not visible
 		if(f.returns().empty()){
 			tc.push_func(nm,new_call_path,ret_jmp_label,true,"");
 		}else{
 			tc.push_func(nm,new_call_path,ret_jmp_label,true,f.returns()[0].name());
 		}
+		
 		// add the aliases to the context of this scope
 		for(const auto&e:aliases_to_add){
 			const string&from=get<0>(e);
 			const string&to=get<1>(e);
 			tc.add_alias(from,to);
 		}
+
 		// compile in-lined code
 		f.code().compile(tc,os,indent_level);
 
@@ -232,7 +235,7 @@ public:
 			assert(false);
 		}
 
-		// provide an exit label for 'return' to use instead of assembler 'ret'
+		// provide an exit label for 'return' to jump to instead of assembler 'ret'
 		tc.asm_label(*this,os,indent_level,ret_jmp_label);
 
 		// pop scope
