@@ -57,13 +57,24 @@ public:
 		string ident;
 		if(stkix>0){
 			// function argument
-			ident="qword[rbp+"+to_string(stkix)+"]";
+			ident="[rbp+"+to_string(stkix)+"]";
 		}else if(stkix<0){
 			// variable
-			ident="qword[rbp"+to_string(stkix)+"]";
+			ident="[rbp"+to_string(stkix)+"]";
 			allocated_stack_+=size;
 		}else{
 			throw "toc:fram:add_var";
+		}
+		if(size==8){
+			ident="qword"+ident;
+		// }else if(size==4){
+		// 	ident="dword"+ident;
+		// }else if(size==2){
+		// 	ident="word"+ident;
+		// }else if(size==1){
+		// 	ident="byte"+ident;
+		}else{
+			throw"unexpected variable size: "+to_string(size);
 		}
 		vars_.put(nm,allocated_var{nm,size,stkix,ident,0});
 	}
@@ -254,7 +265,7 @@ public:
 		// offset by 8 since if stkix is 0 then rsp points at return address
 		//   or past the end of stack (if no function has been called)
 		const size_t stkix=get_current_stack_size()+8;
-		assert(size<=8);
+		assert(size==8||size==4||size==2||size==1);
 		frames_.back().add_var(name,size,-int(stkix),"");
 		// comment the resolved name
 		const string&dest_resolved=resolve_ident_to_nasm(st,name);

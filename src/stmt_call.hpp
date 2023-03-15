@@ -151,7 +151,7 @@ public:
 			const string&from=f.returns()[0].name();
 			const string&to=dest_ident;
 			aliases_to_add.emplace_back(from,to);
-			tc.indent(os,indent_level+1,true);os<<from<<" -> "<<to<<endl;
+			tc.indent(os,indent_level+1,true);os<<"alias "<<from<<" -> "<<to<<endl;
 		}
 
 		size_t i=0;
@@ -174,11 +174,11 @@ public:
 					allocated_scratch_registers.push_back(arg_reg);
 					allocated_registers_in_order.push_back(arg_reg);
 				}
+				tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;
 				// compile expression and store result in 'arg_reg'
 				arg->compile(tc,os,indent_level+1,arg_reg);
 				// alias parameter name to the register containing its value
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
-				tc.indent(os,indent_level+1,true);os<<param.identifier()<<" -> "<<arg_reg<<endl;
 				continue;
 			}
 			// argument is not an expression
@@ -187,13 +187,13 @@ public:
 				// alias parameter name to the argument identifier
 				const string&id=arg->identifier();
 				aliases_to_add.emplace_back(param.identifier(),id);
-				tc.indent(os,indent_level+1,true);os<<param.identifier()<<" -> "<<id<<endl;				
+				tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<id<<endl;				
 			}else{
 				// register allocated for the argument
 				const string&id=arg->identifier();
 				// alias parameter name to the register
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
-				tc.indent(os,indent_level+1,true);os<<param.identifier()<<" -> "<<arg_reg<<endl;				
+				tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;				
 				// move argument to register
 				const string&src=tc.resolve_ident_to_nasm(param,id);
 				tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,src);
