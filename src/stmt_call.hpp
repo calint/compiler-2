@@ -59,9 +59,7 @@ public:
 
 		if(!f.is_inline()){
 			// stack is: <base>,
-
 			tc.call_enter(*this,os,indent_level);
-
 			// stack is: <base>,vars,regs,
 
 			// push arguments starting with the last
@@ -113,8 +111,9 @@ public:
 			// stack is: <base>,vars,regs,args,
 			tc.asm_call(*this,os,indent_level,f.name());
 
-			// if this call is not withing the arguments of a previous call
 			tc.call_exit(*this,os,indent_level,nbytes_of_args_on_stack,allocated_args_registers);
+			// stack is: <base>, (if this was not a call nested in another call's arguments)
+			//       or: <base>,vars,regs,
 
 			// handle return value
 			if(not dest_ident.empty()){

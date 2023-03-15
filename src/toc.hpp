@@ -41,7 +41,7 @@ private:
 
 class frame final{
 public:
-	enum class type{FUNC,BLOCK,LOOP,IF};
+	enum class type{FUNC,BLOCK,LOOP};
 
 	inline frame(const string&name,const type tpe,const string&call_path="",const string&ret_label="",const bool is_inline=false,const string&ret_var=""):
 		name_{name},
@@ -93,8 +93,6 @@ public:
 	inline bool is_block()const{return type_==type::BLOCK;}
 
 	inline bool is_loop()const{return type_==type::LOOP;}
-
-	inline bool is_if()const{return type_==type::IF;}
 
 	inline bool is_name(const string&nm)const{return name_==nm;}
 
