@@ -416,7 +416,7 @@ public:
 
 	inline void call_enter(const statement&st,ostream&os,const size_t indent_level){
 		const bool root_call=call_metas_.empty();
-		const size_t nbytes_of_vars_on_stack{get_current_stack_size()};
+		const size_t nbytes_of_vars_on_stack{root_call?get_current_stack_size():0};
 		if(root_call){
 			// this call is not nested within another call's arguments
 			if(nbytes_of_vars_on_stack){
@@ -464,17 +464,15 @@ public:
 				// stack is: <base>,vars,
 			}
 			// free named registers
-			if(allocated_registers_.size()){
-				size_t i=allocated_registers_.size();
-				while(true){
-					if(i==alloc_reg_idx)
-						break;
-					i--;
-					const string&reg=allocated_registers_[i];
-					// don't pop registers used to pass arguments
-					if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)!=allocated_args_registers.end()){
-						free_named_register(os,indent_level,reg);
-					}
+			size_t i=allocated_registers_.size();
+			while(true){
+				if(i==alloc_reg_idx)
+					break;
+				i--;
+				const string&reg=allocated_registers_[i];
+				// don't pop registers used to pass arguments
+				if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)!=allocated_args_registers.end()){
+					free_named_register(os,indent_level,reg);
 				}
 			}
 		}else{
