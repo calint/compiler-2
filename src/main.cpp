@@ -222,19 +222,18 @@ int main(int argc,char**args){
 
 // called from stmt_block to solve circular dependencies with loop, if and calls
 inline unique_ptr<statement>create_statement_from_tokenizer(token tk,tokenizer&t){
-	const string&func=tk.name();
-	if("mov"==func)        return make_unique<call_asm_mov>(move(tk),t);
-	if("int"==func)        return make_unique<call_asm_int>(move(tk),t);
-	if("xor"==func)        return make_unique<call_asm_xor>(move(tk),t);
-	if("syscall"==func)return make_unique<call_asm_syscall>(move(tk),t);
-	if("loop"==func)          return make_unique<stmt_loop>(move(tk),t);
-	if("if"==func)              return make_unique<stmt_if>(move(tk),t);
-	return                           make_unique<stmt_call>(move(tk),t);
+	if(tk.is_name("mov"))        return make_unique<call_asm_mov>(move(tk),t);
+	if(tk.is_name("int"))        return make_unique<call_asm_int>(move(tk),t);
+	if(tk.is_name("xor"))        return make_unique<call_asm_xor>(move(tk),t);
+	if(tk.is_name("syscall"))return make_unique<call_asm_syscall>(move(tk),t);
+	if(tk.is_name("loop"))          return make_unique<stmt_loop>(move(tk),t);
+	if(tk.is_name("if"))              return make_unique<stmt_if>(move(tk),t);
+	return                                 make_unique<stmt_call>(move(tk),t);
 }
 
 // called from expr_ops_list to solve circular dependencies with calls
 inline unique_ptr<statement>create_statement_from_tokenizer(tokenizer&t){
-	const token&tk=t.next_token();
+	token tk=t.next_token();
 	if(tk.is_name("#"))return make_unique<stmt_comment>(move(tk),t);// i.e.  print("hello") # comment
 	if(t.is_peek_char('('))return create_statement_from_tokenizer(move(tk),t); // i.e.  f(...)
 	return make_unique<statement>(move(tk));// i.e. 0x80, rax, identifiers
