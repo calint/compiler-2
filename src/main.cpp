@@ -16,7 +16,7 @@ using namespace std;
 #include"stmt_if.hpp"
 #include"stmt_return.hpp"
 
-static string file_read_to_string(const char *filename){
+static string read_file_to_string(const char *filename){
 	ifstream t{filename};
 	if(!t.is_open())
 		throw "cannot open field '"+string{filename}+"'";
@@ -62,7 +62,7 @@ static string optimize_jumps_1(stringstream&ss){
 		getline(ss,line1);
 		if(ss.eof())
 			break;
-		string jmp=trim(line1);
+		const string&jmp{trim(line1)};
 		if(!jmp.starts_with("jmp")){
 			sso<<line1<<endl;
 			continue;
@@ -77,7 +77,7 @@ static string optimize_jumps_1(stringstream&ss){
 			}
 			break;
 		}
-		string lbl=trim(line2);
+		string lbl{trim(line2)};
 		if(!lbl.ends_with(':')){
 			sso<<line1<<endl;
 			for(const auto&s:comments)sso<<s<<endl;
@@ -113,14 +113,14 @@ static string optimize_jumps_2(stringstream&ss){
 		getline(ss,line1);
 		if(ss.eof())
 			break;
-		string jxx=trim(line1);
+		const string&jxx{trim(line1)};
 		if(!jxx.starts_with("j")){
 			sso<<line1<<endl;
 			continue;
 		}
 		string line2;
 		getline(ss,line2);
-		string jmp=trim(line2);
+		const string&jmp{trim(line2)};
 		if(!jmp.starts_with("jmp")){
 			sso<<line1<<endl;
 			sso<<line2<<endl;
@@ -136,7 +136,7 @@ static string optimize_jumps_2(stringstream&ss){
 			}
 			break;
 		}
-		string lbl=trim(line3);
+		string lbl{trim(line3)};
 		if(!lbl.ends_with(':')){
 			sso<<line1<<endl;
 			sso<<line2<<endl;
@@ -179,7 +179,7 @@ static string optimize_jumps_2(stringstream&ss){
 		}
 		//   je if_14_8_code
 		//   cmp_14_26:
-		const string ws=line1.substr(0,line1.find_first_not_of(" \t\n\r\f\v"));
+		const string&ws{line1.substr(0,line1.find_first_not_of(" \t\n\r\f\v"))};
 		sso<<ws<<jxx_inv<<" "<<jmp_split[1]<<"  ; opt2"<<endl;
 		for(const auto&s:comments)sso<<s<<endl;
 		sso<<line3<<endl;
@@ -189,25 +189,25 @@ static string optimize_jumps_2(stringstream&ss){
 
 int main(int argc,char**args){
 	auto src_file_name=argc==1?"prog.baz":args[1];
-	auto src=file_read_to_string(src_file_name);
+	auto src=read_file_to_string(src_file_name);
 
 	try{
 		stmt_program p{src};
 		ofstream fo{"diff.baz"};
 		p.source_to(fo);
 		fo.close();
-		if(file_read_to_string(src_file_name)!=file_read_to_string("diff.baz"))
+		if(read_file_to_string(src_file_name)!=read_file_to_string("diff.baz"))
 			throw string("generated source differs");
 		stringstream ss1;
 		p.build(ss1);
-		const string&pass1=optimize_jumps_1(ss1);
+		const string&pass1{optimize_jumps_1(ss1)};
 		stringstream ss2{pass1};
-		const string&pass2=optimize_jumps_2(ss2);
+		const string&pass2{optimize_jumps_2(ss2)};
 		cout<<pass2<<endl;
 		// p.build(cout);
 	}catch(const compiler_error&e){
 		size_t start_char_in_line{0};
-		auto lineno=toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line);
+		const size_t lineno{toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line)};
 		cerr<<"\n"<<src_file_name<<":"<<lineno<<":"<<start_char_in_line<<": "<<e.msg<<endl;
 		return 1;
 	}catch(const string&s){
