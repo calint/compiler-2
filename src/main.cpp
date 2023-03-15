@@ -29,8 +29,8 @@ static string read_file_to_string(const char *filename){
 }
 
 static string trim(string s){
-	size_t start=0;
-	size_t end=s.length()-1;
+	size_t start{0};
+	size_t end{s.length()-1};
 	while(start<end&&(s[start]==' '||s[start]=='\t')){
 		start++;
 	}
@@ -43,7 +43,7 @@ static string trim(string s){
 static vector<string>split(const string&s,char delimiter){
 	vector<string>tokens;
 	string token;
-	istringstream tokenStream(s);
+	istringstream tokenStream{s};
 	while(getline(tokenStream,token,delimiter)){
 		tokens.push_back(token);
 	}
@@ -80,7 +80,7 @@ static string optimize_jumps_1(stringstream&ss){
 		string lbl{trim(line2)};
 		if(!lbl.ends_with(':')){
 			sso<<line1<<endl;
-			for(const auto&s:comments)sso<<s<<endl;
+			for(const string&s:comments)sso<<s<<endl;
 			sso<<line2<<endl;
 			continue;
 		}
@@ -93,7 +93,7 @@ static string optimize_jumps_1(stringstream&ss){
 			continue;
 		}
 		// write the label without the preceding jmp
-		for(const auto&s:comments)sso<<s<<endl;
+		for(const string&s:comments)sso<<s<<endl;
 		sso<<line2<<"  ; opt1"<<endl;
 	}
 	return sso.str();
@@ -188,8 +188,8 @@ static string optimize_jumps_2(stringstream&ss){
 }
 
 int main(int argc,char**args){
-	auto src_file_name=argc==1?"prog.baz":args[1];
-	auto src=read_file_to_string(src_file_name);
+	const char*src_file_name=argc==1?"prog.baz":args[1];
+	string src=read_file_to_string(src_file_name);
 
 	try{
 		stmt_program p{src};
