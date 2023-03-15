@@ -20,9 +20,6 @@ public:
 
 		tokenizer t{source};
 		while(true){
-			if(t.is_eos())
-				break;
-
 			token tk=t.next_token();
 			if(tk.is_blank()){
 				if(t.is_eos())
