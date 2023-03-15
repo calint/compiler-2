@@ -19,7 +19,7 @@ using namespace std;
 static string read_file_to_string(const char *filename){
 	ifstream t{filename};
 	if(!t.is_open())
-		throw "cannot open field '"+string{filename}+"'";
+		throw "cannot open file '"+string{filename}+"'";
 	string str;
 	t.seekg(0,ios::end);
 	str.reserve(size_t(t.tellg()));
