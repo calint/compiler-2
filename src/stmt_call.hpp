@@ -56,7 +56,7 @@ public:
 
 		if(!f.is_inline()){
 			// stack is: <base>,
-			tc.call_enter(*this,os,indent_level);
+			tc.enter_call(*this,os,indent_level);
 			// stack is: <base>,vars,regs,
 
 			// push arguments starting with the last
@@ -108,7 +108,7 @@ public:
 			// stack is: <base>,vars,regs,args,
 			tc.asm_call(*this,os,indent_level,f.name());
 
-			tc.call_exit(*this,os,indent_level,nbytes_of_args_on_stack,allocated_args_registers);
+			tc.exit_call(*this,os,indent_level,nbytes_of_args_on_stack,allocated_args_registers);
 			// stack is: <base>, (if this was not a call nested in another call's arguments)
 			//       or: <base>,vars,regs,
 
@@ -131,7 +131,7 @@ public:
 
 		// create unique labels for in-lined functions based on the location the source
 		// where the call occurred
-		const string&call_path=tc.get_call_path(tok());
+		const string&call_path=tc.get_inline_call_path(tok());
 		const string&src_loc=tc.source_location(tok());
 		const string&new_call_path=call_path.empty()?src_loc:(src_loc+"_"+call_path);
 		const string&ret_jmp_label=nm+"_"+new_call_path+"_end";
@@ -205,9 +205,9 @@ public:
 		// enter function creating a new scope from which 
 		//   prior variables are not visible
 		if(f.returns().empty()){
-			tc.push_func(nm,new_call_path,ret_jmp_label,true,"");
+			tc.enter_func(nm,new_call_path,ret_jmp_label,true,"");
 		}else{
-			tc.push_func(nm,new_call_path,ret_jmp_label,true,f.returns()[0].name());
+			tc.enter_func(nm,new_call_path,ret_jmp_label,true,f.returns()[0].name());
 		}
 
 		// add the aliases to the context of this scope
@@ -238,7 +238,7 @@ public:
 		tc.asm_label(*this,os,indent_level,ret_jmp_label);
 
 		// pop scope
-		tc.pop_func(nm);
+		tc.exit_func(nm);
 	}
 
 	inline statement&arg(size_t ix)const{return*(args_[ix].get());}

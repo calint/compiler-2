@@ -104,7 +104,7 @@ public:
 
 	inline const string&ret_label()const{return ret_label_;}
 
-	inline const string&call_path()const{return call_path_;}
+	inline const string&inline_call_path()const{return call_path_;}
 
 	inline bool is_func_inline()const{return is_inline_;}
 
@@ -222,34 +222,34 @@ public:
 		frames_.back().add_alias(ident,parent_frame_ident);
 	}
 
-	inline void push_func(const string&name,const string&call_loc,const string&ret_jmp,const bool is_inline,const string&ret_var){
+	inline void enter_func(const string&name,const string&call_loc,const string&ret_jmp,const bool is_inline,const string&ret_var){
 		frames_.emplace_back(name,frame::type::FUNC,call_loc,ret_jmp,is_inline,ret_var);
 		check_usage();
 	}
 
-	inline void push_block(){
+	inline void enter_block(){
 		frames_.emplace_back("",frame::type::BLOCK);
 		check_usage();
 	}
 
-	inline void push_loop(const string&name){
+	inline void enter_loop(const string&name){
 		frames_.emplace_back(name,frame::type::LOOP);
 		check_usage();
 	}
 
-	inline void pop_func(const string&name){
+	inline void exit_func(const string&name){
 		frame&f=frames_.back();
 		assert(f.is_func() and f.is_name(name));
 		frames_.pop_back();
 	}
 
-	inline void pop_loop(const string&name){
+	inline void exit_loop(const string&name){
 		frame&f=frames_.back();
 		assert(f.is_loop() and f.is_name(name));
 		frames_.pop_back();
 	}
 
-	inline void pop_block(){
+	inline void exit_block(){
 		frame&f=frames_.back();
 		assert(f.is_block());
 		frames_.pop_back();
@@ -332,11 +332,11 @@ public:
 		}
 	}
 
-	inline const string&get_call_path(const token&tk)const{
+	inline const string&get_inline_call_path(const token&tk)const{
 		size_t i=frames_.size()-1;
 		while(true){
 			if(frames_[i].is_func())
-				return frames_[i].call_path();
+				return frames_[i].inline_call_path();
 			if(i==0) // ? can happen?
 				break;
 			i--;
@@ -409,7 +409,7 @@ public:
 		return find(all_registers_.begin(),all_registers_.end(),id)!=all_registers_.end();
 	}
 
-	inline void call_enter(const statement&st,ostream&os,const size_t indent_level){
+	inline void enter_call(const statement&st,ostream&os,const size_t indent_level){
 		const bool root_call=call_metas_.empty();
 		const size_t nbytes_of_vars_on_stack{root_call?get_current_stack_size():0};
 		if(root_call){
@@ -438,7 +438,7 @@ public:
 		call_metas_.push_back(call_meta{nregs_pushed_on_stack,allocated_registers_.size(),nbytes_of_vars_on_stack});
 	}
 
-	inline void call_exit(const statement&st,ostream&os,const size_t indent_level,const size_t nbytes_of_args_on_stack,const vector<string>&allocated_args_registers){
+	inline void exit_call(const statement&st,ostream&os,const size_t indent_level,const size_t nbytes_of_args_on_stack,const vector<string>&allocated_args_registers){
 		const size_t nregs_pushed{call_metas_.back().nregs_pushed};
 		const size_t nbytes_of_vars{call_metas_.back().nbytes_of_vars};
 		call_metas_.pop_back();

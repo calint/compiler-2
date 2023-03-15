@@ -19,7 +19,7 @@ public:
 
 	// returns the label where the if branch begins evaluating the boolean expression
 	inline string if_bgn_label(const toc&tc)const{
-		const string&call_path=tc.get_call_path(tok());
+		const string&call_path=tc.get_inline_call_path(tok());
 		return "if_"+tc.source_location(tok())+(call_path.empty()?"":"_"+call_path);
 	}
 

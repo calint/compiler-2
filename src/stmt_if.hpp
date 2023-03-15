@@ -64,7 +64,7 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		// make unique labels considering in-lined functions
-		const string call_path=tc.get_call_path(tok());
+		const string call_path=tc.get_inline_call_path(tok());
 		const string src_loc=tc.source_location(tok());
 		const string cp=call_path.empty()?"":"_"+call_path;
 

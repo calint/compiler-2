@@ -99,11 +99,8 @@ public:
 		tc.asm_label(*this,os,indent_level,name());
 		tc.indent(os,indent_level+1,true);source_def_comment_to(os);
 
-		if(returns().empty()){
-			tc.push_func(name(),"","",false,"");
-		}else{
-			tc.push_func(name(),"","",false,returns()[0].name());
-		}
+		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());
+
 		// return binding
 		if(!returns().empty()){
 			const string&nm=returns()[0].name();
@@ -149,7 +146,7 @@ public:
 			tc.free_named_register(os,indent_level+1,allocated_names_registers[i]);
 		}
 		os<<endl;
-		tc.pop_func(name());
+		tc.exit_func(name());
 	}
 
 	inline const vector<token>&returns()const{return returns_;}

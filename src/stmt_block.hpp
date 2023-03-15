@@ -69,10 +69,10 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
-		tc.push_block();
+		tc.enter_block();
 		for(const auto&s:stmts_)
 			s->compile(tc,os,indent_level+1);
-		tc.pop_block();
+		tc.exit_block();
 	}
 
 private:
