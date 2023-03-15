@@ -196,12 +196,12 @@ public:
 		return lineno;
 	}
 
-	inline void finish(const toc&tc,ostream&os){
+	inline void finish(ostream&os){
 		assert(scratch_registers_.size()==8);
 		assert(named_registers_.size()==5);
 		assert(frames_.empty());
-		os<<"\n; max scratch registers in use: "<<tc.max_usage_scratch_regs_<<endl;
-		os<<";            max frames in use: "<<tc.max_frame_count_<<endl;
+		os<<"\n; max scratch registers in use: "<<max_usage_scratch_regs_<<endl;
+		os<<";            max frames in use: "<<max_frame_count_<<endl;
 //		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
 	}
 

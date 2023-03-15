@@ -74,7 +74,7 @@ public:
 
 	inline void build(ostream&os){
 		compile(tc_,os,0);
-		tc_.finish(tc_,os);
+		tc_.finish(os);
 	}
 
 private:
