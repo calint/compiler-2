@@ -8,6 +8,8 @@
 
 TAG=2023-04-15--2--checkpoint && git tag $TAG && git push origin $TAG
 
+git reset --hard HEAD
+
    ; sign extended mov
    movsx rax,byte[rbp-8]
    movsx rax,word[rbp-8]
