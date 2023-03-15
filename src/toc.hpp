@@ -128,7 +128,7 @@ public:
 	inline toc(const string&source):
 		all_registers_{"rax","rbx","rcx","rdx","rsi","rdi","rbp","rsp","r8","r9","r10","r11","r12","r13","r14","r15"},
 		scratch_registers_{"r8","r9","r10","r11","r12","r13","r14","r15"},
-		named_registers_{"rax","rbx","rcx","rdx","rsi","rdi"},
+		named_registers_{"rbx","rcx","rdx","rsi","rdi"},
 		source_str_{source}
 	{}
 
@@ -188,7 +188,7 @@ public:
 
 	inline void finish(const toc&tc,ostream&os){
 		assert(scratch_registers_.size()==8);
-		assert(named_registers_.size()==6);
+		assert(named_registers_.size()==5);
 //		assert(stkix_==0);
 //		assert(framestk_.import_frames_.size()==0);
 		os<<"\n; max scratch registers in use: "<<tc.max_usage_scratch_regs_<<endl;
