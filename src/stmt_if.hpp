@@ -4,15 +4,15 @@
 
 class stmt_if final:public statement{
 public:
-	inline stmt_if(const statement&parent,const token&tk,tokenizer&t):
-		statement{parent,tk}
+	inline stmt_if(const token&tk,tokenizer&t):
+		statement{tk}
 	{
 		// if a=b {x} else if c=d {y} else {z}
 		// 'a=b {x}', 'c=d {y}' are 'branches'
 		// 'if' token has been read
 		while(true){
 			// read branch i.e. a=b {x}
-			branches_.emplace_back(*this,t);
+			branches_.emplace_back(t);
 
 			// check if it is a 'else if' or 'else' or a new statement
 			token tkn=t.next_token();
@@ -31,7 +31,7 @@ public:
 				// save tokens to be able to reproduce the source
 				else_if_tokens_.push_back(tkn);
 				// read the 'else' code
-				else_code_=make_unique<stmt_block>(*this,t);
+				else_code_=make_unique<stmt_block>(t);
 				return;
 			}
 			// 'else if': continue reading if branches

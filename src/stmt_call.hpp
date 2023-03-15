@@ -7,8 +7,8 @@
 
 class stmt_call:public expression{
 public:
-	inline stmt_call(const statement&parent,const token&tk,tokenizer&t):
-		expression{parent,tk}
+	inline stmt_call(const token&tk,tokenizer&t):
+		expression{tk}
 	{
 		if(!t.is_next_char('(')){
 			no_args_=true;
@@ -22,7 +22,7 @@ public:
 				t.next_char(); // consume the peeked char
 				break;
 			}
-			args_.emplace_back(make_unique<expr_ops_list>(*this,t,true));
+			args_.emplace_back(make_unique<expr_ops_list>(t,true));
 			if(t.is_next_char(')'))
 				break;
 			if(!t.is_next_char(','))

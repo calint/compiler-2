@@ -4,11 +4,11 @@
 
 class stmt_def_var final:public statement{
 public:
-	inline stmt_def_var(const statement&parent,const token&tk,tokenizer&t):
-		statement{parent,tk},
+	inline stmt_def_var(const token&tk,tokenizer&t):
+		statement{tk},
 		ident_{t.next_token()},
 		op_{t.next_char()},
-		initial_value_{*this,ident_,t}
+		initial_value_{ident_,t}
 	{
 		if(op_!='=')
 			throw compiler_error(ident_,"expected '=' and initializer");

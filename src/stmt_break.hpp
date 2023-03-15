@@ -2,8 +2,8 @@
 
 class stmt_break final:public statement{
 public:
-	inline stmt_break(const statement&parent,const token&tk):
-		statement{parent,tk}
+	inline stmt_break(const token&tk):
+		statement{tk}
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{

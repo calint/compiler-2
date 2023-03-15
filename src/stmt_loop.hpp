@@ -2,9 +2,9 @@
 
 class stmt_loop final:public statement{
 public:
-	inline stmt_loop(const statement&parent,const token&tk,tokenizer&t):
-		statement{parent,tk},
-		code_{stmt_block{parent,t}}
+	inline stmt_loop(const token&tk,tokenizer&t):
+		statement{tk},
+		code_{stmt_block{t}}
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{

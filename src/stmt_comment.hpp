@@ -2,8 +2,8 @@
 
 class stmt_comment final:public statement{
 public:
-	inline stmt_comment(const statement&parent,const token&tk,tokenizer&t):
-		statement{parent,tk},
+	inline stmt_comment(const token&tk,tokenizer&t):
+		statement{tk},
 		line_{t.read_rest_of_line()}
 	{}
 

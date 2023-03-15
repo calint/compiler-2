@@ -4,9 +4,9 @@
 
 class stmt_assign_var final:public statement{
 public:
-	inline stmt_assign_var(const statement&parent,const token&tk,tokenizer&t):
-		statement{parent,tk},
-		oplist_{expr_ops_list{*this,t}}
+	inline stmt_assign_var(const token&tk,tokenizer&t):
+		statement{tk},
+		oplist_{expr_ops_list{t}}
 	{}
 
 	inline void source_to(ostream&os)const override{

@@ -6,9 +6,9 @@ class toc;
 
 class statement{
 public:
-	inline statement(const statement&parent,const token&tk):parent_{parent},token_{tk}{}
+	inline statement(const token&tk):token_{tk}{}
 
-	inline statement(const statement&other):parent_{other.parent_},token_{other.token_}{}
+	inline statement(const statement&other):token_{other.token_}{}
 
 	inline virtual~statement(){}
 
@@ -20,8 +20,6 @@ public:
 
 	inline const token&tok()const{return token_;}
 
-	inline const statement&parent()const{return parent_;}
-
 	inline virtual bool is_in_data_section()const{return false;}
 
 	inline virtual bool is_expression()const{return false;}
@@ -32,6 +30,5 @@ public:
 
 
 private:
-	const statement&parent_;
 	const token token_;
 };

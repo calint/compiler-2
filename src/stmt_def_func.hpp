@@ -5,8 +5,8 @@
 
 class stmt_def_func final:public statement{
 public:
-	inline stmt_def_func(const statement&parent,const token&tk,tokenizer&t):
-		statement{parent,tk}
+	inline stmt_def_func(const token&tk,tokenizer&t):
+		statement{tk}
 	{
 		name_=t.next_token();
 		if(name_.is_name("inline")){
@@ -20,7 +20,7 @@ public:
 		if(!no_args_){
 			while(true){
 				if(t.is_next_char(')'))break;
-				params_.emplace_back(*this,t);
+				params_.emplace_back(t);
 				if(t.is_next_char(')'))break;
 				if(!t.is_next_char(','))
 					throw compiler_error(params_.back(),"expected ',' after parameter '"+params_.back().tok().name()+"'");
@@ -33,7 +33,7 @@ public:
 				break;
 			}
 		}
-		code_=make_unique<stmt_block>(parent,t);
+		code_=make_unique<stmt_block>(t);
 	}
 
 	inline void source_to(ostream&os)const override{

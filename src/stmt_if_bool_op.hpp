@@ -4,8 +4,8 @@
 
 class stmt_if_bool_op final:public statement{
 public:
-	inline stmt_if_bool_op(const statement&parent,tokenizer&t):
-		statement(parent,t.next_whitespace_token())
+	inline stmt_if_bool_op(tokenizer&t):
+		statement(t.next_whitespace_token())
 	{
 		// if not a=3
 		bool is_not{false};
@@ -20,9 +20,9 @@ public:
 		}
 		is_not_=is_not;
 
-		lhs_=make_unique<expr_ops_list>(*this,t,true);
+		lhs_=make_unique<expr_ops_list>(t,true);
 		if(lhs_->is_empty())
-			throw compiler_error(parent,"expected left hand side of boolean operation");
+			throw compiler_error(*this,"expected left hand side of boolean operation");
 
 		if(t.is_next_char('=')){
 			op_="=";
@@ -39,9 +39,9 @@ public:
 				op_=">";
 			}
 		}else{
-			throw compiler_error(parent,"expected boolean op");
+			throw compiler_error(*this,"expected boolean op");
 		}
-		rhs_=make_unique<expr_ops_list>(*this,t,true);
+		rhs_=make_unique<expr_ops_list>(t,true);
 		if(rhs_->is_empty())// unary
 			throw compiler_error(*lhs_,"expected right hand side of boolean operation");
 	}

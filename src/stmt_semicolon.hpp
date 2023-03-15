@@ -3,8 +3,8 @@
 // empty statement in case semi-colon is used
 class stmt_semicolon final:public statement{
 public:
-	inline stmt_semicolon(const statement&parent,const token&tk,tokenizer&t):
-		statement{parent,tk}
+	inline stmt_semicolon(const token&tk,tokenizer&t):
+		statement{tk}
 	{}
 
 	inline void source_to(ostream&os)const override{

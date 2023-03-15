@@ -2,8 +2,8 @@
 
 class stmt_def_type final:public statement{
 public:
-	inline stmt_def_type(const statement&parent,const token&tk,tokenizer&t):
-		statement{parent,tk},
+	inline stmt_def_type(const token&tk,tokenizer&t):
+		statement{tk},
 		name_{t.next_token()}
 	{
 		if(!t.is_next_char('{'))

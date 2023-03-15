@@ -4,8 +4,8 @@
 
 class expression:public statement{
 public:
-	inline expression(const statement&parent,token tk):
-		statement{parent,tk}
+	inline expression(token tk):
+		statement{tk}
 	{}
 
 	inline bool is_expression()const override{return true;}

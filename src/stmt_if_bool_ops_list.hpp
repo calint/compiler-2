@@ -6,15 +6,15 @@
 
 class stmt_if_bool_ops_list final:public statement{
 public:
-	inline stmt_if_bool_ops_list(const statement&parent,tokenizer&t,bool enclosed=false):
-		statement(parent,t.next_whitespace_token()),
+	inline stmt_if_bool_ops_list(tokenizer&t,bool enclosed=false):
+		statement{t.next_whitespace_token()},
 		enclosed_{enclosed}
 	{
 		while(true){
 			if(t.is_next_char('(')){
-				bools_.emplace_back(stmt_if_bool_ops_list{*this,t,true});
+				bools_.emplace_back(stmt_if_bool_ops_list{t,true});
 			}else{
-				bools_.emplace_back(stmt_if_bool_op{*this,t});
+				bools_.emplace_back(stmt_if_bool_op{t});
 			}
 			if(t.is_next_char(')'))
 				return;

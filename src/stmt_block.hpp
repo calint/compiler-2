@@ -11,8 +11,8 @@
 
 class stmt_block final:public statement{
 public:
-	inline stmt_block(const statement&parent,tokenizer&t):
-		statement{parent,t.next_whitespace_token()},
+	inline stmt_block(tokenizer&t):
+		statement{t.next_whitespace_token()},
 		is_one_statement_{not t.is_next_char('{')}
 	{
 		while(true){
@@ -29,30 +29,30 @@ public:
 			token tk=t.next_token();
 			if(tk.is_blank()){
 				if(t.is_next_char(';')){ // in-case ';' is used
-					stmts_.emplace_back(make_unique<stmt_semicolon>(*this,move(tk),t));
+					stmts_.emplace_back(make_unique<stmt_semicolon>(move(tk),t));
 					last_statement_considered_no_statment=true;
 					continue;
 				}
 				throw compiler_error(tk,"unexpected '"+string{t.peek_char()}+"'");
 			}
 			if(tk.is_name("var")){
-				stmts_.emplace_back(make_unique<stmt_def_var>(*this,move(tk),t));
+				stmts_.emplace_back(make_unique<stmt_def_var>(move(tk),t));
 			}else if(t.is_next_char('=')){
-				stmts_.emplace_back(make_unique<stmt_assign_var>(*this,move(tk),t));
+				stmts_.emplace_back(make_unique<stmt_assign_var>(move(tk),t));
 			}else if(tk.is_name("break")){
-				stmts_.emplace_back(make_unique<stmt_break>(parent,move(tk)));
+				stmts_.emplace_back(make_unique<stmt_break>(move(tk)));
 			}else if(tk.is_name("continue")){
-				stmts_.emplace_back(make_unique<stmt_continue>(parent,move(tk)));
+				stmts_.emplace_back(make_unique<stmt_continue>(move(tk)));
 			}else if(tk.is_name("return")){
-				stmts_.emplace_back(make_unique<stmt_return>(parent,move(tk)));
+				stmts_.emplace_back(make_unique<stmt_return>(move(tk)));
 			}else if(tk.is_name("#")){
-				stmts_.emplace_back(make_unique<stmt_comment>(*this,move(tk),t));
+				stmts_.emplace_back(make_unique<stmt_comment>(move(tk),t));
 				last_statement_considered_no_statment=true;
 			}else if(tk.is_name("")){
-				stmts_.emplace_back(make_unique<stmt_whitespace>(*this,move(tk)));
+				stmts_.emplace_back(make_unique<stmt_whitespace>(move(tk)));
 			}else{
 				// circular reference resolver
-				stmts_.emplace_back(create_statement_from_tokenizer(*this,move(tk),t));
+				stmts_.emplace_back(create_statement_from_tokenizer(move(tk),t));
 			}
 
 			if(is_one_statement_&&!last_statement_considered_no_statment)

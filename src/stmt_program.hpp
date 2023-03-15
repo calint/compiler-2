@@ -10,7 +10,7 @@
 class stmt_program final:public statement{
 public:
 	inline stmt_program(const string&source):
-		statement{*this,token{}},
+		statement{token{}},
 		tc_{source}
 	{
 		// add built-in assembler calls
@@ -30,15 +30,15 @@ public:
 				throw compiler_error(tk,"unexpected blank token");
 			}
 			if(tk.is_name("field")){
-				stmts_.emplace_back(make_unique<stmt_def_field>(*this,tk,t));
+				stmts_.emplace_back(make_unique<stmt_def_field>(tk,t));
 			}else if(tk.is_name("func")){
-				stmts_.emplace_back(make_unique<stmt_def_func>(*this,tk,t));
+				stmts_.emplace_back(make_unique<stmt_def_func>(tk,t));
 			}else if(tk.is_name("type")){
-				stmts_.emplace_back(make_unique<stmt_def_type>(*this,tk,t));
+				stmts_.emplace_back(make_unique<stmt_def_type>(tk,t));
 			}else if(tk.is_name("#")){
-				stmts_.emplace_back(make_unique<stmt_comment>(*this,tk,t));
+				stmts_.emplace_back(make_unique<stmt_comment>(tk,t));
 			}else if(tk.is_name("")){
-				stmts_.emplace_back(make_unique<stmt_whitespace>(*this,tk));
+				stmts_.emplace_back(make_unique<stmt_whitespace>(tk));
 			}else{
 				throw compiler_error(tk,"unexpected keyword '"+tk.name()+"'");
 			}

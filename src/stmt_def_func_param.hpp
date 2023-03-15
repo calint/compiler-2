@@ -2,8 +2,8 @@
 
 class stmt_def_func_param final:public statement{
 public:
-	inline stmt_def_func_param(const statement&parent,tokenizer&t):
-		statement{parent,t.next_token()}
+	inline stmt_def_func_param(tokenizer&t):
+		statement{t.next_token()}
 	{
 		assert(!tok().is_name(""));
 

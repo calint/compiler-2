@@ -221,22 +221,22 @@ int main(int argc,char**args){
 }
 
 // called from stmt_block to solve circular dependencies with loop, if and calls
-inline unique_ptr<statement>create_statement_from_tokenizer(const statement&parent,const token&tk,tokenizer&t){
+inline unique_ptr<statement>create_statement_from_tokenizer(const token&tk,tokenizer&t){
 	const string&func=tk.name();
-	if("mov"==func)        return make_unique<call_asm_mov>(parent,move(tk),t);
-	if("int"==func)        return make_unique<call_asm_int>(parent,move(tk),t);
-	if("xor"==func)        return make_unique<call_asm_xor>(parent,move(tk),t);
-	if("syscall"==func)return make_unique<call_asm_syscall>(parent,move(tk),t);
-	if("loop"==func)          return make_unique<stmt_loop>(parent,move(tk),t);
-	if("if"==func)              return make_unique<stmt_if>(parent,move(tk),t);
-	return                           make_unique<stmt_call>(parent,move(tk),t);
+	if("mov"==func)        return make_unique<call_asm_mov>(move(tk),t);
+	if("int"==func)        return make_unique<call_asm_int>(move(tk),t);
+	if("xor"==func)        return make_unique<call_asm_xor>(move(tk),t);
+	if("syscall"==func)return make_unique<call_asm_syscall>(move(tk),t);
+	if("loop"==func)          return make_unique<stmt_loop>(move(tk),t);
+	if("if"==func)              return make_unique<stmt_if>(move(tk),t);
+	return                           make_unique<stmt_call>(move(tk),t);
 }
 
 // called from expr_ops_list to solve circular dependencies with calls
-inline unique_ptr<statement>create_statement_from_tokenizer(const statement&parent,tokenizer&t){
+inline unique_ptr<statement>create_statement_from_tokenizer(tokenizer&t){
 	const token&tk=t.next_token();
-	if(tk.is_name("#"))return make_unique<stmt_comment>(parent,move(tk),t);// i.e.  print("hello") # comment
-	if(t.is_peek_char('('))return create_statement_from_tokenizer(parent,move(tk),t); // i.e.  f(...)
-	return make_unique<statement>(parent,move(tk));// i.e. 0x80, rax, identifiers
+	if(tk.is_name("#"))return make_unique<stmt_comment>(move(tk),t);// i.e.  print("hello") # comment
+	if(t.is_peek_char('('))return create_statement_from_tokenizer(move(tk),t); // i.e.  f(...)
+	return make_unique<statement>(move(tk));// i.e. 0x80, rax, identifiers
 }
 
