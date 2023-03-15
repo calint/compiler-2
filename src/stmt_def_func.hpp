@@ -62,14 +62,43 @@ public:
 		code_->source_to(os);
 	}
 
+	inline void source_def_comment_to(ostream&os)const{
+		stringstream ss;
+		name_.source_to(ss);
+		if(!no_args_){
+			ss<<"(";
+			const size_t nparam=params_.size()-1;
+			size_t i{0};
+			for(const auto&s:params_){
+				s.source_to(ss);
+				if(i++!=nparam)ss<<",";
+			}
+			ss<<")";
+		}
+		if(!returns_.empty()){
+			ss<<":";
+			const size_t sz=returns_.size()-1;
+			size_t i{0};
+			for(const auto&t:returns_){
+				t.source_to(ss);
+				if(i++!=sz)ss<<",";
+			}
+		}
+		ss<<endl;
+
+		string s=ss.str();
+		string res=regex_replace(s,regex("\\s+")," ");
+		os<<res<<endl;
+	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.add_func(*this,name_.name(),this);//? in constructor for forward ref
 		if(is_inline())
 			return;
-
+		
 		tc.asm_label(*this,os,indent_level,name());
-//		toc::indent(os,indent_level);os<<name()<<":\n";
+		tc.indent(os,indent_level+1,true);source_def_comment_to(os);
+
 		if(returns().empty()){
 			tc.push_func(name(),"","",false,"");
 		}else{

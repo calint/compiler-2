@@ -4,7 +4,6 @@
 #include<sstream>
 #include<regex>
 #include<unordered_set>
-#include <optional>
 
 #include"lut.hpp"
 #include"compiler_error.hpp"

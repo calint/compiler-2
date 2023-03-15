@@ -48,9 +48,12 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.source_comment(*this,os,indent_level);
-
 		const string&nm=tok().name();
 		const stmt_def_func&f=tc.get_func_or_break(*this,nm);
+		
+		tc.indent(os,indent_level,true);
+		f.source_def_comment_to(os);
+
 		if(f.params().size()!=args_.size())
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
 
