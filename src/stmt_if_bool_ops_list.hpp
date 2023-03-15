@@ -18,19 +18,16 @@ public:
 			}
 			if(t.is_next_char(')'))
 				return;
-			token tk=t.next_token();
-			if(tk.is_name("or")){
-				ops_.push_back(tk);
-			}else if(tk.is_name("and")){
-				ops_.push_back(tk);
+			token tk{t.next_token()};
+			if(tk.is_name("or") or tk.is_name("and")){
+				ops_.push_back(move(tk));
 			}else{
 				t.pushback_token(tk);
 				break;
 			}
 		}
-		if(enclosed_){
+		if(enclosed_)
 			throw compiler_error(tok(),"expected ')' to close expression");
-		}
 	}
 
 	inline void source_to(ostream&os)const override{
@@ -38,7 +35,7 @@ public:
 		if(enclosed_){
 			os<<"(";
 		}
-		const size_t n=bools_.size();
+		const size_t n{bools_.size()};
 		for(size_t i=0;i<n;i++){
 			if(bools_[i].index()==0){
 				get<stmt_if_bool_op>(bools_[i]).source_to(os);
@@ -46,7 +43,7 @@ public:
 				get<stmt_if_bool_ops_list>(bools_[i]).source_to(os);
 			}
 			if(i<n-1){
-				const token&t=ops_[i];
+				const token&t{ops_[i]};
 				t.source_to(os);
 			}
 		}
@@ -59,19 +56,19 @@ public:
 	}
 
 	inline string cmp_bgn_label(const toc&tc)const{
-		const string&call_path=tc.get_inline_call_path(tok());
+		const string&call_path{tc.get_inline_call_path(tok())};
 		return "cmp_"+tc.source_location(tok())+(call_path.empty()?"":"_"+call_path);
 	}
 
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true)const{
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 
-		const size_t n=bools_.size();
+		const size_t n{bools_.size()};
 		for(size_t i=0;i<n;i++){
 			if(bools_[i].index()==1){
-				const stmt_if_bool_ops_list&el=get<stmt_if_bool_ops_list>(bools_[i]);
-				string jmp_false=jmp_to_if_false;
-				string jmp_true=jmp_to_if_true;
+				const stmt_if_bool_ops_list&el{get<stmt_if_bool_ops_list>(bools_[i])};
+				string jmp_false{jmp_to_if_false};
+				string jmp_true{jmp_to_if_true};
 				if(i<n-1){
 					// if not last element check if it is a 'or' or 'and' list
 					if(ops_[i].is_name("or")){
@@ -91,14 +88,14 @@ public:
 				continue;
 			}
 			// a=1 and b=2   vs   a=1 or b=2
-			const stmt_if_bool_op&e=get<stmt_if_bool_op>(bools_[i]);
+			const stmt_if_bool_op&e{get<stmt_if_bool_op>(bools_[i])};
 			if(i<n-1){
 				if(ops_[i].is_name("or")){
 					e.compile_or(tc,os,indent_level,jmp_to_if_true);
 				}else if(ops_[i].is_name("and")){
 					e.compile_and(tc,os,indent_level,jmp_to_if_false);
 				}else{
-					throw "expected 'or' or 'and'";
+					throw"expected 'or' or 'and'";
 				}
 			}else{
 				e.compile_and(tc,os,indent_level,jmp_to_if_false);

@@ -10,13 +10,13 @@ public:
 		// if not a=3
 		bool is_not{false};
 		while(true){
-			token tk=t.next_token();
+			token tk{t.next_token()};
 			if(not tk.is_name("not")){
 				t.pushback_token(tk);
 				break;
 			}
 			is_not=not is_not;
-			nots_.push_back(tk);
+			nots_.push_back(move(tk));
 		}
 		is_not_=is_not;
 
@@ -49,9 +49,8 @@ public:
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 
-		for(const auto&e:nots_){
+		for(const token&e:nots_)
 			e.source_to(os);
-		}
 
 		lhs_->source_to(os);
 		os<<op_;
@@ -65,7 +64,6 @@ public:
 	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_true)const{
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
-//		toc::indent(os,indent_level);os<<cmp_bgn_label(tc)<<":\n";
 		resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
 		toc::indent(os,indent_level);
 		os<<(is_not_?asm_jxx_for_op_inv(op_):asm_jxx_for_op(op_));
@@ -75,7 +73,6 @@ public:
 	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false)const{
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
-//		toc::indent(os,indent_level);os<<cmp_bgn_label(tc);os<<":\n";
 		resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
 		toc::indent(os,indent_level);
 		os<<(is_not_?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
@@ -88,7 +85,6 @@ public:
 	}
 
 private:
-
 	inline static string asm_jxx_for_op(const string&op){
 		if(op=="="){
 			return "je";
@@ -141,7 +137,7 @@ private:
 
 		tc.asm_cmd(*this,os,indent_level,op,dest,src);
 
-		for(const auto&r:allocated_registers)
+		for(const string&r:allocated_registers)
 			tc.free_scratch_register(os,indent_level,r);
 	}
 

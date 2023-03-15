@@ -15,12 +15,12 @@ public:
 	{
 		// add built-in assembler calls
 		vector<string>assem{"mov","int","xor","syscall"};
-		for(const auto&s:assem)
+		for(const string&s:assem)
 			tc_.add_func(*this,s,nullptr);
 
 		tokenizer t{source};
 		while(true){
-			token tk=t.next_token();
+			token tk{t.next_token()};
 			if(tk.is_blank()){
 				if(t.is_eos())
 					break;
@@ -65,6 +65,7 @@ public:
 		const stmt_def_func&main=tc.get_func_or_break(*this,"main");
 		if(!main.is_inline())
 			throw compiler_error(main,"main function must be declared inline");
+			
 		os<<"main:"<<endl;
 		tc.enter_func("main","","",true,"");
 		main.code().compile(tc,os,indent_level);

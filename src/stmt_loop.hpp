@@ -11,22 +11,19 @@ public:
 		toc::indent(os,indent_level,true);tc.token_comment(os,tok());
 		// make unique label for this loop considering in-lined functions
 		// current path of source locations where in-lined functions have been called
-		const string&call_path=tc.get_inline_call_path(tok());
+		const string&call_path{tc.get_inline_call_path(tok())};
 		// current source location
-		const string&src_loc=tc.source_location(tok());
+		const string&src_loc{tc.source_location(tok())};
 		// the loop label
-		const string lbl="loop_"+(call_path.empty()?src_loc:(src_loc+"_"+call_path));
+		const string&lbl{"loop_"+(call_path.empty()?src_loc:(src_loc+"_"+call_path))};
 		tc.asm_label(*this,os,indent_level,lbl);
-//		toc::indent(os,indent_level);os<<lbl<<":"<<endl;
 		// enter loop scope
 		tc.enter_loop(lbl);
 		code_.compile(tc,os,indent_level);
 		// jump to loop
 		tc.asm_jmp(*this,os,indent_level,lbl);
-//		toc::indent(os,indent_level);os<<"jmp "<<lbl<<endl;
 		// exit loop label
 		tc.asm_label(*this,os,indent_level,lbl+"_end");
-//		toc::indent(os,indent_level);os<<lbl<<"_end:"<<endl;
 		// exit loop scope
 		tc.exit_loop(lbl);
 	}
