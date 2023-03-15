@@ -26,3 +26,23 @@ TAG=2023-04-15--2--checkpoint && git tag $TAG && git push origin $TAG
 
 
 
+
+extern printf
+--------------------------
+section .text
+global main
+main:
+   mov rsi,42
+   mov rdi,fmt
+   xor rax,rax
+   call printf
+   ret
+
+section .data
+fmt db 'di: %d',10,0
+fmt.len equ $-fmt
+
+section .note.GNU-stack noexec
+-----------------------------
+nasm -f elf64 gen-m.s && gcc -no-pie -o gen-m gen-m.o && ./gen-m
+

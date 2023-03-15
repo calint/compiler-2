@@ -51,9 +51,6 @@ public:
 		const string&nm=tok().name();
 		const stmt_def_func&f=tc.get_func_or_break(*this,nm);
 		
-		tc.indent(os,indent_level,true);
-		f.source_def_comment_to(os);
-
 		if(f.params().size()!=args_.size())
 			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
 
@@ -128,6 +125,9 @@ public:
 		//
 		// inlined function
 		//
+
+		tc.indent(os,indent_level,true);
+		f.source_def_comment_to(os);
 
 		// create unique labels for in-lined functions based on the location the source
 		// where the call occurred

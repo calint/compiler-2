@@ -22,7 +22,9 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
+
 bar:
+;  bar(a,b):res 
 ;  res: qword[rbp-8]
 ;  a: qword[rbp+16]
 ;  b: qword[rbp+24]
@@ -36,12 +38,12 @@ bar:
      cmp_20_12:
      cmp qword[rbp+24],0
      jne if_20_9_end
-     jmp if_20_12_code
-     if_20_12_code:
+     if_20_12_code:  ; opt1
 ;      [20:16] break 
        jmp loop_19_5_end
      if_20_9_end:
 ;    [21:9] print(hello.len,hello)
+;    print(len:reg_rdx,ptr:reg_rcx) 
 ;      inline: 21_9
 ;      alloc rdx
 ;      alias len -> rdx
@@ -79,9 +81,11 @@ bar:
    ret
 
 foo:
+;  foo 
    push rbp
    mov rbp,rsp
 ;  [28:5] print(world.len,world)
+;  print(len:reg_rdx,ptr:reg_rcx) 
 ;    inline: 28_5
 ;    alloc rdx
 ;    alias len -> rdx
@@ -133,6 +137,7 @@ main:
    call foo
    add rsp,24
 ;  [42:5] exit(0)
+;  exit(v) 
 ;    inline: 42_5
 ;    alias v -> 0
 ;    [13:5] mov(rbx,v)
@@ -145,3 +150,4 @@ main:
 
 ; max scratch registers in use: 1
 ;            max frames in use: 6
+

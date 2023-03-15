@@ -24,8 +24,7 @@ bar:
      cmp_20_12:
      cmp qword[rbp+24],0
      jne if_20_9_end
-     jmp if_20_12_code
-     if_20_12_code:
+     if_20_12_code:  ; opt1
        jmp loop_19_5_end
      if_20_9_end:
        mov rdx,hello.len
