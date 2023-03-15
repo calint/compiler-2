@@ -68,10 +68,10 @@ public:
 			// some arguments might be passed through registers
 			vector<string>allocated_args_registers;
 			size_t nbytes_of_args_on_stack=0;
-			size_t nargs=args_.size();
-			while(nargs--){
-				const statement&arg=*args_[nargs];
-				const stmt_def_func_param&param=f.param(nargs);
+			size_t i=args_.size();
+			while(i--){
+				const statement&arg=*args_[i];
+				const stmt_def_func_param&param=f.param(i);
 				// is the argument passed through a register?
 				const string&arg_reg=param.get_register_or_empty();
 				bool argument_passed_in_register=false;
@@ -210,7 +210,7 @@ public:
 		}else{
 			tc.push_func(nm,new_call_path,ret_jmp_label,true,f.returns()[0].name());
 		}
-		
+
 		// add the aliases to the context of this scope
 		for(const auto&e:aliases_to_add){
 			const string&from=get<0>(e);
