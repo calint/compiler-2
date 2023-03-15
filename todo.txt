@@ -4,7 +4,6 @@
       first argument to f is the same register then the second argument is clobbered
 [ ]   non-inlined
 [ ]   inlined
-[ ] review stmt_call
 [ ] character type
 [ ] string type
 [ ] var str="hello world"
@@ -47,6 +46,7 @@
 [ ] clang-format everything for less dess code?
 [ ] compile for pczero task
 -------------------------------------------------------------------------------
+[x] review stmt_call
 [x] when calling non-inlined functions the allocated register is pushed and popped
     although it hasn't been assigned. keep track of that in toc and optimize away
     the push/pop
