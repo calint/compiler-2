@@ -1,42 +1,27 @@
-field hello="hello\n"
-field world="world\n"
-
-func inline print(len:reg_rdx,ptr:reg_rcx){
-    mov(rcx,ptr)
-    mov(rdx,len)
-    mov(rbx,1)
-    mov(rax,4)
-    int(0x80)
-}
-
-func inline exit(v){
+func inline exit(v:reg_rbx){
     mov(rbx,v)
     mov(rax,1)
     int(0x80)
 }
 
-func bar(a,b){
-    loop{
-        if b=0 return
-        print(hello.len,hello)
-        b=b-1
-    }
+func a(i):res{
+    res=i+1
 }
 
-func foo{
-    print(world.len,world)
+func b(i):res{
+    res=i+2
 }
 
-type dq{8}
-type dd{4}
-type dw{2}
-type db{1}
-
-func inline main{
+func c(i):res{
     var a=1
     var b=2
-    var c=3
-    bar(a,b)
-    foo()
-    exit(0)
+    var c=a+b
+    res=i+c
+}
+
+func inline main{
+    var x=1
+    var y=2
+    var z=3
+    exit(1+a(b(z+c(1)+c(x+y))))
 }

@@ -117,6 +117,12 @@ struct field_meta final{
 	bool is_str{false};
 };
 
+struct call_meta final{
+	size_t nregs_pushed{0};
+	size_t alloc_reg_idx{0};
+	size_t nbytes_of_vars{0};
+};
+
 class toc final{
 public:
 	inline toc(const string&source):
@@ -408,20 +414,111 @@ public:
 		return find(all_registers_.begin(),all_registers_.end(),id)!=all_registers_.end();
 	}
 
-	inline bool call_enter(){
-		const bool b=call_allocated_regs_idx_.empty();
-		call_allocated_regs_idx_.push_back(allocated_registers_.size());
-		return b;
+	inline void call_enter(const statement&st,ostream&os,const size_t indent_level){
+		const bool root_call=call_metas_.empty();
+		const size_t nbytes_of_vars_on_stack{get_current_stack_size()};
+		if(root_call){
+			// this call is not nested within another call's arguments
+			if(nbytes_of_vars_on_stack){
+				// adjust stack past the allocated vars
+				asm_cmd(st,os,indent_level,"sub","rsp",to_string(nbytes_of_vars_on_stack));
+				// stack: <base>,.. vars ..,
+			}
+		}
+		// index in the allocated registers that have been allocated but not pushed
+		// prior to this call (that might clobber them)
+		const size_t alloc_regs_idx{root_call?0:call_metas_.back().alloc_reg_idx};
+
+		// push registers allocated prior to this call
+		const size_t n{allocated_registers_.size()};
+		size_t nregs_pushed_on_stack{0};
+		for(size_t i{alloc_regs_idx};i<n;i++){
+			const string&reg=allocated_registers_[i];
+			if(is_register_initiated(reg)){
+				// push only registers that contain a valid value
+				asm_push(st,os,indent_level,reg);
+				nregs_pushed_on_stack++;
+			}
+		}
+		call_metas_.push_back(call_meta{nregs_pushed_on_stack,allocated_registers_.size(),nbytes_of_vars_on_stack});
 	}
 
-	inline bool call_exit(){
-		call_allocated_regs_idx_.pop_back();
-		return call_allocated_regs_idx_.empty();
+	inline void call_exit(const statement&st,ostream&os,const size_t indent_level,const size_t nbytes_of_args_on_stack,const vector<string>&allocated_args_registers){
+		const size_t nregs_pushed{call_metas_.back().nregs_pushed};
+		const size_t nbytes_of_vars{call_metas_.back().nbytes_of_vars};
+		call_metas_.pop_back();
+		const bool restore_rsp_to_base=call_metas_.empty();
+		const size_t alloc_reg_idx{restore_rsp_to_base?0:call_metas_.back().alloc_reg_idx};
+
+		// optimization can be done if no registers need to be popped
+		//   rsp is adjusted once
+		if(nregs_pushed==0){
+			// stack is: <base>,vars,args,
+			if(restore_rsp_to_base){
+				const string&offset=to_string(nbytes_of_args_on_stack+nbytes_of_vars);
+				asm_cmd(st,os,indent_level,"add","rsp",offset);
+				// stack is: <base>,
+			}else{
+				const string&offset=to_string(nbytes_of_args_on_stack);
+				asm_cmd(st,os,indent_level,"add","rsp",offset);
+				// stack is: <base>,vars,
+			}
+			// free named registers
+			if(allocated_registers_.size()){
+				size_t i=allocated_registers_.size();
+				while(true){
+					if(i==alloc_reg_idx)
+						break;
+					i--;
+					const string&reg=allocated_registers_[i];
+					// don't pop registers used to pass arguments
+					if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)!=allocated_args_registers.end()){
+						free_named_register(os,indent_level,reg);
+					}
+				}
+			}
+		}else{
+			// stack is: <base>,vars,regs,args,
+			if(nbytes_of_args_on_stack){
+				const string&offset=to_string(nbytes_of_args_on_stack);
+				asm_cmd(st,os,indent_level,"add","rsp",offset);
+			}
+			// stack is: <base>,vars,regs,
+
+			// pop registers pushed prior to this call
+			size_t i=allocated_registers_.size();
+			while(true){
+				if(i==alloc_reg_idx)
+					break;
+				i--;
+				const string&reg=allocated_registers_[i];
+				// don't pop registers used to pass arguments
+				if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
+					if(is_register_initiated(reg)){
+						// pop only registers that were pushed
+						asm_pop(st,os,indent_level,reg);
+					}
+				}else{
+					free_named_register(os,indent_level,reg);
+				}
+			}
+
+			// stack is: <base>,vars,
+			if(restore_rsp_to_base){
+				// this was not a call within the arguments of another call
+				// stack is: <base>,vars,
+				if(nbytes_of_vars){
+					const string&offset=to_string(nbytes_of_vars);
+					asm_cmd(st,os,indent_level,"add","rsp",offset);
+				}
+				// stack is: <base>,
+			}
+		}
 	}
 
 	inline size_t get_call_alloc_regs_idx()const{
-		if(call_allocated_regs_idx_.size())
-			return call_allocated_regs_idx_.back();
+		if(call_metas_.size())
+			return call_metas_.back().alloc_reg_idx;
 		return 0;
 	}
 
@@ -581,6 +678,6 @@ private:
 	lut<field_meta>fields_;
 	lut<const stmt_def_func*>funcs_;
 	lut<const stmt_def_type*>types_;
-	vector<size_t>call_allocated_regs_idx_;
+	vector<call_meta>call_metas_;
 	unordered_set<string>initiated_registers_;
 };

@@ -6,4 +6,4 @@
 	}
 
 
-TAG=2023-04-15--1 && git tag $TAG && git push origin $TAG
+TAG=2023-04-15--2--checkpoint && git tag $TAG && git push origin $TAG
