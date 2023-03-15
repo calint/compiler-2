@@ -23,22 +23,22 @@ public:
 			if(t.is_eos())
 				break;
 
-			const token tk=t.next_token();
+			token tk=t.next_token();
 			if(tk.is_blank()){
 				if(t.is_eos())
 					break;
 				throw compiler_error(tk,"unexpected blank token");
 			}
 			if(tk.is_name("field")){
-				stmts_.emplace_back(make_unique<stmt_def_field>(tk,t));
+				stmts_.emplace_back(make_unique<stmt_def_field>(move(tk),t));
 			}else if(tk.is_name("func")){
-				stmts_.emplace_back(make_unique<stmt_def_func>(tk,t));
+				stmts_.emplace_back(make_unique<stmt_def_func>(move(tk),t));
 			}else if(tk.is_name("type")){
-				stmts_.emplace_back(make_unique<stmt_def_type>(tk,t));
+				stmts_.emplace_back(make_unique<stmt_def_type>(move(tk),t));
 			}else if(tk.is_name("#")){
-				stmts_.emplace_back(make_unique<stmt_comment>(tk,t));
+				stmts_.emplace_back(make_unique<stmt_comment>(move(tk),t));
 			}else if(tk.is_name("")){
-				stmts_.emplace_back(make_unique<stmt_whitespace>(tk));
+				stmts_.emplace_back(make_unique<stmt_whitespace>(move(tk)));
 			}else{
 				throw compiler_error(tk,"unexpected keyword '"+tk.name()+"'");
 			}

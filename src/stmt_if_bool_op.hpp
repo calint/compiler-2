@@ -5,7 +5,7 @@
 class stmt_if_bool_op final:public statement{
 public:
 	inline stmt_if_bool_op(tokenizer&t):
-		statement(t.next_whitespace_token())
+		statement{t.next_whitespace_token()}
 	{
 		// if not a=3
 		bool is_not{false};

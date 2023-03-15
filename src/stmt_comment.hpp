@@ -2,8 +2,8 @@
 
 class stmt_comment final:public statement{
 public:
-	inline stmt_comment(const token&tk,tokenizer&t):
-		statement{tk},
+	inline stmt_comment(token tk,tokenizer&t):
+		statement{move(tk)},
 		line_{t.read_rest_of_line()}
 	{}
 

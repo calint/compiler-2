@@ -21,7 +21,9 @@ public:
 		end_char_{n2},
 		ws_right_{wa},
 		is_str_{is_string}
-	{}
+	{
+		// cout<<"constructor\n";
+	}
 
 	inline token(const token&tk):
 		ws_left_{tk.ws_left_},
@@ -30,9 +32,12 @@ public:
 		end_char_{tk.end_char_},
 		ws_right_{tk.ws_right_},
 		is_str_{tk.is_str_}
-	{}
+	{
+		// cout<<"copy constructor\n";
+	}
 
 	token&operator=(const token&other){
+		// cout<<"operator =\n";
 		ws_left_=other.ws_left_;
 		start_char_=other.start_char_;
 		name_=other.name_;
@@ -40,6 +45,17 @@ public:
 		ws_right_=other.ws_right_;
 		is_str_=other.is_str_;
 		return*this;
+	}
+
+	inline token(token&&tk):
+		ws_left_{move(tk.ws_left_)},
+		start_char_{tk.start_char_},
+		name_{move(tk.name_)},
+		end_char_{tk.end_char_},
+		ws_right_{move(tk.ws_right_)},
+		is_str_{tk.is_str_}
+	{
+		// cout<<"move constructor\n";
 	}
 
 	inline void source_to(ostream&os)const{

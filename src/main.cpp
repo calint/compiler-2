@@ -221,7 +221,7 @@ int main(int argc,char**args){
 }
 
 // called from stmt_block to solve circular dependencies with loop, if and calls
-inline unique_ptr<statement>create_statement_from_tokenizer(const token&tk,tokenizer&t){
+inline unique_ptr<statement>create_statement_from_tokenizer(token tk,tokenizer&t){
 	const string&func=tk.name();
 	if("mov"==func)        return make_unique<call_asm_mov>(move(tk),t);
 	if("int"==func)        return make_unique<call_asm_int>(move(tk),t);

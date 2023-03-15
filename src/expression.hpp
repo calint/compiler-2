@@ -5,7 +5,7 @@
 class expression:public statement{
 public:
 	inline expression(token tk):
-		statement{tk}
+		statement{move(tk)}
 	{}
 
 	inline bool is_expression()const override{return true;}

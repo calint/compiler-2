@@ -6,7 +6,7 @@ class toc;
 
 class statement{
 public:
-	inline statement(const token&tk):token_{tk}{}
+	inline statement(token tk):token_{move(tk)}{}
 
 	inline statement(const statement&other):token_{other.token_}{}
 

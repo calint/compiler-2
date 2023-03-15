@@ -7,8 +7,8 @@
 
 class stmt_call:public expression{
 public:
-	inline stmt_call(const token&tk,tokenizer&t):
-		expression{tk}
+	inline stmt_call(token tk,tokenizer&t):
+		expression{move(tk)}
 	{
 		if(!t.is_next_char('(')){
 			no_args_=true;

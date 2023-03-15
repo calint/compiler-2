@@ -47,3 +47,15 @@ section .note.GNU-stack noexec
 -----------------------------
 nasm -f elf64 gen-m.s && gcc -no-pie -o gen-m gen-m.o && ./gen-m
 
+
+
+move constructor
+move constructor
+move constructor
+move constructor
+
+copy constructor
+copy constructor
+copy constructor
+move constructor
+

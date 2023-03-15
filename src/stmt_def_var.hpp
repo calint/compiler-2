@@ -4,8 +4,8 @@
 
 class stmt_def_var final:public statement{
 public:
-	inline stmt_def_var(const token&tk,tokenizer&t):
-		statement{tk},
+	inline stmt_def_var(token tk,tokenizer&t):
+		statement{move(tk)},
 		ident_{t.next_token()},
 		op_{t.next_char()},
 		initial_value_{ident_,t}

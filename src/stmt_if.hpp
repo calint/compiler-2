@@ -4,8 +4,8 @@
 
 class stmt_if final:public statement{
 public:
-	inline stmt_if(const token&tk,tokenizer&t):
-		statement{tk}
+	inline stmt_if(token tk,tokenizer&t):
+		statement{move(tk)}
 	{
 		// if a=b {x} else if c=d {y} else {z}
 		// 'a=b {x}', 'c=d {y}' are 'branches'

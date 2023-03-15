@@ -2,8 +2,8 @@
 
 class stmt_def_field final:public statement{
 public:
-	inline stmt_def_field(const token&tk,tokenizer&t):
-		statement{tk},
+	inline stmt_def_field(token tk,tokenizer&t):
+		statement{move(tk)},
 		ident_{t.next_token()}
 	{
 		if(ident_.is_name(""))

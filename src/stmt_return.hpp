@@ -2,8 +2,8 @@
 
 class stmt_return final:public statement{
 public:
-	inline stmt_return(const token&tk):
-		statement{tk}
+	inline stmt_return(token tk):
+		statement{move(tk)}
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{

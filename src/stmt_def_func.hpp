@@ -5,10 +5,10 @@
 
 class stmt_def_func final:public statement{
 public:
-	inline stmt_def_func(const token&tk,tokenizer&t):
-		statement{tk}
+	inline stmt_def_func(token tk,tokenizer&t):
+		statement{move(tk)},
+		name_{t.next_token()}
 	{
-		name_=t.next_token();
 		if(name_.is_name("inline")){
 			inline_tk_=name_;
 			name_=t.next_token();

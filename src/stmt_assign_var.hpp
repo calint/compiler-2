@@ -4,8 +4,8 @@
 
 class stmt_assign_var final:public statement{
 public:
-	inline stmt_assign_var(const token&tk,tokenizer&t):
-		statement{tk},
+	inline stmt_assign_var(token tk,tokenizer&t):
+		statement{move(tk)},
 		oplist_{expr_ops_list{t}}
 	{}
 

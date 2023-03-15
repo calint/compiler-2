@@ -2,8 +2,8 @@
 
 class stmt_loop final:public statement{
 public:
-	inline stmt_loop(const token&tk,tokenizer&t):
-		statement{tk},
+	inline stmt_loop(token tk,tokenizer&t):
+		statement{move(tk)},
 		code_{stmt_block{t}}
 	{}
 

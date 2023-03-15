@@ -2,8 +2,8 @@
 
 class stmt_continue final:public statement{
 public:
-	inline stmt_continue(const token&tk):
-		statement{tk}
+	inline stmt_continue(token tk):
+		statement{move(tk)}
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
