@@ -14,7 +14,7 @@ public:
 				return e.data;
 			}
 		}
-		throw "element not found";
+		throw"element not found";
 	}
 
 	inline bool has(const string&key)const{
