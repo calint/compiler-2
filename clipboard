@@ -25,10 +25,9 @@ TAG=2023-04-15--2--checkpoint && git tag $TAG && git push origin $TAG
    push qword 1
 
 
-
-
-extern printf
 --------------------------
+extern printf
+
 section .text
 global main
 main:
