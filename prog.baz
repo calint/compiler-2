@@ -1,5 +1,7 @@
-field hello="hello\n"
-field world="world\n"
+field  prompt="  hello    enter name: "
+field    name="............................................................"
+field prompt2="  not a name: "
+field     len=0
 
 func inline print(len:reg_rdx,ptr:reg_rcx){
     mov(rcx,ptr)
@@ -9,35 +11,34 @@ func inline print(len:reg_rdx,ptr:reg_rcx){
     int(0x80)
 }
 
+func inline read(len:reg_rdx,ptr:reg_rsi):ret{
+    mov(rsi,ptr)
+    mov(rdx,len)
+    xor(rax)
+    xor(rdi)
+    syscall
+    mov(ret,rax)
+}
+
 func inline exit(v){
     mov(rbx,v)
     mov(rax,1)
     int(0x80)
 }
 
-func bar(a,b):res{
-    loop{
-        if b=0 break
-        print(hello.len,hello)
-        b=b-1
-    }
-    res=a
-}
-
-func foo{
-    print(world.len,world)
-}
-
-type dq{8}
-type dd{4}
-type dw{2}
-type db{1}
-
 func inline main{
-    var a=1
-    var b=2
-    var c=3
-    bar(a,b)
-    foo()
+    print(prompt.len,prompt)
+    loop{
+        var len=read(name.len,name)-1 # remove the \n
+        if len=0
+            print(prompt.len,prompt)
+        else if len<=4
+            print(prompt2.len,prompt2)
+        else{
+            print(len+1,name)
+            if read(name.len,name)=1 # is only \n
+                break
+        }
+    }
     exit(0)
 }

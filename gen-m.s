@@ -1,9 +1,12 @@
 section .data
 align 4
-hello db 'hello',10,''
-hello.len equ $-hello
-world db 'world',10,''
-world.len equ $-world
+prompt db '  hello    enter name: '
+prompt.len equ $-prompt
+name db '............................................................'
+name.len equ $-name
+prompt2 db '  not a name: '
+prompt2.len equ $-prompt2
+len dq 0
 section .bss
 align 4
 stk resd 256
@@ -16,55 +19,72 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
-bar:
-   push rbp
-   mov rbp,rsp
-   loop_19_5:
-     if_20_12:
-     cmp_20_12:
-     cmp qword[rbp+24],0
-     jne if_20_9_end
-     if_20_12_code:  ; opt1
-       jmp loop_19_5_end
-     if_20_9_end:
-       mov rdx,hello.len
-       mov rcx,hello
-       mov rbx,1
-       mov rax,4
-       int 0x80
-     print_21_9_end:
-     sub qword[rbp+24],1
-   jmp loop_19_5
-   loop_19_5_end:
-   mov r15,qword[rbp+16]
-   mov qword[rbp-8],r15
-   mov rax,qword[rbp-8]
-   pop rbp
-   ret
-foo:
-   push rbp
-   mov rbp,rsp
-     mov rdx,world.len
-     mov rcx,world
+main:
+     mov rdx,prompt.len
+     mov rcx,prompt
      mov rbx,1
      mov rax,4
      int 0x80
-   print_28_5_end:
-   pop rbp
-   ret
-main:
-   mov qword[rbp-8],1
-   mov qword[rbp-16],2
-   mov qword[rbp-24],3
-   sub rsp,24
-   push qword[rbp-16]
-   push qword[rbp-8]
-   call bar
-   add rsp,40
-   sub rsp,24
-   call foo
-   add rsp,24
+   print_30_5_end:
+   loop_31_5:
+       mov rdx,name.len
+       mov rsi,name
+       xor rax,rax
+       xor rdi,rdi
+       syscall
+       mov qword[rbp-8],rax
+     read_32_17_end:
+     sub qword[rbp-8],1
+     if_33_12:
+     cmp_33_12:
+     cmp qword[rbp-8],0
+     jne if_35_17
+     if_33_12_code:  ; opt1
+         mov rdx,prompt.len
+         mov rcx,prompt
+         mov rbx,1
+         mov rax,4
+         int 0x80
+       print_34_13_end:
+     jmp if_33_9_end
+     if_35_17:
+     cmp_35_17:
+     cmp qword[rbp-8],4
+     jg if_else_33_9
+     if_35_17_code:  ; opt1
+         mov rdx,prompt2.len
+         mov rcx,prompt2
+         mov rbx,1
+         mov rax,4
+         int 0x80
+       print_36_13_end:
+     jmp if_33_9_end
+     if_else_33_9:
+           mov rdx,qword[rbp-8]
+           add rdx,1
+           mov rcx,name
+           mov rbx,1
+           mov rax,4
+           int 0x80
+         print_38_13_end:
+         if_39_16:
+         cmp_39_16:
+             mov rdx,name.len
+             mov rsi,name
+             xor rax,rax
+             xor rdi,rdi
+             syscall
+             mov r15,rax
+           read_39_16_end:
+         cmp r15,1
+         jne if_39_13_end
+         if_39_16_code:  ; opt1
+           jmp loop_31_5_end
+         if_39_13_end:
+     if_33_9_end:
+   jmp loop_31_5
+   loop_31_5_end:
      mov rbx,0
      mov rax,1
      int 0x80
-   exit_42_5_end:
+   exit_43_5_end:

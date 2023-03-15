@@ -1,4 +1,3 @@
-[ ] stmt_if_branch.code_ can be value instead of unique_ptr
 [ ] toc.add_var(...) check if name shadows
 [ ] stmt_call: enable nested use of named registers
       example: f(x+1,x) where x is argument that was passed through register and the
@@ -51,6 +50,8 @@
 [ ] clang-format everything for less dess code?
 [ ] compile for pczero task
 -------------------------------------------------------------------------------
+[-] stmt_if_branch.code_ can be value instead of unique_ptr
+    -> circular reference?
 [x] statement.parent can be removed
 [x] experiments with linking to the standard c library and using printf
 [x] review stmt_call
