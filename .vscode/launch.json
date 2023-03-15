@@ -11,6 +11,7 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
+            // "logging": { "trace": true, "traceResponse": true },
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

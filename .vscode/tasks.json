@@ -9,7 +9,7 @@
 				"-std=c++2a",
 				"-fcolor-diagnostics",
 				"-fansi-escape-codes",
-				"-g3",
+				"-g",
 				"src/main.cpp",
 				"-fno-inline",
 				"-Werror",

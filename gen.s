@@ -44,10 +44,10 @@ bar:
 ;    [21:9] print(hello.len,hello)
 ;      inline: 21_9
 ;      alloc rdx
-;      len -> rdx
+;      alias len -> rdx
        mov rdx,hello.len
 ;      alloc rcx
-;      ptr -> rcx
+;      alias ptr -> rcx
        mov rcx,hello
 ;      [5:5] mov(rcx,ptr)
 ;      [6:5] mov(rdx,len)
@@ -84,10 +84,10 @@ foo:
 ;  [28:5] print(world.len,world)
 ;    inline: 28_5
 ;    alloc rdx
-;    len -> rdx
+;    alias len -> rdx
      mov rdx,world.len
 ;    alloc rcx
-;    ptr -> rcx
+;    alias ptr -> rcx
      mov rcx,world
 ;    [5:5] mov(rcx,ptr)
 ;    [6:5] mov(rdx,len)
@@ -105,36 +105,36 @@ foo:
 
 main:
 ;  [37:5] var a=1 
-;  a: dword[rbp-8]
+;  a: qword[rbp-8]
 ;  [37:9] a=1 
 ;  [37:11] 1 
 ;  [37:11] a=1 
-   mov dword[rbp-8],1
+   mov qword[rbp-8],1
 ;  [38:5] var b=2 
-;  b: dword[rbp-12]
+;  b: qword[rbp-16]
 ;  [38:9] b=2 
 ;  [38:11] 2 
 ;  [38:11] b=2 
-   mov dword[rbp-12],2
+   mov qword[rbp-16],2
 ;  [39:5] var c=3 
-;  c: dword[rbp-16]
+;  c: qword[rbp-24]
 ;  [39:9] c=3 
 ;  [39:11] 3 
 ;  [39:11] c=3 
-   mov dword[rbp-16],3
+   mov qword[rbp-24],3
 ;  [40:5] bar(a,b)
-   sub rsp,12
-   push dword[rbp-12]
-   push dword[rbp-8]
+   sub rsp,24
+   push qword[rbp-16]
+   push qword[rbp-8]
    call bar
-   add rsp,28
+   add rsp,40
 ;  [41:5] foo()
-   sub rsp,12
+   sub rsp,24
    call foo
-   add rsp,12
+   add rsp,24
 ;  [42:5] exit(0)
 ;    inline: 42_5
-;    v -> 0
+;    alias v -> 0
 ;    [13:5] mov(rbx,v)
      mov rbx,0
 ;    [14:5] mov(rax,1)
