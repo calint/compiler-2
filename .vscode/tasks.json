@@ -6,11 +6,13 @@
 			"label": "build baz",
 			"command": "/usr/bin/clang++",
 			"args": [
+				"src/main.cpp",
+				"-o",
+				"baz",
 				"-std=c++2a",
 				"-fcolor-diagnostics",
 				"-fansi-escape-codes",
 				"-g",
-				"src/main.cpp",
 				"-fno-inline",
 				"-Werror",
 				"-Wfatal-errors",
@@ -23,8 +25,6 @@
 				"-Wno-unused-variable",
 				"-Wno-unused-parameter",
 				"-Wno-unused-private-field",
-				"-o",
-				"baz"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}"
