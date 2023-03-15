@@ -144,9 +144,9 @@ public:
 	{}
 
 	inline void add_field(const statement&s,const string&ident,const stmt_def_field*f,const bool is_str_field){
-		if(fields_.has(ident)){
+		if(fields_.has(ident))
 			throw compiler_error(s.tok(),"field '"+ident+"' already defined");
-		}
+
 		fields_.put(ident,{f,is_str_field});
 	}
 
@@ -158,11 +158,10 @@ public:
 	}
 
 	inline const stmt_def_func&get_func_or_break(const statement&s,const string&name)const{
-		bool valid;
 		if(!funcs_.has(name))
 			throw compiler_error(s,"function '"+name+"' not found");
-		const stmt_def_func*f=funcs_.get(name);
-		return*f;
+
+		return*funcs_.get(name);
 	}
 
 	inline void add_type(const statement&s,const string&ident,const stmt_def_type*f){
@@ -174,7 +173,7 @@ public:
 
 	inline string source_location(const token&t)const{
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(t.char_index(),source_str_.c_str(),char_in_line);
+		const size_t n{line_number_for_char_index(t.char_index(),source_str_.c_str(),char_in_line)};
 		return to_string(n)+"_"+to_string(char_in_line);
 	}
 
@@ -211,7 +210,7 @@ public:
 	}
 
 	inline string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{
-		string nasm_ident=resolve_ident_to_nasm_or_empty(stmt,ident);
+		const string&nasm_ident{resolve_ident_to_nasm_or_empty(stmt,ident)};
 		if(!nasm_ident.empty())
 			return nasm_ident;
 
@@ -238,34 +237,34 @@ public:
 	}
 
 	inline void exit_func(const string&name){
-		frame&f=frames_.back();
+		const frame&f{frames_.back()};
 		assert(f.is_func() and f.is_name(name));
 		frames_.pop_back();
 	}
 
 	inline void exit_loop(const string&name){
-		frame&f=frames_.back();
+		const frame&f{frames_.back()};
 		assert(f.is_loop() and f.is_name(name));
 		frames_.pop_back();
 	}
 
 	inline void exit_block(){
-		frame&f=frames_.back();
+		const frame&f{frames_.back()};
 		assert(f.is_block());
 		frames_.pop_back();
 	}
 
 	inline void add_var(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size){
-		if(frames_.back().has_var(name)){
+		if(frames_.back().has_var(name))
 			throw compiler_error(st,"variable '"+name+"' already declared");
-		}
+
 		// offset by 8 since if stkix is 0 then rsp points at return address
 		//   or past the end of stack (if no function has been called)
-		const size_t stkix=get_current_stack_size()+8;
+		const size_t stkix{get_current_stack_size()+8};
 		assert(size==8||size==4||size==2||size==1);
 		frames_.back().add_var(name,size,-int(stkix),"");
 		// comment the resolved name
-		const string&dest_resolved=resolve_ident_to_nasm(st,name);
+		const string&dest_resolved{resolve_ident_to_nasm(st,name)};
 		indent(os,indent_level,true);os<<name<<": "<<dest_resolved<<endl;
 	}
 
@@ -273,21 +272,20 @@ public:
 		assert(frames_.back().is_func()&&!frames_.back().is_func_inline());
 		frames_.back().add_var(name,size,stkix_delta,"");
 		// comment the resolved name
-		const string&dest_resolved=resolve_ident_to_nasm(st,name);
+		const string&dest_resolved{resolve_ident_to_nasm(st,name)};
 		indent(os,indent_level,true);os<<name<<": "<<dest_resolved<<endl;
 	}
 
 	inline const string&alloc_scratch_register(const statement&st,ostream&os,const size_t indent_level){
-		if(scratch_registers_.empty()){
+		if(scratch_registers_.empty())
 			throw compiler_error(st,"out of scratch registers. try to reduce expression complexity");
-		}
 
-		const string&r=scratch_registers_.back();
+		const string&r{scratch_registers_.back()};
 		scratch_registers_.pop_back();
 
 		indent(os,indent_level,true);os<<"alloc "<<r<<endl;
 
-		const size_t n=8-scratch_registers_.size();
+		const size_t n{8-scratch_registers_.size()};
 		if(n>max_usage_scratch_regs_) // ? stmt_assign_var tries 2 different methods making this metric inaccurate if a discarded method uses more registers than the selected method
 			max_usage_scratch_regs_=n;
 
@@ -297,7 +295,7 @@ public:
 
 	inline void alloc_named_register_or_break(const statement&st,ostream&os,const size_t indent_level,const string&reg){
 		indent(os,indent_level,true);os<<"alloc "<<reg<<endl;
-		auto r=find(named_registers_.begin(),named_registers_.end(),reg);
+		auto r{find(named_registers_.begin(),named_registers_.end(),reg)};
 		if(r==named_registers_.end()){
 			throw compiler_error(st,"named register '"+reg+"' cannot be allocated");
 		}
@@ -322,55 +320,46 @@ public:
 	}
 
 	inline const string&get_loop_label_or_break(const statement&st)const{
-		size_t i=frames_.size()-1;
-		while(true){
+		size_t i{frames_.size()};
+		while(i--){
 			if(frames_[i].is_loop())
 				return frames_[i].name();
 			if(frames_[i].is_func())
 				throw compiler_error(st,"not in a loop");
-			i--;
 		}
+		throw compiler_error(st,"unexpected frames");
 	}
 
 	inline const string&get_inline_call_path(const token&tk)const{
-		size_t i=frames_.size()-1;
-		while(true){
+		size_t i{frames_.size()};
+		while(i--){
 			if(frames_[i].is_func())
 				return frames_[i].inline_call_path();
-			if(i==0) // ? can happen?
-				break;
-			i--;
 		}
 		throw compiler_error(tk,"not in a function");
 	}
 
 	inline const string&get_func_return_label_or_break(const statement&st)const{
-		size_t i=frames_.size()-1;
-		while(true){
+		size_t i{frames_.size()};
+		while(i--){
 			if(frames_[i].is_func())
 				return frames_[i].ret_label();
-			if(i==0) // ? can happen?
-				break; 
-			i--;
 		}
 		throw compiler_error(st,"not in a function");
 	}
 
 	inline const string&get_func_return_var_name_or_break(const statement&st)const{
-		size_t i=frames_.size()-1;
-		while(true){
+		size_t i{frames_.size()};
+		while(i--){
 			if(frames_[i].is_func())
 				return frames_[i].ret_var();
-			if(i==0) // ? can happen?
-				break;
-			i--;
 		}
 		throw compiler_error(st,"not in a function");
 	}
 
 	inline void source_comment(const statement&st,ostream&os,const size_t indent_level)const{
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(st.tok().char_index(),source_str_.c_str(),char_in_line);
+		const size_t n{line_number_for_char_index(st.tok().char_index(),source_str_.c_str(),char_in_line)};
 
 		indent(os,indent_level,true);
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
@@ -378,29 +367,27 @@ public:
 		stringstream ss;
 		ss<<" ";
 		st.source_to(ss);
-		string s=ss.str();
-		string res=regex_replace(s,regex("\\s+")," ");
-		os<<res;
-		os<<endl;
+		const string&s{ss.str()};
+		const string&res{regex_replace(s,regex("\\s+")," ")};
+		os<<res<<endl;
 	}
 
 	inline void source_comment(ostream&os,const string&dest,const char op,const statement&stmt)const{
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(stmt.tok().char_index(),source_str_.c_str(),char_in_line);
+		const size_t n{line_number_for_char_index(stmt.tok().char_index(),source_str_.c_str(),char_in_line)};
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
 
 		stringstream ss;
 		ss<<" "<<dest<<op;
 		stmt.source_to(ss);
-		string s=ss.str();
-		string res=regex_replace(s,regex("\\s+")," ");
-		os<<res;
-		os<<endl;
+		const string&s{ss.str()};
+		const string&res{regex_replace(s,regex("\\s+")," ")};
+		os<<res<<endl;
 	}
 
 	inline void token_comment(ostream&os,const token&tk)const{
 		size_t char_in_line;
-		const size_t n=line_number_for_char_index(tk.char_index(),source_str_.c_str(),char_in_line);
+		const size_t n{line_number_for_char_index(tk.char_index(),source_str_.c_str(),char_in_line)};
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
 		os<<" "<<tk.name()<<endl;
 	}
@@ -410,7 +397,7 @@ public:
 	}
 
 	inline void enter_call(const statement&st,ostream&os,const size_t indent_level){
-		const bool root_call=call_metas_.empty();
+		const bool root_call{call_metas_.empty()};
 		const size_t nbytes_of_vars_on_stack{root_call?get_current_stack_size():0};
 		if(root_call){
 			// this call is not nested within another call's arguments
@@ -428,7 +415,7 @@ public:
 		const size_t n{allocated_registers_.size()};
 		size_t nregs_pushed_on_stack{0};
 		for(size_t i{alloc_regs_idx};i<n;i++){
-			const string&reg=allocated_registers_[i];
+			const string&reg{allocated_registers_[i]};
 			if(is_register_initiated(reg)){
 				// push only registers that contain a valid value
 				asm_push(st,os,indent_level,reg);
@@ -560,7 +547,7 @@ public:
 			return;
 		}
 		os<<(comment?";":" ");
-		for(size_t i=0;i<indent_level;i++)
+		for(size_t i{0};i<indent_level;i++)
 			os<<"  ";
 	}
 
@@ -570,59 +557,46 @@ private:
 	}
 
 	inline size_t get_current_stack_size()const{
-		assert(frames_.size()>0);
-		size_t delta{0};
-		size_t frm_nbr=frames_.size()-1;
-		while(true){
-			const frame&frm=frames_[frm_nbr];
-			delta+=frm.allocated_stack_size();
-			if(frm.is_func()&&!frm.is_func_inline())
+		assert(frames_.size());
+		size_t n{0};
+		size_t i{frames_.size()};
+		while(i--){
+			const frame&f{frames_[i]};
+			n+=f.allocated_stack_size();
+			if(f.is_func()&&!f.is_func_inline())
 				break;
-			if(frm_nbr==0)
-				break;
-			frm_nbr--;
 		}
-		return delta;
+		return n;
 	}
 
 	inline const string resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident)const{
 		string id=ident;
 		// traverse the frames and resolve the id (which might be an alias) to
 		// a variable, field, register or constant
-		size_t frame_idx=frames_.size()-1;
-		while(true){
+		size_t i{frames_.size()};
+		while(i--){
 			// is the frame a function?
-			if(frames_[frame_idx].is_func()){
+			if(frames_[i].is_func()){
 				// is it an alias defined by an argument in the function?
-				if(!frames_[frame_idx].has_alias(id))
+				if(!frames_[i].has_alias(id))
 					break;
 				// yes, continue resolving alias until it is
 				// a variable, field, register or constant
-				id=frames_[frame_idx].get_alias(id);
-				if(frame_idx==0)
+				id=frames_[i].get_alias(id);
+			}else{
+				// does scope contain the variable
+				if(frames_[i].has_var(id))
 					break;
-				frame_idx--;
-				continue;
 			}
-			// does scope contain the variable
-			if(frames_[frame_idx].has_var(id))
-				break;
-			// was this the last frame in the stack?
-			if(frame_idx==0)
-				break;
-			// go 'up' in stack to next scope
-			frame_idx--;
 		}
 
 		// is 'id' a variable?
-		if(frames_[frame_idx].has_var(id))
-			return frames_[frame_idx].get_var(id).nasm_ident();
+		if(frames_[i].has_var(id))
+			return frames_[i].get_var(id).nasm_ident();
 
 		// is 'id' a register?
-		for(const auto&e:all_registers_){
-			if(e==id)
-				return id;
-		}
+		if(is_identifier_register(id))
+			return id;
 
 		// is 'id' a field?
 		if(fields_.has(id)){
@@ -634,9 +608,9 @@ private:
 
 		// is 'id' an implicit identifier?
 		// i.e. 'prompt.len' of a string field 'prompt'
-		string subid=id.substr(0,id.find('.'));
-		if(fields_.has(subid)){ // ? tidy
-			string after_dot=id.substr(subid.size()+1);
+		const string&subid=id.substr(0,id.find('.'));
+		if(fields_.has(subid)){
+			const string&after_dot=id.substr(subid.size()+1);
 			if(after_dot=="len"){
 				return id;
 			}
