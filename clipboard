@@ -48,14 +48,32 @@ section .note.GNU-stack noexec
 nasm -f elf64 gen-m.s && gcc -no-pie -o gen-m gen-m.o && ./gen-m
 
 
+const token&
+----------------
+copy constructor
+constructor
+copy constructor
+constructor
+constructor
+move constructor
 
+token move
+----------------
+constructor
 move constructor
 move constructor
 move constructor
+constructor
+constructor
 move constructor
 
+token copy
+----------------
+constructor
 copy constructor
 copy constructor
 copy constructor
+constructor
+constructor
 move constructor
 
