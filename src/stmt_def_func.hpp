@@ -13,15 +13,16 @@ public:
 			inline_tk_=name_;
 			name_=t.next_token();
 		}
-		if(!t.is_next_char('(')){
+		if(!t.is_next_char('('))
 			no_args_=true;
-//			throw compiler_error(*this,"expected '(' followed by function arguments",identifier->name_copy());
-		}
+
 		if(!no_args_){
 			while(true){
-				if(t.is_next_char(')'))break;
+				if(t.is_next_char(')'))
+					break;
 				params_.emplace_back(t);
-				if(t.is_next_char(')'))break;
+				if(t.is_next_char(')'))
+					break;
 				if(!t.is_next_char(','))
 					throw compiler_error(params_.back(),"expected ',' after parameter '"+params_.back().tok().name()+"'");
 			}
@@ -29,7 +30,8 @@ public:
 		if(t.is_next_char(':')){// returns
 			while(true){
 				returns_.emplace_back(t.next_token());
-				if(t.is_next_char(','))continue;
+				if(t.is_next_char(','))
+					continue;
 				break;
 			}
 		}
@@ -42,21 +44,23 @@ public:
 		name_.source_to(os);
 		if(!no_args_){
 			os<<"(";
-			const size_t nparam=params_.size()-1;
+			const size_t n{params_.size()-1};
 			size_t i{0};
-			for(const auto&s:params_){
-				s.source_to(os);
-				if(i++!=nparam)os<<",";
+			for(const stmt_def_func_param&p:params_){
+				p.source_to(os);
+				if(i++!=n)
+					os<<",";
 			}
 			os<<")";
 		}
 		if(!returns_.empty()){
 			os<<":";
-			const size_t sz=returns_.size()-1;
+			const size_t n{returns_.size()-1};
 			size_t i{0};
-			for(const auto&t:returns_){
+			for(const token&t:returns_){
 				t.source_to(os);
-				if(i++!=sz)os<<",";
+				if(i++!=n)
+					os<<",";
 			}
 		}
 		code_->source_to(os);
@@ -67,27 +71,29 @@ public:
 		name_.source_to(ss);
 		if(!no_args_){
 			ss<<"(";
-			const size_t nparam=params_.size()-1;
+			const size_t n{params_.size()-1};
 			size_t i{0};
-			for(const auto&s:params_){
+			for(const stmt_def_func_param&s:params_){
 				s.source_to(ss);
-				if(i++!=nparam)ss<<",";
+				if(i++!=n)
+					ss<<",";
 			}
 			ss<<")";
 		}
 		if(!returns_.empty()){
 			ss<<":";
-			const size_t sz=returns_.size()-1;
+			const size_t n{returns_.size()-1};
 			size_t i{0};
-			for(const auto&t:returns_){
+			for(const token&t:returns_){
 				t.source_to(ss);
-				if(i++!=sz)ss<<",";
+				if(i++!=n)
+					ss<<",";
 			}
 		}
 		ss<<endl;
 
-		string s=ss.str();
-		string res=regex_replace(s,regex("\\s+")," ");
+		string s{ss.str()};
+		string res{regex_replace(s,regex("\\s+")," ")};
 		os<<res<<endl;
 	}
 
@@ -103,7 +109,7 @@ public:
 
 		// return binding
 		if(!returns().empty()){
-			const string&nm=returns()[0].name();
+			const string&nm{returns()[0].name()};
 			tc.add_var(*this,os,indent_level+1,nm,8);
 //			tc.add_alias(from,"rax");
 		}
@@ -112,17 +118,17 @@ public:
 		// define variables in the called context by binding arguments to stack
 		//    x=[rsp+argnum<<3+8] (const 8 skips return address)
 		vector<string>allocated_names_registers;
-		const int n=int(params_.size());
-		int stk_ix=2<<3; // skip [rbp] and [return address] on stack
-		for(int i=0;i<n;i++){
-			const stmt_def_func_param&pm=params_[unsigned(i)];
-			const string&pm_nm=pm.name();
+		const size_t n{params_.size()};
+		size_t stk_ix{2<<3}; // skip [rbp] and [return address] on stack
+		for(size_t i=0;i<n;i++){
+			const stmt_def_func_param&pm{params_[i]};
+			const string&pm_nm{pm.name()};
 			// (i+2)<<3 ?
 			// stack after push rbp is ...,[arg n],...[arg 1],[return address],[rbp],
-			const string&reg=pm.get_register_or_empty();
+			const string&reg{pm.get_register_or_empty()};
 			if(reg.empty()){
 //				toc::indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<(stk_ix<<3)<<endl;
-				tc.add_func_arg(*this,os,indent_level+1,pm_nm,8,stk_ix);
+				tc.add_func_arg(*this,os,indent_level+1,pm_nm,8,int(stk_ix));
 				stk_ix+=8;
 			}else{
 				toc::indent(os,indent_level+1,true);os<<pm_nm<<": "<<reg<<endl;
@@ -135,13 +141,13 @@ public:
 		tc.asm_cmd(*this,os,indent_level+1,"mov","rbp","rsp");
 		code_->compile(tc,os,indent_level,"");
 		if(!returns().empty()){
-			const string&ret_name=returns()[0].name();
-			const string&ret_name_resolved=tc.resolve_ident_to_nasm(*this,ret_name);
+			const string&ret_name{returns()[0].name()};
+			const string&ret_name_resolved{tc.resolve_ident_to_nasm(*this,ret_name)};
 			tc.asm_cmd(*this,os,indent_level+1,"mov","rax",ret_name_resolved);
 		}
 		tc.asm_pop(*this,os,indent_level+1,"rbp");
 		tc.asm_ret(*this,os,indent_level+1);
-		size_t i=allocated_names_registers.size();
+		size_t i{allocated_names_registers.size()};
 		while(i--){
 			tc.free_named_register(os,indent_level+1,allocated_names_registers[i]);
 		}
@@ -159,10 +165,7 @@ public:
 
 	inline const string&name()const{return name_.name();}
 
-	inline bool is_inline()const{
-		const bool b=!inline_tk_.is_blank();
-		return b;
-	}
+	inline bool is_inline()const{return!inline_tk_.is_blank();}
 
 private:
 	token name_;
