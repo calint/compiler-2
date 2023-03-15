@@ -245,22 +245,6 @@ public:
 		frames_.pop_back();
 	}
 
-	inline size_t get_current_stack_size()const{
-		assert(frames_.size()>0);
-		size_t delta{0};
-		size_t frm_nbr=frames_.size()-1;
-		while(true){
-			const frame&frm=frames_[frm_nbr];
-			delta+=frm.allocated_stack_size();
-			if(frm.is_func()&&!frm.is_func_inline())
-				break;
-			if(frm_nbr==0)
-				break;
-			frm_nbr--;
-		}
-		return delta;
-	}
-
 	inline void add_var(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size){
 		if(frames_.back().has_var(name)){
 			throw compiler_error(st,"variable '"+name+"' already declared");
@@ -514,14 +498,6 @@ public:
 		}
 	}
 
-	inline size_t get_call_alloc_regs_idx()const{
-		if(call_metas_.size())
-			return call_metas_.back().alloc_reg_idx;
-		return 0;
-	}
-
-	inline const vector<string>&get_allocated_registers()const{return allocated_registers_;}
-
 	inline void asm_cmd(const statement&st,ostream&os,const size_t indent_level,const string&op,const string&dest_resolved,const string&src_resolved){
 		if(op=="mov"){
 			if(dest_resolved==src_resolved)
@@ -566,10 +542,6 @@ public:
 		indent(os,indent_level);os<<"call "<<label<<endl;
 	}
 
-	inline bool is_register_initiated(const string&reg)const{
-		return initiated_registers_.contains(reg);
-	}
-
 	inline static void indent(ostream&os,const size_t indent_level,const bool comment=false){
 		if(indent_level==0){
 			if(comment)
@@ -582,6 +554,26 @@ public:
 	}
 
 private:
+	inline bool is_register_initiated(const string&reg)const{
+		return initiated_registers_.contains(reg);
+	}
+
+	inline size_t get_current_stack_size()const{
+		assert(frames_.size()>0);
+		size_t delta{0};
+		size_t frm_nbr=frames_.size()-1;
+		while(true){
+			const frame&frm=frames_[frm_nbr];
+			delta+=frm.allocated_stack_size();
+			if(frm.is_func()&&!frm.is_func_inline())
+				break;
+			if(frm_nbr==0)
+				break;
+			frm_nbr--;
+		}
+		return delta;
+	}
+
 	inline const string resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident)const{
 		string id=ident;
 		// traverse the frames and resolve the id (which might be an alias) to
