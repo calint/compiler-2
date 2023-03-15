@@ -14,13 +14,13 @@ public:
 		is_str_{}
 	{}
 
-	inline token(string wb,size_t n,string tk,size_t n2,string wa,bool is_string=false):
+	inline token(string wb,size_t n,string tk,size_t n2,string wa,bool is_str=false):
 		ws_left_{wb},
 		start_char_{n},
 		name_{tk},
 		end_char_{n2},
 		ws_right_{wa},
-		is_str_{is_string}
+		is_str_{is_str}
 	{
 		// cout<<"constructor\n";
 	}
@@ -75,7 +75,7 @@ public:
 		os<<regex_replace(name_,regex("\\\\n"),"',10,'");
 	}
 
-	inline bool is_name(const string&s)const{return!strcmp(name_.c_str(),s.c_str());}
+	inline bool is_name(const string&s)const{return name_==s;}
 
 	inline const string&name()const{return name_;}
 
