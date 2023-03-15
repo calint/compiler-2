@@ -17,16 +17,14 @@ public:
 	{
 		while(true){
 			// comments, semi-colon not considered a statment
-			bool last_statement_considered_no_statment=false;
-			if(t.is_eos())
-				break;
+			bool last_statement_considered_no_statment{false};
 			if(t.is_next_char('}')){
 				if(not is_one_statement_)
 					break;
 				throw compiler_error(*this,"unexpected '}' in single statement block");
 			}
 
-			token tk=t.next_token();
+			token tk{t.next_token()};
 			if(tk.is_blank()){
 				if(t.is_next_char(';')){ // in-case ';' is used
 					stmts_.emplace_back(make_unique<stmt_semicolon>(move(tk),t));
@@ -62,10 +60,12 @@ public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		if(!is_one_statement_)os<<"{";
+		if(!is_one_statement_)
+			os<<"{";
 		for(const auto&s:stmts_)
 			s->source_to(os);
-		if(!is_one_statement_)os<<"}";
+		if(!is_one_statement_)
+			os<<"}";
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{

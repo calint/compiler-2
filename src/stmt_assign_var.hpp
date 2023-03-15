@@ -30,15 +30,15 @@ public:
 
 		// try with scratch register
 		stringstream ss2;
-		const string&reg=tc.alloc_scratch_register(*this,ss2,indent_level);
+		const string&reg{tc.alloc_scratch_register(*this,ss2,indent_level)};
 		oplist_.compile(tc,ss2,indent_level,reg);
-		const string&dest_resolved=tc.resolve_ident_to_nasm(*this);
+		const string&dest_resolved{tc.resolve_ident_to_nasm(*this)};
 		tc.asm_cmd(*this,ss2,indent_level,"mov",dest_resolved,reg);
 		tc.free_scratch_register(ss2,indent_level,reg);
 
 		// compare instruction count
-		const size_t ss1_count=count_instructions(ss1);
-		const size_t ss2_count=count_instructions(ss2);
+		const size_t ss1_count{count_instructions(ss1)};
+		const size_t ss2_count{count_instructions(ss2)};
 
 		// select version with least instructions
 		if(ss1_count<ss2_count){
@@ -52,7 +52,7 @@ private:
 	inline static size_t count_instructions(stringstream&ss){
 		regex regex("^\\s*;.*$");
 		string line;
-		size_t n=0;
+		size_t n{0};
 		while(getline(ss,line)){
 			if(regex_search(line,regex))
 				continue;

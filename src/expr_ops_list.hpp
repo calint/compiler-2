@@ -68,7 +68,7 @@ public:
 			// check if next operation precedence is same or lower
 			// if not then a new subexpression is added to the list with the last
 			// expression in this list as first expression
-			const int next_precedence=precedence_for_op(t.peek_char());
+			const int next_precedence{precedence_for_op(t.peek_char())};
 			if(next_precedence>precedence){
 				// i.e. =a+b*c+1 where the peeked char is '*'
 				// next operation has higher precedence than current
@@ -77,10 +77,10 @@ public:
 				//   =[(=a) +[(=b)(*c)(+1)]]
 				precedence=next_precedence;
 				if(!ops_.empty()){
-					const int first_op_prec=precedence_for_op(ops_.back());
+					const int first_op_prec{precedence_for_op(ops_.back())};
 					ops_.pop_back();
-					const char lst_op=ops_.back();
-					unique_ptr<statement>prev=move(exps_.back());
+					const char lst_op{ops_.back()};
+					unique_ptr<statement>prev{move(exps_.back())};
 					exps_.pop_back();
 					exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,false,lst_op,first_op_prec,move(prev)));
 					continue;
@@ -95,7 +95,7 @@ public:
 				continue;
 			}
 
-			unique_ptr<statement>stmt=create_statement_from_tokenizer(t);
+			unique_ptr<statement>stmt{create_statement_from_tokenizer(t)};
 			if(stmt->tok().is_blank())
 				throw compiler_error(*stmt,"unexpected '"+string{t.peek_char()}+"'");
 
@@ -129,15 +129,15 @@ public:
 			throw compiler_error(*this,"expressions is empty");
 
 		// first element is assigned to destination
-		const statement&st=*exps_[0].get();
-		const string dest_resolved=tc.resolve_ident_to_nasm(*this,dest);
+		const statement&st{*exps_[0].get()};
+		const string dest_resolved{tc.resolve_ident_to_nasm(*this,dest)};
 		asm_op(tc,os,indent_level,st,'=',dest,dest_resolved);
 
 		// remaining elements are +,-,*,/
-		const size_t len=ops_.size();
-		for(size_t i{0};i<len;i++){
+		const size_t n{ops_.size()};
+		for(size_t i{0};i<n;i++){
 			const char op=ops_[i];
-			const statement&stm=*exps_[i+1].get();
+			const statement&stm{*exps_[i+1].get()};
 			asm_op(tc,os,indent_level,stm,op,dest,dest_resolved);
 		}
 	}
@@ -176,7 +176,7 @@ private:
 		}
 		if(op=='+'){// order1op
 			if(st.is_expression()){
-				const string r=tc.alloc_scratch_register(st,os,indent_level);
+				const string&r{tc.alloc_scratch_register(st,os,indent_level)};
 				st.compile(tc,os,indent_level,r);
 				tc.asm_cmd(st,os,indent_level,"add",dest_resolved,r);
 				tc.free_scratch_register(os,indent_level,r);
@@ -187,7 +187,7 @@ private:
 		}
 		if(op=='-'){// order1op
 			if(st.is_expression()){
-				const string r=tc.alloc_scratch_register(st,os,indent_level);
+				const string&r{tc.alloc_scratch_register(st,os,indent_level)};
 				st.compile(tc,os,indent_level,r);
 				tc.asm_cmd(st,os,indent_level,"sub",dest_resolved,r);
 				tc.free_scratch_register(os,indent_level,r);
@@ -198,7 +198,7 @@ private:
 		}
 		if(op=='*'){// order2op
 			if(st.is_expression()){
-				const string&r=tc.alloc_scratch_register(st,os,indent_level);
+				const string&r{tc.alloc_scratch_register(st,os,indent_level)};
 				st.compile(tc,os,indent_level,r);
 				// imul destination must be a register
 				if(tc.is_identifier_register(dest_resolved)){
@@ -218,7 +218,7 @@ private:
 				return;
 			}
 			// imul destination is not a register
-			const string&r=tc.alloc_scratch_register(st,os,indent_level);
+			const string&r{tc.alloc_scratch_register(st,os,indent_level)};
 			tc.asm_cmd(st,os,indent_level,"mov",r,dest_resolved);
 			tc.asm_cmd(st,os,indent_level,"imul",r,tc.resolve_ident_to_nasm(st));
 			tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,r);

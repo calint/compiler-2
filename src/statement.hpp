@@ -28,7 +28,6 @@ public:
 
 	inline virtual bool is_empty()const{return token_.is_blank();}
 
-
 private:
 	const token token_;
 };

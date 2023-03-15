@@ -11,8 +11,6 @@ public:
 			return;
 
 		while(true){
-			if(t.is_eos())
-				throw compiler_error(*this,"unexpected end of stream in '"+tok().name()+"'");
 			keywords_.emplace_back(t.next_token());
 			if(t.is_next_char(':'))
 				continue;
@@ -24,11 +22,12 @@ public:
 		statement::source_to(os);
 		if(!keywords_.empty()){
 			os<<":";
-			const size_t sz=keywords_.size()-1;
+			const size_t n=keywords_.size()-1;
 			size_t i{0};
-			for(const auto&t:keywords_){
+			for(const token&t:keywords_){
 				t.source_to(os);
-				if(i++!=sz)os<<":";
+				if(i++!=n)
+					os<<":";
 			}
 		}
 	}
@@ -38,7 +37,7 @@ public:
 	inline const string&name()const{return tok().name();}
 
 	inline const string get_register_or_empty()const{
-		for(const auto&kw:keywords()){
+		for(const token&kw:keywords()){
 			if(kw.name().find("reg_"))
 				continue;
 			// requested register for this argument
