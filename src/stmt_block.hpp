@@ -27,30 +27,30 @@ public:
 			token tk{t.next_token()};
 			if(tk.is_blank()){
 				if(t.is_next_char(';')){ // in-case ';' is used
-					stmts_.emplace_back(make_unique<stmt_semicolon>(move(tk),t));
+					stms_.emplace_back(make_unique<stmt_semicolon>(move(tk),t));
 					last_statement_considered_no_statment=true;
 					continue;
 				}
 				throw compiler_error(tk,"unexpected '"+string{t.peek_char()}+"'");
 			}
 			if(tk.is_name("var")){
-				stmts_.emplace_back(make_unique<stmt_def_var>(move(tk),t));
+				stms_.emplace_back(make_unique<stmt_def_var>(move(tk),t));
 			}else if(t.is_next_char('=')){
-				stmts_.emplace_back(make_unique<stmt_assign_var>(move(tk),t));
+				stms_.emplace_back(make_unique<stmt_assign_var>(move(tk),t));
 			}else if(tk.is_name("break")){
-				stmts_.emplace_back(make_unique<stmt_break>(move(tk)));
+				stms_.emplace_back(make_unique<stmt_break>(move(tk)));
 			}else if(tk.is_name("continue")){
-				stmts_.emplace_back(make_unique<stmt_continue>(move(tk)));
+				stms_.emplace_back(make_unique<stmt_continue>(move(tk)));
 			}else if(tk.is_name("return")){
-				stmts_.emplace_back(make_unique<stmt_return>(move(tk)));
+				stms_.emplace_back(make_unique<stmt_return>(move(tk)));
 			}else if(tk.is_name("#")){
-				stmts_.emplace_back(make_unique<stmt_comment>(move(tk),t));
+				stms_.emplace_back(make_unique<stmt_comment>(move(tk),t));
 				last_statement_considered_no_statment=true;
 			}else if(tk.is_name("")){
-				stmts_.emplace_back(make_unique<stmt_whitespace>(move(tk)));
+				stms_.emplace_back(make_unique<stmt_whitespace>(move(tk)));
 			}else{
 				// circular reference resolver
-				stmts_.emplace_back(create_statement_from_tokenizer(move(tk),t));
+				stms_.emplace_back(create_statement_from_tokenizer(move(tk),t));
 			}
 
 			if(is_one_statement_&&!last_statement_considered_no_statment)
@@ -62,7 +62,7 @@ public:
 		statement::source_to(os);
 		if(!is_one_statement_)
 			os<<"{";
-		for(const auto&s:stmts_)
+		for(const auto&s:stms_)
 			s->source_to(os);
 		if(!is_one_statement_)
 			os<<"}";
@@ -70,12 +70,12 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.enter_block();
-		for(const auto&s:stmts_)
+		for(const auto&s:stms_)
 			s->compile(tc,os,indent_level+1);
 		tc.exit_block();
 	}
 
 private:
 	bool is_one_statement_{false};
-	vector<unique_ptr<statement>>stmts_;
+	vector<unique_ptr<statement>>stms_;
 };
