@@ -25,6 +25,11 @@
        mov rax,r15
        pop rbp
        ret
+[ ] optimize stack adjustment between calls
+      call bar
+      add rsp,40
+      sub rsp,24
+      call foo
 [ ] fix 'cmp' two constants case
 [ ] toc.allocate_named_register_or_break: if allocated then tell where
 [ ] toc.add_field: if defined tell where
