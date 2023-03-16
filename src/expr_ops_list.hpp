@@ -1,9 +1,9 @@
 #pragma once
 
-#include"decouple.hpp"
 #include"compiler_error.hpp"
 #include"toc.hpp"
 #include"expression.hpp"
+#include"decouple.hpp"
 
 class expr_ops_list final:public expression{
 public:
