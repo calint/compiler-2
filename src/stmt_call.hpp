@@ -65,7 +65,7 @@ public:
 			size_t nbytes_of_args_on_stack=0;
 			size_t i=args_.size();
 			while(i--){
-				const statement&arg=*args_[i];
+				const expr_ops_list&arg=*args_[i];
 				const stmt_def_func_param&param=f.param(i);
 				// is the argument passed through a register?
 				const string&arg_reg=param.get_register_or_empty();

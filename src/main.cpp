@@ -11,10 +11,7 @@ using namespace std;
 #include"call_asm_xor.hpp"
 #include"call_asm_syscall.hpp"
 #include"stmt_loop.hpp"
-#include"stmt_break.hpp"
-#include"stmt_continue.hpp"
 #include"stmt_if.hpp"
-#include"stmt_return.hpp"
 
 // called from stmt_block to solve circular dependencies with loop, if and calls
 inline unique_ptr<statement>create_statement_from_tokenizer(token tk,tokenizer&t){
@@ -61,10 +58,10 @@ static string trim(string s){
 
 static vector<string>split(const string&s,char delimiter){
 	vector<string>tokens;
-	string token;
-	istringstream tokenStream{s};
-	while(getline(tokenStream,token,delimiter)){
-		tokens.push_back(token);
+	string tk;
+	istringstream ts{s};
+	while(getline(ts,tk,delimiter)){
+		tokens.push_back(tk);
 	}
 	return tokens;
 }
@@ -206,7 +203,7 @@ static string optimize_jumps_2(stringstream&ss){
 	return sso.str();
 }
 
-int main(int argc,char**args){
+int main(int argc,char*args[]){
 	const char*src_file_name=argc==1?"prog.baz":args[1];
 	string src=read_file_to_string(src_file_name);
 
@@ -217,13 +214,13 @@ int main(int argc,char**args){
 		fo.close();
 		if(read_file_to_string(src_file_name)!=read_file_to_string("diff.baz"))
 			throw string("generated source differs");
+		// p.build(cout);
 		stringstream ss1;
 		p.build(ss1);
 		const string&pass1{optimize_jumps_1(ss1)};
 		stringstream ss2{pass1};
 		const string&pass2{optimize_jumps_2(ss2)};
 		cout<<pass2<<endl;
-		// p.build(cout);
 	}catch(const compiler_error&e){
 		size_t start_char_in_line{0};
 		const size_t lineno{toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line)};
