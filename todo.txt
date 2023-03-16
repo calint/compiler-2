@@ -1,4 +1,5 @@
 [ ] review fragile optimze_jumps_x
+[ ] decouple by using cpp implementation files for block and call, remove decouple.hpp
 [ ] toc.add_var(...) check if name shadows
 [ ] stmt_call: enable nested use of named registers
       example: f(x+1,x) where x is argument that was passed through register and the
