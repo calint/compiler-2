@@ -32,40 +32,7 @@ inline unique_ptr<statement>create_statement_from_tokenizer(tokenizer&t){
 	return make_unique<statement>(move(tk));// i.e. 0x80, rax, identifiers
 }
 
-static string read_file_to_string(const char *filename){
-	ifstream t{filename};
-	if(!t.is_open())
-		throw"cannot open file '"+string{filename}+"'";
-	string str;
-	t.seekg(0,ios::end);
-	str.reserve(size_t(t.tellg()));
-	t.seekg(0,ios::beg);
-	str.assign(istreambuf_iterator<char>(t),istreambuf_iterator<char>());
-	return str;
-}
-
-static string trim(string s){
-	size_t start{0};
-	size_t end{s.length()-1};
-	while(start<end&&(s[start]==' '||s[start]=='\t')){
-		start++;
-	}
-	while(end>start&&(s[end]==' '||s[end]=='\t')){
-		end--;
-	}
-	return s.substr(start,end-start+1);
-}
-
-static vector<string>split(const string&s,char delimiter){
-	vector<string>tokens;
-	string tk;
-	istringstream ts{s};
-	while(getline(ts,tk,delimiter)){
-		tokens.push_back(tk);
-	}
-	return tokens;
-}
-
+// opt1
 // example:
 //   jmp cmp_13_26
 //   cmp_13_26:
@@ -122,6 +89,7 @@ static string optimize_jumps_1(stringstream&ss){
 	return sso.str();
 }
 
+// opt2
 // example:
 //   jne cmp_14_26
 //   jmp if_14_8_code
@@ -231,6 +199,18 @@ static string optimize_jumps_2(stringstream&ss){
 		sso<<line3<<endl;
 	}
 	return sso.str();
+}
+
+static string read_file_to_string(const char *filename){
+	ifstream t{filename};
+	if(!t.is_open())
+		throw"cannot open file '"+string{filename}+"'";
+	string str;
+	t.seekg(0,ios::end);
+	str.reserve(size_t(t.tellg()));
+	t.seekg(0,ios::beg);
+	str.assign(istreambuf_iterator<char>(t),istreambuf_iterator<char>());
+	return str;
 }
 
 int main(int argc,char*args[]){
