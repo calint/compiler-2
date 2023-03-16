@@ -1,11 +1,3 @@
-[ ] review fragile optimze_jumps_x
-[ ] decouple by using cpp implementation files for block and call, remove decouple.hpp
-[ ] toc.add_var(...) check if name shadows
-[ ] stmt_call: enable nested use of named registers
-      example: f(x+1,x) where x is argument that was passed through register and the
-      first argument to f is the same register then the second argument is clobbered
-[ ]   non-inlined
-[ ]   inlined
 [ ] character type
 [ ] string type
 [ ] var str="hello world"
@@ -18,6 +10,14 @@
 [ ] bool type
 [ ] inlined function call: if a named register is not available: push/pop?
 [ ] short-hand boolean expression i.e. if a or b
+[ ] review fragile optimze_jumps_x
+[ ] decouple by using cpp implementation files for block and call, remove decouple.hpp
+[ ] toc.add_var(...) check if name shadows
+[ ] stmt_call: enable nested use of named registers
+      example: f(x+1,x) where x is argument that was passed through register and the
+      first argument to f is the same register then the second argument is clobbered
+[ ]   non-inlined
+[ ]   inlined
 [ ] optimize return pattern:
        mov qword[rbp-8],r15
        mov rax,qword[rbp-8]
