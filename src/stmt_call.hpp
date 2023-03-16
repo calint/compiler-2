@@ -247,6 +247,6 @@ public:
 
 private:
 	bool no_args_{false};
-	vector<unique_ptr<statement>>args_;
+	vector<unique_ptr<expr_ops_list>>args_;
 };
 
