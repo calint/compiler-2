@@ -225,6 +225,7 @@ static string optimize_jumps_2(stringstream&ss){
 		//   je if_14_8_code
 		//   cmp_14_26:
 		const string&ws{line1.substr(0,line1.find_first_not_of(" \t\n\r\f\v"))};
+		for(const auto&s:comments2)sso<<s<<endl;
 		sso<<ws<<jxx_inv<<" "<<jmplbl<<"  ; opt2"<<endl;
 		for(const auto&s:comments3)sso<<s<<endl;
 		sso<<line3<<endl;
