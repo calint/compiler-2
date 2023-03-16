@@ -8,8 +8,6 @@ class statement{
 public:
 	inline statement(token tk):token_{move(tk)}{}
 
-	statement()=default;
-	statement(const statement&)=default;
 	statement(statement&&)=default;
 
 	inline virtual~statement(){}
