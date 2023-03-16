@@ -73,8 +73,8 @@ static vector<string>split(const string&s,char delimiter){
 //   cmp_13_26:
 static string optimize_jumps_1(stringstream&ss){
 	stringstream sso;
-	regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
-	regex rxlbl{R"(^\s*(.+):.*$)"};
+	const regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
+	const regex rxlbl{R"(^\s*(.+):.*$)"};
 	smatch match;
 	while(true){
 		string line1;
@@ -131,85 +131,102 @@ static string optimize_jumps_1(stringstream&ss){
 //   cmp_14_26:
 static string optimize_jumps_2(stringstream&ss){
 	stringstream sso;
+	const regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
+	const regex rxjxx{R"(^\s*(j[a-z][a-z]?)\s+(.+)\s*$)"};
+	const regex rxlbl{R"(^\s*(.+):.*$)"};
+	const regex rxcomment{R"(^\s*;.*$)"};
+	smatch match;
+
 	while(true){
 		string line1;
 		getline(ss,line1);
 		if(ss.eof())
 			break;
 
-		const string&jxx{trim(line1)};
-		if(!jxx.starts_with("j")){
+		if(!regex_search(line1,match,rxjxx)){
 			sso<<line1<<endl;
 			continue;
 		}
+		const string&jxx{match[1]};
+		const string&jxxlbl{match[2]};
 
 		string line2;
-		getline(ss,line2);
-		const string&jmp{trim(line2)};
-		if(!jmp.starts_with("jmp")){
-			sso<<line1<<endl;
-			sso<<line2<<endl;
-			continue;
-		}
-
-		string line3;
-		vector<string>comments;
+		vector<string>comments2;
 		while(true){// read comments
-			getline(ss,line3);
-			if(line3.starts_with(';')){
-				comments.push_back(line3);
+			getline(ss,line2);
+			if(regex_match(line2,rxcomment)){
+				comments2.push_back(line2);
 				continue;
 			}
 			break;
 		}
-		
-		string lbl{trim(line3)};
-		if(!lbl.ends_with(':')){
+		if(!regex_search(line2,match,rxjmp)){
 			sso<<line1<<endl;
+			for(const auto&s:comments2)sso<<s<<endl;
 			sso<<line2<<endl;
-			for(const auto&s:comments)sso<<s<<endl;
+			continue;
+		}
+		const string&jmplbl{match[1]};
+
+		string line3;
+		vector<string>comments3;
+		while(true){// read comments
+			getline(ss,line3);
+			if(regex_match(line3,rxcomment)){
+				comments3.push_back(line3);
+				continue;
+			}
+			break;
+		}
+
+		if(!regex_search(line3,match,rxlbl)){
+			sso<<line1<<endl;
+			for(const auto&s:comments2)sso<<s<<endl;
+			sso<<line2<<endl;
+			for(const auto&s:comments3)sso<<s<<endl;
+			sso<<line3<<endl;
+			continue;
+		}
+		string lbl{match[1]};
+
+		if(jxxlbl!=lbl){
+			sso<<line1<<endl;
+			for(const auto&s:comments2)sso<<s<<endl;
+			sso<<line2<<endl;
+			for(const auto&s:comments3)sso<<s<<endl;
 			sso<<line3<<endl;
 			continue;
 		}
 
-		lbl.pop_back();
-		vector<string>jxx_split=split(jxx,' ');
-		if(jxx_split[1]!=lbl){
-			sso<<line1<<endl;
-			sso<<line2<<endl;
-			for(const auto&s:comments)sso<<s<<endl;
-			sso<<line3<<endl;
-			continue;
-		}
 		//   jne cmp_14_26
 		//   jmp if_14_8_code
 		//   cmp_14_26:
-		vector<string>jmp_split=split(jmp,' ');
 		string jxx_inv;
-		if(jxx_split[0]=="jne"){
+		if(jxx=="jne"){
 			jxx_inv="je";
-		}else if(jxx_split[0]=="je"){
+		}else if(jxx=="je"){
 			jxx_inv="jne";
-		}else if(jxx_split[0]=="jg"){
+		}else if(jxx=="jg"){
 			jxx_inv="jle";
-		}else if(jxx_split[0]=="jge"){
+		}else if(jxx=="jge"){
 			jxx_inv="jl";
-		}else if(jxx_split[0]=="jl"){
+		}else if(jxx=="jl"){
 			jxx_inv="jge";
-		}else if(jxx_split[0]=="jle"){
+		}else if(jxx=="jle"){
 			jxx_inv="jg";
 		}else{
 			sso<<line1<<endl;
+			for(const auto&s:comments2)sso<<s<<endl;
 			sso<<line2<<endl;
-			for(const auto&s:comments)sso<<s<<endl;
+			for(const auto&s:comments3)sso<<s<<endl;
 			sso<<line3<<endl;
 			continue;
 		}
 		//   je if_14_8_code
 		//   cmp_14_26:
 		const string&ws{line1.substr(0,line1.find_first_not_of(" \t\n\r\f\v"))};
-		sso<<ws<<jxx_inv<<" "<<jmp_split[1]<<"  ; opt2"<<endl;
-		for(const auto&s:comments)sso<<s<<endl;
+		sso<<ws<<jxx_inv<<" "<<jmplbl<<"  ; opt2"<<endl;
+		for(const auto&s:comments3)sso<<s<<endl;
 		sso<<line3<<endl;
 	}
 	return sso.str();

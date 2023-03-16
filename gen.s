@@ -2,17 +2,6 @@
 
 section .data
 align 4
-;[1:1] field prompt=" hello enter name: " 
-prompt db '  hello    enter name: '
-prompt.len equ $-prompt
-;[2:1] field name="............................................................" 
-name db '............................................................'
-name.len equ $-name
-;[3:1] field prompt2=" not a name: " 
-prompt2 db '  not a name: '
-prompt2.len equ $-prompt2
-;[4:1] field len=0 
-len dq 0
 
 section .bss
 align 4
@@ -29,193 +18,75 @@ mov rbp,rsp
 jmp main
 
 main:
-;  [30:5] print(prompt.len,prompt)
-;  print(len:reg_rdx,ptr:reg_rcx) 
-;    inline: 30_5
-;    alloc rdx
-;    alias len -> rdx
-     mov rdx,prompt.len
-;    alloc rcx
-;    alias ptr -> rcx
-     mov rcx,prompt
-;    [7:5] mov(rcx,ptr)
-;    [8:5] mov(rdx,len)
-;    [9:5] mov(rbx,1)
-     mov rbx,1
-;    [10:5] mov(rax,4)
-     mov rax,4
-;    [11:5] int(0x80)
-     int 0x80
-;    free rcx
-;    free rdx
-   print_30_5_end:
-;  [31:5] loop
-   loop_31_5:
-;    [32:9] var len=read(name.len,name)-1 
-;    len: qword[rbp-8]
-;    [32:13] len=read(name.len,name)-1 
-;    [32:17] read(name.len,name)-1 
-;    [32:17] len=read(name.len,name)
-;    [32:17] read(name.len,name)
-;    read(len:reg_rdx,ptr:reg_rsi):ret 
-;      inline: 32_17
-;      alias ret -> len
-;      alloc rdx
-;      alias len -> rdx
-       mov rdx,name.len
-;      alloc rsi
-;      alias ptr -> rsi
-       mov rsi,name
-;      [15:5] mov(rsi,ptr)
-;      [16:5] mov(rdx,len)
-;      [17:5] xor(rax)
-       xor rax,rax
-;      [18:5] xor(rdi)
-       xor rdi,rdi
-;      [19:5] syscall 
-       syscall
-;      [20:5] mov(ret,rax)
-       mov qword[rbp-8],rax
-;      free rsi
-;      free rdx
-     read_32_17_end:
-;    [32:37] len-1 
-     sub qword[rbp-8],1
-;    [32:39] # remove the \n 
-     if_33_12:
-;    [33:12] ? len=0 
-;    [33:12] ? len=0 
-     cmp_33_12:
-     cmp qword[rbp-8],0
-     jne if_35_17
-     if_33_12_code:  ; opt1
-;      [34:13] print(prompt.len,prompt)
-;      print(len:reg_rdx,ptr:reg_rcx) 
-;        inline: 34_13
-;        alloc rdx
-;        alias len -> rdx
-         mov rdx,prompt.len
-;        alloc rcx
-;        alias ptr -> rcx
-         mov rcx,prompt
-;        [7:5] mov(rcx,ptr)
-;        [8:5] mov(rdx,len)
-;        [9:5] mov(rbx,1)
-         mov rbx,1
-;        [10:5] mov(rax,4)
-         mov rax,4
-;        [11:5] int(0x80)
-         int 0x80
-;        free rcx
-;        free rdx
-       print_34_13_end:
-     jmp if_33_9_end
-     if_35_17:
-;    [35:17] ? len<=4 
-;    [35:17] ? len<=4 
-     cmp_35_17:
-     cmp qword[rbp-8],4
-     jg if_else_33_9
-     if_35_17_code:  ; opt1
-;      [36:13] print(prompt2.len,prompt2)
-;      print(len:reg_rdx,ptr:reg_rcx) 
-;        inline: 36_13
-;        alloc rdx
-;        alias len -> rdx
-         mov rdx,prompt2.len
-;        alloc rcx
-;        alias ptr -> rcx
-         mov rcx,prompt2
-;        [7:5] mov(rcx,ptr)
-;        [8:5] mov(rdx,len)
-;        [9:5] mov(rbx,1)
-         mov rbx,1
-;        [10:5] mov(rax,4)
-         mov rax,4
-;        [11:5] int(0x80)
-         int 0x80
-;        free rcx
-;        free rdx
-       print_36_13_end:
-     jmp if_33_9_end
-     if_else_33_9:
-;        [38:13] print(len+1,name)
-;        print(len:reg_rdx,ptr:reg_rcx) 
-;          inline: 38_13
-;          alloc rdx
-;          alias len -> rdx
-;          [38:19] len+1
-;          [38:19] rdx=len
-           mov rdx,qword[rbp-8]
-;          [38:23] rdx+1
-           add rdx,1
-;          alloc rcx
-;          alias ptr -> rcx
-           mov rcx,name
-;          [7:5] mov(rcx,ptr)
-;          [8:5] mov(rdx,len)
-;          [9:5] mov(rbx,1)
-           mov rbx,1
-;          [10:5] mov(rax,4)
-           mov rax,4
-;          [11:5] int(0x80)
-           int 0x80
-;          free rcx
-;          free rdx
-         print_38_13_end:
-         if_39_16:
-;        [39:16] ? read(name.len,name)=1 
-;        [39:16] ? read(name.len,name)=1 
-         cmp_39_16:
-;        alloc r15
-;          [39:16] read(name.len,name)
-;          [39:16] r15=read(name.len,name)
-;          [39:16] read(name.len,name)
-;          read(len:reg_rdx,ptr:reg_rsi):ret 
-;            inline: 39_16
-;            alias ret -> r15
-;            alloc rdx
-;            alias len -> rdx
-             mov rdx,name.len
-;            alloc rsi
-;            alias ptr -> rsi
-             mov rsi,name
-;            [15:5] mov(rsi,ptr)
-;            [16:5] mov(rdx,len)
-;            [17:5] xor(rax)
-             xor rax,rax
-;            [18:5] xor(rdi)
-             xor rdi,rdi
-;            [19:5] syscall 
-             syscall
-;            [20:5] mov(ret,rax)
-             mov r15,rax
-;            free rsi
-;            free rdx
-           read_39_16_end:
-         cmp r15,1
-;        free r15
-         jne if_39_13_end
-         if_39_16_code:  ; opt1
-;          [39:38] # is only \n 
-;          [40:17] break 
-           jmp loop_31_5_end
-         if_39_13_end:
-     if_33_9_end:
-   jmp loop_31_5
-   loop_31_5_end:
-;  [43:5] exit(0)
+;  [8:5] var a=1 
+;  a: qword[rbp-8]
+;  [8:9] a=1 
+;  [8:11] 1 
+;  [8:11] a=1 
+   mov qword[rbp-8],1
+;  [9:5] var b=2 
+;  b: qword[rbp-16]
+;  [9:9] b=2 
+;  [9:11] 2 
+;  [9:11] b=2 
+   mov qword[rbp-16],2
+;  [10:5] var c=3 
+;  c: qword[rbp-24]
+;  [10:9] c=3 
+;  [10:11] 3 
+;  [10:11] c=3 
+   mov qword[rbp-24],3
+;  [11:5] var d=4 
+;  d: qword[rbp-32]
+;  [11:9] d=4 
+;  [11:11] 4 
+;  [11:11] d=4 
+   mov qword[rbp-32],4
+   if_12_8:
+;  [12:8] ? (a=1 and b=2) or (c=3 and d=4)
+;  [12:9] ? (a=1 and b=2)
+;  [12:9] ? a=1 
+   cmp_12_9:
+   cmp qword[rbp-8],1
+   jne cmp_12_26
+;  [12:17] ? b=2
+   cmp_12_17:
+   cmp qword[rbp-16],2
+   je if_12_8_code  ; opt2
+;  [12:26] ? (c=3 and d=4)
+;  [12:26] ? c=3 
+   cmp_12_26:
+   cmp qword[rbp-24],3
+   jne if_12_5_end
+;  [12:34] ? d=4
+   cmp_12_34:
+   cmp qword[rbp-32],4
+   jne if_12_5_end
+   if_12_8_code:  ; opt1
+;    [13:9] exit(0)
+;    exit(v) 
+;      inline: 13_9
+;      alias v -> 0
+;      [2:5] mov(rbx,v)
+       mov rbx,0
+;      [3:5] mov(rax,1)
+       mov rax,1
+;      [4:5] int(0x80)
+       int 0x80
+     exit_13_9_end:
+   if_12_5_end:
+;  [14:5] exit(1)
 ;  exit(v) 
-;    inline: 43_5
-;    alias v -> 0
-;    [24:5] mov(rbx,v)
-     mov rbx,0
-;    [25:5] mov(rax,1)
+;    inline: 14_5
+;    alias v -> 1
+;    [2:5] mov(rbx,v)
+     mov rbx,1
+;    [3:5] mov(rax,1)
      mov rax,1
-;    [26:5] int(0x80)
+;    [4:5] int(0x80)
      int 0x80
-   exit_43_5_end:
+   exit_14_5_end:
 
 ; max scratch registers in use: 1
-;            max frames in use: 7
+;            max frames in use: 5
 
