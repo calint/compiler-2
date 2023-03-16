@@ -73,16 +73,21 @@ static vector<string>split(const string&s,char delimiter){
 //   cmp_13_26:
 static string optimize_jumps_1(stringstream&ss){
 	stringstream sso;
+	regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
+	regex rxlbl{R"(^\s*(.+):.*$)"};
+	smatch match;
 	while(true){
 		string line1;
 		getline(ss,line1);
 		if(ss.eof())
 			break;
-		const string&jmp{trim(line1)};
-		if(!jmp.starts_with("jmp")){
+
+		if(!regex_search(line1,match,rxjmp)){
 			sso<<line1<<endl;
 			continue;
 		}
+		const string&jmplbl{match[1]};
+
 		string line2;
 		vector<string>comments;
 		while(true){// read comments
@@ -93,21 +98,23 @@ static string optimize_jumps_1(stringstream&ss){
 			}
 			break;
 		}
-		string lbl{trim(line2)};
-		if(!lbl.ends_with(':')){
+
+		if(!regex_search(line2,match,rxlbl)){
 			sso<<line1<<endl;
 			for(const string&s:comments)sso<<s<<endl;
 			sso<<line2<<endl;
 			continue;
 		}
-		lbl.pop_back();
-		vector<string>jxx_split=split(jmp,' ');
-		if(jxx_split[1]!=lbl){
+
+		const string&lbl{match[1]};
+
+		if(jmplbl!=lbl){
 			sso<<line1<<endl;
 			for(const auto&s:comments)sso<<s<<endl;
 			sso<<line2<<endl;
 			continue;
 		}
+
 		// write the label without the preceding jmp
 		for(const string&s:comments)sso<<s<<endl;
 		sso<<line2<<"  ; opt1"<<endl;
@@ -129,11 +136,13 @@ static string optimize_jumps_2(stringstream&ss){
 		getline(ss,line1);
 		if(ss.eof())
 			break;
+
 		const string&jxx{trim(line1)};
 		if(!jxx.starts_with("j")){
 			sso<<line1<<endl;
 			continue;
 		}
+
 		string line2;
 		getline(ss,line2);
 		const string&jmp{trim(line2)};
@@ -142,6 +151,7 @@ static string optimize_jumps_2(stringstream&ss){
 			sso<<line2<<endl;
 			continue;
 		}
+
 		string line3;
 		vector<string>comments;
 		while(true){// read comments
@@ -152,6 +162,7 @@ static string optimize_jumps_2(stringstream&ss){
 			}
 			break;
 		}
+		
 		string lbl{trim(line3)};
 		if(!lbl.ends_with(':')){
 			sso<<line1<<endl;
@@ -160,6 +171,7 @@ static string optimize_jumps_2(stringstream&ss){
 			sso<<line3<<endl;
 			continue;
 		}
+
 		lbl.pop_back();
 		vector<string>jxx_split=split(jxx,' ');
 		if(jxx_split[1]!=lbl){
