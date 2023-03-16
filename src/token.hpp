@@ -5,15 +5,6 @@
 
 class token final{
 public:
-	inline token():
-		ws_left_{},
-		start_ix_{},
-		name_{},
-		end_ix_{},
-		ws_right_{},
-		is_str_{}
-	{}
-
 	inline token(string wb,size_t start_ix,string tk,size_t end_ix,string wa,bool is_str=false):
 		ws_left_{wb},
 		start_ix_{start_ix},
@@ -21,42 +12,13 @@ public:
 		end_ix_{end_ix},
 		ws_right_{wa},
 		is_str_{is_str}
-	{
-		// cout<<"constructor\n";
-	}
+	{}
 
-	inline token(const token&tk):
-		ws_left_{tk.ws_left_},
-		start_ix_{tk.start_ix_},
-		name_{tk.name_},
-		end_ix_{tk.end_ix_},
-		ws_right_{tk.ws_right_},
-		is_str_{tk.is_str_}
-	{
-		// cout<<"copy constructor\n";
-	}
-
-	token&operator=(const token&other){
-		// cout<<"operator =\n";
-		ws_left_=other.ws_left_;
-		start_ix_=other.start_ix_;
-		name_=other.name_;
-		end_ix_=other.end_ix_;
-		ws_right_=other.ws_right_;
-		is_str_=other.is_str_;
-		return*this;
-	}
-
-	inline token(token&&tk):
-		ws_left_{move(tk.ws_left_)},
-		start_ix_{tk.start_ix_},
-		name_{move(tk.name_)},
-		end_ix_{tk.end_ix_},
-		ws_right_{move(tk.ws_right_)},
-		is_str_{tk.is_str_}
-	{
-		// cout<<"move constructor\n";
-	}
+	token()=default;
+	token(const token&)=default;
+	token(token&&)=default;
+	token&operator=(const token&)=default;
+	token&operator=(token&&)=default;
 
 	inline void source_to(ostream&os)const{
 		if(!is_str_){
@@ -96,10 +58,10 @@ public:
 	inline bool is_string()const{return is_str_;}
 
 private:
-	string ws_left_;
-	size_t start_ix_{0};
-	string name_;
-	size_t end_ix_{0};
-	string ws_right_;
-	bool is_str_{false};
+	string ws_left_{};
+	size_t start_ix_{};
+	string name_{};
+	size_t end_ix_{};
+	string ws_right_{};
+	bool is_str_{};
 };

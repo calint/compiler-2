@@ -206,7 +206,6 @@ static string optimize_jumps_2(stringstream&ss){
 int main(int argc,char*args[]){
 	const char*src_file_name=argc==1?"prog.baz":args[1];
 	string src=read_file_to_string(src_file_name);
-
 	try{
 		stmt_program p{src};
 		ofstream fo{"diff.baz"};
