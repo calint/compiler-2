@@ -35,7 +35,7 @@ inline unique_ptr<statement>create_statement_from_tokenizer(tokenizer&t){
 static string read_file_to_string(const char *filename){
 	ifstream t{filename};
 	if(!t.is_open())
-		throw "cannot open file '"+string{filename}+"'";
+		throw"cannot open file '"+string{filename}+"'";
 	string str;
 	t.seekg(0,ios::end);
 	str.reserve(size_t(t.tellg()));
@@ -235,14 +235,15 @@ static string optimize_jumps_2(stringstream&ss){
 
 int main(int argc,char*args[]){
 	const char*src_file_name=argc==1?"prog.baz":args[1];
-	string src=read_file_to_string(src_file_name);
+	string src;
 	try{
+		src=read_file_to_string(src_file_name);
 		stmt_program p{src};
 		ofstream fo{"diff.baz"};
 		p.source_to(fo);
 		fo.close();
 		if(read_file_to_string(src_file_name)!=read_file_to_string("diff.baz"))
-			throw string("generated source differs");
+			throw"generated source differs. diff "+string{src_file_name}+" diff.baz";
 		// p.build(cout);
 		stringstream ss1;
 		p.build(ss1);
