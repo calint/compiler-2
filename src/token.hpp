@@ -14,11 +14,11 @@ public:
 		is_str_{is_str}
 	{}
 
-	token()=default;
-	token(const token&)=default;
-	token(token&&)=default;
-	token&operator=(const token&)=default;
-	token&operator=(token&&)=default;
+	inline token()=default;
+	inline token(const token&)=default;
+	inline token(token&&)=default;
+	inline token&operator=(const token&)=default;
+	inline token&operator=(token&&)=default;
 
 	inline void source_to(ostream&os)const{
 		if(!is_str_){

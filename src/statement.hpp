@@ -7,10 +7,11 @@ class toc;
 class statement{
 public:
 	inline statement(token tk):token_{move(tk)}{}
-
-	statement(statement&&)=default;
-
 	inline virtual~statement(){}
+	inline statement(statement&&)=default;
+	inline statement(const statement&)=default;
+	// inline statement&operator=(const statement&)=default;
+	// inline statement&operator=(statement&&)=default;
 
 	inline virtual void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const{
 		token_.compile_to(os);
