@@ -17,26 +17,6 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 
-f:
-;  f(x):res 
-;  res: qword[rbp-8]
-;  x: qword[rbp+16]
-   push rbp
-   mov rbp,rsp
-;  [8:5] res=-x*2 
-;  alloc r15
-;  [8:9] -x*2 
-;  [8:10] r15=-x
-   mov r15,qword[rbp+16]
-   neg r15
-;  [8:12] r15*2 
-   imul r15,2
-   mov qword[rbp-8],r15
-;  free r15
-   mov rax,qword[rbp-8]
-   pop rbp
-   ret
-
 main:
 ;  [12:5] var a=2 
 ;  a: qword[rbp-8]
@@ -47,18 +27,28 @@ main:
 ;  [13:5] var b=f(-a)
 ;  b: qword[rbp-16]
 ;  [13:9] b=f(-a)
-;  [13:11] f(-a)
-;  [13:11] b=f(-a)
-;  [13:11] f(-a)
-   sub rsp,16
 ;  alloc r15
-   mov r15,qword[rbp-8]
-   neg r15
-   push r15
+;  [13:11] f(-a)
+;  [13:11] r15=f(-a)
+;  [13:11] f(-a)
+;  f(x):res 
+;    inline: 13_11
+;    alias res -> r15
+;    alloc r14
+     mov r14,qword[rbp-8]
+     neg r14
+;    alias x -> r14
+;    [8:5] res=-x*2 
+;    [8:9] -x*2 
+;    [8:10] res=-x
+     mov r15,r14
+     neg r15
+;    [8:12] res*2 
+     imul r15,2
+;    free r14
+   f_13_11_end:
+   mov qword[rbp-16],r15
 ;  free r15
-   call f
-   add rsp,24
-   mov qword[rbp-16],rax
    if_14_8:
 ;  [14:8] ? b=4 
 ;  [14:8] ? b=4 
@@ -91,5 +81,5 @@ main:
      int 0x80
    exit_16_5_end:
 
-; max scratch registers in use: 2
+; max scratch registers in use: 3
 ;            max frames in use: 5

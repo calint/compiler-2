@@ -12,25 +12,15 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
-f:
-   push rbp
-   mov rbp,rsp
-   mov r15,qword[rbp+16]
-   neg r15
-   imul r15,2
-   mov qword[rbp-8],r15
-   mov rax,qword[rbp-8]
-   pop rbp
-   ret
 main:
    mov qword[rbp-8],2
-   sub rsp,16
-   mov r15,qword[rbp-8]
-   neg r15
-   push r15
-   call f
-   add rsp,24
-   mov qword[rbp-16],rax
+     mov r14,qword[rbp-8]
+     neg r14
+     mov r15,r14
+     neg r15
+     imul r15,2
+   f_13_11_end:
+   mov qword[rbp-16],r15
    if_14_8:
    cmp_14_8:
    cmp qword[rbp-16],4

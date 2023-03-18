@@ -97,19 +97,13 @@ public:
 				const ident_resolved&ir{tc.resolve_ident_to_nasm(arg)};
 				if(argument_passed_in_register){
 					// move the identifier to the requested register
-					if(ir.type==ident_resolved::type::CONST){
+					if(ir.is_const()){
 						tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,ir.as_const());
 					}else{
+						tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,ir.id);
 						if(ir.negated){
-							const string&sr=tc.alloc_scratch_register(arg,os,indent_level);
-							tc.asm_cmd(arg,os,indent_level,"mov",sr,ir.id);
-							tc.asm_negate(arg,os,indent_level,sr);
-							tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,sr);
-							tc.free_scratch_register(os,indent_level,sr);
-						}else{
-							tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,ir.id);
-						}
-					}
+							tc.asm_negate(arg,os,indent_level,arg_reg);
+						}					}
 				}else{
 					// push identifier on the stack
 					if(ir.is_const()){
@@ -207,14 +201,26 @@ public:
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
 				continue;
 			}
+
 			// argument is not an expression
+
 			if(arg_reg.empty()){
 				// no register allocated for the argument
 				// alias parameter name to the argument identifier
-				// !! not taking into account negated value
-				const string&id=arg->identifier();
-				aliases_to_add.emplace_back(param.identifier(),id);
-				tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<id<<endl;				
+				if(arg->is_negated()){
+					const ident_resolved&ir=tc.resolve_ident_to_nasm(*arg);
+					const string&sr=tc.alloc_scratch_register(*arg,os,indent_level+1);
+					allocated_registers_in_order.push_back(sr);
+					allocated_scratch_registers.push_back(sr);
+					tc.asm_cmd(param,os,indent_level+1,"mov",sr,ir.id);
+					tc.asm_negate(param,os,indent_level+1,sr);
+					aliases_to_add.emplace_back(param.identifier(),sr);
+					tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<sr<<endl;
+				}else{
+					const string&id=arg->identifier();
+					aliases_to_add.emplace_back(param.identifier(),id);
+					tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<id<<endl;
+				}
 			}else{
 				// register allocated for the argument
 				const string&id=arg->identifier();
@@ -223,12 +229,12 @@ public:
 				tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;				
 				// move argument to register
 				const ident_resolved&ir{tc.resolve_ident_to_nasm(param,id,false)};
-				if(ir.type==ident_resolved::type::CONST){
+				if(ir.is_const()){
 					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,ir.as_const());
 				}else{
 					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,ir.id);
 					if(ir.negated){
-						tc.asm_negate(param,os,indent_level,ir.id);
+						tc.asm_negate(param,os,indent_level+1,arg_reg);
 					}
 				}
 			}
