@@ -18,12 +18,13 @@ mov rbp,rsp
 jmp main
 
 main:
-;  [8:5] var a=1 
+;  [8:5] var a=-1 
 ;  a: qword[rbp-8]
-;  [8:9] a=1 
-;  [8:11] 1 
-;  [8:11] a=1 
+;  [8:9] a=-1 
+;  [8:11] -1 
+;  [8:12] a=-1 
    mov qword[rbp-8],1
+   neg qword[rbp-8]
 ;  [9:5] var b=2 
 ;  b: qword[rbp-16]
 ;  [9:9] b=2 

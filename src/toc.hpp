@@ -502,6 +502,7 @@ public:
 				return;
 
 			if(is_identifier_register(dest_resolved)){
+				// for optmiziation of push/pop when call
 				initiated_registers_.insert(dest_resolved);
 			}
 		}
@@ -538,6 +539,10 @@ public:
 
 	inline void asm_call(const statement&st,ostream&os,const size_t indent_level,const string&label){
 		indent(os,indent_level);os<<"call "<<label<<endl;
+	}
+
+	inline void asm_negate(const statement&st,ostream&os,const size_t indent_level,const string&dest_resolved){
+		indent(os,indent_level);os<<"neg "<<dest_resolved<<endl;
 	}
 
 	inline static void indent(ostream&os,const size_t indent_level,const bool comment=false){

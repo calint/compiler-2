@@ -14,6 +14,7 @@ mov rbp,rsp
 jmp main
 main:
    mov qword[rbp-8],1
+   neg qword[rbp-8]
    mov qword[rbp-16],2
    mov qword[rbp-24],3
    mov qword[rbp-32],4

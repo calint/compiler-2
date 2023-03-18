@@ -131,14 +131,14 @@ public:
 		// first element is assigned to destination
 		const statement&st{*exps_[0].get()};
 		const string dest_resolved{tc.resolve_ident_to_nasm(*this,dest)};
-		asm_op(tc,os,indent_level,st,'=',dest,dest_resolved);
+		asm_op(tc,os,indent_level,'=',dest,dest_resolved,st);
 
 		// remaining elements are +,-,*,/
 		const size_t n{ops_.size()};
 		for(size_t i{0};i<n;i++){
 			const char op=ops_[i];
 			const statement&stm{*exps_[i+1].get()};
-			asm_op(tc,os,indent_level,stm,op,dest,dest_resolved);
+			asm_op(tc,os,indent_level,op,dest,dest_resolved,stm);
 		}
 	}
 
@@ -164,14 +164,18 @@ private:
 		throw string(to_string(__LINE__)+" err");
 	}
 
-	inline void asm_op(toc&tc,ostream&os,const size_t indent_level,const statement&st,const char op,const string&dest,const string&dest_resolved)const{
+	inline void asm_op(toc&tc,ostream&os,const size_t indent_level,const char op,const string&dest,const string&dest_resolved,const statement&st)const{
 		toc::indent(os,indent_level,true);tc.source_comment(os,dest,op,st);
 		if(op=='='){
 			if(st.is_expression()){
 				st.compile(tc,os,indent_level,dest);
 				return;
 			}
-			tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,tc.resolve_ident_to_nasm(st));
+			const string&src_resolved=tc.resolve_ident_to_nasm(st);
+			tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,src_resolved);
+			// if(st.is_negated()){
+			// 	tc.asm_negate(st,os,indent_level,dest_resolved);
+			// }
 			return;
 		}
 		if(op=='+'){// order1op

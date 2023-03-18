@@ -9,6 +9,7 @@ func inline main{
     var b=2
     var c=3
     var d=4
+    # triggers optimize_jumps_1 and optimize_jumps_2
     if (a=1 and b=2) or (c=3 and d=4)
         exit(0)
     exit(1)

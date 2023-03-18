@@ -26,10 +26,20 @@ inline unique_ptr<statement>create_statement_from_tokenizer(token tk,tokenizer&t
 
 // called from expr_ops_list to solve circular dependencies with calls
 inline unique_ptr<statement>create_statement_from_tokenizer(tokenizer&t){
+	bool negated=t.is_next_char('-');
 	token tk=t.next_token();
-	if(tk.is_name("#"))return make_unique<stmt_comment>(move(tk),t);// i.e.  print("hello") # comment
-	if(t.is_peek_char('('))return create_statement_from_tokenizer(move(tk),t); // i.e.  f(...)
-	return make_unique<statement>(move(tk));// i.e. 0x80, rax, identifiers
+	if(tk.is_name("#")){
+		if(negated)
+			throw compiler_error(tk,"unexpected comment after '-'");
+		// i.e.  print("hello") # comment
+		return make_unique<stmt_comment>(move(tk),t);
+	}else if(t.is_peek_char('(')){
+		// i.e.  f(...)
+		return create_statement_from_tokenizer(move(tk),t);
+	}else{
+		// i.e. 0x80, rax, identifiers
+		return make_unique<statement>(move(tk),negated);
+	}
 }
 
 // opt1
