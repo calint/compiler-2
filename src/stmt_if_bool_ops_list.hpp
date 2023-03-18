@@ -61,9 +61,11 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true)const{
-		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
-
 		const size_t n{bools_.size()};
+		if(n>1){
+			// avoid repeated comment
+			toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
+		}
 		for(size_t i=0;i<n;i++){
 			if(bools_[i].index()==1){
 				const stmt_if_bool_ops_list&el{get<stmt_if_bool_ops_list>(bools_[i])};
