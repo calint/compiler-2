@@ -240,11 +240,7 @@ public:
 
 		// enter function creating a new scope from which 
 		//   prior variables are not visible
-		if(f.returns().empty()){
-			tc.enter_func(nm,new_call_path,ret_jmp_label,true,"");
-		}else{
-			tc.enter_func(nm,new_call_path,ret_jmp_label,true,f.returns()[0].name());
-		}
+		tc.enter_func(nm,new_call_path,ret_jmp_label,true,f.returns().empty()?"":f.returns()[0].name());
 
 		// add the aliases to the context of this scope
 		for(const auto&e:aliases_to_add){
