@@ -4,14 +4,9 @@ func inline exit(v){
     int(0x80)
 }
 
-func inline f(x:reg_rdx):res{
-    res=-x*2
-}
-
 func inline main{
-    var a=2
-    var b=f(-a+1);
-    if b=2
+    var a=(1+2)
+    if a=3
         exit(0)
     exit(1)
 }

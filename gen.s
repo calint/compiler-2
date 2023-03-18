@@ -18,52 +18,27 @@ mov rbp,rsp
 jmp main
 
 main:
-;  [12:5] var a=2 
+;  [8:5] var a=(1+2)
 ;  a: qword[rbp-8]
-;  [12:9] a=2 
-;  [12:11] 2 
-;  [12:11] a=2 
-   mov qword[rbp-8],2
-;  [13:5] var b=f(-a+1)
-;  b: qword[rbp-16]
-;  [13:9] b=f(-a+1)
-;  alloc r15
-;  [13:11] f(-a+1)
-;  [13:11] r15=f(-a+1)
-;  [13:11] f(-a+1)
-;  f(x:reg_rdx):res 
-;    inline: 13_11
-;    alias res -> r15
-;    alloc rdx
-;    alias x -> rdx
-;    [13:13] -a+1
-;    [13:14] rdx=-a
-     mov rdx,qword[rbp-8]
-     neg rdx
-;    [13:16] rdx+1
-     add rdx,1
-;    [8:5] res=-x*2 
-;    [8:9] -x*2 
-;    [8:10] res=-x
-     mov r15,rdx
-     neg r15
-;    [8:12] res*2 
-     imul r15,2
-;    free rdx
-   f_13_11_end:
-   mov qword[rbp-16],r15
-;  free r15
-   if_14_8:
-;  [14:8] ? b=2 
-;  [14:8] ? b=2 
-   cmp_14_8:
-   cmp qword[rbp-16],2
-   jne if_14_5_end
-   jmp if_14_8_code
-   if_14_8_code:
-;    [15:9] exit(0)
+;  [8:9] a=(1+2)
+;  [8:11] (1+2)
+;  [8:12] a=(1+2)
+;  [8:12] (1+2)
+;  [8:12] a=1
+   mov qword[rbp-8],1
+;  [8:14] a+2
+   add qword[rbp-8],2
+   if_9_8:
+;  [9:8] ? a=3 
+;  [9:8] ? a=3 
+   cmp_9_8:
+   cmp qword[rbp-8],3
+   jne if_9_5_end
+   jmp if_9_8_code
+   if_9_8_code:
+;    [10:9] exit(0)
 ;    exit(v) 
-;      inline: 15_9
+;      inline: 10_9
 ;      alias v -> 0
 ;      [2:5] mov(rbx,v)
        mov rbx,0
@@ -71,11 +46,11 @@ main:
        mov rax,1
 ;      [4:5] int(0x80)
        int 0x80
-     exit_15_9_end:
-   if_14_5_end:
-;  [16:5] exit(1)
+     exit_10_9_end:
+   if_9_5_end:
+;  [11:5] exit(1)
 ;  exit(v) 
-;    inline: 16_5
+;    inline: 11_5
 ;    alias v -> 1
 ;    [2:5] mov(rbx,v)
      mov rbx,1
@@ -83,7 +58,7 @@ main:
      mov rax,1
 ;    [4:5] int(0x80)
      int 0x80
-   exit_16_5_end:
+   exit_11_5_end:
 
-; max scratch registers in use: 2
+; max scratch registers in use: 1
 ;            max frames in use: 5

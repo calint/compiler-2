@@ -1,4 +1,5 @@
-[ ] negated expression
+[x] negated expression
+[ ]   support for negated expr_ops_list. i.e. a=-(1+2)
 [ ] character type
 [ ] string type
 [ ] var str="hello world"
