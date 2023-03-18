@@ -24,36 +24,40 @@ main:
 ;  [12:11] 2 
 ;  [12:11] a=2 
    mov qword[rbp-8],2
-;  [13:5] var b=f(-a)
+;  [13:5] var b=f(-a+1)
 ;  b: qword[rbp-16]
-;  [13:9] b=f(-a)
+;  [13:9] b=f(-a+1)
 ;  alloc r15
-;  [13:11] f(-a)
-;  [13:11] r15=f(-a)
-;  [13:11] f(-a)
-;  f(x):res 
+;  [13:11] f(-a+1)
+;  [13:11] r15=f(-a+1)
+;  [13:11] f(-a+1)
+;  f(x:reg_rdx):res 
 ;    inline: 13_11
 ;    alias res -> r15
-;    alloc r14
-     mov r14,qword[rbp-8]
-     neg r14
-;    alias x -> r14
+;    alloc rdx
+;    alias x -> rdx
+;    [13:13] -a+1
+;    [13:14] rdx=-a
+     mov rdx,qword[rbp-8]
+     neg rdx
+;    [13:16] rdx+1
+     add rdx,1
 ;    [8:5] res=-x*2 
 ;    [8:9] -x*2 
 ;    [8:10] res=-x
-     mov r15,r14
+     mov r15,rdx
      neg r15
 ;    [8:12] res*2 
      imul r15,2
-;    free r14
+;    free rdx
    f_13_11_end:
    mov qword[rbp-16],r15
 ;  free r15
    if_14_8:
-;  [14:8] ? b=4 
-;  [14:8] ? b=4 
+;  [14:8] ? b=2 
+;  [14:8] ? b=2 
    cmp_14_8:
-   cmp qword[rbp-16],4
+   cmp qword[rbp-16],2
    jne if_14_5_end
    jmp if_14_8_code
    if_14_8_code:
@@ -81,5 +85,5 @@ main:
      int 0x80
    exit_16_5_end:
 
-; max scratch registers in use: 3
+; max scratch registers in use: 2
 ;            max frames in use: 5

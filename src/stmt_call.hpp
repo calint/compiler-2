@@ -222,13 +222,11 @@ public:
 					tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<id<<endl;
 				}
 			}else{
-				// register allocated for the argument
-				const string&id=arg->identifier();
 				// alias parameter name to the register
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
-				tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;				
+				tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;
 				// move argument to register
-				const ident_resolved&ir{tc.resolve_ident_to_nasm(param,id,false)};
+				const ident_resolved&ir{tc.resolve_ident_to_nasm(*arg)};
 				if(ir.is_const()){
 					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,ir.as_const());
 				}else{
