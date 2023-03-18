@@ -14,6 +14,7 @@ public:
 		list_op_{list_op}
 	{
 		int precedence=first_op_precedence;
+		// read first expression
 		// if called in a recursion with a first expression passed
 		if(first_expression){
 			// put in list
@@ -24,16 +25,14 @@ public:
 				token tk=t.next_token();
 				if(tk.is_name("")){
 					if(t.is_next_char('(')){
-						after_negation_ws_token_=tk;
 						negated_=true;
+						after_negation_ws_token_=tk;
 						exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true));
 					}else{
-						throw compiler_error(t,"expected '(' after '-'");
+						throw compiler_error(t,"expected identifier or '(' after '-'");
 					}
 				}else{
-					t.pushback_token(tk);
-					t.pushback_char('-');
-					exps_.emplace_back(create_statement_from_tokenizer(t));
+					exps_.emplace_back(make_unique<statement>(tk,true));
 				}
 			}else{
 				// if subexpression
@@ -182,7 +181,7 @@ public:
 		if(exps_.size()==1){
 			return exps_[0]->is_negated();
 		}
-		return false; // !! negation
+		return negated_;
 	}
 
 	inline bool is_empty()const override{return exps_.empty();}
@@ -204,7 +203,7 @@ private:
 				return;
 			}
 			const ident_resolved&ir{tc.resolve_ident_to_nasm(st)};
-			if(ir.type==ident_resolved::type::CONST){
+			if(ir.is_const()){
 				tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,ir.as_const());
 			}else{
 				tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,ir.id);
@@ -223,7 +222,7 @@ private:
 				return;
 			}
 			const ident_resolved&ir{tc.resolve_ident_to_nasm(st)};
-			if(ir.type==ident_resolved::type::CONST){
+			if(ir.is_const()){
 				tc.asm_cmd(st,os,indent_level,"add",dest_resolved,ir.as_const());
 			}else{
 				if(ir.negated){
@@ -243,7 +242,7 @@ private:
 				return;
 			}
 			const ident_resolved&ir{tc.resolve_ident_to_nasm(st)};
-			if(ir.type==ident_resolved::type::CONST){
+			if(ir.is_const()){
 				tc.asm_cmd(st,os,indent_level,"sub",dest_resolved,ir.as_const());
 			}else{
 				if(ir.negated){
@@ -273,7 +272,7 @@ private:
 			// imul destination operand must be register
 			const ident_resolved&ir=tc.resolve_ident_to_nasm(st);
 			if(tc.is_identifier_register(dest_resolved)){
-				if(ir.type==ident_resolved::type::CONST){
+				if(ir.is_const()){
 					tc.asm_cmd(st,os,indent_level,"imul",dest_resolved,ir.as_const());
 				}else{
 					tc.asm_cmd(st,os,indent_level,"imul",dest_resolved,ir.id);
@@ -286,7 +285,7 @@ private:
 			// imul destination is not a register
 			const string&r{tc.alloc_scratch_register(st,os,indent_level)};
 			tc.asm_cmd(st,os,indent_level,"mov",r,dest_resolved);
-			if(ir.type==ident_resolved::type::CONST){
+			if(ir.is_const()){
 				tc.asm_cmd(st,os,indent_level,"imul",r,ir.as_const());
 			}else{
 				tc.asm_cmd(st,os,indent_level,"imul",r,ir.id);

@@ -18,43 +18,56 @@ mov rbp,rsp
 jmp main
 
 main:
-;  [8:5] var a=-(1+2)
+;  [8:5] var a=-1 
 ;  a: qword[rbp-8]
-;  [8:9] a=-(1+2)
-;  [8:11] -(1+2)
-;  [8:13] a=(1+2)
-;  [8:13] (1+2)
-;  [8:13] a=1
-   mov qword[rbp-8],1
-;  [8:15] a+2
-   add qword[rbp-8],2
-   neg qword[rbp-8]
-;  [9:5] var b=-(-a+1)
+;  [8:9] a=-1 
+;  [8:11] -1 
+;  [8:12] a=-1 
+   mov qword[rbp-8],-1
+;  [9:5] var b=-2 
 ;  b: qword[rbp-16]
-;  [9:9] b=-(-a+1)
+;  [9:9] b=-2 
+;  [9:11] -2 
+;  [9:12] b=-2 
+   mov qword[rbp-16],-2
+;  [10:5] var c=1+-a*-b+3*-a 
+;  c: qword[rbp-24]
+;  [10:9] c=1+-a*-b+3*-a 
+;  [10:11] 1+-a*-b+3*-a 
+;  [10:11] c=1
+   mov qword[rbp-24],1
+;  [10:15] c+-a*-b+3*-a 
 ;  alloc r15
-;  [9:11] -(-a+1)
-;  [9:13] r15=(-a+1)
-;  [9:13] (-a+1)
-;  [9:14] r15=-a
+;  [10:15] -a*-b+3*-a 
+;  [10:14] r15=-a
    mov r15,qword[rbp-8]
    neg r15
-;  [9:16] r15+1
-   add r15,1
+;  [10:17] r15*-b
+   imul r15,qword[rbp-16]
    neg r15
-   mov qword[rbp-16],r15
+;  [10:20] r15+3*-a 
+;  alloc r14
+;  [10:20] 3*-a 
+;  [10:19] r14=3
+   mov r14,3
+;  [10:22] r14*-a 
+   imul r14,qword[rbp-8]
+   neg r14
+   add r15,r14
+;  free r14
+   add qword[rbp-24],r15
 ;  free r15
-   if_10_8:
-;  [10:8] ? b=-4 
-;  [10:8] ? b=-4 
-   cmp_10_8:
-   cmp qword[rbp-16],-4
-   jne if_10_5_end
-   jmp if_10_8_code
-   if_10_8_code:
-;    [11:9] exit(0)
+   if_11_8:
+;  [11:8] ? c=6 
+;  [11:8] ? c=6 
+   cmp_11_8:
+   cmp qword[rbp-24],6
+   jne if_11_5_end
+   jmp if_11_8_code
+   if_11_8_code:
+;    [12:9] exit(0)
 ;    exit(v) 
-;      inline: 11_9
+;      inline: 12_9
 ;      alias v -> 0
 ;      [2:5] mov(rbx,v)
        mov rbx,0
@@ -62,11 +75,11 @@ main:
        mov rax,1
 ;      [4:5] int(0x80)
        int 0x80
-     exit_11_9_end:
-   if_10_5_end:
-;  [12:5] exit(1)
+     exit_12_9_end:
+   if_11_5_end:
+;  [13:5] exit(1)
 ;  exit(v) 
-;    inline: 12_5
+;    inline: 13_5
 ;    alias v -> 1
 ;    [2:5] mov(rbx,v)
      mov rbx,1
@@ -74,7 +87,7 @@ main:
      mov rax,1
 ;    [4:5] int(0x80)
      int 0x80
-   exit_12_5_end:
+   exit_13_5_end:
 
-; max scratch registers in use: 1
+; max scratch registers in use: 3
 ;            max frames in use: 5

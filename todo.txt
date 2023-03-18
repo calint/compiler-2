@@ -1,6 +1,14 @@
 [x] negated expression
 [x]   support for negated expr_ops_list. i.e. a=-(1+2)
 [ ]   review
+[ ] compile error when i.e.:
+      var a=-1
+      var b=-b-(-a)
+[ ] post processing optmization for:
+      mov r15,qword[rbp-8]
+      neg r15
+      neg r15
+      mov qword[rbp-16],r15
 [ ] character type
 [ ] string type
 [ ] var str="hello world"

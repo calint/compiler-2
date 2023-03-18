@@ -225,7 +225,11 @@ public:
 	}
 
 	inline ident_resolved resolve_ident_to_nasm(const statement&stmt)const{
-		return resolve_ident_to_nasm_or_empty(stmt,stmt.identifier(),stmt.is_negated());
+		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(stmt,stmt.identifier(),stmt.is_negated())};
+		if(!ir.id.empty())
+			return ir;
+
+		throw compiler_error(stmt,"cannot resolve identifier '"+stmt.identifier()+"'");
 	}
 
 	inline ident_resolved resolve_ident_to_nasm(const statement&stmt,const string&ident,const bool negated)const{
