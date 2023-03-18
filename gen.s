@@ -2,8 +2,6 @@
 
 section .data
 align 4
-;[7:1] field x=1 
-x dq 1
 
 section .bss
 align 4
@@ -20,21 +18,69 @@ mov rbp,rsp
 jmp main
 
 main:
-;  [10:5] x=2 
-;  [10:7] 2 
-;  [10:7] x=2 
-   mov qword[x],2
-;  [11:5] exit(x)
+;  [8:5] var a=-2 
+;  a: qword[rbp-8]
+;  [8:9] a=-2 
+;  [8:11] -2 
+;  [8:12] a=-2 
+   mov qword[rbp-8],-2
+;  [9:5] var b=-a 
+;  b: qword[rbp-16]
+;  [9:9] b=-a 
+;  alloc r15
+;  [9:11] -a 
+;  [9:12] r15=-a 
+   mov r15,qword[rbp-8]
+   neg r15
+   mov qword[rbp-16],r15
+;  free r15
+   if_10_8:
+;  [10:8] ? -a+2=-b+6 
+;  [10:8] ? -a+2=-b+6 
+   cmp_10_8:
+;  alloc r15
+;    [10:8] -a+2
+;    [10:9] r15=-a
+     mov r15,qword[rbp-8]
+     neg r15
+;    [10:11] r15+2
+     add r15,2
+;  alloc r14
+;    [10:13] -b+6 
+;    [10:14] r14=-b
+     mov r14,qword[rbp-16]
+     neg r14
+;    [10:16] r14+6 
+     add r14,6
+   cmp r15,r14
+;  free r14
+;  free r15
+   jne if_10_5_end
+   jmp if_10_8_code
+   if_10_8_code:
+;    [11:9] exit(0)
+;    exit(v) 
+;      inline: 11_9
+;      alias v -> 0
+;      [2:5] mov(rbx,v)
+       mov rbx,0
+;      [3:5] mov(rax,1)
+       mov rax,1
+;      [4:5] int(0x80)
+       int 0x80
+     exit_11_9_end:
+   if_10_5_end:
+;  [12:5] exit(1)
 ;  exit(v) 
-;    inline: 11_5
-;    alias v -> x
+;    inline: 12_5
+;    alias v -> 1
 ;    [2:5] mov(rbx,v)
-     mov rbx,qword[x]
+     mov rbx,1
 ;    [3:5] mov(rax,1)
      mov rax,1
 ;    [4:5] int(0x80)
      int 0x80
-   exit_11_5_end:
+   exit_12_5_end:
 
-; max scratch registers in use: 1
-;            max frames in use: 4
+; max scratch registers in use: 2
+;            max frames in use: 5

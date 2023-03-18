@@ -29,5 +29,6 @@ SRC=t22.baz && EXP=16 && eval $RUN
 SRC=t23.baz && EXP=17 && eval $RUN
 SRC=t24.baz && EXP=7 && eval $RUN
 SRC=t25.baz && EXP=0 && eval $RUN
+SRC=t26.baz && EXP=0 && eval $RUN
 
 rm gen gen.o gen.s diff.baz out

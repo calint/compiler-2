@@ -125,31 +125,34 @@ private:
 			allocated_registers.push_back(dest);
 			sa.compile(tc,os,indent_level+1,dest);
 		}else{
-			const ident_resolved&ir_dest{tc.resolve_ident_to_nasm(sa)};
-			// !! negation
-			dest=ir_dest.id;
+			const ident_resolved&ir_src{tc.resolve_ident_to_nasm(sa)};
+			if(ir_src.is_const()){
+				dest=ir_src.as_const();
+			}else{
+				if(ir_src.negated){
+					dest=tc.alloc_scratch_register(sb,os,indent_level);
+					allocated_registers.push_back(dest);
+					tc.asm_cmd(sb,os,indent_level,"mov",dest,ir_src.id);
+					tc.asm_negate(sb,os,indent_level,dest);
+				}else{
+					dest=ir_src.id;
+				}
+			}
 		}
 		if(sb.is_expression()){
 			src=tc.alloc_scratch_register(sb,os,indent_level);
 			allocated_registers.push_back(src);
 			sb.compile(tc,os,indent_level+1,src);
 		}else{
-			// !! negation
 			const ident_resolved&ir_src{tc.resolve_ident_to_nasm(sb)};
 			if(ir_src.is_const()){
 				src=ir_src.as_const();
 			}else{
 				if(ir_src.negated){
-					if(ir_src.is_register()){
-						tc.asm_negate(sb,os,indent_level,ir_src.id);
-						src=ir_src.id;
-					}else{
-						const string&sr{tc.alloc_scratch_register(sb,os,indent_level)};
-						allocated_registers.push_back(sr);
-						tc.asm_cmd(sb,os,indent_level,"mov",sr,ir_src.id);
-						tc.asm_negate(sb,os,indent_level,sr);
-						src=sr;
-					}
+					src=tc.alloc_scratch_register(sb,os,indent_level);
+					allocated_registers.push_back(src);
+					tc.asm_cmd(sb,os,indent_level,"mov",src,ir_src.id);
+					tc.asm_negate(sb,os,indent_level,src);
 				}else{
 					src=ir_src.id;
 				}
@@ -158,8 +161,11 @@ private:
 
 		tc.asm_cmd(*this,os,indent_level,op,dest,src);
 
-		for(const string&r:allocated_registers)
-			tc.free_scratch_register(os,indent_level,r);
+		// free allocated registers in reverse order
+		for(auto it=allocated_registers.rbegin();it!=allocated_registers.rend();++it) {
+			const string&reg=*it;
+			tc.free_scratch_register(os,indent_level,reg);
+		}
 	}
 
 	vector<token>nots_;
