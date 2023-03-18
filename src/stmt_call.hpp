@@ -69,15 +69,17 @@ public:
 				const stmt_def_func_param&param=f.param(i);
 				// is the argument passed through a register?
 				const string&arg_reg=param.get_register_or_empty();
-				bool argument_passed_in_register=false;
-				if(!arg_reg.empty()){
-					argument_passed_in_register=true;
+				bool argument_passed_in_register=!arg_reg.empty();
+				if(argument_passed_in_register){
 					tc.alloc_named_register_or_break(arg,os,indent_level,arg_reg);
 					allocated_args_registers.push_back(arg_reg);
 				}
 				if(arg.is_expression()){
-					if(!argument_passed_in_register){
-						// no particular register requested for the argument
+					if(argument_passed_in_register){
+						// compile expression with the result stored in arg_reg
+						arg.compile(tc,os,indent_level+1,arg_reg);
+					}else{
+						// argument passed through stack
 						const string&sr=tc.alloc_scratch_register(arg,os,indent_level);
 						// compile expression with the result stored in sr
 						arg.compile(tc,os,indent_level+1,sr);
@@ -87,9 +89,6 @@ public:
 						tc.free_scratch_register(os,indent_level,sr);
 						// keep track of how many arguments are on the stack
 						nbytes_of_args_on_stack+=8;
-					}else{
-						// compile expression with the result stored in arg_reg
-						arg.compile(tc,os,indent_level+1,arg_reg);
 					}
 					continue;
 				}
