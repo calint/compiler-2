@@ -112,7 +112,7 @@ public:
 					}
 				}else{
 					// push identifier on the stack
-					if(ir.type==ident_resolved::type::CONST){
+					if(ir.is_const()){
 						tc.asm_push(arg,os,indent_level,ir.as_const());
 					}else{
 						if(ir.negated){

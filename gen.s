@@ -17,56 +17,59 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 
+f:
+;  f(x):res 
+;  res: qword[rbp-8]
+;  x: qword[rbp+16]
+   push rbp
+   mov rbp,rsp
+;  [8:5] res=-x*2 
+;  alloc r15
+;  [8:9] -x*2 
+;  [8:10] r15=-x
+   mov r15,qword[rbp+16]
+   neg r15
+;  [8:12] r15*2 
+   imul r15,2
+   mov qword[rbp-8],r15
+;  free r15
+   mov rax,qword[rbp-8]
+   pop rbp
+   ret
+
 main:
-;  [8:5] var a=-2 
+;  [12:5] var a=2 
 ;  a: qword[rbp-8]
-;  [8:9] a=-2 
-;  [8:11] -2 
-;  [8:12] a=-2 
-   mov qword[rbp-8],-2
-;  [9:5] var b=-a 
+;  [12:9] a=2 
+;  [12:11] 2 
+;  [12:11] a=2 
+   mov qword[rbp-8],2
+;  [13:5] var b=f(-a)
 ;  b: qword[rbp-16]
-;  [9:9] b=-a 
+;  [13:9] b=f(-a)
+;  [13:11] f(-a)
+;  [13:11] b=f(-a)
+;  [13:11] f(-a)
+   sub rsp,16
 ;  alloc r15
-;  [9:11] -a 
-;  [9:12] r15=-a 
    mov r15,qword[rbp-8]
    neg r15
-   mov qword[rbp-16],r15
+   push r15
 ;  free r15
-;  [10:5] var c=-a-(-b-(-a)+1)
-;  c: qword[rbp-24]
-;  [10:9] c=-a-(-b-(-a)+1)
-;  alloc r15
-;  [10:11] -a-(-b-(-a)+1)
-;  [10:12] r15=-a
-   mov r15,qword[rbp-8]
-   neg r15
-;  [10:15] r15-(-b-(-a)+1)
-;  alloc r14
-;  [10:15] (-b-(-a)+1)
-;  [10:16] r14=-b
-   mov r14,qword[rbp-16]
-   neg r14
-;  [10:19] r14-(-a)
-   add r14,qword[rbp-8]
-;  [10:23] r14+1
-   add r14,1
-   sub r15,r14
-;  free r14
-   mov qword[rbp-24],r15
-;  free r15
-   if_11_8:
-;  [11:8] ? c=5 
-;  [11:8] ? c=5 
-   cmp_11_8:
-   cmp qword[rbp-24],5
-   jne if_11_5_end
-   jmp if_11_8_code
-   if_11_8_code:
-;    [12:9] exit(0)
+   call f
+   add rsp,24
+   mov qword[rbp-16],rax
+   if_14_8:
+;  [14:8] ? b=4 
+;  [14:8] ? b=4 
+   cmp_14_8:
+   cmp qword[rbp-16],4
+   jne if_14_5_end
+   jmp if_14_8_code
+   if_14_8_code:
+;    [15:9] exit(0)
 ;    exit(v) 
-;      inline: 12_9
+;      inline: 15_9
 ;      alias v -> 0
 ;      [2:5] mov(rbx,v)
        mov rbx,0
@@ -74,11 +77,11 @@ main:
        mov rax,1
 ;      [4:5] int(0x80)
        int 0x80
-     exit_12_9_end:
-   if_11_5_end:
-;  [13:5] exit(1)
+     exit_15_9_end:
+   if_14_5_end:
+;  [16:5] exit(1)
 ;  exit(v) 
-;    inline: 13_5
+;    inline: 16_5
 ;    alias v -> 1
 ;    [2:5] mov(rbx,v)
      mov rbx,1
@@ -86,7 +89,7 @@ main:
      mov rax,1
 ;    [4:5] int(0x80)
      int 0x80
-   exit_13_5_end:
+   exit_16_5_end:
 
 ; max scratch registers in use: 2
 ;            max frames in use: 5
