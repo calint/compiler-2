@@ -15,18 +15,24 @@ jmp main
 main:
    mov qword[rbp-8],1
    add qword[rbp-8],2
-   if_9_8:
-   cmp_9_8:
-   cmp qword[rbp-8],3
-   jne if_9_5_end
-   jmp if_9_8_code
-   if_9_8_code:
+   neg qword[rbp-8]
+   mov r15,qword[rbp-8]
+   neg r15
+   add r15,1
+   neg r15
+   mov qword[rbp-16],r15
+   if_10_8:
+   cmp_10_8:
+   cmp qword[rbp-16],-4
+   jne if_10_5_end
+   jmp if_10_8_code
+   if_10_8_code:
        mov rbx,0
        mov rax,1
        int 0x80
-     exit_10_9_end:
-   if_9_5_end:
+     exit_11_9_end:
+   if_10_5_end:
      mov rbx,1
      mov rax,1
      int 0x80
-   exit_11_5_end:
+   exit_12_5_end:

@@ -6,8 +6,7 @@ func inline exit(v){
 
 func inline main{
     var a=-(1+2)
-    var b=-(-a+1)
-    if b=-4
+    if a=-3
         exit(0)
     exit(1)
 }

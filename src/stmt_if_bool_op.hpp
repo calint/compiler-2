@@ -64,7 +64,7 @@ public:
 	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_true)const{
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
-		resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
+		resolve(tc,os,indent_level,"cmp",*lhs_,*rhs_);
 		toc::indent(os,indent_level);
 		os<<(is_not_?asm_jxx_for_op_inv(op_):asm_jxx_for_op(op_));
 		os<<" "<<jmp_to_if_true<<endl;
@@ -73,7 +73,7 @@ public:
 	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false)const{
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
-		resolve("cmp",tc,os,indent_level,*lhs_,*rhs_);
+		resolve(tc,os,indent_level,"cmp",*lhs_,*rhs_);
 		toc::indent(os,indent_level);
 		os<<(is_not_?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
 		os<<" "<<jmp_to_if_false<<endl;
@@ -117,49 +117,49 @@ private:
 		}
 	}
 
-	inline void resolve(const string&op,toc&tc,ostream&os,size_t indent_level,const statement&sa,const statement&sb)const{
-		string dest,src;
+	inline void resolve(toc&tc,ostream&os,size_t indent_level,const string&op,const statement&lh,const statement&rh)const{
+		string dst,src;
 		vector<string>allocated_registers;
-		if(sa.is_expression()){
-			dest=tc.alloc_scratch_register(sa,os,indent_level);
-			allocated_registers.push_back(dest);
-			sa.compile(tc,os,indent_level+1,dest);
+		if(lh.is_expression()){
+			dst=tc.alloc_scratch_register(lh,os,indent_level);
+			allocated_registers.push_back(dst);
+			lh.compile(tc,os,indent_level+1,dst);
 		}else{
-			const ident_resolved&ir_src{tc.resolve_ident_to_nasm(sa)};
+			const ident_resolved&ir_src{tc.resolve_ident_to_nasm(lh)};
 			if(ir_src.is_const()){
-				dest=ir_src.as_const();
+				dst=ir_src.as_const();
 			}else{
 				if(ir_src.negated){
-					dest=tc.alloc_scratch_register(sb,os,indent_level);
-					allocated_registers.push_back(dest);
-					tc.asm_cmd(sb,os,indent_level,"mov",dest,ir_src.id);
-					tc.asm_negate(sb,os,indent_level,dest);
+					dst=tc.alloc_scratch_register(rh,os,indent_level);
+					allocated_registers.push_back(dst);
+					tc.asm_cmd(rh,os,indent_level,"mov",dst,ir_src.id);
+					tc.asm_negate(rh,os,indent_level,dst);
 				}else{
-					dest=ir_src.id;
+					dst=ir_src.id;
 				}
 			}
 		}
-		if(sb.is_expression()){
-			src=tc.alloc_scratch_register(sb,os,indent_level);
+		if(rh.is_expression()){
+			src=tc.alloc_scratch_register(rh,os,indent_level);
 			allocated_registers.push_back(src);
-			sb.compile(tc,os,indent_level+1,src);
+			rh.compile(tc,os,indent_level+1,src);
 		}else{
-			const ident_resolved&ir_src{tc.resolve_ident_to_nasm(sb)};
+			const ident_resolved&ir_src{tc.resolve_ident_to_nasm(rh)};
 			if(ir_src.is_const()){
 				src=ir_src.as_const();
 			}else{
 				if(ir_src.negated){
-					src=tc.alloc_scratch_register(sb,os,indent_level);
+					src=tc.alloc_scratch_register(rh,os,indent_level);
 					allocated_registers.push_back(src);
-					tc.asm_cmd(sb,os,indent_level,"mov",src,ir_src.id);
-					tc.asm_negate(sb,os,indent_level,src);
+					tc.asm_cmd(rh,os,indent_level,"mov",src,ir_src.id);
+					tc.asm_negate(rh,os,indent_level,src);
 				}else{
 					src=ir_src.id;
 				}
 			}
 		}
 
-		tc.asm_cmd(*this,os,indent_level,op,dest,src);
+		tc.asm_cmd(*this,os,indent_level,op,dst,src);
 
 		// free allocated registers in reverse order
 		for(auto it=allocated_registers.rbegin();it!=allocated_registers.rend();++it) {

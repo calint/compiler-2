@@ -34,6 +34,11 @@ public:
 		seek(-off_t(t.total_length_in_chars()));
 	}
 
+	inline void pushback_char(const char ch){
+		// ? validate char is same as source
+		seek(-off_t(1));
+	}
+
 	inline token next_whitespace_token(){
 		const string&wspre{next_whitespace()};
 		const size_t bgn=nchar_;

@@ -1,5 +1,5 @@
 [x] negated expression
-[ ]   support for negated expr_ops_list. i.e. a=-(1+2)
+[x]   support for negated expr_ops_list. i.e. a=-(1+2)
 [ ]   review
 [ ] character type
 [ ] string type

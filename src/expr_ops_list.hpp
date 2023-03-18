@@ -19,13 +19,31 @@ public:
 			// put in list
 			exps_.push_back(move(first_expression));
 		}else{
-			// if subexpression
-			if(t.is_next_char('(')){
-				// recurse
-				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true));
+			// check for -(a+b) type of expression
+			if(t.is_next_char('-')){
+				token tk=t.next_token();
+				if(tk.is_name("")){
+					if(t.is_next_char('(')){
+						after_negation_ws_token_=tk;
+						negated_=true;
+						exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true));
+					}else{
+						throw compiler_error(t,"expected '(' after '-'");
+					}
+				}else{
+					t.pushback_token(tk);
+					t.pushback_char('-');
+					exps_.emplace_back(create_statement_from_tokenizer(t));
+				}
 			}else{
-				// add first expression
-				exps_.emplace_back(create_statement_from_tokenizer(t));
+				// if subexpression
+				if(t.is_next_char('(')){
+					// recurse
+					exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true));
+				}else{
+					// add first expression
+					exps_.emplace_back(create_statement_from_tokenizer(t));
+				}
 			}
 		}
 
@@ -105,6 +123,10 @@ public:
 
 	inline void source_to(ostream&os)const override{
 		expression::source_to(os);//?
+		if(negated_){
+			os<<'-';
+			after_negation_ws_token_.source_to(os);
+		}
 
 		if(enclosed_)
 			os<<"(";
@@ -139,6 +161,9 @@ public:
 			const char op=ops_[i];
 			const statement&stm{*exps_[i+1].get()};
 			asm_op(tc,os,indent_level,op,dest,ir.id,stm);
+		}
+		if(negated_){
+			tc.asm_negate(*this,os,indent_level,ir.id);
 		}
 	}
 
@@ -280,4 +305,6 @@ private:
 	char list_op_{0}; // +[...]
 	vector<unique_ptr<statement>>exps_;
 	vector<char>ops_;
+	bool negated_{false};
+	token after_negation_ws_token_;
 };
