@@ -2,6 +2,8 @@
 
 section .data
 align 4
+;[1:1] field len=2 
+len dq 2
 
 section .bss
 align 4
@@ -18,62 +20,64 @@ mov rbp,rsp
 jmp main
 
 main:
-;  [8:5] var a=-1 
+;  [10:5] var a=-1 
 ;  a: qword[rbp-8]
-;  [8:9] a=-1 
-;  [8:11] -1 
-;  [8:12] a=-1 
+;  [10:9] a=-1 
+;  [10:11] -1 
+;  [10:12] a=-1 
    mov qword[rbp-8],-1
-;  [9:5] var b=-(-a*-a)
+;  [11:5] a=-a 
+;  [11:7] -a 
+;  [11:8] a=-a 
+   neg qword[rbp-8]
+;  [12:5] var b=-(len)
 ;  b: qword[rbp-16]
-;  [9:9] b=-(-a*-a)
+;  [12:9] b=-(len)
 ;  alloc r15
-;  [9:11] -(-a*-a)
-;  [9:13] r15=(-a*-a)
-;  [9:13] (-a*-a)
-;  [9:14] r15=-a
-   mov r15,qword[rbp-8]
-   neg r15
-;  [9:17] r15*-a
-   imul r15,qword[rbp-8]
-   neg r15
+;  [12:11] -(len)
+;  [12:13] r15=(len)
+   mov r15,qword[len]
    neg r15
    mov qword[rbp-16],r15
 ;  free r15
-   if_10_8:
-;  [10:8] ? b=-1 and a=-1 
-;  [10:8] ? b=-1 
-   cmp_10_8:
-   cmp qword[rbp-16],-1
-   jne if_10_5_end
-;  [10:17] ? a=-1 
-   cmp_10_17:
-   cmp qword[rbp-8],-1
-   jne if_10_5_end
-   if_10_8_code:  ; opt1
-;    [11:9] exit(0)
+;  [13:5] b=-b 
+;  [13:7] -b 
+;  [13:8] b=-b 
+   neg qword[rbp-16]
+   if_14_8:
+;  [14:8] ? a=1 and b=2 
+;  [14:8] ? a=1 
+   cmp_14_8:
+   cmp qword[rbp-8],1
+   jne if_14_5_end
+;  [14:16] ? b=2 
+   cmp_14_16:
+   cmp qword[rbp-16],2
+   jne if_14_5_end
+   if_14_8_code:  ; opt1
+;    [15:9] exit(0)
 ;    exit(v) 
-;      inline: 11_9
+;      inline: 15_9
 ;      alias v -> 0
-;      [2:5] mov(rbx,v)
+;      [4:5] mov(rbx,v)
        mov rbx,0
-;      [3:5] mov(rax,1)
+;      [5:5] mov(rax,1)
        mov rax,1
-;      [4:5] int(0x80)
+;      [6:5] int(0x80)
        int 0x80
-     exit_11_9_end:
-   if_10_5_end:
-;  [12:5] exit(1)
+     exit_15_9_end:
+   if_14_5_end:
+;  [16:5] exit(1)
 ;  exit(v) 
-;    inline: 12_5
+;    inline: 16_5
 ;    alias v -> 1
-;    [2:5] mov(rbx,v)
+;    [4:5] mov(rbx,v)
      mov rbx,1
-;    [3:5] mov(rax,1)
+;    [5:5] mov(rax,1)
      mov rax,1
-;    [4:5] int(0x80)
+;    [6:5] int(0x80)
      int 0x80
-   exit_12_5_end:
+   exit_16_5_end:
 
 ; max scratch registers in use: 1
 ;            max frames in use: 5
