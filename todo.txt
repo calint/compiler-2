@@ -1,3 +1,4 @@
+[ ] negated expression
 [ ] character type
 [ ] string type
 [ ] var str="hello world"
