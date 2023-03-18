@@ -3,8 +3,8 @@
 [ ]   review
 [ ] compile error when i.e.:
       var a=-1
-      var b=-b-(-a)
-[ ] post processing optmization for:
+      var b=-b-(-a) # b is used before initiated
+[ ] post processing optmization for: var b=-(-a*-a)
       mov r15,qword[rbp-8]
       neg r15
       neg r15
