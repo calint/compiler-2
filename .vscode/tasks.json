@@ -12,7 +12,7 @@
 				"-std=c++2a",
 				"-fcolor-diagnostics",
 				"-fansi-escape-codes",
-				"-g",
+				"-g3",
 				"-fno-inline",
 				"-Werror",
 				"-Wfatal-errors",
