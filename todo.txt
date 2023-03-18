@@ -1,9 +1,5 @@
-[x] negated expression
-[x]   support for negated expr_ops_list. i.e. a=-(1+2)
-[ ]   review
 [ ] compile error when i.e.:
-      var a=-1
-      var b=-b-(-a) # b is used before initiated
+      var b=-b-(-1) # b is used before initiated
 [ ] post processing optmization for: var b=-(-a*-a)
       mov r15,qword[rbp-8]
       neg r15
@@ -62,6 +58,9 @@
 [ ] clang-format everything for less dess code?
 [ ] compile for pczero task
 -------------------------------------------------------------------------------
+[x] negated expression
+[x]   support for negated expr_ops_list. i.e. a=-(1+2)
+[x]   review
 [x] review fragile optimze_jumps_x
 [-] stmt_if_branch.code_ can be value instead of unique_ptr
     -> circular reference?
