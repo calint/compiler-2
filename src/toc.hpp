@@ -565,7 +565,7 @@ public:
 		indent(os,indent_level);os<<"call "<<label<<endl;
 	}
 
-	inline void asm_negate(const statement&st,ostream&os,const size_t indent_level,const string&dest_resolved){
+	inline void asm_neg(const statement&st,ostream&os,const size_t indent_level,const string&dest_resolved){
 		indent(os,indent_level);os<<"neg "<<dest_resolved<<endl;
 	}
 

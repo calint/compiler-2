@@ -102,7 +102,7 @@ public:
 					}else{
 						tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,ir.id);
 						if(ir.negated){
-							tc.asm_negate(arg,os,indent_level,arg_reg);
+							tc.asm_neg(arg,os,indent_level,arg_reg);
 						}					}
 				}else{
 					// push identifier on the stack
@@ -112,7 +112,7 @@ public:
 						if(ir.negated){
 							const string&sr=tc.alloc_scratch_register(arg,os,indent_level);
 							tc.asm_cmd(arg,os,indent_level,"mov",sr,ir.id);
-							tc.asm_negate(arg,os,indent_level,sr);
+							tc.asm_neg(arg,os,indent_level,sr);
 							tc.asm_push(arg,os,indent_level,sr);
 							tc.free_scratch_register(os,indent_level,sr);
 						}else{
@@ -213,7 +213,7 @@ public:
 					allocated_registers_in_order.push_back(sr);
 					allocated_scratch_registers.push_back(sr);
 					tc.asm_cmd(param,os,indent_level+1,"mov",sr,ir.id);
-					tc.asm_negate(param,os,indent_level+1,sr);
+					tc.asm_neg(param,os,indent_level+1,sr);
 					aliases_to_add.emplace_back(param.identifier(),sr);
 					tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<sr<<endl;
 				}else{
@@ -232,7 +232,7 @@ public:
 				}else{
 					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,ir.id);
 					if(ir.negated){
-						tc.asm_negate(param,os,indent_level+1,arg_reg);
+						tc.asm_neg(param,os,indent_level+1,arg_reg);
 					}
 				}
 			}

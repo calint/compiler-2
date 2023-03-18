@@ -133,7 +133,7 @@ private:
 					dst=tc.alloc_scratch_register(rh,os,indent_level);
 					allocated_registers.push_back(dst);
 					tc.asm_cmd(rh,os,indent_level,"mov",dst,ir_src.id);
-					tc.asm_negate(rh,os,indent_level,dst);
+					tc.asm_neg(rh,os,indent_level,dst);
 				}else{
 					dst=ir_src.id;
 				}
@@ -152,7 +152,7 @@ private:
 					src=tc.alloc_scratch_register(rh,os,indent_level);
 					allocated_registers.push_back(src);
 					tc.asm_cmd(rh,os,indent_level,"mov",src,ir_src.id);
-					tc.asm_negate(rh,os,indent_level,src);
+					tc.asm_neg(rh,os,indent_level,src);
 				}else{
 					src=ir_src.id;
 				}

@@ -162,7 +162,7 @@ public:
 			asm_op(tc,os,indent_level,op,dest,ir.id,stm);
 		}
 		if(negated_){
-			tc.asm_negate(*this,os,indent_level,ir.id);
+			tc.asm_neg(*this,os,indent_level,ir.id);
 		}
 	}
 
@@ -195,105 +195,105 @@ private:
 		throw string(to_string(__LINE__)+" err");
 	}
 
-	inline void asm_op(toc&tc,ostream&os,const size_t indent_level,const char op,const string&dest,const string&dest_resolved,const statement&st)const{
-		toc::indent(os,indent_level,true);tc.source_comment(os,dest,op,st);
+	inline void asm_op(toc&tc,ostream&os,const size_t indent_level,const char op,const string&dest,const string&dest_resolved,const statement&src)const{
+		toc::indent(os,indent_level,true);tc.source_comment(os,dest,op,src);
 		if(op=='='){
-			if(st.is_expression()){
-				st.compile(tc,os,indent_level,dest);
+			if(src.is_expression()){
+				src.compile(tc,os,indent_level,dest);
 				return;
 			}
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(st)};
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
 			if(ir.is_const()){
-				tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,ir.as_const());
+				tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,ir.as_const());
 			}else{
-				tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,ir.id);
+				tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,ir.id);
 				if(ir.negated){
-					tc.asm_negate(st,os,indent_level,dest_resolved);
+					tc.asm_neg(src,os,indent_level,dest_resolved);
 				}
 			}
 			return;
 		}
 		if(op=='+'){// order1op
-			if(st.is_expression()){
-				const string&r{tc.alloc_scratch_register(st,os,indent_level)};
-				st.compile(tc,os,indent_level,r);
-				tc.asm_cmd(st,os,indent_level,"add",dest_resolved,r);
+			if(src.is_expression()){
+				const string&r{tc.alloc_scratch_register(src,os,indent_level)};
+				src.compile(tc,os,indent_level,r);
+				tc.asm_cmd(src,os,indent_level,"add",dest_resolved,r);
 				tc.free_scratch_register(os,indent_level,r);
 				return;
 			}
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(st)};
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
 			if(ir.is_const()){
-				tc.asm_cmd(st,os,indent_level,"add",dest_resolved,ir.as_const());
+				tc.asm_cmd(src,os,indent_level,"add",dest_resolved,ir.as_const());
 			}else{
 				if(ir.negated){
-					tc.asm_cmd(st,os,indent_level,"sub",dest_resolved,ir.id);
+					tc.asm_cmd(src,os,indent_level,"sub",dest_resolved,ir.id);
 				}else{
-					tc.asm_cmd(st,os,indent_level,"add",dest_resolved,ir.id);
+					tc.asm_cmd(src,os,indent_level,"add",dest_resolved,ir.id);
 				}
 			}
 			return;
 		}
 		if(op=='-'){// order1op
-			if(st.is_expression()){
-				const string&r{tc.alloc_scratch_register(st,os,indent_level)};
-				st.compile(tc,os,indent_level,r);
-				tc.asm_cmd(st,os,indent_level,"sub",dest_resolved,r);
+			if(src.is_expression()){
+				const string&r{tc.alloc_scratch_register(src,os,indent_level)};
+				src.compile(tc,os,indent_level,r);
+				tc.asm_cmd(src,os,indent_level,"sub",dest_resolved,r);
 				tc.free_scratch_register(os,indent_level,r);
 				return;
 			}
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(st)};
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
 			if(ir.is_const()){
-				tc.asm_cmd(st,os,indent_level,"sub",dest_resolved,ir.as_const());
+				tc.asm_cmd(src,os,indent_level,"sub",dest_resolved,ir.as_const());
 			}else{
 				if(ir.negated){
-					tc.asm_cmd(st,os,indent_level,"add",dest_resolved,ir.id);
+					tc.asm_cmd(src,os,indent_level,"add",dest_resolved,ir.id);
 				}else{
-					tc.asm_cmd(st,os,indent_level,"sub",dest_resolved,ir.id);
+					tc.asm_cmd(src,os,indent_level,"sub",dest_resolved,ir.id);
 				}
 			}
 			return;
 		}
 		if(op=='*'){// order2op
-			if(st.is_expression()){
-				const string&r{tc.alloc_scratch_register(st,os,indent_level)};
-				st.compile(tc,os,indent_level,r);
+			if(src.is_expression()){
+				const string&r{tc.alloc_scratch_register(src,os,indent_level)};
+				src.compile(tc,os,indent_level,r);
 				// imul destination must be a register
 				if(tc.is_identifier_register(dest_resolved)){
-					tc.asm_cmd(st,os,indent_level,"imul",dest_resolved,r);
+					tc.asm_cmd(src,os,indent_level,"imul",dest_resolved,r);
 				}else{
 					// imul destination is not a register
-					tc.asm_cmd(st,os,indent_level,"imul",r,dest_resolved);
-					tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,r);
+					tc.asm_cmd(src,os,indent_level,"imul",r,dest_resolved);
+					tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,r);
 				}
 				tc.free_scratch_register(os,indent_level,r);
 				return;
 			}
 			// not an expression, either a register or memory location
 			// imul destination operand must be register
-			const ident_resolved&ir=tc.resolve_ident_to_nasm(st);
+			const ident_resolved&ir=tc.resolve_ident_to_nasm(src);
 			if(tc.is_identifier_register(dest_resolved)){
 				if(ir.is_const()){
-					tc.asm_cmd(st,os,indent_level,"imul",dest_resolved,ir.as_const());
+					tc.asm_cmd(src,os,indent_level,"imul",dest_resolved,ir.as_const());
 				}else{
-					tc.asm_cmd(st,os,indent_level,"imul",dest_resolved,ir.id);
+					tc.asm_cmd(src,os,indent_level,"imul",dest_resolved,ir.id);
 					if(ir.negated){ // ? correct?
-						tc.asm_negate(st,os,indent_level,dest_resolved);
+						tc.asm_neg(src,os,indent_level,dest_resolved);
 					}
 				}
 				return;
 			}
 			// imul destination is not a register
-			const string&r{tc.alloc_scratch_register(st,os,indent_level)};
-			tc.asm_cmd(st,os,indent_level,"mov",r,dest_resolved);
+			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
+			tc.asm_cmd(src,os,indent_level,"mov",r,dest_resolved);
 			if(ir.is_const()){
-				tc.asm_cmd(st,os,indent_level,"imul",r,ir.as_const());
+				tc.asm_cmd(src,os,indent_level,"imul",r,ir.as_const());
 			}else{
-				tc.asm_cmd(st,os,indent_level,"imul",r,ir.id);
+				tc.asm_cmd(src,os,indent_level,"imul",r,ir.id);
 				if(ir.negated){ // ? correct?
-					tc.asm_negate(st,os,indent_level,r);
+					tc.asm_neg(src,os,indent_level,r);
 				}
 			}
-			tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,r);
+			tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,r);
 			tc.free_scratch_register(os,indent_level,r);
 			return;
 		}
