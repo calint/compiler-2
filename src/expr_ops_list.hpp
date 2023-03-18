@@ -130,15 +130,15 @@ public:
 
 		// first element is assigned to destination
 		const statement&st{*exps_[0].get()};
-		const string dest_resolved{tc.resolve_ident_to_nasm(*this,dest)};
-		asm_op(tc,os,indent_level,'=',dest,dest_resolved,st);
+		const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dest,false)};
+		asm_op(tc,os,indent_level,'=',dest,ir.id,st);
 
 		// remaining elements are +,-,*,/
 		const size_t n{ops_.size()};
 		for(size_t i{0};i<n;i++){
 			const char op=ops_[i];
 			const statement&stm{*exps_[i+1].get()};
-			asm_op(tc,os,indent_level,op,dest,dest_resolved,stm);
+			asm_op(tc,os,indent_level,op,dest,ir.id,stm);
 		}
 	}
 
@@ -151,6 +151,13 @@ public:
 
 	inline const string&identifier()const override{
 		return exps_[0]->identifier();
+	}
+
+	inline bool is_negated()const override{
+		if(exps_.size()==1){
+			return exps_[0]->is_negated();
+		}
+		return false; // !! negation
 	}
 
 	inline bool is_empty()const override{return exps_.empty();}
@@ -171,11 +178,15 @@ private:
 				st.compile(tc,os,indent_level,dest);
 				return;
 			}
-			const string&src_resolved=tc.resolve_ident_to_nasm(st);
-			tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,src_resolved);
-			// if(st.is_negated()){
-			// 	tc.asm_negate(st,os,indent_level,dest_resolved);
-			// }
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(st)};
+			if(ir.type==ident_resolved::type::CONST){
+				tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,ir.as_const());
+			}else{
+				tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,ir.id);
+				if(ir.negated){
+					tc.asm_negate(st,os,indent_level,dest_resolved);
+				}
+			}
 			return;
 		}
 		if(op=='+'){// order1op
@@ -186,7 +197,16 @@ private:
 				tc.free_scratch_register(os,indent_level,r);
 				return;
 			}
-			tc.asm_cmd(st,os,indent_level,"add",dest_resolved,tc.resolve_ident_to_nasm(st));
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(st)};
+			if(ir.type==ident_resolved::type::CONST){
+				tc.asm_cmd(st,os,indent_level,"add",dest_resolved,ir.as_const());
+			}else{
+				if(ir.negated){
+					tc.asm_cmd(st,os,indent_level,"sub",dest_resolved,ir.id);
+				}else{
+					tc.asm_cmd(st,os,indent_level,"add",dest_resolved,ir.id);
+				}
+			}
 			return;
 		}
 		if(op=='-'){// order1op
@@ -197,7 +217,16 @@ private:
 				tc.free_scratch_register(os,indent_level,r);
 				return;
 			}
-			tc.asm_cmd(st,os,indent_level,"sub",dest_resolved,tc.resolve_ident_to_nasm(st));
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(st)};
+			if(ir.type==ident_resolved::type::CONST){
+				tc.asm_cmd(st,os,indent_level,"sub",dest_resolved,ir.as_const());
+			}else{
+				if(ir.negated){
+					tc.asm_cmd(st,os,indent_level,"add",dest_resolved,ir.id);
+				}else{
+					tc.asm_cmd(st,os,indent_level,"sub",dest_resolved,ir.id);
+				}
+			}
 			return;
 		}
 		if(op=='*'){// order2op
@@ -217,14 +246,29 @@ private:
 			}
 			// not an expression, either a register or memory location
 			// imul destination operand must be register
+			const ident_resolved&ir=tc.resolve_ident_to_nasm(st);
 			if(tc.is_identifier_register(dest_resolved)){
-				tc.asm_cmd(st,os,indent_level,"imul",dest_resolved,tc.resolve_ident_to_nasm(st));
+				if(ir.type==ident_resolved::type::CONST){
+					tc.asm_cmd(st,os,indent_level,"imul",dest_resolved,ir.as_const());
+				}else{
+					tc.asm_cmd(st,os,indent_level,"imul",dest_resolved,ir.id);
+					if(ir.negated){ // ? correct?
+						tc.asm_negate(st,os,indent_level,dest_resolved);
+					}
+				}
 				return;
 			}
 			// imul destination is not a register
 			const string&r{tc.alloc_scratch_register(st,os,indent_level)};
 			tc.asm_cmd(st,os,indent_level,"mov",r,dest_resolved);
-			tc.asm_cmd(st,os,indent_level,"imul",r,tc.resolve_ident_to_nasm(st));
+			if(ir.type==ident_resolved::type::CONST){
+				tc.asm_cmd(st,os,indent_level,"imul",r,ir.as_const());
+			}else{
+				tc.asm_cmd(st,os,indent_level,"imul",r,ir.id);
+				if(ir.negated){ // ? correct?
+					tc.asm_negate(st,os,indent_level,r);
+				}
+			}
 			tc.asm_cmd(st,os,indent_level,"mov",dest_resolved,r);
 			tc.free_scratch_register(os,indent_level,r);
 			return;

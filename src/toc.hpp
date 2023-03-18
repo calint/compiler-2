@@ -134,6 +134,25 @@ struct call_meta final{
 	size_t nbytes_of_vars{0};
 };
 
+struct ident_resolved final{
+	enum class type{CONST,VAR,REGISTER,FIELD,IMPLIED};
+
+	string id;
+	bool negated{};
+	type type{type::CONST};
+
+	inline string as_const()const{
+		if(negated)
+			return"-"+id;
+		return id;
+	}
+	inline bool is_const()const{return type==type::CONST;}
+	inline bool is_var()const{return type==type::VAR;}
+	inline bool is_register()const{return type==type::REGISTER;}
+	inline bool is_field()const{return type==type::FIELD;}
+	inline bool is_implied()const{return type==type::IMPLIED;}
+};
+
 class toc final{
 public:
 	inline toc(const string&source):
@@ -205,14 +224,14 @@ public:
 //		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
 	}
 
-	inline string resolve_ident_to_nasm(const statement&stmt)const{
-		return resolve_ident_to_nasm(stmt,stmt.identifier());
+	inline ident_resolved resolve_ident_to_nasm(const statement&stmt)const{
+		return resolve_ident_to_nasm_or_empty(stmt,stmt.identifier(),stmt.is_negated());
 	}
 
-	inline string resolve_ident_to_nasm(const statement&stmt,const string&ident)const{
-		const string&nasm_ident{resolve_ident_to_nasm_or_empty(stmt,ident)};
-		if(!nasm_ident.empty())
-			return nasm_ident;
+	inline ident_resolved resolve_ident_to_nasm(const statement&stmt,const string&ident,const bool negated)const{
+		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(stmt,ident,negated)};
+		if(!ir.id.empty())
+			return ir;
 
 		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'");
 	}
@@ -264,7 +283,8 @@ public:
 		assert(size==8||size==4||size==2||size==1);
 		frames_.back().add_var(name,size,-int(stkix),"");
 		// comment the resolved name
-		const string&dest_resolved{resolve_ident_to_nasm(st,name)};
+		const ident_resolved&ir=resolve_ident_to_nasm(st,name,false);
+		const string&dest_resolved{ir.id};
 		indent(os,indent_level,true);os<<name<<": "<<dest_resolved<<endl;
 	}
 
@@ -272,8 +292,8 @@ public:
 		assert(frames_.back().is_func()&&!frames_.back().is_func_inline());
 		frames_.back().add_var(name,size,stkix_delta,"");
 		// comment the resolved name
-		const string&dest_resolved{resolve_ident_to_nasm(st,name)};
-		indent(os,indent_level,true);os<<name<<": "<<dest_resolved<<endl;
+		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
+		indent(os,indent_level,true);os<<name<<": "<<ir.id<<endl;
 	}
 
 	inline const string&alloc_scratch_register(const statement&st,ostream&os,const size_t indent_level){
@@ -574,7 +594,7 @@ private:
 		return n;
 	}
 
-	inline const string resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident)const{
+	inline const ident_resolved resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident,const bool negated)const{
 		string id=ident;
 		// traverse the frames and resolve the id (which might be an alias) to
 		// a variable, field, register or constant
@@ -596,19 +616,20 @@ private:
 		}
 
 		// is 'id' a variable?
-		if(frames_[i].has_var(id))
-			return frames_[i].get_var(id).nasm_ident();
+		if(frames_[i].has_var(id)){
+			return{frames_[i].get_var(id).nasm_ident(),negated,ident_resolved::type::VAR};
+		}
 
 		// is 'id' a register?
 		if(is_identifier_register(id))
-			return id;
+			return{id,negated,ident_resolved::type::REGISTER};
 
 		// is 'id' a field?
 		if(fields_.has(id)){
 			const field_meta&fm=fields_.get(id);
 			if(fm.is_str)
-				return id;
-			return"qword["+id+"]";
+				return{id,negated,ident_resolved::type::FIELD};
+			return{"qword["+id+"]",negated,ident_resolved::type::FIELD};
 		}
 
 		// is 'id' an implicit identifier?
@@ -617,7 +638,7 @@ private:
 		if(fields_.has(subid)){
 			const string&after_dot=id.substr(subid.size()+1);
 			if(after_dot=="len"){
-				return id;
+				return{id,negated,ident_resolved::type::IMPLIED};
 			}
 			throw compiler_error(stmt.tok(),"unknown implicit field constant '"+id+"'");
 		}
@@ -625,21 +646,21 @@ private:
 		char*ep;
 		strtol(id.c_str(),&ep,10); // return ignored
 		if(!*ep)
-			return id;
+			return{id,negated,ident_resolved::type::CONST};
 
 		if(id.find("0x")==0){ // hex
 			strtol(id.c_str()+2,&ep,16); // return ignored
 			if(!*ep)
-				return id;
+				return{id,negated,ident_resolved::type::CONST};
 		}
 
 		if(id.find("0b")==0){ // binary
 			strtol(id.c_str()+2,&ep,2); // return ignored
 			if(!*ep)
-				return id;
+				return{id,negated,ident_resolved::type::CONST};
 		}
 
-		return"";
+		return{"",negated,ident_resolved::type::CONST};
 	}
 
 	inline void check_usage(){

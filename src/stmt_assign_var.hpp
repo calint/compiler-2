@@ -19,7 +19,7 @@ public:
 		tc.source_comment(*this,os,indent_level);
 
 		// for the sake of clearer error message make sure identifier can be resolved
-		tc.resolve_ident_to_nasm(*this); // return is ignored
+		const ident_resolved&dest_resolved{tc.resolve_ident_to_nasm(*this)};
 
 		// compare generated instructions with and without allocated scratch register
 		// select the method that produces least instructions
@@ -32,8 +32,7 @@ public:
 		stringstream ss2;
 		const string&reg{tc.alloc_scratch_register(*this,ss2,indent_level)};
 		oplist_.compile(tc,ss2,indent_level,reg);
-		const string&dest_resolved{tc.resolve_ident_to_nasm(*this)};
-		tc.asm_cmd(*this,ss2,indent_level,"mov",dest_resolved,reg);
+		tc.asm_cmd(*this,ss2,indent_level,"mov",dest_resolved.id,reg);
 		tc.free_scratch_register(ss2,indent_level,reg);
 
 		// compare instruction count

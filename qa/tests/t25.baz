@@ -1,0 +1,15 @@
+func inline exit(v){
+    mov(rbx,v)
+    mov(rax,1)
+    int(0x80)
+}
+
+func inline main{
+    var a=-2
+    var b=-a
+    var c=-a+-b--a
+    var d=1+-a*-b+2
+    if a=-2 and b=2 and c=-2 and d=-1
+        exit(0)
+    exit(1)
+}

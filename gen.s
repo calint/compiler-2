@@ -2,6 +2,8 @@
 
 section .data
 align 4
+;[7:1] field x=1 
+x dq 1
 
 section .bss
 align 4
@@ -18,76 +20,21 @@ mov rbp,rsp
 jmp main
 
 main:
-;  [8:5] var a=-1 
-;  a: qword[rbp-8]
-;  [8:9] a=-1 
-;  [8:11] -1 
-;  [8:12] a=-1 
-   mov qword[rbp-8],1
-   neg qword[rbp-8]
-;  [9:5] var b=2 
-;  b: qword[rbp-16]
-;  [9:9] b=2 
-;  [9:11] 2 
-;  [9:11] b=2 
-   mov qword[rbp-16],2
-;  [10:5] var c=3 
-;  c: qword[rbp-24]
-;  [10:9] c=3 
-;  [10:11] 3 
-;  [10:11] c=3 
-   mov qword[rbp-24],3
-;  [11:5] var d=4 
-;  d: qword[rbp-32]
-;  [11:9] d=4 
-;  [11:11] 4 
-;  [11:11] d=4 
-   mov qword[rbp-32],4
-   if_12_8:
-;  [12:8] ? (a=1 and b=2) or (c=3 and d=4)
-;  [12:9] ? (a=1 and b=2)
-;  [12:9] ? a=1 
-   cmp_12_9:
-   cmp qword[rbp-8],1
-   jne cmp_12_26
-;  [12:17] ? b=2
-   cmp_12_17:
-   cmp qword[rbp-16],2
-   je if_12_8_code  ; opt2
-;  [12:26] ? (c=3 and d=4)
-;  [12:26] ? c=3 
-   cmp_12_26:
-   cmp qword[rbp-24],3
-   jne if_12_5_end
-;  [12:34] ? d=4
-   cmp_12_34:
-   cmp qword[rbp-32],4
-   jne if_12_5_end
-   if_12_8_code:  ; opt1
-;    [13:9] exit(0)
-;    exit(v) 
-;      inline: 13_9
-;      alias v -> 0
-;      [2:5] mov(rbx,v)
-       mov rbx,0
-;      [3:5] mov(rax,1)
-       mov rax,1
-;      [4:5] int(0x80)
-       int 0x80
-     exit_13_9_end:
-   if_12_5_end:
-;  [14:5] exit(1)
+;  [10:5] x=2 
+;  [10:7] 2 
+;  [10:7] x=2 
+   mov qword[x],2
+;  [11:5] exit(x)
 ;  exit(v) 
-;    inline: 14_5
-;    alias v -> 1
+;    inline: 11_5
+;    alias v -> x
 ;    [2:5] mov(rbx,v)
-     mov rbx,1
+     mov rbx,qword[x]
 ;    [3:5] mov(rax,1)
      mov rax,1
 ;    [4:5] int(0x80)
      int 0x80
-   exit_14_5_end:
+   exit_11_5_end:
 
 ; max scratch registers in use: 1
-;            max frames in use: 5
-
+;            max frames in use: 4

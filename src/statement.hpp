@@ -30,7 +30,7 @@ public:
 
 	inline const token&tok()const{return token_;}
 
-	inline bool is_negated()const{return negated_;}
+	inline virtual bool is_negated()const{return negated_;}
 
 	inline virtual bool is_in_data_section()const{return false;}
 

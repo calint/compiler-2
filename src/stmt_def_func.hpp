@@ -142,8 +142,8 @@ public:
 		code_->compile(tc,os,indent_level,"");
 		if(!returns().empty()){
 			const string&ret_name{returns()[0].name()};
-			const string&ret_name_resolved{tc.resolve_ident_to_nasm(*this,ret_name)};
-			tc.asm_cmd(*this,os,indent_level+1,"mov","rax",ret_name_resolved);
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,ret_name,false)};
+			tc.asm_cmd(*this,os,indent_level+1,"mov","rax",ir.id);
 		}
 		tc.asm_pop(*this,os,indent_level+1,"rbp");
 		tc.asm_ret(*this,os,indent_level+1);

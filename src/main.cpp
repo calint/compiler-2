@@ -234,13 +234,13 @@ int main(int argc,char*args[]){
 		fo.close();
 		if(read_file_to_string(src_file_name)!=read_file_to_string("diff.baz"))
 			throw"generated source differs. diff "+string{src_file_name}+" diff.baz";
-		// p.build(cout);
-		stringstream ss1;
-		p.build(ss1);
-		const string&pass1{optimize_jumps_1(ss1)};
-		stringstream ss2{pass1};
-		const string&pass2{optimize_jumps_2(ss2)};
-		cout<<pass2<<endl;
+		p.build(cout);
+		// stringstream ss1;
+		// p.build(ss1);
+		// const string&pass1{optimize_jumps_1(ss1)};
+		// stringstream ss2{pass1};
+		// const string&pass2{optimize_jumps_2(ss2)};
+		// cout<<pass2<<endl;
 	}catch(const compiler_error&e){
 		size_t start_char_in_line{0};
 		const size_t lineno{toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line)};
