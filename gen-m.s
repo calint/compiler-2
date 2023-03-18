@@ -24,8 +24,10 @@ main:
    cmp_10_8:
    cmp qword[rbp-16],-1
    jne if_10_5_end
-   jmp if_10_8_code
-   if_10_8_code:
+   cmp_10_17:
+   cmp qword[rbp-8],-1
+   jne if_10_5_end
+   if_10_8_code:  ; opt1
        mov rbx,0
        mov rax,1
        int 0x80

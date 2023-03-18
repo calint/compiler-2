@@ -41,13 +41,16 @@ main:
    mov qword[rbp-16],r15
 ;  free r15
    if_10_8:
-;  [10:8] ? b=-1 
+;  [10:8] ? b=-1 and a=-1 
 ;  [10:8] ? b=-1 
    cmp_10_8:
    cmp qword[rbp-16],-1
    jne if_10_5_end
-   jmp if_10_8_code
-   if_10_8_code:
+;  [10:17] ? a=-1 
+   cmp_10_17:
+   cmp qword[rbp-8],-1
+   jne if_10_5_end
+   if_10_8_code:  ; opt1
 ;    [11:9] exit(0)
 ;    exit(v) 
 ;      inline: 11_9
@@ -74,3 +77,4 @@ main:
 
 ; max scratch registers in use: 1
 ;            max frames in use: 5
+
