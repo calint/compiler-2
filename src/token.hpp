@@ -15,10 +15,10 @@ public:
 	{}
 
 	inline token()=default;
-	// inline token(const token&)=default;
-	// inline token(token&&)=default;
-	// inline token&operator=(const token&)=default;
-	// inline token&operator=(token&&)=default;
+	inline token(const token&)=default;
+	inline token(token&&)=default;
+	inline token&operator=(const token&)=default;
+	inline token&operator=(token&&)=default;
 
 	inline void source_to(ostream&os)const{
 		if(!is_str_){

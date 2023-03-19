@@ -11,6 +11,7 @@ public:
 		negated_{negated}
 	{}
 	inline virtual~statement()=default;
+	
 	inline statement()=default;
 	inline statement(statement&&)=default;
 	inline statement(const statement&)=default;
