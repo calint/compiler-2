@@ -20,9 +20,9 @@ public:
 			// put in list
 			exps_.push_back(move(first_expression));
 		}else{
-			// check for -(a+b) type of expression
+			// check for negated expression list. i.e. -(a+b)
 			if(t.is_next_char('-')){
-				token tk=t.next_token();
+				token tk{t.next_token()};
 				if(tk.is_name("")){
 					if(t.is_next_char('(')){
 						negated_=true;
