@@ -1,18 +1,43 @@
-func inline exit(v:reg_rbx){
+field  prompt="  hello    enter name: "
+field    name="............................................................"
+field prompt2="  not a name: "
+
+func inline print(len:reg_rdx,ptr:reg_rcx){
+    mov(rcx,ptr)
+    mov(rdx,len)
+    mov(rbx,1)
+    mov(rax,4)
+    int(0x80)
+}
+
+func inline read(len:reg_rdx,ptr:reg_rsi):nbytes_read{
+    mov(rsi,ptr)
+    mov(rdx,len)
+    xor(rax)
+    xor(rdi)
+    syscall
+    mov(nbytes_read,rax)
+}
+
+func inline exit(v){
     mov(rbx,v)
     mov(rax,1)
     int(0x80)
 }
 
-field len=2
-
 func inline main{
-    var a=-1
-    a=-a
-    var b=-len
-    b=-b
-    var c=-(a+b)
-    if a=1 and b=2 and c=-3
-        exit(0)
-    exit(1)
+    print(prompt.len,prompt)
+    loop{
+        var len=read(name.len,name)-1 # remove the \n
+        if len=0
+            print(prompt.len,prompt)
+        else if len<=4
+            print(prompt2.len,prompt2)
+        else{
+            print(len+1,name)
+            if read(name.len,name)=1 # is only \n
+                break
+        }
+    }
+    exit(0)
 }

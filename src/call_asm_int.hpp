@@ -10,8 +10,9 @@ public:
 		tc.source_comment(*this,os,indent_level);
 
 		toc::indent(os,indent_level);
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(arg(0))};
-		// !! negated value
-		os<<"int "<<ir.id<<endl;
+		const ident_resolved&src{tc.resolve_ident_to_nasm(arg(0))};
+		if(!src.is_const())
+			throw compiler_error(arg(0),"only constants supported");
+		os<<"int "<<src.as_const()<<endl;
 	}
 };
