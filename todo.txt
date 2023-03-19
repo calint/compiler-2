@@ -1,10 +1,8 @@
 [ ] compile error when i.e.:
       var b=-b-(-1) # b is used before initiated
-[ ] post processing optmization for: var b=-(-a*-a)
-      mov r15,qword[rbp-8]
-      neg r15
-      neg r15
-      mov qword[rbp-16],r15
+[ ] make sub lists taking in account precedence of 'and' over 'or'
+      i.e. 'a or b and c or d' -> 'a or (b and c) or d'
+[ ] negated subexpression. i.e. 'not (a=1 and b=2)'
 [ ] character type
 [ ] string type
 [ ] var str="hello world"
@@ -25,6 +23,11 @@
       first argument to f is the same register then the second argument is clobbered
 [ ]   non-inlined
 [ ]   inlined
+[ ] post processing optimization for: var b=-(-a*-a)
+      mov r15,qword[rbp-8]
+      neg r15
+      neg r15
+      mov qword[rbp-16],r15
 [ ] optimize return pattern:
        mov qword[rbp-8],r15
        mov rax,qword[rbp-8]
@@ -48,11 +51,8 @@
 [ ] examine expression, expr_ops_list, stmt_call relation
 [ ] token.compile assumes is_str is field
 [ ]   review fragile implementation
-[ ] negated subexpression. i.e. 'not (a=1 and b=2)'
 [ ] why is the binary so big although in-line is turned off in make.sh?
 [ ] tokenizer to keep track of line-number instead of counting it at every call
-[ ] make sub lists taking in account precedence of 'and' over 'or'
-      i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [ ] type size{value} var s=size{1} s=2
 [ ] type point{x,y} var p=point{1,2} p.x=1 p=2
 [ ] var points=point[10] where points contains length of array and a pointer

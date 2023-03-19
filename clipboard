@@ -111,3 +111,8 @@ int main() {
 }
 
 
+To rewrite the expression "not (a=1 and b=2)" without the "not", 
+use De Morgan's laws, which state that "not (A and B)" is the same as
+"(not A) or (not B)" and "not (A or B)" is the same as "(not A) and (not B)".
+Applying this to the given expression, we get:
+"not (a=1 and b=2)" is the same as "(not a=1) or (not b=2)"
