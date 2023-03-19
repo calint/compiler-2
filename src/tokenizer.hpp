@@ -7,6 +7,12 @@ public:
 		ptr_{src_.c_str()}
 	{}
 
+	inline tokenizer()=default;
+	inline tokenizer(const tokenizer&)=default;
+	inline tokenizer(tokenizer&&)=default;
+	inline tokenizer&operator=(const tokenizer&)=default;
+	inline tokenizer&operator=(tokenizer&&)=default;
+
 	inline bool is_eos()const{return!last_char_;}
 
 	inline token next_token(){
@@ -129,6 +135,6 @@ private:
 
 	string src_;
 	const char*ptr_;
-	size_t nchar_{0};
+	size_t nchar_{};
 	char last_char_{-1};
 };

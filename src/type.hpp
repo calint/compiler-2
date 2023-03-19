@@ -8,6 +8,13 @@ public:
         name_{name},
         size_{size}
     {}
+
+    inline type()=default;
+	inline type(const type&)=default;
+	inline type(type&&)=default;
+	inline type&operator=(const type&)=default;
+	inline type&operator=(type&&)=default;
+
 private:
     std::string name_;
     size_t size_;
