@@ -56,10 +56,10 @@ public:
 	}
 
 	inline stmt_block():statement{token{}},is_one_statement_{false}{}
-	inline stmt_block(const stmt_block&)=default;
-	inline stmt_block(stmt_block&&)=default;
-	inline stmt_block&operator=(const stmt_block&)=default;
-	inline stmt_block&operator=(stmt_block&&)=default;
+	// inline stmt_block(const stmt_block&)=default;
+	// inline stmt_block(stmt_block&&)=default;
+	// inline stmt_block&operator=(const stmt_block&)=default;
+	// inline stmt_block&operator=(stmt_block&&)=default;
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);

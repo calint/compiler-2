@@ -21,8 +21,6 @@ public:
 		is_not_=is_not;
 
 		lhs_={t,true};
-		// if(lhs_->is_empty())
-		// 	throw compiler_error(*this,"expected left hand side of boolean operation");
 
 		if(t.is_next_char('=')){
 			op_="=";
@@ -43,8 +41,6 @@ public:
 		}
 		
 		rhs_={t,true};
-		// if(rhs_->is_empty())// unary
-		// 	throw compiler_error(*lhs_,"expected right hand side of boolean operation");
 	}
 
 	inline void source_to(ostream&os)const override{
