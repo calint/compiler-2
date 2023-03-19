@@ -24,7 +24,9 @@ func inline exit(v){
 }
 
 func inline main{
-    var len=read(name.len,name)-1 # remove the \n
-    print(len,name)
+    var a=-1
+    var b=-(-a*-a)
+#    var len=read(name.len,name)-1 # remove the \n
+#    print(len,name)
     exit(0)
 }
