@@ -1,10 +1,10 @@
-field len=2
-
-func inline exit(v){
+func inline exit(v:reg_rbx){
     mov(rbx,v)
     mov(rax,1)
     int(0x80)
 }
+
+field len=2
 
 func inline main{
     var a=-1
