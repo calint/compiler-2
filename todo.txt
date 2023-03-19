@@ -16,7 +16,6 @@
 [ ] implement division op
 [ ] bool type
 [ ] include source file: i.e. "include io" includes io.baz
-[ ] stmt_call::vector<expr_ops_list> instead of unique pointer
 [ ] inlined function call: if a named register is not available: push/pop?
 [ ] short-hand boolean expression i.e. if a or b
 [ ] decouple by using cpp implementation files for block and call, remove decouple.hpp
@@ -60,6 +59,8 @@
 [ ] clang-format everything for less dess code?
 [ ] compile for pczero task
 -------------------------------------------------------------------------------
+[x] stmt_call::vector<expr_ops_list> instead of unique pointer
+    -> tag prior refactoring 2023-04-19--8--checkpoint
 [x] negated expression
 [x]   support for negated expr_ops_list. i.e. a=-(1+2)
 [x]   review

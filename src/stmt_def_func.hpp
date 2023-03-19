@@ -173,5 +173,5 @@ private:
 	vector<token>returns_;
 	unique_ptr<stmt_block>code_;
 	token inline_tk_;
-	bool no_args_{false};
+	bool no_args_{};
 };

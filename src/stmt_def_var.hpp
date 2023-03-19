@@ -6,12 +6,12 @@ class stmt_def_var final:public statement{
 public:
 	inline stmt_def_var(token tk,tokenizer&t):
 		statement{move(tk)},
-		ident_{t.next_token()},
+		name_{t.next_token()},
 		op_{t.next_char()},
-		initial_value_{ident_,t}
+		initial_value_{name_,t}
 	{
 		if(op_!='=')
-			throw compiler_error(ident_,"expected '=' and initializer");
+			throw compiler_error(name_,"expected '=' and initializer");
 	}
 
 	inline void source_to(ostream&os)const override{
@@ -21,12 +21,12 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.source_comment(*this,os,indent_level);
-		tc.add_var(*this,os,indent_level,ident_.name(),8);
-		initial_value_.compile(tc,os,indent_level,ident_.name());
+		tc.add_var(*this,os,indent_level,name_.name(),8);
+		initial_value_.compile(tc,os,indent_level,name_.name());
 	}
 
 private:
-	token ident_;
-	char op_{0};
+	token name_;
+	char op_{};
 	stmt_assign_var initial_value_;
 };
