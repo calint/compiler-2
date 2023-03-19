@@ -176,7 +176,7 @@ public:
 	inline const string&identifier()const override{
 		if(exps_.size()==1)
 			return exps_[0]->identifier();
-		throw"unexpected code path "+string{__FILE__}+" "+to_string(__LINE__);
+		throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 	}
 
 	inline bool is_negated()const override{
@@ -186,7 +186,7 @@ public:
 		return negated_;
 	}
 
-	inline bool is_empty()const override{return exps_.empty();}
+	inline bool is_empty()const override{return exps_.empty();} // ? can be removed?
 
 private:
 	inline static int precedence_for_op(const char ch){
