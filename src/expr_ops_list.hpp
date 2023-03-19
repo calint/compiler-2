@@ -174,7 +174,9 @@ public:
 	}
 
 	inline const string&identifier()const override{
-		return exps_[0]->identifier();
+		if(exps_.size()==1)
+			return exps_[0]->identifier();
+		throw"unexpected code path "+string{__FILE__}+" "+to_string(__LINE__);
 	}
 
 	inline bool is_negated()const override{
