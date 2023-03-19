@@ -10,7 +10,7 @@ func inline f(x):res{
 
 func inline main{
     var a=2
-    var b=f(-a);
+    var b=f(-a)
     if b=4
         exit(0)
     exit(1)
