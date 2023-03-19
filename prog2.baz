@@ -10,7 +10,7 @@ func inline print(len:reg_rdx,ptr:reg_rcx){
     int(0x80)
 }
 
-func inline read(len:reg_rdx,ptr:reg_rsi):nbytes_read{
+func inline read(len:reg_rdx,ptr:reg_rcx):nbytes_read{
     mov(rax,3)   # read system call
     mov(rbx,0)   # file descriptor for standard input
     mov(rcx,ptr) # buffer address
