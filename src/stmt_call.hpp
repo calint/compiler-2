@@ -52,7 +52,7 @@ public:
 		const stmt_def_func&f=tc.get_func_or_break(*this,func_nm);
 		
 		if(f.params().size()!=args_.size())
-			throw compiler_error(*this,"function '"+func_nm+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
+			throw compiler_error(*this,"function '"+func_nm+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" "+(args_.size()==1?"is":"are")+" provided");
 
 		if(!f.is_inline()){
 			// stack is: <base>,
