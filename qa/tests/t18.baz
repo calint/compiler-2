@@ -7,7 +7,7 @@ func inline exit(v:reg_rdi){
     syscall
 }
 
-func inline print(len:reg_rdx,ptr:reg_rcx){
+func inline print(len:reg_rdx,ptr:reg_rsi){
     mov(rax,1)   # write system call
     mov(rdi,1)   # file descriptor for standard out
     mov(rsi,ptr) # buffer address 
