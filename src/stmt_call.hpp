@@ -288,7 +288,7 @@ public:
 	inline size_t arg_count()const{return args_.size();}
 
 private:
-	bool no_args_{false};
+	bool no_args_{};
 	vector<expr_ops_list>args_;
 };
 

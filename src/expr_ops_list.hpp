@@ -303,11 +303,11 @@ private:
 		}
 	}
 
-	bool enclosed_{false}; //  =(a+b) vs =a+b
-	bool in_args_{false}; // foo(a+b)
-	char list_op_{0}; // +[...]
+	bool enclosed_{}; //  (a+b) vs a+b
+	bool in_args_{}; // foo(a+b)
+	char list_op_{}; // +[...] -[...] *[...] /[...]
+	bool negated_{};
 	vector<unique_ptr<statement>>exps_;
 	vector<char>ops_;
-	bool negated_{false};
 	token after_negation_ws_token_;
 };

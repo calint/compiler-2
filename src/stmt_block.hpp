@@ -73,6 +73,6 @@ public:
 	}
 
 private:
-	bool is_one_statement_{false};
+	bool is_one_statement_{};
 	vector<unique_ptr<statement>>stms_;
 };
