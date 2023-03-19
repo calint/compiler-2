@@ -1,0 +1,23 @@
+field name="............................................................"
+
+func inline exit(v:reg_rdi){
+    mov(rax,60) # exit system call
+    mov(rdi,v)  # return code
+    syscall
+}
+
+func foo(x):res{
+    res=-x*2
+}
+
+func bar(y):res{
+    res=-y
+}
+
+func inline main{
+    var a=1
+    var b=-foo(-bar(-a))
+    if b=-2
+        exit(0)
+    exit(1)
+}

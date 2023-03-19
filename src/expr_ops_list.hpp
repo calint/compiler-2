@@ -64,9 +64,8 @@ public:
 			if(t.is_peek_char(')')){
 				if(enclosed_){
 					t.next_char();
-					break;
 				}
-				throw compiler_error(t,"unexpected ')' in expression");
+				break;
 			}
 
 			// next operation
