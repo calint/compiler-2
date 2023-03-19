@@ -11,10 +11,11 @@ public:
 		negated_{negated}
 	{}
 	inline virtual~statement(){}
+	inline statement()=default;
 	inline statement(statement&&)=default;
 	inline statement(const statement&)=default;
-	// inline statement&operator=(const statement&)=default;
-	// inline statement&operator=(statement&&)=default;
+	inline statement&operator=(const statement&other)=default;
+	inline statement&operator=(statement&&)=default;
 
 	inline virtual void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const{
 		if(negated_)
@@ -39,6 +40,6 @@ public:
 	inline virtual const string&identifier()const{return tok().name();}
 
 private:
-	const token token_;
-	const bool negated_{};
+	token token_;
+	bool negated_{};
 };

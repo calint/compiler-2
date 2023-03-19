@@ -35,7 +35,7 @@ public:
 				break;
 			}
 		}
-		code_=make_unique<stmt_block>(t);
+		code_={t};
 	}
 
 	inline void source_to(ostream&os)const override{
@@ -63,7 +63,7 @@ public:
 					os<<",";
 			}
 		}
-		code_->source_to(os);
+		code_.source_to(os);
 	}
 
 	inline void source_def_comment_to(ostream&os)const{
@@ -139,7 +139,7 @@ public:
 		}
 		tc.asm_push(*this,os,indent_level+1,"rbp");
 		tc.asm_cmd(*this,os,indent_level+1,"mov","rbp","rsp");
-		code_->compile(tc,os,indent_level,"");
+		code_.compile(tc,os,indent_level,"");
 		if(!returns().empty()){
 			const string&ret_name{returns()[0].name()};
 			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,ret_name,false)};
@@ -161,7 +161,7 @@ public:
 
 	inline const vector<stmt_def_func_param>&params()const{return params_;}
 
-	inline const stmt_block&code()const{return*code_.get();}
+	inline const stmt_block&code()const{return code_;}
 
 	inline const string&name()const{return name_.name();}
 
@@ -171,7 +171,7 @@ private:
 	token name_;
 	vector<stmt_def_func_param>params_;
 	vector<token>returns_;
-	unique_ptr<stmt_block>code_;
+	stmt_block code_;
 	token inline_tk_;
 	bool no_args_{};
 };

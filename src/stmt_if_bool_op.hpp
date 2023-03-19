@@ -20,7 +20,7 @@ public:
 		}
 		is_not_=is_not;
 
-		lhs_=make_unique<expr_ops_list>(t,true);
+		lhs_={t,true};
 		// if(lhs_->is_empty())
 		// 	throw compiler_error(*this,"expected left hand side of boolean operation");
 
@@ -42,7 +42,7 @@ public:
 			throw compiler_error(*this,"expected boolean op");
 		}
 		
-		rhs_=make_unique<expr_ops_list>(t,true);
+		rhs_={t,true};
 		// if(rhs_->is_empty())// unary
 		// 	throw compiler_error(*lhs_,"expected right hand side of boolean operation");
 	}
@@ -53,9 +53,9 @@ public:
 		for(const token&e:nots_)
 			e.source_to(os);
 
-		lhs_->source_to(os);
+		lhs_.source_to(os);
 		os<<op_;
-		rhs_->source_to(os);
+		rhs_.source_to(os);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
@@ -65,7 +65,7 @@ public:
 	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_true)const{
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
-		resolve(tc,os,indent_level,"cmp",*lhs_,*rhs_);
+		resolve(tc,os,indent_level,"cmp",lhs_,rhs_);
 		toc::indent(os,indent_level);
 		os<<(is_not_?asm_jxx_for_op_inv(op_):asm_jxx_for_op(op_));
 		os<<" "<<jmp_to_if_true<<endl;
@@ -74,7 +74,7 @@ public:
 	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false)const{
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
-		resolve(tc,os,indent_level,"cmp",*lhs_,*rhs_);
+		resolve(tc,os,indent_level,"cmp",lhs_,rhs_);
 		toc::indent(os,indent_level);
 		os<<(is_not_?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
 		os<<" "<<jmp_to_if_false<<endl;
@@ -170,8 +170,8 @@ private:
 	}
 
 	vector<token>nots_;
-	bool is_not_{};
-	unique_ptr<expr_ops_list>lhs_;
-	string op_;
-	unique_ptr<expr_ops_list>rhs_;
+	bool is_not_{}; // not a=b
+	expr_ops_list lhs_;
+	string op_; // '<', '<=', '>', '>=', '='
+	expr_ops_list rhs_;
 };

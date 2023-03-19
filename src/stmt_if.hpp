@@ -31,7 +31,7 @@ public:
 				// save tokens to be able to reproduce the source
 				else_if_tokens_.push_back(move(tkn));
 				// read the 'else' code
-				else_code_=make_unique<stmt_block>(t);
+				else_code_={t};
 				return;
 			}
 			// 'else if': continue reading if branches
@@ -56,9 +56,9 @@ public:
 			br.source_to(os);
 		}
 		// the 'else' code
-		if(else_code_){
+		if(!else_code_.is_empty()){
 			else_if_tokens_.back().source_to(os);
-			else_code_->source_to(os);
+			else_code_.source_to(os);
 		}
 	}
 
@@ -69,7 +69,7 @@ public:
 		const string&cp{call_path.empty()?"":"_"+call_path};
 
 		const string&label_after_if{"if_"+src_loc+cp+"_end"};
-		const string&label_else_branch{else_code_?"if_else_"+src_loc+cp:label_after_if};
+		const string&label_else_branch{!else_code_.is_empty()?"if_else_"+src_loc+cp:label_after_if};
 
 		const size_t n{branches_.size()};
 		for(size_t i=0;i<n;i++){
@@ -83,15 +83,15 @@ public:
 				// if last branch and no 'else' then
 				//   no need to jump to 'after_if' after the code for the branch
 				//   has been executed. just continue
-				if(!else_code_){
+				if(else_code_.is_empty()){
 					jmp_after_if="";
 				}
 			}
 			e.compile(tc,os,indent_level,jmp_if_false,jmp_after_if);
 		}
-		if(else_code_){
+		if(!else_code_.is_empty()){
 			tc.asm_label(*this,os,indent_level,label_else_branch);
-			else_code_->compile(tc,os,indent_level+1);
+			else_code_.compile(tc,os,indent_level+1);
 		}
 		tc.asm_label(*this,os,indent_level,label_after_if);
 	}
@@ -99,5 +99,5 @@ public:
 private:
 	vector<stmt_if_branch>branches_;
 	vector<token>else_if_tokens_;
-	unique_ptr<stmt_block>else_code_;
+	stmt_block else_code_;
 };

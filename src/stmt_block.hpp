@@ -55,6 +55,12 @@ public:
 		}
 	}
 
+	inline stmt_block():statement{token{}},is_one_statement_{false}{}
+	inline stmt_block(const stmt_block&)=default;
+	inline stmt_block(stmt_block&&)=default;
+	inline stmt_block&operator=(const stmt_block&)=default;
+	inline stmt_block&operator=(stmt_block&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		if(!is_one_statement_)
@@ -70,6 +76,10 @@ public:
 		for(const auto&s:stms_)
 			s->compile(tc,os,indent_level+1);
 		tc.exit_block();
+	}
+
+	inline bool is_empty()const{
+		return stms_.empty();
 	}
 
 private:
