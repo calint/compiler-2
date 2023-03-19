@@ -15,6 +15,7 @@
 [ ] op shift left and right
 [ ] implement division op
 [ ] bool type
+[ ] include source file: i.e. "include io" includes io.baz
 [ ] inlined function call: if a named register is not available: push/pop?
 [ ] short-hand boolean expression i.e. if a or b
 [ ] decouple by using cpp implementation files for block and call, remove decouple.hpp
