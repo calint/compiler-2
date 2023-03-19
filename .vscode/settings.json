@@ -17,6 +17,7 @@
         "initializer_list": "cpp",
         "sstream": "cpp",
         "fstream": "cpp",
-        "istream": "cpp"
+        "istream": "cpp",
+        "clipboard": "cpp"
     }
 }
