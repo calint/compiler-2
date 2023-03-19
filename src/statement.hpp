@@ -38,8 +38,6 @@ public:
 
 	inline virtual const string&identifier()const{return tok().name();}
 
-	// inline virtual bool is_empty()const{return token_.is_blank();}
-
 private:
 	const token token_;
 	const bool negated_{};

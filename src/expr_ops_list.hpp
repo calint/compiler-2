@@ -188,8 +188,6 @@ public:
 		return negated_;
 	}
 
-	// inline bool is_empty()const override{return exps_.empty();} // ? can be removed?
-
 private:
 	inline static int precedence_for_op(const char ch){
 		if(ch=='+'||ch=='-')
