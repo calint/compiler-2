@@ -112,11 +112,11 @@ public:
 				continue;
 			}
 
-			unique_ptr<statement>stmt{create_statement_from_tokenizer(t)};
-			if(stmt->tok().is_blank())
-				throw compiler_error(*stmt,"unexpected '"+string{t.peek_char()}+"'");
+			unique_ptr<statement>stm{create_statement_from_tokenizer(t)};
+			if(stm->tok().is_blank())
+				throw compiler_error(*stm,"unexpected '"+string{t.peek_char()}+"'");
 
-			exps_.push_back(move(stmt));
+			exps_.push_back(move(stm));
 		}
 	}
 
