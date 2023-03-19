@@ -49,30 +49,30 @@ main:
 ;  [29:13] read(name.len,name)-1 
 ;  [29:13] len=read(name.len,name)
 ;  [29:13] read(name.len,name)
-;  read(len:reg_rdx,ptr:reg_rcx):nbytes_read 
+;  read(len:reg_rdx,ptr:reg_rsi):nbytes_read 
 ;    inline: 29_13
 ;    alias nbytes_read -> len
 ;    alloc rdx
 ;    alias len -> rdx
      mov rdx,name.len
-;    alloc rcx
-;    alias ptr -> rcx
-     mov rcx,name
-;    [12:5] mov(rax,3)
-     mov rax,3
-;    [12:18] # read system call 
-;    [13:5] mov(rbx,0)
-     mov rbx,0
-;    [13:18] # file descriptor for standard input 
-;    [14:5] mov(rcx,ptr)
-;    [14:18] # buffer address 
-;    [15:5] mov(rdx,len)
-;    [15:18] # buffer size 
-;    [16:5] int(0x80)
-     int 0x80
+;    alloc rsi
+;    alias ptr -> rsi
+     mov rsi,name
+;    [12:2] mov(rax,0)
+     mov rax,0
+;    [12:16] # read system call 
+;    [13:2] mov(rdi,0)
+     mov rdi,0
+;    [13:16] # file descriptor for standard input 
+;    [14:2] mov(rsi,ptr)
+;    [14:16] # buffer address 
+;    [15:2] mov(rdx,len)
+;    [15:16] # buffer size 
+;    [16:2] syscall 
+     syscall
 ;    [17:5] mov(nbytes_read,rax)
      mov qword[rbp-24],rax
-;    free rcx
+;    free rsi
 ;    free rdx
    read_29_13_end:
 ;  [29:33] len-1 
@@ -87,31 +87,34 @@ main:
 ;    alloc rcx
 ;    alias ptr -> rcx
      mov rcx,name
-;    [4:5] mov(rax,4)
-     mov rax,4
+;    [4:5] mov(rax,1)
+     mov rax,1
 ;    [4:18] # write system call 
-;    [5:5] mov(rbx,1)
-     mov rbx,1
+;    [5:5] mov(rdi,1)
+     mov rdi,1
 ;    [5:18] # file descriptor for standard out 
-;    [6:5] mov(rcx,ptr)
+;    [6:5] mov(rsi,ptr)
+     mov rsi,rcx
 ;    [6:18] # buffer address 
 ;    [7:5] mov(rdx,len)
 ;    [7:18] # buffer size 
-;    [8:5] int(0x80)
-     int 0x80
+;    [8:5] syscall 
+     syscall
 ;    free rcx
 ;    free rdx
    print_30_5_end:
 ;  [31:5] exit(0)
-;  exit(v) 
+;  exit(v:reg_rdi) 
 ;    inline: 31_5
-;    alias v -> 0
-;    [21:5] mov(rbx,v)
-     mov rbx,0
-;    [22:5] mov(rax,1)
-     mov rax,1
-;    [23:5] int(0x80)
-     int 0x80
+;    alloc rdi
+;    alias v -> rdi
+     mov rdi,0
+;    [21:5] mov(rax,60)
+     mov rax,60
+;    [22:5] mov(rdi,v)
+;    [23:5] syscall 
+     syscall
+;    free rdi
    exit_31_5_end:
 
 ; max scratch registers in use: 1

@@ -1,18 +1,18 @@
-func inline exit(v:reg_rbx){
-    mov(rbx,v)
-    mov(rax,1)
-    int(0x80)
-}
-
 field hello="hello\n"
 field world="world\n"
 
-func print(len,ptr){
-    mov(rax,4)
-    mov(rbx,1)
-    mov(rcx,ptr)
-    mov(rdx,len)
-    int(0x80)
+func inline exit(v:reg_rdi){
+    mov(rax,60) # exit system call
+    mov(rdi,v)  # return code
+    syscall
+}
+
+func inline print(len:reg_rdx,ptr:reg_rcx){
+    mov(rax,1)   # write system call
+    mov(rdi,1)   # file descriptor for standard out
+    mov(rsi,ptr) # buffer address 
+    mov(rdx,len) # buffer size
+    syscall
 }
 
 func foo{

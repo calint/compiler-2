@@ -1,7 +1,7 @@
-func inline exit(v:reg_rbx){
-    mov(rbx,v)
-    mov(rax,1)
-    int(0x80)
+func inline exit(v:reg_rdi){
+    mov(rax,60) # exit system call
+    mov(rdi,v)  # return code
+    syscall
 }
 
 func fib(i):res{
