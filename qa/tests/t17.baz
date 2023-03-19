@@ -8,10 +8,10 @@ field hello="hello\n"
 field world="world\n"
 
 func print(len,ptr){
+    mov(rax,4)
+    mov(rbx,1)
     mov(rcx,ptr)
     mov(rdx,len)
-    mov(rbx,1)
-    mov(rax,4)
     int(0x80)
 }
 
