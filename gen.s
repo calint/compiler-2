@@ -21,14 +21,36 @@ mov rbp,rsp
 jmp main
 
 main:
-;  [27:5] var len=read(name.len,name)-1 
-;  len: qword[rbp-8]
-;  [27:9] len=read(name.len,name)-1 
-;  [27:13] read(name.len,name)-1 
-;  [27:13] len=read(name.len,name)
-;  [27:13] read(name.len,name)
+;  [27:5] var a=-1 
+;  a: qword[rbp-8]
+;  [27:9] a=-1 
+;  [27:11] -1 
+;  [27:12] a=-1 
+   mov qword[rbp-8],-1
+;  [28:5] var b=-(-a*-a)
+;  b: qword[rbp-16]
+;  [28:9] b=-(-a*-a)
+;  alloc r15
+;  [28:11] -(-a*-a)
+;  [28:13] r15=(-a*-a)
+;  [28:13] (-a*-a)
+;  [28:14] r15=-a
+   mov r15,qword[rbp-8]
+   neg r15
+;  [28:17] r15*-a
+   imul r15,qword[rbp-8]
+   neg r15
+   neg r15
+   mov qword[rbp-16],r15
+;  free r15
+;  [29:5] var len=read(name.len,name)-1 
+;  len: qword[rbp-24]
+;  [29:9] len=read(name.len,name)-1 
+;  [29:13] read(name.len,name)-1 
+;  [29:13] len=read(name.len,name)
+;  [29:13] read(name.len,name)
 ;  read(len:reg_rdx,ptr:reg_rcx):nbytes_read 
-;    inline: 27_13
+;    inline: 29_13
 ;    alias nbytes_read -> len
 ;    alloc rdx
 ;    alias len -> rdx
@@ -49,19 +71,19 @@ main:
 ;    [16:5] int(0x80)
      int 0x80
 ;    [17:5] mov(nbytes_read,rax)
-     mov qword[rbp-8],rax
+     mov qword[rbp-24],rax
 ;    free rcx
 ;    free rdx
-   read_27_13_end:
-;  [27:33] len-1 
-   sub qword[rbp-8],1
-;  [27:35] # remove the \n 
-;  [28:5] print(len,name)
+   read_29_13_end:
+;  [29:33] len-1 
+   sub qword[rbp-24],1
+;  [29:35] # remove the \n 
+;  [30:5] print(len,name)
 ;  print(len:reg_rdx,ptr:reg_rcx) 
-;    inline: 28_5
+;    inline: 30_5
 ;    alloc rdx
 ;    alias len -> rdx
-     mov rdx,qword[rbp-8]
+     mov rdx,qword[rbp-24]
 ;    alloc rcx
 ;    alias ptr -> rcx
      mov rcx,name
@@ -79,10 +101,10 @@ main:
      int 0x80
 ;    free rcx
 ;    free rdx
-   print_28_5_end:
-;  [29:5] exit(0)
+   print_30_5_end:
+;  [31:5] exit(0)
 ;  exit(v) 
-;    inline: 29_5
+;    inline: 31_5
 ;    alias v -> 0
 ;    [21:5] mov(rbx,v)
      mov rbx,0
@@ -90,7 +112,7 @@ main:
      mov rax,1
 ;    [23:5] int(0x80)
      int 0x80
-   exit_29_5_end:
+   exit_31_5_end:
 
 ; max scratch registers in use: 1
 ;            max frames in use: 4
