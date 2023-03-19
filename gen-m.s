@@ -14,20 +14,40 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
+foo:
+   push rbp
+   mov rbp,rsp
+   mov r15,qword[rbp+16]
+   neg r15
+   imul r15,2
+   mov qword[rbp-8],r15
+   mov rax,qword[rbp-8]
+   pop rbp
+   ret
+bar:
+   push rbp
+   mov rbp,rsp
+   mov r15,qword[rbp+16]
+   neg r15
+   mov qword[rbp-8],r15
+   mov rax,qword[rbp-8]
+   pop rbp
+   ret
 main:
    mov qword[rbp-8],1
-       mov r13,qword[rbp-8]
-       neg r13
-       mov r14,r13
-       neg r14
-     bar_19_17_end:
+   sub rsp,16
+     mov r14,qword[rbp-8]
      neg r14
-     mov r15,r14
-     neg r15
-     imul r15,2
-   foo_19_12_end:
-   neg r15
-   mov qword[rbp-16],r15
+     push r14
+     call bar
+     add rsp,8
+     neg rax
+     mov r15,rax
+   push r15
+   call foo
+   add rsp,24
+   neg rax
+   mov qword[rbp-16],rax
    if_20_7:
    cmp_20_8:
    cmp qword[rbp-16],-2

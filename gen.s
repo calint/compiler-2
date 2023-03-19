@@ -20,6 +20,44 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 
+foo:
+;  foo(x):res 
+;  res: qword[rbp-8]
+;  x: qword[rbp+16]
+   push rbp
+   mov rbp,rsp
+;  [10:5] res=-x*2 
+;  alloc r15
+;  [10:9] -x*2 
+;  [10:10] r15=-x
+   mov r15,qword[rbp+16]
+   neg r15
+;  [10:12] r15*2 
+   imul r15,2
+   mov qword[rbp-8],r15
+;  free r15
+   mov rax,qword[rbp-8]
+   pop rbp
+   ret
+
+bar:
+;  bar(y):res 
+;  res: qword[rbp-8]
+;  y: qword[rbp+16]
+   push rbp
+   mov rbp,rsp
+;  [14:5] res=-y 
+;  alloc r15
+;  [14:9] -y 
+;  [14:10] r15=-y 
+   mov r15,qword[rbp+16]
+   neg r15
+   mov qword[rbp-8],r15
+;  free r15
+   mov rax,qword[rbp-8]
+   pop rbp
+   ret
+
 main:
 ;  [18:5] var a=1 
 ;  a: qword[rbp-8]
@@ -30,45 +68,29 @@ main:
 ;  [19:5] var b=-foo(-bar(-a))
 ;  b: qword[rbp-16]
 ;  [19:9] b=-foo(-bar(-a))
-;  alloc r15
 ;  [19:11] -foo(-bar(-a))
-;  [19:12] r15=-foo(-bar(-a))
+;  [19:12] b=-foo(-bar(-a))
 ;  [19:12] -foo(-bar(-a))
-;  foo(x):res 
-;    inline: 19_12
-;    alias res -> r15
-;    alloc r14
-;    alias x -> r14
+   sub rsp,16
+;  alloc r15
 ;    [19:16] -bar(-a)
-;    [19:17] r14=-bar(-a)
+;    [19:17] r15=-bar(-a)
 ;    [19:17] -bar(-a)
-;    bar(y):res 
-;      inline: 19_17
-;      alias res -> r14
-;      alloc r13
-       mov r13,qword[rbp-8]
-       neg r13
-;      alias y -> r13
-;      [14:5] res=-y 
-;      [14:9] -y 
-;      [14:10] res=-y 
-       mov r14,r13
-       neg r14
-;      free r13
-     bar_19_17_end:
+;    alloc r14
+     mov r14,qword[rbp-8]
      neg r14
-;    [10:5] res=-x*2 
-;    [10:9] -x*2 
-;    [10:10] res=-x
-     mov r15,r14
-     neg r15
-;    [10:12] res*2 
-     imul r15,2
+     push r14
 ;    free r14
-   foo_19_12_end:
-   neg r15
-   mov qword[rbp-16],r15
+     call bar
+     add rsp,8
+     neg rax
+     mov r15,rax
+   push r15
 ;  free r15
+   call foo
+   add rsp,24
+   neg rax
+   mov qword[rbp-16],rax
    if_20_7:
 ;  [20:8] ? b=-2
    cmp_20_8:
@@ -107,6 +129,6 @@ main:
 ;    free rdi
    exit_22_5_end:
 
-; max scratch registers in use: 4
+; max scratch registers in use: 3
 ;            max frames in use: 5
 
