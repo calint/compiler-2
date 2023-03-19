@@ -8,13 +8,16 @@ public:
 	inline stmt_if_branch(tokenizer&t):
 		statement{t.next_whitespace_token()},
 		bol_{t},
-		code_{make_unique<stmt_block>(t)}
+		code_{t}
 	{}
+
+	inline stmt_if_branch(stmt_if_branch&&)=default;
+
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		bol_.source_to(os);
-		code_->source_to(os);
+		code_.source_to(os);
 	}
 
 	// returns the label where the if branch begins evaluating the boolean expression
@@ -37,7 +40,7 @@ public:
 		// the label where to jump if evaluation of boolean ops is true
 		tc.asm_label(*this,os,indent_level,jmp_to_if_true_lbl);
 		// the code of the branch
-		code_->compile(tc,os,indent_level);
+		code_.compile(tc,os,indent_level);
 		// after the code of the branch is executed jump to the end of
 		//   the 'if ... else if ... else ...'
 		//   if label not provided then there is no 'else' and this is the last 'if'
@@ -49,5 +52,5 @@ public:
 
 private:
 	stmt_if_bool_ops_list bol_;
-	unique_ptr<stmt_block>code_;
+	stmt_block code_;
 };

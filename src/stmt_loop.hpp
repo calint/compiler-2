@@ -4,7 +4,7 @@ class stmt_loop final:public statement{
 public:
 	inline stmt_loop(token tk,tokenizer&t):
 		statement{move(tk)},
-		code_{stmt_block{t}}
+		code_{t}
 	{}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
