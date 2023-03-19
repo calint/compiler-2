@@ -49,7 +49,7 @@ public:
 
 private:
 	inline static size_t count_instructions(stringstream&ss){
-		regex regex("^\\s*;.*$");
+		const regex regex{R"(^\s*;.*$)"};
 		string line;
 		size_t n{0};
 		while(getline(ss,line)){
