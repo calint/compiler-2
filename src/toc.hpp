@@ -162,6 +162,12 @@ public:
 		source_str_{source}
 	{}
 
+	inline toc()=default;
+	inline toc(const toc&)=default;
+	inline toc(toc&&)=default;
+	inline toc&operator=(const toc&)=default;
+	inline toc&operator=(toc&&)=default;
+
 	inline void add_field(const statement&s,const string&ident,const stmt_def_field*f,const bool is_str_field){
 		if(fields_.has(ident))
 			throw compiler_error(s.tok(),"field '"+ident+"' already defined");

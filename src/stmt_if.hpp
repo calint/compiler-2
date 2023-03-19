@@ -41,6 +41,12 @@ public:
 		}
 	}
 
+	inline stmt_if()=default;
+	inline stmt_if(const stmt_if&)=default;
+	inline stmt_if(stmt_if&&)=default;
+	inline stmt_if&operator=(const stmt_if&)=default;
+	inline stmt_if&operator=(stmt_if&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		// output first branch

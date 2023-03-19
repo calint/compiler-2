@@ -7,6 +7,12 @@ public:
 		line_{t.read_rest_of_line()}
 	{}
 
+	inline stmt_comment()=default;
+	inline stmt_comment(const stmt_comment&)=default;
+	inline stmt_comment(stmt_comment&&)=default;
+	inline stmt_comment&operator=(const stmt_comment&)=default;
+	inline stmt_comment&operator=(stmt_comment&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		os<<line_<<endl;

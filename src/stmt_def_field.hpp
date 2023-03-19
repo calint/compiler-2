@@ -15,6 +15,12 @@ public:
 		initial_value_=t.next_token();
 	}
 
+	inline stmt_def_field()=default;
+	inline stmt_def_field(const stmt_def_field&)=default;
+	inline stmt_def_field(stmt_def_field&&)=default;
+	inline stmt_def_field&operator=(const stmt_def_field&)=default;
+	inline stmt_def_field&operator=(stmt_def_field&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		name_.source_to(os);

@@ -43,6 +43,12 @@ public:
 		rhs_={t,true};
 	}
 
+	inline stmt_if_bool_op()=default;
+	inline stmt_if_bool_op(const stmt_if_bool_op&)=default;
+	inline stmt_if_bool_op(stmt_if_bool_op&&)=default;
+	inline stmt_if_bool_op&operator=(const stmt_if_bool_op&)=default;
+	inline stmt_if_bool_op&operator=(stmt_if_bool_op&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 

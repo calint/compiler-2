@@ -20,6 +20,12 @@ public:
 			throw compiler_error(name_,"expected '}'");
 	}
 
+	inline stmt_def_type()=default;
+	inline stmt_def_type(const stmt_def_type&)=default;
+	inline stmt_def_type(stmt_def_type&&)=default;
+	inline stmt_def_type&operator=(const stmt_def_type&)=default;
+	inline stmt_def_type&operator=(stmt_def_type&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		name_.source_to(os);

@@ -7,6 +7,12 @@ public:
 		code_{t}
 	{}
 
+	inline stmt_loop()=default;
+	inline stmt_loop(const stmt_loop&)=default;
+	inline stmt_loop(stmt_loop&&)=default;
+	inline stmt_loop&operator=(const stmt_loop&)=default;
+	inline stmt_loop&operator=(stmt_loop&&)=default;
+
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		toc::indent(os,indent_level,true);tc.token_comment(os,tok());
 		// make unique label for this loop considering in-lined functions

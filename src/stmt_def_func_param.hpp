@@ -18,6 +18,12 @@ public:
 		}
 	}
 
+	inline stmt_def_func_param()=default;
+	inline stmt_def_func_param(const stmt_def_func_param&)=default;
+	inline stmt_def_func_param(stmt_def_func_param&&)=default;
+	inline stmt_def_func_param&operator=(const stmt_def_func_param&)=default;
+	inline stmt_def_func_param&operator=(stmt_def_func_param&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		if(!keywords_.empty()){

@@ -42,6 +42,12 @@ public:
 		}
 	}
 
+	inline stmt_program()=default;
+	inline stmt_program(const stmt_program&)=default;
+	inline stmt_program(stmt_program&&)=default;
+	inline stmt_program&operator=(const stmt_program&)=default;
+	inline stmt_program&operator=(stmt_program&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		for(const auto&s:stms_)

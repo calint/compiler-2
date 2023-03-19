@@ -6,6 +6,12 @@ public:
 		statement{move(tk)}
 	{}
 
+	inline stmt_break()=default;
+	inline stmt_break(const stmt_break&)=default;
+	inline stmt_break(stmt_break&&)=default;
+	inline stmt_break&operator=(const stmt_break&)=default;
+	inline stmt_break&operator=(stmt_break&&)=default;
+
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.source_comment(*this,os,indent_level);
 		// get loop label

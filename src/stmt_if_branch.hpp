@@ -11,7 +11,11 @@ public:
 		code_{t}
 	{}
 
+	inline stmt_if_branch()=default;
+	inline stmt_if_branch(const stmt_if_branch&)=default;
 	inline stmt_if_branch(stmt_if_branch&&)=default;
+	inline stmt_if_branch&operator=(const stmt_if_branch&)=default;
+	inline stmt_if_branch&operator=(stmt_if_branch&&)=default;
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);

@@ -8,6 +8,12 @@ public:
 		call_asm{move(tkn),t}
 	{}
 
+	inline call_asm_mov()=default;
+	inline call_asm_mov(const call_asm_mov&)=default;
+	inline call_asm_mov(call_asm_mov&&)=default;
+	inline call_asm_mov&operator=(const call_asm_mov&)=default;
+	inline call_asm_mov&operator=(call_asm_mov&&)=default;
+
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.source_comment(*this,os,indent_level);
 

@@ -14,6 +14,12 @@ public:
 			throw compiler_error(name_,"expected '=' and initializer");
 	}
 
+	inline stmt_def_var()=default;
+	inline stmt_def_var(const stmt_def_var&)=default;
+	inline stmt_def_var(stmt_def_var&&)=default;
+	inline stmt_def_var&operator=(const stmt_def_var&)=default;
+	inline stmt_def_var&operator=(stmt_def_var&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		initial_value_.source_to(os);

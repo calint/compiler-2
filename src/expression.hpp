@@ -8,5 +8,11 @@ public:
 		statement{move(tk),negated}
 	{}
 
+	inline expression()=default;
+	inline expression(const expression&)=default;
+	inline expression(expression&&)=default;
+	inline expression&operator=(const expression&)=default;
+	inline expression&operator=(expression&&)=default;
+
 	inline bool is_expression()const override{return true;}
 };

@@ -7,4 +7,10 @@ public:
 	inline call_asm(token tkn,tokenizer&t):
 		stmt_call{move(tkn),false,t}
 	{}
+
+	inline call_asm()=default;
+	inline call_asm(const call_asm&)=default;
+	inline call_asm(call_asm&&)=default;
+	inline call_asm&operator=(const call_asm&)=default;
+	inline call_asm&operator=(call_asm&&)=default;
 };

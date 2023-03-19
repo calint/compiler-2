@@ -9,6 +9,12 @@ public:
 		eols_{t}
 	{}
 
+	inline stmt_assign_var()=default;
+	inline stmt_assign_var(const stmt_assign_var&)=default;
+	inline stmt_assign_var(stmt_assign_var&&)=default;
+	inline stmt_assign_var&operator=(const stmt_assign_var&)=default;
+	inline stmt_assign_var&operator=(stmt_assign_var&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		os<<"=";

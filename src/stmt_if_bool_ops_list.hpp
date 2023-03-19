@@ -30,6 +30,12 @@ public:
 			throw compiler_error(tok(),"expected ')' to close expression");
 	}
 
+	inline stmt_if_bool_ops_list()=default;
+	inline stmt_if_bool_ops_list(const stmt_if_bool_ops_list&)=default;
+	inline stmt_if_bool_ops_list(stmt_if_bool_ops_list&&)=default;
+	inline stmt_if_bool_ops_list&operator=(const stmt_if_bool_ops_list&)=default;
+	inline stmt_if_bool_ops_list&operator=(stmt_if_bool_ops_list&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		if(enclosed_){

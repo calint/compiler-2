@@ -38,6 +38,12 @@ public:
 		code_={t};
 	}
 
+	inline stmt_def_func()=default;
+	inline stmt_def_func(const stmt_def_func&)=default;
+	inline stmt_def_func(stmt_def_func&&)=default;
+	inline stmt_def_func&operator=(const stmt_def_func&)=default;
+	inline stmt_def_func&operator=(stmt_def_func&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		inline_tk_.source_to(os);

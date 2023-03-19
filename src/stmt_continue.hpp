@@ -6,6 +6,12 @@ public:
 		statement{move(tk)}
 	{}
 
+	inline stmt_continue()=default;
+	inline stmt_continue(const stmt_continue&)=default;
+	inline stmt_continue(stmt_continue&&)=default;
+	inline stmt_continue&operator=(const stmt_continue&)=default;
+	inline stmt_continue&operator=(stmt_continue&&)=default;
+
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.source_comment(*this,os,indent_level);
 		// get current loop label
