@@ -14,7 +14,7 @@ public:
 	inline statement()=default;
 	inline statement(statement&&)=default;
 	inline statement(const statement&)=default;
-	inline statement&operator=(const statement&other)=default;
+	inline statement&operator=(const statement&)=default;
 	inline statement&operator=(statement&&)=default;
 
 	inline virtual void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const{
