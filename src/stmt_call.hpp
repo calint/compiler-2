@@ -48,15 +48,15 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.source_comment(*this,os,indent_level);
-		const string&func_nm=tok().name();
-		const stmt_def_func&f=tc.get_func_or_break(*this,func_nm);
+		const stmt_def_func&func{tc.get_func_or_break(*this,tok().name())};
+		const string&func_nm{func.name()};
 		
-		if(f.params().size()!=args_.size())
+		if(func.params().size()!=args_.size())
 			throw compiler_error(*this,"function '"+func_nm+"' expects "+
-				to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+
+				to_string(func.params().size())+" argument"+(func.params().size()==1?"":"s")+
 				" but "+to_string(args_.size())+" "+(args_.size()==1?"is":"are")+" provided");
 
-		if(!f.is_inline()){
+		if(!func.is_inline()){
 			// stack is: <base>,
 			tc.enter_call(*this,os,indent_level);
 			// stack is: <base>,vars,regs,
@@ -68,7 +68,7 @@ public:
 			size_t i{args_.size()};
 			while(i--){
 				const expr_ops_list&arg{*args_[i]};
-				const stmt_def_func_param&param{f.param(i)};
+				const stmt_def_func_param&param{func.param(i)};
 				// is the argument passed through a register?
 				const string&arg_reg=param.get_register_or_empty();
 				bool argument_passed_in_register{!arg_reg.empty()};
@@ -146,7 +146,7 @@ public:
 		//
 
 		tc.indent(os,indent_level,true);
-		f.source_def_comment_to(os);
+		func.source_def_comment_to(os);
 
 		// create unique labels for in-lined functions based on the location the source
 		// where the call occurred
@@ -166,10 +166,10 @@ public:
 
 		// if function returns value
 		if(not dest_ident.empty()){
-			if(f.returns().empty())
+			if(func.returns().empty())
 				throw compiler_error(*this,"cannot assign from function without return");
 			// alias 'from' identifier to 'dest_ident' identifier
-			const string&from{f.returns()[0].name()};
+			const string&from{func.returns()[0].name()};
 			const string&to{dest_ident};
 			aliases_to_add.emplace_back(from,to);
 			tc.indent(os,indent_level+1,true);os<<"alias "<<from<<" -> "<<to<<endl;
@@ -177,7 +177,7 @@ public:
 
 		size_t i=0;
 		for(const auto&arg:args_){
-			const stmt_def_func_param&param{f.param(i)};
+			const stmt_def_func_param&param{func.param(i)};
 			i++;
 			// does the parameter want the value passed through a register?
 			string arg_reg{param.get_register_or_empty()};
@@ -241,7 +241,7 @@ public:
 
 		// enter function creating a new scope from which 
 		//   prior variables are not visible
-		tc.enter_func(func_nm,new_call_path,ret_jmp_label,true,f.returns().empty()?"":f.returns()[0].name());
+		tc.enter_func(func_nm,new_call_path,ret_jmp_label,true,func.returns().empty()?"":func.returns()[0].name());
 
 		// add the aliases to the context of this scope
 		for(const auto&e:aliases_to_add){
@@ -251,7 +251,7 @@ public:
 		}
 
 		// compile in-lined code
-		f.code().compile(tc,os,indent_level);
+		func.code().compile(tc,os,indent_level);
 
 		// free allocated registers in reverse order of allocation
 		for(auto it=allocated_registers_in_order.rbegin();it!=allocated_registers_in_order.rend();++it) {
