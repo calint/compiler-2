@@ -122,6 +122,8 @@ public:
 		}
 	}
 
+	inline expr_ops_list(expr_ops_list&&)=default;
+
 	inline void source_to(ostream&os)const override{
 		expression::source_to(os);//?
 		if(negated_){

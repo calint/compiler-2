@@ -22,11 +22,11 @@ public:
 				t.next_char(); // consume the peeked char
 				break;
 			}
-			args_.emplace_back(make_unique<expr_ops_list>(t,true));
+			args_.emplace_back(t,true);
 			if(t.is_next_char(')'))
 				break;
 			if(!t.is_next_char(','))
-				throw compiler_error(*args_.back(),"expected ',' after argument '"+args_.back()->identifier()+"'");
+				throw compiler_error(args_.back(),"expected ',' after argument '"+args_.back().identifier()+"'");
 			expect_arg=true;
 		}
 	}
@@ -38,7 +38,7 @@ public:
 		os<<"(";
 		size_t i=args_.size()-1;
 		for(const auto&e:args_){
-			e->source_to(os);
+			e.source_to(os);
 			if(i--){
 				os<<",";
 			}
@@ -67,7 +67,7 @@ public:
 			size_t nbytes_of_args_on_stack{0};
 			size_t i{args_.size()};
 			while(i--){
-				const expr_ops_list&arg{*args_[i]};
+				const expr_ops_list&arg{args_[i]};
 				const stmt_def_func_param&param{func.param(i)};
 				// is the argument passed through a register?
 				const string&arg_reg=param.get_register_or_empty();
@@ -185,21 +185,21 @@ public:
 			string arg_reg{param.get_register_or_empty()};
 			if(!arg_reg.empty()){
 				// argument is passed through register
-				tc.alloc_named_register_or_break(*arg,os,indent_level+1,arg_reg);
+				tc.alloc_named_register_or_break(arg,os,indent_level+1,arg_reg);
 				allocated_named_registers.push_back(arg_reg);
 				allocated_registers_in_order.push_back(arg_reg);
 			}
-			if(arg->is_expression()){
+			if(arg.is_expression()){
 				// argument is an expression, evaluate and store in arg_reg
 				if(arg_reg.empty()){
 					// no particular register requested for the argument
-					arg_reg=tc.alloc_scratch_register(*arg,os,indent_level+1);
+					arg_reg=tc.alloc_scratch_register(arg,os,indent_level+1);
 					allocated_scratch_registers.push_back(arg_reg);
 					allocated_registers_in_order.push_back(arg_reg);
 				}
 				tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;
 				// compile expression and store result in 'arg_reg'
-				arg->compile(tc,os,indent_level+1,arg_reg);
+				arg.compile(tc,os,indent_level+1,arg_reg);
 				// alias parameter name to the register containing its value
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
 				continue;
@@ -210,9 +210,9 @@ public:
 			if(arg_reg.empty()){
 				// no register allocated for the argument
 				// alias parameter name to the argument identifier
-				if(arg->is_negated()){
-					const ident_resolved&ir{tc.resolve_ident_to_nasm(*arg)};
-					const string&sr{tc.alloc_scratch_register(*arg,os,indent_level+1)};
+				if(arg.is_negated()){
+					const ident_resolved&ir{tc.resolve_ident_to_nasm(arg)};
+					const string&sr{tc.alloc_scratch_register(arg,os,indent_level+1)};
 					allocated_registers_in_order.push_back(sr);
 					allocated_scratch_registers.push_back(sr);
 					tc.asm_cmd(param,os,indent_level+1,"mov",sr,ir.id);
@@ -220,7 +220,7 @@ public:
 					aliases_to_add.emplace_back(param.identifier(),sr);
 					tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<sr<<endl;
 				}else{
-					const string&id=arg->identifier();
+					const string&id=arg.identifier();
 					aliases_to_add.emplace_back(param.identifier(),id);
 					tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<id<<endl;
 				}
@@ -229,7 +229,7 @@ public:
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
 				tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;
 				// move argument to register
-				const ident_resolved&ir{tc.resolve_ident_to_nasm(*arg)};
+				const ident_resolved&ir{tc.resolve_ident_to_nasm(arg)};
 				if(ir.is_const()){
 					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,ir.as_const());
 				}else{
@@ -283,12 +283,12 @@ public:
 		tc.exit_func(func_nm);
 	}
 
-	inline statement&arg(size_t ix)const{return*(args_[ix].get());}
+	inline const statement&arg(size_t ix)const{return args_[ix];}
 
 	inline size_t arg_count()const{return args_.size();}
 
 private:
 	bool no_args_{false};
-	vector<unique_ptr<expr_ops_list>>args_;
+	vector<expr_ops_list>args_;
 };
 
