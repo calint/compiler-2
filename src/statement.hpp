@@ -10,7 +10,7 @@ public:
 		token_{move(tk)},
 		negated_{negated}
 	{}
-	inline virtual~statement(){}
+	inline virtual~statement()=default;
 	inline statement()=default;
 	inline statement(statement&&)=default;
 	inline statement(const statement&)=default;

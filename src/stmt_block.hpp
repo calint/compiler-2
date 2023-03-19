@@ -55,7 +55,7 @@ public:
 		}
 	}
 
-	inline stmt_block():statement{token{}},is_one_statement_{false}{}
+	inline stmt_block()=default;
 	// inline stmt_block(const stmt_block&)=default;
 	// inline stmt_block(stmt_block&&)=default;
 	// inline stmt_block&operator=(const stmt_block&)=default;
