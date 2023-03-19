@@ -13,7 +13,6 @@ public:
 		in_args_{in_args},
 		list_op_{list_op}
 	{
-		int precedence=first_op_precedence;
 		// read first expression
 		// if called in a recursion with a first expression passed
 		if(first_expression){
@@ -48,17 +47,18 @@ public:
 			}
 		}
 
+		int precedence=first_op_precedence;
 		while(true){ // +a  +3
-			// if parsed in a function call argument list
+			// if parsed in a function call argument list or in a boolean expression
 			if(in_args){ // ? rewrite is_in_bool_expr
 				// if in boolean expression exit when an operation is found
 				if(t.is_peek_char('<'))break;
 				if(t.is_peek_char('='))break;
 				if(t.is_peek_char('>'))break;
+				// if in arguments exit when ',' or ')' is found
+				if(t.is_peek_char(','))break;
+				if(t.is_peek_char(')'))break;
 			}
-			// if in a function argument return when ',' or ')' found
-			if(in_args and (t.is_peek_char(',') or t.is_peek_char(')')))
-				break;
 
 			// if end of subexpression
 			if(t.is_peek_char(')')){
