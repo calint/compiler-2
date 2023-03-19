@@ -21,47 +21,63 @@ mov rbp,rsp
 jmp main
 
 main:
-;  [14:5] var a=1 
+;  [18:5] var a=1 
 ;  a: qword[rbp-8]
-;  [14:9] a=1 
-;  [14:11] 1 
-;  [14:11] a=1 
+;  [18:9] a=1 
+;  [18:11] 1 
+;  [18:11] a=1 
    mov qword[rbp-8],1
-;  [15:5] var b=-f(-a)
+;  [19:5] var b=-foo(-bar(-a))
 ;  b: qword[rbp-16]
-;  [15:9] b=-f(-a)
+;  [19:9] b=-foo(-bar(-a))
 ;  alloc r15
-;  [15:11] -f(-a)
-;  [15:12] r15=-f(-a)
-;  [15:12] -f(-a)
-;  f(a):res 
-;    inline: 15_12
+;  [19:11] -foo(-bar(-a))
+;  [19:12] r15=-foo(-bar(-a))
+;  [19:12] -foo(-bar(-a))
+;  foo(x):res 
+;    inline: 19_12
 ;    alias res -> r15
 ;    alloc r14
-     mov r14,qword[rbp-8]
+;    alias x -> r14
+;    [19:16] -bar(-a)
+;    [19:17] r14=-bar(-a)
+;    [19:17] -bar(-a)
+;    bar(y):res 
+;      inline: 19_17
+;      alias res -> r14
+;      alloc r13
+       mov r13,qword[rbp-8]
+       neg r13
+;      alias y -> r13
+;      [14:5] res=-y 
+;      [14:9] -y 
+;      [14:10] res=-y 
+       mov r14,r13
+       neg r14
+;      free r13
+     bar_19_17_end:
      neg r14
-;    alias a -> r14
-;    [10:5] res=-a*2 
-;    [10:9] -a*2 
-;    [10:10] res=-a
+;    [10:5] res=-x*2 
+;    [10:9] -x*2 
+;    [10:10] res=-x
      mov r15,r14
      neg r15
 ;    [10:12] res*2 
      imul r15,2
 ;    free r14
-   f_15_12_end:
+   foo_19_12_end:
    neg r15
    mov qword[rbp-16],r15
 ;  free r15
-   if_16_7:
-;  [16:8] ? b=-2
-   cmp_16_8:
+   if_20_7:
+;  [20:8] ? b=-2
+   cmp_20_8:
    cmp qword[rbp-16],-2
-   jne if_16_5_end
-   if_16_7_code:  ; opt1
-;    [17:9] exit(0)
+   jne if_20_5_end
+   if_20_7_code:  ; opt1
+;    [21:9] exit(0)
 ;    exit(v:reg_rdi) 
-;      inline: 17_9
+;      inline: 21_9
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,0
@@ -73,11 +89,11 @@ main:
 ;      [6:5] syscall 
        syscall
 ;      free rdi
-     exit_17_9_end:
-   if_16_5_end:
-;  [18:5] exit(1)
+     exit_21_9_end:
+   if_20_5_end:
+;  [22:5] exit(1)
 ;  exit(v:reg_rdi) 
-;    inline: 18_5
+;    inline: 22_5
 ;    alloc rdi
 ;    alias v -> rdi
      mov rdi,1
@@ -89,8 +105,8 @@ main:
 ;    [6:5] syscall 
      syscall
 ;    free rdi
-   exit_18_5_end:
+   exit_22_5_end:
 
-; max scratch registers in use: 3
+; max scratch registers in use: 4
 ;            max frames in use: 5
 
