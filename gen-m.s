@@ -16,10 +16,9 @@ mov rbp,rsp
 jmp main
 main:
      mov rdx,name.len
-     mov rsi,name
+     mov rcx,name
      mov rax,3
      mov rbx,0
-     mov rcx,rsi
      int 0x80
      mov qword[rbp-8],rax
    read_27_13_end:

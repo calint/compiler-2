@@ -27,15 +27,15 @@ main:
 ;  [27:13] read(name.len,name)-1 
 ;  [27:13] len=read(name.len,name)
 ;  [27:13] read(name.len,name)
-;  read(len:reg_rdx,ptr:reg_rsi):nbytes_read 
+;  read(len:reg_rdx,ptr:reg_rcx):nbytes_read 
 ;    inline: 27_13
 ;    alias nbytes_read -> len
 ;    alloc rdx
 ;    alias len -> rdx
      mov rdx,name.len
-;    alloc rsi
-;    alias ptr -> rsi
-     mov rsi,name
+;    alloc rcx
+;    alias ptr -> rcx
+     mov rcx,name
 ;    [12:5] mov(rax,3)
      mov rax,3
 ;    [12:18] # read system call 
@@ -43,7 +43,6 @@ main:
      mov rbx,0
 ;    [13:18] # file descriptor for standard input 
 ;    [14:5] mov(rcx,ptr)
-     mov rcx,rsi
 ;    [14:18] # buffer address 
 ;    [15:5] mov(rdx,len)
 ;    [15:18] # buffer size 
@@ -51,7 +50,7 @@ main:
      int 0x80
 ;    [17:5] mov(nbytes_read,rax)
      mov qword[rbp-8],rax
-;    free rsi
+;    free rcx
 ;    free rdx
    read_27_13_end:
 ;  [27:33] len-1 
