@@ -2,7 +2,7 @@ field  prompt="  hello    enter name: "
 field    name="............................................................"
 field prompt2="  not a name: "
 
-func inline print(len:reg_edx,ptr:reg_ecx){
+func inline print(len:reg_rdx,ptr:reg_rcx){
     mov(rcx,ptr)
     mov(rdx,len)
     mov(rbx,1)
@@ -10,13 +10,13 @@ func inline print(len:reg_edx,ptr:reg_ecx){
     int(0x80)
 }
 
-func inline read(len:reg_edx,ptr:reg_esi):int{
+func inline read(len:reg_rdx,ptr:reg_rsi):nbytes_read{
     mov(rsi,ptr)
     mov(rdx,len)
     xor(rax)
     xor(rdi)
     syscall
-    mov(int,eax)
+    mov(nbytes_read,rax)
 }
 
 func inline exit(v){
@@ -25,7 +25,7 @@ func inline exit(v){
     int(0x80)
 }
 
-func main{
+func inline main{
     print(prompt.len,prompt)
     loop{
         var len=read(name.len,name)-1 # remove the \n

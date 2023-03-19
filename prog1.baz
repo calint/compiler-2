@@ -8,6 +8,10 @@ field len=2
 
 func inline main{
     var a=-1
-    mov(rax,-a)
-    exit(0)
+    a=-a
+    var b=-(len)
+    b=-b
+    if a=1 and b=2
+        exit(0)
+    exit(1)
 }
