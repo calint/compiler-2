@@ -40,7 +40,7 @@ public:
 		const size_t ss2_count{count_instructions(ss2)};
 
 		// select version with least instructions
-		if(ss1_count<ss2_count){
+		if(ss1_count<=ss2_count){
 			os<<ss1.str();
 		}else{
 			os<<ss2.str();
