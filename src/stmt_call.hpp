@@ -7,8 +7,8 @@
 
 class stmt_call:public expression{
 public:
-	inline stmt_call(token tk,tokenizer&t):
-		expression{move(tk)}
+	inline stmt_call(token tk,const bool negated,tokenizer&t):
+		expression{move(tk),negated}
 	{
 		if(!t.is_next_char('(')){
 			no_args_=true;
@@ -134,10 +134,12 @@ public:
 			// handle return value
 			if(not dest_ident.empty()){
 				// function returns value in rax, copy return value to dest_ident
+				if(is_negated()){
+					tc.asm_neg(*this,os,indent_level,"rax");
+				}
 				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dest_ident,false)};
 				tc.asm_cmd(*this,os,indent_level,"mov",ir.id,"rax");
 			}
-
 			return;
 		}
 
@@ -269,7 +271,14 @@ public:
 
 		// provide an exit label for 'return' to jump to instead of assembler 'ret'
 		tc.asm_label(*this,os,indent_level,ret_jmp_label);
+		// if the result of the call is negated
+		if(is_negated()){
+			if(func.returns().empty())
+				throw compiler_error(*this,"function call is negated but it does not return a value");
 
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,func.returns()[0].name(),true)};
+			tc.asm_neg(*this,os,indent_level,ir.id);
+		}
 		// pop scope
 		tc.exit_func(func_nm);
 	}

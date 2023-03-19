@@ -32,7 +32,9 @@ public:
 						throw compiler_error(t,"expected identifier or '(' after '-'");
 					}
 				}else{
-					exps_.emplace_back(make_unique<statement>(tk,true));
+					t.pushback_token(move(tk));
+					t.pushback_char('-');
+					exps_.emplace_back(create_statement_from_tokenizer(t));
 				}
 			}else{
 				// if subexpression
