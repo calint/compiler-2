@@ -1,10 +1,8 @@
 #pragma once
 
 #include"tokenizer.hpp"
-#include"stmt_semicolon.hpp"
 #include"stmt_def_var.hpp"
 #include"stmt_comment.hpp"
-#include"stmt_whitespace.hpp"
 #include"stmt_break.hpp"
 #include"stmt_return.hpp"
 #include"stmt_continue.hpp"
@@ -27,8 +25,7 @@ public:
 			token tk{t.next_token()};
 			if(tk.is_blank()){
 				if(t.is_next_char(';')){ // in-case ';' is used
-					stms_.emplace_back(make_unique<stmt_semicolon>(move(tk),t));
-					last_statement_considered_no_statment=true;
+					throw compiler_error(tk,"unexpected ';'");
 					continue;
 				}
 				throw compiler_error(tk,"unexpected '"+string{t.peek_char()}+"'");
@@ -47,7 +44,7 @@ public:
 				stms_.emplace_back(make_unique<stmt_comment>(move(tk),t));
 				last_statement_considered_no_statment=true;
 			}else if(tk.is_name("")){
-				stms_.emplace_back(make_unique<stmt_whitespace>(move(tk)));
+				stms_.emplace_back(make_unique<statement>(move(tk)));
 			}else{
 				// circular reference resolver
 				stms_.emplace_back(create_statement_from_tokenizer(move(tk),t));

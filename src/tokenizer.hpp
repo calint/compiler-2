@@ -102,9 +102,10 @@ private:
 		const size_t nchar_bm_{nchar_};
 		while(true){
 			const char ch{next_char()};
-			if(is_char_whitespace(ch)||ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||
-					ch=='='||ch==','||ch==':'||
-					ch=='+'||ch=='-'||ch=='*'||ch=='/'||ch==';'||
+			if(is_char_whitespace(ch)||
+			          ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||
+					ch=='='||ch==','||ch==':'||ch==';'||
+					ch=='+'||ch=='-'||ch=='*'||ch=='/'||
 					ch=='<'||ch=='>'
 				){
 				seek(-1);

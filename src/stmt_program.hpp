@@ -35,7 +35,7 @@ public:
 			}else if(tk.is_name("#")){
 				stms_.emplace_back(make_unique<stmt_comment>(move(tk),t));
 			}else if(tk.is_name("")){
-				stms_.emplace_back(make_unique<stmt_whitespace>(move(tk)));
+				stms_.emplace_back(make_unique<statement>(move(tk)));
 			}else{
 				throw compiler_error(tk,"unexpected keyword '"+tk.name()+"'");
 			}
