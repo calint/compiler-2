@@ -48,11 +48,11 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.source_comment(*this,os,indent_level);
-		const string&nm=tok().name();
-		const stmt_def_func&f=tc.get_func_or_break(*this,nm);
+		const string&func_nm=tok().name();
+		const stmt_def_func&f=tc.get_func_or_break(*this,func_nm);
 		
 		if(f.params().size()!=args_.size())
-			throw compiler_error(*this,"function '"+f.name()+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
+			throw compiler_error(*this,"function '"+func_nm+"' expects "+to_string(f.params().size())+" argument"+(f.params().size()==1?"":"s")+" but "+to_string(args_.size())+" are provided");
 
 		if(!f.is_inline()){
 			// stack is: <base>,
@@ -123,7 +123,7 @@ public:
 			}
 
 			// stack is: <base>,vars,regs,args,
-			tc.asm_call(*this,os,indent_level,f.name());
+			tc.asm_call(*this,os,indent_level,func_nm);
 
 			tc.exit_call(*this,os,indent_level,nbytes_of_args_on_stack,allocated_args_registers);
 			// stack is: <base>, (if this was not a call nested in another call's arguments)
@@ -151,7 +151,7 @@ public:
 		const string&call_path=tc.get_inline_call_path(tok());
 		const string&src_loc=tc.source_location(tok());
 		const string&new_call_path=call_path.empty()?src_loc:(src_loc+"_"+call_path);
-		const string&ret_jmp_label=nm+"_"+new_call_path+"_end";
+		const string&ret_jmp_label=func_nm+"_"+new_call_path+"_end";
 
 		toc::indent(os,indent_level+1,true);os<<"inline: "<<new_call_path<<endl;
 
@@ -239,7 +239,7 @@ public:
 
 		// enter function creating a new scope from which 
 		//   prior variables are not visible
-		tc.enter_func(nm,new_call_path,ret_jmp_label,true,f.returns().empty()?"":f.returns()[0].name());
+		tc.enter_func(func_nm,new_call_path,ret_jmp_label,true,f.returns().empty()?"":f.returns()[0].name());
 
 		// add the aliases to the context of this scope
 		for(const auto&e:aliases_to_add){
@@ -269,7 +269,7 @@ public:
 		tc.asm_label(*this,os,indent_level,ret_jmp_label);
 
 		// pop scope
-		tc.exit_func(nm);
+		tc.exit_func(func_nm);
 	}
 
 	inline statement&arg(size_t ix)const{return*(args_[ix].get());}
