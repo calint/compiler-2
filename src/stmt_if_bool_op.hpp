@@ -170,7 +170,7 @@ private:
 	}
 
 	vector<token>nots_;
-	bool is_not_;
+	bool is_not_{};
 	unique_ptr<expr_ops_list>lhs_;
 	string op_;
 	unique_ptr<expr_ops_list>rhs_;

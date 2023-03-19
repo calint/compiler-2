@@ -117,5 +117,5 @@ private:
 
 	vector<variant<stmt_if_bool_op,stmt_if_bool_ops_list>>bools_;
 	vector<token>ops_;
-	bool enclosed_;  // (a=b and c=d) vs a=b and c=d
+	bool enclosed_{};  // (a=b and c=d) vs a=b and c=d
 };

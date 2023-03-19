@@ -6,13 +6,13 @@ class stmt_assign_var final:public statement{
 public:
 	inline stmt_assign_var(token tk,tokenizer&t):
 		statement{move(tk)},
-		oplist_{expr_ops_list{t}}
+		eols_{t}
 	{}
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		os<<"=";
-		oplist_.source_to(os);
+		eols_.source_to(os);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
@@ -26,12 +26,12 @@ public:
 
 		// try without scratch register
 		stringstream ss1;
-		oplist_.compile(tc,ss1,indent_level,identifier());
+		eols_.compile(tc,ss1,indent_level,identifier());
 
 		// try with scratch register
 		stringstream ss2;
 		const string&reg{tc.alloc_scratch_register(*this,ss2,indent_level)};
-		oplist_.compile(tc,ss2,indent_level,reg);
+		eols_.compile(tc,ss2,indent_level,reg);
 		tc.asm_cmd(*this,ss2,indent_level,"mov",dest_resolved.id,reg);
 		tc.free_scratch_register(ss2,indent_level,reg);
 
@@ -60,5 +60,5 @@ private:
 		return n;
 	}
 
-	expr_ops_list oplist_;
+	expr_ops_list eols_;
 };

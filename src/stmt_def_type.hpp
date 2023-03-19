@@ -35,5 +35,5 @@ public:
 private:
 	token name_;
 	token size_token_;
-	size_t size_{0};
+	size_t size_{};
 };
