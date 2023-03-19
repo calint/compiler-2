@@ -14,7 +14,7 @@ public:
 		tc_{source}
 	{
 		// add built-in assembler calls
-		vector<string>assem{"mov","int","xor","syscall"};
+		vector<string>assem{"mov","int"};
 		for(const string&s:assem)
 			tc_.add_func(*this,s,nullptr);
 

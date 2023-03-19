@@ -3,19 +3,19 @@ field    name="............................................................"
 field prompt2="  not a name: "
 
 func inline print(len:reg_rdx,ptr:reg_rcx){
-    mov(rcx,ptr)
-    mov(rdx,len)
-    mov(rbx,1)
-    mov(rax,4)
+    mov(rax,4)   # write system call
+    mov(rbx,1)   # file descriptor for standard out
+    mov(rcx,ptr) # buffer address 
+    mov(rdx,len) # buffer size
     int(0x80)
 }
 
 func inline read(len:reg_rdx,ptr:reg_rsi):nbytes_read{
-    mov(rsi,ptr)
-    mov(rdx,len)
-    xor(rax)
-    xor(rdi)
-    syscall
+    mov(rax,3)   # read system call
+    mov(rbx,0)   # file descriptor for standard input
+    mov(rcx,ptr) # buffer address
+    mov(rdx,len) # buffer size
+    int(0x80)
     mov(nbytes_read,rax)
 }
 

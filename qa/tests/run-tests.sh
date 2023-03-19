@@ -2,6 +2,7 @@
 
 RUN='echo -n "$SRC: " && $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen; e=$?;if test $e -eq $EXP; then echo ok; else echo FAILED. expected $EXP got $e; exit 1; fi'
 DIFF='echo -n "$SRC: " && $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen > out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
+DIFFINP='echo -n "$SRC: " && $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen <${SRC%.*}.in $> out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
 BIN=../../baz
 
 SRC=t1.baz && EXP=58 && eval $RUN
@@ -39,5 +40,6 @@ SRC=t32.baz && EXP=0 && eval $RUN
 SRC=t33.baz && EXP=0 && eval $RUN
 SRC=t34.baz && EXP=0 && eval $RUN
 SRC=t35.baz && EXP=0 && eval $RUN
+SRC=t36.baz && eval $DIFFINP
 
 rm gen gen.o gen.s diff.baz out

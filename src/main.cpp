@@ -8,8 +8,6 @@ using namespace std;
 #include"stmt_program.hpp"
 #include"call_asm_mov.hpp"
 #include"call_asm_int.hpp"
-#include"call_asm_xor.hpp"
-#include"call_asm_syscall.hpp"
 #include"stmt_loop.hpp"
 #include"stmt_if.hpp"
 
@@ -19,8 +17,6 @@ inline unique_ptr<statement>create_statement_from_tokenizer(token tk,tokenizer&t
 	if(tk.is_name("if"))              return make_unique<stmt_if>(move(tk),t);
 	if(tk.is_name("mov"))        return make_unique<call_asm_mov>(move(tk),t);
 	if(tk.is_name("int"))        return make_unique<call_asm_int>(move(tk),t);
-	if(tk.is_name("xor"))        return make_unique<call_asm_xor>(move(tk),t);
-	if(tk.is_name("syscall"))return make_unique<call_asm_syscall>(move(tk),t);
 	return                                 make_unique<stmt_call>(move(tk),t);
 }
 
