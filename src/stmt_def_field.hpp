@@ -12,6 +12,7 @@ public:
 		if(not t.is_next_char('='))
 			throw compiler_error(t,"expected '=' and initial value");
 
+		uops_={t};
 		initial_value_=t.next_token();
 	}
 
@@ -25,6 +26,7 @@ public:
 		statement::source_to(os);
 		name_.source_to(os);
 		os<<"=";
+		uops_.source_to(os);
 		initial_value_.source_to(os);
 	}
 
@@ -41,6 +43,7 @@ public:
 			return;
 		}
 		os<<" dq ";
+		os<<uops_.get_ops_as_string();
 		initial_value_.compile_to(os);
 		os<<endl;
 		tc.add_field(*this,name_.name(),this,false);
@@ -52,5 +55,6 @@ public:
 
 private:
 	token name_;
+	unary_ops uops_;
 	token initial_value_;
 };

@@ -4,8 +4,8 @@
 
 class expression:public statement{
 public:
-	inline expression(token tk,const bool negated):
-		statement{move(tk),negated}
+	inline expression(token tk,unary_ops uops):
+		statement{move(tk),move(uops)}
 	{}
 
 	inline expression()=default;

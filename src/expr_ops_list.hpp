@@ -8,7 +8,7 @@
 class expr_ops_list final:public expression{
 public:
 	inline expr_ops_list(tokenizer&t,const bool in_args=false,const bool enclosed=false,const char list_op='=',const int first_op_precedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>()):
-		expression{t.next_whitespace_token(),false},
+		expression{t.next_whitespace_token(),{}},
 		enclosed_{enclosed},
 		in_args_{in_args},
 		list_op_{list_op}
@@ -19,20 +19,14 @@ public:
 			// put in list
 			exps_.push_back(move(first_expression));
 		}else{
+			uops_={t};
 			// check for negated expression list. i.e. -(a+b)
-			if(t.is_next_char('-')){
-				token tk{t.next_token()};
-				if(tk.is_name("")){
-					if(t.is_next_char('(')){
-						negated_=true;
-						after_negation_ws_token_=tk;
-						exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true));
-					}else{
-						throw compiler_error(t,"expected identifier or '(' after '-'");
-					}
+			if(not uops_.is_empty()){
+				if(t.is_next_char('(')){
+					exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true));
 				}else{
-					t.pushback_token(move(tk));
-					t.pushback_char('-');
+					uops_.put_back(t);
+					uops_={};
 					exps_.emplace_back(create_statement_from_tokenizer(t));
 				}
 			}else{
@@ -129,11 +123,8 @@ public:
 	inline expr_ops_list&operator=(expr_ops_list&&)=default;
 
 	inline void source_to(ostream&os)const override{
-		expression::source_to(os);//?
-		if(negated_){
-			os<<'-';
-			after_negation_ws_token_.source_to(os);
-		}
+		// expression::source_to(os);//?
+		uops_.source_to(os);
 
 		if(enclosed_)
 			os<<"(";
@@ -159,7 +150,7 @@ public:
 
 		// first element is assigned to destination
 		const statement&st{*exps_[0].get()};
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dest,false)};
+		const ident_resolved&ir{tc.resolve_ident_to_nasm(st,dest)};
 		asm_op(tc,os,indent_level,'=',dest,ir.id,st);
 
 		// remaining elements are +,-,*,/
@@ -169,9 +160,7 @@ public:
 			const statement&stm{*exps_[i+1].get()};
 			asm_op(tc,os,indent_level,op,dest,ir.id,stm);
 		}
-		if(negated_){
-			tc.asm_neg(*this,os,indent_level,ir.id);
-		}
+		uops_.compile(tc,os,indent_level,ir.id);
 	}
 
 	inline bool is_expression()const override{
@@ -192,6 +181,13 @@ public:
 			return exps_[0]->is_negated();
 		}
 		return negated_;
+	}
+
+	inline const unary_ops&get_unary_ops()const override{
+		if(exps_.size()==1){
+			return exps_[0]->get_unary_ops();
+		}
+		return uops_;
 	}
 
 private:
@@ -215,9 +211,7 @@ private:
 				tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,ir.as_const());
 			}else{
 				tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,ir.id);
-				if(ir.negated){
-					tc.asm_neg(src,os,indent_level,dest_resolved);
-				}
+				ir.uops.compile(tc,os,indent_level,dest_resolved);
 			}
 			return;
 		}
@@ -233,7 +227,7 @@ private:
 			if(ir.is_const()){
 				tc.asm_cmd(src,os,indent_level,"add",dest_resolved,ir.as_const());
 			}else{
-				if(ir.negated){
+				if(ir.uops.is_negated()){ // !! ignores ~
 					tc.asm_cmd(src,os,indent_level,"sub",dest_resolved,ir.id);
 				}else{
 					tc.asm_cmd(src,os,indent_level,"add",dest_resolved,ir.id);
@@ -253,7 +247,7 @@ private:
 			if(ir.is_const()){
 				tc.asm_cmd(src,os,indent_level,"sub",dest_resolved,ir.as_const());
 			}else{
-				if(ir.negated){
+				if(ir.uops.is_negated()){
 					tc.asm_cmd(src,os,indent_level,"add",dest_resolved,ir.id);
 				}else{
 					tc.asm_cmd(src,os,indent_level,"sub",dest_resolved,ir.id);
@@ -284,7 +278,7 @@ private:
 					tc.asm_cmd(src,os,indent_level,"imul",dest_resolved,ir.as_const());
 				}else{
 					tc.asm_cmd(src,os,indent_level,"imul",dest_resolved,ir.id);
-					if(ir.negated){ // ? correct?
+					if(ir.uops.is_negated()){ // ? correct?
 						tc.asm_neg(src,os,indent_level,dest_resolved);
 					}
 				}
@@ -297,7 +291,7 @@ private:
 				tc.asm_cmd(src,os,indent_level,"imul",r,ir.as_const());
 			}else{
 				tc.asm_cmd(src,os,indent_level,"imul",r,ir.id);
-				if(ir.negated){ // ? correct?
+				if(ir.uops.is_negated()){ // ? correct?
 					tc.asm_neg(src,os,indent_level,r);
 				}
 			}
@@ -313,5 +307,5 @@ private:
 	bool negated_{};
 	vector<unique_ptr<statement>>exps_;
 	vector<char>ops_;
-	token after_negation_ws_token_;
+	unary_ops uops_;
 };

@@ -46,7 +46,7 @@ public:
 			}else if(tk.is_name("")){ // white space
 				stms_.emplace_back(make_unique<statement>(move(tk)));
 			}else{ // circular reference resolver
-				stms_.emplace_back(create_statement_from_tokenizer(move(tk),false,t));
+				stms_.emplace_back(create_statement_from_tokenizer(move(tk),{},t));
 			}
 
 			if(is_one_statement_&&not last_statement_considered_no_statment)

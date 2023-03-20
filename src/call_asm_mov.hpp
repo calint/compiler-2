@@ -32,8 +32,6 @@ public:
 		}
 		// variable, register or field
 		tc.asm_cmd(*this,os,indent_level,"mov",dst_r.id,src.id);
-		if(src.negated){
-			tc.asm_neg(*this,os,indent_level,dst_r.id);
-		}
+		src.uops.compile(tc,os,indent_level,dst_r.id);
 	}
 };

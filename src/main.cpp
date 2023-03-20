@@ -12,29 +12,45 @@ using namespace std;
 #include"stmt_if.hpp"
 
 // called from stmt_block to solve circular dependencies with loop, if and calls
-inline unique_ptr<statement>create_statement_from_tokenizer(token tk,const bool negated,tokenizer&t){
+inline unique_ptr<statement>create_statement_from_tokenizer(token tk,unary_ops uops,tokenizer&t){
 	if(tk.is_name("loop"))          return make_unique<stmt_loop>(move(tk),t);
 	if(tk.is_name("if"))              return make_unique<stmt_if>(move(tk),t);
 	if(tk.is_name("mov"))        return make_unique<call_asm_mov>(move(tk),t);
 	if(tk.is_name("syscall"))return make_unique<call_asm_syscall>(move(tk),t);
-	return                         make_unique<stmt_call>(move(tk),negated,t);
+	return                      make_unique<stmt_call>(move(tk),move(uops),t);
 }
 
 // called from expr_ops_list to solve circular dependencies with calls
 inline unique_ptr<statement>create_statement_from_tokenizer(tokenizer&t){
-	bool negated=t.is_next_char('-');
+	unary_ops uops{t};
 	token tk=t.next_token();
 	if(tk.is_name("#")){
-		if(negated)
-			throw compiler_error(tk,"unexpected comment after '-'");
+		if(!uops.is_empty())
+			throw compiler_error(tk,"unexpected comment after unary ops");
 		// i.e.  print("hello") # comment
 		return make_unique<stmt_comment>(move(tk),t);
 	}else if(t.is_peek_char('(')){
 		// i.e.  f(...)
-		return create_statement_from_tokenizer(move(tk),negated,t);
+		return create_statement_from_tokenizer(move(tk),move(uops),t);
 	}else{
 		// i.e. 0x80, rax, identifiers
-		return make_unique<statement>(move(tk),negated);
+		return make_unique<statement>(move(tk),move(uops));
+	}
+}
+
+// solves circular reference unary_ops->toc->statement->unary_ops
+inline void unary_ops::compile(toc&tc,ostream&os,size_t indent_level,const string&dest_resolved)const{
+	size_t i{ops_.size()};
+	while(i--){
+		tc.indent(os,indent_level,false);
+		const char op{ops_[i]};
+		if(op=='~'){
+			os<<"not "<<dest_resolved<<endl;
+		}else if(op=='-'){
+			os<<"neg "<<dest_resolved<<endl;
+		}else{
+			throw"unexpected "+string{__FILE__}+":"+string{__LINE__};
+		}
 	}
 }
 

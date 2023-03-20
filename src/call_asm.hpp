@@ -5,7 +5,7 @@
 class call_asm:public stmt_call{
 public:
 	inline call_asm(token tkn,tokenizer&t):
-		stmt_call{move(tkn),false,t}
+		stmt_call{move(tkn),{},t}
 	{}
 
 	inline call_asm()=default;

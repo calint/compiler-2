@@ -4,11 +4,12 @@
 #include"tokenizer.hpp"
 #include"expr_ops_list.hpp"
 #include"stmt_def_func.hpp"
+#include"unary_ops.hpp"
 
 class stmt_call:public expression{
 public:
-	inline stmt_call(token tk,const bool negated,tokenizer&t):
-		expression{move(tk),negated}
+	inline stmt_call(token tk,unary_ops uops,tokenizer&t):
+		expression{move(tk),move(uops)}
 	{
 		if(not t.is_next_char('(')){
 			no_args_=true;
@@ -39,7 +40,7 @@ public:
 
 
 	inline void source_to(ostream&os)const override{
-		statement::source_to(os);
+		expression::source_to(os);
 		if(no_args_)
 			return;
 		os<<"(";
@@ -109,18 +110,17 @@ public:
 						tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,ir.as_const());
 					}else{
 						tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,ir.id);
-						if(ir.negated){
-							tc.asm_neg(arg,os,indent_level,arg_reg);
-						}					}
+						ir.uops.compile(tc,os,indent_level,arg_reg);
+					}
 				}else{
 					// push identifier on the stack
 					if(ir.is_const()){
 						tc.asm_push(arg,os,indent_level,ir.as_const());
 					}else{
-						if(ir.negated){
+						if(not ir.uops.is_empty()){
 							const string&sr{tc.alloc_scratch_register(arg,os,indent_level)};
 							tc.asm_cmd(arg,os,indent_level,"mov",sr,ir.id);
-							tc.asm_neg(arg,os,indent_level,sr);
+							ir.uops.compile(tc,os,indent_level,sr);
 							tc.asm_push(arg,os,indent_level,sr);
 							tc.free_scratch_register(os,indent_level,sr);
 						}else{
@@ -141,10 +141,11 @@ public:
 			// handle return value
 			if(not dest_ident.empty()){
 				// function returns value in rax, copy return value to dest_ident
-				if(is_negated()){
-					tc.asm_neg(*this,os,indent_level,"rax");
-				}
-				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dest_ident,false)};
+				get_unary_ops().compile(tc,os,indent_level,"rax");
+				// if(is_negated()){
+				// 	tc.asm_neg(*this,os,indent_level,"rax");
+				// }
+				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dest_ident)};
 				tc.asm_cmd(*this,os,indent_level,"mov",ir.id,"rax");
 			}
 			return;
@@ -241,9 +242,7 @@ public:
 					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,ir.as_const());
 				}else{
 					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,ir.id);
-					if(ir.negated){
-						tc.asm_neg(param,os,indent_level+1,arg_reg);
-					}
+					ir.uops.compile(tc,os,indent_level+1,arg_reg);
 				}
 			}
 		}
@@ -279,12 +278,12 @@ public:
 		// provide an exit label for 'return' to jump to instead of assembler 'ret'
 		tc.asm_label(*this,os,indent_level,ret_jmp_label);
 		// if the result of the call is negated
-		if(is_negated()){
+		if(not get_unary_ops().is_empty()){
 			if(func.returns().empty())
 				throw compiler_error(*this,"function call is negated but it does not return a value");
 
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,func.returns()[0].name(),true)};
-			tc.asm_neg(*this,os,indent_level,ir.id);
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,func.returns()[0].name())};
+			ir.uops.compile(tc,os,indent_level,ir.id);
 		}
 		// pop scope
 		tc.exit_func(func_nm);
@@ -295,7 +294,7 @@ public:
 	inline size_t arg_count()const{return args_.size();}
 
 private:
-	bool no_args_{};
 	vector<expr_ops_list>args_;
+	bool no_args_{};
 };
 

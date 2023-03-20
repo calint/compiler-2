@@ -132,11 +132,11 @@ private:
 			if(dst_r.is_const()){
 				dst=dst_r.as_const();
 			}else{
-				if(dst_r.negated){
+				if(not dst_r.uops.is_empty()){
 					dst=tc.alloc_scratch_register(rh,os,indent_level);
 					allocated_registers.push_back(dst);
 					tc.asm_cmd(rh,os,indent_level,"mov",dst,dst_r.id);
-					tc.asm_neg(rh,os,indent_level,dst);
+					dst_r.uops.compile(tc,os,indent_level,dst);
 				}else{
 					dst=dst_r.id;
 				}
@@ -151,11 +151,11 @@ private:
 			if(src_r.is_const()){
 				src=src_r.as_const();
 			}else{
-				if(src_r.negated){
+				if(not src_r.uops.is_empty()){
 					src=tc.alloc_scratch_register(rh,os,indent_level);
 					allocated_registers.push_back(src);
 					tc.asm_cmd(rh,os,indent_level,"mov",src,src_r.id);
-					tc.asm_neg(rh,os,indent_level,src);
+					src_r.uops.compile(tc,os,indent_level,src);
 				}else{
 					src=src_r.id;
 				}
