@@ -43,11 +43,10 @@ public:
 			}else if(tk.is_name("#")){
 				stms_.emplace_back(make_unique<stmt_comment>(move(tk),t));
 				last_statement_considered_no_statment=true;
-			}else if(tk.is_name("")){
+			}else if(tk.is_name("")){ // white space
 				stms_.emplace_back(make_unique<statement>(move(tk)));
-			}else{
-				// circular reference resolver
-				stms_.emplace_back(create_statement_from_tokenizer(move(tk),t));
+			}else{ // circular reference resolver
+				stms_.emplace_back(create_statement_from_tokenizer(move(tk),false,t));
 			}
 
 			if(is_one_statement_&&not last_statement_considered_no_statment)

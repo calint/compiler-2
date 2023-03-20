@@ -8,7 +8,7 @@
 class expr_ops_list final:public expression{
 public:
 	inline expr_ops_list(tokenizer&t,const bool in_args=false,const bool enclosed=false,const char list_op='=',const int first_op_precedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>()):
-		expression{t.next_whitespace_token()},
+		expression{t.next_whitespace_token(),false},
 		enclosed_{enclosed},
 		in_args_{in_args},
 		list_op_{list_op}

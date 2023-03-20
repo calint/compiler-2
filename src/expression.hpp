@@ -4,7 +4,7 @@
 
 class expression:public statement{
 public:
-	inline expression(token tk,const bool negated=false):
+	inline expression(token tk,const bool negated):
 		statement{move(tk),negated}
 	{}
 
