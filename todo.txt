@@ -3,7 +3,8 @@
 [ ] make sub lists taking in account precedence of 'and' over 'or'
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [ ] negated sub-expression. i.e. 'not (a=1 and b=2)'
-[ ] unary decoration parsed prior to any statement. i.e. '~-a', '~-f(o)'
+[x] unary decoration parsed prior to any statement. i.e. '~-a', '~-f(o)'
+[ ]   review
 [ ] bitwise logical ops: & | ^
 [ ] op shift left and right
 [ ] implement division op

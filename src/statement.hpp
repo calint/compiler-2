@@ -31,8 +31,6 @@ public:
 
 	inline const token&tok()const{return token_;}
 
-	inline virtual bool is_negated()const{return uops_.is_negated();}
-
 	inline virtual bool is_in_data_section()const{return false;}
 
 	inline virtual bool is_expression()const{return false;}

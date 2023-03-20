@@ -142,9 +142,6 @@ public:
 			if(not dest_ident.empty()){
 				// function returns value in rax, copy return value to dest_ident
 				get_unary_ops().compile(tc,os,indent_level,"rax");
-				// if(is_negated()){
-				// 	tc.asm_neg(*this,os,indent_level,"rax");
-				// }
 				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dest_ident)};
 				tc.asm_cmd(*this,os,indent_level,"mov",ir.id,"rax");
 			}
@@ -218,13 +215,13 @@ public:
 			if(arg_reg.empty()){
 				// no register allocated for the argument
 				// alias parameter name to the argument identifier
-				if(arg.is_negated()){
+				if(not arg.get_unary_ops().is_empty()){
 					const ident_resolved&ir{tc.resolve_ident_to_nasm(arg)};
 					const string&sr{tc.alloc_scratch_register(arg,os,indent_level+1)};
 					allocated_registers_in_order.push_back(sr);
 					allocated_scratch_registers.push_back(sr);
 					tc.asm_cmd(param,os,indent_level+1,"mov",sr,ir.id);
-					tc.asm_neg(param,os,indent_level+1,sr);
+					arg.get_unary_ops().compile(tc,os,indent_level+1,sr);
 					aliases_to_add.emplace_back(param.identifier(),sr);
 					tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<sr<<endl;
 				}else{

@@ -635,7 +635,7 @@ private:
 			const field_meta&fm=fields_.get(id);
 			if(fm.is_str)
 				return{id,{},ident_resolved::type::FIELD};
-			return{"qword["+id+"]",{},ident_resolved::type::FIELD};
+			return{"qword["+id+"]",stmt.get_unary_ops(),ident_resolved::type::FIELD};
 		}
 
 		// is 'id' an implicit identifier?
@@ -644,7 +644,7 @@ private:
 		if(fields_.has(subid)){
 			const string&after_dot=id.substr(subid.size()+1);
 			if(after_dot=="len"){
-				return{id,{},ident_resolved::type::IMPLIED};
+				return{id,stmt.get_unary_ops(),ident_resolved::type::IMPLIED};
 			}
 			throw compiler_error(stmt.tok(),"unknown implicit field constant '"+id+"'");
 		}

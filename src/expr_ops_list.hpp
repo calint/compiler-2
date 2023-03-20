@@ -176,13 +176,6 @@ public:
 		throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 	}
 
-	inline bool is_negated()const override{
-		if(exps_.size()==1){
-			return exps_[0]->is_negated();
-		}
-		return negated_;
-	}
-
 	inline const unary_ops&get_unary_ops()const override{
 		if(exps_.size()==1){
 			return exps_[0]->get_unary_ops();
