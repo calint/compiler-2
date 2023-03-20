@@ -27,11 +27,11 @@ public:
 		const ident_resolved&src{tc.resolve_ident_to_nasm(src_arg)};
 		if(src.is_const()){
 			// a constant
-			tc.asm_cmd(*this,os,indent_level,"mov",dst_r.id,src.as_const());
+			tc.asm_cmd(*this,os,indent_level,"mov",dst_r.id,src_arg.get_unary_ops().get_ops_as_string()+src.id);
 			return;
 		}
 		// variable, register or field
 		tc.asm_cmd(*this,os,indent_level,"mov",dst_r.id,src.id);
-		src.uops.compile(tc,os,indent_level,dst_r.id);
+		src_arg.get_unary_ops().compile(tc,os,indent_level,dst_r.id);
 	}
 };

@@ -138,10 +138,8 @@ struct ident_resolved final{
 	enum class type{CONST,VAR,REGISTER,FIELD,IMPLIED};
 
 	string id;
-	unary_ops uops;
 	type type{type::CONST};
 
-	inline string as_const()const{return uops.get_ops_as_string()+id;}
 	inline bool is_const()const{return type==type::CONST;}
 	inline bool is_var()const{return type==type::VAR;}
 	inline bool is_register()const{return type==type::REGISTER;}
@@ -623,19 +621,19 @@ private:
 
 		// is 'id' a variable?
 		if(frames_[i].has_var(id)){
-			return{frames_[i].get_var(id).nasm_ident(),stmt.get_unary_ops(),ident_resolved::type::VAR};
+			return{frames_[i].get_var(id).nasm_ident(),ident_resolved::type::VAR};
 		}
 
 		// is 'id' a register?
 		if(is_identifier_register(id))
-			return{id,stmt.get_unary_ops(),ident_resolved::type::REGISTER}; // ? unary ops?
+			return{id,ident_resolved::type::REGISTER}; // ? unary ops?
 
 		// is 'id' a field?
 		if(fields_.has(id)){
 			const field_meta&fm=fields_.get(id);
 			if(fm.is_str)
-				return{id,{},ident_resolved::type::FIELD};
-			return{"qword["+id+"]",stmt.get_unary_ops(),ident_resolved::type::FIELD};
+				return{id,ident_resolved::type::FIELD};
+			return{"qword["+id+"]",ident_resolved::type::FIELD};
 		}
 
 		// is 'id' an implicit identifier?
@@ -644,7 +642,7 @@ private:
 		if(fields_.has(subid)){
 			const string&after_dot=id.substr(subid.size()+1);
 			if(after_dot=="len"){
-				return{id,stmt.get_unary_ops(),ident_resolved::type::IMPLIED};
+				return{id,ident_resolved::type::IMPLIED};
 			}
 			throw compiler_error(stmt.tok(),"unknown implicit field constant '"+id+"'");
 		}
@@ -652,22 +650,22 @@ private:
 		char*ep;
 		strtol(id.c_str(),&ep,10); // return ignored
 		if(!*ep)
-			return{id,stmt.get_unary_ops(),ident_resolved::type::CONST};
+			return{id,ident_resolved::type::CONST};
 
 		if(id.find("0x")==0){ // hex
 			strtol(id.c_str()+2,&ep,16); // return ignored
 			if(!*ep)
-				return{id,stmt.get_unary_ops(),ident_resolved::type::CONST};
+				return{id,ident_resolved::type::CONST};
 		}
 
 		if(id.find("0b")==0){ // binary
 			strtol(id.c_str()+2,&ep,2); // return ignored
 			if(!*ep)
-				return{id,stmt.get_unary_ops(),ident_resolved::type::CONST};
+				return{id,ident_resolved::type::CONST};
 		}
 
 		// not resolved, return empty answer
-		return{"",{},ident_resolved::type::CONST};
+		return{"",ident_resolved::type::CONST};
 	}
 
 	inline void check_usage(){

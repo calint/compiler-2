@@ -107,24 +107,24 @@ public:
 				if(argument_passed_in_register){
 					// move the identifier to the requested register
 					if(ir.is_const()){
-						tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,ir.as_const());
+						tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,arg.get_unary_ops().get_ops_as_string()+ir.id);
 					}else{
 						tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,ir.id);
-						ir.uops.compile(tc,os,indent_level,arg_reg);
+						arg.get_unary_ops().compile(tc,os,indent_level,arg_reg);
 					}
 				}else{
 					// push identifier on the stack
 					if(ir.is_const()){
-						tc.asm_push(arg,os,indent_level,ir.as_const());
+						tc.asm_push(arg,os,indent_level,arg.get_unary_ops().get_ops_as_string()+ir.id);
 					}else{
-						if(not ir.uops.is_empty()){
-							const string&sr{tc.alloc_scratch_register(arg,os,indent_level)};
-							tc.asm_cmd(arg,os,indent_level,"mov",sr,ir.id);
-							ir.uops.compile(tc,os,indent_level,sr);
-							tc.asm_push(arg,os,indent_level,sr);
-							tc.free_scratch_register(os,indent_level,sr);
-						}else{
+						if(arg.get_unary_ops().is_empty()){
 							tc.asm_push(arg,os,indent_level,ir.id);
+						}else{
+							const string&r{tc.alloc_scratch_register(arg,os,indent_level)};
+							tc.asm_cmd(arg,os,indent_level,"mov",r,ir.id);
+							arg.get_unary_ops().compile(tc,os,indent_level,r);
+							tc.asm_push(arg,os,indent_level,r);
+							tc.free_scratch_register(os,indent_level,r);
 						}
 					}
 					nbytes_of_args_on_stack+=8;
@@ -236,10 +236,11 @@ public:
 				// move argument to register
 				const ident_resolved&ir{tc.resolve_ident_to_nasm(arg)};
 				if(ir.is_const()){
-					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,ir.as_const());
+					const ident_resolved&arg_r{tc.resolve_ident_to_nasm(arg)};
+					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,arg.get_unary_ops().get_ops_as_string()+ir.id);
 				}else{
 					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,ir.id);
-					ir.uops.compile(tc,os,indent_level+1,arg_reg);
+					arg.get_unary_ops().compile(tc,os,indent_level+1,arg_reg);
 				}
 			}
 		}
@@ -280,7 +281,7 @@ public:
 				throw compiler_error(*this,"function call is negated but it does not return a value");
 
 			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,func.returns()[0].name())};
-			ir.uops.compile(tc,os,indent_level,ir.id);
+			get_unary_ops().compile(tc,os,indent_level,ir.id);
 		}
 		// pop scope
 		tc.exit_func(func_nm);

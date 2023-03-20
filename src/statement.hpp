@@ -35,9 +35,11 @@ public:
 
 	inline virtual bool is_expression()const{return false;}
 
-	inline virtual const string&identifier()const{return tok().name();}
+	inline virtual const string&identifier()const{return token_.name();}
 
 	inline virtual const unary_ops&get_unary_ops()const{return uops_;}
+
+	// inline virtual string as_const()const{return uops_.get_ops_as_string()+token_.name();}
 
 private:
 	token token_;

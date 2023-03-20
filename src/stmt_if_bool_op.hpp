@@ -130,15 +130,15 @@ private:
 		}else{
 			const ident_resolved&dst_r{tc.resolve_ident_to_nasm(lh)};
 			if(dst_r.is_const()){
-				dst=dst_r.as_const();
+				dst=lh.get_unary_ops().get_ops_as_string()+dst_r.id;
 			}else{
-				if(not dst_r.uops.is_empty()){
+				if(lh.get_unary_ops().is_empty()){
+					dst=dst_r.id;
+				}else{
 					dst=tc.alloc_scratch_register(rh,os,indent_level);
 					allocated_registers.push_back(dst);
 					tc.asm_cmd(rh,os,indent_level,"mov",dst,dst_r.id);
-					dst_r.uops.compile(tc,os,indent_level,dst);
-				}else{
-					dst=dst_r.id;
+					lh.get_unary_ops().compile(tc,os,indent_level,dst);
 				}
 			}
 		}
@@ -149,15 +149,15 @@ private:
 		}else{
 			const ident_resolved&src_r{tc.resolve_ident_to_nasm(rh)};
 			if(src_r.is_const()){
-				src=src_r.as_const();
+				src=rh.get_unary_ops().get_ops_as_string()+src_r.id;
 			}else{
-				if(not src_r.uops.is_empty()){
+				if(rh.get_unary_ops().is_empty()){
+					src=src_r.id;
+				}else{
 					src=tc.alloc_scratch_register(rh,os,indent_level);
 					allocated_registers.push_back(src);
 					tc.asm_cmd(rh,os,indent_level,"mov",src,src_r.id);
-					src_r.uops.compile(tc,os,indent_level,src);
-				}else{
-					src=src_r.id;
+					rh.get_unary_ops().compile(tc,os,indent_level,src);
 				}
 			}
 		}

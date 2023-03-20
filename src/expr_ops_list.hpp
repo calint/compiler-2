@@ -183,6 +183,12 @@ public:
 		return uops_;
 	}
 
+	// inline string as_const()const override{
+	// 	if(exps_.size()==1)
+	// 		return exps_[0]->as_const();
+	// 	throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
+	// }
+
 private:
 	inline static int precedence_for_op(const char ch){
 		if(ch=='+'||ch=='-')
@@ -201,11 +207,11 @@ private:
 			}
 			const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
 			if(ir.is_const()){
-				tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,ir.as_const());
+				tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 				return;
 			}
 			tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,ir.id);
-			ir.uops.compile(tc,os,indent_level,dest_resolved);
+			src.get_unary_ops().compile(tc,os,indent_level,dest_resolved);
 			return;
 		}
 		if(op=='+'){// order1op
@@ -218,7 +224,7 @@ private:
 			}
 			const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
 			if(ir.is_const()){
-				tc.asm_cmd(src,os,indent_level,"add",dest_resolved,ir.as_const());
+				tc.asm_cmd(src,os,indent_level,"add",dest_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 				return;
 			}
 			const unary_ops&uops=src.get_unary_ops();
@@ -247,7 +253,7 @@ private:
 			}
 			const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
 			if(ir.is_const()){
-				tc.asm_cmd(src,os,indent_level,"sub",dest_resolved,ir.as_const());
+				tc.asm_cmd(src,os,indent_level,"sub",dest_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 				return;
 			}
 			const unary_ops&uops=src.get_unary_ops();
@@ -286,7 +292,7 @@ private:
 			// imul destination operand must be register
 			if(tc.is_identifier_register(dest_resolved)){
 				if(src_r.is_const()){
-					tc.asm_cmd(src,os,indent_level,"imul",dest_resolved,src_r.as_const());
+					tc.asm_cmd(src,os,indent_level,"imul",dest_resolved,src.get_unary_ops().get_ops_as_string()+src_r.id);
 					return;
 				}
 				const unary_ops&uops=src.get_unary_ops();
@@ -305,7 +311,7 @@ private:
 			if(src_r.is_const()){
 				const string&r{tc.alloc_scratch_register(src,os,indent_level)};
 				tc.asm_cmd(src,os,indent_level,"mov",r,dest_resolved);
-				tc.asm_cmd(src,os,indent_level,"imul",r,src_r.as_const());
+				tc.asm_cmd(src,os,indent_level,"imul",r,src.get_unary_ops().get_ops_as_string()+src_r.id);
 				tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,r);
 				tc.free_scratch_register(os,indent_level,r);
 				return;
