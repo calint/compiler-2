@@ -5,9 +5,13 @@ func inline exit(v:reg_rdi){
 }
 
 func inline main{
-    var a=0xfffffffffffffffe # -1
-    var b=2*~a
-    if b=2
-        exit(0)
-    exit(1)
+    var a=0xfffffffffffffffe # -2
+    var b=2*~a # ~a=1
+    if not b=2 exit(1)
+    var c=~a
+    if not c=1 exit(2)
+    var d=~a--1
+    if not d=2 exit(3)
+    exit(0)
 }
+
