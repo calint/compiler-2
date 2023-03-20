@@ -2,7 +2,7 @@
       var b=-b-(-1) # b is used before initiated
 [ ] make sub lists taking in account precedence of 'and' over 'or'
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
-[ ] negated subexpression. i.e. 'not (a=1 and b=2)'
+[ ] negated sub-expression. i.e. 'not (a=1 and b=2)'
 [ ] unary decoration parsed prior to any statement. i.e. '~-a', '~-f(o)'
 [ ] bitwise logical ops: & | ^
 [ ] op shift left and right
@@ -57,7 +57,7 @@
 [ ] type size{value} var s=size{1} s=2
 [ ] type point{x,y} var p=point{1,2} p.x=1 p=2
 [ ] var points=point[10] where points contains length of array and a pointer
-[ ] clang-format everything for less dess code?
+[ ] clang-format everything for less dense code?
 [ ] compile for pczero task
 -------------------------------------------------------------------------------
 [x] stmt_call::vector<expr_ops_list> instead of unique pointer
