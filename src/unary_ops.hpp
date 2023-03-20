@@ -25,7 +25,7 @@ public:
     inline unary_ops&operator=(const unary_ops&)=default;
     inline unary_ops&operator=(unary_ops&&)=default;
 
-    inline bool is_negated()const{return negated_;}
+    inline bool is_only_negated()const{return ops_.size()==1&&ops_.back()=='-';}
 
     inline void put_back(tokenizer&t)const{
         size_t i{ops_.size()};

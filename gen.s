@@ -2,8 +2,6 @@
 
 section .data
 align 4
-;[7:1] field len=-2 
-len dq -2
 
 section .bss
 align 4
@@ -20,99 +18,35 @@ mov rbp,rsp
 jmp main
 
 main:
-;  [18:5] var a=-1 
+;  [8:5] var a=0xfffffffffffffffe 
 ;  a: qword[rbp-8]
-;  [18:9] a=-1 
-;  [18:11] -1 
-;  [18:12] a=-1 
-   mov qword[rbp-8],-1
-;  [19:5] var b=~-foo(-a)
+;  [8:9] a=0xfffffffffffffffe 
+;  [8:11] 0xfffffffffffffffe 
+;  [8:11] a=0xfffffffffffffffe 
+   mov qword[rbp-8],0xfffffffffffffffe
+;  [8:30] # -1 
+;  [9:5] var b=2*~a 
 ;  b: qword[rbp-16]
-;  [19:9] b=~-foo(-a)
-;  [19:11] ~-foo(-a)
-;  [19:13] b=~-foo(-a)
-;  [19:13] ~-foo(-a)
-;  foo(x:reg_rdx):res 
-;    inline: 19_13
-;    alias res -> b
-;    alloc rdx
-;    alias x -> rdx
-     mov rdx,qword[rbp-8]
-     neg rdx
-;    [10:5] res=-x 
-;    [10:9] -x 
-;    [10:10] res=-x 
-     mov qword[rbp-16],rdx
-     neg qword[rbp-16]
-;    free rdx
-   foo_19_13_end:
-   neg qword[rbp-16]
-   not qword[rbp-16]
-;  [20:5] var c=~-(len)
-;  c: qword[rbp-24]
-;  [20:9] c=~-(len)
-;  [20:11] ~-(len)
-;  [20:14] c=(len)
+;  [9:9] b=2*~a 
+;  [9:11] 2*~a 
+;  [9:11] b=2
+   mov qword[rbp-16],2
+;  [9:14] b*~a 
 ;  alloc r15
-   mov r15,qword[len]
-   mov qword[rbp-24],r15
-;  free r15
-   neg qword[rbp-24]
-   not qword[rbp-24]
-;  [21:5] var d=~bar(len)
-;  d: qword[rbp-32]
-;  [21:9] d=~bar(len)
-;  [21:11] ~bar(len)
-;  [21:12] d=~bar(len)
-;  [21:12] ~bar(len)
-;  bar(x):res 
-;    inline: 21_12
-;    alias res -> d
-;    alias x -> len
-;    [14:5] res=-x 
-;    [14:9] -x 
-;    [14:10] res=-x 
-;    alloc r15
-     mov r15,qword[len]
-     mov qword[rbp-32],r15
-;    free r15
-     neg qword[rbp-32]
-   bar_21_12_end:
-   not qword[rbp-32]
-   if_22_8:
-;  [22:8] ? d=~-len and not a=b and a=-1 and b=~1 and c=~2 
-;  [22:8] ? d=~-len 
-   cmp_22_8:
-;  alloc r15
-   mov r15,qword[len]
-   neg r15
+   mov r15,qword[rbp-8]
    not r15
-   cmp qword[rbp-32],r15
+   imul r15,qword[rbp-16]
+   mov qword[rbp-16],r15
 ;  free r15
-   jne if_22_5_end
-;  [22:20] ? not a=b 
-   cmp_22_20:
-;  alloc r15
-   mov r15,qword[rbp-16]
-   cmp qword[rbp-8],r15
-;  free r15
-   je if_22_5_end
-;  [22:32] ? a=-1 
-   cmp_22_32:
-   cmp qword[rbp-8],-1
-   jne if_22_5_end
-;  [22:41] ? b=~1 
-   cmp_22_41:
-   cmp qword[rbp-16],~1
-   jne if_22_5_end
-;  [22:50] ? c=~2 
-   cmp_22_50:
-   cmp qword[rbp-24],~2
-   jne if_22_5_end
-   if_22_8_code:  ; opt1
-;    [23:9] exit(0)
+   if_10_8:
+;  [10:8] ? b=2 
+   cmp_10_8:
+   cmp qword[rbp-16],2
+   jne if_10_5_end
+   if_10_8_code:  ; opt1
+;    [11:9] exit(0)
 ;    exit(v:reg_rdi) 
-;      inline: 23_9
+;      inline: 11_9
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,0
@@ -124,11 +58,11 @@ main:
 ;      [4:5] syscall 
        syscall
 ;      free rdi
-     exit_23_9_end:
-   if_22_5_end:
-;  [24:5] exit(1)
+     exit_11_9_end:
+   if_10_5_end:
+;  [12:5] exit(1)
 ;  exit(v:reg_rdi) 
-;    inline: 24_5
+;    inline: 12_5
 ;    alloc rdi
 ;    alias v -> rdi
      mov rdi,1
@@ -140,7 +74,7 @@ main:
 ;    [4:5] syscall 
      syscall
 ;    free rdi
-   exit_24_5_end:
+   exit_12_5_end:
 
 ; max scratch registers in use: 2
 ;            max frames in use: 5

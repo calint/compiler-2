@@ -37,6 +37,7 @@
         "numeric": "cpp",
         "ostream": "cpp",
         "streambuf": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "cstddef": "cpp"
     }
 }
