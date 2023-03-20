@@ -46,10 +46,7 @@ public:
 	}
 
 	inline token next_whitespace_token(){
-		const string&wspre{next_whitespace()};
-		const size_t bgn=nchar_;
-		const size_t end=nchar_;
-		return token{wspre,bgn,"",end,""};
+		return{next_whitespace(),nchar_,"",nchar_,""};
 	}
 
 	inline bool is_next_char(const char ch){
