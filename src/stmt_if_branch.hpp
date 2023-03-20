@@ -48,7 +48,7 @@ public:
 		//   the 'if ... else if ... else ...'
 		//   if label not provided then there is no 'else' and this is the last 'if'
 		//   so just continue execution
-		if(!jmp_to_after_code_label.empty()){
+		if(not jmp_to_after_code_label.empty()){
 			tc.asm_jmp(*this,os,indent_level,jmp_to_after_code_label);
 		}
 	}

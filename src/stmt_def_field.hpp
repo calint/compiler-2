@@ -9,7 +9,7 @@ public:
 		if(name_.is_name(""))
 			throw compiler_error(t,"expected field name");
 
-		if(!t.is_next_char('='))
+		if(not t.is_next_char('='))
 			throw compiler_error(t,"expected '=' and initial value");
 
 		initial_value_=t.next_token();

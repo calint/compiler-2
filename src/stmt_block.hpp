@@ -50,7 +50,7 @@ public:
 				stms_.emplace_back(create_statement_from_tokenizer(move(tk),t));
 			}
 
-			if(is_one_statement_&&!last_statement_considered_no_statment)
+			if(is_one_statement_&&not last_statement_considered_no_statment)
 				break;
 		}
 	}
@@ -63,11 +63,11 @@ public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		if(!is_one_statement_)
+		if(not is_one_statement_)
 			os<<"{";
 		for(const auto&s:stms_)
 			s->source_to(os);
-		if(!is_one_statement_)
+		if(not is_one_statement_)
 			os<<"}";
 	}
 

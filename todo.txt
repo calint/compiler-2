@@ -10,6 +10,7 @@
 [ ] def table{x,y,z}
 [ ] pointers?
 [ ] bitwise logical ops: & | ^ ~
+[ ] unary decoration parsed prior to any statement. i.e. '~^-a', '~^-f(o)'
 [ ] op shift left and right
 [ ] implement division op
 [ ] bool type

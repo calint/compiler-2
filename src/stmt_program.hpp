@@ -64,12 +64,12 @@ public:
 		os<<"\nsection .bss\nalign 4\nstk resd 256\nstk.end:\n";
 		os<<"\nsection .text\nalign 4\nbits 64\nglobal _start\n_start:\nmov rsp,stk.end\nmov rbp,rsp\njmp main\n\n";
 		for(const auto&s:stms_)
-			if(!s->is_in_data_section())
+			if(not s->is_in_data_section())
 				s->compile(tc,os,indent_level);
 
 		// get the main function and compile
 		const stmt_def_func&main=tc.get_func_or_break(*this,"main");
-		if(!main.is_inline())
+		if(not main.is_inline())
 			throw compiler_error(main,"main function must be declared inline");
 			
 		os<<"main:"<<endl;

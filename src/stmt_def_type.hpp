@@ -6,7 +6,7 @@ public:
 		statement{move(tk)},
 		name_{t.next_token()}
 	{
-		if(!t.is_next_char('{'))
+		if(not t.is_next_char('{'))
 			throw compiler_error(name_,"expected '{'");
 		
 		size_token_=t.next_token();
@@ -16,7 +16,7 @@ public:
 		if(*ep)
 			throw compiler_error(size_token_,"expected size in bytes");
 
-		if(!t.is_next_char('}'))
+		if(not t.is_next_char('}'))
 			throw compiler_error(name_,"expected '}'");
 	}
 

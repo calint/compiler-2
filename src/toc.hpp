@@ -183,7 +183,7 @@ public:
 	}
 
 	inline const stmt_def_func&get_func_or_break(const statement&s,const string&name)const{
-		if(!funcs_.has(name))
+		if(not funcs_.has(name))
 			throw compiler_error(s,"function '"+name+"' not found");
 
 		return*funcs_.get(name);
@@ -232,7 +232,7 @@ public:
 
 	inline ident_resolved resolve_ident_to_nasm(const statement&stmt)const{
 		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(stmt,stmt.identifier(),stmt.is_negated())};
-		if(!ir.id.empty())
+		if(not ir.id.empty())
 			return ir;
 
 		throw compiler_error(stmt,"cannot resolve identifier '"+stmt.identifier()+"'");
@@ -240,7 +240,7 @@ public:
 
 	inline ident_resolved resolve_ident_to_nasm(const statement&stmt,const string&ident,const bool negated)const{
 		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(stmt,ident,negated)};
-		if(!ir.id.empty())
+		if(not ir.id.empty())
 			return ir;
 
 		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'");
@@ -299,7 +299,7 @@ public:
 	}
 
 	inline void add_func_arg(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size,const int stkix_delta){
-		assert(frames_.back().is_func()&&!frames_.back().is_func_inline());
+		assert(frames_.back().is_func()&&not frames_.back().is_func_inline());
 		frames_.back().add_var(name,size,stkix_delta,"");
 		// comment the resolved name
 		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
@@ -598,7 +598,7 @@ private:
 		while(i--){
 			const frame&f{frames_[i]};
 			n+=f.allocated_stack_size();
-			if(f.is_func()&&!f.is_func_inline())
+			if(f.is_func()&&not f.is_func_inline())
 				break;
 		}
 		return n;
@@ -613,7 +613,7 @@ private:
 			// is the frame a function?
 			if(frames_[i].is_func()){
 				// is it an alias defined by an argument in the function?
-				if(!frames_[i].has_alias(id))
+				if(not frames_[i].has_alias(id))
 					break;
 				// yes, continue resolving alias until it is
 				// a variable, field, register or constant

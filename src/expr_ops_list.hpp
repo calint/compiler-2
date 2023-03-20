@@ -95,7 +95,7 @@ public:
 				// move last expression (+b) to subexpression
 				//   =[(=a) +[(=b)(*c)(+1)]]
 				precedence=next_precedence;
-				if(!ops_.empty()){
+				if(not ops_.empty()){
 					const int first_op_prec{precedence_for_op(ops_.back())};
 					ops_.pop_back();
 					const char lst_op{ops_.back()};

@@ -5,9 +5,9 @@ public:
 	inline stmt_def_func_param(tokenizer&t):
 		statement{t.next_token()}
 	{
-		assert(!tok().is_name(""));
+		assert(not tok().is_name(""));
 
-		if(!t.is_next_char(':'))
+		if(not t.is_next_char(':'))
 			return;
 
 		while(true){
@@ -26,7 +26,7 @@ public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		if(!keywords_.empty()){
+		if(not keywords_.empty()){
 			os<<":";
 			const size_t n=keywords_.size()-1;
 			size_t i{0};

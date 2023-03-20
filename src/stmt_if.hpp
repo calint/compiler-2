@@ -16,7 +16,7 @@ public:
 
 			// check if it is a 'else if' or 'else' or a new statement
 			token tkn{t.next_token()};
-			if(!tkn.is_name("else")){
+			if(not tkn.is_name("else")){
 				// not 'else', push token back instream and exit
 				t.pushback_token(move(tkn));
 				return;
@@ -24,7 +24,7 @@ public:
 			// is 'else'
 			// check if 'else if'
 			token tkn2{t.next_token()};
-			if(!tkn2.is_name("if")){
+			if(not tkn2.is_name("if")){
 				// not 'else if', push token back instream and exit
 				t.pushback_token(move(tkn2));
 				// 'else' branch
@@ -62,7 +62,7 @@ public:
 			br.source_to(os);
 		}
 		// the 'else' code
-		if(!else_code_.is_empty()){
+		if(not else_code_.is_empty()){
 			else_if_tokens_.back().source_to(os);
 			else_code_.source_to(os);
 		}
@@ -75,7 +75,7 @@ public:
 		const string&cp{call_path.empty()?"":"_"+call_path};
 
 		const string&label_after_if{"if_"+src_loc+cp+"_end"};
-		const string&label_else_branch{!else_code_.is_empty()?"if_else_"+src_loc+cp:label_after_if};
+		const string&label_else_branch{not else_code_.is_empty()?"if_else_"+src_loc+cp:label_after_if};
 
 		const size_t n{branches_.size()};
 		for(size_t i=0;i<n;i++){
@@ -95,7 +95,7 @@ public:
 			}
 			e.compile(tc,os,indent_level,jmp_if_false,jmp_after_if);
 		}
-		if(!else_code_.is_empty()){
+		if(not else_code_.is_empty()){
 			tc.asm_label(*this,os,indent_level,label_else_branch);
 			else_code_.compile(tc,os,indent_level+1);
 		}

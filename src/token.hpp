@@ -21,7 +21,7 @@ public:
 	inline token&operator=(token&&)=default;
 
 	inline void source_to(ostream&os)const{
-		if(!is_str_){
+		if(not is_str_){
 			os<<ws_left_<<name_<<ws_right_;
 			return;
 		}
@@ -29,7 +29,7 @@ public:
 	}
 
 	inline void compile_to(ostream&os)const{
-		if(!is_str_){
+		if(not is_str_){
 			os<<name_;
 			return;
 		}

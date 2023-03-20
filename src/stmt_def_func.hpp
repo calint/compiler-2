@@ -13,17 +13,17 @@ public:
 			inline_tk_=name_;
 			name_=t.next_token();
 		}
-		if(!t.is_next_char('('))
+		if(not t.is_next_char('('))
 			no_args_=true;
 
-		if(!no_args_){
+		if(not no_args_){
 			while(true){
 				if(t.is_next_char(')'))
 					break;
 				params_.emplace_back(t);
 				if(t.is_next_char(')'))
 					break;
-				if(!t.is_next_char(','))
+				if(not t.is_next_char(','))
 					throw compiler_error(params_.back(),"expected ',' after parameter '"+params_.back().tok().name()+"'");
 			}
 		}
@@ -48,7 +48,7 @@ public:
 		statement::source_to(os);
 		inline_tk_.source_to(os);
 		name_.source_to(os);
-		if(!no_args_){
+		if(not no_args_){
 			os<<"(";
 			const size_t n{params_.size()-1};
 			size_t i{0};
@@ -59,7 +59,7 @@ public:
 			}
 			os<<")";
 		}
-		if(!returns_.empty()){
+		if(not returns_.empty()){
 			os<<":";
 			const size_t n{returns_.size()-1};
 			size_t i{0};
@@ -75,7 +75,7 @@ public:
 	inline void source_def_comment_to(ostream&os)const{
 		stringstream ss;
 		name_.source_to(ss);
-		if(!no_args_){
+		if(not no_args_){
 			ss<<"(";
 			const size_t n{params_.size()-1};
 			size_t i{0};
@@ -86,7 +86,7 @@ public:
 			}
 			ss<<")";
 		}
-		if(!returns_.empty()){
+		if(not returns_.empty()){
 			ss<<":";
 			const size_t n{returns_.size()-1};
 			size_t i{0};
@@ -114,7 +114,7 @@ public:
 		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());
 
 		// return binding
-		if(!returns().empty()){
+		if(not returns().empty()){
 			const string&nm{returns()[0].name()};
 			tc.add_var(*this,os,indent_level+1,nm,8);
 //			tc.add_alias(from,"rax");
@@ -171,7 +171,7 @@ public:
 
 	inline const string&name()const{return name_.name();}
 
-	inline bool is_inline()const{return!inline_tk_.is_blank();}
+	inline bool is_inline()const{return not inline_tk_.is_blank();}
 
 private:
 	token name_;

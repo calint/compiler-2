@@ -10,7 +10,7 @@ public:
 	inline stmt_call(token tk,const bool negated,tokenizer&t):
 		expression{move(tk),negated}
 	{
-		if(!t.is_next_char('(')){
+		if(not t.is_next_char('(')){
 			no_args_=true;
 			return;
 		}
@@ -25,7 +25,7 @@ public:
 			args_.emplace_back(t,true);
 			if(t.is_next_char(')'))
 				break;
-			if(!t.is_next_char(','))
+			if(not t.is_next_char(','))
 				throw compiler_error(args_.back(),"expected ',' after argument '"+args_.back().identifier()+"'");
 			expect_arg=true;
 		}
@@ -63,7 +63,7 @@ public:
 				to_string(func.params().size())+" argument"+(func.params().size()==1?"":"s")+
 				" but "+to_string(args_.size())+" "+(args_.size()==1?"is":"are")+" provided");
 
-		if(!func.is_inline()){
+		if(not func.is_inline()){
 			// stack is: <base>,
 			tc.enter_call(*this,os,indent_level);
 			// stack is: <base>,vars,regs,
@@ -78,7 +78,7 @@ public:
 				const stmt_def_func_param&param{func.param(i)};
 				// is the argument passed through a register?
 				const string&arg_reg=param.get_register_or_empty();
-				bool argument_passed_in_register{!arg_reg.empty()};
+				bool argument_passed_in_register{not arg_reg.empty()};
 				if(argument_passed_in_register){
 					tc.alloc_named_register_or_break(arg,os,indent_level,arg_reg);
 					allocated_args_registers.push_back(arg_reg);
@@ -190,7 +190,7 @@ public:
 			i++;
 			// does the parameter want the value passed through a register?
 			string arg_reg{param.get_register_or_empty()};
-			if(!arg_reg.empty()){
+			if(not arg_reg.empty()){
 				// argument is passed through register
 				tc.alloc_named_register_or_break(arg,os,indent_level+1,arg_reg);
 				allocated_named_registers.push_back(arg_reg);
