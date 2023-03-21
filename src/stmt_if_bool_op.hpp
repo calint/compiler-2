@@ -120,47 +120,11 @@ private:
 		}
 	}
 
-	inline void resolve(toc&tc,ostream&os,size_t indent_level,const string&op,const statement&lh,const statement&rh)const{
-		string dst,src;
+	inline void resolve(toc&tc,ostream&os,size_t indent_level,const string&op,const expr_ops_list&lh,const expr_ops_list&rh)const{
 		vector<string>allocated_registers;
-		if(lh.is_expression()){
-			dst=tc.alloc_scratch_register(lh,os,indent_level);
-			allocated_registers.push_back(dst);
-			lh.compile(tc,os,indent_level+1,dst);
-		}else{
-			const ident_resolved&dst_r{tc.resolve_ident_to_nasm(lh)};
-			if(dst_r.is_const()){
-				dst=lh.get_unary_ops().get_ops_as_string()+dst_r.id;
-			}else{
-				if(lh.get_unary_ops().is_empty()){
-					dst=dst_r.id;
-				}else{
-					dst=tc.alloc_scratch_register(rh,os,indent_level);
-					allocated_registers.push_back(dst);
-					tc.asm_cmd(rh,os,indent_level,"mov",dst,dst_r.id);
-					lh.get_unary_ops().compile(tc,os,indent_level,dst);
-				}
-			}
-		}
-		if(rh.is_expression()){
-			src=tc.alloc_scratch_register(rh,os,indent_level);
-			allocated_registers.push_back(src);
-			rh.compile(tc,os,indent_level+1,src);
-		}else{
-			const ident_resolved&src_r{tc.resolve_ident_to_nasm(rh)};
-			if(src_r.is_const()){
-				src=rh.get_unary_ops().get_ops_as_string()+src_r.id;
-			}else{
-				if(rh.get_unary_ops().is_empty()){
-					src=src_r.id;
-				}else{
-					src=tc.alloc_scratch_register(rh,os,indent_level);
-					allocated_registers.push_back(src);
-					tc.asm_cmd(rh,os,indent_level,"mov",src,src_r.id);
-					rh.get_unary_ops().compile(tc,os,indent_level,src);
-				}
-			}
-		}
+
+		const string&dst=resolve_ident(tc,os,indent_level,lh,allocated_registers);
+		const string&src=resolve_ident(tc,os,indent_level,rh,allocated_registers);
 
 		tc.asm_cmd(*this,os,indent_level,op,dst,src);
 
@@ -169,6 +133,27 @@ private:
 			const string&reg=*it;
 			tc.free_scratch_register(os,indent_level,reg);
 		}
+	}
+
+	inline string resolve_ident(toc&tc,ostream&os,size_t indent_level,const expr_ops_list&exp,vector<string>&allocated_registers)const{
+		if(exp.is_expression()){
+			const string&dst=tc.alloc_scratch_register(exp,os,indent_level);
+			allocated_registers.push_back(dst);
+			exp.compile(tc,os,indent_level+1,dst);
+			return dst;
+		}
+		const ident_resolved&dst_r{tc.resolve_ident_to_nasm(exp)};
+		if(dst_r.is_const()){
+			return exp.get_unary_ops().get_ops_as_string()+dst_r.id;
+		}
+		if(exp.get_unary_ops().is_empty()){
+			return dst_r.id;
+		}
+		const string&dst=tc.alloc_scratch_register(exp,os,indent_level);
+		allocated_registers.push_back(dst);
+		tc.asm_cmd(exp,os,indent_level,"mov",dst,dst_r.id);
+		exp.get_unary_ops().compile(tc,os,indent_level,dst);
+		return dst;
 	}
 
 	vector<token>nots_;
