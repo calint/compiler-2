@@ -33,15 +33,15 @@ public:
 		int precedence=first_op_precedence;
 		while(true){ // +a  +3
 			// if end of subexpression
-			if(enclosed_&&t.is_next_char(')')){
+			if(enclosed_&&t.is_next_char(')'))
 				break;
-			}
+
 			// if parsed in a function call argument list or in a boolean expression
 			if(in_args){ // ? rewrite is_in_bool_expr
 				// if in boolean expression exit when an operation is found
-				if(t.is_peek_char('<')&&not t.is_peek_char2('<'))break; // ! can be out of bounds
+				if(t.is_peek_char('<')&&not t.is_peek_char2('<'))break;
 				if(t.is_peek_char('='))break;
-				if(t.is_peek_char('>')&&not t.is_peek_char2('>'))break; // ! can be out of bounds
+				if(t.is_peek_char('>')&&not t.is_peek_char2('>'))break;
 				// if in arguments exit when ',' or ')' is found
 				if(t.is_peek_char(','))break;
 				if(t.is_peek_char(')'))break;
