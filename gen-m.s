@@ -129,7 +129,27 @@ main:
        syscall
      exit_17_41_end:
    if_17_5_end:
+   if_18_8:
+   cmp_18_13:
+   cmp qword[rbp-8],-2
+   je if_18_5_end
+   if_18_8_code:  ; opt1
+       mov rdi,8
+       mov rax,60
+       syscall
+     exit_18_19_end:
+   if_18_5_end:
+   if_19_8:
+   cmp_19_8:
+   cmp qword[rbp-8],-2
+   je if_19_5_end
+   if_19_8_code:  ; opt1
+       mov rdi,9
+       mov rax,60
+       syscall
+     exit_19_17_end:
+   if_19_5_end:
      mov rdi,0
      mov rax,60
      syscall
-   exit_18_5_end:
+   exit_20_5_end:
