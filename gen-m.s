@@ -56,7 +56,11 @@ main:
    cmp qword[rbp-40],2
    jne if_14_5_end
    cmp_14_51:
-   cmp qword[rbp-48],-2
+     mov r15,2
+     neg r15
+     neg r15
+     neg r15
+   cmp qword[rbp-48],r15
    jne if_14_5_end
    if_14_8_code:  ; opt1
        mov rdi,0

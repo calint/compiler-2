@@ -102,7 +102,7 @@ main:
    neg qword[rbp-48]
    neg qword[rbp-48]
    if_14_8:
-;  [14:8] ? a=-2 and b=2 and c=-2 and d=-1 and e=2 and f=-2 
+;  [14:8] ? a=-2 and b=2 and c=-2 and d=-1 and e=2 and f=-(-(-(2)))
 ;  [14:8] ? a=-2 
    cmp_14_8:
    cmp qword[rbp-8],-2
@@ -123,9 +123,23 @@ main:
    cmp_14_43:
    cmp qword[rbp-40],2
    jne if_14_5_end
-;  [14:51] ? f=-2 
+;  [14:51] ? f=-(-(-(2)))
    cmp_14_51:
-   cmp qword[rbp-48],-2
+;  alloc r15
+;    [14:53] -(-(-(2)))
+;    [14:55] r15=-(-(-(2)))
+;    [14:55] -(-(-(2)))
+;    [14:57] r15=-(-(2))
+;    [14:57] -(-(2))
+;    [14:59] r15=-(2)
+;    [14:59] -(2)
+;    [14:59] r15=2
+     mov r15,2
+     neg r15
+     neg r15
+     neg r15
+   cmp qword[rbp-48],r15
+;  free r15
    jne if_14_5_end
    if_14_8_code:  ; opt1
 ;    [15:9] exit(0)
