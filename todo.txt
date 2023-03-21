@@ -5,7 +5,7 @@
 [ ] negated sub-expression. i.e. 'not (a=1 and b=2)'
 [x] unary decoration parsed prior to any statement. i.e. '~-a', '~-f(o)'
 [ ]   review
-[ ] bitwise logical ops: & | ^
+[x] bitwise logical ops: & | ^
 [ ] op shift left and right
 [ ] implement division op
 [ ] character type

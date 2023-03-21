@@ -61,7 +61,7 @@ public:
 			if(s->is_in_data_section())
 				s->compile(tc,os,indent_level);
 
-		os<<"\nsection .bss\nalign 4\nstk resd 256\nstk.end:\n";
+		os<<"\nsection .bss\nalign 4\nstk resd 1024\nstk.end:\n";
 		os<<"\nsection .text\nalign 4\nbits 64\nglobal _start\n_start:\nmov rsp,stk.end\nmov rbp,rsp\njmp main\n\n";
 		for(const auto&s:stms_)
 			if(not s->is_in_data_section())

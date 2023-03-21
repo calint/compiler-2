@@ -73,6 +73,12 @@ public:
 				ops_.push_back('/');
 			}else if(t.is_peek_char('%')){
 				ops_.push_back('%');
+			}else if(t.is_peek_char('&')){
+				ops_.push_back('&');
+			}else if(t.is_peek_char('|')){
+				ops_.push_back('|');
+			}else if(t.is_peek_char('^')){
+				ops_.push_back('^');
 			}else{
 				// no more operations
 				break;
@@ -191,11 +197,18 @@ public:
 
 private:
 	inline static int precedence_for_op(const char ch){
-		if(ch=='+'||ch=='-')
-			return 1;
-		if(ch=='*'||ch=='/')
-			return 2;
-		throw string(to_string(__LINE__)+" err");
+		switch(ch){
+			case'|':return 1;
+			case'^':return 2;
+			case'&':return 3;
+			case'<':return 4; // shift left
+			case'>':return 4; // shift right
+			case'+':return 5;
+			case'-':return 5;
+			case'*':return 6;
+			case'/':return 6;
+			default:throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
+		}
 	}
 
 	inline void asm_op(toc&tc,ostream&os,const size_t indent_level,const char op,const string&dest,const string&dest_resolved,const statement&src)const{
@@ -228,12 +241,12 @@ private:
 				return;
 			}
 			const unary_ops&uops=src.get_unary_ops();
-			if(uops.is_only_negated()){
-				tc.asm_cmd(src,os,indent_level,"sub",dest_resolved,ir.id);
-				return;
-			}
 			if(uops.is_empty()){
 				tc.asm_cmd(src,os,indent_level,"add",dest_resolved,ir.id);
+				return;
+			}
+			if(uops.is_only_negated()){
+				tc.asm_cmd(src,os,indent_level,"sub",dest_resolved,ir.id);
 				return;
 			}
 			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
@@ -257,12 +270,12 @@ private:
 				return;
 			}
 			const unary_ops&uops=src.get_unary_ops();
-			if(uops.is_only_negated()){
-				tc.asm_cmd(src,os,indent_level,"add",dest_resolved,ir.id);
-				return;
-			}
 			if(uops.is_empty()){
 				tc.asm_cmd(src,os,indent_level,"sub",dest_resolved,ir.id);
+				return;
+			}
+			if(uops.is_only_negated()){
+				tc.asm_cmd(src,os,indent_level,"add",dest_resolved,ir.id);
 				return;
 			}
 			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
@@ -333,6 +346,43 @@ private:
 			tc.free_scratch_register(os,indent_level,r);
 			return;
 		}
+		if(op=='&'){
+			asm_op_bitwise(tc,os,indent_level,"and",dest,dest_resolved,src);
+			return;
+		}
+		if(op=='|'){
+			asm_op_bitwise(tc,os,indent_level,"or",dest,dest_resolved,src);
+			return;
+		}
+		if(op=='^'){
+			asm_op_bitwise(tc,os,indent_level,"xor",dest,dest_resolved,src);
+			return;
+		}
+	}
+
+	inline void asm_op_bitwise(toc&tc,ostream&os,const size_t indent_level,const string&op,const string&dest,const string&dest_resolved,const statement&src)const{
+		if(src.is_expression()){
+			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
+			src.compile(tc,os,indent_level,r);
+			tc.asm_cmd(src,os,indent_level,op,dest_resolved,r);
+			tc.free_scratch_register(os,indent_level,r);
+			return;
+		}
+		const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
+		if(ir.is_const()){
+			tc.asm_cmd(src,os,indent_level,op,dest_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
+			return;
+		}
+		const unary_ops&uops=src.get_unary_ops();
+		if(uops.is_empty()){
+			tc.asm_cmd(src,os,indent_level,op,dest_resolved,ir.id);
+			return;
+		}
+		const string&r{tc.alloc_scratch_register(src,os,indent_level)};
+		tc.asm_cmd(src,os,indent_level,"mov",r,ir.id);
+		uops.compile(tc,os,indent_level,r);		
+		tc.asm_cmd(src,os,indent_level,op,dest_resolved,r);
+		tc.free_scratch_register(os,indent_level,r);
 	}
 
 	bool enclosed_{}; //  (a+b) vs a+b
