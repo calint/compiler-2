@@ -15,15 +15,14 @@ public:
 	{
 		// read first expression i.e. =-a/-(b+1)
 		if(first_expression){
-			// if called in a recursion with first expression provided
+			// called in a recursion with first expression provided
 			exps_.push_back(move(first_expression));
 		}else{
-			// if called in a recursion with unary_ops provided and in a sub-expression
 			// check if new recursion is necessary i.e. =-a/-(-(b+c)+d), t at "-a/-("
 			unary_ops uo={t};
 			// check for negated expression list. i.e. -(a+b)
 			if(t.is_next_char('(')){
-				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true,uo,true));
+				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true,move(uo)));
 			}else{
 				uo.put_back(t);
 				exps_.emplace_back(create_statement_from_tokenizer(t));
@@ -101,13 +100,17 @@ public:
 					t.next_char(); // one more character for << and >>
 			}
 
+			// check if next statement is a subexpression
 			unary_ops uo{t};
 			if(t.is_next_char('(')){
+				// subexpression, recurse
 				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true,uo));
 				continue;
 			}
+			// not subexpression
 			uo.put_back(t);
 
+			// add statement to list
 			unique_ptr<statement>stm{create_statement_from_tokenizer(t)};
 			if(stm->tok().is_blank())
 				throw compiler_error(*stm,"unexpected '"+string{t.peek_char()}+"'");
