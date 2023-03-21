@@ -2,6 +2,8 @@
 
 section .data
 align 4
+;[7:1] field len=2 
+len dq 2
 
 section .bss
 align 4
@@ -18,93 +20,49 @@ mov rbp,rsp
 jmp main
 
 main:
-;  [8:5] var a=4 
+;  [10:5] var a=-1 
 ;  a: qword[rbp-8]
-;  [8:9] a=4 
-;  [8:11] 4 
-;  [8:11] a=4 
-   mov qword[rbp-8],4
-;  [9:5] var b=2 
+;  [10:9] a=-1 
+;  [10:11] -1 
+;  [10:12] a=-1 
+   mov qword[rbp-8],-1
+;  [11:5] a=-a 
+;  [11:7] -a 
+;  [11:8] a=-a 
+   neg qword[rbp-8]
+;  [12:5] var b=-(len)
 ;  b: qword[rbp-16]
-;  [9:9] b=2 
-;  [9:11] 2 
-;  [9:11] b=2 
-   mov qword[rbp-16],2
-;  [10:5] var c=a/b 
-;  c: qword[rbp-24]
-;  [10:9] c=a/b 
-;  [10:11] a/b 
-;  [10:11] c=a
+;  [12:9] b=-(len)
+;  [12:11] -(len)
+;  [12:13] b=-(len)
+;  [12:13] -(len)
+;  [12:13] b=len
 ;  alloc r15
-   mov r15,qword[rbp-8]
-   mov qword[rbp-24],r15
+   mov r15,qword[len]
+   mov qword[rbp-16],r15
 ;  free r15
-;  [10:13] c/b 
-;  alloc rdx
-   xor rdx,rdx
-;  alloc rax
-   mov rax,qword[rbp-24]
-   cqo
-   idiv qword[rbp-16]
-   mov qword[rbp-24],rax
-;  free rax
-;  free rdx
-   if_11_8:
-;  [11:8] ? not c=2 
-   cmp_11_8:
-   cmp qword[rbp-24],2
-   je if_11_5_end
-   if_11_8_code:  ; opt1
-;    [11:16] exit(1)
-;    exit(v:reg_rdi) 
-;      inline: 11_16
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,1
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_11_16_end:
-   if_11_5_end:
-;  [13:5] a=3 
-;  [13:7] 3 
-;  [13:7] a=3 
-   mov qword[rbp-8],3
+   neg qword[rbp-16]
+;  [13:5] b=-b 
+;  [13:7] -b 
+;  [13:8] b=-b 
+   neg qword[rbp-16]
    if_14_8:
-;  [14:8] ? not a%2=1 
+;  [14:8] ? a=1 and b=2 
+;  [14:8] ? a=1 
    cmp_14_8:
-;  alloc r15
-;    [14:12] a%2
-;    [14:12] r15=a
-     mov r15,qword[rbp-8]
-;    [14:14] r15%2
-;    alloc rdx
-     xor rdx,rdx
-;    alloc rax
-     mov rax,r15
-     cqo
-;    alloc r14
-     mov r14,2
-     idiv r14
-;    free r14
-     mov r15,rdx
-;    free rax
-;    free rdx
-   cmp r15,1
-;  free r15
-   je if_14_5_end
+   cmp qword[rbp-8],1
+   jne if_14_5_end
+;  [14:16] ? b=2 
+   cmp_14_16:
+   cmp qword[rbp-16],2
+   jne if_14_5_end
    if_14_8_code:  ; opt1
-;    [14:18] exit(2)
+;    [15:9] exit(0)
 ;    exit(v:reg_rdi) 
-;      inline: 14_18
+;      inline: 15_9
 ;      alloc rdi
 ;      alias v -> rdi
-       mov rdi,2
+       mov rdi,0
 ;      [2:5] mov(rax,60)
        mov rax,60
 ;      [2:17] # exit system call 
@@ -113,146 +71,14 @@ main:
 ;      [4:5] syscall 
        syscall
 ;      free rdi
-     exit_14_18_end:
+     exit_15_9_end:
    if_14_5_end:
-;  [16:5] c=1+3%2+1 
-;  [16:7] 1+3%2+1 
-;  [16:7] c=1
-   mov qword[rbp-24],1
-;  [16:10] c+3%2+1 
-;  alloc r15
-;  [16:10] 3%2+1 
-;  [16:9] r15=3
-   mov r15,3
-;  [16:11] r15%2
-;  alloc rdx
-   xor rdx,rdx
-;  alloc rax
-   mov rax,r15
-   cqo
-;  alloc r14
-   mov r14,2
-   idiv r14
-;  free r14
-   mov r15,rdx
-;  free rax
-;  free rdx
-;  [16:13] r15+1 
-   add r15,1
-   add qword[rbp-24],r15
-;  free r15
-   if_17_8:
-;  [17:8] ? not c=3 
-   cmp_17_8:
-   cmp qword[rbp-24],3
-   je if_17_5_end
-   if_17_8_code:  ; opt1
-;    [17:16] exit(3)
-;    exit(v:reg_rdi) 
-;      inline: 17_16
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,3
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_17_16_end:
-   if_17_5_end:
-;  [19:5] c=-a/-b 
-;  [19:7] -a/-b 
-;  [19:8] c=-a
-;  alloc r15
-   mov r15,qword[rbp-8]
-   mov qword[rbp-24],r15
-;  free r15
-   neg qword[rbp-24]
-;  [19:11] c/-b 
-;  alloc r15
-   mov r15,qword[rbp-16]
-   neg r15
-;  alloc rdx
-   xor rdx,rdx
-;  alloc rax
-   mov rax,qword[rbp-24]
-   cqo
-   idiv r15
-   mov qword[rbp-24],rax
-;  free rax
-;  free rdx
-;  free r15
-   if_20_8:
-;  [20:8] ? not c=1 
-   cmp_20_8:
-   cmp qword[rbp-24],1
-   je if_20_5_end
-   if_20_8_code:  ; opt1
-;    [20:16] exit(4)
-;    exit(v:reg_rdi) 
-;      inline: 20_16
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,4
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_20_16_end:
-   if_20_5_end:
-;  [22:5] c=-a/b 
-;  [22:7] -a/b 
-;  [22:8] c=-a
-;  alloc r15
-   mov r15,qword[rbp-8]
-   mov qword[rbp-24],r15
-;  free r15
-   neg qword[rbp-24]
-;  [22:10] c/b 
-;  alloc rdx
-   xor rdx,rdx
-;  alloc rax
-   mov rax,qword[rbp-24]
-   cqo
-   idiv qword[rbp-16]
-   mov qword[rbp-24],rax
-;  free rax
-;  free rdx
-   if_23_8:
-;  [23:8] ? not c=-1 
-   cmp_23_8:
-   cmp qword[rbp-24],-1
-   je if_23_5_end
-   if_23_8_code:  ; opt1
-;    [23:17] exit(5)
-;    exit(v:reg_rdi) 
-;      inline: 23_17
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,5
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_23_17_end:
-   if_23_5_end:
-;  [25:5] exit(0)
+;  [16:5] exit(1)
 ;  exit(v:reg_rdi) 
-;    inline: 25_5
+;    inline: 16_5
 ;    alloc rdi
 ;    alias v -> rdi
-     mov rdi,0
+     mov rdi,1
 ;    [2:5] mov(rax,60)
      mov rax,60
 ;    [2:17] # exit system call 
@@ -261,8 +87,8 @@ main:
 ;    [4:5] syscall 
      syscall
 ;    free rdi
-   exit_25_5_end:
+   exit_16_5_end:
 
-; max scratch registers in use: 3
+; max scratch registers in use: 1
 ;            max frames in use: 5
 

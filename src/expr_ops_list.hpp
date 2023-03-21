@@ -7,36 +7,26 @@
 
 class expr_ops_list final:public expression{
 public:
-	inline expr_ops_list(tokenizer&t,const bool in_args=false,const bool enclosed=false,const int first_op_precedence=init_precedence,unique_ptr<statement>first_expression=unique_ptr<statement>()):
+	inline expr_ops_list(tokenizer&t,const bool in_args=false,const bool enclosed=false,unary_ops uops={},const int first_op_precedence=init_precedence,unique_ptr<statement>first_expression=unique_ptr<statement>()):
 		expression{t.next_whitespace_token(),{}},
 		enclosed_{enclosed},
-		in_args_{in_args}
+		in_args_{in_args},
+		uops_{move(uops)}
 	{
-		// read first expression
-		// if called in a recursion with a first expression passed
+		// read first expression i.e. =-a/-(b+1)
 		if(first_expression){
-			// put in list
+			// if called in a recursion with first expression provided
 			exps_.push_back(move(first_expression));
 		}else{
-			uops_={t};
+			// if called in a recursion with unary_ops provided and in a sub-expression
+			// check if new recursion is necessary i.e. =-a/-(-(b+c)+d), t at "-a/-("
+			unary_ops uo={t};
 			// check for negated expression list. i.e. -(a+b)
-			if(not uops_.is_empty()){
-				if(t.is_next_char('(')){
-					exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true));
-				}else{
-					uops_.put_back(t);
-					uops_={};
-					exps_.emplace_back(create_statement_from_tokenizer(t));
-				}
+			if(t.is_next_char('(')){
+				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true,uo,true));
 			}else{
-				// if subexpression
-				if(t.is_next_char('(')){
-					// recurse
-					exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true));
-				}else{
-					// add first expression
-					exps_.emplace_back(create_statement_from_tokenizer(t));
-				}
+				uo.put_back(t);
+				exps_.emplace_back(create_statement_from_tokenizer(t));
 			}
 		}
 
@@ -102,7 +92,7 @@ public:
 				ops_.pop_back();
 				unique_ptr<statement>prev{move(exps_.back())};
 				exps_.pop_back();
-				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,false,first_op_prec,move(prev)));
+				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,false,unary_ops{},first_op_prec,move(prev)));
 				continue;
 			}else{
 				precedence=next_precedence;
@@ -111,10 +101,12 @@ public:
 					t.next_char(); // one more character for << and >>
 			}
 
+			unary_ops uo{t};
 			if(t.is_next_char('(')){
-				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true));
+				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true,uo));
 				continue;
 			}
+			uo.put_back(t);
 
 			unique_ptr<statement>stm{create_statement_from_tokenizer(t)};
 			if(stm->tok().is_blank())
@@ -175,6 +167,8 @@ public:
 	}
 
 	inline bool is_expression()const override{
+		if(not uops_.is_empty())
+			return true;
 		if(exps_.size()==1){
 			return exps_[0]->is_expression();
 		}
