@@ -3,7 +3,7 @@
 [ ] make sub lists taking in account precedence of 'and' over 'or'
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [x] negated sub-expression. i.e. 'not (a=1 and b=2)'
-[ ]   review
+[x]   review
 [ ] short-hand boolean expression i.e. if a or b
 [ ] expr_ops_list: div: push/pop rax,rdx if not allocatable
 [ ] expr_ops_list: div: push/pop rcx if not allocatable
