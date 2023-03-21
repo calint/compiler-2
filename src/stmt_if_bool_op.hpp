@@ -158,11 +158,11 @@ private:
 		if(exp.get_unary_ops().is_empty())
 			return dst_r.id;
 		
-		const string&dst=tc.alloc_scratch_register(exp,os,indent_level);
-		allocated_registers.push_back(dst);
-		tc.asm_cmd(exp,os,indent_level,"mov",dst,dst_r.id);
-		exp.get_unary_ops().compile(tc,os,indent_level,dst);
-		return dst;
+		const string&reg=tc.alloc_scratch_register(exp,os,indent_level);
+		allocated_registers.push_back(reg);
+		tc.asm_cmd(exp,os,indent_level,"mov",reg,dst_r.id);
+		exp.get_unary_ops().compile(tc,os,indent_level,reg);
+		return reg;
 	}
 
 	vector<token>nots_;
