@@ -83,7 +83,7 @@ public:
 	}
 
 	inline string cmp_bgn_label(const toc&tc)const{
-		const string&call_path=tc.get_inline_call_path(tok());
+		const string&call_path{tc.get_inline_call_path(tok())};
 		return "cmp_"+tc.source_location(tok())+(call_path.empty()?"":"_"+call_path);
 	}
 
@@ -123,32 +123,33 @@ private:
 	inline void resolve(toc&tc,ostream&os,size_t indent_level,const string&op,const expr_ops_list&lh,const expr_ops_list&rh)const{
 		vector<string>allocated_registers;
 
-		const string&dst=resolve_ident(tc,os,indent_level,lh,allocated_registers);
-		const string&src=resolve_ident(tc,os,indent_level,rh,allocated_registers);
+		const string&dst{resolve_ident(tc,os,indent_level,lh,allocated_registers)};
+		const string&src{resolve_ident(tc,os,indent_level,rh,allocated_registers)};
 
 		tc.asm_cmd(*this,os,indent_level,op,dst,src);
 
 		// free allocated registers in reverse order
-		for(auto it=allocated_registers.rbegin();it!=allocated_registers.rend();++it) {
-			const string&reg=*it;
+		for(auto it{allocated_registers.rbegin()};it!=allocated_registers.rend();++it) {
+			const string&reg{*it};
 			tc.free_scratch_register(os,indent_level,reg);
 		}
 	}
 
 	inline string resolve_ident(toc&tc,ostream&os,size_t indent_level,const expr_ops_list&exp,vector<string>&allocated_registers)const{
 		if(exp.is_expression()){
-			const string&dst=tc.alloc_scratch_register(exp,os,indent_level);
-			allocated_registers.push_back(dst);
-			exp.compile(tc,os,indent_level+1,dst);
-			return dst;
+			const string&reg{tc.alloc_scratch_register(exp,os,indent_level)};
+			allocated_registers.push_back(reg);
+			exp.compile(tc,os,indent_level+1,reg);
+			return reg;
 		}
+		
 		const ident_resolved&dst_r{tc.resolve_ident_to_nasm(exp)};
-		if(dst_r.is_const()){
+		if(dst_r.is_const())
 			return exp.get_unary_ops().get_ops_as_string()+dst_r.id;
-		}
-		if(exp.get_unary_ops().is_empty()){
+
+		if(exp.get_unary_ops().is_empty())
 			return dst_r.id;
-		}
+		
 		const string&dst=tc.alloc_scratch_register(exp,os,indent_level);
 		allocated_registers.push_back(dst);
 		tc.asm_cmd(exp,os,indent_level,"mov",dst,dst_r.id);

@@ -169,9 +169,10 @@ public:
 	inline bool is_expression()const override{
 		if(not uops_.is_empty())
 			return true;
-		if(exps_.size()==1){
+
+		if(exps_.size()==1)
 			return exps_[0]->is_expression();
-		}
+
 		return true;
 	}
 
