@@ -421,25 +421,23 @@ private:
 		if(src.is_expression()){
 			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
 			src.compile(tc,os,indent_level,r);
-			tc.alloc_named_register_or_break(src,os,indent_level,"rdx");
-			tc.asm_cmd(src,os,indent_level,"xor","rdx","rdx");
 			tc.alloc_named_register_or_break(src,os,indent_level,"rax");
 			tc.asm_cmd(src,os,indent_level,"mov","rax",dest_resolved);
+			tc.alloc_named_register_or_break(src,os,indent_level,"rdx");
 			tc.indent(os,indent_level,false);os<<"cqo"<<endl;
 			tc.indent(os,indent_level,false);os<<"idiv "<<r<<endl;
 			// op is either "rax" for the quotient or "rdx" for the reminder
 			tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,op);
-			tc.free_named_register(os,indent_level,"rax");
 			tc.free_named_register(os,indent_level,"rdx");
+			tc.free_named_register(os,indent_level,"rax");
 			tc.free_scratch_register(os,indent_level,r);
 			return;
 		}
 		const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
 		if(ir.is_const()){
-			tc.alloc_named_register_or_break(src,os,indent_level,"rdx");
-			tc.asm_cmd(src,os,indent_level,"xor","rdx","rdx");
 			tc.alloc_named_register_or_break(src,os,indent_level,"rax");
 			tc.asm_cmd(src,os,indent_level,"mov","rax",dest_resolved);
+			tc.alloc_named_register_or_break(src,os,indent_level,"rdx");
 			tc.indent(os,indent_level,false);os<<"cqo"<<endl;
 			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
 			tc.asm_cmd(src,os,indent_level,"mov",r,src.get_unary_ops().get_ops_as_string()+ir.id);
@@ -447,37 +445,35 @@ private:
 			tc.free_scratch_register(os,indent_level,r);
 			// op is either "rax" for the quotient or "rdx" for the reminder
 			tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,op);
-			tc.free_named_register(os,indent_level,"rax");
 			tc.free_named_register(os,indent_level,"rdx");
+			tc.free_named_register(os,indent_level,"rax");
 			return;
 		}
 		const unary_ops&uops=src.get_unary_ops();
 		if(uops.is_empty()){
-			tc.alloc_named_register_or_break(src,os,indent_level,"rdx");
-			tc.asm_cmd(src,os,indent_level,"xor","rdx","rdx");
 			tc.alloc_named_register_or_break(src,os,indent_level,"rax");
 			tc.asm_cmd(src,os,indent_level,"mov","rax",dest_resolved);
+			tc.alloc_named_register_or_break(src,os,indent_level,"rdx");
 			tc.indent(os,indent_level,false);os<<"cqo"<<endl;
 			tc.indent(os,indent_level,false);os<<"idiv "<<ir.id<<endl;
 			// op is either "rax" for the quotient or "rdx" for the reminder
 			tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,op);
-			tc.free_named_register(os,indent_level,"rax");
 			tc.free_named_register(os,indent_level,"rdx");
+			tc.free_named_register(os,indent_level,"rax");
 			return;
 		}
 		const string&r{tc.alloc_scratch_register(src,os,indent_level)};
 		tc.asm_cmd(src,os,indent_level,"mov",r,ir.id);
 		uops.compile(tc,os,indent_level,r);
-		tc.alloc_named_register_or_break(src,os,indent_level,"rdx");
-		tc.asm_cmd(src,os,indent_level,"xor","rdx","rdx");
 		tc.alloc_named_register_or_break(src,os,indent_level,"rax");
 		tc.asm_cmd(src,os,indent_level,"mov","rax",dest_resolved);
+		tc.alloc_named_register_or_break(src,os,indent_level,"rdx");
 		tc.indent(os,indent_level,false);os<<"cqo"<<endl;
 		tc.indent(os,indent_level,false);os<<"idiv "<<r<<endl;
 		// op is either "rax" for the quotient or "rdx" for the reminder
 		tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,op);
-		tc.free_named_register(os,indent_level,"rax");
 		tc.free_named_register(os,indent_level,"rdx");
+		tc.free_named_register(os,indent_level,"rax");
 		tc.free_scratch_register(os,indent_level,r);
 	}
 
