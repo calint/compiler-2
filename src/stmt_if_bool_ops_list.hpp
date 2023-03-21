@@ -58,7 +58,7 @@ public:
 			os<<"(";
 		}
 		const size_t n{bools_.size()};
-		for(size_t i=0;i<n;i++){
+		for(size_t i{0};i<n;i++){
 			if(bools_[i].index()==0){
 				get<stmt_if_bool_op>(bools_[i]).source_to(os);
 			}else{
