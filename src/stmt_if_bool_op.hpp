@@ -151,16 +151,16 @@ private:
 			return reg;
 		}
 		
-		const ident_resolved&dst_r{tc.resolve_ident_to_nasm(exp)};
-		if(dst_r.is_const())
-			return exp.get_unary_ops().get_ops_as_string()+dst_r.id;
+		const ident_resolved&id_r{tc.resolve_ident_to_nasm(exp)};
+		if(id_r.is_const())
+			return exp.get_unary_ops().get_ops_as_string()+id_r.id;
 
 		if(exp.get_unary_ops().is_empty())
-			return dst_r.id;
+			return id_r.id;
 		
 		const string&reg=tc.alloc_scratch_register(exp,os,indent_level);
 		allocated_registers.push_back(reg);
-		tc.asm_cmd(exp,os,indent_level,"mov",reg,dst_r.id);
+		tc.asm_cmd(exp,os,indent_level,"mov",reg,id_r.id);
 		exp.get_unary_ops().compile(tc,os,indent_level,reg);
 		return reg;
 	}
