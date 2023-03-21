@@ -5,8 +5,10 @@ int main(){
 	if( !(a==-2) || !(b==-a) ) return 2;
 	if( !(a==-2 || b==-a) ) return 3;
 	if( !(a==-2) && !(b==-a) ) return 4;
-	if( !(a==-2 && !(a==-1 && b==-1))) return 5;
-	if( !(a==-2 && !(a==-1 && b==-a))) return 6;
-	if( !(a==-2 || !(a==-2 || b==-a))) return 7;
+	if( !(a==-2 && !(a==-1 && b==-1)) ) return 5;
+	if( !(a==-2 && !(a==-1 && b==-a)) ) return 6;
+	if( !(a==-2 || !(a==-2 || b==-a)) ) return 7;
+	if( !(a==-2) ) return 8;
+	if( a!=-2 ) return 9;
 	return 0;
 }
