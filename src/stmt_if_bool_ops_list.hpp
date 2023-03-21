@@ -6,18 +6,33 @@
 
 class stmt_if_bool_ops_list final:public statement{
 public:
-	inline stmt_if_bool_ops_list(tokenizer&t,bool enclosed=false):
+	inline stmt_if_bool_ops_list(tokenizer&t,bool enclosed=false,token not_token={}):
 		statement{t.next_whitespace_token()},
+		not_token_{move(not_token)},
 		enclosed_{enclosed}
 	{
+		// i.e. not (a=1 and b=1)
+		// a=1 and b=1
 		while(true){
-			if(t.is_next_char('(')){
-				bools_.emplace_back(stmt_if_bool_ops_list{t,true});
+			token tknot{t.next_token()};
+			if(tknot.is_name("not")){
+				if(t.is_next_char('(')){
+					bools_.emplace_back(stmt_if_bool_ops_list{t,true,move(tknot)});
+				}else{
+					t.put_back_token(tknot);
+					bools_.emplace_back(stmt_if_bool_op{t});
+				}
 			}else{
-				bools_.emplace_back(stmt_if_bool_op{t});
+				t.put_back_token(tknot);
+				if(t.is_next_char('(')){
+					bools_.emplace_back(stmt_if_bool_ops_list{t,true});
+				}else{
+					bools_.emplace_back(stmt_if_bool_op{t});
+				}
 			}
 			if(t.is_next_char(')'))
 				return;
+				
 			token tk{t.next_token()};
 			if(tk.is_name("or") or tk.is_name("and")){
 				ops_.push_back(move(tk));
@@ -38,6 +53,7 @@ public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
+		not_token_.source_to(os);
 		if(enclosed_){
 			os<<"(";
 		}
@@ -121,7 +137,22 @@ private:
 		return get<stmt_if_bool_op>(v).cmp_bgn_label(tc);
 	}
 
-	vector<variant<stmt_if_bool_op,stmt_if_bool_ops_list>>bools_;
+	using elem=variant<stmt_if_bool_op,stmt_if_bool_ops_list>;
+	using elems=vector<elem>;
+	using elems_ref=vector<const elem*>;
+
+	inline static void unfold(const elems&from,elems_ref&to,bool invert){
+		const size_t n=from.size();
+		for(size_t i=0;i<n;i++){
+			const elem*e=&from[i];
+			to.push_back(e);
+		}
+	}
+
+	inline bool is_notted()const{return not_token_.is_name("not");}
+
+	elems bools_;
 	vector<token>ops_; // 'and' or 'or'
+	token not_token_;
 	bool enclosed_{}; // (a=b and c=d) vs a=b and c=d
 };

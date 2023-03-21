@@ -7,8 +7,8 @@ public:
 	inline stmt_if_bool_op(tokenizer&t):
 		statement{t.next_whitespace_token()}
 	{
-		// if not a=3
 		bool is_not{false};
+		// if not a=3
 		while(true){
 			token tk{t.next_token()};
 			if(not tk.is_name("not")){
