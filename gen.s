@@ -44,6 +44,7 @@ main:
    xor rdx,rdx
 ;  alloc rax
    mov rax,qword[rbp-24]
+   cqo
    idiv qword[rbp-16]
    mov qword[rbp-24],rax
 ;  free rax
@@ -86,6 +87,7 @@ main:
      xor rdx,rdx
 ;    alloc rax
      mov rax,r15
+     cqo
 ;    alloc r14
      mov r14,2
      idiv r14
@@ -127,6 +129,7 @@ main:
    xor rdx,rdx
 ;  alloc rax
    mov rax,r15
+   cqo
 ;  alloc r14
    mov r14,2
    idiv r14
@@ -160,11 +163,93 @@ main:
 ;      free rdi
      exit_17_16_end:
    if_17_5_end:
-;  [19:2] # c=-3/2 
-;  [20:2] # if not c=-1 exit(4) 
-;  [22:5] exit(0)
+;  [19:5] c=-a/-b 
+;  [19:7] -a/-b 
+;  [19:8] c=-a
+;  alloc r15
+   mov r15,qword[rbp-8]
+   mov qword[rbp-24],r15
+;  free r15
+   neg qword[rbp-24]
+;  [19:11] c/-b 
+;  alloc r15
+   mov r15,qword[rbp-16]
+   neg r15
+;  alloc rdx
+   xor rdx,rdx
+;  alloc rax
+   mov rax,qword[rbp-24]
+   cqo
+   idiv r15
+   mov qword[rbp-24],rax
+;  free rax
+;  free rdx
+;  free r15
+   if_20_8:
+;  [20:8] ? not c=1 
+   cmp_20_8:
+   cmp qword[rbp-24],1
+   je if_20_5_end
+   if_20_8_code:  ; opt1
+;    [20:16] exit(4)
+;    exit(v:reg_rdi) 
+;      inline: 20_16
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,4
+;      [2:5] mov(rax,60)
+       mov rax,60
+;      [2:17] # exit system call 
+;      [3:5] mov(rdi,v)
+;      [3:17] # return code 
+;      [4:5] syscall 
+       syscall
+;      free rdi
+     exit_20_16_end:
+   if_20_5_end:
+;  [22:5] c=-a/b 
+;  [22:7] -a/b 
+;  [22:8] c=-a
+;  alloc r15
+   mov r15,qword[rbp-8]
+   mov qword[rbp-24],r15
+;  free r15
+   neg qword[rbp-24]
+;  [22:10] c/b 
+;  alloc rdx
+   xor rdx,rdx
+;  alloc rax
+   mov rax,qword[rbp-24]
+   cqo
+   idiv qword[rbp-16]
+   mov qword[rbp-24],rax
+;  free rax
+;  free rdx
+   if_23_8:
+;  [23:8] ? not c=-1 
+   cmp_23_8:
+   cmp qword[rbp-24],-1
+   je if_23_5_end
+   if_23_8_code:  ; opt1
+;    [23:17] exit(5)
+;    exit(v:reg_rdi) 
+;      inline: 23_17
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,5
+;      [2:5] mov(rax,60)
+       mov rax,60
+;      [2:17] # exit system call 
+;      [3:5] mov(rdi,v)
+;      [3:17] # return code 
+;      [4:5] syscall 
+       syscall
+;      free rdi
+     exit_23_17_end:
+   if_23_5_end:
+;  [25:5] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 22_5
+;    inline: 25_5
 ;    alloc rdi
 ;    alias v -> rdi
      mov rdi,0
@@ -176,7 +261,7 @@ main:
 ;    [4:5] syscall 
      syscall
 ;    free rdi
-   exit_22_5_end:
+   exit_25_5_end:
 
 ; max scratch registers in use: 3
 ;            max frames in use: 5

@@ -425,6 +425,7 @@ private:
 			tc.asm_cmd(src,os,indent_level,"xor","rdx","rdx");
 			tc.alloc_named_register_or_break(src,os,indent_level,"rax");
 			tc.asm_cmd(src,os,indent_level,"mov","rax",dest_resolved);
+			tc.indent(os,indent_level,false);os<<"cqo"<<endl;
 			tc.indent(os,indent_level,false);os<<"idiv "<<r<<endl;
 			// op is either "rax" for the quotient or "rdx" for the reminder
 			tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,op);
@@ -439,6 +440,7 @@ private:
 			tc.asm_cmd(src,os,indent_level,"xor","rdx","rdx");
 			tc.alloc_named_register_or_break(src,os,indent_level,"rax");
 			tc.asm_cmd(src,os,indent_level,"mov","rax",dest_resolved);
+			tc.indent(os,indent_level,false);os<<"cqo"<<endl;
 			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
 			tc.asm_cmd(src,os,indent_level,"mov",r,src.get_unary_ops().get_ops_as_string()+ir.id);
 			tc.indent(os,indent_level,false);os<<"idiv "<<r<<endl;
@@ -455,6 +457,7 @@ private:
 			tc.asm_cmd(src,os,indent_level,"xor","rdx","rdx");
 			tc.alloc_named_register_or_break(src,os,indent_level,"rax");
 			tc.asm_cmd(src,os,indent_level,"mov","rax",dest_resolved);
+			tc.indent(os,indent_level,false);os<<"cqo"<<endl;
 			tc.indent(os,indent_level,false);os<<"idiv "<<ir.id<<endl;
 			// op is either "rax" for the quotient or "rdx" for the reminder
 			tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,op);
@@ -469,6 +472,7 @@ private:
 		tc.asm_cmd(src,os,indent_level,"xor","rdx","rdx");
 		tc.alloc_named_register_or_break(src,os,indent_level,"rax");
 		tc.asm_cmd(src,os,indent_level,"mov","rax",dest_resolved);
+		tc.indent(os,indent_level,false);os<<"cqo"<<endl;
 		tc.indent(os,indent_level,false);os<<"idiv "<<r<<endl;
 		// op is either "rax" for the quotient or "rdx" for the reminder
 		tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,op);

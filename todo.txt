@@ -9,7 +9,8 @@
 [ ]   review
 [x] op shift left and right
 [ ]   review
-[ ] implement division op
+[x] implement division op
+[ ]   review
 [ ] character type
 [ ] string type
 [ ] var str="hello world"

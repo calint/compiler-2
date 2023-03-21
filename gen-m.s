@@ -19,6 +19,7 @@ main:
    mov qword[rbp-24],r15
    xor rdx,rdx
    mov rax,qword[rbp-24]
+   cqo
    idiv qword[rbp-16]
    mov qword[rbp-24],rax
    if_11_8:
@@ -37,6 +38,7 @@ main:
      mov r15,qword[rbp-8]
      xor rdx,rdx
      mov rax,r15
+     cqo
      mov r14,2
      idiv r14
      mov r15,rdx
@@ -52,6 +54,7 @@ main:
    mov r15,3
    xor rdx,rdx
    mov rax,r15
+   cqo
    mov r14,2
    idiv r14
    mov r15,rdx
@@ -67,7 +70,45 @@ main:
        syscall
      exit_17_16_end:
    if_17_5_end:
+   mov r15,qword[rbp-8]
+   mov qword[rbp-24],r15
+   neg qword[rbp-24]
+   mov r15,qword[rbp-16]
+   neg r15
+   xor rdx,rdx
+   mov rax,qword[rbp-24]
+   cqo
+   idiv r15
+   mov qword[rbp-24],rax
+   if_20_8:
+   cmp_20_8:
+   cmp qword[rbp-24],1
+   je if_20_5_end
+   if_20_8_code:  ; opt1
+       mov rdi,4
+       mov rax,60
+       syscall
+     exit_20_16_end:
+   if_20_5_end:
+   mov r15,qword[rbp-8]
+   mov qword[rbp-24],r15
+   neg qword[rbp-24]
+   xor rdx,rdx
+   mov rax,qword[rbp-24]
+   cqo
+   idiv qword[rbp-16]
+   mov qword[rbp-24],rax
+   if_23_8:
+   cmp_23_8:
+   cmp qword[rbp-24],-1
+   je if_23_5_end
+   if_23_8_code:  ; opt1
+       mov rdi,5
+       mov rax,60
+       syscall
+     exit_23_17_end:
+   if_23_5_end:
      mov rdi,0
      mov rax,60
      syscall
-   exit_22_5_end:
+   exit_25_5_end:
