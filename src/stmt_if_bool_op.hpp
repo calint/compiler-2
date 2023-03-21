@@ -37,10 +37,10 @@ public:
 				op_=">";
 			}
 		}else{
-			throw compiler_error(*this,"expected boolean op");
+			throw compiler_error(*this,"expected boolean operation '=','<','<=','>','>='");
 		}
 		
-		rhs_={t,true};
+		rhs_={t};
 	}
 
 	inline stmt_if_bool_op()=default;
@@ -71,7 +71,7 @@ public:
 		const bool invert{inverted?not is_not_:is_not_};
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
-		resolve(tc,os,indent_level,"cmp",lhs_,rhs_);
+		resolve_cmp(tc,os,indent_level,lhs_,rhs_);
 		toc::indent(os,indent_level);
 		os<<(invert?asm_jxx_for_op_inv(op_):asm_jxx_for_op(op_));
 		os<<" "<<jmp_to_if_true<<endl;
@@ -84,7 +84,7 @@ public:
 		const bool invert{inverted?not is_not_:is_not_};
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
-		resolve(tc,os,indent_level,"cmp",lhs_,rhs_);
+		resolve_cmp(tc,os,indent_level,lhs_,rhs_);
 		toc::indent(os,indent_level);
 		os<<(invert?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
 		os<<" "<<jmp_to_if_false<<endl;
@@ -108,7 +108,7 @@ private:
 		}else if(op==">="){
 			return "jge";
 		}else{
-			throw "unknown op "+op;
+			throw"unknown op "+op;
 		}
 	}
 
@@ -124,17 +124,17 @@ private:
 		}else if(op==">="){
 			return "jl";
 		}else{
-			throw "unknown op "+op;
+			throw"unknown op "+op;
 		}
 	}
 
-	inline void resolve(toc&tc,ostream&os,size_t indent_level,const string&op,const expr_ops_list&lh,const expr_ops_list&rh)const{
+	inline void resolve_cmp(toc&tc,ostream&os,size_t indent_level,const expr_ops_list&lh,const expr_ops_list&rh)const{
 		vector<string>allocated_registers;
 
 		const string&dst{resolve_ident(tc,os,indent_level,lh,allocated_registers)};
 		const string&src{resolve_ident(tc,os,indent_level,rh,allocated_registers)};
 
-		tc.asm_cmd(*this,os,indent_level,op,dst,src);
+		tc.asm_cmd(*this,os,indent_level,"cmp",dst,src);
 
 		// free allocated registers in reverse order
 		for(auto it{allocated_registers.rbegin()};it!=allocated_registers.rend();++it) {
