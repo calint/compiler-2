@@ -6,7 +6,9 @@
 [x] unary decoration parsed prior to any statement. i.e. '~-a', '~-f(o)'
 [ ]   review
 [x] bitwise logical ops: & | ^
-[ ] op shift left and right
+[ ]   review
+[x] op shift left and right
+[ ]   review
 [ ] implement division op
 [ ] character type
 [ ] string type

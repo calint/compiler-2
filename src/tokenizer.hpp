@@ -58,6 +58,8 @@ public:
 
 	inline bool is_peek_char(const char ch)const{return *ptr_==ch;}
 
+	inline bool is_peek_char2(const char ch)const{return *(ptr_+1)==ch;}
+
 	inline char peek_char()const{return *ptr_;}
 
 	inline string read_rest_of_line(){

@@ -7,11 +7,10 @@
 
 class expr_ops_list final:public expression{
 public:
-	inline expr_ops_list(tokenizer&t,const bool in_args=false,const bool enclosed=false,const char list_op='=',const int first_op_precedence=3,unique_ptr<statement>first_expression=unique_ptr<statement>()):
+	inline expr_ops_list(tokenizer&t,const bool in_args=false,const bool enclosed=false,const int first_op_precedence=init_precedence,unique_ptr<statement>first_expression=unique_ptr<statement>()):
 		expression{t.next_whitespace_token(),{}},
 		enclosed_{enclosed},
-		in_args_{in_args},
-		list_op_{list_op}
+		in_args_{in_args}
 	{
 		// read first expression
 		// if called in a recursion with a first expression passed
@@ -46,9 +45,9 @@ public:
 			// if parsed in a function call argument list or in a boolean expression
 			if(in_args){ // ? rewrite is_in_bool_expr
 				// if in boolean expression exit when an operation is found
-				if(t.is_peek_char('<'))break;
+				if(t.is_peek_char('<')&&not t.is_peek_char2('<'))break; // ! can be out of bounds
 				if(t.is_peek_char('='))break;
-				if(t.is_peek_char('>'))break;
+				if(t.is_peek_char('>')&&not t.is_peek_char2('>'))break; // ! can be out of bounds
 				// if in arguments exit when ',' or ')' is found
 				if(t.is_peek_char(','))break;
 				if(t.is_peek_char(')'))break;
@@ -79,6 +78,10 @@ public:
 				ops_.push_back('|');
 			}else if(t.is_peek_char('^')){
 				ops_.push_back('^');
+			}else if(t.is_peek_char('<')&&t.is_peek_char2('<')){ // ! can be out of bounds
+				ops_.push_back('<');
+			}else if(t.is_peek_char('>')&&t.is_peek_char2('>')){ // ! can be out of bounds
+			 	ops_.push_back('>');
 			}else{
 				// no more operations
 				break;
@@ -87,7 +90,7 @@ public:
 			// check if next operation precedence is same or lower
 			// if not then a new subexpression is added to the list with the last
 			// expression in this list as first expression
-			const int next_precedence{precedence_for_op(t.peek_char())};
+			const int next_precedence{precedence_for_op(ops_.back())};
 			if(next_precedence>precedence){
 				// i.e. =a+b*c+1 where the peeked char is '*'
 				// next operation has higher precedence than current
@@ -95,18 +98,17 @@ public:
 				// move last expression (+b) to subexpression
 				//   =[(=a) +[(=b)(*c)(+1)]]
 				precedence=next_precedence;
-				if(not ops_.empty()){
-					const int first_op_prec{precedence_for_op(ops_.back())};
-					ops_.pop_back();
-					const char lst_op{ops_.back()};
-					unique_ptr<statement>prev{move(exps_.back())};
-					exps_.pop_back();
-					exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,false,lst_op,first_op_prec,move(prev)));
-					continue;
-				}
+				const int first_op_prec{precedence_for_op(ops_.back())};
+				ops_.pop_back();
+				unique_ptr<statement>prev{move(exps_.back())};
+				exps_.pop_back();
+				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,false,first_op_prec,move(prev)));
+				continue;
 			}else{
 				precedence=next_precedence;
-				t.next_char();// read the peeked operator
+				const char ch=t.next_char();// read the peeked operator
+				if(ch=='<'||ch=='>')
+					t.next_char(); // one more character for << and >>
 			}
 
 			if(t.is_next_char('(')){
@@ -139,7 +141,10 @@ public:
 			exps_[0]->source_to(os);
 			const size_t len{exps_.size()};
 			for(size_t i{1};i<len;i++){
-				os<<ops_[i-1];
+				const char op=ops_[i-1];
+				os<<op;
+				if(op=='<'||op=='>')
+					os<<op;
 				exps_[i]->source_to(os);
 			}
 		}
@@ -196,6 +201,7 @@ public:
 	// }
 
 private:
+	static constexpr int init_precedence{7}; // higher than the highest precedence
 	inline static int precedence_for_op(const char ch){
 		switch(ch){
 			case'|':return 1;
@@ -308,6 +314,14 @@ private:
 			asm_op_bitwise(tc,os,indent_level,"xor",dest,dest_resolved,src);
 			return;
 		}
+		if(op=='<'){
+			asm_op_shift(tc,os,indent_level,"sal",dest,dest_resolved,src);
+			return;
+		}
+		if(op=='>'){
+			asm_op_shift(tc,os,indent_level,"sar",dest,dest_resolved,src);
+			return;
+		}
 	}
 
 	inline void asm_op_add_sub(toc&tc,ostream&os,const size_t indent_level,const string&op,const string&op_inv,const string&dest,const string&dest_resolved,const statement&src)const{
@@ -364,9 +378,38 @@ private:
 		tc.free_scratch_register(os,indent_level,r);
 	}
 
+	inline void asm_op_shift(toc&tc,ostream&os,const size_t indent_level,const string&op,const string&dest,const string&dest_resolved,const statement&src)const{
+		if(src.is_expression()){
+			// the operand must be stored in CL
+			tc.alloc_named_register_or_break(src,os,indent_level,"rcx"); // ? if not available push/pop
+			src.compile(tc,os,indent_level,"rcx");
+			tc.asm_cmd(src,os,indent_level,op,dest_resolved,"cl");
+			tc.free_named_register(os,indent_level,"rcx");
+			return;
+		}
+		const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
+		if(ir.is_const()){
+			tc.asm_cmd(src,os,indent_level,op,dest_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
+			return;
+		}
+		const unary_ops&uops=src.get_unary_ops();
+		if(uops.is_empty()){
+			// the operand must be stored in CL
+			tc.alloc_named_register_or_break(src,os,indent_level,"rcx"); // ? if not available push/pop
+			tc.asm_cmd(src,os,indent_level,"mov","rcx",ir.id);
+			tc.asm_cmd(src,os,indent_level,op,dest_resolved,"cl");
+			tc.free_named_register(os,indent_level,"rcx");
+			return;
+		}
+		tc.alloc_named_register_or_break(src,os,indent_level,"rcx"); // ? if not available push/pop
+		tc.asm_cmd(src,os,indent_level,"mov","rcx",ir.id);
+		uops.compile(tc,os,indent_level,"rcx");		
+		tc.asm_cmd(src,os,indent_level,op,dest_resolved,"cl");
+		tc.free_scratch_register(os,indent_level,"rcx");
+	}
+
 	bool enclosed_{}; //  (a+b) vs a+b
 	bool in_args_{}; // foo(a+b)
-	char list_op_{}; // +[...] -[...] *[...] /[...]
 	bool negated_{};
 	vector<unique_ptr<statement>>exps_;
 	vector<char>ops_;
