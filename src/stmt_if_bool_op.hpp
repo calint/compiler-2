@@ -131,8 +131,8 @@ private:
 	inline void resolve_cmp(toc&tc,ostream&os,size_t indent_level,const expr_ops_list&lh,const expr_ops_list&rh)const{
 		vector<string>allocated_registers;
 
-		const string&dst{resolve_ident(tc,os,indent_level,lh,allocated_registers)};
-		const string&src{resolve_ident(tc,os,indent_level,rh,allocated_registers)};
+		const string&dst{resolve_expr(tc,os,indent_level,lh,allocated_registers)};
+		const string&src{resolve_expr(tc,os,indent_level,rh,allocated_registers)};
 
 		tc.asm_cmd(*this,os,indent_level,"cmp",dst,src);
 
@@ -143,7 +143,7 @@ private:
 		}
 	}
 
-	inline string resolve_ident(toc&tc,ostream&os,size_t indent_level,const expr_ops_list&exp,vector<string>&allocated_registers)const{
+	inline string resolve_expr(toc&tc,ostream&os,size_t indent_level,const expr_ops_list&exp,vector<string>&allocated_registers)const{
 		if(exp.is_expression()){
 			const string&reg{tc.alloc_scratch_register(exp,os,indent_level)};
 			allocated_registers.push_back(reg);
