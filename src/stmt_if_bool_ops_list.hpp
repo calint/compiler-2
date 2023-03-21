@@ -30,7 +30,7 @@ public:
 					bools_.emplace_back(stmt_if_bool_op{t});
 				}
 			}
-			if(t.is_next_char(')'))
+			if(enclosed_ and t.is_next_char(')'))
 				return;
 				
 			token tk{t.next_token()};
