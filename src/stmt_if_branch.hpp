@@ -39,7 +39,7 @@ public:
 		// the begining of this branch
 		tc.asm_label(*this,os,indent_level,if_bgn_lbl);
 		// compile boolean ops list
-		bol_.compile(tc,os,indent_level,jmp_to_if_false_label,jmp_to_if_true_lbl);
+		bol_.compile(tc,os,indent_level,jmp_to_if_false_label,jmp_to_if_true_lbl,false);
 		// the label where to jump if evaluation of boolean ops is true
 		tc.asm_label(*this,os,indent_level,jmp_to_if_true_lbl);
 		// the code of the branch

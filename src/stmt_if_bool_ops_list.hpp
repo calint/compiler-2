@@ -82,49 +82,93 @@ public:
 		return "cmp_"+tc.source_location(tok())+(call_path.empty()?"":"_"+call_path);
 	}
 
-	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true)const{
+	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool inverted)const{
+		// invert according to De Morgan's laws
 		const size_t n{bools_.size()};
 		if(n>1){
 			// avoid repeated comment
+			if(inverted){
+				toc::indent(os,indent_level,true);os<<"invert\n";
+			}
 			toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		}
+		bool invert{inverted?not not_token_.is_name("not"):not_token_.is_name("not")};
 		for(size_t i=0;i<n;i++){
 			if(bools_[i].index()==1){
+				//
+				// stmt_if_bool_ops_list
+				//
 				const stmt_if_bool_ops_list&el{get<stmt_if_bool_ops_list>(bools_[i])};
 				string jmp_false{jmp_to_if_false};
 				string jmp_true{jmp_to_if_true};
 				if(i<n-1){
-					// if not last element check if it is a 'or' or 'and' list
-					if(ops_[i].is_name("or")){
-						// if evaluation is false and next op is "or" then jump_false is next bool eval
-						jmp_false=cmp_label_from_variant(tc,bools_[i+1]);
-					}else if(ops_[i].is_name("and")){
-						// if evaluation is true and next op is "and" then jump_true is next bool eval
-						jmp_true=cmp_label_from_variant(tc,bools_[i+1]);
+					if(!invert){
+						// if not last element check if it is a 'or' or 'and' list
+						if(ops_[i].is_name("or")){
+							// if evaluation is false and next op is "or" then jump_false is next bool eval
+							jmp_false=cmp_label_from_variant(tc,bools_[i+1]);
+						}else if(ops_[i].is_name("and")){
+							// if evaluation is true and next op is "and" then jump_true is next bool eval
+							jmp_true=cmp_label_from_variant(tc,bools_[i+1]);
+						}else{
+							throw "expected 'or' or 'and'";
+						}
+						el.compile(tc,os,indent_level,jmp_false,jmp_true,invert);
 					}else{
-						throw "expected 'or' or 'and'";
+						// if not last element check if it is a 'or' or 'and' list
+						if(ops_[i].is_name("and")){
+							// if evaluation is false and next op is "or" then jump_false is next bool eval
+							jmp_false=cmp_label_from_variant(tc,bools_[i+1]);
+						}else if(ops_[i].is_name("or")){
+							// if evaluation is true and next op is "and" then jump_true is next bool eval
+							jmp_true=cmp_label_from_variant(tc,bools_[i+1]);
+						}else{
+							throw "expected 'or' or 'and'";
+						}
+						el.compile(tc,os,indent_level,jmp_false,jmp_true,invert);
 					}
-					el.compile(tc,os,indent_level,jmp_false,jmp_true);
 				}else{
 					// if last in list jmp_false is next bool eval
-					el.compile(tc,os,indent_level,jmp_false,jmp_true);
+					el.compile(tc,os,indent_level,jmp_false,jmp_true,invert);
 				}
 				continue;
 			}
-			// a=1 and b=2   vs   a=1 or b=2
-			const stmt_if_bool_op&e{get<stmt_if_bool_op>(bools_[i])};
-			if(i<n-1){
-				if(ops_[i].is_name("or")){
-					e.compile_or(tc,os,indent_level,jmp_to_if_true);
-				}else if(ops_[i].is_name("and")){
-					e.compile_and(tc,os,indent_level,jmp_to_if_false);
+
+			//
+			// stmt_if_bool_op
+			//
+			if(!invert){
+				// a=1 and b=2   vs   a=1 or b=2
+				const stmt_if_bool_op&e{get<stmt_if_bool_op>(bools_[i])};
+				if(i<n-1){
+					if(ops_[i].is_name("or")){
+						e.compile_or(tc,os,indent_level,jmp_to_if_true,invert);
+					}else if(ops_[i].is_name("and")){
+						e.compile_and(tc,os,indent_level,jmp_to_if_false,invert);
+					}else{
+						throw"expected 'or' or 'and'";
+					}
 				}else{
-					throw"expected 'or' or 'and'";
+					e.compile_and(tc,os,indent_level,jmp_to_if_false,invert);
+					// if last element and not yet jumped to false then jump to true
+					tc.asm_jmp(*this,os,indent_level,jmp_to_if_true);
 				}
 			}else{
-				e.compile_and(tc,os,indent_level,jmp_to_if_false);
-				// if last element and not yet jumped to false then jump to true
-				tc.asm_jmp(*this,os,indent_level,jmp_to_if_true);
+				// a=1 and b=2   vs   a=1 or b=2
+				const stmt_if_bool_op&e{get<stmt_if_bool_op>(bools_[i])};
+				if(i<n-1){
+					if(ops_[i].is_name("and")){
+						e.compile_or(tc,os,indent_level,jmp_to_if_true,invert);
+					}else if(ops_[i].is_name("or")){
+						e.compile_and(tc,os,indent_level,jmp_to_if_false,invert);
+					}else{
+						throw"expected 'or' or 'and'";
+					}
+				}else{
+					e.compile_and(tc,os,indent_level,jmp_to_if_false,invert);
+					// if last element and not yet jumped to false then jump to true
+					tc.asm_jmp(*this,os,indent_level,jmp_to_if_true);
+				}
 			}
 		}
 	}
@@ -137,21 +181,9 @@ private:
 		return get<stmt_if_bool_op>(v).cmp_bgn_label(tc);
 	}
 
-	using elem=variant<stmt_if_bool_op,stmt_if_bool_ops_list>;
-	using elems=vector<elem>;
-	using elems_ref=vector<const elem*>;
-
-	inline static void unfold(const elems&from,elems_ref&to,bool invert){
-		const size_t n=from.size();
-		for(size_t i=0;i<n;i++){
-			const elem*e=&from[i];
-			to.push_back(e);
-		}
-	}
-
 	inline bool is_notted()const{return not_token_.is_name("not");}
 
-	elems bools_;
+	vector<variant<stmt_if_bool_op,stmt_if_bool_ops_list>>bools_;
 	vector<token>ops_; // 'and' or 'or'
 	token not_token_;
 	bool enclosed_{}; // (a=b and c=d) vs a=b and c=d

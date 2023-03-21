@@ -64,21 +64,29 @@ public:
 		throw compiler_error(tok(),"this code should not be reached: "+string{__FILE__}+":"+to_string(__LINE__));
 	}
 
-	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_true)const{
+	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_true,const bool inverted)const{
+		if(inverted){
+			toc::indent(os,indent_level,true);os<<"invert\n";
+		}
+		const bool invert{inverted?not is_not_:is_not_};
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
 		resolve(tc,os,indent_level,"cmp",lhs_,rhs_);
 		toc::indent(os,indent_level);
-		os<<(is_not_?asm_jxx_for_op_inv(op_):asm_jxx_for_op(op_));
+		os<<(invert?asm_jxx_for_op_inv(op_):asm_jxx_for_op(op_));
 		os<<" "<<jmp_to_if_true<<endl;
 	}
 
-	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false)const{
+	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false,const bool inverted)const{
+		if(inverted){
+			toc::indent(os,indent_level,true);os<<"invert\n";
+		}
+		const bool invert{inverted?not is_not_:is_not_};
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
 		resolve(tc,os,indent_level,"cmp",lhs_,rhs_);
 		toc::indent(os,indent_level);
-		os<<(is_not_?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
+		os<<(invert?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
 		os<<" "<<jmp_to_if_false<<endl;
 	}
 
