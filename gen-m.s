@@ -56,7 +56,38 @@ main:
        syscall
      exit_14_16_end:
    if_14_5_end:
+   mov qword[rbp-40],1
+   mov r15,qword[rbp-8]
+   not r15
+   add r15,qword[rbp-40]
+   mov qword[rbp-48],r15
+   if_17_8:
+   cmp_17_8:
+   cmp qword[rbp-48],2
+   je if_17_5_end
+   if_17_8_code:  ; opt1
+       mov rdi,4
+       mov rax,60
+       syscall
+     exit_17_16_end:
+   if_17_5_end:
+   mov qword[rbp-56],2
+   mov r15,qword[rbp-56]
+   mov r14,qword[rbp-8]
+   not r14
+   imul r15,r14
+   mov qword[rbp-64],r15
+   if_20_8:
+   cmp_20_8:
+   cmp qword[rbp-64],2
+   je if_20_5_end
+   if_20_8_code:  ; opt1
+       mov rdi,5
+       mov rax,60
+       syscall
+     exit_20_16_end:
+   if_20_5_end:
      mov rdi,0
      mov rax,60
      syscall
-   exit_15_5_end:
+   exit_21_5_end:

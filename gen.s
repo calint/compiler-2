@@ -127,9 +127,92 @@ main:
 ;      free rdi
      exit_14_16_end:
    if_14_5_end:
-;  [15:5] exit(0)
+;  [15:5] var e=1 
+;  e: qword[rbp-40]
+;  [15:9] e=1 
+;  [15:11] 1 
+;  [15:11] e=1 
+   mov qword[rbp-40],1
+;  [16:5] var f=~a--e 
+;  f: qword[rbp-48]
+;  [16:9] f=~a--e 
+;  alloc r15
+;  [16:11] ~a--e 
+;  [16:12] r15=~a
+   mov r15,qword[rbp-8]
+   not r15
+;  [16:15] r15--e 
+   add r15,qword[rbp-40]
+   mov qword[rbp-48],r15
+;  free r15
+   if_17_8:
+;  [17:8] ? not f=2 
+   cmp_17_8:
+   cmp qword[rbp-48],2
+   je if_17_5_end
+   if_17_8_code:  ; opt1
+;    [17:16] exit(4)
+;    exit(v:reg_rdi) 
+;      inline: 17_16
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,4
+;      [2:5] mov(rax,60)
+       mov rax,60
+;      [2:17] # exit system call 
+;      [3:5] mov(rdi,v)
+;      [3:17] # return code 
+;      [4:5] syscall 
+       syscall
+;      free rdi
+     exit_17_16_end:
+   if_17_5_end:
+;  [18:5] var g=2 
+;  g: qword[rbp-56]
+;  [18:9] g=2 
+;  [18:11] 2 
+;  [18:11] g=2 
+   mov qword[rbp-56],2
+;  [19:5] var h=g*~a 
+;  h: qword[rbp-64]
+;  [19:9] h=g*~a 
+;  alloc r15
+;  [19:11] g*~a 
+;  [19:11] r15=g
+   mov r15,qword[rbp-56]
+;  [19:14] r15*~a 
+;  alloc r14
+   mov r14,qword[rbp-8]
+   not r14
+   imul r15,r14
+;  free r14
+   mov qword[rbp-64],r15
+;  free r15
+   if_20_8:
+;  [20:8] ? not h=2 
+   cmp_20_8:
+   cmp qword[rbp-64],2
+   je if_20_5_end
+   if_20_8_code:  ; opt1
+;    [20:16] exit(5)
+;    exit(v:reg_rdi) 
+;      inline: 20_16
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,5
+;      [2:5] mov(rax,60)
+       mov rax,60
+;      [2:17] # exit system call 
+;      [3:5] mov(rdi,v)
+;      [3:17] # return code 
+;      [4:5] syscall 
+       syscall
+;      free rdi
+     exit_20_16_end:
+   if_20_5_end:
+;  [21:5] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 15_5
+;    inline: 21_5
 ;    alloc rdi
 ;    alias v -> rdi
      mov rdi,0
@@ -141,7 +224,7 @@ main:
 ;    [4:5] syscall 
      syscall
 ;    free rdi
-   exit_15_5_end:
+   exit_21_5_end:
 
 ; max scratch registers in use: 2
 ;            max frames in use: 5
