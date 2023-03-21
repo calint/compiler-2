@@ -16,7 +16,7 @@ $CC $CF $CW -o baz src/main.cpp
 nasm -f elf64 gen.s
 ld -s -o gen gen.o
 
-ls --color -la baz gen.s gen
+ls --color -la baz gen.s gen-m.s gen
 
 cat gen.s|grep -v -e'^\s*;.*$' -e'^\s*$' > gen-m.s
 

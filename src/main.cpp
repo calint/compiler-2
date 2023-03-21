@@ -24,6 +24,9 @@ inline unique_ptr<statement>create_statement_from_tokenizer(token tk,unary_ops u
 inline unique_ptr<statement>create_statement_from_tokenizer(tokenizer&t){
 	unary_ops uops{t};
 	token tk=t.next_token();
+	if(tk.is_name(""))
+		throw compiler_error(tk,"unexpected empty expression");
+
 	if(tk.is_name("#")){
 		if(!uops.is_empty())
 			throw compiler_error(tk,"unexpected comment after unary ops");
