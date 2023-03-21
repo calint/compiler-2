@@ -111,7 +111,7 @@ public:
 							// if evaluation is true and next op is "and" then jump_true is next bool eval
 							jmp_true=cmp_label_from_variant(tc,bools_[i+1]);
 						}else{
-							throw "expected 'or' or 'and'";
+							throw"expected 'or' or 'and'";
 						}
 						el.compile(tc,os,indent_level,jmp_false,jmp_true,invert);
 					}else{
@@ -124,7 +124,7 @@ public:
 							// if evaluation is true and next op is "and" then jump_true is next bool eval
 							jmp_true=cmp_label_from_variant(tc,bools_[i+1]);
 						}else{
-							throw "expected 'or' or 'and'";
+							throw"expected 'or' or 'and'";
 						}
 						el.compile(tc,os,indent_level,jmp_false,jmp_true,invert);
 					}
@@ -182,8 +182,6 @@ private:
 		}
 		return get<stmt_if_bool_op>(v).cmp_bgn_label(tc);
 	}
-
-	inline bool is_notted()const{return not_token_.is_name("not");}
 
 	vector<variant<stmt_if_bool_op,stmt_if_bool_ops_list>>bools_;
 	vector<token>ops_; // 'and' or 'or'
