@@ -256,12 +256,12 @@ main:
 ;  free r15
    jne if_17_5_end
    if_17_8_code:  ; opt1
-;    [17:41] exit(6)
+;    [17:41] exit(7)
 ;    exit(v:reg_rdi) 
 ;      inline: 17_41
 ;      alloc rdi
 ;      alias v -> rdi
-       mov rdi,6
+       mov rdi,7
 ;      [2:5] mov(rax,60)
        mov rax,60
 ;      [2:17] # exit system call 

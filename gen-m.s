@@ -124,7 +124,7 @@ main:
    cmp qword[rbp-16],r15
    jne if_17_5_end
    if_17_8_code:  ; opt1
-       mov rdi,6
+       mov rdi,7
        mov rax,60
        syscall
      exit_17_41_end:
