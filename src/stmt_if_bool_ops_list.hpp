@@ -83,15 +83,15 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool inverted)const{
-		// invert according to De Morgan's laws
 		const size_t n{bools_.size()};
+		if(inverted){
+			toc::indent(os,indent_level,true);os<<"invert bools\n";
+		}
 		if(n>1){
 			// avoid repeated comment
-			if(inverted){
-				toc::indent(os,indent_level,true);os<<"invert\n";
-			}
 			toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		}
+		// invert according to De Morgan's laws
 		bool invert{inverted?not not_token_.is_name("not"):not_token_.is_name("not")};
 		for(size_t i=0;i<n;i++){
 			if(bools_[i].index()==1){
@@ -115,6 +115,7 @@ public:
 						}
 						el.compile(tc,os,indent_level,jmp_false,jmp_true,invert);
 					}else{
+						// invert expression according to De Morgan's laws
 						// if not last element check if it is a 'or' or 'and' list
 						if(ops_[i].is_name("and")){
 							// if evaluation is false and next op is "or" then jump_false is next bool eval
@@ -154,6 +155,7 @@ public:
 					tc.asm_jmp(*this,os,indent_level,jmp_to_if_true);
 				}
 			}else{
+				// inverted according to De Morgan's laws
 				// a=1 and b=2   vs   a=1 or b=2
 				const stmt_if_bool_op&e{get<stmt_if_bool_op>(bools_[i])};
 				if(i<n-1){
