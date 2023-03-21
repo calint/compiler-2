@@ -411,6 +411,7 @@ private:
 		tc.free_scratch_register(os,indent_level,"rcx");
 	}
 
+	// op is either "rax" for the quotient or "rdx" for the reminder
 	inline void asm_op_div(toc&tc,ostream&os,const size_t indent_level,const string&op,const string&dest,const string&dest_resolved,const statement&src)const{
 		if(src.is_expression()){
 			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
@@ -420,7 +421,6 @@ private:
 			tc.alloc_named_register_or_break(src,os,indent_level,"rdx");
 			tc.indent(os,indent_level,false);os<<"cqo"<<endl;
 			tc.indent(os,indent_level,false);os<<"idiv "<<r<<endl;
-			// op is either "rax" for the quotient or "rdx" for the reminder
 			tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,op);
 			tc.free_named_register(os,indent_level,"rdx");
 			tc.free_named_register(os,indent_level,"rax");
@@ -437,7 +437,6 @@ private:
 			tc.asm_cmd(src,os,indent_level,"mov",r,src.get_unary_ops().get_ops_as_string()+ir.id);
 			tc.indent(os,indent_level,false);os<<"idiv "<<r<<endl;
 			tc.free_scratch_register(os,indent_level,r);
-			// op is either "rax" for the quotient or "rdx" for the reminder
 			tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,op);
 			tc.free_named_register(os,indent_level,"rdx");
 			tc.free_named_register(os,indent_level,"rax");
@@ -464,7 +463,6 @@ private:
 		tc.alloc_named_register_or_break(src,os,indent_level,"rdx");
 		tc.indent(os,indent_level,false);os<<"cqo"<<endl;
 		tc.indent(os,indent_level,false);os<<"idiv "<<r<<endl;
-		// op is either "rax" for the quotient or "rdx" for the reminder
 		tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,op);
 		tc.free_named_register(os,indent_level,"rdx");
 		tc.free_named_register(os,indent_level,"rax");
