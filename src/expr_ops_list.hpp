@@ -20,10 +20,11 @@ public:
 		}else{
 			// check if new recursion is necessary i.e. =-a/-(-(b+c)+d), t at "-a/-("
 			unary_ops uo={t};
-			// check for negated expression list. i.e. -(a+b)
 			if(t.is_next_char('(')){
+				// recursion
 				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true,move(uo)));
 			}else{
+				// statement
 				uo.put_back(t);
 				exps_.emplace_back(create_statement_from_tokenizer(t));
 			}
@@ -67,9 +68,9 @@ public:
 				ops_.push_back('|');
 			}else if(t.is_peek_char('^')){
 				ops_.push_back('^');
-			}else if(t.is_peek_char('<')&&t.is_peek_char2('<')){ // ! can be out of bounds
+			}else if(t.is_peek_char('<')&&t.is_peek_char2('<')){
 				ops_.push_back('<');
-			}else if(t.is_peek_char('>')&&t.is_peek_char2('>')){ // ! can be out of bounds
+			}else if(t.is_peek_char('>')&&t.is_peek_char2('>')){
 			 	ops_.push_back('>');
 			}else{
 				// no more operations

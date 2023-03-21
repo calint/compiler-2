@@ -58,7 +58,9 @@ public:
 
 	inline bool is_peek_char(const char ch)const{return *ptr_==ch;}
 
-	inline bool is_peek_char2(const char ch)const{return *(ptr_+1)==ch;}
+	inline bool is_peek_char2(const char ch)const{
+		return *ptr_==0?false:*(ptr_+1)==ch;
+	}
 
 	inline char peek_char()const{return *ptr_;}
 
@@ -77,9 +79,9 @@ public:
 
 	inline char next_char(){
 		assert(last_char_);
-		nchar_++;
 		last_char_=*ptr_;
 		ptr_++;
+		nchar_++;
 		return last_char_;
 	}
 
