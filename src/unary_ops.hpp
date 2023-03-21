@@ -30,7 +30,7 @@ public:
     inline void put_back(tokenizer&t)const{
         size_t i{ops_.size()};
         while(i--){
-            t.pushback_char(ops_[i]);
+            t.put_back_char(ops_[i]);
         }
     }
 

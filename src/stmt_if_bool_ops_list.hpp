@@ -22,7 +22,7 @@ public:
 			if(tk.is_name("or") or tk.is_name("and")){
 				ops_.push_back(move(tk));
 			}else{
-				t.pushback_token(tk);
+				t.put_back_token(tk);
 				break;
 			}
 		}

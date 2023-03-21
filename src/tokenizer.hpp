@@ -35,12 +35,12 @@ public:
 		return token{wspre,bgn,tkn,end,wsaft};
 	}
 
-	inline void pushback_token(const token&t){
+	inline void put_back_token(const token&t){
 		// ? validate token is same as source
 		seek(-off_t(t.total_length_in_chars()));
 	}
 
-	inline void pushback_char(const char ch){
+	inline void put_back_char(const char ch){
 		// ? validate char is same as source
 		seek(-off_t(1));
 	}

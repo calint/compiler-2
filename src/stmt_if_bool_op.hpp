@@ -12,7 +12,7 @@ public:
 		while(true){
 			token tk{t.next_token()};
 			if(not tk.is_name("not")){
-				t.pushback_token(tk);
+				t.put_back_token(tk);
 				break;
 			}
 			is_not=not is_not;
