@@ -121,17 +121,6 @@ public:
 	inline expr_ops_list(expr_ops_list&&)=default;
 	inline expr_ops_list&operator=(const expr_ops_list&)=default;
 	inline expr_ops_list&operator=(expr_ops_list&&)=default;
-//	inline expr_ops_list(const expr_ops_list&other){
-//		this->enclosed_=other.enclosed_;
-//		for(const auto&e:other.exps_){
-//			exps_.emplace_back(unique_ptr<statement>(e));
-//		}
-//		this->in_args_=other.in_args_;
-//		this->negated_=other.negated_;
-//		this->ops_=other.ops_;
-//		this->uops_=other.uops_;
-//		return*this;
-//	}
 
 	inline void source_to(ostream&os)const override{
 		// expression::source_to(os);//?
