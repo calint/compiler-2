@@ -4,6 +4,7 @@
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [x] negated sub-expression. i.e. 'not (a=1 and b=2)'
 [ ]   review
+[ ] short-hand boolean expression i.e. if a or b
 [ ] expr_ops_list: div: push/pop rax,rdx if not allocatable
 [ ] expr_ops_list: div: push/pop rcx if not allocatable
 [ ] character type
@@ -15,8 +16,7 @@
 [ ] bool type
 [ ] include source file: i.e. "include io" includes io.baz
 [ ] inlined function call: if a named register is not available: push/pop?
-[ ] short-hand boolean expression i.e. if a or b
-[ ] decouple by using cpp implementation files for block and call, remove decouple.hpp
+[ ] decouple by using cpp implementation files for block and call, remove decouple.hpp?
 [ ] toc.add_var(...) check if name shadows
 [ ] stmt_call: enable nested use of named registers
       example: f(x+1,x) where x is argument that was passed through register and the
