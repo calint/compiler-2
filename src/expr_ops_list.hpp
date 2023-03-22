@@ -189,8 +189,11 @@ public:
 	}
 
 	// inline string as_const()const override{
+	// 	assert(exps_.size()==1&&uops_.is_empty());
+
 	// 	if(exps_.size()==1)
 	// 		return exps_[0]->as_const();
+
 	// 	throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 	// }
 
