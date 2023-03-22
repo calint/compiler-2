@@ -7,10 +7,9 @@
 
 class expr_ops_list final:public expression{
 public:
-	inline expr_ops_list(tokenizer&t,const bool in_args=false,const bool enclosed=false,unary_ops uops={},const int first_op_precedence=init_precedence,unique_ptr<statement>first_expression=unique_ptr<statement>()):
+	inline expr_ops_list(tokenizer&t,const bool in_args=false,const bool enclosed=false,unary_ops uops={},const int first_op_precedence=initial_precedence,unique_ptr<statement>first_expression=unique_ptr<statement>()):
 		expression{t.next_whitespace_token(),{}},
 		enclosed_{enclosed},
-		in_args_{in_args},
 		uops_{move(uops)}
 	{
 		// read first expression i.e. =-a/-(b+1)
@@ -183,9 +182,9 @@ public:
 	}
 
 	inline const unary_ops&get_unary_ops()const override{
-		if(exps_.size()==1){
+		if(exps_.size()==1)
 			return exps_[0]->get_unary_ops();
-		}
+		
 		return uops_;
 	}
 
@@ -196,7 +195,7 @@ public:
 	// }
 
 private:
-	static constexpr int init_precedence{7}; // higher than the highest precedence
+	static constexpr int initial_precedence{7}; // higher than the highest precedence
 	inline static int precedence_for_op(const char ch){
 		switch(ch){
 			case'|':return 1;
@@ -471,8 +470,6 @@ private:
 	}
 
 	bool enclosed_{}; //  (a+b) vs a+b
-	bool in_args_{}; // foo(a+b)
-	bool negated_{};
 	vector<unique_ptr<statement>>exps_;
 	vector<char>ops_;
 	unary_ops uops_;
