@@ -169,8 +169,8 @@ main:
    cmp_15_13:
    cmp qword[rbp-8],-2
    jne if_15_8_code
-;  invert bools
 ;  [15:27] ? not (a=-1 and b=-1)
+;  inverted
 ;  [15:27] ? a=-1 
    cmp_15_27:
    cmp qword[rbp-8],-1
@@ -203,8 +203,8 @@ main:
    cmp_16_13:
    cmp qword[rbp-8],-2
    jne if_16_8_code
-;  invert bools
 ;  [16:27] ? not (a=-1 and b=-a)
+;  inverted
 ;  [16:27] ? a=-1 
    cmp_16_27:
    cmp qword[rbp-8],-1
@@ -241,8 +241,8 @@ main:
    cmp_17_13:
    cmp qword[rbp-8],-2
    je if_17_5_end
-;  invert bools
 ;  [17:26] ? not (a=-2 or b=-a)
+;  inverted
 ;  [17:26] ? a=-2 
    cmp_17_26:
    cmp qword[rbp-8],-2

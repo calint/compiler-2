@@ -84,12 +84,12 @@ public:
 
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool inverted)const{
 		const size_t n{bools_.size()};
-		if(inverted){
-			toc::indent(os,indent_level,true);os<<"invert bools\n";
-		}
 		if(n>1){
 			// avoid repeated comment
 			toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
+		}
+		if(inverted){
+			toc::indent(os,indent_level,true);os<<"inverted\n";
 		}
 		// invert according to De Morgan's laws
 		bool invert{inverted?not not_token_.is_name("not"):not_token_.is_name("not")};
@@ -115,13 +115,13 @@ public:
 						}
 						el.compile(tc,os,indent_level,jmp_false,jmp_true,invert);
 					}else{
-						// invert expression according to De Morgan's laws
+						// invert according to De Morgan's laws
 						// if not last element check if it is a 'or' or 'and' list
 						if(ops_[i].is_name("and")){
-							// if evaluation is false and next op is "or" then jump_false is next bool eval
+							// if evaluation is false and next op is "or" (inverted) then jump_false is next bool eval
 							jmp_false=cmp_label_from_variant(tc,bools_[i+1]);
 						}else if(ops_[i].is_name("or")){
-							// if evaluation is true and next op is "and" then jump_true is next bool eval
+							// if evaluation is true and next op is "and" (inverted) then jump_true is next bool eval
 							jmp_true=cmp_label_from_variant(tc,bools_[i+1]);
 						}else{
 							throw"expected 'or' or 'and'";
