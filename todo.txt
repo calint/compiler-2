@@ -7,6 +7,7 @@
 [ ] expr_ops_list: div: push/pop rcx if not allocatable
 [ ] token.compile assumes is_str is field (db)
 [ ]   review fragile implementation
+[ ] expr_ops_list: src.get_unary_ops().get_ops_as_string()+src_r.id -> src.as_const()
 stage 3 - cleanup
 [ ] toc.allocate_named_register_or_break: if allocated then tell where
 [ ] toc.add_field: if defined tell where
