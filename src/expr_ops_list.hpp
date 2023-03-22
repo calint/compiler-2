@@ -108,7 +108,7 @@ public:
 
 			// add statement to list
 			unique_ptr<statement>stm{create_statement_from_tokenizer(t)};
-			if(stm->tok().is_blank())
+			if(stm->tok().is_empty())
 				throw compiler_error(*stm,"unexpected '"+string{t.peek_char()}+"'");
 
 			exps_.push_back(move(stm));

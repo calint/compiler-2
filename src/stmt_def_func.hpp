@@ -171,7 +171,7 @@ public:
 
 	inline const string&name()const{return name_.name();}
 
-	inline bool is_inline()const{return not inline_tk_.is_blank();}
+	inline bool is_inline()const{return not inline_tk_.is_empty();}
 
 private:
 	token name_;

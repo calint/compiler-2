@@ -21,7 +21,7 @@ public:
 		tokenizer t{source};
 		while(true){
 			token tk{t.next_token()};
-			if(tk.is_blank()){
+			if(tk.is_empty()){
 				if(t.is_eos())
 					break;
 				throw compiler_error(tk,"unexpected blank token");

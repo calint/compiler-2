@@ -45,7 +45,7 @@ public:
 
 	inline size_t char_index_end()const{return end_ix_;}
 
-	inline bool is_blank()const{
+	inline bool is_empty()const{
 		if(ws_left_.empty() and name_.empty() and ws_right_.empty())
 			return true;
 		return false;

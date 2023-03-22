@@ -23,7 +23,7 @@ public:
 			}
 
 			token tk{t.next_token()};
-			if(tk.is_blank()){
+			if(tk.is_empty()){
 				if(t.is_next_char(';')){ // in-case ';' is used
 					throw compiler_error(tk,"unexpected ';'");
 					continue;

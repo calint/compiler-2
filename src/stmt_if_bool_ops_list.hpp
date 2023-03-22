@@ -15,18 +15,16 @@ public:
 		// the token is used to give the cmp a unique label
 		//   if first_bool_op is provided then use that token
 		//   else the next white space token
-		// statement{t.next_whitespace_token()},
 		statement{first_op.is_name("")?t.next_whitespace_token():token_from(first_bool_op)},
 		not_token_{move(not_token)},
 		enclosed_{enclosed}
 	{
 		token prv_op{first_op};
-		if(not first_op.is_name("")){
+		if(not first_op.is_empty()){
 			// sub-expression with first bool op provided
 			bools_.push_back(move(first_bool_op));
 			ops_.push_back(move(first_op));
 		}
-		// a=1 and b=1
 		while(true){
 			token tknot{t.next_token()};
 			if(tknot.is_name("not")){
@@ -63,7 +61,7 @@ public:
 			}
 
 			// if first op and is 'and' then create sub-expression
-			if(prv_op.is_blank()){
+			if(prv_op.is_empty()){
 				prv_op=tk;
 				if(tk.is_name("and")){
 					// a and b or c -> (a and b) or c
@@ -102,14 +100,11 @@ public:
 				t.put_back_token(tk);
 				return;
 			}
+
+			// this is an 'and' op after a 'or'
 			// a    or    b     and   c or d
 			//    prv_op back()  tk
-			 if(tk.is_name("or")){
-			 	// a and b or c or d
-			 	//         tk
-			 	ops_.push_back(move(tk));
-			 	continue;
-			 }
+			// create:
 			// a    or   {b     and   c} or d
 			stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
 			bools_.pop_back();
