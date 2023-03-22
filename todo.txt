@@ -26,6 +26,7 @@ stage 4
 [ ] var str="hello world"
 [ ] var len=str.len
 [ ] bool type
+[ ] f(a=1) where argument is a boolean 
 [ ] def table{x,y,z}
 [ ] pointers?
 [ ] user defined types

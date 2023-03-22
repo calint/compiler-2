@@ -24,7 +24,7 @@ public:
 			if(tk.is_empty()){
 				if(t.is_eos())
 					break;
-				throw compiler_error(tk,"unexpected blank token");
+				throw compiler_error(tk,"unexpected '"+string{t.next_char()}+"'");
 			}
 			if(tk.is_name("field")){
 				stms_.emplace_back(make_unique<stmt_def_field>(move(tk),t));
