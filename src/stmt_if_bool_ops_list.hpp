@@ -36,10 +36,11 @@ public:
 			token tk{t.next_token()};
 			if(tk.is_name("or") or tk.is_name("and")){
 				ops_.push_back(move(tk));
-			}else{
-				t.put_back_token(tk);
-				break;
+				continue;
 			}
+			
+			t.put_back_token(tk);
+			break;
 		}
 		if(enclosed_)
 			throw compiler_error(tok(),"expected ')' to close expression");

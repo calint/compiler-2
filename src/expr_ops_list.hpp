@@ -7,7 +7,7 @@
 
 class expr_ops_list final:public expression{
 public:
-	inline expr_ops_list(tokenizer&t,const bool in_args=false,const bool enclosed=false,unary_ops uops={},const int first_op_precedence=initial_precedence,unique_ptr<statement>first_expression=unique_ptr<statement>()):
+	inline expr_ops_list(tokenizer&t,const bool in_args=false,const bool enclosed=false,unary_ops uops={},const char first_op_precedence=initial_precedence,unique_ptr<statement>first_expression=unique_ptr<statement>()):
 		expression{t.next_whitespace_token(),{}},
 		enclosed_{enclosed},
 		uops_{move(uops)}
@@ -29,7 +29,7 @@ public:
 			}
 		}
 
-		int precedence=first_op_precedence;
+		char precedence=first_op_precedence;
 		while(true){ // +a  +3
 			// if end of subexpression
 			if(enclosed_&&t.is_next_char(')'))
@@ -75,7 +75,7 @@ public:
 			// check if next operation precedence is same or lower
 			// if not then a new subexpression is added to the list with the last
 			// expression in this list as first expression
-			const int next_precedence{precedence_for_op(ops_.back())};
+			const char next_precedence{precedence_for_op(ops_.back())};
 			if(next_precedence>precedence){
 				// i.e. =a+b*c+1 where the peeked char is '*'
 				// next operation has higher precedence than current
@@ -83,7 +83,7 @@ public:
 				// move last expression (+b) to subexpression
 				//   =[(=a) +[(=b)(*c)(+1)]]
 				precedence=next_precedence;
-				const int first_op_prec{precedence_for_op(ops_.back())};
+				const char first_op_prec{precedence_for_op(ops_.back())};
 				ops_.pop_back();
 				unique_ptr<statement>prev{move(exps_.back())};
 				exps_.pop_back();
@@ -198,8 +198,8 @@ public:
 	// }
 
 private:
-	static constexpr int initial_precedence{7}; // higher than the highest precedence
-	inline static int precedence_for_op(const char ch){
+	static constexpr char initial_precedence{7}; // higher than the highest precedence
+	inline static char precedence_for_op(const char ch){
 		switch(ch){
 			case'|':return 1;
 			case'^':return 2;
