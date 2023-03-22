@@ -1,6 +1,7 @@
 [x] make sub lists taking in account precedence of 'and' over 'or'
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [ ]   review/remake messy code
+[ ] token.is_empty maybe same as is_name("") instead of considering whitespaces
 [ ] short-hand boolean expression i.e. if a or b
 [ ] compile error when i.e.:
       var b=-b-(-1) # b is used before initiated

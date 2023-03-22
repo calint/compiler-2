@@ -23,13 +23,9 @@ public:
 			}
 
 			token tk{t.next_token()};
-			if(tk.is_empty()){
-				if(t.is_next_char(';')){ // in-case ';' is used
-					throw compiler_error(tk,"unexpected ';'");
-					continue;
-				}
+			if(tk.is_empty())
 				throw compiler_error(tk,"unexpected '"+string{t.peek_char()}+"'");
-			}
+			
 			if(tk.is_name("var")){
 				stms_.emplace_back(make_unique<stmt_def_var>(move(tk),t));
 			}else if(t.is_next_char('=')){
