@@ -4,7 +4,6 @@
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [ ] short-hand boolean expression i.e. if a or b
 [ ] expr_ops_list: div: push/pop rax,rdx if not allocatable
-[ ] expr_ops_list: div: push/pop rcx if not allocatable
 [ ] token.compile assumes is_str is field (db)
 [ ]   review fragile implementation
 [ ] expr_ops_list: src.get_unary_ops().get_ops_as_string()+src_r.id -> src.as_const()
