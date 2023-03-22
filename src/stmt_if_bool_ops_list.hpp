@@ -6,11 +6,21 @@
 
 class stmt_if_bool_ops_list final:public statement{
 public:
-	inline stmt_if_bool_ops_list(tokenizer&t,bool enclosed=false,token not_token={}):
+	inline stmt_if_bool_ops_list(tokenizer&t,bool enclosed=false,token not_token={},
+			bool is_sub_expr=false,
+			variant<stmt_if_bool_op,stmt_if_bool_ops_list>first_bool_op={},
+			token first_op={}
+		):
 		statement{t.next_whitespace_token()},
 		not_token_{move(not_token)},
 		enclosed_{enclosed}
 	{
+		token prv_op{first_op};
+		if(not first_op.is_name("")){
+			// sub-expression with first bool op provided
+			bools_.push_back(move(first_bool_op));
+			ops_.push_back(move(first_op));
+		}
 		// i.e. not (a=1 and b=1)
 		// a=1 and b=1
 		while(true){
@@ -32,15 +42,42 @@ public:
 			}
 			if(enclosed_ and t.is_next_char(')'))
 				return;
-				
+
 			token tk{t.next_token()};
-			if(tk.is_name("or") or tk.is_name("and")){
+			if(not(tk.is_name("or") or tk.is_name("and"))){
+				t.put_back_token(tk);
+				break;
+			}
+			if(prv_op.is_blank() or tk.is_name(prv_op.name())){
+				prv_op=tk;
 				ops_.push_back(move(tk));
 				continue;
 			}
-			
-			t.put_back_token(tk);
-			break;
+			// previous op is not the same as next op
+			//   either new sub-expression or exit current sub-expression
+			// a or b  or       c       and  d or e
+			//       prv_tk ops.back()  tk
+			if(is_sub_expr){
+				t.put_back_token(tk);
+				return;
+			}
+			// a    or    b     and   c or d
+			//    prv_op back()  tk
+			if(tk.is_name("or") and not is_sub_expr){
+				ops_.push_back(move(tk));
+				continue;
+			}
+			// a    or    (b     and   c) or d
+			//    prv_op back()  tk
+			stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
+			bools_.pop_back();
+			bools_.push_back(move(bol));
+			tk=t.next_token();
+			if(not(tk.is_name("or") or tk.is_name("and"))){
+				t.put_back_token(tk);
+				break;
+			}
+			ops_.push_back(move(tk));
 		}
 		if(enclosed_)
 			throw compiler_error(tok(),"expected ')' to close expression");

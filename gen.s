@@ -48,14 +48,15 @@ main:
    cmp_13_8:
    cmp qword[rbp-8],0
    je if_13_8_code
+;  [13:23] ? b=1 and c=3 
 ;  [13:15] ? b=1 
    cmp_13_15:
    cmp qword[rbp-16],1
-   jne if_13_5_end
+   jne cmp_13_30
 ;  [13:23] ? c=3 
    cmp_13_23:
    cmp qword[rbp-24],3
-   je if_13_8_code
+   je if_13_8_code  ; opt2
 ;  [13:30] ? d=4 
    cmp_13_30:
    cmp qword[rbp-32],4

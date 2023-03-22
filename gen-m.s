@@ -23,10 +23,10 @@ main:
    je if_13_8_code
    cmp_13_15:
    cmp qword[rbp-16],1
-   jne if_13_5_end
+   jne cmp_13_30
    cmp_13_23:
    cmp qword[rbp-24],3
-   je if_13_8_code
+   je if_13_8_code  ; opt2
    cmp_13_30:
    cmp qword[rbp-32],4
    jne if_13_5_end

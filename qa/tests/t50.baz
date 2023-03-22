@@ -11,7 +11,6 @@ func inline main{
     var d=4
     
     if a=0 or b=1 and c=3 or d=4 exit(0) # should be true
-    if a=0 or (b=1 and c=3) or d=4 exit(2) # is true
 
     exit(1)
 }
