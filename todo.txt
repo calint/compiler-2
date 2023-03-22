@@ -21,12 +21,12 @@ stage 3 - cleanup
 [ ]    block -> if,loop -> block
 [ ]    block -> call (in-lined) -> block
 stage 4
+[ ] bool type
+[ ] f(a=1) where argument is a boolean
 [ ] character type
 [ ] string type
 [ ] var str="hello world"
 [ ] var len=str.len
-[ ] bool type
-[ ] f(a=1) where argument is a boolean 
 [ ] def table{x,y,z}
 [ ] pointers?
 [ ] user defined types
