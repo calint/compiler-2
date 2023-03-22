@@ -5,17 +5,36 @@
 [ ] short-hand boolean expression i.e. if a or b
 [ ] expr_ops_list: div: push/pop rax,rdx if not allocatable
 [ ] expr_ops_list: div: push/pop rcx if not allocatable
+[ ] token.compile assumes is_str is field (db)
+[ ]   review fragile implementation
+stage 3 - cleanup
+[ ] toc.allocate_named_register_or_break: if allocated then tell where
+[ ] toc.add_field: if defined tell where
+[ ] toc.add_function: if defined tell where
+[ ] toc.add_var: if defined tell where
+[ ] toc.add_var(...) check if name shadows -> consider in-lined functions
+[ ] fix 'cmp' two constants case
+[ ] tokenizer to keep track of line-number instead of counting it at every call
+[ ] examine expression, expr_ops_list, stmt_call relation
+[ ]   circular reference stmt_call -> expr_ops_list -> stmt_call
+[ ] decouple by implementing functions that cause circular references in decouple.cpp
+[ ]    block -> if,loop -> block
+[ ]    block -> call (in-lined) -> block
+stage 4
 [ ] character type
 [ ] string type
 [ ] var str="hello world"
 [ ] var len=str.len
+[ ] bool type
 [ ] def table{x,y,z}
 [ ] pointers?
-[ ] bool type
+[ ] user defined types
+[ ] type size{value} var s=size{1} s=2
+[ ] type point{x,y} var p=point{1,2} p.x=1 p=2
+[ ] var points=point[10] where points contains length of array and a pointer
+[ ] multiple return values assignment: var a,b=foo()  a,b=foo()
 [ ] include source file: i.e. "include io" includes io.baz
 [ ] inlined function call: if a named register is not available: push/pop?
-[ ] decouple by using cpp implementation files for block and call, remove decouple.hpp?
-[ ] toc.add_var(...) check if name shadows
 [ ] stmt_call: enable nested use of named registers
       example: f(x+1,x) where x is argument that was passed through register and the
       first argument to f is the same register then the second argument is clobbered
@@ -40,23 +59,10 @@
       add rsp,40
       sub rsp,24
       call foo
-[ ] fix 'cmp' two constants case
-[ ] toc.allocate_named_register_or_break: if allocated then tell where
-[ ] toc.add_field: if defined tell where
-[ ] toc.add_function: if defined tell where
-[ ] toc.add_var: if defined tell where
-[ ] multiple return values assignment: var a,b=foo()  a,b=foo()
-[ ] examine expression, expr_ops_list, stmt_call relation
-[ ] token.compile assumes is_str is field
-[ ]   review fragile implementation
 [ ] why is the binary so big although in-line is turned off in make.sh?
-[ ] tokenizer to keep track of line-number instead of counting it at every call
-[ ] type size{value} var s=size{1} s=2
-[ ] type point{x,y} var p=point{1,2} p.x=1 p=2
-[ ] var points=point[10] where points contains length of array and a pointer
 [ ] clang-format everything for less dense code?
-[ ] compile for pczero task
 -------------------------------------------------------------------------------
+[-] compile for pczero task -> pczero is 32bit
 [x] negated sub-expression. i.e. 'not (a=1 and b=2)'
 [x]   review
 [x] unary decoration parsed prior to any statement. i.e. '~-a', '~-f(o)'
