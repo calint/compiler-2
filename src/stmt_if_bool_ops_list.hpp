@@ -21,22 +21,29 @@ public:
 			bools_.push_back(move(first_bool_op));
 			ops_.push_back(move(first_op));
 		}
-		// i.e. not (a=1 and b=1)
 		// a=1 and b=1
 		while(true){
 			token tknot{t.next_token()};
 			if(tknot.is_name("not")){
+				// not (a=1 and b=1)
+				// not a=1 and b=1
 				if(t.is_next_char('(')){
+					// not (a=1 and b=1)
 					bools_.emplace_back(stmt_if_bool_ops_list{t,true,move(tknot)});
 				}else{
+					// not a=1 and b=1
 					t.put_back_token(tknot);
 					bools_.emplace_back(stmt_if_bool_op{t});
 				}
 			}else{
+				// (a=1 and b=1)
+				// a=1 and b=1
 				t.put_back_token(tknot);
 				if(t.is_next_char('(')){
+					// (a=1 and b=1)
 					bools_.emplace_back(stmt_if_bool_ops_list{t,true});
 				}else{
+					// a=1 and b=1
 					bools_.emplace_back(stmt_if_bool_op{t});
 				}
 			}
@@ -50,6 +57,7 @@ public:
 				break;
 			}
 
+			// if first op and is and then create sub-expression
 			if(prv_op.is_blank()){
 				prv_op=tk;
 				if(tk.is_name("and")){
@@ -58,8 +66,10 @@ public:
 					stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
 					bools_.pop_back();
 					bools_.push_back(move(bol));
+
 					if(enclosed_ and t.is_next_char(')'))
 						return;
+
 					tk=t.next_token();
 					if(not(tk.is_name("or") or tk.is_name("and"))){
 						t.put_back_token(tk);
@@ -81,7 +91,7 @@ public:
 			// a or b  or       c       and  d or e
 			//       prv_tk ops.back()  tk
 			if(is_sub_expr){
-				// sub_expr are have 'and' ops and this is an or
+				// sub_expr are 'and' ops and this is an 'or'
 				// a or b and c or d
 				//      ------- tk
 				t.put_back_token(tk);
@@ -89,15 +99,7 @@ public:
 			}
 			// a    or    b     and   c or d
 			//    prv_op back()  tk
-			// if(tk.is_name("or")){
-			// 	// a and b or c or d
-			// 	//         tk
-			// 	ops_.push_back(move(tk));
-			// 	continue;
-			// }
 
-			// a    or    b     and   c or d
-			//    prv_op back()  tk
 			// a    or   {b     and   c} or d
 			stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
 			bools_.pop_back();
