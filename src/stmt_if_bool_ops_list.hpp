@@ -164,10 +164,10 @@ public:
 
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool inverted)const{
 		const size_t n{bools_.size()};
-		if(n>1){
+		// if(n>1){
 			// avoid repeated comment
 			toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
-		}
+		// }
 		if(inverted){
 			toc::indent(os,indent_level,true);os<<"inverted\n";
 		}

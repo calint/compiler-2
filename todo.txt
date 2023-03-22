@@ -2,7 +2,7 @@
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [ ]   review/remake messy code
 [ ] token.is_empty maybe same as is_name("") instead of considering whitespaces
-[ ] short-hand boolean expression i.e. if a or b
+[x] short-hand boolean expression i.e. if a or b
 [ ] compile error when i.e.:
       var b=-b-(-1) # b is used before initiated
 [ ] expr_ops_list: div: push/pop rax,rdx if not allocatable

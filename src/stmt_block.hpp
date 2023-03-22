@@ -19,7 +19,7 @@ public:
 			if(t.is_next_char('}')){
 				if(not is_one_statement_)
 					break;
-				throw compiler_error(*this,"unexpected '}' in single statement block");
+				throw compiler_error(t,"unexpected '}' in single statement block");
 			}
 
 			token tk{t.next_token()};

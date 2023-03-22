@@ -46,10 +46,10 @@ public:
 	inline size_t char_index_end()const{return end_ix_;}
 
 	inline bool is_empty()const{
-		if(ws_left_.empty() and name_.empty() and ws_right_.empty())
-			return true;
-		return false;
+		return ws_left_.empty() and name_.empty() and ws_right_.empty();
 	}
+
+	// inline bool is_empty()const{return name_.empty();}
 
 	inline size_t total_length_in_chars()const{
 		return ws_left_.length()+name_.length()+ws_right_.length();

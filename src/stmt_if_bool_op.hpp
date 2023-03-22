@@ -37,7 +37,9 @@ public:
 				op_=">";
 			}
 		}else{
-			throw compiler_error(*this,"expected boolean operation '=','<','<=','>','>='");
+			is_shorthand_=true;
+			return;
+			// throw compiler_error(*this,"expected boolean operation '=','<','<=','>','>='");
 		}
 		
 		rhs_={t};
@@ -56,8 +58,11 @@ public:
 			e.source_to(os);
 
 		lhs_.source_to(os);
-		os<<op_;
-		rhs_.source_to(os);
+
+		if(not is_shorthand_){
+			os<<op_;
+			rhs_.source_to(os);
+		}
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
@@ -71,6 +76,13 @@ public:
 		const bool invert{inverted?not is_not_:is_not_};
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
+		if(is_shorthand_){
+			resolve_cmp_shorthand(tc,os,indent_level,lhs_);
+			toc::indent(os,indent_level);
+			os<<(not invert?asm_jxx_for_op_inv("="):asm_jxx_for_op("="));
+			os<<" "<<jmp_to_if_true<<endl;
+			return;
+		}
 		resolve_cmp(tc,os,indent_level,lhs_,rhs_);
 		toc::indent(os,indent_level);
 		os<<(invert?asm_jxx_for_op_inv(op_):asm_jxx_for_op(op_));
@@ -84,6 +96,13 @@ public:
 		const bool invert{inverted?not is_not_:is_not_};
 		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
+		if(is_shorthand_){
+			resolve_cmp_shorthand(tc,os,indent_level,lhs_);
+			toc::indent(os,indent_level);
+			os<<(not invert?asm_jxx_for_op("="):asm_jxx_for_op_inv("="));
+			os<<" "<<jmp_to_if_false<<endl;
+			return;
+		}
 		resolve_cmp(tc,os,indent_level,lhs_,rhs_);
 		toc::indent(os,indent_level);
 		os<<(invert?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
@@ -143,6 +162,20 @@ private:
 		}
 	}
 
+	inline void resolve_cmp_shorthand(toc&tc,ostream&os,size_t indent_level,const expr_ops_list&lh)const{
+		vector<string>allocated_registers;
+
+		const string&dst{resolve_expr(tc,os,indent_level,lh,allocated_registers)};
+
+		tc.asm_cmd(*this,os,indent_level,"cmp",dst,"0");
+
+		// free allocated registers in reverse order
+		for(auto it{allocated_registers.rbegin()};it!=allocated_registers.rend();++it) {
+			const string&reg{*it};
+			tc.free_scratch_register(os,indent_level,reg);
+		}
+	}
+
 	inline string resolve_expr(toc&tc,ostream&os,size_t indent_level,const expr_ops_list&exp,vector<string>&allocated_registers)const{
 		if(exp.is_expression()){
 			const string&reg{tc.alloc_scratch_register(exp,os,indent_level)};
@@ -166,8 +199,9 @@ private:
 	}
 
 	vector<token>nots_;
-	bool is_not_{}; // not a=b
 	expr_ops_list lhs_;
 	string op_; // '<', '<=', '>', '>=', '='
 	expr_ops_list rhs_;
+	bool is_not_{}; // if not a=b
+	bool is_shorthand_{}; // if a ...
 };

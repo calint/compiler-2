@@ -43,29 +43,15 @@ main:
 ;  [11:11] d=4 
    mov qword[rbp-32],4
    if_12_8:
-;  [12:8] ? a=0 and b=2 or c=0 and d=4 
-;  [12:8] ? a=0 and b=2 
-;  [12:8] ? a=0 
+;  [12:8] ? not a 
+;  [12:8] ? not a 
    cmp_12_8:
    cmp qword[rbp-8],0
-   jne cmp_12_23
-;  [12:16] ? b=2 
-   cmp_12_16:
-   cmp qword[rbp-16],2
-   je if_12_8_code  ; opt2
-;  [12:23] ? c=0 and d=4 
-;  [12:23] ? c=0 
-   cmp_12_23:
-   cmp qword[rbp-24],0
-   jne if_12_5_end
-;  [12:31] ? d=4 
-   cmp_12_31:
-   cmp qword[rbp-32],4
    jne if_12_5_end
    if_12_8_code:  ; opt1
-;    [12:35] exit(1)
+;    [12:14] exit(1)
 ;    exit(v:reg_rdi) 
-;      inline: 12_35
+;      inline: 12_14
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,1
@@ -77,15 +63,74 @@ main:
 ;      [4:5] syscall 
        syscall
 ;      free rdi
-     exit_12_35_end:
+     exit_12_14_end:
    if_12_5_end:
-;  [12:43] # bug: wrong token at construct recursive stmt_if_bool_ops 
-;  [13:5] exit(0)
+   if_13_8:
+;  [13:8] ? not (a and b)
+;  [13:13] ? not (a and b)
+;  [13:13] ? a and b
+;  inverted
+;  invert 'or'
+;  [13:13] ? a 
+   cmp_13_13:
+   cmp qword[rbp-8],0
+   je if_13_8_code
+;  invert 'and'
+;  [13:19] ? b
+   cmp_13_19:
+   cmp qword[rbp-16],0
+   jne if_13_5_end
+   if_13_8_code:  ; opt1
+;    [13:22] exit(2)
+;    exit(v:reg_rdi) 
+;      inline: 13_22
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,2
+;      [2:5] mov(rax,60)
+       mov rax,60
+;      [2:17] # exit system call 
+;      [3:5] mov(rdi,v)
+;      [3:17] # return code 
+;      [4:5] syscall 
+       syscall
+;      free rdi
+     exit_13_22_end:
+   if_13_5_end:
+   if_14_8:
+;  [14:8] ? a and b 
+;  [14:8] ? a and b 
+;  [14:8] ? a 
+   cmp_14_8:
+   cmp qword[rbp-8],0
+   je if_14_5_end
+;  [14:14] ? b 
+   cmp_14_14:
+   cmp qword[rbp-16],0
+   je if_14_5_end
+   if_14_8_code:  ; opt1
+;    [14:16] exit(0)
+;    exit(v:reg_rdi) 
+;      inline: 14_16
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,0
+;      [2:5] mov(rax,60)
+       mov rax,60
+;      [2:17] # exit system call 
+;      [3:5] mov(rdi,v)
+;      [3:17] # return code 
+;      [4:5] syscall 
+       syscall
+;      free rdi
+     exit_14_16_end:
+   if_14_5_end:
+;  [15:5] exit(3)
 ;  exit(v:reg_rdi) 
-;    inline: 13_5
+;    inline: 15_5
 ;    alloc rdi
 ;    alias v -> rdi
-     mov rdi,0
+     mov rdi,3
 ;    [2:5] mov(rax,60)
      mov rax,60
 ;    [2:17] # exit system call 
@@ -94,7 +139,7 @@ main:
 ;    [4:5] syscall 
      syscall
 ;    free rdi
-   exit_13_5_end:
+   exit_15_5_end:
 
 ; max scratch registers in use: 1
 ;            max frames in use: 5
