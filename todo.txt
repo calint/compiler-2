@@ -1,12 +1,9 @@
-[ ] compile error when i.e.:
-      var b=-b-(-1) # b is used before initiated
 [ ] make sub lists taking in account precedence of 'and' over 'or'
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [ ] short-hand boolean expression i.e. if a or b
+[ ] compile error when i.e.:
+      var b=-b-(-1) # b is used before initiated
 [ ] expr_ops_list: div: push/pop rax,rdx if not allocatable
-[ ] token.compile assumes is_str is field (db)
-[ ]   review fragile implementation
-[ ] expr_ops_list: src.get_unary_ops().get_ops_as_string()+src_r.id -> src.as_const()
 stage 3 - cleanup
 [ ] toc.allocate_named_register_or_break: if allocated then tell where
 [ ] toc.add_field: if defined tell where
@@ -33,6 +30,8 @@ stage 4
 [ ] type point{x,y} var p=point{1,2} p.x=1 p=2
 [ ] var points=point[10] where points contains length of array and a pointer
 [ ] multiple return values assignment: var a,b=foo()  a,b=foo()
+[ ] token.compile assumes is_str is field (db)
+[ ]   review fragile implementation
 [ ] include source file: i.e. "include io" includes io.baz
 [ ] inlined function call: if a named register is not available: push/pop?
 [ ] stmt_call: enable nested use of named registers
@@ -62,6 +61,8 @@ stage 4
 [ ] why is the binary so big although in-line is turned off in make.sh?
 [ ] clang-format everything for less dense code?
 -------------------------------------------------------------------------------
+[-] expr_ops_list: src.get_unary_ops().get_ops_as_string()+src_r.id -> src.as_const()
+    -> resolved identifier might differ from src.identifier
 [-] compile for pczero task -> pczero is 32bit
 [x] negated sub-expression. i.e. 'not (a=1 and b=2)'
 [x]   review
