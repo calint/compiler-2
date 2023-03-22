@@ -40,6 +40,7 @@ public:
 					bools_.emplace_back(stmt_if_bool_op{t});
 				}
 			}
+
 			if(enclosed_ and t.is_next_char(')'))
 				return;
 
@@ -48,25 +49,52 @@ public:
 				t.put_back_token(tk);
 				break;
 			}
-			if(prv_op.is_blank() or tk.is_name(prv_op.name())){
+
+			if(prv_op.is_blank()){
 				prv_op=tk;
+				if(tk.is_name("and")){
+					stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
+					bools_.pop_back();
+					bools_.push_back(move(bol));
+					if(enclosed_ and t.is_next_char(')'))
+						return;
+					tk=t.next_token();
+					if(not(tk.is_name("or") or tk.is_name("and"))){
+						t.put_back_token(tk);
+						break;
+					}
+					prv_op=tk;
+					ops_.push_back(move(tk));
+					continue;
+				}
+			}
+
+			if(tk.is_name(prv_op.name())){
 				ops_.push_back(move(tk));
 				continue;
 			}
+
+			prv_op=tk;
+
 			// previous op is not the same as next op
-			//   either new sub-expression or exit current sub-expression
+			//   either a new sub-expression or exit current sub-expression
 			// a or b  or       c       and  d or e
 			//       prv_tk ops.back()  tk
 			if(is_sub_expr){
+				// a or b and c or d
+				//      ------- tk
 				t.put_back_token(tk);
 				return;
 			}
 			// a    or    b     and   c or d
 			//    prv_op back()  tk
-			if(tk.is_name("or") and not is_sub_expr){
+			if(tk.is_name("or")){
+				// a and b or c or d
+				//         tk
 				ops_.push_back(move(tk));
 				continue;
 			}
+
 			// a    or    (b     and   c) or d
 			//    prv_op back()  tk
 			stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
