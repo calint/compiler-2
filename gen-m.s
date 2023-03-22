@@ -18,25 +18,25 @@ main:
    mov qword[rbp-24],3
    mov qword[rbp-32],4
    if_12_8:
-   cmp_12_9:
-   cmp qword[rbp-8],1
-   jne cmp_12_34
-   cmp_12_18:
+   cmp_12_8:
+   cmp qword[rbp-8],0
+   jne cmp_12_23
+   cmp_12_16:
    cmp qword[rbp-16],2
-   je if_12_8_code
-   cmp_12_25:
-   cmp qword[rbp-24],3
    je if_12_8_code  ; opt2
-   cmp_12_34:
+   cmp_12_23:
+   cmp qword[rbp-24],0
+   jne if_12_5_end
+   cmp_12_31:
    cmp qword[rbp-32],4
    jne if_12_5_end
    if_12_8_code:  ; opt1
-       mov rdi,0
+       mov rdi,1
        mov rax,60
        syscall
-     exit_13_9_end:
+     exit_12_35_end:
    if_12_5_end:
-     mov rdi,1
+     mov rdi,0
      mov rax,60
      syscall
-   exit_14_5_end:
+   exit_13_5_end:

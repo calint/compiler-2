@@ -6,12 +6,17 @@
 
 class stmt_if_bool_ops_list final:public statement{
 public:
-	inline stmt_if_bool_ops_list(tokenizer&t,bool enclosed=false,token not_token={},
-			bool is_sub_expr=false,
+	inline stmt_if_bool_ops_list(
+			tokenizer&t,const bool enclosed=false,token not_token={},
+			const bool is_sub_expr=false,
 			variant<stmt_if_bool_op,stmt_if_bool_ops_list>first_bool_op={},
 			token first_op={}
 		):
-		statement{t.next_whitespace_token()},
+		// the token is used to give the cmp a unique label
+		//   if first_bool_op is provided then use that token
+		//   else the next white space token
+		// statement{t.next_whitespace_token()},
+		statement{first_op.is_name("")?t.next_whitespace_token():token_from(first_bool_op)},
 		not_token_{move(not_token)},
 		enclosed_{enclosed}
 	{
@@ -57,11 +62,11 @@ public:
 				break;
 			}
 
-			// if first op and is and then create sub-expression
+			// if first op and is 'and' then create sub-expression
 			if(prv_op.is_blank()){
 				prv_op=tk;
 				if(tk.is_name("and")){
-					// a and b or c
+					// a and b or c -> (a and b) or c
 					// first op is 'and', make sub-expression (a and b) ...
 					stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
 					bools_.pop_back();
@@ -99,11 +104,20 @@ public:
 			}
 			// a    or    b     and   c or d
 			//    prv_op back()  tk
-
+			 if(tk.is_name("or")){
+			 	// a and b or c or d
+			 	//         tk
+			 	ops_.push_back(move(tk));
+			 	continue;
+			 }
 			// a    or   {b     and   c} or d
 			stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
 			bools_.pop_back();
 			bools_.push_back(move(bol));
+
+			if(enclosed_ and t.is_next_char(')'))
+				return;
+
 			prv_op=tk;
 			tk=t.next_token();
 			if(not(tk.is_name("or") or tk.is_name("and"))){
@@ -177,10 +191,10 @@ public:
 						// if not last element check if it is a 'or' or 'and' list
 						if(ops_[i].is_name("or")){
 							// if evaluation is false and next op is "or" then jump_false is next bool eval
-							jmp_false=cmp_label_from_variant(tc,bools_[i+1]);
+							jmp_false=cmp_label_from(tc,bools_[i+1]);
 						}else if(ops_[i].is_name("and")){
 							// if evaluation is true and next op is "and" then jump_true is next bool eval
-							jmp_true=cmp_label_from_variant(tc,bools_[i+1]);
+							jmp_true=cmp_label_from(tc,bools_[i+1]);
 						}else{
 							throw"expected 'or' or 'and'";
 						}
@@ -190,10 +204,10 @@ public:
 						// if not last element check if it is a 'or' or 'and' list
 						if(ops_[i].is_name("and")){
 							// if evaluation is false and next op is "or" (inverted) then jump_false is next bool eval
-							jmp_false=cmp_label_from_variant(tc,bools_[i+1]);
+							jmp_false=cmp_label_from(tc,bools_[i+1]);
 						}else if(ops_[i].is_name("or")){
 							// if evaluation is true and next op is "and" (inverted) then jump_true is next bool eval
-							jmp_true=cmp_label_from_variant(tc,bools_[i+1]);
+							jmp_true=cmp_label_from(tc,bools_[i+1]);
 						}else{
 							throw"expected 'or' or 'and'";
 						}
@@ -247,11 +261,18 @@ public:
 	}
 
 private:
-	inline static string cmp_label_from_variant(const toc&tc,const variant<stmt_if_bool_op,stmt_if_bool_ops_list>&v){
-		if(v.index()==1){
+	inline static string cmp_label_from(const toc&tc,const variant<stmt_if_bool_op,stmt_if_bool_ops_list>&v){
+		if(v.index()==1)
 			return get<stmt_if_bool_ops_list>(v).cmp_bgn_label(tc);
-		}
+
 		return get<stmt_if_bool_op>(v).cmp_bgn_label(tc);
+	}
+
+	inline static token token_from(const variant<stmt_if_bool_op,stmt_if_bool_ops_list>&bop){
+		if(bop.index()==0)
+			return get<stmt_if_bool_op>(bop).tok();
+
+		return get<stmt_if_bool_ops_list>(bop).tok();
 	}
 
 	vector<variant<stmt_if_bool_op,stmt_if_bool_ops_list>>bools_;

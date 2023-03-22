@@ -43,32 +43,32 @@ main:
 ;  [11:11] d=4 
    mov qword[rbp-32],4
    if_12_8:
-;  [12:8] ? (a=1 and (b=2 or c=3)) or d=4 
-;  [12:17] ? a=1 and (b=2 or c=3)
-;  [12:9] ? a=1 
-   cmp_12_9:
-   cmp qword[rbp-8],1
-   jne cmp_12_34
-;  [12:18] ? (b=2 or c=3)
-;  [12:18] ? b=2 
-   cmp_12_18:
+;  [12:8] ? a=0 and b=2 or c=0 and d=4 
+;  [12:8] ? a=0 and b=2 
+;  [12:8] ? a=0 
+   cmp_12_8:
+   cmp qword[rbp-8],0
+   jne cmp_12_23
+;  [12:16] ? b=2 
+   cmp_12_16:
    cmp qword[rbp-16],2
-   je if_12_8_code
-;  [12:25] ? c=3
-   cmp_12_25:
-   cmp qword[rbp-24],3
    je if_12_8_code  ; opt2
-;  [12:34] ? d=4 
-   cmp_12_34:
+;  [12:23] ? c=0 and d=4 
+;  [12:23] ? c=0 
+   cmp_12_23:
+   cmp qword[rbp-24],0
+   jne if_12_5_end
+;  [12:31] ? d=4 
+   cmp_12_31:
    cmp qword[rbp-32],4
    jne if_12_5_end
    if_12_8_code:  ; opt1
-;    [13:9] exit(0)
+;    [12:35] exit(1)
 ;    exit(v:reg_rdi) 
-;      inline: 13_9
+;      inline: 12_35
 ;      alloc rdi
 ;      alias v -> rdi
-       mov rdi,0
+       mov rdi,1
 ;      [2:5] mov(rax,60)
        mov rax,60
 ;      [2:17] # exit system call 
@@ -77,14 +77,15 @@ main:
 ;      [4:5] syscall 
        syscall
 ;      free rdi
-     exit_13_9_end:
+     exit_12_35_end:
    if_12_5_end:
-;  [14:5] exit(1)
+;  [12:43] # bug: wrong token at construct recursive stmt_if_bool_ops 
+;  [13:5] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 14_5
+;    inline: 13_5
 ;    alloc rdi
 ;    alias v -> rdi
-     mov rdi,1
+     mov rdi,0
 ;    [2:5] mov(rax,60)
      mov rax,60
 ;    [2:17] # exit system call 
@@ -93,7 +94,7 @@ main:
 ;    [4:5] syscall 
      syscall
 ;    free rdi
-   exit_14_5_end:
+   exit_13_5_end:
 
 ; max scratch registers in use: 1
 ;            max frames in use: 5

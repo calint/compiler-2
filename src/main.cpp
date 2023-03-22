@@ -250,7 +250,7 @@ int main(int argc,char*args[]){
 		if(read_file_to_string(src_file_name)!=read_file_to_string("diff.baz"))
 			throw"generated source differs. diff "+string{src_file_name}+" diff.baz";
 
-		// p.build(cout);
+//		 p.build(cout);
 
 		stringstream ss1;
 		p.build(ss1);
