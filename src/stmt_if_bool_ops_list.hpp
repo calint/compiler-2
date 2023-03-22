@@ -53,6 +53,8 @@ public:
 			if(prv_op.is_blank()){
 				prv_op=tk;
 				if(tk.is_name("and")){
+					// a and b or c
+					// first op is 'and', make sub-expression (a and b) ...
 					stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
 					bools_.pop_back();
 					bools_.push_back(move(bol));
@@ -74,13 +76,12 @@ public:
 				continue;
 			}
 
-			prv_op=tk;
-
 			// previous op is not the same as next op
 			//   either a new sub-expression or exit current sub-expression
 			// a or b  or       c       and  d or e
 			//       prv_tk ops.back()  tk
 			if(is_sub_expr){
+				// sub_expr are have 'and' ops and this is an or
 				// a or b and c or d
 				//      ------- tk
 				t.put_back_token(tk);
@@ -88,18 +89,20 @@ public:
 			}
 			// a    or    b     and   c or d
 			//    prv_op back()  tk
-			if(tk.is_name("or")){
-				// a and b or c or d
-				//         tk
-				ops_.push_back(move(tk));
-				continue;
-			}
+			// if(tk.is_name("or")){
+			// 	// a and b or c or d
+			// 	//         tk
+			// 	ops_.push_back(move(tk));
+			// 	continue;
+			// }
 
-			// a    or    (b     and   c) or d
+			// a    or    b     and   c or d
 			//    prv_op back()  tk
+			// a    or   {b     and   c} or d
 			stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
 			bools_.pop_back();
 			bools_.push_back(move(bol));
+			prv_op=tk;
 			tk=t.next_token();
 			if(not(tk.is_name("or") or tk.is_name("and"))){
 				t.put_back_token(tk);
