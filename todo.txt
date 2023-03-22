@@ -21,7 +21,17 @@ stage 3 - cleanup
 [ ]    block -> if,loop -> block
 [ ]    block -> call (in-lined) -> block
 stage 4
+[ ] primitive types
+[ ]   var b=bool(a=1)
+[ ]   var c=byte(1)
+[ ]   var w=word(1)
+[ ]   var d=dword(1)
+[ ]   var i=1
+[ ] floting point instructions
+[ ]   var flt=1.0f
+[ ]   var dbl=1.0
 [ ] bool type
+[ ] function argument types
 [ ] f(a=1) where argument is a boolean
 [ ] character type
 [ ] string type
