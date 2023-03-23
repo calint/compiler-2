@@ -634,7 +634,7 @@ private:
 		// traverse the frames and resolve the id (which might be an alias) to
 		// a variable, field, register or constant
 		size_t i{frames_.size()};
-		while(i--){ // ? can it roll over past 0?
+		while(i--){
 			// is the frame a function?
 			if(frames_[i].is_func()){
 				// is it an alias defined by an argument in the function?
