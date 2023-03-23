@@ -11,9 +11,9 @@ using namespace std;
 #include"stmt_loop.hpp"
 #include"stmt_if.hpp"
 
+static string read_file_to_string(const char *file_name);
 static void optimize_jumps_1(istream&is,ostream&os);
 static void optimize_jumps_2(istream&is,ostream&os);
-static string read_file_to_string(const char *file_name);
 
 int main(int argc,char*args[]){
 	const char*src_file_name=argc==1?"prog.baz":args[1];
