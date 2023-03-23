@@ -152,7 +152,7 @@ public:
 
 		// first element is assigned to destination
 		const statement&st{*exps_[0].get()};
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(st,dest)};
+		const ident_resolved&ir{tc.resolve_ident_to_nasm(st,dest,false)};
 		asm_op(tc,os,indent_level,'=',dest,ir.id,st);
 
 		// remaining elements are +,-,*,/
@@ -222,7 +222,7 @@ private:
 				src.compile(tc,os,indent_level,dest);
 				return;
 			}
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
 			if(ir.is_const()){
 				tc.asm_cmd(src,os,indent_level,"mov",dest_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 				return;
@@ -255,7 +255,7 @@ private:
 				return;
 			}
 			// not an expression, either a register or memory location
-			const ident_resolved&src_r=tc.resolve_ident_to_nasm(src);
+			const ident_resolved&src_r=tc.resolve_ident_to_nasm(src,true);
 			// imul destination operand must be register
 			if(tc.is_identifier_register(dest_resolved)){
 				if(src_r.is_const()){
@@ -338,7 +338,7 @@ private:
 			tc.free_scratch_register(os,indent_level,r);
 			return;
 		}
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
+		const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
 		if(ir.is_const()){
 			tc.asm_cmd(src,os,indent_level,op,dest_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 			return;
@@ -367,7 +367,7 @@ private:
 			tc.free_scratch_register(os,indent_level,r);
 			return;
 		}
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
+		const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
 		if(ir.is_const()){
 			tc.asm_cmd(src,os,indent_level,op,dest_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 			return;
@@ -393,7 +393,7 @@ private:
 			tc.free_named_register(os,indent_level,"rcx");
 			return;
 		}
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
+		const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
 		if(ir.is_const()){
 			tc.asm_cmd(src,os,indent_level,op,dest_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 			return;
@@ -430,7 +430,7 @@ private:
 			tc.free_scratch_register(os,indent_level,r);
 			return;
 		}
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(src)};
+		const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
 		if(ir.is_const()){
 			tc.alloc_named_register_or_break(src,os,indent_level,"rax");
 			tc.asm_cmd(src,os,indent_level,"mov","rax",dest_resolved);

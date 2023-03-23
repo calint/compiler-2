@@ -103,7 +103,7 @@ public:
 					continue;
 				}
 				// not an expression, resolve identifier to nasm
-				const ident_resolved&ir{tc.resolve_ident_to_nasm(arg)};
+				const ident_resolved&ir{tc.resolve_ident_to_nasm(arg,true)};
 				if(argument_passed_in_register){
 					// move the identifier to the requested register
 					if(ir.is_const()){
@@ -142,7 +142,7 @@ public:
 			if(not dest_ident.empty()){
 				// function returns value in rax, copy return value to dest_ident
 				get_unary_ops().compile(tc,os,indent_level,"rax");
-				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dest_ident)};
+				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dest_ident,false)};
 				tc.asm_cmd(*this,os,indent_level,"mov",ir.id,"rax");
 			}
 			return;
@@ -216,7 +216,7 @@ public:
 				// no register allocated for the argument
 				// alias parameter name to the argument identifier
 				if(not arg.get_unary_ops().is_empty()){
-					const ident_resolved&ir{tc.resolve_ident_to_nasm(arg)};
+					const ident_resolved&ir{tc.resolve_ident_to_nasm(arg,true)};
 					const string&sr{tc.alloc_scratch_register(arg,os,indent_level+1)};
 					allocated_registers_in_order.push_back(sr);
 					allocated_scratch_registers.push_back(sr);
@@ -234,9 +234,9 @@ public:
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
 				tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;
 				// move argument to register
-				const ident_resolved&ir{tc.resolve_ident_to_nasm(arg)};
+				const ident_resolved&ir{tc.resolve_ident_to_nasm(arg,true)};
 				if(ir.is_const()){
-					const ident_resolved&arg_r{tc.resolve_ident_to_nasm(arg)};
+					const ident_resolved&arg_r{tc.resolve_ident_to_nasm(arg,true)};
 					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,arg.get_unary_ops().get_ops_as_string()+ir.id);
 				}else{
 					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,ir.id);
@@ -275,12 +275,12 @@ public:
 
 		// provide an exit label for 'return' to jump to instead of assembler 'ret'
 		tc.asm_label(*this,os,indent_level,ret_jmp_label);
-		// if the result of the call is negated
+		// if the result of the call has unary ops
 		if(not get_unary_ops().is_empty()){
 			if(func.returns().empty())
-				throw compiler_error(*this,"function call is negated but it does not return a value");
+				throw compiler_error(*this,"function call has unary operations but it does not return a value");
 
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,func.returns()[0].name())};
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,func.returns()[0].name(),true)};
 			get_unary_ops().compile(tc,os,indent_level,ir.id);
 		}
 		// pop scope

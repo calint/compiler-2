@@ -116,14 +116,14 @@ public:
 		// return binding
 		if(not returns().empty()){
 			const string&nm{returns()[0].name()};
-			tc.add_var(*this,os,indent_level+1,nm,8);
+			tc.add_var(*this,os,indent_level+1,nm,8,false);
 //			tc.add_alias(from,"rax");
 		}
 
 		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[return address]
 		// define variables in the called context by binding arguments to stack
 		//    x=[rsp+argnum<<3+8] (const 8 skips return address)
-		vector<string>allocated_names_registers;
+		vector<string>allocated_named_registers;
 		const size_t n{params_.size()};
 		size_t stk_ix{2<<3}; // skip [rbp] and [return address] on stack
 		for(size_t i=0;i<n;i++){
@@ -139,7 +139,7 @@ public:
 			}else{
 				toc::indent(os,indent_level+1,true);os<<pm_nm<<": "<<reg<<endl;
 				tc.alloc_named_register_or_break(pm,os,indent_level+1,reg);
-				allocated_names_registers.push_back(reg);
+				allocated_named_registers.push_back(reg);
 				tc.add_alias(pm_nm,reg);
 			}
 		}
@@ -148,14 +148,14 @@ public:
 		code_.compile(tc,os,indent_level,"");
 		if(!returns().empty()){
 			const string&ret_name{returns()[0].name()};
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,ret_name)};
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,ret_name,true)};
 			tc.asm_cmd(*this,os,indent_level+1,"mov","rax",ir.id);
 		}
 		tc.asm_pop(*this,os,indent_level+1,"rbp");
 		tc.asm_ret(*this,os,indent_level+1);
-		size_t i{allocated_names_registers.size()};
+		size_t i{allocated_named_registers.size()};
 		while(i--){
-			tc.free_named_register(os,indent_level+1,allocated_names_registers[i]);
+			tc.free_named_register(os,indent_level+1,allocated_named_registers[i]);
 		}
 		os<<endl;
 		tc.exit_func(name());

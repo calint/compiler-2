@@ -15,13 +15,20 @@ class stmt_def_type;
 
 class allocated_var final{
 public:
-	inline allocated_var(const string&name,const size_t size,const int stkix,const string&nasm_ident,char bits):
+	inline allocated_var(const string&name,const size_t size,const int stkix,const string&nasm_ident,const char bits,const bool initiated):
 		name_{name},
 		size_{size},
 		stkix_{stkix},
 		nasm_ident_{nasm_ident},
-		bits_{bits}
+		bits_{bits},
+		initiated_{initiated}
 	{}
+
+	inline allocated_var()=default;
+	inline allocated_var(const allocated_var&)=default;
+	inline allocated_var(allocated_var&&)=default;
+	inline allocated_var&operator=(const allocated_var&)=default;
+	inline allocated_var&operator=(allocated_var&&)=default;
 
 	inline bool is_name(const string&nm)const{return nm==name_;}
 
@@ -31,12 +38,19 @@ public:
 
 	inline size_t get_size()const{return size_;}
 
+	inline const string&get_name()const{return name_;}
+
+	inline bool is_initiated()const{return initiated_;}
+
+	inline void set_initiated(const bool yes){initiated_=yes;}
+
 private:
 	string name_;
-	size_t size_{0};
-	int stkix_{0};
+	size_t size_{};
+	int stkix_{};
 	string nasm_ident_;
-	char bits_{0}; // 1: const
+	char bits_{}; // 1: const
+	bool initiated_{};
 };
 
 class frame final{
@@ -52,7 +66,7 @@ public:
 		type_{tpe}
 	{}
 
-	inline void add_var(const string&nm,const size_t size,const int stkix,const string&flags){
+	inline void add_var(const string&nm,const size_t size,const int stkix,const bool initiated){
 		string ident;
 		if(stkix>0){
 			// function argument
@@ -75,14 +89,16 @@ public:
 		}else{
 			throw"unexpected variable size: "+to_string(size);
 		}
-		vars_.put(nm,allocated_var{nm,size,stkix,ident,0});
+		vars_.put(nm,allocated_var{nm,size,stkix,ident,0,initiated});
 	}
 
 	inline size_t allocated_stack_size()const{return allocated_stack_;}
 
 	inline bool has_var(const string&name)const{return vars_.has(name);}
 
-	inline const allocated_var get_var(const string&name)const{return vars_.get(name);}
+	inline allocated_var get_var(const string&name)const{return vars_.get(name);}
+
+	inline allocated_var&get_var_ref(const string&name){return vars_.get_ref(name);}
 
 	inline void add_alias(const string&ident,const string&outside_ident){
 		aliases_.put(ident,outside_ident);
@@ -224,16 +240,16 @@ public:
 //		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
 	}
 
-	inline ident_resolved resolve_ident_to_nasm(const statement&stmt)const{
-		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(stmt,stmt.identifier())};
+	inline ident_resolved resolve_ident_to_nasm(const statement&stmt,const bool must_be_initiated)const{
+		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(stmt,stmt.identifier(),must_be_initiated)};
 		if(not ir.id.empty())
 			return ir;
 
 		throw compiler_error(stmt,"cannot resolve identifier '"+stmt.identifier()+"'");
 	}
 
-	inline ident_resolved resolve_ident_to_nasm(const statement&stmt,const string&ident)const{
-		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(stmt,ident)};
+	inline ident_resolved resolve_ident_to_nasm(const statement&stmt,const string&ident,const bool must_be_initiated)const{
+		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(stmt,ident,must_be_initiated)};
 		if(not ir.id.empty())
 			return ir;
 
@@ -277,7 +293,7 @@ public:
 		frames_.pop_back();
 	}
 
-	inline void add_var(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size){
+	inline void add_var(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size,const bool initiated){
 		if(frames_.back().has_var(name))
 			throw compiler_error(st,"variable '"+name+"' already declared");
 
@@ -285,18 +301,18 @@ public:
 		//   or past the end of stack (if no function has been called)
 		const size_t stkix{get_current_stack_size()+8};
 		assert(size==8||size==4||size==2||size==1);
-		frames_.back().add_var(name,size,-int(stkix),"");
+		frames_.back().add_var(name,size,-int(stkix),initiated);
 		// comment the resolved name
-		const ident_resolved&ir=resolve_ident_to_nasm(st,name);
+		const ident_resolved&ir=resolve_ident_to_nasm(st,name,false);
 		const string&dest_resolved{ir.id};
 		indent(os,indent_level,true);os<<name<<": "<<dest_resolved<<endl;
 	}
 
 	inline void add_func_arg(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size,const int stkix_delta){
 		assert(frames_.back().is_func()&&not frames_.back().is_func_inline());
-		frames_.back().add_var(name,size,stkix_delta,"");
+		frames_.back().add_var(name,size,stkix_delta,true);
 		// comment the resolved name
-		const ident_resolved&ir{resolve_ident_to_nasm(st,name)};
+		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
 		indent(os,indent_level,true);os<<name<<": "<<ir.id<<endl;
 	}
 
@@ -569,6 +585,36 @@ public:
 		indent(os,indent_level);os<<"neg "<<dest_resolved<<endl;
 	}
 
+	inline void var_has_been_initiated(const statement&st,const string&name){
+		string id{name};
+		// traverse the frames and resolve the id (which might be an alias) to
+		// a variable, field, register or constant
+		size_t i{frames_.size()};
+		while(i--){
+			// is the frame a function?
+			if(frames_[i].is_func()){
+				// is it an alias defined by an argument in the function?
+				if(not frames_[i].has_alias(id))
+					break;
+				// yes, continue resolving alias until it is
+				// a variable, field, register or constant
+				id=frames_[i].get_alias(id);
+			}else{
+				// does scope contain the variable
+				if(frames_[i].has_var(id))
+					break;
+			}
+		}
+
+		// is 'id' a variable?
+		if(frames_[i].has_var(id)){
+			frames_[i].get_var_ref(id).set_initiated(true);
+			return;
+		}
+		
+		// a register or field, assumed initiated
+	} 
+
 	inline static void indent(ostream&os,const size_t indent_level,const bool comment=false){
 		if(indent_level==0){
 			if(comment)
@@ -598,7 +644,7 @@ private:
 		return n;
 	}
 
-	inline const ident_resolved resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident)const{
+	inline const ident_resolved resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident,const bool must_be_initiated=true)const{
 		string id=ident;
 		// traverse the frames and resolve the id (which might be an alias) to
 		// a variable, field, register or constant
@@ -621,7 +667,10 @@ private:
 
 		// is 'id' a variable?
 		if(frames_[i].has_var(id)){
-			return{frames_[i].get_var(id).nasm_ident(),ident_resolved::type::VAR};
+			allocated_var var=frames_[i].get_var(id);
+			if(not var.is_initiated()and must_be_initiated)
+				throw compiler_error(stmt,"variable '"+string{var.get_name()}+"' is not initiated");
+			return{var.nasm_ident(),ident_resolved::type::VAR};
 		}
 
 		// is 'id' a register?

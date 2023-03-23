@@ -17,14 +17,14 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.source_comment(*this,os,indent_level);
 
-		const ident_resolved&dst_r{tc.resolve_ident_to_nasm(arg(0))};
+		const ident_resolved&dst_r{tc.resolve_ident_to_nasm(arg(0),false)};
 		const statement&src_arg{arg(1)};
 		if(src_arg.is_expression()){ // ? the assembler commands might not need this
 			src_arg.compile(tc,os,indent_level+1,dst_r.id);
 			return;
 		}
 		// src is not an expression
-		const ident_resolved&src{tc.resolve_ident_to_nasm(src_arg)};
+		const ident_resolved&src{tc.resolve_ident_to_nasm(src_arg,true)};
 		if(src.is_const()){
 			// a constant
 			tc.asm_cmd(*this,os,indent_level,"mov",dst_r.id,src_arg.get_unary_ops().get_ops_as_string()+src.id);

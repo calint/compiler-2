@@ -19,7 +19,7 @@ public:
 			// not in-lined
 			const string&ret_var{tc.get_func_return_var_name_or_break(*this)};
 			if(not ret_var.empty()){
-				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,ret_var)};
+				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,ret_var,false)};
 				const string&src_resolved{ir.id};
 				tc.asm_cmd(*this,os,indent_level,"mov","rax",src_resolved);
 			}

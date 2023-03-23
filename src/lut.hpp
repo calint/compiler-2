@@ -31,6 +31,25 @@ public:
 		elems_.emplace_back(el{key,data});
 	}
 
+	// inline void set(const string&key,T data){
+	// 	for(const auto&e:elems_){
+	// 		if(not e.is_key(key))
+	// 			continue;
+	// 		e.data=data;
+	// 		return;
+	// 	}
+	// 	throw"key '"+key+"' not found in "+string{__FILE__}+":"+to_string(__LINE__);
+	// }
+
+	inline T&get_ref(const string&key){
+		for(el&e:elems_){
+			if(e.is_key(key)){
+				return e.data;
+			}
+		}
+		throw"element not found";
+	}
+
 private:
 	class el{
 	public:

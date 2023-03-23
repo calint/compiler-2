@@ -27,7 +27,7 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
 		tc.source_comment(*this,os,indent_level);
-		tc.add_var(*this,os,indent_level,name_.name(),8);
+		tc.add_var(*this,os,indent_level,name_.name(),8,false);
 		initial_value_.compile(tc,os,indent_level,name_.name());
 	}
 

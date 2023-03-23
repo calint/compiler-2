@@ -25,7 +25,7 @@ public:
 		tc.source_comment(*this,os,indent_level);
 
 		// for the sake of clearer error message make sure identifier can be resolved
-		const ident_resolved&dest_resolved{tc.resolve_ident_to_nasm(*this)};
+		const ident_resolved&dest_resolved{tc.resolve_ident_to_nasm(*this,false)};
 
 		// compare generated instructions with and without allocated scratch register
 		// select the method that produces least instructions
@@ -51,6 +51,8 @@ public:
 		}else{
 			os<<ss2.str();
 		}
+
+		tc.var_has_been_initiated(*this,tok().name());
 	}
 
 private:
