@@ -78,6 +78,7 @@ public:
 						t.put_back_token(tk);
 						break;
 					}
+					
 					prv_op=tk;
 					ops_.push_back(move(tk));
 					continue;
