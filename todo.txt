@@ -6,7 +6,7 @@ stage 4
 [ ]   var c=byte(0)    var c:byte=0
 [ ]   var w=word(0)    var c:word=0
 [ ]   var d=dword(0)   var d:dword=0
-[ ]   var i=quad(0)    var i:quad=0   var i=0
+[ ]   var i=quad(0)    var i:quad=0   var i=0  quad is default
 [ ]   var x=c+w+d gives error, not matching types, no implicit conversion
 [ ]   var x=quad(c)+quad(w)+quad(d)
 [ ]   var c=i gives error, source type size is larger than destination
