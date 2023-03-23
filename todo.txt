@@ -6,11 +6,6 @@ stage 3 - cleanup
 [ ] toc.add_var(...) check if name shadows -> consider in-lined functions
 [ ] fix 'cmp' two constants case
 [ ] tokenizer to keep track of line-number instead of counting it at every call
-[ ] examine expression, expr_ops_list, stmt_call relation
-[ ]   circular reference stmt_call -> expr_ops_list -> stmt_call
-[ ] decouple by implementing functions that cause circular references in decouple.cpp
-[ ]    block -> if,loop -> block
-[ ]    block -> call (in-lined) -> block
 stage 4
 [ ] primitive types
 [ ]   var b=bool(a=1)  var b:bool=true
@@ -63,6 +58,12 @@ stage 4
 [ ] why is the binary so big although in-line is turned off in make.sh?
 [ ] clang-format everything for less dense code?
 -------------------------------------------------------------------------------
+[-] examine expression, expr_ops_list, stmt_call relation
+[-]   circular reference stmt_call -> expr_ops_list -> stmt_call
+[-] decouple by implementing functions that cause circular references in decouple.cpp
+[-]    block -> if,loop -> block
+[-]    block -> call (in-lined) -> block
+[-]    cannot without making field in declaration of 'if' and 'loop' to unique_ptr<stmt_block>
 [x] make sub lists taking in account precedence of 'and' over 'or'
       i.e. 'a or b and c or d' -> 'a or (b and c) or d'
 [x]   review/remake messy code -> messy but readable and simple
