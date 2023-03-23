@@ -13,12 +13,11 @@ CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-c
 $CC $CF $CW -o baz src/main.cpp
 
 ./baz prog.baz > gen.s
+grep -v -e'^\s*;.*$' -e'^\s*$' gen.s > gen-m.s
 nasm -f elf64 gen.s
 ld -s -o gen gen.o
 
 ls --color -la baz gen.s gen-m.s gen
-
-cat gen.s|grep -v -e'^\s*;.*$' -e'^\s*$' > gen-m.s
 
 echo
 echo -n '    source: ' && cat src/*|wc
