@@ -681,14 +681,18 @@ private:
 		// is 'id' a variable?
 		if(frames_[i].has_var(id)){
 			allocated_var var=frames_[i].get_var(id);
-			if(not var.is_initiated()and must_be_initiated)
-				throw compiler_error(stmt,"variable '"+string{var.get_name()}+"' is not initiated");
+			if(must_be_initiated and not var.is_initiated())
+				throw compiler_error(stmt,"variable '"+var.get_name()+"' is not initiated");
 			return{var.nasm_ident(),ident_resolved::type::VAR};
 		}
 
 		// is 'id' a register?
-		if(is_identifier_register(id))
+		if(is_identifier_register(id)){
+			if(must_be_initiated and not is_register_initiated(id))
+				throw compiler_error(stmt,"register '"+id+"' is not initiated");
+
 			return{id,ident_resolved::type::REGISTER}; // ? unary ops?
+		}
 
 		// is 'id' a field?
 		if(fields_.has(id)){
