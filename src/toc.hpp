@@ -656,7 +656,7 @@ public:
 		indent(os,indent_level);os<<"neg "<<dest_resolved<<endl;
 	}
 
-	inline void var_has_been_initiated(const statement&st,const string&name){
+	inline void set_var_is_initiated(const string&name){
 		string id{name};
 		// traverse the frames and resolve the id (which might be an alias) to
 		// a variable, field, register or constant

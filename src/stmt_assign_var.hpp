@@ -52,7 +52,7 @@ public:
 			os<<ss2.str();
 		}
 
-		tc.var_has_been_initiated(*this,tok().name());
+		tc.set_var_is_initiated(tok().name());
 	}
 
 private:
