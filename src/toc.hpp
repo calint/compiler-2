@@ -15,33 +15,33 @@ class stmt_def_type;
 struct var_meta final{
 	string name;
 	token declared_at;
-	size_t size{};
-	int stkix{};
-	string nasm_ident;
-	bool initiated{};
+	size_t size{}; // in bytes
+	int stack_idx{}; // location relative to rsp
+	string nasm_ident; // nasm usable literal
+	bool initiated{}; // true if variable has been initiated
 };
 
 class frame final{
 public:
 	enum class type{FUNC,BLOCK,LOOP};
 
-	inline frame(const string&name,const type tpe,const string&call_path="",const string&ret_label="",const bool is_inline=false,const string&ret_var=""):
+	inline frame(const string&name,const type tpe,const string&call_path="",const string&func_ret_label="",const bool func_is_inline=false,const string&func_ret_var=""):
 		name_{name},
 		call_path_{call_path},
-		ret_label_{ret_label},
-		ret_var_{ret_var},
-		is_inline_{is_inline},
+		func_ret_label_{func_ret_label},
+		func_ret_var_{func_ret_var},
+		func_is_inline_{func_is_inline},
 		type_{tpe}
 	{}
 
-	inline void add_var(const string&nm,const token&declared_at,const size_t size,const int stkix,const bool initiated){
+	inline void add_var(const string&nm,const token&declared_at,const size_t size,const int stack_idx,const bool initiated){
 		string ident;
-		if(stkix>0){
+		if(stack_idx>0){
 			// function argument
-			ident="[rbp+"+to_string(stkix)+"]";
-		}else if(stkix<0){
+			ident="[rbp+"+to_string(stack_idx)+"]";
+		}else if(stack_idx<0){
 			// variable
-			ident="[rbp"+to_string(stkix)+"]";
+			ident="[rbp"+to_string(stack_idx)+"]";
 			allocated_stack_+=size;
 		}else{
 			throw "toc:fram:add_var";
@@ -57,18 +57,16 @@ public:
 		}else{
 			throw"unexpected variable size: "+to_string(size);
 		}
-		vars_.put(nm,var_meta{nm,declared_at,size,stkix,ident,initiated});
+		vars_.put(nm,var_meta{nm,declared_at,size,stack_idx,ident,initiated});
 	}
 
 	inline size_t allocated_stack_size()const{return allocated_stack_;}
 
 	inline bool has_var(const string&name)const{return vars_.has(name);}
 
-	inline var_meta get_var(const string&name)const{return vars_.get(name);}
-
 	inline var_meta&get_var_ref(const string&name){return vars_.get_ref(name);}
 
-	inline const var_meta&get_var_const_ref(const string&name){return vars_.get_const_ref(name);}
+	inline const var_meta&get_var_const_ref(const string&name)const{return vars_.get_const_ref(name);}
 
 	inline void add_alias(const string&ident,const string&outside_ident){aliases_.put(ident,outside_ident);}
 
@@ -86,13 +84,13 @@ public:
 
 	inline const string&name()const{return name_;}
 
-	inline const string&ret_label()const{return ret_label_;}
+	inline const string&func_ret_label()const{return func_ret_label_;}
 
 	inline const string&inline_call_path()const{return call_path_;}
 
-	inline bool is_func_inline()const{return is_inline_;}
+	inline bool func_is_inline()const{return func_is_inline_;}
 
-	inline const string&ret_var()const{return ret_var_;}
+	inline const string&func_ret_var()const{return func_ret_var_;}
 
 private:
 	string name_; // optional name
@@ -100,9 +98,9 @@ private:
 	size_t allocated_stack_{}; // number of slots used on the stack by this frame
 	lut<var_meta>vars_; // vars declared in this frame
 	lut<string>aliases_; // aliases that refers to previous frame alias or var
-	string ret_label_; // the label to jump to when exiting an inlined function
-	string ret_var_; // the variable that contains the return value
-	bool is_inline_{};
+	string func_ret_label_; // the label to jump to when exiting an inlined function
+	string func_ret_var_; // the variable that contains the return value
+	bool func_is_inline_{};
 	type type_{type::FUNC}; // frame type
 	size_t last_added_var_size{};
 };
@@ -280,37 +278,18 @@ public:
 			const var_meta&var=frames_.back().get_var_const_ref(name);
 			throw compiler_error(st,"variable '"+name+"' already declared at "+source_location_hr(var.declared_at));
 		}
-		// check if variable shadows a declaration within the function scope
-		string id=name;
-		// traverse the frames and resolve the id (which might be an alias) to
-		// a variable, field, register or constant
-		size_t i{frames_.size()};
-		while(i--){
-			// is the frame a function?
-			if(frames_[i].is_func()){
-				// is it an alias defined by an argument in the function?
-				if(not frames_[i].has_alias(id))
-					break;
-				// yes, continue resolving alias until it is
-				// a variable, field, register or constant
-				id=frames_[i].get_alias(id);
-			}else{
-				// does scope contain the variable
-				if(frames_[i].has_var(id))
-					break;
-			}
-		}
-
-		if(frames_[i].has_var(id)){
-			const var_meta&var{frames_[i].get_var_const_ref(id)};
+		pair<string,frame&>idfrm{get_id_and_frame_for_identifier(name)};
+		const string&id=idfrm.first;
+		if(idfrm.second.has_var(id)){
+			const var_meta&var{idfrm.second.get_var_const_ref(id)};
 			throw compiler_error(st,"variable '"+name+"' shadows variable declared at "+source_location_hr(var.declared_at));
 		}
 
-		// offset by 8 since if stkix is 0 then rsp points at return address
+		// offset by 8 since if stack_idx is 0 then rsp points at return address
 		//   or past the end of stack (if no function has been called)
-		const size_t stkix{get_current_stack_size()+8};
+		const size_t stack_idx{get_current_stack_size()+8};
 		assert(size==8||size==4||size==2||size==1);
-		frames_.back().add_var(name,st.tok(),size,-int(stkix),initiated);
+		frames_.back().add_var(name,st.tok(),size,-int(stack_idx),initiated);
 		// comment the resolved name
 		const ident_resolved&ir=resolve_ident_to_nasm(st,name,false);
 		const string&dest_resolved{ir.id};
@@ -318,7 +297,7 @@ public:
 	}
 
 	inline void add_func_arg(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size,const int stkix_delta){
-		assert(frames_.back().is_func()&&not frames_.back().is_func_inline());
+		assert(frames_.back().is_func()&&not frames_.back().func_is_inline());
 		frames_.back().add_var(name,st.tok(),size,stkix_delta,true);
 		// comment the resolved name
 		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
@@ -417,7 +396,7 @@ public:
 		size_t i{frames_.size()};
 		while(i--){
 			if(frames_[i].is_func())
-				return frames_[i].ret_label();
+				return frames_[i].func_ret_label();
 		}
 		throw compiler_error(st,"not in a function");
 	}
@@ -426,7 +405,7 @@ public:
 		size_t i{frames_.size()};
 		while(i--){
 			if(frames_[i].is_func())
-				return frames_[i].ret_var();
+				return frames_[i].func_ret_var();
 		}
 		throw compiler_error(st,"not in a function");
 	}
@@ -620,29 +599,11 @@ public:
 	}
 
 	inline void set_var_is_initiated(const string&name){
-		string id{name};
-		// traverse the frames and resolve the id (which might be an alias) to
-		// a variable, field, register or constant
-		size_t i{frames_.size()};
-		while(i--){
-			// is the frame a function?
-			if(frames_[i].is_func()){
-				// is it an alias defined by an argument in the function?
-				if(not frames_[i].has_alias(id))
-					break;
-				// yes, continue resolving alias until it is
-				// a variable, field, register or constant
-				id=frames_[i].get_alias(id);
-			}else{
-				// does scope contain the variable
-				if(frames_[i].has_var(id))
-					break;
-			}
-		}
-
+		pair<string,frame&>idfrm{get_id_and_frame_for_identifier(name)};
+		const string&id=idfrm.first;
 		// is 'id' a variable?
-		if(frames_[i].has_var(id)){
-			frames_[i].get_var_ref(id).initiated=true;
+		if(idfrm.second.has_var(id)){
+			idfrm.second.get_var_ref(id).initiated=true;
 			return;
 		}
 
@@ -669,6 +630,29 @@ public:
 	}
 
 private:
+	inline pair<string,frame&>get_id_and_frame_for_identifier(const string&name){
+		string id{name};
+		// traverse the frames and resolve the id (which might be an alias) to
+		// a variable, field, register or constant
+		size_t i{frames_.size()};
+		while(i--){ // ? can it roll over past 0?
+			// is the frame a function?
+			if(frames_[i].is_func()){
+				// is it an alias defined by an argument in the function?
+				if(not frames_[i].has_alias(id))
+					break;
+				// yes, continue resolving alias until it is
+				// a variable, field, register or constant
+				id=frames_[i].get_alias(id);
+				continue;
+			}
+			// does scope contain the variable
+			if(frames_[i].has_var(id))
+				break;
+		}
+		return{move(id),frames_[i]};		
+	}
+
 	inline bool is_register_initiated(const string&reg)const{
 		return initiated_registers_.contains(reg);
 	}
@@ -680,7 +664,7 @@ private:
 		while(i--){
 			const frame&f{frames_[i]};
 			n+=f.allocated_stack_size();
-			if(f.is_func()&&not f.is_func_inline())
+			if(f.is_func()&&not f.func_is_inline())
 				break;
 		}
 		return n;
@@ -709,7 +693,7 @@ private:
 
 		// is 'id' a variable?
 		if(frames_[i].has_var(id)){
-			var_meta var=frames_[i].get_var(id);
+			const var_meta&var=frames_[i].get_var_const_ref(id);
 			if(must_be_initiated and not var.initiated)
 				throw compiler_error(stmt,"variable '"+var.name+"' is not initiated");
 			return{var.nasm_ident,ident_resolved::type::VAR};
