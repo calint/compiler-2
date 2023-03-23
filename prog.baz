@@ -12,6 +12,7 @@ func inline main{
     var a=-2
     var b=-a
     var c=~f(a)
+    var d=()
     if not (a=-2 and b=-a) exit(1)
     if not a=-2 or not b=-a exit(2)
     if not (a=-2 or b=-a) exit(3)

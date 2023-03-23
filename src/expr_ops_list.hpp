@@ -148,7 +148,7 @@ public:
 		tc.source_comment(*this,os,indent);
 
 		if(exps_.empty()) // ? can this happen?
-			throw compiler_error(*this,"expressions is empty");
+			throw compiler_error(*this,"expression is empty");
 
 		// first element is assigned to destination
 		const statement&st{*exps_[0].get()};
@@ -178,6 +178,7 @@ public:
 	inline const string&identifier()const override{
 		if(exps_.size()==1)
 			return exps_[0]->identifier();
+
 		throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 	}
 
@@ -187,15 +188,6 @@ public:
 		
 		return uops_;
 	}
-
-	// inline string as_const()const override{
-	// 	assert(exps_.size()==1&&uops_.is_empty());
-
-	// 	if(exps_.size()==1)
-	// 		return exps_[0]->as_const();
-
-	// 	throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
-	// }
 
 private:
 	static constexpr char initial_precedence{7}; // higher than the highest precedence
