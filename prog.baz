@@ -4,11 +4,24 @@ func inline exit(v:reg_rdi){
     syscall
 }
 
-func inline main{
+func inline a(i):res{
+    res=i+1
+}
+
+func inline b(i):res{
+    res=i+2
+}
+
+func inline c(i):res{
     var a=1
     var b=2
-    var c=3
-    var d=4
-    var r=((b+c)*d+c*(a+b))*2
-    exit(r)
+    var c=a+b
+    res=i+c
+}
+
+func inline main{
+    var x=1
+    var y=2
+    var z=3
+    exit(a(b(c(1))))
 }

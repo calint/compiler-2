@@ -42,7 +42,7 @@ public:
 
 	inline bool is_initiated()const{return initiated_;}
 
-	inline void set_initiated(const bool yes){initiated_=yes;}
+	inline void set_initiated(){initiated_=true;}
 
 private:
 	string name_;
@@ -621,12 +621,20 @@ public:
 
 		// is 'id' a variable?
 		if(frames_[i].has_var(id)){
-			frames_[i].get_var_ref(id).set_initiated(true);
+			frames_[i].get_var_ref(id).set_initiated();
 			return;
 		}
-		
-		// a register or field, assumed initiated
-	} 
+
+		if(fields_.has(id))
+			return; // a field, it is initiated
+
+		if(is_identifier_register(id)){
+			initiated_registers_.insert(id); // ? this might not be necessary since it is updated at asm_cmd(...,"mov",...)
+			return;
+		}
+
+		throw"should not be reached: "+string{__FILE__}+":"+to_string(__LINE__);
+	}
 
 	inline static void indent(ostream&os,const size_t indent_level,const bool comment=false){
 		if(indent_level==0){
