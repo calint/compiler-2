@@ -70,9 +70,7 @@ public:
 
 	inline const var_meta&get_var_const_ref(const string&name){return vars_.get_const_ref(name);}
 
-	inline void add_alias(const string&ident,const string&outside_ident){
-		aliases_.put(ident,outside_ident);
-	}
+	inline void add_alias(const string&ident,const string&outside_ident){aliases_.put(ident,outside_ident);}
 
 	inline bool is_func()const{return type_==type::FUNC;}
 
