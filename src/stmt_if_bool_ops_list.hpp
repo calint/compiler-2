@@ -95,7 +95,7 @@ public:
 			// a or b  |or|       |c|       |and|  d or e
 			//       |prv_tk| |ops.back()|  |tk|
 			if(is_sub_expr){
-				// generated subexpressions are 'and' ops and this is an 'or'
+				// generated sub-expressions are 'and' ops and this is an 'or'
 				// a or b and c |or| d
 				//      ------- |tk|
 				t.put_back_token(tk);
