@@ -1,0 +1,29 @@
+func inline exit(v:reg_rdi){
+	mov(rax,60) # exit system call
+	mov(rdi,v)  # return code
+	syscall
+}
+
+field fld=42
+field str="hello world"
+
+type vector{x,y}
+type object{pos:vector,vel:vector,color}
+
+func inline main{
+	var obj:object=1
+	if not obj.pos.x=1 exit(1)
+	obj.pos.x=1
+	obj.pos.y=2
+	obj.vel.x=4
+	obj.vel.y=str
+	obj.color=str.len
+	
+	if not fld=42 exit(2)
+	if not obj.pos.x=1 exit(3)
+	if not obj.pos.y=2 exit(4)
+	if not obj.vel.x=4 exit(5)
+	if not obj.vel.y=str exit(6)
+	if not obj.color=str.len exit(7)
+	exit(0)
+}

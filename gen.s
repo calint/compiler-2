@@ -3,7 +3,7 @@
 section .data
 align 4
 ;[7:1] field len=-2 
-len dq -2
+len: dq -2
 
 section .bss
 align 4

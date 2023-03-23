@@ -1,6 +1,6 @@
 section .data
 align 4
-len dq -2
+len: dq -2
 section .bss
 align 4
 stk resd 1024

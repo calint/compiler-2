@@ -144,26 +144,26 @@ struct ident_resolved final{
 
 class baz_ident final{
 public:
-	inline baz_ident(string id_full):
-		id_full_{id_full},
-		id_base_{id_full.substr(0,id_full.find('.'))}
+	inline baz_ident(string id):
+		id_{id}
 	{
-		if(id_full_.size()==id_base_.size())
-			return;
-		// ? split
-		dots_.push_back(id_full_.substr(id_base_.size()+1));
+		size_t start{0},end{0};
+		while((end=id.find('.',start))!=string::npos){
+			path_.push_back(id.substr(start,end-start));
+			start=end+1;
+		}
+		path_.push_back(id.substr(start));
 	}
 
-	inline const string&id()const{return id_full_;}
+	inline const string&id()const{return id_;}
 
-	inline const string&var_name()const{return id_base_;}
+	inline const string&id_base()const{return path_[0];}
 
-	inline string var_field()const{return dots_.empty()?"":dots_[0];}
+	inline const vector<string>&path()const{return path_;}
 
 private:
-	string id_full_;
-	string id_base_;
-	vector<string>dots_;
+	string id_;
+	vector<string>path_;
 };
 
 class toc final{
@@ -640,7 +640,7 @@ public:
 
 	inline void set_var_is_initiated(const string&name){
 		baz_ident bid{name};
-		pair<string,frame&>idfrm{get_id_and_frame_for_identifier(bid.var_name())};
+		pair<string,frame&>idfrm{get_id_and_frame_for_identifier(bid.id_base())};
 		const string&id=idfrm.first;
 		frame&frm=idfrm.second;
 		// is 'id' a variable?
@@ -713,7 +713,8 @@ private:
 	}
 
 	inline const ident_resolved resolve_ident_to_nasm_or_empty(const statement&st,const string&ident,const bool must_be_initiated)const{
-		string id{ident};
+		baz_ident bid{ident};
+		string id{bid.id_base()};
 		// traverse the frames and resolve the id (which might be an alias) to
 		// a variable, field, register or constant
 		size_t i{frames_.size()};
@@ -738,7 +739,7 @@ private:
 			const var_meta&var=frames_[i].get_var_const_ref(id);
 			if(must_be_initiated and not var.initiated)
 				throw compiler_error(st,"variable '"+var.name+"' is not initiated");
-			const string&acc=var.tp.field_accessor(st.tok(),"",var.stack_idx);
+			const string&acc=var.tp.accessor(st.tok(),bid.path(),var.stack_idx);
 			return{acc,ident_resolved::type::VAR};
 		}
 
@@ -753,22 +754,25 @@ private:
 		// is 'id' a field?
 
 		if(fields_.has(id)){
+			const string&after_dot=bid.path().size()<2?"":bid.path()[1]; // ! not correct
+			if(after_dot=="len"){
+				return{id+"."+after_dot,ident_resolved::type::IMPLIED};
+			}
 			const field_meta&fm=fields_.get_const_ref(id);
 			if(fm.is_str)
 				return{id,ident_resolved::type::FIELD};
 			return{"qword["+id+"]",ident_resolved::type::FIELD};
 		}
 
-		// is 'id' an implicit identifier?
-		// i.e. 'prompt.len' of a string field 'prompt'
-		const string&subid=id.substr(0,id.find('.'));
-		if(fields_.has(subid)){
-			const string&after_dot=id.substr(subid.size()+1);
-			if(after_dot=="len"){
-				return{id,ident_resolved::type::IMPLIED};
-			}
-			throw compiler_error(st.tok(),"unknown implicit field constant '"+id+"'");
-		}
+//		// is 'id' an implicit identifier?
+//		// i.e. 'prompt.len' of a string field 'prompt'
+//		if(fields_.has(bid.id_base())){
+//			const string&after_dot=bid.path().empty()?string{""}:bid.path()[1];
+//			if(after_dot=="len"){
+//				return{bid.id(),ident_resolved::type::IMPLIED};
+//			}
+//			throw compiler_error(st.tok(),"unknown implicit field constant '"+id+"'");
+//		}
 
 
 		char*ep;

@@ -87,7 +87,7 @@ public:
 			type_.set_size(8); // ? magic number
 		}else{
 			for(const stmt_def_type_field&fld:fields_){
-				const type&tp{tc.get_type(fld,fld.type_str())};
+				const type&tp{tc.get_type(fld,fld.type_str().empty()?"qword":fld.type_str())};
 				type_.add_field(fld.tok(),fld.name(),tp);
 			}
 		}
