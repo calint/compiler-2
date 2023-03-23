@@ -6,7 +6,7 @@
 	}
 
 
-TAG=2023-04-23--5--checkpoint && git tag $TAG && git push origin $TAG
+TAG=2023-04-23--6--checkpoint && git tag $TAG && git push origin $TAG
 
 git reset --hard HEAD
 
