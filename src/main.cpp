@@ -259,10 +259,10 @@ int main(int argc,char*args[]){
 		return 1;
 	}catch(const string&s){
 		cerr<<"\nexception: "<<s<<endl;
-		return 1;
+		return 2;
 	}catch(...){
 		cerr<<"\nexception"<<endl;
-		return 1;
+		return 3;
 	}
 	return 0;
 }
