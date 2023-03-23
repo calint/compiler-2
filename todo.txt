@@ -1,12 +1,12 @@
 [ ] clean-up: consistent variable names
 [x] clean-up: consistent function arguments names
 stage 4
-[ ] primitive types
+[ ] built-in types
 [ ]   var b=bool(a=1)  var b:bool=true
 [ ]   var c=byte(1)    var c:byte=1
 [ ]   var w=word(1)    var c:word=1
 [ ]   var d=dword(1)   var d:dword=1
-[ ]   var i=1          var i=1 or var i:quad=1 or var i=quad(1)
+[ ]   var i=1          var i:quad=1   var i=quad(1)
 [ ]   var x=c+w+d gives error, not matching types, no implicit conversion
 [ ]   var x=quad(c)+quad(w)+quad(d)
 [ ]   var c=i gives error, source type size is larger than destination
