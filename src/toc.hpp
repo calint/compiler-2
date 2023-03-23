@@ -317,6 +317,32 @@ public:
 			const var_meta&var=frames_.back().get_var_const_ref(name);
 			throw compiler_error(st,"variable '"+name+"' already declared at "+source_location_hr(var.get_declared_at()));
 		}
+		// check if variable shadows a declaration within the function scope
+		string id=name;
+		// traverse the frames and resolve the id (which might be an alias) to
+		// a variable, field, register or constant
+		size_t i{frames_.size()};
+		while(i--){
+			// is the frame a function?
+			if(frames_[i].is_func()){
+				// is it an alias defined by an argument in the function?
+				if(not frames_[i].has_alias(id))
+					break;
+				// yes, continue resolving alias until it is
+				// a variable, field, register or constant
+				id=frames_[i].get_alias(id);
+			}else{
+				// does scope contain the variable
+				if(frames_[i].has_var(id))
+					break;
+			}
+		}
+
+		if(frames_[i].has_var(id)){
+			const var_meta&var{frames_[i].get_var_const_ref(id)};
+			throw compiler_error(st,"variable '"+name+"' shadows variable declared at "+source_location_hr(var.get_declared_at()));
+		}
+
 		// offset by 8 since if stkix is 0 then rsp points at return address
 		//   or past the end of stack (if no function has been called)
 		const size_t stkix{get_current_stack_size()+8};
