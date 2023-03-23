@@ -9,12 +9,12 @@ public:
 				return last_has_el->data;
 			}
 		}
-		for(const auto&e:elems_){
+		for(const el&e:elems_){
 			if(e.is_key(key)){
 				return e.data;
 			}
 		}
-		throw"element not found";
+		throw"element not found: "+key;
 	}
 
 	inline bool has(const string&key)const{
@@ -31,23 +31,13 @@ public:
 		elems_.emplace_back(el{key,data});
 	}
 
-	// inline void set(const string&key,T data){
-	// 	for(const auto&e:elems_){
-	// 		if(not e.is_key(key))
-	// 			continue;
-	// 		e.data=data;
-	// 		return;
-	// 	}
-	// 	throw"key '"+key+"' not found in "+string{__FILE__}+":"+to_string(__LINE__);
-	// }
-
 	inline T&get_ref(const string&key){
 		for(el&e:elems_){
 			if(e.is_key(key)){
 				return e.data;
 			}
 		}
-		throw"element not found";
+		throw"element not found: "+key;
 	}
 
 	// for clarity get_const_ref instead of overloading get_ref
@@ -62,7 +52,7 @@ public:
 				return e.data;
 			}
 		}
-		throw"element not found";
+		throw"element not found: "+key;
 	}
 
 private:
