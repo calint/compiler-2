@@ -166,16 +166,10 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool inverted)const{
-		const size_t n{bools_.size()};
-		// if(n>1){
-			// avoid repeated comment
-			toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
-		// }
-		if(inverted){
-			toc::indent(os,indent_level,true);os<<"inverted\n";
-		}
+		toc::indent(os,indent_level,true);tc.source_comment(os,"?",inverted?" inverted: ":" ",*this);
 		// invert according to De Morgan's laws
 		bool invert{inverted?not not_token_.is_name("not"):not_token_.is_name("not")};
+		const size_t n{bools_.size()};
 		for(size_t i=0;i<n;i++){
 			if(bools_[i].index()==1){
 				//

@@ -446,7 +446,7 @@ public:
 		os<<res<<endl;
 	}
 
-	inline void source_comment(ostream&os,const string&dest,const char op,const statement&stmt)const{
+	inline void source_comment(ostream&os,const string&dest,const string op,const statement&stmt)const{
 		size_t char_in_line;
 		const size_t n{line_number_for_char_index(stmt.tok().char_index(),source_str_.c_str(),char_in_line)};
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";

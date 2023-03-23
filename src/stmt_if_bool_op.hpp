@@ -70,11 +70,8 @@ public:
 	}
 
 	inline void compile_or(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_true,const bool inverted)const{
-		if(inverted){
-			toc::indent(os,indent_level,true);os<<"invert 'or'\n";
-		}
 		const bool invert{inverted?not is_not_:is_not_};
-		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
+		toc::indent(os,indent_level,true);tc.source_comment(os,"?",inverted?" 'or' inverted: ":" ",*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
 		if(is_shorthand_){
 			resolve_cmp_shorthand(tc,os,indent_level,lhs_);
@@ -90,11 +87,8 @@ public:
 	}
 
 	inline void compile_and(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false,const bool inverted)const{
-		if(inverted){
-			toc::indent(os,indent_level,true);os<<"invert 'and'\n";
-		}
 		const bool invert{inverted?not is_not_:is_not_};
-		toc::indent(os,indent_level,true);tc.source_comment(os,"?",' ',*this);
+		toc::indent(os,indent_level,true);tc.source_comment(os,"?",inverted?" 'and' inverted: ":" ",*this);
 		tc.asm_label(*this,os,indent_level,cmp_bgn_label(tc));
 		if(is_shorthand_){
 			resolve_cmp_shorthand(tc,os,indent_level,lhs_);

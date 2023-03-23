@@ -216,7 +216,7 @@ private:
 	}
 
 	inline void asm_op(toc&tc,ostream&os,const size_t indent_level,const char op,const string&dest,const string&dest_resolved,const statement&src)const{
-		toc::indent(os,indent_level,true);tc.source_comment(os,dest,op,src);
+		toc::indent(os,indent_level,true);tc.source_comment(os,dest,{op},src);
 		if(op=='='){
 			if(src.is_expression()){
 				src.compile(tc,os,indent_level,dest);
