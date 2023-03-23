@@ -140,6 +140,9 @@ public:
 
 			// handle return value
 			if(not dst.empty()){
+				if(func.returns().empty())
+					throw compiler_error(*this,"function call does not return a value");
+
 				// function returns value in rax, copy return value to dst
 				get_unary_ops().compile(tc,os,indent,"rax");
 				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dst,false)};

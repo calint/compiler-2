@@ -4,10 +4,14 @@ func inline exit(v:reg_rdi){
     syscall
 }
 
+func f(x):res{
+    res=1
+}
+
 func inline main{
     var a=-2
     var b=-a
-
+    var c=~f(a)
     if not (a=-2 and b=-a) exit(1)
     if not a=-2 or not b=-a exit(2)
     if not (a=-2 or b=-a) exit(3)
