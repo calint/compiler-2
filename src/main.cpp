@@ -42,15 +42,15 @@ inline unique_ptr<statement>create_statement_from_tokenizer(tokenizer&t){
 }
 
 // solves circular reference unary_ops->toc->statement->unary_ops
-inline void unary_ops::compile(toc&tc,ostream&os,size_t indent_level,const string&dest_resolved)const{
+inline void unary_ops::compile(toc&tc,ostream&os,size_t indent_level,const string&dst_resolved)const{
 	size_t i{ops_.size()};
 	while(i--){
 		tc.indent(os,indent_level,false);
 		const char op{ops_[i]};
 		if(op=='~'){
-			os<<"not "<<dest_resolved<<endl;
+			os<<"not "<<dst_resolved<<endl;
 		}else if(op=='-'){
-			os<<"neg "<<dest_resolved<<endl;
+			os<<"neg "<<dst_resolved<<endl;
 		}else{
 			throw"unexpected "+string{__FILE__}+":"+string{__LINE__};
 		}
@@ -226,10 +226,10 @@ static string optimize_jumps_2(stringstream&ss){
 	return sso.str();
 }
 
-static string read_file_to_string(const char *filename){
-	ifstream t{filename};
+static string read_file_to_string(const char *file_name){
+	ifstream t{file_name};
 	if(!t.is_open())
-		throw"cannot open file '"+string{filename}+"'";
+		throw"cannot open file '"+string{file_name}+"'";
 	string str;
 	t.seekg(0,ios::end);
 	str.reserve(size_t(t.tellg()));
