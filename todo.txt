@@ -1,16 +1,16 @@
 [ ] clean-up: consistent variable names
 stage 4
 [ ] built-in types
-[ ]   var b=bool(false)  var b:bool=true
-[ ]   var c=byte(0)    var c:byte=0
-[ ]   var w=word(0)    var c:word=0
-[ ]   var d=dword(0)   var d:dword=0
-[ ]   var i=quad(0)    var i:quad=0   var i=0  quad is default
+[ ]   var b:bool=true
+[ ]   var c:byte=0
+[ ]   var c:word=0
+[ ]   var d:dword=0
+[ ]   var i:qword=0   var i=0  qword is default
 [ ]   var x=c+w+d gives error, not matching types, no implicit conversion
-[ ]   var x=quad(c)+quad(w)+quad(d)
+[ ]   var x=qword(c)+quad(w)+quad(d)
 [ ]   var c=i gives error, source type size is larger than destination
 [ ] user defined types
-[ ]   'typedef' size quad?  'alias' size quad
+[ ]   'typedef' size qword?  'alias' size qword
 [ ]     var i=1 var s=size(i) i=s gives error i=quad(s) 
 [ ]   type size{value}, var s=size{1}, s=size(1), s.value=2 == s=2 
 [ ]   type point{x,y} var p=point{1,2} p=point(1,2) p.x=1 == p=2 
