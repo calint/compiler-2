@@ -34,7 +34,7 @@ public:
 		type_{tpe}
 	{}
 
-	inline void add_var(const string&nm,const token&declared_at,const size_t size,const int stack_idx,const bool initiated){
+	inline void add_var(const string&name,const token&declared_at,const size_t size,const int stack_idx,const bool initiated){
 		string ident;
 		if(stack_idx>0){
 			// function argument
@@ -44,7 +44,7 @@ public:
 			ident="[rbp"+to_string(stack_idx)+"]";
 			allocated_stack_+=size;
 		}else{
-			throw "toc:fram:add_var";
+			throw"toc:fram:add_var";
 		}
 		if(size==8){
 			ident="qword"+ident;
@@ -57,7 +57,7 @@ public:
 		}else{
 			throw"unexpected variable size: "+to_string(size);
 		}
-		vars_.put(nm,var_meta{nm,declared_at,size,stack_idx,ident,initiated});
+		vars_.put(name,{name,declared_at,size,stack_idx,ident,initiated});
 	}
 
 	inline size_t allocated_stack_size()const{return allocated_stack_;}
@@ -95,14 +95,13 @@ public:
 private:
 	string name_; // optional name
 	string call_path_; // a unique path of source locations of the inlined call
-	size_t allocated_stack_{}; // number of slots used on the stack by this frame
-	lut<var_meta>vars_; // vars declared in this frame
-	lut<string>aliases_; // aliases that refers to previous frame alias or var
+	size_t allocated_stack_{}; // number of bytes used on the stack by this frame
+	lut<var_meta>vars_; // variables declared in this frame
+	lut<string>aliases_; // aliases that refers to previous frame alias or variable
 	string func_ret_label_; // the label to jump to when exiting an inlined function
 	string func_ret_var_; // the variable that contains the return value
 	bool func_is_inline_{};
 	type type_{type::FUNC}; // frame type
-	size_t last_added_var_size{};
 };
 
 struct field_meta final{
