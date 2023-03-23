@@ -2,8 +2,11 @@
 
 section .data
 align 4
-;[7:1] field len=-2 
-len: dq -2
+;[7:1] field fld=42 
+fld: dq 42
+;[8:1] field str="hello world" 
+str: db 'hello world'
+str.len equ $-str
 
 section .bss
 align 4
@@ -19,131 +22,407 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 
-main:
-;  [18:5] var a=-1 
-;  a: qword[rbp-8]
-;  [18:9] a=-1 
-;  [18:11] -1 
-;  [18:12] a=-1 
-   mov qword[rbp-8],-1
-;  [19:5] var b=~-foo(-a)
-;  b: qword[rbp-16]
-;  [19:9] b=~-foo(-a)
-;  [19:11] ~-foo(-a)
-;  [19:13] b=~-foo(-a)
-;  [19:13] ~-foo(-a)
-;  foo(x:reg_rdx):res 
-;    inline: 19_13
-;    alias res -> b
-;    alloc rdx
-;    alias x -> rdx
-     mov rdx,qword[rbp-8]
-     neg rdx
-;    [10:5] res=-x 
-;    [10:9] -x 
-;    [10:10] res=-x 
-     mov qword[rbp-16],rdx
-     neg qword[rbp-16]
-;    free rdx
-   foo_19_13_end:
-   neg qword[rbp-16]
-   not qword[rbp-16]
-;  [20:5] var c=~-(len)
-;  c: qword[rbp-24]
-;  [20:9] c=~-(len)
-;  [20:11] ~-(len)
-;  [20:14] c=~-(len)
-;  [20:14] ~-(len)
-;  [20:14] c=len
-;  alloc r15
-   mov r15,qword[len]
-   mov qword[rbp-24],r15
-;  free r15
-   neg qword[rbp-24]
-   not qword[rbp-24]
-;  [21:5] var d=~bar(len)
-;  d: qword[rbp-32]
-;  [21:9] d=~bar(len)
-;  [21:11] ~bar(len)
-;  [21:12] d=~bar(len)
-;  [21:12] ~bar(len)
-;  bar(x):res 
-;    inline: 21_12
-;    alias res -> d
-;    alias x -> len
-;    [14:5] res=-x 
-;    [14:9] -x 
-;    [14:10] res=-x 
-;    alloc r15
-     mov r15,qword[len]
-     mov qword[rbp-32],r15
-;    free r15
-     neg qword[rbp-32]
-   bar_21_12_end:
-   not qword[rbp-32]
-   if_22_8:
-;  [22:8] ? d=~-len and not a=b and a=-1 and b=~1 and c=~2 
-;  [22:8] ? d=~-len and not a=b and a=-1 and b=~1 and c=~2 
-;  [22:8] ? d=~-len 
-   cmp_22_8:
-;  alloc r15
-   mov r15,qword[len]
-   neg r15
-   not r15
-   cmp qword[rbp-32],r15
-;  free r15
-   jne if_22_5_end
-;  [22:20] ? not a=b 
-   cmp_22_20:
-;  alloc r15
-   mov r15,qword[rbp-16]
-   cmp qword[rbp-8],r15
-;  free r15
-   je if_22_5_end
-;  [22:32] ? a=-1 
-   cmp_22_32:
-   cmp qword[rbp-8],-1
-   jne if_22_5_end
-;  [22:41] ? b=~1 
-   cmp_22_41:
-   cmp qword[rbp-16],~1
-   jne if_22_5_end
-;  [22:50] ? c=~2 
-   cmp_22_50:
-   cmp qword[rbp-24],~2
-   jne if_22_5_end
-   if_22_8_code:  ; opt1
-;    [23:9] exit(0)
+f:
+;  f() 
+   push rbp
+   mov rbp,rsp
+;  [14:2] var obj:object=1 
+;  obj: qword[rbp-40]
+;  [14:6] obj=1 
+;  [14:17] 1 
+;  [14:17] obj=1 
+   mov qword[rbp-40],1
+   if_15_5:
+;  [15:5] ? not obj.pos.x=1 
+;  [15:5] ? not obj.pos.x=1 
+   cmp_15_5:
+   cmp qword[rbp-40],1
+   je if_15_2_end
+   if_15_5_code:  ; opt1
+;    [15:21] exit(1)
 ;    exit(v:reg_rdi) 
-;      inline: 23_9
+;      inline: 15_21
 ;      alloc rdi
 ;      alias v -> rdi
-       mov rdi,0
-;      [2:5] mov(rax,60)
+       mov rdi,1
+;      [2:2] mov(rax,60)
        mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
        syscall
 ;      free rdi
-     exit_23_9_end:
-   if_22_5_end:
-;  [24:5] exit(1)
+     exit_15_21_end:
+   if_15_2_end:
+;  [16:2] obj.pos.x=1 
+;  [16:12] 1 
+;  [16:12] obj.pos.x=1 
+   mov qword[rbp-40],1
+;  [17:2] obj.pos.y=2 
+;  [17:12] 2 
+;  [17:12] obj.pos.y=2 
+   mov qword[rbp-32],2
+;  [18:2] obj.vel.x=4 
+;  [18:12] 4 
+;  [18:12] obj.vel.x=4 
+   mov qword[rbp-24],4
+;  [19:2] obj.vel.y=str 
+;  [19:12] str 
+;  [19:12] obj.vel.y=str 
+   mov qword[rbp-16],str
+;  [20:2] obj.color=str.len 
+;  [20:12] str.len 
+;  [20:12] obj.color=str.len 
+   mov qword[rbp-8],str.len
+   if_22_5:
+;  [22:5] ? not fld=42 
+;  [22:5] ? not fld=42 
+   cmp_22_5:
+   cmp qword[fld],42
+   je if_22_2_end
+   if_22_5_code:  ; opt1
+;    [22:16] exit(2)
+;    exit(v:reg_rdi) 
+;      inline: 22_16
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,2
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_22_16_end:
+   if_22_2_end:
+   if_23_5:
+;  [23:5] ? not obj.pos.x=1 
+;  [23:5] ? not obj.pos.x=1 
+   cmp_23_5:
+   cmp qword[rbp-40],1
+   je if_23_2_end
+   if_23_5_code:  ; opt1
+;    [23:21] exit(3)
+;    exit(v:reg_rdi) 
+;      inline: 23_21
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,3
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_23_21_end:
+   if_23_2_end:
+   if_24_5:
+;  [24:5] ? not obj.pos.y=2 
+;  [24:5] ? not obj.pos.y=2 
+   cmp_24_5:
+   cmp qword[rbp-32],2
+   je if_24_2_end
+   if_24_5_code:  ; opt1
+;    [24:21] exit(4)
+;    exit(v:reg_rdi) 
+;      inline: 24_21
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,4
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_24_21_end:
+   if_24_2_end:
+   if_25_5:
+;  [25:5] ? not obj.vel.x=4 
+;  [25:5] ? not obj.vel.x=4 
+   cmp_25_5:
+   cmp qword[rbp-24],4
+   je if_25_2_end
+   if_25_5_code:  ; opt1
+;    [25:21] exit(5)
+;    exit(v:reg_rdi) 
+;      inline: 25_21
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,5
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_25_21_end:
+   if_25_2_end:
+   if_26_5:
+;  [26:5] ? not obj.vel.y=str 
+;  [26:5] ? not obj.vel.y=str 
+   cmp_26_5:
+   cmp qword[rbp-16],str
+   je if_26_2_end
+   if_26_5_code:  ; opt1
+;    [26:23] exit(6)
+;    exit(v:reg_rdi) 
+;      inline: 26_23
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,6
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_26_23_end:
+   if_26_2_end:
+   if_27_5:
+;  [27:5] ? not obj.color=str.len 
+;  [27:5] ? not obj.color=str.len 
+   cmp_27_5:
+   cmp qword[rbp-8],str.len
+   je if_27_2_end
+   if_27_5_code:  ; opt1
+;    [27:27] exit(7)
+;    exit(v:reg_rdi) 
+;      inline: 27_27
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,7
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_27_27_end:
+   if_27_2_end:
+   pop rbp
+   ret
+
+main:
+;  [31:2] var obj:object=1 
+;  obj: qword[rbp-40]
+;  [31:6] obj=1 
+;  [31:17] 1 
+;  [31:17] obj=1 
+   mov qword[rbp-40],1
+   if_32_5:
+;  [32:5] ? not obj.pos.x=1 
+;  [32:5] ? not obj.pos.x=1 
+   cmp_32_5:
+   cmp qword[rbp-40],1
+   je if_32_2_end
+   if_32_5_code:  ; opt1
+;    [32:21] exit(1)
+;    exit(v:reg_rdi) 
+;      inline: 32_21
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,1
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_32_21_end:
+   if_32_2_end:
+;  [33:2] obj.pos.x=1 
+;  [33:12] 1 
+;  [33:12] obj.pos.x=1 
+   mov qword[rbp-40],1
+;  [34:2] obj.pos.y=2 
+;  [34:12] 2 
+;  [34:12] obj.pos.y=2 
+   mov qword[rbp-32],2
+;  [35:2] obj.vel.x=4 
+;  [35:12] 4 
+;  [35:12] obj.vel.x=4 
+   mov qword[rbp-24],4
+;  [36:2] obj.vel.y=str 
+;  [36:12] str 
+;  [36:12] obj.vel.y=str 
+   mov qword[rbp-16],str
+;  [37:2] obj.color=str.len 
+;  [37:12] str.len 
+;  [37:12] obj.color=str.len 
+   mov qword[rbp-8],str.len
+   if_39_5:
+;  [39:5] ? not fld=42 
+;  [39:5] ? not fld=42 
+   cmp_39_5:
+   cmp qword[fld],42
+   je if_39_2_end
+   if_39_5_code:  ; opt1
+;    [39:16] exit(2)
+;    exit(v:reg_rdi) 
+;      inline: 39_16
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,2
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_39_16_end:
+   if_39_2_end:
+   if_40_5:
+;  [40:5] ? not obj.pos.x=1 
+;  [40:5] ? not obj.pos.x=1 
+   cmp_40_5:
+   cmp qword[rbp-40],1
+   je if_40_2_end
+   if_40_5_code:  ; opt1
+;    [40:21] exit(3)
+;    exit(v:reg_rdi) 
+;      inline: 40_21
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,3
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_40_21_end:
+   if_40_2_end:
+   if_41_5:
+;  [41:5] ? not obj.pos.y=2 
+;  [41:5] ? not obj.pos.y=2 
+   cmp_41_5:
+   cmp qword[rbp-32],2
+   je if_41_2_end
+   if_41_5_code:  ; opt1
+;    [41:21] exit(4)
+;    exit(v:reg_rdi) 
+;      inline: 41_21
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,4
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_41_21_end:
+   if_41_2_end:
+   if_42_5:
+;  [42:5] ? not obj.vel.x=4 
+;  [42:5] ? not obj.vel.x=4 
+   cmp_42_5:
+   cmp qword[rbp-24],4
+   je if_42_2_end
+   if_42_5_code:  ; opt1
+;    [42:21] exit(5)
+;    exit(v:reg_rdi) 
+;      inline: 42_21
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,5
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_42_21_end:
+   if_42_2_end:
+   if_43_5:
+;  [43:5] ? not obj.vel.y=str 
+;  [43:5] ? not obj.vel.y=str 
+   cmp_43_5:
+   cmp qword[rbp-16],str
+   je if_43_2_end
+   if_43_5_code:  ; opt1
+;    [43:23] exit(6)
+;    exit(v:reg_rdi) 
+;      inline: 43_23
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,6
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_43_23_end:
+   if_43_2_end:
+   if_44_5:
+;  [44:5] ? not obj.color=str.len 
+;  [44:5] ? not obj.color=str.len 
+   cmp_44_5:
+   cmp qword[rbp-8],str.len
+   je if_44_2_end
+   if_44_5_code:  ; opt1
+;    [44:27] exit(7)
+;    exit(v:reg_rdi) 
+;      inline: 44_27
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,7
+;      [2:2] mov(rax,60)
+       mov rax,60
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
+       syscall
+;      free rdi
+     exit_44_27_end:
+   if_44_2_end:
+;  [46:2] f()
+   sub rsp,40
+   call f
+   add rsp,40
+;  [47:2] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 24_5
+;    inline: 47_2
 ;    alloc rdi
 ;    alias v -> rdi
-     mov rdi,1
-;    [2:5] mov(rax,60)
+     mov rdi,0
+;    [2:2] mov(rax,60)
      mov rax,60
-;    [2:17] # exit system call 
-;    [3:5] mov(rdi,v)
-;    [3:17] # return code 
-;    [4:5] syscall 
+;    [2:14] # exit system call 
+;    [3:2] mov(rdi,v)
+;    [3:14] # return code 
+;    [4:2] syscall 
      syscall
 ;    free rdi
-   exit_24_5_end:
+   exit_47_2_end:
 
-; max scratch registers in use: 2
+; max scratch registers in use: 1
 ;            max frames in use: 5

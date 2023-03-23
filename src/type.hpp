@@ -39,7 +39,7 @@ public:
 			return"qword[rbp"+string{stack_idx_base>0?"+":""}+to_string(stack_idx_base)+"]";
 
 		const size_t offset=field_offset(tk,path);
-		const int stack_idx=stack_idx_base-int(offset);
+		const int stack_idx=stack_idx_base+int(offset);
 		return"qword[rbp"+string{stack_idx>0?"+":""}+to_string(stack_idx)+"]";
 	}
 

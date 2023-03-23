@@ -326,9 +326,7 @@ public:
 			throw compiler_error(st,"variable '"+name+"' shadows variable declared at "+source_location_hr(var.declared_at));
 		}
 
-		// offset by 8 since if stack_idx is 0 then rsp points at return address
-		//   or past the end of stack (if no function has been called)
-		const int stack_idx{int(get_current_stack_size())+8};
+		const int stack_idx{int(get_current_stack_size()+var_type.size())};
 		frames_.back().add_var(name,var_type,st.tok(),-stack_idx,initiated);
 		// comment the resolved name
 		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
