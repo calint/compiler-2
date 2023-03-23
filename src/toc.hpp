@@ -8,7 +8,6 @@
 #include"lut.hpp"
 #include"compiler_error.hpp"
 
-class token;
 class stmt_def_func;
 class stmt_def_field;
 class stmt_def_type;
