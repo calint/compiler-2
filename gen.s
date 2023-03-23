@@ -2,6 +2,15 @@
 
 section .data
 align 4
+;[1:1] field prompt=" hello enter name: " 
+prompt db '  hello    enter name: '
+prompt.len equ $-prompt
+;[2:1] field name="............................................................" 
+name db '............................................................'
+name.len equ $-name
+;[3:1] field prompt2=" not a name: " 
+prompt2 db '  not a name: '
+prompt2.len equ $-prompt2
 
 section .bss
 align 4
@@ -18,129 +27,221 @@ mov rbp,rsp
 jmp main
 
 main:
-;  [8:5] var a=1 
-;  a: qword[rbp-8]
-;  [8:9] a=1 
-;  [8:11] 1 
-;  [8:11] a=1 
-   mov qword[rbp-8],1
-;  [9:5] var b=2 
-;  b: qword[rbp-16]
-;  [9:9] b=2 
-;  [9:11] 2 
-;  [9:11] b=2 
-   mov qword[rbp-16],2
-;  [10:5] var c=3 
-;  c: qword[rbp-24]
-;  [10:9] c=3 
-;  [10:11] 3 
-;  [10:11] c=3 
-   mov qword[rbp-24],3
-;  [11:5] var d=4 
-;  d: qword[rbp-32]
-;  [11:9] d=4 
-;  [11:11] 4 
-;  [11:11] d=4 
-   mov qword[rbp-32],4
-   if_12_8:
-;  [12:8] ? not a 
-;  [12:8] ? not a 
-   cmp_12_8:
-   cmp qword[rbp-8],0
-   jne if_12_5_end
-   if_12_8_code:  ; opt1
-;    [12:14] exit(1)
-;    exit(v:reg_rdi) 
-;      inline: 12_14
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,1
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_12_14_end:
-   if_12_5_end:
-   if_13_8:
-;  [13:8] ? not (a and b)
-;  [13:13] ? not (a and b)
-;  [13:13] ? a and b
-;  inverted
-;  invert 'or'
-;  [13:13] ? a 
-   cmp_13_13:
-   cmp qword[rbp-8],0
-   je if_13_8_code
-;  invert 'and'
-;  [13:19] ? b
-   cmp_13_19:
-   cmp qword[rbp-16],0
-   jne if_13_5_end
-   if_13_8_code:  ; opt1
-;    [13:22] exit(2)
-;    exit(v:reg_rdi) 
-;      inline: 13_22
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,2
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_13_22_end:
-   if_13_5_end:
-   if_14_8:
-;  [14:8] ? a and b 
-;  [14:8] ? a and b 
-;  [14:8] ? a 
-   cmp_14_8:
-   cmp qword[rbp-8],0
-   je if_14_5_end
-;  [14:14] ? b 
-   cmp_14_14:
-   cmp qword[rbp-16],0
-   je if_14_5_end
-   if_14_8_code:  ; opt1
-;    [14:16] exit(0)
-;    exit(v:reg_rdi) 
-;      inline: 14_16
-;      alloc rdi
-;      alias v -> rdi
+;  [29:5] print(prompt.len,prompt)
+;  print(len:reg_rdx,ptr:reg_rsi) 
+;    inline: 29_5
+;    alloc rdx
+;    alias len -> rdx
+     mov rdx,prompt.len
+;    alloc rsi
+;    alias ptr -> rsi
+     mov rsi,prompt
+;    [12:5] mov(rax,1)
+     mov rax,1
+;    [12:18] # write system call 
+;    [13:5] mov(rdi,1)
+     mov rdi,1
+;    [13:18] # file descriptor for standard out 
+;    [14:5] mov(rsi,ptr)
+;    [14:18] # buffer address 
+;    [15:5] mov(rdx,len)
+;    [15:18] # buffer size 
+;    [16:5] syscall 
+     syscall
+;    free rsi
+;    free rdx
+   print_29_5_end:
+;  [30:5] loop
+   loop_30_5:
+;    [31:9] var len=read(name.len,name)-1 
+;    len: qword[rbp-8]
+;    [31:13] len=read(name.len,name)-1 
+;    [31:17] read(name.len,name)-1 
+;    [31:17] len=read(name.len,name)
+;    [31:17] read(name.len,name)
+;    read(len:reg_rdx,ptr:reg_rsi):nbytes_read 
+;      inline: 31_17
+;      alias nbytes_read -> len
+;      alloc rdx
+;      alias len -> rdx
+       mov rdx,name.len
+;      alloc rsi
+;      alias ptr -> rsi
+       mov rsi,name
+;      [20:2] mov(rax,0)
+       mov rax,0
+;      [20:16] # read system call 
+;      [21:2] mov(rdi,0)
        mov rdi,0
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
+;      [21:16] # file descriptor for standard input 
+;      [22:2] mov(rsi,ptr)
+;      [22:16] # buffer address 
+;      [23:2] mov(rdx,len)
+;      [23:16] # buffer size 
+;      [24:2] syscall 
        syscall
-;      free rdi
-     exit_14_16_end:
-   if_14_5_end:
-;  [15:5] exit(3)
+;      [25:5] mov(nbytes_read,rax)
+       mov qword[rbp-8],rax
+;      free rsi
+;      free rdx
+     read_31_17_end:
+;    [31:37] len-1 
+     sub qword[rbp-8],1
+;    [31:39] # remove the \n 
+     if_32_12:
+;    [32:12] ? len=0 
+;    [32:12] ? len=0 
+     cmp_32_12:
+     cmp qword[rbp-8],0
+     jne if_34_17
+     if_32_12_code:  ; opt1
+;      [33:13] print(prompt.len,prompt)
+;      print(len:reg_rdx,ptr:reg_rsi) 
+;        inline: 33_13
+;        alloc rdx
+;        alias len -> rdx
+         mov rdx,prompt.len
+;        alloc rsi
+;        alias ptr -> rsi
+         mov rsi,prompt
+;        [12:5] mov(rax,1)
+         mov rax,1
+;        [12:18] # write system call 
+;        [13:5] mov(rdi,1)
+         mov rdi,1
+;        [13:18] # file descriptor for standard out 
+;        [14:5] mov(rsi,ptr)
+;        [14:18] # buffer address 
+;        [15:5] mov(rdx,len)
+;        [15:18] # buffer size 
+;        [16:5] syscall 
+         syscall
+;        free rsi
+;        free rdx
+       print_33_13_end:
+     jmp if_32_9_end
+     if_34_17:
+;    [34:17] ? len<=4 
+;    [34:17] ? len<=4 
+     cmp_34_17:
+     cmp qword[rbp-8],4
+     jg if_else_32_9
+     if_34_17_code:  ; opt1
+;      [35:13] print(prompt2.len,prompt2)
+;      print(len:reg_rdx,ptr:reg_rsi) 
+;        inline: 35_13
+;        alloc rdx
+;        alias len -> rdx
+         mov rdx,prompt2.len
+;        alloc rsi
+;        alias ptr -> rsi
+         mov rsi,prompt2
+;        [12:5] mov(rax,1)
+         mov rax,1
+;        [12:18] # write system call 
+;        [13:5] mov(rdi,1)
+         mov rdi,1
+;        [13:18] # file descriptor for standard out 
+;        [14:5] mov(rsi,ptr)
+;        [14:18] # buffer address 
+;        [15:5] mov(rdx,len)
+;        [15:18] # buffer size 
+;        [16:5] syscall 
+         syscall
+;        free rsi
+;        free rdx
+       print_35_13_end:
+     jmp if_32_9_end
+     if_else_32_9:
+;        [37:13] print(len+1,name)
+;        print(len:reg_rdx,ptr:reg_rsi) 
+;          inline: 37_13
+;          alloc rdx
+;          alias len -> rdx
+;          [37:19] len+1
+;          [37:19] rdx=len
+           mov rdx,qword[rbp-8]
+;          [37:23] rdx+1
+           add rdx,1
+;          alloc rsi
+;          alias ptr -> rsi
+           mov rsi,name
+;          [12:5] mov(rax,1)
+           mov rax,1
+;          [12:18] # write system call 
+;          [13:5] mov(rdi,1)
+           mov rdi,1
+;          [13:18] # file descriptor for standard out 
+;          [14:5] mov(rsi,ptr)
+;          [14:18] # buffer address 
+;          [15:5] mov(rdx,len)
+;          [15:18] # buffer size 
+;          [16:5] syscall 
+           syscall
+;          free rsi
+;          free rdx
+         print_37_13_end:
+         if_38_16:
+;        [38:16] ? read(name.len,name)=1 
+;        [38:16] ? read(name.len,name)=1 
+         cmp_38_16:
+;        alloc r15
+;          [38:16] read(name.len,name)
+;          [38:16] r15=read(name.len,name)
+;          [38:16] read(name.len,name)
+;          read(len:reg_rdx,ptr:reg_rsi):nbytes_read 
+;            inline: 38_16
+;            alias nbytes_read -> r15
+;            alloc rdx
+;            alias len -> rdx
+             mov rdx,name.len
+;            alloc rsi
+;            alias ptr -> rsi
+             mov rsi,name
+;            [20:2] mov(rax,0)
+             mov rax,0
+;            [20:16] # read system call 
+;            [21:2] mov(rdi,0)
+             mov rdi,0
+;            [21:16] # file descriptor for standard input 
+;            [22:2] mov(rsi,ptr)
+;            [22:16] # buffer address 
+;            [23:2] mov(rdx,len)
+;            [23:16] # buffer size 
+;            [24:2] syscall 
+             syscall
+;            [25:5] mov(nbytes_read,rax)
+             mov r15,rax
+;            free rsi
+;            free rdx
+           read_38_16_end:
+         cmp r15,1
+;        free r15
+         jne if_38_13_end
+         if_38_16_code:  ; opt1
+;          [38:38] # is only \n 
+;          [39:17] break 
+           jmp loop_30_5_end
+         if_38_13_end:
+     if_32_9_end:
+   jmp loop_30_5
+   loop_30_5_end:
+;  [42:5] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 15_5
+;    inline: 42_5
 ;    alloc rdi
 ;    alias v -> rdi
-     mov rdi,3
-;    [2:5] mov(rax,60)
+     mov rdi,0
+;    [6:5] mov(rax,60)
      mov rax,60
-;    [2:17] # exit system call 
-;    [3:5] mov(rdi,v)
-;    [3:17] # return code 
-;    [4:5] syscall 
+;    [6:17] # exit system call 
+;    [7:5] mov(rdi,v)
+;    [7:17] # return code 
+;    [8:5] syscall 
      syscall
 ;    free rdi
-   exit_15_5_end:
+   exit_42_5_end:
 
 ; max scratch registers in use: 1
-;            max frames in use: 5
+;            max frames in use: 7
 

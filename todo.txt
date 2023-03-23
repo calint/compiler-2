@@ -6,8 +6,8 @@
 [x] short-hand boolean expression i.e. if a or b
 [x] compile error when i.e.:
       var b=-b-(-1) # b is used before initiated
-[ ] expr_ops_list: div: push/pop rax,rdx if not allocatable
-[ ] expr_ops_list: shift: push/pop rcx if not allocatable
+[x] expr_ops_list: div: push/pop rax,rdx if not allocatable
+[x] expr_ops_list: shift: push/pop rcx if not allocatable
 stage 3 - cleanup
 [ ] toc.allocate_named_register_or_break: if allocated then tell where
 [ ] toc.add_field: if defined tell where

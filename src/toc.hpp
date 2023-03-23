@@ -343,6 +343,19 @@ public:
 		allocated_registers_.push_back(reg);
 	}
 
+	inline bool alloc_named_register(const statement&st,ostream&os,const size_t indent_level,const string&reg){
+		indent(os,indent_level,true);os<<"alloc "<<reg;
+		auto r{find(named_registers_.begin(),named_registers_.end(),reg)};
+		if(r==named_registers_.end()){
+			os<<" failed"<<endl;
+			return false;
+		}
+		named_registers_.erase(r);
+		allocated_registers_.push_back(reg);
+		os<<endl;
+		return true;
+	}
+
 	inline void free_named_register(ostream&os,const size_t indent_level,const string&reg){
 		indent(os,indent_level,true);os<<"free "<<reg<<endl;
 		assert(allocated_registers_.back()==reg);
