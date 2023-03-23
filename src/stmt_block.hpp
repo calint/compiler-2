@@ -29,7 +29,7 @@ public:
 			if(tk.is_name("var")){
 				stms_.emplace_back(make_unique<stmt_def_var>(move(tk),t));
 			}else if(t.is_next_char('=')){
-				stms_.emplace_back(make_unique<stmt_assign_var>(move(tk),t));
+				stms_.emplace_back(make_unique<stmt_assign_var>(move(tk),token{},t));
 			}else if(tk.is_name("break")){
 				stms_.emplace_back(make_unique<stmt_break>(move(tk)));
 			}else if(tk.is_name("continue")){

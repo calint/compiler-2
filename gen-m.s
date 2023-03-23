@@ -1,5 +1,6 @@
 section .data
 align 4
+len dq -2
 section .bss
 align 4
 stk resd 1024
@@ -12,40 +13,51 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
-f:
-   push rbp
-   mov rbp,rsp
-   mov r15,qword[rbp+16]
-   mov qword[rbp-8],r15
-   add qword[rbp-8],1
-   mov rax,qword[rbp-8]
-   pop rbp
-   ret
 main:
-   mov qword[rbp-8],1
-   mov qword[rbp-16],2
-   mov qword[rbp-24],3
-   mov qword[rbp-32],4
-   if_17_8:
-   cmp_17_9:
-   cmp qword[rbp-8],1
-   jne cmp_17_26
-   cmp_17_17:
-   cmp qword[rbp-16],2
-   je if_17_8_code  ; opt2
-   cmp_17_26:
-   cmp qword[rbp-24],3
-   jne if_17_5_end
-   cmp_17_34:
-   cmp qword[rbp-32],4
-   jne if_17_5_end
-   if_17_8_code:  ; opt1
+   mov qword[rbp-8],-1
+     mov rdx,qword[rbp-8]
+     neg rdx
+     mov qword[rbp-16],rdx
+     neg qword[rbp-16]
+   foo_19_13_end:
+   neg qword[rbp-16]
+   not qword[rbp-16]
+   mov r15,qword[len]
+   mov qword[rbp-24],r15
+   neg qword[rbp-24]
+   not qword[rbp-24]
+     mov r15,qword[len]
+     mov qword[rbp-32],r15
+     neg qword[rbp-32]
+   bar_21_12_end:
+   not qword[rbp-32]
+   if_22_8:
+   cmp_22_8:
+   mov r15,qword[len]
+   neg r15
+   not r15
+   cmp qword[rbp-32],r15
+   jne if_22_5_end
+   cmp_22_20:
+   mov r15,qword[rbp-16]
+   cmp qword[rbp-8],r15
+   je if_22_5_end
+   cmp_22_32:
+   cmp qword[rbp-8],-1
+   jne if_22_5_end
+   cmp_22_41:
+   cmp qword[rbp-16],~1
+   jne if_22_5_end
+   cmp_22_50:
+   cmp qword[rbp-24],~2
+   jne if_22_5_end
+   if_22_8_code:  ; opt1
        mov rdi,0
        mov rax,60
        syscall
-     exit_18_9_end:
-   if_17_5_end:
+     exit_23_9_end:
+   if_22_5_end:
      mov rdi,1
      mov rax,60
      syscall
-   exit_19_5_end:
+   exit_24_5_end:

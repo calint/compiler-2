@@ -4,8 +4,9 @@
 
 class stmt_assign_var final:public statement{
 public:
-	inline stmt_assign_var(token tk,tokenizer&t):
-		statement{move(tk)},
+	inline stmt_assign_var(token name,token type,tokenizer&t):
+		statement{move(name)},
+		type_{move(type)},
 		eols_{t}
 	{}
 
@@ -17,6 +18,16 @@ public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
+		os<<"=";
+		eols_.source_to(os);
+	}
+
+	inline void source_def_to(ostream&os)const{
+		statement::source_to(os);
+		if(not type_.is_empty()){
+			os<<':';
+			type_.source_to(os);
+		}
 		os<<"=";
 		eols_.source_to(os);
 	}
@@ -51,7 +62,6 @@ public:
 		}else{
 			os<<ss2.str();
 		}
-
 		tc.set_var_is_initiated(tok().name());
 	}
 
@@ -68,5 +78,6 @@ private:
 		return n;
 	}
 
+	token type_; // type
 	expr_ops_list eols_;
 };

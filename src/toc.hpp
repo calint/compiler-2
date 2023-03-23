@@ -7,6 +7,7 @@
 
 #include"lut.hpp"
 #include"compiler_error.hpp"
+#include"type.hpp"
 
 class stmt_def_func;
 class stmt_def_field;
@@ -14,8 +15,8 @@ class stmt_def_type;
 
 struct var_meta final{
 	string name;
+	const type&tp;
 	token declared_at;
-	size_t size{}; // in bytes
 	int stack_idx{}; // location relative to rbp
 	string nasm_ident; // nasm usable literal
 	bool initiated{}; // true if variable has been initiated
@@ -23,41 +24,42 @@ struct var_meta final{
 
 class frame final{
 public:
-	enum class type{FUNC,BLOCK,LOOP};
+	enum class frame_type{FUNC,BLOCK,LOOP};
 
-	inline frame(const string&name,const type type,const string&call_path="",const string&func_ret_label="",const bool func_is_inline=false,const string&func_ret_var=""):
+	inline frame(const string&name,const frame_type tpe,const string&call_path="",const string&func_ret_label="",const bool func_is_inline=false,const string&func_ret_var=""):
 		name_{name},
 		call_path_{call_path},
 		func_ret_label_{func_ret_label},
 		func_ret_var_{func_ret_var},
 		func_is_inline_{func_is_inline},
-		type_{type}
+		type_{tpe}
 	{}
 
-	inline void add_var(const string&name,const token&declared_at,const size_t size,const int stack_idx,const bool initiated){
-		string ident;
+	inline void add_var(const string&name,const type&tpe,const token&declared_at,const int stack_idx,const bool initiated){
+		string nasm_ident;
 		if(stack_idx>0){
 			// function argument
-			ident="[rbp+"+to_string(stack_idx)+"]";
+			nasm_ident="[rbp+"+to_string(stack_idx)+"]";
 		}else if(stack_idx<0){
 			// variable
-			ident="[rbp"+to_string(stack_idx)+"]";
-			allocated_stack_+=size;
+			nasm_ident="[rbp"+to_string(stack_idx)+"]";
+			allocated_stack_+=tpe.size();
 		}else{
 			throw"toc:fram:add_var";
 		}
-		if(size==8){
-			ident="qword"+ident;
+//		if(size==8){
+//			nasm_ident="qword"+nasm_ident;
 		// }else if(size==4){
 		// 	ident="dword"+ident;
 		// }else if(size==2){
 		// 	ident="word"+ident;
 		// }else if(size==1){
 		// 	ident="byte"+ident;
-		}else{
-			throw"unexpected variable size: "+to_string(size);
-		}
-		vars_.put(name,{name,declared_at,size,stack_idx,ident,initiated});
+//		}else{
+			nasm_ident="qword"+nasm_ident;
+//			throw"unexpected variable size: "+to_string(size);
+//		}
+		vars_.put(name,{name,tpe,declared_at,stack_idx,nasm_ident,initiated});
 	}
 
 	inline size_t allocated_stack_size()const{return allocated_stack_;}
@@ -70,11 +72,11 @@ public:
 
 	inline void add_alias(const string&ident,const string&outside_ident){aliases_.put(ident,outside_ident);}
 
-	inline bool is_func()const{return type_==type::FUNC;}
+	inline bool is_func()const{return type_==frame_type::FUNC;}
 
-	inline bool is_block()const{return type_==type::BLOCK;}
+	inline bool is_block()const{return type_==frame_type::BLOCK;}
 
-	inline bool is_loop()const{return type_==type::LOOP;}
+	inline bool is_loop()const{return type_==frame_type::LOOP;}
 
 	inline bool is_name(const string&nm)const{return name_==nm;}
 
@@ -101,7 +103,7 @@ private:
 	string func_ret_label_; // the label to jump to when exiting an inlined function
 	string func_ret_var_; // the variable that contains the return value
 	bool func_is_inline_{};
-	type type_{type::FUNC}; // frame type
+	frame_type type_{frame_type::FUNC}; // frame type
 };
 
 struct field_meta final{
@@ -121,6 +123,12 @@ struct call_meta final{
 	size_t nbytes_of_vars{};
 };
 
+struct type_meta final{
+	const stmt_def_type&def;
+	const token declared_at;
+	const type&tp;
+};
+
 struct ident_resolved final{
 	enum class type{CONST,VAR,REGISTER,FIELD,IMPLIED};
 
@@ -132,6 +140,30 @@ struct ident_resolved final{
 	inline bool is_register()const{return type==type::REGISTER;}
 	inline bool is_field()const{return type==type::FIELD;}
 	inline bool is_implied()const{return type==type::IMPLIED;}
+};
+
+class baz_ident final{
+public:
+	inline baz_ident(string id_full):
+		id_full_{id_full},
+		id_base_{id_full.substr(0,id_full.find('.'))}
+	{
+		if(id_full_.size()==id_base_.size())
+			return;
+		// ? split
+		dots_.push_back(id_full_.substr(id_base_.size()+1));
+	}
+
+	inline const string&id()const{return id_full_;}
+
+	inline const string&var_name()const{return id_base_;}
+
+	inline string var_field()const{return dots_.empty()?"":dots_[0];}
+
+private:
+	string id_full_;
+	string id_base_;
+	vector<string>dots_;
 };
 
 class toc final{
@@ -172,11 +204,18 @@ public:
 		return*funcs_.get_const_ref(name).def;
 	}
 
-	inline void add_type(const statement&st,const string&ident,const stmt_def_type*f){
-		if(types_.has(ident))
-			throw compiler_error(st,"type '"+ident +"' already defined");
+	inline void add_type(const statement&st,const type&tp){
+		if(types_.has(tp.name()))
+			throw compiler_error(st,"type '"+tp.name() +"' already defined");
 
-		types_.put(ident,f);
+		types_.put(tp.name(),tp);
+	}
+
+	inline const type&get_type(const statement&st,const string&name)const{
+		if(not types_.has(name))
+			throw compiler_error(st,"type '"+name+"' not found");
+
+		return types_.get_const_ref(name);
 	}
 
 	inline string source_location_for_label(const token&tk)const{
@@ -240,17 +279,17 @@ public:
 	}
 
 	inline void enter_func(const string&name,const string&call_loc,const string&ret_jmp,const bool is_inline,const string&ret_var){
-		frames_.emplace_back(name,frame::type::FUNC,call_loc,ret_jmp,is_inline,ret_var);
+		frames_.emplace_back(name,frame::frame_type::FUNC,call_loc,ret_jmp,is_inline,ret_var);
 		check_usage();
 	}
 
 	inline void enter_block(){
-		frames_.emplace_back("",frame::type::BLOCK);
+		frames_.emplace_back("",frame::frame_type::BLOCK);
 		check_usage();
 	}
 
 	inline void enter_loop(const string&name){
-		frames_.emplace_back(name,frame::type::LOOP);
+		frames_.emplace_back(name,frame::frame_type::LOOP);
 		check_usage();
 	}
 
@@ -272,32 +311,34 @@ public:
 		frames_.pop_back();
 	}
 
-	inline void add_var(const statement&st,ostream&os,size_t indnt,const string&name,const size_t size,const bool initiated){
+	inline void add_var(const statement&st,ostream&os,size_t indnt,const string&name,const type&var_type,const bool initiated){
+		// check if variable already declared in this scope
 		if(frames_.back().has_var(name)){
 			const var_meta&var=frames_.back().get_var_const_ref(name);
 			throw compiler_error(st,"variable '"+name+"' already declared at "+source_location_hr(var.declared_at));
 		}
+		// check if variable shadows previously declared variable
 		pair<string,frame&>idfrm{get_id_and_frame_for_identifier(name)};
 		const string&id=idfrm.first;
-		if(idfrm.second.has_var(id)){
-			const var_meta&var{idfrm.second.get_var_const_ref(id)};
+		const frame&frm=idfrm.second;
+		if(frm.has_var(id)){
+			const var_meta&var{frm.get_var_const_ref(id)};
 			throw compiler_error(st,"variable '"+name+"' shadows variable declared at "+source_location_hr(var.declared_at));
 		}
 
 		// offset by 8 since if stack_idx is 0 then rsp points at return address
 		//   or past the end of stack (if no function has been called)
-		const size_t stack_idx{get_current_stack_size()+8};
-		assert(size==8||size==4||size==2||size==1);
-		frames_.back().add_var(name,st.tok(),size,-int(stack_idx),initiated);
+		const int stack_idx{int(get_current_stack_size())+8};
+		frames_.back().add_var(name,var_type,st.tok(),-stack_idx,initiated);
 		// comment the resolved name
-		const ident_resolved&ir=resolve_ident_to_nasm(st,name,false);
+		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
 		const string&dest_resolved{ir.id};
 		indent(os,indnt,true);os<<name<<": "<<dest_resolved<<endl;
 	}
 
-	inline void add_func_arg(const statement&st,ostream&os,size_t indnt,const string&name,const size_t size,const int stack_idx){
+	inline void add_func_arg(const statement&st,ostream&os,size_t indnt,const string&name,const type&arg_type,const int stack_idx){
 		assert(frames_.back().is_func()&&not frames_.back().func_is_inline());
-		frames_.back().add_var(name,st.tok(),size,stack_idx,true);
+		frames_.back().add_var(name,arg_type,st.tok(),stack_idx,true);
 		// comment the resolved name
 		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
 		indent(os,indnt,true);os<<name<<": "<<ir.id<<endl;
@@ -598,11 +639,13 @@ public:
 	}
 
 	inline void set_var_is_initiated(const string&name){
-		pair<string,frame&>idfrm{get_id_and_frame_for_identifier(name)};
+		baz_ident bid{name};
+		pair<string,frame&>idfrm{get_id_and_frame_for_identifier(bid.var_name())};
 		const string&id=idfrm.first;
+		frame&frm=idfrm.second;
 		// is 'id' a variable?
-		if(idfrm.second.has_var(id)){
-			idfrm.second.get_var_ref(id).initiated=true;
+		if(frm.has_var(id)){
+			frm.get_var_ref(id).initiated=true;
 			return;
 		}
 
@@ -670,7 +713,7 @@ private:
 	}
 
 	inline const ident_resolved resolve_ident_to_nasm_or_empty(const statement&st,const string&ident,const bool must_be_initiated)const{
-		string id=ident;
+		string id{ident};
 		// traverse the frames and resolve the id (which might be an alias) to
 		// a variable, field, register or constant
 		size_t i{frames_.size()};
@@ -695,7 +738,8 @@ private:
 			const var_meta&var=frames_[i].get_var_const_ref(id);
 			if(must_be_initiated and not var.initiated)
 				throw compiler_error(st,"variable '"+var.name+"' is not initiated");
-			return{var.nasm_ident,ident_resolved::type::VAR};
+			const string&acc=var.tp.field_accessor(st.tok(),"",var.stack_idx);
+			return{acc,ident_resolved::type::VAR};
 		}
 
 		// is 'id' a register?
@@ -707,6 +751,7 @@ private:
 		}
 
 		// is 'id' a field?
+
 		if(fields_.has(id)){
 			const field_meta&fm=fields_.get_const_ref(id);
 			if(fm.is_str)
@@ -724,6 +769,7 @@ private:
 			}
 			throw compiler_error(st.tok(),"unknown implicit field constant '"+id+"'");
 		}
+
 
 		char*ep;
 		strtol(id.c_str(),&ep,10); // return ignored
@@ -762,7 +808,7 @@ private:
 	string source_str_;
 	lut<field_meta>fields_;
 	lut<func_meta>funcs_;
-	lut<const stmt_def_type*>types_;
+	lut<const type&>types_;
 	vector<call_meta>call_metas_;
 	unordered_set<string>initiated_registers_;
 };

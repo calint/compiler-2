@@ -116,7 +116,8 @@ public:
 		// return binding
 		if(not returns().empty()){
 			const string&nm{returns()[0].name()};
-			tc.add_var(*this,os,indent+1,nm,8,false);
+			const type&ret_type{tc.get_type(*this,"qword")};
+			tc.add_var(*this,os,indent+1,nm,ret_type,false); // ? var type
 //			tc.add_alias(from,"rax");
 		}
 
@@ -128,14 +129,15 @@ public:
 		size_t stk_ix{2<<3}; // skip [rbp] and [return address] on stack
 		for(size_t i=0;i<n;i++){
 			const stmt_def_func_param&pm{params_[i]};
+			const type&arg_type{tc.get_type(pm,"qword")}; // ? var type
 			const string&pm_nm{pm.name()};
 			// (i+2)<<3 ?
 			// stack after push rbp is ...,[arg n],...[arg 1],[return address],[rbp],
 			const string&reg{pm.get_register_or_empty()};
 			if(reg.empty()){
 //				toc::indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<(stk_ix<<3)<<endl;
-				tc.add_func_arg(*this,os,indent+1,pm_nm,8,int(stk_ix));
-				stk_ix+=8;
+				tc.add_func_arg(*this,os,indent+1,pm_nm,arg_type,int(stk_ix)); // ? var type
+				stk_ix+=arg_type.size();
 			}else{
 				toc::indent(os,indent+1,true);os<<pm_nm<<": "<<reg<<endl;
 				tc.alloc_named_register_or_break(pm,os,indent+1,reg);

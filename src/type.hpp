@@ -2,20 +2,57 @@
 #include<cstddef>
 #include<string>
 
-class type{
-public:
-    inline type(const std::string name,const size_t size):
-        name_{name},
-        size_{size}
-    {}
+class type;
+struct type_field final{
+	const string name;
+	const type&tp;
+	const size_t offset{};
+};
 
-    inline type()=default;
+class type final{
+public:
+	inline type(const std::string name,const size_t size):
+		name_{name},
+		size_{size}
+	{}
+
+	inline type()=default;
 	inline type(const type&)=default;
 	inline type(type&&)=default;
 	inline type&operator=(const type&)=default;
 	inline type&operator=(type&&)=default;
 
+	inline void add_field(const token&tk,const string&name,const type&tp){
+		fields_.emplace_back(type_field{name,tp,size_});
+		size_+=tp.size_;
+	}
+	inline const type_field&field(const token&tk,const string&name)const{
+		for(const type_field&fld:fields_){
+			if(fld.name==name)
+				return fld;
+		}
+		throw compiler_error(tk,"field '"+name+"' not found in type '"+name_+"'");
+	}
+
+	inline const string field_accessor(const token&tk,const string&name,const int stack_idx_base)const{
+		if(name.empty())
+			return"qword[rbp"+string{stack_idx_base>0?"+":""}+to_string(stack_idx_base)+"]";
+
+		const type_field&fld=field(tk,name);
+		const int stack_idx=stack_idx_base-int(fld.offset);
+		return"qword[rbp"+string{stack_idx>0?"+":""}+to_string(stack_idx)+"]";
+	}
+
+	inline size_t size()const{return size_;}
+
+	inline void set_size(const size_t nbytes){size_=nbytes;}
+
+	inline const string&name()const{return name_;}
+
+	inline void set_name(const string&nm){name_=nm;}
+
 private:
-    std::string name_;
-    size_t size_;
+	std::string name_;
+	size_t size_{};
+	vector<type_field>fields_;
 };
