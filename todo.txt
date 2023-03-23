@@ -13,6 +13,9 @@ stage 4
 [ ]   var w=word(1)    var c:word=1
 [ ]   var d=dword(1)   var d:dword=1
 [ ]   var i=1          var i=1 or var i:quad=1 or var i=quad(1)
+[ ]   var x=c+w+d gives error, not matching types, no implicit conversion
+[ ]   var x=quad(c)+quad(w)+quad(d)
+[ ]   var c=i gives error, source type size is larger than destination
 [ ] let i=1 creates a constant
 [ ] bool type
 [ ] function argument types
