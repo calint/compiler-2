@@ -2,27 +2,25 @@
 [x] clean-up: consistent function arguments names
 stage 4
 [ ] built-in types
-[ ]   var b=bool(a=1)  var b:bool=true
-[ ]   var c=byte(1)    var c:byte=1
-[ ]   var w=word(1)    var c:word=1
-[ ]   var d=dword(1)   var d:dword=1
-[ ]   var i=1          var i:quad=1   var i=quad(1)
+[ ]   var b=bool(false)  var b:bool=true
+[ ]   var c=byte(0)    var c:byte=0
+[ ]   var w=word(0)    var c:word=0
+[ ]   var d=dword(0)   var d:dword=0
+[ ]   var i=quad(0)    var i:quad=0   var i=0
 [ ]   var x=c+w+d gives error, not matching types, no implicit conversion
 [ ]   var x=quad(c)+quad(w)+quad(d)
 [ ]   var c=i gives error, source type size is larger than destination
+[ ] user defined types
+[ ]   type size{value}, var s=size{1}, s=size(1), s.value=2 == s=2 
+[ ]   type point{x,y} var p=point{1,2} p=point(1,2) p.x=1 == p=2 
 [ ] let i=1 creates a constant
-[ ] bool type
 [ ] function argument types
 [ ] f(a=1) where argument is a boolean
-[ ] character type
 [ ] string type
 [ ] var str="hello world"
 [ ] var len=str.len
 [ ] def table{x,y,z}
 [ ] pointers?
-[ ] user defined types
-[ ] type size{value}, var s=size{1}, s=size(1), s=2 implies s.value=2
-[ ] type point{x,y} var p=point{1,2} p.x=1 p=2  p=point(1,2)
 [ ] var points=point[10] where points contains length of array and a pointer
 [ ] multiple return values assignment: var a,b=foo()  a,b=foo()
 [ ] fix 'cmp' two constants case
