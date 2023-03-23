@@ -1,21 +1,25 @@
 [ ] clean-up: consistent variable names
 stage 4
-[ ] built-in types
+[ ] function argument types
+[o] built-in types
 [ ]   var b:bool=true
 [ ]   var c:byte=0
 [ ]   var c:word=0
 [ ]   var d:dword=0
-[ ]   var i:qword=0   var i=0  qword is default
+[x]   var i:qword=0   var i=0  qword is default
 [ ]   var x=c+w+d gives error, not matching types, no implicit conversion
 [ ]   var x=qword(c)+quad(w)+quad(d)
 [ ]   var c=i gives error, source type size is larger than destination
-[ ] user defined types
-[ ]   'typedef' size qword?  'alias' size qword
-[ ]     var i=1 var s=size(i) i=s gives error i=quad(s) 
-[ ]   type size{value}, var s=size{1}, s=size(1), s.value=2 == s=2 
-[ ]   type point{x,y} var p=point{1,2} p=point(1,2) p.x=1 == p=2 
+[x] user defined types
+[-]   'typedef' size qword?  'alias' size qword
+[-]     var i=1 var s=size(i) i=s gives error i=quad(s) 
+[x]   type size{value}, var s:size=1¨, s.value=2 == s=2 
+[x]   type point{x,y}
+[ ]   var p:point{1,2}
+[-]   p=point(1,2)
+[x]   p.x=1 == p=1
+      ->type point{x,y}
 [ ] let i=1 creates a constant
-[ ] function argument types
 [ ] f(a=1) where argument is a boolean
 [ ] string type
 [ ] var str="hello world"
