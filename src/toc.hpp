@@ -20,7 +20,6 @@ public:
 		size_{size},
 		stkix_{stkix},
 		nasm_ident_{nasm_ident},
-		bits_{bits},
 		initiated_{initiated}
 	{}
 
@@ -31,8 +30,6 @@ public:
 	inline var_meta&operator=(var_meta&&)=default;
 
 	inline bool is_name(const string&nm)const{return nm==name_;}
-
-	inline bool is_const()const{return bits_&1;}
 
 	inline const string&nasm_ident()const{return nasm_ident_;}
 
@@ -52,7 +49,6 @@ private:
 	size_t size_{};
 	int stkix_{};
 	string nasm_ident_;
-	char bits_{}; // 1: const
 	bool initiated_{};
 };
 
