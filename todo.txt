@@ -13,6 +13,7 @@ stage 4
 [ ]   var w=word(1)    var c:word=1
 [ ]   var d=dword(1)   var d:dword=1
 [ ]   var i=1          var i=1 or var i:quad=1 or var i=quad(1)
+[ ] let i=1 creates a constant
 [ ] bool type
 [ ] function argument types
 [ ] f(a=1) where argument is a boolean
