@@ -13,8 +13,8 @@ public:
 	inline stmt_loop&operator=(const stmt_loop&)=default;
 	inline stmt_loop&operator=(stmt_loop&&)=default;
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
-		toc::indent(os,indent_level,true);tc.token_comment(os,tok());
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
+		toc::indent(os,indent,true);tc.token_comment(os,tok());
 		// make unique label for this loop considering in-lined functions
 		// current path of source locations where in-lined functions have been called
 		const string&call_path{tc.get_inline_call_path(tok())};
@@ -22,14 +22,14 @@ public:
 		const string&src_loc{tc.source_location_for_label(tok())};
 		// the loop label
 		const string&lbl{"loop_"+(call_path.empty()?src_loc:(src_loc+"_"+call_path))};
-		tc.asm_label(*this,os,indent_level,lbl);
+		tc.asm_label(*this,os,indent,lbl);
 		// enter loop scope
 		tc.enter_loop(lbl);
-		code_.compile(tc,os,indent_level);
+		code_.compile(tc,os,indent);
 		// jump to loop
-		tc.asm_jmp(*this,os,indent_level,lbl);
+		tc.asm_jmp(*this,os,indent,lbl);
 		// exit loop label
-		tc.asm_label(*this,os,indent_level,lbl+"_end");
+		tc.asm_label(*this,os,indent,lbl+"_end");
 		// exit loop scope
 		tc.exit_loop(lbl);
 	}

@@ -103,20 +103,20 @@ public:
 		os<<res<<endl;
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		tc.add_func(*this,name_.name(),this);//? in constructor for forward ref
 		if(is_inline())
 			return;
 		
-		tc.asm_label(*this,os,indent_level,name());
-		tc.indent(os,indent_level+1,true);source_def_comment_to(os);
+		tc.asm_label(*this,os,indent,name());
+		tc.indent(os,indent+1,true);source_def_comment_to(os);
 
 		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());
 
 		// return binding
 		if(not returns().empty()){
 			const string&nm{returns()[0].name()};
-			tc.add_var(*this,os,indent_level+1,nm,8,false);
+			tc.add_var(*this,os,indent+1,nm,8,false);
 //			tc.add_alias(from,"rax");
 		}
 
@@ -134,28 +134,28 @@ public:
 			const string&reg{pm.get_register_or_empty()};
 			if(reg.empty()){
 //				toc::indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<(stk_ix<<3)<<endl;
-				tc.add_func_arg(*this,os,indent_level+1,pm_nm,8,int(stk_ix));
+				tc.add_func_arg(*this,os,indent+1,pm_nm,8,int(stk_ix));
 				stk_ix+=8;
 			}else{
-				toc::indent(os,indent_level+1,true);os<<pm_nm<<": "<<reg<<endl;
-				tc.alloc_named_register_or_break(pm,os,indent_level+1,reg);
+				toc::indent(os,indent+1,true);os<<pm_nm<<": "<<reg<<endl;
+				tc.alloc_named_register_or_break(pm,os,indent+1,reg);
 				allocated_named_registers.push_back(reg);
 				tc.add_alias(pm_nm,reg);
 			}
 		}
-		tc.asm_push(*this,os,indent_level+1,"rbp");
-		tc.asm_cmd(*this,os,indent_level+1,"mov","rbp","rsp");
-		code_.compile(tc,os,indent_level,"");
+		tc.asm_push(*this,os,indent+1,"rbp");
+		tc.asm_cmd(*this,os,indent+1,"mov","rbp","rsp");
+		code_.compile(tc,os,indent,"");
 		if(!returns().empty()){
 			const string&ret_name{returns()[0].name()};
 			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,ret_name,true)};
-			tc.asm_cmd(*this,os,indent_level+1,"mov","rax",ir.id);
+			tc.asm_cmd(*this,os,indent+1,"mov","rax",ir.id);
 		}
-		tc.asm_pop(*this,os,indent_level+1,"rbp");
-		tc.asm_ret(*this,os,indent_level+1);
+		tc.asm_pop(*this,os,indent+1,"rbp");
+		tc.asm_ret(*this,os,indent+1);
 		size_t i{allocated_named_registers.size()};
 		while(i--){
-			tc.free_named_register(os,indent_level+1,allocated_named_registers[i]);
+			tc.free_named_register(os,indent+1,allocated_named_registers[i]);
 		}
 		os<<endl;
 		tc.exit_func(name());

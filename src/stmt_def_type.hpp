@@ -34,7 +34,7 @@ public:
 		os<<'}';
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		tc.add_type(*this,name_.name(),this);
 	}
 

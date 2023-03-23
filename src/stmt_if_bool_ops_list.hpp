@@ -156,7 +156,7 @@ public:
 			os<<")";
 		}
 	}
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		throw compiler_error(tok(),"this code should not be reached: "+string{__FILE__}+":"+to_string(__LINE__));
 	}
 
@@ -165,8 +165,8 @@ public:
 		return "cmp_"+tc.source_location_for_label(tok())+(call_path.empty()?"":"_"+call_path);
 	}
 
-	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool inverted)const{
-		toc::indent(os,indent_level,true);tc.source_comment(os,"?",inverted?" inverted: ":" ",*this);
+	inline void compile(toc&tc,ostream&os,const size_t indent,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool inverted)const{
+		toc::indent(os,indent,true);tc.source_comment(os,"?",inverted?" inverted: ":" ",*this);
 		// invert according to De Morgan's laws
 		bool invert{inverted?not not_token_.is_name("not"):not_token_.is_name("not")};
 		const size_t n{bools_.size()};
@@ -190,7 +190,7 @@ public:
 						}else{
 							throw"expected 'or' or 'and'";
 						}
-						el.compile(tc,os,indent_level,jmp_false,jmp_true,invert);
+						el.compile(tc,os,indent,jmp_false,jmp_true,invert);
 					}else{
 						// invert according to De Morgan's laws
 						// if not last element check if it is a 'or' or 'and' list
@@ -203,11 +203,11 @@ public:
 						}else{
 							throw"expected 'or' or 'and'";
 						}
-						el.compile(tc,os,indent_level,jmp_false,jmp_true,invert);
+						el.compile(tc,os,indent,jmp_false,jmp_true,invert);
 					}
 				}else{
 					// if last in list jmp_false is next bool eval
-					el.compile(tc,os,indent_level,jmp_false,jmp_true,invert);
+					el.compile(tc,os,indent,jmp_false,jmp_true,invert);
 				}
 				continue;
 			}
@@ -220,16 +220,16 @@ public:
 				const stmt_if_bool_op&e{get<stmt_if_bool_op>(bools_[i])};
 				if(i<n-1){
 					if(ops_[i].is_name("or")){
-						e.compile_or(tc,os,indent_level,jmp_to_if_true,invert);
+						e.compile_or(tc,os,indent,jmp_to_if_true,invert);
 					}else if(ops_[i].is_name("and")){
-						e.compile_and(tc,os,indent_level,jmp_to_if_false,invert);
+						e.compile_and(tc,os,indent,jmp_to_if_false,invert);
 					}else{
 						throw"expected 'or' or 'and'";
 					}
 				}else{
-					e.compile_and(tc,os,indent_level,jmp_to_if_false,invert);
+					e.compile_and(tc,os,indent,jmp_to_if_false,invert);
 					// if last element and not yet jumped to false then jump to true
-					tc.asm_jmp(*this,os,indent_level,jmp_to_if_true);
+					tc.asm_jmp(*this,os,indent,jmp_to_if_true);
 				}
 			}else{
 				// inverted according to De Morgan's laws
@@ -237,16 +237,16 @@ public:
 				const stmt_if_bool_op&e{get<stmt_if_bool_op>(bools_[i])};
 				if(i<n-1){
 					if(ops_[i].is_name("and")){
-						e.compile_or(tc,os,indent_level,jmp_to_if_true,invert);
+						e.compile_or(tc,os,indent,jmp_to_if_true,invert);
 					}else if(ops_[i].is_name("or")){
-						e.compile_and(tc,os,indent_level,jmp_to_if_false,invert);
+						e.compile_and(tc,os,indent,jmp_to_if_false,invert);
 					}else{
 						throw"expected 'or' or 'and'";
 					}
 				}else{
-					e.compile_and(tc,os,indent_level,jmp_to_if_false,invert);
+					e.compile_and(tc,os,indent,jmp_to_if_false,invert);
 					// if last element and not yet jumped to false then jump to true
-					tc.asm_jmp(*this,os,indent_level,jmp_to_if_true);
+					tc.asm_jmp(*this,os,indent,jmp_to_if_true);
 				}
 			}
 		}

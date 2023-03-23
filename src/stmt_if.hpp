@@ -68,7 +68,7 @@ public:
 		}
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		// make unique labels considering in-lined functions
 		const string&call_path{tc.get_inline_call_path(tok())};
 		const string&src_loc{tc.source_location_for_label(tok())};
@@ -93,13 +93,13 @@ public:
 					jmp_after_if="";
 				}
 			}
-			e.compile(tc,os,indent_level,jmp_if_false,jmp_after_if);
+			e.compile(tc,os,indent,jmp_if_false,jmp_after_if);
 		}
 		if(not else_code_.is_empty()){
-			tc.asm_label(*this,os,indent_level,label_else_branch);
-			else_code_.compile(tc,os,indent_level+1);
+			tc.asm_label(*this,os,indent,label_else_branch);
+			else_code_.compile(tc,os,indent+1);
 		}
-		tc.asm_label(*this,os,indent_level,label_after_if);
+		tc.asm_label(*this,os,indent,label_after_if);
 	}
 
 private:

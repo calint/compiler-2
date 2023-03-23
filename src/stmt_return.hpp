@@ -12,8 +12,8 @@ public:
 	inline stmt_return&operator=(const stmt_return&)=default;
 	inline stmt_return&operator=(stmt_return&&)=default;
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
-		tc.source_comment(*this,os,indent_level);
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
+		tc.source_comment(*this,os,indent);
 		const string&ret{tc.get_func_return_label_or_break(*this)};
 		if(ret.empty()){
 			// not in-lined
@@ -21,13 +21,13 @@ public:
 			if(not ret_var.empty()){
 				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,ret_var,false)};
 				const string&src_resolved{ir.id};
-				tc.asm_cmd(*this,os,indent_level,"mov","rax",src_resolved);
+				tc.asm_cmd(*this,os,indent,"mov","rax",src_resolved);
 			}
-			tc.asm_pop(*this,os,indent_level,"rbp");
-			tc.asm_ret(*this,os,indent_level);
+			tc.asm_pop(*this,os,indent,"rbp");
+			tc.asm_ret(*this,os,indent);
 			return;
 		}
 		// in-lined
-		tc.asm_jmp(*this,os,indent_level,ret);
+		tc.asm_jmp(*this,os,indent,ret);
 	}
 };

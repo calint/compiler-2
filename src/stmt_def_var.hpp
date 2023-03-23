@@ -25,10 +25,10 @@ public:
 		initial_value_.source_to(os);
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
-		tc.source_comment(*this,os,indent_level);
-		tc.add_var(*this,os,indent_level,name_.name(),8,false);
-		initial_value_.compile(tc,os,indent_level,name_.name());
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
+		tc.source_comment(*this,os,indent);
+		tc.add_var(*this,os,indent,name_.name(),8,false);
+		initial_value_.compile(tc,os,indent,name_.name());
 	}
 
 private:

@@ -272,7 +272,7 @@ public:
 		frames_.pop_back();
 	}
 
-	inline void add_var(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size,const bool initiated){
+	inline void add_var(const statement&st,ostream&os,size_t indnt,const string&name,const size_t size,const bool initiated){
 		if(frames_.back().has_var(name)){
 			const var_meta&var=frames_.back().get_var_const_ref(name);
 			throw compiler_error(st,"variable '"+name+"' already declared at "+source_location_hr(var.declared_at));
@@ -292,25 +292,25 @@ public:
 		// comment the resolved name
 		const ident_resolved&ir=resolve_ident_to_nasm(st,name,false);
 		const string&dest_resolved{ir.id};
-		indent(os,indent_level,true);os<<name<<": "<<dest_resolved<<endl;
+		indent(os,indnt,true);os<<name<<": "<<dest_resolved<<endl;
 	}
 
-	inline void add_func_arg(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size,const int stack_idx){
+	inline void add_func_arg(const statement&st,ostream&os,size_t indnt,const string&name,const size_t size,const int stack_idx){
 		assert(frames_.back().is_func()&&not frames_.back().func_is_inline());
 		frames_.back().add_var(name,st.tok(),size,stack_idx,true);
 		// comment the resolved name
 		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
-		indent(os,indent_level,true);os<<name<<": "<<ir.id<<endl;
+		indent(os,indnt,true);os<<name<<": "<<ir.id<<endl;
 	}
 
-	inline const string&alloc_scratch_register(const statement&st,ostream&os,const size_t indent_level){
+	inline const string&alloc_scratch_register(const statement&st,ostream&os,const size_t indnt){
 		if(scratch_registers_.empty())
 			throw compiler_error(st,"out of scratch registers. try to reduce expression complexity");
 
 		const string&r{scratch_registers_.back()};
 		scratch_registers_.pop_back();
 
-		indent(os,indent_level,true);os<<"alloc "<<r<<endl;
+		indent(os,indnt,true);os<<"alloc "<<r<<endl;
 
 		const size_t n{8-scratch_registers_.size()};
 		if(n>max_usage_scratch_regs_) // ? stmt_assign_var tries 2 different methods making this metric inaccurate if a discarded method uses more registers than the selected method
@@ -321,8 +321,8 @@ public:
 		return r;
 	}
 
-	inline void alloc_named_register_or_break(const statement&st,ostream&os,const size_t indent_level,const string&reg){
-		indent(os,indent_level,true);os<<"alloc "<<reg<<endl;
+	inline void alloc_named_register_or_break(const statement&st,ostream&os,const size_t indnt,const string&reg){
+		indent(os,indnt,true);os<<"alloc "<<reg<<endl;
 		auto r{find(named_registers_.begin(),named_registers_.end(),reg)};
 		if(r==named_registers_.end()){
 			const size_t n{allocated_registers_.size()};
@@ -339,8 +339,8 @@ public:
 		allocated_registers_loc_.push_back(source_location_hr(st.tok()));
 	}
 
-	inline bool alloc_named_register(const statement&st,ostream&os,const size_t indent_level,const string&reg){
-		indent(os,indent_level,true);os<<"alloc "<<reg;
+	inline bool alloc_named_register(const statement&st,ostream&os,const size_t indnt,const string&reg){
+		indent(os,indnt,true);os<<"alloc "<<reg;
 		auto r{find(named_registers_.begin(),named_registers_.end(),reg)};
 		if(r==named_registers_.end()){
 			os<<": false"<<endl;
@@ -353,8 +353,8 @@ public:
 		return true;
 	}
 
-	inline void free_named_register(ostream&os,const size_t indent_level,const string&reg){
-		indent(os,indent_level,true);os<<"free "<<reg<<endl;
+	inline void free_named_register(ostream&os,const size_t indnt,const string&reg){
+		indent(os,indnt,true);os<<"free "<<reg<<endl;
 		assert(allocated_registers_.back()==reg);
 		allocated_registers_.pop_back();
 		allocated_registers_loc_.pop_back();
@@ -362,8 +362,8 @@ public:
 		initiated_registers_.erase(reg);
 	}
 
-	inline void free_scratch_register(ostream&os,const size_t indent_level,const string&reg){
-		indent(os,indent_level,true);os<<"free "<<reg<<endl;
+	inline void free_scratch_register(ostream&os,const size_t indnt,const string&reg){
+		indent(os,indnt,true);os<<"free "<<reg<<endl;
 		assert(allocated_registers_.back()==reg);
 		allocated_registers_.pop_back();
 		allocated_registers_loc_.pop_back();
@@ -409,11 +409,11 @@ public:
 		throw compiler_error(st,"not in a function");
 	}
 
-	inline void source_comment(const statement&st,ostream&os,const size_t indent_level)const{
+	inline void source_comment(const statement&st,ostream&os,const size_t indnt)const{
 		size_t char_in_line;
 		const size_t n{line_number_for_char_index(st.tok().char_index(),source_str_.c_str(),char_in_line)};
 
-		indent(os,indent_level,true);
+		indent(os,indnt,true);
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
 
 		stringstream ss;
@@ -448,14 +448,14 @@ public:
 		return find(all_registers_.begin(),all_registers_.end(),id)!=all_registers_.end();
 	}
 
-	inline void enter_call(const statement&st,ostream&os,const size_t indent_level){
+	inline void enter_call(const statement&st,ostream&os,const size_t indnt){
 		const bool root_call{call_metas_.empty()};
 		const size_t nbytes_of_vars_on_stack{root_call?get_current_stack_size():0};
 		if(root_call){
 			// this call is not nested within another call's arguments
 			if(nbytes_of_vars_on_stack){
 				// adjust stack past the allocated vars
-				asm_cmd(st,os,indent_level,"sub","rsp",to_string(nbytes_of_vars_on_stack));
+				asm_cmd(st,os,indnt,"sub","rsp",to_string(nbytes_of_vars_on_stack));
 				// stack: <base>,.. vars ..,
 			}
 		}
@@ -470,14 +470,14 @@ public:
 			const string&reg{allocated_registers_[i]};
 			if(is_register_initiated(reg)){
 				// push only registers that contain a valid value
-				asm_push(st,os,indent_level,reg);
+				asm_push(st,os,indnt,reg);
 				nregs_pushed_on_stack++;
 			}
 		}
 		call_metas_.push_back(call_meta{nregs_pushed_on_stack,allocated_registers_.size(),nbytes_of_vars_on_stack});
 	}
 
-	inline void exit_call(const statement&st,ostream&os,const size_t indent_level,const size_t nbytes_of_args_on_stack,const vector<string>&allocated_args_registers){
+	inline void exit_call(const statement&st,ostream&os,const size_t indnt,const size_t nbytes_of_args_on_stack,const vector<string>&allocated_args_registers){
 		const size_t nregs_pushed{call_metas_.back().nregs_pushed};
 		const size_t nbytes_of_vars{call_metas_.back().nbytes_of_vars};
 		call_metas_.pop_back();
@@ -490,11 +490,11 @@ public:
 			// stack is: <base>,vars,args,
 			if(restore_rsp_to_base){
 				const string&offset=to_string(nbytes_of_args_on_stack+nbytes_of_vars);
-				asm_cmd(st,os,indent_level,"add","rsp",offset);
+				asm_cmd(st,os,indnt,"add","rsp",offset);
 				// stack is: <base>,
 			}else{
 				const string&offset=to_string(nbytes_of_args_on_stack);
-				asm_cmd(st,os,indent_level,"add","rsp",offset);
+				asm_cmd(st,os,indnt,"add","rsp",offset);
 				// stack is: <base>,vars,
 			}
 			// free named registers
@@ -506,14 +506,14 @@ public:
 				const string&reg{allocated_registers_[i]};
 				// don't pop registers used to pass arguments
 				if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)!=allocated_args_registers.end()){
-					free_named_register(os,indent_level,reg);
+					free_named_register(os,indnt,reg);
 				}
 			}
 		}else{
 			// stack is: <base>,vars,regs,args,
 			if(nbytes_of_args_on_stack){
 				const string&offset=to_string(nbytes_of_args_on_stack);
-				asm_cmd(st,os,indent_level,"add","rsp",offset);
+				asm_cmd(st,os,indnt,"add","rsp",offset);
 			}
 			// stack is: <base>,vars,regs,
 
@@ -528,10 +528,10 @@ public:
 				if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
 					if(is_register_initiated(reg)){
 						// pop only registers that were pushed
-						asm_pop(st,os,indent_level,reg);
+						asm_pop(st,os,indnt,reg);
 					}
 				}else{
-					free_named_register(os,indent_level,reg);
+					free_named_register(os,indnt,reg);
 				}
 			}
 
@@ -541,14 +541,14 @@ public:
 				// stack is: <base>,vars,
 				if(nbytes_of_vars){
 					const string&offset=to_string(nbytes_of_vars);
-					asm_cmd(st,os,indent_level,"add","rsp",offset);
+					asm_cmd(st,os,indnt,"add","rsp",offset);
 				}
 				// stack is: <base>,
 			}
 		}
 	}
 
-	inline void asm_cmd(const statement&st,ostream&os,const size_t indent_level,const string&op,const string&dst_resolved,const string&src_resolved){
+	inline void asm_cmd(const statement&st,ostream&os,const size_t indnt,const string&op,const string&dst_resolved,const string&src_resolved){
 		if(op=="mov"){
 			if(dst_resolved==src_resolved)
 				return;
@@ -560,41 +560,41 @@ public:
 		}
 		// check if both source and destination are memory operations
 		if(dst_resolved.find_first_of('[')!=string::npos and src_resolved.find_first_of('[')!=string::npos){
-			const string&r=alloc_scratch_register(st,os,indent_level);
-			indent(os,indent_level);os<<"mov "<<r<<","<<src_resolved<<endl;
-			indent(os,indent_level);os<<op<<" "<<dst_resolved<<","<<r<<endl;
-			free_scratch_register(os,indent_level,r);
+			const string&r=alloc_scratch_register(st,os,indnt);
+			indent(os,indnt);os<<"mov "<<r<<","<<src_resolved<<endl;
+			indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<r<<endl;
+			free_scratch_register(os,indnt,r);
 			return;
 		}
-		indent(os,indent_level);os<<op<<" "<<dst_resolved<<","<<src_resolved<<endl;
+		indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<src_resolved<<endl;
 	}
 
-	inline void asm_push(const statement&st,ostream&os,const size_t indent_level,const string&reg){
-		indent(os,indent_level);os<<"push "<<reg<<endl;
+	inline void asm_push(const statement&st,ostream&os,const size_t indnt,const string&reg){
+		indent(os,indnt);os<<"push "<<reg<<endl;
 	}
 
-	inline void asm_pop(const statement&st,ostream&os,const size_t indent_level,const string&reg){
-		indent(os,indent_level);os<<"pop "<<reg<<endl;
+	inline void asm_pop(const statement&st,ostream&os,const size_t indnt,const string&reg){
+		indent(os,indnt);os<<"pop "<<reg<<endl;
 	}
 
-	inline void asm_ret(const statement&st,ostream&os,const size_t indent_level){
-		indent(os,indent_level);os<<"ret\n";
+	inline void asm_ret(const statement&st,ostream&os,const size_t indnt){
+		indent(os,indnt);os<<"ret\n";
 	}
 
-	inline void asm_jmp(const statement&st,ostream&os,const size_t indent_level,const string&label){
-		indent(os,indent_level);os<<"jmp "<<label<<endl;
+	inline void asm_jmp(const statement&st,ostream&os,const size_t indnt,const string&label){
+		indent(os,indnt);os<<"jmp "<<label<<endl;
 	}
 
-	inline void asm_label(const statement&st,ostream&os,const size_t indent_level,const string&label){
-		indent(os,indent_level);os<<label<<":"<<endl;
+	inline void asm_label(const statement&st,ostream&os,const size_t indnt,const string&label){
+		indent(os,indnt);os<<label<<":"<<endl;
 	}
 
-	inline void asm_call(const statement&st,ostream&os,const size_t indent_level,const string&label){
-		indent(os,indent_level);os<<"call "<<label<<endl;
+	inline void asm_call(const statement&st,ostream&os,const size_t indnt,const string&label){
+		indent(os,indnt);os<<"call "<<label<<endl;
 	}
 
-	inline void asm_neg(const statement&st,ostream&os,const size_t indent_level,const string&dst_resolved){
-		indent(os,indent_level);os<<"neg "<<dst_resolved<<endl;
+	inline void asm_neg(const statement&st,ostream&os,const size_t indnt,const string&dst_resolved){
+		indent(os,indnt);os<<"neg "<<dst_resolved<<endl;
 	}
 
 	inline void set_var_is_initiated(const string&name){
@@ -617,14 +617,14 @@ public:
 		throw"should not be reached: "+string{__FILE__}+":"+to_string(__LINE__);
 	}
 
-	inline static void indent(ostream&os,const size_t indent_level,const bool comment=false){
-		if(indent_level==0){
+	inline static void indent(ostream&os,const size_t indnt,const bool comment=false){
+		if(indnt==0){
 			if(comment)
 				os<<";";
 			return;
 		}
 		os<<(comment?";":" ");
-		for(size_t i{0};i<indent_level;i++)
+		for(size_t i{0};i<indnt;i++)
 			os<<"  ";
 	}
 

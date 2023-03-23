@@ -29,27 +29,27 @@ public:
 		return "if_"+tc.source_location_for_label(tok())+(call_path.empty()?"":"_"+call_path);
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst)const override{
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst)const override{
 		throw compiler_error(tok(),"this code should not be reached");
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&jmp_to_if_false_label,const string&jmp_to_after_code_label)const{
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&jmp_to_if_false_label,const string&jmp_to_after_code_label)const{
 		const string&if_bgn_lbl{if_bgn_label(tc)};
 		const string&jmp_to_if_true_lbl{if_bgn_lbl+"_code"};
 		// the begining of this branch
-		tc.asm_label(*this,os,indent_level,if_bgn_lbl);
+		tc.asm_label(*this,os,indent,if_bgn_lbl);
 		// compile boolean ops list
-		bol_.compile(tc,os,indent_level,jmp_to_if_false_label,jmp_to_if_true_lbl,false);
+		bol_.compile(tc,os,indent,jmp_to_if_false_label,jmp_to_if_true_lbl,false);
 		// the label where to jump if evaluation of boolean ops is true
-		tc.asm_label(*this,os,indent_level,jmp_to_if_true_lbl);
+		tc.asm_label(*this,os,indent,jmp_to_if_true_lbl);
 		// the code of the branch
-		code_.compile(tc,os,indent_level);
+		code_.compile(tc,os,indent);
 		// after the code of the branch is executed jump to the end of
 		//   the 'if ... else if ... else ...'
 		//   if label not provided then there is no 'else' and this is the last 'if'
 		//   so just continue execution
 		if(not jmp_to_after_code_label.empty()){
-			tc.asm_jmp(*this,os,indent_level,jmp_to_after_code_label);
+			tc.asm_jmp(*this,os,indent,jmp_to_after_code_label);
 		}
 	}
 

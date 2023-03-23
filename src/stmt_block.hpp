@@ -66,10 +66,10 @@ public:
 			os<<"}";
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		tc.enter_block();
 		for(const auto&s:stms_)
-			s->compile(tc,os,indent_level+1);
+			s->compile(tc,os,indent+1);
 		tc.exit_block();
 	}
 

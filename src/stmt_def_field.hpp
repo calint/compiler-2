@@ -30,14 +30,14 @@ public:
 		initial_value_.source_to(os);
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
-		tc.source_comment(*this,os,indent_level);
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
+		tc.source_comment(*this,os,indent);
 		os<<name_.name();
 		if(initial_value_.is_string()){
 			os<<" db '";
 			initial_value_.compile_to(os);
 			os<<"'\n";
-			toc::indent(os,indent_level);
+			toc::indent(os,indent);
 			os<<name_.name()<<".len equ $-"<<name_.name()<<"\n";
 			tc.add_field(*this,name_.name(),this,true);
 			return;

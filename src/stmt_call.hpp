@@ -54,8 +54,8 @@ public:
 		os<<")";
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
-		tc.source_comment(*this,os,indent_level);
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
+		tc.source_comment(*this,os,indent);
 		const stmt_def_func&func{tc.get_func_or_break(*this,tok().name())};
 		const string&func_nm{func.name()};
 		
@@ -66,7 +66,7 @@ public:
 
 		if(not func.is_inline()){
 			// stack is: <base>,
-			tc.enter_call(*this,os,indent_level);
+			tc.enter_call(*this,os,indent);
 			// stack is: <base>,vars,regs,
 
 			// push arguments starting with the last
@@ -81,22 +81,22 @@ public:
 				const string&arg_reg=param.get_register_or_empty();
 				bool argument_passed_in_register{not arg_reg.empty()};
 				if(argument_passed_in_register){
-					tc.alloc_named_register_or_break(arg,os,indent_level,arg_reg);
+					tc.alloc_named_register_or_break(arg,os,indent,arg_reg);
 					allocated_args_registers.push_back(arg_reg);
 				}
 				if(arg.is_expression()){
 					if(argument_passed_in_register){
 						// compile expression with the result stored in arg_reg
-						arg.compile(tc,os,indent_level+1,arg_reg);
+						arg.compile(tc,os,indent+1,arg_reg);
 					}else{
 						// argument passed through stack
-						const string&sr{tc.alloc_scratch_register(arg,os,indent_level)};
+						const string&sr{tc.alloc_scratch_register(arg,os,indent)};
 						// compile expression with the result stored in sr
-						arg.compile(tc,os,indent_level+1,sr);
+						arg.compile(tc,os,indent+1,sr);
 						// argument is passed to function through the stack
-						tc.asm_push(arg,os,indent_level,sr);
+						tc.asm_push(arg,os,indent,sr);
 						// free scratch register
-						tc.free_scratch_register(os,indent_level,sr);
+						tc.free_scratch_register(os,indent,sr);
 						// keep track of how many arguments are on the stack
 						nbytes_of_args_on_stack+=8;
 					}
@@ -107,24 +107,24 @@ public:
 				if(argument_passed_in_register){
 					// move the identifier to the requested register
 					if(ir.is_const()){
-						tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,arg.get_unary_ops().get_ops_as_string()+ir.id);
+						tc.asm_cmd(arg,os,indent,"mov",arg_reg,arg.get_unary_ops().get_ops_as_string()+ir.id);
 					}else{
-						tc.asm_cmd(arg,os,indent_level,"mov",arg_reg,ir.id);
-						arg.get_unary_ops().compile(tc,os,indent_level,arg_reg);
+						tc.asm_cmd(arg,os,indent,"mov",arg_reg,ir.id);
+						arg.get_unary_ops().compile(tc,os,indent,arg_reg);
 					}
 				}else{
 					// push identifier on the stack
 					if(ir.is_const()){
-						tc.asm_push(arg,os,indent_level,arg.get_unary_ops().get_ops_as_string()+ir.id);
+						tc.asm_push(arg,os,indent,arg.get_unary_ops().get_ops_as_string()+ir.id);
 					}else{
 						if(arg.get_unary_ops().is_empty()){
-							tc.asm_push(arg,os,indent_level,ir.id);
+							tc.asm_push(arg,os,indent,ir.id);
 						}else{
-							const string&r{tc.alloc_scratch_register(arg,os,indent_level)};
-							tc.asm_cmd(arg,os,indent_level,"mov",r,ir.id);
-							arg.get_unary_ops().compile(tc,os,indent_level,r);
-							tc.asm_push(arg,os,indent_level,r);
-							tc.free_scratch_register(os,indent_level,r);
+							const string&r{tc.alloc_scratch_register(arg,os,indent)};
+							tc.asm_cmd(arg,os,indent,"mov",r,ir.id);
+							arg.get_unary_ops().compile(tc,os,indent,r);
+							tc.asm_push(arg,os,indent,r);
+							tc.free_scratch_register(os,indent,r);
 						}
 					}
 					nbytes_of_args_on_stack+=8;
@@ -132,18 +132,18 @@ public:
 			}
 
 			// stack is: <base>,vars,regs,args,
-			tc.asm_call(*this,os,indent_level,func_nm);
+			tc.asm_call(*this,os,indent,func_nm);
 
-			tc.exit_call(*this,os,indent_level,nbytes_of_args_on_stack,allocated_args_registers);
+			tc.exit_call(*this,os,indent,nbytes_of_args_on_stack,allocated_args_registers);
 			// stack is: <base>, (if this was not a call nested in another call's arguments)
 			//       or: <base>,vars,regs,
 
 			// handle return value
 			if(not dst.empty()){
 				// function returns value in rax, copy return value to dst
-				get_unary_ops().compile(tc,os,indent_level,"rax");
+				get_unary_ops().compile(tc,os,indent,"rax");
 				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dst,false)};
-				tc.asm_cmd(*this,os,indent_level,"mov",ir.id,"rax");
+				tc.asm_cmd(*this,os,indent,"mov",ir.id,"rax");
 			}
 			return;
 		}
@@ -152,7 +152,7 @@ public:
 		// inlined function
 		//
 
-		tc.indent(os,indent_level,true);
+		tc.indent(os,indent,true);
 		func.source_def_comment_to(os);
 
 		// create unique labels for in-lined functions based on the location the source
@@ -162,7 +162,7 @@ public:
 		const string&new_call_path{call_path.empty()?src_loc:(src_loc+"_"+call_path)};
 		const string&ret_jmp_label{func_nm+"_"+new_call_path+"_end"};
 
-		toc::indent(os,indent_level+1,true);os<<"inline: "<<new_call_path<<endl;
+		toc::indent(os,indent+1,true);os<<"inline: "<<new_call_path<<endl;
 
 		vector<string>allocated_named_registers;
 		vector<string>allocated_scratch_registers;
@@ -179,7 +179,7 @@ public:
 			const string&from{func.returns()[0].name()};
 			const string&to{dst};
 			aliases_to_add.emplace_back(from,to);
-			tc.indent(os,indent_level+1,true);os<<"alias "<<from<<" -> "<<to<<endl;
+			tc.indent(os,indent+1,true);os<<"alias "<<from<<" -> "<<to<<endl;
 		}
 
 		size_t i=0;
@@ -190,7 +190,7 @@ public:
 			string arg_reg{param.get_register_or_empty()};
 			if(not arg_reg.empty()){
 				// argument is passed through register
-				tc.alloc_named_register_or_break(arg,os,indent_level+1,arg_reg);
+				tc.alloc_named_register_or_break(arg,os,indent+1,arg_reg);
 				allocated_named_registers.push_back(arg_reg);
 				allocated_registers_in_order.push_back(arg_reg);
 			}
@@ -198,13 +198,13 @@ public:
 				// argument is an expression, evaluate and store in arg_reg
 				if(arg_reg.empty()){
 					// no particular register requested for the argument
-					arg_reg=tc.alloc_scratch_register(arg,os,indent_level+1);
+					arg_reg=tc.alloc_scratch_register(arg,os,indent+1);
 					allocated_scratch_registers.push_back(arg_reg);
 					allocated_registers_in_order.push_back(arg_reg);
 				}
-				tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;
+				tc.indent(os,indent+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;
 				// compile expression and store result in 'arg_reg'
-				arg.compile(tc,os,indent_level+1,arg_reg);
+				arg.compile(tc,os,indent+1,arg_reg);
 				// alias parameter name to the register containing its value
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
 				continue;
@@ -217,30 +217,30 @@ public:
 				// alias parameter name to the argument identifier
 				if(not arg.get_unary_ops().is_empty()){
 					const ident_resolved&ir{tc.resolve_ident_to_nasm(arg,true)};
-					const string&sr{tc.alloc_scratch_register(arg,os,indent_level+1)};
+					const string&sr{tc.alloc_scratch_register(arg,os,indent+1)};
 					allocated_registers_in_order.push_back(sr);
 					allocated_scratch_registers.push_back(sr);
-					tc.asm_cmd(param,os,indent_level+1,"mov",sr,ir.id);
-					arg.get_unary_ops().compile(tc,os,indent_level+1,sr);
+					tc.asm_cmd(param,os,indent+1,"mov",sr,ir.id);
+					arg.get_unary_ops().compile(tc,os,indent+1,sr);
 					aliases_to_add.emplace_back(param.identifier(),sr);
-					tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<sr<<endl;
+					tc.indent(os,indent+1,true);os<<"alias "<<param.identifier()<<" -> "<<sr<<endl;
 				}else{
 					const string&id=arg.identifier();
 					aliases_to_add.emplace_back(param.identifier(),id);
-					tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<id<<endl;
+					tc.indent(os,indent+1,true);os<<"alias "<<param.identifier()<<" -> "<<id<<endl;
 				}
 			}else{
 				// alias parameter name to the register
 				aliases_to_add.emplace_back(param.identifier(),arg_reg);
-				tc.indent(os,indent_level+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;
+				tc.indent(os,indent+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;
 				// move argument to register
 				const ident_resolved&ir{tc.resolve_ident_to_nasm(arg,true)};
 				if(ir.is_const()){
 					const ident_resolved&arg_r{tc.resolve_ident_to_nasm(arg,true)};
-					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,arg.get_unary_ops().get_ops_as_string()+ir.id);
+					tc.asm_cmd(param,os,indent+1,"mov",arg_reg,arg.get_unary_ops().get_ops_as_string()+ir.id);
 				}else{
-					tc.asm_cmd(param,os,indent_level+1,"mov",arg_reg,ir.id);
-					arg.get_unary_ops().compile(tc,os,indent_level+1,arg_reg);
+					tc.asm_cmd(param,os,indent+1,"mov",arg_reg,ir.id);
+					arg.get_unary_ops().compile(tc,os,indent+1,arg_reg);
 				}
 			}
 		}
@@ -257,31 +257,31 @@ public:
 		}
 
 		// compile in-lined code
-		func.code().compile(tc,os,indent_level);
+		func.code().compile(tc,os,indent);
 
 		// free allocated registers in reverse order of allocation
 		for(auto it=allocated_registers_in_order.rbegin();it!=allocated_registers_in_order.rend();++it) {
 			const string&reg{*it};
 			if(find(allocated_scratch_registers.begin(),allocated_scratch_registers.end(),reg)!=allocated_scratch_registers.end()){
-				tc.free_scratch_register(os,indent_level+1,reg);
+				tc.free_scratch_register(os,indent+1,reg);
 				continue;
 			}
 			if(find(allocated_named_registers.begin(),allocated_named_registers.end(),reg)!=allocated_named_registers.end()){
-				tc.free_named_register(os,indent_level+1,reg);
+				tc.free_named_register(os,indent+1,reg);
 				continue;
 			}
 			assert(false);
 		}
 
 		// provide an exit label for 'return' to jump to instead of assembler 'ret'
-		tc.asm_label(*this,os,indent_level,ret_jmp_label);
+		tc.asm_label(*this,os,indent,ret_jmp_label);
 		// if the result of the call has unary ops
 		if(not get_unary_ops().is_empty()){
 			if(func.returns().empty())
 				throw compiler_error(*this,"function call has unary operations but it does not return a value");
 
 			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,func.returns()[0].name(),true)};
-			get_unary_ops().compile(tc,os,indent_level,ir.id);
+			get_unary_ops().compile(tc,os,indent,ir.id);
 		}
 		// pop scope
 		tc.exit_func(func_nm);

@@ -21,8 +21,8 @@ public:
 		eols_.source_to(os);
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
-		tc.source_comment(*this,os,indent_level);
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
+		tc.source_comment(*this,os,indent);
 
 		// for the sake of clearer error message make sure identifier can be resolved
 		const ident_resolved&dest_resolved{tc.resolve_ident_to_nasm(*this,false)};
@@ -32,14 +32,14 @@ public:
 
 		// try without scratch register
 		stringstream ss1;
-		eols_.compile(tc,ss1,indent_level,identifier());
+		eols_.compile(tc,ss1,indent,identifier());
 
 		// try with scratch register
 		stringstream ss2;
-		const string&reg{tc.alloc_scratch_register(*this,ss2,indent_level)};
-		eols_.compile(tc,ss2,indent_level,reg);
-		tc.asm_cmd(*this,ss2,indent_level,"mov",dest_resolved.id,reg);
-		tc.free_scratch_register(ss2,indent_level,reg);
+		const string&reg{tc.alloc_scratch_register(*this,ss2,indent)};
+		eols_.compile(tc,ss2,indent,reg);
+		tc.asm_cmd(*this,ss2,indent,"mov",dest_resolved.id,reg);
+		tc.free_scratch_register(ss2,indent,reg);
 
 		// compare instruction count
 		const size_t ss1_count{count_instructions(ss1)};

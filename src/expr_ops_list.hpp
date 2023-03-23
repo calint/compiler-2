@@ -144,8 +144,8 @@ public:
 			os<<")";
 	}
 
-	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&dst)const override{
-		tc.source_comment(*this,os,indent_level);
+	inline void compile(toc&tc,ostream&os,const size_t indent,const string&dst)const override{
+		tc.source_comment(*this,os,indent);
 
 		if(exps_.empty()) // ? can this happen?
 			throw compiler_error(*this,"expressions is empty");
@@ -153,16 +153,16 @@ public:
 		// first element is assigned to destination
 		const statement&st{*exps_[0].get()};
 		const ident_resolved&ir{tc.resolve_ident_to_nasm(st,dst,false)};
-		asm_op(tc,os,indent_level,'=',dst,ir.id,st);
+		asm_op(tc,os,indent,'=',dst,ir.id,st);
 
 		// remaining elements are +,-,*,/
 		const size_t n{ops_.size()};
 		for(size_t i{0};i<n;i++){
 			const char op=ops_[i];
 			const statement&stm{*exps_[i+1].get()};
-			asm_op(tc,os,indent_level,op,dst,ir.id,stm);
+			asm_op(tc,os,indent,op,dst,ir.id,stm);
 		}
-		uops_.compile(tc,os,indent_level,ir.id);
+		uops_.compile(tc,os,indent,ir.id);
 	}
 
 	inline bool is_expression()const override{
@@ -215,43 +215,43 @@ private:
 		}
 	}
 
-	inline void asm_op(toc&tc,ostream&os,const size_t indent_level,const char op,const string&dst,const string&dst_resolved,const statement&src)const{
-		toc::indent(os,indent_level,true);tc.source_comment(os,dst,{op},src);
+	inline void asm_op(toc&tc,ostream&os,const size_t indent,const char op,const string&dst,const string&dst_resolved,const statement&src)const{
+		toc::indent(os,indent,true);tc.source_comment(os,dst,{op},src);
 		if(op=='='){
 			if(src.is_expression()){
-				src.compile(tc,os,indent_level,dst);
+				src.compile(tc,os,indent,dst);
 				return;
 			}
 			const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
 			if(ir.is_const()){
-				tc.asm_cmd(src,os,indent_level,"mov",dst_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
+				tc.asm_cmd(src,os,indent,"mov",dst_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 				return;
 			}
-			tc.asm_cmd(src,os,indent_level,"mov",dst_resolved,ir.id);
-			src.get_unary_ops().compile(tc,os,indent_level,dst_resolved);
+			tc.asm_cmd(src,os,indent,"mov",dst_resolved,ir.id);
+			src.get_unary_ops().compile(tc,os,indent,dst_resolved);
 			return;
 		}
 		if(op=='+'){
-			asm_op_add_sub(tc,os,indent_level,"add","sub",dst,dst_resolved,src);
+			asm_op_add_sub(tc,os,indent,"add","sub",dst,dst_resolved,src);
 			return;
 		}
 		if(op=='-'){// order1op
-			asm_op_add_sub(tc,os,indent_level,"sub","add",dst,dst_resolved,src);
+			asm_op_add_sub(tc,os,indent,"sub","add",dst,dst_resolved,src);
 			return;
 		}
 		if(op=='*'){// order2op
 			if(src.is_expression()){
-				const string&r{tc.alloc_scratch_register(src,os,indent_level)};
-				src.compile(tc,os,indent_level,r);
+				const string&r{tc.alloc_scratch_register(src,os,indent)};
+				src.compile(tc,os,indent,r);
 				// imul destination must be a register
 				if(tc.is_identifier_register(dst_resolved)){
-					tc.asm_cmd(src,os,indent_level,"imul",dst_resolved,r);
+					tc.asm_cmd(src,os,indent,"imul",dst_resolved,r);
 				}else{
 					// imul destination is not a register
-					tc.asm_cmd(src,os,indent_level,"imul",r,dst_resolved);
-					tc.asm_cmd(src,os,indent_level,"mov",dst_resolved,r);
+					tc.asm_cmd(src,os,indent,"imul",r,dst_resolved);
+					tc.asm_cmd(src,os,indent,"mov",dst_resolved,r);
 				}
-				tc.free_scratch_register(os,indent_level,r);
+				tc.free_scratch_register(os,indent,r);
 				return;
 			}
 			// not an expression, either a register or memory location
@@ -259,150 +259,150 @@ private:
 			// imul destination operand must be register
 			if(tc.is_identifier_register(dst_resolved)){
 				if(src_r.is_const()){
-					tc.asm_cmd(src,os,indent_level,"imul",dst_resolved,src.get_unary_ops().get_ops_as_string()+src_r.id);
+					tc.asm_cmd(src,os,indent,"imul",dst_resolved,src.get_unary_ops().get_ops_as_string()+src_r.id);
 					return;
 				}
 				const unary_ops&uops=src.get_unary_ops();
 				if(uops.is_empty()){
-					tc.asm_cmd(src,os,indent_level,"imul",dst_resolved,src_r.id);
+					tc.asm_cmd(src,os,indent,"imul",dst_resolved,src_r.id);
 					return;
 				}
-				const string&r{tc.alloc_scratch_register(src,os,indent_level)};
-				tc.asm_cmd(src,os,indent_level,"mov",r,src_r.id);
-				uops.compile(tc,os,indent_level,r);
-				tc.asm_cmd(src,os,indent_level,"imul",dst_resolved,r);
-				tc.free_scratch_register(os,indent_level,r);
+				const string&r{tc.alloc_scratch_register(src,os,indent)};
+				tc.asm_cmd(src,os,indent,"mov",r,src_r.id);
+				uops.compile(tc,os,indent,r);
+				tc.asm_cmd(src,os,indent,"imul",dst_resolved,r);
+				tc.free_scratch_register(os,indent,r);
 				return;
 			}
 			// imul destination is not a register
 			if(src_r.is_const()){
-				const string&r{tc.alloc_scratch_register(src,os,indent_level)};
-				tc.asm_cmd(src,os,indent_level,"mov",r,dst_resolved);
-				tc.asm_cmd(src,os,indent_level,"imul",r,src.get_unary_ops().get_ops_as_string()+src_r.id);
-				tc.asm_cmd(src,os,indent_level,"mov",dst_resolved,r);
-				tc.free_scratch_register(os,indent_level,r);
+				const string&r{tc.alloc_scratch_register(src,os,indent)};
+				tc.asm_cmd(src,os,indent,"mov",r,dst_resolved);
+				tc.asm_cmd(src,os,indent,"imul",r,src.get_unary_ops().get_ops_as_string()+src_r.id);
+				tc.asm_cmd(src,os,indent,"mov",dst_resolved,r);
+				tc.free_scratch_register(os,indent,r);
 				return;
 			}
 			const unary_ops&uops=src.get_unary_ops();
 			if(uops.is_empty()){
-				const string&r{tc.alloc_scratch_register(src,os,indent_level)};
-				tc.asm_cmd(src,os,indent_level,"mov",r,dst_resolved);
-				tc.asm_cmd(src,os,indent_level,"imul",r,src_r.id);
-				tc.asm_cmd(src,os,indent_level,"mov",dst_resolved,r);
-				tc.free_scratch_register(os,indent_level,r);
+				const string&r{tc.alloc_scratch_register(src,os,indent)};
+				tc.asm_cmd(src,os,indent,"mov",r,dst_resolved);
+				tc.asm_cmd(src,os,indent,"imul",r,src_r.id);
+				tc.asm_cmd(src,os,indent,"mov",dst_resolved,r);
+				tc.free_scratch_register(os,indent,r);
 				return;
 			}
-			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
-			tc.asm_cmd(src,os,indent_level,"mov",r,src_r.id);
-			uops.compile(tc,os,indent_level,r);
-			tc.asm_cmd(src,os,indent_level,"imul",r,dst_resolved);
-			tc.asm_cmd(src,os,indent_level,"mov",dst_resolved,r);
-			tc.free_scratch_register(os,indent_level,r);
+			const string&r{tc.alloc_scratch_register(src,os,indent)};
+			tc.asm_cmd(src,os,indent,"mov",r,src_r.id);
+			uops.compile(tc,os,indent,r);
+			tc.asm_cmd(src,os,indent,"imul",r,dst_resolved);
+			tc.asm_cmd(src,os,indent,"mov",dst_resolved,r);
+			tc.free_scratch_register(os,indent,r);
 			return;
 		}
 		if(op=='/'){
-			asm_op_div(tc,os,indent_level,"rax",dst,dst_resolved,src);
+			asm_op_div(tc,os,indent,"rax",dst,dst_resolved,src);
 			return;
 		}
 		if(op=='%'){
-			asm_op_div(tc,os,indent_level,"rdx",dst,dst_resolved,src);
+			asm_op_div(tc,os,indent,"rdx",dst,dst_resolved,src);
 			return;
 		}
 		if(op=='&'){
-			asm_op_bitwise(tc,os,indent_level,"and",dst,dst_resolved,src);
+			asm_op_bitwise(tc,os,indent,"and",dst,dst_resolved,src);
 			return;
 		}
 		if(op=='|'){
-			asm_op_bitwise(tc,os,indent_level,"or",dst,dst_resolved,src);
+			asm_op_bitwise(tc,os,indent,"or",dst,dst_resolved,src);
 			return;
 		}
 		if(op=='^'){
-			asm_op_bitwise(tc,os,indent_level,"xor",dst,dst_resolved,src);
+			asm_op_bitwise(tc,os,indent,"xor",dst,dst_resolved,src);
 			return;
 		}
 		if(op=='<'){
-			asm_op_shift(tc,os,indent_level,"sal",dst,dst_resolved,src);
+			asm_op_shift(tc,os,indent,"sal",dst,dst_resolved,src);
 			return;
 		}
 		if(op=='>'){
-			asm_op_shift(tc,os,indent_level,"sar",dst,dst_resolved,src);
+			asm_op_shift(tc,os,indent,"sar",dst,dst_resolved,src);
 			return;
 		}
 	}
 
-	inline void asm_op_add_sub(toc&tc,ostream&os,const size_t indent_level,const string&op,const string&op_inv,const string&dst,const string&dst_resolved,const statement&src)const{
+	inline void asm_op_add_sub(toc&tc,ostream&os,const size_t indent,const string&op,const string&op_inv,const string&dst,const string&dst_resolved,const statement&src)const{
 		if(src.is_expression()){
-			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
-			src.compile(tc,os,indent_level,r);
-			tc.asm_cmd(src,os,indent_level,op,dst_resolved,r);
-			tc.free_scratch_register(os,indent_level,r);
+			const string&r{tc.alloc_scratch_register(src,os,indent)};
+			src.compile(tc,os,indent,r);
+			tc.asm_cmd(src,os,indent,op,dst_resolved,r);
+			tc.free_scratch_register(os,indent,r);
 			return;
 		}
 		const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
 		if(ir.is_const()){
-			tc.asm_cmd(src,os,indent_level,op,dst_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
+			tc.asm_cmd(src,os,indent,op,dst_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 			return;
 		}
 		const unary_ops&uops=src.get_unary_ops();
 		if(uops.is_empty()){
-			tc.asm_cmd(src,os,indent_level,op,dst_resolved,ir.id);
+			tc.asm_cmd(src,os,indent,op,dst_resolved,ir.id);
 			return;
 		}
 		if(uops.is_only_negated()){
-			tc.asm_cmd(src,os,indent_level,op_inv,dst_resolved,ir.id);
+			tc.asm_cmd(src,os,indent,op_inv,dst_resolved,ir.id);
 			return;
 		}
-		const string&r{tc.alloc_scratch_register(src,os,indent_level)};
-		tc.asm_cmd(src,os,indent_level,"mov",r,ir.id);
-		uops.compile(tc,os,indent_level,r);		
-		tc.asm_cmd(src,os,indent_level,op,dst_resolved,r);
-		tc.free_scratch_register(os,indent_level,r);
+		const string&r{tc.alloc_scratch_register(src,os,indent)};
+		tc.asm_cmd(src,os,indent,"mov",r,ir.id);
+		uops.compile(tc,os,indent,r);		
+		tc.asm_cmd(src,os,indent,op,dst_resolved,r);
+		tc.free_scratch_register(os,indent,r);
 	}
 
-	inline void asm_op_bitwise(toc&tc,ostream&os,const size_t indent_level,const string&op,const string&dst,const string&dst_resolved,const statement&src)const{
+	inline void asm_op_bitwise(toc&tc,ostream&os,const size_t indent,const string&op,const string&dst,const string&dst_resolved,const statement&src)const{
 		if(src.is_expression()){
-			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
-			src.compile(tc,os,indent_level,r);
-			tc.asm_cmd(src,os,indent_level,op,dst_resolved,r);
-			tc.free_scratch_register(os,indent_level,r);
+			const string&r{tc.alloc_scratch_register(src,os,indent)};
+			src.compile(tc,os,indent,r);
+			tc.asm_cmd(src,os,indent,op,dst_resolved,r);
+			tc.free_scratch_register(os,indent,r);
 			return;
 		}
 		const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
 		if(ir.is_const()){
-			tc.asm_cmd(src,os,indent_level,op,dst_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
+			tc.asm_cmd(src,os,indent,op,dst_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 			return;
 		}
 		const unary_ops&uops=src.get_unary_ops();
 		if(uops.is_empty()){
-			tc.asm_cmd(src,os,indent_level,op,dst_resolved,ir.id);
+			tc.asm_cmd(src,os,indent,op,dst_resolved,ir.id);
 			return;
 		}
-		const string&r{tc.alloc_scratch_register(src,os,indent_level)};
-		tc.asm_cmd(src,os,indent_level,"mov",r,ir.id);
-		uops.compile(tc,os,indent_level,r);		
-		tc.asm_cmd(src,os,indent_level,op,dst_resolved,r);
-		tc.free_scratch_register(os,indent_level,r);
+		const string&r{tc.alloc_scratch_register(src,os,indent)};
+		tc.asm_cmd(src,os,indent,"mov",r,ir.id);
+		uops.compile(tc,os,indent,r);		
+		tc.asm_cmd(src,os,indent,op,dst_resolved,r);
+		tc.free_scratch_register(os,indent,r);
 	}
 
-	inline void asm_op_shift(toc&tc,ostream&os,const size_t indent_level,const string&op,const string&dst,const string&dst_resolved,const statement&src)const{
+	inline void asm_op_shift(toc&tc,ostream&os,const size_t indent,const string&op,const string&dst,const string&dst_resolved,const statement&src)const{
 		if(src.is_expression()){
 			// the operand must be stored in CL
-			const bool rcx_allocated=tc.alloc_named_register(src,os,indent_level,"rcx");
+			const bool rcx_allocated=tc.alloc_named_register(src,os,indent,"rcx");
 			if(not rcx_allocated){
-				tc.asm_push(src,os,indent_level,"rcx");
+				tc.asm_push(src,os,indent,"rcx");
 			}
-			src.compile(tc,os,indent_level,"rcx");
-			tc.asm_cmd(src,os,indent_level,op,dst_resolved,"cl");
+			src.compile(tc,os,indent,"rcx");
+			tc.asm_cmd(src,os,indent,op,dst_resolved,"cl");
 			if(rcx_allocated){
-				tc.free_named_register(os,indent_level,"rcx");
+				tc.free_named_register(os,indent,"rcx");
 			}else{
-				tc.asm_pop(src,os,indent_level,"rcx");
+				tc.asm_pop(src,os,indent,"rcx");
 			}
 			return;
 		}
 		const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
 		if(ir.is_const()){
-			tc.asm_cmd(src,os,indent_level,op,dst_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
+			tc.asm_cmd(src,os,indent,op,dst_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 			return;
 		}
 		if(ir.id=="rcx")
@@ -410,89 +410,89 @@ private:
 		const unary_ops&uops=src.get_unary_ops();
 		if(uops.is_empty()){
 			// the operand must be stored in CL
-			const bool rcx_allocated=tc.alloc_named_register(src,os,indent_level,"rcx");
+			const bool rcx_allocated=tc.alloc_named_register(src,os,indent,"rcx");
 			if(not rcx_allocated){
-				tc.asm_push(src,os,indent_level,"rcx");
+				tc.asm_push(src,os,indent,"rcx");
 			}
-			tc.asm_cmd(src,os,indent_level,"mov","rcx",ir.id);
-			tc.asm_cmd(src,os,indent_level,op,dst_resolved,"cl");
+			tc.asm_cmd(src,os,indent,"mov","rcx",ir.id);
+			tc.asm_cmd(src,os,indent,op,dst_resolved,"cl");
 			if(rcx_allocated){
-				tc.free_named_register(os,indent_level,"rcx");
+				tc.free_named_register(os,indent,"rcx");
 			}else{
-				tc.asm_pop(src,os,indent_level,"rcx");
+				tc.asm_pop(src,os,indent,"rcx");
 			}
 			return;
 		}
-		const bool rcx_allocated=tc.alloc_named_register(src,os,indent_level,"rcx");
+		const bool rcx_allocated=tc.alloc_named_register(src,os,indent,"rcx");
 		if(not rcx_allocated){
-			tc.asm_push(src,os,indent_level,"rcx");
+			tc.asm_push(src,os,indent,"rcx");
 		}
-		tc.asm_cmd(src,os,indent_level,"mov","rcx",ir.id);
-		uops.compile(tc,os,indent_level,"rcx");		
-		tc.asm_cmd(src,os,indent_level,op,dst_resolved,"cl");
+		tc.asm_cmd(src,os,indent,"mov","rcx",ir.id);
+		uops.compile(tc,os,indent,"rcx");		
+		tc.asm_cmd(src,os,indent,op,dst_resolved,"cl");
 		if(rcx_allocated){
-			tc.free_named_register(os,indent_level,"rcx");
+			tc.free_named_register(os,indent,"rcx");
 		}else{
-			tc.asm_pop(src,os,indent_level,"rcx");
+			tc.asm_pop(src,os,indent,"rcx");
 		}
 	}
 
 	// op is either "rax" for the quotient or "rdx" for the reminder
-	inline void asm_op_div(toc&tc,ostream&os,const size_t indent_level,const string&op,const string&dst,const string&dst_resolved,const statement&src)const{
+	inline void asm_op_div(toc&tc,ostream&os,const size_t indent,const string&op,const string&dst,const string&dst_resolved,const statement&src)const{
 		if(src.is_expression()){
-			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
-			src.compile(tc,os,indent_level,r);
-			const bool rax_allocated=tc.alloc_named_register(src,os,indent_level,"rax");
+			const string&r{tc.alloc_scratch_register(src,os,indent)};
+			src.compile(tc,os,indent,r);
+			const bool rax_allocated=tc.alloc_named_register(src,os,indent,"rax");
 			if(not rax_allocated){
-				tc.asm_push(src,os,indent_level,"rax");
+				tc.asm_push(src,os,indent,"rax");
 			}
-			tc.asm_cmd(src,os,indent_level,"mov","rax",dst_resolved);
-			const bool rdx_allocated=tc.alloc_named_register(src,os,indent_level,"rdx");
+			tc.asm_cmd(src,os,indent,"mov","rax",dst_resolved);
+			const bool rdx_allocated=tc.alloc_named_register(src,os,indent,"rdx");
 			if(not rdx_allocated){
-				tc.asm_push(src,os,indent_level,"rdx");
+				tc.asm_push(src,os,indent,"rdx");
 			}
-			tc.indent(os,indent_level,false);os<<"cqo"<<endl;
-			tc.indent(os,indent_level,false);os<<"idiv "<<r<<endl;
-			tc.asm_cmd(src,os,indent_level,"mov",dst_resolved,op);
+			tc.indent(os,indent,false);os<<"cqo"<<endl;
+			tc.indent(os,indent,false);os<<"idiv "<<r<<endl;
+			tc.asm_cmd(src,os,indent,"mov",dst_resolved,op);
 			if(rdx_allocated){
-				tc.free_named_register(os,indent_level,"rdx");
+				tc.free_named_register(os,indent,"rdx");
 			}else{
-				tc.asm_pop(src,os,indent_level,"rdx");
+				tc.asm_pop(src,os,indent,"rdx");
 			}
 			if(rax_allocated){
-				tc.free_named_register(os,indent_level,"rax");
+				tc.free_named_register(os,indent,"rax");
 			}else{
-				tc.asm_pop(src,os,indent_level,"rax");
+				tc.asm_pop(src,os,indent,"rax");
 			}
-			tc.free_scratch_register(os,indent_level,r);
+			tc.free_scratch_register(os,indent,r);
 			return;
 		}
 		const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
 		if(ir.is_const()){
-			const bool rax_allocated=tc.alloc_named_register(src,os,indent_level,"rax");
+			const bool rax_allocated=tc.alloc_named_register(src,os,indent,"rax");
 			if(not rax_allocated){
-				tc.asm_push(src,os,indent_level,"rax");
+				tc.asm_push(src,os,indent,"rax");
 			}
-			tc.asm_cmd(src,os,indent_level,"mov","rax",dst_resolved);
-			const bool rdx_allocated=tc.alloc_named_register(src,os,indent_level,"rdx");
+			tc.asm_cmd(src,os,indent,"mov","rax",dst_resolved);
+			const bool rdx_allocated=tc.alloc_named_register(src,os,indent,"rdx");
 			if(not rdx_allocated){
-				tc.asm_push(src,os,indent_level,"rdx");
+				tc.asm_push(src,os,indent,"rdx");
 			}
-			tc.indent(os,indent_level,false);os<<"cqo"<<endl;
-			const string&r{tc.alloc_scratch_register(src,os,indent_level)};
-			tc.asm_cmd(src,os,indent_level,"mov",r,src.get_unary_ops().get_ops_as_string()+ir.id);
-			tc.indent(os,indent_level,false);os<<"idiv "<<r<<endl;
-			tc.free_scratch_register(os,indent_level,r);
-			tc.asm_cmd(src,os,indent_level,"mov",dst_resolved,op);
+			tc.indent(os,indent,false);os<<"cqo"<<endl;
+			const string&r{tc.alloc_scratch_register(src,os,indent)};
+			tc.asm_cmd(src,os,indent,"mov",r,src.get_unary_ops().get_ops_as_string()+ir.id);
+			tc.indent(os,indent,false);os<<"idiv "<<r<<endl;
+			tc.free_scratch_register(os,indent,r);
+			tc.asm_cmd(src,os,indent,"mov",dst_resolved,op);
 			if(rdx_allocated){
-				tc.free_named_register(os,indent_level,"rdx");
+				tc.free_named_register(os,indent,"rdx");
 			}else{
-				tc.asm_pop(src,os,indent_level,"rdx");
+				tc.asm_pop(src,os,indent,"rdx");
 			}
 			if(rax_allocated){
-				tc.free_named_register(os,indent_level,"rax");
+				tc.free_named_register(os,indent,"rax");
 			}else{
-				tc.asm_pop(src,os,indent_level,"rax");
+				tc.asm_pop(src,os,indent,"rax");
 			}
 			return;
 		}
@@ -500,57 +500,57 @@ private:
 			throw compiler_error(src,"cannot use 'rdx' or 'rax' as operands in division because those registers are used");
 		const unary_ops&uops=src.get_unary_ops();
 		if(uops.is_empty()){
-			const bool rax_allocated=tc.alloc_named_register(src,os,indent_level,"rax");
+			const bool rax_allocated=tc.alloc_named_register(src,os,indent,"rax");
 			if(not rax_allocated){
-				tc.asm_push(src,os,indent_level,"rax");
+				tc.asm_push(src,os,indent,"rax");
 			}
-			tc.asm_cmd(src,os,indent_level,"mov","rax",dst_resolved);
-			const bool rdx_allocated=tc.alloc_named_register(src,os,indent_level,"rdx");
+			tc.asm_cmd(src,os,indent,"mov","rax",dst_resolved);
+			const bool rdx_allocated=tc.alloc_named_register(src,os,indent,"rdx");
 			if(not rdx_allocated){
-				tc.asm_push(src,os,indent_level,"rdx");
+				tc.asm_push(src,os,indent,"rdx");
 			}
-			tc.indent(os,indent_level,false);os<<"cqo"<<endl;
-			tc.indent(os,indent_level,false);os<<"idiv "<<ir.id<<endl;
+			tc.indent(os,indent,false);os<<"cqo"<<endl;
+			tc.indent(os,indent,false);os<<"idiv "<<ir.id<<endl;
 			// op is either "rax" for the quotient or "rdx" for the reminder
-			tc.asm_cmd(src,os,indent_level,"mov",dst_resolved,op);
+			tc.asm_cmd(src,os,indent,"mov",dst_resolved,op);
 			if(rdx_allocated){
-				tc.free_named_register(os,indent_level,"rdx");
+				tc.free_named_register(os,indent,"rdx");
 			}else{
-				tc.asm_pop(src,os,indent_level,"rdx");
+				tc.asm_pop(src,os,indent,"rdx");
 			}
 			if(rax_allocated){
-				tc.free_named_register(os,indent_level,"rax");
+				tc.free_named_register(os,indent,"rax");
 			}else{
-				tc.asm_pop(src,os,indent_level,"rax");
+				tc.asm_pop(src,os,indent,"rax");
 			}
 			return;
 		}
-		const string&r{tc.alloc_scratch_register(src,os,indent_level)};
-		tc.asm_cmd(src,os,indent_level,"mov",r,ir.id);
-		uops.compile(tc,os,indent_level,r);
-		const bool rax_allocated=tc.alloc_named_register(src,os,indent_level,"rax");
+		const string&r{tc.alloc_scratch_register(src,os,indent)};
+		tc.asm_cmd(src,os,indent,"mov",r,ir.id);
+		uops.compile(tc,os,indent,r);
+		const bool rax_allocated=tc.alloc_named_register(src,os,indent,"rax");
 		if(not rax_allocated){
-			tc.asm_push(src,os,indent_level,"rax");
+			tc.asm_push(src,os,indent,"rax");
 		}
-		tc.asm_cmd(src,os,indent_level,"mov","rax",dst_resolved);
-		const bool rdx_allocated=tc.alloc_named_register(src,os,indent_level,"rdx");
+		tc.asm_cmd(src,os,indent,"mov","rax",dst_resolved);
+		const bool rdx_allocated=tc.alloc_named_register(src,os,indent,"rdx");
 		if(not rdx_allocated){
-			tc.asm_push(src,os,indent_level,"rdx");
+			tc.asm_push(src,os,indent,"rdx");
 		}
-		tc.indent(os,indent_level,false);os<<"cqo"<<endl;
-		tc.indent(os,indent_level,false);os<<"idiv "<<r<<endl;
-		tc.asm_cmd(src,os,indent_level,"mov",dst_resolved,op);
+		tc.indent(os,indent,false);os<<"cqo"<<endl;
+		tc.indent(os,indent,false);os<<"idiv "<<r<<endl;
+		tc.asm_cmd(src,os,indent,"mov",dst_resolved,op);
 		if(rdx_allocated){
-			tc.free_named_register(os,indent_level,"rdx");
+			tc.free_named_register(os,indent,"rdx");
 		}else{
-			tc.asm_pop(src,os,indent_level,"rdx");
+			tc.asm_pop(src,os,indent,"rdx");
 		}
 		if(rax_allocated){
-			tc.free_named_register(os,indent_level,"rax");
+			tc.free_named_register(os,indent,"rax");
 		}else{
-			tc.asm_pop(src,os,indent_level,"rax");
+			tc.asm_pop(src,os,indent,"rax");
 		}
-		tc.free_scratch_register(os,indent_level,r);
+		tc.free_scratch_register(os,indent,r);
 	}
 
 	bool enclosed_{}; //  (a+b) vs a+b
