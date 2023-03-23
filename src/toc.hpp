@@ -129,25 +129,25 @@ public:
 private:
 	string name_; // optional name
 	string call_path_; // a unique path of source locations of the inlined call
-	size_t allocated_stack_{0}; // number of slots used on the stack by this frame
+	size_t allocated_stack_{}; // number of slots used on the stack by this frame
 	lut<allocated_var>vars_; // vars declared in this frame
 	lut<string>aliases_; // aliases that refers to previous frame alias or var
 	string ret_label_; // the label to jump to when exiting an inlined function
 	string ret_var_; // the variable that contains the return value
-	bool is_inline_{false};
+	bool is_inline_{};
 	type type_{type::FUNC}; // frame type
-	size_t last_added_var_size{0};
+	size_t last_added_var_size{};
 };
 
 struct field_meta final{
-	const stmt_def_field*def{nullptr};
-	bool is_str{false};
+	const stmt_def_field*def{};
+	bool is_str{};
 };
 
 struct call_meta final{
-	size_t nregs_pushed{0};
-	size_t alloc_reg_idx{0};
-	size_t nbytes_of_vars{0};
+	size_t nregs_pushed{};
+	size_t alloc_reg_idx{};
+	size_t nbytes_of_vars{};
 };
 
 struct ident_resolved final{
