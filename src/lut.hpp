@@ -18,7 +18,7 @@ public:
 	}
 
 	inline bool has(const string&key)const{
-		for(const auto&e:elems_){
+		for(const el&e:elems_){
 			if(e.is_key(key)){
 				last_has_el=&e;
 				return true;
@@ -50,6 +50,21 @@ public:
 		throw"element not found";
 	}
 
+	// for clarity get_const_ref instead of overloading get_ref
+	inline const T&get_const_ref(const string&key)const{
+		if(last_has_el){
+			if(last_has_el->is_key(key)){
+				return last_has_el->data;
+			}
+		}
+		for(const el&e:elems_){
+			if(e.is_key(key)){
+				return e.data;
+			}
+		}
+		throw"element not found";
+	}
+
 private:
 	class el{
 	public:
@@ -58,5 +73,5 @@ private:
 		inline bool is_key(const string&k)const{return k==key;}
 	};
 	vector<el>elems_;
-	mutable const el*last_has_el{nullptr};
+	mutable const el*last_has_el{};
 };
