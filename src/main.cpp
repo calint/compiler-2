@@ -223,15 +223,12 @@ static void optimize_jumps_2(istream&is,ostream&os){
 }
 
 static string read_file_to_string(const char *file_name){
-	ifstream t{file_name};
-	if(!t.is_open())
+	ifstream fs{file_name};
+	if(not fs.is_open())
 		throw"cannot open file '"+string{file_name}+"'";
-	string str;
-	t.seekg(0,ios::end);
-	str.reserve(size_t(t.tellg()));
-	t.seekg(0,ios::beg);
-	str.assign(istreambuf_iterator<char>(t),istreambuf_iterator<char>());
-	return str;
+    std::stringstream buf;
+    buf<<fs.rdbuf();
+    return buf.str();
 }
 
 int main(int argc,char*args[]){
@@ -246,12 +243,15 @@ int main(int argc,char*args[]){
 		if(read_file_to_string(src_file_name)!=read_file_to_string("diff.baz"))
 			throw"generated source differs. diff "+string{src_file_name}+" diff.baz";
 
+		// without jump optimizations
 //		 p.build(cout);
 
+		// with jump optimizations
 		stringstream ss1,ss2;
 		p.build(ss1);
 		optimize_jumps_1(ss1,ss2);
 		optimize_jumps_2(ss2,cout);
+
 	}catch(const compiler_error&e){
 		size_t start_char_in_line{0};
 		const size_t lineno{toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line)};
