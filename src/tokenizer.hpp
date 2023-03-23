@@ -32,7 +32,7 @@ public:
 		const string&tkn{next_token_str()};
 		const size_t end{nchar_};
 		const string&wsaft{next_whitespace()};
-		return token{wspre,bgn,tkn,end,wsaft};
+		return{wspre,bgn,tkn,end,wsaft};
 	}
 
 	inline void put_back_token(const token&t){
@@ -100,7 +100,7 @@ private:
 			break;
 		}
 		const size_t len{nchar_-nchar_bm_};
-		return string{ptr_-len,len};
+		return{ptr_-len,len};
 	}
 
 	inline string next_token_str(){
@@ -122,7 +122,7 @@ private:
 			continue;
 		}
 		const size_t len{nchar_-nchar_bm_};
-		return string{ptr_-len,len};
+		return{ptr_-len,len};
 	}
 
 	inline void seek(const off_t nch){
