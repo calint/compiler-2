@@ -63,19 +63,18 @@ inline void unary_ops::compile(toc&tc,ostream&os,size_t indent_level,const strin
 //   cmp_13_26:
 // to
 //   cmp_13_26:
-static string optimize_jumps_1(stringstream&ss){
-	stringstream sso;
+static void optimize_jumps_1(istream&is,ostream&os){
 	const regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
 	const regex rxlbl{R"(^\s*(.+):.*$)"};
 	smatch match;
 	while(true){
 		string line1;
-		getline(ss,line1);
-		if(ss.eof())
+		getline(is,line1);
+		if(is.eof())
 			break;
 
 		if(!regex_search(line1,match,rxjmp)){
-			sso<<line1<<endl;
+			os<<line1<<endl;
 			continue;
 		}
 		const string&jmplbl{match[1]};
@@ -83,7 +82,7 @@ static string optimize_jumps_1(stringstream&ss){
 		string line2;
 		vector<string>comments;
 		while(true){// read comments
-			getline(ss,line2);
+			getline(is,line2);
 			if(line2.starts_with(';')){
 				comments.push_back(line2);
 				continue;
@@ -92,26 +91,25 @@ static string optimize_jumps_1(stringstream&ss){
 		}
 
 		if(!regex_search(line2,match,rxlbl)){
-			sso<<line1<<endl;
-			for(const string&s:comments)sso<<s<<endl;
-			sso<<line2<<endl;
+			os<<line1<<endl;
+			for(const string&s:comments)os<<s<<endl;
+			os<<line2<<endl;
 			continue;
 		}
 
 		const string&lbl{match[1]};
 
 		if(jmplbl!=lbl){
-			sso<<line1<<endl;
-			for(const auto&s:comments)sso<<s<<endl;
-			sso<<line2<<endl;
+			os<<line1<<endl;
+			for(const auto&s:comments)os<<s<<endl;
+			os<<line2<<endl;
 			continue;
 		}
 
 		// write the label without the preceding jmp
-		for(const string&s:comments)sso<<s<<endl;
-		sso<<line2<<"  ; opt1"<<endl;
+		for(const string&s:comments)os<<s<<endl;
+		os<<line2<<"  ; opt1"<<endl;
 	}
-	return sso.str();
 }
 
 // opt2
@@ -122,8 +120,7 @@ static string optimize_jumps_1(stringstream&ss){
 // to
 //   je if_14_8_code
 //   cmp_14_26:
-static string optimize_jumps_2(stringstream&ss){
-	stringstream sso;
+static void optimize_jumps_2(istream&is,ostream&os){
 	const regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
 	const regex rxjxx{R"(^\s*(j[a-z][a-z]?)\s+(.+)\s*$)"};
 	const regex rxlbl{R"(^\s*(.+):.*$)"};
@@ -132,12 +129,12 @@ static string optimize_jumps_2(stringstream&ss){
 
 	while(true){
 		string line1;
-		getline(ss,line1);
-		if(ss.eof())
+		getline(is,line1);
+		if(is.eof())
 			break;
 
 		if(!regex_search(line1,match,rxjxx)){
-			sso<<line1<<endl;
+			os<<line1<<endl;
 			continue;
 		}
 		const string&jxx{match[1]};
@@ -146,7 +143,7 @@ static string optimize_jumps_2(stringstream&ss){
 		string line2;
 		vector<string>comments2;
 		while(true){// read comments
-			getline(ss,line2);
+			getline(is,line2);
 			if(regex_match(line2,rxcomment)){
 				comments2.push_back(line2);
 				continue;
@@ -154,9 +151,9 @@ static string optimize_jumps_2(stringstream&ss){
 			break;
 		}
 		if(!regex_search(line2,match,rxjmp)){
-			sso<<line1<<endl;
-			for(const auto&s:comments2)sso<<s<<endl;
-			sso<<line2<<endl;
+			os<<line1<<endl;
+			for(const auto&s:comments2)os<<s<<endl;
+			os<<line2<<endl;
 			continue;
 		}
 		const string&jmplbl{match[1]};
@@ -164,7 +161,7 @@ static string optimize_jumps_2(stringstream&ss){
 		string line3;
 		vector<string>comments3;
 		while(true){// read comments
-			getline(ss,line3);
+			getline(is,line3);
 			if(regex_match(line3,rxcomment)){
 				comments3.push_back(line3);
 				continue;
@@ -173,21 +170,21 @@ static string optimize_jumps_2(stringstream&ss){
 		}
 
 		if(!regex_search(line3,match,rxlbl)){
-			sso<<line1<<endl;
-			for(const auto&s:comments2)sso<<s<<endl;
-			sso<<line2<<endl;
-			for(const auto&s:comments3)sso<<s<<endl;
-			sso<<line3<<endl;
+			os<<line1<<endl;
+			for(const auto&s:comments2)os<<s<<endl;
+			os<<line2<<endl;
+			for(const auto&s:comments3)os<<s<<endl;
+			os<<line3<<endl;
 			continue;
 		}
 		string lbl{match[1]};
 
 		if(jxxlbl!=lbl){
-			sso<<line1<<endl;
-			for(const auto&s:comments2)sso<<s<<endl;
-			sso<<line2<<endl;
-			for(const auto&s:comments3)sso<<s<<endl;
-			sso<<line3<<endl;
+			os<<line1<<endl;
+			for(const auto&s:comments2)os<<s<<endl;
+			os<<line2<<endl;
+			for(const auto&s:comments3)os<<s<<endl;
+			os<<line3<<endl;
 			continue;
 		}
 
@@ -208,22 +205,21 @@ static string optimize_jumps_2(stringstream&ss){
 		}else if(jxx=="jle"){
 			jxx_inv="jg";
 		}else{
-			sso<<line1<<endl;
-			for(const auto&s:comments2)sso<<s<<endl;
-			sso<<line2<<endl;
-			for(const auto&s:comments3)sso<<s<<endl;
-			sso<<line3<<endl;
+			os<<line1<<endl;
+			for(const auto&s:comments2)os<<s<<endl;
+			os<<line2<<endl;
+			for(const auto&s:comments3)os<<s<<endl;
+			os<<line3<<endl;
 			continue;
 		}
 		//   je if_14_8_code
 		//   cmp_14_26:
 		const string&ws{line1.substr(0,line1.find_first_not_of(" \t\n\r\f\v"))};
-		for(const auto&s:comments2)sso<<s<<endl;
-		sso<<ws<<jxx_inv<<" "<<jmplbl<<"  ; opt2"<<endl;
-		for(const auto&s:comments3)sso<<s<<endl;
-		sso<<line3<<endl;
+		for(const auto&s:comments2)os<<s<<endl;
+		os<<ws<<jxx_inv<<" "<<jmplbl<<"  ; opt2"<<endl;
+		for(const auto&s:comments3)os<<s<<endl;
+		os<<line3<<endl;
 	}
-	return sso.str();
 }
 
 static string read_file_to_string(const char *file_name){
@@ -252,12 +248,10 @@ int main(int argc,char*args[]){
 
 //		 p.build(cout);
 
-		stringstream ss1;
+		stringstream ss1,ss2;
 		p.build(ss1);
-		const string&pass1{optimize_jumps_1(ss1)};
-		stringstream ss2{pass1};
-		const string&pass2{optimize_jumps_2(ss2)};
-		cout<<pass2<<endl;
+		optimize_jumps_1(ss1,ss2);
+		optimize_jumps_2(ss2,cout);
 	}catch(const compiler_error&e){
 		size_t start_char_in_line{0};
 		const size_t lineno{toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line)};
