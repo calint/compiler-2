@@ -56,8 +56,7 @@ public:
 	}
 
 private:
-	class el{
-	public:
+	struct el{
 		string key;
 		T data;
 		inline bool is_key(const string&k)const{return k==key;}
