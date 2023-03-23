@@ -158,7 +158,7 @@ public:
 		// create unique labels for in-lined functions based on the location the source
 		// where the call occurred
 		const string&call_path{tc.get_inline_call_path(tok())};
-		const string&src_loc{tc.source_location(tok())};
+		const string&src_loc{tc.source_location_for_label(tok())};
 		const string&new_call_path{call_path.empty()?src_loc:(src_loc+"_"+call_path)};
 		const string&ret_jmp_label{func_nm+"_"+new_call_path+"_end"};
 

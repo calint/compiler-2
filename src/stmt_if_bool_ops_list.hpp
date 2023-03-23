@@ -162,7 +162,7 @@ public:
 
 	inline string cmp_bgn_label(const toc&tc)const{
 		const string&call_path{tc.get_inline_call_path(tok())};
-		return "cmp_"+tc.source_location(tok())+(call_path.empty()?"":"_"+call_path);
+		return "cmp_"+tc.source_location_for_label(tok())+(call_path.empty()?"":"_"+call_path);
 	}
 
 	inline void compile(toc&tc,ostream&os,const size_t indent_level,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool inverted)const{

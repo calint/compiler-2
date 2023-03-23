@@ -1,8 +1,8 @@
 stage 3 - cleanup
 [ ] toc.allocate_named_register_or_break: if allocated then tell where
-[ ] toc.add_field: if defined tell where
-[ ] toc.add_function: if defined tell where
-[ ] toc.add_var: if defined tell where
+[x] toc.add_field: if defined tell where
+[x] toc.add_function: if defined tell where
+[x] toc.add_var: if defined tell where
 [ ] toc.add_var(...) check if name shadows -> consider in-lined functions
 [ ] fix 'cmp' two constants case
 [ ] tokenizer to keep track of line-number instead of counting it at every call

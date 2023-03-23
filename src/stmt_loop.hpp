@@ -19,7 +19,7 @@ public:
 		// current path of source locations where in-lined functions have been called
 		const string&call_path{tc.get_inline_call_path(tok())};
 		// current source location
-		const string&src_loc{tc.source_location(tok())};
+		const string&src_loc{tc.source_location_for_label(tok())};
 		// the loop label
 		const string&lbl{"loop_"+(call_path.empty()?src_loc:(src_loc+"_"+call_path))};
 		tc.asm_label(*this,os,indent_level,lbl);

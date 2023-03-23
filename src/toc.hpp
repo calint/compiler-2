@@ -12,10 +12,11 @@ class stmt_def_func;
 class stmt_def_field;
 class stmt_def_type;
 
-class allocated_var final{
+class var_meta final{
 public:
-	inline allocated_var(const string&name,const size_t size,const int stkix,const string&nasm_ident,const char bits,const bool initiated):
+	inline var_meta(const string&name,const token&declared_at,const size_t size,const int stkix,const string&nasm_ident,const char bits,const bool initiated):
 		name_{name},
+		declared_at_{declared_at},
 		size_{size},
 		stkix_{stkix},
 		nasm_ident_{nasm_ident},
@@ -23,11 +24,11 @@ public:
 		initiated_{initiated}
 	{}
 
-	inline allocated_var()=default;
-	inline allocated_var(const allocated_var&)=default;
-	inline allocated_var(allocated_var&&)=default;
-	inline allocated_var&operator=(const allocated_var&)=default;
-	inline allocated_var&operator=(allocated_var&&)=default;
+	inline var_meta()=default;
+	inline var_meta(const var_meta&)=default;
+	inline var_meta(var_meta&&)=default;
+	inline var_meta&operator=(const var_meta&)=default;
+	inline var_meta&operator=(var_meta&&)=default;
 
 	inline bool is_name(const string&nm)const{return nm==name_;}
 
@@ -43,8 +44,11 @@ public:
 
 	inline void set_initiated(){initiated_=true;}
 
+	inline const token&get_declared_at()const{return declared_at_;}
+
 private:
 	string name_;
+	token declared_at_;
 	size_t size_{};
 	int stkix_{};
 	string nasm_ident_;
@@ -65,7 +69,7 @@ public:
 		type_{tpe}
 	{}
 
-	inline void add_var(const string&nm,const size_t size,const int stkix,const bool initiated){
+	inline void add_var(const string&nm,const token&declared_at,const size_t size,const int stkix,const bool initiated){
 		string ident;
 		if(stkix>0){
 			// function argument
@@ -88,16 +92,18 @@ public:
 		}else{
 			throw"unexpected variable size: "+to_string(size);
 		}
-		vars_.put(nm,allocated_var{nm,size,stkix,ident,0,initiated});
+		vars_.put(nm,var_meta{nm,declared_at,size,stkix,ident,0,initiated});
 	}
 
 	inline size_t allocated_stack_size()const{return allocated_stack_;}
 
 	inline bool has_var(const string&name)const{return vars_.has(name);}
 
-	inline allocated_var get_var(const string&name)const{return vars_.get(name);}
+	inline var_meta get_var(const string&name)const{return vars_.get(name);}
 
-	inline allocated_var&get_var_ref(const string&name){return vars_.get_ref(name);}
+	inline var_meta&get_var_ref(const string&name){return vars_.get_ref(name);}
+
+	inline const var_meta&get_var_const_ref(const string&name){return vars_.get_const_ref(name);}
 
 	inline void add_alias(const string&ident,const string&outside_ident){
 		aliases_.put(ident,outside_ident);
@@ -129,7 +135,7 @@ private:
 	string name_; // optional name
 	string call_path_; // a unique path of source locations of the inlined call
 	size_t allocated_stack_{}; // number of slots used on the stack by this frame
-	lut<allocated_var>vars_; // vars declared in this frame
+	lut<var_meta>vars_; // vars declared in this frame
 	lut<string>aliases_; // aliases that refers to previous frame alias or var
 	string ret_label_; // the label to jump to when exiting an inlined function
 	string ret_var_; // the variable that contains the return value
@@ -140,7 +146,13 @@ private:
 
 struct field_meta final{
 	const stmt_def_field*def{};
-	bool is_str{};
+	const token declared_at;
+	const bool is_str{};
+};
+
+struct func_meta final{
+	const stmt_def_func*def{};
+	const token declared_at;
 };
 
 struct call_meta final{
@@ -178,24 +190,26 @@ public:
 	inline toc&operator=(toc&&)=default;
 
 	inline void add_field(const statement&s,const string&ident,const stmt_def_field*f,const bool is_str_field){
-		if(fields_.has(ident))
-			throw compiler_error(s.tok(),"field '"+ident+"' already defined");
-
-		fields_.put(ident,{f,is_str_field});
+		if(fields_.has(ident)){
+			const field_meta&fld=fields_.get(ident);
+			throw compiler_error(s.tok(),"field '"+ident+"' already defined at "+source_location_hr(fld.declared_at));
+		}
+		fields_.put(ident,{f,s.tok(),is_str_field});
 	}
 
 	inline void add_func(const statement&s,const string&ident,const stmt_def_func*ref){
-		if(funcs_.has(ident))
-			throw compiler_error(s,"function '"+ident+"' already defined");
-
-		funcs_.put(ident,ref);
+		if(funcs_.has(ident)){
+			const func_meta&func=funcs_.get(ident);
+			throw compiler_error(s,"function '"+ident+"' already defined at "+source_location_hr(func.declared_at));
+		}
+		funcs_.put(ident,{ref,s.tok()});
 	}
 
 	inline const stmt_def_func&get_func_or_break(const statement&s,const string&name)const{
 		if(not funcs_.has(name))
 			throw compiler_error(s,"function '"+name+"' not found");
 
-		return*funcs_.get(name);
+		return*funcs_.get_const_ref(name).def;
 	}
 
 	inline void add_type(const statement&s,const string&ident,const stmt_def_type*f){
@@ -205,10 +219,16 @@ public:
 		types_.put(ident,f);
 	}
 
-	inline string source_location(const token&t)const{
+	inline string source_location_for_label(const token&t)const{
 		size_t char_in_line;
 		const size_t n{line_number_for_char_index(t.char_index(),source_str_.c_str(),char_in_line)};
 		return to_string(n)+"_"+to_string(char_in_line);
+	}
+
+	inline string source_location_hr(const token&tk){
+		size_t char_in_line;
+		const size_t n{line_number_for_char_index(tk.char_index(),source_str_.c_str(),char_in_line)};
+		return to_string(n)+":"+to_string(char_in_line);
 	}
 
 	inline static size_t line_number_for_char_index(const size_t char_index,const char*ptr,size_t&char_in_line){
@@ -293,14 +313,15 @@ public:
 	}
 
 	inline void add_var(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size,const bool initiated){
-		if(frames_.back().has_var(name))
-			throw compiler_error(st,"variable '"+name+"' already declared");
-
+		if(frames_.back().has_var(name)){
+			const var_meta&var=frames_.back().get_var_const_ref(name);
+			throw compiler_error(st,"variable '"+name+"' already declared at "+source_location_hr(var.get_declared_at()));
+		}
 		// offset by 8 since if stkix is 0 then rsp points at return address
 		//   or past the end of stack (if no function has been called)
 		const size_t stkix{get_current_stack_size()+8};
 		assert(size==8||size==4||size==2||size==1);
-		frames_.back().add_var(name,size,-int(stkix),initiated);
+		frames_.back().add_var(name,st.tok(),size,-int(stkix),initiated);
 		// comment the resolved name
 		const ident_resolved&ir=resolve_ident_to_nasm(st,name,false);
 		const string&dest_resolved{ir.id};
@@ -309,7 +330,7 @@ public:
 
 	inline void add_func_arg(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size,const int stkix_delta){
 		assert(frames_.back().is_func()&&not frames_.back().is_func_inline());
-		frames_.back().add_var(name,size,stkix_delta,true);
+		frames_.back().add_var(name,st.tok(),size,stkix_delta,true);
 		// comment the resolved name
 		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
 		indent(os,indent_level,true);os<<name<<": "<<ir.id<<endl;
@@ -687,7 +708,7 @@ private:
 
 		// is 'id' a variable?
 		if(frames_[i].has_var(id)){
-			allocated_var var=frames_[i].get_var(id);
+			var_meta var=frames_[i].get_var(id);
 			if(must_be_initiated and not var.is_initiated())
 				throw compiler_error(stmt,"variable '"+var.get_name()+"' is not initiated");
 			return{var.nasm_ident(),ident_resolved::type::VAR};
@@ -703,7 +724,7 @@ private:
 
 		// is 'id' a field?
 		if(fields_.has(id)){
-			const field_meta&fm=fields_.get(id);
+			const field_meta&fm=fields_.get_const_ref(id);
 			if(fm.is_str)
 				return{id,ident_resolved::type::FIELD};
 			return{"qword["+id+"]",ident_resolved::type::FIELD};
@@ -755,7 +776,7 @@ private:
 	size_t max_frame_count_{0};
 	string source_str_;
 	lut<field_meta>fields_;
-	lut<const stmt_def_func*>funcs_;
+	lut<func_meta>funcs_;
 	lut<const stmt_def_type*>types_;
 	vector<call_meta>call_metas_;
 	unordered_set<string>initiated_registers_;
