@@ -4,8 +4,8 @@
 
 class call_asm_mov final:public call_asm{
 public:
-	inline call_asm_mov(token tkn,tokenizer&t):
-		call_asm{move(tkn),t}
+	inline call_asm_mov(token tk,tokenizer&t):
+		call_asm{move(tk),t}
 	{}
 
 	inline call_asm_mov()=default;
@@ -14,7 +14,7 @@ public:
 	inline call_asm_mov&operator=(const call_asm_mov&)=default;
 	inline call_asm_mov&operator=(call_asm_mov&&)=default;
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		tc.source_comment(*this,os,indent_level);
 
 		const ident_resolved&dst_r{tc.resolve_ident_to_nasm(arg(0),false)};

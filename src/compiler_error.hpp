@@ -11,8 +11,8 @@ public:
 		start_char{tk.char_index()},end_char{tk.char_index_end()}
 	{}
 
-	inline compiler_error(const statement&s,const string&message):
-		compiler_error{s.tok(),message}
+	inline compiler_error(const statement&st,const string&message):
+		compiler_error{st.tok(),message}
 	{}
 
 	inline compiler_error(const tokenizer&t,const string&message):
