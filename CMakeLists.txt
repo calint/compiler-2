@@ -18,16 +18,16 @@ add_compile_options(
     -Wno-unused-private-field
 )
 add_executable(baz src/main.cpp)
-#add_custom_command(TARGET baz POST_BUILD
-#    COMMAND echo "* compiling prog.baz to gen.s"
-#    COMMAND ./baz > gen.s
-#    COMMAND rm diff.baz
+add_custom_command(TARGET baz POST_BUILD
+    COMMAND echo "* compiling prog.baz to gen.s"
+    COMMAND ./baz > gen.s
+    COMMAND rm diff.baz
 #    COMMAND grep -v -e'^\s*;.*$' -e'^\s*$' gen.s > gen-m.s
-#    COMMAND echo "* compiling gen.s with nasm to executable gen"
-#    COMMAND nasm -f elf64 gen.s
-#    COMMAND ld -s -o gen gen.o
-#    COMMAND ls --color -la baz gen.s gen
-#    COMMAND rm -f gen.o diff.baz
-#    COMMAND echo "* running gen"
-#    COMMAND ./gen
-#)
+    COMMAND echo "* compiling gen.s with nasm to executable gen"
+    COMMAND nasm -f elf64 gen.s
+    COMMAND ld -s -o gen gen.o
+    COMMAND ls --color -la baz gen.s gen
+    COMMAND rm -f gen.o diff.baz
+    COMMAND echo "* running gen"
+    COMMAND ./gen
+)
