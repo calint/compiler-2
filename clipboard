@@ -118,3 +118,24 @@ Applying this to the given expression, we get:
 "not (a=1 and b=2)" is the same as "(not a=1) or (not b=2)"
 
 throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
+
+
+qa/tetst/t6.baz
+------------------------------------------------------------
+func inline exit(v:reg_rdi){
+    mov(rax,60) # exit system call
+    mov(rdi,v)  # return code
+    syscall
+}
+
+func inline main{
+    var a=1
+    var b=2
+    var c=3
+    var d=4
+    # triggers optimize_jumps_1 and optimize_jumps_2
+    if (a=1 and b=2) or (c=3 and d=4)
+        exit(0)
+    exit(1)
+}
+-----------------------------------------------------
