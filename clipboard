@@ -6,7 +6,7 @@
 	}
 
 
-TAG=2023-04-23--7--cleanup && git tag $TAG && git push origin $TAG
+TAG=2023-04-23--8--cleanup && git tag $TAG && git push origin $TAG
 
 git reset --hard HEAD
 
