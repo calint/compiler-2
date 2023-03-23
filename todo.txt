@@ -1,5 +1,4 @@
 [ ] clean-up: consistent variable names
-[x] clean-up: consistent function arguments names
 stage 4
 [ ] built-in types
 [ ]   var b=bool(false)  var b:bool=true
@@ -56,6 +55,7 @@ stage 4
 [ ] why is the binary so big although in-line is turned off in make.sh?
 [ ] clang-format everything for less dense code?
 -------------------------------------------------------------------------------
+[x] clean-up: consistent function arguments names
 [x] toc.allocate_named_register_or_break: if allocated then tell where
 [x] toc.add_field: if defined tell where
 [x] toc.add_function: if defined tell where
