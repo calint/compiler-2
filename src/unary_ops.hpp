@@ -12,7 +12,6 @@ public:
                 ops_.push_back('~');
             }else if(t.is_next_char('-')){
                 ops_.push_back('-');
-                negated_=not negated_; // ? if already negated throw exception
             }else{
                 break;
             }
@@ -41,7 +40,7 @@ public:
         }
     }
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_resolved)const;
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst_resolved)const;
 
     inline bool is_empty()const{return ops_.empty();}
 
@@ -51,5 +50,4 @@ public:
 
 private:
     vector<char>ops_;
-    bool negated_{};
 };

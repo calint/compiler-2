@@ -103,7 +103,7 @@ public:
 		os<<res<<endl;
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		tc.add_func(*this,name_.name(),this);//? in constructor for forward ref
 		if(is_inline())
 			return;

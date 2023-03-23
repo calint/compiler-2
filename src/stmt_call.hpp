@@ -54,7 +54,7 @@ public:
 		os<<")";
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		tc.source_comment(*this,os,indent_level);
 		const stmt_def_func&func{tc.get_func_or_break(*this,tok().name())};
 		const string&func_nm{func.name()};
@@ -139,10 +139,10 @@ public:
 			//       or: <base>,vars,regs,
 
 			// handle return value
-			if(not dest_ident.empty()){
-				// function returns value in rax, copy return value to dest_ident
+			if(not dst.empty()){
+				// function returns value in rax, copy return value to dst
 				get_unary_ops().compile(tc,os,indent_level,"rax");
-				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dest_ident,false)};
+				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dst,false)};
 				tc.asm_cmd(*this,os,indent_level,"mov",ir.id,"rax");
 			}
 			return;
@@ -172,12 +172,12 @@ public:
 		vector<tuple<string,string>>aliases_to_add;
 
 		// if function returns value
-		if(not dest_ident.empty()){
+		if(not dst.empty()){
 			if(func.returns().empty())
 				throw compiler_error(*this,"cannot assign from function without return");
-			// alias 'from' identifier to 'dest_ident' identifier
+			// alias 'from' identifier to 'dst' identifier
 			const string&from{func.returns()[0].name()};
-			const string&to{dest_ident};
+			const string&to{dst};
 			aliases_to_add.emplace_back(from,to);
 			tc.indent(os,indent_level+1,true);os<<"alias "<<from<<" -> "<<to<<endl;
 		}

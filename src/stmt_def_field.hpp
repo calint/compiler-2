@@ -30,7 +30,7 @@ public:
 		initial_value_.source_to(os);
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		tc.source_comment(*this,os,indent_level);
 		os<<name_.name();
 		if(initial_value_.is_string()){

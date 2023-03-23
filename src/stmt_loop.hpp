@@ -13,7 +13,7 @@ public:
 	inline stmt_loop&operator=(const stmt_loop&)=default;
 	inline stmt_loop&operator=(stmt_loop&&)=default;
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		toc::indent(os,indent_level,true);tc.token_comment(os,tok());
 		// make unique label for this loop considering in-lined functions
 		// current path of source locations where in-lined functions have been called

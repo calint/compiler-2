@@ -68,7 +68,7 @@ public:
 		}
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		// make unique labels considering in-lined functions
 		const string&call_path{tc.get_inline_call_path(tok())};
 		const string&src_loc{tc.source_location_for_label(tok())};

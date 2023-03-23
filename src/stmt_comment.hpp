@@ -18,7 +18,7 @@ public:
 		os<<line_<<endl;
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dest_ident="")const override{
+	inline void compile(toc&tc,ostream&os,size_t indent_level,const string&dst="")const override{
 		tc.source_comment(*this,os,indent_level);
 	}
 
