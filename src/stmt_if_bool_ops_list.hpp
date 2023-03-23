@@ -84,6 +84,7 @@ public:
 				}
 			}
 
+			// if same op as previous continue
 			if(tk.is_name(prv_op.name())){
 				ops_.push_back(move(tk));
 				continue;
@@ -91,21 +92,21 @@ public:
 
 			// previous op is not the same as next op
 			//   either a new sub-expression or exit current sub-expression
-			// a or b  or       c       and  d or e
-			//       prv_tk ops.back()  tk
+			// a or b  |or|       |c|       |and|  d or e
+			//       |prv_tk| |ops.back()|  |tk|
 			if(is_sub_expr){
-				// sub_expr are 'and' ops and this is an 'or'
-				// a or b and c or d
-				//      ------- tk
+				// generated subexpressions are 'and' ops and this is an 'or'
+				// a or b and c |or| d
+				//      ------- |tk|
 				t.put_back_token(tk);
 				return;
 			}
 
 			// this is an 'and' op after a 'or'
-			// a    or    b     and   c or d
-			//    prv_op back()  tk
+			// a    |or|    |b|     |and|   c or d
+			//    |prv_op| |back()| |tk|
 			// create:
-			// a    or   {b     and   c} or d
+			// a    or   (b     and   c) or d
 			stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
 			bools_.pop_back();
 			bools_.push_back(move(bol));
@@ -119,6 +120,7 @@ public:
 				t.put_back_token(tk);
 				break;
 			}
+			
 			ops_.push_back(move(tk));
 		}
 		if(enclosed_)
