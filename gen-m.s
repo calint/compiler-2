@@ -1,11 +1,7 @@
 section .data
 align 4
-prompt db '  hello    enter name: '
-prompt.len equ $-prompt
-name db '............................................................'
-name.len equ $-name
-prompt2 db '  not a name: '
-prompt2.len equ $-prompt2
+a db '....'
+a.len equ $-a
 section .bss
 align 4
 stk resd 1024
@@ -19,71 +15,23 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 main:
-     mov rdx,prompt.len
-     mov rsi,prompt
-     mov rax,1
-     mov rdi,1
-     syscall
-   print_29_5_end:
-   loop_30_5:
-       mov rdx,name.len
-       mov rsi,name
-       mov rax,0
-       mov rdi,0
-       syscall
-       mov qword[rbp-8],rax
-     read_31_17_end:
-     sub qword[rbp-8],1
-     if_32_12:
-     cmp_32_12:
-     cmp qword[rbp-8],0
-     jne if_34_17
-     if_32_12_code:  ; opt1
-         mov rdx,prompt.len
-         mov rsi,prompt
-         mov rax,1
-         mov rdi,1
-         syscall
-       print_33_13_end:
-     jmp if_32_9_end
-     if_34_17:
-     cmp_34_17:
-     cmp qword[rbp-8],4
-     jg if_else_32_9
-     if_34_17_code:  ; opt1
-         mov rdx,prompt2.len
-         mov rsi,prompt2
-         mov rax,1
-         mov rdi,1
-         syscall
-       print_35_13_end:
-     jmp if_32_9_end
-     if_else_32_9:
-           mov rdx,qword[rbp-8]
-           add rdx,1
-           mov rsi,name
-           mov rax,1
-           mov rdi,1
-           syscall
-         print_37_13_end:
-         if_38_16:
-         cmp_38_16:
-             mov rdx,name.len
-             mov rsi,name
-             mov rax,0
-             mov rdi,0
-             syscall
-             mov r15,rax
-           read_38_16_end:
-         cmp r15,1
-         jne if_38_13_end
-         if_38_16_code:  ; opt1
-           jmp loop_30_5_end
-         if_38_13_end:
-     if_32_9_end:
-   jmp loop_30_5
-   loop_30_5_end:
-     mov rdi,0
+   mov qword[rbp-8],1
+   mov qword[rbp-16],2
+   mov qword[rbp-24],3
+           mov qword[rbp-32],1
+           mov qword[rbp-40],2
+           mov r13,qword[rbp-32]
+           add r13,qword[rbp-40]
+           mov qword[rbp-48],r13
+           mov r14,1
+           add r14,qword[rbp-48]
+         c_28_14_end:
+         mov r15,r14
+         add r15,2
+       b_28_12_end:
+       mov rdi,r15
+       add rdi,1
+     a_28_10_end:
      mov rax,60
      syscall
-   exit_42_5_end:
+   exit_28_5_end:

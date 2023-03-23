@@ -1,9 +1,4 @@
 stage 3 - cleanup
-[ ] toc.allocate_named_register_or_break: if allocated then tell where
-[x] toc.add_field: if defined tell where
-[x] toc.add_function: if defined tell where
-[x] toc.add_var: if defined tell where
-[x] toc.add_var(...) check if name shadows -> consider in-lined functions
 [ ] fix 'cmp' two constants case
 [ ] tokenizer to keep track of line-number instead of counting it at every call
 stage 4
@@ -62,6 +57,11 @@ stage 4
 [ ] why is the binary so big although in-line is turned off in make.sh?
 [ ] clang-format everything for less dense code?
 -------------------------------------------------------------------------------
+[x] toc.allocate_named_register_or_break: if allocated then tell where
+[x] toc.add_field: if defined tell where
+[x] toc.add_function: if defined tell where
+[x] toc.add_var: if defined tell where
+[x] toc.add_var(...) check if name shadows -> consider in-lined functions
 [-] examine expression, expr_ops_list, stmt_call relation
 [-]   circular reference stmt_call -> expr_ops_list -> stmt_call
 [-] decouple by implementing functions that cause circular references in decouple.cpp

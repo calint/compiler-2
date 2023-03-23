@@ -376,6 +376,7 @@ public:
 			max_usage_scratch_regs_=n;
 
 		allocated_registers_.push_back(r);
+		allocated_registers_loc_.push_back(source_location_hr(st.tok()));
 		return r;
 	}
 
@@ -383,21 +384,30 @@ public:
 		indent(os,indent_level,true);os<<"alloc "<<reg<<endl;
 		auto r{find(named_registers_.begin(),named_registers_.end(),reg)};
 		if(r==named_registers_.end()){
-			throw compiler_error(st,"named register '"+reg+"' cannot be allocated");
+			const size_t n{allocated_registers_.size()};
+			string loc;
+			for(size_t i{0};i<n;i++){
+				if(allocated_registers_[i]==reg){
+					loc=allocated_registers_loc_[i];
+				}
+			}
+			throw compiler_error(st,"cannot allocate register '"+reg+"' because it was allocated at "+loc);
 		}
 		named_registers_.erase(r);
 		allocated_registers_.push_back(reg);
+		allocated_registers_loc_.push_back(source_location_hr(st.tok()));
 	}
 
 	inline bool alloc_named_register(const statement&st,ostream&os,const size_t indent_level,const string&reg){
 		indent(os,indent_level,true);os<<"alloc "<<reg;
 		auto r{find(named_registers_.begin(),named_registers_.end(),reg)};
 		if(r==named_registers_.end()){
-			os<<" failed"<<endl;
+			os<<": false"<<endl;
 			return false;
 		}
 		named_registers_.erase(r);
 		allocated_registers_.push_back(reg);
+		allocated_registers_loc_.push_back(source_location_hr(st.tok()));
 		os<<endl;
 		return true;
 	}
@@ -406,6 +416,7 @@ public:
 		indent(os,indent_level,true);os<<"free "<<reg<<endl;
 		assert(allocated_registers_.back()==reg);
 		allocated_registers_.pop_back();
+		allocated_registers_loc_.pop_back();
 		named_registers_.push_back(reg);
 		initiated_registers_.erase(reg);
 	}
@@ -414,6 +425,7 @@ public:
 		indent(os,indent_level,true);os<<"free "<<reg<<endl;
 		assert(allocated_registers_.back()==reg);
 		allocated_registers_.pop_back();
+		allocated_registers_loc_.pop_back();
 		scratch_registers_.push_back(reg);
 		initiated_registers_.erase(reg);
 	}
@@ -545,12 +557,12 @@ public:
 				// stack is: <base>,vars,
 			}
 			// free named registers
-			size_t i=allocated_registers_.size();
+			size_t i{allocated_registers_.size()};
 			while(true){
 				if(i==alloc_reg_idx)
 					break;
 				i--;
-				const string&reg=allocated_registers_[i];
+				const string&reg{allocated_registers_[i]};
 				// don't pop registers used to pass arguments
 				if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)!=allocated_args_registers.end()){
 					free_named_register(os,indent_level,reg);
@@ -565,12 +577,12 @@ public:
 			// stack is: <base>,vars,regs,
 
 			// pop registers pushed prior to this call
-			size_t i=allocated_registers_.size();
+			size_t i{allocated_registers_.size()};
 			while(true){
 				if(i==alloc_reg_idx)
 					break;
 				i--;
-				const string&reg=allocated_registers_[i];
+				const string&reg{allocated_registers_[i]};
 				// don't pop registers used to pass arguments
 				if(find(allocated_args_registers.begin(),allocated_args_registers.end(),reg)==allocated_args_registers.end()){
 					if(is_register_initiated(reg)){
@@ -797,6 +809,7 @@ private:
 	vector<string>all_registers_;
 	vector<string>scratch_registers_;
 	vector<string>allocated_registers_;
+	vector<string>allocated_registers_loc_; // source locations of allocated_registers_
 	vector<string>named_registers_;
 	size_t max_usage_scratch_regs_{0};
 	size_t max_frame_count_{0};
