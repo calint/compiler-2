@@ -16,7 +16,7 @@ struct var_meta final{
 	string name;
 	token declared_at;
 	size_t size{}; // in bytes
-	int stack_idx{}; // location relative to rsp
+	int stack_idx{}; // location relative to rbp
 	string nasm_ident; // nasm usable literal
 	bool initiated{}; // true if variable has been initiated
 };
@@ -25,13 +25,13 @@ class frame final{
 public:
 	enum class type{FUNC,BLOCK,LOOP};
 
-	inline frame(const string&name,const type tpe,const string&call_path="",const string&func_ret_label="",const bool func_is_inline=false,const string&func_ret_var=""):
+	inline frame(const string&name,const type type,const string&call_path="",const string&func_ret_label="",const bool func_is_inline=false,const string&func_ret_var=""):
 		name_{name},
 		call_path_{call_path},
 		func_ret_label_{func_ret_label},
 		func_ret_var_{func_ret_var},
 		func_is_inline_{func_is_inline},
-		type_{tpe}
+		type_{type}
 	{}
 
 	inline void add_var(const string&name,const token&declared_at,const size_t size,const int stack_idx,const bool initiated){
@@ -78,9 +78,9 @@ public:
 
 	inline bool is_name(const string&nm)const{return name_==nm;}
 
-	inline bool has_alias(const string&name)const{return aliases_.has(name);}
+	inline bool has_alias(const string&nm)const{return aliases_.has(nm);}
 
-	inline const string get_alias(const string&name)const{return aliases_.get(name);}
+	inline const string get_alias(const string&nm)const{return aliases_.get(nm);}
 
 	inline const string&name()const{return name_;}
 
@@ -97,7 +97,7 @@ private:
 	string call_path_; // a unique path of source locations of the inlined call
 	size_t allocated_stack_{}; // number of bytes used on the stack by this frame
 	lut<var_meta>vars_; // variables declared in this frame
-	lut<string>aliases_; // aliases that refers to previous frame alias or variable
+	lut<string>aliases_; // aliases that refers to previous frame(s) alias or variable
 	string func_ret_label_; // the label to jump to when exiting an inlined function
 	string func_ret_var_; // the variable that contains the return value
 	bool func_is_inline_{};
@@ -149,39 +149,39 @@ public:
 	inline toc&operator=(const toc&)=default;
 	inline toc&operator=(toc&&)=default;
 
-	inline void add_field(const statement&s,const string&ident,const stmt_def_field*f,const bool is_str_field){
+	inline void add_field(const statement&st,const string&ident,const stmt_def_field*f,const bool is_str_field){
 		if(fields_.has(ident)){
 			const field_meta&fld=fields_.get(ident);
-			throw compiler_error(s.tok(),"field '"+ident+"' already defined at "+source_location_hr(fld.declared_at));
+			throw compiler_error(st.tok(),"field '"+ident+"' already defined at "+source_location_hr(fld.declared_at));
 		}
-		fields_.put(ident,{f,s.tok(),is_str_field});
+		fields_.put(ident,{f,st.tok(),is_str_field});
 	}
 
-	inline void add_func(const statement&s,const string&ident,const stmt_def_func*ref){
+	inline void add_func(const statement&st,const string&ident,const stmt_def_func*ref){
 		if(funcs_.has(ident)){
 			const func_meta&func=funcs_.get(ident);
-			throw compiler_error(s,"function '"+ident+"' already defined at "+source_location_hr(func.declared_at));
+			throw compiler_error(st,"function '"+ident+"' already defined at "+source_location_hr(func.declared_at));
 		}
-		funcs_.put(ident,{ref,s.tok()});
+		funcs_.put(ident,{ref,st.tok()});
 	}
 
-	inline const stmt_def_func&get_func_or_break(const statement&s,const string&name)const{
+	inline const stmt_def_func&get_func_or_break(const statement&st,const string&name)const{
 		if(not funcs_.has(name))
-			throw compiler_error(s,"function '"+name+"' not found");
+			throw compiler_error(st,"function '"+name+"' not found");
 
 		return*funcs_.get_const_ref(name).def;
 	}
 
-	inline void add_type(const statement&s,const string&ident,const stmt_def_type*f){
+	inline void add_type(const statement&st,const string&ident,const stmt_def_type*f){
 		if(types_.has(ident))
-			throw compiler_error(s,"type '"+ident +"' already defined");
+			throw compiler_error(st,"type '"+ident +"' already defined");
 
 		types_.put(ident,f);
 	}
 
-	inline string source_location_for_label(const token&t)const{
+	inline string source_location_for_label(const token&tk)const{
 		size_t char_in_line;
-		const size_t n{line_number_for_char_index(t.char_index(),source_str_.c_str(),char_in_line)};
+		const size_t n{line_number_for_char_index(tk.char_index(),source_str_.c_str(),char_in_line)};
 		return to_string(n)+"_"+to_string(char_in_line);
 	}
 
@@ -219,20 +219,20 @@ public:
 //		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
 	}
 
-	inline ident_resolved resolve_ident_to_nasm(const statement&stmt,const bool must_be_initiated)const{
-		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(stmt,stmt.identifier(),must_be_initiated)};
+	inline ident_resolved resolve_ident_to_nasm(const statement&st,const bool must_be_initiated)const{
+		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(st,st.identifier(),must_be_initiated)};
 		if(not ir.id.empty())
 			return ir;
 
-		throw compiler_error(stmt,"cannot resolve identifier '"+stmt.identifier()+"'");
+		throw compiler_error(st,"cannot resolve identifier '"+st.identifier()+"'");
 	}
 
-	inline ident_resolved resolve_ident_to_nasm(const statement&stmt,const string&ident,const bool must_be_initiated)const{
-		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(stmt,ident,must_be_initiated)};
+	inline ident_resolved resolve_ident_to_nasm(const statement&st,const string&ident,const bool must_be_initiated)const{
+		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(st,ident,must_be_initiated)};
 		if(not ir.id.empty())
 			return ir;
 
-		throw compiler_error(stmt.tok(),"cannot resolve identifier '"+ident+"'");
+		throw compiler_error(st.tok(),"cannot resolve identifier '"+ident+"'");
 	}
 
 	inline void add_alias(const string&ident,const string&parent_frame_ident){
@@ -295,9 +295,9 @@ public:
 		indent(os,indent_level,true);os<<name<<": "<<dest_resolved<<endl;
 	}
 
-	inline void add_func_arg(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size,const int stkix_delta){
+	inline void add_func_arg(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size,const int stack_idx){
 		assert(frames_.back().is_func()&&not frames_.back().func_is_inline());
-		frames_.back().add_var(name,st.tok(),size,stkix_delta,true);
+		frames_.back().add_var(name,st.tok(),size,stack_idx,true);
 		// comment the resolved name
 		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
 		indent(os,indent_level,true);os<<name<<": "<<ir.id<<endl;
@@ -424,14 +424,14 @@ public:
 		os<<res<<endl;
 	}
 
-	inline void source_comment(ostream&os,const string&dest,const string op,const statement&stmt)const{
+	inline void source_comment(ostream&os,const string&dst,const string op,const statement&st)const{
 		size_t char_in_line;
-		const size_t n{line_number_for_char_index(stmt.tok().char_index(),source_str_.c_str(),char_in_line)};
+		const size_t n{line_number_for_char_index(st.tok().char_index(),source_str_.c_str(),char_in_line)};
 		os<<"["<<to_string(n)<<":"<<char_in_line<<"]";
 
 		stringstream ss;
-		ss<<" "<<dest<<op;
-		stmt.source_to(ss);
+		ss<<" "<<dst<<op;
+		st.source_to(ss);
 		const string&s{ss.str()};
 		const string&res{regex_replace(s,regex("\\s+")," ")};
 		os<<res<<endl;
@@ -548,25 +548,25 @@ public:
 		}
 	}
 
-	inline void asm_cmd(const statement&st,ostream&os,const size_t indent_level,const string&op,const string&dest_resolved,const string&src_resolved){
+	inline void asm_cmd(const statement&st,ostream&os,const size_t indent_level,const string&op,const string&dst_resolved,const string&src_resolved){
 		if(op=="mov"){
-			if(dest_resolved==src_resolved)
+			if(dst_resolved==src_resolved)
 				return;
 
-			if(is_identifier_register(dest_resolved)){
+			if(is_identifier_register(dst_resolved)){
 				// for optmiziation of push/pop when call
-				initiated_registers_.insert(dest_resolved);
+				initiated_registers_.insert(dst_resolved);
 			}
 		}
 		// check if both source and destination are memory operations
-		if(dest_resolved.find_first_of('[')!=string::npos and src_resolved.find_first_of('[')!=string::npos){
+		if(dst_resolved.find_first_of('[')!=string::npos and src_resolved.find_first_of('[')!=string::npos){
 			const string&r=alloc_scratch_register(st,os,indent_level);
 			indent(os,indent_level);os<<"mov "<<r<<","<<src_resolved<<endl;
-			indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<r<<endl;
+			indent(os,indent_level);os<<op<<" "<<dst_resolved<<","<<r<<endl;
 			free_scratch_register(os,indent_level,r);
 			return;
 		}
-		indent(os,indent_level);os<<op<<" "<<dest_resolved<<","<<src_resolved<<endl;
+		indent(os,indent_level);os<<op<<" "<<dst_resolved<<","<<src_resolved<<endl;
 	}
 
 	inline void asm_push(const statement&st,ostream&os,const size_t indent_level,const string&reg){
@@ -593,8 +593,8 @@ public:
 		indent(os,indent_level);os<<"call "<<label<<endl;
 	}
 
-	inline void asm_neg(const statement&st,ostream&os,const size_t indent_level,const string&dest_resolved){
-		indent(os,indent_level);os<<"neg "<<dest_resolved<<endl;
+	inline void asm_neg(const statement&st,ostream&os,const size_t indent_level,const string&dst_resolved){
+		indent(os,indent_level);os<<"neg "<<dst_resolved<<endl;
 	}
 
 	inline void set_var_is_initiated(const string&name){
@@ -669,7 +669,7 @@ private:
 		return n;
 	}
 
-	inline const ident_resolved resolve_ident_to_nasm_or_empty(const statement&stmt,const string&ident,const bool must_be_initiated=true)const{
+	inline const ident_resolved resolve_ident_to_nasm_or_empty(const statement&st,const string&ident,const bool must_be_initiated)const{
 		string id=ident;
 		// traverse the frames and resolve the id (which might be an alias) to
 		// a variable, field, register or constant
@@ -694,14 +694,14 @@ private:
 		if(frames_[i].has_var(id)){
 			const var_meta&var=frames_[i].get_var_const_ref(id);
 			if(must_be_initiated and not var.initiated)
-				throw compiler_error(stmt,"variable '"+var.name+"' is not initiated");
+				throw compiler_error(st,"variable '"+var.name+"' is not initiated");
 			return{var.nasm_ident,ident_resolved::type::VAR};
 		}
 
 		// is 'id' a register?
 		if(is_identifier_register(id)){
 			if(must_be_initiated and not is_register_initiated(id))
-				throw compiler_error(stmt,"register '"+id+"' is not initiated");
+				throw compiler_error(st,"register '"+id+"' is not initiated");
 
 			return{id,ident_resolved::type::REGISTER}; // ? unary ops?
 		}
@@ -722,7 +722,7 @@ private:
 			if(after_dot=="len"){
 				return{id,ident_resolved::type::IMPLIED};
 			}
-			throw compiler_error(stmt.tok(),"unknown implicit field constant '"+id+"'");
+			throw compiler_error(st.tok(),"unknown implicit field constant '"+id+"'");
 		}
 
 		char*ep;
