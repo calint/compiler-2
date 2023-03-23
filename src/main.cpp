@@ -11,6 +11,47 @@ using namespace std;
 #include"stmt_loop.hpp"
 #include"stmt_if.hpp"
 
+static void optimize_jumps_1(istream&is,ostream&os);
+static void optimize_jumps_2(istream&is,ostream&os);
+static string read_file_to_string(const char *file_name);
+
+int main(int argc,char*args[]){
+	const char*src_file_name=argc==1?"prog.baz":args[1];
+	string src;
+	try{
+		src=read_file_to_string(src_file_name);
+		stmt_program p{src};
+		ofstream fo{"diff.baz"};
+		p.source_to(fo);
+		fo.close();
+		if(read_file_to_string(src_file_name)!=read_file_to_string("diff.baz"))
+			throw"generated source differs. diff "+string{src_file_name}+" diff.baz";
+
+		// without jump optimizations
+//		 p.build(cout);
+
+		// with jump optimizations
+		stringstream ss1,ss2;
+		p.build(ss1);
+		optimize_jumps_1(ss1,ss2);
+		optimize_jumps_2(ss2,cout);
+
+	}catch(const compiler_error&e){
+		size_t start_char_in_line{0};
+		const size_t lineno{toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line)};
+		cerr<<"\n"<<src_file_name<<":"<<lineno<<":"<<start_char_in_line<<": "<<e.msg<<endl;
+		return 1;
+	}catch(const string&s){
+		cerr<<"\nexception: "<<s<<endl;
+		return 2;
+	}catch(...){
+		cerr<<"\nexception"<<endl;
+		return 3;
+	}
+	return 0;
+}
+
+
 // called from stmt_block to solve circular dependencies with loop, if and calls
 inline unique_ptr<statement>create_statement_from_tokenizer(token tk,unary_ops uops,tokenizer&t){
 	if(tk.is_name("loop"))          return make_unique<stmt_loop>(move(tk),t);
@@ -231,38 +272,3 @@ static string read_file_to_string(const char *file_name){
     return buf.str();
 }
 
-int main(int argc,char*args[]){
-	const char*src_file_name=argc==1?"prog.baz":args[1];
-	string src;
-	try{
-		src=read_file_to_string(src_file_name);
-		stmt_program p{src};
-		ofstream fo{"diff.baz"};
-		p.source_to(fo);
-		fo.close();
-		if(read_file_to_string(src_file_name)!=read_file_to_string("diff.baz"))
-			throw"generated source differs. diff "+string{src_file_name}+" diff.baz";
-
-		// without jump optimizations
-//		 p.build(cout);
-
-		// with jump optimizations
-		stringstream ss1,ss2;
-		p.build(ss1);
-		optimize_jumps_1(ss1,ss2);
-		optimize_jumps_2(ss2,cout);
-
-	}catch(const compiler_error&e){
-		size_t start_char_in_line{0};
-		const size_t lineno{toc::line_number_for_char_index(e.start_char,src.c_str(),start_char_in_line)};
-		cerr<<"\n"<<src_file_name<<":"<<lineno<<":"<<start_char_in_line<<": "<<e.msg<<endl;
-		return 1;
-	}catch(const string&s){
-		cerr<<"\nexception: "<<s<<endl;
-		return 2;
-	}catch(...){
-		cerr<<"\nexception"<<endl;
-		return 3;
-	}
-	return 0;
-}
