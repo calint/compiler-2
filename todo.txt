@@ -1,4 +1,5 @@
-[ ] clean-up: consitency function arguments
+[ ] clean-up: consistent variable names
+[x] clean-up: consistent function arguments names
 stage 4
 [ ] primitive types
 [ ]   var b=bool(a=1)  var b:bool=true
