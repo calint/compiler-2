@@ -12,44 +12,13 @@ class stmt_def_func;
 class stmt_def_field;
 class stmt_def_type;
 
-class var_meta final{
-public:
-	inline var_meta(const string&name,const token&declared_at,const size_t size,const int stkix,const string&nasm_ident,const char bits,const bool initiated):
-		name_{name},
-		declared_at_{declared_at},
-		size_{size},
-		stkix_{stkix},
-		nasm_ident_{nasm_ident},
-		initiated_{initiated}
-	{}
-
-	inline var_meta()=default;
-	inline var_meta(const var_meta&)=default;
-	inline var_meta(var_meta&&)=default;
-	inline var_meta&operator=(const var_meta&)=default;
-	inline var_meta&operator=(var_meta&&)=default;
-
-	inline bool is_name(const string&nm)const{return nm==name_;}
-
-	inline const string&nasm_ident()const{return nasm_ident_;}
-
-	inline size_t get_size()const{return size_;}
-
-	inline const string&get_name()const{return name_;}
-
-	inline bool is_initiated()const{return initiated_;}
-
-	inline void set_initiated(){initiated_=true;}
-
-	inline const token&get_declared_at()const{return declared_at_;}
-
-private:
-	string name_;
-	token declared_at_;
-	size_t size_{};
-	int stkix_{};
-	string nasm_ident_;
-	bool initiated_{};
+struct var_meta final{
+	string name;
+	token declared_at;
+	size_t size{};
+	int stkix{};
+	string nasm_ident;
+	bool initiated{};
 };
 
 class frame final{
@@ -88,7 +57,7 @@ public:
 		}else{
 			throw"unexpected variable size: "+to_string(size);
 		}
-		vars_.put(nm,var_meta{nm,declared_at,size,stkix,ident,0,initiated});
+		vars_.put(nm,var_meta{nm,declared_at,size,stkix,ident,initiated});
 	}
 
 	inline size_t allocated_stack_size()const{return allocated_stack_;}
@@ -311,7 +280,7 @@ public:
 	inline void add_var(const statement&st,ostream&os,size_t indent_level,const string&name,const size_t size,const bool initiated){
 		if(frames_.back().has_var(name)){
 			const var_meta&var=frames_.back().get_var_const_ref(name);
-			throw compiler_error(st,"variable '"+name+"' already declared at "+source_location_hr(var.get_declared_at()));
+			throw compiler_error(st,"variable '"+name+"' already declared at "+source_location_hr(var.declared_at));
 		}
 		// check if variable shadows a declaration within the function scope
 		string id=name;
@@ -336,7 +305,7 @@ public:
 
 		if(frames_[i].has_var(id)){
 			const var_meta&var{frames_[i].get_var_const_ref(id)};
-			throw compiler_error(st,"variable '"+name+"' shadows variable declared at "+source_location_hr(var.get_declared_at()));
+			throw compiler_error(st,"variable '"+name+"' shadows variable declared at "+source_location_hr(var.declared_at));
 		}
 
 		// offset by 8 since if stkix is 0 then rsp points at return address
@@ -675,7 +644,7 @@ public:
 
 		// is 'id' a variable?
 		if(frames_[i].has_var(id)){
-			frames_[i].get_var_ref(id).set_initiated();
+			frames_[i].get_var_ref(id).initiated=true;
 			return;
 		}
 
@@ -743,9 +712,9 @@ private:
 		// is 'id' a variable?
 		if(frames_[i].has_var(id)){
 			var_meta var=frames_[i].get_var(id);
-			if(must_be_initiated and not var.is_initiated())
-				throw compiler_error(stmt,"variable '"+var.get_name()+"' is not initiated");
-			return{var.nasm_ident(),ident_resolved::type::VAR};
+			if(must_be_initiated and not var.initiated)
+				throw compiler_error(stmt,"variable '"+var.name+"' is not initiated");
+			return{var.nasm_ident,ident_resolved::type::VAR};
 		}
 
 		// is 'id' a register?
