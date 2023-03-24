@@ -643,7 +643,6 @@ public:
 			return;
 		}
 
-
 		const size_t dst_size{get_size_from_operand(st,dst_resolved)};
 		const size_t src_size{get_size_from_operand(st,src_resolved)};
 		if(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved)){

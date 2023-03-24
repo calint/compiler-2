@@ -116,83 +116,134 @@ main:
        syscall
      exit_33_19_end:
    if_33_2_end:
-   movsx r15,byte[rbp-40]
-   mov word[rbp-6],r15w
+   mov r15w,word[rbp-6]
+   mov word[rbp-42],r15w
    if_36_5:
    cmp_36_5:
-   cmp word[rbp-6],-2
+   cmp word[rbp-42],-1
    je if_36_2_end
    jmp if_36_5_code
    if_36_5_code:
        mov rdi,9
        mov rax,60
        syscall
-     exit_36_20_end:
+     exit_36_14_end:
    if_36_2_end:
-   if_37_5:
-   cmp_37_5:
+   movsx r15,byte[rbp-40]
+   mov word[rbp-6],r15w
+   if_39_5:
+   cmp_39_5:
+   cmp word[rbp-6],-2
+   je if_39_2_end
+   jmp if_39_5_code
+   if_39_5_code:
+       mov rdi,9
+       mov rax,60
+       syscall
+     exit_39_20_end:
+   if_39_2_end:
+   if_40_5:
+   cmp_40_5:
    movsx r15w,byte[rbp-40]
    cmp word[rbp-6],r15w
-   je if_37_2_end
-   jmp if_37_5_code
-   if_37_5_code:
+   je if_40_2_end
+   jmp if_40_5_code
+   if_40_5_code:
        mov rdi,10
        mov rax,60
        syscall
-     exit_37_21_end:
-   if_37_2_end:
+     exit_40_21_end:
+   if_40_2_end:
    mov dword[rbp-46],-3
    mov r15d,dword[rbp-46]
    mov dword[rbp-4],r15d
-   if_41_5:
-   cmp_41_5:
+   if_44_5:
+   cmp_44_5:
    cmp dword[rbp-4],-3
-   je if_41_2_end
-   jmp if_41_5_code
-   if_41_5_code:
+   je if_44_2_end
+   jmp if_44_5_code
+   if_44_5_code:
        mov rdi,11
        mov rax,60
        syscall
-     exit_41_21_end:
-   if_41_2_end:
-   if_42_5:
-   cmp_42_5:
-   mov r15d,dword[rbp-46]
-   cmp dword[rbp-4],r15d
-   je if_42_2_end
-   jmp if_42_5_code
-   if_42_5_code:
-       mov rdi,12
-       mov rax,60
-       syscall
-     exit_42_21_end:
-   if_42_2_end:
-   movsx r15,byte[rbp-40]
-   mov dword[rbp-4],r15d
+     exit_44_21_end:
+   if_44_2_end:
    if_45_5:
    cmp_45_5:
-   cmp dword[rbp-4],-2
+   mov r15d,dword[rbp-46]
+   cmp dword[rbp-4],r15d
    je if_45_2_end
    jmp if_45_5_code
    if_45_5_code:
-       mov rdi,9
+       mov rdi,12
        mov rax,60
        syscall
      exit_45_21_end:
    if_45_2_end:
-   if_46_5:
-   cmp_46_5:
+   mov r15d,dword[rbp-4]
+   mov dword[rbp-46],r15d
+   if_48_5:
+   cmp_48_5:
+   cmp dword[rbp-46],-3
+   je if_48_2_end
+   jmp if_48_5_code
+   if_48_5_code:
+       mov rdi,11
+       mov rax,60
+       syscall
+     exit_48_15_end:
+   if_48_2_end:
+   movsx r15,byte[rbp-40]
+   mov dword[rbp-4],r15d
+   if_51_5:
+   cmp_51_5:
+   cmp dword[rbp-4],-2
+   je if_51_2_end
+   jmp if_51_5_code
+   if_51_5_code:
+       mov rdi,9
+       mov rax,60
+       syscall
+     exit_51_21_end:
+   if_51_2_end:
+   if_52_5:
+   cmp_52_5:
    movsx r15d,byte[rbp-40]
    cmp dword[rbp-4],r15d
-   je if_46_2_end
-   jmp if_46_5_code
-   if_46_5_code:
+   je if_52_2_end
+   jmp if_52_5_code
+   if_52_5_code:
        mov rdi,10
        mov rax,60
        syscall
-     exit_46_22_end:
-   if_46_2_end:
+     exit_52_22_end:
+   if_52_2_end:
+   movsx r15,word[rbp-42]
+   mov dword[rbp-4],r15d
+   if_55_5:
+   cmp_55_5:
+   cmp dword[rbp-4],-1
+   je if_55_2_end
+   jmp if_55_5_code
+   if_55_5_code:
+       mov rdi,9
+       mov rax,60
+       syscall
+     exit_55_21_end:
+   if_55_2_end:
+   if_56_5:
+   cmp_56_5:
+   movsx r15d,word[rbp-42]
+   cmp dword[rbp-4],r15d
+   je if_56_2_end
+   jmp if_56_5_code
+   if_56_5_code:
+       mov rdi,10
+       mov rax,60
+       syscall
+     exit_56_20_end:
+   if_56_2_end:
      mov rdi,0
      mov rax,60
      syscall
-   exit_48_2_end:
+   exit_58_2_end:
