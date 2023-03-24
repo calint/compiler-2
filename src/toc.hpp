@@ -618,12 +618,17 @@ public:
 		if(dst_size>src_size){
 			// mov rax,byte[b] -> movsx
 			if(not(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved))){
-				indent(os,indnt);os<<"movsx "<<dst_resolved<<","<<src_resolved<<endl;
+				if(op=="mov"){
+					indent(os,indnt);os<<"movsx "<<dst_resolved<<","<<src_resolved<<endl;
+					return;
+				}
+				// cmp rax,byte[b] // ? code path is never reached?
+				indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<src_resolved<<endl;
 				return;
 			}
 			const string&r{alloc_scratch_register(st,os,indnt)};
-			indent(os,indnt);os<<"movsx "<<r<<","<<src_resolved<<endl;
 			const string&r_sized{get_register_operand_for_size(st,r,dst_size)};
+			indent(os,indnt);os<<"movsx "<<r_sized<<","<<src_resolved<<endl;
 			indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<r_sized<<endl;
 			free_scratch_register(os,indnt,r);
 			return;
