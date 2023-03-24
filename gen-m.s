@@ -144,7 +144,7 @@ main:
    if_39_2_end:
    if_40_5:
    cmp_40_5:
-   movsx r15w,byte[rbp-40]
+   movsx r15,byte[rbp-40]
    cmp word[rbp-6],r15w
    je if_40_2_end
    jmp if_40_5_code
@@ -208,7 +208,7 @@ main:
    if_51_2_end:
    if_52_5:
    cmp_52_5:
-   movsx r15d,byte[rbp-40]
+   movsx r15,byte[rbp-40]
    cmp dword[rbp-4],r15d
    je if_52_2_end
    jmp if_52_5_code
@@ -233,7 +233,7 @@ main:
    if_55_2_end:
    if_56_5:
    cmp_56_5:
-   movsx r15d,word[rbp-42]
+   movsx r15,word[rbp-42]
    cmp dword[rbp-4],r15d
    je if_56_2_end
    jmp if_56_5_code

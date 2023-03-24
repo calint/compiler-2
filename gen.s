@@ -337,7 +337,7 @@ main:
 ;  [40:5] ? not obj.wrd=bt2 
    cmp_40_5:
 ;  alloc r15
-   movsx r15w,byte[rbp-40]
+   movsx r15,byte[rbp-40]
    cmp word[rbp-6],r15w
 ;  free r15
    je if_40_2_end
@@ -490,7 +490,7 @@ main:
 ;  [52:5] ? not obj.dwrd=bt2 
    cmp_52_5:
 ;  alloc r15
-   movsx r15d,byte[rbp-40]
+   movsx r15,byte[rbp-40]
    cmp dword[rbp-4],r15d
 ;  free r15
    je if_52_2_end
@@ -548,7 +548,7 @@ main:
 ;  [56:5] ? not obj.dwrd=w 
    cmp_56_5:
 ;  alloc r15
-   movsx r15d,word[rbp-42]
+   movsx r15,word[rbp-42]
    cmp dword[rbp-4],r15d
 ;  free r15
    je if_56_2_end

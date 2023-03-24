@@ -596,68 +596,50 @@ public:
 				// for optimization of push/pop when calling a function
 				initiated_registers_.insert(dst_resolved);
 			}
-
-			const size_t dst_size{get_size_from_operand(st,dst_resolved)};
-			const size_t src_size{get_size_from_operand(st,src_resolved)};
-
-			if(dst_size==src_size){
-				if(not(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved))){
-					indent(os,indnt);os<<"mov "<<dst_resolved<<","<<src_resolved<<endl;
-					return;
-				}
-
-				const string&r{alloc_scratch_register(st,os,indnt)};
-				const string&r_sized{get_register_operand_for_size(st,r,src_size)};
-				indent(os,indnt);os<<"mov "<<r_sized<<","<<src_resolved<<endl;
-				indent(os,indnt);os<<"mov "<<dst_resolved<<","<<r_sized<<endl;
-				free_scratch_register(os,indnt,r);
-				return;
-			}
-
-			if(dst_size>src_size){
-				// mov rax,byte[b] -> movsx
-				if(not(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved))){
-					indent(os,indnt);os<<"movsx "<<dst_resolved<<","<<src_resolved<<endl;
-					return;
-				}
-				const string&r{alloc_scratch_register(st,os,indnt)};
-				indent(os,indnt);os<<"movsx "<<r<<","<<src_resolved<<endl;
-				const string&r_sized{get_register_operand_for_size(st,r,dst_size)};
-				indent(os,indnt);os<<"mov "<<dst_resolved<<","<<r_sized<<endl;
-				free_scratch_register(os,indnt,r);
-				return;
-			}
-
-			// dst_size < src_size
-			if(is_identifier_register(src_resolved)){
-				const string&rsized{get_register_operand_for_size(st,src_resolved,dst_size)};
-				indent(os,indnt);os<<"mov "<<dst_resolved<<","<<rsized<<endl;
-				return;
-			}
-
-			if(is_operand_memory(src_resolved))
-				throw compiler_error(st,"cannot move '"+src_resolved+"' to '"+dst_resolved+"' because it would be truncated");
-
-			// constant
-			indent(os,indnt);os<<"mov "<<dst_resolved<<","<<src_resolved<<endl;
-			return;
 		}
 
 		const size_t dst_size{get_size_from_operand(st,dst_resolved)};
 		const size_t src_size{get_size_from_operand(st,src_resolved)};
-		if(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved)){
-			const string&r{alloc_scratch_register(st,os,indnt)};
-			const string&r_sized{get_register_operand_for_size(st,r,dst_size)};
-			if(dst_size>src_size){
-				indent(os,indnt);os<<"movsx "<<r_sized<<","<<src_resolved<<endl;
-			}else{
-				indent(os,indnt);os<<"mov "<<r_sized<<","<<src_resolved<<endl;
+
+		if(dst_size==src_size){
+			if(not(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved))){
+				indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<src_resolved<<endl;
+				return;
 			}
+
+			const string&r{alloc_scratch_register(st,os,indnt)};
+			const string&r_sized{get_register_operand_for_size(st,r,src_size)};
+			indent(os,indnt);os<<"mov "<<r_sized<<","<<src_resolved<<endl;
 			indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<r_sized<<endl;
 			free_scratch_register(os,indnt,r);
 			return;
 		}
 
+		if(dst_size>src_size){
+			// mov rax,byte[b] -> movsx
+			if(not(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved))){
+				indent(os,indnt);os<<"movsx "<<dst_resolved<<","<<src_resolved<<endl;
+				return;
+			}
+			const string&r{alloc_scratch_register(st,os,indnt)};
+			indent(os,indnt);os<<"movsx "<<r<<","<<src_resolved<<endl;
+			const string&r_sized{get_register_operand_for_size(st,r,dst_size)};
+			indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<r_sized<<endl;
+			free_scratch_register(os,indnt,r);
+			return;
+		}
+
+		// dst_size < src_size
+		if(is_identifier_register(src_resolved)){
+			const string&r_sized{get_register_operand_for_size(st,src_resolved,dst_size)};
+			indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<r_sized<<endl;
+			return;
+		}
+
+		if(is_operand_memory(src_resolved))
+			throw compiler_error(st,"cannot move '"+src_resolved+"' to '"+dst_resolved+"' because it would be truncated");
+
+		// constant
 		indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<src_resolved<<endl;
 	}
 
