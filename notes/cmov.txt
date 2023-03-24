@@ -10,3 +10,5 @@ cmovp - Move if parity even
 cmovnp - Move if parity odd
 cmovl - Move if less (signed)
 cmovnl - Move if not less (signed)
+cmovle - Move if less or equal (signed)
+cmovg - Move if greater (signed)
