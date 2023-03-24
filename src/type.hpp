@@ -11,9 +11,10 @@ struct type_field final{
 
 class type final{
 public:
-	inline type(const std::string name,const size_t size):
+	inline type(const std::string name,const size_t size,const bool is_built_in):
 		name_{name},
-		size_{size}
+		size_{size},
+		is_built_in_{is_built_in}
 	{}
 
 	inline type()=default;
@@ -51,6 +52,8 @@ public:
 
 	inline void set_name(const string&nm){name_=nm;}
 
+	inline bool is_built_in()const{return is_built_in_;}
+
 private:
 	inline size_t field_offset(const token&tk,const vector<string>&path)const{
 		const type*tp{this};
@@ -61,7 +64,7 @@ private:
 				return offset;
 			const type_field&fld=tp->field(tk,path[path_idx]);
 			offset+=fld.offset;
-			if(fld.tp.name()=="qword"){ // ? built-int
+			if(fld.tp.is_built_in_){
 				return offset;
 			}
 			tp=&fld.tp;
@@ -72,4 +75,5 @@ private:
 	std::string name_;
 	size_t size_{};
 	vector<type_field>fields_;
+	bool is_built_in_{};
 };

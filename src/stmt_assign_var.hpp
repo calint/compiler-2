@@ -78,6 +78,6 @@ private:
 		return n;
 	}
 
-	token type_; // type
+	token type_;
 	expr_ops_list eols_;
 };

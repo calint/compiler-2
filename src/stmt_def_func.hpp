@@ -116,7 +116,7 @@ public:
 		// return binding
 		if(not returns().empty()){
 			const string&nm{returns()[0].name()};
-			const type&ret_type{tc.get_type(*this,"qword")};
+			const type&ret_type{tc.get_type(*this,toc::default_type)};
 			tc.add_var(*this,os,indent+1,nm,ret_type,false); // ? var type
 //			tc.add_alias(from,"rax");
 		}
@@ -129,7 +129,7 @@ public:
 		size_t stk_ix{2<<3}; // skip [rbp] and [return address] on stack
 		for(size_t i=0;i<n;i++){
 			const stmt_def_func_param&pm{params_[i]};
-			const type&arg_type{tc.get_type(pm,"qword")}; // ? var type
+			const type&arg_type{tc.get_type(pm,toc::default_type)}; // ? var type
 			const string&pm_nm{pm.name()};
 			// (i+2)<<3 ?
 			// stack after push rbp is ...,[arg n],...[arg 1],[return address],[rbp],

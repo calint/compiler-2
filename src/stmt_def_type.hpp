@@ -33,7 +33,6 @@ private:
 };
 
 class stmt_def_type final:public statement{
-	type qword{"qword",8};
 public:
 	inline stmt_def_type(token tk,tokenizer&t):
 		statement{move(tk)},
@@ -84,10 +83,10 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		type_.set_name(name_.name());
 		if(fields_.empty()){
-			type_.set_size(8); // ? magic number
+			type_.set_size(toc::default_type_size);
 		}else{
 			for(const stmt_def_type_field&fld:fields_){
-				const type&tp{tc.get_type(fld,fld.type_str().empty()?"qword":fld.type_str())};
+				const type&tp{tc.get_type(fld,fld.type_str().empty()?toc::default_type:fld.type_str())};
 				type_.add_field(fld.tok(),fld.name(),tp);
 			}
 		}

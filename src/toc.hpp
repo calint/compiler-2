@@ -35,7 +35,7 @@ public:
 		type_{tpe}
 	{}
 
-	inline void add_var(const string&name,const type&tpe,const token&declared_at,const int stack_idx,const bool initiated){
+	inline void add_var(const token&declared_at,const string&name,const type&tpe,const int stack_idx,const bool initiated){
 		string nasm_ident;
 		if(stack_idx>0){
 			// function argument
@@ -134,6 +134,7 @@ struct ident_resolved final{
 
 	string id;
 	type type{type::CONST};
+	size_t size{};
 
 	inline bool is_const()const{return type==type::CONST;}
 	inline bool is_var()const{return type==type::VAR;}
@@ -327,16 +328,15 @@ public:
 		}
 
 		const int stack_idx{int(get_current_stack_size()+var_type.size())};
-		frames_.back().add_var(name,var_type,st.tok(),-stack_idx,initiated);
+		frames_.back().add_var(st.tok(),name,var_type,-stack_idx,initiated);
 		// comment the resolved name
 		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
-		const string&dest_resolved{ir.id};
-		indent(os,indnt,true);os<<name<<": "<<dest_resolved<<endl;
+		indent(os,indnt,true);os<<name<<": "<<ir.id<<endl;
 	}
 
 	inline void add_func_arg(const statement&st,ostream&os,size_t indnt,const string&name,const type&arg_type,const int stack_idx){
 		assert(frames_.back().is_func()&&not frames_.back().func_is_inline());
-		frames_.back().add_var(name,arg_type,st.tok(),stack_idx,true);
+		frames_.back().add_var(st.tok(),name,arg_type,stack_idx,true);
 		// comment the resolved name
 		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
 		indent(os,indnt,true);os<<name<<": "<<ir.id<<endl;
@@ -593,12 +593,27 @@ public:
 				return;
 
 			if(is_identifier_register(dst_resolved)){
-				// for optmiziation of push/pop when call
+				// for optimization of push/pop when calling a function
 				initiated_registers_.insert(dst_resolved);
 			}
+			const size_t dst_size{get_size_from_operand(dst_resolved)};
+			const size_t src_size{get_size_from_operand(src_resolved)};
+			// check if both source and destination are memory operations
+			if(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved)){
+				const string&r=alloc_scratch_register(st,os,indnt);
+				if(src_size!=toc::default_type_size){
+					indent(os,indnt);os<<"movsx "<<r<<","<<src_resolved<<endl;
+				}else{
+					indent(os,indnt);os<<"mov "<<r<<","<<src_resolved<<endl;
+				}
+				indent(os,indnt);os<<"mov "<<dst_resolved<<","<<r<<endl;
+				free_scratch_register(os,indnt,r);
+				return;
+			}
+
 		}
 		// check if both source and destination are memory operations
-		if(dst_resolved.find_first_of('[')!=string::npos and src_resolved.find_first_of('[')!=string::npos){
+		if(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved)){
 			const string&r=alloc_scratch_register(st,os,indnt);
 			indent(os,indnt);os<<"mov "<<r<<","<<src_resolved<<endl;
 			indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<r<<endl;
@@ -608,12 +623,177 @@ public:
 		indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<src_resolved<<endl;
 	}
 
-	inline void asm_push(const statement&st,ostream&os,const size_t indnt,const string&reg){
-		indent(os,indnt);os<<"push "<<reg<<endl;
+	inline bool is_operand_memory(const string&operand)const{
+		return operand.find_first_of('[')!=string::npos;
+	}
+	inline size_t get_size_from_operand(const string&operand)const{ // ? sort of ugly
+		if(operand.find("qword")==0)return 8;
+		if(operand.find("dword")==0)return 4;
+		if(operand.find("word")==0)return 2;
+		if(operand.find("byte")==0)return 1;
+		if(is_identifier_register(operand)){
+			if(operand=="rax")return 8;
+			if(operand=="rbx")return 8;
+			if(operand=="rcx")return 8;
+			if(operand=="rdx")return 8;
+			if(operand=="rbp")return 8;
+			if(operand=="rsi")return 8;
+			if(operand=="rdi")return 8;
+			if(operand=="rsp")return 8;
+			if(operand=="r8")return 8;
+			if(operand=="r9")return 8;
+			if(operand=="r10")return 8;
+			if(operand=="r11")return 8;
+			if(operand=="r12")return 8;
+			if(operand=="r13")return 8;
+			if(operand=="r14")return 8;
+			if(operand=="r15")return 8;
+
+			if(operand=="eax")return 4;
+			if(operand=="ebx")return 4;
+			if(operand=="ecx")return 4;
+			if(operand=="edx")return 4;
+			if(operand=="ebp")return 4;
+			if(operand=="esi")return 4;
+			if(operand=="edi")return 4;
+			if(operand=="esp")return 4;
+			if(operand=="r8d")return 4;
+			if(operand=="r9d")return 4;
+			if(operand=="r10d")return 4;
+			if(operand=="r11d")return 4;
+			if(operand=="r12d")return 4;
+			if(operand=="r13d")return 4;
+			if(operand=="r14d")return 4;
+			if(operand=="r15d")return 4;
+
+			if(operand=="ax")return 2;
+			if(operand=="bx")return 2;
+			if(operand=="cx")return 2;
+			if(operand=="dx")return 2;
+			if(operand=="bp")return 2;
+			if(operand=="si")return 2;
+			if(operand=="di")return 2;
+			if(operand=="sp")return 2;
+			if(operand=="r8w")return 2;
+			if(operand=="r9w")return 2;
+			if(operand=="r10w")return 2;
+			if(operand=="r11w")return 2;
+			if(operand=="r12w")return 2;
+			if(operand=="r13w")return 2;
+			if(operand=="r14w")return 2;
+			if(operand=="r15w")return 2;
+
+			if(operand=="al")return 1;
+			if(operand=="ah")return 1;
+			if(operand=="bl")return 1;
+			if(operand=="bh")return 1;
+			if(operand=="cl")return 1;
+			if(operand=="ch")return 1;
+			if(operand=="dl")return 1;
+			if(operand=="dh")return 1;
+			if(operand=="r8b")return 1;
+			if(operand=="r9b")return 1;
+			if(operand=="r10b")return 1;
+			if(operand=="r11b")return 1;
+			if(operand=="r12b")return 1;
+			if(operand=="r13b")return 1;
+			if(operand=="r14b")return 1;
+			if(operand=="r15b")return 1;
+		}
+		return 0;
 	}
 
-	inline void asm_pop(const statement&st,ostream&os,const size_t indnt,const string&reg){
-		indent(os,indnt);os<<"pop "<<reg<<endl;
+	inline string get_register_operand_for_size(const statement&st,const string&operand,const size_t size)const{ // ? sort of ugly
+		if(operand=="rax"){
+			switch(size){
+			case 8:return"rax";
+			case 4:return"eax";
+			case 2:return"ax";
+			case 1:return"al";
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			}
+		}
+		if(operand=="rbx"){
+			switch(size){
+			case 8:return"rbx";
+			case 4:return"ebx";
+			case 2:return"bx";
+			case 1:return"bl";
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			}
+		}
+		if(operand=="rcx"){
+			switch(size){
+			case 8:return"rcx";
+			case 4:return"ecx";
+			case 2:return"cx";
+			case 1:return"cl";
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			}
+		}
+		if(operand=="rdx"){
+			switch(size){
+			case 8:return"rdx";
+			case 4:return"edx";
+			case 2:return"dx";
+			case 1:return"dl";
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			}
+		}
+		if(operand=="rbp"){
+			switch(size){
+			case 8:return"rbp";
+			case 4:return"ebp";
+			case 2:return"bp";
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			}
+		}
+		if(operand=="rsi"){
+			switch(size){
+			case 8:return"rsi";
+			case 4:return"esi";
+			case 2:return"si";
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			}
+		}
+		if(operand=="rdi"){
+			switch(size){
+			case 8:return"rdi";
+			case 4:return"edi";
+			case 2:return"di";
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			}
+		}
+		if(operand=="rsp"){
+			switch(size){
+			case 8:return"rsp";
+			case 4:return"esp";
+			case 2:return"sp";
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			}
+		}
+		regex rx{R"(r(\d\d?)"};
+		smatch match;
+		if(!regex_search(operand,match,rx)){
+			throw compiler_error(st,"unknown register "+operand);
+		}
+		const string&rnbr{match[1]};
+		switch(size){
+		case 8:return"r"+rnbr;
+		case 4:return"r"+rnbr+"d";
+		case 2:return"r"+rnbr+"w";
+		case 1:return"r"+rnbr+"b";
+		default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+		}
+
+		throw compiler_error(st,"unknown register operand "+operand);
+	}
+	inline void asm_push(const statement&st,ostream&os,const size_t indnt,const string&operand){
+		indent(os,indnt);os<<"push "<<operand<<endl;
+	}
+
+	inline void asm_pop(const statement&st,ostream&os,const size_t indnt,const string&operand){
+		indent(os,indnt);os<<"pop "<<operand<<endl;
 	}
 
 	inline void asm_ret(const statement&st,ostream&os,const size_t indnt){
@@ -668,6 +848,9 @@ public:
 		for(size_t i{0};i<indnt;i++)
 			os<<"  ";
 	}
+
+	inline static constexpr const char*default_type{"qword"};
+	inline static constexpr size_t default_type_size{8};
 
 private:
 	inline pair<string,frame&>get_id_and_frame_for_identifier(const string&name){
@@ -725,11 +908,11 @@ private:
 				// yes, continue resolving alias until it is
 				// a variable, field, register or constant
 				id=frames_[i].get_alias(id);
-			}else{
-				// does scope contain the variable
-				if(frames_[i].has_var(id))
-					break;
+				continue;
 			}
+			// does scope contain the variable
+			if(frames_[i].has_var(id))
+				break;
 		}
 
 		// is 'id' a variable?
@@ -738,7 +921,7 @@ private:
 			if(must_be_initiated and not var.initiated)
 				throw compiler_error(st,"variable '"+var.name+"' is not initiated");
 			const string&acc=var.tp.accessor(st.tok(),bid.path(),var.stack_idx);
-			return{acc,ident_resolved::type::VAR};
+			return{acc,ident_resolved::type::VAR,var.tp.size()};
 		}
 
 		// is 'id' a register?
@@ -746,7 +929,7 @@ private:
 			if(must_be_initiated and not is_register_initiated(id))
 				throw compiler_error(st,"register '"+id+"' is not initiated");
 
-			return{id,ident_resolved::type::REGISTER}; // ? unary ops?
+			return{id,ident_resolved::type::REGISTER,default_type_size}; // ? unary ops?
 		}
 
 		// is 'id' a field?
@@ -754,12 +937,12 @@ private:
 		if(fields_.has(id)){
 			const string&after_dot=bid.path().size()<2?"":bid.path()[1]; // ! not correct
 			if(after_dot=="len"){
-				return{id+"."+after_dot,ident_resolved::type::IMPLIED};
+				return{id+"."+after_dot,ident_resolved::type::IMPLIED,default_type_size};
 			}
 			const field_meta&fm=fields_.get_const_ref(id);
 			if(fm.is_str)
 				return{id,ident_resolved::type::FIELD};
-			return{"qword["+id+"]",ident_resolved::type::FIELD};
+			return{"qword["+id+"]",ident_resolved::type::FIELD,0};
 		}
 
 //		// is 'id' an implicit identifier?
@@ -776,22 +959,22 @@ private:
 		char*ep;
 		strtol(id.c_str(),&ep,10); // return ignored
 		if(!*ep)
-			return{id,ident_resolved::type::CONST};
+			return{id,ident_resolved::type::CONST,default_type_size};
 
 		if(id.find("0x")==0){ // hex
 			strtol(id.c_str()+2,&ep,16); // return ignored
 			if(!*ep)
-				return{id,ident_resolved::type::CONST};
+				return{id,ident_resolved::type::CONST,default_type_size};
 		}
 
 		if(id.find("0b")==0){ // binary
 			strtol(id.c_str()+2,&ep,2); // return ignored
 			if(!*ep)
-				return{id,ident_resolved::type::CONST};
+				return{id,ident_resolved::type::CONST,default_type_size};
 		}
 
 		// not resolved, return empty answer
-		return{"",ident_resolved::type::CONST};
+		return{"",ident_resolved::type::CONST,0};
 	}
 
 	inline void check_usage(){
