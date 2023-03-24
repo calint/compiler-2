@@ -596,113 +596,159 @@ public:
 				// for optimization of push/pop when calling a function
 				initiated_registers_.insert(dst_resolved);
 			}
-			const size_t dst_size{get_size_from_operand(dst_resolved)};
-			const size_t src_size{get_size_from_operand(src_resolved)};
-			// check if both source and destination are memory operations
-			if(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved)){
-				const string&r=alloc_scratch_register(st,os,indnt);
-				if(src_size!=toc::default_type_size){
-					indent(os,indnt);os<<"movsx "<<r<<","<<src_resolved<<endl;
-				}else{
-					indent(os,indnt);os<<"mov "<<r<<","<<src_resolved<<endl;
+
+			const size_t dst_size{get_size_from_operand(st,dst_resolved)};
+			const size_t src_size{get_size_from_operand(st,src_resolved)};
+
+			if(dst_size==src_size){
+				if(not(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved))){
+					indent(os,indnt);os<<"mov "<<dst_resolved<<","<<src_resolved<<endl;
+					return;
 				}
-				indent(os,indnt);os<<"mov "<<dst_resolved<<","<<r<<endl;
+
+				const string&r{alloc_scratch_register(st,os,indnt)};
+				const string&r_sized{get_register_operand_for_size(st,r,src_size)};
+				indent(os,indnt);os<<"mov "<<r_sized<<","<<src_resolved<<endl;
+				indent(os,indnt);os<<"mov "<<dst_resolved<<","<<r_sized<<endl;
 				free_scratch_register(os,indnt,r);
 				return;
 			}
 
+			if(dst_size>src_size){
+				// mov rax,byte[b] -> movsx
+				if(not(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved))){
+					indent(os,indnt);os<<"movsx "<<dst_resolved<<","<<src_resolved<<endl;
+					return;
+				}
+				const string&r{alloc_scratch_register(st,os,indnt)};
+				indent(os,indnt);os<<"movsx "<<r<<","<<src_resolved<<endl;
+				const string&r_sized{get_register_operand_for_size(st,r,dst_size)};
+				indent(os,indnt);os<<"mov "<<dst_resolved<<","<<r_sized<<endl;
+				free_scratch_register(os,indnt,r);
+				return;
+			}
+
+			// dst_size < src_size
+			if(is_identifier_register(src_resolved)){
+				const string&rsized{get_register_operand_for_size(st,src_resolved,dst_size)};
+				indent(os,indnt);os<<"mov "<<dst_resolved<<","<<rsized<<endl;
+				return;
+			}
+
+			if(is_operand_memory(src_resolved))
+				throw compiler_error(st,"cannot move '"+src_resolved+"' to '"+dst_resolved+"' because it would be truncated");
+
+			// constant
+			indent(os,indnt);os<<"mov "<<dst_resolved<<","<<src_resolved<<endl;
+			return;
 		}
-		// check if both source and destination are memory operations
+
+
+		const size_t dst_size{get_size_from_operand(st,dst_resolved)};
+		const size_t src_size{get_size_from_operand(st,src_resolved)};
 		if(is_operand_memory(dst_resolved) and is_operand_memory(src_resolved)){
-			const string&r=alloc_scratch_register(st,os,indnt);
-			indent(os,indnt);os<<"mov "<<r<<","<<src_resolved<<endl;
-			indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<r<<endl;
+			const string&r{alloc_scratch_register(st,os,indnt)};
+			const string&r_sized{get_register_operand_for_size(st,r,dst_size)};
+			if(dst_size>src_size){
+				indent(os,indnt);os<<"movsx "<<r_sized<<","<<src_resolved<<endl;
+			}else{
+				indent(os,indnt);os<<"mov "<<r_sized<<","<<src_resolved<<endl;
+			}
+			indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<r_sized<<endl;
 			free_scratch_register(os,indnt,r);
 			return;
 		}
+
 		indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<src_resolved<<endl;
 	}
 
 	inline bool is_operand_memory(const string&operand)const{
 		return operand.find_first_of('[')!=string::npos;
 	}
-	inline size_t get_size_from_operand(const string&operand)const{ // ? sort of ugly
+	inline size_t get_size_from_operand(const statement&st,const string&operand)const{ // ? sort of ugly
 		if(operand.find("qword")==0)return 8;
 		if(operand.find("dword")==0)return 4;
 		if(operand.find("word")==0)return 2;
 		if(operand.find("byte")==0)return 1;
-		if(is_identifier_register(operand)){
-			if(operand=="rax")return 8;
-			if(operand=="rbx")return 8;
-			if(operand=="rcx")return 8;
-			if(operand=="rdx")return 8;
-			if(operand=="rbp")return 8;
-			if(operand=="rsi")return 8;
-			if(operand=="rdi")return 8;
-			if(operand=="rsp")return 8;
-			if(operand=="r8")return 8;
-			if(operand=="r9")return 8;
-			if(operand=="r10")return 8;
-			if(operand=="r11")return 8;
-			if(operand=="r12")return 8;
-			if(operand=="r13")return 8;
-			if(operand=="r14")return 8;
-			if(operand=="r15")return 8;
+		if(is_identifier_register(operand))
+			return get_size_from_operand_register(st,operand);
 
-			if(operand=="eax")return 4;
-			if(operand=="ebx")return 4;
-			if(operand=="ecx")return 4;
-			if(operand=="edx")return 4;
-			if(operand=="ebp")return 4;
-			if(operand=="esi")return 4;
-			if(operand=="edi")return 4;
-			if(operand=="esp")return 4;
-			if(operand=="r8d")return 4;
-			if(operand=="r9d")return 4;
-			if(operand=="r10d")return 4;
-			if(operand=="r11d")return 4;
-			if(operand=="r12d")return 4;
-			if(operand=="r13d")return 4;
-			if(operand=="r14d")return 4;
-			if(operand=="r15d")return 4;
-
-			if(operand=="ax")return 2;
-			if(operand=="bx")return 2;
-			if(operand=="cx")return 2;
-			if(operand=="dx")return 2;
-			if(operand=="bp")return 2;
-			if(operand=="si")return 2;
-			if(operand=="di")return 2;
-			if(operand=="sp")return 2;
-			if(operand=="r8w")return 2;
-			if(operand=="r9w")return 2;
-			if(operand=="r10w")return 2;
-			if(operand=="r11w")return 2;
-			if(operand=="r12w")return 2;
-			if(operand=="r13w")return 2;
-			if(operand=="r14w")return 2;
-			if(operand=="r15w")return 2;
-
-			if(operand=="al")return 1;
-			if(operand=="ah")return 1;
-			if(operand=="bl")return 1;
-			if(operand=="bh")return 1;
-			if(operand=="cl")return 1;
-			if(operand=="ch")return 1;
-			if(operand=="dl")return 1;
-			if(operand=="dh")return 1;
-			if(operand=="r8b")return 1;
-			if(operand=="r9b")return 1;
-			if(operand=="r10b")return 1;
-			if(operand=="r11b")return 1;
-			if(operand=="r12b")return 1;
-			if(operand=="r13b")return 1;
-			if(operand=="r14b")return 1;
-			if(operand=="r15b")return 1;
-		}
-		return 0;
+		// constant
+		return default_type_size;
+//		throw compiler_error(st,"size of operand '"+operand+"' could not be deduced");
 	}
 
+	inline size_t get_size_from_operand_register(const statement&st,const string&operand)const{
+		if(operand=="rax")return 8;
+		if(operand=="rbx")return 8;
+		if(operand=="rcx")return 8;
+		if(operand=="rdx")return 8;
+		if(operand=="rbp")return 8;
+		if(operand=="rsi")return 8;
+		if(operand=="rdi")return 8;
+		if(operand=="rsp")return 8;
+		if(operand=="r8")return 8;
+		if(operand=="r9")return 8;
+		if(operand=="r10")return 8;
+		if(operand=="r11")return 8;
+		if(operand=="r12")return 8;
+		if(operand=="r13")return 8;
+		if(operand=="r14")return 8;
+		if(operand=="r15")return 8;
+
+		if(operand=="eax")return 4;
+		if(operand=="ebx")return 4;
+		if(operand=="ecx")return 4;
+		if(operand=="edx")return 4;
+		if(operand=="ebp")return 4;
+		if(operand=="esi")return 4;
+		if(operand=="edi")return 4;
+		if(operand=="esp")return 4;
+		if(operand=="r8d")return 4;
+		if(operand=="r9d")return 4;
+		if(operand=="r10d")return 4;
+		if(operand=="r11d")return 4;
+		if(operand=="r12d")return 4;
+		if(operand=="r13d")return 4;
+		if(operand=="r14d")return 4;
+		if(operand=="r15d")return 4;
+
+		if(operand=="ax")return 2;
+		if(operand=="bx")return 2;
+		if(operand=="cx")return 2;
+		if(operand=="dx")return 2;
+		if(operand=="bp")return 2;
+		if(operand=="si")return 2;
+		if(operand=="di")return 2;
+		if(operand=="sp")return 2;
+		if(operand=="r8w")return 2;
+		if(operand=="r9w")return 2;
+		if(operand=="r10w")return 2;
+		if(operand=="r11w")return 2;
+		if(operand=="r12w")return 2;
+		if(operand=="r13w")return 2;
+		if(operand=="r14w")return 2;
+		if(operand=="r15w")return 2;
+
+		if(operand=="al")return 1;
+		if(operand=="ah")return 1;
+		if(operand=="bl")return 1;
+		if(operand=="bh")return 1;
+		if(operand=="cl")return 1;
+		if(operand=="ch")return 1;
+		if(operand=="dl")return 1;
+		if(operand=="dh")return 1;
+		if(operand=="r8b")return 1;
+		if(operand=="r9b")return 1;
+		if(operand=="r10b")return 1;
+		if(operand=="r11b")return 1;
+		if(operand=="r12b")return 1;
+		if(operand=="r13b")return 1;
+		if(operand=="r14b")return 1;
+		if(operand=="r15b")return 1;
+
+		throw compiler_error(st,"unknown register '"+operand+"'");
+	}
 	inline string get_register_operand_for_size(const statement&st,const string&operand,const size_t size)const{ // ? sort of ugly
 		if(operand=="rax"){
 			switch(size){
@@ -710,7 +756,7 @@ public:
 			case 4:return"eax";
 			case 2:return"ax";
 			case 1:return"al";
-			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand '"+operand+"'");
 			}
 		}
 		if(operand=="rbx"){
@@ -719,7 +765,7 @@ public:
 			case 4:return"ebx";
 			case 2:return"bx";
 			case 1:return"bl";
-			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register '"+operand+"'");
 			}
 		}
 		if(operand=="rcx"){
@@ -728,7 +774,7 @@ public:
 			case 4:return"ecx";
 			case 2:return"cx";
 			case 1:return"cl";
-			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register '"+operand+"'");
 			}
 		}
 		if(operand=="rdx"){
@@ -737,7 +783,7 @@ public:
 			case 4:return"edx";
 			case 2:return"dx";
 			case 1:return"dl";
-			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register '"+operand+"'");
 			}
 		}
 		if(operand=="rbp"){
@@ -745,7 +791,7 @@ public:
 			case 8:return"rbp";
 			case 4:return"ebp";
 			case 2:return"bp";
-			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register '"+operand+"'");
 			}
 		}
 		if(operand=="rsi"){
@@ -753,7 +799,7 @@ public:
 			case 8:return"rsi";
 			case 4:return"esi";
 			case 2:return"si";
-			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register '"+operand+"'");
 			}
 		}
 		if(operand=="rdi"){
@@ -761,7 +807,7 @@ public:
 			case 8:return"rdi";
 			case 4:return"edi";
 			case 2:return"di";
-			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register '"+operand+"'");
 			}
 		}
 		if(operand=="rsp"){
@@ -769,10 +815,10 @@ public:
 			case 8:return"rsp";
 			case 4:return"esp";
 			case 2:return"sp";
-			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+			default:throw compiler_error(st,"illegal size "+to_string(size)+" for register '"+operand+"'");
 			}
 		}
-		regex rx{R"(r(\d\d?)"};
+		regex rx{R"(r(\d+))"};
 		smatch match;
 		if(!regex_search(operand,match,rx)){
 			throw compiler_error(st,"unknown register "+operand);
@@ -783,10 +829,10 @@ public:
 		case 4:return"r"+rnbr+"d";
 		case 2:return"r"+rnbr+"w";
 		case 1:return"r"+rnbr+"b";
-		default:throw compiler_error(st,"illegal size "+to_string(size)+" for register operand "+operand);
+		default:throw compiler_error(st,"illegal size "+to_string(size)+" for register '"+operand+"'");
 		}
 
-		throw compiler_error(st,"unknown register operand "+operand);
+		throw compiler_error(st,"unknown register '"+operand+"'");
 	}
 	inline void asm_push(const statement&st,ostream&os,const size_t indnt,const string&operand){
 		indent(os,indnt);os<<"push "<<operand<<endl;

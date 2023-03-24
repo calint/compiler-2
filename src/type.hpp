@@ -36,12 +36,24 @@ public:
 	}
 
 	inline const string accessor(const token&tk,const vector<string>&path,const int stack_idx_base)const{
-		if(path.size()==1)
-			return"qword[rbp"+string{stack_idx_base>0?"+":""}+to_string(stack_idx_base)+"]";
-
-		const size_t offset=field_offset(tk,path);
+		const pair<size_t,size_t>res{field_size_and_offset(tk,path)};
+		const size_t offset{res.second};
+		const size_t fldsize{res.first};
 		const int stack_idx=stack_idx_base+int(offset);
-		return"qword[rbp"+string{stack_idx>0?"+":""}+to_string(stack_idx)+"]";
+
+		const string&memsize{get_memory_operand_for_size(tk,fldsize)};
+
+		return memsize+"[rbp"+string{stack_idx>0?"+":""}+to_string(stack_idx)+"]";
+	}
+
+	inline string get_memory_operand_for_size(const token&tk,const size_t size)const{
+		switch(size){
+		case 8:return"qword";
+		case 4:return"dword";
+		case 2:return"word";
+		case 1:return"byte";
+		default:throw compiler_error(tk,"illegal size for memory operand: "+to_string(size));
+		}
 	}
 
 	inline size_t size()const{return size_;}
@@ -55,17 +67,28 @@ public:
 	inline bool is_built_in()const{return is_built_in_;}
 
 private:
-	inline size_t field_offset(const token&tk,const vector<string>&path)const{
+	inline pair<size_t,size_t>field_size_and_offset(const token&tk,const vector<string>&path)const{
+		if(path.size()==1){
+			// path contains only a reference to the variable
+			// find first primitive type
+			const type*t{this};
+			while(true){
+				if(t->fields_.empty())
+					return{t->size_,0};
+				t=&t->fields_[0].tp;
+			}
+		}
 		const type*tp{this};
 		size_t offset{0};
 		size_t path_idx{1};
 		while(true){
 			if(path_idx==path.size())
-				return offset;
+				return{tp->fields_.empty()?size_:tp->fields_[0].tp.size_,offset};
+
 			const type_field&fld=tp->field(tk,path[path_idx]);
 			offset+=fld.offset;
 			if(fld.tp.is_built_in_){
-				return offset;
+				return{fld.tp.size_,offset};
 			}
 			tp=&fld.tp;
 			path_idx++;
