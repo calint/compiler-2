@@ -1,0 +1,12 @@
+cmovz - Move if zero
+cmovnz - Move if not zero
+cmovb - Move if below (unsigned)
+cmovnb - Move if not below (unsigned)
+cmovbe - Move if below or equal (unsigned)
+cmova - Move if above (unsigned)
+cmovs - Move if sign
+cmovns - Move if not sign
+cmovp - Move if parity even
+cmovnp - Move if parity odd
+cmovl - Move if less (signed)
+cmovnl - Move if not less (signed)
