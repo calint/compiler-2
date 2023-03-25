@@ -159,6 +159,10 @@ public:
 				// function returns value in rax, copy return value to dst
 				get_unary_ops().compile(tc,os,indent,"rax");
 				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dst,false)};
+				const type&return_type{tc.get_type(*this,func.get_return_type_str())};
+				if(return_type.size()>ir.tp.size())
+					throw compiler_error(*this,"return type '"+func.get_return_type_str()+"' would be truncated when copied to '"+ir.tp.name()+"'");
+
 				tc.asm_cmd(*this,os,indent,"mov",ir.id,"rax");
 			}
 			return;

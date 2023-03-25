@@ -4,14 +4,14 @@
 stage 4
 [ ] handle constants when deducing operand size
 [ ] specify whether ok for an op to truncate value instead of only exception
-[ ] function argument types
+[x] function argument types
 [o] built-in types
 [ ]   var b:bool=true
 [x]   var c:byte=0
 [x]   var c:word=0
 [x]   var d:dword=0
 [x]   var i:qword=0   var i=0  qword is default
-[ ]   var x=c+w+d gives error, not matching types, no implicit conversion
+[x]   var x=c+w+d gives error, not matching types, no implicit conversion
 [ ]   var x=qword(c)+quad(w)+quad(d)
 [ ]   var c=i gives error, source type size is larger than destination
 [x] user defined types

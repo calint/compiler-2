@@ -181,9 +181,9 @@ public:
 
 	inline bool is_inline()const{return not inline_tk_.is_empty();}
 
-private:
 	inline const string&get_return_type_str()const{return return_type_str;}
 
+private:
 	token name_;
 	vector<stmt_def_func_param>params_;
 	vector<token>returns_;

@@ -24,6 +24,10 @@ func f5(i:byte):res:byte{
     res=-i*4
 }
 
+func inline f6(i:byte):res:qword{
+    res=-i
+}
+
 func inline main{
     var q=f1(1)
     if not q=-1 exit(1)
@@ -43,10 +47,19 @@ func inline main{
     if not d=-9 exit(4)
 
     q=f2(qd)
-    if not q=-9 exit(0)
-    
-    b=f2(qd)
-    if not b=-9 exit(0)
+    if not q=-8 exit(5)
 
+    b=f6(b)
+    if not b=4 exit(6)
+
+    w=f6(b)
+    if not w=-4 exit(7)
+
+    d=f6(b)
+    if not d=-4 exit(8)
+
+    q=f6(b)
+    if not q=-4 exit(8)
+    
     exit(0)
 }
