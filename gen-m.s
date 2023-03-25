@@ -149,65 +149,22 @@ main:
        syscall
      exit_50_17_end:
    if_50_5_end:
-     neg byte[rbp-24]
+     movsx r15,byte[rbp-24]
+     mov qword[rbp-8],r15
+     neg qword[rbp-8]
    f6_52_7_end:
    if_53_8:
    cmp_53_8:
-   cmp byte[rbp-24],4
+   cmp qword[rbp-8],4
    je if_53_5_end
    jmp if_53_8_code
    if_53_8_code:
-       mov rdi,6
+       mov rdi,8
        mov rax,60
        syscall
      exit_53_16_end:
    if_53_5_end:
-     movsx r15w,byte[rbp-24]
-     mov word[rbp-26],r15w
-     neg word[rbp-26]
-   f6_55_7_end:
-   if_56_8:
-   cmp_56_8:
-   cmp word[rbp-26],-4
-   je if_56_5_end
-   jmp if_56_8_code
-   if_56_8_code:
-       mov rdi,7
-       mov rax,60
-       syscall
-     exit_56_17_end:
-   if_56_5_end:
-     movsx r15d,byte[rbp-24]
-     mov dword[rbp-30],r15d
-     neg dword[rbp-30]
-   f6_58_7_end:
-   if_59_8:
-   cmp_59_8:
-   cmp dword[rbp-30],-4
-   je if_59_5_end
-   jmp if_59_8_code
-   if_59_8_code:
-       mov rdi,8
-       mov rax,60
-       syscall
-     exit_59_17_end:
-   if_59_5_end:
-     movsx r15,byte[rbp-24]
-     mov qword[rbp-8],r15
-     neg qword[rbp-8]
-   f6_61_7_end:
-   if_62_8:
-   cmp_62_8:
-   cmp qword[rbp-8],-4
-   je if_62_5_end
-   jmp if_62_8_code
-   if_62_8_code:
-       mov rdi,8
-       mov rax,60
-       syscall
-     exit_62_17_end:
-   if_62_5_end:
      mov rdi,0
      mov rax,60
      syscall
-   exit_64_5_end:
+   exit_55_5_end:

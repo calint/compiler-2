@@ -195,6 +195,12 @@ public:
 		if(not dst.empty()){
 			if(func.returns().empty())
 				throw compiler_error(*this,"cannot assign from function without return");
+
+			const type&return_type{tc.get_type(*this,func.get_return_type_str())};
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dst,false)};
+			if(ir.tp.size()<return_type.size())
+				throw compiler_error(*this,"return type '"+func.get_return_type_str()+"' would be truncated when copied to '"+ir.tp.name()+"'");
+
 			// alias 'from' identifier to 'dst' identifier
 			const string&from{func.returns()[0].name()};
 			const string&to{dst};

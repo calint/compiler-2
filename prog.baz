@@ -49,17 +49,8 @@ func inline main{
     q=f2(qd)
     if not q=-8 exit(5)
 
-    b=f6(b)
-    if not b=4 exit(6)
-
-    w=f6(b)
-    if not w=-4 exit(7)
-
-    d=f6(b)
-    if not d=-4 exit(8)
-
     q=f6(b)
-    if not q=-4 exit(8)
+    if not q=4 exit(8)
     
     exit(0)
 }
