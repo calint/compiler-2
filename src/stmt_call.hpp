@@ -85,7 +85,7 @@ public:
 //			if(dst_resolved.tp.name()!=return_type.name())
 //				throw compiler_error(*this,"return type '"+return_type.name()+"' does not match the destination type '"+dst_resolved.tp.name()+"'");
 			if(dst_resolved.tp.size()<return_type.size())
-				throw compiler_error(*this,"return type '"+func.get_return_type_str()+"' would be truncated when copied to '"+dst_resolved.tp.name()+"'");
+				throw compiler_error(*this,"return type '"+func.get_return_type_str()+"' would be truncated when copied to '"+dst+"' of type '"+dst_resolved.tp.name()+"'");
 		}
 
 		if(not func.is_inline()){
