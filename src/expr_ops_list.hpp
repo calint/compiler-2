@@ -189,6 +189,12 @@ public:
 		return uops_;
 	}
 
+	inline virtual const type&get_type(toc&tc)const override{
+		assert(not exps_.empty());
+		return exps_[0]->get_type(tc);
+	}
+
+
 private:
 	static constexpr char initial_precedence{7}; // higher than the highest precedence
 	inline static char precedence_for_op(const char ch){

@@ -104,7 +104,7 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
-		tc.add_func(*this,name_.name(),this);//? in constructor for forward ref
+		tc.add_func(*this,name_.name(),"qword",this); // ! implement
 		if(is_inline())
 			return;
 		
@@ -116,9 +116,8 @@ public:
 		// return binding
 		if(not returns().empty()){
 			const string&nm{returns()[0].name()};
-			const type&ret_type{tc.get_type(*this,toc::default_type)};
-			tc.add_var(*this,os,indent+1,nm,ret_type,false); // ? var type
-//			tc.add_alias(from,"rax");
+			const type&ret_type{tc.get_type(*this,toc::default_type)}; // ? var type
+			tc.add_var(*this,os,indent+1,nm,ret_type,false);
 		}
 
 		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[return address]
@@ -129,18 +128,20 @@ public:
 		size_t stk_ix{2<<3}; // skip [rbp] and [return address] on stack
 		for(size_t i=0;i<n;i++){
 			const stmt_def_func_param&pm{params_[i]};
-			const type&arg_type{tc.get_type(pm,toc::default_type)}; // ? var type
+			const type&arg_type{pm.get_type(tc)};
 			const string&pm_nm{pm.name()};
 			// (i+2)<<3 ?
 			// stack after push rbp is ...,[arg n],...[arg 1],[return address],[rbp],
 			const string&reg{pm.get_register_or_empty()};
 			if(reg.empty()){
-//				toc::indent(os,indent_level+1,true);os<<pm_nm<<": rsp+"<<(stk_ix<<3)<<endl;
-				tc.add_func_arg(*this,os,indent+1,pm_nm,arg_type,int(stk_ix)); // ? var type
-				stk_ix+=arg_type.size();
+				tc.add_func_arg(*this,os,indent+1,pm_nm,arg_type,int(stk_ix));
+//				stk_ix+=arg_type.size();
+				// only 64 bits values on the stack
+				stk_ix+=toc::default_type_size;
 			}else{
 				toc::indent(os,indent+1,true);os<<pm_nm<<": "<<reg<<endl;
 				tc.alloc_named_register_or_break(pm,os,indent+1,reg);
+				// ! check if arg_type fits in register
 				allocated_named_registers.push_back(reg);
 				tc.add_alias(pm_nm,reg);
 			}

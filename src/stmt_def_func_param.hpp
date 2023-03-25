@@ -52,6 +52,15 @@ public:
 		return"";
 	}
 
+	inline virtual const type&get_type(toc&tc)const override{
+		for(const token&kw:keywords()){
+			if(kw.name().find("reg_")==0)
+				continue;
+			return tc.get_type(*this,kw.name());
+		}
+		return tc.get_type(*this,toc::default_type);
+	}
+
 private:
 	vector<token>keywords_;
 };

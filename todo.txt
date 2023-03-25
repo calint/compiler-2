@@ -1,7 +1,9 @@
 [ ] clean-up: consistent variable names
 [ ] review the the declaration of default move,copy,constructor in every class
+[ ] source location of a character index counts tabs as one character
 stage 4
 [ ] handle constants when deducing operand size
+[ ] specify whether ok for an op to truncate value instead of only exception
 [ ] function argument types
 [o] built-in types
 [ ]   var b:bool=true
@@ -23,6 +25,8 @@ stage 4
       ->type point{x,y}
 [ ] let i=1 creates a constant
 [ ] f(a=1) where argument is a boolean
+[ ] function arguments as references
+[ ] function return written to reference
 [ ] string type
 [ ] var str="hello world"
 [ ] var len=str.len

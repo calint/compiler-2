@@ -16,7 +16,7 @@ public:
 		// add built-in assembler calls
 		vector<string>assem{"mov","syscall"};
 		for(const string&s:assem)
-			tc_.add_func(*this,s,nullptr);
+			tc_.add_func(*this,s,"",nullptr);
 
 		tokenizer t{source};
 		while(true){

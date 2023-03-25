@@ -4,6 +4,7 @@
 #include"unary_ops.hpp"
 
 class toc;
+class type;
 
 class statement{
 public:
@@ -39,9 +40,12 @@ public:
 
 	inline virtual const unary_ops&get_unary_ops()const{return uops_;}
 
-	// inline virtual string as_const()const{return uops_.get_ops_as_string()+token_.name();}
+	inline virtual const string&get_type_str()const{return type_str_;}
+
+	inline virtual const type&get_type(toc&tc)const;
 
 private:
 	token token_;
 	unary_ops uops_;
+	string type_str_;
 };

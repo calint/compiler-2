@@ -101,6 +101,11 @@ inline void unary_ops::compile(toc&tc,ostream&os,size_t indent_level,const strin
 	}
 }
 
+
+inline const type&statement::get_type(toc&tc)const{
+	const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,false)};
+	return ir.tp;
+}
 // opt1
 // example:
 //   jmp cmp_13_26

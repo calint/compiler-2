@@ -113,6 +113,7 @@ struct field_meta final{
 };
 
 struct func_meta final{
+	const string return_type;
 	const stmt_def_func*def{};
 	const token declared_at;
 };
@@ -130,17 +131,17 @@ struct type_meta final{
 };
 
 struct ident_resolved final{
-	enum class type{CONST,VAR,REGISTER,FIELD,IMPLIED};
+	enum class ident_type{CONST,VAR,REGISTER,FIELD,IMPLIED};
 
 	string id;
-	type type{type::CONST};
-	size_t size{};
+	const type&tp;
+	ident_type ident_type{ident_type::CONST};
 
-	inline bool is_const()const{return type==type::CONST;}
-	inline bool is_var()const{return type==type::VAR;}
-	inline bool is_register()const{return type==type::REGISTER;}
-	inline bool is_field()const{return type==type::FIELD;}
-	inline bool is_implied()const{return type==type::IMPLIED;}
+	inline bool is_const()const{return ident_type==ident_type::CONST;}
+	inline bool is_var()const{return ident_type==ident_type::VAR;}
+	inline bool is_register()const{return ident_type==ident_type::REGISTER;}
+	inline bool is_field()const{return ident_type==ident_type::FIELD;}
+	inline bool is_implied()const{return ident_type==ident_type::IMPLIED;}
 };
 
 class baz_ident final{
@@ -190,12 +191,12 @@ public:
 		fields_.put(ident,{f,st.tok(),is_str_field});
 	}
 
-	inline void add_func(const statement&st,const string&ident,const stmt_def_func*ref){
-		if(funcs_.has(ident)){
-			const func_meta&func=funcs_.get(ident);
-			throw compiler_error(st,"function '"+ident+"' already defined at "+source_location_hr(func.declared_at));
+	inline void add_func(const statement&st,const string&name,const string&return_type,const stmt_def_func*ref){
+		if(funcs_.has(name)){
+			const func_meta&func=funcs_.get(name);
+			throw compiler_error(st,"function '"+name+"' already defined at "+source_location_hr(func.declared_at));
 		}
-		funcs_.put(ident,{ref,st.tok()});
+		funcs_.put(name,{return_type,ref,st.tok()});
 	}
 
 	inline const stmt_def_func&get_func_or_break(const statement&st,const string&name)const{
@@ -622,9 +623,6 @@ public:
 					indent(os,indnt);os<<"movsx "<<dst_resolved<<","<<src_resolved<<endl;
 					return;
 				}
-				// cmp rax,byte[b] // ? code path is never reached?
-				indent(os,indnt);os<<op<<" "<<dst_resolved<<","<<src_resolved<<endl;
-				return;
 			}
 			const string&r{alloc_scratch_register(st,os,indnt)};
 			const string&r_sized{get_register_operand_for_size(st,r,dst_size)};
@@ -953,7 +951,7 @@ private:
 			if(must_be_initiated and not var.initiated)
 				throw compiler_error(st,"variable '"+var.name+"' is not initiated");
 			const string&acc=var.tp.accessor(st.tok(),bid.path(),var.stack_idx);
-			return{acc,ident_resolved::type::VAR,var.tp.size()};
+			return{acc,var.tp,ident_resolved::ident_type::VAR};
 		}
 
 		// is 'id' a register?
@@ -961,7 +959,7 @@ private:
 			if(must_be_initiated and not is_register_initiated(id))
 				throw compiler_error(st,"register '"+id+"' is not initiated");
 
-			return{id,ident_resolved::type::REGISTER,default_type_size}; // ? unary ops?
+			return{id,get_type(st,default_type),ident_resolved::ident_type::REGISTER}; // ? unary ops?
 		}
 
 		// is 'id' a field?
@@ -969,44 +967,38 @@ private:
 		if(fields_.has(id)){
 			const string&after_dot=bid.path().size()<2?"":bid.path()[1]; // ! not correct
 			if(after_dot=="len"){
-				return{id+"."+after_dot,ident_resolved::type::IMPLIED,default_type_size};
+				return{id+"."+after_dot,get_type(st,default_type),ident_resolved::ident_type::IMPLIED};
 			}
 			const field_meta&fm=fields_.get_const_ref(id);
 			if(fm.is_str)
-				return{id,ident_resolved::type::FIELD};
-			return{"qword["+id+"]",ident_resolved::type::FIELD,0};
+				return{id,get_type(st,default_type),ident_resolved::ident_type::FIELD};
+			return{"qword["+id+"]",get_type(st,default_type),ident_resolved::ident_type::FIELD};
 		}
-
-//		// is 'id' an implicit identifier?
-//		// i.e. 'prompt.len' of a string field 'prompt'
-//		if(fields_.has(bid.id_base())){
-//			const string&after_dot=bid.path().empty()?string{""}:bid.path()[1];
-//			if(after_dot=="len"){
-//				return{bid.id(),ident_resolved::type::IMPLIED};
-//			}
-//			throw compiler_error(st.tok(),"unknown implicit field constant '"+id+"'");
-//		}
-
 
 		char*ep;
 		strtol(id.c_str(),&ep,10); // return ignored
 		if(!*ep)
-			return{id,ident_resolved::type::CONST,default_type_size};
+			return{id,get_type(st,default_type),ident_resolved::ident_type::CONST};
 
 		if(id.find("0x")==0){ // hex
 			strtol(id.c_str()+2,&ep,16); // return ignored
 			if(!*ep)
-				return{id,ident_resolved::type::CONST,default_type_size};
+				return{id,get_type(st,default_type),ident_resolved::ident_type::CONST};
 		}
 
 		if(id.find("0b")==0){ // binary
 			strtol(id.c_str()+2,&ep,2); // return ignored
 			if(!*ep)
-				return{id,ident_resolved::type::CONST,default_type_size};
+				return{id,get_type(st,default_type),ident_resolved::ident_type::CONST};
+		}
+
+		if(funcs_.has(id)){
+			const func_meta&func{funcs_.get_const_ref(id)};
+			return{id,get_type(st,func.return_type),ident_resolved::ident_type::CONST};
 		}
 
 		// not resolved, return empty answer
-		return{"",ident_resolved::type::CONST,0};
+		return{"",get_type(st,default_type),ident_resolved::ident_type::CONST};
 	}
 
 	inline void check_usage(){

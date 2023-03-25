@@ -77,6 +77,10 @@ public:
 			while(i--){
 				const expr_ops_list&arg{args_[i]};
 				const stmt_def_func_param&param{func.param(i)};
+				const type&arg_type=arg.get_type(tc);
+				const type&param_type=param.get_type(tc);
+				if(arg_type.name()!=param_type.name())
+					throw compiler_error(arg,"argument "+to_string(i+1)+" of type '"+arg_type.name()+"' does not match parameter '"+param_type.name()+"'");
 				// is the argument passed through a register?
 				const string&arg_reg=param.get_register_or_empty();
 				bool argument_passed_in_register{not arg_reg.empty()};
@@ -118,7 +122,16 @@ public:
 						tc.asm_push(arg,os,indent,arg.get_unary_ops().get_ops_as_string()+ir.id);
 					}else{
 						if(arg.get_unary_ops().is_empty()){
-							tc.asm_push(arg,os,indent,ir.id);
+							if(ir.tp.size()==toc::default_type_size){
+								tc.asm_push(arg,os,indent,ir.id);
+							}else{
+								// value to be pushed is not a 64 bit value
+								// push can only be done with 64 or 16 bits values
+								const string&r{tc.alloc_scratch_register(arg,os,indent)};
+								tc.asm_cmd(arg, os, indent,"mov",r,ir.id);
+								tc.asm_push(arg,os,indent,r);
+								tc.free_scratch_register(os,indent,r);
+							}
 						}else{
 							const string&r{tc.alloc_scratch_register(arg,os,indent)};
 							tc.asm_cmd(arg,os,indent,"mov",r,ir.id);
@@ -189,6 +202,10 @@ public:
 		for(const auto&arg:args_){
 			const stmt_def_func_param&param{func.param(i)};
 			i++;
+			const type&arg_type=arg.get_type(tc);
+			const type&param_type=param.get_type(tc);
+			if(arg_type.name()!=param_type.name())
+				throw compiler_error(arg,"argument "+to_string(i)+" of type '"+arg_type.name()+"' does not match parameter '"+param_type.name()+"'");
 			// does the parameter want the value passed through a register?
 			string arg_reg{param.get_register_or_empty()};
 			if(not arg_reg.empty()){
