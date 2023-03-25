@@ -879,8 +879,9 @@ public:
 			os<<"  ";
 	}
 
-	inline static constexpr const char*default_type{"qword"};
-	inline static constexpr size_t default_type_size{8};
+//	inline static constexpr const char*default_type{"qword"};
+	inline static const char*default_type_str{"qword"};
+	inline static const size_t default_type_size{8};
 
 private:
 	inline pair<string,frame&>get_id_and_frame_for_identifier(const string&name){
@@ -959,7 +960,7 @@ private:
 			if(must_be_initiated and not is_register_initiated(id))
 				throw compiler_error(st,"register '"+id+"' is not initiated");
 
-			return{id,get_type(st,default_type),ident_resolved::ident_type::REGISTER}; // ? unary ops?
+			return{id,get_type(st,default_type_str),ident_resolved::ident_type::REGISTER}; // ? unary ops?
 		}
 
 		// is 'id' a field?
@@ -967,29 +968,29 @@ private:
 		if(fields_.has(id)){
 			const string&after_dot=bid.path().size()<2?"":bid.path()[1]; // ! not correct
 			if(after_dot=="len"){
-				return{id+"."+after_dot,get_type(st,default_type),ident_resolved::ident_type::IMPLIED};
+				return{id+"."+after_dot,get_type(st,default_type_str),ident_resolved::ident_type::IMPLIED};
 			}
 			const field_meta&fm=fields_.get_const_ref(id);
 			if(fm.is_str)
-				return{id,get_type(st,default_type),ident_resolved::ident_type::FIELD};
-			return{"qword["+id+"]",get_type(st,default_type),ident_resolved::ident_type::FIELD};
+				return{id,get_type(st,default_type_str),ident_resolved::ident_type::FIELD};
+			return{"qword["+id+"]",get_type(st,default_type_str),ident_resolved::ident_type::FIELD};
 		}
 
 		char*ep;
 		strtol(id.c_str(),&ep,10); // return ignored
 		if(!*ep)
-			return{id,get_type(st,default_type),ident_resolved::ident_type::CONST};
+			return{id,get_type(st,default_type_str),ident_resolved::ident_type::CONST};
 
 		if(id.find("0x")==0){ // hex
 			strtol(id.c_str()+2,&ep,16); // return ignored
 			if(!*ep)
-				return{id,get_type(st,default_type),ident_resolved::ident_type::CONST};
+				return{id,get_type(st,default_type_str),ident_resolved::ident_type::CONST};
 		}
 
 		if(id.find("0b")==0){ // binary
 			strtol(id.c_str()+2,&ep,2); // return ignored
 			if(!*ep)
-				return{id,get_type(st,default_type),ident_resolved::ident_type::CONST};
+				return{id,get_type(st,default_type_str),ident_resolved::ident_type::CONST};
 		}
 
 		if(funcs_.has(id)){
@@ -998,7 +999,7 @@ private:
 		}
 
 		// not resolved, return empty answer
-		return{"",get_type(st,default_type),ident_resolved::ident_type::CONST};
+		return{"",get_type(st,default_type_str),ident_resolved::ident_type::CONST};
 	}
 
 	inline void check_usage(){

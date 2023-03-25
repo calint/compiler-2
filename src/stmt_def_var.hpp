@@ -29,7 +29,7 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		tc.source_comment(*this,os,indent);
-		const type&tp{tc.get_type(*this,type_.name().empty()?toc::default_type:type_.name())}; // ? magic word
+		const type&tp{tc.get_type(*this,type_.name().empty()?toc::default_type_str:type_.name())}; // ? magic word
 		tc.add_var(*this,os,indent,name_.name(),tp,false);
 		initial_value_.compile(tc,os,indent,name_.name());
 	}

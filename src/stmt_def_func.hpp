@@ -30,9 +30,14 @@ public:
 		if(t.is_next_char(':')){// returns
 			while(true){
 				returns_.emplace_back(t.next_token());
-				if(t.is_next_char(','))
+				if(t.is_next_char(':'))
 					continue;
 				break;
+			}
+			if(returns_.size()>1){
+				return_type_str=returns_[1].name();
+			}else{
+				return_type_str=string{toc::default_type_str};
 			}
 		}
 		code_={t};
@@ -66,7 +71,7 @@ public:
 			for(const token&t:returns_){
 				t.source_to(os);
 				if(i++!=n)
-					os<<",";
+					os<<":";
 			}
 		}
 		code_.source_to(os);
@@ -93,7 +98,7 @@ public:
 			for(const token&t:returns_){
 				t.source_to(ss);
 				if(i++!=n)
-					ss<<",";
+					ss<<":";
 			}
 		}
 		ss<<endl;
@@ -104,7 +109,7 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
-		tc.add_func(*this,name_.name(),"qword",this); // ! implement
+		tc.add_func(*this,name_.name(),get_return_type_str(),this); // ! implement
 		if(is_inline())
 			return;
 		
@@ -116,7 +121,7 @@ public:
 		// return binding
 		if(not returns().empty()){
 			const string&nm{returns()[0].name()};
-			const type&ret_type{tc.get_type(*this,toc::default_type)}; // ? var type
+			const type&ret_type{tc.get_type(*this,get_return_type_str())}; // ? var type
 			tc.add_var(*this,os,indent+1,nm,ret_type,false);
 		}
 
@@ -177,10 +182,13 @@ public:
 	inline bool is_inline()const{return not inline_tk_.is_empty();}
 
 private:
+	inline const string&get_return_type_str()const{return return_type_str;}
+
 	token name_;
 	vector<stmt_def_func_param>params_;
 	vector<token>returns_;
 	stmt_block code_;
 	token inline_tk_;
+	string return_type_str;
 	bool no_args_{};
 };

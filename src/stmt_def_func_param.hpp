@@ -58,7 +58,7 @@ public:
 				continue;
 			return tc.get_type(*this,kw.name());
 		}
-		return tc.get_type(*this,toc::default_type);
+		return tc.get_type(*this,toc::default_type_str);
 	}
 
 private:

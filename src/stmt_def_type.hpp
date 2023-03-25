@@ -86,7 +86,7 @@ public:
 			type_.set_size(toc::default_type_size);
 		}else{
 			for(const stmt_def_type_field&fld:fields_){
-				const type&tp{tc.get_type(fld,fld.type_str().empty()?toc::default_type:fld.type_str())};
+				const type&tp{tc.get_type(fld,fld.type_str().empty()?toc::default_type_str:fld.type_str())};
 				type_.add_field(fld.tok(),fld.name(),tp);
 			}
 		}
