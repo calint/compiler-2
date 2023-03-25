@@ -880,7 +880,7 @@ public:
 	}
 
 //	inline static constexpr const char*default_type{"qword"};
-	inline static const char*default_type_str{"qword"};
+	inline static const char*default_type_str{"i64"};
 	inline static const size_t default_type_size{8};
 
 private:

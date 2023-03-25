@@ -36,7 +36,7 @@ f1:
    ret
 
 f2:
-;  f2(i):res:qword 
+;  f2(i):res:i64 
 ;  res: qword[rbp-8]
 ;  i: qword[rbp+16]
    push rbp
@@ -56,7 +56,7 @@ f2:
    ret
 
 f3:
-;  f3(i:dword):res:dword 
+;  f3(i:i32):res:i32 
 ;  res: dword[rbp-4]
 ;  i: dword[rbp+16]
    push rbp
@@ -76,7 +76,7 @@ f3:
    ret
 
 f4:
-;  f4(i:word):res:word 
+;  f4(i:i16):res:i16 
 ;  res: word[rbp-2]
 ;  i: word[rbp+16]
    push rbp
@@ -96,7 +96,7 @@ f4:
    ret
 
 f5:
-;  f5(i:byte):res:byte 
+;  f5(i:i8):res:i8 
 ;  res: byte[rbp-1]
 ;  i: byte[rbp+16]
    push rbp
@@ -151,36 +151,36 @@ main:
 ;      free rdi
      exit_33_17_end:
    if_33_5_end:
-;  [35:5] var bt:byte=1 
+;  [35:5] var bt:i8=1 
 ;  bt: byte[rbp-9]
 ;  [35:9] bt=1 
-;  [35:17] 1 
-;  [35:17] bt=1 
+;  [35:15] 1 
+;  [35:15] bt=1 
    mov byte[rbp-9],1
-;  [36:5] var wd:word=2 
+;  [36:5] var wd:i16=2 
 ;  wd: word[rbp-11]
 ;  [36:9] wd=2 
-;  [36:17] 2 
-;  [36:17] wd=2 
+;  [36:16] 2 
+;  [36:16] wd=2 
    mov word[rbp-11],2
-;  [37:5] var dd:dword=3 
+;  [37:5] var dd:i32=3 
 ;  dd: dword[rbp-15]
 ;  [37:9] dd=3 
-;  [37:18] 3 
-;  [37:18] dd=3 
+;  [37:16] 3 
+;  [37:16] dd=3 
    mov dword[rbp-15],3
-;  [38:5] var qd:qword=4 
+;  [38:5] var qd:i64=4 
 ;  qd: qword[rbp-23]
 ;  [38:9] qd=4 
-;  [38:18] 4 
-;  [38:18] qd=4 
+;  [38:16] 4 
+;  [38:16] qd=4 
    mov qword[rbp-23],4
-;  [40:5] var b:byte=f5(bt)
+;  [40:5] var b:i8=f5(bt)
 ;  b: byte[rbp-24]
 ;  [40:9] b=f5(bt)
-;  [40:16] f5(bt)
-;  [40:16] b=f5(bt)
-;  [40:16] f5(bt)
+;  [40:14] f5(bt)
+;  [40:14] b=f5(bt)
+;  [40:14] f5(bt)
    sub rsp,24
 ;  alloc r15
    movsx r15,byte[rbp-9]
@@ -213,12 +213,12 @@ main:
 ;      free rdi
      exit_41_17_end:
    if_41_5_end:
-;  [43:5] var w:word=f4(wd)
+;  [43:5] var w:i16=f4(wd)
 ;  w: word[rbp-26]
 ;  [43:9] w=f4(wd)
-;  [43:16] f4(wd)
-;  [43:16] w=f4(wd)
-;  [43:16] f4(wd)
+;  [43:15] f4(wd)
+;  [43:15] w=f4(wd)
+;  [43:15] f4(wd)
    sub rsp,26
 ;  alloc r15
    movsx r15,word[rbp-11]
@@ -251,12 +251,12 @@ main:
 ;      free rdi
      exit_44_17_end:
    if_44_5_end:
-;  [46:5] var d:dword=f3(dd)
+;  [46:5] var d:i32=f3(dd)
 ;  d: dword[rbp-30]
 ;  [46:9] d=f3(dd)
-;  [46:17] f3(dd)
-;  [46:17] d=f3(dd)
-;  [46:17] f3(dd)
+;  [46:15] f3(dd)
+;  [46:15] d=f3(dd)
+;  [46:15] f3(dd)
    sub rsp,30
 ;  alloc r15
    movsx r15,dword[rbp-15]
@@ -326,7 +326,7 @@ main:
 ;  [52:7] f6(b)
 ;  [52:7] q=f6(b)
 ;  [52:7] f6(b)
-;  f6(i:byte):res:qword 
+;  f6(i:i8):res:i64 
 ;    inline: 52_7
 ;    alias res -> q
 ;    alias i -> b

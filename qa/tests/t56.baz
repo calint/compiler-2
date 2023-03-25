@@ -4,19 +4,19 @@ func inline exit(v:reg_rdi){
 	syscall
 }
 
-func f1(b:byte,w:word,d:dword,q:qword):res{
+func f1(b:i8,w:i16,d:i32,q:i64):res{
 	res=b+w+d+q
 }
 
-func inline f2(b:byte,w:word,d:dword,q:qword):res{
+func inline f2(b:i8,w:i16,d:i32,q:i64):res{
 	res=b+w+d+q
 }
 
 func inline main{
-	var b:byte=-1
-	var w:word=-2
-	var d:dword=-3
-	var q:qword=-4
+	var b:i8=-1
+	var w:i16=-2
+	var d:i32=-3
+	var q:i64=-4
 
 	var r=f1(b,w,d,q)
 	if not r=-10 exit(1)

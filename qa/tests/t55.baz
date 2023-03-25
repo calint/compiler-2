@@ -5,14 +5,14 @@ func inline exit(v:reg_rdi){
 }
 
 type vector{x,y}
-type object{pos:vector,vel:vector,color:byte,wrd:word,dwrd:dword}
+type object{pos:vector,vel:vector,color:i8,wrd:i16,dwrd:i32}
 
 func inline main{
 	var obj:object=1
 	if not obj.pos.x=1 exit(1)
 
-#	var bt1:byte=obj.pos.x  # truncation error
-	var bt2:byte=-2
+#	var bt1:i8=obj.pos.x  # truncation error
+	var bt2:i8=-2
 	obj.pos.y=bt2
 	
 	if not obj.pos.y=-2 exit(4)
@@ -27,7 +27,7 @@ func inline main{
 	bt2=obj.color
 	if not bt2=obj.color exit(8)
 
-	var w:word=-1
+	var w:i16=-1
 	obj.wrd=w
 	if not obj.wrd=-1 exit(9)
 	if not obj.wrd=w exit(10)
@@ -39,7 +39,7 @@ func inline main{
 	if not obj.wrd=-2 exit(9)
 	if not obj.wrd=bt2 exit(10)
 
-	var dw:dword=-3
+	var dw:i32=-3
 	obj.dwrd=dw
 	if not obj.dwrd=-3 exit(11)
 	if not obj.dwrd=dw exit(12)
