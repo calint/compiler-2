@@ -1,14 +1,21 @@
 #pragma once
 
 #include"expr_ops_list.hpp"
+#include"stmt_if_bool_ops_list.hpp"
 
 class stmt_assign_var final:public statement{
 public:
 	inline stmt_assign_var(token name,token type,tokenizer&t):
 		statement{move(name)},
-		type_{move(type)},
-		eols_{t}
-	{}
+		type_{move(type)}
+	{
+		if(type_.is_name(toc::bool_type_str)){
+			eols_=stmt_if_bool_ops_list{t};
+			return;
+		}
+
+		eols_=expr_ops_list{t};
+	}
 
 	inline stmt_assign_var()=default;
 	inline stmt_assign_var(const stmt_assign_var&)=default;
@@ -19,7 +26,11 @@ public:
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		os<<"=";
-		eols_.source_to(os);
+		if(eols_.index()==0){
+			get<expr_ops_list>(eols_).source_to(os);
+		}else{
+			get<stmt_if_bool_ops_list>(eols_).source_to(os);
+		}
 	}
 
 	inline void source_def_to(ostream&os)const{
@@ -29,7 +40,11 @@ public:
 			type_.source_to(os);
 		}
 		os<<"=";
-		eols_.source_to(os);
+		if(eols_.index()==0){
+			get<expr_ops_list>(eols_).source_to(os);
+		}else{
+			get<stmt_if_bool_ops_list>(eols_).source_to(os);
+		}
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
@@ -38,31 +53,53 @@ public:
 		// for the sake of clearer error message make sure identifier can be resolved
 		const ident_resolved&dest_resolved{tc.resolve_ident_to_nasm(*this,false)};
 
-		// compare generated instructions with and without allocated scratch register
-		// select the method that produces least instructions
+		if(eols_.index()==0){
+			const expr_ops_list&eol{get<expr_ops_list>(eols_)};
 
-		// try without scratch register
-		stringstream ss1;
-		eols_.compile(tc,ss1,indent,identifier());
+			// compare generated instructions with and without allocated scratch register
+			// select the method that produces least instructions
 
-		// try with scratch register
-		stringstream ss2;
-		const string&reg{tc.alloc_scratch_register(*this,ss2,indent)};
-		eols_.compile(tc,ss2,indent,reg);
-		tc.asm_cmd(*this,ss2,indent,"mov",dest_resolved.id,reg);
-		tc.free_scratch_register(ss2,indent,reg);
+			// try without scratch register
+			stringstream ss1;
+			eol.compile(tc,ss1,indent,identifier());
 
-		// compare instruction count
-		const size_t ss1_count{count_instructions(ss1)};
-		const size_t ss2_count{count_instructions(ss2)};
+			// try with scratch register
+			stringstream ss2;
+			const string&reg{tc.alloc_scratch_register(*this,ss2,indent)};
+			eol.compile(tc,ss2,indent,reg);
+			tc.asm_cmd(*this,ss2,indent,"mov",dest_resolved.id,reg);
+			tc.free_scratch_register(ss2,indent,reg);
 
-		// select version with least instructions
-		if(ss1_count<=ss2_count){
-			os<<ss1.str();
-		}else{
-			os<<ss2.str();
+			// compare instruction count
+			const size_t ss1_count{count_instructions(ss1)};
+			const size_t ss2_count{count_instructions(ss2)};
+
+			// select version with least instructions
+			if(ss1_count<=ss2_count){
+				os<<ss1.str();
+			}else{
+				os<<ss2.str();
+			}
+			tc.set_var_is_initiated(tok().name());
+			return;
 		}
-		tc.set_var_is_initiated(tok().name());
+
+		// bool expression
+		const stmt_if_bool_ops_list&eol{get<stmt_if_bool_ops_list>(eols_)};
+		const string&call_path{tc.get_inline_call_path(tok())};
+		const string&src_loc{tc.source_location_for_label(tok())};
+		const string&postfix{src_loc+(call_path.empty()?"":("_"+call_path))};
+		const string&jmp_to_if_true{"true_"+postfix};
+		const string&jmp_to_if_false{"false_"+postfix};
+		const string&jmp_to_end{"end_"+postfix};
+		eol.compile(tc,os,indent,jmp_to_if_false,jmp_to_if_true,false);
+		tc.asm_label(*this,os,indent,jmp_to_if_true);
+		tc.asm_cmd(*this,os,indent,"mov",dest_resolved.id,"1");
+		tc.asm_jmp(*this,os,indent,jmp_to_end);
+		tc.asm_label(*this,os,indent,jmp_to_if_false);
+		tc.asm_cmd(*this,os,indent,"mov",dest_resolved.id,"0");
+		tc.asm_label(*this,os,indent,jmp_to_end);
+		tc.set_var_is_initiated(dst);
 	}
 
 private:
@@ -79,5 +116,5 @@ private:
 	}
 
 	token type_;
-	expr_ops_list eols_;
+	variant<expr_ops_list,stmt_if_bool_ops_list>eols_;
 };

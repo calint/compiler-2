@@ -1,3 +1,5 @@
+true equ 1
+false equ 0
 section .data
 align 4
 section .bss
@@ -12,159 +14,65 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
-f1:
+foo:
    push rbp
    mov rbp,rsp
-   mov r15,qword[rbp+16]
-   mov qword[rbp-8],r15
-   neg qword[rbp-8]
-   mov rax,qword[rbp-8]
-   pop rbp
-   ret
-f2:
-   push rbp
-   mov rbp,rsp
-   mov r15,qword[rbp+16]
-   neg r15
-   imul r15,2
-   mov qword[rbp-8],r15
-   mov rax,qword[rbp-8]
-   pop rbp
-   ret
-f3:
-   push rbp
-   mov rbp,rsp
-   movsx r15,dword[rbp+16]
-   neg r15
-   imul r15,3
-   mov dword[rbp-4],r15d
-   movsx rax,dword[rbp-4]
-   pop rbp
-   ret
-f4:
-   push rbp
-   mov rbp,rsp
-   movsx r15,word[rbp+16]
-   neg r15
-   imul r15,4
-   mov word[rbp-2],r15w
-   movsx rax,word[rbp-2]
-   pop rbp
-   ret
-f5:
-   push rbp
-   mov rbp,rsp
-   movsx r15,byte[rbp+16]
-   neg r15
-   imul r15,4
-   mov byte[rbp-1],r15b
+   if_8_8:
+   cmp_8_8:
+   cmp byte[rbp+16],0
+   je if_else_8_5
+   jmp if_8_8_code
+   if_8_8_code:
+     mov byte[rbp-1],false
+   jmp if_8_5_end
+   if_else_8_5:
+       mov byte[rbp-1],true
+   if_8_5_end:
    movsx rax,byte[rbp-1]
    pop rbp
    ret
 main:
-   sub rsp,8
-   push 1
-   call f1
-   add rsp,16
-   mov qword[rbp-8],rax
-   if_33_8:
-   cmp_33_8:
-   cmp qword[rbp-8],-1
-   je if_33_5_end
-   jmp if_33_8_code
-   if_33_8_code:
+   mov byte[rbp-1],1
+   mov byte[rbp-2],2
+   cmp_15_17:
+   mov r15b,byte[rbp-2]
+   cmp byte[rbp-1],r15b
+   jge false_15_9
+   jmp true_15_9
+   true_15_9:
+   mov byte[rbp-3],1
+   jmp end_15_9
+   false_15_9:
+   mov byte[rbp-3],0
+   end_15_9:
+   cmp_17_17:
+     sub rsp,4
+     movsx r14,byte[rbp-3]
+     push r14
+     call foo
+     add rsp,12
+     mov r15,rax
+   cmp r15,0
+   je false_17_9
+   jmp true_17_9
+   true_17_9:
+   mov byte[rbp-4],1
+   jmp end_17_9
+   false_17_9:
+   mov byte[rbp-4],0
+   end_17_9:
+   if_18_8:
+   cmp_18_8:
+   cmp byte[rbp-4],0
+   je if_18_5_end
+   jmp if_18_8_code
+   if_18_8_code:
        mov rdi,1
        mov rax,60
        syscall
-     exit_33_17_end:
-   if_33_5_end:
-   mov byte[rbp-9],1
-   mov word[rbp-11],2
-   mov dword[rbp-15],3
-   mov qword[rbp-23],4
-   sub rsp,24
-   movsx r15,byte[rbp-9]
-   push r15
-   call f5
-   add rsp,32
-   mov byte[rbp-24],al
-   if_41_8:
-   cmp_41_8:
-   cmp byte[rbp-24],-4
-   je if_41_5_end
-   jmp if_41_8_code
-   if_41_8_code:
-       mov rdi,2
-       mov rax,60
-       syscall
-     exit_41_17_end:
-   if_41_5_end:
-   sub rsp,26
-   movsx r15,word[rbp-11]
-   push r15
-   call f4
-   add rsp,34
-   mov word[rbp-26],ax
-   if_44_8:
-   cmp_44_8:
-   cmp word[rbp-26],-8
-   je if_44_5_end
-   jmp if_44_8_code
-   if_44_8_code:
-       mov rdi,3
-       mov rax,60
-       syscall
-     exit_44_17_end:
-   if_44_5_end:
-   sub rsp,30
-   movsx r15,dword[rbp-15]
-   push r15
-   call f3
-   add rsp,38
-   mov dword[rbp-30],eax
-   if_47_8:
-   cmp_47_8:
-   cmp dword[rbp-30],-9
-   je if_47_5_end
-   jmp if_47_8_code
-   if_47_8_code:
-       mov rdi,4
-       mov rax,60
-       syscall
-     exit_47_17_end:
-   if_47_5_end:
-   sub rsp,30
-   push qword[rbp-23]
-   call f2
-   add rsp,38
-   mov qword[rbp-8],rax
-   if_50_8:
-   cmp_50_8:
-   cmp qword[rbp-8],-8
-   je if_50_5_end
-   jmp if_50_8_code
-   if_50_8_code:
-       mov rdi,5
-       mov rax,60
-       syscall
-     exit_50_17_end:
-   if_50_5_end:
-     movsx r15,byte[rbp-24]
-     mov qword[rbp-8],r15
-     neg qword[rbp-8]
-   f6_52_7_end:
-   if_53_8:
-   cmp_53_8:
-   cmp qword[rbp-8],4
-   je if_53_5_end
-   jmp if_53_8_code
-   if_53_8_code:
-       mov rdi,8
-       mov rax,60
-       syscall
-     exit_53_16_end:
-   if_53_5_end:
+     exit_18_11_end:
+   if_18_5_end:
      mov rdi,0
      mov rax,60
      syscall
-   exit_57_5_end:
+   exit_26_5_end:

@@ -882,6 +882,8 @@ public:
 //	inline static constexpr const char*default_type{"qword"};
 	inline static const char*default_type_str{"i64"};
 	inline static const size_t default_type_size{8};
+	inline static const char*bool_type_str{"bool"};
+	inline static const size_t bool_type_size{1};
 
 private:
 	inline pair<string,frame&>get_id_and_frame_for_identifier(const string&name){
@@ -997,6 +999,9 @@ private:
 			const func_meta&func{funcs_.get_const_ref(id)};
 			return{id,get_type(st,func.return_type),ident_resolved::ident_type::CONST};
 		}
+
+		if(id=="true"||id=="false")
+			return{id,get_type(st,bool_type_str),ident_resolved::ident_type::CONST};
 
 		// not resolved, return empty answer
 		return{"",get_type(st,default_type_str),ident_resolved::ident_type::CONST};

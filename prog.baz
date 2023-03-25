@@ -4,55 +4,24 @@ func inline exit(v:reg_rdi){
     syscall
 }
 
-func f1(i):res{
-    res=-i
-}
-
-func f2(i):res:i64{
-    res=-i*2
-}
-
-func f3(i:i32):res:i32{
-    res=-i*3
-}
-
-func f4(i:i16):res:i16{
-    res=-i*4
-}
-
-func f5(i:i8):res:i8{
-    res=-i*4
-}
-
-func inline f6(i:i8):res:i64{
-    res=-i
+func foo(b:bool):res:bool{
+    if b res=false else res=true
 }
 
 func inline main{
-    var q=f1(1)
-    if not q=-1 exit(1)
+    var bt1:i8=1
+    var bt2:i8=2
     
-    var bt:i8=1
-    var wd:i16=2
-    var dd:i32=3
-    var qd:i64=4
+    var b1:bool=bt1<bt2
     
-    var b:i8=f5(bt)
-    if not b=-4 exit(2)
-
-    var w:i16=f4(wd)
-    if not w=-8 exit(3)
-
-    var d:i32=f3(dd)
-    if not d=-9 exit(4)
-
-    q=f2(qd)
-    if not q=-8 exit(5)
-
-    q=f6(b)
-    if not q=4 exit(8)
-
-#    b=f6(b) # truncation error
+    var b3:bool=foo(b1)
+    if b3 exit(1)
+    
+#    b3=bt1=1
+#    if not b3 exit(2)
+    
+#    b3=not bt1=1
+#    if b3 exit(3)
     
     exit(0)
 }
