@@ -59,10 +59,34 @@ public:
 		const stmt_def_func&func{tc.get_func_or_break(*this,tok().name())};
 		const string&func_nm{func.name()};
 		
+		// check that the same number of arguments are provided as expected
 		if(func.params().size()!=args_.size())
 			throw compiler_error(*this,"function '"+func_nm+"' expects "+
 				to_string(func.params().size())+" argument"+(func.params().size()==1?"":"s")+
 				" but "+to_string(args_.size())+" "+(args_.size()==1?"is":"are")+" provided");
+
+		// check that argument types match the parameters
+		for(size_t i=0;i<args_.size();i++){
+			const expr_ops_list&arg{args_[i]};
+			const stmt_def_func_param&param{func.param(i)};
+			const type&arg_type=arg.get_type(tc);
+			const type&param_type=param.get_type(tc);
+			if(arg_type.name()!=param_type.name())
+				throw compiler_error(arg,"argument "+to_string(i+1)+" of type '"+arg_type.name()+"' does not match parameter of type '"+param_type.name()+"'");
+		}
+
+		// check that return value matches the type
+		if(not dst.empty()){
+			if(func.returns().empty())
+				throw compiler_error(*this,"cannot assign from function that does not return value");
+
+			const type&return_type{tc.get_type(*this,func.get_return_type_str())};
+			const ident_resolved&dst_resolved{tc.resolve_ident_to_nasm(*this,dst,false)};
+//			if(dst_resolved.tp.name()!=return_type.name())
+//				throw compiler_error(*this,"return type '"+return_type.name()+"' does not match the destination type '"+dst_resolved.tp.name()+"'");
+			if(dst_resolved.tp.size()<return_type.size())
+				throw compiler_error(*this,"return type '"+func.get_return_type_str()+"' would be truncated when copied to '"+dst_resolved.tp.name()+"'");
+		}
 
 		if(not func.is_inline()){
 			// stack is: <base>,
@@ -77,10 +101,6 @@ public:
 			while(i--){
 				const expr_ops_list&arg{args_[i]};
 				const stmt_def_func_param&param{func.param(i)};
-				const type&arg_type=arg.get_type(tc);
-				const type&param_type=param.get_type(tc);
-				if(arg_type.name()!=param_type.name())
-					throw compiler_error(arg,"argument "+to_string(i+1)+" of type '"+arg_type.name()+"' does not match parameter '"+param_type.name()+"'");
 				// is the argument passed through a register?
 				const string&arg_reg=param.get_register_or_empty();
 				bool argument_passed_in_register{not arg_reg.empty()};
@@ -128,7 +148,7 @@ public:
 								// value to be pushed is not a 64 bit value
 								// push can only be done with 64 or 16 bits values
 								const string&r{tc.alloc_scratch_register(arg,os,indent)};
-								tc.asm_cmd(arg, os, indent,"mov",r,ir.id);
+								tc.asm_cmd(arg,os,indent,"mov",r,ir.id);
 								tc.asm_push(arg,os,indent,r);
 								tc.free_scratch_register(os,indent,r);
 							}
@@ -153,16 +173,9 @@ public:
 
 			// handle return value
 			if(not dst.empty()){
-				if(func.returns().empty())
-					throw compiler_error(*this,"function call does not return a value");
-
 				// function returns value in rax, copy return value to dst
 				get_unary_ops().compile(tc,os,indent,"rax");
 				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dst,false)};
-				const type&return_type{tc.get_type(*this,func.get_return_type_str())};
-				if(return_type.size()>ir.tp.size())
-					throw compiler_error(*this,"return type '"+func.get_return_type_str()+"' would be truncated when copied to '"+ir.tp.name()+"'");
-
 				tc.asm_cmd(*this,os,indent,"mov",ir.id,"rax");
 			}
 			return;
@@ -193,14 +206,6 @@ public:
 
 		// if function returns value
 		if(not dst.empty()){
-			if(func.returns().empty())
-				throw compiler_error(*this,"cannot assign from function without return");
-
-			const type&return_type{tc.get_type(*this,func.get_return_type_str())};
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dst,false)};
-			if(ir.tp.size()<return_type.size())
-				throw compiler_error(*this,"return type '"+func.get_return_type_str()+"' would be truncated when copied to '"+ir.tp.name()+"'");
-
 			// alias 'from' identifier to 'dst' identifier
 			const string&from{func.returns()[0].name()};
 			const string&to{dst};
@@ -212,10 +217,6 @@ public:
 		for(const auto&arg:args_){
 			const stmt_def_func_param&param{func.param(i)};
 			i++;
-			const type&arg_type=arg.get_type(tc);
-			const type&param_type=param.get_type(tc);
-			if(arg_type.name()!=param_type.name())
-				throw compiler_error(arg,"argument "+to_string(i)+" of type '"+arg_type.name()+"' does not match parameter '"+param_type.name()+"'");
 			// does the parameter want the value passed through a register?
 			string arg_reg{param.get_register_or_empty()};
 			if(not arg_reg.empty()){

@@ -51,6 +51,8 @@ func inline main{
 
     q=f6(b)
     if not q=4 exit(8)
+
+#    b=f6(b) # truncation error
     
     exit(0)
 }

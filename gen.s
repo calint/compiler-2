@@ -363,9 +363,10 @@ main:
 ;      free rdi
      exit_53_16_end:
    if_53_5_end:
-;  [55:5] exit(0)
+;  [55:1] # b=f6(b) # truncation error 
+;  [57:5] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 55_5
+;    inline: 57_5
 ;    alloc rdi
 ;    alias v -> rdi
      mov rdi,0
@@ -377,7 +378,7 @@ main:
 ;    [4:5] syscall 
      syscall
 ;    free rdi
-   exit_55_5_end:
+   exit_57_5_end:
 
 ; max scratch registers in use: 2
 ;            max frames in use: 5
