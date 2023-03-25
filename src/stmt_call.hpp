@@ -249,38 +249,38 @@ public:
 			}
 
 			// argument is not an expression
-
 			if(arg_reg.empty()){
 				// no register allocated for the argument
 				// alias parameter name to the argument identifier
-				if(not arg.get_unary_ops().is_empty()){
-					const ident_resolved&ir{tc.resolve_ident_to_nasm(arg,true)};
-					const string&sr{tc.alloc_scratch_register(arg,os,indent+1)};
-					allocated_registers_in_order.push_back(sr);
-					allocated_scratch_registers.push_back(sr);
-					tc.asm_cmd(param,os,indent+1,"mov",sr,ir.id);
-					arg.get_unary_ops().compile(tc,os,indent+1,sr);
-					aliases_to_add.emplace_back(param.identifier(),sr);
-					tc.indent(os,indent+1,true);os<<"alias "<<param.identifier()<<" -> "<<sr<<endl;
-				}else{
+				if(arg.get_unary_ops().is_empty()){
 					const string&id=arg.identifier();
 					aliases_to_add.emplace_back(param.identifier(),id);
 					tc.indent(os,indent+1,true);os<<"alias "<<param.identifier()<<" -> "<<id<<endl;
+					continue;
 				}
-			}else{
-				// alias parameter name to the register
-				aliases_to_add.emplace_back(param.identifier(),arg_reg);
-				tc.indent(os,indent+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;
-				// move argument to register
+				// unary ops must be applied
 				const ident_resolved&ir{tc.resolve_ident_to_nasm(arg,true)};
-				if(ir.is_const()){
-					const ident_resolved&arg_r{tc.resolve_ident_to_nasm(arg,true)};
-					tc.asm_cmd(param,os,indent+1,"mov",arg_reg,arg.get_unary_ops().get_ops_as_string()+ir.id);
-				}else{
-					tc.asm_cmd(param,os,indent+1,"mov",arg_reg,ir.id);
-					arg.get_unary_ops().compile(tc,os,indent+1,arg_reg);
-				}
+				const string&sr{tc.alloc_scratch_register(arg,os,indent+1)};
+				allocated_registers_in_order.push_back(sr);
+				allocated_scratch_registers.push_back(sr);
+				tc.asm_cmd(param,os,indent+1,"mov",sr,ir.id);
+				arg.get_unary_ops().compile(tc,os,indent+1,sr);
+				aliases_to_add.emplace_back(param.identifier(),sr);
+				tc.indent(os,indent+1,true);os<<"alias "<<param.identifier()<<" -> "<<sr<<endl;
+				continue;
 			}
+			// alias parameter name to the register
+			aliases_to_add.emplace_back(param.identifier(),arg_reg);
+			tc.indent(os,indent+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;
+			// move argument to register
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(arg,true)};
+			if(ir.is_const()){
+				const ident_resolved&arg_r{tc.resolve_ident_to_nasm(arg,true)};
+				tc.asm_cmd(param,os,indent+1,"mov",arg_reg,arg.get_unary_ops().get_ops_as_string()+ir.id);
+				continue;
+			}
+			tc.asm_cmd(param,os,indent+1,"mov",arg_reg,ir.id);
+			arg.get_unary_ops().compile(tc,os,indent+1,arg_reg);
 		}
 
 		// enter function creating a new scope from which 
