@@ -37,6 +37,7 @@ public:
 				op_=">";
 			}
 		}else{
+			// if a ...
 			is_shorthand_=true;
 			return;
 			// throw compiler_error(*this,"expected boolean operation '=','<','<=','>','>='");
