@@ -5,10 +5,7 @@ public:
 	inline stmt_loop(toc&tc,token tk,tokenizer&t):
 		statement{move(tk)}
 	{
-		// current source location
-		const string&src_loc{tc.source_location_for_label(tok())};
-		// the loop label
-		const string&lbl{"loop_"+src_loc};
+		const string&lbl{"loop_"+tc.source_location_for_label(tok())};
 		tc.enter_loop(lbl);
 		code_={tc,t};
 		tc.exit_loop(lbl);

@@ -5,11 +5,9 @@ false equ 0
 
 section .data
 align 4
-;[7:1] field fld=42 
-fld: dq 42
-;[8:1] field str="hello world" 
-str: db 'hello world'
-str.len equ $-str
+;[1:1] field hello="hello world" 
+hello: db 'hello world'
+hello.len equ $-hello
 
 section .bss
 align 4
@@ -25,421 +23,158 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 
-f:
-;  f() 
-   push rbp
-   mov rbp,rsp
-;  obj: qword[rbp-40]
-;  [14:2] var obj:object=1 
-;  [14:6] obj=1 
-;  [14:17] 1 
-;  [14:17] obj=1 
-   mov qword[rbp-40],1
-   if_15_5:
-;  [15:5] ? not obj.pos.x=1 
-;  [15:5] ? not obj.pos.x=1 
-   cmp_15_5:
-   cmp qword[rbp-40],1
-   je if_15_2_end
-   jmp if_15_5_code
-   if_15_5_code:
-;    [15:21] exit(1)
-;    exit(v:reg_rdi) 
-;      inline: 15_21
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,1
-;      [2:2] mov(rax,60)
-       mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
-       syscall
-;      free rdi
-     exit_15_21_end:
-   if_15_2_end:
-;  [16:2] obj.pos.x=1 
-;  [16:12] 1 
-;  [16:12] obj.pos.x=1 
-   mov qword[rbp-40],1
-;  [17:2] obj.pos.y=2 
-;  [17:12] 2 
-;  [17:12] obj.pos.y=2 
-   mov qword[rbp-32],2
-;  [18:2] obj.vel.x=4 
-;  [18:12] 4 
-;  [18:12] obj.vel.x=4 
-   mov qword[rbp-24],4
-;  [19:2] obj.vel.y=str 
-;  [19:12] str 
-;  [19:12] obj.vel.y=str 
-   mov qword[rbp-16],str
-;  [20:2] obj.color=str.len 
-;  [20:12] str.len 
-;  [20:12] obj.color=str.len 
-   mov qword[rbp-8],str.len
-   if_22_5:
-;  [22:5] ? not fld=42 
-;  [22:5] ? not fld=42 
-   cmp_22_5:
-   cmp qword[fld],42
-   je if_22_2_end
-   jmp if_22_5_code
-   if_22_5_code:
-;    [22:16] exit(2)
-;    exit(v:reg_rdi) 
-;      inline: 22_16
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,2
-;      [2:2] mov(rax,60)
-       mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
-       syscall
-;      free rdi
-     exit_22_16_end:
-   if_22_2_end:
-   if_23_5:
-;  [23:5] ? not obj.pos.x=1 
-;  [23:5] ? not obj.pos.x=1 
-   cmp_23_5:
-   cmp qword[rbp-40],1
-   je if_23_2_end
-   jmp if_23_5_code
-   if_23_5_code:
-;    [23:21] exit(3)
-;    exit(v:reg_rdi) 
-;      inline: 23_21
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,3
-;      [2:2] mov(rax,60)
-       mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
-       syscall
-;      free rdi
-     exit_23_21_end:
-   if_23_2_end:
-   if_24_5:
-;  [24:5] ? not obj.pos.y=2 
-;  [24:5] ? not obj.pos.y=2 
-   cmp_24_5:
-   cmp qword[rbp-32],2
-   je if_24_2_end
-   jmp if_24_5_code
-   if_24_5_code:
-;    [24:21] exit(4)
-;    exit(v:reg_rdi) 
-;      inline: 24_21
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,4
-;      [2:2] mov(rax,60)
-       mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
-       syscall
-;      free rdi
-     exit_24_21_end:
-   if_24_2_end:
-   if_25_5:
-;  [25:5] ? not obj.vel.x=4 
-;  [25:5] ? not obj.vel.x=4 
-   cmp_25_5:
-   cmp qword[rbp-24],4
-   je if_25_2_end
-   jmp if_25_5_code
-   if_25_5_code:
-;    [25:21] exit(5)
-;    exit(v:reg_rdi) 
-;      inline: 25_21
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,5
-;      [2:2] mov(rax,60)
-       mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
-       syscall
-;      free rdi
-     exit_25_21_end:
-   if_25_2_end:
-   if_26_5:
-;  [26:5] ? not obj.vel.y=str 
-;  [26:5] ? not obj.vel.y=str 
-   cmp_26_5:
-   cmp qword[rbp-16],str
-   je if_26_2_end
-   jmp if_26_5_code
-   if_26_5_code:
-;    [26:23] exit(6)
-;    exit(v:reg_rdi) 
-;      inline: 26_23
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,6
-;      [2:2] mov(rax,60)
-       mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
-       syscall
-;      free rdi
-     exit_26_23_end:
-   if_26_2_end:
-   if_27_5:
-;  [27:5] ? not obj.color=str.len 
-;  [27:5] ? not obj.color=str.len 
-   cmp_27_5:
-   cmp qword[rbp-8],str.len
-   je if_27_2_end
-   jmp if_27_5_code
-   if_27_5_code:
-;    [27:27] exit(7)
-;    exit(v:reg_rdi) 
-;      inline: 27_27
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,7
-;      [2:2] mov(rax,60)
-       mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
-       syscall
-;      free rdi
-     exit_27_27_end:
-   if_27_2_end:
-   pop rbp
-   ret
-
 main:
-;  obj: qword[rbp-40]
-;  [31:2] var obj:object=1 
-;  [31:6] obj=1 
-;  [31:17] 1 
-;  [31:17] obj=1 
-   mov qword[rbp-40],1
-   if_32_5:
-;  [32:5] ? not obj.pos.x=1 
-;  [32:5] ? not obj.pos.x=1 
-   cmp_32_5:
-   cmp qword[rbp-40],1
-   je if_32_2_end
-   jmp if_32_5_code
-   if_32_5_code:
-;    [32:21] exit(1)
+;  bt1: byte[rbp-1]
+;  [10:5] var bt1:i8=1 
+;  [10:9] bt1=1 
+;  [10:16] 1 
+;  [10:16] bt1=1 
+   mov byte[rbp-1],1
+;  bt2: byte[rbp-2]
+;  [11:5] var bt2:i8=2 
+;  [11:9] bt2=2 
+;  [11:16] 2 
+;  [11:16] bt2=2 
+   mov byte[rbp-2],2
+;  b1: byte[rbp-3]
+;  [13:5] var b1:bool=bt1<bt2 
+;  [13:9] b1=bt1<bt2 
+;  [13:17] ? bt1<bt2 
+;  [13:17] ? bt1<bt2 
+   cmp_13_17:
+;  alloc r15
+   mov r15b,byte[rbp-2]
+   cmp byte[rbp-1],r15b
+;  free r15
+   jge false_13_9
+   jmp true_13_9
+   true_13_9:
+   mov byte[rbp-3],1
+   jmp end_13_9
+   false_13_9:
+   mov byte[rbp-3],0
+   end_13_9:
+   if_14_8:
+;  [14:8] ? not b1 
+;  [14:8] ? not b1 
+   cmp_14_8:
+   cmp byte[rbp-3],0
+   jne if_14_5_end
+   jmp if_14_8_code
+   if_14_8_code:
+;    [14:15] exit(1)
 ;    exit(v:reg_rdi) 
-;      inline: 32_21
+;      inline: 14_15
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,1
-;      [2:2] mov(rax,60)
+;      [4:5] mov(rax,60)
        mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
+;      [4:17] # exit system call 
+;      [5:5] mov(rdi,v)
+;      [5:17] # return code 
+;      [6:5] syscall 
        syscall
 ;      free rdi
-     exit_32_21_end:
-   if_32_2_end:
-;  [33:2] obj.pos.x=1 
-;  [33:12] 1 
-;  [33:12] obj.pos.x=1 
-   mov qword[rbp-40],1
-;  [34:2] obj.pos.y=2 
-;  [34:12] 2 
-;  [34:12] obj.pos.y=2 
-   mov qword[rbp-32],2
-;  [35:2] obj.vel.x=4 
-;  [35:12] 4 
-;  [35:12] obj.vel.x=4 
-   mov qword[rbp-24],4
-;  [36:2] obj.vel.y=str 
-;  [36:12] str 
-;  [36:12] obj.vel.y=str 
-   mov qword[rbp-16],str
-;  [37:2] obj.color=str.len 
-;  [37:12] str.len 
-;  [37:12] obj.color=str.len 
-   mov qword[rbp-8],str.len
-   if_39_5:
-;  [39:5] ? not fld=42 
-;  [39:5] ? not fld=42 
-   cmp_39_5:
-   cmp qword[fld],42
-   je if_39_2_end
-   jmp if_39_5_code
-   if_39_5_code:
-;    [39:16] exit(2)
+     exit_14_15_end:
+   if_14_5_end:
+;  b2: byte[rbp-4]
+;  [16:5] var b2:bool=bt1=1 
+;  [16:9] b2=bt1=1 
+;  [16:17] ? bt1=1 
+;  [16:17] ? bt1=1 
+   cmp_16_17:
+   cmp byte[rbp-1],1
+   jne false_16_9
+   jmp true_16_9
+   true_16_9:
+   mov byte[rbp-4],1
+   jmp end_16_9
+   false_16_9:
+   mov byte[rbp-4],0
+   end_16_9:
+;  [17:5] b2=not bt2 
+;  [17:8] ? not bt2 
+;  [17:8] ? not bt2 
+   cmp_17_8:
+   cmp byte[rbp-2],0
+   jne false_17_5
+   jmp true_17_5
+   true_17_5:
+   mov byte[rbp-4],1
+   jmp end_17_5
+   false_17_5:
+   mov byte[rbp-4],0
+   end_17_5:
+   if_18_8:
+;  [18:8] ? b2 
+;  [18:8] ? b2 
+   cmp_18_8:
+   cmp byte[rbp-4],0
+   je if_18_5_end
+   jmp if_18_8_code
+   if_18_8_code:
+;    [18:11] exit(2)
 ;    exit(v:reg_rdi) 
-;      inline: 39_16
+;      inline: 18_11
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,2
-;      [2:2] mov(rax,60)
+;      [4:5] mov(rax,60)
        mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
+;      [4:17] # exit system call 
+;      [5:5] mov(rdi,v)
+;      [5:17] # return code 
+;      [6:5] syscall 
        syscall
 ;      free rdi
-     exit_39_16_end:
-   if_39_2_end:
-   if_40_5:
-;  [40:5] ? not obj.pos.x=1 
-;  [40:5] ? not obj.pos.x=1 
-   cmp_40_5:
-   cmp qword[rbp-40],1
-   je if_40_2_end
-   jmp if_40_5_code
-   if_40_5_code:
-;    [40:21] exit(3)
+     exit_18_11_end:
+   if_18_5_end:
+;  [20:5] bt1=-1+2 
+;  [20:9] -1+2 
+;  [20:10] bt1=-1
+   mov byte[rbp-1],-1
+;  [20:12] bt1+2 
+   add byte[rbp-1],2
+   if_21_8:
+;  [21:8] ? not bt1=1 
+;  [21:8] ? not bt1=1 
+   cmp_21_8:
+   cmp byte[rbp-1],1
+   je if_21_5_end
+   jmp if_21_8_code
+   if_21_8_code:
+;    [21:18] exit(3)
 ;    exit(v:reg_rdi) 
-;      inline: 40_21
+;      inline: 21_18
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,3
-;      [2:2] mov(rax,60)
+;      [4:5] mov(rax,60)
        mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
+;      [4:17] # exit system call 
+;      [5:5] mov(rdi,v)
+;      [5:17] # return code 
+;      [6:5] syscall 
        syscall
 ;      free rdi
-     exit_40_21_end:
-   if_40_2_end:
-   if_41_5:
-;  [41:5] ? not obj.pos.y=2 
-;  [41:5] ? not obj.pos.y=2 
-   cmp_41_5:
-   cmp qword[rbp-32],2
-   je if_41_2_end
-   jmp if_41_5_code
-   if_41_5_code:
-;    [41:21] exit(4)
-;    exit(v:reg_rdi) 
-;      inline: 41_21
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,4
-;      [2:2] mov(rax,60)
-       mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
-       syscall
-;      free rdi
-     exit_41_21_end:
-   if_41_2_end:
-   if_42_5:
-;  [42:5] ? not obj.vel.x=4 
-;  [42:5] ? not obj.vel.x=4 
-   cmp_42_5:
-   cmp qword[rbp-24],4
-   je if_42_2_end
-   jmp if_42_5_code
-   if_42_5_code:
-;    [42:21] exit(5)
-;    exit(v:reg_rdi) 
-;      inline: 42_21
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,5
-;      [2:2] mov(rax,60)
-       mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
-       syscall
-;      free rdi
-     exit_42_21_end:
-   if_42_2_end:
-   if_43_5:
-;  [43:5] ? not obj.vel.y=str 
-;  [43:5] ? not obj.vel.y=str 
-   cmp_43_5:
-   cmp qword[rbp-16],str
-   je if_43_2_end
-   jmp if_43_5_code
-   if_43_5_code:
-;    [43:23] exit(6)
-;    exit(v:reg_rdi) 
-;      inline: 43_23
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,6
-;      [2:2] mov(rax,60)
-       mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
-       syscall
-;      free rdi
-     exit_43_23_end:
-   if_43_2_end:
-   if_44_5:
-;  [44:5] ? not obj.color=str.len 
-;  [44:5] ? not obj.color=str.len 
-   cmp_44_5:
-   cmp qword[rbp-8],str.len
-   je if_44_2_end
-   jmp if_44_5_code
-   if_44_5_code:
-;    [44:27] exit(7)
-;    exit(v:reg_rdi) 
-;      inline: 44_27
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,7
-;      [2:2] mov(rax,60)
-       mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
-       syscall
-;      free rdi
-     exit_44_27_end:
-   if_44_2_end:
-;  [46:2] f()
-   sub rsp,40
-   call f
-   add rsp,40
-;  [47:2] exit(0)
+     exit_21_18_end:
+   if_21_5_end:
+;  [23:5] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 47_2
+;    inline: 23_5
 ;    alloc rdi
 ;    alias v -> rdi
      mov rdi,0
-;    [2:2] mov(rax,60)
+;    [4:5] mov(rax,60)
      mov rax,60
-;    [2:14] # exit system call 
-;    [3:2] mov(rdi,v)
-;    [3:14] # return code 
-;    [4:2] syscall 
+;    [4:17] # exit system call 
+;    [5:5] mov(rdi,v)
+;    [5:17] # return code 
+;    [6:5] syscall 
      syscall
 ;    free rdi
-   exit_47_2_end:
+   exit_23_5_end:
 
 ; max scratch registers in use: 1
 ;            max frames in use: 5
