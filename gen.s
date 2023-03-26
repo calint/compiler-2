@@ -5,11 +5,9 @@ false equ 0
 
 section .data
 align 4
-;[7:1] field fld=42 
-fld: dq 42
-;[8:1] field str="hello world" 
-str: db 'hello world'
-str.len equ $-str
+;[1:1] field hello="hello world" 
+hello: db 'hello world'
+hello.len equ $-hello
 
 section .bss
 align 4
@@ -26,51 +24,157 @@ mov rbp,rsp
 jmp main
 
 main:
-;  obj: qword[rbp-40]
-;  [14:2] var obj:object=1 
-;  [14:6] obj=1 
-;  [14:17] 1 
-;  [14:17] obj=1 
-   mov qword[rbp-40],1
-   if_15_5:
-;  [15:5] ? not obj.pos.x=1 
-;  [15:5] ? not obj.pos.x=1 
-   cmp_15_5:
-   cmp qword[rbp-40],1
-   je if_15_2_end
-   jmp if_15_5_code
-   if_15_5_code:
-;    [15:21] exit(1)
+;  bt1: byte[rbp-1]
+;  [10:5] var bt1:i8=1 
+;  [10:9] bt1=1 
+;  [10:16] 1 
+;  [10:16] bt1=1 
+   mov byte[rbp-1],1
+;  bt2: byte[rbp-2]
+;  [11:5] var bt2:i8=2 
+;  [11:9] bt2=2 
+;  [11:16] 2 
+;  [11:16] bt2=2 
+   mov byte[rbp-2],2
+;  b1: byte[rbp-3]
+;  [13:5] var b1:bool=bt1<bt2 
+;  [13:9] b1=bt1<bt2 
+;  [13:17] ? bt1<bt2 
+;  [13:17] ? bt1<bt2 
+   cmp_13_17:
+;  alloc r15
+   mov r15b,byte[rbp-2]
+   cmp byte[rbp-1],r15b
+;  free r15
+   jge false_13_9
+   jmp true_13_9
+   true_13_9:
+   mov byte[rbp-3],1
+   jmp end_13_9
+   false_13_9:
+   mov byte[rbp-3],0
+   end_13_9:
+   if_14_8:
+;  [14:8] ? not b1 
+;  [14:8] ? not b1 
+   cmp_14_8:
+   cmp byte[rbp-3],0
+   jne if_14_5_end
+   jmp if_14_8_code
+   if_14_8_code:
+;    [14:15] exit(1)
 ;    exit(v:reg_rdi) 
-;      inline: 15_21
+;      inline: 14_15
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,1
-;      [2:2] mov(rax,60)
+;      [4:5] mov(rax,60)
        mov rax,60
-;      [2:14] # exit system call 
-;      [3:2] mov(rdi,v)
-;      [3:14] # return code 
-;      [4:2] syscall 
+;      [4:17] # exit system call 
+;      [5:5] mov(rdi,v)
+;      [5:17] # return code 
+;      [6:5] syscall 
        syscall
 ;      free rdi
-     exit_15_21_end:
-   if_15_2_end:
-;  [16:2] exit(0)
+     exit_14_15_end:
+   if_14_5_end:
+;  b2: byte[rbp-4]
+;  [16:5] var b2:bool=bt1=1 
+;  [16:9] b2=bt1=1 
+;  [16:17] ? bt1=1 
+;  [16:17] ? bt1=1 
+   cmp_16_17:
+   cmp byte[rbp-1],1
+   jne false_16_9
+   jmp true_16_9
+   true_16_9:
+   mov byte[rbp-4],1
+   jmp end_16_9
+   false_16_9:
+   mov byte[rbp-4],0
+   end_16_9:
+;  [17:5] b2=not bt2 
+;  [17:8] ? not bt2 
+;  [17:8] ? not bt2 
+   cmp_17_8:
+   cmp byte[rbp-2],0
+   jne false_17_5
+   jmp true_17_5
+   true_17_5:
+   mov byte[rbp-4],1
+   jmp end_17_5
+   false_17_5:
+   mov byte[rbp-4],0
+   end_17_5:
+   if_18_8:
+;  [18:8] ? b2 
+;  [18:8] ? b2 
+   cmp_18_8:
+   cmp byte[rbp-4],0
+   je if_18_5_end
+   jmp if_18_8_code
+   if_18_8_code:
+;    [18:11] exit(2)
+;    exit(v:reg_rdi) 
+;      inline: 18_11
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,2
+;      [4:5] mov(rax,60)
+       mov rax,60
+;      [4:17] # exit system call 
+;      [5:5] mov(rdi,v)
+;      [5:17] # return code 
+;      [6:5] syscall 
+       syscall
+;      free rdi
+     exit_18_11_end:
+   if_18_5_end:
+;  [20:5] bt1=-1+2 
+;  [20:9] -1+2 
+;  [20:10] bt1=-1
+   mov byte[rbp-1],-1
+;  [20:12] bt1+2 
+   add byte[rbp-1],2
+   if_21_8:
+;  [21:8] ? not bt1=1 
+;  [21:8] ? not bt1=1 
+   cmp_21_8:
+   cmp byte[rbp-1],1
+   je if_21_5_end
+   jmp if_21_8_code
+   if_21_8_code:
+;    [21:18] exit(3)
+;    exit(v:reg_rdi) 
+;      inline: 21_18
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,3
+;      [4:5] mov(rax,60)
+       mov rax,60
+;      [4:17] # exit system call 
+;      [5:5] mov(rdi,v)
+;      [5:17] # return code 
+;      [6:5] syscall 
+       syscall
+;      free rdi
+     exit_21_18_end:
+   if_21_5_end:
+;  [23:5] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 16_2
+;    inline: 23_5
 ;    alloc rdi
 ;    alias v -> rdi
      mov rdi,0
-;    [2:2] mov(rax,60)
+;    [4:5] mov(rax,60)
      mov rax,60
-;    [2:14] # exit system call 
-;    [3:2] mov(rdi,v)
-;    [3:14] # return code 
-;    [4:2] syscall 
+;    [4:17] # exit system call 
+;    [5:5] mov(rdi,v)
+;    [5:17] # return code 
+;    [6:5] syscall 
      syscall
 ;    free rdi
-   exit_16_2_end:
+   exit_23_5_end:
 
 ; max scratch registers in use: 1
 ;            max frames in use: 5
