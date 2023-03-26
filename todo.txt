@@ -17,6 +17,10 @@ stage 4
 [x] user defined types
 [-]   'typedef' size qword?  'alias' size qword
 [-]     var i=1 var s=size(i) i=s gives error i=quad(s) 
+[x]   type vector{x,y} type object{pos:vector,vel:vector,color:i8}
+[ ]     var o:object={{1,2},{0,0},1}
+[ ]     var o=object({1,2},{0,0},1)
+[ ]   func object(self,pos,vel,color)
 [x]   type size{value}, var s:size=1¨, s.value=2 == s=2 
 [x]   type point{x,y}
 [ ]   var p:point{1,2}

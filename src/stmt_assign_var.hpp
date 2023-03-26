@@ -1,7 +1,7 @@
 #pragma once
 
+#include "bool_ops_list.hpp"
 #include"expr_ops_list.hpp"
-#include"stmt_if_bool_ops_list.hpp"
 
 class stmt_assign_var final:public statement{
 public:
@@ -9,18 +9,9 @@ public:
 		statement{move(name)},
 		type_{move(type)}
 	{
-		if(type_.is_name("")){
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,false)};
-			if(ir.tp.name()==toc::bool_type_str){
-				eols_=stmt_if_bool_ops_list{tc,t};
-				return;
-			}
-			eols_=expr_ops_list{tc,t};
-			return;
-		}
-
-		if(type_.is_name(toc::bool_type_str)){
-			eols_=stmt_if_bool_ops_list{tc,t};
+		const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,false)};
+		if(ir.tp.name()==toc::bool_type_str){
+			eols_=bool_ops_list{tc,t};
 			return;
 		}
 		eols_=expr_ops_list{tc,t};
@@ -38,7 +29,7 @@ public:
 		if(eols_.index()==0){
 			get<expr_ops_list>(eols_).source_to(os);
 		}else{
-			get<stmt_if_bool_ops_list>(eols_).source_to(os);
+			get<bool_ops_list>(eols_).source_to(os);
 		}
 	}
 
@@ -52,7 +43,7 @@ public:
 		if(eols_.index()==0){
 			get<expr_ops_list>(eols_).source_to(os);
 		}else{
-			get<stmt_if_bool_ops_list>(eols_).source_to(os);
+			get<bool_ops_list>(eols_).source_to(os);
 		}
 	}
 
@@ -94,7 +85,7 @@ public:
 		}
 
 		// bool expression
-		const stmt_if_bool_ops_list&eol{get<stmt_if_bool_ops_list>(eols_)};
+		const bool_ops_list&eol{get<bool_ops_list>(eols_)};
 		const string&call_path{tc.get_inline_call_path(tok())};
 		const string&src_loc{tc.source_location_for_label(tok())};
 		const string&postfix{src_loc+(call_path.empty()?"":("_"+call_path))};
@@ -125,5 +116,5 @@ private:
 	}
 
 	token type_;
-	variant<expr_ops_list,stmt_if_bool_ops_list>eols_;
+	variant<expr_ops_list,bool_ops_list>eols_;
 };

@@ -2,16 +2,16 @@
 
 #include<variant>
 
+#include "bool_op.hpp"
 #include"statement.hpp"
-#include"stmt_if_bool_op.hpp"
 
-class stmt_if_bool_ops_list final:public statement{
+class bool_ops_list final:public statement{
 public:
-	inline stmt_if_bool_ops_list(
+	inline bool_ops_list(
 			toc&tc,
 			tokenizer&t,const bool enclosed=false,token not_token={},
 			const bool is_sub_expr=false,
-			variant<stmt_if_bool_op,stmt_if_bool_ops_list>first_bool_op={},
+			variant<bool_op,bool_ops_list>first_bool_op={},
 			token first_op={}
 		):
 		// the token is used to give the cmp a unique label
@@ -34,11 +34,11 @@ public:
 				// not a=1 and b=1
 				if(t.is_next_char('(')){
 					// not (a=1 and b=1)
-					bools_.emplace_back(stmt_if_bool_ops_list{tc,t,true,move(tknot)});
+					bools_.emplace_back(bool_ops_list{tc,t,true,move(tknot)});
 				}else{
 					// not a=1 and b=1
 					t.put_back_token(tknot);
-					bools_.emplace_back(stmt_if_bool_op{tc,t});
+					bools_.emplace_back(bool_op{tc,t});
 				}
 			}else{
 				// (a=1 and b=1)
@@ -46,10 +46,10 @@ public:
 				t.put_back_token(tknot);
 				if(t.is_next_char('(')){
 					// (a=1 and b=1)
-					bools_.emplace_back(stmt_if_bool_ops_list{tc,t,true});
+					bools_.emplace_back(bool_ops_list{tc,t,true});
 				}else{
 					// a=1 and b=1
-					bools_.emplace_back(stmt_if_bool_op{tc,t});
+					bools_.emplace_back(bool_op{tc,t});
 				}
 			}
 
@@ -68,7 +68,7 @@ public:
 				if(tk.is_name("and")){
 					// a and b or c -> (a and b) or c
 					// first op is 'and', make sub-expression (a and b) ...
-					stmt_if_bool_ops_list bol{tc,t,false,{},true,move(bools_.back()),move(tk)};
+					bool_ops_list bol{tc,t,false,{},true,move(bools_.back()),move(tk)};
 					bools_.pop_back();
 					bools_.push_back(move(bol));
 
@@ -110,7 +110,7 @@ public:
 			//    |prv_op| |back()| |tk|
 			// create:
 			// a    or   (b     and   c) or d
-			stmt_if_bool_ops_list bol{tc,t,false,{},true,move(bools_.back()),move(tk)};
+			bool_ops_list bol{tc,t,false,{},true,move(bools_.back()),move(tk)};
 			bools_.pop_back();
 			bools_.push_back(move(bol));
 
@@ -130,11 +130,11 @@ public:
 			throw compiler_error(tok(),"expected ')' to close expression");
 	}
 
-	inline stmt_if_bool_ops_list()=default;
-	inline stmt_if_bool_ops_list(const stmt_if_bool_ops_list&)=default;
-	inline stmt_if_bool_ops_list(stmt_if_bool_ops_list&&)=default;
-	inline stmt_if_bool_ops_list&operator=(const stmt_if_bool_ops_list&)=default;
-	inline stmt_if_bool_ops_list&operator=(stmt_if_bool_ops_list&&)=default;
+	inline bool_ops_list()=default;
+	inline bool_ops_list(const bool_ops_list&)=default;
+	inline bool_ops_list(bool_ops_list&&)=default;
+	inline bool_ops_list&operator=(const bool_ops_list&)=default;
+	inline bool_ops_list&operator=(bool_ops_list&&)=default;
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
@@ -145,9 +145,9 @@ public:
 		const size_t n{bools_.size()};
 		for(size_t i{0};i<n;i++){
 			if(bools_[i].index()==0){
-				get<stmt_if_bool_op>(bools_[i]).source_to(os);
+				get<bool_op>(bools_[i]).source_to(os);
 			}else{
-				get<stmt_if_bool_ops_list>(bools_[i]).source_to(os);
+				get<bool_ops_list>(bools_[i]).source_to(os);
 			}
 			if(i<n-1){
 				const token&t{ops_[i]};
@@ -177,7 +177,7 @@ public:
 				//
 				// stmt_if_bool_ops_list
 				//
-				const stmt_if_bool_ops_list&el{get<stmt_if_bool_ops_list>(bools_[i])};
+				const bool_ops_list&el{get<bool_ops_list>(bools_[i])};
 				string jmp_false{jmp_to_if_false};
 				string jmp_true{jmp_to_if_true};
 				if(i<n-1){
@@ -219,7 +219,7 @@ public:
 			//
 			if(!invert){
 				// a=1 and b=2   vs   a=1 or b=2
-				const stmt_if_bool_op&e{get<stmt_if_bool_op>(bools_[i])};
+				const bool_op&e{get<bool_op>(bools_[i])};
 				if(i<n-1){
 					if(ops_[i].is_name("or")){
 						e.compile_or(tc,os,indent,jmp_to_if_true,invert);
@@ -236,7 +236,7 @@ public:
 			}else{
 				// inverted according to De Morgan's laws
 				// a=1 and b=2   vs   a=1 or b=2
-				const stmt_if_bool_op&e{get<stmt_if_bool_op>(bools_[i])};
+				const bool_op&e{get<bool_op>(bools_[i])};
 				if(i<n-1){
 					if(ops_[i].is_name("and")){
 						e.compile_or(tc,os,indent,jmp_to_if_true,invert);
@@ -255,21 +255,21 @@ public:
 	}
 
 private:
-	inline static string cmp_label_from(const toc&tc,const variant<stmt_if_bool_op,stmt_if_bool_ops_list>&v){
+	inline static string cmp_label_from(const toc&tc,const variant<bool_op,bool_ops_list>&v){
 		if(v.index()==1)
-			return get<stmt_if_bool_ops_list>(v).cmp_bgn_label(tc);
+			return get<bool_ops_list>(v).cmp_bgn_label(tc);
 
-		return get<stmt_if_bool_op>(v).cmp_bgn_label(tc);
+		return get<bool_op>(v).cmp_bgn_label(tc);
 	}
 
-	inline static token token_from(const variant<stmt_if_bool_op,stmt_if_bool_ops_list>&bop){
+	inline static token token_from(const variant<bool_op,bool_ops_list>&bop){
 		if(bop.index()==0)
-			return get<stmt_if_bool_op>(bop).tok();
+			return get<bool_op>(bop).tok();
 
-		return get<stmt_if_bool_ops_list>(bop).tok();
+		return get<bool_ops_list>(bop).tok();
 	}
 
-	vector<variant<stmt_if_bool_op,stmt_if_bool_ops_list>>bools_;
+	vector<variant<bool_op,bool_ops_list>>bools_;
 	vector<token>ops_; // 'and' or 'or'
 	token not_token_;
 	bool enclosed_{}; // (a=b and c=d) vs a=b and c=d

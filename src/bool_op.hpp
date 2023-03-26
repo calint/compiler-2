@@ -1,10 +1,10 @@
 #pragma once
 
-#include"statement.hpp"
+#include"expr_ops_list.hpp"
 
-class stmt_if_bool_op final:public statement{
+class bool_op final:public statement{
 public:
-	inline stmt_if_bool_op(toc&tc,tokenizer&t):
+	inline bool_op(toc&tc,tokenizer&t):
 		statement{t.next_whitespace_token()}
 	{
 		bool is_not{false};
@@ -45,11 +45,11 @@ public:
 		rhs_={tc,t};
 	}
 
-	inline stmt_if_bool_op()=default;
-	inline stmt_if_bool_op(const stmt_if_bool_op&)=default;
-	inline stmt_if_bool_op(stmt_if_bool_op&&)=default;
-	inline stmt_if_bool_op&operator=(const stmt_if_bool_op&)=default;
-	inline stmt_if_bool_op&operator=(stmt_if_bool_op&&)=default;
+	inline bool_op()=default;
+	inline bool_op(const bool_op&)=default;
+	inline bool_op(bool_op&&)=default;
+	inline bool_op&operator=(const bool_op&)=default;
+	inline bool_op&operator=(bool_op&&)=default;
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
