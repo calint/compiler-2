@@ -41,14 +41,12 @@ public:
 			os<<"'\n";
 			toc::indent(os,indent);
 			os<<name_.name()<<".len equ $-"<<name_.name()<<"\n";
-			tc.add_field(*this,name_.name(),this,true);
 			return;
 		}
 		os<<" dq ";
 		os<<uops_.get_ops_as_string();
 		initial_value_.compile_to(os);
 		os<<endl;
-		tc.add_field(*this,name_.name(),this,false);
 	}
 
 	inline bool is_in_data_section()const override{return true;}

@@ -8,6 +8,12 @@
 #include"stmt_def_type.hpp"
 
 class stmt_program final:public statement{
+	// built-in type
+	type type_i64 {"i64"  ,8,true};
+	type type_i32 {"i32"  ,4,true};
+	type type_i16 {"i16"  ,2,true};
+	type type_i8  {"i8"   ,1,true};
+	type type_bool{"bool" ,1,true};
 public:
 	inline stmt_program(const string&source):
 		statement{token{}},
@@ -18,12 +24,6 @@ public:
 		for(const string&s:assem)
 			tc_.add_func(*this,s,"",nullptr);
 
-		// built-in type
-		const type&type_i64 {"i64"  ,8,true};
-		const type&type_i32 {"i32"  ,4,true};
-		const type&type_i16 {"i16"  ,2,true};
-		const type&type_i8  {"i8"   ,1,true};
-		const type&type_bool{"bool" ,1,true};
 		tc_.add_type(*this,type_i64);
 		tc_.add_type(*this,type_i32);
 		tc_.add_type(*this,type_i16);
@@ -93,26 +93,7 @@ public:
 	}
 
 	inline void build(ostream&os){
-		tc_={tc_.source()};
-		// add built-in assembler calls
-		vector<string>assem{"mov","syscall"};
-		for(const string&s:assem)
-			tc_.add_func(*this,s,"",nullptr);
-
-		// built-in type
-		const type&type_i64 {"i64"  ,8,true};
-		const type&type_i32 {"i32"  ,4,true};
-		const type&type_i16 {"i16"  ,2,true};
-		const type&type_i8  {"i8"   ,1,true};
-		const type&type_bool{"bool" ,1,true};
-		tc_.add_type(*this,type_i64);
-		tc_.add_type(*this,type_i32);
-		tc_.add_type(*this,type_i16);
-		tc_.add_type(*this,type_i8);
-		tc_.add_type(*this,type_bool);
-
 		compile(tc_,os,0);
-
 		tc_.finish(os);
 	}
 

@@ -254,12 +254,20 @@ public:
 	}
 
 	inline void finish(ostream&os){
-		assert(scratch_registers_.size()==8);
-		assert(named_registers_.size()==6);
-		assert(frames_.empty());
 		os<<"\n; max scratch registers in use: "<<max_usage_scratch_regs_<<endl;
 		os<<";            max frames in use: "<<max_frame_count_<<endl;
 //		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
+		assert(all_registers_.size()==16);
+		assert(allocated_registers_.empty());
+		assert(allocated_registers_loc_.empty());
+		assert(call_metas_.empty());
+		assert(frames_.empty());
+//		assert(initiated_registers_.empty());
+		initiated_registers_.clear();
+		assert(named_registers_.size()==6);
+		assert(scratch_registers_.size()==8);
+		max_frame_count_=0;
+		max_usage_scratch_regs_=0;
 	}
 
 	inline ident_resolved resolve_ident_to_nasm(const statement&st,const bool must_be_initiated)const{

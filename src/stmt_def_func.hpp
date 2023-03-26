@@ -41,45 +41,13 @@ public:
 			}
 		}
 
-
+		tc.add_func(*this,name_.name(),get_return_type_str(),this);
 		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());
-		null_stream ns{};
-		// return binding
-		if(not returns().empty()){
-			const string&nm{returns()[0].name()};
-			const type&ret_type{tc.get_type(*this,get_return_type_str())};
-			tc.add_var(*this,ns,0,nm,ret_type,false);
-		}
 		vector<string>allocated_named_registers;
-		const size_t n{params_.size()};
-		size_t stk_ix{2<<3}; // skip [rbp] and [return address] on stack
-		for(size_t i=0;i<n;i++){
-			const stmt_def_func_param&pm{params_[i]};
-			const type&arg_type{pm.get_type(tc)};
-			const string&pm_nm{pm.name()};
-			// (i+2)<<3 ?
-			// stack after push rbp is ...,[arg n],...[arg 1],[return address],[rbp],
-			const string&reg{pm.get_register_or_empty()};
-			if(reg.empty()){
-				tc.add_func_arg(*this,ns,0,pm_nm,arg_type,int(stk_ix));
-//				stk_ix+=arg_type.size();
-				// only 64 bits values on the stack
-				stk_ix+=toc::default_type_size;
-			}else{
-				tc.alloc_named_register_or_break(pm,ns,0,reg);
-				// ! check if arg_type fits in register
-				allocated_named_registers.push_back(reg);
-				tc.add_alias(pm_nm,reg);
-			}
-		}
-
+		null_stream ns{};
+		init_variables(tc,ns,0,allocated_named_registers);
 		code_={tc,t};
-
-		size_t i{allocated_named_registers.size()};
-		while(i--){
-			tc.free_named_register(ns,0,allocated_named_registers[i]);
-		}
-
+		free_allocated_register(tc,ns,0,allocated_named_registers);
 		tc.exit_func(name());
 	}
 
@@ -148,16 +116,7 @@ public:
 		os<<res<<endl;
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
-		tc.add_func(*this,name_.name(),get_return_type_str(),this); // ! implement
-		if(is_inline())
-			return;
-		
-		tc.asm_label(*this,os,indent,name());
-		tc.indent(os,indent+1,true);source_def_comment_to(os);
-
-		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());
-
+	inline void init_variables(toc&tc,ostream&os,size_t indent,vector<string>&allocated_named_registers)const{
 		// return binding
 		if(not returns().empty()){
 			const string&nm{returns()[0].name()};
@@ -168,7 +127,6 @@ public:
 		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[return address]
 		// define variables in the called context by binding arguments to stack
 		//    x=[rsp+argnum<<3+8] (const 8 skips return address)
-		vector<string>allocated_named_registers;
 		const size_t n{params_.size()};
 		size_t stk_ix{2<<3}; // skip [rbp] and [return address] on stack
 		for(size_t i=0;i<n;i++){
@@ -191,6 +149,26 @@ public:
 				tc.add_alias(pm_nm,reg);
 			}
 		}
+	}
+
+	inline void free_allocated_register(toc&tc,ostream&os,size_t indent,const vector<string>&allocated_named_registers)const{
+		size_t i{allocated_named_registers.size()};
+		while(i--){
+			tc.free_named_register(os,indent+1,allocated_named_registers[i]);
+		}
+	}
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
+		if(is_inline())
+			return;
+		
+		tc.asm_label(*this,os,indent,name());
+		tc.indent(os,indent+1,true);source_def_comment_to(os);
+
+		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());
+
+		vector<string>allocated_named_registers;
+		init_variables(tc,os,indent,allocated_named_registers);
+
 		tc.asm_push(*this,os,indent+1,"rbp");
 		tc.asm_cmd(*this,os,indent+1,"mov","rbp","rsp");
 		code_.compile(tc,os,indent,"");
@@ -201,10 +179,9 @@ public:
 		}
 		tc.asm_pop(*this,os,indent+1,"rbp");
 		tc.asm_ret(*this,os,indent+1);
-		size_t i{allocated_named_registers.size()};
-		while(i--){
-			tc.free_named_register(os,indent+1,allocated_named_registers[i]);
-		}
+
+		free_allocated_register(tc,os,indent,allocated_named_registers);
+
 		os<<endl;
 		tc.exit_func(name());
 	}

@@ -56,10 +56,6 @@ public:
 				throw compiler_error(t,"expected ',' and more fields");
 		}
 
-
-		null_stream ns{};
-
-
 		type_.set_name(name_.name());
 		if(fields_.empty()){
 			type_.set_size(toc::default_type_size);
@@ -95,28 +91,7 @@ public:
 		os<<'}';
 	}
 
-	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
-		if(fields_.empty()){
-			type_.set_size(toc::default_type_size);
-		}else{
-			type_.clear_fields();
-			for(const stmt_def_type_field&fld:fields_){
-				const type&tp{tc.get_type(fld,fld.type_str().empty()?toc::default_type_str:fld.type_str())};
-				type_.add_field(fld.tok(),fld.name(),tp);
-			}
-		}
-		tc.add_type(*this,type_);
-//		type_.set_name(name_.name());
-//		if(fields_.empty()){
-//			type_.set_size(toc::default_type_size);
-//		}else{
-//			for(const stmt_def_type_field&fld:fields_){
-//				const type&tp{tc.get_type(fld,fld.type_str().empty()?toc::default_type_str:fld.type_str())};
-//				type_.add_field(fld.tok(),fld.name(),tp);
-//			}
-//		}
-//		tc.add_type(*this,type_);
-	}
+	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{}
 
 private:
 	token name_;
