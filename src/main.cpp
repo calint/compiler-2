@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#include"stmt_program.hpp"
+#include"program.hpp"
 #include"call_asm_mov.hpp"
 #include"call_asm_syscall.hpp"
 #include"stmt_loop.hpp"
@@ -20,7 +20,7 @@ int main(int argc,char*args[]){
 	string src;
 	try{
 		src=read_file_to_string(src_file_name);
-		stmt_program p{src};
+		program p{src};
 		ofstream fo{"diff.baz"};
 		p.source_to(fo);
 		fo.close();
