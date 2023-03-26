@@ -9,10 +9,11 @@
 
 class stmt_block final:public statement{
 public:
-	inline stmt_block(tokenizer&t):
+	inline stmt_block(toc&tc,tokenizer&t):
 		statement{t.next_whitespace_token()},
 		is_one_statement_{not t.is_next_char('{')}
 	{
+		tc.enter_block();
 		while(true){
 			// comments, semi-colon not considered a statment
 			bool last_statement_considered_no_statment{false};
@@ -27,9 +28,9 @@ public:
 				throw compiler_error(tk,"unexpected '"+string{t.peek_char()}+"'");
 			
 			if(tk.is_name("var")){
-				stms_.emplace_back(make_unique<stmt_def_var>(move(tk),t));
+				stms_.emplace_back(make_unique<stmt_def_var>(tc,move(tk),t));
 			}else if(t.is_next_char('=')){
-				stms_.emplace_back(make_unique<stmt_assign_var>(move(tk),token{},t));
+				stms_.emplace_back(make_unique<stmt_assign_var>(tc,move(tk),token{},t));
 			}else if(tk.is_name("break")){
 				stms_.emplace_back(make_unique<stmt_break>(move(tk)));
 			}else if(tk.is_name("continue")){
@@ -42,12 +43,13 @@ public:
 			}else if(tk.is_name("")){ // white space
 				stms_.emplace_back(make_unique<statement>(move(tk)));
 			}else{ // circular reference resolver
-				stms_.emplace_back(create_statement_from_tokenizer(move(tk),{},t));
+				stms_.emplace_back(create_statement_from_tokenizer(tc,move(tk),{},t));
 			}
 
 			if(is_one_statement_&&not last_statement_considered_no_statment)
 				break;
 		}
+		tc.exit_block();
 	}
 
 	inline stmt_block()=default;

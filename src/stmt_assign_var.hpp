@@ -5,16 +5,25 @@
 
 class stmt_assign_var final:public statement{
 public:
-	inline stmt_assign_var(token name,token type,tokenizer&t):
+	inline stmt_assign_var(toc&tc,token name,token type,tokenizer&t):
 		statement{move(name)},
 		type_{move(type)}
 	{
-		if(type_.is_name(toc::bool_type_str)){
-			eols_=stmt_if_bool_ops_list{t};
+		if(type_.is_name("")){
+			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,false)};
+			if(ir.tp.name()==toc::bool_type_str){
+				eols_=stmt_if_bool_ops_list{tc,t};
+				return;
+			}
+			eols_=expr_ops_list{tc,t};
 			return;
 		}
 
-		eols_=expr_ops_list{t};
+		if(type_.is_name(toc::bool_type_str)){
+			eols_=stmt_if_bool_ops_list{tc,t};
+			return;
+		}
+		eols_=expr_ops_list{tc,t};
 	}
 
 	inline stmt_assign_var()=default;
@@ -99,7 +108,7 @@ public:
 		tc.asm_label(*this,os,indent,jmp_to_if_false);
 		tc.asm_cmd(*this,os,indent,"mov",dest_resolved.id,"0");
 		tc.asm_label(*this,os,indent,jmp_to_end);
-		tc.set_var_is_initiated(dst);
+		tc.set_var_is_initiated(identifier());
 	}
 
 private:

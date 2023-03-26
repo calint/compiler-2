@@ -2,8 +2,8 @@
 
 class call_asm_syscall final:public call_asm{
 public:
-	inline call_asm_syscall(token tk,tokenizer&t):
-		call_asm{move(tk),t}
+	inline call_asm_syscall(toc&tc,token tk,tokenizer&t):
+		call_asm{tc,move(tk),t}
 	{}
 
 	inline call_asm_syscall()=default;

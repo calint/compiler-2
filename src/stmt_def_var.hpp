@@ -2,9 +2,21 @@
 
 #include"stmt_assign_var.hpp"
 
+class null_buffer:public streambuf{
+public:
+	int overflow(int c)override{return c;}
+};
+
+class null_stream:public ostream{
+public:
+	null_stream():ostream(&nb_){}
+private:
+	null_buffer nb_;
+};
+
 class stmt_def_var final:public statement{
 public:
-	inline stmt_def_var(token tk,tokenizer&t):
+	inline stmt_def_var(toc&tc,token tk,tokenizer&t):
 		statement{move(tk)},
 		name_{t.next_token()}
 	{
@@ -13,7 +25,15 @@ public:
 		}
 		if(not t.is_next_char('='))
 			throw compiler_error(name_,"expected '=' and initializer");
-		initial_value_={name_,type_,t};
+
+
+		const type&tp{tc.get_type(*this,type_.name().empty()?toc::default_type_str:type_.name())};
+		null_stream ns{};
+		tc.add_var(*this,ns,0,name_.name(),tp,false);
+
+
+		initial_value_={tc,name_,type_,t};
+
 	}
 
 	inline stmt_def_var()=default;
@@ -28,9 +48,9 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
-		tc.source_comment(*this,os,indent);
 		const type&tp{tc.get_type(*this,type_.name().empty()?toc::default_type_str:type_.name())};
 		tc.add_var(*this,os,indent,name_.name(),tp,false);
+		tc.source_comment(*this,os,indent);
 		initial_value_.compile(tc,os,indent,name_.name());
 	}
 

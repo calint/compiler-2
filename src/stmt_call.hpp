@@ -8,7 +8,7 @@
 
 class stmt_call:public expression{
 public:
-	inline stmt_call(token tk,unary_ops uops,tokenizer&t):
+	inline stmt_call(toc&tc,token tk,unary_ops uops,tokenizer&t):
 		expression{move(tk),move(uops)}
 	{
 		if(not t.is_next_char('(')){
@@ -23,7 +23,7 @@ public:
 				t.next_char(); // consume the peeked char
 				break;
 			}
-			args_.emplace_back(t,true);
+			args_.emplace_back(tc,t,true);
 			if(t.is_next_char(')'))
 				break;
 			if(not t.is_next_char(','))

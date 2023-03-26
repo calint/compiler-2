@@ -4,7 +4,7 @@
 
 class stmt_if final:public statement{
 public:
-	inline stmt_if(token tk,tokenizer&t):
+	inline stmt_if(toc&tc,token tk,tokenizer&t):
 		statement{move(tk)}
 	{
 		// if a=b {x} else if c=d {y} else {z}
@@ -12,7 +12,7 @@ public:
 		// 'if' token has been read
 		while(true){
 			// read branch i.e. a=b {x}
-			branches_.emplace_back(t);
+			branches_.emplace_back(tc,t);
 
 			// check if it is a 'else if' or 'else' or a new statement
 			token tkn{t.next_token()};
@@ -31,7 +31,7 @@ public:
 				// save tokens to be able to reproduce the source
 				else_if_tokens_.push_back(move(tkn));
 				// read the 'else' code
-				else_code_={t};
+				else_code_={tc,t};
 				return;
 			}
 			// 'else if': continue reading if branches

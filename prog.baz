@@ -1,27 +1,17 @@
 func inline exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall
+	mov(rax,60) # exit system call
+	mov(rdi,v)  # return code
+	syscall
 }
 
-func foo(b:bool):res:bool{
-    if b res=false else res=true
-}
+field fld=42
+field str="hello world"
+
+type vector{x,y}
+type object{pos:vector,vel:vector,color}
 
 func inline main{
-    var bt1:i8=1
-    var bt2:i8=2
-    
-    var b1:bool=bt1<bt2
-    
-    var b3:bool=foo(b1)
-    if b3 exit(1)
-    
-#    b3=bt1=1
-#    if not b3 exit(2)
-    
-#    b3=not bt1=1
-#    if b3 exit(3)
-    
-    exit(0)
+	var obj:object=1
+	if not obj.pos.x=1 exit(1)
+	exit(0)
 }

@@ -2,7 +2,7 @@
 
 class stmt_def_field final:public statement{
 public:
-	inline stmt_def_field(token tk,tokenizer&t):
+	inline stmt_def_field(toc&tc,token tk,tokenizer&t):
 		statement{move(tk)},
 		name_{t.next_token()}
 	{
@@ -14,6 +14,8 @@ public:
 
 		uops_={t};
 		initial_value_=t.next_token();
+
+		tc.add_field(*this,name_.name(),this,initial_value_.is_string());
 	}
 
 	inline stmt_def_field()=default;

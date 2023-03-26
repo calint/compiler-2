@@ -66,6 +66,8 @@ public:
 
 	inline bool is_built_in()const{return is_built_in_;}
 
+	inline void clear_fields(){fields_.clear();size_=0;}
+
 private:
 	inline pair<size_t,size_t>field_size_and_offset(const token&tk,const vector<string>&path)const{
 		if(path.size()==1){

@@ -183,6 +183,8 @@ public:
 	inline toc&operator=(const toc&)=default;
 	inline toc&operator=(toc&&)=default;
 
+	inline const string&source()const{return source_str_;}
+
 	inline void add_field(const statement&st,const string&ident,const stmt_def_field*f,const bool is_str_field){
 		if(fields_.has(ident)){
 			const field_meta&fld=fields_.get(ident);

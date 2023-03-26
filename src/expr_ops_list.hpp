@@ -7,7 +7,7 @@
 
 class expr_ops_list final:public expression{
 public:
-	inline expr_ops_list(tokenizer&t,const bool in_args=false,const bool enclosed=false,unary_ops uops={},const char first_op_precedence=initial_precedence,unique_ptr<statement>first_expression=unique_ptr<statement>()):
+	inline expr_ops_list(toc&tc,tokenizer&t,const bool in_args=false,const bool enclosed=false,unary_ops uops={},const char first_op_precedence=initial_precedence,unique_ptr<statement>first_expression=unique_ptr<statement>()):
 		expression{t.next_whitespace_token(),{}},
 		enclosed_{enclosed},
 		uops_{move(uops)}
@@ -21,11 +21,11 @@ public:
 			unary_ops uo={t};
 			if(t.is_next_char('(')){
 				// recursion
-				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true,move(uo)));
+				exps_.emplace_back(make_unique<expr_ops_list>(tc,t,in_args,true,move(uo)));
 			}else{
 				// statement
 				uo.put_back(t);
-				exps_.emplace_back(create_statement_from_tokenizer(t));
+				exps_.emplace_back(create_statement_from_tokenizer(tc,t));
 			}
 		}
 
@@ -87,7 +87,7 @@ public:
 				ops_.pop_back();
 				unique_ptr<statement>prev{move(exps_.back())};
 				exps_.pop_back();
-				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,false,unary_ops{},first_op_prec,move(prev)));
+				exps_.emplace_back(make_unique<expr_ops_list>(tc,t,in_args,false,unary_ops{},first_op_prec,move(prev)));
 				continue;
 			}else{
 				precedence=next_precedence;
@@ -100,14 +100,14 @@ public:
 			unary_ops uo{t};
 			if(t.is_next_char('(')){
 				// subexpression, recurse
-				exps_.emplace_back(make_unique<expr_ops_list>(t,in_args,true,uo));
+				exps_.emplace_back(make_unique<expr_ops_list>(tc,t,in_args,true,uo));
 				continue;
 			}
 			// not subexpression
 			uo.put_back(t);
 
 			// add statement to list
-			unique_ptr<statement>stm{create_statement_from_tokenizer(t)};
+			unique_ptr<statement>stm{create_statement_from_tokenizer(tc,t)};
 			if(stm->tok().is_empty())
 				throw compiler_error(*stm,"unexpected '"+string{t.peek_char()}+"'");
 

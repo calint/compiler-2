@@ -2,10 +2,17 @@
 
 class stmt_loop final:public statement{
 public:
-	inline stmt_loop(token tk,tokenizer&t):
-		statement{move(tk)},
-		code_{t}
-	{}
+	inline stmt_loop(toc&tc,token tk,tokenizer&t):
+		statement{move(tk)}
+	{
+		// current source location
+		const string&src_loc{tc.source_location_for_label(tok())};
+		// the loop label
+		const string&lbl{"loop_"+src_loc};
+		tc.enter_loop(lbl);
+		code_={tc,t};
+		tc.exit_loop(lbl);
+	}
 
 	inline stmt_loop()=default;
 	inline stmt_loop(const stmt_loop&)=default;

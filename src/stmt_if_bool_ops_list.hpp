@@ -8,6 +8,7 @@
 class stmt_if_bool_ops_list final:public statement{
 public:
 	inline stmt_if_bool_ops_list(
+			toc&tc,
 			tokenizer&t,const bool enclosed=false,token not_token={},
 			const bool is_sub_expr=false,
 			variant<stmt_if_bool_op,stmt_if_bool_ops_list>first_bool_op={},
@@ -33,11 +34,11 @@ public:
 				// not a=1 and b=1
 				if(t.is_next_char('(')){
 					// not (a=1 and b=1)
-					bools_.emplace_back(stmt_if_bool_ops_list{t,true,move(tknot)});
+					bools_.emplace_back(stmt_if_bool_ops_list{tc,t,true,move(tknot)});
 				}else{
 					// not a=1 and b=1
 					t.put_back_token(tknot);
-					bools_.emplace_back(stmt_if_bool_op{t});
+					bools_.emplace_back(stmt_if_bool_op{tc,t});
 				}
 			}else{
 				// (a=1 and b=1)
@@ -45,10 +46,10 @@ public:
 				t.put_back_token(tknot);
 				if(t.is_next_char('(')){
 					// (a=1 and b=1)
-					bools_.emplace_back(stmt_if_bool_ops_list{t,true});
+					bools_.emplace_back(stmt_if_bool_ops_list{tc,t,true});
 				}else{
 					// a=1 and b=1
-					bools_.emplace_back(stmt_if_bool_op{t});
+					bools_.emplace_back(stmt_if_bool_op{tc,t});
 				}
 			}
 
@@ -67,7 +68,7 @@ public:
 				if(tk.is_name("and")){
 					// a and b or c -> (a and b) or c
 					// first op is 'and', make sub-expression (a and b) ...
-					stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
+					stmt_if_bool_ops_list bol{tc,t,false,{},true,move(bools_.back()),move(tk)};
 					bools_.pop_back();
 					bools_.push_back(move(bol));
 
@@ -109,7 +110,7 @@ public:
 			//    |prv_op| |back()| |tk|
 			// create:
 			// a    or   (b     and   c) or d
-			stmt_if_bool_ops_list bol{t,false,{},true,move(bools_.back()),move(tk)};
+			stmt_if_bool_ops_list bol{tc,t,false,{},true,move(bools_.back()),move(tk)};
 			bools_.pop_back();
 			bools_.push_back(move(bol));
 

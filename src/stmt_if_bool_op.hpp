@@ -4,7 +4,7 @@
 
 class stmt_if_bool_op final:public statement{
 public:
-	inline stmt_if_bool_op(tokenizer&t):
+	inline stmt_if_bool_op(toc&tc,tokenizer&t):
 		statement{t.next_whitespace_token()}
 	{
 		bool is_not{false};
@@ -20,7 +20,7 @@ public:
 		}
 		is_not_=is_not;
 
-		lhs_={t,true};
+		lhs_={tc,t,true};
 
 		if(t.is_next_char('=')){
 			op_="=";
@@ -42,7 +42,7 @@ public:
 			// throw compiler_error(*this,"expected boolean operation '=','<','<=','>','>='");
 		}
 		
-		rhs_={t};
+		rhs_={tc,t};
 	}
 
 	inline stmt_if_bool_op()=default;

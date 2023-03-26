@@ -5,7 +5,7 @@
 
 class stmt_def_func final:public statement{
 public:
-	inline stmt_def_func(token tk,tokenizer&t):
+	inline stmt_def_func(toc&tc,token tk,tokenizer&t):
 		statement{move(tk)},
 		name_{t.next_token()}
 	{
@@ -40,7 +40,47 @@ public:
 				return_type_str=string{toc::default_type_str};
 			}
 		}
-		code_={t};
+
+
+		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());
+		null_stream ns{};
+		// return binding
+		if(not returns().empty()){
+			const string&nm{returns()[0].name()};
+			const type&ret_type{tc.get_type(*this,get_return_type_str())};
+			tc.add_var(*this,ns,0,nm,ret_type,false);
+		}
+		vector<string>allocated_named_registers;
+		const size_t n{params_.size()};
+		size_t stk_ix{2<<3}; // skip [rbp] and [return address] on stack
+		for(size_t i=0;i<n;i++){
+			const stmt_def_func_param&pm{params_[i]};
+			const type&arg_type{pm.get_type(tc)};
+			const string&pm_nm{pm.name()};
+			// (i+2)<<3 ?
+			// stack after push rbp is ...,[arg n],...[arg 1],[return address],[rbp],
+			const string&reg{pm.get_register_or_empty()};
+			if(reg.empty()){
+				tc.add_func_arg(*this,ns,0,pm_nm,arg_type,int(stk_ix));
+//				stk_ix+=arg_type.size();
+				// only 64 bits values on the stack
+				stk_ix+=toc::default_type_size;
+			}else{
+				tc.alloc_named_register_or_break(pm,ns,0,reg);
+				// ! check if arg_type fits in register
+				allocated_named_registers.push_back(reg);
+				tc.add_alias(pm_nm,reg);
+			}
+		}
+
+		code_={tc,t};
+
+		size_t i{allocated_named_registers.size()};
+		while(i--){
+			tc.free_named_register(ns,0,allocated_named_registers[i]);
+		}
+
+		tc.exit_func(name());
 	}
 
 	inline stmt_def_func()=default;

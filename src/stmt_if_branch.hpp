@@ -5,10 +5,10 @@
 
 class stmt_if_branch final:public statement{
 public:
-	inline stmt_if_branch(tokenizer&t):
+	inline stmt_if_branch(toc&tc,tokenizer&t):
 		statement{t.next_whitespace_token()},
-		bol_{t},
-		code_{t}
+		bol_{tc,t},
+		code_{tc,t}
 	{}
 
 	inline stmt_if_branch()=default;

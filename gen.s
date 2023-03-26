@@ -5,6 +5,11 @@ false equ 0
 
 section .data
 align 4
+;[7:1] field fld=42 
+fld: dq 42
+;[8:1] field str="hello world" 
+str: db 'hello world'
+str.len equ $-str
 
 section .bss
 align 4
@@ -20,137 +25,52 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 
-foo:
-;  foo(b:bool):res:bool 
-;  res: byte[rbp-1]
-;  b: byte[rbp+16]
-   push rbp
-   mov rbp,rsp
-   if_8_8:
-;  [8:8] ? b 
-;  [8:8] ? b 
-   cmp_8_8:
-   cmp byte[rbp+16],0
-   je if_else_8_5
-   jmp if_8_8_code
-   if_8_8_code:
-;    [8:10] res=false 
-;    [8:14] false 
-;    [8:14] res=false 
-     mov byte[rbp-1],false
-   jmp if_8_5_end
-   if_else_8_5:
-;      [8:25] res=true 
-;      [8:29] true 
-;      [8:29] res=true 
-       mov byte[rbp-1],true
-   if_8_5_end:
-   movsx rax,byte[rbp-1]
-   pop rbp
-   ret
-
 main:
-;  [12:5] var bt1:i8=1 
-;  bt1: byte[rbp-1]
-;  [12:9] bt1=1 
-;  [12:16] 1 
-;  [12:16] bt1=1 
-   mov byte[rbp-1],1
-;  [13:5] var bt2:i8=2 
-;  bt2: byte[rbp-2]
-;  [13:9] bt2=2 
-;  [13:16] 2 
-;  [13:16] bt2=2 
-   mov byte[rbp-2],2
-;  [15:5] var b1:bool=bt1<bt2 
-;  b1: byte[rbp-3]
-;  [15:9] b1=bt1<bt2 
-;  [15:17] ? bt1<bt2 
-;  [15:17] ? bt1<bt2 
-   cmp_15_17:
-;  alloc r15
-   mov r15b,byte[rbp-2]
-   cmp byte[rbp-1],r15b
-;  free r15
-   jge false_15_9
-   jmp true_15_9
-   true_15_9:
-   mov byte[rbp-3],1
-   jmp end_15_9
-   false_15_9:
-   mov byte[rbp-3],0
-   end_15_9:
-;  [17:5] var b3:bool=foo(b1)
-;  b3: byte[rbp-4]
-;  [17:9] b3=foo(b1)
-;  [17:17] ? foo(b1)
-;  [17:17] ? foo(b1)
-   cmp_17_17:
-;  alloc r15
-;    [17:17] foo(b1)
-;    [17:17] r15=foo(b1)
-;    [17:17] foo(b1)
-     sub rsp,4
-;    alloc r14
-     movsx r14,byte[rbp-3]
-     push r14
-;    free r14
-     call foo
-     add rsp,12
-     mov r15,rax
-   cmp r15,0
-;  free r15
-   je false_17_9
-   jmp true_17_9
-   true_17_9:
-   mov byte[rbp-4],1
-   jmp end_17_9
-   false_17_9:
-   mov byte[rbp-4],0
-   end_17_9:
-   if_18_8:
-;  [18:8] ? b3 
-;  [18:8] ? b3 
-   cmp_18_8:
-   cmp byte[rbp-4],0
-   je if_18_5_end
-   jmp if_18_8_code
-   if_18_8_code:
-;    [18:11] exit(1)
+;  obj: qword[rbp-40]
+;  [14:2] var obj:object=1 
+;  [14:6] obj=1 
+;  [14:17] 1 
+;  [14:17] obj=1 
+   mov qword[rbp-40],1
+   if_15_5:
+;  [15:5] ? not obj.pos.x=1 
+;  [15:5] ? not obj.pos.x=1 
+   cmp_15_5:
+   cmp qword[rbp-40],1
+   je if_15_2_end
+   jmp if_15_5_code
+   if_15_5_code:
+;    [15:21] exit(1)
 ;    exit(v:reg_rdi) 
-;      inline: 18_11
+;      inline: 15_21
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,1
-;      [2:5] mov(rax,60)
+;      [2:2] mov(rax,60)
        mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
+;      [2:14] # exit system call 
+;      [3:2] mov(rdi,v)
+;      [3:14] # return code 
+;      [4:2] syscall 
        syscall
 ;      free rdi
-     exit_18_11_end:
-   if_18_5_end:
-;  [20:1] # b3=bt1=1 
-;  [21:1] # if not b3 exit(2) 
-;  [23:1] # b3=not bt1=1 
-;  [24:1] # if b3 exit(3) 
-;  [26:5] exit(0)
+     exit_15_21_end:
+   if_15_2_end:
+;  [16:2] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 26_5
+;    inline: 16_2
 ;    alloc rdi
 ;    alias v -> rdi
      mov rdi,0
-;    [2:5] mov(rax,60)
+;    [2:2] mov(rax,60)
      mov rax,60
-;    [2:17] # exit system call 
-;    [3:5] mov(rdi,v)
-;    [3:17] # return code 
-;    [4:5] syscall 
+;    [2:14] # exit system call 
+;    [3:2] mov(rdi,v)
+;    [3:14] # return code 
+;    [4:2] syscall 
      syscall
 ;    free rdi
-   exit_26_5_end:
+   exit_16_2_end:
 
-; max scratch registers in use: 2
+; max scratch registers in use: 1
 ;            max frames in use: 5
