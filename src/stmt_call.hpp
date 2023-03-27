@@ -17,10 +17,9 @@ public:
 		}
 		bool expect_arg{false};
 		while(true){
-			if(t.is_peek_char(')')){ // foo()
+			if(t.is_next_char(')')){ // foo()
 				if(expect_arg)
 					throw compiler_error(t,"expected argument after ','");
-				t.next_char(); // consume the peeked char
 				break;
 			}
 			args_.emplace_back(tc,t,true);
