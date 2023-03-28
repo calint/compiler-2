@@ -2,9 +2,11 @@
 
 class stmt_break final:public statement{
 public:
-	inline stmt_break(token tk):
+	inline stmt_break(toc&tc,token tk):
 		statement{move(tk)}
-	{}
+	{
+		set_type(&tc.get_type(*this,toc::void_type_str));
+	}
 
 	inline stmt_break()=default;
 	inline stmt_break(const stmt_break&)=default;

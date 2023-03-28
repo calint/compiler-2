@@ -20,7 +20,7 @@ public:
 			while(true){
 				if(t.is_next_char(')'))
 					break;
-				params_.emplace_back(t);
+				params_.emplace_back(tc,t);
 				if(t.is_next_char(')'))
 					break;
 				if(not t.is_next_char(','))
@@ -35,16 +35,15 @@ public:
 				break;
 			}
 			if(returns_.size()>1){
-				type_=&tc.get_type(*this,returns_[1].name());
+				set_type(&tc.get_type(*this,returns_[1].name()));
 //				return_type_str=returns_[1].name();
 			}else{
-				type_=&tc.get_type(*this,toc::default_type_str); // ? hack  may be void
+				set_type(&tc.get_type(*this,toc::default_type_str)); // ? hack  may be void
 			}
 		}else{
-			type_=&tc.get_type(*this,"void");
+			set_type(&tc.get_type(*this,toc::void_type_str));
 		}
-		assert(type_);
-		tc.add_func(*this,name_.name(),*type_,this);
+		tc.add_func(*this,name_.name(),get_type(),this);
 		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());
 		vector<string>allocated_named_registers;
 		null_stream ns{};
@@ -123,7 +122,7 @@ public:
 		// return binding
 		if(not returns().empty()){
 			const string&nm{returns()[0].name()};
-			tc.add_var(*this,os,indent+1,nm,*type_,false);
+			tc.add_var(*this,os,indent+1,nm,get_type(),false);
 		}
 
 		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[return address]
@@ -133,7 +132,7 @@ public:
 		size_t stk_ix{2<<3}; // skip [rbp] and [return address] on stack
 		for(size_t i=0;i<n;i++){
 			const stmt_def_func_param&pm{params_[i]};
-			const type&arg_type{pm.get_type(tc)};
+			const type&arg_type{pm.get_type()};
 			const string&pm_nm{pm.name()};
 			// (i+2)<<3 ?
 			// stack after push rbp is ...,[arg n],...[arg 1],[return address],[rbp],
@@ -201,7 +200,7 @@ public:
 
 	inline bool is_inline()const{return not inline_tk_.is_empty();}
 
-	inline const type&get_type(toc&tc)const override{return*type_;}
+//	inline const type&get_type(toc&tc)const override{return*type_;}
 
 private:
 	token name_;
@@ -210,5 +209,5 @@ private:
 	stmt_block code_;
 	token inline_tk_;
 	bool no_args_{};
-	const type*type_{};
+//	const type*type_{};
 };

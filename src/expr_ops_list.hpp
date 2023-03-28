@@ -189,9 +189,9 @@ public:
 		return uops_;
 	}
 
-	inline virtual const type&get_type(toc&tc)const override{
+	inline const type&get_type()const override{
 		assert(not exps_.empty());
-		return exps_[0]->get_type(tc); // ! hack  find the size of the largest integral element
+		return exps_[0]->get_type(); // ! hack  find the size of the largest integral element
 	}
 
 

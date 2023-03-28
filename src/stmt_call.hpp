@@ -25,6 +25,7 @@ public:
 			args_.emplace_back(tc,t,true);
 			expect_arg=t.is_next_char(',');
 		}
+		set_type(&tc.get_func_return_type_or_break(*this,identifier()));
 	}
 
 	inline stmt_call()=default;
@@ -64,8 +65,8 @@ public:
 		for(size_t i=0;i<args_.size();i++){
 			const expr_ops_list&arg{args_[i]};
 			const stmt_def_func_param&param{func.param(i)};
-			const type&arg_type=arg.get_type(tc);
-			const type&param_type=param.get_type(tc);
+			const type&arg_type=arg.get_type();
+			const type&param_type=param.get_type();
 			if(arg_type.is_built_in()&&param_type.is_built_in()){
 				if(param_type.size()<arg_type.size())
 					throw compiler_error(arg,"argument "+to_string(i+1)+" of type '"+arg_type.name()+"' would be truncated when passed to parameter of type '"+param_type.name()+"'");
@@ -80,7 +81,7 @@ public:
 			if(func.returns().empty())
 				throw compiler_error(*this,"cannot assign from function that does not return value");
 
-			const type&return_type{func.get_type(tc)};
+			const type&return_type{func.get_type()};
 			const ident_resolved&dst_resolved{tc.resolve_ident_to_nasm(*this,dst,false)};
 //			if(dst_resolved.tp.name()!=return_type.name())
 //				throw compiler_error(*this,"return type '"+return_type.name()+"' does not match the destination type '"+dst_resolved.tp.name()+"'");

@@ -208,6 +208,13 @@ public:
 		return*funcs_.get_const_ref(name).def;
 	}
 
+	inline const type&get_func_return_type_or_break(const statement&st,const string&name)const{
+		if(not funcs_.has(name))
+			throw compiler_error(st,"function '"+name+"' not found");
+
+		return funcs_.get_const_ref(name).tp;
+	}
+
 	inline void add_type(const statement&st,const type&tp){
 		if(types_.has(tp.name()))
 			throw compiler_error(st,"type '"+tp.name() +"' already defined");
@@ -894,6 +901,7 @@ public:
 	inline static const size_t default_type_size{8};
 	inline static const char*bool_type_str{"bool"};
 	inline static const size_t bool_type_size{1};
+	inline static const char*void_type_str{"void"};
 
 private:
 	inline pair<string,frame&>get_id_and_frame_for_identifier(const string&name){
@@ -951,10 +959,14 @@ private:
 				// yes, continue resolving alias until it is
 				// a variable, field, register or constant
 				id=frames_[i].get_alias(id);
+				if(i==0)
+					break;
 				continue;
 			}
 			// does scope contain the variable
 			if(frames_[i].has_var(id))
+				break;
+			if(i==0)
 				break;
 		}
 
@@ -1007,7 +1019,7 @@ private:
 
 		if(funcs_.has(id)){
 			const func_meta&func{funcs_.get_const_ref(id)};
-			return{id,func.tp,ident_resolved::ident_type::CONST};
+			return{id,func.tp,ident_resolved::ident_type::CONST};// ? type is func
 		}
 
 		if(id=="true"||id=="false")

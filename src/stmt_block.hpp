@@ -32,16 +32,17 @@ public:
 			}else if(t.is_next_char('=')){
 				stms_.emplace_back(make_unique<stmt_assign_var>(tc,move(tk),token{},t));
 			}else if(tk.is_name("break")){
-				stms_.emplace_back(make_unique<stmt_break>(move(tk)));
+				stms_.emplace_back(make_unique<stmt_break>(tc,move(tk)));
 			}else if(tk.is_name("continue")){
-				stms_.emplace_back(make_unique<stmt_continue>(move(tk)));
+				stms_.emplace_back(make_unique<stmt_continue>(tc,move(tk)));
 			}else if(tk.is_name("return")){
-				stms_.emplace_back(make_unique<stmt_return>(move(tk)));
+				stms_.emplace_back(make_unique<stmt_return>(tc,move(tk)));
 			}else if(tk.is_name("#")){
-				stms_.emplace_back(make_unique<stmt_comment>(move(tk),t));
+				stms_.emplace_back(make_unique<stmt_comment>(tc,move(tk),t));
 				last_statement_considered_no_statment=true;
 			}else if(tk.is_name("")){ // white space
 				stms_.emplace_back(make_unique<statement>(move(tk)));
+				stms_.back()->set_type(&tc.get_type(*stms_.back(),toc::void_type_str));
 			}else{ // circular reference resolver
 				stms_.emplace_back(create_statement_from_tokenizer(tc,move(tk),{},t));
 			}
@@ -50,6 +51,7 @@ public:
 				break;
 		}
 		tc.exit_block();
+		set_type(&tc.get_type(*this,toc::void_type_str));
 	}
 
 	inline stmt_block()=default;

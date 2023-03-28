@@ -15,6 +15,11 @@ public:
 		uops_={t};
 		initial_value_=t.next_token();
 
+		if(initial_value_.is_string()){
+			set_type(&tc.get_type(*this,toc::void_type_str)); // ! not implemented
+		}else{
+			set_type(&tc.get_type(*this,toc::default_type_str));
+		}
 		tc.add_field(*this,name_.name(),this,initial_value_.is_string());
 	}
 

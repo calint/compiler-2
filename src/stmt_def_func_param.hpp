@@ -2,13 +2,15 @@
 
 class stmt_def_func_param final:public statement{
 public:
-	inline stmt_def_func_param(tokenizer&t):
+	inline stmt_def_func_param(toc&tc,tokenizer&t):
 		statement{t.next_token()}
 	{
 		assert(not tok().is_name(""));
 
-		if(not t.is_next_char(':'))
+		if(not t.is_next_char(':')){
+			set_type(&tc.get_type(*this,toc::default_type_str));
 			return;
+		}
 
 		while(true){
 			keywords_.emplace_back(t.next_token());
@@ -16,6 +18,14 @@ public:
 				continue;
 			break;
 		}
+
+		for(const token&kw:keywords()){
+			if(kw.name().find("reg_")==0)
+				continue;
+			set_type(&tc.get_type(*this,kw.name()));
+			return;
+		}
+		set_type(&tc.get_type(*this,toc::default_type_str));
 	}
 
 	inline stmt_def_func_param()=default;
@@ -50,15 +60,6 @@ public:
 			return kw.name().substr(4,kw.name().size());
 		}
 		return"";
-	}
-
-	inline virtual const type&get_type(toc&tc)const override{
-		for(const token&kw:keywords()){
-			if(kw.name().find("reg_")==0)
-				continue;
-			return tc.get_type(*this,kw.name());
-		}
-		return tc.get_type(*this,toc::default_type_str);
 	}
 
 private:

@@ -75,13 +75,16 @@ inline unique_ptr<statement>create_statement_from_tokenizer(toc&tc,tokenizer&t){
 		if(!uops.is_empty())
 			throw compiler_error(tk,"unexpected comment after unary ops");
 		// i.e.  print("hello") # comment
-		return make_unique<stmt_comment>(move(tk),t);
+		return make_unique<stmt_comment>(tc,move(tk),t);
 	}else if(t.is_peek_char('(')){
 		// i.e.  f(...)
 		return create_statement_from_tokenizer(tc,move(tk),move(uops),t);
 	}else{
 		// i.e. 0x80, rax, identifiers
-		return make_unique<statement>(move(tk),move(uops));
+		unique_ptr<statement>st{make_unique<statement>(move(tk),move(uops))};
+		const ident_resolved&ir{tc.resolve_ident_to_nasm(*st,false)};
+		st->set_type(&ir.tp);
+		return st;
 	}
 }
 
@@ -102,10 +105,10 @@ inline void unary_ops::compile(toc&tc,ostream&os,size_t indent_level,const strin
 }
 
 
-inline const type&statement::get_type(toc&tc)const{
-	const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,false)};
-	return ir.tp;
-}
+//inline const type&statement::get_type(toc&tc)const{
+//	const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,false)};
+//	return ir.tp;
+//}
 // opt1
 // example:
 //   jmp cmp_13_26

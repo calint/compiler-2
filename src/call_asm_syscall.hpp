@@ -4,7 +4,9 @@ class call_asm_syscall final:public call_asm{
 public:
 	inline call_asm_syscall(toc&tc,token tk,tokenizer&t):
 		call_asm{tc,move(tk),t}
-	{}
+	{
+		set_type(&tc.get_type(*this,toc::void_type_str));
+	}
 
 	inline call_asm_syscall()=default;
 	inline call_asm_syscall(const call_asm_syscall&)=default;

@@ -7,6 +7,8 @@ public:
 	inline bool_op(toc&tc,tokenizer&t):
 		statement{t.next_whitespace_token()}
 	{
+		set_type(&tc.get_type(*this,toc::bool_type_str));
+
 		bool is_not{false};
 		// if not a=3
 		while(true){

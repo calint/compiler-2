@@ -28,10 +28,9 @@ public:
 
 
 		const type&tp{tc.get_type(*this,type_.name().empty()?toc::default_type_str:type_.name())};
+		set_type(&tp);
 		null_stream ns{};
 		tc.add_var(*this,ns,0,name_.name(),tp,false);
-
-
 		initial_value_={tc,name_,type_,t};
 
 	}

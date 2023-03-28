@@ -2,10 +2,12 @@
 
 class stmt_comment final:public statement{
 public:
-	inline stmt_comment(token tk,tokenizer&t):
+	inline stmt_comment(toc&tc,token tk,tokenizer&t):
 		statement{move(tk)},
 		line_{t.read_rest_of_line()}
-	{}
+	{
+		set_type(&tc.get_type(*this,toc::void_type_str));
+	}
 
 	inline stmt_comment()=default;
 	inline stmt_comment(const stmt_comment&)=default;

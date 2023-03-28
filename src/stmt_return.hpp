@@ -2,9 +2,11 @@
 
 class stmt_return final:public statement{
 public:
-	inline stmt_return(token tk):
+	inline stmt_return(toc&tc,token tk):
 		statement{move(tk)}
-	{}
+	{
+		set_type(&tc.get_type(*this,toc::void_type_str));
+	}
 
 	inline stmt_return()=default;
 	inline stmt_return(const stmt_return&)=default;

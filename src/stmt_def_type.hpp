@@ -2,11 +2,13 @@
 
 class stmt_def_type_field final:public statement{
 public:
-	inline stmt_def_type_field(token tk,tokenizer&t):
+	inline stmt_def_type_field(toc&tc,token tk,tokenizer&t):
 		statement{move(tk)}
 	{
-		if(not t.is_next_char(':'))
+		set_type(&tc.get_type(*this,toc::void_type_str));
+		if(not t.is_next_char(':')){
 			return;
+		}
 		type_=t.next_token();
 	}
 
@@ -49,7 +51,7 @@ public:
 					throw compiler_error(t,"expected '}'");
 				break;
 			}
-			fields_.emplace_back(stmt_def_type_field{move(tknm),t});
+			fields_.emplace_back(stmt_def_type_field{tc,move(tknm),t});
 			if(t.is_next_char('}'))
 				break;
 			if(not t.is_next_char(','))

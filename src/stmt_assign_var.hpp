@@ -15,6 +15,7 @@ public:
 			return;
 		}
 		eols_=expr_ops_list{tc,t};
+		set_type(&ir.tp);
 	}
 
 	inline stmt_assign_var()=default;

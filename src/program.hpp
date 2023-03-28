@@ -9,13 +9,13 @@
 
 class program final{
 	// built-in type
-	type type_void{"void" ,0,true};
-	type type_i64 {"i64"  ,8,true};
+	type type_void{toc::void_type_str,0,true};
+	type type_i64 {toc::default_type_str,8,true};
 	type type_i32 {"i32"  ,4,true};
 	type type_i16 {"i16"  ,2,true};
 	type type_i8  {"i8"   ,1,true};
-	type type_bool{"bool" ,1,true};
-	statement root_stmt{}; // place-holder
+	type type_bool{toc::bool_type_str,1,true};
+	statement prg{}; // place-holder
 public:
 	inline program(const string&source):
 		tc_{source}
@@ -23,14 +23,14 @@ public:
 		// add built-in assembler calls
 		vector<string>assem{"mov","syscall"};
 		for(const string&s:assem)
-			tc_.add_func(root_stmt,s,type_void,nullptr);
+			tc_.add_func(prg,s,type_void,nullptr);
 
-		tc_.add_type(root_stmt,type_i64);
-		tc_.add_type(root_stmt,type_i32);
-		tc_.add_type(root_stmt,type_i16);
-		tc_.add_type(root_stmt,type_i8);
-		tc_.add_type(root_stmt,type_bool);
-		tc_.add_type(root_stmt,type_void);
+		tc_.add_type(prg,type_i64);
+		tc_.add_type(prg,type_i32);
+		tc_.add_type(prg,type_i16);
+		tc_.add_type(prg,type_i8);
+		tc_.add_type(prg,type_bool);
+		tc_.add_type(prg,type_void);
 
 		tokenizer t{source};
 		while(true){
@@ -47,7 +47,7 @@ public:
 			}else if(tk.is_name("type")){
 				stms_.emplace_back(make_unique<stmt_def_type>(tc_,move(tk),t));
 			}else if(tk.is_name("#")){
-				stms_.emplace_back(make_unique<stmt_comment>(move(tk),t));
+				stms_.emplace_back(make_unique<stmt_comment>(tc_,move(tk),t));
 			}else if(tk.is_name("")){
 				stms_.emplace_back(make_unique<statement>(move(tk)));
 			}else{
@@ -83,7 +83,7 @@ public:
 				s->compile(tc,os,indent);
 
 		// get the main function and compile
-		const stmt_def_func&main=tc.get_func_or_break(root_stmt,"main");
+		const stmt_def_func&main=tc.get_func_or_break(prg,"main");
 		if(not main.is_inline())
 			throw compiler_error(main,"main function must be declared inline");
 

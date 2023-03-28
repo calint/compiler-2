@@ -6,7 +6,9 @@ class call_asm_mov final:public call_asm{
 public:
 	inline call_asm_mov(toc&tc,token tk,tokenizer&t):
 		call_asm{tc,move(tk),t}
-	{}
+	{
+		set_type(&tc.get_type(*this,toc::void_type_str));
+	}
 
 	inline call_asm_mov()=default;
 	inline call_asm_mov(const call_asm_mov&)=default;
