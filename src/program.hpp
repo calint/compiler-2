@@ -9,12 +9,12 @@
 
 class program final{
 	// built-in type
-	type type_void{"void",0,true};
-	type type_i64 {toc::default_type_str,8,true};
+	type type_void{"void" ,0,true};
+	type type_i64 {"i64"  ,8,true};
 	type type_i32 {"i32"  ,4,true};
 	type type_i16 {"i16"  ,2,true};
 	type type_i8  {"i8"   ,1,true};
-	type type_bool{toc::bool_type_str,1,true};
+	type type_bool{"bool" ,1,true};
 	statement prg{}; // place-holder
 public:
 	inline program(const string&source):
@@ -87,7 +87,7 @@ public:
 				s->compile(tc,os,indent);
 
 		// get the main function and compile
-		const stmt_def_func&main=tc.get_func_or_break(prg,"main");
+		const stmt_def_func&main=tc.get_func_or_throw(prg,"main");
 		if(not main.is_inline())
 			throw compiler_error(main,"main function must be declared inline");
 

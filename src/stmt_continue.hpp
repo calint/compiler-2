@@ -17,7 +17,7 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		tc.source_comment(*this,os,indent);
 		// get current loop label
-		const string&loop_label=tc.get_loop_label_or_break(*this);
+		const string&loop_label=tc.get_loop_label_or_throw(*this);
 		// jump to it
 		tc.asm_jmp(*this,os,indent,loop_label);
 	}

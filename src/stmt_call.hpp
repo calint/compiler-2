@@ -25,7 +25,7 @@ public:
 			args_.emplace_back(tc,t,true);
 			expect_arg=t.is_next_char(',');
 		}
-		set_type(tc.get_func_return_type_or_break(*this,identifier()));
+		set_type(tc.get_func_return_type_or_throw(*this,identifier()));
 	}
 
 	inline stmt_call()=default;
@@ -52,7 +52,7 @@ public:
 
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		tc.source_comment(*this,os,indent);
-		const stmt_def_func&func{tc.get_func_or_break(*this,tok().name())};
+		const stmt_def_func&func{tc.get_func_or_throw(*this,tok().name())};
 		const string&func_nm{func.name()};
 		
 		// check that the same number of arguments are provided as expected
@@ -149,7 +149,7 @@ public:
 					continue;
 				}
 				if(arg.get_unary_ops().is_empty()){
-					if(ir.tp.size()==toc::default_type_size){
+					if(ir.tp.size()==tc.get_type_default().size()){
 						tc.asm_push(arg,os,indent,ir.id);
 						nbytes_of_args_on_stack+=8;
 						continue;

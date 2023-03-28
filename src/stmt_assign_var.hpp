@@ -10,7 +10,7 @@ public:
 		type_{move(type)}
 	{
 		const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,false)};
-		if(ir.tp.name()==toc::bool_type_str){
+		if(ir.tp.name()==tc.get_type_bool().name()){
 			eols_=bool_ops_list{tc,t};
 			return;
 		}

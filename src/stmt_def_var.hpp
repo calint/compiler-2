@@ -27,7 +27,7 @@ public:
 			throw compiler_error(name_,"expected '=' and initializer");
 
 
-		const type&tp{tc.get_type(*this,type_.name().empty()?toc::default_type_str:type_.name())};
+		const type&tp{type_.name().empty()?tc.get_type_default():tc.get_type_or_throw(*this,type_.name())};
 		set_type(tp);
 		null_stream ns{};
 		tc.add_var(*this,ns,0,name_.name(),tp,false);
@@ -47,8 +47,7 @@ public:
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
-		const type&tp{tc.get_type(*this,type_.name().empty()?toc::default_type_str:type_.name())};
-		tc.add_var(*this,os,indent,name_.name(),tp,false);
+		tc.add_var(*this,os,indent,name_.name(),get_type(),false);
 		tc.source_comment(*this,os,indent);
 		initial_value_.compile(tc,os,indent,name_.name());
 	}

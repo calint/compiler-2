@@ -22,7 +22,7 @@ public:
 		for(const token&kw:keywords()){
 			if(kw.name().find("reg_")==0)
 				continue;
-			set_type(tc.get_type(*this,kw.name()));
+			set_type(tc.get_type_or_throw(*this,kw.name()));
 			return;
 		}
 

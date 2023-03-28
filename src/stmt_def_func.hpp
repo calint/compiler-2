@@ -35,7 +35,7 @@ public:
 				break;
 			}
 			if(returns_.size()>1){
-				set_type(tc.get_type(*this,returns_[1].name()));
+				set_type(tc.get_type_or_throw(*this,returns_[1].name()));
 //				return_type_str=returns_[1].name();
 			}else{
 				set_type(tc.get_type_default());
@@ -141,7 +141,7 @@ public:
 				tc.add_func_arg(*this,os,indent+1,pm_nm,arg_type,int(stk_ix));
 //				stk_ix+=arg_type.size();
 				// only 64 bits values on the stack
-				stk_ix+=toc::default_type_size;
+				stk_ix+=tc.get_type_default().size();
 			}else{
 				toc::indent(os,indent+1,true);os<<pm_nm<<": "<<reg<<endl;
 				tc.alloc_named_register_or_break(pm,os,indent+1,reg);
