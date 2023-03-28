@@ -50,19 +50,19 @@ f:
 main:
 ;  bt1: byte[rbp-1]
 ;  [16:5] var bt1:i8=1 
-;  [16:9] bt1=1 
+;  [16:9] bt1:i8=1 
 ;  [16:16] 1 
 ;  [16:16] bt1=1 
    mov byte[rbp-1],1
 ;  bt2: byte[rbp-2]
 ;  [17:5] var bt2:i8=2 
-;  [17:9] bt2=2 
+;  [17:9] bt2:i8=2 
 ;  [17:16] 2 
 ;  [17:16] bt2=2 
    mov byte[rbp-2],2
 ;  b: byte[rbp-3]
 ;  [18:5] var b:bool=f(bt1,bt2)
-;  [18:9] b=f(bt1,bt2)
+;  [18:9] b:bool=f(bt1,bt2)
 ;  [18:16] ? f(bt1,bt2)
 ;  [18:16] ? f(bt1,bt2)
    cmp_18_16:

@@ -100,7 +100,7 @@ public:
 			unary_ops uo{t};
 			if(t.is_next_char('(')){
 				// subexpression, recurse
-				exps_.emplace_back(make_unique<expr_ops_list>(tc,t,in_args,true,uo));
+				exps_.emplace_back(make_unique<expr_ops_list>(tc,t,in_args,true,move(uo)));
 				continue;
 			}
 			// not subexpression
@@ -191,7 +191,7 @@ public:
 
 	inline virtual const type&get_type(toc&tc)const override{
 		assert(not exps_.empty());
-		return exps_[0]->get_type(tc);
+		return exps_[0]->get_type(tc); // ! hack  find the size of the largest integral element
 	}
 
 
