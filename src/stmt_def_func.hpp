@@ -35,13 +35,13 @@ public:
 				break;
 			}
 			if(returns_.size()>1){
-				set_type(&tc.get_type(*this,returns_[1].name()));
+				set_type(tc.get_type(*this,returns_[1].name()));
 //				return_type_str=returns_[1].name();
 			}else{
-				set_type(&tc.get_type(*this,toc::default_type_str)); // ? hack  may be void
+				set_type(tc.get_type(*this,toc::default_type_str)); // ? hack  may be void
 			}
 		}else{
-			set_type(&tc.get_type(*this,toc::void_type_str));
+			set_type(tc.get_type(*this,toc::void_type_str));
 		}
 		tc.add_func(*this,name_.name(),get_type(),this);
 		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());

@@ -25,7 +25,7 @@ public:
 			args_.emplace_back(tc,t,true);
 			expect_arg=t.is_next_char(',');
 		}
-		set_type(&tc.get_func_return_type_or_break(*this,identifier()));
+		set_type(tc.get_func_return_type_or_break(*this,identifier()));
 	}
 
 	inline stmt_call()=default;

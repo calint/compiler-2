@@ -8,7 +8,7 @@ public:
 		assert(not tok().is_name(""));
 
 		if(not t.is_next_char(':')){
-			set_type(&tc.get_type(*this,toc::default_type_str));
+			set_type(tc.get_type(*this,toc::default_type_str));
 			return;
 		}
 
@@ -22,10 +22,10 @@ public:
 		for(const token&kw:keywords()){
 			if(kw.name().find("reg_")==0)
 				continue;
-			set_type(&tc.get_type(*this,kw.name()));
+			set_type(tc.get_type(*this,kw.name()));
 			return;
 		}
-		set_type(&tc.get_type(*this,toc::default_type_str));
+		set_type(tc.get_type(*this,toc::default_type_str));
 	}
 
 	inline stmt_def_func_param()=default;

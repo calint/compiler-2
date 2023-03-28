@@ -21,7 +21,7 @@ public:
 		not_token_{move(not_token)},
 		enclosed_{enclosed}
 	{
-		set_type(&tc.get_type(*this,toc::bool_type_str));
+		set_type(tc.get_type(*this,toc::bool_type_str));
 
 		token prv_op{first_op};
 		if(not first_op.is_empty()){

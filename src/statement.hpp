@@ -40,7 +40,7 @@ public:
 
 	inline virtual const unary_ops&get_unary_ops()const{return uops_;}
 
-	inline void set_type(const type*tp){type_=tp;}
+	inline void set_type(const type&tp){type_=&tp;}
 
 	inline virtual const type&get_type()const{return*type_;}
 

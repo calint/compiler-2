@@ -10,7 +10,7 @@ public:
 		bol_{tc,t},
 		code_{tc,t}
 	{
-		set_type(&tc.get_type(*this,toc::void_type_str));
+		set_type(tc.get_type(*this,toc::void_type_str));
 	}
 
 	inline stmt_if_branch()=default;

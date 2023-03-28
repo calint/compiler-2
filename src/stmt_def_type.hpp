@@ -5,7 +5,7 @@ public:
 	inline stmt_def_type_field(toc&tc,token tk,tokenizer&t):
 		statement{move(tk)}
 	{
-		set_type(&tc.get_type(*this,toc::void_type_str));
+		set_type(tc.get_type(*this,toc::void_type_str));
 		if(not t.is_next_char(':')){
 			return;
 		}

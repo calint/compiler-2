@@ -5,7 +5,7 @@ public:
 	inline stmt_continue(toc&tc,token tk):
 		statement{move(tk)}
 	{
-		set_type(&tc.get_type(*this,toc::void_type_str));
+		set_type(tc.get_type(*this,toc::void_type_str));
 	}
 
 	inline stmt_continue()=default;

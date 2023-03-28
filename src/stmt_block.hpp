@@ -42,7 +42,7 @@ public:
 				last_statement_considered_no_statment=true;
 			}else if(tk.is_name("")){ // white space
 				stms_.emplace_back(make_unique<statement>(move(tk)));
-				stms_.back()->set_type(&tc.get_type(*stms_.back(),toc::void_type_str));
+				stms_.back()->set_type(tc.get_type(*stms_.back(),toc::void_type_str));
 			}else{ // circular reference resolver
 				stms_.emplace_back(create_statement_from_tokenizer(tc,move(tk),{},t));
 			}
@@ -51,7 +51,7 @@ public:
 				break;
 		}
 		tc.exit_block();
-		set_type(&tc.get_type(*this,toc::void_type_str));
+		set_type(tc.get_type(*this,toc::void_type_str));
 	}
 
 	inline stmt_block()=default;
