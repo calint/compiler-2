@@ -40,6 +40,8 @@ public:
 			}else{
 				type_=&tc.get_type(*this,toc::default_type_str); // ? hack  may be void
 			}
+		}else{
+			type_=&tc.get_type(*this,"void");
 		}
 
 		tc.add_func(*this,name_.name(),*type_,this);
