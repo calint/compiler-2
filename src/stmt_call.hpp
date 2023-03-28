@@ -13,7 +13,7 @@ public:
 	{
 		if(not t.is_next_char('(')){
 			no_args_=true;
-			return; // ! may have return value
+			return;
 		}
 		bool expect_arg{false};
 		while(true){
