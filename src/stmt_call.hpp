@@ -84,13 +84,13 @@ public:
 			if(func.returns().empty())
 				throw compiler_error(*this,"cannot assign from function that does not return value");
 
-			const type&return_type{tc.get_type(*this,func.get_return_type_str())};
+			const type&return_type{func.get_type(tc)};
 			const ident_resolved&dst_resolved{tc.resolve_ident_to_nasm(*this,dst,false)};
 //			if(dst_resolved.tp.name()!=return_type.name())
 //				throw compiler_error(*this,"return type '"+return_type.name()+"' does not match the destination type '"+dst_resolved.tp.name()+"'");
 			// ? check if built in integer types
 			if(dst_resolved.tp.size()<return_type.size())
-				throw compiler_error(*this,"return type '"+func.get_return_type_str()+"' would be truncated when copied to '"+dst+"' of type '"+dst_resolved.tp.name()+"'");
+				throw compiler_error(*this,"return type '"+return_type.name()+"' would be truncated when copied to '"+dst+"' of type '"+dst_resolved.tp.name()+"'");
 		}
 
 		if(not func.is_inline()){

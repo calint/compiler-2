@@ -9,6 +9,7 @@
 
 class program final{
 	// built-in type
+	type type_void{"void" ,0,true};
 	type type_i64 {"i64"  ,8,true};
 	type type_i32 {"i32"  ,4,true};
 	type type_i16 {"i16"  ,2,true};
@@ -22,13 +23,14 @@ public:
 		// add built-in assembler calls
 		vector<string>assem{"mov","syscall"};
 		for(const string&s:assem)
-			tc_.add_func(root_stmt,s,"",nullptr);
+			tc_.add_func(root_stmt,s,type_void,nullptr);
 
 		tc_.add_type(root_stmt,type_i64);
 		tc_.add_type(root_stmt,type_i32);
 		tc_.add_type(root_stmt,type_i16);
 		tc_.add_type(root_stmt,type_i8);
 		tc_.add_type(root_stmt,type_bool);
+		tc_.add_type(root_stmt,type_void);
 
 		tokenizer t{source};
 		while(true){

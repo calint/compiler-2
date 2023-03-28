@@ -35,13 +35,14 @@ public:
 				break;
 			}
 			if(returns_.size()>1){
-				return_type_str=returns_[1].name();
+				type_=&tc.get_type(*this,returns_[1].name());
+//				return_type_str=returns_[1].name();
 			}else{
-				return_type_str=string{toc::default_type_str};
+				type_=&tc.get_type(*this,toc::default_type_str); // ? hack  may be void
 			}
 		}
 
-		tc.add_func(*this,name_.name(),get_return_type_str(),this);
+		tc.add_func(*this,name_.name(),*type_,this);
 		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());
 		vector<string>allocated_named_registers;
 		null_stream ns{};
@@ -120,8 +121,7 @@ public:
 		// return binding
 		if(not returns().empty()){
 			const string&nm{returns()[0].name()};
-			const type&ret_type{tc.get_type(*this,get_return_type_str())}; // ? var type
-			tc.add_var(*this,os,indent+1,nm,ret_type,false);
+			tc.add_var(*this,os,indent+1,nm,*type_,false);
 		}
 
 		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[return address]
@@ -157,6 +157,7 @@ public:
 			tc.free_named_register(os,indent+1,allocated_named_registers[i]);
 		}
 	}
+
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		if(is_inline())
 			return;
@@ -198,7 +199,9 @@ public:
 
 	inline bool is_inline()const{return not inline_tk_.is_empty();}
 
-	inline const string&get_return_type_str()const{return return_type_str;}
+//	inline const string&get_return_type_str()const{return return_type_str;}
+
+	inline const type&get_type(toc&tc)const override{return*type_;}
 
 private:
 	token name_;
@@ -206,6 +209,7 @@ private:
 	vector<token>returns_;
 	stmt_block code_;
 	token inline_tk_;
-	string return_type_str;
+//	string return_type_str;
 	bool no_args_{};
+	const type*type_{};
 };

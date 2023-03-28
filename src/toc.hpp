@@ -113,7 +113,7 @@ struct field_meta final{
 };
 
 struct func_meta final{
-	const string return_type;
+	const type&tp;
 	const stmt_def_func*def{};
 	const token declared_at;
 };
@@ -193,7 +193,7 @@ public:
 		fields_.put(ident,{f,st.tok(),is_str_field});
 	}
 
-	inline void add_func(const statement&st,const string&name,const string&return_type,const stmt_def_func*ref){
+	inline void add_func(const statement&st,const string&name,const type&return_type,const stmt_def_func*ref){
 		if(funcs_.has(name)){
 			const func_meta&func=funcs_.get(name);
 			throw compiler_error(st,"function '"+name+"' already defined at "+source_location_hr(func.declared_at));
@@ -1007,7 +1007,7 @@ private:
 
 		if(funcs_.has(id)){
 			const func_meta&func{funcs_.get_const_ref(id)};
-			return{id,get_type(st,func.return_type),ident_resolved::ident_type::CONST};
+			return{id,func.tp,ident_resolved::ident_type::CONST};
 		}
 
 		if(id=="true"||id=="false")
