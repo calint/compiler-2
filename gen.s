@@ -20,84 +20,72 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 
-f:
-;  f(x:i8,y:i8):res:bool 
-;  res: byte[rbp-1]
-;  x: byte[rbp+16]
-;  y: byte[rbp+24]
-   push rbp
-   mov rbp,rsp
-;  [8:5] res=x=y 
-;  [8:9] ? x=y 
-;  [8:9] ? x=y 
-   cmp_8_9:
-;  alloc r15
-   mov r15b,byte[rbp+24]
-   cmp byte[rbp+16],r15b
-;  free r15
-   jne false_8_5
-   jmp true_8_5
-   true_8_5:
-   mov byte[rbp-1],1
-   jmp end_8_5
-   false_8_5:
-   mov byte[rbp-1],0
-   end_8_5:
-   movsx rax,byte[rbp-1]
-   pop rbp
-   ret
-
 main:
-;  bt1: byte[rbp-1]
-;  [16:5] var bt1:i8=1 
-;  [16:9] bt1:i8=1 
-;  [16:16] 1 
-;  [16:16] bt1=1 
-   mov byte[rbp-1],1
-;  bt2: byte[rbp-2]
-;  [17:5] var bt2:i8=2 
-;  [17:9] bt2:i8=2 
-;  [17:16] 2 
-;  [17:16] bt2=2 
-   mov byte[rbp-2],2
-;  b: byte[rbp-3]
-;  [18:5] var b:bool=f(bt1,bt2)
-;  [18:9] b:bool=f(bt1,bt2)
-;  [18:16] ? f(bt1,bt2)
-;  [18:16] ? f(bt1,bt2)
-   cmp_18_16:
+;  a: qword[rbp-8]
+;  [8:5] var a=1 
+;  [8:9] a=1 
+;  [8:11] 1 
+;  [8:11] a=1 
+   mov qword[rbp-8],1
+;  b: qword[rbp-16]
+;  [9:5] var b=2 
+;  [9:9] b=2 
+;  [9:11] 2 
+;  [9:11] b=2 
+   mov qword[rbp-16],2
+;  c: qword[rbp-24]
+;  [10:5] var c=3 
+;  [10:9] c=3 
+;  [10:11] 3 
+;  [10:11] c=3 
+   mov qword[rbp-24],3
+;  d: qword[rbp-32]
+;  [11:5] var d=4 
+;  [11:9] d=4 
+;  [11:11] 4 
+;  [11:11] d=4 
+   mov qword[rbp-32],4
+;  r: qword[rbp-40]
+;  [12:5] var r=((b+c)*d+c*(a+b))*2 
+;  [12:9] r=((b+c)*d+c*(a+b))*2 
 ;  alloc r15
-;    [18:16] f(bt1,bt2)
-;    [18:16] r15=f(bt1,bt2)
-;    [18:16] f(bt1,bt2)
-     sub rsp,3
-;    alloc r14
-     movsx r14,byte[rbp-2]
-     push r14
-;    free r14
-;    alloc r14
-     movsx r14,byte[rbp-1]
-     push r14
-;    free r14
-     call f
-     add rsp,19
-     mov r15,rax
-   cmp r15,0
+;  [12:11] ((b+c)*d+c*(a+b))*2 
+;  [12:12] r15=((b+c)*d+c*(a+b))
+;  [12:12] ((b+c)*d+c*(a+b))
+;  [12:13] r15=(b+c)
+;  [12:13] (b+c)
+;  [12:13] r15=b
+   mov r15,qword[rbp-16]
+;  [12:15] r15+c
+   add r15,qword[rbp-24]
+;  [12:18] r15*d
+   imul r15,qword[rbp-32]
+;  [12:21] r15+c*(a+b)
+;  alloc r14
+;  [12:21] c*(a+b)
+;  [12:20] r14=c
+   mov r14,qword[rbp-24]
+;  [12:23] r14*(a+b)
+;  alloc r13
+;  [12:23] (a+b)
+;  [12:23] r13=a
+   mov r13,qword[rbp-8]
+;  [12:25] r13+b
+   add r13,qword[rbp-16]
+   imul r14,r13
+;  free r13
+   add r15,r14
+;  free r14
+;  [12:29] r15*2 
+   imul r15,2
+   mov qword[rbp-40],r15
 ;  free r15
-   je false_18_9
-   jmp true_18_9
-   true_18_9:
-   mov byte[rbp-3],1
-   jmp end_18_9
-   false_18_9:
-   mov byte[rbp-3],0
-   end_18_9:
-;  [20:5] exit(0)
+;  [13:5] exit(r)
 ;  exit(v:reg_rdi) 
-;    inline: 20_5
+;    inline: 13_5
 ;    alloc rdi
 ;    alias v -> rdi
-     mov rdi,0
+     mov rdi,qword[rbp-40]
 ;    [2:5] mov(rax,60)
      mov rax,60
 ;    [2:17] # exit system call 
@@ -106,7 +94,7 @@ main:
 ;    [4:5] syscall 
      syscall
 ;    free rdi
-   exit_20_5_end:
+   exit_13_5_end:
 
-; max scratch registers in use: 2
+; max scratch registers in use: 3
 ;            max frames in use: 4

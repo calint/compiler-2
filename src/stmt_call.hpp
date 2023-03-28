@@ -13,7 +13,7 @@ public:
 	{
 		if(not t.is_next_char('(')){
 			no_args_=true;
-			return;
+			return; // ! may have return value
 		}
 		bool expect_arg{false};
 		while(true){
@@ -23,11 +23,7 @@ public:
 				break;
 			}
 			args_.emplace_back(tc,t,true);
-			if(t.is_next_char(')'))
-				break;
-			if(not t.is_next_char(','))
-				throw compiler_error(args_.back(),"expected ',' after argument '"+args_.back().identifier()+"'");
-			expect_arg=true;
+			expect_arg=t.is_next_char(',');
 		}
 	}
 

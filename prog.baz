@@ -4,18 +4,11 @@ func inline exit(v:reg_rdi){
     syscall
 }
 
-func f(x:i8,y:i8):res:bool{
-    res=x=y
-}
-
-func inline f2(x:bool):res:bool{
-    if x res=false else res=true
-}
-
 func inline main{
-    var bt1:i8=1
-    var bt2:i8=2
-    var b:bool=f(bt1,bt2)
-    
-    exit(0)
+    var a=1
+    var b=2
+    var c=3
+    var d=4
+    var r=((b+c)*d+c*(a+b))*2
+    exit(r)
 }

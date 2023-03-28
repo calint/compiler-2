@@ -14,45 +14,22 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
-f:
-   push rbp
-   mov rbp,rsp
-   cmp_8_9:
-   mov r15b,byte[rbp+24]
-   cmp byte[rbp+16],r15b
-   jne false_8_5
-   jmp true_8_5
-   true_8_5:
-   mov byte[rbp-1],1
-   jmp end_8_5
-   false_8_5:
-   mov byte[rbp-1],0
-   end_8_5:
-   movsx rax,byte[rbp-1]
-   pop rbp
-   ret
 main:
-   mov byte[rbp-1],1
-   mov byte[rbp-2],2
-   cmp_18_16:
-     sub rsp,3
-     movsx r14,byte[rbp-2]
-     push r14
-     movsx r14,byte[rbp-1]
-     push r14
-     call f
-     add rsp,19
-     mov r15,rax
-   cmp r15,0
-   je false_18_9
-   jmp true_18_9
-   true_18_9:
-   mov byte[rbp-3],1
-   jmp end_18_9
-   false_18_9:
-   mov byte[rbp-3],0
-   end_18_9:
-     mov rdi,0
+   mov qword[rbp-8],1
+   mov qword[rbp-16],2
+   mov qword[rbp-24],3
+   mov qword[rbp-32],4
+   mov r15,qword[rbp-16]
+   add r15,qword[rbp-24]
+   imul r15,qword[rbp-32]
+   mov r14,qword[rbp-24]
+   mov r13,qword[rbp-8]
+   add r13,qword[rbp-16]
+   imul r14,r13
+   add r15,r14
+   imul r15,2
+   mov qword[rbp-40],r15
+     mov rdi,qword[rbp-40]
      mov rax,60
      syscall
-   exit_20_5_end:
+   exit_13_5_end:
