@@ -5,6 +5,9 @@ false equ 0
 
 section .data
 align 4
+;[1:1] field hello="hello world" 
+hello: db 'hello world'
+hello.len equ $-hello
 
 section .bss
 align 4
@@ -21,80 +24,157 @@ mov rbp,rsp
 jmp main
 
 main:
-;  a: qword[rbp-8]
-;  [8:5] var a=1 
-;  [8:9] a=1 
-;  [8:11] 1 
-;  [8:11] a=1 
-   mov qword[rbp-8],1
-;  b: qword[rbp-16]
-;  [9:5] var b=2 
-;  [9:9] b=2 
-;  [9:11] 2 
-;  [9:11] b=2 
-   mov qword[rbp-16],2
-;  c: qword[rbp-24]
-;  [10:5] var c=3 
-;  [10:9] c=3 
-;  [10:11] 3 
-;  [10:11] c=3 
-   mov qword[rbp-24],3
-;  d: qword[rbp-32]
-;  [11:5] var d=4 
-;  [11:9] d=4 
-;  [11:11] 4 
-;  [11:11] d=4 
-   mov qword[rbp-32],4
-;  r: qword[rbp-40]
-;  [12:5] var r=((b+c)*d+c*(a+b))*2 
-;  [12:9] r=((b+c)*d+c*(a+b))*2 
+;  bt1: byte[rbp-1]
+;  [10:5] var bt1:i8=1 
+;  [10:9] bt1:i8=1 
+;  [10:16] 1 
+;  [10:16] bt1=1 
+   mov byte[rbp-1],1
+;  bt2: byte[rbp-2]
+;  [11:5] var bt2:i8=2 
+;  [11:9] bt2:i8=2 
+;  [11:16] 2 
+;  [11:16] bt2=2 
+   mov byte[rbp-2],2
+;  b1: byte[rbp-3]
+;  [13:5] var b1:bool=bt1<bt2 
+;  [13:9] b1:bool=bt1<bt2 
+;  [13:17] ? bt1<bt2 
+;  [13:17] ? bt1<bt2 
+   cmp_13_17:
 ;  alloc r15
-;  [12:11] ((b+c)*d+c*(a+b))*2 
-;  [12:12] r15=((b+c)*d+c*(a+b))
-;  [12:12] ((b+c)*d+c*(a+b))
-;  [12:13] r15=(b+c)
-;  [12:13] (b+c)
-;  [12:13] r15=b
-   mov r15,qword[rbp-16]
-;  [12:15] r15+c
-   add r15,qword[rbp-24]
-;  [12:18] r15*d
-   imul r15,qword[rbp-32]
-;  [12:21] r15+c*(a+b)
-;  alloc r14
-;  [12:21] c*(a+b)
-;  [12:20] r14=c
-   mov r14,qword[rbp-24]
-;  [12:23] r14*(a+b)
-;  alloc r13
-;  [12:23] (a+b)
-;  [12:23] r13=a
-   mov r13,qword[rbp-8]
-;  [12:25] r13+b
-   add r13,qword[rbp-16]
-   imul r14,r13
-;  free r13
-   add r15,r14
-;  free r14
-;  [12:29] r15*2 
-   imul r15,2
-   mov qword[rbp-40],r15
+   mov r15b,byte[rbp-2]
+   cmp byte[rbp-1],r15b
 ;  free r15
-;  [13:5] exit(r)
+   jge false_13_9
+   jmp true_13_9
+   true_13_9:
+   mov byte[rbp-3],1
+   jmp end_13_9
+   false_13_9:
+   mov byte[rbp-3],0
+   end_13_9:
+   if_14_8:
+;  [14:8] ? not b1 
+;  [14:8] ? not b1 
+   cmp_14_8:
+   cmp byte[rbp-3],0
+   jne if_14_5_end
+   jmp if_14_8_code
+   if_14_8_code:
+;    [14:15] exit(1)
+;    exit(v:reg_rdi) 
+;      inline: 14_15
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,1
+;      [4:5] mov(rax,60)
+       mov rax,60
+;      [4:17] # exit system call 
+;      [5:5] mov(rdi,v)
+;      [5:17] # return code 
+;      [6:5] syscall 
+       syscall
+;      free rdi
+     exit_14_15_end:
+   if_14_5_end:
+;  b2: byte[rbp-4]
+;  [16:5] var b2:bool=bt1=1 
+;  [16:9] b2:bool=bt1=1 
+;  [16:17] ? bt1=1 
+;  [16:17] ? bt1=1 
+   cmp_16_17:
+   cmp byte[rbp-1],1
+   jne false_16_9
+   jmp true_16_9
+   true_16_9:
+   mov byte[rbp-4],1
+   jmp end_16_9
+   false_16_9:
+   mov byte[rbp-4],0
+   end_16_9:
+;  [17:5] b2=not bt2 
+;  [17:8] ? not bt2 
+;  [17:8] ? not bt2 
+   cmp_17_8:
+   cmp byte[rbp-2],0
+   jne false_17_5
+   jmp true_17_5
+   true_17_5:
+   mov byte[rbp-4],1
+   jmp end_17_5
+   false_17_5:
+   mov byte[rbp-4],0
+   end_17_5:
+   if_18_8:
+;  [18:8] ? b2 
+;  [18:8] ? b2 
+   cmp_18_8:
+   cmp byte[rbp-4],0
+   je if_18_5_end
+   jmp if_18_8_code
+   if_18_8_code:
+;    [18:11] exit(2)
+;    exit(v:reg_rdi) 
+;      inline: 18_11
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,2
+;      [4:5] mov(rax,60)
+       mov rax,60
+;      [4:17] # exit system call 
+;      [5:5] mov(rdi,v)
+;      [5:17] # return code 
+;      [6:5] syscall 
+       syscall
+;      free rdi
+     exit_18_11_end:
+   if_18_5_end:
+;  [20:5] bt1=-1+2 
+;  [20:9] -1+2 
+;  [20:10] bt1=-1
+   mov byte[rbp-1],-1
+;  [20:12] bt1+2 
+   add byte[rbp-1],2
+   if_21_8:
+;  [21:8] ? not bt1=1 
+;  [21:8] ? not bt1=1 
+   cmp_21_8:
+   cmp byte[rbp-1],1
+   je if_21_5_end
+   jmp if_21_8_code
+   if_21_8_code:
+;    [21:18] exit(3)
+;    exit(v:reg_rdi) 
+;      inline: 21_18
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi,3
+;      [4:5] mov(rax,60)
+       mov rax,60
+;      [4:17] # exit system call 
+;      [5:5] mov(rdi,v)
+;      [5:17] # return code 
+;      [6:5] syscall 
+       syscall
+;      free rdi
+     exit_21_18_end:
+   if_21_5_end:
+;  [23:5] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 13_5
+;    inline: 23_5
 ;    alloc rdi
 ;    alias v -> rdi
-     mov rdi,qword[rbp-40]
-;    [2:5] mov(rax,60)
+     mov rdi,0
+;    [4:5] mov(rax,60)
      mov rax,60
-;    [2:17] # exit system call 
-;    [3:5] mov(rdi,v)
-;    [3:17] # return code 
-;    [4:5] syscall 
+;    [4:17] # exit system call 
+;    [5:5] mov(rdi,v)
+;    [5:17] # return code 
+;    [6:5] syscall 
      syscall
 ;    free rdi
-   exit_13_5_end:
+   exit_23_5_end:
 
-; max scratch registers in use: 3
-;            max frames in use: 4
+; max scratch registers in use: 1
+;            max frames in use: 5

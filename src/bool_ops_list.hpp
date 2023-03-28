@@ -8,8 +8,8 @@
 class bool_ops_list final:public statement{
 public:
 	inline bool_ops_list(
-			toc&tc,
-			tokenizer&t,const bool enclosed=false,token not_token={},
+			toc&tc,tokenizer&t,
+			const bool enclosed=false,token not_token={},
 			const bool is_sub_expr=false,
 			variant<bool_op,bool_ops_list>first_bool_op={},
 			token first_op={}
@@ -254,6 +254,30 @@ public:
 				}
 			}
 		}
+	}
+
+	inline bool is_expression()const override{ // ? assumes it is not an expression
+		if(bools_.size()>1)
+			return true;
+
+		assert(bools_.size()>0);
+
+		if(bools_[0].index()==0)
+			return get<bool_op>(bools_[0]).is_expression();
+
+		return get<bool_ops_list>(bools_[0]).is_expression();
+	}
+
+	inline const string&identifier()const override{
+		if(bools_.size()>1)
+			throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
+
+		assert(bools_.size()>0);
+
+		if(bools_[0].index()==0)
+			return get<bool_op>(bools_[0]).identifier();
+
+		return get<bool_ops_list>(bools_[0]).identifier();
 	}
 
 private:

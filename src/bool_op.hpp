@@ -111,6 +111,22 @@ public:
 		return "cmp_"+tc.source_location_for_label(tok())+(call_path.empty()?"":"_"+call_path);
 	}
 
+	inline bool is_shorthand()const{return is_shorthand_;}
+
+	inline const string&identifier()const override{
+		if(is_shorthand())
+			return lhs_.identifier();
+
+		throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
+	}
+
+	inline bool is_expression()const override{
+		if(is_shorthand() and not is_not_)
+			return lhs_.is_expression();
+
+		return true;
+	}
+
 private:
 	inline static string asm_jxx_for_op(const string&op){
 		if(op=="="){

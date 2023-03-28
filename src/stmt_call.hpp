@@ -5,6 +5,7 @@
 #include"expr_ops_list.hpp"
 #include"stmt_def_func.hpp"
 #include"unary_ops.hpp"
+#include"expr_any.hpp"
 
 class stmt_call:public expression{
 public:
@@ -24,7 +25,7 @@ public:
 					throw compiler_error(t,"expected argument after ','");
 				break;
 			}
-			args_.emplace_back(tc,t,true);
+			args_.emplace_back(tc,get_type(),t,true);
 			expect_arg=t.is_next_char(',');
 		}
 	}
@@ -64,10 +65,10 @@ public:
 
 		// check that argument types match the parameters
 		for(size_t i=0;i<args_.size();i++){
-			const expr_ops_list&arg{args_[i]};
+			const expr_any&arg{args_[i]};
 			const stmt_def_func_param&param{func.param(i)};
-			const type&arg_type=arg.get_type();
-			const type&param_type=param.get_type();
+			const type&arg_type{arg.get_type()};
+			const type&param_type{param.get_type()};
 			if(arg_type.is_built_in()&&param_type.is_built_in()){
 				if(param_type.size()<arg_type.size())
 					throw compiler_error(arg,"argument "+to_string(i+1)+" of type '"+arg_type.name()+"' would be truncated when passed to parameter of type '"+param_type.name()+"'");
@@ -102,7 +103,7 @@ public:
 			size_t nbytes_of_args_on_stack{0};
 			size_t i{args_.size()};
 			while(i--){
-				const expr_ops_list&arg{args_[i]};
+				const expr_any&arg{args_[i]};
 				const stmt_def_func_param&param{func.param(i)};
 				// is the argument passed through a register?
 				const string&arg_reg=param.get_register_or_empty();
@@ -333,7 +334,7 @@ public:
 	inline size_t arg_count()const{return args_.size();}
 
 private:
-	vector<expr_ops_list>args_;
+	vector<expr_any>args_;
 	bool no_args_{};
 };
 
