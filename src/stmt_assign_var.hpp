@@ -25,16 +25,6 @@ public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		os<<"=";
-		if(eols_.index()==0){
-			get<expr_ops_list>(eols_).source_to(os);
-		}else{
-			get<bool_ops_list>(eols_).source_to(os);
-		}
-	}
-
-	inline void source_def_to(ostream&os)const{
-		statement::source_to(os);
 		if(not type_.is_empty()){
 			os<<':';
 			type_.source_to(os);
@@ -46,6 +36,20 @@ public:
 			get<bool_ops_list>(eols_).source_to(os);
 		}
 	}
+
+//	inline void source_def_to(ostream&os)const{
+//		statement::source_to(os);
+//		if(not type_.is_empty()){
+//			os<<':';
+//			type_.source_to(os);
+//		}
+//		os<<"=";
+//		if(eols_.index()==0){
+//			get<expr_ops_list>(eols_).source_to(os);
+//		}else{
+//			get<bool_ops_list>(eols_).source_to(os);
+//		}
+//	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		tc.source_comment(*this,os,indent);
@@ -104,11 +108,11 @@ public:
 
 private:
 	inline static size_t count_instructions(stringstream&ss){
-		const regex regex{R"(^\s*;.*$)"};
+		const regex rxcomment{R"(^\s*;.*$)"};
 		string line;
 		size_t n{0};
 		while(getline(ss,line)){
-			if(regex_search(line,regex))
+			if(regex_search(line,rxcomment))
 				continue;
 			n++;
 		}

@@ -44,7 +44,7 @@ public:
 
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
-		initial_value_.source_def_to(os);
+		initial_value_.source_to(os);
 	}
 
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
