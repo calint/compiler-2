@@ -14,7 +14,7 @@ stage 4
 [x]   var d:i32=0
 [x]   var q:i64=0   var q=0  i64 is default
 [-]   var x=c+w+d+q gives error, not matching types, no implicit conversion
-[ ]      built-in integer (registers) allowed type to size up to 'i64'
+[ ]      built-in integer (registers) allowed to size up to 'i64'
 [ ]   var x=i8(c)+i16(w)+i32(w)+i64(d): deduced size i64
 [x]   var c=i gives error, source type size is larger than destination
 [x] user defined types
