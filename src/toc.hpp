@@ -277,7 +277,7 @@ public:
 		max_usage_scratch_regs_=0;
 	}
 
-	inline ident_resolved resolve_ident_to_nasm(const statement&st,const bool must_be_initiated)const{
+	inline ident_resolved resolve_identifier(const statement&st,const bool must_be_initiated)const{
 		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(st,st.identifier(),must_be_initiated)};
 		if(not ir.id.empty())
 			return ir;
@@ -285,7 +285,7 @@ public:
 		throw compiler_error(st,"cannot resolve identifier '"+st.identifier()+"'");
 	}
 
-	inline ident_resolved resolve_ident_to_nasm(const statement&st,const string&ident,const bool must_be_initiated)const{
+	inline ident_resolved resolve_identifier(const statement&st,const string&ident,const bool must_be_initiated)const{
 		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(st,ident,must_be_initiated)};
 		if(not ir.id.empty())
 			return ir;
@@ -348,7 +348,7 @@ public:
 		const int stack_idx{int(get_current_stack_size()+var_type.size())};
 		frames_.back().add_var(st.tok(),name,var_type,-stack_idx,initiated);
 		// comment the resolved name
-		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
+		const ident_resolved&ir{resolve_identifier(st,name,false)};
 		indent(os,indnt,true);os<<name<<": "<<ir.id<<endl;
 	}
 
@@ -356,7 +356,7 @@ public:
 		assert(frames_.back().is_func()&&not frames_.back().func_is_inline());
 		frames_.back().add_var(st.tok(),name,arg_type,stack_idx,true);
 		// comment the resolved name
-		const ident_resolved&ir{resolve_ident_to_nasm(st,name,false)};
+		const ident_resolved&ir{resolve_identifier(st,name,false)};
 		indent(os,indnt,true);os<<name<<": "<<ir.id<<endl;
 	}
 

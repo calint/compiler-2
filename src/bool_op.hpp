@@ -181,7 +181,7 @@ private:
 			return reg;
 		}
 		
-		const ident_resolved&id_r{tc.resolve_ident_to_nasm(exp,true)};
+		const ident_resolved&id_r{tc.resolve_identifier(exp,true)};
 		if(id_r.is_const())
 			return exp.get_unary_ops().get_ops_as_string()+id_r.id;
 

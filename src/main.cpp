@@ -82,7 +82,7 @@ inline unique_ptr<statement>create_statement_from_tokenizer(toc&tc,tokenizer&t){
 	}else{
 		// i.e. 0x80, rax, identifiers
 		unique_ptr<statement>st{make_unique<statement>(move(tk),move(uops))};
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(*st,false)};
+		const ident_resolved&ir{tc.resolve_identifier(*st,false)};
 		st->set_type(ir.tp);
 		return st;
 	}

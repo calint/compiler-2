@@ -176,7 +176,7 @@ public:
 		code_.compile(tc,os,indent,"");
 		if(!returns().empty()){
 			const string&ret_name{returns()[0].name()};
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,ret_name,true)};
+			const ident_resolved&ir{tc.resolve_identifier(*this,ret_name,true)};
 			tc.asm_cmd(*this,os,indent+1,"mov","rax",ir.id);
 		}
 		tc.asm_pop(*this,os,indent+1,"rbp");

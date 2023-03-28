@@ -82,7 +82,7 @@ public:
 				throw compiler_error(*this,"cannot assign from function that does not return value");
 
 			const type&return_type{func.get_type()};
-			const ident_resolved&dst_resolved{tc.resolve_ident_to_nasm(*this,dst,false)};
+			const ident_resolved&dst_resolved{tc.resolve_identifier(*this,dst,false)};
 //			if(dst_resolved.tp.name()!=return_type.name())
 //				throw compiler_error(*this,"return type '"+return_type.name()+"' does not match the destination type '"+dst_resolved.tp.name()+"'");
 			// ? check if built in integer types
@@ -129,7 +129,7 @@ public:
 					continue;
 				}
 				// not an expression, resolve identifier to nasm
-				const ident_resolved&ir{tc.resolve_ident_to_nasm(arg,true)};
+				const ident_resolved&ir{tc.resolve_identifier(arg,true)};
 				if(argument_passed_in_register){
 					// move the identifier to the requested register
 					if(ir.is_const()){
@@ -184,7 +184,7 @@ public:
 			if(not dst.empty()){
 				// function returns value in rax, copy return value to dst
 				get_unary_ops().compile(tc,os,indent,"rax");
-				const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,dst,false)};
+				const ident_resolved&ir{tc.resolve_identifier(*this,dst,false)};
 				tc.asm_cmd(*this,os,indent,"mov",ir.id,"rax");
 			}
 			return;
@@ -261,7 +261,7 @@ public:
 					continue;
 				}
 				// unary ops must be applied
-				const ident_resolved&ir{tc.resolve_ident_to_nasm(arg,true)};
+				const ident_resolved&ir{tc.resolve_identifier(arg,true)};
 				const string&sr{tc.alloc_scratch_register(arg,os,indent+1)};
 				allocated_registers_in_order.push_back(sr);
 				allocated_scratch_registers.push_back(sr);
@@ -275,9 +275,9 @@ public:
 			aliases_to_add.emplace_back(param.identifier(),arg_reg);
 			tc.indent(os,indent+1,true);os<<"alias "<<param.identifier()<<" -> "<<arg_reg<<endl;
 			// move argument to register
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(arg,true)};
+			const ident_resolved&ir{tc.resolve_identifier(arg,true)};
 			if(ir.is_const()){
-				const ident_resolved&arg_r{tc.resolve_ident_to_nasm(arg,true)};
+				const ident_resolved&arg_r{tc.resolve_identifier(arg,true)};
 				tc.asm_cmd(param,os,indent+1,"mov",arg_reg,arg.get_unary_ops().get_ops_as_string()+ir.id);
 				continue;
 			}
@@ -320,7 +320,7 @@ public:
 			if(func.returns().empty())
 				throw compiler_error(*this,"function call has unary operations but it does not return a value");
 
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,func.returns()[0].name(),true)};
+			const ident_resolved&ir{tc.resolve_identifier(*this,func.returns()[0].name(),true)};
 			get_unary_ops().compile(tc,os,indent,ir.id);
 		}
 		// pop scope

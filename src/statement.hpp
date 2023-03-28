@@ -47,5 +47,5 @@ public:
 private:
 	token token_;
 	unary_ops uops_;
-	const type*type_;
+	const type*type_{};
 };

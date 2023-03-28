@@ -152,7 +152,7 @@ public:
 
 		// first element is assigned to destination
 		const statement&st{*exps_[0].get()};
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(st,dst,false)};
+		const ident_resolved&ir{tc.resolve_identifier(st,dst,false)};
 		asm_op(tc,os,indent,'=',dst,ir.id,st);
 
 		// remaining elements are +,-,*,/
@@ -220,7 +220,7 @@ private:
 				src.compile(tc,os,indent,dst);
 				return;
 			}
-			const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
+			const ident_resolved&ir{tc.resolve_identifier(src,true)};
 			if(ir.is_const()){
 				tc.asm_cmd(src,os,indent,"mov",dst_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 				return;
@@ -253,7 +253,7 @@ private:
 				return;
 			}
 			// not an expression, either a register or memory location
-			const ident_resolved&src_r=tc.resolve_ident_to_nasm(src,true);
+			const ident_resolved&src_r=tc.resolve_identifier(src,true);
 			// imul destination operand must be register
 			if(tc.is_identifier_register(dst_resolved)){
 				if(src_r.is_const()){
@@ -336,7 +336,7 @@ private:
 			tc.free_scratch_register(os,indent,r);
 			return;
 		}
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
+		const ident_resolved&ir{tc.resolve_identifier(src,true)};
 		if(ir.is_const()){
 			tc.asm_cmd(src,os,indent,op,dst_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 			return;
@@ -365,7 +365,7 @@ private:
 			tc.free_scratch_register(os,indent,r);
 			return;
 		}
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
+		const ident_resolved&ir{tc.resolve_identifier(src,true)};
 		if(ir.is_const()){
 			tc.asm_cmd(src,os,indent,op,dst_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 			return;
@@ -398,7 +398,7 @@ private:
 			}
 			return;
 		}
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
+		const ident_resolved&ir{tc.resolve_identifier(src,true)};
 		if(ir.is_const()){
 			tc.asm_cmd(src,os,indent,op,dst_resolved,src.get_unary_ops().get_ops_as_string()+ir.id);
 			return;
@@ -465,7 +465,7 @@ private:
 			tc.free_scratch_register(os,indent,r);
 			return;
 		}
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(src,true)};
+		const ident_resolved&ir{tc.resolve_identifier(src,true)};
 		if(ir.is_const()){
 			const bool rax_allocated=tc.alloc_named_register(src,os,indent,"rax");
 			if(not rax_allocated){

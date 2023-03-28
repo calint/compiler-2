@@ -9,7 +9,7 @@ public:
 		statement{move(name)},
 		type_{move(type)}
 	{
-		const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,false)};
+		const ident_resolved&ir{tc.resolve_identifier(*this,false)};
 		if(ir.tp.name()==tc.get_type_bool().name()){
 			eols_=bool_ops_list{tc,t};
 			return;
@@ -56,7 +56,7 @@ public:
 		tc.source_comment(*this,os,indent);
 
 		// for the sake of clearer error message make sure identifier can be resolved
-		const ident_resolved&dest_resolved{tc.resolve_ident_to_nasm(*this,false)};
+		const ident_resolved&dest_resolved{tc.resolve_identifier(*this,false)};
 
 		if(eols_.index()==0){
 			const expr_ops_list&eol{get<expr_ops_list>(eols_)};
