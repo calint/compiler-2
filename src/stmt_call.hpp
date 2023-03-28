@@ -11,6 +11,8 @@ public:
 	inline stmt_call(toc&tc,token tk,unary_ops uops,tokenizer&t):
 		expression{move(tk),move(uops)}
 	{
+		set_type(tc.get_func_return_type_or_throw(*this,identifier()));
+
 		if(not t.is_next_char('(')){
 			no_args_=true;
 			return;
@@ -25,7 +27,6 @@ public:
 			args_.emplace_back(tc,t,true);
 			expect_arg=t.is_next_char(',');
 		}
-		set_type(tc.get_func_return_type_or_throw(*this,identifier()));
 	}
 
 	inline stmt_call()=default;
