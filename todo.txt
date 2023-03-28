@@ -2,6 +2,8 @@
 [ ] review the the declaration of default move,copy,constructor in every class
 [ ] source location of a character index counts tabs as one character
 stage 4
+[ ] deduced_expr: deduce expression type to bool or integral
+[ ]   is_const, is_expression, is_bool, is_integral
 [ ] handle constants when deducing operand size
 [ ] specify whether ok for an op to truncate value instead of only exception
 [x] function argument types
