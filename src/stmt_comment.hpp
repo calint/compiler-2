@@ -6,7 +6,7 @@ public:
 		statement{move(tk)},
 		line_{t.read_rest_of_line()}
 	{
-		set_type(tc.get_type(*this,toc::void_type_str));
+		set_type(tc.get_type_void());
 	}
 
 	inline stmt_comment()=default;

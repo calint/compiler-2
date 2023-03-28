@@ -7,7 +7,7 @@ public:
 	inline call_asm(toc&tc,token tk,tokenizer&t):
 		stmt_call{tc,move(tk),{},t}
 	{
-		set_type(tc.get_type(*this,toc::void_type_str));
+		set_type(tc.get_type_void());
 	}
 
 	inline call_asm()=default;

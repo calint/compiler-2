@@ -9,7 +9,7 @@
 
 class program final{
 	// built-in type
-	type type_void{toc::void_type_str,0,true};
+	type type_void{"void",0,true};
 	type type_i64 {toc::default_type_str,8,true};
 	type type_i32 {"i32"  ,4,true};
 	type type_i16 {"i16"  ,2,true};
@@ -31,6 +31,10 @@ public:
 		tc_.add_type(prg,type_i8);
 		tc_.add_type(prg,type_bool);
 		tc_.add_type(prg,type_void);
+
+		tc_.set_type_void(type_void);
+		tc_.set_type_bool(type_bool);
+		tc_.set_type_default(type_i64);
 
 		tokenizer t{source};
 		while(true){

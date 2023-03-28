@@ -885,6 +885,18 @@ public:
 		throw"should not be reached: "+string{__FILE__}+":"+to_string(__LINE__);
 	}
 
+	inline void set_type_void(const type&tp){type_void_=&tp;}
+
+	inline const type&get_type_void()const{return*type_void_;}
+
+	inline void set_type_default(const type&tp){type_default_=&tp;}
+
+	inline const type&get_type_default()const{return*type_default_;}
+
+	inline void set_type_bool(const type&tp){type_bool_=&tp;}
+
+	inline const type&get_type_bool()const{return*type_bool_;}
+
 	inline static void indent(ostream&os,const size_t indnt,const bool comment=false){
 		if(indnt==0){
 			if(comment)
@@ -1048,4 +1060,7 @@ private:
 	lut<const type&>types_;
 	vector<call_meta>call_metas_;
 	unordered_set<string>initiated_registers_;
+	const type*type_void_{};
+	const type*type_default_{};
+	const type*type_bool_{};
 };

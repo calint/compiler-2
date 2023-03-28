@@ -8,7 +8,7 @@ public:
 		assert(not tok().is_name(""));
 
 		if(not t.is_next_char(':')){
-			set_type(tc.get_type(*this,toc::default_type_str));
+			set_type(tc.get_type_default());
 			return;
 		}
 
@@ -25,7 +25,8 @@ public:
 			set_type(tc.get_type(*this,kw.name()));
 			return;
 		}
-		set_type(tc.get_type(*this,toc::default_type_str));
+
+		set_type(tc.get_type_default());
 	}
 
 	inline stmt_def_func_param()=default;

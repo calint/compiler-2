@@ -7,7 +7,7 @@ public:
 	inline stmt_if(toc&tc,token tk,tokenizer&t):
 		statement{move(tk)}
 	{
-		set_type(tc.get_type(*this,toc::void_type_str));
+		set_type(tc.get_type_void());
 		// if a=b {x} else if c=d {y} else {z}
 		// 'a=b {x}', 'c=d {y}' are 'branches'
 		// 'if' token has been read
