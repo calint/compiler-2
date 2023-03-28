@@ -18,7 +18,7 @@ stage 4
 [ ]   var x=i8(c)+i16(w)+i32(w)+i64(d): deduced size i64
 [x]   var c=i gives error, source type size is larger than destination
 [x] user defined types
-[-]   'typedef' size i64?  alias size i64
+[-]   typedef size i64?  alias size i64?
 [-]     var i=1 var s=size(i) i=s gives error i=quad(s) 
 [x]   type vector{x,y} type object{pos:vector,vel:vector,color:i8}
 [ ]     var o:object={{1,2},{0,0},1}
