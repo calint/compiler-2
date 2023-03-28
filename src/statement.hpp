@@ -40,12 +40,12 @@ public:
 
 	inline virtual const unary_ops&get_unary_ops()const{return uops_;}
 
-	inline virtual const string&get_type_str()const{return type_str_;}
+//	inline virtual const string&get_type_str()const{return type_str_;}
 
 	inline virtual const type&get_type(toc&tc)const;
 
 private:
 	token token_;
 	unary_ops uops_;
-	string type_str_;
+//	string type_str_;
 };
