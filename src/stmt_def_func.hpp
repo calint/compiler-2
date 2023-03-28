@@ -43,7 +43,7 @@ public:
 		}else{
 			type_=&tc.get_type(*this,"void");
 		}
-
+		assert(type_);
 		tc.add_func(*this,name_.name(),*type_,this);
 		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());
 		vector<string>allocated_named_registers;
@@ -201,8 +201,6 @@ public:
 
 	inline bool is_inline()const{return not inline_tk_.is_empty();}
 
-//	inline const string&get_return_type_str()const{return return_type_str;}
-
 	inline const type&get_type(toc&tc)const override{return*type_;}
 
 private:
@@ -211,7 +209,6 @@ private:
 	vector<token>returns_;
 	stmt_block code_;
 	token inline_tk_;
-//	string return_type_str;
 	bool no_args_{};
 	const type*type_{};
 };
