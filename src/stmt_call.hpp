@@ -70,6 +70,11 @@ public:
 			const stmt_def_func_param&param{func.param(i)};
 			const type&arg_type=arg.get_type(tc);
 			const type&param_type=param.get_type(tc);
+			if(arg_type.is_built_in()&&param_type.is_built_in()){
+				if(param_type.size()<arg_type.size())
+					throw compiler_error(arg,"argument "+to_string(i+1)+" of type '"+arg_type.name()+"' would be truncated when passed to parameter of type '"+param_type.name()+"'");
+				continue;
+			}
 			if(arg_type.name()!=param_type.name())
 				throw compiler_error(arg,"argument "+to_string(i+1)+" of type '"+arg_type.name()+"' does not match parameter of type '"+param_type.name()+"'");
 		}
@@ -83,6 +88,7 @@ public:
 			const ident_resolved&dst_resolved{tc.resolve_ident_to_nasm(*this,dst,false)};
 //			if(dst_resolved.tp.name()!=return_type.name())
 //				throw compiler_error(*this,"return type '"+return_type.name()+"' does not match the destination type '"+dst_resolved.tp.name()+"'");
+			// ? check if built in integer types
 			if(dst_resolved.tp.size()<return_type.size())
 				throw compiler_error(*this,"return type '"+func.get_return_type_str()+"' would be truncated when copied to '"+dst+"' of type '"+dst_resolved.tp.name()+"'");
 		}

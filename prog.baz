@@ -1,38 +1,21 @@
-func inline main{
-    var bt1:i8=1
-    var bt2:i8=2
-
-    var b1:bool=bt1<bt2
-    if not b1 exit(1)
-
-    var b2:bool=bt1=1
-    b2=not bt2
-    if b2 exit(2)
-
-    bt1=-1+2
-    if not bt1=1 exit(3)
-
-    if not f(false) exit(4)
-    
-    var test=hello
-    
-#    if f2(true) exit(5)
-    
-    exit(0)
+func inline exit(v:reg_rdi){
+    mov(rax,60) # exit system call
+    mov(rdi,v)  # return code
+    syscall
 }
 
-func f(x:bool):res:bool{
-    res=not x
+func f(x:i8,y:i8):res:bool{
+    res=x=y
 }
 
 func inline f2(x:bool):res:bool{
     if x res=false else res=true
 }
 
-field hello="hello world"
-
-func inline exit(v:reg_rdi){
-    mov(rax,60) # exit system call
-    mov(rdi,v)  # return code
-    syscall
+func inline main{
+    var bt1:i8=1
+    var bt2:i8=2
+    var b:bool=f(bt1,bt2)
+    
+    exit(0)
 }
