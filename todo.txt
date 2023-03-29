@@ -4,6 +4,8 @@
 stage 4
 [ ] deduced_expr: deduce expression type to bool or integral
 [ ]   is_const, is_expression, is_bool, is_integral
+[ ] fix 'cmp' two constants case
+[ ] bool_op_list use cmovexx when assignment
 [ ] handle constants when deducing operand size
 [ ] specify whether ok for an op to truncate value instead of error
 [x] function argument types
@@ -30,7 +32,6 @@ stage 4
 [-]   p=point(1,2)
 [x]   p.x=1 == p=1
       ->type point{x,y}
-[ ] bool_op_list use cmovexx when assignment
 [ ] let i=1 creates a constant
 [ ] f(a=1) where argument is a boolean
 [ ] function arguments as references
@@ -43,7 +44,6 @@ stage 4
 [ ] pointers?
 [ ] var points=point[10] where points contains length of array and a pointer
 [ ] multiple return values assignment: var a,b=foo()  a,b=foo()
-[ ] fix 'cmp' two constants case
 [ ] tokenizer to keep track of line-number instead of computing it
 [ ] token.compile assumes is_str is field (db)
 [ ]   review fragile implementation
