@@ -14,28 +14,10 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
-f:
-   push rbp
-   mov rbp,rsp
-   if_8_8:
-   cmp_8_8:
-   cmp byte[rbp+16],0
-   je if_else_8_5
-   jmp if_8_8_code
-   if_8_8_code:
-     mov byte[rbp-1],false
-   jmp if_8_5_end
-   if_else_8_5:
-       mov byte[rbp-1],true
-   if_8_5_end:
-   movsx rax,byte[rbp-1]
-   pop rbp
-   ret
 main:
    mov byte[rbp-1],true
    mov qword[rbp-9],1
    cmp_15_16:
-     sub rsp,10
        cmp_15_18:
        cmp byte[rbp-1],0
        jne false_15_18
@@ -46,10 +28,18 @@ main:
        false_15_18:
        mov r14,0
        end_15_18:
-     push r14
-     call f
-     add rsp,18
-     mov r15,rax
+       if_8_8_15_16:
+       cmp_8_8_15_16:
+       cmp r14,0
+       je if_else_8_5_15_16
+       jmp if_8_8_15_16_code
+       if_8_8_15_16_code:
+         mov r15,false
+       jmp if_8_5_15_16_end
+       if_else_8_5_15_16:
+           mov r15,true
+       if_8_5_15_16_end:
+     f_15_16_end:
    cmp r15,0
    je false_15_9
    jmp true_15_9
@@ -71,7 +61,6 @@ main:
      exit_16_14_end:
    if_16_5_end:
    cmp_18_7:
-     sub rsp,10
        cmp_18_9:
        cmp byte[rbp-1],0
        je false_18_9
@@ -82,10 +71,18 @@ main:
        false_18_9:
        mov r14,0
        end_18_9:
-     push r14
-     call f
-     add rsp,18
-     mov r15,rax
+       if_8_8_18_7:
+       cmp_8_8_18_7:
+       cmp r14,0
+       je if_else_8_5_18_7
+       jmp if_8_8_18_7_code
+       if_8_8_18_7_code:
+         mov r15,false
+       jmp if_8_5_18_7_end
+       if_else_8_5_18_7:
+           mov r15,true
+       if_8_5_18_7_end:
+     f_18_7_end:
    cmp r15,0
    je false_18_5
    jmp true_18_5
@@ -107,7 +104,6 @@ main:
      exit_19_10_end:
    if_19_5_end:
    cmp_21_7:
-     sub rsp,10
        cmp_21_9:
        cmp qword[rbp-9],0
        je false_21_9
@@ -118,10 +114,18 @@ main:
        false_21_9:
        mov r14,0
        end_21_9:
-     push r14
-     call f
-     add rsp,18
-     mov r15,rax
+       if_8_8_21_7:
+       cmp_8_8_21_7:
+       cmp r14,0
+       je if_else_8_5_21_7
+       jmp if_8_8_21_7_code
+       if_8_8_21_7_code:
+         mov r15,false
+       jmp if_8_5_21_7_end
+       if_else_8_5_21_7:
+           mov r15,true
+       if_8_5_21_7_end:
+     f_21_7_end:
    cmp r15,0
    je false_21_5
    jmp true_21_5
@@ -143,11 +147,18 @@ main:
      exit_22_10_end:
    if_22_5_end:
    cmp_24_7:
-     sub rsp,10
-     push true
-     call f
-     add rsp,18
-     mov r15,rax
+       if_8_8_24_7:
+       cmp_8_8_24_7:
+       cmp true,0
+       je if_else_8_5_24_7
+       jmp if_8_8_24_7_code
+       if_8_8_24_7_code:
+         mov r15,false
+       jmp if_8_5_24_7_end
+       if_else_8_5_24_7:
+           mov r15,true
+       if_8_5_24_7_end:
+     f_24_7_end:
    cmp r15,0
    je false_24_5
    jmp true_24_5
@@ -169,11 +180,18 @@ main:
      exit_25_10_end:
    if_25_5_end:
    cmp_27_7:
-     sub rsp,10
-     push false
-     call f
-     add rsp,18
-     mov r15,rax
+       if_8_8_27_7:
+       cmp_8_8_27_7:
+       cmp false,0
+       je if_else_8_5_27_7
+       jmp if_8_8_27_7_code
+       if_8_8_27_7_code:
+         mov r15,false
+       jmp if_8_5_27_7_end
+       if_else_8_5_27_7:
+           mov r15,true
+       if_8_5_27_7_end:
+     f_27_7_end:
    cmp r15,0
    je false_27_5
    jmp true_27_5

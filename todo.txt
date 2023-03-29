@@ -30,6 +30,7 @@ stage 4
 [-]   p=point(1,2)
 [x]   p.x=1 == p=1
       ->type point{x,y}
+[ ] bool_op_list use cmovexx when assignment
 [ ] let i=1 creates a constant
 [ ] f(a=1) where argument is a boolean
 [ ] function arguments as references
