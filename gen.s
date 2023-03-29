@@ -20,6 +20,31 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 
+f:
+;  f(b:bool):res:bool 
+;  res: byte[rbp-1]
+;  b: byte[rbp+16]
+   push rbp
+   mov rbp,rsp
+   if_8_8:
+;  [8:8] ? b 
+;  [8:8] ? b 
+   cmp_8_8:
+   cmp byte[rbp+16],0
+   je if_else_8_5
+   jmp if_8_8_code
+   if_8_8_code:
+;    [8:10] res=false 
+     mov byte[rbp-1],false
+   jmp if_8_5_end
+   if_else_8_5:
+;      [8:25] res=true 
+       mov byte[rbp-1],true
+   if_8_5_end:
+   movsx rax,byte[rbp-1]
+   pop rbp
+   ret
+
 main:
 ;  b: byte[rbp-1]
 ;  [12:5] var b:bool=true 
@@ -41,11 +66,8 @@ main:
 ;    [15:16] f(not b)
 ;    [15:16] r15=f(not b)
 ;    [15:16] f(not b)
-;    f(b:bool):res:bool 
-;      inline: 15_16
-;      alias res -> r15
-;      alloc r14
-;      alias b -> r14
+     sub rsp,10
+;    alloc r14
 ;      [15:18] not b
 ;      [15:18] ? not b
 ;      [15:18] ? not b
@@ -59,23 +81,11 @@ main:
        false_15_18:
        mov r14,0
        end_15_18:
-       if_8_8_15_16:
-;      [8:8] ? b 
-;      [8:8] ? b 
-       cmp_8_8_15_16:
-       cmp r14,0
-       je if_else_8_5_15_16
-       jmp if_8_8_15_16_code
-       if_8_8_15_16_code:
-;        [8:10] res=false 
-         mov r15,false
-       jmp if_8_5_15_16_end
-       if_else_8_5_15_16:
-;          [8:25] res=true 
-           mov r15,true
-       if_8_5_15_16_end:
-;      free r14
-     f_15_16_end:
+     push r14
+;    free r14
+     call f
+     add rsp,18
+     mov r15,rax
    cmp r15,0
 ;  free r15
    je false_15_9
@@ -118,11 +128,8 @@ main:
 ;    [18:7] f(b)
 ;    [18:7] r15=f(b)
 ;    [18:7] f(b)
-;    f(b:bool):res:bool 
-;      inline: 18_7
-;      alias res -> r15
-;      alloc r14
-;      alias b -> r14
+     sub rsp,10
+;    alloc r14
 ;      [18:9] b
 ;      [18:9] ? b
 ;      [18:9] ? b
@@ -136,23 +143,11 @@ main:
        false_18_9:
        mov r14,0
        end_18_9:
-       if_8_8_18_7:
-;      [8:8] ? b 
-;      [8:8] ? b 
-       cmp_8_8_18_7:
-       cmp r14,0
-       je if_else_8_5_18_7
-       jmp if_8_8_18_7_code
-       if_8_8_18_7_code:
-;        [8:10] res=false 
-         mov r15,false
-       jmp if_8_5_18_7_end
-       if_else_8_5_18_7:
-;          [8:25] res=true 
-           mov r15,true
-       if_8_5_18_7_end:
-;      free r14
-     f_18_7_end:
+     push r14
+;    free r14
+     call f
+     add rsp,18
+     mov r15,rax
    cmp r15,0
 ;  free r15
    je false_18_5
@@ -195,11 +190,8 @@ main:
 ;    [21:7] f(q)
 ;    [21:7] r15=f(q)
 ;    [21:7] f(q)
-;    f(b:bool):res:bool 
-;      inline: 21_7
-;      alias res -> r15
-;      alloc r14
-;      alias b -> r14
+     sub rsp,10
+;    alloc r14
 ;      [21:9] q
 ;      [21:9] ? q
 ;      [21:9] ? q
@@ -213,23 +205,11 @@ main:
        false_21_9:
        mov r14,0
        end_21_9:
-       if_8_8_21_7:
-;      [8:8] ? b 
-;      [8:8] ? b 
-       cmp_8_8_21_7:
-       cmp r14,0
-       je if_else_8_5_21_7
-       jmp if_8_8_21_7_code
-       if_8_8_21_7_code:
-;        [8:10] res=false 
-         mov r15,false
-       jmp if_8_5_21_7_end
-       if_else_8_5_21_7:
-;          [8:25] res=true 
-           mov r15,true
-       if_8_5_21_7_end:
-;      free r14
-     f_21_7_end:
+     push r14
+;    free r14
+     call f
+     add rsp,18
+     mov r15,rax
    cmp r15,0
 ;  free r15
    je false_21_5
@@ -272,26 +252,11 @@ main:
 ;    [24:7] f(true)
 ;    [24:7] r15=f(true)
 ;    [24:7] f(true)
-;    f(b:bool):res:bool 
-;      inline: 24_7
-;      alias res -> r15
-;      alias b -> true
-       if_8_8_24_7:
-;      [8:8] ? b 
-;      [8:8] ? b 
-       cmp_8_8_24_7:
-       cmp true,0
-       je if_else_8_5_24_7
-       jmp if_8_8_24_7_code
-       if_8_8_24_7_code:
-;        [8:10] res=false 
-         mov r15,false
-       jmp if_8_5_24_7_end
-       if_else_8_5_24_7:
-;          [8:25] res=true 
-           mov r15,true
-       if_8_5_24_7_end:
-     f_24_7_end:
+     sub rsp,10
+     push true
+     call f
+     add rsp,18
+     mov r15,rax
    cmp r15,0
 ;  free r15
    je false_24_5
@@ -334,26 +299,11 @@ main:
 ;    [27:7] f(false)
 ;    [27:7] r15=f(false)
 ;    [27:7] f(false)
-;    f(b:bool):res:bool 
-;      inline: 27_7
-;      alias res -> r15
-;      alias b -> false
-       if_8_8_27_7:
-;      [8:8] ? b 
-;      [8:8] ? b 
-       cmp_8_8_27_7:
-       cmp false,0
-       je if_else_8_5_27_7
-       jmp if_8_8_27_7_code
-       if_8_8_27_7_code:
-;        [8:10] res=false 
-         mov r15,false
-       jmp if_8_5_27_7_end
-       if_else_8_5_27_7:
-;          [8:25] res=true 
-           mov r15,true
-       if_8_5_27_7_end:
-     f_27_7_end:
+     sub rsp,10
+     push false
+     call f
+     add rsp,18
+     mov r15,rax
    cmp r15,0
 ;  free r15
    je false_27_5
