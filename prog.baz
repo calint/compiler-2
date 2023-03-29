@@ -1,24 +1,31 @@
-field hello="hello world"
-
 func inline exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
     syscall
 }
 
+func f(b:bool):res:bool{
+    if b res=false else res=true
+}
+
 func inline main{
-    var bt1:i8=1
-    var bt2:i8=2
+    var b:bool=true
+    var q=1
 
-    var b1:bool=bt1<bt2
-    if not b1 exit(1)
-
-    var b2:bool=bt1=1
-    b2=not bt2
-    if b2 exit(2)
-
-    bt1=-1+2
-    if not bt1=1 exit(3)
-
+    var r:bool=f(not b)
+    if not r exit(1)
+    
+    r=f(b)
+    if r exit(2)
+    
+    r=f(q)
+    if r exit(3)
+    
+    r=f(true)
+    if r exit(4)
+    
+    r=f(false)
+    if not r exit(5)
+    
     exit(0)
 }
