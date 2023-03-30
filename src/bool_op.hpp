@@ -41,11 +41,12 @@ public:
 		}else{
 			// if a ...
 			is_shorthand_=true;
+			resolve_if_op_is_expression(tc);
 			return;
 			// throw compiler_error(*this,"expected boolean operation '=','<','<=','>','>='");
 		}
-		
 		rhs_={tc,t};
+		resolve_if_op_is_expression(tc);
 	}
 
 	inline bool_op()=default;
@@ -119,24 +120,39 @@ public:
 		throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 	}
 
-	inline bool is_expression()const override{
-		if(is_not_)
-			return true;
-
-		if(lhs_.is_expression())
-			return true;
-
-		if(not is_shorthand_ and rhs_.is_expression())
-			return true;
-
-		const string&id=lhs_.identifier();
-		if(id=="true" or id=="false")
-			return false;
-
-		return true;
-	}
+	inline bool is_expression()const override{return is_expression_;}
 
 private:
+	inline void resolve_if_op_is_expression(toc&tc){
+		if(is_not_){
+			is_expression_=true;
+			return;
+		}
+
+		if(lhs_.is_expression()){
+			is_expression_=true;
+			return;
+		}
+
+		if(not is_shorthand_ and rhs_.is_expression()){
+			is_expression_=true;
+			return;
+		}
+
+		if(lhs_.get_type().name()==tc.get_type_bool().name()){
+			is_expression_=false;
+			return;
+		}
+
+		const string&id=lhs_.identifier();
+		if(id=="true" or id=="false"){
+			is_expression_=false;
+			return;
+		}
+
+		is_expression_=true;
+	}
+
 	inline static string asm_jxx_for_op(const string&op){
 		if(op=="="){
 			return "je";
@@ -226,4 +242,5 @@ private:
 	expr_ops_list rhs_;
 	bool is_not_{}; // if not a=b
 	bool is_shorthand_{}; // if a ...
+	bool is_expression_{};
 };
