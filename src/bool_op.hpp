@@ -129,12 +129,12 @@ private:
 			return;
 		}
 
-		if(lhs_.is_expression()){
+		if(not is_shorthand_){
 			is_expression_=true;
 			return;
 		}
 
-		if(not is_shorthand_ and rhs_.is_expression()){
+		if(lhs_.is_expression()){ // ? expression would be integer type
 			is_expression_=true;
 			return;
 		}
