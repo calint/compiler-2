@@ -169,6 +169,9 @@ public:
 		if(not uops_.is_empty())
 			return true;
 
+		if(exps_.empty())
+			return false;
+
 		if(exps_.size()==1)
 			return exps_[0]->is_expression();
 

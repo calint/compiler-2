@@ -126,6 +126,9 @@ public:
 		if(lhs_.is_expression())
 			return true;
 
+		if(not is_shorthand_ and rhs_.is_expression())
+			return true;
+
 		const string&id=lhs_.identifier();
 		if(id=="true" or id=="false")
 			return false;
