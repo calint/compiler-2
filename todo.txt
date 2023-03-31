@@ -5,7 +5,7 @@
 [ ] bool_op_list use cmovexx when assignment
 [ ] handle constants when deducing operand size
 [ ] specify whether ok for an op to truncate value instead of error
-[ ] deduced_expr: deduce expression type to bool or integral
+[ ] expr_any: deduce expression type to bool or integral
 [ ]   is_const, is_expression, is_bool, is_integral
 stage 4
 [x] function argument types
