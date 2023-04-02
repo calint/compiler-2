@@ -64,5 +64,6 @@ SRC=t56.baz && EXP=0 && eval $RUN
 SRC=t57.baz && EXP=0 && eval $RUN
 SRC=t58.baz && EXP=0 && eval $RUN
 SRC=t59.baz && EXP=0 && eval $RUN
+SRC=t60.baz && EXP=0 && eval $RUN
 
 rm gen gen.o gen.s diff.baz out

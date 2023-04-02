@@ -1,4 +1,6 @@
-[ ] fix 'cmp' two constants case
+[x] fix 'cmp' two constants case
+      -> messy code that does dead-code elimination
+[ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names
 [ ] review the the declaration of default move,copy,constructor in every class
 [ ] source location of a character index counts tabs as one character

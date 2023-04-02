@@ -84,7 +84,7 @@ public:
 			if(not lhs_.is_expression()){
 				const ident_resolved&ir{tc.resolve_identifier(lhs_,false)};
 				if(ir.is_const()){
-					bool b{eval_constant(ir.const_value,lhs_.get_unary_ops())};
+					bool b{lhs_.get_unary_ops().evaluate_constant(ir.const_value)!=0};
 					if(invert)
 						b=!b;
 					if(b){
@@ -99,6 +99,27 @@ public:
 			os<<(not invert?asm_jxx_for_op_inv("="):asm_jxx_for_op("="));
 			os<<" "<<jmp_to_if_true<<endl;
 			return nullopt;
+		}
+		// check the case when both operands are constants
+		if(not lhs_.is_expression() and not rhs_.is_expression()){
+			const ident_resolved&lhs_resolved{tc.resolve_identifier(lhs_,false)};
+			const ident_resolved&rhs_resolved{tc.resolve_identifier(rhs_,false)};
+			if(lhs_resolved.is_const() and rhs_resolved.is_const()){
+				bool b{eval_constant(
+							lhs_.get_unary_ops().evaluate_constant(lhs_resolved.const_value),
+							op_,
+							rhs_.get_unary_ops().evaluate_constant(rhs_resolved.const_value)
+						)};
+				if(invert)
+					b=!b;
+				toc::indent(os,indent,true);
+				os<<"const eval to "<<(b?"true":"false")<<endl;
+				if(b){
+					toc::indent(os,indent);
+					os<<"jmp "<<jmp_to_if_true<<endl;
+				}
+				return b;
+			}
 		}
 		resolve_cmp(tc,os,indent,lhs_,rhs_);
 		toc::indent(os,indent);
@@ -116,7 +137,7 @@ public:
 			if(not lhs_.is_expression()){
 				const ident_resolved&ir{tc.resolve_identifier(lhs_,false)};
 				if(ir.is_const()){
-					bool b{eval_constant(ir.const_value,lhs_.get_unary_ops())};
+					bool b{lhs_.get_unary_ops().evaluate_constant(ir.const_value)!=0};
 					if(invert)
 						b=!b;
 					toc::indent(os,indent,true);
@@ -134,6 +155,27 @@ public:
 			os<<" "<<jmp_to_if_false<<endl;
 			return nullopt;
 		}
+		// check the case when both operands are constants
+		if(not lhs_.is_expression() and not rhs_.is_expression()){
+			const ident_resolved&lhs_resolved{tc.resolve_identifier(lhs_,false)};
+			const ident_resolved&rhs_resolved{tc.resolve_identifier(rhs_,false)};
+			if(lhs_resolved.is_const() and rhs_resolved.is_const()){
+				bool b{eval_constant(
+							lhs_.get_unary_ops().evaluate_constant(lhs_resolved.const_value),
+							op_,
+							rhs_.get_unary_ops().evaluate_constant(rhs_resolved.const_value)
+						)};
+				if(invert)
+					b=!b;
+				toc::indent(os,indent,true);
+				os<<"const eval to "<<(b?"true":"false")<<endl;
+				if(not b){
+					toc::indent(os,indent);
+					os<<"jmp "<<jmp_to_if_false<<endl;
+				}
+				return b;
+			}
+		}
 		resolve_cmp(tc,os,indent,lhs_,rhs_);
 		toc::indent(os,indent);
 		os<<(invert?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
@@ -141,9 +183,13 @@ public:
 		return nullopt;
 	}
 
-	static bool eval_constant(const long int value,const unary_ops&uops){
-		const long int v{uops.evaluate_constant(value)};
-		return v!=0;
+	static bool eval_constant(const long int lh,const string&op,const long int rh){
+		if(op=="=")return lh==rh;
+		if(op=="<")return lh<rh;
+		if(op=="<=")return lh<=rh;
+		if(op==">")return lh>rh;
+		if(op==">=")return lh>=rh;
+		throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 	}
 
 	inline string cmp_bgn_label(const toc&tc)const{
