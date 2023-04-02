@@ -183,15 +183,6 @@ public:
 		return nullopt;
 	}
 
-	static bool eval_constant(const long int lh,const string&op,const long int rh){
-		if(op=="=")return lh==rh;
-		if(op=="<")return lh<rh;
-		if(op=="<=")return lh<=rh;
-		if(op==">")return lh>rh;
-		if(op==">=")return lh>=rh;
-		throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
-	}
-
 	inline string cmp_bgn_label(const toc&tc)const{
 		const string&call_path{tc.get_inline_call_path(tok())};
 		return "cmp_"+tc.source_location_for_label(tok())+(call_path.empty()?"":"_"+call_path);
@@ -236,6 +227,15 @@ private:
 		}
 
 		is_expression_=true;
+	}
+
+	inline static bool eval_constant(const long int lh,const string&op,const long int rh){
+		if(op=="=")return lh==rh;
+		if(op=="<")return lh<rh;
+		if(op=="<=")return lh<=rh;
+		if(op==">")return lh>rh;
+		if(op==">=")return lh>=rh;
+		throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 	}
 
 	inline static string asm_jxx_for_op(const string&op){
