@@ -87,6 +87,8 @@ public:
 					bool b{lhs_.get_unary_ops().evaluate_constant(ir.const_value)!=0};
 					if(invert)
 						b=!b;
+					toc::indent(os,indent,true);
+					os<<"const eval to "<<(b?"true":"false")<<endl;
 					if(b){
 						toc::indent(os,indent);
 						os<<"jmp "<<jmp_to_if_true<<endl;
