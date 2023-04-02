@@ -48,6 +48,18 @@ public:
         return{ops_.begin(),ops_.end()};
     }
 
+    inline long int evaluate_constant(long int v)const{
+        size_t i{ops_.size()};
+        while(i--){
+        	switch(ops_[i]){
+        	case'-':v=-v;break;
+        	case'~':v=~v;break;
+        	default:throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
+        	}
+        }
+        return v;
+    }
+
 private:
     vector<char>ops_;
 };

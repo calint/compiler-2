@@ -20,259 +20,51 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 
-f:
-;  f(b:bool):res:bool 
-;  res: byte[rbp-1]
-;  b: byte[rbp+16]
-   push rbp
-   mov rbp,rsp
-   if_8_8:
-;  [8:8] ? b 
-;  [8:8] ? b 
-   cmp_8_8:
-   cmp byte[rbp+16],0
-   je if_else_8_5
-   jmp if_8_8_code
-   if_8_8_code:
-;    [8:10] res=false 
-     mov byte[rbp-1],false
-   jmp if_8_5_end
-   if_else_8_5:
-;      [8:25] res=true 
-       mov byte[rbp-1],true
-   if_8_5_end:
-   movsx rax,byte[rbp-1]
-   pop rbp
-   ret
-
 main:
-;  b: byte[rbp-1]
-;  [12:5] var b:bool=true 
-;  [12:9] b:bool=true 
-   mov byte[rbp-1],true
-;  q: qword[rbp-9]
-;  [13:5] var q=1 
-;  [13:9] q=1 
-;  [13:11] 1 
-;  [13:11] q=1 
-   mov qword[rbp-9],1
-;  b2: byte[rbp-10]
-;  [14:5] var b2:bool=b 
-;  [14:9] b2:bool=b 
+;  r: byte[rbp-1]
+;  [12:5] var r:bool=f(true)
+;  [12:9] r:bool=f(true)
+;  [12:16] ? f(true)
+;  [12:16] ? f(true)
+   cmp_12_16:
 ;  alloc r15
-   mov r15b,byte[rbp-1]
-   mov byte[rbp-10],r15b
-;  free r15
-;  r: byte[rbp-11]
-;  [16:5] var r:bool=f(not b)
-;  [16:9] r:bool=f(not b)
-;  [16:16] ? f(not b)
-;  [16:16] ? f(not b)
-   cmp_16_16:
-;  alloc r15
-;    [16:16] f(not b)
-;    [16:16] r15=f(not b)
-;    [16:16] f(not b)
-     sub rsp,11
-;    alloc r14
-;      [16:18] not b
-;      [16:18] ? not b
-;      [16:18] ? not b
-       cmp_16_18:
-       cmp byte[rbp-1],0
-       jne false_16_18
-       jmp true_16_18
-       true_16_18:
-       mov r14,1
-       jmp end_16_18
-       false_16_18:
-       mov r14,0
-       end_16_18:
-     push r14
-;    free r14
-     call f
-     add rsp,19
-     mov r15,rax
+;    [12:16] f(true)
+;    [12:16] r15=f(true)
+;    [12:16] f(true)
+;    f(b:bool):res:bool 
+;      inline: 12_16
+;      alias res -> r15
+;      alias b -> true
+       if_8_8_12_16:
+;      [8:8] ? b 
+;      [8:8] ? b 
+       cmp_8_8_12_16:
+;      const eval to true
+;        [8:10] res=false 
+         mov r15,false
+       if_8_5_12_16_end:
+     f_12_16_end:
    cmp r15,0
 ;  free r15
-   je false_16_9
-   jmp true_16_9
-   true_16_9:
-   mov byte[rbp-11],1
-   jmp end_16_9
-   false_16_9:
-   mov byte[rbp-11],0
-   end_16_9:
-   if_17_8:
-;  [17:8] ? not r 
-;  [17:8] ? not r 
-   cmp_17_8:
-   cmp byte[rbp-11],0
-   jne if_17_5_end
-   jmp if_17_8_code
-   if_17_8_code:
-;    [17:14] exit(1)
+   je false_12_9
+   jmp true_12_9
+   true_12_9:
+   mov byte[rbp-1],1
+   jmp end_12_9
+   false_12_9:
+   mov byte[rbp-1],0
+   end_12_9:
+   if_13_8:
+;  [13:8] ? r=false 
+;  [13:8] ? r=false 
+   cmp_13_8:
+   cmp byte[rbp-1],false
+   jne if_13_5_end
+   jmp if_13_8_code
+   if_13_8_code:
+;    [14:9] exit(4)
 ;    exit(v:reg_rdi) 
-;      inline: 17_14
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,1
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_17_14_end:
-   if_17_5_end:
-;  [19:5] r=f(b)
-;  [19:7] ? f(b)
-;  [19:7] ? f(b)
-   cmp_19_7:
-;  alloc r15
-;    [19:7] f(b)
-;    [19:7] r15=f(b)
-;    [19:7] f(b)
-     sub rsp,11
-;    alloc r14
-     movsx r14,byte[rbp-1]
-     push r14
-;    free r14
-     call f
-     add rsp,19
-     mov r15,rax
-   cmp r15,0
-;  free r15
-   je false_19_5
-   jmp true_19_5
-   true_19_5:
-   mov byte[rbp-11],1
-   jmp end_19_5
-   false_19_5:
-   mov byte[rbp-11],0
-   end_19_5:
-   if_20_8:
-;  [20:8] ? r 
-;  [20:8] ? r 
-   cmp_20_8:
-   cmp byte[rbp-11],0
-   je if_20_5_end
-   jmp if_20_8_code
-   if_20_8_code:
-;    [20:10] exit(2)
-;    exit(v:reg_rdi) 
-;      inline: 20_10
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,2
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_20_10_end:
-   if_20_5_end:
-;  [22:5] r=f(q)
-;  [22:7] ? f(q)
-;  [22:7] ? f(q)
-   cmp_22_7:
-;  alloc r15
-;    [22:7] f(q)
-;    [22:7] r15=f(q)
-;    [22:7] f(q)
-     sub rsp,11
-;    alloc r14
-;      [22:9] q
-;      [22:9] ? q
-;      [22:9] ? q
-       cmp_22_9:
-       cmp qword[rbp-9],0
-       je false_22_9
-       jmp true_22_9
-       true_22_9:
-       mov r14,1
-       jmp end_22_9
-       false_22_9:
-       mov r14,0
-       end_22_9:
-     push r14
-;    free r14
-     call f
-     add rsp,19
-     mov r15,rax
-   cmp r15,0
-;  free r15
-   je false_22_5
-   jmp true_22_5
-   true_22_5:
-   mov byte[rbp-11],1
-   jmp end_22_5
-   false_22_5:
-   mov byte[rbp-11],0
-   end_22_5:
-   if_23_8:
-;  [23:8] ? r 
-;  [23:8] ? r 
-   cmp_23_8:
-   cmp byte[rbp-11],0
-   je if_23_5_end
-   jmp if_23_8_code
-   if_23_8_code:
-;    [23:10] exit(3)
-;    exit(v:reg_rdi) 
-;      inline: 23_10
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,3
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_23_10_end:
-   if_23_5_end:
-;  [25:5] r=f(true)
-;  [25:7] ? f(true)
-;  [25:7] ? f(true)
-   cmp_25_7:
-;  alloc r15
-;    [25:7] f(true)
-;    [25:7] r15=f(true)
-;    [25:7] f(true)
-     sub rsp,11
-     push true
-     call f
-     add rsp,19
-     mov r15,rax
-   cmp r15,0
-;  free r15
-   je false_25_5
-   jmp true_25_5
-   true_25_5:
-   mov byte[rbp-11],1
-   jmp end_25_5
-   false_25_5:
-   mov byte[rbp-11],0
-   end_25_5:
-   if_26_8:
-;  [26:8] ? r 
-;  [26:8] ? r 
-   cmp_26_8:
-   cmp byte[rbp-11],0
-   je if_26_5_end
-   jmp if_26_8_code
-   if_26_8_code:
-;    [26:10] exit(4)
-;    exit(v:reg_rdi) 
-;      inline: 26_10
+;      inline: 14_9
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,4
@@ -284,58 +76,11 @@ main:
 ;      [4:5] syscall 
        syscall
 ;      free rdi
-     exit_26_10_end:
-   if_26_5_end:
-;  [28:5] r=f(false)
-;  [28:7] ? f(false)
-;  [28:7] ? f(false)
-   cmp_28_7:
-;  alloc r15
-;    [28:7] f(false)
-;    [28:7] r15=f(false)
-;    [28:7] f(false)
-     sub rsp,11
-     push false
-     call f
-     add rsp,19
-     mov r15,rax
-   cmp r15,0
-;  free r15
-   je false_28_5
-   jmp true_28_5
-   true_28_5:
-   mov byte[rbp-11],1
-   jmp end_28_5
-   false_28_5:
-   mov byte[rbp-11],0
-   end_28_5:
-   if_29_8:
-;  [29:8] ? not r 
-;  [29:8] ? not r 
-   cmp_29_8:
-   cmp byte[rbp-11],0
-   jne if_29_5_end
-   jmp if_29_8_code
-   if_29_8_code:
-;    [29:14] exit(5)
-;    exit(v:reg_rdi) 
-;      inline: 29_14
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,5
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_29_14_end:
-   if_29_5_end:
-;  [31:5] exit(0)
+     exit_14_9_end:
+   if_13_5_end:
+;  [16:5] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 31_5
+;    inline: 16_5
 ;    alloc rdi
 ;    alias v -> rdi
      mov rdi,0
@@ -347,7 +92,7 @@ main:
 ;    [4:5] syscall 
      syscall
 ;    free rdi
-   exit_31_5_end:
+   exit_16_5_end:
 
-; max scratch registers in use: 2
+; max scratch registers in use: 1
 ;            max frames in use: 5

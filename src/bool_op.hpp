@@ -1,5 +1,7 @@
 #pragma once
 
+#include<optional>
+
 #include"expr_ops_list.hpp"
 
 class bool_op final:public statement{
@@ -73,38 +75,75 @@ public:
 		throw compiler_error(tok(),"this code should not be reached: "+string{__FILE__}+":"+to_string(__LINE__));
 	}
 
-	inline void compile_or(toc&tc,ostream&os,size_t indent,const string&jmp_to_if_true,const bool inverted)const{
+	inline optional<bool>compile_or(toc&tc,ostream&os,size_t indent,const string&jmp_to_if_true,const bool inverted)const{
 		const bool invert{inverted?not is_not_:is_not_};
 		toc::indent(os,indent,true);tc.source_comment(os,"?",inverted?" 'or' inverted: ":" ",*this);
 		tc.asm_label(*this,os,indent,cmp_bgn_label(tc));
 		if(is_shorthand_){
+			// check case when operand is constant
+			if(not lhs_.is_expression()){
+				const ident_resolved&ir{tc.resolve_identifier(lhs_,false)};
+				if(ir.is_const()){
+					bool b{eval_constant(ir.const_value,lhs_.get_unary_ops())};
+					if(invert)
+						b=!b;
+					if(b){
+						toc::indent(os,indent);
+						os<<"jmp "<<jmp_to_if_true<<endl;
+					}
+					return b;
+				}
+			}
 			resolve_cmp_shorthand(tc,os,indent,lhs_);
 			toc::indent(os,indent);
 			os<<(not invert?asm_jxx_for_op_inv("="):asm_jxx_for_op("="));
 			os<<" "<<jmp_to_if_true<<endl;
-			return;
+			return nullopt;
 		}
 		resolve_cmp(tc,os,indent,lhs_,rhs_);
 		toc::indent(os,indent);
 		os<<(invert?asm_jxx_for_op_inv(op_):asm_jxx_for_op(op_));
 		os<<" "<<jmp_to_if_true<<endl;
+		return nullopt;
 	}
 
-	inline void compile_and(toc&tc,ostream&os,size_t indent,const string&jmp_to_if_false,const bool inverted)const{
+	inline optional<bool>compile_and(toc&tc,ostream&os,size_t indent,const string&jmp_to_if_false,const bool inverted)const{
 		const bool invert{inverted?not is_not_:is_not_};
 		toc::indent(os,indent,true);tc.source_comment(os,"?",inverted?" 'and' inverted: ":" ",*this);
 		tc.asm_label(*this,os,indent,cmp_bgn_label(tc));
 		if(is_shorthand_){
+			// check case when operand is constant
+			if(not lhs_.is_expression()){
+				const ident_resolved&ir{tc.resolve_identifier(lhs_,false)};
+				if(ir.is_const()){
+					bool b{eval_constant(ir.const_value,lhs_.get_unary_ops())};
+					if(invert)
+						b=!b;
+					toc::indent(os,indent,true);
+					os<<"const eval to "<<(b?"true":"false")<<endl;
+					if(not b){
+						toc::indent(os,indent);
+						os<<"jmp "<<jmp_to_if_false<<endl;
+					}
+					return b;
+				}
+			}
 			resolve_cmp_shorthand(tc,os,indent,lhs_);
 			toc::indent(os,indent);
 			os<<(not invert?asm_jxx_for_op("="):asm_jxx_for_op_inv("="));
 			os<<" "<<jmp_to_if_false<<endl;
-			return;
+			return nullopt;
 		}
 		resolve_cmp(tc,os,indent,lhs_,rhs_);
 		toc::indent(os,indent);
 		os<<(invert?asm_jxx_for_op(op_):asm_jxx_for_op_inv(op_));
 		os<<" "<<jmp_to_if_false<<endl;
+		return nullopt;
+	}
+
+	static bool eval_constant(const long int value,const unary_ops&uops){
+		const long int v{uops.evaluate_constant(value)};
+		return v!=0;
 	}
 
 	inline string cmp_bgn_label(const toc&tc)const{

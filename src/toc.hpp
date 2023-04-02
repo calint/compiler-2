@@ -134,6 +134,7 @@ struct ident_resolved final{
 	enum class ident_type{CONST,VAR,REGISTER,FIELD,IMPLIED};
 
 	string id;
+	long int const_value{};
 	const type&tp;
 	ident_type ident_type{ident_type::CONST};
 
@@ -981,7 +982,7 @@ private:
 			if(must_be_initiated and not var.initiated)
 				throw compiler_error(st,"variable '"+var.name+"' is not initiated");
 			const string&acc=var.tp.accessor(st.tok(),bid.path(),var.stack_idx);
-			return{acc,var.tp,ident_resolved::ident_type::VAR};
+			return{acc,0,var.tp,ident_resolved::ident_type::VAR};
 		}
 
 		// is 'id' a register?
@@ -989,7 +990,7 @@ private:
 			if(must_be_initiated and not is_register_initiated(id))
 				throw compiler_error(st,"register '"+id+"' is not initiated");
 
-			return{id,get_type_default(),ident_resolved::ident_type::REGISTER}; // ? unary ops?
+			return{id,0,get_type_default(),ident_resolved::ident_type::REGISTER}; // ? unary ops?
 		}
 
 		// is 'id' a field?
@@ -997,41 +998,44 @@ private:
 		if(fields_.has(id)){
 			const string&after_dot=bid.path().size()<2?"":bid.path()[1]; // ! not correct
 			if(after_dot=="len"){
-				return{id+"."+after_dot,get_type_default(),ident_resolved::ident_type::IMPLIED};
+				return{id+"."+after_dot,0,get_type_default(),ident_resolved::ident_type::IMPLIED};
 			}
 			const field_meta&fm=fields_.get_const_ref(id);
 			if(fm.is_str)
-				return{id,get_type_default(),ident_resolved::ident_type::FIELD};
-			return{"qword["+id+"]",get_type_default(),ident_resolved::ident_type::FIELD};
+				return{id,0,get_type_default(),ident_resolved::ident_type::FIELD};
+			return{"qword["+id+"]",0,get_type_default(),ident_resolved::ident_type::FIELD};
 		}
 
 		char*ep;
-		strtol(id.c_str(),&ep,10); // return ignored
+		const long int const_value{strtol(id.c_str(),&ep,10)};
 		if(!*ep)
-			return{id,get_type_default(),ident_resolved::ident_type::CONST};
+			return{id,const_value,get_type_default(),ident_resolved::ident_type::CONST};
 
 		if(id.find("0x")==0){ // hex
-			strtol(id.c_str()+2,&ep,16); // return ignored
+			const long int value{strtol(id.c_str()+2,&ep,16)};
 			if(!*ep)
-				return{id,get_type_default(),ident_resolved::ident_type::CONST};
+				return{id,value,get_type_default(),ident_resolved::ident_type::CONST};
 		}
 
 		if(id.find("0b")==0){ // binary
-			strtol(id.c_str()+2,&ep,2); // return ignored
+			const long int value{strtol(id.c_str()+2,&ep,2)};
 			if(!*ep)
-				return{id,get_type_default(),ident_resolved::ident_type::CONST};
+				return{id,value,get_type_default(),ident_resolved::ident_type::CONST};
 		}
 
 		if(funcs_.has(id)){
 			const func_meta&func{funcs_.get_const_ref(id)};
-			return{id,func.tp,ident_resolved::ident_type::CONST};// ? type is func
+			return{id,0,func.tp,ident_resolved::ident_type::CONST};// ? type is func
 		}
 
-		if(id=="true"||id=="false")
-			return{id,get_type_bool(),ident_resolved::ident_type::CONST};
+		if(id=="true")
+			return{id,1,get_type_bool(),ident_resolved::ident_type::CONST};
+
+		if(id=="false")
+			return{id,0,get_type_bool(),ident_resolved::ident_type::CONST};
 
 		// not resolved, return empty answer
-		return{"",get_type_void(),ident_resolved::ident_type::CONST};
+		return{"",0,get_type_void(),ident_resolved::ident_type::CONST};
 	}
 
 	inline void check_usage(){

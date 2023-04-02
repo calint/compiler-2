@@ -79,6 +79,8 @@ public:
 		const string&label_else_branch{not else_code_.is_empty()?"if_else_"+src_loc+cp:label_after_if};
 
 		const size_t n{branches_.size()};
+
+		bool branch_evaluated_to_true{false};
 		for(size_t i=0;i<n;i++){
 			const stmt_if_branch&e{branches_[i]};
 			string jmp_if_false{label_else_branch};
@@ -94,11 +96,17 @@ public:
 					jmp_after_if="";
 				}
 			}
-			e.compile(tc,os,indent,jmp_if_false,jmp_after_if);
+			optional<bool>const_eval{e.compile(tc,os,indent,jmp_if_false,jmp_after_if)};
+			if(const_eval and *const_eval==true){
+				branch_evaluated_to_true=true;
+				break;
+			}
 		}
-		if(not else_code_.is_empty()){
-			tc.asm_label(*this,os,indent,label_else_branch);
-			else_code_.compile(tc,os,indent+1);
+		if(not branch_evaluated_to_true){
+			if(not else_code_.is_empty()){
+				tc.asm_label(*this,os,indent,label_else_branch);
+				else_code_.compile(tc,os,indent+1);
+			}
 		}
 		tc.asm_label(*this,os,indent,label_after_if);
 	}

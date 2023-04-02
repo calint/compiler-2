@@ -169,7 +169,7 @@ public:
 		return "cmp_"+tc.source_location_for_label(tok())+(call_path.empty()?"":"_"+call_path);
 	}
 
-	inline void compile(toc&tc,ostream&os,const size_t indent,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool inverted)const{
+	inline optional<bool>compile(toc&tc,ostream&os,const size_t indent,const string&jmp_to_if_false,const string&jmp_to_if_true,const bool inverted)const{
 		toc::indent(os,indent,true);tc.source_comment(os,"?",inverted?" inverted: ":" ",*this);
 		// invert according to De Morgan's laws
 		bool invert{inverted?not not_token_.is_name("not"):not_token_.is_name("not")};
@@ -194,7 +194,9 @@ public:
 						}else{
 							throw"expected 'or' or 'and'";
 						}
-						el.compile(tc,os,indent,jmp_false,jmp_true,invert);
+						optional<bool>const_eval{el.compile(tc,os,indent,jmp_false,jmp_true,invert)};
+						if(const_eval)
+							return*const_eval;
 					}else{
 						// invert according to De Morgan's laws
 						// if not last element check if it is a 'or' or 'and' list
@@ -207,11 +209,15 @@ public:
 						}else{
 							throw"expected 'or' or 'and'";
 						}
-						el.compile(tc,os,indent,jmp_false,jmp_true,invert);
+						optional<bool>const_eval{el.compile(tc,os,indent,jmp_false,jmp_true,invert)};
+						if(const_eval)
+							return*const_eval;
 					}
 				}else{
 					// if last in list jmp_false is next bool eval
-					el.compile(tc,os,indent,jmp_false,jmp_true,invert);
+					optional<bool>const_eval{el.compile(tc,os,indent,jmp_false,jmp_true,invert)};
+					if(const_eval)
+						return*const_eval;
 				}
 				continue;
 			}
@@ -224,14 +230,20 @@ public:
 				const bool_op&e{get<bool_op>(bools_[i])};
 				if(i<n-1){
 					if(ops_[i].is_name("or")){
-						e.compile_or(tc,os,indent,jmp_to_if_true,invert);
+						optional<bool>const_eval{e.compile_or(tc,os,indent,jmp_to_if_true,invert)};
+						if(const_eval and *const_eval==true) // constant evaluated to true, short-circuit
+							return*const_eval;
 					}else if(ops_[i].is_name("and")){
-						e.compile_and(tc,os,indent,jmp_to_if_false,invert);
+						optional<bool>const_eval{e.compile_and(tc,os,indent,jmp_to_if_false,invert)};
+						if(const_eval and *const_eval==false) // constant evaluated to false, short-circuit
+							return*const_eval;
 					}else{
 						throw"expected 'or' or 'and'";
 					}
 				}else{
-					e.compile_and(tc,os,indent,jmp_to_if_false,invert);
+					optional<bool>const_eval{e.compile_and(tc,os,indent,jmp_to_if_false,invert)};
+					if(const_eval) // constant evaluated
+						return*const_eval;
 					// if last element and not yet jumped to false then jump to true
 					tc.asm_jmp(*this,os,indent,jmp_to_if_true);
 				}
@@ -241,19 +253,26 @@ public:
 				const bool_op&e{get<bool_op>(bools_[i])};
 				if(i<n-1){
 					if(ops_[i].is_name("and")){
-						e.compile_or(tc,os,indent,jmp_to_if_true,invert);
+						optional<bool>const_eval{e.compile_or(tc,os,indent,jmp_to_if_true,invert)};
+						if(const_eval and *const_eval==true) // constant evaluated to true, short-circuit
+							return*const_eval;
 					}else if(ops_[i].is_name("or")){
-						e.compile_and(tc,os,indent,jmp_to_if_false,invert);
+						optional<bool>const_eval{e.compile_and(tc,os,indent,jmp_to_if_false,invert)};
+						if(const_eval and *const_eval==false) // constant evaluated to false, short-circuit
+							return*const_eval;
 					}else{
 						throw"expected 'or' or 'and'";
 					}
 				}else{
-					e.compile_and(tc,os,indent,jmp_to_if_false,invert);
+					optional<bool>const_eval{e.compile_and(tc,os,indent,jmp_to_if_false,invert)};
+					if(const_eval) // constant evaluated
+						return*const_eval;
 					// if last element and not yet jumped to false then jump to true
 					tc.asm_jmp(*this,os,indent,jmp_to_if_true);
 				}
 			}
 		}
+		return nullopt;
 	}
 
 	inline bool is_expression()const override{ // ? assumes it is not an expression
