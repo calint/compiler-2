@@ -9,6 +9,6 @@ func inline main{
     var b=2
     var c=3
     var d=4
-    if a=0 and b=2 or c=0 and d=4 exit(1) # bug: wrong token at construct recursive stmt_if_bool_ops
+    if a==0 and b==2 or c==0 and d==4 exit(1) # bug: wrong token at construct recursive stmt_if_bool_ops
     exit(0)
 }

@@ -12,7 +12,7 @@ func inline main{
     x=y
     y=z
     z=4
-    if x=2 and y=3 and z=4
+    if x==2 and y==3 and z==4
        exit(0)
     exit(1)
 }

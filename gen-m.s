@@ -109,7 +109,7 @@ main:
        mov rdi,6
        mov rax,60
        syscall
-     exit_35_20_end:
+     exit_35_21_end:
    if_35_5_end:
    if_36_8:
    cmp_36_8:
@@ -126,7 +126,7 @@ main:
        mov rdi,7
        mov rax,60
        syscall
-     exit_36_20_end:
+     exit_36_21_end:
    if_36_5_end:
    if_37_8:
    cmp_37_8:
@@ -145,7 +145,7 @@ main:
        mov rdi,8
        mov rax,60
        syscall
-     exit_37_20_end:
+     exit_37_21_end:
    if_37_5_end:
    if_38_8:
    cmp_38_8:
@@ -165,7 +165,7 @@ main:
        mov rdi,9
        mov rax,60
        syscall
-     exit_38_20_end:
+     exit_38_21_end:
    if_38_5_end:
      mov rdi,0
      mov rax,60

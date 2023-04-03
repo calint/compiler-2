@@ -14,7 +14,7 @@ func inline main{
     var a=-1
     var b=~-foo(-a)
     var c=~-(len)
-    if a=-1 and b=~1 and c=~2
+    if a==-1 and b==~1 and c==~2
         exit(0)
     exit(1)
 }

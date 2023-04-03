@@ -6,7 +6,7 @@ func inline exit(v:reg_rdi){
 
 func inline main{
     var a=1
-    if not a=2
+    if not a==2
         exit(0)
     exit(1)
 }

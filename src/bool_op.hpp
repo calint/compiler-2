@@ -27,6 +27,8 @@ public:
 		lhs_={tc,t,true};
 
 		if(t.is_next_char('=')){
+			if(not t.is_next_char('='))
+				throw compiler_error(t,"expected '=='");
 			op_="=";
 		}else if(t.is_next_char('<')){
 			if(t.is_next_char('=')){
@@ -67,6 +69,8 @@ public:
 
 		if(not is_shorthand_){
 			os<<op_;
+			if(op_=="=")
+				os<<'=';
 			rhs_.source_to(os);
 		}
 	}

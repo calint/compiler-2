@@ -6,7 +6,7 @@ func inline exit(v:reg_rdi){
 
 func inline main{
     var a=-(1+2)
-    if a=-3
+    if a==-3
         exit(0)
     exit(1)
 }

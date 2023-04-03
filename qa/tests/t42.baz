@@ -19,7 +19,7 @@ func inline main{
     var b=~-foo(-a)
     var c=~-(len)
     var d=~bar(len)
-    if d=~-len and not a=b and a=-1 and b=~1 and c=~2
+    if d==~-len and not a==b and a==-1 and b==~1 and c==~2
         exit(0)
     exit(1)
 }

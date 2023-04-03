@@ -30,7 +30,7 @@ func inline f6(i:i8):res:i64{
 
 func inline main{
     var q=f1(1)
-    if not q=-1 exit(1)
+    if not q==-1 exit(1)
     
     var bt:i8=1
     var wd:i16=2
@@ -38,19 +38,19 @@ func inline main{
     var qd:i64=4
     
     var b:i8=f5(bt)
-    if not b=-4 exit(2)
+    if not b==-4 exit(2)
 
     var w:i16=f4(wd)
-    if not w=-8 exit(3)
+    if not w==-8 exit(3)
 
     var d:i32=f3(dd)
-    if not d=-9 exit(4)
+    if not d==-9 exit(4)
 
     q=f2(qd)
-    if not q=-8 exit(5)
+    if not q==-8 exit(5)
 
     q=f6(b)
-    if not q=4 exit(8)
+    if not q==4 exit(8)
     
     exit(0)
 }

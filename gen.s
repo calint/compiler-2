@@ -131,17 +131,17 @@ main:
      exit_23_14_end:
    if_23_5_end:
    if_25_8:
-;  [25:8] ? 1=2 
-;  [25:8] ? 1=2 
+;  [25:8] ? 1==2 
+;  [25:8] ? 1==2 
    cmp_25_8:
 ;  const eval to false
    if_25_5_end:  ; opt1
    if_27_8:
-;  [27:8] ? 1=1 
-;  [27:8] ? 1=1 
+;  [27:8] ? 1==1 
+;  [27:8] ? 1==1 
    cmp_27_8:
 ;  const eval to true
-;    [27:12] r=true 
+;    [27:13] r=true 
      mov byte[rbp-1],true
    if_27_5_end:
    if_29_8:
@@ -168,12 +168,12 @@ main:
      exit_29_14_end:
    if_29_5_end:
    if_31_8:
-;  [31:8] ? 1=2 
-;  [31:8] ? 1=2 
+;  [31:8] ? 1==2 
+;  [31:8] ? 1==2 
    cmp_31_8:
 ;  const eval to false
    if_else_31_5:  ; opt1
-;      [31:24] r=false 
+;      [31:25] r=false 
        mov byte[rbp-1],false
    if_31_5_end:
    if_33_8:
@@ -200,8 +200,8 @@ main:
      exit_33_10_end:
    if_33_5_end:
    if_35_8:
-;  [35:8] ? not f2(0)=4 
-;  [35:8] ? not f2(0)=4 
+;  [35:8] ? not f2(0)==4 
+;  [35:8] ? not f2(0)==4 
    cmp_35_8:
 ;  alloc r15
 ;    [35:12] f2(0)
@@ -212,13 +212,13 @@ main:
 ;      alias res -> r15
 ;      alias i -> 0
        if_12_8_35_12:
-;      [12:8] ? i=0 
-;      [12:8] ? i=0 
+;      [12:8] ? i==0 
+;      [12:8] ? i==0 
        cmp_12_8_35_12:
 ;      const eval to true
-;        [12:12] res=4 
-;        [12:16] 4 
-;        [12:16] res=4 
+;        [12:13] res=4 
+;        [12:17] 4 
+;        [12:17] res=4 
          mov r15,4
        if_12_5_35_12_end:
      f2_35_12_end:
@@ -226,9 +226,9 @@ main:
 ;  free r15
    je if_35_5_end
    if_35_8_code:  ; opt1
-;    [35:20] exit(6)
+;    [35:21] exit(6)
 ;    exit(v:reg_rdi) 
-;      inline: 35_20
+;      inline: 35_21
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,6
@@ -240,11 +240,11 @@ main:
 ;      [4:5] syscall 
        syscall
 ;      free rdi
-     exit_35_20_end:
+     exit_35_21_end:
    if_35_5_end:
    if_36_8:
-;  [36:8] ? not f2(1)=5 
-;  [36:8] ? not f2(1)=5 
+;  [36:8] ? not f2(1)==5 
+;  [36:8] ? not f2(1)==5 
    cmp_36_8:
 ;  alloc r15
 ;    [36:12] f2(1)
@@ -255,18 +255,18 @@ main:
 ;      alias res -> r15
 ;      alias i -> 1
        if_12_8_36_12:
-;      [12:8] ? i=0 
-;      [12:8] ? i=0 
+;      [12:8] ? i==0 
+;      [12:8] ? i==0 
        cmp_12_8_36_12:
 ;      const eval to false
        if_13_13_36_12:  ; opt1
-;      [13:13] ? i=1 
-;      [13:13] ? i=1 
+;      [13:13] ? i==1 
+;      [13:13] ? i==1 
        cmp_13_13_36_12:
 ;      const eval to true
-;        [13:17] res=5 
-;        [13:21] 5 
-;        [13:21] res=5 
+;        [13:18] res=5 
+;        [13:22] 5 
+;        [13:22] res=5 
          mov r15,5
        if_12_5_36_12_end:
      f2_36_12_end:
@@ -274,9 +274,9 @@ main:
 ;  free r15
    je if_36_5_end
    if_36_8_code:  ; opt1
-;    [36:20] exit(7)
+;    [36:21] exit(7)
 ;    exit(v:reg_rdi) 
-;      inline: 36_20
+;      inline: 36_21
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,7
@@ -288,11 +288,11 @@ main:
 ;      [4:5] syscall 
        syscall
 ;      free rdi
-     exit_36_20_end:
+     exit_36_21_end:
    if_36_5_end:
    if_37_8:
-;  [37:8] ? not f2(2)=6 
-;  [37:8] ? not f2(2)=6 
+;  [37:8] ? not f2(2)==6 
+;  [37:8] ? not f2(2)==6 
    cmp_37_8:
 ;  alloc r15
 ;    [37:12] f2(2)
@@ -303,23 +303,23 @@ main:
 ;      alias res -> r15
 ;      alias i -> 2
        if_12_8_37_12:
-;      [12:8] ? i=0 
-;      [12:8] ? i=0 
+;      [12:8] ? i==0 
+;      [12:8] ? i==0 
        cmp_12_8_37_12:
 ;      const eval to false
        if_13_13_37_12:  ; opt1
-;      [13:13] ? i=1 
-;      [13:13] ? i=1 
+;      [13:13] ? i==1 
+;      [13:13] ? i==1 
        cmp_13_13_37_12:
 ;      const eval to false
        if_14_13_37_12:  ; opt1
-;      [14:13] ? i=2 
-;      [14:13] ? i=2 
+;      [14:13] ? i==2 
+;      [14:13] ? i==2 
        cmp_14_13_37_12:
 ;      const eval to true
-;        [14:17] res=6 
-;        [14:21] 6 
-;        [14:21] res=6 
+;        [14:18] res=6 
+;        [14:22] 6 
+;        [14:22] res=6 
          mov r15,6
        if_12_5_37_12_end:
      f2_37_12_end:
@@ -327,9 +327,9 @@ main:
 ;  free r15
    je if_37_5_end
    if_37_8_code:  ; opt1
-;    [37:20] exit(8)
+;    [37:21] exit(8)
 ;    exit(v:reg_rdi) 
-;      inline: 37_20
+;      inline: 37_21
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,8
@@ -341,11 +341,11 @@ main:
 ;      [4:5] syscall 
        syscall
 ;      free rdi
-     exit_37_20_end:
+     exit_37_21_end:
    if_37_5_end:
    if_38_8:
-;  [38:8] ? not f2(3)=7 
-;  [38:8] ? not f2(3)=7 
+;  [38:8] ? not f2(3)==7 
+;  [38:8] ? not f2(3)==7 
    cmp_38_8:
 ;  alloc r15
 ;    [38:12] f2(3)
@@ -356,18 +356,18 @@ main:
 ;      alias res -> r15
 ;      alias i -> 3
        if_12_8_38_12:
-;      [12:8] ? i=0 
-;      [12:8] ? i=0 
+;      [12:8] ? i==0 
+;      [12:8] ? i==0 
        cmp_12_8_38_12:
 ;      const eval to false
        if_13_13_38_12:  ; opt1
-;      [13:13] ? i=1 
-;      [13:13] ? i=1 
+;      [13:13] ? i==1 
+;      [13:13] ? i==1 
        cmp_13_13_38_12:
 ;      const eval to false
        if_14_13_38_12:  ; opt1
-;      [14:13] ? i=2 
-;      [14:13] ? i=2 
+;      [14:13] ? i==2 
+;      [14:13] ? i==2 
        cmp_14_13_38_12:
 ;      const eval to false
        if_else_12_5_38_12:  ; opt1
@@ -381,9 +381,9 @@ main:
 ;  free r15
    je if_38_5_end
    if_38_8_code:  ; opt1
-;    [38:20] exit(9)
+;    [38:21] exit(9)
 ;    exit(v:reg_rdi) 
-;      inline: 38_20
+;      inline: 38_21
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,9
@@ -395,7 +395,7 @@ main:
 ;      [4:5] syscall 
        syscall
 ;      free rdi
-     exit_38_20_end:
+     exit_38_21_end:
    if_38_5_end:
 ;  [41:5] exit(0)
 ;  exit(v:reg_rdi) 

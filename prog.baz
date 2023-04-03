@@ -9,9 +9,9 @@ func inline f(b:bool):res:bool{
 }
 
 func inline f2(i:i64):res:i64{
-    if i=0 res=4
-    else if i=1 res=5
-    else if i=2 res=6
+    if i==0 res=4
+    else if i==1 res=5
+    else if i==2 res=6
     else res=7
 }
 
@@ -22,20 +22,20 @@ func inline main{
     r=f(false)
     if not r exit(2)
     
-    if 1=2 exit(3)
+    if 1==2 exit(3)
     
-    if 1=1 r=true else r=false
+    if 1==1 r=true else r=false
     
     if not r exit(4)
 
-    if 1=2 r=true else r=false
+    if 1==2 r=true else r=false
     
     if r exit(5)
 
-    if not f2(0)=4 exit(6)
-    if not f2(1)=5 exit(7)
-    if not f2(2)=6 exit(8)
-    if not f2(3)=7 exit(9)
+    if not f2(0)==4 exit(6)
+    if not f2(1)==5 exit(7)
+    if not f2(2)==6 exit(8)
+    if not f2(3)==7 exit(9)
     
 
     exit(0)

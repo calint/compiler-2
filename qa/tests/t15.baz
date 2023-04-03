@@ -22,7 +22,7 @@ func inline main{
     var a=3
     var b=2
     loop{
-        if a=0 break
+        if a==0 break
         bar()
         a=a-1
     }

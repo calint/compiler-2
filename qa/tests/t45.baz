@@ -7,17 +7,17 @@ func inline exit(v:reg_rdi){
 func inline main{
     var a=1
     var b=a<<1
-    if not b=2 exit(1)
+    if not b==2 exit(1)
 
     b=b>>1
-    if not b=1 exit(2)
+    if not b==1 exit(2)
 
     var c=2
     var d=a<<c
-    if not d=4 exit(3)
+    if not d==4 exit(3)
 
     var e=d>>c
-    if not e=1 exit(3)
+    if not e==1 exit(3)
 
     exit(0)
 }

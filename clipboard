@@ -119,8 +119,9 @@ Applying this to the given expression, we get:
 
 throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 
+printf("\033[2J"); // clears console
 
-qa/tetst/t6.baz
+qa/tests/t6.baz
 ------------------------------------------------------------
 func inline exit(v:reg_rdi){
     mov(rax,60) # exit system call
@@ -139,3 +140,35 @@ func inline main{
     exit(1)
 }
 -----------------------------------------------------
+section .data
+    num1 dq 3.14    ; first floating-point number
+    num2 dq 2.71    ; second floating-point number
+    result dq 0     ; space to store the result
+
+section .text
+    global main
+    extern printf
+
+main:
+    ; Load the two numbers into xmm0 and xmm1 registers
+    movsd xmm0, qword[num1]
+    movsd xmm1, qword[num2]
+
+    ; Add the two numbers and store the result in xmm0
+    addsd xmm0, xmm1
+
+    ; Move the result from xmm0 to the result variable in memory
+    movsd qword[result], xmm0
+
+    ; Print the result using printf
+    mov rdi, fmt
+    movsd xmm0, qword[result]
+    call printf
+
+    ; Exit the program
+    xor eax, eax
+    ret
+
+section .data
+    fmt db "Result: %f", 10, 0   ; printf format string
+-----------------------------------------------------------

@@ -11,7 +11,7 @@ func inline f(x:reg_rdx):res{
 func inline main{
     var a=2
     var b=f(-a+1)
-    if b=2
+    if b==2
         exit(0)
     exit(1)
 }

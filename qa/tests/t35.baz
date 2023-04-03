@@ -11,7 +11,7 @@ func inline main{
     a=-a
     var b=-(len)
     b=-b
-    if a=1 and b=2
+    if a==1 and b==2
         exit(0)
     exit(1)
 }

@@ -13,12 +13,12 @@ func inline main{
     var b1:bool=bt1<bt2
     if not b1 exit(1)
 
-    var b2:bool=bt1=1
+    var b2:bool=bt1==1
     b2=not bt2
     if b2 exit(2)
 
     bt1=-1+2
-    if not bt1=1 exit(3)
+    if not bt1==1 exit(3)
 
     exit(0)
 }

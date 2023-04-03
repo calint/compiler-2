@@ -17,7 +17,7 @@ func inline print(len:reg_rdx,ptr:reg_rsi){
 
 func bar(a,b){
     loop{
-        if b=0 return
+        if b==0 return
         print(hello.len,hello)
         b=b-1
     }

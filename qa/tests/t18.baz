@@ -25,7 +25,7 @@ func bar(n,x){
     loop{
         var b=2
         print(hello.len-n,hello)
-        if n=0 break
+        if n==0 break
         n=n-1
         i=i-1
         b=b-1
