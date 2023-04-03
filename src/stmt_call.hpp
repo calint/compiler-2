@@ -70,6 +70,7 @@ public:
 			const type&arg_type{arg.get_type()};
 			const type&param_type{param.get_type()};
 			if(arg_type.is_built_in()&&param_type.is_built_in()){
+				// ? check if it is integral (not bool)
 				if(param_type.size()<arg_type.size())
 					throw compiler_error(arg,"argument "+to_string(i+1)+" of type '"+arg_type.name()+"' would be truncated when passed to parameter of type '"+param_type.name()+"'");
 				continue;
