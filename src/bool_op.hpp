@@ -29,7 +29,11 @@ public:
 		if(t.is_next_char('=')){
 			if(not t.is_next_char('='))
 				throw compiler_error(t,"expected '=='");
-			op_="=";
+			op_="==";
+		}else if(t.is_next_char('!')){
+			if(not t.is_next_char('='))
+				throw compiler_error(t,"expected '!='");
+			op_="!=";
 		}else if(t.is_next_char('<')){
 			if(t.is_next_char('=')){
 				op_="<=";
@@ -69,8 +73,6 @@ public:
 
 		if(not is_shorthand_){
 			os<<op_;
-			if(op_=="=")
-				os<<'=';
 			rhs_.source_to(os);
 		}
 	}
@@ -102,7 +104,7 @@ public:
 			}
 			resolve_cmp_shorthand(tc,os,indent,lhs_);
 			toc::indent(os,indent);
-			os<<(not invert?asm_jxx_for_op_inv("="):asm_jxx_for_op("="));
+			os<<(not invert?asm_jxx_for_op_inv("=="):asm_jxx_for_op("=="));
 			os<<" "<<jmp_to_if_true<<endl;
 			return nullopt;
 		}
@@ -157,7 +159,7 @@ public:
 			}
 			resolve_cmp_shorthand(tc,os,indent,lhs_);
 			toc::indent(os,indent);
-			os<<(not invert?asm_jxx_for_op("="):asm_jxx_for_op_inv("="));
+			os<<(not invert?asm_jxx_for_op("=="):asm_jxx_for_op_inv("=="));
 			os<<" "<<jmp_to_if_false<<endl;
 			return nullopt;
 		}
@@ -236,7 +238,7 @@ private:
 	}
 
 	inline static bool eval_constant(const long int lh,const string&op,const long int rh){
-		if(op=="=")return lh==rh;
+		if(op=="==")return lh==rh;
 		if(op=="<")return lh<rh;
 		if(op=="<=")return lh<=rh;
 		if(op==">")return lh>rh;
@@ -245,8 +247,10 @@ private:
 	}
 
 	inline static string asm_jxx_for_op(const string&op){
-		if(op=="="){
+		if(op=="=="){
 			return "je";
+		}else if(op=="!="){
+			return "jne";
 		}else if(op=="<"){
 			return "jl";
 		}else if(op=="<="){
@@ -261,8 +265,10 @@ private:
 	}
 
 	inline static string asm_jxx_for_op_inv(const string&op){
-		if(op=="="){
+		if(op=="=="){
 			return "jne";
+		}else if(op=="!="){
+			return "je";
 		}else if(op=="<"){
 			return "jge";
 		}else if(op=="<="){

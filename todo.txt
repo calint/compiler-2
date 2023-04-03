@@ -1,6 +1,6 @@
 [x] fix 'cmp' two constants case
       -> messy code that does dead-code elimination
-[ ] bool_op: implement !=
+[x] bool_op: implement !=
 [ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names
 [ ] review the the declaration of default move,copy,constructor in every class
