@@ -1,10 +1,10 @@
 [x] fix 'cmp' two constants case
       -> messy code that does dead-code elimination
 [x] bool_op: implement !=
-[ ] bool_op: implement !
+[ ] bool_op: implement ! (logical not)
 [ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names
-[ ] review the the declaration of default move,copy,constructor in every class
+[ ] review the declaration of default move,copy,constructor in every class
 [ ] source location of a character index counts tabs as one character
 [ ] bool_op_list use cmovexx when assignment
 [ ] handle constants when deducing operand size
