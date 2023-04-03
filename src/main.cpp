@@ -28,13 +28,13 @@ int main(int argc,char*args[]){
 			throw"generated source differs. diff "+string{src_file_name}+" diff.baz";
 
 		// without jump optimizations
-		 p.build(cout);
+//		 p.build(cout);
 
 		// with jump optimizations
-//		stringstream ss1,ss2;
-//		p.build(ss1);
-//		optimize_jumps_1(ss1,ss2);
-//		optimize_jumps_2(ss2,cout);
+		stringstream ss1,ss2;
+		p.build(ss1);
+		optimize_jumps_1(ss1,ss2);
+		optimize_jumps_2(ss2,cout);
 
 	}catch(const compiler_error&e){
 		size_t start_char_in_line{0};
