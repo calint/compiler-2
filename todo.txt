@@ -13,7 +13,7 @@
 stage 4
 [x] function argument types
 [o] built-in types
-[ ]   var b:bool=false
+[x]   var b:bool=false
 [x]   var c:i8=0
 [x]   var w:i16=0
 [x]   var d:i32=0
