@@ -36,6 +36,7 @@ stage 4
       ->type point{x,y}
 [ ] let i=1 creates a constant
 [ ] f(a=1) where argument is a boolean
+[ ] function arguments relative to rsp allowing writing to variable in previous function context
 [ ] function arguments as references
 [ ]   pass effective address to the type
 [ ] function return written to reference
