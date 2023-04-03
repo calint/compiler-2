@@ -526,11 +526,11 @@ public:
 		size_t nregs_pushed_on_stack{0};
 		for(size_t i{alloc_regs_idx};i<n;i++){
 			const string&reg{allocated_registers_[i]};
-			if(is_register_initiated(reg)){
-				// push only registers that contain a valid value
-				asm_push(st,os,indnt,reg);
-				nregs_pushed_on_stack++;
-			}
+			if(not is_register_initiated(reg))
+				continue;
+			// push only registers that contain a valid value
+			asm_push(st,os,indnt,reg);
+			nregs_pushed_on_stack++;
 		}
 		call_metas_.push_back(call_meta{nregs_pushed_on_stack,allocated_registers_.size(),nbytes_of_vars_on_stack});
 	}
@@ -539,7 +539,7 @@ public:
 		const size_t nregs_pushed{call_metas_.back().nregs_pushed};
 		const size_t nbytes_of_vars{call_metas_.back().nbytes_of_vars};
 		call_metas_.pop_back();
-		const bool restore_rsp_to_base=call_metas_.empty();
+		const bool restore_rsp_to_base{call_metas_.empty()};
 		const size_t alloc_reg_idx{restore_rsp_to_base?0:call_metas_.back().alloc_reg_idx};
 
 		// optimization can be done if no registers need to be popped
@@ -547,11 +547,11 @@ public:
 		if(nregs_pushed==0){
 			// stack is: <base>,vars,args,
 			if(restore_rsp_to_base){
-				const string&offset=to_string(nbytes_of_args_on_stack+nbytes_of_vars);
+				const string&offset{to_string(nbytes_of_args_on_stack+nbytes_of_vars)};
 				asm_cmd(st,os,indnt,"add","rsp",offset);
 				// stack is: <base>,
 			}else{
-				const string&offset=to_string(nbytes_of_args_on_stack);
+				const string&offset{to_string(nbytes_of_args_on_stack)};
 				asm_cmd(st,os,indnt,"add","rsp",offset);
 				// stack is: <base>,vars,
 			}
@@ -570,7 +570,7 @@ public:
 		}else{
 			// stack is: <base>,vars,regs,args,
 			if(nbytes_of_args_on_stack){
-				const string&offset=to_string(nbytes_of_args_on_stack);
+				const string&offset{to_string(nbytes_of_args_on_stack)};
 				asm_cmd(st,os,indnt,"add","rsp",offset);
 			}
 			// stack is: <base>,vars,regs,
@@ -598,7 +598,7 @@ public:
 				// this was not a call within the arguments of another call
 				// stack is: <base>,vars,
 				if(nbytes_of_vars){
-					const string&offset=to_string(nbytes_of_vars);
+					const string&offset{to_string(nbytes_of_vars)};
 					asm_cmd(st,os,indnt,"add","rsp",offset);
 				}
 				// stack is: <base>,
