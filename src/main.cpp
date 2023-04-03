@@ -278,8 +278,8 @@ static string read_file_to_string(const char *file_name){
 	ifstream fs{file_name};
 	if(not fs.is_open())
 		throw"cannot open file '"+string{file_name}+"'";
-    std::stringstream buf;
-    buf<<fs.rdbuf();
-    return buf.str();
+	std::stringstream buf;
+	buf<<fs.rdbuf();
+	return buf.str();
 }
 
