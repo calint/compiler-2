@@ -260,7 +260,7 @@ private:
 		}else if(op==">="){
 			return "jge";
 		}else{
-			throw"unknown op "+op;
+			throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 		}
 	}
 
@@ -278,7 +278,7 @@ private:
 		}else if(op==">="){
 			return "jl";
 		}else{
-			throw"unknown op "+op;
+			throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 		}
 	}
 
