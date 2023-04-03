@@ -101,7 +101,7 @@ inline void unary_ops::compile(toc&tc,ostream&os,size_t indent_level,const strin
 //		}else if(op=='!'){
 //			os<<"xor "<<dst_resolved<<",1"<<endl;
 		}else{
-			throw"unexpected "+string{__FILE__}+":"+string{__LINE__};
+			throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 		}
 	}
 }
