@@ -136,7 +136,7 @@ private:
 	}
 
 	string src_;
-	const char*ptr_;
+	const char*ptr_{};
 	size_t nchar_{};
 	char last_char_{-1};
 };
