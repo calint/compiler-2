@@ -98,8 +98,8 @@ inline void unary_ops::compile(toc&tc,ostream&os,size_t indent_level,const strin
 			os<<"not "<<dst_resolved<<endl;
 		}else if(op=='-'){
 			os<<"neg "<<dst_resolved<<endl;
-		}else if(op=='!'){
-			os<<"xor "<<dst_resolved<<",1"<<endl;
+//		}else if(op=='!'){
+//			os<<"xor "<<dst_resolved<<",1"<<endl;
 		}else{
 			throw"unexpected "+string{__FILE__}+":"+string{__LINE__};
 		}

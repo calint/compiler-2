@@ -12,8 +12,8 @@ public:
 				ops_.push_back('~');
 			}else if(t.is_next_char('-')){
 				ops_.push_back('-');
-			}else if(t.is_next_char('!')){
-				ops_.push_back('!');
+//			}else if(t.is_next_char('!')){
+//				ops_.push_back('!');
 			}else{
 				break;
 			}
@@ -56,7 +56,7 @@ public:
 			switch(ops_[i]){
 			case'-':v=-v;break;
 			case'~':v=~v;break;
-			case'!':v=v^1;break;
+//			case'!':v=v^1;break;
 			default:throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 			}
 		}
