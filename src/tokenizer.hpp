@@ -110,7 +110,7 @@ private:
 		while(true){
 			const char ch{next_char()};
 			if(is_char_whitespace(ch)||
-			          ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||
+					ch==0||ch=='('||ch==')'||ch=='{'||ch=='}'||
 					ch=='='||ch==','||ch==':'||ch==';'||
 					ch=='+'||ch=='-'||ch=='*'||ch=='/'||ch=='%'||
 					ch=='&'||ch=='|'||ch=='^'||
