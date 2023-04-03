@@ -23,7 +23,8 @@ main:
    mov r15b,byte[rbp-2]
    cmp byte[rbp-1],r15b
    je if_12_5_end
-   if_12_8_code:  ; opt1
+   jmp if_12_8_code
+   if_12_8_code:
        mov rdi,1
        mov rax,60
        syscall
@@ -34,7 +35,8 @@ main:
    mov r15b,byte[rbp-3]
    cmp byte[rbp-1],r15b
    jne if_14_5_end
-   if_14_8_code:  ; opt1
+   jmp if_14_8_code
+   if_14_8_code:
        mov rdi,2
        mov rax,60
        syscall

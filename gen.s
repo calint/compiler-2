@@ -42,7 +42,8 @@ main:
    cmp byte[rbp-1],r15b
 ;  free r15
    je if_12_5_end
-   if_12_8_code:  ; opt1
+   jmp if_12_8_code
+   if_12_8_code:
 ;    [12:15] exit(1)
 ;    exit(v:reg_rdi) 
 ;      inline: 12_15
@@ -68,7 +69,8 @@ main:
    cmp byte[rbp-1],r15b
 ;  free r15
    jne if_14_5_end
-   if_14_8_code:  ; opt1
+   jmp if_14_8_code
+   if_14_8_code:
 ;    [14:19] exit(2)
 ;    exit(v:reg_rdi) 
 ;      inline: 14_19

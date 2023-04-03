@@ -28,13 +28,13 @@ int main(int argc,char*args[]){
 			throw"generated source differs. diff "+string{src_file_name}+" diff.baz";
 
 		// without jump optimizations
-//		 p.build(cout);
+		 p.build(cout);
 
 		// with jump optimizations
-		stringstream ss1,ss2;
-		p.build(ss1);
-		optimize_jumps_1(ss1,ss2);
-		optimize_jumps_2(ss2,cout);
+//		stringstream ss1,ss2;
+//		p.build(ss1);
+//		optimize_jumps_1(ss1,ss2);
+//		optimize_jumps_2(ss2,cout);
 
 	}catch(const compiler_error&e){
 		size_t start_char_in_line{0};
@@ -98,6 +98,8 @@ inline void unary_ops::compile(toc&tc,ostream&os,size_t indent_level,const strin
 			os<<"not "<<dst_resolved<<endl;
 		}else if(op=='-'){
 			os<<"neg "<<dst_resolved<<endl;
+		}else if(op=='!'){
+			os<<"xor "<<dst_resolved<<",1"<<endl;
 		}else{
 			throw"unexpected "+string{__FILE__}+":"+string{__LINE__};
 		}
