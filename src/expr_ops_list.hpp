@@ -151,18 +151,18 @@ public:
 			throw compiler_error(*this,"expression is empty");
 
 		// first element is assigned to destination
-		const statement&st{*exps_[0].get()};
-		const ident_resolved&ir{tc.resolve_identifier(st,dst,false)};
-		asm_op(tc,os,indent,'=',dst,ir.id,st);
+		const statement&src{*exps_[0].get()};
+		const ident_resolved&dst_resolved{tc.resolve_identifier(src,dst,false)};
+		asm_op(tc,os,indent,'=',dst,dst_resolved.id,src);
 
 		// remaining elements are +,-,*,/
 		const size_t n{ops_.size()};
 		for(size_t i{0};i<n;i++){
 			const char op=ops_[i];
-			const statement&stm{*exps_[i+1].get()};
-			asm_op(tc,os,indent,op,dst,ir.id,stm);
+			const statement&src_stm{*exps_[i+1].get()};
+			asm_op(tc,os,indent,op,dst,dst_resolved.id,src_stm);
 		}
-		uops_.compile(tc,os,indent,ir.id);
+		uops_.compile(tc,os,indent,dst_resolved.id);
 	}
 
 	inline bool is_expression()const override{
