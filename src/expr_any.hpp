@@ -94,18 +94,5 @@ public:
 	}
 
 private:
-	inline static size_t count_instructions(stringstream&ss){
-		const regex rxcomment{R"(^\s*;.*$)"};
-		string line;
-		size_t n{0};
-		while(getline(ss,line)){
-			if(regex_search(line,rxcomment))
-				continue;
-			n++;
-		}
-		return n;
-	}
-
-	token type_;
 	variant<expr_ops_list,bool_ops_list>eols_;
 };
