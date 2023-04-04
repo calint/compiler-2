@@ -219,28 +219,18 @@ private:
 	inline void asm_op(toc&tc,ostream&os,const size_t indent,const char op,const ident_resolved&dst,const statement&src)const{
 		toc::indent(os,indent,true);tc.source_comment(os,dst.id,{op},src);
 		if(op=='='){
-			if(src.is_expression()){
-				src.compile(tc,os,indent,dst.id);
-				return;
-			}
-			const ident_resolved&src_resolved{tc.resolve_identifier(src,true)};
-			if(src_resolved.is_const()){
-				tc.asm_cmd(src,os,indent,"mov",dst.id_nasm,src.get_unary_ops().as_string()+src_resolved.id_nasm);
-				return;
-			}
-			tc.asm_cmd(src,os,indent,"mov",dst.id_nasm,src_resolved.id_nasm);
-			src.get_unary_ops().compile(tc,os,indent,dst.id_nasm);
+			asm_op_mov(tc,os,indent,dst,src);
 			return;
 		}
 		if(op=='+'){
 			asm_op_add_sub(tc,os,indent,"add","sub",dst,src);
 			return;
 		}
-		if(op=='-'){// order1op
+		if(op=='-'){
 			asm_op_add_sub(tc,os,indent,"sub","add",dst,src);
 			return;
 		}
-		if(op=='*'){// order2op
+		if(op=='*'){
 			asm_op_mul(tc,os,indent,dst,src);
 			return;
 		}
@@ -272,6 +262,20 @@ private:
 			asm_op_shift(tc,os,indent,"sar",dst,src);
 			return;
 		}
+	}
+
+	inline void asm_op_mov(toc&tc,ostream&os,const size_t indent,const ident_resolved&dst,const statement&src)const{
+		if(src.is_expression()){
+			src.compile(tc,os,indent,dst.id);
+			return;
+		}
+		const ident_resolved&src_resolved{tc.resolve_identifier(src,true)};
+		if(src_resolved.is_const()){
+			tc.asm_cmd(src,os,indent,"mov",dst.id_nasm,src.get_unary_ops().as_string()+src_resolved.id_nasm);
+			return;
+		}
+		tc.asm_cmd(src,os,indent,"mov",dst.id_nasm,src_resolved.id_nasm);
+		src.get_unary_ops().compile(tc,os,indent,dst.id_nasm);
 	}
 
 	inline void asm_op_mul(toc&tc,ostream&os,const size_t indent,const ident_resolved&dst,const statement&src)const{
