@@ -1,7 +1,7 @@
 [x] fix 'cmp' two constants case
       -> messy code that does dead-code elimination
 [x] bool_op: implement !=
-[ ] use expr_any in stmt_assign_var
+[x] use expr_any in stmt_assign_var
 [-] bool_op: implement ! (logical not) -> same as "not a"
 [ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names

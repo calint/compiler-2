@@ -1,7 +1,6 @@
 #pragma once
 
-#include "bool_ops_list.hpp"
-#include"expr_ops_list.hpp"
+#include"expr_any.hpp"
 
 class stmt_assign_var final:public statement{
 public:
@@ -9,13 +8,9 @@ public:
 		statement{move(name)},
 		type_{move(type)}
 	{
-		const ident_resolved&ir{tc.resolve_identifier(*this,false)};
-		if(ir.tp.name()==tc.get_type_bool().name()){
-			eols_=bool_ops_list{tc,t};
-			return;
-		}
-		eols_=expr_ops_list{tc,t};
-		set_type(ir.tp);
+		const ident_resolved&dst_resolved{tc.resolve_identifier(*this,false)};
+		exp_={tc,dst_resolved.tp,t,false};
+		set_type(dst_resolved.tp);
 	}
 
 	inline stmt_assign_var()=default;
@@ -31,11 +26,7 @@ public:
 			type_.source_to(os);
 		}
 		os<<"=";
-		if(eols_.index()==0){
-			get<expr_ops_list>(eols_).source_to(os);
-		}else{
-			get<bool_ops_list>(eols_).source_to(os);
-		}
+		exp_.source_to(os);
 	}
 
 //	inline void source_def_to(ostream&os)const{
@@ -58,20 +49,18 @@ public:
 		// for the sake of clearer error message make sure identifier can be resolved
 		const ident_resolved&dst_resolved{tc.resolve_identifier(*this,false)};
 
-		if(eols_.index()==0){
-			const expr_ops_list&eol{get<expr_ops_list>(eols_)};
-
+		if(not exp_.is_bool_expression()){
 			// compare generated instructions with and without allocated scratch register
 			// select the method that produces least instructions
 
 			// try without scratch register
 			stringstream ss1;
-			eol.compile(tc,ss1,indent,identifier());
+			exp_.compile(tc,ss1,indent,dst_resolved.id);
 
 			// try with scratch register
 			stringstream ss2;
 			const string&reg{tc.alloc_scratch_register(*this,ss2,indent)};
-			eol.compile(tc,ss2,indent,reg);
+			exp_.compile(tc,ss2,indent,reg);
 			tc.asm_cmd(*this,ss2,indent,"mov",dst_resolved.id_nasm,reg);
 			tc.free_scratch_register(ss2,indent,reg);
 
@@ -85,32 +74,13 @@ public:
 			}else{
 				os<<ss2.str();
 			}
-			tc.set_var_is_initiated(tok().name());
+			tc.set_var_is_initiated(dst_resolved.id);
 			return;
 		}
 
 		// bool expression
-		const bool_ops_list&eol{get<bool_ops_list>(eols_)};
-		if(not eol.is_expression()){
-			const ident_resolved&src_resolved{tc.resolve_identifier(eol,false)};
-			tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,src_resolved.id_nasm);
-			tc.set_var_is_initiated(identifier());
-			return;
-		}
-		const string&call_path{tc.get_inline_call_path(tok())};
-		const string&src_loc{tc.source_location_for_label(tok())};
-		const string&postfix{src_loc+(call_path.empty()?"":("_"+call_path))};
-		const string&jmp_to_if_true{"true_"+postfix};
-		const string&jmp_to_if_false{"false_"+postfix};
-		const string&jmp_to_end{"end_"+postfix};
-		eol.compile(tc,os,indent,jmp_to_if_false,jmp_to_if_true,false);
-		tc.asm_label(*this,os,indent,jmp_to_if_true);
-		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,"1");
-		tc.asm_jmp(*this,os,indent,jmp_to_end);
-		tc.asm_label(*this,os,indent,jmp_to_if_false);
-		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,"0");
-		tc.asm_label(*this,os,indent,jmp_to_end);
-		tc.set_var_is_initiated(identifier());
+		exp_.compile(tc,os,indent,dst_resolved.id);
+		tc.set_var_is_initiated(dst_resolved.id);
 	}
 
 private:
@@ -127,5 +97,5 @@ private:
 	}
 
 	token type_;
-	variant<expr_ops_list,bool_ops_list>eols_;
+	expr_any exp_;
 };

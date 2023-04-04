@@ -24,6 +24,8 @@ public:
 	inline expr_any&operator=(const expr_any&)=default;
 	inline expr_any&operator=(expr_any&&)=default;
 
+	inline bool is_bool_expression()const{return eols_.index()==1;}
+
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		if(eols_.index()==0){
@@ -43,7 +45,14 @@ public:
 		}
 
 		// bool expression
+
+		const ident_resolved&dst_resolved{tc.resolve_identifier(*this,dst,false)};
 		const bool_ops_list&eol{get<bool_ops_list>(eols_)};
+		if(not eol.is_expression()){
+			const ident_resolved&src_resolved{tc.resolve_identifier(eol,false)};
+			tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,src_resolved.id_nasm);
+			return;
+		}
 		const string&call_path{tc.get_inline_call_path(tok())};
 		const string&src_loc{tc.source_location_for_label(tok())};
 		const string&postfix{src_loc+(call_path.empty()?"":("_"+call_path))};
@@ -52,7 +61,6 @@ public:
 		const string&jmp_to_end{"end_"+postfix};
 		eol.compile(tc,os,indent,jmp_to_if_false,jmp_to_if_true,false);
 		tc.asm_label(*this,os,indent,jmp_to_if_true);
-		const ident_resolved&dst_resolved{tc.resolve_identifier(*this,dst,false)};
 		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,"1");
 		tc.asm_jmp(*this,os,indent,jmp_to_end);
 		tc.asm_label(*this,os,indent,jmp_to_if_false);

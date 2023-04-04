@@ -24,14 +24,17 @@ main:
 ;  b1: byte[rbp-1]
 ;  [8:5] var b1:bool=true 
 ;  [8:9] b1:bool=true 
+;  [8:17] true 
    mov byte[rbp-1],true
 ;  b2: byte[rbp-2]
 ;  [9:5] var b2:bool=true 
 ;  [9:9] b2:bool=true 
+;  [9:17] true 
    mov byte[rbp-2],true
 ;  b3: byte[rbp-3]
 ;  [10:5] var b3:bool=false 
 ;  [10:9] b3:bool=false 
+;  [10:17] false 
    mov byte[rbp-3],false
    if_12_8:
 ;  [12:8] ? b1!=b2 
