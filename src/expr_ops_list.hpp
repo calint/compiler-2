@@ -241,64 +241,7 @@ private:
 			return;
 		}
 		if(op=='*'){// order2op
-			if(src.is_expression()){
-				const string&reg{tc.alloc_scratch_register(src,os,indent)};
-				src.compile(tc,os,indent,reg);
-				// imul destination must be a register
-				if(dst.is_register()){
-					tc.asm_cmd(src,os,indent,"imul",dst.id_nasm,reg);
-				}else{
-					// imul destination is not a register
-					tc.asm_cmd(src,os,indent,"imul",reg,dst.id_nasm);
-					tc.asm_cmd(src,os,indent,"mov",dst.id_nasm,reg);
-				}
-				tc.free_scratch_register(os,indent,reg);
-				return;
-			}
-			// not an expression, either a register or memory location
-			const ident_resolved&src_resolved=tc.resolve_identifier(src,true);
-			// imul destination operand must be register
-			if(dst.is_register()){
-				if(src_resolved.is_const()){
-					tc.asm_cmd(src,os,indent,"imul",dst.id_nasm,src.get_unary_ops().as_string()+src_resolved.id_nasm);
-					return;
-				}
-				const unary_ops&uops=src.get_unary_ops();
-				if(uops.is_empty()){
-					tc.asm_cmd(src,os,indent,"imul",dst.id_nasm,src_resolved.id_nasm);
-					return;
-				}
-				const string&r{tc.alloc_scratch_register(src,os,indent)};
-				tc.asm_cmd(src,os,indent,"mov",r,src_resolved.id_nasm);
-				uops.compile(tc,os,indent,r);
-				tc.asm_cmd(src,os,indent,"imul",dst.id_nasm,r);
-				tc.free_scratch_register(os,indent,r);
-				return;
-			}
-			// imul destination is not a register
-			if(src_resolved.is_const()){
-				const string&reg{tc.alloc_scratch_register(src,os,indent)};
-				tc.asm_cmd(src,os,indent,"mov",reg,dst.id_nasm);
-				tc.asm_cmd(src,os,indent,"imul",reg,src.get_unary_ops().as_string()+src_resolved.id_nasm);
-				tc.asm_cmd(src,os,indent,"mov",dst.id_nasm,reg);
-				tc.free_scratch_register(os,indent,reg);
-				return;
-			}
-			const unary_ops&uops{src.get_unary_ops()};
-			if(uops.is_empty()){
-				const string&reg{tc.alloc_scratch_register(src,os,indent)};
-				tc.asm_cmd(src,os,indent,"mov",reg,dst.id_nasm);
-				tc.asm_cmd(src,os,indent,"imul",reg,src_resolved.id_nasm);
-				tc.asm_cmd(src,os,indent,"mov",dst.id_nasm,reg);
-				tc.free_scratch_register(os,indent,reg);
-				return;
-			}
-			const string&reg{tc.alloc_scratch_register(src,os,indent)};
-			tc.asm_cmd(src,os,indent,"mov",reg,src_resolved.id_nasm);
-			uops.compile(tc,os,indent,reg);
-			tc.asm_cmd(src,os,indent,"imul",reg,dst.id_nasm);
-			tc.asm_cmd(src,os,indent,"mov",dst.id_nasm,reg);
-			tc.free_scratch_register(os,indent,reg);
+			asm_op_mul(tc,os,indent,dst,src);
 			return;
 		}
 		if(op=='/'){
@@ -329,6 +272,67 @@ private:
 			asm_op_shift(tc,os,indent,"sar",dst,src);
 			return;
 		}
+	}
+
+	inline void asm_op_mul(toc&tc,ostream&os,const size_t indent,const ident_resolved&dst,const statement&src)const{
+		if(src.is_expression()){
+			const string&reg{tc.alloc_scratch_register(src,os,indent)};
+			src.compile(tc,os,indent,reg);
+			// imul destination must be a register
+			if(dst.is_register()){
+				tc.asm_cmd(src,os,indent,"imul",dst.id_nasm,reg);
+			}else{
+				// imul destination is not a register
+				tc.asm_cmd(src,os,indent,"imul",reg,dst.id_nasm);
+				tc.asm_cmd(src,os,indent,"mov",dst.id_nasm,reg);
+			}
+			tc.free_scratch_register(os,indent,reg);
+			return;
+		}
+		// not an expression, either a register or memory location
+		const ident_resolved&src_resolved=tc.resolve_identifier(src,true);
+		// imul destination operand must be register
+		if(dst.is_register()){
+			if(src_resolved.is_const()){
+				tc.asm_cmd(src,os,indent,"imul",dst.id_nasm,src.get_unary_ops().as_string()+src_resolved.id_nasm);
+				return;
+			}
+			const unary_ops&uops=src.get_unary_ops();
+			if(uops.is_empty()){
+				tc.asm_cmd(src,os,indent,"imul",dst.id_nasm,src_resolved.id_nasm);
+				return;
+			}
+			const string&reg{tc.alloc_scratch_register(src,os,indent)};
+			tc.asm_cmd(src,os,indent,"mov",reg,src_resolved.id_nasm);
+			uops.compile(tc,os,indent,reg);
+			tc.asm_cmd(src,os,indent,"imul",dst.id_nasm,reg);
+			tc.free_scratch_register(os,indent,reg);
+			return;
+		}
+		// imul destination is not a register
+		if(src_resolved.is_const()){
+			const string&reg{tc.alloc_scratch_register(src,os,indent)};
+			tc.asm_cmd(src,os,indent,"mov",reg,dst.id_nasm);
+			tc.asm_cmd(src,os,indent,"imul",reg,src.get_unary_ops().as_string()+src_resolved.id_nasm);
+			tc.asm_cmd(src,os,indent,"mov",dst.id_nasm,reg);
+			tc.free_scratch_register(os,indent,reg);
+			return;
+		}
+		const unary_ops&uops{src.get_unary_ops()};
+		if(uops.is_empty()){
+			const string&reg{tc.alloc_scratch_register(src,os,indent)};
+			tc.asm_cmd(src,os,indent,"mov",reg,dst.id_nasm);
+			tc.asm_cmd(src,os,indent,"imul",reg,src_resolved.id_nasm);
+			tc.asm_cmd(src,os,indent,"mov",dst.id_nasm,reg);
+			tc.free_scratch_register(os,indent,reg);
+			return;
+		}
+		const string&reg{tc.alloc_scratch_register(src,os,indent)};
+		tc.asm_cmd(src,os,indent,"mov",reg,src_resolved.id_nasm);
+		uops.compile(tc,os,indent,reg);
+		tc.asm_cmd(src,os,indent,"imul",reg,dst.id_nasm);
+		tc.asm_cmd(src,os,indent,"mov",dst.id_nasm,reg);
+		tc.free_scratch_register(os,indent,reg);
 	}
 
 	inline void asm_op_add_sub(toc&tc,ostream&os,const size_t indent,const string&op,const string&op_inv,const ident_resolved&dst,const statement&src)const{
