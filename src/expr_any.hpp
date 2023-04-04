@@ -53,10 +53,10 @@ public:
 		eol.compile(tc,os,indent,jmp_to_if_false,jmp_to_if_true,false);
 		tc.asm_label(*this,os,indent,jmp_to_if_true);
 		const ident_resolved&dst_resolved{tc.resolve_identifier(*this,dst,false)};
-		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id,"1");
+		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,"1");
 		tc.asm_jmp(*this,os,indent,jmp_to_end);
 		tc.asm_label(*this,os,indent,jmp_to_if_false);
-		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id,"0");
+		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,"0");
 		tc.asm_label(*this,os,indent,jmp_to_end);
 	}
 

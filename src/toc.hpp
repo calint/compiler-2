@@ -134,6 +134,7 @@ struct ident_resolved final{
 	enum class ident_type{CONST,VAR,REGISTER,FIELD,IMPLIED};
 
 	string id;
+	string id_nasm;
 	long int const_value{};
 	const type&tp;
 	ident_type ident_type{ident_type::CONST};
@@ -279,16 +280,16 @@ public:
 	}
 
 	inline ident_resolved resolve_identifier(const statement&st,const bool must_be_initiated)const{
-		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(st,st.identifier(),must_be_initiated)};
-		if(not ir.id.empty())
+		const ident_resolved&ir{resolve_ident_or_empty(st,st.identifier(),must_be_initiated)};
+		if(not ir.id_nasm.empty())
 			return ir;
 
 		throw compiler_error(st,"cannot resolve identifier '"+st.identifier()+"'");
 	}
 
 	inline ident_resolved resolve_identifier(const statement&st,const string&ident,const bool must_be_initiated)const{
-		const ident_resolved&ir{resolve_ident_to_nasm_or_empty(st,ident,must_be_initiated)};
-		if(not ir.id.empty())
+		const ident_resolved&ir{resolve_ident_or_empty(st,ident,must_be_initiated)};
+		if(not ir.id_nasm.empty())
 			return ir;
 
 		throw compiler_error(st.tok(),"cannot resolve identifier '"+ident+"'");
@@ -350,7 +351,7 @@ public:
 		frames_.back().add_var(st.tok(),name,var_type,-stack_idx,initiated);
 		// comment the resolved name
 		const ident_resolved&ir{resolve_identifier(st,name,false)};
-		indent(os,indnt,true);os<<name<<": "<<ir.id<<endl;
+		indent(os,indnt,true);os<<name<<": "<<ir.id_nasm<<endl;
 	}
 
 	inline void add_func_arg(const statement&st,ostream&os,size_t indnt,const string&name,const type&arg_type,const int stack_idx){
@@ -358,7 +359,7 @@ public:
 		frames_.back().add_var(st.tok(),name,arg_type,stack_idx,true);
 		// comment the resolved name
 		const ident_resolved&ir{resolve_identifier(st,name,false)};
-		indent(os,indnt,true);os<<name<<": "<<ir.id<<endl;
+		indent(os,indnt,true);os<<name<<": "<<ir.id_nasm<<endl;
 	}
 
 	inline const string&alloc_scratch_register(const statement&st,ostream&os,const size_t indnt){
@@ -869,7 +870,7 @@ public:
 		pair<string,frame&>idfrm{get_id_and_frame_for_identifier(bid.id_base())};
 		const string&id=idfrm.first;
 		frame&frm=idfrm.second;
-		// is 'id' a variable?
+		// is 'id_nasm' a variable?
 		if(frm.has_var(id)){
 			frm.get_var_ref(id).initiated=true;
 			return;
@@ -912,7 +913,7 @@ public:
 private:
 	inline pair<string,frame&>get_id_and_frame_for_identifier(const string&name){
 		string id{name};
-		// traverse the frames and resolve the id (which might be an alias) to
+		// traverse the frames and resolve the id_nasm (which might be an alias) to
 		// a variable, field, register or constant
 		size_t i{frames_.size()};
 		while(i--){
@@ -950,10 +951,10 @@ private:
 		return n;
 	}
 
-	inline const ident_resolved resolve_ident_to_nasm_or_empty(const statement&st,const string&ident,const bool must_be_initiated)const{
+	inline const ident_resolved resolve_ident_or_empty(const statement&st,const string&ident,const bool must_be_initiated)const{
 		baz_ident bid{ident};
 		string id{bid.id_base()};
-		// traverse the frames and resolve the id (which might be an alias) to
+		// traverse the frames and resolve the id_nasm (which might be an alias) to
 		// a variable, field, register or constant
 		size_t i{frames_.size()};
 		while(i--){
@@ -976,66 +977,67 @@ private:
 				break;
 		}
 
-		// is 'id' a variable?
+		// is 'id_nasm' a variable?
 		if(frames_[i].has_var(id)){
 			const var_meta&var=frames_[i].get_var_const_ref(id);
 			if(must_be_initiated and not var.initiated)
 				throw compiler_error(st,"variable '"+var.name+"' is not initiated");
 			const string&acc=var.tp.accessor(st.tok(),bid.path(),var.stack_idx);
-			return{acc,0,var.tp,ident_resolved::ident_type::VAR};
+			return{ident,acc,0,var.tp,ident_resolved::ident_type::VAR};
 		}
 
-		// is 'id' a register?
+		// is 'id_nasm' a register?
 		if(is_identifier_register(id)){
 			if(must_be_initiated and not is_register_initiated(id))
 				throw compiler_error(st,"register '"+id+"' is not initiated");
 
-			return{id,0,get_type_default(),ident_resolved::ident_type::REGISTER}; // ? unary ops?
+			return{ident,id,0,get_type_default(),ident_resolved::ident_type::REGISTER}; // ? unary ops?
 		}
 
-		// is 'id' a field?
+		// is 'id_nasm' a field?
 
 		if(fields_.has(id)){
 			const string&after_dot=bid.path().size()<2?"":bid.path()[1]; // ! not correct
 			if(after_dot=="len"){
-				return{id+"."+after_dot,0,get_type_default(),ident_resolved::ident_type::IMPLIED};
+				return{ident,id+"."+after_dot,0,get_type_default(),ident_resolved::ident_type::IMPLIED};
 			}
 			const field_meta&fm=fields_.get_const_ref(id);
 			if(fm.is_str)
-				return{id,0,get_type_default(),ident_resolved::ident_type::FIELD};
-			return{"qword["+id+"]",0,get_type_default(),ident_resolved::ident_type::FIELD};
+				return{ident,id,0,get_type_default(),ident_resolved::ident_type::FIELD};
+			// ? assumes qword
+			return{ident,"qword["+id+"]",0,get_type_default(),ident_resolved::ident_type::FIELD};
 		}
 
 		char*ep;
 		const long int const_value{strtol(id.c_str(),&ep,10)};
 		if(!*ep)
-			return{id,const_value,get_type_default(),ident_resolved::ident_type::CONST};
+			return{ident,id,const_value,get_type_default(),ident_resolved::ident_type::CONST};
 
 		if(id.find("0x")==0){ // hex
 			const long int value{strtol(id.c_str()+2,&ep,16)};
 			if(!*ep)
-				return{id,value,get_type_default(),ident_resolved::ident_type::CONST};
+				return{ident,id,value,get_type_default(),ident_resolved::ident_type::CONST};
 		}
 
 		if(id.find("0b")==0){ // binary
 			const long int value{strtol(id.c_str()+2,&ep,2)};
 			if(!*ep)
-				return{id,value,get_type_default(),ident_resolved::ident_type::CONST};
+				return{ident,id,value,get_type_default(),ident_resolved::ident_type::CONST};
 		}
 
 		if(funcs_.has(id)){
 			const func_meta&func{funcs_.get_const_ref(id)};
-			return{id,0,func.tp,ident_resolved::ident_type::CONST};// ? type is func
+			return{ident,id,0,func.tp,ident_resolved::ident_type::CONST};// ? type is func
 		}
 
 		if(id=="true")
-			return{id,1,get_type_bool(),ident_resolved::ident_type::CONST};
+			return{ident,id,1,get_type_bool(),ident_resolved::ident_type::CONST};
 
 		if(id=="false")
-			return{id,0,get_type_bool(),ident_resolved::ident_type::CONST};
+			return{ident,id,0,get_type_bool(),ident_resolved::ident_type::CONST};
 
 		// not resolved, return empty answer
-		return{"",0,get_type_void(),ident_resolved::ident_type::CONST};
+		return{"","",0,get_type_void(),ident_resolved::ident_type::CONST};
 	}
 
 	inline void check_usage(){

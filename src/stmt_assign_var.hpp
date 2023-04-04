@@ -72,7 +72,7 @@ public:
 			stringstream ss2;
 			const string&reg{tc.alloc_scratch_register(*this,ss2,indent)};
 			eol.compile(tc,ss2,indent,reg);
-			tc.asm_cmd(*this,ss2,indent,"mov",dst_resolved.id,reg);
+			tc.asm_cmd(*this,ss2,indent,"mov",dst_resolved.id_nasm,reg);
 			tc.free_scratch_register(ss2,indent,reg);
 
 			// compare instruction count
@@ -93,7 +93,7 @@ public:
 		const bool_ops_list&eol{get<bool_ops_list>(eols_)};
 		if(not eol.is_expression()){
 			const ident_resolved&src_resolved{tc.resolve_identifier(eol,false)};
-			tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id,src_resolved.id);
+			tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,src_resolved.id_nasm);
 			tc.set_var_is_initiated(identifier());
 			return;
 		}
@@ -105,10 +105,10 @@ public:
 		const string&jmp_to_end{"end_"+postfix};
 		eol.compile(tc,os,indent,jmp_to_if_false,jmp_to_if_true,false);
 		tc.asm_label(*this,os,indent,jmp_to_if_true);
-		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id,"1");
+		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,"1");
 		tc.asm_jmp(*this,os,indent,jmp_to_end);
 		tc.asm_label(*this,os,indent,jmp_to_if_false);
-		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id,"0");
+		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,"0");
 		tc.asm_label(*this,os,indent,jmp_to_end);
 		tc.set_var_is_initiated(identifier());
 	}

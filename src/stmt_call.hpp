@@ -136,31 +136,31 @@ public:
 				if(argument_passed_in_register){
 					// move the identifier to the requested register
 					if(ir.is_const()){
-						tc.asm_cmd(arg,os,indent,"mov",arg_reg,arg.get_unary_ops().get_ops_as_string()+ir.id);
+						tc.asm_cmd(arg,os,indent,"mov",arg_reg,arg.get_unary_ops().as_string()+ir.id_nasm);
 						nbytes_of_args_on_stack+=8;
 						continue;
 					}
-					tc.asm_cmd(arg,os,indent,"mov",arg_reg,ir.id);
+					tc.asm_cmd(arg,os,indent,"mov",arg_reg,ir.id_nasm);
 					arg.get_unary_ops().compile(tc,os,indent,arg_reg);
 					nbytes_of_args_on_stack+=8;
 					continue;
 				}
 				// push identifier on the stack
 				if(ir.is_const()){
-					tc.asm_push(arg,os,indent,arg.get_unary_ops().get_ops_as_string()+ir.id);
+					tc.asm_push(arg,os,indent,arg.get_unary_ops().as_string()+ir.id_nasm);
 					nbytes_of_args_on_stack+=8;
 					continue;
 				}
 				if(arg.get_unary_ops().is_empty()){
 					if(ir.tp.size()==tc.get_type_default().size()){
-						tc.asm_push(arg,os,indent,ir.id);
+						tc.asm_push(arg,os,indent,ir.id_nasm);
 						nbytes_of_args_on_stack+=8;
 						continue;
 					}
 					// value to be pushed is not a 64 bit value
 					// push can only be done with 64 or 16 bits values
 					const string&r{tc.alloc_scratch_register(arg,os,indent)};
-					tc.asm_cmd(arg,os,indent,"mov",r,ir.id);
+					tc.asm_cmd(arg,os,indent,"mov",r,ir.id_nasm);
 					tc.asm_push(arg,os,indent,r);
 					tc.free_scratch_register(os,indent,r);
 					nbytes_of_args_on_stack+=8;
@@ -168,7 +168,7 @@ public:
 				}
 				// unary ops must be applied
 				const string&r{tc.alloc_scratch_register(arg,os,indent)};
-				tc.asm_cmd(arg,os,indent,"mov",r,ir.id);
+				tc.asm_cmd(arg,os,indent,"mov",r,ir.id_nasm);
 				arg.get_unary_ops().compile(tc,os,indent,r);
 				tc.asm_push(arg,os,indent,r);
 				tc.free_scratch_register(os,indent,r);
@@ -188,7 +188,7 @@ public:
 				// function returns value in rax, copy return value to dst
 				get_unary_ops().compile(tc,os,indent,"rax");
 				const ident_resolved&ir{tc.resolve_identifier(*this,dst,false)};
-				tc.asm_cmd(*this,os,indent,"mov",ir.id,"rax");
+				tc.asm_cmd(*this,os,indent,"mov",ir.id_nasm,"rax");
 			}
 			return;
 		}
@@ -268,7 +268,7 @@ public:
 				const string&sr{tc.alloc_scratch_register(arg,os,indent+1)};
 				allocated_registers_in_order.push_back(sr);
 				allocated_scratch_registers.push_back(sr);
-				tc.asm_cmd(param,os,indent+1,"mov",sr,ir.id);
+				tc.asm_cmd(param,os,indent+1,"mov",sr,ir.id_nasm);
 				arg.get_unary_ops().compile(tc,os,indent+1,sr);
 				aliases_to_add.emplace_back(param.identifier(),sr);
 				tc.indent(os,indent+1,true);os<<"alias "<<param.identifier()<<" -> "<<sr<<endl;
@@ -281,10 +281,10 @@ public:
 			const ident_resolved&ir{tc.resolve_identifier(arg,true)};
 			if(ir.is_const()){
 				const ident_resolved&arg_r{tc.resolve_identifier(arg,true)};
-				tc.asm_cmd(param,os,indent+1,"mov",arg_reg,arg.get_unary_ops().get_ops_as_string()+ir.id);
+				tc.asm_cmd(param,os,indent+1,"mov",arg_reg,arg.get_unary_ops().as_string()+ir.id_nasm);
 				continue;
 			}
-			tc.asm_cmd(param,os,indent+1,"mov",arg_reg,ir.id);
+			tc.asm_cmd(param,os,indent+1,"mov",arg_reg,ir.id_nasm);
 			arg.get_unary_ops().compile(tc,os,indent+1,arg_reg);
 		}
 
@@ -324,7 +324,7 @@ public:
 				throw compiler_error(*this,"function call has unary operations but it does not return a value");
 
 			const ident_resolved&ir{tc.resolve_identifier(*this,func.returns()[0].name(),true)};
-			get_unary_ops().compile(tc,os,indent,ir.id);
+			get_unary_ops().compile(tc,os,indent,ir.id_nasm);
 		}
 		// pop scope
 		tc.exit_func(func_nm);

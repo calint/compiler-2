@@ -46,7 +46,7 @@ public:
 
 	inline bool is_empty()const{return ops_.empty();}
 
-	inline string get_ops_as_string()const{
+	inline string as_string()const{
 		return{ops_.begin(),ops_.end()};
 	}
 

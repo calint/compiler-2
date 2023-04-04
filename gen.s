@@ -30,36 +30,22 @@ main:
 ;  [9:9] b2:bool=true 
    mov byte[rbp-2],true
 ;  b3: byte[rbp-3]
-;  [10:5] var b3:bool=not b2 
-;  [10:9] b3:bool=not b2 
-;  [10:17] ? not b2 
-;  [10:17] ? not b2 
-   cmp_10_17:
-   cmp byte[rbp-2],0
-   jne false_10_9
-   jmp true_10_9
-   true_10_9:
-   mov byte[rbp-3],1
-   jmp end_10_9
-   false_10_9:
-   mov byte[rbp-3],0
-   end_10_9:
-;  [11:1] # var i=1 
-;  [12:1] # var j=~i 
-   if_14_8:
-;  [14:8] ? b1!=b2 
-;  [14:8] ? b1!=b2 
-   cmp_14_8:
+;  [10:5] var b3:bool=false 
+;  [10:9] b3:bool=false 
+   mov byte[rbp-3],false
+   if_12_8:
+;  [12:8] ? b1!=b2 
+;  [12:8] ? b1!=b2 
+   cmp_12_8:
 ;  alloc r15
    mov r15b,byte[rbp-2]
    cmp byte[rbp-1],r15b
 ;  free r15
-   je if_14_5_end
-   jmp if_14_8_code
-   if_14_8_code:
-;    [14:15] exit(1)
+   je if_12_5_end
+   if_12_8_code:  ; opt1
+;    [12:15] exit(1)
 ;    exit(v:reg_rdi) 
-;      inline: 14_15
+;      inline: 12_15
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,1
@@ -71,22 +57,21 @@ main:
 ;      [4:5] syscall 
        syscall
 ;      free rdi
-     exit_14_15_end:
-   if_14_5_end:
-   if_16_8:
-;  [16:8] ? not b1!=b3 
-;  [16:8] ? not b1!=b3 
-   cmp_16_8:
+     exit_12_15_end:
+   if_12_5_end:
+   if_14_8:
+;  [14:8] ? not b1!=b3 
+;  [14:8] ? not b1!=b3 
+   cmp_14_8:
 ;  alloc r15
    mov r15b,byte[rbp-3]
    cmp byte[rbp-1],r15b
 ;  free r15
-   jne if_16_5_end
-   jmp if_16_8_code
-   if_16_8_code:
-;    [16:19] exit(2)
+   jne if_14_5_end
+   if_14_8_code:  ; opt1
+;    [14:19] exit(2)
 ;    exit(v:reg_rdi) 
-;      inline: 16_19
+;      inline: 14_19
 ;      alloc rdi
 ;      alias v -> rdi
        mov rdi,2
@@ -98,11 +83,11 @@ main:
 ;      [4:5] syscall 
        syscall
 ;      free rdi
-     exit_16_19_end:
-   if_16_5_end:
-;  [18:5] exit(0)
+     exit_14_19_end:
+   if_14_5_end:
+;  [16:5] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 18_5
+;    inline: 16_5
 ;    alloc rdi
 ;    alias v -> rdi
      mov rdi,0
@@ -114,7 +99,7 @@ main:
 ;    [4:5] syscall 
      syscall
 ;    free rdi
-   exit_18_5_end:
+   exit_16_5_end:
 
 ; max scratch registers in use: 1
 ;            max frames in use: 5

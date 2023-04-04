@@ -49,7 +49,7 @@ public:
 			return;
 		}
 		os<<" dq ";
-		os<<uops_.get_ops_as_string();
+		os<<uops_.as_string();
 		initial_value_.compile_to(os);
 		os<<endl;
 	}

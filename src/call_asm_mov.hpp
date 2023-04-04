@@ -22,18 +22,18 @@ public:
 		const ident_resolved&dst_r{tc.resolve_identifier(arg(0),false)};
 		const statement&src_arg{arg(1)};
 		if(src_arg.is_expression()){ // ? the assembler commands might not need this
-			src_arg.compile(tc,os,indent+1,dst_r.id);
+			src_arg.compile(tc,os,indent+1,dst_r.id_nasm);
 			return;
 		}
 		// src is not an expression
 		const ident_resolved&src{tc.resolve_identifier(src_arg,true)};
 		if(src.is_const()){
 			// a constant
-			tc.asm_cmd(*this,os,indent,"mov",dst_r.id,src_arg.get_unary_ops().get_ops_as_string()+src.id);
+			tc.asm_cmd(*this,os,indent,"mov",dst_r.id_nasm,src_arg.get_unary_ops().as_string()+src.id_nasm);
 			return;
 		}
 		// variable, register or field
-		tc.asm_cmd(*this,os,indent,"mov",dst_r.id,src.id);
-		src_arg.get_unary_ops().compile(tc,os,indent,dst_r.id);
+		tc.asm_cmd(*this,os,indent,"mov",dst_r.id_nasm,src.id_nasm);
+		src_arg.get_unary_ops().compile(tc,os,indent,dst_r.id_nasm);
 	}
 };

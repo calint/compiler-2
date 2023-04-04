@@ -321,14 +321,14 @@ private:
 		
 		const ident_resolved&id_r{tc.resolve_identifier(exp,true)};
 		if(id_r.is_const())
-			return exp.get_unary_ops().get_ops_as_string()+id_r.id;
+			return exp.get_unary_ops().as_string()+id_r.id_nasm;
 
 		if(exp.get_unary_ops().is_empty())
-			return id_r.id;
+			return id_r.id_nasm;
 		
 		const string&reg=tc.alloc_scratch_register(exp,os,indent);
 		allocated_registers.push_back(reg);
-		tc.asm_cmd(exp,os,indent,"mov",reg,id_r.id);
+		tc.asm_cmd(exp,os,indent,"mov",reg,id_r.id_nasm);
 		exp.get_unary_ops().compile(tc,os,indent,reg);
 		return reg;
 	}
