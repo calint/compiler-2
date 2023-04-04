@@ -32,15 +32,15 @@ public:
 		char precedence=first_op_precedence;
 		while(true){ // +a  +3
 			// if end of subexpression
-			if(enclosed_&&t.is_next_char(')'))
+			if(enclosed_ and t.is_next_char(')'))
 				break;
 
 			// if parsed in a function call argument list or in a boolean expression
 			if(in_args){ // ? rewrite is_in_bool_expr
 				// if in boolean expression exit when an operation is found
-				if(t.is_peek_char('<')&&not t.is_peek_char2('<'))break;
+				if(t.is_peek_char('<')and not t.is_peek_char2('<'))break;
 				if(t.is_peek_char('='))break;
-				if(t.is_peek_char('>')&&not t.is_peek_char2('>'))break;
+				if(t.is_peek_char('>')and not t.is_peek_char2('>'))break;
 				// if in arguments exit when ',' or ')' is found
 				if(t.is_peek_char(','))break;
 				if(t.is_peek_char(')'))break;
@@ -63,9 +63,9 @@ public:
 				ops_.push_back('|');
 			}else if(t.is_peek_char('^')){
 				ops_.push_back('^');
-			}else if(t.is_peek_char('<')&&t.is_peek_char2('<')){
+			}else if(t.is_peek_char('<')and t.is_peek_char2('<')){
 				ops_.push_back('<');
-			}else if(t.is_peek_char('>')&&t.is_peek_char2('>')){
+			}else if(t.is_peek_char('>')and t.is_peek_char2('>')){
 			 	ops_.push_back('>');
 			}else{
 				// no more operations
@@ -93,7 +93,7 @@ public:
 
 			precedence=next_precedence;
 			const char ch=t.next_char();// read the peeked operator
-			if(ch=='<'||ch=='>')
+			if(ch=='<' or ch=='>')
 				t.next_char(); // one more character for << and >>
 
 			// check if next statement is a subexpression
