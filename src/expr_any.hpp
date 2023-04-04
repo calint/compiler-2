@@ -24,8 +24,6 @@ public:
 	inline expr_any&operator=(const expr_any&)=default;
 	inline expr_any&operator=(expr_any&&)=default;
 
-	inline bool is_bool_expression()const{return eols_.index()==1;}
-
 	inline void source_to(ostream&os)const override{
 		statement::source_to(os);
 		if(eols_.index()==0){
@@ -67,6 +65,8 @@ public:
 		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,"0");
 		tc.asm_label(*this,os,indent,jmp_to_end);
 	}
+
+	inline bool is_bool()const{return eols_.index()==1;}
 
 	inline bool is_expression()const override{
 		if(eols_.index()==0){

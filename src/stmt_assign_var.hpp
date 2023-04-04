@@ -46,40 +46,41 @@ public:
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		tc.source_comment(*this,os,indent);
 
-		// for the sake of clearer error message make sure identifier can be resolved
 		const ident_resolved&dst_resolved{tc.resolve_identifier(*this,false)};
 
-		if(not exp_.is_bool_expression()){
-			// compare generated instructions with and without allocated scratch register
-			// select the method that produces least instructions
-
-			// try without scratch register
-			stringstream ss1;
-			exp_.compile(tc,ss1,indent,dst_resolved.id);
-
-			// try with scratch register
-			stringstream ss2;
-			const string&reg{tc.alloc_scratch_register(*this,ss2,indent)};
-			exp_.compile(tc,ss2,indent,reg);
-			tc.asm_cmd(*this,ss2,indent,"mov",dst_resolved.id_nasm,reg);
-			tc.free_scratch_register(ss2,indent,reg);
-
-			// compare instruction count
-			const size_t ss1_count{count_instructions(ss1)};
-			const size_t ss2_count{count_instructions(ss2)};
-
-			// select version with least instructions
-			if(ss1_count<=ss2_count){
-				os<<ss1.str();
-			}else{
-				os<<ss2.str();
-			}
+		if(exp_.is_bool()){
+			exp_.compile(tc,os,indent,dst_resolved.id);
 			tc.set_var_is_initiated(dst_resolved.id);
 			return;
 		}
 
-		// bool expression
-		exp_.compile(tc,os,indent,dst_resolved.id);
+		// integer expression
+
+		// compare generated instructions with and without scratch register
+		// select the method that produces least instructions
+
+		// try without scratch register
+		stringstream ss1;
+		exp_.compile(tc,ss1,indent,dst_resolved.id);
+
+		// try with scratch register
+		stringstream ss2;
+		const string&reg{tc.alloc_scratch_register(*this,ss2,indent)};
+		exp_.compile(tc,ss2,indent,reg);
+		tc.asm_cmd(*this,ss2,indent,"mov",dst_resolved.id_nasm,reg);
+		tc.free_scratch_register(ss2,indent,reg);
+
+		// compare instruction count
+		const size_t ss1_count{count_instructions(ss1)};
+		const size_t ss2_count{count_instructions(ss2)};
+
+		// select version with least instructions
+		if(ss1_count<=ss2_count){
+			os<<ss1.str();
+		}else{
+			os<<ss2.str();
+		}
+
 		tc.set_var_is_initiated(dst_resolved.id);
 	}
 

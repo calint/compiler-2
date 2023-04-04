@@ -1,8 +1,3 @@
-[x] fix 'cmp' two constants case
-      -> messy code that does dead-code elimination
-[x] bool_op: implement !=
-[x] use expr_any in stmt_assign_var
-[-] bool_op: implement ! (logical not) -> same as "not a"
 [ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names
 [ ] review the declaration of default move,copy,constructor in every class
@@ -82,6 +77,11 @@ stage 4
 [ ] why is the binary so big although in-line is turned off in make.sh?
 [ ] clang-format everything for less dense code?
 -------------------------------------------------------------------------------
+[x] fix 'cmp' two constants case
+      -> messy code that does dead-code elimination
+[x] bool_op: implement !=
+[x] use expr_any in stmt_assign_var
+[-] bool_op: implement ! (logical not) -> same as "not a"
 [x] clean-up: consistent function arguments names
 [x] toc.allocate_named_register_or_break: if allocated then tell where
 [x] toc.add_field: if defined tell where
