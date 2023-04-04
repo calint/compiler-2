@@ -130,13 +130,13 @@ public:
 			os<<"(";
 
 		exps_[0]->source_to(os);
-		const size_t len{exps_.size()};
-		for(size_t i{1};i<len;i++){
-			const char op=ops_[i-1];
+		const size_t n{ops_.size()};
+		for(size_t i{0};i<n;i++){
+			const char op{ops_[i]};
 			os<<op;
-			if(op=='<'||op=='>')
+			if(op=='<' or op=='>')
 				os<<op;
-			exps_[i]->source_to(os);
+			exps_[i+1]->source_to(os);
 		}
 
 		if(enclosed_)
