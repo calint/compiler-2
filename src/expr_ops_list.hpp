@@ -89,12 +89,12 @@ public:
 				exps_.pop_back();
 				exps_.emplace_back(make_unique<expr_ops_list>(tc,t,in_args,false,unary_ops{},first_op_prec,move(prev)));
 				continue;
-			}else{
-				precedence=next_precedence;
-				const char ch=t.next_char();// read the peeked operator
-				if(ch=='<'||ch=='>')
-					t.next_char(); // one more character for << and >>
 			}
+
+			precedence=next_precedence;
+			const char ch=t.next_char();// read the peeked operator
+			if(ch=='<'||ch=='>')
+				t.next_char(); // one more character for << and >>
 
 			// check if next statement is a subexpression
 			unary_ops uo{t};
@@ -103,10 +103,11 @@ public:
 				exps_.emplace_back(make_unique<expr_ops_list>(tc,t,in_args,true,move(uo)));
 				continue;
 			}
+
 			// not subexpression
 			uo.put_back(t);
 
-			// add statement to list
+			// read statement
 			unique_ptr<statement>stm{create_statement_from_tokenizer(tc,t)};
 			if(stm->tok().is_empty())
 				throw compiler_error(*stm,"unexpected '"+string{t.peek_char()}+"'");
