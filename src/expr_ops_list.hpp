@@ -129,16 +129,14 @@ public:
 		if(enclosed_)
 			os<<"(";
 
-		if(not exps_.empty()){
-			exps_[0]->source_to(os);
-			const size_t len{exps_.size()};
-			for(size_t i{1};i<len;i++){
-				const char op=ops_[i-1];
+		exps_[0]->source_to(os);
+		const size_t len{exps_.size()};
+		for(size_t i{1};i<len;i++){
+			const char op=ops_[i-1];
+			os<<op;
+			if(op=='<'||op=='>')
 				os<<op;
-				if(op=='<'||op=='>')
-					os<<op;
-				exps_[i]->source_to(os);
-			}
+			exps_[i]->source_to(os);
 		}
 
 		if(enclosed_)
@@ -147,9 +145,6 @@ public:
 
 	inline void compile(toc&tc,ostream&os,const size_t indent,const string&dst)const override{
 		tc.source_comment(*this,os,indent);
-
-		if(exps_.empty()) // ? can this happen?
-			throw compiler_error(*this,"expression is empty");
 
 		// first element is assigned to destination
 		const ident_resolved&dst_resolved{tc.resolve_identifier(*this,dst,false)};
@@ -168,9 +163,6 @@ public:
 	inline bool is_expression()const override{
 		if(not uops_.is_empty())
 			return true;
-
-		if(exps_.empty()) // ? can this happen?
-			return false;
 
 		if(exps_.size()==1)
 			return exps_[0]->is_expression();
