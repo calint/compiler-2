@@ -57,7 +57,18 @@ public:
 		const string&jmp_to_if_true{"true_"+postfix};
 		const string&jmp_to_if_false{"false_"+postfix};
 		const string&jmp_to_end{"end_"+postfix};
-		eol.compile(tc,os,indent,jmp_to_if_false,jmp_to_if_true,false);
+		optional<bool>const_eval{eol.compile(tc,os,indent,jmp_to_if_false,jmp_to_if_true,false)};
+		if(const_eval){
+			if(*const_eval==true){
+				tc.asm_label(*this,os,indent,jmp_to_if_true);
+				tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,"1");
+				return;
+			}
+			// constant evaluation to false
+			tc.asm_label(*this,os,indent,jmp_to_if_false);
+			tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,"0");
+			return;
+		}
 		tc.asm_label(*this,os,indent,jmp_to_if_true);
 		tc.asm_cmd(*this,os,indent,"mov",dst_resolved.id_nasm,"1");
 		tc.asm_jmp(*this,os,indent,jmp_to_end);
