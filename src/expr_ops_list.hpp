@@ -168,7 +168,7 @@ public:
 		if(not uops_.is_empty())
 			return true;
 
-		if(exps_.empty())
+		if(exps_.empty()) // ? can this happen?
 			return false;
 
 		if(exps_.size()==1)
@@ -195,7 +195,6 @@ public:
 		assert(not exps_.empty());
 		return exps_[0]->get_type(); // ! hack  find the size of the largest integral element
 	}
-
 
 private:
 	static constexpr char initial_precedence{7}; // higher than the highest precedence
