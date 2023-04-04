@@ -151,17 +151,16 @@ public:
 			throw compiler_error(*this,"expression is empty");
 
 		// first element is assigned to destination
-		const statement&src{*exps_[0].get()};
 		const ident_resolved&dst_resolved{tc.resolve_identifier(*this,dst,false)};
-		asm_op(tc,os,indent,'=',dst_resolved,src);
+		asm_op(tc,os,indent,'=',dst_resolved,*exps_[0]);
 
-		// remaining elements are +,-,*,/
+		// remaining elements are +,-,*,/,%,|,&,^
 		const size_t n{ops_.size()};
 		for(size_t i{0};i<n;i++){
-			const char op=ops_[i];
-			const statement&src_stm{*exps_[i+1].get()};
-			asm_op(tc,os,indent,op,dst_resolved,src_stm);
+			asm_op(tc,os,indent,ops_[i],dst_resolved,*exps_[i+1]);
 		}
+
+		// apply unary expressions on destination
 		uops_.compile(tc,os,indent,dst_resolved.id_nasm);
 	}
 
