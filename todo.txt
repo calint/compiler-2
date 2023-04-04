@@ -1,7 +1,8 @@
 [x] fix 'cmp' two constants case
       -> messy code that does dead-code elimination
 [x] bool_op: implement !=
-[ ] bool_op: implement ! (logical not)
+[ ] use expr_any in stmt_assign_var
+[-] bool_op: implement ! (logical not) -> same as "not a"
 [ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names
 [ ] review the declaration of default move,copy,constructor in every class
