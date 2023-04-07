@@ -103,47 +103,6 @@ public:
 		os<<res<<endl;
 	}
 
-	inline void init_variables(toc&tc,ostream&os,size_t indent,vector<string>&allocated_named_registers)const{
-		// return binding
-		if(not returns().empty()){
-			const string&nm{returns()[0].name()};
-			tc.add_var(*this,os,indent+1,nm,get_type(),false);
-		}
-
-		// stack is now: ...,[prev rsp],...,[arg n],[arg n-1],...,[arg 1],[return address],[rbp]
-		//   (some arguments might be passed through registers)
-
-		// define variables in the called context by mapping arguments to stack
-		const size_t n{params_.size()};
-		size_t stk_ix{2<<3}; // skip [rbp] and [return address] on stack
-		for(size_t i=0;i<n;i++){
-			const stmt_def_func_param&pm{params_[i]};
-			const type&arg_type{pm.get_type()};
-			const string&pm_nm{pm.name()};
-			const string&reg{pm.get_register_or_empty()};
-			if(reg.empty()){
-				// argument not passed as register
-				tc.add_func_arg(*this,os,indent+1,pm_nm,arg_type,int(stk_ix));
-				// only 64 bits values on the stack
-				stk_ix+=tc.get_type_default().size();
-				continue;
-			}
-			// argument passed as named register
-			toc::indent(os,indent+1,true);os<<pm_nm<<": "<<reg<<endl;
-			tc.alloc_named_register_or_throw(pm,os,indent+1,reg);
-			// ! check if arg_type fits in register
-			allocated_named_registers.push_back(reg);
-			tc.add_alias(pm_nm,reg);
-		}
-	}
-
-	inline void free_allocated_registers(toc&tc,ostream&os,size_t indent,const vector<string>&allocated_named_registers)const{
-		size_t i{allocated_named_registers.size()};
-		while(i--){
-			tc.free_named_register(os,indent+1,allocated_named_registers[i]);
-		}
-	}
-
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		if(is_inline())
 			return;
@@ -189,6 +148,47 @@ public:
 	inline bool is_inline()const{return not inline_tk_.is_empty();}
 
 private:
+	inline void init_variables(toc&tc,ostream&os,size_t indent,vector<string>&allocated_named_registers)const{
+		// return binding
+		if(not returns().empty()){
+			const string&nm{returns()[0].name()};
+			tc.add_var(*this,os,indent+1,nm,get_type(),false);
+		}
+
+		// stack is now: ...,[prev rsp],...,[arg n],[arg n-1],...,[arg 1],[return address],[rbp]
+		//   (some arguments might be passed through registers)
+
+		// define variables in the called context by mapping arguments to stack
+		const size_t n{params_.size()};
+		size_t stk_ix{2<<3}; // skip [rbp] and [return address] on stack
+		for(size_t i=0;i<n;i++){
+			const stmt_def_func_param&pm{params_[i]};
+			const type&arg_type{pm.get_type()};
+			const string&pm_nm{pm.name()};
+			const string&reg{pm.get_register_or_empty()};
+			if(reg.empty()){
+				// argument not passed as register
+				tc.add_func_arg(*this,os,indent+1,pm_nm,arg_type,int(stk_ix));
+				// only 64 bits values on the stack
+				stk_ix+=tc.get_type_default().size();
+				continue;
+			}
+			// argument passed as named register
+			toc::indent(os,indent+1,true);os<<pm_nm<<": "<<reg<<endl;
+			tc.alloc_named_register_or_throw(pm,os,indent+1,reg);
+			// ! check if arg_type fits in register
+			allocated_named_registers.push_back(reg);
+			tc.add_alias(pm_nm,reg);
+		}
+	}
+
+	inline void free_allocated_registers(toc&tc,ostream&os,size_t indent,const vector<string>&allocated_named_registers)const{
+		size_t i{allocated_named_registers.size()};
+		while(i--){
+			tc.free_named_register(os,indent+1,allocated_named_registers[i]);
+		}
+	}
+
 	token name_;
 	vector<stmt_def_func_param>params_;
 	vector<token>returns_;
