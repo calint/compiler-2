@@ -125,7 +125,7 @@ public:
 			tc.add_var(*this,os,indent+1,nm,get_type(),false);
 		}
 
-		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[return address],[rbp]
+		// stack is now: ...,[prev rsp],...,[arg n],[arg n-1],...,[arg 1],[return address],[rbp]
 		//   (some arguments might be passed through registers)
 
 		// define variables in the called context by mapping arguments to stack
