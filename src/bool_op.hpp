@@ -218,17 +218,20 @@ private:
 			return;
 		}
 
-		if(lhs_.is_expression()){ // ? expression would be integer type
+		// short-hand expressions
+		if(lhs_.is_expression()){
 			is_expression_=true;
 			return;
 		}
 
-		if(lhs_.get_type().name()==tc.get_type_bool().name()){
-			is_expression_=false;
-			return;
-		}
+//		if(lhs_.get_type().name()==tc.get_type_bool().name()){
+//			is_expression_=false;
+//			return;
+//		}
 
-		const string&id=lhs_.identifier();
+		// if not expression then it is a single statement
+		//   and identifier is valid
+		const string&id{lhs_.identifier()};
 		if(id=="true" or id=="false"){
 			is_expression_=false;
 			return;

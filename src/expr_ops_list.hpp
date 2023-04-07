@@ -171,10 +171,9 @@ public:
 	}
 
 	inline const string&identifier()const override{
-		if(exps_.size()==1)
-			return exps_[0]->identifier();
+		assert(exps_.size()==1);
 
-		throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
+		return exps_[0]->identifier();
 	}
 
 	inline const unary_ops&get_unary_ops()const override{
