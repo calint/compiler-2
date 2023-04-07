@@ -203,8 +203,6 @@ public:
 
 	inline bool is_inline()const{return not inline_tk_.is_empty();}
 
-//	inline const type&get_type(toc&tc)const override{return*type_;}
-
 private:
 	token name_;
 	vector<stmt_def_func_param>params_;
@@ -212,5 +210,4 @@ private:
 	stmt_block code_;
 	token inline_tk_;
 	bool no_args_{};
-//	const type*type_{};
 };
