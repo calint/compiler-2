@@ -4,14 +4,22 @@ func inline exit(v:reg_rdi){
     syscall
 }
 
+func inline foo(x){
+   x=x+1
+}
+
+func bar(x){
+   x=x+1
+   if not x==2 exit(2)
+}
+
 func inline main{
-    var b1:bool=true
-    var b2:bool=true
-    var b3:bool=false
-    
-    if b1!=b2 exit(1)
-    
-    if not b1!=b3 exit(2)
+    var a=0
+    foo(a)
+    if not a==1 exit(1)
+
+    bar(a)
+    if not a==1 exit(3)
     
     exit(0)
 }

@@ -125,30 +125,30 @@ public:
 			tc.add_var(*this,os,indent+1,nm,get_type(),false);
 		}
 
-		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[return address]
-		// define variables in the called context by binding arguments to stack
-		//    x=[rsp+argnum<<3+8] (const 8 skips return address)
+		// stack is now: ...,[prev sp],[arg n],[arg n-1],...,[arg 1],[return address],[rbp]
+		//   (some arguments might be passed through registers)
+
+		// define variables in the called context by mapping arguments to stack
 		const size_t n{params_.size()};
 		size_t stk_ix{2<<3}; // skip [rbp] and [return address] on stack
 		for(size_t i=0;i<n;i++){
 			const stmt_def_func_param&pm{params_[i]};
 			const type&arg_type{pm.get_type()};
 			const string&pm_nm{pm.name()};
-			// (i+2)<<3 ?
-			// stack after push rbp is ...,[arg n],...[arg 1],[return address],[rbp],
 			const string&reg{pm.get_register_or_empty()};
 			if(reg.empty()){
+				// argument not passed as register
 				tc.add_func_arg(*this,os,indent+1,pm_nm,arg_type,int(stk_ix));
-//				stk_ix+=arg_type.size();
 				// only 64 bits values on the stack
 				stk_ix+=tc.get_type_default().size();
-			}else{
-				toc::indent(os,indent+1,true);os<<pm_nm<<": "<<reg<<endl;
-				tc.alloc_named_register_or_break(pm,os,indent+1,reg);
-				// ! check if arg_type fits in register
-				allocated_named_registers.push_back(reg);
-				tc.add_alias(pm_nm,reg);
+				continue;
 			}
+			// argument passed as named register
+			toc::indent(os,indent+1,true);os<<pm_nm<<": "<<reg<<endl;
+			tc.alloc_named_register_or_break(pm,os,indent+1,reg);
+			// ! check if arg_type fits in register
+			allocated_named_registers.push_back(reg);
+			tc.add_alias(pm_nm,reg);
 		}
 	}
 
@@ -168,16 +168,17 @@ public:
 
 		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());
 
+		tc.asm_push(*this,os,indent+1,"rbp");
+		tc.asm_cmd(*this,os,indent+1,"mov","rbp","rsp");
+
 		vector<string>allocated_named_registers;
 		init_variables(tc,os,indent,allocated_named_registers);
 
-		tc.asm_push(*this,os,indent+1,"rbp");
-		tc.asm_cmd(*this,os,indent+1,"mov","rbp","rsp");
 		code_.compile(tc,os,indent,"");
 		if(!returns().empty()){
 			const string&ret_name{returns()[0].name()};
-			const ident_resolved&ir{tc.resolve_identifier(*this,ret_name,true)};
-			tc.asm_cmd(*this,os,indent+1,"mov","rax",ir.id_nasm);
+			const ident_resolved&ret_resolved{tc.resolve_identifier(*this,ret_name,true)};
+			tc.asm_cmd(*this,os,indent+1,"mov","rax",ret_resolved.id_nasm);
 		}
 		tc.asm_pop(*this,os,indent+1,"rbp");
 		tc.asm_ret(*this,os,indent+1);

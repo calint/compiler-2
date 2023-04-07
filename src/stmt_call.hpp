@@ -107,7 +107,7 @@ public:
 				const expr_any&arg{args_[i]};
 				const stmt_def_func_param&param{func.param(i)};
 				// is the argument passed through a register?
-				const string&arg_reg=param.get_register_or_empty();
+				const string&arg_reg{param.get_register_or_empty()};
 				bool argument_passed_in_register{not arg_reg.empty()};
 				if(argument_passed_in_register){
 					tc.alloc_named_register_or_break(arg,os,indent,arg_reg);
@@ -120,58 +120,58 @@ public:
 						continue;
 					}
 					// argument passed through stack
-					const string&sr{tc.alloc_scratch_register(arg,os,indent)};
+					const string&reg{tc.alloc_scratch_register(arg,os,indent)};
 					// compile expression with the result stored in sr
-					arg.compile(tc,os,indent+1,sr);
+					arg.compile(tc,os,indent+1,reg);
 					// argument is passed to function through the stack
-					tc.asm_push(arg,os,indent,sr);
+					tc.asm_push(arg,os,indent,reg);
 					// free scratch register
-					tc.free_scratch_register(os,indent,sr);
+					tc.free_scratch_register(os,indent,reg);
 					// keep track of how many arguments are on the stack
 					nbytes_of_args_on_stack+=8;
 					continue;
 				}
 				// not an expression, resolve identifier to nasm
-				const ident_resolved&ir{tc.resolve_identifier(arg,true)};
+				const ident_resolved&arg_resolved{tc.resolve_identifier(arg,true)};
 				if(argument_passed_in_register){
 					// move the identifier to the requested register
-					if(ir.is_const()){
-						tc.asm_cmd(arg,os,indent,"mov",arg_reg,arg.get_unary_ops().as_string()+ir.id_nasm);
+					if(arg_resolved.is_const()){
+						tc.asm_cmd(arg,os,indent,"mov",arg_reg,arg.get_unary_ops().as_string()+arg_resolved.id_nasm);
 						nbytes_of_args_on_stack+=8;
 						continue;
 					}
-					tc.asm_cmd(arg,os,indent,"mov",arg_reg,ir.id_nasm);
+					tc.asm_cmd(arg,os,indent,"mov",arg_reg,arg_resolved.id_nasm);
 					arg.get_unary_ops().compile(tc,os,indent,arg_reg);
 					nbytes_of_args_on_stack+=8;
 					continue;
 				}
 				// push identifier on the stack
-				if(ir.is_const()){
-					tc.asm_push(arg,os,indent,arg.get_unary_ops().as_string()+ir.id_nasm);
+				if(arg_resolved.is_const()){
+					tc.asm_push(arg,os,indent,arg.get_unary_ops().as_string()+arg_resolved.id_nasm);
 					nbytes_of_args_on_stack+=8;
 					continue;
 				}
 				if(arg.get_unary_ops().is_empty()){
-					if(ir.tp.size()==tc.get_type_default().size()){
-						tc.asm_push(arg,os,indent,ir.id_nasm);
+					if(arg_resolved.tp.size()==tc.get_type_default().size()){
+						tc.asm_push(arg,os,indent,arg_resolved.id_nasm);
 						nbytes_of_args_on_stack+=8;
 						continue;
 					}
 					// value to be pushed is not a 64 bit value
 					// push can only be done with 64 or 16 bits values
-					const string&r{tc.alloc_scratch_register(arg,os,indent)};
-					tc.asm_cmd(arg,os,indent,"mov",r,ir.id_nasm);
-					tc.asm_push(arg,os,indent,r);
-					tc.free_scratch_register(os,indent,r);
+					const string&reg{tc.alloc_scratch_register(arg,os,indent)};
+					tc.asm_cmd(arg,os,indent,"mov",reg,arg_resolved.id_nasm);
+					tc.asm_push(arg,os,indent,reg);
+					tc.free_scratch_register(os,indent,reg);
 					nbytes_of_args_on_stack+=8;
 					continue;
 				}
 				// unary ops must be applied
-				const string&r{tc.alloc_scratch_register(arg,os,indent)};
-				tc.asm_cmd(arg,os,indent,"mov",r,ir.id_nasm);
-				arg.get_unary_ops().compile(tc,os,indent,r);
-				tc.asm_push(arg,os,indent,r);
-				tc.free_scratch_register(os,indent,r);
+				const string&reg{tc.alloc_scratch_register(arg,os,indent)};
+				tc.asm_cmd(arg,os,indent,"mov",reg,arg_resolved.id_nasm);
+				arg.get_unary_ops().compile(tc,os,indent,reg);
+				tc.asm_push(arg,os,indent,reg);
+				tc.free_scratch_register(os,indent,reg);
 				nbytes_of_args_on_stack+=8;
 				continue;
 			}

@@ -14,33 +14,51 @@ _start:
 mov rsp,stk.end
 mov rbp,rsp
 jmp main
-main:
-   mov byte[rbp-1],true
-   mov byte[rbp-2],true
-   mov byte[rbp-3],false
-   if_12_8:
-   cmp_12_8:
-   mov r15b,byte[rbp-2]
-   cmp byte[rbp-1],r15b
-   je if_12_5_end
-   if_12_8_code:  ; opt1
-       mov rdi,1
-       mov rax,60
-       syscall
-     exit_12_15_end:
-   if_12_5_end:
-   if_14_8:
-   cmp_14_8:
-   mov r15b,byte[rbp-3]
-   cmp byte[rbp-1],r15b
-   jne if_14_5_end
-   if_14_8_code:  ; opt1
+bar:
+   push rbp
+   mov rbp,rsp
+   add qword[rbp+16],1
+   if_13_7:
+   cmp_13_7:
+   cmp qword[rbp+16],2
+   je if_13_4_end
+   if_13_7_code:  ; opt1
        mov rdi,2
        mov rax,60
        syscall
-     exit_14_19_end:
-   if_14_5_end:
+     exit_13_16_end:
+   if_13_4_end:
+   pop rbp
+   ret
+main:
+   mov qword[rbp-8],0
+     add qword[rbp-8],1
+   foo_18_5_end:
+   if_19_8:
+   cmp_19_8:
+   cmp qword[rbp-8],1
+   je if_19_5_end
+   if_19_8_code:  ; opt1
+       mov rdi,1
+       mov rax,60
+       syscall
+     exit_19_17_end:
+   if_19_5_end:
+   sub rsp,8
+   push qword[rbp-8]
+   call bar
+   add rsp,16
+   if_22_8:
+   cmp_22_8:
+   cmp qword[rbp-8],1
+   je if_22_5_end
+   if_22_8_code:  ; opt1
+       mov rdi,3
+       mov rax,60
+       syscall
+     exit_22_17_end:
+   if_22_5_end:
      mov rdi,0
      mov rax,60
      syscall
-   exit_16_5_end:
+   exit_24_5_end:
