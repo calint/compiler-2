@@ -29,20 +29,6 @@ public:
 		exp_.source_to(os);
 	}
 
-//	inline void source_def_to(ostream&os)const{
-//		statement::source_to(os);
-//		if(not type_.is_empty()){
-//			os<<':';
-//			type_.source_to(os);
-//		}
-//		os<<"=";
-//		if(eols_.index()==0){
-//			get<expr_ops_list>(eols_).source_to(os);
-//		}else{
-//			get<bool_ops_list>(eols_).source_to(os);
-//		}
-//	}
-
 	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
 		tc.source_comment(*this,os,indent);
 
