@@ -175,11 +175,13 @@ public:
 		init_variables(tc,os,indent,allocated_named_registers);
 
 		code_.compile(tc,os,indent,"");
+
 		if(!returns().empty()){
 			const string&ret_name{returns()[0].name()};
 			const ident_resolved&ret_resolved{tc.resolve_identifier(*this,ret_name,true)};
 			tc.asm_cmd(*this,os,indent+1,"mov","rax",ret_resolved.id_nasm);
 		}
+
 		tc.asm_pop(*this,os,indent+1,"rbp");
 		tc.asm_ret(*this,os,indent+1);
 
