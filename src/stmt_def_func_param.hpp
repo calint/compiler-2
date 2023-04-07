@@ -55,7 +55,7 @@ public:
 
 	inline const string get_register_or_empty()const{
 		for(const token&kw:keywords()){
-			if(kw.name().find("reg_"))
+			if(kw.name().find("reg_")!=0)
 				continue;
 			// requested register for this argument
 			return kw.name().substr(4,kw.name().size());
