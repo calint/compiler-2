@@ -60,8 +60,15 @@ public:
 	inline stmt_def_func&operator=(stmt_def_func&&)=default;
 
 	inline void source_to(ostream&os)const override{
-		statement::source_to(os);
-		inline_tk_.source_to(os);
+		source_def_to(os,false);
+		code_.source_to(os);
+	}
+
+	inline void source_def_to(ostream&os,const bool summary)const{
+		if(not summary){
+			statement::source_to(os);
+			inline_tk_.source_to(os);
+		}
 		name_.source_to(os);
 		if(not no_args_){
 			os<<"(";
@@ -84,33 +91,11 @@ public:
 					os<<":";
 			}
 		}
-		code_.source_to(os);
 	}
 
 	inline void source_def_comment_to(ostream&os)const{
 		stringstream ss;
-		name_.source_to(ss);
-		if(not no_args_){
-			ss<<"(";
-			const size_t n{params_.size()-1};
-			size_t i{0};
-			for(const stmt_def_func_param&s:params_){
-				s.source_to(ss);
-				if(i++!=n)
-					ss<<",";
-			}
-			ss<<")";
-		}
-		if(not returns_.empty()){
-			ss<<":";
-			const size_t n{returns_.size()-1};
-			size_t i{0};
-			for(const token&t:returns_){
-				t.source_to(ss);
-				if(i++!=n)
-					ss<<":";
-			}
-		}
+		source_def_to(ss,true);
 		ss<<endl;
 
 		string s{ss.str()};
