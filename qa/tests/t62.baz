@@ -1,0 +1,25 @@
+func inline exit(v:reg_rdi){
+    mov(rax,60) # exit system call
+    mov(rdi,v)  # return code
+    syscall
+}
+
+func inline foo(x){
+   x=x+1
+}
+
+func bar(x){
+   x=x+1
+   if not x==2 exit(2)
+}
+
+func inline main{
+    var a=0
+    foo(a)
+    if not a==1 exit(1)
+
+    bar(a)
+    if not a==1 exit(3)
+
+    exit(0)
+}
