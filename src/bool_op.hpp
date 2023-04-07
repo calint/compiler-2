@@ -224,10 +224,11 @@ private:
 			return;
 		}
 
-//		if(lhs_.get_type().name()==tc.get_type_bool().name()){
-//			is_expression_=false;
-//			return;
-//		}
+		// check if lhs is a bool
+		if(lhs_.get_type().name()==tc.get_type_bool().name()){
+			is_expression_=false;
+			return;
+		}
 
 		// if not expression then it is a single statement
 		//   and identifier is valid
