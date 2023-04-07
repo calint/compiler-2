@@ -46,10 +46,10 @@ public:
 		tc.add_func(*this,name_.name(),get_type(),this);
 		tc.enter_func(name(),"","",false,returns().empty()?"":returns()[0].name());
 		vector<string>allocated_named_registers;
-		null_stream ns{};
+		null_stream ns{}; // don't make output while parsing
 		init_variables(tc,ns,0,allocated_named_registers);
 		code_={tc,t};
-		free_allocated_register(tc,ns,0,allocated_named_registers);
+		free_allocated_registers(tc,ns,0,allocated_named_registers);
 		tc.exit_func(name());
 	}
 
@@ -130,14 +130,14 @@ public:
 			}
 			// argument passed as named register
 			toc::indent(os,indent+1,true);os<<pm_nm<<": "<<reg<<endl;
-			tc.alloc_named_register_or_break(pm,os,indent+1,reg);
+			tc.alloc_named_register_or_throw(pm,os,indent+1,reg);
 			// ! check if arg_type fits in register
 			allocated_named_registers.push_back(reg);
 			tc.add_alias(pm_nm,reg);
 		}
 	}
 
-	inline void free_allocated_register(toc&tc,ostream&os,size_t indent,const vector<string>&allocated_named_registers)const{
+	inline void free_allocated_registers(toc&tc,ostream&os,size_t indent,const vector<string>&allocated_named_registers)const{
 		size_t i{allocated_named_registers.size()};
 		while(i--){
 			tc.free_named_register(os,indent+1,allocated_named_registers[i]);
@@ -170,7 +170,7 @@ public:
 		tc.asm_pop(*this,os,indent+1,"rbp");
 		tc.asm_ret(*this,os,indent+1);
 
-		free_allocated_register(tc,os,indent,allocated_named_registers);
+		free_allocated_registers(tc,os,indent,allocated_named_registers);
 
 		os<<endl;
 		tc.exit_func(name());

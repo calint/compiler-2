@@ -380,7 +380,7 @@ public:
 		return r;
 	}
 
-	inline void alloc_named_register_or_break(const statement&st,ostream&os,const size_t indnt,const string&reg){
+	inline void alloc_named_register_or_throw(const statement&st,ostream&os,const size_t indnt,const string&reg){
 		indent(os,indnt,true);os<<"alloc "<<reg<<endl;
 		auto r{find(named_registers_.begin(),named_registers_.end(),reg)};
 		if(r==named_registers_.end()){

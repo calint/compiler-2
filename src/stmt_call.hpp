@@ -110,7 +110,7 @@ public:
 				const string&arg_reg{param.get_register_or_empty()};
 				bool argument_passed_in_register{not arg_reg.empty()};
 				if(argument_passed_in_register){
-					tc.alloc_named_register_or_break(arg,os,indent,arg_reg);
+					tc.alloc_named_register_or_throw(arg,os,indent,arg_reg);
 					allocated_args_registers.push_back(arg_reg);
 				}
 				if(arg.is_expression()){
@@ -233,7 +233,7 @@ public:
 			string arg_reg{param.get_register_or_empty()};
 			if(not arg_reg.empty()){
 				// argument is passed through register
-				tc.alloc_named_register_or_break(arg,os,indent+1,arg_reg);
+				tc.alloc_named_register_or_throw(arg,os,indent+1,arg_reg);
 				allocated_named_registers.push_back(arg_reg);
 				allocated_registers_in_order.push_back(arg_reg);
 			}
