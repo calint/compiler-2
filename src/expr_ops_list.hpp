@@ -29,7 +29,7 @@ public:
 			}
 		}
 
-		char precedence=first_op_precedence;
+		char precedence{first_op_precedence};
 		while(true){ // +a  +3
 			// if end of subexpression
 			if(enclosed_ and t.is_next_char(')'))
