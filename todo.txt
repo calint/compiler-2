@@ -1,6 +1,7 @@
 [ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names
-[ ] review the declaration of default move,copy,constructor in every class
+[x] review the declaration of default move,copy,constructor in every class
+     -> although redundant it declares intention. keep.
 [ ] source location of a character index counts tabs as one character
 [ ] bool_op_list use cmovexx when assignment
 [ ] handle constants when deducing operand size
