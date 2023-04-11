@@ -4,7 +4,8 @@
      -> although redundant it declares intention. keep.
 [ ] source location of a character index counts tabs as one character
 [ ] bool_op_list use cmovexx when assignment
-[ ] handle constants when deducing operand size
+[ ] handle constants when deducing operand size 
+     -> deduce if possible to the size of the desired type
 [ ] specify whether ok for an op to truncate value instead of error
 [ ] expr_any: deduce expression type to bool or integral
 [ ]   is_const, is_expression, is_bool, is_integral
