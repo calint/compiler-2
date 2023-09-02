@@ -20,116 +20,23 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 
-bar:
-;  bar(x) 
-   push rbp
-   mov rbp,rsp
-;  x: qword[rbp+16]
-;  [12:4] x=x+1 
-;  [12:6] x+1 
-;  [12:6] x+1 
-;  [12:6] x=x
-;  [12:8] x+1 
-   add qword[rbp+16],1
-   if_13_7:
-;  [13:7] ? not x==2 
-;  [13:7] ? not x==2 
-   cmp_13_7:
-   cmp qword[rbp+16],2
-   je if_13_4_end
-   if_13_7_code:  ; opt1
-;    [13:16] exit(2)
-;    exit(v:reg_rdi) 
-;      inline: 13_16
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,2
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_13_16_end:
-   if_13_4_end:
-   pop rbp
-   ret
-
 main:
-;  a: qword[rbp-8]
-;  [17:5] var a=0 
-;  [17:9] a=0 
-;  [17:11] 0 
-;  [17:11] 0 
-;  [17:11] a=0 
-   mov qword[rbp-8],0
-;  [18:5] foo(a)
-;  foo(x) 
-;    inline: 18_5
-;    alias x -> a
-;    [8:4] x=x+1 
-;    [8:6] x+1 
-;    [8:6] x+1 
-;    [8:6] x=x
-;    [8:8] x+1 
-     add qword[rbp-8],1
-   foo_18_5_end:
-   if_19_8:
-;  [19:8] ? not a==1 
-;  [19:8] ? not a==1 
-   cmp_19_8:
-   cmp qword[rbp-8],1
-   je if_19_5_end
-   if_19_8_code:  ; opt1
-;    [19:17] exit(1)
-;    exit(v:reg_rdi) 
-;      inline: 19_17
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,1
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_19_17_end:
-   if_19_5_end:
-;  [21:5] bar(a)
-   sub rsp,8
-   push qword[rbp-8]
-   call bar
-   add rsp,16
-   if_22_8:
-;  [22:8] ? not a==1 
-;  [22:8] ? not a==1 
-   cmp_22_8:
-   cmp qword[rbp-8],1
-   je if_22_5_end
-   if_22_8_code:  ; opt1
-;    [22:17] exit(3)
-;    exit(v:reg_rdi) 
-;      inline: 22_17
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi,3
-;      [2:5] mov(rax,60)
-       mov rax,60
-;      [2:17] # exit system call 
-;      [3:5] mov(rdi,v)
-;      [3:17] # return code 
-;      [4:5] syscall 
-       syscall
-;      free rdi
-     exit_22_17_end:
-   if_22_5_end:
-;  [24:5] exit(0)
+;  b1: byte[rbp-1]
+;  [8:5] var b1:bool=true 
+;  [8:9] b1:bool=true 
+;  [8:17] true 
+   mov byte[rbp-1],true
+;  b2: byte[rbp-2]
+;  [9:5] var b2:bool=b1 
+;  [9:9] b2:bool=b1 
+;  [9:17] b1 
+;  alloc r15
+   mov r15b,byte[rbp-1]
+   mov byte[rbp-2],r15b
+;  free r15
+;  [11:5] exit(0)
 ;  exit(v:reg_rdi) 
-;    inline: 24_5
+;    inline: 11_5
 ;    alloc rdi
 ;    alias v -> rdi
      mov rdi,0
@@ -141,7 +48,7 @@ main:
 ;    [4:5] syscall 
      syscall
 ;    free rdi
-   exit_24_5_end:
+   exit_11_5_end:
 
 ; max scratch registers in use: 1
-;            max frames in use: 5
+;            max frames in use: 4

@@ -4,7 +4,7 @@
             "name": "debug baz",
             "type": "cppdbg",
             "request": "launch",
-            "program": "baz",
+            "program": "${workspaceFolder}/baz",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
