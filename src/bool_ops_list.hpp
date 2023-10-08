@@ -279,7 +279,7 @@ public:
 		if(bools_.size()>1)
 			return true;
 
-		assert(bools_.size()>0);
+		assert(!bools_.empty());
 
 		if(bools_[0].index()==0)
 			return get<bool_op>(bools_[0]).is_expression();
@@ -291,7 +291,7 @@ public:
 		if(bools_.size()>1)
 			throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 
-		assert(bools_.size()>0);
+		assert(!bools_.empty());
 
 		if(bools_[0].index()==0)
 			return get<bool_op>(bools_[0]).identifier();

@@ -1173,7 +1173,7 @@ private:
   }
 
   inline size_t get_current_stack_size() const {
-    assert(frames_.size());
+    assert(!frames_.empty());
     size_t n{0};
     size_t i{frames_.size()};
     while (i--) {
