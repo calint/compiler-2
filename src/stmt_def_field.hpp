@@ -6,11 +6,13 @@ class stmt_def_field final : public statement {
 public:
   inline stmt_def_field(toc &tc, token tk, tokenizer &t)
       : statement{std::move(tk)}, name_{t.next_token()} {
-    if (name_.is_name(""))
+    if (name_.is_name("")) {
       throw compiler_error(t, "expected field name");
+}
 
-    if (not t.is_next_char('='))
+    if (not t.is_next_char('=')) {
       throw compiler_error(t, "expected '=' and initial value");
+}
 
     uops_ = unary_ops{t};
     initial_value_ = t.next_token();

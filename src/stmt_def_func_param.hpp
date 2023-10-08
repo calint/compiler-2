@@ -13,14 +13,16 @@ public:
 
     while (true) {
       keywords_.emplace_back(t.next_token());
-      if (t.is_next_char(':'))
+      if (t.is_next_char(':')) {
         continue;
+}
       break;
     }
 
     for (const token &kw : keywords()) {
-      if (kw.name().starts_with("reg_"))
+      if (kw.name().starts_with("reg_")) {
         continue;
+}
       set_type(tc.get_type_or_throw(*this, kw.name()));
       return;
     }
@@ -44,8 +46,9 @@ public:
       size_t i{0};
       for (const token &t : keywords_) {
         t.source_to(os);
-        if (i++ != n)
+        if (i++ != n) {
           os << ":";
+}
       }
     }
   }
@@ -56,8 +59,9 @@ public:
 
   [[nodiscard]] inline auto get_register_or_empty() const -> string {
     for (const token &kw : keywords()) {
-      if (!kw.name().starts_with("reg_"))
+      if (!kw.name().starts_with("reg_")) {
         continue;
+}
       // requested register for this argument
       return kw.name().substr(4, kw.name().size());
     }

@@ -22,8 +22,9 @@ public:
 
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
-    if (type_.is_empty())
+    if (type_.is_empty()) {
       return;
+}
     os << ':';
     type_.source_to(os);
   }
@@ -40,22 +41,26 @@ class stmt_def_type final : public statement {
 public:
   inline stmt_def_type(toc &tc, token tk, tokenizer &t)
       : statement{std::move(tk)}, name_{t.next_token()} {
-    if (not t.is_next_char('{'))
+    if (not t.is_next_char('{')) {
       throw compiler_error(name_, "expected '{'");
+}
 
     while (true) {
       token tknm{t.next_token()};
       if (tknm.is_name("")) {
         ws_ = tknm;
-        if (not t.is_next_char('}'))
+        if (not t.is_next_char('}')) {
           throw compiler_error(t, "expected '}'");
+}
         break;
       }
       fields_.emplace_back(tc, std::move(tknm), t);
-      if (t.is_next_char('}'))
+      if (t.is_next_char('}')) {
         break;
-      if (not t.is_next_char(','))
+}
+      if (not t.is_next_char(',')) {
         throw compiler_error(t, "expected ',' and more fields");
+}
     }
 
     type_.set_name(name_.name());

@@ -11,27 +11,32 @@ public:
       inline_tk_ = name_;
       name_ = t.next_token();
     }
-    if (not t.is_next_char('('))
+    if (not t.is_next_char('(')) {
       no_args_ = true;
+}
 
     if (not no_args_) {
       while (true) {
-        if (t.is_next_char(')'))
+        if (t.is_next_char(')')) {
           break;
+}
         params_.emplace_back(tc, t);
-        if (t.is_next_char(')'))
+        if (t.is_next_char(')')) {
           break;
-        if (not t.is_next_char(','))
+}
+        if (not t.is_next_char(',')) {
           throw compiler_error(params_.back(),
                                "expected ',' after parameter '" +
                                    params_.back().tok().name() + "'");
+}
       }
     }
     if (t.is_next_char(':')) { // returns
       while (true) {
         returns_.emplace_back(t.next_token());
-        if (t.is_next_char(':'))
+        if (t.is_next_char(':')) {
           continue;
+}
         break;
       }
       if (returns_.size() > 1) {
@@ -79,8 +84,9 @@ public:
       size_t i{0};
       for (const stmt_def_func_param &p : params_) {
         p.source_to(os);
-        if (i++ != n)
+        if (i++ != n) {
           os << ",";
+}
       }
       os << ")";
     }
@@ -90,8 +96,9 @@ public:
       size_t i{0};
       for (const token &t : returns_) {
         t.source_to(os);
-        if (i++ != n)
+        if (i++ != n) {
           os << ":";
+}
       }
     }
   }
@@ -108,8 +115,9 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
-    if (is_inline())
+    if (is_inline()) {
       return;
+}
 
     tc.asm_label(*this, os, indent, name());
     tc.indent(os, indent + 1, true);

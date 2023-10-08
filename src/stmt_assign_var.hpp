@@ -77,8 +77,9 @@ private:
     string line;
     size_t n{0};
     while (getline(ss, line)) {
-      if (regex_search(line, rxcomment))
+      if (regex_search(line, rxcomment)) {
         continue;
+}
       n++;
     }
     return n;

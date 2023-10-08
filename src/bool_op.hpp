@@ -23,12 +23,14 @@ public:
     lhs_ = {tc, t, true};
 
     if (t.is_next_char('=')) {
-      if (not t.is_next_char('='))
+      if (not t.is_next_char('=')) {
         throw compiler_error(t, "expected '=='");
+}
       op_ = "==";
     } else if (t.is_next_char('!')) {
-      if (not t.is_next_char('='))
+      if (not t.is_next_char('=')) {
         throw compiler_error(t, "expected '!='");
+}
       op_ = "!=";
     } else if (t.is_next_char('<')) {
       if (t.is_next_char('=')) {
@@ -65,8 +67,9 @@ public:
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
 
-    for (const token &e : nots_)
+    for (const token &e : nots_) {
       e.source_to(os);
+}
 
     lhs_.source_to(os);
 
@@ -97,8 +100,9 @@ public:
         const ident_resolved &ir{tc.resolve_identifier(lhs_, false)};
         if (ir.is_const()) {
           bool b{lhs_.get_unary_ops().evaluate_constant(ir.const_value) != 0};
-          if (invert)
+          if (invert) {
             b = !b;
+}
           toc::indent(os, indent, true);
           os << "const eval to " << (b ? "true" : "false") << endl;
           if (b) {
@@ -123,8 +127,9 @@ public:
             lhs_.get_unary_ops().evaluate_constant(lhs_resolved.const_value),
             op_,
             rhs_.get_unary_ops().evaluate_constant(rhs_resolved.const_value))};
-        if (invert)
+        if (invert) {
           b = !b;
+}
         toc::indent(os, indent, true);
         os << "const eval to " << (b ? "true" : "false") << endl;
         if (b) {
@@ -154,8 +159,9 @@ public:
         const ident_resolved &ir{tc.resolve_identifier(lhs_, false)};
         if (ir.is_const()) {
           bool b{lhs_.get_unary_ops().evaluate_constant(ir.const_value) != 0};
-          if (invert)
+          if (invert) {
             b = !b;
+}
           toc::indent(os, indent, true);
           os << "const eval to " << (b ? "true" : "false") << endl;
           if (not b) {
@@ -180,8 +186,9 @@ public:
             lhs_.get_unary_ops().evaluate_constant(lhs_resolved.const_value),
             op_,
             rhs_.get_unary_ops().evaluate_constant(rhs_resolved.const_value))};
-        if (invert)
+        if (invert) {
           b = !b;
+}
         toc::indent(os, indent, true);
         os << "const eval to " << (b ? "true" : "false") << endl;
         if (not b) {
@@ -252,16 +259,21 @@ private:
 
   inline static auto eval_constant(const long int lh, const string &op,
                                    const long int rh) -> bool {
-    if (op == "==")
+    if (op == "==") {
       return lh == rh;
-    if (op == "<")
+}
+    if (op == "<") {
       return lh < rh;
-    if (op == "<=")
+}
+    if (op == "<=") {
       return lh <= rh;
-    if (op == ">")
+}
+    if (op == ">") {
       return lh > rh;
-    if (op == ">=")
+}
+    if (op == ">=") {
       return lh >= rh;
+}
     throw unexpected_exception("unexpected code path " + string{__FILE__} +
                                ":" + to_string(__LINE__));
   }
@@ -358,11 +370,13 @@ private:
     }
 
     const ident_resolved &id_r{tc.resolve_identifier(exp, true)};
-    if (id_r.is_const())
+    if (id_r.is_const()) {
       return exp.get_unary_ops().as_string() + id_r.id_nasm;
+}
 
-    if (exp.get_unary_ops().is_empty())
+    if (exp.get_unary_ops().is_empty()) {
       return id_r.id_nasm;
+}
 
     const string &reg = tc.alloc_scratch_register(exp, os, indent);
     allocated_registers.push_back(reg);

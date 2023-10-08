@@ -17,14 +17,16 @@ public:
       // comments, semi-colon not considered a statment
       bool last_statement_considered_no_statment{false};
       if (t.is_next_char('}')) {
-        if (not is_one_statement_)
+        if (not is_one_statement_) {
           break;
+}
         throw compiler_error(t, "unexpected '}' in single statement block");
       }
 
       token tk{t.next_token()};
-      if (tk.is_empty())
+      if (tk.is_empty()) {
         throw compiler_error(tk, "unexpected '" + string{t.peek_char()} + "'");
+}
 
       if (tk.is_name("var")) {
         stms_.emplace_back(make_unique<stmt_def_var>(tc, std::move(tk), t));
@@ -48,8 +50,9 @@ public:
             create_statement_from_tokenizer(tc, std::move(tk), {}, t));
       }
 
-      if (is_one_statement_ && not last_statement_considered_no_statment)
+      if (is_one_statement_ && not last_statement_considered_no_statment) {
         break;
+}
     }
     tc.exit_block();
     set_type(tc.get_type_void());
@@ -65,19 +68,23 @@ public:
 
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
-    if (not is_one_statement_)
+    if (not is_one_statement_) {
       os << "{";
-    for (const auto &s : stms_)
+}
+    for (const auto &s : stms_) {
       s->source_to(os);
-    if (not is_one_statement_)
+}
+    if (not is_one_statement_) {
       os << "}";
+}
   }
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
     tc.enter_block();
-    for (const auto &s : stms_)
+    for (const auto &s : stms_) {
       s->compile(tc, os, indent + 1);
+}
     tc.exit_block();
   }
 

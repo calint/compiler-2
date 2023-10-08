@@ -35,23 +35,29 @@ public:
     char precedence{first_op_precedence};
     while (true) { // +a  +3
       // if end of subexpression
-      if (enclosed_ and t.is_next_char(')'))
+      if (enclosed_ and t.is_next_char(')')) {
         break;
+}
 
       // if parsed in a function call argument list or in a boolean expression
       if (in_args) { // ? rewrite is_in_bool_expr
         // if in boolean expression exit when an operation is found
-        if (t.is_peek_char('<') and not t.is_peek_char2('<'))
+        if (t.is_peek_char('<') and not t.is_peek_char2('<')) {
           break;
-        if (t.is_peek_char('='))
+}
+        if (t.is_peek_char('=')) {
           break;
-        if (t.is_peek_char('>') and not t.is_peek_char2('>'))
+}
+        if (t.is_peek_char('>') and not t.is_peek_char2('>')) {
           break;
+}
         // if in arguments exit when ',' or ')' is found
-        if (t.is_peek_char(','))
+        if (t.is_peek_char(',')) {
           break;
-        if (t.is_peek_char(')'))
+}
+        if (t.is_peek_char(')')) {
           break;
+}
       }
 
       // next operation
@@ -102,8 +108,9 @@ public:
 
       precedence = next_precedence;
       const char ch = t.next_char(); // read the peeked operator
-      if (ch == '<' or ch == '>')
+      if (ch == '<' or ch == '>') {
         t.next_char(); // one more character for << and >>
+}
 
       // check if next statement is a subexpression
       unary_ops uo{t};
@@ -119,9 +126,10 @@ public:
 
       // read statement
       unique_ptr<statement> stm{create_statement_from_tokenizer(tc, t)};
-      if (stm->tok().is_empty())
+      if (stm->tok().is_empty()) {
         throw compiler_error(*stm,
                              "unexpected '" + string{t.peek_char()} + "'");
+}
 
       exps_.push_back(std::move(stm));
     }
@@ -139,21 +147,24 @@ public:
     expression::source_to(os); // whitespace
     uops_.source_to(os);
 
-    if (enclosed_)
+    if (enclosed_) {
       os << "(";
+}
 
     exps_[0]->source_to(os);
     const size_t n{ops_.size()};
     for (size_t i{0}; i < n; i++) {
       const char op{ops_[i]};
       os << op;
-      if (op == '<' or op == '>')
+      if (op == '<' or op == '>') {
         os << op;
+}
       exps_[i + 1]->source_to(os);
     }
 
-    if (enclosed_)
+    if (enclosed_) {
       os << ")";
+}
   }
 
   inline void compile(toc &tc, ostream &os, const size_t indent,
@@ -176,11 +187,13 @@ public:
   }
 
   [[nodiscard]] inline auto is_expression() const -> bool override {
-    if (not uops_.is_empty())
+    if (not uops_.is_empty()) {
       return true;
+}
 
-    if (exps_.size() == 1)
+    if (exps_.size() == 1) {
       return exps_[0]->is_expression();
+}
 
     return true;
   }
@@ -192,8 +205,9 @@ public:
   }
 
   [[nodiscard]] inline auto get_unary_ops() const -> const unary_ops & override {
-    if (exps_.size() == 1)
+    if (exps_.size() == 1) {
       return exps_[0]->get_unary_ops();
+}
 
     return uops_;
   }
@@ -449,9 +463,10 @@ private:
                  src.get_unary_ops().as_string() + src_resolved.id_nasm);
       return;
     }
-    if (src_resolved.id_nasm == "rcx")
+    if (src_resolved.id_nasm == "rcx") {
       throw compiler_error(src, "cannot use 'rcx' as operand in shift because "
                                 "that registers is used");
+}
 
     const unary_ops &uops{src.get_unary_ops()};
     if (uops.is_empty()) {
@@ -553,9 +568,10 @@ private:
       }
       return;
     }
-    if (src_resolved.id_nasm == "rdx" or src_resolved.id_nasm == "rax")
+    if (src_resolved.id_nasm == "rdx" or src_resolved.id_nasm == "rax") {
       throw compiler_error(src, "cannot use 'rdx' or 'rax' as operands in "
                                 "division because those registers are used");
+}
 
     const unary_ops &uops = src.get_unary_ops();
     if (uops.is_empty()) {

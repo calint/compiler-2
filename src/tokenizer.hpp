@@ -51,8 +51,9 @@ public:
   }
 
   inline auto is_next_char(const char ch) -> bool {
-    if (*ptr_ != ch)
+    if (*ptr_ != ch) {
       return false;
+}
     next_char(); // return ignored
     return true;
   }
@@ -68,10 +69,12 @@ public:
   inline auto read_rest_of_line() -> string {
     const char *bgn{ptr_};
     while (true) {
-      if (*ptr_ == '\n')
+      if (*ptr_ == '\n') {
         break;
-      if (*ptr_ == '\0')
+}
+      if (*ptr_ == '\0') {
         break;
+}
       ptr_++;
     }
     const string &s{bgn, size_t(ptr_ - bgn)};
@@ -92,13 +95,15 @@ public:
 
 private:
   inline auto next_whitespace() -> string {
-    if (is_eos())
+    if (is_eos()) {
       return "";
+}
     const size_t nchar_bm_{nchar_};
     while (true) {
       const char ch{next_char()};
-      if (is_char_whitespace(ch))
+      if (is_char_whitespace(ch)) {
         continue;
+}
       seek(-1);
       break;
     }
@@ -107,8 +112,9 @@ private:
   }
 
   inline auto next_token_str() -> string {
-    if (is_eos())
+    if (is_eos()) {
       return "";
+}
     const size_t nchar_bm_{nchar_};
     while (true) {
       const char ch{next_char()};

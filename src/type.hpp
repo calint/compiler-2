@@ -29,8 +29,9 @@ public:
   }
   [[nodiscard]] inline auto field(const token &tk, const string &name) const -> const type_field & {
     for (const type_field &fld : fields_) {
-      if (fld.name == name)
+      if (fld.name == name) {
         return fld;
+}
     }
     throw compiler_error(tk, "field '" + name + "' not found in type '" +
                                  name_ + "'");
@@ -89,8 +90,9 @@ private:
       // find first primitive type
       const type *t{this};
       while (true) {
-        if (t->fields_.empty())
+        if (t->fields_.empty()) {
           return {t->size_, 0};
+}
         t = &t->fields_[0].tp;
       }
     }
@@ -98,8 +100,9 @@ private:
     size_t offset{0};
     size_t path_idx{1};
     while (true) {
-      if (path_idx == path.size())
+      if (path_idx == path.size()) {
         return {tp->fields_.empty() ? size_ : tp->fields_[0].tp.size_, offset};
+}
 
       const type_field &fld = tp->field(tk, path[path_idx]);
       offset += fld.offset;
