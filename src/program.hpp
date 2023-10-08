@@ -14,16 +14,17 @@ class program final {
   type type_i16{"i16", 2, true};
   type type_i8{"i8", 1, true};
   type type_bool{"bool", 1, true};
+  //
   statement prg{}; // place-holder
-  vector<unique_ptr<statement>> stms_{};
+  vector<unique_ptr<statement>> statements_{};
   toc tc_;
 
 public:
   inline explicit program(const string &source) : tc_{source} {
     // add built-in assembler calls
-    const vector<string> assem{"mov", "syscall"};
-    for (const string &s : assem) {
-      tc_.add_func(prg, s, type_void, nullptr);
+    const vector<string> assembler_funcs{"mov", "syscall"};
+    for (const string &str : assembler_funcs) {
+      tc_.add_func(prg, str, type_void, nullptr);
     }
 
     tc_.add_type(prg, type_i64);
@@ -37,26 +38,26 @@ public:
     tc_.set_type_bool(type_bool);
     tc_.set_type_default(type_i64);
 
-    tokenizer t{source};
+    tokenizer tkz{source};
     while (true) {
-      token tk{t.next_token()};
+      token tk{tkz.next_token()};
       if (tk.is_empty()) {
-        if (t.is_eos()) {
+        if (tkz.is_eos()) {
           break;
         }
         throw compiler_exception(tk,
-                                 "unexpected '" + string{t.next_char()} + "'");
+                                 "unexpected '" + string{tkz.next_char()} + "'");
       }
       if (tk.is_name("field")) {
-        stms_.emplace_back(make_unique<stmt_def_field>(tc_, move(tk), t));
+        statements_.emplace_back(make_unique<stmt_def_field>(tc_, move(tk), tkz));
       } else if (tk.is_name("func")) {
-        stms_.emplace_back(make_unique<stmt_def_func>(tc_, move(tk), t));
+        statements_.emplace_back(make_unique<stmt_def_func>(tc_, move(tk), tkz));
       } else if (tk.is_name("type")) {
-        stms_.emplace_back(make_unique<stmt_def_type>(tc_, move(tk), t));
+        statements_.emplace_back(make_unique<stmt_def_type>(tc_, move(tk), tkz));
       } else if (tk.is_name("#")) {
-        stms_.emplace_back(make_unique<stmt_comment>(tc_, move(tk), t));
+        statements_.emplace_back(make_unique<stmt_comment>(tc_, move(tk), tkz));
       } else if (tk.is_name("")) {
-        stms_.emplace_back(make_unique<statement>(move(tk)));
+        statements_.emplace_back(make_unique<statement>(move(tk)));
       } else {
         throw compiler_exception(tk, "unexpected keyword '" + tk.name() + "'");
       }
@@ -72,8 +73,8 @@ public:
   inline ~program() = default;
 
   inline void source_to(ostream &os) const {
-    for (const auto &s : stms_) {
-      s->source_to(os);
+    for (const auto &st : statements_) {
+      st->source_to(os);
     }
   }
 
@@ -83,18 +84,18 @@ public:
     os << "true equ 1\nfalse equ 0\n";
 
     os << "\nsection .data\nalign 4\n";
-    for (const auto &s : stms_) {
-      if (s->is_in_data_section()) {
-        s->compile(tc, os, indent);
+    for (const auto &st : statements_) {
+      if (st->is_in_data_section()) {
+        st->compile(tc, os, indent);
       }
     }
 
     os << "\nsection .bss\nalign 4\nstk resd 1024\nstk.end:\n";
     os << "\nsection .text\nalign 4\nbits 64\nglobal _start\n_start:\nmov "
           "rsp,stk.end\nmov rbp,rsp\njmp main\n\n";
-    for (const auto &s : stms_) {
-      if (not s->is_in_data_section()) {
-        s->compile(tc, os, indent);
+    for (const auto &st : statements_) {
+      if (not st->is_in_data_section()) {
+        st->compile(tc, os, indent);
       }
     }
 

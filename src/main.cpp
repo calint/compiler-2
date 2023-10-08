@@ -28,9 +28,9 @@ auto main(int argc, char *args[]) -> int {
   string src;
   try {
     src = read_file_to_string(src_file_name);
-    program p{src};
+    program prg{src};
     ofstream fo{"diff.baz"};
-    p.source_to(fo);
+    prg.source_to(fo);
     fo.close();
     if (read_file_to_string(src_file_name) != read_file_to_string("diff.baz")) {
       throw panic_exception("generated source differs. diff " +
@@ -43,7 +43,7 @@ auto main(int argc, char *args[]) -> int {
     // with jump optimizations
     stringstream ss1{};
     stringstream ss2{};
-    p.build(ss1);
+    prg.build(ss1);
     optimize_jumps_1(ss1, ss2);
     optimize_jumps_2(ss2, cout);
 
