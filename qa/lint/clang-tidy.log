@@ -1,2 +1,12 @@
-sön  8 okt 2023 23:26:10 CEST
-sön  8 okt 2023 23:26:44 CEST
+sön  8 okt 2023 23:44:11 CEST
+/home/c/w/compiler-2/qa/lint/../../src/expr_ops_list.hpp:2:1: warning: #includes are not sorted properly [llvm-include-order]
+#include "decouple.hpp"
+^        ~~~~~~~~~~~~~~
+         "compiler_exception.hpp"
+/home/c/w/compiler-2/qa/lint/../../src/expr_ops_list.hpp:2:10: note: FIX-IT applied suggested code changes
+#include "decouple.hpp"
+         ^
+/home/c/w/compiler-2/qa/lint/../../src/expr_ops_list.hpp:3:10: note: FIX-IT applied suggested code changes
+#include "compiler_exception.hpp"
+         ^
+sön  8 okt 2023 23:44:45 CEST

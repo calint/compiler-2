@@ -34,7 +34,7 @@ public:
   inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
                       [[maybe_unused]] size_t indent,
                       [[maybe_unused]] const string &dst) const override {
-    throw compiler_error(tok(), "this code should not be reached");
+    throw compiler_exception(tok(), "this code should not be reached");
   }
 
   inline auto compile(toc &tc, ostream &os, size_t indent,

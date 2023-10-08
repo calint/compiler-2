@@ -1,6 +1,6 @@
 #pragma once
+#include "compiler_exception.hpp"
 #include "decouple.hpp"
-#include "exceptions.hpp"
 #include "expression.hpp"
 #include "toc.hpp"
 
@@ -127,7 +127,7 @@ public:
       // read statement
       unique_ptr<statement> stm{create_statement_from_tokenizer(tc, t)};
       if (stm->tok().is_empty()) {
-        throw compiler_error(*stm,
+        throw compiler_exception(*stm,
                              "unexpected '" + string{t.peek_char()} + "'");
       }
 
@@ -241,7 +241,7 @@ private:
     case '%':
       return 6;
     default:
-      throw unexpected_exception("unexpected code path " + string{__FILE__} +
+      throw panic_exception("unexpected code path " + string{__FILE__} +
                                  ":" + to_string(__LINE__));
     }
   }
@@ -465,7 +465,7 @@ private:
       return;
     }
     if (src_resolved.id_nasm == "rcx") {
-      throw compiler_error(src, "cannot use 'rcx' as operand in shift because "
+      throw compiler_exception(src, "cannot use 'rcx' as operand in shift because "
                                 "that registers is used");
     }
 
@@ -570,7 +570,7 @@ private:
       return;
     }
     if (src_resolved.id_nasm == "rdx" or src_resolved.id_nasm == "rax") {
-      throw compiler_error(src, "cannot use 'rdx' or 'rax' as operands in "
+      throw compiler_exception(src, "cannot use 'rdx' or 'rax' as operands in "
                                 "division because those registers are used");
     }
 

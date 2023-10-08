@@ -19,12 +19,12 @@ public:
         if (not is_one_statement_) {
           break;
         }
-        throw compiler_error(t, "unexpected '}' in single statement block");
+        throw compiler_exception(t, "unexpected '}' in single statement block");
       }
 
       token tk{t.next_token()};
       if (tk.is_empty()) {
-        throw compiler_error(tk, "unexpected '" + string{t.peek_char()} + "'");
+        throw compiler_exception(tk, "unexpected '" + string{t.peek_char()} + "'");
       }
 
       if (tk.is_name("var")) {

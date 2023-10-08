@@ -24,7 +24,7 @@ public:
           break;
         }
         if (not t.is_next_char(',')) {
-          throw compiler_error(params_.back(),
+          throw compiler_exception(params_.back(),
                                "expected ',' after parameter '" +
                                    params_.back().tok().name() + "'");
         }

@@ -23,12 +23,12 @@ public:
 
     if (t.is_next_char('=')) {
       if (not t.is_next_char('=')) {
-        throw compiler_error(t, "expected '=='");
+        throw compiler_exception(t, "expected '=='");
       }
       op_ = "==";
     } else if (t.is_next_char('!')) {
       if (not t.is_next_char('=')) {
-        throw compiler_error(t, "expected '!='");
+        throw compiler_exception(t, "expected '!='");
       }
       op_ = "!=";
     } else if (t.is_next_char('<')) {
@@ -81,7 +81,7 @@ public:
   inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
                       [[maybe_unused]] size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
-    throw compiler_error(
+    throw compiler_exception(
         tok(), "this code should not be reached: " + string{__FILE__} + ":" +
                    to_string(__LINE__));
   }
@@ -215,7 +215,7 @@ public:
 
     return lhs_.identifier();
 
-    throw unexpected_exception("unexpected code path " + string{__FILE__} +
+    throw panic_exception("unexpected code path " + string{__FILE__} +
                                ":" + to_string(__LINE__));
   }
 
@@ -275,7 +275,7 @@ private:
     if (op == ">=") {
       return lh >= rh;
     }
-    throw unexpected_exception("unexpected code path " + string{__FILE__} +
+    throw panic_exception("unexpected code path " + string{__FILE__} +
                                ":" + to_string(__LINE__));
   }
 
@@ -299,7 +299,7 @@ private:
       return "jge";
     }
 
-    throw unexpected_exception("unexpected code path " + string{__FILE__} +
+    throw panic_exception("unexpected code path " + string{__FILE__} +
                                ":" + to_string(__LINE__));
   }
 
@@ -322,7 +322,7 @@ private:
     if (op == ">=") {
       return "jl";
     }
-    throw unexpected_exception("unexpected code path " + string{__FILE__} +
+    throw panic_exception("unexpected code path " + string{__FILE__} +
                                ":" + to_string(__LINE__));
   }
 

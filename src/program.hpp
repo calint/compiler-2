@@ -41,7 +41,7 @@ public:
         if (t.is_eos()) {
           break;
         }
-        throw compiler_error(tk, "unexpected '" + string{t.next_char()} + "'");
+        throw compiler_exception(tk, "unexpected '" + string{t.next_char()} + "'");
       }
       if (tk.is_name("field")) {
         stms_.emplace_back(make_unique<stmt_def_field>(tc_, std::move(tk), t));
@@ -54,7 +54,7 @@ public:
       } else if (tk.is_name("")) {
         stms_.emplace_back(make_unique<statement>(std::move(tk)));
       } else {
-        throw compiler_error(tk, "unexpected keyword '" + tk.name() + "'");
+        throw compiler_exception(tk, "unexpected keyword '" + tk.name() + "'");
       }
     }
   }
@@ -97,7 +97,7 @@ public:
     // get the main function and compile
     const stmt_def_func &main = tc.get_func_or_throw(prg, "main");
     if (not main.is_inline()) {
-      throw compiler_error(main, "main function must be declared inline");
+      throw compiler_exception(main, "main function must be declared inline");
     }
 
     os << "main:" << endl;

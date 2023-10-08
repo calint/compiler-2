@@ -20,7 +20,7 @@ public:
     while (true) {
       if (t.is_next_char(')')) { // foo()
         if (expect_arg) {
-          throw compiler_error(t, "expected argument after ','");
+          throw compiler_exception(t, "expected argument after ','");
         }
         break;
       }
@@ -61,7 +61,7 @@ public:
 
     // check that the same number of arguments are provided as expected
     if (func.params().size() != args_.size()) {
-      throw compiler_error(
+      throw compiler_exception(
           *this, "function '" + func_nm + "' expects " +
                      to_string(func.params().size()) + " argument" +
                      (func.params().size() == 1 ? "" : "s") + " but " +
@@ -78,7 +78,7 @@ public:
       if (arg_type.is_built_in() && param_type.is_built_in()) {
         // ? check if it is integral (not bool)
         if (param_type.size() < arg_type.size()) {
-          throw compiler_error(
+          throw compiler_exception(
               arg,
               "argument " + to_string(i + 1) + " of type '" + arg_type.name() +
                   "' would be truncated when passed to parameter of type '" +
@@ -87,7 +87,7 @@ public:
         continue;
       }
       if (arg_type.name() != param_type.name()) {
-        throw compiler_error(arg, "argument " + to_string(i + 1) +
+        throw compiler_exception(arg, "argument " + to_string(i + 1) +
                                       " of type '" + arg_type.name() +
                                       "' does not match parameter of type '" +
                                       param_type.name() + "'");
@@ -97,7 +97,7 @@ public:
     // check that return value matches the type
     if (not dst.empty()) {
       if (func.returns().empty()) {
-        throw compiler_error(
+        throw compiler_exception(
             *this, "cannot assign from function that does not return value");
       }
 
@@ -110,7 +110,7 @@ public:
       //'"+dst_resolved.tp.name()+"'");
       // ? check if built in integer types
       if (dst_resolved.tp.size() < return_type.size()) {
-        throw compiler_error(*this,
+        throw compiler_exception(*this,
                              "return type '" + return_type.name() +
                                  "' would be truncated when copied to '" + dst +
                                  "' of type '" + dst_resolved.tp.name() + "'");
@@ -363,7 +363,7 @@ public:
     // if the result of the call has unary ops
     if (not get_unary_ops().is_empty()) {
       if (func.returns().empty()) {
-        throw compiler_error(*this, "function call has unary operations but it "
+        throw compiler_exception(*this, "function call has unary operations but it "
                                     "does not return a value");
       }
 

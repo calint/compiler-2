@@ -126,7 +126,7 @@ public:
       ops_.push_back(std::move(tk));
     }
     if (enclosed_) {
-      throw compiler_error(tok(), "expected ')' to close expression");
+      throw compiler_exception(tok(), "expected ')' to close expression");
     }
   }
 
@@ -163,7 +163,7 @@ public:
   inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
                       [[maybe_unused]] size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
-    throw compiler_error(
+    throw compiler_exception(
         tok(), "this code should not be reached: " + string{__FILE__} + ":" +
                    to_string(__LINE__));
   }
@@ -204,7 +204,7 @@ public:
               // next bool eval
               jmp_true = cmp_label_from(tc, bools_[i + 1]);
             } else {
-              throw unexpected_exception("expected 'or' or 'and'");
+              throw panic_exception("expected 'or' or 'and'");
             }
             optional<bool> const_eval{
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
@@ -223,7 +223,7 @@ public:
               // jump_true is next bool eval
               jmp_true = cmp_label_from(tc, bools_[i + 1]);
             } else {
-              throw unexpected_exception("expected 'or' or 'and'");
+              throw panic_exception("expected 'or' or 'and'");
             }
             optional<bool> const_eval{
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
@@ -264,7 +264,7 @@ public:
               return *const_eval;
             }
           } else {
-            throw unexpected_exception("expected 'or' or 'and'");
+            throw panic_exception("expected 'or' or 'and'");
           }
         } else {
           optional<bool> const_eval{
@@ -295,7 +295,7 @@ public:
               return *const_eval;
             }
           } else {
-            throw unexpected_exception("expected 'or' or 'and'");
+            throw panic_exception("expected 'or' or 'and'");
           }
         } else {
           optional<bool> const_eval{
@@ -328,7 +328,7 @@ public:
 
   [[nodiscard]] inline auto identifier() const -> const string & override {
     if (bools_.size() > 1) {
-      throw unexpected_exception("unexpected code path " + string{__FILE__} +
+      throw panic_exception("unexpected code path " + string{__FILE__} +
                                  ":" + to_string(__LINE__));
     }
 

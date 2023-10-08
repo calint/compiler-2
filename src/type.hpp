@@ -32,7 +32,7 @@ public:
         return fld;
       }
     }
-    throw compiler_error(tk, "field '" + name + "' not found in type '" +
+    throw compiler_exception(tk, "field '" + name + "' not found in type '" +
                                  name_ + "'");
   }
 
@@ -62,7 +62,7 @@ public:
     case 1:
       return "byte";
     default:
-      throw compiler_error(tk, "illegal size for memory operand: " +
+      throw compiler_exception(tk, "illegal size for memory operand: " +
                                    to_string(size));
     }
   }

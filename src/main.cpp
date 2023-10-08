@@ -14,7 +14,7 @@ using namespace std;
 
 #include "call_asm_mov.hpp"
 #include "call_asm_syscall.hpp"
-#include "exceptions.hpp"
+#include "compiler_exception.hpp"
 #include "program.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
@@ -33,7 +33,7 @@ auto main(int argc, char *args[]) -> int {
     p.source_to(fo);
     fo.close();
     if (read_file_to_string(src_file_name) != read_file_to_string("diff.baz")) {
-      throw unexpected_exception("generated source differs. diff " +
+      throw panic_exception("generated source differs. diff " +
                                  string{src_file_name} + " diff.baz");
     }
 
@@ -47,7 +47,7 @@ auto main(int argc, char *args[]) -> int {
     optimize_jumps_1(ss1, ss2);
     optimize_jumps_2(ss2, cout);
 
-  } catch (const compiler_error &e) {
+  } catch (const compiler_exception &e) {
     size_t start_char_in_line{0};
     const size_t lineno{toc::line_number_for_char_index(
         e.start_char, src.c_str(), start_char_in_line)};
@@ -55,14 +55,8 @@ auto main(int argc, char *args[]) -> int {
          << src_file_name << ":" << lineno << ":" << start_char_in_line << ": "
          << e.msg << endl;
     return 1;
-  } catch (const string &s) {
-    cerr << "\nexception: " << s << endl;
-    return 2;
-  } catch (const unexpected_exception &e) {
+  } catch (const panic_exception &e) {
     cerr << "\nexception: " << e.what() << endl;
-    return 2;
-  } catch (const char *s) {
-    cerr << "\nexception: " << s << endl;
     return 2;
   } catch (...) {
     cerr << "\nexception" << endl;
@@ -96,12 +90,12 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &t)
   unary_ops uops{t};
   token tk = t.next_token();
   if (tk.is_name("")) {
-    throw compiler_error(tk, "unexpected empty expression");
+    throw compiler_exception(tk, "unexpected empty expression");
   }
 
   if (tk.is_name("#")) {
     if (!uops.is_empty()) {
-      throw compiler_error(tk, "unexpected comment after unary ops");
+      throw compiler_exception(tk, "unexpected comment after unary ops");
     }
     // i.e.  print("hello") # comment
     return make_unique<stmt_comment>(tc, std::move(tk), t);
@@ -133,7 +127,7 @@ inline void unary_ops::compile(toc & /*tc*/, ostream &os, size_t indent_level,
       //		}else if(op=='!'){
       //			os<<"xor "<<dst_resolved<<",1"<<endl;
     } else {
-      throw unexpected_exception("unexpected code path " + string{__FILE__} +
+      throw panic_exception("unexpected code path " + string{__FILE__} +
                                  ":" + to_string(__LINE__));
     }
   }
@@ -337,7 +331,7 @@ static void optimize_jumps_2(istream &is, ostream &os) {
 static auto read_file_to_string(const char *file_name) -> string {
   ifstream fs{file_name};
   if (not fs.is_open()) {
-    throw unexpected_exception("cannot open file '" + string{file_name} + "'");
+    throw panic_exception("cannot open file '" + string{file_name} + "'");
   }
   std::stringstream buf{};
   buf << fs.rdbuf();

@@ -1,5 +1,5 @@
 #pragma once
-#include "exceptions.hpp"
+#include "compiler_exception.hpp"
 #include "lut.hpp"
 #include "type.hpp"
 
@@ -40,7 +40,7 @@ public:
       nasm_ident = "[rbp" + to_string(stack_idx) + "]";
       allocated_stack_ += tpe.size();
     } else {
-      throw unexpected_exception("toc:fram:add_var");
+      throw panic_exception("toc:fram:add_var");
     }
     //		if(size==8){
     //			nasm_ident="qword"+nasm_ident;
@@ -220,7 +220,7 @@ public:
                         const stmt_def_field *f, const bool is_str_field) {
     if (fields_.has(ident)) {
       const field_meta &fld = fields_.get(ident);
-      throw compiler_error(st.tok(), "field '" + ident +
+      throw compiler_exception(st.tok(), "field '" + ident +
                                          "' already defined at " +
                                          source_location_hr(fld.declared_at));
     }
@@ -231,7 +231,7 @@ public:
                        const type &return_type, const stmt_def_func *ref) {
     if (funcs_.has(name)) {
       const func_meta &func = funcs_.get(name);
-      throw compiler_error(st, "function '" + name + "' already defined at " +
+      throw compiler_exception(st, "function '" + name + "' already defined at " +
                                    source_location_hr(func.declared_at));
     }
     funcs_.put(name, {return_type, ref, st.tok()});
@@ -240,7 +240,7 @@ public:
   inline auto get_func_or_throw(const statement &st, const string &name) const
       -> const stmt_def_func & {
     if (not funcs_.has(name)) {
-      throw compiler_error(st, "function '" + name + "' not found");
+      throw compiler_exception(st, "function '" + name + "' not found");
     }
 
     return *funcs_.get_const_ref(name).def;
@@ -250,7 +250,7 @@ public:
                                             const string &name) const
       -> const type & {
     if (not funcs_.has(name)) {
-      throw compiler_error(st, "function '" + name + "' not found");
+      throw compiler_exception(st, "function '" + name + "' not found");
     }
 
     return funcs_.get_const_ref(name).tp;
@@ -258,7 +258,7 @@ public:
 
   inline void add_type(const statement &st, const type &tp) {
     if (types_.has(tp.name())) {
-      throw compiler_error(st, "type '" + tp.name() + "' already defined");
+      throw compiler_exception(st, "type '" + tp.name() + "' already defined");
     }
 
     types_.put(tp.name(), tp);
@@ -267,7 +267,7 @@ public:
   inline auto get_type_or_throw(const statement &st, const string &name) const
       -> const type & {
     if (not types_.has(name)) {
-      throw compiler_error(st, "type '" + name + "' not found");
+      throw compiler_exception(st, "type '" + name + "' not found");
     }
 
     return types_.get_const_ref(name);
@@ -337,7 +337,7 @@ public:
       return ir;
     }
 
-    throw compiler_error(st,
+    throw compiler_exception(st,
                          "cannot resolve identifier '" + st.identifier() + "'");
   }
 
@@ -350,7 +350,7 @@ public:
       return ir;
     }
 
-    throw compiler_error(st.tok(), "cannot resolve identifier '" + ident + "'");
+    throw compiler_exception(st.tok(), "cannot resolve identifier '" + ident + "'");
   }
 
   inline void add_alias(const string &ident, const string &parent_frame_ident) {
@@ -399,7 +399,7 @@ public:
     // check if variable already declared in this scope
     if (frames_.back().has_var(name)) {
       const var_meta &var = frames_.back().get_var_const_ref(name);
-      throw compiler_error(st, "variable '" + name + "' already declared at " +
+      throw compiler_exception(st, "variable '" + name + "' already declared at " +
                                    source_location_hr(var.declared_at));
     }
     // check if variable shadows previously declared variable
@@ -408,7 +408,7 @@ public:
     const frame &frm = idfrm.second;
     if (frm.has_var(id)) {
       const var_meta &var{frm.get_var_const_ref(id)};
-      throw compiler_error(st, "variable '" + name +
+      throw compiler_exception(st, "variable '" + name +
                                    "' shadows variable declared at " +
                                    source_location_hr(var.declared_at));
     }
@@ -435,7 +435,7 @@ public:
   inline auto alloc_scratch_register(const statement &st, ostream &os,
                                      const size_t indnt) -> const string & {
     if (scratch_registers_.empty()) {
-      throw compiler_error(
+      throw compiler_exception(
           st, "out of scratch registers. try to reduce expression complexity");
     }
 
@@ -472,7 +472,7 @@ public:
           loc = allocated_registers_loc_[i];
         }
       }
-      throw compiler_error(st, "cannot allocate register '" + reg +
+      throw compiler_exception(st, "cannot allocate register '" + reg +
                                    "' because it was allocated at " + loc);
     }
     named_registers_.erase(r);
@@ -527,10 +527,10 @@ public:
         return frames_[i].name();
       }
       if (frames_[i].is_func()) {
-        throw compiler_error(st, "not in a loop");
+        throw compiler_exception(st, "not in a loop");
       }
     }
-    throw compiler_error(st, "unexpected frames");
+    throw compiler_exception(st, "unexpected frames");
   }
 
   inline auto get_inline_call_path(const token &tk) const -> const string & {
@@ -540,7 +540,7 @@ public:
         return frames_[i].inline_call_path();
       }
     }
-    throw compiler_error(tk, "not in a function");
+    throw compiler_exception(tk, "not in a function");
   }
 
   inline auto get_func_return_label_or_throw(const statement &st) const
@@ -551,7 +551,7 @@ public:
         return frames_[i].func_ret_label();
       }
     }
-    throw compiler_error(st, "not in a function");
+    throw compiler_exception(st, "not in a function");
   }
 
   inline auto get_func_return_var_name_or_throw(const statement &st) const
@@ -562,7 +562,7 @@ public:
         return frames_[i].func_ret_var();
       }
     }
-    throw compiler_error(st, "not in a function");
+    throw compiler_exception(st, "not in a function");
   }
 
   inline void source_comment(const statement &st, ostream &os,
@@ -791,7 +791,7 @@ public:
     }
 
     if (is_operand_memory(src_resolved)) {
-      throw compiler_error(st, "cannot move '" + src_resolved + "' to '" +
+      throw compiler_exception(st, "cannot move '" + src_resolved + "' to '" +
                                    dst_resolved +
                                    "' because it would be truncated");
     }
@@ -1028,7 +1028,7 @@ public:
       return 1;
     }
 
-    throw compiler_error(st, "unknown register '" + operand + "'");
+    throw compiler_exception(st, "unknown register '" + operand + "'");
   }
   inline static auto get_register_operand_for_size(const statement &st,
                                                    const string &operand,
@@ -1045,7 +1045,7 @@ public:
       case 1:
         return "al";
       default:
-        throw compiler_error(st, "illegal size " + to_string(size) +
+        throw compiler_exception(st, "illegal size " + to_string(size) +
                                      " for register operand '" + operand + "'");
       }
     }
@@ -1060,7 +1060,7 @@ public:
       case 1:
         return "bl";
       default:
-        throw compiler_error(st, "illegal size " + to_string(size) +
+        throw compiler_exception(st, "illegal size " + to_string(size) +
                                      " for register '" + operand + "'");
       }
     }
@@ -1075,7 +1075,7 @@ public:
       case 1:
         return "cl";
       default:
-        throw compiler_error(st, "illegal size " + to_string(size) +
+        throw compiler_exception(st, "illegal size " + to_string(size) +
                                      " for register '" + operand + "'");
       }
     }
@@ -1090,7 +1090,7 @@ public:
       case 1:
         return "dl";
       default:
-        throw compiler_error(st, "illegal size " + to_string(size) +
+        throw compiler_exception(st, "illegal size " + to_string(size) +
                                      " for register '" + operand + "'");
       }
     }
@@ -1103,7 +1103,7 @@ public:
       case 2:
         return "bp";
       default:
-        throw compiler_error(st, "illegal size " + to_string(size) +
+        throw compiler_exception(st, "illegal size " + to_string(size) +
                                      " for register '" + operand + "'");
       }
     }
@@ -1116,7 +1116,7 @@ public:
       case 2:
         return "si";
       default:
-        throw compiler_error(st, "illegal size " + to_string(size) +
+        throw compiler_exception(st, "illegal size " + to_string(size) +
                                      " for register '" + operand + "'");
       }
     }
@@ -1129,7 +1129,7 @@ public:
       case 2:
         return "di";
       default:
-        throw compiler_error(st, "illegal size " + to_string(size) +
+        throw compiler_exception(st, "illegal size " + to_string(size) +
                                      " for register '" + operand + "'");
       }
     }
@@ -1142,14 +1142,14 @@ public:
       case 2:
         return "sp";
       default:
-        throw compiler_error(st, "illegal size " + to_string(size) +
+        throw compiler_exception(st, "illegal size " + to_string(size) +
                                      " for register '" + operand + "'");
       }
     }
     const regex rx{R"(r(\d+))"};
     smatch match;
     if (!regex_search(operand, match, rx)) {
-      throw compiler_error(st, "unknown register " + operand);
+      throw compiler_exception(st, "unknown register " + operand);
     }
     const string &rnbr{match[1]};
     switch (size) {
@@ -1162,11 +1162,11 @@ public:
     case 1:
       return "r" + rnbr + "b";
     default:
-      throw compiler_error(st, "illegal size " + to_string(size) +
+      throw compiler_exception(st, "illegal size " + to_string(size) +
                                    " for register '" + operand + "'");
     }
 
-    throw compiler_error(st, "unknown register '" + operand + "'");
+    throw compiler_exception(st, "unknown register '" + operand + "'");
   }
   inline static void asm_push([[maybe_unused]] const statement &st, ostream &os,
                               const size_t indnt, const string &operand) {
@@ -1232,7 +1232,7 @@ public:
       return;
     }
 
-    throw unexpected_exception("should not be reached: " + string{__FILE__} +
+    throw panic_exception("should not be reached: " + string{__FILE__} +
                                ":" + to_string(__LINE__));
   }
 
@@ -1345,7 +1345,7 @@ private:
     if (frames_[i].has_var(id)) {
       const var_meta &var = frames_[i].get_var_const_ref(id);
       if (must_be_initiated and not var.initiated) {
-        throw compiler_error(st,
+        throw compiler_exception(st,
                              "variable '" + var.name + "' is not initiated");
       }
       const string &acc = var.tp.accessor(st.tok(), bid.path(), var.stack_idx);
@@ -1355,7 +1355,7 @@ private:
     // is 'id_nasm' a register?
     if (is_identifier_register(id)) {
       if (must_be_initiated and not is_register_initiated(id)) {
-        throw compiler_error(st, "register '" + id + "' is not initiated");
+        throw compiler_exception(st, "register '" + id + "' is not initiated");
       }
 
       return {ident, id, 0, get_type_default(),

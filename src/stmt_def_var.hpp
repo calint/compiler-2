@@ -22,7 +22,7 @@ public:
       type_ = t.next_token();
     }
     if (not t.is_next_char('=')) {
-      throw compiler_error(name_, "expected '=' and initializer");
+      throw compiler_exception(name_, "expected '=' and initializer");
     }
 
     const type &tp{type_.name().empty()

@@ -48,7 +48,7 @@ public:
   inline stmt_def_type(toc &tc, token tk, tokenizer &t)
       : statement{std::move(tk)}, name_{t.next_token()} {
     if (not t.is_next_char('{')) {
-      throw compiler_error(name_, "expected '{'");
+      throw compiler_exception(name_, "expected '{'");
     }
 
     while (true) {
@@ -56,7 +56,7 @@ public:
       if (tknm.is_name("")) {
         ws_ = tknm;
         if (not t.is_next_char('}')) {
-          throw compiler_error(t, "expected '}'");
+          throw compiler_exception(t, "expected '}'");
         }
         break;
       }
@@ -65,7 +65,7 @@ public:
         break;
       }
       if (not t.is_next_char(',')) {
-        throw compiler_error(t, "expected ',' and more fields");
+        throw compiler_exception(t, "expected ',' and more fields");
       }
     }
 
