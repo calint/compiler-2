@@ -1,5 +1,4 @@
 #pragma once
-
 #include "token.hpp"
 #include "unary_ops.hpp"
 

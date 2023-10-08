@@ -36,7 +36,9 @@ public:
     os << regex_replace(name_, regex("\\\\n"), "',10,'");
   }
 
-  [[nodiscard]] inline auto is_name(const string &s) const -> bool { return name_ == s; }
+  [[nodiscard]] inline auto is_name(const string &s) const -> bool {
+    return name_ == s;
+  }
 
   [[nodiscard]] inline auto name() const -> const string & { return name_; }
 

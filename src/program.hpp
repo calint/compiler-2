@@ -1,5 +1,4 @@
 #pragma once
-
 #include "statement.hpp"
 #include "stmt_def_field.hpp"
 #include "stmt_def_func.hpp"

@@ -1,5 +1,4 @@
 #pragma once
-
 #include "bool_op.hpp"
 #include "bool_ops_list.hpp"
 
@@ -39,8 +38,9 @@ public:
   }
 
   inline auto compile(toc &tc, ostream &os, size_t indent,
-                                const string &jmp_to_if_false_label,
-                                const string &jmp_to_after_code_label) const -> optional<bool> {
+                      const string &jmp_to_if_false_label,
+                      const string &jmp_to_after_code_label) const
+      -> optional<bool> {
     const string &if_bgn_lbl{if_bgn_label(tc)};
     const string &jmp_to_if_true_lbl{if_bgn_lbl + "_code"};
     // the begining of this branch

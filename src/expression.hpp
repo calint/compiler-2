@@ -1,5 +1,4 @@
 #pragma once
-
 #include "statement.hpp"
 
 class expression : public statement {

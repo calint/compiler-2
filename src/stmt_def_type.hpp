@@ -15,8 +15,10 @@ public:
   inline stmt_def_type_field() = default;
   inline stmt_def_type_field(const stmt_def_type_field &) = default;
   inline stmt_def_type_field(stmt_def_type_field &&) = default;
-  inline auto operator=(const stmt_def_type_field &) -> stmt_def_type_field & = default;
-  inline auto operator=(stmt_def_type_field &&) -> stmt_def_type_field & = default;
+  inline auto operator=(const stmt_def_type_field &)
+      -> stmt_def_type_field & = default;
+  inline auto operator=(stmt_def_type_field &&)
+      -> stmt_def_type_field & = default;
 
   inline ~stmt_def_type_field() override = default;
 
@@ -24,14 +26,18 @@ public:
     statement::source_to(os);
     if (type_.is_empty()) {
       return;
-}
+    }
     os << ':';
     type_.source_to(os);
   }
 
-  [[nodiscard]] inline auto name() const -> const string & { return tok().name(); }
+  [[nodiscard]] inline auto name() const -> const string & {
+    return tok().name();
+  }
 
-  [[nodiscard]] inline auto type_str() const -> const string & { return type_.name(); }
+  [[nodiscard]] inline auto type_str() const -> const string & {
+    return type_.name();
+  }
 
 private:
   token type_{};
@@ -43,7 +49,7 @@ public:
       : statement{std::move(tk)}, name_{t.next_token()} {
     if (not t.is_next_char('{')) {
       throw compiler_error(name_, "expected '{'");
-}
+    }
 
     while (true) {
       token tknm{t.next_token()};
@@ -51,16 +57,16 @@ public:
         ws_ = tknm;
         if (not t.is_next_char('}')) {
           throw compiler_error(t, "expected '}'");
-}
+        }
         break;
       }
       fields_.emplace_back(tc, std::move(tknm), t);
       if (t.is_next_char('}')) {
         break;
-}
+      }
       if (not t.is_next_char(',')) {
         throw compiler_error(t, "expected ',' and more fields");
-}
+      }
     }
 
     type_.set_name(name_.name());

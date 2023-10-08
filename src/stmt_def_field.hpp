@@ -8,11 +8,11 @@ public:
       : statement{std::move(tk)}, name_{t.next_token()} {
     if (name_.is_name("")) {
       throw compiler_error(t, "expected field name");
-}
+    }
 
     if (not t.is_next_char('=')) {
       throw compiler_error(t, "expected '=' and initial value");
-}
+    }
 
     uops_ = unary_ops{t};
     initial_value_ = t.next_token();
@@ -59,9 +59,13 @@ public:
     os << endl;
   }
 
-  [[nodiscard]] inline auto is_in_data_section() const -> bool override { return true; }
+  [[nodiscard]] inline auto is_in_data_section() const -> bool override {
+    return true;
+  }
 
-  [[nodiscard]] inline auto is_string_field() const -> bool { return initial_value_.is_string(); }
+  [[nodiscard]] inline auto is_string_field() const -> bool {
+    return initial_value_.is_string();
+  }
 
 private:
   token name_{};

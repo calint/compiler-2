@@ -15,14 +15,14 @@ public:
       keywords_.emplace_back(t.next_token());
       if (t.is_next_char(':')) {
         continue;
-}
+      }
       break;
     }
 
     for (const token &kw : keywords()) {
       if (kw.name().starts_with("reg_")) {
         continue;
-}
+      }
       set_type(tc.get_type_or_throw(*this, kw.name()));
       return;
     }
@@ -33,8 +33,10 @@ public:
   inline stmt_def_func_param() = default;
   inline stmt_def_func_param(const stmt_def_func_param &) = default;
   inline stmt_def_func_param(stmt_def_func_param &&) = default;
-  inline auto operator=(const stmt_def_func_param &) -> stmt_def_func_param & = default;
-  inline auto operator=(stmt_def_func_param &&) -> stmt_def_func_param & = default;
+  inline auto operator=(const stmt_def_func_param &)
+      -> stmt_def_func_param & = default;
+  inline auto operator=(stmt_def_func_param &&)
+      -> stmt_def_func_param & = default;
 
   inline ~stmt_def_func_param() override = default;
 
@@ -48,20 +50,24 @@ public:
         t.source_to(os);
         if (i++ != n) {
           os << ":";
-}
+        }
       }
     }
   }
 
-  [[nodiscard]] inline auto keywords() const -> const vector<token> & { return keywords_; }
+  [[nodiscard]] inline auto keywords() const -> const vector<token> & {
+    return keywords_;
+  }
 
-  [[nodiscard]] inline auto name() const -> const string & { return tok().name(); }
+  [[nodiscard]] inline auto name() const -> const string & {
+    return tok().name();
+  }
 
   [[nodiscard]] inline auto get_register_or_empty() const -> string {
     for (const token &kw : keywords()) {
       if (!kw.name().starts_with("reg_")) {
         continue;
-}
+      }
       // requested register for this argument
       return kw.name().substr(4, kw.name().size());
     }

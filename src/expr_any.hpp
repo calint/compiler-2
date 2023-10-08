@@ -1,5 +1,4 @@
 #pragma once
-
 #include "bool_ops_list.hpp"
 #include "expr_ops_list.hpp"
 

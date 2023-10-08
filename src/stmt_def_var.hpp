@@ -1,5 +1,4 @@
 #pragma once
-
 #include "stmt_assign_var.hpp"
 
 class null_buffer : public streambuf {
@@ -24,7 +23,7 @@ public:
     }
     if (not t.is_next_char('=')) {
       throw compiler_error(name_, "expected '=' and initializer");
-}
+    }
 
     const type &tp{type_.name().empty()
                        ? tc.get_type_default()

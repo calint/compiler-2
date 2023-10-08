@@ -1,5 +1,4 @@
 #pragma once
-
 #include "call_asm.hpp"
 
 class call_asm_mov final : public call_asm {

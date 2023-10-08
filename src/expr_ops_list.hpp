@@ -1,5 +1,4 @@
 #pragma once
-
 #include "decouple.hpp"
 #include "exceptions.hpp"
 #include "expression.hpp"

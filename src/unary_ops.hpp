@@ -53,7 +53,9 @@ public:
 
   [[nodiscard]] inline auto is_empty() const -> bool { return ops_.empty(); }
 
-  [[nodiscard]] inline auto as_string() const -> string { return {ops_.begin(), ops_.end()}; }
+  [[nodiscard]] inline auto as_string() const -> string {
+    return {ops_.begin(), ops_.end()};
+  }
 
   [[nodiscard]] inline auto evaluate_constant(long int v) const -> long int {
     size_t i{ops_.size()};
@@ -63,7 +65,7 @@ public:
         v = -v;
         break;
       case '~':
-        v = ~v; //NOLINT(hicpp-signed-bitwise)
+        v = ~v; // NOLINT(hicpp-signed-bitwise)
         break;
         //			case'!':v=v^1;break;
       default:

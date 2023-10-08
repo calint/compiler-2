@@ -1,5 +1,4 @@
 #pragma once
-
 #include "statement.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"

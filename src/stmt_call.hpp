@@ -1,5 +1,4 @@
 #pragma once
-
 #include "expr_any.hpp"
 #include "expr_ops_list.hpp"
 #include "expression.hpp"
@@ -22,7 +21,7 @@ public:
       if (t.is_next_char(')')) { // foo()
         if (expect_arg) {
           throw compiler_error(t, "expected argument after ','");
-}
+        }
         break;
       }
       args_.emplace_back(tc, get_type(), t, true);
@@ -42,7 +41,7 @@ public:
     expression::source_to(os);
     if (no_args_) {
       return;
-}
+    }
     os << "(";
     size_t i = args_.size() - 1;
     for (const auto &e : args_) {
@@ -68,7 +67,7 @@ public:
                      (func.params().size() == 1 ? "" : "s") + " but " +
                      to_string(args_.size()) + " " +
                      (args_.size() == 1 ? "is" : "are") + " provided");
-}
+    }
 
     // check that argument types match the parameters
     for (size_t i = 0; i < args_.size(); i++) {
@@ -84,7 +83,7 @@ public:
               "argument " + to_string(i + 1) + " of type '" + arg_type.name() +
                   "' would be truncated when passed to parameter of type '" +
                   param_type.name() + "'");
-}
+        }
         continue;
       }
       if (arg_type.name() != param_type.name()) {
@@ -92,7 +91,7 @@ public:
                                       " of type '" + arg_type.name() +
                                       "' does not match parameter of type '" +
                                       param_type.name() + "'");
-}
+      }
     }
 
     // check that return value matches the type
@@ -100,7 +99,7 @@ public:
       if (func.returns().empty()) {
         throw compiler_error(
             *this, "cannot assign from function that does not return value");
-}
+      }
 
       const type &return_type{func.get_type()};
       const ident_resolved &dst_resolved{
@@ -115,7 +114,7 @@ public:
                              "return type '" + return_type.name() +
                                  "' would be truncated when copied to '" + dst +
                                  "' of type '" + dst_resolved.tp.name() + "'");
-}
+      }
     }
 
     if (not func.is_inline()) {
@@ -174,7 +173,7 @@ public:
         // push identifier on the stack
         if (arg_resolved.is_const()) {
           toc::asm_push(arg, os, indent,
-                      arg.get_unary_ops().as_string() + arg_resolved.id_nasm);
+                        arg.get_unary_ops().as_string() + arg_resolved.id_nasm);
           nbytes_of_args_on_stack += 8;
           continue;
         }
@@ -366,7 +365,7 @@ public:
       if (func.returns().empty()) {
         throw compiler_error(*this, "function call has unary operations but it "
                                     "does not return a value");
-}
+      }
 
       const ident_resolved &ir{
           tc.resolve_identifier(*this, func.returns()[0].name(), true)};
@@ -376,7 +375,9 @@ public:
     tc.exit_func(func_nm);
   }
 
-  [[nodiscard]] inline auto arg(size_t ix) const -> const statement & { return args_[ix]; }
+  [[nodiscard]] inline auto arg(size_t ix) const -> const statement & {
+    return args_[ix];
+  }
 
   [[nodiscard]] inline auto arg_count() const -> size_t { return args_.size(); }
 

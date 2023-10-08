@@ -53,12 +53,14 @@ public:
   inline auto is_next_char(const char ch) -> bool {
     if (*ptr_ != ch) {
       return false;
-}
+    }
     next_char(); // return ignored
     return true;
   }
 
-  [[nodiscard]] inline auto is_peek_char(const char ch) const -> bool { return *ptr_ == ch; }
+  [[nodiscard]] inline auto is_peek_char(const char ch) const -> bool {
+    return *ptr_ == ch;
+  }
 
   [[nodiscard]] inline auto is_peek_char2(const char ch) const -> bool {
     return *ptr_ == 0 ? false : *(ptr_ + 1) == ch;
@@ -71,10 +73,10 @@ public:
     while (true) {
       if (*ptr_ == '\n') {
         break;
-}
+      }
       if (*ptr_ == '\0') {
         break;
-}
+      }
       ptr_++;
     }
     const string &s{bgn, size_t(ptr_ - bgn)};
@@ -91,19 +93,21 @@ public:
     return last_char_;
   }
 
-  [[nodiscard]] inline auto current_char_index_in_source() const -> size_t { return nchar_; }
+  [[nodiscard]] inline auto current_char_index_in_source() const -> size_t {
+    return nchar_;
+  }
 
 private:
   inline auto next_whitespace() -> string {
     if (is_eos()) {
       return "";
-}
+    }
     const size_t nchar_bm_{nchar_};
     while (true) {
       const char ch{next_char()};
       if (is_char_whitespace(ch)) {
         continue;
-}
+      }
       seek(-1);
       break;
     }
@@ -114,7 +118,7 @@ private:
   inline auto next_token_str() -> string {
     if (is_eos()) {
       return "";
-}
+    }
     const size_t nchar_bm_{nchar_};
     while (true) {
       const char ch{next_char()};
