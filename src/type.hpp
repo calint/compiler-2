@@ -11,8 +11,8 @@ struct type_field final {
 
 class type final {
 public:
-  inline type(const std::string name, const size_t size, const bool is_built_in)
-      : name_{name}, size_{size}, is_built_in_{is_built_in} {}
+  inline type(std::string name, const size_t size, const bool is_built_in)
+      : name_{std::move(name)}, size_{size}, is_built_in_{is_built_in} {}
 
   inline type() = default;
   inline type(const type &) = default;

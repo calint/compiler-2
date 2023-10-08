@@ -157,7 +157,7 @@ struct ident_resolved final {
 
 class baz_ident final {
 public:
-  inline explicit baz_ident(string id) : id_{id} {
+  inline explicit baz_ident(const string &id) : id_{id} {
     size_t start{0}, end{0};
     while ((end = id.find('.', start)) != string::npos) {
       path_.push_back(id.substr(start, end - start));
@@ -542,7 +542,7 @@ public:
     os << res << endl;
   }
 
-  inline void source_comment(ostream &os, const string &dst, const string op,
+  inline void source_comment(ostream &os, const string &dst, const string &op,
                              const statement &st) const {
     size_t char_in_line{};
     const size_t n{line_number_for_char_index(
