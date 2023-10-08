@@ -13,22 +13,22 @@ public:
     }
     if (not t.is_next_char('(')) {
       no_args_ = true;
-}
+    }
 
     if (not no_args_) {
       while (true) {
         if (t.is_next_char(')')) {
           break;
-}
+        }
         params_.emplace_back(tc, t);
         if (t.is_next_char(')')) {
           break;
-}
+        }
         if (not t.is_next_char(',')) {
           throw compiler_error(params_.back(),
                                "expected ',' after parameter '" +
                                    params_.back().tok().name() + "'");
-}
+        }
       }
     }
     if (t.is_next_char(':')) { // returns
@@ -36,7 +36,7 @@ public:
         returns_.emplace_back(t.next_token());
         if (t.is_next_char(':')) {
           continue;
-}
+        }
         break;
       }
       if (returns_.size() > 1) {
@@ -86,7 +86,7 @@ public:
         p.source_to(os);
         if (i++ != n) {
           os << ",";
-}
+        }
       }
       os << ")";
     }
@@ -98,7 +98,7 @@ public:
         t.source_to(os);
         if (i++ != n) {
           os << ":";
-}
+        }
       }
     }
   }
@@ -117,7 +117,7 @@ public:
                       [[maybe_unused]] const string &dst = "") const override {
     if (is_inline()) {
       return;
-}
+    }
 
     toc::asm_label(*this, os, indent, name());
     toc::indent(os, indent + 1, true);
@@ -150,19 +150,29 @@ public:
     tc.exit_func(name());
   }
 
-  [[nodiscard]] inline auto returns() const -> const vector<token> & { return returns_; }
+  [[nodiscard]] inline auto returns() const -> const vector<token> & {
+    return returns_;
+  }
 
-  [[nodiscard]] inline auto param(const size_t ix) const -> const stmt_def_func_param & {
+  [[nodiscard]] inline auto param(const size_t ix) const
+      -> const stmt_def_func_param & {
     return params_[ix];
   }
 
-  [[nodiscard]] inline auto params() const -> const vector<stmt_def_func_param> & { return params_; }
+  [[nodiscard]] inline auto params() const
+      -> const vector<stmt_def_func_param> & {
+    return params_;
+  }
 
   [[nodiscard]] inline auto code() const -> const stmt_block & { return code_; }
 
-  [[nodiscard]] inline auto name() const -> const string & { return name_.name(); }
+  [[nodiscard]] inline auto name() const -> const string & {
+    return name_.name();
+  }
 
-  [[nodiscard]] inline auto is_inline() const -> bool { return not inline_tk_.is_empty(); }
+  [[nodiscard]] inline auto is_inline() const -> bool {
+    return not inline_tk_.is_empty();
+  }
 
 private:
   inline void init_variables(toc &tc, ostream &os, size_t indent,
@@ -179,7 +189,7 @@ private:
 
     // define variables in the called context by mapping arguments to stack
     const size_t n{params_.size()};
-    size_t stk_ix{2 << 3}; // skip [rbp] and [return address] on stack
+    size_t stk_ix{2U << 3U}; // skip [rbp] and [return address] on stack
     for (size_t i = 0; i < n; i++) {
       const stmt_def_func_param &pm{params_[i]};
       const type &arg_type{pm.get_type()};

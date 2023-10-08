@@ -83,7 +83,9 @@ public:
     toc::asm_label(*this, os, indent, jmp_to_end);
   }
 
-  [[nodiscard]] inline auto is_bool() const -> bool { return eols_.index() == 1; }
+  [[nodiscard]] inline auto is_bool() const -> bool {
+    return eols_.index() == 1;
+  }
 
   [[nodiscard]] inline auto is_expression() const -> bool override {
     if (eols_.index() == 0) {
@@ -107,7 +109,8 @@ public:
     return eol.identifier();
   }
 
-  [[nodiscard]] inline auto get_unary_ops() const -> const unary_ops & override {
+  [[nodiscard]] inline auto get_unary_ops() const
+      -> const unary_ops & override {
     if (eols_.index() == 0) {
       const expr_ops_list &eol{get<expr_ops_list>(eols_)};
       return eol.get_unary_ops();

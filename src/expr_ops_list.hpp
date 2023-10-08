@@ -37,27 +37,27 @@ public:
       // if end of subexpression
       if (enclosed_ and t.is_next_char(')')) {
         break;
-}
+      }
 
       // if parsed in a function call argument list or in a boolean expression
       if (in_args) { // ? rewrite is_in_bool_expr
         // if in boolean expression exit when an operation is found
         if (t.is_peek_char('<') and not t.is_peek_char2('<')) {
           break;
-}
+        }
         if (t.is_peek_char('=')) {
           break;
-}
+        }
         if (t.is_peek_char('>') and not t.is_peek_char2('>')) {
           break;
-}
+        }
         // if in arguments exit when ',' or ')' is found
         if (t.is_peek_char(',')) {
           break;
-}
+        }
         if (t.is_peek_char(')')) {
           break;
-}
+        }
       }
 
       // next operation
@@ -101,8 +101,9 @@ public:
         ops_.pop_back();
         unique_ptr<statement> prev{std::move(exps_.back())};
         exps_.pop_back();
-        exps_.emplace_back(make_unique<expr_ops_list>(
-            tc, t, in_args, false, unary_ops{}, first_op_prec, std::move(prev)));
+        exps_.emplace_back(
+            make_unique<expr_ops_list>(tc, t, in_args, false, unary_ops{},
+                                       first_op_prec, std::move(prev)));
         continue;
       }
 
@@ -110,7 +111,7 @@ public:
       const char ch = t.next_char(); // read the peeked operator
       if (ch == '<' or ch == '>') {
         t.next_char(); // one more character for << and >>
-}
+      }
 
       // check if next statement is a subexpression
       unary_ops uo{t};
@@ -129,7 +130,7 @@ public:
       if (stm->tok().is_empty()) {
         throw compiler_error(*stm,
                              "unexpected '" + string{t.peek_char()} + "'");
-}
+      }
 
       exps_.push_back(std::move(stm));
     }
@@ -149,7 +150,7 @@ public:
 
     if (enclosed_) {
       os << "(";
-}
+    }
 
     exps_[0]->source_to(os);
     const size_t n{ops_.size()};
@@ -158,13 +159,13 @@ public:
       os << op;
       if (op == '<' or op == '>') {
         os << op;
-}
+      }
       exps_[i + 1]->source_to(os);
     }
 
     if (enclosed_) {
       os << ")";
-}
+    }
   }
 
   inline void compile(toc &tc, ostream &os, const size_t indent,
@@ -189,11 +190,11 @@ public:
   [[nodiscard]] inline auto is_expression() const -> bool override {
     if (not uops_.is_empty()) {
       return true;
-}
+    }
 
     if (exps_.size() == 1) {
       return exps_[0]->is_expression();
-}
+    }
 
     return true;
   }
@@ -204,10 +205,11 @@ public:
     return exps_[0]->identifier();
   }
 
-  [[nodiscard]] inline auto get_unary_ops() const -> const unary_ops & override {
+  [[nodiscard]] inline auto get_unary_ops() const
+      -> const unary_ops & override {
     if (exps_.size() == 1) {
       return exps_[0]->get_unary_ops();
-}
+    }
 
     return uops_;
   }
@@ -466,7 +468,7 @@ private:
     if (src_resolved.id_nasm == "rcx") {
       throw compiler_error(src, "cannot use 'rcx' as operand in shift because "
                                 "that registers is used");
-}
+    }
 
     const unary_ops &uops{src.get_unary_ops()};
     if (uops.is_empty()) {
@@ -571,7 +573,7 @@ private:
     if (src_resolved.id_nasm == "rdx" or src_resolved.id_nasm == "rax") {
       throw compiler_error(src, "cannot use 'rdx' or 'rax' as operands in "
                                 "division because those registers are used");
-}
+    }
 
     const unary_ops &uops = src.get_unary_ops();
     if (uops.is_empty()) {

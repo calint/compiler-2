@@ -58,8 +58,8 @@ public:
     for (size_t i = 1; i < n; i++) {
       const stmt_if_branch &br{branches_[i]};
       // 'else if' tokens as read from source
-      else_if_tokens_[((i - 1) << 1)].source_to(os);
-      else_if_tokens_[((i - 1) << 1) + 1].source_to(os);
+      else_if_tokens_[((i - 1)) << 1U].source_to(os);
+      else_if_tokens_[((i - 1) << 1U) + 1].source_to(os);
       br.source_to(os);
     }
     // the 'else' code

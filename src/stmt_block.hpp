@@ -19,14 +19,14 @@ public:
       if (t.is_next_char('}')) {
         if (not is_one_statement_) {
           break;
-}
+        }
         throw compiler_error(t, "unexpected '}' in single statement block");
       }
 
       token tk{t.next_token()};
       if (tk.is_empty()) {
         throw compiler_error(tk, "unexpected '" + string{t.peek_char()} + "'");
-}
+      }
 
       if (tk.is_name("var")) {
         stms_.emplace_back(make_unique<stmt_def_var>(tc, std::move(tk), t));
@@ -52,7 +52,7 @@ public:
 
       if (is_one_statement_ && not last_statement_considered_no_statment) {
         break;
-}
+      }
     }
     tc.exit_block();
     set_type(tc.get_type_void());
@@ -70,13 +70,13 @@ public:
     statement::source_to(os);
     if (not is_one_statement_) {
       os << "{";
-}
+    }
     for (const auto &s : stms_) {
       s->source_to(os);
-}
+    }
     if (not is_one_statement_) {
       os << "}";
-}
+    }
   }
 
   inline void compile(toc &tc, ostream &os, size_t indent,
@@ -84,7 +84,7 @@ public:
     tc.enter_block();
     for (const auto &s : stms_) {
       s->compile(tc, os, indent + 1);
-}
+    }
     tc.exit_block();
   }
 

@@ -28,13 +28,14 @@ auto main(int argc, char *args[]) -> int {
     if (read_file_to_string(src_file_name) != read_file_to_string("diff.baz")) {
       throw unexpected_exception("generated source differs. diff " +
                                  string{src_file_name} + " diff.baz");
-}
+    }
 
     // without jump optimizations
     //		 p.build(cout);
 
     // with jump optimizations
-    stringstream ss1, ss2;
+    stringstream ss1{};
+    stringstream ss2{};
     p.build(ss1);
     optimize_jumps_1(ss1, ss2);
     optimize_jumps_2(ss2, cout);
@@ -64,46 +65,48 @@ auto main(int argc, char *args[]) -> int {
 }
 
 // called from stmt_block to solve circular dependencies with loop, if and calls
-inline auto create_statement_from_tokenizer(toc &tc, token tk,
-                                                             unary_ops uops,
-                                                             tokenizer &t) -> unique_ptr<statement> {
+inline auto create_statement_from_tokenizer(toc &tc, token tk, unary_ops uops,
+                                            tokenizer &t)
+    -> unique_ptr<statement> {
   if (tk.is_name("loop")) {
     return make_unique<stmt_loop>(tc, std::move(tk), t);
-}
+  }
   if (tk.is_name("if")) {
     return make_unique<stmt_if>(tc, std::move(tk), t);
-}
+  }
   if (tk.is_name("mov")) {
     return make_unique<call_asm_mov>(tc, std::move(tk), t);
-}
+  }
   if (tk.is_name("syscall")) {
     return make_unique<call_asm_syscall>(tc, std::move(tk), t);
-}
+  }
   return make_unique<stmt_call>(tc, std::move(tk), std::move(uops), t);
 }
 
 // called from expr_ops_list to solve circular dependencies with calls
-inline auto create_statement_from_tokenizer(toc &tc,
-                                                             tokenizer &t) -> unique_ptr<statement> {
+inline auto create_statement_from_tokenizer(toc &tc, tokenizer &t)
+    -> unique_ptr<statement> {
   unary_ops uops{t};
   token tk = t.next_token();
   if (tk.is_name("")) {
     throw compiler_error(tk, "unexpected empty expression");
-}
+  }
 
   if (tk.is_name("#")) {
     if (!uops.is_empty()) {
       throw compiler_error(tk, "unexpected comment after unary ops");
-}
+    }
     // i.e.  print("hello") # comment
     return make_unique<stmt_comment>(tc, std::move(tk), t);
   }
   if (t.is_peek_char('(')) {
     // i.e.  f(...)
-    return create_statement_from_tokenizer(tc, std::move(tk), std::move(uops), t);
+    return create_statement_from_tokenizer(tc, std::move(tk), std::move(uops),
+                                           t);
   }
   // i.e. 0x80, rax, identifiers
-  unique_ptr<statement> st{make_unique<statement>(std::move(tk), std::move(uops))};
+  unique_ptr<statement> st{
+      make_unique<statement>(std::move(tk), std::move(uops))};
   const ident_resolved &ir{tc.resolve_identifier(*st, false)};
   st->set_type(ir.tp);
   return st;
@@ -148,7 +151,7 @@ static void optimize_jumps_1(istream &is, ostream &os) {
     getline(is, line1);
     if (is.eof()) {
       break;
-}
+    }
 
     if (!regex_search(line1, match, rxjmp)) {
       os << line1 << endl;
@@ -171,7 +174,7 @@ static void optimize_jumps_1(istream &is, ostream &os) {
       os << line1 << endl;
       for (const string &s : comments) {
         os << s << endl;
-}
+      }
       os << line2 << endl;
       continue;
     }
@@ -182,7 +185,7 @@ static void optimize_jumps_1(istream &is, ostream &os) {
       os << line1 << endl;
       for (const auto &s : comments) {
         os << s << endl;
-}
+      }
       os << line2 << endl;
       continue;
     }
@@ -190,7 +193,7 @@ static void optimize_jumps_1(istream &is, ostream &os) {
     // write the label without the preceding jmp
     for (const string &s : comments) {
       os << s << endl;
-}
+    }
     os << line2 << "  ; opt1" << endl;
   }
 }
@@ -215,7 +218,7 @@ static void optimize_jumps_2(istream &is, ostream &os) {
     getline(is, line1);
     if (is.eof()) {
       break;
-}
+    }
 
     if (!regex_search(line1, match, rxjxx)) {
       os << line1 << endl;
@@ -238,7 +241,7 @@ static void optimize_jumps_2(istream &is, ostream &os) {
       os << line1 << endl;
       for (const auto &s : comments2) {
         os << s << endl;
-}
+      }
       os << line2 << endl;
       continue;
     }
@@ -259,11 +262,11 @@ static void optimize_jumps_2(istream &is, ostream &os) {
       os << line1 << endl;
       for (const auto &s : comments2) {
         os << s << endl;
-}
+      }
       os << line2 << endl;
       for (const auto &s : comments3) {
         os << s << endl;
-}
+      }
       os << line3 << endl;
       continue;
     }
@@ -273,11 +276,11 @@ static void optimize_jumps_2(istream &is, ostream &os) {
       os << line1 << endl;
       for (const auto &s : comments2) {
         os << s << endl;
-}
+      }
       os << line2 << endl;
       for (const auto &s : comments3) {
         os << s << endl;
-}
+      }
       os << line3 << endl;
       continue;
     }
@@ -302,11 +305,11 @@ static void optimize_jumps_2(istream &is, ostream &os) {
       os << line1 << endl;
       for (const auto &s : comments2) {
         os << s << endl;
-}
+      }
       os << line2 << endl;
       for (const auto &s : comments3) {
         os << s << endl;
-}
+      }
       os << line3 << endl;
       continue;
     }
@@ -315,11 +318,11 @@ static void optimize_jumps_2(istream &is, ostream &os) {
     const string &ws{line1.substr(0, line1.find_first_not_of(" \t\n\r\f\v"))};
     for (const auto &s : comments2) {
       os << s << endl;
-}
+    }
     os << ws << jxx_inv << " " << jmplbl << "  ; opt2" << endl;
     for (const auto &s : comments3) {
       os << s << endl;
-}
+    }
     os << line3 << endl;
   }
 }
@@ -328,7 +331,7 @@ static auto read_file_to_string(const char *file_name) -> string {
   ifstream fs{file_name};
   if (not fs.is_open()) {
     throw unexpected_exception("cannot open file '" + string{file_name} + "'");
-}
+  }
   std::stringstream buf;
   buf << fs.rdbuf();
   return buf.str();

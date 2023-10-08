@@ -53,7 +53,7 @@ public:
 
       if (enclosed_ and t.is_next_char(')')) {
         return;
-}
+      }
 
       token tk{t.next_token()};
       if (not(tk.is_name("or") or tk.is_name("and"))) {
@@ -67,14 +67,14 @@ public:
         if (tk.is_name("and")) {
           // a and b or c -> (a and b) or c
           // first op is 'and', make sub-expression (a and b) ...
-          bool_ops_list bol{tc,      t, false, {}, true, std::move(bools_.back()),
-                            std::move(tk)};
+          bool_ops_list bol{
+              tc, t, false, {}, true, std::move(bools_.back()), std::move(tk)};
           bools_.pop_back();
           bools_.emplace_back(std::move(bol));
 
           if (enclosed_ and t.is_next_char(')')) {
             return;
-}
+          }
 
           token tk2 = t.next_token();
           if (not(tk2.is_name("or") or tk2.is_name("and"))) {
@@ -117,7 +117,7 @@ public:
 
       if (enclosed_ and t.is_next_char(')')) {
         return;
-}
+      }
 
       prv_op = tk;
       tk = t.next_token();
@@ -130,7 +130,7 @@ public:
     }
     if (enclosed_) {
       throw compiler_error(tok(), "expected ')' to close expression");
-}
+    }
   }
 
   inline bool_ops_list() = default;
@@ -178,9 +178,9 @@ public:
   }
 
   inline auto compile(toc &tc, ostream &os, const size_t indent,
-                                const string &jmp_to_if_false,
-                                const string &jmp_to_if_true,
-                                const bool inverted) const -> optional<bool> {
+                      const string &jmp_to_if_false,
+                      const string &jmp_to_if_true, const bool inverted) const
+      -> optional<bool> {
     toc::indent(os, indent, true);
     tc.source_comment(os, "?", inverted ? " inverted: " : " ", *this);
     // invert according to De Morgan's laws
@@ -213,7 +213,7 @@ public:
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
             if (const_eval) {
               return *const_eval;
-}
+            }
           } else {
             // invert according to De Morgan's laws
             // if not last element check if it is a 'or' or 'and' list
@@ -232,7 +232,7 @@ public:
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
             if (const_eval) {
               return *const_eval;
-}
+            }
           }
         } else {
           // if last in list jmp_false is next bool eval
@@ -240,7 +240,7 @@ public:
               el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
           if (const_eval) {
             return *const_eval;
-}
+          }
         }
         continue;
       }
@@ -258,14 +258,14 @@ public:
             if (const_eval and *const_eval) {
               // constant evaluated to true, short-circuit
               return *const_eval;
-}
+            }
           } else if (ops_[i].is_name("and")) {
             optional<bool> const_eval{
                 e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
             if (const_eval and not *const_eval) {
               // constant evaluated to false, short-circuit
               return *const_eval;
-}
+            }
           } else {
             throw unexpected_exception("expected 'or' or 'and'");
           }
@@ -274,7 +274,7 @@ public:
               e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
           if (const_eval) { // constant evaluated
             return *const_eval;
-}
+          }
           // if last element and not yet jumped to false then jump to true
           toc::asm_jmp(*this, os, indent, jmp_to_if_true);
         }
@@ -289,14 +289,14 @@ public:
             if (const_eval and *const_eval) {
               // constant evaluated to true, short-circuit
               return *const_eval;
-}
+            }
           } else if (ops_[i].is_name("or")) {
             optional<bool> const_eval{
                 e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
             if (const_eval and not *const_eval) {
               // constant evaluated to false, short-circuit
               return *const_eval;
-}
+            }
           } else {
             throw unexpected_exception("expected 'or' or 'and'");
           }
@@ -305,7 +305,7 @@ public:
               e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
           if (const_eval) { // constant evaluated
             return *const_eval;
-}
+          }
           // if last element and not yet jumped to false then jump to true
           toc::asm_jmp(*this, os, indent, jmp_to_if_true);
         }
@@ -314,17 +314,17 @@ public:
     return nullopt;
   }
 
-  [[nodiscard]] inline auto
-  is_expression() const -> bool override { // ? assumes it is not an expression
+  [[nodiscard]] inline auto is_expression() const
+      -> bool override { // ? assumes it is not an expression
     if (bools_.size() > 1) {
       return true;
-}
+    }
 
     assert(!bools_.empty());
 
     if (bools_[0].index() == 0) {
       return get<bool_op>(bools_[0]).is_expression();
-}
+    }
 
     return get<bool_ops_list>(bools_[0]).is_expression();
   }
@@ -333,31 +333,33 @@ public:
     if (bools_.size() > 1) {
       throw unexpected_exception("unexpected code path " + string{__FILE__} +
                                  ":" + to_string(__LINE__));
-}
+    }
 
     assert(!bools_.empty());
 
     if (bools_[0].index() == 0) {
       return get<bool_op>(bools_[0]).identifier();
-}
+    }
 
     return get<bool_ops_list>(bools_[0]).identifier();
   }
 
 private:
-  inline static auto
-  cmp_label_from(const toc &tc, const variant<bool_op, bool_ops_list> &v) -> string {
+  inline static auto cmp_label_from(const toc &tc,
+                                    const variant<bool_op, bool_ops_list> &v)
+      -> string {
     if (v.index() == 1) {
       return get<bool_ops_list>(v).cmp_bgn_label(tc);
-}
+    }
 
     return get<bool_op>(v).cmp_bgn_label(tc);
   }
 
-  inline static auto token_from(const variant<bool_op, bool_ops_list> &bop) -> token {
+  inline static auto token_from(const variant<bool_op, bool_ops_list> &bop)
+      -> token {
     if (bop.index() == 0) {
       return get<bool_op>(bop).tok();
-}
+    }
 
     return get<bool_ops_list>(bop).tok();
   }

@@ -15,5 +15,7 @@ public:
 
   inline ~expression() override = default;
 
-  [[nodiscard]] inline auto is_expression() const -> bool override { return true; }
+  [[nodiscard]] inline auto is_expression() const -> bool override {
+    return true;
+  }
 };

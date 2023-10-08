@@ -25,12 +25,12 @@ public:
     if (t.is_next_char('=')) {
       if (not t.is_next_char('=')) {
         throw compiler_error(t, "expected '=='");
-}
+      }
       op_ = "==";
     } else if (t.is_next_char('!')) {
       if (not t.is_next_char('=')) {
         throw compiler_error(t, "expected '!='");
-}
+      }
       op_ = "!=";
     } else if (t.is_next_char('<')) {
       if (t.is_next_char('=')) {
@@ -69,7 +69,7 @@ public:
 
     for (const token &e : nots_) {
       e.source_to(os);
-}
+    }
 
     lhs_.source_to(os);
 
@@ -88,8 +88,8 @@ public:
   }
 
   inline auto compile_or(toc &tc, ostream &os, size_t indent,
-                                   const string &jmp_to_if_true,
-                                   const bool inverted) const -> optional<bool> {
+                         const string &jmp_to_if_true,
+                         const bool inverted) const -> optional<bool> {
     const bool invert{inverted ? not is_not_ : is_not_};
     toc::indent(os, indent, true);
     tc.source_comment(os, "?", inverted ? " 'or' inverted: " : " ", *this);
@@ -102,7 +102,7 @@ public:
           bool b{lhs_.get_unary_ops().evaluate_constant(ir.const_value) != 0};
           if (invert) {
             b = !b;
-}
+          }
           toc::indent(os, indent, true);
           os << "const eval to " << (b ? "true" : "false") << endl;
           if (b) {
@@ -129,7 +129,7 @@ public:
             rhs_.get_unary_ops().evaluate_constant(rhs_resolved.const_value))};
         if (invert) {
           b = !b;
-}
+        }
         toc::indent(os, indent, true);
         os << "const eval to " << (b ? "true" : "false") << endl;
         if (b) {
@@ -147,8 +147,8 @@ public:
   }
 
   inline auto compile_and(toc &tc, ostream &os, size_t indent,
-                                    const string &jmp_to_if_false,
-                                    const bool inverted) const -> optional<bool> {
+                          const string &jmp_to_if_false,
+                          const bool inverted) const -> optional<bool> {
     const bool invert{inverted ? not is_not_ : is_not_};
     toc::indent(os, indent, true);
     tc.source_comment(os, "?", inverted ? " 'and' inverted: " : " ", *this);
@@ -161,7 +161,7 @@ public:
           bool b{lhs_.get_unary_ops().evaluate_constant(ir.const_value) != 0};
           if (invert) {
             b = !b;
-}
+          }
           toc::indent(os, indent, true);
           os << "const eval to " << (b ? "true" : "false") << endl;
           if (not b) {
@@ -188,7 +188,7 @@ public:
             rhs_.get_unary_ops().evaluate_constant(rhs_resolved.const_value))};
         if (invert) {
           b = !b;
-}
+        }
         toc::indent(os, indent, true);
         os << "const eval to " << (b ? "true" : "false") << endl;
         if (not b) {
@@ -220,7 +220,9 @@ public:
                                ":" + to_string(__LINE__));
   }
 
-  [[nodiscard]] inline auto is_expression() const -> bool override { return is_expression_; }
+  [[nodiscard]] inline auto is_expression() const -> bool override {
+    return is_expression_;
+  }
 
 private:
   inline void resolve_if_op_is_expression(toc &tc) {
@@ -261,19 +263,19 @@ private:
                                    const long int rh) -> bool {
     if (op == "==") {
       return lh == rh;
-}
+    }
     if (op == "<") {
       return lh < rh;
-}
+    }
     if (op == "<=") {
       return lh <= rh;
-}
+    }
     if (op == ">") {
       return lh > rh;
-}
+    }
     if (op == ">=") {
       return lh >= rh;
-}
+    }
     throw unexpected_exception("unexpected code path " + string{__FILE__} +
                                ":" + to_string(__LINE__));
   }
@@ -360,8 +362,9 @@ private:
   }
 
   inline static auto resolve_expr(toc &tc, ostream &os, size_t indent,
-                                    const expr_ops_list &exp,
-                                    vector<string> &allocated_registers) -> string {
+                                  const expr_ops_list &exp,
+                                  vector<string> &allocated_registers)
+      -> string {
     if (exp.is_expression()) {
       const string &reg{tc.alloc_scratch_register(exp, os, indent)};
       allocated_registers.push_back(reg);
@@ -372,11 +375,11 @@ private:
     const ident_resolved &id_r{tc.resolve_identifier(exp, true)};
     if (id_r.is_const()) {
       return exp.get_unary_ops().as_string() + id_r.id_nasm;
-}
+    }
 
     if (exp.get_unary_ops().is_empty()) {
       return id_r.id_nasm;
-}
+    }
 
     const string &reg = tc.alloc_scratch_register(exp, os, indent);
     allocated_registers.push_back(reg);

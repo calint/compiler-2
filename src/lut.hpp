@@ -58,7 +58,9 @@ private:
   struct el {
     string key;
     T data;
-    [[nodiscard]] inline auto is_key(const string &k) const -> bool { return k == key; }
+    [[nodiscard]] inline auto is_key(const string &k) const -> bool {
+      return k == key;
+    }
   };
   vector<el> elems_{};
   mutable const el *last_has_el{};

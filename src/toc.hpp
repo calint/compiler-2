@@ -63,9 +63,13 @@ public:
     vars_.put(name, {name, tpe, declared_at, stack_idx, nasm_ident, initiated});
   }
 
-  inline auto allocated_stack_size() const -> size_t { return allocated_stack_; }
+  inline auto allocated_stack_size() const -> size_t {
+    return allocated_stack_;
+  }
 
-  inline auto has_var(const string &name) const -> bool { return vars_.has(name); }
+  inline auto has_var(const string &name) const -> bool {
+    return vars_.has(name);
+  }
 
   inline auto get_var_ref(const string &name) -> var_meta & {
     return vars_.get_ref(name);
@@ -87,13 +91,19 @@ public:
 
   inline auto is_name(const string &nm) const -> bool { return name_ == nm; }
 
-  inline auto has_alias(const string &nm) const -> bool { return aliases_.has(nm); }
+  inline auto has_alias(const string &nm) const -> bool {
+    return aliases_.has(nm);
+  }
 
-  inline auto get_alias(const string &nm) const -> string { return aliases_.get(nm); }
+  inline auto get_alias(const string &nm) const -> string {
+    return aliases_.get(nm);
+  }
 
   inline auto name() const -> const string & { return name_; }
 
-  inline auto func_ret_label() const -> const string & { return func_ret_label_; }
+  inline auto func_ret_label() const -> const string & {
+    return func_ret_label_;
+  }
 
   inline auto inline_call_path() const -> const string & { return call_path_; }
 
@@ -148,17 +158,28 @@ struct ident_resolved final {
   const type &tp;
   ident_type ident_type{ident_type::CONST};
 
-  [[nodiscard]] inline auto is_const() const -> bool { return ident_type == ident_type::CONST; }
-  [[nodiscard]] inline auto is_var() const -> bool { return ident_type == ident_type::VAR; }
-  [[nodiscard]] inline auto is_register() const -> bool { return ident_type == ident_type::REGISTER; }
-  [[nodiscard]] inline auto is_field() const -> bool { return ident_type == ident_type::FIELD; }
-  [[nodiscard]] inline auto is_implied() const -> bool { return ident_type == ident_type::IMPLIED; }
+  [[nodiscard]] inline auto is_const() const -> bool {
+    return ident_type == ident_type::CONST;
+  }
+  [[nodiscard]] inline auto is_var() const -> bool {
+    return ident_type == ident_type::VAR;
+  }
+  [[nodiscard]] inline auto is_register() const -> bool {
+    return ident_type == ident_type::REGISTER;
+  }
+  [[nodiscard]] inline auto is_field() const -> bool {
+    return ident_type == ident_type::FIELD;
+  }
+  [[nodiscard]] inline auto is_implied() const -> bool {
+    return ident_type == ident_type::IMPLIED;
+  }
 };
 
 class baz_ident final {
 public:
   inline explicit baz_ident(const string &id) : id_{id} {
-    size_t start{0}, end{0};
+    size_t start{0};
+    size_t end{0};
     while ((end = id.find('.', start)) != string::npos) {
       path_.push_back(id.substr(start, end - start));
       start = end + 1;
@@ -168,9 +189,13 @@ public:
 
   [[nodiscard]] inline auto id() const -> const string & { return id_; }
 
-  [[nodiscard]] inline auto id_base() const -> const string & { return path_[0]; }
+  [[nodiscard]] inline auto id_base() const -> const string & {
+    return path_[0];
+  }
 
-  [[nodiscard]] inline auto path() const -> const vector<string> & { return path_; }
+  [[nodiscard]] inline auto path() const -> const vector<string> & {
+    return path_;
+  }
 
 private:
   string id_{};
@@ -218,20 +243,21 @@ public:
     funcs_.put(name, {return_type, ref, st.tok()});
   }
 
-  inline auto get_func_or_throw(const statement &st,
-                                                const string &name) const -> const stmt_def_func & {
+  inline auto get_func_or_throw(const statement &st, const string &name) const
+      -> const stmt_def_func & {
     if (not funcs_.has(name)) {
       throw compiler_error(st, "function '" + name + "' not found");
-}
+    }
 
     return *funcs_.get_const_ref(name).def;
   }
 
   inline auto get_func_return_type_or_throw(const statement &st,
-                                                   const string &name) const -> const type & {
+                                            const string &name) const
+      -> const type & {
     if (not funcs_.has(name)) {
       throw compiler_error(st, "function '" + name + "' not found");
-}
+    }
 
     return funcs_.get_const_ref(name).tp;
   }
@@ -239,16 +265,16 @@ public:
   inline void add_type(const statement &st, const type &tp) {
     if (types_.has(tp.name())) {
       throw compiler_error(st, "type '" + tp.name() + "' already defined");
-}
+    }
 
     types_.put(tp.name(), tp);
   }
 
-  inline auto get_type_or_throw(const statement &st,
-                                       const string &name) const -> const type & {
+  inline auto get_type_or_throw(const statement &st, const string &name) const
+      -> const type & {
     if (not types_.has(name)) {
       throw compiler_error(st, "type '" + name + "' not found");
-}
+    }
 
     return types_.get_const_ref(name);
   }
@@ -268,15 +294,16 @@ public:
   }
 
   inline static auto line_number_for_char_index(const size_t char_index,
-                                                  const char *ptr,
-                                                  size_t &char_in_line) -> size_t {
+                                                const char *ptr,
+                                                size_t &char_in_line)
+      -> size_t {
     size_t ix{0};
     size_t lix{0};
     size_t lineno{1};
     while (true) {
       if (ix == char_index) {
         break;
-}
+      }
       if (*ptr++ == '\n') {
         lineno++;
         ix++;
@@ -308,25 +335,26 @@ public:
   }
 
   inline auto resolve_identifier(const statement &st,
-                                           const bool must_be_initiated) const -> ident_resolved {
+                                 const bool must_be_initiated) const
+      -> ident_resolved {
     const ident_resolved &ir{
         resolve_ident_or_empty(st, st.identifier(), must_be_initiated)};
     if (not ir.id_nasm.empty()) {
       return ir;
-}
+    }
 
     throw compiler_error(st,
                          "cannot resolve identifier '" + st.identifier() + "'");
   }
 
-  inline auto resolve_identifier(const statement &st,
-                                           const string &ident,
-                                           const bool must_be_initiated) const -> ident_resolved {
+  inline auto resolve_identifier(const statement &st, const string &ident,
+                                 const bool must_be_initiated) const
+      -> ident_resolved {
     const ident_resolved &ir{
         resolve_ident_or_empty(st, ident, must_be_initiated)};
     if (not ir.id_nasm.empty()) {
       return ir;
-}
+    }
 
     throw compiler_error(st.tok(), "cannot resolve identifier '" + ident + "'");
   }
@@ -411,11 +439,11 @@ public:
   }
 
   inline auto alloc_scratch_register(const statement &st, ostream &os,
-                                              const size_t indnt) -> const string & {
+                                     const size_t indnt) -> const string & {
     if (scratch_registers_.empty()) {
       throw compiler_error(
           st, "out of scratch registers. try to reduce expression complexity");
-}
+    }
 
     const string &r{scratch_registers_.back()};
     scratch_registers_.pop_back();
@@ -425,11 +453,11 @@ public:
 
     const size_t n{8 - scratch_registers_.size()};
     if (n > max_usage_scratch_regs_) { // ? stmt_assign_var tries 2 different
-                                     // methods making this metric inaccurate if
-                                     // a discarded method uses more registers
-                                     // than the selected method
+      // methods making this metric inaccurate if
+      // a discarded method uses more registers
+      // than the selected method
       max_usage_scratch_regs_ = n;
-}
+    }
 
     allocated_registers_.push_back(r);
     allocated_registers_loc_.push_back(source_location_hr(st.tok()));
@@ -459,7 +487,8 @@ public:
   }
 
   inline auto alloc_named_register(const statement &st, ostream &os,
-                                   const size_t indnt, const string &reg) -> bool {
+                                   const size_t indnt, const string &reg)
+      -> bool {
     indent(os, indnt, true);
     os << "alloc " << reg;
     auto r{find(named_registers_.begin(), named_registers_.end(), reg)};
@@ -496,15 +525,16 @@ public:
     initiated_registers_.erase(reg);
   }
 
-  inline auto get_loop_label_or_throw(const statement &st) const -> const string & {
+  inline auto get_loop_label_or_throw(const statement &st) const
+      -> const string & {
     size_t i{frames_.size()};
     while (i--) {
       if (frames_[i].is_loop()) {
         return frames_[i].name();
-}
+      }
       if (frames_[i].is_func()) {
         throw compiler_error(st, "not in a loop");
-}
+      }
     }
     throw compiler_error(st, "unexpected frames");
   }
@@ -514,29 +544,29 @@ public:
     while (i--) {
       if (frames_[i].is_func()) {
         return frames_[i].inline_call_path();
-}
+      }
     }
     throw compiler_error(tk, "not in a function");
   }
 
-  inline auto
-  get_func_return_label_or_throw(const statement &st) const -> const string & {
+  inline auto get_func_return_label_or_throw(const statement &st) const
+      -> const string & {
     size_t i{frames_.size()};
     while (i--) {
       if (frames_[i].is_func()) {
         return frames_[i].func_ret_label();
-}
+      }
     }
     throw compiler_error(st, "not in a function");
   }
 
-  inline auto
-  get_func_return_var_name_or_throw(const statement &st) const -> const string & {
+  inline auto get_func_return_var_name_or_throw(const statement &st) const
+      -> const string & {
     size_t i{frames_.size()};
     while (i--) {
       if (frames_[i].is_func()) {
         return frames_[i].func_ret_var();
-}
+      }
     }
     throw compiler_error(st, "not in a function");
   }
@@ -611,7 +641,7 @@ public:
       const string &reg{allocated_registers_[i]};
       if (not is_register_initiated(reg)) {
         continue;
-}
+      }
       // push only registers that contain a valid value
       asm_push(st, os, indnt, reg);
       nregs_pushed_on_stack++;
@@ -650,7 +680,7 @@ public:
       while (true) {
         if (i == alloc_reg_idx) {
           break;
-}
+        }
         i--;
         const string &reg{allocated_registers_[i]};
         // don't pop registers used to pass arguments
@@ -673,7 +703,7 @@ public:
       while (true) {
         if (i == alloc_reg_idx) {
           break;
-}
+        }
         i--;
         const string &reg{allocated_registers_[i]};
         // don't pop registers used to pass arguments
@@ -708,7 +738,7 @@ public:
     if (op == "mov") {
       if (dst_resolved == src_resolved) {
         return;
-}
+      }
 
       if (is_identifier_register(dst_resolved)) {
         // for optimization of push/pop when calling a function
@@ -770,7 +800,7 @@ public:
       throw compiler_error(st, "cannot move '" + src_resolved + "' to '" +
                                    dst_resolved +
                                    "' because it would be truncated");
-}
+    }
 
     // constant
     indent(os, indnt);
@@ -780,24 +810,24 @@ public:
   inline static auto is_operand_memory(const string &operand) -> bool {
     return operand.find_first_of('[') != string::npos;
   }
-  inline auto
-  get_size_from_operand(const statement &st,
-                        const string &operand) const -> size_t { // ? sort of ugly
+  inline auto get_size_from_operand(const statement &st,
+                                    const string &operand) const
+      -> size_t { // ? sort of ugly
     if (operand.starts_with("qword")) {
       return 8;
-}
+    }
     if (operand.starts_with("dword")) {
       return 4;
-}
+    }
     if (operand.starts_with("word")) {
       return 2;
-}
+    }
     if (operand.starts_with("byte")) {
       return 1;
-}
+    }
     if (is_identifier_register(operand)) {
       return get_size_from_operand_register(st, operand);
-}
+    }
 
     // constant
     return get_type_default().size();
@@ -806,208 +836,210 @@ public:
   }
 
   inline static auto get_size_from_operand_register(const statement &st,
-                                                      const string &operand) -> size_t {
+                                                    const string &operand)
+      -> size_t {
     if (operand == "rax") {
       return 8;
-}
+    }
     if (operand == "rbx") {
       return 8;
-}
+    }
     if (operand == "rcx") {
       return 8;
-}
+    }
     if (operand == "rdx") {
       return 8;
-}
+    }
     if (operand == "rbp") {
       return 8;
-}
+    }
     if (operand == "rsi") {
       return 8;
-}
+    }
     if (operand == "rdi") {
       return 8;
-}
+    }
     if (operand == "rsp") {
       return 8;
-}
+    }
     if (operand == "r8") {
       return 8;
-}
+    }
     if (operand == "r9") {
       return 8;
-}
+    }
     if (operand == "r10") {
       return 8;
-}
+    }
     if (operand == "r11") {
       return 8;
-}
+    }
     if (operand == "r12") {
       return 8;
-}
+    }
     if (operand == "r13") {
       return 8;
-}
+    }
     if (operand == "r14") {
       return 8;
-}
+    }
     if (operand == "r15") {
       return 8;
-}
+    }
 
     if (operand == "eax") {
       return 4;
-}
+    }
     if (operand == "ebx") {
       return 4;
-}
+    }
     if (operand == "ecx") {
       return 4;
-}
+    }
     if (operand == "edx") {
       return 4;
-}
+    }
     if (operand == "ebp") {
       return 4;
-}
+    }
     if (operand == "esi") {
       return 4;
-}
+    }
     if (operand == "edi") {
       return 4;
-}
+    }
     if (operand == "esp") {
       return 4;
-}
+    }
     if (operand == "r8d") {
       return 4;
-}
+    }
     if (operand == "r9d") {
       return 4;
-}
+    }
     if (operand == "r10d") {
       return 4;
-}
+    }
     if (operand == "r11d") {
       return 4;
-}
+    }
     if (operand == "r12d") {
       return 4;
-}
+    }
     if (operand == "r13d") {
       return 4;
-}
+    }
     if (operand == "r14d") {
       return 4;
-}
+    }
     if (operand == "r15d") {
       return 4;
-}
+    }
 
     if (operand == "ax") {
       return 2;
-}
+    }
     if (operand == "bx") {
       return 2;
-}
+    }
     if (operand == "cx") {
       return 2;
-}
+    }
     if (operand == "dx") {
       return 2;
-}
+    }
     if (operand == "bp") {
       return 2;
-}
+    }
     if (operand == "si") {
       return 2;
-}
+    }
     if (operand == "di") {
       return 2;
-}
+    }
     if (operand == "sp") {
       return 2;
-}
+    }
     if (operand == "r8w") {
       return 2;
-}
+    }
     if (operand == "r9w") {
       return 2;
-}
+    }
     if (operand == "r10w") {
       return 2;
-}
+    }
     if (operand == "r11w") {
       return 2;
-}
+    }
     if (operand == "r12w") {
       return 2;
-}
+    }
     if (operand == "r13w") {
       return 2;
-}
+    }
     if (operand == "r14w") {
       return 2;
-}
+    }
     if (operand == "r15w") {
       return 2;
-}
+    }
 
     if (operand == "al") {
       return 1;
-}
+    }
     if (operand == "ah") {
       return 1;
-}
+    }
     if (operand == "bl") {
       return 1;
-}
+    }
     if (operand == "bh") {
       return 1;
-}
+    }
     if (operand == "cl") {
       return 1;
-}
+    }
     if (operand == "ch") {
       return 1;
-}
+    }
     if (operand == "dl") {
       return 1;
-}
+    }
     if (operand == "dh") {
       return 1;
-}
+    }
     if (operand == "r8b") {
       return 1;
-}
+    }
     if (operand == "r9b") {
       return 1;
-}
+    }
     if (operand == "r10b") {
       return 1;
-}
+    }
     if (operand == "r11b") {
       return 1;
-}
+    }
     if (operand == "r12b") {
       return 1;
-}
+    }
     if (operand == "r13b") {
       return 1;
-}
+    }
     if (operand == "r14b") {
       return 1;
-}
+    }
     if (operand == "r15b") {
       return 1;
-}
+    }
 
     throw compiler_error(st, "unknown register '" + operand + "'");
   }
-  inline static auto
-  get_register_operand_for_size(const statement &st, const string &operand,
-                                const size_t size) -> string { // ? sort of ugly
+  inline static auto get_register_operand_for_size(const statement &st,
+                                                   const string &operand,
+                                                   const size_t size)
+      -> string { // ? sort of ugly
     if (operand == "rax") {
       switch (size) {
       case 8:
@@ -1198,7 +1230,7 @@ public:
 
     if (fields_.has(id)) {
       return; // a field, it is initiated
-}
+    }
 
     if (is_identifier_register(id)) {
       initiated_registers_.insert(id); // ? this might not be necessary since it
@@ -1216,7 +1248,9 @@ public:
 
   inline void set_type_default(const type &tp) { type_default_ = &tp; }
 
-  inline auto get_type_default() const -> const type & { return *type_default_; }
+  inline auto get_type_default() const -> const type & {
+    return *type_default_;
+  }
 
   inline void set_type_bool(const type &tp) { type_bool_ = &tp; }
 
@@ -1227,18 +1261,18 @@ public:
     if (indnt == 0) {
       if (comment) {
         os << ";";
-}
+      }
       return;
     }
     os << (comment ? ";" : " ");
     for (size_t i{0}; i < indnt; i++) {
       os << "  ";
-}
+    }
   }
 
 private:
-  inline auto
-  get_id_and_frame_for_identifier(const string &name) -> pair<string, frame &> {
+  inline auto get_id_and_frame_for_identifier(const string &name)
+      -> pair<string, frame &> {
     string id{name};
     // traverse the frames and resolve the id_nasm (which might be an alias) to
     // a variable, field, register or constant
@@ -1249,7 +1283,7 @@ private:
         // is it an alias defined by an argument in the function?
         if (not frames_[i].has_alias(id)) {
           break;
-}
+        }
         // yes, continue resolving alias until it is
         // a variable, field, register or constant
         id = frames_[i].get_alias(id);
@@ -1258,7 +1292,7 @@ private:
       // does scope contain the variable
       if (frames_[i].has_var(id)) {
         break;
-}
+      }
     }
     return {std::move(id), frames_[i]};
   }
@@ -1276,14 +1310,14 @@ private:
       n += f.allocated_stack_size();
       if (f.is_func() && not f.func_is_inline()) {
         break;
-}
+      }
     }
     return n;
   }
 
-  inline auto
-  resolve_ident_or_empty(const statement &st, const string &ident,
-                         const bool must_be_initiated) const -> ident_resolved {
+  inline auto resolve_ident_or_empty(const statement &st, const string &ident,
+                                     const bool must_be_initiated) const
+      -> ident_resolved {
     const baz_ident bid{ident};
     string id{bid.id_base()};
     // traverse the frames and resolve the id_nasm (which might be an alias) to
@@ -1295,22 +1329,22 @@ private:
         // is it an alias defined by an argument in the function?
         if (not frames_[i].has_alias(id)) {
           break;
-}
+        }
         // yes, continue resolving alias until it is
         // a variable, field, register or constant
         id = frames_[i].get_alias(id);
         if (i == 0) {
           break;
-}
+        }
         continue;
       }
       // does scope contain the variable
       if (frames_[i].has_var(id)) {
         break;
-}
+      }
       if (i == 0) {
         break;
-}
+      }
     }
 
     // is 'id_nasm' a variable?
@@ -1319,7 +1353,7 @@ private:
       if (must_be_initiated and not var.initiated) {
         throw compiler_error(st,
                              "variable '" + var.name + "' is not initiated");
-}
+      }
       const string &acc = var.tp.accessor(st.tok(), bid.path(), var.stack_idx);
       return {ident, acc, 0, var.tp, ident_resolved::ident_type::VAR};
     }
@@ -1328,7 +1362,7 @@ private:
     if (is_identifier_register(id)) {
       if (must_be_initiated and not is_register_initiated(id)) {
         throw compiler_error(st, "register '" + id + "' is not initiated");
-}
+      }
 
       return {ident, id, 0, get_type_default(),
               ident_resolved::ident_type::REGISTER}; // ? unary ops?
@@ -1347,7 +1381,7 @@ private:
       if (fm.is_str) {
         return {ident, id, 0, get_type_default(),
                 ident_resolved::ident_type::FIELD};
-}
+      }
       // ? assumes qword
       return {ident, "qword[" + id + "]", 0, get_type_default(),
               ident_resolved::ident_type::FIELD};
@@ -1358,14 +1392,14 @@ private:
     if (!*ep) {
       return {ident, id, const_value, get_type_default(),
               ident_resolved::ident_type::CONST};
-}
+    }
 
     if (id.starts_with("0x")) { // hex
       const long int value{strtol(id.c_str() + 2, &ep, 16)};
       if (!*ep) {
         return {ident, id, value, get_type_default(),
                 ident_resolved::ident_type::CONST};
-}
+      }
     }
 
     if (id.starts_with("0b")) { // binary
@@ -1373,7 +1407,7 @@ private:
       if (!*ep) {
         return {ident, id, value, get_type_default(),
                 ident_resolved::ident_type::CONST};
-}
+      }
     }
 
     if (funcs_.has(id)) {
@@ -1384,11 +1418,11 @@ private:
 
     if (id == "true") {
       return {ident, id, 1, get_type_bool(), ident_resolved::ident_type::CONST};
-}
+    }
 
     if (id == "false") {
       return {ident, id, 0, get_type_bool(), ident_resolved::ident_type::CONST};
-}
+    }
 
     // not resolved, return empty answer
     return {"", "", 0, get_type_void(), ident_resolved::ident_type::CONST};
@@ -1397,7 +1431,7 @@ private:
   inline void check_usage() {
     if (frames_.size() > max_frame_count_) {
       max_frame_count_ = frames_.size();
-}
+    }
   }
 
   vector<frame> frames_{};

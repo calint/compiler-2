@@ -79,7 +79,7 @@ private:
     while (getline(ss, line)) {
       if (regex_search(line, rxcomment)) {
         continue;
-}
+      }
       n++;
     }
     return n;

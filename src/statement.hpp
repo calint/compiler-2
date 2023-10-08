@@ -32,17 +32,27 @@ public:
 
   [[nodiscard]] inline auto tok() const -> const token & { return token_; }
 
-  [[nodiscard]] inline virtual auto is_in_data_section() const -> bool { return false; }
+  [[nodiscard]] inline virtual auto is_in_data_section() const -> bool {
+    return false;
+  }
 
-  [[nodiscard]] inline virtual auto is_expression() const -> bool { return false; }
+  [[nodiscard]] inline virtual auto is_expression() const -> bool {
+    return false;
+  }
 
-  [[nodiscard]] inline virtual auto identifier() const -> const string & { return token_.name(); }
+  [[nodiscard]] inline virtual auto identifier() const -> const string & {
+    return token_.name();
+  }
 
-  [[nodiscard]] inline virtual auto get_unary_ops() const -> const unary_ops & { return uops_; }
+  [[nodiscard]] inline virtual auto get_unary_ops() const -> const unary_ops & {
+    return uops_;
+  }
 
   inline void set_type(const type &tp) { type_ = &tp; }
 
-  [[nodiscard]] inline virtual auto get_type() const -> const type & { return *type_; }
+  [[nodiscard]] inline virtual auto get_type() const -> const type & {
+    return *type_;
+  }
 
 private:
   token token_{};

@@ -63,7 +63,7 @@ public:
         v = -v;
         break;
       case '~':
-        v = ~v;
+        v = ~v; //NOLINT(hicpp-signed-bitwise)
         break;
         //			case'!':v=v^1;break;
       default:

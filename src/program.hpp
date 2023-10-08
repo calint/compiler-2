@@ -22,7 +22,7 @@ public:
     const vector<string> assem{"mov", "syscall"};
     for (const string &s : assem) {
       tc_.add_func(prg, s, type_void, nullptr);
-}
+    }
 
     tc_.add_type(prg, type_i64);
     tc_.add_type(prg, type_i32);
@@ -41,7 +41,7 @@ public:
       if (tk.is_empty()) {
         if (t.is_eos()) {
           break;
-}
+        }
         throw compiler_error(tk, "unexpected '" + string{t.next_char()} + "'");
       }
       if (tk.is_name("field")) {
@@ -71,7 +71,7 @@ public:
   inline void source_to(ostream &os) const {
     for (const auto &s : stms_) {
       s->source_to(os);
-}
+    }
   }
 
   inline void compile(toc &tc, ostream &os, size_t indent,
@@ -83,8 +83,8 @@ public:
     for (const auto &s : stms_) {
       if (s->is_in_data_section()) {
         s->compile(tc, os, indent);
-}
-}
+      }
+    }
 
     os << "\nsection .bss\nalign 4\nstk resd 1024\nstk.end:\n";
     os << "\nsection .text\nalign 4\nbits 64\nglobal _start\n_start:\nmov "
@@ -92,14 +92,14 @@ public:
     for (const auto &s : stms_) {
       if (not s->is_in_data_section()) {
         s->compile(tc, os, indent);
-}
-}
+      }
+    }
 
     // get the main function and compile
     const stmt_def_func &main = tc.get_func_or_throw(prg, "main");
     if (not main.is_inline()) {
       throw compiler_error(main, "main function must be declared inline");
-}
+    }
 
     os << "main:" << endl;
     tc.enter_func("main", "", "", true, "");
