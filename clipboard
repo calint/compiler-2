@@ -83,29 +83,29 @@ move constructor
 #include <string>
 
 int main() {
-  std::string str = "This is a test string [more or less].";
-  std::regex re("\\[(.*?)\\]");
-  std::smatch match;
+  string str = "This is a test string [more or less].";
+  regex re("\\[(.*?)\\]");
+  smatch match;
 
-  if (std::regex_search(str, match, re)) {
-    std::cout << match[1] << std::endl;
+  if (regex_search(str, match, re)) {
+    cout << match[1] << endl;
   }
   return 0;
 }
 
 
-std::regex regexPattern(R"(^\s*jmp\s?(.?)\s*$)");
+regex regexPattern(R"(^\s*jmp\s?(.?)\s*$)");
 
 int main() {
-   std::string date_string = "2023-03-17";
-   std::regex date_regex{ R"((\d{4})-(\d{2})-(\d{2}))" };
-   std::smatch match;
-   if (std::regex_search(date_string, match, date_regex)) {
-      std::cout << "Year: " << match[1].str() << std::endl;
-      std::cout << "Month: " << match[2].str() << std::endl;
-      std::cout << "Day: " << match[3].str() << std::endl;
+   string date_string = "2023-03-17";
+   regex date_regex{ R"((\d{4})-(\d{2})-(\d{2}))" };
+   smatch match;
+   if (regex_search(date_string, match, date_regex)) {
+      cout << "Year: " << match[1].str() << endl;
+      cout << "Month: " << match[2].str() << endl;
+      cout << "Day: " << match[3].str() << endl;
    } else {
-      std::cout << "No match found" << std::endl;
+      cout << "No match found" << endl;
    }
    return 0;
 }

@@ -2,7 +2,7 @@
 
 class stmt_loop final : public statement {
 public:
-  inline stmt_loop(toc &tc, token tk, tokenizer &t) : statement{std::move(tk)} {
+  inline stmt_loop(toc &tc, token tk, tokenizer &t) : statement{move(tk)} {
     set_type(tc.get_type_void());
     const string &lbl{"loop_" + tc.source_location_for_label(tok())};
     tc.enter_loop(lbl);

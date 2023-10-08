@@ -13,14 +13,14 @@ public:
         //   else the next white space token
         statement{first_op.is_name("") ? t.next_whitespace_token()
                                        : token_from(first_bool_op)},
-        not_token_{std::move(not_token)}, enclosed_{enclosed} {
+        not_token_{move(not_token)}, enclosed_{enclosed} {
     set_type(tc.get_type_bool());
 
     token prv_op{first_op};
     if (not first_op.is_empty()) {
       // sub-expression with first bool op provided
-      bools_.push_back(std::move(first_bool_op));
-      ops_.push_back(std::move(first_op));
+      bools_.push_back(move(first_bool_op));
+      ops_.push_back(move(first_op));
     }
     while (true) {
       token tknot{t.next_token()};
@@ -29,7 +29,7 @@ public:
         // not a=1 and b=1
         if (t.is_next_char('(')) {
           // not (a=1 and b=1)
-          bools_.emplace_back(bool_ops_list{tc, t, true, std::move(tknot)});
+          bools_.emplace_back(bool_ops_list{tc, t, true, move(tknot)});
         } else {
           // not a=1 and b=1
           t.put_back_token(tknot);
@@ -65,9 +65,9 @@ public:
           // a and b or c -> (a and b) or c
           // first op is 'and', make sub-expression (a and b) ...
           bool_ops_list bol{
-              tc, t, false, {}, true, std::move(bools_.back()), std::move(tk)};
+              tc, t, false, {}, true, move(bools_.back()), move(tk)};
           bools_.pop_back();
-          bools_.emplace_back(std::move(bol));
+          bools_.emplace_back(move(bol));
 
           if (enclosed_ and t.is_next_char(')')) {
             return;
@@ -80,14 +80,14 @@ public:
           }
 
           prv_op = tk2;
-          ops_.push_back(std::move(tk2));
+          ops_.push_back(move(tk2));
           continue;
         }
       }
 
       // if same op as previous continue
       if (tk.is_name(prv_op.name())) {
-        ops_.push_back(std::move(tk));
+        ops_.push_back(move(tk));
         continue;
       }
 
@@ -108,9 +108,9 @@ public:
       //    |prv_op| |back()| |tk|
       // create:
       // a    or   (b     and   c) or d
-      bool_ops_list bol{tc, t, false, {}, true, std::move(bools_.back()), tk};
+      bool_ops_list bol{tc, t, false, {}, true, move(bools_.back()), tk};
       bools_.pop_back();
-      bools_.emplace_back(std::move(bol));
+      bools_.emplace_back(move(bol));
 
       if (enclosed_ and t.is_next_char(')')) {
         return;
@@ -123,7 +123,7 @@ public:
         break;
       }
 
-      ops_.push_back(std::move(tk));
+      ops_.push_back(move(tk));
     }
     if (enclosed_) {
       throw compiler_exception(tok(), "expected ')' to close expression");

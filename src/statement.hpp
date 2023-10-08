@@ -8,7 +8,7 @@ class type;
 class statement {
 public:
   inline explicit statement(token tk, unary_ops uops = {})
-      : token_{std::move(tk)}, uops_{std::move(uops)} {}
+      : token_{move(tk)}, uops_{move(uops)} {}
   inline virtual ~statement() = default;
 
   inline statement() = default;

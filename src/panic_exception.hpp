@@ -1,9 +1,9 @@
-class panic_exception final : public std::exception {
+class panic_exception final : public exception {
   const string msg{};
 
 public:
   inline explicit panic_exception(string message)
-      : msg{std::move(message)} {}
+      : msg{move(message)} {}
 
   [[nodiscard]] auto what() const noexcept -> const char * override {
     return msg.c_str();

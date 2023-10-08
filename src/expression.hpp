@@ -4,7 +4,7 @@
 class expression : public statement {
 public:
   inline expression(token tk, unary_ops uops)
-      : statement{std::move(tk), std::move(uops)} {}
+      : statement{move(tk), move(uops)} {}
 
   inline expression() = default;
   inline expression(const expression &) = default;

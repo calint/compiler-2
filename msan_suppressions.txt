@@ -1,24 +1,5 @@
 # errors triggered by system code
 src:*/lib/gcc/*
 
-
-##### work in progress
-#src:*/libstdc*/*
-
-
-#src:*/fstream.tcc
-#src:*/basic_file.cc
-
-#src:*/stmt_block.hpp
-#src:*/tokenizer.hpp
-#src:*/token.hpp
-
-#fun:xwrite
-#fun:__interceptor_memcmp
-#fun:_ZL19read_file_to_stringB5cxx11PKc
-#fun:_ZN3lutI9func_metaE3putERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES0_
-
-#src:*/gcc-13-13.1.0/*
-#src:fstream.tcc
-
+src:*/tokenizer.hpp
 

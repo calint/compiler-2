@@ -3,7 +3,7 @@
 class stmt_def_type_field final : public statement {
 public:
   inline stmt_def_type_field(toc &tc, token tk, tokenizer &t)
-      : statement{std::move(tk)} {
+      : statement{move(tk)} {
     set_type(tc.get_type_void());
 
     if (not t.is_next_char(':')) {
@@ -46,7 +46,7 @@ private:
 class stmt_def_type final : public statement {
 public:
   inline stmt_def_type(toc &tc, token tk, tokenizer &t)
-      : statement{std::move(tk)}, name_{t.next_token()} {
+      : statement{move(tk)}, name_{t.next_token()} {
     if (not t.is_next_char('{')) {
       throw compiler_exception(name_, "expected '{'");
     }
@@ -60,7 +60,7 @@ public:
         }
         break;
       }
-      fields_.emplace_back(tc, std::move(tknm), t);
+      fields_.emplace_back(tc, move(tknm), t);
       if (t.is_next_char('}')) {
         break;
       }

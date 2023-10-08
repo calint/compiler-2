@@ -1,11 +1,18 @@
 #pragma once
 
 class token final {
+  string ws_left_{};
+  size_t start_ix_{};
+  string name_{};
+  size_t end_ix_{};
+  string ws_right_{};
+  bool is_str_{};
+
 public:
-  inline token(string wb, size_t start_ix, string tk, size_t end_ix, string wa,
-               bool is_str = false)
-      : ws_left_{std::move(wb)}, start_ix_{start_ix}, name_{std::move(tk)},
-        end_ix_{end_ix}, ws_right_{std::move(wa)}, is_str_{is_str} {}
+  inline token(string ws_left, size_t start_ix, string name, size_t end_ix,
+               string ws_right, bool is_str = false)
+      : ws_left_{move(ws_left)}, start_ix_{start_ix}, name_{move(name)},
+        end_ix_{end_ix}, ws_right_{move(ws_right)}, is_str_{is_str} {}
 
   inline token() = default;
   inline token(const token &) = default;
@@ -54,12 +61,4 @@ public:
   }
 
   [[nodiscard]] inline auto is_string() const -> bool { return is_str_; }
-
-private:
-  string ws_left_{};
-  size_t start_ix_{};
-  string name_{};
-  size_t end_ix_{};
-  string ws_right_{};
-  bool is_str_{};
 };

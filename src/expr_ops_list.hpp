@@ -12,18 +12,18 @@ public:
       const char first_op_precedence = initial_precedence,
       unique_ptr<statement> first_expression = unique_ptr<statement>())
       : expression{t.next_whitespace_token(), {}}, enclosed_{enclosed},
-        uops_{std::move(uops)} {
+        uops_{move(uops)} {
     // read first expression i.e. =-a/-(b+1)
     if (first_expression) {
       // called in a recursion with first expression provided
-      exps_.push_back(std::move(first_expression));
+      exps_.push_back(move(first_expression));
     } else {
       // check if new recursion is necessary i.e. =-a/-(-(b+c)+d), t at "-a/-("
       unary_ops uo{t};
       if (t.is_next_char('(')) {
         // recursion
         exps_.emplace_back(
-            make_unique<expr_ops_list>(tc, t, in_args, true, std::move(uo)));
+            make_unique<expr_ops_list>(tc, t, in_args, true, move(uo)));
       } else {
         // statement
         uo.put_back(t);
@@ -98,11 +98,11 @@ public:
         precedence = next_precedence;
         const char first_op_prec{precedence_for_op(ops_.back())};
         ops_.pop_back();
-        unique_ptr<statement> prev{std::move(exps_.back())};
+        unique_ptr<statement> prev{move(exps_.back())};
         exps_.pop_back();
         exps_.emplace_back(
             make_unique<expr_ops_list>(tc, t, in_args, false, unary_ops{},
-                                       first_op_prec, std::move(prev)));
+                                       first_op_prec, move(prev)));
         continue;
       }
 
@@ -117,7 +117,7 @@ public:
       if (t.is_next_char('(')) {
         // subexpression, recurse
         exps_.emplace_back(
-            make_unique<expr_ops_list>(tc, t, in_args, true, std::move(uo)));
+            make_unique<expr_ops_list>(tc, t, in_args, true, move(uo)));
         continue;
       }
 
@@ -131,7 +131,7 @@ public:
                              "unexpected '" + string{t.peek_char()} + "'");
       }
 
-      exps_.push_back(std::move(stm));
+      exps_.push_back(move(stm));
     }
   }
 

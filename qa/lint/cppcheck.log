@@ -73,7 +73,7 @@ int main(int argc,char*args[]){
  inline statement(token tk,unary_ops uops={}):
                                      ^
 ../../src/type.hpp:14:32: performance: Function parameter 'name' should be passed by const reference. [passedByValue]
- inline type(const std::string name,const size_t size,const bool is_built_in):
+ inline type(const string name,const size_t size,const bool is_built_in):
                                ^
 ../../src/toc.hpp:486:70: performance: Function parameter 'op' should be passed by const reference. [passedByValue]
  inline void source_comment(ostream&os,const string&dst,const string op,const statement&st)const{
@@ -120,19 +120,19 @@ int main(int argc,char*args[]){
 ../../src/toc.hpp:1022:6: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
   if(id.find("0b")==0){ // binary
      ^
-../../src/type.hpp:32:0: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/type.hpp:32:0: style: Consider using find_if algorithm instead of a raw loop. [useStlAlgorithm]
    if(fld.name==name)
 ^
-../../src/lut.hpp:13:21: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/lut.hpp:13:21: style: Consider using find_if algorithm instead of a raw loop. [useStlAlgorithm]
    if(e.is_key(key)){
                     ^
-../../src/lut.hpp:22:21: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/lut.hpp:22:21: style: Consider using find_if algorithm instead of a raw loop. [useStlAlgorithm]
    if(e.is_key(key)){
                     ^
-../../src/lut.hpp:36:21: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/lut.hpp:36:21: style: Consider using find_if algorithm instead of a raw loop. [useStlAlgorithm]
    if(e.is_key(key)){
                     ^
-../../src/lut.hpp:51:21: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/lut.hpp:51:21: style: Consider using find_if algorithm instead of a raw loop. [useStlAlgorithm]
    if(e.is_key(key)){
                     ^
 nofile:0:0: information: Unmatched suppression: knownConditionTrueFalse [unmatchedSuppression]

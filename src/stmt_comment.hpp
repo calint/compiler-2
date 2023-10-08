@@ -3,7 +3,7 @@
 class stmt_comment final : public statement {
 public:
   inline stmt_comment(toc &tc, token tk, tokenizer &t)
-      : statement{std::move(tk)}, line_{t.read_rest_of_line()} {
+      : statement{move(tk)}, line_{t.read_rest_of_line()} {
     set_type(tc.get_type_void());
   }
 

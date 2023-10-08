@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 # tools:
 #   clang-tidy: Ubuntu LLVM version 15.0.7
 
 SRC=../../src/main.cpp
-if [ $1 == "fix" ]; then
+if [ "$1" == "fix" ]; then
     FIX=-fix
 fi
 

@@ -23,8 +23,8 @@ public:
   inline frame(string name, const frame_type tpe, string call_path = "",
                string func_ret_label = "", const bool func_is_inline = false,
                string func_ret_var = "") noexcept
-      : name_{std::move(name)}, call_path_{std::move(call_path)},
-        func_ret_label_{std::move(func_ret_label)}, func_ret_var_{std::move(
+      : name_{move(name)}, call_path_{move(call_path)},
+        func_ret_label_{move(func_ret_label)}, func_ret_var_{move(
                                                         func_ret_var)},
         func_is_inline_{func_is_inline}, type_{tpe} {}
 
@@ -1292,7 +1292,7 @@ private:
         break;
       }
     }
-    return {std::move(id), frames_[i]};
+    return {move(id), frames_[i]};
   }
 
   inline auto is_register_initiated(const string &reg) const -> bool {

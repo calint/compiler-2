@@ -9,8 +9,8 @@ struct type_field final {
 
 class type final {
 public:
-  inline type(std::string name, const size_t size, const bool is_built_in)
-      : name_{std::move(name)}, size_{size}, is_built_in_{is_built_in} {}
+  inline type(string name, const size_t size, const bool is_built_in)
+      : name_{move(name)}, size_{size}, is_built_in_{is_built_in} {}
 
   inline type() = default;
   inline type(const type &) = default;
@@ -115,7 +115,7 @@ private:
     }
   }
 
-  std::string name_{};
+  string name_{};
   size_t size_{};
   vector<type_field> fields_{};
   bool is_built_in_{};

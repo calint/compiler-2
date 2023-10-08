@@ -70,18 +70,18 @@ inline auto create_statement_from_tokenizer(toc &tc, token tk, unary_ops uops,
                                             tokenizer &t)
     -> unique_ptr<statement> {
   if (tk.is_name("loop")) {
-    return make_unique<stmt_loop>(tc, std::move(tk), t);
+    return make_unique<stmt_loop>(tc, move(tk), t);
   }
   if (tk.is_name("if")) {
-    return make_unique<stmt_if>(tc, std::move(tk), t);
+    return make_unique<stmt_if>(tc, move(tk), t);
   }
   if (tk.is_name("mov")) {
-    return make_unique<call_asm_mov>(tc, std::move(tk), t);
+    return make_unique<call_asm_mov>(tc, move(tk), t);
   }
   if (tk.is_name("syscall")) {
-    return make_unique<call_asm_syscall>(tc, std::move(tk), t);
+    return make_unique<call_asm_syscall>(tc, move(tk), t);
   }
-  return make_unique<stmt_call>(tc, std::move(tk), std::move(uops), t);
+  return make_unique<stmt_call>(tc, move(tk), move(uops), t);
 }
 
 // called from expr_ops_list to solve circular dependencies with calls
@@ -98,16 +98,16 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &t)
       throw compiler_exception(tk, "unexpected comment after unary ops");
     }
     // i.e.  print("hello") # comment
-    return make_unique<stmt_comment>(tc, std::move(tk), t);
+    return make_unique<stmt_comment>(tc, move(tk), t);
   }
   if (t.is_peek_char('(')) {
     // i.e.  f(...)
-    return create_statement_from_tokenizer(tc, std::move(tk), std::move(uops),
+    return create_statement_from_tokenizer(tc, move(tk), move(uops),
                                            t);
   }
   // i.e. 0x80, rax, identifiers
   unique_ptr<statement> st{
-      make_unique<statement>(std::move(tk), std::move(uops))};
+      make_unique<statement>(move(tk), move(uops))};
   const ident_resolved &ir{tc.resolve_identifier(*st, false)};
   st->set_type(ir.tp);
   return st;
@@ -333,7 +333,7 @@ static auto read_file_to_string(const char *file_name) -> string {
   if (not fs.is_open()) {
     throw panic_exception("cannot open file '" + string{file_name} + "'");
   }
-  std::stringstream buf{};
+  stringstream buf{};
   buf << fs.rdbuf();
   return buf.str();
 }

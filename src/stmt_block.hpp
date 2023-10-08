@@ -28,25 +28,25 @@ public:
       }
 
       if (tk.is_name("var")) {
-        stms_.emplace_back(make_unique<stmt_def_var>(tc, std::move(tk), t));
+        stms_.emplace_back(make_unique<stmt_def_var>(tc, move(tk), t));
       } else if (t.is_next_char('=')) {
         stms_.emplace_back(
-            make_unique<stmt_assign_var>(tc, std::move(tk), token{}, t));
+            make_unique<stmt_assign_var>(tc, move(tk), token{}, t));
       } else if (tk.is_name("break")) {
-        stms_.emplace_back(make_unique<stmt_break>(tc, std::move(tk)));
+        stms_.emplace_back(make_unique<stmt_break>(tc, move(tk)));
       } else if (tk.is_name("continue")) {
-        stms_.emplace_back(make_unique<stmt_continue>(tc, std::move(tk)));
+        stms_.emplace_back(make_unique<stmt_continue>(tc, move(tk)));
       } else if (tk.is_name("return")) {
-        stms_.emplace_back(make_unique<stmt_return>(tc, std::move(tk)));
+        stms_.emplace_back(make_unique<stmt_return>(tc, move(tk)));
       } else if (tk.is_name("#")) {
-        stms_.emplace_back(make_unique<stmt_comment>(tc, std::move(tk), t));
+        stms_.emplace_back(make_unique<stmt_comment>(tc, move(tk), t));
         last_statement_considered_no_statment = true;
       } else if (tk.is_name("")) { // white space
-        stms_.emplace_back(make_unique<statement>(std::move(tk)));
+        stms_.emplace_back(make_unique<statement>(move(tk)));
         stms_.back()->set_type(tc.get_type_void());
       } else { // circular reference resolver
         stms_.emplace_back(
-            create_statement_from_tokenizer(tc, std::move(tk), {}, t));
+            create_statement_from_tokenizer(tc, move(tk), {}, t));
       }
 
       if (is_one_statement_ && not last_statement_considered_no_statment) {

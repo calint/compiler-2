@@ -9,7 +9,7 @@
 class stmt_call : public expression {
 public:
   inline stmt_call(toc &tc, token tk, unary_ops uops, tokenizer &t)
-      : expression{std::move(tk), std::move(uops)} {
+      : expression{move(tk), move(uops)} {
     set_type(tc.get_func_return_type_or_throw(*this, identifier()));
 
     if (not t.is_next_char('(')) {

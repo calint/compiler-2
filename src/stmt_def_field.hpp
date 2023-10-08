@@ -5,7 +5,7 @@
 class stmt_def_field final : public statement {
 public:
   inline stmt_def_field(toc &tc, token tk, tokenizer &t)
-      : statement{std::move(tk)}, name_{t.next_token()} {
+      : statement{move(tk)}, name_{t.next_token()} {
     if (name_.is_name("")) {
       throw compiler_exception(t, "expected field name");
     }

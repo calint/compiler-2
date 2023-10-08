@@ -2,9 +2,14 @@
 #include "token.hpp"
 
 class tokenizer final {
+  const string &src_{};
+  const char *ptr_{};
+  size_t nchar_{};
+  char last_char_{-1};
+
 public:
-  inline explicit tokenizer(const string &str)
-      : src_{str}, ptr_{src_.c_str()} {}
+  inline explicit tokenizer(const string &src)
+      : src_{src}, ptr_{src_.c_str()} {}
 
   inline tokenizer() = delete;
   inline tokenizer(const tokenizer &) = delete;
@@ -145,9 +150,4 @@ private:
   inline static auto is_char_whitespace(const char ch) -> bool {
     return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
   }
-
-  const string &src_{};
-  const char *ptr_{};
-  size_t nchar_{};
-  char last_char_{-1};
 };
