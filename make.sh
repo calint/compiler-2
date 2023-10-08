@@ -7,11 +7,21 @@
 set -e
 
 CC="clang++ -std=c++20"
-CF="-Os -fno-inline -Werror -Wfatal-errors"
+CF="-fno-inline -Werror -Wfatal-errors"
 CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-call \
     -Wno-padded -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field"
+SAN=
+DBG=
+OPT=-O3
+if [ "$1" = "qa2" ]; then
+    SAN="-fsanitize=memory,undefined -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=msan_suppressions.txt"
+    DBG=-g
+elif [ "$1" = "qa" ]; then
+    ETC="-fprofile-instr-generate -fcoverage-mapping $ETC"
+    DBG=-g
+fi
 
-CMD="$CC $CF $CW -o baz src/main.cpp"
+CMD="$CC -o baz $OPT $DBG $CF $CW $SAN src/main.cpp"
 echo
 echo $CMD
 $CMD

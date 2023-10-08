@@ -146,7 +146,7 @@ private:
     return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
   }
 
-  string src_;
+  string src_{};
   const char *ptr_{};
   size_t nchar_{};
   char last_char_{-1};

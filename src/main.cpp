@@ -1,7 +1,14 @@
 #include <cassert>
+#include <cstddef>
 #include <cstring>
 #include <fstream>
+#include <iostream>
+#include <optional>
+#include <regex>
 #include <sstream>
+#include <string>
+#include <unordered_set>
+#include <variant>
 
 using namespace std;
 
@@ -332,7 +339,7 @@ static auto read_file_to_string(const char *file_name) -> string {
   if (not fs.is_open()) {
     throw unexpected_exception("cannot open file '" + string{file_name} + "'");
   }
-  std::stringstream buf;
+  std::stringstream buf{};
   buf << fs.rdbuf();
   return buf.str();
 }

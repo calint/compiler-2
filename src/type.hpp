@@ -1,6 +1,4 @@
 #pragma once
-#include <cstddef>
-#include <string>
 
 class type;
 struct type_field final {

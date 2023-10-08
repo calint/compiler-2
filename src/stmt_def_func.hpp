@@ -50,7 +50,7 @@ public:
     tc.add_func(*this, name_.name(), get_type(), this);
     tc.enter_func(name(), "", "", false,
                   returns().empty() ? "" : returns()[0].name());
-    vector<string> allocated_named_registers;
+    vector<string> allocated_named_registers{};
     null_stream ns{}; // don't make output while parsing
     init_variables(tc, ns, 0, allocated_named_registers);
     code_ = {tc, t};

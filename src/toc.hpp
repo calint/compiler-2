@@ -1,10 +1,4 @@
 #pragma once
-
-#include <cassert>
-#include <regex>
-#include <sstream>
-#include <unordered_set>
-
 #include "exceptions.hpp"
 #include "lut.hpp"
 #include "type.hpp"

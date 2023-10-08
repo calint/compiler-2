@@ -1,5 +1,4 @@
 #pragma once
-
 #include "stmt_if_branch.hpp"
 
 class stmt_if final : public statement {

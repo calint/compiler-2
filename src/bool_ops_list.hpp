@@ -1,7 +1,6 @@
 #pragma once
 #include "bool_op.hpp"
 #include "statement.hpp"
-#include <variant>
 
 class bool_ops_list final : public statement {
 public:
