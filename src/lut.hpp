@@ -2,7 +2,7 @@
 
 template <class T> class lut final {
 public:
-  inline T get(const string &key) const {
+  inline auto get(const string &key) const -> T {
     if (last_has_el) {
       if (last_has_el->is_key(key)) {
         return last_has_el->data;
@@ -16,7 +16,7 @@ public:
     throw unexpected_exception("element not found: " + key);
   }
 
-  inline bool has(const string &key) const {
+  inline auto has(const string &key) const -> bool {
     for (const el &e : elems_) {
       if (e.is_key(key)) {
         last_has_el = &e;
@@ -30,7 +30,7 @@ public:
     elems_.emplace_back(el{key, data});
   }
 
-  inline T &get_ref(const string &key) {
+  inline auto get_ref(const string &key) -> T & {
     for (el &e : elems_) {
       if (e.is_key(key)) {
         return e.data;
@@ -40,7 +40,7 @@ public:
   }
 
   // for clarity get_const_ref instead of overloading get_ref
-  inline const T &get_const_ref(const string &key) const {
+  inline auto get_const_ref(const string &key) const -> const T & {
     if (last_has_el) {
       if (last_has_el->is_key(key)) {
         return last_has_el->data;
@@ -58,7 +58,7 @@ private:
   struct el {
     string key;
     T data;
-    inline bool is_key(const string &k) const { return k == key; }
+    [[nodiscard]] inline auto is_key(const string &k) const -> bool { return k == key; }
   };
   vector<el> elems_{};
   mutable const el *last_has_el{};

@@ -13,8 +13,8 @@ public:
   inline stmt_if_branch() = default;
   inline stmt_if_branch(const stmt_if_branch &) = default;
   inline stmt_if_branch(stmt_if_branch &&) = default;
-  inline stmt_if_branch &operator=(const stmt_if_branch &) = default;
-  inline stmt_if_branch &operator=(stmt_if_branch &&) = default;
+  inline auto operator=(const stmt_if_branch &) -> stmt_if_branch & = default;
+  inline auto operator=(stmt_if_branch &&) -> stmt_if_branch & = default;
 
   inline ~stmt_if_branch() override = default;
 
@@ -26,7 +26,7 @@ public:
 
   // returns the label where the if branch begins evaluating the boolean
   // expression
-  inline string if_bgn_label(const toc &tc) const {
+  [[nodiscard]] inline auto if_bgn_label(const toc &tc) const -> string {
     const string &call_path{tc.get_inline_call_path(tok())};
     return "if_" + tc.source_location_for_label(tok()) +
            (call_path.empty() ? "" : "_" + call_path);
@@ -38,9 +38,9 @@ public:
     throw compiler_error(tok(), "this code should not be reached");
   }
 
-  inline optional<bool> compile(toc &tc, ostream &os, size_t indent,
+  inline auto compile(toc &tc, ostream &os, size_t indent,
                                 const string &jmp_to_if_false_label,
-                                const string &jmp_to_after_code_label) const {
+                                const string &jmp_to_after_code_label) const -> optional<bool> {
     const string &if_bgn_lbl{if_bgn_label(tc)};
     const string &jmp_to_if_true_lbl{if_bgn_lbl + "_code"};
     // the begining of this branch

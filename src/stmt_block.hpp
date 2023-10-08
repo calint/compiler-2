@@ -58,8 +58,8 @@ public:
   inline stmt_block() = default;
   inline stmt_block(const stmt_block &) = default;
   inline stmt_block(stmt_block &&) = default;
-  inline stmt_block &operator=(const stmt_block &) = default;
-  inline stmt_block &operator=(stmt_block &&) = default;
+  inline auto operator=(const stmt_block &) -> stmt_block & = default;
+  inline auto operator=(stmt_block &&) -> stmt_block & = default;
 
   inline ~stmt_block() override = default;
 
@@ -81,7 +81,7 @@ public:
     tc.exit_block();
   }
 
-  inline bool is_empty() const { return stms_.empty(); }
+  [[nodiscard]] inline auto is_empty() const -> bool { return stms_.empty(); }
 
 private:
   bool is_one_statement_{};

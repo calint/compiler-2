@@ -9,8 +9,8 @@ public:
   inline stmt_return() = default;
   inline stmt_return(const stmt_return &) = default;
   inline stmt_return(stmt_return &&) = default;
-  inline stmt_return &operator=(const stmt_return &) = default;
-  inline stmt_return &operator=(stmt_return &&) = default;
+  inline auto operator=(const stmt_return &) -> stmt_return & = default;
+  inline auto operator=(stmt_return &&) -> stmt_return & = default;
 
   inline ~stmt_return() override = default;
 

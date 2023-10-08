@@ -43,8 +43,8 @@ public:
   inline stmt_if() = default;
   inline stmt_if(const stmt_if &) = default;
   inline stmt_if(stmt_if &&) = default;
-  inline stmt_if &operator=(const stmt_if &) = default;
-  inline stmt_if &operator=(stmt_if &&) = default;
+  inline auto operator=(const stmt_if &) -> stmt_if & = default;
+  inline auto operator=(stmt_if &&) -> stmt_if & = default;
 
   inline ~stmt_if() override = default;
 

@@ -12,11 +12,11 @@ using namespace std;
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
 
-static string read_file_to_string(const char *file_name);
+static auto read_file_to_string(const char *file_name) -> string;
 static void optimize_jumps_1(istream &is, ostream &os);
 static void optimize_jumps_2(istream &is, ostream &os);
 
-int main(int argc, char *args[]) {
+auto main(int argc, char *args[]) -> int {
   const char *src_file_name = argc == 1 ? "prog.baz" : args[1];
   string src;
   try {
@@ -63,9 +63,9 @@ int main(int argc, char *args[]) {
 }
 
 // called from stmt_block to solve circular dependencies with loop, if and calls
-inline unique_ptr<statement> create_statement_from_tokenizer(toc &tc, token tk,
+inline auto create_statement_from_tokenizer(toc &tc, token tk,
                                                              unary_ops uops,
-                                                             tokenizer &t) {
+                                                             tokenizer &t) -> unique_ptr<statement> {
   if (tk.is_name("loop"))
     return make_unique<stmt_loop>(tc, move(tk), t);
   if (tk.is_name("if"))
@@ -78,8 +78,8 @@ inline unique_ptr<statement> create_statement_from_tokenizer(toc &tc, token tk,
 }
 
 // called from expr_ops_list to solve circular dependencies with calls
-inline unique_ptr<statement> create_statement_from_tokenizer(toc &tc,
-                                                             tokenizer &t) {
+inline auto create_statement_from_tokenizer(toc &tc,
+                                                             tokenizer &t) -> unique_ptr<statement> {
   unary_ops uops{t};
   token tk = t.next_token();
   if (tk.is_name(""))
@@ -303,7 +303,7 @@ static void optimize_jumps_2(istream &is, ostream &os) {
   }
 }
 
-static string read_file_to_string(const char *file_name) {
+static auto read_file_to_string(const char *file_name) -> string {
   ifstream fs{file_name};
   if (not fs.is_open())
     throw unexpected_exception("cannot open file '" + string{file_name} + "'");

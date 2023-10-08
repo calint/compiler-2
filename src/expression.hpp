@@ -10,10 +10,10 @@ public:
   inline expression() = default;
   inline expression(const expression &) = default;
   inline expression(expression &&) = default;
-  inline expression &operator=(const expression &) = default;
-  inline expression &operator=(expression &&) = default;
+  inline auto operator=(const expression &) -> expression & = default;
+  inline auto operator=(expression &&) -> expression & = default;
 
   inline ~expression() override = default;
 
-  inline bool is_expression() const override { return true; }
+  [[nodiscard]] inline auto is_expression() const -> bool override { return true; }
 };

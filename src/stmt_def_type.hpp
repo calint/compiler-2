@@ -15,8 +15,8 @@ public:
   inline stmt_def_type_field() = default;
   inline stmt_def_type_field(const stmt_def_type_field &) = default;
   inline stmt_def_type_field(stmt_def_type_field &&) = default;
-  inline stmt_def_type_field &operator=(const stmt_def_type_field &) = default;
-  inline stmt_def_type_field &operator=(stmt_def_type_field &&) = default;
+  inline auto operator=(const stmt_def_type_field &) -> stmt_def_type_field & = default;
+  inline auto operator=(stmt_def_type_field &&) -> stmt_def_type_field & = default;
 
   inline ~stmt_def_type_field() override = default;
 
@@ -28,9 +28,9 @@ public:
     type_.source_to(os);
   }
 
-  inline const string &name() const { return tok().name(); }
+  [[nodiscard]] inline auto name() const -> const string & { return tok().name(); }
 
-  inline const string &type_str() const { return type_.name(); }
+  [[nodiscard]] inline auto type_str() const -> const string & { return type_.name(); }
 
 private:
   token type_{};
@@ -75,8 +75,8 @@ public:
   inline stmt_def_type() = default;
   inline stmt_def_type(const stmt_def_type &) = default;
   inline stmt_def_type(stmt_def_type &&) = default;
-  inline stmt_def_type &operator=(const stmt_def_type &) = default;
-  inline stmt_def_type &operator=(stmt_def_type &&) = default;
+  inline auto operator=(const stmt_def_type &) -> stmt_def_type & = default;
+  inline auto operator=(stmt_def_type &&) -> stmt_def_type & = default;
 
   inline ~stmt_def_type() override = default;
 

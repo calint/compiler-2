@@ -20,8 +20,8 @@ public:
   inline expr_any() = default;
   inline expr_any(const expr_any &) = default;
   inline expr_any(expr_any &&) = default;
-  inline expr_any &operator=(const expr_any &) = default;
-  inline expr_any &operator=(expr_any &&) = default;
+  inline auto operator=(const expr_any &) -> expr_any & = default;
+  inline auto operator=(expr_any &&) -> expr_any & = default;
 
   inline ~expr_any() override = default;
 
@@ -83,9 +83,9 @@ public:
     tc.asm_label(*this, os, indent, jmp_to_end);
   }
 
-  inline bool is_bool() const { return eols_.index() == 1; }
+  [[nodiscard]] inline auto is_bool() const -> bool { return eols_.index() == 1; }
 
-  inline bool is_expression() const override {
+  [[nodiscard]] inline auto is_expression() const -> bool override {
     if (eols_.index() == 0) {
       const expr_ops_list &eol{get<expr_ops_list>(eols_)};
       return eol.is_expression();
@@ -96,7 +96,7 @@ public:
     return eol.is_expression();
   }
 
-  inline const string &identifier() const override {
+  [[nodiscard]] inline auto identifier() const -> const string & override {
     if (eols_.index() == 0) {
       const expr_ops_list &eol{get<expr_ops_list>(eols_)};
       return eol.identifier();
@@ -107,7 +107,7 @@ public:
     return eol.identifier();
   }
 
-  inline const unary_ops &get_unary_ops() const override {
+  [[nodiscard]] inline auto get_unary_ops() const -> const unary_ops & override {
     if (eols_.index() == 0) {
       const expr_ops_list &eol{get<expr_ops_list>(eols_)};
       return eol.get_unary_ops();

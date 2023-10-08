@@ -9,8 +9,8 @@ public:
   inline stmt_break() = default;
   inline stmt_break(const stmt_break &) = default;
   inline stmt_break(stmt_break &&) = default;
-  inline stmt_break &operator=(const stmt_break &) = default;
-  inline stmt_break &operator=(stmt_break &&) = default;
+  inline auto operator=(const stmt_break &) -> stmt_break & = default;
+  inline auto operator=(stmt_break &&) -> stmt_break & = default;
 
   inline ~stmt_break() override = default;
 

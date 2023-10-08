@@ -61,8 +61,8 @@ public:
   inline program() = default;
   inline program(const program &) = default;
   inline program(program &&) = default;
-  inline program &operator=(const program &) = default;
-  inline program &operator=(program &&) = default;
+  inline auto operator=(const program &) -> program & = default;
+  inline auto operator=(program &&) -> program & = default;
 
   inline ~program() = default;
 

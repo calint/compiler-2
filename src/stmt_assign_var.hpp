@@ -14,8 +14,8 @@ public:
   inline stmt_assign_var() = default;
   inline stmt_assign_var(const stmt_assign_var &) = default;
   inline stmt_assign_var(stmt_assign_var &&) = default;
-  inline stmt_assign_var &operator=(const stmt_assign_var &) = default;
-  inline stmt_assign_var &operator=(stmt_assign_var &&) = default;
+  inline auto operator=(const stmt_assign_var &) -> stmt_assign_var & = default;
+  inline auto operator=(stmt_assign_var &&) -> stmt_assign_var & = default;
 
   inline ~stmt_assign_var() override = default;
 
@@ -72,7 +72,7 @@ public:
   }
 
 private:
-  inline static size_t count_instructions(stringstream &ss) {
+  inline static auto count_instructions(stringstream &ss) -> size_t {
     const regex rxcomment{R"(^\s*;.*$)"};
     string line;
     size_t n{0};

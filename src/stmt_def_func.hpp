@@ -57,8 +57,8 @@ public:
   inline stmt_def_func() = default;
   inline stmt_def_func(const stmt_def_func &) = default;
   inline stmt_def_func(stmt_def_func &&) = default;
-  inline stmt_def_func &operator=(const stmt_def_func &) = default;
-  inline stmt_def_func &operator=(stmt_def_func &&) = default;
+  inline auto operator=(const stmt_def_func &) -> stmt_def_func & = default;
+  inline auto operator=(stmt_def_func &&) -> stmt_def_func & = default;
 
   inline ~stmt_def_func() override = default;
 
@@ -142,19 +142,19 @@ public:
     tc.exit_func(name());
   }
 
-  inline const vector<token> &returns() const { return returns_; }
+  [[nodiscard]] inline auto returns() const -> const vector<token> & { return returns_; }
 
-  inline const stmt_def_func_param &param(const size_t ix) const {
+  [[nodiscard]] inline auto param(const size_t ix) const -> const stmt_def_func_param & {
     return params_[ix];
   }
 
-  inline const vector<stmt_def_func_param> &params() const { return params_; }
+  [[nodiscard]] inline auto params() const -> const vector<stmt_def_func_param> & { return params_; }
 
-  inline const stmt_block &code() const { return code_; }
+  [[nodiscard]] inline auto code() const -> const stmt_block & { return code_; }
 
-  inline const string &name() const { return name_.name(); }
+  [[nodiscard]] inline auto name() const -> const string & { return name_.name(); }
 
-  inline bool is_inline() const { return not inline_tk_.is_empty(); }
+  [[nodiscard]] inline auto is_inline() const -> bool { return not inline_tk_.is_empty(); }
 
 private:
   inline void init_variables(toc &tc, ostream &os, size_t indent,

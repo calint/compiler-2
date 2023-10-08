@@ -13,8 +13,8 @@ public:
   inline stmt_loop() = default;
   inline stmt_loop(const stmt_loop &) = default;
   inline stmt_loop(stmt_loop &&) = default;
-  inline stmt_loop &operator=(const stmt_loop &) = default;
-  inline stmt_loop &operator=(stmt_loop &&) = default;
+  inline auto operator=(const stmt_loop &) -> stmt_loop & = default;
+  inline auto operator=(stmt_loop &&) -> stmt_loop & = default;
 
   inline ~stmt_loop() override = default;
 

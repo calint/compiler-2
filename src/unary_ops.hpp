@@ -25,12 +25,12 @@ public:
   inline unary_ops() = default;
   inline unary_ops(const unary_ops &) = default;
   inline unary_ops(unary_ops &&) = default;
-  inline unary_ops &operator=(const unary_ops &) = default;
-  inline unary_ops &operator=(unary_ops &&) = default;
+  inline auto operator=(const unary_ops &) -> unary_ops & = default;
+  inline auto operator=(unary_ops &&) -> unary_ops & = default;
 
   inline ~unary_ops() = default;
 
-  inline bool is_only_negated() const {
+  [[nodiscard]] inline auto is_only_negated() const -> bool {
     return ops_.size() == 1 && ops_.back() == '-';
   }
 
@@ -51,11 +51,11 @@ public:
   inline void compile(toc &tc, ostream &os, size_t indent_level,
                       const string &dst_resolved) const;
 
-  inline bool is_empty() const { return ops_.empty(); }
+  [[nodiscard]] inline auto is_empty() const -> bool { return ops_.empty(); }
 
-  inline string as_string() const { return {ops_.begin(), ops_.end()}; }
+  [[nodiscard]] inline auto as_string() const -> string { return {ops_.begin(), ops_.end()}; }
 
-  inline long int evaluate_constant(long int v) const {
+  [[nodiscard]] inline auto evaluate_constant(long int v) const -> long int {
     size_t i{ops_.size()};
     while (i--) {
       switch (ops_[i]) {

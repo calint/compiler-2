@@ -26,8 +26,8 @@ public:
   inline stmt_def_field() = default;
   inline stmt_def_field(const stmt_def_field &) = default;
   inline stmt_def_field(stmt_def_field &&) = default;
-  inline stmt_def_field &operator=(const stmt_def_field &) = default;
-  inline stmt_def_field &operator=(stmt_def_field &&) = default;
+  inline auto operator=(const stmt_def_field &) -> stmt_def_field & = default;
+  inline auto operator=(stmt_def_field &&) -> stmt_def_field & = default;
 
   inline ~stmt_def_field() override = default;
 
@@ -57,9 +57,9 @@ public:
     os << endl;
   }
 
-  inline bool is_in_data_section() const override { return true; }
+  [[nodiscard]] inline auto is_in_data_section() const -> bool override { return true; }
 
-  inline bool is_string_field() const { return initial_value_.is_string(); }
+  [[nodiscard]] inline auto is_string_field() const -> bool { return initial_value_.is_string(); }
 
 private:
   token name_{};

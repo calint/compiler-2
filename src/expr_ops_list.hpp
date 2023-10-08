@@ -130,8 +130,8 @@ public:
   inline expr_ops_list() = default;
   inline expr_ops_list(const expr_ops_list &) = default;
   inline expr_ops_list(expr_ops_list &&) = default;
-  inline expr_ops_list &operator=(const expr_ops_list &) = default;
-  inline expr_ops_list &operator=(expr_ops_list &&) = default;
+  inline auto operator=(const expr_ops_list &) -> expr_ops_list & = default;
+  inline auto operator=(expr_ops_list &&) -> expr_ops_list & = default;
 
   inline ~expr_ops_list() override = default;
 
@@ -175,7 +175,7 @@ public:
     uops_.compile(tc, os, indent, dst_resolved.id_nasm);
   }
 
-  inline bool is_expression() const override {
+  [[nodiscard]] inline auto is_expression() const -> bool override {
     if (not uops_.is_empty())
       return true;
 
@@ -185,20 +185,20 @@ public:
     return true;
   }
 
-  inline const string &identifier() const override {
+  [[nodiscard]] inline auto identifier() const -> const string & override {
     assert(exps_.size() == 1);
 
     return exps_[0]->identifier();
   }
 
-  inline const unary_ops &get_unary_ops() const override {
+  [[nodiscard]] inline auto get_unary_ops() const -> const unary_ops & override {
     if (exps_.size() == 1)
       return exps_[0]->get_unary_ops();
 
     return uops_;
   }
 
-  inline const type &get_type() const override {
+  [[nodiscard]] inline auto get_type() const -> const type & override {
     assert(not exps_.empty());
     return exps_[0]
         ->get_type(); // ! hack  find the size of the largest integral element
@@ -207,7 +207,7 @@ public:
 private:
   static constexpr char initial_precedence{
       7}; // higher than the highest precedence
-  inline static char precedence_for_op(const char ch) {
+  inline static auto precedence_for_op(const char ch) -> char {
     switch (ch) {
     case '|':
       return 1;

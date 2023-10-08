@@ -4,7 +4,7 @@
 
 class null_buffer : public streambuf {
 public:
-  int overflow(int c) override { return c; }
+  auto overflow(int c) -> int override { return c; }
 };
 
 class null_stream : public ostream {
@@ -37,8 +37,8 @@ public:
   inline stmt_def_var() = default;
   inline stmt_def_var(const stmt_def_var &) = default;
   inline stmt_def_var(stmt_def_var &&) = default;
-  inline stmt_def_var &operator=(const stmt_def_var &) = default;
-  inline stmt_def_var &operator=(stmt_def_var &&) = default;
+  inline auto operator=(const stmt_def_var &) -> stmt_def_var & = default;
+  inline auto operator=(stmt_def_var &&) -> stmt_def_var & = default;
 
   inline ~stmt_def_var() override = default;
 

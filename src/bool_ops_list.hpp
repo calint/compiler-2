@@ -132,8 +132,8 @@ public:
   inline bool_ops_list() = default;
   inline bool_ops_list(const bool_ops_list &) = default;
   inline bool_ops_list(bool_ops_list &&) = default;
-  inline bool_ops_list &operator=(const bool_ops_list &) = default;
-  inline bool_ops_list &operator=(bool_ops_list &&) = default;
+  inline auto operator=(const bool_ops_list &) -> bool_ops_list & = default;
+  inline auto operator=(bool_ops_list &&) -> bool_ops_list & = default;
 
   inline ~bool_ops_list() override = default;
 
@@ -167,16 +167,16 @@ public:
                    to_string(__LINE__));
   }
 
-  inline string cmp_bgn_label(const toc &tc) const {
+  [[nodiscard]] inline auto cmp_bgn_label(const toc &tc) const -> string {
     const string &call_path{tc.get_inline_call_path(tok())};
     return "cmp_" + tc.source_location_for_label(tok()) +
            (call_path.empty() ? "" : "_" + call_path);
   }
 
-  inline optional<bool> compile(toc &tc, ostream &os, const size_t indent,
+  inline auto compile(toc &tc, ostream &os, const size_t indent,
                                 const string &jmp_to_if_false,
                                 const string &jmp_to_if_true,
-                                const bool inverted) const {
+                                const bool inverted) const -> optional<bool> {
     toc::indent(os, indent, true);
     tc.source_comment(os, "?", inverted ? " inverted: " : " ", *this);
     // invert according to De Morgan's laws
@@ -301,8 +301,8 @@ public:
     return nullopt;
   }
 
-  inline bool
-  is_expression() const override { // ? assumes it is not an expression
+  [[nodiscard]] inline auto
+  is_expression() const -> bool override { // ? assumes it is not an expression
     if (bools_.size() > 1)
       return true;
 
@@ -314,7 +314,7 @@ public:
     return get<bool_ops_list>(bools_[0]).is_expression();
   }
 
-  inline const string &identifier() const override {
+  [[nodiscard]] inline auto identifier() const -> const string & override {
     if (bools_.size() > 1)
       throw unexpected_exception("unexpected code path " + string{__FILE__} +
                                  ":" + to_string(__LINE__));
@@ -328,15 +328,15 @@ public:
   }
 
 private:
-  inline static string
-  cmp_label_from(const toc &tc, const variant<bool_op, bool_ops_list> &v) {
+  inline static auto
+  cmp_label_from(const toc &tc, const variant<bool_op, bool_ops_list> &v) -> string {
     if (v.index() == 1)
       return get<bool_ops_list>(v).cmp_bgn_label(tc);
 
     return get<bool_op>(v).cmp_bgn_label(tc);
   }
 
-  inline static token token_from(const variant<bool_op, bool_ops_list> &bop) {
+  inline static auto token_from(const variant<bool_op, bool_ops_list> &bop) -> token {
     if (bop.index() == 0)
       return get<bool_op>(bop).tok();
 

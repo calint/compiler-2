@@ -32,8 +32,8 @@ public:
   inline stmt_call() = default;
   inline stmt_call(const stmt_call &) = default;
   inline stmt_call(stmt_call &&) = default;
-  inline stmt_call &operator=(const stmt_call &) = default;
-  inline stmt_call &operator=(stmt_call &&) = default;
+  inline auto operator=(const stmt_call &) -> stmt_call & = default;
+  inline auto operator=(stmt_call &&) -> stmt_call & = default;
 
   inline ~stmt_call() override = default;
 
@@ -368,9 +368,9 @@ public:
     tc.exit_func(func_nm);
   }
 
-  inline const statement &arg(size_t ix) const { return args_[ix]; }
+  [[nodiscard]] inline auto arg(size_t ix) const -> const statement & { return args_[ix]; }
 
-  inline size_t arg_count() const { return args_.size(); }
+  [[nodiscard]] inline auto arg_count() const -> size_t { return args_.size(); }
 
 private:
   vector<expr_any> args_{};

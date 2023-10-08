@@ -10,8 +10,8 @@ public:
   inline call_asm_syscall() = default;
   inline call_asm_syscall(const call_asm_syscall &) = default;
   inline call_asm_syscall(call_asm_syscall &&) = default;
-  inline call_asm_syscall &operator=(const call_asm_syscall &) = default;
-  inline call_asm_syscall &operator=(call_asm_syscall &&) = default;
+  inline auto operator=(const call_asm_syscall &) -> call_asm_syscall & = default;
+  inline auto operator=(call_asm_syscall &&) -> call_asm_syscall & = default;
 
   inline ~call_asm_syscall() override = default;
 

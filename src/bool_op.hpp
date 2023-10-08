@@ -57,8 +57,8 @@ public:
   inline bool_op() = default;
   inline bool_op(const bool_op &) = default;
   inline bool_op(bool_op &&) = default;
-  inline bool_op &operator=(const bool_op &) = default;
-  inline bool_op &operator=(bool_op &&) = default;
+  inline auto operator=(const bool_op &) -> bool_op & = default;
+  inline auto operator=(bool_op &&) -> bool_op & = default;
 
   inline ~bool_op() override = default;
 
@@ -84,9 +84,9 @@ public:
                    to_string(__LINE__));
   }
 
-  inline optional<bool> compile_or(toc &tc, ostream &os, size_t indent,
+  inline auto compile_or(toc &tc, ostream &os, size_t indent,
                                    const string &jmp_to_if_true,
-                                   const bool inverted) const {
+                                   const bool inverted) const -> optional<bool> {
     const bool invert{inverted ? not is_not_ : is_not_};
     toc::indent(os, indent, true);
     tc.source_comment(os, "?", inverted ? " 'or' inverted: " : " ", *this);
@@ -141,9 +141,9 @@ public:
     return nullopt;
   }
 
-  inline optional<bool> compile_and(toc &tc, ostream &os, size_t indent,
+  inline auto compile_and(toc &tc, ostream &os, size_t indent,
                                     const string &jmp_to_if_false,
-                                    const bool inverted) const {
+                                    const bool inverted) const -> optional<bool> {
     const bool invert{inverted ? not is_not_ : is_not_};
     toc::indent(os, indent, true);
     tc.source_comment(os, "?", inverted ? " 'and' inverted: " : " ", *this);
@@ -198,13 +198,13 @@ public:
     return nullopt;
   }
 
-  inline string cmp_bgn_label(const toc &tc) const {
+  [[nodiscard]] inline auto cmp_bgn_label(const toc &tc) const -> string {
     const string &call_path{tc.get_inline_call_path(tok())};
     return "cmp_" + tc.source_location_for_label(tok()) +
            (call_path.empty() ? "" : "_" + call_path);
   }
 
-  inline const string &identifier() const override {
+  [[nodiscard]] inline auto identifier() const -> const string & override {
     assert(not is_expression());
 
     return lhs_.identifier();
@@ -213,7 +213,7 @@ public:
                                ":" + to_string(__LINE__));
   }
 
-  inline bool is_expression() const override { return is_expression_; }
+  [[nodiscard]] inline auto is_expression() const -> bool override { return is_expression_; }
 
 private:
   inline void resolve_if_op_is_expression(toc &tc) {
@@ -250,8 +250,8 @@ private:
     is_expression_ = true;
   }
 
-  inline static bool eval_constant(const long int lh, const string &op,
-                                   const long int rh) {
+  inline static auto eval_constant(const long int lh, const string &op,
+                                   const long int rh) -> bool {
     if (op == "==")
       return lh == rh;
     if (op == "<")
@@ -266,7 +266,7 @@ private:
                                ":" + to_string(__LINE__));
   }
 
-  inline static string asm_jxx_for_op(const string &op) {
+  inline static auto asm_jxx_for_op(const string &op) -> string {
     if (op == "==") {
       return "je";
     }
@@ -290,7 +290,7 @@ private:
                                ":" + to_string(__LINE__));
   }
 
-  inline static string asm_jxx_for_op_inv(const string &op) {
+  inline static auto asm_jxx_for_op_inv(const string &op) -> string {
     if (op == "==") {
       return "jne";
     }
@@ -347,9 +347,9 @@ private:
     }
   }
 
-  inline static string resolve_expr(toc &tc, ostream &os, size_t indent,
+  inline static auto resolve_expr(toc &tc, ostream &os, size_t indent,
                                     const expr_ops_list &exp,
-                                    vector<string> &allocated_registers) {
+                                    vector<string> &allocated_registers) -> string {
     if (exp.is_expression()) {
       const string &reg{tc.alloc_scratch_register(exp, os, indent)};
       allocated_registers.push_back(reg);

@@ -21,6 +21,6 @@ public:
   size_t start_char{};
   size_t end_char{};
 
-  const char *what() const noexcept override { return msg.c_str(); }
+  [[nodiscard]] auto what() const noexcept -> const char * override { return msg.c_str(); }
 };
 

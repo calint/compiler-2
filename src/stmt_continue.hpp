@@ -9,8 +9,8 @@ public:
   inline stmt_continue() = default;
   inline stmt_continue(const stmt_continue &) = default;
   inline stmt_continue(stmt_continue &&) = default;
-  inline stmt_continue &operator=(const stmt_continue &) = default;
-  inline stmt_continue &operator=(stmt_continue &&) = default;
+  inline auto operator=(const stmt_continue &) -> stmt_continue & = default;
+  inline auto operator=(stmt_continue &&) -> stmt_continue & = default;
 
   inline ~stmt_continue() override = default;
 

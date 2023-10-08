@@ -63,15 +63,15 @@ public:
     vars_.put(name, {name, tpe, declared_at, stack_idx, nasm_ident, initiated});
   }
 
-  inline size_t allocated_stack_size() const { return allocated_stack_; }
+  inline auto allocated_stack_size() const -> size_t { return allocated_stack_; }
 
-  inline bool has_var(const string &name) const { return vars_.has(name); }
+  inline auto has_var(const string &name) const -> bool { return vars_.has(name); }
 
-  inline var_meta &get_var_ref(const string &name) {
+  inline auto get_var_ref(const string &name) -> var_meta & {
     return vars_.get_ref(name);
   }
 
-  inline const var_meta &get_var_const_ref(const string &name) const {
+  inline auto get_var_const_ref(const string &name) const -> const var_meta & {
     return vars_.get_const_ref(name);
   }
 
@@ -79,27 +79,27 @@ public:
     aliases_.put(ident, outside_ident);
   }
 
-  inline bool is_func() const { return type_ == frame_type::FUNC; }
+  inline auto is_func() const -> bool { return type_ == frame_type::FUNC; }
 
-  inline bool is_block() const { return type_ == frame_type::BLOCK; }
+  inline auto is_block() const -> bool { return type_ == frame_type::BLOCK; }
 
-  inline bool is_loop() const { return type_ == frame_type::LOOP; }
+  inline auto is_loop() const -> bool { return type_ == frame_type::LOOP; }
 
-  inline bool is_name(const string &nm) const { return name_ == nm; }
+  inline auto is_name(const string &nm) const -> bool { return name_ == nm; }
 
-  inline bool has_alias(const string &nm) const { return aliases_.has(nm); }
+  inline auto has_alias(const string &nm) const -> bool { return aliases_.has(nm); }
 
-  inline string get_alias(const string &nm) const { return aliases_.get(nm); }
+  inline auto get_alias(const string &nm) const -> string { return aliases_.get(nm); }
 
-  inline const string &name() const { return name_; }
+  inline auto name() const -> const string & { return name_; }
 
-  inline const string &func_ret_label() const { return func_ret_label_; }
+  inline auto func_ret_label() const -> const string & { return func_ret_label_; }
 
-  inline const string &inline_call_path() const { return call_path_; }
+  inline auto inline_call_path() const -> const string & { return call_path_; }
 
-  inline bool func_is_inline() const { return func_is_inline_; }
+  inline auto func_is_inline() const -> bool { return func_is_inline_; }
 
-  inline const string &func_ret_var() const { return func_ret_var_; }
+  inline auto func_ret_var() const -> const string & { return func_ret_var_; }
 
 private:
   string name_{};      // optional name
@@ -148,11 +148,11 @@ struct ident_resolved final {
   const type &tp;
   ident_type ident_type{ident_type::CONST};
 
-  inline bool is_const() const { return ident_type == ident_type::CONST; }
-  inline bool is_var() const { return ident_type == ident_type::VAR; }
-  inline bool is_register() const { return ident_type == ident_type::REGISTER; }
-  inline bool is_field() const { return ident_type == ident_type::FIELD; }
-  inline bool is_implied() const { return ident_type == ident_type::IMPLIED; }
+  [[nodiscard]] inline auto is_const() const -> bool { return ident_type == ident_type::CONST; }
+  [[nodiscard]] inline auto is_var() const -> bool { return ident_type == ident_type::VAR; }
+  [[nodiscard]] inline auto is_register() const -> bool { return ident_type == ident_type::REGISTER; }
+  [[nodiscard]] inline auto is_field() const -> bool { return ident_type == ident_type::FIELD; }
+  [[nodiscard]] inline auto is_implied() const -> bool { return ident_type == ident_type::IMPLIED; }
 };
 
 class baz_ident final {
@@ -166,11 +166,11 @@ public:
     path_.push_back(id.substr(start));
   }
 
-  inline const string &id() const { return id_; }
+  [[nodiscard]] inline auto id() const -> const string & { return id_; }
 
-  inline const string &id_base() const { return path_[0]; }
+  [[nodiscard]] inline auto id_base() const -> const string & { return path_[0]; }
 
-  inline const vector<string> &path() const { return path_; }
+  [[nodiscard]] inline auto path() const -> const vector<string> & { return path_; }
 
 private:
   string id_{};
@@ -190,12 +190,12 @@ public:
   inline toc() = default;
   inline toc(const toc &) = default;
   inline toc(toc &&) = default;
-  inline toc &operator=(const toc &) = default;
-  inline toc &operator=(toc &&) = default;
+  inline auto operator=(const toc &) -> toc & = default;
+  inline auto operator=(toc &&) -> toc & = default;
 
   inline ~toc() = default;
 
-  inline const string &source() const { return source_str_; }
+  inline auto source() const -> const string & { return source_str_; }
 
   inline void add_field(const statement &st, const string &ident,
                         const stmt_def_field *f, const bool is_str_field) {
@@ -218,16 +218,16 @@ public:
     funcs_.put(name, {return_type, ref, st.tok()});
   }
 
-  inline const stmt_def_func &get_func_or_throw(const statement &st,
-                                                const string &name) const {
+  inline auto get_func_or_throw(const statement &st,
+                                                const string &name) const -> const stmt_def_func & {
     if (not funcs_.has(name))
       throw compiler_error(st, "function '" + name + "' not found");
 
     return *funcs_.get_const_ref(name).def;
   }
 
-  inline const type &get_func_return_type_or_throw(const statement &st,
-                                                   const string &name) const {
+  inline auto get_func_return_type_or_throw(const statement &st,
+                                                   const string &name) const -> const type & {
     if (not funcs_.has(name))
       throw compiler_error(st, "function '" + name + "' not found");
 
@@ -241,31 +241,31 @@ public:
     types_.put(tp.name(), tp);
   }
 
-  inline const type &get_type_or_throw(const statement &st,
-                                       const string &name) const {
+  inline auto get_type_or_throw(const statement &st,
+                                       const string &name) const -> const type & {
     if (not types_.has(name))
       throw compiler_error(st, "type '" + name + "' not found");
 
     return types_.get_const_ref(name);
   }
 
-  inline string source_location_for_label(const token &tk) const {
+  inline auto source_location_for_label(const token &tk) const -> string {
     size_t char_in_line{};
     const size_t n{line_number_for_char_index(
         tk.char_index(), source_str_.c_str(), char_in_line)};
     return to_string(n) + "_" + to_string(char_in_line);
   }
 
-  inline string source_location_hr(const token &tk) {
+  inline auto source_location_hr(const token &tk) -> string {
     size_t char_in_line{};
     const size_t n{line_number_for_char_index(
         tk.char_index(), source_str_.c_str(), char_in_line)};
     return to_string(n) + ":" + to_string(char_in_line);
   }
 
-  inline static size_t line_number_for_char_index(const size_t char_index,
+  inline static auto line_number_for_char_index(const size_t char_index,
                                                   const char *ptr,
-                                                  size_t &char_in_line) {
+                                                  size_t &char_in_line) -> size_t {
     size_t ix{0};
     size_t lix{0};
     size_t lineno{1};
@@ -302,8 +302,8 @@ public:
     max_usage_scratch_regs_ = 0;
   }
 
-  inline ident_resolved resolve_identifier(const statement &st,
-                                           const bool must_be_initiated) const {
+  inline auto resolve_identifier(const statement &st,
+                                           const bool must_be_initiated) const -> ident_resolved {
     const ident_resolved &ir{
         resolve_ident_or_empty(st, st.identifier(), must_be_initiated)};
     if (not ir.id_nasm.empty())
@@ -313,9 +313,9 @@ public:
                          "cannot resolve identifier '" + st.identifier() + "'");
   }
 
-  inline ident_resolved resolve_identifier(const statement &st,
+  inline auto resolve_identifier(const statement &st,
                                            const string &ident,
-                                           const bool must_be_initiated) const {
+                                           const bool must_be_initiated) const -> ident_resolved {
     const ident_resolved &ir{
         resolve_ident_or_empty(st, ident, must_be_initiated)};
     if (not ir.id_nasm.empty())
@@ -403,8 +403,8 @@ public:
     os << name << ": " << ir.id_nasm << endl;
   }
 
-  inline const string &alloc_scratch_register(const statement &st, ostream &os,
-                                              const size_t indnt) {
+  inline auto alloc_scratch_register(const statement &st, ostream &os,
+                                              const size_t indnt) -> const string & {
     if (scratch_registers_.empty())
       throw compiler_error(
           st, "out of scratch registers. try to reduce expression complexity");
@@ -449,8 +449,8 @@ public:
     allocated_registers_loc_.push_back(source_location_hr(st.tok()));
   }
 
-  inline bool alloc_named_register(const statement &st, ostream &os,
-                                   const size_t indnt, const string &reg) {
+  inline auto alloc_named_register(const statement &st, ostream &os,
+                                   const size_t indnt, const string &reg) -> bool {
     indent(os, indnt, true);
     os << "alloc " << reg;
     auto r{find(named_registers_.begin(), named_registers_.end(), reg)};
@@ -487,7 +487,7 @@ public:
     initiated_registers_.erase(reg);
   }
 
-  inline const string &get_loop_label_or_throw(const statement &st) const {
+  inline auto get_loop_label_or_throw(const statement &st) const -> const string & {
     size_t i{frames_.size()};
     while (i--) {
       if (frames_[i].is_loop())
@@ -498,7 +498,7 @@ public:
     throw compiler_error(st, "unexpected frames");
   }
 
-  inline const string &get_inline_call_path(const token &tk) const {
+  inline auto get_inline_call_path(const token &tk) const -> const string & {
     size_t i{frames_.size()};
     while (i--) {
       if (frames_[i].is_func())
@@ -507,8 +507,8 @@ public:
     throw compiler_error(tk, "not in a function");
   }
 
-  inline const string &
-  get_func_return_label_or_throw(const statement &st) const {
+  inline auto
+  get_func_return_label_or_throw(const statement &st) const -> const string & {
     size_t i{frames_.size()};
     while (i--) {
       if (frames_[i].is_func())
@@ -517,8 +517,8 @@ public:
     throw compiler_error(st, "not in a function");
   }
 
-  inline const string &
-  get_func_return_var_name_or_throw(const statement &st) const {
+  inline auto
+  get_func_return_var_name_or_throw(const statement &st) const -> const string & {
     size_t i{frames_.size()};
     while (i--) {
       if (frames_[i].is_func())
@@ -567,7 +567,7 @@ public:
     os << " " << tk.name() << endl;
   }
 
-  inline bool is_identifier_register(const string &id) const {
+  inline auto is_identifier_register(const string &id) const -> bool {
     return find(all_registers_.begin(), all_registers_.end(), id) !=
            all_registers_.end();
   }
@@ -758,12 +758,12 @@ public:
     os << op << " " << dst_resolved << "," << src_resolved << endl;
   }
 
-  inline static bool is_operand_memory(const string &operand) {
+  inline static auto is_operand_memory(const string &operand) -> bool {
     return operand.find_first_of('[') != string::npos;
   }
-  inline size_t
+  inline auto
   get_size_from_operand(const statement &st,
-                        const string &operand) const { // ? sort of ugly
+                        const string &operand) const -> size_t { // ? sort of ugly
     if (operand.starts_with("qword"))
       return 8;
     if (operand.starts_with("dword"))
@@ -781,8 +781,8 @@ public:
     // be deduced");
   }
 
-  inline static size_t get_size_from_operand_register(const statement &st,
-                                                      const string &operand) {
+  inline static auto get_size_from_operand_register(const statement &st,
+                                                      const string &operand) -> size_t {
     if (operand == "rax")
       return 8;
     if (operand == "rbx")
@@ -917,9 +917,9 @@ public:
 
     throw compiler_error(st, "unknown register '" + operand + "'");
   }
-  inline static string
+  inline static auto
   get_register_operand_for_size(const statement &st, const string &operand,
-                                const size_t size) { // ? sort of ugly
+                                const size_t size) -> string { // ? sort of ugly
     if (operand == "rax") {
       switch (size) {
       case 8:
@@ -1123,15 +1123,15 @@ public:
 
   inline void set_type_void(const type &tp) { type_void_ = &tp; }
 
-  inline const type &get_type_void() const { return *type_void_; }
+  inline auto get_type_void() const -> const type & { return *type_void_; }
 
   inline void set_type_default(const type &tp) { type_default_ = &tp; }
 
-  inline const type &get_type_default() const { return *type_default_; }
+  inline auto get_type_default() const -> const type & { return *type_default_; }
 
   inline void set_type_bool(const type &tp) { type_bool_ = &tp; }
 
-  inline const type &get_type_bool() const { return *type_bool_; }
+  inline auto get_type_bool() const -> const type & { return *type_bool_; }
 
   inline static void indent(ostream &os, const size_t indnt,
                             const bool comment = false) {
@@ -1146,8 +1146,8 @@ public:
   }
 
 private:
-  inline pair<string, frame &>
-  get_id_and_frame_for_identifier(const string &name) {
+  inline auto
+  get_id_and_frame_for_identifier(const string &name) -> pair<string, frame &> {
     string id{name};
     // traverse the frames and resolve the id_nasm (which might be an alias) to
     // a variable, field, register or constant
@@ -1170,11 +1170,11 @@ private:
     return {move(id), frames_[i]};
   }
 
-  inline bool is_register_initiated(const string &reg) const {
+  inline auto is_register_initiated(const string &reg) const -> bool {
     return initiated_registers_.contains(reg);
   }
 
-  inline size_t get_current_stack_size() const {
+  inline auto get_current_stack_size() const -> size_t {
     assert(!frames_.empty());
     size_t n{0};
     size_t i{frames_.size()};
@@ -1187,9 +1187,9 @@ private:
     return n;
   }
 
-  inline ident_resolved
+  inline auto
   resolve_ident_or_empty(const statement &st, const string &ident,
-                         const bool must_be_initiated) const {
+                         const bool must_be_initiated) const -> ident_resolved {
     const baz_ident bid{ident};
     string id{bid.id_base()};
     // traverse the frames and resolve the id_nasm (which might be an alias) to

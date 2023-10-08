@@ -17,8 +17,8 @@ public:
   inline type() = default;
   inline type(const type &) = default;
   inline type(type &&) = default;
-  inline type &operator=(const type &) = default;
-  inline type &operator=(type &&) = default;
+  inline auto operator=(const type &) -> type & = default;
+  inline auto operator=(type &&) -> type & = default;
 
   inline ~type() = default;
 
@@ -27,7 +27,7 @@ public:
     fields_.emplace_back(type_field{name, tp, size_});
     size_ += tp.size_;
   }
-  inline const type_field &field(const token &tk, const string &name) const {
+  [[nodiscard]] inline auto field(const token &tk, const string &name) const -> const type_field & {
     for (const type_field &fld : fields_) {
       if (fld.name == name)
         return fld;
@@ -36,8 +36,8 @@ public:
                                  name_ + "'");
   }
 
-  inline string accessor(const token &tk, const vector<string> &path,
-                         const int stack_idx_base) const {
+  [[nodiscard]] inline auto accessor(const token &tk, const vector<string> &path,
+                         const int stack_idx_base) const -> string {
     const pair<size_t, size_t> res{field_size_and_offset(tk, path)};
     const size_t offset{res.second};
     const size_t fldsize{res.first};
@@ -49,8 +49,8 @@ public:
            to_string(stack_idx) + "]";
   }
 
-  inline static string get_memory_operand_for_size(const token &tk,
-                                                   const size_t size) {
+  inline static auto get_memory_operand_for_size(const token &tk,
+                                                   const size_t size) -> string {
     switch (size) {
     case 8:
       return "qword";
@@ -66,15 +66,15 @@ public:
     }
   }
 
-  inline size_t size() const { return size_; }
+  [[nodiscard]] inline auto size() const -> size_t { return size_; }
 
   inline void set_size(const size_t nbytes) { size_ = nbytes; }
 
-  inline const string &name() const { return name_; }
+  [[nodiscard]] inline auto name() const -> const string & { return name_; }
 
   inline void set_name(const string &nm) { name_ = nm; }
 
-  inline bool is_built_in() const { return is_built_in_; }
+  [[nodiscard]] inline auto is_built_in() const -> bool { return is_built_in_; }
 
   inline void clear_fields() {
     fields_.clear();
@@ -82,8 +82,8 @@ public:
   }
 
 private:
-  inline pair<size_t, size_t>
-  field_size_and_offset(const token &tk, const vector<string> &path) const {
+  [[nodiscard]] inline auto
+  field_size_and_offset(const token &tk, const vector<string> &path) const -> pair<size_t, size_t> {
     if (path.size() == 1) {
       // path contains only a reference to the variable
       // find first primitive type

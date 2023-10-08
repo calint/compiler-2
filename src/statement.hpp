@@ -15,8 +15,8 @@ public:
   inline statement() = default;
   inline statement(statement &&) = default;
   inline statement(const statement &) = default;
-  inline statement &operator=(const statement &) = default;
-  inline statement &operator=(statement &&) = default;
+  inline auto operator=(const statement &) -> statement & = default;
+  inline auto operator=(statement &&) -> statement & = default;
 
   inline virtual void compile([[maybe_unused]] toc &tc, ostream &os,
                               [[maybe_unused]] size_t indent,
@@ -30,19 +30,19 @@ public:
     token_.source_to(os);
   }
 
-  inline const token &tok() const { return token_; }
+  [[nodiscard]] inline auto tok() const -> const token & { return token_; }
 
-  inline virtual bool is_in_data_section() const { return false; }
+  [[nodiscard]] inline virtual auto is_in_data_section() const -> bool { return false; }
 
-  inline virtual bool is_expression() const { return false; }
+  [[nodiscard]] inline virtual auto is_expression() const -> bool { return false; }
 
-  inline virtual const string &identifier() const { return token_.name(); }
+  [[nodiscard]] inline virtual auto identifier() const -> const string & { return token_.name(); }
 
-  inline virtual const unary_ops &get_unary_ops() const { return uops_; }
+  [[nodiscard]] inline virtual auto get_unary_ops() const -> const unary_ops & { return uops_; }
 
   inline void set_type(const type &tp) { type_ = &tp; }
 
-  inline virtual const type &get_type() const { return *type_; }
+  [[nodiscard]] inline virtual auto get_type() const -> const type & { return *type_; }
 
 private:
   token token_{};

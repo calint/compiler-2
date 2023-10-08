@@ -12,8 +12,8 @@ public:
   inline call_asm_mov() = default;
   inline call_asm_mov(const call_asm_mov &) = default;
   inline call_asm_mov(call_asm_mov &&) = default;
-  inline call_asm_mov &operator=(const call_asm_mov &) = default;
-  inline call_asm_mov &operator=(call_asm_mov &&) = default;
+  inline auto operator=(const call_asm_mov &) -> call_asm_mov & = default;
+  inline auto operator=(call_asm_mov &&) -> call_asm_mov & = default;
 
   inline ~call_asm_mov() override = default;
 

@@ -31,8 +31,8 @@ public:
   inline stmt_def_func_param() = default;
   inline stmt_def_func_param(const stmt_def_func_param &) = default;
   inline stmt_def_func_param(stmt_def_func_param &&) = default;
-  inline stmt_def_func_param &operator=(const stmt_def_func_param &) = default;
-  inline stmt_def_func_param &operator=(stmt_def_func_param &&) = default;
+  inline auto operator=(const stmt_def_func_param &) -> stmt_def_func_param & = default;
+  inline auto operator=(stmt_def_func_param &&) -> stmt_def_func_param & = default;
 
   inline ~stmt_def_func_param() override = default;
 
@@ -50,11 +50,11 @@ public:
     }
   }
 
-  inline const vector<token> &keywords() const { return keywords_; }
+  [[nodiscard]] inline auto keywords() const -> const vector<token> & { return keywords_; }
 
-  inline const string &name() const { return tok().name(); }
+  [[nodiscard]] inline auto name() const -> const string & { return tok().name(); }
 
-  inline string get_register_or_empty() const {
+  [[nodiscard]] inline auto get_register_or_empty() const -> string {
     for (const token &kw : keywords()) {
       if (!kw.name().starts_with("reg_"))
         continue;

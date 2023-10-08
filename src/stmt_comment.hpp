@@ -10,8 +10,8 @@ public:
   inline stmt_comment() = default;
   inline stmt_comment(const stmt_comment &) = default;
   inline stmt_comment(stmt_comment &&) = default;
-  inline stmt_comment &operator=(const stmt_comment &) = default;
-  inline stmt_comment &operator=(stmt_comment &&) = default;
+  inline auto operator=(const stmt_comment &) -> stmt_comment & = default;
+  inline auto operator=(stmt_comment &&) -> stmt_comment & = default;
 
   inline ~stmt_comment() override = default;
 

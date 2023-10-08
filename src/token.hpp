@@ -13,8 +13,8 @@ public:
   inline token() = default;
   inline token(const token &) = default;
   inline token(token &&) = default;
-  inline token &operator=(const token &) = default;
-  inline token &operator=(token &&) = default;
+  inline auto operator=(const token &) -> token & = default;
+  inline auto operator=(token &&) -> token & = default;
 
   inline ~token() = default;
 
@@ -36,25 +36,25 @@ public:
     os << regex_replace(name_, regex("\\\\n"), "',10,'");
   }
 
-  inline bool is_name(const string &s) const { return name_ == s; }
+  [[nodiscard]] inline auto is_name(const string &s) const -> bool { return name_ == s; }
 
-  inline const string &name() const { return name_; }
+  [[nodiscard]] inline auto name() const -> const string & { return name_; }
 
-  inline size_t char_index() const { return start_ix_; }
+  [[nodiscard]] inline auto char_index() const -> size_t { return start_ix_; }
 
-  inline size_t char_index_end() const { return end_ix_; }
+  [[nodiscard]] inline auto char_index_end() const -> size_t { return end_ix_; }
 
-  inline bool is_empty() const {
+  [[nodiscard]] inline auto is_empty() const -> bool {
     return ws_left_.empty() and name_.empty() and ws_right_.empty();
   }
 
   // inline bool is_empty()const{return name_.empty();}
 
-  inline size_t total_length_in_chars() const {
+  [[nodiscard]] inline auto total_length_in_chars() const -> size_t {
     return ws_left_.length() + name_.length() + ws_right_.length();
   }
 
-  inline bool is_string() const { return is_str_; }
+  [[nodiscard]] inline auto is_string() const -> bool { return is_str_; }
 
 private:
   string ws_left_{};

@@ -5,5 +5,5 @@ public:
   inline explicit unexpected_exception(string message)
       : msg{std::move(message)} {}
 
-  const char *what() const noexcept override { return msg.c_str(); }
+  [[nodiscard]] auto what() const noexcept -> const char * override { return msg.c_str(); }
 };
