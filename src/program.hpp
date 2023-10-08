@@ -19,7 +19,7 @@ class program final {
 public:
   inline explicit program(const string &source) : tc_{source} {
     // add built-in assembler calls
-    vector<string> assem{"mov", "syscall"};
+    const vector<string> assem{"mov", "syscall"};
     for (const string &s : assem)
       tc_.add_func(prg, s, type_void, nullptr);
 

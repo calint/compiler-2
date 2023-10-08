@@ -374,7 +374,7 @@ public:
                                    source_location_hr(var.declared_at));
     }
     // check if variable shadows previously declared variable
-    pair<string, frame &> idfrm{get_id_and_frame_for_identifier(name)};
+    const pair<string, frame &> idfrm{get_id_and_frame_for_identifier(name)};
     const string &id = idfrm.first;
     const frame &frm = idfrm.second;
     if (frm.has_var(id)) {
@@ -777,8 +777,8 @@ public:
 
     // constant
     return get_type_default().size();
-    //		throw compiler_error(st,"size of operand '"+operand+"' could not be
-    //deduced");
+    //		throw compiler_error(st,"size of operand '"+operand+"' could not
+    //be deduced");
   }
 
   inline size_t get_size_from_operand_register(const statement &st,
@@ -1032,7 +1032,7 @@ public:
                                      " for register '" + operand + "'");
       }
     }
-    regex rx{R"(r(\d+))"};
+    const regex rx{R"(r(\d+))"};
     smatch match;
     if (!regex_search(operand, match, rx)) {
       throw compiler_error(st, "unknown register " + operand);
@@ -1096,7 +1096,7 @@ public:
   }
 
   inline void set_var_is_initiated(const string &name) {
-    baz_ident bid{name};
+    const baz_ident bid{name};
     pair<string, frame &> idfrm{get_id_and_frame_for_identifier(bid.id_base())};
     const string &id = idfrm.first;
     frame &frm = idfrm.second;
@@ -1188,7 +1188,7 @@ private:
   inline const ident_resolved
   resolve_ident_or_empty(const statement &st, const string &ident,
                          const bool must_be_initiated) const {
-    baz_ident bid{ident};
+    const baz_ident bid{ident};
     string id{bid.id_base()};
     // traverse the frames and resolve the id_nasm (which might be an alias) to
     // a variable, field, register or constant
