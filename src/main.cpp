@@ -110,7 +110,7 @@ inline auto create_statement_from_tokenizer(toc &tc,
 }
 
 // solves circular reference unary_ops->toc->statement->unary_ops
-inline void unary_ops::compile(toc &tc, ostream &os, size_t indent_level,
+inline void unary_ops::compile(toc & /*tc*/, ostream &os, size_t indent_level,
                                const string &dst_resolved) const {
   size_t i{ops_.size()};
   while (i--) {
