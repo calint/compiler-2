@@ -764,13 +764,13 @@ public:
   inline size_t
   get_size_from_operand(const statement &st,
                         const string &operand) const { // ? sort of ugly
-    if (operand.find("qword") == 0)
+    if (operand.starts_with("qword"))
       return 8;
-    if (operand.find("dword") == 0)
+    if (operand.starts_with("dword"))
       return 4;
-    if (operand.find("word") == 0)
+    if (operand.starts_with("word"))
       return 2;
-    if (operand.find("byte") == 0)
+    if (operand.starts_with("byte"))
       return 1;
     if (is_identifier_register(operand))
       return get_size_from_operand_register(st, operand);
@@ -778,7 +778,7 @@ public:
     // constant
     return get_type_default().size();
     //		throw compiler_error(st,"size of operand '"+operand+"' could not
-    //be deduced");
+    // be deduced");
   }
 
   inline size_t get_size_from_operand_register(const statement &st,
@@ -1256,14 +1256,14 @@ private:
       return {ident, id, const_value, get_type_default(),
               ident_resolved::ident_type::CONST};
 
-    if (id.find("0x") == 0) { // hex
+    if (id.starts_with("0x")) { // hex
       const long int value{strtol(id.c_str() + 2, &ep, 16)};
       if (!*ep)
         return {ident, id, value, get_type_default(),
                 ident_resolved::ident_type::CONST};
     }
 
-    if (id.find("0b") == 0) { // binary
+    if (id.starts_with("0b")) { // binary
       const long int value{strtol(id.c_str() + 2, &ep, 2)};
       if (!*ep)
         return {ident, id, value, get_type_default(),
