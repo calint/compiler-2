@@ -4,7 +4,7 @@
 
 class stmt_if final : public statement {
 public:
-  inline stmt_if(toc &tc, token tk, tokenizer &t) : statement{move(tk)} {
+  inline stmt_if(toc &tc, token tk, tokenizer &t) : statement{std::move(tk)} {
     set_type(tc.get_type_void());
     // if a=b {x} else if c=d {y} else {z}
     // 'a=b {x}', 'c=d {y}' are 'branches'
@@ -28,15 +28,15 @@ public:
         t.put_back_token(tkn2);
         // 'else' branch
         // save tokens to be able to reproduce the source
-        else_if_tokens_.push_back(move(tkn));
+        else_if_tokens_.push_back(std::move(tkn));
         // read the 'else' code
         else_code_ = {tc, t};
         return;
       }
       // 'else if': continue reading if branches
       // save tokens to be able to reproduce the source
-      else_if_tokens_.push_back(move(tkn));
-      else_if_tokens_.push_back(move(tkn2));
+      else_if_tokens_.push_back(std::move(tkn));
+      else_if_tokens_.push_back(std::move(tkn2));
     }
   }
 

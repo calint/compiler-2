@@ -14,7 +14,7 @@ public:
     }
     expr_ops_list e{tc, t, in_args};
     set_type(e.get_type());
-    eols_ = move(e);
+    eols_ = std::move(e);
   }
 
   inline expr_any() = default;

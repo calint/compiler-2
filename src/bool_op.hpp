@@ -16,7 +16,7 @@ public:
         break;
       }
       is_not = not is_not;
-      nots_.push_back(move(tk));
+      nots_.push_back(std::move(tk));
     }
     is_not_ = is_not;
 

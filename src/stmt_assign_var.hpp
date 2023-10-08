@@ -5,7 +5,7 @@
 class stmt_assign_var final : public statement {
 public:
   inline stmt_assign_var(toc &tc, token name, token type, tokenizer &t)
-      : statement{move(name)}, type_{move(type)} {
+      : statement{std::move(name)}, type_{std::move(type)} {
     const ident_resolved &dst_resolved{tc.resolve_identifier(*this, false)};
     exp_ = {tc, dst_resolved.tp, t, false};
     set_type(dst_resolved.tp);

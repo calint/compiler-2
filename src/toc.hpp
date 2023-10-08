@@ -1167,7 +1167,7 @@ private:
       if (frames_[i].has_var(id))
         break;
     }
-    return {move(id), frames_[i]};
+    return {std::move(id), frames_[i]};
   }
 
   inline auto is_register_initiated(const string &reg) const -> bool {

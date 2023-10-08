@@ -2,7 +2,7 @@
 
 class stmt_break final : public statement {
 public:
-  inline stmt_break(toc &tc, token tk) : statement{move(tk)} {
+  inline stmt_break(toc &tc, token tk) : statement{std::move(tk)} {
     set_type(tc.get_type_void());
   }
 

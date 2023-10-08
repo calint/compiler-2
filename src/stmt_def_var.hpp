@@ -18,7 +18,7 @@ private:
 class stmt_def_var final : public statement {
 public:
   inline stmt_def_var(toc &tc, token tk, tokenizer &t)
-      : statement{move(tk)}, name_{t.next_token()} {
+      : statement{std::move(tk)}, name_{t.next_token()} {
     if (t.is_next_char(':')) {
       type_ = t.next_token();
     }

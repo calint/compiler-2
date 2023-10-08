@@ -5,7 +5,7 @@
 class call_asm_mov final : public call_asm {
 public:
   inline call_asm_mov(toc &tc, token tk, tokenizer &t)
-      : call_asm{tc, move(tk), t} {
+      : call_asm{tc, std::move(tk), t} {
     set_type(tc.get_type_void());
   }
 
