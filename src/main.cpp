@@ -114,7 +114,7 @@ inline void unary_ops::compile(toc &tc, ostream &os, size_t indent_level,
                                const string &dst_resolved) const {
   size_t i{ops_.size()};
   while (i--) {
-    tc.indent(os, indent_level, false);
+    toc::indent(os, indent_level, false);
     const char op{ops_[i]};
     if (op == '~') {
       os << "not " << dst_resolved << endl;

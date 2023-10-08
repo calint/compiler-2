@@ -66,21 +66,21 @@ public:
         eol.compile(tc, os, indent, jmp_to_if_false, jmp_to_if_true, false)};
     if (const_eval) {
       if (*const_eval) {
-        tc.asm_label(*this, os, indent, jmp_to_if_true);
+        toc::asm_label(*this, os, indent, jmp_to_if_true);
         tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "1");
         return;
       }
       // constant evaluation to false
-      tc.asm_label(*this, os, indent, jmp_to_if_false);
+      toc::asm_label(*this, os, indent, jmp_to_if_false);
       tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "0");
       return;
     }
-    tc.asm_label(*this, os, indent, jmp_to_if_true);
+    toc::asm_label(*this, os, indent, jmp_to_if_true);
     tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "1");
-    tc.asm_jmp(*this, os, indent, jmp_to_end);
-    tc.asm_label(*this, os, indent, jmp_to_if_false);
+    toc::asm_jmp(*this, os, indent, jmp_to_end);
+    toc::asm_label(*this, os, indent, jmp_to_if_false);
     tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "0");
-    tc.asm_label(*this, os, indent, jmp_to_end);
+    toc::asm_label(*this, os, indent, jmp_to_end);
   }
 
   [[nodiscard]] inline auto is_bool() const -> bool { return eols_.index() == 1; }

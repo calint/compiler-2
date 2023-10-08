@@ -26,11 +26,11 @@ public:
         const string &src_resolved{ir.id_nasm};
         tc.asm_cmd(*this, os, indent, "mov", "rax", src_resolved);
       }
-      tc.asm_pop(*this, os, indent, "rbp");
-      tc.asm_ret(*this, os, indent);
+      toc::asm_pop(*this, os, indent, "rbp");
+      toc::asm_ret(*this, os, indent);
       return;
     }
     // in-lined
-    tc.asm_jmp(*this, os, indent, ret);
+    toc::asm_jmp(*this, os, indent, ret);
   }
 };

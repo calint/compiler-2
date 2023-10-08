@@ -119,14 +119,14 @@ public:
       return;
 }
 
-    tc.asm_label(*this, os, indent, name());
-    tc.indent(os, indent + 1, true);
+    toc::asm_label(*this, os, indent, name());
+    toc::indent(os, indent + 1, true);
     source_def_comment_to(os);
 
     tc.enter_func(name(), "", "", false,
                   returns().empty() ? "" : returns()[0].name());
 
-    tc.asm_push(*this, os, indent + 1, "rbp");
+    toc::asm_push(*this, os, indent + 1, "rbp");
     tc.asm_cmd(*this, os, indent + 1, "mov", "rbp", "rsp");
 
     vector<string> allocated_named_registers;
@@ -141,8 +141,8 @@ public:
       tc.asm_cmd(*this, os, indent + 1, "mov", "rax", ret_resolved.id_nasm);
     }
 
-    tc.asm_pop(*this, os, indent + 1, "rbp");
-    tc.asm_ret(*this, os, indent + 1);
+    toc::asm_pop(*this, os, indent + 1, "rbp");
+    toc::asm_ret(*this, os, indent + 1);
 
     free_allocated_registers(tc, os, indent, allocated_named_registers);
 

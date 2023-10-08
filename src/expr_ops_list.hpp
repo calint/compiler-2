@@ -446,14 +446,14 @@ private:
       // the operand must be stored in CL
       const bool rcx_allocated{tc.alloc_named_register(src, os, indent, "rcx")};
       if (not rcx_allocated) {
-        tc.asm_push(src, os, indent, "rcx");
+        toc::asm_push(src, os, indent, "rcx");
       }
       src.compile(tc, os, indent, "rcx");
       tc.asm_cmd(src, os, indent, op, dst.id_nasm, "cl");
       if (rcx_allocated) {
         tc.free_named_register(os, indent, "rcx");
       } else {
-        tc.asm_pop(src, os, indent, "rcx");
+        toc::asm_pop(src, os, indent, "rcx");
       }
       return;
     }
@@ -473,20 +473,20 @@ private:
       // the operand must be stored in CL
       const bool rcx_allocated{tc.alloc_named_register(src, os, indent, "rcx")};
       if (not rcx_allocated) {
-        tc.asm_push(src, os, indent, "rcx");
+        toc::asm_push(src, os, indent, "rcx");
       }
       tc.asm_cmd(src, os, indent, "mov", "rcx", src_resolved.id_nasm);
       tc.asm_cmd(src, os, indent, op, dst.id_nasm, "cl");
       if (rcx_allocated) {
         tc.free_named_register(os, indent, "rcx");
       } else {
-        tc.asm_pop(src, os, indent, "rcx");
+        toc::asm_pop(src, os, indent, "rcx");
       }
       return;
     }
     const bool rcx_allocated{tc.alloc_named_register(src, os, indent, "rcx")};
     if (not rcx_allocated) {
-      tc.asm_push(src, os, indent, "rcx");
+      toc::asm_push(src, os, indent, "rcx");
     }
     tc.asm_cmd(src, os, indent, "mov", "rcx", src_resolved.id_nasm);
     uops.compile(tc, os, indent, "rcx");
@@ -494,7 +494,7 @@ private:
     if (rcx_allocated) {
       tc.free_named_register(os, indent, "rcx");
     } else {
-      tc.asm_pop(src, os, indent, "rcx");
+      toc::asm_pop(src, os, indent, "rcx");
     }
   }
 
@@ -508,28 +508,28 @@ private:
       const bool rax_allocated =
           tc.alloc_named_register(src, os, indent, "rax");
       if (not rax_allocated) {
-        tc.asm_push(src, os, indent, "rax");
+        toc::asm_push(src, os, indent, "rax");
       }
       tc.asm_cmd(src, os, indent, "mov", "rax", dst.id_nasm);
       const bool rdx_allocated =
           tc.alloc_named_register(src, os, indent, "rdx");
       if (not rdx_allocated) {
-        tc.asm_push(src, os, indent, "rdx");
+        toc::asm_push(src, os, indent, "rdx");
       }
-      tc.indent(os, indent, false);
+      toc::indent(os, indent, false);
       os << "cqo" << endl;
-      tc.indent(os, indent, false);
+      toc::indent(os, indent, false);
       os << "idiv " << reg << endl;
       tc.asm_cmd(src, os, indent, "mov", dst.id_nasm, op);
       if (rdx_allocated) {
         tc.free_named_register(os, indent, "rdx");
       } else {
-        tc.asm_pop(src, os, indent, "rdx");
+        toc::asm_pop(src, os, indent, "rdx");
       }
       if (rax_allocated) {
         tc.free_named_register(os, indent, "rax");
       } else {
-        tc.asm_pop(src, os, indent, "rax");
+        toc::asm_pop(src, os, indent, "rax");
       }
       tc.free_scratch_register(os, indent, reg);
       return;
@@ -539,32 +539,32 @@ private:
       const bool rax_allocated =
           tc.alloc_named_register(src, os, indent, "rax");
       if (not rax_allocated) {
-        tc.asm_push(src, os, indent, "rax");
+        toc::asm_push(src, os, indent, "rax");
       }
       tc.asm_cmd(src, os, indent, "mov", "rax", dst.id_nasm);
       const bool rdx_allocated =
           tc.alloc_named_register(src, os, indent, "rdx");
       if (not rdx_allocated) {
-        tc.asm_push(src, os, indent, "rdx");
+        toc::asm_push(src, os, indent, "rdx");
       }
-      tc.indent(os, indent, false);
+      toc::indent(os, indent, false);
       os << "cqo" << endl;
       const string &r{tc.alloc_scratch_register(src, os, indent)};
       tc.asm_cmd(src, os, indent, "mov", r,
                  src.get_unary_ops().as_string() + src_resolved.id_nasm);
-      tc.indent(os, indent, false);
+      toc::indent(os, indent, false);
       os << "idiv " << r << endl;
       tc.free_scratch_register(os, indent, r);
       tc.asm_cmd(src, os, indent, "mov", dst.id_nasm, op);
       if (rdx_allocated) {
         tc.free_named_register(os, indent, "rdx");
       } else {
-        tc.asm_pop(src, os, indent, "rdx");
+        toc::asm_pop(src, os, indent, "rdx");
       }
       if (rax_allocated) {
         tc.free_named_register(os, indent, "rax");
       } else {
-        tc.asm_pop(src, os, indent, "rax");
+        toc::asm_pop(src, os, indent, "rax");
       }
       return;
     }
@@ -577,28 +577,28 @@ private:
     if (uops.is_empty()) {
       const bool rax_allocated{tc.alloc_named_register(src, os, indent, "rax")};
       if (not rax_allocated) {
-        tc.asm_push(src, os, indent, "rax");
+        toc::asm_push(src, os, indent, "rax");
       }
       tc.asm_cmd(src, os, indent, "mov", "rax", dst.id_nasm);
       const bool rdx_allocated{tc.alloc_named_register(src, os, indent, "rdx")};
       if (not rdx_allocated) {
-        tc.asm_push(src, os, indent, "rdx");
+        toc::asm_push(src, os, indent, "rdx");
       }
-      tc.indent(os, indent, false);
+      toc::indent(os, indent, false);
       os << "cqo" << endl;
-      tc.indent(os, indent, false);
+      toc::indent(os, indent, false);
       os << "idiv " << src_resolved.id_nasm << endl;
       // op is either "rax" for the quotient or "rdx" for the reminder
       tc.asm_cmd(src, os, indent, "mov", dst.id_nasm, op);
       if (rdx_allocated) {
         tc.free_named_register(os, indent, "rdx");
       } else {
-        tc.asm_pop(src, os, indent, "rdx");
+        toc::asm_pop(src, os, indent, "rdx");
       }
       if (rax_allocated) {
         tc.free_named_register(os, indent, "rax");
       } else {
-        tc.asm_pop(src, os, indent, "rax");
+        toc::asm_pop(src, os, indent, "rax");
       }
       return;
     }
@@ -607,27 +607,27 @@ private:
     uops.compile(tc, os, indent, reg);
     const bool rax_allocated{tc.alloc_named_register(src, os, indent, "rax")};
     if (not rax_allocated) {
-      tc.asm_push(src, os, indent, "rax");
+      toc::asm_push(src, os, indent, "rax");
     }
     tc.asm_cmd(src, os, indent, "mov", "rax", dst.id_nasm);
     const bool rdx_allocated{tc.alloc_named_register(src, os, indent, "rdx")};
     if (not rdx_allocated) {
-      tc.asm_push(src, os, indent, "rdx");
+      toc::asm_push(src, os, indent, "rdx");
     }
-    tc.indent(os, indent, false);
+    toc::indent(os, indent, false);
     os << "cqo" << endl;
-    tc.indent(os, indent, false);
+    toc::indent(os, indent, false);
     os << "idiv " << reg << endl;
     tc.asm_cmd(src, os, indent, "mov", dst.id_nasm, op);
     if (rdx_allocated) {
       tc.free_named_register(os, indent, "rdx");
     } else {
-      tc.asm_pop(src, os, indent, "rdx");
+      toc::asm_pop(src, os, indent, "rdx");
     }
     if (rax_allocated) {
       tc.free_named_register(os, indent, "rax");
     } else {
-      tc.asm_pop(src, os, indent, "rax");
+      toc::asm_pop(src, os, indent, "rax");
     }
     tc.free_scratch_register(os, indent, reg);
   }
