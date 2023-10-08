@@ -46,7 +46,7 @@ public:
       nasm_ident = "[rbp" + to_string(stack_idx) + "]";
       allocated_stack_ += tpe.size();
     } else {
-      throw "toc:fram:add_var";
+      throw unexpected_exception("toc:fram:add_var");
     }
     //		if(size==8){
     //			nasm_ident="qword"+nasm_ident;
@@ -1116,8 +1116,8 @@ public:
       return;
     }
 
-    throw "should not be reached: " + string{__FILE__} + ":" +
-        to_string(__LINE__);
+    throw unexpected_exception("should not be reached: " + string{__FILE__} +
+                               ":" + to_string(__LINE__));
   }
 
   inline void set_type_void(const type &tp) { type_void_ = &tp; }

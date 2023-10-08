@@ -209,8 +209,8 @@ public:
 
     return lhs_.identifier();
 
-    throw "unexpected code path " + string{__FILE__} + ":" +
-        to_string(__LINE__);
+    throw unexpected_exception("unexpected code path " + string{__FILE__} +
+                               ":" + to_string(__LINE__));
   }
 
   inline bool is_expression() const override { return is_expression_; }
@@ -262,8 +262,8 @@ private:
       return lh > rh;
     if (op == ">=")
       return lh >= rh;
-    throw "unexpected code path " + string{__FILE__} + ":" +
-        to_string(__LINE__);
+    throw unexpected_exception("unexpected code path " + string{__FILE__} +
+                               ":" + to_string(__LINE__));
   }
 
   inline static string asm_jxx_for_op(const string &op) {
@@ -286,8 +286,8 @@ private:
       return "jge";
     }
 
-    throw "unexpected code path " + string{__FILE__} + ":" +
-        to_string(__LINE__);
+    throw unexpected_exception("unexpected code path " + string{__FILE__} +
+                               ":" + to_string(__LINE__));
   }
 
   inline static string asm_jxx_for_op_inv(const string &op) {
@@ -309,8 +309,8 @@ private:
     if (op == ">=") {
       return "jl";
     }
-    throw "unexpected code path " + string{__FILE__} + ":" +
-        to_string(__LINE__);
+    throw unexpected_exception("unexpected code path " + string{__FILE__} +
+                               ":" + to_string(__LINE__));
   }
 
   inline void resolve_cmp(toc &tc, ostream &os, size_t indent,

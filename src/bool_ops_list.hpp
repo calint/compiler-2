@@ -203,7 +203,7 @@ public:
               // next bool eval
               jmp_true = cmp_label_from(tc, bools_[i + 1]);
             } else {
-              throw "expected 'or' or 'and'";
+              throw unexpected_exception("expected 'or' or 'and'");
             }
             optional<bool> const_eval{
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
@@ -221,7 +221,7 @@ public:
               // jump_true is next bool eval
               jmp_true = cmp_label_from(tc, bools_[i + 1]);
             } else {
-              throw "expected 'or' or 'and'";
+              throw unexpected_exception("expected 'or' or 'and'");
             }
             optional<bool> const_eval{
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
@@ -258,7 +258,7 @@ public:
               // constant evaluated to false, short-circuit
               return *const_eval;
           } else {
-            throw "expected 'or' or 'and'";
+            throw unexpected_exception("expected 'or' or 'and'");
           }
         } else {
           optional<bool> const_eval{
@@ -286,7 +286,7 @@ public:
               // constant evaluated to false, short-circuit
               return *const_eval;
           } else {
-            throw "expected 'or' or 'and'";
+            throw unexpected_exception("expected 'or' or 'and'");
           }
         } else {
           optional<bool> const_eval{
@@ -316,8 +316,8 @@ public:
 
   inline const string &identifier() const override {
     if (bools_.size() > 1)
-      throw "unexpected code path " + string{__FILE__} + ":" +
-          to_string(__LINE__);
+      throw unexpected_exception("unexpected code path " + string{__FILE__} +
+                                 ":" + to_string(__LINE__));
 
     assert(!bools_.empty());
 

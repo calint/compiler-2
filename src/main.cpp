@@ -7,10 +7,10 @@ using namespace std;
 
 #include "call_asm_mov.hpp"
 #include "call_asm_syscall.hpp"
+#include "exceptions.hpp"
 #include "program.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
-#include "exceptions.hpp"
 
 static string read_file_to_string(const char *file_name);
 static void optimize_jumps_1(istream &is, ostream &os);
@@ -26,8 +26,8 @@ int main(int argc, char *args[]) {
     p.source_to(fo);
     fo.close();
     if (read_file_to_string(src_file_name) != read_file_to_string("diff.baz"))
-      throw "generated source differs. diff " + string{src_file_name} +
-          " diff.baz";
+      throw unexpected_exception("generated source differs. diff " +
+                                 string{src_file_name} + " diff.baz");
 
     // without jump optimizations
     //		 p.build(cout);
@@ -116,8 +116,8 @@ inline void unary_ops::compile(toc &tc, ostream &os, size_t indent_level,
       //		}else if(op=='!'){
       //			os<<"xor "<<dst_resolved<<",1"<<endl;
     } else {
-      throw "unexpected code path " + string{__FILE__} + ":" +
-          to_string(__LINE__);
+      throw unexpected_exception("unexpected code path " + string{__FILE__} +
+                                 ":" + to_string(__LINE__));
     }
   }
 }
@@ -306,7 +306,7 @@ static void optimize_jumps_2(istream &is, ostream &os) {
 static string read_file_to_string(const char *file_name) {
   ifstream fs{file_name};
   if (not fs.is_open())
-    throw "cannot open file '" + string{file_name} + "'";
+    throw unexpected_exception("cannot open file '" + string{file_name} + "'");
   std::stringstream buf;
   buf << fs.rdbuf();
   return buf.str();

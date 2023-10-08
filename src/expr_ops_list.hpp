@@ -226,8 +226,8 @@ private:
     case '%':
       return 6;
     default:
-      throw "unexpected code path " + string{__FILE__} + ":" +
-          to_string(__LINE__);
+      throw unexpected_exception("unexpected code path " + string{__FILE__} +
+                                 ":" + to_string(__LINE__));
     }
   }
 

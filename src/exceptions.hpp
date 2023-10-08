@@ -24,10 +24,3 @@ public:
   const char *what() const noexcept override { return msg.c_str(); }
 };
 
-class unexpected_exception final : public std::exception {
-public:
-  inline unexpected_exception(string message) : msg{std::move(message)} {}
-
-  const string msg{};
-  const char *what() const noexcept override { return msg.c_str(); }
-};

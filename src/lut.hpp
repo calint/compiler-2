@@ -13,7 +13,7 @@ public:
         return e.data;
       }
     }
-    throw "element not found: " + key;
+    throw unexpected_exception("element not found: " + key);
   }
 
   inline bool has(const string &key) const {
@@ -36,7 +36,7 @@ public:
         return e.data;
       }
     }
-    throw "element not found: " + key;
+    throw unexpected_exception("element not found: " + key);
   }
 
   // for clarity get_const_ref instead of overloading get_ref
@@ -51,7 +51,7 @@ public:
         return e.data;
       }
     }
-    throw "element not found: " + key;
+    throw unexpected_exception("element not found: " + key);
   }
 
 private:

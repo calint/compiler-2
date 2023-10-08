@@ -1,6 +1,6 @@
 #pragma once
-
 #include "tokenizer.hpp"
+#include "unexpected_exception.hpp"
 
 class toc;
 
@@ -67,8 +67,8 @@ public:
         break;
         //			case'!':v=v^1;break;
       default:
-        throw "unexpected code path " + string{__FILE__} + ":" +
-            to_string(__LINE__);
+        throw unexpected_exception("unexpected code path " + string{__FILE__} +
+                                   ":" + to_string(__LINE__));
       }
     }
     return v;
