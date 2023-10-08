@@ -13,6 +13,8 @@ public:
   inline stmt_comment &operator=(const stmt_comment &) = default;
   inline stmt_comment &operator=(stmt_comment &&) = default;
 
+  inline ~stmt_comment() override = default;
+
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
     os << line_ << endl;

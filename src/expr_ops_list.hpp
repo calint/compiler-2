@@ -133,6 +133,8 @@ public:
   inline expr_ops_list &operator=(const expr_ops_list &) = default;
   inline expr_ops_list &operator=(expr_ops_list &&) = default;
 
+  inline ~expr_ops_list() override = default;
+
   inline void source_to(ostream &os) const override {
     expression::source_to(os); // whitespace
     uops_.source_to(os);

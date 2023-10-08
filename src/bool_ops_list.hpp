@@ -135,6 +135,8 @@ public:
   inline bool_ops_list &operator=(const bool_ops_list &) = default;
   inline bool_ops_list &operator=(bool_ops_list &&) = default;
 
+  inline ~bool_ops_list() override = default;
+
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
     not_token_.source_to(os);

@@ -64,6 +64,8 @@ public:
   inline program &operator=(const program &) = default;
   inline program &operator=(program &&) = default;
 
+  inline ~program() = default;
+
   inline void source_to(ostream &os) const {
     for (const auto &s : stms_)
       s->source_to(os);

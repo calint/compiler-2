@@ -16,6 +16,8 @@ public:
   inline stmt_loop &operator=(const stmt_loop &) = default;
   inline stmt_loop &operator=(stmt_loop &&) = default;
 
+  inline ~stmt_loop() override = default;
+
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
     toc::indent(os, indent, true);

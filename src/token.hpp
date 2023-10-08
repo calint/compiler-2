@@ -16,6 +16,8 @@ public:
   inline token &operator=(const token &) = default;
   inline token &operator=(token &&) = default;
 
+  inline ~token() = default;
+
   inline void source_to(ostream &os) const {
     if (not is_str_) {
       os << ws_left_ << name_ << ws_right_;

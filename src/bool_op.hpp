@@ -60,6 +60,8 @@ public:
   inline bool_op &operator=(const bool_op &) = default;
   inline bool_op &operator=(bool_op &&) = default;
 
+  inline ~bool_op() override = default;
+
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
 

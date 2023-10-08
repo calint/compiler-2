@@ -40,6 +40,8 @@ public:
   inline stmt_def_var &operator=(const stmt_def_var &) = default;
   inline stmt_def_var &operator=(stmt_def_var &&) = default;
 
+  inline ~stmt_def_var() override = default;
+
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
     initial_value_.source_to(os);

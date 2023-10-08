@@ -15,6 +15,8 @@ public:
   inline call_asm_mov &operator=(const call_asm_mov &) = default;
   inline call_asm_mov &operator=(call_asm_mov &&) = default;
 
+  inline ~call_asm_mov() override = default;
+
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
     tc.source_comment(*this, os, indent);

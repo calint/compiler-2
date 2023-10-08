@@ -11,6 +11,8 @@ public:
   inline tokenizer &operator=(const tokenizer &) = default;
   inline tokenizer &operator=(tokenizer &&) = default;
 
+  inline ~tokenizer() = default;
+
   inline bool is_eos() const { return !last_char_; }
 
   inline token next_token() {

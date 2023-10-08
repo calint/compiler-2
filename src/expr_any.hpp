@@ -23,6 +23,8 @@ public:
   inline expr_any &operator=(const expr_any &) = default;
   inline expr_any &operator=(expr_any &&) = default;
 
+  inline ~expr_any() override = default;
+
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
     if (eols_.index() == 0) {

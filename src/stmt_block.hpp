@@ -61,6 +61,8 @@ public:
   inline stmt_block &operator=(const stmt_block &) = default;
   inline stmt_block &operator=(stmt_block &&) = default;
 
+  inline ~stmt_block() override = default;
+
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
     if (not is_one_statement_)

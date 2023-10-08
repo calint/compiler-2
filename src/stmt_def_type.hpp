@@ -18,6 +18,8 @@ public:
   inline stmt_def_type_field &operator=(const stmt_def_type_field &) = default;
   inline stmt_def_type_field &operator=(stmt_def_type_field &&) = default;
 
+  inline ~stmt_def_type_field() override = default;
+
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
     if (type_.is_empty())
@@ -75,6 +77,8 @@ public:
   inline stmt_def_type(stmt_def_type &&) = default;
   inline stmt_def_type &operator=(const stmt_def_type &) = default;
   inline stmt_def_type &operator=(stmt_def_type &&) = default;
+
+  inline ~stmt_def_type() override = default;
 
   inline void source_to(ostream &os) const override {
     statement::source_to(os);

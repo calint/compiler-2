@@ -13,6 +13,8 @@ public:
   inline call_asm_syscall &operator=(const call_asm_syscall &) = default;
   inline call_asm_syscall &operator=(call_asm_syscall &&) = default;
 
+  inline ~call_asm_syscall() override = default;
+
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
     tc.source_comment(*this, os, indent);

@@ -60,6 +60,8 @@ public:
   inline stmt_def_func &operator=(const stmt_def_func &) = default;
   inline stmt_def_func &operator=(stmt_def_func &&) = default;
 
+  inline ~stmt_def_func() override = default;
+
   inline void source_to(ostream &os) const override {
     source_def_to(os, false);
     code_.source_to(os);

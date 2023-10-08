@@ -12,6 +12,8 @@ public:
   inline stmt_break &operator=(const stmt_break &) = default;
   inline stmt_break &operator=(stmt_break &&) = default;
 
+  inline ~stmt_break() override = default;
+
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
     tc.source_comment(*this, os, indent);

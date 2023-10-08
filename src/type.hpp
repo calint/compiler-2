@@ -20,6 +20,8 @@ public:
   inline type &operator=(const type &) = default;
   inline type &operator=(type &&) = default;
 
+  inline ~type() = default;
+
   inline void add_field([[maybe_unused]] const token &tk, const string &name,
                         const type &tp) {
     fields_.emplace_back(type_field{name, tp, size_});

@@ -16,6 +16,8 @@ public:
   inline stmt_if_branch &operator=(const stmt_if_branch &) = default;
   inline stmt_if_branch &operator=(stmt_if_branch &&) = default;
 
+  inline ~stmt_if_branch() override = default;
+
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
     bol_.source_to(os);

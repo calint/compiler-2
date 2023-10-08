@@ -35,6 +35,8 @@ public:
   inline stmt_call &operator=(const stmt_call &) = default;
   inline stmt_call &operator=(stmt_call &&) = default;
 
+  inline ~stmt_call() override = default;
+
   inline void source_to(ostream &os) const override {
     expression::source_to(os);
     if (no_args_)
