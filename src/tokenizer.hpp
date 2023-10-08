@@ -117,7 +117,6 @@ private:
         seek(-1);
         break;
       }
-      continue;
     }
     const size_t len{nchar_ - nchar_bm_};
     return {ptr_ - len, len};

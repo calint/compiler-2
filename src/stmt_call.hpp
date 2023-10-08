@@ -191,7 +191,6 @@ public:
         tc.asm_push(arg, os, indent, reg);
         tc.free_scratch_register(os, indent, reg);
         nbytes_of_args_on_stack += 8;
-        continue;
       }
 
       // stack is: <base>,vars,regs,args,

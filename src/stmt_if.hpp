@@ -19,7 +19,7 @@ public:
 			token tkn{t.next_token()};
 			if(not tkn.is_name("else")){
 				// not 'else', push token back instream and exit
-				t.put_back_token(move(tkn));
+				t.put_back_token(tkn);
 				return;
 			}
 			// is 'else'
@@ -27,7 +27,7 @@ public:
 			token tkn2{t.next_token()};
 			if(not tkn2.is_name("if")){
 				// not 'else if', push token back instream and exit
-				t.put_back_token(move(tkn2));
+				t.put_back_token(tkn2);
 				// 'else' branch
 				// save tokens to be able to reproduce the source
 				else_if_tokens_.push_back(move(tkn));

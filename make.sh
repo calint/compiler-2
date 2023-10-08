@@ -8,7 +8,8 @@ set -e
 
 CC="clang++ -std=c++2a"
 CF="-Os -fno-inline -Werror -Wfatal-errors"
-CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-call -Wno-padded -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field"
+CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-call \
+    -Wno-padded -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field"
 
 $CC $CF $CW -o baz src/main.cpp
 
@@ -20,6 +21,7 @@ ld -s -o gen gen.o
 ls --color -la baz gen.s gen-m.s gen
 
 echo
+echo    '              lines   words   chars'
 echo -n '    source: ' && cat src/*|wc
 echo -n '   gzipped: ' && cat src/*|gzip|wc 
 echo -n 'baz source: ' && cat prog.baz|grep -v -e'^\s*$'|wc
