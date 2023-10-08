@@ -15,6 +15,9 @@ class program final {
   type type_i8{"i8", 1, true};
   type type_bool{"bool", 1, true};
   statement prg{}; // place-holder
+  vector<unique_ptr<statement>> stms_{};
+  toc tc_;
+
 public:
   inline explicit program(const string &source) : tc_{source} {
     // add built-in assembler calls
@@ -41,7 +44,8 @@ public:
         if (t.is_eos()) {
           break;
         }
-        throw compiler_exception(tk, "unexpected '" + string{t.next_char()} + "'");
+        throw compiler_exception(tk,
+                                 "unexpected '" + string{t.next_char()} + "'");
       }
       if (tk.is_name("field")) {
         stms_.emplace_back(make_unique<stmt_def_field>(tc_, std::move(tk), t));
@@ -59,11 +63,11 @@ public:
     }
   }
 
-  inline program() = default;
-  inline program(const program &) = default;
-  inline program(program &&) = default;
-  inline auto operator=(const program &) -> program & = default;
-  inline auto operator=(program &&) -> program & = default;
+  inline program() = delete;
+  inline program(const program &) = delete;
+  inline program(program &&) = delete;
+  inline auto operator=(const program &) -> program & = delete;
+  inline auto operator=(program &&) -> program & = delete;
 
   inline ~program() = default;
 
@@ -110,8 +114,4 @@ public:
     compile(tc_, os, 0);
     tc_.finish(os);
   }
-
-private:
-  vector<unique_ptr<statement>> stms_{};
-  toc tc_{};
 };

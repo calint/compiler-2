@@ -3,14 +3,14 @@
 
 class tokenizer final {
 public:
-  inline explicit tokenizer(string str)
-      : src_{std::move(str)}, ptr_{src_.c_str()} {}
+  inline explicit tokenizer(const string &str)
+      : src_{str}, ptr_{src_.c_str()} {}
 
-  inline tokenizer() = default;
-  inline tokenizer(const tokenizer &) = default;
-  inline tokenizer(tokenizer &&) = default;
-  inline auto operator=(const tokenizer &) -> tokenizer & = default;
-  inline auto operator=(tokenizer &&) -> tokenizer & = default;
+  inline tokenizer() = delete;
+  inline tokenizer(const tokenizer &) = delete;
+  inline tokenizer(tokenizer &&) = delete;
+  inline auto operator=(const tokenizer &) -> tokenizer & = delete;
+  inline auto operator=(tokenizer &&) -> tokenizer & = delete;
 
   inline ~tokenizer() = default;
 
@@ -146,7 +146,7 @@ private:
     return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
   }
 
-  string src_{};
+  const string &src_{};
   const char *ptr_{};
   size_t nchar_{};
   char last_char_{-1};

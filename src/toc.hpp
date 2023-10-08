@@ -198,19 +198,19 @@ private:
 
 class toc final {
 public:
-  inline explicit toc(string source)
+  inline explicit toc(const string &source)
       : all_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
                        "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"},
         scratch_registers_{"r8",  "r9",  "r10", "r11",
                            "r12", "r13", "r14", "r15"},
         named_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi"},
-        source_str_{std::move(source)} {}
+        source_str_{source} {}
 
-  inline toc() = default;
-  inline toc(const toc &) = default;
-  inline toc(toc &&) = default;
-  inline auto operator=(const toc &) -> toc & = default;
-  inline auto operator=(toc &&) -> toc & = default;
+  inline toc() = delete;
+  inline toc(const toc &) = delete;
+  inline toc(toc &&) = delete;
+  inline auto operator=(const toc &) -> toc & = delete;
+  inline auto operator=(toc &&) -> toc & = delete;
 
   inline ~toc() = default;
 
@@ -220,9 +220,9 @@ public:
                         const stmt_def_field *f, const bool is_str_field) {
     if (fields_.has(ident)) {
       const field_meta &fld = fields_.get(ident);
-      throw compiler_exception(st.tok(), "field '" + ident +
-                                         "' already defined at " +
-                                         source_location_hr(fld.declared_at));
+      throw compiler_exception(st.tok(),
+                               "field '" + ident + "' already defined at " +
+                                   source_location_hr(fld.declared_at));
     }
     fields_.put(ident, {f, st.tok(), is_str_field});
   }
@@ -231,8 +231,9 @@ public:
                        const type &return_type, const stmt_def_func *ref) {
     if (funcs_.has(name)) {
       const func_meta &func = funcs_.get(name);
-      throw compiler_exception(st, "function '" + name + "' already defined at " +
-                                   source_location_hr(func.declared_at));
+      throw compiler_exception(st, "function '" + name +
+                                       "' already defined at " +
+                                       source_location_hr(func.declared_at));
     }
     funcs_.put(name, {return_type, ref, st.tok()});
   }
@@ -337,8 +338,8 @@ public:
       return ir;
     }
 
-    throw compiler_exception(st,
-                         "cannot resolve identifier '" + st.identifier() + "'");
+    throw compiler_exception(st, "cannot resolve identifier '" +
+                                     st.identifier() + "'");
   }
 
   inline auto resolve_identifier(const statement &st, const string &ident,
@@ -350,7 +351,8 @@ public:
       return ir;
     }
 
-    throw compiler_exception(st.tok(), "cannot resolve identifier '" + ident + "'");
+    throw compiler_exception(st.tok(),
+                             "cannot resolve identifier '" + ident + "'");
   }
 
   inline void add_alias(const string &ident, const string &parent_frame_ident) {
@@ -399,8 +401,9 @@ public:
     // check if variable already declared in this scope
     if (frames_.back().has_var(name)) {
       const var_meta &var = frames_.back().get_var_const_ref(name);
-      throw compiler_exception(st, "variable '" + name + "' already declared at " +
-                                   source_location_hr(var.declared_at));
+      throw compiler_exception(st, "variable '" + name +
+                                       "' already declared at " +
+                                       source_location_hr(var.declared_at));
     }
     // check if variable shadows previously declared variable
     const pair<string, frame &> idfrm{get_id_and_frame_for_identifier(name)};
@@ -409,8 +412,8 @@ public:
     if (frm.has_var(id)) {
       const var_meta &var{frm.get_var_const_ref(id)};
       throw compiler_exception(st, "variable '" + name +
-                                   "' shadows variable declared at " +
-                                   source_location_hr(var.declared_at));
+                                       "' shadows variable declared at " +
+                                       source_location_hr(var.declared_at));
     }
 
     const int stack_idx{int(get_current_stack_size() + var_type.size())};
@@ -473,7 +476,7 @@ public:
         }
       }
       throw compiler_exception(st, "cannot allocate register '" + reg +
-                                   "' because it was allocated at " + loc);
+                                       "' because it was allocated at " + loc);
     }
     named_registers_.erase(r);
     allocated_registers_.push_back(reg);
@@ -792,8 +795,8 @@ public:
 
     if (is_operand_memory(src_resolved)) {
       throw compiler_exception(st, "cannot move '" + src_resolved + "' to '" +
-                                   dst_resolved +
-                                   "' because it would be truncated");
+                                       dst_resolved +
+                                       "' because it would be truncated");
     }
 
     // constant
@@ -1046,7 +1049,8 @@ public:
         return "al";
       default:
         throw compiler_exception(st, "illegal size " + to_string(size) +
-                                     " for register operand '" + operand + "'");
+                                         " for register operand '" + operand +
+                                         "'");
       }
     }
     if (operand == "rbx") {
@@ -1061,7 +1065,7 @@ public:
         return "bl";
       default:
         throw compiler_exception(st, "illegal size " + to_string(size) +
-                                     " for register '" + operand + "'");
+                                         " for register '" + operand + "'");
       }
     }
     if (operand == "rcx") {
@@ -1076,7 +1080,7 @@ public:
         return "cl";
       default:
         throw compiler_exception(st, "illegal size " + to_string(size) +
-                                     " for register '" + operand + "'");
+                                         " for register '" + operand + "'");
       }
     }
     if (operand == "rdx") {
@@ -1091,7 +1095,7 @@ public:
         return "dl";
       default:
         throw compiler_exception(st, "illegal size " + to_string(size) +
-                                     " for register '" + operand + "'");
+                                         " for register '" + operand + "'");
       }
     }
     if (operand == "rbp") {
@@ -1104,7 +1108,7 @@ public:
         return "bp";
       default:
         throw compiler_exception(st, "illegal size " + to_string(size) +
-                                     " for register '" + operand + "'");
+                                         " for register '" + operand + "'");
       }
     }
     if (operand == "rsi") {
@@ -1117,7 +1121,7 @@ public:
         return "si";
       default:
         throw compiler_exception(st, "illegal size " + to_string(size) +
-                                     " for register '" + operand + "'");
+                                         " for register '" + operand + "'");
       }
     }
     if (operand == "rdi") {
@@ -1130,7 +1134,7 @@ public:
         return "di";
       default:
         throw compiler_exception(st, "illegal size " + to_string(size) +
-                                     " for register '" + operand + "'");
+                                         " for register '" + operand + "'");
       }
     }
     if (operand == "rsp") {
@@ -1143,7 +1147,7 @@ public:
         return "sp";
       default:
         throw compiler_exception(st, "illegal size " + to_string(size) +
-                                     " for register '" + operand + "'");
+                                         " for register '" + operand + "'");
       }
     }
     const regex rx{R"(r(\d+))"};
@@ -1163,7 +1167,7 @@ public:
       return "r" + rnbr + "b";
     default:
       throw compiler_exception(st, "illegal size " + to_string(size) +
-                                   " for register '" + operand + "'");
+                                       " for register '" + operand + "'");
     }
 
     throw compiler_exception(st, "unknown register '" + operand + "'");
@@ -1232,8 +1236,8 @@ public:
       return;
     }
 
-    throw panic_exception("should not be reached: " + string{__FILE__} +
-                               ":" + to_string(__LINE__));
+    throw panic_exception("should not be reached: " + string{__FILE__} + ":" +
+                          to_string(__LINE__));
   }
 
   inline void set_type_void(const type &tp) { type_void_ = &tp; }
@@ -1345,8 +1349,8 @@ private:
     if (frames_[i].has_var(id)) {
       const var_meta &var = frames_[i].get_var_const_ref(id);
       if (must_be_initiated and not var.initiated) {
-        throw compiler_exception(st,
-                             "variable '" + var.name + "' is not initiated");
+        throw compiler_exception(st, "variable '" + var.name +
+                                         "' is not initiated");
       }
       const string &acc = var.tp.accessor(st.tok(), bid.path(), var.stack_idx);
       return {ident, acc, 0, var.tp, ident_resolved::ident_type::VAR};
@@ -1437,7 +1441,7 @@ private:
   vector<string> named_registers_{};
   size_t max_usage_scratch_regs_{0};
   size_t max_frame_count_{0};
-  string source_str_{};
+  const string &source_str_{};
   lut<field_meta> fields_{};
   lut<func_meta> funcs_{};
   lut<const type &> types_{};
