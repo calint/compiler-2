@@ -89,7 +89,7 @@ public:
 
   inline bool has_alias(const string &nm) const { return aliases_.has(nm); }
 
-  inline const string get_alias(const string &nm) const {
+  inline string get_alias(const string &nm) const {
     return aliases_.get(nm);
   }
 
@@ -1185,7 +1185,7 @@ private:
     return n;
   }
 
-  inline const ident_resolved
+  inline ident_resolved
   resolve_ident_or_empty(const statement &st, const string &ident,
                          const bool must_be_initiated) const {
     const baz_ident bid{ident};

@@ -52,7 +52,7 @@ public:
 
   inline const string &name() const { return tok().name(); }
 
-  inline const string get_register_or_empty() const {
+  inline string get_register_or_empty() const {
     for (const token &kw : keywords()) {
       if (!kw.name().starts_with("reg_"))
         continue;
