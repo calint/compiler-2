@@ -72,7 +72,7 @@ public:
 					// first op is 'and', make sub-expression (a and b) ...
 					bool_ops_list bol{tc,t,false,{},true,move(bools_.back()),move(tk)};
 					bools_.pop_back();
-					bools_.push_back(move(bol));
+					bools_.emplace_back(move(bol));
 
 					if(enclosed_ and t.is_next_char(')'))
 						return;
@@ -114,7 +114,7 @@ public:
 			// a    or   (b     and   c) or d
 			bool_ops_list bol{tc,t,false,{},true,move(bools_.back()),move(tk)};
 			bools_.pop_back();
-			bools_.push_back(move(bol));
+			bools_.emplace_back(move(bol));
 
 			if(enclosed_ and t.is_next_char(')'))
 				return;

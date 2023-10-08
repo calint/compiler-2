@@ -18,7 +18,7 @@ public:
 			exps_.push_back(move(first_expression));
 		}else{
 			// check if new recursion is necessary i.e. =-a/-(-(b+c)+d), t at "-a/-("
-			unary_ops uo={t};
+			unary_ops uo{t};
 			if(t.is_next_char('(')){
 				// recursion
 				exps_.emplace_back(make_unique<expr_ops_list>(tc,t,in_args,true,move(uo)));
