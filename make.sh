@@ -11,7 +11,12 @@ CF="-Os -fno-inline -Werror -Wfatal-errors"
 CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-call \
     -Wno-padded -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field"
 
-$CC $CF $CW -o baz src/main.cpp
+CMD="$CC $CF $CW -o baz src/main.cpp"
+echo
+echo $CMD
+$CMD
+echo
+
 
 ./baz prog.baz > gen.s
 grep -v -e'^\s*;.*$' -e'^\s*$' gen.s > gen-m.s

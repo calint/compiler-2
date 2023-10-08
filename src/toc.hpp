@@ -250,14 +250,14 @@ public:
   }
 
   inline string source_location_for_label(const token &tk) const {
-    size_t char_in_line;
+    size_t char_in_line{};
     const size_t n{line_number_for_char_index(
         tk.char_index(), source_str_.c_str(), char_in_line)};
     return to_string(n) + "_" + to_string(char_in_line);
   }
 
   inline string source_location_hr(const token &tk) {
-    size_t char_in_line;
+    size_t char_in_line{};
     const size_t n{line_number_for_char_index(
         tk.char_index(), source_str_.c_str(), char_in_line)};
     return to_string(n) + ":" + to_string(char_in_line);
@@ -529,7 +529,7 @@ public:
 
   inline void source_comment(const statement &st, ostream &os,
                              const size_t indnt) const {
-    size_t char_in_line;
+    size_t char_in_line{};
     const size_t n{line_number_for_char_index(
         st.tok().char_index(), source_str_.c_str(), char_in_line)};
 
@@ -546,7 +546,7 @@ public:
 
   inline void source_comment(ostream &os, const string &dst, const string op,
                              const statement &st) const {
-    size_t char_in_line;
+    size_t char_in_line{};
     const size_t n{line_number_for_char_index(
         st.tok().char_index(), source_str_.c_str(), char_in_line)};
     os << "[" << to_string(n) << ":" << char_in_line << "]";
@@ -560,7 +560,7 @@ public:
   }
 
   inline void token_comment(ostream &os, const token &tk) const {
-    size_t char_in_line;
+    size_t char_in_line{};
     const size_t n{line_number_for_char_index(
         tk.char_index(), source_str_.c_str(), char_in_line)};
     os << "[" << to_string(n) << ":" << char_in_line << "]";
@@ -1250,7 +1250,7 @@ private:
               ident_resolved::ident_type::FIELD};
     }
 
-    char *ep;
+    char *ep{};
     const long int const_value{strtol(id.c_str(), &ep, 10)};
     if (!*ep)
       return {ident, id, const_value, get_type_default(),
