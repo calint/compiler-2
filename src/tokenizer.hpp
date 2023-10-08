@@ -2,8 +2,8 @@
 
 class tokenizer final {
 public:
-  inline explicit tokenizer(const string &str)
-      : src_{str}, ptr_{src_.c_str()} {}
+  inline explicit tokenizer(string str)
+      : src_{std::move(str)}, ptr_{src_.c_str()} {}
 
   inline tokenizer() = default;
   inline tokenizer(const tokenizer &) = default;

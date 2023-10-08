@@ -6,8 +6,8 @@
 
 class compiler_error final{
 public:
-	inline compiler_error(const token&tk,const string&message):
-		msg{message},
+	inline compiler_error(const token&tk,string message):
+		msg{std::move(message)},
 		start_char{tk.char_index()},end_char{tk.char_index_end()}
 	{}
 
@@ -15,8 +15,8 @@ public:
 		compiler_error{st.tok(),message}
 	{}
 
-	inline compiler_error(const tokenizer&t,const string&message):
-		msg{message},
+	inline compiler_error(const tokenizer&t,string message):
+		msg{std::move(message)},
 		start_char{t.current_char_index_in_source()},
 		end_char{t.current_char_index_in_source()}
 	{}

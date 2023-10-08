@@ -26,12 +26,12 @@ class frame final {
 public:
   enum class frame_type { FUNC, BLOCK, LOOP };
 
-  inline frame(const string &name, const frame_type tpe,
-               const string &call_path = "", const string &func_ret_label = "",
-               const bool func_is_inline = false,
-               const string &func_ret_var = "")
-      : name_{name}, call_path_{call_path}, func_ret_label_{func_ret_label},
-        func_ret_var_{func_ret_var},
+  inline frame(string name, const frame_type tpe, string call_path = "",
+               string func_ret_label = "", const bool func_is_inline = false,
+               string func_ret_var = "")
+      : name_{std::move(name)}, call_path_{std::move(call_path)},
+        func_ret_label_{std::move(func_ret_label)}, func_ret_var_{std::move(
+                                                        func_ret_var)},
         func_is_inline_{func_is_inline}, type_{tpe} {}
 
   inline void add_var(const token &declared_at, const string &name,
@@ -89,9 +89,7 @@ public:
 
   inline bool has_alias(const string &nm) const { return aliases_.has(nm); }
 
-  inline string get_alias(const string &nm) const {
-    return aliases_.get(nm);
-  }
+  inline string get_alias(const string &nm) const { return aliases_.get(nm); }
 
   inline const string &name() const { return name_; }
 
@@ -181,13 +179,13 @@ private:
 
 class toc final {
 public:
-  inline explicit toc(const string &source)
+  inline explicit toc(string source)
       : all_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
                        "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"},
         scratch_registers_{"r8",  "r9",  "r10", "r11",
                            "r12", "r13", "r14", "r15"},
         named_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi"},
-        source_str_{source} {}
+        source_str_{std::move(source)} {}
 
   inline toc() = default;
   inline toc(const toc &) = default;
