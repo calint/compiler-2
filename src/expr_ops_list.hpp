@@ -614,7 +614,7 @@ private:
   }
 
   bool enclosed_{}; //  (a+b) vs a+b
-  vector<unique_ptr<statement>> exps_;
-  vector<char> ops_;
-  unary_ops uops_;
+  vector<unique_ptr<statement>> exps_{};
+  vector<char> ops_{};
+  unary_ops uops_{};
 };

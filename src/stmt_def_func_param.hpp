@@ -63,5 +63,5 @@ public:
   }
 
 private:
-  vector<token> keywords_;
+  vector<token> keywords_{};
 };

@@ -28,7 +28,7 @@ public:
 
   inline frame(string name, const frame_type tpe, string call_path = "",
                string func_ret_label = "", const bool func_is_inline = false,
-               string func_ret_var = "")
+               string func_ret_var = "") noexcept
       : name_{std::move(name)}, call_path_{std::move(call_path)},
         func_ret_label_{std::move(func_ret_label)}, func_ret_var_{std::move(
                                                         func_ret_var)},
@@ -102,15 +102,15 @@ public:
   inline const string &func_ret_var() const { return func_ret_var_; }
 
 private:
-  string name_;      // optional name
-  string call_path_; // a unique path of source locations of the inlined call
+  string name_{};      // optional name
+  string call_path_{}; // a unique path of source locations of the inlined call
   size_t allocated_stack_{}; // number of bytes used on the stack by this frame
-  lut<var_meta> vars_;       // variables declared in this frame
+  lut<var_meta> vars_{};     // variables declared in this frame
   lut<string>
-      aliases_; // aliases that refers to previous frame(s) alias or variable
-  string
-      func_ret_label_;  // the label to jump to when exiting an inlined function
-  string func_ret_var_; // the variable that contains the return value
+      aliases_{}; // aliases that refers to previous frame(s) alias or variable
+  string func_ret_label_{}; // the label to jump to when exiting an inlined
+                            // function
+  string func_ret_var_{};   // the variable that contains the return value
   bool func_is_inline_{};
   frame_type type_{frame_type::FUNC}; // frame type
 };
@@ -173,8 +173,8 @@ public:
   inline const vector<string> &path() const { return path_; }
 
 private:
-  string id_;
-  vector<string> path_;
+  string id_{};
+  vector<string> path_{};
 };
 
 class toc final {
@@ -1052,43 +1052,44 @@ public:
 
     throw compiler_error(st, "unknown register '" + operand + "'");
   }
-  inline void asm_push(const statement &st, ostream &os, const size_t indnt,
-                       const string &operand) {
+  inline void asm_push([[maybe_unused]] const statement &st, ostream &os,
+                       const size_t indnt, const string &operand) {
     indent(os, indnt);
     os << "push " << operand << endl;
   }
 
-  inline void asm_pop(const statement &st, ostream &os, const size_t indnt,
-                      const string &operand) {
+  inline void asm_pop([[maybe_unused]] const statement &st, ostream &os,
+                      const size_t indnt, const string &operand) {
     indent(os, indnt);
     os << "pop " << operand << endl;
   }
 
-  inline void asm_ret(const statement &st, ostream &os, const size_t indnt) {
+  inline void asm_ret([[maybe_unused]] const statement &st, ostream &os,
+                      const size_t indnt) {
     indent(os, indnt);
     os << "ret\n";
   }
 
-  inline void asm_jmp(const statement &st, ostream &os, const size_t indnt,
-                      const string &label) {
+  inline void asm_jmp([[maybe_unused]] const statement &st, ostream &os,
+                      const size_t indnt, const string &label) {
     indent(os, indnt);
     os << "jmp " << label << endl;
   }
 
-  inline void asm_label(const statement &st, ostream &os, const size_t indnt,
-                        const string &label) {
+  inline void asm_label([[maybe_unused]] const statement &st, ostream &os,
+                        const size_t indnt, const string &label) {
     indent(os, indnt);
     os << label << ":" << endl;
   }
 
-  inline void asm_call(const statement &st, ostream &os, const size_t indnt,
-                       const string &label) {
+  inline void asm_call([[maybe_unused]] const statement &st, ostream &os,
+                       const size_t indnt, const string &label) {
     indent(os, indnt);
     os << "call " << label << endl;
   }
 
-  inline void asm_neg(const statement &st, ostream &os, const size_t indnt,
-                      const string &dst_resolved) {
+  inline void asm_neg([[maybe_unused]] const statement &st, ostream &os,
+                      const size_t indnt, const string &dst_resolved) {
     indent(os, indnt);
     os << "neg " << dst_resolved << endl;
   }
@@ -1289,21 +1290,21 @@ private:
       max_frame_count_ = frames_.size();
   }
 
-  vector<frame> frames_;
-  vector<string> all_registers_;
-  vector<string> scratch_registers_;
-  vector<string> allocated_registers_;
+  vector<frame> frames_{};
+  vector<string> all_registers_{};
+  vector<string> scratch_registers_{};
+  vector<string> allocated_registers_{};
   vector<string>
-      allocated_registers_loc_; // source locations of allocated_registers_
-  vector<string> named_registers_;
+      allocated_registers_loc_{}; // source locations of allocated_registers_
+  vector<string> named_registers_{};
   size_t max_usage_scratch_regs_{0};
   size_t max_frame_count_{0};
-  string source_str_;
-  lut<field_meta> fields_;
-  lut<func_meta> funcs_;
-  lut<const type &> types_;
-  vector<call_meta> call_metas_;
-  unordered_set<string> initiated_registers_;
+  string source_str_{};
+  lut<field_meta> fields_{};
+  lut<func_meta> funcs_{};
+  lut<const type &> types_{};
+  vector<call_meta> call_metas_{};
+  unordered_set<string> initiated_registers_{};
   const type *type_void_{};
   const type *type_default_{};
   const type *type_bool_{};

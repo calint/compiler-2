@@ -38,7 +38,7 @@ public:
   }
 
   inline void compile(toc &tc, ostream &os, size_t indent,
-                      const string &dst = "") const override {
+                      [[maybe_unused]] const string &dst = "") const override {
     tc.source_comment(*this, os, indent);
     os << name_.name() << ':';
     if (initial_value_.is_string()) {
@@ -60,7 +60,7 @@ public:
   inline bool is_string_field() const { return initial_value_.is_string(); }
 
 private:
-  token name_;
-  unary_ops uops_;
-  token initial_value_;
+  token name_{};
+  unary_ops uops_{};
+  token initial_value_{};
 };

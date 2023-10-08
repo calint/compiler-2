@@ -105,7 +105,7 @@ public:
   }
 
   inline void compile(toc &tc, ostream &os, size_t indent,
-                      const string &dst = "") const override {
+                      [[maybe_unused]] const string &dst = "") const override {
     if (is_inline())
       return;
 
@@ -201,10 +201,10 @@ private:
     }
   }
 
-  token name_;
-  vector<stmt_def_func_param> params_;
-  vector<token> returns_;
-  stmt_block code_;
-  token inline_tk_;
+  token name_{};
+  vector<stmt_def_func_param> params_{};
+  vector<token> returns_{};
+  stmt_block code_{};
+  token inline_tk_{};
   bool no_args_{};
 };

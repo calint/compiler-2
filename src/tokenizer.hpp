@@ -38,7 +38,7 @@ public:
     seek(-off_t(t.total_length_in_chars()));
   }
 
-  inline void put_back_char(const char ch) {
+  inline void put_back_char([[maybe_unused]] const char ch) {
     // ? validate char is same as source
     seek(-off_t(1));
   }

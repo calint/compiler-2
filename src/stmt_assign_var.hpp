@@ -1,88 +1,87 @@
 #pragma once
 
-#include"expr_any.hpp"
+#include "expr_any.hpp"
 
-class stmt_assign_var final:public statement{
+class stmt_assign_var final : public statement {
 public:
-	inline stmt_assign_var(toc&tc,token name,token type,tokenizer&t):
-		statement{move(name)},
-		type_{move(type)}
-	{
-		const ident_resolved&dst_resolved{tc.resolve_identifier(*this,false)};
-		exp_={tc,dst_resolved.tp,t,false};
-		set_type(dst_resolved.tp);
-	}
+  inline stmt_assign_var(toc &tc, token name, token type, tokenizer &t)
+      : statement{move(name)}, type_{move(type)} {
+    const ident_resolved &dst_resolved{tc.resolve_identifier(*this, false)};
+    exp_ = {tc, dst_resolved.tp, t, false};
+    set_type(dst_resolved.tp);
+  }
 
-	inline stmt_assign_var()=default;
-	inline stmt_assign_var(const stmt_assign_var&)=default;
-	inline stmt_assign_var(stmt_assign_var&&)=default;
-	inline stmt_assign_var&operator=(const stmt_assign_var&)=default;
-	inline stmt_assign_var&operator=(stmt_assign_var&&)=default;
+  inline stmt_assign_var() = default;
+  inline stmt_assign_var(const stmt_assign_var &) = default;
+  inline stmt_assign_var(stmt_assign_var &&) = default;
+  inline stmt_assign_var &operator=(const stmt_assign_var &) = default;
+  inline stmt_assign_var &operator=(stmt_assign_var &&) = default;
 
-	inline void source_to(ostream&os)const override{
-		statement::source_to(os);
-		if(not type_.is_empty()){
-			os<<':';
-			type_.source_to(os);
-		}
-		os<<"=";
-		exp_.source_to(os);
-	}
+  inline void source_to(ostream &os) const override {
+    statement::source_to(os);
+    if (not type_.is_empty()) {
+      os << ':';
+      type_.source_to(os);
+    }
+    os << "=";
+    exp_.source_to(os);
+  }
 
-	inline void compile(toc&tc,ostream&os,size_t indent,const string&dst="")const override{
-		tc.source_comment(*this,os,indent);
+  inline void compile(toc &tc, ostream &os, size_t indent,
+                      [[maybe_unused]] const string &dst = "") const override {
+    tc.source_comment(*this, os, indent);
 
-		const ident_resolved&dst_resolved{tc.resolve_identifier(*this,false)};
+    const ident_resolved &dst_resolved{tc.resolve_identifier(*this, false)};
 
-		if(exp_.is_bool()){
-			exp_.compile(tc,os,indent,dst_resolved.id);
-			tc.set_var_is_initiated(dst_resolved.id);
-			return;
-		}
+    if (exp_.is_bool()) {
+      exp_.compile(tc, os, indent, dst_resolved.id);
+      tc.set_var_is_initiated(dst_resolved.id);
+      return;
+    }
 
-		// integer expression
+    // integer expression
 
-		// compare generated instructions with and without scratch register
-		// select the method that produces least instructions
+    // compare generated instructions with and without scratch register
+    // select the method that produces least instructions
 
-		// try without scratch register
-		stringstream ss1;
-		exp_.compile(tc,ss1,indent,dst_resolved.id);
+    // try without scratch register
+    stringstream ss1;
+    exp_.compile(tc, ss1, indent, dst_resolved.id);
 
-		// try with scratch register
-		stringstream ss2;
-		const string&reg{tc.alloc_scratch_register(*this,ss2,indent)};
-		exp_.compile(tc,ss2,indent,reg);
-		tc.asm_cmd(*this,ss2,indent,"mov",dst_resolved.id_nasm,reg);
-		tc.free_scratch_register(ss2,indent,reg);
+    // try with scratch register
+    stringstream ss2;
+    const string &reg{tc.alloc_scratch_register(*this, ss2, indent)};
+    exp_.compile(tc, ss2, indent, reg);
+    tc.asm_cmd(*this, ss2, indent, "mov", dst_resolved.id_nasm, reg);
+    tc.free_scratch_register(ss2, indent, reg);
 
-		// compare instruction count
-		const size_t ss1_count{count_instructions(ss1)};
-		const size_t ss2_count{count_instructions(ss2)};
+    // compare instruction count
+    const size_t ss1_count{count_instructions(ss1)};
+    const size_t ss2_count{count_instructions(ss2)};
 
-		// select version with least instructions
-		if(ss1_count<=ss2_count){
-			os<<ss1.str();
-		}else{
-			os<<ss2.str();
-		}
+    // select version with least instructions
+    if (ss1_count <= ss2_count) {
+      os << ss1.str();
+    } else {
+      os << ss2.str();
+    }
 
-		tc.set_var_is_initiated(dst_resolved.id);
-	}
+    tc.set_var_is_initiated(dst_resolved.id);
+  }
 
 private:
-	inline static size_t count_instructions(stringstream&ss){
-		const regex rxcomment{R"(^\s*;.*$)"};
-		string line;
-		size_t n{0};
-		while(getline(ss,line)){
-			if(regex_search(line,rxcomment))
-				continue;
-			n++;
-		}
-		return n;
-	}
+  inline static size_t count_instructions(stringstream &ss) {
+    const regex rxcomment{R"(^\s*;.*$)"};
+    string line;
+    size_t n{0};
+    while (getline(ss, line)) {
+      if (regex_search(line, rxcomment))
+        continue;
+      n++;
+    }
+    return n;
+  }
 
-	token type_;
-	expr_any exp_;
+  token type_{};
+  expr_any exp_{};
 };

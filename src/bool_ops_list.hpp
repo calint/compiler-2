@@ -157,8 +157,9 @@ public:
       os << ")";
     }
   }
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      const string &dst = "") const override {
+  inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
+                      [[maybe_unused]] size_t indent,
+                      [[maybe_unused]] const string &dst = "") const override {
     throw compiler_error(
         tok(), "this code should not be reached: " + string{__FILE__} + ":" +
                    to_string(__LINE__));
@@ -245,16 +246,14 @@ public:
           if (ops_[i].is_name("or")) {
             optional<bool> const_eval{
                 e.compile_or(tc, os, indent, jmp_to_if_true, invert)};
-            if (const_eval and
-                *const_eval ==
-                    true) // constant evaluated to true, short-circuit
+            if (const_eval and *const_eval)
+              // constant evaluated to true, short-circuit
               return *const_eval;
           } else if (ops_[i].is_name("and")) {
             optional<bool> const_eval{
                 e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
-            if (const_eval and
-                *const_eval ==
-                    false) // constant evaluated to false, short-circuit
+            if (const_eval and not *const_eval)
+              // constant evaluated to false, short-circuit
               return *const_eval;
           } else {
             throw "expected 'or' or 'and'";
@@ -275,16 +274,14 @@ public:
           if (ops_[i].is_name("and")) {
             optional<bool> const_eval{
                 e.compile_or(tc, os, indent, jmp_to_if_true, invert)};
-            if (const_eval and
-                *const_eval ==
-                    true) // constant evaluated to true, short-circuit
+            if (const_eval and *const_eval)
+              // constant evaluated to true, short-circuit
               return *const_eval;
           } else if (ops_[i].is_name("or")) {
             optional<bool> const_eval{
                 e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
-            if (const_eval and
-                *const_eval ==
-                    false) // constant evaluated to false, short-circuit
+            if (const_eval and not *const_eval)
+              // constant evaluated to false, short-circuit
               return *const_eval;
           } else {
             throw "expected 'or' or 'and'";
@@ -344,8 +341,8 @@ private:
     return get<bool_ops_list>(bop).tok();
   }
 
-  vector<variant<bool_op, bool_ops_list>> bools_;
-  vector<token> ops_; // 'and' or 'or'
-  token not_token_;
+  vector<variant<bool_op, bool_ops_list>> bools_{};
+  vector<token> ops_{}; // 'and' or 'or'
+  token not_token_{};
   bool enclosed_{}; // (a=b and c=d) vs a=b and c=d
 };

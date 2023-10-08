@@ -18,8 +18,9 @@ public:
   inline statement &operator=(const statement &) = default;
   inline statement &operator=(statement &&) = default;
 
-  inline virtual void compile(toc &tc, ostream &os, size_t indent,
-                              const string &dst = "") const {
+  inline virtual void compile([[maybe_unused]] toc &tc, ostream &os,
+                              [[maybe_unused]] size_t indent,
+                              [[maybe_unused]] const string &dst = "") const {
     uops_.source_to(os);
     token_.compile_to(os);
   }
@@ -44,7 +45,7 @@ public:
   inline virtual const type &get_type() const { return *type_; }
 
 private:
-  token token_;
-  unary_ops uops_;
+  token token_{};
+  unary_ops uops_{};
   const type *type_{};
 };

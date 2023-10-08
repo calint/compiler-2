@@ -20,7 +20,8 @@ public:
   inline type &operator=(const type &) = default;
   inline type &operator=(type &&) = default;
 
-  inline void add_field(const token &tk, const string &name, const type &tp) {
+  inline void add_field([[maybe_unused]] const token &tk, const string &name,
+                        const type &tp) {
     fields_.emplace_back(type_field{name, tp, size_});
     size_ += tp.size_;
   }
@@ -108,8 +109,8 @@ private:
     }
   }
 
-  std::string name_;
+  std::string name_{};
   size_t size_{};
-  vector<type_field> fields_;
+  vector<type_field> fields_{};
   bool is_built_in_{};
 };

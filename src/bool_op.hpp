@@ -74,8 +74,9 @@ public:
     }
   }
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      const string &dst = "") const override {
+  inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
+                      [[maybe_unused]] size_t indent,
+                      [[maybe_unused]] const string &dst = "") const override {
     throw compiler_error(
         tok(), "this code should not be reached: " + string{__FILE__} + ":" +
                    to_string(__LINE__));
@@ -368,10 +369,10 @@ private:
     return reg;
   }
 
-  vector<token> nots_;
-  expr_ops_list lhs_;
-  string op_; // '<', '<=', '>', '>=', '='
-  expr_ops_list rhs_;
+  vector<token> nots_{};
+  expr_ops_list lhs_{};
+  string op_{}; // '<', '<=', '>', '>=', '='
+  expr_ops_list rhs_{};
   bool is_not_{};       // if not a=b
   bool is_shorthand_{}; // if a ...
   bool is_expression_{};

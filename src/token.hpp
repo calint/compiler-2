@@ -55,10 +55,10 @@ public:
   inline bool is_string() const { return is_str_; }
 
 private:
-  string ws_left_;
+  string ws_left_{};
   size_t start_ix_{};
-  string name_;
+  string name_{};
   size_t end_ix_{};
-  string ws_right_;
+  string ws_right_{};
   bool is_str_{};
 };

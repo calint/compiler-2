@@ -31,7 +31,7 @@ public:
   inline const string &type_str() const { return type_.name(); }
 
 private:
-  token type_;
+  token type_{};
 };
 
 class stmt_def_type final : public statement {
@@ -93,13 +93,14 @@ public:
     os << '}';
   }
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      const string &dst = "") const override {}
+  inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
+                      [[maybe_unused]] size_t indent,
+                      [[maybe_unused]] const string &dst = "") const override {}
 
 private:
-  token name_;
-  token ws_;
-  vector<stmt_def_type_field> fields_;
+  token name_{};
+  token ws_{};
+  vector<stmt_def_type_field> fields_{};
   size_t size_{};
-  mutable type type_;
+  mutable type type_{};
 };

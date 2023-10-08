@@ -331,7 +331,7 @@ public:
     func.code().compile(tc, os, indent);
 
     // free allocated registers in reverse order of allocation
-    //NOLINTNEXTLINE(modernize-loop-convert)
+    // NOLINTNEXTLINE(modernize-loop-convert)
     for (auto it = allocated_registers_in_order.rbegin();
          it != allocated_registers_in_order.rend(); ++it) {
       const string &reg{*it};
@@ -371,6 +371,6 @@ public:
   inline size_t arg_count() const { return args_.size(); }
 
 private:
-  vector<expr_any> args_;
+  vector<expr_any> args_{};
   bool no_args_{};
 };

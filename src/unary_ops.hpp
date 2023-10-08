@@ -5,6 +5,8 @@
 class toc;
 
 class unary_ops final {
+  vector<char> ops_{};
+
 public:
   inline explicit unary_ops(tokenizer &t) {
     while (true) {
@@ -69,7 +71,4 @@ public:
     }
     return v;
   }
-
-private:
-  vector<char> ops_;
 };
