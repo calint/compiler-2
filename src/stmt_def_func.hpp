@@ -194,9 +194,9 @@ private:
     }
   }
 
-  inline void free_allocated_registers(
-      toc &tc, ostream &os, size_t indent,
-      const vector<string> &allocated_named_registers) const {
+  inline static void
+  free_allocated_registers(toc &tc, ostream &os, size_t indent,
+                           const vector<string> &allocated_named_registers) {
     size_t i{allocated_named_registers.size()};
     while (i--) {
       tc.free_named_register(os, indent + 1, allocated_named_registers[i]);

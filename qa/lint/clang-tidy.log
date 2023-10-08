@@ -1,2 +1,286 @@
-sön  8 okt 2023 20:51:18 CEST
-sön  8 okt 2023 20:51:51 CEST
+sön  8 okt 2023 21:05:50 CEST
+/home/c/w/compiler-2/qa/lint/../../src/bool_op.hpp:201:3: warning: function 'cmp_bgn_label' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline string cmp_bgn_label(const toc &tc) const {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/bool_op.hpp:207:3: warning: function 'identifier' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const string &identifier() const override {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/bool_op.hpp:216:3: warning: function 'is_expression' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_expression() const override { return is_expression_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/bool_ops_list.hpp:170:3: warning: function 'cmp_bgn_label' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline string cmp_bgn_label(const toc &tc) const {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/bool_ops_list.hpp:304:3: warning: function 'is_expression' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/bool_ops_list.hpp:317:3: warning: function 'identifier' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const string &identifier() const override {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/exceptions.hpp:24:3: warning: function 'what' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  const char *what() const noexcept override { return msg.c_str(); }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/expr_any.hpp:86:3: warning: function 'is_bool' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_bool() const { return eols_.index() == 1; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/expr_any.hpp:88:3: warning: function 'is_expression' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_expression() const override {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/expr_any.hpp:99:3: warning: function 'identifier' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const string &identifier() const override {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/expr_any.hpp:110:3: warning: function 'get_unary_ops' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const unary_ops &get_unary_ops() const override {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/expr_ops_list.hpp:178:3: warning: function 'is_expression' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_expression() const override {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/expr_ops_list.hpp:188:3: warning: function 'identifier' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const string &identifier() const override {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/expr_ops_list.hpp:194:3: warning: function 'get_unary_ops' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const unary_ops &get_unary_ops() const override {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/expr_ops_list.hpp:201:3: warning: function 'get_type' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const type &get_type() const override {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/expression.hpp:18:3: warning: function 'is_expression' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_expression() const override { return true; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/lut.hpp:61:5: warning: function 'is_key' should be marked [[nodiscard]] [modernize-use-nodiscard]
+    inline bool is_key(const string &k) const { return k == key; }
+    ^
+    [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/statement.hpp:33:3: warning: function 'tok' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const token &tok() const { return token_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/statement.hpp:35:3: warning: function 'is_in_data_section' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline virtual bool is_in_data_section() const { return false; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/statement.hpp:37:3: warning: function 'is_expression' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline virtual bool is_expression() const { return false; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/statement.hpp:39:3: warning: function 'identifier' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline virtual const string &identifier() const { return token_.name(); }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/statement.hpp:41:3: warning: function 'get_unary_ops' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline virtual const unary_ops &get_unary_ops() const { return uops_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/statement.hpp:45:3: warning: function 'get_type' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline virtual const type &get_type() const { return *type_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_block.hpp:84:3: warning: function 'is_empty' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_empty() const { return stms_.empty(); }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_call.hpp:371:3: warning: function 'arg' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const statement &arg(size_t ix) const { return args_[ix]; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_call.hpp:373:3: warning: function 'arg_count' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline size_t arg_count() const { return args_.size(); }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_field.hpp:60:3: warning: function 'is_in_data_section' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_in_data_section() const override { return true; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_field.hpp:62:3: warning: function 'is_string_field' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_string_field() const { return initial_value_.is_string(); }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_func.hpp:145:3: warning: function 'returns' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const vector<token> &returns() const { return returns_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_func.hpp:147:3: warning: function 'param' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const stmt_def_func_param &param(const size_t ix) const {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_func.hpp:151:3: warning: function 'params' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const vector<stmt_def_func_param> &params() const { return params_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_func.hpp:153:3: warning: function 'code' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const stmt_block &code() const { return code_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_func.hpp:155:3: warning: function 'name' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const string &name() const { return name_.name(); }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_func.hpp:157:3: warning: function 'is_inline' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_inline() const { return not inline_tk_.is_empty(); }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_func_param.hpp:53:3: warning: function 'keywords' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const vector<token> &keywords() const { return keywords_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_func_param.hpp:55:3: warning: function 'name' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const string &name() const { return tok().name(); }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_func_param.hpp:57:3: warning: function 'get_register_or_empty' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline string get_register_or_empty() const {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_type.hpp:31:3: warning: function 'name' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const string &name() const { return tok().name(); }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_type.hpp:33:3: warning: function 'type_str' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const string &type_str() const { return type_.name(); }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/stmt_if_branch.hpp:29:3: warning: function 'if_bgn_label' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline string if_bgn_label(const toc &tc) const {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:151:3: warning: function 'is_const' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_const() const { return ident_type == ident_type::CONST; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:152:3: warning: function 'is_var' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_var() const { return ident_type == ident_type::VAR; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:153:3: warning: function 'is_register' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_register() const { return ident_type == ident_type::REGISTER; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:154:3: warning: function 'is_field' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_field() const { return ident_type == ident_type::FIELD; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:155:3: warning: function 'is_implied' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_implied() const { return ident_type == ident_type::IMPLIED; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:169:3: warning: function 'id' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const string &id() const { return id_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:171:3: warning: function 'id_base' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const string &id_base() const { return path_[0]; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:173:3: warning: function 'path' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const vector<string> &path() const { return path_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/token.hpp:39:3: warning: function 'is_name' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_name(const string &s) const { return name_ == s; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/token.hpp:41:3: warning: function 'name' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const string &name() const { return name_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/token.hpp:43:3: warning: function 'char_index' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline size_t char_index() const { return start_ix_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/token.hpp:45:3: warning: function 'char_index_end' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline size_t char_index_end() const { return end_ix_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/token.hpp:47:3: warning: function 'is_empty' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_empty() const {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/token.hpp:53:3: warning: function 'total_length_in_chars' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline size_t total_length_in_chars() const {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/token.hpp:57:3: warning: function 'is_string' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_string() const { return is_str_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/tokenizer.hpp:17:3: warning: function 'is_eos' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_eos() const { return !last_char_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/tokenizer.hpp:60:3: warning: function 'is_peek_char' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_peek_char(const char ch) const { return *ptr_ == ch; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/tokenizer.hpp:62:3: warning: function 'is_peek_char2' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_peek_char2(const char ch) const {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/tokenizer.hpp:66:3: warning: function 'peek_char' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline char peek_char() const { return *ptr_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/tokenizer.hpp:91:3: warning: function 'current_char_index_in_source' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline size_t current_char_index_in_source() const { return nchar_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/type.hpp:30:3: warning: function 'field' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const type_field &field(const token &tk, const string &name) const {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/type.hpp:39:3: warning: function 'accessor' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline string accessor(const token &tk, const vector<string> &path,
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/type.hpp:69:3: warning: function 'size' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline size_t size() const { return size_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/type.hpp:73:3: warning: function 'name' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline const string &name() const { return name_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/type.hpp:77:3: warning: function 'is_built_in' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_built_in() const { return is_built_in_; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/type.hpp:85:3: warning: function 'field_size_and_offset' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline pair<size_t, size_t>
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/unary_ops.hpp:33:3: warning: function 'is_only_negated' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_only_negated() const {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/unary_ops.hpp:54:3: warning: function 'is_empty' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline bool is_empty() const { return ops_.empty(); }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/unary_ops.hpp:56:3: warning: function 'as_string' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline string as_string() const { return {ops_.begin(), ops_.end()}; }
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/unary_ops.hpp:58:3: warning: function 'evaluate_constant' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  inline long int evaluate_constant(long int v) const {
+  ^
+  [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/unexpected_exception.hpp:8:3: warning: function 'what' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  const char *what() const noexcept override { return msg.c_str(); }
+  ^
+  [[nodiscard]] 
+sön  8 okt 2023 21:06:23 CEST

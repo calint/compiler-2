@@ -231,8 +231,9 @@ private:
     }
   }
 
-  inline void asm_op(toc &tc, ostream &os, const size_t indent, const char op,
-                     const ident_resolved &dst, const statement &src) const {
+  inline static void asm_op(toc &tc, ostream &os, const size_t indent,
+                            const char op, const ident_resolved &dst,
+                            const statement &src) {
     toc::indent(os, indent, true);
     tc.source_comment(os, dst.id, {op}, src);
     if (op == '=') {
@@ -281,9 +282,9 @@ private:
     }
   }
 
-  inline void asm_op_mov(toc &tc, ostream &os, const size_t indent,
-                         const ident_resolved &dst,
-                         const statement &src) const {
+  inline static void asm_op_mov(toc &tc, ostream &os, const size_t indent,
+                                const ident_resolved &dst,
+                                const statement &src) {
     if (src.is_expression()) {
       src.compile(tc, os, indent, dst.id);
       return;
@@ -298,9 +299,9 @@ private:
     src.get_unary_ops().compile(tc, os, indent, dst.id_nasm);
   }
 
-  inline void asm_op_mul(toc &tc, ostream &os, const size_t indent,
-                         const ident_resolved &dst,
-                         const statement &src) const {
+  inline static void asm_op_mul(toc &tc, ostream &os, const size_t indent,
+                                const ident_resolved &dst,
+                                const statement &src) {
     if (src.is_expression()) {
       const string &reg{tc.alloc_scratch_register(src, os, indent)};
       src.compile(tc, os, indent, reg);
@@ -363,10 +364,10 @@ private:
     tc.free_scratch_register(os, indent, reg);
   }
 
-  inline void asm_op_add_sub(toc &tc, ostream &os, const size_t indent,
-                             const string &op, const string &op_inv,
-                             const ident_resolved &dst,
-                             const statement &src) const {
+  inline static void asm_op_add_sub(toc &tc, ostream &os, const size_t indent,
+                                    const string &op, const string &op_inv,
+                                    const ident_resolved &dst,
+                                    const statement &src) {
     if (src.is_expression()) {
       const string &reg{tc.alloc_scratch_register(src, os, indent)};
       src.compile(tc, os, indent, reg);
@@ -396,9 +397,9 @@ private:
     tc.free_scratch_register(os, indent, reg);
   }
 
-  inline void asm_op_bitwise(toc &tc, ostream &os, const size_t indent,
-                             const string &op, const ident_resolved &dst,
-                             const statement &src) const {
+  inline static void asm_op_bitwise(toc &tc, ostream &os, const size_t indent,
+                                    const string &op, const ident_resolved &dst,
+                                    const statement &src) {
     if (src.is_expression()) {
       const string &reg{tc.alloc_scratch_register(src, os, indent)};
       src.compile(tc, os, indent, reg);
@@ -424,9 +425,9 @@ private:
     tc.free_scratch_register(os, indent, reg);
   }
 
-  inline void asm_op_shift(toc &tc, ostream &os, const size_t indent,
-                           const string &op, const ident_resolved &dst,
-                           const statement &src) const {
+  inline static void asm_op_shift(toc &tc, ostream &os, const size_t indent,
+                                  const string &op, const ident_resolved &dst,
+                                  const statement &src) {
     if (src.is_expression()) {
       // the operand must be stored in CL
       const bool rcx_allocated{tc.alloc_named_register(src, os, indent, "rcx")};
@@ -483,9 +484,9 @@ private:
   }
 
   // op is either "rax" for the quotient or "rdx" for the reminder
-  inline void asm_op_div(toc &tc, ostream &os, const size_t indent,
-                         const string &op, const ident_resolved &dst,
-                         const statement &src) const {
+  inline static void asm_op_div(toc &tc, ostream &os, const size_t indent,
+                                const string &op, const ident_resolved &dst,
+                                const statement &src) {
     if (src.is_expression()) {
       const string &reg{tc.alloc_scratch_register(src, os, indent)};
       src.compile(tc, os, indent, reg);

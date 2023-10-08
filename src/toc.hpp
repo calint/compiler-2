@@ -758,7 +758,7 @@ public:
     os << op << " " << dst_resolved << "," << src_resolved << endl;
   }
 
-  inline bool is_operand_memory(const string &operand) const {
+  inline static bool is_operand_memory(const string &operand) {
     return operand.find_first_of('[') != string::npos;
   }
   inline size_t
@@ -781,8 +781,8 @@ public:
     // be deduced");
   }
 
-  inline size_t get_size_from_operand_register(const statement &st,
-                                               const string &operand) const {
+  inline static size_t get_size_from_operand_register(const statement &st,
+                                                      const string &operand) {
     if (operand == "rax")
       return 8;
     if (operand == "rbx")
@@ -917,9 +917,9 @@ public:
 
     throw compiler_error(st, "unknown register '" + operand + "'");
   }
-  inline string
+  inline static string
   get_register_operand_for_size(const statement &st, const string &operand,
-                                const size_t size) const { // ? sort of ugly
+                                const size_t size) { // ? sort of ugly
     if (operand == "rax") {
       switch (size) {
       case 8:
@@ -1054,44 +1054,45 @@ public:
 
     throw compiler_error(st, "unknown register '" + operand + "'");
   }
-  inline void asm_push([[maybe_unused]] const statement &st, ostream &os,
-                       const size_t indnt, const string &operand) {
+  inline static void asm_push([[maybe_unused]] const statement &st, ostream &os,
+                              const size_t indnt, const string &operand) {
     indent(os, indnt);
     os << "push " << operand << endl;
   }
 
-  inline void asm_pop([[maybe_unused]] const statement &st, ostream &os,
-                      const size_t indnt, const string &operand) {
+  inline static void asm_pop([[maybe_unused]] const statement &st, ostream &os,
+                             const size_t indnt, const string &operand) {
     indent(os, indnt);
     os << "pop " << operand << endl;
   }
 
-  inline void asm_ret([[maybe_unused]] const statement &st, ostream &os,
-                      const size_t indnt) {
+  inline static void asm_ret([[maybe_unused]] const statement &st, ostream &os,
+                             const size_t indnt) {
     indent(os, indnt);
     os << "ret\n";
   }
 
-  inline void asm_jmp([[maybe_unused]] const statement &st, ostream &os,
-                      const size_t indnt, const string &label) {
+  inline static void asm_jmp([[maybe_unused]] const statement &st, ostream &os,
+                             const size_t indnt, const string &label) {
     indent(os, indnt);
     os << "jmp " << label << endl;
   }
 
-  inline void asm_label([[maybe_unused]] const statement &st, ostream &os,
-                        const size_t indnt, const string &label) {
+  inline static void asm_label([[maybe_unused]] const statement &st,
+                               ostream &os, const size_t indnt,
+                               const string &label) {
     indent(os, indnt);
     os << label << ":" << endl;
   }
 
-  inline void asm_call([[maybe_unused]] const statement &st, ostream &os,
-                       const size_t indnt, const string &label) {
+  inline static void asm_call([[maybe_unused]] const statement &st, ostream &os,
+                              const size_t indnt, const string &label) {
     indent(os, indnt);
     os << "call " << label << endl;
   }
 
-  inline void asm_neg([[maybe_unused]] const statement &st, ostream &os,
-                      const size_t indnt, const string &dst_resolved) {
+  inline static void asm_neg([[maybe_unused]] const statement &st, ostream &os,
+                             const size_t indnt, const string &dst_resolved) {
     indent(os, indnt);
     os << "neg " << dst_resolved << endl;
   }

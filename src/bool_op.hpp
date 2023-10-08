@@ -347,9 +347,9 @@ private:
     }
   }
 
-  inline string resolve_expr(toc &tc, ostream &os, size_t indent,
-                             const expr_ops_list &exp,
-                             vector<string> &allocated_registers) const {
+  inline static string resolve_expr(toc &tc, ostream &os, size_t indent,
+                                    const expr_ops_list &exp,
+                                    vector<string> &allocated_registers) {
     if (exp.is_expression()) {
       const string &reg{tc.alloc_scratch_register(exp, os, indent)};
       allocated_registers.push_back(reg);

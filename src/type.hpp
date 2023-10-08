@@ -49,8 +49,8 @@ public:
            to_string(stack_idx) + "]";
   }
 
-  inline string get_memory_operand_for_size(const token &tk,
-                                            const size_t size) const {
+  inline static string get_memory_operand_for_size(const token &tk,
+                                                   const size_t size) {
     switch (size) {
     case 8:
       return "qword";
