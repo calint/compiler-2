@@ -3,37 +3,43 @@
 #include "stmt_def_func_param.hpp"
 
 class stmt_def_func final : public statement {
+  token name_{};
+  vector<stmt_def_func_param> params_{};
+  vector<token> returns_{};
+  stmt_block code_{};
+  token inline_tk_{};
+  bool no_args_{};
+
 public:
-  inline stmt_def_func(toc &tc, token tk, tokenizer &t)
-      : statement{move(tk)}, name_{t.next_token()} {
+  inline stmt_def_func(toc &tc, token tk, tokenizer &tz)
+      : statement{move(tk)}, name_{tz.next_token()} {
     if (name_.is_name("inline")) {
       inline_tk_ = name_;
-      name_ = t.next_token();
+      name_ = tz.next_token();
     }
-    if (not t.is_next_char('(')) {
+    if (not tz.is_next_char('(')) {
       no_args_ = true;
     }
-
     if (not no_args_) {
       while (true) {
-        if (t.is_next_char(')')) {
+        if (tz.is_next_char(')')) {
           break;
         }
-        params_.emplace_back(tc, t);
-        if (t.is_next_char(')')) {
+        params_.emplace_back(tc, tz);
+        if (tz.is_next_char(')')) {
           break;
         }
-        if (not t.is_next_char(',')) {
+        if (not tz.is_next_char(',')) {
           throw compiler_exception(params_.back(),
-                               "expected ',' after parameter '" +
-                                   params_.back().tok().name() + "'");
+                                   "expected ',' after parameter '" +
+                                       params_.back().tok().name() + "'");
         }
       }
     }
-    if (t.is_next_char(':')) { // returns
+    if (tz.is_next_char(':')) { // returns
       while (true) {
-        returns_.emplace_back(t.next_token());
-        if (t.is_next_char(':')) {
+        returns_.emplace_back(tz.next_token());
+        if (tz.is_next_char(':')) {
           continue;
         }
         break;
@@ -53,7 +59,7 @@ public:
     vector<string> allocated_named_registers{};
     null_stream ns{}; // don't make output while parsing
     init_variables(tc, ns, 0, allocated_named_registers);
-    code_ = {tc, t};
+    code_ = {tc, tz};
     free_allocated_registers(tc, ns, 0, allocated_named_registers);
     tc.exit_func(name());
   }
@@ -219,11 +225,4 @@ private:
       tc.free_named_register(os, indent + 1, allocated_named_registers[i]);
     }
   }
-
-  token name_{};
-  vector<stmt_def_func_param> params_{};
-  vector<token> returns_{};
-  stmt_block code_{};
-  token inline_tk_{};
-  bool no_args_{};
 };

@@ -29,12 +29,12 @@ auto main(int argc, char *args[]) -> int {
   try {
     src = read_file_to_string(src_file_name);
     program prg{src};
-    ofstream fo{"diff.baz"};
-    prg.source_to(fo);
-    fo.close();
+    ofstream reproduced_source{"diff.baz"};
+    prg.source_to(reproduced_source);
+    reproduced_source.close();
     if (read_file_to_string(src_file_name) != read_file_to_string("diff.baz")) {
       throw panic_exception("generated source differs. diff " +
-                                 string{src_file_name} + " diff.baz");
+                            string{src_file_name} + " diff.baz");
     }
 
     // without jump optimizations
@@ -102,12 +102,10 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &t)
   }
   if (t.is_peek_char('(')) {
     // i.e.  f(...)
-    return create_statement_from_tokenizer(tc, move(tk), move(uops),
-                                           t);
+    return create_statement_from_tokenizer(tc, move(tk), move(uops), t);
   }
   // i.e. 0x80, rax, identifiers
-  unique_ptr<statement> st{
-      make_unique<statement>(move(tk), move(uops))};
+  unique_ptr<statement> st{make_unique<statement>(move(tk), move(uops))};
   const ident_resolved &ir{tc.resolve_identifier(*st, false)};
   st->set_type(ir.tp);
   return st;
@@ -127,8 +125,8 @@ inline void unary_ops::compile(toc & /*tc*/, ostream &os, size_t indent_level,
       //		}else if(op=='!'){
       //			os<<"xor "<<dst_resolved<<",1"<<endl;
     } else {
-      throw panic_exception("unexpected code path " + string{__FILE__} +
-                                 ":" + to_string(__LINE__));
+      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                            to_string(__LINE__));
     }
   }
 }
