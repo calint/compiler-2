@@ -5,7 +5,7 @@
 #include <sstream>
 #include <unordered_set>
 
-#include "compiler_error.hpp"
+#include "exceptions.hpp"
 #include "lut.hpp"
 #include "type.hpp"
 

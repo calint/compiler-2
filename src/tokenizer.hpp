@@ -1,4 +1,5 @@
 #pragma once
+#include "token.hpp"
 
 class tokenizer final {
 public:

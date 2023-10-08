@@ -10,6 +10,7 @@ using namespace std;
 #include "program.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
+#include "exceptions.hpp"
 
 static string read_file_to_string(const char *file_name);
 static void optimize_jumps_1(istream &is, ostream &os);
@@ -47,6 +48,9 @@ int main(int argc, char *args[]) {
     return 1;
   } catch (const string &s) {
     cerr << "\nexception: " << s << endl;
+    return 2;
+  } catch (const unexpected_exception &e) {
+    cerr << "\nexception: " << e.what() << endl;
     return 2;
   } catch (const char *s) {
     cerr << "\nexception: " << s << endl;

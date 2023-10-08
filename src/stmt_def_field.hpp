@@ -1,5 +1,5 @@
 #pragma once
-#include "compiler_error.hpp"
+#include "exceptions.hpp"
 #include "toc.hpp"
 
 class stmt_def_field final : public statement {
