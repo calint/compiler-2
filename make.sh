@@ -6,7 +6,7 @@
 #       g++: g++ (Ubuntu 12.2.0-3ubuntu1) 12.2.0
 set -e
 
-CC="clang++ -std=c++2a"
+CC="clang++ -std=c++20"
 CF="-Os -fno-inline -Werror -Wfatal-errors"
 CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-call \
     -Wno-padded -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field"

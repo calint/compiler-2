@@ -86,16 +86,16 @@ inline unique_ptr<statement> create_statement_from_tokenizer(toc &tc,
       throw compiler_error(tk, "unexpected comment after unary ops");
     // i.e.  print("hello") # comment
     return make_unique<stmt_comment>(tc, move(tk), t);
-  } else if (t.is_peek_char('(')) {
+  }
+  if (t.is_peek_char('(')) {
     // i.e.  f(...)
     return create_statement_from_tokenizer(tc, move(tk), move(uops), t);
-  } else {
-    // i.e. 0x80, rax, identifiers
-    unique_ptr<statement> st{make_unique<statement>(move(tk), move(uops))};
-    const ident_resolved &ir{tc.resolve_identifier(*st, false)};
-    st->set_type(ir.tp);
-    return st;
   }
+  // i.e. 0x80, rax, identifiers
+  unique_ptr<statement> st{make_unique<statement>(move(tk), move(uops))};
+  const ident_resolved &ir{tc.resolve_identifier(*st, false)};
+  st->set_type(ir.tp);
+  return st;
 }
 
 // solves circular reference unary_ops->toc->statement->unary_ops

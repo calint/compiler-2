@@ -74,14 +74,14 @@ public:
           if (enclosed_ and t.is_next_char(')'))
             return;
 
-          tk = t.next_token();
-          if (not(tk.is_name("or") or tk.is_name("and"))) {
-            t.put_back_token(tk);
+          token tk2 = t.next_token();
+          if (not(tk2.is_name("or") or tk2.is_name("and"))) {
+            t.put_back_token(tk2);
             break;
           }
 
-          prv_op = tk;
-          ops_.push_back(move(tk));
+          prv_op = tk2;
+          ops_.push_back(move(tk2));
           continue;
         }
       }
@@ -109,7 +109,7 @@ public:
       //    |prv_op| |back()| |tk|
       // create:
       // a    or   (b     and   c) or d
-      bool_ops_list bol{tc, t, false, {}, true, move(bools_.back()), move(tk)};
+      bool_ops_list bol{tc, t, false, {}, true, move(bools_.back()), tk};
       bools_.pop_back();
       bools_.emplace_back(move(bol));
 
