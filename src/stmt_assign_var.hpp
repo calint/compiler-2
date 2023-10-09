@@ -3,11 +3,15 @@
 #include "expr_any.hpp"
 
 class stmt_assign_var final : public statement {
+  token type_{};
+  expr_any exp_{};
+
 public:
-  inline stmt_assign_var(toc &tc, token name, token type, tokenizer &t)
+  inline stmt_assign_var(toc &tc, token name, token type, tokenizer &tz)
       : statement{move(name)}, type_{move(type)} {
+
     const ident_resolved &dst_resolved{tc.resolve_identifier(*this, false)};
-    exp_ = {tc, dst_resolved.tp, t, false};
+    exp_ = {tc, dst_resolved.tp, tz, false};
     set_type(dst_resolved.tp);
   }
 
@@ -84,7 +88,4 @@ private:
     }
     return n;
   }
-
-  token type_{};
-  expr_any exp_{};
 };

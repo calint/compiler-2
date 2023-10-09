@@ -1,12 +1,14 @@
 #pragma once
 
 class stmt_loop final : public statement {
+  stmt_block code_{};
+
 public:
-  inline stmt_loop(toc &tc, token tk, tokenizer &t) : statement{move(tk)} {
+  inline stmt_loop(toc &tc, token tk, tokenizer &tz) : statement{move(tk)} {
     set_type(tc.get_type_void());
     const string &lbl{"loop_" + tc.source_location_for_label(tok())};
     tc.enter_loop(lbl);
-    code_ = {tc, t};
+    code_ = {tc, tz};
     tc.exit_loop(lbl);
   }
 
@@ -47,7 +49,4 @@ public:
     statement::source_to(os);
     code_.source_to(os);
   }
-
-private:
-  stmt_block code_{};
 };

@@ -1,9 +1,11 @@
 #pragma once
 
 class stmt_comment final : public statement {
+  string line_{};
+
 public:
-  inline stmt_comment(toc &tc, token tk, tokenizer &t)
-      : statement{move(tk)}, line_{t.read_rest_of_line()} {
+  inline stmt_comment(toc &tc, token tk, tokenizer &tz)
+      : statement{move(tk)}, line_{tz.read_rest_of_line()} {
     set_type(tc.get_type_void());
   }
 
@@ -24,7 +26,4 @@ public:
                       [[maybe_unused]] const string &dst = "") const override {
     tc.source_comment(*this, os, indent);
   }
-
-private:
-  string line_;
 };

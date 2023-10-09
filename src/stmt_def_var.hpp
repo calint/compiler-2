@@ -7,14 +7,17 @@ public:
 };
 
 class null_stream : public ostream {
+  null_buffer nb_{};
+
 public:
   null_stream() : ostream(&nb_) {}
-
-private:
-  null_buffer nb_{};
 };
 
 class stmt_def_var final : public statement {
+  token name_{};
+  token type_{};
+  stmt_assign_var initial_value_{};
+
 public:
   inline stmt_def_var(toc &tc, token tk, tokenizer &tz)
       : statement{move(tk)}, name_{tz.next_token()} {
@@ -53,9 +56,4 @@ public:
     tc.source_comment(*this, os, indent);
     initial_value_.compile(tc, os, indent, name_.name());
   }
-
-private:
-  token name_{};
-  token type_{};
-  stmt_assign_var initial_value_{};
 };

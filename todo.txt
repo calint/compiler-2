@@ -1,8 +1,9 @@
 [ ] var v : vector = {1, a + b, f() - 1}
-[ ] better coverage of bool_op. qa/see coverage-report
+[x] better coverage of bool_op. qa/see coverage-report
 [ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names
-[ ] source location of a character index counts tabs as one character
+[x] source location of a character index counts tabs as one character
+    => editor set to treat tabs as spaces
 [ ] bool_op_list use cmovexx when assignment
 [ ] handle constants when deducing operand size 
      -> deduce if possible to the size of the desired type

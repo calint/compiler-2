@@ -3,9 +3,13 @@
 #include "bool_ops_list.hpp"
 
 class stmt_if_branch final : public statement {
+  bool_ops_list bol_{};
+  stmt_block code_{};
+
 public:
-  inline stmt_if_branch(toc &tc, tokenizer &t)
-      : statement{t.next_whitespace_token()}, bol_{tc, t}, code_{tc, t} {
+  inline stmt_if_branch(toc &tc, tokenizer &tz)
+      : statement{tz.next_whitespace_token()}, bol_{tc, tz}, code_{tc, tz} {
+
     set_type(tc.get_type_void());
   }
 
@@ -78,8 +82,4 @@ public:
     }
     return nullopt;
   }
-
-private:
-  bool_ops_list bol_;
-  stmt_block code_;
 };

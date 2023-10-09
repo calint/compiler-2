@@ -14,12 +14,14 @@ class stmt_call : public expression {
 public:
   inline stmt_call(toc &tc, token tk, unary_ops uops, tokenizer &tz)
       : expression{move(tk), move(uops)} {
+
     set_type(tc.get_func_return_type_or_throw(*this, identifier()));
 
     if (not tz.is_next_char('(')) {
       no_args_ = true;
       return;
     }
+
     bool expect_arg{false};
     while (true) {
       if (tz.is_next_char(')')) { // foo()
@@ -31,6 +33,7 @@ public:
       args_.emplace_back(tc, get_type(), tz, true);
       expect_arg = tz.is_next_char(',');
     }
+
     whitespace_after_ = tz.next_whitespace_token();
   }
 

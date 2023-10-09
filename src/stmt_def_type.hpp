@@ -1,71 +1,35 @@
 #pragma once
-
-class stmt_def_type_field final : public statement {
-public:
-  inline stmt_def_type_field(toc &tc, token tk, tokenizer &t)
-      : statement{move(tk)} {
-    set_type(tc.get_type_void());
-
-    if (not t.is_next_char(':')) {
-      return;
-    }
-    type_ = t.next_token();
-  }
-
-  inline stmt_def_type_field() = default;
-  inline stmt_def_type_field(const stmt_def_type_field &) = default;
-  inline stmt_def_type_field(stmt_def_type_field &&) = default;
-  inline auto operator=(const stmt_def_type_field &)
-      -> stmt_def_type_field & = default;
-  inline auto operator=(stmt_def_type_field &&)
-      -> stmt_def_type_field & = default;
-
-  inline ~stmt_def_type_field() override = default;
-
-  inline void source_to(ostream &os) const override {
-    statement::source_to(os);
-    if (type_.is_empty()) {
-      return;
-    }
-    os << ':';
-    type_.source_to(os);
-  }
-
-  [[nodiscard]] inline auto name() const -> const string & {
-    return tok().name();
-  }
-
-  [[nodiscard]] inline auto type_str() const -> const string & {
-    return type_.name();
-  }
-
-private:
-  token type_{};
-};
+#include "stmt_def_type_field.hpp"
 
 class stmt_def_type final : public statement {
+  token name_{};
+  token ws_{};
+  vector<stmt_def_type_field> fields_{};
+  type type_{};
+
 public:
-  inline stmt_def_type(toc &tc, token tk, tokenizer &t)
-      : statement{move(tk)}, name_{t.next_token()} {
-    if (not t.is_next_char('{')) {
+  inline stmt_def_type(toc &tc, token tk, tokenizer &tz)
+      : statement{move(tk)}, name_{tz.next_token()} {
+
+    if (not tz.is_next_char('{')) {
       throw compiler_exception(name_, "expected '{'");
     }
 
     while (true) {
-      token tknm{t.next_token()};
+      token tknm{tz.next_token()};
       if (tknm.is_name("")) {
         ws_ = tknm;
-        if (not t.is_next_char('}')) {
-          throw compiler_exception(t, "expected '}'");
+        if (not tz.is_next_char('}')) {
+          throw compiler_exception(tz, "expected '}'");
         }
         break;
       }
-      fields_.emplace_back(tc, move(tknm), t);
-      if (t.is_next_char('}')) {
+      fields_.emplace_back(tc, move(tknm), tz);
+      if (tz.is_next_char('}')) {
         break;
       }
-      if (not t.is_next_char(',')) {
-        throw compiler_exception(t, "expected ',' and more fields");
+      if (not tz.is_next_char(',')) {
+        throw compiler_exception(tz, "expected ',' and more fields");
       }
     }
 
@@ -111,10 +75,4 @@ public:
   inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
                       [[maybe_unused]] size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {}
-
-private:
-  token name_{};
-  token ws_{};
-  vector<stmt_def_type_field> fields_{};
-  type type_{};
 };

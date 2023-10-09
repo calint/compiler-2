@@ -2,34 +2,38 @@
 #include "stmt_if_branch.hpp"
 
 class stmt_if final : public statement {
+  vector<stmt_if_branch> branches_{};
+  vector<token> else_if_tokens_{};
+  stmt_block else_code_{};
+
 public:
-  inline stmt_if(toc &tc, token tk, tokenizer &t) : statement{move(tk)} {
+  inline stmt_if(toc &tc, token tk, tokenizer &tz) : statement{move(tk)} {
     set_type(tc.get_type_void());
     // if a=b {x} else if c=d {y} else {z}
     // 'a=b {x}', 'c=d {y}' are 'branches'
     // 'if' token has been read
     while (true) {
       // read branch i.e. a=b {x}
-      branches_.emplace_back(tc, t);
+      branches_.emplace_back(tc, tz);
 
       // check if it is a 'else if' or 'else' or a new statement
-      token tkn{t.next_token()};
+      token tkn{tz.next_token()};
       if (not tkn.is_name("else")) {
         // not 'else', push token back instream and exit
-        t.put_back_token(tkn);
+        tz.put_back_token(tkn);
         return;
       }
       // is 'else'
       // check if 'else if'
-      token tkn2{t.next_token()};
+      token tkn2{tz.next_token()};
       if (not tkn2.is_name("if")) {
         // not 'else if', push token back instream and exit
-        t.put_back_token(tkn2);
+        tz.put_back_token(tkn2);
         // 'else' branch
         // save tokens to be able to reproduce the source
         else_if_tokens_.push_back(move(tkn));
         // read the 'else' code
-        else_code_ = {tc, t};
+        else_code_ = {tc, tz};
         return;
       }
       // 'else if': continue reading if branches
@@ -112,9 +116,4 @@ public:
     }
     toc::asm_label(*this, os, indent, label_after_if);
   }
-
-private:
-  vector<stmt_if_branch> branches_{};
-  vector<token> else_if_tokens_{};
-  stmt_block else_code_{};
 };

@@ -7,31 +7,35 @@
 #include "tokenizer.hpp"
 
 class stmt_block final : public statement {
+  bool is_one_statement_{};
+  vector<unique_ptr<statement>> stms_{};
+
 public:
-  inline stmt_block(toc &tc, tokenizer &t)
-      : statement{t.next_whitespace_token()}, is_one_statement_{
-                                                  not t.is_next_char('{')} {
+  inline stmt_block(toc &tc, tokenizer &tz)
+      : statement{tz.next_whitespace_token()}, is_one_statement_{
+                                                  not tz.is_next_char('{')} {
     tc.enter_block();
     while (true) {
       // comments, semi-colon not considered a statment
       bool last_statement_considered_no_statment{false};
-      if (t.is_next_char('}')) {
+      if (tz.is_next_char('}')) {
         if (not is_one_statement_) {
           break;
         }
-        throw compiler_exception(t, "unexpected '}' in single statement block");
+        throw compiler_exception(tz, "unexpected '}' in single statement block");
       }
 
-      token tk{t.next_token()};
+      token tk{tz.next_token()};
       if (tk.is_empty()) {
-        throw compiler_exception(tk, "unexpected '" + string{t.peek_char()} + "'");
+        throw compiler_exception(tk,
+                                 "unexpected '" + string{tz.peek_char()} + "'");
       }
 
       if (tk.is_name("var")) {
-        stms_.emplace_back(make_unique<stmt_def_var>(tc, move(tk), t));
-      } else if (t.is_next_char('=')) {
+        stms_.emplace_back(make_unique<stmt_def_var>(tc, move(tk), tz));
+      } else if (tz.is_next_char('=')) {
         stms_.emplace_back(
-            make_unique<stmt_assign_var>(tc, move(tk), token{}, t));
+            make_unique<stmt_assign_var>(tc, move(tk), token{}, tz));
       } else if (tk.is_name("break")) {
         stms_.emplace_back(make_unique<stmt_break>(tc, move(tk)));
       } else if (tk.is_name("continue")) {
@@ -39,14 +43,14 @@ public:
       } else if (tk.is_name("return")) {
         stms_.emplace_back(make_unique<stmt_return>(tc, move(tk)));
       } else if (tk.is_name("#")) {
-        stms_.emplace_back(make_unique<stmt_comment>(tc, move(tk), t));
+        stms_.emplace_back(make_unique<stmt_comment>(tc, move(tk), tz));
         last_statement_considered_no_statment = true;
       } else if (tk.is_name("")) { // white space
         stms_.emplace_back(make_unique<statement>(move(tk)));
         stms_.back()->set_type(tc.get_type_void());
       } else { // circular reference resolver
         stms_.emplace_back(
-            create_statement_from_tokenizer(tc, move(tk), {}, t));
+            create_statement_from_tokenizer(tc, move(tk), {}, tz));
       }
 
       if (is_one_statement_ and not last_statement_considered_no_statment) {
@@ -88,8 +92,4 @@ public:
   }
 
   [[nodiscard]] inline auto is_empty() const -> bool { return stms_.empty(); }
-
-private:
-  bool is_one_statement_{};
-  vector<unique_ptr<statement>> stms_{};
 };

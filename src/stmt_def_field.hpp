@@ -3,6 +3,10 @@
 #include "toc.hpp"
 
 class stmt_def_field final : public statement {
+  token name_{};
+  unary_ops uops_{};
+  token initial_value_{};
+
 public:
   inline stmt_def_field(toc &tc, token tk, tokenizer &tz)
       : statement{move(tk)}, name_{tz.next_token()} {
@@ -67,9 +71,4 @@ public:
   [[nodiscard]] inline auto is_string_field() const -> bool {
     return initial_value_.is_string();
   }
-
-private:
-  token name_{};
-  unary_ops uops_{};
-  token initial_value_{};
 };
