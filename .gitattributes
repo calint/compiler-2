@@ -1,7 +1,7 @@
 # directory to be considered in "Languages"
-/src/* linguist-vendored
+/src/*    linguist-detectable
 
-# excluding directories
-/qa/* -linguist-vendored
-/notes/* -linguist-vendored
-/from/* -linguist-vendored
+# exclude directories
+/qa/*    -linguist-detectable
+/notes/* -linguist-detectable
+/from/*  -linguist-detectable
