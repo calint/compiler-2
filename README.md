@@ -82,7 +82,6 @@ func inline main {
         print(dot.len, dot)
         print(nl.len, nl)
     }
-    exit(0)
 }
 ```
 
@@ -257,17 +256,17 @@ main:
 ;      alloc rsi
 ;      alias ptr -> rsi
        mov rsi, input
-;      [24:2] mov(rax, 0) 
+;      [24:5] mov(rax, 0) 
        mov rax, 0
-;      [24:17] # read system call 
-;      [25:2] mov(rdi, 0) 
+;      [24:20] # read system call 
+;      [25:5] mov(rdi, 0) 
        mov rdi, 0
-;      [25:17] # file descriptor for standard input 
-;      [26:2] mov(rsi, ptr) 
-;      [26:17] # buffer address 
-;      [27:2] mov(rdx, len) 
-;      [27:17] # buffer size 
-;      [28:2] syscall 
+;      [25:20] # file descriptor for standard input 
+;      [26:5] mov(rsi, ptr) 
+;      [26:20] # buffer address 
+;      [27:5] mov(rdx, len) 
+;      [27:20] # buffer size 
+;      [28:5] syscall 
        syscall
 ;      [29:5] mov(nbytes_read, rax) 
        mov qword[rbp-24], rax
@@ -423,21 +422,12 @@ main:
      print_65_9_end:
    jmp loop_52_5
    loop_52_5_end:
-;  [67:5] exit(0) 
-;  exit(v : reg_rdi) 
-;    inline: 67_5
-;    alloc rdi
-;    alias v -> rdi
-     mov rdi, 0
-;    [10:5] mov(rax, 60) 
-     mov rax, 60
-;    [10:18] # exit system call 
-;    [11:5] mov(rdi, v) 
-;    [11:18] # return code 
-;    [12:5] syscall 
-     syscall
-;    free rdi
-   exit_67_5_end:
+; main end
+
+; system call: exit 0
+mov rax, 60
+mov rdi, 0
+syscall
 
 ; max scratch registers in use: 1
 ;            max frames in use: 7

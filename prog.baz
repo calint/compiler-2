@@ -64,5 +64,4 @@ func inline main {
         print(dot.len, dot)
         print(nl.len, nl)
     }
-    exit(0)
 }

@@ -112,7 +112,6 @@ main:
      print_65_9_end:
    jmp loop_52_5
    loop_52_5_end:
-     mov rdi, 0
-     mov rax, 60
-     syscall
-   exit_67_5_end:
+mov rax, 60
+mov rdi, 0
+syscall
