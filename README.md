@@ -4,8 +4,15 @@ experimental compiler to nasm x86_64 for linux
 intention:
 * minimalistic language
 * gain experience writing compilers
-* generate handwritten-like assembler for x86_64 nasm
-* generating inlined functions for a super-loop, no reentrance type of program
+* generate handwritten-like assembler compiled by nasm for x86_64
+* program with a super loop and non-reentrant inlined functions
+
+supports:
+* built-in integer types (64, 32, 16, 8 bit)
+* built-in boolean type
+* user defined types (in progress)
+* inlined functions
+* keywords: inline, func, field, var, loop, if, else, continue, break
 
 sample code:
 ```
@@ -32,11 +39,11 @@ func inline print(len : reg_rdx, ptr : reg_rsi) {
 }
 
 func inline read(len : reg_rdx, ptr : reg_rsi) : nbytes_read {
-	mov(rax, 0)    # read system call
-	mov(rdi, 0)    # file descriptor for standard input
-	mov(rsi, ptr)  # buffer address
-	mov(rdx, len)  # buffer size
-	syscall
+    mov(rax, 0)    # read system call
+    mov(rdi, 0)    # file descriptor for standard input
+    mov(rsi, ptr)  # buffer address
+    mov(rdx, len)  # buffer size
+    syscall
     mov(nbytes_read, rax) # return value
 }
 
