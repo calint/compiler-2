@@ -14,8 +14,8 @@ SAN=
 DBG=
 OPT=-O3
 if [ "$1" = "qa2" ]; then
-    SAN="-fsanitize=memory,undefined -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=msan_suppressions.txt"
-#    SAN="-fsanitize=address,undefined -fno-omit-frame-pointer"
+#    SAN="-fsanitize=memory,undefined -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=msan_suppressions.txt"
+    SAN="-fsanitize=address,undefined -fno-omit-frame-pointer"
     DBG=-g
 elif [ "$1" = "qa" ]; then
     ETC="-fprofile-instr-generate -fcoverage-mapping $ETC"

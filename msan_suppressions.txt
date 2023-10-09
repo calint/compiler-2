@@ -1,5 +1,6 @@
+#!special-case-list-v2
 # errors triggered by system code
 src:*/lib/gcc/*
 
-src:token.hpp
-src:tokenizer.hpp
+src:*/token.hpp
+src:*/tokenizer.hpp
