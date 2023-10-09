@@ -29,6 +29,8 @@ func inline read(len : reg_rdx, ptr : reg_rsi) : nbytes_read {
     mov(nbytes_read, rax) # return value
 }
 
+# define a type with 'x' being default register size (64 bit)
+#   and 'y' being 32 bit
 type vector { x, y : i32 }
 
 func inline main {
