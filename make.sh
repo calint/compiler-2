@@ -29,7 +29,7 @@ elif [ "$1" = "prof" ]; then
     DBG=-g
 fi
 
-CMD="$CC -o baz $OPT $DBG $CF $CW $MSAN $PROF src/main.cpp"
+CMD="$CC src/main.cpp -o baz $OPT $DBG $CF $CW $MSAN $PROF"
 echo
 echo $CMD
 $CMD
