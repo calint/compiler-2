@@ -9,3 +9,4 @@
 /CMakeFiles/
 /Makefile
 /sanitizer.log
+/qa/tests/coverage-report/*
