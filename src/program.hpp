@@ -45,15 +45,18 @@ public:
         if (tkz.is_eos()) {
           break;
         }
-        throw compiler_exception(tk,
-                                 "unexpected '" + string{tkz.next_char()} + "'");
+        throw compiler_exception(tk, "unexpected '" + string{tkz.next_char()} +
+                                         "'");
       }
       if (tk.is_name("field")) {
-        statements_.emplace_back(make_unique<stmt_def_field>(tc_, move(tk), tkz));
+        statements_.emplace_back(
+            make_unique<stmt_def_field>(tc_, move(tk), tkz));
       } else if (tk.is_name("func")) {
-        statements_.emplace_back(make_unique<stmt_def_func>(tc_, move(tk), tkz));
+        statements_.emplace_back(
+            make_unique<stmt_def_func>(tc_, move(tk), tkz));
       } else if (tk.is_name("type")) {
-        statements_.emplace_back(make_unique<stmt_def_type>(tc_, move(tk), tkz));
+        statements_.emplace_back(
+            make_unique<stmt_def_type>(tc_, move(tk), tkz));
       } else if (tk.is_name("#")) {
         statements_.emplace_back(make_unique<stmt_comment>(tc_, move(tk), tkz));
       } else if (tk.is_name("")) {
@@ -102,7 +105,8 @@ public:
     // get the main function and compile
     const stmt_def_func &main = tc.get_func_or_throw(prg, "main");
     if (not main.is_inline()) {
-      throw compiler_exception(main, "main function must be declared inline");
+      throw compiler_exception(main.tok(),
+                               "main function must be declared inline");
     }
 
     os << "main:" << endl;

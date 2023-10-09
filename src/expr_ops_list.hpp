@@ -13,12 +13,13 @@ public:
       unique_ptr<statement> first_expression = unique_ptr<statement>())
       : expression{t.next_whitespace_token(), {}}, enclosed_{enclosed},
         uops_{move(uops)} {
+
     // read first expression i.e. =-a/-(b+1)
     if (first_expression) {
       // called in a recursion with first expression provided
       exps_.push_back(move(first_expression));
     } else {
-      // check if new recursion is necessary i.e. =-a/-(-(b+c)+d), t at "-a/-("
+      // check if new recursion is necessary e.g. =-a/-(-(b+c)+d), t at "-a/-("
       unary_ops uo{t};
       if (t.is_next_char('(')) {
         // recursion
@@ -100,9 +101,8 @@ public:
         ops_.pop_back();
         unique_ptr<statement> prev{move(exps_.back())};
         exps_.pop_back();
-        exps_.emplace_back(
-            make_unique<expr_ops_list>(tc, t, in_args, false, unary_ops{},
-                                       first_op_prec, move(prev)));
+        exps_.emplace_back(make_unique<expr_ops_list>(
+            tc, t, in_args, false, unary_ops{}, first_op_prec, move(prev)));
         continue;
       }
 
@@ -127,8 +127,8 @@ public:
       // read statement
       unique_ptr<statement> stm{create_statement_from_tokenizer(tc, t)};
       if (stm->tok().is_empty()) {
-        throw compiler_exception(*stm,
-                             "unexpected '" + string{t.peek_char()} + "'");
+        throw compiler_exception(stm->tok(),
+                                 "unexpected '" + string{t.peek_char()} + "'");
       }
 
       exps_.push_back(move(stm));
@@ -241,8 +241,8 @@ private:
     case '%':
       return 6;
     default:
-      throw panic_exception("unexpected code path " + string{__FILE__} +
-                                 ":" + to_string(__LINE__));
+      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                            to_string(__LINE__));
     }
   }
 
@@ -465,8 +465,9 @@ private:
       return;
     }
     if (src_resolved.id_nasm == "rcx") {
-      throw compiler_exception(src, "cannot use 'rcx' as operand in shift because "
-                                "that registers is used");
+      throw compiler_exception(src.tok(),
+                               "cannot use 'rcx' as operand in shift because "
+                               "that registers is used");
     }
 
     const unary_ops &uops{src.get_unary_ops()};
@@ -570,8 +571,9 @@ private:
       return;
     }
     if (src_resolved.id_nasm == "rdx" or src_resolved.id_nasm == "rax") {
-      throw compiler_exception(src, "cannot use 'rdx' or 'rax' as operands in "
-                                "division because those registers are used");
+      throw compiler_exception(src.tok(),
+                               "cannot use 'rdx' or 'rax' as operands in "
+                               "division because those registers are used");
     }
 
     const unary_ops &uops = src.get_unary_ops();

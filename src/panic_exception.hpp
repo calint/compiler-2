@@ -1,3 +1,5 @@
+#pragma once
+
 class panic_exception final : public exception {
   const string msg{};
 

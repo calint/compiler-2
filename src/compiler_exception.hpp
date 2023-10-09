@@ -1,5 +1,4 @@
 #pragma once
-#include "statement.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 
@@ -9,8 +8,8 @@ public:
       : msg{move(message)},
         start_char{tk.char_index()}, end_char{tk.char_index_end()} {}
 
-  inline compiler_exception(const statement &st, const string &message)
-      : compiler_exception{st.tok(), message} {}
+  // inline compiler_exception(const statement &st, const string &message)
+  //     : compiler_exception{st.tok(), message} {}
 
   inline compiler_exception(const tokenizer &t, string message)
       : msg{move(message)}, start_char{t.current_char_index_in_source()},

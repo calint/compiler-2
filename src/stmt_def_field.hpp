@@ -4,18 +4,19 @@
 
 class stmt_def_field final : public statement {
 public:
-  inline stmt_def_field(toc &tc, token tk, tokenizer &t)
-      : statement{move(tk)}, name_{t.next_token()} {
-    if (name_.is_name("")) {
-      throw compiler_exception(t, "expected field name");
+  inline stmt_def_field(toc &tc, token tk, tokenizer &tz)
+      : statement{move(tk)}, name_{tz.next_token()} {
+
+    if (name_.is_empty()) {
+      throw compiler_exception(name_, "expected field name");
     }
 
-    if (not t.is_next_char('=')) {
-      throw compiler_exception(t, "expected '=' and initial value");
+    if (not tz.is_next_char('=')) {
+      throw compiler_exception(tz, "expected '=' and initial value");
     }
 
-    uops_ = unary_ops{t};
-    initial_value_ = t.next_token();
+    uops_ = unary_ops{tz};
+    initial_value_ = tz.next_token();
 
     if (initial_value_.is_string()) {
       set_type(tc.get_type_void()); // ! not implemented

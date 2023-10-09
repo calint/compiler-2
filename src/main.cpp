@@ -65,7 +65,8 @@ auto main(int argc, char *args[]) -> int {
   return 0;
 }
 
-// called from stmt_block to solve circular dependencies with 'loop', 'if' and 'calls'
+// called from stmt_block to solve circular dependencies with 'loop', 'if' and
+// 'calls'
 inline auto create_statement_from_tokenizer(toc &tc, token tk, unary_ops uops,
                                             tokenizer &t)
     -> unique_ptr<statement> {
@@ -87,6 +88,7 @@ inline auto create_statement_from_tokenizer(toc &tc, token tk, unary_ops uops,
 // called from expr_ops_list to solve circular dependencies with calls
 inline auto create_statement_from_tokenizer(toc &tc, tokenizer &t)
     -> unique_ptr<statement> {
+
   unary_ops uops{t};
   token tk = t.next_token();
   if (tk.is_name("")) {

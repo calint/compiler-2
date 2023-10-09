@@ -7,26 +7,31 @@
 #include "unary_ops.hpp"
 
 class stmt_call : public expression {
+  vector<expr_any> args_{};
+  bool no_args_{};
+  token whitespace_after_{};
+
 public:
-  inline stmt_call(toc &tc, token tk, unary_ops uops, tokenizer &t)
+  inline stmt_call(toc &tc, token tk, unary_ops uops, tokenizer &tz)
       : expression{move(tk), move(uops)} {
     set_type(tc.get_func_return_type_or_throw(*this, identifier()));
 
-    if (not t.is_next_char('(')) {
+    if (not tz.is_next_char('(')) {
       no_args_ = true;
       return;
     }
     bool expect_arg{false};
     while (true) {
-      if (t.is_next_char(')')) { // foo()
+      if (tz.is_next_char(')')) { // foo()
         if (expect_arg) {
-          throw compiler_exception(t, "expected argument after ','");
+          throw compiler_exception(tz, "expected argument after ','");
         }
         break;
       }
-      args_.emplace_back(tc, get_type(), t, true);
-      expect_arg = t.is_next_char(',');
+      args_.emplace_back(tc, get_type(), tz, true);
+      expect_arg = tz.is_next_char(',');
     }
+    whitespace_after_ = tz.next_whitespace_token();
   }
 
   inline stmt_call() = default;
@@ -51,6 +56,7 @@ public:
       }
     }
     os << ")";
+    whitespace_after_.source_to(os);
   }
 
   inline void compile(toc &tc, ostream &os, size_t indent,
@@ -62,11 +68,11 @@ public:
     // check that the same number of arguments are provided as expected
     if (func.params().size() != args_.size()) {
       throw compiler_exception(
-          *this, "function '" + func_nm + "' expects " +
-                     to_string(func.params().size()) + " argument" +
-                     (func.params().size() == 1 ? "" : "s") + " but " +
-                     to_string(args_.size()) + " " +
-                     (args_.size() == 1 ? "is" : "are") + " provided");
+          this->tok(), "function '" + func_nm + "' expects " +
+                           to_string(func.params().size()) + " argument" +
+                           (func.params().size() == 1 ? "" : "s") + " but " +
+                           to_string(args_.size()) + " " +
+                           (args_.size() == 1 ? "is" : "are") + " provided");
     }
 
     // check that argument types match the parameters
@@ -79,7 +85,7 @@ public:
         // ? check if it is integral (not bool)
         if (param_type.size() < arg_type.size()) {
           throw compiler_exception(
-              arg,
+              arg.tok(),
               "argument " + to_string(i + 1) + " of type '" + arg_type.name() +
                   "' would be truncated when passed to parameter of type '" +
                   param_type.name() + "'");
@@ -87,10 +93,11 @@ public:
         continue;
       }
       if (arg_type.name() != param_type.name()) {
-        throw compiler_exception(arg, "argument " + to_string(i + 1) +
-                                      " of type '" + arg_type.name() +
-                                      "' does not match parameter of type '" +
-                                      param_type.name() + "'");
+        throw compiler_exception(arg.tok(),
+                                 "argument " + to_string(i + 1) + " of type '" +
+                                     arg_type.name() +
+                                     "' does not match parameter of type '" +
+                                     param_type.name() + "'");
       }
     }
 
@@ -98,7 +105,8 @@ public:
     if (not dst.empty()) {
       if (func.returns().empty()) {
         throw compiler_exception(
-            *this, "cannot assign from function that does not return value");
+            this->tok(),
+            "cannot assign from function that does not return value");
       }
 
       const type &return_type{func.get_type()};
@@ -110,10 +118,10 @@ public:
       //'"+dst_resolved.tp.name()+"'");
       // ? check if built in integer types
       if (dst_resolved.tp.size() < return_type.size()) {
-        throw compiler_exception(*this,
-                             "return type '" + return_type.name() +
-                                 "' would be truncated when copied to '" + dst +
-                                 "' of type '" + dst_resolved.tp.name() + "'");
+        throw compiler_exception(
+            this->tok(), "return type '" + return_type.name() +
+                             "' would be truncated when copied to '" + dst +
+                             "' of type '" + dst_resolved.tp.name() + "'");
       }
     }
 
@@ -363,8 +371,9 @@ public:
     // if the result of the call has unary ops
     if (not get_unary_ops().is_empty()) {
       if (func.returns().empty()) {
-        throw compiler_exception(*this, "function call has unary operations but it "
-                                    "does not return a value");
+        throw compiler_exception(this->tok(),
+                                 "function call has unary operations but it "
+                                 "does not return a value");
       }
 
       const ident_resolved &ir{
@@ -380,8 +389,4 @@ public:
   }
 
   [[nodiscard]] inline auto arg_count() const -> size_t { return args_.size(); }
-
-private:
-  vector<expr_any> args_{};
-  bool no_args_{};
 };

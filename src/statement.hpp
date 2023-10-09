@@ -1,4 +1,5 @@
 #pragma once
+#include "compiler_exception.hpp"
 #include "token.hpp"
 #include "unary_ops.hpp"
 
@@ -8,14 +9,18 @@ class type;
 class statement {
 public:
   inline explicit statement(token tk, unary_ops uops = {})
-      : token_{move(tk)}, uops_{move(uops)} {}
-  inline virtual ~statement() = default;
+      : token_{move(tk)}, uops_{move(uops)} {
+
+    validate_identifier_name(token_);
+  }
 
   inline statement() = default;
   inline statement(statement &&) = default;
   inline statement(const statement &) = default;
   inline auto operator=(const statement &) -> statement & = default;
   inline auto operator=(statement &&) -> statement & = default;
+
+  inline virtual ~statement() = default;
 
   inline virtual void compile([[maybe_unused]] toc &tc, ostream &os,
                               [[maybe_unused]] size_t indent,
@@ -51,6 +56,17 @@ public:
 
   [[nodiscard]] inline virtual auto get_type() const -> const type & {
     return *type_;
+  }
+
+  //? where to place this validation. empty token in statement is ok
+  inline static void validate_identifier_name(const token &tk) {
+    // if (tk.is_empty()) {
+    //   throw compiler_exception(tk, "unexpected empty identifier");
+    // }
+    if (tk.name().ends_with(".")) {
+      throw compiler_exception(tk, "unexpected '.' at the end of '" +
+                                       tk.name() + "'");
+    }
   }
 
 private:

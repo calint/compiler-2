@@ -30,7 +30,7 @@ public:
           break;
         }
         if (not tz.is_next_char(',')) {
-          throw compiler_exception(params_.back(),
+          throw compiler_exception(params_.back().tok(),
                                    "expected ',' after parameter '" +
                                        params_.back().tok().name() + "'");
         }
