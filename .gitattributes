@@ -1,1 +1,4 @@
 /src/** linguist-detectable
+/qa/** -linguist-detectable
+/notes/** -linguist-detectable
+/from/** -linguist-detectable
