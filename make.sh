@@ -1,9 +1,10 @@
 #!/bin/sh
 # tools:
-#   clang++: Ubuntu clang version 15.0.6 x86_64-pc-linux-gnu posix
-#      nasm: NASM version 2.15.05
-#        ld: GNU ld (GNU Binutils for Ubuntu) 2.39
-#       g++: g++ (Ubuntu 12.2.0-3ubuntu1) 12.2.0
+#   clang++: 15.0.7
+#       g++: 12.3.0
+#      nasm: 2.16.01
+#        ld: 2.40
+
 set -e
 
 # change to directory of the script
@@ -29,11 +30,14 @@ elif [ "$1" = "prof" ]; then
     DBG=-g
 fi
 
+SEP="--------------------------------------------------------------------------------"
+
 CMD="$CC src/main.cpp -o baz $OPT $DBG $CF $CW $MSAN $PROF"
-echo
+echo $SEP
 echo $CMD
 $CMD
-echo
+echo $SEP
+
 
 if [ "$1" = "prof" ]; then
     exit 0
@@ -46,13 +50,14 @@ ld -s -o gen gen.o
 
 ls --color -la baz gen.s gen-m.s gen
 
-echo
+echo $SEP
 echo    '              lines   words   chars'
-echo -n '    source: ' && cat src/*|wc
-echo -n '   gzipped: ' && cat src/*|gzip|wc 
-echo -n 'baz source: ' && cat prog.baz|grep -v -e'^\s*$'|wc
-echo -n '   gzipped: ' && cat prog.baz|grep -v -e'^\s*$'|gzip|wc
-echo -n 'asm source: ' && cat gen-m.s|wc
-echo -n '   gzipped: ' && cat gen-m.s|gzip|wc
-echo
+echo -n '    source: '; cat src/* | wc
+echo -n '   gzipped: '; cat src/* | gzip | wc 
+echo -n 'baz source: '; cat prog.baz | grep -v -e'^\s*$' | wc
+echo -n '   gzipped: '; cat prog.baz | grep -v -e'^\s*$' | gzip | wc
+echo -n 'asm source: '; cat gen-m.s | wc
+echo -n '   gzipped: '; cat gen-m.s | gzip | wc
+echo $SEP
 ./gen
+echo $SEP

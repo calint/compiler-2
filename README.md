@@ -14,6 +14,10 @@ supports:
 * inlined functions
 * keywords: inline, func, field, var, loop, if, else, continue, break
 
+howto:
+* to compile the compiler that compiles 'prog.baz' and assembles the generated code run 'make.sh'
+* after that use './run-baz.sh myprogram.baz' or './run-baz.sh' to compile and run 'prog.baz'
+
 sample code:
 ```
 field   hello = "hello world from baz\n"
