@@ -47,15 +47,15 @@ main:
 ;    inline: 33_5
 ;    alloc rdx
 ;    alias len -> rdx
-     mov rdx,hello.len
+     mov rdx, hello.len
 ;    alloc rsi
 ;    alias ptr -> rsi
-     mov rsi,hello
+     mov rsi, hello
 ;    [16:5] mov(rax, 1) 
-     mov rax,1
+     mov rax, 1
 ;    [16:19] # write system call 
 ;    [17:5] mov(rdi, 1) 
-     mov rdi,1
+     mov rdi, 1
 ;    [17:19] # file descriptor for standard out 
 ;    [18:5] mov(rsi, ptr) 
 ;    [18:19] # buffer address 
@@ -73,15 +73,15 @@ main:
 ;      inline: 35_9
 ;      alloc rdx
 ;      alias len -> rdx
-       mov rdx,prompt1.len
+       mov rdx, prompt1.len
 ;      alloc rsi
 ;      alias ptr -> rsi
-       mov rsi,prompt1
+       mov rsi, prompt1
 ;      [16:5] mov(rax, 1) 
-       mov rax,1
+       mov rax, 1
 ;      [16:19] # write system call 
 ;      [17:5] mov(rdi, 1) 
-       mov rdi,1
+       mov rdi, 1
 ;      [17:19] # file descriptor for standard out 
 ;      [18:5] mov(rsi, ptr) 
 ;      [18:19] # buffer address 
@@ -104,15 +104,15 @@ main:
 ;      alias nbytes_read -> len
 ;      alloc rdx
 ;      alias len -> rdx
-       mov rdx,input.len
+       mov rdx, input.len
 ;      alloc rsi
 ;      alias ptr -> rsi
-       mov rsi,input
+       mov rsi, input
 ;      [24:2] mov(rax, 0) 
-       mov rax,0
+       mov rax, 0
 ;      [24:17] # read system call 
 ;      [25:2] mov(rdi, 0) 
-       mov rdi,0
+       mov rdi, 0
 ;      [25:17] # file descriptor for standard input 
 ;      [26:2] mov(rsi, ptr) 
 ;      [26:17] # buffer address 
@@ -121,19 +121,19 @@ main:
 ;      [28:2] syscall 
        syscall
 ;      [29:5] mov(nbytes_read, rax) 
-       mov qword[rbp-8],rax
+       mov qword[rbp-8], rax
 ;      [29:27] # return value 
 ;      free rsi
 ;      free rdx
      read_36_19_end:
 ;    [36:44] len- 1 
-     sub qword[rbp-8],1
+     sub qword[rbp-8], 1
 ;    [36:49] # -1 don't include the '\n' 
      if_37_12:
 ;    [37:12] ? len == 0 
 ;    [37:12] ? len == 0 
      cmp_37_12:
-     cmp qword[rbp-8],0
+     cmp qword[rbp-8], 0
      jne if_37_9_end
      if_37_12_code:  ; opt1
 ;      [38:13] break 
@@ -143,7 +143,7 @@ main:
 ;    [40:12] ? len <= 4 
 ;    [40:12] ? len <= 4 
      cmp_40_12:
-     cmp qword[rbp-8],4
+     cmp qword[rbp-8], 4
      jg if_40_9_end
      if_40_12_code:  ; opt1
 ;      [41:13] print(prompt2.len, prompt2) 
@@ -151,15 +151,15 @@ main:
 ;        inline: 41_13
 ;        alloc rdx
 ;        alias len -> rdx
-         mov rdx,prompt2.len
+         mov rdx, prompt2.len
 ;        alloc rsi
 ;        alias ptr -> rsi
-         mov rsi,prompt2
+         mov rsi, prompt2
 ;        [16:5] mov(rax, 1) 
-         mov rax,1
+         mov rax, 1
 ;        [16:19] # write system call 
 ;        [17:5] mov(rdi, 1) 
-         mov rdi,1
+         mov rdi, 1
 ;        [17:19] # file descriptor for standard out 
 ;        [18:5] mov(rsi, ptr) 
 ;        [18:19] # buffer address 
@@ -178,15 +178,15 @@ main:
 ;      inline: 44_9
 ;      alloc rdx
 ;      alias len -> rdx
-       mov rdx,prompt3.len
+       mov rdx, prompt3.len
 ;      alloc rsi
 ;      alias ptr -> rsi
-       mov rsi,prompt3
+       mov rsi, prompt3
 ;      [16:5] mov(rax, 1) 
-       mov rax,1
+       mov rax, 1
 ;      [16:19] # write system call 
 ;      [17:5] mov(rdi, 1) 
-       mov rdi,1
+       mov rdi, 1
 ;      [17:19] # file descriptor for standard out 
 ;      [18:5] mov(rsi, ptr) 
 ;      [18:19] # buffer address 
@@ -202,15 +202,15 @@ main:
 ;      inline: 45_9
 ;      alloc rdx
 ;      alias len -> rdx
-       mov rdx,qword[rbp-8]
+       mov rdx, qword[rbp-8]
 ;      alloc rsi
 ;      alias ptr -> rsi
-       mov rsi,input
+       mov rsi, input
 ;      [16:5] mov(rax, 1) 
-       mov rax,1
+       mov rax, 1
 ;      [16:19] # write system call 
 ;      [17:5] mov(rdi, 1) 
-       mov rdi,1
+       mov rdi, 1
 ;      [17:19] # file descriptor for standard out 
 ;      [18:5] mov(rsi, ptr) 
 ;      [18:19] # buffer address 
@@ -226,15 +226,15 @@ main:
 ;      inline: 46_9
 ;      alloc rdx
 ;      alias len -> rdx
-       mov rdx,dot.len
+       mov rdx, dot.len
 ;      alloc rsi
 ;      alias ptr -> rsi
-       mov rsi,dot
+       mov rsi, dot
 ;      [16:5] mov(rax, 1) 
-       mov rax,1
+       mov rax, 1
 ;      [16:19] # write system call 
 ;      [17:5] mov(rdi, 1) 
-       mov rdi,1
+       mov rdi, 1
 ;      [17:19] # file descriptor for standard out 
 ;      [18:5] mov(rsi, ptr) 
 ;      [18:19] # buffer address 
@@ -250,15 +250,15 @@ main:
 ;      inline: 47_9
 ;      alloc rdx
 ;      alias len -> rdx
-       mov rdx,nl.len
+       mov rdx, nl.len
 ;      alloc rsi
 ;      alias ptr -> rsi
-       mov rsi,nl
+       mov rsi, nl
 ;      [16:5] mov(rax, 1) 
-       mov rax,1
+       mov rax, 1
 ;      [16:19] # write system call 
 ;      [17:5] mov(rdi, 1) 
-       mov rdi,1
+       mov rdi, 1
 ;      [17:19] # file descriptor for standard out 
 ;      [18:5] mov(rsi, ptr) 
 ;      [18:19] # buffer address 
@@ -276,9 +276,9 @@ main:
 ;    inline: 49_5
 ;    alloc rdi
 ;    alias v -> rdi
-     mov rdi,0
+     mov rdi, 0
 ;    [10:5] mov(rax, 60) 
-     mov rax,60
+     mov rax, 60
 ;    [10:18] # exit system call 
 ;    [11:5] mov(rdi, v) 
 ;    [11:18] # return code 

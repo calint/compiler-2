@@ -753,16 +753,16 @@ public:
       if (not(is_operand_memory(dst_resolved) and
               is_operand_memory(src_resolved))) {
         indent(os, indnt);
-        os << op << " " << dst_resolved << "," << src_resolved << endl;
+        os << op << " " << dst_resolved << ", " << src_resolved << endl;
         return;
       }
 
       const string &r{alloc_scratch_register(st, os, indnt)};
       const string &r_sized{get_register_operand_for_size(st, r, src_size)};
       indent(os, indnt);
-      os << "mov " << r_sized << "," << src_resolved << endl;
+      os << "mov " << r_sized << ", " << src_resolved << endl;
       indent(os, indnt);
-      os << op << " " << dst_resolved << "," << r_sized << endl;
+      os << op << " " << dst_resolved << ", " << r_sized << endl;
       free_scratch_register(os, indnt, r);
       return;
     }
@@ -773,16 +773,16 @@ public:
               is_operand_memory(src_resolved))) {
         if (op == "mov") {
           indent(os, indnt);
-          os << "movsx " << dst_resolved << "," << src_resolved << endl;
+          os << "movsx " << dst_resolved << ", " << src_resolved << endl;
           return;
         }
       }
       const string &r{alloc_scratch_register(st, os, indnt)};
       const string &r_sized{get_register_operand_for_size(st, r, dst_size)};
       indent(os, indnt);
-      os << "movsx " << r_sized << "," << src_resolved << endl;
+      os << "movsx " << r_sized << ", " << src_resolved << endl;
       indent(os, indnt);
-      os << op << " " << dst_resolved << "," << r_sized << endl;
+      os << op << " " << dst_resolved << ", " << r_sized << endl;
       free_scratch_register(os, indnt, r);
       return;
     }
@@ -792,7 +792,7 @@ public:
       const string &r_sized{
           get_register_operand_for_size(st, src_resolved, dst_size)};
       indent(os, indnt);
-      os << op << " " << dst_resolved << "," << r_sized << endl;
+      os << op << " " << dst_resolved << ", " << r_sized << endl;
       return;
     }
 
@@ -804,7 +804,7 @@ public:
 
     // constant
     indent(os, indnt);
-    os << op << " " << dst_resolved << "," << src_resolved << endl;
+    os << op << " " << dst_resolved << ", " << src_resolved << endl;
   }
 
   inline static auto is_operand_memory(const string &operand) -> bool {
