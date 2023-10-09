@@ -29,74 +29,77 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 main:
+   mov qword[rbp-12], 3
+   mov dword[rbp-4], 4
      mov rdx, hello.len
      mov rsi, hello
      mov rax, 1
      mov rdi, 1
      syscall
-   print_33_5_end:
-   loop_34_5:
+   print_37_5_end:
+   loop_38_5:
        mov rdx, prompt1.len
        mov rsi, prompt1
        mov rax, 1
        mov rdi, 1
        syscall
-     print_35_9_end:
+     print_39_9_end:
        mov rdx, input.len
        mov rsi, input
        mov rax, 0
        mov rdi, 0
        syscall
-       mov qword[rbp-8], rax
-     read_36_19_end:
-     sub qword[rbp-8], 1
-     if_37_12:
-     cmp_37_12:
-     cmp qword[rbp-8], 0
-     jne if_37_9_end
-     if_37_12_code:  ; opt1
-       jmp loop_34_5_end
-     if_37_9_end:
-     if_40_12:
-     cmp_40_12:
-     cmp qword[rbp-8], 4
-     jg if_40_9_end
-     if_40_12_code:  ; opt1
+       mov qword[rbp-20], rax
+     read_40_19_end:
+     sub qword[rbp-20], 1
+     if_41_12:
+     cmp_41_12:
+     cmp qword[rbp-20], 0
+     jne if_41_9_end
+     if_41_12_code:  ; opt1
+       jmp loop_38_5_end
+     if_41_9_end:
+     if_44_12:
+     cmp_44_12:
+     mov r15, qword[rbp-12]
+     cmp qword[rbp-20], r15
+     jg if_44_9_end
+     if_44_12_code:  ; opt1
          mov rdx, prompt2.len
          mov rsi, prompt2
          mov rax, 1
          mov rdi, 1
          syscall
-       print_41_13_end:
-       jmp loop_34_5
-     if_40_9_end:
+       print_45_13_end:
+       jmp loop_38_5
+     if_44_9_end:
        mov rdx, prompt3.len
        mov rsi, prompt3
        mov rax, 1
        mov rdi, 1
        syscall
-     print_44_9_end:
-       mov rdx, qword[rbp-8]
+     print_48_9_end:
+       mov rdx, qword[rbp-20]
        mov rsi, input
        mov rax, 1
        mov rdi, 1
        syscall
-     print_45_9_end:
+     print_49_9_end:
        mov rdx, dot.len
        mov rsi, dot
        mov rax, 1
        mov rdi, 1
        syscall
-     print_46_9_end:
+     print_50_9_end:
        mov rdx, nl.len
        mov rsi, nl
        mov rax, 1
        mov rdi, 1
        syscall
-     print_47_9_end:
-   jmp loop_34_5
-   loop_34_5_end:
+     print_51_9_end:
+   jmp loop_38_5
+   loop_38_5_end:
      mov rdi, 0
      mov rax, 60
      syscall
-   exit_49_5_end:
+   exit_53_5_end:

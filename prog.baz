@@ -29,7 +29,11 @@ func inline read(len : reg_rdx, ptr : reg_rsi) : nbytes_read {
     mov(nbytes_read, rax) # return value
 }
 
+type vector { x, y : i32 }
+
 func inline main {
+    var v : vector = 3
+    v.y = 4
     print(hello.len, hello)
     loop {
         print(prompt1.len, prompt1)
@@ -37,7 +41,7 @@ func inline main {
         if len == 0 {
             break
         }
-        if len <= 4 {
+        if len <= v.x {
             print(prompt2.len, prompt2)
             continue
         }
