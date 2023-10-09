@@ -1,5 +1,8 @@
 #/bin/sh
 
+# change to directory of the script
+cd $(dirname "$0")
+
 ../../make.sh prof 
 
 RUN='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen; e=$?;if test $e -eq $EXP; then echo ok; else echo FAILED. expected $EXP got $e; exit 1; fi'
@@ -80,9 +83,9 @@ rm gen gen.o gen.s diff.baz out
 llvm-profdata merge -o baz.profdata -sparse $(ls *.profraw) &&
 llvm-cov export --format=lcov --instr-profile baz.profdata --object $BIN > lcov.info &&
 # generate report
-genhtml --quiet lcov.info --output-directory coverage-report/ &&
+genhtml --quiet lcov.info --output-directory report/ &&
 echo &&
-echo coverage report generated in "$(realpath "coverage-report/")" &&
+echo coverage report generated in "$(realpath "report/")" &&
 echo &&
 
 rm *.profraw baz.profdata lcov.info

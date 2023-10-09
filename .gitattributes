@@ -1,8 +1,4 @@
 # directory to be considered in "Languages"
 /src/*       linguist-detectable
-
-# exclude directories
 /qa/*       -linguist-detectable
-/notes/*    -linguist-detectable
-/from/*     -linguist-detectable
-/doxygen/*  -linguist-detectable
+/etc/*      -linguist-detectable
