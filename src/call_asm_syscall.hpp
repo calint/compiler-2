@@ -2,8 +2,9 @@
 
 class call_asm_syscall final : public call_asm {
 public:
-  inline call_asm_syscall(toc &tc, token tk, tokenizer &t)
-      : call_asm{tc, move(tk), t} {
+  inline call_asm_syscall(toc &tc, token tk, tokenizer &tz)
+      : call_asm{tc, move(tk), tz} {
+
     set_type(tc.get_type_void());
   }
 

@@ -1,6 +1,17 @@
 #pragma once
 
 template <class T> class lut final {
+  struct el {
+    string key;
+    T data;
+    [[nodiscard]] inline auto is_key(const string &k) const -> bool {
+      return k == key;
+    }
+  };
+
+  vector<el> elems_{};
+  mutable const el *last_has_el{};
+
 public:
   inline auto get(const string &key) const -> T {
     if (last_has_el) {
@@ -53,15 +64,4 @@ public:
     }
     throw panic_exception("element not found: " + key);
   }
-
-private:
-  struct el {
-    string key;
-    T data;
-    [[nodiscard]] inline auto is_key(const string &k) const -> bool {
-      return k == key;
-    }
-  };
-  vector<el> elems_{};
-  mutable const el *last_has_el{};
 };

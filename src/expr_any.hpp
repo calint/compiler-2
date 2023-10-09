@@ -6,11 +6,13 @@ class expr_any final : public statement {
 public:
   inline expr_any(toc &tc, const type &tp, tokenizer &tz, bool in_args)
       : statement{tz.next_whitespace_token()} {
+
     if (tp.name() == tc.get_type_bool().name()) {
       eols_ = bool_ops_list{tc, tz};
       set_type(tp);
       return;
     }
+
     expr_ops_list e{tc, tz, in_args};
     set_type(e.get_type());
     eols_ = move(e);

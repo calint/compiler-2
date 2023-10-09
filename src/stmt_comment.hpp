@@ -6,6 +6,7 @@ class stmt_comment final : public statement {
 public:
   inline stmt_comment(toc &tc, token tk, tokenizer &tz)
       : statement{move(tk)}, line_{tz.read_rest_of_line()} {
+
     set_type(tc.get_type_void());
   }
 

@@ -4,14 +4,14 @@
 
 class bool_ops_list final : public statement {
 public:
-  inline bool_ops_list(toc &tc, tokenizer &t, const bool enclosed = false,
+  inline bool_ops_list(toc &tc, tokenizer &tz, const bool enclosed = false,
                        token not_token = {}, const bool is_sub_expr = false,
                        variant<bool_op, bool_ops_list> first_bool_op = {},
                        token first_op = {})
       : // the token is used to give the cmp a unique label
         //   if first_bool_op is provided then use that token
         //   else the next white space token
-        statement{first_op.is_name("") ? t.next_whitespace_token()
+        statement{first_op.is_name("") ? tz.next_whitespace_token()
                                        : token_from(first_bool_op)},
         not_token_{move(not_token)}, enclosed_{enclosed} {
     set_type(tc.get_type_bool());
@@ -23,38 +23,38 @@ public:
       ops_.push_back(move(first_op));
     }
     while (true) {
-      token tknot{t.next_token()};
+      token tknot{tz.next_token()};
       if (tknot.is_name("not")) {
         // not (a=1 and b=1)
         // not a=1 and b=1
-        if (t.is_next_char('(')) {
+        if (tz.is_next_char('(')) {
           // not (a=1 and b=1)
-          bools_.emplace_back(bool_ops_list{tc, t, true, move(tknot)});
+          bools_.emplace_back(bool_ops_list{tc, tz, true, move(tknot)});
         } else {
           // not a=1 and b=1
-          t.put_back_token(tknot);
-          bools_.emplace_back(bool_op{tc, t});
+          tz.put_back_token(tknot);
+          bools_.emplace_back(bool_op{tc, tz});
         }
       } else {
         // (a=1 and b=1)
         // a=1 and b=1
-        t.put_back_token(tknot);
-        if (t.is_next_char('(')) {
+        tz.put_back_token(tknot);
+        if (tz.is_next_char('(')) {
           // (a=1 and b=1)
-          bools_.emplace_back(bool_ops_list{tc, t, true});
+          bools_.emplace_back(bool_ops_list{tc, tz, true});
         } else {
           // a=1 and b=1
-          bools_.emplace_back(bool_op{tc, t});
+          bools_.emplace_back(bool_op{tc, tz});
         }
       }
 
-      if (enclosed_ and t.is_next_char(')')) {
+      if (enclosed_ and tz.is_next_char(')')) {
         return;
       }
 
-      token tk{t.next_token()};
+      token tk{tz.next_token()};
       if (not(tk.is_name("or") or tk.is_name("and"))) {
-        t.put_back_token(tk);
+        tz.put_back_token(tk);
         break;
       }
 
@@ -64,18 +64,18 @@ public:
         if (tk.is_name("and")) {
           // a and b or c -> (a and b) or c
           // first op is 'and', make sub-expression (a and b) ...
-          bool_ops_list bol{tc,      t, false, {}, true, move(bools_.back()),
+          bool_ops_list bol{tc,      tz, false, {}, true, move(bools_.back()),
                             move(tk)};
           bools_.pop_back();
           bools_.emplace_back(move(bol));
 
-          if (enclosed_ and t.is_next_char(')')) {
+          if (enclosed_ and tz.is_next_char(')')) {
             return;
           }
 
-          token tk2 = t.next_token();
+          token tk2 = tz.next_token();
           if (not(tk2.is_name("or") or tk2.is_name("and"))) {
-            t.put_back_token(tk2);
+            tz.put_back_token(tk2);
             break;
           }
 
@@ -99,7 +99,7 @@ public:
         // generated sub-expressions are 'and' ops and this is an 'or'
         // a or b and c |or| d
         //      ------- |tk|
-        t.put_back_token(tk);
+        tz.put_back_token(tk);
         return;
       }
 
@@ -108,18 +108,18 @@ public:
       //    |prv_op| |back()| |tk|
       // create:
       // a    or   (b     and   c) or d
-      bool_ops_list bol{tc, t, false, {}, true, move(bools_.back()), tk};
+      bool_ops_list bol{tc, tz, false, {}, true, move(bools_.back()), tk};
       bools_.pop_back();
       bools_.emplace_back(move(bol));
 
-      if (enclosed_ and t.is_next_char(')')) {
+      if (enclosed_ and tz.is_next_char(')')) {
         return;
       }
 
       prv_op = tk;
-      tk = t.next_token();
+      tk = tz.next_token();
       if (not(tk.is_name("or") or tk.is_name("and"))) {
-        t.put_back_token(tk);
+        tz.put_back_token(tk);
         break;
       }
 

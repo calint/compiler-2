@@ -13,7 +13,8 @@ class stmt_block final : public statement {
 public:
   inline stmt_block(toc &tc, tokenizer &tz)
       : statement{tz.next_whitespace_token()}, is_one_statement_{
-                                                  not tz.is_next_char('{')} {
+                                                   not tz.is_next_char('{')} {
+
     tc.enter_block();
     while (true) {
       // comments, semi-colon not considered a statment
@@ -22,7 +23,8 @@ public:
         if (not is_one_statement_) {
           break;
         }
-        throw compiler_exception(tz, "unexpected '}' in single statement block");
+        throw compiler_exception(tz,
+                                 "unexpected '}' in single statement block");
       }
 
       token tk{tz.next_token()};

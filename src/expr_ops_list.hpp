@@ -7,11 +7,11 @@
 class expr_ops_list final : public expression {
 public:
   inline expr_ops_list(
-      toc &tc, tokenizer &t, const bool in_args = false,
+      toc &tc, tokenizer &tz, const bool in_args = false,
       const bool enclosed = false, unary_ops uops = {},
       const char first_op_precedence = initial_precedence,
       unique_ptr<statement> first_expression = unique_ptr<statement>())
-      : expression{t.next_whitespace_token(), {}}, enclosed_{enclosed},
+      : expression{tz.next_whitespace_token(), {}}, enclosed_{enclosed},
         uops_{move(uops)} {
 
     // read first expression i.e. =-a/-(b+1)
@@ -20,66 +20,66 @@ public:
       exps_.push_back(move(first_expression));
     } else {
       // check if new recursion is necessary e.g. =-a/-(-(b+c)+d), t at "-a/-("
-      unary_ops uo{t};
-      if (t.is_next_char('(')) {
+      unary_ops uo{tz};
+      if (tz.is_next_char('(')) {
         // recursion
         exps_.emplace_back(
-            make_unique<expr_ops_list>(tc, t, in_args, true, move(uo)));
+            make_unique<expr_ops_list>(tc, tz, in_args, true, move(uo)));
       } else {
         // statement
-        uo.put_back(t);
-        exps_.emplace_back(create_statement_from_tokenizer(tc, t));
+        uo.put_back(tz);
+        exps_.emplace_back(create_statement_from_tokenizer(tc, tz));
       }
     }
 
     char precedence{first_op_precedence};
     while (true) { // +a  +3
       // if end of subexpression
-      if (enclosed_ and t.is_next_char(')')) {
+      if (enclosed_ and tz.is_next_char(')')) {
         break;
       }
 
       // if parsed in a function call argument list or in a boolean expression
       if (in_args) { //? rewrite is_in_bool_expr
         // if in boolean expression exit when an operation is found
-        if (t.is_peek_char('<') and not t.is_peek_char2('<')) {
+        if (tz.is_peek_char('<') and not tz.is_peek_char2('<')) {
           break;
         }
-        if (t.is_peek_char('=')) {
+        if (tz.is_peek_char('=')) {
           break;
         }
-        if (t.is_peek_char('>') and not t.is_peek_char2('>')) {
+        if (tz.is_peek_char('>') and not tz.is_peek_char2('>')) {
           break;
         }
         // if in arguments exit when ',' or ')' is found
-        if (t.is_peek_char(',')) {
+        if (tz.is_peek_char(',')) {
           break;
         }
-        if (t.is_peek_char(')')) {
+        if (tz.is_peek_char(')')) {
           break;
         }
       }
 
       // next operation
-      if (t.is_peek_char('+')) {
+      if (tz.is_peek_char('+')) {
         ops_.push_back('+');
-      } else if (t.is_peek_char('-')) {
+      } else if (tz.is_peek_char('-')) {
         ops_.push_back('-');
-      } else if (t.is_peek_char('*')) {
+      } else if (tz.is_peek_char('*')) {
         ops_.push_back('*');
-      } else if (t.is_peek_char('/')) {
+      } else if (tz.is_peek_char('/')) {
         ops_.push_back('/');
-      } else if (t.is_peek_char('%')) {
+      } else if (tz.is_peek_char('%')) {
         ops_.push_back('%');
-      } else if (t.is_peek_char('&')) {
+      } else if (tz.is_peek_char('&')) {
         ops_.push_back('&');
-      } else if (t.is_peek_char('|')) {
+      } else if (tz.is_peek_char('|')) {
         ops_.push_back('|');
-      } else if (t.is_peek_char('^')) {
+      } else if (tz.is_peek_char('^')) {
         ops_.push_back('^');
-      } else if (t.is_peek_char('<') and t.is_peek_char2('<')) {
+      } else if (tz.is_peek_char('<') and tz.is_peek_char2('<')) {
         ops_.push_back('<');
-      } else if (t.is_peek_char('>') and t.is_peek_char2('>')) {
+      } else if (tz.is_peek_char('>') and tz.is_peek_char2('>')) {
         ops_.push_back('>');
       } else {
         // no more operations
@@ -102,33 +102,33 @@ public:
         unique_ptr<statement> prev{move(exps_.back())};
         exps_.pop_back();
         exps_.emplace_back(make_unique<expr_ops_list>(
-            tc, t, in_args, false, unary_ops{}, first_op_prec, move(prev)));
+            tc, tz, in_args, false, unary_ops{}, first_op_prec, move(prev)));
         continue;
       }
 
       precedence = next_precedence;
-      const char ch = t.next_char(); // read the peeked operator
+      const char ch = tz.next_char(); // read the peeked operator
       if (ch == '<' or ch == '>') {
-        t.next_char(); // one more character for << and >>
+        tz.next_char(); // one more character for << and >>
       }
 
       // check if next statement is a subexpression
-      unary_ops uo{t};
-      if (t.is_next_char('(')) {
+      unary_ops uo{tz};
+      if (tz.is_next_char('(')) {
         // subexpression, recurse
         exps_.emplace_back(
-            make_unique<expr_ops_list>(tc, t, in_args, true, move(uo)));
+            make_unique<expr_ops_list>(tc, tz, in_args, true, move(uo)));
         continue;
       }
 
       // not subexpression
-      uo.put_back(t);
+      uo.put_back(tz);
 
       // read statement
-      unique_ptr<statement> stm{create_statement_from_tokenizer(tc, t)};
+      unique_ptr<statement> stm{create_statement_from_tokenizer(tc, tz)};
       if (stm->tok().is_empty()) {
         throw compiler_exception(stm->tok(),
-                                 "unexpected '" + string{t.peek_char()} + "'");
+                                 "unexpected '" + string{tz.peek_char()} + "'");
       }
 
       exps_.push_back(move(stm));
@@ -220,8 +220,9 @@ public:
   }
 
 private:
-  static constexpr char initial_precedence{
-      7}; // higher than the highest precedence
+  // higher than the highest precedence
+  static constexpr char initial_precedence{7};
+
   inline static auto precedence_for_op(const char ch) -> char {
     switch (ch) {
     case '|':

@@ -3,15 +3,17 @@
 
 class bool_op final : public statement {
 public:
-  inline bool_op(toc &tc, tokenizer &t) : statement{t.next_whitespace_token()} {
+  inline bool_op(toc &tc, tokenizer &tz)
+      : statement{tz.next_whitespace_token()} {
+
     set_type(tc.get_type_bool());
 
     bool is_not{false};
     // if not a=3
     while (true) {
-      token tk{t.next_token()};
+      token tk{tz.next_token()};
       if (not tk.is_name("not")) {
-        t.put_back_token(tk);
+        tz.put_back_token(tk);
         break;
       }
       is_not = not is_not;
@@ -19,26 +21,26 @@ public:
     }
     is_not_ = is_not;
 
-    lhs_ = {tc, t, true};
+    lhs_ = {tc, tz, true};
 
-    if (t.is_next_char('=')) {
-      if (not t.is_next_char('=')) {
-        throw compiler_exception(t, "expected '=='");
+    if (tz.is_next_char('=')) {
+      if (not tz.is_next_char('=')) {
+        throw compiler_exception(tz, "expected '=='");
       }
       op_ = "==";
-    } else if (t.is_next_char('!')) {
-      if (not t.is_next_char('=')) {
-        throw compiler_exception(t, "expected '!='");
+    } else if (tz.is_next_char('!')) {
+      if (not tz.is_next_char('=')) {
+        throw compiler_exception(tz, "expected '!='");
       }
       op_ = "!=";
-    } else if (t.is_next_char('<')) {
-      if (t.is_next_char('=')) {
+    } else if (tz.is_next_char('<')) {
+      if (tz.is_next_char('=')) {
         op_ = "<=";
       } else {
         op_ = "<";
       }
-    } else if (t.is_next_char('>')) {
-      if (t.is_next_char('=')) {
+    } else if (tz.is_next_char('>')) {
+      if (tz.is_next_char('=')) {
         op_ = ">=";
       } else {
         op_ = ">";
@@ -51,7 +53,7 @@ public:
       // throw compiler_error(*this,"expected boolean operation
       // '=','<','<=','>','>='");
     }
-    rhs_ = {tc, t};
+    rhs_ = {tc, tz};
     resolve_if_op_is_expression(tc);
   }
 

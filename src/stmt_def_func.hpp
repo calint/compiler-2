@@ -14,6 +14,7 @@ class stmt_def_func final : public statement {
 public:
   inline stmt_def_func(toc &tc, token tk, tokenizer &tz)
       : statement{move(tk)}, name_{tz.next_token()} {
+
     if (name_.is_name("inline")) {
       inline_tk_ = name_;
       name_ = tz.next_token();
