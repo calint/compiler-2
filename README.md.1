@@ -1,5 +1,5 @@
-# compiler-2
-experimental compiler to nasm x86_64 for linux
+# compiler-2: baz
+experimental compiler of minimalistic language to nasm x86_64 for linux
 
 intention:
 * minimalistic language
