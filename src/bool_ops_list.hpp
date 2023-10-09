@@ -254,7 +254,7 @@ public:
                 e.compile_or(tc, os, indent, jmp_to_if_true, invert)};
             if (const_eval and *const_eval) {
               // constant evaluated to true, short-circuit
-              return *const_eval;
+              return true;
             }
           } else if (ops_[i].is_name("and")) {
             optional<bool> const_eval{
@@ -285,14 +285,14 @@ public:
                 e.compile_or(tc, os, indent, jmp_to_if_true, invert)};
             if (const_eval and *const_eval) {
               // constant evaluated to true, short-circuit
-              return *const_eval;
+              return true;
             }
           } else if (ops_[i].is_name("or")) {
             optional<bool> const_eval{
                 e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
             if (const_eval and not *const_eval) {
               // constant evaluated to false, short-circuit
-              return *const_eval;
+              return false;
             }
           } else {
             throw panic_exception("expected 'or' or 'and'");

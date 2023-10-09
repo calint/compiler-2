@@ -7,22 +7,23 @@
 set -e
 
 CC="clang++ -std=c++20"
-CF="-fno-inline -Werror -Wfatal-errors"
-CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-unqualified-std-cast-call \
-    -Wno-padded -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter -Wno-unused-private-field"
-SAN=
+CF="-Werror -Wfatal-errors"
+CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables  -Wno-padded \
+    -Wno-unqualified-std-cast-call"
+MSAN=
+PROF=
 DBG=
 OPT=-O3
-if [ "$1" = "qa2" ]; then
-#    SAN="-fsanitize=memory,undefined -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=msan_suppressions.txt"
-    SAN="-fsanitize=address,undefined -fno-omit-frame-pointer"
+if [ "$1" = "msan" ]; then
+#    MSAN="-fsanitize=memory,undefined -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=msan_suppressions.txt"
+    MSAN="-fsanitize=address,undefined -fno-omit-frame-pointer"
     DBG=-g
-elif [ "$1" = "qa" ]; then
-    ETC="-fprofile-instr-generate -fcoverage-mapping $ETC"
+elif [ "$1" = "prof" ]; then
+    PROF="-fprofile-instr-generate -fcoverage-mapping"
     DBG=-g
 fi
 
-CMD="$CC -o baz $OPT $DBG $CF $CW $SAN src/main.cpp"
+CMD="$CC -o baz $OPT $DBG $CF $CW $MSAN $PROF src/main.cpp"
 echo
 echo $CMD
 $CMD

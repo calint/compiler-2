@@ -1,139 +1,91 @@
-sön  8 okt 2023 17:40:18 CEST
+mån  9 okt 2023 12:19:15 CEST
 Checking ../../src/main.cpp ...
-../../src/tokenizer.hpp:5:9: style: Class 'tokenizer' has a constructor with 1 argument that is not explicit. [noExplicitConstructor]
- inline tokenizer(const string&str):
-        ^
-../../src/unary_ops.hpp:9:9: style: Class 'unary_ops' has a constructor with 1 argument that is not explicit. [noExplicitConstructor]
- inline unary_ops(tokenizer&t){
-        ^
-../../src/statement.hpp:11:9: style: Class 'statement' has a constructor with 1 argument that is not explicit. [noExplicitConstructor]
- inline statement(token tk,unary_ops uops={}):
-        ^
-../../src/toc.hpp:151:9: style: Class 'baz_ident' has a constructor with 1 argument that is not explicit. [noExplicitConstructor]
- inline baz_ident(string id):
-        ^
-../../src/toc.hpp:175:9: style: Class 'toc' has a constructor with 1 argument that is not explicit. [noExplicitConstructor]
- inline toc(const string&source):
-        ^
-../../src/program.hpp:20:9: style: Class 'program' has a constructor with 1 argument that is not explicit. [noExplicitConstructor]
- inline program(const string&source):
-        ^
-../../src/tokenizer.hpp:122:4: style: 'continue' is redundant since it is the last statement in a loop. [redundantContinue]
-   continue;
-   ^
-../../src/stmt_call.hpp:176:5: style: 'continue' is redundant since it is the last statement in a loop. [redundantContinue]
-    continue;
-    ^
-../../src/program.hpp:90:23: style: Local variable 'main' shadows outer function [shadowFunction]
-  const stmt_def_func&main=tc.get_func_or_throw(prg,"main");
+../../src/stmt_call.hpp:74:23: style: Local variable 'arg' shadows outer function [shadowFunction]
+      const expr_any &arg{args_[i]};
                       ^
-../../src/main.cpp:18:5: note: Shadowed declaration
-int main(int argc,char*args[]){
-    ^
-../../src/program.hpp:90:23: note: Shadow variable
-  const stmt_def_func&main=tc.get_func_or_throw(prg,"main");
+../../src/stmt_call.hpp:378:29: note: Shadowed declaration
+  [[nodiscard]] inline auto arg(size_t ix) const -> const statement & {
+                            ^
+../../src/stmt_call.hpp:74:23: note: Shadow variable
+      const expr_any &arg{args_[i]};
                       ^
-../../src/stmt_call.hpp:68:19: style: Local variable 'arg' shadows outer function [shadowFunction]
-   const expr_any&arg{args_[i]};
-                  ^
-../../src/stmt_call.hpp:333:25: note: Shadowed declaration
- inline const statement&arg(size_t ix)const{return args_[ix];}
+../../src/stmt_call.hpp:131:25: style: Local variable 'arg' shadows outer function [shadowFunction]
+        const expr_any &arg{args_[i]};
                         ^
-../../src/stmt_call.hpp:68:19: note: Shadow variable
-   const expr_any&arg{args_[i]};
-                  ^
-../../src/stmt_call.hpp:107:20: style: Local variable 'arg' shadows outer function [shadowFunction]
-    const expr_any&arg{args_[i]};
-                   ^
-../../src/stmt_call.hpp:333:25: note: Shadowed declaration
- inline const statement&arg(size_t ix)const{return args_[ix];}
+../../src/stmt_call.hpp:378:29: note: Shadowed declaration
+  [[nodiscard]] inline auto arg(size_t ix) const -> const statement & {
+                            ^
+../../src/stmt_call.hpp:131:25: note: Shadow variable
+        const expr_any &arg{args_[i]};
                         ^
-../../src/stmt_call.hpp:107:20: note: Shadow variable
-    const expr_any&arg{args_[i]};
-                   ^
-../../src/stmt_call.hpp:229:18: style: Local variable 'arg' shadows outer function [shadowFunction]
-  for(const auto&arg:args_){
-                 ^
-../../src/stmt_call.hpp:333:25: note: Shadowed declaration
- inline const statement&arg(size_t ix)const{return args_[ix];}
-                        ^
-../../src/stmt_call.hpp:229:18: note: Shadow variable
-  for(const auto&arg:args_){
-                 ^
-../../src/token.hpp:8:22: performance: Function parameter 'wb' should be passed by const reference. [passedByValue]
- inline token(string wb,size_t start_ix,string tk,size_t end_ix,string wa,bool is_str=false):
+../../src/stmt_call.hpp:259:22: style: Local variable 'arg' shadows outer function [shadowFunction]
+    for (const auto &arg : args_) {
                      ^
-../../src/token.hpp:8:48: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
- inline token(string wb,size_t start_ix,string tk,size_t end_ix,string wa,bool is_str=false):
-                                               ^
-../../src/token.hpp:8:72: performance: Function parameter 'wa' should be passed by const reference. [passedByValue]
- inline token(string wb,size_t start_ix,string tk,size_t end_ix,string wa,bool is_str=false):
-                                                                       ^
-../../src/statement.hpp:11:38: performance: Function parameter 'uops' should be passed by const reference. [passedByValue]
- inline statement(token tk,unary_ops uops={}):
-                                     ^
-../../src/type.hpp:14:32: performance: Function parameter 'name' should be passed by const reference. [passedByValue]
- inline type(const string name,const size_t size,const bool is_built_in):
-                               ^
-../../src/toc.hpp:486:70: performance: Function parameter 'op' should be passed by const reference. [passedByValue]
- inline void source_comment(ostream&os,const string&dst,const string op,const statement&st)const{
-                                                                     ^
-../../src/expr_ops_list.hpp:10:103: performance: Function parameter 'uops' should be passed by const reference. [passedByValue]
- inline expr_ops_list(toc&tc,tokenizer&t,const bool in_args=false,const bool enclosed=false,unary_ops uops={},const char first_op_precedence=initial_precedence,unique_ptr<statement>first_expression=unique_ptr<statement>()):
-                                                                                                      ^
-../../src/bool_op.hpp:210:46: style: Parameter 'tc' can be declared as reference to const [constParameter]
- inline void resolve_if_op_is_expression(toc&tc){
-                                             ^
-../../src/stmt_comment.hpp:5:26: style: Parameter 'tc' can be declared as reference to const [constParameter]
- inline stmt_comment(toc&tc,token tk,tokenizer&t):
+../../src/stmt_call.hpp:378:29: note: Shadowed declaration
+  [[nodiscard]] inline auto arg(size_t ix) const -> const statement & {
+                            ^
+../../src/stmt_call.hpp:259:22: note: Shadow variable
+    for (const auto &arg : args_) {
+                     ^
+../../src/program.hpp:103:26: style: Local variable 'main' shadows outer function [shadowFunction]
+    const stmt_def_func &main = tc.get_func_or_throw(prg, "main");
                          ^
-../../src/stmt_break.hpp:5:24: style: Parameter 'tc' can be declared as reference to const [constParameter]
- inline stmt_break(toc&tc,token tk):
-                       ^
-../../src/stmt_return.hpp:5:25: style: Parameter 'tc' can be declared as reference to const [constParameter]
- inline stmt_return(toc&tc,token tk):
-                        ^
-../../src/stmt_continue.hpp:5:27: style: Parameter 'tc' can be declared as reference to const [constParameter]
- inline stmt_continue(toc&tc,token tk):
+../../src/main.cpp:26:6: note: Shadowed declaration
+auto main(int argc, char *args[]) -> int {
+     ^
+../../src/program.hpp:103:26: note: Shadow variable
+    const stmt_def_func &main = tc.get_func_or_throw(prg, "main");
+                         ^
+../../src/toc.hpp:23:23: performance: Function parameter 'name' should be passed by const reference. [passedByValue]
+  inline frame(string name, const frame_type tpe, string call_path = "",
+                      ^
+../../src/toc.hpp:23:58: performance: Function parameter 'call_path' should be passed by const reference. [passedByValue]
+  inline frame(string name, const frame_type tpe, string call_path = "",
+                                                         ^
+../../src/toc.hpp:24:23: performance: Function parameter 'func_ret_label' should be passed by const reference. [passedByValue]
+               string func_ret_label = "", const bool func_is_inline = false,
+                      ^
+../../src/toc.hpp:25:23: performance: Function parameter 'func_ret_var' should be passed by const reference. [passedByValue]
+               string func_ret_var = "") noexcept
+                      ^
+../../src/expr_ops_list.hpp:11:46: performance: Function parameter 'uops' should be passed by const reference. [passedByValue]
+      const bool enclosed = false, unary_ops uops = {},
+                                             ^
+../../src/bool_op.hpp:227:48: style: Parameter 'tc' can be declared as reference to const [constParameter]
+  inline void resolve_if_op_is_expression(toc &tc) {
+                                               ^
+../../src/stmt_break.hpp:5:26: style: Parameter 'tc' can be declared as reference to const [constParameter]
+  inline stmt_break(toc &tc, token tk) : statement{move(tk)} {
+                         ^
+../../src/stmt_comment.hpp:5:28: style: Parameter 'tc' can be declared as reference to const [constParameter]
+  inline stmt_comment(toc &tc, token tk, tokenizer &t)
+                           ^
+../../src/stmt_continue.hpp:5:29: style: Parameter 'tc' can be declared as reference to const [constParameter]
+  inline stmt_continue(toc &tc, token tk) : statement{move(tk)} {
+                            ^
+../../src/stmt_return.hpp:5:27: style: Parameter 'tc' can be declared as reference to const [constParameter]
+  inline stmt_return(toc &tc, token tk) : statement{move(tk)} {
                           ^
-../../src/stmt_def_type.hpp:5:33: style: Parameter 'tc' can be declared as reference to const [constParameter]
- inline stmt_def_type_field(toc&tc,token tk,tokenizer&t):
-                                ^
-../../src/lut.hpp:35:10: style: Variable 'e' can be declared as reference to const [constVariable]
-  for(el&e:elems_){
-         ^
-../../src/toc.hpp:672:6: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
-  if(operand.find("qword")==0)return 8;
-     ^
-../../src/toc.hpp:673:6: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
-  if(operand.find("dword")==0)return 4;
-     ^
-../../src/toc.hpp:674:6: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
-  if(operand.find("word")==0)return 2;
-     ^
-../../src/toc.hpp:675:6: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
-  if(operand.find("byte")==0)return 1;
-     ^
-../../src/toc.hpp:1016:6: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
-  if(id.find("0x")==0){ // hex
-     ^
-../../src/toc.hpp:1022:6: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
-  if(id.find("0b")==0){ // binary
-     ^
-../../src/type.hpp:32:0: style: Consider using find_if algorithm instead of a raw loop. [useStlAlgorithm]
-   if(fld.name==name)
-^
-../../src/lut.hpp:13:21: style: Consider using find_if algorithm instead of a raw loop. [useStlAlgorithm]
-   if(e.is_key(key)){
-                    ^
-../../src/lut.hpp:22:21: style: Consider using find_if algorithm instead of a raw loop. [useStlAlgorithm]
-   if(e.is_key(key)){
-                    ^
-../../src/lut.hpp:36:21: style: Consider using find_if algorithm instead of a raw loop. [useStlAlgorithm]
-   if(e.is_key(key)){
-                    ^
-../../src/lut.hpp:51:21: style: Consider using find_if algorithm instead of a raw loop. [useStlAlgorithm]
-   if(e.is_key(key)){
-                    ^
+../../src/stmt_def_type.hpp:5:35: style: Parameter 'tc' can be declared as reference to const [constParameter]
+  inline stmt_def_type_field(toc &tc, token tk, tokenizer &t)
+                                  ^
+../../src/lut.hpp:34:14: style: Variable 'e' can be declared as reference to const [constVariable]
+    for (el &e : elems_) {
+             ^
+../../src/type.hpp:31:29: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+      if (fld.name == name) {
+                            ^
+../../src/lut.hpp:12:26: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+      if (e.is_key(key)) {
+                         ^
+../../src/lut.hpp:21:26: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+      if (e.is_key(key)) {
+                         ^
+../../src/lut.hpp:35:26: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+      if (e.is_key(key)) {
+                         ^
+../../src/lut.hpp:50:26: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+      if (e.is_key(key)) {
+                         ^
 nofile:0:0: information: Unmatched suppression: knownConditionTrueFalse [unmatchedSuppression]
 

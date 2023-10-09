@@ -75,7 +75,7 @@ public:
       const stmt_def_func_param &param{func.param(i)};
       const type &arg_type{arg.get_type()};
       const type &param_type{param.get_type()};
-      if (arg_type.is_built_in() && param_type.is_built_in()) {
+      if (arg_type.is_built_in() and param_type.is_built_in()) {
         // ? check if it is integral (not bool)
         if (param_type.size() < arg_type.size()) {
           throw compiler_exception(
@@ -314,7 +314,7 @@ public:
       // move argument to register
       const ident_resolved &ir{tc.resolve_identifier(arg, true)};
       if (ir.is_const()) {
-        const ident_resolved &arg_r{tc.resolve_identifier(arg, true)};
+        // const ident_resolved &arg_r{tc.resolve_identifier(arg, true)};
         tc.asm_cmd(param, os, indent + 1, "mov", arg_reg,
                    arg.get_unary_ops().as_string() + ir.id_nasm);
         continue;

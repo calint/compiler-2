@@ -49,7 +49,7 @@ public:
             create_statement_from_tokenizer(tc, move(tk), {}, t));
       }
 
-      if (is_one_statement_ && not last_statement_considered_no_statment) {
+      if (is_one_statement_ and not last_statement_considered_no_statment) {
         break;
       }
     }

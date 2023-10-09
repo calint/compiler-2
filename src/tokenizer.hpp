@@ -127,11 +127,11 @@ private:
     const size_t nchar_bm_{nchar_};
     while (true) {
       const char ch{next_char()};
-      if (is_char_whitespace(ch) || ch == 0 || ch == '(' || ch == ')' ||
-          ch == '{' || ch == '}' || ch == '=' || ch == ',' || ch == ':' ||
-          ch == ';' || ch == '+' || ch == '-' || ch == '*' || ch == '/' ||
-          ch == '%' || ch == '&' || ch == '|' || ch == '^' || ch == '<' ||
-          ch == '>' || ch == '!') {
+      if (is_char_whitespace(ch) or ch == '\0' or ch == '(' or ch == ')' or
+          ch == '{' or ch == '}' or ch == '=' or ch == ',' or ch == ':' or
+          ch == ';' or ch == '+' or ch == '-' or ch == '*' or ch == '/' or
+          ch == '%' or ch == '&' or ch == '|' or ch == '^' or ch == '<' or
+          ch == '>' or ch == '!') {
         seek(-1);
         break;
       }
@@ -148,6 +148,6 @@ private:
   }
 
   inline static auto is_char_whitespace(const char ch) -> bool {
-    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+    return ch == ' ' or ch == '\t' or ch == '\r' or ch == '\n';
   }
 };

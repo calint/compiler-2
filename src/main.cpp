@@ -32,7 +32,7 @@ auto main(int argc, char *args[]) -> int {
     ofstream reproduced_source{"diff.baz"};
     prg.source_to(reproduced_source);
     reproduced_source.close();
-    if (read_file_to_string(src_file_name) != read_file_to_string("diff.baz")) {
+    if (src != read_file_to_string("diff.baz")) {
       throw panic_exception("generated source differs. diff " +
                             string{src_file_name} + " diff.baz");
     }
@@ -41,8 +41,8 @@ auto main(int argc, char *args[]) -> int {
     //		 p.build(cout);
 
     // with jump optimizations
-    stringstream ss1{};
-    stringstream ss2{};
+    stringstream ss1;
+    stringstream ss2;
     prg.build(ss1);
     optimize_jumps_1(ss1, ss2);
     optimize_jumps_2(ss2, cout);
@@ -65,7 +65,7 @@ auto main(int argc, char *args[]) -> int {
   return 0;
 }
 
-// called from stmt_block to solve circular dependencies with loop, if and calls
+// called from stmt_block to solve circular dependencies with 'loop', 'if' and 'calls'
 inline auto create_statement_from_tokenizer(toc &tc, token tk, unary_ops uops,
                                             tokenizer &t)
     -> unique_ptr<statement> {

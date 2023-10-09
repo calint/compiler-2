@@ -16,12 +16,12 @@ private:
 
 class stmt_def_var final : public statement {
 public:
-  inline stmt_def_var(toc &tc, token tk, tokenizer &t)
-      : statement{move(tk)}, name_{t.next_token()} {
-    if (t.is_next_char(':')) {
-      type_ = t.next_token();
+  inline stmt_def_var(toc &tc, token tk, tokenizer &tz)
+      : statement{move(tk)}, name_{tz.next_token()} {
+    if (tz.is_next_char(':')) {
+      type_ = tz.next_token();
     }
-    if (not t.is_next_char('=')) {
+    if (not tz.is_next_char('=')) {
       throw compiler_exception(name_, "expected '=' and initializer");
     }
 
@@ -31,7 +31,7 @@ public:
     set_type(tp);
     null_stream ns{};
     tc.add_var(*this, ns, 0, name_.name(), tp, false);
-    initial_value_ = {tc, name_, type_, t};
+    initial_value_ = {tc, name_, type_, tz};
   }
 
   inline stmt_def_var() = default;

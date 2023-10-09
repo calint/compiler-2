@@ -3,7 +3,8 @@
 RUN='echo -n "$SRC: " && $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen; e=$?;if test $e -eq $EXP; then echo ok; else echo FAILED. expected $EXP got $e; exit 1; fi'
 DIFF='echo -n "$SRC: " && $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen > out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
 DIFFINP='echo -n "$SRC: " && $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen <${SRC%.*}.in $> out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
-BIN=../../baz
+#BIN='valgrind --quiet --leak-check=full --show-leak-kinds=all -s ../../baz'
+BIN='../../baz'
 
 SRC=t1.baz && EXP=58 && eval $RUN
 SRC=t2.baz && EXP=1 && eval $RUN

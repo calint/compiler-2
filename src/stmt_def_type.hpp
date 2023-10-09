@@ -116,6 +116,5 @@ private:
   token name_{};
   token ws_{};
   vector<stmt_def_type_field> fields_{};
-  size_t size_{};
-  mutable type type_{};
+  type type_{};
 };
