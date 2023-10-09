@@ -52,6 +52,10 @@ func inline read(len : reg_rdx, ptr : reg_rsi) : nbytes {
     mov(nbytes, rax) # return value
 }
 
+func inline assert(expr : bool) {
+    if not expr exit(1)
+}
+
 # define a type 'vector'
 #   member 'x' being default type (64 bit integer)
 #   member 'y' being 32 bit
@@ -70,10 +74,13 @@ func inline main {
 
     var itm : item = 1    # sets itm.pos.x
     itm.vel.x = 4
+    itm.vel.y = 0
     itm.valid = true
 
     # check if valid
-    if not itm.valid exit(1)
+    assert(itm.vel.y == 0)
+    assert(itm.valid)
+    assert(not itm.vel.y != 0)
 
     print(hello.len, hello)
     loop {
@@ -139,82 +146,190 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 
-;[32:1] # define a type 'vector' 
-;[33:1] # member 'x' being default type (64 bit integer) 
-;[34:1] # member 'y' being 32 bit 
-;[35:1] # member 'z' being 16 bit 
-;[36:1] # member 'w' being 8 bit 
-;[37:1] # member 'valid' being a boolean 
+;[36:1] # define a type 'vector' 
+;[37:1] # member 'x' being default type (64 bit integer) 
+;[38:1] # member 'y' being 32 bit 
+;[39:1] # member 'z' being 16 bit 
+;[40:1] # member 'w' being 8 bit 
+;[41:1] # member 'valid' being a boolean 
 main:
-;  [42:5] # declare 'v' on the stack 
+;  [46:5] # declare 'v' on the stack 
 ;  v: qword[rbp-15]
-;  [43:5] var v : vector = 3 
-;  [43:9] v : vector = 3 
-;  [43:22] 3 
-;  [43:22] 3 
-;  [43:22] v=3 
+;  [47:5] var v : vector = 3 
+;  [47:9] v : vector = 3 
+;  [47:22] 3 
+;  [47:22] 3 
+;  [47:22] v=3 
    mov qword[rbp-15], 3
-;  [43:27] # sets v.x is set to 3 
-;  [44:5] v.y = 4 
-;  [44:11] 4 
-;  [44:11] 4 
-;  [44:11] v.y=4 
+;  [47:27] # sets v.x 
+;  [48:5] v.y = 4 
+;  [48:11] 4 
+;  [48:11] 4 
+;  [48:11] v.y=4 
    mov dword[rbp-7], 4
-;  [45:5] v.z = 5 
-;  [45:11] 5 
-;  [45:11] 5 
-;  [45:11] v.z=5 
+;  [49:5] v.z = 5 
+;  [49:11] 5 
+;  [49:11] 5 
+;  [49:11] v.z=5 
    mov word[rbp-3], 5
-;  [46:5] v.w = 6 
-;  [46:11] 6 
-;  [46:11] 6 
-;  [46:11] v.w=6 
+;  [50:5] v.w = 6 
+;  [50:11] 6 
+;  [50:11] 6 
+;  [50:11] v.w=6 
    mov byte[rbp-1], 6
 ;  itm: qword[rbp-46]
-;  [48:5] var itm : item = 1 
-;  [48:9] itm : item = 1 
-;  [48:22] 1 
-;  [48:22] 1 
-;  [48:22] itm=1 
+;  [52:5] var itm : item = 1 
+;  [52:9] itm : item = 1 
+;  [52:22] 1 
+;  [52:22] 1 
+;  [52:22] itm=1 
    mov qword[rbp-46], 1
-;  [48:27] # sets itm.pos.x = 1 
-;  [49:5] itm.vel.x = 4 
-;  [49:17] 4 
-;  [49:17] 4 
-;  [49:17] itm.vel.x=4 
+;  [52:27] # sets itm.pos.x 
+;  [53:5] itm.vel.x = 4 
+;  [53:17] 4 
+;  [53:17] 4 
+;  [53:17] itm.vel.x=4 
    mov qword[rbp-31], 4
-;  [50:5] itm.valid = true 
-;  [50:17] true 
-;  [50:17] true 
-;  [50:17] itm.valid=true 
+;  [54:5] itm.vel.y = 0 
+;  [54:17] 0 
+;  [54:17] 0 
+;  [54:17] itm.vel.y=0 
+   mov dword[rbp-23], 0
+;  [55:5] itm.valid = true 
+;  [55:17] true 
+;  [55:17] true 
+;  [55:17] itm.valid=true 
    mov byte[rbp-16], true
-;  [52:5] # check if valid 
-   if_53_8:
-;  [53:8] ? not itm.valid 
-;  [53:8] ? not itm.valid 
-   cmp_53_8:
-   cmp byte[rbp-16], 0
-   jne if_53_5_end
-   if_53_8_code:  ; opt1
-;    [53:22] exit(1) 
-;    exit(v : reg_rdi) 
-;      inline: 53_22
-;      alloc rdi
-;      alias v -> rdi
-       mov rdi, 1
-;      [10:5] mov(rax, 60) 
-       mov rax, 60
-;      [10:19] # exit system call 
-;      [11:5] mov(rdi, v) 
-;      [11:19] # return code 
-;      [12:5] syscall 
-       syscall
-;      free rdi
-     exit_53_22_end:
-   if_53_5_end:
-;  [55:5] print(hello.len, hello) 
+;  [57:5] # check if valid 
+;  [58:5] assert(itm.vel.y == 0) 
+;  assert(expr : bool) 
+;    inline: 58_5
+;    alloc r15
+;    alias expr -> r15
+;    [58:12] itm.vel.y == 0
+;    [58:12] ? itm.vel.y == 0
+;    [58:12] ? itm.vel.y == 0
+     cmp_58_12:
+     cmp dword[rbp-23], 0
+     jne false_58_12
+     true_58_12:  ; opt1
+     mov r15, 1
+     jmp end_58_12
+     false_58_12:
+     mov r15, 0
+     end_58_12:
+     if_33_8_58_5:
+;    [33:8] ? not expr 
+;    [33:8] ? not expr 
+     cmp_33_8_58_5:
+     cmp r15, 0
+     jne if_33_5_58_5_end
+     if_33_8_58_5_code:  ; opt1
+;      [33:17] exit(1) 
+;      exit(v : reg_rdi) 
+;        inline: 33_17_58_5
+;        alloc rdi
+;        alias v -> rdi
+         mov rdi, 1
+;        [10:5] mov(rax, 60) 
+         mov rax, 60
+;        [10:19] # exit system call 
+;        [11:5] mov(rdi, v) 
+;        [11:19] # return code 
+;        [12:5] syscall 
+         syscall
+;        free rdi
+       exit_33_17_58_5_end:
+     if_33_5_58_5_end:
+;    free r15
+   assert_58_5_end:
+;  [59:5] assert(itm.valid) 
+;  assert(expr : bool) 
+;    inline: 59_5
+;    alloc r15
+;    alias expr -> r15
+;    [59:12] itm.valid
+;    [59:12] ? itm.valid
+;    [59:12] ? itm.valid
+     cmp_59_12:
+     cmp byte[rbp-16], 0
+     je false_59_12
+     true_59_12:  ; opt1
+     mov r15, 1
+     jmp end_59_12
+     false_59_12:
+     mov r15, 0
+     end_59_12:
+     if_33_8_59_5:
+;    [33:8] ? not expr 
+;    [33:8] ? not expr 
+     cmp_33_8_59_5:
+     cmp r15, 0
+     jne if_33_5_59_5_end
+     if_33_8_59_5_code:  ; opt1
+;      [33:17] exit(1) 
+;      exit(v : reg_rdi) 
+;        inline: 33_17_59_5
+;        alloc rdi
+;        alias v -> rdi
+         mov rdi, 1
+;        [10:5] mov(rax, 60) 
+         mov rax, 60
+;        [10:19] # exit system call 
+;        [11:5] mov(rdi, v) 
+;        [11:19] # return code 
+;        [12:5] syscall 
+         syscall
+;        free rdi
+       exit_33_17_59_5_end:
+     if_33_5_59_5_end:
+;    free r15
+   assert_59_5_end:
+;  [60:5] assert(not itm.vel.y != 0) 
+;  assert(expr : bool) 
+;    inline: 60_5
+;    alloc r15
+;    alias expr -> r15
+;    [60:12] not itm.vel.y != 0
+;    [60:12] ? not itm.vel.y != 0
+;    [60:12] ? not itm.vel.y != 0
+     cmp_60_12:
+     cmp dword[rbp-23], 0
+     jne false_60_12
+     true_60_12:  ; opt1
+     mov r15, 1
+     jmp end_60_12
+     false_60_12:
+     mov r15, 0
+     end_60_12:
+     if_33_8_60_5:
+;    [33:8] ? not expr 
+;    [33:8] ? not expr 
+     cmp_33_8_60_5:
+     cmp r15, 0
+     jne if_33_5_60_5_end
+     if_33_8_60_5_code:  ; opt1
+;      [33:17] exit(1) 
+;      exit(v : reg_rdi) 
+;        inline: 33_17_60_5
+;        alloc rdi
+;        alias v -> rdi
+         mov rdi, 1
+;        [10:5] mov(rax, 60) 
+         mov rax, 60
+;        [10:19] # exit system call 
+;        [11:5] mov(rdi, v) 
+;        [11:19] # return code 
+;        [12:5] syscall 
+         syscall
+;        free rdi
+       exit_33_17_60_5_end:
+     if_33_5_60_5_end:
+;    free r15
+   assert_60_5_end:
+;  [62:5] print(hello.len, hello) 
 ;  print(len : reg_rdx, ptr : reg_rsi) 
-;    inline: 55_5
+;    inline: 62_5
 ;    alloc rdx
 ;    alias len -> rdx
      mov rdx, hello.len
@@ -235,12 +350,12 @@ main:
      syscall
 ;    free rsi
 ;    free rdx
-   print_55_5_end:
-;  [56:5] loop
-   loop_56_5:
-;    [57:9] print(prompt1.len, prompt1) 
+   print_62_5_end:
+;  [63:5] loop
+   loop_63_5:
+;    [64:9] print(prompt1.len, prompt1) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 57_9
+;      inline: 64_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, prompt1.len
@@ -261,16 +376,16 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_57_9_end:
+     print_64_9_end:
 ;    len: qword[rbp-54]
-;    [58:9] var len = read(input.len, input) - 1 
-;    [58:13] len = read(input.len, input) - 1 
-;    [58:19] read(input.len, input) - 1 
-;    [58:19] read(input.len, input) - 1 
-;    [58:19] len=read(input.len, input) 
-;    [58:19] read(input.len, input) 
+;    [65:9] var len = read(input.len, input) - 1 
+;    [65:13] len = read(input.len, input) - 1 
+;    [65:19] read(input.len, input) - 1 
+;    [65:19] read(input.len, input) - 1 
+;    [65:19] len=read(input.len, input) 
+;    [65:19] read(input.len, input) 
 ;    read(len : reg_rdx, ptr : reg_rsi) : nbytes 
-;      inline: 58_19
+;      inline: 65_19
 ;      alias nbytes -> len
 ;      alloc rdx
 ;      alias len -> rdx
@@ -295,33 +410,33 @@ main:
 ;      [29:22] # return value 
 ;      free rsi
 ;      free rdx
-     read_58_19_end:
-;    [58:44] len- 1 
+     read_65_19_end:
+;    [65:44] len- 1 
      sub qword[rbp-54], 1
-;    [58:49] # -1 don't include the '\n' 
-     if_59_12:
-;    [59:12] ? len == 0 
-;    [59:12] ? len == 0 
-     cmp_59_12:
+;    [65:49] # -1 don't include the '\n' 
+     if_66_12:
+;    [66:12] ? len == 0 
+;    [66:12] ? len == 0 
+     cmp_66_12:
      cmp qword[rbp-54], 0
-     jne if_59_9_end
-     if_59_12_code:  ; opt1
-;      [60:13] break 
-       jmp loop_56_5_end
-     if_59_9_end:
-     if_62_12:
-;    [62:12] ? len <= itm.vel.x 
-;    [62:12] ? len <= itm.vel.x 
-     cmp_62_12:
+     jne if_66_9_end
+     if_66_12_code:  ; opt1
+;      [67:13] break 
+       jmp loop_63_5_end
+     if_66_9_end:
+     if_69_12:
+;    [69:12] ? len <= itm.vel.x 
+;    [69:12] ? len <= itm.vel.x 
+     cmp_69_12:
 ;    alloc r15
      mov r15, qword[rbp-31]
      cmp qword[rbp-54], r15
 ;    free r15
-     jg if_62_9_end
-     if_62_12_code:  ; opt1
-;      [63:13] print(prompt2.len, prompt2) 
+     jg if_69_9_end
+     if_69_12_code:  ; opt1
+;      [70:13] print(prompt2.len, prompt2) 
 ;      print(len : reg_rdx, ptr : reg_rsi) 
-;        inline: 63_13
+;        inline: 70_13
 ;        alloc rdx
 ;        alias len -> rdx
          mov rdx, prompt2.len
@@ -342,13 +457,13 @@ main:
          syscall
 ;        free rsi
 ;        free rdx
-       print_63_13_end:
-;      [64:13] continue 
-       jmp loop_56_5
-     if_62_9_end:
-;    [66:9] print(prompt3.len, prompt3) 
+       print_70_13_end:
+;      [71:13] continue 
+       jmp loop_63_5
+     if_69_9_end:
+;    [73:9] print(prompt3.len, prompt3) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 66_9
+;      inline: 73_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, prompt3.len
@@ -369,10 +484,10 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_66_9_end:
-;    [67:9] print(len, input) 
+     print_73_9_end:
+;    [74:9] print(len, input) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 67_9
+;      inline: 74_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, qword[rbp-54]
@@ -393,10 +508,10 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_67_9_end:
-;    [68:9] print(dot.len, dot) 
+     print_74_9_end:
+;    [75:9] print(dot.len, dot) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 68_9
+;      inline: 75_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, dot.len
@@ -417,10 +532,10 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_68_9_end:
-;    [69:9] print(nl.len, nl) 
+     print_75_9_end:
+;    [76:9] print(nl.len, nl) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 69_9
+;      inline: 76_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, nl.len
@@ -441,9 +556,9 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_69_9_end:
-   jmp loop_56_5
-   loop_56_5_end:
+     print_76_9_end:
+   jmp loop_63_5
+   loop_63_5_end:
 ; main end
 
 ; system call: exit 0
