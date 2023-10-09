@@ -31,11 +31,16 @@ func inline read(len : reg_rdx, ptr : reg_rsi) : nbytes_read {
 
 # define a type with 'x' being default register size (64 bit)
 #   and 'y' being 32 bit
-type vector { x, y : i32 }
+type vector { x, y : i32, z : i8, w : bool }
 
 func inline main {
-    var v : vector = 3
+    var v : vector = 3    # v.x is set to 3
     v.y = 4
+    v.z = 5
+    v.w = true
+
+    if not v.w exit(1)
+
     print(hello.len, hello)
     loop {
         print(prompt1.len, prompt1)

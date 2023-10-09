@@ -7,6 +7,7 @@ intention:
 * generate handwritten-like assembler for x86_64 nasm
 * generating inlined functions for a super-loop, no reentrance type of program
 
+sample code:
 ```
 field   hello = "hello world from baz\n"
 field   input = "............................................................"
@@ -39,7 +40,18 @@ func inline read(len : reg_rdx, ptr : reg_rsi) : nbytes_read {
     mov(nbytes_read, rax) # return value
 }
 
+# define a type with 'x' being default register size (64 bit)
+#   and 'y' being 32 bit
+type vector { x, y : i32, z : i8, w : bool }
+
 func inline main {
+    var v : vector = 3    # v.x is set to 3
+    v.y = 4
+    v.z = 5
+    v.w = true
+
+    if not v.w exit(1)
+
     print(hello.len, hello)
     loop {
         print(prompt1.len, prompt1)
@@ -47,7 +59,7 @@ func inline main {
         if len == 0 {
             break
         }
-        if len <= 4 {
+        if len <= v.x {
             print(prompt2.len, prompt2)
             continue
         }
@@ -105,10 +117,58 @@ mov rsp,stk.end
 mov rbp,rsp
 jmp main
 
+;[32:1] # define a type with 'x' being default register size (64 bit) 
+;[33:1] # and 'y' being 32 bit 
 main:
-;  [33:5] print(hello.len, hello) 
+;  v: qword[rbp-14]
+;  [37:5] var v : vector = 3 
+;  [37:9] v : vector = 3 
+;  [37:22] 3 
+;  [37:22] 3 
+;  [37:22] v=3 
+   mov qword[rbp-14], 3
+;  [37:27] # v.x is set to 3 
+;  [38:5] v.y = 4 
+;  [38:11] 4 
+;  [38:11] 4 
+;  [38:11] v.y=4 
+   mov dword[rbp-6], 4
+;  [39:5] v.z = 5 
+;  [39:11] 5 
+;  [39:11] 5 
+;  [39:11] v.z=5 
+   mov byte[rbp-2], 5
+;  [40:5] v.w = true 
+;  [40:11] true 
+;  [40:11] true 
+;  [40:11] v.w=true 
+   mov byte[rbp-1], true
+   if_42_8:
+;  [42:8] ? not v.w 
+;  [42:8] ? not v.w 
+   cmp_42_8:
+   cmp byte[rbp-1], 0
+   jne if_42_5_end
+   if_42_8_code:  ; opt1
+;    [42:16] exit(1) 
+;    exit(v : reg_rdi) 
+;      inline: 42_16
+;      alloc rdi
+;      alias v -> rdi
+       mov rdi, 1
+;      [10:5] mov(rax, 60) 
+       mov rax, 60
+;      [10:18] # exit system call 
+;      [11:5] mov(rdi, v) 
+;      [11:18] # return code 
+;      [12:5] syscall 
+       syscall
+;      free rdi
+     exit_42_16_end:
+   if_42_5_end:
+;  [44:5] print(hello.len, hello) 
 ;  print(len : reg_rdx, ptr : reg_rsi) 
-;    inline: 33_5
+;    inline: 44_5
 ;    alloc rdx
 ;    alias len -> rdx
      mov rdx, hello.len
@@ -129,12 +189,12 @@ main:
      syscall
 ;    free rsi
 ;    free rdx
-   print_33_5_end:
-;  [34:5] loop
-   loop_34_5:
-;    [35:9] print(prompt1.len, prompt1) 
+   print_44_5_end:
+;  [45:5] loop
+   loop_45_5:
+;    [46:9] print(prompt1.len, prompt1) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 35_9
+;      inline: 46_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, prompt1.len
@@ -155,16 +215,16 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_35_9_end:
-;    len: qword[rbp-8]
-;    [36:9] var len = read(input.len, input) - 1 
-;    [36:13] len = read(input.len, input) - 1 
-;    [36:19] read(input.len, input) - 1 
-;    [36:19] read(input.len, input) - 1 
-;    [36:19] len=read(input.len, input) 
-;    [36:19] read(input.len, input) 
+     print_46_9_end:
+;    len: qword[rbp-22]
+;    [47:9] var len = read(input.len, input) - 1 
+;    [47:13] len = read(input.len, input) - 1 
+;    [47:19] read(input.len, input) - 1 
+;    [47:19] read(input.len, input) - 1 
+;    [47:19] len=read(input.len, input) 
+;    [47:19] read(input.len, input) 
 ;    read(len : reg_rdx, ptr : reg_rsi) : nbytes_read 
-;      inline: 36_19
+;      inline: 47_19
 ;      alias nbytes_read -> len
 ;      alloc rdx
 ;      alias len -> rdx
@@ -185,34 +245,37 @@ main:
 ;      [28:2] syscall 
        syscall
 ;      [29:5] mov(nbytes_read, rax) 
-       mov qword[rbp-8], rax
+       mov qword[rbp-22], rax
 ;      [29:27] # return value 
 ;      free rsi
 ;      free rdx
-     read_36_19_end:
-;    [36:44] len- 1 
-     sub qword[rbp-8], 1
-;    [36:49] # -1 don't include the '\n' 
-     if_37_12:
-;    [37:12] ? len == 0 
-;    [37:12] ? len == 0 
-     cmp_37_12:
-     cmp qword[rbp-8], 0
-     jne if_37_9_end
-     if_37_12_code:  ; opt1
-;      [38:13] break 
-       jmp loop_34_5_end
-     if_37_9_end:
-     if_40_12:
-;    [40:12] ? len <= 4 
-;    [40:12] ? len <= 4 
-     cmp_40_12:
-     cmp qword[rbp-8], 4
-     jg if_40_9_end
-     if_40_12_code:  ; opt1
-;      [41:13] print(prompt2.len, prompt2) 
+     read_47_19_end:
+;    [47:44] len- 1 
+     sub qword[rbp-22], 1
+;    [47:49] # -1 don't include the '\n' 
+     if_48_12:
+;    [48:12] ? len == 0 
+;    [48:12] ? len == 0 
+     cmp_48_12:
+     cmp qword[rbp-22], 0
+     jne if_48_9_end
+     if_48_12_code:  ; opt1
+;      [49:13] break 
+       jmp loop_45_5_end
+     if_48_9_end:
+     if_51_12:
+;    [51:12] ? len <= v.x 
+;    [51:12] ? len <= v.x 
+     cmp_51_12:
+;    alloc r15
+     mov r15, qword[rbp-14]
+     cmp qword[rbp-22], r15
+;    free r15
+     jg if_51_9_end
+     if_51_12_code:  ; opt1
+;      [52:13] print(prompt2.len, prompt2) 
 ;      print(len : reg_rdx, ptr : reg_rsi) 
-;        inline: 41_13
+;        inline: 52_13
 ;        alloc rdx
 ;        alias len -> rdx
          mov rdx, prompt2.len
@@ -233,13 +296,13 @@ main:
          syscall
 ;        free rsi
 ;        free rdx
-       print_41_13_end:
-;      [42:13] continue 
-       jmp loop_34_5
-     if_40_9_end:
-;    [44:9] print(prompt3.len, prompt3) 
+       print_52_13_end:
+;      [53:13] continue 
+       jmp loop_45_5
+     if_51_9_end:
+;    [55:9] print(prompt3.len, prompt3) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 44_9
+;      inline: 55_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, prompt3.len
@@ -260,13 +323,13 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_44_9_end:
-;    [45:9] print(len, input) 
+     print_55_9_end:
+;    [56:9] print(len, input) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 45_9
+;      inline: 56_9
 ;      alloc rdx
 ;      alias len -> rdx
-       mov rdx, qword[rbp-8]
+       mov rdx, qword[rbp-22]
 ;      alloc rsi
 ;      alias ptr -> rsi
        mov rsi, input
@@ -284,10 +347,10 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_45_9_end:
-;    [46:9] print(dot.len, dot) 
+     print_56_9_end:
+;    [57:9] print(dot.len, dot) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 46_9
+;      inline: 57_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, dot.len
@@ -308,10 +371,10 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_46_9_end:
-;    [47:9] print(nl.len, nl) 
+     print_57_9_end:
+;    [58:9] print(nl.len, nl) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 47_9
+;      inline: 58_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, nl.len
@@ -332,12 +395,12 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_47_9_end:
-   jmp loop_34_5
-   loop_34_5_end:
-;  [49:5] exit(0) 
+     print_58_9_end:
+   jmp loop_45_5
+   loop_45_5_end:
+;  [60:5] exit(0) 
 ;  exit(v : reg_rdi) 
-;    inline: 49_5
+;    inline: 60_5
 ;    alloc rdi
 ;    alias v -> rdi
      mov rdi, 0
@@ -349,7 +412,7 @@ main:
 ;    [12:5] syscall 
      syscall
 ;    free rdi
-   exit_49_5_end:
+   exit_60_5_end:
 
 ; max scratch registers in use: 1
 ;            max frames in use: 7
