@@ -1,5 +1,5 @@
 # errors triggered by system code
 src:*/lib/gcc/*
 
-src:*/tokenizer.hpp
-
+src:token.hpp
+src:tokenizer.hpp
