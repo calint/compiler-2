@@ -81,9 +81,8 @@ public:
   inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
                       [[maybe_unused]] size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
-    throw compiler_exception(
-        tok(), "this code should not be reached: " + string{__FILE__} + ":" +
-                   to_string(__LINE__));
+    throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                          to_string(__LINE__));
   }
 
   inline auto compile_or(toc &tc, ostream &os, size_t indent,
@@ -117,7 +116,7 @@ public:
       os << " " << jmp_to_if_true << endl;
       return nullopt;
     }
-    // check the case when both operands are constants
+    // check case when both operands are constants
     if (not lhs_.is_expression() and not rhs_.is_expression()) {
       const ident_resolved &lhs_resolved{tc.resolve_identifier(lhs_, false)};
       const ident_resolved &rhs_resolved{tc.resolve_identifier(rhs_, false)};
@@ -215,8 +214,8 @@ public:
 
     return lhs_.identifier();
 
-    throw panic_exception("unexpected code path " + string{__FILE__} +
-                               ":" + to_string(__LINE__));
+    throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                          to_string(__LINE__));
   }
 
   [[nodiscard]] inline auto is_expression() const -> bool override {
@@ -275,8 +274,8 @@ private:
     if (op == ">=") {
       return lh >= rh;
     }
-    throw panic_exception("unexpected code path " + string{__FILE__} +
-                               ":" + to_string(__LINE__));
+    throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                          to_string(__LINE__));
   }
 
   inline static auto asm_jxx_for_op(const string &op) -> string {
@@ -299,8 +298,8 @@ private:
       return "jge";
     }
 
-    throw panic_exception("unexpected code path " + string{__FILE__} +
-                               ":" + to_string(__LINE__));
+    throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                          to_string(__LINE__));
   }
 
   inline static auto asm_jxx_for_op_inv(const string &op) -> string {
@@ -322,8 +321,8 @@ private:
     if (op == ">=") {
       return "jl";
     }
-    throw panic_exception("unexpected code path " + string{__FILE__} +
-                               ":" + to_string(__LINE__));
+    throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                          to_string(__LINE__));
   }
 
   inline void resolve_cmp(toc &tc, ostream &os, size_t indent,

@@ -113,6 +113,12 @@ public:
     tc.enter_func("main", "", "", true, "");
     main.code().compile(tc, os, indent);
     tc.exit_func("main");
+    os << "; main end" << endl;
+    os << endl;
+    os << "; system call: exit 0" << endl;
+    os << "mov rax, 60" << endl;
+    os << "mov rdi, 0" << endl;
+    os << "syscall" << endl;
   }
 
   inline void build(ostream &os) {

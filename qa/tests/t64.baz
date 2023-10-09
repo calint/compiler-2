@@ -1,0 +1,35 @@
+func inline exit(v : reg_rdi) {
+    mov(rax, 60) # exit system call
+    mov(rdi, v)  # return code
+    syscall
+}
+
+func inline main {
+    if not true exit(1)
+    if true == false exit(2)
+    if not true == true exit(3)
+    if not false == false exit(4)
+    if true == false or false == true or false or not true exit(5)
+    if not not true == false exit(5)
+
+    var x = 1
+    var y = 2
+
+    if x > y exit(6)
+    if x >= y exit(7)
+    if y < x exit(8)
+    if y <= x exit(9)
+
+    if not x < y exit(10)
+    if not x <= y exit(11)
+    if not y > x exit(12)
+    if not y >= x exit(13)
+
+    if 1 > 2 exit(14)
+    if 1 >= 2 exit(15)
+    if 2 < 1 exit(16)
+    if 2 <= 1 exit(17)
+
+    if 1 > 2 or not (x < y) exit(18)
+    if false or not (true) exit(19)
+}
