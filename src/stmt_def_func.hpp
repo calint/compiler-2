@@ -5,6 +5,7 @@
 class stmt_def_func final : public statement {
   token name_{};
   vector<stmt_def_func_param> params_{};
+  token whitespace_after_params_{};
   vector<token> returns_{};
   stmt_block code_{};
   token inline_tk_{};
@@ -36,6 +37,7 @@ public:
         }
       }
     }
+    whitespace_after_params_ = tz.next_whitespace_token();
     if (tz.is_next_char(':')) { // returns
       while (true) {
         returns_.emplace_back(tz.next_token());
@@ -95,6 +97,7 @@ public:
       }
       os << ")";
     }
+    whitespace_after_params_.source_to(os);
     if (not returns_.empty()) {
       os << ":";
       const size_t n{returns_.size() - 1};

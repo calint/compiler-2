@@ -99,7 +99,7 @@ main:
 ;    [36:19] read(input.len, input) - 1 
 ;    [36:19] len=read(input.len, input) 
 ;    [36:19] read(input.len, input) 
-;    read(len : reg_rdx, ptr : reg_rsi): nbytes_read 
+;    read(len : reg_rdx, ptr : reg_rsi) : nbytes_read 
 ;      inline: 36_19
 ;      alias nbytes_read -> len
 ;      alloc rdx
