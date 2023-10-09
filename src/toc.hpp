@@ -247,6 +247,15 @@ public:
     return *funcs_.get_const_ref(name).def;
   }
 
+  inline auto is_func_builtin(const statement &st, const string &name) const
+      -> bool {
+    if (not funcs_.has(name)) {
+      throw compiler_exception(st.tok(), "function '" + name + "' not found");
+    }
+
+    return funcs_.get_const_ref(name).def == nullptr;
+  }
+
   inline auto get_func_return_type_or_throw(const statement &st,
                                             const string &name) const
       -> const type & {
@@ -1242,7 +1251,7 @@ public:
 
     if (is_identifier_register(id)) {
       //? this might not be necessary since it is updated at
-      //asm_cmd(...,"mov",...)
+      // asm_cmd(...,"mov",...)
       initiated_registers_.insert(id);
       return;
     }

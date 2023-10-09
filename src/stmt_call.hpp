@@ -22,18 +22,39 @@ public:
       return;
     }
 
-    bool expect_arg{false};
-    while (true) {
-      if (tz.is_next_char(')')) { // foo()
-        if (expect_arg) {
-          throw compiler_exception(tz, "expected argument after ','");
+    if (not tc.is_func_builtin(*this, tok().name())) {
+      // user defined function
+      const stmt_def_func &func{tc.get_func_or_throw(*this, identifier())};
+      size_t i{0};
+      const size_t n{func.params().size()};
+      for (auto const &param : func.params()) {
+        args_.emplace_back(tc, param.get_type(), tz, true);
+        i++;
+        if (i < n) {
+          if (not tz.is_next_char(',')) {
+            throw compiler_exception(tz, "expected argument " +
+                                             to_string(i + 1) + " '" +
+                                             param.name() + "'");
+          }
         }
-        break;
       }
-      args_.emplace_back(tc, get_type(), tz, true);
-      expect_arg = tz.is_next_char(',');
+      if (not tz.is_next_char(')')) {
+        throw compiler_exception(tz, "expected ')' after arguments");
+      }
+    } else {
+      // built-in function   todo. fix this by having a stmt_func_def
+      bool expect_arg{false};
+      while (true) {
+        if (tz.is_next_char(')')) { // foo()
+          if (expect_arg) {
+            throw compiler_exception(tz, "expected argument after ','");
+          }
+          break;
+        }
+        args_.emplace_back(tc, get_type(), tz, true);
+        expect_arg = tz.is_next_char(',');
+      }
     }
-
     whitespace_after_ = tz.next_whitespace_token();
   }
 
@@ -65,7 +86,7 @@ public:
   inline void compile(toc &tc, ostream &os, size_t indent,
                       const string &dst = "") const override {
     tc.source_comment(*this, os, indent);
-    const stmt_def_func &func{tc.get_func_or_throw(*this, tok().name())};
+    const stmt_def_func &func{tc.get_func_or_throw(*this, identifier())};
     const string &func_nm{func.name()};
 
     // check that the same number of arguments are provided as expected

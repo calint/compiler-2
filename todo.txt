@@ -1,10 +1,8 @@
-[ ] var v : vector = {1, a + b, f() - 1}
-[x] better coverage of bool_op. qa/see coverage-report
+[x] f(a==1) where argument is a boolean
+[o] var o:object={{1,2},{0,0},1}
+[.] var v : vector = {1, a + b, f() - 1}
 [ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names
-[x] source location of a character index counts tabs as one character
-    => editor set to treat tabs as spaces
-[ ] bool_op_list use cmovexx when assignment
 [ ] handle constants when deducing operand size 
      -> deduce if possible to the size of the desired type
 [ ] specify whether ok for an op to truncate value instead of error
@@ -26,17 +24,15 @@ stage 4
 [-]   typedef size i64?  alias size i64?
 [-]     var i=1 var s=size(i) i=s gives error i=quad(s) 
 [x]   type vector{x,y} type object{pos:vector,vel:vector,color:i8}
-[ ]     var o:object={{1,2},{0,0},1}
-[ ]     var o=object({1,2},{0,0},1)
+[-]     var o=object({1,2},{0,0},1)
 [ ]   func object(self,pos,vel,color)
 [x]   type size{value}, var s:size=1, s.value=2 == s=2 
 [x]   type point{x,y}
-[ ]   var p:point{1,2}
+[-]   var p:point{1,2}
 [-]   p=point(1,2)
 [x]   p.x=1 == p=1
       -> type point{x,y}
 [ ] let i=1 creates a constant
-[ ] f(a=1) where argument is a boolean
 [ ] function arguments relative to rsp allowing writing to variable in previous function context
 [ ] function arguments as references
 [ ]   pass effective address to the type
@@ -79,6 +75,11 @@ stage 4
       call foo
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
+[-] bool_op_list use cmovexx when assignment
+    => simplicity trumps complexity of generating the assembler
+[x] better coverage of bool_op. qa/see coverage-report
+[x] source location of a character index counts tabs as one character
+    => editor set to treat tabs as spaces
 [x] clang-format everything for less dense code?
     => visual code formatter
 [x] review the declaration of default move,copy,constructor in every class

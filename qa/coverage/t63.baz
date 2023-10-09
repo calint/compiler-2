@@ -7,8 +7,8 @@ field      nl = "\n"
 field     dot = "."
 
 func inline exit(v : reg_rdi) {
-    mov(rax, 60) # exit system call
-    mov(rdi, v)  # return code
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
     syscall
 }
 
@@ -20,16 +20,45 @@ func inline print(len : reg_rdx, ptr : reg_rsi) {
     syscall
 }
 
-func inline read(len : reg_rdx, ptr : reg_rsi) : nbytes_read {
-	mov(rax, 0)    # read system call
-	mov(rdi, 0)    # file descriptor for standard input
-	mov(rsi, ptr)  # buffer address
-	mov(rdx, len)  # buffer size
-	syscall
-    mov(nbytes_read, rax) # return value
+func inline read(len : reg_rdx, ptr : reg_rsi) : nbytes {
+    mov(rax, 0)   # read system call
+    mov(rdi, 0)   # file descriptor for standard input
+    mov(rsi, ptr) # buffer address
+    mov(rdx, len) # buffer size
+    syscall
+    mov(nbytes, rax) # return value
 }
 
+func inline assert(expr : bool) {
+    if not expr exit(1)
+}
+
+# define a type 'vector'
+#   member 'x' being default type (64 bit integer)
+#   member 'y' being 32 bit
+#   member 'z' being 16 bit
+#   member 'w' being 8 bit
+#   member 'valid' being a boolean
+type vector {x, y : i32, z : i16, w : i8}
+type item { pos : vector, vel : vector, valid : bool }
+
 func inline main {
+    # declare 'v' on the stack
+    var v : vector = 3    # sets v.x
+    v.y = 4
+    v.z = 5
+    v.w = 6
+
+    var itm : item = 1    # sets itm.pos.x
+    itm.vel.x = 4
+    itm.vel.y = 0
+    itm.valid = true
+
+    # check if valid
+    assert(itm.vel.y == 0)
+    assert(itm.valid)
+    assert(not itm.vel.y != 0)
+
     print(hello.len, hello)
     loop {
         print(prompt1.len, prompt1)
@@ -37,7 +66,7 @@ func inline main {
         if len == 0 {
             break
         }
-        if len <= 4 {
+        if len <= itm.vel.x {
             print(prompt2.len, prompt2)
             continue
         }
@@ -46,5 +75,4 @@ func inline main {
         print(dot.len, dot)
         print(nl.len, nl)
     }
-    exit(0)
 }

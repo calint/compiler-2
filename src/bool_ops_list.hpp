@@ -14,6 +14,7 @@ public:
         statement{first_op.is_name("") ? tz.next_whitespace_token()
                                        : token_from(first_bool_op)},
         not_token_{move(not_token)}, enclosed_{enclosed} {
+
     set_type(tc.get_type_bool());
 
     token prv_op{first_op};
