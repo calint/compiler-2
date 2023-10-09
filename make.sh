@@ -6,6 +6,10 @@
 #       g++: g++ (Ubuntu 12.2.0-3ubuntu1) 12.2.0
 set -e
 
+# change to directory of the script
+cd $(dirname "$0")
+
+# set environment
 CC="clang++ -std=c++20"
 CF="-Werror -Wfatal-errors"
 CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables  -Wno-padded \
@@ -19,6 +23,8 @@ if [ "$1" = "msan" ]; then
     MSAN="-fsanitize=address,undefined -fno-omit-frame-pointer"
     DBG=-g
 elif [ "$1" = "prof" ]; then
+    # profiling, sanitize
+    MSAN="-fsanitize=address,undefined -fno-omit-frame-pointer"
     PROF="-fprofile-instr-generate -fcoverage-mapping"
     DBG=-g
 fi
@@ -29,6 +35,9 @@ echo $CMD
 $CMD
 echo
 
+if [ "$1" = "prof" ]; then
+    exit 0
+fi
 
 ./baz prog.baz > gen.s
 grep -v -e'^\s*;.*$' -e'^\s*$' gen.s > gen-m.s

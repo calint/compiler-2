@@ -1,9 +1,11 @@
 #/bin/sh
 
-RUN='echo -n "$SRC: " && $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen; e=$?;if test $e -eq $EXP; then echo ok; else echo FAILED. expected $EXP got $e; exit 1; fi'
-DIFF='echo -n "$SRC: " && $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen > out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
-DIFFINP='echo -n "$SRC: " && $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen <${SRC%.*}.in $> out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
-DIFFPY='echo -n "$SRC: " && $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./${SRC%.*}.py $> out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
+../../make.sh prof 
+
+RUN='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen; e=$?;if test $e -eq $EXP; then echo ok; else echo FAILED. expected $EXP got $e; exit 1; fi'
+DIFF='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen > out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
+DIFFINP='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen < ${SRC%.*}.in $> out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
+DIFFPY='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./${SRC%.*}.py $> out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
 #BIN='valgrind --quiet --leak-check=full --show-leak-kinds=all -s ../../baz'
 BIN='../../baz'
 
@@ -72,3 +74,14 @@ SRC=t62.baz && EXP=0 && eval $RUN
 SRC=t63.baz && eval $DIFFPY
 
 rm gen gen.o gen.s diff.baz out
+
+# process coverage data
+llvm-profdata merge -o baz.profdata -sparse $(ls *.profraw) &&
+llvm-cov export --format=lcov --instr-profile baz.profdata --object $BIN > lcov.info &&
+# generate report
+genhtml --quiet lcov.info --output-directory coverage-report/ &&
+echo &&
+echo coverage report generated in "$(realpath "coverage-report/")" &&
+echo &&
+
+rm *.profraw baz.profdata lcov.info
