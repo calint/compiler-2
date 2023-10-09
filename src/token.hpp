@@ -36,7 +36,7 @@ public:
       os << name_;
       return;
     }
-    // ? temporary fix
+    //? temporary fix to handle strings
     os << regex_replace(name_, regex("\\\\n"), "',10,'");
   }
 

@@ -42,12 +42,12 @@ public:
   }
 
   inline void put_back_token(const token &t) {
-    // ? validate token is same as source
+    //? validate token is same as source
     seek(-off_t(t.total_length_in_chars()));
   }
 
   inline void put_back_char([[maybe_unused]] const char ch) {
-    // ? validate char is same as source
+    //? validate char is same as source
     seek(-off_t(1));
   }
 

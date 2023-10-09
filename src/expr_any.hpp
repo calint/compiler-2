@@ -117,7 +117,7 @@ public:
 
     // bool expression
     const bool_ops_list &eol{get<bool_ops_list>(eols_)};
-    return eol.get_unary_ops(); // ? can there be unary ops on bool
+    return eol.get_unary_ops(); //? can there be unary ops on bool
   }
 
 private:

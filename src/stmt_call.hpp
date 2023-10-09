@@ -82,7 +82,7 @@ public:
       const type &arg_type{arg.get_type()};
       const type &param_type{param.get_type()};
       if (arg_type.is_built_in() and param_type.is_built_in()) {
-        // ? check if it is integral (not bool)
+        //? check if it is integral (not bool)
         if (param_type.size() < arg_type.size()) {
           throw compiler_exception(
               arg.tok(),
@@ -116,7 +116,7 @@ public:
       //				throw compiler_error(*this,"return type
       //'"+return_type.name()+"' does not match the destination type
       //'"+dst_resolved.tp.name()+"'");
-      // ? check if built in integer types
+      //? check if built in integer types
       if (dst_resolved.tp.size() < return_type.size()) {
         throw compiler_exception(
             this->tok(), "return type '" + return_type.name() +

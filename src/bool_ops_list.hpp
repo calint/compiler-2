@@ -64,8 +64,8 @@ public:
         if (tk.is_name("and")) {
           // a and b or c -> (a and b) or c
           // first op is 'and', make sub-expression (a and b) ...
-          bool_ops_list bol{
-              tc, t, false, {}, true, move(bools_.back()), move(tk)};
+          bool_ops_list bol{tc,      t, false, {}, true, move(bools_.back()),
+                            move(tk)};
           bools_.pop_back();
           bools_.emplace_back(move(bol));
 
@@ -311,8 +311,8 @@ public:
     return nullopt;
   }
 
-  [[nodiscard]] inline auto is_expression() const
-      -> bool override { // ? assumes it is not an expression
+  //? assumes it is not an expression
+  [[nodiscard]] inline auto is_expression() const -> bool override {
     if (bools_.size() > 1) {
       return true;
     }
@@ -328,8 +328,8 @@ public:
 
   [[nodiscard]] inline auto identifier() const -> const string & override {
     if (bools_.size() > 1) {
-      throw panic_exception("unexpected code path " + string{__FILE__} +
-                                 ":" + to_string(__LINE__));
+      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                            to_string(__LINE__));
     }
 
     assert(!bools_.empty());

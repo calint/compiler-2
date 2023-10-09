@@ -22,8 +22,8 @@ public:
 
     const ident_resolved &dst_r{tc.resolve_identifier(arg(0), false)};
     const statement &src_arg{arg(1)};
-    if (src_arg
-            .is_expression()) { // ? the assembler commands might not need this
+    //? the assembler commands might not need this
+    if (src_arg.is_expression()) {
       src_arg.compile(tc, os, indent + 1, dst_r.id_nasm);
       return;
     }

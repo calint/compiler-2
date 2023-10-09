@@ -451,10 +451,9 @@ public:
     os << "alloc " << r << endl;
 
     const size_t n{8 - scratch_registers_.size()};
-    if (n > max_usage_scratch_regs_) { // ? stmt_assign_var tries 2 different
-      // methods making this metric inaccurate if
-      // a discarded method uses more registers
-      // than the selected method
+    if (n > max_usage_scratch_regs_) {
+      // stmt_assign_var tries 2 different methods making this metric inaccurate
+      // if a discarded method uses more registers than the selected method
       max_usage_scratch_regs_ = n;
     }
 
@@ -811,8 +810,8 @@ public:
     return operand.find_first_of('[') != string::npos;
   }
   inline auto get_size_from_operand(const statement &st,
-                                    const string &operand) const
-      -> size_t { // ? sort of ugly
+                                    const string &operand) const -> size_t {
+    //? sort of ugly
     if (operand.starts_with("qword")) {
       return 8;
     }
@@ -1039,7 +1038,8 @@ public:
   inline static auto get_register_operand_for_size(const statement &st,
                                                    const string &operand,
                                                    const size_t size)
-      -> string { // ? sort of ugly
+      -> string {
+    //? sort of ugly
     if (operand == "rax") {
       switch (size) {
       case 8:
@@ -1241,8 +1241,9 @@ public:
     }
 
     if (is_identifier_register(id)) {
-      initiated_registers_.insert(id); // ? this might not be necessary since it
-                                       // is updated at asm_cmd(...,"mov",...)
+      //? this might not be necessary since it is updated at
+      //asm_cmd(...,"mov",...)
+      initiated_registers_.insert(id);
       return;
     }
 
@@ -1373,8 +1374,9 @@ private:
                                  "register '" + id + "' is not initiated");
       }
 
+      //? unary ops?
       return {ident, id, 0, get_type_default(),
-              ident_resolved::ident_type::REGISTER}; // ? unary ops?
+              ident_resolved::ident_type::REGISTER};
     }
 
     // is 'id_nasm' a field?
@@ -1391,7 +1393,7 @@ private:
         return {ident, id, 0, get_type_default(),
                 ident_resolved::ident_type::FIELD};
       }
-      // ? assumes qword
+      //? assumes qword
       return {ident, "qword[" + id + "]", 0, get_type_default(),
               ident_resolved::ident_type::FIELD};
     }
@@ -1421,8 +1423,8 @@ private:
 
     if (funcs_.has(id)) {
       const func_meta &func{funcs_.get_const_ref(id)};
-      return {ident, id, 0, func.tp,
-              ident_resolved::ident_type::CONST}; // ? type is func
+      //? type is func
+      return {ident, id, 0, func.tp, ident_resolved::ident_type::CONST};
     }
 
     if (id == "true") {
