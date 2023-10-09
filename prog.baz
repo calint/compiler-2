@@ -29,17 +29,23 @@ func inline read(len : reg_rdx, ptr : reg_rsi) : nbytes_read {
     mov(nbytes_read, rax) # return value
 }
 
-# define a type with 'x' being default register size (64 bit)
-#   and 'y' being 32 bit
+# define a type 'vector'
+#   member 'x' being default size (64 bit)
+#   member 'y' being 32 bit
+#   member 'z' being 16 bit
+#   member 'w' being 8 bit
+#   member 'valid' being a boolean
 type vector { x, y : i32, z : i16, w : i8, valid : bool }
 
 func inline main {
+    # declare 'v' on the stack
     var v : vector = 3    # v.x is set to 3
     v.y = 4
     v.z = 5
     v.w = 6
     v.valid = true
 
+    # check if valid
     if not v.valid exit(1)
 
     print(hello.len, hello)
