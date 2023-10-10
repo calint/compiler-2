@@ -38,8 +38,8 @@ func inline assert(expr : bool) {
 #   member 'y' being 32 bit
 #   member 'z' being 16 bit
 #   member 'w' being 8 bit
-#   member 'valid' being a boolean
 type vector {x, y : i32, z : i16, w : i8}
+
 type item { pos : vector, vel : vector, valid : bool }
 
 func inline main {

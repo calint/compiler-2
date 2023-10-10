@@ -46,7 +46,6 @@ jmp main
 ;[38:1] # member 'y' being 32 bit 
 ;[39:1] # member 'z' being 16 bit 
 ;[40:1] # member 'w' being 8 bit 
-;[41:1] # member 'valid' being a boolean 
 main:
 ;  [46:5] # declare 'v' on the stack 
 ;  v: qword[rbp-15]

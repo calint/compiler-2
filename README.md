@@ -61,8 +61,8 @@ func inline assert(expr : bool) {
 #   member 'y' being 32 bit
 #   member 'z' being 16 bit
 #   member 'w' being 8 bit
-#   member 'valid' being a boolean
 type vector {x, y : i32, z : i16, w : i8}
+
 type item { pos : vector, vel : vector, valid : bool }
 
 func inline main {
@@ -151,7 +151,6 @@ jmp main
 ;[38:1] # member 'y' being 32 bit 
 ;[39:1] # member 'z' being 16 bit 
 ;[40:1] # member 'w' being 8 bit 
-;[41:1] # member 'valid' being a boolean 
 main:
 ;  [46:5] # declare 'v' on the stack 
 ;  v: qword[rbp-15]

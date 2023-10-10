@@ -12,7 +12,7 @@ cd $(dirname "$0")
 
 # set environment
 CC="clang++ -std=c++20"
-CF="-Werror -Wfatal-errors"
+CF="-Wfatal-errors -Werror"
 CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables  -Wno-padded \
     -Wno-unqualified-std-cast-call"
 MSAN=
