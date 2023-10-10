@@ -19,6 +19,7 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
+
     tc.source_comment(*this, os, indent);
 
     const ident_resolved &dst_r{tc.resolve_identifier(arg(0), false)};

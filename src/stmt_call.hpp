@@ -22,9 +22,10 @@ public:
       return;
     }
 
-    if (not tc.is_func_builtin(*this, tok().name())) {
+    if (not tc.is_func_builtin(*this, identifier())) {
       // user defined function
       const stmt_def_func &func{tc.get_func_or_throw(*this, identifier())};
+      // try to create argument expressions of same type as parameter
       size_t i{0};
       const size_t n{func.params().size()};
       for (auto const &param : func.params()) {
@@ -42,7 +43,8 @@ public:
         throw compiler_exception(tz, "expected ')' after arguments");
       }
     } else {
-      // built-in function   todo. fix this by having a stmt_func_def
+      // built-in function
+      //? make this nicer. todo.
       bool expect_arg{false};
       while (true) {
         if (tz.is_next_char(')')) { // foo()
@@ -51,7 +53,8 @@ public:
           }
           break;
         }
-        args_.emplace_back(tc, get_type(), tz, true);
+        //? default type because built-in function that takes parameter is 'mov'
+        args_.emplace_back(tc, tc.get_type_default(), tz, true);
         expect_arg = tz.is_next_char(',');
       }
     }
@@ -136,11 +139,7 @@ public:
       const type &return_type{func.get_type()};
       const ident_resolved &dst_resolved{
           tc.resolve_identifier(*this, dst, false)};
-      //			if(dst_resolved.tp.name()!=return_type.name())
-      //				throw compiler_error(*this,"return type
-      //'"+return_type.name()+"' does not match the destination type
-      //'"+dst_resolved.tp.name()+"'");
-      //? check if built in integer types
+      //?
       if (dst_resolved.tp.size() < return_type.size()) {
         throw compiler_exception(
             this->tok(), "return type '" + return_type.name() +
