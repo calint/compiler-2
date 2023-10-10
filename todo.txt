@@ -1,5 +1,8 @@
 [o] var o:object={{1,2},{0,0},1}
 [.] var v : vector = {1, a + b, f() - 1}
+[ ] string type
+[ ] var str="hello world"
+[ ] var len=str.len
 [!] qa/t63 sometimes fails when run in batch. examine t63.py
     => 'out' and 't63.out' don't differ when it fails (racing condition?)
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
@@ -17,9 +20,6 @@
 [ ] function arguments as references
 [ ]   pass effective address to the type
 [ ] function return written to reference
-[ ] string type
-[ ] var str="hello world"
-[ ] var len=str.len
 [ ] def table{x,y,z}
 [ ] pointers?
 [ ] var points=point[10] where points contains length of array and a pointer
