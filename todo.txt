@@ -1,4 +1,5 @@
 [ ] qa/t63 sometimes fails when run in batch. examine t63.py
+    => 'out' and 't63.out' don't differ (racing condition?)
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
 [x] f(a==1) where argument is a boolean
 [o] var o:object={{1,2},{0,0},1}

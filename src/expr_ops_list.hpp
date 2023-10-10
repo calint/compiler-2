@@ -113,7 +113,7 @@ public:
       }
 
       // check if next statement is a subexpression
-      unary_ops uo{tz};
+      const unary_ops uo{tz};
       if (tz.is_next_char('(')) {
         // subexpression, recurse
         exps_.emplace_back(
@@ -125,13 +125,13 @@ public:
       uo.put_back(tz);
 
       // read statement
-      unique_ptr<statement> stm{create_statement_from_tokenizer(tc, tz)};
-      if (stm->tok().is_empty()) {
-        throw compiler_exception(stm->tok(),
+      unique_ptr<statement> st{create_statement_from_tokenizer(tc, tz)};
+      if (st->tok().is_empty()) {
+        throw compiler_exception(st->tok(),
                                  "unexpected '" + string{tz.peek_char()} + "'");
       }
-
-      exps_.push_back(move(stm));
+      // move statement to list
+      exps_.push_back(move(st));
     }
   }
 

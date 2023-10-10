@@ -7,8 +7,8 @@ cd $(dirname "$0")
 
 RUN='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen; e=$?;if test $e -eq $EXP; then echo ok; else echo FAILED. expected $EXP got $e; exit 1; fi'
 DIFF='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen > out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
-DIFFINP='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen < ${SRC%.*}.in $> out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
-DIFFPY='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./${SRC%.*}.py $> out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
+DIFFINP='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen < ${SRC%.*}.in > out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
+DIFFPY='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./${SRC%.*}.py > out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
 #BIN='valgrind --quiet --leak-check=full --show-leak-kinds=all -s ../../baz'
 BIN='../../baz'
 

@@ -284,7 +284,8 @@ public:
     return types_.get_const_ref(name);
   }
 
-  inline auto source_location_for_use_in_label(const token &tk) const -> string {
+  inline auto source_location_for_use_in_label(const token &tk) const
+      -> string {
     size_t char_in_line{};
     const size_t n{line_number_for_char_index(
         tk.char_index(), source_str_.c_str(), char_in_line)};
@@ -785,22 +786,24 @@ public:
           return;
         }
       }
-      const string &r{alloc_scratch_register(st, os, indnt)};
-      const string &r_sized{get_register_operand_for_size(st, r, dst_size)};
+      // both operands refer to memory
+      // use scratch register for transfer
+      const string &reg{alloc_scratch_register(st, os, indnt)};
+      const string &reg_sized{get_register_operand_for_size(st, reg, dst_size)};
       indent(os, indnt);
-      os << "movsx " << r_sized << ", " << src_resolved << endl;
+      os << "movsx " << reg_sized << ", " << src_resolved << endl;
       indent(os, indnt);
-      os << op << " " << dst_resolved << ", " << r_sized << endl;
-      free_scratch_register(os, indnt, r);
+      os << op << " " << dst_resolved << ", " << reg_sized << endl;
+      free_scratch_register(os, indnt, reg);
       return;
     }
 
     // dst_size < src_size
     if (is_identifier_register(src_resolved)) {
-      const string &r_sized{
+      const string &reg_sized{
           get_register_operand_for_size(st, src_resolved, dst_size)};
       indent(os, indnt);
-      os << op << " " << dst_resolved << ", " << r_sized << endl;
+      os << op << " " << dst_resolved << ", " << reg_sized << endl;
       return;
     }
 

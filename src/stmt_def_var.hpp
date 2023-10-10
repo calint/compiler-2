@@ -1,13 +1,11 @@
 #pragma once
 #include "stmt_assign_var.hpp"
 
-class null_buffer : public streambuf {
-public:
-  auto overflow(int c) -> int override { return c; }
-};
-
 class null_stream : public ostream {
-  null_buffer nb_{};
+  class null_buffer : public streambuf {
+  public:
+    auto overflow(int c) -> int override { return c; }
+  } nb_{};
 
 public:
   null_stream() : ostream(&nb_) {}
