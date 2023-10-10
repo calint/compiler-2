@@ -3,7 +3,7 @@
 	"tasks": [
 		{
 			"type": "cppbuild",
-			"label": "build baz",
+			"label": "baz build",
 			"command": "/usr/bin/g++",
 			"args": [
                 "-std=c++23",
@@ -49,14 +49,13 @@
 			"group": {
 				"kind": "build",
 				"isDefault": true
-			},
-			"detail": "compiler: /usr/bin/clang++"
+			}
 		},
 		{
-			"label": "test baz",
+			"label": "baz run tests",
 			"command": "run-tests.sh",
 			"options": {
-				"cwd": "${workspaceFolder}/qa/tests"
+				"cwd": "${workspaceFolder}/qa/coverage/"
 			},
 			"problemMatcher": []
 		}

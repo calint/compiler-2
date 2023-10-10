@@ -48,6 +48,8 @@ public:
     }
   }
 
+  // implemented in main.cpp
+  // solves circular reference unary_ops->toc->statement->unary_ops
   inline void compile(toc &tc, ostream &os, size_t indent_level,
                       const string &dst_resolved) const;
 

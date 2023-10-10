@@ -37,6 +37,7 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       const string &dst = "") const override {
+
     tc.source_comment(*this, os, indent);
 
     if (eols_.index() == 0) {
@@ -56,8 +57,9 @@ public:
                  src_resolved.id_nasm);
       return;
     }
+
     const string &call_path{tc.get_inline_call_path(tok())};
-    const string &src_loc{tc.source_location_for_label(tok())};
+    const string &src_loc{tc.source_location_for_use_in_label(tok())};
     const string &postfix{src_loc +
                           (call_path.empty() ? "" : ("_" + call_path))};
     const string &jmp_to_if_true{"true_" + postfix};

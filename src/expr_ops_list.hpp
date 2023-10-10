@@ -117,7 +117,7 @@ public:
       if (tz.is_next_char('(')) {
         // subexpression, recurse
         exps_.emplace_back(
-            make_unique<expr_ops_list>(tc, tz, in_args, true, move(uo)));
+            make_unique<expr_ops_list>(tc, tz, in_args, true, uo));
         continue;
       }
 
@@ -157,6 +157,7 @@ public:
       const char op{ops_[i]};
       os << op;
       if (op == '<' or op == '>') {
+        // << or >>
         os << op;
       }
       exps_[i + 1]->source_to(os);
@@ -215,8 +216,8 @@ public:
 
   [[nodiscard]] inline auto get_type() const -> const type & override {
     assert(not exps_.empty());
-    return exps_[0]
-        ->get_type(); // ! hack  find the size of the largest integral element
+    //? hack  find the size of the largest integral element
+    return exps_[0]->get_type();
   }
 
 private:
@@ -231,8 +232,8 @@ private:
       return 2;
     case '&':
       return 3;
-    case '<': // shift left
-    case '>': // shift right
+    case '<': // shift left (note. consider having different precedence than C)
+    case '>': // shift right(      with << and >> being atleast * / %         )
       return 4;
     case '+':
     case '-':

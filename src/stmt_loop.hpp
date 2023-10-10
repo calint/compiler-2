@@ -6,7 +6,7 @@ class stmt_loop final : public statement {
 public:
   inline stmt_loop(toc &tc, token tk, tokenizer &tz) : statement{move(tk)} {
     set_type(tc.get_type_void());
-    const string &lbl{"loop_" + tc.source_location_for_label(tok())};
+    const string &lbl{"loop_" + tc.source_location_for_use_in_label(tok())};
     tc.enter_loop(lbl);
     code_ = {tc, tz};
     tc.exit_loop(lbl);
@@ -29,7 +29,7 @@ public:
     // called
     const string &call_path{tc.get_inline_call_path(tok())};
     // current source location
-    const string &src_loc{tc.source_location_for_label(tok())};
+    const string &src_loc{tc.source_location_for_use_in_label(tok())};
     // the loop label
     const string &lbl{
         "loop_" + (call_path.empty() ? src_loc : (src_loc + "_" + call_path))};

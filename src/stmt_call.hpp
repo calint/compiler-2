@@ -192,11 +192,13 @@ public:
             nbytes_of_args_on_stack += 8;
             continue;
           }
+          // not a constant
           tc.asm_cmd(arg, os, indent, "mov", arg_reg, arg_resolved.id_nasm);
           arg.get_unary_ops().compile(tc, os, indent, arg_reg);
           nbytes_of_args_on_stack += 8;
           continue;
         }
+        // argument not passed through register
         // push identifier on the stack
         if (arg_resolved.is_const()) {
           toc::asm_push(arg, os, indent,
@@ -205,18 +207,20 @@ public:
           continue;
         }
         if (arg.get_unary_ops().is_empty()) {
+          // check if argument size is register size
           if (arg_resolved.tp.size() == tc.get_type_default().size()) {
             toc::asm_push(arg, os, indent, arg_resolved.id_nasm);
             nbytes_of_args_on_stack += 8;
             continue;
           }
           // value to be pushed is not a 64 bit value
-          // push can only be done with 64 or 16 bits values
+          // push can only be done with 64 or 16 bits values on x86_64
           const string &reg{tc.alloc_scratch_register(arg, os, indent)};
           tc.asm_cmd(arg, os, indent, "mov", reg, arg_resolved.id_nasm);
           toc::asm_push(arg, os, indent, reg);
           tc.free_scratch_register(os, indent, reg);
           nbytes_of_args_on_stack += 8;
+          //? what about 16 bit values
           continue;
         }
         // unary ops must be applied
@@ -254,10 +258,10 @@ public:
     toc::indent(os, indent, true);
     func.source_def_comment_to(os);
 
-    // create unique labels for in-lined functions based on the location the
-    // source where the call occurred
+    // create unique labels for in-lined functions based on location of source
+    // where the call occurred
     const string &call_path{tc.get_inline_call_path(tok())};
-    const string &src_loc{tc.source_location_for_label(tok())};
+    const string &src_loc{tc.source_location_for_use_in_label(tok())};
     const string &new_call_path{
         call_path.empty() ? src_loc : (src_loc + "_" + call_path)};
     const string &ret_jmp_label{func_nm + "_" + new_call_path + "_end"};
@@ -305,6 +309,7 @@ public:
         toc::indent(os, indent + 1, true);
         os << "alias " << param.identifier() << " -> " << arg_reg << endl;
         // compile expression and store result in 'arg_reg'
+        // note. 'unary_ops' are part of 'expr_ops_list'
         arg.compile(tc, os, indent + 1, arg_reg);
         // alias parameter name to the register containing its value
         aliases_to_add.emplace_back(param.identifier(), arg_reg);
@@ -312,40 +317,44 @@ public:
       }
 
       // argument is not an expression
+      // check if argument is passed through register
       if (arg_reg.empty()) {
+        // argument not passed through register
         // no register allocated for the argument
         // alias parameter name to the argument identifier
         if (arg.get_unary_ops().is_empty()) {
-          const string &id{arg.identifier()};
-          aliases_to_add.emplace_back(param.identifier(), id);
+          const string &arg_id{arg.identifier()};
+          aliases_to_add.emplace_back(param.identifier(), arg_id);
           toc::indent(os, indent + 1, true);
-          os << "alias " << param.identifier() << " -> " << id << endl;
+          os << "alias " << param.identifier() << " -> " << arg_id << endl;
           continue;
         }
         // unary ops must be applied
         const ident_resolved &ir{tc.resolve_identifier(arg, true)};
-        const string &sr{tc.alloc_scratch_register(arg, os, indent + 1)};
-        allocated_registers_in_order.push_back(sr);
-        allocated_scratch_registers.push_back(sr);
-        tc.asm_cmd(param, os, indent + 1, "mov", sr, ir.id_nasm);
-        arg.get_unary_ops().compile(tc, os, indent + 1, sr);
-        aliases_to_add.emplace_back(param.identifier(), sr);
+        const string &scratch_reg{
+            tc.alloc_scratch_register(arg, os, indent + 1)};
+        allocated_registers_in_order.push_back(scratch_reg);
+        allocated_scratch_registers.push_back(scratch_reg);
+        tc.asm_cmd(param, os, indent + 1, "mov", scratch_reg, ir.id_nasm);
+        arg.get_unary_ops().compile(tc, os, indent + 1, scratch_reg);
+        aliases_to_add.emplace_back(param.identifier(), scratch_reg);
         toc::indent(os, indent + 1, true);
-        os << "alias " << param.identifier() << " -> " << sr << endl;
+        os << "alias " << param.identifier() << " -> " << scratch_reg << endl;
         continue;
       }
+      // argument passed through register
       // alias parameter name to the register
       aliases_to_add.emplace_back(param.identifier(), arg_reg);
       toc::indent(os, indent + 1, true);
       os << "alias " << param.identifier() << " -> " << arg_reg << endl;
-      // move argument to register
+      // move argument to register specified in param
       const ident_resolved &ir{tc.resolve_identifier(arg, true)};
       if (ir.is_const()) {
-        // const ident_resolved &arg_r{tc.resolve_identifier(arg, true)};
         tc.asm_cmd(param, os, indent + 1, "mov", arg_reg,
                    arg.get_unary_ops().as_string() + ir.id_nasm);
         continue;
       }
+      // not a const, move argument to register
       tc.asm_cmd(param, os, indent + 1, "mov", arg_reg, ir.id_nasm);
       arg.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
     }

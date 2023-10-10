@@ -171,7 +171,7 @@ public:
 
   [[nodiscard]] inline auto cmp_bgn_label(const toc &tc) const -> string {
     const string &call_path{tc.get_inline_call_path(tok())};
-    return "cmp_" + tc.source_location_for_label(tok()) +
+    return "cmp_" + tc.source_location_for_use_in_label(tok()) +
            (call_path.empty() ? "" : "_" + call_path);
   }
 

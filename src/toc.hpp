@@ -284,7 +284,7 @@ public:
     return types_.get_const_ref(name);
   }
 
-  inline auto source_location_for_label(const token &tk) const -> string {
+  inline auto source_location_for_use_in_label(const token &tk) const -> string {
     size_t char_in_line{};
     const size_t n{line_number_for_char_index(
         tk.char_index(), source_str_.c_str(), char_in_line)};
