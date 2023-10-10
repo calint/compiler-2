@@ -1,10 +1,9 @@
 field   hello = "hello world from baz\n"
 field   input = "............................................................"
-field prompt1 = "enter name: "
+field prompt1 = "enter name:\n"
 field prompt2 = "that is not a name.\n"
 field prompt3 = "hello "
-field      nl = "\n"
-field     dot = "."
+field   dot_nl = ".\n"
 
 func inline exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
@@ -72,7 +71,6 @@ func inline main {
         }
         print(prompt3.len, prompt3)
         print(len, input)
-        print(dot.len, dot)
-        print(nl.len, nl)
+        print(dot_nl.len, dot_nl)
     }
 }
