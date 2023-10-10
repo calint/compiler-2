@@ -8,18 +8,33 @@ class stmt_def_field;
 class stmt_def_type;
 
 struct var_meta final {
-  string name;
+  string name{};
   const type &tp;
-  token declared_at;
-  int stack_idx{};   // location relative to rbp
-  string nasm_ident; // nasm usable literal
-  bool initiated{};  // true if variable has been initiated
+  token declared_at{};
+  int stack_idx{};     // location relative to rbp
+  string nasm_ident{}; // nasm usable literal
+  bool initiated{};    // true if variable has been initiated
 };
 
 class frame final {
+  string name_{};      // optional name
+  string call_path_{}; // a unique path of source locations of the inlined call
+  size_t allocated_stack_{}; // number of bytes used on the stack by this frame
+  lut<var_meta> vars_{};     // variables declared in this frame
+  lut<string>
+      aliases_{}; // aliases that refers to previous frame(s) alias or variable
+  string func_ret_label_{}; // the label to jump to when exiting an inlined
+                            // function
+  string func_ret_var_{};   // the variable that contains the return value
+  bool func_is_inline_{};
+
 public:
   enum class frame_type { FUNC, BLOCK, LOOP };
 
+private:
+  frame_type type_{frame_type::FUNC}; // frame type
+
+public:
   inline frame(string name, const frame_type tpe, string call_path = "",
                string func_ret_label = "", const bool func_is_inline = false,
                string func_ret_var = "") noexcept
@@ -104,31 +119,18 @@ public:
   inline auto func_is_inline() const -> bool { return func_is_inline_; }
 
   inline auto func_ret_var() const -> const string & { return func_ret_var_; }
-
-private:
-  string name_{};      // optional name
-  string call_path_{}; // a unique path of source locations of the inlined call
-  size_t allocated_stack_{}; // number of bytes used on the stack by this frame
-  lut<var_meta> vars_{};     // variables declared in this frame
-  lut<string>
-      aliases_{}; // aliases that refers to previous frame(s) alias or variable
-  string func_ret_label_{}; // the label to jump to when exiting an inlined
-                            // function
-  string func_ret_var_{};   // the variable that contains the return value
-  bool func_is_inline_{};
-  frame_type type_{frame_type::FUNC}; // frame type
 };
 
 struct field_meta final {
   const stmt_def_field *def{};
-  const token declared_at;
+  const token declared_at{};
   const bool is_str{};
 };
 
 struct func_meta final {
   const type &tp;
   const stmt_def_func *def{};
-  const token declared_at;
+  const token declared_at{};
 };
 
 struct call_meta final {
@@ -139,16 +141,16 @@ struct call_meta final {
 
 struct type_meta final {
   const stmt_def_type &def;
-  const token declared_at;
+  const token declared_at{};
   const type &tp;
 };
 
 struct ident_resolved final {
   enum class ident_type { CONST, VAR, REGISTER, FIELD, IMPLIED };
 
-  string id;
-  string id_nasm;
-  long int const_value{};
+  string id{};
+  string id_nasm{};
+  long const_value{};
   const type &tp;
   ident_type ident_type{ident_type::CONST};
 
@@ -1411,14 +1413,14 @@ private:
     }
 
     char *ep{};
-    const long int const_value{strtol(id.c_str(), &ep, 10)};
+    const long const_value{strtol(id.c_str(), &ep, 10)};
     if (!*ep) {
       return {ident, id, const_value, get_type_default(),
               ident_resolved::ident_type::CONST};
     }
 
     if (id.starts_with("0x")) { // hex
-      const long int value{strtol(id.c_str() + 2, &ep, 16)};
+      const long value{strtol(id.c_str() + 2, &ep, 16)};
       if (!*ep) {
         return {ident, id, value, get_type_default(),
                 ident_resolved::ident_type::CONST};
@@ -1426,7 +1428,7 @@ private:
     }
 
     if (id.starts_with("0b")) { // binary
-      const long int value{strtol(id.c_str() + 2, &ep, 2)};
+      const long value{strtol(id.c_str() + 2, &ep, 2)};
       if (!*ep) {
         return {ident, id, value, get_type_default(),
                 ident_resolved::ident_type::CONST};

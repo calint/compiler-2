@@ -309,7 +309,7 @@ private:
     const ident_resolved &src_resolved{tc.resolve_identifier(src, true)};
     if (src_resolved.is_const()) {
       tc.asm_cmd(src, os, indent, "mov", dst.id_nasm,
-                 src.get_unary_ops().as_string() + src_resolved.id_nasm);
+                 src.get_unary_ops().to_string() + src_resolved.id_nasm);
       return;
     }
     tc.asm_cmd(src, os, indent, "mov", dst.id_nasm, src_resolved.id_nasm);
@@ -339,7 +339,7 @@ private:
     if (dst.is_register()) {
       if (src_resolved.is_const()) {
         tc.asm_cmd(src, os, indent, "imul", dst.id_nasm,
-                   src.get_unary_ops().as_string() + src_resolved.id_nasm);
+                   src.get_unary_ops().to_string() + src_resolved.id_nasm);
         return;
       }
       const unary_ops &uops{src.get_unary_ops()};
@@ -359,7 +359,7 @@ private:
       const string &reg{tc.alloc_scratch_register(src, os, indent)};
       tc.asm_cmd(src, os, indent, "mov", reg, dst.id_nasm);
       tc.asm_cmd(src, os, indent, "imul", reg,
-                 src.get_unary_ops().as_string() + src_resolved.id_nasm);
+                 src.get_unary_ops().to_string() + src_resolved.id_nasm);
       tc.asm_cmd(src, os, indent, "mov", dst.id_nasm, reg);
       tc.free_scratch_register(os, indent, reg);
       return;
@@ -395,7 +395,7 @@ private:
     const ident_resolved &src_resolved{tc.resolve_identifier(src, true)};
     if (src_resolved.is_const()) {
       tc.asm_cmd(src, os, indent, op, dst.id_nasm,
-                 src.get_unary_ops().as_string() + src_resolved.id_nasm);
+                 src.get_unary_ops().to_string() + src_resolved.id_nasm);
       return;
     }
     const unary_ops &uops{src.get_unary_ops()};
@@ -427,7 +427,7 @@ private:
     const ident_resolved &src_resolved{tc.resolve_identifier(src, true)};
     if (src_resolved.is_const()) {
       tc.asm_cmd(src, os, indent, op, dst.id_nasm,
-                 src.get_unary_ops().as_string() + src_resolved.id_nasm);
+                 src.get_unary_ops().to_string() + src_resolved.id_nasm);
       return;
     }
     const unary_ops &uops{src.get_unary_ops()};
@@ -463,7 +463,7 @@ private:
     const ident_resolved &src_resolved{tc.resolve_identifier(src, true)};
     if (src_resolved.is_const()) {
       tc.asm_cmd(src, os, indent, op, dst.id_nasm,
-                 src.get_unary_ops().as_string() + src_resolved.id_nasm);
+                 src.get_unary_ops().to_string() + src_resolved.id_nasm);
       return;
     }
     if (src_resolved.id_nasm == "rcx") {
@@ -555,7 +555,7 @@ private:
       os << "cqo" << endl;
       const string &r{tc.alloc_scratch_register(src, os, indent)};
       tc.asm_cmd(src, os, indent, "mov", r,
-                 src.get_unary_ops().as_string() + src_resolved.id_nasm);
+                 src.get_unary_ops().to_string() + src_resolved.id_nasm);
       toc::indent(os, indent, false);
       os << "idiv " << r << endl;
       tc.free_scratch_register(os, indent, r);

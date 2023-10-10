@@ -3,8 +3,8 @@
 [ ] string type
 [ ] var str="hello world"
 [ ] var len=str.len
-[!] qa/t63 sometimes fails when run in batch. examine t63.py
-    => 'out' and 't63.out' don't differ when it fails (racing condition?)
+[x] qa/t63 sometimes fails when run in batch. examine t63.py
+    => error in t63.py
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
 [ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names

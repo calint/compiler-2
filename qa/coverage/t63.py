@@ -2,17 +2,24 @@
 
 import subprocess
 
-def send_and_receive(input_line, process):
-    process.stdin.write(input_line)
-    process.stdin.flush()
-    output = process.stdout.readline()
-    print(output, end='')
+process = subprocess.Popen(['./gen'],
+                           stdin=subprocess.PIPE,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           universal_newlines=True)
 
-process = subprocess.Popen(['./gen'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-
-send_and_receive('bob\n', process)
-send_and_receive('charlie\n', process)
-send_and_receive('\n', process)
+print(process.stdout.readline(), end='') # hello
+print(process.stdout.readline(), end='') # enter name
+process.stdin.write('bob\n')
+process.stdin.flush()
+print(process.stdout.readline(), end='') # not a name
+print(process.stdout.readline(), end='') # enter name
+process.stdin.write('charlie\n')
+process.stdin.flush()
+print(process.stdout.readline(), end='') # hello charlie
+print(process.stdout.readline(), end='') # enter name
+process.stdin.write('\n')
+process.stdin.flush()
 
 process.stdin.close()
 process.stdout.close()

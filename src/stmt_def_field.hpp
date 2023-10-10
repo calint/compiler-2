@@ -59,7 +59,7 @@ public:
       return;
     }
     os << " dq ";
-    os << uops_.as_string();
+    os << uops_.to_string();
     initial_value_.compile_to(os);
     os << endl;
   }

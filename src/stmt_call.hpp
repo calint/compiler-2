@@ -188,7 +188,7 @@ public:
           // move the identifier to the requested register
           if (arg_resolved.is_const()) {
             tc.asm_cmd(arg, os, indent, "mov", arg_reg,
-                       arg.get_unary_ops().as_string() + arg_resolved.id_nasm);
+                       arg.get_unary_ops().to_string() + arg_resolved.id_nasm);
             nbytes_of_args_on_stack += 8;
             continue;
           }
@@ -202,7 +202,7 @@ public:
         // push identifier on the stack
         if (arg_resolved.is_const()) {
           toc::asm_push(arg, os, indent,
-                        arg.get_unary_ops().as_string() + arg_resolved.id_nasm);
+                        arg.get_unary_ops().to_string() + arg_resolved.id_nasm);
           nbytes_of_args_on_stack += 8;
           continue;
         }
@@ -351,7 +351,7 @@ public:
       const ident_resolved &ir{tc.resolve_identifier(arg, true)};
       if (ir.is_const()) {
         tc.asm_cmd(param, os, indent + 1, "mov", arg_reg,
-                   arg.get_unary_ops().as_string() + ir.id_nasm);
+                   arg.get_unary_ops().to_string() + ir.id_nasm);
         continue;
       }
       // not a const, move argument to register

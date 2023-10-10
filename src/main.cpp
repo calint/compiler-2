@@ -128,7 +128,7 @@ inline void unary_ops::compile(toc & /*tc*/, ostream &os, size_t indent_level,
       //			os<<"xor "<<dst_resolved<<",1"<<endl;
     } else {
       throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                            to_string(__LINE__));
+                            std::to_string(__LINE__));
     }
   }
 }

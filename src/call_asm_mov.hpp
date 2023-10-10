@@ -34,7 +34,7 @@ public:
     if (src.is_const()) {
       // a constant
       tc.asm_cmd(*this, os, indent, "mov", dst_r.id_nasm,
-                 src_arg.get_unary_ops().as_string() + src.id_nasm);
+                 src_arg.get_unary_ops().to_string() + src.id_nasm);
       return;
     }
     // variable, register or field

@@ -259,8 +259,8 @@ private:
     is_expression_ = true;
   }
 
-  inline static auto eval_constant(const long int lh, const string &op,
-                                   const long int rh) -> bool {
+  inline static auto eval_constant(const long lh, const string &op,
+                                   const long rh) -> bool {
     if (op == "==") {
       return lh == rh;
     }
@@ -374,7 +374,7 @@ private:
 
     const ident_resolved &id_r{tc.resolve_identifier(exp, true)};
     if (id_r.is_const()) {
-      return exp.get_unary_ops().as_string() + id_r.id_nasm;
+      return exp.get_unary_ops().to_string() + id_r.id_nasm;
     }
 
     if (exp.get_unary_ops().is_empty()) {

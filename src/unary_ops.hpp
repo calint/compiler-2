@@ -55,11 +55,11 @@ public:
 
   [[nodiscard]] inline auto is_empty() const -> bool { return ops_.empty(); }
 
-  [[nodiscard]] inline auto as_string() const -> string {
+  [[nodiscard]] inline auto to_string() const -> string {
     return {ops_.begin(), ops_.end()};
   }
 
-  [[nodiscard]] inline auto evaluate_constant(long int v) const -> long int {
+  [[nodiscard]] inline auto evaluate_constant(long v) const -> long {
     size_t i{ops_.size()};
     while (i--) {
       switch (ops_[i]) {
@@ -72,7 +72,7 @@ public:
         //			case'!':v=v^1;break;
       default:
         throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                              to_string(__LINE__));
+                              std::to_string(__LINE__));
       }
     }
     return v;
