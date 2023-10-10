@@ -107,7 +107,7 @@ public:
       }
 
       precedence = next_precedence;
-      const char ch = tz.next_char(); // read the peeked operator
+      const char ch{tz.next_char()}; // read the peeked operator
       if (ch == '<' or ch == '>') {
         tz.next_char(); // one more character for << and >>
       }
@@ -333,7 +333,7 @@ private:
       return;
     }
     // not an expression, either a register or memory location
-    const ident_resolved &src_resolved = tc.resolve_identifier(src, true);
+    const ident_resolved &src_resolved{tc.resolve_identifier(src, true)};
     // imul destination operand must be register
     if (dst.is_register()) {
       if (src_resolved.is_const()) {
@@ -341,7 +341,7 @@ private:
                    src.get_unary_ops().as_string() + src_resolved.id_nasm);
         return;
       }
-      const unary_ops &uops = src.get_unary_ops();
+      const unary_ops &uops{src.get_unary_ops()};
       if (uops.is_empty()) {
         tc.asm_cmd(src, os, indent, "imul", dst.id_nasm, src_resolved.id_nasm);
         return;
@@ -397,7 +397,7 @@ private:
                  src.get_unary_ops().as_string() + src_resolved.id_nasm);
       return;
     }
-    const unary_ops &uops = src.get_unary_ops();
+    const unary_ops &uops{src.get_unary_ops()};
     if (uops.is_empty()) {
       tc.asm_cmd(src, os, indent, op, dst.id_nasm, src_resolved.id_nasm);
       return;
@@ -577,7 +577,7 @@ private:
                                "division because those registers are used");
     }
 
-    const unary_ops &uops = src.get_unary_ops();
+    const unary_ops &uops{src.get_unary_ops()};
     if (uops.is_empty()) {
       const bool rax_allocated{tc.alloc_named_register(src, os, indent, "rax")};
       if (not rax_allocated) {

@@ -47,7 +47,7 @@ public:
     statement::source_to(os);
     if (not keywords_.empty()) {
       os << ":";
-      const size_t n = keywords_.size() - 1;
+      const size_t n{keywords_.size() - 1};
       size_t i{0};
       for (const token &t : keywords_) {
         t.source_to(os);

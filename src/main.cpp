@@ -24,7 +24,7 @@ static void optimize_jumps_1(istream &is, ostream &os);
 static void optimize_jumps_2(istream &is, ostream &os);
 
 auto main(int argc, char *args[]) -> int {
-  const char *src_file_name = argc == 1 ? "prog.baz" : args[1];
+  const char *src_file_name{argc == 1 ? "prog.baz" : args[1]};
   string src;
   try {
     src = read_file_to_string(src_file_name);
@@ -90,7 +90,7 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &t)
     -> unique_ptr<statement> {
 
   unary_ops uops{t};
-  token tk = t.next_token();
+  token tk{t.next_token()};
   if (tk.is_name("")) {
     throw compiler_exception(tk, "unexpected empty expression");
   }

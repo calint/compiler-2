@@ -1,3 +1,4 @@
+[ ] qa/t63 sometimes fails when run in batch. examine t63.py
 [x] f(a==1) where argument is a boolean
 [o] var o:object={{1,2},{0,0},1}
 [.] var v : vector = {1, a + b, f() - 1}

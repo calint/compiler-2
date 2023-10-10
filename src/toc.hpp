@@ -219,7 +219,7 @@ public:
   inline void add_field(const statement &st, const string &ident,
                         const stmt_def_field *f, const bool is_str_field) {
     if (fields_.has(ident)) {
-      const field_meta &fld = fields_.get(ident);
+      const field_meta &fld{fields_.get(ident)};
       throw compiler_exception(st.tok(),
                                "field '" + ident + "' already defined at " +
                                    source_location_hr(fld.declared_at));
@@ -230,7 +230,7 @@ public:
   inline void add_func(const statement &st, const string &name,
                        const type &return_type, const stmt_def_func *ref) {
     if (funcs_.has(name)) {
-      const func_meta &func = funcs_.get(name);
+      const func_meta &func{funcs_.get(name)};
       throw compiler_exception(st.tok(),
                                "function '" + name + "' already defined at " +
                                    source_location_hr(func.declared_at));
@@ -410,15 +410,15 @@ public:
                       const bool initiated) {
     // check if variable already declared in this scope
     if (frames_.back().has_var(name)) {
-      const var_meta &var = frames_.back().get_var_const_ref(name);
+      const var_meta &var{frames_.back().get_var_const_ref(name)};
       throw compiler_exception(st.tok(),
                                "variable '" + name + "' already declared at " +
                                    source_location_hr(var.declared_at));
     }
     // check if variable shadows previously declared variable
     const pair<string, frame &> idfrm{get_id_and_frame_for_identifier(name)};
-    const string &id = idfrm.first;
-    const frame &frm = idfrm.second;
+    const string &id{idfrm.first};
+    const frame &frm{idfrm.second};
     if (frm.has_var(id)) {
       const var_meta &var{frm.get_var_const_ref(id)};
       throw compiler_exception(
@@ -1237,8 +1237,8 @@ public:
   inline void set_var_is_initiated(const string &name) {
     const baz_ident bid{name};
     pair<string, frame &> idfrm{get_id_and_frame_for_identifier(bid.id_base())};
-    const string &id = idfrm.first;
-    frame &frm = idfrm.second;
+    const string &id{idfrm.first};
+    frame &frm{idfrm.second};
     // is 'id_nasm' a variable?
     if (frm.has_var(id)) {
       frm.get_var_ref(id).initiated = true;
@@ -1367,12 +1367,12 @@ private:
 
     // is 'id_nasm' a variable?
     if (frames_[i].has_var(id)) {
-      const var_meta &var = frames_[i].get_var_const_ref(id);
+      const var_meta &var{frames_[i].get_var_const_ref(id)};
       if (must_be_initiated and not var.initiated) {
         throw compiler_exception(st.tok(), "variable '" + var.name +
                                                "' is not initiated");
       }
-      const string &acc = var.tp.accessor(st.tok(), bid.path(), var.stack_idx);
+      const string &acc{var.tp.accessor(st.tok(), bid.path(), var.stack_idx)};
       return {ident, acc, 0, var.tp, ident_resolved::ident_type::VAR};
     }
 
@@ -1397,7 +1397,7 @@ private:
         return {ident, id + "." + after_dot, 0, get_type_default(),
                 ident_resolved::ident_type::IMPLIED};
       }
-      const field_meta &fm = fields_.get_const_ref(id);
+      const field_meta &fm{fields_.get_const_ref(id)};
       if (fm.is_str) {
         return {ident, id, 0, get_type_default(),
                 ident_resolved::ident_type::FIELD};

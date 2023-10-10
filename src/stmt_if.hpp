@@ -58,7 +58,7 @@ public:
     branch.source_to(os);
     // output the remaining 'else if' branches
     const size_t n{branches_.size()};
-    for (size_t i = 1; i < n; i++) {
+    for (size_t i{1}; i < n; i++) {
       const stmt_if_branch &br{branches_[i]};
       // 'else if' tokens as read from source
       else_if_tokens_[((i - 1)) << 1U].source_to(os);
@@ -86,7 +86,7 @@ public:
     const size_t n{branches_.size()};
 
     bool branch_evaluated_to_true{false};
-    for (size_t i = 0; i < n; i++) {
+    for (size_t i{0}; i < n; i++) {
       const stmt_if_branch &e{branches_[i]};
       string jmp_if_false{label_else_branch};
       string jmp_after_if{label_after_if};

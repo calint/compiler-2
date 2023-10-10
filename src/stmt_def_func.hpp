@@ -199,7 +199,7 @@ private:
     // define variables in the called context by mapping arguments to stack
     const size_t n{params_.size()};
     size_t stk_ix{2U << 3U}; // skip [rbp] and [return address] on stack
-    for (size_t i = 0; i < n; i++) {
+    for (size_t i{0}; i < n; i++) {
       const stmt_def_func_param &pm{params_[i]};
       const type &arg_type{pm.get_type()};
       const string &pm_nm{pm.name()};

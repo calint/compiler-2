@@ -33,7 +33,7 @@ public:
       }
     }
     throw compiler_exception(tk, "field '" + name + "' not found in type '" +
-                                 name_ + "'");
+                                     name_ + "'");
   }
 
   [[nodiscard]] inline auto accessor(const token &tk,
@@ -42,7 +42,7 @@ public:
     const pair<size_t, size_t> res{field_size_and_offset(tk, path)};
     const size_t offset{res.second};
     const size_t fldsize{res.first};
-    const int stack_idx = stack_idx_base + int(offset);
+    const int stack_idx{stack_idx_base + int(offset)};
 
     const string &memsize{get_memory_operand_for_size(tk, fldsize)};
 
@@ -63,7 +63,7 @@ public:
       return "byte";
     default:
       throw compiler_exception(tk, "illegal size for memory operand: " +
-                                   to_string(size));
+                                       to_string(size));
     }
   }
 
@@ -105,7 +105,7 @@ private:
         return {tp->fields_.empty() ? size_ : tp->fields_[0].tp.size_, offset};
       }
 
-      const type_field &fld = tp->field(tk, path[path_idx]);
+      const type_field &fld{tp->field(tk, path[path_idx])};
       offset += fld.offset;
       if (fld.tp.is_built_in_) {
         return {fld.tp.size_, offset};

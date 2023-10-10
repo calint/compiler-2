@@ -14,7 +14,7 @@ public:
     }
 
     expr_ops_list e{tc, tz, in_args};
-    set_type(e.get_type());
+    set_type(e.get_type()); //? const ref still valid after move?
     eols_ = move(e);
   }
 

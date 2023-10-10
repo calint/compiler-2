@@ -381,7 +381,7 @@ private:
       return id_r.id_nasm;
     }
 
-    const string &reg = tc.alloc_scratch_register(exp, os, indent);
+    const string &reg{tc.alloc_scratch_register(exp, os, indent)};
     allocated_registers.push_back(reg);
     tc.asm_cmd(exp, os, indent, "mov", reg, id_r.id_nasm);
     exp.get_unary_ops().compile(tc, os, indent, reg);

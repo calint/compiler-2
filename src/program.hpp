@@ -103,7 +103,7 @@ public:
     }
 
     // get the main function and compile
-    const stmt_def_func &main = tc.get_func_or_throw(prg, "main");
+    const stmt_def_func &main{tc.get_func_or_throw(prg, "main")};
     if (not main.is_inline()) {
       throw compiler_exception(main.tok(),
                                "main function must be declared inline");

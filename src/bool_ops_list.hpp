@@ -74,7 +74,7 @@ public:
             return;
           }
 
-          token tk2 = tz.next_token();
+          token tk2{tz.next_token()};
           if (not(tk2.is_name("or") or tk2.is_name("and"))) {
             tz.put_back_token(tk2);
             break;
@@ -185,7 +185,7 @@ public:
     const bool invert{inverted ? not not_token_.is_name("not")
                                : not_token_.is_name("not")};
     const size_t n{bools_.size()};
-    for (size_t i = 0; i < n; i++) {
+    for (size_t i{0}; i < n; i++) {
       if (bools_[i].index() == 1) {
         //
         // stmt_if_bool_ops_list

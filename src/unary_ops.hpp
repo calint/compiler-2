@@ -43,7 +43,7 @@ public:
 
   inline void source_to(ostream &os) const {
     const size_t n{ops_.size()};
-    for (size_t i = 0; i < n; i++) {
+    for (size_t i{0}; i < n; i++) {
       os << ops_[i];
     }
   }

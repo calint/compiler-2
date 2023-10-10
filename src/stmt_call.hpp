@@ -72,7 +72,7 @@ public:
       return;
     }
     os << "(";
-    size_t i = args_.size() - 1;
+    size_t i{args_.size() - 1};
     for (const auto &e : args_) {
       e.source_to(os);
       if (i--) {
@@ -100,7 +100,7 @@ public:
     }
 
     // check that argument types match the parameters
-    for (size_t i = 0; i < args_.size(); i++) {
+    for (size_t i{0}; i < args_.size(); i++) {
       const expr_any &arg{args_[i]};
       const stmt_def_func_param &param{func.param(i)};
       const type &arg_type{arg.get_type()};
@@ -287,7 +287,7 @@ public:
       os << "alias " << from << " -> " << to << endl;
     }
 
-    size_t i = 0;
+    size_t i{0};
     for (const auto &arg : args_) {
       const stmt_def_func_param &param{func.param(i)};
       i++;
@@ -321,7 +321,7 @@ public:
         // no register allocated for the argument
         // alias parameter name to the argument identifier
         if (arg.get_unary_ops().is_empty()) {
-          const string &id = arg.identifier();
+          const string &id{arg.identifier()};
           aliases_to_add.emplace_back(param.identifier(), id);
           toc::indent(os, indent + 1, true);
           os << "alias " << param.identifier() << " -> " << id << endl;
@@ -372,7 +372,7 @@ public:
 
     // free allocated registers in reverse order of allocation
     // NOLINTNEXTLINE(modernize-loop-convert)
-    for (auto it = allocated_registers_in_order.rbegin();
+    for (auto it{allocated_registers_in_order.rbegin()};
          it != allocated_registers_in_order.rend(); ++it) {
       const string &reg{*it};
       if (find(allocated_scratch_registers.begin(),
