@@ -1,9 +1,8 @@
-[ ] qa/t63 sometimes fails when run in batch. examine t63.py
-    => 'out' and 't63.out' don't differ (racing condition?)
-[ ] stmt_call: check arguments vs parameters in constructor instead of at compile
-[x] f(a==1) where argument is a boolean
 [o] var o:object={{1,2},{0,0},1}
 [.] var v : vector = {1, a + b, f() - 1}
+[!] qa/t63 sometimes fails when run in batch. examine t63.py
+    => 'out' and 't63.out' don't differ when it fails (racing condition?)
+[ ] stmt_call: check arguments vs parameters in constructor instead of at compile
 [ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names
 [ ] handle constants when deducing operand size 
@@ -11,30 +10,8 @@
 [ ] specify whether ok for an op to truncate value instead of error
 [ ] expr_any: deduce expression type to bool or integral
 [ ]   is_const, is_expression, is_bool, is_integral
-stage 4
-[x] function argument types
-[o] built-in types
-[x]   var b:bool=false
-[x]   var c:i8=0
-[x]   var w:i16=0
-[x]   var d:i32=0
-[x]   var q:i64=0   var q=0  i64 is default
-[-]   var x=c+w+d+q gives error, not matching types, no implicit conversion
-[ ]      built-in integer (registers) allowed to size up to 'i64'
-[ ]   var x=i8(c)+i16(w)+i32(w)+i64(d): deduced size i64
-[x]   var c=i gives error, source type size is larger than destination
-[x] user defined types
-[-]   typedef size i64?  alias size i64?
-[-]     var i=1 var s=size(i) i=s gives error i=quad(s) 
-[x]   type vector{x,y} type object{pos:vector,vel:vector,color:i8}
-[-]     var o=object({1,2},{0,0},1)
-[ ]   func object(self,pos,vel,color)
-[x]   type size{value}, var s:size=1, s.value=2 == s=2 
-[x]   type point{x,y}
-[-]   var p:point{1,2}
-[-]   p=point(1,2)
-[x]   p.x=1 == p=1
-      -> type point{x,y}
+[ ] func object(object& self, pos, vel, color) called when 'var o : object = {...}'
+[ ] func foo(object& self, arg) can be called with o.foo(arg)
 [ ] let i=1 creates a constant
 [ ] function arguments relative to rsp allowing writing to variable in previous function context
 [ ] function arguments as references
@@ -78,6 +55,29 @@ stage 4
       call foo
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
+[x] f(a==1) where argument is a boolean
+[x] type size{value}, var s:size=1, s.value=2 == s=2 
+[x] type point{x,y}
+[-] var p:point{1,2}
+[-] p=point(1,2)
+[x] p.x=1 == p=1
+    => type point{x,y}
+[x] function argument types
+[x] built-in types
+[x]   var b:bool=false
+[x]   var c:i8=0
+[x]   var w:i16=0
+[x]   var d:i32=0
+[x]   var q:i64=0   var q=0  i64 is default
+[-]   var x=c+w+d+q gives error, not matching types, no implicit conversion
+[x]      built-in integer (registers) allowed to size up to 'i64'
+[-]   var x=i8(c)+i16(w)+i32(w)+i64(d): deduced size i64
+[x]   var c=i gives error, source type size is larger than destination
+[x] user defined types
+[-]   typedef size i64?  alias size i64?
+[-]     var i=1 var s=size(i) i=s gives error i=quad(s) 
+[x]   type vector{x,y} type object{pos:vector,vel:vector,color:i8}
+[-]     var o=object({1,2},{0,0},1)
 [-] bool_op_list use cmovexx when assignment
     => simplicity trumps complexity of generating the assembler
 [x] better coverage of bool_op. qa/see coverage-report
