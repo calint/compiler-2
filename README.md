@@ -10,7 +10,7 @@ intention:
 supports:
 * built-in integer types (64, 32, 16, 8 bit)
 * built-in boolean type
-* user defined types (in progress)
+* user defined types
 * inlined functions
 * keywords: inline, func, field, var, loop, if, else, continue, break
 
