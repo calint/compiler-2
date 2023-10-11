@@ -135,18 +135,13 @@ public:
 
   [[nodiscard]] inline auto identifier() const -> const string & override {
     if (eols_.index() == 0) {
-      const expr_ops_list &eol{get<expr_ops_list>(eols_)};
-      return eol.identifier();
+      return get<expr_ops_list>(eols_).identifier();
     }
     if (eols_.index() == 1) {
-      // bool expression
-      const bool_ops_list &eol{get<bool_ops_list>(eols_)};
-      return eol.identifier();
+      return get<bool_ops_list>(eols_).identifier();
     }
     if (eols_.index() == 2) {
-      // bool expression
-      const assign_type_value &eol{get<assign_type_value>(eols_)};
-      return eol.identifier();
+      return get<assign_type_value>(eols_).identifier();
     }
     throw panic_exception("expr_any:2");
   }
