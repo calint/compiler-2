@@ -11,24 +11,23 @@ public:
   inline expr_any(toc &tc, tokenizer &tz, const type &tp, bool in_args)
       : statement{tz.next_whitespace_token()} {
 
+    set_type(tp);
+
     if (not tp.is_built_in()) {
       // destination is not built-in (register) value
       // assume assign type value
       var_ = assign_type_value{tc, tz, tp};
-      set_type(tp);
       return;
     }
 
     if (tp.name() == tc.get_type_bool().name()) {
       // destination is boolean
       var_ = bool_ops_list{tc, tz};
-      set_type(tp);
       return;
     }
 
     // destination is built-in (register) value
     var_ = expr_ops_list{tc, tz, in_args};
-    set_type(tp);
   }
 
   inline expr_any() = default;
@@ -52,8 +51,7 @@ public:
       get<assign_type_value>(var_).source_to(os);
       return;
     default:
-      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                            std::to_string(__LINE__));
+      throw panic_exception("expr_any:4");
     }
   }
 
@@ -122,46 +120,45 @@ public:
   }
 
   [[nodiscard]] inline auto is_expression() const -> bool override {
-    if (var_.index() == 0) {
+    switch (var_.index()) {
+    case 0:
       // number expression
       return get<expr_ops_list>(var_).is_expression();
-    }
-    if (var_.index() == 1) {
+    case 1:
       // bool expression
       return get<bool_ops_list>(var_).is_expression();
+    default:
+      throw panic_exception("expr_any:1");
     }
-    if (var_.index() == 2) {
-      // assign type expression
-      return get<assign_type_value>(var_).is_expression();
-    }
-    throw panic_exception("expr_any:1");
+    // note. 'assign_type_value' cannot be expression
   }
 
   [[nodiscard]] inline auto identifier() const -> const string & override {
-    if (var_.index() == 0) {
+    switch (var_.index()) {
+    case 0:
       return get<expr_ops_list>(var_).identifier();
-    }
-    if (var_.index() == 1) {
+    case 1:
       return get<bool_ops_list>(var_).identifier();
-    }
-    if (var_.index() == 2) {
+    case 2:
       return get<assign_type_value>(var_).identifier();
+    default:
+      throw panic_exception("expr_any:2");
     }
-    throw panic_exception("expr_any:2");
   }
 
   [[nodiscard]] inline auto get_unary_ops() const
       -> const unary_ops & override {
-    if (var_.index() == 0) {
-      const expr_ops_list &eol{get<expr_ops_list>(var_)};
-      return eol.get_unary_ops();
+
+    switch (var_.index()) {
+    case 0:
+      return get<expr_ops_list>(var_).get_unary_ops();
+    case 1:
+      return get<bool_ops_list>(var_).get_unary_ops();
+    default:
+      throw panic_exception("expr_any:3");
     }
-    if (var_.index() == 1) {
-      // bool expression
-      const bool_ops_list &eol{get<bool_ops_list>(var_)};
-      return eol.get_unary_ops(); //? can there be unary ops on bool
-    }
-    throw panic_exception("expr_any:3");
+    // note. 'assign_type_value' does not have 'unary_ops' and cannot be
+    // argument in call
   }
 
   [[nodiscard]] inline auto is_assign_type_value() const -> bool {
