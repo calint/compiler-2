@@ -38,8 +38,11 @@ type point{x, y}
 type object{pos : point, color : i32}
 
 func inline main {
-    var o1 : object = {{1, 2}, 0xff0000}
-    assert(o1.pos.x == 1)
+    var x = 1
+    var y = 2
+
+    var o1 : object = {{x * 10, y}, 0xff0000}
+    assert(o1.pos.x == 10)
     assert(o1.pos.y == 2)
     assert(o1.color == 0xff0000)
 
