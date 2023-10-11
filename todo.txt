@@ -1,7 +1,3 @@
-[x] main:create_statement_from_tokenizer review move(tk) ..
-[x] var v : vector = {1, a + b, f() - 1}
-[o] var o:object={{1,2},{0,0},1}
-[ ] o.pos = v
 [ ] string type
 [ ] var str="hello world"
 [ ] var len=str.len
@@ -55,6 +51,10 @@
       call foo
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
+[x] main:create_statement_from_tokenizer review move(tk) ..
+[x] var v : vector = {1, a + b, f() - 1}
+[x] var o:object={{1,2},{0,0},1}
+[x] o.pos = v
 [x] expr_ops_list: more coverage
     => t65
 [x] qa/t63 sometimes fails when run in batch. examine t63.py
