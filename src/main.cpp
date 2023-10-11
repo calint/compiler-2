@@ -158,25 +158,42 @@ inline void assign_type_value::source_to(ostream &os) const {
   os << '}';
 }
 
-inline void assign_type_value::compile_recursive(const assign_type_value &atv,
-                                                 toc &tc, ostream &os,
-                                                 size_t indent,
-                                                 const string &dst,
-                                                 const type &tp) {
+inline void
+assign_type_value::compile_recursive(const assign_type_value &atv, toc &tc,
+                                     ostream &os, size_t indent,
+                                     [[maybe_unused]] const string &src,
+                                     const string &dst, const type &dst_type) {
   tc.source_comment(atv, os, indent);
   if (not atv.tok().is_name("")) {
-    const string &tknm = atv.tok().name();
     // e.g. obj.pos = p
+    const string &tknm = atv.tok().name();
     const ident_resolved &id_res{tc.resolve_identifier(atv, true)};
-    if (id_res.tp.name() != tp.name()) {
-      throw compiler_exception(atv.tok(), "cannot assign '" + tknm + "' to '" +
-                                              dst + "' because type of '" +
-                                              tknm + "' is '" +
-                                              id_res.tp.name() + "' and '" +
-                                              dst + "' is '" + tp.name() + "'");
+    if (id_res.tp.name() != dst_type.name()) {
+      throw compiler_exception(
+          atv.tok(), "cannot assign '" + tknm + "' to '" + dst + "' because '" +
+                         tknm + "' is '" + id_res.tp.name() + "' and '" + dst +
+                         "' is '" + dst_type.name() + "'");
     }
+    const vector<type_field> &flds{dst_type.fields()};
+    const size_t n{flds.size()};
+    for (size_t i{0}; i < n; i++) {
+      const type_field &fld{flds[i]};
+      if (fld.tp.is_built_in()) {
+        const string &src_resolved{
+            tc.resolve_identifier(atv, tknm + "." + fld.name, false).id_nasm};
+        const string &dst_resolved{
+            tc.resolve_identifier(atv, dst + "." + fld.name, false).id_nasm};
+        tc.asm_cmd(atv, os, indent, "mov", dst_resolved, src_resolved);
+        continue;
+      }
+      compile_recursive(atv.exprs_[i]->as_assign_type_value(), tc, os,
+                        indent + 1, "", dst + "." + fld.name, fld.tp);
+    }
+    return;
   }
-  const vector<type_field> &flds{tp.fields()};
+
+  // e.g. obj.pos = {x, y, z}
+  const vector<type_field> &flds{dst_type.fields()};
   const size_t n{flds.size()};
   for (size_t i{0}; i < n; i++) {
     const type_field &fld{flds[i]};
@@ -185,14 +202,14 @@ inline void assign_type_value::compile_recursive(const assign_type_value &atv,
       continue;
     }
     compile_recursive(atv.exprs_[i]->as_assign_type_value(), tc, os, indent + 1,
-                      dst + "." + fld.name, fld.tp);
+                      "", dst + "." + fld.name, fld.tp);
   }
 }
 
 inline void assign_type_value::compile(toc &tc, ostream &os, size_t indent,
                                        const string &dst) const {
   const type &tp{get_type()};
-  assign_type_value::compile_recursive(*this, tc, os, indent + 1, dst, tp);
+  assign_type_value::compile_recursive(*this, tc, os, indent + 1, "", dst, tp);
 }
 
 // inline const type&statement::get_type(toc&tc)const{

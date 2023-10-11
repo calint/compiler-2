@@ -15,14 +15,16 @@ type position {x, y}
 type object { pos : vector, vel : vector, valid : bool }
 
 func inline main {
-    var a : i32 = 10
-    var pos : vector = {a, a + 1, 12, 13}
-    assert(pos.x == 10)
-    assert(pos.y == 11)
-    assert(pos.z == 12)
-    assert(pos.w == 13)
+    var x : i32 = 10
+    var v1 : vector = {x, 2 * x, 12, 13}
+    assert(v1.x == 10)
+    assert(v1.y == 20)
+    assert(v1.z == 12)
+    assert(v1.w == 13)
 
-    var obj : object = {{a + a, 2, 3, 4}, {5, 6, 7, 8}, true}
+    var v2 : vector = v1
+
+    var obj : object = {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
     assert(obj.pos.x == 20)
     assert(obj.pos.y == 2)
     assert(obj.pos.z == 3)
@@ -33,6 +35,12 @@ func inline main {
     assert(obj.vel.w == 8)
     assert(obj.valid == true)
 
-    var p : position = {1, 2}
+    var p : vector = {-1, -2, -3, -4}
     obj.pos = p
+    assert(obj.pos.x == -1)
+    assert(obj.pos.y == -2)
+    assert(obj.pos.z == -3)
+    assert(obj.pos.w == -4)
+
+#    var o2 : object = {p, {-11, -12, -13, -14}, x == 10}
 }
