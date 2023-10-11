@@ -44,7 +44,7 @@ public:
         type_.add_field(fld.tok(), fld.name(), tp);
       }
     }
-    tc.add_type(*this, type_);
+    tc.add_type(name_, type_);
   }
 
   inline stmt_def_type() = default;

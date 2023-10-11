@@ -8,6 +8,11 @@ struct type_field final {
 };
 
 class type final {
+  string name_{};
+  size_t size_{};
+  vector<type_field> fields_{};
+  bool is_built_in_{};
+
 public:
   inline type(string name, const size_t size, const bool is_built_in)
       : name_{move(name)}, size_{size}, is_built_in_{is_built_in} {}
@@ -25,8 +30,10 @@ public:
     fields_.emplace_back(type_field{name, tp, size_});
     size_ += tp.size_;
   }
+
   [[nodiscard]] inline auto field(const token &tk, const string &name) const
       -> const type_field & {
+
     for (const type_field &fld : fields_) {
       if (fld.name == name) {
         return fld;
@@ -39,6 +46,7 @@ public:
   [[nodiscard]] inline auto accessor(const token &tk,
                                      const vector<string> &path,
                                      const int stack_idx_base) const -> string {
+
     const pair<size_t, size_t> res{field_size_and_offset(tk, path)};
     const size_t offset{res.second};
     const size_t fldsize{res.first};
@@ -82,10 +90,13 @@ public:
     size_ = 0;
   }
 
+  inline const vector<type_field> &fields() const { return fields_; }
+
 private:
   [[nodiscard]] inline auto
   field_size_and_offset(const token &tk, const vector<string> &path) const
       -> pair<size_t, size_t> {
+
     if (path.size() == 1) {
       // path contains only a reference to the variable
       // find first primitive type
@@ -114,9 +125,4 @@ private:
       path_idx++;
     }
   }
-
-  string name_{};
-  size_t size_{};
-  vector<type_field> fields_{};
-  bool is_built_in_{};
 };

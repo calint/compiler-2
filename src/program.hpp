@@ -21,18 +21,18 @@ class program final {
 
 public:
   inline explicit program(const string &source) : tc_{source} {
+    const token &prgtk{prg.tok()};
     // add built-in assembler calls
     const vector<string> assembler_funcs{"mov", "syscall"};
     for (const string &str : assembler_funcs) {
-      tc_.add_func(prg, str, type_void, nullptr);
+      tc_.add_func(prgtk, str, type_void, nullptr);
     }
-
-    tc_.add_type(prg, type_i64);
-    tc_.add_type(prg, type_i32);
-    tc_.add_type(prg, type_i16);
-    tc_.add_type(prg, type_i8);
-    tc_.add_type(prg, type_bool);
-    tc_.add_type(prg, type_void);
+    tc_.add_type(prgtk, type_i64);
+    tc_.add_type(prgtk, type_i32);
+    tc_.add_type(prgtk, type_i16);
+    tc_.add_type(prgtk, type_i8);
+    tc_.add_type(prgtk, type_bool);
+    tc_.add_type(prgtk, type_void);
 
     tc_.set_type_void(type_void);
     tc_.set_type_bool(type_bool);

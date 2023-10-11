@@ -56,7 +56,7 @@ public:
     } else {
       set_type(tc.get_type_void());
     }
-    tc.add_func(*this, name_.name(), get_type(), this);
+    tc.add_func(name_, name_.name(), get_type(), this);
     tc.enter_func(name(), "", "", false,
                   returns().empty() ? "" : returns()[0].name());
     vector<string> allocated_named_registers{};

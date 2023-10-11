@@ -15,6 +15,7 @@ using namespace std;
 #include "call_asm_mov.hpp"
 #include "call_asm_syscall.hpp"
 #include "compiler_exception.hpp"
+#include "expr_any.hpp"
 #include "program.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
@@ -67,7 +68,7 @@ auto main(int argc, char *args[]) -> int {
 
 // called from stmt_block to solve circular dependencies with 'loop', 'if' and
 // 'calls'
-inline auto create_statement_from_tokenizer(toc &tc, token tk, unary_ops uops,
+inline auto create_statement_from_tokenizer(toc &tc, token tk, unary_ops &uops,
                                             tokenizer &t)
     -> unique_ptr<statement> {
   if (tk.is_name("loop")) {
@@ -104,13 +105,20 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &t)
   }
   if (t.is_peek_char('(')) {
     // i.e.  f(...)
-    return create_statement_from_tokenizer(tc, move(tk), move(uops), t);
+    return create_statement_from_tokenizer(tc, move(tk), uops, t);
   }
   // i.e. 0x80, rax, identifiers
-  unique_ptr<statement> st{make_unique<statement>(move(tk), move(uops))};
+  unique_ptr<statement> st{make_unique<statement>(move(tk), uops)};
   const ident_resolved &ir{tc.resolve_identifier(*st, false)};
   st->set_type(ir.tp);
   return st;
+}
+
+inline auto create_expr_any_from_tokenizer(toc &tc, tokenizer &tz,
+                                           const type &tp, bool in_args)
+    -> unique_ptr<expr_any> {
+
+  return make_unique<expr_any>(tc, tz, tp, in_args);
 }
 
 // solves circular reference unary_ops->toc->statement->unary_ops

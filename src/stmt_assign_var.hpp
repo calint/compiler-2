@@ -11,7 +11,7 @@ public:
       : statement{move(name)}, type_{move(type)} {
 
     const ident_resolved &dst_resolved{tc.resolve_identifier(*this, false)};
-    exp_ = {tc, dst_resolved.tp, tz, false};
+    exp_ = {tc, tz, dst_resolved.tp, false};
     set_type(dst_resolved.tp);
   }
 

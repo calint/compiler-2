@@ -229,15 +229,15 @@ public:
     fields_.put(ident, {f, st.tok(), is_str_field});
   }
 
-  inline void add_func(const statement &st, const string &name,
+  inline void add_func(const token &tk, const string &name,
                        const type &return_type, const stmt_def_func *ref) {
     if (funcs_.has(name)) {
       const func_meta &func{funcs_.get_const_ref(name)};
       const string src_loc{source_location_hr(func.declared_at)};
-      throw compiler_exception(st.tok(), "function '" + name +
-                                             "' already defined at " + src_loc);
+      throw compiler_exception(tk, "function '" + name +
+                                       "' already defined at " + src_loc);
     }
-    funcs_.put(name, {return_type, ref, st.tok()});
+    funcs_.put(name, {return_type, ref, tk});
   }
 
   inline auto get_func_or_throw(const statement &st, const string &name) const
@@ -268,10 +268,9 @@ public:
     return funcs_.get_const_ref(name).tp;
   }
 
-  inline void add_type(const statement &st, const type &tp) {
+  inline void add_type(const token &tk, const type &tp) {
     if (types_.has(tp.name())) {
-      throw compiler_exception(st.tok(),
-                               "type '" + tp.name() + "' already defined");
+      throw compiler_exception(tk, "type '" + tp.name() + "' already defined");
     }
 
     types_.put(tp.name(), tp);

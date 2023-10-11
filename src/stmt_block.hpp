@@ -51,8 +51,9 @@ public:
         stms_.emplace_back(make_unique<statement>(move(tk)));
         stms_.back()->set_type(tc.get_type_void());
       } else { // circular reference resolver
+        unary_ops uops{};
         stms_.emplace_back(
-            create_statement_from_tokenizer(tc, move(tk), {}, tz));
+            create_statement_from_tokenizer(tc, move(tk), uops, tz));
       }
 
       if (is_one_statement_ and not last_statement_considered_no_statment) {

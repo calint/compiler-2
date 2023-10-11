@@ -1,11 +1,20 @@
 #pragma once
+#include "assign_type_value.hpp"
 #include "bool_ops_list.hpp"
 #include "expr_ops_list.hpp"
 
+// holds 'expr_ops_list', 'bool_ops_list', 'assign_type_field'
 class expr_any final : public statement {
+  variant<expr_ops_list, bool_ops_list, assign_type_value> eols_{};
+
 public:
-  inline expr_any(toc &tc, const type &tp, tokenizer &tz, bool in_args)
+  inline expr_any(toc &tc, tokenizer &tz, const type &tp, bool in_args)
       : statement{tz.next_whitespace_token()} {
+
+    if (tz.is_next_char('{')) {
+      eols_ = assign_type_value{tc, tz, tp};
+      return;
+    }
 
     if (tp.name() == tc.get_type_bool().name()) {
       eols_ = bool_ops_list{tc, tz};
@@ -123,7 +132,4 @@ public:
     const bool_ops_list &eol{get<bool_ops_list>(eols_)};
     return eol.get_unary_ops(); //? can there be unary ops on bool
   }
-
-private:
-  variant<expr_ops_list, bool_ops_list> eols_{};
 };

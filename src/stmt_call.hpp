@@ -25,7 +25,7 @@ public:
       size_t i{0};
       const size_t n{func.params().size()};
       for (auto const &param : func.params()) {
-        args_.emplace_back(tc, param.get_type(), tz, true);
+        args_.emplace_back(tc, tz, param.get_type(), true);
         i++;
         if (i < n) {
           if (not tz.is_next_char(',')) {
@@ -50,7 +50,7 @@ public:
           break;
         }
         //? default type because built-in function that takes parameter is 'mov'
-        args_.emplace_back(tc, tc.get_type_default(), tz, true);
+        args_.emplace_back(tc, tz, tc.get_type_default(), true);
         expect_arg = tz.is_next_char(',');
       }
     }
