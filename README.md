@@ -56,9 +56,9 @@ func assert(expr : bool) {
     if not expr exit(1)
 }
 
-type point{x, y}
+type point {x, y}
 
-type object{pos : point, color : i32}
+type object {pos : point, color : i32}
 
 func inline main {
     var x = 1
