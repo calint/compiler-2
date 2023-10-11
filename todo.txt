@@ -1,5 +1,6 @@
+[x] main:create_statement_from_tokenizer review move(tk) ..
+[x] var v : vector = {1, a + b, f() - 1}
 [o] var o:object={{1,2},{0,0},1}
-[.] var v : vector = {1, a + b, f() - 1}
 [ ] o.pos = v
 [ ] string type
 [ ] var str="hello world"

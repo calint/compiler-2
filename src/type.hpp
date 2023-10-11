@@ -90,7 +90,9 @@ public:
     size_ = 0;
   }
 
-  inline const vector<type_field> &fields() const { return fields_; }
+  [[nodiscard]] inline auto fields() const -> const vector<type_field> & {
+    return fields_;
+  }
 
 private:
   [[nodiscard]] inline auto

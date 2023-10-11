@@ -45,7 +45,13 @@ public:
       return;
     }
 
-    // integer expression
+    if (exp_.is_assign_type_value()) {
+      exp_.compile(tc, os, indent, dst_resolved.id);
+      tc.set_var_is_initiated(dst_resolved.id);
+      return;
+    }
+
+    // number expression
 
     // compare generated instructions with and without scratch register
     // select the method that produces least instructions

@@ -51,7 +51,7 @@ public:
         stms_.emplace_back(make_unique<statement>(move(tk)));
         stms_.back()->set_type(tc.get_type_void());
       } else { // circular reference resolver
-        unary_ops uops{};
+        const unary_ops uops{};
         stms_.emplace_back(create_statement_from_tokenizer(tc, tk, tz, uops));
       }
 

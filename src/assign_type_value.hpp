@@ -36,4 +36,11 @@ public:
 
   // implemented in main.cpp
   inline void source_to(ostream &os) const override;
+  inline void compile(toc &tc, ostream &os, size_t indent,
+                      const string &dst = "") const override;
+
+private:
+  inline static void compile_recursive(const assign_type_value &atv, toc &tc,
+                                       ostream &os, size_t indent,
+                                       const string &dst, const type &tp);
 };

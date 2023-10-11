@@ -810,6 +810,7 @@ public:
     }
 
     if (is_operand_memory(src_resolved)) {
+      //? todo. this displays nasm identifiers but should be human readable identifiers
       throw compiler_exception(st.tok(), "cannot move '" + src_resolved +
                                              "' to '" + dst_resolved +
                                              "' because it would be truncated");

@@ -39,7 +39,7 @@ auto main(int argc, char *args[]) -> int {
     }
 
     // without jump optimizations
-    //		 p.build(cout);
+    // prg.build(cout);
 
     // with jump optimizations
     stringstream ss1;
@@ -73,25 +73,25 @@ inline auto create_statement_from_tokenizer(toc &tc, const token &tk,
                                             const unary_ops &uops)
     -> unique_ptr<statement> {
   if (tk.is_name("loop")) {
-    return make_unique<stmt_loop>(tc, move(tk), tz);
+    return make_unique<stmt_loop>(tc, tk, tz);
   }
   if (tk.is_name("if")) {
-    return make_unique<stmt_if>(tc, move(tk), tz);
+    return make_unique<stmt_if>(tc, tk, tz);
   }
   if (tk.is_name("mov")) {
-    return make_unique<call_asm_mov>(tc, move(tk), tz);
+    return make_unique<call_asm_mov>(tc, tk, tz);
   }
   if (tk.is_name("syscall")) {
-    return make_unique<call_asm_syscall>(tc, move(tk), tz);
+    return make_unique<call_asm_syscall>(tc, tk, tz);
   }
-  return make_unique<stmt_call>(tc, move(tk), move(uops), tz);
+  return make_unique<stmt_call>(tc, tk, uops, tz);
 }
 
 // called from expr_ops_list to solve circular dependencies with calls
 inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
     -> unique_ptr<statement> {
 
-  unary_ops uops{tz};
+  const unary_ops uops{tz};
   token tk{tz.next_token()};
   if (tk.is_name("")) {
     throw compiler_exception(tk, "unexpected empty expression");
@@ -106,7 +106,7 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
   }
   if (tz.is_peek_char('(')) {
     // i.e.  f(...)
-    return create_statement_from_tokenizer(tc, move(tk), tz, uops);
+    return create_statement_from_tokenizer(tc, tk, tz, uops);
   }
   // i.e. 0x80, rax, identifiers
   unique_ptr<statement> st{make_unique<statement>(move(tk), uops)};
@@ -153,6 +153,31 @@ inline void assign_type_value::source_to(ostream &os) const {
     ea->source_to(os);
   }
   os << '}';
+}
+
+inline void assign_type_value::compile_recursive(const assign_type_value &atv,
+                                                 toc &tc, ostream &os,
+                                                 size_t indent,
+                                                 const string &dst,
+                                                 const type &tp) {
+  tc.source_comment(atv, os, indent);
+  const vector<type_field> &flds{tp.fields()};
+  const size_t n{flds.size()};
+  for (size_t i{0}; i < n; i++) {
+    const type_field &fld{flds[i]};
+    if (fld.tp.is_built_in()) {
+      atv.exprs_[i]->compile(tc, os, indent, dst + "." + fld.name);
+      continue;
+    }
+    compile_recursive(atv.exprs_[i]->as_assign_type_value(), tc, os, indent + 1,
+                      dst + "." + fld.name, fld.tp);
+  }
+}
+
+inline void assign_type_value::compile(toc &tc, ostream &os, size_t indent,
+                                       const string &dst) const {
+  const type &tp{get_type()};
+  assign_type_value::compile_recursive(*this, tc, os, indent + 1, dst, tp);
 }
 
 // inline const type&statement::get_type(toc&tc)const{

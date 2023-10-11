@@ -59,11 +59,12 @@ public:
     tc.source_comment(*this, os, indent);
 
     if (eols_.index() == 0) {
-      // integer expression
+      // number expression
       const expr_ops_list &eol{get<expr_ops_list>(eols_)};
       eol.compile(tc, os, indent, dst);
       return;
     }
+
     if (eols_.index() == 1) {
       // bool expression
       const ident_resolved &dst_resolved{
@@ -106,6 +107,7 @@ public:
       toc::asm_label(*this, os, indent, jmp_to_end);
       return;
     }
+
     if (eols_.index() == 2) {
       // assign type value
       const assign_type_value &atl{get<assign_type_value>(eols_)};
@@ -156,5 +158,13 @@ public:
       return eol.get_unary_ops(); //? can there be unary ops on bool
     }
     throw panic_exception("expr_any:3");
+  }
+
+  [[nodiscard]] inline auto is_assign_type_value() const -> bool {
+    return eols_.index() == 2;
+  }
+
+  [[nodiscard]] inline auto as_assign_type_value() const -> const assign_type_value & {
+    return get<assign_type_value>(eols_);
   }
 };

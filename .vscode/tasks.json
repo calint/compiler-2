@@ -38,7 +38,7 @@
                 "-Wundef",
                 "-Wfloat-equal",
                 "-Wnoexcept",
-                "-Wno-stringop-truncation"
+                "-Wno-stringop-truncation",
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
