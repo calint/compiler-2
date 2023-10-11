@@ -45,12 +45,19 @@ public:
     }
   }
 
-  // implemented in main.cpp
-  inline void source_to(ostream &os) const override;
   inline void compile(toc &tc, ostream &os, size_t indent,
-                      const string &dst = "") const override;
+                      const string &dst) const override {
+    assign_type_value::compile_recursive(*this, tc, os, indent + 1,
+                                         tok().name(), dst, get_type());
+  }
+
+  // implemented in main.cpp due to circular reference
+  //   assign_type_value -> expr_any -> assign_type_value
+  inline void source_to(ostream &os) const override;
 
 private:
+  // implemented in main.cpp due to circular reference
+  //   assign_type_value -> expr_any -> assign_type_value
   inline static void compile_recursive(const assign_type_value &atv, toc &tc,
                                        ostream &os, size_t indent,
                                        const string &src, const string &dst,

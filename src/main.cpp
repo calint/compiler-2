@@ -161,6 +161,7 @@ inline void assign_type_value::source_to(ostream &os) const {
 inline void assign_type_value::compile_recursive(
     const assign_type_value &atv, toc &tc, ostream &os, size_t indent,
     const string &src, const string &dst, const type &dst_type) {
+
   tc.source_comment(atv, os, indent);
   if (not src.empty()) {
     // e.g. obj.pos = p
@@ -205,13 +206,6 @@ inline void assign_type_value::compile_recursive(
                       atv.exprs_[i]->identifier(), dst + "." + fld.name,
                       fld.tp);
   }
-}
-
-inline void assign_type_value::compile(toc &tc, ostream &os, size_t indent,
-                                       const string &dst) const {
-  const type &tp{get_type()};
-  assign_type_value::compile_recursive(*this, tc, os, indent + 1, tok().name(),
-                                       dst, tp);
 }
 
 // inline const type&statement::get_type(toc&tc)const{

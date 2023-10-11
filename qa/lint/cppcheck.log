@@ -1,4 +1,4 @@
-ons 11 okt 2023 12:36:54 CEST
+ons 11 okt 2023 23:22:48 CEST
 Checking ../../src/main.cpp ...
 ../../src/toc.hpp:38:23: performance: Function parameter 'name' should be passed by const reference. [passedByValue]
   inline frame(string name, const frame_type tpe, string call_path = "",
@@ -36,7 +36,7 @@ Checking ../../src/main.cpp ...
 ../../src/lut.hpp:45:14: style: Variable 'e' can be declared as reference to const [constVariable]
     for (el &e : elems_) {
              ^
-../../src/type.hpp:31:29: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/type.hpp:38:29: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
       if (fld.name == name) {
                             ^
 ../../src/lut.hpp:23:26: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
