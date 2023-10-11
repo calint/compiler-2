@@ -77,6 +77,7 @@ SRC=t62 && EXP=0 && eval $RUN
 SRC=t63 && eval $DIFFPY
 SRC=t64 && EXP=0 && eval $RUN
 SRC=t65 && EXP=0 && eval $RUN
+SRC=t66 && EXP=0 && eval $RUN
 
 rm gen gen.o gen.s diff.baz out
 
