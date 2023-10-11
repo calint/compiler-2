@@ -39,19 +39,13 @@ public:
 
     const ident_resolved &dst_resolved{tc.resolve_identifier(*this, false)};
 
-    if (exp_.is_bool()) {
+    if (exp_.is_bool() or exp_.is_assign_type_value()) {
       exp_.compile(tc, os, indent, dst_resolved.id);
       tc.set_var_is_initiated(dst_resolved.id);
       return;
     }
 
-    if (exp_.is_assign_type_value()) {
-      exp_.compile(tc, os, indent, dst_resolved.id);
-      tc.set_var_is_initiated(dst_resolved.id);
-      return;
-    }
-
-    // number expression
+    // number (register) expression
 
     // compare generated instructions with and without scratch register
     // select the method that produces least instructions

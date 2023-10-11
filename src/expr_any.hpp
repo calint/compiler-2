@@ -51,7 +51,7 @@ public:
       get<assign_type_value>(var_).source_to(os);
       return;
     default:
-      throw panic_exception("expr_any:4");
+      throw panic_exception("expr_any:1");
     }
   }
 
@@ -62,7 +62,7 @@ public:
 
     switch (var_.index()) {
     default:
-      throw panic_exception("expr_any:1");
+      throw panic_exception("expr_any:2");
     case 0:
       // number expression
       get<expr_ops_list>(var_).compile(tc, os, indent, dst);
@@ -128,7 +128,7 @@ public:
       // bool expression
       return get<bool_ops_list>(var_).is_expression();
     default:
-      throw panic_exception("expr_any:1");
+      throw panic_exception("expr_any:3");
     }
     // note. 'assign_type_value' cannot be expression
   }
@@ -142,7 +142,7 @@ public:
     case 2:
       return get<assign_type_value>(var_).identifier();
     default:
-      throw panic_exception("expr_any:2");
+      throw panic_exception("expr_any:4");
     }
   }
 
@@ -155,7 +155,7 @@ public:
     case 1:
       return get<bool_ops_list>(var_).get_unary_ops();
     default:
-      throw panic_exception("expr_any:3");
+      throw panic_exception("expr_any:5");
     }
     // note. 'assign_type_value' does not have 'unary_ops' and cannot be
     // argument in call
