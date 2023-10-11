@@ -509,14 +509,12 @@ private:
     if (src.is_expression()) {
       const string &reg{tc.alloc_scratch_register(src, os, indent)};
       src.compile(tc, os, indent, reg);
-      const bool rax_allocated =
-          tc.alloc_named_register(src, os, indent, "rax");
+      const bool rax_allocated{tc.alloc_named_register(src, os, indent, "rax")};
       if (not rax_allocated) {
         toc::asm_push(src, os, indent, "rax");
       }
       tc.asm_cmd(src, os, indent, "mov", "rax", dst.id_nasm);
-      const bool rdx_allocated =
-          tc.alloc_named_register(src, os, indent, "rdx");
+      const bool rdx_allocated{tc.alloc_named_register(src, os, indent, "rdx")};
       if (not rdx_allocated) {
         toc::asm_push(src, os, indent, "rdx");
       }
@@ -540,14 +538,12 @@ private:
     }
     const ident_resolved &src_resolved{tc.resolve_identifier(src, true)};
     if (src_resolved.is_const()) {
-      const bool rax_allocated =
-          tc.alloc_named_register(src, os, indent, "rax");
+      const bool rax_allocated{tc.alloc_named_register(src, os, indent, "rax")};
       if (not rax_allocated) {
         toc::asm_push(src, os, indent, "rax");
       }
       tc.asm_cmd(src, os, indent, "mov", "rax", dst.id_nasm);
-      const bool rdx_allocated =
-          tc.alloc_named_register(src, os, indent, "rdx");
+      const bool rdx_allocated{tc.alloc_named_register(src, os, indent, "rdx")};
       if (not rdx_allocated) {
         toc::asm_push(src, os, indent, "rdx");
       }

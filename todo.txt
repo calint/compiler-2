@@ -1,10 +1,9 @@
 [o] var o:object={{1,2},{0,0},1}
 [.] var v : vector = {1, a + b, f() - 1}
+[ ] o.pos = v
 [ ] string type
 [ ] var str="hello world"
 [ ] var len=str.len
-[x] qa/t63 sometimes fails when run in batch. examine t63.py
-    => error in t63.py
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
 [ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names
@@ -57,6 +56,8 @@
 -------------------------------------------------------------------------------
 [x] expr_ops_list: more coverage
     => t65
+[x] qa/t63 sometimes fails when run in batch. examine t63.py
+    => error in t63.py
 [x] f(a==1) where argument is a boolean
 [x] type size{value}, var s:size=1, s.value=2 == s=2 
 [x] type point{x,y}
