@@ -93,8 +93,12 @@ main:
    push r15
    call assert
    add rsp, 44
-     mov qword[rbp-52], -1
-     mov qword[rbp-44], -2
+     mov r15, qword[rbp-8]
+     mov qword[rbp-52], r15
+     neg qword[rbp-52]
+     mov r15, qword[rbp-16]
+     mov qword[rbp-44], r15
+     neg qword[rbp-44]
      mov r15, qword[rbp-52]
      mov qword[rbp-36], r15
      mov r15, qword[rbp-44]

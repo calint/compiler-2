@@ -175,18 +175,26 @@ main:
    call assert
    add rsp, 44
 ;  p1: qword[rbp-52]
-;  [49:5] var p1 : point = {-1, -2}
-;  [49:9] p1 : point = {-1, -2}
-;  [49:22] {-1, -2}
-;    [49:22] {-1, -2}
-;    [49:23] -1
-;    [49:23] -1
-;    [49:24] p1.x=-1
-     mov qword[rbp-52], -1
-;    [49:27] -2
-;    [49:27] -2
-;    [49:28] p1.y=-2
-     mov qword[rbp-44], -2
+;  [49:5] var p1 : point = {-x, -y}
+;  [49:9] p1 : point = {-x, -y}
+;  [49:22] {-x, -y}
+;    [49:22] {-x, -y}
+;    [49:23] -x
+;    [49:23] -x
+;    [49:24] p1.x=-x
+;    alloc r15
+     mov r15, qword[rbp-8]
+     mov qword[rbp-52], r15
+;    free r15
+     neg qword[rbp-52]
+;    [49:27] -y
+;    [49:27] -y
+;    [49:28] p1.y=-y
+;    alloc r15
+     mov r15, qword[rbp-16]
+     mov qword[rbp-44], r15
+;    free r15
+     neg qword[rbp-44]
 ;  [50:5] o1.pos = p1 
 ;  [50:14] p1 
 ;    [50:14] p1 
