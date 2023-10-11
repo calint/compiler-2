@@ -37,10 +37,19 @@ public:
 
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
-    if (eols_.index() == 0) {
+    switch (eols_.index()) {
+    case 0:
       get<expr_ops_list>(eols_).source_to(os);
-    } else {
+      return;
+    case 1:
       get<bool_ops_list>(eols_).source_to(os);
+      return;
+    case 2:
+      get<assign_type_value>(eols_).source_to(os);
+      return;
+    default:
+      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                            std::to_string(__LINE__));
     }
   }
 
@@ -50,49 +59,59 @@ public:
     tc.source_comment(*this, os, indent);
 
     if (eols_.index() == 0) {
+      // integer expression
       const expr_ops_list &eol{get<expr_ops_list>(eols_)};
       eol.compile(tc, os, indent, dst);
       return;
     }
-
-    // bool expression
-
-    const ident_resolved &dst_resolved{
-        tc.resolve_identifier(*this, dst, false)};
-    const bool_ops_list &eol{get<bool_ops_list>(eols_)};
-    if (not eol.is_expression()) {
-      const ident_resolved &src_resolved{tc.resolve_identifier(eol, false)};
-      tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm,
-                 src_resolved.id_nasm);
-      return;
-    }
-
-    const string &call_path{tc.get_inline_call_path(tok())};
-    const string &src_loc{tc.source_location_for_use_in_label(tok())};
-    const string &postfix{src_loc +
-                          (call_path.empty() ? "" : ("_" + call_path))};
-    const string &jmp_to_if_true{"true_" + postfix};
-    const string &jmp_to_if_false{"false_" + postfix};
-    const string &jmp_to_end{"end_" + postfix};
-    optional<bool> const_eval{
-        eol.compile(tc, os, indent, jmp_to_if_false, jmp_to_if_true, false)};
-    if (const_eval) {
-      if (*const_eval) {
-        toc::asm_label(*this, os, indent, jmp_to_if_true);
-        tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "1");
+    if (eols_.index() == 1) {
+      // bool expression
+      const ident_resolved &dst_resolved{
+          tc.resolve_identifier(*this, dst, false)};
+      const bool_ops_list &eol{get<bool_ops_list>(eols_)};
+      if (not eol.is_expression()) {
+        const ident_resolved &src_resolved{tc.resolve_identifier(eol, false)};
+        tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm,
+                   src_resolved.id_nasm);
         return;
       }
-      // constant evaluation to false
+      // expression
+      const string &call_path{tc.get_inline_call_path(tok())};
+      const string &src_loc{tc.source_location_for_use_in_label(tok())};
+      const string &postfix{src_loc +
+                            (call_path.empty() ? "" : ("_" + call_path))};
+      const string &jmp_to_if_true{"true_" + postfix};
+      const string &jmp_to_if_false{"false_" + postfix};
+      const string &jmp_to_end{"end_" + postfix};
+      optional<bool> const_eval{
+          eol.compile(tc, os, indent, jmp_to_if_false, jmp_to_if_true, false)};
+      if (const_eval) {
+        if (*const_eval) {
+          // constant evaluation to true
+          toc::asm_label(*this, os, indent, jmp_to_if_true);
+          tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "1");
+          return;
+        }
+        // constant evaluation to false
+        toc::asm_label(*this, os, indent, jmp_to_if_false);
+        tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "0");
+        return;
+      }
+      // not constant evaluation
+      toc::asm_label(*this, os, indent, jmp_to_if_true);
+      tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "1");
+      toc::asm_jmp(*this, os, indent, jmp_to_end);
       toc::asm_label(*this, os, indent, jmp_to_if_false);
       tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "0");
+      toc::asm_label(*this, os, indent, jmp_to_end);
       return;
     }
-    toc::asm_label(*this, os, indent, jmp_to_if_true);
-    tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "1");
-    toc::asm_jmp(*this, os, indent, jmp_to_end);
-    toc::asm_label(*this, os, indent, jmp_to_if_false);
-    tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "0");
-    toc::asm_label(*this, os, indent, jmp_to_end);
+    if (eols_.index() == 2) {
+      // assign type value
+      const assign_type_value &atl{get<assign_type_value>(eols_)};
+      atl.compile(tc, os, indent, dst);
+      return;
+    }
   }
 
   [[nodiscard]] inline auto is_bool() const -> bool {
@@ -104,10 +123,12 @@ public:
       const expr_ops_list &eol{get<expr_ops_list>(eols_)};
       return eol.is_expression();
     }
-
-    // bool expression
-    const bool_ops_list &eol{get<bool_ops_list>(eols_)};
-    return eol.is_expression();
+    if (eols_.index() == 1) {
+      // bool expression
+      const bool_ops_list &eol{get<bool_ops_list>(eols_)};
+      return eol.is_expression();
+    }
+    throw panic_exception("expr_any:1");
   }
 
   [[nodiscard]] inline auto identifier() const -> const string & override {
@@ -115,10 +136,12 @@ public:
       const expr_ops_list &eol{get<expr_ops_list>(eols_)};
       return eol.identifier();
     }
-
-    // bool expression
-    const bool_ops_list &eol{get<bool_ops_list>(eols_)};
-    return eol.identifier();
+    if (eols_.index() == 1) {
+      // bool expression
+      const bool_ops_list &eol{get<bool_ops_list>(eols_)};
+      return eol.identifier();
+    }
+    throw panic_exception("expr_any:2");
   }
 
   [[nodiscard]] inline auto get_unary_ops() const
@@ -127,9 +150,11 @@ public:
       const expr_ops_list &eol{get<expr_ops_list>(eols_)};
       return eol.get_unary_ops();
     }
-
-    // bool expression
-    const bool_ops_list &eol{get<bool_ops_list>(eols_)};
-    return eol.get_unary_ops(); //? can there be unary ops on bool
+    if (eols_.index() == 1) {
+      // bool expression
+      const bool_ops_list &eol{get<bool_ops_list>(eols_)};
+      return eol.get_unary_ops(); //? can there be unary ops on bool
+    }
+    throw panic_exception("expr_any:3");
   }
 };

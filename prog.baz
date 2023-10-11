@@ -42,6 +42,8 @@ type vector {x, y : i32, z : i16, w : i8}
 type item { pos : vector, vel : vector, valid : bool }
 
 func inline main {
+    var pos : vector = {10, 11, 12, 13}
+
     # declare 'v' on the stack
     var v : vector = 3    # sets v.x
     v.y = 4

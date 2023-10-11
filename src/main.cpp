@@ -68,30 +68,31 @@ auto main(int argc, char *args[]) -> int {
 
 // called from stmt_block to solve circular dependencies with 'loop', 'if' and
 // 'calls'
-inline auto create_statement_from_tokenizer(toc &tc, token tk, unary_ops &uops,
-                                            tokenizer &t)
+inline auto create_statement_from_tokenizer(toc &tc, const token &tk,
+                                            tokenizer &tz,
+                                            const unary_ops &uops)
     -> unique_ptr<statement> {
   if (tk.is_name("loop")) {
-    return make_unique<stmt_loop>(tc, move(tk), t);
+    return make_unique<stmt_loop>(tc, move(tk), tz);
   }
   if (tk.is_name("if")) {
-    return make_unique<stmt_if>(tc, move(tk), t);
+    return make_unique<stmt_if>(tc, move(tk), tz);
   }
   if (tk.is_name("mov")) {
-    return make_unique<call_asm_mov>(tc, move(tk), t);
+    return make_unique<call_asm_mov>(tc, move(tk), tz);
   }
   if (tk.is_name("syscall")) {
-    return make_unique<call_asm_syscall>(tc, move(tk), t);
+    return make_unique<call_asm_syscall>(tc, move(tk), tz);
   }
-  return make_unique<stmt_call>(tc, move(tk), move(uops), t);
+  return make_unique<stmt_call>(tc, move(tk), move(uops), tz);
 }
 
 // called from expr_ops_list to solve circular dependencies with calls
-inline auto create_statement_from_tokenizer(toc &tc, tokenizer &t)
+inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
     -> unique_ptr<statement> {
 
-  unary_ops uops{t};
-  token tk{t.next_token()};
+  unary_ops uops{tz};
+  token tk{tz.next_token()};
   if (tk.is_name("")) {
     throw compiler_exception(tk, "unexpected empty expression");
   }
@@ -101,11 +102,11 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &t)
       throw compiler_exception(tk, "unexpected comment after unary ops");
     }
     // i.e.  print("hello") # comment
-    return make_unique<stmt_comment>(tc, move(tk), t);
+    return make_unique<stmt_comment>(tc, move(tk), tz);
   }
-  if (t.is_peek_char('(')) {
+  if (tz.is_peek_char('(')) {
     // i.e.  f(...)
-    return create_statement_from_tokenizer(tc, move(tk), uops, t);
+    return create_statement_from_tokenizer(tc, move(tk), tz, uops);
   }
   // i.e. 0x80, rax, identifiers
   unique_ptr<statement> st{make_unique<statement>(move(tk), uops)};
@@ -139,6 +140,19 @@ inline void unary_ops::compile(toc & /*tc*/, ostream &os, size_t indent_level,
                             std::to_string(__LINE__));
     }
   }
+}
+
+inline void assign_type_value::source_to(ostream &os) const {
+  statement::source_to(os);
+  os << '{';
+  size_t i{0};
+  for (const auto &ea : exprs_) {
+    if (i++) {
+      os << ',';
+    }
+    ea->source_to(os);
+  }
+  os << '}';
 }
 
 // inline const type&statement::get_type(toc&tc)const{
