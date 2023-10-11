@@ -24,23 +24,39 @@ func inline main {
 
     var v2 : vector = v1
 
-    var obj : object = {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
-    assert(obj.pos.x == 20)
-    assert(obj.pos.y == 2)
-    assert(obj.pos.z == 3)
-    assert(obj.pos.w == 4)
-    assert(obj.vel.x == 5)
-    assert(obj.vel.y == 6)
-    assert(obj.vel.z == 7)
-    assert(obj.vel.w == 8)
-    assert(obj.valid == true)
+    var o1 : object = {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
+    assert(o1.pos.x == 20)
+    assert(o1.pos.y == 2)
+    assert(o1.pos.z == 3)
+    assert(o1.pos.w == 4)
+    assert(o1.vel.x == 5)
+    assert(o1.vel.y == 6)
+    assert(o1.vel.z == 7)
+    assert(o1.vel.w == 8)
+    assert(o1.valid == true)
 
     var p : vector = {-1, -2, -3, -4}
-    obj.pos = p
-    assert(obj.pos.x == -1)
-    assert(obj.pos.y == -2)
-    assert(obj.pos.z == -3)
-    assert(obj.pos.w == -4)
+    o1.pos = p
+    assert(o1.pos.x == -1)
+    assert(o1.pos.y == -2)
+    assert(o1.pos.z == -3)
+    assert(o1.pos.w == -4)
 
-#    var o2 : object = {p, {-11, -12, -13, -14}, x == 10}
+    var p2 : vector = {-11, -22, -33, -44}
+    var o2 : object = {p, p2, x == 10}
+    assert(o2.pos.x == -1)
+    assert(o2.pos.y == -2)
+    assert(o2.pos.z == -3)
+    assert(o2.pos.w == -4)
+    assert(o2.vel.x == -11)
+    assert(o2.vel.y == -22)
+    assert(o2.vel.z == -33)
+    assert(o2.vel.w == -44)
+    assert(o2.valid == true)
+
+    var o3 : object = o2
+    assert(o3.pos.x == -1)
+    assert(o3.pos.y == -2)
+    assert(o3.pos.z == -3)
+    assert(o3.pos.w == -4)
 }

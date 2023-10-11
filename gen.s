@@ -189,61 +189,61 @@ main:
      mov r15b, byte[rbp-5]
      mov byte[rbp-20], r15b
 ;    free r15
-;  obj: qword[rbp-65]
-;  [27:5] var obj : object = {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
-;  [27:9] obj : object = {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
-;  [27:24] {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
-;    [27:24] {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
-;      [27:25] {x + x, 2, 3, 4}
-;      [27:26] x + x
-;      [27:26] x + x
-;      [27:26] obj.pos.x=x 
+;  o1: qword[rbp-65]
+;  [27:5] var o1 : object = {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
+;  [27:9] o1 : object = {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
+;  [27:23] {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
+;    [27:23] {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
+;      [27:24] {x + x, 2, 3, 4}
+;      [27:25] x + x
+;      [27:25] x + x
+;      [27:25] o1.pos.x=x 
 ;      alloc r15
        movsx r15, dword[rbp-4]
        mov qword[rbp-65], r15
 ;      free r15
-;      [27:30] obj.pos.x+ x
+;      [27:29] o1.pos.x+ x
 ;      alloc r15
        movsx r15, dword[rbp-4]
        add qword[rbp-65], r15
 ;      free r15
-;      [27:33] 2
-;      [27:33] 2
-;      [27:33] obj.pos.y=2
+;      [27:32] 2
+;      [27:32] 2
+;      [27:32] o1.pos.y=2
        mov dword[rbp-57], 2
-;      [27:36] 3
-;      [27:36] 3
-;      [27:36] obj.pos.z=3
+;      [27:35] 3
+;      [27:35] 3
+;      [27:35] o1.pos.z=3
        mov word[rbp-53], 3
-;      [27:39] 4
-;      [27:39] 4
-;      [27:39] obj.pos.w=4
+;      [27:38] 4
+;      [27:38] 4
+;      [27:38] o1.pos.w=4
        mov byte[rbp-51], 4
-;      [27:43] {5, 6, 7, 8}
-;      [27:44] 5
-;      [27:44] 5
-;      [27:44] obj.vel.x=5
+;      [27:42] {5, 6, 7, 8}
+;      [27:43] 5
+;      [27:43] 5
+;      [27:43] o1.vel.x=5
        mov qword[rbp-50], 5
-;      [27:47] 6
-;      [27:47] 6
-;      [27:47] obj.vel.y=6
+;      [27:46] 6
+;      [27:46] 6
+;      [27:46] o1.vel.y=6
        mov dword[rbp-42], 6
-;      [27:50] 7
-;      [27:50] 7
-;      [27:50] obj.vel.z=7
+;      [27:49] 7
+;      [27:49] 7
+;      [27:49] o1.vel.z=7
        mov word[rbp-38], 7
-;      [27:53] 8
-;      [27:53] 8
-;      [27:53] obj.vel.w=8
+;      [27:52] 8
+;      [27:52] 8
+;      [27:52] o1.vel.w=8
        mov byte[rbp-36], 8
-;    [27:57] true
+;    [27:56] true
      mov byte[rbp-35], true
-;  [28:5] assert(obj.pos.x == 20) 
+;  [28:5] assert(o1.pos.x == 20) 
    sub rsp, 65
 ;  alloc r15
-;    [28:12] obj.pos.x == 20
-;    [28:12] ? obj.pos.x == 20
-;    [28:12] ? obj.pos.x == 20
+;    [28:12] o1.pos.x == 20
+;    [28:12] ? o1.pos.x == 20
+;    [28:12] ? o1.pos.x == 20
      cmp_28_12:
      cmp qword[rbp-65], 20
      jne false_28_12
@@ -257,12 +257,12 @@ main:
 ;  free r15
    call assert
    add rsp, 73
-;  [29:5] assert(obj.pos.y == 2) 
+;  [29:5] assert(o1.pos.y == 2) 
    sub rsp, 65
 ;  alloc r15
-;    [29:12] obj.pos.y == 2
-;    [29:12] ? obj.pos.y == 2
-;    [29:12] ? obj.pos.y == 2
+;    [29:12] o1.pos.y == 2
+;    [29:12] ? o1.pos.y == 2
+;    [29:12] ? o1.pos.y == 2
      cmp_29_12:
      cmp dword[rbp-57], 2
      jne false_29_12
@@ -276,12 +276,12 @@ main:
 ;  free r15
    call assert
    add rsp, 73
-;  [30:5] assert(obj.pos.z == 3) 
+;  [30:5] assert(o1.pos.z == 3) 
    sub rsp, 65
 ;  alloc r15
-;    [30:12] obj.pos.z == 3
-;    [30:12] ? obj.pos.z == 3
-;    [30:12] ? obj.pos.z == 3
+;    [30:12] o1.pos.z == 3
+;    [30:12] ? o1.pos.z == 3
+;    [30:12] ? o1.pos.z == 3
      cmp_30_12:
      cmp word[rbp-53], 3
      jne false_30_12
@@ -295,12 +295,12 @@ main:
 ;  free r15
    call assert
    add rsp, 73
-;  [31:5] assert(obj.pos.w == 4) 
+;  [31:5] assert(o1.pos.w == 4) 
    sub rsp, 65
 ;  alloc r15
-;    [31:12] obj.pos.w == 4
-;    [31:12] ? obj.pos.w == 4
-;    [31:12] ? obj.pos.w == 4
+;    [31:12] o1.pos.w == 4
+;    [31:12] ? o1.pos.w == 4
+;    [31:12] ? o1.pos.w == 4
      cmp_31_12:
      cmp byte[rbp-51], 4
      jne false_31_12
@@ -314,12 +314,12 @@ main:
 ;  free r15
    call assert
    add rsp, 73
-;  [32:5] assert(obj.vel.x == 5) 
+;  [32:5] assert(o1.vel.x == 5) 
    sub rsp, 65
 ;  alloc r15
-;    [32:12] obj.vel.x == 5
-;    [32:12] ? obj.vel.x == 5
-;    [32:12] ? obj.vel.x == 5
+;    [32:12] o1.vel.x == 5
+;    [32:12] ? o1.vel.x == 5
+;    [32:12] ? o1.vel.x == 5
      cmp_32_12:
      cmp qword[rbp-50], 5
      jne false_32_12
@@ -333,12 +333,12 @@ main:
 ;  free r15
    call assert
    add rsp, 73
-;  [33:5] assert(obj.vel.y == 6) 
+;  [33:5] assert(o1.vel.y == 6) 
    sub rsp, 65
 ;  alloc r15
-;    [33:12] obj.vel.y == 6
-;    [33:12] ? obj.vel.y == 6
-;    [33:12] ? obj.vel.y == 6
+;    [33:12] o1.vel.y == 6
+;    [33:12] ? o1.vel.y == 6
+;    [33:12] ? o1.vel.y == 6
      cmp_33_12:
      cmp dword[rbp-42], 6
      jne false_33_12
@@ -352,12 +352,12 @@ main:
 ;  free r15
    call assert
    add rsp, 73
-;  [34:5] assert(obj.vel.z == 7) 
+;  [34:5] assert(o1.vel.z == 7) 
    sub rsp, 65
 ;  alloc r15
-;    [34:12] obj.vel.z == 7
-;    [34:12] ? obj.vel.z == 7
-;    [34:12] ? obj.vel.z == 7
+;    [34:12] o1.vel.z == 7
+;    [34:12] ? o1.vel.z == 7
+;    [34:12] ? o1.vel.z == 7
      cmp_34_12:
      cmp word[rbp-38], 7
      jne false_34_12
@@ -371,12 +371,12 @@ main:
 ;  free r15
    call assert
    add rsp, 73
-;  [35:5] assert(obj.vel.w == 8) 
+;  [35:5] assert(o1.vel.w == 8) 
    sub rsp, 65
 ;  alloc r15
-;    [35:12] obj.vel.w == 8
-;    [35:12] ? obj.vel.w == 8
-;    [35:12] ? obj.vel.w == 8
+;    [35:12] o1.vel.w == 8
+;    [35:12] ? o1.vel.w == 8
+;    [35:12] ? o1.vel.w == 8
      cmp_35_12:
      cmp byte[rbp-36], 8
      jne false_35_12
@@ -390,12 +390,12 @@ main:
 ;  free r15
    call assert
    add rsp, 73
-;  [36:5] assert(obj.valid == true) 
+;  [36:5] assert(o1.valid == true) 
    sub rsp, 65
 ;  alloc r15
-;    [36:12] obj.valid == true
-;    [36:12] ? obj.valid == true
-;    [36:12] ? obj.valid == true
+;    [36:12] o1.valid == true
+;    [36:12] ? o1.valid == true
+;    [36:12] ? o1.valid == true
      cmp_36_12:
      cmp byte[rbp-35], true
      jne false_36_12
@@ -430,9 +430,9 @@ main:
 ;    [38:35] -4
 ;    [38:36] p.w=-4
      mov byte[rbp-66], -4
-;  [39:5] obj.pos = p 
-;  [39:15] p 
-;    [39:15] p 
+;  [39:5] o1.pos = p 
+;  [39:14] p 
+;    [39:14] p 
 ;    alloc r15
      mov r15, qword[rbp-80]
      mov qword[rbp-65], r15
@@ -449,12 +449,12 @@ main:
      mov r15b, byte[rbp-66]
      mov byte[rbp-51], r15b
 ;    free r15
-;  [40:5] assert(obj.pos.x == -1) 
+;  [40:5] assert(o1.pos.x == -1) 
    sub rsp, 80
 ;  alloc r15
-;    [40:12] obj.pos.x == -1
-;    [40:12] ? obj.pos.x == -1
-;    [40:12] ? obj.pos.x == -1
+;    [40:12] o1.pos.x == -1
+;    [40:12] ? o1.pos.x == -1
+;    [40:12] ? o1.pos.x == -1
      cmp_40_12:
      cmp qword[rbp-65], -1
      jne false_40_12
@@ -468,12 +468,12 @@ main:
 ;  free r15
    call assert
    add rsp, 88
-;  [41:5] assert(obj.pos.y == -2) 
+;  [41:5] assert(o1.pos.y == -2) 
    sub rsp, 80
 ;  alloc r15
-;    [41:12] obj.pos.y == -2
-;    [41:12] ? obj.pos.y == -2
-;    [41:12] ? obj.pos.y == -2
+;    [41:12] o1.pos.y == -2
+;    [41:12] ? o1.pos.y == -2
+;    [41:12] ? o1.pos.y == -2
      cmp_41_12:
      cmp dword[rbp-57], -2
      jne false_41_12
@@ -487,12 +487,12 @@ main:
 ;  free r15
    call assert
    add rsp, 88
-;  [42:5] assert(obj.pos.z == -3) 
+;  [42:5] assert(o1.pos.z == -3) 
    sub rsp, 80
 ;  alloc r15
-;    [42:12] obj.pos.z == -3
-;    [42:12] ? obj.pos.z == -3
-;    [42:12] ? obj.pos.z == -3
+;    [42:12] o1.pos.z == -3
+;    [42:12] ? o1.pos.z == -3
+;    [42:12] ? o1.pos.z == -3
      cmp_42_12:
      cmp word[rbp-53], -3
      jne false_42_12
@@ -506,12 +506,12 @@ main:
 ;  free r15
    call assert
    add rsp, 88
-;  [43:5] assert(obj.pos.w == -4) 
+;  [43:5] assert(o1.pos.w == -4) 
    sub rsp, 80
 ;  alloc r15
-;    [43:12] obj.pos.w == -4
-;    [43:12] ? obj.pos.w == -4
-;    [43:12] ? obj.pos.w == -4
+;    [43:12] o1.pos.w == -4
+;    [43:12] ? o1.pos.w == -4
+;    [43:12] ? o1.pos.w == -4
      cmp_43_12:
      cmp byte[rbp-51], -4
      jne false_43_12
@@ -525,7 +525,368 @@ main:
 ;  free r15
    call assert
    add rsp, 88
-;  [45:1] # var o2 : object = {p, {-11, -12, -13, -14}, x == 10} 
+;  p2: qword[rbp-95]
+;  [45:5] var p2 : vector = {-11, -22, -33, -44}
+;  [45:9] p2 : vector = {-11, -22, -33, -44}
+;  [45:23] {-11, -22, -33, -44}
+;    [45:23] {-11, -22, -33, -44}
+;    [45:24] -11
+;    [45:24] -11
+;    [45:25] p2.x=-11
+     mov qword[rbp-95], -11
+;    [45:29] -22
+;    [45:29] -22
+;    [45:30] p2.y=-22
+     mov dword[rbp-87], -22
+;    [45:34] -33
+;    [45:34] -33
+;    [45:35] p2.z=-33
+     mov word[rbp-83], -33
+;    [45:39] -44
+;    [45:39] -44
+;    [45:40] p2.w=-44
+     mov byte[rbp-81], -44
+;  o2: qword[rbp-126]
+;  [46:5] var o2 : object = {p, p2, x == 10}
+;  [46:9] o2 : object = {p, p2, x == 10}
+;  [46:23] {p, p2, x == 10}
+;    [46:23] {p, p2, x == 10}
+;      [46:24] p
+;      alloc r15
+       mov r15, qword[rbp-80]
+       mov qword[rbp-126], r15
+;      free r15
+;      alloc r15
+       mov r15d, dword[rbp-72]
+       mov dword[rbp-118], r15d
+;      free r15
+;      alloc r15
+       mov r15w, word[rbp-68]
+       mov word[rbp-114], r15w
+;      free r15
+;      alloc r15
+       mov r15b, byte[rbp-66]
+       mov byte[rbp-112], r15b
+;      free r15
+;      [46:27] p2
+;      alloc r15
+       mov r15, qword[rbp-95]
+       mov qword[rbp-111], r15
+;      free r15
+;      alloc r15
+       mov r15d, dword[rbp-87]
+       mov dword[rbp-103], r15d
+;      free r15
+;      alloc r15
+       mov r15w, word[rbp-83]
+       mov word[rbp-99], r15w
+;      free r15
+;      alloc r15
+       mov r15b, byte[rbp-81]
+       mov byte[rbp-97], r15b
+;      free r15
+;    [46:31] x == 10
+;    [46:31] ? x == 10
+;    [46:31] ? x == 10
+     cmp_46_31:
+     cmp dword[rbp-4], 10
+     jne false_46_31
+     true_46_31:  ; opt1
+     mov byte[rbp-96], 1
+     jmp end_46_31
+     false_46_31:
+     mov byte[rbp-96], 0
+     end_46_31:
+;  [47:5] assert(o2.pos.x == -1) 
+   sub rsp, 126
+;  alloc r15
+;    [47:12] o2.pos.x == -1
+;    [47:12] ? o2.pos.x == -1
+;    [47:12] ? o2.pos.x == -1
+     cmp_47_12:
+     cmp qword[rbp-126], -1
+     jne false_47_12
+     true_47_12:  ; opt1
+     mov r15, 1
+     jmp end_47_12
+     false_47_12:
+     mov r15, 0
+     end_47_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 134
+;  [48:5] assert(o2.pos.y == -2) 
+   sub rsp, 126
+;  alloc r15
+;    [48:12] o2.pos.y == -2
+;    [48:12] ? o2.pos.y == -2
+;    [48:12] ? o2.pos.y == -2
+     cmp_48_12:
+     cmp dword[rbp-118], -2
+     jne false_48_12
+     true_48_12:  ; opt1
+     mov r15, 1
+     jmp end_48_12
+     false_48_12:
+     mov r15, 0
+     end_48_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 134
+;  [49:5] assert(o2.pos.z == -3) 
+   sub rsp, 126
+;  alloc r15
+;    [49:12] o2.pos.z == -3
+;    [49:12] ? o2.pos.z == -3
+;    [49:12] ? o2.pos.z == -3
+     cmp_49_12:
+     cmp word[rbp-114], -3
+     jne false_49_12
+     true_49_12:  ; opt1
+     mov r15, 1
+     jmp end_49_12
+     false_49_12:
+     mov r15, 0
+     end_49_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 134
+;  [50:5] assert(o2.pos.w == -4) 
+   sub rsp, 126
+;  alloc r15
+;    [50:12] o2.pos.w == -4
+;    [50:12] ? o2.pos.w == -4
+;    [50:12] ? o2.pos.w == -4
+     cmp_50_12:
+     cmp byte[rbp-112], -4
+     jne false_50_12
+     true_50_12:  ; opt1
+     mov r15, 1
+     jmp end_50_12
+     false_50_12:
+     mov r15, 0
+     end_50_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 134
+;  [51:5] assert(o2.vel.x == -11) 
+   sub rsp, 126
+;  alloc r15
+;    [51:12] o2.vel.x == -11
+;    [51:12] ? o2.vel.x == -11
+;    [51:12] ? o2.vel.x == -11
+     cmp_51_12:
+     cmp qword[rbp-111], -11
+     jne false_51_12
+     true_51_12:  ; opt1
+     mov r15, 1
+     jmp end_51_12
+     false_51_12:
+     mov r15, 0
+     end_51_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 134
+;  [52:5] assert(o2.vel.y == -22) 
+   sub rsp, 126
+;  alloc r15
+;    [52:12] o2.vel.y == -22
+;    [52:12] ? o2.vel.y == -22
+;    [52:12] ? o2.vel.y == -22
+     cmp_52_12:
+     cmp dword[rbp-103], -22
+     jne false_52_12
+     true_52_12:  ; opt1
+     mov r15, 1
+     jmp end_52_12
+     false_52_12:
+     mov r15, 0
+     end_52_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 134
+;  [53:5] assert(o2.vel.z == -33) 
+   sub rsp, 126
+;  alloc r15
+;    [53:12] o2.vel.z == -33
+;    [53:12] ? o2.vel.z == -33
+;    [53:12] ? o2.vel.z == -33
+     cmp_53_12:
+     cmp word[rbp-99], -33
+     jne false_53_12
+     true_53_12:  ; opt1
+     mov r15, 1
+     jmp end_53_12
+     false_53_12:
+     mov r15, 0
+     end_53_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 134
+;  [54:5] assert(o2.vel.w == -44) 
+   sub rsp, 126
+;  alloc r15
+;    [54:12] o2.vel.w == -44
+;    [54:12] ? o2.vel.w == -44
+;    [54:12] ? o2.vel.w == -44
+     cmp_54_12:
+     cmp byte[rbp-97], -44
+     jne false_54_12
+     true_54_12:  ; opt1
+     mov r15, 1
+     jmp end_54_12
+     false_54_12:
+     mov r15, 0
+     end_54_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 134
+;  [55:5] assert(o2.valid == true) 
+   sub rsp, 126
+;  alloc r15
+;    [55:12] o2.valid == true
+;    [55:12] ? o2.valid == true
+;    [55:12] ? o2.valid == true
+     cmp_55_12:
+     cmp byte[rbp-96], true
+     jne false_55_12
+     true_55_12:  ; opt1
+     mov r15, 1
+     jmp end_55_12
+     false_55_12:
+     mov r15, 0
+     end_55_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 134
+;  o3: qword[rbp-157]
+;  [57:5] var o3 : object = o2 
+;  [57:9] o3 : object = o2 
+;  [57:23] o2 
+;    [57:23] o2 
+;      [57:23] o2 
+;      alloc r15
+       mov r15, qword[rbp-126]
+       mov qword[rbp-157], r15
+;      free r15
+;      alloc r15
+       mov r15d, dword[rbp-118]
+       mov dword[rbp-149], r15d
+;      free r15
+;      alloc r15
+       mov r15w, word[rbp-114]
+       mov word[rbp-145], r15w
+;      free r15
+;      alloc r15
+       mov r15b, byte[rbp-112]
+       mov byte[rbp-143], r15b
+;      free r15
+;      [57:23] o2 
+;      alloc r15
+       mov r15, qword[rbp-111]
+       mov qword[rbp-142], r15
+;      free r15
+;      alloc r15
+       mov r15d, dword[rbp-103]
+       mov dword[rbp-134], r15d
+;      free r15
+;      alloc r15
+       mov r15w, word[rbp-99]
+       mov word[rbp-130], r15w
+;      free r15
+;      alloc r15
+       mov r15b, byte[rbp-97]
+       mov byte[rbp-128], r15b
+;      free r15
+;    alloc r15
+     mov r15b, byte[rbp-96]
+     mov byte[rbp-127], r15b
+;    free r15
+;  [58:5] assert(o3.pos.x == -1) 
+   sub rsp, 157
+;  alloc r15
+;    [58:12] o3.pos.x == -1
+;    [58:12] ? o3.pos.x == -1
+;    [58:12] ? o3.pos.x == -1
+     cmp_58_12:
+     cmp qword[rbp-157], -1
+     jne false_58_12
+     true_58_12:  ; opt1
+     mov r15, 1
+     jmp end_58_12
+     false_58_12:
+     mov r15, 0
+     end_58_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 165
+;  [59:5] assert(o3.pos.y == -2) 
+   sub rsp, 157
+;  alloc r15
+;    [59:12] o3.pos.y == -2
+;    [59:12] ? o3.pos.y == -2
+;    [59:12] ? o3.pos.y == -2
+     cmp_59_12:
+     cmp dword[rbp-149], -2
+     jne false_59_12
+     true_59_12:  ; opt1
+     mov r15, 1
+     jmp end_59_12
+     false_59_12:
+     mov r15, 0
+     end_59_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 165
+;  [60:5] assert(o3.pos.z == -3) 
+   sub rsp, 157
+;  alloc r15
+;    [60:12] o3.pos.z == -3
+;    [60:12] ? o3.pos.z == -3
+;    [60:12] ? o3.pos.z == -3
+     cmp_60_12:
+     cmp word[rbp-145], -3
+     jne false_60_12
+     true_60_12:  ; opt1
+     mov r15, 1
+     jmp end_60_12
+     false_60_12:
+     mov r15, 0
+     end_60_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 165
+;  [61:5] assert(o3.pos.w == -4) 
+   sub rsp, 157
+;  alloc r15
+;    [61:12] o3.pos.w == -4
+;    [61:12] ? o3.pos.w == -4
+;    [61:12] ? o3.pos.w == -4
+     cmp_61_12:
+     cmp byte[rbp-143], -4
+     jne false_61_12
+     true_61_12:  ; opt1
+     mov r15, 1
+     jmp end_61_12
+     false_61_12:
+     mov r15, 0
+     end_61_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 165
 ; main end
 
 ; system call: exit 0

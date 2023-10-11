@@ -293,6 +293,222 @@ main:
    push r15
    call assert
    add rsp, 88
+     mov qword[rbp-95], -11
+     mov dword[rbp-87], -22
+     mov word[rbp-83], -33
+     mov byte[rbp-81], -44
+       mov r15, qword[rbp-80]
+       mov qword[rbp-126], r15
+       mov r15d, dword[rbp-72]
+       mov dword[rbp-118], r15d
+       mov r15w, word[rbp-68]
+       mov word[rbp-114], r15w
+       mov r15b, byte[rbp-66]
+       mov byte[rbp-112], r15b
+       mov r15, qword[rbp-95]
+       mov qword[rbp-111], r15
+       mov r15d, dword[rbp-87]
+       mov dword[rbp-103], r15d
+       mov r15w, word[rbp-83]
+       mov word[rbp-99], r15w
+       mov r15b, byte[rbp-81]
+       mov byte[rbp-97], r15b
+     cmp_46_31:
+     cmp dword[rbp-4], 10
+     jne false_46_31
+     true_46_31:  ; opt1
+     mov byte[rbp-96], 1
+     jmp end_46_31
+     false_46_31:
+     mov byte[rbp-96], 0
+     end_46_31:
+   sub rsp, 126
+     cmp_47_12:
+     cmp qword[rbp-126], -1
+     jne false_47_12
+     true_47_12:  ; opt1
+     mov r15, 1
+     jmp end_47_12
+     false_47_12:
+     mov r15, 0
+     end_47_12:
+   push r15
+   call assert
+   add rsp, 134
+   sub rsp, 126
+     cmp_48_12:
+     cmp dword[rbp-118], -2
+     jne false_48_12
+     true_48_12:  ; opt1
+     mov r15, 1
+     jmp end_48_12
+     false_48_12:
+     mov r15, 0
+     end_48_12:
+   push r15
+   call assert
+   add rsp, 134
+   sub rsp, 126
+     cmp_49_12:
+     cmp word[rbp-114], -3
+     jne false_49_12
+     true_49_12:  ; opt1
+     mov r15, 1
+     jmp end_49_12
+     false_49_12:
+     mov r15, 0
+     end_49_12:
+   push r15
+   call assert
+   add rsp, 134
+   sub rsp, 126
+     cmp_50_12:
+     cmp byte[rbp-112], -4
+     jne false_50_12
+     true_50_12:  ; opt1
+     mov r15, 1
+     jmp end_50_12
+     false_50_12:
+     mov r15, 0
+     end_50_12:
+   push r15
+   call assert
+   add rsp, 134
+   sub rsp, 126
+     cmp_51_12:
+     cmp qword[rbp-111], -11
+     jne false_51_12
+     true_51_12:  ; opt1
+     mov r15, 1
+     jmp end_51_12
+     false_51_12:
+     mov r15, 0
+     end_51_12:
+   push r15
+   call assert
+   add rsp, 134
+   sub rsp, 126
+     cmp_52_12:
+     cmp dword[rbp-103], -22
+     jne false_52_12
+     true_52_12:  ; opt1
+     mov r15, 1
+     jmp end_52_12
+     false_52_12:
+     mov r15, 0
+     end_52_12:
+   push r15
+   call assert
+   add rsp, 134
+   sub rsp, 126
+     cmp_53_12:
+     cmp word[rbp-99], -33
+     jne false_53_12
+     true_53_12:  ; opt1
+     mov r15, 1
+     jmp end_53_12
+     false_53_12:
+     mov r15, 0
+     end_53_12:
+   push r15
+   call assert
+   add rsp, 134
+   sub rsp, 126
+     cmp_54_12:
+     cmp byte[rbp-97], -44
+     jne false_54_12
+     true_54_12:  ; opt1
+     mov r15, 1
+     jmp end_54_12
+     false_54_12:
+     mov r15, 0
+     end_54_12:
+   push r15
+   call assert
+   add rsp, 134
+   sub rsp, 126
+     cmp_55_12:
+     cmp byte[rbp-96], true
+     jne false_55_12
+     true_55_12:  ; opt1
+     mov r15, 1
+     jmp end_55_12
+     false_55_12:
+     mov r15, 0
+     end_55_12:
+   push r15
+   call assert
+   add rsp, 134
+       mov r15, qword[rbp-126]
+       mov qword[rbp-157], r15
+       mov r15d, dword[rbp-118]
+       mov dword[rbp-149], r15d
+       mov r15w, word[rbp-114]
+       mov word[rbp-145], r15w
+       mov r15b, byte[rbp-112]
+       mov byte[rbp-143], r15b
+       mov r15, qword[rbp-111]
+       mov qword[rbp-142], r15
+       mov r15d, dword[rbp-103]
+       mov dword[rbp-134], r15d
+       mov r15w, word[rbp-99]
+       mov word[rbp-130], r15w
+       mov r15b, byte[rbp-97]
+       mov byte[rbp-128], r15b
+     mov r15b, byte[rbp-96]
+     mov byte[rbp-127], r15b
+   sub rsp, 157
+     cmp_58_12:
+     cmp qword[rbp-157], -1
+     jne false_58_12
+     true_58_12:  ; opt1
+     mov r15, 1
+     jmp end_58_12
+     false_58_12:
+     mov r15, 0
+     end_58_12:
+   push r15
+   call assert
+   add rsp, 165
+   sub rsp, 157
+     cmp_59_12:
+     cmp dword[rbp-149], -2
+     jne false_59_12
+     true_59_12:  ; opt1
+     mov r15, 1
+     jmp end_59_12
+     false_59_12:
+     mov r15, 0
+     end_59_12:
+   push r15
+   call assert
+   add rsp, 165
+   sub rsp, 157
+     cmp_60_12:
+     cmp word[rbp-145], -3
+     jne false_60_12
+     true_60_12:  ; opt1
+     mov r15, 1
+     jmp end_60_12
+     false_60_12:
+     mov r15, 0
+     end_60_12:
+   push r15
+   call assert
+   add rsp, 165
+   sub rsp, 157
+     cmp_61_12:
+     cmp byte[rbp-143], -4
+     jne false_61_12
+     true_61_12:  ; opt1
+     mov r15, 1
+     jmp end_61_12
+     false_61_12:
+     mov r15, 0
+     end_61_12:
+   push r15
+   call assert
+   add rsp, 165
 mov rax, 60
 mov rdi, 0
 syscall

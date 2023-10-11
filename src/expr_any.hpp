@@ -143,6 +143,11 @@ public:
       const bool_ops_list &eol{get<bool_ops_list>(eols_)};
       return eol.identifier();
     }
+    if (eols_.index() == 2) {
+      // bool expression
+      const assign_type_value &eol{get<assign_type_value>(eols_)};
+      return eol.identifier();
+    }
     throw panic_exception("expr_any:2");
   }
 

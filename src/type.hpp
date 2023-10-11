@@ -62,9 +62,9 @@ public:
     while (not tp_first_field->is_built_in()) {
       tp_first_field = &tp_first_field->fields_[0].tp;
     }
-    size_t fldsize{tp_first_field->size()};
 
-    const string &memsize{get_memory_operand_for_size(tk, fldsize)};
+    const string &memsize{
+        get_memory_operand_for_size(tk, tp_first_field->size())};
 
     return {*tp, memsize + "[rbp" + string{stack_idx > 0 ? "+" : ""} +
                      to_string(stack_idx) + "]"};
