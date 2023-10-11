@@ -232,10 +232,10 @@ public:
   inline void add_func(const statement &st, const string &name,
                        const type &return_type, const stmt_def_func *ref) {
     if (funcs_.has(name)) {
-      const func_meta &func{funcs_.get(name)};
-      throw compiler_exception(st.tok(),
-                               "function '" + name + "' already defined at " +
-                                   source_location_hr(func.declared_at));
+      const func_meta &func{funcs_.get_const_ref(name)};
+      const string src_loc{source_location_hr(func.declared_at)};
+      throw compiler_exception(st.tok(), "function '" + name +
+                                             "' already defined at " + src_loc);
     }
     funcs_.put(name, {return_type, ref, st.tok()});
   }
@@ -296,9 +296,10 @@ public:
 
   inline auto source_location_hr(const token &tk) -> string {
     size_t char_in_line{};
-    const size_t n{line_number_for_char_index(
+    const size_t line_num{line_number_for_char_index(
         tk.char_index(), source_str_.c_str(), char_in_line)};
-    return to_string(n) + ":" + to_string(char_in_line);
+
+    return to_string(line_num) + ":" + to_string(char_in_line);
   }
 
   inline static auto line_number_for_char_index(const size_t char_index,

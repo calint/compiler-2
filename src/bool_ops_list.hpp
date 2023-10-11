@@ -164,9 +164,8 @@ public:
   inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
                       [[maybe_unused]] size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
-    throw compiler_exception(
-        tok(), "this code should not be reached: " + string{__FILE__} + ":" +
-                   to_string(__LINE__));
+    throw panic_exception("this code should not be reached: " +
+                          string{__FILE__} + ":" + to_string(__LINE__));
   }
 
   [[nodiscard]] inline auto cmp_bgn_label(const toc &tc) const -> string {
@@ -262,7 +261,7 @@ public:
                 e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
             if (const_eval and not *const_eval) {
               // constant evaluated to false, short-circuit
-              return *const_eval;
+              return false;
             }
           } else {
             throw panic_exception("expected 'or' or 'and'");

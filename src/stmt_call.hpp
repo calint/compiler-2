@@ -100,15 +100,15 @@ public:
 
     // check that argument types match the parameters
     for (size_t i{0}; i < args_.size(); i++) {
-      const expr_any &arg{args_[i]};
+      const expr_any &ea{args_[i]};
       const stmt_def_func_param &param{func.param(i)};
-      const type &arg_type{arg.get_type()};
+      const type &arg_type{ea.get_type()};
       const type &param_type{param.get_type()};
       if (arg_type.is_built_in() and param_type.is_built_in()) {
         //? check if it is integral (not bool)
         if (param_type.size() < arg_type.size()) {
           throw compiler_exception(
-              arg.tok(),
+              ea.tok(),
               "argument " + to_string(i + 1) + " of type '" + arg_type.name() +
                   "' would be truncated when passed to parameter of type '" +
                   param_type.name() + "'");
@@ -116,7 +116,7 @@ public:
         continue;
       }
       if (arg_type.name() != param_type.name()) {
-        throw compiler_exception(arg.tok(),
+        throw compiler_exception(ea.tok(),
                                  "argument " + to_string(i + 1) + " of type '" +
                                      arg_type.name() +
                                      "' does not match parameter of type '" +
@@ -155,27 +155,27 @@ public:
       size_t nbytes_of_args_on_stack{0};
       size_t i{args_.size()};
       while (i--) {
-        const expr_any &arg{args_[i]};
+        const expr_any &ea{args_[i]};
         const stmt_def_func_param &param{func.param(i)};
         // is the argument passed through a register?
         const string &arg_reg{param.get_register_or_empty()};
         const bool argument_passed_in_register{not arg_reg.empty()};
         if (argument_passed_in_register) {
-          tc.alloc_named_register_or_throw(arg, os, indent, arg_reg);
+          tc.alloc_named_register_or_throw(ea, os, indent, arg_reg);
           allocated_args_registers.push_back(arg_reg);
         }
-        if (arg.is_expression()) {
+        if (ea.is_expression()) {
           if (argument_passed_in_register) {
             // compile expression with the result stored in arg_reg
-            arg.compile(tc, os, indent + 1, arg_reg);
+            ea.compile(tc, os, indent + 1, arg_reg);
             continue;
           }
           // argument passed through stack
-          const string &reg{tc.alloc_scratch_register(arg, os, indent)};
+          const string &reg{tc.alloc_scratch_register(ea, os, indent)};
           // compile expression with the result stored in sr
-          arg.compile(tc, os, indent + 1, reg);
+          ea.compile(tc, os, indent + 1, reg);
           // argument is passed to function through the stack
-          toc::asm_push(arg, os, indent, reg);
+          toc::asm_push(ea, os, indent, reg);
           // free scratch register
           tc.free_scratch_register(os, indent, reg);
           // keep track of how many arguments are on the stack
@@ -183,51 +183,51 @@ public:
           continue;
         }
         // not an expression, resolve identifier to nasm
-        const ident_resolved &arg_resolved{tc.resolve_identifier(arg, true)};
+        const ident_resolved &arg_resolved{tc.resolve_identifier(ea, true)};
         if (argument_passed_in_register) {
           // move the identifier to the requested register
           if (arg_resolved.is_const()) {
-            tc.asm_cmd(arg, os, indent, "mov", arg_reg,
-                       arg.get_unary_ops().to_string() + arg_resolved.id_nasm);
+            tc.asm_cmd(ea, os, indent, "mov", arg_reg,
+                       ea.get_unary_ops().to_string() + arg_resolved.id_nasm);
             nbytes_of_args_on_stack += 8;
             continue;
           }
           // not a constant
-          tc.asm_cmd(arg, os, indent, "mov", arg_reg, arg_resolved.id_nasm);
-          arg.get_unary_ops().compile(tc, os, indent, arg_reg);
+          tc.asm_cmd(ea, os, indent, "mov", arg_reg, arg_resolved.id_nasm);
+          ea.get_unary_ops().compile(tc, os, indent, arg_reg);
           nbytes_of_args_on_stack += 8;
           continue;
         }
         // argument not passed through register
         // push identifier on the stack
         if (arg_resolved.is_const()) {
-          toc::asm_push(arg, os, indent,
-                        arg.get_unary_ops().to_string() + arg_resolved.id_nasm);
+          toc::asm_push(ea, os, indent,
+                        ea.get_unary_ops().to_string() + arg_resolved.id_nasm);
           nbytes_of_args_on_stack += 8;
           continue;
         }
-        if (arg.get_unary_ops().is_empty()) {
+        if (ea.get_unary_ops().is_empty()) {
           // check if argument size is register size
           if (arg_resolved.tp.size() == tc.get_type_default().size()) {
-            toc::asm_push(arg, os, indent, arg_resolved.id_nasm);
+            toc::asm_push(ea, os, indent, arg_resolved.id_nasm);
             nbytes_of_args_on_stack += 8;
             continue;
           }
           // value to be pushed is not a 64 bit value
           // push can only be done with 64 or 16 bits values on x86_64
-          const string &reg{tc.alloc_scratch_register(arg, os, indent)};
-          tc.asm_cmd(arg, os, indent, "mov", reg, arg_resolved.id_nasm);
-          toc::asm_push(arg, os, indent, reg);
+          const string &reg{tc.alloc_scratch_register(ea, os, indent)};
+          tc.asm_cmd(ea, os, indent, "mov", reg, arg_resolved.id_nasm);
+          toc::asm_push(ea, os, indent, reg);
           tc.free_scratch_register(os, indent, reg);
           nbytes_of_args_on_stack += 8;
           //? what about 16 bit values
           continue;
         }
         // unary ops must be applied
-        const string &reg{tc.alloc_scratch_register(arg, os, indent)};
-        tc.asm_cmd(arg, os, indent, "mov", reg, arg_resolved.id_nasm);
-        arg.get_unary_ops().compile(tc, os, indent, reg);
-        toc::asm_push(arg, os, indent, reg);
+        const string &reg{tc.alloc_scratch_register(ea, os, indent)};
+        tc.asm_cmd(ea, os, indent, "mov", reg, arg_resolved.id_nasm);
+        ea.get_unary_ops().compile(tc, os, indent, reg);
+        toc::asm_push(ea, os, indent, reg);
         tc.free_scratch_register(os, indent, reg);
         nbytes_of_args_on_stack += 8;
       }
@@ -287,22 +287,22 @@ public:
     }
 
     size_t i{0};
-    for (const auto &arg : args_) {
+    for (const expr_any &ea : args_) {
       const stmt_def_func_param &param{func.param(i)};
       i++;
       // does the parameter want the value passed through a register?
       string arg_reg{param.get_register_or_empty()};
       if (not arg_reg.empty()) {
         // argument is passed through register
-        tc.alloc_named_register_or_throw(arg, os, indent + 1, arg_reg);
+        tc.alloc_named_register_or_throw(ea, os, indent + 1, arg_reg);
         allocated_named_registers.push_back(arg_reg);
         allocated_registers_in_order.push_back(arg_reg);
       }
-      if (arg.is_expression()) {
+      if (ea.is_expression()) {
         // argument is an expression, evaluate and store in arg_reg
         if (arg_reg.empty()) {
           // no particular register requested for the argument
-          arg_reg = tc.alloc_scratch_register(arg, os, indent + 1);
+          arg_reg = tc.alloc_scratch_register(ea, os, indent + 1);
           allocated_scratch_registers.push_back(arg_reg);
           allocated_registers_in_order.push_back(arg_reg);
         }
@@ -310,7 +310,7 @@ public:
         os << "alias " << param.identifier() << " -> " << arg_reg << endl;
         // compile expression and store result in 'arg_reg'
         // note. 'unary_ops' are part of 'expr_ops_list'
-        arg.compile(tc, os, indent + 1, arg_reg);
+        ea.compile(tc, os, indent + 1, arg_reg);
         // alias parameter name to the register containing its value
         aliases_to_add.emplace_back(param.identifier(), arg_reg);
         continue;
@@ -322,21 +322,21 @@ public:
         // argument not passed through register
         // no register allocated for the argument
         // alias parameter name to the argument identifier
-        if (arg.get_unary_ops().is_empty()) {
-          const string &arg_id{arg.identifier()};
+        if (ea.get_unary_ops().is_empty()) {
+          const string &arg_id{ea.identifier()};
           aliases_to_add.emplace_back(param.identifier(), arg_id);
           toc::indent(os, indent + 1, true);
           os << "alias " << param.identifier() << " -> " << arg_id << endl;
           continue;
         }
         // unary ops must be applied
-        const ident_resolved &ir{tc.resolve_identifier(arg, true)};
+        const ident_resolved &ir{tc.resolve_identifier(ea, true)};
         const string &scratch_reg{
-            tc.alloc_scratch_register(arg, os, indent + 1)};
+            tc.alloc_scratch_register(ea, os, indent + 1)};
         allocated_registers_in_order.push_back(scratch_reg);
         allocated_scratch_registers.push_back(scratch_reg);
         tc.asm_cmd(param, os, indent + 1, "mov", scratch_reg, ir.id_nasm);
-        arg.get_unary_ops().compile(tc, os, indent + 1, scratch_reg);
+        ea.get_unary_ops().compile(tc, os, indent + 1, scratch_reg);
         aliases_to_add.emplace_back(param.identifier(), scratch_reg);
         toc::indent(os, indent + 1, true);
         os << "alias " << param.identifier() << " -> " << scratch_reg << endl;
@@ -348,15 +348,15 @@ public:
       toc::indent(os, indent + 1, true);
       os << "alias " << param.identifier() << " -> " << arg_reg << endl;
       // move argument to register specified in param
-      const ident_resolved &ir{tc.resolve_identifier(arg, true)};
+      const ident_resolved &ir{tc.resolve_identifier(ea, true)};
       if (ir.is_const()) {
         tc.asm_cmd(param, os, indent + 1, "mov", arg_reg,
-                   arg.get_unary_ops().to_string() + ir.id_nasm);
+                   ea.get_unary_ops().to_string() + ir.id_nasm);
         continue;
       }
       // not a const, move argument to register
       tc.asm_cmd(param, os, indent + 1, "mov", arg_reg, ir.id_nasm);
-      arg.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
+      ea.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
     }
 
     // enter function creating a new scope from which

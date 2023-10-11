@@ -103,15 +103,15 @@ public:
     }
 
     // get the main function and compile
-    const stmt_def_func &main{tc.get_func_or_throw(prg, "main")};
-    if (not main.is_inline()) {
-      throw compiler_exception(main.tok(),
+    const stmt_def_func &func_main{tc.get_func_or_throw(prg, "main")};
+    if (not func_main.is_inline()) {
+      throw compiler_exception(func_main.tok(),
                                "main function must be declared inline");
     }
 
     os << "main:" << endl;
     tc.enter_func("main", "", "", true, "");
-    main.code().compile(tc, os, indent);
+    func_main.code().compile(tc, os, indent);
     tc.exit_func("main");
     os << "; main end" << endl;
     os << endl;
