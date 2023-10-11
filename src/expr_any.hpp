@@ -11,7 +11,7 @@ public:
   inline expr_any(toc &tc, tokenizer &tz, const type &tp, bool in_args)
       : statement{tz.next_whitespace_token()} {
 
-    if (tz.is_next_char('{')) {
+    if (not tp.is_built_in()) {
       eols_ = assign_type_value{tc, tz, tp};
       return;
     }
@@ -164,7 +164,8 @@ public:
     return eols_.index() == 2;
   }
 
-  [[nodiscard]] inline auto as_assign_type_value() const -> const assign_type_value & {
+  [[nodiscard]] inline auto as_assign_type_value() const
+      -> const assign_type_value & {
     return get<assign_type_value>(eols_);
   }
 };

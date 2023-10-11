@@ -45,17 +45,29 @@ public:
 
   [[nodiscard]] inline auto accessor(const token &tk,
                                      const vector<string> &path,
-                                     const int stack_idx_base) const -> string {
+                                     const int stack_idx_base) const
+      -> pair<const type &, string> {
 
-    const pair<size_t, size_t> res{field_size_and_offset(tk, path)};
-    const size_t offset{res.second};
-    const size_t fldsize{res.first};
+    const type *tp{this};
+    size_t offset{0};
+    for (size_t path_idx{1}; path_idx != path.size(); path_idx++) {
+      const type_field &fld{tp->field(tk, path[path_idx])};
+      offset += fld.offset;
+      tp = &fld.tp;
+    }
     const int stack_idx{stack_idx_base + int(offset)};
+
+    // find first built-in type to have a valid operand size for the address
+    const type *tp_first_field{tp};
+    while (not tp_first_field->is_built_in()) {
+      tp_first_field = &tp_first_field->fields_[0].tp;
+    }
+    size_t fldsize{tp_first_field->size()};
 
     const string &memsize{get_memory_operand_for_size(tk, fldsize)};
 
-    return memsize + "[rbp" + string{stack_idx > 0 ? "+" : ""} +
-           to_string(stack_idx) + "]";
+    return {*tp, memsize + "[rbp" + string{stack_idx > 0 ? "+" : ""} +
+                     to_string(stack_idx) + "]"};
   }
 
   inline static auto get_memory_operand_for_size(const token &tk,
@@ -92,39 +104,5 @@ public:
 
   [[nodiscard]] inline auto fields() const -> const vector<type_field> & {
     return fields_;
-  }
-
-private:
-  [[nodiscard]] inline auto
-  field_size_and_offset(const token &tk, const vector<string> &path) const
-      -> pair<size_t, size_t> {
-
-    if (path.size() == 1) {
-      // path contains only a reference to the variable
-      // find first primitive type
-      const type *t{this};
-      while (true) {
-        if (t->fields_.empty()) {
-          return {t->size_, 0};
-        }
-        t = &t->fields_[0].tp;
-      }
-    }
-    const type *tp{this};
-    size_t offset{0};
-    size_t path_idx{1};
-    while (true) {
-      if (path_idx == path.size()) {
-        return {tp->fields_.empty() ? size_ : tp->fields_[0].tp.size_, offset};
-      }
-
-      const type_field &fld{tp->field(tk, path[path_idx])};
-      offset += fld.offset;
-      if (fld.tp.is_built_in_) {
-        return {fld.tp.size_, offset};
-      }
-      tp = &fld.tp;
-      path_idx++;
-    }
   }
 };

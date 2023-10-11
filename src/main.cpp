@@ -144,6 +144,9 @@ inline void unary_ops::compile(toc & /*tc*/, ostream &os, size_t indent_level,
 
 inline void assign_type_value::source_to(ostream &os) const {
   statement::source_to(os);
+  if (not tok().is_name("")) {
+    return;
+  }
   os << '{';
   size_t i{0};
   for (const auto &ea : exprs_) {
@@ -161,6 +164,18 @@ inline void assign_type_value::compile_recursive(const assign_type_value &atv,
                                                  const string &dst,
                                                  const type &tp) {
   tc.source_comment(atv, os, indent);
+  if (not atv.tok().is_name("")) {
+    const string &tknm = atv.tok().name();
+    // e.g. obj.pos = p
+    const ident_resolved &id_res{tc.resolve_identifier(atv, true)};
+    if (id_res.tp.name() != tp.name()) {
+      throw compiler_exception(atv.tok(), "cannot assign '" + tknm + "' to '" +
+                                              dst + "' because type of '" +
+                                              tknm + "' is '" +
+                                              id_res.tp.name() + "' and '" +
+                                              dst + "' is '" + tp.name() + "'");
+    }
+  }
   const vector<type_field> &flds{tp.fields()};
   const size_t n{flds.size()};
   for (size_t i{0}; i < n; i++) {

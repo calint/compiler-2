@@ -10,6 +10,8 @@ func assert(expr : bool) {
 
 type vector {x, y : i32, z : i16, w : i8}
 
+type position {x, y}
+
 type object { pos : vector, vel : vector, valid : bool }
 
 func inline main {
@@ -30,4 +32,7 @@ func inline main {
     assert(obj.vel.z == 7)
     assert(obj.vel.w == 8)
     assert(obj.valid == true)
+
+    var p : position = {1, 2}
+    obj.pos = p
 }

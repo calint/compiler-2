@@ -345,6 +345,7 @@ public:
   inline auto resolve_identifier(const statement &st,
                                  const bool must_be_initiated) const
       -> ident_resolved {
+
     const ident_resolved &ir{
         resolve_ident_or_empty(st, st.identifier(), must_be_initiated)};
     if (not ir.id_nasm.empty()) {
@@ -810,7 +811,8 @@ public:
     }
 
     if (is_operand_memory(src_resolved)) {
-      //? todo. this displays nasm identifiers but should be human readable identifiers
+      //? todo. this displays nasm identifiers but should be human readable
+      // identifiers
       throw compiler_exception(st.tok(), "cannot move '" + src_resolved +
                                              "' to '" + dst_resolved +
                                              "' because it would be truncated");
@@ -1342,6 +1344,7 @@ private:
   inline auto resolve_ident_or_empty(const statement &st, const string &ident,
                                      const bool must_be_initiated) const
       -> ident_resolved {
+
     const baz_ident bid{ident};
     string id{bid.id_base()};
     // traverse the frames and resolve the id_nasm (which might be an alias) to
@@ -1378,8 +1381,8 @@ private:
         throw compiler_exception(st.tok(), "variable '" + var.name +
                                                "' is not initiated");
       }
-      const string &acc{var.tp.accessor(st.tok(), bid.path(), var.stack_idx)};
-      return {ident, acc, 0, var.tp, ident_resolved::ident_type::VAR};
+      auto [tp, acc]{var.tp.accessor(st.tok(), bid.path(), var.stack_idx)};
+      return {ident, acc, 0, tp, ident_resolved::ident_type::VAR};
     }
 
     // is 'id_nasm' a register?
@@ -1394,8 +1397,7 @@ private:
               ident_resolved::ident_type::REGISTER};
     }
 
-    // is 'id_nasm' a field?
-
+    // is it a field?
     if (fields_.has(id)) {
       const string &after_dot =
           bid.path().size() < 2 ? "" : bid.path()[1]; // ! not correct
@@ -1413,6 +1415,7 @@ private:
               ident_resolved::ident_type::FIELD};
     }
 
+    // is it a constant?
     char *ep{};
     const long const_value{strtol(id.c_str(), &ep, 10)};
     if (!*ep) {
@@ -1436,12 +1439,14 @@ private:
       }
     }
 
+    //? comment this
     if (funcs_.has(id)) {
       const func_meta &func{funcs_.get_const_ref(id)};
       //? type is func
       return {ident, id, 0, func.tp, ident_resolved::ident_type::CONST};
     }
 
+    // is it a boolean constant?
     if (id == "true") {
       return {ident, id, 1, get_type_bool(), ident_resolved::ident_type::CONST};
     }

@@ -8,7 +8,7 @@ type vector{x,y}
 type object{pos:vector,vel:vector,color:i8,wrd:i16,dwrd:i32}
 
 func inline main{
-	var obj:object=1
+	var obj:object={{1,0},{0,0},0,0,0}
 	if not obj.pos.x==1 exit(1)
 
 #	var bt1:i8=obj.pos.x  # truncation error
