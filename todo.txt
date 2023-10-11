@@ -1,3 +1,6 @@
+[ ] review main.cpp move of tokens and unary_ops
+[ ] review new code
+[ ] "#comment" should be accepted as "# comment"
 [ ] string type
 [ ] var str="hello world"
 [ ] var len=str.len
@@ -30,11 +33,11 @@
       first argument to f is the same register then the second argument is clobbered
 [ ]   non-inlined
 [ ]   inlined
-[ ] post processing optimization for: var b=-(-a*-a)
-      mov r15,qword[rbp-8]
-      neg r15
-      neg r15
-      mov qword[rbp-16],r15
+[ ] optimize stack adjustment between calls
+      call bar
+      add rsp,40
+      sub rsp,24
+      call foo
 [ ] optimize return pattern:
        mov qword[rbp-8],r15
        mov rax,qword[rbp-8]
@@ -44,11 +47,11 @@
        mov rax,r15
        pop rbp
        ret
-[ ] optimize stack adjustment between calls
-      call bar
-      add rsp,40
-      sub rsp,24
-      call foo
+[ ] post processing optimization for: var b=-(-a*-a)
+      mov r15,qword[rbp-8]
+      neg r15
+      neg r15
+      mov qword[rbp-16],r15
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
 [x] main:create_statement_from_tokenizer review move(tk) ..
