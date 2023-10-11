@@ -142,7 +142,7 @@ inline void unary_ops::compile(toc & /*tc*/, ostream &os, size_t indent_level,
   }
 }
 
-inline void assign_type_value::source_to(ostream &os) const {
+inline void stmt_type_value::source_to(ostream &os) const {
   statement::source_to(os);
   if (not tok().is_name("")) {
     return;
@@ -158,8 +158,8 @@ inline void assign_type_value::source_to(ostream &os) const {
   os << '}';
 }
 
-inline void assign_type_value::compile_recursive(
-    const assign_type_value &atv, toc &tc, ostream &os, size_t indent,
+inline void stmt_type_value::compile_recursive(
+    const stmt_type_value &atv, toc &tc, ostream &os, size_t indent,
     const string &src, const string &dst, const type &dst_type) {
 
   tc.source_comment(atv, os, indent);
