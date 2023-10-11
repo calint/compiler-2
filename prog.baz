@@ -1,62 +1,72 @@
+field   hello = "hello world from baz\n"
+field   input = "............................................................"
+field prompt1 = "enter name:\n"
+field prompt2 = "that is not a name.\n"
+field prompt3 = "hello "
+field     dot = "."
+field      nl = "\n"
+
 func inline exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
     syscall
 }
 
+func inline print(len : reg_rdx, ptr : reg_rsi) {
+    mov(rax, 1)   # write system call
+    mov(rdi, 1)   # file descriptor for standard out
+    mov(rsi, ptr) # buffer address 
+    mov(rdx, len) # buffer size
+    syscall
+}
+
+func inline read(len : reg_rdx, ptr : reg_rsi) : nbytes {
+    mov(rax, 0)   # read system call
+    mov(rdi, 0)   # file descriptor for standard input
+    mov(rsi, ptr) # buffer address
+    mov(rdx, len) # buffer size
+    syscall
+    mov(nbytes, rax) # return value
+}
+
 func assert(expr : bool) {
     if not expr exit(1)
 }
 
-type vector {x, y : i32, z : i16, w : i8}
+type point{x, y}
 
-type position {x, y}
-
-type object { pos : vector, vel : vector, valid : bool }
+type object{pos : point, color : i32}
 
 func inline main {
-    var x : i32 = 10
-    var v1 : vector = {x, 2 * x, 12, 13}
-    assert(v1.x == 10)
-    assert(v1.y == 20)
-    assert(v1.z == 12)
-    assert(v1.w == 13)
-
-    var v2 : vector = v1
-
-    var o1 : object = {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
-    assert(o1.pos.x == 20)
+    var o1 : object = {{1, 2}, 0xff0000}
+    assert(o1.pos.x == 1)
     assert(o1.pos.y == 2)
-    assert(o1.pos.z == 3)
-    assert(o1.pos.w == 4)
-    assert(o1.vel.x == 5)
-    assert(o1.vel.y == 6)
-    assert(o1.vel.z == 7)
-    assert(o1.vel.w == 8)
-    assert(o1.valid == true)
+    assert(o1.color == 0xff0000)
 
-    var p : vector = {-1, -2, -3, -4}
-    o1.pos = p
+    var p1 : point = {-1, -2}
+    o1.pos = p1
     assert(o1.pos.x == -1)
     assert(o1.pos.y == -2)
-    assert(o1.pos.z == -3)
-    assert(o1.pos.w == -4)
 
-    var p2 : vector = {-11, -22, -33, -44}
-    var o2 : object = {p, p2, x == 10}
+    var o2 : object = o1
     assert(o2.pos.x == -1)
     assert(o2.pos.y == -2)
-    assert(o2.pos.z == -3)
-    assert(o2.pos.w == -4)
-    assert(o2.vel.x == -11)
-    assert(o2.vel.y == -22)
-    assert(o2.vel.z == -33)
-    assert(o2.vel.w == -44)
-    assert(o2.valid == true)
+    assert(o2.color == 0xff0000)
 
-    var o3 : object = o2
-    assert(o3.pos.x == -1)
-    assert(o3.pos.y == -2)
-    assert(o3.pos.z == -3)
-    assert(o3.pos.w == -4)
+    print(hello.len, hello)
+    loop {
+        print(prompt1.len, prompt1)
+        var len = read(input.len, input) - 1    # -1 don't include the '\n'
+        if len == 0 {
+            break
+        }
+        if len <= 4 {
+            print(prompt2.len, prompt2)
+            continue
+        }
+        print(prompt3.len, prompt3)
+        print(len, input)
+        print(dot.len, dot)
+        print(nl.len, nl)
+    }
 }
