@@ -5,14 +5,17 @@
 class toc;
 
 class unary_ops final {
+  token whitespace_before_{};
   vector<char> ops_{};
 
 public:
-  inline explicit unary_ops(tokenizer &t) {
+  inline explicit unary_ops(tokenizer &tz)
+      : whitespace_before_{tz.next_whitespace_token()} {
+
     while (true) {
-      if (t.is_next_char('~')) {
+      if (tz.is_next_char('~')) {
         ops_.push_back('~');
-      } else if (t.is_next_char('-')) {
+      } else if (tz.is_next_char('-')) {
         ops_.push_back('-');
         //			}else if(t.is_next_char('!')){
         //				ops_.push_back('!');
@@ -34,14 +37,16 @@ public:
     return ops_.size() == 1 && ops_.back() == '-';
   }
 
-  inline void put_back(tokenizer &t) const {
+  inline void put_back(tokenizer &tz) const {
+    tz.put_back_token(whitespace_before_);
     size_t i{ops_.size()};
     while (i--) {
-      t.put_back_char(ops_[i]);
+      tz.put_back_char(ops_[i]);
     }
   }
 
   inline void source_to(ostream &os) const {
+    whitespace_before_.source_to(os);
     const size_t n{ops_.size()};
     for (size_t i{0}; i < n; i++) {
       os << ops_[i];

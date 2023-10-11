@@ -1,3 +1,4 @@
+[x] expr_ops_list: more coverage
 [o] var o:object={{1,2},{0,0},1}
 [.] var v : vector = {1, a + b, f() - 1}
 [ ] string type
