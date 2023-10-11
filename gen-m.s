@@ -168,68 +168,68 @@ main:
      mov rax, 1
      mov rdi, 1
      syscall
-   print_58_5_end:
-   loop_59_5:
+   print_56_5_end:
+   loop_57_5:
        mov rdx, prompt1.len
        mov rsi, prompt1
        mov rax, 1
        mov rdi, 1
        syscall
-     print_60_9_end:
+     print_58_9_end:
        mov rdx, input.len
        mov rsi, input
        mov rax, 0
        mov rdi, 0
        syscall
        mov qword[rbp-64], rax
-     read_61_19_end:
+     read_59_19_end:
      sub qword[rbp-64], 1
-     if_62_12:
-     cmp_62_12:
+     if_60_12:
+     cmp_60_12:
      cmp qword[rbp-64], 0
-     jne if_62_9_end
-     if_62_12_code:  ; opt1
-       jmp loop_59_5_end
-     if_62_9_end:
-     if_65_12:
-     cmp_65_12:
+     jne if_60_9_end
+     if_60_12_code:  ; opt1
+       jmp loop_57_5_end
+     if_60_9_end:
+     if_63_12:
+     cmp_63_12:
      cmp qword[rbp-64], 4
-     jg if_65_9_end
-     if_65_12_code:  ; opt1
+     jg if_63_9_end
+     if_63_12_code:  ; opt1
          mov rdx, prompt2.len
          mov rsi, prompt2
          mov rax, 1
          mov rdi, 1
          syscall
-       print_66_13_end:
-       jmp loop_59_5
-     if_65_9_end:
+       print_64_13_end:
+       jmp loop_57_5
+     if_63_9_end:
        mov rdx, prompt3.len
        mov rsi, prompt3
        mov rax, 1
        mov rdi, 1
        syscall
-     print_69_9_end:
+     print_67_9_end:
        mov rdx, qword[rbp-64]
        mov rsi, input
        mov rax, 1
        mov rdi, 1
        syscall
-     print_70_9_end:
+     print_68_9_end:
        mov rdx, dot.len
        mov rsi, dot
        mov rax, 1
        mov rdi, 1
        syscall
-     print_71_9_end:
+     print_69_9_end:
        mov rdx, nl.len
        mov rsi, nl
        mov rax, 1
        mov rdi, 1
        syscall
-     print_72_9_end:
-   jmp loop_59_5
-   loop_59_5_end:
+     print_70_9_end:
+   jmp loop_57_5
+   loop_57_5_end:
 mov rax, 60
 mov rdi, 0
 syscall
