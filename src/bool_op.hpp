@@ -4,7 +4,7 @@
 class bool_op final : public statement {
 public:
   inline bool_op(toc &tc, tokenizer &tz)
-      : statement{{}, tz.next_whitespace_token()} {
+      : statement{tz.next_whitespace_token()} {
 
     set_type(tc.get_type_bool());
 

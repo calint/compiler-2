@@ -10,7 +10,7 @@ class expr_type_value final : public statement {
 
 public:
   inline expr_type_value(toc &tc, tokenizer &tz, const type &tp)
-      : statement{{}, tz.next_token()} {
+      : statement{tz.next_token()} {
 
     set_type(tp);
 

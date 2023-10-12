@@ -7,7 +7,7 @@ class stmt_if final : public statement {
   stmt_block else_code_{};
 
 public:
-  inline stmt_if(toc &tc, const token &tk, tokenizer &tz) : statement{{}, tk} {
+  inline stmt_if(toc &tc, token tk, tokenizer &tz) : statement{move(tk)} {
     set_type(tc.get_type_void());
     // if a=b {x} else if c=d {y} else {z}
     // 'a=b {x}', 'c=d {y}' are 'branches'

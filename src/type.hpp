@@ -25,9 +25,9 @@ public:
 
   inline ~type() = default;
 
-  inline void add_field([[maybe_unused]] const token &tk, const string &name,
+  inline void add_field([[maybe_unused]] const token &tk, string name,
                         const type &tp) {
-    fields_.emplace_back(type_field{name, tp, size_});
+    fields_.emplace_back(type_field{move(name), tp, size_});
     size_ += tp.size_;
   }
 

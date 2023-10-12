@@ -43,7 +43,7 @@ public:
                                                    func_ret_var)},
         func_is_inline_{func_is_inline}, type_{tpe} {}
 
-  inline void add_var(const token &declared_at, const string &name,
+  inline void add_var(token declared_at, const string &name,
                       const type &tpe, const int stack_idx,
                       const bool initiated) {
     string nasm_ident;
@@ -69,7 +69,7 @@ public:
     nasm_ident = "qword" + nasm_ident;
     //			throw"unexpected variable size: "+to_string(size);
     //		}
-    vars_.put(name, {name, tpe, declared_at, stack_idx, nasm_ident, initiated});
+    vars_.put(name, {name, tpe, move(declared_at), stack_idx, nasm_ident, initiated});
   }
 
   inline auto allocated_stack_size() const -> size_t {

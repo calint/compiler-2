@@ -8,8 +8,8 @@ class stmt_def_type final : public statement {
   type type_{};
 
 public:
-  inline stmt_def_type(toc &tc, const token &tk, tokenizer &tz)
-      : statement{{}, tk}, name_{tz.next_token()} {
+  inline stmt_def_type(toc &tc, token tk, tokenizer &tz)
+      : statement{move(tk)}, name_{tz.next_token()} {
 
     if (not tz.is_next_char('{')) {
       throw compiler_exception(name_, "expected '{'");

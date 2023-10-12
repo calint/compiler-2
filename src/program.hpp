@@ -21,7 +21,7 @@ class program final {
 
 public:
   inline explicit program(const string &source) : tc_{source} {
-    const token &prgtk{prg.tok()};
+    const token prgtk{prg.tok()};
     // add built-in assembler calls
     const vector<string> assembler_funcs{"mov", "syscall"};
     for (const string &str : assembler_funcs) {
@@ -59,7 +59,7 @@ public:
       } else if (tk.is_name("")) {
         //? should this be able to happen?
         // throw panic_exception("program:1");
-        statements_.emplace_back(make_unique<statement>(unary_ops{}, tk));
+        statements_.emplace_back(make_unique<statement>(tk, unary_ops{}));
       } else {
         throw compiler_exception(tk, "unexpected keyword '" + tk.name() + "'");
       }

@@ -8,9 +8,8 @@ class stmt_call : public expression {
   token whitespace_after_{};
 
 public:
-  inline stmt_call(toc &tc, const unary_ops &uops, const token &tk,
-                   tokenizer &tz)
-      : expression{uops, tk} {
+  inline stmt_call(toc &tc, unary_ops uops, token tk, tokenizer &tz)
+      : expression{move(tk), move(uops)} {
 
     set_type(tc.get_func_return_type_or_throw(*this, identifier()));
 

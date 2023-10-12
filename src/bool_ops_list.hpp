@@ -11,8 +11,7 @@ public:
       : // the token is used to give 'cmp' a unique label
         //   if first_bool_op is provided then use that token
         //   else the next white space token
-        statement{{},
-                  first_op.is_name("") ? tz.next_whitespace_token()
+        statement{first_op.is_name("") ? tz.next_whitespace_token()
                                        : token_from(first_bool_op)},
         not_token_{move(not_token)}, enclosed_{enclosed} {
 
@@ -154,8 +153,7 @@ public:
         get<bool_ops_list>(bools_[i]).source_to(os);
       }
       if (i < n - 1) {
-        const token &t{ops_[i]};
-        t.source_to(os);
+        ops_[i].source_to(os);
       }
     }
     if (enclosed_) {

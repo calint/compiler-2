@@ -8,7 +8,7 @@ class expr_any final : public statement {
 
 public:
   inline expr_any(toc &tc, tokenizer &tz, const type &tp, bool in_args)
-      : statement{{}, tz.next_whitespace_token()} {
+      : statement{tz.next_whitespace_token()} {
 
     set_type(tp);
 

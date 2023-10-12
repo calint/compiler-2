@@ -11,7 +11,7 @@ public:
       const bool enclosed = false, unary_ops uops = {},
       const char first_op_precedence = initial_precedence,
       unique_ptr<statement> first_expression = unique_ptr<statement>())
-      : expression{{}, tz.next_whitespace_token()}, enclosed_{enclosed},
+      : expression{tz.next_whitespace_token()}, enclosed_{enclosed},
         uops_{move(uops)} {
 
     // read first expression i.e. =-a/-(b+1)

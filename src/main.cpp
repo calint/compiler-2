@@ -68,22 +68,22 @@ auto main(int argc, char *args[]) -> int {
 
 // called from 'stmt_block' to solve circular dependencies with 'loop', 'if' and
 // function calls
-inline auto create_statement_from_tokenizer(toc &tc, const unary_ops &uops,
-                                            const token &tk, tokenizer &tz)
+inline auto create_statement_from_tokenizer(toc &tc, unary_ops uops, token tk,
+                                            tokenizer &tz)
     -> unique_ptr<statement> {
   if (tk.is_name("loop")) {
-    return make_unique<stmt_loop>(tc, tk, tz);
+    return make_unique<stmt_loop>(tc, move(tk), tz);
   }
   if (tk.is_name("if")) {
-    return make_unique<stmt_if>(tc, tk, tz);
+    return make_unique<stmt_if>(tc, move(tk), tz);
   }
   if (tk.is_name("mov")) {
-    return make_unique<call_asm_mov>(tc, tk, tz);
+    return make_unique<call_asm_mov>(tc, move(tk), tz);
   }
   if (tk.is_name("syscall")) {
-    return make_unique<call_asm_syscall>(tc, tk, tz);
+    return make_unique<call_asm_syscall>(tc, move(tk), tz);
   }
-  return make_unique<stmt_call>(tc, uops, tk, tz);
+  return make_unique<stmt_call>(tc, move(uops), move(tk), tz);
 }
 
 // called from 'expr_ops_list' to solve circular dependencies with function
@@ -91,8 +91,8 @@ inline auto create_statement_from_tokenizer(toc &tc, const unary_ops &uops,
 inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
     -> unique_ptr<statement> {
 
-  const unary_ops uops{tz};
-  const token tk{tz.next_token()};
+  unary_ops uops{tz};
+  token tk{tz.next_token()};
   if (tk.is_name("")) {
     throw compiler_exception(tk, "unexpected empty expression");
   }
@@ -102,14 +102,14 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
       throw compiler_exception(tk, "unexpected comment after unary ops");
     }
     // i.e.  print("hello") # comment
-    return make_unique<stmt_comment>(tc, tk, tz);
+    return make_unique<stmt_comment>(tc, move(tk), tz);
   }
   if (tz.is_peek_char('(')) {
     // i.e.  f(...)
-    return create_statement_from_tokenizer(tc, uops, tk, tz);
+    return create_statement_from_tokenizer(tc, move(uops), move(tk), tz);
   }
   // i.e. 0x80, rax, identifiers
-  unique_ptr<statement> st{make_unique<statement>(uops, tk)};
+  unique_ptr<statement> st{make_unique<statement>(tk, move(uops))};
   const ident_resolved &ir{tc.resolve_identifier(*st, false)};
   st->set_type(ir.tp);
   return st;

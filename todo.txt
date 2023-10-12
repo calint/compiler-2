@@ -1,10 +1,11 @@
-[ ] review main.cpp move of tokens and unary_ops
+[x] review main.cpp move of tokens and unary_ops
+[ ] modernize: pass by value and move
 [ ] review new code
 [ ] "#comment" should be accepted as "# comment"
 [ ] string type
 [ ]   var str = "hello world"
 [ ]   var len = str.len
-[ ] var points : point[10] = {}
+[ ] var points : point[10] = { {1, 2}, {3, 4}}
 [ ]   points[1].x = 1
 [ ]   points.len
 [ ] floating point numbers
@@ -23,6 +24,7 @@
 [ ] function arguments relative to rsp allowing writing to variable in previous function context
 [ ] function arguments as references
 [ ]   pass effective address to the type
+[ ] deduce to expr_ops_list or bool_ops_list
 [ ] function return written to reference
 [ ] def table{x,y,z}
 [ ] pointers?

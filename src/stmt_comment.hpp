@@ -4,8 +4,8 @@ class stmt_comment final : public statement {
   string line_{};
 
 public:
-  inline stmt_comment(toc &tc, const token &tk, tokenizer &tz)
-      : statement{{}, tk}, line_{tz.read_rest_of_line()} {
+  inline stmt_comment(toc &tc, token tk, tokenizer &tz)
+      : statement{move(tk)}, line_{tz.read_rest_of_line()} {
 
     set_type(tc.get_type_void());
   }

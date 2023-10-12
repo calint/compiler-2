@@ -12,7 +12,7 @@ class statement {
   const type *type_{};
 
 public:
-  inline explicit statement(unary_ops uops, token tk)
+  inline explicit statement(token tk, unary_ops uops = {})
       : token_{move(tk)}, uops_{move(uops)} {
 
     validate_identifier_name(token_);

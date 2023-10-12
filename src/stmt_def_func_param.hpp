@@ -5,7 +5,7 @@ class stmt_def_func_param final : public statement {
 
 public:
   inline stmt_def_func_param(toc &tc, tokenizer &tz)
-      : statement{{}, tz.next_token()} {
+      : statement{tz.next_token()} {
 
     assert(not tok().is_name(""));
 
