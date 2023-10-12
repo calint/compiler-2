@@ -37,17 +37,7 @@ type point {x, y}
 
 type object {pos : point, color : i32}
 
-func inline foo(p : point) {
-    p.x = 0xa
-    p.y = 0xb
-}
-
 func inline main {
-    var p : point = {0, 0}
-    foo(p)
-    assert(p.x == 0xa)
-    assert(p.y == 0xb)
-
     var x = 1
     var y = 2
 

@@ -126,6 +126,9 @@ public:
     case 1:
       // bool expression
       return get<bool_ops_list>(var_).is_expression();
+    case 2:
+      // assign value
+      return get<expr_type_value>(var_).is_expression();
     default:
       throw panic_exception("expr_any:3");
     }
@@ -153,6 +156,8 @@ public:
       return get<expr_ops_list>(var_).get_unary_ops();
     case 1:
       return get<bool_ops_list>(var_).get_unary_ops();
+    case 2:
+      return get<expr_type_value>(var_).get_unary_ops();
     default:
       throw panic_exception("expr_any:5");
     }
