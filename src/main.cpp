@@ -128,15 +128,17 @@ inline void unary_ops::compile(toc & /*tc*/, ostream &os, size_t indent_level,
   while (i--) {
     toc::indent(os, indent_level, false);
     const char op{ops_[i]};
-    if (op == '~') {
+    switch (op) {
+    case '~':
       os << "not " << dst_resolved << endl;
-    } else if (op == '-') {
+      break;
+    case '-':
       os << "neg " << dst_resolved << endl;
       //		}else if(op=='!'){
       //			os<<"xor "<<dst_resolved<<",1"<<endl;
-    } else {
-      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                            std::to_string(__LINE__));
+      break;
+    default:
+      throw panic_exception("unary_ops::compile 1");
     }
   }
 }
@@ -179,9 +181,11 @@ inline void expr_type_value::compile_recursive(const expr_type_value &atv,
       const type_field &fld{flds[i]};
       if (fld.tp.is_built_in()) {
         const string &src_resolved{
-            tc.resolve_identifier(atv.tok(), src + "." + fld.name, false).id_nasm};
+            tc.resolve_identifier(atv.tok(), src + "." + fld.name, false)
+                .id_nasm};
         const string &dst_resolved{
-            tc.resolve_identifier(atv.tok(), dst + "." + fld.name, false).id_nasm};
+            tc.resolve_identifier(atv.tok(), dst + "." + fld.name, false)
+                .id_nasm};
         tc.asm_cmd(atv.tok(), os, indent, "mov", dst_resolved, src_resolved);
         continue;
       }

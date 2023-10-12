@@ -1280,7 +1280,7 @@ public:
     os << "call " << label << endl;
   }
 
-  inline static void asm_neg([[maybe_unused]] const statement &st, ostream &os,
+  inline static void asm_neg([[maybe_unused]] const token &src_loc, ostream &os,
                              const size_t indnt, const string &dst_resolved) {
     indent(os, indnt);
     os << "neg " << dst_resolved << endl;
