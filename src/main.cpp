@@ -86,7 +86,8 @@ inline auto create_statement_from_tokenizer(toc &tc, const unary_ops &uops,
   return make_unique<stmt_call>(tc, uops, tk, tz);
 }
 
-// called from expr_ops_list to solve circular dependencies with calls
+// called from 'expr_ops_list' to solve circular dependencies with function
+// calls
 inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
     -> unique_ptr<statement> {
 
