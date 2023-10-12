@@ -8,8 +8,8 @@ class type;
 
 class statement {
 public:
-  inline explicit statement(token tk, unary_ops uops = {})
-      : token_{move(tk)}, uops_{move(uops)} {
+  inline explicit statement(const unary_ops &uops, const token &tk)
+      : token_{tk}, uops_{uops} {
 
     validate_identifier_name(token_);
   }

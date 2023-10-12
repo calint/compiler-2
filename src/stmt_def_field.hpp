@@ -8,8 +8,8 @@ class stmt_def_field final : public statement {
   token initial_value_{};
 
 public:
-  inline stmt_def_field(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)}, name_{tz.next_token()} {
+  inline stmt_def_field(toc &tc, const token &tk, tokenizer &tz)
+      : statement{{}, tk}, name_{tz.next_token()} {
 
     if (name_.is_empty()) {
       throw compiler_exception(name_, "expected field name");

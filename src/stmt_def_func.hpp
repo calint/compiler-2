@@ -12,8 +12,8 @@ class stmt_def_func final : public statement {
   bool no_args_{};
 
 public:
-  inline stmt_def_func(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)}, name_{tz.next_token()} {
+  inline stmt_def_func(toc &tc, const token &tk, tokenizer &tz)
+      : statement{{}, tk}, name_{tz.next_token()} {
 
     if (name_.is_name("inline")) {
       inline_tk_ = name_;

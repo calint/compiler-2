@@ -3,8 +3,8 @@
 
 class expression : public statement {
 public:
-  inline expression(token tk, unary_ops uops)
-      : statement{move(tk), move(uops)} {}
+  inline expression(const unary_ops &uops, const token &tk)
+      : statement{uops, tk} {}
 
   inline expression() = default;
   inline expression(const expression &) = default;

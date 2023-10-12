@@ -12,8 +12,8 @@ class stmt_block final : public statement {
 
 public:
   inline stmt_block(toc &tc, tokenizer &tz)
-      : statement{tz.next_whitespace_token()}, is_one_statement_{
-                                                   not tz.is_next_char('{')} {
+      : statement{{}, tz.next_whitespace_token()},
+        is_one_statement_{not tz.is_next_char('{')} {
 
     tc.enter_block();
     while (true) {
@@ -27,32 +27,34 @@ public:
                                  "unexpected '}' in single statement block");
       }
 
-      token tk{tz.next_token()};
+      const token tk{tz.next_token()};
       if (tk.is_empty()) {
         throw compiler_exception(tk,
                                  "unexpected '" + string{tz.peek_char()} + "'");
       }
 
       if (tk.is_name("var")) {
-        stms_.emplace_back(make_unique<stmt_def_var>(tc, move(tk), tz));
+        stms_.emplace_back(make_unique<stmt_def_var>(tc, tk, tz));
       } else if (tz.is_next_char('=')) {
-        stms_.emplace_back(
-            make_unique<stmt_assign_var>(tc, move(tk), token{}, tz));
+        stms_.emplace_back(make_unique<stmt_assign_var>(tc, tk, token{}, tz));
       } else if (tk.is_name("break")) {
-        stms_.emplace_back(make_unique<stmt_break>(tc, move(tk)));
+        stms_.emplace_back(make_unique<stmt_break>(tc, tk));
       } else if (tk.is_name("continue")) {
-        stms_.emplace_back(make_unique<stmt_continue>(tc, move(tk)));
+        stms_.emplace_back(make_unique<stmt_continue>(tc, tk));
       } else if (tk.is_name("return")) {
-        stms_.emplace_back(make_unique<stmt_return>(tc, move(tk)));
+        stms_.emplace_back(make_unique<stmt_return>(tc, tk));
       } else if (tk.is_name("#")) {
-        stms_.emplace_back(make_unique<stmt_comment>(tc, move(tk), tz));
+        stms_.emplace_back(make_unique<stmt_comment>(tc, tk, tz));
         last_statement_considered_no_statment = true;
-      } else if (tk.is_name("")) { // white space
-        stms_.emplace_back(make_unique<statement>(move(tk)));
-        stms_.back()->set_type(tc.get_type_void());
+      } else if (tk.is_name("")) {
+        // whitespace
+        //? should this be able to happend?
+        // throw panic_exception("stmt_block:1");
+        stms_.emplace_back(make_unique<statement>(unary_ops{}, tk));
+        // stms_.back()->set_type(tc.get_type_void());
       } else { // circular reference resolver
         const unary_ops uops{};
-        stms_.emplace_back(create_statement_from_tokenizer(tc, tk, tz, uops));
+        stms_.emplace_back(create_statement_from_tokenizer(tc, uops, tk, tz));
       }
 
       if (is_one_statement_ and not last_statement_considered_no_statment) {

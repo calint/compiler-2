@@ -3,8 +3,8 @@
 
 class call_asm_mov final : public call_asm {
 public:
-  inline call_asm_mov(toc &tc, token tk, tokenizer &tz)
-      : call_asm{tc, move(tk), tz} {
+  inline call_asm_mov(toc &tc, const token &tk, tokenizer &tz)
+      : call_asm{tc, tk, tz} {
 
     set_type(tc.get_type_void());
   }

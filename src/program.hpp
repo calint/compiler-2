@@ -40,7 +40,7 @@ public:
 
     tokenizer tkz{source};
     while (true) {
-      token tk{tkz.next_token()};
+      const token tk{tkz.next_token()};
       if (tk.is_empty()) {
         if (tkz.is_eos()) {
           break;
@@ -49,18 +49,17 @@ public:
                                          "'");
       }
       if (tk.is_name("field")) {
-        statements_.emplace_back(
-            make_unique<stmt_def_field>(tc_, move(tk), tkz));
+        statements_.emplace_back(make_unique<stmt_def_field>(tc_, tk, tkz));
       } else if (tk.is_name("func")) {
-        statements_.emplace_back(
-            make_unique<stmt_def_func>(tc_, move(tk), tkz));
+        statements_.emplace_back(make_unique<stmt_def_func>(tc_, tk, tkz));
       } else if (tk.is_name("type")) {
-        statements_.emplace_back(
-            make_unique<stmt_def_type>(tc_, move(tk), tkz));
+        statements_.emplace_back(make_unique<stmt_def_type>(tc_, tk, tkz));
       } else if (tk.is_name("#")) {
-        statements_.emplace_back(make_unique<stmt_comment>(tc_, move(tk), tkz));
+        statements_.emplace_back(make_unique<stmt_comment>(tc_, tk, tkz));
       } else if (tk.is_name("")) {
-        statements_.emplace_back(make_unique<statement>(move(tk)));
+        //? should this be able to happen?
+        // throw panic_exception("program:1");
+        statements_.emplace_back(make_unique<statement>(unary_ops{}, tk));
       } else {
         throw compiler_exception(tk, "unexpected keyword '" + tk.name() + "'");
       }

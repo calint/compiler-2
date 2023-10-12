@@ -4,8 +4,8 @@ class stmt_def_type_field final : public statement {
   token type_{};
 
 public:
-  inline stmt_def_type_field(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)} {
+  inline stmt_def_type_field(toc &tc, const token &tk, tokenizer &tz)
+      : statement{{}, tk} {
 
     set_type(tc.get_type_void());
 

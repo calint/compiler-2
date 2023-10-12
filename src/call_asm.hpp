@@ -3,8 +3,8 @@
 
 class call_asm : public stmt_call {
 public:
-  inline call_asm(toc &tc, token tk, tokenizer &tz)
-      : stmt_call{tc, move(tk), {}, tz} {
+  inline call_asm(toc &tc, const token &tk, tokenizer &tz)
+      : stmt_call{tc, {}, tk, tz} {
 
     set_type(tc.get_type_void());
   }

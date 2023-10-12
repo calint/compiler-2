@@ -2,7 +2,7 @@
 
 class stmt_return final : public statement {
 public:
-  inline stmt_return(toc &tc, token tk) : statement{move(tk)} {
+  inline stmt_return(toc &tc, const token &tk) : statement{{}, tk} {
     set_type(tc.get_type_void());
   }
 

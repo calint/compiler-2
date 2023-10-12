@@ -8,15 +8,15 @@ class stmt_def_type final : public statement {
   type type_{};
 
 public:
-  inline stmt_def_type(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)}, name_{tz.next_token()} {
+  inline stmt_def_type(toc &tc, const token &tk, tokenizer &tz)
+      : statement{{}, tk}, name_{tz.next_token()} {
 
     if (not tz.is_next_char('{')) {
       throw compiler_exception(name_, "expected '{'");
     }
 
     while (true) {
-      token tknm{tz.next_token()};
+      const token tknm{tz.next_token()};
       if (tknm.is_name("")) {
         ws_ = tknm;
         if (not tz.is_next_char('}')) {
@@ -24,7 +24,7 @@ public:
         }
         break;
       }
-      fields_.emplace_back(tc, move(tknm), tz);
+      fields_.emplace_back(tc, tknm, tz);
       if (tz.is_next_char('}')) {
         break;
       }

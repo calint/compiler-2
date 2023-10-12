@@ -4,17 +4,18 @@
 
 class bool_ops_list final : public statement {
 public:
-  inline bool_ops_list(
-      toc &tc, tokenizer &tz, const bool enclosed = false, token not_token = {},
-      const bool is_sub_expr = false,
-      variant<bool_op, bool_ops_list> first_bool_op = {},
-      token first_op = {})
+  inline bool_ops_list(toc &tc, tokenizer &tz, const bool enclosed = false,
+                       const token &not_token = {},
+                       const bool is_sub_expr = false,
+                       variant<bool_op, bool_ops_list> first_bool_op = {},
+                       token first_op = {})
       : // the token is used to give 'cmp' a unique label
         //   if first_bool_op is provided then use that token
         //   else the next white space token
-        statement{first_op.is_name("") ? tz.next_whitespace_token()
+        statement{{},
+                  first_op.is_name("") ? tz.next_whitespace_token()
                                        : token_from(first_bool_op)},
-        not_token_{move(not_token)}, enclosed_{enclosed} {
+        not_token_{not_token}, enclosed_{enclosed} {
 
     set_type(tc.get_type_bool());
 
@@ -25,13 +26,13 @@ public:
       ops_.push_back(move(first_op));
     }
     while (true) {
-      token tknot{tz.next_token()};
+      const token tknot{tz.next_token()};
       if (tknot.is_name("not")) {
         // not (a=1 and b=1)
         // not a=1 and b=1
         if (tz.is_next_char('(')) {
           // not (a=1 and b=1)
-          bools_.emplace_back(bool_ops_list{tc, tz, true, move(tknot)});
+          bools_.emplace_back(bool_ops_list{tc, tz, true, tknot});
         } else {
           // not a=1 and b=1
           tz.put_back_token(tknot);
@@ -66,8 +67,8 @@ public:
         if (tk.is_name("and")) {
           // a and b or c -> (a and b) or c
           // first op is 'and', make sub-expression (a and b) ...
-          bool_ops_list bol{
-              tc, tz, false, {}, true, move(bools_.back()), move(tk)};
+          bool_ops_list bol{tc,      tz, false, {}, true, move(bools_.back()),
+                            move(tk)};
           bools_.pop_back();
           bools_.emplace_back(move(bol));
 
@@ -135,10 +136,8 @@ public:
   inline bool_ops_list() = default;
   inline bool_ops_list(const bool_ops_list &) = default;
   inline bool_ops_list(bool_ops_list &&) = default;
-  inline auto operator=(const bool_ops_list &)
-      -> bool_ops_list & = default;
-  inline auto operator=(bool_ops_list &&)
-      -> bool_ops_list & = default;
+  inline auto operator=(const bool_ops_list &) -> bool_ops_list & = default;
+  inline auto operator=(bool_ops_list &&) -> bool_ops_list & = default;
 
   inline ~bool_ops_list() override = default;
 
@@ -346,8 +345,8 @@ public:
   }
 
 private:
-  inline static auto
-  cmp_label_from(const toc &tc, const variant<bool_op, bool_ops_list> &v)
+  inline static auto cmp_label_from(const toc &tc,
+                                    const variant<bool_op, bool_ops_list> &v)
       -> string {
     if (v.index() == 1) {
       return get<bool_ops_list>(v).cmp_bgn_label(tc);

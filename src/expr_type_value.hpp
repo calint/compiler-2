@@ -10,7 +10,7 @@ class expr_type_value final : public statement {
 
 public:
   inline expr_type_value(toc &tc, tokenizer &tz, const type &tp)
-      : statement{tz.next_token()} {
+      : statement{{}, tz.next_token()} {
 
     set_type(tp);
 
@@ -47,8 +47,8 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       const string &dst) const override {
-    expr_type_value::compile_recursive(*this, tc, os, indent + 1,
-                                         tok().name(), dst, get_type());
+    expr_type_value::compile_recursive(*this, tc, os, indent + 1, tok().name(),
+                                       dst, get_type());
   }
 
   // implemented in main.cpp due to circular reference

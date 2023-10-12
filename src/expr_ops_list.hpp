@@ -8,11 +8,11 @@ class expr_ops_list final : public expression {
 public:
   inline expr_ops_list(
       toc &tc, tokenizer &tz, const bool in_args = false,
-      const bool enclosed = false, unary_ops uops = {},
+      const bool enclosed = false, const unary_ops &uops = {},
       const char first_op_precedence = initial_precedence,
       unique_ptr<statement> first_expression = unique_ptr<statement>())
-      : expression{tz.next_whitespace_token(), {}}, enclosed_{enclosed},
-        uops_{move(uops)} {
+      : expression{{}, tz.next_whitespace_token()}, enclosed_{enclosed},
+        uops_{uops} {
 
     // read first expression i.e. =-a/-(b+1)
     if (first_expression) {
@@ -20,11 +20,11 @@ public:
       exps_.push_back(move(first_expression));
     } else {
       // check if new recursion is necessary e.g. =-a/-(-(b+c)+d), t at "-a/-("
-      unary_ops uo{tz};
+      const unary_ops uo{tz};
       if (tz.is_next_char('(')) {
         // recursion
         exps_.emplace_back(
-            make_unique<expr_ops_list>(tc, tz, in_args, true, move(uo)));
+            make_unique<expr_ops_list>(tc, tz, in_args, true, uo));
       } else {
         // statement
         uo.put_back(tz);

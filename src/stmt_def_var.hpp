@@ -17,8 +17,8 @@ class stmt_def_var final : public statement {
   stmt_assign_var initial_value_{};
 
 public:
-  inline stmt_def_var(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)}, name_{tz.next_token()} {
+  inline stmt_def_var(toc &tc, const token &tk, tokenizer &tz)
+      : statement{{}, tk}, name_{tz.next_token()} {
     if (tz.is_next_char(':')) {
       type_ = tz.next_token();
     }

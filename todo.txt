@@ -2,8 +2,13 @@
 [ ] review new code
 [ ] "#comment" should be accepted as "# comment"
 [ ] string type
-[ ] var str="hello world"
-[ ] var len=str.len
+[ ]   var str = "hello world"
+[ ]   var len = str.len
+[ ] var points : point[10] = {}
+[ ]   points[1].x = 1
+[ ]   points.len
+[ ] floating point numbers
+[ ] func f(p : point) {} ... f({x, y})
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
 [ ] fix 'cmp' with left hand side constant
 [ ] clean-up: consistent variable names
@@ -21,7 +26,6 @@
 [ ] function return written to reference
 [ ] def table{x,y,z}
 [ ] pointers?
-[ ] var points=point[10] where points contains length of array and a pointer
 [ ] multiple return values assignment: var a,b=foo()  a,b=foo()
 [ ] tokenizer to keep track of line-number instead of computing it
 [ ] token.compile assumes is_str is field (db)

@@ -68,9 +68,8 @@ auto main(int argc, char *args[]) -> int {
 
 // called from stmt_block to solve circular dependencies with 'loop', 'if' and
 // 'calls'
-inline auto create_statement_from_tokenizer(toc &tc, const token &tk,
-                                            tokenizer &tz,
-                                            const unary_ops &uops)
+inline auto create_statement_from_tokenizer(toc &tc, const unary_ops &uops,
+                                            const token &tk, tokenizer &tz)
     -> unique_ptr<statement> {
   if (tk.is_name("loop")) {
     return make_unique<stmt_loop>(tc, tk, tz);
@@ -84,7 +83,7 @@ inline auto create_statement_from_tokenizer(toc &tc, const token &tk,
   if (tk.is_name("syscall")) {
     return make_unique<call_asm_syscall>(tc, tk, tz);
   }
-  return make_unique<stmt_call>(tc, tk, uops, tz);
+  return make_unique<stmt_call>(tc, uops, tk, tz);
 }
 
 // called from expr_ops_list to solve circular dependencies with calls
@@ -92,24 +91,24 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
     -> unique_ptr<statement> {
 
   const unary_ops uops{tz};
-  token tk{tz.next_token()};
+  const token tk{tz.next_token()};
   if (tk.is_name("")) {
     throw compiler_exception(tk, "unexpected empty expression");
   }
 
-  if (tk.is_name("#")) {
+  if (tk.name().starts_with("#")) {
     if (!uops.is_empty()) {
       throw compiler_exception(tk, "unexpected comment after unary ops");
     }
     // i.e.  print("hello") # comment
-    return make_unique<stmt_comment>(tc, move(tk), tz);
+    return make_unique<stmt_comment>(tc, tk, tz);
   }
   if (tz.is_peek_char('(')) {
     // i.e.  f(...)
-    return create_statement_from_tokenizer(tc, tk, tz, uops);
+    return create_statement_from_tokenizer(tc, uops, tk, tz);
   }
   // i.e. 0x80, rax, identifiers
-  unique_ptr<statement> st{make_unique<statement>(move(tk), uops)};
+  unique_ptr<statement> st{make_unique<statement>(uops, tk)};
   const ident_resolved &ir{tc.resolve_identifier(*st, false)};
   st->set_type(ir.tp);
   return st;
@@ -158,9 +157,11 @@ inline void expr_type_value::source_to(ostream &os) const {
   os << '}';
 }
 
-inline void expr_type_value::compile_recursive(
-    const expr_type_value &atv, toc &tc, ostream &os, size_t indent,
-    const string &src, const string &dst, const type &dst_type) {
+inline void expr_type_value::compile_recursive(const expr_type_value &atv,
+                                               toc &tc, ostream &os,
+                                               size_t indent, const string &src,
+                                               const string &dst,
+                                               const type &dst_type) {
 
   tc.source_comment(atv, os, indent);
   if (not src.empty()) {
