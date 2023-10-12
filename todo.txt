@@ -3,7 +3,7 @@
 [ ]     where p refers into caller stack (rbp+xx)
 [ ] func f(inout point p) { p.x = 1 } p refers to instance in caller stack (rbp+xx)
 [ ] func f(copy point p) copies point to callee stack
-[ ] func f(const point p) const is default, p is refers "back" in the stack (rbp+xx)
+[ ] func f(const point p) const is default, p refers "back" in the stack (rbp+xx)
 [ ] multiple return values: func f() : point pos, point vel { ... }
 [ ]    var p,v = f()
 [ ] review new code
