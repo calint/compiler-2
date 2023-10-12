@@ -1,4 +1,9 @@
 [x] review main.cpp move of tokens and unary_ops
+[ ] func f() : point p { p = {1, 2} }
+[ ]    var pos : point = f()
+[ ]     where p is allocated on the stack rbp+xx
+[ ] multiple return values: func f() : point pos, point vel { ... }
+[ ]    var p,v = f()
 [ ] modernize: pass by value and move
 [ ] review new code
 [ ] "#comment" should be accepted as "# comment"
