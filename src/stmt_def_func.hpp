@@ -4,8 +4,8 @@
 
 class stmt_def_func final : public statement {
   struct return_info {
-    token type_tk{};  // type token
-    token ident_tk{}; // identifier
+    const token type_tk{};  // type token
+    const token ident_tk{}; // identifier
     const type &tp;   // type
   };
 
@@ -47,8 +47,8 @@ public:
     whitespace_after_params_ = tz.next_whitespace_token();
     if (tz.is_next_char(':')) { // returns
       while (true) {
-        token type_tk{tz.next_token()};
-        struct return_info ret_info {
+        const token type_tk{tz.next_token()};
+        const struct return_info ret_info {
           type_tk,
               tz.next_token(), tc.get_type_or_throw(type_tk, type_tk.name())
         };
@@ -58,7 +58,7 @@ public:
         }
         break;
       }
-      if (returns_.size() > 0) {
+      if (not returns_.empty()) {
         set_type(returns_[0].tp);
       } else {
         set_type(tc.get_type_default());
