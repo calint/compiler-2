@@ -180,14 +180,14 @@ main:
 ;  [41:9] x = 1 
 ;  [41:13] 1 
 ;  [41:13] 1 
-;  [41:13] x=1 
+;  [41:13] x = 1 
    mov qword[rbp-8], 1
 ;  y: qword[rbp-16]
 ;  [42:5] var y = 2 
 ;  [42:9] y = 2 
 ;  [42:13] 2 
 ;  [42:13] 2 
-;  [42:13] y=2 
+;  [42:13] y = 2 
    mov qword[rbp-16], 2
 ;  o1: qword[rbp-36]
 ;  [44:5] var o1 : object = {{x * 10, y}, 0xff0000}
@@ -198,22 +198,22 @@ main:
 ;      [44:25] x * 10
 ;      alloc r15
 ;      [44:25] x * 10
-;      [44:25] r15=x 
+;      [44:25] r15 = x 
        mov r15, qword[rbp-8]
-;      [44:29] r15* 10
+;      [44:29] r15 * 10
        imul r15, 10
        mov qword[rbp-36], r15
 ;      free r15
 ;      [44:33] y
 ;      [44:33] y
-;      [44:33] o1.pos.y=y
+;      [44:33] o1.pos.y = y
 ;      alloc r15
        mov r15, qword[rbp-16]
        mov qword[rbp-28], r15
 ;      free r15
 ;    [44:37] 0xff0000
 ;    [44:37] 0xff0000
-;    [44:37] o1.color=0xff0000
+;    [44:37] o1.color = 0xff0000
      mov dword[rbp-20], 0xff0000
 ;  [45:5] assert(o1.pos.x == 10) 
    sub rsp, 36
@@ -279,7 +279,7 @@ main:
 ;    [49:22] {-x, -y}
 ;    [49:23] -x
 ;    [49:23] -x
-;    [49:24] p1.x=-x
+;    [49:24] p1.x = -x
 ;    alloc r15
      mov r15, qword[rbp-8]
      mov qword[rbp-52], r15
@@ -287,7 +287,7 @@ main:
      neg qword[rbp-52]
 ;    [49:27] -y
 ;    [49:27] -y
-;    [49:28] p1.y=-y
+;    [49:28] p1.y = -y
 ;    alloc r15
      mov r15, qword[rbp-16]
      mov qword[rbp-44], r15
@@ -472,7 +472,7 @@ main:
 ;    [62:13] len = read(input.len, input) - 1 
 ;    [62:19] read(input.len, input) - 1 
 ;    [62:19] read(input.len, input) - 1 
-;    [62:19] len=read(input.len, input) 
+;    [62:19] len = read(input.len, input) 
 ;    [62:19] read(input.len, input) 
 ;    read(len : reg_rdx, ptr : reg_rsi) : nbytes 
 ;      inline: 62_19
@@ -501,7 +501,7 @@ main:
 ;      free rsi
 ;      free rdx
      read_62_19_end:
-;    [62:44] len- 1 
+;    [62:44] len - 1 
      sub qword[rbp-80], 1
 ;    [62:49] # -1 don't include the '\n' 
      if_63_12:

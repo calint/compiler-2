@@ -607,8 +607,8 @@ public:
         st.tok().char_index(), source_str_.c_str(), char_in_line)};
     os << "[" << to_string(n) << ":" << char_in_line << "]";
 
-    stringstream ss;
-    ss << " " << dst << op;
+    stringstream ss{};
+    ss << " " << dst << " " << op << " ";
     st.source_to(ss);
     const string &s{ss.str()};
     const string &res{regex_replace(s, regex("\\s+"), " ")};

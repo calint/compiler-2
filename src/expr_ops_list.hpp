@@ -173,6 +173,7 @@ public:
 
     const ident_resolved &dst_resolved{
         tc.resolve_identifier(*this, dst, false)};
+
     if (dst_resolved.is_register()) {
       do_compile(tc, os, indent, dst);
       return;
@@ -187,6 +188,7 @@ public:
     stringstream ss2{};
     const string &reg{tc.alloc_scratch_register(*this, ss2, indent)};
     do_compile(tc, ss2, indent, reg);
+    // tc.source_comment(*this, ss2, indent);
     tc.asm_cmd(*this, ss2, indent, "mov", dst_resolved.id_nasm, reg);
     tc.free_scratch_register(ss2, indent, reg);
 
