@@ -166,7 +166,7 @@ inline void expr_type_value::compile_recursive(const expr_type_value &atv,
   tc.source_comment(atv, os, indent);
   if (not src.empty()) {
     // e.g. obj.pos = p
-    const ident_resolved &id_res{tc.resolve_identifier(atv, src, true)};
+    const ident_resolved &id_res{tc.resolve_identifier(atv.tok(), src, true)};
     if (id_res.tp.name() != dst_type.name()) {
       throw compiler_exception(
           atv.tok(), "cannot assign '" + src + "' to '" + dst + "' because '" +
@@ -179,9 +179,9 @@ inline void expr_type_value::compile_recursive(const expr_type_value &atv,
       const type_field &fld{flds[i]};
       if (fld.tp.is_built_in()) {
         const string &src_resolved{
-            tc.resolve_identifier(atv, src + "." + fld.name, false).id_nasm};
+            tc.resolve_identifier(atv.tok(), src + "." + fld.name, false).id_nasm};
         const string &dst_resolved{
-            tc.resolve_identifier(atv, dst + "." + fld.name, false).id_nasm};
+            tc.resolve_identifier(atv.tok(), dst + "." + fld.name, false).id_nasm};
         tc.asm_cmd(atv, os, indent, "mov", dst_resolved, src_resolved);
         continue;
       }

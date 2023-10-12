@@ -147,7 +147,7 @@ public:
     if (!returns().empty()) {
       const string &ret_name{returns()[0].ident_tk.name()};
       const ident_resolved &ret_resolved{
-          tc.resolve_identifier(*this, ret_name, true)};
+          tc.resolve_identifier(tok(), ret_name, true)};
       tc.asm_cmd(*this, os, indent + 1, "mov", "rax", ret_resolved.id_nasm);
     }
 
@@ -190,7 +190,7 @@ private:
     // return binding
     if (not returns().empty()) {
       const string &nm{returns()[0].ident_tk.name()};
-      tc.add_var(*this, os, indent + 1, nm, get_type(), false);
+      tc.add_var(tok(), os, indent + 1, nm, get_type(), false);
     }
 
     // stack is now: ...,[prev rsp],...,[arg n],[arg n-1],...,[arg 1],[return
@@ -207,7 +207,7 @@ private:
       const string &reg{pm.get_register_or_empty()};
       if (reg.empty()) {
         // argument not passed as register
-        tc.add_func_arg(*this, os, indent + 1, pm_nm, arg_type, int(stk_ix));
+        tc.add_func_arg(tok(), os, indent + 1, pm_nm, arg_type, int(stk_ix));
         // only 64 bits values on the stack
         stk_ix += tc.get_type_default().size();
         continue;

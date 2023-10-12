@@ -239,85 +239,86 @@ public:
 
   inline auto source() const -> const string & { return source_str_; }
 
-  inline void add_field(const statement &st, const string &ident,
+  inline void add_field(const token &src_loc, const string &ident,
                         const stmt_def_field *f, const bool is_str_field) {
     if (fields_.has(ident)) {
       const field_info &fld{fields_.get(ident)};
-      throw compiler_exception(st.tok(),
+      throw compiler_exception(src_loc,
                                "field '" + ident + "' already defined at " +
                                    source_location_hr(fld.declared_at));
     }
-    fields_.put(ident, {f, st.tok(), is_str_field});
+    fields_.put(ident, {f, src_loc, is_str_field});
   }
 
-  inline void add_func(const token &tk, const string &name,
+  inline void add_func(const token &src_loc, const string &name,
                        const type &return_type, const stmt_def_func *ref) {
     if (funcs_.has(name)) {
       const func_info &func{funcs_.get_const_ref(name)};
-      const string src_loc{source_location_hr(func.declared_at)};
-      throw compiler_exception(tk, "function '" + name +
-                                       "' already defined at " + src_loc);
+      const string loc{source_location_hr(func.declared_at)};
+      throw compiler_exception(src_loc, "function '" + name +
+                                            "' already defined at " + loc);
     }
-    funcs_.put(name, {return_type, ref, tk});
+    funcs_.put(name, {return_type, ref, src_loc});
   }
 
-  inline auto get_func_or_throw(const statement &st, const string &name) const
+  inline auto get_func_or_throw(const token &src_loc, const string &name) const
       -> const stmt_def_func & {
     if (not funcs_.has(name)) {
-      throw compiler_exception(st.tok(), "function '" + name + "' not found");
+      throw compiler_exception(src_loc, "function '" + name + "' not found");
     }
 
     return *funcs_.get_const_ref(name).def;
   }
 
-  inline auto is_func_builtin(const statement &st, const string &name) const
+  inline auto is_func_builtin(const token &src_loc, const string &name) const
       -> bool {
     if (not funcs_.has(name)) {
-      throw compiler_exception(st.tok(), "function '" + name + "' not found");
+      throw compiler_exception(src_loc, "function '" + name + "' not found");
     }
 
     return funcs_.get_const_ref(name).def == nullptr;
   }
 
-  inline auto get_func_return_type_or_throw(const statement &st,
+  inline auto get_func_return_type_or_throw(const token &src_loc,
                                             const string &name) const
       -> const type & {
     if (not funcs_.has(name)) {
-      throw compiler_exception(st.tok(), "function '" + name + "' not found");
+      throw compiler_exception(src_loc, "function '" + name + "' not found");
     }
 
     return funcs_.get_const_ref(name).tp;
   }
 
-  inline void add_type(const token &tk, const type &tp) {
+  inline void add_type(const token &src_loc, const type &tp) {
     if (types_.has(tp.name())) {
-      throw compiler_exception(tk, "type '" + tp.name() + "' already defined");
+      throw compiler_exception(src_loc,
+                               "type '" + tp.name() + "' already defined");
     }
 
     types_.put(tp.name(), tp);
   }
 
-  inline auto get_type_or_throw(const token &cur_tk, const string &name) const
+  inline auto get_type_or_throw(const token &src_loc, const string &name) const
       -> const type & {
     if (not types_.has(name)) {
-      throw compiler_exception(cur_tk, "type '" + name + "' not found");
+      throw compiler_exception(src_loc, "type '" + name + "' not found");
     }
 
     return types_.get_const_ref(name);
   }
 
-  inline auto source_location_for_use_in_label(const token &tk) const
+  inline auto source_location_for_use_in_label(const token &src_loc) const
       -> string {
     size_t char_in_line{};
     const size_t n{line_number_for_char_index(
-        tk.char_index(), source_str_.c_str(), char_in_line)};
+        src_loc.char_index(), source_str_.c_str(), char_in_line)};
     return to_string(n) + "_" + to_string(char_in_line);
   }
 
-  inline auto source_location_hr(const token &tk) -> string {
+  inline auto source_location_hr(const token &src_loc) -> string {
     size_t char_in_line{};
     const size_t line_num{line_number_for_char_index(
-        tk.char_index(), source_str_.c_str(), char_in_line)};
+        src_loc.char_index(), source_str_.c_str(), char_in_line)};
 
     return to_string(line_num) + ":" + to_string(char_in_line);
   }
@@ -368,7 +369,7 @@ public:
       -> ident_resolved {
 
     const ident_resolved &ir{
-        resolve_ident_or_empty(st, st.identifier(), must_be_initiated)};
+        resolve_ident_or_empty(st.tok(), st.identifier(), must_be_initiated)};
     if (not ir.id_nasm.empty()) {
       return ir;
     }
@@ -377,29 +378,30 @@ public:
                                            st.identifier() + "'");
   }
 
-  inline auto resolve_identifier(const statement &st, const string &ident,
+  inline auto resolve_identifier(const token &src_loc, const string &name,
                                  const bool must_be_initiated) const
       -> ident_resolved {
     const ident_resolved &ir{
-        resolve_ident_or_empty(st, ident, must_be_initiated)};
+        resolve_ident_or_empty(src_loc, name, must_be_initiated)};
     if (not ir.id_nasm.empty()) {
       return ir;
     }
 
-    throw compiler_exception(st.tok(),
-                             "cannot resolve identifier '" + ident + "'");
+    throw compiler_exception(src_loc,
+                             "cannot resolve identifier '" + name + "'");
   }
 
-  inline void add_alias(const string &ident, const string &parent_frame_ident) {
-    frames_.back().add_alias(ident, parent_frame_ident);
+  inline void add_alias(const string &name,
+                        const string &name_in_parent_frame) {
+    frames_.back().add_alias(name, name_in_parent_frame);
   }
 
   inline void enter_func(const string &name, const string &call_loc,
-                         const string &ret_jmp, const bool is_inline,
-                         const vector<func_return_info> &rets) {
+                         const string &return_jmp_label, const bool is_inline,
+                         const vector<func_return_info> &returns) {
 
-    frames_.emplace_back(name, frame::frame_type::FUNC, call_loc, ret_jmp,
-                         is_inline, rets);
+    frames_.emplace_back(name, frame::frame_type::FUNC, call_loc,
+                         return_jmp_label, is_inline, returns);
     check_usage();
   }
 
@@ -431,13 +433,13 @@ public:
     frames_.pop_back();
   }
 
-  inline void add_var(const statement &st, ostream &os, size_t indnt,
+  inline void add_var(const token &src_loc, ostream &os, size_t indnt,
                       const string &name, const type &var_type,
                       const bool initiated) {
     // check if variable already declared in this scope
     if (frames_.back().has_var(name)) {
       const var_info &var{frames_.back().get_var_const_ref(name)};
-      throw compiler_exception(st.tok(),
+      throw compiler_exception(src_loc,
                                "variable '" + name + "' already declared at " +
                                    source_location_hr(var.declared_at));
     }
@@ -448,25 +450,25 @@ public:
     if (frm.has_var(id)) {
       const var_info &var{frm.get_var_const_ref(id)};
       throw compiler_exception(
-          st.tok(), "variable '" + name + "' shadows variable declared at " +
-                        source_location_hr(var.declared_at));
+          src_loc, "variable '" + name + "' shadows variable declared at " +
+                       source_location_hr(var.declared_at));
     }
 
     const int stack_idx{int(get_current_stack_size() + var_type.size())};
-    frames_.back().add_var(st.tok(), name, var_type, -stack_idx, initiated);
+    frames_.back().add_var(src_loc, name, var_type, -stack_idx, initiated);
     // comment the resolved name
-    const ident_resolved &ir{resolve_identifier(st, name, false)};
+    const ident_resolved &ir{resolve_identifier(src_loc, name, false)};
     indent(os, indnt, true);
     os << name << ": " << ir.id_nasm << endl;
   }
 
-  inline void add_func_arg(const statement &st, ostream &os, size_t indnt,
+  inline void add_func_arg(const token &src_loc, ostream &os, size_t indnt,
                            const string &name, const type &arg_type,
                            const int stack_idx) {
     assert(frames_.back().is_func() && not frames_.back().func_is_inline());
-    frames_.back().add_var(st.tok(), name, arg_type, stack_idx, true);
+    frames_.back().add_var(src_loc, name, arg_type, stack_idx, true);
     // comment the resolved name
-    const ident_resolved &ir{resolve_identifier(st, name, false)};
+    const ident_resolved &ir{resolve_identifier(src_loc, name, false)};
     indent(os, indnt, true);
     os << name << ": " << ir.id_nasm << endl;
   }
@@ -1378,7 +1380,7 @@ private:
     return n;
   }
 
-  inline auto resolve_ident_or_empty(const statement &st, const string &ident,
+  inline auto resolve_ident_or_empty(const token &src_loc, const string &ident,
                                      const bool must_be_initiated) const
       -> ident_resolved {
 
@@ -1415,17 +1417,17 @@ private:
     if (frames_[i].has_var(id)) {
       const var_info &var{frames_[i].get_var_const_ref(id)};
       if (must_be_initiated and not var.initiated) {
-        throw compiler_exception(st.tok(), "variable '" + var.name +
-                                               "' is not initiated");
+        throw compiler_exception(src_loc, "variable '" + var.name +
+                                              "' is not initiated");
       }
-      auto [tp, acc]{var.tp.accessor(st.tok(), bid.path(), var.stack_idx)};
+      auto [tp, acc]{var.tp.accessor(src_loc, bid.path(), var.stack_idx)};
       return {ident, acc, 0, tp, ident_resolved::ident_type::VAR};
     }
 
     // is 'id_nasm' a register?
     if (is_identifier_register(id)) {
       if (must_be_initiated and not is_register_initiated(id)) {
-        throw compiler_exception(st.tok(),
+        throw compiler_exception(src_loc,
                                  "register '" + id + "' is not initiated");
       }
 

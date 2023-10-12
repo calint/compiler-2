@@ -31,7 +31,7 @@ public:
                        : tc.get_type_or_throw(type_, type_.name())};
     set_type(tp);
     null_stream ns{};
-    tc.add_var(*this, ns, 0, name_.name(), tp, false);
+    tc.add_var(tok(), ns, 0, name_.name(), tp, false);
     initial_value_ = {tc, name_, type_, tz};
   }
 
@@ -50,7 +50,7 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
-    tc.add_var(*this, os, indent, name_.name(), get_type(), false);
+    tc.add_var(tok(), os, indent, name_.name(), get_type(), false);
     tc.source_comment(*this, os, indent);
     initial_value_.compile(tc, os, indent, name_.name());
   }

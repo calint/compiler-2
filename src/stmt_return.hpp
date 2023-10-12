@@ -24,7 +24,7 @@ public:
       if (not returns.empty()) {
         const func_return_info &ret_info{returns.at(0)};
         const ident_resolved &ir{
-            tc.resolve_identifier(*this, ret_info.ident_tk.name(), false)};
+            tc.resolve_identifier(tok(), ret_info.ident_tk.name(), false)};
         const string &src_resolved{ir.id_nasm};
         tc.asm_cmd(*this, os, indent, "mov", "rax", src_resolved);
       }

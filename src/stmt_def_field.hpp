@@ -27,7 +27,7 @@ public:
     } else {
       set_type(tc.get_type_default());
     }
-    tc.add_field(*this, name_.name(), this, initial_value_.is_string());
+    tc.add_field(tok(), name_.name(), this, initial_value_.is_string());
   }
 
   inline stmt_def_field() = default;

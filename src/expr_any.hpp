@@ -73,7 +73,7 @@ public:
     case 1:
       // bool expression
       const ident_resolved &dst_resolved{
-          tc.resolve_identifier(*this, dst, false)};
+          tc.resolve_identifier(tok(), dst, false)};
       const bool_ops_list &bol{get<bool_ops_list>(var_)};
       if (not bol.is_expression()) {
         const ident_resolved &src_resolved{tc.resolve_identifier(bol, false)};

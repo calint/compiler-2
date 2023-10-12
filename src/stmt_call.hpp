@@ -11,16 +11,16 @@ public:
   inline stmt_call(toc &tc, unary_ops uops, token tk, tokenizer &tz)
       : expression{move(tk), move(uops)} {
 
-    set_type(tc.get_func_return_type_or_throw(*this, identifier()));
+    set_type(tc.get_func_return_type_or_throw(tok(), identifier()));
 
     if (not tz.is_next_char('(')) {
       no_args_ = true;
       return;
     }
 
-    if (not tc.is_func_builtin(*this, identifier())) {
+    if (not tc.is_func_builtin(tok(), identifier())) {
       // user defined function
-      const stmt_def_func &func{tc.get_func_or_throw(*this, identifier())};
+      const stmt_def_func &func{tc.get_func_or_throw(tok(), identifier())};
       // try to create argument expressions of same type as parameter
       size_t i{0};
       const size_t n{func.params().size()};
@@ -85,7 +85,7 @@ public:
   inline void compile(toc &tc, ostream &os, size_t indent,
                       const string &dst = "") const override {
     tc.source_comment(*this, os, indent);
-    const stmt_def_func &func{tc.get_func_or_throw(*this, identifier())};
+    const stmt_def_func &func{tc.get_func_or_throw(tok(), identifier())};
     const string &func_nm{func.name()};
 
     // check that the same number of arguments are provided as expected
@@ -134,7 +134,7 @@ public:
 
       const type &return_type{func.get_type()};
       const ident_resolved &dst_resolved{
-          tc.resolve_identifier(*this, dst, false)};
+          tc.resolve_identifier(tok(), dst, false)};
       //?
       if (dst_resolved.tp.size() < return_type.size()) {
         throw compiler_exception(
@@ -245,7 +245,7 @@ public:
       if (not dst.empty()) {
         // function returns value in rax, copy return value to dst
         get_unary_ops().compile(tc, os, indent, "rax");
-        const ident_resolved &ir{tc.resolve_identifier(*this, dst, false)};
+        const ident_resolved &ir{tc.resolve_identifier(tok(), dst, false)};
         tc.asm_cmd(*this, os, indent, "mov", ir.id_nasm, "rax");
       }
       return;
@@ -404,7 +404,7 @@ public:
       }
 
       const ident_resolved &ir{tc.resolve_identifier(
-          *this, func.returns()[0].ident_tk.name(), true)};
+          tok(), func.returns()[0].ident_tk.name(), true)};
       get_unary_ops().compile(tc, os, indent, ir.id_nasm);
     }
     // pop scope

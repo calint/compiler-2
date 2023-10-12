@@ -172,7 +172,7 @@ public:
                       const string &dst) const override {
 
     const ident_resolved &dst_resolved{
-        tc.resolve_identifier(*this, dst, false)};
+        tc.resolve_identifier(tok(), dst, false)};
 
     if (dst_resolved.is_register()) {
       do_compile(tc, os, indent, dst);
@@ -248,7 +248,7 @@ private:
     }
     // first element is assigned to destination
     const ident_resolved &dst_resolved{
-        tc.resolve_identifier(*this, dst, false)};
+        tc.resolve_identifier(tok(), dst, false)};
     asm_op(tc, os, indent, '=', dst_resolved, *exps_[0]);
 
     // remaining elements are +,-,*,/,%,|,&,^
