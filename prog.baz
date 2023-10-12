@@ -45,6 +45,7 @@ func inline foo(p : point) {
 func inline main {
     var p : point = {0, 0}
     foo(p)
+    # inlined functions can write to the arguments
     assert(p.x == 0xa)
     assert(p.y == 0xb)
 
