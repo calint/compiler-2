@@ -1,22 +1,2 @@
-tor 12 okt 2023 03:08:41 CEST
-/home/c/w/compiler-2/qa/lint/../../src/bool_ops_list.hpp:8:24: warning: pass by value and use std::move [modernize-pass-by-value]
-                       const token &not_token = {},
-                       ^~~~~~~~~~~~~
-                       token 
-/home/c/w/compiler-2/qa/lint/../../src/expr_ops_list.hpp:11:36: warning: pass by value and use std::move [modernize-pass-by-value]
-      const bool enclosed = false, const unary_ops &uops = {},
-                                   ^~~~~~~~~~~~~~~~~
-                                   unary_ops 
-/home/c/w/compiler-2/qa/lint/../../src/statement.hpp:11:29: warning: pass by value and use std::move [modernize-pass-by-value]
-  inline explicit statement(const unary_ops &uops, const token &tk)
-                            ^~~~~~~~~~~~~~~~~
-                            unary_ops 
-/home/c/w/compiler-2/qa/lint/../../src/statement.hpp:11:52: warning: pass by value and use std::move [modernize-pass-by-value]
-  inline explicit statement(const unary_ops &uops, const token &tk)
-                                                   ^~~~~~~~~~~~~
-                                                   token 
-/home/c/w/compiler-2/qa/lint/../../src/stmt_assign_var.hpp:10:54: warning: pass by value and use std::move [modernize-pass-by-value]
-  inline stmt_assign_var(toc &tc, const token &name, const token &type,
-                                                     ^~~~~~~~~~~~~
-                                                     token 
-tor 12 okt 2023 03:09:24 CEST
+tor 12 okt 2023 03:14:30 CEST
+tor 12 okt 2023 03:15:14 CEST

@@ -66,8 +66,8 @@ auto main(int argc, char *args[]) -> int {
   return 0;
 }
 
-// called from stmt_block to solve circular dependencies with 'loop', 'if' and
-// 'calls'
+// called from 'stmt_block' to solve circular dependencies with 'loop', 'if' and
+// function calls
 inline auto create_statement_from_tokenizer(toc &tc, const unary_ops &uops,
                                             const token &tk, tokenizer &tz)
     -> unique_ptr<statement> {

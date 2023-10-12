@@ -1,4 +1,6 @@
 #pragma once
+#include <utility>
+
 #include "compiler_exception.hpp"
 #include "token.hpp"
 #include "unary_ops.hpp"
@@ -8,8 +10,8 @@ class type;
 
 class statement {
 public:
-  inline explicit statement(const unary_ops &uops, const token &tk)
-      : token_{tk}, uops_{uops} {
+  inline explicit statement(unary_ops uops, token tk)
+      : token_{move(tk)}, uops_{move(uops)} {
 
     validate_identifier_name(token_);
   }

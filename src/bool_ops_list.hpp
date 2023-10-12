@@ -1,11 +1,13 @@
 #pragma once
+#include <utility>
+
 #include "bool_op.hpp"
 #include "statement.hpp"
 
 class bool_ops_list final : public statement {
 public:
   inline bool_ops_list(toc &tc, tokenizer &tz, const bool enclosed = false,
-                       const token &not_token = {},
+                       token not_token = {},
                        const bool is_sub_expr = false,
                        variant<bool_op, bool_ops_list> first_bool_op = {},
                        token first_op = {})
@@ -15,7 +17,7 @@ public:
         statement{{},
                   first_op.is_name("") ? tz.next_whitespace_token()
                                        : token_from(first_bool_op)},
-        not_token_{not_token}, enclosed_{enclosed} {
+        not_token_{move(not_token)}, enclosed_{enclosed} {
 
     set_type(tc.get_type_bool());
 

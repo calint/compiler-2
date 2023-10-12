@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "expr_any.hpp"
 
 class stmt_assign_var final : public statement {
@@ -7,9 +9,9 @@ class stmt_assign_var final : public statement {
   expr_any exp_{};
 
 public:
-  inline stmt_assign_var(toc &tc, const token &name, const token &type,
+  inline stmt_assign_var(toc &tc, const token &name, token type,
                          tokenizer &tz)
-      : statement{{}, name}, type_{type} {
+      : statement{{}, name}, type_{move(type)} {
 
     const ident_resolved &dst_resolved{tc.resolve_identifier(*this, false)};
     exp_ = {tc, tz, dst_resolved.tp, false};

@@ -1,4 +1,6 @@
 #pragma once
+#include <utility>
+
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expression.hpp"
@@ -8,11 +10,11 @@ class expr_ops_list final : public expression {
 public:
   inline expr_ops_list(
       toc &tc, tokenizer &tz, const bool in_args = false,
-      const bool enclosed = false, const unary_ops &uops = {},
+      const bool enclosed = false, unary_ops uops = {},
       const char first_op_precedence = initial_precedence,
       unique_ptr<statement> first_expression = unique_ptr<statement>())
       : expression{{}, tz.next_whitespace_token()}, enclosed_{enclosed},
-        uops_{uops} {
+        uops_{move(uops)} {
 
     // read first expression i.e. =-a/-(b+1)
     if (first_expression) {
