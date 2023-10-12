@@ -1,10 +1,8 @@
 [ ] func f() : point p { p = {1, 2} }
 [ ]    var pos : point = f()
-[ ]     where p is allocated on the stack rbp+xx
-[x] review main.cpp move of tokens and unary_ops
+[ ]     where p refers to pos relative to rbp (rbp+xx)
 [ ] multiple return values: func f() : point pos, point vel { ... }
 [ ]    var p,v = f()
-[ ] modernize: pass by value and move
 [ ] review new code
 [ ] "#comment" should be accepted as "# comment"
 [ ] string type
@@ -65,6 +63,8 @@
       mov qword[rbp-16],r15
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
+[x] review main.cpp move of tokens and unary_ops
+[x] modernize: pass by value and move
 [x] main:create_statement_from_tokenizer review move(tk) ..
 [x] var v : vector = {1, a + b, f() - 1}
 [x] var o:object={{1,2},{0,0},1}
