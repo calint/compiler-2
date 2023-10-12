@@ -225,7 +225,7 @@ public:
   }
 
 private:
-  inline void resolve_if_op_is_expression(toc &tc) {
+  inline void resolve_if_op_is_expression(const toc &tc) {
     if (is_not_) {
       is_expression_ = true;
       return;

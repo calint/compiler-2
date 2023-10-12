@@ -1,14 +1,11 @@
 #pragma once
-#include <utility>
-
 #include "bool_op.hpp"
 #include "statement.hpp"
 
 class bool_ops_list final : public statement {
 public:
   inline bool_ops_list(toc &tc, tokenizer &tz, const bool enclosed = false,
-                       token not_token = {},
-                       const bool is_sub_expr = false,
+                       token not_token = {}, const bool is_sub_expr = false,
                        variant<bool_op, bool_ops_list> first_bool_op = {},
                        token first_op = {})
       : // the token is used to give 'cmp' a unique label
