@@ -7,6 +7,12 @@ class stmt_def_func;
 class stmt_def_field;
 class stmt_def_type;
 
+struct func_return_info {
+  const token type_tk{};  // type token
+  const token ident_tk{}; // identifier
+  const type &tp;         // type
+};
+
 struct var_meta final {
   string name{};
   const type &tp;
@@ -17,15 +23,28 @@ struct var_meta final {
 };
 
 class frame final {
-  string name_{};      // optional name
-  string call_path_{}; // a unique path of source locations of the inlined call
-  size_t allocated_stack_{}; // number of bytes used on the stack by this frame
-  lut<var_meta> vars_{};     // variables declared in this frame
-  lut<string>
-      aliases_{}; // aliases that refers to previous frame(s) alias or variable
-  string func_ret_label_{}; // the label to jump to when exiting an inlined
-                            // function
-  string func_ret_var_{};   // the variable that contains the return value
+  // optional name
+  string name_{};
+
+  // a unique path of source locations of the inlined call
+  string call_path_{};
+
+  // number of bytes used on the stack by this frame
+  size_t allocated_stack_{};
+
+  // variables declared in this frame
+  lut<var_meta> vars_{};
+
+  // aliases that refers to previous frame(s) alias or variable
+  lut<string> aliases_{};
+
+  // the label to jump to when exiting an inlined function
+  string func_ret_label_{};
+
+  // info about the function returns
+  const vector<func_return_info> &func_rets_{};
+
+  // true if function is inlined
   bool func_is_inline_{};
 
 public:
@@ -37,11 +56,10 @@ private:
 public:
   inline frame(string name, const frame_type tpe, string call_path = "",
                string func_ret_label = "", const bool func_is_inline = false,
-               string func_ret_var = "") noexcept
-      : name_{move(name)}, call_path_{move(call_path)},
-        func_ret_label_{move(func_ret_label)}, func_ret_var_{move(
-                                                   func_ret_var)},
-        func_is_inline_{func_is_inline}, type_{tpe} {}
+               const vector<func_return_info> &func_rets = {}) noexcept
+      : name_{move(name)}, call_path_{move(call_path)}, func_ret_label_{move(
+                                                            func_ret_label)},
+        func_rets_{func_rets}, func_is_inline_{func_is_inline}, type_{tpe} {}
 
   inline void add_var(token declared_at, const string &name, const type &tpe,
                       const int stack_idx, const bool initiated) {
@@ -118,7 +136,10 @@ public:
 
   inline auto func_is_inline() const -> bool { return func_is_inline_; }
 
-  inline auto func_ret_var() const -> const string & { return func_ret_var_; }
+  inline auto get_func_returns_infos() const
+      -> const vector<func_return_info> & {
+    return func_rets_;
+  }
 };
 
 struct field_meta final {
@@ -375,9 +396,10 @@ public:
 
   inline void enter_func(const string &name, const string &call_loc,
                          const string &ret_jmp, const bool is_inline,
-                         const string &ret_var) {
+                         const vector<func_return_info> &rets) {
+
     frames_.emplace_back(name, frame::frame_type::FUNC, call_loc, ret_jmp,
-                         is_inline, ret_var);
+                         is_inline, rets);
     check_usage();
   }
 
@@ -572,12 +594,27 @@ public:
     throw compiler_exception(st.tok(), "not in a function");
   }
 
-  inline auto get_func_return_var_name_or_throw(const statement &st) const
-      -> const string & {
+  // inline auto get_func_return_var_name_or_throw(const statement &st) const
+  //     -> const string & {
+  //   size_t i{frames_.size()};
+  //   while (i--) {
+  //     if (frames_[i].is_func()) {
+  //       const vector<func_return_info> &returns{
+  //           frames_[i].get_func_returns_infos()};
+  //       if (not returns.empty()) {
+  //         return returns.at(0).ident_tk.name();
+  //       }
+  //     }
+  //   }
+  //   throw compiler_exception(st.tok(), "not in a function");
+  // }
+
+  inline auto get_func_returns(const statement &st) const
+      -> const vector<func_return_info> & {
     size_t i{frames_.size()};
     while (i--) {
       if (frames_[i].is_func()) {
-        return frames_[i].func_ret_var();
+        return frames_[i].get_func_returns_infos();
       }
     }
     throw compiler_exception(st.tok(), "not in a function");

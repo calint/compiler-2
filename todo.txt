@@ -14,6 +14,7 @@
 [ ] var points : point[10] = { {1, 2}, {3, 4}}
 [ ]   points[1].x = 1
 [ ]   points.len
+[ ] consider cmovxx when evaluating a boolean expression
 [ ] floating point numbers
 [ ] func f(p : point) {} ... f({x, y})
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile

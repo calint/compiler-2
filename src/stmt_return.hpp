@@ -20,9 +20,11 @@ public:
     const string &ret{tc.get_func_return_label_or_throw(*this)};
     if (ret.empty()) {
       // not in-lined
-      const string &ret_var{tc.get_func_return_var_name_or_throw(*this)};
-      if (not ret_var.empty()) {
-        const ident_resolved &ir{tc.resolve_identifier(*this, ret_var, false)};
+      const vector<func_return_info> &returns{tc.get_func_returns(*this)};
+      if (not returns.empty()) {
+        const func_return_info &ret_info{returns.at(0)};
+        const ident_resolved &ir{
+            tc.resolve_identifier(*this, ret_info.ident_tk.name(), false)};
         const string &src_resolved{ir.id_nasm};
         tc.asm_cmd(*this, os, indent, "mov", "rax", src_resolved);
       }

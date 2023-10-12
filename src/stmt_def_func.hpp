@@ -3,16 +3,10 @@
 #include "stmt_def_func_param.hpp"
 
 class stmt_def_func final : public statement {
-  struct return_info {
-    const token type_tk{};  // type token
-    const token ident_tk{}; // identifier
-    const type &tp;   // type
-  };
-
   token name_{};
   vector<stmt_def_func_param> params_{};
   token whitespace_after_params_{};
-  vector<return_info> returns_{};
+  vector<func_return_info> returns_{};
   stmt_block code_{};
   token inline_tk_{};
   bool no_args_{};
@@ -48,7 +42,7 @@ public:
     if (tz.is_next_char(':')) { // returns
       while (true) {
         const token type_tk{tz.next_token()};
-        const struct return_info ret_info {
+        const struct func_return_info ret_info {
           type_tk,
               tz.next_token(), tc.get_type_or_throw(type_tk, type_tk.name())
         };
@@ -66,8 +60,7 @@ public:
       set_type(tc.get_type_void());
     }
     tc.add_func(name_, name_.name(), get_type(), this);
-    tc.enter_func(name(), "", "", false,
-                  returns().empty() ? "" : returns()[0].ident_tk.name());
+    tc.enter_func(name(), "", "", false, returns_);
     vector<string> allocated_named_registers{};
     null_stream ns{}; // don't make output while parsing
     init_variables(tc, ns, 0, allocated_named_registers);
@@ -111,7 +104,7 @@ public:
     if (not returns_.empty()) {
       os << ":";
       size_t i{0};
-      for (const return_info &ri : returns_) {
+      for (const func_return_info &ri : returns_) {
         if (i++) {
           os << ":";
         }
@@ -141,8 +134,7 @@ public:
     toc::indent(os, indent + 1, true);
     source_def_comment_to(os);
 
-    tc.enter_func(name(), "", "", false,
-                  returns().empty() ? "" : returns()[0].ident_tk.name());
+    tc.enter_func(name(), "", "", false, returns_);
 
     toc::asm_push(*this, os, indent + 1, "rbp");
     tc.asm_cmd(*this, os, indent + 1, "mov", "rbp", "rsp");
@@ -168,7 +160,7 @@ public:
     tc.exit_func(name());
   }
 
-  [[nodiscard]] inline auto returns() const -> const vector<return_info> & {
+  [[nodiscard]] inline auto returns() const -> const vector<func_return_info> & {
     return returns_;
   }
 
