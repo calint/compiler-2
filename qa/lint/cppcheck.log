@@ -1,5 +1,32 @@
-tor 12 okt 2023 03:48:48 CEST
+tor 12 okt 2023 10:29:16 CEST
 Checking ../../src/main.cpp ...
+../../src/toc.hpp:38:23: performance: Function parameter 'name' should be passed by const reference. [passedByValue]
+  inline frame(string name, const frame_type tpe, string call_path = "",
+                      ^
+../../src/toc.hpp:38:58: performance: Function parameter 'call_path' should be passed by const reference. [passedByValue]
+  inline frame(string name, const frame_type tpe, string call_path = "",
+                                                         ^
+../../src/toc.hpp:39:23: performance: Function parameter 'func_ret_label' should be passed by const reference. [passedByValue]
+               string func_ret_label = "", const bool func_is_inline = false,
+                      ^
+../../src/toc.hpp:40:23: performance: Function parameter 'func_ret_var' should be passed by const reference. [passedByValue]
+               string func_ret_var = "") noexcept
+                      ^
+../../src/stmt_break.hpp:5:26: style: Parameter 'tc' can be declared as reference to const [constParameter]
+  inline stmt_break(toc &tc, token tk) : statement{move(tk)} {
+                         ^
+../../src/stmt_comment.hpp:7:28: style: Parameter 'tc' can be declared as reference to const [constParameter]
+  inline stmt_comment(toc &tc, token tk, tokenizer &tz)
+                           ^
+../../src/stmt_continue.hpp:5:29: style: Parameter 'tc' can be declared as reference to const [constParameter]
+  inline stmt_continue(toc &tc, token tk) : statement{move(tk)} {
+                            ^
+../../src/stmt_return.hpp:5:27: style: Parameter 'tc' can be declared as reference to const [constParameter]
+  inline stmt_return(toc &tc, token tk) : statement{move(tk)} {
+                          ^
+../../src/stmt_def_type_field.hpp:7:35: style: Parameter 'tc' can be declared as reference to const [constParameter]
+  inline stmt_def_type_field(toc &tc, token tk, tokenizer &tz)
+                                  ^
 ../../src/lut.hpp:45:14: style: Variable 'e' can be declared as reference to const [constVariable]
     for (el &e : elems_) {
              ^

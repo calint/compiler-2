@@ -170,33 +170,36 @@ public:
 
   inline void compile(toc &tc, ostream &os, const size_t indent,
                       const string &dst) const override {
-    tc.source_comment(*this, os, indent);
 
-    // first element is assigned to destination
     const ident_resolved &dst_resolved{
         tc.resolve_identifier(*this, dst, false)};
-    asm_op(tc, os, indent, '=', dst_resolved, *exps_[0]);
-
-    // remaining elements are +,-,*,/,%,|,&,^
-    const size_t n{ops_.size()};
-    for (size_t i{0}; i < n; i++) {
-      asm_op(tc, os, indent, ops_[i], dst_resolved, *exps_[i + 1]);
+    if (dst_resolved.is_register()) {
+      do_compile(tc, os, indent, dst);
+      return;
     }
 
-    // apply unary expressions on destination
-    uops_.compile(tc, os, indent, dst_resolved.id_nasm);
-  }
+    // compile with and without scratch register
+    // try without scratch register
+    stringstream ss1{};
+    do_compile(tc, ss1, indent, dst);
 
-  [[nodiscard]] inline auto is_expression() const -> bool override {
-    if (not uops_.is_empty()) {
-      return true;
+    // try with scratch register
+    stringstream ss2{};
+    const string &reg{tc.alloc_scratch_register(*this, ss2, indent)};
+    do_compile(tc, ss2, indent, reg);
+    tc.asm_cmd(*this, ss2, indent, "mov", dst_resolved.id_nasm, reg);
+    tc.free_scratch_register(ss2, indent, reg);
+
+    // compare instruction count
+    const size_t ss1_count{count_instructions(ss1)};
+    const size_t ss2_count{count_instructions(ss2)};
+
+    // select version with least instructions
+    if (ss1_count <= ss2_count) {
+      os << ss1.str();
+    } else {
+      os << ss2.str();
     }
-
-    if (exps_.size() == 1) {
-      return exps_[0]->is_expression();
-    }
-
-    return true;
   }
 
   [[nodiscard]] inline auto identifier() const -> const string & override {
@@ -220,7 +223,55 @@ public:
     return exps_[0]->get_type();
   }
 
+  [[nodiscard]] inline auto is_expression() const -> bool override {
+    if (not uops_.is_empty()) {
+      return true;
+    }
+
+    if (exps_.size() == 1) {
+      return exps_[0]->is_expression();
+    }
+
+    return true;
+  }
+
 private:
+  inline void do_compile(toc &tc, ostream &os, const size_t indent,
+                         const string &dst) const {
+    tc.source_comment(*this, os, indent);
+
+    if (not tc.is_identifier_register(dst)) {
+      // try compiling with scratch register
+      // in some cases is faster
+    }
+    // first element is assigned to destination
+    const ident_resolved &dst_resolved{
+        tc.resolve_identifier(*this, dst, false)};
+    asm_op(tc, os, indent, '=', dst_resolved, *exps_[0]);
+
+    // remaining elements are +,-,*,/,%,|,&,^
+    const size_t n{ops_.size()};
+    for (size_t i{0}; i < n; i++) {
+      asm_op(tc, os, indent, ops_[i], dst_resolved, *exps_[i + 1]);
+    }
+
+    // apply unary expressions on destination
+    uops_.compile(tc, os, indent, dst_resolved.id_nasm);
+  }
+
+  inline static auto count_instructions(stringstream &ss) -> size_t {
+    const regex rxcomment{R"(^\s*;.*$)"};
+    string line;
+    size_t n{0};
+    while (getline(ss, line)) {
+      if (regex_search(line, rxcomment)) {
+        continue;
+      }
+      n++;
+    }
+    return n;
+  }
+
   // higher than the highest precedence
   static constexpr char initial_precedence{7};
 

@@ -96,7 +96,6 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
   if (tk.is_name("")) {
     throw compiler_exception(tk, "unexpected empty expression");
   }
-
   if (tk.name().starts_with("#")) {
     if (!uops.is_empty()) {
       throw compiler_exception(tk, "unexpected comment after unary ops");

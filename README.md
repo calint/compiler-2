@@ -196,15 +196,11 @@ main:
 ;    [44:23] {{x * 10, y}, 0xff0000}
 ;      [44:24] {x * 10, y}
 ;      [44:25] x * 10
+;      alloc r15
 ;      [44:25] x * 10
-;      [44:25] o1.pos.x=x 
-;      alloc r15
+;      [44:25] r15=x 
        mov r15, qword[rbp-8]
-       mov qword[rbp-36], r15
-;      free r15
-;      [44:29] o1.pos.x* 10
-;      alloc r15
-       mov r15, qword[rbp-36]
+;      [44:29] r15* 10
        imul r15, 10
        mov qword[rbp-36], r15
 ;      free r15

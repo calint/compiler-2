@@ -39,52 +39,14 @@ public:
     const ident_resolved &dst_resolved{tc.resolve_identifier(*this, false)};
 
     if (exp_.is_bool() or exp_.is_assign_type_value()) {
+      // boolean expresion
       exp_.compile(tc, os, indent, dst_resolved.id);
       tc.set_var_is_initiated(dst_resolved.id);
       return;
     }
 
     // number (register) expression
-
-    // compare generated instructions with and without scratch register
-    // select the method that produces least instructions
-
-    // try without scratch register
-    stringstream ss1;
-    exp_.compile(tc, ss1, indent, dst_resolved.id);
-
-    // try with scratch register
-    stringstream ss2;
-    const string &reg{tc.alloc_scratch_register(*this, ss2, indent)};
-    exp_.compile(tc, ss2, indent, reg);
-    tc.asm_cmd(*this, ss2, indent, "mov", dst_resolved.id_nasm, reg);
-    tc.free_scratch_register(ss2, indent, reg);
-
-    // compare instruction count
-    const size_t ss1_count{count_instructions(ss1)};
-    const size_t ss2_count{count_instructions(ss2)};
-
-    // select version with least instructions
-    if (ss1_count <= ss2_count) {
-      os << ss1.str();
-    } else {
-      os << ss2.str();
-    }
-
+    exp_.compile(tc, os, indent, dst_resolved.id);
     tc.set_var_is_initiated(dst_resolved.id);
-  }
-
-private:
-  inline static auto count_instructions(stringstream &ss) -> size_t {
-    const regex rxcomment{R"(^\s*;.*$)"};
-    string line;
-    size_t n{0};
-    while (getline(ss, line)) {
-      if (regex_search(line, rxcomment)) {
-        continue;
-      }
-      n++;
-    }
-    return n;
   }
 };

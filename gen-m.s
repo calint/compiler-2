@@ -47,8 +47,6 @@ main:
    mov qword[rbp-8], 1
    mov qword[rbp-16], 2
        mov r15, qword[rbp-8]
-       mov qword[rbp-36], r15
-       mov r15, qword[rbp-36]
        imul r15, 10
        mov qword[rbp-36], r15
        mov r15, qword[rbp-16]
