@@ -1,5 +1,4 @@
 #pragma once
-#include "bool_op.hpp"
 #include "bool_ops_list.hpp"
 
 class stmt_if_branch final : public statement {

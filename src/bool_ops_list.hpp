@@ -4,11 +4,12 @@
 
 class bool_ops_list final : public statement {
 public:
-  inline bool_ops_list(toc &tc, tokenizer &tz, const bool enclosed = false,
-                       token not_token = {}, const bool is_sub_expr = false,
-                       variant<bool_op, bool_ops_list> first_bool_op = {},
-                       token first_op = {})
-      : // the token is used to give the cmp a unique label
+  inline bool_ops_list(
+      toc &tc, tokenizer &tz, const bool enclosed = false, token not_token = {},
+      const bool is_sub_expr = false,
+      variant<bool_op, bool_ops_list> first_bool_op = {},
+      token first_op = {})
+      : // the token is used to give 'cmp' a unique label
         //   if first_bool_op is provided then use that token
         //   else the next white space token
         statement{first_op.is_name("") ? tz.next_whitespace_token()
@@ -65,8 +66,8 @@ public:
         if (tk.is_name("and")) {
           // a and b or c -> (a and b) or c
           // first op is 'and', make sub-expression (a and b) ...
-          bool_ops_list bol{tc,      tz, false, {}, true, move(bools_.back()),
-                            move(tk)};
+          bool_ops_list bol{
+              tc, tz, false, {}, true, move(bools_.back()), move(tk)};
           bools_.pop_back();
           bools_.emplace_back(move(bol));
 
@@ -134,8 +135,10 @@ public:
   inline bool_ops_list() = default;
   inline bool_ops_list(const bool_ops_list &) = default;
   inline bool_ops_list(bool_ops_list &&) = default;
-  inline auto operator=(const bool_ops_list &) -> bool_ops_list & = default;
-  inline auto operator=(bool_ops_list &&) -> bool_ops_list & = default;
+  inline auto operator=(const bool_ops_list &)
+      -> bool_ops_list & = default;
+  inline auto operator=(bool_ops_list &&)
+      -> bool_ops_list & = default;
 
   inline ~bool_ops_list() override = default;
 
@@ -161,6 +164,7 @@ public:
       os << ")";
     }
   }
+
   inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
                       [[maybe_unused]] size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
@@ -342,8 +346,8 @@ public:
   }
 
 private:
-  inline static auto cmp_label_from(const toc &tc,
-                                    const variant<bool_op, bool_ops_list> &v)
+  inline static auto
+  cmp_label_from(const toc &tc, const variant<bool_op, bool_ops_list> &v)
       -> string {
     if (v.index() == 1) {
       return get<bool_ops_list>(v).cmp_bgn_label(tc);

@@ -1,10 +1,10 @@
 #pragma once
 #include "bool_ops_list.hpp"
 #include "expr_ops_list.hpp"
-#include "stmt_type_value.hpp"
+#include "expr_type_value.hpp"
 
 class expr_any final : public statement {
-  variant<expr_ops_list, bool_ops_list, stmt_type_value> var_{};
+  variant<expr_ops_list, bool_ops_list, expr_type_value> var_{};
 
 public:
   inline expr_any(toc &tc, tokenizer &tz, const type &tp, bool in_args)
@@ -15,7 +15,7 @@ public:
     if (not tp.is_built_in()) {
       // destination is not built-in (register) value
       // assume assign type value
-      var_ = stmt_type_value{tc, tz, tp};
+      var_ = expr_type_value{tc, tz, tp};
       return;
     }
 
@@ -47,7 +47,7 @@ public:
       get<bool_ops_list>(var_).source_to(os);
       return;
     case 2:
-      get<stmt_type_value>(var_).source_to(os);
+      get<expr_type_value>(var_).source_to(os);
       return;
     default:
       throw panic_exception("expr_any:1");
@@ -68,7 +68,7 @@ public:
       return;
     case 2:
       // assign type value
-      get<stmt_type_value>(var_).compile(tc, os, indent, dst);
+      get<expr_type_value>(var_).compile(tc, os, indent, dst);
       return;
     case 1:
       // bool expression
@@ -129,7 +129,7 @@ public:
     default:
       throw panic_exception("expr_any:3");
     }
-    // note. 'stmt_type_value' cannot be expression
+    // note. 'expr_type_value' cannot be expression
   }
 
   [[nodiscard]] inline auto identifier() const -> const string & override {
@@ -139,7 +139,7 @@ public:
     case 1:
       return get<bool_ops_list>(var_).identifier();
     case 2:
-      return get<stmt_type_value>(var_).identifier();
+      return get<expr_type_value>(var_).identifier();
     default:
       throw panic_exception("expr_any:4");
     }
@@ -156,7 +156,7 @@ public:
     default:
       throw panic_exception("expr_any:5");
     }
-    // note. 'stmt_type_value' does not have 'unary_ops' and cannot be
+    // note. 'expr_type_value' does not have 'unary_ops' and cannot be
     // argument in call
   }
 
@@ -165,7 +165,7 @@ public:
   }
 
   [[nodiscard]] inline auto as_assign_type_value() const
-      -> const stmt_type_value & {
-    return get<stmt_type_value>(var_);
+      -> const expr_type_value & {
+    return get<expr_type_value>(var_);
   }
 };

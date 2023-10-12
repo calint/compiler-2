@@ -5,11 +5,11 @@
 
 class expr_any;
 
-class stmt_type_value final : public statement {
+class expr_type_value final : public statement {
   vector<unique_ptr<expr_any>> exprs_{};
 
 public:
-  inline stmt_type_value(toc &tc, tokenizer &tz, const type &tp)
+  inline expr_type_value(toc &tc, tokenizer &tz, const type &tp)
       : statement{tz.next_token()} {
 
     set_type(tp);
@@ -47,18 +47,18 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       const string &dst) const override {
-    stmt_type_value::compile_recursive(*this, tc, os, indent + 1,
+    expr_type_value::compile_recursive(*this, tc, os, indent + 1,
                                          tok().name(), dst, get_type());
   }
 
   // implemented in main.cpp due to circular reference
-  //   stmt_type_value -> expr_any -> stmt_type_value
+  //   expr_type_value -> expr_any -> expr_type_value
   inline void source_to(ostream &os) const override;
 
 private:
   // implemented in main.cpp due to circular reference
-  //   stmt_type_value -> expr_any -> stmt_type_value
-  inline static void compile_recursive(const stmt_type_value &atv, toc &tc,
+  //   expr_type_value -> expr_any -> expr_type_value
+  inline static void compile_recursive(const expr_type_value &atv, toc &tc,
                                        ostream &os, size_t indent,
                                        const string &src, const string &dst,
                                        const type &dst_type);
