@@ -60,10 +60,9 @@ public:
       }
       if (not returns_.empty()) {
         set_type(returns_[0].tp);
-      } else {
-        set_type(tc.get_type_default());
       }
     } else {
+      // no return
       set_type(tc.get_type_void());
     }
     tc.add_func(name_, name_.name(), get_type(), this);
