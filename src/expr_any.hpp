@@ -77,7 +77,7 @@ public:
       const bool_ops_list &bol{get<bool_ops_list>(var_)};
       if (not bol.is_expression()) {
         const ident_resolved &src_resolved{tc.resolve_identifier(bol, false)};
-        tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm,
+        tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
                    src_resolved.id_nasm);
         return;
       }
@@ -94,22 +94,22 @@ public:
       if (const_eval) {
         if (*const_eval) {
           // constant evaluation to true
-          toc::asm_label(*this, os, indent, jmp_to_if_true);
-          tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "1");
+          toc::asm_label(tok(), os, indent, jmp_to_if_true);
+          tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "1");
           return;
         }
         // constant evaluation to false
-        toc::asm_label(*this, os, indent, jmp_to_if_false);
-        tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "0");
+        toc::asm_label(tok(), os, indent, jmp_to_if_false);
+        tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "0");
         return;
       }
       // not constant evaluation
-      toc::asm_label(*this, os, indent, jmp_to_if_true);
-      tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "1");
-      toc::asm_jmp(*this, os, indent, jmp_to_end);
-      toc::asm_label(*this, os, indent, jmp_to_if_false);
-      tc.asm_cmd(*this, os, indent, "mov", dst_resolved.id_nasm, "0");
-      toc::asm_label(*this, os, indent, jmp_to_end);
+      toc::asm_label(tok(), os, indent, jmp_to_if_true);
+      tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "1");
+      toc::asm_jmp(tok(), os, indent, jmp_to_end);
+      toc::asm_label(tok(), os, indent, jmp_to_if_false);
+      tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "0");
+      toc::asm_label(tok(), os, indent, jmp_to_end);
       return;
     }
   }

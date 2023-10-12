@@ -110,10 +110,10 @@ public:
     }
     if (not branch_evaluated_to_true) {
       if (not else_code_.is_empty()) {
-        toc::asm_label(*this, os, indent, label_else_branch);
+        toc::asm_label(tok(), os, indent, label_else_branch);
         else_code_.compile(tc, os, indent + 1);
       }
     }
-    toc::asm_label(*this, os, indent, label_after_if);
+    toc::asm_label(tok(), os, indent, label_after_if);
   }
 };

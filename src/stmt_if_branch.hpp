@@ -47,7 +47,7 @@ public:
     const string &if_bgn_lbl{if_bgn_label(tc)};
     const string &jmp_to_if_true_lbl{if_bgn_lbl + "_code"};
     // the begining of this branch
-    toc::asm_label(*this, os, indent, if_bgn_lbl);
+    toc::asm_label(tok(), os, indent, if_bgn_lbl);
     // compile boolean ops list
     optional<bool> const_eval{bol_.compile(
         tc, os, indent, jmp_to_if_false_label, jmp_to_if_true_lbl, false)};
@@ -69,7 +69,7 @@ public:
       return *const_eval;
     }
     // the label where to jump if evaluation of boolean ops is true
-    toc::asm_label(*this, os, indent, jmp_to_if_true_lbl);
+    toc::asm_label(tok(), os, indent, jmp_to_if_true_lbl);
     // the code of the branch
     code_.compile(tc, os, indent);
     // after the code of the branch is executed jump to the end of
@@ -77,7 +77,7 @@ public:
     //   if label not provided then there is no 'else' and this is the last 'if'
     //   so just continue execution
     if (not jmp_to_after_code_label.empty()) {
-      toc::asm_jmp(*this, os, indent, jmp_to_after_code_label);
+      toc::asm_jmp(tok(), os, indent, jmp_to_after_code_label);
     }
     return nullopt;
   }

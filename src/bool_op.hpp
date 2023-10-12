@@ -93,7 +93,7 @@ public:
     const bool invert{inverted ? not is_not_ : is_not_};
     toc::indent(os, indent, true);
     tc.source_comment(os, "?", inverted ? " 'or' inverted: " : " ", *this);
-    toc::asm_label(*this, os, indent, cmp_bgn_label(tc));
+    toc::asm_label(tok(), os, indent, cmp_bgn_label(tc));
     if (is_shorthand_) {
       // check case when operand is constant
       if (not lhs_.is_expression()) {
@@ -152,7 +152,7 @@ public:
     const bool invert{inverted ? not is_not_ : is_not_};
     toc::indent(os, indent, true);
     tc.source_comment(os, "?", inverted ? " 'and' inverted: " : " ", *this);
-    toc::asm_label(*this, os, indent, cmp_bgn_label(tc));
+    toc::asm_label(tok(), os, indent, cmp_bgn_label(tc));
     if (is_shorthand_) {
       // check case when operand is constant
       if (not lhs_.is_expression()) {
@@ -335,7 +335,7 @@ private:
     const string &dst{resolve_expr(tc, os, indent, lh, allocated_registers)};
     const string &src{resolve_expr(tc, os, indent, rh, allocated_registers)};
 
-    tc.asm_cmd(*this, os, indent, "cmp", dst, src);
+    tc.asm_cmd(tok(), os, indent, "cmp", dst, src);
 
     // free allocated registers in reverse order
     for (auto it{allocated_registers.rbegin()};
@@ -351,7 +351,7 @@ private:
 
     const string &dst{resolve_expr(tc, os, indent, lh, allocated_registers)};
 
-    tc.asm_cmd(*this, os, indent, "cmp", dst, "0");
+    tc.asm_cmd(tok(), os, indent, "cmp", dst, "0");
 
     // free allocated registers in reverse order
     for (auto it{allocated_registers.rbegin()};
@@ -366,7 +366,7 @@ private:
                                   vector<string> &allocated_registers)
       -> string {
     if (exp.is_expression()) {
-      const string &reg{tc.alloc_scratch_register(exp, os, indent)};
+      const string &reg{tc.alloc_scratch_register(exp.tok(), os, indent)};
       allocated_registers.push_back(reg);
       exp.compile(tc, os, indent + 1, reg);
       return reg;
@@ -381,9 +381,9 @@ private:
       return id_r.id_nasm;
     }
 
-    const string &reg{tc.alloc_scratch_register(exp, os, indent)};
+    const string &reg{tc.alloc_scratch_register(exp.tok(), os, indent)};
     allocated_registers.push_back(reg);
-    tc.asm_cmd(exp, os, indent, "mov", reg, id_r.id_nasm);
+    tc.asm_cmd(exp.tok(), os, indent, "mov", reg, id_r.id_nasm);
     exp.get_unary_ops().compile(tc, os, indent, reg);
     return reg;
   }

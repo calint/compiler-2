@@ -273,7 +273,7 @@ public:
             return *const_eval;
           }
           // if last element and not yet jumped to false then jump to true
-          toc::asm_jmp(*this, os, indent, jmp_to_if_true);
+          toc::asm_jmp(tok(), os, indent, jmp_to_if_true);
         }
       } else {
         // inverted according to De Morgan's laws
@@ -304,7 +304,7 @@ public:
             return *const_eval;
           }
           // if last element and not yet jumped to false then jump to true
-          toc::asm_jmp(*this, os, indent, jmp_to_if_true);
+          toc::asm_jmp(tok(), os, indent, jmp_to_if_true);
         }
       }
     }

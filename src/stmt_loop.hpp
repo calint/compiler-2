@@ -33,14 +33,14 @@ public:
     // the loop label
     const string &lbl{
         "loop_" + (call_path.empty() ? src_loc : (src_loc + "_" + call_path))};
-    toc::asm_label(*this, os, indent, lbl);
+    toc::asm_label(tok(), os, indent, lbl);
     // enter loop scope
     tc.enter_loop(lbl);
     code_.compile(tc, os, indent);
     // jump to loop
-    toc::asm_jmp(*this, os, indent, lbl);
+    toc::asm_jmp(tok(), os, indent, lbl);
     // exit loop label
-    toc::asm_label(*this, os, indent, lbl + "_end");
+    toc::asm_label(tok(), os, indent, lbl + "_end");
     // exit loop scope
     tc.exit_loop(lbl);
   }

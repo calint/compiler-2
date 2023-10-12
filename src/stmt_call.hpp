@@ -146,7 +146,7 @@ public:
 
     if (not func.is_inline()) {
       // stack is: <base>,
-      tc.enter_call(*this, os, indent);
+      tc.enter_call(tok(), os, indent);
       // stack is: <base>,vars,regs,
 
       // push arguments starting with the last
@@ -171,11 +171,11 @@ public:
             continue;
           }
           // argument passed through stack
-          const string &reg{tc.alloc_scratch_register(ea, os, indent)};
+          const string &reg{tc.alloc_scratch_register(ea.tok(), os, indent)};
           // compile expression with the result stored in sr
           ea.compile(tc, os, indent + 1, reg);
           // argument is passed to function through the stack
-          toc::asm_push(ea, os, indent, reg);
+          toc::asm_push(ea.tok(), os, indent, reg);
           // free scratch register
           tc.free_scratch_register(os, indent, reg);
           // keep track of how many arguments are on the stack
@@ -187,13 +187,14 @@ public:
         if (argument_passed_in_register) {
           // move the identifier to the requested register
           if (arg_resolved.is_const()) {
-            tc.asm_cmd(ea, os, indent, "mov", arg_reg,
+            tc.asm_cmd(ea.tok(), os, indent, "mov", arg_reg,
                        ea.get_unary_ops().to_string() + arg_resolved.id_nasm);
             nbytes_of_args_on_stack += 8;
             continue;
           }
           // not a constant
-          tc.asm_cmd(ea, os, indent, "mov", arg_reg, arg_resolved.id_nasm);
+          tc.asm_cmd(ea.tok(), os, indent, "mov", arg_reg,
+                     arg_resolved.id_nasm);
           ea.get_unary_ops().compile(tc, os, indent, arg_reg);
           nbytes_of_args_on_stack += 8;
           continue;
@@ -201,7 +202,7 @@ public:
         // argument not passed through register
         // push identifier on the stack
         if (arg_resolved.is_const()) {
-          toc::asm_push(ea, os, indent,
+          toc::asm_push(ea.tok(), os, indent,
                         ea.get_unary_ops().to_string() + arg_resolved.id_nasm);
           nbytes_of_args_on_stack += 8;
           continue;
@@ -209,33 +210,33 @@ public:
         if (ea.get_unary_ops().is_empty()) {
           // check if argument size is register size
           if (arg_resolved.tp.size() == tc.get_type_default().size()) {
-            toc::asm_push(ea, os, indent, arg_resolved.id_nasm);
+            toc::asm_push(ea.tok(), os, indent, arg_resolved.id_nasm);
             nbytes_of_args_on_stack += 8;
             continue;
           }
           // value to be pushed is not a 64 bit value
           // push can only be done with 64 or 16 bits values on x86_64
-          const string &reg{tc.alloc_scratch_register(ea, os, indent)};
-          tc.asm_cmd(ea, os, indent, "mov", reg, arg_resolved.id_nasm);
-          toc::asm_push(ea, os, indent, reg);
+          const string &reg{tc.alloc_scratch_register(ea.tok(), os, indent)};
+          tc.asm_cmd(ea.tok(), os, indent, "mov", reg, arg_resolved.id_nasm);
+          toc::asm_push(ea.tok(), os, indent, reg);
           tc.free_scratch_register(os, indent, reg);
           nbytes_of_args_on_stack += 8;
           //? what about 16 bit values
           continue;
         }
         // unary ops must be applied
-        const string &reg{tc.alloc_scratch_register(ea, os, indent)};
-        tc.asm_cmd(ea, os, indent, "mov", reg, arg_resolved.id_nasm);
+        const string &reg{tc.alloc_scratch_register(ea.tok(), os, indent)};
+        tc.asm_cmd(ea.tok(), os, indent, "mov", reg, arg_resolved.id_nasm);
         ea.get_unary_ops().compile(tc, os, indent, reg);
-        toc::asm_push(ea, os, indent, reg);
+        toc::asm_push(ea.tok(), os, indent, reg);
         tc.free_scratch_register(os, indent, reg);
         nbytes_of_args_on_stack += 8;
       }
 
       // stack is: <base>,vars,regs,args,
-      toc::asm_call(*this, os, indent, func_nm);
+      toc::asm_call(tok(), os, indent, func_nm);
 
-      tc.exit_call(*this, os, indent, nbytes_of_args_on_stack,
+      tc.exit_call(tok(), os, indent, nbytes_of_args_on_stack,
                    allocated_args_registers);
       // stack is: <base>, (if this was not a call nested in another call's
       // arguments)
@@ -246,7 +247,7 @@ public:
         // function returns value in rax, copy return value to dst
         get_unary_ops().compile(tc, os, indent, "rax");
         const ident_resolved &ir{tc.resolve_identifier(tok(), dst, false)};
-        tc.asm_cmd(*this, os, indent, "mov", ir.id_nasm, "rax");
+        tc.asm_cmd(tok(), os, indent, "mov", ir.id_nasm, "rax");
       }
       return;
     }
@@ -302,7 +303,7 @@ public:
         // argument is an expression, evaluate and store in arg_reg
         if (arg_reg.empty()) {
           // no particular register requested for the argument
-          arg_reg = tc.alloc_scratch_register(ea, os, indent + 1);
+          arg_reg = tc.alloc_scratch_register(ea.tok(), os, indent + 1);
           allocated_scratch_registers.push_back(arg_reg);
           allocated_registers_in_order.push_back(arg_reg);
         }
@@ -332,10 +333,10 @@ public:
         // unary ops must be applied
         const ident_resolved &ir{tc.resolve_identifier(ea, true)};
         const string &scratch_reg{
-            tc.alloc_scratch_register(ea, os, indent + 1)};
+            tc.alloc_scratch_register(ea.tok(), os, indent + 1)};
         allocated_registers_in_order.push_back(scratch_reg);
         allocated_scratch_registers.push_back(scratch_reg);
-        tc.asm_cmd(param, os, indent + 1, "mov", scratch_reg, ir.id_nasm);
+        tc.asm_cmd(param.tok(), os, indent + 1, "mov", scratch_reg, ir.id_nasm);
         ea.get_unary_ops().compile(tc, os, indent + 1, scratch_reg);
         aliases_to_add.emplace_back(param.identifier(), scratch_reg);
         toc::indent(os, indent + 1, true);
@@ -350,12 +351,12 @@ public:
       // move argument to register specified in param
       const ident_resolved &ir{tc.resolve_identifier(ea, true)};
       if (ir.is_const()) {
-        tc.asm_cmd(param, os, indent + 1, "mov", arg_reg,
+        tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg,
                    ea.get_unary_ops().to_string() + ir.id_nasm);
         continue;
       }
       // not a const, move argument to register
-      tc.asm_cmd(param, os, indent + 1, "mov", arg_reg, ir.id_nasm);
+      tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg, ir.id_nasm);
       ea.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
     }
 
@@ -394,7 +395,7 @@ public:
     }
 
     // provide an exit label for 'return' to jump to instead of assembler 'ret'
-    toc::asm_label(*this, os, indent, ret_jmp_label);
+    toc::asm_label(tok(), os, indent, ret_jmp_label);
     // if the result of the call has unary ops
     if (not get_unary_ops().is_empty()) {
       if (func.returns().empty()) {

@@ -473,11 +473,11 @@ public:
     os << name << ": " << ir.id_nasm << endl;
   }
 
-  inline auto alloc_scratch_register(const statement &st, ostream &os,
+  inline auto alloc_scratch_register(const token &src_loc, ostream &os,
                                      const size_t indnt) -> const string & {
     if (scratch_registers_.empty()) {
       throw compiler_exception(
-          st.tok(),
+          src_loc,
           "out of scratch registers. try to reduce expression complexity");
     }
 
@@ -495,7 +495,7 @@ public:
     }
 
     allocated_registers_.push_back(r);
-    allocated_registers_loc_.push_back(source_location_hr(st.tok()));
+    allocated_registers_loc_.push_back(source_location_hr(src_loc));
     return r;
   }
 
@@ -522,7 +522,7 @@ public:
     allocated_registers_loc_.push_back(source_location_hr(st.tok()));
   }
 
-  inline auto alloc_named_register(const statement &st, ostream &os,
+  inline auto alloc_named_register(const token &src_loc, ostream &os,
                                    const size_t indnt, const string &reg)
       -> bool {
     indent(os, indnt, true);
@@ -534,7 +534,7 @@ public:
     }
     named_registers_.erase(r);
     allocated_registers_.push_back(reg);
-    allocated_registers_loc_.push_back(source_location_hr(st.tok()));
+    allocated_registers_loc_.push_back(source_location_hr(src_loc));
     os << endl;
     return true;
   }
@@ -667,7 +667,8 @@ public:
            all_registers_.end();
   }
 
-  inline void enter_call(const statement &st, ostream &os, const size_t indnt) {
+  inline void enter_call(const token &src_loc, ostream &os,
+                         const size_t indnt) {
     const bool root_call{call_metas_.empty()};
     const size_t nbytes_of_vars_on_stack{root_call ? get_current_stack_size()
                                                    : 0};
@@ -675,7 +676,7 @@ public:
       // this call is not nested within another call's arguments
       if (nbytes_of_vars_on_stack) {
         // adjust stack past the allocated vars
-        asm_cmd(st, os, indnt, "sub", "rsp",
+        asm_cmd(src_loc, os, indnt, "sub", "rsp",
                 to_string(nbytes_of_vars_on_stack));
         // stack: <base>,.. vars ..,
       }
@@ -694,7 +695,7 @@ public:
         continue;
       }
       // push only registers that contain a valid value
-      asm_push(st, os, indnt, reg);
+      asm_push(src_loc, os, indnt, reg);
       nregs_pushed_on_stack++;
     }
     call_metas_.push_back(call_info{nregs_pushed_on_stack,
@@ -702,7 +703,7 @@ public:
                                     nbytes_of_vars_on_stack});
   }
 
-  inline void exit_call(const statement &st, ostream &os, const size_t indnt,
+  inline void exit_call(const token &src_loc, ostream &os, const size_t indnt,
                         const size_t nbytes_of_args_on_stack,
                         const vector<string> &allocated_args_registers) {
     const size_t nregs_pushed{call_metas_.back().nregs_pushed};
@@ -719,11 +720,11 @@ public:
       if (restore_rsp_to_base) {
         const string &offset{
             to_string(nbytes_of_args_on_stack + nbytes_of_vars)};
-        asm_cmd(st, os, indnt, "add", "rsp", offset);
+        asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
         // stack is: <base>,
       } else {
         const string &offset{to_string(nbytes_of_args_on_stack)};
-        asm_cmd(st, os, indnt, "add", "rsp", offset);
+        asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
         // stack is: <base>,vars,
       }
       // free named registers
@@ -745,7 +746,7 @@ public:
       // stack is: <base>,vars,regs,args,
       if (nbytes_of_args_on_stack) {
         const string &offset{to_string(nbytes_of_args_on_stack)};
-        asm_cmd(st, os, indnt, "add", "rsp", offset);
+        asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
       }
       // stack is: <base>,vars,regs,
 
@@ -763,7 +764,7 @@ public:
                  reg) == allocated_args_registers.end()) {
           if (is_register_initiated(reg)) {
             // pop only registers that were pushed
-            asm_pop(st, os, indnt, reg);
+            asm_pop(src_loc, os, indnt, reg);
           }
         } else {
           free_named_register(os, indnt, reg);
@@ -776,14 +777,14 @@ public:
         // stack is: <base>,vars,
         if (nbytes_of_vars) {
           const string &offset{to_string(nbytes_of_vars)};
-          asm_cmd(st, os, indnt, "add", "rsp", offset);
+          asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
         }
         // stack is: <base>,
       }
     }
   }
 
-  inline void asm_cmd(const statement &st, ostream &os, const size_t indnt,
+  inline void asm_cmd(const token &src_loc, ostream &os, const size_t indnt,
                       const string &op, const string &dst_resolved,
                       const string &src_resolved) {
     if (op == "mov") {
@@ -797,8 +798,8 @@ public:
       }
     }
 
-    const size_t dst_size{get_size_from_operand(st, dst_resolved)};
-    const size_t src_size{get_size_from_operand(st, src_resolved)};
+    const size_t dst_size{get_size_from_operand(src_loc, dst_resolved)};
+    const size_t src_size{get_size_from_operand(src_loc, src_resolved)};
 
     if (dst_size == src_size) {
       if (not(is_operand_memory(dst_resolved) and
@@ -808,8 +809,9 @@ public:
         return;
       }
 
-      const string &r{alloc_scratch_register(st, os, indnt)};
-      const string &r_sized{get_register_operand_for_size(st, r, src_size)};
+      const string &r{alloc_scratch_register(src_loc, os, indnt)};
+      const string &r_sized{
+          get_register_operand_for_size(src_loc, r, src_size)};
       indent(os, indnt);
       os << "mov " << r_sized << ", " << src_resolved << endl;
       indent(os, indnt);
@@ -830,8 +832,9 @@ public:
       }
       // both operands refer to memory
       // use scratch register for transfer
-      const string &reg{alloc_scratch_register(st, os, indnt)};
-      const string &reg_sized{get_register_operand_for_size(st, reg, dst_size)};
+      const string &reg{alloc_scratch_register(src_loc, os, indnt)};
+      const string &reg_sized{
+          get_register_operand_for_size(src_loc, reg, dst_size)};
       indent(os, indnt);
       os << "movsx " << reg_sized << ", " << src_resolved << endl;
       indent(os, indnt);
@@ -843,7 +846,7 @@ public:
     // dst_size < src_size
     if (is_identifier_register(src_resolved)) {
       const string &reg_sized{
-          get_register_operand_for_size(st, src_resolved, dst_size)};
+          get_register_operand_for_size(src_loc, src_resolved, dst_size)};
       indent(os, indnt);
       os << op << " " << dst_resolved << ", " << reg_sized << endl;
       return;
@@ -852,9 +855,9 @@ public:
     if (is_operand_memory(src_resolved)) {
       //? todo. this displays nasm identifiers but should be human readable
       // identifiers
-      throw compiler_exception(st.tok(), "cannot move '" + src_resolved +
-                                             "' to '" + dst_resolved +
-                                             "' because it would be truncated");
+      throw compiler_exception(src_loc, "cannot move '" + src_resolved +
+                                            "' to '" + dst_resolved +
+                                            "' because it would be truncated");
     }
 
     // constant
@@ -865,7 +868,7 @@ public:
   inline static auto is_operand_memory(const string &operand) -> bool {
     return operand.find_first_of('[') != string::npos;
   }
-  inline auto get_size_from_operand(const statement &st,
+  inline auto get_size_from_operand(const token &src_loc,
                                     const string &operand) const -> size_t {
     //? sort of ugly
     if (operand.starts_with("qword")) {
@@ -881,7 +884,7 @@ public:
       return 1;
     }
     if (is_identifier_register(operand)) {
-      return get_size_from_operand_register(st, operand);
+      return get_size_from_operand_register(src_loc, operand);
     }
 
     // constant
@@ -890,7 +893,7 @@ public:
     // be deduced");
   }
 
-  inline static auto get_size_from_operand_register(const statement &st,
+  inline static auto get_size_from_operand_register(const token &src_loc,
                                                     const string &operand)
       -> size_t {
     if (operand == "rax") {
@@ -1089,9 +1092,9 @@ public:
       return 1;
     }
 
-    throw compiler_exception(st.tok(), "unknown register '" + operand + "'");
+    throw compiler_exception(src_loc, "unknown register '" + operand + "'");
   }
-  inline static auto get_register_operand_for_size(const statement &st,
+  inline static auto get_register_operand_for_size(const token &src_loc,
                                                    const string &operand,
                                                    const size_t size)
       -> string {
@@ -1107,9 +1110,9 @@ public:
       case 1:
         return "al";
       default:
-        throw compiler_exception(st.tok(), "illegal size " + to_string(size) +
-                                               " for register operand '" +
-                                               operand + "'");
+        throw compiler_exception(src_loc, "illegal size " + to_string(size) +
+                                              " for register operand '" +
+                                              operand + "'");
       }
     }
     if (operand == "rbx") {
@@ -1123,9 +1126,9 @@ public:
       case 1:
         return "bl";
       default:
-        throw compiler_exception(st.tok(), "illegal size " + to_string(size) +
-                                               " for register '" + operand +
-                                               "'");
+        throw compiler_exception(src_loc, "illegal size " + to_string(size) +
+                                              " for register '" + operand +
+                                              "'");
       }
     }
     if (operand == "rcx") {
@@ -1139,9 +1142,9 @@ public:
       case 1:
         return "cl";
       default:
-        throw compiler_exception(st.tok(), "illegal size " + to_string(size) +
-                                               " for register '" + operand +
-                                               "'");
+        throw compiler_exception(src_loc, "illegal size " + to_string(size) +
+                                              " for register '" + operand +
+                                              "'");
       }
     }
     if (operand == "rdx") {
@@ -1155,9 +1158,9 @@ public:
       case 1:
         return "dl";
       default:
-        throw compiler_exception(st.tok(), "illegal size " + to_string(size) +
-                                               " for register '" + operand +
-                                               "'");
+        throw compiler_exception(src_loc, "illegal size " + to_string(size) +
+                                              " for register '" + operand +
+                                              "'");
       }
     }
     if (operand == "rbp") {
@@ -1169,9 +1172,9 @@ public:
       case 2:
         return "bp";
       default:
-        throw compiler_exception(st.tok(), "illegal size " + to_string(size) +
-                                               " for register '" + operand +
-                                               "'");
+        throw compiler_exception(src_loc, "illegal size " + to_string(size) +
+                                              " for register '" + operand +
+                                              "'");
       }
     }
     if (operand == "rsi") {
@@ -1183,9 +1186,9 @@ public:
       case 2:
         return "si";
       default:
-        throw compiler_exception(st.tok(), "illegal size " + to_string(size) +
-                                               " for register '" + operand +
-                                               "'");
+        throw compiler_exception(src_loc, "illegal size " + to_string(size) +
+                                              " for register '" + operand +
+                                              "'");
       }
     }
     if (operand == "rdi") {
@@ -1197,9 +1200,9 @@ public:
       case 2:
         return "di";
       default:
-        throw compiler_exception(st.tok(), "illegal size " + to_string(size) +
-                                               " for register '" + operand +
-                                               "'");
+        throw compiler_exception(src_loc, "illegal size " + to_string(size) +
+                                              " for register '" + operand +
+                                              "'");
       }
     }
     if (operand == "rsp") {
@@ -1211,15 +1214,15 @@ public:
       case 2:
         return "sp";
       default:
-        throw compiler_exception(st.tok(), "illegal size " + to_string(size) +
-                                               " for register '" + operand +
-                                               "'");
+        throw compiler_exception(src_loc, "illegal size " + to_string(size) +
+                                              " for register '" + operand +
+                                              "'");
       }
     }
     const regex rx{R"(r(\d+))"};
     smatch match;
     if (!regex_search(operand, match, rx)) {
-      throw compiler_exception(st.tok(), "unknown register " + operand);
+      throw compiler_exception(src_loc, "unknown register " + operand);
     }
     const string &rnbr{match[1]};
     switch (size) {
@@ -1232,44 +1235,46 @@ public:
     case 1:
       return "r" + rnbr + "b";
     default:
-      throw compiler_exception(st.tok(), "illegal size " + to_string(size) +
-                                             " for register '" + operand + "'");
+      throw compiler_exception(src_loc, "illegal size " + to_string(size) +
+                                            " for register '" + operand + "'");
     }
 
-    throw compiler_exception(st.tok(), "unknown register '" + operand + "'");
+    throw compiler_exception(src_loc, "unknown register '" + operand + "'");
   }
-  inline static void asm_push([[maybe_unused]] const statement &st, ostream &os,
-                              const size_t indnt, const string &operand) {
+
+  inline static void asm_push([[maybe_unused]] const token &src_loc,
+                              ostream &os, const size_t indnt,
+                              const string &operand) {
     indent(os, indnt);
     os << "push " << operand << endl;
   }
 
-  inline static void asm_pop([[maybe_unused]] const statement &st, ostream &os,
+  inline static void asm_pop([[maybe_unused]] const token &src_loc, ostream &os,
                              const size_t indnt, const string &operand) {
     indent(os, indnt);
     os << "pop " << operand << endl;
   }
 
-  inline static void asm_ret([[maybe_unused]] const statement &st, ostream &os,
+  inline static void asm_ret([[maybe_unused]] const token &src_loc, ostream &os,
                              const size_t indnt) {
     indent(os, indnt);
     os << "ret\n";
   }
 
-  inline static void asm_jmp([[maybe_unused]] const statement &st, ostream &os,
+  inline static void asm_jmp([[maybe_unused]] const token &src_loc, ostream &os,
                              const size_t indnt, const string &label) {
     indent(os, indnt);
     os << "jmp " << label << endl;
   }
 
-  inline static void asm_label([[maybe_unused]] const statement &st,
+  inline static void asm_label([[maybe_unused]] const token &src_loc,
                                ostream &os, const size_t indnt,
                                const string &label) {
     indent(os, indnt);
     os << label << ":" << endl;
   }
 
-  inline static void asm_call([[maybe_unused]] const statement &st, ostream &os,
+  inline static void asm_call([[maybe_unused]] const token &src_loc, ostream &os,
                               const size_t indnt, const string &label) {
     indent(os, indnt);
     os << "call " << label << endl;

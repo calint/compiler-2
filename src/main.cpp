@@ -182,7 +182,7 @@ inline void expr_type_value::compile_recursive(const expr_type_value &atv,
             tc.resolve_identifier(atv.tok(), src + "." + fld.name, false).id_nasm};
         const string &dst_resolved{
             tc.resolve_identifier(atv.tok(), dst + "." + fld.name, false).id_nasm};
-        tc.asm_cmd(atv, os, indent, "mov", dst_resolved, src_resolved);
+        tc.asm_cmd(atv.tok(), os, indent, "mov", dst_resolved, src_resolved);
         continue;
       }
       // not a register built-in type, recurse

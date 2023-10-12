@@ -33,12 +33,12 @@ public:
     const ident_resolved &src{tc.resolve_identifier(src_arg, true)};
     if (src.is_const()) {
       // a constant
-      tc.asm_cmd(*this, os, indent, "mov", dst_r.id_nasm,
+      tc.asm_cmd(tok(), os, indent, "mov", dst_r.id_nasm,
                  src_arg.get_unary_ops().to_string() + src.id_nasm);
       return;
     }
     // variable, register or field
-    tc.asm_cmd(*this, os, indent, "mov", dst_r.id_nasm, src.id_nasm);
+    tc.asm_cmd(tok(), os, indent, "mov", dst_r.id_nasm, src.id_nasm);
     src_arg.get_unary_ops().compile(tc, os, indent, dst_r.id_nasm);
   }
 };

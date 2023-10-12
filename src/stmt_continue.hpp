@@ -20,6 +20,6 @@ public:
     // get current loop label
     const string &loop_label = tc.get_loop_label_or_throw(*this);
     // jump to it
-    toc::asm_jmp(*this, os, indent, loop_label);
+    toc::asm_jmp(tok(), os, indent, loop_label);
   }
 };

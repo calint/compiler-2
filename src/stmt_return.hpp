@@ -26,13 +26,13 @@ public:
         const ident_resolved &ir{
             tc.resolve_identifier(tok(), ret_info.ident_tk.name(), false)};
         const string &src_resolved{ir.id_nasm};
-        tc.asm_cmd(*this, os, indent, "mov", "rax", src_resolved);
+        tc.asm_cmd(tok(), os, indent, "mov", "rax", src_resolved);
       }
-      toc::asm_pop(*this, os, indent, "rbp");
-      toc::asm_ret(*this, os, indent);
+      toc::asm_pop(tok(), os, indent, "rbp");
+      toc::asm_ret(tok(), os, indent);
       return;
     }
     // in-lined
-    toc::asm_jmp(*this, os, indent, ret);
+    toc::asm_jmp(tok(), os, indent, ret);
   }
 };

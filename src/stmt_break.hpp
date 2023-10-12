@@ -20,6 +20,6 @@ public:
     // get loop label
     const string &loop_label{tc.get_loop_label_or_throw(*this)};
     // jump out of the loop
-    toc::asm_jmp(*this, os, indent, loop_label + "_end");
+    toc::asm_jmp(tok(), os, indent, loop_label + "_end");
   }
 };

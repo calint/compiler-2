@@ -130,14 +130,14 @@ public:
       return;
     }
 
-    toc::asm_label(*this, os, indent, name());
+    toc::asm_label(tok(), os, indent, name());
     toc::indent(os, indent + 1, true);
     source_def_comment_to(os);
 
     tc.enter_func(name(), "", "", false, returns_);
 
-    toc::asm_push(*this, os, indent + 1, "rbp");
-    tc.asm_cmd(*this, os, indent + 1, "mov", "rbp", "rsp");
+    toc::asm_push(tok(), os, indent + 1, "rbp");
+    tc.asm_cmd(tok(), os, indent + 1, "mov", "rbp", "rsp");
 
     vector<string> allocated_named_registers;
     init_variables(tc, os, indent, allocated_named_registers);
@@ -148,11 +148,11 @@ public:
       const string &ret_name{returns()[0].ident_tk.name()};
       const ident_resolved &ret_resolved{
           tc.resolve_identifier(tok(), ret_name, true)};
-      tc.asm_cmd(*this, os, indent + 1, "mov", "rax", ret_resolved.id_nasm);
+      tc.asm_cmd(tok(), os, indent + 1, "mov", "rax", ret_resolved.id_nasm);
     }
 
-    toc::asm_pop(*this, os, indent + 1, "rbp");
-    toc::asm_ret(*this, os, indent + 1);
+    toc::asm_pop(tok(), os, indent + 1, "rbp");
+    toc::asm_ret(tok(), os, indent + 1);
 
     free_allocated_registers(tc, os, indent, allocated_named_registers);
 
