@@ -9,6 +9,10 @@ class toc;
 class type;
 
 class statement {
+  token token_{};
+  unary_ops uops_{};
+  const type *type_{};
+
 public:
   inline explicit statement(unary_ops uops, token tk)
       : token_{move(tk)}, uops_{move(uops)} {
@@ -70,9 +74,4 @@ public:
                                        tk.name() + "'");
     }
   }
-
-private:
-  token token_{};
-  unary_ops uops_{};
-  const type *type_{};
 };

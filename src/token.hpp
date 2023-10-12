@@ -12,7 +12,21 @@ public:
   inline token(string ws_left, size_t start_ix, string name, size_t end_ix,
                string ws_right, bool is_str = false)
       : ws_left_{move(ws_left)}, start_ix_{start_ix}, name_{move(name)},
-        end_ix_{end_ix}, ws_right_{move(ws_right)}, is_str_{is_str} {}
+        end_ix_{end_ix}, ws_right_{move(ws_right)}, is_str_{is_str} {
+    // puts("token new");
+  }
+
+  // inline token() { puts("token default"); };
+  // inline token(const token &) { puts("token copy"); }
+  // inline token(token &&) { puts("token move"); }
+  // inline auto operator=(const token &) -> token & {
+  //   puts("token copy assign");
+  //   return *this;
+  // }
+  // inline auto operator=(token &&) -> token & {
+  //   puts("token move assign");
+  //   return *this;
+  // }
 
   inline token() = default;
   inline token(const token &) = default;
