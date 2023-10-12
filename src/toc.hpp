@@ -7,13 +7,13 @@ class stmt_def_func;
 class stmt_def_field;
 class stmt_def_type;
 
-struct func_return_info {
+struct func_return_info final {
   const token type_tk{};  // type token
   const token ident_tk{}; // identifier
   const type &tp;         // type
 };
 
-struct var_meta final {
+struct var_info final {
   string name{};
   const type &tp;
   token declared_at{};
@@ -33,7 +33,7 @@ class frame final {
   size_t allocated_stack_{};
 
   // variables declared in this frame
-  lut<var_meta> vars_{};
+  lut<var_info> vars_{};
 
   // aliases that refers to previous frame(s) alias or variable
   lut<string> aliases_{};
@@ -98,11 +98,11 @@ public:
     return vars_.has(name);
   }
 
-  inline auto get_var_ref(const string &name) -> var_meta & {
+  inline auto get_var_ref(const string &name) -> var_info & {
     return vars_.get_ref(name);
   }
 
-  inline auto get_var_const_ref(const string &name) const -> const var_meta & {
+  inline auto get_var_const_ref(const string &name) const -> const var_info & {
     return vars_.get_const_ref(name);
   }
 
@@ -142,25 +142,25 @@ public:
   }
 };
 
-struct field_meta final {
+struct field_info final {
   const stmt_def_field *def{};
   const token declared_at{};
   const bool is_str{};
 };
 
-struct func_meta final {
+struct func_info final {
   const type &tp;
   const stmt_def_func *def{};
   const token declared_at{};
 };
 
-struct call_meta final {
+struct call_info final {
   size_t nregs_pushed{};
   size_t alloc_reg_idx{};
   size_t nbytes_of_vars{};
 };
 
-struct type_meta final {
+struct type_info final {
   const stmt_def_type &def;
   const token declared_at{};
   const type &tp;
@@ -242,7 +242,7 @@ public:
   inline void add_field(const statement &st, const string &ident,
                         const stmt_def_field *f, const bool is_str_field) {
     if (fields_.has(ident)) {
-      const field_meta &fld{fields_.get(ident)};
+      const field_info &fld{fields_.get(ident)};
       throw compiler_exception(st.tok(),
                                "field '" + ident + "' already defined at " +
                                    source_location_hr(fld.declared_at));
@@ -253,7 +253,7 @@ public:
   inline void add_func(const token &tk, const string &name,
                        const type &return_type, const stmt_def_func *ref) {
     if (funcs_.has(name)) {
-      const func_meta &func{funcs_.get_const_ref(name)};
+      const func_info &func{funcs_.get_const_ref(name)};
       const string src_loc{source_location_hr(func.declared_at)};
       throw compiler_exception(tk, "function '" + name +
                                        "' already defined at " + src_loc);
@@ -436,7 +436,7 @@ public:
                       const bool initiated) {
     // check if variable already declared in this scope
     if (frames_.back().has_var(name)) {
-      const var_meta &var{frames_.back().get_var_const_ref(name)};
+      const var_info &var{frames_.back().get_var_const_ref(name)};
       throw compiler_exception(st.tok(),
                                "variable '" + name + "' already declared at " +
                                    source_location_hr(var.declared_at));
@@ -446,7 +446,7 @@ public:
     const string &id{idfrm.first};
     const frame &frm{idfrm.second};
     if (frm.has_var(id)) {
-      const var_meta &var{frm.get_var_const_ref(id)};
+      const var_info &var{frm.get_var_const_ref(id)};
       throw compiler_exception(
           st.tok(), "variable '" + name + "' shadows variable declared at " +
                         source_location_hr(var.declared_at));
@@ -695,7 +695,7 @@ public:
       asm_push(st, os, indnt, reg);
       nregs_pushed_on_stack++;
     }
-    call_metas_.push_back(call_meta{nregs_pushed_on_stack,
+    call_metas_.push_back(call_info{nregs_pushed_on_stack,
                                     allocated_registers_.size(),
                                     nbytes_of_vars_on_stack});
   }
@@ -1413,7 +1413,7 @@ private:
 
     // is 'id_nasm' a variable?
     if (frames_[i].has_var(id)) {
-      const var_meta &var{frames_[i].get_var_const_ref(id)};
+      const var_info &var{frames_[i].get_var_const_ref(id)};
       if (must_be_initiated and not var.initiated) {
         throw compiler_exception(st.tok(), "variable '" + var.name +
                                                "' is not initiated");
@@ -1442,7 +1442,7 @@ private:
         return {ident, id + "." + after_dot, 0, get_type_default(),
                 ident_resolved::ident_type::IMPLIED};
       }
-      const field_meta &fm{fields_.get_const_ref(id)};
+      const field_info &fm{fields_.get_const_ref(id)};
       if (fm.is_str) {
         return {ident, id, 0, get_type_default(),
                 ident_resolved::ident_type::FIELD};
@@ -1478,7 +1478,7 @@ private:
 
     //? comment this
     if (funcs_.has(id)) {
-      const func_meta &func{funcs_.get_const_ref(id)};
+      const func_info &func{funcs_.get_const_ref(id)};
       //? type is func
       return {ident, id, 0, func.tp, ident_resolved::ident_type::CONST};
     }
@@ -1512,10 +1512,10 @@ private:
   size_t max_usage_scratch_regs_{0};
   size_t max_frame_count_{0};
   const string &source_str_{};
-  lut<field_meta> fields_{};
-  lut<func_meta> funcs_{};
+  lut<field_info> fields_{};
+  lut<func_info> funcs_{};
   lut<const type &> types_{};
-  vector<call_meta> call_metas_{};
+  vector<call_info> call_metas_{};
   unordered_set<string> initiated_registers_{};
   const type *type_void_{};
   const type *type_default_{};
