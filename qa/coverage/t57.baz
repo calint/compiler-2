@@ -4,27 +4,27 @@ func inline exit(v:reg_rdi){
     syscall
 }
 
-func f1(i):res{
+func f1(i):i64 res{
     res=-i
 }
 
-func f2(i):res:i64{
+func f2(i):i64 res{
     res=-i*2
 }
 
-func f3(i:i32):res:i32{
+func f3(i:i32):i32 res{
     res=-i*3
 }
 
-func f4(i:i16):res:i16{
+func f4(i:i16):i16 res{
     res=-i*4
 }
 
-func f5(i:i8):res:i8{
+func f5(i:i8):i8 res{
     res=-i*4
 }
 
-func inline f6(i:i8):res:i64{
+func inline f6(i:i8):i64 res{
     res=-i
 }
 

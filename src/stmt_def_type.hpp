@@ -40,7 +40,7 @@ public:
       for (const stmt_def_type_field &fld : fields_) {
         const type &tp{fld.type_str().empty()
                            ? tc.get_type_default()
-                           : tc.get_type_or_throw(fld, fld.type_str())};
+                           : tc.get_type_or_throw(fld.tok(), fld.type_str())};
         type_.add_field(fld.tok(), fld.name(), tp);
       }
     }

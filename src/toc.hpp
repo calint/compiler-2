@@ -43,9 +43,8 @@ public:
                                                    func_ret_var)},
         func_is_inline_{func_is_inline}, type_{tpe} {}
 
-  inline void add_var(token declared_at, const string &name,
-                      const type &tpe, const int stack_idx,
-                      const bool initiated) {
+  inline void add_var(token declared_at, const string &name, const type &tpe,
+                      const int stack_idx, const bool initiated) {
     string nasm_ident;
     if (stack_idx > 0) {
       // function argument
@@ -69,7 +68,8 @@ public:
     nasm_ident = "qword" + nasm_ident;
     //			throw"unexpected variable size: "+to_string(size);
     //		}
-    vars_.put(name, {name, tpe, move(declared_at), stack_idx, nasm_ident, initiated});
+    vars_.put(name,
+              {name, tpe, move(declared_at), stack_idx, nasm_ident, initiated});
   }
 
   inline auto allocated_stack_size() const -> size_t {
@@ -276,10 +276,10 @@ public:
     types_.put(tp.name(), tp);
   }
 
-  inline auto get_type_or_throw(const statement &st, const string &name) const
+  inline auto get_type_or_throw(const token &cur_tk, const string &name) const
       -> const type & {
     if (not types_.has(name)) {
-      throw compiler_exception(st.tok(), "type '" + name + "' not found");
+      throw compiler_exception(cur_tk, "type '" + name + "' not found");
     }
 
     return types_.get_const_ref(name);

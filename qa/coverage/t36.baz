@@ -14,7 +14,7 @@ func inline print(len:reg_rdx,ptr:reg_rsi){
     syscall
 }
 
-func inline read(len:reg_rdx,ptr:reg_rsi):nbytes_read{
+func inline read(len:reg_rdx,ptr:reg_rsi):i64 nbytes_read{
 	mov(rax,0)    # read system call
 	mov(rdi,0)    # file descriptor for standard input
 	mov(rsi,ptr)  # buffer address

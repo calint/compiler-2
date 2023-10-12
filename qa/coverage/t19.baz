@@ -4,7 +4,7 @@ func inline exit(v:reg_rdi){
     syscall
 }
 
-func fib(i):res{
+func fib(i):i64 res{
     if i==0 {
         res=1
         return

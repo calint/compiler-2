@@ -3,10 +3,16 @@
 #include "stmt_def_func_param.hpp"
 
 class stmt_def_func final : public statement {
+  struct return_info {
+    token type_tk{};  // type token
+    token ident_tk{}; // identifier
+    const type &tp;   // type
+  };
+
   token name_{};
   vector<stmt_def_func_param> params_{};
   token whitespace_after_params_{};
-  vector<token> returns_{};
+  vector<return_info> returns_{};
   stmt_block code_{};
   token inline_tk_{};
   bool no_args_{};
@@ -41,15 +47,19 @@ public:
     whitespace_after_params_ = tz.next_whitespace_token();
     if (tz.is_next_char(':')) { // returns
       while (true) {
-        returns_.emplace_back(tz.next_token());
-        if (tz.is_next_char(':')) {
+        token type_tk{tz.next_token()};
+        struct return_info ret_info {
+          type_tk,
+              tz.next_token(), tc.get_type_or_throw(type_tk, type_tk.name())
+        };
+        returns_.emplace_back(ret_info);
+        if (tz.is_next_char(',')) {
           continue;
         }
         break;
       }
-      if (returns_.size() > 1) {
-        set_type(tc.get_type_or_throw(*this, returns_[1].name()));
-        //				return_type_str=returns_[1].name();
+      if (returns_.size() > 0) {
+        set_type(returns_[0].tp);
       } else {
         set_type(tc.get_type_default());
       }
@@ -58,7 +68,7 @@ public:
     }
     tc.add_func(name_, name_.name(), get_type(), this);
     tc.enter_func(name(), "", "", false,
-                  returns().empty() ? "" : returns()[0].name());
+                  returns().empty() ? "" : returns()[0].ident_tk.name());
     vector<string> allocated_named_registers{};
     null_stream ns{}; // don't make output while parsing
     init_variables(tc, ns, 0, allocated_named_registers);
@@ -101,13 +111,13 @@ public:
     whitespace_after_params_.source_to(os);
     if (not returns_.empty()) {
       os << ":";
-      const size_t n{returns_.size() - 1};
       size_t i{0};
-      for (const token &t : returns_) {
-        t.source_to(os);
-        if (i++ != n) {
+      for (const return_info &ri : returns_) {
+        if (i++) {
           os << ":";
         }
+        ri.type_tk.source_to(os);
+        ri.ident_tk.source_to(os);
       }
     }
   }
@@ -133,7 +143,7 @@ public:
     source_def_comment_to(os);
 
     tc.enter_func(name(), "", "", false,
-                  returns().empty() ? "" : returns()[0].name());
+                  returns().empty() ? "" : returns()[0].ident_tk.name());
 
     toc::asm_push(*this, os, indent + 1, "rbp");
     tc.asm_cmd(*this, os, indent + 1, "mov", "rbp", "rsp");
@@ -144,7 +154,7 @@ public:
     code_.compile(tc, os, indent, "");
 
     if (!returns().empty()) {
-      const string &ret_name{returns()[0].name()};
+      const string &ret_name{returns()[0].ident_tk.name()};
       const ident_resolved &ret_resolved{
           tc.resolve_identifier(*this, ret_name, true)};
       tc.asm_cmd(*this, os, indent + 1, "mov", "rax", ret_resolved.id_nasm);
@@ -159,7 +169,7 @@ public:
     tc.exit_func(name());
   }
 
-  [[nodiscard]] inline auto returns() const -> const vector<token> & {
+  [[nodiscard]] inline auto returns() const -> const vector<return_info> & {
     return returns_;
   }
 
@@ -188,7 +198,7 @@ private:
                              vector<string> &allocated_named_registers) const {
     // return binding
     if (not returns().empty()) {
-      const string &nm{returns()[0].name()};
+      const string &nm{returns()[0].ident_tk.name()};
       tc.add_var(*this, os, indent + 1, nm, get_type(), false);
     }
 

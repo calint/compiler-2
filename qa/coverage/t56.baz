@@ -4,11 +4,11 @@ func inline exit(v:reg_rdi){
 	syscall
 }
 
-func f1(b:i8,w:i16,d:i32,q:i64):res{
+func f1(b:i8,w:i16,d:i32,q:i64):i64 res{
 	res=b+w+d+q
 }
 
-func inline f2(b:i8,w:i16,d:i32,q:i64):res{
+func inline f2(b:i8,w:i16,d:i32,q:i64):i64 res{
 	res=b+w+d+q
 }
 

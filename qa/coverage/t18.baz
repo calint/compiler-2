@@ -32,7 +32,7 @@ func bar(n,x){
     }
 }
 
-func f(x):res{
+func f(x):i64 res{
     res=x
 }
 
@@ -42,5 +42,4 @@ func inline main{
     foo()
     var b=3
     bar(a+f(a),b)
-    exit(0)
 }

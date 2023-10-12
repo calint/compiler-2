@@ -4,15 +4,15 @@ func inline exit(v:reg_rdi){
     syscall
 }
 
-func a(i):res{
+func a(i):i64 res{
     res=i+1
 }
 
-func b(i):res{
+func b(i):i64 res{
     res=i+2
 }
 
-func c(i):res{
+func c(i):i64 res{
     var a=1
     var b=2
     var c=a+b

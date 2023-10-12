@@ -43,7 +43,7 @@ func inline print(len : reg_rdx, ptr : reg_rsi) {
     syscall
 }
 
-func inline read(len : reg_rdx, ptr : reg_rsi) : nbytes {
+func inline read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, ptr) # buffer address
@@ -474,7 +474,7 @@ main:
 ;    [62:19] read(input.len, input) - 1 
 ;    [62:19] len = read(input.len, input) 
 ;    [62:19] read(input.len, input) 
-;    read(len : reg_rdx, ptr : reg_rsi) : nbytes 
+;    read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes 
 ;      inline: 62_19
 ;      alias nbytes -> len
 ;      alloc rdx

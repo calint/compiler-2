@@ -26,7 +26,7 @@ public:
       if (kw.name().starts_with("reg_")) {
         continue;
       }
-      set_type(tc.get_type_or_throw(*this, kw.name()));
+      set_type(tc.get_type_or_throw(tok(), kw.name()));
       return;
     }
 

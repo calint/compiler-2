@@ -28,7 +28,7 @@ public:
 
     const type &tp{type_.name().empty()
                        ? tc.get_type_default()
-                       : tc.get_type_or_throw(*this, type_.name())};
+                       : tc.get_type_or_throw(type_, type_.name())};
     set_type(tp);
     null_stream ns{};
     tc.add_var(*this, ns, 0, name_.name(), tp, false);

@@ -4,11 +4,11 @@ func inline exit(v:reg_rdi){
     syscall
 }
 
-func inline f(b:bool):res:bool{
+func inline f(b:bool):bool res{
     if b res=false else res=true
 }
 
-func inline f2(i:i64):res:i64{
+func inline f2(i:i64):i64 res{
     if i==0 res=4
     else if i==1 res=5
     else if i==2 res=6

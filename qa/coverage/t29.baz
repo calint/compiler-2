@@ -4,7 +4,7 @@ func inline exit(v:reg_rdi){
     syscall
 }
 
-func inline f(x):res{
+func inline f(x):i64 res{
     res=-x*2
 }
 

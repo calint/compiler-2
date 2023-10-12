@@ -6,11 +6,11 @@ func inline exit(v:reg_rdi){
 
 field len=-2
 
-func inline foo(x:reg_rdx):res{
+func inline foo(x:reg_rdx):i64 res{
     res=-x
 }
 
-func inline bar(x):res{
+func inline bar(x):i64 res{
     res=-x
 }
 

@@ -279,7 +279,7 @@ public:
     // if function returns value
     if (not dst.empty()) {
       // alias 'from' identifier to 'dst' identifier
-      const string &from{func.returns()[0].name()};
+      const string &from{func.returns()[0].ident_tk.name()};
       const string &to{dst};
       aliases_to_add.emplace_back(from, to);
       toc::indent(os, indent + 1, true);
@@ -362,7 +362,8 @@ public:
     // enter function creating a new scope from which
     //   prior variables are not visible
     tc.enter_func(func_nm, new_call_path, ret_jmp_label, true,
-                  func.returns().empty() ? "" : func.returns()[0].name());
+                  func.returns().empty() ? ""
+                                         : func.returns()[0].ident_tk.name());
 
     // add the aliases to the context of this scope
     for (const auto &e : aliases_to_add) {
@@ -404,8 +405,8 @@ public:
                                  "does not return a value");
       }
 
-      const ident_resolved &ir{
-          tc.resolve_identifier(*this, func.returns()[0].name(), true)};
+      const ident_resolved &ir{tc.resolve_identifier(
+          *this, func.returns()[0].ident_tk.name(), true)};
       get_unary_ops().compile(tc, os, indent, ir.id_nasm);
     }
     // pop scope

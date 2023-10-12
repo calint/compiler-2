@@ -6,11 +6,11 @@ func inline exit(v:reg_rdi){
     syscall
 }
 
-func foo(x):res{
+func foo(x):i64 res{
     res=-x*2
 }
 
-func bar(y):res{
+func bar(y):i64 res{
     res=-y
 }
 
