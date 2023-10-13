@@ -61,7 +61,7 @@ type point {x, y}
 type object {pos : point, color : i32}
 
 func inline foo(p : point) {
-    p.x = 0xa
+    p.x = 0b10
     p.y = 0xb
 }
 
@@ -69,7 +69,7 @@ func inline main {
     var p : point = {0, 0}
     foo(p)
     # inlined functions can write to the arguments
-    assert(p.x == 0xa)
+    assert(p.x == 2)
     assert(p.y == 0xb)
 
     var x = 1
@@ -203,11 +203,11 @@ main:
 ;  foo(p : point) 
 ;    inline: 47_5
 ;    alias p -> p
-;    [41:5] p.x = 0xa 
-;    [41:11] 0xa 
-;    [41:11] 0xa 
-;    [41:11] p.x = 0xa 
-     mov qword[rbp-16], 0xa
+;    [41:5] p.x = 0b10 
+;    [41:11] 0b10 
+;    [41:11] 0b10 
+;    [41:11] p.x = 0b10 
+     mov qword[rbp-16], 0b10
 ;    [42:5] p.y = 0xb 
 ;    [42:11] 0xb 
 ;    [42:11] 0xb 
@@ -215,14 +215,14 @@ main:
      mov qword[rbp-8], 0xb
    foo_47_5_end:
 ;  [48:5] # inlined functions can write to the arguments 
-;  [49:5] assert(p.x == 0xa) 
+;  [49:5] assert(p.x == 2) 
    sub rsp, 16
 ;  alloc r15
-;    [49:12] p.x == 0xa
-;    [49:12] ? p.x == 0xa
-;    [49:12] ? p.x == 0xa
+;    [49:12] p.x == 2
+;    [49:12] ? p.x == 2
+;    [49:12] ? p.x == 2
      cmp_49_12:
-     cmp qword[rbp-16], 0xa
+     cmp qword[rbp-16], 2
      jne false_49_12
      true_49_12:  ; opt1
      mov r15, 1

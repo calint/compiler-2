@@ -5,7 +5,7 @@ intention:
 * minimalistic language
 * gain experience writing compilers
 * generate handwritten-like assembler compiled by nasm for x86_64
-* program with a super loop and non-reentrant inlined functions
+* program of a super loop with non-reentrant inlined functions
 
 supports:
 * built-in integer types (64, 32, 16, 8 bit)
