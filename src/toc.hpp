@@ -53,9 +53,10 @@ private:
   frame_type type_{frame_type::FUNC}; // frame type
 
 public:
-  inline frame(string name, const frame_type tpe, string call_path = "",
-               string func_ret_label = "", const bool func_is_inline = false,
-               const vector<func_return_info> &func_rets = {}) noexcept
+  inline frame(string name, const frame_type tpe,
+               const vector<func_return_info> &func_rets = {},
+               const bool func_is_inline = false, string call_path = "",
+               string func_ret_label = "") noexcept
       : name_{move(name)}, call_path_{move(call_path)}, func_ret_label_{move(
                                                             func_ret_label)},
         func_rets_{func_rets}, func_is_inline_{func_is_inline}, type_{tpe} {}
@@ -395,8 +396,8 @@ public:
                          const string &call_path = "",
                          const string &return_jmp_label = "") {
 
-    frames_.emplace_back(name, frame::frame_type::FUNC, call_path,
-                         return_jmp_label, is_inline, returns);
+    frames_.emplace_back(name, frame::frame_type::FUNC, returns, is_inline,
+                         call_path, return_jmp_label);
     check_usage();
   }
 
