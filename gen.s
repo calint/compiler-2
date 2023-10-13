@@ -92,7 +92,7 @@ main:
 ;    alias p -> p
 ;    [41:5] p.x = 0xa 
 ;    [41:11] 0xa 
-;    [41:11] 0xa 
+;    [41:11] 0xa www
 ;    [41:11] p.x = 0xa 
      mov qword[rbp-16], 0xa
 ;    [42:5] p.y = 0xb 

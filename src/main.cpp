@@ -49,12 +49,10 @@ auto main(int argc, char *args[]) -> int {
     optimize_jumps_2(ss2, cout);
 
   } catch (const compiler_exception &e) {
-    size_t start_char_in_line{0};
-    const size_t lineno{toc::line_number_for_char_index(
-        e.start_char, src.c_str(), start_char_in_line)};
+    const auto [line, col]{
+        toc::line_number_for_char_index(e.start_char, src.c_str())};
     cerr << "\n"
-         << src_file_name << ":" << lineno << ":" << start_char_in_line << ": "
-         << e.msg << endl;
+         << src_file_name << ":" << line << ":" << col << ": " << e.msg << endl;
     return 1;
   } catch (const panic_exception &e) {
     cerr << "\nexception: " << e.what() << endl;

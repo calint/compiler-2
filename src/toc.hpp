@@ -83,6 +83,7 @@ public:
     // }else if(size==1){
     // 	ident="byte"+ident;
     //		}else{
+    //? why qword only?
     nasm_ident = "qword" + nasm_ident;
     //			throw"unexpected variable size: "+to_string(size);
     //		}
@@ -155,9 +156,9 @@ struct func_info final {
 };
 
 struct call_info final {
-  size_t nregs_pushed{};
-  size_t alloc_reg_idx{};
-  size_t nbytes_of_vars{};
+  const size_t nregs_pushed{};
+  const size_t alloc_reg_idx{};
+  const size_t nbytes_of_vars{};
 };
 
 struct type_info final {
@@ -169,11 +170,11 @@ struct type_info final {
 struct ident_resolved final {
   enum class ident_type { CONST, VAR, REGISTER, FIELD, IMPLIED };
 
-  string id{};
-  string id_nasm{};
-  long const_value{};
+  const string id{};
+  const string id_nasm{};
+  const long const_value{};
   const type &tp;
-  ident_type ident_type{ident_type::CONST};
+  const ident_type ident_type{ident_type::CONST};
 
   [[nodiscard]] inline auto is_const() const -> bool {
     return ident_type == ident_type::CONST;
@@ -193,8 +194,11 @@ struct ident_resolved final {
 };
 
 class baz_ident final {
+  const string id_{};
+  vector<string> path_{};
+
 public:
-  inline explicit baz_ident(const string &id) : id_{id} {
+  inline explicit baz_ident(const string id) : id_{move(id)} {
     size_t start{0};
     size_t end{0};
     while ((end = id.find('.', start)) != string::npos) {
@@ -213,10 +217,6 @@ public:
   [[nodiscard]] inline auto path() const -> const vector<string> & {
     return path_;
   }
-
-private:
-  string id_{};
-  vector<string> path_{};
 };
 
 class toc final {
@@ -309,41 +309,37 @@ public:
 
   inline auto source_location_for_use_in_label(const token &src_loc) const
       -> string {
-    size_t char_in_line{};
-    const size_t n{line_number_for_char_index(
-        src_loc.char_index(), source_str_.c_str(), char_in_line)};
-    return to_string(n) + "_" + to_string(char_in_line);
+    const auto [line, col]{
+        line_number_for_char_index(src_loc.char_index(), source_str_.c_str())};
+    return to_string(line) + "_" + to_string(col);
   }
 
   inline auto source_location_hr(const token &src_loc) -> string {
-    size_t char_in_line{};
-    const size_t line_num{line_number_for_char_index(
-        src_loc.char_index(), source_str_.c_str(), char_in_line)};
+    const auto [line, col]{
+        line_number_for_char_index(src_loc.char_index(), source_str_.c_str())};
 
-    return to_string(line_num) + ":" + to_string(char_in_line);
+    return to_string(line) + ":" + to_string(col);
   }
 
   inline static auto line_number_for_char_index(const size_t char_index,
-                                                const char *ptr,
-                                                size_t &char_in_line)
-      -> size_t {
+                                                const char *ptr)
+      -> pair<size_t, size_t> {
     size_t ix{0};
     size_t lix{0};
-    size_t lineno{1};
+    size_t line_num{1};
     while (true) {
       if (ix == char_index) {
         break;
       }
       if (*ptr++ == '\n') {
-        lineno++;
+        line_num++;
         ix++;
         lix = ix;
         continue;
       }
       ix++;
     }
-    char_in_line = ix - lix + 1;
-    return lineno;
+    return {line_num, ix - lix + 1};
   }
 
   inline void finish(ostream &os) {
@@ -611,7 +607,7 @@ public:
   //   throw compiler_exception(st.tok(), "not in a function");
   // }
 
-  inline auto get_func_returns(const statement &st) const
+  inline auto get_func_returns(const token &src_loc) const
       -> const vector<func_return_info> & {
     size_t i{frames_.size()};
     while (i--) {
@@ -619,17 +615,16 @@ public:
         return frames_[i].get_func_returns_infos();
       }
     }
-    throw compiler_exception(st.tok(), "not in a function");
+    throw compiler_exception(src_loc, "not in a function");
   }
 
   inline void source_comment(const statement &st, ostream &os,
                              const size_t indnt) const {
-    size_t char_in_line{};
-    const size_t n{line_number_for_char_index(
-        st.tok().char_index(), source_str_.c_str(), char_in_line)};
+    const auto [line, col]{
+        line_number_for_char_index(st.tok().char_index(), source_str_.c_str())};
 
     indent(os, indnt, true);
-    os << "[" << to_string(n) << ":" << char_in_line << "]";
+    os << "[" << line << ":" << col << "]";
 
     stringstream ss;
     ss << " ";
@@ -641,10 +636,9 @@ public:
 
   inline void source_comment(ostream &os, const string &dst, const string &op,
                              const statement &st) const {
-    size_t char_in_line{};
-    const size_t n{line_number_for_char_index(
-        st.tok().char_index(), source_str_.c_str(), char_in_line)};
-    os << "[" << to_string(n) << ":" << char_in_line << "]";
+    const auto [line, col]{
+        line_number_for_char_index(st.tok().char_index(), source_str_.c_str())};
+    os << "[" << line << ":" << col << "]";
 
     stringstream ss{};
     ss << " " << dst << " " << op << " ";
@@ -655,10 +649,9 @@ public:
   }
 
   inline void token_comment(ostream &os, const token &tk) const {
-    size_t char_in_line{};
-    const size_t n{line_number_for_char_index(
-        tk.char_index(), source_str_.c_str(), char_in_line)};
-    os << "[" << to_string(n) << ":" << char_in_line << "]";
+    const auto [line, col]{
+        line_number_for_char_index(tk.char_index(), source_str_.c_str())};
+    os << "[" << line << ":" << col << "]";
     os << " " << tk.name() << endl;
   }
 
@@ -1274,8 +1267,9 @@ public:
     os << label << ":" << endl;
   }
 
-  inline static void asm_call([[maybe_unused]] const token &src_loc, ostream &os,
-                              const size_t indnt, const string &label) {
+  inline static void asm_call([[maybe_unused]] const token &src_loc,
+                              ostream &os, const size_t indnt,
+                              const string &label) {
     indent(os, indnt);
     os << "call " << label << endl;
   }
