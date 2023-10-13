@@ -1,5 +1,6 @@
-[ ] process generated asm to remove duplicate labels
-[ ] coverage: bool_ops_list
+[-] process generated asm to remove duplicate labels
+    => was error in bool_ops_list
+[x] coverage: bool_ops_list
 [x] coverage: stmt_call
 [ ] review new code
 [ ] clean-up: review class, struct, function names

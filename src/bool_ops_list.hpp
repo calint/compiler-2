@@ -3,6 +3,11 @@
 #include "statement.hpp"
 
 class bool_ops_list final : public statement {
+  vector<variant<bool_op, bool_ops_list>> bools_{};
+  vector<token> ops_{}; // 'and' or 'or'
+  token not_token_{}; // not (a==b and c==d)
+  bool enclosed_{}; // (a==b and c==d) vs a==b and c==d
+
 public:
   inline bool_ops_list(toc &tc, tokenizer &tz, const bool enclosed = false,
                        token not_token = {}, const bool is_sub_expr = false,
@@ -389,9 +394,4 @@ private:
 
     return get<bool_ops_list>(bop).tok();
   }
-
-  vector<variant<bool_op, bool_ops_list>> bools_{};
-  vector<token> ops_{}; // 'and' or 'or'
-  token not_token_{};
-  bool enclosed_{}; // (a=b and c=d) vs a=b and c=d
 };
