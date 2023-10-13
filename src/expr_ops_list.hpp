@@ -62,25 +62,25 @@ public:
 
       // next operation
       if (tz.is_peek_char('+')) {
-        ops_.push_back('+');
+        ops_.emplace_back('+');
       } else if (tz.is_peek_char('-')) {
-        ops_.push_back('-');
+        ops_.emplace_back('-');
       } else if (tz.is_peek_char('*')) {
-        ops_.push_back('*');
+        ops_.emplace_back('*');
       } else if (tz.is_peek_char('/')) {
-        ops_.push_back('/');
+        ops_.emplace_back('/');
       } else if (tz.is_peek_char('%')) {
-        ops_.push_back('%');
+        ops_.emplace_back('%');
       } else if (tz.is_peek_char('&')) {
-        ops_.push_back('&');
+        ops_.emplace_back('&');
       } else if (tz.is_peek_char('|')) {
-        ops_.push_back('|');
+        ops_.emplace_back('|');
       } else if (tz.is_peek_char('^')) {
-        ops_.push_back('^');
+        ops_.emplace_back('^');
       } else if (tz.is_peek_char('<') and tz.is_peek_char2('<')) {
-        ops_.push_back('<');
+        ops_.emplace_back('<');
       } else if (tz.is_peek_char('>') and tz.is_peek_char2('>')) {
-        ops_.push_back('>');
+        ops_.emplace_back('>');
       } else {
         // no more operations
         break;
@@ -131,7 +131,7 @@ public:
                                  "unexpected '" + string{tz.peek_char()} + "'");
       }
       // move statement to list
-      exps_.push_back(move(st));
+      exps_.emplace_back(move(st));
     }
   }
 
