@@ -17,9 +17,8 @@ struct var_info final {
   string name{};
   const type &tp;
   token declared_at{};
-  int stack_idx{};     // location relative to rbp
-  string nasm_ident{}; // nasm usable literal
-  bool initiated{};    // true if variable has been initiated
+  int stack_idx{};  // location relative to rbp
+  bool initiated{}; // true if variable has been initiated
 };
 
 class frame final {
@@ -63,32 +62,11 @@ public:
 
   inline void add_var(token declared_at, const string &name, const type &tpe,
                       const int stack_idx, const bool initiated) {
-    string nasm_ident;
-    if (stack_idx > 0) {
-      // function argument
-      nasm_ident = "[rbp+" + to_string(stack_idx) + "]";
-    } else if (stack_idx < 0) {
-      // variable
-      nasm_ident = "[rbp" + to_string(stack_idx) + "]";
+    if (stack_idx < 0) {
+      // variable, increase allocated stack size
       allocated_stack_ += tpe.size();
-    } else {
-      throw panic_exception("toc:fram:add_var");
     }
-    //		if(size==8){
-    //			nasm_ident="qword"+nasm_ident;
-    // }else if(size==4){
-    // 	ident="dword"+ident;
-    // }else if(size==2){
-    // 	ident="word"+ident;
-    // }else if(size==1){
-    // 	ident="byte"+ident;
-    //		}else{
-    //? why qword only?
-    nasm_ident = "qword" + nasm_ident;
-    //			throw"unexpected variable size: "+to_string(size);
-    //		}
-    vars_.put(name,
-              {name, tpe, move(declared_at), stack_idx, nasm_ident, initiated});
+    vars_.put(name, {name, tpe, move(declared_at), stack_idx, initiated});
   }
 
   inline auto allocated_stack_size() const -> size_t {
@@ -690,8 +668,8 @@ public:
       nregs_pushed_on_stack++;
     }
     call_metas_.emplace_back(call_info{nregs_pushed_on_stack,
-                                    allocated_registers_.size(),
-                                    nbytes_of_vars_on_stack});
+                                       allocated_registers_.size(),
+                                       nbytes_of_vars_on_stack});
   }
 
   inline void exit_call(const token &src_loc, ostream &os, const size_t indnt,

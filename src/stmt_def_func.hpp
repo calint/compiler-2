@@ -160,7 +160,8 @@ public:
     tc.exit_func(name());
   }
 
-  [[nodiscard]] inline auto returns() const -> const vector<func_return_info> & {
+  [[nodiscard]] inline auto returns() const
+      -> const vector<func_return_info> & {
     return returns_;
   }
 
@@ -189,8 +190,8 @@ private:
                              vector<string> &allocated_named_registers) const {
     // return binding
     if (not returns().empty()) {
-      const string &nm{returns()[0].ident_tk.name()};
-      tc.add_var(tok(), os, indent + 1, nm, get_type(), false);
+      const token &id_tkn{returns()[0].ident_tk};
+      tc.add_var(id_tkn, os, indent + 1, id_tkn.name(), get_type(), false);
     }
 
     // stack is now: ...,[prev rsp],...,[arg n],[arg n-1],...,[arg 1],[return
