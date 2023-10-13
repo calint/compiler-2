@@ -46,12 +46,12 @@ assert:
 main:
      mov qword[rbp-16], 0
      mov qword[rbp-8], 0
-     mov qword[rbp-16], 0xa
+     mov qword[rbp-16], 0b10
      mov qword[rbp-8], 0xb
    foo_47_5_end:
    sub rsp, 16
      cmp_49_12:
-     cmp qword[rbp-16], 0xa
+     cmp qword[rbp-16], 2
      jne false_49_12
      true_49_12:  ; opt1
      mov r15, 1

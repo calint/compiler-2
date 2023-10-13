@@ -7,9 +7,9 @@
 [ ] clean-up: review variable names
 [ ] "#comment" should be accepted as "# comment"
 [ ] var pos : point = foo()
-[ ] func f(inout point p) { p.x = 1 }
-[ ] func f(copy point p) copies point to callee stack
-[ ] func f(const point p) const is default
+[ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
+[ ] func f(p : point copy) copies point to callee stack
+[ ] func f(p : point const) const is default func f(p : point)
 [ ] multiple return values: func f() : point pos, point vel { ... }
 [ ]    var p,v = f()
 [ ] string type

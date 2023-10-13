@@ -266,6 +266,9 @@ private:
     if (op == "==") {
       return lh == rh;
     }
+    if (op == "!=") {
+      return lh != rh;
+    }
     if (op == "<") {
       return lh < rh;
     }
