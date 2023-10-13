@@ -592,21 +592,6 @@ public:
     throw compiler_exception(src_loc, "not in a function");
   }
 
-  // inline auto get_func_return_var_name_or_throw(const statement &st) const
-  //     -> const string & {
-  //   size_t i{frames_.size()};
-  //   while (i--) {
-  //     if (frames_[i].is_func()) {
-  //       const vector<func_return_info> &returns{
-  //           frames_[i].get_func_returns_infos()};
-  //       if (not returns.empty()) {
-  //         return returns.at(0).ident_tk.name();
-  //       }
-  //     }
-  //   }
-  //   throw compiler_exception(st.tok(), "not in a function");
-  // }
-
   inline auto get_func_returns(const token &src_loc) const
       -> const vector<func_return_info> & {
     size_t i{frames_.size()};
@@ -801,14 +786,14 @@ public:
         return;
       }
 
-      const string &r{alloc_scratch_register(src_loc, os, indnt)};
-      const string &r_sized{
-          get_register_operand_for_size(src_loc, r, src_size)};
+      const string &reg{alloc_scratch_register(src_loc, os, indnt)};
+      const string &reg_sized{
+          get_register_operand_for_size(src_loc, reg, src_size)};
       indent(os, indnt);
-      os << "mov " << r_sized << ", " << src_resolved << endl;
+      os << "mov " << reg_sized << ", " << src_resolved << endl;
       indent(os, indnt);
-      os << op << " " << dst_resolved << ", " << r_sized << endl;
-      free_scratch_register(os, indnt, r);
+      os << op << " " << dst_resolved << ", " << reg_sized << endl;
+      free_scratch_register(os, indnt, reg);
       return;
     }
 
