@@ -1375,6 +1375,7 @@ private:
         return n;
       }
     }
+    // top frame, 'main'
     return n;
   }
 
@@ -1476,12 +1477,12 @@ private:
       }
     }
 
-    //? comment this
-    if (funcs_.has(id)) {
-      const func_info &func{funcs_.get_const_ref(id)};
-      //? type is func
-      return {ident, id, 0, func.tp, ident_resolved::ident_type::CONST};
-    }
+    // //? comment this
+    // if (funcs_.has(id)) {
+    //   const func_info &func{funcs_.get_const_ref(id)};
+    //   //? type is func
+    //   return {ident, id, 0, func.tp, ident_resolved::ident_type::CONST};
+    // }
 
     // is it a boolean constant?
     if (id == "true") {
