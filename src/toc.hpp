@@ -842,6 +842,44 @@ public:
     os << op << " " << dst_resolved << ", " << src_resolved << endl;
   }
 
+  inline void set_var_is_initiated(const string &name) {
+    const baz_ident bid{name};
+    const auto [id, frm]{get_id_and_frame_for_identifier(bid.id_base())};
+    // is 'id_nasm' a variable?
+    if (frm.has_var(id)) {
+      frm.get_var_ref(id).initiated = true;
+      return;
+    }
+
+    if (fields_.has(id)) {
+      return; // a field, it is initiated
+    }
+
+    if (is_identifier_register(id)) {
+      //? this might not be necessary since it is updated at
+      // asm_cmd(...,"mov",...)
+      initiated_registers_.insert(id);
+      return;
+    }
+
+    throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                          to_string(__LINE__));
+  }
+
+  inline void set_type_void(const type &tp) { type_void_ = &tp; }
+
+  inline auto get_type_void() const -> const type & { return *type_void_; }
+
+  inline void set_type_default(const type &tp) { type_default_ = &tp; }
+
+  inline auto get_type_default() const -> const type & {
+    return *type_default_;
+  }
+
+  inline void set_type_bool(const type &tp) { type_bool_ = &tp; }
+
+  inline auto get_type_bool() const -> const type & { return *type_bool_; }
+
   inline static auto is_operand_memory(const string &operand) -> bool {
     return operand.find_first_of('[') != string::npos;
   }
@@ -865,6 +903,10 @@ public:
       return get_size_from_operand_register(src_loc, operand);
     }
 
+    // -------------------------------------------------------------------------
+    // static
+    // -------------------------------------------------------------------------
+
     // constant
     //? calculate the smallest size of the constant?
     return get_type_default().size();
@@ -873,199 +915,39 @@ public:
   inline static auto get_size_from_operand_register(const token &src_loc,
                                                     const string &operand)
       -> size_t {
-    if (operand == "rax") {
-      return 8;
-    }
-    if (operand == "rbx") {
-      return 8;
-    }
-    if (operand == "rcx") {
-      return 8;
-    }
-    if (operand == "rdx") {
-      return 8;
-    }
-    if (operand == "rbp") {
-      return 8;
-    }
-    if (operand == "rsi") {
-      return 8;
-    }
-    if (operand == "rdi") {
-      return 8;
-    }
-    if (operand == "rsp") {
-      return 8;
-    }
-    if (operand == "r8") {
-      return 8;
-    }
-    if (operand == "r9") {
-      return 8;
-    }
-    if (operand == "r10") {
-      return 8;
-    }
-    if (operand == "r11") {
-      return 8;
-    }
-    if (operand == "r12") {
-      return 8;
-    }
-    if (operand == "r13") {
-      return 8;
-    }
-    if (operand == "r14") {
-      return 8;
-    }
-    if (operand == "r15") {
+    if (operand == "rax" || operand == "rbx" || operand == "rcx" ||
+        operand == "rdx" || operand == "rbp" || operand == "rsi" ||
+        operand == "rdi" || operand == "rsp" || operand == "r8" ||
+        operand == "r9" || operand == "r10" || operand == "r11" ||
+        operand == "r12" || operand == "r13" || operand == "r14" ||
+        operand == "r15") {
       return 8;
     }
 
-    if (operand == "eax") {
-      return 4;
-    }
-    if (operand == "ebx") {
-      return 4;
-    }
-    if (operand == "ecx") {
-      return 4;
-    }
-    if (operand == "edx") {
-      return 4;
-    }
-    if (operand == "ebp") {
-      return 4;
-    }
-    if (operand == "esi") {
-      return 4;
-    }
-    if (operand == "edi") {
-      return 4;
-    }
-    if (operand == "esp") {
-      return 4;
-    }
-    if (operand == "r8d") {
-      return 4;
-    }
-    if (operand == "r9d") {
-      return 4;
-    }
-    if (operand == "r10d") {
-      return 4;
-    }
-    if (operand == "r11d") {
-      return 4;
-    }
-    if (operand == "r12d") {
-      return 4;
-    }
-    if (operand == "r13d") {
-      return 4;
-    }
-    if (operand == "r14d") {
-      return 4;
-    }
-    if (operand == "r15d") {
+    if (operand == "eax" || operand == "ebx" || operand == "ecx" ||
+        operand == "edx" || operand == "ebp" || operand == "esi" ||
+        operand == "edi" || operand == "esp" || operand == "r8d" ||
+        operand == "r9d" || operand == "r10d" || operand == "r11d" ||
+        operand == "r12d" || operand == "r13d" || operand == "r14d" ||
+        operand == "r15d") {
       return 4;
     }
 
-    if (operand == "ax") {
-      return 2;
-    }
-    if (operand == "bx") {
-      return 2;
-    }
-    if (operand == "cx") {
-      return 2;
-    }
-    if (operand == "dx") {
-      return 2;
-    }
-    if (operand == "bp") {
-      return 2;
-    }
-    if (operand == "si") {
-      return 2;
-    }
-    if (operand == "di") {
-      return 2;
-    }
-    if (operand == "sp") {
-      return 2;
-    }
-    if (operand == "r8w") {
-      return 2;
-    }
-    if (operand == "r9w") {
-      return 2;
-    }
-    if (operand == "r10w") {
-      return 2;
-    }
-    if (operand == "r11w") {
-      return 2;
-    }
-    if (operand == "r12w") {
-      return 2;
-    }
-    if (operand == "r13w") {
-      return 2;
-    }
-    if (operand == "r14w") {
-      return 2;
-    }
-    if (operand == "r15w") {
+    if (operand == "ax" || operand == "bx" || operand == "cx" ||
+        operand == "dx" || operand == "bp" || operand == "si" ||
+        operand == "di" || operand == "sp" || operand == "r8w" ||
+        operand == "r9w" || operand == "r10w" || operand == "r11w" ||
+        operand == "r12w" || operand == "r13w" || operand == "r14w" ||
+        operand == "r15w") {
       return 2;
     }
 
-    if (operand == "al") {
-      return 1;
-    }
-    if (operand == "ah") {
-      return 1;
-    }
-    if (operand == "bl") {
-      return 1;
-    }
-    if (operand == "bh") {
-      return 1;
-    }
-    if (operand == "cl") {
-      return 1;
-    }
-    if (operand == "ch") {
-      return 1;
-    }
-    if (operand == "dl") {
-      return 1;
-    }
-    if (operand == "dh") {
-      return 1;
-    }
-    if (operand == "r8b") {
-      return 1;
-    }
-    if (operand == "r9b") {
-      return 1;
-    }
-    if (operand == "r10b") {
-      return 1;
-    }
-    if (operand == "r11b") {
-      return 1;
-    }
-    if (operand == "r12b") {
-      return 1;
-    }
-    if (operand == "r13b") {
-      return 1;
-    }
-    if (operand == "r14b") {
-      return 1;
-    }
-    if (operand == "r15b") {
+    if (operand == "al" || operand == "ah" || operand == "bl" ||
+        operand == "bh" || operand == "cl" || operand == "ch" ||
+        operand == "dl" || operand == "dh" || operand == "r8b" ||
+        operand == "r9b" || operand == "r10b" || operand == "r11b" ||
+        operand == "r12b" || operand == "r13b" || operand == "r14b" ||
+        operand == "r15b") {
       return 1;
     }
 
@@ -1271,44 +1153,6 @@ public:
     os << "not " << dst_resolved << endl;
   }
 
-  inline void set_var_is_initiated(const string &name) {
-    const baz_ident bid{name};
-    const auto [id, frm]{get_id_and_frame_for_identifier(bid.id_base())};
-    // is 'id_nasm' a variable?
-    if (frm.has_var(id)) {
-      frm.get_var_ref(id).initiated = true;
-      return;
-    }
-
-    if (fields_.has(id)) {
-      return; // a field, it is initiated
-    }
-
-    if (is_identifier_register(id)) {
-      //? this might not be necessary since it is updated at
-      // asm_cmd(...,"mov",...)
-      initiated_registers_.insert(id);
-      return;
-    }
-
-    throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                          to_string(__LINE__));
-  }
-
-  inline void set_type_void(const type &tp) { type_void_ = &tp; }
-
-  inline auto get_type_void() const -> const type & { return *type_void_; }
-
-  inline void set_type_default(const type &tp) { type_default_ = &tp; }
-
-  inline auto get_type_default() const -> const type & {
-    return *type_default_;
-  }
-
-  inline void set_type_bool(const type &tp) { type_bool_ = &tp; }
-
-  inline auto get_type_bool() const -> const type & { return *type_bool_; }
-
   inline static void indent(ostream &os, const size_t indnt,
                             const bool comment = false) {
     if (indnt == 0) {
@@ -1466,13 +1310,6 @@ private:
                 ident_resolved::ident_type::CONST};
       }
     }
-
-    // //? comment this
-    // if (funcs_.has(id)) {
-    //   const func_info &func{funcs_.get_const_ref(id)};
-    //   //? type is func
-    //   return {ident, id, 0, func.tp, ident_resolved::ident_type::CONST};
-    // }
 
     // is it a boolean constant?
     if (id == "true") {
