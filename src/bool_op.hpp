@@ -97,9 +97,10 @@ public:
     if (is_shorthand_) {
       // check case when operand is constant
       if (not lhs_.is_expression()) {
-        const ident_resolved &ir{tc.resolve_identifier(lhs_, false)};
-        if (ir.is_const()) {
-          bool b{lhs_.get_unary_ops().evaluate_constant(ir.const_value) != 0};
+        const ident_resolved &lhs_resolved{tc.resolve_identifier(lhs_, false)};
+        if (lhs_resolved.is_const()) {
+          bool b{lhs_.get_unary_ops().evaluate_constant(
+                     lhs_resolved.const_value) != 0};
           if (invert) {
             b = !b;
           }
@@ -156,9 +157,10 @@ public:
     if (is_shorthand_) {
       // check case when operand is constant
       if (not lhs_.is_expression()) {
-        const ident_resolved &ir{tc.resolve_identifier(lhs_, false)};
-        if (ir.is_const()) {
-          bool b{lhs_.get_unary_ops().evaluate_constant(ir.const_value) != 0};
+        const ident_resolved &lhs_resolved{tc.resolve_identifier(lhs_, false)};
+        if (lhs_resolved.is_const()) {
+          bool b{lhs_.get_unary_ops().evaluate_constant(
+                     lhs_resolved.const_value) != 0};
           if (invert) {
             b = !b;
           }
@@ -372,18 +374,18 @@ private:
       return reg;
     }
 
-    const ident_resolved &id_r{tc.resolve_identifier(exp, true)};
-    if (id_r.is_const()) {
-      return exp.get_unary_ops().to_string() + id_r.id_nasm;
+    const ident_resolved &exp_resolved{tc.resolve_identifier(exp, true)};
+    if (exp_resolved.is_const()) {
+      return exp.get_unary_ops().to_string() + exp_resolved.id_nasm;
     }
 
     if (exp.get_unary_ops().is_empty()) {
-      return id_r.id_nasm;
+      return exp_resolved.id_nasm;
     }
 
     const string &reg{tc.alloc_scratch_register(exp.tok(), os, indent)};
     allocated_registers.emplace_back(reg);
-    tc.asm_cmd(exp.tok(), os, indent, "mov", reg, id_r.id_nasm);
+    tc.asm_cmd(exp.tok(), os, indent, "mov", reg, exp_resolved.id_nasm);
     exp.get_unary_ops().compile(tc, os, indent, reg);
     return reg;
   }

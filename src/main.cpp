@@ -107,8 +107,8 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
   }
   // i.e. 0x80, rax, identifiers
   unique_ptr<statement> st{make_unique<statement>(tk, move(uops))};
-  const ident_resolved &ir{tc.resolve_identifier(*st, false)};
-  st->set_type(ir.tp);
+  const ident_resolved &st_resolved{tc.resolve_identifier(*st, false)};
+  st->set_type(st_resolved.tp);
   return st;
 }
 

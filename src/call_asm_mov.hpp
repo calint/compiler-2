@@ -22,23 +22,24 @@ public:
 
     tc.comment_source(*this, os, indent);
 
-    const ident_resolved &dst_r{tc.resolve_identifier(arg(0), false)};
+    const ident_resolved &dst_resolved{tc.resolve_identifier(arg(0), false)};
     const statement &src_arg{arg(1)};
     //? the assembler commands might not need this
     if (src_arg.is_expression()) {
-      src_arg.compile(tc, os, indent + 1, dst_r.id_nasm);
+      src_arg.compile(tc, os, indent + 1, dst_resolved.id_nasm);
       return;
     }
     // src is not an expression
-    const ident_resolved &src{tc.resolve_identifier(src_arg, true)};
-    if (src.is_const()) {
+    const ident_resolved &src_resolved{tc.resolve_identifier(src_arg, true)};
+    if (src_resolved.is_const()) {
       // a constant
-      tc.asm_cmd(tok(), os, indent, "mov", dst_r.id_nasm,
-                 src_arg.get_unary_ops().to_string() + src.id_nasm);
+      tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
+                 src_arg.get_unary_ops().to_string() + src_resolved.id_nasm);
       return;
     }
     // variable, register or field
-    tc.asm_cmd(tok(), os, indent, "mov", dst_r.id_nasm, src.id_nasm);
-    src_arg.get_unary_ops().compile(tc, os, indent, dst_r.id_nasm);
+    tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
+               src_resolved.id_nasm);
+    src_arg.get_unary_ops().compile(tc, os, indent, dst_resolved.id_nasm);
   }
 };

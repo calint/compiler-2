@@ -331,12 +331,13 @@ public:
           continue;
         }
         // unary ops must be applied
-        const ident_resolved &ir{tc.resolve_identifier(ea, true)};
+        const ident_resolved &arg_resolved{tc.resolve_identifier(ea, true)};
         const string &scratch_reg{
             tc.alloc_scratch_register(ea.tok(), os, indent + 1)};
         allocated_registers_in_order.emplace_back(scratch_reg);
         allocated_scratch_registers.emplace_back(scratch_reg);
-        tc.asm_cmd(param.tok(), os, indent + 1, "mov", scratch_reg, ir.id_nasm);
+        tc.asm_cmd(param.tok(), os, indent + 1, "mov", scratch_reg,
+                   arg_resolved.id_nasm);
         ea.get_unary_ops().compile(tc, os, indent + 1, scratch_reg);
         aliases_to_add.emplace_back(param.identifier(), scratch_reg);
         toc::indent(os, indent + 1, true);
@@ -349,14 +350,15 @@ public:
       toc::indent(os, indent + 1, true);
       os << "alias " << param.identifier() << " -> " << arg_reg << endl;
       // move argument to register specified in param
-      const ident_resolved &ir{tc.resolve_identifier(ea, true)};
-      if (ir.is_const()) {
+      const ident_resolved &arg_resolved{tc.resolve_identifier(ea, true)};
+      if (arg_resolved.is_const()) {
         tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg,
-                   ea.get_unary_ops().to_string() + ir.id_nasm);
+                   ea.get_unary_ops().to_string() + arg_resolved.id_nasm);
         continue;
       }
       // not a const, move argument to register
-      tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg, ir.id_nasm);
+      tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg,
+                 arg_resolved.id_nasm);
       ea.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
     }
 
