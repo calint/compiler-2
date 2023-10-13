@@ -16,9 +16,9 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
-    tc.source_comment(*this, os, indent);
+    tc.comment_source(*this, os, indent);
     // get loop label
-    const string &loop_label{tc.get_loop_label_or_throw(*this)};
+    const string &loop_label{tc.get_loop_label_or_throw(tok())};
     // jump out of the loop
     toc::asm_jmp(tok(), os, indent, loop_label + "_end");
   }

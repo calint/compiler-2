@@ -163,7 +163,7 @@ inline void expr_type_value::compile_recursive(const expr_type_value &atv,
                                                const string &dst,
                                                const type &dst_type) {
 
-  tc.source_comment(atv, os, indent);
+  tc.comment_source(atv, os, indent);
   if (not src.empty()) {
     // e.g. obj.pos = p
     const ident_resolved &id_res{tc.resolve_identifier(atv.tok(), src, true)};

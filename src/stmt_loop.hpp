@@ -23,7 +23,7 @@ public:
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
     toc::indent(os, indent, true);
-    tc.token_comment(os, tok());
+    tc.comment_token(os, tok());
     // make unique label for this loop considering in-lined functions
     // current path of source locations where in-lined functions have been
     // called

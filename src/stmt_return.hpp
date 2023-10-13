@@ -16,11 +16,11 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
-    tc.source_comment(*this, os, indent);
-    const string &ret{tc.get_func_return_label_or_throw(*this)};
+    tc.comment_source(*this, os, indent);
+    const string &ret{tc.get_func_return_label_or_throw(tok())};
     if (ret.empty()) {
       // not in-lined
-      const vector<func_return_info> &returns{tc.get_func_returns(*this)};
+      const vector<func_return_info> &returns{tc.get_func_returns(tok())};
       if (not returns.empty()) {
         const func_return_info &ret_info{returns.at(0)};
         const ident_resolved &ir{

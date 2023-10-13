@@ -92,7 +92,7 @@ public:
                          const bool inverted) const -> optional<bool> {
     const bool invert{inverted ? not is_not_ : is_not_};
     toc::indent(os, indent, true);
-    tc.source_comment(os, "?", inverted ? " 'or' inverted: " : " ", *this);
+    tc.comment_source(os, "?", inverted ? " 'or' inverted: " : " ", *this);
     toc::asm_label(tok(), os, indent, cmp_bgn_label(tc));
     if (is_shorthand_) {
       // check case when operand is constant
@@ -151,7 +151,7 @@ public:
                           const bool inverted) const -> optional<bool> {
     const bool invert{inverted ? not is_not_ : is_not_};
     toc::indent(os, indent, true);
-    tc.source_comment(os, "?", inverted ? " 'and' inverted: " : " ", *this);
+    tc.comment_source(os, "?", inverted ? " 'and' inverted: " : " ", *this);
     toc::asm_label(tok(), os, indent, cmp_bgn_label(tc));
     if (is_shorthand_) {
       // check case when operand is constant

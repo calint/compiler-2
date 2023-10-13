@@ -48,7 +48,7 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
-    tc.source_comment(*this, os, indent);
+    tc.comment_source(*this, os, indent);
     os << name_.name() << ':';
     if (initial_value_.is_string()) {
       os << " db '";

@@ -25,6 +25,6 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
-    tc.source_comment(*this, os, indent);
+    tc.comment_source(*this, os, indent);
   }
 };

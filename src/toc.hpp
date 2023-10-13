@@ -440,9 +440,7 @@ public:
                                    source_location_hr(var.declared_at));
     }
     // check if variable shadows previously declared variable
-    const pair<string, frame &> idfrm{get_id_and_frame_for_identifier(name)};
-    const string &id{idfrm.first};
-    const frame &frm{idfrm.second};
+    const auto [id, frm]{get_id_and_frame_for_identifier(name)};
     if (frm.has_var(id)) {
       const var_info &var{frm.get_var_const_ref(id)};
       throw compiler_exception(
@@ -557,7 +555,7 @@ public:
     initiated_registers_.erase(reg);
   }
 
-  inline auto get_loop_label_or_throw(const statement &st) const
+  inline auto get_loop_label_or_throw(const token &src_loc) const
       -> const string & {
     size_t i{frames_.size()};
     while (i--) {
@@ -565,10 +563,10 @@ public:
         return frames_[i].name();
       }
       if (frames_[i].is_func()) {
-        throw compiler_exception(st.tok(), "not in a loop");
+        throw compiler_exception(src_loc, "not in a loop");
       }
     }
-    throw compiler_exception(st.tok(), "unexpected frames");
+    throw compiler_exception(src_loc, "unexpected frames");
   }
 
   inline auto get_inline_call_path(const token &tk) const -> const string & {
@@ -581,7 +579,7 @@ public:
     throw compiler_exception(tk, "not in a function");
   }
 
-  inline auto get_func_return_label_or_throw(const statement &st) const
+  inline auto get_func_return_label_or_throw(const token &src_loc) const
       -> const string & {
     size_t i{frames_.size()};
     while (i--) {
@@ -589,7 +587,7 @@ public:
         return frames_[i].func_ret_label();
       }
     }
-    throw compiler_exception(st.tok(), "not in a function");
+    throw compiler_exception(src_loc, "not in a function");
   }
 
   // inline auto get_func_return_var_name_or_throw(const statement &st) const
@@ -618,7 +616,7 @@ public:
     throw compiler_exception(src_loc, "not in a function");
   }
 
-  inline void source_comment(const statement &st, ostream &os,
+  inline void comment_source(const statement &st, ostream &os,
                              const size_t indnt) const {
     const auto [line, col]{
         line_number_for_char_index(st.tok().char_index(), source_str_.c_str())};
@@ -634,7 +632,7 @@ public:
     os << res << endl;
   }
 
-  inline void source_comment(ostream &os, const string &dst, const string &op,
+  inline void comment_source(ostream &os, const string &dst, const string &op,
                              const statement &st) const {
     const auto [line, col]{
         line_number_for_char_index(st.tok().char_index(), source_str_.c_str())};
@@ -648,7 +646,7 @@ public:
     os << res << endl;
   }
 
-  inline void token_comment(ostream &os, const token &tk) const {
+  inline void comment_token(ostream &os, const token &tk) const {
     const auto [line, col]{
         line_number_for_char_index(tk.char_index(), source_str_.c_str())};
     os << "[" << line << ":" << col << "]";
@@ -861,6 +859,7 @@ public:
   inline static auto is_operand_memory(const string &operand) -> bool {
     return operand.find_first_of('[') != string::npos;
   }
+
   inline auto get_size_from_operand(const token &src_loc,
                                     const string &operand) const -> size_t {
     //? sort of ugly
@@ -881,9 +880,8 @@ public:
     }
 
     // constant
+    //? calculate the smallest size of the constant?
     return get_type_default().size();
-    //		throw compiler_error(st,"size of operand '"+operand+"' could not
-    // be deduced");
   }
 
   inline static auto get_size_from_operand_register(const token &src_loc,
@@ -1087,6 +1085,7 @@ public:
 
     throw compiler_exception(src_loc, "unknown register '" + operand + "'");
   }
+
   inline static auto get_register_operand_for_size(const token &src_loc,
                                                    const string &operand,
                                                    const size_t size)
@@ -1373,7 +1372,7 @@ private:
       const frame &f{frames_[i]};
       n += f.allocated_stack_size();
       if (f.is_func() && not f.func_is_inline()) {
-        break;
+        return n;
       }
     }
     return n;

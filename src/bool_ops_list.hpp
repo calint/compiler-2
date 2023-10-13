@@ -179,7 +179,7 @@ public:
                       const string &jmp_to_if_true, const bool inverted) const
       -> optional<bool> {
     toc::indent(os, indent, true);
-    tc.source_comment(os, "?", inverted ? " inverted: " : " ", *this);
+    tc.comment_source(os, "?", inverted ? " inverted: " : " ", *this);
     // invert according to De Morgan's laws
     const bool invert{inverted ? not not_token_.is_name("not")
                                : not_token_.is_name("not")};

@@ -84,7 +84,7 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       const string &dst = "") const override {
-    tc.source_comment(*this, os, indent);
+    tc.comment_source(*this, os, indent);
     const stmt_def_func &func{tc.get_func_or_throw(tok(), identifier())};
     const string &func_nm{func.name()};
 

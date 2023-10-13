@@ -240,7 +240,7 @@ public:
 private:
   inline void do_compile(toc &tc, ostream &os, const size_t indent,
                          const string &dst) const {
-    tc.source_comment(*this, os, indent);
+    tc.comment_source(*this, os, indent);
 
     if (not tc.is_identifier_register(dst)) {
       // try compiling with scratch register
@@ -305,7 +305,7 @@ private:
                             const char op, const ident_resolved &dst,
                             const statement &src) {
     toc::indent(os, indent, true);
-    tc.source_comment(os, dst.id, {op}, src);
+    tc.comment_source(os, dst.id, {op}, src);
     if (op == '=') {
       asm_op_mov(tc, os, indent, dst, src);
       return;
