@@ -5,6 +5,8 @@
 		}
 	}
 
+# find duplicate labels
+cat gen.s | grep -E '^\s+.*\:'| sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | sort | uniq -d
 
 TAG=$(date "+%Y-%m-%d--%H-%M") && git tag $TAG && git push origin $TAG
 

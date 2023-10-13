@@ -1,0 +1,86 @@
+field   hello = "hello world from baz\n"
+field   input = "............................................................"
+field prompt1 = "enter name:\n"
+field prompt2 = "that is not a name.\n"
+field prompt3 = "hello "
+field     dot = "."
+field      nl = "\n"
+
+func inline exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall
+}
+
+func inline print(len : reg_rdx, ptr : reg_rsi) {
+    mov(rax, 1)   # write system call
+    mov(rdi, 1)   # file descriptor for standard out
+    mov(rsi, ptr) # buffer address 
+    mov(rdx, len) # buffer size
+    syscall
+}
+
+func inline read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+    mov(rax, 0)   # read system call
+    mov(rdi, 0)   # file descriptor for standard input
+    mov(rsi, ptr) # buffer address
+    mov(rdx, len) # buffer size
+    syscall
+    mov(nbytes, rax) # return value
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+type point {x, y}
+
+type object {pos : point, color : i32}
+
+func inline foo(p : point) {
+    p.x = 0b10    # binary value 2
+    p.y = 0xb     # hex value 11
+}
+
+func inline main {
+    var p : point = {0, 0}
+    foo(p)
+    # inlined functions can write to the arguments
+    assert(p.x == 2)
+    assert(p.y == 0xb)
+
+    var x = 1
+    var y = 2
+
+    var o1 : object = {{x * 10, y}, 0xff0000}
+    assert(o1.pos.x == 10)
+    assert(o1.pos.y == 2)
+    assert(o1.color == 0xff0000)
+
+    var p1 : point = {-x, -y}
+    o1.pos = p1
+    assert(o1.pos.x == -1)
+    assert(o1.pos.y == -2)
+
+    var o2 : object = o1
+    assert(o2.pos.x == -1)
+    assert(o2.pos.y == -2)
+    assert(o2.color == 0xff0000)
+
+    print(hello.len, hello)
+    loop {
+        print(prompt1.len, prompt1)
+        var len = read(input.len, input) - 1    # -1 don't include the '\n'
+        if len == 0 {
+            break
+        }
+        if len <= 4 {
+            print(prompt2.len, prompt2)
+            continue
+        }
+        print(prompt3.len, prompt3)
+        print(len, input)
+        print(dot.len, dot)
+        print(nl.len, nl)
+    }
+}

@@ -2,6 +2,14 @@
 #include "expr_ops_list.hpp"
 
 class bool_op final : public statement {
+  vector<token> nots_{};
+  expr_ops_list lhs_{};
+  string op_{}; // '<', '<=', '>', '>=', '='
+  expr_ops_list rhs_{};
+  bool is_not_{};       // if not a=b
+  bool is_shorthand_{}; // if a ...
+  bool is_expression_{};
+
 public:
   inline bool_op(toc &tc, tokenizer &tz)
       : statement{tz.next_whitespace_token()} {
@@ -167,8 +175,8 @@ public:
           toc::indent(os, indent, true);
           os << "const eval to " << (b ? "true" : "false") << endl;
           if (not b) {
-            toc::indent(os, indent);
-            os << "jmp " << jmp_to_if_false << endl;
+            // short circuit 'and' chain
+            toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_false);
           }
           return b;
         }
@@ -194,8 +202,8 @@ public:
         toc::indent(os, indent, true);
         os << "const eval to " << (b ? "true" : "false") << endl;
         if (not b) {
-          toc::indent(os, indent);
-          os << "jmp " << jmp_to_if_false << endl;
+          // short circuit 'and' chain
+          toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_false);
         }
         return b;
       }
@@ -392,12 +400,4 @@ private:
     exp.get_unary_ops().compile(tc, os, indent, reg);
     return reg;
   }
-
-  vector<token> nots_{};
-  expr_ops_list lhs_{};
-  string op_{}; // '<', '<=', '>', '>=', '='
-  expr_ops_list rhs_{};
-  bool is_not_{};       // if not a=b
-  bool is_shorthand_{}; // if a ...
-  bool is_expression_{};
 };

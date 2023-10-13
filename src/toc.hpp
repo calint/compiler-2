@@ -856,8 +856,6 @@ public:
     }
 
     if (is_identifier_register(id)) {
-      //? this might not be necessary since it is updated at
-      // asm_cmd(...,"mov",...)
       initiated_registers_.insert(id);
       return;
     }

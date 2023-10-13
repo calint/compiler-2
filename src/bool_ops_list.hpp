@@ -187,7 +187,7 @@ public:
     for (size_t i{0}; i < n; i++) {
       if (bools_[i].index() == 1) {
         //
-        // stmt_if_bool_ops_list
+        // bool_ops_list
         //
         const bool_ops_list &el{get<bool_ops_list>(bools_[i])};
         string jmp_false{jmp_to_if_false};
@@ -211,6 +211,13 @@ public:
             optional<bool> const_eval{
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
             if (const_eval) {
+              // if evaluated constant
+              // provide the label for the next bool evaluation that will not be
+              // evaluated because expression has been short-circuited
+              //? fixme. this is not fully understood and generates duplicate
+              // labels
+              toc::asm_label(el.tok(), os, indent,
+                           *const_eval ? jmp_true : jmp_false);
               return *const_eval;
             }
           } else {
@@ -232,6 +239,13 @@ public:
             optional<bool> const_eval{
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
             if (const_eval) {
+              // if evaluated constant
+              // provide the label for the next bool evaluation that will not be
+              // evaluated because expression has been short-circuited
+              //? fixme. this is not fully understood and generates duplicate
+              // labels
+              toc::asm_label(el.tok(), os, indent,
+                           *const_eval ? jmp_true : jmp_false);
               return *const_eval;
             }
           }
@@ -247,7 +261,7 @@ public:
       }
 
       //
-      // stmt_if_bool_op
+      // bool_op
       //
       if (!invert) {
         // a=1 and b=2   vs   a=1 or b=2
