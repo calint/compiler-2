@@ -61,8 +61,8 @@ type point {x, y}
 type object {pos : point, color : i32}
 
 func inline foo(p : point) {
-    p.x = 0b10
-    p.y = 0xb
+    p.x = 0b10    # binary value 2
+    p.y = 0xb     # hex value 11
 }
 
 func inline main {
@@ -208,11 +208,13 @@ main:
 ;    [41:11] 0b10 
 ;    [41:11] p.x = 0b10 
      mov qword[rbp-16], 0b10
+;    [41:19] # binary value 2 
 ;    [42:5] p.y = 0xb 
 ;    [42:11] 0xb 
 ;    [42:11] 0xb 
 ;    [42:11] p.y = 0xb 
      mov qword[rbp-8], 0xb
+;    [42:19] # hex value 11 
    foo_47_5_end:
 ;  [48:5] # inlined functions can write to the arguments 
 ;  [49:5] assert(p.x == 2) 
