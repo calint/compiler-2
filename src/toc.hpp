@@ -238,25 +238,25 @@ public:
   inline auto source() const -> const string & { return source_; }
 
   inline void add_field(const token &src_loc, const string &name,
-                        const stmt_def_field *f, const bool is_str_field) {
+                        const stmt_def_field *fld, const bool is_str_field) {
     if (fields_.has(name)) {
-      const field_info &fld{fields_.get(name)};
-      throw compiler_exception(src_loc,
-                               "field '" + name + "' already defined at " +
-                                   source_location_hr(fld.declared_at));
+      const field_info &f{fields_.get(name)};
+      throw compiler_exception(src_loc, "field '" + name +
+                                            "' already defined at " +
+                                            source_location_hr(f.declared_at));
     }
-    fields_.put(name, {f, src_loc, is_str_field});
+    fields_.put(name, {fld, src_loc, is_str_field});
   }
 
   inline void add_func(const token &src_loc, const string &name,
-                       const type &return_type, const stmt_def_func *ref) {
+                       const type &return_type, const stmt_def_func *func) {
     if (funcs_.has(name)) {
-      const func_info &func{funcs_.get_const_ref(name)};
-      const string loc{source_location_hr(func.declared_at)};
+      const func_info &f{funcs_.get_const_ref(name)};
+      const string loc{source_location_hr(f.declared_at)};
       throw compiler_exception(src_loc, "function '" + name +
                                             "' already defined at " + loc);
     }
-    funcs_.put(name, {return_type, ref, src_loc});
+    funcs_.put(name, {return_type, func, src_loc});
   }
 
   inline auto get_func_or_throw(const token &src_loc, const string &name) const
@@ -320,7 +320,7 @@ public:
   }
 
   inline static auto line_and_col_num_for_char_index(const size_t char_index,
-                                                     const char *ptr)
+                                                     const char *src)
       -> pair<size_t, size_t> {
     size_t ix{0};
     size_t lix{0};
@@ -329,7 +329,7 @@ public:
       if (ix == char_index) {
         break;
       }
-      if (*ptr++ == '\n') {
+      if (*src++ == '\n') {
         line_num++;
         ix++;
         lix = ix;
