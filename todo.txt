@@ -6,15 +6,10 @@
 [x]     toc
 [ ] clean-up: review variable names
 [ ] "#comment" should be accepted as "# comment"
-[-] func f() : point p { p = {1, 2} }
-[-]    var pos : point = f()
-[-]     where p refers into caller stack (rbp+xx)
-    => does not work for non-inlined functions, stack is unknown, depending on caller context
-[ ] func f(inout point p) { p.x = 1 } p refers to instance in caller stack (rbp+xx)
-    => does not work for non-inlined functions, stack is unknown, depending on caller context
+[ ] var pos : point = foo()
+[ ] func f(inout point p) { p.x = 1 }
 [ ] func f(copy point p) copies point to callee stack
-[ ] func f(const point p) const is default, p refers "back" in the stack (rbp+xx)
-    => refers back in stack does not work for non-inlined functions
+[ ] func f(const point p) const is default
 [ ] multiple return values: func f() : point pos, point vel { ... }
 [ ]    var p,v = f()
 [ ] string type
@@ -36,7 +31,6 @@
 [ ] func object(object& self, pos, vel, color) called when 'var o : object = {...}'
 [ ] func foo(object& self, arg) can be called with o.foo(arg)
 [ ] let i=1 creates a constant
-[ ] function arguments relative to rsp allowing writing to variable in previous function context
 [ ] function arguments as references
 [ ]   pass effective address to the type
 [ ] deduce to expr_ops_list or bool_ops_list
@@ -75,6 +69,12 @@
       mov qword[rbp-16],r15
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
+[-] func f() : point p { p = {1, 2} }
+[-]    var pos : point = f()
+[-]     where p refers into caller stack (rbp+xx)
+    => does not work for non-inlined functions, stack is unknown, depending on caller context
+[-] function arguments relative to rsp allowing writing to variable in previous function context
+    => non-inlined functions don't know the stack of caller regarding how many registers where saved on the stack
 [x] review main.cpp move of tokens and unary_ops
 [x] modernize: pass by value and move
 [x] main:create_statement_from_tokenizer review move(tk) ..
