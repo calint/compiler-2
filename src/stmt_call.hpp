@@ -362,7 +362,7 @@ public:
 
     // enter function creating a new scope from which
     //   prior variables are not visible
-    tc.enter_func(func_nm, new_call_path, ret_jmp_label, true, func.returns());
+    tc.enter_func(func_nm, func.returns(), true, new_call_path, ret_jmp_label);
 
     // add the aliases to the context of this scope
     for (const auto &e : aliases_to_add) {

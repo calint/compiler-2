@@ -60,7 +60,7 @@ public:
       set_type(tc.get_type_void());
     }
     tc.add_func(name_, name_.name(), get_type(), this);
-    tc.enter_func(name(), "", "", false, returns_);
+    tc.enter_func(name(), returns_);
     vector<string> allocated_named_registers{};
     null_stream ns{}; // don't make output while parsing
     init_variables(tc, ns, 0, allocated_named_registers);
@@ -134,7 +134,7 @@ public:
     toc::indent(os, indent + 1, true);
     source_def_comment_to(os);
 
-    tc.enter_func(name(), "", "", false, returns_);
+    tc.enter_func(name(), returns_);
 
     toc::asm_push(tok(), os, indent + 1, "rbp");
     tc.asm_cmd(tok(), os, indent + 1, "mov", "rbp", "rsp");

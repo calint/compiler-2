@@ -389,11 +389,13 @@ public:
     frames_.back().add_alias(name, name_in_parent_frame);
   }
 
-  inline void enter_func(const string &name, const string &call_loc,
-                         const string &return_jmp_label, const bool is_inline,
-                         const vector<func_return_info> &returns) {
+  inline void enter_func(const string &name,
+                         const vector<func_return_info> &returns = {},
+                         const bool is_inline = false,
+                         const string &call_path = "",
+                         const string &return_jmp_label = "") {
 
-    frames_.emplace_back(name, frame::frame_type::FUNC, call_loc,
+    frames_.emplace_back(name, frame::frame_type::FUNC, call_path,
                          return_jmp_label, is_inline, returns);
     check_usage();
   }

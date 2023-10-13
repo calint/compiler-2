@@ -1,5 +1,6 @@
 [ ] review new code
 [ ] clean-up: review class, struct, function names
+[ ] toc: rename baz_ident
 [ ] clean-up: review argument names
 [ ] clean-up: review variable names
 [ ] "#comment" should be accepted as "# comment"

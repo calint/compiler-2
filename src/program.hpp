@@ -109,7 +109,7 @@ public:
     }
 
     os << "main:" << endl;
-    tc.enter_func("main", "", "", true, {});
+    tc.enter_func("main");
     func_main.code().compile(tc, os, indent);
     tc.exit_func("main");
     os << "; main end" << endl;
