@@ -1,7 +1,9 @@
 [ ] review new code
 [ ] clean-up: review class, struct, function names
+[x]     toc
 [ ] toc: rename baz_ident
 [ ] clean-up: review argument names
+[x]     toc
 [ ] clean-up: review variable names
 [ ] "#comment" should be accepted as "# comment"
 [-] func f() : point p { p = {1, 2} }
