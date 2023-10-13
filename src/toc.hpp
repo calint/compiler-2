@@ -1277,9 +1277,7 @@ public:
 
   inline void set_var_is_initiated(const string &name) {
     const baz_ident bid{name};
-    pair<string, frame &> idfrm{get_id_and_frame_for_identifier(bid.id_base())};
-    const string &id{idfrm.first};
-    frame &frm{idfrm.second};
+    const auto [id, frm]{get_id_and_frame_for_identifier(bid.id_base())};
     // is 'id_nasm' a variable?
     if (frm.has_var(id)) {
       frm.get_var_ref(id).initiated = true;
