@@ -1,0 +1,27 @@
+func inline exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall
+}
+
+func inline assert(expr : bool) {
+    if not expr exit(1)
+}
+
+func foo(x : reg_rsi, y : reg_rcx) {
+    assert(x == -2)    # ~1 == 0xfffffffe
+    assert(y == -2)
+}
+
+func inline fow(x : reg_rsi, y : reg_rcx) {
+    assert(x == 0)
+    assert(y == 0)
+}
+
+func inline main {
+    var a : i64 = 1
+    foo(~1, ~a)
+    fow(~-1, ~-a)
+    foo(a - 3, -2)
+    fow(a - 1, 0)
+}

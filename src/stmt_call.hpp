@@ -189,14 +189,12 @@ public:
           if (arg_resolved.is_const()) {
             tc.asm_cmd(ea.tok(), os, indent, "mov", arg_reg,
                        ea.get_unary_ops().to_string() + arg_resolved.id_nasm);
-            nbytes_of_args_on_stack += 8;
             continue;
           }
           // not a constant
           tc.asm_cmd(ea.tok(), os, indent, "mov", arg_reg,
                      arg_resolved.id_nasm);
           ea.get_unary_ops().compile(tc, os, indent, arg_reg);
-          nbytes_of_args_on_stack += 8;
           continue;
         }
         // argument not passed through register

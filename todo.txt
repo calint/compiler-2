@@ -1,5 +1,5 @@
 [ ] coverage: bool_ops_list
-[ ] coverage: stmt_call
+[x] coverage: stmt_call
 [ ] review new code
 [ ] clean-up: review class, struct, function names
 [x]     toc
