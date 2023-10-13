@@ -211,14 +211,17 @@ public:
             optional<bool> const_eval{
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
             if (const_eval) {
-              // if evaluated constant
-              // provide the label for the next bool evaluation that will not be
-              // evaluated because expression has been short-circuited
-              //? fixme. this is not fully understood and generates duplicate
-              // labels
-              toc::asm_label(el.tok(), os, indent,
-                           *const_eval ? jmp_true : jmp_false);
-              return *const_eval;
+              // expression evaluated to a constant
+
+              // if false and in an 'and' list short-circuit and return
+              // evaluation
+              if (not *const_eval and ops_[i].is_name("and")) {
+                return *const_eval;
+              }
+              // if true and in an 'or' list short-circuit and return result
+              if (*const_eval and ops_[i].is_name("or")) {
+                return *const_eval;
+              }
             }
           } else {
             // invert according to De Morgan's laws
@@ -239,14 +242,18 @@ public:
             optional<bool> const_eval{
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
             if (const_eval) {
-              // if evaluated constant
-              // provide the label for the next bool evaluation that will not be
-              // evaluated because expression has been short-circuited
-              //? fixme. this is not fully understood and generates duplicate
-              // labels
-              toc::asm_label(el.tok(), os, indent,
-                           *const_eval ? jmp_true : jmp_false);
-              return *const_eval;
+              // expression evaluated to a constant
+
+              // if false and in an 'and' (inverted 'or') list short-circuit and
+              // return evaluation
+              if (not *const_eval and ops_[i].is_name("or")) {
+                return *const_eval;
+              }
+              // if true and in an 'or' (inverted 'and') list short-circuit and
+              // return evaluation
+              if (*const_eval and ops_[i].is_name("and")) {
+                return *const_eval;
+              }
             }
           }
         } else {
@@ -254,6 +261,8 @@ public:
           optional<bool> const_eval{
               el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
           if (const_eval) {
+            // if evaluated to a constant then that is the final evaluation of
+            // this expression
             return *const_eval;
           }
         }

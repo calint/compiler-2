@@ -1,3 +1,4 @@
+[ ] process generated asm to remove duplicate labels
 [ ] coverage: bool_ops_list
 [x] coverage: stmt_call
 [ ] review new code

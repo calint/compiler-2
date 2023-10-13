@@ -21,6 +21,7 @@ func inline main {
     var g : bool = not ((true or true) and (x == 1 or y == 3))
     var h : bool = ((true or true) and (x == 1 or y == 3))
     var i : bool = ((false and true) and (x == 1 or y == 3))
+    var j : bool = (false or false and true) or true
 
     assert(a)
     assert(not b)
@@ -31,4 +32,5 @@ func inline main {
     assert(not g)
     assert(h)
     assert(not i)
+    assert(j)
 }
