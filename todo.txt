@@ -1,13 +1,19 @@
-[ ] func f() : point p { p = {1, 2} }
-[ ]    var pos : point = f()
-[ ]     where p refers into caller stack (rbp+xx)
+[ ] review new code
+[ ] clean-up: review class, struct, function names
+[ ] clean-up: review argument names
+[ ] clean-up: review variable names
+[ ] "#comment" should be accepted as "# comment"
+[-] func f() : point p { p = {1, 2} }
+[-]    var pos : point = f()
+[-]     where p refers into caller stack (rbp+xx)
+    => does not work for non-inlined functions, stack is unknown, depending on caller context
 [ ] func f(inout point p) { p.x = 1 } p refers to instance in caller stack (rbp+xx)
+    => does not work for non-inlined functions, stack is unknown, depending on caller context
 [ ] func f(copy point p) copies point to callee stack
 [ ] func f(const point p) const is default, p refers "back" in the stack (rbp+xx)
+    => refers back in stack does not work for non-inlined functions
 [ ] multiple return values: func f() : point pos, point vel { ... }
 [ ]    var p,v = f()
-[ ] review new code
-[ ] "#comment" should be accepted as "# comment"
 [ ] string type
 [ ]   var str = "hello world"
 [ ]   var len = str.len
@@ -19,7 +25,6 @@
 [ ] func f(p : point) {} ... f({x, y})
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
 [ ] fix 'cmp' with left hand side constant
-[ ] clean-up: consistent variable names
 [ ] handle constants when deducing operand size 
      -> deduce if possible to the size of the desired type
 [ ] specify whether ok for an op to truncate value instead of error

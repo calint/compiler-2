@@ -176,14 +176,14 @@ class baz_ident final {
   vector<string> path_{};
 
 public:
-  inline explicit baz_ident(const string id) : id_{move(id)} {
+  inline explicit baz_ident(string id) : id_{move(id)} {
     size_t start{0};
     size_t end{0};
-    while ((end = id.find('.', start)) != string::npos) {
-      path_.emplace_back(id.substr(start, end - start));
+    while ((end = id_.find('.', start)) != string::npos) {
+      path_.emplace_back(id_.substr(start, end - start));
       start = end + 1;
     }
-    path_.emplace_back(id.substr(start));
+    path_.emplace_back(id_.substr(start));
   }
 
   [[nodiscard]] inline auto id() const -> const string & { return id_; }
@@ -223,8 +223,8 @@ public:
                                         "r8",  "r9",  "r10", "r11",
                                         "r12", "r13", "r14", "r15"},
         named_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi"},
-        scratch_registers_{"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"}
-  {}
+        scratch_registers_{"r8",  "r9",  "r10", "r11",
+                           "r12", "r13", "r14", "r15"} {}
 
   inline toc() = delete;
   inline toc(const toc &) = delete;
@@ -236,15 +236,15 @@ public:
 
   inline auto source() const -> const string & { return source_; }
 
-  inline void add_field(const token &src_loc, const string &ident,
+  inline void add_field(const token &src_loc, const string &name,
                         const stmt_def_field *f, const bool is_str_field) {
-    if (fields_.has(ident)) {
-      const field_info &fld{fields_.get(ident)};
+    if (fields_.has(name)) {
+      const field_info &fld{fields_.get(name)};
       throw compiler_exception(src_loc,
-                               "field '" + ident + "' already defined at " +
+                               "field '" + name + "' already defined at " +
                                    source_location_hr(fld.declared_at));
     }
-    fields_.put(ident, {f, src_loc, is_str_field});
+    fields_.put(name, {f, src_loc, is_str_field});
   }
 
   inline void add_func(const token &src_loc, const string &name,
@@ -307,19 +307,19 @@ public:
   inline auto source_location_for_use_in_label(const token &src_loc) const
       -> string {
     const auto [line, col]{
-        line_number_for_char_index(src_loc.char_index(), source_.c_str())};
+        line_and_col_num_for_char_index(src_loc.char_index(), source_.c_str())};
     return to_string(line) + "_" + to_string(col);
   }
 
   inline auto source_location_hr(const token &src_loc) -> string {
     const auto [line, col]{
-        line_number_for_char_index(src_loc.char_index(), source_.c_str())};
+        line_and_col_num_for_char_index(src_loc.char_index(), source_.c_str())};
 
     return to_string(line) + ":" + to_string(col);
   }
 
-  inline static auto line_number_for_char_index(const size_t char_index,
-                                                const char *ptr)
+  inline static auto line_and_col_num_for_char_index(const size_t char_index,
+                                                     const char *ptr)
       -> pair<size_t, size_t> {
     size_t ix{0};
     size_t lix{0};
@@ -615,8 +615,8 @@ public:
 
   inline void comment_source(const statement &st, ostream &os,
                              const size_t indnt) const {
-    const auto [line, col]{
-        line_number_for_char_index(st.tok().char_index(), source_.c_str())};
+    const auto [line, col]{line_and_col_num_for_char_index(
+        st.tok().char_index(), source_.c_str())};
 
     indent(os, indnt, true);
     os << "[" << line << ":" << col << "]";
@@ -631,8 +631,8 @@ public:
 
   inline void comment_source(ostream &os, const string &dst, const string &op,
                              const statement &st) const {
-    const auto [line, col]{
-        line_number_for_char_index(st.tok().char_index(), source_.c_str())};
+    const auto [line, col]{line_and_col_num_for_char_index(
+        st.tok().char_index(), source_.c_str())};
     os << "[" << line << ":" << col << "]";
 
     stringstream ss{};
@@ -645,7 +645,7 @@ public:
 
   inline void comment_token(ostream &os, const token &tk) const {
     const auto [line, col]{
-        line_number_for_char_index(tk.char_index(), source_.c_str())};
+        line_and_col_num_for_char_index(tk.char_index(), source_.c_str())};
     os << "[" << line << ":" << col << "]";
     os << " " << tk.name() << endl;
   }
