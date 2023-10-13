@@ -164,8 +164,8 @@ public:
   inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
                       [[maybe_unused]] size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
-    throw panic_exception("this code should not be reached: " +
-                          string{__FILE__} + ":" + to_string(__LINE__));
+    throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                          to_string(__LINE__));
   }
 
   [[nodiscard]] inline auto cmp_bgn_label(const toc &tc) const -> string {
@@ -204,7 +204,9 @@ public:
               // next bool eval
               jmp_true = cmp_label_from(tc, bools_[i + 1]);
             } else {
-              throw panic_exception("expected 'or' or 'and'");
+              throw panic_exception("expected 'or' or 'and'" +
+                                    string{__FILE__} + ":" +
+                                    std::to_string(__LINE__));
             }
             optional<bool> const_eval{
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
@@ -223,7 +225,9 @@ public:
               // jump_true is next bool eval
               jmp_true = cmp_label_from(tc, bools_[i + 1]);
             } else {
-              throw panic_exception("expected 'or' or 'and'");
+              throw panic_exception("expected 'or' or 'and'" +
+                                    string{__FILE__} + ":" +
+                                    to_string(__LINE__));
             }
             optional<bool> const_eval{
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
@@ -264,7 +268,8 @@ public:
               return false;
             }
           } else {
-            throw panic_exception("expected 'or' or 'and'");
+            throw panic_exception("expected 'or' or 'and'" + string{__FILE__} +
+                                  ":" + to_string(__LINE__));
           }
         } else {
           optional<bool> const_eval{
@@ -295,7 +300,8 @@ public:
               return false;
             }
           } else {
-            throw panic_exception("expected 'or' or 'and'");
+            throw panic_exception("expected 'or' or 'and'" + string{__FILE__} +
+                                  ":" + to_string(__LINE__));
           }
         } else {
           optional<bool> const_eval{

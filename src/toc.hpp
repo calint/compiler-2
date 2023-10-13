@@ -1291,7 +1291,7 @@ public:
       return;
     }
 
-    throw panic_exception("should not be reached: " + string{__FILE__} + ":" +
+    throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
                           to_string(__LINE__));
   }
 

@@ -50,7 +50,8 @@ public:
       get<expr_type_value>(var_).source_to(os);
       return;
     default:
-      throw panic_exception("expr_any:1");
+      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                            to_string(__LINE__));
     }
   }
 
@@ -61,7 +62,8 @@ public:
 
     switch (var_.index()) {
     default:
-      throw panic_exception("expr_any:2");
+      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                            to_string(__LINE__));
     case 0:
       // number expression
       get<expr_ops_list>(var_).compile(tc, os, indent, dst);
@@ -130,7 +132,8 @@ public:
       // assign value
       return get<expr_type_value>(var_).is_expression();
     default:
-      throw panic_exception("expr_any:3");
+      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                            to_string(__LINE__));
     }
     // note. 'expr_type_value' cannot be expression
   }
@@ -144,7 +147,8 @@ public:
     case 2:
       return get<expr_type_value>(var_).identifier();
     default:
-      throw panic_exception("expr_any:4");
+      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                            to_string(__LINE__));
     }
   }
 
@@ -159,7 +163,8 @@ public:
     case 2:
       return get<expr_type_value>(var_).get_unary_ops();
     default:
-      throw panic_exception("expr_any:5");
+      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                            to_string(__LINE__));
     }
     // note. 'expr_type_value' does not have 'unary_ops' and cannot be
     // argument in call

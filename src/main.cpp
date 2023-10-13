@@ -133,7 +133,8 @@ inline void unary_ops::compile([[maybe_unused]] toc &tc, ostream &os,
       toc::asm_neg(whitespace_before_, os, indnt, dst_resolved);
       break;
     default:
-      throw panic_exception("unary_ops::compile 1");
+      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                            std::to_string(__LINE__));
     }
   }
 }
