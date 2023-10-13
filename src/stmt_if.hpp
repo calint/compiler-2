@@ -31,15 +31,15 @@ public:
         tz.put_back_token(tkn2);
         // 'else' branch
         // save tokens to be able to reproduce the source
-        else_if_tokens_.push_back(move(tkn));
+        else_if_tokens_.emplace_back(move(tkn));
         // read the 'else' code
         else_code_ = {tc, tz};
         return;
       }
       // 'else if': continue reading if branches
       // save tokens to be able to reproduce the source
-      else_if_tokens_.push_back(move(tkn));
-      else_if_tokens_.push_back(move(tkn2));
+      else_if_tokens_.emplace_back(move(tkn));
+      else_if_tokens_.emplace_back(move(tkn2));
     }
   }
 

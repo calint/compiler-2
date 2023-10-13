@@ -243,7 +243,7 @@ static void optimize_jumps_1(istream &is, ostream &os) {
     while (true) { // read comments
       getline(is, line2);
       if (line2.starts_with(';')) {
-        comments.push_back(line2);
+        comments.emplace_back(line2);
         continue;
       }
       break;
@@ -311,7 +311,7 @@ static void optimize_jumps_2(istream &is, ostream &os) {
     while (true) { // read comments
       getline(is, line2);
       if (regex_match(line2, rxcomment)) {
-        comments2.push_back(line2);
+        comments2.emplace_back(line2);
         continue;
       }
       break;
@@ -331,7 +331,7 @@ static void optimize_jumps_2(istream &is, ostream &os) {
     while (true) { // read comments
       getline(is, line3);
       if (regex_match(line3, rxcomment)) {
-        comments3.push_back(line3);
+        comments3.emplace_back(line3);
         continue;
       }
       break;

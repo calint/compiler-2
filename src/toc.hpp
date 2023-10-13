@@ -202,10 +202,10 @@ public:
     size_t start{0};
     size_t end{0};
     while ((end = id.find('.', start)) != string::npos) {
-      path_.push_back(id.substr(start, end - start));
+      path_.emplace_back(id.substr(start, end - start));
       start = end + 1;
     }
-    path_.push_back(id.substr(start));
+    path_.emplace_back(id.substr(start));
   }
 
   [[nodiscard]] inline auto id() const -> const string & { return id_; }
@@ -488,8 +488,8 @@ public:
       max_usage_scratch_regs_ = n;
     }
 
-    allocated_registers_.push_back(r);
-    allocated_registers_loc_.push_back(source_location_hr(src_loc));
+    allocated_registers_.emplace_back(r);
+    allocated_registers_loc_.emplace_back(source_location_hr(src_loc));
     return r;
   }
 
@@ -512,8 +512,8 @@ public:
                                              loc);
     }
     named_registers_.erase(r);
-    allocated_registers_.push_back(reg);
-    allocated_registers_loc_.push_back(source_location_hr(st.tok()));
+    allocated_registers_.emplace_back(reg);
+    allocated_registers_loc_.emplace_back(source_location_hr(st.tok()));
   }
 
   inline auto alloc_named_register(const token &src_loc, ostream &os,
@@ -527,8 +527,8 @@ public:
       return false;
     }
     named_registers_.erase(r);
-    allocated_registers_.push_back(reg);
-    allocated_registers_loc_.push_back(source_location_hr(src_loc));
+    allocated_registers_.emplace_back(reg);
+    allocated_registers_loc_.emplace_back(source_location_hr(src_loc));
     os << endl;
     return true;
   }
@@ -540,7 +540,7 @@ public:
     assert(allocated_registers_.back() == reg);
     allocated_registers_.pop_back();
     allocated_registers_loc_.pop_back();
-    named_registers_.push_back(reg);
+    named_registers_.emplace_back(reg);
     initiated_registers_.erase(reg);
   }
 
@@ -551,7 +551,7 @@ public:
     assert(allocated_registers_.back() == reg);
     allocated_registers_.pop_back();
     allocated_registers_loc_.pop_back();
-    scratch_registers_.push_back(reg);
+    scratch_registers_.emplace_back(reg);
     initiated_registers_.erase(reg);
   }
 
@@ -689,7 +689,7 @@ public:
       asm_push(src_loc, os, indnt, reg);
       nregs_pushed_on_stack++;
     }
-    call_metas_.push_back(call_info{nregs_pushed_on_stack,
+    call_metas_.emplace_back(call_info{nregs_pushed_on_stack,
                                     allocated_registers_.size(),
                                     nbytes_of_vars_on_stack});
   }

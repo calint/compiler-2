@@ -14,11 +14,11 @@ public:
 
     while (true) {
       if (tz.is_next_char('~')) {
-        ops_.push_back('~');
+        ops_.emplace_back('~');
       } else if (tz.is_next_char('-')) {
-        ops_.push_back('-');
+        ops_.emplace_back('-');
         //			}else if(t.is_next_char('!')){
-        //				ops_.push_back('!');
+        //				ops_.emplace_back('!');
       } else {
         break;
       }

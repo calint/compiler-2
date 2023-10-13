@@ -217,7 +217,7 @@ private:
       os << pm_nm << ": " << reg << endl;
       tc.alloc_named_register_or_throw(pm, os, indent + 1, reg);
       // ! check if arg_type fits in register
-      allocated_named_registers.push_back(reg);
+      allocated_named_registers.emplace_back(reg);
       tc.add_alias(pm_nm, reg);
     }
   }

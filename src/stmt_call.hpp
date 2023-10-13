@@ -162,7 +162,7 @@ public:
         const bool argument_passed_in_register{not arg_reg.empty()};
         if (argument_passed_in_register) {
           tc.alloc_named_register_or_throw(ea, os, indent, arg_reg);
-          allocated_args_registers.push_back(arg_reg);
+          allocated_args_registers.emplace_back(arg_reg);
         }
         if (ea.is_expression()) {
           if (argument_passed_in_register) {
@@ -296,16 +296,16 @@ public:
       if (not arg_reg.empty()) {
         // argument is passed through register
         tc.alloc_named_register_or_throw(ea, os, indent + 1, arg_reg);
-        allocated_named_registers.push_back(arg_reg);
-        allocated_registers_in_order.push_back(arg_reg);
+        allocated_named_registers.emplace_back(arg_reg);
+        allocated_registers_in_order.emplace_back(arg_reg);
       }
       if (ea.is_expression()) {
         // argument is an expression, evaluate and store in arg_reg
         if (arg_reg.empty()) {
           // no particular register requested for the argument
           arg_reg = tc.alloc_scratch_register(ea.tok(), os, indent + 1);
-          allocated_scratch_registers.push_back(arg_reg);
-          allocated_registers_in_order.push_back(arg_reg);
+          allocated_scratch_registers.emplace_back(arg_reg);
+          allocated_registers_in_order.emplace_back(arg_reg);
         }
         toc::indent(os, indent + 1, true);
         os << "alias " << param.identifier() << " -> " << arg_reg << endl;
@@ -334,8 +334,8 @@ public:
         const ident_resolved &ir{tc.resolve_identifier(ea, true)};
         const string &scratch_reg{
             tc.alloc_scratch_register(ea.tok(), os, indent + 1)};
-        allocated_registers_in_order.push_back(scratch_reg);
-        allocated_scratch_registers.push_back(scratch_reg);
+        allocated_registers_in_order.emplace_back(scratch_reg);
+        allocated_scratch_registers.emplace_back(scratch_reg);
         tc.asm_cmd(param.tok(), os, indent + 1, "mov", scratch_reg, ir.id_nasm);
         ea.get_unary_ops().compile(tc, os, indent + 1, scratch_reg);
         aliases_to_add.emplace_back(param.identifier(), scratch_reg);

@@ -17,7 +17,7 @@ public:
         break;
       }
       is_not = not is_not;
-      nots_.push_back(move(tk));
+      nots_.emplace_back(move(tk));
     }
     is_not_ = is_not;
 
@@ -367,7 +367,7 @@ private:
       -> string {
     if (exp.is_expression()) {
       const string &reg{tc.alloc_scratch_register(exp.tok(), os, indent)};
-      allocated_registers.push_back(reg);
+      allocated_registers.emplace_back(reg);
       exp.compile(tc, os, indent + 1, reg);
       return reg;
     }
@@ -382,7 +382,7 @@ private:
     }
 
     const string &reg{tc.alloc_scratch_register(exp.tok(), os, indent)};
-    allocated_registers.push_back(reg);
+    allocated_registers.emplace_back(reg);
     tc.asm_cmd(exp.tok(), os, indent, "mov", reg, id_r.id_nasm);
     exp.get_unary_ops().compile(tc, os, indent, reg);
     return reg;

@@ -20,8 +20,8 @@ public:
     token prv_op{first_op};
     if (not first_op.is_empty()) {
       // sub-expression with first bool op provided
-      bools_.push_back(move(first_bool_op));
-      ops_.push_back(move(first_op));
+      bools_.emplace_back(move(first_bool_op));
+      ops_.emplace_back(move(first_op));
     }
     while (true) {
       const token tknot{tz.next_token()};
@@ -81,14 +81,14 @@ public:
           }
 
           prv_op = tk2;
-          ops_.push_back(move(tk2));
+          ops_.emplace_back(move(tk2));
           continue;
         }
       }
 
       // if same op as previous continue
       if (tk.is_name(prv_op.name())) {
-        ops_.push_back(move(tk));
+        ops_.emplace_back(move(tk));
         continue;
       }
 
@@ -124,7 +124,7 @@ public:
         break;
       }
 
-      ops_.push_back(move(tk));
+      ops_.emplace_back(move(tk));
     }
     if (enclosed_) {
       throw compiler_exception(tok(), "expected ')' to close expression");

@@ -17,7 +17,7 @@ public:
     // read first expression i.e. =-a/-(b+1)
     if (first_expression) {
       // called in a recursion with first expression provided
-      exps_.push_back(move(first_expression));
+      exps_.emplace_back(move(first_expression));
     } else {
       // check if new recursion is necessary e.g. =-a/-(-(b+c)+d), t at "-a/-("
       const unary_ops uo{tz};
