@@ -120,20 +120,17 @@ inline auto create_expr_any_from_tokenizer(toc &tc, tokenizer &tz,
 }
 
 // solves circular reference unary_ops->toc->statement->unary_ops
-inline void unary_ops::compile(toc & /*tc*/, ostream &os, size_t indent_level,
-                               const string &dst_resolved) const {
+inline void unary_ops::compile([[maybe_unused]] toc &tc, ostream &os,
+                               size_t indnt, const string &dst_resolved) const {
   size_t i{ops_.size()};
   while (i--) {
-    toc::indent(os, indent_level, false);
     const char op{ops_[i]};
     switch (op) {
     case '~':
-      os << "not " << dst_resolved << endl;
+      toc::asm_not(whitespace_before_, os, indnt, dst_resolved);
       break;
     case '-':
-      os << "neg " << dst_resolved << endl;
-      //		}else if(op=='!'){
-      //			os<<"xor "<<dst_resolved<<",1"<<endl;
+      toc::asm_neg(whitespace_before_, os, indnt, dst_resolved);
       break;
     default:
       throw panic_exception("unary_ops::compile 1");

@@ -1265,6 +1265,12 @@ public:
     os << "neg " << dst_resolved << endl;
   }
 
+  inline static void asm_not([[maybe_unused]] const token &src_loc, ostream &os,
+                             const size_t indnt, const string &dst_resolved) {
+    indent(os, indnt);
+    os << "not " << dst_resolved << endl;
+  }
+
   inline void set_var_is_initiated(const string &name) {
     const baz_ident bid{name};
     const auto [id, frm]{get_id_and_frame_for_identifier(bid.id_base())};

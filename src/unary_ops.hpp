@@ -55,7 +55,7 @@ public:
 
   // implemented in main.cpp
   // solves circular reference unary_ops->toc->statement->unary_ops
-  inline void compile(toc &tc, ostream &os, size_t indent_level,
+  inline void compile(toc &tc, ostream &os, size_t indnt,
                       const string &dst_resolved) const;
 
   [[nodiscard]] inline auto is_empty() const -> bool { return ops_.empty(); }
