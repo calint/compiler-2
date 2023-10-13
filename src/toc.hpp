@@ -198,14 +198,33 @@ public:
 };
 
 class toc final {
+  const string &source_{};
+  vector<frame> frames_{};
+  vector<string> all_registers_{};
+  vector<string> named_registers_{};
+  vector<string> scratch_registers_{};
+  vector<string> allocated_registers_{};
+  vector<string> allocated_registers_src_locs_{}; // source locations
+  unordered_set<string> initiated_registers_{};
+  lut<field_info> fields_{};
+  lut<func_info> funcs_{};
+  vector<call_info> calls_{};
+  lut<const type &> types_{};
+  const type *type_void_{};
+  const type *type_default_{};
+  const type *type_bool_{};
+  size_t max_usage_scratch_regs_{0};
+  size_t max_frame_count_{0};
+
 public:
   inline explicit toc(const string &source)
-      : all_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
-                       "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"},
-        scratch_registers_{"r8",  "r9",  "r10", "r11",
-                           "r12", "r13", "r14", "r15"},
+      : source_{source}, all_registers_{"rax", "rbx", "rcx", "rdx",
+                                        "rsi", "rdi", "rbp", "rsp",
+                                        "r8",  "r9",  "r10", "r11",
+                                        "r12", "r13", "r14", "r15"},
         named_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi"},
-        source_str_{source} {}
+        scratch_registers_{"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"}
+  {}
 
   inline toc() = delete;
   inline toc(const toc &) = delete;
@@ -215,7 +234,7 @@ public:
 
   inline ~toc() = default;
 
-  inline auto source() const -> const string & { return source_str_; }
+  inline auto source() const -> const string & { return source_; }
 
   inline void add_field(const token &src_loc, const string &ident,
                         const stmt_def_field *f, const bool is_str_field) {
@@ -288,13 +307,13 @@ public:
   inline auto source_location_for_use_in_label(const token &src_loc) const
       -> string {
     const auto [line, col]{
-        line_number_for_char_index(src_loc.char_index(), source_str_.c_str())};
+        line_number_for_char_index(src_loc.char_index(), source_.c_str())};
     return to_string(line) + "_" + to_string(col);
   }
 
   inline auto source_location_hr(const token &src_loc) -> string {
     const auto [line, col]{
-        line_number_for_char_index(src_loc.char_index(), source_str_.c_str())};
+        line_number_for_char_index(src_loc.char_index(), source_.c_str())};
 
     return to_string(line) + ":" + to_string(col);
   }
@@ -327,8 +346,8 @@ public:
     //		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
     assert(all_registers_.size() == 16);
     assert(allocated_registers_.empty());
-    assert(allocated_registers_loc_.empty());
-    assert(call_metas_.empty());
+    assert(allocated_registers_src_locs_.empty());
+    assert(calls_.empty());
     assert(frames_.empty());
     //		assert(initiated_registers_.empty());
     initiated_registers_.clear();
@@ -467,7 +486,7 @@ public:
     }
 
     allocated_registers_.emplace_back(r);
-    allocated_registers_loc_.emplace_back(source_location_hr(src_loc));
+    allocated_registers_src_locs_.emplace_back(source_location_hr(src_loc));
     return r;
   }
 
@@ -482,7 +501,7 @@ public:
       string loc;
       for (size_t i{0}; i < n; i++) {
         if (allocated_registers_[i] == reg) {
-          loc = allocated_registers_loc_[i];
+          loc = allocated_registers_src_locs_[i];
         }
       }
       throw compiler_exception(st.tok(), "cannot allocate register '" + reg +
@@ -491,7 +510,7 @@ public:
     }
     named_registers_.erase(r);
     allocated_registers_.emplace_back(reg);
-    allocated_registers_loc_.emplace_back(source_location_hr(st.tok()));
+    allocated_registers_src_locs_.emplace_back(source_location_hr(st.tok()));
   }
 
   inline auto alloc_named_register(const token &src_loc, ostream &os,
@@ -506,7 +525,7 @@ public:
     }
     named_registers_.erase(r);
     allocated_registers_.emplace_back(reg);
-    allocated_registers_loc_.emplace_back(source_location_hr(src_loc));
+    allocated_registers_src_locs_.emplace_back(source_location_hr(src_loc));
     os << endl;
     return true;
   }
@@ -517,7 +536,7 @@ public:
     os << "free " << reg << endl;
     assert(allocated_registers_.back() == reg);
     allocated_registers_.pop_back();
-    allocated_registers_loc_.pop_back();
+    allocated_registers_src_locs_.pop_back();
     named_registers_.emplace_back(reg);
     initiated_registers_.erase(reg);
   }
@@ -528,7 +547,7 @@ public:
     os << "free " << reg << endl;
     assert(allocated_registers_.back() == reg);
     allocated_registers_.pop_back();
-    allocated_registers_loc_.pop_back();
+    allocated_registers_src_locs_.pop_back();
     scratch_registers_.emplace_back(reg);
     initiated_registers_.erase(reg);
   }
@@ -597,7 +616,7 @@ public:
   inline void comment_source(const statement &st, ostream &os,
                              const size_t indnt) const {
     const auto [line, col]{
-        line_number_for_char_index(st.tok().char_index(), source_str_.c_str())};
+        line_number_for_char_index(st.tok().char_index(), source_.c_str())};
 
     indent(os, indnt, true);
     os << "[" << line << ":" << col << "]";
@@ -613,7 +632,7 @@ public:
   inline void comment_source(ostream &os, const string &dst, const string &op,
                              const statement &st) const {
     const auto [line, col]{
-        line_number_for_char_index(st.tok().char_index(), source_str_.c_str())};
+        line_number_for_char_index(st.tok().char_index(), source_.c_str())};
     os << "[" << line << ":" << col << "]";
 
     stringstream ss{};
@@ -626,7 +645,7 @@ public:
 
   inline void comment_token(ostream &os, const token &tk) const {
     const auto [line, col]{
-        line_number_for_char_index(tk.char_index(), source_str_.c_str())};
+        line_number_for_char_index(tk.char_index(), source_.c_str())};
     os << "[" << line << ":" << col << "]";
     os << " " << tk.name() << endl;
   }
@@ -638,7 +657,7 @@ public:
 
   inline void enter_call(const token &src_loc, ostream &os,
                          const size_t indnt) {
-    const bool root_call{call_metas_.empty()};
+    const bool root_call{calls_.empty()};
     const size_t nbytes_of_vars_on_stack{root_call ? get_current_stack_size()
                                                    : 0};
     if (root_call) {
@@ -652,8 +671,7 @@ public:
     }
     // index in the allocated registers that have been allocated but not pushed
     // prior to this call (that might clobber them)
-    const size_t alloc_regs_idx{root_call ? 0
-                                          : call_metas_.back().alloc_reg_idx};
+    const size_t alloc_regs_idx{root_call ? 0 : calls_.back().alloc_reg_idx};
 
     // push registers allocated prior to this call
     const size_t n{allocated_registers_.size()};
@@ -667,20 +685,20 @@ public:
       asm_push(src_loc, os, indnt, reg);
       nregs_pushed_on_stack++;
     }
-    call_metas_.emplace_back(call_info{nregs_pushed_on_stack,
-                                       allocated_registers_.size(),
-                                       nbytes_of_vars_on_stack});
+    calls_.emplace_back(call_info{nregs_pushed_on_stack,
+                                  allocated_registers_.size(),
+                                  nbytes_of_vars_on_stack});
   }
 
   inline void exit_call(const token &src_loc, ostream &os, const size_t indnt,
                         const size_t nbytes_of_args_on_stack,
                         const vector<string> &allocated_args_registers) {
-    const size_t nregs_pushed{call_metas_.back().nregs_pushed};
-    const size_t nbytes_of_vars{call_metas_.back().nbytes_of_vars};
-    call_metas_.pop_back();
-    const bool restore_rsp_to_base{call_metas_.empty()};
+    const size_t nregs_pushed{calls_.back().nregs_pushed};
+    const size_t nbytes_of_vars{calls_.back().nbytes_of_vars};
+    calls_.pop_back();
+    const bool restore_rsp_to_base{calls_.empty()};
     const size_t alloc_reg_idx{
-        restore_rsp_to_base ? 0 : call_metas_.back().alloc_reg_idx};
+        restore_rsp_to_base ? 0 : calls_.back().alloc_reg_idx};
 
     // optimization can be done if no registers need to be popped
     //   rsp is adjusted once
@@ -1480,23 +1498,4 @@ private:
       max_frame_count_ = frames_.size();
     }
   }
-
-  vector<frame> frames_{};
-  vector<string> all_registers_{};
-  vector<string> scratch_registers_{};
-  vector<string> allocated_registers_{};
-  vector<string>
-      allocated_registers_loc_{}; // source locations of allocated_registers_
-  vector<string> named_registers_{};
-  size_t max_usage_scratch_regs_{0};
-  size_t max_frame_count_{0};
-  const string &source_str_{};
-  lut<field_info> fields_{};
-  lut<func_info> funcs_{};
-  lut<const type &> types_{};
-  vector<call_info> call_metas_{};
-  unordered_set<string> initiated_registers_{};
-  const type *type_void_{};
-  const type *type_default_{};
-  const type *type_bool_{};
 };
