@@ -166,12 +166,13 @@ inline void expr_type_value::compile_recursive(const expr_type_value &atv,
   tc.comment_source(atv, os, indent);
   if (not src.empty()) {
     // e.g. obj.pos = p
-    const ident_resolved &id_res{tc.resolve_identifier(atv.tok(), src, true)};
-    if (id_res.tp.name() != dst_type.name()) {
+    const ident_resolved &id_resolved{
+        tc.resolve_identifier(atv.tok(), src, true)};
+    if (id_resolved.tp.name() != dst_type.name()) {
       throw compiler_exception(
           atv.tok(), "cannot assign '" + src + "' to '" + dst + "' because '" +
-                         src + "' is '" + id_res.tp.name() + "' and '" + dst +
-                         "' is '" + dst_type.name() + "'");
+                         src + "' is '" + id_resolved.tp.name() + "' and '" +
+                         dst + "' is '" + dst_type.name() + "'");
     }
     const vector<type_field> &flds{dst_type.fields()};
     const size_t n{flds.size()};

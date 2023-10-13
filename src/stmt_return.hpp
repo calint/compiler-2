@@ -23,9 +23,9 @@ public:
       const vector<func_return_info> &returns{tc.get_func_returns(tok())};
       if (not returns.empty()) {
         const func_return_info &ret_info{returns.at(0)};
-        const ident_resolved &ir{
+        const ident_resolved &ret_resolved{
             tc.resolve_identifier(tok(), ret_info.ident_tk.name(), false)};
-        const string &src_resolved{ir.id_nasm};
+        const string &src_resolved{ret_resolved.id_nasm};
         tc.asm_cmd(tok(), os, indent, "mov", "rax", src_resolved);
       }
       toc::asm_pop(tok(), os, indent, "rbp");

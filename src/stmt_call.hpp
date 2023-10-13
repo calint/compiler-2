@@ -246,8 +246,9 @@ public:
       if (not dst.empty()) {
         // function returns value in rax, copy return value to dst
         get_unary_ops().compile(tc, os, indent, "rax");
-        const ident_resolved &ir{tc.resolve_identifier(tok(), dst, false)};
-        tc.asm_cmd(tok(), os, indent, "mov", ir.id_nasm, "rax");
+        const ident_resolved &dst_resolved{
+            tc.resolve_identifier(tok(), dst, false)};
+        tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "rax");
       }
       return;
     }
@@ -398,6 +399,7 @@ public:
 
     // provide an exit label for 'return' to jump to instead of assembler 'ret'
     toc::asm_label(tok(), os, indent, ret_jmp_label);
+
     // if the result of the call has unary ops
     if (not get_unary_ops().is_empty()) {
       if (func.returns().empty()) {
@@ -406,9 +408,9 @@ public:
                                  "does not return a value");
       }
 
-      const ident_resolved &ir{tc.resolve_identifier(
+      const ident_resolved &ret_resolved{tc.resolve_identifier(
           tok(), func.returns()[0].ident_tk.name(), true)};
-      get_unary_ops().compile(tc, os, indent, ir.id_nasm);
+      get_unary_ops().compile(tc, os, indent, ret_resolved.id_nasm);
     }
     // pop scope
     tc.exit_func(func_nm);

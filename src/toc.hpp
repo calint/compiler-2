@@ -375,10 +375,10 @@ public:
   inline auto resolve_identifier(const token &src_loc, const string &name,
                                  const bool must_be_initiated) const
       -> ident_resolved {
-    const ident_resolved &ir{
+    const ident_resolved &name_resolved{
         resolve_ident_or_empty(src_loc, name, must_be_initiated)};
-    if (not ir.id_nasm.empty()) {
-      return ir;
+    if (not name_resolved.id_nasm.empty()) {
+      return name_resolved;
     }
 
     throw compiler_exception(src_loc,
@@ -451,9 +451,10 @@ public:
     const int stack_idx{int(get_current_stack_size() + var_type.size())};
     frames_.back().add_var(src_loc, name, var_type, -stack_idx, initiated);
     // comment the resolved name
-    const ident_resolved &ir{resolve_identifier(src_loc, name, false)};
+    const ident_resolved &name_resolved{
+        resolve_identifier(src_loc, name, false)};
     indent(os, indnt, true);
-    os << name << ": " << ir.id_nasm << endl;
+    os << name << ": " << name_resolved.id_nasm << endl;
   }
 
   inline void add_func_arg(const token &src_loc, ostream &os, size_t indnt,
@@ -462,9 +463,10 @@ public:
     assert(frames_.back().is_func() && not frames_.back().func_is_inline());
     frames_.back().add_var(src_loc, name, arg_type, stack_idx, true);
     // comment the resolved name
-    const ident_resolved &ir{resolve_identifier(src_loc, name, false)};
+    const ident_resolved &name_resolved{
+        resolve_identifier(src_loc, name, false)};
     indent(os, indnt, true);
-    os << name << ": " << ir.id_nasm << endl;
+    os << name << ": " << name_resolved.id_nasm << endl;
   }
 
   inline auto alloc_scratch_register(const token &src_loc, ostream &os,
