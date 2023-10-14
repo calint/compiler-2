@@ -9,17 +9,19 @@ class stmt_if final : public statement {
 public:
   inline stmt_if(toc &tc, token tk, tokenizer &tz) : statement{move(tk)} {
     set_type(tc.get_type_void());
-    // if a=b {x} else if c=d {y} else {z}
-    // 'a=b {x}', 'c=d {y}' are 'branches'
+    // e.g. if a == b {x = 1} else if c == d {y = 2} else {z = 3}
+    // broken down in branches 'a == b {x = 1}', 'c == d {y = 2}' ending with an
+    // optional 'else' block
+
     // 'if' token has been read
     while (true) {
-      // read branch i.e. a=b {x}
+      // read branch i.e. a == b {x = 1}
       branches_.emplace_back(tc, tz);
 
       // check if it is a 'else if' or 'else' or a new statement
       token tkn{tz.next_token()};
       if (not tkn.is_name("else")) {
-        // not 'else', push token back instream and exit
+        // not 'else', push token back in stream and exit
         tz.put_back_token(tkn);
         return;
       }
@@ -27,7 +29,7 @@ public:
       // check if 'else if'
       token tkn2{tz.next_token()};
       if (not tkn2.is_name("if")) {
-        // not 'else if', push token back instream and exit
+        // not 'else if', push token back in stream and exit
         tz.put_back_token(tkn2);
         // 'else' branch
         // save tokens to be able to reproduce the source
@@ -59,11 +61,11 @@ public:
     // output the remaining 'else if' branches
     const size_t n{branches_.size()};
     for (size_t i{1}; i < n; i++) {
-      const stmt_if_branch &br{branches_[i]};
+      const stmt_if_branch &else_if_branch{branches_[i]};
       // 'else if' tokens as read from source
-      else_if_tokens_[((i - 1)) << 1U].source_to(os);
+      else_if_tokens_[(i - 1) << 1U].source_to(os);
       else_if_tokens_[((i - 1) << 1U) + 1].source_to(os);
-      br.source_to(os);
+      else_if_branch.source_to(os);
     }
     // the 'else' code
     if (not else_code_.is_empty()) {
@@ -74,6 +76,7 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
+
     // make unique labels considering in-lined functions
     const string &call_path{tc.get_inline_call_path(tok())};
     const string &src_loc{tc.source_location_for_use_in_label(tok())};
@@ -95,25 +98,30 @@ public:
         jmp_if_false = branches_[i + 1].if_bgn_label(tc);
       } else {
         // if last branch and no 'else' then
-        //   no need to jump to 'after_if' after the code for the branch
-        //   has been executed. just continue
+        //   no need to jump to 'after_if' after the code of the branch
+        //     has been executed. just continue
         if (else_code_.is_empty()) {
           jmp_after_if = "";
         }
       }
+      // compile the condition which might return that the condition was a
+      // constant evaluation
       optional<bool> const_eval{
           e.compile(tc, os, indent, jmp_if_false, jmp_after_if)};
+      // if condition was a constant evaluation and result was true
       if (const_eval and *const_eval) {
         branch_evaluated_to_true = true;
         break;
       }
     }
+    // if it wasn't a constant evaluation that was true generate the else code
     if (not branch_evaluated_to_true) {
       if (not else_code_.is_empty()) {
         toc::asm_label(tok(), os, indent, label_else_branch);
         else_code_.compile(tc, os, indent + 1);
       }
     }
+
     toc::asm_label(tok(), os, indent, label_after_if);
   }
 };

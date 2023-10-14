@@ -8,6 +8,8 @@
 [x]     stmt_comment
 [x]     stmt_block
 [x]     statement
+[x]     stmt_if
+[x]     stmt_if_branch
 [ ] toc: rename baz_ident
 [ ] var pos : point = foo()
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
