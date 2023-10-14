@@ -74,9 +74,11 @@ public:
       return;
     case 1:
       // bool expression
+      const bool_ops_list &bol{get<bool_ops_list>(var_)};
+      // resolve the destination
       const ident_resolved &dst_resolved{
           tc.resolve_identifier(tok(), dst, false)};
-      const bool_ops_list &bol{get<bool_ops_list>(var_)};
+      // if not expression assign destination
       if (not bol.is_expression()) {
         const ident_resolved &src_resolved{tc.resolve_identifier(bol, false)};
         tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
@@ -84,40 +86,44 @@ public:
         return;
       }
       // expression
+      // make unique labels considering inlined functions
       const string &call_path{tc.get_inline_call_path(tok())};
       const string &src_loc{tc.source_location_for_use_in_label(tok())};
+      // unique partial label for this assembler location
       const string &postfix{src_loc +
                             (call_path.empty() ? "" : ("_" + call_path))};
+      // labels to jump to depending on the evaluation
       const string &jmp_to_if_true{"true_" + postfix};
       const string &jmp_to_if_false{"false_" + postfix};
+      // the end of the assign
       const string &jmp_to_end{"end_" + postfix};
+      // compile and possibly evaluate constant expression
       optional<bool> const_eval{
           bol.compile(tc, os, indent, jmp_to_if_false, jmp_to_if_true, false)};
       if (const_eval) {
+        // constant evaluation
         if (*const_eval) {
-          // constant evaluation to true
+          // evaluation is true
           toc::asm_label(tok(), os, indent, jmp_to_if_true);
-          tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "1");
+          tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "true");
           return;
         }
         // constant evaluation to false
         toc::asm_label(tok(), os, indent, jmp_to_if_false);
-        tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "0");
+        tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "false");
         return;
       }
       // not constant evaluation
+      // label for where the condition to branch if true
       toc::asm_label(tok(), os, indent, jmp_to_if_true);
-      tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "1");
+      tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "true");
       toc::asm_jmp(tok(), os, indent, jmp_to_end);
+      // label for where the condition to branch if false
       toc::asm_label(tok(), os, indent, jmp_to_if_false);
-      tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "0");
+      tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "false");
       toc::asm_label(tok(), os, indent, jmp_to_end);
       return;
     }
-  }
-
-  [[nodiscard]] inline auto is_bool() const -> bool {
-    return var_.index() == 1;
   }
 
   [[nodiscard]] inline auto is_expression() const -> bool override {
@@ -168,6 +174,10 @@ public:
     }
     // note. 'expr_type_value' does not have 'unary_ops' and cannot be
     // argument in call
+  }
+
+  [[nodiscard]] inline auto is_bool() const -> bool {
+    return var_.index() == 1;
   }
 
   [[nodiscard]] inline auto is_assign_type_value() const -> bool {

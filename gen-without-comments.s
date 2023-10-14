@@ -54,10 +54,10 @@ main:
      cmp qword[rbp-16], 2
      jne false_49_12
      true_49_12:  ; opt1
-     mov r15, 1
+     mov r15, true
      jmp end_49_12
      false_49_12:
-     mov r15, 0
+     mov r15, false
      end_49_12:
    push r15
    call assert
@@ -67,10 +67,10 @@ main:
      cmp qword[rbp-8], 0xb
      jne false_50_12
      true_50_12:  ; opt1
-     mov r15, 1
+     mov r15, true
      jmp end_50_12
      false_50_12:
-     mov r15, 0
+     mov r15, false
      end_50_12:
    push r15
    call assert
@@ -88,10 +88,10 @@ main:
      cmp qword[rbp-52], 10
      jne false_56_12
      true_56_12:  ; opt1
-     mov r15, 1
+     mov r15, true
      jmp end_56_12
      false_56_12:
-     mov r15, 0
+     mov r15, false
      end_56_12:
    push r15
    call assert
@@ -101,10 +101,10 @@ main:
      cmp qword[rbp-44], 2
      jne false_57_12
      true_57_12:  ; opt1
-     mov r15, 1
+     mov r15, true
      jmp end_57_12
      false_57_12:
-     mov r15, 0
+     mov r15, false
      end_57_12:
    push r15
    call assert
@@ -114,10 +114,10 @@ main:
      cmp dword[rbp-36], 0xff0000
      jne false_58_12
      true_58_12:  ; opt1
-     mov r15, 1
+     mov r15, true
      jmp end_58_12
      false_58_12:
-     mov r15, 0
+     mov r15, false
      end_58_12:
    push r15
    call assert
@@ -137,10 +137,10 @@ main:
      cmp qword[rbp-52], -1
      jne false_62_12
      true_62_12:  ; opt1
-     mov r15, 1
+     mov r15, true
      jmp end_62_12
      false_62_12:
-     mov r15, 0
+     mov r15, false
      end_62_12:
    push r15
    call assert
@@ -150,10 +150,10 @@ main:
      cmp qword[rbp-44], -2
      jne false_63_12
      true_63_12:  ; opt1
-     mov r15, 1
+     mov r15, true
      jmp end_63_12
      false_63_12:
-     mov r15, 0
+     mov r15, false
      end_63_12:
    push r15
    call assert
@@ -169,10 +169,10 @@ main:
      cmp qword[rbp-88], -1
      jne false_66_12
      true_66_12:  ; opt1
-     mov r15, 1
+     mov r15, true
      jmp end_66_12
      false_66_12:
-     mov r15, 0
+     mov r15, false
      end_66_12:
    push r15
    call assert
@@ -182,10 +182,10 @@ main:
      cmp qword[rbp-80], -2
      jne false_67_12
      true_67_12:  ; opt1
-     mov r15, 1
+     mov r15, true
      jmp end_67_12
      false_67_12:
-     mov r15, 0
+     mov r15, false
      end_67_12:
    push r15
    call assert
@@ -195,10 +195,10 @@ main:
      cmp dword[rbp-72], 0xff0000
      jne false_68_12
      true_68_12:  ; opt1
-     mov r15, 1
+     mov r15, true
      jmp end_68_12
      false_68_12:
-     mov r15, 0
+     mov r15, false
      end_68_12:
    push r15
    call assert
