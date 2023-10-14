@@ -14,7 +14,7 @@
 [ ] string type
 [ ]   var str = "hello world"
 [ ]   var len = str.len
-[ ] var points : point[10] = { {1, 2}, {3, 4}}
+[ ] var points : point[10] = {{1, 2}, {3, 4}}
 [ ]   points[1].x = 1
 [ ]   points.len
 [ ] consider cmovxx when evaluating a boolean expression
