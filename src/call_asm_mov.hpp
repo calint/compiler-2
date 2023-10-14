@@ -1,10 +1,10 @@
 #pragma once
-#include "call_asm.hpp"
+#include "stmt_call.hpp"
 
-class call_asm_mov final : public call_asm {
+class call_asm_mov final : public stmt_call {
 public:
   inline call_asm_mov(toc &tc, token tk, tokenizer &tz)
-      : call_asm{tc, move(tk), tz} {
+      : stmt_call{tc, {}, move(tk), tz} {
 
     set_type(tc.get_type_void());
   }
@@ -22,20 +22,22 @@ public:
 
     tc.comment_source(*this, os, indent);
 
-    const ident_resolved &dst_resolved{tc.resolve_identifier(arg(0), false)};
     if (arg_count() != 2) {
       throw compiler_exception(tok(), "expected 2 arguments");
     }
+
+    //? the assembler command might not need to resolve expressions
+    const ident_resolved &dst_resolved{tc.resolve_identifier(arg(0), false)};
+
     const statement &src_arg{arg(1)};
-    //? the assembler commands might not need this
     if (src_arg.is_expression()) {
-      src_arg.compile(tc, os, indent + 1, dst_resolved.id_nasm);
+      src_arg.compile(tc, os, indent + 1, dst_resolved.id);
       return;
     }
+
     // src is not an expression
     const ident_resolved &src_resolved{tc.resolve_identifier(src_arg, true)};
     if (src_resolved.is_const()) {
-      // a constant
       tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
                  src_arg.get_unary_ops().to_string() + src_resolved.id_nasm);
       return;

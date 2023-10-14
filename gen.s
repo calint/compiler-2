@@ -460,7 +460,7 @@ main:
 ;      [26:19] # buffer address 
 ;      [27:5] mov(rdx, len) 
 ;      [27:19] # buffer size 
-;      [28:5] syscall 
+;      [28:5] syscall() 
        syscall
 ;      [29:5] mov(nbytes, rax) 
        mov qword[rbp-96], rax

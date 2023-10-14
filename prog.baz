@@ -25,7 +25,7 @@ func inline read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, ptr) # buffer address
     mov(rdx, len) # buffer size
-    syscall
+    syscall()
     mov(nbytes, rax) # return value
 }
 

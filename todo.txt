@@ -17,16 +17,16 @@
 [x]     stmt_def_type_field
 [ ]     stmt_def_func
 [ ]     stmt_def_func_param
-[ ]     stmt_call
 [x]     expression
 [x]     expr_any
-[ ]     expr_ops_list
 [x]     expr_type_value
+[ ]     expr_ops_list
 [ ]     bool_op
 [ ]     bool_ops_list
-[ ]     call_asm
-[ ]     call_asm_syscall
-[ ]     call_asm_mov
+[ ]     stmt_call
+[x]     call_asm: deleted
+[x]     call_asm_syscall
+[x]     call_asm_mov
 [x]     compiler_exception
 [x]     panic_exception
 [x]     decouple.hpp
