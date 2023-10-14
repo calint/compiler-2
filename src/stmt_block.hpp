@@ -44,7 +44,7 @@ public:
         stms_.emplace_back(make_unique<stmt_continue>(tc, move(tk)));
       } else if (tk.is_name("return")) {
         stms_.emplace_back(make_unique<stmt_return>(tc, move(tk)));
-      } else if (tk.is_name("#")) {
+      } else if (tk.name().starts_with("#")) {
         stms_.emplace_back(make_unique<stmt_comment>(tc, move(tk), tz));
         last_statement_considered_no_statment = true;
       } else if (tk.is_name("")) {

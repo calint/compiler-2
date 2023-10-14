@@ -54,7 +54,7 @@ public:
         statements_.emplace_back(make_unique<stmt_def_func>(tc_, tk, tkz));
       } else if (tk.is_name("type")) {
         statements_.emplace_back(make_unique<stmt_def_type>(tc_, tk, tkz));
-      } else if (tk.is_name("#")) {
+      } else if (tk.name().starts_with("#")) {
         statements_.emplace_back(make_unique<stmt_comment>(tc_, tk, tkz));
       } else if (tk.is_name("")) {
         //? should this be able to happen?

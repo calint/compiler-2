@@ -5,7 +5,6 @@
 [ ] clean-up: review argument names
 [x]     toc
 [ ] clean-up: review variable names
-[ ] "#comment" should be accepted as "# comment"
 [ ] var pos : point = foo()
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
 [ ] func f(p : point copy) copies point to callee stack
@@ -69,6 +68,7 @@
       mov qword[rbp-16],r15
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
+[x] "#comment" should be accepted as "# comment"
 [-] process generated asm to remove duplicate labels
     => was error in bool_ops_list
 [x] coverage: bool_ops_list
