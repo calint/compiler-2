@@ -10,6 +10,8 @@
 [x]     statement
 [x]     stmt_if
 [x]     stmt_if_branch
+[x]     stmt_def_var
+
 [ ] toc: rename baz_ident
 [ ] var pos : point = foo()
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'

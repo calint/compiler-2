@@ -12,27 +12,34 @@ public:
 };
 
 class stmt_def_var final : public statement {
-  token name_{};
-  token type_{};
+  token name_tk_{};
+  token type_tk_{};
   stmt_assign_var initial_value_{};
 
 public:
   inline stmt_def_var(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)}, name_{tz.next_token()} {
-    if (tz.is_next_char(':')) {
-      type_ = tz.next_token();
-    }
-    if (not tz.is_next_char('=')) {
-      throw compiler_exception(name_, "expected '=' and initializer");
-    }
+      : statement{move(tk)}, name_tk_{tz.next_token()} {
 
-    const type &tp{type_.name().empty()
+    // check if type declared
+    if (tz.is_next_char(':')) {
+      type_tk_ = tz.next_token();
+    }
+    // expect initialization
+    if (not tz.is_next_char('=')) {
+      throw compiler_exception(name_tk_, "expected '=' and initializer");
+    }
+    // get type reference from token
+    const type &tp{type_tk_.name().empty()
                        ? tc.get_type_default()
-                       : tc.get_type_or_throw(type_, type_.name())};
+                       : tc.get_type_or_throw(type_tk_, type_tk_.name())};
     set_type(tp);
-    null_stream ns{};
-    tc.add_var(name_, ns, 0, name_.name(), tp, false);
-    initial_value_ = {tc, name_, type_, tz};
+
+    // dry-run compilation to null stream to set up the program state in tocI
+    null_stream null_strm{};
+    tc.add_var(name_tk_, null_strm, 0, name_tk_.name(), tp, false);
+
+    // initialization code
+    initial_value_ = {tc, name_tk_, type_tk_, tz};
   }
 
   inline stmt_def_var() = default;
@@ -50,8 +57,9 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
-    tc.add_var(name_, os, indent, name_.name(), get_type(), false);
+
+    tc.add_var(name_tk_, os, indent, name_tk_.name(), get_type(), false);
     tc.comment_source(*this, os, indent);
-    initial_value_.compile(tc, os, indent, name_.name());
+    initial_value_.compile(tc, os, indent, name_tk_.name());
   }
 };
