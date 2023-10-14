@@ -62,7 +62,7 @@ public:
       set_type(tc.get_type_void());
     }
     tc.add_func(name_tk_, name_tk_.name(), get_type(), this);
-    tc.enter_func(name(), returns_);
+    tc.enter_func(name(), returns_, is_inline());
     // dry-run compile step to setup context for code block parsing
     vector<string> allocated_named_registers{};
     null_stream null_strm{}; // don't make output
@@ -210,8 +210,8 @@ private:
         const string &param_name{param.name()};
         const string &param_reg{param.get_register_name_or_empty()};
         if (param_reg.empty()) {
-          // argument not passed as register
-          tc.add_func_arg(tok(), os, indent + 1, param_name, param_type, 0);
+          // argument not passed as register, add it as variable
+          tc.add_var(tok(), os, indent + 1, param_name, param_type, true);
           continue;
         }
 
@@ -219,24 +219,30 @@ private:
         toc::indent(os, indent + 1, true);
         os << param_name << ": " << param_reg << endl;
         tc.alloc_named_register_or_throw(param, os, indent + 1, param_reg);
+        // make an alias from argument name to register
+        tc.add_alias(param_name, param_reg);
         // mark register as initiated
         tc.set_var_is_initiated(param_reg);
-        //? check if arg_type fits in register
+        // add it to list of allocated registers
         allocated_named_registers.emplace_back(param_reg);
-        tc.add_alias(param_name, param_reg);
       }
       return;
     }
 
+    //
     // not inline function
+    //
 
     // stack is now: ...,[prev rsp],...,[arg n],[arg n-1],...,[arg 1],[return
     // address],[rbp]
     //   (some arguments might be passed through registers)
 
+    // set up stack index relative to what rbp will be
+    //   skip [rbp] and [return address] on stack
+    size_t stk_ix{2U << 3U};
+    
     // define variables in the called context by mapping arguments to stack
     const size_t n{params_.size()};
-    size_t stk_ix{2U << 3U}; // skip [rbp] and [return address] on stack
     for (size_t i{0}; i < n; i++) {
       const stmt_def_func_param &param{params_[i]};
       const type &param_type{param.get_type()};
