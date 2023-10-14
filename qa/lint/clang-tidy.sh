@@ -1,6 +1,9 @@
 #!/bin/bash
 # tools:
-#   clang-tidy: Ubuntu LLVM version 15.0.7
+#   clang-tidy: 15.0.7
+
+# change to directory of the script
+cd $(dirname "$0")
 
 SRC=../../src/main.cpp
 if [ "$1" == "fix" ]; then
