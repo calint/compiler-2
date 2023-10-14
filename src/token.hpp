@@ -1,32 +1,18 @@
 #pragma once
 
 class token final {
-  string ws_left_{};
-  size_t start_ix_{};
-  string name_{};
-  size_t end_ix_{};
-  string ws_right_{};
-  bool is_str_{};
+  string ws_left_{};  // whitespace left of token text
+  size_t start_ix_{}; // token text start index in source
+  string name_{};     // token text
+  size_t end_ix_{};   // token text end index in source
+  string ws_right_{}; // whitespace right of token text
+  bool is_str_{};     // true if 'stmt_def_field' was a string
 
 public:
   inline token(string ws_left, size_t start_ix, string name, size_t end_ix,
                string ws_right, bool is_str = false)
       : ws_left_{move(ws_left)}, start_ix_{start_ix}, name_{move(name)},
-        end_ix_{end_ix}, ws_right_{move(ws_right)}, is_str_{is_str} {
-    // puts("token new");
-  }
-
-  // inline token() { puts("token default"); };
-  // inline token(const token &) { puts("token copy"); }
-  // inline token(token &&) { puts("token move"); }
-  // inline auto operator=(const token &) -> token & {
-  //   puts("token copy assign");
-  //   return *this;
-  // }
-  // inline auto operator=(token &&) -> token & {
-  //   puts("token move assign");
-  //   return *this;
-  // }
+        end_ix_{end_ix}, ws_right_{move(ws_right)}, is_str_{is_str} {}
 
   inline token() = default;
   inline token(const token &) = default;
@@ -51,7 +37,7 @@ public:
       return;
     }
     //? temporary fix to handle strings
-    os << regex_replace(name_, regex("\\\\n"), "',10,'");
+    os << regex_replace(name_, regex(R"(\\n)"), "',10,'");
   }
 
   [[nodiscard]] inline auto is_name(const string &s) const -> bool {

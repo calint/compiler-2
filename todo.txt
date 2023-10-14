@@ -18,6 +18,16 @@
 [ ]     stmt_def_func
 [ ]     stmt_def_func_param
 [ ]     stmt_call
+[x]     expression
+[ ]     expr_any
+[ ]     expr_ops_list
+[ ]     expr_type_value
+[ ]     bool_op
+[ ]     bool_ops_list
+[ ]     call_asm
+[ ]     call_asm_syscall
+[ ]     call_asm_mov
+[ ] consider disabling function definitions and calls without ()
 [ ] toc: rename baz_ident
 [ ] var pos : point = foo()
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
