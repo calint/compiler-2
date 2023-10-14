@@ -4,13 +4,12 @@
 // implemented in main.cpp
 
 class toc;
-class expr_any;
-class statement;
 class tokenizer;
-class unary_ops;
-class type;
+class statement;
 class unary_ops;
 class token;
+class expr_any;
+class type;
 
 inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
     -> unique_ptr<statement>;

@@ -46,9 +46,9 @@ public:
 
   [[nodiscard]] inline auto name() const -> const string & { return name_; }
 
-  [[nodiscard]] inline auto char_index() const -> size_t { return start_ix_; }
+  [[nodiscard]] inline auto start_index() const -> size_t { return start_ix_; }
 
-  [[nodiscard]] inline auto char_index_end() const -> size_t { return end_ix_; }
+  [[nodiscard]] inline auto end_index() const -> size_t { return end_ix_; }
 
   [[nodiscard]] inline auto is_empty() const -> bool {
     return ws_left_.empty() and name_.empty() and ws_right_.empty();

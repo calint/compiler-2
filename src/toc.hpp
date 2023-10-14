@@ -307,14 +307,16 @@ public:
 
   inline auto source_location_for_use_in_label(const token &src_loc) const
       -> string {
-    const auto [line, col]{
-        line_and_col_num_for_char_index(src_loc.char_index(), source_.c_str())};
+
+    const auto [line, col]{line_and_col_num_for_char_index(
+        src_loc.start_index(), source_.c_str())};
+
     return to_string(line) + "_" + to_string(col);
   }
 
   inline auto source_location_hr(const token &src_loc) -> string {
-    const auto [line, col]{
-        line_and_col_num_for_char_index(src_loc.char_index(), source_.c_str())};
+    const auto [line, col]{line_and_col_num_for_char_index(
+        src_loc.start_index(), source_.c_str())};
 
     return to_string(line) + ":" + to_string(col);
   }
@@ -605,8 +607,9 @@ public:
 
   inline void comment_source(const statement &st, ostream &os,
                              const size_t indnt) const {
+
     const auto [line, col]{line_and_col_num_for_char_index(
-        st.tok().char_index(), source_.c_str())};
+        st.tok().start_index(), source_.c_str())};
 
     indent(os, indnt, true);
     os << "[" << line << ":" << col << "]";
@@ -621,8 +624,10 @@ public:
 
   inline void comment_source(ostream &os, const string &dst, const string &op,
                              const statement &st) const {
+
     const auto [line, col]{line_and_col_num_for_char_index(
-        st.tok().char_index(), source_.c_str())};
+        st.tok().start_index(), source_.c_str())};
+
     os << "[" << line << ":" << col << "]";
 
     stringstream ss{};
@@ -635,7 +640,8 @@ public:
 
   inline void comment_token(ostream &os, const token &tk) const {
     const auto [line, col]{
-        line_and_col_num_for_char_index(tk.char_index(), source_.c_str())};
+        line_and_col_num_for_char_index(tk.start_index(), source_.c_str())};
+
     os << "[" << line << ":" << col << "]";
     os << " " << tk.name() << endl;
   }

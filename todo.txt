@@ -27,6 +27,10 @@
 [ ]     call_asm
 [ ]     call_asm_syscall
 [ ]     call_asm_mov
+[x]     compiler_exception
+[x]     panic_exception
+[x]     decouple.hpp
+[ ] rename compiler_exception
 [ ] consider disabling function definitions and calls without ()
 [ ] toc: rename baz_ident
 [ ] var pos : point = foo()

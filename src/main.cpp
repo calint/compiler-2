@@ -50,7 +50,7 @@ auto main(int argc, char *args[]) -> int {
 
   } catch (const compiler_exception &e) {
     const auto [line, col]{
-        toc::line_and_col_num_for_char_index(e.start_char, src.c_str())};
+        toc::line_and_col_num_for_char_index(e.start_index, src.c_str())};
     cerr << "\n"
          << src_file_name << ":" << line << ":" << col << ": " << e.msg << endl;
     return 1;
