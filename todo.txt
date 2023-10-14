@@ -21,7 +21,7 @@
 [x]     expression
 [x]     expr_any
 [ ]     expr_ops_list
-[ ]     expr_type_value
+[x]     expr_type_value
 [ ]     bool_op
 [ ]     bool_ops_list
 [ ]     call_asm
@@ -30,6 +30,7 @@
 [x]     compiler_exception
 [x]     panic_exception
 [x]     decouple.hpp
+[ ]     main.cpp
 [ ] rename compiler_exception
 [ ] consider disabling function definitions and calls without ()
 [ ] toc: rename baz_ident
