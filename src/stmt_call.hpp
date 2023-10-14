@@ -392,7 +392,8 @@ public:
         tc.free_named_register(os, indent + 1, reg);
         continue;
       }
-      assert(false);
+      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                            to_string(__LINE__));
     }
 
     // provide an exit label for 'return' to jump to instead of assembler 'ret'

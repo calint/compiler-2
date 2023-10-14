@@ -32,7 +32,7 @@ field      nl = "\n"
 func inline exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
-    syscall
+    syscall()
 }
 
 func inline print(len : reg_rdx, ptr : reg_rsi) {
@@ -40,7 +40,7 @@ func inline print(len : reg_rdx, ptr : reg_rsi) {
     mov(rdi, 1)   # file descriptor for standard out
     mov(rsi, ptr) # buffer address 
     mov(rdx, len) # buffer size
-    syscall
+    syscall()
 }
 
 func inline read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
@@ -65,7 +65,7 @@ func inline foo(p : point) {
     p.y = 0xb     # hex value 11
 }
 
-func inline main {
+func inline main() {
     var p : point = {0, 0}
     foo(p)
     # inlined functions can write to the arguments
@@ -177,7 +177,7 @@ assert:
 ;      [10:19] # exit system call 
 ;      [11:5] mov(rdi, v) 
 ;      [11:19] # return code 
-;      [12:5] syscall 
+;      [12:5] syscall() 
        syscall
 ;      free rdi
      exit_33_17_end:
@@ -516,7 +516,7 @@ main:
 ;    [18:19] # buffer address 
 ;    [19:5] mov(rdx, len) 
 ;    [19:19] # buffer size 
-;    [20:5] syscall 
+;    [20:5] syscall() 
      syscall
 ;    free rsi
 ;    free rdx
@@ -542,7 +542,7 @@ main:
 ;      [18:19] # buffer address 
 ;      [19:5] mov(rdx, len) 
 ;      [19:19] # buffer size 
-;      [20:5] syscall 
+;      [20:5] syscall() 
        syscall
 ;      free rsi
 ;      free rdx
@@ -620,7 +620,7 @@ main:
 ;        [18:19] # buffer address 
 ;        [19:5] mov(rdx, len) 
 ;        [19:19] # buffer size 
-;        [20:5] syscall 
+;        [20:5] syscall() 
          syscall
 ;        free rsi
 ;        free rdx
@@ -647,7 +647,7 @@ main:
 ;      [18:19] # buffer address 
 ;      [19:5] mov(rdx, len) 
 ;      [19:19] # buffer size 
-;      [20:5] syscall 
+;      [20:5] syscall() 
        syscall
 ;      free rsi
 ;      free rdx
@@ -671,7 +671,7 @@ main:
 ;      [18:19] # buffer address 
 ;      [19:5] mov(rdx, len) 
 ;      [19:19] # buffer size 
-;      [20:5] syscall 
+;      [20:5] syscall() 
        syscall
 ;      free rsi
 ;      free rdx
@@ -695,7 +695,7 @@ main:
 ;      [18:19] # buffer address 
 ;      [19:5] mov(rdx, len) 
 ;      [19:19] # buffer size 
-;      [20:5] syscall 
+;      [20:5] syscall() 
        syscall
 ;      free rsi
 ;      free rdx
@@ -719,7 +719,7 @@ main:
 ;      [18:19] # buffer address 
 ;      [19:5] mov(rdx, len) 
 ;      [19:19] # buffer size 
-;      [20:5] syscall 
+;      [20:5] syscall() 
        syscall
 ;      free rsi
 ;      free rdx

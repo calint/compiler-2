@@ -23,6 +23,9 @@ public:
     tc.comment_source(*this, os, indent);
 
     const ident_resolved &dst_resolved{tc.resolve_identifier(arg(0), false)};
+    if (arg_count() != 2) {
+      throw compiler_exception(tok(), "expected 2 arguments");
+    }
     const statement &src_arg{arg(1)};
     //? the assembler commands might not need this
     if (src_arg.is_expression()) {

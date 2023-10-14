@@ -64,7 +64,7 @@ assert:
 ;      [10:19] # exit system call 
 ;      [11:5] mov(rdi, v) 
 ;      [11:19] # return code 
-;      [12:5] syscall 
+;      [12:5] syscall() 
        syscall
 ;      free rdi
      exit_33_17_end:
@@ -403,7 +403,7 @@ main:
 ;    [18:19] # buffer address 
 ;    [19:5] mov(rdx, len) 
 ;    [19:19] # buffer size 
-;    [20:5] syscall 
+;    [20:5] syscall() 
      syscall
 ;    free rsi
 ;    free rdx
@@ -429,7 +429,7 @@ main:
 ;      [18:19] # buffer address 
 ;      [19:5] mov(rdx, len) 
 ;      [19:19] # buffer size 
-;      [20:5] syscall 
+;      [20:5] syscall() 
        syscall
 ;      free rsi
 ;      free rdx
@@ -507,7 +507,7 @@ main:
 ;        [18:19] # buffer address 
 ;        [19:5] mov(rdx, len) 
 ;        [19:19] # buffer size 
-;        [20:5] syscall 
+;        [20:5] syscall() 
          syscall
 ;        free rsi
 ;        free rdx
@@ -534,7 +534,7 @@ main:
 ;      [18:19] # buffer address 
 ;      [19:5] mov(rdx, len) 
 ;      [19:19] # buffer size 
-;      [20:5] syscall 
+;      [20:5] syscall() 
        syscall
 ;      free rsi
 ;      free rdx
@@ -558,7 +558,7 @@ main:
 ;      [18:19] # buffer address 
 ;      [19:5] mov(rdx, len) 
 ;      [19:19] # buffer size 
-;      [20:5] syscall 
+;      [20:5] syscall() 
        syscall
 ;      free rsi
 ;      free rdx
@@ -582,7 +582,7 @@ main:
 ;      [18:19] # buffer address 
 ;      [19:5] mov(rdx, len) 
 ;      [19:19] # buffer size 
-;      [20:5] syscall 
+;      [20:5] syscall() 
        syscall
 ;      free rsi
 ;      free rdx
@@ -606,7 +606,7 @@ main:
 ;      [18:19] # buffer address 
 ;      [19:5] mov(rdx, len) 
 ;      [19:19] # buffer size 
-;      [20:5] syscall 
+;      [20:5] syscall() 
        syscall
 ;      free rsi
 ;      free rdx
