@@ -30,7 +30,7 @@
 [ ]     expr_ops_list
 [ ]     bool_op
 [ ]     bool_ops_list
-[ ]     unary_ops
+[x]     unary_ops
 [ ]     tokenizer
 [ ]     token
 [ ]     lut

@@ -5,12 +5,12 @@
 class toc;
 
 class unary_ops final {
-  token whitespace_before_{};
+  token ws_before_{}; // whitespace before the ops
   vector<char> ops_{};
 
 public:
   inline explicit unary_ops(tokenizer &tz)
-      : whitespace_before_{tz.next_whitespace_token()} {
+      : ws_before_{tz.next_whitespace_token()} {
 
     while (true) {
       if (tz.is_next_char('~')) {
@@ -38,23 +38,23 @@ public:
   }
 
   inline void put_back(tokenizer &tz) const {
-    tz.put_back_token(whitespace_before_);
+    // put back in reverse order
     size_t i{ops_.size()};
     while (i--) {
       tz.put_back_char(ops_[i]);
     }
+    tz.put_back_token(ws_before_);
   }
 
   inline void source_to(ostream &os) const {
-    whitespace_before_.source_to(os);
-    const size_t n{ops_.size()};
-    for (size_t i{0}; i < n; i++) {
-      os << ops_[i];
+    ws_before_.source_to(os);
+    for (const char op : ops_) {
+      os << op;
     }
   }
 
   // implemented in main.cpp
-  // solves circular reference unary_ops->toc->statement->unary_ops
+  // solves circular reference: unary_ops -> toc -> statement -> unary_ops
   inline void compile(toc &tc, ostream &os, size_t indnt,
                       const string &dst_resolved) const;
 
@@ -74,7 +74,6 @@ public:
       case '~':
         v = ~v; // NOLINT(hicpp-signed-bitwise)
         break;
-        //			case'!':v=v^1;break;
       default:
         throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
                               std::to_string(__LINE__));

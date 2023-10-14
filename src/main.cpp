@@ -127,10 +127,10 @@ inline void unary_ops::compile([[maybe_unused]] toc &tc, ostream &os,
     const char op{ops_[i]};
     switch (op) {
     case '~':
-      toc::asm_not(whitespace_before_, os, indnt, dst_resolved);
+      toc::asm_not(ws_before_, os, indnt, dst_resolved);
       break;
     case '-':
-      toc::asm_neg(whitespace_before_, os, indnt, dst_resolved);
+      toc::asm_neg(ws_before_, os, indnt, dst_resolved);
       break;
     default:
       throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
