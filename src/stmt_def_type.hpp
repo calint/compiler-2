@@ -2,29 +2,23 @@
 #include "stmt_def_type_field.hpp"
 
 class stmt_def_type final : public statement {
-  token name_{};
-  token ws_{};
+  token name_tk_{};
+  token ws_{}; // whitespace
   vector<stmt_def_type_field> fields_{};
   type type_{};
 
 public:
   inline stmt_def_type(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)}, name_{tz.next_token()} {
+      : statement{move(tk)}, name_tk_{tz.next_token()} {
 
     if (not tz.is_next_char('{')) {
-      throw compiler_exception(name_, "expected '{'");
+      throw compiler_exception(name_tk_,
+                               "expected '{' to begin declaration of type");
     }
 
     while (true) {
-      const token tknm{tz.next_token()};
-      if (tknm.is_name("")) {
-        ws_ = tknm;
-        if (not tz.is_next_char('}')) {
-          throw compiler_exception(tz, "expected '}'");
-        }
-        break;
-      }
-      fields_.emplace_back(tc, tknm, tz);
+      // read field definition with next token being name
+      fields_.emplace_back(tc, tz.next_token(), tz);
       if (tz.is_next_char('}')) {
         break;
       }
@@ -32,19 +26,17 @@ public:
         throw compiler_exception(tz, "expected ',' and more fields");
       }
     }
-
-    type_.set_name(name_.name());
-    if (fields_.empty()) {
-      type_.set_size(tc.get_type_default().size());
-    } else {
-      for (const stmt_def_type_field &fld : fields_) {
-        const type &tp{fld.type_str().empty()
-                           ? tc.get_type_default()
-                           : tc.get_type_or_throw(fld.tok(), fld.type_str())};
-        type_.add_field(fld.tok(), fld.name(), tp);
-      }
+    // initiate the type definitions
+    type_.set_name(name_tk_.name());
+    // add the fields
+    for (const stmt_def_type_field &fld : fields_) {
+      // get type of field. no type name means default
+      const type &tp{fld.type_str().empty()
+                         ? tc.get_type_default()
+                         : tc.get_type_or_throw(fld.tok(), fld.type_str())};
+      type_.add_field(fld.tok(), fld.name(), tp);
     }
-    tc.add_type(name_, type_);
+    tc.add_type(name_tk_, type_);
   }
 
   inline stmt_def_type() = default;
@@ -57,17 +49,15 @@ public:
 
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
-    name_.source_to(os);
+    name_tk_.source_to(os);
     os << '{';
     ws_.source_to(os);
     size_t i{0};
-    const size_t n{fields_.size()};
-    for (const stmt_def_type_field &tf : fields_) {
-      tf.source_to(os);
-      if (i < n - 1) {
+    for (const stmt_def_type_field &fld : fields_) {
+      if (i++) {
         os << ',';
       }
-      i++;
+      fld.source_to(os);
     }
     os << '}';
   }

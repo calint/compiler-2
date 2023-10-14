@@ -1,21 +1,22 @@
 [ ] review new code
 [ ] clean-up:
 [x]     toc
+[x]     statement
 [x]     stmt_return
 [x]     stmt_breaks
 [x]     stmt_continue
-[x]     stmt_loops
+[x]     stmt_loop
 [x]     stmt_comment
 [x]     stmt_block
-[x]     statement
 [x]     stmt_if
 [x]     stmt_if_branch
 [x]     stmt_def_var
 [x]     stmt_assign_var
 [x]     stmt_def_field
+[x]     stmt_def_type
+[x]     stmt_def_type_field
 [ ]     stmt_def_func
 [ ]     stmt_def_func_param
-[ ]     stmt_def_type
 [ ]     stmt_call
 [ ] toc: rename baz_ident
 [ ] var pos : point = foo()
