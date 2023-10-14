@@ -2,10 +2,10 @@
 #include "token.hpp"
 
 class tokenizer final {
-  const string &src_{};
-  const char *ptr_{};
-  size_t nchar_{};
-  char last_char_{-1};
+  const string &src_{}; // the string to be tokenized
+  const char *ptr_{};   // pointer to current position
+  size_t char_ix_{};    // current char index in 'src_'
+  char last_char_{-1};  // last read character (-1 before any characters read)
 
 public:
   inline explicit tokenizer(const string &src)
@@ -19,47 +19,51 @@ public:
 
   inline ~tokenizer() = default;
 
-  [[nodiscard]] inline auto is_eos() const -> bool { return !last_char_; }
+  [[nodiscard]] inline auto is_eos() const -> bool {
+    return last_char_ == '\0';
+  }
 
   inline auto next_token() -> token {
-    const string &wspre{next_whitespace()};
-    const size_t bgn{nchar_};
+    const string &ws_before{next_whitespace()};
+    const size_t bgn_ix{char_ix_};
     if (is_next_char('"')) {
-      string s;
+      // string token
+      string txt;
       while (true) {
         if (is_next_char('"')) {
-          const size_t end{nchar_};
-          const string &wsaft{next_whitespace()};
-          return token{wspre, bgn, s, end, wsaft, true};
+          const size_t end{char_ix_};
+          const string &ws_after{next_whitespace()};
+          return token{ws_before, bgn_ix, txt, end, ws_after, true};
         }
-        s.push_back(next_char());
+        txt.push_back(next_char());
       }
     }
-    const string &tkn{next_token_str()};
-    const size_t end{nchar_};
-    const string &wsaft{next_whitespace()};
-    return {wspre, bgn, tkn, end, wsaft};
+    // not a string
+    const string &txt{next_token_str()};
+    const size_t end_ix{char_ix_};
+    const string &ws_after{next_whitespace()};
+    return {ws_before, bgn_ix, txt, end_ix, ws_after};
   }
 
   inline void put_back_token(const token &t) {
     //? validate token is same as source
-    seek(-off_t(t.total_length_in_chars()));
+    move_back(t.total_length_in_chars());
   }
 
-  inline void put_back_char([[maybe_unused]] const char ch) {
+  inline void put_back_char(const char ch) {
     //? validate char is same as source
-    seek(-off_t(1));
+    move_back(sizeof(ch));
   }
 
   inline auto next_whitespace_token() -> token {
-    return {next_whitespace(), nchar_, "", nchar_, ""};
+    return {next_whitespace(), char_ix_, "", char_ix_, ""};
   }
 
   inline auto is_next_char(const char ch) -> bool {
     if (*ptr_ != ch) {
       return false;
     }
-    next_char(); // return ignored
+    (void)next_char(); // return ignored
     return true;
   }
 
@@ -86,7 +90,7 @@ public:
     }
     const string &s{bgn, size_t(ptr_ - bgn)};
     ptr_++;
-    nchar_ += size_t(ptr_ - bgn);
+    char_ix_ += size_t(ptr_ - bgn);
     return s;
   }
 
@@ -94,12 +98,12 @@ public:
     assert(last_char_);
     last_char_ = *ptr_;
     ptr_++;
-    nchar_++;
+    char_ix_++;
     return last_char_;
   }
 
   [[nodiscard]] inline auto current_char_index_in_source() const -> size_t {
-    return nchar_;
+    return char_ix_;
   }
 
 private:
@@ -107,16 +111,16 @@ private:
     if (is_eos()) {
       return "";
     }
-    const size_t nchar_bm_{nchar_};
+    const size_t bgn_ix{char_ix_};
     while (true) {
       const char ch{next_char()};
       if (is_char_whitespace(ch)) {
         continue;
       }
-      seek(-1);
+      move_back(1);
       break;
     }
-    const size_t len{nchar_ - nchar_bm_};
+    const size_t len{char_ix_ - bgn_ix};
     return {ptr_ - len, len};
   }
 
@@ -124,7 +128,7 @@ private:
     if (is_eos()) {
       return "";
     }
-    const size_t nchar_bm_{nchar_};
+    const size_t bgn_ix{char_ix_};
     while (true) {
       const char ch{next_char()};
       if (is_char_whitespace(ch) or ch == '\0' or ch == '(' or ch == ')' or
@@ -132,19 +136,19 @@ private:
           ch == ';' or ch == '+' or ch == '-' or ch == '*' or ch == '/' or
           ch == '%' or ch == '&' or ch == '|' or ch == '^' or ch == '<' or
           ch == '>' or ch == '!') {
-        seek(-1);
+        move_back(1);
         break;
       }
     }
-    const size_t len{nchar_ - nchar_bm_};
+    const size_t len{char_ix_ - bgn_ix};
     return {ptr_ - len, len};
   }
 
-  inline void seek(const off_t nch) {
-    assert(ssize_t(src_.size()) >= (ssize_t(nchar_) + nch) and
-           (ssize_t(nchar_) + nch) >= 0);
-    ptr_ += nch;
-    nchar_ = size_t(ssize_t(nchar_) + nch);
+  inline void move_back(const size_t nchars) {
+    assert(char_ix_ >= nchars);
+
+    ptr_ -= nchars;
+    char_ix_ = size_t(char_ix_ - nchars);
   }
 
   inline static auto is_char_whitespace(const char ch) -> bool {

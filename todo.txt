@@ -31,7 +31,7 @@
 [ ]     bool_op
 [ ]     bool_ops_list
 [x]     unary_ops
-[ ]     tokenizer
+[x]     tokenizer
 [x]     token
 [x]     lut
 [ ]     main.cpp
