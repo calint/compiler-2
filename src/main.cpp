@@ -64,8 +64,9 @@ auto main(int argc, char *args[]) -> int {
   return 0;
 }
 
-// called from 'stmt_block' to solve circular dependencies with 'loop', 'if' and
-// function calls
+// declared in 'decouple.hpp'
+//   called from 'stmt_block' to solve circular dependencies with 'loop', 'if'
+//   and function calls
 inline auto create_statement_from_tokenizer(toc &tc, unary_ops uops, token tk,
                                             tokenizer &tz)
     -> unique_ptr<statement> {
@@ -84,8 +85,9 @@ inline auto create_statement_from_tokenizer(toc &tc, unary_ops uops, token tk,
   return make_unique<stmt_call>(tc, move(uops), move(tk), tz);
 }
 
-// called from 'expr_ops_list' to solve circular dependencies with function
-// calls
+// declared in 'decouple.hpp'
+//   called from 'expr_ops_list' to solve circular dependencies with function
+//   calls
 inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
     -> unique_ptr<statement> {
 
@@ -102,16 +104,18 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
     return make_unique<stmt_comment>(tc, move(tk), tz);
   }
   if (tz.is_peek_char('(')) {
-    // i.e.  f(...)
+    // i.e.  foo(...)
     return create_statement_from_tokenizer(tc, move(uops), move(tk), tz);
   }
   // i.e. 0x80, rax, identifiers
-  unique_ptr<statement> st{make_unique<statement>(tk, move(uops))};
-  const ident_resolved &st_resolved{tc.resolve_identifier(*st, false)};
-  st->set_type(st_resolved.tp);
-  return st;
+  unique_ptr<statement> stmt{make_unique<statement>(tk, move(uops))};
+  const ident_resolved &stmt_resolved{tc.resolve_identifier(*stmt, false)};
+  stmt->set_type(stmt_resolved.tp);
+  return stmt;
 }
 
+// declared in 'decouple.hpp'
+//   solves circular reference: expr_type_value -> expr_any -> expr_type_value
 inline auto create_expr_any_from_tokenizer(toc &tc, tokenizer &tz,
                                            const type &tp, bool in_args)
     -> unique_ptr<expr_any> {
@@ -119,7 +123,8 @@ inline auto create_expr_any_from_tokenizer(toc &tc, tokenizer &tz,
   return make_unique<expr_any>(tc, tz, tp, in_args);
 }
 
-// solves circular reference unary_ops->toc->statement->unary_ops
+// declared in "unary_ops.hpp"
+//  solves circular reference: unary_ops -> toc -> statement -> unary_ops
 inline void unary_ops::compile([[maybe_unused]] toc &tc, ostream &os,
                                size_t indnt, const string &dst_resolved) const {
   size_t i{ops_.size()};
@@ -139,6 +144,9 @@ inline void unary_ops::compile([[maybe_unused]] toc &tc, ostream &os,
   }
 }
 
+// declared in 'expr_type_value.hpps':
+//   resolves circular reference: expr_type_value -> expr_any ->
+//   expr_type_values
 inline void expr_type_value::source_to(ostream &os) const {
   statement::source_to(os);
   if (not tok().is_name("")) {
@@ -155,6 +163,9 @@ inline void expr_type_value::source_to(ostream &os) const {
   os << '}';
 }
 
+// declared in 'expr_type_value.hpps':
+//   resolves circular reference: expr_type_value -> expr_any ->
+//   expr_type_values
 inline void expr_type_value::compile_recursive(const expr_type_value &atv,
                                                toc &tc, ostream &os,
                                                size_t indent, const string &src,
@@ -162,20 +173,20 @@ inline void expr_type_value::compile_recursive(const expr_type_value &atv,
                                                const type &dst_type) {
 
   tc.comment_source(atv, os, indent);
+
   if (not src.empty()) {
     // e.g. obj.pos = p
-    const ident_resolved &id_resolved{
-        tc.resolve_identifier(atv.tok(), src, true)};
-    if (id_resolved.tp.name() != dst_type.name()) {
+    const type &src_type{tc.resolve_identifier(atv.tok(), src, true).tp};
+    if (src_type.name() != dst_type.name()) {
       throw compiler_exception(
           atv.tok(), "cannot assign '" + src + "' to '" + dst + "' because '" +
-                         src + "' is '" + id_resolved.tp.name() + "' and '" +
-                         dst + "' is '" + dst_type.name() + "'");
+                         src + "' is '" + src_type.name() + "' and '" + dst +
+                         "' is '" + dst_type.name() + "'");
     }
     const vector<type_field> &flds{dst_type.fields()};
     const size_t n{flds.size()};
     for (size_t i{0}; i < n; i++) {
-      const type_field &fld{flds[i]};
+      const type_field &fld{flds.at(i)};
       if (fld.tp.is_built_in()) {
         const string &src_resolved{
             tc.resolve_identifier(atv.tok(), src + "." + fld.name, false)
@@ -199,21 +210,18 @@ inline void expr_type_value::compile_recursive(const expr_type_value &atv,
   const vector<type_field> &flds{dst_type.fields()};
   const size_t n{flds.size()};
   for (size_t i{0}; i < n; i++) {
-    const type_field &fld{flds[i]};
+    const type_field &fld{flds.at(i)};
     if (fld.tp.is_built_in()) {
-      atv.exprs_[i]->compile(tc, os, indent, dst + "." + fld.name);
+      atv.exprs_.at(i)->compile(tc, os, indent, dst + "." + fld.name);
       continue;
     }
-    compile_recursive(atv.exprs_[i]->as_assign_type_value(), tc, os, indent + 1,
-                      atv.exprs_[i]->identifier(), dst + "." + fld.name,
-                      fld.tp);
+    // not a built-in type, recurse
+    compile_recursive(atv.exprs_.at(i)->as_assign_type_value(), tc, os,
+                      indent + 1, atv.exprs_.at(i)->identifier(),
+                      dst + "." + fld.name, fld.tp);
   }
 }
 
-// inline const type&statement::get_type(toc&tc)const{
-//	const ident_resolved&ir{tc.resolve_ident_to_nasm(*this,false)};
-//	return ir.tp;
-// }
 //  opt1
 //  example:
 //    jmp cmp_13_26
@@ -223,11 +231,12 @@ inline void expr_type_value::compile_recursive(const expr_type_value &atv,
 static void optimize_jumps_1(istream &is, ostream &os) {
   const regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
   const regex rxlbl{R"(^\s*(.+):.*$)"};
+  const regex rxcomment{R"(^\s*;.*$)"};
   smatch match;
   while (true) {
-    string line1;
+    string line1{};
     getline(is, line1);
-    if (is.eof()) {
+    if (is.eof()) { //? what if there is no new line at end of file?
       break;
     }
 
@@ -237,11 +246,11 @@ static void optimize_jumps_1(istream &is, ostream &os) {
     }
     const string &jmplbl{match[1]};
 
-    string line2;
-    vector<string> comments;
+    string line2{};
+    vector<string> comments{};
     while (true) { // read comments
       getline(is, line2);
-      if (line2.starts_with(';')) {
+      if (regex_match(line2, rxcomment)) {
         comments.emplace_back(line2);
         continue;
       }
@@ -259,6 +268,7 @@ static void optimize_jumps_1(istream &is, ostream &os) {
 
     const string &lbl{match[1]};
 
+    // if not same label then output the buffered data and continues
     if (jmplbl != lbl) {
       os << line1 << endl;
       for (const auto &s : comments) {
@@ -292,9 +302,9 @@ static void optimize_jumps_2(istream &is, ostream &os) {
   smatch match;
 
   while (true) {
-    string line1;
+    string line1{};
     getline(is, line1);
-    if (is.eof()) {
+    if (is.eof()) { //? what if there is no new line at end of file?
       break;
     }
 
@@ -305,8 +315,8 @@ static void optimize_jumps_2(istream &is, ostream &os) {
     const string &jxx{match[1]};
     const string &jxxlbl{match[2]};
 
-    string line2;
-    vector<string> comments2;
+    string line2{};
+    vector<string> comments2{};
     while (true) { // read comments
       getline(is, line2);
       if (regex_match(line2, rxcomment)) {
@@ -325,8 +335,8 @@ static void optimize_jumps_2(istream &is, ostream &os) {
     }
     const string &jmplbl{match[1]};
 
-    string line3;
-    vector<string> comments3;
+    string line3{};
+    vector<string> comments3{};
     while (true) { // read comments
       getline(is, line3);
       if (regex_match(line3, rxcomment)) {
@@ -366,7 +376,7 @@ static void optimize_jumps_2(istream &is, ostream &os) {
     //   jne cmp_14_26
     //   jmp if_14_8_code
     //   cmp_14_26:
-    string jxx_inv;
+    string jxx_inv{};
     if (jxx == "jne") {
       jxx_inv = "je";
     } else if (jxx == "je") {
@@ -393,11 +403,12 @@ static void optimize_jumps_2(istream &is, ostream &os) {
     }
     //   je if_14_8_code
     //   cmp_14_26:
-    const string &ws{line1.substr(0, line1.find_first_not_of(" \t\n\r\f\v"))};
+    // get the whitespaces
+    const string &ws_before{line1.substr(0, line1.find_first_not_of(" \t\n\r\f\v"))};
     for (const auto &s : comments2) {
       os << s << endl;
     }
-    os << ws << jxx_inv << " " << jmplbl << "  ; opt2" << endl;
+    os << ws_before << jxx_inv << " " << jmplbl << "  ; opt2" << endl;
     for (const auto &s : comments3) {
       os << s << endl;
     }

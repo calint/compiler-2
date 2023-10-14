@@ -34,7 +34,7 @@
 [x]     tokenizer
 [x]     token
 [x]     lut
-[ ]     main.cpp
+[x]     main.cpp
 [ ] check that return value is initiated before copy to rax
 [ ] rename compiler_exception
 [ ] consider disabling function definitions and calls without ()
