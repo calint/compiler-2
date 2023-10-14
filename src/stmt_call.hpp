@@ -136,11 +136,11 @@ public:
       const ident_resolved &dst_resolved{
           tc.resolve_identifier(tok(), dst, false)};
       //?
-      if (dst_resolved.tp.size() < return_type.size()) {
+      if (dst_resolved.type_ref.size() < return_type.size()) {
         throw compiler_exception(
             this->tok(), "return type '" + return_type.name() +
                              "' would be truncated when copied to '" + dst +
-                             "' of type '" + dst_resolved.tp.name() + "'");
+                             "' of type '" + dst_resolved.type_ref.name() + "'");
       }
     }
 
@@ -207,7 +207,7 @@ public:
         }
         if (ea.get_unary_ops().is_empty()) {
           // check if argument size is register size
-          if (arg_resolved.tp.size() == tc.get_type_default().size()) {
+          if (arg_resolved.type_ref.size() == tc.get_type_default().size()) {
             toc::asm_push(ea.tok(), os, indent, arg_resolved.id_nasm);
             nbytes_of_args_on_stack += 8;
             continue;

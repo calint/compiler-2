@@ -110,7 +110,7 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
   // i.e. 0x80, rax, identifiers
   unique_ptr<statement> stmt{make_unique<statement>(tk, move(uops))};
   const ident_resolved &stmt_resolved{tc.resolve_identifier(*stmt, false)};
-  stmt->set_type(stmt_resolved.tp);
+  stmt->set_type(stmt_resolved.type_ref);
   return stmt;
 }
 
@@ -176,7 +176,7 @@ inline void expr_type_value::compile_recursive(const expr_type_value &atv,
 
   if (not src.empty()) {
     // e.g. obj.pos = p
-    const type &src_type{tc.resolve_identifier(atv.tok(), src, true).tp};
+    const type &src_type{tc.resolve_identifier(atv.tok(), src, true).type_ref};
     if (src_type.name() != dst_type.name()) {
       throw compiler_exception(
           atv.tok(), "cannot assign '" + src + "' to '" + dst + "' because '" +

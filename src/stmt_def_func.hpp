@@ -56,7 +56,7 @@ public:
         }
       }
       // set function type to first return type
-      set_type(returns_[0].tp);
+      set_type(returns_[0].type_ref);
     } else {
       // no return, set type to 'void's
       set_type(tc.get_type_void());
