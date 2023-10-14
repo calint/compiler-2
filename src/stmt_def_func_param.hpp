@@ -1,7 +1,7 @@
 #pragma once
 
 class stmt_def_func_param final : public statement {
-  vector<token> keywords_{};
+  token type_tk_{};
 
 public:
   inline stmt_def_func_param(toc &tc, tokenizer &tz)
@@ -10,27 +10,20 @@ public:
     assert(not tok().is_name(""));
 
     if (not tz.is_next_char(':')) {
+      // no type defined, set default
       set_type(tc.get_type_default());
       return;
     }
 
-    while (true) {
-      keywords_.emplace_back(tz.next_token());
-      if (tz.is_next_char(':')) {
-        continue;
-      }
-      break;
-    }
-
-    for (const token &kw : keywords()) {
-      if (kw.name().starts_with("reg_")) {
-        continue;
-      }
-      set_type(tc.get_type_or_throw(tok(), kw.name()));
+    // get type
+    type_tk_ = tz.next_token();
+    if (type_tk_.name().starts_with("reg_")) {
+      // register parameter, set default type
+      set_type(tc.get_type_default());
       return;
     }
 
-    set_type(tc.get_type_default());
+    set_type(tc.get_type_or_throw(tok(), type_tk_.name()));
   }
 
   inline stmt_def_func_param() = default;
@@ -45,34 +38,21 @@ public:
 
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
-    if (not keywords_.empty()) {
-      os << ":";
-      const size_t n{keywords_.size() - 1};
-      size_t i{0};
-      for (const token &t : keywords_) {
-        t.source_to(os);
-        if (i++ != n) {
-          os << ":";
-        }
-      }
+    if (type_tk_.is_name("")) {
+      return;
     }
-  }
-
-  [[nodiscard]] inline auto keywords() const -> const vector<token> & {
-    return keywords_;
+    os << ":";
+    type_tk_.source_to(os);
   }
 
   [[nodiscard]] inline auto name() const -> const string & {
     return tok().name();
   }
 
-  [[nodiscard]] inline auto get_register_or_empty() const -> string {
-    for (const token &kw : keywords()) {
-      if (!kw.name().starts_with("reg_")) {
-        continue;
-      }
-      // requested register for this argument
-      return kw.name().substr(4, kw.name().size());
+  [[nodiscard]] inline auto get_register_name_or_empty() const -> string {
+    const string &type_name{type_tk_.name()};
+    if (type_name.starts_with("reg_")) {
+      return type_name.substr(4, type_name.size());
     }
     return "";
   }

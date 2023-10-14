@@ -158,7 +158,7 @@ public:
         const expr_any &ea{args_[i]};
         const stmt_def_func_param &param{func.param(i)};
         // is the argument passed through a register?
-        const string &arg_reg{param.get_register_or_empty()};
+        const string &arg_reg{param.get_register_name_or_empty()};
         const bool argument_passed_in_register{not arg_reg.empty()};
         if (argument_passed_in_register) {
           tc.alloc_named_register_or_throw(ea, os, indent, arg_reg);
@@ -291,7 +291,7 @@ public:
       const stmt_def_func_param &param{func.param(i)};
       i++;
       // does the parameter want the value passed through a register?
-      string arg_reg{param.get_register_or_empty()};
+      string arg_reg{param.get_register_name_or_empty()};
       if (not arg_reg.empty()) {
         // argument is passed through register
         tc.alloc_named_register_or_throw(ea, os, indent + 1, arg_reg);

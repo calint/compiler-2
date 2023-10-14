@@ -3,9 +3,9 @@
 #include "stmt_def_func_param.hpp"
 
 class stmt_def_func final : public statement {
-  token name_{};
+  token name_tk_{};
   vector<stmt_def_func_param> params_{};
-  token whitespace_after_params_{};
+  token ws_after_params_{}; // whitespace after ')'
   vector<func_return_info> returns_{};
   stmt_block code_{};
   token inline_tk_{};
@@ -13,16 +13,19 @@ class stmt_def_func final : public statement {
 
 public:
   inline stmt_def_func(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)}, name_{tz.next_token()} {
+      : statement{move(tk)}, name_tk_{tz.next_token()} {
 
-    if (name_.is_name("inline")) {
-      inline_tk_ = name_;
-      name_ = tz.next_token();
+    if (name_tk_.is_name("inline")) {
+      // handle 'func inline foo(...)'
+      inline_tk_ = name_tk_;
+      name_tk_ = tz.next_token();
     }
     if (not tz.is_next_char('(')) {
+      // no parameters expected
       no_args_ = true;
     }
     if (not no_args_) {
+      // read parameters definition
       while (true) {
         if (tz.is_next_char(')')) {
           break;
@@ -38,8 +41,9 @@ public:
         }
       }
     }
-    whitespace_after_params_ = tz.next_whitespace_token();
-    if (tz.is_next_char(':')) { // returns
+    ws_after_params_ = tz.next_whitespace_token();
+    if (tz.is_next_char(':')) {
+      // function returns
       while (true) {
         const token type_tk{tz.next_token()};
         const struct func_return_info ret_info {
@@ -47,25 +51,24 @@ public:
               tz.next_token(), tc.get_type_or_throw(type_tk, type_tk.name())
         };
         returns_.emplace_back(ret_info);
-        if (tz.is_next_char(',')) {
-          continue;
+        if (not tz.is_next_char(',')) {
+          break;
         }
-        break;
       }
-      if (not returns_.empty()) {
-        set_type(returns_[0].tp);
-      }
+      // set function type to first return type
+      set_type(returns_[0].tp);
     } else {
-      // no return
+      // no return, set type to 'void's
       set_type(tc.get_type_void());
     }
-    tc.add_func(name_, name_.name(), get_type(), this);
+    tc.add_func(name_tk_, name_tk_.name(), get_type(), this);
     tc.enter_func(name(), returns_);
+    // dry-run compile step to setup context for code block parsing
     vector<string> allocated_named_registers{};
-    null_stream ns{}; // don't make output while parsing
-    init_variables(tc, ns, 0, allocated_named_registers);
+    null_stream null_strm{}; // don't make output
+    init_variables(tc, null_strm, 0, allocated_named_registers);
     code_ = {tc, tz};
-    free_allocated_registers(tc, ns, 0, allocated_named_registers);
+    free_allocated_registers(tc, null_strm, 0, allocated_named_registers);
     tc.exit_func(name());
   }
 
@@ -87,29 +90,30 @@ public:
       statement::source_to(os);
       inline_tk_.source_to(os);
     }
-    name_.source_to(os);
+    name_tk_.source_to(os);
     if (not no_args_) {
+      // function has parameters
       os << "(";
-      const size_t n{params_.size() - 1};
       size_t i{0};
       for (const stmt_def_func_param &p : params_) {
-        p.source_to(os);
-        if (i++ != n) {
+        if (i++) {
           os << ",";
         }
+        p.source_to(os);
       }
       os << ")";
     }
-    whitespace_after_params_.source_to(os);
+    ws_after_params_.source_to(os);
     if (not returns_.empty()) {
+      // return parameters
       os << ":";
       size_t i{0};
-      for (const func_return_info &ri : returns_) {
+      for (const func_return_info &ret_info : returns_) {
         if (i++) {
           os << ":";
         }
-        ri.type_tk.source_to(os);
-        ri.ident_tk.source_to(os);
+        ret_info.type_tk.source_to(os);
+        ret_info.ident_tk.source_to(os);
       }
     }
   }
@@ -119,14 +123,17 @@ public:
     source_def_to(ss, true);
     ss << endl;
 
-    const string s{ss.str()};
-    const string res{regex_replace(s, regex("\\s+"), " ")};
+    const string src{ss.str()};
+    // make comment friendly string replacing consecutive with one space
+    const string res{regex_replace(src, regex(R"(\s+)"), " ")};
     os << res << endl;
   }
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
+
     if (is_inline()) {
+      // inlined function don't have declaration
       return;
     }
 
@@ -135,28 +142,29 @@ public:
     source_def_comment_to(os);
 
     tc.enter_func(name(), returns_);
-
+    // setup stack
     toc::asm_push(tok(), os, indent + 1, "rbp");
     tc.asm_cmd(tok(), os, indent + 1, "mov", "rbp", "rsp");
-
+    // initiate variables and parameters passed through registers
     vector<string> allocated_named_registers;
     init_variables(tc, os, indent, allocated_named_registers);
-
+    // compile function body
     code_.compile(tc, os, indent, "");
-
-    if (!returns().empty()) {
-      const string &ret_name{returns()[0].ident_tk.name()};
+    // if function returns copy return value to rax
+    if (not returns().empty()) {
+      const string &ret_name{returns_[0].ident_tk.name()};
       const ident_resolved &ret_resolved{
           tc.resolve_identifier(tok(), ret_name, true)};
       tc.asm_cmd(tok(), os, indent + 1, "mov", "rax", ret_resolved.id_nasm);
     }
-
+    // restore 'rbp' and return
     toc::asm_pop(tok(), os, indent + 1, "rbp");
     toc::asm_ret(tok(), os, indent + 1);
-
+    // free allocated named registers
     free_allocated_registers(tc, os, indent, allocated_named_registers);
-
+    // empty line
     os << endl;
+    // exit function context
     tc.exit_func(name());
   }
 
@@ -178,7 +186,7 @@ public:
   [[nodiscard]] inline auto code() const -> const stmt_block & { return code_; }
 
   [[nodiscard]] inline auto name() const -> const string & {
-    return name_.name();
+    return name_tk_.name();
   }
 
   [[nodiscard]] inline auto is_inline() const -> bool {
@@ -188,8 +196,9 @@ public:
 private:
   inline void init_variables(toc &tc, ostream &os, size_t indent,
                              vector<string> &allocated_named_registers) const {
-    // return binding
+
     if (not returns().empty()) {
+      // declare variable for the return
       const token &id_tkn{returns()[0].ident_tk};
       tc.add_var(id_tkn, os, indent + 1, id_tkn.name(), get_type(), false);
     }
@@ -202,32 +211,47 @@ private:
     const size_t n{params_.size()};
     size_t stk_ix{2U << 3U}; // skip [rbp] and [return address] on stack
     for (size_t i{0}; i < n; i++) {
-      const stmt_def_func_param &pm{params_[i]};
-      const type &arg_type{pm.get_type()};
-      const string &pm_nm{pm.name()};
-      const string &reg{pm.get_register_or_empty()};
-      if (reg.empty()) {
+      const stmt_def_func_param &param{params_[i]};
+      const type &param_type{param.get_type()};
+      const string &param_name{param.name()};
+      const string &param_reg{param.get_register_name_or_empty()};
+      if (param_reg.empty()) {
         // argument not passed as register
-        tc.add_func_arg(tok(), os, indent + 1, pm_nm, arg_type, int(stk_ix));
-        // only 64 bits values on the stack
+        tc.add_func_arg(tok(), os, indent + 1, param_name, param_type,
+                        int(stk_ix));
+        //? todo. only 64 bits values on the stack
+        if (param_type.size() > tc.get_type_default().size()) {
+          throw compiler_exception(
+              param.tok(),
+              "parameter '" + param_name + "' of type '" + param_type.name() +
+                  "' can not be passed through the stack because its size, " +
+                  to_string(param_type.size()) +
+                  " bytes, is greater than register size of " +
+                  to_string(tc.get_type_default().size()) + " bytes");
+        }
+        //? todo. support for passing arbitrary size argument 
         stk_ix += tc.get_type_default().size();
         continue;
       }
+
       // argument passed as named register
       toc::indent(os, indent + 1, true);
-      os << pm_nm << ": " << reg << endl;
-      tc.alloc_named_register_or_throw(pm, os, indent + 1, reg);
+      os << param_name << ": " << param_reg << endl;
+      tc.alloc_named_register_or_throw(param, os, indent + 1, param_reg);
       // mark register as initiated
-      tc.set_var_is_initiated(reg);
-      // ! check if arg_type fits in register
-      allocated_named_registers.emplace_back(reg);
-      tc.add_alias(pm_nm, reg);
+      tc.set_var_is_initiated(param_reg);
+      //? check if arg_type fits in register
+      allocated_named_registers.emplace_back(param_reg);
+      tc.add_alias(param_name, param_reg);
     }
   }
 
   inline static void
   free_allocated_registers(toc &tc, ostream &os, size_t indent,
                            const vector<string> &allocated_named_registers) {
+
+    // free allocated named register in reverse order
+    //? necessary to be in reversed order?
     size_t i{allocated_named_registers.size()};
     while (i--) {
       tc.free_named_register(os, indent + 1, allocated_named_registers[i]);
