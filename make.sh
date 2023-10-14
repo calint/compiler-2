@@ -43,7 +43,7 @@ if [ "$1" = "prof" ]; then
 fi
 
 ./baz prog.baz > gen.s
-grep -v -e'^\s*;.*$' -e'^\s*$' gen.s > gen-m.s
+grep -v -e'^\s*;.*$' -e'^\s*$' gen.s > gen-without-comments.s
 nasm -f elf64 gen.s
 ld -s -o gen gen.o
 
