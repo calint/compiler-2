@@ -19,7 +19,7 @@
 [ ]     stmt_def_func_param
 [ ]     stmt_call
 [x]     expression
-[ ]     expr_any
+[x]     expr_any
 [ ]     expr_ops_list
 [ ]     expr_type_value
 [ ]     bool_op

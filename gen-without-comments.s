@@ -52,26 +52,26 @@ main:
    sub rsp, 16
      cmp_49_12:
      cmp qword[rbp-16], 2
-     jne false_49_12
-     true_49_12:  ; opt1
+     jne bool_false_49_12
+     bool_true_49_12:  ; opt1
      mov r15, true
-     jmp end_49_12
-     false_49_12:
+     jmp bool_end_49_12
+     bool_false_49_12:
      mov r15, false
-     end_49_12:
+     bool_end_49_12:
    push r15
    call assert
    add rsp, 24
    sub rsp, 16
      cmp_50_12:
      cmp qword[rbp-8], 0xb
-     jne false_50_12
-     true_50_12:  ; opt1
+     jne bool_false_50_12
+     bool_true_50_12:  ; opt1
      mov r15, true
-     jmp end_50_12
-     false_50_12:
+     jmp bool_end_50_12
+     bool_false_50_12:
      mov r15, false
-     end_50_12:
+     bool_end_50_12:
    push r15
    call assert
    add rsp, 24
@@ -86,39 +86,39 @@ main:
    sub rsp, 52
      cmp_56_12:
      cmp qword[rbp-52], 10
-     jne false_56_12
-     true_56_12:  ; opt1
+     jne bool_false_56_12
+     bool_true_56_12:  ; opt1
      mov r15, true
-     jmp end_56_12
-     false_56_12:
+     jmp bool_end_56_12
+     bool_false_56_12:
      mov r15, false
-     end_56_12:
+     bool_end_56_12:
    push r15
    call assert
    add rsp, 60
    sub rsp, 52
      cmp_57_12:
      cmp qword[rbp-44], 2
-     jne false_57_12
-     true_57_12:  ; opt1
+     jne bool_false_57_12
+     bool_true_57_12:  ; opt1
      mov r15, true
-     jmp end_57_12
-     false_57_12:
+     jmp bool_end_57_12
+     bool_false_57_12:
      mov r15, false
-     end_57_12:
+     bool_end_57_12:
    push r15
    call assert
    add rsp, 60
    sub rsp, 52
      cmp_58_12:
      cmp dword[rbp-36], 0xff0000
-     jne false_58_12
-     true_58_12:  ; opt1
+     jne bool_false_58_12
+     bool_true_58_12:  ; opt1
      mov r15, true
-     jmp end_58_12
-     false_58_12:
+     jmp bool_end_58_12
+     bool_false_58_12:
      mov r15, false
-     end_58_12:
+     bool_end_58_12:
    push r15
    call assert
    add rsp, 60
@@ -135,26 +135,26 @@ main:
    sub rsp, 68
      cmp_62_12:
      cmp qword[rbp-52], -1
-     jne false_62_12
-     true_62_12:  ; opt1
+     jne bool_false_62_12
+     bool_true_62_12:  ; opt1
      mov r15, true
-     jmp end_62_12
-     false_62_12:
+     jmp bool_end_62_12
+     bool_false_62_12:
      mov r15, false
-     end_62_12:
+     bool_end_62_12:
    push r15
    call assert
    add rsp, 76
    sub rsp, 68
      cmp_63_12:
      cmp qword[rbp-44], -2
-     jne false_63_12
-     true_63_12:  ; opt1
+     jne bool_false_63_12
+     bool_true_63_12:  ; opt1
      mov r15, true
-     jmp end_63_12
-     false_63_12:
+     jmp bool_end_63_12
+     bool_false_63_12:
      mov r15, false
-     end_63_12:
+     bool_end_63_12:
    push r15
    call assert
    add rsp, 76
@@ -167,39 +167,39 @@ main:
    sub rsp, 88
      cmp_66_12:
      cmp qword[rbp-88], -1
-     jne false_66_12
-     true_66_12:  ; opt1
+     jne bool_false_66_12
+     bool_true_66_12:  ; opt1
      mov r15, true
-     jmp end_66_12
-     false_66_12:
+     jmp bool_end_66_12
+     bool_false_66_12:
      mov r15, false
-     end_66_12:
+     bool_end_66_12:
    push r15
    call assert
    add rsp, 96
    sub rsp, 88
      cmp_67_12:
      cmp qword[rbp-80], -2
-     jne false_67_12
-     true_67_12:  ; opt1
+     jne bool_false_67_12
+     bool_true_67_12:  ; opt1
      mov r15, true
-     jmp end_67_12
-     false_67_12:
+     jmp bool_end_67_12
+     bool_false_67_12:
      mov r15, false
-     end_67_12:
+     bool_end_67_12:
    push r15
    call assert
    add rsp, 96
    sub rsp, 88
      cmp_68_12:
      cmp dword[rbp-72], 0xff0000
-     jne false_68_12
-     true_68_12:  ; opt1
+     jne bool_false_68_12
+     bool_true_68_12:  ; opt1
      mov r15, true
-     jmp end_68_12
-     false_68_12:
+     jmp bool_end_68_12
+     bool_false_68_12:
      mov r15, false
-     end_68_12:
+     bool_end_68_12:
    push r15
    call assert
    add rsp, 96

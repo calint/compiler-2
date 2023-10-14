@@ -93,10 +93,10 @@ public:
       const string &postfix{src_loc +
                             (call_path.empty() ? "" : ("_" + call_path))};
       // labels to jump to depending on the evaluation
-      const string &jmp_to_if_true{"true_" + postfix};
-      const string &jmp_to_if_false{"false_" + postfix};
+      const string &jmp_to_if_true{"bool_true_" + postfix};
+      const string &jmp_to_if_false{"bool_false_" + postfix};
       // the end of the assign
-      const string &jmp_to_end{"end_" + postfix};
+      const string &jmp_to_end{"bool_end_" + postfix};
       // compile and possibly evaluate constant expression
       optional<bool> const_eval{
           bol.compile(tc, os, indent, jmp_to_if_false, jmp_to_if_true, false)};
