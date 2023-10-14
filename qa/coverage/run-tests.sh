@@ -1,4 +1,8 @@
 #/bin/sh
+# tools:
+#   llvm-profdata: ?
+#        llvm-cov: 15.0.7
+#         genhtml: 1.16
 
 # change to directory of the script
 cd $(dirname "$0")
