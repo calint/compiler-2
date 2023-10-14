@@ -56,13 +56,13 @@ public:
     } else {
       // if a ...
       is_shorthand_ = true;
-      resolve_if_op_is_expression(tc);
+      resolve_if_op_is_expression();
       return;
       // throw compiler_error(*this,"expected boolean operation
       // '=','<','<=','>','>='");
     }
     rhs_ = {tc, tz};
-    resolve_if_op_is_expression(tc);
+    resolve_if_op_is_expression();
   }
 
   inline bool_op() = default;
@@ -142,8 +142,7 @@ public:
         toc::indent(os, indent, true);
         os << "const eval to " << (b ? "true" : "false") << endl;
         if (b) {
-          toc::indent(os, indent);
-          os << "jmp " << jmp_to_if_true << endl;
+          toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_true);
         }
         return b;
       }
@@ -222,12 +221,8 @@ public:
   }
 
   [[nodiscard]] inline auto identifier() const -> const string & override {
-    assert(not is_expression());
-
+    assert(not is_expression_);
     return lhs_.identifier();
-
-    throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                          to_string(__LINE__));
   }
 
   [[nodiscard]] inline auto is_expression() const -> bool override {
@@ -235,7 +230,7 @@ public:
   }
 
 private:
-  inline void resolve_if_op_is_expression(const toc &tc) {
+  inline void resolve_if_op_is_expression() {
     if (is_not_) {
       is_expression_ = true;
       return;
@@ -249,12 +244,6 @@ private:
     // short-hand expressions
     if (lhs_.is_expression()) {
       is_expression_ = true;
-      return;
-    }
-
-    // check if lhs is a bool
-    if (lhs_.get_type().name() == tc.get_type_bool().name()) {
-      is_expression_ = false;
       return;
     }
 

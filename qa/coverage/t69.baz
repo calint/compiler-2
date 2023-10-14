@@ -24,6 +24,9 @@ func inline main {
     var j : bool = (false or false and true) or true
     var k : bool = (true and false) or (true or false) or (true and false)
     var l : bool = (true)
+    var m : bool = not true == true or not false == false
+    var n : bool = not true == false or not false == false
+    var o : bool = true
 
     assert(a)
     assert(not b)
@@ -37,4 +40,7 @@ func inline main {
     assert(j)
     assert(k)
     assert(l)
+    assert(not m)
+    assert(n)
+    assert(o)
 }

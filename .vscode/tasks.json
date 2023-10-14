@@ -65,56 +65,6 @@
                 "cwd": "${workspaceFolder}/qa/lint/"
             },
             "problemMatcher": []
-        },
-        {
-            "type": "cppbuild",
-            "label": "baz build",
-            "command": "/usr/bin/g++",
-            "args": [
-                "-std=c++23",
-                "src/main.cpp",
-                "-o",
-                "baz",
-                "-g",
-                "-fdiagnostics-color=always",
-                "-Wfatal-errors",
-                "-Werror",
-                "-Wall",
-                "-Wextra",
-                "-Wpedantic",
-                "-Weffc++",
-                "-Wsign-conversion",
-                "-Wold-style-cast",
-                "-Wshadow",
-                "-Wctad-maybe-unsupported",
-                "-Wconversion",
-                "-Wcast-align",
-                "-Wcast-qual",
-                "-Wctor-dtor-privacy",
-                "-Wdisabled-optimization",
-                "-Wlogical-op",
-                "-Wmissing-declarations",
-                "-Wmissing-include-dirs",
-                "-Woverloaded-virtual",
-                "-Wredundant-decls",
-                "-Wsign-promo",
-                "-Wstrict-null-sentinel",
-                "-Wswitch-default",
-                "-Wundef",
-                "-Wfloat-equal",
-                "-Wnoexcept",
-                "-Wno-stringop-truncation"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": [
-                "$gcc"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
         }
     ]
 }
