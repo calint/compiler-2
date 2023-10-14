@@ -1,5 +1,5 @@
 [ ] review new code
-[ ] clean-up:
+[o] clean-up:
 [x]     toc
 [x]     statement
 [x]     stmt_return
@@ -224,7 +224,7 @@
      possibly with a post processor of nasm file
         je if_14_8_code
         cmp_14_26:
-[ ]   review fragile implementation
+[x]   review fragile implementation
 [x] fix generated code
         jmp cmp_13_26
         cmp_13_26:
