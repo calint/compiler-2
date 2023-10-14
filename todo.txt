@@ -9,6 +9,9 @@
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
 [ ] func f(p : point copy) copies point to callee stack
 [ ] func f(p : point const) const is default func f(p : point)
+[ ] function return a non-register passable type
+[ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
+[ ] func foo(object& self, arg) can be called with o.foo(arg)
 [ ] multiple return values: func f() : point pos, point vel { ... }
 [ ]    var p,v = f()
 [ ] string type
@@ -25,18 +28,12 @@
 [ ] handle constants when deducing operand size 
      -> deduce if possible to the size of the desired type
 [ ] specify whether ok for an op to truncate value instead of error
-[ ] expr_any: deduce expression type to bool or integral
+[ ] expr_any: deduce expression type to bool or numbers
 [ ]   is_const, is_expression, is_bool, is_integral
-[ ] func object(object& self, pos, vel, color) called when 'var o : object = {...}'
-[ ] func foo(object& self, arg) can be called with o.foo(arg)
 [ ] let i=1 creates a constant
-[ ] function arguments as references
-[ ]   pass effective address to the type
-[ ] deduce to expr_ops_list or bool_ops_list
-[ ] function return written to reference
 [ ] def table{x,y,z}
-[ ] pointers?
-[ ] multiple return values assignment: var a,b=foo()  a,b=foo()
+[-] pointers?
+    => try without
 [ ] tokenizer to keep track of line-number instead of computing it
 [ ] token.compile assumes is_str is field (db)
 [ ]   review fragile implementation
