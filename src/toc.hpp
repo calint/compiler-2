@@ -791,7 +791,8 @@ public:
         os << op << " " << dst_resolved << ", " << src_resolved << endl;
         return;
       }
-
+      // both operands are memory references
+      //   use scratch register for transfer
       const string &reg{alloc_scratch_register(src_loc, os, indnt)};
       const string &reg_sized{
           get_register_operand_for_size(src_loc, reg, src_size)};
@@ -814,7 +815,7 @@ public:
         }
       }
       // both operands refer to memory
-      // use scratch register for transfer
+      //   use scratch register for transfer
       const string &reg{alloc_scratch_register(src_loc, os, indnt)};
       const string &reg_sized{
           get_register_operand_for_size(src_loc, reg, dst_size)};

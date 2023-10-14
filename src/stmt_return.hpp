@@ -29,6 +29,7 @@ public:
         const string &ret_resolved{
             tc.resolve_identifier(tok(), returns.at(0).ident_tk.name(), false)
                 .id_nasm};
+        //? todo. check that the return value has been assigned
         // assign return value to 'rax's
         tc.asm_cmd(tok(), os, indent, "mov", "rax", ret_resolved);
       }
