@@ -47,7 +47,7 @@ grep -v -e'^\s*;.*$' -e'^\s*$' gen.s > gen-without-comments.s
 nasm -f elf64 gen.s
 ld -s -o gen gen.o
 
-ls --color -la baz gen.s gen-m.s gen
+ls --color -la baz gen.s gen-without-comments.s gen
 
 echo $SEP
 echo    '              lines   words   chars'
@@ -55,8 +55,8 @@ echo -n '    source: '; cat src/* | wc
 echo -n '   gzipped: '; cat src/* | gzip | wc 
 echo -n 'baz source: '; cat prog.baz | grep -v -e'^\s*$' | wc
 echo -n '   gzipped: '; cat prog.baz | grep -v -e'^\s*$' | gzip | wc
-echo -n 'asm source: '; cat gen-m.s | wc
-echo -n '   gzipped: '; cat gen-m.s | gzip | wc
+echo -n 'asm source: '; cat gen-without-comments.s | wc
+echo -n '   gzipped: '; cat gen-without-comments.s | gzip | wc
 echo $SEP
 ./gen
 echo $SEP

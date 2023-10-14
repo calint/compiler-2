@@ -22,11 +22,13 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
+
     toc::indent(os, indent, true);
     tc.comment_token(os, tok());
+
     // make unique label for this loop considering in-lined functions
-    // current path of source locations where in-lined functions have been
-    // called
+    //   current path of source locations where in-lined functions have been
+    //     called
     const string &call_path{tc.get_inline_call_path(tok())};
     // current source location
     const string &src_loc{tc.source_location_for_use_in_label(tok())};
@@ -36,8 +38,9 @@ public:
     toc::asm_label(tok(), os, indent, lbl);
     // enter loop scope
     tc.enter_loop(lbl);
+    // compile loop body
     code_.compile(tc, os, indent);
-    // jump to loop
+    // jump to loop start after body
     toc::asm_jmp(tok(), os, indent, lbl);
     // exit loop label
     toc::asm_label(tok(), os, indent, lbl + "_end");

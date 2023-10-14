@@ -15,10 +15,13 @@ public:
       : statement{tz.next_whitespace_token()}, is_one_statement_{
                                                    not tz.is_next_char('{')} {
 
+    set_type(tc.get_type_void());
+
     tc.enter_block();
     while (true) {
       // comments, semi-colon not considered a statment
       bool last_statement_considered_no_statment{false};
+      // end-of block?
       if (tz.is_next_char('}')) {
         if (not is_one_statement_) {
           break;
@@ -63,7 +66,6 @@ public:
       }
     }
     tc.exit_block();
-    set_type(tc.get_type_void());
   }
 
   inline stmt_block() = default;
@@ -89,6 +91,7 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
+
     tc.enter_block();
     for (const auto &s : stms_) {
       s->compile(tc, os, indent + 1);

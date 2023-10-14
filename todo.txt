@@ -1,10 +1,14 @@
 [ ] review new code
-[ ] clean-up: review class, struct, function names
+[ ] clean-up:
 [x]     toc
+[x]     stmt_return
+[x]     stmt_breaks
+[x]     stmt_continue
+[x]     stmt_loops
+[x]     stmt_comment
+[x]     stmt_block
+[x]     statement
 [ ] toc: rename baz_ident
-[ ] clean-up: review argument names
-[x]     toc
-[ ] clean-up: review variable names
 [ ] var pos : point = foo()
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
 [ ] func f(p : point copy) copies point to callee stack
