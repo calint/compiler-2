@@ -30,6 +30,10 @@
 [ ]     expr_ops_list
 [ ]     bool_op
 [ ]     bool_ops_list
+[ ]     unary_ops
+[ ]     tokenizer
+[ ]     token
+[ ]     lut
 [ ]     main.cpp
 [ ] rename compiler_exception
 [ ] consider disabling function definitions and calls without ()

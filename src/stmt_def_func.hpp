@@ -133,7 +133,6 @@ public:
                       [[maybe_unused]] const string &dst = "") const override {
 
     if (is_inline()) {
-      // inlined function don't have declaration
       return;
     }
 
@@ -203,6 +202,34 @@ private:
       tc.add_var(id_tkn, os, indent + 1, id_tkn.name(), get_type(), false);
     }
 
+    if (is_inline()) {
+      const size_t n{params_.size()};
+      for (size_t i{0}; i < n; i++) {
+        const stmt_def_func_param &param{params_[i]};
+        const type &param_type{param.get_type()};
+        const string &param_name{param.name()};
+        const string &param_reg{param.get_register_name_or_empty()};
+        if (param_reg.empty()) {
+          // argument not passed as register
+          tc.add_func_arg(tok(), os, indent + 1, param_name, param_type, 0);
+          continue;
+        }
+
+        // argument passed as named register
+        toc::indent(os, indent + 1, true);
+        os << param_name << ": " << param_reg << endl;
+        tc.alloc_named_register_or_throw(param, os, indent + 1, param_reg);
+        // mark register as initiated
+        tc.set_var_is_initiated(param_reg);
+        //? check if arg_type fits in register
+        allocated_named_registers.emplace_back(param_reg);
+        tc.add_alias(param_name, param_reg);
+      }
+      return;
+    }
+
+    // not inline function
+
     // stack is now: ...,[prev rsp],...,[arg n],[arg n-1],...,[arg 1],[return
     // address],[rbp]
     //   (some arguments might be passed through registers)
@@ -219,17 +246,17 @@ private:
         // argument not passed as register
         tc.add_func_arg(tok(), os, indent + 1, param_name, param_type,
                         int(stk_ix));
-        //? todo. only 64 bits values on the stack
         if (param_type.size() > tc.get_type_default().size()) {
+          //? todo. support for passing arbitrary size argument
           throw compiler_exception(
               param.tok(),
               "parameter '" + param_name + "' of type '" + param_type.name() +
-                  "' can not be passed through the stack because its size, " +
+                  "' can not be passed through the stack "
+                  "because its size, " +
                   to_string(param_type.size()) +
                   " bytes, is greater than register size of " +
                   to_string(tc.get_type_default().size()) + " bytes");
         }
-        //? todo. support for passing arbitrary size argument 
         stk_ix += tc.get_type_default().size();
         continue;
       }
