@@ -35,6 +35,7 @@
 [x]     lut
 [x]     main.cpp
 [ ] check that return value is initiated before copy to rax
+[ ] change vector indexing to safer .at(i)
 [ ] rename compiler_exception
 [ ] consider disabling function definitions and calls without ()
 [ ] toc: rename baz_ident

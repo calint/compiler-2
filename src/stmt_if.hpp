@@ -56,15 +56,15 @@ public:
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
     // output first branch
-    const stmt_if_branch &branch{branches_[0]};
+    const stmt_if_branch &branch{branches_.at(0)};
     branch.source_to(os);
     // output the remaining 'else if' branches
     const size_t n{branches_.size()};
     for (size_t i{1}; i < n; i++) {
-      const stmt_if_branch &else_if_branch{branches_[i]};
+      const stmt_if_branch &else_if_branch{branches_.at(i)};
       // 'else if' tokens as read from source
-      else_if_tokens_[(i - 1) << 1U].source_to(os);
-      else_if_tokens_[((i - 1) << 1U) + 1].source_to(os);
+      else_if_tokens_.at((i - 1) << 1U).source_to(os);
+      else_if_tokens_.at(((i - 1) << 1U) + 1).source_to(os);
       else_if_branch.source_to(os);
     }
     // the 'else' code
@@ -90,12 +90,12 @@ public:
 
     bool branch_evaluated_to_true{false};
     for (size_t i{0}; i < n; i++) {
-      const stmt_if_branch &e{branches_[i]};
+      const stmt_if_branch &e{branches_.at(i)};
       string jmp_if_false{label_else_branch};
       string jmp_after_if{label_after_if};
       if (i < n - 1) {
         // if branch is false jump to next if
-        jmp_if_false = branches_[i + 1].if_bgn_label(tc);
+        jmp_if_false = branches_.at(i + 1).if_bgn_label(tc);
       } else {
         // if last branch and no 'else' then
         //   no need to jump to 'after_if' after the code of the branch
