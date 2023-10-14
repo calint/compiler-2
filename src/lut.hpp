@@ -4,6 +4,7 @@ template <class T> class lut final {
   struct el {
     string key;
     T data;
+
     [[nodiscard]] inline auto is_key(const string &k) const -> bool {
       return k == key;
     }

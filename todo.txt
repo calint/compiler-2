@@ -32,8 +32,8 @@
 [ ]     bool_ops_list
 [x]     unary_ops
 [ ]     tokenizer
-[ ]     token
-[ ]     lut
+[x]     token
+[x]     lut
 [ ]     main.cpp
 [ ] check that return value is initiated before copy to rax
 [ ] rename compiler_exception

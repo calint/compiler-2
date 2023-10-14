@@ -54,8 +54,6 @@ public:
     return ws_left_.empty() and name_.empty() and ws_right_.empty();
   }
 
-  // inline bool is_empty()const{return name_.empty();}
-
   [[nodiscard]] inline auto total_length_in_chars() const -> size_t {
     return ws_left_.length() + name_.length() + ws_right_.length();
   }
