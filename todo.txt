@@ -39,6 +39,9 @@
 [ ] rename compiler_exception
 [ ] consider disabling function definitions and calls without ()
 [ ] toc: rename baz_ident
+[ ] stmt_call: check arguments vs parameters in constructor instead of at compile
+[ ] fix 'cmp' with left hand side constant
+    => compilation error
 [ ] var pos : point = foo()
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
 [ ] func f(p : point copy) copies point to callee stack
@@ -57,8 +60,6 @@
 [ ] consider cmovxx when evaluating a boolean expression
 [ ] floating point numbers
 [ ] func f(p : point) {} ... f({x, y})
-[ ] stmt_call: check arguments vs parameters in constructor instead of at compile
-[ ] fix 'cmp' with left hand side constant
 [ ] handle constants when deducing operand size 
      -> deduce if possible to the size of the desired type
 [ ] specify whether ok for an op to truncate value instead of error

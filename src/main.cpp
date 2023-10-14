@@ -144,9 +144,9 @@ inline void unary_ops::compile([[maybe_unused]] toc &tc, ostream &os,
   }
 }
 
-// declared in 'expr_type_value.hpps':
+// declared in 'expr_type_value.hpp':
 //   resolves circular reference: expr_type_value -> expr_any ->
-//   expr_type_values
+//   expr_type_value
 inline void expr_type_value::source_to(ostream &os) const {
   statement::source_to(os);
   if (not tok().is_name("")) {
@@ -232,7 +232,7 @@ static void optimize_jumps_1(istream &is, ostream &os) {
   const regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
   const regex rxlbl{R"(^\s*(.+):.*$)"};
   const regex rxcomment{R"(^\s*;.*$)"};
-  smatch match;
+  smatch match{};
   while (true) {
     string line1{};
     getline(is, line1);
@@ -240,7 +240,7 @@ static void optimize_jumps_1(istream &is, ostream &os) {
       break;
     }
 
-    if (!regex_search(line1, match, rxjmp)) {
+    if (not regex_search(line1, match, rxjmp)) {
       os << line1 << endl;
       continue;
     }
@@ -257,7 +257,7 @@ static void optimize_jumps_1(istream &is, ostream &os) {
       break;
     }
 
-    if (!regex_search(line2, match, rxlbl)) {
+    if (not regex_search(line2, match, rxlbl)) {
       os << line1 << endl;
       for (const string &s : comments) {
         os << s << endl;
@@ -271,7 +271,7 @@ static void optimize_jumps_1(istream &is, ostream &os) {
     // if not same label then output the buffered data and continues
     if (jmplbl != lbl) {
       os << line1 << endl;
-      for (const auto &s : comments) {
+      for (const string &s : comments) {
         os << s << endl;
       }
       os << line2 << endl;
@@ -299,7 +299,7 @@ static void optimize_jumps_2(istream &is, ostream &os) {
   const regex rxjxx{R"(^\s*(j[a-z][a-z]?)\s+(.+)\s*$)"};
   const regex rxlbl{R"(^\s*(.+):.*$)"};
   const regex rxcomment{R"(^\s*;.*$)"};
-  smatch match;
+  smatch match{};
 
   while (true) {
     string line1{};
@@ -308,7 +308,7 @@ static void optimize_jumps_2(istream &is, ostream &os) {
       break;
     }
 
-    if (!regex_search(line1, match, rxjxx)) {
+    if (not regex_search(line1, match, rxjxx)) {
       os << line1 << endl;
       continue;
     }
@@ -325,9 +325,9 @@ static void optimize_jumps_2(istream &is, ostream &os) {
       }
       break;
     }
-    if (!regex_search(line2, match, rxjmp)) {
+    if (not regex_search(line2, match, rxjmp)) {
       os << line1 << endl;
-      for (const auto &s : comments2) {
+      for (const string &s : comments2) {
         os << s << endl;
       }
       os << line2 << endl;
@@ -346,13 +346,13 @@ static void optimize_jumps_2(istream &is, ostream &os) {
       break;
     }
 
-    if (!regex_search(line3, match, rxlbl)) {
+    if (not regex_search(line3, match, rxlbl)) {
       os << line1 << endl;
-      for (const auto &s : comments2) {
+      for (const string &s : comments2) {
         os << s << endl;
       }
       os << line2 << endl;
-      for (const auto &s : comments3) {
+      for (const string &s : comments3) {
         os << s << endl;
       }
       os << line3 << endl;
@@ -362,11 +362,11 @@ static void optimize_jumps_2(istream &is, ostream &os) {
 
     if (jxxlbl != lbl) {
       os << line1 << endl;
-      for (const auto &s : comments2) {
+      for (const string &s : comments2) {
         os << s << endl;
       }
       os << line2 << endl;
-      for (const auto &s : comments3) {
+      for (const string &s : comments3) {
         os << s << endl;
       }
       os << line3 << endl;
@@ -391,11 +391,11 @@ static void optimize_jumps_2(istream &is, ostream &os) {
       jxx_inv = "jg";
     } else {
       os << line1 << endl;
-      for (const auto &s : comments2) {
+      for (const string &s : comments2) {
         os << s << endl;
       }
       os << line2 << endl;
-      for (const auto &s : comments3) {
+      for (const string &s : comments3) {
         os << s << endl;
       }
       os << line3 << endl;
@@ -404,12 +404,13 @@ static void optimize_jumps_2(istream &is, ostream &os) {
     //   je if_14_8_code
     //   cmp_14_26:
     // get the whitespaces
-    const string &ws_before{line1.substr(0, line1.find_first_not_of(" \t\n\r\f\v"))};
-    for (const auto &s : comments2) {
+    const string &ws_before{
+        line1.substr(0, line1.find_first_not_of(" \t\n\r\f\v"))};
+    for (const string &s : comments2) {
       os << s << endl;
     }
     os << ws_before << jxx_inv << " " << jmplbl << "  ; opt2" << endl;
-    for (const auto &s : comments3) {
+    for (const string &s : comments3) {
       os << s << endl;
     }
     os << line3 << endl;
