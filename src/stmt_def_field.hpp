@@ -3,16 +3,16 @@
 #include "toc.hpp"
 
 class stmt_def_field final : public statement {
-  token name_{};
+  token name_tk_{};
   unary_ops uops_{};
   token initial_value_{};
 
 public:
   inline stmt_def_field(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)}, name_{tz.next_token()} {
+      : statement{move(tk)}, name_tk_{tz.next_token()} {
 
-    if (name_.is_empty()) {
-      throw compiler_exception(name_, "expected field name");
+    if (name_tk_.is_empty()) {
+      throw compiler_exception(name_tk_, "expected field name");
     }
 
     if (not tz.is_next_char('=')) {
@@ -20,14 +20,16 @@ public:
     }
 
     uops_ = unary_ops{tz};
+
     initial_value_ = tz.next_token();
 
     if (initial_value_.is_string()) {
-      set_type(tc.get_type_void()); // ! not implemented
+      set_type(tc.get_type_void()); //? not implemented
     } else {
-      set_type(tc.get_type_default());
+      set_type(tc.get_type_default()); //? only default type supported
     }
-    tc.add_field(tok(), name_.name(), this, initial_value_.is_string());
+
+    tc.add_field(tok(), name_tk_.name(), this, initial_value_.is_string());
   }
 
   inline stmt_def_field() = default;
@@ -40,7 +42,7 @@ public:
 
   inline void source_to(ostream &os) const override {
     statement::source_to(os);
-    name_.source_to(os);
+    name_tk_.source_to(os);
     os << "=";
     uops_.source_to(os);
     initial_value_.source_to(os);
@@ -48,16 +50,19 @@ public:
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       [[maybe_unused]] const string &dst = "") const override {
+
     tc.comment_source(*this, os, indent);
-    os << name_.name() << ':';
+    os << name_tk_.name() << ':';
     if (initial_value_.is_string()) {
       os << " db '";
       initial_value_.compile_to(os);
       os << "'\n";
       toc::indent(os, indent);
-      os << name_.name() << ".len equ $-" << name_.name() << "\n";
+      // the length of th string
+      os << name_tk_.name() << ".len equ $-" << name_tk_.name() << "\n";
       return;
     }
+    // default type is i64
     os << " dq ";
     os << uops_.to_string();
     initial_value_.compile_to(os);

@@ -12,7 +12,11 @@
 [x]     stmt_if_branch
 [x]     stmt_def_var
 [x]     stmt_assign_var
-[ ]     
+[x]     stmt_def_field
+[ ]     stmt_def_func
+[ ]     stmt_def_func_param
+[ ]     stmt_def_type
+[ ]     stmt_call
 [ ] toc: rename baz_ident
 [ ] var pos : point = foo()
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
