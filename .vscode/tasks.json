@@ -38,8 +38,6 @@
                 "-Wundef",
                 "-Wfloat-equal",
                 "-Wnoexcept",
-                "-Wno-stringop-truncation",
-                "-Wno-unused-function",
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
