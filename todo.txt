@@ -26,7 +26,7 @@
 [x]     stmt_def_func
 [x]     stmt_def_func_param
 [x]     stmt_call
-[ ]     expr_ops_list
+[x]     expr_ops_list
 [ ]     bool_op
 [ ]     bool_ops_list
 [x]     unary_ops

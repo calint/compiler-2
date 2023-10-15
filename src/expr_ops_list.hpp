@@ -5,6 +5,11 @@
 #include "toc.hpp"
 
 class expr_ops_list final : public expression {
+  bool enclosed_{}; //  (a+b) vs a+b
+  vector<unique_ptr<statement>> exprs_{};
+  vector<char> ops_{};
+  unary_ops uops_{}; // e.g. ~(a+b)
+
 public:
   inline expr_ops_list(
       toc &tc, tokenizer &tz, const bool in_args = false,
@@ -17,18 +22,18 @@ public:
     // read first expression i.e. =-a/-(b+1)
     if (first_expression) {
       // called in a recursion with first expression provided
-      exps_.emplace_back(move(first_expression));
+      exprs_.emplace_back(move(first_expression));
     } else {
       // check if new recursion is necessary e.g. =-a/-(-(b+c)+d), tz at "-a/-("
       const unary_ops uo{tz};
       if (tz.is_next_char('(')) {
         // recursion of sub-expression with unary ops
-        exps_.emplace_back(
+        exprs_.emplace_back(
             make_unique<expr_ops_list>(tc, tz, in_args, true, uo));
       } else {
         // statement, push back the unary ops to attach them to the statement
         uo.put_back(tz);
-        exps_.emplace_back(create_statement_from_tokenizer(tc, tz));
+        exprs_.emplace_back(create_statement_from_tokenizer(tc, tz));
       }
     }
 
@@ -92,9 +97,9 @@ public:
         //   =[(=a) +[(=b)(*c)(+1)]]
         precedence = next_precedence;
         ops_.pop_back();
-        unique_ptr<statement> last_stmt_in_expr{move(exps_.back())};
-        exps_.pop_back();
-        exps_.emplace_back(make_unique<expr_ops_list>(tc, tz, in_args, false,
+        unique_ptr<statement> last_stmt_in_expr{move(exprs_.back())};
+        exprs_.pop_back();
+        exprs_.emplace_back(make_unique<expr_ops_list>(tc, tz, in_args, false,
                                                       unary_ops{}, precedence,
                                                       move(last_stmt_in_expr)));
         continue;
@@ -116,7 +121,7 @@ public:
       const unary_ops uo{tz};
       if (tz.is_next_char('(')) {
         // subexpression, recurse
-        exps_.emplace_back(
+        exprs_.emplace_back(
             make_unique<expr_ops_list>(tc, tz, in_args, true, uo));
         continue;
       }
@@ -131,7 +136,7 @@ public:
                                  "unexpected '" + string{tz.peek_char()} + "'");
       }
       // move statement to list
-      exps_.emplace_back(move(st));
+      exprs_.emplace_back(move(st));
     }
   }
 
@@ -151,7 +156,7 @@ public:
       os << "(";
     }
 
-    exps_.at(0)->source_to(os);
+    exprs_.at(0)->source_to(os);
     const size_t n{ops_.size()};
     for (size_t i{0}; i < n; i++) {
       const char op{ops_.at(i)};
@@ -160,7 +165,7 @@ public:
         // << or >>
         os << op;
       }
-      exps_.at(i + 1)->source_to(os);
+      exprs_.at(i + 1)->source_to(os);
     }
 
     if (enclosed_) {
@@ -205,25 +210,25 @@ public:
   }
 
   [[nodiscard]] inline auto identifier() const -> const string & override {
-    assert(exps_.size() == 1);
+    assert(exprs_.size() == 1);
 
-    return exps_.at(0)->identifier();
+    return exprs_.at(0)->identifier();
   }
 
   [[nodiscard]] inline auto get_unary_ops() const
       -> const unary_ops & override {
 
-    if (exps_.size() == 1) { //? why the unary ops of first expression
-      return exps_.at(0)->get_unary_ops();
+    if (exprs_.size() == 1) { //? why the unary ops of first expression
+      return exprs_.at(0)->get_unary_ops();
     }
 
     return uops_;
   }
 
   [[nodiscard]] inline auto get_type() const -> const type & override {
-    assert(not exps_.empty());
+    assert(not exprs_.empty());
     //? hack  find the size of the largest integral element
-    return exps_.at(0)->get_type();
+    return exprs_.at(0)->get_type();
   }
 
   [[nodiscard]] inline auto is_expression() const -> bool override {
@@ -231,8 +236,8 @@ public:
       return true;
     }
 
-    if (exps_.size() == 1) {
-      return exps_.at(0)->is_expression();
+    if (exprs_.size() == 1) {
+      return exprs_.at(0)->is_expression();
     }
 
     return true;
@@ -246,12 +251,12 @@ private:
     // first element is assigned to destination
     const ident_resolved &dst_resolved{
         tc.resolve_identifier(tok(), dst, false)};
-    asm_op(tc, os, indent, '=', dst_resolved, *exps_.at(0));
+    asm_op(tc, os, indent, '=', dst_resolved, *exprs_.at(0));
 
     // remaining elements are +,-,*,/,%,|,&,^,<<,>>
     const size_t n{ops_.size()};
     for (size_t i{0}; i < n; i++) {
-      asm_op(tc, os, indent, ops_[i], dst_resolved, *exps_.at(i + 1));
+      asm_op(tc, os, indent, ops_[i], dst_resolved, *exprs_.at(i + 1));
     }
 
     // apply unary expressions on destination
@@ -422,6 +427,7 @@ private:
       tc.free_scratch_register(os, indent, reg);
       return;
     }
+    // source is not a constant
     const unary_ops &uops{src.get_unary_ops()};
     if (uops.is_empty()) {
       const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
@@ -431,6 +437,7 @@ private:
       tc.free_scratch_register(os, indent, reg);
       return;
     }
+    // source is not a constant and unary ops need to be applied
     const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
     tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
     uops.compile(tc, os, indent, reg);
@@ -440,7 +447,8 @@ private:
   }
 
   inline static void asm_op_add_sub(toc &tc, ostream &os, const size_t indent,
-                                    const string &op, const string &op_inv,
+                                    const string &op,
+                                    const string &op_when_negated,
                                     const ident_resolved &dst,
                                     const statement &src) {
     if (src.is_expression()) {
@@ -450,19 +458,21 @@ private:
       tc.free_scratch_register(os, indent, reg);
       return;
     }
+    // src is not a expression
     const ident_resolved &src_resolved{tc.resolve_identifier(src, true)};
     if (src_resolved.is_const()) {
       tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
                  src.get_unary_ops().to_string() + src_resolved.id_nasm);
       return;
     }
+    // src is not a constant
     const unary_ops &uops{src.get_unary_ops()};
     if (uops.is_empty()) {
       tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, src_resolved.id_nasm);
       return;
     }
     if (uops.is_only_negated()) {
-      tc.asm_cmd(src.tok(), os, indent, op_inv, dst.id_nasm,
+      tc.asm_cmd(src.tok(), os, indent, op_when_negated, dst.id_nasm,
                  src_resolved.id_nasm);
       return;
     }
@@ -483,17 +493,20 @@ private:
       tc.free_scratch_register(os, indent, reg);
       return;
     }
+    // src is not an expression
     const ident_resolved &src_resolved{tc.resolve_identifier(src, true)};
     if (src_resolved.is_const()) {
       tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
                  src.get_unary_ops().to_string() + src_resolved.id_nasm);
       return;
     }
+    // src is not an expression and not a constant
     const unary_ops &uops{src.get_unary_ops()};
     if (uops.is_empty()) {
       tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, src_resolved.id_nasm);
       return;
     }
+    // src is not an expression and not a constant and has unary ops
     const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
     tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
     uops.compile(tc, os, indent, reg);
@@ -505,12 +518,16 @@ private:
                                   const string &op, const ident_resolved &dst,
                                   const statement &src) {
     if (src.is_expression()) {
-      // the operand must be stored in CL
+      // the operand must be stored in register 'CL'
+      //? todo. BMI2 (Bit Manipulation Instruction Set 2)
+      //        look at shlx/shrx/sarx which can use any register for the shift
+      //        amount
       const bool rcx_allocated{
           tc.alloc_named_register(src.tok(), os, indent, "rcx")};
       if (not rcx_allocated) {
         toc::asm_push(src.tok(), os, indent, "rcx");
       }
+      // the number of bits to shift is an expression, compile it to 'rcx'
       src.compile(tc, os, indent, "rcx");
       tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, "cl");
       if (rcx_allocated) {
@@ -520,6 +537,7 @@ private:
       }
       return;
     }
+    // src is not an expression
     const ident_resolved &src_resolved{tc.resolve_identifier(src, true)};
     if (src_resolved.is_const()) {
       tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
@@ -534,7 +552,7 @@ private:
 
     const unary_ops &uops{src.get_unary_ops()};
     if (uops.is_empty()) {
-      // the operand must be stored in CL
+      // the operand must be stored in CL (see note above about BMI2)
       const bool rcx_allocated{
           tc.alloc_named_register(src.tok(), os, indent, "rcx")};
       if (not rcx_allocated) {
@@ -549,6 +567,7 @@ private:
       }
       return;
     }
+    // unary ops need to be applied on the argument src
     const bool rcx_allocated{
         tc.alloc_named_register(src.tok(), os, indent, "rcx")};
     if (not rcx_allocated) {
@@ -564,7 +583,8 @@ private:
     }
   }
 
-  // op is either "rax" for the quotient or "rdx" for the reminder
+  // op is either 'rax' for the quotient or 'rdx' for the reminder to be moved
+  // into 'dst'
   inline static void asm_op_div(toc &tc, ostream &os, const size_t indent,
                                 const string &op, const ident_resolved &dst,
                                 const statement &src) {
@@ -600,6 +620,7 @@ private:
       tc.free_scratch_register(os, indent, reg);
       return;
     }
+    // src is not an expression
     const ident_resolved &src_resolved{tc.resolve_identifier(src, true)};
     if (src_resolved.is_const()) {
       const bool rax_allocated{
@@ -615,12 +636,13 @@ private:
       }
       toc::indent(os, indent, false);
       os << "cqo" << endl;
-      const string &r{tc.alloc_scratch_register(src.tok(), os, indent)};
-      tc.asm_cmd(src.tok(), os, indent, "mov", r,
+      const string &scratch_reg{
+          tc.alloc_scratch_register(src.tok(), os, indent)};
+      tc.asm_cmd(src.tok(), os, indent, "mov", scratch_reg,
                  src.get_unary_ops().to_string() + src_resolved.id_nasm);
       toc::indent(os, indent, false);
-      os << "idiv " << r << endl;
-      tc.free_scratch_register(os, indent, r);
+      os << "idiv " << scratch_reg << endl;
+      tc.free_scratch_register(os, indent, scratch_reg);
       tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, op);
       if (rdx_allocated) {
         tc.free_named_register(os, indent, "rdx");
@@ -639,7 +661,7 @@ private:
                                "cannot use 'rdx' or 'rax' as operands in "
                                "division because those registers are used");
     }
-
+    // src is not an expression and not a constant
     const unary_ops &uops{src.get_unary_ops()};
     if (uops.is_empty()) {
       const bool rax_allocated{
@@ -671,6 +693,7 @@ private:
       }
       return;
     }
+    // src is not an expression and not a constant and has unary ops
     const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
     tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
     uops.compile(tc, os, indent, reg);
@@ -702,9 +725,4 @@ private:
     }
     tc.free_scratch_register(os, indent, reg);
   }
-
-  bool enclosed_{}; //  (a+b) vs a+b
-  vector<unique_ptr<statement>> exps_{};
-  vector<char> ops_{};
-  unary_ops uops_{};
 };
