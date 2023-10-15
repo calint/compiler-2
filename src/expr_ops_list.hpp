@@ -10,7 +10,7 @@ public:
       toc &tc, tokenizer &tz, const bool in_args = false,
       const bool enclosed = false, unary_ops uops = {},
       const char first_op_precedence = initial_precedence,
-      unique_ptr<statement> first_expression = unique_ptr<statement>())
+      unique_ptr<statement> first_expression = unique_ptr<statement>{})
       : expression{tz.next_whitespace_token()}, enclosed_{enclosed},
         uops_{move(uops)} {
 
@@ -19,14 +19,14 @@ public:
       // called in a recursion with first expression provided
       exps_.emplace_back(move(first_expression));
     } else {
-      // check if new recursion is necessary e.g. =-a/-(-(b+c)+d), t at "-a/-("
+      // check if new recursion is necessary e.g. =-a/-(-(b+c)+d), tz at "-a/-("
       const unary_ops uo{tz};
       if (tz.is_next_char('(')) {
-        // recursion
+        // recursion of sub-expression with unary ops
         exps_.emplace_back(
             make_unique<expr_ops_list>(tc, tz, in_args, true, uo));
       } else {
-        // statement
+        // statement, push back the unary ops to attach them to the statement
         uo.put_back(tz);
         exps_.emplace_back(create_statement_from_tokenizer(tc, tz));
       }
@@ -40,22 +40,16 @@ public:
       }
 
       // if parsed in a function call argument list or in a boolean expression
-      if (in_args) { //? rewrite is_in_bool_expr
-        // if in boolean expression exit when an operation is found
+      if (in_args) {
+        // if in boolean expression check for '<' and '>' but not '<<' and '>>'
         if (tz.is_peek_char('<') and not tz.is_peek_char2('<')) {
-          break;
-        }
-        if (tz.is_peek_char('=')) {
           break;
         }
         if (tz.is_peek_char('>') and not tz.is_peek_char2('>')) {
           break;
         }
         // if in arguments exit when ',' or ')' is found
-        if (tz.is_peek_char(',')) {
-          break;
-        }
-        if (tz.is_peek_char(')')) {
+        if (tz.is_peek_char(',') or tz.is_peek_char(')')) {
           break;
         }
       }
@@ -87,29 +81,35 @@ public:
       }
 
       // check if next operation precedence is same or lower
-      // if not then a new subexpression is added to the list with the last
-      // expression in this list as first expression
+      // if not then a subexpression is added to the list with the last
+      // expression in this list being first expression in the subexpression
       const char next_precedence{precedence_for_op(ops_.back())};
       if (next_precedence > precedence) {
-        // i.e. =a+b*c+1 where the peeked char is '*'
+        // e.g. =a+b*c+1 where the peeked char is '*'
         // next operation has higher precedence than current
         // list is now =[(=a)(+b)]
         // move last expression (+b) to subexpression
         //   =[(=a) +[(=b)(*c)(+1)]]
         precedence = next_precedence;
-        const char first_op_prec{precedence_for_op(ops_.back())};
         ops_.pop_back();
-        unique_ptr<statement> prev{move(exps_.back())};
+        unique_ptr<statement> last_stmt_in_expr{move(exps_.back())};
         exps_.pop_back();
-        exps_.emplace_back(make_unique<expr_ops_list>(
-            tc, tz, in_args, false, unary_ops{}, first_op_prec, move(prev)));
+        exps_.emplace_back(make_unique<expr_ops_list>(tc, tz, in_args, false,
+                                                      unary_ops{}, precedence,
+                                                      move(last_stmt_in_expr)));
         continue;
       }
 
       precedence = next_precedence;
       const char ch{tz.next_char()}; // read the peeked operator
-      if (ch == '<' or ch == '>') {
-        tz.next_char(); // one more character for << and >>
+      if (ch == '<') {
+        if (tz.next_char() != '<') {
+          throw compiler_exception(tz, "expected operator '<<'");
+        }
+      } else if (ch == '>') {
+        if (tz.next_char() != '>') {
+          throw compiler_exception(tz, "expected operator '>>'");
+        }
       }
 
       // check if next statement is a subexpression
@@ -151,16 +151,16 @@ public:
       os << "(";
     }
 
-    exps_[0]->source_to(os);
+    exps_.at(0)->source_to(os);
     const size_t n{ops_.size()};
     for (size_t i{0}; i < n; i++) {
-      const char op{ops_[i]};
+      const char op{ops_.at(i)};
       os << op;
       if (op == '<' or op == '>') {
         // << or >>
         os << op;
       }
-      exps_[i + 1]->source_to(os);
+      exps_.at(i + 1)->source_to(os);
     }
 
     if (enclosed_) {
@@ -207,13 +207,14 @@ public:
   [[nodiscard]] inline auto identifier() const -> const string & override {
     assert(exps_.size() == 1);
 
-    return exps_[0]->identifier();
+    return exps_.at(0)->identifier();
   }
 
   [[nodiscard]] inline auto get_unary_ops() const
       -> const unary_ops & override {
-    if (exps_.size() == 1) {
-      return exps_[0]->get_unary_ops();
+
+    if (exps_.size() == 1) { //? why the unary ops of first expression
+      return exps_.at(0)->get_unary_ops();
     }
 
     return uops_;
@@ -222,7 +223,7 @@ public:
   [[nodiscard]] inline auto get_type() const -> const type & override {
     assert(not exps_.empty());
     //? hack  find the size of the largest integral element
-    return exps_[0]->get_type();
+    return exps_.at(0)->get_type();
   }
 
   [[nodiscard]] inline auto is_expression() const -> bool override {
@@ -231,7 +232,7 @@ public:
     }
 
     if (exps_.size() == 1) {
-      return exps_[0]->is_expression();
+      return exps_.at(0)->is_expression();
     }
 
     return true;
@@ -242,19 +243,15 @@ private:
                          const string &dst) const {
     tc.comment_source(*this, os, indent);
 
-    if (not tc.is_identifier_register(dst)) {
-      // try compiling with scratch register
-      // in some cases is faster
-    }
     // first element is assigned to destination
     const ident_resolved &dst_resolved{
         tc.resolve_identifier(tok(), dst, false)};
-    asm_op(tc, os, indent, '=', dst_resolved, *exps_[0]);
+    asm_op(tc, os, indent, '=', dst_resolved, *exps_.at(0));
 
-    // remaining elements are +,-,*,/,%,|,&,^
+    // remaining elements are +,-,*,/,%,|,&,^,<<,>>
     const size_t n{ops_.size()};
     for (size_t i{0}; i < n; i++) {
-      asm_op(tc, os, indent, ops_[i], dst_resolved, *exps_[i + 1]);
+      asm_op(tc, os, indent, ops_[i], dst_resolved, *exps_.at(i + 1));
     }
 
     // apply unary expressions on destination
@@ -263,7 +260,7 @@ private:
 
   inline static auto count_instructions(stringstream &ss) -> size_t {
     const regex rxcomment{R"(^\s*;.*$)"};
-    string line;
+    string line{};
     size_t n{0};
     while (getline(ss, line)) {
       if (regex_search(line, rxcomment)) {
@@ -305,7 +302,14 @@ private:
                             const char op, const ident_resolved &dst,
                             const statement &src) {
     toc::indent(os, indent, true);
-    tc.comment_source(os, dst.id, {op}, src);
+    string op_str{op};
+    if (op == '<') {
+      op_str.push_back('<');
+    } else if (op == '>') {
+      op_str.push_back('>');
+    }
+    tc.comment_source(os, dst.id, op_str, src);
+
     if (op == '=') {
       asm_op_mov(tc, os, indent, dst, src);
       return;
