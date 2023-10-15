@@ -1,7 +1,5 @@
-[ ] check that return value is initiated before copy to rax
-[ ] fix 'cmp' with left hand side constant
-    => compilation error
-[x] change vector indexing to safer .at(i)
+[ ] check that return value is initiated before copy to rax in non-inlined functions
+[ ] fix 'cmp' with left hand side constant => compilation error
 [ ] rename compiler_exception
 [ ] consider disabling function definitions and calls without ()
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
@@ -24,10 +22,10 @@
 [ ] floating point numbers
 [ ] func f(p : point) {} ... f({x, y})
 [ ] handle constants when deducing operand size 
-     -> deduce if possible to the size of the desired type
+     => deduce if possible to the size of the desired type
 [ ] specify whether ok for an op to truncate value instead of error
 [ ] expr_any: deduce expression type to bool or numbers
-[ ]   is_const, is_expression, is_bool, is_integral
+[ ]   is_const, is_bool_expression, is_number_expression
 [ ] let i=1 creates a constant
 [ ] def table{x,y,z}
 [ ] tokenizer to keep track of line-number instead of computing it
@@ -61,6 +59,7 @@
       mov qword[rbp-16],r15
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
+[x] change vector indexing to safer .at(i)
 [-] pointers?
     => try without
 [x] toc: rename baz_ident
