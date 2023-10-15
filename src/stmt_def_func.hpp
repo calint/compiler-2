@@ -153,7 +153,7 @@ public:
     if (not returns().empty()) {
       const string &ret_name{returns_.at(0).ident_tk.name()};
       const ident_resolved &ret_resolved{
-          tc.resolve_identifier(tok(), ret_name, true)};
+          tc.resolve_identifier(returns_.at(0).ident_tk, ret_name, true)};
       tc.asm_cmd(tok(), os, indent + 1, "mov", "rax", ret_resolved.id_nasm);
     }
     // restore 'rbp' and return

@@ -902,6 +902,28 @@ public:
                           to_string(__LINE__));
   }
 
+  inline auto is_var_initiated(const string &name) -> bool {
+    const identifier ident{name};
+    const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
+    // is 'id_nasm' a variable?
+    if (frm.has_var(id)) {
+      return frm.get_var_ref(id).initiated;
+    }
+
+    if (fields_.has(id)) {
+      return true; // a field, it is initiated
+    }
+
+    if (is_identifier_register(id)) {
+      auto it = std::find(initiated_registers_.begin(),
+                          initiated_registers_.end(), id);
+      return it != initiated_registers_.end();
+    }
+
+    throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                          to_string(__LINE__));
+  }
+
   inline void set_type_void(const type &tp) { type_void_ = &tp; }
 
   inline auto get_type_void() const -> const type & { return *type_void_; }

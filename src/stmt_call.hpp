@@ -371,8 +371,8 @@ public:
 
     // enter function creating a new scope from which
     //   prior variables are not visible
-    tc.enter_func(func_name, func.returns(), true, new_call_path,
-                  ret_jmp_label);
+    const vector<func_return_info> &returns{func.returns()};
+    tc.enter_func(func_name, returns, true, new_call_path, ret_jmp_label);
 
     // add the aliases to the context of the new scope
     for (const auto &alias : aliases_to_add) {
@@ -383,6 +383,17 @@ public:
 
     // compile in-lined code
     func.code().compile(tc, os, indent);
+
+    // if function returns then check that the return variable has been assigned
+    if (not returns.empty()) {
+      const string &ret_var{returns.at(0).ident_tk.name()};
+
+      if (not tc.is_var_initiated(ret_var)) {
+        throw compiler_exception(returns.at(0).ident_tk,
+                                 "return variable '" + ret_var +
+                                     "' has not been assigned");
+      }
+    }
 
     // free allocated registers in reverse order of allocation
     // NOLINTNEXTLINE(modernize-loop-convert)

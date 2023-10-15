@@ -25,10 +25,9 @@ public:
       // not in-lined
       const vector<func_return_info> &returns{tc.get_func_returns(tok())};
       if (not returns.empty()) {
-        // get nasm identifier for the variable containing the return value
+        const string &ret_var{returns.at(0).ident_tk.name()};
         const string &ret_resolved{
-            tc.resolve_identifier(tok(), returns.at(0).ident_tk.name(), false)
-                .id_nasm};
+            tc.resolve_identifier(tok(), ret_var, true).id_nasm};
         //? todo. check that the return value has been assigned
         // assign return value to 'rax's
         tc.asm_cmd(tok(), os, indent, "mov", "rax", ret_resolved);
@@ -39,7 +38,17 @@ public:
       return;
     }
 
-    // in-lined function, jump to return labels
+    // in-lined function
+    // check that the return value has been assigned
+    const vector<func_return_info> &returns{tc.get_func_returns(tok())};
+    if (not returns.empty()) {
+      const string &ret_var{returns.at(0).ident_tk.name()};
+      if (not tc.is_var_initiated(ret_var)) {
+        throw compiler_exception(tok(), "return variable '" + ret_var +
+                                            "' has not been assigned");
+      }
+    }
+    // jump to return labels
     toc::asm_jmp(tok(), os, indent, ret_lbl);
   }
 };
