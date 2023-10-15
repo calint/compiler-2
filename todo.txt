@@ -1,16 +1,18 @@
+[ ] rename compiler_exception
+[ ] consider disabling function definitions and calls without ()
+[ ] stmt_call: check arguments vs parameters in constructor instead of at compile
 [o] check that return value is assigned in functions
     => should check that all execution paths initiates the value
         now it may result in undefined behavior because the compiler checks that
         the return value is set in any branch of execution
-[x] fix 'cmp' with left hand side constant => compilation error instead of further complications
-    => "if 1 + 1 == x" is not considered constant because expr_ops_list does not support
-        constant evaluation 
+[ ] consider mapping execution paths in a tree to find out if a variable is set always set
 [ ] review "//?" comments
 [ ] review "todo." comments
-[ ] rename compiler_exception
-[ ] consider disabling function definitions and calls without ()
-[ ] stmt_call: check arguments vs parameters in constructor instead of at compile
-[ ] function return a non-register passable type
+[ ] handle constants when deducing operand size 
+     => deduce if possible to the size of the desired type
+[ ] specify whether ok for an op to truncate value instead of error
+stage 5
+[ ] function return of non-register passable type
 [ ]     var pos : point = foo()
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
 [ ] func f(p : point copy) copies point to callee stack
@@ -28,9 +30,6 @@
 [ ] consider cmovxx when evaluating a boolean expression
 [ ] floating point numbers
 [ ] func f(p : point) {} ... f({x, y})
-[ ] handle constants when deducing operand size 
-     => deduce if possible to the size of the desired type
-[ ] specify whether ok for an op to truncate value instead of error
 [ ] expr_any: deduce expression type to bool or numbers
 [ ]   is_const, is_bool_expression, is_number_expression
 [ ] let i=1 creates a constant
@@ -66,6 +65,9 @@
       mov qword[rbp-16],r15
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
+[x] fix 'cmp' with left hand side constant => compilation error instead of further complications
+    => "if 1 + 1 == x" is not considered constant because expr_ops_list does not support
+        constant evaluation 
 [x] change vector indexing to safer .at(i)
 [-] pointers?
     => try without
