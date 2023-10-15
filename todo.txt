@@ -5,7 +5,7 @@
     => should check all execution paths to find out if the variable is always assigned
         now it may result in undefined behavior because the compiler checks that
         the return value is set in any branch of execution
-[ ] consider mapping execution paths in a tree to find out if a variable is always set
+[ ] consider mapping execution paths in a tree to find out if a variable is always assigned
 [ ] review "//?" comments
 [ ] review "todo." comments
 [ ] handle constants when deducing operand size 
