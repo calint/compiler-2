@@ -215,7 +215,17 @@ public:
         return const_eval;
       }
     }
-    //? todo. check that lhs_ is not a constant
+
+    // don't allow left-hand-side to be constant because generated assembler
+    // does not compile
+    if (not lhs_.is_expression()) {
+      const ident_resolved &lhs_resolved{tc.resolve_identifier(lhs_, false)};
+      if (lhs_resolved.is_const()) {
+        throw compiler_exception(
+            lhs_.tok(), "left hand side expression may not be a constant");
+      }
+    }
+
     resolve_cmp(tc, os, indent, lhs_, rhs_);
     toc::indent(os, indent);
     os << (invert ? asm_jxx_for_op(op_) : asm_jxx_for_op_inv(op_));

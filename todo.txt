@@ -1,5 +1,5 @@
 [x] check that return value is assigned in functions
-[ ] fix 'cmp' with left hand side constant => compilation error instead of further complications
+[x] fix 'cmp' with left hand side constant => compilation error instead of further complications
 [ ] review "//?" comments
 [ ] review "todo." comments
 [ ] rename compiler_exception
