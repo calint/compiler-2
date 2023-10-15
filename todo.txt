@@ -27,7 +27,7 @@
 [x]     stmt_def_func_param
 [x]     stmt_call
 [x]     expr_ops_list
-[ ]     bool_op
+[x]     bool_op
 [ ]     bool_ops_list
 [x]     unary_ops
 [x]     tokenizer

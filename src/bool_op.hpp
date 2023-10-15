@@ -4,10 +4,10 @@
 class bool_op final : public statement {
   vector<token> nots_{};
   expr_ops_list lhs_{};
-  string op_{}; // '<', '<=', '>', '>=', '='
+  string op_{}; // '<', '<=', '>', '>=', '==', '!='
   expr_ops_list rhs_{};
-  bool is_not_{};       // if not a=b
-  bool is_shorthand_{}; // if a ...
+  bool is_not_{};       // e.g. if not a == b ...
+  bool is_shorthand_{}; // e.g. if a ...
   bool is_expression_{};
 
 public:
@@ -17,7 +17,7 @@ public:
     set_type(tc.get_type_bool());
 
     bool is_not{false};
-    // if not a=3
+    // if not a == 3 ...
     while (true) {
       token tk{tz.next_token()};
       if (not tk.is_name("not")) {
@@ -58,8 +58,6 @@ public:
       is_shorthand_ = true;
       resolve_if_op_is_expression();
       return;
-      // throw compiler_error(*this,"expected boolean operation
-      // '=','<','<=','>','>='");
     }
     rhs_ = {tc, tz};
     resolve_if_op_is_expression();
@@ -105,20 +103,24 @@ public:
     if (is_shorthand_) {
       // check case when operand is constant
       if (not lhs_.is_expression()) {
+        // left-hand-side is not a expression, either a constant or an
+        // identifier
         const ident_resolved &lhs_resolved{tc.resolve_identifier(lhs_, false)};
         if (lhs_resolved.is_const()) {
-          bool b{lhs_.get_unary_ops().evaluate_constant(
-                     lhs_resolved.const_value) != 0};
+          bool const_eval{lhs_.get_unary_ops().evaluate_constant(
+                              lhs_resolved.const_value) != 0};
           if (invert) {
-            b = !b;
+            const_eval = not const_eval;
           }
           toc::indent(os, indent, true);
-          os << "const eval to " << (b ? "true" : "false") << endl;
-          if (b) {
+          os << "const eval to " << (const_eval ? "true" : "false") << endl;
+          if (const_eval) {
+            // since it is an 'or' chain short-circuit expression and jump to
+            // label for true
             toc::indent(os, indent);
             os << "jmp " << jmp_to_if_true << endl;
           }
-          return b;
+          return const_eval;
         }
       }
       resolve_cmp_shorthand(tc, os, indent, lhs_);
@@ -132,21 +134,23 @@ public:
       const ident_resolved &lhs_resolved{tc.resolve_identifier(lhs_, false)};
       const ident_resolved &rhs_resolved{tc.resolve_identifier(rhs_, false)};
       if (lhs_resolved.is_const() and rhs_resolved.is_const()) {
-        bool b{eval_constant(
+        bool const_eval{eval_constant(
             lhs_.get_unary_ops().evaluate_constant(lhs_resolved.const_value),
             op_,
             rhs_.get_unary_ops().evaluate_constant(rhs_resolved.const_value))};
         if (invert) {
-          b = !b;
+          const_eval = not const_eval;
         }
         toc::indent(os, indent, true);
-        os << "const eval to " << (b ? "true" : "false") << endl;
-        if (b) {
+        os << "const eval to " << (const_eval ? "true" : "false") << endl;
+        if (const_eval) {
           toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_true);
         }
-        return b;
+        return const_eval;
       }
     }
+    // left-hand-side or right-hand-side or both are expressions
+    //? todo. compilation error if lhs_ is contant
     resolve_cmp(tc, os, indent, lhs_, rhs_);
     toc::indent(os, indent);
     os << (invert ? asm_jxx_for_op_inv(op_) : asm_jxx_for_op(op_));
@@ -157,6 +161,7 @@ public:
   inline auto compile_and(toc &tc, ostream &os, size_t indent,
                           const string &jmp_to_if_false,
                           const bool inverted) const -> optional<bool> {
+
     const bool invert{inverted ? not is_not_ : is_not_};
     toc::indent(os, indent, true);
     tc.comment_source(os, "?", inverted ? " 'and' inverted: " : " ", *this);
@@ -166,47 +171,51 @@ public:
       if (not lhs_.is_expression()) {
         const ident_resolved &lhs_resolved{tc.resolve_identifier(lhs_, false)};
         if (lhs_resolved.is_const()) {
-          bool b{lhs_.get_unary_ops().evaluate_constant(
-                     lhs_resolved.const_value) != 0};
+          bool const_eval{lhs_.get_unary_ops().evaluate_constant(
+                              lhs_resolved.const_value) != 0};
           if (invert) {
-            b = !b;
+            const_eval = not const_eval;
           }
           toc::indent(os, indent, true);
-          os << "const eval to " << (b ? "true" : "false") << endl;
-          if (not b) {
-            // short circuit 'and' chain
+          os << "const eval to " << (const_eval ? "true" : "false") << endl;
+          if (not const_eval) {
+            // since it is an 'and' chain short-circuit expression and jump to
+            // label for false
             toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_false);
           }
-          return b;
+          return const_eval;
         }
       }
+      // left-hand-side is expression
       resolve_cmp_shorthand(tc, os, indent, lhs_);
       toc::indent(os, indent);
       os << (not invert ? asm_jxx_for_op("==") : asm_jxx_for_op_inv("=="));
       os << " " << jmp_to_if_false << endl;
       return nullopt;
     }
+    // not shorthand expression
     // check the case when both operands are constants
     if (not lhs_.is_expression() and not rhs_.is_expression()) {
       const ident_resolved &lhs_resolved{tc.resolve_identifier(lhs_, false)};
       const ident_resolved &rhs_resolved{tc.resolve_identifier(rhs_, false)};
       if (lhs_resolved.is_const() and rhs_resolved.is_const()) {
-        bool b{eval_constant(
+        bool const_eval{eval_constant(
             lhs_.get_unary_ops().evaluate_constant(lhs_resolved.const_value),
             op_,
             rhs_.get_unary_ops().evaluate_constant(rhs_resolved.const_value))};
         if (invert) {
-          b = !b;
+          const_eval = not const_eval;
         }
         toc::indent(os, indent, true);
-        os << "const eval to " << (b ? "true" : "false") << endl;
-        if (not b) {
+        os << "const eval to " << (const_eval ? "true" : "false") << endl;
+        if (not const_eval) {
           // short circuit 'and' chain
           toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_false);
         }
-        return b;
+        return const_eval;
       }
     }
+    //? todo. check that lhs_ is not a constant
     resolve_cmp(tc, os, indent, lhs_, rhs_);
     toc::indent(os, indent);
     os << (invert ? asm_jxx_for_op(op_) : asm_jxx_for_op_inv(op_));
@@ -330,12 +339,13 @@ private:
   }
 
   inline void resolve_cmp(toc &tc, ostream &os, size_t indent,
-                          const expr_ops_list &lh,
-                          const expr_ops_list &rh) const {
-    vector<string> allocated_registers;
+                          const expr_ops_list &lhs,
+                          const expr_ops_list &rhs) const {
 
-    const string &dst{resolve_expr(tc, os, indent, lh, allocated_registers)};
-    const string &src{resolve_expr(tc, os, indent, rh, allocated_registers)};
+    vector<string> allocated_registers{};
+
+    const string &dst{resolve_expr(tc, os, indent, lhs, allocated_registers)};
+    const string &src{resolve_expr(tc, os, indent, rhs, allocated_registers)};
 
     tc.asm_cmd(tok(), os, indent, "cmp", dst, src);
 
@@ -348,10 +358,10 @@ private:
   }
 
   inline void resolve_cmp_shorthand(toc &tc, ostream &os, size_t indent,
-                                    const expr_ops_list &lh) const {
-    vector<string> allocated_registers;
+                                    const expr_ops_list &lhs) const {
+    vector<string> allocated_registers{};
 
-    const string &dst{resolve_expr(tc, os, indent, lh, allocated_registers)};
+    const string &dst{resolve_expr(tc, os, indent, lhs, allocated_registers)};
 
     tc.asm_cmd(tok(), os, indent, "cmp", dst, "0");
 
@@ -364,29 +374,30 @@ private:
   }
 
   inline static auto resolve_expr(toc &tc, ostream &os, size_t indent,
-                                  const expr_ops_list &exp,
+                                  const expr_ops_list &expr,
                                   vector<string> &allocated_registers)
       -> string {
-    if (exp.is_expression()) {
-      const string &reg{tc.alloc_scratch_register(exp.tok(), os, indent)};
+
+    if (expr.is_expression()) {
+      const string &reg{tc.alloc_scratch_register(expr.tok(), os, indent)};
       allocated_registers.emplace_back(reg);
-      exp.compile(tc, os, indent + 1, reg);
+      expr.compile(tc, os, indent + 1, reg);
       return reg;
     }
-
-    const ident_resolved &exp_resolved{tc.resolve_identifier(exp, true)};
-    if (exp_resolved.is_const()) {
-      return exp.get_unary_ops().to_string() + exp_resolved.id_nasm;
+    // expr is not an expression
+    const ident_resolved &expr_resolved{tc.resolve_identifier(expr, true)};
+    if (expr_resolved.is_const()) {
+      return expr.get_unary_ops().to_string() + expr_resolved.id_nasm;
     }
-
-    if (exp.get_unary_ops().is_empty()) {
-      return exp_resolved.id_nasm;
+    // expr not a constant, it is an identifier
+    if (expr.get_unary_ops().is_empty()) {
+      return expr_resolved.id_nasm;
     }
-
-    const string &reg{tc.alloc_scratch_register(exp.tok(), os, indent)};
+    // expr is not an expression and has unary ops
+    const string &reg{tc.alloc_scratch_register(expr.tok(), os, indent)};
     allocated_registers.emplace_back(reg);
-    tc.asm_cmd(exp.tok(), os, indent, "mov", reg, exp_resolved.id_nasm);
-    exp.get_unary_ops().compile(tc, os, indent, reg);
+    tc.asm_cmd(expr.tok(), os, indent, "mov", reg, expr_resolved.id_nasm);
+    expr.get_unary_ops().compile(tc, os, indent, reg);
     return reg;
   }
 };
