@@ -324,10 +324,10 @@ public:
       // check if argument is passed through register
       if (arg_reg.empty()) {
         // argument not passed through register
-        // no register allocated for the argument
-        // alias parameter name to the argument identifier
+        // check if unary ops need to be applied
         if (ea.get_unary_ops().is_empty()) {
-          // no unary ops, alias
+          // no unary ops
+          // alias parameter name to the argument identifier
           const string &arg_id{ea.identifier()};
           aliases_to_add.emplace_back(param.identifier(), arg_id);
           toc::indent(os, indent + 1, true);
@@ -343,6 +343,7 @@ public:
         tc.asm_cmd(param.tok(), os, indent + 1, "mov", scratch_reg,
                    arg_resolved.id_nasm);
         ea.get_unary_ops().compile(tc, os, indent + 1, scratch_reg);
+        // alias parameter to scratch register
         aliases_to_add.emplace_back(param.identifier(), scratch_reg);
         toc::indent(os, indent + 1, true);
         os << "alias " << param.identifier() << " -> " << scratch_reg << endl;
