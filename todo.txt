@@ -1,5 +1,7 @@
-[ ] check that return value is initiated before copy to rax in non-inlined functions
-[ ] fix 'cmp' with left hand side constant => compilation error
+[ ] check that return value is assigned in functions
+[ ] fix 'cmp' with left hand side constant => compilation error instead of further complications
+[ ] review "//?" comments
+[ ] review "todo." comments
 [ ] rename compiler_exception
 [ ] consider disabling function definitions and calls without ()
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
