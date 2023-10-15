@@ -25,7 +25,7 @@
 [x]     decouple.hpp
 [x]     stmt_def_func
 [x]     stmt_def_func_param
-[ ]     stmt_call
+[x]     stmt_call
 [ ]     expr_ops_list
 [ ]     bool_op
 [ ]     bool_ops_list

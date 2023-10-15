@@ -203,6 +203,7 @@ private:
     }
 
     if (is_inline()) {
+      //? inline functions get parameters as aliases
       const size_t n{params_.size()};
       for (size_t i{0}; i < n; i++) {
         const stmt_def_func_param &param{params_[i]};
@@ -240,7 +241,7 @@ private:
     // set up stack index relative to what rbp will be
     //   skip [rbp] and [return address] on stack
     size_t stk_ix{2U << 3U};
-    
+
     // define variables in the called context by mapping arguments to stack
     const size_t n{params_.size()};
     for (size_t i{0}; i < n; i++) {

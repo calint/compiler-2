@@ -5,7 +5,7 @@
 class stmt_call : public expression {
   vector<expr_any> args_{};
   bool no_args_{};
-  token whitespace_after_{};
+  token ws_after_{}; // whitespace after arguments
 
 public:
   inline stmt_call(toc &tc, unary_ops uops, token tk, tokenizer &tz)
@@ -24,7 +24,7 @@ public:
       // try to create argument expressions of same type as parameter
       size_t i{0};
       const size_t n{func.params().size()};
-      for (auto const &param : func.params()) {
+      for (const stmt_def_func_param &param : func.params()) {
         args_.emplace_back(tc, tz, param.get_type(), true);
         i++;
         if (i < n) {
@@ -40,7 +40,7 @@ public:
       }
     } else {
       // built-in function
-      //? make this nicer. todo.
+      //? todo. make this nicer
       bool expect_arg{false};
       while (true) {
         if (tz.is_next_char(')')) { // foo()
@@ -54,7 +54,7 @@ public:
         expect_arg = tz.is_next_char(',');
       }
     }
-    whitespace_after_ = tz.next_whitespace_token();
+    ws_after_ = tz.next_whitespace_token();
   }
 
   inline stmt_call() = default;
@@ -71,27 +71,29 @@ public:
       return;
     }
     os << "(";
-    size_t i{args_.size() - 1};
-    for (const auto &e : args_) {
-      e.source_to(os);
-      if (i--) {
+    size_t i{0};
+    for (const expr_any &e : args_) {
+      if (i++) {
         os << ",";
       }
+      e.source_to(os);
     }
     os << ")";
-    whitespace_after_.source_to(os);
+    ws_after_.source_to(os);
   }
 
   inline void compile(toc &tc, ostream &os, size_t indent,
                       const string &dst = "") const override {
+
     tc.comment_source(*this, os, indent);
+
     const stmt_def_func &func{tc.get_func_or_throw(tok(), identifier())};
-    const string &func_nm{func.name()};
+    const string &func_name{func.name()};
 
     // check that the same number of arguments are provided as expected
     if (func.params().size() != args_.size()) {
       throw compiler_exception(
-          this->tok(), "function '" + func_nm + "' expects " +
+          this->tok(), "function '" + func_name + "' expects " +
                            to_string(func.params().size()) + " argument" +
                            (func.params().size() == 1 ? "" : "s") + " but " +
                            to_string(args_.size()) + " " +
@@ -100,7 +102,7 @@ public:
 
     // check that argument types match the parameters
     for (size_t i{0}; i < args_.size(); i++) {
-      const expr_any &ea{args_[i]};
+      const expr_any &ea{args_.at(i)};
       const stmt_def_func_param &param{func.param(i)};
       const type &arg_type{ea.get_type()};
       const type &param_type{param.get_type()};
@@ -127,9 +129,7 @@ public:
     // check that return value matches the type
     if (not dst.empty()) {
       if (func.returns().empty()) {
-        throw compiler_exception(
-            this->tok(),
-            "cannot assign from function that does not return value");
+        throw compiler_exception(this->tok(), "function does not return value");
       }
 
       const type &return_type{func.get_type()};
@@ -137,10 +137,11 @@ public:
           tc.resolve_identifier(tok(), dst, false)};
       //?
       if (dst_resolved.type_ref.size() < return_type.size()) {
-        throw compiler_exception(
-            this->tok(), "return type '" + return_type.name() +
-                             "' would be truncated when copied to '" + dst +
-                             "' of type '" + dst_resolved.type_ref.name() + "'");
+        throw compiler_exception(this->tok(),
+                                 "return type '" + return_type.name() +
+                                     "' would be truncated when copied to '" +
+                                     dst + "' of type '" +
+                                     dst_resolved.type_ref.name() + "'");
       }
     }
 
@@ -155,7 +156,7 @@ public:
       size_t nbytes_of_args_on_stack{0};
       size_t i{args_.size()};
       while (i--) {
-        const expr_any &ea{args_[i]};
+        const expr_any &ea{args_.at(i)};
         const stmt_def_func_param &param{func.param(i)};
         // is the argument passed through a register?
         const string &arg_reg{param.get_register_name_or_empty()};
@@ -174,12 +175,12 @@ public:
           const string &reg{tc.alloc_scratch_register(ea.tok(), os, indent)};
           // compile expression with the result stored in sr
           ea.compile(tc, os, indent + 1, reg);
-          // argument is passed to function through the stack
+          // push result on stack
           toc::asm_push(ea.tok(), os, indent, reg);
           // free scratch register
           tc.free_scratch_register(os, indent, reg);
           // keep track of how many arguments are on the stack
-          nbytes_of_args_on_stack += 8;
+          nbytes_of_args_on_stack += tc.get_type_default().size();
           continue;
         }
         // not an expression, resolve identifier to nasm
@@ -202,23 +203,25 @@ public:
         if (arg_resolved.is_const()) {
           toc::asm_push(ea.tok(), os, indent,
                         ea.get_unary_ops().to_string() + arg_resolved.id_nasm);
-          nbytes_of_args_on_stack += 8;
+          nbytes_of_args_on_stack += tc.get_type_default().size();
           continue;
         }
+        // not a constant
         if (ea.get_unary_ops().is_empty()) {
           // check if argument size is register size
           if (arg_resolved.type_ref.size() == tc.get_type_default().size()) {
             toc::asm_push(ea.tok(), os, indent, arg_resolved.id_nasm);
-            nbytes_of_args_on_stack += 8;
+            nbytes_of_args_on_stack += tc.get_type_default().size();
             continue;
           }
           // value to be pushed is not a 64 bit value
           // push can only be done with 64 or 16 bits values on x86_64
           const string &reg{tc.alloc_scratch_register(ea.tok(), os, indent)};
+          // the 'mov' will be compiled to 'movsx'
           tc.asm_cmd(ea.tok(), os, indent, "mov", reg, arg_resolved.id_nasm);
           toc::asm_push(ea.tok(), os, indent, reg);
           tc.free_scratch_register(os, indent, reg);
-          nbytes_of_args_on_stack += 8;
+          nbytes_of_args_on_stack += tc.get_type_default().size();
           //? what about 16 bit values
           continue;
         }
@@ -228,11 +231,11 @@ public:
         ea.get_unary_ops().compile(tc, os, indent, reg);
         toc::asm_push(ea.tok(), os, indent, reg);
         tc.free_scratch_register(os, indent, reg);
-        nbytes_of_args_on_stack += 8;
+        nbytes_of_args_on_stack += tc.get_type_default().size();
       }
 
       // stack is: <base>,vars,regs,args,
-      toc::asm_call(tok(), os, indent, func_nm);
+      toc::asm_call(tok(), os, indent, func_name);
 
       tc.exit_call(tok(), os, indent, nbytes_of_args_on_stack,
                    allocated_args_registers);
@@ -242,7 +245,7 @@ public:
 
       // handle return value
       if (not dst.empty()) {
-        // function returns value in rax, copy return value to dst
+        // function returns value in 'rax', copy return value to 'dst's
         get_unary_ops().compile(tc, os, indent, "rax");
         const ident_resolved &dst_resolved{
             tc.resolve_identifier(tok(), dst, false)};
@@ -264,7 +267,7 @@ public:
     const string &src_loc{tc.source_location_for_use_in_label(tok())};
     const string &new_call_path{
         call_path.empty() ? src_loc : (src_loc + "_" + call_path)};
-    const string &ret_jmp_label{func_nm + "_" + new_call_path + "_end"};
+    const string &ret_jmp_label{func_name + "_" + new_call_path + "_end"};
 
     toc::indent(os, indent + 1, true);
     os << "inline: " << new_call_path << endl;
@@ -274,12 +277,12 @@ public:
     vector<string> allocated_registers_in_order;
 
     // buffer the aliases of arguments
-    vector<tuple<string, string>> aliases_to_add;
+    vector<pair<string, string>> aliases_to_add;
 
     // if function returns value
     if (not dst.empty()) {
-      // alias 'from' identifier to 'dst' identifier
-      const string &from{func.returns()[0].ident_tk.name()};
+      // alias return identifier to 'dst'
+      const string &from{func.returns().at(0).ident_tk.name()};
       const string &to{dst};
       aliases_to_add.emplace_back(from, to);
       toc::indent(os, indent + 1, true);
@@ -302,17 +305,18 @@ public:
         // argument is an expression, evaluate and store in arg_reg
         if (arg_reg.empty()) {
           // no particular register requested for the argument
+          // re-assign 'arg_reg' to scratch register
           arg_reg = tc.alloc_scratch_register(ea.tok(), os, indent + 1);
           allocated_scratch_registers.emplace_back(arg_reg);
           allocated_registers_in_order.emplace_back(arg_reg);
         }
-        toc::indent(os, indent + 1, true);
-        os << "alias " << param.identifier() << " -> " << arg_reg << endl;
         // compile expression and store result in 'arg_reg'
         // note. 'unary_ops' are part of 'expr_ops_list'
         ea.compile(tc, os, indent + 1, arg_reg);
         // alias parameter name to the register containing its value
         aliases_to_add.emplace_back(param.identifier(), arg_reg);
+        toc::indent(os, indent + 1, true);
+        os << "alias " << param.identifier() << " -> " << arg_reg << endl;
         continue;
       }
 
@@ -323,13 +327,14 @@ public:
         // no register allocated for the argument
         // alias parameter name to the argument identifier
         if (ea.get_unary_ops().is_empty()) {
+          // no unary ops, alias
           const string &arg_id{ea.identifier()};
           aliases_to_add.emplace_back(param.identifier(), arg_id);
           toc::indent(os, indent + 1, true);
           os << "alias " << param.identifier() << " -> " << arg_id << endl;
           continue;
         }
-        // unary ops must be applied
+        // unary ops must be applied, allocate a scratch register and evaluate
         const ident_resolved &arg_resolved{tc.resolve_identifier(ea, true)};
         const string &scratch_reg{
             tc.alloc_scratch_register(ea.tok(), os, indent + 1)};
@@ -343,7 +348,8 @@ public:
         os << "alias " << param.identifier() << " -> " << scratch_reg << endl;
         continue;
       }
-      // argument passed through register
+
+      // argument is not an expression and passed through register
       // alias parameter name to the register
       aliases_to_add.emplace_back(param.identifier(), arg_reg);
       toc::indent(os, indent + 1, true);
@@ -351,11 +357,12 @@ public:
       // move argument to register specified in param
       const ident_resolved &arg_resolved{tc.resolve_identifier(ea, true)};
       if (arg_resolved.is_const()) {
+        // argument is a constant
         tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg,
                    ea.get_unary_ops().to_string() + arg_resolved.id_nasm);
         continue;
       }
-      // not a const, move argument to register
+      // argument is not a constant, move argument to register
       tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg,
                  arg_resolved.id_nasm);
       ea.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
@@ -363,12 +370,13 @@ public:
 
     // enter function creating a new scope from which
     //   prior variables are not visible
-    tc.enter_func(func_nm, func.returns(), true, new_call_path, ret_jmp_label);
+    tc.enter_func(func_name, func.returns(), true, new_call_path,
+                  ret_jmp_label);
 
-    // add the aliases to the context of this scope
-    for (const auto &e : aliases_to_add) {
-      const string &from{get<0>(e)};
-      const string &to{get<1>(e)};
+    // add the aliases to the context of the new scope
+    for (const auto &alias : aliases_to_add) {
+      const string &from{alias.first};
+      const string &to{alias.second};
       tc.add_alias(from, to);
     }
 
@@ -408,15 +416,16 @@ public:
       }
 
       const ident_resolved &ret_resolved{tc.resolve_identifier(
-          tok(), func.returns()[0].ident_tk.name(), true)};
+          tok(), func.returns().at(0).ident_tk.name(), true)};
+      // note. unary_ops::compile destination argument must be resolved
       get_unary_ops().compile(tc, os, indent, ret_resolved.id_nasm);
     }
-    // pop scope
-    tc.exit_func(func_nm);
+    // exit scope
+    tc.exit_func(func_name);
   }
 
   [[nodiscard]] inline auto arg(size_t ix) const -> const statement & {
-    return args_[ix];
+    return args_.at(ix);
   }
 
   [[nodiscard]] inline auto arg_count() const -> size_t { return args_.size(); }
