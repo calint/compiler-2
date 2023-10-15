@@ -28,7 +28,7 @@ public:
     const vector<type_field> &flds{tp.fields()};
     const size_t nflds{flds.size()};
     for (size_t i{0}; i < nflds; i++) {
-      const type_field &fld{flds[i]};
+      const type_field &fld{flds.at(i)};
       // create expression that assigns to field
       // might recurse creating 'expr_type_value'
       exprs_.emplace_back(create_expr_any_from_tokenizer(tc, tz, fld.tp, true));

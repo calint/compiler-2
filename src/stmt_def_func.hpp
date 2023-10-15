@@ -56,7 +56,7 @@ public:
         }
       }
       // set function type to first return type
-      set_type(returns_[0].type_ref);
+      set_type(returns_.at(0).type_ref);
     } else {
       // no return, set type to 'void's
       set_type(tc.get_type_void());
@@ -151,7 +151,7 @@ public:
     code_.compile(tc, os, indent, "");
     // if function returns copy return value to rax
     if (not returns().empty()) {
-      const string &ret_name{returns_[0].ident_tk.name()};
+      const string &ret_name{returns_.at(0).ident_tk.name()};
       const ident_resolved &ret_resolved{
           tc.resolve_identifier(tok(), ret_name, true)};
       tc.asm_cmd(tok(), os, indent + 1, "mov", "rax", ret_resolved.id_nasm);
@@ -174,7 +174,7 @@ public:
 
   [[nodiscard]] inline auto param(const size_t ix) const
       -> const stmt_def_func_param & {
-    return params_[ix];
+    return params_.at(ix);
   }
 
   [[nodiscard]] inline auto params() const
@@ -198,7 +198,7 @@ private:
 
     if (not returns().empty()) {
       // declare variable for the return
-      const token &id_tkn{returns()[0].ident_tk};
+      const token &id_tkn{returns().at(0).ident_tk};
       tc.add_var(id_tkn, os, indent + 1, id_tkn.name(), get_type(), false);
     }
 
@@ -206,7 +206,7 @@ private:
       //? inline functions get parameters as aliases
       const size_t n{params_.size()};
       for (size_t i{0}; i < n; i++) {
-        const stmt_def_func_param &param{params_[i]};
+        const stmt_def_func_param &param{params_.at(i)};
         const type &param_type{param.get_type()};
         const string &param_name{param.name()};
         const string &param_reg{param.get_register_name_or_empty()};
@@ -245,7 +245,7 @@ private:
     // define variables in the called context by mapping arguments to stack
     const size_t n{params_.size()};
     for (size_t i{0}; i < n; i++) {
-      const stmt_def_func_param &param{params_[i]};
+      const stmt_def_func_param &param{params_.at(i)};
       const type &param_type{param.get_type()};
       const string &param_name{param.name()};
       const string &param_reg{param.get_register_name_or_empty()};
@@ -288,7 +288,7 @@ private:
     //? necessary to be in reversed order?
     size_t i{allocated_named_registers.size()};
     while (i--) {
-      tc.free_named_register(os, indent + 1, allocated_named_registers[i]);
+      tc.free_named_register(os, indent + 1, allocated_named_registers.at(i));
     }
   }
 };

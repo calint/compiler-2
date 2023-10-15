@@ -223,11 +223,11 @@ public:
 
               // if false and in an 'and' list short-circuit and return
               // evaluation
-              if (not *const_eval and ops_[i].is_name("and")) {
+              if (not *const_eval and ops_.at(i).is_name("and")) {
                 return *const_eval;
               }
               // if true and in an 'or' list short-circuit and return result
-              if (*const_eval and ops_[i].is_name("or")) {
+              if (*const_eval and ops_.at(i).is_name("or")) {
                 return *const_eval;
               }
             }

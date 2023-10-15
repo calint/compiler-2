@@ -60,7 +60,7 @@ public:
     // find first built-in type to have a valid operand size for the address
     const type *tp_first_field{tp};
     while (not tp_first_field->is_built_in()) {
-      tp_first_field = &tp_first_field->fields_[0].tp;
+      tp_first_field = &tp_first_field->fields_.at(0).tp;
     }
 
     const string &memsize{

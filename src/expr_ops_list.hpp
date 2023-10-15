@@ -256,7 +256,7 @@ private:
     // remaining elements are +,-,*,/,%,|,&,^,<<,>>
     const size_t n{ops_.size()};
     for (size_t i{0}; i < n; i++) {
-      asm_op(tc, os, indent, ops_[i], dst_resolved, *exprs_.at(i + 1));
+      asm_op(tc, os, indent, ops_.at(i), dst_resolved, *exprs_.at(i + 1));
     }
 
     // apply unary expressions on destination

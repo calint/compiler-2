@@ -1,25 +1,25 @@
 [ ] check that return value is initiated before copy to rax
 [ ] fix 'cmp' with left hand side constant
     => compilation error
-[ ] change vector indexing to safer .at(i)
+[x] change vector indexing to safer .at(i)
 [ ] rename compiler_exception
 [ ] consider disabling function definitions and calls without ()
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
-[ ] var pos : point = foo()
+[ ] function return a non-register passable type
+[ ]     var pos : point = foo()
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
 [ ] func f(p : point copy) copies point to callee stack
-[ ] func f(p : point const) const is default func f(p : point)
-[ ] function return a non-register passable type
+[ ] func f(p : point const) const is default. same as "func f(p : point)"
 [ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
 [ ] func foo(object& self, arg) can be called with o.foo(arg)
-[ ] multiple return values: func f() : point pos, point vel { ... }
-[ ]    var p,v = f()
 [ ] string type
 [ ]   var str = "hello world"
 [ ]   var len = str.len
 [ ] var points : point[10] = {{1, 2}, {3, 4}}
 [ ]   points[1].x = 1
 [ ]   points.len
+[ ] multiple return values: func f() : point pos, point vel { ... }
+[ ]    var p,v = f()
 [ ] consider cmovxx when evaluating a boolean expression
 [ ] floating point numbers
 [ ] func f(p : point) {} ... f({x, y})

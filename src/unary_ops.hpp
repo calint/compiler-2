@@ -41,7 +41,7 @@ public:
     // put back in reverse order
     size_t i{ops_.size()};
     while (i--) {
-      tz.put_back_char(ops_[i]);
+      tz.put_back_char(ops_.at(i));
     }
     tz.put_back_token(ws_before_);
   }
@@ -67,7 +67,7 @@ public:
   [[nodiscard]] inline auto evaluate_constant(long v) const -> long {
     size_t i{ops_.size()};
     while (i--) {
-      switch (ops_[i]) {
+      switch (ops_.at(i)) {
       case '-':
         v = -v;
         break;
