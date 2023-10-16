@@ -57,7 +57,7 @@ public:
         tc, os, indent, jmp_to_if_false_label, jmp_to_if_true_lbl, false)};
     // if constant boolean expression
     if (const_eval) {
-      // if evaluated to true then this branch code will execut
+      // if evaluated to true then this branch code will execute
       if (*const_eval) {
         // the code of the branch
         code_.compile(tc, os, indent);
