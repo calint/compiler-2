@@ -748,10 +748,7 @@ public:
       }
       // free named registers
       size_t i{allocated_registers_.size()};
-      while (true) {
-        if (i == alloc_reg_idx) {
-          break;
-        }
+      while (i != alloc_reg_idx) {
         i--;
         const string &reg{allocated_registers_.at(i)};
         // don't pop registers used to pass arguments
@@ -771,10 +768,7 @@ public:
 
       // pop registers pushed prior to this call
       size_t i{allocated_registers_.size()};
-      while (true) {
-        if (i == alloc_reg_idx) {
-          break;
-        }
+      while (i != alloc_reg_idx) {
         i--;
         const string &reg{allocated_registers_.at(i)};
         // don't pop registers used to pass arguments
