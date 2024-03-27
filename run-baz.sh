@@ -1,12 +1,13 @@
 #!/bin/bash
 
+set -e
+
 PRG=${1:-prog.baz}
 
 # change to directory of the script
 cd $(dirname "$0")
 
 SEP="--------------------------------------------------------------------------------"
-echo
 echo $SEP
 ./baz $PRG > gen.s &&
 nasm -f elf64 gen.s &&
@@ -17,5 +18,3 @@ echo $SEP &&
 ./gen &&
 echo $SEP
 echo returned: $?
-echo
-rm -f default.profraw

@@ -1,9 +1,9 @@
 #!/bin/sh
 # tools:
-#   clang++: 15.0.7
-#       g++: 12.3.0
+#   clang++: 16.0.6
+#       g++: 13.2.0
 #      nasm: 2.16.01
-#        ld: 2.40
+#        ld: 2.41
 
 set -e
 
@@ -20,12 +20,12 @@ PROF=
 DBG=
 OPT=-O3
 if [ "$1" = "msan" ]; then
-    # sanitize
-    MSAN="-fPIE -pie -fsanitize=memory,undefined -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=etc/msan_suppressions.txt"
+    # sanitize (note: sanitize crashes unpredictably with core dump)
+    #MSAN="-fsanitize=memory,undefined -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=etc/msan_suppressions.txt"
     DBG=-g
 elif [ "$1" = "prof" ]; then
-    # profiling, sanitize
-#    MSAN="-fPIE -pie -fsanitize=address,undefined -fno-omit-frame-pointer"
+    # profiling, sanitize (note: sanitize crashes unpredictably with core dump)
+#    MSAN="-fsanitize=address,undefined -fno-omit-frame-pointer"
     PROF="-fprofile-instr-generate -fcoverage-mapping"
     DBG=-g
 fi
