@@ -20,11 +20,12 @@ PROF=
 DBG=
 OPT=-O3
 if [ "$1" = "msan" ]; then
-    MSAN="-fsanitize=memory,undefined -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=msan_suppressions.txt"
+    # sanitize
+    MSAN="-fPIE -pie -fsanitize=memory,undefined -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=msan_suppressions.txt"
     DBG=-g
 elif [ "$1" = "prof" ]; then
     # profiling, sanitize
-    MSAN="-fsanitize=address,undefined -fno-omit-frame-pointer"
+#    MSAN="-fPIE -pie -fsanitize=address,undefined -fno-omit-frame-pointer"
     PROF="-fprofile-instr-generate -fcoverage-mapping"
     DBG=-g
 fi

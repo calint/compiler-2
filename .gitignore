@@ -11,3 +11,5 @@
 gen
 gen.o
 diff.baz
+lcov.info
+*.profdata
