@@ -692,7 +692,7 @@ public:
                                                    : 0};
     if (root_call) {
       // this call is not nested within another call's arguments
-      if (nbytes_of_vars_on_stack) {
+      if (nbytes_of_vars_on_stack != 0) {
         // adjust stack past the allocated vars
         asm_cmd(src_loc, os, indnt, "sub", "rsp",
                 to_string(nbytes_of_vars_on_stack));
@@ -736,7 +736,7 @@ public:
     //   rsp is adjusted once
     if (nregs_pushed == 0) {
       // stack is: <base>,vars,args,
-      if (restore_rsp_to_base) {
+      if (restore_rsp_to_base != 0) {
         const string &offset{
             to_string(nbytes_of_args_on_stack + nbytes_of_vars)};
         asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
@@ -763,7 +763,7 @@ public:
       }
     } else {
       // stack is: <base>,vars,regs,args,
-      if (nbytes_of_args_on_stack) {
+      if (nbytes_of_args_on_stack != 0) {
         const string &offset{to_string(nbytes_of_args_on_stack)};
         asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
       }
@@ -794,7 +794,7 @@ public:
       if (restore_rsp_to_base) {
         // this was not a call within the arguments of another call
         // stack is: <base>,vars,
-        if (nbytes_of_vars) {
+        if (nbytes_of_vars != 0) {
           const string &offset{to_string(nbytes_of_vars)};
           asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
         }
