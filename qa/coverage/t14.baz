@@ -1,13 +1,13 @@
 func inline exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
-    syscall
+    syscall()
 }
 
 field x=1
 field y=2
 
-func inline main{
+func inline main(){
     var z=3
     x=y
     y=z

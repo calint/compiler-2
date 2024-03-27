@@ -1,7 +1,7 @@
 func inline exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
-    syscall
+    syscall()
 }
 
 func a(i):i64 res{
@@ -16,6 +16,6 @@ func c(i):i64 res{
     res=i+3
 }
 
-func inline main{
+func inline main(){
     exit(a(b(c(1))))
 }

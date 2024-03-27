@@ -1,7 +1,7 @@
 func inline exit(v:reg_rdi){
 	mov(rax,60) # exit system call
 	mov(rdi,v)  # return code
-	syscall
+	syscall()
 }
 
 field fld=42
@@ -27,7 +27,7 @@ func f(){
 	if not obj.color==str.len exit(7)
 }
 
-func inline main{
+func inline main(){
 	var obj:object={{1,0},{0,0},0}
 	if not obj.pos.x==1 exit(1)
 	obj.pos.x=1

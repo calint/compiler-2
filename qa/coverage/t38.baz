@@ -3,14 +3,14 @@ field name="............................................................"
 func inline exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
-    syscall
+    syscall()
 }
 
 func inline f(a):i64 res{
     res=-a*2
 }
 
-func inline main{
+func inline main(){
     var a=1
     var b=-f(-a)
     if(b==-2)

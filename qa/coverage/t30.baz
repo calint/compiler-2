@@ -1,14 +1,14 @@
 func inline exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
-    syscall
+    syscall()
 }
 
 func inline f(x:reg_rdx):i64 res{
     res=-x*2
 }
 
-func inline main{
+func inline main(){
     var a=2
     var b=f(-a+1)
     if b==2

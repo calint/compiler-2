@@ -1,10 +1,10 @@
 func inline exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
-    syscall
+    syscall()
 }
 
-func inline main{
+func inline main(){
     var a=0xfffffffffffffffe # -2
     var b=2*~a # ~a=1
     if not b==2 exit(1)

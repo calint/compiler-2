@@ -9,7 +9,7 @@ field      nl = "\n"
 func inline exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
-    syscall
+    syscall()
 }
 
 func inline print(len : reg_rdx, ptr : reg_rsi) {
@@ -17,7 +17,7 @@ func inline print(len : reg_rdx, ptr : reg_rsi) {
     mov(rdi, 1)   # file descriptor for standard out
     mov(rsi, ptr) # buffer address 
     mov(rdx, len) # buffer size
-    syscall
+    syscall()
 }
 
 func inline read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
@@ -25,11 +25,11 @@ func inline read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, ptr) # buffer address
     mov(rdx, len) # buffer size
-    syscall
+    syscall()
     mov(nbytes, rax) # return value
 }
 
-func inline main {
+func inline main(){
     print(hello.len, hello)
     loop {
         print(prompt1.len, prompt1)

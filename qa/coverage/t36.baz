@@ -3,7 +3,7 @@ field name="............................................................"
 func inline exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
-    syscall
+    syscall()
 }
 
 func inline print(len:reg_rdx,ptr:reg_rsi){
@@ -11,7 +11,7 @@ func inline print(len:reg_rdx,ptr:reg_rsi){
     mov(rdi,1)   # file descriptor for standard out
     mov(rsi,ptr) # buffer address 
     mov(rdx,len) # buffer size
-    syscall
+    syscall()
 }
 
 func inline read(len:reg_rdx,ptr:reg_rsi):i64 nbytes_read{
@@ -19,11 +19,11 @@ func inline read(len:reg_rdx,ptr:reg_rsi):i64 nbytes_read{
 	mov(rdi,0)    # file descriptor for standard input
 	mov(rsi,ptr)  # buffer address
 	mov(rdx,len)  # buffer size
-	syscall
+	syscall()
     mov(nbytes_read,rax)
 }
 
-func inline main{
+func inline main(){
     var len=read(name.len,name)-1 # remove the \n
     print(len,name)
     exit(0)

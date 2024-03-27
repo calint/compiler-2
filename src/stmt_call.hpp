@@ -4,7 +4,6 @@
 
 class stmt_call : public expression {
   vector<expr_any> args_{};
-  bool no_args_{};
   token ws_after_{}; // whitespace after arguments
 
 public:
@@ -14,8 +13,7 @@ public:
     set_type(tc.get_func_return_type_or_throw(tok(), identifier()));
 
     if (not tz.is_next_char('(')) {
-      no_args_ = true;
-      return;
+      throw compiler_exception(tk, "expected '(' after function name");
     }
 
     if (not tc.is_func_builtin(tok(), identifier())) {
@@ -67,9 +65,6 @@ public:
 
   inline void source_to(ostream &os) const override {
     expression::source_to(os);
-    if (no_args_) {
-      return;
-    }
     os << "(";
     size_t i{0};
     for (const expr_any &e : args_) {

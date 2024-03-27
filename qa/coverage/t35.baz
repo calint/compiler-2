@@ -1,12 +1,12 @@
 func inline exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
-    syscall
+    syscall()
 }
 
 field len=2
 
-func inline main{
+func inline main(){
     var a=-1
     a=-a
     var b=-(len)

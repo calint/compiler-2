@@ -1,7 +1,7 @@
 func inline exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
-    syscall
+    syscall()
 }
 
 func inline f(b:bool):bool res{
@@ -15,7 +15,7 @@ func inline f2(i:i64):i64 res{
     else res=7
 }
 
-func inline main{
+func inline main(){
     var r:bool=f(true)
     if r exit(1)
 

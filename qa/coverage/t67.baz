@@ -1,7 +1,7 @@
 func inline exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
-    syscall
+    syscall()
 }
 
 func assert(expr : bool) {
@@ -14,7 +14,7 @@ type object { pos : position, valid : bool }
 
 type square { super : object, color}
 
-func inline main {
+func inline main(){
     var p1 : position = {10, 20, 30}
     var o1 : object = {p1, true}
     var sq1 : square = {o1, 0xff0000}

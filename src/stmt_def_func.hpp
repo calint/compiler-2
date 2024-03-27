@@ -9,7 +9,6 @@ class stmt_def_func final : public statement {
   vector<func_return_info> returns_{};
   stmt_block code_{};
   token inline_tk_{};
-  bool no_args_{};
 
 public:
   inline stmt_def_func(toc &tc, token tk, tokenizer &tz)
@@ -21,24 +20,21 @@ public:
       name_tk_ = tz.next_token();
     }
     if (not tz.is_next_char('(')) {
-      // no parameters expected
-      no_args_ = true;
+      throw compiler_exception(name_tk_, "expected '(' after function name");
     }
-    if (not no_args_) {
-      // read parameters definition
-      while (true) {
-        if (tz.is_next_char(')')) {
-          break;
-        }
-        params_.emplace_back(tc, tz);
-        if (tz.is_next_char(')')) {
-          break;
-        }
-        if (not tz.is_next_char(',')) {
-          throw compiler_exception(params_.back().tok(),
-                                   "expected ',' after parameter '" +
-                                       params_.back().tok().name() + "'");
-        }
+    // read parameters definition
+    while (true) {
+      if (tz.is_next_char(')')) {
+        break;
+      }
+      params_.emplace_back(tc, tz);
+      if (tz.is_next_char(')')) {
+        break;
+      }
+      if (not tz.is_next_char(',')) {
+        throw compiler_exception(params_.back().tok(),
+                                 "expected ',' after parameter '" +
+                                     params_.back().tok().name() + "'");
       }
     }
     ws_after_params_ = tz.next_whitespace_token();
@@ -91,9 +87,9 @@ public:
       inline_tk_.source_to(os);
     }
     name_tk_.source_to(os);
-    if (not no_args_) {
-      // function has parameters
-      os << "(";
+    // function has parameters
+    os << "(";
+    {
       size_t i{0};
       for (const stmt_def_func_param &p : params_) {
         if (i++) {
@@ -101,8 +97,8 @@ public:
         }
         p.source_to(os);
       }
-      os << ")";
     }
+    os << ")";
     ws_after_params_.source_to(os);
     if (not returns_.empty()) {
       // return parameters

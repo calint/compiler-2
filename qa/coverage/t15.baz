@@ -3,7 +3,7 @@ field  hello="hello\n"
 func inline exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
-    syscall
+    syscall()
 }
 
 func inline print(len:reg_rdx,ptr:reg_rsi){
@@ -11,14 +11,14 @@ func inline print(len:reg_rdx,ptr:reg_rsi){
     mov(rdi,1)   # file descriptor for standard out
     mov(rsi,ptr) # buffer address 
     mov(rdx,len) # buffer size
-    syscall
+    syscall()
 }
 
-func bar{
+func bar(){
     print(hello.len,hello)
 }
 
-func inline main{
+func inline main(){
     var a=3
     var b=2
     loop{

@@ -1,5 +1,5 @@
 [ ] implement arrays
-[ ] consider disabling function definitions and calls without ()
+[x] consider disabling function definitions and calls without ()
 [ ] calculate stack size at compile time instead of hardcoded
 [ ] rename compiler_exception
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
