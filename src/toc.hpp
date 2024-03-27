@@ -736,7 +736,7 @@ public:
     //   rsp is adjusted once
     if (nregs_pushed == 0) {
       // stack is: <base>,vars,args,
-      if (restore_rsp_to_base != 0) {
+      if (restore_rsp_to_base) {
         const string &offset{
             to_string(nbytes_of_args_on_stack + nbytes_of_vars)};
         asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
