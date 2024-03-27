@@ -21,7 +21,7 @@ DBG=
 OPT=-O3
 if [ "$1" = "msan" ]; then
     # sanitize
-    MSAN="-fPIE -pie -fsanitize=memory,undefined -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=msan_suppressions.txt"
+    MSAN="-fPIE -pie -fsanitize=memory,undefined -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=etc/msan_suppressions.txt"
     DBG=-g
 elif [ "$1" = "prof" ]; then
     # profiling, sanitize
