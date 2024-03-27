@@ -150,7 +150,7 @@ public:
       }
     }
     // left-hand-side or right-hand-side or both are expressions
-    //? todo. compilation error if lhs_ is contant
+    //? todo. compilation error if lhs_ is constant
     resolve_cmp(tc, os, indent, lhs_, rhs_);
     toc::indent(os, indent);
     os << (invert ? asm_jxx_for_op_inv(op_) : asm_jxx_for_op(op_));
