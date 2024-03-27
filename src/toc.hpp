@@ -218,13 +218,13 @@ class toc final {
   const type *type_bool_{};
   size_t usage_max_scratch_regs_{};
   size_t usage_max_frame_count_{};
+  size_t usage_max_stack_size_{};
 
 public:
   inline explicit toc(const string &source)
-      : source_{source}, all_registers_{"rax", "rbx", "rcx", "rdx",
-                                        "rsi", "rdi", "rbp", "rsp",
-                                        "r8",  "r9",  "r10", "r11",
-                                        "r12", "r13", "r14", "r15"},
+      : source_{source},
+        all_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
+                       "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"},
         named_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi"},
         scratch_registers_{"r8",  "r9",  "r10", "r11",
                            "r12", "r13", "r14", "r15"} {}
@@ -356,6 +356,8 @@ public:
     os << "\n; max scratch registers in use: " << usage_max_scratch_regs_
        << endl;
     os << ";            max frames in use: " << usage_max_frame_count_ << endl;
+    os << ";               max stack size: " << usage_max_stack_size_ << " B"
+       << endl;
     //		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
     assert(all_registers_.size() == 16);
     assert(allocated_registers_.empty());
@@ -467,6 +469,12 @@ public:
 
     const int stack_idx{int(get_current_stack_size() + var_type.size())};
     frames_.back().add_var(src_loc, name, var_type, -stack_idx, initiated);
+
+    const size_t total_stack_size{get_total_stack_size()};
+    if (total_stack_size > usage_max_stack_size_) {
+      usage_max_stack_size_ = total_stack_size;
+    }
+
     // comment the resolved name
     const ident_resolved &name_resolved{
         resolve_identifier(src_loc, name, false)};
@@ -1270,6 +1278,19 @@ private:
       }
     }
     // top frame, 'main'
+    return nbytes;
+  }
+
+  //? does not take into account non-inlined calls and the return address from a
+  // function call
+  inline auto get_total_stack_size() const -> size_t {
+    assert(!frames_.empty());
+    size_t nbytes{0};
+    size_t i{frames_.size()};
+    while (i--) {
+      const frame &frm{frames_.at(i)};
+      nbytes += frm.allocated_stack_size();
+    }
     return nbytes;
   }
 

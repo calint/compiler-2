@@ -11,13 +11,13 @@ template <class T> class lut final {
   };
 
   vector<el> elems_{};
-  mutable const el *last_has_el{};
+  mutable const el *last_has_el_{};
 
 public:
   inline auto get(const string &key) const -> T {
-    if (last_has_el) {
-      if (last_has_el->is_key(key)) {
-        return last_has_el->data;
+    if (last_has_el_) {
+      if (last_has_el_->is_key(key)) {
+        return last_has_el_->data;
       }
     }
     for (const el &e : elems_) {
@@ -31,10 +31,11 @@ public:
   inline auto has(const string &key) const -> bool {
     for (const el &e : elems_) {
       if (e.is_key(key)) {
-        last_has_el = &e;
+        last_has_el_ = &e;
         return true;
       }
     }
+    last_has_el_ = nullptr;
     return false;
   }
 
@@ -53,9 +54,9 @@ public:
 
   // for clarity get_const_ref instead of overloading get_ref
   inline auto get_const_ref(const string &key) const -> const T & {
-    if (last_has_el) {
-      if (last_has_el->is_key(key)) {
-        return last_has_el->data;
+    if (last_has_el_) {
+      if (last_has_el_->is_key(key)) {
+        return last_has_el_->data;
       }
     }
     for (const el &e : elems_) {

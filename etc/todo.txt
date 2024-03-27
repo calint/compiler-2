@@ -1,6 +1,7 @@
 [ ] implement arrays
 [x] consider disabling function definitions and calls without ()
 [ ] calculate stack size at compile time instead of hardcoded
+[ ]   calculate max stack size used
 [ ] rename compiler_exception
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
 [o] check that return value is assigned in functions
