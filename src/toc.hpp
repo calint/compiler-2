@@ -356,7 +356,7 @@ public:
     os << "\n; max scratch registers in use: " << usage_max_scratch_regs_
        << endl;
     os << ";            max frames in use: " << usage_max_frame_count_ << endl;
-    os << ";               max stack size: " << usage_max_stack_size_ << " B"
+    os << ";        max inline stack size: " << usage_max_stack_size_ << " B"
        << endl;
     //		os<<";          max stack in use: "<<tc.max_stack_usage_<<endl;
     assert(all_registers_.size() == 16);
