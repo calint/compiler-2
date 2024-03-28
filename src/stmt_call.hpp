@@ -13,7 +13,7 @@ public:
     set_type(tc.get_func_return_type_or_throw(tok(), identifier()));
 
     if (not tz.is_next_char('(')) {
-      throw compiler_exception(tk, "expected '(' after function name");
+      throw compiler_exception(tok(), "expected '(' after function name");
     }
 
     if (not tc.is_func_builtin(tok(), identifier())) {

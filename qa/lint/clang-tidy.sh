@@ -1,6 +1,6 @@
 #!/bin/bash
 # tools:
-#   clang-tidy: 15.0.7
+#   clang-tidy: 16.0.6
 
 # change to directory of the script
 cd $(dirname "$0")

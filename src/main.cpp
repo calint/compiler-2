@@ -20,9 +20,11 @@ using namespace std;
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
 
-static auto read_file_to_string(const char *file_name) -> string;
-static void optimize_jumps_1(istream &is, ostream &os);
-static void optimize_jumps_2(istream &is, ostream &os);
+namespace {
+auto read_file_to_string(const char *file_name) -> string;
+void optimize_jumps_1(istream &is, ostream &os);
+void optimize_jumps_2(istream &is, ostream &os);
+} // namespace
 
 auto main(int argc, char *args[]) -> int {
   const char *src_file_name{argc == 1 ? "prog.baz" : args[1]};
@@ -222,13 +224,14 @@ inline void expr_type_value::compile_recursive(const expr_type_value &atv,
   }
 }
 
+namespace {
 //  opt1
 //  example:
 //    jmp cmp_13_26
 //    cmp_13_26:
 //  to
 //    cmp_13_26:
-static void optimize_jumps_1(istream &is, ostream &os) {
+void optimize_jumps_1(istream &is, ostream &os) {
   const regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
   const regex rxlbl{R"(^\s*(.+):.*$)"};
   const regex rxcomment{R"(^\s*;.*$)"};
@@ -294,7 +297,7 @@ static void optimize_jumps_1(istream &is, ostream &os) {
 // to
 //   je if_14_8_code
 //   cmp_14_26:
-static void optimize_jumps_2(istream &is, ostream &os) {
+void optimize_jumps_2(istream &is, ostream &os) {
   const regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
   const regex rxjxx{R"(^\s*(j[a-z][a-z]?)\s+(.+)\s*$)"};
   const regex rxlbl{R"(^\s*(.+):.*$)"};
@@ -417,7 +420,7 @@ static void optimize_jumps_2(istream &is, ostream &os) {
   }
 }
 
-static auto read_file_to_string(const char *file_name) -> string {
+auto read_file_to_string(const char *file_name) -> string {
   ifstream fs{file_name};
   if (not fs.is_open()) {
     throw panic_exception("cannot open file '" + string{file_name} + "'");
@@ -426,3 +429,5 @@ static auto read_file_to_string(const char *file_name) -> string {
   buf << fs.rdbuf();
   return buf.str();
 }
+
+} // end of anonymous namespace

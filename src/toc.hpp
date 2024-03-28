@@ -709,7 +709,7 @@ public:
     for (size_t i{alloc_regs_idx}; i < n; i++) {
       const string &reg{allocated_registers_.at(i)};
       if (not is_register_initiated(reg)) {
-        // don't save uninitiated registers because their value is irrelevants
+        // don't save uninitiated registers because their value is irrelevant
         continue;
       }
       // push only registers that contain a valid value
