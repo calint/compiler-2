@@ -15,7 +15,7 @@ public:
 
     // 'if' token has been read
     while (true) {
-      // read branch i.e. a == b {x = 1}
+      // read branch e.g. a == b {x = 1}
       branches_.emplace_back(tc, tz);
 
       // check if it is a 'else if' or 'else' or a new statement

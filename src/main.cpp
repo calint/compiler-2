@@ -102,14 +102,14 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
     if (!uops.is_empty()) {
       throw compiler_exception(tk, "unexpected comment after unary ops");
     }
-    // i.e.  print("hello") # comment
+    // e.g.  print("hello") # comment
     return make_unique<stmt_comment>(tc, move(tk), tz);
   }
   if (tz.is_peek_char('(')) {
-    // i.e.  foo(...)
+    // e.g.  foo(...)
     return create_statement_from_tokenizer(tc, move(uops), move(tk), tz);
   }
-  // i.e. 0x80, rax, identifiers
+  // e.g. 0x80, rax, identifiers
   unique_ptr<statement> stmt{make_unique<statement>(tk, move(uops))};
   const ident_resolved &stmt_resolved{tc.resolve_identifier(*stmt, false)};
   stmt->set_type(stmt_resolved.type_ref);

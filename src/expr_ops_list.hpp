@@ -19,7 +19,7 @@ public:
       : expression{tz.next_whitespace_token()}, enclosed_{enclosed},
         uops_{move(uops)} {
 
-    // read first expression i.e. =-a/-(b+1)
+    // read first expression e.g. =-a/-(b+1)
     if (first_expression) {
       // called in a recursion with first expression provided
       exprs_.emplace_back(move(first_expression));
