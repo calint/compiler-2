@@ -39,6 +39,11 @@ public:
 
     const ident_resolved &dst_resolved{tc.resolve_identifier(*this, false)};
 
+    if (dst_resolved.is_const()) {
+      throw compiler_exception(tok(), "cannot assign to constant '" +
+                                          dst_resolved.id + "'");
+    }
+
     expr_.compile(tc, os, indent, dst_resolved.id);
 
     tc.set_var_is_initiated(dst_resolved.id);
