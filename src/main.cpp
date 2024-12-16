@@ -66,6 +66,11 @@ auto main(int argc, char *args[]) -> int {
   return 0;
 }
 
+//
+// implementation of functions that could not be implemented in headers due to
+// circular references
+//
+
 // declared in 'decouple.hpp'
 //   called from 'stmt_block' to solve circular dependencies with 'loop', 'if'
 //   and function calls
@@ -125,6 +130,7 @@ create_expr_any_from_tokenizer(toc &tc, tokenizer &tz, const type &tp,
   return make_unique<expr_any>(tc, tz, tp, in_args);
 }
 
+// declared in 'expr_type_value.hpp'
 // note: constructor and destructor is implemented in 'main.cpp' where the
 // 'expr_any' definition is known. clang++ -std=c++23 requires it since
 // changes to handling of unique_ptr to incomplete types
