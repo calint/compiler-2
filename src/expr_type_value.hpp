@@ -16,6 +16,8 @@ public:
   inline expr_type_value(expr_type_value &&) = default;
   inline auto operator=(const expr_type_value &) -> expr_type_value & = default;
   inline auto operator=(expr_type_value &&) -> expr_type_value & = default;
+  // note: copy and assignment constructor will not compile if used
+
   inline ~expr_type_value() override;
 
   inline void compile(toc &tc, ostream &os, size_t indent,
@@ -25,7 +27,7 @@ public:
                                        dst, get_type());
   }
 
-  // implemented in main.cpp due to circular reference
+  // implemented in 'main.cpp' due to circular reference
   //   expr_type_value -> expr_any -> expr_type_value
   inline void source_to(ostream &os) const override;
 
