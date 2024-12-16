@@ -1,9 +1,9 @@
 #!/bin/sh
 # tools:
-#   clang++: 16.0.6
-#       g++: 13.2.0
-#      nasm: 2.16.01
-#        ld: 2.41
+#   clang++: 18.1.8
+#       g++: 14.2.0
+#      nasm: 2.16.03
+#        ld: 2.43
 
 set -e
 
@@ -11,7 +11,14 @@ set -e
 cd $(dirname "$0")
 
 # set environment
+#CC="g++ -std=c++23"
+#CF="-Wfatal-errors -Werror"
+#CW="-Wall -Wextra -Wpedantic \
+#    -Wno-c++98-compat -Wno-weak-vtables -Wno-padded \
+#    -Wno-unqualified-std-cast-call -Wno-unsafe-buffer-usage"
+
 CC="clang++ -std=c++20"
+# note: c++23 gives breaking change of handling of incomplete types by unique_ptr
 CF="-Wfatal-errors -Werror"
 CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-padded \
     -Wno-unqualified-std-cast-call -Wno-unsafe-buffer-usage"
