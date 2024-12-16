@@ -176,27 +176,6 @@ inline expr_type_value::expr_type_value(toc &tc, tokenizer &tz, const type &tp)
 
 inline expr_type_value::~expr_type_value() = default;
 
-// declared in "unary_ops.hpp"
-//  solves circular reference: unary_ops -> toc -> statement -> unary_ops
-inline void unary_ops::compile([[maybe_unused]] toc &tc, ostream &os,
-                               size_t indnt, const string &dst_resolved) const {
-  size_t i{ops_.size()};
-  while (i--) {
-    const char op{ops_[i]};
-    switch (op) {
-    case '~':
-      toc::asm_not(ws_before_, os, indnt, dst_resolved);
-      break;
-    case '-':
-      toc::asm_neg(ws_before_, os, indnt, dst_resolved);
-      break;
-    default:
-      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                            std::to_string(__LINE__));
-    }
-  }
-}
-
 // declared in 'expr_type_value.hpp':
 //   resolves circular reference: expr_type_value -> expr_any ->
 //   expr_type_value
@@ -216,7 +195,7 @@ inline void expr_type_value::source_to(ostream &os) const {
   os << '}';
 }
 
-// declared in 'expr_type_value.hpps':
+// declared in 'expr_type_value.hpp':
 //   resolves circular reference: expr_type_value -> expr_any ->
 //   expr_type_values
 inline void expr_type_value::compile_recursive(const expr_type_value &atv,
@@ -272,6 +251,27 @@ inline void expr_type_value::compile_recursive(const expr_type_value &atv,
     compile_recursive(atv.exprs_.at(i)->as_assign_type_value(), tc, os,
                       indent + 1, atv.exprs_.at(i)->identifier(),
                       dst + "." + fld.name, fld.tp);
+  }
+}
+
+// declared in "unary_ops.hpp"
+//  solves circular reference: unary_ops -> toc -> statement -> unary_ops
+inline void unary_ops::compile([[maybe_unused]] toc &tc, ostream &os,
+                               size_t indnt, const string &dst_resolved) const {
+  size_t i{ops_.size()};
+  while (i--) {
+    const char op{ops_[i]};
+    switch (op) {
+    case '~':
+      toc::asm_not(ws_before_, os, indnt, dst_resolved);
+      break;
+    case '-':
+      toc::asm_neg(ws_before_, os, indnt, dst_resolved);
+      break;
+    default:
+      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
+                            std::to_string(__LINE__));
+    }
   }
 }
 
