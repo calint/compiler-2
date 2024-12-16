@@ -69,9 +69,9 @@ auto main(int argc, char *args[]) -> int {
 // declared in 'decouple.hpp'
 //   called from 'stmt_block' to solve circular dependencies with 'loop', 'if'
 //   and function calls
-inline auto create_statement_from_tokenizer(toc &tc, unary_ops uops, token tk,
-                                            tokenizer &tz)
-    -> unique_ptr<statement> {
+inline auto
+create_statement_from_tokenizer(toc &tc, unary_ops uops, token tk,
+                                tokenizer &tz) -> unique_ptr<statement> {
   if (tk.is_name("loop")) {
     return make_unique<stmt_loop>(tc, move(tk), tz);
   }
@@ -118,12 +118,57 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
 
 // declared in 'decouple.hpp'
 //   solves circular reference: expr_type_value -> expr_any -> expr_type_value
-inline auto create_expr_any_from_tokenizer(toc &tc, tokenizer &tz,
-                                           const type &tp, bool in_args)
-    -> unique_ptr<expr_any> {
+inline auto
+create_expr_any_from_tokenizer(toc &tc, tokenizer &tz, const type &tp,
+                               bool in_args) -> unique_ptr<expr_any> {
 
   return make_unique<expr_any>(tc, tz, tp, in_args);
 }
+
+// note: constructor and destructor is implemented in 'main.cpp' where the
+// 'expr_any' definition is known. clang++ -std=c++23 requires it since
+// changes to handling of unique_ptr to incomplete types
+
+inline expr_type_value::expr_type_value(toc &tc, tokenizer &tz, const type &tp)
+    : statement{tz.next_token()} {
+
+  set_type(tp);
+
+  if (not tok().is_name("")) {
+    // e.g. obj.pos = p
+    return;
+  }
+
+  // e.g. obj.pos = {x, y}
+  if (not tz.is_next_char('{')) {
+    throw compiler_exception(tz, "expected '{' to open assign type '" +
+                                     tp.name() + "'");
+  }
+
+  const vector<type_field> &flds{tp.fields()};
+  const size_t nflds{flds.size()};
+  for (size_t i{0}; i < nflds; i++) {
+    const type_field &fld{flds.at(i)};
+    // create expression that assigns to field
+    // might recurse creating 'expr_type_value'
+    exprs_.emplace_back(create_expr_any_from_tokenizer(tc, tz, fld.tp, true));
+
+    if (i < nflds - 1) {
+      if (not tz.is_next_char(',')) {
+        throw compiler_exception(tz, "expected ',' and value of field '" +
+                                         flds[i + 1].name + "' in type '" +
+                                         tp.name() + "'");
+      }
+    }
+  }
+
+  if (not tz.is_next_char('}')) {
+    throw compiler_exception(tz, "expected '}' to close assign type '" +
+                                     tp.name() + "'");
+  }
+}
+
+inline expr_type_value::~expr_type_value() = default;
 
 // declared in "unary_ops.hpp"
 //  solves circular reference: unary_ops -> toc -> statement -> unary_ops

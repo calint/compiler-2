@@ -11,8 +11,7 @@ set -e
 cd $(dirname "$0")
 
 # set environment
-CC="clang++ -std=c++20"
-# note: c++23 gives breaking change in handling of incomplete types by unique_ptr
+CC="clang++ -std=c++23"
 CF="-Wfatal-errors -Werror"
 CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-padded \
     -Wno-unqualified-std-cast-call -Wno-unsafe-buffer-usage"
