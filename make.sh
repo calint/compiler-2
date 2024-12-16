@@ -24,7 +24,7 @@ CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-padded \
 
 MSAN=
 PROF=
-DBG=
+DBG=-g
 OPT=-O3
 if [ "$1" = "msan" ]; then
     # sanitize (note: sanitize crashes unpredictably with core dump)

@@ -2,56 +2,22 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "type": "cppbuild",
-            "label": "baz build",
-            "command": "/usr/bin/g++",
-            "args": [
-                "-std=c++23",
-                "src/main.cpp",
-                "-o",
-                "baz",
-                "-g",
-                "-fdiagnostics-color=always",
-                "-Wfatal-errors",
-                "-Werror",
-                "-Wall",
-                "-Wextra",
-                "-Wpedantic",
-                "-Weffc++",
-                "-Wsign-conversion",
-                "-Wold-style-cast",
-                "-Wshadow",
-                "-Wctad-maybe-unsupported",
-                "-Wconversion",
-                "-Wcast-align",
-                "-Wcast-qual",
-                "-Wctor-dtor-privacy",
-                "-Wdisabled-optimization",
-                "-Wlogical-op",
-                "-Wmissing-declarations",
-                "-Wmissing-include-dirs",
-                "-Woverloaded-virtual",
-                "-Wredundant-decls",
-                "-Wsign-promo",
-                "-Wstrict-null-sentinel",
-                "-Wswitch-default",
-                "-Wundef",
-                "-Wfloat-equal",
-                "-Wnoexcept",
-            ],
+            "label": "baz: build and run",
+            "type": "shell",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "command": "${workspaceFolder}/make.sh",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [
                 "$gcc"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
+            ]
         },
         {
-            "label": "baz run tests",
+            "label": "baz: run tests",
             "command": "run-tests.sh",
             "options": {
                 "cwd": "${workspaceFolder}/qa/coverage/"
@@ -59,7 +25,7 @@
             "problemMatcher": []
         },
         {
-            "label": "baz clang tidy",
+            "label": "baz: clang tidy",
             "command": "clang-tidy.sh",
             "options": {
                 "cwd": "${workspaceFolder}/qa/lint/"

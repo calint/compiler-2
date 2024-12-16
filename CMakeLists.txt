@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 project(compiler-2)
 find_program(NASM nasm REQUIRED)
 set(CMAKE_CXX_COMPILER "clang++")
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 add_compile_options(
     -O3
     -Werror
