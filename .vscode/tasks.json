@@ -6,7 +6,7 @@
             "label": "baz build",
             "command": "/usr/bin/g++",
             "args": [
-                "-std=c++20",
+                "-std=c++23",
                 "src/main.cpp",
                 "-o",
                 "baz",
