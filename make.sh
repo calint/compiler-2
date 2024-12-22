@@ -4,19 +4,18 @@
 #       g++: 14.2.0
 #      nasm: 2.16.03
 #        ld: 2.43
-
 set -e
 
 # change to directory of the script
 cd $(dirname "$0")
 
 # set environment
-#CC="clang++ -std=c++23"
-#CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-padded \
-#    -Wno-unqualified-std-cast-call -Wno-unsafe-buffer-usage"
+CC="clang++ -std=c++23"
+CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-padded \
+    -Wno-unqualified-std-cast-call -Wno-unsafe-buffer-usage"
 
-CC="g++ -std=c++23"
-CW="-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow"
+#CC="g++ -std=c++23"
+#CW="-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow"
 
 CF="-Wfatal-errors -Werror"
 MSAN=
