@@ -494,8 +494,12 @@ auto read_file_to_string(const char* file_name) -> std::string {
         throw panic_exception("cannot open file '" + std::string{file_name} +
                               "'");
     }
-    std::stringstream buf{};
+    std::stringstream buf;
     buf << fs.rdbuf();
+    if (buf.bad()) {
+        throw panic_exception("error reading file '" + std::string{file_name} +
+                              "'");
+    }
     return buf.str();
 }
 

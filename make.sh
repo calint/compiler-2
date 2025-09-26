@@ -19,17 +19,15 @@ CW="-Weverything -Wno-c++98-compat -Wno-weak-vtables -Wno-padded -Wno-unsafe-buf
 CF="-Wfatal-errors -Werror"
 MSAN=
 PROF=
-DBG=-g
-OPT=-O3
+#DBG=-g
+#OPT=-O3
 if [ "$1" = "msan" ]; then
-  # sanitize (note: sanitize crashes unpredictably with core dump)
-  #MSAN="-fsanitize=memory,undefined -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=etc/msan_suppressions.txt"
+  MSAN="-fsanitize=memory,undefined -fsanitize-memory-track-origins=2"
   DBG=-g
 elif [ "$1" = "prof" ]; then
   # profiling, sanitize (note: sanitize crashes unpredictably with core dump)
   #    MSAN="-fsanitize=address,undefined -fno-omit-frame-pointer"
   PROF="-fprofile-instr-generate -fcoverage-mapping"
-  DBG=-g
 fi
 
 SEP="--------------------------------------------------------------------------------"
