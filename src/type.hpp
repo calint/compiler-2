@@ -14,6 +14,11 @@ struct type_field final {
 };
 
 class type final {
+    static constexpr std::string size_qword{"qword"};
+    static constexpr std::string size_dword{"dword"};
+    static constexpr std::string size_word{"word"};
+    static constexpr std::string size_byte{"byte"};
+
     std::string name_;
     size_t size_{};
     std::vector<type_field> fields_;
@@ -79,16 +84,16 @@ class type final {
     }
 
     static auto get_memory_operand_for_size(const token& tk, const size_t size)
-        -> std::string {
+        -> const std::string& {
         switch (size) {
         case 8:
-            return "qword";
+            return size_qword;
         case 4:
-            return "dword";
+            return size_dword;
         case 2:
-            return "word";
+            return size_word;
         case 1:
-            return "byte";
+            return size_byte;
         default:
             throw compiler_exception(tk, "illegal size for memory operand: " +
                                              std::to_string(size));

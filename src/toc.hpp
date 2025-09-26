@@ -111,8 +111,8 @@ class frame final {
         return aliases_.has(name);
     }
 
-    auto get_alias(const std::string& name) const -> std::string {
-        return aliases_.get(name);
+    auto get_alias(const std::string& name) const -> const std::string& {
+        return aliases_.get_const_ref(name);
     }
 
     auto name() const -> const std::string& { return name_; }
@@ -336,6 +336,7 @@ class toc final {
         return std::to_string(line) + "_" + std::to_string(col);
     }
 
+    // human readable source location
     auto source_location_hr(const token& src_loc) -> std::string {
 
         const auto [line, col]{line_and_col_num_for_char_index(

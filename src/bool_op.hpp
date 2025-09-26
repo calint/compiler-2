@@ -7,6 +7,13 @@
 #include "expr_ops_list.hpp"
 
 class bool_op final : public statement {
+    static constexpr std::string asm_je{"je"};
+    static constexpr std::string asm_jne{"jne"};
+    static constexpr std::string asm_jl{"jl"};
+    static constexpr std::string asm_jle{"jle"};
+    static constexpr std::string asm_jg{"jg"};
+    static constexpr std::string asm_jge{"jge"};
+
     std::vector<token> nots_;
     expr_ops_list lhs_;
     std::string op_; // '<', '<=', '>', '>=', '==', '!='
@@ -324,48 +331,49 @@ class bool_op final : public statement {
                               ":" + std::to_string(__LINE__));
     }
 
-    static auto asm_jxx_for_op(const std::string& op) -> std::string {
+    static auto asm_jxx_for_op(const std::string& op) -> const std::string& {
         if (op == "==") {
-            return "je";
+            return asm_je;
         }
         if (op == "!=") {
-            return "jne";
+            return asm_jne;
         }
         if (op == "<") {
-            return "jl";
+            return asm_jl;
         }
         if (op == "<=") {
-            return "jle";
+            return asm_jle;
         }
         if (op == ">") {
-            return "jg";
+            return asm_jg;
         }
         if (op == ">=") {
-            return "jge";
+            return asm_jge;
         }
 
         throw panic_exception("unexpected code path " + std::string{__FILE__} +
                               ":" + std::to_string(__LINE__));
     }
 
-    static auto asm_jxx_for_op_inv(const std::string& op) -> std::string {
+    static auto asm_jxx_for_op_inv(const std::string& op)
+        -> const std::string& {
         if (op == "==") {
-            return "jne";
+            return asm_jne;
         }
         if (op == "!=") {
-            return "je";
+            return asm_je;
         }
         if (op == "<") {
-            return "jge";
+            return asm_jge;
         }
         if (op == "<=") {
-            return "jg";
+            return asm_jg;
         }
         if (op == ">") {
-            return "jle";
+            return asm_jle;
         }
         if (op == ">=") {
-            return "jl";
+            return asm_jl;
         }
         throw panic_exception("unexpected code path " + std::string{__FILE__} +
                               ":" + std::to_string(__LINE__));
