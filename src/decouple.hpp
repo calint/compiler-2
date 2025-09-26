@@ -1,9 +1,8 @@
 #pragma once
-
-#include <memory>
-
 // solves circular references
 // implemented in main.cpp
+
+#include <memory>
 
 class toc;
 class tokenizer;
