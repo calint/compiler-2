@@ -1,10 +1,11 @@
 #pragma once
+
 #include "bool_ops_list.hpp"
 #include "expr_ops_list.hpp"
 #include "expr_type_value.hpp"
 
 class expr_any final : public statement {
-  variant<expr_ops_list, bool_ops_list, expr_type_value> var_{};
+  std::variant<expr_ops_list, bool_ops_list, expr_type_value> var_{};
 
 public:
   inline expr_any(toc &tc, tokenizer &tz, const type &tp, bool in_args)
@@ -37,7 +38,7 @@ public:
 
   inline ~expr_any() override = default;
 
-  inline void source_to(ostream &os) const override {
+  inline void source_to(std::ostream &os) const override {
     statement::source_to(os);
     switch (var_.index()) {
     case 0:
@@ -50,20 +51,20 @@ public:
       get<expr_type_value>(var_).source_to(os);
       return;
     default:
-      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                            to_string(__LINE__));
+      throw panic_exception("unexpected code path " + std::string{__FILE__} +
+                            ":" + std::to_string(__LINE__));
     }
   }
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      const string &dst = "") const override {
+  inline void compile(toc &tc, std::ostream &os, size_t indent,
+                      const std::string &dst = "") const override {
 
     tc.comment_source(*this, os, indent);
 
     switch (var_.index()) {
     default:
-      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                            to_string(__LINE__));
+      throw panic_exception("unexpected code path " + std::string{__FILE__} +
+                            ":" + std::to_string(__LINE__));
     case 0:
       // number expression
       get<expr_ops_list>(var_).compile(tc, os, indent, dst);
@@ -87,18 +88,18 @@ public:
       }
       // expression
       // make unique labels considering inlined functions
-      const string &call_path{tc.get_inline_call_path(tok())};
-      const string &src_loc{tc.source_location_for_use_in_label(tok())};
+      const std::string &call_path{tc.get_inline_call_path(tok())};
+      const std::string &src_loc{tc.source_location_for_use_in_label(tok())};
       // unique partial label for this assembler location
-      const string &postfix{src_loc +
-                            (call_path.empty() ? "" : ("_" + call_path))};
+      const std::string &postfix{src_loc +
+                                 (call_path.empty() ? "" : ("_" + call_path))};
       // labels to jump to depending on the evaluation
-      const string &jmp_to_if_true{"bool_true_" + postfix};
-      const string &jmp_to_if_false{"bool_false_" + postfix};
+      const std::string &jmp_to_if_true{"bool_true_" + postfix};
+      const std::string &jmp_to_if_false{"bool_false_" + postfix};
       // the end of the assign
-      const string &jmp_to_end{"bool_end_" + postfix};
+      const std::string &jmp_to_end{"bool_end_" + postfix};
       // compile and possibly evaluate constant expression
-      optional<bool> const_eval{
+      std::optional<bool> const_eval{
           bol.compile(tc, os, indent, jmp_to_if_false, jmp_to_if_true, false)};
       if (const_eval) {
         // constant evaluation
@@ -138,13 +139,13 @@ public:
       // assign value
       return get<expr_type_value>(var_).is_expression();
     default:
-      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                            to_string(__LINE__));
+      throw panic_exception("unexpected code path " + std::string{__FILE__} +
+                            ":" + std::to_string(__LINE__));
     }
     // note. 'expr_type_value' cannot be expression
   }
 
-  [[nodiscard]] inline auto identifier() const -> const string & override {
+  [[nodiscard]] inline auto identifier() const -> const std::string & override {
     switch (var_.index()) {
     case 0:
       return get<expr_ops_list>(var_).identifier();
@@ -153,8 +154,8 @@ public:
     case 2:
       return get<expr_type_value>(var_).identifier();
     default:
-      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                            to_string(__LINE__));
+      throw panic_exception("unexpected code path " + std::string{__FILE__} +
+                            ":" + std::to_string(__LINE__));
     }
   }
 
@@ -169,8 +170,8 @@ public:
     case 2:
       return get<expr_type_value>(var_).get_unary_ops();
     default:
-      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                            to_string(__LINE__));
+      throw panic_exception("unexpected code path " + std::string{__FILE__} +
+                            ":" + std::to_string(__LINE__));
     }
     // note. 'expr_type_value' does not have 'unary_ops' and cannot be
     // argument in call

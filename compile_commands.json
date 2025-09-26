@@ -10,7 +10,8 @@
       "-Wno-weak-vtables",
       "-Wno-padded",
       "-Wno-unqualified-std-cast-call",
-      "-Wno-unsafe-buffer-usage"
+      "-Wno-unsafe-buffer-usage",
+      "-Wno-undefined-inline"
     ],
     "directory": "/home/c/w/compiler-2",
     "file": "src/main.cpp"

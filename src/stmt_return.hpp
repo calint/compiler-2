@@ -1,8 +1,11 @@
 #pragma once
 
+#include "statement.hpp"
+#include "toc.hpp"
+
 class stmt_return final : public statement {
 public:
-  inline stmt_return(toc &tc, token tk) : statement{move(tk)} {
+  inline stmt_return(toc &tc, token tk) : statement{std::move(tk)} {
     set_type(tc.get_type_void());
   }
 
@@ -14,19 +17,20 @@ public:
 
   inline ~stmt_return() override = default;
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      [[maybe_unused]] const string &dst = "") const override {
+  inline void
+  compile(toc &tc, std::ostream &os, size_t indent,
+          [[maybe_unused]] const std::string &dst = "") const override {
 
     tc.comment_source(*this, os, indent);
 
     // get the jump target to exit inlined functions
-    const string &ret_lbl{tc.get_func_return_label_or_throw(tok())};
+    const std::string &ret_lbl{tc.get_func_return_label_or_throw(tok())};
     if (ret_lbl.empty()) {
       // not in-lined
-      const vector<func_return_info> &returns{tc.get_func_returns(tok())};
+      const std::vector<func_return_info> &returns{tc.get_func_returns(tok())};
       if (not returns.empty()) {
-        const string &ret_var{returns.at(0).ident_tk.name()};
-        const string &ret_resolved{
+        const std::string &ret_var{returns.at(0).ident_tk.name()};
+        const std::string &ret_resolved{
             tc.resolve_identifier(tok(), ret_var, true).id_nasm};
         //? todo. check that the return value has been assigned
         // assign return value to 'rax's
@@ -40,9 +44,9 @@ public:
 
     // in-lined function
     // check that the return value has been assigned
-    const vector<func_return_info> &returns{tc.get_func_returns(tok())};
+    const std::vector<func_return_info> &returns{tc.get_func_returns(tok())};
     if (not returns.empty()) {
-      const string &ret_var{returns.at(0).ident_tk.name()};
+      const std::string &ret_var{returns.at(0).ident_tk.name()};
       if (not tc.is_var_initiated(ret_var)) {
         throw compiler_exception(tok(), "return variable '" + ret_var +
                                             "' has not been assigned");

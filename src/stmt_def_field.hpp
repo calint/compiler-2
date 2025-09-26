@@ -1,5 +1,6 @@
 #pragma once
-#include "compiler_exception.hpp"
+
+#include "statement.hpp"
 #include "toc.hpp"
 
 class stmt_def_field final : public statement {
@@ -9,7 +10,7 @@ class stmt_def_field final : public statement {
 
 public:
   inline stmt_def_field(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)}, name_tk_{tz.next_token()} {
+      : statement{std::move(tk)}, name_tk_{tz.next_token()} {
 
     if (name_tk_.is_empty()) {
       throw compiler_exception(name_tk_, "expected field name");
@@ -40,7 +41,7 @@ public:
 
   inline ~stmt_def_field() override = default;
 
-  inline void source_to(ostream &os) const override {
+  inline void source_to(std::ostream &os) const override {
     statement::source_to(os);
     name_tk_.source_to(os);
     os << "=";
@@ -48,8 +49,9 @@ public:
     initial_value_.source_to(os);
   }
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      [[maybe_unused]] const string &dst = "") const override {
+  inline void
+  compile(toc &tc, std::ostream &os, size_t indent,
+          [[maybe_unused]] const std::string &dst = "") const override {
 
     tc.comment_source(*this, os, indent);
     os << name_tk_.name() << ':';
@@ -66,7 +68,7 @@ public:
     os << " dq ";
     os << uops_.to_string();
     initial_value_.compile_to(os);
-    os << endl;
+    os << std::endl;
   }
 
   [[nodiscard]] inline auto is_in_data_section() const -> bool override {

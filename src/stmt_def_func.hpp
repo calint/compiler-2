@@ -1,18 +1,19 @@
 #pragma once
+
 #include "stmt_block.hpp"
 #include "stmt_def_func_param.hpp"
 
 class stmt_def_func final : public statement {
   token name_tk_{};
-  vector<stmt_def_func_param> params_{};
+  std::vector<stmt_def_func_param> params_{};
   token ws_after_params_{}; // whitespace after ')'
-  vector<func_return_info> returns_{};
+  std::vector<func_return_info> returns_{};
   stmt_block code_{};
   token inline_tk_{};
 
 public:
   inline stmt_def_func(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)}, name_tk_{tz.next_token()} {
+      : statement{std::move(tk)}, name_tk_{tz.next_token()} {
 
     if (name_tk_.is_name("inline")) {
       // handle 'func inline foo(...)'
@@ -63,7 +64,7 @@ public:
     tc.add_func(name_tk_, name_tk_.name(), get_type(), this);
     tc.enter_func(name(), returns_, is_inline());
     // dry-run compile step to setup context for code block parsing
-    vector<string> allocated_named_registers{};
+    std::vector<std::string> allocated_named_registers{};
     null_stream null_strm{}; // don't make output
     init_variables(tc, null_strm, 0, allocated_named_registers);
     code_ = {tc, tz};
@@ -79,12 +80,12 @@ public:
 
   inline ~stmt_def_func() override = default;
 
-  inline void source_to(ostream &os) const override {
+  inline void source_to(std::ostream &os) const override {
     source_def_to(os, false);
     code_.source_to(os);
   }
 
-  inline void source_def_to(ostream &os, const bool summary) const {
+  inline void source_def_to(std::ostream &os, const bool summary) const {
     if (not summary) {
       statement::source_to(os);
       inline_tk_.source_to(os);
@@ -117,19 +118,20 @@ public:
     }
   }
 
-  inline void source_def_comment_to(ostream &os) const {
-    stringstream ss;
+  inline void source_def_comment_to(std::ostream &os) const {
+    std::stringstream ss;
     source_def_to(ss, true);
-    ss << endl;
+    ss << std::endl;
 
-    const string src{ss.str()};
+    const std::string src{ss.str()};
     // make comment friendly string replacing consecutive with one space
-    const string res{regex_replace(src, regex(R"(\s+)"), " ")};
-    os << res << endl;
+    const std::string res{regex_replace(src, std::regex(R"(\s+)"), " ")};
+    os << res << std::endl;
   }
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      [[maybe_unused]] const string &dst = "") const override {
+  inline void
+  compile(toc &tc, std::ostream &os, size_t indent,
+          [[maybe_unused]] const std::string &dst = "") const override {
 
     if (is_inline()) {
       return;
@@ -144,13 +146,13 @@ public:
     toc::asm_push(tok(), os, indent + 1, "rbp");
     tc.asm_cmd(tok(), os, indent + 1, "mov", "rbp", "rsp");
     // initiate variables and parameters passed through registers
-    vector<string> allocated_named_registers;
+    std::vector<std::string> allocated_named_registers;
     init_variables(tc, os, indent, allocated_named_registers);
     // compile function body
     code_.compile(tc, os, indent, "");
     // if function returns copy return value to rax
     if (not returns().empty()) {
-      const string &ret_name{returns_.at(0).ident_tk.name()};
+      const std::string &ret_name{returns_.at(0).ident_tk.name()};
       const ident_resolved &ret_resolved{
           tc.resolve_identifier(returns_.at(0).ident_tk, ret_name, true)};
       tc.asm_cmd(tok(), os, indent + 1, "mov", "rax", ret_resolved.id_nasm);
@@ -161,13 +163,13 @@ public:
     // free allocated named registers
     free_allocated_registers(tc, os, indent, allocated_named_registers);
     // empty line
-    os << endl;
+    os << std::endl;
     // exit function context
     tc.exit_func(name());
   }
 
   [[nodiscard]] inline auto returns() const
-      -> const vector<func_return_info> & {
+      -> const std::vector<func_return_info> & {
     return returns_;
   }
 
@@ -177,13 +179,13 @@ public:
   }
 
   [[nodiscard]] inline auto params() const
-      -> const vector<stmt_def_func_param> & {
+      -> const std::vector<stmt_def_func_param> & {
     return params_;
   }
 
   [[nodiscard]] inline auto code() const -> const stmt_block & { return code_; }
 
-  [[nodiscard]] inline auto name() const -> const string & {
+  [[nodiscard]] inline auto name() const -> const std::string & {
     return name_tk_.name();
   }
 
@@ -192,8 +194,9 @@ public:
   }
 
 private:
-  inline void init_variables(toc &tc, ostream &os, size_t indent,
-                             vector<string> &allocated_named_registers) const {
+  inline void
+  init_variables(toc &tc, std::ostream &os, size_t indent,
+                 std::vector<std::string> &allocated_named_registers) const {
 
     if (not returns().empty()) {
       // declare variable for the return
@@ -207,8 +210,8 @@ private:
       for (size_t i{0}; i < n; i++) {
         const stmt_def_func_param &param{params_.at(i)};
         const type &param_type{param.get_type()};
-        const string &param_name{param.name()};
-        const string &param_reg{param.get_register_name_or_empty()};
+        const std::string &param_name{param.name()};
+        const std::string &param_reg{param.get_register_name_or_empty()};
         if (param_reg.empty()) {
           // argument not passed as register, add it as variable
           tc.add_var(tok(), os, indent + 1, param_name, param_type, true);
@@ -217,7 +220,7 @@ private:
 
         // argument passed as named register
         toc::indent(os, indent + 1, true);
-        os << param_name << ": " << param_reg << endl;
+        os << param_name << ": " << param_reg << std::endl;
         tc.alloc_named_register_or_throw(param, os, indent + 1, param_reg);
         // make an alias from argument name to register
         tc.add_alias(param_name, param_reg);
@@ -246,8 +249,8 @@ private:
     for (size_t i{0}; i < n; i++) {
       const stmt_def_func_param &param{params_.at(i)};
       const type &param_type{param.get_type()};
-      const string &param_name{param.name()};
-      const string &param_reg{param.get_register_name_or_empty()};
+      const std::string &param_name{param.name()};
+      const std::string &param_reg{param.get_register_name_or_empty()};
       if (param_reg.empty()) {
         // argument not passed as register
         tc.add_func_arg(tok(), os, indent + 1, param_name, param_type,
@@ -259,9 +262,9 @@ private:
               "parameter '" + param_name + "' of type '" + param_type.name() +
                   "' can not be passed through the stack "
                   "because its size, " +
-                  to_string(param_type.size()) +
+                  std::to_string(param_type.size()) +
                   " bytes, is greater than register size of " +
-                  to_string(tc.get_type_default().size()) + " bytes");
+                  std::to_string(tc.get_type_default().size()) + " bytes");
         }
         stk_ix += tc.get_type_default().size();
         continue;
@@ -269,7 +272,7 @@ private:
 
       // argument passed as named register
       toc::indent(os, indent + 1, true);
-      os << param_name << ": " << param_reg << endl;
+      os << param_name << ": " << param_reg << std::endl;
       tc.alloc_named_register_or_throw(param, os, indent + 1, param_reg);
       // mark register as initiated
       tc.set_var_is_initiated(param_reg);
@@ -279,9 +282,9 @@ private:
     }
   }
 
-  inline static void
-  free_allocated_registers(toc &tc, ostream &os, size_t indent,
-                           const vector<string> &allocated_named_registers) {
+  inline static void free_allocated_registers(
+      toc &tc, std::ostream &os, size_t indent,
+      const std::vector<std::string> &allocated_named_registers) {
 
     // free allocated named register in reverse order
     //? necessary to be in reversed order?

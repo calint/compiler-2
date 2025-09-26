@@ -1,10 +1,11 @@
 #pragma once
+
 #include "decouple.hpp"
 #include "statement.hpp"
 #include "type.hpp"
 
 class expr_type_value final : public statement {
-  vector<unique_ptr<expr_any>> exprs_{};
+  std::vector<std::unique_ptr<expr_any>> exprs_{};
 
 public:
   // note: constructor and destructor is implemented in 'main.cpp' where the
@@ -20,8 +21,8 @@ public:
 
   inline ~expr_type_value() override;
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      const string &dst) const override {
+  inline void compile(toc &tc, std::ostream &os, size_t indent,
+                      const std::string &dst) const override {
 
     expr_type_value::compile_recursive(*this, tc, os, indent + 1, tok().name(),
                                        dst, get_type());
@@ -29,13 +30,14 @@ public:
 
   // implemented in 'main.cpp' due to circular reference
   //   expr_type_value -> expr_any -> expr_type_value
-  inline void source_to(ostream &os) const override;
+  inline void source_to(std::ostream &os) const override;
 
 private:
   // implemented in main.cpp due to circular reference
   //   expr_type_value -> expr_any -> expr_type_value
   inline static void compile_recursive(const expr_type_value &atv, toc &tc,
-                                       ostream &os, size_t indent,
-                                       const string &src, const string &dst,
+                                       std::ostream &os, size_t indent,
+                                       const std::string &src,
+                                       const std::string &dst,
                                        const type &dst_type);
 };

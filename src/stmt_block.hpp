@@ -1,4 +1,5 @@
 #pragma once
+
 #include "stmt_break.hpp"
 #include "stmt_comment.hpp"
 #include "stmt_continue.hpp"
@@ -8,7 +9,7 @@
 
 class stmt_block final : public statement {
   bool is_one_statement_{};
-  vector<unique_ptr<statement>> stms_{};
+  std::vector<std::unique_ptr<statement>> stms_{};
 
 public:
   inline stmt_block(toc &tc, tokenizer &tz)
@@ -32,33 +33,36 @@ public:
 
       token tk{tz.next_token()};
       if (tk.is_empty()) {
-        throw compiler_exception(tk,
-                                 "unexpected '" + string{tz.peek_char()} + "'");
+        throw compiler_exception(tk, "unexpected '" +
+                                         std::string{tz.peek_char()} + "'");
       }
 
       if (tk.is_name("var")) {
-        stms_.emplace_back(make_unique<stmt_def_var>(tc, move(tk), tz));
+        stms_.emplace_back(
+            std::make_unique<stmt_def_var>(tc, std::move(tk), tz));
       } else if (tz.is_next_char('=')) {
         stms_.emplace_back(
-            make_unique<stmt_assign_var>(tc, move(tk), token{}, tz));
+            std::make_unique<stmt_assign_var>(tc, std::move(tk), token{}, tz));
       } else if (tk.is_name("break")) {
-        stms_.emplace_back(make_unique<stmt_break>(tc, move(tk)));
+        stms_.emplace_back(std::make_unique<stmt_break>(tc, std::move(tk)));
       } else if (tk.is_name("continue")) {
-        stms_.emplace_back(make_unique<stmt_continue>(tc, move(tk)));
+        stms_.emplace_back(std::make_unique<stmt_continue>(tc, std::move(tk)));
       } else if (tk.is_name("return")) {
-        stms_.emplace_back(make_unique<stmt_return>(tc, move(tk)));
+        stms_.emplace_back(std::make_unique<stmt_return>(tc, std::move(tk)));
       } else if (tk.name().starts_with("#")) {
-        stms_.emplace_back(make_unique<stmt_comment>(tc, move(tk), tz));
+        stms_.emplace_back(
+            std::make_unique<stmt_comment>(tc, std::move(tk), tz));
         last_statement_considered_no_statment = true;
       } else if (tk.is_name("")) {
         // whitespace
         //? should this be able to happend?
         // throw panic_exception("stmt_block:1");
-        stms_.emplace_back(make_unique<statement>(move(tk), unary_ops{}));
+        stms_.emplace_back(
+            std::make_unique<statement>(std::move(tk), unary_ops{}));
         // stms_.back()->set_type(tc.get_type_void());
       } else { // circular reference resolver
-        stms_.emplace_back(
-            create_statement_from_tokenizer(tc, unary_ops{}, move(tk), tz));
+        stms_.emplace_back(create_statement_from_tokenizer(tc, unary_ops{},
+                                                           std::move(tk), tz));
       }
 
       if (is_one_statement_ and not last_statement_considered_no_statment) {
@@ -76,7 +80,7 @@ public:
 
   inline ~stmt_block() override = default;
 
-  inline void source_to(ostream &os) const override {
+  inline void source_to(std::ostream &os) const override {
     statement::source_to(os);
     if (not is_one_statement_) {
       os << "{";
@@ -89,8 +93,9 @@ public:
     }
   }
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      [[maybe_unused]] const string &dst = "") const override {
+  inline void
+  compile(toc &tc, std::ostream &os, size_t indent,
+          [[maybe_unused]] const std::string &dst = "") const override {
 
     tc.enter_block();
     for (const auto &s : stms_) {

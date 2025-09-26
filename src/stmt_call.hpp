@@ -1,14 +1,15 @@
 #pragma once
+
 #include "expr_any.hpp"
 #include "stmt_def_func.hpp"
 
 class stmt_call : public expression {
-  vector<expr_any> args_{};
+  std::vector<expr_any> args_{};
   token ws_after_{}; // whitespace after arguments
 
 public:
   inline stmt_call(toc &tc, unary_ops uops, token tk, tokenizer &tz)
-      : expression{move(tk), move(uops)} {
+      : expression{std::move(tk), std::move(uops)} {
 
     set_type(tc.get_func_return_type_or_throw(tok(), identifier()));
 
@@ -28,7 +29,7 @@ public:
         if (i < n) {
           if (not tz.is_next_char(',')) {
             throw compiler_exception(tz, "expected argument " +
-                                             to_string(i + 1) + " '" +
+                                             std::to_string(i + 1) + " '" +
                                              param.name() + "'");
           }
         }
@@ -63,7 +64,7 @@ public:
 
   inline ~stmt_call() override = default;
 
-  inline void source_to(ostream &os) const override {
+  inline void source_to(std::ostream &os) const override {
     expression::source_to(os);
     os << "(";
     size_t i{0};
@@ -77,21 +78,21 @@ public:
     ws_after_.source_to(os);
   }
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      const string &dst = "") const override {
+  inline void compile(toc &tc, std::ostream &os, size_t indent,
+                      const std::string &dst = "") const override {
 
     tc.comment_source(*this, os, indent);
 
     const stmt_def_func &func{tc.get_func_or_throw(tok(), identifier())};
-    const string &func_name{func.name()};
+    const std::string &func_name{func.name()};
 
     // check that the same number of arguments are provided as expected
     if (func.params().size() != args_.size()) {
       throw compiler_exception(
           this->tok(), "function '" + func_name + "' expects " +
-                           to_string(func.params().size()) + " argument" +
+                           std::to_string(func.params().size()) + " argument" +
                            (func.params().size() == 1 ? "" : "s") + " but " +
-                           to_string(args_.size()) + " " +
+                           std::to_string(args_.size()) + " " +
                            (args_.size() == 1 ? "is" : "are") + " provided");
     }
 
@@ -106,7 +107,8 @@ public:
         if (param_type.size() < arg_type.size()) {
           throw compiler_exception(
               ea.tok(),
-              "argument " + to_string(i + 1) + " of type '" + arg_type.name() +
+              "argument " + std::to_string(i + 1) + " of type '" +
+                  arg_type.name() +
                   "' would be truncated when passed to parameter of type '" +
                   param_type.name() + "'");
         }
@@ -114,8 +116,8 @@ public:
       }
       if (arg_type.name() != param_type.name()) {
         throw compiler_exception(ea.tok(),
-                                 "argument " + to_string(i + 1) + " of type '" +
-                                     arg_type.name() +
+                                 "argument " + std::to_string(i + 1) +
+                                     " of type '" + arg_type.name() +
                                      "' does not match parameter of type '" +
                                      param_type.name() + "'");
       }
@@ -147,14 +149,14 @@ public:
 
       // push arguments starting with the last
       // some arguments might be passed through registers
-      vector<string> allocated_args_registers;
+      std::vector<std::string> allocated_args_registers;
       size_t nbytes_of_args_on_stack{0};
       size_t i{args_.size()};
       while (i--) {
         const expr_any &ea{args_.at(i)};
         const stmt_def_func_param &param{func.param(i)};
         // is the argument passed through a register?
-        const string &arg_reg{param.get_register_name_or_empty()};
+        const std::string &arg_reg{param.get_register_name_or_empty()};
         const bool argument_passed_in_register{not arg_reg.empty()};
         if (argument_passed_in_register) {
           tc.alloc_named_register_or_throw(ea, os, indent, arg_reg);
@@ -167,7 +169,8 @@ public:
             continue;
           }
           // argument passed through stack
-          const string &reg{tc.alloc_scratch_register(ea.tok(), os, indent)};
+          const std::string &reg{
+              tc.alloc_scratch_register(ea.tok(), os, indent)};
           // compile expression with the result stored in sr
           ea.compile(tc, os, indent + 1, reg);
           // push result on stack
@@ -211,7 +214,8 @@ public:
           }
           // value to be pushed is not a 64 bit value
           // push can only be done with 64 or 16 bits values on x86_64
-          const string &reg{tc.alloc_scratch_register(ea.tok(), os, indent)};
+          const std::string &reg{
+              tc.alloc_scratch_register(ea.tok(), os, indent)};
           // the 'mov' will be compiled to 'movsx'
           tc.asm_cmd(ea.tok(), os, indent, "mov", reg, arg_resolved.id_nasm);
           toc::asm_push(ea.tok(), os, indent, reg);
@@ -221,7 +225,7 @@ public:
           continue;
         }
         // unary ops must be applied
-        const string &reg{tc.alloc_scratch_register(ea.tok(), os, indent)};
+        const std::string &reg{tc.alloc_scratch_register(ea.tok(), os, indent)};
         tc.asm_cmd(ea.tok(), os, indent, "mov", reg, arg_resolved.id_nasm);
         ea.get_unary_ops().compile(tc, os, indent, reg);
         toc::asm_push(ea.tok(), os, indent, reg);
@@ -258,30 +262,30 @@ public:
 
     // create unique labels for in-lined functions based on location of source
     // where the call occurred
-    const string &call_path{tc.get_inline_call_path(tok())};
-    const string &src_loc{tc.source_location_for_use_in_label(tok())};
-    const string &new_call_path{
+    const std::string &call_path{tc.get_inline_call_path(tok())};
+    const std::string &src_loc{tc.source_location_for_use_in_label(tok())};
+    const std::string &new_call_path{
         call_path.empty() ? src_loc : (src_loc + "_" + call_path)};
-    const string &ret_jmp_label{func_name + "_" + new_call_path + "_end"};
+    const std::string &ret_jmp_label{func_name + "_" + new_call_path + "_end"};
 
     toc::indent(os, indent + 1, true);
-    os << "inline: " << new_call_path << endl;
+    os << "inline: " << new_call_path << std::endl;
 
-    vector<string> allocated_named_registers;
-    vector<string> allocated_scratch_registers;
-    vector<string> allocated_registers_in_order;
+    std::vector<std::string> allocated_named_registers;
+    std::vector<std::string> allocated_scratch_registers;
+    std::vector<std::string> allocated_registers_in_order;
 
     // buffer the aliases of arguments
-    vector<pair<string, string>> aliases_to_add;
+    std::vector<std::pair<std::string, std::string>> aliases_to_add;
 
     // if function returns value
     if (not dst.empty()) {
       // alias return identifier to 'dst'
-      const string &from{func.returns().at(0).ident_tk.name()};
-      const string &to{dst};
+      const std::string &from{func.returns().at(0).ident_tk.name()};
+      const std::string &to{dst};
       aliases_to_add.emplace_back(from, to);
       toc::indent(os, indent + 1, true);
-      os << "alias " << from << " -> " << to << endl;
+      os << "alias " << from << " -> " << to << std::endl;
     }
 
     size_t i{0};
@@ -289,7 +293,7 @@ public:
       const stmt_def_func_param &param{func.param(i)};
       i++;
       // does the parameter want the value passed through a register?
-      string arg_reg{param.get_register_name_or_empty()};
+      std::string arg_reg{param.get_register_name_or_empty()};
       if (not arg_reg.empty()) {
         // argument is passed through register
         tc.alloc_named_register_or_throw(ea, os, indent + 1, arg_reg);
@@ -311,7 +315,7 @@ public:
         // alias parameter name to the register containing its value
         aliases_to_add.emplace_back(param.identifier(), arg_reg);
         toc::indent(os, indent + 1, true);
-        os << "alias " << param.identifier() << " -> " << arg_reg << endl;
+        os << "alias " << param.identifier() << " -> " << arg_reg << std::endl;
         continue;
       }
 
@@ -323,15 +327,15 @@ public:
         if (ea.get_unary_ops().is_empty()) {
           // no unary ops
           // alias parameter name to the argument identifier
-          const string &arg_id{ea.identifier()};
+          const std::string &arg_id{ea.identifier()};
           aliases_to_add.emplace_back(param.identifier(), arg_id);
           toc::indent(os, indent + 1, true);
-          os << "alias " << param.identifier() << " -> " << arg_id << endl;
+          os << "alias " << param.identifier() << " -> " << arg_id << std::endl;
           continue;
         }
         // unary ops must be applied, allocate a scratch register and evaluate
         const ident_resolved &arg_resolved{tc.resolve_identifier(ea, true)};
-        const string &scratch_reg{
+        const std::string &scratch_reg{
             tc.alloc_scratch_register(ea.tok(), os, indent + 1)};
         allocated_registers_in_order.emplace_back(scratch_reg);
         allocated_scratch_registers.emplace_back(scratch_reg);
@@ -341,7 +345,8 @@ public:
         // alias parameter to scratch register
         aliases_to_add.emplace_back(param.identifier(), scratch_reg);
         toc::indent(os, indent + 1, true);
-        os << "alias " << param.identifier() << " -> " << scratch_reg << endl;
+        os << "alias " << param.identifier() << " -> " << scratch_reg
+           << std::endl;
         continue;
       }
 
@@ -349,7 +354,7 @@ public:
       // alias parameter name to the register
       aliases_to_add.emplace_back(param.identifier(), arg_reg);
       toc::indent(os, indent + 1, true);
-      os << "alias " << param.identifier() << " -> " << arg_reg << endl;
+      os << "alias " << param.identifier() << " -> " << arg_reg << std::endl;
       // move argument to register specified in param
       const ident_resolved &arg_resolved{tc.resolve_identifier(ea, true)};
       if (arg_resolved.is_const()) {
@@ -366,13 +371,13 @@ public:
 
     // enter function creating a new scope from which
     //   prior variables are not visible
-    const vector<func_return_info> &returns{func.returns()};
+    const std::vector<func_return_info> &returns{func.returns()};
     tc.enter_func(func_name, returns, true, new_call_path, ret_jmp_label);
 
     // add the aliases to the context of the new scope
     for (const auto &alias : aliases_to_add) {
-      const string &from{alias.first};
-      const string &to{alias.second};
+      const std::string &from{alias.first};
+      const std::string &to{alias.second};
       tc.add_alias(from, to);
     }
 
@@ -381,7 +386,7 @@ public:
 
     // if function returns then check that the return variable has been assigned
     if (not returns.empty()) {
-      const string &ret_var{returns.at(0).ident_tk.name()};
+      const std::string &ret_var{returns.at(0).ident_tk.name()};
 
       if (not tc.is_var_initiated(ret_var)) {
         throw compiler_exception(returns.at(0).ident_tk,
@@ -394,7 +399,7 @@ public:
     // NOLINTNEXTLINE(modernize-loop-convert)
     for (auto it{allocated_registers_in_order.rbegin()};
          it != allocated_registers_in_order.rend(); ++it) {
-      const string &reg{*it};
+      const std::string &reg{*it};
       if (find(allocated_scratch_registers.begin(),
                allocated_scratch_registers.end(),
                reg) != allocated_scratch_registers.end()) {
@@ -407,8 +412,8 @@ public:
         tc.free_named_register(os, indent + 1, reg);
         continue;
       }
-      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                            to_string(__LINE__));
+      throw panic_exception("unexpected code path " + std::string{__FILE__} +
+                            ":" + std::to_string(__LINE__));
     }
 
     // provide an exit label for 'return' to jump to instead of assembler 'ret'

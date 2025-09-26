@@ -1,15 +1,16 @@
 #pragma once
+
 #include "stmt_def_type_field.hpp"
 
 class stmt_def_type final : public statement {
   token name_tk_{};
   token ws_{}; // whitespace
-  vector<stmt_def_type_field> fields_{};
+  std::vector<stmt_def_type_field> fields_{};
   type type_{};
 
 public:
   inline stmt_def_type(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)}, name_tk_{tz.next_token()} {
+      : statement{std::move(tk)}, name_tk_{tz.next_token()} {
 
     if (not tz.is_next_char('{')) {
       throw compiler_exception(name_tk_,
@@ -47,7 +48,7 @@ public:
 
   inline ~stmt_def_type() override = default;
 
-  inline void source_to(ostream &os) const override {
+  inline void source_to(std::ostream &os) const override {
     statement::source_to(os);
     name_tk_.source_to(os);
     os << '{';
@@ -62,7 +63,8 @@ public:
     os << '}';
   }
 
-  inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
-                      [[maybe_unused]] size_t indent,
-                      [[maybe_unused]] const string &dst = "") const override {}
+  inline void
+  compile([[maybe_unused]] toc &tc, [[maybe_unused]] std::ostream &os,
+          [[maybe_unused]] size_t indent,
+          [[maybe_unused]] const std::string &dst = "") const override {}
 };

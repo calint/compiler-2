@@ -1,10 +1,13 @@
 #pragma once
 
-class panic_exception final : public exception {
-  const string msg_{};
+#include <exception>
+#include <string>
+
+class panic_exception final : public std::exception {
+  const std::string msg_{};
 
 public:
-  inline explicit panic_exception(string msg) : msg_{move(msg)} {}
+  inline explicit panic_exception(std::string msg) : msg_{move(msg)} {}
 
   [[nodiscard]] auto what() const noexcept -> const char * override {
     return msg_.c_str();

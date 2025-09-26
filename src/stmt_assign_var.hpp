@@ -1,4 +1,5 @@
 #pragma once
+
 #include "expr_any.hpp"
 
 class stmt_assign_var final : public statement {
@@ -7,7 +8,7 @@ class stmt_assign_var final : public statement {
 
 public:
   inline stmt_assign_var(toc &tc, token name, token type, tokenizer &tz)
-      : statement{move(name)}, type_tk_{move(type)} {
+      : statement{std::move(name)}, type_tk_{std::move(type)} {
 
     const ident_resolved &dst_resolved{tc.resolve_identifier(*this, false)};
     set_type(dst_resolved.type_ref);
@@ -22,7 +23,7 @@ public:
 
   inline ~stmt_assign_var() override = default;
 
-  inline void source_to(ostream &os) const override {
+  inline void source_to(std::ostream &os) const override {
     statement::source_to(os);
     if (not type_tk_.is_empty()) {
       os << ':';
@@ -32,8 +33,9 @@ public:
     expr_.source_to(os);
   }
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      [[maybe_unused]] const string &dst = "") const override {
+  inline void
+  compile(toc &tc, std::ostream &os, size_t indent,
+          [[maybe_unused]] const std::string &dst = "") const override {
 
     tc.comment_source(*this, os, indent);
 

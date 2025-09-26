@@ -1,10 +1,11 @@
 #pragma once
+
 #include "stmt_call.hpp"
 
 class call_asm_mov final : public stmt_call {
 public:
   inline call_asm_mov(toc &tc, token tk, tokenizer &tz)
-      : stmt_call{tc, {}, move(tk), tz} {
+      : stmt_call{tc, {}, std::move(tk), tz} {
 
     set_type(tc.get_type_void());
   }
@@ -17,8 +18,9 @@ public:
 
   inline ~call_asm_mov() override = default;
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      [[maybe_unused]] const string &dst = "") const override {
+  inline void
+  compile(toc &tc, std::ostream &os, size_t indent,
+          [[maybe_unused]] const std::string &dst = "") const override {
 
     tc.comment_source(*this, os, indent);
 

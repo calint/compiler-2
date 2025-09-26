@@ -1,20 +1,26 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
+#include "compiler_exception.hpp"
+#include "token.hpp"
+
 class type;
 struct type_field final {
-  const string name;
+  const std::string name;
   const type &tp;
   const size_t offset{};
 };
 
 class type final {
-  string name_{};
+  std::string name_{};
   size_t size_{};
-  vector<type_field> fields_{};
+  std::vector<type_field> fields_{};
   bool is_built_in_{};
 
 public:
-  inline type(string name, const size_t size, const bool is_built_in)
+  inline type(std::string name, const size_t size, const bool is_built_in)
       : name_{move(name)}, size_{size}, is_built_in_{is_built_in} {}
 
   inline type() = default;
@@ -25,13 +31,14 @@ public:
 
   inline ~type() = default;
 
-  inline void add_field([[maybe_unused]] const token &tk, string name,
+  inline void add_field([[maybe_unused]] const token &tk, std::string name,
                         const type &tp) {
     fields_.emplace_back(type_field{move(name), tp, size_});
     size_ += tp.size_;
   }
 
-  [[nodiscard]] inline auto field(const token &tk, const string &name) const
+  [[nodiscard]] inline auto field(const token &tk,
+                                  const std::string &name) const
       -> const type_field & {
 
     for (const type_field &fld : fields_) {
@@ -44,9 +51,9 @@ public:
   }
 
   [[nodiscard]] inline auto accessor(const token &tk,
-                                     const vector<string> &path,
+                                     const std::vector<std::string> &path,
                                      const int stack_idx_base) const
-      -> pair<const type &, string> {
+      -> std::pair<const type &, std::string> {
 
     const type *tp{this};
     size_t offset{0};
@@ -63,16 +70,17 @@ public:
       tp_first_field = &tp_first_field->fields_.at(0).tp;
     }
 
-    const string &memsize{
+    const std::string &memsize{
         get_memory_operand_for_size(tk, tp_first_field->size())};
-    const string &accessor = memsize + "[rbp" +
-                             string{stack_idx > 0 ? "+" : ""} +
-                             to_string(stack_idx) + "]";
+    const std::string &accessor = memsize + "[rbp" +
+                                  std::string{stack_idx > 0 ? "+" : ""} +
+                                  std::to_string(stack_idx) + "]";
     return {*tp, accessor};
   }
 
   inline static auto get_memory_operand_for_size(const token &tk,
-                                                 const size_t size) -> string {
+                                                 const size_t size)
+      -> std::string {
     switch (size) {
     case 8:
       return "qword";
@@ -84,7 +92,7 @@ public:
       return "byte";
     default:
       throw compiler_exception(tk, "illegal size for memory operand: " +
-                                       to_string(size));
+                                       std::to_string(size));
     }
   }
 
@@ -92,9 +100,11 @@ public:
 
   inline void set_size(const size_t nbytes) { size_ = nbytes; }
 
-  [[nodiscard]] inline auto name() const -> const string & { return name_; }
+  [[nodiscard]] inline auto name() const -> const std::string & {
+    return name_;
+  }
 
-  inline void set_name(const string &nm) { name_ = nm; }
+  inline void set_name(const std::string &nm) { name_ = nm; }
 
   [[nodiscard]] inline auto is_built_in() const -> bool { return is_built_in_; }
 
@@ -103,7 +113,7 @@ public:
     size_ = 0;
   }
 
-  [[nodiscard]] inline auto fields() const -> const vector<type_field> & {
+  [[nodiscard]] inline auto fields() const -> const std::vector<type_field> & {
     return fields_;
   }
 };

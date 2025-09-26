@@ -1,4 +1,5 @@
 #pragma once
+
 #include "compiler_exception.hpp"
 #include "token.hpp"
 #include "unary_ops.hpp"
@@ -13,7 +14,7 @@ class statement {
 
 public:
   inline explicit statement(token tk, unary_ops uops = {})
-      : token_{move(tk)}, uops_{move(uops)} {
+      : token_{std::move(tk)}, uops_{std::move(uops)} {
 
     validate_identifier_name(token_);
   }
@@ -26,14 +27,15 @@ public:
 
   inline virtual ~statement() = default;
 
-  inline virtual void compile([[maybe_unused]] toc &tc, ostream &os,
-                              [[maybe_unused]] size_t indent,
-                              [[maybe_unused]] const string &dst = "") const {
+  inline virtual void
+  compile([[maybe_unused]] toc &tc, std::ostream &os,
+          [[maybe_unused]] size_t indent,
+          [[maybe_unused]] const std::string &dst = "") const {
     uops_.source_to(os);
     token_.compile_to(os);
   }
 
-  inline virtual void source_to(ostream &os) const {
+  inline virtual void source_to(std::ostream &os) const {
     uops_.source_to(os);
     token_.source_to(os);
   }
@@ -48,7 +50,7 @@ public:
     return false;
   }
 
-  [[nodiscard]] inline virtual auto identifier() const -> const string & {
+  [[nodiscard]] inline virtual auto identifier() const -> const std::string & {
     return token_.name();
   }
 

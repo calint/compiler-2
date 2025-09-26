@@ -1,13 +1,14 @@
 #pragma once
+
 #include "stmt_if_branch.hpp"
 
 class stmt_if final : public statement {
-  vector<stmt_if_branch> branches_{};
-  vector<token> else_if_tokens_{};
+  std::vector<stmt_if_branch> branches_{};
+  std::vector<token> else_if_tokens_{};
   stmt_block else_code_{};
 
 public:
-  inline stmt_if(toc &tc, token tk, tokenizer &tz) : statement{move(tk)} {
+  inline stmt_if(toc &tc, token tk, tokenizer &tz) : statement{std::move(tk)} {
     set_type(tc.get_type_void());
     // e.g. if a == b {x = 1} else if c == d {y = 2} else {z = 3}
     // broken down in branches 'a == b {x = 1}', 'c == d {y = 2}' ending with an
@@ -33,15 +34,15 @@ public:
         tz.put_back_token(tkn2);
         // 'else' branch
         // save tokens to be able to reproduce the source
-        else_if_tokens_.emplace_back(move(tkn));
+        else_if_tokens_.emplace_back(std::move(tkn));
         // read the 'else' code
         else_code_ = {tc, tz};
         return;
       }
       // 'else if': continue reading if branches
       // save tokens to be able to reproduce the source
-      else_if_tokens_.emplace_back(move(tkn));
-      else_if_tokens_.emplace_back(move(tkn2));
+      else_if_tokens_.emplace_back(std::move(tkn));
+      else_if_tokens_.emplace_back(std::move(tkn2));
     }
   }
 
@@ -53,7 +54,7 @@ public:
 
   inline ~stmt_if() override = default;
 
-  inline void source_to(ostream &os) const override {
+  inline void source_to(std::ostream &os) const override {
     statement::source_to(os);
     // output first branch
     const stmt_if_branch &branch{branches_.at(0)};
@@ -74,16 +75,17 @@ public:
     }
   }
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      [[maybe_unused]] const string &dst = "") const override {
+  inline void
+  compile(toc &tc, std::ostream &os, size_t indent,
+          [[maybe_unused]] const std::string &dst = "") const override {
 
     // make unique labels considering in-lined functions
-    const string &call_path{tc.get_inline_call_path(tok())};
-    const string &src_loc{tc.source_location_for_use_in_label(tok())};
-    const string &cp{call_path.empty() ? "" : "_" + call_path};
+    const std::string &call_path{tc.get_inline_call_path(tok())};
+    const std::string &src_loc{tc.source_location_for_use_in_label(tok())};
+    const std::string &cp{call_path.empty() ? "" : "_" + call_path};
 
-    const string &label_after_if{"if_" + src_loc + cp + "_end"};
-    const string &label_else_branch{
+    const std::string &label_after_if{"if_" + src_loc + cp + "_end"};
+    const std::string &label_else_branch{
         not else_code_.is_empty() ? "if_else_" + src_loc + cp : label_after_if};
 
     const size_t n{branches_.size()};
@@ -91,8 +93,8 @@ public:
     bool branch_evaluated_to_true{false};
     for (size_t i{0}; i < n; i++) {
       const stmt_if_branch &e{branches_.at(i)};
-      string jmp_if_false{label_else_branch};
-      string jmp_after_if{label_after_if};
+      std::string jmp_if_false{label_else_branch};
+      std::string jmp_after_if{label_after_if};
       if (i < n - 1) {
         // if branch is false jump to next if
         jmp_if_false = branches_.at(i + 1).if_bgn_label(tc);
@@ -106,7 +108,7 @@ public:
       }
       // compile the condition which might return that the condition was a
       // constant evaluation
-      optional<bool> const_eval{
+      std::optional<bool> const_eval{
           e.compile(tc, os, indent, jmp_if_false, jmp_after_if)};
       // if condition was a constant evaluation and result was true
       if (const_eval and *const_eval) {

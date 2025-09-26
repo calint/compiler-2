@@ -1,24 +1,27 @@
 #pragma once
+
+#include <variant>
+
 #include "bool_op.hpp"
 #include "statement.hpp"
 
 class bool_ops_list final : public statement {
-  vector<variant<bool_op, bool_ops_list>> bools_{};
-  vector<token> ops_{}; // 'and' or 'or'
-  token not_token_{};   // not (a==b and c==d)
-  bool enclosed_{};     // (a==b and c==d) vs a==b and c==d
+  std::vector<std::variant<bool_op, bool_ops_list>> bools_{};
+  std::vector<token> ops_{}; // 'and' or 'or'
+  token not_token_{};        // not (a==b and c==d)
+  bool enclosed_{};          // (a==b and c==d) vs a==b and c==d
 
 public:
   inline bool_ops_list(toc &tc, tokenizer &tz, const bool enclosed = false,
                        token not_token = {}, const bool is_sub_expr = false,
-                       variant<bool_op, bool_ops_list> first_bool_op = {},
+                       std::variant<bool_op, bool_ops_list> first_bool_op = {},
                        token first_op = {})
       : // the token is used to give 'cmp' a unique label
         //   if first_bool_op is provided then use that token
         //   else the next white space token
         statement{first_op.is_name("") ? tz.next_whitespace_token()
                                        : token_from(first_bool_op)},
-        not_token_{move(not_token)}, enclosed_{enclosed} {
+        not_token_{std::move(not_token)}, enclosed_{enclosed} {
 
     set_type(tc.get_type_bool());
 
@@ -26,7 +29,7 @@ public:
     if (not first_op.is_empty()) {
       // sub-expression with first bool op provided
       bools_.emplace_back(move(first_bool_op));
-      ops_.emplace_back(move(first_op));
+      ops_.emplace_back(std::move(first_op));
     }
     while (true) {
       const token not_tk{tz.next_token()};
@@ -72,9 +75,9 @@ public:
           // a and b or c -> (a and b) or c
           // first op is 'and', make sub-expression (a and b) ...
           bool_ops_list bol{
-              tc, tz, false, {}, true, move(bools_.back()), move(op_tk)};
+              tc, tz, false, {}, true, move(bools_.back()), std::move(op_tk)};
           bools_.pop_back();
-          bools_.emplace_back(move(bol));
+          bools_.emplace_back(std::move(bol));
 
           if (enclosed_ and tz.is_next_char(')')) {
             return;
@@ -87,14 +90,14 @@ public:
           }
 
           prv_op = nxt_op_tk;
-          ops_.emplace_back(move(nxt_op_tk));
+          ops_.emplace_back(std::move(nxt_op_tk));
           continue;
         }
       }
 
       // if same op as previous continue
       if (op_tk.is_name(prv_op.name())) {
-        ops_.emplace_back(move(op_tk));
+        ops_.emplace_back(std::move(op_tk));
         continue;
       }
 
@@ -118,7 +121,7 @@ public:
       // a    or   (b     and   c) or d
       bool_ops_list bol{tc, tz, false, {}, true, move(bools_.back()), op_tk};
       bools_.pop_back();
-      bools_.emplace_back(move(bol));
+      bools_.emplace_back(std::move(bol));
 
       if (enclosed_ and tz.is_next_char(')')) {
         return;
@@ -131,7 +134,7 @@ public:
         break;
       }
 
-      ops_.emplace_back(move(op_tk));
+      ops_.emplace_back(std::move(op_tk));
     }
     if (enclosed_) {
       throw compiler_exception(tok(), "expected ')' to close expression");
@@ -146,7 +149,7 @@ public:
 
   inline ~bool_ops_list() override = default;
 
-  inline void source_to(ostream &os) const override {
+  inline void source_to(std::ostream &os) const override {
     statement::source_to(os);
     not_token_.source_to(os);
     if (enclosed_) {
@@ -168,23 +171,24 @@ public:
     }
   }
 
-  inline void compile([[maybe_unused]] toc &tc, [[maybe_unused]] ostream &os,
-                      [[maybe_unused]] size_t indent,
-                      [[maybe_unused]] const string &dst = "") const override {
-    throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                          to_string(__LINE__));
+  [[noreturn]] inline void
+  compile([[maybe_unused]] toc &tc, [[maybe_unused]] std::ostream &os,
+          [[maybe_unused]] size_t indent,
+          [[maybe_unused]] const std::string &dst = "") const override {
+    throw panic_exception("unexpected code path " + std::string{__FILE__} +
+                          ":" + std::to_string(__LINE__));
   }
 
-  [[nodiscard]] inline auto cmp_bgn_label(const toc &tc) const -> string {
-    const string &call_path{tc.get_inline_call_path(tok())};
+  [[nodiscard]] inline auto cmp_bgn_label(const toc &tc) const -> std::string {
+    const std::string &call_path{tc.get_inline_call_path(tok())};
     return "cmp_" + tc.source_location_for_use_in_label(tok()) +
            (call_path.empty() ? "" : "_" + call_path);
   }
 
-  inline auto compile(toc &tc, ostream &os, const size_t indent,
-                      const string &jmp_to_if_false,
-                      const string &jmp_to_if_true, const bool inverted) const
-      -> optional<bool> {
+  inline auto compile(toc &tc, std::ostream &os, const size_t indent,
+                      const std::string &jmp_to_if_false,
+                      const std::string &jmp_to_if_true,
+                      const bool inverted) const -> std::optional<bool> {
 
     toc::indent(os, indent, true);
     tc.comment_source(os, "?", inverted ? " inverted: " : " ", *this);
@@ -198,8 +202,8 @@ public:
         // bool_ops_list
         //
         const bool_ops_list &el{get<bool_ops_list>(bools_.at(i))};
-        string jmp_false{jmp_to_if_false};
-        string jmp_true{jmp_to_if_true};
+        std::string jmp_false{jmp_to_if_false};
+        std::string jmp_true{jmp_to_if_true};
         if (i < n - 1) {
           if (!invert) {
             // if not last element check if it is a 'or' or 'and' list
@@ -213,10 +217,10 @@ public:
               jmp_true = cmp_label_from(tc, bools_.at(i + 1));
             } else {
               throw panic_exception("expected 'or' or 'and'" +
-                                    string{__FILE__} + ":" +
+                                    std::string{__FILE__} + ":" +
                                     std::to_string(__LINE__));
             }
-            optional<bool> const_eval{
+            std::optional<bool> const_eval{
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
             if (const_eval) {
               // expression evaluated to a constant
@@ -244,10 +248,10 @@ public:
               jmp_true = cmp_label_from(tc, bools_.at(i + 1));
             } else {
               throw panic_exception("expected 'or' or 'and'" +
-                                    string{__FILE__} + ":" +
-                                    to_string(__LINE__));
+                                    std::string{__FILE__} + ":" +
+                                    std::to_string(__LINE__));
             }
-            optional<bool> const_eval{
+            std::optional<bool> const_eval{
                 el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
             if (const_eval) {
               // expression evaluated to a constant
@@ -266,7 +270,7 @@ public:
           }
         } else {
           // if last in list jmp_false is next bool eval
-          optional<bool> const_eval{
+          std::optional<bool> const_eval{
               el.compile(tc, os, indent, jmp_false, jmp_true, invert)};
           if (const_eval) {
             // if evaluated to a constant then that is the final evaluation of
@@ -285,25 +289,26 @@ public:
         const bool_op &e{get<bool_op>(bools_.at(i))};
         if (i < n - 1) {
           if (ops_.at(i).is_name("or")) {
-            optional<bool> const_eval{
+            std::optional<bool> const_eval{
                 e.compile_or(tc, os, indent, jmp_to_if_true, invert)};
             if (const_eval and *const_eval) {
               // constant evaluated to true, short-circuit
               return true;
             }
           } else if (ops_.at(i).is_name("and")) {
-            optional<bool> const_eval{
+            std::optional<bool> const_eval{
                 e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
             if (const_eval and not *const_eval) {
               // constant evaluated to false, short-circuit
               return false;
             }
           } else {
-            throw panic_exception("expected 'or' or 'and'" + string{__FILE__} +
-                                  ":" + to_string(__LINE__));
+            throw panic_exception("expected 'or' or 'and'" +
+                                  std::string{__FILE__} + ":" +
+                                  std::to_string(__LINE__));
           }
         } else {
-          optional<bool> const_eval{
+          std::optional<bool> const_eval{
               e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
           if (const_eval) { // constant evaluated
             return *const_eval;
@@ -317,25 +322,26 @@ public:
         const bool_op &e{get<bool_op>(bools_.at(i))};
         if (i < n - 1) {
           if (ops_.at(i).is_name("and")) {
-            optional<bool> const_eval{
+            std::optional<bool> const_eval{
                 e.compile_or(tc, os, indent, jmp_to_if_true, invert)};
             if (const_eval and *const_eval) {
               // constant evaluated to true, short-circuit
               return true;
             }
           } else if (ops_.at(i).is_name("or")) {
-            optional<bool> const_eval{
+            std::optional<bool> const_eval{
                 e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
             if (const_eval and not *const_eval) {
               // constant evaluated to false, short-circuit
               return false;
             }
           } else {
-            throw panic_exception("expected 'or' or 'and'" + string{__FILE__} +
-                                  ":" + to_string(__LINE__));
+            throw panic_exception("expected 'or' or 'and'" +
+                                  std::string{__FILE__} + ":" +
+                                  std::to_string(__LINE__));
           }
         } else {
-          optional<bool> const_eval{
+          std::optional<bool> const_eval{
               e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
           if (const_eval) { // constant evaluated
             return *const_eval;
@@ -345,7 +351,7 @@ public:
         }
       }
     }
-    return nullopt;
+    return std::nullopt;
   }
 
   //? assumes it is not an expression
@@ -363,10 +369,10 @@ public:
     return get<bool_ops_list>(bools_.at(0)).is_expression();
   }
 
-  [[nodiscard]] inline auto identifier() const -> const string & override {
+  [[nodiscard]] inline auto identifier() const -> const std::string & override {
     if (bools_.size() > 1) {
-      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                            to_string(__LINE__));
+      throw panic_exception("unexpected code path " + std::string{__FILE__} +
+                            ":" + std::to_string(__LINE__));
     }
 
     assert(!bools_.empty());
@@ -379,9 +385,9 @@ public:
   }
 
 private:
-  inline static auto cmp_label_from(const toc &tc,
-                                    const variant<bool_op, bool_ops_list> &var)
-      -> string {
+  inline static auto
+  cmp_label_from(const toc &tc, const std::variant<bool_op, bool_ops_list> &var)
+      -> std::string {
 
     if (var.index() == 1) {
       return get<bool_ops_list>(var).cmp_bgn_label(tc);
@@ -390,7 +396,7 @@ private:
     return get<bool_op>(var).cmp_bgn_label(tc);
   }
 
-  inline static auto token_from(const variant<bool_op, bool_ops_list> &var)
+  inline static auto token_from(const std::variant<bool_op, bool_ops_list> &var)
       -> token {
 
     if (var.index() == 0) {

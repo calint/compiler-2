@@ -1,14 +1,18 @@
 #pragma once
+
+#include <cassert>
+#include <string>
+
 #include "token.hpp"
 
 class tokenizer final {
-  const string &src_{}; // the string to be tokenized
-  const char *ptr_{};   // pointer to current position
-  size_t char_ix_{};    // current char index in 'src_'
-  char last_char_{-1};  // last read character (-1 before any characters read)
+  const std::string &src_{}; // the string to be tokenized
+  const char *ptr_{};        // pointer to current position
+  size_t char_ix_{};         // current char index in 'src_'
+  char last_char_{-1}; // last read character (-1 before any characters read)
 
 public:
-  inline explicit tokenizer(const string &src)
+  inline explicit tokenizer(const std::string &src)
       : src_{src}, ptr_{src_.c_str()} {}
 
   inline tokenizer() = delete;
@@ -24,24 +28,24 @@ public:
   }
 
   inline auto next_token() -> token {
-    const string &ws_before{next_whitespace()};
+    const std::string &ws_before{next_whitespace()};
     const size_t bgn_ix{char_ix_};
     if (is_next_char('"')) {
       // string token
-      string txt;
+      std::string txt;
       while (true) {
         if (is_next_char('"')) {
           const size_t end{char_ix_};
-          const string &ws_after{next_whitespace()};
+          const std::string &ws_after{next_whitespace()};
           return token{ws_before, bgn_ix, txt, end, ws_after, true};
         }
         txt.push_back(next_char());
       }
     }
     // not a string
-    const string &txt{next_token_str()};
+    const std::string &txt{next_token_str()};
     const size_t end_ix{char_ix_};
-    const string &ws_after{next_whitespace()};
+    const std::string &ws_after{next_whitespace()};
     return {ws_before, bgn_ix, txt, end_ix, ws_after};
   }
 
@@ -77,7 +81,7 @@ public:
 
   [[nodiscard]] inline auto peek_char() const -> char { return *ptr_; }
 
-  inline auto read_rest_of_line() -> string {
+  inline auto read_rest_of_line() -> std::string {
     const char *bgn{ptr_};
     while (true) {
       if (*ptr_ == '\n') {
@@ -88,7 +92,7 @@ public:
       }
       ptr_++;
     }
-    const string &s{bgn, size_t(ptr_ - bgn)};
+    const std::string &s{bgn, size_t(ptr_ - bgn)};
     ptr_++;
     char_ix_ += size_t(ptr_ - bgn);
     return s;
@@ -107,7 +111,7 @@ public:
   }
 
 private:
-  inline auto next_whitespace() -> string {
+  inline auto next_whitespace() -> std::string {
     if (is_eos()) {
       return "";
     }
@@ -124,7 +128,7 @@ private:
     return {ptr_ - len, len};
   }
 
-  inline auto next_token_str() -> string {
+  inline auto next_token_str() -> std::string {
     if (is_eos()) {
       return "";
     }

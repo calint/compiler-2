@@ -1,23 +1,26 @@
 #pragma once
-#include "compiler_exception.hpp"
+
+#include <sstream>
+#include <vector>
+
 #include "decouple.hpp"
 #include "expression.hpp"
 #include "toc.hpp"
 
 class expr_ops_list final : public expression {
   bool enclosed_{}; //  (a+b) vs a+b
-  vector<unique_ptr<statement>> exprs_{};
-  vector<char> ops_{};
+  std::vector<std::unique_ptr<statement>> exprs_{};
+  std::vector<char> ops_{};
   unary_ops uops_{}; // e.g. ~(a+b)
 
 public:
-  inline expr_ops_list(
-      toc &tc, tokenizer &tz, const bool in_args = false,
-      const bool enclosed = false, unary_ops uops = {},
-      const char first_op_precedence = initial_precedence,
-      unique_ptr<statement> first_expression = unique_ptr<statement>{})
+  inline expr_ops_list(toc &tc, tokenizer &tz, const bool in_args = false,
+                       const bool enclosed = false, unary_ops uops = {},
+                       const char first_op_precedence = initial_precedence,
+                       std::unique_ptr<statement> first_expression =
+                           std::unique_ptr<statement>{})
       : expression{tz.next_whitespace_token()}, enclosed_{enclosed},
-        uops_{move(uops)} {
+        uops_{std::move(uops)} {
 
     // read first expression e.g. =-a/-(b+1)
     if (first_expression) {
@@ -29,7 +32,7 @@ public:
       if (tz.is_next_char('(')) {
         // recursion of sub-expression with unary ops
         exprs_.emplace_back(
-            make_unique<expr_ops_list>(tc, tz, in_args, true, uo));
+            std::make_unique<expr_ops_list>(tc, tz, in_args, true, uo));
       } else {
         // statement, push back the unary ops to attach them to the statement
         uo.put_back(tz);
@@ -97,7 +100,7 @@ public:
         //   =[(=a) +[(=b)(*c)(+1)]]
         precedence = next_precedence;
         ops_.pop_back();
-        unique_ptr<statement> last_stmt_in_expr{move(exprs_.back())};
+        std::unique_ptr<statement> last_stmt_in_expr{move(exprs_.back())};
         exprs_.pop_back();
         exprs_.emplace_back(
             make_unique<expr_ops_list>(tc, tz, in_args, false, unary_ops{},
@@ -122,7 +125,7 @@ public:
       if (tz.is_next_char('(')) {
         // subexpression, recurse
         exprs_.emplace_back(
-            make_unique<expr_ops_list>(tc, tz, in_args, true, uo));
+            std::make_unique<expr_ops_list>(tc, tz, in_args, true, uo));
         continue;
       }
 
@@ -130,10 +133,10 @@ public:
       uo.put_back(tz);
 
       // read statement
-      unique_ptr<statement> st{create_statement_from_tokenizer(tc, tz)};
+      std::unique_ptr<statement> st{create_statement_from_tokenizer(tc, tz)};
       if (st->tok().is_empty()) {
-        throw compiler_exception(st->tok(),
-                                 "unexpected '" + string{tz.peek_char()} + "'");
+        throw compiler_exception(
+            st->tok(), "unexpected '" + std::string{tz.peek_char()} + "'");
       }
       // move statement to list
       exprs_.emplace_back(move(st));
@@ -148,7 +151,7 @@ public:
 
   inline ~expr_ops_list() override = default;
 
-  inline void source_to(ostream &os) const override {
+  inline void source_to(std::ostream &os) const override {
     expression::source_to(os); // whitespace
     uops_.source_to(os);
 
@@ -173,8 +176,8 @@ public:
     }
   }
 
-  inline void compile(toc &tc, ostream &os, const size_t indent,
-                      const string &dst) const override {
+  inline void compile(toc &tc, std::ostream &os, const size_t indent,
+                      const std::string &dst) const override {
 
     const ident_resolved &dst_resolved{
         tc.resolve_identifier(tok(), dst, false)};
@@ -186,12 +189,12 @@ public:
 
     // compile with and without scratch register
     // try without scratch register
-    stringstream ss1{};
+    std::stringstream ss1{};
     do_compile(tc, ss1, indent, dst);
 
     // try with scratch register
-    stringstream ss2{};
-    const string &reg{tc.alloc_scratch_register(tok(), ss2, indent)};
+    std::stringstream ss2{};
+    const std::string &reg{tc.alloc_scratch_register(tok(), ss2, indent)};
     do_compile(tc, ss2, indent, reg);
     // tc.source_comment(*this, ss2, indent);
     tc.asm_cmd(tok(), ss2, indent, "mov", dst_resolved.id_nasm, reg);
@@ -209,7 +212,7 @@ public:
     }
   }
 
-  [[nodiscard]] inline auto identifier() const -> const string & override {
+  [[nodiscard]] inline auto identifier() const -> const std::string & override {
     assert(exprs_.size() == 1);
 
     return exprs_.at(0)->identifier();
@@ -244,8 +247,8 @@ public:
   }
 
 private:
-  inline void do_compile(toc &tc, ostream &os, const size_t indent,
-                         const string &dst) const {
+  inline void do_compile(toc &tc, std::ostream &os, const size_t indent,
+                         const std::string &dst) const {
     tc.comment_source(*this, os, indent);
 
     // first element is assigned to destination
@@ -263,9 +266,9 @@ private:
     uops_.compile(tc, os, indent, dst_resolved.id_nasm);
   }
 
-  inline static auto count_instructions(stringstream &ss) -> size_t {
-    const regex rxcomment{R"(^\s*;.*$)"};
-    string line{};
+  inline static auto count_instructions(std::stringstream &ss) -> size_t {
+    const std::regex rxcomment{R"(^\s*;.*$)"};
+    std::string line{};
     size_t n{0};
     while (getline(ss, line)) {
       if (regex_search(line, rxcomment)) {
@@ -298,16 +301,16 @@ private:
     case '%':
       return 6;
     default:
-      throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                            to_string(__LINE__));
+      throw panic_exception("unexpected code path " + std::string{__FILE__} +
+                            ":" + std::to_string(__LINE__));
     }
   }
 
-  inline static void asm_op(toc &tc, ostream &os, const size_t indent,
+  inline static void asm_op(toc &tc, std::ostream &os, const size_t indent,
                             const char op, const ident_resolved &dst,
                             const statement &src) {
     toc::indent(os, indent, true);
-    string op_str{op};
+    std::string op_str{op};
     if (op == '<') {
       op_str.push_back('<');
     } else if (op == '>') {
@@ -361,7 +364,7 @@ private:
     }
   }
 
-  inline static void asm_op_mov(toc &tc, ostream &os, const size_t indent,
+  inline static void asm_op_mov(toc &tc, std::ostream &os, const size_t indent,
                                 const ident_resolved &dst,
                                 const statement &src) {
     if (src.is_expression()) {
@@ -378,11 +381,11 @@ private:
     src.get_unary_ops().compile(tc, os, indent, dst.id_nasm);
   }
 
-  inline static void asm_op_mul(toc &tc, ostream &os, const size_t indent,
+  inline static void asm_op_mul(toc &tc, std::ostream &os, const size_t indent,
                                 const ident_resolved &dst,
                                 const statement &src) {
     if (src.is_expression()) {
-      const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
+      const std::string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
       src.compile(tc, os, indent, reg);
       // imul destination must be a register
       if (dst.is_register()) {
@@ -410,7 +413,7 @@ private:
                    src_resolved.id_nasm);
         return;
       }
-      const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
+      const std::string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
       tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
       uops.compile(tc, os, indent, reg);
       tc.asm_cmd(src.tok(), os, indent, "imul", dst.id_nasm, reg);
@@ -419,7 +422,7 @@ private:
     }
     // imul destination is not a register
     if (src_resolved.is_const()) {
-      const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
+      const std::string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
       tc.asm_cmd(src.tok(), os, indent, "mov", reg, dst.id_nasm);
       tc.asm_cmd(src.tok(), os, indent, "imul", reg,
                  src.get_unary_ops().to_string() + src_resolved.id_nasm);
@@ -430,7 +433,7 @@ private:
     // source is not a constant
     const unary_ops &uops{src.get_unary_ops()};
     if (uops.is_empty()) {
-      const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
+      const std::string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
       tc.asm_cmd(src.tok(), os, indent, "mov", reg, dst.id_nasm);
       tc.asm_cmd(src.tok(), os, indent, "imul", reg, src_resolved.id_nasm);
       tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, reg);
@@ -438,7 +441,7 @@ private:
       return;
     }
     // source is not a constant and unary ops need to be applied
-    const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
+    const std::string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
     tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
     uops.compile(tc, os, indent, reg);
     tc.asm_cmd(src.tok(), os, indent, "imul", reg, dst.id_nasm);
@@ -446,13 +449,13 @@ private:
     tc.free_scratch_register(os, indent, reg);
   }
 
-  inline static void asm_op_add_sub(toc &tc, ostream &os, const size_t indent,
-                                    const string &op,
-                                    const string &op_when_negated,
+  inline static void asm_op_add_sub(toc &tc, std::ostream &os,
+                                    const size_t indent, const std::string &op,
+                                    const std::string &op_when_negated,
                                     const ident_resolved &dst,
                                     const statement &src) {
     if (src.is_expression()) {
-      const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
+      const std::string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
       src.compile(tc, os, indent, reg);
       tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, reg);
       tc.free_scratch_register(os, indent, reg);
@@ -476,18 +479,19 @@ private:
                  src_resolved.id_nasm);
       return;
     }
-    const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
+    const std::string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
     tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
     uops.compile(tc, os, indent, reg);
     tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, reg);
     tc.free_scratch_register(os, indent, reg);
   }
 
-  inline static void asm_op_bitwise(toc &tc, ostream &os, const size_t indent,
-                                    const string &op, const ident_resolved &dst,
+  inline static void asm_op_bitwise(toc &tc, std::ostream &os,
+                                    const size_t indent, const std::string &op,
+                                    const ident_resolved &dst,
                                     const statement &src) {
     if (src.is_expression()) {
-      const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
+      const std::string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
       src.compile(tc, os, indent, reg);
       tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, reg);
       tc.free_scratch_register(os, indent, reg);
@@ -507,15 +511,16 @@ private:
       return;
     }
     // src is not an expression and not a constant and has unary ops
-    const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
+    const std::string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
     tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
     uops.compile(tc, os, indent, reg);
     tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, reg);
     tc.free_scratch_register(os, indent, reg);
   }
 
-  inline static void asm_op_shift(toc &tc, ostream &os, const size_t indent,
-                                  const string &op, const ident_resolved &dst,
+  inline static void asm_op_shift(toc &tc, std::ostream &os,
+                                  const size_t indent, const std::string &op,
+                                  const ident_resolved &dst,
                                   const statement &src) {
     if (src.is_expression()) {
       // the operand must be stored in register 'CL'
@@ -585,11 +590,12 @@ private:
 
   // op is either 'rax' for the quotient or 'rdx' for the reminder to be moved
   // into 'dst'
-  inline static void asm_op_div(toc &tc, ostream &os, const size_t indent,
-                                const string &op, const ident_resolved &dst,
+  inline static void asm_op_div(toc &tc, std::ostream &os, const size_t indent,
+                                const std::string &op,
+                                const ident_resolved &dst,
                                 const statement &src) {
     if (src.is_expression()) {
-      const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
+      const std::string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
       src.compile(tc, os, indent, reg);
       const bool rax_allocated{
           tc.alloc_named_register(src.tok(), os, indent, "rax")};
@@ -603,9 +609,9 @@ private:
         toc::asm_push(src.tok(), os, indent, "rdx");
       }
       toc::indent(os, indent, false);
-      os << "cqo" << endl;
+      os << "cqo" << std::endl;
       toc::indent(os, indent, false);
-      os << "idiv " << reg << endl;
+      os << "idiv " << reg << std::endl;
       tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, op);
       if (rdx_allocated) {
         tc.free_named_register(os, indent, "rdx");
@@ -635,13 +641,13 @@ private:
         toc::asm_push(src.tok(), os, indent, "rdx");
       }
       toc::indent(os, indent, false);
-      os << "cqo" << endl;
-      const string &scratch_reg{
+      os << "cqo" << std::endl;
+      const std::string &scratch_reg{
           tc.alloc_scratch_register(src.tok(), os, indent)};
       tc.asm_cmd(src.tok(), os, indent, "mov", scratch_reg,
                  src.get_unary_ops().to_string() + src_resolved.id_nasm);
       toc::indent(os, indent, false);
-      os << "idiv " << scratch_reg << endl;
+      os << "idiv " << scratch_reg << std::endl;
       tc.free_scratch_register(os, indent, scratch_reg);
       tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, op);
       if (rdx_allocated) {
@@ -676,9 +682,9 @@ private:
         toc::asm_push(src.tok(), os, indent, "rdx");
       }
       toc::indent(os, indent, false);
-      os << "cqo" << endl;
+      os << "cqo" << std::endl;
       toc::indent(os, indent, false);
-      os << "idiv " << src_resolved.id_nasm << endl;
+      os << "idiv " << src_resolved.id_nasm << std::endl;
       // op is either "rax" for the quotient or "rdx" for the reminder
       tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, op);
       if (rdx_allocated) {
@@ -694,7 +700,7 @@ private:
       return;
     }
     // src is not an expression and not a constant and has unary ops
-    const string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
+    const std::string &reg{tc.alloc_scratch_register(src.tok(), os, indent)};
     tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
     uops.compile(tc, os, indent, reg);
     const bool rax_allocated{
@@ -709,9 +715,9 @@ private:
       toc::asm_push(src.tok(), os, indent, "rdx");
     }
     toc::indent(os, indent, false);
-    os << "cqo" << endl;
+    os << "cqo" << std::endl;
     toc::indent(os, indent, false);
-    os << "idiv " << reg << endl;
+    os << "idiv " << reg << std::endl;
     tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, op);
     if (rdx_allocated) {
       tc.free_named_register(os, indent, "rdx");

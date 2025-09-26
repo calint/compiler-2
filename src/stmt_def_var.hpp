@@ -1,14 +1,15 @@
 #pragma once
+
 #include "stmt_assign_var.hpp"
 
-class null_stream : public ostream {
-  class null_buffer : public streambuf {
+class null_stream : public std::ostream {
+  class null_buffer : public std::streambuf {
   public:
     auto overflow(int c) -> int override { return c; }
   } nb_{};
 
 public:
-  null_stream() : ostream(&nb_) {}
+  null_stream() : std::ostream(&nb_) {}
 };
 
 class stmt_def_var final : public statement {
@@ -18,7 +19,7 @@ class stmt_def_var final : public statement {
 
 public:
   inline stmt_def_var(toc &tc, token tk, tokenizer &tz)
-      : statement{move(tk)}, name_tk_{tz.next_token()} {
+      : statement{std::move(tk)}, name_tk_{tz.next_token()} {
 
     // check if type declared
     if (tz.is_next_char(':')) {
@@ -50,13 +51,14 @@ public:
 
   inline ~stmt_def_var() override = default;
 
-  inline void source_to(ostream &os) const override {
+  inline void source_to(std::ostream &os) const override {
     statement::source_to(os);
     initial_value_.source_to(os);
   }
 
-  inline void compile(toc &tc, ostream &os, size_t indent,
-                      [[maybe_unused]] const string &dst = "") const override {
+  inline void
+  compile(toc &tc, std::ostream &os, size_t indent,
+          [[maybe_unused]] const std::string &dst = "") const override {
 
     tc.add_var(name_tk_, os, indent, name_tk_.name(), get_type(), false);
     tc.comment_source(*this, os, indent);

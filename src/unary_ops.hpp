@@ -1,4 +1,7 @@
 #pragma once
+
+#include <vector>
+
 #include "panic_exception.hpp"
 #include "tokenizer.hpp"
 
@@ -6,7 +9,7 @@ class toc;
 
 class unary_ops final {
   token ws_before_{}; // whitespace before the ops
-  vector<char> ops_{};
+  std::vector<char> ops_{};
 
 public:
   inline explicit unary_ops(tokenizer &tz)
@@ -46,7 +49,7 @@ public:
     tz.put_back_token(ws_before_);
   }
 
-  inline void source_to(ostream &os) const {
+  inline void source_to(std::ostream &os) const {
     ws_before_.source_to(os);
     for (const char op : ops_) {
       os << op;
@@ -55,12 +58,12 @@ public:
 
   // implemented in main.cpp
   // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-  inline void compile(toc &tc, ostream &os, size_t indnt,
-                      const string &dst_resolved) const;
+  inline void compile(toc &tc, std::ostream &os, size_t indnt,
+                      const std::string &dst_resolved) const;
 
   [[nodiscard]] inline auto is_empty() const -> bool { return ops_.empty(); }
 
-  [[nodiscard]] inline auto to_string() const -> string {
+  [[nodiscard]] inline auto to_string() const -> std::string {
     return {ops_.begin(), ops_.end()};
   }
 
@@ -75,8 +78,8 @@ public:
         v = ~v; // NOLINT(hicpp-signed-bitwise)
         break;
       default:
-        throw panic_exception("unexpected code path " + string{__FILE__} + ":" +
-                              std::to_string(__LINE__));
+        throw panic_exception("unexpected code path " + std::string{__FILE__} +
+                              ":" + std::to_string(__LINE__));
       }
     }
     return v;
