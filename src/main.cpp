@@ -74,9 +74,9 @@ auto main(int argc, char *args[]) -> int {
 // declared in 'decouple.hpp'
 //   called from 'stmt_block' to solve circular dependencies with 'loop', 'if'
 //   and function calls
-inline auto
-create_statement_from_tokenizer(toc &tc, unary_ops uops, token tk,
-                                tokenizer &tz) -> unique_ptr<statement> {
+inline auto create_statement_from_tokenizer(toc &tc, unary_ops uops, token tk,
+                                            tokenizer &tz)
+    -> unique_ptr<statement> {
   if (tk.is_name("loop")) {
     return make_unique<stmt_loop>(tc, move(tk), tz);
   }
@@ -123,9 +123,9 @@ inline auto create_statement_from_tokenizer(toc &tc, tokenizer &tz)
 
 // declared in 'decouple.hpp'
 //   solves circular reference: expr_type_value -> expr_any -> expr_type_value
-inline auto
-create_expr_any_from_tokenizer(toc &tc, tokenizer &tz, const type &tp,
-                               bool in_args) -> unique_ptr<expr_any> {
+inline auto create_expr_any_from_tokenizer(toc &tc, tokenizer &tz,
+                                           const type &tp, bool in_args)
+    -> unique_ptr<expr_any> {
 
   return make_unique<expr_any>(tc, tz, tp, in_args);
 }

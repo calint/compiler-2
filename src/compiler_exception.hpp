@@ -9,8 +9,8 @@ public:
   size_t end_index{};
 
   inline compiler_exception(const token &tk, string message)
-      : msg{move(message)},
-        start_index{tk.start_index()}, end_index{tk.end_index()} {}
+      : msg{move(message)}, start_index{tk.start_index()},
+        end_index{tk.end_index()} {}
 
   inline compiler_exception(const tokenizer &tz, string message)
       : msg{move(message)}, start_index{tz.current_char_index_in_source()},

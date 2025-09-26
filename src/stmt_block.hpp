@@ -12,8 +12,8 @@ class stmt_block final : public statement {
 
 public:
   inline stmt_block(toc &tc, tokenizer &tz)
-      : statement{tz.next_whitespace_token()}, is_one_statement_{
-                                                   not tz.is_next_char('{')} {
+      : statement{tz.next_whitespace_token()},
+        is_one_statement_{not tz.is_next_char('{')} {
 
     set_type(tc.get_type_void());
 

@@ -65,9 +65,10 @@ public:
 
     const string &memsize{
         get_memory_operand_for_size(tk, tp_first_field->size())};
-
-    return {*tp, memsize + "[rbp" + string{stack_idx > 0 ? "+" : ""} +
-                     to_string(stack_idx) + "]"};
+    const string &accessor = memsize + "[rbp" +
+                             string{stack_idx > 0 ? "+" : ""} +
+                             to_string(stack_idx) + "]";
+    return {*tp, accessor};
   }
 
   inline static auto get_memory_operand_for_size(const token &tk,

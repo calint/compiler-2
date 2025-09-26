@@ -99,9 +99,9 @@ public:
         ops_.pop_back();
         unique_ptr<statement> last_stmt_in_expr{move(exprs_.back())};
         exprs_.pop_back();
-        exprs_.emplace_back(make_unique<expr_ops_list>(tc, tz, in_args, false,
-                                                      unary_ops{}, precedence,
-                                                      move(last_stmt_in_expr)));
+        exprs_.emplace_back(
+            make_unique<expr_ops_list>(tc, tz, in_args, false, unary_ops{},
+                                       precedence, move(last_stmt_in_expr)));
         continue;
       }
 
