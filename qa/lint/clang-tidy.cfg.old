@@ -1,3 +1,6 @@
+# !
+# ! file does not work with comments inside the 'Checks'
+# !
 Checks: '
   *,
   -abseil-string-find-str-contains,             # string::contains is in c++23, clang++ is c++20
