@@ -253,7 +253,8 @@ class toc final {
         if (fields_.has(name)) {
             throw compiler_exception(
                 src_loc, "field '" + name + "' already defined at " +
-                             source_location_hr(fields_.get(name).declared_at));
+                             source_location_hr(
+                                 fields_.get_const_ref(name).declared_at));
         }
         fields_.put(
             name, {.def = fld, .declared_at = src_loc, .is_str = is_str_field});
