@@ -29,7 +29,7 @@ class bool_ops_list final : public statement {
         token prv_op{first_op};
         if (not first_op.is_empty()) {
             // sub-expression with first bool op provided
-            bools_.emplace_back(move(first_bool_op));
+            bools_.emplace_back(std::move(first_bool_op));
             ops_.emplace_back(std::move(first_op));
         }
         while (true) {
@@ -80,7 +80,7 @@ class bool_ops_list final : public statement {
                                       false,
                                       {},
                                       true,
-                                      move(bools_.back()),
+                                      std::move(bools_.back()),
                                       std::move(op_tk)};
                     bools_.pop_back();
                     bools_.emplace_back(std::move(bol));
@@ -126,8 +126,8 @@ class bool_ops_list final : public statement {
             //  |prv_op_tk| |back()| |op_tk|
             // create:
             // a    or   (b     and   c) or d
-            bool_ops_list bol{tc,   tz, false, {}, true, move(bools_.back()),
-                              op_tk};
+            bool_ops_list bol{
+                tc, tz, false, {}, true, std::move(bools_.back()), op_tk};
             bools_.pop_back();
             bools_.emplace_back(std::move(bol));
 

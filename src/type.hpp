@@ -21,7 +21,7 @@ class type final {
 
   public:
     inline type(std::string name, const size_t size, const bool is_built_in)
-        : name_{move(name)}, size_{size}, is_built_in_{is_built_in} {}
+        : name_{std::move(name)}, size_{size}, is_built_in_{is_built_in} {}
 
     inline type() = default;
     inline type(const type&) = default;
@@ -33,7 +33,7 @@ class type final {
 
     inline void add_field([[maybe_unused]] const token& tk, std::string name,
                           const type& tp) {
-        fields_.emplace_back(type_field{move(name), tp, size_});
+        fields_.emplace_back(type_field{std::move(name), tp, size_});
         size_ += tp.size_;
     }
 

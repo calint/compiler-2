@@ -10,11 +10,12 @@ class compiler_exception final : public std::exception {
     size_t end_index{};
 
     inline compiler_exception(const token& tk, std::string message)
-        : msg{move(message)}, start_index{tk.start_index()},
+        : msg{std::move(message)}, start_index{tk.start_index()},
           end_index{tk.end_index()} {}
 
     inline compiler_exception(const tokenizer& tz, std::string message)
-        : msg{move(message)}, start_index{tz.current_char_index_in_source()},
+        : msg{std::move(message)},
+          start_index{tz.current_char_index_in_source()},
           end_index{tz.current_char_index_in_source()} {}
 
     [[nodiscard]] inline auto what() const noexcept -> const char* override {

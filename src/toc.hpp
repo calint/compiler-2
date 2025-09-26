@@ -61,8 +61,8 @@ class frame final {
                  const std::vector<func_return_info>& func_rets = {},
                  const bool func_is_inline = false, std::string call_path = "",
                  std::string func_ret_label = "") noexcept
-        : name_{move(name)}, call_path_{move(call_path)},
-          func_ret_label_{move(func_ret_label)}, func_rets_{func_rets},
+        : name_{std::move(name)}, call_path_{std::move(call_path)},
+          func_ret_label_{std::move(func_ret_label)}, func_rets_{func_rets},
           func_is_inline_{func_is_inline}, type_{frm_type} {}
 
     inline void add_var(token declared_at, const std::string& name,
@@ -189,7 +189,7 @@ class identifier final {
     std::vector<std::string> path_{};
 
   public:
-    inline explicit identifier(std::string id) : id_{move(id)} {
+    inline explicit identifier(std::string id) : id_{std::move(id)} {
         size_t start{0};
         size_t end{0};
         while ((end = id_.find('.', start)) != std::string::npos) {
@@ -907,7 +907,7 @@ class toc final {
 
         if (is_operand_memory(src_resolved)) {
             //? todo. this displays nasm identifiers but should be human
-            //readable
+            // readable
             // identifiers
             throw compiler_exception(
                 src_loc, "cannot move '" + src_resolved + "' to '" +
@@ -1294,7 +1294,7 @@ class toc final {
                 break;
             }
         }
-        return {move(id), frames_.at(i)};
+        return {std::move(id), frames_.at(i)};
     }
 
     inline auto is_register_initiated(const std::string& reg) const -> bool {
@@ -1317,7 +1317,7 @@ class toc final {
     }
 
     //? does not take into account non-inlined calls and the return address from
-    //a
+    // a
     // function call
     inline auto get_total_stack_size() const -> size_t {
         assert(!frames_.empty());

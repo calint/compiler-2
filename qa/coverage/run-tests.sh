@@ -90,11 +90,10 @@ rm gen gen.o gen.s diff.baz out
 
 # process coverage data
 llvm-profdata merge -o baz.profdata -sparse $(ls *.profraw) &&
-llvm-cov export --format=lcov --instr-profile baz.profdata --object $BIN > lcov.info &&
-# generate report
-genhtml --quiet lcov.info --output-directory report/ &&
-echo &&
-echo coverage report generated in "$(realpath "report/")" &&
-echo &&
-
-rm *.profraw baz.profdata lcov.info
+  llvm-cov export --format=lcov --instr-profile baz.profdata --object $BIN >lcov.info &&
+  # generate report
+  genhtml --ignore-errors unsupported -quiet lcov.info --output-directory report/ &&
+  echo &&
+  echo coverage report generated in "$(realpath "report/")" &&
+  echo &&
+  rm *.profraw baz.profdata lcov.info

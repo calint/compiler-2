@@ -25,7 +25,7 @@ class expr_ops_list final : public expression {
         // read first expression e.g. =-a/-(b+1)
         if (first_expression) {
             // called in a recursion with first expression provided
-            exprs_.emplace_back(move(first_expression));
+            exprs_.emplace_back(std::move(first_expression));
         } else {
             // check if new recursion is necessary e.g. =-a/-(-(b+c)+d), tz at
             // "-a/-("
@@ -106,11 +106,11 @@ class expr_ops_list final : public expression {
                 precedence = next_precedence;
                 ops_.pop_back();
                 std::unique_ptr<statement> last_stmt_in_expr{
-                    move(exprs_.back())};
+                    std::move(exprs_.back())};
                 exprs_.pop_back();
                 exprs_.emplace_back(make_unique<expr_ops_list>(
                     tc, tz, in_args, false, unary_ops{}, precedence,
-                    move(last_stmt_in_expr)));
+                    std::move(last_stmt_in_expr)));
                 continue;
             }
 
@@ -147,7 +147,7 @@ class expr_ops_list final : public expression {
                                              std::string{tz.peek_char()} + "'");
             }
             // move statement to list
-            exprs_.emplace_back(move(st));
+            exprs_.emplace_back(std::move(st));
         }
     }
 
