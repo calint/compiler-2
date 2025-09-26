@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
 #include "panic_exception.hpp"
@@ -66,7 +67,7 @@ class unary_ops final {
         return {ops_.begin(), ops_.end()};
     }
 
-    [[nodiscard]] auto evaluate_constant(long v) const -> long {
+    [[nodiscard]] auto evaluate_constant(int64_t v) const -> int64_t {
         size_t i{ops_.size()};
         while (i--) {
             switch (ops_.at(i)) {

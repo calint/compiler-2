@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cstdint>
 #include <unordered_set>
 
 #include "compiler_exception.hpp"
@@ -160,7 +161,7 @@ struct ident_resolved final {
 
     const std::string id;
     const std::string id_nasm;
-    const long const_value{};
+    const int64_t const_value{};
     const type& type_ref;
     const ident_type ident_type{ident_type::CONST};
 
@@ -486,7 +487,8 @@ class toc final {
                                          source_location_hr(var.declared_at));
         }
 
-        const int stack_idx{int(get_current_stack_size() + var_type.size())};
+        const int stack_idx{
+            static_cast<int>(get_current_stack_size() + var_type.size())};
         frames_.back().add_var(src_loc, name, var_type, -stack_idx, initiated);
 
         const size_t total_stack_size{get_total_stack_size()};
@@ -1400,7 +1402,7 @@ class toc final {
 
         // is it a constant?
         char* ep{};
-        const long const_value{strtol(id.c_str(), &ep, 10)};
+        const int64_t const_value{strtol(id.c_str(), &ep, 10)};
         if (!*ep) {
             return {.id = ident,
                     .id_nasm = id,
@@ -1410,7 +1412,7 @@ class toc final {
         }
 
         if (id.starts_with("0x")) { // hex
-            const long value{strtol(id.c_str() + 2, &ep, 16)};
+            const int64_t value{strtol(id.c_str() + 2, &ep, 16)};
             if (!*ep) {
                 return {.id = ident,
                         .id_nasm = id,
@@ -1421,7 +1423,7 @@ class toc final {
         }
 
         if (id.starts_with("0b")) { // binary
-            const long value{strtol(id.c_str() + 2, &ep, 2)};
+            const int64_t value{strtol(id.c_str() + 2, &ep, 2)};
             if (!*ep) {
                 return {.id = ident,
                         .id_nasm = id,

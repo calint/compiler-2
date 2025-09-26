@@ -260,7 +260,7 @@ class stmt_def_func final : public statement {
             if (param_reg.empty()) {
                 // argument not passed as register
                 tc.add_func_arg(tok(), os, indent + 1, param_name, param_type,
-                                int(stk_ix));
+                                static_cast<int>(stk_ix));
                 if (param_type.size() > tc.get_type_default().size()) {
                     //? todo. support for passing arbitrary size argument
                     throw compiler_exception(

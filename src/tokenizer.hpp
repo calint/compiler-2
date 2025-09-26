@@ -90,9 +90,9 @@ class tokenizer final {
             }
             ptr_++;
         }
-        const std::string& s{bgn, size_t(ptr_ - bgn)};
+        const std::string& s{bgn, static_cast<size_t>(ptr_ - bgn)};
         ptr_++;
-        char_ix_ += size_t(ptr_ - bgn);
+        char_ix_ += static_cast<size_t>(ptr_ - bgn);
         return s;
     }
 
@@ -150,7 +150,7 @@ class tokenizer final {
         assert(char_ix_ >= nchars);
 
         ptr_ -= nchars;
-        char_ix_ = size_t(char_ix_ - nchars);
+        char_ix_ = static_cast<size_t>(char_ix_ - nchars);
     }
 
     static auto is_char_whitespace(const char ch) -> bool {

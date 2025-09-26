@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 #include <optional>
 #include <ostream>
 
@@ -307,8 +308,8 @@ class bool_op final : public statement {
         is_expression_ = true;
     }
 
-    static auto eval_constant(const long lh, const std::string& op,
-                              const long rh) -> bool {
+    static auto eval_constant(const int64_t lh, const std::string& op,
+                              const int64_t rh) -> bool {
         if (op == "==") {
             return lh == rh;
         }

@@ -67,7 +67,7 @@ class type final {
             offset += fld.offset;
             tp = &fld.tp;
         }
-        const int stack_idx{stack_idx_base + int(offset)};
+        const int stack_idx{stack_idx_base + static_cast<int>(offset)};
 
         // find first built-in type to have a valid operand size for the address
         const type* tp_first_field{tp};
