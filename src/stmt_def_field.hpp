@@ -4,12 +4,12 @@
 #include "toc.hpp"
 
 class stmt_def_field final : public statement {
-    token name_tk_{};
-    unary_ops uops_{};
-    token initial_value_{};
+    token name_tk_;
+    unary_ops uops_;
+    token initial_value_;
 
   public:
-    inline stmt_def_field(toc& tc, token tk, tokenizer& tz)
+    stmt_def_field(toc& tc, token tk, tokenizer& tz)
         : statement{std::move(tk)}, name_tk_{tz.next_token()} {
 
         if (name_tk_.is_empty()) {
@@ -33,15 +33,15 @@ class stmt_def_field final : public statement {
         tc.add_field(tok(), name_tk_.name(), this, initial_value_.is_string());
     }
 
-    inline stmt_def_field() = default;
-    inline stmt_def_field(const stmt_def_field&) = default;
-    inline stmt_def_field(stmt_def_field&&) = default;
-    inline auto operator=(const stmt_def_field&) -> stmt_def_field& = default;
-    inline auto operator=(stmt_def_field&&) -> stmt_def_field& = default;
+    stmt_def_field() = default;
+    stmt_def_field(const stmt_def_field&) = default;
+    stmt_def_field(stmt_def_field&&) = default;
+    auto operator=(const stmt_def_field&) -> stmt_def_field& = default;
+    auto operator=(stmt_def_field&&) -> stmt_def_field& = default;
 
-    inline ~stmt_def_field() override = default;
+    ~stmt_def_field() override = default;
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         statement::source_to(os);
         name_tk_.source_to(os);
         os << "=";
@@ -49,9 +49,8 @@ class stmt_def_field final : public statement {
         initial_value_.source_to(os);
     }
 
-    inline void
-    compile(toc& tc, std::ostream& os, size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const override {
+    void compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const override {
 
         tc.comment_source(*this, os, indent);
         os << name_tk_.name() << ':';
@@ -68,14 +67,14 @@ class stmt_def_field final : public statement {
         os << " dq ";
         os << uops_.to_string();
         initial_value_.compile_to(os);
-        os << std::endl;
+        os << '\n';
     }
 
-    [[nodiscard]] inline auto is_in_data_section() const -> bool override {
+    [[nodiscard]] auto is_in_data_section() const -> bool override {
         return true;
     }
 
-    [[nodiscard]] inline auto is_string_field() const -> bool {
+    [[nodiscard]] auto is_string_field() const -> bool {
         return initial_value_.is_string();
     }
 };

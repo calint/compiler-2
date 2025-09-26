@@ -8,12 +8,11 @@
 class toc;
 
 class unary_ops final {
-    token ws_before_{}; // whitespace before the ops
-    std::vector<char> ops_{};
+    token ws_before_; // whitespace before the ops
+    std::vector<char> ops_;
 
   public:
-    inline explicit unary_ops(tokenizer& tz)
-        : ws_before_{tz.next_whitespace_token()} {
+    explicit unary_ops(tokenizer& tz) : ws_before_{tz.next_whitespace_token()} {
 
         while (true) {
             if (tz.is_next_char('~')) {
@@ -28,19 +27,19 @@ class unary_ops final {
         }
     }
 
-    inline unary_ops() = default;
-    inline unary_ops(const unary_ops&) = default;
-    inline unary_ops(unary_ops&&) = default;
-    inline auto operator=(const unary_ops&) -> unary_ops& = default;
-    inline auto operator=(unary_ops&&) -> unary_ops& = default;
+    unary_ops() = default;
+    unary_ops(const unary_ops&) = default;
+    unary_ops(unary_ops&&) = default;
+    auto operator=(const unary_ops&) -> unary_ops& = default;
+    auto operator=(unary_ops&&) -> unary_ops& = default;
 
-    inline ~unary_ops() = default;
+    ~unary_ops() = default;
 
-    [[nodiscard]] inline auto is_only_negated() const -> bool {
+    [[nodiscard]] auto is_only_negated() const -> bool {
         return ops_.size() == 1 && ops_.back() == '-';
     }
 
-    inline void put_back(tokenizer& tz) const {
+    void put_back(tokenizer& tz) const {
         // put back in reverse order
         size_t i{ops_.size()};
         while (i--) {
@@ -49,7 +48,7 @@ class unary_ops final {
         tz.put_back_token(ws_before_);
     }
 
-    inline void source_to(std::ostream& os) const {
+    void source_to(std::ostream& os) const {
         ws_before_.source_to(os);
         for (const char op : ops_) {
             os << op;
@@ -61,13 +60,13 @@ class unary_ops final {
     inline void compile(toc& tc, std::ostream& os, size_t indnt,
                         const std::string& dst_resolved) const;
 
-    [[nodiscard]] inline auto is_empty() const -> bool { return ops_.empty(); }
+    [[nodiscard]] auto is_empty() const -> bool { return ops_.empty(); }
 
-    [[nodiscard]] inline auto to_string() const -> std::string {
+    [[nodiscard]] auto to_string() const -> std::string {
         return {ops_.begin(), ops_.end()};
     }
 
-    [[nodiscard]] inline auto evaluate_constant(long v) const -> long {
+    [[nodiscard]] auto evaluate_constant(long v) const -> long {
         size_t i{ops_.size()};
         while (i--) {
             switch (ops_.at(i)) {

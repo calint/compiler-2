@@ -7,17 +7,16 @@
 #include "expr_ops_list.hpp"
 
 class bool_op final : public statement {
-    std::vector<token> nots_{};
-    expr_ops_list lhs_{};
-    std::string op_{}; // '<', '<=', '>', '>=', '==', '!='
-    expr_ops_list rhs_{};
+    std::vector<token> nots_;
+    expr_ops_list lhs_;
+    std::string op_; // '<', '<=', '>', '>=', '==', '!='
+    expr_ops_list rhs_;
     bool is_not_{};       // e.g. if not a == b ...
     bool is_shorthand_{}; // e.g. if a ...
     bool is_expression_{};
 
   public:
-    inline bool_op(toc& tc, tokenizer& tz)
-        : statement{tz.next_whitespace_token()} {
+    bool_op(toc& tc, tokenizer& tz) : statement{tz.next_whitespace_token()} {
 
         set_type(tc.get_type_bool());
 
@@ -68,15 +67,15 @@ class bool_op final : public statement {
         resolve_if_op_is_expression();
     }
 
-    inline bool_op() = default;
-    inline bool_op(const bool_op&) = default;
-    inline bool_op(bool_op&&) = default;
-    inline auto operator=(const bool_op&) -> bool_op& = default;
-    inline auto operator=(bool_op&&) -> bool_op& = default;
+    bool_op() = default;
+    bool_op(const bool_op&) = default;
+    bool_op(bool_op&&) = default;
+    auto operator=(const bool_op&) -> bool_op& = default;
+    auto operator=(bool_op&&) -> bool_op& = default;
 
-    inline ~bool_op() override = default;
+    ~bool_op() override = default;
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         statement::source_to(os);
 
         for (const token& e : nots_) {
@@ -91,7 +90,7 @@ class bool_op final : public statement {
         }
     }
 
-    [[noreturn]] inline void
+    [[noreturn]] void
     compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
             [[maybe_unused]] size_t indent,
             [[maybe_unused]] const std::string& dst = "") const override {
@@ -99,9 +98,9 @@ class bool_op final : public statement {
                               ":" + std::to_string(__LINE__));
     }
 
-    inline auto compile_or(toc& tc, std::ostream& os, size_t indent,
-                           const std::string& jmp_to_if_true,
-                           const bool inverted) const -> std::optional<bool> {
+    auto compile_or(toc& tc, std::ostream& os, size_t indent,
+                    const std::string& jmp_to_if_true,
+                    const bool inverted) const -> std::optional<bool> {
         const bool invert{inverted ? not is_not_ : is_not_};
         toc::indent(os, indent, true);
         tc.comment_source(os, "?", inverted ? " 'or' inverted: " : " ", *this);
@@ -121,12 +120,12 @@ class bool_op final : public statement {
                     }
                     toc::indent(os, indent, true);
                     os << "const eval to " << (const_eval ? "true" : "false")
-                       << std::endl;
+                       << '\n';
                     if (const_eval) {
                         // since it is an 'or' chain short-circuit expression
                         // and jump to label for true
                         toc::indent(os, indent);
-                        os << "jmp " << jmp_to_if_true << std::endl;
+                        os << "jmp " << jmp_to_if_true << '\n';
                     }
                     return const_eval;
                 }
@@ -135,7 +134,7 @@ class bool_op final : public statement {
             toc::indent(os, indent);
             os << (not invert ? asm_jxx_for_op_inv("==")
                               : asm_jxx_for_op("=="));
-            os << " " << jmp_to_if_true << std::endl;
+            os << " " << jmp_to_if_true << '\n';
             return std::nullopt;
         }
         // check case when both operands are constants
@@ -156,7 +155,7 @@ class bool_op final : public statement {
                 }
                 toc::indent(os, indent, true);
                 os << "const eval to " << (const_eval ? "true" : "false")
-                   << std::endl;
+                   << '\n';
                 if (const_eval) {
                     toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_true);
                 }
@@ -168,13 +167,13 @@ class bool_op final : public statement {
         resolve_cmp(tc, os, indent, lhs_, rhs_);
         toc::indent(os, indent);
         os << (invert ? asm_jxx_for_op_inv(op_) : asm_jxx_for_op(op_));
-        os << " " << jmp_to_if_true << std::endl;
+        os << " " << jmp_to_if_true << '\n';
         return std::nullopt;
     }
 
-    inline auto compile_and(toc& tc, std::ostream& os, size_t indent,
-                            const std::string& jmp_to_if_false,
-                            const bool inverted) const -> std::optional<bool> {
+    auto compile_and(toc& tc, std::ostream& os, size_t indent,
+                     const std::string& jmp_to_if_false,
+                     const bool inverted) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
         toc::indent(os, indent, true);
@@ -193,7 +192,7 @@ class bool_op final : public statement {
                     }
                     toc::indent(os, indent, true);
                     os << "const eval to " << (const_eval ? "true" : "false")
-                       << std::endl;
+                       << '\n';
                     if (not const_eval) {
                         // since it is an 'and' chain short-circuit expression
                         // and jump to label for false
@@ -207,7 +206,7 @@ class bool_op final : public statement {
             toc::indent(os, indent);
             os << (not invert ? asm_jxx_for_op("==")
                               : asm_jxx_for_op_inv("=="));
-            os << " " << jmp_to_if_false << std::endl;
+            os << " " << jmp_to_if_false << '\n';
             return std::nullopt;
         }
         // not shorthand expression
@@ -229,7 +228,7 @@ class bool_op final : public statement {
                 }
                 toc::indent(os, indent, true);
                 os << "const eval to " << (const_eval ? "true" : "false")
-                   << std::endl;
+                   << '\n';
                 if (not const_eval) {
                     // short circuit 'and' chain
                     toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_false);
@@ -253,29 +252,27 @@ class bool_op final : public statement {
         resolve_cmp(tc, os, indent, lhs_, rhs_);
         toc::indent(os, indent);
         os << (invert ? asm_jxx_for_op(op_) : asm_jxx_for_op_inv(op_));
-        os << " " << jmp_to_if_false << std::endl;
+        os << " " << jmp_to_if_false << '\n';
         return std::nullopt;
     }
 
-    [[nodiscard]] inline auto cmp_bgn_label(const toc& tc) const
-        -> std::string {
+    [[nodiscard]] auto cmp_bgn_label(const toc& tc) const -> std::string {
         const std::string& call_path{tc.get_inline_call_path(tok())};
         return "cmp_" + tc.source_location_for_use_in_label(tok()) +
                (call_path.empty() ? "" : "_" + call_path);
     }
 
-    [[nodiscard]] inline auto identifier() const
-        -> const std::string& override {
+    [[nodiscard]] auto identifier() const -> const std::string& override {
         assert(not is_expression_);
         return lhs_.identifier();
     }
 
-    [[nodiscard]] inline auto is_expression() const -> bool override {
+    [[nodiscard]] auto is_expression() const -> bool override {
         return is_expression_;
     }
 
   private:
-    inline void resolve_if_op_is_expression() {
+    void resolve_if_op_is_expression() {
         if (is_not_) {
             is_expression_ = true;
             return;
@@ -303,8 +300,8 @@ class bool_op final : public statement {
         is_expression_ = true;
     }
 
-    inline static auto eval_constant(const long lh, const std::string& op,
-                                     const long rh) -> bool {
+    static auto eval_constant(const long lh, const std::string& op,
+                              const long rh) -> bool {
         if (op == "==") {
             return lh == rh;
         }
@@ -327,7 +324,7 @@ class bool_op final : public statement {
                               ":" + std::to_string(__LINE__));
     }
 
-    inline static auto asm_jxx_for_op(const std::string& op) -> std::string {
+    static auto asm_jxx_for_op(const std::string& op) -> std::string {
         if (op == "==") {
             return "je";
         }
@@ -351,8 +348,7 @@ class bool_op final : public statement {
                               ":" + std::to_string(__LINE__));
     }
 
-    inline static auto asm_jxx_for_op_inv(const std::string& op)
-        -> std::string {
+    static auto asm_jxx_for_op_inv(const std::string& op) -> std::string {
         if (op == "==") {
             return "jne";
         }
@@ -375,9 +371,8 @@ class bool_op final : public statement {
                               ":" + std::to_string(__LINE__));
     }
 
-    inline void resolve_cmp(toc& tc, std::ostream& os, size_t indent,
-                            const expr_ops_list& lhs,
-                            const expr_ops_list& rhs) const {
+    void resolve_cmp(toc& tc, std::ostream& os, size_t indent,
+                     const expr_ops_list& lhs, const expr_ops_list& rhs) const {
 
         std::vector<std::string> allocated_registers{};
 
@@ -396,8 +391,8 @@ class bool_op final : public statement {
         }
     }
 
-    inline void resolve_cmp_shorthand(toc& tc, std::ostream& os, size_t indent,
-                                      const expr_ops_list& lhs) const {
+    void resolve_cmp_shorthand(toc& tc, std::ostream& os, size_t indent,
+                               const expr_ops_list& lhs) const {
         std::vector<std::string> allocated_registers{};
 
         const std::string& dst{
@@ -413,10 +408,10 @@ class bool_op final : public statement {
         }
     }
 
-    inline static auto
-    resolve_expr(toc& tc, std::ostream& os, size_t indent,
-                 const expr_ops_list& expr,
-                 std::vector<std::string>& allocated_registers) -> std::string {
+    static auto resolve_expr(toc& tc, std::ostream& os, size_t indent,
+                             const expr_ops_list& expr,
+                             std::vector<std::string>& allocated_registers)
+        -> std::string {
 
         if (expr.is_expression()) {
             const std::string& reg{

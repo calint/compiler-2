@@ -8,65 +8,61 @@ class toc;
 class type;
 
 class statement {
-    token token_{};
-    unary_ops uops_{};
+    token token_;
+    unary_ops uops_;
     const type* type_{};
 
   public:
-    inline explicit statement(token tk, unary_ops uops = {})
+    explicit statement(token tk, unary_ops uops = {})
         : token_{std::move(tk)}, uops_{std::move(uops)} {
 
         validate_identifier_name(token_);
     }
 
-    inline statement() = default;
-    inline statement(statement&&) = default;
-    inline statement(const statement&) = default;
-    inline auto operator=(const statement&) -> statement& = default;
-    inline auto operator=(statement&&) -> statement& = default;
+    statement() = default;
+    statement(statement&&) = default;
+    statement(const statement&) = default;
+    auto operator=(const statement&) -> statement& = default;
+    auto operator=(statement&&) -> statement& = default;
 
-    inline virtual ~statement() = default;
+    virtual ~statement() = default;
 
-    inline virtual void
-    compile([[maybe_unused]] toc& tc, std::ostream& os,
-            [[maybe_unused]] size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const {
+    virtual void compile([[maybe_unused]] toc& tc, std::ostream& os,
+                         [[maybe_unused]] size_t indent,
+                         [[maybe_unused]] const std::string& dst = "") const {
         uops_.source_to(os);
         token_.compile_to(os);
     }
 
-    inline virtual void source_to(std::ostream& os) const {
+    virtual void source_to(std::ostream& os) const {
         uops_.source_to(os);
         token_.source_to(os);
     }
 
-    [[nodiscard]] inline auto tok() const -> const token& { return token_; }
+    [[nodiscard]] auto tok() const -> const token& { return token_; }
 
-    [[nodiscard]] inline virtual auto is_in_data_section() const -> bool {
+    [[nodiscard]] virtual auto is_in_data_section() const -> bool {
         return false;
     }
 
-    [[nodiscard]] inline virtual auto is_expression() const -> bool {
-        return false;
-    }
+    [[nodiscard]] virtual auto is_expression() const -> bool { return false; }
 
-    [[nodiscard]] inline virtual auto identifier() const -> const std::string& {
+    [[nodiscard]] virtual auto identifier() const -> const std::string& {
         return token_.name();
     }
 
-    [[nodiscard]] inline virtual auto get_unary_ops() const
-        -> const unary_ops& {
+    [[nodiscard]] virtual auto get_unary_ops() const -> const unary_ops& {
         return uops_;
     }
 
-    inline void set_type(const type& tp) { type_ = &tp; }
+    void set_type(const type& tp) { type_ = &tp; }
 
-    [[nodiscard]] inline virtual auto get_type() const -> const type& {
+    [[nodiscard]] virtual auto get_type() const -> const type& {
         return *type_;
     }
 
     //? where to place this validation. empty token in statement is ok
-    inline static void validate_identifier_name(const token& tk) {
+    static void validate_identifier_name(const token& tk) {
         // if (tk.is_empty()) {
         //   throw compiler_exception(tk, "unexpected empty identifier");
         // }

@@ -4,11 +4,10 @@
 #include "stmt_block.hpp"
 
 class stmt_loop final : public statement {
-    stmt_block code_{};
+    stmt_block code_;
 
   public:
-    inline stmt_loop(toc& tc, token tk, tokenizer& tz)
-        : statement{std::move(tk)} {
+    stmt_loop(toc& tc, token tk, tokenizer& tz) : statement{std::move(tk)} {
         set_type(tc.get_type_void());
         const std::string& lbl{"loop_" +
                                tc.source_location_for_use_in_label(tok())};
@@ -17,17 +16,16 @@ class stmt_loop final : public statement {
         tc.exit_loop(lbl);
     }
 
-    inline stmt_loop() = default;
-    inline stmt_loop(const stmt_loop&) = default;
-    inline stmt_loop(stmt_loop&&) = default;
-    inline auto operator=(const stmt_loop&) -> stmt_loop& = default;
-    inline auto operator=(stmt_loop&&) -> stmt_loop& = default;
+    stmt_loop() = default;
+    stmt_loop(const stmt_loop&) = default;
+    stmt_loop(stmt_loop&&) = default;
+    auto operator=(const stmt_loop&) -> stmt_loop& = default;
+    auto operator=(stmt_loop&&) -> stmt_loop& = default;
 
-    inline ~stmt_loop() override = default;
+    ~stmt_loop() override = default;
 
-    inline void
-    compile(toc& tc, std::ostream& os, size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const override {
+    void compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const override {
 
         toc::indent(os, indent, true);
         tc.comment_token(os, tok());
@@ -55,7 +53,7 @@ class stmt_loop final : public statement {
         tc.exit_loop(lbl);
     }
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         statement::source_to(os);
         code_.source_to(os);
     }

@@ -1,14 +1,16 @@
 #pragma once
 
+#include <algorithm>
+
 #include "expr_any.hpp"
 #include "stmt_def_func.hpp"
 
 class stmt_call : public expression {
-    std::vector<expr_any> args_{};
-    token ws_after_{}; // whitespace after arguments
+    std::vector<expr_any> args_;
+    token ws_after_; // whitespace after arguments
 
   public:
-    inline stmt_call(toc& tc, unary_ops uops, token tk, tokenizer& tz)
+    stmt_call(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : expression{std::move(tk), std::move(uops)} {
 
         set_type(tc.get_func_return_type_or_throw(tok(), identifier()));
@@ -51,7 +53,7 @@ class stmt_call : public expression {
                     break;
                 }
                 //? default type because built-in function that takes parameter
-                //is 'mov'
+                // is 'mov'
                 args_.emplace_back(tc, tz, tc.get_type_default(), true);
                 expect_arg = tz.is_next_char(',');
             }
@@ -59,15 +61,15 @@ class stmt_call : public expression {
         ws_after_ = tz.next_whitespace_token();
     }
 
-    inline stmt_call() = default;
-    inline stmt_call(const stmt_call&) = default;
-    inline stmt_call(stmt_call&&) = default;
-    inline auto operator=(const stmt_call&) -> stmt_call& = default;
-    inline auto operator=(stmt_call&&) -> stmt_call& = default;
+    stmt_call() = default;
+    stmt_call(const stmt_call&) = default;
+    stmt_call(stmt_call&&) = default;
+    auto operator=(const stmt_call&) -> stmt_call& = default;
+    auto operator=(stmt_call&&) -> stmt_call& = default;
 
-    inline ~stmt_call() override = default;
+    ~stmt_call() override = default;
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         expression::source_to(os);
         os << "(";
         size_t i{0};
@@ -81,8 +83,8 @@ class stmt_call : public expression {
         ws_after_.source_to(os);
     }
 
-    inline void compile(toc& tc, std::ostream& os, size_t indent,
-                        const std::string& dst = "") const override {
+    void compile(toc& tc, std::ostream& os, size_t indent,
+                 const std::string& dst = "") const override {
 
         tc.comment_source(*this, os, indent);
 
@@ -284,7 +286,7 @@ class stmt_call : public expression {
                                          "_end"};
 
         toc::indent(os, indent + 1, true);
-        os << "inline: " << new_call_path << std::endl;
+        os << "inline: " << new_call_path << '\n';
 
         std::vector<std::string> allocated_named_registers;
         std::vector<std::string> allocated_scratch_registers;
@@ -300,7 +302,7 @@ class stmt_call : public expression {
             const std::string& to{dst};
             aliases_to_add.emplace_back(from, to);
             toc::indent(os, indent + 1, true);
-            os << "alias " << from << " -> " << to << std::endl;
+            os << "alias " << from << " -> " << to << '\n';
         }
 
         size_t i{0};
@@ -332,7 +334,7 @@ class stmt_call : public expression {
                 aliases_to_add.emplace_back(param.identifier(), arg_reg);
                 toc::indent(os, indent + 1, true);
                 os << "alias " << param.identifier() << " -> " << arg_reg
-                   << std::endl;
+                   << '\n';
                 continue;
             }
 
@@ -348,7 +350,7 @@ class stmt_call : public expression {
                     aliases_to_add.emplace_back(param.identifier(), arg_id);
                     toc::indent(os, indent + 1, true);
                     os << "alias " << param.identifier() << " -> " << arg_id
-                       << std::endl;
+                       << '\n';
                     continue;
                 }
                 // unary ops must be applied, allocate a scratch register and
@@ -366,7 +368,7 @@ class stmt_call : public expression {
                 aliases_to_add.emplace_back(param.identifier(), scratch_reg);
                 toc::indent(os, indent + 1, true);
                 os << "alias " << param.identifier() << " -> " << scratch_reg
-                   << std::endl;
+                   << '\n';
                 continue;
             }
 
@@ -374,8 +376,7 @@ class stmt_call : public expression {
             // alias parameter name to the register
             aliases_to_add.emplace_back(param.identifier(), arg_reg);
             toc::indent(os, indent + 1, true);
-            os << "alias " << param.identifier() << " -> " << arg_reg
-               << std::endl;
+            os << "alias " << param.identifier() << " -> " << arg_reg << '\n';
             // move argument to register specified in param
             const ident_resolved& arg_resolved{tc.resolve_identifier(ea, true)};
             if (arg_resolved.is_const()) {
@@ -419,19 +420,18 @@ class stmt_call : public expression {
         }
 
         // free allocated registers in reverse order of allocation
-        // NOLINTNEXTLINE(modernize-loop-convert)
         for (auto it{allocated_registers_in_order.rbegin()};
              it != allocated_registers_in_order.rend(); ++it) {
             const std::string& reg{*it};
-            if (find(allocated_scratch_registers.begin(),
-                     allocated_scratch_registers.end(),
-                     reg) != allocated_scratch_registers.end()) {
+            if (std::ranges::find(allocated_scratch_registers,
+
+                                  reg) != allocated_scratch_registers.end()) {
                 tc.free_scratch_register(os, indent + 1, reg);
                 continue;
             }
-            if (find(allocated_named_registers.begin(),
-                     allocated_named_registers.end(),
-                     reg) != allocated_named_registers.end()) {
+            if (std::ranges::find(allocated_named_registers,
+
+                                  reg) != allocated_named_registers.end()) {
                 tc.free_named_register(os, indent + 1, reg);
                 continue;
             }
@@ -461,11 +461,9 @@ class stmt_call : public expression {
         tc.exit_func(func_name);
     }
 
-    [[nodiscard]] inline auto arg(size_t ix) const -> const statement& {
+    [[nodiscard]] auto arg(size_t ix) const -> const statement& {
         return args_.at(ix);
     }
 
-    [[nodiscard]] inline auto arg_count() const -> size_t {
-        return args_.size();
-    }
+    [[nodiscard]] auto arg_count() const -> size_t { return args_.size(); }
 };

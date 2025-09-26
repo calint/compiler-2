@@ -4,15 +4,15 @@
 #include "stmt_def_func_param.hpp"
 
 class stmt_def_func final : public statement {
-    token name_tk_{};
-    std::vector<stmt_def_func_param> params_{};
-    token ws_after_params_{}; // whitespace after ')'
-    std::vector<func_return_info> returns_{};
-    stmt_block code_{};
-    token inline_tk_{};
+    token name_tk_;
+    std::vector<stmt_def_func_param> params_;
+    token ws_after_params_; // whitespace after ')'
+    std::vector<func_return_info> returns_;
+    stmt_block code_;
+    token inline_tk_;
 
   public:
-    inline stmt_def_func(toc& tc, token tk, tokenizer& tz)
+    stmt_def_func(toc& tc, token tk, tokenizer& tz)
         : statement{std::move(tk)}, name_tk_{tz.next_token()} {
 
         if (name_tk_.is_name("inline")) {
@@ -45,8 +45,9 @@ class stmt_def_func final : public statement {
             while (true) {
                 const token type_tk{tz.next_token()};
                 const struct func_return_info ret_info{
-                    type_tk, tz.next_token(),
-                    tc.get_type_or_throw(type_tk, type_tk.name())};
+                    .type_tk = type_tk,
+                    .ident_tk = tz.next_token(),
+                    .type_ref = tc.get_type_or_throw(type_tk, type_tk.name())};
                 if (not ret_info.type_ref.is_built_in()) {
                     throw compiler_exception{
                         ret_info.type_tk,
@@ -74,20 +75,20 @@ class stmt_def_func final : public statement {
         tc.exit_func(name());
     }
 
-    inline stmt_def_func() = default;
-    inline stmt_def_func(const stmt_def_func&) = default;
-    inline stmt_def_func(stmt_def_func&&) = default;
-    inline auto operator=(const stmt_def_func&) -> stmt_def_func& = default;
-    inline auto operator=(stmt_def_func&&) -> stmt_def_func& = default;
+    stmt_def_func() = default;
+    stmt_def_func(const stmt_def_func&) = default;
+    stmt_def_func(stmt_def_func&&) = default;
+    auto operator=(const stmt_def_func&) -> stmt_def_func& = default;
+    auto operator=(stmt_def_func&&) -> stmt_def_func& = default;
 
-    inline ~stmt_def_func() override = default;
+    ~stmt_def_func() override = default;
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         source_def_to(os, false);
         code_.source_to(os);
     }
 
-    inline void source_def_to(std::ostream& os, const bool summary) const {
+    void source_def_to(std::ostream& os, const bool summary) const {
         if (not summary) {
             statement::source_to(os);
             inline_tk_.source_to(os);
@@ -120,20 +121,19 @@ class stmt_def_func final : public statement {
         }
     }
 
-    inline void source_def_comment_to(std::ostream& os) const {
+    void source_def_comment_to(std::ostream& os) const {
         std::stringstream ss;
         source_def_to(ss, true);
-        ss << std::endl;
+        ss << '\n';
 
         const std::string src{ss.str()};
         // make comment friendly string replacing consecutive with one space
         const std::string res{regex_replace(src, std::regex(R"(\s+)"), " ")};
-        os << res << std::endl;
+        os << res << '\n';
     }
 
-    inline void
-    compile(toc& tc, std::ostream& os, size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const override {
+    void compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const override {
 
         if (is_inline()) {
             return;
@@ -166,40 +166,37 @@ class stmt_def_func final : public statement {
         // free allocated named registers
         free_allocated_registers(tc, os, indent, allocated_named_registers);
         // empty line
-        os << std::endl;
+        os << '\n';
         // exit function context
         tc.exit_func(name());
     }
 
-    [[nodiscard]] inline auto returns() const
-        -> const std::vector<func_return_info>& {
+    [[nodiscard]] auto returns() const -> const std::vector<func_return_info>& {
         return returns_;
     }
 
-    [[nodiscard]] inline auto param(const size_t ix) const
+    [[nodiscard]] auto param(const size_t ix) const
         -> const stmt_def_func_param& {
         return params_.at(ix);
     }
 
-    [[nodiscard]] inline auto params() const
+    [[nodiscard]] auto params() const
         -> const std::vector<stmt_def_func_param>& {
         return params_;
     }
 
-    [[nodiscard]] inline auto code() const -> const stmt_block& {
-        return code_;
-    }
+    [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
 
-    [[nodiscard]] inline auto name() const -> const std::string& {
+    [[nodiscard]] auto name() const -> const std::string& {
         return name_tk_.name();
     }
 
-    [[nodiscard]] inline auto is_inline() const -> bool {
+    [[nodiscard]] auto is_inline() const -> bool {
         return not inline_tk_.is_empty();
     }
 
   private:
-    inline void
+    void
     init_variables(toc& tc, std::ostream& os, size_t indent,
                    std::vector<std::string>& allocated_named_registers) const {
 
@@ -228,7 +225,7 @@ class stmt_def_func final : public statement {
 
                 // argument passed as named register
                 toc::indent(os, indent + 1, true);
-                os << param_name << ": " << param_reg << std::endl;
+                os << param_name << ": " << param_reg << '\n';
                 tc.alloc_named_register_or_throw(param, os, indent + 1,
                                                  param_reg);
                 // make an alias from argument name to register
@@ -283,7 +280,7 @@ class stmt_def_func final : public statement {
 
             // argument passed as named register
             toc::indent(os, indent + 1, true);
-            os << param_name << ": " << param_reg << std::endl;
+            os << param_name << ": " << param_reg << '\n';
             tc.alloc_named_register_or_throw(param, os, indent + 1, param_reg);
             // mark register as initiated
             tc.set_var_is_initiated(param_reg);
@@ -293,7 +290,7 @@ class stmt_def_func final : public statement {
         }
     }
 
-    inline static void free_allocated_registers(
+    static void free_allocated_registers(
         toc& tc, std::ostream& os, size_t indent,
         const std::vector<std::string>& allocated_named_registers) {
 

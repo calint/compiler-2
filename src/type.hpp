@@ -14,31 +14,31 @@ struct type_field final {
 };
 
 class type final {
-    std::string name_{};
+    std::string name_;
     size_t size_{};
-    std::vector<type_field> fields_{};
+    std::vector<type_field> fields_;
     bool is_built_in_{};
 
   public:
-    inline type(std::string name, const size_t size, const bool is_built_in)
+    type(std::string name, const size_t size, const bool is_built_in)
         : name_{std::move(name)}, size_{size}, is_built_in_{is_built_in} {}
 
-    inline type() = default;
-    inline type(const type&) = default;
-    inline type(type&&) = default;
-    inline auto operator=(const type&) -> type& = default;
-    inline auto operator=(type&&) -> type& = default;
+    type() = default;
+    type(const type&) = default;
+    type(type&&) = default;
+    auto operator=(const type&) -> type& = default;
+    auto operator=(type&&) -> type& = default;
 
-    inline ~type() = default;
+    ~type() = default;
 
-    inline void add_field([[maybe_unused]] const token& tk, std::string name,
-                          const type& tp) {
-        fields_.emplace_back(type_field{std::move(name), tp, size_});
+    void add_field([[maybe_unused]] const token& tk, std::string name,
+                   const type& tp) {
+        fields_.emplace_back(
+            type_field{.name = std::move(name), .tp = tp, .offset = size_});
         size_ += tp.size_;
     }
 
-    [[nodiscard]] inline auto field(const token& tk,
-                                    const std::string& name) const
+    [[nodiscard]] auto field(const token& tk, const std::string& name) const
         -> const type_field& {
 
         for (const type_field& fld : fields_) {
@@ -50,9 +50,9 @@ class type final {
                                          "' not found in type '" + name_ + "'");
     }
 
-    [[nodiscard]] inline auto accessor(const token& tk,
-                                       const std::vector<std::string>& path,
-                                       const int stack_idx_base) const
+    [[nodiscard]] auto accessor(const token& tk,
+                                const std::vector<std::string>& path,
+                                const int stack_idx_base) const
         -> std::pair<const type&, std::string> {
 
         const type* tp{this};
@@ -78,8 +78,7 @@ class type final {
         return {*tp, accessor};
     }
 
-    inline static auto get_memory_operand_for_size(const token& tk,
-                                                   const size_t size)
+    static auto get_memory_operand_for_size(const token& tk, const size_t size)
         -> std::string {
         switch (size) {
         case 8:
@@ -96,26 +95,22 @@ class type final {
         }
     }
 
-    [[nodiscard]] inline auto size() const -> size_t { return size_; }
+    [[nodiscard]] auto size() const -> size_t { return size_; }
 
-    inline void set_size(const size_t nbytes) { size_ = nbytes; }
+    void set_size(const size_t nbytes) { size_ = nbytes; }
 
-    [[nodiscard]] inline auto name() const -> const std::string& {
-        return name_;
-    }
+    [[nodiscard]] auto name() const -> const std::string& { return name_; }
 
-    inline void set_name(const std::string& nm) { name_ = nm; }
+    void set_name(const std::string& nm) { name_ = nm; }
 
-    [[nodiscard]] inline auto is_built_in() const -> bool {
-        return is_built_in_;
-    }
+    [[nodiscard]] auto is_built_in() const -> bool { return is_built_in_; }
 
-    inline void clear_fields() {
+    void clear_fields() {
         fields_.clear();
         size_ = 0;
     }
 
-    [[nodiscard]] inline auto fields() const -> const std::vector<type_field>& {
+    [[nodiscard]] auto fields() const -> const std::vector<type_field>& {
         return fields_;
     }
 };

@@ -9,10 +9,10 @@
 
 class stmt_block final : public statement {
     bool is_one_statement_{};
-    std::vector<std::unique_ptr<statement>> stms_{};
+    std::vector<std::unique_ptr<statement>> stms_;
 
   public:
-    inline stmt_block(toc& tc, tokenizer& tz)
+    stmt_block(toc& tc, tokenizer& tz)
         : statement{tz.next_whitespace_token()},
           is_one_statement_{not tz.is_next_char('{')} {
 
@@ -76,15 +76,15 @@ class stmt_block final : public statement {
         tc.exit_block();
     }
 
-    inline stmt_block() = default;
-    inline stmt_block(const stmt_block&) = default;
-    inline stmt_block(stmt_block&&) = default;
-    inline auto operator=(const stmt_block&) -> stmt_block& = default;
-    inline auto operator=(stmt_block&&) -> stmt_block& = default;
+    stmt_block() = default;
+    stmt_block(const stmt_block&) = default;
+    stmt_block(stmt_block&&) = default;
+    auto operator=(const stmt_block&) -> stmt_block& = default;
+    auto operator=(stmt_block&&) -> stmt_block& = default;
 
-    inline ~stmt_block() override = default;
+    ~stmt_block() override = default;
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         statement::source_to(os);
         if (not is_one_statement_) {
             os << "{";
@@ -97,9 +97,8 @@ class stmt_block final : public statement {
         }
     }
 
-    inline void
-    compile(toc& tc, std::ostream& os, size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const override {
+    void compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const override {
 
         tc.enter_block();
         for (const auto& s : stms_) {
@@ -108,5 +107,5 @@ class stmt_block final : public statement {
         tc.exit_block();
     }
 
-    [[nodiscard]] inline auto is_empty() const -> bool { return stms_.empty(); }
+    [[nodiscard]] auto is_empty() const -> bool { return stms_.empty(); }
 };

@@ -6,17 +6,16 @@
 #include "statement.hpp"
 
 class bool_ops_list final : public statement {
-    std::vector<std::variant<bool_op, bool_ops_list>> bools_{};
-    std::vector<token> ops_{}; // 'and' or 'or'
-    token not_token_{};        // not (a==b and c==d)
-    bool enclosed_{};          // (a==b and c==d) vs a==b and c==d
+    std::vector<std::variant<bool_op, bool_ops_list>> bools_;
+    std::vector<token> ops_; // 'and' or 'or'
+    token not_token_;        // not (a==b and c==d)
+    bool enclosed_{};        // (a==b and c==d) vs a==b and c==d
 
   public:
-    inline bool_ops_list(
-        toc& tc, tokenizer& tz, const bool enclosed = false,
-        token not_token = {}, const bool is_sub_expr = false,
-        std::variant<bool_op, bool_ops_list> first_bool_op = {},
-        token first_op = {})
+    bool_ops_list(toc& tc, tokenizer& tz, const bool enclosed = false,
+                  token not_token = {}, const bool is_sub_expr = false,
+                  std::variant<bool_op, bool_ops_list> first_bool_op = {},
+                  token first_op = {})
         : // the token is used to give 'cmp' a unique label
           //   if first_bool_op is provided then use that token
           //   else the next white space token
@@ -149,15 +148,15 @@ class bool_ops_list final : public statement {
         }
     }
 
-    inline bool_ops_list() = default;
-    inline bool_ops_list(const bool_ops_list&) = default;
-    inline bool_ops_list(bool_ops_list&&) = default;
-    inline auto operator=(const bool_ops_list&) -> bool_ops_list& = default;
-    inline auto operator=(bool_ops_list&&) -> bool_ops_list& = default;
+    bool_ops_list() = default;
+    bool_ops_list(const bool_ops_list&) = default;
+    bool_ops_list(bool_ops_list&&) = default;
+    auto operator=(const bool_ops_list&) -> bool_ops_list& = default;
+    auto operator=(bool_ops_list&&) -> bool_ops_list& = default;
 
-    inline ~bool_ops_list() override = default;
+    ~bool_ops_list() override = default;
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         statement::source_to(os);
         not_token_.source_to(os);
         if (enclosed_) {
@@ -179,7 +178,7 @@ class bool_ops_list final : public statement {
         }
     }
 
-    [[noreturn]] inline void
+    [[noreturn]] void
     compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
             [[maybe_unused]] size_t indent,
             [[maybe_unused]] const std::string& dst = "") const override {
@@ -187,17 +186,16 @@ class bool_ops_list final : public statement {
                               ":" + std::to_string(__LINE__));
     }
 
-    [[nodiscard]] inline auto cmp_bgn_label(const toc& tc) const
-        -> std::string {
+    [[nodiscard]] auto cmp_bgn_label(const toc& tc) const -> std::string {
         const std::string& call_path{tc.get_inline_call_path(tok())};
         return "cmp_" + tc.source_location_for_use_in_label(tok()) +
                (call_path.empty() ? "" : "_" + call_path);
     }
 
-    inline auto compile(toc& tc, std::ostream& os, const size_t indent,
-                        const std::string& jmp_to_if_false,
-                        const std::string& jmp_to_if_true,
-                        const bool inverted) const -> std::optional<bool> {
+    auto compile(toc& tc, std::ostream& os, const size_t indent,
+                 const std::string& jmp_to_if_false,
+                 const std::string& jmp_to_if_true, const bool inverted) const
+        -> std::optional<bool> {
 
         toc::indent(os, indent, true);
         tc.comment_source(os, "?", inverted ? " inverted: " : " ", *this);
@@ -369,7 +367,7 @@ class bool_ops_list final : public statement {
     }
 
     //? assumes it is not an expression
-    [[nodiscard]] inline auto is_expression() const -> bool override {
+    [[nodiscard]] auto is_expression() const -> bool override {
         if (bools_.size() > 1) {
             return true;
         }
@@ -383,8 +381,7 @@ class bool_ops_list final : public statement {
         return get<bool_ops_list>(bools_.at(0)).is_expression();
     }
 
-    [[nodiscard]] inline auto identifier() const
-        -> const std::string& override {
+    [[nodiscard]] auto identifier() const -> const std::string& override {
         if (bools_.size() > 1) {
             throw panic_exception("unexpected code path " +
                                   std::string{__FILE__} + ":" +
@@ -401,9 +398,8 @@ class bool_ops_list final : public statement {
     }
 
   private:
-    inline static auto
-    cmp_label_from(const toc& tc,
-                   const std::variant<bool_op, bool_ops_list>& var)
+    static auto cmp_label_from(const toc& tc,
+                               const std::variant<bool_op, bool_ops_list>& var)
         -> std::string {
 
         if (var.index() == 1) {
@@ -413,8 +409,8 @@ class bool_ops_list final : public statement {
         return get<bool_op>(var).cmp_bgn_label(tc);
     }
 
-    inline static auto
-    token_from(const std::variant<bool_op, bool_ops_list>& var) -> token {
+    static auto token_from(const std::variant<bool_op, bool_ops_list>& var)
+        -> token {
 
         if (var.index() == 0) {
             return get<bool_op>(var).tok();

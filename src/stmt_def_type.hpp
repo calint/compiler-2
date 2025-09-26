@@ -3,13 +3,13 @@
 #include "stmt_def_type_field.hpp"
 
 class stmt_def_type final : public statement {
-    token name_tk_{};
-    token ws_{}; // whitespace
-    std::vector<stmt_def_type_field> fields_{};
-    type type_{};
+    token name_tk_;
+    token ws_; // whitespace
+    std::vector<stmt_def_type_field> fields_;
+    type type_;
 
   public:
-    inline stmt_def_type(toc& tc, token tk, tokenizer& tz)
+    stmt_def_type(toc& tc, token tk, tokenizer& tz)
         : statement{std::move(tk)}, name_tk_{tz.next_token()} {
 
         if (not tz.is_next_char('{')) {
@@ -41,15 +41,15 @@ class stmt_def_type final : public statement {
         tc.add_type(name_tk_, type_);
     }
 
-    inline stmt_def_type() = default;
-    inline stmt_def_type(const stmt_def_type&) = default;
-    inline stmt_def_type(stmt_def_type&&) = default;
-    inline auto operator=(const stmt_def_type&) -> stmt_def_type& = default;
-    inline auto operator=(stmt_def_type&&) -> stmt_def_type& = default;
+    stmt_def_type() = default;
+    stmt_def_type(const stmt_def_type&) = default;
+    stmt_def_type(stmt_def_type&&) = default;
+    auto operator=(const stmt_def_type&) -> stmt_def_type& = default;
+    auto operator=(stmt_def_type&&) -> stmt_def_type& = default;
 
-    inline ~stmt_def_type() override = default;
+    ~stmt_def_type() override = default;
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         statement::source_to(os);
         name_tk_.source_to(os);
         os << '{';
@@ -64,8 +64,7 @@ class stmt_def_type final : public statement {
         os << '}';
     }
 
-    inline void
-    compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
-            [[maybe_unused]] size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const override {}
+    void compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
+                 [[maybe_unused]] size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const override {}
 };

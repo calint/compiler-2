@@ -13,12 +13,12 @@ class null_stream : public std::ostream {
 };
 
 class stmt_def_var final : public statement {
-    token name_tk_{};
-    token type_tk_{};
-    stmt_assign_var initial_value_{};
+    token name_tk_;
+    token type_tk_;
+    stmt_assign_var initial_value_;
 
   public:
-    inline stmt_def_var(toc& tc, token tk, tokenizer& tz)
+    stmt_def_var(toc& tc, token tk, tokenizer& tz)
         : statement{std::move(tk)}, name_tk_{tz.next_token()} {
 
         // check if type declared
@@ -44,22 +44,21 @@ class stmt_def_var final : public statement {
         initial_value_ = {tc, name_tk_, type_tk_, tz};
     }
 
-    inline stmt_def_var() = default;
-    inline stmt_def_var(const stmt_def_var&) = default;
-    inline stmt_def_var(stmt_def_var&&) = default;
-    inline auto operator=(const stmt_def_var&) -> stmt_def_var& = default;
-    inline auto operator=(stmt_def_var&&) -> stmt_def_var& = default;
+    stmt_def_var() = default;
+    stmt_def_var(const stmt_def_var&) = default;
+    stmt_def_var(stmt_def_var&&) = default;
+    auto operator=(const stmt_def_var&) -> stmt_def_var& = default;
+    auto operator=(stmt_def_var&&) -> stmt_def_var& = default;
 
-    inline ~stmt_def_var() override = default;
+    ~stmt_def_var() override = default;
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         statement::source_to(os);
         initial_value_.source_to(os);
     }
 
-    inline void
-    compile(toc& tc, std::ostream& os, size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const override {
+    void compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const override {
 
         tc.add_var(name_tk_, os, indent, name_tk_.name(), get_type(), false);
         tc.comment_source(*this, os, indent);

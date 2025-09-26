@@ -3,11 +3,11 @@
 #include "expr_any.hpp"
 
 class stmt_assign_var final : public statement {
-    token type_tk_{};
-    expr_any expr_{};
+    token type_tk_;
+    expr_any expr_;
 
   public:
-    inline stmt_assign_var(toc& tc, token name, token type, tokenizer& tz)
+    stmt_assign_var(toc& tc, token name, token type, tokenizer& tz)
         : statement{std::move(name)}, type_tk_{std::move(type)} {
 
         const ident_resolved& dst_resolved{tc.resolve_identifier(*this, false)};
@@ -15,15 +15,15 @@ class stmt_assign_var final : public statement {
         expr_ = {tc, tz, dst_resolved.type_ref, false};
     }
 
-    inline stmt_assign_var() = default;
-    inline stmt_assign_var(const stmt_assign_var&) = default;
-    inline stmt_assign_var(stmt_assign_var&&) = default;
-    inline auto operator=(const stmt_assign_var&) -> stmt_assign_var& = default;
-    inline auto operator=(stmt_assign_var&&) -> stmt_assign_var& = default;
+    stmt_assign_var() = default;
+    stmt_assign_var(const stmt_assign_var&) = default;
+    stmt_assign_var(stmt_assign_var&&) = default;
+    auto operator=(const stmt_assign_var&) -> stmt_assign_var& = default;
+    auto operator=(stmt_assign_var&&) -> stmt_assign_var& = default;
 
-    inline ~stmt_assign_var() override = default;
+    ~stmt_assign_var() override = default;
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         statement::source_to(os);
         if (not type_tk_.is_empty()) {
             os << ':';
@@ -33,9 +33,8 @@ class stmt_assign_var final : public statement {
         expr_.source_to(os);
     }
 
-    inline void
-    compile(toc& tc, std::ostream& os, size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const override {
+    void compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const override {
 
         tc.comment_source(*this, os, indent);
 

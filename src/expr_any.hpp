@@ -5,10 +5,10 @@
 #include "expr_type_value.hpp"
 
 class expr_any final : public statement {
-    std::variant<expr_ops_list, bool_ops_list, expr_type_value> var_{};
+    std::variant<expr_ops_list, bool_ops_list, expr_type_value> var_;
 
   public:
-    inline expr_any(toc& tc, tokenizer& tz, const type& tp, bool in_args)
+    expr_any(toc& tc, tokenizer& tz, const type& tp, bool in_args)
         : statement{tz.next_whitespace_token()} {
 
         set_type(tp);
@@ -30,15 +30,15 @@ class expr_any final : public statement {
         var_ = expr_ops_list{tc, tz, in_args};
     }
 
-    inline expr_any() = default;
-    inline expr_any(const expr_any&) = default;
-    inline expr_any(expr_any&&) = default;
-    inline auto operator=(const expr_any&) -> expr_any& = default;
-    inline auto operator=(expr_any&&) -> expr_any& = default;
+    expr_any() = default;
+    expr_any(const expr_any&) = default;
+    expr_any(expr_any&&) = default;
+    auto operator=(const expr_any&) -> expr_any& = default;
+    auto operator=(expr_any&&) -> expr_any& = default;
 
-    inline ~expr_any() override = default;
+    ~expr_any() override = default;
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         statement::source_to(os);
         switch (var_.index()) {
         case 0:
@@ -57,8 +57,8 @@ class expr_any final : public statement {
         }
     }
 
-    inline void compile(toc& tc, std::ostream& os, size_t indent,
-                        const std::string& dst = "") const override {
+    void compile(toc& tc, std::ostream& os, size_t indent,
+                 const std::string& dst = "") const override {
 
         tc.comment_source(*this, os, indent);
 
@@ -133,7 +133,7 @@ class expr_any final : public statement {
         }
     }
 
-    [[nodiscard]] inline auto is_expression() const -> bool override {
+    [[nodiscard]] auto is_expression() const -> bool override {
         switch (var_.index()) {
         case 0:
             // number expression
@@ -152,8 +152,7 @@ class expr_any final : public statement {
         // note. 'expr_type_value' cannot be expression
     }
 
-    [[nodiscard]] inline auto identifier() const
-        -> const std::string& override {
+    [[nodiscard]] auto identifier() const -> const std::string& override {
         switch (var_.index()) {
         case 0:
             return get<expr_ops_list>(var_).identifier();
@@ -168,8 +167,7 @@ class expr_any final : public statement {
         }
     }
 
-    [[nodiscard]] inline auto get_unary_ops() const
-        -> const unary_ops& override {
+    [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
 
         switch (var_.index()) {
         case 0:
@@ -187,16 +185,13 @@ class expr_any final : public statement {
         // argument in call
     }
 
-    [[nodiscard]] inline auto is_bool() const -> bool {
-        return var_.index() == 1;
-    }
+    [[nodiscard]] auto is_bool() const -> bool { return var_.index() == 1; }
 
-    [[nodiscard]] inline auto is_assign_type_value() const -> bool {
+    [[nodiscard]] auto is_assign_type_value() const -> bool {
         return var_.index() == 2;
     }
 
-    [[nodiscard]] inline auto as_assign_type_value() const
-        -> const expr_type_value& {
+    [[nodiscard]] auto as_assign_type_value() const -> const expr_type_value& {
         return get<expr_type_value>(var_);
     }
 };

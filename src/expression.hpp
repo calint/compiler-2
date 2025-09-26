@@ -4,18 +4,16 @@
 
 class expression : public statement {
   public:
-    inline explicit expression(token tk, unary_ops uops = {})
+    explicit expression(token tk, unary_ops uops = {})
         : statement{std::move(tk), std::move(uops)} {}
 
-    inline expression() = default;
-    inline expression(const expression&) = default;
-    inline expression(expression&&) = default;
-    inline auto operator=(const expression&) -> expression& = default;
-    inline auto operator=(expression&&) -> expression& = default;
+    expression() = default;
+    expression(const expression&) = default;
+    expression(expression&&) = default;
+    auto operator=(const expression&) -> expression& = default;
+    auto operator=(expression&&) -> expression& = default;
 
-    inline ~expression() override = default;
+    ~expression() override = default;
 
-    [[nodiscard]] inline auto is_expression() const -> bool override {
-        return true;
-    }
+    [[nodiscard]] auto is_expression() const -> bool override { return true; }
 };

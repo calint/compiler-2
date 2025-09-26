@@ -12,22 +12,20 @@ class tokenizer final {
     char last_char_{-1}; // last read character (-1 before any characters read)
 
   public:
-    inline explicit tokenizer(const std::string& src)
+    explicit tokenizer(const std::string& src)
         : src_{src}, ptr_{src_.c_str()} {}
 
-    inline tokenizer() = delete;
-    inline tokenizer(const tokenizer&) = delete;
-    inline tokenizer(tokenizer&&) = delete;
-    inline auto operator=(const tokenizer&) -> tokenizer& = delete;
-    inline auto operator=(tokenizer&&) -> tokenizer& = delete;
+    tokenizer() = delete;
+    tokenizer(const tokenizer&) = delete;
+    tokenizer(tokenizer&&) = delete;
+    auto operator=(const tokenizer&) -> tokenizer& = delete;
+    auto operator=(tokenizer&&) -> tokenizer& = delete;
 
-    inline ~tokenizer() = default;
+    ~tokenizer() = default;
 
-    [[nodiscard]] inline auto is_eos() const -> bool {
-        return last_char_ == '\0';
-    }
+    [[nodiscard]] auto is_eos() const -> bool { return last_char_ == '\0'; }
 
-    inline auto next_token() -> token {
+    auto next_token() -> token {
         const std::string& ws_before{next_whitespace()};
         const size_t bgn_ix{char_ix_};
         if (is_next_char('"')) {
@@ -49,21 +47,21 @@ class tokenizer final {
         return {ws_before, bgn_ix, txt, end_ix, ws_after};
     }
 
-    inline void put_back_token(const token& t) {
+    void put_back_token(const token& t) {
         //? validate token is same as source
         move_back(t.total_length_in_chars());
     }
 
-    inline void put_back_char(const char ch) {
+    void put_back_char(const char ch) {
         //? validate char is same as source
         move_back(sizeof(ch));
     }
 
-    inline auto next_whitespace_token() -> token {
+    auto next_whitespace_token() -> token {
         return {next_whitespace(), char_ix_, "", char_ix_, ""};
     }
 
-    inline auto is_next_char(const char ch) -> bool {
+    auto is_next_char(const char ch) -> bool {
         if (*ptr_ != ch) {
             return false;
         }
@@ -71,17 +69,17 @@ class tokenizer final {
         return true;
     }
 
-    [[nodiscard]] inline auto is_peek_char(const char ch) const -> bool {
+    [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
         return *ptr_ == ch;
     }
 
-    [[nodiscard]] inline auto is_peek_char2(const char ch) const -> bool {
+    [[nodiscard]] auto is_peek_char2(const char ch) const -> bool {
         return *ptr_ == 0 ? false : *(ptr_ + 1) == ch;
     }
 
-    [[nodiscard]] inline auto peek_char() const -> char { return *ptr_; }
+    [[nodiscard]] auto peek_char() const -> char { return *ptr_; }
 
-    inline auto read_rest_of_line() -> std::string {
+    auto read_rest_of_line() -> std::string {
         const char* bgn{ptr_};
         while (true) {
             if (*ptr_ == '\n') {
@@ -98,7 +96,7 @@ class tokenizer final {
         return s;
     }
 
-    inline auto next_char() -> char {
+    auto next_char() -> char {
         assert(last_char_);
         last_char_ = *ptr_;
         ptr_++;
@@ -106,12 +104,12 @@ class tokenizer final {
         return last_char_;
     }
 
-    [[nodiscard]] inline auto current_char_index_in_source() const -> size_t {
+    [[nodiscard]] auto current_char_index_in_source() const -> size_t {
         return char_ix_;
     }
 
   private:
-    inline auto next_whitespace() -> std::string {
+    auto next_whitespace() -> std::string {
         if (is_eos()) {
             return "";
         }
@@ -128,7 +126,7 @@ class tokenizer final {
         return {ptr_ - len, len};
     }
 
-    inline auto next_token_str() -> std::string {
+    auto next_token_str() -> std::string {
         if (is_eos()) {
             return "";
         }
@@ -148,14 +146,14 @@ class tokenizer final {
         return {ptr_ - len, len};
     }
 
-    inline void move_back(const size_t nchars) {
+    void move_back(const size_t nchars) {
         assert(char_ix_ >= nchars);
 
         ptr_ -= nchars;
         char_ix_ = size_t(char_ix_ - nchars);
     }
 
-    inline static auto is_char_whitespace(const char ch) -> bool {
+    static auto is_char_whitespace(const char ch) -> bool {
         return ch == ' ' or ch == '\t' or ch == '\r' or ch == '\n';
     }
 };

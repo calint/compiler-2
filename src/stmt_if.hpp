@@ -3,13 +3,12 @@
 #include "stmt_if_branch.hpp"
 
 class stmt_if final : public statement {
-    std::vector<stmt_if_branch> branches_{};
-    std::vector<token> else_if_tokens_{};
-    stmt_block else_code_{};
+    std::vector<stmt_if_branch> branches_;
+    std::vector<token> else_if_tokens_;
+    stmt_block else_code_;
 
   public:
-    inline stmt_if(toc& tc, token tk, tokenizer& tz)
-        : statement{std::move(tk)} {
+    stmt_if(toc& tc, token tk, tokenizer& tz) : statement{std::move(tk)} {
         set_type(tc.get_type_void());
         // e.g. if a == b {x = 1} else if c == d {y = 2} else {z = 3}
         // broken down in branches 'a == b {x = 1}', 'c == d {y = 2}' ending
@@ -47,15 +46,15 @@ class stmt_if final : public statement {
         }
     }
 
-    inline stmt_if() = default;
-    inline stmt_if(const stmt_if&) = default;
-    inline stmt_if(stmt_if&&) = default;
-    inline auto operator=(const stmt_if&) -> stmt_if& = default;
-    inline auto operator=(stmt_if&&) -> stmt_if& = default;
+    stmt_if() = default;
+    stmt_if(const stmt_if&) = default;
+    stmt_if(stmt_if&&) = default;
+    auto operator=(const stmt_if&) -> stmt_if& = default;
+    auto operator=(stmt_if&&) -> stmt_if& = default;
 
-    inline ~stmt_if() override = default;
+    ~stmt_if() override = default;
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         statement::source_to(os);
         // output first branch
         const stmt_if_branch& branch{branches_.at(0)};
@@ -76,9 +75,8 @@ class stmt_if final : public statement {
         }
     }
 
-    inline void
-    compile(toc& tc, std::ostream& os, size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const override {
+    void compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const override {
 
         // make unique labels considering in-lined functions
         const std::string& call_path{tc.get_inline_call_path(tok())};

@@ -5,21 +5,20 @@
 
 class stmt_return final : public statement {
   public:
-    inline stmt_return(toc& tc, token tk) : statement{std::move(tk)} {
+    stmt_return(toc& tc, token tk) : statement{std::move(tk)} {
         set_type(tc.get_type_void());
     }
 
-    inline stmt_return() = default;
-    inline stmt_return(const stmt_return&) = default;
-    inline stmt_return(stmt_return&&) = default;
-    inline auto operator=(const stmt_return&) -> stmt_return& = default;
-    inline auto operator=(stmt_return&&) -> stmt_return& = default;
+    stmt_return() = default;
+    stmt_return(const stmt_return&) = default;
+    stmt_return(stmt_return&&) = default;
+    auto operator=(const stmt_return&) -> stmt_return& = default;
+    auto operator=(stmt_return&&) -> stmt_return& = default;
 
-    inline ~stmt_return() override = default;
+    ~stmt_return() override = default;
 
-    inline void
-    compile(toc& tc, std::ostream& os, size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const override {
+    void compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const override {
 
         tc.comment_source(*this, os, indent);
 

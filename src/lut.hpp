@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "panic_exception.hpp"
@@ -10,16 +11,16 @@ template <class T> class lut final {
         std::string key;
         T data;
 
-        [[nodiscard]] inline auto is_key(const std::string& k) const -> bool {
+        [[nodiscard]] auto is_key(const std::string& k) const -> bool {
             return k == key;
         }
     };
 
-    std::vector<el> elems_{};
+    std::vector<el> elems_;
     mutable const el* last_has_el_{};
 
   public:
-    inline auto get(const std::string& key) const -> T {
+    auto get(const std::string& key) const -> T {
         if (last_has_el_) {
             if (last_has_el_->is_key(key)) {
                 return last_has_el_->data;
@@ -33,7 +34,7 @@ template <class T> class lut final {
         throw panic_exception("element not found: " + key);
     }
 
-    inline auto has(const std::string& key) const -> bool {
+    auto has(const std::string& key) const -> bool {
         for (const el& e : elems_) {
             if (e.is_key(key)) {
                 last_has_el_ = &e;
@@ -44,11 +45,11 @@ template <class T> class lut final {
         return false;
     }
 
-    inline void put(const std::string& key, T data) {
-        elems_.emplace_back(el{key, data});
+    void put(const std::string& key, T data) {
+        elems_.emplace_back(el{key, std::move(data)});
     }
 
-    inline auto get_ref(const std::string& key) -> T& {
+    auto get_ref(const std::string& key) -> T& {
         for (el& e : elems_) {
             if (e.is_key(key)) {
                 return e.data;
@@ -58,7 +59,7 @@ template <class T> class lut final {
     }
 
     // for clarity get_const_ref instead of overloading get_ref
-    inline auto get_const_ref(const std::string& key) const -> const T& {
+    auto get_const_ref(const std::string& key) const -> const T& {
         if (last_has_el_) {
             if (last_has_el_->is_key(key)) {
                 return last_has_el_->data;

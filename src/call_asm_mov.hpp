@@ -4,23 +4,22 @@
 
 class call_asm_mov final : public stmt_call {
   public:
-    inline call_asm_mov(toc& tc, token tk, tokenizer& tz)
+    call_asm_mov(toc& tc, token tk, tokenizer& tz)
         : stmt_call{tc, {}, std::move(tk), tz} {
 
         set_type(tc.get_type_void());
     }
 
-    inline call_asm_mov() = default;
-    inline call_asm_mov(const call_asm_mov&) = default;
-    inline call_asm_mov(call_asm_mov&&) = default;
-    inline auto operator=(const call_asm_mov&) -> call_asm_mov& = default;
-    inline auto operator=(call_asm_mov&&) -> call_asm_mov& = default;
+    call_asm_mov() = default;
+    call_asm_mov(const call_asm_mov&) = default;
+    call_asm_mov(call_asm_mov&&) = default;
+    auto operator=(const call_asm_mov&) -> call_asm_mov& = default;
+    auto operator=(call_asm_mov&&) -> call_asm_mov& = default;
 
-    inline ~call_asm_mov() override = default;
+    ~call_asm_mov() override = default;
 
-    inline void
-    compile(toc& tc, std::ostream& os, size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const override {
+    void compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const override {
 
         tc.comment_source(*this, os, indent);
 

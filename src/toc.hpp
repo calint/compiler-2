@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <unordered_set>
 
 #include "compiler_exception.hpp"
@@ -12,37 +13,37 @@ class stmt_def_field;
 class stmt_def_type;
 
 struct func_return_info final {
-    const token type_tk{};  // type token
-    const token ident_tk{}; // identifier token
+    const token type_tk;  // type token
+    const token ident_tk; // identifier token
     const type& type_ref;
 };
 
 struct var_info final {
-    std::string name{};
+    std::string name;
     const type& type_ref;
-    token declared_at{}; // token for position in sources
-    int stack_idx{};     // location relative to rbp
-    bool initiated{};    // true if variable has been initiated
+    token declared_at; // token for position in sources
+    int stack_idx{};   // location relative to rbp
+    bool initiated{};  // true if variable has been initiated
 };
 
 class frame final {
     // optional name
-    std::string name_{};
+    std::string name_;
 
     // a unique path of source locations of the inlined call
-    std::string call_path_{};
+    std::string call_path_;
 
     // number of bytes used on the stack by this frame
     size_t allocated_stack_{};
 
     // variables declared in this frame
-    lut<var_info> vars_{};
+    lut<var_info> vars_;
 
     // aliases that refers to previous frame(s) alias or variable
-    lut<std::string> aliases_{};
+    lut<std::string> aliases_;
 
     // the label to jump to when exiting an inlined function
-    std::string func_ret_label_{};
+    std::string func_ret_label_;
 
     // info about the function returns
     const std::vector<func_return_info>& func_rets_{};
@@ -51,84 +52,80 @@ class frame final {
     bool func_is_inline_{};
 
   public:
-    enum class frame_type { FUNC, BLOCK, LOOP };
+    enum class frame_type : uint8_t { FUNC, BLOCK, LOOP };
 
   private:
     frame_type type_{frame_type::FUNC}; // frame type
 
   public:
-    inline frame(std::string name, const frame_type frm_type,
-                 const std::vector<func_return_info>& func_rets = {},
-                 const bool func_is_inline = false, std::string call_path = "",
-                 std::string func_ret_label = "") noexcept
+    frame(std::string name, const frame_type frm_type,
+          const std::vector<func_return_info>& func_rets = {},
+          const bool func_is_inline = false, std::string call_path = "",
+          std::string func_ret_label = "") noexcept
         : name_{std::move(name)}, call_path_{std::move(call_path)},
           func_ret_label_{std::move(func_ret_label)}, func_rets_{func_rets},
           func_is_inline_{func_is_inline}, type_{frm_type} {}
 
-    inline void add_var(token declared_at, const std::string& name,
-                        const type& tpe, const int stack_idx,
-                        const bool initiated) {
+    void add_var(token declared_at, const std::string& name, const type& tpe,
+                 const int stack_idx, const bool initiated) {
         if (stack_idx < 0) {
             // variable, increase allocated stack size
             allocated_stack_ += tpe.size();
         }
-        vars_.put(name,
-                  {name, tpe, std::move(declared_at), stack_idx, initiated});
+        vars_.put(name, {.name = name,
+                         .type_ref = tpe,
+                         .declared_at = std::move(declared_at),
+                         .stack_idx = stack_idx,
+                         .initiated = initiated});
     }
 
-    inline auto allocated_stack_size() const -> size_t {
-        return allocated_stack_;
-    }
+    auto allocated_stack_size() const -> size_t { return allocated_stack_; }
 
-    inline auto has_var(const std::string& name) const -> bool {
+    auto has_var(const std::string& name) const -> bool {
         return vars_.has(name);
     }
 
-    inline auto get_var_ref(const std::string& name) -> var_info& {
+    auto get_var_ref(const std::string& name) -> var_info& {
         return vars_.get_ref(name);
     }
 
-    inline auto get_var_const_ref(const std::string& name) const
-        -> const var_info& {
+    auto get_var_const_ref(const std::string& name) const -> const var_info& {
         return vars_.get_const_ref(name);
     }
 
-    inline void add_alias(const std::string& ident,
-                          const std::string& outside_ident) {
+    void add_alias(const std::string& ident, const std::string& outside_ident) {
         aliases_.put(ident, outside_ident);
     }
 
-    inline auto is_func() const -> bool { return type_ == frame_type::FUNC; }
+    auto is_func() const -> bool { return type_ == frame_type::FUNC; }
 
-    inline auto is_block() const -> bool { return type_ == frame_type::BLOCK; }
+    auto is_block() const -> bool { return type_ == frame_type::BLOCK; }
 
-    inline auto is_loop() const -> bool { return type_ == frame_type::LOOP; }
+    auto is_loop() const -> bool { return type_ == frame_type::LOOP; }
 
-    inline auto is_name(const std::string& name) const -> bool {
+    auto is_name(const std::string& name) const -> bool {
         return name_ == name;
     }
 
-    inline auto has_alias(const std::string& name) const -> bool {
+    auto has_alias(const std::string& name) const -> bool {
         return aliases_.has(name);
     }
 
-    inline auto get_alias(const std::string& name) const -> std::string {
+    auto get_alias(const std::string& name) const -> std::string {
         return aliases_.get(name);
     }
 
-    inline auto name() const -> const std::string& { return name_; }
+    auto name() const -> const std::string& { return name_; }
 
-    inline auto func_ret_label() const -> const std::string& {
+    auto func_ret_label() const -> const std::string& {
         return func_ret_label_;
     }
 
-    inline auto inline_call_path() const -> const std::string& {
-        return call_path_;
-    }
+    auto inline_call_path() const -> const std::string& { return call_path_; }
 
-    inline auto func_is_inline() const -> bool { return func_is_inline_; }
+    auto func_is_inline() const -> bool { return func_is_inline_; }
 
-    inline auto get_func_returns_infos() const
+    auto get_func_returns_infos() const
         -> const std::vector<func_return_info>& {
         return func_rets_;
     }
@@ -136,13 +133,13 @@ class frame final {
 
 struct field_info final {
     const stmt_def_field* def{};
-    const token declared_at{}; // token for position in sources
+    const token declared_at; // token for position in sources
     const bool is_str{};
 };
 
 struct func_info final {
     const stmt_def_func* def{};
-    const token declared_at{}; // token for position in sources
+    const token declared_at; // token for position in sources
     const type& type_ref;
 };
 
@@ -154,42 +151,42 @@ struct call_info final {
 
 struct type_info final {
     const stmt_def_type& def;
-    const token declared_at{};
+    const token declared_at;
     const type& type_ref;
 };
 
 struct ident_resolved final {
-    enum class ident_type { CONST, VAR, REGISTER, FIELD, IMPLIED };
+    enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
 
-    const std::string id{};
-    const std::string id_nasm{};
+    const std::string id;
+    const std::string id_nasm;
     const long const_value{};
     const type& type_ref;
     const ident_type ident_type{ident_type::CONST};
 
-    [[nodiscard]] inline auto is_const() const -> bool {
+    [[nodiscard]] auto is_const() const -> bool {
         return ident_type == ident_type::CONST;
     }
-    [[nodiscard]] inline auto is_var() const -> bool {
+    [[nodiscard]] auto is_var() const -> bool {
         return ident_type == ident_type::VAR;
     }
-    [[nodiscard]] inline auto is_register() const -> bool {
+    [[nodiscard]] auto is_register() const -> bool {
         return ident_type == ident_type::REGISTER;
     }
-    [[nodiscard]] inline auto is_field() const -> bool {
+    [[nodiscard]] auto is_field() const -> bool {
         return ident_type == ident_type::FIELD;
     }
-    [[nodiscard]] inline auto is_implied() const -> bool {
+    [[nodiscard]] auto is_implied() const -> bool {
         return ident_type == ident_type::IMPLIED;
     }
 };
 
 class identifier final {
-    const std::string id_{};
-    std::vector<std::string> path_{};
+    const std::string id_;
+    std::vector<std::string> path_;
 
   public:
-    inline explicit identifier(std::string id) : id_{std::move(id)} {
+    explicit identifier(std::string id) : id_{std::move(id)} {
         size_t start{0};
         size_t end{0};
         while ((end = id_.find('.', start)) != std::string::npos) {
@@ -199,31 +196,30 @@ class identifier final {
         path_.emplace_back(id_.substr(start));
     }
 
-    [[nodiscard]] inline auto id() const -> const std::string& { return id_; }
+    [[nodiscard]] auto id() const -> const std::string& { return id_; }
 
-    [[nodiscard]] inline auto id_base() const -> const std::string& {
+    [[nodiscard]] auto id_base() const -> const std::string& {
         return path_.at(0);
     }
 
-    [[nodiscard]] inline auto path() const -> const std::vector<std::string>& {
+    [[nodiscard]] auto path() const -> const std::vector<std::string>& {
         return path_;
     }
 };
 
 class toc final {
     const std::string& source_{};
-    std::vector<frame> frames_{};
-    std::vector<std::string> all_registers_{};
-    std::vector<std::string> named_registers_{};
-    std::vector<std::string> scratch_registers_{};
-    std::vector<std::string> allocated_registers_{};
-    std::vector<std::string>
-        allocated_registers_src_locs_{}; // source locations
-    std::unordered_set<std::string> initiated_registers_{};
-    lut<field_info> fields_{};
-    lut<func_info> funcs_{};
-    std::vector<call_info> calls_{};
-    lut<const type&> types_{};
+    std::vector<frame> frames_;
+    std::vector<std::string> all_registers_;
+    std::vector<std::string> named_registers_;
+    std::vector<std::string> scratch_registers_;
+    std::vector<std::string> allocated_registers_;
+    std::vector<std::string> allocated_registers_src_locs_; // source locations
+    std::unordered_set<std::string> initiated_registers_;
+    lut<field_info> fields_;
+    lut<func_info> funcs_;
+    std::vector<call_info> calls_;
+    lut<const type&> types_;
     const type* type_void_{};
     const type* type_default_{};
     const type* type_bool_{};
@@ -232,7 +228,7 @@ class toc final {
     size_t usage_max_stack_size_{};
 
   public:
-    inline explicit toc(const std::string& source)
+    explicit toc(const std::string& source)
         : source_{source},
           all_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi",
                          "rbp", "rsp", "r8",  "r9",  "r10", "r11",
@@ -241,29 +237,30 @@ class toc final {
           scratch_registers_{"r8",  "r9",  "r10", "r11",
                              "r12", "r13", "r14", "r15"} {}
 
-    inline toc() = delete;
-    inline toc(const toc&) = delete;
-    inline toc(toc&&) = delete;
-    inline auto operator=(const toc&) -> toc& = delete;
-    inline auto operator=(toc&&) -> toc& = delete;
+    toc() = delete;
+    toc(const toc&) = delete;
+    toc(toc&&) = delete;
+    auto operator=(const toc&) -> toc& = delete;
+    auto operator=(toc&&) -> toc& = delete;
 
-    inline ~toc() = default;
+    ~toc() = default;
 
-    inline auto source() const -> const std::string& { return source_; }
+    auto source() const -> const std::string& { return source_; }
 
-    inline void add_field(const token& src_loc, const std::string& name,
-                          const stmt_def_field* fld, const bool is_str_field) {
+    void add_field(const token& src_loc, const std::string& name,
+                   const stmt_def_field* fld, const bool is_str_field) {
 
         if (fields_.has(name)) {
             throw compiler_exception(
                 src_loc, "field '" + name + "' already defined at " +
                              source_location_hr(fields_.get(name).declared_at));
         }
-        fields_.put(name, {fld, src_loc, is_str_field});
+        fields_.put(
+            name, {.def = fld, .declared_at = src_loc, .is_str = is_str_field});
     }
 
-    inline void add_func(const token& src_loc, const std::string& name,
-                         const type& return_type, const stmt_def_func* func) {
+    void add_func(const token& src_loc, const std::string& name,
+                  const type& return_type, const stmt_def_func* func) {
 
         if (funcs_.has(name)) {
             const func_info& fn{funcs_.get_const_ref(name)};
@@ -271,11 +268,12 @@ class toc final {
             throw compiler_exception(
                 src_loc, "function '" + name + "' already defined at " + loc);
         }
-        funcs_.put(name, {func, src_loc, return_type});
+        funcs_.put(
+            name,
+            {.def = func, .declared_at = src_loc, .type_ref = return_type});
     }
 
-    inline auto get_func_or_throw(const token& src_loc,
-                                  const std::string& name) const
+    auto get_func_or_throw(const token& src_loc, const std::string& name) const
         -> const stmt_def_func& {
 
         if (not funcs_.has(name)) {
@@ -286,8 +284,8 @@ class toc final {
         return *funcs_.get_const_ref(name).def;
     }
 
-    inline auto is_func_builtin(const token& src_loc,
-                                const std::string& name) const -> bool {
+    auto is_func_builtin(const token& src_loc, const std::string& name) const
+        -> bool {
 
         if (not funcs_.has(name)) {
             throw compiler_exception(src_loc,
@@ -297,8 +295,8 @@ class toc final {
         return funcs_.get_const_ref(name).def == nullptr;
     }
 
-    inline auto get_func_return_type_or_throw(const token& src_loc,
-                                              const std::string& name) const
+    auto get_func_return_type_or_throw(const token& src_loc,
+                                       const std::string& name) const
         -> const type& {
 
         if (not funcs_.has(name)) {
@@ -309,7 +307,7 @@ class toc final {
         return funcs_.get_const_ref(name).type_ref;
     }
 
-    inline void add_type(const token& src_loc, const type& tp) {
+    void add_type(const token& src_loc, const type& tp) {
         if (types_.has(tp.name())) {
             //? todo. specify where the type has been defined
             throw compiler_exception(src_loc, "type '" + tp.name() +
@@ -319,8 +317,7 @@ class toc final {
         types_.put(tp.name(), tp);
     }
 
-    inline auto get_type_or_throw(const token& src_loc,
-                                  const std::string& name) const
+    auto get_type_or_throw(const token& src_loc, const std::string& name) const
         -> const type& {
 
         if (not types_.has(name)) {
@@ -330,7 +327,7 @@ class toc final {
         return types_.get_const_ref(name);
     }
 
-    inline auto source_location_for_use_in_label(const token& src_loc) const
+    auto source_location_for_use_in_label(const token& src_loc) const
         -> std::string {
 
         const auto [line, col]{line_and_col_num_for_char_index(
@@ -339,7 +336,7 @@ class toc final {
         return std::to_string(line) + "_" + std::to_string(col);
     }
 
-    inline auto source_location_hr(const token& src_loc) -> std::string {
+    auto source_location_hr(const token& src_loc) -> std::string {
 
         const auto [line, col]{line_and_col_num_for_char_index(
             src_loc.start_index(), source_.c_str())};
@@ -347,8 +344,8 @@ class toc final {
         return std::to_string(line) + ":" + std::to_string(col);
     }
 
-    inline static auto line_and_col_num_for_char_index(const size_t char_index,
-                                                       const char* src)
+    static auto line_and_col_num_for_char_index(const size_t char_index,
+                                                const char* src)
         -> std::pair<size_t, size_t> {
 
         size_t ix{0};
@@ -369,13 +366,13 @@ class toc final {
         return {line_num, ix - lix + 1};
     }
 
-    inline void finish(std::ostream& os) {
+    void finish(std::ostream& os) {
         os << "\n; max scratch registers in use: " << usage_max_scratch_regs_
-           << std::endl;
+           << '\n';
         os << ";            max frames in use: " << usage_max_frame_count_
-           << std::endl;
+           << '\n';
         os << ";        max inline stack size: " << usage_max_stack_size_
-           << " B" << std::endl;
+           << " B" << '\n';
         //		os<<";          max stack in use:
         //"<<tc.max_stack_usage_<<std::endl;
         assert(all_registers_.size() == 16);
@@ -391,8 +388,8 @@ class toc final {
         usage_max_scratch_regs_ = 0;
     }
 
-    inline auto resolve_identifier(const statement& st,
-                                   const bool must_be_initiated) const
+    auto resolve_identifier(const statement& st,
+                            const bool must_be_initiated) const
         -> ident_resolved {
 
         const ident_resolved& id_resolved{resolve_ident_or_empty(
@@ -406,9 +403,8 @@ class toc final {
                                                st.identifier() + "'");
     }
 
-    inline auto resolve_identifier(const token& src_loc,
-                                   const std::string& name,
-                                   const bool must_be_initiated) const
+    auto resolve_identifier(const token& src_loc, const std::string& name,
+                            const bool must_be_initiated) const
         -> ident_resolved {
 
         const ident_resolved& name_resolved{
@@ -422,54 +418,54 @@ class toc final {
                                  "cannot resolve identifier '" + name + "'");
     }
 
-    inline void add_alias(const std::string& name,
-                          const std::string& name_in_parent_frame) {
+    void add_alias(const std::string& name,
+                   const std::string& name_in_parent_frame) {
 
         frames_.back().add_alias(name, name_in_parent_frame);
     }
 
-    inline void enter_func(const std::string& name,
-                           const std::vector<func_return_info>& returns = {},
-                           const bool is_inline = false,
-                           const std::string& call_path = "",
-                           const std::string& return_jmp_label = "") {
+    void enter_func(const std::string& name,
+                    const std::vector<func_return_info>& returns = {},
+                    const bool is_inline = false,
+                    const std::string& call_path = "",
+                    const std::string& return_jmp_label = "") {
 
         frames_.emplace_back(name, frame::frame_type::FUNC, returns, is_inline,
                              call_path, return_jmp_label);
         refresh_usage();
     }
 
-    inline void enter_block() {
+    void enter_block() {
         frames_.emplace_back("", frame::frame_type::BLOCK);
         refresh_usage();
     }
 
-    inline void enter_loop(const std::string& name) {
+    void enter_loop(const std::string& name) {
         frames_.emplace_back(name, frame::frame_type::LOOP);
         refresh_usage();
     }
 
-    inline void exit_func(const std::string& name) {
+    void exit_func(const std::string& name) {
         const frame& frm{frames_.back()};
         assert(frm.is_func() and frm.is_name(name));
         frames_.pop_back();
     }
 
-    inline void exit_loop(const std::string& name) {
+    void exit_loop(const std::string& name) {
         const frame& frm{frames_.back()};
         assert(frm.is_loop() and frm.is_name(name));
         frames_.pop_back();
     }
 
-    inline void exit_block() {
+    void exit_block() {
         const frame& frm{frames_.back()};
         assert(frm.is_block());
         frames_.pop_back();
     }
 
-    inline void add_var(const token& src_loc, std::ostream& os, size_t indnt,
-                        const std::string& name, const type& var_type,
-                        const bool initiated) {
+    void add_var(const token& src_loc, std::ostream& os, size_t indnt,
+                 const std::string& name, const type& var_type,
+                 const bool initiated) {
 
         // check if variable is already declared in this scope
         if (frames_.back().has_var(name)) {
@@ -492,20 +488,19 @@ class toc final {
         frames_.back().add_var(src_loc, name, var_type, -stack_idx, initiated);
 
         const size_t total_stack_size{get_total_stack_size()};
-        if (total_stack_size > usage_max_stack_size_) {
-            usage_max_stack_size_ = total_stack_size;
-        }
+        usage_max_stack_size_ =
+            std::max(total_stack_size, usage_max_stack_size_);
 
         // comment the resolved name
         const ident_resolved& name_resolved{
             resolve_identifier(src_loc, name, false)};
         indent(os, indnt, true);
-        os << name << ": " << name_resolved.id_nasm << std::endl;
+        os << name << ": " << name_resolved.id_nasm << '\n';
     }
 
-    inline void add_func_arg(const token& src_loc, std::ostream& os,
-                             size_t indnt, const std::string& name,
-                             const type& arg_type, const int stack_idx) {
+    void add_func_arg(const token& src_loc, std::ostream& os, size_t indnt,
+                      const std::string& name, const type& arg_type,
+                      const int stack_idx) {
 
         assert(frames_.back().is_func() && not frames_.back().func_is_inline());
 
@@ -514,12 +509,11 @@ class toc final {
         const ident_resolved& name_resolved{
             resolve_identifier(src_loc, name, false)};
         indent(os, indnt, true);
-        os << name << ": " << name_resolved.id_nasm << std::endl;
+        os << name << ": " << name_resolved.id_nasm << '\n';
     }
 
-    inline auto alloc_scratch_register(const token& src_loc, std::ostream& os,
-                                       const size_t indnt)
-        -> const std::string& {
+    auto alloc_scratch_register(const token& src_loc, std::ostream& os,
+                                const size_t indnt) -> const std::string& {
 
         if (scratch_registers_.empty()) {
             throw compiler_exception(src_loc,
@@ -531,30 +525,23 @@ class toc final {
         scratch_registers_.pop_back();
 
         indent(os, indnt, true);
-        os << "alloc " << reg << std::endl;
+        os << "alloc " << reg << '\n';
 
         //? 8 is magic number
         const size_t n{8 - scratch_registers_.size()};
-        if (n > usage_max_scratch_regs_) {
-            // stmt_assign_var tries 2 different methods making this metric
-            // inaccurate if a discarded method uses more registers than the
-            // selected method
-            usage_max_scratch_regs_ = n;
-        }
+        usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
 
         allocated_registers_.emplace_back(reg);
         allocated_registers_src_locs_.emplace_back(source_location_hr(src_loc));
         return reg;
     }
 
-    inline void alloc_named_register_or_throw(const statement& st,
-                                              std::ostream& os,
-                                              const size_t indnt,
-                                              const std::string& reg) {
+    void alloc_named_register_or_throw(const statement& st, std::ostream& os,
+                                       const size_t indnt,
+                                       const std::string& reg) {
         indent(os, indnt, true);
-        os << "alloc " << reg << std::endl;
-        auto reg_iter{
-            find(named_registers_.begin(), named_registers_.end(), reg)};
+        os << "alloc " << reg << '\n';
+        auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
             std::string loc{};
             const size_t n{allocated_registers_.size()};
@@ -574,29 +561,28 @@ class toc final {
             source_location_hr(st.tok()));
     }
 
-    inline auto alloc_named_register(const token& src_loc, std::ostream& os,
-                                     const size_t indnt, const std::string& reg)
+    auto alloc_named_register(const token& src_loc, std::ostream& os,
+                              const size_t indnt, const std::string& reg)
         -> bool {
 
         indent(os, indnt, true);
         os << "alloc " << reg;
-        auto reg_iter{
-            find(named_registers_.begin(), named_registers_.end(), reg)};
+        auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
-            os << ": false" << std::endl;
+            os << ": false" << '\n';
             return false;
         }
         named_registers_.erase(reg_iter);
         allocated_registers_.emplace_back(reg);
         allocated_registers_src_locs_.emplace_back(source_location_hr(src_loc));
-        os << std::endl;
+        os << '\n';
         return true;
     }
 
-    inline void free_named_register(std::ostream& os, const size_t indnt,
-                                    const std::string& reg) {
+    void free_named_register(std::ostream& os, const size_t indnt,
+                             const std::string& reg) {
         indent(os, indnt, true);
-        os << "free " << reg << std::endl;
+        os << "free " << reg << '\n';
         assert(allocated_registers_.back() == reg);
         allocated_registers_.pop_back();
         allocated_registers_src_locs_.pop_back();
@@ -604,10 +590,10 @@ class toc final {
         initiated_registers_.erase(reg);
     }
 
-    inline void free_scratch_register(std::ostream& os, const size_t indnt,
-                                      const std::string& reg) {
+    void free_scratch_register(std::ostream& os, const size_t indnt,
+                               const std::string& reg) {
         indent(os, indnt, true);
-        os << "free " << reg << std::endl;
+        os << "free " << reg << '\n';
         assert(allocated_registers_.back() == reg);
         allocated_registers_.pop_back();
         allocated_registers_src_locs_.pop_back();
@@ -615,7 +601,7 @@ class toc final {
         initiated_registers_.erase(reg);
     }
 
-    inline auto get_loop_label_or_throw(const token& src_loc) const
+    auto get_loop_label_or_throw(const token& src_loc) const
         -> const std::string& {
 
         size_t i{frames_.size()};
@@ -630,7 +616,7 @@ class toc final {
         throw compiler_exception(src_loc, "unexpected frames");
     }
 
-    inline auto get_inline_call_path(const token& src_loc) const
+    auto get_inline_call_path(const token& src_loc) const
         -> const std::string& {
 
         size_t i{frames_.size()};
@@ -642,7 +628,7 @@ class toc final {
         throw compiler_exception(src_loc, "not in a function");
     }
 
-    inline auto get_func_return_label_or_throw(const token& src_loc) const
+    auto get_func_return_label_or_throw(const token& src_loc) const
         -> const std::string& {
 
         size_t i{frames_.size()};
@@ -654,7 +640,7 @@ class toc final {
         throw compiler_exception(src_loc, "not in a function");
     }
 
-    inline auto get_func_returns(const token& src_loc) const
+    auto get_func_returns(const token& src_loc) const
         -> const std::vector<func_return_info>& {
 
         size_t i{frames_.size()};
@@ -666,8 +652,8 @@ class toc final {
         throw compiler_exception(src_loc, "not in a function");
     }
 
-    inline void comment_source(const statement& st, std::ostream& os,
-                               const size_t indnt) const {
+    void comment_source(const statement& st, std::ostream& os,
+                        const size_t indnt) const {
 
         const auto [line, col]{line_and_col_num_for_char_index(
             st.tok().start_index(), source_.c_str())};
@@ -680,12 +666,11 @@ class toc final {
         st.source_to(ss);
         const std::string& s{ss.str()};
         const std::string& res{regex_replace(s, std::regex(R"(\s+)"), " ")};
-        os << res << std::endl;
+        os << res << '\n';
     }
 
-    inline void comment_source(std::ostream& os, const std::string& dst,
-                               const std::string& op,
-                               const statement& st) const {
+    void comment_source(std::ostream& os, const std::string& dst,
+                        const std::string& op, const statement& st) const {
 
         const auto [line, col]{line_and_col_num_for_char_index(
             st.tok().start_index(), source_.c_str())};
@@ -697,24 +682,23 @@ class toc final {
         st.source_to(ss);
         const std::string& s{ss.str()};
         const std::string& res{regex_replace(s, std::regex(R"(\s+)"), " ")};
-        os << res << std::endl;
+        os << res << '\n';
     }
 
-    inline void comment_token(std::ostream& os, const token& tk) const {
+    void comment_token(std::ostream& os, const token& tk) const {
         const auto [line, col]{
             line_and_col_num_for_char_index(tk.start_index(), source_.c_str())};
 
         os << "[" << line << ":" << col << "]";
-        os << " " << tk.name() << std::endl;
+        os << " " << tk.name() << '\n';
     }
 
-    inline auto is_identifier_register(const std::string& id) const -> bool {
-        return find(all_registers_.begin(), all_registers_.end(), id) !=
-               all_registers_.end();
+    auto is_identifier_register(const std::string& id) const -> bool {
+        return std::ranges::find(all_registers_, id) != all_registers_.end();
     }
 
-    inline void enter_call(const token& src_loc, std::ostream& os,
-                           const size_t indnt) {
+    void enter_call(const token& src_loc, std::ostream& os,
+                    const size_t indnt) {
         const bool root_call{calls_.empty()};
         const size_t nbytes_of_vars_on_stack{
             root_call ? get_current_stack_size() : 0};
@@ -746,15 +730,15 @@ class toc final {
             asm_push(src_loc, os, indnt, reg);
             nregs_pushed_on_stack++;
         }
-        calls_.emplace_back(call_info{nregs_pushed_on_stack,
-                                      allocated_registers_.size(),
-                                      nbytes_of_vars_on_stack});
+        calls_.emplace_back(
+            call_info{.nregs_pushed = nregs_pushed_on_stack,
+                      .alloc_reg_idx = allocated_registers_.size(),
+                      .nbytes_of_vars = nbytes_of_vars_on_stack});
     }
 
-    inline void
-    exit_call(const token& src_loc, std::ostream& os, const size_t indnt,
-              const size_t nbytes_of_args_on_stack,
-              const std::vector<std::string>& allocated_args_registers) {
+    void exit_call(const token& src_loc, std::ostream& os, const size_t indnt,
+                   const size_t nbytes_of_args_on_stack,
+                   const std::vector<std::string>& allocated_args_registers) {
 
         const size_t nregs_pushed{calls_.back().nregs_pushed};
         const size_t nbytes_of_vars{calls_.back().nbytes_of_vars};
@@ -784,9 +768,9 @@ class toc final {
                 i--;
                 const std::string& reg{allocated_registers_.at(i)};
                 // don't pop registers used to pass arguments
-                if (find(allocated_args_registers.begin(),
-                         allocated_args_registers.end(),
-                         reg) != allocated_args_registers.end()) {
+                if (std::ranges::find(allocated_args_registers,
+
+                                      reg) != allocated_args_registers.end()) {
                     free_named_register(os, indnt, reg);
                 }
             }
@@ -805,9 +789,9 @@ class toc final {
                 i--;
                 const std::string& reg{allocated_registers_.at(i)};
                 // don't pop registers used to pass arguments
-                if (find(allocated_args_registers.begin(),
-                         allocated_args_registers.end(),
-                         reg) == allocated_args_registers.end()) {
+                if (std::ranges::find(allocated_args_registers,
+
+                                      reg) == allocated_args_registers.end()) {
                     if (is_register_initiated(reg)) {
                         // pop only registers that were pushed
                         asm_pop(src_loc, os, indnt, reg);
@@ -830,10 +814,9 @@ class toc final {
         }
     }
 
-    inline void asm_cmd(const token& src_loc, std::ostream& os,
-                        const size_t indnt, const std::string& op,
-                        const std::string& dst_resolved,
-                        const std::string& src_resolved) {
+    void asm_cmd(const token& src_loc, std::ostream& os, const size_t indnt,
+                 const std::string& op, const std::string& dst_resolved,
+                 const std::string& src_resolved) {
         if (op == "mov") {
             if (dst_resolved == src_resolved) {
                 return;
@@ -853,8 +836,7 @@ class toc final {
                     is_operand_memory(src_resolved))) {
                 // both operands are not memory references
                 indent(os, indnt);
-                os << op << " " << dst_resolved << ", " << src_resolved
-                   << std::endl;
+                os << op << " " << dst_resolved << ", " << src_resolved << '\n';
                 return;
             }
             // both operands are memory references
@@ -863,9 +845,9 @@ class toc final {
             const std::string& reg_sized{
                 get_register_operand_for_size(src_loc, reg, src_size)};
             indent(os, indnt);
-            os << "mov " << reg_sized << ", " << src_resolved << std::endl;
+            os << "mov " << reg_sized << ", " << src_resolved << '\n';
             indent(os, indnt);
-            os << op << " " << dst_resolved << ", " << reg_sized << std::endl;
+            os << op << " " << dst_resolved << ", " << reg_sized << '\n';
             free_scratch_register(os, indnt, reg);
             return;
         }
@@ -878,7 +860,7 @@ class toc final {
                 if (op == "mov") {
                     indent(os, indnt);
                     os << "movsx " << dst_resolved << ", " << src_resolved
-                       << std::endl;
+                       << '\n';
                     return;
                 }
             }
@@ -888,9 +870,9 @@ class toc final {
             const std::string& reg_sized{
                 get_register_operand_for_size(src_loc, reg, dst_size)};
             indent(os, indnt);
-            os << "movsx " << reg_sized << ", " << src_resolved << std::endl;
+            os << "movsx " << reg_sized << ", " << src_resolved << '\n';
             indent(os, indnt);
-            os << op << " " << dst_resolved << ", " << reg_sized << std::endl;
+            os << op << " " << dst_resolved << ", " << reg_sized << '\n';
             free_scratch_register(os, indnt, reg);
             return;
         }
@@ -901,7 +883,7 @@ class toc final {
             const std::string& reg_sized{
                 get_register_operand_for_size(src_loc, src_resolved, dst_size)};
             indent(os, indnt);
-            os << op << " " << dst_resolved << ", " << reg_sized << std::endl;
+            os << op << " " << dst_resolved << ", " << reg_sized << '\n';
             return;
         }
 
@@ -916,10 +898,10 @@ class toc final {
 
         // constant
         indent(os, indnt);
-        os << op << " " << dst_resolved << ", " << src_resolved << std::endl;
+        os << op << " " << dst_resolved << ", " << src_resolved << '\n';
     }
 
-    inline void set_var_is_initiated(const std::string& name) {
+    void set_var_is_initiated(const std::string& name) {
         const identifier ident{name};
         const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
         // is 'id_nasm' a variable?
@@ -941,7 +923,7 @@ class toc final {
                               ":" + std::to_string(__LINE__));
     }
 
-    inline auto is_var_initiated(const std::string& name) -> bool {
+    auto is_var_initiated(const std::string& name) -> bool {
         const identifier ident{name};
         const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
         // is 'id_nasm' a variable?
@@ -954,8 +936,7 @@ class toc final {
         }
 
         if (is_identifier_register(id)) {
-            auto it = std::find(initiated_registers_.begin(),
-                                initiated_registers_.end(), id);
+            auto it = std::ranges::find(initiated_registers_, id);
             return it != initiated_registers_.end();
         }
 
@@ -963,27 +944,24 @@ class toc final {
                               ":" + std::to_string(__LINE__));
     }
 
-    inline void set_type_void(const type& tp) { type_void_ = &tp; }
+    void set_type_void(const type& tp) { type_void_ = &tp; }
 
-    inline auto get_type_void() const -> const type& { return *type_void_; }
+    auto get_type_void() const -> const type& { return *type_void_; }
 
-    inline void set_type_default(const type& tp) { type_default_ = &tp; }
+    void set_type_default(const type& tp) { type_default_ = &tp; }
 
-    inline auto get_type_default() const -> const type& {
-        return *type_default_;
-    }
+    auto get_type_default() const -> const type& { return *type_default_; }
 
-    inline void set_type_bool(const type& tp) { type_bool_ = &tp; }
+    void set_type_bool(const type& tp) { type_bool_ = &tp; }
 
-    inline auto get_type_bool() const -> const type& { return *type_bool_; }
+    auto get_type_bool() const -> const type& { return *type_bool_; }
 
-    inline static auto is_operand_memory(const std::string& operand) -> bool {
+    static auto is_operand_memory(const std::string& operand) -> bool {
         return operand.find_first_of('[') != std::string::npos;
     }
 
-    inline auto get_size_from_operand(const token& src_loc,
-                                      const std::string& operand) const
-        -> size_t {
+    auto get_size_from_operand(const token& src_loc,
+                               const std::string& operand) const -> size_t {
         //? sort of ugly
         if (operand.starts_with("qword")) {
             return 8;
@@ -1010,9 +988,9 @@ class toc final {
     // statics
     // -------------------------------------------------------------------------
 
-    inline static auto
-    get_size_from_operand_register(const token& src_loc,
-                                   const std::string& operand) -> size_t {
+    static auto get_size_from_operand_register(const token& src_loc,
+                                               const std::string& operand)
+        -> size_t {
 
         if (operand == "rax" || operand == "rbx" || operand == "rcx" ||
             operand == "rdx" || operand == "rbp" || operand == "rsi" ||
@@ -1053,9 +1031,9 @@ class toc final {
         throw compiler_exception(src_loc, "unknown register '" + operand + "'");
     }
 
-    inline static auto get_register_operand_for_size(const token& src_loc,
-                                                     const std::string& operand,
-                                                     const size_t size)
+    static auto get_register_operand_for_size(const token& src_loc,
+                                              const std::string& operand,
+                                              const size_t size)
         -> std::string {
         //? sort of ugly
         if (operand == "rax") {
@@ -1183,7 +1161,7 @@ class toc final {
         if (!regex_search(operand, match, rx)) {
             throw compiler_exception(src_loc, "unknown register " + operand);
         }
-        const std::string& rnbr{match[1]};
+        const std::string rnbr{match[1]};
         switch (size) {
         case 8:
             return "r" + rnbr;
@@ -1200,63 +1178,59 @@ class toc final {
         }
     }
 
-    inline static void asm_push([[maybe_unused]] const token& src_loc,
-                                std::ostream& os, const size_t indnt,
-                                const std::string& operand) {
+    static void asm_push([[maybe_unused]] const token& src_loc,
+                         std::ostream& os, const size_t indnt,
+                         const std::string& operand) {
         indent(os, indnt);
-        os << "push " << operand << std::endl;
+        os << "push " << operand << '\n';
     }
 
-    inline static void asm_pop([[maybe_unused]] const token& src_loc,
-                               std::ostream& os, const size_t indnt,
-                               const std::string& operand) {
+    static void asm_pop([[maybe_unused]] const token& src_loc, std::ostream& os,
+                        const size_t indnt, const std::string& operand) {
         indent(os, indnt);
-        os << "pop " << operand << std::endl;
+        os << "pop " << operand << '\n';
     }
 
-    inline static void asm_ret([[maybe_unused]] const token& src_loc,
-                               std::ostream& os, const size_t indnt) {
+    static void asm_ret([[maybe_unused]] const token& src_loc, std::ostream& os,
+                        const size_t indnt) {
         indent(os, indnt);
         os << "ret\n";
     }
 
-    inline static void asm_jmp([[maybe_unused]] const token& src_loc,
-                               std::ostream& os, const size_t indnt,
-                               const std::string& label) {
+    static void asm_jmp([[maybe_unused]] const token& src_loc, std::ostream& os,
+                        const size_t indnt, const std::string& label) {
         indent(os, indnt);
-        os << "jmp " << label << std::endl;
+        os << "jmp " << label << '\n';
     }
 
-    inline static void asm_label([[maybe_unused]] const token& src_loc,
-                                 std::ostream& os, const size_t indnt,
-                                 const std::string& label) {
+    static void asm_label([[maybe_unused]] const token& src_loc,
+                          std::ostream& os, const size_t indnt,
+                          const std::string& label) {
         indent(os, indnt);
-        os << label << ":" << std::endl;
+        os << label << ":" << '\n';
     }
 
-    inline static void asm_call([[maybe_unused]] const token& src_loc,
-                                std::ostream& os, const size_t indnt,
-                                const std::string& label) {
+    static void asm_call([[maybe_unused]] const token& src_loc,
+                         std::ostream& os, const size_t indnt,
+                         const std::string& label) {
         indent(os, indnt);
-        os << "call " << label << std::endl;
+        os << "call " << label << '\n';
     }
 
-    inline static void asm_neg([[maybe_unused]] const token& src_loc,
-                               std::ostream& os, const size_t indnt,
-                               const std::string& dst_resolved) {
+    static void asm_neg([[maybe_unused]] const token& src_loc, std::ostream& os,
+                        const size_t indnt, const std::string& dst_resolved) {
         indent(os, indnt);
-        os << "neg " << dst_resolved << std::endl;
+        os << "neg " << dst_resolved << '\n';
     }
 
-    inline static void asm_not([[maybe_unused]] const token& src_loc,
-                               std::ostream& os, const size_t indnt,
-                               const std::string& dst_resolved) {
+    static void asm_not([[maybe_unused]] const token& src_loc, std::ostream& os,
+                        const size_t indnt, const std::string& dst_resolved) {
         indent(os, indnt);
-        os << "not " << dst_resolved << std::endl;
+        os << "not " << dst_resolved << '\n';
     }
 
-    inline static void indent(std::ostream& os, const size_t indnt,
-                              const bool comment = false) {
+    static void indent(std::ostream& os, const size_t indnt,
+                       const bool comment = false) {
         if (indnt == 0) {
             if (comment) {
                 os << ";";
@@ -1270,7 +1244,7 @@ class toc final {
     }
 
   private:
-    inline auto get_id_and_frame_for_identifier(const std::string& name)
+    auto get_id_and_frame_for_identifier(const std::string& name)
         -> std::pair<std::string, frame&> {
 
         std::string id{name};
@@ -1297,11 +1271,11 @@ class toc final {
         return {std::move(id), frames_.at(i)};
     }
 
-    inline auto is_register_initiated(const std::string& reg) const -> bool {
+    auto is_register_initiated(const std::string& reg) const -> bool {
         return initiated_registers_.contains(reg);
     }
 
-    inline auto get_current_stack_size() const -> size_t {
+    auto get_current_stack_size() const -> size_t {
         assert(!frames_.empty());
         size_t nbytes{0};
         size_t i{frames_.size()};
@@ -1319,7 +1293,7 @@ class toc final {
     //? does not take into account non-inlined calls and the return address from
     // a
     // function call
-    inline auto get_total_stack_size() const -> size_t {
+    auto get_total_stack_size() const -> size_t {
         assert(!frames_.empty());
         size_t nbytes{0};
         size_t i{frames_.size()};
@@ -1330,9 +1304,8 @@ class toc final {
         return nbytes;
     }
 
-    inline auto resolve_ident_or_empty(const token& src_loc,
-                                       const std::string& ident,
-                                       const bool must_be_initiated) const
+    auto resolve_ident_or_empty(const token& src_loc, const std::string& ident,
+                                const bool must_be_initiated) const
         -> ident_resolved {
 
         const identifier bid{ident};
@@ -1373,7 +1346,11 @@ class toc final {
             }
             auto [tp, acc]{
                 var.type_ref.accessor(src_loc, bid.path(), var.stack_idx)};
-            return {ident, acc, 0, tp, ident_resolved::ident_type::VAR};
+            return {.id = ident,
+                    .id_nasm = acc,
+                    .const_value = 0,
+                    .type_ref = tp,
+                    .ident_type = ident_resolved::ident_type::VAR};
         }
 
         // is 'id_nasm' a register?
@@ -1384,8 +1361,11 @@ class toc final {
             }
 
             //? unary ops?
-            return {ident, id, 0, get_type_default(),
-                    ident_resolved::ident_type::REGISTER};
+            return {.id = ident,
+                    .id_nasm = id,
+                    .const_value = 0,
+                    .type_ref = get_type_default(),
+                    .ident_type = ident_resolved::ident_type::REGISTER};
         }
 
         // is it a field?
@@ -1394,61 +1374,88 @@ class toc final {
                 bid.path().size() < 2 ? ""
                                       : bid.path().at(1); //? bug. not correct
             if (after_dot == "len") {
-                return {ident, id + "." + after_dot, 0, get_type_default(),
-                        ident_resolved::ident_type::IMPLIED};
+                return {.id = ident,
+                        .id_nasm = id + "." + after_dot,
+                        .const_value = 0,
+                        .type_ref = get_type_default(),
+                        .ident_type = ident_resolved::ident_type::IMPLIED};
             }
             const field_info& fi{fields_.get_const_ref(id)};
             if (fi.is_str) {
-                return {ident, id, 0, get_type_default(),
-                        ident_resolved::ident_type::FIELD};
+                return {.id = ident,
+                        .id_nasm = id,
+                        .const_value = 0,
+                        .type_ref = get_type_default(),
+                        .ident_type = ident_resolved::ident_type::FIELD};
             }
             //? assumes qword
-            return {ident, "qword[" + id + "]", 0, get_type_default(),
-                    ident_resolved::ident_type::FIELD};
+            return {.id = ident,
+                    .id_nasm = "qword[" + id + "]",
+                    .const_value = 0,
+                    .type_ref = get_type_default(),
+                    .ident_type = ident_resolved::ident_type::FIELD};
         }
 
         // is it a constant?
         char* ep{};
         const long const_value{strtol(id.c_str(), &ep, 10)};
         if (!*ep) {
-            return {ident, id, const_value, get_type_default(),
-                    ident_resolved::ident_type::CONST};
+            return {.id = ident,
+                    .id_nasm = id,
+                    .const_value = const_value,
+                    .type_ref = get_type_default(),
+                    .ident_type = ident_resolved::ident_type::CONST};
         }
 
         if (id.starts_with("0x")) { // hex
             const long value{strtol(id.c_str() + 2, &ep, 16)};
             if (!*ep) {
-                return {ident, id, value, get_type_default(),
-                        ident_resolved::ident_type::CONST};
+                return {.id = ident,
+                        .id_nasm = id,
+                        .const_value = value,
+                        .type_ref = get_type_default(),
+                        .ident_type = ident_resolved::ident_type::CONST};
             }
         }
 
         if (id.starts_with("0b")) { // binary
             const long value{strtol(id.c_str() + 2, &ep, 2)};
             if (!*ep) {
-                return {ident, id, value, get_type_default(),
-                        ident_resolved::ident_type::CONST};
+                return {.id = ident,
+                        .id_nasm = id,
+                        .const_value = value,
+                        .type_ref = get_type_default(),
+                        .ident_type = ident_resolved::ident_type::CONST};
             }
         }
 
         // is it a boolean constant?
         if (id == "true") {
-            return {ident, id, 1, get_type_bool(),
-                    ident_resolved::ident_type::CONST};
+            return {.id = ident,
+                    .id_nasm = id,
+                    .const_value = 1,
+                    .type_ref = get_type_bool(),
+                    .ident_type = ident_resolved::ident_type::CONST};
         }
 
         if (id == "false") {
-            return {ident, id, 0, get_type_bool(),
-                    ident_resolved::ident_type::CONST};
+            return {.id = ident,
+                    .id_nasm = id,
+                    .const_value = 0,
+                    .type_ref = get_type_bool(),
+                    .ident_type = ident_resolved::ident_type::CONST};
         }
 
         // not resolved, return empty answer
-        return {"", "", 0, get_type_void(), ident_resolved::ident_type::CONST};
+        return {.id = "",
+                .id_nasm = "",
+                .const_value = 0,
+                .type_ref = get_type_void(),
+                .ident_type = ident_resolved::ident_type::CONST};
     }
 
-    inline void refresh_usage() {
-        if (frames_.size() > usage_max_frame_count_) {
-            usage_max_frame_count_ = frames_.size();
-        }
+    void refresh_usage() {
+        usage_max_frame_count_ =
+            std::max(frames_.size(), usage_max_frame_count_);
     }
 };

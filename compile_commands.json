@@ -10,6 +10,7 @@
       "-Wno-weak-vtables",
       "-Wno-padded",
       "-Wno-unsafe-buffer-usage",
+      "-Wno-pre-c++20-compat-pedantic",
       "-Wno-undefined-inline"
     ],
     "directory": "/home/c/w/compiler-2",

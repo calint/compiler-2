@@ -3,17 +3,30 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <regex>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "call_asm_mov.hpp"
 #include "call_asm_syscall.hpp"
 #include "compiler_exception.hpp"
 #include "expr_any.hpp"
+#include "expr_type_value.hpp"
+#include "panic_exception.hpp"
 #include "program.hpp"
+#include "statement.hpp"
+#include "stmt_call.hpp"
+#include "stmt_comment.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
+#include "toc.hpp"
+#include "token.hpp"
+#include "tokenizer.hpp"
+#include "type.hpp"
+#include "unary_ops.hpp"
 
 namespace {
 auto read_file_to_string(const char* file_name) -> std::string;
@@ -50,13 +63,13 @@ auto main(int argc, char* args[]) -> int {
             toc::line_and_col_num_for_char_index(e.start_index, src.c_str())};
         std::cerr << "\n"
                   << src_file_name << ":" << line << ":" << col << ": " << e.msg
-                  << std::endl;
+                  << '\n';
         return 1;
     } catch (const panic_exception& e) {
-        std::cerr << "\nexception: " << e.what() << std::endl;
+        std::cerr << "\nexception: " << e.what() << '\n';
         return 2;
     } catch (...) {
-        std::cerr << "\nexception" << std::endl;
+        std::cerr << "\nexception" << '\n';
         return 3;
     }
     return 0;
@@ -173,7 +186,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     }
 }
 
-inline expr_type_value::~expr_type_value() = default;
+expr_type_value::~expr_type_value() = default;
 
 // declared in 'expr_type_value.hpp':
 //   resolves circular reference: expr_type_value -> expr_any ->
@@ -299,10 +312,10 @@ void optimize_jumps_1(std::istream& is, std::ostream& os) {
         }
 
         if (not regex_search(line1, match, rxjmp)) {
-            os << line1 << std::endl;
+            os << line1 << '\n';
             continue;
         }
-        const std::string& jmplbl{match[1]};
+        const std::string jmplbl{match[1]};
 
         std::string line2{};
         std::vector<std::string> comments{};
@@ -316,31 +329,31 @@ void optimize_jumps_1(std::istream& is, std::ostream& os) {
         }
 
         if (not regex_search(line2, match, rxlbl)) {
-            os << line1 << std::endl;
+            os << line1 << '\n';
             for (const std::string& s : comments) {
-                os << s << std::endl;
+                os << s << '\n';
             }
-            os << line2 << std::endl;
+            os << line2 << '\n';
             continue;
         }
 
-        const std::string& lbl{match[1]};
+        const std::string lbl{match[1]};
 
         // if not same label then output the buffered data and continues
         if (jmplbl != lbl) {
-            os << line1 << std::endl;
+            os << line1 << '\n';
             for (const std::string& s : comments) {
-                os << s << std::endl;
+                os << s << '\n';
             }
-            os << line2 << std::endl;
+            os << line2 << '\n';
             continue;
         }
 
         // write the label without the preceding jmp
         for (const std::string& s : comments) {
-            os << s << std::endl;
+            os << s << '\n';
         }
-        os << line2 << "  ; opt1" << std::endl;
+        os << line2 << "  ; opt1" << '\n';
     }
 }
 
@@ -367,11 +380,11 @@ void optimize_jumps_2(std::istream& is, std::ostream& os) {
         }
 
         if (not regex_search(line1, match, rxjxx)) {
-            os << line1 << std::endl;
+            os << line1 << '\n';
             continue;
         }
-        const std::string& jxx{match[1]};
-        const std::string& jxxlbl{match[2]};
+        const std::string jxx{match[1]};
+        const std::string jxxlbl{match[2]};
 
         std::string line2{};
         std::vector<std::string> comments2{};
@@ -384,14 +397,14 @@ void optimize_jumps_2(std::istream& is, std::ostream& os) {
             break;
         }
         if (not regex_search(line2, match, rxjmp)) {
-            os << line1 << std::endl;
+            os << line1 << '\n';
             for (const std::string& s : comments2) {
-                os << s << std::endl;
+                os << s << '\n';
             }
-            os << line2 << std::endl;
+            os << line2 << '\n';
             continue;
         }
-        const std::string& jmplbl{match[1]};
+        const std::string jmplbl{match[1]};
 
         std::string line3{};
         std::vector<std::string> comments3{};
@@ -405,29 +418,29 @@ void optimize_jumps_2(std::istream& is, std::ostream& os) {
         }
 
         if (not regex_search(line3, match, rxlbl)) {
-            os << line1 << std::endl;
+            os << line1 << '\n';
             for (const std::string& s : comments2) {
-                os << s << std::endl;
+                os << s << '\n';
             }
-            os << line2 << std::endl;
+            os << line2 << '\n';
             for (const std::string& s : comments3) {
-                os << s << std::endl;
+                os << s << '\n';
             }
-            os << line3 << std::endl;
+            os << line3 << '\n';
             continue;
         }
         const std::string lbl{match[1]};
 
         if (jxxlbl != lbl) {
-            os << line1 << std::endl;
+            os << line1 << '\n';
             for (const std::string& s : comments2) {
-                os << s << std::endl;
+                os << s << '\n';
             }
-            os << line2 << std::endl;
+            os << line2 << '\n';
             for (const std::string& s : comments3) {
-                os << s << std::endl;
+                os << s << '\n';
             }
-            os << line3 << std::endl;
+            os << line3 << '\n';
             continue;
         }
 
@@ -448,15 +461,15 @@ void optimize_jumps_2(std::istream& is, std::ostream& os) {
         } else if (jxx == "jle") {
             jxx_inv = "jg";
         } else {
-            os << line1 << std::endl;
+            os << line1 << '\n';
             for (const std::string& s : comments2) {
-                os << s << std::endl;
+                os << s << '\n';
             }
-            os << line2 << std::endl;
+            os << line2 << '\n';
             for (const std::string& s : comments3) {
-                os << s << std::endl;
+                os << s << '\n';
             }
-            os << line3 << std::endl;
+            os << line3 << '\n';
             continue;
         }
         //   je if_14_8_code
@@ -465,13 +478,13 @@ void optimize_jumps_2(std::istream& is, std::ostream& os) {
         const std::string& ws_before{
             line1.substr(0, line1.find_first_not_of(" \t\n\r\f\v"))};
         for (const std::string& s : comments2) {
-            os << s << std::endl;
+            os << s << '\n';
         }
-        os << ws_before << jxx_inv << " " << jmplbl << "  ; opt2" << std::endl;
+        os << ws_before << jxx_inv << " " << jmplbl << "  ; opt2" << '\n';
         for (const std::string& s : comments3) {
-            os << s << std::endl;
+            os << s << '\n';
         }
-        os << line3 << std::endl;
+        os << line3 << '\n';
     }
 }
 

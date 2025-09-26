@@ -4,25 +4,25 @@
 #include "stmt_block.hpp"
 
 class stmt_if_branch final : public statement {
-    bool_ops_list bol_{};
-    stmt_block code_{};
+    bool_ops_list bol_;
+    stmt_block code_;
 
   public:
-    inline stmt_if_branch(toc& tc, tokenizer& tz)
+    stmt_if_branch(toc& tc, tokenizer& tz)
         : statement{tz.next_whitespace_token()}, bol_{tc, tz}, code_{tc, tz} {
 
         set_type(tc.get_type_void());
     }
 
-    inline stmt_if_branch() = default;
-    inline stmt_if_branch(const stmt_if_branch&) = default;
-    inline stmt_if_branch(stmt_if_branch&&) = default;
-    inline auto operator=(const stmt_if_branch&) -> stmt_if_branch& = default;
-    inline auto operator=(stmt_if_branch&&) -> stmt_if_branch& = default;
+    stmt_if_branch() = default;
+    stmt_if_branch(const stmt_if_branch&) = default;
+    stmt_if_branch(stmt_if_branch&&) = default;
+    auto operator=(const stmt_if_branch&) -> stmt_if_branch& = default;
+    auto operator=(stmt_if_branch&&) -> stmt_if_branch& = default;
 
-    inline ~stmt_if_branch() override = default;
+    ~stmt_if_branch() override = default;
 
-    inline void source_to(std::ostream& os) const override {
+    void source_to(std::ostream& os) const override {
         statement::source_to(os);
         bol_.source_to(os);
         code_.source_to(os);
@@ -30,14 +30,14 @@ class stmt_if_branch final : public statement {
 
     // returns the label where the if branch begins evaluating the boolean
     // expression
-    [[nodiscard]] inline auto if_bgn_label(const toc& tc) const -> std::string {
+    [[nodiscard]] auto if_bgn_label(const toc& tc) const -> std::string {
         // construct a unique label considering in-lined functions
         const std::string& call_path{tc.get_inline_call_path(tok())};
         return "if_" + tc.source_location_for_use_in_label(tok()) +
                (call_path.empty() ? "" : "_" + call_path);
     }
 
-    [[noreturn]] inline void
+    [[noreturn]] void
     compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
             [[maybe_unused]] size_t indent,
             [[maybe_unused]] const std::string& dst) const override {
@@ -46,9 +46,9 @@ class stmt_if_branch final : public statement {
                               ":" + std::to_string(__LINE__));
     }
 
-    inline auto compile(toc& tc, std::ostream& os, size_t indent,
-                        const std::string& jmp_to_if_false_label,
-                        const std::string& jmp_to_after_code_label) const
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 const std::string& jmp_to_if_false_label,
+                 const std::string& jmp_to_after_code_label) const
         -> std::optional<bool> {
 
         const std::string& if_bgn_lbl{if_bgn_label(tc)};
