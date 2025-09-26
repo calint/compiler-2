@@ -374,7 +374,7 @@ class bool_op final : public statement {
     void resolve_cmp(toc& tc, std::ostream& os, size_t indent,
                      const expr_ops_list& lhs, const expr_ops_list& rhs) const {
 
-        std::vector<std::string> allocated_registers{};
+        std::vector<std::string> allocated_registers;
 
         const std::string& dst{
             resolve_expr(tc, os, indent, lhs, allocated_registers)};
@@ -393,7 +393,7 @@ class bool_op final : public statement {
 
     void resolve_cmp_shorthand(toc& tc, std::ostream& os, size_t indent,
                                const expr_ops_list& lhs) const {
-        std::vector<std::string> allocated_registers{};
+        std::vector<std::string> allocated_registers;
 
         const std::string& dst{
             resolve_expr(tc, os, indent, lhs, allocated_registers)};

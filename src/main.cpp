@@ -303,9 +303,9 @@ void optimize_jumps_1(std::istream& is, std::ostream& os) {
     const std::regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
     const std::regex rxlbl{R"(^\s*(.+):.*$)"};
     const std::regex rxcomment{R"(^\s*;.*$)"};
-    std::smatch match{};
+    std::smatch match;
     while (true) {
-        std::string line1{};
+        std::string line1;
         getline(is, line1);
         if (is.eof()) { //? what if there is no new line at end of file?
             break;
@@ -317,8 +317,8 @@ void optimize_jumps_1(std::istream& is, std::ostream& os) {
         }
         const std::string jmplbl{match[1]};
 
-        std::string line2{};
-        std::vector<std::string> comments{};
+        std::string line2;
+        std::vector<std::string> comments;
         while (true) { // read comments
             getline(is, line2);
             if (regex_match(line2, rxcomment)) {
@@ -370,10 +370,10 @@ void optimize_jumps_2(std::istream& is, std::ostream& os) {
     const std::regex rxjxx{R"(^\s*(j[a-z][a-z]?)\s+(.+)\s*$)"};
     const std::regex rxlbl{R"(^\s*(.+):.*$)"};
     const std::regex rxcomment{R"(^\s*;.*$)"};
-    std::smatch match{};
+    std::smatch match;
 
     while (true) {
-        std::string line1{};
+        std::string line1;
         getline(is, line1);
         if (is.eof()) { //? what if there is no new line at end of file?
             break;
@@ -386,8 +386,8 @@ void optimize_jumps_2(std::istream& is, std::ostream& os) {
         const std::string jxx{match[1]};
         const std::string jxxlbl{match[2]};
 
-        std::string line2{};
-        std::vector<std::string> comments2{};
+        std::string line2;
+        std::vector<std::string> comments2;
         while (true) { // read comments
             getline(is, line2);
             if (regex_match(line2, rxcomment)) {
@@ -406,8 +406,8 @@ void optimize_jumps_2(std::istream& is, std::ostream& os) {
         }
         const std::string jmplbl{match[1]};
 
-        std::string line3{};
-        std::vector<std::string> comments3{};
+        std::string line3;
+        std::vector<std::string> comments3;
         while (true) { // read comments
             getline(is, line3);
             if (regex_match(line3, rxcomment)) {
@@ -447,7 +447,7 @@ void optimize_jumps_2(std::istream& is, std::ostream& os) {
         //   jne cmp_14_26
         //   jmp if_14_8_code
         //   cmp_14_26:
-        std::string jxx_inv{};
+        std::string jxx_inv;
         if (jxx == "jne") {
             jxx_inv = "je";
         } else if (jxx == "je") {

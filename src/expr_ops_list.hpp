@@ -197,11 +197,11 @@ class expr_ops_list final : public expression {
 
         // compile with and without scratch register
         // try without scratch register
-        std::stringstream ss1{};
+        std::stringstream ss1;
         do_compile(tc, ss1, indent, dst);
 
         // try with scratch register
-        std::stringstream ss2{};
+        std::stringstream ss2;
         const std::string& reg{tc.alloc_scratch_register(tok(), ss2, indent)};
         do_compile(tc, ss2, indent, reg);
         // tc.source_comment(*this, ss2, indent);
@@ -275,7 +275,7 @@ class expr_ops_list final : public expression {
 
     static auto count_instructions(std::stringstream& ss) -> size_t {
         const std::regex rxcomment{R"(^\s*;.*$)"};
-        std::string line{};
+        std::string line;
         size_t n{0};
         while (getline(ss, line)) {
             if (regex_search(line, rxcomment)) {

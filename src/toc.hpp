@@ -543,7 +543,7 @@ class toc final {
         os << "alloc " << reg << '\n';
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
-            std::string loc{};
+            std::string loc;
             const size_t n{allocated_registers_.size()};
             for (size_t i{0}; i < n; i++) {
                 if (allocated_registers_.at(i) == reg) {
@@ -661,7 +661,7 @@ class toc final {
         indent(os, indnt, true);
         os << "[" << line << ":" << col << "]";
 
-        std::stringstream ss{};
+        std::stringstream ss;
         ss << " ";
         st.source_to(ss);
         const std::string& s{ss.str()};
@@ -677,7 +677,7 @@ class toc final {
 
         os << "[" << line << ":" << col << "]";
 
-        std::stringstream ss{};
+        std::stringstream ss;
         ss << " " << dst << " " << op << " ";
         st.source_to(ss);
         const std::string& s{ss.str()};
@@ -1157,7 +1157,7 @@ class toc final {
             }
         }
         const std::regex rx{R"(r(\d+))"};
-        std::smatch match{};
+        std::smatch match;
         if (!regex_search(operand, match, rx)) {
             throw compiler_exception(src_loc, "unknown register " + operand);
         }

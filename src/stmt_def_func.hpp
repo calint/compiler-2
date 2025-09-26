@@ -67,8 +67,8 @@ class stmt_def_func final : public statement {
         tc.add_func(name_tk_, name_tk_.name(), get_type(), this);
         tc.enter_func(name(), returns_, is_inline());
         // dry-run compile step to setup context for code block parsing
-        std::vector<std::string> allocated_named_registers{};
-        null_stream null_strm{}; // don't make output
+        std::vector<std::string> allocated_named_registers;
+        null_stream null_strm; // don't make output
         init_variables(tc, null_strm, 0, allocated_named_registers);
         code_ = {tc, tz};
         free_allocated_registers(tc, null_strm, 0, allocated_named_registers);
