@@ -1,15 +1,13 @@
-	static void replaceSubstring(string& original_string,const string& substring_to_replace,const string& replacement_string){
-		size_t start_pos=original_string.find(substring_to_replace);
-		if(start_pos!=string::npos){
-			original_string.replace(start_pos,substring_to_replace.length(),replacement_string);
-		}
-	}
-
 # find duplicate labels
 cat gen.s | grep -E '^\s+.*\:'| sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | sort | uniq -d
 
+# tag with time stamp
 TAG=$(date "+%Y-%m-%d--%H-%M") && git tag $TAG && git push origin $TAG
 
+# check memory issues
+valgrind --tool=memcheck --track-origins=yes ./baz
+
+# resets current state to HEAD
 git reset --hard HEAD
 
    ; sign extended mov
@@ -47,6 +45,7 @@ fmt.len equ $-fmt
 
 section .note.GNU-stack noexec
 -----------------------------
+
 nasm -f elf64 gen-m.s && gcc -no-pie -o gen-m gen-m.o && ./gen-m
 
 
@@ -79,47 +78,12 @@ constructor
 constructor
 move constructor
 
-
-#include <iostream>
-#include <regex>
-#include <string>
-
-int main() {
-  string str = "This is a test string [more or less].";
-  regex re("\\[(.*?)\\]");
-  smatch match;
-
-  if (regex_search(str, match, re)) {
-    cout << match[1] << endl;
-  }
-  return 0;
-}
-
-
-regex regexPattern(R"(^\s*jmp\s?(.?)\s*$)");
-
-int main() {
-   string date_string = "2023-03-17";
-   regex date_regex{ R"((\d{4})-(\d{2})-(\d{2}))" };
-   smatch match;
-   if (regex_search(date_string, match, date_regex)) {
-      cout << "Year: " << match[1].str() << endl;
-      cout << "Month: " << match[2].str() << endl;
-      cout << "Day: " << match[3].str() << endl;
-   } else {
-      cout << "No match found" << endl;
-   }
-   return 0;
-}
-
-
 To rewrite the expression "not (a=1 and b=2)" without the "not", 
 use De Morgan's laws, which state that "not (A and B)" is the same as
 "(not A) or (not B)" and "not (A or B)" is the same as "(not A) and (not B)".
 Applying this to the given expression, we get:
 "not (a=1 and b=2)" is the same as "(not a=1) or (not b=2)"
 
-throw"unexpected code path "+string{__FILE__}+":"+to_string(__LINE__);
 
 printf("\033[2J"); // clears console
 
