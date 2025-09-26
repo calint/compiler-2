@@ -5,6 +5,7 @@
     => pass address to argument through stack
 [ ] allow return types to be non-registers
     => pass address to return through stack 
+[ ] support for float and double
 [ ] implement arrays
 [ ] implement strings
 [ ] replace endl with '\n'
