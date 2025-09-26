@@ -46,7 +46,7 @@ class frame final {
     std::string func_ret_label_;
 
     // info about the function returns
-    const std::vector<func_return_info>& func_rets_{};
+    const std::vector<func_return_info>& func_rets_;
 
     // true if function is inlined
     bool func_is_inline_{};
@@ -208,7 +208,7 @@ class identifier final {
 };
 
 class toc final {
-    const std::string& source_{};
+    const std::string& source_;
     std::vector<frame> frames_;
     std::vector<std::string> all_registers_;
     std::vector<std::string> named_registers_;

@@ -6,9 +6,9 @@
 #include "token.hpp"
 
 class tokenizer final {
-    const std::string& src_{}; // the string to be tokenized
-    const char* ptr_{};        // pointer to current position
-    size_t char_ix_{};         // current char index in 'src_'
+    const std::string& src_; // the string to be tokenized
+    const char* ptr_{};      // pointer to current position
+    size_t char_ix_{};       // current char index in 'src_'
     char last_char_{-1}; // last read character (-1 before any characters read)
 
   public:
