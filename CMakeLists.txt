@@ -9,10 +9,10 @@ add_compile_options(
     -Wfatal-errors
     -Weverything
     -Wno-c++98-compat
+    -Wno-pre-c++20-compat-pedantic
     -Wno-weak-vtables
     -Wno-padded
     -Wno-unsafe-buffer-usage
-    -Wno-pre-c++20-compat-pedantic
 )
 add_executable(baz src/main.cpp)
 #add_custom_command(TARGET baz POST_BUILD
