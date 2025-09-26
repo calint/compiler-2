@@ -1,0 +1,18 @@
+[
+  {
+    "arguments": [
+      "clang++",
+      "-std=c++23",
+      "-Wfatal-errors",
+      "-Werror",
+      "-Weverything",
+      "-Wno-c++98-compat",
+      "-Wno-weak-vtables",
+      "-Wno-padded",
+      "-Wno-unqualified-std-cast-call",
+      "-Wno-unsafe-buffer-usage"
+    ],
+    "directory": "/home/c/w/compiler-2",
+    "file": "src/main.cpp"
+  }
+]
