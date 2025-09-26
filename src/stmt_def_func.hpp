@@ -42,10 +42,13 @@ public:
       // function returns
       while (true) {
         const token type_tk{tz.next_token()};
-        const struct func_return_info ret_info {
-          type_tk,
-              tz.next_token(), tc.get_type_or_throw(type_tk, type_tk.name())
-        };
+        const struct func_return_info ret_info{
+            type_tk, tz.next_token(),
+            tc.get_type_or_throw(type_tk, type_tk.name())};
+        if (not ret_info.type_ref.is_built_in()) {
+          throw compiler_exception{ret_info.type_tk,
+                                   "only built-in types allowed as return"};
+        }
         returns_.emplace_back(ret_info);
         if (not tz.is_next_char(',')) {
           break;
