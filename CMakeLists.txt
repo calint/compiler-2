@@ -11,7 +11,6 @@ add_compile_options(
     -Wno-c++98-compat
     -Wno-weak-vtables
     -Wno-padded
-    -Wno-unqualified-std-cast-call
     -Wno-unsafe-buffer-usage
 )
 add_executable(baz src/main.cpp)
