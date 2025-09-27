@@ -210,7 +210,7 @@ class stmt_def_func final : public statement {
         }
 
         if (is_inline()) {
-            //? inline functions get parameters as aliases
+            // inline functions get arguments as aliases
             const size_t n{params_.size()};
             for (size_t i{}; i < n; i++) {
                 const stmt_def_func_param& param{params_.at(i)};
