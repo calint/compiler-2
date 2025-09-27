@@ -19,11 +19,11 @@ Experimental compiler of minimalistic language to nasm x86_64 for Linux
 
 ## Howto
 
-* to compile the compiler that compiles 'prog.baz' and assembles the generated
-code run 'make.sh'
-* after that use './run-baz.sh myprogram.baz' or './run-baz.sh' to compile and
-run 'prog.baz'
-* to run the tests 'qa/coverage/run-tests.sh' and see coverage report in 'qa/coverage/report/'
+* to compile the compiler that compiles `prog.baz` and assembles the generated
+code run `./make.sh`
+* after that use `./run-baz.sh myprogram.baz` or `./run-baz.sh` to compile and
+run `prog.baz`
+* to run the tests `qa/coverage/run-tests.sh` and see coverage report in `qa/coverage/report/`
 
 ## Sample
 
