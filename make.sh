@@ -20,7 +20,7 @@ CF="-Wfatal-errors -Werror"
 MSAN=
 PROF=
 #DBG=-g
-#OPT=-O3
+OPT=-O3
 if [ "$1" = "msan" ]; then
   MSAN="-fsanitize=memory,undefined -fsanitize-memory-track-origins=2"
   DBG=-g
