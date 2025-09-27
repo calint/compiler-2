@@ -58,13 +58,13 @@ func inline main() {
     assert(p.x == 2)
     assert(p.y == 0xb)
 
-    var arg = 0
-    bar(arg)
-    assert(arg == 0xff)
+    var i = 0
+    bar(i)
+    assert(i == 0xff)
 
-    arg = 1
-    arg = baz(arg)
-    assert(arg == 2)
+    var j = 1
+    var k = baz(j)
+    assert(k == 2)
 
     var x = 1
     var y = 2
