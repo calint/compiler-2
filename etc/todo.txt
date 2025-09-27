@@ -1,17 +1,18 @@
 [ ] consider removing support for non-inlined functions because it is out of scope
+[ ] implement arrays
 [x] replace all {0} and {false} to default {}
 [x] make auto for all functions with trailing return
 [x] better format
 [x] adjust for neovim clangd development
-[ ] type.hpp:66: why by reference in: const string &memsize{get_memory_operand_for_size(tk, tp_first_field->size())}
+[x] type.hpp:66: why by reference in: const string &memsize{get_memory_operand_for_size(tk, tp_first_field->size())}
+    => get_memory_operand_for_size now returns const std::string&
 [ ] allow non-register types to functions
     => pass address to argument through stack
 [ ] allow return types to be non-registers
     => pass address to return through stack 
 [ ] support for float and double
-[ ] implement arrays
 [ ] implement strings
-[ ] replace endl with '\n'
+[x] replace endl with '\n'
 [x] consider disabling function definitions and calls without ()
 [ ] calculate stack size at compile time instead of hardcoded
 [ ]   calculate max stack size used
