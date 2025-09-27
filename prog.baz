@@ -37,7 +37,7 @@ type point {x, y}
 
 type object {pos : point, color : i32}
 
-# inlined function arguments are equivalent to mutable references
+# inline function arguments are equivalent to mutable references
 func inline foo(p : point) {
     p.x = 0b10    # binary value 2
     p.y = 0xb     # hex value 11

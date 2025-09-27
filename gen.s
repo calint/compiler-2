@@ -72,7 +72,7 @@ assert:
    pop rbp
    ret
 
-;[40:1] # inlined function arguments are equivalent to mutable references 
+;[40:1] # inline function arguments are equivalent to mutable references 
 ;[46:1] # default argument type is i64 
 main:
 ;  p: qword[rbp-16]
