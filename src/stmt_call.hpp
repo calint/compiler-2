@@ -258,7 +258,7 @@ class stmt_call : public expression {
 
             // handle return value
             if (not dst.empty()) {
-                // function returns value in rax, copy return value to dst
+                // function returns value in 'rax', copy return value to 'dst'
                 get_unary_ops().compile(tc, os, indent, "rax");
                 const ident_resolved& dst_resolved{
                     tc.resolve_identifier(tok(), dst, false)};
