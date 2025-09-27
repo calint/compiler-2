@@ -778,43 +778,45 @@ class toc final {
                     free_named_register(os, indnt, reg);
                 }
             }
-        } else {
-            // stack is: <base>,vars,regs,args,
-            if (nbytes_of_args_on_stack != 0) {
-                const std::string& offset{
-                    std::to_string(nbytes_of_args_on_stack)};
+            return;
+        }
+
+        // adjust stack past variables on stack then pop the saved registers
+
+        // stack is: <base>,vars,regs,args,
+        if (nbytes_of_args_on_stack != 0) {
+            const std::string& offset{std::to_string(nbytes_of_args_on_stack)};
+            asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
+        }
+        // stack is: <base>,vars,regs,
+
+        // pop registers pushed prior to this call
+        size_t i{allocated_registers_.size()};
+        while (i != alloc_reg_idx) {
+            i--;
+            const std::string& reg{allocated_registers_.at(i)};
+            // don't pop registers used to pass arguments
+            if (std::ranges::find(allocated_args_registers,
+
+                                  reg) == allocated_args_registers.end()) {
+                if (is_register_initiated(reg)) {
+                    // pop only registers that were pushed
+                    asm_pop(src_loc, os, indnt, reg);
+                }
+            } else {
+                free_named_register(os, indnt, reg);
+            }
+        }
+
+        // stack is: <base>,vars,
+        if (restore_rsp_to_base) {
+            // this was not a call within the arguments of another call
+            // stack is: <base>,vars,
+            if (nbytes_of_vars != 0) {
+                const std::string& offset{std::to_string(nbytes_of_vars)};
                 asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
             }
-            // stack is: <base>,vars,regs,
-
-            // pop registers pushed prior to this call
-            size_t i{allocated_registers_.size()};
-            while (i != alloc_reg_idx) {
-                i--;
-                const std::string& reg{allocated_registers_.at(i)};
-                // don't pop registers used to pass arguments
-                if (std::ranges::find(allocated_args_registers,
-
-                                      reg) == allocated_args_registers.end()) {
-                    if (is_register_initiated(reg)) {
-                        // pop only registers that were pushed
-                        asm_pop(src_loc, os, indnt, reg);
-                    }
-                } else {
-                    free_named_register(os, indnt, reg);
-                }
-            }
-
-            // stack is: <base>,vars,
-            if (restore_rsp_to_base) {
-                // this was not a call within the arguments of another call
-                // stack is: <base>,vars,
-                if (nbytes_of_vars != 0) {
-                    const std::string& offset{std::to_string(nbytes_of_vars)};
-                    asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
-                }
-                // stack is: <base>,
-            }
+            // stack is: <base>,
         }
     }
 
