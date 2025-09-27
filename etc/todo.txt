@@ -1,22 +1,6 @@
-[x] consider removing support for non-inlined functions because it is out of scope
-    => intention of program is super-loop non-reentrant inlined functions
 [ ] implement arrays
-[x] replace all {0} and {false} to default {}
-[x] make auto for all functions with trailing return
-[x] better format
-[x] adjust for neovim clangd development
-[x] type.hpp:66: why by reference in: const string &memsize{get_memory_operand_for_size(tk, tp_first_field->size())}
-    => get_memory_operand_for_size now returns const std::string&
-[ ] allow non-register types to functions
-    => pass address to argument through stack
-[ ] allow return types to be non-registers
-    => pass address to return through stack 
-[ ] support for float and double
 [ ] implement strings
-[x] replace endl with '\n'
-[x] consider disabling function definitions and calls without ()
-[ ] calculate stack size at compile time instead of hardcoded
-[ ]   calculate max stack size used
+[ ] support for float and double
 [ ] rename compiler_exception
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
 [o] check that return value is assigned in functions
@@ -29,6 +13,7 @@
 [ ] handle constants when deducing operand size 
      => deduce if possible to the size of the desired type
 [ ] specify whether ok for an op to truncate value instead of error
+
 stage 5
 [ ] function return of non-register passable type
 [ ]     var pos : point = foo()
@@ -83,6 +68,22 @@ stage 5
       mov qword[rbp-16],r15
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
+[x] consider removing support for non-inlined functions because it is out of scope
+=> intention of program is super-loop non-reentrant inlined functions
+[x] replace all {0} and {false} to default {}
+[x] make auto for all functions with trailing return
+[x] better format
+[x] adjust for neovim clangd development
+[x] type.hpp:66: why by reference in: const string &memsize{get_memory_operand_for_size(tk, tp_first_field->size())}
+=> get_memory_operand_for_size now returns const std::string&
+[-] allow non-register types to functions
+=> pass address to argument through stack
+[-] allow return types to be non-registers
+=> pass address to return through stack 
+  [x] replace endl with '\n'
+[x] consider disabling function definitions and calls without ()
+  [x] calculate stack size at compile time instead of hardcoded
+  [x]   calculate max stack size used
 [x] fix 'cmp' with left hand side constant => compilation error instead of further complications
     => "if 1 + 1 == x" is not considered constant because expr_ops_list does not support
         constant evaluation 
