@@ -1325,7 +1325,8 @@ class toc final {
         // traverse the frames and resolve the id_nasm (which might be an alias)
         // to a variable, field, register or constant
         size_t i{frames_.size()};
-        while (i--) {
+        while (i) {
+            i--;
             // is the frame a function?
             if (frames_.at(i).is_func()) {
                 // is it an alias defined by an argument in the function?
@@ -1335,21 +1336,15 @@ class toc final {
                 // yes, continue resolving alias until it is
                 // a variable, field, register or constant
                 id = frames_.at(i).get_alias(id);
-                if (i == 0) {
-                    break;
-                }
                 continue;
             }
             // does scope contain the variable
             if (frames_.at(i).has_var(id)) {
                 break;
             }
-            if (i == 0) {
-                break;
-            }
         }
 
-        // is 'id_nasm' a variable?
+        // is 'id' a variable?
         if (frames_.at(i).has_var(id)) {
             const var_info& var{frames_.at(i).get_var_const_ref(id)};
             if (must_be_initiated and not var.initiated) {
@@ -1365,7 +1360,7 @@ class toc final {
                     .ident_type = ident_resolved::ident_type::VAR};
         }
 
-        // is 'id_nasm' a register?
+        // is 'id' a register?
         if (is_identifier_register(id)) {
             if (must_be_initiated and not is_register_initiated(id)) {
                 throw compiler_exception(src_loc, "register '" + id +
@@ -1380,7 +1375,7 @@ class toc final {
                     .ident_type = ident_resolved::ident_type::REGISTER};
         }
 
-        // is it a field?
+        // is 'id' a field?
         if (fields_.has(id)) {
             const std::string& after_dot =
                 bid.path().size() < 2 ? ""
@@ -1408,7 +1403,7 @@ class toc final {
                     .ident_type = ident_resolved::ident_type::FIELD};
         }
 
-        // is it a constant?
+        // is 'id' a constant?
         char* ep{};
         const int64_t const_value{strtol(id.c_str(), &ep, 10)};
         if (!*ep) {
@@ -1441,7 +1436,7 @@ class toc final {
             }
         }
 
-        // is it a boolean constant?
+        // is 'id' a boolean constant?
         if (id == "true") {
             return {.id = ident,
                     .id_nasm = id,
