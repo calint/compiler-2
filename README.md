@@ -80,7 +80,7 @@ func foo(p : point) {
     p.y = 0xb     # hex value 11
 }
 
-# default argument type is i64
+# default argument type is `i64`
 func bar(arg) {
     arg = 0xff
 }
@@ -192,7 +192,7 @@ jmp main
 ;[39:1] # user types are defined using keyword `type` 
 ;[41:1] # default type is `i64` and does not need to be specified 
 ;[46:1] # function arguments are equivalent to mutable references 
-;[52:1] # default argument type is i64 
+;[52:1] # default argument type is `i64` 
 ;[57:1] # return target is specified as a variable, in this case `res` 
 main:
 ;  p: qword[rbp-16]

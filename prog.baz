@@ -49,7 +49,7 @@ func foo(p : point) {
     p.y = 0xb     # hex value 11
 }
 
-# default argument type is i64
+# default argument type is `i64`
 func bar(arg) {
     arg = 0xff
 }
