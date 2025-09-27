@@ -1,3 +1,4 @@
+[x] replace all {0} and {false} to default {}
 [x] make auto for all functions with trailing return
 [x] better format
 [x] adjust for neovim clangd development

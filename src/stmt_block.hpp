@@ -21,7 +21,7 @@ class stmt_block final : public statement {
         tc.enter_block();
         while (true) {
             // comments, semi-colon not considered a statment
-            bool last_statement_considered_no_statment{false};
+            bool last_statement_considered_no_statment{};
             // end-of block?
             if (tz.is_next_char('}')) {
                 if (not is_one_statement_) {

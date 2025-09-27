@@ -28,7 +28,7 @@ class bool_op final : public statement {
 
         set_type(tc.get_type_bool());
 
-        bool is_not{false};
+        bool is_not{};
         // if not a == 3 ...
         while (true) {
             token tk{tz.next_token()};
