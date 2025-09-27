@@ -1,7 +1,7 @@
 # compiler-2: baz
 
-Experimental compiler of minimalistic and specialized language to nasm x86_64
-for Linux
+Experimental compiler for a minimalistic, specialized language that targets NASM
+x86_64 assembly on Linux.
 
 ## Intention
 
