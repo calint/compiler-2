@@ -97,7 +97,7 @@ class stmt_def_func final : public statement {
         // function has parameters
         os << "(";
         {
-            size_t i{0};
+            size_t i{};
             for (const stmt_def_func_param& p : params_) {
                 if (i++) {
                     os << ",";
@@ -110,7 +110,7 @@ class stmt_def_func final : public statement {
         if (not returns_.empty()) {
             // return parameters
             os << ":";
-            size_t i{0};
+            size_t i{};
             for (const func_return_info& ret_info : returns_) {
                 if (i++) {
                     os << ":";
@@ -212,7 +212,7 @@ class stmt_def_func final : public statement {
         if (is_inline()) {
             //? inline functions get parameters as aliases
             const size_t n{params_.size()};
-            for (size_t i{0}; i < n; i++) {
+            for (size_t i{}; i < n; i++) {
                 const stmt_def_func_param& param{params_.at(i)};
                 const type& param_type{param.get_type()};
                 const std::string& param_name{param.name()};
@@ -254,7 +254,7 @@ class stmt_def_func final : public statement {
 
         // define variables in the called context by mapping arguments to stack
         const size_t n{params_.size()};
-        for (size_t i{0}; i < n; i++) {
+        for (size_t i{}; i < n; i++) {
             const stmt_def_func_param& param{params_.at(i)};
             const type& param_type{param.get_type()};
             const std::string& param_name{param.name()};

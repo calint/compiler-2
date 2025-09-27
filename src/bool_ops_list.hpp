@@ -163,7 +163,7 @@ class bool_ops_list final : public statement {
             os << "(";
         }
         const size_t n{bools_.size()};
-        for (size_t i{0}; i < n; i++) {
+        for (size_t i{}; i < n; i++) {
             if (bools_.at(i).index() == 0) {
                 get<bool_op>(bools_.at(i)).source_to(os);
             } else {
@@ -204,7 +204,7 @@ class bool_ops_list final : public statement {
         const bool invert{inverted ? not not_token_.is_name("not")
                                    : not_token_.is_name("not")};
         const size_t n{bools_.size()};
-        for (size_t i{0}; i < n; i++) {
+        for (size_t i{}; i < n; i++) {
             if (bools_.at(i).index() == 1) {
                 //
                 // bool_ops_list

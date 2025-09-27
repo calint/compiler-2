@@ -24,7 +24,7 @@ class stmt_call : public expression {
             const stmt_def_func& func{
                 tc.get_func_or_throw(tok(), identifier())};
             // try to create argument expressions of same type as parameter
-            size_t i{0};
+            size_t i{};
             const size_t n{func.params().size()};
             for (const stmt_def_func_param& param : func.params()) {
                 args_.emplace_back(tc, tz, param.get_type(), true);
@@ -43,7 +43,7 @@ class stmt_call : public expression {
         } else {
             // built-in function
             //? todo. make this nicer
-            bool expect_arg{false};
+            bool expect_arg{};
             while (true) {
                 if (tz.is_next_char(')')) { // foo()
                     if (expect_arg) {
@@ -72,7 +72,7 @@ class stmt_call : public expression {
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
         os << "(";
-        size_t i{0};
+        size_t i{};
         for (const expr_any& e : args_) {
             if (i++) {
                 os << ",";
@@ -103,7 +103,7 @@ class stmt_call : public expression {
         }
 
         // check that argument types match the parameters
-        for (size_t i{0}; i < args_.size(); i++) {
+        for (size_t i{}; i < args_.size(); i++) {
             const expr_any& ea{args_.at(i)};
             const stmt_def_func_param& param{func.param(i)};
             const type& arg_type{ea.get_type()};
@@ -157,7 +157,7 @@ class stmt_call : public expression {
             // push arguments starting with the last
             // some arguments might be passed through registers
             std::vector<std::string> allocated_args_registers;
-            size_t nbytes_of_args_on_stack{0};
+            size_t nbytes_of_args_on_stack{};
             size_t i{args_.size()};
             while (i--) {
                 const expr_any& ea{args_.at(i)};
@@ -304,7 +304,7 @@ class stmt_call : public expression {
             os << "alias " << from << " -> " << to << '\n';
         }
 
-        size_t i{0};
+        size_t i{};
         for (const expr_any& ea : args_) {
             const stmt_def_func_param& param{func.param(i)};
             i++;

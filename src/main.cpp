@@ -164,7 +164,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
     const std::vector<type_field>& flds{tp.fields()};
     const size_t nflds{flds.size()};
-    for (size_t i{0}; i < nflds; i++) {
+    for (size_t i{}; i < nflds; i++) {
         const type_field& fld{flds.at(i)};
         // create expression that assigns to field
         // might recurse creating 'expr_type_value'
@@ -197,7 +197,7 @@ inline void expr_type_value::source_to(std::ostream& os) const {
         return;
     }
     os << '{';
-    size_t i{0};
+    size_t i{};
     for (const auto& ea : exprs_) {
         if (i++) {
             os << ',';
@@ -229,7 +229,7 @@ inline void expr_type_value::compile_recursive(
         }
         const std::vector<type_field>& flds{dst_type.fields()};
         const size_t n{flds.size()};
-        for (size_t i{0}; i < n; i++) {
+        for (size_t i{}; i < n; i++) {
             const type_field& fld{flds.at(i)};
             if (fld.tp.is_built_in()) {
                 const std::string& src_resolved{
@@ -256,7 +256,7 @@ inline void expr_type_value::compile_recursive(
     // e.g. o2 = {{1, 2, 3}, p2, z}
     const std::vector<type_field>& flds{dst_type.fields()};
     const size_t n{flds.size()};
-    for (size_t i{0}; i < n; i++) {
+    for (size_t i{}; i < n; i++) {
         const type_field& fld{flds.at(i)};
         if (fld.tp.is_built_in()) {
             atv.exprs_.at(i)->compile(tc, os, indent, dst + "." + fld.name);

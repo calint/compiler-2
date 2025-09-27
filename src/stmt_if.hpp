@@ -92,7 +92,7 @@ class stmt_if final : public statement {
         const size_t n{branches_.size()};
 
         bool branch_evaluated_to_true{false};
-        for (size_t i{0}; i < n; i++) {
+        for (size_t i{}; i < n; i++) {
             const stmt_if_branch& e{branches_.at(i)};
             std::string jmp_if_false{label_else_branch};
             std::string jmp_after_if{label_after_if};

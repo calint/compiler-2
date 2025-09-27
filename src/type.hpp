@@ -61,7 +61,7 @@ class type final {
         -> std::pair<const type&, std::string> {
 
         const type* tp{this};
-        size_t offset{0};
+        size_t offset{};
         for (size_t path_idx{1}; path_idx != path.size(); path_idx++) {
             const type_field& fld{tp->field(tk, path[path_idx])};
             offset += fld.offset;

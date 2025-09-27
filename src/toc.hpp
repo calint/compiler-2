@@ -189,8 +189,8 @@ class identifier final {
 
   public:
     explicit identifier(std::string id) : id_{std::move(id)} {
-        size_t start{0};
-        size_t end{0};
+        size_t start{};
+        size_t end{};
         while ((end = id_.find('.', start)) != std::string::npos) {
             path_.emplace_back(id_.substr(start, end - start));
             start = end + 1;
@@ -352,8 +352,8 @@ class toc final {
                                                 const char* src)
         -> std::pair<size_t, size_t> {
 
-        size_t ix{0};
-        size_t lix{0};
+        size_t ix{};
+        size_t lix{};
         size_t line_num{1};
         while (true) {
             if (ix == char_index) {
@@ -550,7 +550,7 @@ class toc final {
         if (reg_iter == named_registers_.end()) {
             std::string loc;
             const size_t n{allocated_registers_.size()};
-            for (size_t i{0}; i < n; i++) {
+            for (size_t i{}; i < n; i++) {
                 if (allocated_registers_.at(i) == reg) {
                     loc = allocated_registers_src_locs_.at(i);
                     break;
@@ -724,7 +724,7 @@ class toc final {
 
         // push registers allocated prior to this call
         const size_t n{allocated_registers_.size()};
-        size_t nregs_pushed_on_stack{0};
+        size_t nregs_pushed_on_stack{};
         for (size_t i{alloc_regs_idx}; i < n; i++) {
             const std::string& reg{allocated_registers_.at(i)};
             if (not is_register_initiated(reg)) {
@@ -1250,7 +1250,7 @@ class toc final {
             return;
         }
         os << (comment ? ";" : " ");
-        for (size_t i{0}; i < indnt; i++) {
+        for (size_t i{}; i < indnt; i++) {
             os << "  ";
         }
     }
@@ -1289,7 +1289,7 @@ class toc final {
 
     auto get_current_stack_size() const -> size_t {
         assert(!frames_.empty());
-        size_t nbytes{0};
+        size_t nbytes{};
         size_t i{frames_.size()};
         while (i--) {
             const frame& frm{frames_.at(i)};
@@ -1307,7 +1307,7 @@ class toc final {
     // function call
     auto get_total_stack_size() const -> size_t {
         assert(!frames_.empty());
-        size_t nbytes{0};
+        size_t nbytes{};
         size_t i{frames_.size()};
         while (i--) {
             const frame& frm{frames_.at(i)};

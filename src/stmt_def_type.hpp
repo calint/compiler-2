@@ -54,7 +54,7 @@ class stmt_def_type final : public statement {
         name_tk_.source_to(os);
         os << '{';
         ws_.source_to(os);
-        size_t i{0};
+        size_t i{};
         for (const stmt_def_type_field& fld : fields_) {
             if (i++) {
                 os << ',';

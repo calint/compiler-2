@@ -169,7 +169,7 @@ class expr_ops_list final : public expression {
 
         exprs_.at(0)->source_to(os);
         const size_t n{ops_.size()};
-        for (size_t i{0}; i < n; i++) {
+        for (size_t i{}; i < n; i++) {
             const char op{ops_.at(i)};
             os << op;
             if (op == '<' or op == '>') {
@@ -265,7 +265,7 @@ class expr_ops_list final : public expression {
 
         // remaining elements are +,-,*,/,%,|,&,^,<<,>>
         const size_t n{ops_.size()};
-        for (size_t i{0}; i < n; i++) {
+        for (size_t i{}; i < n; i++) {
             asm_op(tc, os, indent, ops_.at(i), dst_resolved, *exprs_.at(i + 1));
         }
 
@@ -276,7 +276,7 @@ class expr_ops_list final : public expression {
     static auto count_instructions(std::stringstream& ss) -> size_t {
         const std::regex rxcomment{R"(^\s*;.*$)"};
         std::string line;
-        size_t n{0};
+        size_t n{};
         while (getline(ss, line)) {
             if (regex_search(line, rxcomment)) {
                 continue;
