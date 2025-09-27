@@ -7,7 +7,7 @@ x86_64 assembly on Linux.
 
 * minimalistic language
 * gain experience writing compilers
-* generate handwritten-like assembler compiled by nasm for x86_64
+* generate handwritten-like assembler compiled by NASM for x86_64
 * super loop program with non-reentrant inlined functions
 
 ## Supports
