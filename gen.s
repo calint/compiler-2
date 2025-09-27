@@ -76,21 +76,21 @@ assert:
 ;[46:1] # default argument type is i64 
 main:
 ;  p: qword[rbp-16]
-;  [52:5] var p : point = {0, 0}
-;  [52:9] p : point = {0, 0}
-;  [52:21] {0, 0}
-;    [52:21] {0, 0}
-;    [52:22] 0
-;    [52:22] 0
-;    [52:22] p.x = 0
+;  [56:5] var p : point = {0, 0}
+;  [56:9] p : point = {0, 0}
+;  [56:21] {0, 0}
+;    [56:21] {0, 0}
+;    [56:22] 0
+;    [56:22] 0
+;    [56:22] p.x = 0
      mov qword[rbp-16], 0
-;    [52:25] 0
-;    [52:25] 0
-;    [52:25] p.y = 0
+;    [56:25] 0
+;    [56:25] 0
+;    [56:25] p.y = 0
      mov qword[rbp-8], 0
-;  [53:5] foo(p) 
+;  [57:5] foo(p) 
 ;  foo(p : point) 
-;    inline: 53_5
+;    inline: 57_5
 ;    alias p -> p
 ;    [42:5] p.x = 0b10 
 ;    [42:11] 0b10 
@@ -104,70 +104,34 @@ main:
 ;    [43:11] p.y = 0xb 
      mov qword[rbp-8], 0xb
 ;    [43:19] # hex value 11 
-   foo_53_5_end:
-;  [54:5] assert(p.x == 2) 
+   foo_57_5_end:
+;  [58:5] assert(p.x == 2) 
    sub rsp, 16
 ;  alloc r15
-;    [54:12] p.x == 2
-;    [54:12] ? p.x == 2
-;    [54:12] ? p.x == 2
-     cmp_54_12:
+;    [58:12] p.x == 2
+;    [58:12] ? p.x == 2
+;    [58:12] ? p.x == 2
+     cmp_58_12:
      cmp qword[rbp-16], 2
-     jne bool_false_54_12
-     bool_true_54_12:  ; opt1
+     jne bool_false_58_12
+     bool_true_58_12:  ; opt1
      mov r15, true
-     jmp bool_end_54_12
-     bool_false_54_12:
+     jmp bool_end_58_12
+     bool_false_58_12:
      mov r15, false
-     bool_end_54_12:
+     bool_end_58_12:
    push r15
 ;  free r15
    call assert
    add rsp, 24
-;  [55:5] assert(p.y == 0xb) 
+;  [59:5] assert(p.y == 0xb) 
    sub rsp, 16
 ;  alloc r15
-;    [55:12] p.y == 0xb
-;    [55:12] ? p.y == 0xb
-;    [55:12] ? p.y == 0xb
-     cmp_55_12:
-     cmp qword[rbp-8], 0xb
-     jne bool_false_55_12
-     bool_true_55_12:  ; opt1
-     mov r15, true
-     jmp bool_end_55_12
-     bool_false_55_12:
-     mov r15, false
-     bool_end_55_12:
-   push r15
-;  free r15
-   call assert
-   add rsp, 24
-;  arg: qword[rbp-24]
-;  [57:5] var arg = 0 
-;  [57:9] arg = 0 
-;  [57:15] 0 
-;  [57:15] 0 
-;  [57:15] arg = 0 
-   mov qword[rbp-24], 0
-;  [58:5] bar(arg) 
-;  bar(arg) 
-;    inline: 58_5
-;    alias arg -> arg
-;    [48:3] arg = 0xff 
-;    [48:9] 0xff 
-;    [48:9] 0xff 
-;    [48:9] arg = 0xff 
-     mov qword[rbp-24], 0xff
-   bar_58_5_end:
-;  [59:5] assert(arg == 0xff) 
-   sub rsp, 24
-;  alloc r15
-;    [59:12] arg == 0xff
-;    [59:12] ? arg == 0xff
-;    [59:12] ? arg == 0xff
+;    [59:12] p.y == 0xb
+;    [59:12] ? p.y == 0xb
+;    [59:12] ? p.y == 0xb
      cmp_59_12:
-     cmp qword[rbp-24], 0xff
+     cmp qword[rbp-8], 0xb
      jne bool_false_59_12
      bool_true_59_12:  ; opt1
      mov r15, true
@@ -178,93 +142,76 @@ main:
    push r15
 ;  free r15
    call assert
+   add rsp, 24
+;  arg: qword[rbp-24]
+;  [61:5] var arg = 0 
+;  [61:9] arg = 0 
+;  [61:15] 0 
+;  [61:15] 0 
+;  [61:15] arg = 0 
+   mov qword[rbp-24], 0
+;  [62:5] bar(arg) 
+;  bar(arg) 
+;    inline: 62_5
+;    alias arg -> arg
+;    [48:5] arg = 0xff 
+;    [48:11] 0xff 
+;    [48:11] 0xff 
+;    [48:11] arg = 0xff 
+     mov qword[rbp-24], 0xff
+   bar_62_5_end:
+;  [63:5] assert(arg == 0xff) 
+   sub rsp, 24
+;  alloc r15
+;    [63:12] arg == 0xff
+;    [63:12] ? arg == 0xff
+;    [63:12] ? arg == 0xff
+     cmp_63_12:
+     cmp qword[rbp-24], 0xff
+     jne bool_false_63_12
+     bool_true_63_12:  ; opt1
+     mov r15, true
+     jmp bool_end_63_12
+     bool_false_63_12:
+     mov r15, false
+     bool_end_63_12:
+   push r15
+;  free r15
+   call assert
    add rsp, 32
-;  x: qword[rbp-32]
-;  [61:5] var x = 1 
-;  [61:9] x = 1 
-;  [61:13] 1 
-;  [61:13] 1 
-;  [61:13] x = 1 
-   mov qword[rbp-32], 1
-;  y: qword[rbp-40]
-;  [62:5] var y = 2 
-;  [62:9] y = 2 
-;  [62:13] 2 
-;  [62:13] 2 
-;  [62:13] y = 2 
-   mov qword[rbp-40], 2
-;  o1: qword[rbp-60]
-;  [64:5] var o1 : object = {{x * 10, y}, 0xff0000}
-;  [64:9] o1 : object = {{x * 10, y}, 0xff0000}
-;  [64:23] {{x * 10, y}, 0xff0000}
-;    [64:23] {{x * 10, y}, 0xff0000}
-;      [64:24] {x * 10, y}
-;      [64:25] x * 10
-;      alloc r15
-;      [64:25] x * 10
-;      [64:25] r15 = x 
-       mov r15, qword[rbp-32]
-;      [64:29] r15 * 10
-       imul r15, 10
-       mov qword[rbp-60], r15
-;      free r15
-;      [64:33] y
-;      [64:33] y
-;      [64:33] o1.pos.y = y
-;      alloc r15
-       mov r15, qword[rbp-40]
-       mov qword[rbp-52], r15
-;      free r15
-;    [64:37] 0xff0000
-;    [64:37] 0xff0000
-;    [64:37] o1.color = 0xff0000
-     mov dword[rbp-44], 0xff0000
-;  [65:5] assert(o1.pos.x == 10) 
-   sub rsp, 60
+;  [65:5] arg = 1 
+;  [65:11] 1 
+;  [65:11] 1 
+;  [65:11] arg = 1 
+   mov qword[rbp-24], 1
+;  [66:5] arg = baz(arg) 
+;  [66:11] baz(arg) 
+;  [66:11] baz(arg) 
+;  [66:11] arg = baz(arg) 
+;  [66:11] baz(arg) 
+;  baz(arg) : i64 res 
+;    inline: 66_11
+;    alias res -> arg
+;    alias arg -> arg
+;    [52:5] res = arg * 2 
+;    [52:11] arg * 2 
+;    [52:11] arg * 2 
+;    [52:11] res = arg 
+;    [52:17] res * 2 
+;    alloc r15
+     mov r15, qword[rbp-24]
+     imul r15, 2
+     mov qword[rbp-24], r15
+;    free r15
+   baz_66_11_end:
+;  [67:5] assert(arg == 2) 
+   sub rsp, 24
 ;  alloc r15
-;    [65:12] o1.pos.x == 10
-;    [65:12] ? o1.pos.x == 10
-;    [65:12] ? o1.pos.x == 10
-     cmp_65_12:
-     cmp qword[rbp-60], 10
-     jne bool_false_65_12
-     bool_true_65_12:  ; opt1
-     mov r15, true
-     jmp bool_end_65_12
-     bool_false_65_12:
-     mov r15, false
-     bool_end_65_12:
-   push r15
-;  free r15
-   call assert
-   add rsp, 68
-;  [66:5] assert(o1.pos.y == 2) 
-   sub rsp, 60
-;  alloc r15
-;    [66:12] o1.pos.y == 2
-;    [66:12] ? o1.pos.y == 2
-;    [66:12] ? o1.pos.y == 2
-     cmp_66_12:
-     cmp qword[rbp-52], 2
-     jne bool_false_66_12
-     bool_true_66_12:  ; opt1
-     mov r15, true
-     jmp bool_end_66_12
-     bool_false_66_12:
-     mov r15, false
-     bool_end_66_12:
-   push r15
-;  free r15
-   call assert
-   add rsp, 68
-;  [67:5] assert(o1.color == 0xff0000) 
-   sub rsp, 60
-;  alloc r15
-;    [67:12] o1.color == 0xff0000
-;    [67:12] ? o1.color == 0xff0000
-;    [67:12] ? o1.color == 0xff0000
+;    [67:12] arg == 2
+;    [67:12] ? arg == 2
+;    [67:12] ? arg == 2
      cmp_67_12:
-     cmp dword[rbp-44], 0xff0000
+     cmp qword[rbp-24], 2
      jne bool_false_67_12
      bool_true_67_12:  ; opt1
      mov r15, true
@@ -275,31 +222,128 @@ main:
    push r15
 ;  free r15
    call assert
+   add rsp, 32
+;  x: qword[rbp-32]
+;  [69:5] var x = 1 
+;  [69:9] x = 1 
+;  [69:13] 1 
+;  [69:13] 1 
+;  [69:13] x = 1 
+   mov qword[rbp-32], 1
+;  y: qword[rbp-40]
+;  [70:5] var y = 2 
+;  [70:9] y = 2 
+;  [70:13] 2 
+;  [70:13] 2 
+;  [70:13] y = 2 
+   mov qword[rbp-40], 2
+;  o1: qword[rbp-60]
+;  [72:5] var o1 : object = {{x * 10, y}, 0xff0000}
+;  [72:9] o1 : object = {{x * 10, y}, 0xff0000}
+;  [72:23] {{x * 10, y}, 0xff0000}
+;    [72:23] {{x * 10, y}, 0xff0000}
+;      [72:24] {x * 10, y}
+;      [72:25] x * 10
+;      alloc r15
+;      [72:25] x * 10
+;      [72:25] r15 = x 
+       mov r15, qword[rbp-32]
+;      [72:29] r15 * 10
+       imul r15, 10
+       mov qword[rbp-60], r15
+;      free r15
+;      [72:33] y
+;      [72:33] y
+;      [72:33] o1.pos.y = y
+;      alloc r15
+       mov r15, qword[rbp-40]
+       mov qword[rbp-52], r15
+;      free r15
+;    [72:37] 0xff0000
+;    [72:37] 0xff0000
+;    [72:37] o1.color = 0xff0000
+     mov dword[rbp-44], 0xff0000
+;  [73:5] assert(o1.pos.x == 10) 
+   sub rsp, 60
+;  alloc r15
+;    [73:12] o1.pos.x == 10
+;    [73:12] ? o1.pos.x == 10
+;    [73:12] ? o1.pos.x == 10
+     cmp_73_12:
+     cmp qword[rbp-60], 10
+     jne bool_false_73_12
+     bool_true_73_12:  ; opt1
+     mov r15, true
+     jmp bool_end_73_12
+     bool_false_73_12:
+     mov r15, false
+     bool_end_73_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 68
+;  [74:5] assert(o1.pos.y == 2) 
+   sub rsp, 60
+;  alloc r15
+;    [74:12] o1.pos.y == 2
+;    [74:12] ? o1.pos.y == 2
+;    [74:12] ? o1.pos.y == 2
+     cmp_74_12:
+     cmp qword[rbp-52], 2
+     jne bool_false_74_12
+     bool_true_74_12:  ; opt1
+     mov r15, true
+     jmp bool_end_74_12
+     bool_false_74_12:
+     mov r15, false
+     bool_end_74_12:
+   push r15
+;  free r15
+   call assert
+   add rsp, 68
+;  [75:5] assert(o1.color == 0xff0000) 
+   sub rsp, 60
+;  alloc r15
+;    [75:12] o1.color == 0xff0000
+;    [75:12] ? o1.color == 0xff0000
+;    [75:12] ? o1.color == 0xff0000
+     cmp_75_12:
+     cmp dword[rbp-44], 0xff0000
+     jne bool_false_75_12
+     bool_true_75_12:  ; opt1
+     mov r15, true
+     jmp bool_end_75_12
+     bool_false_75_12:
+     mov r15, false
+     bool_end_75_12:
+   push r15
+;  free r15
+   call assert
    add rsp, 68
 ;  p1: qword[rbp-76]
-;  [69:5] var p1 : point = {-x, -y}
-;  [69:9] p1 : point = {-x, -y}
-;  [69:22] {-x, -y}
-;    [69:22] {-x, -y}
-;    [69:23] -x
-;    [69:23] -x
-;    [69:24] p1.x = -x
+;  [77:5] var p1 : point = {-x, -y}
+;  [77:9] p1 : point = {-x, -y}
+;  [77:22] {-x, -y}
+;    [77:22] {-x, -y}
+;    [77:23] -x
+;    [77:23] -x
+;    [77:24] p1.x = -x
 ;    alloc r15
      mov r15, qword[rbp-32]
      mov qword[rbp-76], r15
 ;    free r15
      neg qword[rbp-76]
-;    [69:27] -y
-;    [69:27] -y
-;    [69:28] p1.y = -y
+;    [77:27] -y
+;    [77:27] -y
+;    [77:28] p1.y = -y
 ;    alloc r15
      mov r15, qword[rbp-40]
      mov qword[rbp-68], r15
 ;    free r15
      neg qword[rbp-68]
-;  [70:5] o1.pos = p1 
-;  [70:14] p1 
-;    [70:14] p1 
+;  [78:5] o1.pos = p1 
+;  [78:14] p1 
+;    [78:14] p1 
 ;    alloc r15
      mov r15, qword[rbp-76]
      mov qword[rbp-60], r15
@@ -308,50 +352,50 @@ main:
      mov r15, qword[rbp-68]
      mov qword[rbp-52], r15
 ;    free r15
-;  [71:5] assert(o1.pos.x == -1) 
+;  [79:5] assert(o1.pos.x == -1) 
    sub rsp, 76
 ;  alloc r15
-;    [71:12] o1.pos.x == -1
-;    [71:12] ? o1.pos.x == -1
-;    [71:12] ? o1.pos.x == -1
-     cmp_71_12:
+;    [79:12] o1.pos.x == -1
+;    [79:12] ? o1.pos.x == -1
+;    [79:12] ? o1.pos.x == -1
+     cmp_79_12:
      cmp qword[rbp-60], -1
-     jne bool_false_71_12
-     bool_true_71_12:  ; opt1
+     jne bool_false_79_12
+     bool_true_79_12:  ; opt1
      mov r15, true
-     jmp bool_end_71_12
-     bool_false_71_12:
+     jmp bool_end_79_12
+     bool_false_79_12:
      mov r15, false
-     bool_end_71_12:
+     bool_end_79_12:
    push r15
 ;  free r15
    call assert
    add rsp, 84
-;  [72:5] assert(o1.pos.y == -2) 
+;  [80:5] assert(o1.pos.y == -2) 
    sub rsp, 76
 ;  alloc r15
-;    [72:12] o1.pos.y == -2
-;    [72:12] ? o1.pos.y == -2
-;    [72:12] ? o1.pos.y == -2
-     cmp_72_12:
+;    [80:12] o1.pos.y == -2
+;    [80:12] ? o1.pos.y == -2
+;    [80:12] ? o1.pos.y == -2
+     cmp_80_12:
      cmp qword[rbp-52], -2
-     jne bool_false_72_12
-     bool_true_72_12:  ; opt1
+     jne bool_false_80_12
+     bool_true_80_12:  ; opt1
      mov r15, true
-     jmp bool_end_72_12
-     bool_false_72_12:
+     jmp bool_end_80_12
+     bool_false_80_12:
      mov r15, false
-     bool_end_72_12:
+     bool_end_80_12:
    push r15
 ;  free r15
    call assert
    add rsp, 84
 ;  o2: qword[rbp-96]
-;  [74:5] var o2 : object = o1 
-;  [74:9] o2 : object = o1 
-;  [74:23] o1 
-;    [74:23] o1 
-;      [74:23] o1 
+;  [82:5] var o2 : object = o1 
+;  [82:9] o2 : object = o1 
+;  [82:23] o1 
+;    [82:23] o1 
+;      [82:23] o1 
 ;      alloc r15
        mov r15, qword[rbp-60]
        mov qword[rbp-96], r15
@@ -364,66 +408,66 @@ main:
      mov r15d, dword[rbp-44]
      mov dword[rbp-80], r15d
 ;    free r15
-;  [75:5] assert(o2.pos.x == -1) 
+;  [83:5] assert(o2.pos.x == -1) 
    sub rsp, 96
 ;  alloc r15
-;    [75:12] o2.pos.x == -1
-;    [75:12] ? o2.pos.x == -1
-;    [75:12] ? o2.pos.x == -1
-     cmp_75_12:
+;    [83:12] o2.pos.x == -1
+;    [83:12] ? o2.pos.x == -1
+;    [83:12] ? o2.pos.x == -1
+     cmp_83_12:
      cmp qword[rbp-96], -1
-     jne bool_false_75_12
-     bool_true_75_12:  ; opt1
+     jne bool_false_83_12
+     bool_true_83_12:  ; opt1
      mov r15, true
-     jmp bool_end_75_12
-     bool_false_75_12:
+     jmp bool_end_83_12
+     bool_false_83_12:
      mov r15, false
-     bool_end_75_12:
+     bool_end_83_12:
    push r15
 ;  free r15
    call assert
    add rsp, 104
-;  [76:5] assert(o2.pos.y == -2) 
+;  [84:5] assert(o2.pos.y == -2) 
    sub rsp, 96
 ;  alloc r15
-;    [76:12] o2.pos.y == -2
-;    [76:12] ? o2.pos.y == -2
-;    [76:12] ? o2.pos.y == -2
-     cmp_76_12:
+;    [84:12] o2.pos.y == -2
+;    [84:12] ? o2.pos.y == -2
+;    [84:12] ? o2.pos.y == -2
+     cmp_84_12:
      cmp qword[rbp-88], -2
-     jne bool_false_76_12
-     bool_true_76_12:  ; opt1
+     jne bool_false_84_12
+     bool_true_84_12:  ; opt1
      mov r15, true
-     jmp bool_end_76_12
-     bool_false_76_12:
+     jmp bool_end_84_12
+     bool_false_84_12:
      mov r15, false
-     bool_end_76_12:
+     bool_end_84_12:
    push r15
 ;  free r15
    call assert
    add rsp, 104
-;  [77:5] assert(o2.color == 0xff0000) 
+;  [85:5] assert(o2.color == 0xff0000) 
    sub rsp, 96
 ;  alloc r15
-;    [77:12] o2.color == 0xff0000
-;    [77:12] ? o2.color == 0xff0000
-;    [77:12] ? o2.color == 0xff0000
-     cmp_77_12:
+;    [85:12] o2.color == 0xff0000
+;    [85:12] ? o2.color == 0xff0000
+;    [85:12] ? o2.color == 0xff0000
+     cmp_85_12:
      cmp dword[rbp-80], 0xff0000
-     jne bool_false_77_12
-     bool_true_77_12:  ; opt1
+     jne bool_false_85_12
+     bool_true_85_12:  ; opt1
      mov r15, true
-     jmp bool_end_77_12
-     bool_false_77_12:
+     jmp bool_end_85_12
+     bool_false_85_12:
      mov r15, false
-     bool_end_77_12:
+     bool_end_85_12:
    push r15
 ;  free r15
    call assert
    add rsp, 104
-;  [79:5] print(hello.len, hello) 
+;  [87:5] print(hello.len, hello) 
 ;  print(len : reg_rdx, ptr : reg_rsi) 
-;    inline: 79_5
+;    inline: 87_5
 ;    alloc rdx
 ;    alias len -> rdx
      mov rdx, hello.len
@@ -444,12 +488,12 @@ main:
      syscall
 ;    free rsi
 ;    free rdx
-   print_79_5_end:
-;  [80:5] loop
-   loop_80_5:
-;    [81:9] print(prompt1.len, prompt1) 
+   print_87_5_end:
+;  [88:5] loop
+   loop_88_5:
+;    [89:9] print(prompt1.len, prompt1) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 81_9
+;      inline: 89_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, prompt1.len
@@ -470,16 +514,16 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_81_9_end:
+     print_89_9_end:
 ;    len: qword[rbp-104]
-;    [82:9] var len = read(input.len, input) - 1 
-;    [82:13] len = read(input.len, input) - 1 
-;    [82:19] read(input.len, input) - 1 
-;    [82:19] read(input.len, input) - 1 
-;    [82:19] len = read(input.len, input) 
-;    [82:19] read(input.len, input) 
+;    [90:9] var len = read(input.len, input) - 1 
+;    [90:13] len = read(input.len, input) - 1 
+;    [90:19] read(input.len, input) - 1 
+;    [90:19] read(input.len, input) - 1 
+;    [90:19] len = read(input.len, input) 
+;    [90:19] read(input.len, input) 
 ;    read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes 
-;      inline: 82_19
+;      inline: 90_19
 ;      alias nbytes -> len
 ;      alloc rdx
 ;      alias len -> rdx
@@ -504,30 +548,30 @@ main:
 ;      [29:22] # return value 
 ;      free rsi
 ;      free rdx
-     read_82_19_end:
-;    [82:44] len - 1 
+     read_90_19_end:
+;    [90:44] len - 1 
      sub qword[rbp-104], 1
-;    [82:49] # -1 don't include the '\n' 
-     if_83_12:
-;    [83:12] ? len == 0 
-;    [83:12] ? len == 0 
-     cmp_83_12:
+;    [90:49] # -1 don't include the '\n' 
+     if_91_12:
+;    [91:12] ? len == 0 
+;    [91:12] ? len == 0 
+     cmp_91_12:
      cmp qword[rbp-104], 0
-     jne if_83_9_end
-     if_83_12_code:  ; opt1
-;      [84:13] break 
-       jmp loop_80_5_end
-     if_83_9_end:
-     if_86_12:
-;    [86:12] ? len <= 4 
-;    [86:12] ? len <= 4 
-     cmp_86_12:
+     jne if_91_9_end
+     if_91_12_code:  ; opt1
+;      [92:13] break 
+       jmp loop_88_5_end
+     if_91_9_end:
+     if_94_12:
+;    [94:12] ? len <= 4 
+;    [94:12] ? len <= 4 
+     cmp_94_12:
      cmp qword[rbp-104], 4
-     jg if_86_9_end
-     if_86_12_code:  ; opt1
-;      [87:13] print(prompt2.len, prompt2) 
+     jg if_94_9_end
+     if_94_12_code:  ; opt1
+;      [95:13] print(prompt2.len, prompt2) 
 ;      print(len : reg_rdx, ptr : reg_rsi) 
-;        inline: 87_13
+;        inline: 95_13
 ;        alloc rdx
 ;        alias len -> rdx
          mov rdx, prompt2.len
@@ -548,13 +592,13 @@ main:
          syscall
 ;        free rsi
 ;        free rdx
-       print_87_13_end:
-;      [88:13] continue 
-       jmp loop_80_5
-     if_86_9_end:
-;    [90:9] print(prompt3.len, prompt3) 
+       print_95_13_end:
+;      [96:13] continue 
+       jmp loop_88_5
+     if_94_9_end:
+;    [98:9] print(prompt3.len, prompt3) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 90_9
+;      inline: 98_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, prompt3.len
@@ -575,10 +619,10 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_90_9_end:
-;    [91:9] print(len, input) 
+     print_98_9_end:
+;    [99:9] print(len, input) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 91_9
+;      inline: 99_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, qword[rbp-104]
@@ -599,10 +643,10 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_91_9_end:
-;    [92:9] print(dot.len, dot) 
+     print_99_9_end:
+;    [100:9] print(dot.len, dot) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 92_9
+;      inline: 100_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, dot.len
@@ -623,10 +667,10 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_92_9_end:
-;    [93:9] print(nl.len, nl) 
+     print_100_9_end:
+;    [101:9] print(nl.len, nl) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 93_9
+;      inline: 101_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, nl.len
@@ -647,9 +691,9 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_93_9_end:
-   jmp loop_80_5
-   loop_80_5_end:
+     print_101_9_end:
+   jmp loop_88_5
+   loop_88_5_end:
 ; main end
 
 ; system call: exit 0
