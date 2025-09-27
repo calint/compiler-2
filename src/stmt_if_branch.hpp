@@ -32,7 +32,7 @@ class stmt_if_branch final : public statement {
     // expression
     [[nodiscard]] auto if_bgn_label(const toc& tc) const -> std::string {
         // construct a unique label considering in-lined functions
-        const std::string& call_path{tc.get_inline_call_path(tok())};
+        const std::string& call_path{tc.get_call_path(tok())};
         return "if_" + tc.source_location_for_use_in_label(tok()) +
                (call_path.empty() ? "" : "_" + call_path);
     }

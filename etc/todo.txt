@@ -1,4 +1,5 @@
-[ ] consider removing support for non-inlined functions because it is out of scope
+[x] consider removing support for non-inlined functions because it is out of scope
+    => intention of program is super-loop non-entrant inlined functions
 [ ] implement arrays
 [x] replace all {0} and {false} to default {}
 [x] make auto for all functions with trailing return

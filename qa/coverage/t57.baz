@@ -1,4 +1,4 @@
-func inline exit(v:reg_rdi){
+func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
     syscall()
@@ -24,11 +24,11 @@ func f5(i:i8):i8 res{
     res=-i*4
 }
 
-func inline f6(i:i8):i64 res{
+func f6(i:i8):i64 res{
     res=-i
 }
 
-func inline main(){
+func main(){
     var q=f1(1)
     if not q==-1 exit(1)
     

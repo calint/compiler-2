@@ -1,6 +1,6 @@
 field name="............................................................"
 
-func inline exit(v:reg_rdi){
+func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
     syscall()
@@ -14,7 +14,7 @@ func bar(y):i64 res{
     res=-y
 }
 
-func inline main(){
+func main(){
     var a=1
     var b=-foo(-bar(-a))
     if(b==-2)

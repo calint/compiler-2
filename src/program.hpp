@@ -110,11 +110,6 @@ class program final {
 
         // get the main function and compile
         const stmt_def_func& func_main{tc.get_func_or_throw(prg.tok(), "main")};
-        if (not func_main.is_inline()) {
-            throw compiler_exception(func_main.tok(),
-                                     "main function must be declared inline");
-        }
-
         os << "main:\n";
         tc.enter_func("main");
         func_main.code().compile(tc, os, indent);

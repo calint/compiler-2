@@ -34,7 +34,7 @@ class stmt_loop final : public statement {
         // make unique label for this loop considering in-lined functions
         //   current path of source locations where in-lined functions have been
         //     called
-        const std::string& call_path{tc.get_inline_call_path(tok())};
+        const std::string& call_path{tc.get_call_path(tok())};
         // current source location
         const std::string& src_loc{tc.source_location_for_use_in_label(tok())};
         // the loop label

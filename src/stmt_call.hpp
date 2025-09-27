@@ -149,135 +149,12 @@ class stmt_call : public expression {
             }
         }
 
-        if (not func.is_inline()) {
-            // stack is: <base>,
-            tc.enter_call(tok(), os, indent);
-            // stack is: <base>,vars,regs,
-
-            // push arguments starting with the last
-            // some arguments might be passed through registers
-            std::vector<std::string> allocated_args_registers;
-            size_t nbytes_of_args_on_stack{};
-            size_t i{args_.size()};
-            while (i--) {
-                const expr_any& ea{args_.at(i)};
-                const stmt_def_func_param& param{func.param(i)};
-                // is the argument passed through a register?
-                const std::string& arg_reg{param.get_register_name_or_empty()};
-                const bool argument_passed_in_register{not arg_reg.empty()};
-                if (argument_passed_in_register) {
-                    tc.alloc_named_register_or_throw(ea, os, indent, arg_reg);
-                    allocated_args_registers.emplace_back(arg_reg);
-                }
-                if (ea.is_expression()) {
-                    if (argument_passed_in_register) {
-                        // compile expression with the result stored in arg_reg
-                        ea.compile(tc, os, indent + 1, arg_reg);
-                        continue;
-                    }
-                    // argument passed through stack
-                    const std::string& reg{
-                        tc.alloc_scratch_register(ea.tok(), os, indent)};
-                    // compile expression with the result stored in sr
-                    ea.compile(tc, os, indent + 1, reg);
-                    // push result on stack
-                    toc::asm_push(ea.tok(), os, indent, reg);
-                    // free scratch register
-                    tc.free_scratch_register(os, indent, reg);
-                    // keep track of how many arguments are on the stack
-                    nbytes_of_args_on_stack += tc.get_type_default().size();
-                    continue;
-                }
-                // not an expression, resolve identifier to nasm
-                const ident_resolved& arg_resolved{
-                    tc.resolve_identifier(ea, true)};
-                if (argument_passed_in_register) {
-                    // move the identifier to the requested register
-                    if (arg_resolved.is_const()) {
-                        tc.asm_cmd(ea.tok(), os, indent, "mov", arg_reg,
-                                   ea.get_unary_ops().to_string() +
-                                       arg_resolved.id_nasm);
-                        continue;
-                    }
-                    // not a constant
-                    tc.asm_cmd(ea.tok(), os, indent, "mov", arg_reg,
-                               arg_resolved.id_nasm);
-                    ea.get_unary_ops().compile(tc, os, indent, arg_reg);
-                    continue;
-                }
-                // argument not passed through register
-                // push identifier on the stack
-                if (arg_resolved.is_const()) {
-                    toc::asm_push(ea.tok(), os, indent,
-                                  ea.get_unary_ops().to_string() +
-                                      arg_resolved.id_nasm);
-                    nbytes_of_args_on_stack += tc.get_type_default().size();
-                    continue;
-                }
-                // not a constant
-                if (ea.get_unary_ops().is_empty()) {
-                    // check if argument size is register size
-                    if (arg_resolved.type_ref.size() ==
-                        tc.get_type_default().size()) {
-                        toc::asm_push(ea.tok(), os, indent,
-                                      arg_resolved.id_nasm);
-                        nbytes_of_args_on_stack += tc.get_type_default().size();
-                        continue;
-                    }
-                    // value to be pushed is not a 64 bit value
-                    // push can only be done with 64 or 16 bits values on x86_64
-                    const std::string& reg{
-                        tc.alloc_scratch_register(ea.tok(), os, indent)};
-                    // the 'mov' will be compiled to 'movsx'
-                    tc.asm_cmd(ea.tok(), os, indent, "mov", reg,
-                               arg_resolved.id_nasm);
-                    toc::asm_push(ea.tok(), os, indent, reg);
-                    tc.free_scratch_register(os, indent, reg);
-                    nbytes_of_args_on_stack += tc.get_type_default().size();
-                    //? what about 16 bit values
-                    continue;
-                }
-                // unary ops must be applied
-                const std::string& reg{
-                    tc.alloc_scratch_register(ea.tok(), os, indent)};
-                tc.asm_cmd(ea.tok(), os, indent, "mov", reg,
-                           arg_resolved.id_nasm);
-                ea.get_unary_ops().compile(tc, os, indent, reg);
-                toc::asm_push(ea.tok(), os, indent, reg);
-                tc.free_scratch_register(os, indent, reg);
-                nbytes_of_args_on_stack += tc.get_type_default().size();
-            }
-
-            // stack is: <base>,vars,regs,args,
-            toc::asm_call(tok(), os, indent, func_name);
-
-            tc.exit_call(tok(), os, indent, nbytes_of_args_on_stack,
-                         allocated_args_registers);
-            // stack is: <base>, (if this was not a call nested in another
-            // call's arguments) or: <base>,vars,regs,
-
-            // handle return value
-            if (not dst.empty()) {
-                // function returns value in 'rax', copy return value to 'dst'
-                get_unary_ops().compile(tc, os, indent, "rax");
-                const ident_resolved& dst_resolved{
-                    tc.resolve_identifier(tok(), dst, false)};
-                tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
-                           "rax");
-            }
-            return;
-        }
-
-        //
-        // inlined function
-        //
-
         toc::indent(os, indent, true);
         func.source_def_comment_to(os);
 
         // create unique labels for in-lined functions based on location of
         // source where the call occurred
-        const std::string& call_path{tc.get_inline_call_path(tok())};
+        const std::string& call_path{tc.get_call_path(tok())};
         const std::string& src_loc{tc.source_location_for_use_in_label(tok())};
         const std::string& new_call_path{
             call_path.empty() ? src_loc : (src_loc + "_" + call_path)};
@@ -394,7 +271,7 @@ class stmt_call : public expression {
         // enter function creating a new scope from which
         //   prior variables are not visible
         const std::vector<func_return_info>& returns{func.returns()};
-        tc.enter_func(func_name, returns, true, new_call_path, ret_jmp_label);
+        tc.enter_func(func_name, returns, new_call_path, ret_jmp_label);
 
         // add the aliases to the context of the new scope
         for (const auto& alias : aliases_to_add) {

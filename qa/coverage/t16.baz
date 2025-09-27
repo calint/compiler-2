@@ -1,13 +1,13 @@
 field hello="hello\n"
 field world="world\n"
 
-func inline exit(v:reg_rdi){
+func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
     syscall()
 }
 
-func inline print(len:reg_rdx,ptr:reg_rsi){
+func print(len:reg_rdx,ptr:reg_rsi){
     mov(rax,1)   # write system call
     mov(rdi,1)   # file descriptor for standard out
     mov(rsi,ptr) # buffer address 
@@ -27,7 +27,7 @@ func foo(){
     print(world.len,world)
 }
 
-func inline main(){
+func main(){
     var a=1
     var b=2
     var c=3

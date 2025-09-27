@@ -1,4 +1,4 @@
-func inline exit(v:reg_rdi){
+func exit(v:reg_rdi){
 	mov(rax,60) # exit system call
 	mov(rdi,v)  # return code
 	syscall()
@@ -7,7 +7,7 @@ func inline exit(v:reg_rdi){
 type vector{x,y}
 type object{pos:vector,vel:vector,color:i8,wrd:i16,dwrd:i32}
 
-func inline main(){
+func main(){
 	var obj:object={{1,0},{0,0},0,0,0}
 	if not obj.pos.x==1 exit(1)
 

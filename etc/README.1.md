@@ -8,7 +8,6 @@ Experimental compiler of minimalistic language to nasm x86_64 for Linux
 * gain experience writing compilers
 * generate handwritten-like assembler compiled by nasm for x86_64
 * super loop program with non-reentrant inlined functions
-* support re-entrant non-inlined functions
 
 ## Supports
 
@@ -16,7 +15,7 @@ Experimental compiler of minimalistic language to nasm x86_64 for Linux
 * built-in boolean type
 * user defined types
 * inlined functions
-* keywords: inline, func, field, var, loop, if, else, continue, break
+* keywords: func, field, var, loop, if, else, continue, break
 
 ## Howto
 

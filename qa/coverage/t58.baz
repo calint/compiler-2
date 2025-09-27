@@ -1,12 +1,12 @@
 field hello="hello world"
 
-func inline exit(v:reg_rdi){
+func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
     syscall()
 }
 
-func inline main(){
+func main(){
     var bt1:i8=1
     var bt2:i8=2
 

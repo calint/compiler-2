@@ -6,13 +6,13 @@ field prompt3 = "hello "
 field     dot = "."
 field      nl = "\n"
 
-func inline exit(v : reg_rdi) {
+func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
     syscall()
 }
 
-func inline print(len : reg_rdx, ptr : reg_rsi) {
+func print(len : reg_rdx, ptr : reg_rsi) {
     mov(rax, 1)   # write system call
     mov(rdi, 1)   # file descriptor for standard out
     mov(rsi, ptr) # buffer address 
@@ -20,7 +20,7 @@ func inline print(len : reg_rdx, ptr : reg_rsi) {
     syscall()
 }
 
-func inline read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, ptr) # buffer address
@@ -29,7 +29,7 @@ func inline read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(nbytes, rax) # return value
 }
 
-func inline main(){
+func main(){
     print(hello.len, hello)
     loop {
         print(prompt1.len, prompt1)

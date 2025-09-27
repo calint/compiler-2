@@ -6,13 +6,13 @@ field prompt3 = "hello "
 field     dot = "."
 field      nl = "\n"
 
-func inline exit(v : reg_rdi) {
+func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
     syscall()
 }
 
-func inline print(len : reg_rdx, ptr : reg_rsi) {
+func print(len : reg_rdx, ptr : reg_rsi) {
     mov(rax, 1)   # write system call
     mov(rdi, 1)   # file descriptor for standard out
     mov(rsi, ptr) # buffer address 
@@ -20,7 +20,7 @@ func inline print(len : reg_rdx, ptr : reg_rsi) {
     syscall()
 }
 
-func inline read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, ptr) # buffer address
@@ -38,21 +38,21 @@ type point {x, y}
 type object {pos : point, color : i32}
 
 # inline function arguments are equivalent to mutable references
-func inline foo(p : point) {
+func foo(p : point) {
     p.x = 0b10    # binary value 2
     p.y = 0xb     # hex value 11
 }
 
 # default argument type is i64
-func inline bar(arg) {
+func bar(arg) {
     arg = 0xff
 }
 
-func inline baz(arg) : i64 res {
+func baz(arg) : i64 res {
     res = arg * 2
 }
 
-func inline main() {
+func main() {
     var p : point = {0, 0}
     foo(p)
     assert(p.x == 2)

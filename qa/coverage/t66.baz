@@ -1,4 +1,4 @@
-func inline exit(v : reg_rdi) {
+func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
     syscall()
@@ -14,7 +14,7 @@ type position {x, y}
 
 type object { pos : vector, vel : vector, valid : bool }
 
-func inline main(){
+func main(){
     var x : i32 = 10
     var v1 : vector = {x, 2 * x, 12, 13}
     assert(v1.x == 10)

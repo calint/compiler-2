@@ -1,10 +1,10 @@
-func inline exit(v:reg_rdi){
+func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
     syscall()
 }
 
-func inline main(){
+func main(){
     var a=1
     var b=2
     var c=3

@@ -1,4 +1,4 @@
-func inline exit(v : reg_rdi) {
+func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
     syscall()
@@ -8,7 +8,7 @@ func assert(expr : bool) {
     if not expr exit(1)
 }
 
-func inline main(){
+func main(){
     var x = 1
     var y = 3
     var z = 4

@@ -1,21 +1,21 @@
-func inline exit(v:reg_rdi){
+func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
     syscall()
 }
 
-func inline f(b:bool):bool res{
+func f(b:bool):bool res{
     if b res=false else res=true
 }
 
-func inline f2(i:i64):i64 res{
+func f2(i:i64):i64 res{
     if i==0 res=4
     else if i==1 res=5
     else if i==2 res=6
     else res=7
 }
 
-func inline main(){
+func main(){
     var r:bool=f(true)
     if r exit(1)
 

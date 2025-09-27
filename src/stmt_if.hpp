@@ -80,7 +80,7 @@ class stmt_if final : public statement {
         -> void override {
 
         // make unique labels considering in-lined functions
-        const std::string& call_path{tc.get_inline_call_path(tok())};
+        const std::string& call_path{tc.get_call_path(tok())};
         const std::string& src_loc{tc.source_location_for_use_in_label(tok())};
         const std::string& cp{call_path.empty() ? "" : "_" + call_path};
 

@@ -49,9 +49,6 @@ class frame final {
     // info about the function returns
     const std::vector<func_return_info>& func_rets_;
 
-    // true if function is inlined
-    bool func_is_inline_{};
-
   public:
     enum class frame_type : uint8_t { FUNC, BLOCK, LOOP };
 
@@ -61,11 +58,10 @@ class frame final {
   public:
     frame(std::string name, const frame_type frm_type,
           const std::vector<func_return_info>& func_rets = {},
-          const bool func_is_inline = false, std::string call_path = "",
-          std::string func_ret_label = "") noexcept
+          std::string call_path = "", std::string func_ret_label = "") noexcept
         : name_{std::move(name)}, call_path_{std::move(call_path)},
           func_ret_label_{std::move(func_ret_label)}, func_rets_{func_rets},
-          func_is_inline_{func_is_inline}, type_{frm_type} {}
+          type_{frm_type} {}
 
     auto add_var(token declared_at, const std::string& name, const type& tpe,
                  const int stack_idx, const bool initiated) -> void {
@@ -123,9 +119,7 @@ class frame final {
         return func_ret_label_;
     }
 
-    auto inline_call_path() const -> const std::string& { return call_path_; }
-
-    auto func_is_inline() const -> bool { return func_is_inline_; }
+    auto call_path() const -> const std::string& { return call_path_; }
 
     auto get_func_returns_infos() const
         -> const std::vector<func_return_info>& {
@@ -430,12 +424,11 @@ class toc final {
 
     auto enter_func(const std::string& name,
                     const std::vector<func_return_info>& returns = {},
-                    const bool is_inline = false,
                     const std::string& call_path = "",
                     const std::string& return_jmp_label = "") -> void {
 
-        frames_.emplace_back(name, frame::frame_type::FUNC, returns, is_inline,
-                             call_path, return_jmp_label);
+        frames_.emplace_back(name, frame::frame_type::FUNC, returns, call_path,
+                             return_jmp_label);
         refresh_usage();
     }
 
@@ -496,20 +489,6 @@ class toc final {
         usage_max_stack_size_ =
             std::max(total_stack_size, usage_max_stack_size_);
 
-        // comment the resolved name
-        const ident_resolved& name_resolved{
-            resolve_identifier(src_loc, name, false)};
-        indent(os, indnt, true);
-        os << name << ": " << name_resolved.id_nasm << '\n';
-    }
-
-    auto add_func_arg(const token& src_loc, std::ostream& os, size_t indnt,
-                      const std::string& name, const type& arg_type,
-                      const int stack_idx) -> void {
-
-        assert(frames_.back().is_func() && not frames_.back().func_is_inline());
-
-        frames_.back().add_var(src_loc, name, arg_type, stack_idx, true);
         // comment the resolved name
         const ident_resolved& name_resolved{
             resolve_identifier(src_loc, name, false)};
@@ -621,13 +600,12 @@ class toc final {
         throw compiler_exception(src_loc, "unexpected frames");
     }
 
-    auto get_inline_call_path(const token& src_loc) const
-        -> const std::string& {
+    auto get_call_path(const token& src_loc) const -> const std::string& {
 
         size_t i{frames_.size()};
         while (i--) {
             if (frames_.at(i).is_func()) {
-                return frames_.at(i).inline_call_path();
+                return frames_.at(i).call_path();
             }
         }
         throw compiler_exception(src_loc, "not in a function");
@@ -1294,7 +1272,7 @@ class toc final {
         while (i--) {
             const frame& frm{frames_.at(i)};
             nbytes += frm.allocated_stack_size();
-            if (frm.is_func() and not frm.func_is_inline()) {
+            if (frm.is_func()) {
                 return nbytes;
             }
         }
@@ -1302,9 +1280,6 @@ class toc final {
         return nbytes;
     }
 
-    //? does not take into account non-inlined calls and the return address from
-    // a
-    // function call
     auto get_total_stack_size() const -> size_t {
         assert(!frames_.empty());
         size_t nbytes{};

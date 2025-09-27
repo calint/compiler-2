@@ -91,7 +91,7 @@ class expr_any final : public statement {
             }
             // expression
             // make unique labels considering inlined functions
-            const std::string& call_path{tc.get_inline_call_path(tok())};
+            const std::string& call_path{tc.get_call_path(tok())};
             const std::string& src_loc{
                 tc.source_location_for_use_in_label(tok())};
             // unique partial label for this assembler location

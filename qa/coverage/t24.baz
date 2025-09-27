@@ -1,25 +1,25 @@
-func inline exit(v:reg_rdi){
+func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
     syscall()
 }
 
-func inline a(i):i64 res{
+func a(i):i64 res{
     res=i+1
 }
 
-func inline b(i):i64 res{
+func b(i):i64 res{
     res=i+2
 }
 
-func inline c(i):i64 res{
+func c(i):i64 res{
     var a=1
     var b=2
     var c=a+b
     res=i+c
 }
 
-func inline main(){
+func main(){
     var x=1
     var y=2
     var z=3

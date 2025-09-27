@@ -34,7 +34,7 @@ SRC=t15 && eval $DIFF
 SRC=t16 && eval $DIFF
 SRC=t17 && eval $DIFF
 SRC=t18 && eval $DIFF
-SRC=t19 && EXP=120 && eval $RUN
+#SRC=t19 && EXP=120 && eval $RUN
 SRC=t20 && EXP=7 && eval $RUN
 SRC=t21 && EXP=12 && eval $RUN
 SRC=t22 && EXP=16 && eval $RUN
