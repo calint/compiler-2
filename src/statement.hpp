@@ -27,14 +27,15 @@ class statement {
 
     virtual ~statement() = default;
 
-    virtual void compile([[maybe_unused]] toc& tc, std::ostream& os,
+    virtual auto compile([[maybe_unused]] toc& tc, std::ostream& os,
                          [[maybe_unused]] size_t indent,
-                         [[maybe_unused]] const std::string& dst = "") const {
+                         [[maybe_unused]] const std::string& dst = "") const
+        -> void {
         uops_.source_to(os);
         token_.compile_to(os);
     }
 
-    virtual void source_to(std::ostream& os) const {
+    virtual auto source_to(std::ostream& os) const -> void {
         uops_.source_to(os);
         token_.source_to(os);
     }
