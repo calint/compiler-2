@@ -51,6 +51,7 @@ func foo(p : point) {
 
 # default argument type is `i64`
 func bar(arg) {
+    if arg == 0 return
     arg = 0xff
 }
 
@@ -66,6 +67,10 @@ func main() {
     assert(p.y == 0xb)
 
     var i = 0
+    bar(i)
+    assert(i == 0)
+
+    i = 1
     bar(i)
     assert(i == 0xff)
 
