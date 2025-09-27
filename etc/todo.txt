@@ -45,14 +45,14 @@ stage 5
 [ ] stmt_call: enable nested use of named registers
       example: f(x+1,x) where x is argument that was passed through register and the
       first argument to f is the same register then the second argument is clobbered
-[ ]   non-inlined
-[ ]   inlined
-[ ] optimize stack adjustment between calls
+[-]   non-inlined
+[x]   inlined
+[-] optimize stack adjustment between calls
       call bar
       add rsp,40
       sub rsp,24
       call foo
-[ ] optimize return pattern:
+[-] optimize return pattern:
        mov qword[rbp-8],r15
        mov rax,qword[rbp-8]
        pop rbp
@@ -69,21 +69,21 @@ stage 5
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
 [x] consider removing support for non-inlined functions because it is out of scope
-=> intention of program is super-loop non-reentrant inlined functions
+    => intention of program is super-loop non-reentrant inlined functions
 [x] replace all {0} and {false} to default {}
 [x] make auto for all functions with trailing return
 [x] better format
 [x] adjust for neovim clangd development
 [x] type.hpp:66: why by reference in: const string &memsize{get_memory_operand_for_size(tk, tp_first_field->size())}
-=> get_memory_operand_for_size now returns const std::string&
+    => get_memory_operand_for_size now returns const std::string&
 [-] allow non-register types to functions
-=> pass address to argument through stack
+    => pass address to argument through stack
 [-] allow return types to be non-registers
-=> pass address to return through stack 
-  [x] replace endl with '\n'
+    => pass address to return through stack 
+[x] replace endl with '\n'
 [x] consider disabling function definitions and calls without ()
-  [x] calculate stack size at compile time instead of hardcoded
-  [x]   calculate max stack size used
+[x] calculate stack size at compile time instead of hardcoded
+[x]   calculate max stack size used
 [x] fix 'cmp' with left hand side constant => compilation error instead of further complications
     => "if 1 + 1 == x" is not considered constant because expr_ops_list does not support
         constant evaluation 
