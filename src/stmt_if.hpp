@@ -54,7 +54,7 @@ class stmt_if final : public statement {
 
     ~stmt_if() override = default;
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         // output first branch
         const stmt_if_branch& branch{branches_.at(0)};
@@ -75,8 +75,9 @@ class stmt_if final : public statement {
         }
     }
 
-    void compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] const std::string& dst = "") const override {
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const
+        -> void override {
 
         // make unique labels considering in-lined functions
         const std::string& call_path{tc.get_inline_call_path(tok())};

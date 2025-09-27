@@ -21,8 +21,8 @@ class expr_type_value final : public statement {
 
     inline ~expr_type_value() override;
 
-    void compile(toc& tc, std::ostream& os, size_t indent,
-                 const std::string& dst) const override {
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 const std::string& dst) const -> void override {
 
         expr_type_value::compile_recursive(*this, tc, os, indent + 1,
                                            tok().name(), dst, get_type());

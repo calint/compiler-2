@@ -159,7 +159,7 @@ class expr_ops_list final : public expression {
 
     ~expr_ops_list() override = default;
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os); // whitespace
         uops_.source_to(os);
 
@@ -184,8 +184,8 @@ class expr_ops_list final : public expression {
         }
     }
 
-    void compile(toc& tc, std::ostream& os, const size_t indent,
-                 const std::string& dst) const override {
+    auto compile(toc& tc, std::ostream& os, const size_t indent,
+                 const std::string& dst) const -> void override {
 
         const ident_resolved& dst_resolved{
             tc.resolve_identifier(tok(), dst, false)};
@@ -254,8 +254,8 @@ class expr_ops_list final : public expression {
     }
 
   private:
-    void do_compile(toc& tc, std::ostream& os, const size_t indent,
-                    const std::string& dst) const {
+    auto do_compile(toc& tc, std::ostream& os, const size_t indent,
+                    const std::string& dst) const -> void {
         tc.comment_source(*this, os, indent);
 
         // first element is assigned to destination

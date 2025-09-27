@@ -40,7 +40,7 @@ class unary_ops final {
         return ops_.size() == 1 && ops_.back() == '-';
     }
 
-    void put_back(tokenizer& tz) const {
+    auto put_back(tokenizer& tz) const -> void {
         // put back in reverse order
         size_t i{ops_.size()};
         while (i--) {
@@ -49,7 +49,7 @@ class unary_ops final {
         tz.put_back_token(ws_before_);
     }
 
-    void source_to(std::ostream& os) const {
+    auto source_to(std::ostream& os) const -> void {
         ws_before_.source_to(os);
         for (const char op : ops_) {
             os << op;
@@ -58,8 +58,8 @@ class unary_ops final {
 
     // implemented in main.cpp
     // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-    inline void compile(toc& tc, std::ostream& os, size_t indnt,
-                        const std::string& dst_resolved) const;
+    inline auto compile(toc& tc, std::ostream& os, size_t indnt,
+                        const std::string& dst_resolved) const -> void;
 
     [[nodiscard]] auto is_empty() const -> bool { return ops_.empty(); }
 

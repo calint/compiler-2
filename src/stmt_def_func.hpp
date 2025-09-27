@@ -83,12 +83,12 @@ class stmt_def_func final : public statement {
 
     ~stmt_def_func() override = default;
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         source_def_to(os, false);
         code_.source_to(os);
     }
 
-    void source_def_to(std::ostream& os, const bool summary) const {
+    auto source_def_to(std::ostream& os, const bool summary) const -> void {
         if (not summary) {
             statement::source_to(os);
             inline_tk_.source_to(os);
@@ -121,7 +121,7 @@ class stmt_def_func final : public statement {
         }
     }
 
-    void source_def_comment_to(std::ostream& os) const {
+    auto source_def_comment_to(std::ostream& os) const -> void {
         std::stringstream ss;
         source_def_to(ss, true);
         ss << '\n';
@@ -132,8 +132,9 @@ class stmt_def_func final : public statement {
         os << res << '\n';
     }
 
-    void compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] const std::string& dst = "") const override {
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const
+        -> void override {
 
         if (is_inline()) {
             return;
@@ -196,9 +197,10 @@ class stmt_def_func final : public statement {
     }
 
   private:
-    void
+    auto
     init_variables(toc& tc, std::ostream& os, size_t indent,
-                   std::vector<std::string>& allocated_named_registers) const {
+                   std::vector<std::string>& allocated_named_registers) const
+        -> void {
 
         if (not returns().empty()) {
             // declare variable for the return

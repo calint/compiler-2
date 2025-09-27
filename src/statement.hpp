@@ -55,14 +55,14 @@ class statement {
         return uops_;
     }
 
-    void set_type(const type& tp) { type_ = &tp; }
+    auto set_type(const type& tp) -> void { type_ = &tp; }
 
     [[nodiscard]] virtual auto get_type() const -> const type& {
         return *type_;
     }
 
     //? where to place this validation. empty token in statement is ok
-    static void validate_identifier_name(const token& tk) {
+    static auto validate_identifier_name(const token& tk) -> void {
         // if (tk.is_empty()) {
         //   throw compiler_exception(tk, "unexpected empty identifier");
         // }

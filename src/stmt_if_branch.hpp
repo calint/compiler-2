@@ -22,7 +22,7 @@ class stmt_if_branch final : public statement {
 
     ~stmt_if_branch() override = default;
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         bol_.source_to(os);
         code_.source_to(os);

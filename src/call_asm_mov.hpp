@@ -18,8 +18,9 @@ class call_asm_mov final : public stmt_call {
 
     ~call_asm_mov() override = default;
 
-    void compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] const std::string& dst = "") const override {
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const
+        -> void override {
 
         tc.comment_source(*this, os, indent);
 

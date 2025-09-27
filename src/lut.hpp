@@ -45,7 +45,7 @@ template <class T> class lut final {
         return false;
     }
 
-    void put(const std::string& key, T data) {
+    auto put(const std::string& key, T data) -> void {
         elems_.emplace_back(el{key, std::move(data)});
     }
 

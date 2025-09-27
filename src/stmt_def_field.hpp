@@ -41,7 +41,7 @@ class stmt_def_field final : public statement {
 
     ~stmt_def_field() override = default;
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);
         os << "=";
@@ -49,8 +49,9 @@ class stmt_def_field final : public statement {
         initial_value_.source_to(os);
     }
 
-    void compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] const std::string& dst = "") const override {
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const
+        -> void override {
 
         tc.comment_source(*this, os, indent);
         os << name_tk_.name() << ':';

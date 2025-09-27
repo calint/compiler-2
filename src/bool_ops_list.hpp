@@ -156,7 +156,7 @@ class bool_ops_list final : public statement {
 
     ~bool_ops_list() override = default;
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         not_token_.source_to(os);
         if (enclosed_) {
@@ -178,10 +178,11 @@ class bool_ops_list final : public statement {
         }
     }
 
-    [[noreturn]] void
+    [[noreturn]] auto
     compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
             [[maybe_unused]] size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const override {
+            [[maybe_unused]] const std::string& dst = "") const
+        -> void override {
         throw panic_exception("unexpected code path " + std::string{__FILE__} +
                               ":" + std::to_string(__LINE__));
     }

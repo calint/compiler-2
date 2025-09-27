@@ -47,12 +47,12 @@ class tokenizer final {
         return {ws_before, bgn_ix, txt, end_ix, ws_after};
     }
 
-    void put_back_token(const token& t) {
+    auto put_back_token(const token& t) -> void {
         //? validate token is same as source
         move_back(t.total_length_in_chars());
     }
 
-    void put_back_char(const char ch) {
+    auto put_back_char(const char ch) -> void {
         //? validate char is same as source
         move_back(sizeof(ch));
     }
@@ -146,7 +146,7 @@ class tokenizer final {
         return {ptr_ - len, len};
     }
 
-    void move_back(const size_t nchars) {
+    auto move_back(const size_t nchars) -> void {
         assert(char_ix_ >= nchars);
 
         ptr_ -= nchars;

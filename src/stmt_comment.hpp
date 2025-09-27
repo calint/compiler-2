@@ -21,13 +21,14 @@ class stmt_comment final : public statement {
 
     ~stmt_comment() override = default;
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         os << line_ << '\n';
     }
 
-    void compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] const std::string& dst = "") const override {
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const
+        -> void override {
         tc.comment_source(*this, os, indent);
     }
 };

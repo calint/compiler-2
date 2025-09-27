@@ -36,8 +36,8 @@ class type final {
 
     ~type() = default;
 
-    void add_field([[maybe_unused]] const token& tk, std::string name,
-                   const type& tp) {
+    auto add_field([[maybe_unused]] const token& tk, std::string name,
+                   const type& tp) -> void {
         fields_.emplace_back(
             type_field{.name = std::move(name), .tp = tp, .offset = size_});
         size_ += tp.size_;
@@ -102,15 +102,15 @@ class type final {
 
     [[nodiscard]] auto size() const -> size_t { return size_; }
 
-    void set_size(const size_t nbytes) { size_ = nbytes; }
+    auto set_size(const size_t nbytes) -> void { size_ = nbytes; }
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
 
-    void set_name(const std::string& nm) { name_ = nm; }
+    auto set_name(const std::string& nm) -> void { name_ = nm; }
 
     [[nodiscard]] auto is_built_in() const -> bool { return is_built_in_; }
 
-    void clear_fields() {
+    auto clear_fields() -> void {
         fields_.clear();
         size_ = 0;
     }

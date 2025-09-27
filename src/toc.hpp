@@ -67,8 +67,8 @@ class frame final {
           func_ret_label_{std::move(func_ret_label)}, func_rets_{func_rets},
           func_is_inline_{func_is_inline}, type_{frm_type} {}
 
-    void add_var(token declared_at, const std::string& name, const type& tpe,
-                 const int stack_idx, const bool initiated) {
+    auto add_var(token declared_at, const std::string& name, const type& tpe,
+                 const int stack_idx, const bool initiated) -> void {
         if (stack_idx < 0) {
             // variable, increase allocated stack size
             allocated_stack_ += tpe.size();
@@ -94,7 +94,8 @@ class frame final {
         return vars_.get_const_ref(name);
     }
 
-    void add_alias(const std::string& ident, const std::string& outside_ident) {
+    auto add_alias(const std::string& ident, const std::string& outside_ident)
+        -> void {
         aliases_.put(ident, outside_ident);
     }
 
@@ -248,8 +249,8 @@ class toc final {
 
     auto source() const -> const std::string& { return source_; }
 
-    void add_field(const token& src_loc, const std::string& name,
-                   const stmt_def_field* fld, const bool is_str_field) {
+    auto add_field(const token& src_loc, const std::string& name,
+                   const stmt_def_field* fld, const bool is_str_field) -> void {
 
         if (fields_.has(name)) {
             throw compiler_exception(
@@ -261,8 +262,8 @@ class toc final {
             name, {.def = fld, .declared_at = src_loc, .is_str = is_str_field});
     }
 
-    void add_func(const token& src_loc, const std::string& name,
-                  const type& return_type, const stmt_def_func* func) {
+    auto add_func(const token& src_loc, const std::string& name,
+                  const type& return_type, const stmt_def_func* func) -> void {
 
         if (funcs_.has(name)) {
             const func_info& fn{funcs_.get_const_ref(name)};
@@ -309,7 +310,7 @@ class toc final {
         return funcs_.get_const_ref(name).type_ref;
     }
 
-    void add_type(const token& src_loc, const type& tp) {
+    auto add_type(const token& src_loc, const type& tp) -> void {
         if (types_.has(tp.name())) {
             //? todo. specify where the type has been defined
             throw compiler_exception(src_loc, "type '" + tp.name() +
@@ -369,7 +370,7 @@ class toc final {
         return {line_num, ix - lix + 1};
     }
 
-    void finish(std::ostream& os) {
+    auto finish(std::ostream& os) -> void {
         os << "\n; max scratch registers in use: " << usage_max_scratch_regs_
            << '\n';
         os << ";            max frames in use: " << usage_max_frame_count_
@@ -421,54 +422,54 @@ class toc final {
                                  "cannot resolve identifier '" + name + "'");
     }
 
-    void add_alias(const std::string& name,
-                   const std::string& name_in_parent_frame) {
+    auto add_alias(const std::string& name,
+                   const std::string& name_in_parent_frame) -> void {
 
         frames_.back().add_alias(name, name_in_parent_frame);
     }
 
-    void enter_func(const std::string& name,
+    auto enter_func(const std::string& name,
                     const std::vector<func_return_info>& returns = {},
                     const bool is_inline = false,
                     const std::string& call_path = "",
-                    const std::string& return_jmp_label = "") {
+                    const std::string& return_jmp_label = "") -> void {
 
         frames_.emplace_back(name, frame::frame_type::FUNC, returns, is_inline,
                              call_path, return_jmp_label);
         refresh_usage();
     }
 
-    void enter_block() {
+    auto enter_block() -> void {
         frames_.emplace_back("", frame::frame_type::BLOCK);
         refresh_usage();
     }
 
-    void enter_loop(const std::string& name) {
+    auto enter_loop(const std::string& name) -> void {
         frames_.emplace_back(name, frame::frame_type::LOOP);
         refresh_usage();
     }
 
-    void exit_func(const std::string& name) {
+    auto exit_func(const std::string& name) -> void {
         const frame& frm{frames_.back()};
         assert(frm.is_func() and frm.is_name(name));
         frames_.pop_back();
     }
 
-    void exit_loop(const std::string& name) {
+    auto exit_loop(const std::string& name) -> void {
         const frame& frm{frames_.back()};
         assert(frm.is_loop() and frm.is_name(name));
         frames_.pop_back();
     }
 
-    void exit_block() {
+    auto exit_block() -> void {
         const frame& frm{frames_.back()};
         assert(frm.is_block());
         frames_.pop_back();
     }
 
-    void add_var(const token& src_loc, std::ostream& os, size_t indnt,
+    auto add_var(const token& src_loc, std::ostream& os, size_t indnt,
                  const std::string& name, const type& var_type,
-                 const bool initiated) {
+                 const bool initiated) -> void {
 
         // check if variable is already declared in this scope
         if (frames_.back().has_var(name)) {
@@ -502,9 +503,9 @@ class toc final {
         os << name << ": " << name_resolved.id_nasm << '\n';
     }
 
-    void add_func_arg(const token& src_loc, std::ostream& os, size_t indnt,
+    auto add_func_arg(const token& src_loc, std::ostream& os, size_t indnt,
                       const std::string& name, const type& arg_type,
-                      const int stack_idx) {
+                      const int stack_idx) -> void {
 
         assert(frames_.back().is_func() && not frames_.back().func_is_inline());
 
@@ -540,9 +541,9 @@ class toc final {
         return reg;
     }
 
-    void alloc_named_register_or_throw(const statement& st, std::ostream& os,
+    auto alloc_named_register_or_throw(const statement& st, std::ostream& os,
                                        const size_t indnt,
-                                       const std::string& reg) {
+                                       const std::string& reg) -> void {
         indent(os, indnt, true);
         os << "alloc " << reg << '\n';
         auto reg_iter{std::ranges::find(named_registers_, reg)};
@@ -583,8 +584,8 @@ class toc final {
         return true;
     }
 
-    void free_named_register(std::ostream& os, const size_t indnt,
-                             const std::string& reg) {
+    auto free_named_register(std::ostream& os, const size_t indnt,
+                             const std::string& reg) -> void {
         indent(os, indnt, true);
         os << "free " << reg << '\n';
         assert(allocated_registers_.back() == reg);
@@ -594,8 +595,8 @@ class toc final {
         initiated_registers_.erase(reg);
     }
 
-    void free_scratch_register(std::ostream& os, const size_t indnt,
-                               const std::string& reg) {
+    auto free_scratch_register(std::ostream& os, const size_t indnt,
+                               const std::string& reg) -> void {
         indent(os, indnt, true);
         os << "free " << reg << '\n';
         assert(allocated_registers_.back() == reg);
@@ -656,8 +657,8 @@ class toc final {
         throw compiler_exception(src_loc, "not in a function");
     }
 
-    void comment_source(const statement& st, std::ostream& os,
-                        const size_t indnt) const {
+    auto comment_source(const statement& st, std::ostream& os,
+                        const size_t indnt) const -> void {
 
         const auto [line, col]{line_and_col_num_for_char_index(
             st.tok().start_index(), source_.c_str())};
@@ -673,8 +674,9 @@ class toc final {
         os << res << '\n';
     }
 
-    void comment_source(std::ostream& os, const std::string& dst,
-                        const std::string& op, const statement& st) const {
+    auto comment_source(std::ostream& os, const std::string& dst,
+                        const std::string& op, const statement& st) const
+        -> void {
 
         const auto [line, col]{line_and_col_num_for_char_index(
             st.tok().start_index(), source_.c_str())};
@@ -689,7 +691,7 @@ class toc final {
         os << res << '\n';
     }
 
-    void comment_token(std::ostream& os, const token& tk) const {
+    auto comment_token(std::ostream& os, const token& tk) const -> void {
         const auto [line, col]{
             line_and_col_num_for_char_index(tk.start_index(), source_.c_str())};
 
@@ -701,8 +703,8 @@ class toc final {
         return std::ranges::find(all_registers_, id) != all_registers_.end();
     }
 
-    void enter_call(const token& src_loc, std::ostream& os,
-                    const size_t indnt) {
+    auto enter_call(const token& src_loc, std::ostream& os, const size_t indnt)
+        -> void {
         const bool root_call{calls_.empty()};
         const size_t nbytes_of_vars_on_stack{
             root_call ? get_current_stack_size() : 0};
@@ -740,9 +742,10 @@ class toc final {
                       .nbytes_of_vars = nbytes_of_vars_on_stack});
     }
 
-    void exit_call(const token& src_loc, std::ostream& os, const size_t indnt,
+    auto exit_call(const token& src_loc, std::ostream& os, const size_t indnt,
                    const size_t nbytes_of_args_on_stack,
-                   const std::vector<std::string>& allocated_args_registers) {
+                   const std::vector<std::string>& allocated_args_registers)
+        -> void {
 
         const size_t nregs_pushed{calls_.back().nregs_pushed};
         const size_t nbytes_of_vars{calls_.back().nbytes_of_vars};
@@ -820,9 +823,9 @@ class toc final {
         }
     }
 
-    void asm_cmd(const token& src_loc, std::ostream& os, const size_t indnt,
+    auto asm_cmd(const token& src_loc, std::ostream& os, const size_t indnt,
                  const std::string& op, const std::string& dst_resolved,
-                 const std::string& src_resolved) {
+                 const std::string& src_resolved) -> void {
         if (op == "mov") {
             if (dst_resolved == src_resolved) {
                 return;
@@ -907,7 +910,7 @@ class toc final {
         os << op << " " << dst_resolved << ", " << src_resolved << '\n';
     }
 
-    void set_var_is_initiated(const std::string& name) {
+    auto set_var_is_initiated(const std::string& name) -> void {
         const identifier ident{name};
         const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
         // is 'id_nasm' a variable?
@@ -950,15 +953,15 @@ class toc final {
                               ":" + std::to_string(__LINE__));
     }
 
-    void set_type_void(const type& tp) { type_void_ = &tp; }
+    auto set_type_void(const type& tp) -> void { type_void_ = &tp; }
 
     auto get_type_void() const -> const type& { return *type_void_; }
 
-    void set_type_default(const type& tp) { type_default_ = &tp; }
+    auto set_type_default(const type& tp) -> void { type_default_ = &tp; }
 
     auto get_type_default() const -> const type& { return *type_default_; }
 
-    void set_type_bool(const type& tp) { type_bool_ = &tp; }
+    auto set_type_bool(const type& tp) -> void { type_bool_ = &tp; }
 
     auto get_type_bool() const -> const type& { return *type_bool_; }
 
@@ -1184,59 +1187,62 @@ class toc final {
         }
     }
 
-    static void asm_push([[maybe_unused]] const token& src_loc,
+    static auto asm_push([[maybe_unused]] const token& src_loc,
                          std::ostream& os, const size_t indnt,
-                         const std::string& operand) {
+                         const std::string& operand) -> void {
         indent(os, indnt);
         os << "push " << operand << '\n';
     }
 
-    static void asm_pop([[maybe_unused]] const token& src_loc, std::ostream& os,
-                        const size_t indnt, const std::string& operand) {
+    static auto asm_pop([[maybe_unused]] const token& src_loc, std::ostream& os,
+                        const size_t indnt, const std::string& operand)
+        -> void {
         indent(os, indnt);
         os << "pop " << operand << '\n';
     }
 
-    static void asm_ret([[maybe_unused]] const token& src_loc, std::ostream& os,
-                        const size_t indnt) {
+    static auto asm_ret([[maybe_unused]] const token& src_loc, std::ostream& os,
+                        const size_t indnt) -> void {
         indent(os, indnt);
         os << "ret\n";
     }
 
-    static void asm_jmp([[maybe_unused]] const token& src_loc, std::ostream& os,
-                        const size_t indnt, const std::string& label) {
+    static auto asm_jmp([[maybe_unused]] const token& src_loc, std::ostream& os,
+                        const size_t indnt, const std::string& label) -> void {
         indent(os, indnt);
         os << "jmp " << label << '\n';
     }
 
-    static void asm_label([[maybe_unused]] const token& src_loc,
+    static auto asm_label([[maybe_unused]] const token& src_loc,
                           std::ostream& os, const size_t indnt,
-                          const std::string& label) {
+                          const std::string& label) -> void {
         indent(os, indnt);
         os << label << ":" << '\n';
     }
 
-    static void asm_call([[maybe_unused]] const token& src_loc,
+    static auto asm_call([[maybe_unused]] const token& src_loc,
                          std::ostream& os, const size_t indnt,
-                         const std::string& label) {
+                         const std::string& label) -> void {
         indent(os, indnt);
         os << "call " << label << '\n';
     }
 
-    static void asm_neg([[maybe_unused]] const token& src_loc, std::ostream& os,
-                        const size_t indnt, const std::string& dst_resolved) {
+    static auto asm_neg([[maybe_unused]] const token& src_loc, std::ostream& os,
+                        const size_t indnt, const std::string& dst_resolved)
+        -> void {
         indent(os, indnt);
         os << "neg " << dst_resolved << '\n';
     }
 
-    static void asm_not([[maybe_unused]] const token& src_loc, std::ostream& os,
-                        const size_t indnt, const std::string& dst_resolved) {
+    static auto asm_not([[maybe_unused]] const token& src_loc, std::ostream& os,
+                        const size_t indnt, const std::string& dst_resolved)
+        -> void {
         indent(os, indnt);
         os << "not " << dst_resolved << '\n';
     }
 
-    static void indent(std::ostream& os, const size_t indnt,
-                       const bool comment = false) {
+    static auto indent(std::ostream& os, const size_t indnt,
+                       const bool comment = false) -> void {
         if (indnt == 0) {
             if (comment) {
                 os << ";";
@@ -1460,7 +1466,7 @@ class toc final {
                 .ident_type = ident_resolved::ident_type::CONST};
     }
 
-    void refresh_usage() {
+    auto refresh_usage() -> void {
         usage_max_frame_count_ =
             std::max(frames_.size(), usage_max_frame_count_);
     }

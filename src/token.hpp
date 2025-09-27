@@ -27,7 +27,7 @@ class token final {
 
     ~token() = default;
 
-    void source_to(std::ostream& os) const {
+    auto source_to(std::ostream& os) const -> void {
         if (not is_str_) {
             os << ws_left_ << name_ << ws_right_;
             return;
@@ -36,7 +36,7 @@ class token final {
            << '"' << ws_right_;
     }
 
-    void compile_to(std::ostream& os) const {
+    auto compile_to(std::ostream& os) const -> void {
         if (not is_str_) {
             os << name_;
             return;

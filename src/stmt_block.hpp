@@ -84,7 +84,7 @@ class stmt_block final : public statement {
 
     ~stmt_block() override = default;
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         if (not is_one_statement_) {
             os << "{";
@@ -97,8 +97,9 @@ class stmt_block final : public statement {
         }
     }
 
-    void compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] const std::string& dst = "") const override {
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const
+        -> void override {
 
         tc.enter_block();
         for (const auto& s : stms_) {

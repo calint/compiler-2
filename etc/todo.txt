@@ -1,3 +1,4 @@
+[x] make auto for all functions with trailing return
 [x] better format
 [x] adjust for neovim clangd development
 [ ] type.hpp:66: why by reference in: const string &memsize{get_memory_operand_for_size(tk, tp_first_field->size())}

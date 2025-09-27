@@ -69,7 +69,7 @@ class stmt_call : public expression {
 
     ~stmt_call() override = default;
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
         os << "(";
         size_t i{0};
@@ -83,8 +83,8 @@ class stmt_call : public expression {
         ws_after_.source_to(os);
     }
 
-    void compile(toc& tc, std::ostream& os, size_t indent,
-                 const std::string& dst = "") const override {
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 const std::string& dst = "") const -> void override {
 
         tc.comment_source(*this, os, indent);
 

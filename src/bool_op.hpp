@@ -83,7 +83,7 @@ class bool_op final : public statement {
 
     ~bool_op() override = default;
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
 
         for (const token& e : nots_) {
@@ -98,10 +98,11 @@ class bool_op final : public statement {
         }
     }
 
-    [[noreturn]] void
+    [[noreturn]] auto
     compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
             [[maybe_unused]] size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const override {
+            [[maybe_unused]] const std::string& dst = "") const
+        -> void override {
         throw panic_exception("unexpected code path " + std::string{__FILE__} +
                               ":" + std::to_string(__LINE__));
     }
@@ -280,7 +281,7 @@ class bool_op final : public statement {
     }
 
   private:
-    void resolve_if_op_is_expression() {
+    auto resolve_if_op_is_expression() -> void {
         if (is_not_) {
             is_expression_ = true;
             return;
@@ -380,8 +381,9 @@ class bool_op final : public statement {
                               ":" + std::to_string(__LINE__));
     }
 
-    void resolve_cmp(toc& tc, std::ostream& os, size_t indent,
-                     const expr_ops_list& lhs, const expr_ops_list& rhs) const {
+    auto resolve_cmp(toc& tc, std::ostream& os, size_t indent,
+                     const expr_ops_list& lhs, const expr_ops_list& rhs) const
+        -> void {
 
         std::vector<std::string> allocated_registers;
 
@@ -400,8 +402,8 @@ class bool_op final : public statement {
         }
     }
 
-    void resolve_cmp_shorthand(toc& tc, std::ostream& os, size_t indent,
-                               const expr_ops_list& lhs) const {
+    auto resolve_cmp_shorthand(toc& tc, std::ostream& os, size_t indent,
+                               const expr_ops_list& lhs) const -> void {
         std::vector<std::string> allocated_registers;
 
         const std::string& dst{

@@ -24,8 +24,9 @@ class stmt_loop final : public statement {
 
     ~stmt_loop() override = default;
 
-    void compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] const std::string& dst = "") const override {
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 [[maybe_unused]] const std::string& dst = "") const
+        -> void override {
 
         toc::indent(os, indent, true);
         tc.comment_token(os, tok());
@@ -53,7 +54,7 @@ class stmt_loop final : public statement {
         tc.exit_loop(lbl);
     }
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         code_.source_to(os);
     }

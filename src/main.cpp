@@ -30,8 +30,8 @@
 
 namespace {
 auto read_file_to_string(const char* file_name) -> std::string;
-void optimize_jumps_1(std::istream& is, std::ostream& os);
-void optimize_jumps_2(std::istream& is, std::ostream& os);
+auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void;
+auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void;
 } // namespace
 
 auto main(int argc, char* args[]) -> int {
@@ -299,7 +299,7 @@ namespace {
 //    cmp_13_26:
 //  to
 //    cmp_13_26:
-void optimize_jumps_1(std::istream& is, std::ostream& os) {
+auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
     const std::regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
     const std::regex rxlbl{R"(^\s*(.+):.*$)"};
     const std::regex rxcomment{R"(^\s*;.*$)"};
@@ -365,7 +365,7 @@ void optimize_jumps_1(std::istream& is, std::ostream& os) {
 // to
 //   je if_14_8_code
 //   cmp_14_26:
-void optimize_jumps_2(std::istream& is, std::ostream& os) {
+auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
     const std::regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
     const std::regex rxjxx{R"(^\s*(j[a-z][a-z]?)\s+(.+)\s*$)"};
     const std::regex rxlbl{R"(^\s*(.+):.*$)"};

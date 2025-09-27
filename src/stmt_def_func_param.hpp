@@ -37,7 +37,7 @@ class stmt_def_func_param final : public statement {
 
     ~stmt_def_func_param() override = default;
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         if (type_tk_.is_name("")) {
             return;

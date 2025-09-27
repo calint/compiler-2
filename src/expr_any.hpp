@@ -38,7 +38,7 @@ class expr_any final : public statement {
 
     ~expr_any() override = default;
 
-    void source_to(std::ostream& os) const override {
+    auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         switch (var_.index()) {
         case 0:
@@ -57,8 +57,8 @@ class expr_any final : public statement {
         }
     }
 
-    void compile(toc& tc, std::ostream& os, size_t indent,
-                 const std::string& dst = "") const override {
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 const std::string& dst = "") const -> void override {
 
         tc.comment_source(*this, os, indent);
 
