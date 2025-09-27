@@ -268,8 +268,8 @@ class stmt_call : public expression {
             ea.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
         }
 
-        // enter function creating a new scope from which
-        //   prior variables are not visible
+        // enter function creating a new scope from which prior variables are
+        // not visible
         const std::vector<func_return_info>& returns{func.returns()};
         tc.enter_func(func_name, returns, new_call_path, ret_jmp_label);
 
