@@ -6,6 +6,9 @@ field prompt3 = "hello "
 field     dot = "."
 field      nl = "\n"
 
+# all functions are inlined
+
+# arguments can be placed in specified register using `reg_...` syntax 
 func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
@@ -33,11 +36,14 @@ func assert(expr : bool) {
     if not expr exit(1)
 }
 
+# user types are defined using keyword `type`
+
+# default type is `i64` and does not need to be specified
 type point {x, y}
 
 type object {pos : point, color : i32}
 
-# inline function arguments are equivalent to mutable references
+# function arguments are equivalent to mutable references
 func foo(p : point) {
     p.x = 0b10    # binary value 2
     p.y = 0xb     # hex value 11
@@ -48,6 +54,7 @@ func bar(arg) {
     arg = 0xff
 }
 
+# return target is specified as a variable, in this case `res`
 func baz(arg) : i64 res {
     res = arg * 2
 }
