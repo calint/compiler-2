@@ -72,8 +72,8 @@ assert:
    pop rbp
    ret
 
-;[40:1] # inlined function arguments are modifiable references 
-;[46:1] # default type is i64 
+;[40:1] # inlined function arguments are equivalent to mutable references 
+;[46:1] # default argument type is i64 
 main:
 ;  p: qword[rbp-16]
 ;  [52:5] var p : point = {0, 0}
