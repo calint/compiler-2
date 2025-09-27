@@ -330,47 +330,49 @@ main:
      if_91_12:
      cmp_91_12:
      cmp qword[rbp-120], 0
-     jne if_91_9_end
+     jne if_93_19
      if_91_12_code:  ; opt1
        jmp loop_88_5_end
-     if_91_9_end:
-     if_94_12:
-     cmp_94_12:
+     jmp if_91_9_end
+     if_93_19:
+     cmp_93_19:
      cmp qword[rbp-120], 4
-     jg if_94_9_end
-     if_94_12_code:  ; opt1
+     jg if_else_91_9
+     if_93_19_code:  ; opt1
          mov rdx, prompt2.len
          mov rsi, prompt2
          mov rax, 1
          mov rdi, 1
          syscall
-       print_95_13_end:
+       print_94_13_end:
        jmp loop_88_5
-     if_94_9_end:
-       mov rdx, prompt3.len
-       mov rsi, prompt3
-       mov rax, 1
-       mov rdi, 1
-       syscall
-     print_98_9_end:
-       mov rdx, qword[rbp-120]
-       mov rsi, input
-       mov rax, 1
-       mov rdi, 1
-       syscall
-     print_99_9_end:
-       mov rdx, dot.len
-       mov rsi, dot
-       mov rax, 1
-       mov rdi, 1
-       syscall
-     print_100_9_end:
-       mov rdx, nl.len
-       mov rsi, nl
-       mov rax, 1
-       mov rdi, 1
-       syscall
-     print_101_9_end:
+     jmp if_91_9_end
+     if_else_91_9:
+           mov rdx, prompt3.len
+           mov rsi, prompt3
+           mov rax, 1
+           mov rdi, 1
+           syscall
+         print_97_13_end:
+           mov rdx, qword[rbp-120]
+           mov rsi, input
+           mov rax, 1
+           mov rdi, 1
+           syscall
+         print_98_13_end:
+           mov rdx, dot.len
+           mov rsi, dot
+           mov rax, 1
+           mov rdi, 1
+           syscall
+         print_99_13_end:
+           mov rdx, nl.len
+           mov rsi, nl
+           mov rax, 1
+           mov rdi, 1
+           syscall
+         print_100_13_end:
+     if_91_9_end:
    jmp loop_88_5
    loop_88_5_end:
 mov rax, 60

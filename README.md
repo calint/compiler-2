@@ -121,15 +121,15 @@ func main() {
         var len = read(input.len, input) - 1    # -1 don't include the '\n'
         if len == 0 {
             break
-        }
-        if len <= 4 {
+        } else if len <= 4 {
             print(prompt2.len, prompt2)
             continue
+        } else {
+            print(prompt3.len, prompt3)
+            print(len, input)
+            print(dot.len, dot)
+            print(nl.len, nl)
         }
-        print(prompt3.len, prompt3)
-        print(len, input)
-        print(dot.len, dot)
-        print(nl.len, nl)
     }
 }
 ```
@@ -945,21 +945,21 @@ main:
 ;    [91:12] ? len == 0 
      cmp_91_12:
      cmp qword[rbp-120], 0
-     jne if_91_9_end
+     jne if_93_19
      if_91_12_code:  ; opt1
 ;      [92:13] break 
        jmp loop_88_5_end
-     if_91_9_end:
-     if_94_12:
-;    [94:12] ? len <= 4 
-;    [94:12] ? len <= 4 
-     cmp_94_12:
+     jmp if_91_9_end
+     if_93_19:
+;    [93:19] ? len <= 4 
+;    [93:19] ? len <= 4 
+     cmp_93_19:
      cmp qword[rbp-120], 4
-     jg if_94_9_end
-     if_94_12_code:  ; opt1
-;      [95:13] print(prompt2.len, prompt2) 
+     jg if_else_91_9
+     if_93_19_code:  ; opt1
+;      [94:13] print(prompt2.len, prompt2) 
 ;      print(len : reg_rdx, ptr : reg_rsi) 
-;        inline: 95_13
+;        inline: 94_13
 ;        alloc rdx
 ;        alias len -> rdx
          mov rdx, prompt2.len
@@ -980,106 +980,108 @@ main:
          syscall
 ;        free rsi
 ;        free rdx
-       print_95_13_end:
-;      [96:13] continue 
+       print_94_13_end:
+;      [95:13] continue 
        jmp loop_88_5
-     if_94_9_end:
-;    [98:9] print(prompt3.len, prompt3) 
-;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 98_9
-;      alloc rdx
-;      alias len -> rdx
-       mov rdx, prompt3.len
-;      alloc rsi
-;      alias ptr -> rsi
-       mov rsi, prompt3
-;      [16:5] mov(rax, 1) 
-       mov rax, 1
-;      [16:19] # write system call 
-;      [17:5] mov(rdi, 1) 
-       mov rdi, 1
-;      [17:19] # file descriptor for standard out 
-;      [18:5] mov(rsi, ptr) 
-;      [18:19] # buffer address 
-;      [19:5] mov(rdx, len) 
-;      [19:19] # buffer size 
-;      [20:5] syscall() 
-       syscall
-;      free rsi
-;      free rdx
-     print_98_9_end:
-;    [99:9] print(len, input) 
-;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 99_9
-;      alloc rdx
-;      alias len -> rdx
-       mov rdx, qword[rbp-120]
-;      alloc rsi
-;      alias ptr -> rsi
-       mov rsi, input
-;      [16:5] mov(rax, 1) 
-       mov rax, 1
-;      [16:19] # write system call 
-;      [17:5] mov(rdi, 1) 
-       mov rdi, 1
-;      [17:19] # file descriptor for standard out 
-;      [18:5] mov(rsi, ptr) 
-;      [18:19] # buffer address 
-;      [19:5] mov(rdx, len) 
-;      [19:19] # buffer size 
-;      [20:5] syscall() 
-       syscall
-;      free rsi
-;      free rdx
-     print_99_9_end:
-;    [100:9] print(dot.len, dot) 
-;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 100_9
-;      alloc rdx
-;      alias len -> rdx
-       mov rdx, dot.len
-;      alloc rsi
-;      alias ptr -> rsi
-       mov rsi, dot
-;      [16:5] mov(rax, 1) 
-       mov rax, 1
-;      [16:19] # write system call 
-;      [17:5] mov(rdi, 1) 
-       mov rdi, 1
-;      [17:19] # file descriptor for standard out 
-;      [18:5] mov(rsi, ptr) 
-;      [18:19] # buffer address 
-;      [19:5] mov(rdx, len) 
-;      [19:19] # buffer size 
-;      [20:5] syscall() 
-       syscall
-;      free rsi
-;      free rdx
-     print_100_9_end:
-;    [101:9] print(nl.len, nl) 
-;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 101_9
-;      alloc rdx
-;      alias len -> rdx
-       mov rdx, nl.len
-;      alloc rsi
-;      alias ptr -> rsi
-       mov rsi, nl
-;      [16:5] mov(rax, 1) 
-       mov rax, 1
-;      [16:19] # write system call 
-;      [17:5] mov(rdi, 1) 
-       mov rdi, 1
-;      [17:19] # file descriptor for standard out 
-;      [18:5] mov(rsi, ptr) 
-;      [18:19] # buffer address 
-;      [19:5] mov(rdx, len) 
-;      [19:19] # buffer size 
-;      [20:5] syscall() 
-       syscall
-;      free rsi
-;      free rdx
-     print_101_9_end:
+     jmp if_91_9_end
+     if_else_91_9:
+;        [97:13] print(prompt3.len, prompt3) 
+;        print(len : reg_rdx, ptr : reg_rsi) 
+;          inline: 97_13
+;          alloc rdx
+;          alias len -> rdx
+           mov rdx, prompt3.len
+;          alloc rsi
+;          alias ptr -> rsi
+           mov rsi, prompt3
+;          [16:5] mov(rax, 1) 
+           mov rax, 1
+;          [16:19] # write system call 
+;          [17:5] mov(rdi, 1) 
+           mov rdi, 1
+;          [17:19] # file descriptor for standard out 
+;          [18:5] mov(rsi, ptr) 
+;          [18:19] # buffer address 
+;          [19:5] mov(rdx, len) 
+;          [19:19] # buffer size 
+;          [20:5] syscall() 
+           syscall
+;          free rsi
+;          free rdx
+         print_97_13_end:
+;        [98:13] print(len, input) 
+;        print(len : reg_rdx, ptr : reg_rsi) 
+;          inline: 98_13
+;          alloc rdx
+;          alias len -> rdx
+           mov rdx, qword[rbp-120]
+;          alloc rsi
+;          alias ptr -> rsi
+           mov rsi, input
+;          [16:5] mov(rax, 1) 
+           mov rax, 1
+;          [16:19] # write system call 
+;          [17:5] mov(rdi, 1) 
+           mov rdi, 1
+;          [17:19] # file descriptor for standard out 
+;          [18:5] mov(rsi, ptr) 
+;          [18:19] # buffer address 
+;          [19:5] mov(rdx, len) 
+;          [19:19] # buffer size 
+;          [20:5] syscall() 
+           syscall
+;          free rsi
+;          free rdx
+         print_98_13_end:
+;        [99:13] print(dot.len, dot) 
+;        print(len : reg_rdx, ptr : reg_rsi) 
+;          inline: 99_13
+;          alloc rdx
+;          alias len -> rdx
+           mov rdx, dot.len
+;          alloc rsi
+;          alias ptr -> rsi
+           mov rsi, dot
+;          [16:5] mov(rax, 1) 
+           mov rax, 1
+;          [16:19] # write system call 
+;          [17:5] mov(rdi, 1) 
+           mov rdi, 1
+;          [17:19] # file descriptor for standard out 
+;          [18:5] mov(rsi, ptr) 
+;          [18:19] # buffer address 
+;          [19:5] mov(rdx, len) 
+;          [19:19] # buffer size 
+;          [20:5] syscall() 
+           syscall
+;          free rsi
+;          free rdx
+         print_99_13_end:
+;        [100:13] print(nl.len, nl) 
+;        print(len : reg_rdx, ptr : reg_rsi) 
+;          inline: 100_13
+;          alloc rdx
+;          alias len -> rdx
+           mov rdx, nl.len
+;          alloc rsi
+;          alias ptr -> rsi
+           mov rsi, nl
+;          [16:5] mov(rax, 1) 
+           mov rax, 1
+;          [16:19] # write system call 
+;          [17:5] mov(rdi, 1) 
+           mov rdi, 1
+;          [17:19] # file descriptor for standard out 
+;          [18:5] mov(rsi, ptr) 
+;          [18:19] # buffer address 
+;          [19:5] mov(rdx, len) 
+;          [19:19] # buffer size 
+;          [20:5] syscall() 
+           syscall
+;          free rsi
+;          free rdx
+         print_100_13_end:
+     if_91_9_end:
    jmp loop_88_5
    loop_88_5_end:
 ; main end

@@ -90,14 +90,14 @@ func main() {
         var len = read(input.len, input) - 1    # -1 don't include the '\n'
         if len == 0 {
             break
-        }
-        if len <= 4 {
+        } else if len <= 4 {
             print(prompt2.len, prompt2)
             continue
+        } else {
+            print(prompt3.len, prompt3)
+            print(len, input)
+            print(dot.len, dot)
+            print(nl.len, nl)
         }
-        print(prompt3.len, prompt3)
-        print(len, input)
-        print(dot.len, dot)
-        print(nl.len, nl)
     }
 }
