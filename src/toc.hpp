@@ -376,7 +376,7 @@ class toc final {
         os << ";            max frames in use: " << usage_max_frame_count_
            << '\n';
         os << ";        max inline stack size: " << usage_max_stack_size_
-           << " B" << '\n';
+           << " B\n";
         //		os<<";          max stack in use:
         //"<<tc.max_stack_usage_<<std::endl;
         assert(all_registers_.size() == 16);
@@ -574,7 +574,7 @@ class toc final {
         os << "alloc " << reg;
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
-            os << ": false" << '\n';
+            os << ": false\n";
             return false;
         }
         named_registers_.erase(reg_iter);
@@ -1217,7 +1217,7 @@ class toc final {
                           std::ostream& os, const size_t indnt,
                           const std::string& label) -> void {
         indent(os, indnt);
-        os << label << ":" << '\n';
+        os << label << ":\n";
     }
 
     static auto asm_call([[maybe_unused]] const token& src_loc,

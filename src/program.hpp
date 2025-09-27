@@ -115,16 +115,16 @@ class program final {
                                      "main function must be declared inline");
         }
 
-        os << "main:" << '\n';
+        os << "main:\n";
         tc.enter_func("main");
         func_main.code().compile(tc, os, indent);
         tc.exit_func("main");
-        os << "; main end" << '\n';
+        os << "; main end\n";
         os << '\n';
-        os << "; system call: exit 0" << '\n';
-        os << "mov rax, 60" << '\n';
-        os << "mov rdi, 0" << '\n';
-        os << "syscall" << '\n';
+        os << "; system call: exit 0\n";
+        os << "mov rax, 60\n";
+        os << "mov rdi, 0\n";
+        os << "syscall\n";
     }
 
     auto build(std::ostream& os) -> void {

@@ -629,7 +629,7 @@ class expr_ops_list final : public expression {
                 toc::asm_push(src.tok(), os, indent, "rdx");
             }
             toc::indent(os, indent, false);
-            os << "cqo" << '\n';
+            os << "cqo\n";
             toc::indent(os, indent, false);
             os << "idiv " << reg << '\n';
             tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, op);
@@ -661,7 +661,7 @@ class expr_ops_list final : public expression {
                 toc::asm_push(src.tok(), os, indent, "rdx");
             }
             toc::indent(os, indent, false);
-            os << "cqo" << '\n';
+            os << "cqo\n";
             const std::string& scratch_reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             tc.asm_cmd(src.tok(), os, indent, "mov", scratch_reg,
@@ -702,7 +702,7 @@ class expr_ops_list final : public expression {
                 toc::asm_push(src.tok(), os, indent, "rdx");
             }
             toc::indent(os, indent, false);
-            os << "cqo" << '\n';
+            os << "cqo\n";
             toc::indent(os, indent, false);
             os << "idiv " << src_resolved.id_nasm << '\n';
             // op is either "rax" for the quotient or "rdx" for the reminder
@@ -736,7 +736,7 @@ class expr_ops_list final : public expression {
             toc::asm_push(src.tok(), os, indent, "rdx");
         }
         toc::indent(os, indent, false);
-        os << "cqo" << '\n';
+        os << "cqo\n";
         toc::indent(os, indent, false);
         os << "idiv " << reg << '\n';
         tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, op);
