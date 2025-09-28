@@ -47,7 +47,8 @@ class program final {
             if (tk.is_empty()) {
                 assert(tz.is_eos());
                 break;
-            } else if (tk.is_name("field")) {
+            }
+            if (tk.is_name("field")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_def_field>(tc_, tk, tz));
             } else if (tk.is_name("func")) {
@@ -72,8 +73,8 @@ class program final {
     }
 
     program() = delete;
-    program(const program&) = delete;
-    program(program&&) = delete;
+    program(const program&) = default;
+    program(program&&) = default;
     auto operator=(const program&) -> program& = delete;
     auto operator=(program&&) -> program& = delete;
 

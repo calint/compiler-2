@@ -237,8 +237,8 @@ class toc final {
     explicit toc(const std::string& source) : source_{source} {}
 
     toc() = delete;
-    toc(const toc&) = delete;
-    toc(toc&&) = delete;
+    toc(const toc&) = default;
+    toc(toc&&) = default;
     auto operator=(const toc&) -> toc& = delete;
     auto operator=(toc&&) -> toc& = delete;
 

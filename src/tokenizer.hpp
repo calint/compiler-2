@@ -16,8 +16,8 @@ class tokenizer final {
         : src_{src}, ptr_{src_.c_str()} {}
 
     tokenizer() = delete;
-    tokenizer(const tokenizer&) = delete;
-    tokenizer(tokenizer&&) = delete;
+    tokenizer(const tokenizer&) = default;
+    tokenizer(tokenizer&&) = default;
     auto operator=(const tokenizer&) -> tokenizer& = delete;
     auto operator=(tokenizer&&) -> tokenizer& = delete;
 
