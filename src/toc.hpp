@@ -1303,8 +1303,9 @@ class toc final {
                                 const bool must_be_initiated) const
         -> ident_resolved {
 
-        identifier bid{ident};
-        std::string id{bid.id_base()};
+        identifier id{ident};
+        // get the root of an identifier: example p.x -> p
+        std::string base_id{id.id_base()};
         // traverse the frames and resolve the id_nasm (which might be an
         // alias) to a variable, field, register or constant
         size_t i{frames_.size()};
@@ -1313,39 +1314,39 @@ class toc final {
             // is the frame a function?
             if (frames_.at(i).is_func()) {
                 // is it an alias defined by an argument in the function?
-                if (not frames_.at(i).has_alias(id)) {
+                if (not frames_.at(i).has_alias(base_id)) {
+                    // no, it is not
                     break;
                 }
-                // yes, continue resolving alias until it is
-                // a variable, field, register or constant
-                id = frames_.at(i).get_alias(id);
-                // FIX get base static, refactor
-                identifier new_bid{id};
-                id = new_bid.id_base();
-                if (bid.path().size() == 1) {
-                    // this is an alias. example res -> p.x
-                    bid = new_bid;
+                // yes, continue resolving alias until it is a variable, field,
+                // register or constant
+                base_id = frames_.at(i).get_alias(base_id);
+                identifier new_id{base_id};
+                base_id = new_id.id_base();
+                if (id.path().size() == 1) {
+                    // this is an alias of type: res -> p.x
+                    id = new_id;
                 } else {
-                    // this is an alias. example pt.x -> p.x
-                    bid.set_base(id);
+                    // this is an alias of type: pt.x -> p.x
+                    id.set_base(base_id);
                 }
                 continue;
             }
             // does scope contain the variable
-            if (frames_.at(i).has_var(id)) {
+            if (frames_.at(i).has_var(base_id)) {
                 break;
             }
         }
 
         // is 'id' a variable?
-        if (frames_.at(i).has_var(id)) {
-            const var_info& var{frames_.at(i).get_var_const_ref(id)};
+        if (frames_.at(i).has_var(base_id)) {
+            const var_info& var{frames_.at(i).get_var_const_ref(base_id)};
             if (must_be_initiated and not var.initiated) {
                 throw compiler_exception(src_loc, "variable '" + var.name +
                                                       "' is not initiated");
             }
             auto [tp, acc]{
-                var.type_ref.accessor(src_loc, bid.path(), var.stack_idx)};
+                var.type_ref.accessor(src_loc, id.path(), var.stack_idx)};
             return {.id = ident,
                     .id_nasm = acc,
                     .const_value = 0,
@@ -1354,43 +1355,43 @@ class toc final {
         }
 
         // is 'id' a register?
-        if (is_identifier_register(id)) {
-            if (must_be_initiated and not is_register_initiated(id)) {
-                throw compiler_exception(src_loc, "register '" + id +
+        if (is_identifier_register(base_id)) {
+            if (must_be_initiated and not is_register_initiated(base_id)) {
+                throw compiler_exception(src_loc, "register '" + base_id +
                                                       "' is not initiated");
             }
 
             //? unary ops?
             return {.id = ident,
-                    .id_nasm = id,
+                    .id_nasm = base_id,
                     .const_value = 0,
                     .type_ref = get_type_default(),
                     .ident_type = ident_resolved::ident_type::REGISTER};
         }
 
         // is 'id' a field?
-        if (fields_.has(id)) {
+        if (fields_.has(base_id)) {
             const std::string& after_dot =
-                bid.path().size() < 2 ? ""
-                                      : bid.path().at(1); //? bug. not correct
+                id.path().size() < 2 ? ""
+                                     : id.path().at(1); //? bug. not correct
             if (after_dot == "len") {
                 return {.id = ident,
-                        .id_nasm = id + "." + after_dot,
+                        .id_nasm = base_id + "." + after_dot,
                         .const_value = 0,
                         .type_ref = get_type_default(),
                         .ident_type = ident_resolved::ident_type::IMPLIED};
             }
-            const field_info& fi{fields_.get_const_ref(id)};
+            const field_info& fi{fields_.get_const_ref(base_id)};
             if (fi.is_str) {
                 return {.id = ident,
-                        .id_nasm = id,
+                        .id_nasm = base_id,
                         .const_value = 0,
                         .type_ref = get_type_default(),
                         .ident_type = ident_resolved::ident_type::FIELD};
             }
             //? assumes qword
             return {.id = ident,
-                    .id_nasm = "qword[" + id + "]",
+                    .id_nasm = "qword[" + base_id + "]",
                     .const_value = 0,
                     .type_ref = get_type_default(),
                     .ident_type = ident_resolved::ident_type::FIELD};
@@ -1398,31 +1399,31 @@ class toc final {
 
         // is 'id' a constant?
         char* ep{};
-        const int64_t const_value{strtol(id.c_str(), &ep, 10)};
+        const int64_t const_value{strtol(base_id.c_str(), &ep, 10)};
         if (!*ep) {
             return {.id = ident,
-                    .id_nasm = id,
+                    .id_nasm = base_id,
                     .const_value = const_value,
                     .type_ref = get_type_default(),
                     .ident_type = ident_resolved::ident_type::CONST};
         }
 
-        if (id.starts_with("0x")) { // hex
-            const int64_t value{strtol(id.c_str() + 2, &ep, 16)};
+        if (base_id.starts_with("0x")) { // hex
+            const int64_t value{strtol(base_id.c_str() + 2, &ep, 16)};
             if (!*ep) {
                 return {.id = ident,
-                        .id_nasm = id,
+                        .id_nasm = base_id,
                         .const_value = value,
                         .type_ref = get_type_default(),
                         .ident_type = ident_resolved::ident_type::CONST};
             }
         }
 
-        if (id.starts_with("0b")) { // binary
-            const int64_t value{strtol(id.c_str() + 2, &ep, 2)};
+        if (base_id.starts_with("0b")) { // binary
+            const int64_t value{strtol(base_id.c_str() + 2, &ep, 2)};
             if (!*ep) {
                 return {.id = ident,
-                        .id_nasm = id,
+                        .id_nasm = base_id,
                         .const_value = value,
                         .type_ref = get_type_default(),
                         .ident_type = ident_resolved::ident_type::CONST};
@@ -1430,17 +1431,17 @@ class toc final {
         }
 
         // is 'id' a boolean constant?
-        if (id == "true") {
+        if (base_id == "true") {
             return {.id = ident,
-                    .id_nasm = id,
+                    .id_nasm = base_id,
                     .const_value = 1,
                     .type_ref = get_type_bool(),
                     .ident_type = ident_resolved::ident_type::CONST};
         }
 
-        if (id == "false") {
+        if (base_id == "false") {
             return {.id = ident,
-                    .id_nasm = id,
+                    .id_nasm = base_id,
                     .const_value = 0,
                     .type_ref = get_type_bool(),
                     .ident_type = ident_resolved::ident_type::CONST};

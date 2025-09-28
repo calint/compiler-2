@@ -91,7 +91,7 @@ func main() {
     assert(o1.pos.x == 10)
     assert(o1.pos.y == 2)
     assert(o1.color == 0xff0000)
-
+    
     var p1 : point = {-x, -y}
     o1.pos = p1
     assert(o1.pos.x == -1)
