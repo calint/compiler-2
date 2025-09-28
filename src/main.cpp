@@ -1,3 +1,5 @@
+// review: 2025-09-29
+
 #include <cassert>
 #include <cstddef>
 #include <cstring>
@@ -85,6 +87,7 @@ auto main(int argc, char* args[]) -> int {
 inline auto create_statement_from_tokenizer(toc& tc, unary_ops uops, token tk,
                                             tokenizer& tz)
     -> std::unique_ptr<statement> {
+
     if (tk.is_name("loop")) {
         return std::make_unique<stmt_loop>(tc, std::move(tk), tz);
     }
@@ -150,6 +153,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
     set_type(tp);
 
+    // is it an identifier?
     if (not tok().is_name("")) {
         // e.g. obj.pos = p
         return;
@@ -191,9 +195,13 @@ expr_type_value::~expr_type_value() = default;
 // resolves circular reference: expr_type_value -> expr_any -> expr_type_value
 inline void expr_type_value::source_to(std::ostream& os) const {
     statement::source_to(os);
+
+    // is it an identifier? because that was printed by statement
     if (not tok().is_name("")) {
         return;
     }
+
+    // not an identifier
     os << '{';
     size_t i{};
     for (const std::unique_ptr<expr_any>& ea : exprs_) {
@@ -208,37 +216,37 @@ inline void expr_type_value::source_to(std::ostream& os) const {
 // declared in 'expr_type_value.hpp'
 // resolves circular reference: expr_type_value -> expr_any -> expr_type_values
 inline void expr_type_value::compile_recursive(
-    const expr_type_value& atv, toc& tc, std::ostream& os, size_t indent,
+    const expr_type_value& etv, toc& tc, std::ostream& os, size_t indent,
     const std::string& src, const std::string& dst, const type& dst_type) {
 
-    tc.comment_source(atv, os, indent);
+    tc.comment_source(etv, os, indent);
 
+    // is it an identifier?
     if (not src.empty()) {
-        // e.g. obj.pos = p
-        const type& src_type{tc.make_ident_info(atv.tok(), src, true).type_ref};
+        // yes, e.g. obj.pos = p
+        const type& src_type{tc.make_ident_info(etv.tok(), src, true).type_ref};
         if (src_type.name() != dst_type.name()) {
-            throw compiler_exception(atv.tok(),
+            throw compiler_exception(etv.tok(),
                                      "cannot assign '" + src + "' to '" + dst +
                                          "' because '" + src + "' is '" +
                                          src_type.name() + "' and '" + dst +
                                          "' is '" + dst_type.name() + "'");
         }
-        const std::vector<type_field>& flds{dst_type.fields()};
-        const size_t n{flds.size()};
-        for (size_t i{}; i < n; i++) {
-            const type_field& fld{flds.at(i)};
+
+        for (const type_field& fld : dst_type.fields()) {
             if (fld.tp.is_built_in()) {
                 const std::string& src_info{
-                    tc.make_ident_info(atv.tok(), src + "." + fld.name, false)
+                    tc.make_ident_info(etv.tok(), src + "." + fld.name, false)
                         .id_nasm};
                 const std::string& dst_info{
-                    tc.make_ident_info(atv.tok(), dst + "." + fld.name, false)
+                    tc.make_ident_info(etv.tok(), dst + "." + fld.name, false)
                         .id_nasm};
-                tc.asm_cmd(atv.tok(), os, indent, "mov", dst_info, src_info);
+                tc.asm_cmd(etv.tok(), os, indent, "mov", dst_info, src_info);
                 continue;
             }
-            // not a register built-in type, recurse
-            compile_recursive(atv, tc, os, indent + 1, src + "." + fld.name,
+
+            // not a built-in, recurse
+            compile_recursive(etv, tc, os, indent + 1, src + "." + fld.name,
                               dst + "." + fld.name, fld.tp);
         }
         return;
@@ -252,21 +260,22 @@ inline void expr_type_value::compile_recursive(
     for (size_t i{}; i < n; i++) {
         const type_field& fld{flds.at(i)};
         if (fld.tp.is_built_in()) {
-            atv.exprs_.at(i)->compile(tc, os, indent, dst + "." + fld.name);
+            etv.exprs_.at(i)->compile(tc, os, indent, dst + "." + fld.name);
             continue;
         }
         // not a built-in type, recurse
-        compile_recursive(atv.exprs_.at(i)->as_assign_type_value(), tc, os,
-                          indent + 1, atv.exprs_.at(i)->identifier(),
+        compile_recursive(etv.exprs_.at(i)->as_assign_type_value(), tc, os,
+                          indent + 1, etv.exprs_.at(i)->identifier(),
                           dst + "." + fld.name, fld.tp);
     }
 }
 
-// declared in "unary_ops.hpp"
+// declared in 'unary_ops.hpp'
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
 inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
                                size_t indnt,
                                const std::string& dst_info) const {
+
     size_t i{ops_.size()};
     while (i--) {
         const char op{ops_[i]};
@@ -420,6 +429,7 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
             os << line3 << '\n';
             continue;
         }
+
         const std::string lbl{match[1]};
 
         if (jxxlbl != lbl) {
