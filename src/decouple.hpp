@@ -2,6 +2,8 @@
 // solves circular references
 // implemented in main.cpp
 
+// reviewed: 2025-09-28
+
 #include <memory>
 
 class toc;
