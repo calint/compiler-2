@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include <cstdint>
 #include <vector>
@@ -56,7 +57,7 @@ class unary_ops final {
         }
     }
 
-    // implemented in main.cpp
+    // implemented in 'main.cpp'
     // solves circular reference: unary_ops -> toc -> statement -> unary_ops
     inline auto compile(toc& tc, std::ostream& os, size_t indnt,
                         const std::string& dst_resolved) const -> void;
@@ -78,9 +79,7 @@ class unary_ops final {
                 v = ~v; // NOLINT(hicpp-signed-bitwise)
                 break;
             default:
-                throw panic_exception("unexpected code path " +
-                                      std::string{__FILE__} + ":" +
-                                      std::to_string(__LINE__));
+                throw panic_exception("unexpected code path");
             }
         }
         return v;
