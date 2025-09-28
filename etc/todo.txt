@@ -1,4 +1,5 @@
-[ ] toc: review the is_variable_initiated and set_variable_initiated regarding registers
+[ ] toc: review the is_variable_initiated and set_variable_initiated
+    regarding registers
 [ ] tokenizer, token etc to std::string_view
 [ ] tokenizer: handle string with escaped " 
 [ ] token: regex construction to static
