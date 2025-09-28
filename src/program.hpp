@@ -62,8 +62,8 @@ class program final {
                 statements_.emplace_back(
                     std::make_unique<stmt_comment>(tc_, tk, tkz));
             } else if (tk.is_name("")) {
-                //? should this be able to happen?
-                // throw panic_exception("program:1");
+                // empty space at end of file; necessary for source reproduction
+                // to be identical
                 statements_.emplace_back(
                     std::make_unique<statement>(tk, unary_ops{}));
             } else {
