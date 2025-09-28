@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include <algorithm>
 
@@ -42,7 +43,6 @@ class stmt_call : public expression {
             }
         } else {
             // built-in function
-            //? todo. make this nicer
             bool expect_arg{};
             while (true) {
                 if (tz.is_next_char(')')) { // foo()
@@ -52,9 +52,8 @@ class stmt_call : public expression {
                     }
                     break;
                 }
-                //? default type because built-in function that takes parameter
-                // is 'mov'
                 args_.emplace_back(tc, tz, tc.get_type_default(), true);
+                // note: default type because built-in function use registers
                 expect_arg = tz.is_next_char(',');
             }
         }
@@ -181,30 +180,31 @@ class stmt_call : public expression {
         }
 
         size_t i{};
-        for (const expr_any& ea : args_) {
+        for (const expr_any& arg : args_) {
             const stmt_def_func_param& param{func.param(i)};
             i++;
             // does the parameter want the value passed through a register?
             std::string arg_reg{param.get_register_name_or_empty()};
             if (not arg_reg.empty()) {
                 // argument is passed through register
-                tc.alloc_named_register_or_throw(ea, os, indent + 1, arg_reg);
+                tc.alloc_named_register_or_throw(arg, os, indent + 1, arg_reg);
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
-            if (ea.is_expression()) {
+            // is argument an expression?
+            if (arg.is_expression()) {
                 // argument is an expression, evaluate and store in arg_reg
                 if (arg_reg.empty()) {
                     // no particular register requested for the argument
                     // re-assign 'arg_reg' to scratch register
                     arg_reg =
-                        tc.alloc_scratch_register(ea.tok(), os, indent + 1);
+                        tc.alloc_scratch_register(arg.tok(), os, indent + 1);
                     allocated_scratch_registers.emplace_back(arg_reg);
                     allocated_registers_in_order.emplace_back(arg_reg);
                 }
                 // compile expression and store result in 'arg_reg'
-                // note. 'unary_ops' are part of 'expr_ops_list'
-                ea.compile(tc, os, indent + 1, arg_reg);
+                // note: 'unary_ops' are part of 'expr_ops_list'
+                arg.compile(tc, os, indent + 1, arg_reg);
                 // alias parameter name to the register containing its value
                 aliases_to_add.emplace_back(param.identifier(), arg_reg);
                 toc::indent(os, indent + 1, true);
@@ -214,31 +214,31 @@ class stmt_call : public expression {
             }
 
             // argument is not an expression
-            // check if argument is passed through register
+            // is argument is passed through register?
             if (arg_reg.empty()) {
                 // argument not passed through register
-                // check if unary ops need to be applied
-                if (ea.get_unary_ops().is_empty()) {
+                // does unary ops need to be applied?
+                if (arg.get_unary_ops().is_empty()) {
                     // no unary ops
                     // alias parameter name to the argument identifier
-                    const std::string& arg_id{ea.identifier()};
+                    const std::string& arg_id{arg.identifier()};
                     aliases_to_add.emplace_back(param.identifier(), arg_id);
                     toc::indent(os, indent + 1, true);
                     os << "alias " << param.identifier() << " -> " << arg_id
                        << '\n';
                     continue;
                 }
-                // unary ops must be applied, allocate a scratch register and
-                // evaluate
+                // unary ops must be applied
+                // allocate a scratch register and evaluate
                 const ident_resolved& arg_resolved{
-                    tc.resolve_identifier(ea, true)};
+                    tc.resolve_identifier(arg, true)};
                 const std::string& scratch_reg{
-                    tc.alloc_scratch_register(ea.tok(), os, indent + 1)};
+                    tc.alloc_scratch_register(arg.tok(), os, indent + 1)};
                 allocated_registers_in_order.emplace_back(scratch_reg);
                 allocated_scratch_registers.emplace_back(scratch_reg);
                 tc.asm_cmd(param.tok(), os, indent + 1, "mov", scratch_reg,
                            arg_resolved.id_nasm);
-                ea.get_unary_ops().compile(tc, os, indent + 1, scratch_reg);
+                arg.get_unary_ops().compile(tc, os, indent + 1, scratch_reg);
                 // alias parameter to scratch register
                 aliases_to_add.emplace_back(param.identifier(), scratch_reg);
                 toc::indent(os, indent + 1, true);
@@ -253,18 +253,22 @@ class stmt_call : public expression {
             toc::indent(os, indent + 1, true);
             os << "alias " << param.identifier() << " -> " << arg_reg << '\n';
             // move argument to register specified in param
-            const ident_resolved& arg_resolved{tc.resolve_identifier(ea, true)};
+            const ident_resolved& arg_resolved{
+                tc.resolve_identifier(arg, true)};
+            // is argument a constant?
             if (arg_resolved.is_const()) {
                 // argument is a constant
+                // assign it to the register
                 tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg,
-                           ea.get_unary_ops().to_string() +
+                           arg.get_unary_ops().to_string() +
                                arg_resolved.id_nasm);
                 continue;
             }
-            // argument is not a constant, move argument to register
+            // argument is not a constant
+            // assign argument to register
             tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg,
                        arg_resolved.id_nasm);
-            ea.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
+            arg.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
         }
 
         // enter function creating a new scope from which prior variables are
@@ -307,26 +311,26 @@ class stmt_call : public expression {
                 tc.free_named_register(os, indent + 1, reg);
                 continue;
             }
-            throw panic_exception("unexpected code path " +
-                                  std::string{__FILE__} + ":" +
-                                  std::to_string(__LINE__));
+            throw panic_exception("unexpected code path");
         }
 
-        // provide an exit label for 'return' to jump to instead of assembler
-        // 'ret'
+        // provide an exit label for 'return' to jump to
         toc::asm_label(tok(), os, indent, ret_jmp_label);
 
-        // if the result of the call has unary ops
+        // does the result of the call have unary ops?
+        // e.g.: var x = ~foo*()
         if (not get_unary_ops().is_empty()) {
+            // has unary ops
+            // does the function have a return?
             if (func.returns().empty()) {
                 throw compiler_exception(
                     tok(), "function call has unary operations but it "
                            "does not return a value");
             }
 
+            // compile the result using the unary ops
             const ident_resolved& ret_resolved{tc.resolve_identifier(
                 tok(), func.returns().at(0).ident_tk.name(), true)};
-            // note. unary_ops::compile destination argument must be resolved
             get_unary_ops().compile(tc, os, indent, ret_resolved.id_nasm);
         }
         // exit scope
