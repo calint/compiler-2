@@ -41,6 +41,8 @@ class expr_any final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         switch (var_.index()) {
+        default:
+            throw panic_exception("unexpected code path expr_any:1");
         case 0:
             get<expr_ops_list>(var_).source_to(os);
             return;
@@ -50,8 +52,6 @@ class expr_any final : public statement {
         case 2:
             get<expr_type_value>(var_).source_to(os);
             return;
-        default:
-            throw panic_exception("unexpected code path expr_any:1");
         }
     }
 
