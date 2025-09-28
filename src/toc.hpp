@@ -43,7 +43,7 @@ class frame final {
     // aliases that refers to previous frame(s) alias or variable
     lut<std::string> aliases_;
 
-    // the label to jump to when exiting an inlined function
+    // the label to jump to when exiting an function
     std::string func_ret_label_;
 
     // info about the function returns
