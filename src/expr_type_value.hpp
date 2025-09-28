@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-30
 
 #include "decouple.hpp"
 #include "statement.hpp"
@@ -12,6 +13,7 @@ class expr_type_value final : public statement {
     // 'expr_any' definition is known. clang++ -std=c++23 requires it since
     // changes to handling of unique_ptr to incomplete types
     inline expr_type_value(toc& tc, tokenizer& tz, const type& tp);
+
     expr_type_value() = default;
     expr_type_value(const expr_type_value&) = default;
     expr_type_value(expr_type_value&&) = default;
@@ -28,13 +30,13 @@ class expr_type_value final : public statement {
                                            tok().name(), dst, get_type());
     }
 
-    // implemented in 'main.cpp' due to circular reference
-    //   expr_type_value -> expr_any -> expr_type_value
+    // implemented in 'main.cpp' due to circular reference:
+    // expr_type_value -> expr_any -> expr_type_value
     inline void source_to(std::ostream& os) const override;
 
   private:
-    // implemented in main.cpp due to circular reference
-    //   expr_type_value -> expr_any -> expr_type_value
+    // implemented in main.cpp due to circular reference:
+    // expr_type_value -> expr_any -> expr_type_value
     inline static void compile_recursive(const expr_type_value& atv, toc& tc,
                                          std::ostream& os, size_t indent,
                                          const std::string& src,
