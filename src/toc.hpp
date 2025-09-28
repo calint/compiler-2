@@ -400,7 +400,7 @@ class toc final {
                             const bool must_be_initiated) const
         -> ident_resolved {
 
-        const ident_resolved& id_resolved{resolve_ident_or_empty(
+        const ident_resolved& id_resolved{resolve_identifier_or_empty(
             st.tok(), st.identifier(), must_be_initiated)};
 
         if (not id_resolved.id_nasm.empty()) {
@@ -416,7 +416,7 @@ class toc final {
         -> ident_resolved {
 
         const ident_resolved& name_resolved{
-            resolve_ident_or_empty(src_loc, name, must_be_initiated)};
+            resolve_identifier_or_empty(src_loc, name, must_be_initiated)};
 
         if (not name_resolved.id_nasm.empty()) {
             return name_resolved;
@@ -1304,8 +1304,9 @@ class toc final {
         return nbytes;
     }
 
-    auto resolve_ident_or_empty(const token& src_loc, const std::string& ident,
-                                const bool must_be_initiated) const
+    auto resolve_identifier_or_empty(const token& src_loc,
+                                     const std::string& ident,
+                                     const bool must_be_initiated) const
         -> ident_resolved {
 
         identifier id{ident};
