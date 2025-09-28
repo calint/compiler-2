@@ -187,7 +187,7 @@ class expr_ops_list final : public expression {
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const std::string& dst) const -> void override {
 
-        const ident_resolved& dst_resolved{
+        const ident_resolved dst_resolved{
             tc.resolve_identifier(tok(), dst, false)};
 
         if (dst_resolved.is_register()) {

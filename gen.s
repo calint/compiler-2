@@ -87,8 +87,7 @@ mov rsp,stk.end
      cmp_66_12:
      cmp qword[rsp-16], 2
      jne bool_false_66_12
-     jmp bool_true_66_12
-     bool_true_66_12:
+     bool_true_66_12:  ; opt1
      mov r15, true
      jmp bool_end_66_12
      bool_false_66_12:
@@ -101,8 +100,7 @@ mov rsp,stk.end
      cmp_36_8_66_5:
      cmp r15, 0
      jne if_36_5_66_5_end
-     jmp if_36_8_66_5_code
-     if_36_8_66_5_code:
+     if_36_8_66_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_66_5
@@ -131,8 +129,7 @@ mov rsp,stk.end
      cmp_67_12:
      cmp qword[rsp-8], 0xb
      jne bool_false_67_12
-     jmp bool_true_67_12
-     bool_true_67_12:
+     bool_true_67_12:  ; opt1
      mov r15, true
      jmp bool_end_67_12
      bool_false_67_12:
@@ -145,8 +142,7 @@ mov rsp,stk.end
      cmp_36_8_67_5:
      cmp r15, 0
      jne if_36_5_67_5_end
-     jmp if_36_8_67_5_code
-     if_36_8_67_5_code:
+     if_36_8_67_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_67_5
@@ -182,8 +178,7 @@ mov rsp,stk.end
      cmp_54_8_70_5:
      cmp qword[rsp-24], 0
      jne if_54_5_70_5_end
-     jmp if_54_8_70_5_code
-     if_54_8_70_5_code:
+     if_54_8_70_5_code:  ; opt1
 ;      [54:17] return 
        jmp bar_70_5_end
      if_54_5_70_5_end:
@@ -203,8 +198,7 @@ mov rsp,stk.end
      cmp_71_12:
      cmp qword[rsp-24], 0
      jne bool_false_71_12
-     jmp bool_true_71_12
-     bool_true_71_12:
+     bool_true_71_12:  ; opt1
      mov r15, true
      jmp bool_end_71_12
      bool_false_71_12:
@@ -217,8 +211,7 @@ mov rsp,stk.end
      cmp_36_8_71_5:
      cmp r15, 0
      jne if_36_5_71_5_end
-     jmp if_36_8_71_5_code
-     if_36_8_71_5_code:
+     if_36_8_71_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_71_5
@@ -252,8 +245,7 @@ mov rsp,stk.end
      cmp_54_8_74_5:
      cmp qword[rsp-24], 0
      jne if_54_5_74_5_end
-     jmp if_54_8_74_5_code
-     if_54_8_74_5_code:
+     if_54_8_74_5_code:  ; opt1
 ;      [54:17] return 
        jmp bar_74_5_end
      if_54_5_74_5_end:
@@ -273,8 +265,7 @@ mov rsp,stk.end
      cmp_75_12:
      cmp qword[rsp-24], 0xff
      jne bool_false_75_12
-     jmp bool_true_75_12
-     bool_true_75_12:
+     bool_true_75_12:  ; opt1
      mov r15, true
      jmp bool_end_75_12
      bool_false_75_12:
@@ -287,8 +278,7 @@ mov rsp,stk.end
      cmp_36_8_75_5:
      cmp r15, 0
      jne if_36_5_75_5_end
-     jmp if_36_8_75_5_code
-     if_36_8_75_5_code:
+     if_36_8_75_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_75_5
@@ -346,8 +336,7 @@ mov rsp,stk.end
      cmp_79_12:
      cmp qword[rsp-40], 2
      jne bool_false_79_12
-     jmp bool_true_79_12
-     bool_true_79_12:
+     bool_true_79_12:  ; opt1
      mov r15, true
      jmp bool_end_79_12
      bool_false_79_12:
@@ -360,8 +349,7 @@ mov rsp,stk.end
      cmp_36_8_79_5:
      cmp r15, 0
      jne if_36_5_79_5_end
-     jmp if_36_8_79_5_code
-     if_36_8_79_5_code:
+     if_36_8_79_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_79_5
@@ -410,8 +398,7 @@ mov rsp,stk.end
      cmp_82_12:
      cmp qword[rsp-40], 2
      jne bool_false_82_12
-     jmp bool_true_82_12
-     bool_true_82_12:
+     bool_true_82_12:  ; opt1
      mov r15, true
      jmp bool_end_82_12
      bool_false_82_12:
@@ -424,8 +411,7 @@ mov rsp,stk.end
      cmp_36_8_82_5:
      cmp r15, 0
      jne if_36_5_82_5_end
-     jmp if_36_8_82_5_code
-     if_36_8_82_5_code:
+     if_36_8_82_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_82_5
@@ -482,8 +468,7 @@ mov rsp,stk.end
      cmp_85_12:
      cmp qword[rsp-56], 4
      jne bool_false_85_12
-     jmp bool_true_85_12
-     bool_true_85_12:
+     bool_true_85_12:  ; opt1
      mov r15, true
      jmp bool_end_85_12
      bool_false_85_12:
@@ -496,8 +481,7 @@ mov rsp,stk.end
      cmp_36_8_85_5:
      cmp r15, 0
      jne if_36_5_85_5_end
-     jmp if_36_8_85_5_code
-     if_36_8_85_5_code:
+     if_36_8_85_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_85_5
@@ -566,8 +550,7 @@ mov rsp,stk.end
      cmp_91_12:
      cmp qword[rsp-92], 10
      jne bool_false_91_12
-     jmp bool_true_91_12
-     bool_true_91_12:
+     bool_true_91_12:  ; opt1
      mov r15, true
      jmp bool_end_91_12
      bool_false_91_12:
@@ -580,8 +563,7 @@ mov rsp,stk.end
      cmp_36_8_91_5:
      cmp r15, 0
      jne if_36_5_91_5_end
-     jmp if_36_8_91_5_code
-     if_36_8_91_5_code:
+     if_36_8_91_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_91_5
@@ -610,8 +592,7 @@ mov rsp,stk.end
      cmp_92_12:
      cmp qword[rsp-84], 2
      jne bool_false_92_12
-     jmp bool_true_92_12
-     bool_true_92_12:
+     bool_true_92_12:  ; opt1
      mov r15, true
      jmp bool_end_92_12
      bool_false_92_12:
@@ -624,8 +605,7 @@ mov rsp,stk.end
      cmp_36_8_92_5:
      cmp r15, 0
      jne if_36_5_92_5_end
-     jmp if_36_8_92_5_code
-     if_36_8_92_5_code:
+     if_36_8_92_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_92_5
@@ -654,8 +634,7 @@ mov rsp,stk.end
      cmp_93_12:
      cmp dword[rsp-76], 0xff0000
      jne bool_false_93_12
-     jmp bool_true_93_12
-     bool_true_93_12:
+     bool_true_93_12:  ; opt1
      mov r15, true
      jmp bool_end_93_12
      bool_false_93_12:
@@ -668,8 +647,7 @@ mov rsp,stk.end
      cmp_36_8_93_5:
      cmp r15, 0
      jne if_36_5_93_5_end
-     jmp if_36_8_93_5_code
-     if_36_8_93_5_code:
+     if_36_8_93_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_93_5
@@ -730,8 +708,7 @@ mov rsp,stk.end
      cmp_97_12:
      cmp qword[rsp-92], -1
      jne bool_false_97_12
-     jmp bool_true_97_12
-     bool_true_97_12:
+     bool_true_97_12:  ; opt1
      mov r15, true
      jmp bool_end_97_12
      bool_false_97_12:
@@ -744,8 +721,7 @@ mov rsp,stk.end
      cmp_36_8_97_5:
      cmp r15, 0
      jne if_36_5_97_5_end
-     jmp if_36_8_97_5_code
-     if_36_8_97_5_code:
+     if_36_8_97_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_97_5
@@ -774,8 +750,7 @@ mov rsp,stk.end
      cmp_98_12:
      cmp qword[rsp-84], -2
      jne bool_false_98_12
-     jmp bool_true_98_12
-     bool_true_98_12:
+     bool_true_98_12:  ; opt1
      mov r15, true
      jmp bool_end_98_12
      bool_false_98_12:
@@ -788,8 +763,7 @@ mov rsp,stk.end
      cmp_36_8_98_5:
      cmp r15, 0
      jne if_36_5_98_5_end
-     jmp if_36_8_98_5_code
-     if_36_8_98_5_code:
+     if_36_8_98_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_98_5
@@ -836,8 +810,7 @@ mov rsp,stk.end
      cmp_101_12:
      cmp qword[rsp-128], -1
      jne bool_false_101_12
-     jmp bool_true_101_12
-     bool_true_101_12:
+     bool_true_101_12:  ; opt1
      mov r15, true
      jmp bool_end_101_12
      bool_false_101_12:
@@ -850,8 +823,7 @@ mov rsp,stk.end
      cmp_36_8_101_5:
      cmp r15, 0
      jne if_36_5_101_5_end
-     jmp if_36_8_101_5_code
-     if_36_8_101_5_code:
+     if_36_8_101_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_101_5
@@ -880,8 +852,7 @@ mov rsp,stk.end
      cmp_102_12:
      cmp qword[rsp-120], -2
      jne bool_false_102_12
-     jmp bool_true_102_12
-     bool_true_102_12:
+     bool_true_102_12:  ; opt1
      mov r15, true
      jmp bool_end_102_12
      bool_false_102_12:
@@ -894,8 +865,7 @@ mov rsp,stk.end
      cmp_36_8_102_5:
      cmp r15, 0
      jne if_36_5_102_5_end
-     jmp if_36_8_102_5_code
-     if_36_8_102_5_code:
+     if_36_8_102_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_102_5
@@ -924,8 +894,7 @@ mov rsp,stk.end
      cmp_103_12:
      cmp dword[rsp-112], 0xff0000
      jne bool_false_103_12
-     jmp bool_true_103_12
-     bool_true_103_12:
+     bool_true_103_12:  ; opt1
      mov r15, true
      jmp bool_end_103_12
      bool_false_103_12:
@@ -938,8 +907,7 @@ mov rsp,stk.end
      cmp_36_8_103_5:
      cmp r15, 0
      jne if_36_5_103_5_end
-     jmp if_36_8_103_5_code
-     if_36_8_103_5_code:
+     if_36_8_103_5_code:  ; opt1
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_103_5
@@ -958,6 +926,237 @@ mov rsp,stk.end
      if_36_5_103_5_end:
 ;    free r15
    assert_103_5_end:
+;  [105:5] print(hello.len, hello) 
+;  print(len : reg_rdx, ptr : reg_rsi) 
+;    inline: 105_5
+;    alloc rdx
+;    alias len -> rdx
+     mov rdx, hello.len
+;    alloc rsi
+;    alias ptr -> rsi
+     mov rsi, hello
+;    [19:5] mov(rax, 1) 
+     mov rax, 1
+;    [19:19] # write system call 
+;    [20:5] mov(rdi, 1) 
+     mov rdi, 1
+;    [20:19] # file descriptor for standard out 
+;    [21:5] mov(rsi, ptr) 
+;    [21:19] # buffer address 
+;    [22:5] mov(rdx, len) 
+;    [22:19] # buffer size 
+;    [23:5] syscall() 
+     syscall
+;    free rsi
+;    free rdx
+   print_105_5_end:
+;  [106:5] loop
+   loop_106_5:
+;    [107:9] print(prompt1.len, prompt1) 
+;    print(len : reg_rdx, ptr : reg_rsi) 
+;      inline: 107_9
+;      alloc rdx
+;      alias len -> rdx
+       mov rdx, prompt1.len
+;      alloc rsi
+;      alias ptr -> rsi
+       mov rsi, prompt1
+;      [19:5] mov(rax, 1) 
+       mov rax, 1
+;      [19:19] # write system call 
+;      [20:5] mov(rdi, 1) 
+       mov rdi, 1
+;      [20:19] # file descriptor for standard out 
+;      [21:5] mov(rsi, ptr) 
+;      [21:19] # buffer address 
+;      [22:5] mov(rdx, len) 
+;      [22:19] # buffer size 
+;      [23:5] syscall() 
+       syscall
+;      free rsi
+;      free rdx
+     print_107_9_end:
+;    len: qword[rsp-136]
+;    [108:9] var len = read(input.len, input) - 1 
+;    [108:13] len = read(input.len, input) - 1 
+;    [108:19] read(input.len, input) - 1 
+;    [108:19] read(input.len, input) - 1 
+;    [108:19] len = read(input.len, input) 
+;    [108:19] read(input.len, input) 
+;    read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes 
+;      inline: 108_19
+;      alias nbytes -> len
+;      alloc rdx
+;      alias len -> rdx
+       mov rdx, input.len
+;      alloc rsi
+;      alias ptr -> rsi
+       mov rsi, input
+;      [27:5] mov(rax, 0) 
+       mov rax, 0
+;      [27:19] # read system call 
+;      [28:5] mov(rdi, 0) 
+       mov rdi, 0
+;      [28:19] # file descriptor for standard input 
+;      [29:5] mov(rsi, ptr) 
+;      [29:19] # buffer address 
+;      [30:5] mov(rdx, len) 
+;      [30:19] # buffer size 
+;      [31:5] syscall() 
+       syscall
+;      [32:5] mov(nbytes, rax) 
+       mov qword[rsp-136], rax
+;      [32:22] # return value 
+;      free rsi
+;      free rdx
+     read_108_19_end:
+;    [108:44] len - 1 
+     sub qword[rsp-136], 1
+;    [108:49] # -1 don't include the '\n' 
+     if_109_12:
+;    [109:12] ? len == 0 
+;    [109:12] ? len == 0 
+     cmp_109_12:
+     cmp qword[rsp-136], 0
+     jne if_111_19
+     if_109_12_code:  ; opt1
+;      [110:13] break 
+       jmp loop_106_5_end
+     jmp if_109_9_end
+     if_111_19:
+;    [111:19] ? len <= 4 
+;    [111:19] ? len <= 4 
+     cmp_111_19:
+     cmp qword[rsp-136], 4
+     jg if_else_109_9
+     if_111_19_code:  ; opt1
+;      [112:13] print(prompt2.len, prompt2) 
+;      print(len : reg_rdx, ptr : reg_rsi) 
+;        inline: 112_13
+;        alloc rdx
+;        alias len -> rdx
+         mov rdx, prompt2.len
+;        alloc rsi
+;        alias ptr -> rsi
+         mov rsi, prompt2
+;        [19:5] mov(rax, 1) 
+         mov rax, 1
+;        [19:19] # write system call 
+;        [20:5] mov(rdi, 1) 
+         mov rdi, 1
+;        [20:19] # file descriptor for standard out 
+;        [21:5] mov(rsi, ptr) 
+;        [21:19] # buffer address 
+;        [22:5] mov(rdx, len) 
+;        [22:19] # buffer size 
+;        [23:5] syscall() 
+         syscall
+;        free rsi
+;        free rdx
+       print_112_13_end:
+;      [113:13] continue 
+       jmp loop_106_5
+     jmp if_109_9_end
+     if_else_109_9:
+;        [115:13] print(prompt3.len, prompt3) 
+;        print(len : reg_rdx, ptr : reg_rsi) 
+;          inline: 115_13
+;          alloc rdx
+;          alias len -> rdx
+           mov rdx, prompt3.len
+;          alloc rsi
+;          alias ptr -> rsi
+           mov rsi, prompt3
+;          [19:5] mov(rax, 1) 
+           mov rax, 1
+;          [19:19] # write system call 
+;          [20:5] mov(rdi, 1) 
+           mov rdi, 1
+;          [20:19] # file descriptor for standard out 
+;          [21:5] mov(rsi, ptr) 
+;          [21:19] # buffer address 
+;          [22:5] mov(rdx, len) 
+;          [22:19] # buffer size 
+;          [23:5] syscall() 
+           syscall
+;          free rsi
+;          free rdx
+         print_115_13_end:
+;        [116:13] print(len, input) 
+;        print(len : reg_rdx, ptr : reg_rsi) 
+;          inline: 116_13
+;          alloc rdx
+;          alias len -> rdx
+           mov rdx, qword[rsp-136]
+;          alloc rsi
+;          alias ptr -> rsi
+           mov rsi, input
+;          [19:5] mov(rax, 1) 
+           mov rax, 1
+;          [19:19] # write system call 
+;          [20:5] mov(rdi, 1) 
+           mov rdi, 1
+;          [20:19] # file descriptor for standard out 
+;          [21:5] mov(rsi, ptr) 
+;          [21:19] # buffer address 
+;          [22:5] mov(rdx, len) 
+;          [22:19] # buffer size 
+;          [23:5] syscall() 
+           syscall
+;          free rsi
+;          free rdx
+         print_116_13_end:
+;        [117:13] print(dot.len, dot) 
+;        print(len : reg_rdx, ptr : reg_rsi) 
+;          inline: 117_13
+;          alloc rdx
+;          alias len -> rdx
+           mov rdx, dot.len
+;          alloc rsi
+;          alias ptr -> rsi
+           mov rsi, dot
+;          [19:5] mov(rax, 1) 
+           mov rax, 1
+;          [19:19] # write system call 
+;          [20:5] mov(rdi, 1) 
+           mov rdi, 1
+;          [20:19] # file descriptor for standard out 
+;          [21:5] mov(rsi, ptr) 
+;          [21:19] # buffer address 
+;          [22:5] mov(rdx, len) 
+;          [22:19] # buffer size 
+;          [23:5] syscall() 
+           syscall
+;          free rsi
+;          free rdx
+         print_117_13_end:
+;        [118:13] print(nl.len, nl) 
+;        print(len : reg_rdx, ptr : reg_rsi) 
+;          inline: 118_13
+;          alloc rdx
+;          alias len -> rdx
+           mov rdx, nl.len
+;          alloc rsi
+;          alias ptr -> rsi
+           mov rsi, nl
+;          [19:5] mov(rax, 1) 
+           mov rax, 1
+;          [19:19] # write system call 
+;          [20:5] mov(rdi, 1) 
+           mov rdi, 1
+;          [20:19] # file descriptor for standard out 
+;          [21:5] mov(rsi, ptr) 
+;          [21:19] # buffer address 
+;          [22:5] mov(rdx, len) 
+;          [22:19] # buffer size 
+;          [23:5] syscall() 
+           syscall
+;          free rsi
+;          free rdx
+         print_118_13_end:
+     if_109_9_end:
+   jmp loop_106_5
+   loop_106_5_end:
 ;----------------------------------------------------
 ; system call: exit 0
 mov rax, 60
@@ -966,4 +1165,4 @@ syscall
 
 ; max scratch registers in use: 1
 ;            max frames in use: 7
-;        max inline stack size: 128 B
+;        max inline stack size: 136 B
