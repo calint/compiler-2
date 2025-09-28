@@ -29,7 +29,6 @@ run `prog.baz`
 ## Source
 
 ```text
-```
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
 C/C++ Header                    35            723            467           4340
