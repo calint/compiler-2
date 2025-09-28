@@ -16,14 +16,13 @@ class program final {
     type type_i8{"i8", 1, true};
     type type_bool{"bool", 1, true};
 
-    statement prg; // place-holder
     std::vector<std::unique_ptr<statement>> statements_;
-    toc tc_;
+    toc tc_; // table of contents
 
   public:
     explicit program(const std::string& source) : tc_{source} {
         // create dummy token to use `toc` functions
-        const token prgtk{prg.tok()};
+        const token prgtk{};
 
         // add built-in assembler calls
         tc_.add_func(prgtk, "mov", type_void, nullptr);
@@ -107,7 +106,7 @@ class program final {
         }
 
         // get the main function and compile
-        const stmt_def_func& func_main{tc.get_func_or_throw(prg.tok(), "main")};
+        const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
         tc.enter_func("main");
         func_main.code().compile(tc, os, indent);
         tc.exit_func("main");
