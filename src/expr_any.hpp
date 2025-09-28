@@ -51,9 +51,7 @@ class expr_any final : public statement {
             get<expr_type_value>(var_).source_to(os);
             return;
         default:
-            throw panic_exception("unexpected code path " +
-                                  std::string{__FILE__} + ":" +
-                                  std::to_string(__LINE__));
+            throw panic_exception("unexpected code path");
         }
     }
 
@@ -64,9 +62,7 @@ class expr_any final : public statement {
 
         switch (var_.index()) {
         default:
-            throw panic_exception("unexpected code path " +
-                                  std::string{__FILE__} + ":" +
-                                  std::to_string(__LINE__));
+            throw panic_exception("unexpected code path");
         case 0:
             // number expression
             get<expr_ops_list>(var_).compile(tc, os, indent, dst);
@@ -90,7 +86,7 @@ class expr_any final : public statement {
                 return;
             }
             // expression
-            // make unique labels considering inlined functions
+            // make unique labels considering in-lined functions
             const std::string& call_path{tc.get_call_path(tok())};
             const std::string& src_loc{
                 tc.source_location_for_use_in_label(tok())};
