@@ -17,10 +17,12 @@ class bool_ops_list final : public statement {
                   std::variant<bool_op, bool_ops_list> first_bool_op = {},
                   token first_op = {})
         : // the token is used to give 'cmp' a unique label
-          //   if first_bool_op is provided then use that token
-          //   else the next white space token
-          statement{first_op.is_name("") ? tz.next_whitespace_token()
-                                         : token_from(first_bool_op)},
+          // if 'first_bool_op' is provided then use that token
+          // else the next white space token
+          // note: 'first_op' is provided whenever a valid 'first_bool_op' is
+          //       provided
+          statement{first_op.is_empty() ? tz.next_whitespace_token()
+                                        : token_from(first_bool_op)},
           not_token_{std::move(not_token)}, enclosed_{enclosed} {
 
         set_type(tc.get_type_bool());
