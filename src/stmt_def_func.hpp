@@ -194,7 +194,6 @@ class stmt_def_func final : public statement {
 
             tc.alloc_named_register_or_throw(param, os, indent + 1, param_reg);
             tc.add_alias(param_name, param_reg);
-            tc.set_var_is_initiated(param_reg);
             allocated_named_registers.emplace_back(param_reg);
         }
     }

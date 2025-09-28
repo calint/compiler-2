@@ -32,9 +32,6 @@ class call_asm_mov final : public stmt_call {
         // the assembler command might not need to resolve expressions
         const ident_info& dst_info{tc.make_ident_info(arg(0), false)};
 
-        // mark the dst as initiated
-        tc.set_var_is_initiated(dst_info.id);
-
         const statement& src_arg{arg(1)};
         if (src_arg.is_expression()) {
             src_arg.compile(tc, os, indent + 1, dst_info.id);
@@ -51,6 +48,7 @@ class call_asm_mov final : public stmt_call {
         // variable, register or field
         tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
                    src_info.id_nasm);
+        tc.set_var_is_initiated(dst_info.id);
         src_arg.get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
     }
 };

@@ -7,6 +7,7 @@
 
 #include "compiler_exception.hpp"
 #include "lut.hpp"
+#include "panic_exception.hpp"
 #include "statement.hpp"
 #include "type.hpp"
 
@@ -790,7 +791,15 @@ class toc final {
             return;
         }
 
-        // field or register
+        if (fields_.has(id)) {
+            return;
+        }
+
+        if (is_identifier_register(id)) {
+            return;
+        }
+
+        throw panic_exception{"unexpected code path toc:1"};
     }
 
     auto is_var_initiated(const std::string& name) -> bool {
@@ -801,8 +810,15 @@ class toc final {
             return frm.get_var_const_ref(id).initiated;
         }
 
-        // field or register
-        return true;
+        if (fields_.has(id)) {
+            return true;
+        }
+
+        if (is_identifier_register(id)) {
+            return true;
+        }
+
+        throw panic_exception{"unexpected code path toc:2"};
     }
 
     auto set_type_void(const type& tpe) -> void { type_void_ = &tpe; }
