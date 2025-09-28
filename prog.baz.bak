@@ -44,9 +44,9 @@ type point {x, y}
 type object {pos : point, color : i32}
 
 # function arguments are equivalent to mutable references
-func foo(pt : point) {
-    pt.x = 0b10    # binary value 2
-    pt.y = 0xb     # hex value 11
+func foo(p : point) {
+    p.x = 0b10    # binary value 2
+    p.y = 0xb     # hex value 11
 }
 
 # default argument type is `i64`
@@ -65,6 +65,7 @@ func main() {
     foo(p)
     assert(p.x == 2)
     assert(p.y == 0xb)
+    return
 
     var i = 0
     bar(i)

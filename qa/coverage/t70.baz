@@ -1,0 +1,21 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+type point {x, y}
+
+func baz(arg) : i64 res {
+    res = arg * 2
+}
+
+func main() {
+    var p : point = {0, 0}
+    p = {baz(2), baz(3)}
+    assert(p.x==4 and p.y==6)
+}

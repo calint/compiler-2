@@ -25,25 +25,14 @@ class stmt_return final : public statement {
 
         // get the jump target to exit inlined functions
         const std::string& ret_lbl{tc.get_func_return_label_or_throw(tok())};
+
         if (ret_lbl.empty()) {
-            // not in-lined
-            const std::vector<func_return_info>& returns{
-                tc.get_func_returns(tok())};
-            if (not returns.empty()) {
-                const std::string& ret_var{returns.at(0).ident_tk.name()};
-                const std::string& ret_resolved{
-                    tc.resolve_identifier(tok(), ret_var, true).id_nasm};
-                //? todo. check that the return value has been assigned
-                // assign return value to 'rax's
-                tc.asm_cmd(tok(), os, indent, "mov", "rax", ret_resolved);
-            }
-            // return
-            toc::asm_pop(tok(), os, indent, "rbp");
-            toc::asm_ret(tok(), os, indent);
+            // in main
+            // FIX
+            os << "mov rdi, 0\nmov rax, 60\nsyscall\n";
             return;
         }
 
-        // in-lined function
         // check that the return value has been assigned
         const std::vector<func_return_info>& returns{
             tc.get_func_returns(tok())};

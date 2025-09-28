@@ -63,21 +63,21 @@ main:
 ;    [64:25] p.y = 0
      mov qword[rbp-8], 0
 ;  [65:5] foo(p) 
-;  foo(p : point) 
+;  foo(pt : point) 
 ;    inline: 65_5
-;    alias p -> p
-;    [48:5] p.x = 0b10 
-;    [48:11] 0b10 
-;    [48:11] 0b10 
-;    [48:11] p.x = 0b10 
+;    alias pt -> p
+;    [48:5] pt.x = 0b10 
+;    [48:12] 0b10 
+;    [48:12] 0b10 
+;    [48:12] pt.x = 0b10 
      mov qword[rbp-16], 0b10
-;    [48:19] # binary value 2 
-;    [49:5] p.y = 0xb 
-;    [49:11] 0xb 
-;    [49:11] 0xb 
-;    [49:11] p.y = 0xb 
+;    [48:20] # binary value 2 
+;    [49:5] pt.y = 0xb 
+;    [49:12] 0xb 
+;    [49:12] 0xb 
+;    [49:12] pt.y = 0xb 
      mov qword[rbp-8], 0xb
-;    [49:19] # hex value 11 
+;    [49:20] # hex value 11 
    foo_65_5_end:
 ;  [66:5] assert(p.x == 2) 
 ;  assert(expr : bool) 
@@ -89,7 +89,8 @@ main:
      cmp_66_12:
      cmp qword[rbp-16], 2
      jne bool_false_66_12
-     bool_true_66_12:  ; opt1
+     jmp bool_true_66_12
+     bool_true_66_12:
      mov r15, true
      jmp bool_end_66_12
      bool_false_66_12:
@@ -102,7 +103,8 @@ main:
      cmp_36_8_66_5:
      cmp r15, 0
      jne if_36_5_66_5_end
-     if_36_8_66_5_code:  ; opt1
+     jmp if_36_8_66_5_code
+     if_36_8_66_5_code:
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_66_5
@@ -131,7 +133,8 @@ main:
      cmp_67_12:
      cmp qword[rbp-8], 0xb
      jne bool_false_67_12
-     bool_true_67_12:  ; opt1
+     jmp bool_true_67_12
+     bool_true_67_12:
      mov r15, true
      jmp bool_end_67_12
      bool_false_67_12:
@@ -144,7 +147,8 @@ main:
      cmp_36_8_67_5:
      cmp r15, 0
      jne if_36_5_67_5_end
-     if_36_8_67_5_code:  ; opt1
+     jmp if_36_8_67_5_code
+     if_36_8_67_5_code:
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_67_5
@@ -180,7 +184,8 @@ main:
      cmp_54_8_70_5:
      cmp qword[rbp-24], 0
      jne if_54_5_70_5_end
-     if_54_8_70_5_code:  ; opt1
+     jmp if_54_8_70_5_code
+     if_54_8_70_5_code:
 ;      [54:17] return 
        jmp bar_70_5_end
      if_54_5_70_5_end:
@@ -200,7 +205,8 @@ main:
      cmp_71_12:
      cmp qword[rbp-24], 0
      jne bool_false_71_12
-     bool_true_71_12:  ; opt1
+     jmp bool_true_71_12
+     bool_true_71_12:
      mov r15, true
      jmp bool_end_71_12
      bool_false_71_12:
@@ -213,7 +219,8 @@ main:
      cmp_36_8_71_5:
      cmp r15, 0
      jne if_36_5_71_5_end
-     if_36_8_71_5_code:  ; opt1
+     jmp if_36_8_71_5_code
+     if_36_8_71_5_code:
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_71_5
@@ -247,7 +254,8 @@ main:
      cmp_54_8_74_5:
      cmp qword[rbp-24], 0
      jne if_54_5_74_5_end
-     if_54_8_74_5_code:  ; opt1
+     jmp if_54_8_74_5_code
+     if_54_8_74_5_code:
 ;      [54:17] return 
        jmp bar_74_5_end
      if_54_5_74_5_end:
@@ -267,7 +275,8 @@ main:
      cmp_75_12:
      cmp qword[rbp-24], 0xff
      jne bool_false_75_12
-     bool_true_75_12:  ; opt1
+     jmp bool_true_75_12
+     bool_true_75_12:
      mov r15, true
      jmp bool_end_75_12
      bool_false_75_12:
@@ -280,7 +289,8 @@ main:
      cmp_36_8_75_5:
      cmp r15, 0
      jne if_36_5_75_5_end
-     if_36_8_75_5_code:  ; opt1
+     jmp if_36_8_75_5_code
+     if_36_8_75_5_code:
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_75_5
@@ -338,7 +348,8 @@ main:
      cmp_79_12:
      cmp qword[rbp-40], 2
      jne bool_false_79_12
-     bool_true_79_12:  ; opt1
+     jmp bool_true_79_12
+     bool_true_79_12:
      mov r15, true
      jmp bool_end_79_12
      bool_false_79_12:
@@ -351,7 +362,8 @@ main:
      cmp_36_8_79_5:
      cmp r15, 0
      jne if_36_5_79_5_end
-     if_36_8_79_5_code:  ; opt1
+     jmp if_36_8_79_5_code
+     if_36_8_79_5_code:
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_79_5
@@ -370,57 +382,110 @@ main:
      if_36_5_79_5_end:
 ;    free r15
    assert_79_5_end:
-;  x: qword[rbp-48]
-;  [81:5] var x = 1 
-;  [81:9] x = 1 
-;  [81:13] 1 
-;  [81:13] 1 
-;  [81:13] x = 1 
-   mov qword[rbp-48], 1
-;  y: qword[rbp-56]
-;  [82:5] var y = 2 
-;  [82:9] y = 2 
-;  [82:13] 2 
-;  [82:13] 2 
-;  [82:13] y = 2 
-   mov qword[rbp-56], 2
-;  o1: qword[rbp-76]
-;  [84:5] var o1 : object = {{x * 10, y}, 0xff0000}
-;  [84:9] o1 : object = {{x * 10, y}, 0xff0000}
-;  [84:23] {{x * 10, y}, 0xff0000}
-;    [84:23] {{x * 10, y}, 0xff0000}
-;      [84:24] {x * 10, y}
-;      [84:25] x * 10
+;  [81:5] k = baz(1) 
+;  [81:9] baz(1) 
+;  [81:9] baz(1) 
+;  [81:9] k = baz(1) 
+;  [81:9] baz(1) 
+;  baz(arg) : i64 res 
+;    inline: 81_9
+;    alias res -> k
+;    alias arg -> 1
+;    [60:5] res = arg * 2 
+;    [60:11] arg * 2 
+;    alloc r15
+;    [60:11] arg * 2 
+;    [60:11] r15 = arg 
+     mov r15, 1
+;    [60:17] r15 * 2 
+     imul r15, 2
+     mov qword[rbp-40], r15
+;    free r15
+   baz_81_9_end:
+;  [82:5] assert(k == 2) 
+;  assert(expr : bool) 
+;    inline: 82_5
+;    alloc r15
+;    [82:12] k == 2
+;    [82:12] ? k == 2
+;    [82:12] ? k == 2
+     cmp_82_12:
+     cmp qword[rbp-40], 2
+     jne bool_false_82_12
+     jmp bool_true_82_12
+     bool_true_82_12:
+     mov r15, true
+     jmp bool_end_82_12
+     bool_false_82_12:
+     mov r15, false
+     bool_end_82_12:
+;    alias expr -> r15
+     if_36_8_82_5:
+;    [36:8] ? not expr 
+;    [36:8] ? not expr 
+     cmp_36_8_82_5:
+     cmp r15, 0
+     jne if_36_5_82_5_end
+     jmp if_36_8_82_5_code
+     if_36_8_82_5_code:
+;      [36:17] exit(1) 
+;      exit(v : reg_rdi) 
+;        inline: 36_17_82_5
+;        alloc rdi
+;        alias v -> rdi
+         mov rdi, 1
+;        [13:5] mov(rax, 60) 
+         mov rax, 60
+;        [13:19] # exit system call 
+;        [14:5] mov(rdi, v) 
+;        [14:19] # return code 
+;        [15:5] syscall() 
+         syscall
+;        free rdi
+       exit_36_17_82_5_end:
+     if_36_5_82_5_end:
+;    free r15
+   assert_82_5_end:
+;  p0: qword[rbp-56]
+;  [84:5] var p0 : point = {baz(2), 0}
+;  [84:9] p0 : point = {baz(2), 0}
+;  [84:22] {baz(2), 0}
+;    [84:22] {baz(2), 0}
+;    [84:23] baz(2)
+;    [84:23] baz(2)
+;    [84:23] p0.x = baz(2)
+;    [84:23] baz(2)
+;    baz(arg) : i64 res 
+;      inline: 84_23
+;      alias res -> p0.x
+;      alias arg -> 2
+;      [60:5] res = arg * 2 
+;      [60:11] arg * 2 
 ;      alloc r15
-;      [84:25] x * 10
-;      [84:25] r15 = x 
-       mov r15, qword[rbp-48]
-;      [84:29] r15 * 10
-       imul r15, 10
-       mov qword[rbp-76], r15
+;      [60:11] arg * 2 
+;      [60:11] r15 = arg 
+       mov r15, 2
+;      [60:17] r15 * 2 
+       imul r15, 2
+       mov qword[rbp-56], r15
 ;      free r15
-;      [84:33] y
-;      [84:33] y
-;      [84:33] o1.pos.y = y
-;      alloc r15
-       mov r15, qword[rbp-56]
-       mov qword[rbp-68], r15
-;      free r15
-;    [84:37] 0xff0000
-;    [84:37] 0xff0000
-;    [84:37] o1.color = 0xff0000
-     mov dword[rbp-60], 0xff0000
-;  [85:5] assert(o1.pos.x == 10) 
+     baz_84_23_end:
+;    [84:31] 0
+;    [84:31] 0
+;    [84:31] p0.y = 0
+     mov qword[rbp-48], 0
+;  [85:5] assert(p0.x == 4) 
 ;  assert(expr : bool) 
 ;    inline: 85_5
 ;    alloc r15
-;    [85:12] o1.pos.x == 10
-;    [85:12] ? o1.pos.x == 10
-;    [85:12] ? o1.pos.x == 10
+;    [85:12] p0.x == 4
+;    [85:12] ? p0.x == 4
+;    [85:12] ? p0.x == 4
      cmp_85_12:
-     cmp qword[rbp-76], 10
+     cmp qword[rbp-56], 4
      jne bool_false_85_12
-     bool_true_85_12:  ; opt1
+     jmp bool_true_85_12
+     bool_true_85_12:
      mov r15, true
      jmp bool_end_85_12
      bool_false_85_12:
@@ -433,7 +498,8 @@ main:
      cmp_36_8_85_5:
      cmp r15, 0
      jne if_36_5_85_5_end
-     if_36_8_85_5_code:  ; opt1
+     jmp if_36_8_85_5_code
+     if_36_8_85_5_code:
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_85_5
@@ -452,133 +518,58 @@ main:
      if_36_5_85_5_end:
 ;    free r15
    assert_85_5_end:
-;  [86:5] assert(o1.pos.y == 2) 
-;  assert(expr : bool) 
-;    inline: 86_5
-;    alloc r15
-;    [86:12] o1.pos.y == 2
-;    [86:12] ? o1.pos.y == 2
-;    [86:12] ? o1.pos.y == 2
-     cmp_86_12:
-     cmp qword[rbp-68], 2
-     jne bool_false_86_12
-     bool_true_86_12:  ; opt1
-     mov r15, true
-     jmp bool_end_86_12
-     bool_false_86_12:
-     mov r15, false
-     bool_end_86_12:
-;    alias expr -> r15
-     if_36_8_86_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
-     cmp_36_8_86_5:
-     cmp r15, 0
-     jne if_36_5_86_5_end
-     if_36_8_86_5_code:  ; opt1
-;      [36:17] exit(1) 
-;      exit(v : reg_rdi) 
-;        inline: 36_17_86_5
-;        alloc rdi
-;        alias v -> rdi
-         mov rdi, 1
-;        [13:5] mov(rax, 60) 
-         mov rax, 60
-;        [13:19] # exit system call 
-;        [14:5] mov(rdi, v) 
-;        [14:19] # return code 
-;        [15:5] syscall() 
-         syscall
-;        free rdi
-       exit_36_17_86_5_end:
-     if_36_5_86_5_end:
-;    free r15
-   assert_86_5_end:
-;  [87:5] assert(o1.color == 0xff0000) 
-;  assert(expr : bool) 
-;    inline: 87_5
-;    alloc r15
-;    [87:12] o1.color == 0xff0000
-;    [87:12] ? o1.color == 0xff0000
-;    [87:12] ? o1.color == 0xff0000
-     cmp_87_12:
-     cmp dword[rbp-60], 0xff0000
-     jne bool_false_87_12
-     bool_true_87_12:  ; opt1
-     mov r15, true
-     jmp bool_end_87_12
-     bool_false_87_12:
-     mov r15, false
-     bool_end_87_12:
-;    alias expr -> r15
-     if_36_8_87_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
-     cmp_36_8_87_5:
-     cmp r15, 0
-     jne if_36_5_87_5_end
-     if_36_8_87_5_code:  ; opt1
-;      [36:17] exit(1) 
-;      exit(v : reg_rdi) 
-;        inline: 36_17_87_5
-;        alloc rdi
-;        alias v -> rdi
-         mov rdi, 1
-;        [13:5] mov(rax, 60) 
-         mov rax, 60
-;        [13:19] # exit system call 
-;        [14:5] mov(rdi, v) 
-;        [14:19] # return code 
-;        [15:5] syscall() 
-         syscall
-;        free rdi
-       exit_36_17_87_5_end:
-     if_36_5_87_5_end:
-;    free r15
-   assert_87_5_end:
-;  p1: qword[rbp-92]
-;  [89:5] var p1 : point = {-x, -y}
-;  [89:9] p1 : point = {-x, -y}
-;  [89:22] {-x, -y}
-;    [89:22] {-x, -y}
-;    [89:23] -x
-;    [89:23] -x
-;    [89:24] p1.x = -x
-;    alloc r15
-     mov r15, qword[rbp-48]
-     mov qword[rbp-92], r15
-;    free r15
-     neg qword[rbp-92]
-;    [89:27] -y
-;    [89:27] -y
-;    [89:28] p1.y = -y
-;    alloc r15
-     mov r15, qword[rbp-56]
-     mov qword[rbp-84], r15
-;    free r15
-     neg qword[rbp-84]
-;  [90:5] o1.pos = p1 
-;  [90:14] p1 
-;    [90:14] p1 
-;    alloc r15
-     mov r15, qword[rbp-92]
-     mov qword[rbp-76], r15
-;    free r15
-;    alloc r15
-     mov r15, qword[rbp-84]
-     mov qword[rbp-68], r15
-;    free r15
-;  [91:5] assert(o1.pos.x == -1) 
+;  x: qword[rbp-64]
+;  [87:5] var x = 1 
+;  [87:9] x = 1 
+;  [87:13] 1 
+;  [87:13] 1 
+;  [87:13] x = 1 
+   mov qword[rbp-64], 1
+;  y: qword[rbp-72]
+;  [88:5] var y = 2 
+;  [88:9] y = 2 
+;  [88:13] 2 
+;  [88:13] 2 
+;  [88:13] y = 2 
+   mov qword[rbp-72], 2
+;  o1: qword[rbp-92]
+;  [90:5] var o1 : object = {{x * 10, y}, 0xff0000}
+;  [90:9] o1 : object = {{x * 10, y}, 0xff0000}
+;  [90:23] {{x * 10, y}, 0xff0000}
+;    [90:23] {{x * 10, y}, 0xff0000}
+;      [90:24] {x * 10, y}
+;      [90:25] x * 10
+;      alloc r15
+;      [90:25] x * 10
+;      [90:25] r15 = x 
+       mov r15, qword[rbp-64]
+;      [90:29] r15 * 10
+       imul r15, 10
+       mov qword[rbp-92], r15
+;      free r15
+;      [90:33] y
+;      [90:33] y
+;      [90:33] o1.pos.y = y
+;      alloc r15
+       mov r15, qword[rbp-72]
+       mov qword[rbp-84], r15
+;      free r15
+;    [90:37] 0xff0000
+;    [90:37] 0xff0000
+;    [90:37] o1.color = 0xff0000
+     mov dword[rbp-76], 0xff0000
+;  [91:5] assert(o1.pos.x == 10) 
 ;  assert(expr : bool) 
 ;    inline: 91_5
 ;    alloc r15
-;    [91:12] o1.pos.x == -1
-;    [91:12] ? o1.pos.x == -1
-;    [91:12] ? o1.pos.x == -1
+;    [91:12] o1.pos.x == 10
+;    [91:12] ? o1.pos.x == 10
+;    [91:12] ? o1.pos.x == 10
      cmp_91_12:
-     cmp qword[rbp-76], -1
+     cmp qword[rbp-92], 10
      jne bool_false_91_12
-     bool_true_91_12:  ; opt1
+     jmp bool_true_91_12
+     bool_true_91_12:
      mov r15, true
      jmp bool_end_91_12
      bool_false_91_12:
@@ -591,7 +582,8 @@ main:
      cmp_36_8_91_5:
      cmp r15, 0
      jne if_36_5_91_5_end
-     if_36_8_91_5_code:  ; opt1
+     jmp if_36_8_91_5_code
+     if_36_8_91_5_code:
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_91_5
@@ -610,17 +602,18 @@ main:
      if_36_5_91_5_end:
 ;    free r15
    assert_91_5_end:
-;  [92:5] assert(o1.pos.y == -2) 
+;  [92:5] assert(o1.pos.y == 2) 
 ;  assert(expr : bool) 
 ;    inline: 92_5
 ;    alloc r15
-;    [92:12] o1.pos.y == -2
-;    [92:12] ? o1.pos.y == -2
-;    [92:12] ? o1.pos.y == -2
+;    [92:12] o1.pos.y == 2
+;    [92:12] ? o1.pos.y == 2
+;    [92:12] ? o1.pos.y == 2
      cmp_92_12:
-     cmp qword[rbp-68], -2
+     cmp qword[rbp-84], 2
      jne bool_false_92_12
-     bool_true_92_12:  ; opt1
+     jmp bool_true_92_12
+     bool_true_92_12:
      mov r15, true
      jmp bool_end_92_12
      bool_false_92_12:
@@ -633,7 +626,8 @@ main:
      cmp_36_8_92_5:
      cmp r15, 0
      jne if_36_5_92_5_end
-     if_36_8_92_5_code:  ; opt1
+     jmp if_36_8_92_5_code
+     if_36_8_92_5_code:
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_92_5
@@ -652,51 +646,35 @@ main:
      if_36_5_92_5_end:
 ;    free r15
    assert_92_5_end:
-;  o2: qword[rbp-112]
-;  [94:5] var o2 : object = o1 
-;  [94:9] o2 : object = o1 
-;  [94:23] o1 
-;    [94:23] o1 
-;      [94:23] o1 
-;      alloc r15
-       mov r15, qword[rbp-76]
-       mov qword[rbp-112], r15
-;      free r15
-;      alloc r15
-       mov r15, qword[rbp-68]
-       mov qword[rbp-104], r15
-;      free r15
-;    alloc r15
-     mov r15d, dword[rbp-60]
-     mov dword[rbp-96], r15d
-;    free r15
-;  [95:5] assert(o2.pos.x == -1) 
+;  [93:5] assert(o1.color == 0xff0000) 
 ;  assert(expr : bool) 
-;    inline: 95_5
+;    inline: 93_5
 ;    alloc r15
-;    [95:12] o2.pos.x == -1
-;    [95:12] ? o2.pos.x == -1
-;    [95:12] ? o2.pos.x == -1
-     cmp_95_12:
-     cmp qword[rbp-112], -1
-     jne bool_false_95_12
-     bool_true_95_12:  ; opt1
+;    [93:12] o1.color == 0xff0000
+;    [93:12] ? o1.color == 0xff0000
+;    [93:12] ? o1.color == 0xff0000
+     cmp_93_12:
+     cmp dword[rbp-76], 0xff0000
+     jne bool_false_93_12
+     jmp bool_true_93_12
+     bool_true_93_12:
      mov r15, true
-     jmp bool_end_95_12
-     bool_false_95_12:
+     jmp bool_end_93_12
+     bool_false_93_12:
      mov r15, false
-     bool_end_95_12:
+     bool_end_93_12:
 ;    alias expr -> r15
-     if_36_8_95_5:
+     if_36_8_93_5:
 ;    [36:8] ? not expr 
 ;    [36:8] ? not expr 
-     cmp_36_8_95_5:
+     cmp_36_8_93_5:
      cmp r15, 0
-     jne if_36_5_95_5_end
-     if_36_8_95_5_code:  ; opt1
+     jne if_36_5_93_5_end
+     jmp if_36_8_93_5_code
+     if_36_8_93_5_code:
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
-;        inline: 36_17_95_5
+;        inline: 36_17_93_5
 ;        alloc rdi
 ;        alias v -> rdi
          mov rdi, 1
@@ -708,63 +686,54 @@ main:
 ;        [15:5] syscall() 
          syscall
 ;        free rdi
-       exit_36_17_95_5_end:
-     if_36_5_95_5_end:
+       exit_36_17_93_5_end:
+     if_36_5_93_5_end:
 ;    free r15
-   assert_95_5_end:
-;  [96:5] assert(o2.pos.y == -2) 
-;  assert(expr : bool) 
-;    inline: 96_5
+   assert_93_5_end:
+;  p1: qword[rbp-108]
+;  [95:5] var p1 : point = {-x, -y}
+;  [95:9] p1 : point = {-x, -y}
+;  [95:22] {-x, -y}
+;    [95:22] {-x, -y}
+;    [95:23] -x
+;    [95:23] -x
+;    [95:24] p1.x = -x
 ;    alloc r15
-;    [96:12] o2.pos.y == -2
-;    [96:12] ? o2.pos.y == -2
-;    [96:12] ? o2.pos.y == -2
-     cmp_96_12:
-     cmp qword[rbp-104], -2
-     jne bool_false_96_12
-     bool_true_96_12:  ; opt1
-     mov r15, true
-     jmp bool_end_96_12
-     bool_false_96_12:
-     mov r15, false
-     bool_end_96_12:
-;    alias expr -> r15
-     if_36_8_96_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
-     cmp_36_8_96_5:
-     cmp r15, 0
-     jne if_36_5_96_5_end
-     if_36_8_96_5_code:  ; opt1
-;      [36:17] exit(1) 
-;      exit(v : reg_rdi) 
-;        inline: 36_17_96_5
-;        alloc rdi
-;        alias v -> rdi
-         mov rdi, 1
-;        [13:5] mov(rax, 60) 
-         mov rax, 60
-;        [13:19] # exit system call 
-;        [14:5] mov(rdi, v) 
-;        [14:19] # return code 
-;        [15:5] syscall() 
-         syscall
-;        free rdi
-       exit_36_17_96_5_end:
-     if_36_5_96_5_end:
+     mov r15, qword[rbp-64]
+     mov qword[rbp-108], r15
 ;    free r15
-   assert_96_5_end:
-;  [97:5] assert(o2.color == 0xff0000) 
+     neg qword[rbp-108]
+;    [95:27] -y
+;    [95:27] -y
+;    [95:28] p1.y = -y
+;    alloc r15
+     mov r15, qword[rbp-72]
+     mov qword[rbp-100], r15
+;    free r15
+     neg qword[rbp-100]
+;  [96:5] o1.pos = p1 
+;  [96:14] p1 
+;    [96:14] p1 
+;    alloc r15
+     mov r15, qword[rbp-108]
+     mov qword[rbp-92], r15
+;    free r15
+;    alloc r15
+     mov r15, qword[rbp-100]
+     mov qword[rbp-84], r15
+;    free r15
+;  [97:5] assert(o1.pos.x == -1) 
 ;  assert(expr : bool) 
 ;    inline: 97_5
 ;    alloc r15
-;    [97:12] o2.color == 0xff0000
-;    [97:12] ? o2.color == 0xff0000
-;    [97:12] ? o2.color == 0xff0000
+;    [97:12] o1.pos.x == -1
+;    [97:12] ? o1.pos.x == -1
+;    [97:12] ? o1.pos.x == -1
      cmp_97_12:
-     cmp dword[rbp-96], 0xff0000
+     cmp qword[rbp-92], -1
      jne bool_false_97_12
-     bool_true_97_12:  ; opt1
+     jmp bool_true_97_12
+     bool_true_97_12:
      mov r15, true
      jmp bool_end_97_12
      bool_false_97_12:
@@ -777,7 +746,8 @@ main:
      cmp_36_8_97_5:
      cmp r15, 0
      jne if_36_5_97_5_end
-     if_36_8_97_5_code:  ; opt1
+     jmp if_36_8_97_5_code
+     if_36_8_97_5_code:
 ;      [36:17] exit(1) 
 ;      exit(v : reg_rdi) 
 ;        inline: 36_17_97_5
@@ -796,9 +766,203 @@ main:
      if_36_5_97_5_end:
 ;    free r15
    assert_97_5_end:
-;  [99:5] print(hello.len, hello) 
+;  [98:5] assert(o1.pos.y == -2) 
+;  assert(expr : bool) 
+;    inline: 98_5
+;    alloc r15
+;    [98:12] o1.pos.y == -2
+;    [98:12] ? o1.pos.y == -2
+;    [98:12] ? o1.pos.y == -2
+     cmp_98_12:
+     cmp qword[rbp-84], -2
+     jne bool_false_98_12
+     jmp bool_true_98_12
+     bool_true_98_12:
+     mov r15, true
+     jmp bool_end_98_12
+     bool_false_98_12:
+     mov r15, false
+     bool_end_98_12:
+;    alias expr -> r15
+     if_36_8_98_5:
+;    [36:8] ? not expr 
+;    [36:8] ? not expr 
+     cmp_36_8_98_5:
+     cmp r15, 0
+     jne if_36_5_98_5_end
+     jmp if_36_8_98_5_code
+     if_36_8_98_5_code:
+;      [36:17] exit(1) 
+;      exit(v : reg_rdi) 
+;        inline: 36_17_98_5
+;        alloc rdi
+;        alias v -> rdi
+         mov rdi, 1
+;        [13:5] mov(rax, 60) 
+         mov rax, 60
+;        [13:19] # exit system call 
+;        [14:5] mov(rdi, v) 
+;        [14:19] # return code 
+;        [15:5] syscall() 
+         syscall
+;        free rdi
+       exit_36_17_98_5_end:
+     if_36_5_98_5_end:
+;    free r15
+   assert_98_5_end:
+;  o2: qword[rbp-128]
+;  [100:5] var o2 : object = o1 
+;  [100:9] o2 : object = o1 
+;  [100:23] o1 
+;    [100:23] o1 
+;      [100:23] o1 
+;      alloc r15
+       mov r15, qword[rbp-92]
+       mov qword[rbp-128], r15
+;      free r15
+;      alloc r15
+       mov r15, qword[rbp-84]
+       mov qword[rbp-120], r15
+;      free r15
+;    alloc r15
+     mov r15d, dword[rbp-76]
+     mov dword[rbp-112], r15d
+;    free r15
+;  [101:5] assert(o2.pos.x == -1) 
+;  assert(expr : bool) 
+;    inline: 101_5
+;    alloc r15
+;    [101:12] o2.pos.x == -1
+;    [101:12] ? o2.pos.x == -1
+;    [101:12] ? o2.pos.x == -1
+     cmp_101_12:
+     cmp qword[rbp-128], -1
+     jne bool_false_101_12
+     jmp bool_true_101_12
+     bool_true_101_12:
+     mov r15, true
+     jmp bool_end_101_12
+     bool_false_101_12:
+     mov r15, false
+     bool_end_101_12:
+;    alias expr -> r15
+     if_36_8_101_5:
+;    [36:8] ? not expr 
+;    [36:8] ? not expr 
+     cmp_36_8_101_5:
+     cmp r15, 0
+     jne if_36_5_101_5_end
+     jmp if_36_8_101_5_code
+     if_36_8_101_5_code:
+;      [36:17] exit(1) 
+;      exit(v : reg_rdi) 
+;        inline: 36_17_101_5
+;        alloc rdi
+;        alias v -> rdi
+         mov rdi, 1
+;        [13:5] mov(rax, 60) 
+         mov rax, 60
+;        [13:19] # exit system call 
+;        [14:5] mov(rdi, v) 
+;        [14:19] # return code 
+;        [15:5] syscall() 
+         syscall
+;        free rdi
+       exit_36_17_101_5_end:
+     if_36_5_101_5_end:
+;    free r15
+   assert_101_5_end:
+;  [102:5] assert(o2.pos.y == -2) 
+;  assert(expr : bool) 
+;    inline: 102_5
+;    alloc r15
+;    [102:12] o2.pos.y == -2
+;    [102:12] ? o2.pos.y == -2
+;    [102:12] ? o2.pos.y == -2
+     cmp_102_12:
+     cmp qword[rbp-120], -2
+     jne bool_false_102_12
+     jmp bool_true_102_12
+     bool_true_102_12:
+     mov r15, true
+     jmp bool_end_102_12
+     bool_false_102_12:
+     mov r15, false
+     bool_end_102_12:
+;    alias expr -> r15
+     if_36_8_102_5:
+;    [36:8] ? not expr 
+;    [36:8] ? not expr 
+     cmp_36_8_102_5:
+     cmp r15, 0
+     jne if_36_5_102_5_end
+     jmp if_36_8_102_5_code
+     if_36_8_102_5_code:
+;      [36:17] exit(1) 
+;      exit(v : reg_rdi) 
+;        inline: 36_17_102_5
+;        alloc rdi
+;        alias v -> rdi
+         mov rdi, 1
+;        [13:5] mov(rax, 60) 
+         mov rax, 60
+;        [13:19] # exit system call 
+;        [14:5] mov(rdi, v) 
+;        [14:19] # return code 
+;        [15:5] syscall() 
+         syscall
+;        free rdi
+       exit_36_17_102_5_end:
+     if_36_5_102_5_end:
+;    free r15
+   assert_102_5_end:
+;  [103:5] assert(o2.color == 0xff0000) 
+;  assert(expr : bool) 
+;    inline: 103_5
+;    alloc r15
+;    [103:12] o2.color == 0xff0000
+;    [103:12] ? o2.color == 0xff0000
+;    [103:12] ? o2.color == 0xff0000
+     cmp_103_12:
+     cmp dword[rbp-112], 0xff0000
+     jne bool_false_103_12
+     jmp bool_true_103_12
+     bool_true_103_12:
+     mov r15, true
+     jmp bool_end_103_12
+     bool_false_103_12:
+     mov r15, false
+     bool_end_103_12:
+;    alias expr -> r15
+     if_36_8_103_5:
+;    [36:8] ? not expr 
+;    [36:8] ? not expr 
+     cmp_36_8_103_5:
+     cmp r15, 0
+     jne if_36_5_103_5_end
+     jmp if_36_8_103_5_code
+     if_36_8_103_5_code:
+;      [36:17] exit(1) 
+;      exit(v : reg_rdi) 
+;        inline: 36_17_103_5
+;        alloc rdi
+;        alias v -> rdi
+         mov rdi, 1
+;        [13:5] mov(rax, 60) 
+         mov rax, 60
+;        [13:19] # exit system call 
+;        [14:5] mov(rdi, v) 
+;        [14:19] # return code 
+;        [15:5] syscall() 
+         syscall
+;        free rdi
+       exit_36_17_103_5_end:
+     if_36_5_103_5_end:
+;    free r15
+   assert_103_5_end:
+;  [105:5] print(hello.len, hello) 
 ;  print(len : reg_rdx, ptr : reg_rsi) 
-;    inline: 99_5
+;    inline: 105_5
 ;    alloc rdx
 ;    alias len -> rdx
      mov rdx, hello.len
@@ -819,12 +983,12 @@ main:
      syscall
 ;    free rsi
 ;    free rdx
-   print_99_5_end:
-;  [100:5] loop
-   loop_100_5:
-;    [101:9] print(prompt1.len, prompt1) 
+   print_105_5_end:
+;  [106:5] loop
+   loop_106_5:
+;    [107:9] print(prompt1.len, prompt1) 
 ;    print(len : reg_rdx, ptr : reg_rsi) 
-;      inline: 101_9
+;      inline: 107_9
 ;      alloc rdx
 ;      alias len -> rdx
        mov rdx, prompt1.len
@@ -845,16 +1009,16 @@ main:
        syscall
 ;      free rsi
 ;      free rdx
-     print_101_9_end:
-;    len: qword[rbp-120]
-;    [102:9] var len = read(input.len, input) - 1 
-;    [102:13] len = read(input.len, input) - 1 
-;    [102:19] read(input.len, input) - 1 
-;    [102:19] read(input.len, input) - 1 
-;    [102:19] len = read(input.len, input) 
-;    [102:19] read(input.len, input) 
+     print_107_9_end:
+;    len: qword[rbp-136]
+;    [108:9] var len = read(input.len, input) - 1 
+;    [108:13] len = read(input.len, input) - 1 
+;    [108:19] read(input.len, input) - 1 
+;    [108:19] read(input.len, input) - 1 
+;    [108:19] len = read(input.len, input) 
+;    [108:19] read(input.len, input) 
 ;    read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes 
-;      inline: 102_19
+;      inline: 108_19
 ;      alias nbytes -> len
 ;      alloc rdx
 ;      alias len -> rdx
@@ -875,34 +1039,36 @@ main:
 ;      [31:5] syscall() 
        syscall
 ;      [32:5] mov(nbytes, rax) 
-       mov qword[rbp-120], rax
+       mov qword[rbp-136], rax
 ;      [32:22] # return value 
 ;      free rsi
 ;      free rdx
-     read_102_19_end:
-;    [102:44] len - 1 
-     sub qword[rbp-120], 1
-;    [102:49] # -1 don't include the '\n' 
-     if_103_12:
-;    [103:12] ? len == 0 
-;    [103:12] ? len == 0 
-     cmp_103_12:
-     cmp qword[rbp-120], 0
-     jne if_105_19
-     if_103_12_code:  ; opt1
-;      [104:13] break 
-       jmp loop_100_5_end
-     jmp if_103_9_end
-     if_105_19:
-;    [105:19] ? len <= 4 
-;    [105:19] ? len <= 4 
-     cmp_105_19:
-     cmp qword[rbp-120], 4
-     jg if_else_103_9
-     if_105_19_code:  ; opt1
-;      [106:13] print(prompt2.len, prompt2) 
+     read_108_19_end:
+;    [108:44] len - 1 
+     sub qword[rbp-136], 1
+;    [108:49] # -1 don't include the '\n' 
+     if_109_12:
+;    [109:12] ? len == 0 
+;    [109:12] ? len == 0 
+     cmp_109_12:
+     cmp qword[rbp-136], 0
+     jne if_111_19
+     jmp if_109_12_code
+     if_109_12_code:
+;      [110:13] break 
+       jmp loop_106_5_end
+     jmp if_109_9_end
+     if_111_19:
+;    [111:19] ? len <= 4 
+;    [111:19] ? len <= 4 
+     cmp_111_19:
+     cmp qword[rbp-136], 4
+     jg if_else_109_9
+     jmp if_111_19_code
+     if_111_19_code:
+;      [112:13] print(prompt2.len, prompt2) 
 ;      print(len : reg_rdx, ptr : reg_rsi) 
-;        inline: 106_13
+;        inline: 112_13
 ;        alloc rdx
 ;        alias len -> rdx
          mov rdx, prompt2.len
@@ -923,14 +1089,14 @@ main:
          syscall
 ;        free rsi
 ;        free rdx
-       print_106_13_end:
-;      [107:13] continue 
-       jmp loop_100_5
-     jmp if_103_9_end
-     if_else_103_9:
-;        [109:13] print(prompt3.len, prompt3) 
+       print_112_13_end:
+;      [113:13] continue 
+       jmp loop_106_5
+     jmp if_109_9_end
+     if_else_109_9:
+;        [115:13] print(prompt3.len, prompt3) 
 ;        print(len : reg_rdx, ptr : reg_rsi) 
-;          inline: 109_13
+;          inline: 115_13
 ;          alloc rdx
 ;          alias len -> rdx
            mov rdx, prompt3.len
@@ -951,13 +1117,13 @@ main:
            syscall
 ;          free rsi
 ;          free rdx
-         print_109_13_end:
-;        [110:13] print(len, input) 
+         print_115_13_end:
+;        [116:13] print(len, input) 
 ;        print(len : reg_rdx, ptr : reg_rsi) 
-;          inline: 110_13
+;          inline: 116_13
 ;          alloc rdx
 ;          alias len -> rdx
-           mov rdx, qword[rbp-120]
+           mov rdx, qword[rbp-136]
 ;          alloc rsi
 ;          alias ptr -> rsi
            mov rsi, input
@@ -975,10 +1141,10 @@ main:
            syscall
 ;          free rsi
 ;          free rdx
-         print_110_13_end:
-;        [111:13] print(dot.len, dot) 
+         print_116_13_end:
+;        [117:13] print(dot.len, dot) 
 ;        print(len : reg_rdx, ptr : reg_rsi) 
-;          inline: 111_13
+;          inline: 117_13
 ;          alloc rdx
 ;          alias len -> rdx
            mov rdx, dot.len
@@ -999,10 +1165,10 @@ main:
            syscall
 ;          free rsi
 ;          free rdx
-         print_111_13_end:
-;        [112:13] print(nl.len, nl) 
+         print_117_13_end:
+;        [118:13] print(nl.len, nl) 
 ;        print(len : reg_rdx, ptr : reg_rsi) 
-;          inline: 112_13
+;          inline: 118_13
 ;          alloc rdx
 ;          alias len -> rdx
            mov rdx, nl.len
@@ -1023,10 +1189,10 @@ main:
            syscall
 ;          free rsi
 ;          free rdx
-         print_112_13_end:
-     if_103_9_end:
-   jmp loop_100_5
-   loop_100_5_end:
+         print_118_13_end:
+     if_109_9_end:
+   jmp loop_106_5
+   loop_106_5_end:
 ; main end
 
 ; system call: exit 0
@@ -1036,4 +1202,4 @@ syscall
 
 ; max scratch registers in use: 1
 ;            max frames in use: 7
-;        max inline stack size: 120 B
+;        max inline stack size: 136 B

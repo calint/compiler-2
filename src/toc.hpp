@@ -178,7 +178,7 @@ struct ident_resolved final {
 };
 
 class identifier final {
-    const std::string id_;
+    std::string id_;
     std::vector<std::string> path_;
 
   public:
@@ -192,6 +192,8 @@ class identifier final {
         path_.emplace_back(id_.substr(start));
     }
 
+    auto operator=(const identifier&) -> identifier& = default;
+
     [[nodiscard]] auto id() const -> const std::string& { return id_; }
 
     [[nodiscard]] auto id_base() const -> const std::string& {
@@ -201,6 +203,8 @@ class identifier final {
     [[nodiscard]] auto path() const -> const std::vector<std::string>& {
         return path_;
     }
+
+    auto set_base(std::string name) -> void { path_[0] = name; }
 };
 
 class toc final {
@@ -889,10 +893,11 @@ class toc final {
     }
 
     auto set_var_is_initiated(const std::string& name) -> void {
-        const identifier ident{name};
-        const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
+        const auto [id, frm]{get_id_and_frame_for_identifier(name)};
+        // FIX
+        const identifier found_ident{id};
         // is 'id_nasm' a variable?
-        if (frm.has_var(id)) {
+        if (frm.has_var(found_ident.id_base())) {
             frm.get_var_ref(id).initiated = true;
             return;
         }
@@ -1234,14 +1239,16 @@ class toc final {
     }
 
   private:
-    auto get_id_and_frame_for_identifier(const std::string& name)
+    auto get_id_and_frame_for_identifier(const std::string& ident)
         -> std::pair<std::string, frame&> {
 
-        std::string id{name};
+        identifier bid{ident};
+        std::string id{bid.id_base()};
         // traverse the frames and resolve the id_nasm (which might be an alias)
         // to a variable, field, register or constant
         size_t i{frames_.size()};
-        while (i--) {
+        while (i) {
+            i--;
             // is the frame a function?
             if (frames_.at(i).is_func()) {
                 // is it an alias defined by an argument in the function?
@@ -1251,6 +1258,8 @@ class toc final {
                 // yes, continue resolving alias until it is
                 // a variable, field, register or constant
                 id = frames_.at(i).get_alias(id);
+                bid = identifier{id};
+                id = bid.id_base();
                 continue;
             }
             // does scope contain the variable
@@ -1295,10 +1304,10 @@ class toc final {
                                 const bool must_be_initiated) const
         -> ident_resolved {
 
-        const identifier bid{ident};
+        identifier bid{ident};
         std::string id{bid.id_base()};
-        // traverse the frames and resolve the id_nasm (which might be an alias)
-        // to a variable, field, register or constant
+        // traverse the frames and resolve the id_nasm (which might be an
+        // alias) to a variable, field, register or constant
         size_t i{frames_.size()};
         while (i) {
             i--;
@@ -1311,6 +1320,16 @@ class toc final {
                 // yes, continue resolving alias until it is
                 // a variable, field, register or constant
                 id = frames_.at(i).get_alias(id);
+                // FIX get base static, refactor
+                identifier new_bid{id};
+                id = new_bid.id_base();
+                if (bid.path().size() == 1) {
+                    // this is an alias. example res -> p.x
+                    bid = new_bid;
+                } else {
+                    // this is an alias. example pt.x -> p.x
+                    bid.set_base(id);
+                }
                 continue;
             }
             // does scope contain the variable
