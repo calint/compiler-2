@@ -101,7 +101,8 @@ class program final {
 
         os << "\nsection .bss\nalign 4\nstk resd 1024\nstk.end:\n";
         os << "\nsection .text\nalign 4\nbits 64\nglobal _start\n_start:\nmov "
-              "rsp,stk.end\nmov rbp,rsp\njmp main\n\n";
+              "rsp,stk.end\n\n";
+        os << ";----------------------------------------------------\n";
         for (const auto& st : statements_) {
             if (not st->is_in_data_section()) {
                 st->compile(tc, os, indent);
@@ -110,12 +111,10 @@ class program final {
 
         // get the main function and compile
         const stmt_def_func& func_main{tc.get_func_or_throw(prg.tok(), "main")};
-        os << "main:\n";
         tc.enter_func("main");
         func_main.code().compile(tc, os, indent);
         tc.exit_func("main");
-        os << "; main end\n";
-        os << '\n';
+        os << ";----------------------------------------------------\n";
         os << "; system call: exit 0\n";
         os << "mov rax, 60\n";
         os << "mov rdi, 0\n";

@@ -23,7 +23,7 @@ struct var_info final {
     std::string name;
     const type& type_ref;
     token declared_at; // token for position in sources
-    int stack_idx{};   // location relative to rbp
+    int stack_idx{};   // location relative to rsp
     bool initiated{};  // true if variable has been initiated
 };
 
@@ -233,7 +233,7 @@ class toc final {
           all_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi",
                          "rbp", "rsp", "r8",  "r9",  "r10", "r11",
                          "r12", "r13", "r14", "r15"},
-          named_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi"},
+          named_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp"},
           scratch_registers_{"r8",  "r9",  "r10", "r11",
                              "r12", "r13", "r14", "r15"} {}
 
@@ -384,7 +384,7 @@ class toc final {
         assert(frames_.empty());
         //		assert(initiated_registers_.empty());
         initiated_registers_.clear();
-        assert(named_registers_.size() == 6);
+        assert(named_registers_.size() == 7);
         assert(scratch_registers_.size() == 8);
         usage_max_frame_count_ = 0;
         usage_max_scratch_regs_ = 0;
