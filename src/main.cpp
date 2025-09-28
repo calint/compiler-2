@@ -282,9 +282,7 @@ inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
             toc::asm_neg(ws_before_, os, indnt, dst_resolved);
             break;
         default:
-            throw panic_exception("unexpected code path " +
-                                  std::string{__FILE__} + ":" +
-                                  std::to_string(__LINE__));
+            throw panic_exception("unexpected code path main:1");
         }
     }
 }

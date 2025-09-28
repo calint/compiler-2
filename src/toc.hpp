@@ -788,8 +788,7 @@ class toc final {
             return;
         }
 
-        throw panic_exception("unexpected code path " + std::string{__FILE__} +
-                              ":" + std::to_string(__LINE__));
+        throw panic_exception("unexpected code path toc:1");
     }
 
     auto is_var_initiated(const std::string& name) -> bool {
@@ -809,8 +808,7 @@ class toc final {
             return it != initiated_registers_.end();
         }
 
-        throw panic_exception("unexpected code path " + std::string{__FILE__} +
-                              ":" + std::to_string(__LINE__));
+        throw panic_exception("unexpected code path toc:2");
     }
 
     auto set_type_void(const type& tp) -> void { type_void_ = &tp; }

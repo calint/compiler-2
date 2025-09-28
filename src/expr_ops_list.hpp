@@ -307,9 +307,7 @@ class expr_ops_list final : public expression {
         case '%':
             return 6;
         default:
-            throw panic_exception("unexpected code path " +
-                                  std::string{__FILE__} + ":" +
-                                  std::to_string(__LINE__));
+            throw panic_exception("unexpected code path expr_ops_list:1");
         }
     }
 

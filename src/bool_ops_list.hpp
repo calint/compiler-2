@@ -183,8 +183,7 @@ class bool_ops_list final : public statement {
             [[maybe_unused]] size_t indent,
             [[maybe_unused]] const std::string& dst = "") const
         -> void override {
-        throw panic_exception("unexpected code path " + std::string{__FILE__} +
-                              ":" + std::to_string(__LINE__));
+        throw panic_exception("unexpected code path bool_ops_list:1");
     }
 
     [[nodiscard]] auto cmp_bgn_label(const toc& tc) const -> std::string {
@@ -225,9 +224,7 @@ class bool_ops_list final : public statement {
                             // jump_true is next bool eval
                             jmp_true = cmp_label_from(tc, bools_.at(i + 1));
                         } else {
-                            throw panic_exception("expected 'or' or 'and'" +
-                                                  std::string{__FILE__} + ":" +
-                                                  std::to_string(__LINE__));
+                            throw panic_exception("expected 'or' or 'and' 1");
                         }
                         std::optional<bool> const_eval{el.compile(
                             tc, os, indent, jmp_false, jmp_true, invert)};
@@ -258,9 +255,7 @@ class bool_ops_list final : public statement {
                             // (inverted) then jump_true is next bool eval
                             jmp_true = cmp_label_from(tc, bools_.at(i + 1));
                         } else {
-                            throw panic_exception("expected 'or' or 'and'" +
-                                                  std::string{__FILE__} + ":" +
-                                                  std::to_string(__LINE__));
+                            throw panic_exception("expected 'or' or 'and' 2");
                         }
                         std::optional<bool> const_eval{el.compile(
                             tc, os, indent, jmp_false, jmp_true, invert)};
@@ -314,9 +309,7 @@ class bool_ops_list final : public statement {
                             return false;
                         }
                     } else {
-                        throw panic_exception("expected 'or' or 'and'" +
-                                              std::string{__FILE__} + ":" +
-                                              std::to_string(__LINE__));
+                        throw panic_exception("expected 'or' or 'and' 3");
                     }
                 } else {
                     std::optional<bool> const_eval{
@@ -348,9 +341,7 @@ class bool_ops_list final : public statement {
                             return false;
                         }
                     } else {
-                        throw panic_exception("expected 'or' or 'and'" +
-                                              std::string{__FILE__} + ":" +
-                                              std::to_string(__LINE__));
+                        throw panic_exception("expected 'or' or 'and' 4");
                     }
                 } else {
                     std::optional<bool> const_eval{
@@ -384,9 +375,7 @@ class bool_ops_list final : public statement {
 
     [[nodiscard]] auto identifier() const -> const std::string& override {
         if (bools_.size() > 1) {
-            throw panic_exception("unexpected code path " +
-                                  std::string{__FILE__} + ":" +
-                                  std::to_string(__LINE__));
+            throw panic_exception("unexpected code path bool_ops_list:5");
         }
 
         assert(!bools_.empty());

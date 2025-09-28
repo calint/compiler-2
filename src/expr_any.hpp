@@ -51,7 +51,7 @@ class expr_any final : public statement {
             get<expr_type_value>(var_).source_to(os);
             return;
         default:
-            throw panic_exception("unexpected code path");
+            throw panic_exception("unexpected code path expr_any:1");
         }
     }
 
@@ -62,7 +62,7 @@ class expr_any final : public statement {
 
         switch (var_.index()) {
         default:
-            throw panic_exception("unexpected code path");
+            throw panic_exception("unexpected code path expr_any:2");
         case 0:
             // number expression
             get<expr_ops_list>(var_).compile(tc, os, indent, dst);
@@ -141,9 +141,7 @@ class expr_any final : public statement {
             // assign value
             return get<expr_type_value>(var_).is_expression();
         default:
-            throw panic_exception("unexpected code path " +
-                                  std::string{__FILE__} + ":" +
-                                  std::to_string(__LINE__));
+            throw panic_exception("unexpected code path expr_any:3");
         }
         // note. 'expr_type_value' cannot be expression
     }
@@ -157,9 +155,7 @@ class expr_any final : public statement {
         case 2:
             return get<expr_type_value>(var_).identifier();
         default:
-            throw panic_exception("unexpected code path " +
-                                  std::string{__FILE__} + ":" +
-                                  std::to_string(__LINE__));
+            throw panic_exception("unexpected code path expr_any:4");
         }
     }
 
@@ -173,9 +169,7 @@ class expr_any final : public statement {
         case 2:
             return get<expr_type_value>(var_).get_unary_ops();
         default:
-            throw panic_exception("unexpected code path " +
-                                  std::string{__FILE__} + ":" +
-                                  std::to_string(__LINE__));
+            throw panic_exception("unexpected code path expr_any:5");
         }
         // note. 'expr_type_value' does not have 'unary_ops' and cannot be
         // argument in call

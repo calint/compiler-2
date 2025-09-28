@@ -103,8 +103,7 @@ class bool_op final : public statement {
             [[maybe_unused]] size_t indent,
             [[maybe_unused]] const std::string& dst = "") const
         -> void override {
-        throw panic_exception("unexpected code path " + std::string{__FILE__} +
-                              ":" + std::to_string(__LINE__));
+        throw panic_exception("unexpected code path bool_op:1");
     }
 
     auto compile_or(toc& tc, std::ostream& os, size_t indent,
@@ -329,8 +328,7 @@ class bool_op final : public statement {
         if (op == ">=") {
             return lh >= rh;
         }
-        throw panic_exception("unexpected code path " + std::string{__FILE__} +
-                              ":" + std::to_string(__LINE__));
+        throw panic_exception("unexpected code path bool_op:2");
     }
 
     static auto asm_jxx_for_op(const std::string& op) -> const std::string& {
@@ -353,8 +351,7 @@ class bool_op final : public statement {
             return asm_jge;
         }
 
-        throw panic_exception("unexpected code path " + std::string{__FILE__} +
-                              ":" + std::to_string(__LINE__));
+        throw panic_exception("unexpected code path bool_op:3");
     }
 
     static auto asm_jxx_for_op_inv(const std::string& op)
@@ -377,8 +374,7 @@ class bool_op final : public statement {
         if (op == ">=") {
             return asm_jl;
         }
-        throw panic_exception("unexpected code path " + std::string{__FILE__} +
-                              ":" + std::to_string(__LINE__));
+        throw panic_exception("unexpected code path bool_op:4");
     }
 
     auto resolve_cmp(toc& tc, std::ostream& os, size_t indent,
