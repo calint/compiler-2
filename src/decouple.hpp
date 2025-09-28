@@ -1,6 +1,6 @@
 #pragma once
 // solves circular references
-// implemented in main.cpp
+// implemented in 'main.cpp'
 
 // reviewed: 2025-09-28
 

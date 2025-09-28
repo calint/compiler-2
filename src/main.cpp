@@ -55,7 +55,6 @@ auto main(int argc, char* args[]) -> int {
         std::stringstream ss1;
         std::stringstream ss2;
         prg.build(ss1);
-        // prg.build(std::cout);
         optimize_jumps_1(ss1, ss2);
         optimize_jumps_2(ss2, std::cout);
 
@@ -73,7 +72,6 @@ auto main(int argc, char* args[]) -> int {
         std::cerr << "\nexception" << '\n';
         return 3;
     }
-    return 0;
 }
 
 //
