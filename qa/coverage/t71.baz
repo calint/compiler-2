@@ -101,21 +101,4 @@ func main() {
     assert(o2.pos.x == -1)
     assert(o2.pos.y == -2)
     assert(o2.color == 0xff0000)
-
-    print(hello.len, hello)
-    loop {
-        print(prompt1.len, prompt1)
-        var len = read(input.len, input) - 1    # -1 don't include the '\n'
-        if len == 0 {
-            break
-        } else if len <= 4 {
-            print(prompt2.len, prompt2)
-            continue
-        } else {
-            print(prompt3.len, prompt3)
-            print(len, input)
-            print(dot.len, dot)
-            print(nl.len, nl)
-        }
-    }
 }
