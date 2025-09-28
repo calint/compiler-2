@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include <string>
 #include <vector>
@@ -18,6 +19,23 @@ class type final {
     static constexpr std::string size_dword{"dword"};
     static constexpr std::string size_word{"word"};
     static constexpr std::string size_byte{"byte"};
+
+    static auto get_memory_operand_for_size(const token& tk, const size_t size)
+        -> const std::string& {
+        switch (size) {
+        case 8:
+            return size_qword;
+        case 4:
+            return size_dword;
+        case 2:
+            return size_word;
+        case 1:
+            return size_byte;
+        default:
+            throw compiler_exception(tk, "illegal size for memory operand: " +
+                                             std::to_string(size));
+        }
+    }
 
     std::string name_;
     size_t size_{};
@@ -83,37 +101,13 @@ class type final {
         return {*tp, accessor};
     }
 
-    static auto get_memory_operand_for_size(const token& tk, const size_t size)
-        -> const std::string& {
-        switch (size) {
-        case 8:
-            return size_qword;
-        case 4:
-            return size_dword;
-        case 2:
-            return size_word;
-        case 1:
-            return size_byte;
-        default:
-            throw compiler_exception(tk, "illegal size for memory operand: " +
-                                             std::to_string(size));
-        }
-    }
-
     [[nodiscard]] auto size() const -> size_t { return size_; }
-
-    auto set_size(const size_t nbytes) -> void { size_ = nbytes; }
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
 
     auto set_name(const std::string& nm) -> void { name_ = nm; }
 
     [[nodiscard]] auto is_built_in() const -> bool { return is_built_in_; }
-
-    auto clear_fields() -> void {
-        fields_.clear();
-        size_ = 0;
-    }
 
     [[nodiscard]] auto fields() const -> const std::vector<type_field>& {
         return fields_;
