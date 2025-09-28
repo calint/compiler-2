@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include "compiler_exception.hpp"
 #include "stmt_block.hpp"
@@ -48,11 +49,13 @@ class stmt_def_func final : public statement {
                     .type_tk = type_tk,
                     .ident_tk = ident_tk,
                     .type_ref = tc.get_type_or_throw(type_tk, type_tk.name())};
+
                 if (not ret_info.type_ref.is_built_in()) {
                     throw compiler_exception{
                         ret_info.type_tk,
                         "only built-in types allowed as return"};
                 }
+
                 returns_.emplace_back(ret_info);
                 if (not tz.is_next_char(',')) {
                     break;
@@ -61,12 +64,12 @@ class stmt_def_func final : public statement {
             // set function type to first return type
             set_type(returns_.at(0).type_ref);
         } else {
-            // no return, set type to 'void's
+            // no return, set type to 'void'
             set_type(tc.get_type_void());
         }
+
         tc.add_func(name_tk_, name_tk_.name(), get_type(), this);
         tc.enter_func(name(), returns_);
-        // dry-run compile step to setup context for code block parsing
         std::vector<std::string> allocated_named_registers;
         null_stream null_strm; // don't make output
         init_variables(tc, null_strm, 0, allocated_named_registers);
@@ -162,22 +165,25 @@ class stmt_def_func final : public statement {
                    std::vector<std::string>& allocated_named_registers) const
         -> void {
 
+        // does function have return?
         if (not returns().empty()) {
-            // declare variable for the return
+            // yes, declare variable for the return
             const token& id_tkn{returns().at(0).ident_tk};
             tc.add_var(id_tkn, os, indent + 1, id_tkn.name(), get_type(),
                        false);
         }
 
-        // inline functions get arguments as aliases
+        // functions get arguments as aliases
         const size_t n{params_.size()};
         for (size_t i{}; i < n; i++) {
             const stmt_def_func_param& param{params_.at(i)};
             const type& param_type{param.get_type()};
             const std::string& param_name{param.name()};
             const std::string& param_reg{param.get_register_name_or_empty()};
+
+            // is argument passed as named register?
             if (param_reg.empty()) {
-                // argument not passed as register, add it as variable
+                // no, add it as variable
                 tc.add_var(tok(), os, indent + 1, param_name, param_type, true);
                 continue;
             }
@@ -185,12 +191,10 @@ class stmt_def_func final : public statement {
             // argument passed as named register
             toc::indent(os, indent + 1, true);
             os << param_name << ": " << param_reg << '\n';
+
             tc.alloc_named_register_or_throw(param, os, indent + 1, param_reg);
-            // make an alias from argument name to register
             tc.add_alias(param_name, param_reg);
-            // mark register as initiated
             tc.set_var_is_initiated(param_reg);
-            // add it to list of allocated registers
             allocated_named_registers.emplace_back(param_reg);
         }
     }
@@ -200,7 +204,6 @@ class stmt_def_func final : public statement {
         const std::vector<std::string>& allocated_named_registers) {
 
         // free allocated named register in reverse order
-        //? necessary to be in reversed order?
         size_t i{allocated_named_registers.size()};
         while (i--) {
             tc.free_named_register(os, indent + 1,

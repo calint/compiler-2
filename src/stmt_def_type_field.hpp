@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include "statement.hpp"
 #include "toc.hpp"
@@ -10,11 +11,11 @@ class stmt_def_type_field final : public statement {
     stmt_def_type_field(toc& tc, token tk, tokenizer& tz)
         : statement{std::move(tk)} {
 
-        // the type of 'stmt_def_type_field' is void
         set_type(tc.get_type_void());
 
-        // if type is not specified it is assumed the default type
+        // is type specified?
         if (not tz.is_next_char(':')) {
+            // it is not
             return;
         }
         // get type name

@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include "statement.hpp"
 #include "toc.hpp"
@@ -8,7 +9,6 @@ class stmt_def_func_param final : public statement {
 
   public:
     stmt_def_func_param(toc& tc, tokenizer& tz) : statement{tz.next_token()} {
-
         assert(not tok().is_name(""));
 
         if (not tz.is_next_char(':')) {
