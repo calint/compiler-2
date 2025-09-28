@@ -4,7 +4,6 @@ true equ 1
 false equ 0
 
 section .data
-align 4
 ;[1:1] field hello = "hello world from baz\n"
 hello: db 'hello world from baz',10,''
 hello.len equ $-hello

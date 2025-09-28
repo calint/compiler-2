@@ -1,7 +1,6 @@
 true equ 1
 false equ 0
 section .data
-align 4
 hello: db 'hello world from baz',10,''
 hello.len equ $-hello
 input: db '............................................................'
