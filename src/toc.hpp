@@ -646,14 +646,13 @@ class toc final {
             st.tok().start_index(), source_.c_str())};
 
         indent(os, indnt, true);
-        os << "[" << line << ":" << col << "]";
+        os << "[" << line << ":" << col << "] ";
 
         std::stringstream ss;
-        ss << " ";
         st.source_to(ss);
-        const std::string& s{ss.str()};
-        const std::string& res{regex_replace(s, std::regex(R"(\s+)"), " ")};
-        os << res << '\n';
+        const std::string s{ss.str()};
+        const std::string res{regex_replace(s, std::regex(R"(\s+)"), " ")};
+        os << res << "\n";
     }
 
     auto comment_source(std::ostream& os, const std::string& dst,
