@@ -135,7 +135,7 @@ class stmt_call : public expression {
             }
 
             const type& return_type{func.get_type()};
-            const ident_info& dst_info{tc.resolve_info(tok(), dst, false)};
+            const ident_info& dst_info{tc.make_ident_info(tok(), dst, false)};
             //?
             if (dst_info.type_ref.size() < return_type.size()) {
                 throw compiler_exception(
@@ -324,7 +324,7 @@ class stmt_call : public expression {
             }
 
             // compile the result using the unary ops
-            const ident_info& ret_info{tc.resolve_info(
+            const ident_info& ret_info{tc.make_ident_info(
                 tok(), func.returns().at(0).ident_tk.name(), true)};
             get_unary_ops().compile(tc, os, indent, ret_info.id_nasm);
         }

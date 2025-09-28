@@ -400,8 +400,8 @@ class toc final {
                                                st.identifier() + "'");
     }
 
-    auto resolve_info(const token& src_loc, const std::string& id,
-                      const bool must_be_initiated) const -> ident_info {
+    auto make_ident_info(const token& src_loc, const std::string& id,
+                         const bool must_be_initiated) const -> ident_info {
 
         const ident_info& id_info{
             made_ident_info_or_empty(src_loc, id, must_be_initiated)};
@@ -488,7 +488,7 @@ class toc final {
             std::max(total_stack_size, usage_max_stack_size_);
 
         // comment the resolved name
-        const ident_info& name_info{resolve_info(src_loc, name, false)};
+        const ident_info& name_info{make_ident_info(src_loc, name, false)};
         indent(os, indnt, true);
         os << name << ": " << name_info.id_nasm << '\n';
     }

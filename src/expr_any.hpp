@@ -77,7 +77,7 @@ class expr_any final : public statement {
             // bool expression
             const bool_ops_list& bol{get<bool_ops_list>(var_)};
             // resolve the destination
-            const ident_info& dst_info{tc.resolve_info(tok(), dst, false)};
+            const ident_info& dst_info{tc.make_ident_info(tok(), dst, false)};
             // if not expression assign to destination
             if (not bol.is_expression()) {
                 const ident_info& src_info{tc.make_ident_info(bol, false)};

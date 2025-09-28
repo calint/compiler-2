@@ -187,7 +187,7 @@ class expr_ops_list final : public expression {
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const std::string& dst) const -> void override {
 
-        const ident_info dst_info{tc.resolve_info(tok(), dst, false)};
+        const ident_info dst_info{tc.make_ident_info(tok(), dst, false)};
 
         if (dst_info.is_register()) {
             do_compile(tc, os, indent, dst_info);
@@ -202,7 +202,7 @@ class expr_ops_list final : public expression {
         // try with scratch register
         std::stringstream ss2;
         const std::string& reg{tc.alloc_scratch_register(tok(), ss2, indent)};
-        const ident_info dest_reg{tc.resolve_info(tok(), reg, false)};
+        const ident_info dest_reg{tc.make_ident_info(tok(), reg, false)};
         do_compile(tc, ss2, indent, dst_info);
         tc.asm_cmd(tok(), ss2, indent, "mov", dst_info.id_nasm, reg);
         tc.free_scratch_register(ss2, indent, reg);

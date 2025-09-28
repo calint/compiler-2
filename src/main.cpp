@@ -215,7 +215,7 @@ inline void expr_type_value::compile_recursive(
 
     if (not src.empty()) {
         // e.g. obj.pos = p
-        const type& src_type{tc.resolve_info(atv.tok(), src, true).type_ref};
+        const type& src_type{tc.make_ident_info(atv.tok(), src, true).type_ref};
         if (src_type.name() != dst_type.name()) {
             throw compiler_exception(atv.tok(),
                                      "cannot assign '" + src + "' to '" + dst +
@@ -229,10 +229,10 @@ inline void expr_type_value::compile_recursive(
             const type_field& fld{flds.at(i)};
             if (fld.tp.is_built_in()) {
                 const std::string& src_info{
-                    tc.resolve_info(atv.tok(), src + "." + fld.name, false)
+                    tc.make_ident_info(atv.tok(), src + "." + fld.name, false)
                         .id_nasm};
                 const std::string& dst_info{
-                    tc.resolve_info(atv.tok(), dst + "." + fld.name, false)
+                    tc.make_ident_info(atv.tok(), dst + "." + fld.name, false)
                         .id_nasm};
                 tc.asm_cmd(atv.tok(), os, indent, "mov", dst_info, src_info);
                 continue;
