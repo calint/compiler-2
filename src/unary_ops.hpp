@@ -21,8 +21,6 @@ class unary_ops final {
                 ops_.emplace_back('~');
             } else if (tz.is_next_char('-')) {
                 ops_.emplace_back('-');
-                //			}else if(t.is_next_char('!')){
-                //				ops_.emplace_back('!');
             } else {
                 break;
             }
