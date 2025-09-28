@@ -215,8 +215,10 @@ class toc final {
         "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"};
     std::vector<std::string> named_registers_{"rax", "rbx", "rcx", "rdx",
                                               "rsi", "rdi", "rbp"};
+    size_t named_registers_initial_size_{named_registers_.size()};
     std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r11",
                                                 "r12", "r13", "r14", "r15"};
+    size_t scratch_registers_initial_size_{scratch_registers_.size()};
     std::vector<std::string> allocated_registers_;
     std::vector<std::string> allocated_registers_src_locs_; // source locations
     std::unordered_set<std::string> initiated_registers_;
@@ -370,18 +372,16 @@ class toc final {
            << '\n';
         os << ";            max frames in use: " << usage_max_frame_count_
            << '\n';
-        os << ";        max inline stack size: " << usage_max_stack_size_
+        os << ";               max stack size: " << usage_max_stack_size_
            << " B\n";
-        //		os<<";          max stack in use:
-        //"<<tc.max_stack_usage_<<std::endl;
         assert(all_registers_.size() == 16);
         assert(allocated_registers_.empty());
         assert(allocated_registers_src_locs_.empty());
         assert(frames_.empty());
         //		assert(initiated_registers_.empty());
         initiated_registers_.clear();
-        assert(named_registers_.size() == 7);
-        assert(scratch_registers_.size() == 8);
+        assert(named_registers_.size() == named_registers_initial_size_);
+        assert(scratch_registers_.size() == scratch_registers_initial_size_);
         usage_max_frame_count_ = 0;
         usage_max_scratch_regs_ = 0;
     }
@@ -511,8 +511,8 @@ class toc final {
         indent(os, indnt, true);
         os << "alloc " << reg << '\n';
 
-        //? 8 is magic number
-        const size_t n{8 - scratch_registers_.size()};
+        const size_t n{scratch_registers_initial_size_ -
+                       scratch_registers_.size()};
         usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
 
         allocated_registers_.emplace_back(reg);

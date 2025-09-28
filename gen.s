@@ -1171,4 +1171,4 @@ syscall
 
 ; max scratch registers in use: 3
 ;            max frames in use: 7
-;        max inline stack size: 136 B
+;               max stack size: 136 B
