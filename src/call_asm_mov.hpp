@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include "stmt_call.hpp"
 
@@ -28,7 +29,7 @@ class call_asm_mov final : public stmt_call {
             throw compiler_exception(tok(), "expected 2 arguments");
         }
 
-        //? the assembler command might not need to resolve expressions
+        // the assembler command might not need to resolve expressions
         const ident_resolved& dst_resolved{
             tc.resolve_identifier(arg(0), false)};
 
@@ -41,7 +42,7 @@ class call_asm_mov final : public stmt_call {
             return;
         }
 
-        // src is not an expression
+        // 'src_arg' is not an expression
         const ident_resolved& src_resolved{
             tc.resolve_identifier(src_arg, true)};
         if (src_resolved.is_const()) {
