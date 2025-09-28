@@ -219,7 +219,6 @@ inline void expr_type_value::compile_recursive(
 
     if (not src.empty()) {
         // e.g. obj.pos = p
-        //      obj.pos = {foo(), 3}
         const type& src_type{
             tc.resolve_identifier(atv.tok(), src, true).type_ref};
         if (src_type.name() != dst_type.name()) {
@@ -253,7 +252,7 @@ inline void expr_type_value::compile_recursive(
         return;
     }
 
-    // e.g. obj.pos = {x, y, z}
+    // e.g. obj.pos = {x, foo(y), z}
     // e.g. o2 = {p, p2, z}
     // e.g. o2 = {{1, 2, 3}, p2, z}
     const std::vector<type_field>& flds{dst_type.fields()};
