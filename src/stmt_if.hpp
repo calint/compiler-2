@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include "stmt_if_branch.hpp"
 
@@ -10,11 +11,12 @@ class stmt_if final : public statement {
   public:
     stmt_if(toc& tc, token tk, tokenizer& tz) : statement{std::move(tk)} {
         set_type(tc.get_type_void());
-        // e.g. if a == b {x = 1} else if c == d {y = 2} else {z = 3}
-        // broken down in branches 'a == b {x = 1}', 'c == d {y = 2}' ending
-        // with an optional 'else' block
+        // e.g. if a == b {x = 1} else if c == d {y = 2} else {z = 3} broken
+        // down in branches 'a == b {x = 1}', 'c == d {y = 2}' ending with an
+        // optional 'else' block
 
-        // 'if' token has been read
+        // note: 'if' token has been read
+
         while (true) {
             // read branch e.g. a == b {x = 1}
             branches_.emplace_back(tc, tz);
@@ -30,7 +32,7 @@ class stmt_if final : public statement {
             // check if 'else if'
             token tkn2{tz.next_token()};
             if (not tkn2.is_name("if")) {
-                // not 'else if', push token back in stream and exit
+                // not 'else if', push token back in stream
                 tz.put_back_token(tkn2);
                 // 'else' branch
                 // save tokens to be able to reproduce the source
@@ -64,8 +66,8 @@ class stmt_if final : public statement {
         for (size_t i{1}; i < n; i++) {
             const stmt_if_branch& else_if_branch{branches_.at(i)};
             // 'else if' tokens as read from source
-            else_if_tokens_.at((i - 1) << 1U).source_to(os);
-            else_if_tokens_.at(((i - 1) << 1U) + 1).source_to(os);
+            else_if_tokens_.at((i - 1) << 1u).source_to(os);
+            else_if_tokens_.at(((i - 1) << 1u) + 1).source_to(os);
             else_if_branch.source_to(os);
         }
         // the 'else' code
@@ -82,7 +84,7 @@ class stmt_if final : public statement {
         // make unique labels considering in-lined functions
         const std::string& call_path{tc.get_call_path(tok())};
         const std::string& src_loc{tc.source_location_for_use_in_label(tok())};
-        const std::string& cp{call_path.empty() ? "" : "_" + call_path};
+        const std::string& cp{call_path.empty() ? "" : ("_" + call_path)};
 
         const std::string& label_after_if{"if_" + src_loc + cp + "_end"};
         const std::string& label_else_branch{not else_code_.is_empty()
@@ -93,24 +95,24 @@ class stmt_if final : public statement {
 
         bool branch_evaluated_to_true{};
         for (size_t i{}; i < n; i++) {
-            const stmt_if_branch& e{branches_.at(i)};
+            const stmt_if_branch& if_branch{branches_.at(i)};
             std::string jmp_if_false{label_else_branch};
-            std::string jmp_after_if{label_after_if};
+            std::string jmp_if_done{label_after_if};
             if (i < n - 1) {
                 // if branch is false jump to next if
                 jmp_if_false = branches_.at(i + 1).if_bgn_label(tc);
             } else {
-                // if last branch and no 'else' then
-                //   no need to jump to 'after_if' after the code of the branch
-                //     has been executed. just continue
+                // if last branch and no 'else' then no need to jump to
+                // 'after_if' after the code of the branch has been executed.
+                // just continue
                 if (else_code_.is_empty()) {
-                    jmp_after_if = "";
+                    jmp_if_done = "";
                 }
             }
             // compile the condition which might return that the condition was a
             // constant evaluation
             std::optional<bool> const_eval{
-                e.compile(tc, os, indent, jmp_if_false, jmp_after_if)};
+                if_branch.compile(tc, os, indent, jmp_if_false, jmp_if_done)};
             // if condition was a constant evaluation and result was true
             if (const_eval and *const_eval) {
                 branch_evaluated_to_true = true;
