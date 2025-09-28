@@ -36,7 +36,7 @@ class stmt_def_var final : public statement {
         set_type(tp);
 
         // dry-run compilation to null stream to set up the program state in
-        // tocI
+        // toc
         null_stream null_strm;
         tc.add_var(name_tk_, null_strm, 0, name_tk_.name(), tp, false);
 
