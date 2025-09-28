@@ -1,5 +1,5 @@
 ```
 
-## Generates
+## Sample
 
 ```text

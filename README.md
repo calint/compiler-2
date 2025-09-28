@@ -26,6 +26,19 @@ code run `./make.sh`
 run `prog.baz`
 * to run the tests `qa/coverage/run-tests.sh` and see coverage report in `qa/coverage/report/`
 
+## Source
+
+```text
+```
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+C/C++ Header                    35            723            467           4340
+C++                              1             44             60            397
+-------------------------------------------------------------------------------
+SUM:                            36            767            527           4737
+-------------------------------------------------------------------------------
+```
+
 ## Sample
 
 ```text
