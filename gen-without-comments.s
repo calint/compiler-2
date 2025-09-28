@@ -1,3 +1,6 @@
+section .bss
+stk resd 1024
+stk.end:
 true equ 1
 false equ 0
 section .data
@@ -15,9 +18,6 @@ dot: db '.'
 dot.len equ $-dot
 nl: db '',10,''
 nl.len equ $-nl
-section .bss
-stk resd 1024
-stk.end:
 section .text
 bits 64
 global _start
