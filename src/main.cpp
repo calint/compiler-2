@@ -190,8 +190,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 expr_type_value::~expr_type_value() = default;
 
 // declared in 'expr_type_value.hpp':
-//   resolves circular reference: expr_type_value -> expr_any ->
-//   expr_type_value
+// resolves circular reference: expr_type_value -> expr_any -> expr_type_value
 inline void expr_type_value::source_to(std::ostream& os) const {
     statement::source_to(os);
     if (not tok().is_name("")) {
@@ -199,7 +198,7 @@ inline void expr_type_value::source_to(std::ostream& os) const {
     }
     os << '{';
     size_t i{};
-    for (const auto& ea : exprs_) {
+    for (const std::unique_ptr<expr_any>& ea : exprs_) {
         if (i++) {
             os << ',';
         }
@@ -209,8 +208,7 @@ inline void expr_type_value::source_to(std::ostream& os) const {
 }
 
 // declared in 'expr_type_value.hpp':
-//   resolves circular reference: expr_type_value -> expr_any ->
-//   expr_type_values
+// resolves circular reference: expr_type_value -> expr_any -> expr_type_values
 inline void expr_type_value::compile_recursive(
     const expr_type_value& atv, toc& tc, std::ostream& os, size_t indent,
     const std::string& src, const std::string& dst, const type& dst_type) {
@@ -270,8 +268,8 @@ inline void expr_type_value::compile_recursive(
     }
 }
 
-// declared in "unary_ops.hpp"
-//  solves circular reference: unary_ops -> toc -> statement -> unary_ops
+// declared in "unary_ops.hpp":
+// solves circular reference: unary_ops -> toc -> statement -> unary_ops
 inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
                                size_t indnt,
                                const std::string& dst_resolved) const {
