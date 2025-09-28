@@ -99,8 +99,8 @@ class program final {
             }
         }
 
-        os << "\nsection .bss\nalign 4\nstk resd 1024\nstk.end:\n";
-        os << "\nsection .text\nalign 4\nbits 64\nglobal _start\n_start:\nmov "
+        os << "\nsection .bss\nstk resd 1024\nstk.end:\n";
+        os << "\nsection .text\nbits 64\nglobal _start\n_start:\nmov "
               "rsp,stk.end\n\n";
         os << ";----------------------------------------------------\n";
         for (const auto& st : statements_) {

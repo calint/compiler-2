@@ -17,11 +17,9 @@ dot.len equ $-dot
 nl: db '',10,''
 nl.len equ $-nl
 section .bss
-align 4
 stk resd 1024
 stk.end:
 section .text
-align 4
 bits 64
 global _start
 _start:
