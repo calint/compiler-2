@@ -82,8 +82,8 @@ auto main(int argc, char* args[]) -> int {
 //
 
 // declared in 'decouple.hpp'
-//   called from 'stmt_block' to solve circular dependencies with 'loop', 'if'
-//   and function calls
+// called from 'stmt_block' to solve circular dependencies with 'loop', 'if' and
+// function calls
 inline auto create_statement_from_tokenizer(toc& tc, unary_ops uops, token tk,
                                             tokenizer& tz)
     -> std::unique_ptr<statement> {
@@ -103,8 +103,8 @@ inline auto create_statement_from_tokenizer(toc& tc, unary_ops uops, token tk,
 }
 
 // declared in 'decouple.hpp'
-//   called from 'expr_ops_list' to solve circular dependencies with function
-//   calls
+// called from 'expr_ops_list' to solve circular dependencies with function
+// calls
 inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
@@ -134,7 +134,7 @@ inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz)
 }
 
 // declared in 'decouple.hpp'
-//   solves circular reference: expr_type_value -> expr_any -> expr_type_value
+// solves circular reference: expr_type_value -> expr_any -> expr_type_value
 inline auto create_expr_any_from_tokenizer(toc& tc, tokenizer& tz,
                                            const type& tp, bool in_args)
     -> std::unique_ptr<expr_any> {
@@ -189,7 +189,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
 expr_type_value::~expr_type_value() = default;
 
-// declared in 'expr_type_value.hpp':
+// declared in 'expr_type_value.hpp'
 // resolves circular reference: expr_type_value -> expr_any -> expr_type_value
 inline void expr_type_value::source_to(std::ostream& os) const {
     statement::source_to(os);
@@ -207,7 +207,7 @@ inline void expr_type_value::source_to(std::ostream& os) const {
     os << '}';
 }
 
-// declared in 'expr_type_value.hpp':
+// declared in 'expr_type_value.hpp'
 // resolves circular reference: expr_type_value -> expr_any -> expr_type_values
 inline void expr_type_value::compile_recursive(
     const expr_type_value& atv, toc& tc, std::ostream& os, size_t indent,
@@ -268,7 +268,7 @@ inline void expr_type_value::compile_recursive(
     }
 }
 
-// declared in "unary_ops.hpp":
+// declared in "unary_ops.hpp"
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
 inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
                                size_t indnt,
