@@ -1,4 +1,4 @@
-[ ] find out why toc.source_comment does not remove trailing spaces
+[x] find out why toc.source_comment does not remove trailing spaces
 [ ] implement arrays
 [ ] implement strings
 [ ] support for float and double

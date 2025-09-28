@@ -216,9 +216,13 @@ class identifier final {
 class toc final {
     const std::string& source_;
     std::vector<frame> frames_;
-    std::vector<std::string> all_registers_;
-    std::vector<std::string> named_registers_;
-    std::vector<std::string> scratch_registers_;
+    std::vector<std::string> all_registers_{
+        "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
+        "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"};
+    std::vector<std::string> named_registers_{"rax", "rbx", "rcx", "rdx",
+                                              "rsi", "rdi", "rbp"};
+    std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r11",
+                                                "r12", "r13", "r14", "r15"};
     std::vector<std::string> allocated_registers_;
     std::vector<std::string> allocated_registers_src_locs_; // source locations
     std::unordered_set<std::string> initiated_registers_;
@@ -235,14 +239,7 @@ class toc final {
     const std::regex regex_ws{R"(\s+)"};
 
   public:
-    explicit toc(const std::string& source)
-        : source_{source},
-          all_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi",
-                         "rbp", "rsp", "r8",  "r9",  "r10", "r11",
-                         "r12", "r13", "r14", "r15"},
-          named_registers_{"rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp"},
-          scratch_registers_{"r8",  "r9",  "r10", "r11",
-                             "r12", "r13", "r14", "r15"} {}
+    explicit toc(const std::string& source) : source_{source} {}
 
     toc() = delete;
     toc(const toc&) = delete;
