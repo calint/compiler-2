@@ -63,13 +63,13 @@ mov rsp,stk.end
 ;    [48:5]  pt.x = 0b10
 ;    [48:12]  0b10
 ;    [48:12] 0b10
-;    [48:12] pt.x = 0b10 
+;    [48:12] pt.x = 0b10
      mov qword[rsp-16], 0b10
 ;    [48:20] # binary value 2
 ;    [49:5]  pt.y = 0xb
 ;    [49:12]  0xb
 ;    [49:12] 0xb
-;    [49:12] pt.y = 0xb 
+;    [49:12] pt.y = 0xb
      mov qword[rsp-8], 0xb
 ;    [49:20] # hex value 11
    foo_65_5_end:
@@ -91,8 +91,8 @@ mov rsp,stk.end
      bool_end_66_12:
 ;    alias expr -> r15
      if_36_8_66_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_66_5:
      cmp r15, 0
      jne if_36_5_66_5_end
@@ -133,8 +133,8 @@ mov rsp,stk.end
      bool_end_67_12:
 ;    alias expr -> r15
      if_36_8_67_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_67_5:
      cmp r15, 0
      jne if_36_5_67_5_end
@@ -162,15 +162,15 @@ mov rsp,stk.end
 ;  [69:9] i = 0
 ;  [69:13]  0
 ;  [69:13] 0
-;  [69:13] i = 0 
+;  [69:13] i = 0
    mov qword[rsp-24], 0
 ;  [70:5] bar(i)
 ;  bar(arg) 
 ;    inline: 70_5
 ;    alias arg -> i
      if_54_8_70_5:
-;    [54:8] ? arg == 0 
-;    [54:8] ? arg == 0 
+;    [54:8] ? arg == 0
+;    [54:8] ? arg == 0
      cmp_54_8_70_5:
      cmp qword[rsp-24], 0
      jne if_54_5_70_5_end
@@ -181,7 +181,7 @@ mov rsp,stk.end
 ;    [55:5] arg = 0xff
 ;    [55:11]  0xff
 ;    [55:11] 0xff
-;    [55:11] arg = 0xff 
+;    [55:11] arg = 0xff
      mov qword[rsp-24], 0xff
    bar_70_5_end:
 ;  [71:5] assert(i == 0)
@@ -202,8 +202,8 @@ mov rsp,stk.end
      bool_end_71_12:
 ;    alias expr -> r15
      if_36_8_71_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_71_5:
      cmp r15, 0
      jne if_36_5_71_5_end
@@ -229,15 +229,15 @@ mov rsp,stk.end
 ;  [73:5] i = 1
 ;  [73:9]  1
 ;  [73:9] 1
-;  [73:9] i = 1 
+;  [73:9] i = 1
    mov qword[rsp-24], 1
 ;  [74:5] bar(i)
 ;  bar(arg) 
 ;    inline: 74_5
 ;    alias arg -> i
      if_54_8_74_5:
-;    [54:8] ? arg == 0 
-;    [54:8] ? arg == 0 
+;    [54:8] ? arg == 0
+;    [54:8] ? arg == 0
      cmp_54_8_74_5:
      cmp qword[rsp-24], 0
      jne if_54_5_74_5_end
@@ -248,7 +248,7 @@ mov rsp,stk.end
 ;    [55:5] arg = 0xff
 ;    [55:11]  0xff
 ;    [55:11] 0xff
-;    [55:11] arg = 0xff 
+;    [55:11] arg = 0xff
      mov qword[rsp-24], 0xff
    bar_74_5_end:
 ;  [75:5] assert(i == 0xff)
@@ -269,8 +269,8 @@ mov rsp,stk.end
      bool_end_75_12:
 ;    alias expr -> r15
      if_36_8_75_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_75_5:
      cmp r15, 0
      jne if_36_5_75_5_end
@@ -298,14 +298,14 @@ mov rsp,stk.end
 ;  [77:9] j = 1
 ;  [77:13]  1
 ;  [77:13] 1
-;  [77:13] j = 1 
+;  [77:13] j = 1
    mov qword[rsp-32], 1
 ;  k: qword[rsp-40]
 ;  [78:5] var k = baz(j)
 ;  [78:9] k = baz(j)
 ;  [78:13]  baz(j)
 ;  [78:13] baz(j)
-;  [78:13] k = baz(j) 
+;  [78:13] k = baz(j)
 ;  [78:13] baz(j)
 ;  baz(arg) : i64 res 
 ;    inline: 78_13
@@ -314,12 +314,12 @@ mov rsp,stk.end
 ;    [60:5]  res = arg * 2
 ;    [60:11]  arg * 2
 ;    [60:11] arg * 2
-;    [60:11] res = arg 
+;    [60:11] res = arg
 ;    alloc r15
      mov r15, qword[rsp-32]
      mov qword[rsp-40], r15
 ;    free r15
-;    [60:17] res * 2 
+;    [60:17] res * 2
 ;    alloc r15
      mov r15, qword[rsp-40]
      imul r15, 2
@@ -344,8 +344,8 @@ mov rsp,stk.end
      bool_end_79_12:
 ;    alias expr -> r15
      if_36_8_79_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_79_5:
      cmp r15, 0
      jne if_36_5_79_5_end
@@ -371,7 +371,7 @@ mov rsp,stk.end
 ;  [81:5] k = baz(1)
 ;  [81:9]  baz(1)
 ;  [81:9] baz(1)
-;  [81:9] k = baz(1) 
+;  [81:9] k = baz(1)
 ;  [81:9] baz(1)
 ;  baz(arg) : i64 res 
 ;    inline: 81_9
@@ -380,9 +380,9 @@ mov rsp,stk.end
 ;    [60:5]  res = arg * 2
 ;    [60:11]  arg * 2
 ;    [60:11] arg * 2
-;    [60:11] res = arg 
+;    [60:11] res = arg
      mov qword[rsp-40], 1
-;    [60:17] res * 2 
+;    [60:17] res * 2
 ;    alloc r15
      mov r15, qword[rsp-40]
      imul r15, 2
@@ -407,8 +407,8 @@ mov rsp,stk.end
      bool_end_82_12:
 ;    alias expr -> r15
      if_36_8_82_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_82_5:
      cmp r15, 0
      jne if_36_5_82_5_end
@@ -447,9 +447,9 @@ mov rsp,stk.end
 ;      [60:5]  res = arg * 2
 ;      [60:11]  arg * 2
 ;      [60:11] arg * 2
-;      [60:11] res = arg 
+;      [60:11] res = arg
        mov qword[rsp-56], 2
-;      [60:17] res * 2 
+;      [60:17] res * 2
 ;      alloc r15
        mov r15, qword[rsp-56]
        imul r15, 2
@@ -478,8 +478,8 @@ mov rsp,stk.end
      bool_end_85_12:
 ;    alias expr -> r15
      if_36_8_85_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_85_5:
      cmp r15, 0
      jne if_36_5_85_5_end
@@ -507,14 +507,14 @@ mov rsp,stk.end
 ;  [87:9] x = 1
 ;  [87:13]  1
 ;  [87:13] 1
-;  [87:13] x = 1 
+;  [87:13] x = 1
    mov qword[rsp-64], 1
 ;  y: qword[rsp-72]
 ;  [88:5] var y = 2
 ;  [88:9] y = 2
 ;  [88:13]  2
 ;  [88:13] 2
-;  [88:13] y = 2 
+;  [88:13] y = 2
    mov qword[rsp-72], 2
 ;  o1: qword[rsp-92]
 ;  [90:5] var o1 : object = {{x * 10, y}, 0xff0000}
@@ -524,7 +524,7 @@ mov rsp,stk.end
 ;      [90:24] {x * 10, y}
 ;      [90:25] x * 10
 ;      [90:25] x * 10
-;      [90:25] o1.pos.x = x 
+;      [90:25] o1.pos.x = x
 ;      alloc r15
        mov r15, qword[rsp-64]
        mov qword[rsp-92], r15
@@ -564,8 +564,8 @@ mov rsp,stk.end
      bool_end_91_12:
 ;    alias expr -> r15
      if_36_8_91_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_91_5:
      cmp r15, 0
      jne if_36_5_91_5_end
@@ -606,8 +606,8 @@ mov rsp,stk.end
      bool_end_92_12:
 ;    alias expr -> r15
      if_36_8_92_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_92_5:
      cmp r15, 0
      jne if_36_5_92_5_end
@@ -648,8 +648,8 @@ mov rsp,stk.end
      bool_end_93_12:
 ;    alias expr -> r15
      if_36_8_93_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_93_5:
      cmp r15, 0
      jne if_36_5_93_5_end
@@ -722,8 +722,8 @@ mov rsp,stk.end
      bool_end_97_12:
 ;    alias expr -> r15
      if_36_8_97_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_97_5:
      cmp r15, 0
      jne if_36_5_97_5_end
@@ -764,8 +764,8 @@ mov rsp,stk.end
      bool_end_98_12:
 ;    alias expr -> r15
      if_36_8_98_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_98_5:
      cmp r15, 0
      jne if_36_5_98_5_end
@@ -824,8 +824,8 @@ mov rsp,stk.end
      bool_end_101_12:
 ;    alias expr -> r15
      if_36_8_101_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_101_5:
      cmp r15, 0
      jne if_36_5_101_5_end
@@ -866,8 +866,8 @@ mov rsp,stk.end
      bool_end_102_12:
 ;    alias expr -> r15
      if_36_8_102_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_102_5:
      cmp r15, 0
      jne if_36_5_102_5_end
@@ -908,8 +908,8 @@ mov rsp,stk.end
      bool_end_103_12:
 ;    alias expr -> r15
      if_36_8_103_5:
-;    [36:8] ? not expr 
-;    [36:8] ? not expr 
+;    [36:8] ? not expr
+;    [36:8] ? not expr
      cmp_36_8_103_5:
      cmp r15, 0
      jne if_36_5_103_5_end
@@ -987,7 +987,7 @@ mov rsp,stk.end
 ;    [108:13] len = read(input.len, input) - 1
 ;    [108:19]  read(input.len, input) - 1
 ;    [108:19] read(input.len, input) - 1
-;    [108:19] len = read(input.len, input) 
+;    [108:19] len = read(input.len, input)
 ;    [108:19] read(input.len, input)
 ;    read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes 
 ;      inline: 108_19
@@ -1016,12 +1016,12 @@ mov rsp,stk.end
 ;      free rsi
 ;      free rdx
      read_108_19_end:
-;    [108:44] len - 1 
+;    [108:44] len - 1
      sub qword[rsp-136], 1
 ;    [108:49] # -1 don't include the '\n'
      if_109_12:
-;    [109:12] ? len == 0 
-;    [109:12] ? len == 0 
+;    [109:12] ? len == 0
+;    [109:12] ? len == 0
      cmp_109_12:
      cmp qword[rsp-136], 0
      jne if_111_19
@@ -1030,8 +1030,8 @@ mov rsp,stk.end
        jmp loop_106_5_end
      jmp if_109_9_end
      if_111_19:
-;    [111:19] ? len <= 4 
-;    [111:19] ? len <= 4 
+;    [111:19] ? len <= 4
+;    [111:19] ? len <= 4
      cmp_111_19:
      cmp qword[rsp-136], 4
      jg if_else_109_9

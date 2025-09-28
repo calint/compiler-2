@@ -1,8 +1,9 @@
 #pragma once
+// review: 2025-09-29
 
 #include <algorithm>
 #include <cstdint>
-#include <unordered_set>
+#include <iostream>
 
 #include "compiler_exception.hpp"
 #include "lut.hpp"
@@ -22,16 +23,16 @@ struct func_return_info final {
 struct var_info final {
     std::string name;
     const type& type_ref;
-    token declared_at; // token for position in sources
-    int stack_idx{};   // location relative to rsp
-    bool initiated{};  // true if variable has been initiated
+    token declared_at_tk; // token for position in source
+    int stack_idx{};      // location relative to rsp
+    bool initiated{};     // true if variable has been initiated
 };
 
 class frame final {
     // optional name
     std::string name_;
 
-    // a unique path of source locations of the inlined call
+    // a unique path of source locations of the in-lined call
     std::string call_path_;
 
     // number of bytes used on the stack by this frame
@@ -43,7 +44,7 @@ class frame final {
     // aliases that refers to previous frame(s) alias or variable
     lut<std::string> aliases_;
 
-    // the label to jump to when exiting an function
+    // the label to jump to when exiting a in-lined function
     std::string func_ret_label_;
 
     // info about the function returns
@@ -63,15 +64,18 @@ class frame final {
           func_ret_label_{std::move(func_ret_label)}, func_rets_{func_rets},
           type_{frm_type} {}
 
-    auto add_var(token declared_at, const std::string& name, const type& tpe,
-                 const int stack_idx, const bool initiated) -> void {
+    auto add_var(token declared_at_tk, const std::string& name,
+                 const type& type_ref, const int stack_idx,
+                 const bool initiated) -> void {
+
         if (stack_idx < 0) {
             // variable, increase allocated stack size
-            allocated_stack_ += tpe.size();
+            allocated_stack_ += type_ref.size();
         }
+
         vars_.put(name, {.name = name,
-                         .type_ref = tpe,
-                         .declared_at = std::move(declared_at),
+                         .type_ref = type_ref,
+                         .declared_at_tk = std::move(declared_at_tk),
                          .stack_idx = stack_idx,
                          .initiated = initiated});
     }
@@ -90,9 +94,8 @@ class frame final {
         return vars_.get_const_ref(name);
     }
 
-    auto add_alias(const std::string& ident, const std::string& outside_ident)
-        -> void {
-        aliases_.put(ident, outside_ident);
+    auto add_alias(const std::string& from, const std::string& to) -> void {
+        aliases_.put(from, to);
     }
 
     auto is_func() const -> bool { return type_ == frame_type::FUNC; }
@@ -129,19 +132,19 @@ class frame final {
 
 struct field_info final {
     const stmt_def_field* def{};
-    const token declared_at; // token for position in sources
+    const token declared_at_tk; // token for position in source
     const bool is_str{};
 };
 
 struct func_info final {
     const stmt_def_func* def{};
-    const token declared_at; // token for position in sources
+    const token declared_at_tk; // token for position in source
     const type& type_ref;
 };
 
 struct type_info final {
     const stmt_def_type& def;
-    const token declared_at;
+    const token declared_at_tk;
     const type& type_ref;
 };
 
@@ -149,7 +152,7 @@ struct ident_info final {
     enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
 
     const std::string id;
-    const std::string id_nasm;
+    const std::string id_nasm; // NASM valid source
     const int64_t const_value{};
     const type& type_ref;
     const ident_type ident_type{ident_type::CONST};
@@ -157,17 +160,9 @@ struct ident_info final {
     [[nodiscard]] auto is_const() const -> bool {
         return ident_type == ident_type::CONST;
     }
-    [[nodiscard]] auto is_var() const -> bool {
-        return ident_type == ident_type::VAR;
-    }
+
     [[nodiscard]] auto is_register() const -> bool {
         return ident_type == ident_type::REGISTER;
-    }
-    [[nodiscard]] auto is_field() const -> bool {
-        return ident_type == ident_type::FIELD;
-    }
-    [[nodiscard]] auto is_implied() const -> bool {
-        return ident_type == ident_type::IMPLIED;
     }
 };
 
@@ -194,8 +189,6 @@ class identifier final {
     auto operator=(const identifier&) -> identifier& = default;
     auto operator=(identifier&&) -> identifier& = default;
 
-    [[nodiscard]] auto id() const -> const std::string& { return id_; }
-
     [[nodiscard]] auto id_base() const -> const std::string& {
         return path_.at(0);
     }
@@ -221,7 +214,6 @@ class toc final {
     size_t scratch_registers_initial_size_{scratch_registers_.size()};
     std::vector<std::string> allocated_registers_;
     std::vector<std::string> allocated_registers_src_locs_; // source locations
-    std::unordered_set<std::string> initiated_registers_;
     lut<field_info> fields_;
     lut<func_info> funcs_;
     lut<const type&> types_;
@@ -244,103 +236,110 @@ class toc final {
 
     ~toc() = default;
 
-    auto source() const -> const std::string& { return source_; }
-
-    auto add_field(const token& src_loc, const std::string& name,
-                   const stmt_def_field* fld, const bool is_str_field) -> void {
+    auto add_field(const token& src_loc_tk, const std::string& name,
+                   const stmt_def_field* fld_def, const bool is_str_field)
+        -> void {
 
         if (fields_.has(name)) {
             throw compiler_exception(
-                src_loc, "field '" + name + "' already defined at " +
-                             source_location_hr(
-                                 fields_.get_const_ref(name).declared_at));
+                src_loc_tk,
+                "field '" + name + "' already defined at " +
+                    source_location_hr(
+                        fields_.get_const_ref(name).declared_at_tk));
         }
-        fields_.put(
-            name, {.def = fld, .declared_at = src_loc, .is_str = is_str_field});
+
+        fields_.put(name, {.def = fld_def,
+                           .declared_at_tk = src_loc_tk,
+                           .is_str = is_str_field});
     }
 
-    auto add_func(const token& src_loc, const std::string& name,
-                  const type& return_type, const stmt_def_func* func) -> void {
+    auto add_func(const token& src_loc_tk, const std::string& name,
+                  const type& return_type, const stmt_def_func* func_def)
+        -> void {
 
         if (funcs_.has(name)) {
             const func_info& fn{funcs_.get_const_ref(name)};
-            const std::string loc{source_location_hr(fn.declared_at)};
-            throw compiler_exception(
-                src_loc, "function '" + name + "' already defined at " + loc);
+            const std::string loc{source_location_hr(fn.declared_at_tk)};
+            throw compiler_exception(src_loc_tk, "function '" + name +
+                                                     "' already defined at " +
+                                                     loc);
         }
-        funcs_.put(
-            name,
-            {.def = func, .declared_at = src_loc, .type_ref = return_type});
+
+        funcs_.put(name, {.def = func_def,
+                          .declared_at_tk = src_loc_tk,
+                          .type_ref = return_type});
     }
 
-    auto get_func_or_throw(const token& src_loc, const std::string& name) const
+    auto get_func_or_throw(const token& src_loc_tk,
+                           const std::string& name) const
         -> const stmt_def_func& {
 
         if (not funcs_.has(name)) {
-            throw compiler_exception(src_loc,
+            throw compiler_exception(src_loc_tk,
                                      "function '" + name + "' not found");
         }
 
         return *funcs_.get_const_ref(name).def;
     }
 
-    auto is_func_builtin(const token& src_loc, const std::string& name) const
+    auto is_func_builtin(const token& src_loc_tk, const std::string& name) const
         -> bool {
 
         if (not funcs_.has(name)) {
-            throw compiler_exception(src_loc,
+            throw compiler_exception(src_loc_tk,
                                      "function '" + name + "' not found");
         }
 
         return funcs_.get_const_ref(name).def == nullptr;
     }
 
-    auto get_func_return_type_or_throw(const token& src_loc,
+    auto get_func_return_type_or_throw(const token& src_loc_tk,
                                        const std::string& name) const
         -> const type& {
 
         if (not funcs_.has(name)) {
-            throw compiler_exception(src_loc,
+            throw compiler_exception(src_loc_tk,
                                      "function '" + name + "' not found");
         }
 
         return funcs_.get_const_ref(name).type_ref;
     }
 
-    auto add_type(const token& src_loc, const type& tp) -> void {
-        if (types_.has(tp.name())) {
+    auto add_type(const token& src_loc_tk, const type& tpe) -> void {
+        if (types_.has(tpe.name())) {
             //? todo. specify where the type has been defined
-            throw compiler_exception(src_loc, "type '" + tp.name() +
-                                                  "' already defined");
+            throw compiler_exception(src_loc_tk, "type '" + tpe.name() +
+                                                     "' already defined");
         }
 
-        types_.put(tp.name(), tp);
+        types_.put(tpe.name(), tpe);
     }
 
-    auto get_type_or_throw(const token& src_loc, const std::string& name) const
-        -> const type& {
+    auto get_type_or_throw(const token& src_loc_tk,
+                           const std::string& name) const -> const type& {
 
         if (not types_.has(name)) {
-            throw compiler_exception(src_loc, "type '" + name + "' not found");
+            throw compiler_exception(src_loc_tk,
+                                     "type '" + name + "' not found");
         }
 
         return types_.get_const_ref(name);
     }
 
-    auto source_location_for_use_in_label(const token& src_loc) const
+    auto source_location_for_use_in_label(const token& src_loc_tk) const
         -> std::string {
 
         const auto [line, col]{line_and_col_num_for_char_index(
-            src_loc.start_index(), source_.c_str())};
+            src_loc_tk.start_index(), source_.c_str())};
 
         return std::to_string(line) + "_" + std::to_string(col);
     }
 
     // human readable source location
-    auto source_location_hr(const token& src_loc) -> std::string {
+    auto source_location_hr(const token& src_loc_tk) -> std::string {
 
         const auto [line, col]{line_and_col_num_for_char_index(
-            src_loc.start_index(), source_.c_str())};
+            src_loc_tk.start_index(), source_.c_str())};
 
         return std::to_string(line) + ":" + std::to_string(col);
     }
@@ -349,8 +348,8 @@ class toc final {
                                                 const char* src)
         -> std::pair<size_t, size_t> {
 
-        size_t ix{};
-        size_t lix{};
+        size_t ix{};  // current index
+        size_t lix{}; // start of line
         size_t line_num{1};
         while (true) {
             if (ix == char_index) {
@@ -378,8 +377,6 @@ class toc final {
         assert(allocated_registers_.empty());
         assert(allocated_registers_src_locs_.empty());
         assert(frames_.empty());
-        //		assert(initiated_registers_.empty());
-        initiated_registers_.clear();
         assert(named_registers_.size() == named_registers_initial_size_);
         assert(scratch_registers_.size() == scratch_registers_initial_size_);
         usage_max_frame_count_ = 0;
@@ -389,7 +386,7 @@ class toc final {
     auto make_ident_info(const statement& st,
                          const bool must_be_initiated) const -> ident_info {
 
-        const ident_info& id_info{made_ident_info_or_empty(
+        const ident_info& id_info{make_ident_info_or_empty(
             st.tok(), st.identifier(), must_be_initiated)};
 
         if (not id_info.id_nasm.empty()) {
@@ -400,24 +397,23 @@ class toc final {
                                                st.identifier() + "'");
     }
 
-    auto make_ident_info(const token& src_loc, const std::string& id,
+    auto make_ident_info(const token& src_loc_tk, const std::string& ident,
                          const bool must_be_initiated) const -> ident_info {
 
         const ident_info& id_info{
-            made_ident_info_or_empty(src_loc, id, must_be_initiated)};
+            make_ident_info_or_empty(src_loc_tk, ident, must_be_initiated)};
 
         if (not id_info.id_nasm.empty()) {
             return id_info;
         }
 
-        throw compiler_exception(src_loc,
-                                 "cannot resolve identifier '" + id + "'");
+        throw compiler_exception(src_loc_tk,
+                                 "cannot resolve identifier '" + ident + "'");
     }
 
-    auto add_alias(const std::string& name,
-                   const std::string& name_in_parent_frame) -> void {
-
-        frames_.back().add_alias(name, name_in_parent_frame);
+    // note: 'to' is alias or variable in parent frame
+    auto add_alias(const std::string& from, const std::string& to) -> void {
+        frames_.back().add_alias(from, to);
     }
 
     auto enter_func(const std::string& name,
@@ -458,7 +454,7 @@ class toc final {
         frames_.pop_back();
     }
 
-    auto add_var(const token& src_loc, std::ostream& os, size_t indnt,
+    auto add_var(const token& src_loc_tk, std::ostream& os, size_t indnt,
                  const std::string& name, const type& var_type,
                  const bool initiated) -> void {
 
@@ -466,38 +462,40 @@ class toc final {
         if (frames_.back().has_var(name)) {
             const var_info& var{frames_.back().get_var_const_ref(name)};
             throw compiler_exception(
-                src_loc, "variable '" + name + "' already declared at " +
-                             source_location_hr(var.declared_at));
+                src_loc_tk, "variable '" + name + "' already declared at " +
+                                source_location_hr(var.declared_at_tk));
         }
+
         // check if variable shadows previously declared variable
         const auto [id, frm]{get_id_and_frame_for_identifier(name)};
         if (frm.has_var(id)) {
             const var_info& var{frm.get_var_const_ref(id)};
-            throw compiler_exception(src_loc,
-                                     "variable '" + name +
-                                         "' shadows variable declared at " +
-                                         source_location_hr(var.declared_at));
+            throw compiler_exception(
+                src_loc_tk, "variable '" + name +
+                                "' shadows variable declared at " +
+                                source_location_hr(var.declared_at_tk));
         }
 
-        const int stack_idx{
-            static_cast<int>(get_current_stack_size() + var_type.size())};
-        frames_.back().add_var(src_loc, name, var_type, -stack_idx, initiated);
+        const int stack_idx{static_cast<int>(get_current_function_stack_size() +
+                                             var_type.size())};
+        frames_.back().add_var(src_loc_tk, name, var_type, -stack_idx,
+                               initiated);
 
         const size_t total_stack_size{get_total_stack_size()};
         usage_max_stack_size_ =
             std::max(total_stack_size, usage_max_stack_size_);
 
         // comment the resolved name
-        const ident_info& name_info{make_ident_info(src_loc, name, false)};
+        const ident_info& name_info{make_ident_info(src_loc_tk, name, false)};
         indent(os, indnt, true);
         os << name << ": " << name_info.id_nasm << '\n';
     }
 
-    auto alloc_scratch_register(const token& src_loc, std::ostream& os,
+    auto alloc_scratch_register(const token& src_loc_tk, std::ostream& os,
                                 const size_t indnt) -> const std::string& {
 
         if (scratch_registers_.empty()) {
-            throw compiler_exception(src_loc,
+            throw compiler_exception(src_loc_tk,
                                      "out of scratch registers. try to reduce "
                                      "expression complexity");
         }
@@ -513,7 +511,8 @@ class toc final {
         usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
 
         allocated_registers_.emplace_back(reg);
-        allocated_registers_src_locs_.emplace_back(source_location_hr(src_loc));
+        allocated_registers_src_locs_.emplace_back(
+            source_location_hr(src_loc_tk));
         return reg;
     }
 
@@ -522,8 +521,10 @@ class toc final {
                                        const std::string& reg) -> void {
         indent(os, indnt, true);
         os << "alloc " << reg << '\n';
+
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
+            // not found
             std::string loc;
             const size_t n{allocated_registers_.size()};
             for (size_t i{}; i < n; i++) {
@@ -536,53 +537,62 @@ class toc final {
                 st.tok(), "cannot allocate register '" + reg +
                               "' because it was allocated at " + loc);
         }
+
         named_registers_.erase(reg_iter);
         allocated_registers_.emplace_back(reg);
         allocated_registers_src_locs_.emplace_back(
             source_location_hr(st.tok()));
     }
 
-    auto alloc_named_register(const token& src_loc, std::ostream& os,
+    auto alloc_named_register(const token& src_loc_tk, std::ostream& os,
                               const size_t indnt, const std::string& reg)
         -> bool {
 
         indent(os, indnt, true);
         os << "alloc " << reg;
+
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
+            // not found
             os << ": false\n";
             return false;
         }
+
+        os << '\n';
+
         named_registers_.erase(reg_iter);
         allocated_registers_.emplace_back(reg);
-        allocated_registers_src_locs_.emplace_back(source_location_hr(src_loc));
-        os << '\n';
+        allocated_registers_src_locs_.emplace_back(
+            source_location_hr(src_loc_tk));
+
         return true;
     }
 
     auto free_named_register(std::ostream& os, const size_t indnt,
                              const std::string& reg) -> void {
+
         indent(os, indnt, true);
         os << "free " << reg << '\n';
+
         assert(allocated_registers_.back() == reg);
         allocated_registers_.pop_back();
         allocated_registers_src_locs_.pop_back();
         named_registers_.emplace_back(reg);
-        initiated_registers_.erase(reg);
     }
 
     auto free_scratch_register(std::ostream& os, const size_t indnt,
                                const std::string& reg) -> void {
+
         indent(os, indnt, true);
         os << "free " << reg << '\n';
+
         assert(allocated_registers_.back() == reg);
         allocated_registers_.pop_back();
         allocated_registers_src_locs_.pop_back();
         scratch_registers_.emplace_back(reg);
-        initiated_registers_.erase(reg);
     }
 
-    auto get_loop_label_or_throw(const token& src_loc) const
+    auto get_loop_label_or_throw(const token& src_loc_tk) const
         -> const std::string& {
 
         size_t i{frames_.size()};
@@ -591,24 +601,25 @@ class toc final {
                 return frames_.at(i).name();
             }
             if (frames_.at(i).is_func()) {
-                throw compiler_exception(src_loc, "not in a loop");
+                throw compiler_exception(src_loc_tk, "not in a loop");
             }
         }
-        throw compiler_exception(src_loc, "unexpected frames");
+
+        throw compiler_exception(src_loc_tk, "unexpected frames");
     }
 
-    auto get_call_path(const token& src_loc) const -> const std::string& {
-
+    auto get_call_path(const token& src_loc_tk) const -> const std::string& {
         size_t i{frames_.size()};
         while (i--) {
             if (frames_.at(i).is_func()) {
                 return frames_.at(i).call_path();
             }
         }
-        throw compiler_exception(src_loc, "not in a function");
+
+        throw compiler_exception(src_loc_tk, "not in a function");
     }
 
-    auto get_func_return_label_or_throw(const token& src_loc) const
+    auto get_func_return_label_or_throw(const token& src_loc_tk) const
         -> const std::string& {
 
         size_t i{frames_.size()};
@@ -617,10 +628,11 @@ class toc final {
                 return frames_.at(i).func_ret_label();
             }
         }
-        throw compiler_exception(src_loc, "not in a function");
+
+        throw compiler_exception(src_loc_tk, "not in a function");
     }
 
-    auto get_func_returns(const token& src_loc) const
+    auto get_func_returns(const token& src_loc_tk) const
         -> const std::vector<func_return_info>& {
 
         size_t i{frames_.size()};
@@ -629,7 +641,8 @@ class toc final {
                 return frames_.at(i).get_func_returns_infos();
             }
         }
-        throw compiler_exception(src_loc, "not in a function");
+
+        throw compiler_exception(src_loc_tk, "not in a function");
     }
 
     auto comment_source(const statement& st, std::ostream& os,
@@ -645,6 +658,7 @@ class toc final {
         st.source_to(ss);
         const std::string s{ss.str()};
         std::string res{std::regex_replace(s, regex_ws, " ")};
+        // trim end of string
         if (!res.empty() && res.back() == ' ') {
             res.pop_back();
         }
@@ -663,8 +677,12 @@ class toc final {
         std::stringstream ss;
         ss << " " << dst << " " << op << " ";
         st.source_to(ss);
-        const std::string& s{ss.str()};
-        const std::string& res{regex_replace(s, std::regex(R"(\s+)"), " ")};
+        const std::string s{ss.str()};
+        std::string res{regex_replace(s, regex_ws, " ")};
+        // trim end of string
+        if (!res.empty() && res.back() == ' ') {
+            res.pop_back();
+        }
         os << res << '\n';
     }
 
@@ -680,22 +698,16 @@ class toc final {
         return std::ranges::find(all_registers_, id) != all_registers_.end();
     }
 
-    auto asm_cmd(const token& src_loc, std::ostream& os, const size_t indnt,
+    auto asm_cmd(const token& src_loc_tk, std::ostream& os, const size_t indnt,
                  const std::string& op, const std::string& dst_nasm,
                  const std::string& src_nasm) -> void {
-        if (op == "mov") {
-            if (dst_nasm == src_nasm) {
-                return;
-            }
 
-            if (is_identifier_register(dst_nasm)) {
-                // for optimization of push/pop when calling a function
-                initiated_registers_.insert(dst_nasm);
-            }
+        if (op == "mov" and dst_nasm == src_nasm) {
+            return;
         }
 
-        const size_t dst_size{get_size_from_operand(src_loc, dst_nasm)};
-        const size_t src_size{get_size_from_operand(src_loc, src_nasm)};
+        const size_t dst_size{get_size_from_operand(src_loc_tk, dst_nasm)};
+        const size_t src_size{get_size_from_operand(src_loc_tk, src_nasm)};
 
         if (dst_size == src_size) {
             if (not(is_operand_memory(dst_nasm) and
@@ -705,11 +717,13 @@ class toc final {
                 os << op << " " << dst_nasm << ", " << src_nasm << '\n';
                 return;
             }
+
             // both operands are memory references
-            //   use scratch register for transfer
-            const std::string& reg{alloc_scratch_register(src_loc, os, indnt)};
+            // use scratch register for transfer
+            const std::string& reg{
+                alloc_scratch_register(src_loc_tk, os, indnt)};
             const std::string& reg_sized{
-                get_register_operand_for_size(src_loc, reg, src_size)};
+                get_register_operand_for_size(src_loc_tk, reg, src_size)};
             indent(os, indnt);
             os << "mov " << reg_sized << ", " << src_nasm << '\n';
             indent(os, indnt);
@@ -729,11 +743,13 @@ class toc final {
                     return;
                 }
             }
+
             // both operands refer to memory
-            //   use scratch register for transfer
-            const std::string& reg{alloc_scratch_register(src_loc, os, indnt)};
+            // use scratch register for transfer
+            const std::string& reg{
+                alloc_scratch_register(src_loc_tk, os, indnt)};
             const std::string& reg_sized{
-                get_register_operand_for_size(src_loc, reg, dst_size)};
+                get_register_operand_for_size(src_loc_tk, reg, dst_size)};
             indent(os, indnt);
             os << "movsx " << reg_sized << ", " << src_nasm << '\n';
             indent(os, indnt);
@@ -746,7 +762,7 @@ class toc final {
         //? truncation might change value of signed number
         if (is_identifier_register(src_nasm)) {
             const std::string& reg_sized{
-                get_register_operand_for_size(src_loc, src_nasm, dst_size)};
+                get_register_operand_for_size(src_loc_tk, src_nasm, dst_size)};
             indent(os, indnt);
             os << op << " " << dst_nasm << ", " << reg_sized << '\n';
             return;
@@ -754,11 +770,10 @@ class toc final {
 
         if (is_operand_memory(src_nasm)) {
             //? todo. this displays nasm identifiers but should be human
-            // readable
-            // identifiers
+            // readable identifiers
             throw compiler_exception(
-                src_loc, "cannot move '" + src_nasm + "' to '" + dst_nasm +
-                             "' because it would be truncated");
+                src_loc_tk, "cannot move '" + src_nasm + "' to '" + dst_nasm +
+                                "' because it would be truncated");
         }
 
         // constant
@@ -767,56 +782,38 @@ class toc final {
     }
 
     auto set_var_is_initiated(const std::string& name) -> void {
-        const auto [id, frm]{get_id_and_frame_for_identifier(name)};
-        // FIX
-        const identifier found_ident{id};
-        // is 'id_nasm' a variable?
-        if (frm.has_var(found_ident.id_base())) {
+        const identifier ident{name};
+        const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
+
+        if (frm.has_var(id)) {
             frm.get_var_ref(id).initiated = true;
             return;
         }
 
-        if (fields_.has(id)) {
-            return; // a field, it is initiated
-        }
-
-        if (is_identifier_register(id)) {
-            initiated_registers_.insert(id);
-            return;
-        }
-
-        throw panic_exception("unexpected code path toc:1");
+        // field or register
     }
 
     auto is_var_initiated(const std::string& name) -> bool {
         const identifier ident{name};
         const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
-        // is 'id_nasm' a variable?
+
         if (frm.has_var(id)) {
             return frm.get_var_const_ref(id).initiated;
         }
 
-        if (fields_.has(id)) {
-            return true; // a field, it is initiated
-        }
-
-        if (is_identifier_register(id)) {
-            auto it = std::ranges::find(initiated_registers_, id);
-            return it != initiated_registers_.end();
-        }
-
-        throw panic_exception("unexpected code path toc:2");
+        // field or register
+        return true;
     }
 
-    auto set_type_void(const type& tp) -> void { type_void_ = &tp; }
+    auto set_type_void(const type& tpe) -> void { type_void_ = &tpe; }
 
     auto get_type_void() const -> const type& { return *type_void_; }
 
-    auto set_type_default(const type& tp) -> void { type_default_ = &tp; }
+    auto set_type_default(const type& tpe) -> void { type_default_ = &tpe; }
 
     auto get_type_default() const -> const type& { return *type_default_; }
 
-    auto set_type_bool(const type& tp) -> void { type_bool_ = &tp; }
+    auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
 
     auto get_type_bool() const -> const type& { return *type_bool_; }
 
@@ -824,7 +821,7 @@ class toc final {
         return operand.find_first_of('[') != std::string::npos;
     }
 
-    auto get_size_from_operand(const token& src_loc,
+    auto get_size_from_operand(const token& src_loc_tk,
                                const std::string& operand) const -> size_t {
         //? sort of ugly
         if (operand.starts_with("qword")) {
@@ -840,11 +837,10 @@ class toc final {
             return 1;
         }
         if (is_identifier_register(operand)) {
-            return get_size_from_operand_register(src_loc, operand);
+            return get_size_from_operand_register(src_loc_tk, operand);
         }
 
         // constant
-        //? calculate the smallest size of the constant?
         return get_type_default().size();
     }
 
@@ -852,7 +848,7 @@ class toc final {
     // statics
     // -------------------------------------------------------------------------
 
-    static auto get_size_from_operand_register(const token& src_loc,
+    static auto get_size_from_operand_register(const token& src_loc_tk,
                                                const std::string& operand)
         -> size_t {
 
@@ -892,13 +888,15 @@ class toc final {
             return 1;
         }
 
-        throw compiler_exception(src_loc, "unknown register '" + operand + "'");
+        throw compiler_exception(src_loc_tk,
+                                 "unknown register '" + operand + "'");
     }
 
-    static auto get_register_operand_for_size(const token& src_loc,
+    static auto get_register_operand_for_size(const token& src_loc_tk,
                                               const std::string& operand,
                                               const size_t size)
         -> std::string {
+
         //? sort of ugly
         if (operand == "rax") {
             switch (size) {
@@ -912,8 +910,8 @@ class toc final {
                 return "al";
             default:
                 throw compiler_exception(
-                    src_loc, "illegal size " + std::to_string(size) +
-                                 " for register operand '" + operand + "'");
+                    src_loc_tk, "illegal size " + std::to_string(size) +
+                                    " for register operand '" + operand + "'");
             }
         }
         if (operand == "rbx") {
@@ -928,8 +926,8 @@ class toc final {
                 return "bl";
             default:
                 throw compiler_exception(
-                    src_loc, "illegal size " + std::to_string(size) +
-                                 " for register '" + operand + "'");
+                    src_loc_tk, "illegal size " + std::to_string(size) +
+                                    " for register '" + operand + "'");
             }
         }
         if (operand == "rcx") {
@@ -944,8 +942,8 @@ class toc final {
                 return "cl";
             default:
                 throw compiler_exception(
-                    src_loc, "illegal size " + std::to_string(size) +
-                                 " for register '" + operand + "'");
+                    src_loc_tk, "illegal size " + std::to_string(size) +
+                                    " for register '" + operand + "'");
             }
         }
         if (operand == "rdx") {
@@ -960,8 +958,8 @@ class toc final {
                 return "dl";
             default:
                 throw compiler_exception(
-                    src_loc, "illegal size " + std::to_string(size) +
-                                 " for register '" + operand + "'");
+                    src_loc_tk, "illegal size " + std::to_string(size) +
+                                    " for register '" + operand + "'");
             }
         }
         if (operand == "rbp") {
@@ -974,8 +972,8 @@ class toc final {
                 return "bp";
             default:
                 throw compiler_exception(
-                    src_loc, "illegal size " + std::to_string(size) +
-                                 " for register '" + operand + "'");
+                    src_loc_tk, "illegal size " + std::to_string(size) +
+                                    " for register '" + operand + "'");
             }
         }
         if (operand == "rsi") {
@@ -988,8 +986,8 @@ class toc final {
                 return "si";
             default:
                 throw compiler_exception(
-                    src_loc, "illegal size " + std::to_string(size) +
-                                 " for register '" + operand + "'");
+                    src_loc_tk, "illegal size " + std::to_string(size) +
+                                    " for register '" + operand + "'");
             }
         }
         if (operand == "rdi") {
@@ -1002,8 +1000,8 @@ class toc final {
                 return "di";
             default:
                 throw compiler_exception(
-                    src_loc, "illegal size " + std::to_string(size) +
-                                 " for register '" + operand + "'");
+                    src_loc_tk, "illegal size " + std::to_string(size) +
+                                    " for register '" + operand + "'");
             }
         }
         if (operand == "rsp") {
@@ -1016,14 +1014,16 @@ class toc final {
                 return "sp";
             default:
                 throw compiler_exception(
-                    src_loc, "illegal size " + std::to_string(size) +
-                                 " for register '" + operand + "'");
+                    src_loc_tk, "illegal size " + std::to_string(size) +
+                                    " for register '" + operand + "'");
             }
         }
+
+        //? todo. move this to a static
         const std::regex rx{R"(r(\d+))"};
         std::smatch match;
         if (!regex_search(operand, match, rx)) {
-            throw compiler_exception(src_loc, "unknown register " + operand);
+            throw compiler_exception(src_loc_tk, "unknown register " + operand);
         }
         const std::string rnbr{match[1]};
         switch (size) {
@@ -1036,62 +1036,63 @@ class toc final {
         case 1:
             return "r" + rnbr + "b";
         default:
-            throw compiler_exception(src_loc,
+            throw compiler_exception(src_loc_tk,
                                      "illegal size " + std::to_string(size) +
                                          " for register '" + operand + "'");
         }
     }
 
-    static auto asm_push([[maybe_unused]] const token& src_loc,
+    static auto asm_push([[maybe_unused]] const token& src_loc_tk,
                          std::ostream& os, const size_t indnt,
                          const std::string& operand) -> void {
+
         indent(os, indnt);
         os << "push " << operand << '\n';
     }
 
-    static auto asm_pop([[maybe_unused]] const token& src_loc, std::ostream& os,
-                        const size_t indnt, const std::string& operand)
-        -> void {
+    static auto asm_pop([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, const size_t indnt,
+                        const std::string& operand) -> void {
+
         indent(os, indnt);
         os << "pop " << operand << '\n';
     }
 
-    static auto asm_jmp([[maybe_unused]] const token& src_loc, std::ostream& os,
-                        const size_t indnt, const std::string& label) -> void {
+    static auto asm_jmp([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, const size_t indnt,
+                        const std::string& label) -> void {
+
         indent(os, indnt);
         os << "jmp " << label << '\n';
     }
 
-    static auto asm_label([[maybe_unused]] const token& src_loc,
+    static auto asm_label([[maybe_unused]] const token& src_loc_tk,
                           std::ostream& os, const size_t indnt,
                           const std::string& label) -> void {
+
         indent(os, indnt);
         os << label << ":\n";
     }
 
-    static auto asm_call([[maybe_unused]] const token& src_loc,
-                         std::ostream& os, const size_t indnt,
-                         const std::string& label) -> void {
-        indent(os, indnt);
-        os << "call " << label << '\n';
-    }
+    static auto asm_neg([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, const size_t indnt,
+                        const std::string& operand) -> void {
 
-    static auto asm_neg([[maybe_unused]] const token& src_loc, std::ostream& os,
-                        const size_t indnt, const std::string& operand)
-        -> void {
         indent(os, indnt);
         os << "neg " << operand << '\n';
     }
 
-    static auto asm_not([[maybe_unused]] const token& src_loc, std::ostream& os,
-                        const size_t indnt, const std::string& operand)
-        -> void {
+    static auto asm_not([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, const size_t indnt,
+                        const std::string& operand) -> void {
+
         indent(os, indnt);
         os << "not " << operand << '\n';
     }
 
     static auto indent(std::ostream& os, const size_t indnt,
                        const bool comment = false) -> void {
+
         if (indnt == 0) {
             if (comment) {
                 os << ";";
@@ -1108,8 +1109,8 @@ class toc final {
     auto get_id_and_frame_for_identifier(const std::string& ident)
         -> std::pair<std::string, frame&> {
 
-        identifier bid{ident};
-        std::string id{bid.id_base()};
+        identifier id{ident};
+        std::string id_base{id.id_base()};
         // traverse the frames and resolve the id_nasm (which might be an alias)
         // to a variable, field, register or constant
         size_t i{frames_.size()};
@@ -1118,29 +1119,25 @@ class toc final {
             // is the frame a function?
             if (frames_.at(i).is_func()) {
                 // is it an alias defined by an argument in the function?
-                if (not frames_.at(i).has_alias(id)) {
+                if (not frames_.at(i).has_alias(id_base)) {
+                    // no, done within the context of this function
                     break;
                 }
-                // yes, continue resolving alias until it is
-                // a variable, field, register or constant
-                id = frames_.at(i).get_alias(id);
-                bid = identifier{id};
-                id = bid.id_base();
+                // yes, continue resolving alias until it is a variable, field,
+                // register or constant
+                id = identifier{frames_.at(i).get_alias(id_base)};
+                id_base = id.id_base();
                 continue;
             }
             // does scope contain the variable
-            if (frames_.at(i).has_var(id)) {
+            if (frames_.at(i).has_var(id_base)) {
                 break;
             }
         }
-        return {std::move(id), frames_.at(i)};
+        return {std::move(id_base), frames_.at(i)};
     }
 
-    auto is_register_initiated(const std::string& reg) const -> bool {
-        return initiated_registers_.contains(reg);
-    }
-
-    auto get_current_stack_size() const -> size_t {
+    auto get_current_function_stack_size() const -> size_t {
         assert(!frames_.empty());
         size_t nbytes{};
         size_t i{frames_.size()};
@@ -1166,14 +1163,14 @@ class toc final {
         return nbytes;
     }
 
-    auto made_ident_info_or_empty(const token& src_loc,
+    auto make_ident_info_or_empty(const token& src_loc,
                                   const std::string& ident,
                                   const bool must_be_initiated) const
         -> ident_info {
 
         identifier id{ident};
         // get the root of an identifier: example p.x -> p
-        std::string base_id{id.id_base()};
+        std::string id_base{id.id_base()};
         // traverse the frames and resolve the id_nasm (which might be an
         // alias) to a variable, field, register or constant
         size_t i{frames_.size()};
@@ -1182,32 +1179,32 @@ class toc final {
             // is the frame a function?
             if (frames_.at(i).is_func()) {
                 // is it an alias defined by an argument in the function?
-                if (not frames_.at(i).has_alias(base_id)) {
+                if (not frames_.at(i).has_alias(id_base)) {
                     // no, it is not
                     break;
                 }
                 // yes, continue resolving alias until it is a variable, field,
                 // register or constant
-                const identifier new_id{frames_.at(i).get_alias(base_id)};
-                base_id = new_id.id_base();
+                const identifier new_id{frames_.at(i).get_alias(id_base)};
+                id_base = new_id.id_base();
                 if (id.path().size() == 1) {
                     // this is an alias of type: res -> p.x
                     id = new_id;
                 } else {
                     // this is an alias of type: pt.x -> p.x
-                    id.set_base(base_id);
+                    id.set_base(id_base);
                 }
                 continue;
             }
             // does scope contain the variable
-            if (frames_.at(i).has_var(base_id)) {
+            if (frames_.at(i).has_var(id_base)) {
                 break;
             }
         }
 
-        // is 'id' a variable?
-        if (frames_.at(i).has_var(base_id)) {
-            const var_info& var{frames_.at(i).get_var_const_ref(base_id)};
+        // is it a variable?
+        if (frames_.at(i).has_var(id_base)) {
+            const var_info& var{frames_.at(i).get_var_const_ref(id_base)};
             if (must_be_initiated and not var.initiated) {
                 throw compiler_exception(src_loc, "variable '" + var.name +
                                                       "' is not initiated");
@@ -1221,44 +1218,39 @@ class toc final {
                     .ident_type = ident_info::ident_type::VAR};
         }
 
-        // is 'id' a register?
-        if (is_identifier_register(base_id)) {
-            if (must_be_initiated and not is_register_initiated(base_id)) {
-                throw compiler_exception(src_loc, "register '" + base_id +
-                                                      "' is not initiated");
-            }
-
+        // is it a register?
+        if (is_identifier_register(id_base)) {
             //? unary ops?
             return {.id = ident,
-                    .id_nasm = base_id,
+                    .id_nasm = id_base,
                     .const_value = 0,
                     .type_ref = get_type_default(),
                     .ident_type = ident_info::ident_type::REGISTER};
         }
 
-        // is 'id' a field?
-        if (fields_.has(base_id)) {
+        // is it a field?
+        if (fields_.has(id_base)) {
             const std::string& after_dot =
                 id.path().size() < 2 ? ""
                                      : id.path().at(1); //? bug. not correct
             if (after_dot == "len") {
                 return {.id = ident,
-                        .id_nasm = base_id + "." + after_dot,
+                        .id_nasm = id_base + ".len",
                         .const_value = 0,
                         .type_ref = get_type_default(),
                         .ident_type = ident_info::ident_type::IMPLIED};
             }
-            const field_info& fi{fields_.get_const_ref(base_id)};
+            const field_info& fi{fields_.get_const_ref(id_base)};
             if (fi.is_str) {
                 return {.id = ident,
-                        .id_nasm = base_id,
+                        .id_nasm = id_base,
                         .const_value = 0,
                         .type_ref = get_type_default(),
                         .ident_type = ident_info::ident_type::FIELD};
             }
             //? assumes qword
             return {.id = ident,
-                    .id_nasm = "qword[" + base_id + "]",
+                    .id_nasm = "qword[" + id_base + "]",
                     .const_value = 0,
                     .type_ref = get_type_default(),
                     .ident_type = ident_info::ident_type::FIELD};
@@ -1266,49 +1258,49 @@ class toc final {
 
         // is 'id' a constant?
         char* ep{};
-        const int64_t const_value{strtol(base_id.c_str(), &ep, 10)};
+        const int64_t const_value{strtol(id_base.c_str(), &ep, 10)};
         if (!*ep) {
             return {.id = ident,
-                    .id_nasm = base_id,
+                    .id_nasm = id_base,
                     .const_value = const_value,
                     .type_ref = get_type_default(),
                     .ident_type = ident_info::ident_type::CONST};
         }
 
-        if (base_id.starts_with("0x")) { // hex
-            const int64_t value{strtol(base_id.c_str() + 2, &ep, 16)};
+        if (id_base.starts_with("0x")) { // hex
+            const int64_t value{strtol(id_base.c_str() + 2, &ep, 16)};
             if (!*ep) {
                 return {.id = ident,
-                        .id_nasm = base_id,
+                        .id_nasm = id_base,
                         .const_value = value,
                         .type_ref = get_type_default(),
                         .ident_type = ident_info::ident_type::CONST};
             }
         }
 
-        if (base_id.starts_with("0b")) { // binary
-            const int64_t value{strtol(base_id.c_str() + 2, &ep, 2)};
+        if (id_base.starts_with("0b")) { // binary
+            const int64_t value{strtol(id_base.c_str() + 2, &ep, 2)};
             if (!*ep) {
                 return {.id = ident,
-                        .id_nasm = base_id,
+                        .id_nasm = id_base,
                         .const_value = value,
                         .type_ref = get_type_default(),
                         .ident_type = ident_info::ident_type::CONST};
             }
         }
 
-        // is 'id' a boolean constant?
-        if (base_id == "true") {
+        // is it a boolean constant?
+        if (id_base == "true") {
             return {.id = ident,
-                    .id_nasm = base_id,
+                    .id_nasm = "true",
                     .const_value = 1,
                     .type_ref = get_type_bool(),
                     .ident_type = ident_info::ident_type::CONST};
         }
 
-        if (base_id == "false") {
+        if (id_base == "false") {
             return {.id = ident,
-                    .id_nasm = base_id,
+                    .id_nasm = "false",
                     .const_value = 0,
                     .type_ref = get_type_bool(),
                     .ident_type = ident_info::ident_type::CONST};
