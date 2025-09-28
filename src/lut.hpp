@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include <string>
 #include <utility>
@@ -7,7 +8,7 @@
 #include "panic_exception.hpp"
 
 template <class T> class lut final {
-    struct el final {
+    struct elem final {
         std::string key;
         T data;
 
@@ -16,17 +17,17 @@ template <class T> class lut final {
         }
     };
 
-    std::vector<el> elems_;
-    mutable const el* last_has_el_{};
+    std::vector<elem> elems_;
+    mutable const elem* last_has_elem_{};
 
   public:
     auto get(const std::string& key) const -> T {
-        if (last_has_el_) {
-            if (last_has_el_->is_key(key)) {
-                return last_has_el_->data;
+        if (last_has_elem_) {
+            if (last_has_elem_->is_key(key)) {
+                return last_has_elem_->data;
             }
         }
-        for (const el& e : elems_) {
+        for (const elem& e : elems_) {
             if (e.is_key(key)) {
                 return e.data;
             }
@@ -35,22 +36,22 @@ template <class T> class lut final {
     }
 
     auto has(const std::string& key) const -> bool {
-        for (const el& e : elems_) {
+        for (const elem& e : elems_) {
             if (e.is_key(key)) {
-                last_has_el_ = &e;
+                last_has_elem_ = &e;
                 return true;
             }
         }
-        last_has_el_ = nullptr;
+        last_has_elem_ = nullptr;
         return false;
     }
 
     auto put(const std::string& key, T data) -> void {
-        elems_.emplace_back(el{key, std::move(data)});
+        elems_.emplace_back(elem{key, std::move(data)});
     }
 
     auto get_ref(const std::string& key) -> T& {
-        for (el& e : elems_) {
+        for (elem& e : elems_) {
             if (e.is_key(key)) {
                 return e.data;
             }
@@ -58,14 +59,14 @@ template <class T> class lut final {
         throw panic_exception("element not found: " + key);
     }
 
-    // for clarity get_const_ref instead of overloading get_ref
+    // note: for clarity get_const_ref instead of overloading get_ref
     auto get_const_ref(const std::string& key) const -> const T& {
-        if (last_has_el_) {
-            if (last_has_el_->is_key(key)) {
-                return last_has_el_->data;
+        if (last_has_elem_) {
+            if (last_has_elem_->is_key(key)) {
+                return last_has_elem_->data;
             }
         }
-        for (const el& e : elems_) {
+        for (const elem& e : elems_) {
             if (e.is_key(key)) {
                 return e.data;
             }

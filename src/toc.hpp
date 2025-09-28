@@ -797,7 +797,7 @@ class toc final {
         const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
         // is 'id_nasm' a variable?
         if (frm.has_var(id)) {
-            return frm.get_var_ref(id).initiated;
+            return frm.get_var_const_ref(id).initiated;
         }
 
         if (fields_.has(id)) {
