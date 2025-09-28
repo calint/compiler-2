@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include "stmt_assign_var.hpp"
 
@@ -35,12 +36,9 @@ class stmt_def_var final : public statement {
                            : tc.get_type_or_throw(type_tk_, type_tk_.name())};
         set_type(tp);
 
-        // dry-run compilation to null stream to set up the program state in
-        // toc
+        // add var to toc without causing output by passing a null stream
         null_stream null_strm;
         tc.add_var(name_tk_, null_strm, 0, name_tk_.name(), tp, false);
-
-        // initialization code
         initial_value_ = {tc, name_tk_, type_tk_, tz};
     }
 
