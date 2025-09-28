@@ -1,3 +1,4 @@
+[ ] token: regex construction to static
 [ ] unary_ops: use std::source_location in panic exception
 [ ] stmt_call: use std::source_location in panic exception
 [x] find out why toc.source_comment does not remove trailing spaces
