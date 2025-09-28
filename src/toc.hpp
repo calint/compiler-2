@@ -232,6 +232,7 @@ class toc final {
     size_t usage_max_scratch_regs_{};
     size_t usage_max_frame_count_{};
     size_t usage_max_stack_size_{};
+    const std::regex regex_ws{R"(\s+)"};
 
   public:
     explicit toc(const std::string& source)
@@ -657,7 +658,10 @@ class toc final {
         std::stringstream ss;
         st.source_to(ss);
         const std::string s{ss.str()};
-        const std::string res{regex_replace(s, std::regex(R"(\s+)"), " ")};
+        std::string res{std::regex_replace(s, regex_ws, " ")};
+        if (!res.empty() && res.back() == ' ') {
+            res.pop_back();
+        }
         os << res << "\n";
     }
 
