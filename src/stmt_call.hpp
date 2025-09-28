@@ -287,7 +287,6 @@ class stmt_call : public expression {
         // assigned
         if (not returns.empty()) {
             const std::string& ret_var{returns.at(0).ident_tk.name()};
-
             if (not tc.is_var_initiated(ret_var)) {
                 throw compiler_exception(returns.at(0).ident_tk,
                                          "return variable '" + ret_var +
@@ -299,15 +298,13 @@ class stmt_call : public expression {
         for (auto it{allocated_registers_in_order.rbegin()};
              it != allocated_registers_in_order.rend(); ++it) {
             const std::string& reg{*it};
-            if (std::ranges::find(allocated_scratch_registers,
-
-                                  reg) != allocated_scratch_registers.end()) {
+            if (std::ranges::find(allocated_scratch_registers, reg) !=
+                allocated_scratch_registers.end()) {
                 tc.free_scratch_register(os, indent + 1, reg);
                 continue;
             }
-            if (std::ranges::find(allocated_named_registers,
-
-                                  reg) != allocated_named_registers.end()) {
+            if (std::ranges::find(allocated_named_registers, reg) !=
+                allocated_named_registers.end()) {
                 tc.free_named_register(os, indent + 1, reg);
                 continue;
             }
