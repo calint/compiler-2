@@ -806,28 +806,28 @@ class toc final {
     }
 
     auto asm_cmd(const token& src_loc, std::ostream& os, const size_t indnt,
-                 const std::string& op, const std::string& dst_resolved,
-                 const std::string& src_resolved) -> void {
+                 const std::string& op, const std::string& dst_nasm,
+                 const std::string& src_nasm) -> void {
         if (op == "mov") {
-            if (dst_resolved == src_resolved) {
+            if (dst_nasm == src_nasm) {
                 return;
             }
 
-            if (is_identifier_register(dst_resolved)) {
+            if (is_identifier_register(dst_nasm)) {
                 // for optimization of push/pop when calling a function
-                initiated_registers_.insert(dst_resolved);
+                initiated_registers_.insert(dst_nasm);
             }
         }
 
-        const size_t dst_size{get_size_from_operand(src_loc, dst_resolved)};
-        const size_t src_size{get_size_from_operand(src_loc, src_resolved)};
+        const size_t dst_size{get_size_from_operand(src_loc, dst_nasm)};
+        const size_t src_size{get_size_from_operand(src_loc, src_nasm)};
 
         if (dst_size == src_size) {
-            if (not(is_operand_memory(dst_resolved) and
-                    is_operand_memory(src_resolved))) {
+            if (not(is_operand_memory(dst_nasm) and
+                    is_operand_memory(src_nasm))) {
                 // both operands are not memory references
                 indent(os, indnt);
-                os << op << " " << dst_resolved << ", " << src_resolved << '\n';
+                os << op << " " << dst_nasm << ", " << src_nasm << '\n';
                 return;
             }
             // both operands are memory references
@@ -836,22 +836,21 @@ class toc final {
             const std::string& reg_sized{
                 get_register_operand_for_size(src_loc, reg, src_size)};
             indent(os, indnt);
-            os << "mov " << reg_sized << ", " << src_resolved << '\n';
+            os << "mov " << reg_sized << ", " << src_nasm << '\n';
             indent(os, indnt);
-            os << op << " " << dst_resolved << ", " << reg_sized << '\n';
+            os << op << " " << dst_nasm << ", " << reg_sized << '\n';
             free_scratch_register(os, indnt, reg);
             return;
         }
 
         if (dst_size > src_size) {
             // mov rax,byte[b] -> movsx
-            if (not(is_operand_memory(dst_resolved) and
-                    is_operand_memory(src_resolved))) {
+            if (not(is_operand_memory(dst_nasm) and
+                    is_operand_memory(src_nasm))) {
                 // not both operands memory references
                 if (op == "mov") {
                     indent(os, indnt);
-                    os << "movsx " << dst_resolved << ", " << src_resolved
-                       << '\n';
+                    os << "movsx " << dst_nasm << ", " << src_nasm << '\n';
                     return;
                 }
             }
@@ -861,35 +860,35 @@ class toc final {
             const std::string& reg_sized{
                 get_register_operand_for_size(src_loc, reg, dst_size)};
             indent(os, indnt);
-            os << "movsx " << reg_sized << ", " << src_resolved << '\n';
+            os << "movsx " << reg_sized << ", " << src_nasm << '\n';
             indent(os, indnt);
-            os << op << " " << dst_resolved << ", " << reg_sized << '\n';
+            os << op << " " << dst_nasm << ", " << reg_sized << '\n';
             free_scratch_register(os, indnt, reg);
             return;
         }
 
         // dst_size < src_size
         //? truncation might change value of signed number
-        if (is_identifier_register(src_resolved)) {
+        if (is_identifier_register(src_nasm)) {
             const std::string& reg_sized{
-                get_register_operand_for_size(src_loc, src_resolved, dst_size)};
+                get_register_operand_for_size(src_loc, src_nasm, dst_size)};
             indent(os, indnt);
-            os << op << " " << dst_resolved << ", " << reg_sized << '\n';
+            os << op << " " << dst_nasm << ", " << reg_sized << '\n';
             return;
         }
 
-        if (is_operand_memory(src_resolved)) {
+        if (is_operand_memory(src_nasm)) {
             //? todo. this displays nasm identifiers but should be human
             // readable
             // identifiers
             throw compiler_exception(
-                src_loc, "cannot move '" + src_resolved + "' to '" +
-                             dst_resolved + "' because it would be truncated");
+                src_loc, "cannot move '" + src_nasm + "' to '" + dst_nasm +
+                             "' because it would be truncated");
         }
 
         // constant
         indent(os, indnt);
-        os << op << " " << dst_resolved << ", " << src_resolved << '\n';
+        os << op << " " << dst_nasm << ", " << src_nasm << '\n';
     }
 
     auto set_var_is_initiated(const std::string& name) -> void {

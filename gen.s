@@ -317,11 +317,15 @@ mov rsp,stk.end
 ;    alias arg -> j
 ;    [60:5] res = arg * 2 
 ;    [60:11] arg * 2 
-;    alloc r15
 ;    [60:11] arg * 2 
-;    [60:11] r15 = arg 
+;    [60:11] res = arg 
+;    alloc r15
      mov r15, qword[rsp-32]
-;    [60:17] r15 * 2 
+     mov qword[rsp-40], r15
+;    free r15
+;    [60:17] res * 2 
+;    alloc r15
+     mov r15, qword[rsp-40]
      imul r15, 2
      mov qword[rsp-40], r15
 ;    free r15
@@ -379,11 +383,12 @@ mov rsp,stk.end
 ;    alias arg -> 1
 ;    [60:5] res = arg * 2 
 ;    [60:11] arg * 2 
-;    alloc r15
 ;    [60:11] arg * 2 
-;    [60:11] r15 = arg 
-     mov r15, 1
-;    [60:17] r15 * 2 
+;    [60:11] res = arg 
+     mov qword[rsp-40], 1
+;    [60:17] res * 2 
+;    alloc r15
+     mov r15, qword[rsp-40]
      imul r15, 2
      mov qword[rsp-40], r15
 ;    free r15
@@ -445,11 +450,12 @@ mov rsp,stk.end
 ;      alias arg -> 2
 ;      [60:5] res = arg * 2 
 ;      [60:11] arg * 2 
-;      alloc r15
 ;      [60:11] arg * 2 
-;      [60:11] r15 = arg 
-       mov r15, 2
-;      [60:17] r15 * 2 
+;      [60:11] res = arg 
+       mov qword[rsp-56], 2
+;      [60:17] res * 2 
+;      alloc r15
+       mov r15, qword[rsp-56]
        imul r15, 2
        mov qword[rsp-56], r15
 ;      free r15
@@ -521,11 +527,15 @@ mov rsp,stk.end
 ;    [90:23] {{x * 10, y}, 0xff0000}
 ;      [90:24] {x * 10, y}
 ;      [90:25] x * 10
-;      alloc r15
 ;      [90:25] x * 10
-;      [90:25] r15 = x 
+;      [90:25] o1.pos.x = x 
+;      alloc r15
        mov r15, qword[rsp-64]
-;      [90:29] r15 * 10
+       mov qword[rsp-92], r15
+;      free r15
+;      [90:29] o1.pos.x * 10
+;      alloc r15
+       mov r15, qword[rsp-92]
        imul r15, 10
        mov qword[rsp-92], r15
 ;      free r15
@@ -1163,6 +1173,6 @@ mov rax, 60
 mov rdi, 0
 syscall
 
-; max scratch registers in use: 1
+; max scratch registers in use: 3
 ;            max frames in use: 7
 ;        max inline stack size: 136 B

@@ -191,20 +191,20 @@ class expr_ops_list final : public expression {
             tc.resolve_identifier(tok(), dst, false)};
 
         if (dst_resolved.is_register()) {
-            do_compile(tc, os, indent, dst);
+            do_compile(tc, os, indent, dst_resolved);
             return;
         }
 
         // compile with and without scratch register
         // try without scratch register
         std::stringstream ss1;
-        do_compile(tc, ss1, indent, dst);
+        do_compile(tc, ss1, indent, dst_resolved);
 
         // try with scratch register
         std::stringstream ss2;
         const std::string& reg{tc.alloc_scratch_register(tok(), ss2, indent)};
-        do_compile(tc, ss2, indent, reg);
-        // tc.source_comment(*this, ss2, indent);
+        const ident_resolved dest_reg{tc.resolve_identifier(tok(), reg, false)};
+        do_compile(tc, ss2, indent, dst_resolved);
         tc.asm_cmd(tok(), ss2, indent, "mov", dst_resolved.id_nasm, reg);
         tc.free_scratch_register(ss2, indent, reg);
 
@@ -255,12 +255,10 @@ class expr_ops_list final : public expression {
 
   private:
     auto do_compile(toc& tc, std::ostream& os, const size_t indent,
-                    const std::string& dst) const -> void {
+                    const ident_resolved& dst_resolved) const -> void {
         tc.comment_source(*this, os, indent);
 
         // first element is assigned to destination
-        const ident_resolved& dst_resolved{
-            tc.resolve_identifier(tok(), dst, false)};
         asm_op(tc, os, indent, '=', dst_resolved, *exprs_.at(0));
 
         // remaining elements are +,-,*,/,%,|,&,^,<<,>>

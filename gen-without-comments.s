@@ -133,6 +133,8 @@ mov rsp,stk.end
    assert_75_5_end:
    mov qword[rsp-32], 1
      mov r15, qword[rsp-32]
+     mov qword[rsp-40], r15
+     mov r15, qword[rsp-40]
      imul r15, 2
      mov qword[rsp-40], r15
    baz_78_13_end:
@@ -156,7 +158,8 @@ mov rsp,stk.end
        exit_36_17_79_5_end:
      if_36_5_79_5_end:
    assert_79_5_end:
-     mov r15, 1
+     mov qword[rsp-40], 1
+     mov r15, qword[rsp-40]
      imul r15, 2
      mov qword[rsp-40], r15
    baz_81_9_end:
@@ -180,7 +183,8 @@ mov rsp,stk.end
        exit_36_17_82_5_end:
      if_36_5_82_5_end:
    assert_82_5_end:
-       mov r15, 2
+       mov qword[rsp-56], 2
+       mov r15, qword[rsp-56]
        imul r15, 2
        mov qword[rsp-56], r15
      baz_84_23_end:
@@ -208,6 +212,8 @@ mov rsp,stk.end
    mov qword[rsp-64], 1
    mov qword[rsp-72], 2
        mov r15, qword[rsp-64]
+       mov qword[rsp-92], r15
+       mov r15, qword[rsp-92]
        imul r15, 10
        mov qword[rsp-92], r15
        mov r15, qword[rsp-72]
