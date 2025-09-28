@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include "bool_ops_list.hpp"
 #include "stmt_block.hpp"
@@ -42,8 +43,7 @@ class stmt_if_branch final : public statement {
             [[maybe_unused]] size_t indent,
             [[maybe_unused]] const std::string& dst) const override {
 
-        throw panic_exception("unexpected code path " + std::string{__FILE__} +
-                              ":" + std::to_string(__LINE__));
+        throw panic_exception("unexpected code path");
     }
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
@@ -58,11 +58,11 @@ class stmt_if_branch final : public statement {
         // compile boolean ops list
         std::optional<bool> const_eval{bol_.compile(
             tc, os, indent, jmp_to_if_false_label, jmp_to_if_true_lbl, false)};
-        // if constant boolean expression
+        // did boolean evaluation result in a constant?
         if (const_eval) {
-            // if evaluated to true then this branch code will execute
+            // yes, was the constant evaluation result true?
             if (*const_eval) {
-                // the code of the branch
+                // yes, this branch code will execute
                 code_.compile(tc, os, indent);
             }
             return *const_eval;
@@ -71,10 +71,10 @@ class stmt_if_branch final : public statement {
         toc::asm_label(tok(), os, indent, jmp_to_if_true_lbl);
         // the code of the branch
         code_.compile(tc, os, indent);
-        // after the code of the branch is executed jump to the end of
-        //   the 'if ... else if ... else ...' block
-        //   if jump label not provided then there is no 'else' and this is the
-        //   last 'if' so just continue execution
+        // after the code of the branch is executed jump to the end of the 'if
+        // ... else if ... else ...' block.
+        // if jump label not provided then there is no 'else' and this is the
+        // last 'if' so just continue execution
         if (not jmp_to_after_code_label.empty()) {
             toc::asm_jmp(tok(), os, indent, jmp_to_after_code_label);
         }
