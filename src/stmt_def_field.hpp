@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include "statement.hpp"
 #include "toc.hpp"
@@ -21,9 +22,7 @@ class stmt_def_field final : public statement {
         }
 
         uops_ = unary_ops{tz};
-
         initial_value_ = tz.next_token();
-
         if (initial_value_.is_string()) {
             set_type(tc.get_type_void()); //? not implemented
         } else {
@@ -60,10 +59,11 @@ class stmt_def_field final : public statement {
             initial_value_.compile_to(os);
             os << "'\n";
             toc::indent(os, indent);
-            // the length of th string
+            // the length of the string
             os << name_tk_.name() << ".len equ $-" << name_tk_.name() << "\n";
             return;
         }
+
         // default type is i64
         os << " dq ";
         os << uops_.to_string();

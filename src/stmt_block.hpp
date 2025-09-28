@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include "stmt_break.hpp"
 #include "stmt_comment.hpp"
@@ -20,9 +21,10 @@ class stmt_block final : public statement {
 
         tc.enter_block();
         while (true) {
-            // comments, semi-colon not considered a statment
+            // comments, semi-colon not considered a statement
             bool last_statement_considered_no_statment{};
-            // end-of block?
+
+            // is it end-of block?
             if (tz.is_next_char('}')) {
                 if (not is_one_statement_) {
                     break;
@@ -57,12 +59,9 @@ class stmt_block final : public statement {
                     std::make_unique<stmt_comment>(tc, std::move(tk), tz));
                 last_statement_considered_no_statment = true;
             } else if (tk.is_name("")) {
-                // whitespace
-                //? should this be able to happend?
-                // throw panic_exception("stmt_block:1");
+                // when last statement did not read the right whitespace
                 stms_.emplace_back(
                     std::make_unique<statement>(std::move(tk), unary_ops{}));
-                // stms_.back()->set_type(tc.get_type_void());
             } else { // circular reference resolver
                 stms_.emplace_back(create_statement_from_tokenizer(
                     tc, unary_ops{}, std::move(tk), tz));
