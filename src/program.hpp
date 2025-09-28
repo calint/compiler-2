@@ -101,7 +101,7 @@ class program final {
 
         os << "\nsection .bss\nstk resd 1024\nstk.end:\n";
         os << "\nsection .text\nbits 64\nglobal _start\n_start:\nmov "
-              "rsp,stk.end\n\n";
+              "rsp,stk.end\n";
         os << ";----------------------------------------------------\n";
         for (const auto& st : statements_) {
             if (not st->is_in_data_section()) {

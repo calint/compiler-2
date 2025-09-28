@@ -193,7 +193,6 @@ bits 64
 global _start
 _start:
 mov rsp,stk.end
-
 ;----------------------------------------------------
 ;[9:1] # all functions are inlined 
 ;[11:1]  # arguments can be placed in specified register using `reg_...` syntax 
