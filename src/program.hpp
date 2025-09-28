@@ -39,36 +39,32 @@ class program final {
         tc_.set_type_bool(type_bool);
         tc_.set_type_default(type_i64);
 
-        tokenizer tkz{source};
+        tokenizer tz{source};
         while (true) {
-            const token tk{tkz.next_token()};
+            const token tk{tz.next_token()};
             if (tk.is_empty()) {
-                if (tkz.is_eos()) {
-                    break;
-                }
-                throw compiler_exception(
-                    tk, "unexpected '" + std::string{tkz.next_char()} + "'");
-            }
-            if (tk.is_name("field")) {
+                assert(tz.is_eos());
+                break;
+            } else if (tk.is_name("field")) {
                 statements_.emplace_back(
-                    std::make_unique<stmt_def_field>(tc_, tk, tkz));
+                    std::make_unique<stmt_def_field>(tc_, tk, tz));
             } else if (tk.is_name("func")) {
                 statements_.emplace_back(
-                    std::make_unique<stmt_def_func>(tc_, tk, tkz));
+                    std::make_unique<stmt_def_func>(tc_, tk, tz));
             } else if (tk.is_name("type")) {
                 statements_.emplace_back(
-                    std::make_unique<stmt_def_type>(tc_, tk, tkz));
+                    std::make_unique<stmt_def_type>(tc_, tk, tz));
             } else if (tk.name().starts_with("#")) {
                 statements_.emplace_back(
-                    std::make_unique<stmt_comment>(tc_, tk, tkz));
+                    std::make_unique<stmt_comment>(tc_, tk, tz));
             } else if (tk.is_name("")) {
                 // empty space at end of file; necessary for source reproduction
                 // to be identical
                 statements_.emplace_back(
                     std::make_unique<statement>(tk, unary_ops{}));
             } else {
-                throw compiler_exception(tk, "unexpected keyword '" +
-                                                 tk.name() + "'");
+                throw compiler_exception{tk, "unexpected keyword '" +
+                                                 tk.name() + "'"};
             }
         }
     }
