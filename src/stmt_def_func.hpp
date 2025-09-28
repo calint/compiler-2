@@ -1,5 +1,6 @@
 #pragma once
 
+#include "compiler_exception.hpp"
 #include "stmt_block.hpp"
 #include "stmt_def_func_param.hpp"
 
@@ -38,9 +39,14 @@ class stmt_def_func final : public statement {
             // function returns
             while (true) {
                 const token type_tk{tz.next_token()};
+                const token ident_tk{tz.next_token()};
+                if (ident_tk.name().contains('.')) {
+                    throw compiler_exception(
+                        ident_tk, "return variable name may not contain '.'");
+                }
                 const struct func_return_info ret_info{
                     .type_tk = type_tk,
-                    .ident_tk = tz.next_token(),
+                    .ident_tk = ident_tk,
                     .type_ref = tc.get_type_or_throw(type_tk, type_tk.name())};
                 if (not ret_info.type_ref.is_built_in()) {
                     throw compiler_exception{
