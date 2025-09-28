@@ -103,28 +103,28 @@ class stmt_call : public expression {
 
         // check that argument types match the parameters
         for (size_t i{}; i < args_.size(); i++) {
-            const expr_any& ea{args_.at(i)};
+            const expr_any& arg{args_.at(i)};
             const stmt_def_func_param& param{func.param(i)};
-            const type& arg_type{ea.get_type()};
+            const type& arg_type{arg.get_type()};
             const type& param_type{param.get_type()};
             if (arg_type.is_built_in() and param_type.is_built_in()) {
                 //? check if it is integral (not bool)
                 if (param_type.size() < arg_type.size()) {
                     throw compiler_exception(
-                        ea.tok(), "argument " + std::to_string(i + 1) +
-                                      " of type '" + arg_type.name() +
-                                      "' would be truncated when passed to "
-                                      "parameter of type '" +
-                                      param_type.name() + "'");
+                        arg.tok(), "argument " + std::to_string(i + 1) +
+                                       " of type '" + arg_type.name() +
+                                       "' would be truncated when passed to "
+                                       "parameter of type '" +
+                                       param_type.name() + "'");
                 }
                 continue;
             }
             if (arg_type.name() != param_type.name()) {
                 throw compiler_exception(
-                    ea.tok(), "argument " + std::to_string(i + 1) +
-                                  " of type '" + arg_type.name() +
-                                  "' does not match parameter of type '" +
-                                  param_type.name() + "'");
+                    arg.tok(), "argument " + std::to_string(i + 1) +
+                                   " of type '" + arg_type.name() +
+                                   "' does not match parameter of type '" +
+                                   param_type.name() + "'");
             }
         }
 
