@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-30
 
 #include "bool_ops_list.hpp"
 #include "expr_ops_list.hpp"
@@ -40,9 +41,8 @@ class expr_any final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
+
         switch (var_.index()) {
-        default:
-            throw panic_exception("unexpected code path expr_any:1");
         case 0:
             get<expr_ops_list>(var_).source_to(os);
             return;
@@ -52,6 +52,8 @@ class expr_any final : public statement {
         case 2:
             get<expr_type_value>(var_).source_to(os);
             return;
+        default:
+            throw panic_exception("unexpected code path expr_any:1");
         }
     }
 
@@ -77,7 +79,7 @@ class expr_any final : public statement {
             // resolve the destination
             const ident_resolved& dst_resolved{
                 tc.resolve_identifier(tok(), dst, false)};
-            // if not expression assign destination
+            // if not expression assign to destination
             if (not bol.is_expression()) {
                 const ident_resolved& src_resolved{
                     tc.resolve_identifier(bol, false)};
@@ -101,17 +103,22 @@ class expr_any final : public statement {
             // compile and possibly evaluate constant expression
             std::optional<bool> const_eval{bol.compile(
                 tc, os, indent, jmp_to_if_false, jmp_to_if_true, false)};
+            // did the evaluation result in a constant?
             if (const_eval) {
-                // constant evaluation
+                // yes, constant evaluation
                 if (*const_eval) {
-                    // evaluation is true
+                    // constant evaluation is true
                     toc::asm_label(tok(), os, indent, jmp_to_if_true);
+                    // note: label necessary for optimizing away the 'jmp' prior
+                    // to the label in main as 'opt1'
                     tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
                                "true");
                     return;
                 }
-                // constant evaluation to false
+                // constant evaluation is false
                 toc::asm_label(tok(), os, indent, jmp_to_if_false);
+                // note: label necessary for optimizing away the 'jmp' prior
+                // to the label in main as 'opt1'
                 tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
                            "false");
                 return;
@@ -138,12 +145,13 @@ class expr_any final : public statement {
             // bool expression
             return get<bool_ops_list>(var_).is_expression();
         case 2:
-            // assign value
+            // assign type value
             return get<expr_type_value>(var_).is_expression();
         default:
             throw panic_exception("unexpected code path expr_any:3");
         }
-        // note. 'expr_type_value' cannot be expression
+        // note. 'expr_type_value' cannot be expression but may contain
+        // expressions to be assigned to type members
     }
 
     [[nodiscard]] auto identifier() const -> const std::string& override {
@@ -173,12 +181,6 @@ class expr_any final : public statement {
         }
         // note. 'expr_type_value' does not have 'unary_ops' and cannot be
         // argument in call
-    }
-
-    [[nodiscard]] auto is_bool() const -> bool { return var_.index() == 1; }
-
-    [[nodiscard]] auto is_assign_type_value() const -> bool {
-        return var_.index() == 2;
     }
 
     [[nodiscard]] auto as_assign_type_value() const -> const expr_type_value& {
