@@ -1,11 +1,15 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include <cassert>
+#include <cctype>
 #include <string>
 
 #include "token.hpp"
 
 class tokenizer final {
+    std::string delimiters_{
+        " \t\r\n(){}=,:+-*/%&|^<>!\0"}; // NOLINT(bugprone-string-literal-with-embedded-nul)
     const std::string& src_; // the string to be tokenized
     const char* ptr_{};      // pointer to current position
     size_t char_ix_{};       // current char index in 'src_'
@@ -26,7 +30,7 @@ class tokenizer final {
     [[nodiscard]] auto is_eos() const -> bool { return last_char_ == '\0'; }
 
     auto next_token() -> token {
-        const std::string& ws_before{next_whitespace()};
+        const std::string ws_before{next_whitespace()};
         const size_t bgn_ix{char_ix_};
         if (is_next_char('"')) {
             // string token
@@ -34,26 +38,26 @@ class tokenizer final {
             while (true) {
                 if (is_next_char('"')) {
                     const size_t end{char_ix_};
-                    const std::string& ws_after{next_whitespace()};
+                    const std::string ws_after{next_whitespace()};
                     return token{ws_before, bgn_ix, txt, end, ws_after, true};
                 }
                 txt.push_back(next_char());
             }
         }
         // not a string
-        const std::string& txt{next_token_str()};
+        const std::string txt{next_token_str()};
         const size_t end_ix{char_ix_};
-        const std::string& ws_after{next_whitespace()};
+        const std::string ws_after{next_whitespace()};
         return {ws_before, bgn_ix, txt, end_ix, ws_after};
     }
 
     auto put_back_token(const token& t) -> void {
-        //? validate token is same as source
+        //? todo. validate token is same as source
         move_back(t.total_length_in_chars());
     }
 
     auto put_back_char(const char ch) -> void {
-        //? validate char is same as source
+        assert(char_ix_ > 0 and *(ptr_ - 1) == ch);
         move_back(sizeof(ch));
     }
 
@@ -90,7 +94,7 @@ class tokenizer final {
             }
             ptr_++;
         }
-        const std::string& s{bgn, static_cast<size_t>(ptr_ - bgn)};
+        const std::string s{bgn, static_cast<size_t>(ptr_ - bgn)};
         ptr_++;
         char_ix_ += static_cast<size_t>(ptr_ - bgn);
         return s;
@@ -116,7 +120,7 @@ class tokenizer final {
         const size_t bgn_ix{char_ix_};
         while (true) {
             const char ch{next_char()};
-            if (is_char_whitespace(ch)) {
+            if (std::isspace(ch)) {
                 continue;
             }
             move_back(1);
@@ -133,11 +137,7 @@ class tokenizer final {
         const size_t bgn_ix{char_ix_};
         while (true) {
             const char ch{next_char()};
-            if (is_char_whitespace(ch) or ch == '\0' or ch == '(' or
-                ch == ')' or ch == '{' or ch == '}' or ch == '=' or ch == ',' or
-                ch == ':' or ch == ';' or ch == '+' or ch == '-' or ch == '*' or
-                ch == '/' or ch == '%' or ch == '&' or ch == '|' or ch == '^' or
-                ch == '<' or ch == '>' or ch == '!') {
+            if (delimiters_.contains(ch)) {
                 move_back(1);
                 break;
             }
@@ -151,9 +151,5 @@ class tokenizer final {
 
         ptr_ -= nchars;
         char_ix_ = static_cast<size_t>(char_ix_ - nchars);
-    }
-
-    static auto is_char_whitespace(const char ch) -> bool {
-        return ch == ' ' or ch == '\t' or ch == '\r' or ch == '\n';
     }
 };
