@@ -1199,8 +1199,7 @@ class toc final {
                 }
                 // yes, continue resolving alias until it is a variable, field,
                 // register or constant
-                base_id = frames_.at(i).get_alias(base_id);
-                const identifier new_id{base_id};
+                const identifier new_id{frames_.at(i).get_alias(base_id)};
                 base_id = new_id.id_base();
                 if (id.path().size() == 1) {
                     // this is an alias of type: res -> p.x
