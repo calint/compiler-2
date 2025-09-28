@@ -1,4 +1,3 @@
-[ ] implement xor
 [ ] tokenizer, token etc to std::string_view
 [ ] tokenizer: handle string with escaped " 
 [ ] token: regex construction to static
