@@ -139,12 +139,6 @@ struct func_info final {
     const type& type_ref;
 };
 
-struct call_info final {
-    const size_t nregs_pushed{};
-    const size_t alloc_reg_idx{};
-    const size_t nbytes_of_vars{};
-};
-
 struct type_info final {
     const stmt_def_type& def;
     const token declared_at;
@@ -228,7 +222,6 @@ class toc final {
     std::unordered_set<std::string> initiated_registers_;
     lut<field_info> fields_;
     lut<func_info> funcs_;
-    std::vector<call_info> calls_;
     lut<const type&> types_;
     const type* type_void_{};
     const type* type_default_{};
@@ -384,7 +377,6 @@ class toc final {
         assert(all_registers_.size() == 16);
         assert(allocated_registers_.empty());
         assert(allocated_registers_src_locs_.empty());
-        assert(calls_.empty());
         assert(frames_.empty());
         //		assert(initiated_registers_.empty());
         initiated_registers_.clear();
@@ -689,126 +681,6 @@ class toc final {
 
     auto is_identifier_register(const std::string& id) const -> bool {
         return std::ranges::find(all_registers_, id) != all_registers_.end();
-    }
-
-    auto enter_call(const token& src_loc, std::ostream& os, const size_t indnt)
-        -> void {
-        const bool root_call{calls_.empty()};
-        const size_t nbytes_of_vars_on_stack{
-            root_call ? get_current_stack_size() : 0};
-        if (root_call) {
-            // this call is not nested within another call's arguments
-            if (nbytes_of_vars_on_stack != 0) {
-                // adjust stack past the allocated vars
-                asm_cmd(src_loc, os, indnt, "sub", "rsp",
-                        std::to_string(nbytes_of_vars_on_stack));
-                // stack: <base>,.. vars ..,
-            }
-        }
-        // index in the allocated registers that have been allocated but not
-        // pushed prior to this call (that might clobber them)
-        const size_t alloc_regs_idx{root_call ? 0
-                                              : calls_.back().alloc_reg_idx};
-
-        // push registers allocated prior to this call
-        const size_t n{allocated_registers_.size()};
-        size_t nregs_pushed_on_stack{};
-        for (size_t i{alloc_regs_idx}; i < n; i++) {
-            const std::string& reg{allocated_registers_.at(i)};
-            if (not is_register_initiated(reg)) {
-                // don't save uninitiated registers because their value is
-                // irrelevant
-                continue;
-            }
-            // push only registers that contain a valid value
-            asm_push(src_loc, os, indnt, reg);
-            nregs_pushed_on_stack++;
-        }
-        calls_.emplace_back(
-            call_info{.nregs_pushed = nregs_pushed_on_stack,
-                      .alloc_reg_idx = allocated_registers_.size(),
-                      .nbytes_of_vars = nbytes_of_vars_on_stack});
-    }
-
-    auto exit_call(const token& src_loc, std::ostream& os, const size_t indnt,
-                   const size_t nbytes_of_args_on_stack,
-                   const std::vector<std::string>& allocated_args_registers)
-        -> void {
-
-        const size_t nregs_pushed{calls_.back().nregs_pushed};
-        const size_t nbytes_of_vars{calls_.back().nbytes_of_vars};
-        calls_.pop_back();
-        const bool restore_rsp_to_base{calls_.empty()};
-        const size_t alloc_reg_idx{
-            restore_rsp_to_base ? 0 : calls_.back().alloc_reg_idx};
-
-        // optimization can be done if no registers need to be popped
-        //   rsp is adjusted once
-        if (nregs_pushed == 0) {
-            // stack is: <base>,vars,args,
-            if (restore_rsp_to_base) {
-                const std::string& offset{
-                    std::to_string(nbytes_of_args_on_stack + nbytes_of_vars)};
-                asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
-                // stack is: <base>,
-            } else {
-                const std::string& offset{
-                    std::to_string(nbytes_of_args_on_stack)};
-                asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
-                // stack is: <base>,vars,
-            }
-            // free named registers
-            size_t i{allocated_registers_.size()};
-            while (i != alloc_reg_idx) {
-                i--;
-                const std::string& reg{allocated_registers_.at(i)};
-                // don't pop registers used to pass arguments
-                if (std::ranges::find(allocated_args_registers,
-
-                                      reg) != allocated_args_registers.end()) {
-                    free_named_register(os, indnt, reg);
-                }
-            }
-            return;
-        }
-
-        // adjust stack past variables on stack then pop the saved registers
-
-        // stack is: <base>,vars,regs,args,
-        if (nbytes_of_args_on_stack != 0) {
-            const std::string& offset{std::to_string(nbytes_of_args_on_stack)};
-            asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
-        }
-        // stack is: <base>,vars,regs,
-
-        // pop registers pushed prior to this call
-        size_t i{allocated_registers_.size()};
-        while (i != alloc_reg_idx) {
-            i--;
-            const std::string& reg{allocated_registers_.at(i)};
-            // don't pop registers used to pass arguments
-            if (std::ranges::find(allocated_args_registers,
-
-                                  reg) == allocated_args_registers.end()) {
-                if (is_register_initiated(reg)) {
-                    // pop only registers that were pushed
-                    asm_pop(src_loc, os, indnt, reg);
-                }
-            } else {
-                free_named_register(os, indnt, reg);
-            }
-        }
-
-        // stack is: <base>,vars,
-        if (restore_rsp_to_base) {
-            // this was not a call within the arguments of another call
-            // stack is: <base>,vars,
-            if (nbytes_of_vars != 0) {
-                const std::string& offset{std::to_string(nbytes_of_vars)};
-                asm_cmd(src_loc, os, indnt, "add", "rsp", offset);
-            }
-            // stack is: <base>,
-        }
     }
 
     auto asm_cmd(const token& src_loc, std::ostream& os, const size_t indnt,
