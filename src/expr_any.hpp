@@ -77,14 +77,12 @@ class expr_any final : public statement {
             // bool expression
             const bool_ops_list& bol{get<bool_ops_list>(var_)};
             // resolve the destination
-            const ident_resolved& dst_resolved{
-                tc.resolve_identifier(tok(), dst, false)};
+            const ident_info& dst_info{tc.resolve_info(tok(), dst, false)};
             // if not expression assign to destination
             if (not bol.is_expression()) {
-                const ident_resolved& src_resolved{
-                    tc.resolve_identifier(bol, false)};
-                tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
-                           src_resolved.id_nasm);
+                const ident_info& src_info{tc.make_ident_info(bol, false)};
+                tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
+                           src_info.id_nasm);
                 return;
             }
             // expression
@@ -111,7 +109,7 @@ class expr_any final : public statement {
                     toc::asm_label(tok(), os, indent, jmp_to_if_true);
                     // note: label necessary for optimizing away the 'jmp' prior
                     // to the label in main as 'opt1'
-                    tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
+                    tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
                                "true");
                     return;
                 }
@@ -119,18 +117,17 @@ class expr_any final : public statement {
                 toc::asm_label(tok(), os, indent, jmp_to_if_false);
                 // note: label necessary for optimizing away the 'jmp' prior
                 // to the label in main as 'opt1'
-                tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
-                           "false");
+                tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm, "false");
                 return;
             }
             // not constant evaluation
             // label for where the condition to branch if true
             toc::asm_label(tok(), os, indent, jmp_to_if_true);
-            tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "true");
+            tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm, "true");
             toc::asm_jmp(tok(), os, indent, jmp_to_end);
             // label for where the condition to branch if false
             toc::asm_label(tok(), os, indent, jmp_to_if_false);
-            tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm, "false");
+            tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm, "false");
             toc::asm_label(tok(), os, indent, jmp_to_end);
             return;
         }

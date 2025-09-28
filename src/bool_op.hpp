@@ -118,11 +118,10 @@ class bool_op final : public statement {
             if (not lhs_.is_expression()) {
                 // left-hand-side is not a expression, either a constant or an
                 // identifier
-                const ident_resolved& lhs_resolved{
-                    tc.resolve_identifier(lhs_, false)};
-                if (lhs_resolved.is_const()) {
+                const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
+                if (lhs_info.is_const()) {
                     bool const_eval{lhs_.get_unary_ops().evaluate_constant(
-                                        lhs_resolved.const_value) != 0};
+                                        lhs_info.const_value) != 0};
                     if (invert) {
                         const_eval = not const_eval;
                     }
@@ -147,17 +146,15 @@ class bool_op final : public statement {
         }
         // check case when both operands are constants
         if (not lhs_.is_expression() and not rhs_.is_expression()) {
-            const ident_resolved& lhs_resolved{
-                tc.resolve_identifier(lhs_, false)};
-            const ident_resolved& rhs_resolved{
-                tc.resolve_identifier(rhs_, false)};
-            if (lhs_resolved.is_const() and rhs_resolved.is_const()) {
+            const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
+            const ident_info& rhs_info{tc.make_ident_info(rhs_, false)};
+            if (lhs_info.is_const() and rhs_info.is_const()) {
                 bool const_eval{
                     eval_constant(lhs_.get_unary_ops().evaluate_constant(
-                                      lhs_resolved.const_value),
+                                      lhs_info.const_value),
                                   op_,
                                   rhs_.get_unary_ops().evaluate_constant(
-                                      rhs_resolved.const_value))};
+                                      rhs_info.const_value))};
                 if (invert) {
                     const_eval = not const_eval;
                 }
@@ -190,11 +187,10 @@ class bool_op final : public statement {
         if (is_shorthand_) {
             // check case when operand is constant
             if (not lhs_.is_expression()) {
-                const ident_resolved& lhs_resolved{
-                    tc.resolve_identifier(lhs_, false)};
-                if (lhs_resolved.is_const()) {
+                const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
+                if (lhs_info.is_const()) {
                     bool const_eval{lhs_.get_unary_ops().evaluate_constant(
-                                        lhs_resolved.const_value) != 0};
+                                        lhs_info.const_value) != 0};
                     if (invert) {
                         const_eval = not const_eval;
                     }
@@ -220,17 +216,15 @@ class bool_op final : public statement {
         // not shorthand expression
         // check the case when both operands are constants
         if (not lhs_.is_expression() and not rhs_.is_expression()) {
-            const ident_resolved& lhs_resolved{
-                tc.resolve_identifier(lhs_, false)};
-            const ident_resolved& rhs_resolved{
-                tc.resolve_identifier(rhs_, false)};
-            if (lhs_resolved.is_const() and rhs_resolved.is_const()) {
+            const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
+            const ident_info& rhs_info{tc.make_ident_info(rhs_, false)};
+            if (lhs_info.is_const() and rhs_info.is_const()) {
                 bool const_eval{
                     eval_constant(lhs_.get_unary_ops().evaluate_constant(
-                                      lhs_resolved.const_value),
+                                      lhs_info.const_value),
                                   op_,
                                   rhs_.get_unary_ops().evaluate_constant(
-                                      rhs_resolved.const_value))};
+                                      rhs_info.const_value))};
                 if (invert) {
                     const_eval = not const_eval;
                 }
@@ -248,9 +242,8 @@ class bool_op final : public statement {
         // don't allow left-hand-side to be constant because generated assembler
         // does not compile
         if (not lhs_.is_expression()) {
-            const ident_resolved& lhs_resolved{
-                tc.resolve_identifier(lhs_, false)};
-            if (lhs_resolved.is_const()) {
+            const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
+            if (lhs_info.is_const()) {
                 throw compiler_exception(
                     lhs_.tok(),
                     "left hand side expression may not be a constant");
@@ -428,19 +421,19 @@ class bool_op final : public statement {
             return reg;
         }
         // expr is not an expression
-        const ident_resolved& expr_resolved{tc.resolve_identifier(expr, true)};
-        if (expr_resolved.is_const()) {
-            return expr.get_unary_ops().to_string() + expr_resolved.id_nasm;
+        const ident_info& expr_info{tc.make_ident_info(expr, true)};
+        if (expr_info.is_const()) {
+            return expr.get_unary_ops().to_string() + expr_info.id_nasm;
         }
         // expr not a constant, it is an identifier
         if (expr.get_unary_ops().is_empty()) {
-            return expr_resolved.id_nasm;
+            return expr_info.id_nasm;
         }
         // expr is not an expression and has unary ops
         const std::string& reg{
             tc.alloc_scratch_register(expr.tok(), os, indent)};
         allocated_registers.emplace_back(reg);
-        tc.asm_cmd(expr.tok(), os, indent, "mov", reg, expr_resolved.id_nasm);
+        tc.asm_cmd(expr.tok(), os, indent, "mov", reg, expr_info.id_nasm);
         expr.get_unary_ops().compile(tc, os, indent, reg);
         return reg;
     }

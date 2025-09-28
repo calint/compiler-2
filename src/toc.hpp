@@ -145,7 +145,7 @@ struct type_info final {
     const type& type_ref;
 };
 
-struct ident_resolved final {
+struct ident_info final {
     enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
 
     const std::string id;
@@ -386,34 +386,32 @@ class toc final {
         usage_max_scratch_regs_ = 0;
     }
 
-    auto resolve_identifier(const statement& st,
-                            const bool must_be_initiated) const
-        -> ident_resolved {
+    auto make_ident_info(const statement& st,
+                         const bool must_be_initiated) const -> ident_info {
 
-        const ident_resolved& id_resolved{resolve_identifier_or_empty(
+        const ident_info& id_info{made_ident_info_or_empty(
             st.tok(), st.identifier(), must_be_initiated)};
 
-        if (not id_resolved.id_nasm.empty()) {
-            return id_resolved;
+        if (not id_info.id_nasm.empty()) {
+            return id_info;
         }
 
         throw compiler_exception(st.tok(), "cannot resolve identifier '" +
                                                st.identifier() + "'");
     }
 
-    auto resolve_identifier(const token& src_loc, const std::string& name,
-                            const bool must_be_initiated) const
-        -> ident_resolved {
+    auto resolve_info(const token& src_loc, const std::string& id,
+                      const bool must_be_initiated) const -> ident_info {
 
-        const ident_resolved& name_resolved{
-            resolve_identifier_or_empty(src_loc, name, must_be_initiated)};
+        const ident_info& id_info{
+            made_ident_info_or_empty(src_loc, id, must_be_initiated)};
 
-        if (not name_resolved.id_nasm.empty()) {
-            return name_resolved;
+        if (not id_info.id_nasm.empty()) {
+            return id_info;
         }
 
         throw compiler_exception(src_loc,
-                                 "cannot resolve identifier '" + name + "'");
+                                 "cannot resolve identifier '" + id + "'");
     }
 
     auto add_alias(const std::string& name,
@@ -490,10 +488,9 @@ class toc final {
             std::max(total_stack_size, usage_max_stack_size_);
 
         // comment the resolved name
-        const ident_resolved& name_resolved{
-            resolve_identifier(src_loc, name, false)};
+        const ident_info& name_info{resolve_info(src_loc, name, false)};
         indent(os, indnt, true);
-        os << name << ": " << name_resolved.id_nasm << '\n';
+        os << name << ": " << name_info.id_nasm << '\n';
     }
 
     auto alloc_scratch_register(const token& src_loc, std::ostream& os,
@@ -1059,12 +1056,6 @@ class toc final {
         os << "pop " << operand << '\n';
     }
 
-    static auto asm_ret([[maybe_unused]] const token& src_loc, std::ostream& os,
-                        const size_t indnt) -> void {
-        indent(os, indnt);
-        os << "ret\n";
-    }
-
     static auto asm_jmp([[maybe_unused]] const token& src_loc, std::ostream& os,
                         const size_t indnt, const std::string& label) -> void {
         indent(os, indnt);
@@ -1086,17 +1077,17 @@ class toc final {
     }
 
     static auto asm_neg([[maybe_unused]] const token& src_loc, std::ostream& os,
-                        const size_t indnt, const std::string& dst_resolved)
+                        const size_t indnt, const std::string& operand)
         -> void {
         indent(os, indnt);
-        os << "neg " << dst_resolved << '\n';
+        os << "neg " << operand << '\n';
     }
 
     static auto asm_not([[maybe_unused]] const token& src_loc, std::ostream& os,
-                        const size_t indnt, const std::string& dst_resolved)
+                        const size_t indnt, const std::string& operand)
         -> void {
         indent(os, indnt);
-        os << "not " << dst_resolved << '\n';
+        os << "not " << operand << '\n';
     }
 
     static auto indent(std::ostream& os, const size_t indnt,
@@ -1175,10 +1166,10 @@ class toc final {
         return nbytes;
     }
 
-    auto resolve_identifier_or_empty(const token& src_loc,
-                                     const std::string& ident,
-                                     const bool must_be_initiated) const
-        -> ident_resolved {
+    auto made_ident_info_or_empty(const token& src_loc,
+                                  const std::string& ident,
+                                  const bool must_be_initiated) const
+        -> ident_info {
 
         identifier id{ident};
         // get the root of an identifier: example p.x -> p
@@ -1227,7 +1218,7 @@ class toc final {
                     .id_nasm = acc,
                     .const_value = 0,
                     .type_ref = tp,
-                    .ident_type = ident_resolved::ident_type::VAR};
+                    .ident_type = ident_info::ident_type::VAR};
         }
 
         // is 'id' a register?
@@ -1242,7 +1233,7 @@ class toc final {
                     .id_nasm = base_id,
                     .const_value = 0,
                     .type_ref = get_type_default(),
-                    .ident_type = ident_resolved::ident_type::REGISTER};
+                    .ident_type = ident_info::ident_type::REGISTER};
         }
 
         // is 'id' a field?
@@ -1255,7 +1246,7 @@ class toc final {
                         .id_nasm = base_id + "." + after_dot,
                         .const_value = 0,
                         .type_ref = get_type_default(),
-                        .ident_type = ident_resolved::ident_type::IMPLIED};
+                        .ident_type = ident_info::ident_type::IMPLIED};
             }
             const field_info& fi{fields_.get_const_ref(base_id)};
             if (fi.is_str) {
@@ -1263,14 +1254,14 @@ class toc final {
                         .id_nasm = base_id,
                         .const_value = 0,
                         .type_ref = get_type_default(),
-                        .ident_type = ident_resolved::ident_type::FIELD};
+                        .ident_type = ident_info::ident_type::FIELD};
             }
             //? assumes qword
             return {.id = ident,
                     .id_nasm = "qword[" + base_id + "]",
                     .const_value = 0,
                     .type_ref = get_type_default(),
-                    .ident_type = ident_resolved::ident_type::FIELD};
+                    .ident_type = ident_info::ident_type::FIELD};
         }
 
         // is 'id' a constant?
@@ -1281,7 +1272,7 @@ class toc final {
                     .id_nasm = base_id,
                     .const_value = const_value,
                     .type_ref = get_type_default(),
-                    .ident_type = ident_resolved::ident_type::CONST};
+                    .ident_type = ident_info::ident_type::CONST};
         }
 
         if (base_id.starts_with("0x")) { // hex
@@ -1291,7 +1282,7 @@ class toc final {
                         .id_nasm = base_id,
                         .const_value = value,
                         .type_ref = get_type_default(),
-                        .ident_type = ident_resolved::ident_type::CONST};
+                        .ident_type = ident_info::ident_type::CONST};
             }
         }
 
@@ -1302,7 +1293,7 @@ class toc final {
                         .id_nasm = base_id,
                         .const_value = value,
                         .type_ref = get_type_default(),
-                        .ident_type = ident_resolved::ident_type::CONST};
+                        .ident_type = ident_info::ident_type::CONST};
             }
         }
 
@@ -1312,7 +1303,7 @@ class toc final {
                     .id_nasm = base_id,
                     .const_value = 1,
                     .type_ref = get_type_bool(),
-                    .ident_type = ident_resolved::ident_type::CONST};
+                    .ident_type = ident_info::ident_type::CONST};
         }
 
         if (base_id == "false") {
@@ -1320,15 +1311,15 @@ class toc final {
                     .id_nasm = base_id,
                     .const_value = 0,
                     .type_ref = get_type_bool(),
-                    .ident_type = ident_resolved::ident_type::CONST};
+                    .ident_type = ident_info::ident_type::CONST};
         }
 
-        // not resolved, return empty answer
+        // not resolved, return empty info
         return {.id = "",
                 .id_nasm = "",
                 .const_value = 0,
                 .type_ref = get_type_void(),
-                .ident_type = ident_resolved::ident_type::CONST};
+                .ident_type = ident_info::ident_type::CONST};
     }
 
     auto refresh_usage() -> void {

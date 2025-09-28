@@ -187,25 +187,24 @@ class expr_ops_list final : public expression {
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const std::string& dst) const -> void override {
 
-        const ident_resolved dst_resolved{
-            tc.resolve_identifier(tok(), dst, false)};
+        const ident_info dst_info{tc.resolve_info(tok(), dst, false)};
 
-        if (dst_resolved.is_register()) {
-            do_compile(tc, os, indent, dst_resolved);
+        if (dst_info.is_register()) {
+            do_compile(tc, os, indent, dst_info);
             return;
         }
 
         // compile with and without scratch register
         // try without scratch register
         std::stringstream ss1;
-        do_compile(tc, ss1, indent, dst_resolved);
+        do_compile(tc, ss1, indent, dst_info);
 
         // try with scratch register
         std::stringstream ss2;
         const std::string& reg{tc.alloc_scratch_register(tok(), ss2, indent)};
-        const ident_resolved dest_reg{tc.resolve_identifier(tok(), reg, false)};
-        do_compile(tc, ss2, indent, dst_resolved);
-        tc.asm_cmd(tok(), ss2, indent, "mov", dst_resolved.id_nasm, reg);
+        const ident_info dest_reg{tc.resolve_info(tok(), reg, false)};
+        do_compile(tc, ss2, indent, dst_info);
+        tc.asm_cmd(tok(), ss2, indent, "mov", dst_info.id_nasm, reg);
         tc.free_scratch_register(ss2, indent, reg);
 
         // compare instruction count
@@ -255,20 +254,20 @@ class expr_ops_list final : public expression {
 
   private:
     auto do_compile(toc& tc, std::ostream& os, const size_t indent,
-                    const ident_resolved& dst_resolved) const -> void {
+                    const ident_info& dst_info) const -> void {
         tc.comment_source(*this, os, indent);
 
         // first element is assigned to destination
-        asm_op(tc, os, indent, '=', dst_resolved, *exprs_.at(0));
+        asm_op(tc, os, indent, '=', dst_info, *exprs_.at(0));
 
         // remaining elements are +,-,*,/,%,|,&,^,<<,>>
         const size_t n{ops_.size()};
         for (size_t i{}; i < n; i++) {
-            asm_op(tc, os, indent, ops_.at(i), dst_resolved, *exprs_.at(i + 1));
+            asm_op(tc, os, indent, ops_.at(i), dst_info, *exprs_.at(i + 1));
         }
 
         // apply unary expressions on destination
-        uops_.compile(tc, os, indent, dst_resolved.id_nasm);
+        uops_.compile(tc, os, indent, dst_info.id_nasm);
     }
 
     static auto count_instructions(std::stringstream& ss) -> size_t {
@@ -312,7 +311,7 @@ class expr_ops_list final : public expression {
     }
 
     static void asm_op(toc& tc, std::ostream& os, const size_t indent,
-                       const char op, const ident_resolved& dst,
+                       const char op, const ident_info& dst,
                        const statement& src) {
         toc::indent(os, indent, true);
         std::string op_str{op};
@@ -370,24 +369,23 @@ class expr_ops_list final : public expression {
     }
 
     static void asm_op_mov(toc& tc, std::ostream& os, const size_t indent,
-                           const ident_resolved& dst, const statement& src) {
+                           const ident_info& dst, const statement& src) {
         if (src.is_expression()) {
             src.compile(tc, os, indent, dst.id);
             return;
         }
-        const ident_resolved& src_resolved{tc.resolve_identifier(src, true)};
-        if (src_resolved.is_const()) {
+        const ident_info& src_info{tc.make_ident_info(src, true)};
+        if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm,
-                       src.get_unary_ops().to_string() + src_resolved.id_nasm);
+                       src.get_unary_ops().to_string() + src_info.id_nasm);
             return;
         }
-        tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm,
-                   src_resolved.id_nasm);
+        tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, src_info.id_nasm);
         src.get_unary_ops().compile(tc, os, indent, dst.id_nasm);
     }
 
     static void asm_op_mul(toc& tc, std::ostream& os, const size_t indent,
-                           const ident_resolved& dst, const statement& src) {
+                           const ident_info& dst, const statement& src) {
         if (src.is_expression()) {
             const std::string& reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
@@ -404,36 +402,35 @@ class expr_ops_list final : public expression {
             return;
         }
         // not an expression, either a register or memory location
-        const ident_resolved& src_resolved{tc.resolve_identifier(src, true)};
+        const ident_info& src_info{tc.make_ident_info(src, true)};
         // imul destination operand must be register
         if (dst.is_register()) {
-            if (src_resolved.is_const()) {
+            if (src_info.is_const()) {
                 tc.asm_cmd(src.tok(), os, indent, "imul", dst.id_nasm,
-                           src.get_unary_ops().to_string() +
-                               src_resolved.id_nasm);
+                           src.get_unary_ops().to_string() + src_info.id_nasm);
                 return;
             }
             const unary_ops& uops{src.get_unary_ops()};
             if (uops.is_empty()) {
                 tc.asm_cmd(src.tok(), os, indent, "imul", dst.id_nasm,
-                           src_resolved.id_nasm);
+                           src_info.id_nasm);
                 return;
             }
             const std::string& reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
-            tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
+            tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
             uops.compile(tc, os, indent, reg);
             tc.asm_cmd(src.tok(), os, indent, "imul", dst.id_nasm, reg);
             tc.free_scratch_register(os, indent, reg);
             return;
         }
         // imul destination is not a register
-        if (src_resolved.is_const()) {
+        if (src_info.is_const()) {
             const std::string& reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             tc.asm_cmd(src.tok(), os, indent, "mov", reg, dst.id_nasm);
             tc.asm_cmd(src.tok(), os, indent, "imul", reg,
-                       src.get_unary_ops().to_string() + src_resolved.id_nasm);
+                       src.get_unary_ops().to_string() + src_info.id_nasm);
             tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, reg);
             tc.free_scratch_register(os, indent, reg);
             return;
@@ -444,8 +441,7 @@ class expr_ops_list final : public expression {
             const std::string& reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             tc.asm_cmd(src.tok(), os, indent, "mov", reg, dst.id_nasm);
-            tc.asm_cmd(src.tok(), os, indent, "imul", reg,
-                       src_resolved.id_nasm);
+            tc.asm_cmd(src.tok(), os, indent, "imul", reg, src_info.id_nasm);
             tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, reg);
             tc.free_scratch_register(os, indent, reg);
             return;
@@ -453,7 +449,7 @@ class expr_ops_list final : public expression {
         // source is not a constant and unary ops need to be applied
         const std::string& reg{
             tc.alloc_scratch_register(src.tok(), os, indent)};
-        tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
+        tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
         uops.compile(tc, os, indent, reg);
         tc.asm_cmd(src.tok(), os, indent, "imul", reg, dst.id_nasm);
         tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, reg);
@@ -463,8 +459,7 @@ class expr_ops_list final : public expression {
     static void asm_op_add_sub(toc& tc, std::ostream& os, const size_t indent,
                                const std::string& op,
                                const std::string& op_when_negated,
-                               const ident_resolved& dst,
-                               const statement& src) {
+                               const ident_info& dst, const statement& src) {
         if (src.is_expression()) {
             const std::string& reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
@@ -474,34 +469,34 @@ class expr_ops_list final : public expression {
             return;
         }
         // src is not a expression
-        const ident_resolved& src_resolved{tc.resolve_identifier(src, true)};
-        if (src_resolved.is_const()) {
+        const ident_info& src_info{tc.make_ident_info(src, true)};
+        if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
-                       src.get_unary_ops().to_string() + src_resolved.id_nasm);
+                       src.get_unary_ops().to_string() + src_info.id_nasm);
             return;
         }
         // src is not a constant
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
-                       src_resolved.id_nasm);
+                       src_info.id_nasm);
             return;
         }
         if (uops.is_only_negated()) {
             tc.asm_cmd(src.tok(), os, indent, op_when_negated, dst.id_nasm,
-                       src_resolved.id_nasm);
+                       src_info.id_nasm);
             return;
         }
         const std::string& reg{
             tc.alloc_scratch_register(src.tok(), os, indent)};
-        tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
+        tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
         uops.compile(tc, os, indent, reg);
         tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, reg);
         tc.free_scratch_register(os, indent, reg);
     }
 
     static void asm_op_bitwise(toc& tc, std::ostream& os, const size_t indent,
-                               const std::string& op, const ident_resolved& dst,
+                               const std::string& op, const ident_info& dst,
                                const statement& src) {
         if (src.is_expression()) {
             const std::string& reg{
@@ -512,30 +507,30 @@ class expr_ops_list final : public expression {
             return;
         }
         // src is not an expression
-        const ident_resolved& src_resolved{tc.resolve_identifier(src, true)};
-        if (src_resolved.is_const()) {
+        const ident_info& src_info{tc.make_ident_info(src, true)};
+        if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
-                       src.get_unary_ops().to_string() + src_resolved.id_nasm);
+                       src.get_unary_ops().to_string() + src_info.id_nasm);
             return;
         }
         // src is not an expression and not a constant
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
-                       src_resolved.id_nasm);
+                       src_info.id_nasm);
             return;
         }
         // src is not an expression and not a constant and has unary ops
         const std::string& reg{
             tc.alloc_scratch_register(src.tok(), os, indent)};
-        tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
+        tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
         uops.compile(tc, os, indent, reg);
         tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, reg);
         tc.free_scratch_register(os, indent, reg);
     }
 
     static void asm_op_shift(toc& tc, std::ostream& os, const size_t indent,
-                             const std::string& op, const ident_resolved& dst,
+                             const std::string& op, const ident_info& dst,
                              const statement& src) {
         if (src.is_expression()) {
             // the operand must be stored in register 'CL'
@@ -558,13 +553,13 @@ class expr_ops_list final : public expression {
             return;
         }
         // src is not an expression
-        const ident_resolved& src_resolved{tc.resolve_identifier(src, true)};
-        if (src_resolved.is_const()) {
+        const ident_info& src_info{tc.make_ident_info(src, true)};
+        if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
-                       src.get_unary_ops().to_string() + src_resolved.id_nasm);
+                       src.get_unary_ops().to_string() + src_info.id_nasm);
             return;
         }
-        if (src_resolved.id_nasm == "rcx") {
+        if (src_info.id_nasm == "rcx") {
             throw compiler_exception(
                 src.tok(), "cannot use 'rcx' as operand in shift because "
                            "that registers is used");
@@ -578,8 +573,7 @@ class expr_ops_list final : public expression {
             if (not rcx_allocated) {
                 toc::asm_push(src.tok(), os, indent, "rcx");
             }
-            tc.asm_cmd(src.tok(), os, indent, "mov", "rcx",
-                       src_resolved.id_nasm);
+            tc.asm_cmd(src.tok(), os, indent, "mov", "rcx", src_info.id_nasm);
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, "cl");
             if (rcx_allocated) {
                 tc.free_named_register(os, indent, "rcx");
@@ -594,7 +588,7 @@ class expr_ops_list final : public expression {
         if (not rcx_allocated) {
             toc::asm_push(src.tok(), os, indent, "rcx");
         }
-        tc.asm_cmd(src.tok(), os, indent, "mov", "rcx", src_resolved.id_nasm);
+        tc.asm_cmd(src.tok(), os, indent, "mov", "rcx", src_info.id_nasm);
         uops.compile(tc, os, indent, "rcx");
         tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, "cl");
         if (rcx_allocated) {
@@ -607,7 +601,7 @@ class expr_ops_list final : public expression {
     // op is either 'rax' for the quotient or 'rdx' for the reminder to be moved
     // into 'dst'
     static void asm_op_div(toc& tc, std::ostream& os, const size_t indent,
-                           const std::string& op, const ident_resolved& dst,
+                           const std::string& op, const ident_info& dst,
                            const statement& src) {
         if (src.is_expression()) {
             const std::string& reg{
@@ -643,8 +637,8 @@ class expr_ops_list final : public expression {
             return;
         }
         // src is not an expression
-        const ident_resolved& src_resolved{tc.resolve_identifier(src, true)};
-        if (src_resolved.is_const()) {
+        const ident_info& src_info{tc.make_ident_info(src, true)};
+        if (src_info.is_const()) {
             const bool rax_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rax")};
             if (not rax_allocated) {
@@ -661,7 +655,7 @@ class expr_ops_list final : public expression {
             const std::string& scratch_reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             tc.asm_cmd(src.tok(), os, indent, "mov", scratch_reg,
-                       src.get_unary_ops().to_string() + src_resolved.id_nasm);
+                       src.get_unary_ops().to_string() + src_info.id_nasm);
             toc::indent(os, indent, false);
             os << "idiv " << scratch_reg << '\n';
             tc.free_scratch_register(os, indent, scratch_reg);
@@ -678,7 +672,7 @@ class expr_ops_list final : public expression {
             }
             return;
         }
-        if (src_resolved.id_nasm == "rdx" or src_resolved.id_nasm == "rax") {
+        if (src_info.id_nasm == "rdx" or src_info.id_nasm == "rax") {
             throw compiler_exception(
                 src.tok(), "cannot use 'rdx' or 'rax' as operands in "
                            "division because those registers are used");
@@ -700,7 +694,7 @@ class expr_ops_list final : public expression {
             toc::indent(os, indent, false);
             os << "cqo\n";
             toc::indent(os, indent, false);
-            os << "idiv " << src_resolved.id_nasm << '\n';
+            os << "idiv " << src_info.id_nasm << '\n';
             // op is either "rax" for the quotient or "rdx" for the reminder
             tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, op);
             if (rdx_allocated) {
@@ -718,7 +712,7 @@ class expr_ops_list final : public expression {
         // src is not an expression and not a constant and has unary ops
         const std::string& reg{
             tc.alloc_scratch_register(src.tok(), os, indent)};
-        tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_resolved.id_nasm);
+        tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
         uops.compile(tc, os, indent, reg);
         const bool rax_allocated{
             tc.alloc_named_register(src.tok(), os, indent, "rax")};

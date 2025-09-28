@@ -126,8 +126,8 @@ inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz)
     // e.g. 0x80, rax, identifiers
     std::unique_ptr<statement> stmt{
         std::make_unique<statement>(tk, std::move(uops))};
-    const ident_resolved& stmt_resolved{tc.resolve_identifier(*stmt, false)};
-    stmt->set_type(stmt_resolved.type_ref);
+    const ident_info& stmt_info{tc.make_ident_info(*stmt, false)};
+    stmt->set_type(stmt_info.type_ref);
     return stmt;
 }
 
@@ -215,8 +215,7 @@ inline void expr_type_value::compile_recursive(
 
     if (not src.empty()) {
         // e.g. obj.pos = p
-        const type& src_type{
-            tc.resolve_identifier(atv.tok(), src, true).type_ref};
+        const type& src_type{tc.resolve_info(atv.tok(), src, true).type_ref};
         if (src_type.name() != dst_type.name()) {
             throw compiler_exception(atv.tok(),
                                      "cannot assign '" + src + "' to '" + dst +
@@ -229,16 +228,13 @@ inline void expr_type_value::compile_recursive(
         for (size_t i{}; i < n; i++) {
             const type_field& fld{flds.at(i)};
             if (fld.tp.is_built_in()) {
-                const std::string& src_resolved{
-                    tc.resolve_identifier(atv.tok(), src + "." + fld.name,
-                                          false)
+                const std::string& src_info{
+                    tc.resolve_info(atv.tok(), src + "." + fld.name, false)
                         .id_nasm};
-                const std::string& dst_resolved{
-                    tc.resolve_identifier(atv.tok(), dst + "." + fld.name,
-                                          false)
+                const std::string& dst_info{
+                    tc.resolve_info(atv.tok(), dst + "." + fld.name, false)
                         .id_nasm};
-                tc.asm_cmd(atv.tok(), os, indent, "mov", dst_resolved,
-                           src_resolved);
+                tc.asm_cmd(atv.tok(), os, indent, "mov", dst_info, src_info);
                 continue;
             }
             // not a register built-in type, recurse
@@ -270,16 +266,16 @@ inline void expr_type_value::compile_recursive(
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
 inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
                                size_t indnt,
-                               const std::string& dst_resolved) const {
+                               const std::string& dst_info) const {
     size_t i{ops_.size()};
     while (i--) {
         const char op{ops_[i]};
         switch (op) {
         case '~':
-            toc::asm_not(ws_before_, os, indnt, dst_resolved);
+            toc::asm_not(ws_before_, os, indnt, dst_info);
             break;
         case '-':
-            toc::asm_neg(ws_before_, os, indnt, dst_resolved);
+            toc::asm_neg(ws_before_, os, indnt, dst_info);
             break;
         default:
             throw panic_exception("unexpected code path main:1");

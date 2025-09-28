@@ -30,30 +30,27 @@ class call_asm_mov final : public stmt_call {
         }
 
         // the assembler command might not need to resolve expressions
-        const ident_resolved& dst_resolved{
-            tc.resolve_identifier(arg(0), false)};
+        const ident_info& dst_info{tc.make_ident_info(arg(0), false)};
 
         // mark the dst as initiated
-        tc.set_var_is_initiated(dst_resolved.id);
+        tc.set_var_is_initiated(dst_info.id);
 
         const statement& src_arg{arg(1)};
         if (src_arg.is_expression()) {
-            src_arg.compile(tc, os, indent + 1, dst_resolved.id);
+            src_arg.compile(tc, os, indent + 1, dst_info.id);
             return;
         }
 
         // 'src_arg' is not an expression
-        const ident_resolved& src_resolved{
-            tc.resolve_identifier(src_arg, true)};
-        if (src_resolved.is_const()) {
-            tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
-                       src_arg.get_unary_ops().to_string() +
-                           src_resolved.id_nasm);
+        const ident_info& src_info{tc.make_ident_info(src_arg, true)};
+        if (src_info.is_const()) {
+            tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
+                       src_arg.get_unary_ops().to_string() + src_info.id_nasm);
             return;
         }
         // variable, register or field
-        tc.asm_cmd(tok(), os, indent, "mov", dst_resolved.id_nasm,
-                   src_resolved.id_nasm);
-        src_arg.get_unary_ops().compile(tc, os, indent, dst_resolved.id_nasm);
+        tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
+                   src_info.id_nasm);
+        src_arg.get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
     }
 };

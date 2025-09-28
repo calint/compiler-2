@@ -135,15 +135,13 @@ class stmt_call : public expression {
             }
 
             const type& return_type{func.get_type()};
-            const ident_resolved& dst_resolved{
-                tc.resolve_identifier(tok(), dst, false)};
+            const ident_info& dst_info{tc.resolve_info(tok(), dst, false)};
             //?
-            if (dst_resolved.type_ref.size() < return_type.size()) {
+            if (dst_info.type_ref.size() < return_type.size()) {
                 throw compiler_exception(
                     tok(), "return type '" + return_type.name() +
                                "' would be truncated when copied to '" + dst +
-                               "' of type '" + dst_resolved.type_ref.name() +
-                               "'");
+                               "' of type '" + dst_info.type_ref.name() + "'");
             }
         }
 
@@ -230,14 +228,13 @@ class stmt_call : public expression {
                 }
                 // unary ops must be applied
                 // allocate a scratch register and evaluate
-                const ident_resolved& arg_resolved{
-                    tc.resolve_identifier(arg, true)};
+                const ident_info& arg_info{tc.make_ident_info(arg, true)};
                 const std::string& scratch_reg{
                     tc.alloc_scratch_register(arg.tok(), os, indent + 1)};
                 allocated_registers_in_order.emplace_back(scratch_reg);
                 allocated_scratch_registers.emplace_back(scratch_reg);
                 tc.asm_cmd(param.tok(), os, indent + 1, "mov", scratch_reg,
-                           arg_resolved.id_nasm);
+                           arg_info.id_nasm);
                 arg.get_unary_ops().compile(tc, os, indent + 1, scratch_reg);
                 // alias parameter to scratch register
                 aliases_to_add.emplace_back(param.identifier(), scratch_reg);
@@ -253,21 +250,19 @@ class stmt_call : public expression {
             toc::indent(os, indent + 1, true);
             os << "alias " << param.identifier() << " -> " << arg_reg << '\n';
             // move argument to register specified in param
-            const ident_resolved& arg_resolved{
-                tc.resolve_identifier(arg, true)};
+            const ident_info& arg_info{tc.make_ident_info(arg, true)};
             // is argument a constant?
-            if (arg_resolved.is_const()) {
+            if (arg_info.is_const()) {
                 // argument is a constant
                 // assign it to the register
                 tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg,
-                           arg.get_unary_ops().to_string() +
-                               arg_resolved.id_nasm);
+                           arg.get_unary_ops().to_string() + arg_info.id_nasm);
                 continue;
             }
             // argument is not a constant
             // assign argument to register
             tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg,
-                       arg_resolved.id_nasm);
+                       arg_info.id_nasm);
             arg.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
         }
 
@@ -329,9 +324,9 @@ class stmt_call : public expression {
             }
 
             // compile the result using the unary ops
-            const ident_resolved& ret_resolved{tc.resolve_identifier(
+            const ident_info& ret_info{tc.resolve_info(
                 tok(), func.returns().at(0).ident_tk.name(), true)};
-            get_unary_ops().compile(tc, os, indent, ret_resolved.id_nasm);
+            get_unary_ops().compile(tc, os, indent, ret_info.id_nasm);
         }
         // exit scope
         tc.exit_func(func_name);
