@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include "statement.hpp"
 #include "toc.hpp"
@@ -23,12 +24,11 @@ class stmt_return final : public statement {
 
         tc.comment_source(*this, os, indent);
 
-        // get the jump target to exit inlined functions
+        // get the jump target to exit function
         const std::string& ret_lbl{tc.get_func_return_label_or_throw(tok())};
 
         if (ret_lbl.empty()) {
-            // in main
-            // FIX
+            // note: return from 'main' is exit
             os << "mov rdi, 0\nmov rax, 60\nsyscall\n";
             return;
         }
