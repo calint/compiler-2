@@ -94,12 +94,11 @@ class stmt_call : public expression {
         // check that the same number of arguments are provided as expected
         if (func.params().size() != args_.size()) {
             throw compiler_exception(
-                this->tok(),
-                "function '" + func_name + "' expects " +
-                    std::to_string(func.params().size()) + " argument" +
-                    (func.params().size() == 1 ? "" : "s") + " but " +
-                    std::to_string(args_.size()) + " " +
-                    (args_.size() == 1 ? "is" : "are") + " provided");
+                tok(), "function '" + func_name + "' expects " +
+                           std::to_string(func.params().size()) + " argument" +
+                           (func.params().size() == 1 ? "" : "s") + " but " +
+                           std::to_string(args_.size()) + " " +
+                           (args_.size() == 1 ? "is" : "are") + " provided");
         }
 
         // check that argument types match the parameters
@@ -132,7 +131,7 @@ class stmt_call : public expression {
         // check that return value matches the type
         if (not dst.empty()) {
             if (func.returns().empty()) {
-                throw compiler_exception(this->tok(),
+                throw compiler_exception(tok(),
                                          "function does not return value");
             }
 
@@ -142,10 +141,10 @@ class stmt_call : public expression {
             //?
             if (dst_resolved.type_ref.size() < return_type.size()) {
                 throw compiler_exception(
-                    this->tok(), "return type '" + return_type.name() +
-                                     "' would be truncated when copied to '" +
-                                     dst + "' of type '" +
-                                     dst_resolved.type_ref.name() + "'");
+                    tok(), "return type '" + return_type.name() +
+                               "' would be truncated when copied to '" + dst +
+                               "' of type '" + dst_resolved.type_ref.name() +
+                               "'");
             }
         }
 
@@ -321,8 +320,8 @@ class stmt_call : public expression {
         if (not get_unary_ops().is_empty()) {
             if (func.returns().empty()) {
                 throw compiler_exception(
-                    this->tok(), "function call has unary operations but it "
-                                 "does not return a value");
+                    tok(), "function call has unary operations but it "
+                           "does not return a value");
             }
 
             const ident_resolved& ret_resolved{tc.resolve_identifier(
