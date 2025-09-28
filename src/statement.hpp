@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-28
 
 #include "compiler_exception.hpp"
 #include "token.hpp"
@@ -62,11 +63,7 @@ class statement {
         return *type_;
     }
 
-    //? where to place this validation. empty token in statement is ok
     static auto validate_identifier_name(const token& tk) -> void {
-        // if (tk.is_empty()) {
-        //   throw compiler_exception(tk, "unexpected empty identifier");
-        // }
         if (tk.name().ends_with(".")) {
             throw compiler_exception(tk, "unexpected '.' at the end of '" +
                                              tk.name() + "'");
