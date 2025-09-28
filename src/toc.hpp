@@ -192,7 +192,13 @@ class identifier final {
         path_.emplace_back(id_.substr(start));
     }
 
+    ~identifier() = default;
+
+    identifier() = default;
+    identifier(identifier&&) = default;
+    identifier(const identifier&) = default;
     auto operator=(const identifier&) -> identifier& = default;
+    auto operator=(identifier&&) -> identifier& = default;
 
     [[nodiscard]] auto id() const -> const std::string& { return id_; }
 
@@ -204,7 +210,7 @@ class identifier final {
         return path_;
     }
 
-    auto set_base(std::string name) -> void { path_[0] = name; }
+    auto set_base(std::string name) -> void { path_[0] = std::move(name); }
 };
 
 class toc final {
@@ -1320,7 +1326,7 @@ class toc final {
                 // yes, continue resolving alias until it is a variable, field,
                 // register or constant
                 base_id = frames_.at(i).get_alias(base_id);
-                identifier new_id{base_id};
+                const identifier new_id{base_id};
                 base_id = new_id.id_base();
                 if (id.path().size() == 1) {
                     // this is an alias of type: res -> p.x
