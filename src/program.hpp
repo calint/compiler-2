@@ -22,12 +22,14 @@ class program final {
 
   public:
     explicit program(const std::string& source) : tc_{source} {
+        // create dummy token to use `toc` functions
         const token prgtk{prg.tok()};
+
         // add built-in assembler calls
-        const std::vector<std::string> assembler_funcs{"mov", "syscall"};
-        for (const std::string& str : assembler_funcs) {
-            tc_.add_func(prgtk, str, type_void, nullptr);
-        }
+        tc_.add_func(prgtk, "mov", type_void, nullptr);
+        tc_.add_func(prgtk, "syscall", type_void, nullptr);
+
+        // add built-in types
         tc_.add_type(prgtk, type_i64);
         tc_.add_type(prgtk, type_i32);
         tc_.add_type(prgtk, type_i16);
@@ -35,6 +37,7 @@ class program final {
         tc_.add_type(prgtk, type_bool);
         tc_.add_type(prgtk, type_void);
 
+        // set defaults
         tc_.set_type_void(type_void);
         tc_.set_type_bool(type_bool);
         tc_.set_type_default(type_i64);
