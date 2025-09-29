@@ -35,6 +35,7 @@ class call_asm_mov final : public stmt_call {
         const statement& src_arg{arg(1)};
         if (src_arg.is_expression()) {
             src_arg.compile(tc, os, indent + 1, dst_info.id);
+            tc.set_var_is_initiated(dst_info.id);
             return;
         }
 
