@@ -11,32 +11,18 @@
 class bool_ops_list final : public statement {
     std::vector<std::variant<bool_op, bool_ops_list>> bools_;
     std::vector<token> ops_; // 'and' or 'or' ops between element in 'bools_'
-    token not_token_;        // e.g. not (a==b and c==d)
     bool enclosed_{};        // e.g. (a==b and c==d) vs a==b and c==d
+    token not_token_;        // e.g. not (a==b and c==d)
 
   public:
     bool_ops_list(toc& tc, tokenizer& tz, const bool enclosed = false,
-                  token not_token = {}, const bool is_sub_expr = false,
-                  std::variant<bool_op, bool_ops_list> first_bool_op = {},
-                  token first_op = {})
-        : // the token is used to give 'cmp' a unique label
-          // if 'first_bool_op' is provided then use that token
-          // else the next white space token
-          // note: 'first_op' is provided whenever a valid 'first_bool_op' is
-          // provided
-          statement{first_op.is_empty() ? tz.next_whitespace_token()
-                                        : token_from(first_bool_op)},
-          not_token_{std::move(not_token)}, enclosed_{enclosed} {
+                  token not_token = {})
+        : statement{tz.next_whitespace_token()}, enclosed_{enclosed},
+          not_token_{std::move(not_token)} {
 
         set_type(tc.get_type_bool());
 
-        token prv_op{first_op};
-        // is this call part recursion?
-        if (not first_op.is_empty()) {
-            // yes, sub-expression with first bool op provided
-            bools_.emplace_back(std::move(first_bool_op));
-            ops_.emplace_back(std::move(first_op));
-        }
+        token prv_op{};
 
         // parse
         while (true) {
@@ -87,89 +73,13 @@ class bool_ops_list final : public statement {
             // if first op and is 'and' then create sub-expression
             if (prv_op.is_empty()) {
                 prv_op = op_tk;
-                if (op_tk.is_name("and")) {
-                    // e.g. a and b or c -> (a and b) or c
-                    // first op is 'and', make sub-expression (a and b) ...
-                    // move the first boolean op out of this list and give it to
-                    // the sub-expression
-                    bool_ops_list bol{tc,
-                                      tz,
-                                      false,
-                                      {},
-                                      true,
-                                      std::move(bools_.back()),
-                                      std::move(op_tk)};
-                    bools_.pop_back();
-                    bools_.emplace_back(std::move(bol));
-
-                    // end of '(...)' enclosed expression?
-                    if (enclosed_ and tz.is_next_char(')')) {
-                        // yes, done
-                        return;
-                    }
-
-                    token nxt_op_tk{tz.next_token()};
-                    // if it continuation of the expression with 'and'
-                    // or 'or'?
-                    if (not nxt_op_tk.is_name("or") and
-                        not nxt_op_tk.is_name("and")) {
-                        // no, put back token in stream and exit loop
-                        tz.put_back_token(nxt_op_tk);
-                        break;
-                    }
-
-                    // 'and' or 'or', put it in ops list
-                    prv_op = nxt_op_tk;
-                    ops_.emplace_back(std::move(nxt_op_tk));
-                    continue;
-                }
             }
 
-            // if same op as previous continue
-            if (op_tk.is_name(prv_op.name())) {
-                ops_.emplace_back(std::move(op_tk));
-                continue;
+            if (not prv_op.is_name(op_tk.name())) {
+                throw compiler_exception{
+                    tz, "mixing 'and' and 'or' without parenthesis"};
             }
 
-            // previous op is not the same as next op
-
-            // either a new sub-expression or exit current sub-expression
-            // a or b  |or|       |c|          |and|  d or e
-            //      |prv_op_tk| |ops.back()|  |op_tk|
-            if (is_sub_expr) {
-                // generated sub-expressions are 'and' ops and this is an 'or'
-                // a or b and c  |or| d
-                //      ------- |op_tk|
-                tz.put_back_token(op_tk);
-                return;
-            }
-
-            // this is an 'and' op after a 'or'
-            // a    |or|      |b|     |and|   c or d
-            //  |prv_op_tk| |back()| |op_tk|
-            // create:
-            // a    or   (b     and   c) or d
-            bool_ops_list bol{
-                tc, tz, false, {}, true, std::move(bools_.back()), op_tk};
-            bools_.pop_back();
-            bools_.emplace_back(std::move(bol));
-
-            // is it end of '(...)' sub expression?
-            if (enclosed_ and tz.is_next_char(')')) {
-                // yes, done
-                return;
-            }
-
-            prv_op = op_tk;
-            op_tk = tz.next_token();
-            // is it expected 'and' or 'or'?
-            if (not op_tk.is_name("or") and not op_tk.is_name("and")) {
-                // no, put it back in the stream and exit
-                tz.put_back_token(op_tk);
-                break;
-            }
-
-            // add op to ops list
             ops_.emplace_back(std::move(op_tk));
         }
         if (enclosed_) {
