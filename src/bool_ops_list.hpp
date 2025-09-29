@@ -5,11 +5,13 @@
 #include "bool_op.hpp"
 #include "statement.hpp"
 
+// list of boolean expressions / list instead of true
+// note: quirky parsing but supports short-circuiting
 class bool_ops_list final : public statement {
     std::vector<std::variant<bool_op, bool_ops_list>> bools_;
-    std::vector<token> ops_; // 'and' or 'or'
-    token not_token_;        // not (a==b and c==d)
-    bool enclosed_{};        // (a==b and c==d) vs a==b and c==d
+    std::vector<token> ops_; // 'and' or 'or' ops between element in 'bools_'
+    token not_token_;        // e.g. not (a==b and c==d)
+    bool enclosed_{};        // e.g. (a==b and c==d) vs a==b and c==d
 
   public:
     bool_ops_list(toc& tc, tokenizer& tz, const bool enclosed = false,
@@ -20,7 +22,7 @@ class bool_ops_list final : public statement {
           // if 'first_bool_op' is provided then use that token
           // else the next white space token
           // note: 'first_op' is provided whenever a valid 'first_bool_op' is
-          //       provided
+          // provided
           statement{first_op.is_empty() ? tz.next_whitespace_token()
                                         : token_from(first_bool_op)},
           not_token_{std::move(not_token)}, enclosed_{enclosed} {
@@ -28,11 +30,14 @@ class bool_ops_list final : public statement {
         set_type(tc.get_type_bool());
 
         token prv_op{first_op};
+        // is this call part recursion?
         if (not first_op.is_empty()) {
-            // sub-expression with first bool op provided
+            // yes, sub-expression with first bool op provided
             bools_.emplace_back(std::move(first_bool_op));
             ops_.emplace_back(std::move(first_op));
         }
+
+        // parse
         while (true) {
             const token not_tk{tz.next_token()};
             if (not_tk.is_name("not")) {
@@ -40,32 +45,40 @@ class bool_ops_list final : public statement {
                 //  vs
                 // not a == 1 and b == 1
                 if (tz.is_next_char('(')) {
-                    // not (a=1 and b=1)
+                    // e.g. not (a=1 and b=1)
+                    // recurse
                     bools_.emplace_back(bool_ops_list{tc, tz, true, not_tk});
                 } else {
-                    // not a=1 and b=1
+                    // e.g. not a=1 and b=1
+                    // the 'not' is part of the bool element, put it back to be
+                    // read by the element
                     tz.put_back_token(not_tk);
                     bools_.emplace_back(bool_op{tc, tz});
                 }
             } else {
-                // (a == 1 and b == 1)
-                // a == 1 and b == 1
+                // e.g. (a == 1 and b == 1)
+                //      a == 1 and b == 1
+                // 'not_tk' not keyword 'not', put it back in the stream
                 tz.put_back_token(not_tk);
                 if (tz.is_next_char('(')) {
-                    // (a == 1 and b == 1)
+                    // e.g. (a == 1 and b == 1)
                     bools_.emplace_back(bool_ops_list{tc, tz, true});
                 } else {
-                    // a == 1 and b == 1
+                    // e.g. a == 1 and b == 1
                     bools_.emplace_back(bool_op{tc, tz});
                 }
             }
 
+            // end of '(...)' enclosed expression?
             if (enclosed_ and tz.is_next_char(')')) {
+                // yes, done
                 return;
             }
 
+            // read 'and' or 'or'
             token op_tk{tz.next_token()};
-            if (not(op_tk.is_name("or") or op_tk.is_name("and"))) {
+            if (not op_tk.is_name("or") and not op_tk.is_name("and")) {
+                // not expected keyword, put it back
                 tz.put_back_token(op_tk);
                 break;
             }
@@ -74,8 +87,10 @@ class bool_ops_list final : public statement {
             if (prv_op.is_empty()) {
                 prv_op = op_tk;
                 if (op_tk.is_name("and")) {
-                    // a and b or c -> (a and b) or c
+                    // e.g. a and b or c -> (a and b) or c
                     // first op is 'and', make sub-expression (a and b) ...
+                    // move the first boolean op out of this list and give it to
+                    // the sub-expression
                     bool_ops_list bol{tc,
                                       tz,
                                       false,
@@ -86,17 +101,23 @@ class bool_ops_list final : public statement {
                     bools_.pop_back();
                     bools_.emplace_back(std::move(bol));
 
+                    // end of '(...)' enclosed expression?
                     if (enclosed_ and tz.is_next_char(')')) {
+                        // yes, done
                         return;
                     }
 
                     token nxt_op_tk{tz.next_token()};
-                    if (not(nxt_op_tk.is_name("or") or
-                            nxt_op_tk.is_name("and"))) {
+                    // if it continuation of the expression with 'and'
+                    // or 'or'?
+                    if (not nxt_op_tk.is_name("or") and
+                        not nxt_op_tk.is_name("and")) {
+                        // no, put back token in stream and exit loop
                         tz.put_back_token(nxt_op_tk);
                         break;
                     }
 
+                    // 'and' or 'or', put it in ops list
                     prv_op = nxt_op_tk;
                     ops_.emplace_back(std::move(nxt_op_tk));
                     continue;
@@ -132,17 +153,22 @@ class bool_ops_list final : public statement {
             bools_.pop_back();
             bools_.emplace_back(std::move(bol));
 
+            // is it end of '(...)' sub expression?
             if (enclosed_ and tz.is_next_char(')')) {
+                // yes, done
                 return;
             }
 
             prv_op = op_tk;
             op_tk = tz.next_token();
-            if (not(op_tk.is_name("or") or op_tk.is_name("and"))) {
+            // is it expected 'and' or 'or'?
+            if (not op_tk.is_name("or") and not op_tk.is_name("and")) {
+                // no, put it back in the stream and exit
                 tz.put_back_token(op_tk);
                 break;
             }
 
+            // add op to ops list
             ops_.emplace_back(std::move(op_tk));
         }
         if (enclosed_) {

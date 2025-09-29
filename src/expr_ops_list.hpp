@@ -9,7 +9,7 @@
 #include "toc.hpp"
 
 // a list of elements / lists connected by operators instead of tree
-// quirky 1'st pass with trivial second pass compilation
+// note: quirky parsing but trivial compilation
 class expr_ops_list final : public expression {
     bool enclosed_{};                               //  (a+b) vs a+b
     std::vector<std::unique_ptr<statement>> exprs_; // expressions list
