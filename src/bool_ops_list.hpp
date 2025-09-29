@@ -239,12 +239,12 @@ class bool_ops_list final : public statement {
                         // if not last element check if it is a 'or' or 'and'
                         // list
                         if (ops_.at(i).is_name("or")) {
-                            // if evaluation is false and next op is "or" then
-                            // jump_false is next bool eval
+                            // if evaluation is false and next op is 'or' then
+                            // 'jump_false' goes to next bool op in the list
                             jmp_false = cmp_label_from(tc, bools_.at(i + 1));
                         } else if (ops_.at(i).is_name("and")) {
-                            // if evaluation is true and next op is "and" then
-                            // jump_true is next bool eval
+                            // if evaluation is true and next op is 'and' then
+                            // 'jump_true' goes to next bool op in the list
                             jmp_true = cmp_label_from(tc, bools_.at(i + 1));
                         } else {
                             throw panic_exception("expected 'or' or 'and' 1");
@@ -273,13 +273,13 @@ class bool_ops_list final : public statement {
                             // 'and' list inverted
                             // if evaluation is false and next op is 'or'
                             // (inverted from 'and') then 'jump_false' is next
-                            // bool eval
+                            // bool op in the list
                             jmp_false = cmp_label_from(tc, bools_.at(i + 1));
                         } else if (ops_.at(i).is_name("or")) {
                             // 'or' list inverted
                             // if evaluation is true and next op is 'and'
                             // (inverted from 'or') then 'jump_true' is next
-                            // bool eval
+                            // bool op in the list
                             jmp_true = cmp_label_from(tc, bools_.at(i + 1));
                         } else {
                             throw panic_exception("expected 'or' or 'and' 2");
@@ -304,8 +304,8 @@ class bool_ops_list final : public statement {
                         }
                     }
                 } else {
-                    // last bool operation in list
-                    // 'jmp_false' is next bool eval
+                    // last bool op in the list
+                    // 'jmp_false' is next bool ops list
                     std::optional<bool> const_eval{el.compile(
                         tc, os, indent, jmp_false, jmp_true, invert)};
                     // did expression evaluate to a constant?
