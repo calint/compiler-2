@@ -15,7 +15,6 @@ class unary_ops final {
 
   public:
     explicit unary_ops(tokenizer& tz) : ws_before_{tz.next_whitespace_token()} {
-
         while (true) {
             if (tz.is_next_char('~')) {
                 ops_.emplace_back('~');
