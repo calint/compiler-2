@@ -2,4 +2,4 @@
 
 ## Sample
 
-```clike
+```text
