@@ -596,12 +596,11 @@ class toc final {
     auto get_loop_label_or_throw(const token& src_loc_tk) const
         -> const std::string& {
 
-        size_t i{frames_.size()};
-        while (i--) {
-            if (frames_.at(i).is_loop()) {
-                return frames_.at(i).name();
+        for (auto frm{frames_.rbegin()}; frm != frames_.rend(); ++frm) {
+            if (frm->is_loop()) {
+                return frm->name();
             }
-            if (frames_.at(i).is_func()) {
+            if (frm->is_func()) {
                 throw compiler_exception(src_loc_tk, "not in a loop");
             }
         }
@@ -610,10 +609,9 @@ class toc final {
     }
 
     auto get_call_path(const token& src_loc_tk) const -> const std::string& {
-        size_t i{frames_.size()};
-        while (i--) {
-            if (frames_.at(i).is_func()) {
-                return frames_.at(i).call_path();
+        for (auto frm{frames_.rbegin()}; frm != frames_.rend(); ++frm) {
+            if (frm->is_func()) {
+                return frm->call_path();
             }
         }
 
