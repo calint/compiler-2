@@ -1,3 +1,5 @@
+[ ] bool_ops_list fix:
+    var h9 : bool = not ( (t1 + t2 + t3 + t4) > 20 and not t5 ) and (t3 / 5 > 1 or t4 / 1 == 2)
 [x] bool_ops_list: there can be no spaces between ( () )
 [ ] tokenizer to keep track of line-number instead of computing it
 [ ] consider refactoring to 1 pass compiler making compiling in constructor
