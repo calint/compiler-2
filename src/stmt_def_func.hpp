@@ -75,7 +75,8 @@ class stmt_def_func final : public statement {
         null_stream null_strm; // don't make output
         init_variables(tc, null_strm, 0, allocated_named_registers);
         code_ = {tc, tz};
-        free_allocated_registers(tc, null_strm, 0, allocated_named_registers);
+        free_allocated_named_registers(tc, null_strm, 0,
+                                       allocated_named_registers);
         tc.exit_func(name());
     }
 
@@ -199,15 +200,14 @@ class stmt_def_func final : public statement {
         }
     }
 
-    static void free_allocated_registers(
-        toc& tc, std::ostream& os, size_t indent,
-        const std::vector<std::string>& allocated_named_registers) {
+    static auto
+    free_allocated_named_registers(toc& tc, std::ostream& os, size_t indent,
+                                   const std::vector<std::string>& registers)
+        -> void {
 
         // free allocated named register in reverse order
-        size_t i{allocated_named_registers.size()};
-        while (i--) {
-            tc.free_named_register(os, indent + 1,
-                                   allocated_named_registers.at(i));
+        for (auto reg{registers.rbegin()}; reg != registers.rend(); ++reg) {
+            tc.free_named_register(os, indent + 1, *reg);
         }
     }
 };
