@@ -155,16 +155,6 @@ class stmt_call : public expression {
         const std::string& ret_jmp_label{func_name + "_" + new_call_path +
                                          "_end"};
 
-        toc::indent(os, indent, true);
-        func.source_def_comment_to(os);
-
-        // note: not necessary but makes reading the generated code without
-        // comments easier
-        toc::asm_label(tok(), os, indent, func_name + "_" + new_call_path);
-
-        toc::indent(os, indent + 1, true);
-        os << "inline: " << new_call_path << '\n';
-
         std::vector<std::string> allocated_named_registers;
         std::vector<std::string> allocated_scratch_registers;
         std::vector<std::string> allocated_registers_in_order;
@@ -178,8 +168,6 @@ class stmt_call : public expression {
             const std::string& from{func.returns().at(0).ident_tk.name()};
             const std::string& to{dst};
             aliases_to_add.emplace_back(from, to);
-            toc::indent(os, indent + 1, true);
-            os << "alias " << from << " -> " << to << '\n';
         }
 
         size_t i{};
@@ -190,7 +178,7 @@ class stmt_call : public expression {
             std::string arg_reg{param.get_register_name_or_empty()};
             if (not arg_reg.empty()) {
                 // argument is passed through register
-                tc.alloc_named_register_or_throw(arg, os, indent + 1, arg_reg);
+                tc.alloc_named_register_or_throw(arg, os, indent, arg_reg);
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
@@ -200,19 +188,15 @@ class stmt_call : public expression {
                 if (arg_reg.empty()) {
                     // no particular register requested for the argument
                     // re-assign 'arg_reg' to scratch register
-                    arg_reg =
-                        tc.alloc_scratch_register(arg.tok(), os, indent + 1);
+                    arg_reg = tc.alloc_scratch_register(arg.tok(), os, indent);
                     allocated_scratch_registers.emplace_back(arg_reg);
                     allocated_registers_in_order.emplace_back(arg_reg);
                 }
                 // compile expression and store result in 'arg_reg'
                 // note: 'unary_ops' are part of 'expr_ops_list'
-                arg.compile(tc, os, indent + 1, arg_reg);
+                arg.compile(tc, os, indent, arg_reg);
                 // alias parameter name to the register containing its value
                 aliases_to_add.emplace_back(param.identifier(), arg_reg);
-                toc::indent(os, indent + 1, true);
-                os << "alias " << param.identifier() << " -> " << arg_reg
-                   << '\n';
                 continue;
             }
 
@@ -226,50 +210,49 @@ class stmt_call : public expression {
                     // alias parameter name to the argument identifier
                     const std::string& arg_id{arg.identifier()};
                     aliases_to_add.emplace_back(param.identifier(), arg_id);
-                    toc::indent(os, indent + 1, true);
-                    os << "alias " << param.identifier() << " -> " << arg_id
-                       << '\n';
                     continue;
                 }
                 // unary ops must be applied
                 // allocate a scratch register and evaluate
                 const ident_info& arg_info{tc.make_ident_info(arg, true)};
                 const std::string& scratch_reg{
-                    tc.alloc_scratch_register(arg.tok(), os, indent + 1)};
+                    tc.alloc_scratch_register(arg.tok(), os, indent)};
                 allocated_registers_in_order.emplace_back(scratch_reg);
                 allocated_scratch_registers.emplace_back(scratch_reg);
-                tc.asm_cmd(param.tok(), os, indent + 1, "mov", scratch_reg,
+                tc.asm_cmd(param.tok(), os, indent, "mov", scratch_reg,
                            arg_info.id_nasm);
-                arg.get_unary_ops().compile(tc, os, indent + 1, scratch_reg);
+                arg.get_unary_ops().compile(tc, os, indent, scratch_reg);
                 // alias parameter to scratch register
                 aliases_to_add.emplace_back(param.identifier(), scratch_reg);
-                toc::indent(os, indent + 1, true);
-                os << "alias " << param.identifier() << " -> " << scratch_reg
-                   << '\n';
                 continue;
             }
 
             // argument is not an expression and passed through register
             // alias parameter name to the register
             aliases_to_add.emplace_back(param.identifier(), arg_reg);
-            toc::indent(os, indent + 1, true);
-            os << "alias " << param.identifier() << " -> " << arg_reg << '\n';
             // move argument to register specified in param
             const ident_info& arg_info{tc.make_ident_info(arg, true)};
             // is argument a constant?
             if (arg_info.is_const()) {
                 // argument is a constant
                 // assign it to the register
-                tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg,
+                tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
                            arg.get_unary_ops().to_string() + arg_info.id_nasm);
                 continue;
             }
             // argument is not a constant
             // assign argument to register
-            tc.asm_cmd(param.tok(), os, indent + 1, "mov", arg_reg,
+            tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
                        arg_info.id_nasm);
             arg.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
         }
+
+        toc::indent(os, indent, true);
+        func.source_def_comment_to(os);
+
+        // note: not necessary but makes reading the generated code without
+        // comments easier
+        toc::asm_label(tok(), os, indent, func_name + "_" + new_call_path);
 
         // enter function creating a new scope from which prior variables are
         // not visible
@@ -281,6 +264,9 @@ class stmt_call : public expression {
             const std::string& from{alias.first};
             const std::string& to{alias.second};
             tc.add_alias(from, to);
+
+            toc::indent(os, indent + 1, true);
+            os << "alias " << from << " -> " << to << '\n';
         }
 
         // compile in-lined code

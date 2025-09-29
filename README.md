@@ -31,10 +31,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    35            792            550           4284
+C/C++ Header                    35            792            550           4270
 C++                              1             51             64            385
 -------------------------------------------------------------------------------
-SUM:                            36            843            614           4669
+SUM:                            36            843            614           4655
 -------------------------------------------------------------------------------
 ```
 
@@ -236,7 +236,6 @@ main:
 ;    [67:5]  foo(p)
 ;    foo(pt : point) 
     foo_67_5:
-;        inline: 67_5
 ;        alias pt -> p
 ;        [49:5]  pt.x = 0b10
 ;        [49:12]  0b10
@@ -251,22 +250,21 @@ main:
         mov qword[rsp-8], 0xb
 ;        [50:20] # hex value 11
 ;        [51:5]  assert(pt.x == 0b10)
+;        alloc r15
+;        [51:12] pt.x == 0b10
+;        [51:12] ? pt.x == 0b10
+;        [51:12] ? pt.x == 0b10
+        cmp_51_12_67_5:
+        cmp qword[rsp-16], 0b10
+        jne bool_false_51_12_67_5
+        bool_true_51_12_67_5:  ; opt1
+        mov r15, true
+        jmp bool_end_51_12_67_5
+        bool_false_51_12_67_5:
+        mov r15, false
+        bool_end_51_12_67_5:
 ;        assert(expr : bool) 
         assert_51_5_67_5:
-;            inline: 51_5_67_5
-;            alloc r15
-;            [51:12] pt.x == 0b10
-;            [51:12] ? pt.x == 0b10
-;            [51:12] ? pt.x == 0b10
-            cmp_51_12_67_5:
-            cmp qword[rsp-16], 0b10
-            jne bool_false_51_12_67_5
-            bool_true_51_12_67_5:  ; opt1
-            mov r15, true
-            jmp bool_end_51_12_67_5
-            bool_false_51_12_67_5:
-            mov r15, false
-            bool_end_51_12_67_5:
 ;            alias expr -> r15
             if_20_8_51_5_67_5:
 ;            [20:8] ? not expr
@@ -276,12 +274,11 @@ main:
             jne if_20_5_51_5_67_5_end
             if_20_8_51_5_67_5_code:  ; opt1
 ;                [20:17] exit(1)
+;                alloc rdi
+                mov rdi, 1
 ;                exit(v : reg_rdi) 
                 exit_20_17_51_5_67_5:
-;                    inline: 20_17_51_5_67_5
-;                    alloc rdi
 ;                    alias v -> rdi
-                    mov rdi, 1
 ;                    [14:5]  mov(rax, 60)
                     mov rax, 60
 ;                    [14:19] # exit system call
@@ -296,22 +293,21 @@ main:
         assert_51_5_67_5_end:
     foo_67_5_end:
 ;    [68:5] assert(p.x == 2)
+;    alloc r15
+;    [68:12] p.x == 2
+;    [68:12] ? p.x == 2
+;    [68:12] ? p.x == 2
+    cmp_68_12:
+    cmp qword[rsp-16], 2
+    jne bool_false_68_12
+    bool_true_68_12:  ; opt1
+    mov r15, true
+    jmp bool_end_68_12
+    bool_false_68_12:
+    mov r15, false
+    bool_end_68_12:
 ;    assert(expr : bool) 
     assert_68_5:
-;        inline: 68_5
-;        alloc r15
-;        [68:12] p.x == 2
-;        [68:12] ? p.x == 2
-;        [68:12] ? p.x == 2
-        cmp_68_12:
-        cmp qword[rsp-16], 2
-        jne bool_false_68_12
-        bool_true_68_12:  ; opt1
-        mov r15, true
-        jmp bool_end_68_12
-        bool_false_68_12:
-        mov r15, false
-        bool_end_68_12:
 ;        alias expr -> r15
         if_20_8_68_5:
 ;        [20:8] ? not expr
@@ -321,12 +317,11 @@ main:
         jne if_20_5_68_5_end
         if_20_8_68_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_68_5:
-;                inline: 20_17_68_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -340,22 +335,21 @@ main:
 ;        free r15
     assert_68_5_end:
 ;    [69:5] assert(p.y == 0xb)
+;    alloc r15
+;    [69:12] p.y == 0xb
+;    [69:12] ? p.y == 0xb
+;    [69:12] ? p.y == 0xb
+    cmp_69_12:
+    cmp qword[rsp-8], 0xb
+    jne bool_false_69_12
+    bool_true_69_12:  ; opt1
+    mov r15, true
+    jmp bool_end_69_12
+    bool_false_69_12:
+    mov r15, false
+    bool_end_69_12:
 ;    assert(expr : bool) 
     assert_69_5:
-;        inline: 69_5
-;        alloc r15
-;        [69:12] p.y == 0xb
-;        [69:12] ? p.y == 0xb
-;        [69:12] ? p.y == 0xb
-        cmp_69_12:
-        cmp qword[rsp-8], 0xb
-        jne bool_false_69_12
-        bool_true_69_12:  ; opt1
-        mov r15, true
-        jmp bool_end_69_12
-        bool_false_69_12:
-        mov r15, false
-        bool_end_69_12:
 ;        alias expr -> r15
         if_20_8_69_5:
 ;        [20:8] ? not expr
@@ -365,12 +359,11 @@ main:
         jne if_20_5_69_5_end
         if_20_8_69_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_69_5:
-;                inline: 20_17_69_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -393,7 +386,6 @@ main:
 ;    [72:5] bar(i)
 ;    bar(arg) 
     bar_72_5:
-;        inline: 72_5
 ;        alias arg -> i
         if_56_8_72_5:
 ;        [56:8] ? arg == 0
@@ -412,22 +404,21 @@ main:
         mov qword[rsp-24], 0xff
     bar_72_5_end:
 ;    [73:5] assert(i == 0)
+;    alloc r15
+;    [73:12] i == 0
+;    [73:12] ? i == 0
+;    [73:12] ? i == 0
+    cmp_73_12:
+    cmp qword[rsp-24], 0
+    jne bool_false_73_12
+    bool_true_73_12:  ; opt1
+    mov r15, true
+    jmp bool_end_73_12
+    bool_false_73_12:
+    mov r15, false
+    bool_end_73_12:
 ;    assert(expr : bool) 
     assert_73_5:
-;        inline: 73_5
-;        alloc r15
-;        [73:12] i == 0
-;        [73:12] ? i == 0
-;        [73:12] ? i == 0
-        cmp_73_12:
-        cmp qword[rsp-24], 0
-        jne bool_false_73_12
-        bool_true_73_12:  ; opt1
-        mov r15, true
-        jmp bool_end_73_12
-        bool_false_73_12:
-        mov r15, false
-        bool_end_73_12:
 ;        alias expr -> r15
         if_20_8_73_5:
 ;        [20:8] ? not expr
@@ -437,12 +428,11 @@ main:
         jne if_20_5_73_5_end
         if_20_8_73_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_73_5:
-;                inline: 20_17_73_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -463,7 +453,6 @@ main:
 ;    [76:5] bar(i)
 ;    bar(arg) 
     bar_76_5:
-;        inline: 76_5
 ;        alias arg -> i
         if_56_8_76_5:
 ;        [56:8] ? arg == 0
@@ -482,22 +471,21 @@ main:
         mov qword[rsp-24], 0xff
     bar_76_5_end:
 ;    [77:5] assert(i == 0xff)
+;    alloc r15
+;    [77:12] i == 0xff
+;    [77:12] ? i == 0xff
+;    [77:12] ? i == 0xff
+    cmp_77_12:
+    cmp qword[rsp-24], 0xff
+    jne bool_false_77_12
+    bool_true_77_12:  ; opt1
+    mov r15, true
+    jmp bool_end_77_12
+    bool_false_77_12:
+    mov r15, false
+    bool_end_77_12:
 ;    assert(expr : bool) 
     assert_77_5:
-;        inline: 77_5
-;        alloc r15
-;        [77:12] i == 0xff
-;        [77:12] ? i == 0xff
-;        [77:12] ? i == 0xff
-        cmp_77_12:
-        cmp qword[rsp-24], 0xff
-        jne bool_false_77_12
-        bool_true_77_12:  ; opt1
-        mov r15, true
-        jmp bool_end_77_12
-        bool_false_77_12:
-        mov r15, false
-        bool_end_77_12:
 ;        alias expr -> r15
         if_20_8_77_5:
 ;        [20:8] ? not expr
@@ -507,12 +495,11 @@ main:
         jne if_20_5_77_5_end
         if_20_8_77_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_77_5:
-;                inline: 20_17_77_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -541,7 +528,6 @@ main:
 ;    [80:13] baz(j)
 ;    baz(arg) : i64 res 
     baz_80_13:
-;        inline: 80_13
 ;        alias res -> k
 ;        alias arg -> j
 ;        [62:5]  res = arg * 2
@@ -560,22 +546,21 @@ main:
 ;        free r15
     baz_80_13_end:
 ;    [81:5] assert(k == 2)
+;    alloc r15
+;    [81:12] k == 2
+;    [81:12] ? k == 2
+;    [81:12] ? k == 2
+    cmp_81_12:
+    cmp qword[rsp-40], 2
+    jne bool_false_81_12
+    bool_true_81_12:  ; opt1
+    mov r15, true
+    jmp bool_end_81_12
+    bool_false_81_12:
+    mov r15, false
+    bool_end_81_12:
 ;    assert(expr : bool) 
     assert_81_5:
-;        inline: 81_5
-;        alloc r15
-;        [81:12] k == 2
-;        [81:12] ? k == 2
-;        [81:12] ? k == 2
-        cmp_81_12:
-        cmp qword[rsp-40], 2
-        jne bool_false_81_12
-        bool_true_81_12:  ; opt1
-        mov r15, true
-        jmp bool_end_81_12
-        bool_false_81_12:
-        mov r15, false
-        bool_end_81_12:
 ;        alias expr -> r15
         if_20_8_81_5:
 ;        [20:8] ? not expr
@@ -585,12 +570,11 @@ main:
         jne if_20_5_81_5_end
         if_20_8_81_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_81_5:
-;                inline: 20_17_81_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -610,7 +594,6 @@ main:
 ;    [83:9] baz(1)
 ;    baz(arg) : i64 res 
     baz_83_9:
-;        inline: 83_9
 ;        alias res -> k
 ;        alias arg -> 1
 ;        [62:5]  res = arg * 2
@@ -626,22 +609,21 @@ main:
 ;        free r15
     baz_83_9_end:
 ;    [84:5] assert(k == 2)
+;    alloc r15
+;    [84:12] k == 2
+;    [84:12] ? k == 2
+;    [84:12] ? k == 2
+    cmp_84_12:
+    cmp qword[rsp-40], 2
+    jne bool_false_84_12
+    bool_true_84_12:  ; opt1
+    mov r15, true
+    jmp bool_end_84_12
+    bool_false_84_12:
+    mov r15, false
+    bool_end_84_12:
 ;    assert(expr : bool) 
     assert_84_5:
-;        inline: 84_5
-;        alloc r15
-;        [84:12] k == 2
-;        [84:12] ? k == 2
-;        [84:12] ? k == 2
-        cmp_84_12:
-        cmp qword[rsp-40], 2
-        jne bool_false_84_12
-        bool_true_84_12:  ; opt1
-        mov r15, true
-        jmp bool_end_84_12
-        bool_false_84_12:
-        mov r15, false
-        bool_end_84_12:
 ;        alias expr -> r15
         if_20_8_84_5:
 ;        [20:8] ? not expr
@@ -651,12 +633,11 @@ main:
         jne if_20_5_84_5_end
         if_20_8_84_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_84_5:
-;                inline: 20_17_84_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -680,7 +661,6 @@ main:
 ;    [86:23] baz(2)
 ;    baz(arg) : i64 res 
     baz_86_23:
-;        inline: 86_23
 ;        alias res -> p0.x
 ;        alias arg -> 2
 ;        [62:5]  res = arg * 2
@@ -700,22 +680,21 @@ main:
 ;    [86:31] p0.y = 0
     mov qword[rsp-48], 0
 ;    [87:5]  assert(p0.x == 4)
+;    alloc r15
+;    [87:12] p0.x == 4
+;    [87:12] ? p0.x == 4
+;    [87:12] ? p0.x == 4
+    cmp_87_12:
+    cmp qword[rsp-56], 4
+    jne bool_false_87_12
+    bool_true_87_12:  ; opt1
+    mov r15, true
+    jmp bool_end_87_12
+    bool_false_87_12:
+    mov r15, false
+    bool_end_87_12:
 ;    assert(expr : bool) 
     assert_87_5:
-;        inline: 87_5
-;        alloc r15
-;        [87:12] p0.x == 4
-;        [87:12] ? p0.x == 4
-;        [87:12] ? p0.x == 4
-        cmp_87_12:
-        cmp qword[rsp-56], 4
-        jne bool_false_87_12
-        bool_true_87_12:  ; opt1
-        mov r15, true
-        jmp bool_end_87_12
-        bool_false_87_12:
-        mov r15, false
-        bool_end_87_12:
 ;        alias expr -> r15
         if_20_8_87_5:
 ;        [20:8] ? not expr
@@ -725,12 +704,11 @@ main:
         jne if_20_5_87_5_end
         if_20_8_87_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_87_5:
-;                inline: 20_17_87_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -788,22 +766,21 @@ main:
 ;    [92:37] o1.color = 0xff0000
     mov dword[rsp-76], 0xff0000
 ;    [93:5]  assert(o1.pos.x == 10)
+;    alloc r15
+;    [93:12] o1.pos.x == 10
+;    [93:12] ? o1.pos.x == 10
+;    [93:12] ? o1.pos.x == 10
+    cmp_93_12:
+    cmp qword[rsp-92], 10
+    jne bool_false_93_12
+    bool_true_93_12:  ; opt1
+    mov r15, true
+    jmp bool_end_93_12
+    bool_false_93_12:
+    mov r15, false
+    bool_end_93_12:
 ;    assert(expr : bool) 
     assert_93_5:
-;        inline: 93_5
-;        alloc r15
-;        [93:12] o1.pos.x == 10
-;        [93:12] ? o1.pos.x == 10
-;        [93:12] ? o1.pos.x == 10
-        cmp_93_12:
-        cmp qword[rsp-92], 10
-        jne bool_false_93_12
-        bool_true_93_12:  ; opt1
-        mov r15, true
-        jmp bool_end_93_12
-        bool_false_93_12:
-        mov r15, false
-        bool_end_93_12:
 ;        alias expr -> r15
         if_20_8_93_5:
 ;        [20:8] ? not expr
@@ -813,12 +790,11 @@ main:
         jne if_20_5_93_5_end
         if_20_8_93_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_93_5:
-;                inline: 20_17_93_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -832,22 +808,21 @@ main:
 ;        free r15
     assert_93_5_end:
 ;    [94:5] assert(o1.pos.y == 2)
+;    alloc r15
+;    [94:12] o1.pos.y == 2
+;    [94:12] ? o1.pos.y == 2
+;    [94:12] ? o1.pos.y == 2
+    cmp_94_12:
+    cmp qword[rsp-84], 2
+    jne bool_false_94_12
+    bool_true_94_12:  ; opt1
+    mov r15, true
+    jmp bool_end_94_12
+    bool_false_94_12:
+    mov r15, false
+    bool_end_94_12:
 ;    assert(expr : bool) 
     assert_94_5:
-;        inline: 94_5
-;        alloc r15
-;        [94:12] o1.pos.y == 2
-;        [94:12] ? o1.pos.y == 2
-;        [94:12] ? o1.pos.y == 2
-        cmp_94_12:
-        cmp qword[rsp-84], 2
-        jne bool_false_94_12
-        bool_true_94_12:  ; opt1
-        mov r15, true
-        jmp bool_end_94_12
-        bool_false_94_12:
-        mov r15, false
-        bool_end_94_12:
 ;        alias expr -> r15
         if_20_8_94_5:
 ;        [20:8] ? not expr
@@ -857,12 +832,11 @@ main:
         jne if_20_5_94_5_end
         if_20_8_94_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_94_5:
-;                inline: 20_17_94_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -876,22 +850,21 @@ main:
 ;        free r15
     assert_94_5_end:
 ;    [95:5] assert(o1.color == 0xff0000)
+;    alloc r15
+;    [95:12] o1.color == 0xff0000
+;    [95:12] ? o1.color == 0xff0000
+;    [95:12] ? o1.color == 0xff0000
+    cmp_95_12:
+    cmp dword[rsp-76], 0xff0000
+    jne bool_false_95_12
+    bool_true_95_12:  ; opt1
+    mov r15, true
+    jmp bool_end_95_12
+    bool_false_95_12:
+    mov r15, false
+    bool_end_95_12:
 ;    assert(expr : bool) 
     assert_95_5:
-;        inline: 95_5
-;        alloc r15
-;        [95:12] o1.color == 0xff0000
-;        [95:12] ? o1.color == 0xff0000
-;        [95:12] ? o1.color == 0xff0000
-        cmp_95_12:
-        cmp dword[rsp-76], 0xff0000
-        jne bool_false_95_12
-        bool_true_95_12:  ; opt1
-        mov r15, true
-        jmp bool_end_95_12
-        bool_false_95_12:
-        mov r15, false
-        bool_end_95_12:
 ;        alias expr -> r15
         if_20_8_95_5:
 ;        [20:8] ? not expr
@@ -901,12 +874,11 @@ main:
         jne if_20_5_95_5_end
         if_20_8_95_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_95_5:
-;                inline: 20_17_95_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -952,22 +924,21 @@ main:
     mov qword[rsp-84], r15
 ;    free r15
 ;    [99:5] assert(o1.pos.x == -1)
+;    alloc r15
+;    [99:12] o1.pos.x == -1
+;    [99:12] ? o1.pos.x == -1
+;    [99:12] ? o1.pos.x == -1
+    cmp_99_12:
+    cmp qword[rsp-92], -1
+    jne bool_false_99_12
+    bool_true_99_12:  ; opt1
+    mov r15, true
+    jmp bool_end_99_12
+    bool_false_99_12:
+    mov r15, false
+    bool_end_99_12:
 ;    assert(expr : bool) 
     assert_99_5:
-;        inline: 99_5
-;        alloc r15
-;        [99:12] o1.pos.x == -1
-;        [99:12] ? o1.pos.x == -1
-;        [99:12] ? o1.pos.x == -1
-        cmp_99_12:
-        cmp qword[rsp-92], -1
-        jne bool_false_99_12
-        bool_true_99_12:  ; opt1
-        mov r15, true
-        jmp bool_end_99_12
-        bool_false_99_12:
-        mov r15, false
-        bool_end_99_12:
 ;        alias expr -> r15
         if_20_8_99_5:
 ;        [20:8] ? not expr
@@ -977,12 +948,11 @@ main:
         jne if_20_5_99_5_end
         if_20_8_99_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_99_5:
-;                inline: 20_17_99_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -996,22 +966,21 @@ main:
 ;        free r15
     assert_99_5_end:
 ;    [100:5] assert(o1.pos.y == -2)
+;    alloc r15
+;    [100:12] o1.pos.y == -2
+;    [100:12] ? o1.pos.y == -2
+;    [100:12] ? o1.pos.y == -2
+    cmp_100_12:
+    cmp qword[rsp-84], -2
+    jne bool_false_100_12
+    bool_true_100_12:  ; opt1
+    mov r15, true
+    jmp bool_end_100_12
+    bool_false_100_12:
+    mov r15, false
+    bool_end_100_12:
 ;    assert(expr : bool) 
     assert_100_5:
-;        inline: 100_5
-;        alloc r15
-;        [100:12] o1.pos.y == -2
-;        [100:12] ? o1.pos.y == -2
-;        [100:12] ? o1.pos.y == -2
-        cmp_100_12:
-        cmp qword[rsp-84], -2
-        jne bool_false_100_12
-        bool_true_100_12:  ; opt1
-        mov r15, true
-        jmp bool_end_100_12
-        bool_false_100_12:
-        mov r15, false
-        bool_end_100_12:
 ;        alias expr -> r15
         if_20_8_100_5:
 ;        [20:8] ? not expr
@@ -1021,12 +990,11 @@ main:
         jne if_20_5_100_5_end
         if_20_8_100_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_100_5:
-;                inline: 20_17_100_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -1058,22 +1026,21 @@ main:
     mov dword[rsp-112], r15d
 ;    free r15
 ;    [103:5] assert(o2.pos.x == -1)
+;    alloc r15
+;    [103:12] o2.pos.x == -1
+;    [103:12] ? o2.pos.x == -1
+;    [103:12] ? o2.pos.x == -1
+    cmp_103_12:
+    cmp qword[rsp-128], -1
+    jne bool_false_103_12
+    bool_true_103_12:  ; opt1
+    mov r15, true
+    jmp bool_end_103_12
+    bool_false_103_12:
+    mov r15, false
+    bool_end_103_12:
 ;    assert(expr : bool) 
     assert_103_5:
-;        inline: 103_5
-;        alloc r15
-;        [103:12] o2.pos.x == -1
-;        [103:12] ? o2.pos.x == -1
-;        [103:12] ? o2.pos.x == -1
-        cmp_103_12:
-        cmp qword[rsp-128], -1
-        jne bool_false_103_12
-        bool_true_103_12:  ; opt1
-        mov r15, true
-        jmp bool_end_103_12
-        bool_false_103_12:
-        mov r15, false
-        bool_end_103_12:
 ;        alias expr -> r15
         if_20_8_103_5:
 ;        [20:8] ? not expr
@@ -1083,12 +1050,11 @@ main:
         jne if_20_5_103_5_end
         if_20_8_103_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_103_5:
-;                inline: 20_17_103_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -1102,22 +1068,21 @@ main:
 ;        free r15
     assert_103_5_end:
 ;    [104:5] assert(o2.pos.y == -2)
+;    alloc r15
+;    [104:12] o2.pos.y == -2
+;    [104:12] ? o2.pos.y == -2
+;    [104:12] ? o2.pos.y == -2
+    cmp_104_12:
+    cmp qword[rsp-120], -2
+    jne bool_false_104_12
+    bool_true_104_12:  ; opt1
+    mov r15, true
+    jmp bool_end_104_12
+    bool_false_104_12:
+    mov r15, false
+    bool_end_104_12:
 ;    assert(expr : bool) 
     assert_104_5:
-;        inline: 104_5
-;        alloc r15
-;        [104:12] o2.pos.y == -2
-;        [104:12] ? o2.pos.y == -2
-;        [104:12] ? o2.pos.y == -2
-        cmp_104_12:
-        cmp qword[rsp-120], -2
-        jne bool_false_104_12
-        bool_true_104_12:  ; opt1
-        mov r15, true
-        jmp bool_end_104_12
-        bool_false_104_12:
-        mov r15, false
-        bool_end_104_12:
 ;        alias expr -> r15
         if_20_8_104_5:
 ;        [20:8] ? not expr
@@ -1127,12 +1092,11 @@ main:
         jne if_20_5_104_5_end
         if_20_8_104_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_104_5:
-;                inline: 20_17_104_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -1146,22 +1110,21 @@ main:
 ;        free r15
     assert_104_5_end:
 ;    [105:5] assert(o2.color == 0xff0000)
+;    alloc r15
+;    [105:12] o2.color == 0xff0000
+;    [105:12] ? o2.color == 0xff0000
+;    [105:12] ? o2.color == 0xff0000
+    cmp_105_12:
+    cmp dword[rsp-112], 0xff0000
+    jne bool_false_105_12
+    bool_true_105_12:  ; opt1
+    mov r15, true
+    jmp bool_end_105_12
+    bool_false_105_12:
+    mov r15, false
+    bool_end_105_12:
 ;    assert(expr : bool) 
     assert_105_5:
-;        inline: 105_5
-;        alloc r15
-;        [105:12] o2.color == 0xff0000
-;        [105:12] ? o2.color == 0xff0000
-;        [105:12] ? o2.color == 0xff0000
-        cmp_105_12:
-        cmp dword[rsp-112], 0xff0000
-        jne bool_false_105_12
-        bool_true_105_12:  ; opt1
-        mov r15, true
-        jmp bool_end_105_12
-        bool_false_105_12:
-        mov r15, false
-        bool_end_105_12:
 ;        alias expr -> r15
         if_20_8_105_5:
 ;        [20:8] ? not expr
@@ -1171,12 +1134,11 @@ main:
         jne if_20_5_105_5_end
         if_20_8_105_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_105_5:
-;                inline: 20_17_105_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -1196,22 +1158,21 @@ main:
 ;    [107:25] counter + 1
     add qword[counter], 1
 ;    [108:5] assert(counter == 1)
+;    alloc r15
+;    [108:12] counter == 1
+;    [108:12] ? counter == 1
+;    [108:12] ? counter == 1
+    cmp_108_12:
+    cmp qword[counter], 1
+    jne bool_false_108_12
+    bool_true_108_12:  ; opt1
+    mov r15, true
+    jmp bool_end_108_12
+    bool_false_108_12:
+    mov r15, false
+    bool_end_108_12:
 ;    assert(expr : bool) 
     assert_108_5:
-;        inline: 108_5
-;        alloc r15
-;        [108:12] counter == 1
-;        [108:12] ? counter == 1
-;        [108:12] ? counter == 1
-        cmp_108_12:
-        cmp qword[counter], 1
-        jne bool_false_108_12
-        bool_true_108_12:  ; opt1
-        mov r15, true
-        jmp bool_end_108_12
-        bool_false_108_12:
-        mov r15, false
-        bool_end_108_12:
 ;        alias expr -> r15
         if_20_8_108_5:
 ;        [20:8] ? not expr
@@ -1221,12 +1182,11 @@ main:
         jne if_20_5_108_5_end
         if_20_8_108_5_code:  ; opt1
 ;            [20:17] exit(1)
+;            alloc rdi
+            mov rdi, 1
 ;            exit(v : reg_rdi) 
             exit_20_17_108_5:
-;                inline: 20_17_108_5
-;                alloc rdi
 ;                alias v -> rdi
-                mov rdi, 1
 ;                [14:5]  mov(rax, 60)
                 mov rax, 60
 ;                [14:19] # exit system call
@@ -1240,15 +1200,14 @@ main:
 ;        free r15
     assert_108_5_end:
 ;    [110:5] print(hello.len, hello)
+;    alloc rdx
+    mov rdx, hello.len
+;    alloc rsi
+    mov rsi, hello
 ;    print(len : reg_rdx, ptr : reg_rsi) 
     print_110_5:
-;        inline: 110_5
-;        alloc rdx
 ;        alias len -> rdx
-        mov rdx, hello.len
-;        alloc rsi
 ;        alias ptr -> rsi
-        mov rsi, hello
 ;        [24:5]  mov(rax, 1)
         mov rax, 1
 ;        [24:19] # write system call
@@ -1267,15 +1226,14 @@ main:
 ;    [111:5] loop
     loop_111_5:
 ;        [112:9]  print(prompt1.len, prompt1)
+;        alloc rdx
+        mov rdx, prompt1.len
+;        alloc rsi
+        mov rsi, prompt1
 ;        print(len : reg_rdx, ptr : reg_rsi) 
         print_112_9:
-;            inline: 112_9
-;            alloc rdx
 ;            alias len -> rdx
-            mov rdx, prompt1.len
-;            alloc rsi
 ;            alias ptr -> rsi
-            mov rsi, prompt1
 ;            [24:5]  mov(rax, 1)
             mov rax, 1
 ;            [24:19] # write system call
@@ -1298,16 +1256,15 @@ main:
 ;        [113:19] read(input.len, input) - 1
 ;        [113:19] len = read(input.len, input)
 ;        [113:19] read(input.len, input)
+;        alloc rdx
+        mov rdx, input.len
+;        alloc rsi
+        mov rsi, input
 ;        read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes 
         read_113_19:
-;            inline: 113_19
 ;            alias nbytes -> len
-;            alloc rdx
 ;            alias len -> rdx
-            mov rdx, input.len
-;            alloc rsi
 ;            alias ptr -> rsi
-            mov rsi, input
 ;            [32:5]  mov(rax, 0)
             mov rax, 0
 ;            [32:19] # read system call
@@ -1347,15 +1304,14 @@ main:
         jg if_else_114_9
         if_116_19_code:  ; opt1
 ;            [117:13]  print(prompt2.len, prompt2)
+;            alloc rdx
+            mov rdx, prompt2.len
+;            alloc rsi
+            mov rsi, prompt2
 ;            print(len : reg_rdx, ptr : reg_rsi) 
             print_117_13:
-;                inline: 117_13
-;                alloc rdx
 ;                alias len -> rdx
-                mov rdx, prompt2.len
-;                alloc rsi
 ;                alias ptr -> rsi
-                mov rsi, prompt2
 ;                [24:5]  mov(rax, 1)
                 mov rax, 1
 ;                [24:19] # write system call
@@ -1376,15 +1332,14 @@ main:
         jmp if_114_9_end
         if_else_114_9:
 ;            [120:13]  print(prompt3.len, prompt3)
+;            alloc rdx
+            mov rdx, prompt3.len
+;            alloc rsi
+            mov rsi, prompt3
 ;            print(len : reg_rdx, ptr : reg_rsi) 
             print_120_13:
-;                inline: 120_13
-;                alloc rdx
 ;                alias len -> rdx
-                mov rdx, prompt3.len
-;                alloc rsi
 ;                alias ptr -> rsi
-                mov rsi, prompt3
 ;                [24:5]  mov(rax, 1)
                 mov rax, 1
 ;                [24:19] # write system call
@@ -1401,15 +1356,14 @@ main:
 ;                free rdx
             print_120_13_end:
 ;            [121:13] print(len, input)
+;            alloc rdx
+            mov rdx, qword[rsp-136]
+;            alloc rsi
+            mov rsi, input
 ;            print(len : reg_rdx, ptr : reg_rsi) 
             print_121_13:
-;                inline: 121_13
-;                alloc rdx
 ;                alias len -> rdx
-                mov rdx, qword[rsp-136]
-;                alloc rsi
 ;                alias ptr -> rsi
-                mov rsi, input
 ;                [24:5]  mov(rax, 1)
                 mov rax, 1
 ;                [24:19] # write system call
@@ -1426,15 +1380,14 @@ main:
 ;                free rdx
             print_121_13_end:
 ;            [122:13] print(dot.len, dot)
+;            alloc rdx
+            mov rdx, dot.len
+;            alloc rsi
+            mov rsi, dot
 ;            print(len : reg_rdx, ptr : reg_rsi) 
             print_122_13:
-;                inline: 122_13
-;                alloc rdx
 ;                alias len -> rdx
-                mov rdx, dot.len
-;                alloc rsi
 ;                alias ptr -> rsi
-                mov rsi, dot
 ;                [24:5]  mov(rax, 1)
                 mov rax, 1
 ;                [24:19] # write system call
@@ -1451,15 +1404,14 @@ main:
 ;                free rdx
             print_122_13_end:
 ;            [123:13] print(nl.len, nl)
+;            alloc rdx
+            mov rdx, nl.len
+;            alloc rsi
+            mov rsi, nl
 ;            print(len : reg_rdx, ptr : reg_rsi) 
             print_123_13:
-;                inline: 123_13
-;                alloc rdx
 ;                alias len -> rdx
-                mov rdx, nl.len
-;                alloc rsi
 ;                alias ptr -> rsi
-                mov rsi, nl
 ;                [24:5]  mov(rax, 1)
                 mov rax, 1
 ;                [24:19] # write system call
