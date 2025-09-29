@@ -28,4 +28,4 @@ run `prog.baz`
 
 ## Source
 
-```text
+```clike

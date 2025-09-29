@@ -28,7 +28,7 @@ run `prog.baz`
 
 ## Source
 
-```text
+```clike
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
 C/C++ Header                    35            792            550           4271
