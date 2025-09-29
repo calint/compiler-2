@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <ranges>
 #include <regex>
 #include <sstream>
 #include <string>
@@ -274,9 +275,7 @@ inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
                                size_t indnt,
                                const std::string& dst_info) const {
 
-    size_t i{ops_.size()};
-    while (i--) {
-        const char op{ops_[i]};
+    for (auto op : std::views::reverse(ops_)) {
         switch (op) {
         case '~':
             toc::asm_not(ws_before_, os, indnt, dst_info);
