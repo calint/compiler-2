@@ -46,7 +46,7 @@ mov rsp,stk.end
 ;[54:1]  # default argument type is `i64`
 ;[60:1]  # return target is specified as a variable, in this case `res`
 main:
-;    p: qword[rsp-16]
+;    var p: point @ qword[rsp-16]
 ;    [66:5]  var p : point = {0, 0}
 ;    [66:9] p : point = {0, 0}
 ;    [66:21]  {0, 0}
@@ -202,7 +202,7 @@ main:
         if_20_5_69_5_end:
 ;        free r15
     assert_69_5_end:
-;    i: qword[rsp-24]
+;    var i: i64 @ qword[rsp-24]
 ;    [71:5] var i = 0
 ;    [71:9] i = 0
 ;    [71:13]  0
@@ -338,14 +338,14 @@ main:
         if_20_5_77_5_end:
 ;        free r15
     assert_77_5_end:
-;    j: qword[rsp-32]
+;    var j: i64 @ qword[rsp-32]
 ;    [79:5] var j = 1
 ;    [79:9] j = 1
 ;    [79:13]  1
 ;    [79:13] 1
 ;    [79:13] j = 1
     mov qword[rsp-32], 1
-;    k: qword[rsp-40]
+;    var k: i64 @ qword[rsp-40]
 ;    [80:5] var k = baz(j)
 ;    [80:9] k = baz(j)
 ;    [80:13]  baz(j)
@@ -476,7 +476,7 @@ main:
         if_20_5_84_5_end:
 ;        free r15
     assert_84_5_end:
-;    p0: qword[rsp-56]
+;    var p0: point @ qword[rsp-56]
 ;    [86:5] var p0 : point = {baz(2), 0}
 ;    [86:9] p0 : point = {baz(2), 0}
 ;    [86:22]  {baz(2), 0}
@@ -547,21 +547,21 @@ main:
         if_20_5_87_5_end:
 ;        free r15
     assert_87_5_end:
-;    x: qword[rsp-64]
+;    var x: i64 @ qword[rsp-64]
 ;    [89:5] var x = 1
 ;    [89:9] x = 1
 ;    [89:13]  1
 ;    [89:13] 1
 ;    [89:13] x = 1
     mov qword[rsp-64], 1
-;    y: qword[rsp-72]
+;    var y: i64 @ qword[rsp-72]
 ;    [90:5] var y = 2
 ;    [90:9] y = 2
 ;    [90:13]  2
 ;    [90:13] 2
 ;    [90:13] y = 2
     mov qword[rsp-72], 2
-;    o1: qword[rsp-92]
+;    var o1: object @ qword[rsp-92]
 ;    [92:5] var o1 : object = {{x * 10, y}, 0xff0000}
 ;    [92:9] o1 : object = {{x * 10, y}, 0xff0000}
 ;    [92:23]  {{x * 10, y}, 0xff0000}
@@ -717,7 +717,7 @@ main:
         if_20_5_95_5_end:
 ;        free r15
     assert_95_5_end:
-;    p1: qword[rsp-108]
+;    var p1: point @ qword[rsp-108]
 ;    [97:5] var p1 : point = {-x, -y}
 ;    [97:9] p1 : point = {-x, -y}
 ;    [97:22]  {-x, -y}
@@ -833,7 +833,7 @@ main:
         if_20_5_100_5_end:
 ;        free r15
     assert_100_5_end:
-;    o2: qword[rsp-128]
+;    var o2: object @ qword[rsp-128]
 ;    [102:5] var o2 : object = o1
 ;    [102:9] o2 : object = o1
 ;    [102:23]  o1
@@ -1075,7 +1075,7 @@ main:
 ;            free rsi
 ;            free rdx
         print_112_9_end:
-;        len: qword[rsp-136]
+;        var len: i64 @ qword[rsp-136]
 ;        [113:9] var len = read(input.len, input) - 1
 ;        [113:13] len = read(input.len, input) - 1
 ;        [113:19]  read(input.len, input) - 1

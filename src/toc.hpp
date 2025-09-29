@@ -487,7 +487,8 @@ class toc final {
         // comment the resolved name
         const ident_info& name_info{make_ident_info(src_loc_tk, name, false)};
         indent(os, indnt, true);
-        os << name << ": " << name_info.id_nasm << '\n';
+        os << "var " << name << ": " << name_info.type_ref.name() << " @ "
+           << name_info.id_nasm << '\n';
     }
 
     auto alloc_scratch_register(const token& src_loc_tk, std::ostream& os,
