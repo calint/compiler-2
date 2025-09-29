@@ -1,12 +1,12 @@
-[ ] t69.baz has commented samples that break baz
+[x] t69.baz has commented samples that break baz
 [x] refactor parsing of bool_ops_list and check compilation:
     => don't allow mixing of 'or's and 'and's without parenthesis greatly
        reduces the complexity. (same like in C++)
-[ ] var w : bool = (x + y <= z) and (not (z == 4) or (x == 1 and y == 3))
-[ ] bool_ops_list: there can be no spaces between ( () )
+[x] var w : bool = (x + y <= z) and (not (z == 4) or (x == 1 and y == 3))
+[x] bool_ops_list: there can be no spaces between ( () )
     var u : bool = not ( (false or true) and not (true and false) ) or (x > 10)
                  => false
-[ ] bool_ops_list:
+[x] bool_ops_list:
     var r : bool = (x + y <= z)  and (not (z == 4) or (x == 1 and y == 3))
 [ ] consider refactoring to 1 pass compiler making compiling in constructor
     constructor(os data,os code,indent)

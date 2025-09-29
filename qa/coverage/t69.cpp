@@ -10,6 +10,7 @@ int main() {
     int t4 = 2;
     bool t5 = false;
 
+    bool r = (x + y <= z) and (not(z == 4) or (x == 1 and y == 3));
     bool aa = ((t1 == t2 and t3 > t1 * t4) or t5) and not(t1 != t2 or t3 < 10);
     bool bb = not(t5 or (t1 + t2 > t3) or (t3 / t4 == t1)) and t1 == 5;
     bool cc = not(t1 < t2 and t3 > t4 and t5) or (x == 1 and not(y == z));
@@ -22,6 +23,7 @@ int main() {
     bool jj = ((t1 + t2 == t3) or (t3 / t4 == t1)) and not(t1 < t5 or t2 < t5);
     bool kk = not(t1 == t2 and t3 / t4 == t1);
 
+    std::cout << " r: " << r << "\n";
     std::cout << "aa: " << aa << "\n";
     std::cout << "bb: " << bb << "\n";
     std::cout << "cc: " << cc << "\n";

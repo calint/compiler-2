@@ -23,7 +23,7 @@ class expr_any final : public statement {
 
         if (tp.name() == tc.get_type_bool().name()) {
             // destination is boolean
-            var_ = bool_ops_list{tc, tz};
+            var_ = bool_ops_list{tc, tz.next_whitespace_token(), tz};
             return;
         }
 

@@ -51,6 +51,12 @@ class tokenizer final {
         return {ws_before, bgn_ix, txt, end_ix, ws_after};
     }
 
+    // returns an token which is a marker at current position with empty name
+    // and whitespaces
+    [[nodiscard]] auto current_position_token() const -> token {
+        return {"", char_ix_, "", char_ix_, ""};
+    }
+
     auto put_back_token(const token& t) -> void {
         //? todo. validate token is same as source
         move_back(t.total_length_in_chars());

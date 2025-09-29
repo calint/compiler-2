@@ -11,6 +11,8 @@ grep -v -e'^\s*;.*$' -e'^\s*$' gen.s >gen-without-comments.s
 nasm -f elf64 gen.s
 ld -s -o gen gen.o
 echo $SEP
+set +e # don't stop att errors
 ./gen
+RET=$?
 echo $SEP
-echo returned: $?
+echo returned: $RET

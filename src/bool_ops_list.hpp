@@ -15,9 +15,9 @@ class bool_ops_list final : public statement {
     token not_token_;        // e.g. not (a==b and c==d)
 
   public:
-    bool_ops_list(toc& tc, tokenizer& tz, const bool enclosed = false,
+    bool_ops_list(toc& tc, token tk, tokenizer& tz, const bool enclosed = false,
                   token not_token = {})
-        : statement{tz.next_whitespace_token()}, enclosed_{enclosed},
+        : statement{std::move(tk)}, enclosed_{enclosed},
           not_token_{std::move(not_token)} {
 
         set_type(tc.get_type_bool());
@@ -31,10 +31,12 @@ class bool_ops_list final : public statement {
                 // not (a == 1 and b == 1)
                 //  vs
                 // not a == 1 and b == 1
+                token pos_tk = tz.current_position_token();
                 if (tz.is_next_char('(')) {
                     // e.g. not (a=1 and b=1)
                     // recurse
-                    bools_.emplace_back(bool_ops_list{tc, tz, true, not_tk});
+                    bools_.emplace_back(
+                        bool_ops_list{tc, std::move(pos_tk), tz, true, not_tk});
                 } else {
                     // e.g. not a=1 and b=1
                     // the 'not' is part of the bool element, put it back to be
@@ -47,9 +49,11 @@ class bool_ops_list final : public statement {
                 //      a == 1 and b == 1
                 // 'not_tk' not keyword 'not', put it back in the stream
                 tz.put_back_token(not_tk);
+                token pos_tk = tz.current_position_token();
                 if (tz.is_next_char('(')) {
                     // e.g. (a == 1 and b == 1)
-                    bools_.emplace_back(bool_ops_list{tc, tz, true});
+                    bools_.emplace_back(
+                        bool_ops_list{tc, std::move(pos_tk), tz, true});
                 } else {
                     // e.g. a == 1 and b == 1
                     bools_.emplace_back(bool_op{tc, tz});
@@ -142,6 +146,7 @@ class bool_ops_list final : public statement {
                 // bool_ops_list
                 //
                 const bool_ops_list& el{get<bool_ops_list>(bools_.at(i))};
+                toc::asm_label(tok(), os, indent, el.cmp_bgn_label(tc));
                 std::string jmp_false{jmp_to_if_false};
                 std::string jmp_true{jmp_to_if_true};
                 if (i < n - 1) {

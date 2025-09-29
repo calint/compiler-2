@@ -10,7 +10,8 @@ class stmt_if_branch final : public statement {
 
   public:
     stmt_if_branch(toc& tc, tokenizer& tz)
-        : statement{tz.next_whitespace_token()}, bol_{tc, tz}, code_{tc, tz} {
+        : statement{tz.next_whitespace_token()},
+          bol_{tc, tz.next_whitespace_token(), tz}, code_{tc, tz} {
 
         set_type(tc.get_type_void());
     }
