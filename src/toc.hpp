@@ -623,10 +623,9 @@ class toc final {
     auto get_func_return_label_or_throw(const token& src_loc_tk) const
         -> const std::string& {
 
-        size_t i{frames_.size()};
-        while (i--) {
-            if (frames_.at(i).is_func()) {
-                return frames_.at(i).func_ret_label();
+        for (auto frm{frames_.rbegin()}; frm != frames_.rend(); ++frm) {
+            if (frm->is_func()) {
+                return frm->func_ret_label();
             }
         }
 
@@ -636,10 +635,9 @@ class toc final {
     auto get_func_returns(const token& src_loc_tk) const
         -> const std::vector<func_return_info>& {
 
-        size_t i{frames_.size()};
-        while (i--) {
-            if (frames_.at(i).is_func()) {
-                return frames_.at(i).get_func_returns_infos();
+        for (auto frm{frames_.rbegin()}; frm != frames_.rend(); ++frm) {
+            if (frm->is_func()) {
+                return frm->get_func_returns_infos();
             }
         }
 
@@ -1134,23 +1132,23 @@ class toc final {
         std::string id_base{id.id_base()};
 
         // traverse the frames and try to find the identifier
-        size_t i{frames_.size()};
-        while (i) {
-            i--;
+        for (auto frm{frames_.rbegin()}; frm != frames_.rend(); ++frm) {
             // does scope contain the variable?
-            if (frames_.at(i).has_var(id_base)) {
+            if (frm->has_var(id_base)) {
                 // yes, return result
-                return {std::move(id_base), frames_.at(i)};
+                return {std::move(id_base), *frm};
             }
+
             // is the frame a function?
-            if (frames_.at(i).is_func()) {
-                // is identifier an alias?
-                if (not frames_.at(i).has_alias(id_base)) {
-                    // no, done within the context of this function
-                    break;
+            if (frm->is_func()) {
+                // yes, is identifier an alias?
+                if (not frm->has_alias(id_base)) {
+                    // no, return not found
+                    return {"", frames_.at(0)};
                 }
-                // yes, continue resolving alias until it is a variable, field
-                // or register
+
+                // yes, continue resolving aliases until a variable, field or
+                // register
 
                 // note: when compiling in "dry-run" at 'stmt_def_func' the
                 //       return variable is in the frame of the function as a
@@ -1159,24 +1157,24 @@ class toc final {
                 //       to a variable in a higher context, thus aliases are
                 //       followed to find the variable
 
-                id = identifier{frames_.at(i).get_alias(id_base)};
+                id = identifier{frm->get_alias(id_base)};
                 id_base = id.id_base();
+
                 if (is_identifier_register(id_base) or fields_.has(id_base)) {
-                    return {std::move(id_base), frames_.at(i)};
+                    return {std::move(id_base), *frm};
                 }
             }
         }
-        return {"", frames_.at(0)};
+
+        throw panic_exception{"unexpected code path toc:3"};
     }
 
     auto get_current_function_stack_size() const -> size_t {
         assert(!frames_.empty());
         size_t nbytes{};
-        size_t i{frames_.size()};
-        while (i--) {
-            const frame& frm{frames_.at(i)};
-            nbytes += frm.allocated_stack_size();
-            if (frm.is_func()) {
+        for (auto frm{frames_.rbegin()}; frm != frames_.rend(); ++frm) {
+            nbytes += frm->allocated_stack_size();
+            if (frm->is_func()) {
                 return nbytes;
             }
         }
@@ -1187,10 +1185,8 @@ class toc final {
     auto get_total_stack_size() const -> size_t {
         assert(!frames_.empty());
         size_t nbytes{};
-        size_t i{frames_.size()};
-        while (i--) {
-            const frame& frm{frames_.at(i)};
-            nbytes += frm.allocated_stack_size();
+        for (auto frm{frames_.rbegin()}; frm != frames_.rend(); ++frm) {
+            nbytes += frm->allocated_stack_size();
         }
         return nbytes;
     }
