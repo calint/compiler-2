@@ -69,6 +69,7 @@ class stmt_def_func final : public statement {
         }
 
         tc.add_func(name_tk_, name_tk_.name(), get_type(), this);
+        // dry-run compilation to catch errors before called
         tc.enter_func(name(), returns_);
         std::vector<std::string> allocated_named_registers;
         null_stream null_strm; // don't make output
