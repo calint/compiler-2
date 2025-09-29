@@ -1,23 +1,9 @@
-[x] t69.baz has commented samples that break baz
-[x] refactor parsing of bool_ops_list and check compilation:
-    => don't allow mixing of 'or's and 'and's without parenthesis greatly
-       reduces the complexity. (same like in C++)
-[x] var w : bool = (x + y <= z) and (not (z == 4) or (x == 1 and y == 3))
 [ ] bool_ops_list: there can be no spaces between ( () )
-    var u : bool = not ( (false or true) and not (true and false) ) or (x > 10)
-                 => false
-[x] bool_ops_list:
-    var r : bool = (x + y <= z)  and (not (z == 4) or (x == 1 and y == 3))
+[ ] tokenizer to keep track of line-number instead of computing it
 [ ] consider refactoring to 1 pass compiler making compiling in constructor
     constructor(os data,os code,indent)
-[x] toc: review the is_variable_initiated and set_variable_initiated
-        case '<': // shift left
-        case '>': // shift right
-            return 4;
-    regarding registers (get_id_and_frame_for_identifier is dubious)
 [ ] tokenizer, token etc to std::string_view
 [ ] tokenizer: handle string with escaped " 
-[ ] tokenizer to keep track of line-number instead of computing it
 [ ] token: regex construction to static
 [ ] unary_ops: use std::source_location in panic exception
 [ ] stmt_call: use std::source_location in panic exception
@@ -91,6 +77,20 @@ stage 5
       mov qword[rbp-16],r15
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
+[x] var u : bool = not ( (false or true) and not (true and false) ) or (x > 10)
+                 => false
+[x] t69.baz has commented samples that break baz
+[x] refactor parsing of bool_ops_list and check compilation:
+    => don't allow mixing of 'or's and 'and's without parenthesis greatly
+       reduces the complexity. (same like in C++)
+[x] var w : bool = (x + y <= z) and (not (z == 4) or (x == 1 and y == 3))
+[x] bool_ops_list:
+    var r : bool = (x + y <= z)  and (not (z == 4) or (x == 1 and y == 3))
+[x] toc: review the is_variable_initiated and set_variable_initiated
+        case '<': // shift left
+        case '>': // shift right
+            return 4;
+    regarding registers (get_id_and_frame_for_identifier is dubious)
 [x] consider removing support for non-inlined functions because it is out of scope
     => intention of program is super-loop non-reentrant inlined functions
 [x] replace all {0} and {false} to default {}
