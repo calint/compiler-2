@@ -1,4 +1,5 @@
 #pragma once
+// reviewed: 2025-09-29
 
 #include <cassert>
 #include <cstdint>
@@ -143,7 +144,8 @@ class bool_op final : public statement {
             // 'lhs' is an expression
             resolve_cmp_shorthand(tc, os, indent, lhs_);
             toc::indent(os, indent);
-            os << (not invert ? asm_jxx_for_op_inv("==")
+            // note: shorthand variant checks for "not false"
+            os << (not invert ? asm_jxx_for_op_inv("==") // "not false"
                               : asm_jxx_for_op("=="));
             os << " " << jmp_to_if_true << '\n';
             return std::nullopt;
@@ -169,13 +171,26 @@ class bool_op final : public statement {
                 os << "const eval to " << (const_eval ? "true" : "false")
                    << '\n';
                 if (const_eval) {
+                    // expression evaluated at compile time and true so
+                    // short-circuit and jump to true
                     toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_true);
                 }
                 return const_eval;
             }
         }
+
+        // don't allow left-hand-side to be constant because generated assembler
+        // does not compile
+        if (not lhs_.is_expression()) {
+            const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
+            if (lhs_info.is_const()) {
+                throw compiler_exception(
+                    lhs_.tok(),
+                    "left hand side expression may not be a constant");
+            }
+        }
+
         // left-hand-side or right-hand-side or both are expressions
-        //? todo. compilation error if lhs_ is constant
         resolve_cmp(tc, os, indent, lhs_, rhs_);
         toc::indent(os, indent);
         os << (invert ? asm_jxx_for_op_inv(op_) : asm_jxx_for_op(op_));
@@ -212,14 +227,17 @@ class bool_op final : public statement {
                     return const_eval;
                 }
             }
+
             // left-hand-side is expression
             resolve_cmp_shorthand(tc, os, indent, lhs_);
             toc::indent(os, indent);
+            // note: jump to "if false label" if result is "false"
             os << (not invert ? asm_jxx_for_op("==")
                               : asm_jxx_for_op_inv("=="));
             os << " " << jmp_to_if_false << '\n';
             return std::nullopt;
         }
+
         // not shorthand expression
         // check the case when both operands are constants
         if (not lhs_.is_expression() and not rhs_.is_expression()) {
@@ -426,16 +444,19 @@ class bool_op final : public statement {
             expr.compile(tc, os, indent + 1, reg);
             return reg;
         }
-        // expr is not an expression
+
+        // 'expr' is not an expression
         const ident_info& expr_info{tc.make_ident_info(expr, true)};
         if (expr_info.is_const()) {
             return expr.get_unary_ops().to_string() + expr_info.id_nasm;
         }
-        // expr not a constant, it is an identifier
+
+        // 'expr' not a constant, it is an identifier
         if (expr.get_unary_ops().is_empty()) {
             return expr_info.id_nasm;
         }
-        // expr is not an expression and has unary ops
+
+        // 'expr' is not an expression and has unary ops
         const std::string& reg{
             tc.alloc_scratch_register(expr.tok(), os, indent)};
         allocated_registers.emplace_back(reg);

@@ -31,10 +31,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    35            783            509           4274
+C/C++ Header                    35            790            523           4283
 C++                              1             51             64            385
 -------------------------------------------------------------------------------
-SUM:                            36            834            573           4659
+SUM:                            36            841            587           4668
 -------------------------------------------------------------------------------
 ```
 
@@ -269,7 +269,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_67_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_67_5_end
      if_20_8_67_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -311,7 +311,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_68_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_68_5_end
      if_20_8_68_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -380,7 +380,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_72_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_72_5_end
      if_20_8_72_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -447,7 +447,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_76_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_76_5_end
      if_20_8_76_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -522,7 +522,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_80_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_80_5_end
      if_20_8_80_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -585,7 +585,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_83_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_83_5_end
      if_20_8_83_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -656,7 +656,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_86_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_86_5_end
      if_20_8_86_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -742,7 +742,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_92_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_92_5_end
      if_20_8_92_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -784,7 +784,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_93_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_93_5_end
      if_20_8_93_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -826,7 +826,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_94_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_94_5_end
      if_20_8_94_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -900,7 +900,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_98_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_98_5_end
      if_20_8_98_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -942,7 +942,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_99_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_99_5_end
      if_20_8_99_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -1002,7 +1002,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_102_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_102_5_end
      if_20_8_102_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -1044,7 +1044,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_103_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_103_5_end
      if_20_8_103_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -1086,7 +1086,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_104_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_104_5_end
      if_20_8_104_5_code:  ; opt1
 ;      [20:17] exit(1)
@@ -1134,7 +1134,7 @@ mov rsp,stk.end
 ;    [20:8] ? not expr
 ;    [20:8] ? not expr
      cmp_20_8_107_5:
-     cmp r15, 0
+     cmp r15, false
      jne if_20_5_107_5_end
      if_20_8_107_5_code:  ; opt1
 ;      [20:17] exit(1)
