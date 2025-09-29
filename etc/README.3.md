@@ -2,4 +2,4 @@
 
 ## Generates
 
-```text
+```nasm
