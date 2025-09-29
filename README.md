@@ -28,7 +28,7 @@ run `prog.baz`
 
 ## Source
 
-```clike
+```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
 C/C++ Header                    35            792            550           4271
@@ -40,7 +40,7 @@ SUM:                            36            843            614           4656
 
 ## Sample
 
-```text
+```clike
 field   hello = "hello world from baz\n"
 field   input = "............................................................"
 field prompt1 = "enter name:\n"
