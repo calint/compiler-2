@@ -1202,17 +1202,24 @@ class toc final {
         size_t i{frames_.size()};
         while (i) {
             i--;
+            const frame& frm{frames_.at(i)};
+            // does scope contain the variable?
+            if (frm.has_var(id_base)) {
+                // yes, found
+                break;
+            }
             // is the frame a function?
-            if (frames_.at(i).is_func()) {
-                // is it an alias defined by an argument in the function?
-                if (not frames_.at(i).has_alias(id_base)) {
+            if (frm.is_func()) {
+                // is it an alias defined by the function?
+                if (not frm.has_alias(id_base)) {
                     // no, it is not
                     break;
                 }
                 // yes, continue resolving alias until it is a variable, field,
                 // register or constant
-                const identifier new_id{frames_.at(i).get_alias(id_base)};
+                const identifier new_id{frm.get_alias(id_base)};
                 id_base = new_id.id_base();
+                // is this a path e.g. 'pt.x' or just 'res'?
                 if (id.path().size() == 1) {
                     // this is an alias of type: res -> p.x
                     id = new_id;
@@ -1222,15 +1229,12 @@ class toc final {
                 }
                 continue;
             }
-            // does scope contain the variable
-            if (frames_.at(i).has_var(id_base)) {
-                break;
-            }
         }
 
+        const frame& frm{frames_.at(i)};
         // is it a variable?
-        if (frames_.at(i).has_var(id_base)) {
-            const var_info& var{frames_.at(i).get_var_const_ref(id_base)};
+        if (frm.has_var(id_base)) {
+            const var_info& var{frm.get_var_const_ref(id_base)};
             if (must_be_initiated and not var.initiated) {
                 throw compiler_exception(src_loc, "variable '" + var.name +
                                                       "' is not initiated");
