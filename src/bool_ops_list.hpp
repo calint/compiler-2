@@ -13,6 +13,7 @@ class bool_ops_list final : public statement {
     std::vector<token> ops_; // 'and' or 'or' ops between element in 'bools_'
     bool enclosed_{};        // e.g. (a==b and c==d) vs a==b and c==d
     token not_token_;        // e.g. not (a==b and c==d)
+    token ws1_;              // whitespace after parenthesis
 
   public:
     bool_ops_list(toc& tc, token tk, tokenizer& tz, const bool enclosed = false,
@@ -49,11 +50,12 @@ class bool_ops_list final : public statement {
                 //      a == 1 and b == 1
                 // 'not_tk' not keyword 'not', put it back in the stream
                 tz.put_back_token(not_tk);
+                token ws = tz.next_whitespace_token();
                 token pos_tk = tz.current_position_token();
                 if (tz.is_next_char('(')) {
                     // e.g. (a == 1 and b == 1)
-                    bools_.emplace_back(
-                        bool_ops_list{tc, std::move(pos_tk), tz, true});
+                    bools_.emplace_back(bool_ops_list{tc, std::move(pos_tk), tz,
+                                                      true, std::move(ws)});
                 } else {
                     // e.g. a == 1 and b == 1
                     bools_.emplace_back(bool_op{tc, tz});
@@ -62,6 +64,7 @@ class bool_ops_list final : public statement {
 
             // end of '(...)' enclosed expression?
             if (enclosed_ and tz.is_next_char(')')) {
+                ws1_ = tz.next_whitespace_token();
                 // yes, done
                 return;
             }
@@ -118,6 +121,7 @@ class bool_ops_list final : public statement {
         }
         if (enclosed_) {
             os << ")";
+            ws1_.source_to(os);
         }
     }
 

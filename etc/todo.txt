@@ -1,4 +1,4 @@
-[ ] bool_ops_list: there can be no spaces between ( () )
+[x] bool_ops_list: there can be no spaces between ( () )
 [ ] tokenizer to keep track of line-number instead of computing it
 [ ] consider refactoring to 1 pass compiler making compiling in constructor
     constructor(os data,os code,indent)
