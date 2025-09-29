@@ -1,4 +1,9 @@
+[ ] consider refactoring to 1 pass compiler making compiling in constructor
+    constructor(os data,os code,indent)
 [x] toc: review the is_variable_initiated and set_variable_initiated
+        case '<': // shift left
+        case '>': // shift right
+            return 4;
     regarding registers (get_id_and_frame_for_identifier is dubious)
 [ ] tokenizer, token etc to std::string_view
 [ ] tokenizer: handle string with escaped " 

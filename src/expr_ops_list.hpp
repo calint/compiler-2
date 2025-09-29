@@ -7,7 +7,8 @@
 #include "expression.hpp"
 #include "toc.hpp"
 
-// a list of elements / lists connected by operators
+// a list of elements / lists connected by operators instead of true
+// quirky 1'st pass with trivial second pass compilation
 class expr_ops_list final : public expression {
     bool enclosed_{};                               //  (a+b) vs a+b
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
