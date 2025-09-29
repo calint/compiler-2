@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <algorithm>
+#include <ranges>
 
 #include "expr_any.hpp"
 #include "stmt_def_func.hpp"
@@ -293,9 +294,8 @@ class stmt_call : public expression {
         }
 
         // free allocated registers in reverse order of allocation
-        for (auto it{allocated_registers_in_order.rbegin()};
-             it != allocated_registers_in_order.rend(); ++it) {
-            const std::string& reg{*it};
+        for (const auto& reg :
+             allocated_registers_in_order | std::views::reverse) {
             if (std::ranges::find(allocated_scratch_registers, reg) !=
                 allocated_scratch_registers.end()) {
                 tc.free_scratch_register(os, indent + 1, reg);

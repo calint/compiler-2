@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <ostream>
+#include <ranges>
 
 #include "expr_ops_list.hpp"
 
@@ -384,9 +385,7 @@ class bool_op final : public statement {
         tc.asm_cmd(tok(), os, indent, "cmp", dst, src);
 
         // free allocated registers in reverse order
-        for (auto it{allocated_registers.rbegin()};
-             it != allocated_registers.rend(); ++it) {
-            const std::string& reg{*it};
+        for (const auto& reg : allocated_registers | std::views::reverse) {
             tc.free_scratch_register(os, indent, reg);
         }
     }
@@ -401,9 +400,7 @@ class bool_op final : public statement {
         tc.asm_cmd(tok(), os, indent, "cmp", dst, "0");
 
         // free allocated registers in reverse order
-        for (auto it{allocated_registers.rbegin()};
-             it != allocated_registers.rend(); ++it) {
-            const std::string& reg{*it};
+        for (const auto& reg : allocated_registers | std::views::reverse) {
             tc.free_scratch_register(os, indent, reg);
         }
     }

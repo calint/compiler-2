@@ -4,6 +4,7 @@
 #include "compiler_exception.hpp"
 #include "stmt_block.hpp"
 #include "stmt_def_func_param.hpp"
+#include <ranges>
 
 class stmt_def_func final : public statement {
     token name_tk_;
@@ -204,8 +205,8 @@ class stmt_def_func final : public statement {
         -> void {
 
         // free allocated named register in reverse order
-        for (auto reg{registers.rbegin()}; reg != registers.rend(); ++reg) {
-            tc.free_named_register(os, indent + 1, *reg);
+        for (const auto& reg : registers | std::views::reverse) {
+            tc.free_named_register(os, indent + 1, reg);
         }
     }
 };
