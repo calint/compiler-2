@@ -5,8 +5,6 @@
 #      nasm: 2.16.03
 #        ld: 2.43
 set -e
-
-# change to directory of the script
 cd $(dirname "$0")
 
 # set environment
