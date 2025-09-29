@@ -3,7 +3,7 @@
     => don't allow mixing of 'or's and 'and's without parenthesis greatly
        reduces the complexity. (same like in C++)
 [x] var w : bool = (x + y <= z) and (not (z == 4) or (x == 1 and y == 3))
-[x] bool_ops_list: there can be no spaces between ( () )
+[ ] bool_ops_list: there can be no spaces between ( () )
     var u : bool = not ( (false or true) and not (true and false) ) or (x > 10)
                  => false
 [x] bool_ops_list:
