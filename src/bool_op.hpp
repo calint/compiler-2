@@ -26,11 +26,10 @@ class bool_op final : public statement {
 
   public:
     bool_op(toc& tc, tokenizer& tz) : statement{tz.next_whitespace_token()} {
-
         set_type(tc.get_type_bool());
 
         bool is_not{};
-        // if not a == 3 ...
+        // e.g. if not a == 3 ...
         while (true) {
             token tk{tz.next_token()};
             if (not tk.is_name("not")) {
@@ -67,11 +66,12 @@ class bool_op final : public statement {
                 op_ = ">";
             }
         } else {
-            // if a ...
+            // e.g. if a ...
             is_shorthand_ = true;
             resolve_if_op_is_expression();
             return;
         }
+
         rhs_ = {tc, tz};
         resolve_if_op_is_expression();
     }
@@ -86,17 +86,15 @@ class bool_op final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-
         for (const token& e : nots_) {
             e.source_to(os);
         }
-
         lhs_.source_to(os);
-
-        if (not is_shorthand_) {
-            os << op_;
-            rhs_.source_to(os);
+        if (is_shorthand_) {
+            return;
         }
+        os << op_;
+        rhs_.source_to(os);
     }
 
     [[noreturn]] auto
@@ -107,18 +105,21 @@ class bool_op final : public statement {
         throw panic_exception("unexpected code path bool_op:1");
     }
 
+    // returns an optional bool and if defined the expression evaluated to the
+    // value of the optional
     auto compile_or(toc& tc, std::ostream& os, size_t indent,
                     const std::string& jmp_to_if_true,
                     const bool inverted) const -> std::optional<bool> {
+
         const bool invert{inverted ? not is_not_ : is_not_};
         toc::indent(os, indent, true);
         tc.comment_source(os, "?", inverted ? " 'or' inverted: " : " ", *this);
         toc::asm_label(tok(), os, indent, cmp_bgn_label(tc));
         if (is_shorthand_) {
-            // check case when operand is constant
+            // is 'lhs' a constant?
             if (not lhs_.is_expression()) {
-                // left-hand-side is not a expression, either a constant or an
-                // identifier
+                // yes, left-hand-side is not a expression, either a constant or
+                // an identifier
                 const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
                 if (lhs_info.is_const()) {
                     bool const_eval{lhs_.get_unary_ops().evaluate_constant(
@@ -138,6 +139,8 @@ class bool_op final : public statement {
                     return const_eval;
                 }
             }
+
+            // 'lhs' is an expression
             resolve_cmp_shorthand(tc, os, indent, lhs_);
             toc::indent(os, indent);
             os << (not invert ? asm_jxx_for_op_inv("==")
@@ -145,6 +148,9 @@ class bool_op final : public statement {
             os << " " << jmp_to_if_true << '\n';
             return std::nullopt;
         }
+
+        // not shorthand boolean expression
+
         // check case when both operands are constants
         if (not lhs_.is_expression() and not rhs_.is_expression()) {
             const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
@@ -275,7 +281,9 @@ class bool_op final : public statement {
 
   private:
     auto resolve_if_op_is_expression() -> void {
+        // is it a negated expression?
         if (is_not_) {
+            // yes, then it is an expression
             is_expression_ = true;
             return;
         }
@@ -291,14 +299,17 @@ class bool_op final : public statement {
             return;
         }
 
-        // if not expression then it is a single statement
-        //   and identifier is valid
+        // if not expression then it is a single statement and identifier is
+        // valid
         const std::string& id{lhs_.identifier()};
+        // is it a boolean value?
         if (id == "true" or id == "false") {
+            // yes, not an expression
             is_expression_ = false;
             return;
         }
 
+        // not a boolean value thus a variable
         is_expression_ = true;
     }
 
@@ -350,6 +361,7 @@ class bool_op final : public statement {
 
     static auto asm_jxx_for_op_inv(const std::string& op)
         -> const std::string& {
+
         if (op == "==") {
             return asm_jne;
         }
@@ -392,14 +404,11 @@ class bool_op final : public statement {
 
     auto resolve_cmp_shorthand(toc& tc, std::ostream& os, size_t indent,
                                const expr_ops_list& lhs) const -> void {
-        std::vector<std::string> allocated_registers;
 
+        std::vector<std::string> allocated_registers;
         const std::string& dst{
             resolve_expr(tc, os, indent, lhs, allocated_registers)};
-
-        tc.asm_cmd(tok(), os, indent, "cmp", dst, "0");
-
-        // free allocated registers in reverse order
+        tc.asm_cmd(tok(), os, indent, "cmp", dst, "false");
         for (const auto& reg : allocated_registers | std::views::reverse) {
             tc.free_scratch_register(os, indent, reg);
         }
