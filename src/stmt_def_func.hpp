@@ -176,9 +176,7 @@ class stmt_def_func final : public statement {
         }
 
         // functions get arguments as aliases
-        const size_t n{params_.size()};
-        for (size_t i{}; i < n; i++) {
-            const stmt_def_func_param& param{params_.at(i)};
+        for (const stmt_def_func_param& param : params_) {
             const type& param_type{param.get_type()};
             const std::string& param_name{param.name()};
             const std::string& param_reg{param.get_register_name_or_empty()};
