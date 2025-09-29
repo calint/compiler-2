@@ -214,12 +214,6 @@ class bool_ops_list final : public statement {
         throw panic_exception("unexpected code path bool_ops_list:1");
     }
 
-    [[nodiscard]] auto cmp_bgn_label(const toc& tc) const -> std::string {
-        const std::string& call_path{tc.get_call_path(tok())};
-        return "cmp_" + tc.source_location_for_use_in_label(tok()) +
-               (call_path.empty() ? "" : "_" + call_path);
-    }
-
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const std::string& jmp_to_if_false,
                  const std::string& jmp_to_if_true, const bool inverted) const
@@ -416,6 +410,12 @@ class bool_ops_list final : public statement {
     }
 
   private:
+    [[nodiscard]] auto cmp_bgn_label(const toc& tc) const -> std::string {
+        const std::string& call_path{tc.get_call_path(tok())};
+        return "cmp_" + tc.source_location_for_use_in_label(tok()) +
+               (call_path.empty() ? "" : "_" + call_path);
+    }
+
     static auto cmp_label_from(const toc& tc,
                                const std::variant<bool_op, bool_ops_list>& var)
         -> std::string {
