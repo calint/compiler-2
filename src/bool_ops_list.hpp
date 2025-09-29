@@ -1,12 +1,13 @@
 #pragma once
+// reviewed: 2025-09-29
 
 #include <variant>
 
 #include "bool_op.hpp"
 #include "statement.hpp"
 
-// list of boolean expressions / list instead of true
-// note: quirky parsing but supports short-circuiting
+// list of boolean expressions / list instead of tree
+// note: quirky parsing and compiling but supports short-circuiting
 class bool_ops_list final : public statement {
     std::vector<std::variant<bool_op, bool_ops_list>> bools_;
     std::vector<token> ops_; // 'and' or 'or' ops between element in 'bools_'
@@ -269,27 +270,33 @@ class bool_ops_list final : public statement {
                         // if not last element check if it is a 'or' or 'and'
                         // list
                         if (ops_.at(i).is_name("and")) {
-                            // if evaluation is false and next op is "or"
-                            // (inverted) then jump_false is next bool eval
+                            // 'and' list inverted
+                            // if evaluation is false and next op is 'or'
+                            // (inverted from 'and') then 'jump_false' is next
+                            // bool eval
                             jmp_false = cmp_label_from(tc, bools_.at(i + 1));
                         } else if (ops_.at(i).is_name("or")) {
-                            // if evaluation is true and next op is "and"
-                            // (inverted) then jump_true is next bool eval
+                            // 'or' list inverted
+                            // if evaluation is true and next op is 'and'
+                            // (inverted from 'or') then 'jump_true' is next
+                            // bool eval
                             jmp_true = cmp_label_from(tc, bools_.at(i + 1));
                         } else {
                             throw panic_exception("expected 'or' or 'and' 2");
                         }
+
                         std::optional<bool> const_eval{el.compile(
                             tc, os, indent, jmp_false, jmp_true, invert)};
+                        // did expression evaluate to a constant?
                         if (const_eval) {
-                            // expression evaluated to a constant
+                            // yes, short-circuit
 
-                            // if false and in an 'and' (inverted 'or') list
+                            // if 'false' and in an 'and' (inverted 'or') list
                             // short-circuit and return evaluation
                             if (not *const_eval and ops_.at(i).is_name("or")) {
                                 return *const_eval;
                             }
-                            // if true and in an 'or' (inverted 'and') list
+                            // if 'true' and in an 'or' (inverted 'and') list
                             // short-circuit and return evaluation
                             if (*const_eval and ops_.at(i).is_name("and")) {
                                 return *const_eval;
@@ -297,12 +304,13 @@ class bool_ops_list final : public statement {
                         }
                     }
                 } else {
-                    // if last in list jmp_false is next bool eval
+                    // last bool operation in list
+                    // 'jmp_false' is next bool eval
                     std::optional<bool> const_eval{el.compile(
                         tc, os, indent, jmp_false, jmp_true, invert)};
+                    // did expression evaluate to a constant?
                     if (const_eval) {
-                        // if evaluated to a constant then that is the final
-                        // evaluation of this expression
+                        // yes, return it
                         return *const_eval;
                     }
                 }
@@ -316,6 +324,7 @@ class bool_ops_list final : public statement {
                 // a == 1 and b == 2   vs   a == 1 or b == 2
                 const bool_op& e{get<bool_op>(bools_.at(i))};
                 if (i < n - 1) {
+                    // not last element
                     if (ops_.at(i).is_name("or")) {
                         std::optional<bool> const_eval{e.compile_or(
                             tc, os, indent, jmp_to_if_true, invert)};
@@ -334,13 +343,13 @@ class bool_ops_list final : public statement {
                         throw panic_exception("expected 'or' or 'and' 3");
                     }
                 } else {
+                    // last element
                     std::optional<bool> const_eval{
                         e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
-                    if (const_eval) { // constant evaluated
+                    if (const_eval) {
                         return *const_eval;
                     }
-                    // if last element and not yet jumped to false then jump to
-                    // true
+                    // if not yet jumped to false then jump to true
                     toc::asm_jmp(tok(), os, indent, jmp_to_if_true);
                 }
             } else {
@@ -348,6 +357,7 @@ class bool_ops_list final : public statement {
                 // a=1 and b=2   vs   a=1 or b=2
                 const bool_op& e{get<bool_op>(bools_.at(i))};
                 if (i < n - 1) {
+                    // not last element
                     if (ops_.at(i).is_name("and")) {
                         std::optional<bool> const_eval{e.compile_or(
                             tc, os, indent, jmp_to_if_true, invert)};
@@ -366,13 +376,13 @@ class bool_ops_list final : public statement {
                         throw panic_exception("expected 'or' or 'and' 4");
                     }
                 } else {
+                    // last element
                     std::optional<bool> const_eval{
                         e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
-                    if (const_eval) { // constant evaluated
+                    if (const_eval) {
                         return *const_eval;
                     }
-                    // if last element and not yet jumped to false then jump to
-                    // true
+                    // if not yet jumped to false then jump to true
                     toc::asm_jmp(tok(), os, indent, jmp_to_if_true);
                 }
             }
@@ -382,12 +392,15 @@ class bool_ops_list final : public statement {
 
     //? assumes it is not an expression
     [[nodiscard]] auto is_expression() const -> bool override {
+        // is there more than 1 bool in the list
         if (bools_.size() > 1) {
+            // yes, it is expression
             return true;
         }
 
         assert(!bools_.empty());
 
+        // 1 expression in the list
         if (bools_.at(0).index() == 0) {
             return get<bool_op>(bools_.at(0)).is_expression();
         }
