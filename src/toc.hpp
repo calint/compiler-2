@@ -1164,7 +1164,6 @@ class toc final {
                 if (is_identifier_register(id_base) or fields_.has(id_base)) {
                     return {std::move(id_base), frames_.at(i)};
                 }
-                continue;
             }
         }
         return {"", frames_.at(0)};
