@@ -7,11 +7,12 @@
 #include "expression.hpp"
 #include "toc.hpp"
 
+// a list of elements / lists connected by operators
 class expr_ops_list final : public expression {
-    bool enclosed_{}; //  (a+b) vs a+b
-    std::vector<std::unique_ptr<statement>> exprs_;
-    std::vector<char> ops_;
-    unary_ops uops_; // e.g. ~(a+b)
+    bool enclosed_{};                               //  (a+b) vs a+b
+    std::vector<std::unique_ptr<statement>> exprs_; // expression list
+    std::vector<char> ops_; // operators between elements of the vector
+    unary_ops uops_;        // unary ops e.g. ~(a+b)
 
   public:
     expr_ops_list(toc& tc, tokenizer& tz, const bool in_args = false,
@@ -27,8 +28,8 @@ class expr_ops_list final : public expression {
             // called in a recursion with first expression provided
             exprs_.emplace_back(std::move(first_expression));
         } else {
-            // check if new recursion is necessary e.g. =-a/-(-(b+c)+d), tz at
-            // "-a/-("
+            // check if new recursion is necessary
+            // e.g. =-a/-(-(b+c)+d), tz at "-a/-("
             const unary_ops uo{tz};
             if (tz.is_next_char('(')) {
                 // recursion of sub-expression with unary ops
@@ -93,15 +94,15 @@ class expr_ops_list final : public expression {
             }
 
             // check if next operation precedence is same or lower
-            // if not then a subexpression is added to the list with the last
+            // if not then a sub-expression is added to the list with the last
             // expression in this list being first expression in the
-            // subexpression
+            // sub-expression
             const char next_precedence{precedence_for_op(ops_.back())};
             if (next_precedence > precedence) {
                 // e.g. =a+b*c+1 where the peeked char is '*'
                 // next operation has higher precedence than current
                 // list is now =[(=a)(+b)]
-                // move last expression (+b) to subexpression
+                // move last expression (+b) to sub-expression
                 //   =[(=a) +[(=b)(*c)(+1)]]
                 precedence = next_precedence;
                 ops_.pop_back();
@@ -126,16 +127,16 @@ class expr_ops_list final : public expression {
                 }
             }
 
-            // check if next statement is a subexpression
+            // check if next statement is a sub-expression
             const unary_ops uo{tz};
             if (tz.is_next_char('(')) {
-                // subexpression, recurse
+                // sub-expression, recurse
                 exprs_.emplace_back(
                     std::make_unique<expr_ops_list>(tc, tz, in_args, true, uo));
                 continue;
             }
 
-            // not subexpression
+            // not sub-expression
             uo.put_back(tz);
 
             // read statement
@@ -226,7 +227,6 @@ class expr_ops_list final : public expression {
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
-
         if (exprs_.size() == 1) { //? why the unary ops of first expression
             return exprs_.at(0)->get_unary_ops();
         }
@@ -241,20 +241,24 @@ class expr_ops_list final : public expression {
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
+        // if unary operators then it will need to compile expression
         if (not uops_.is_empty()) {
             return true;
         }
 
+        // if only 1 element then it decides if it is an expression
         if (exprs_.size() == 1) {
             return exprs_.at(0)->is_expression();
         }
 
+        // more than 1 element, automatically an expression
         return true;
     }
 
   private:
     auto do_compile(toc& tc, std::ostream& os, const size_t indent,
                     const ident_info& dst_info) const -> void {
+
         tc.comment_source(*this, os, indent);
 
         // first element is assigned to destination
@@ -286,6 +290,7 @@ class expr_ops_list final : public expression {
     // higher than the highest precedence
     static constexpr char initial_precedence{7};
 
+    // higher value higher precedence
     static auto precedence_for_op(const char ch) -> char {
         switch (ch) {
         case '|':
@@ -294,16 +299,15 @@ class expr_ops_list final : public expression {
             return 2;
         case '&':
             return 3;
-        case '<': // shift left (note. consider having different precedence than
-                  // C)
-        case '>': // shift right(      with << and >> being atleast * / % )
-            return 4;
         case '+':
         case '-':
-            return 5;
+            return 4;
         case '*':
         case '/':
         case '%':
+            return 5;
+        case '<': // shift left
+        case '>': // shift right
             return 6;
         default:
             throw panic_exception("unexpected code path expr_ops_list:1");
@@ -320,6 +324,7 @@ class expr_ops_list final : public expression {
         } else if (op == '>') {
             op_str.push_back('>');
         }
+
         tc.comment_source(os, dst.id, op_str, src);
 
         if (op == '=') {
@@ -370,10 +375,12 @@ class expr_ops_list final : public expression {
 
     static void asm_op_mov(toc& tc, std::ostream& os, const size_t indent,
                            const ident_info& dst, const statement& src) {
+
         if (src.is_expression()) {
             src.compile(tc, os, indent, dst.id);
             return;
         }
+
         const ident_info& src_info{tc.make_ident_info(src, true)};
         if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm,
@@ -386,6 +393,7 @@ class expr_ops_list final : public expression {
 
     static void asm_op_mul(toc& tc, std::ostream& os, const size_t indent,
                            const ident_info& dst, const statement& src) {
+
         if (src.is_expression()) {
             const std::string& reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
