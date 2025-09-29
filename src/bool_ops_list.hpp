@@ -173,7 +173,7 @@ class bool_ops_list final : public statement {
             ops_.emplace_back(std::move(op_tk));
         }
         if (enclosed_) {
-            throw compiler_exception(tok(), "expected ')' to close expression");
+            throw compiler_exception{tz, "expected ')' to close expression"};
         }
     }
 
@@ -236,15 +236,17 @@ class bool_ops_list final : public statement {
                 std::string jmp_true{jmp_to_if_true};
                 if (i < n - 1) {
                     if (!invert) {
-                        // if not last element check if it is a 'or' or 'and'
-                        // list
+                        // if not last element check if it is a 'or' or
+                        // 'and' list
                         if (ops_.at(i).is_name("or")) {
-                            // if evaluation is false and next op is 'or' then
-                            // 'jump_false' goes to next bool op in the list
+                            // if evaluation is false and next op is 'or'
+                            // then 'jump_false' goes to next bool op in the
+                            // list
                             jmp_false = cmp_label_from(tc, bools_.at(i + 1));
                         } else if (ops_.at(i).is_name("and")) {
-                            // if evaluation is true and next op is 'and' then
-                            // 'jump_true' goes to next bool op in the list
+                            // if evaluation is true and next op is 'and'
+                            // then 'jump_true' goes to next bool op in the
+                            // list
                             jmp_true = cmp_label_from(tc, bools_.at(i + 1));
                         } else {
                             throw panic_exception("expected 'or' or 'and' 1");
@@ -254,8 +256,8 @@ class bool_ops_list final : public statement {
                         if (const_eval) {
                             // expression evaluated to a constant
 
-                            // if false and in an 'and' list short-circuit and
-                            // return evaluation
+                            // if false and in an 'and' list short-circuit
+                            // and return evaluation
                             if (not *const_eval and ops_.at(i).is_name("and")) {
                                 return *const_eval;
                             }
@@ -267,13 +269,13 @@ class bool_ops_list final : public statement {
                         }
                     } else {
                         // invert according to De Morgan's laws
-                        // if not last element check if it is a 'or' or 'and'
-                        // list
+                        // if not last element check if it is a 'or' or
+                        // 'and' list
                         if (ops_.at(i).is_name("and")) {
                             // 'and' list inverted
                             // if evaluation is false and next op is 'or'
-                            // (inverted from 'and') then 'jump_false' is next
-                            // bool op in the list
+                            // (inverted from 'and') then 'jump_false' is
+                            // next bool op in the list
                             jmp_false = cmp_label_from(tc, bools_.at(i + 1));
                         } else if (ops_.at(i).is_name("or")) {
                             // 'or' list inverted
@@ -291,13 +293,13 @@ class bool_ops_list final : public statement {
                         if (const_eval) {
                             // yes, short-circuit
 
-                            // if 'false' and in an 'and' (inverted 'or') list
-                            // short-circuit and return evaluation
+                            // if 'false' and in an 'and' (inverted 'or')
+                            // list short-circuit and return evaluation
                             if (not *const_eval and ops_.at(i).is_name("or")) {
                                 return *const_eval;
                             }
-                            // if 'true' and in an 'or' (inverted 'and') list
-                            // short-circuit and return evaluation
+                            // if 'true' and in an 'or' (inverted 'and')
+                            // list short-circuit and return evaluation
                             if (*const_eval and ops_.at(i).is_name("and")) {
                                 return *const_eval;
                             }

@@ -27,6 +27,15 @@ func main(){
     var m : bool = not true == true or not false == false
     var n : bool = not true == false or not false == false
     var o : bool = true
+    var p : bool = ((x < y and y <= z) or (z > x and not (y == x))) and (x != z or y == 3)
+    var q : bool = not (not (x == 1) or not (y != 3)) and not (z > 5 and x < 0)
+    var r : bool = not ((x == 1 and y == 3 and z == 4) or (x != 1 or y != 3 or z != 4))
+    var s : bool = (x < 0) or (y == 3) and (z > 1) or (x != 1) and (y < z)
+ #   var t : bool = not ((x == 1) == not (y != 3)) or (z == 4)
+    var u : bool = not ((false or true) and not (true and false)) or (x > 10)
+    var v : bool = (not (x != 1) or not (y < 0)) and (z == 4)
+ #   var w : bool = (x + y <= z)  and (not (z == 4) or (x == 1 and y == 3))
+    var pp : bool = not (x == 1 or y != 3 and z == 4) or (x > 5 and y < 0)
 
     assert(a)
     assert(not b)
@@ -43,4 +52,13 @@ func main(){
     assert(not m)
     assert(n)
     assert(o)
+    assert(p)
+    assert(not q)
+    assert(not r)
+    assert(s)
+ #   assert(t)
+    assert(not u)
+    assert(v)
+#    assert(w)
+    assert(not pp)
 }

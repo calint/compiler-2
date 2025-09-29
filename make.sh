@@ -17,8 +17,8 @@ CW="-Weverything -Wno-c++98-compat -Wno-pre-c++20-compat-pedantic -Wno-weak-vtab
 CF="-Wfatal-errors -Werror"
 MSAN=
 PROF=
-#DBG=-g
-OPT=-O3
+DBG=-g
+#OPT=-O3
 if [ "$1" = "msan" ]; then
   MSAN="-fsanitize=memory,undefined -fsanitize-memory-track-origins=2"
   DBG=-g
