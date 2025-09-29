@@ -1107,15 +1107,14 @@ class toc final {
     static auto indent(std::ostream& os, const size_t indnt,
                        const bool comment = false) -> void {
 
+        if (comment) {
+            os << ';';
+        }
         if (indnt == 0) {
-            if (comment) {
-                os << ";";
-            }
             return;
         }
-        os << (comment ? ";" : " ");
         for (size_t i{}; i < indnt; i++) {
-            os << "  ";
+            os << "    ";
         }
     }
 

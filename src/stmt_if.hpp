@@ -124,7 +124,7 @@ class stmt_if final : public statement {
         if (not branch_evaluated_to_true) {
             if (not else_code_.is_empty()) {
                 toc::asm_label(tok(), os, indent, label_else_branch);
-                else_code_.compile(tc, os, indent + 1);
+                else_code_.compile(tc, os, indent);
             }
         }
 

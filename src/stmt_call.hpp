@@ -146,9 +146,6 @@ class stmt_call : public expression {
             }
         }
 
-        toc::indent(os, indent, true);
-        func.source_def_comment_to(os);
-
         // create unique labels for in-lined functions based on location of
         // source where the call occurred
         const std::string& call_path{tc.get_call_path(tok())};
@@ -157,6 +154,13 @@ class stmt_call : public expression {
             call_path.empty() ? src_loc : (src_loc + "_" + call_path)};
         const std::string& ret_jmp_label{func_name + "_" + new_call_path +
                                          "_end"};
+
+        toc::indent(os, indent, true);
+        func.source_def_comment_to(os);
+
+        // note: not necessary but makes reading the generated code without
+        // comments easier
+        toc::asm_label(tok(), os, indent, func_name + "_" + new_call_path);
 
         toc::indent(os, indent + 1, true);
         os << "inline: " << new_call_path << '\n';

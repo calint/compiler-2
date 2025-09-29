@@ -48,6 +48,7 @@ type object {pos : point, color : i32}
 func foo(pt : point) {
     pt.x = 0b10    # binary value 2
     pt.y = 0xb     # hex value 11
+    assert(pt.x == 0b10)
 }
 
 # default argument type is `i64`

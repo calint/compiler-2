@@ -109,13 +109,14 @@ class program final {
 
         // get the main function and compile
         const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
+        os << "main:\n"; // note: not necessary
         tc.enter_func("main");
         func_main.code().compile(tc, os, indent);
         tc.exit_func("main");
-        os << "; system call: exit 0\n";
-        os << "mov rax, 60\n";
-        os << "mov rdi, 0\n";
-        os << "syscall\n";
+        os << "    ; system call: exit 0\n";
+        os << "    mov rax, 60\n";
+        os << "    mov rdi, 0\n";
+        os << "    syscall\n";
     }
 
     auto build(std::ostream& os) -> void {

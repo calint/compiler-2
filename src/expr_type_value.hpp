@@ -26,8 +26,8 @@ class expr_type_value final : public statement {
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  const std::string& dst) const -> void override {
 
-        expr_type_value::compile_recursive(*this, tc, os, indent + 1,
-                                           tok().name(), dst, get_type());
+        expr_type_value::compile_recursive(*this, tc, os, indent, tok().name(),
+                                           dst, get_type());
     }
 
     // implemented in 'main.cpp' due to circular reference:
