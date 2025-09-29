@@ -5,6 +5,7 @@ field prompt2 = "that is not a name.\n"
 field prompt3 = "hello "
 field     dot = "."
 field      nl = "\n"
+field counter = 0
 
 # all functions are inlined
 
@@ -13,6 +14,10 @@ func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
     syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
 }
 
 func print(len : reg_rdx, ptr : reg_rsi) {
@@ -30,10 +35,6 @@ func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(rdx, len) # buffer size
     syscall()
     mov(nbytes, rax) # return value
-}
-
-func assert(expr : bool) {
-    if not expr exit(1)
 }
 
 # user types are defined using keyword `type`
@@ -101,6 +102,9 @@ func main() {
     assert(o2.pos.x == -1)
     assert(o2.pos.y == -2)
     assert(o2.color == 0xff0000)
+
+    counter = counter + 1
+    assert(counter == 1)
 
     print(hello.len, hello)
     loop {
