@@ -1143,6 +1143,12 @@ class toc final {
                 // register or constant
                 id = identifier{frames_.at(i).get_alias(id_base)};
                 id_base = id.id_base();
+                // note: when compiling in 'dry-run' at 'stmt_def_func' the
+                //       return variable is in the frame of the function as a
+                //       variable, however when compiling the 'stmt_call' the
+                //       return is added as an alias to a variable in a higher
+                //       context , thus aliases are followed to find the
+                //       variable
                 continue;
             }
             // does scope contain the variable
