@@ -173,13 +173,10 @@ class identifier final {
 
   public:
     explicit identifier(std::string id) : id_{std::move(id)} {
-        size_t start{};
-        size_t end{};
-        while ((end = id_.find('.', start)) != std::string::npos) {
-            path_.emplace_back(id_.substr(start, end - start));
-            start = end + 1;
+        auto parts = id_ | std::views::split('.');
+        for (auto part : parts) {
+            path_.emplace_back(part.begin(), part.end());
         }
-        path_.emplace_back(id_.substr(start));
     }
 
     ~identifier() = default;
