@@ -1,4 +1,4 @@
-[ ] toc: review the is_variable_initiated and set_variable_initiated
+[x] toc: review the is_variable_initiated and set_variable_initiated
     regarding registers (get_id_and_frame_for_identifier is dubious)
 [ ] tokenizer, token etc to std::string_view
 [ ] tokenizer: handle string with escaped " 

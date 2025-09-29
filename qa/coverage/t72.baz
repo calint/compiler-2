@@ -1,0 +1,21 @@
+field    count = 1
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+func foo(i) {
+    i = 0xfe5e + 1
+}
+
+func main() {
+    assert(count == 1)
+    foo(count)
+    assert(count == 0xfe5f)
+}

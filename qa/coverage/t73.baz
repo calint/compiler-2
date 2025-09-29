@@ -1,0 +1,17 @@
+field    count = 1
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func foo(i) {
+    exit(i)
+}
+
+func main() {
+    if true {
+       foo(5)
+    }
+}

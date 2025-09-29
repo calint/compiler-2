@@ -469,7 +469,7 @@ class toc final {
 
         // check if variable shadows previously declared variable
         const auto [id, frm]{get_id_and_frame_for_identifier(name)};
-        if (frm.has_var(id)) {
+        if (not id.empty()) {
             const var_info& var{frm.get_var_const_ref(id)};
             throw compiler_exception(
                 src_loc_tk, "variable '" + name +
@@ -783,19 +783,19 @@ class toc final {
     }
 
     auto set_var_is_initiated(const std::string& name) -> void {
+        if (fields_.has(name) or is_identifier_register(name)) {
+            return;
+        }
+
         const identifier ident{name};
         const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
 
-        if (frm.has_var(id)) {
+        if (not id.empty()) {
+            if (is_identifier_register(id) or fields_.has(id)) {
+                return;
+            }
+            // is a variable
             frm.get_var_ref(id).initiated = true;
-            return;
-        }
-
-        if (fields_.has(id)) {
-            return;
-        }
-
-        if (is_identifier_register(id)) {
             return;
         }
 
@@ -806,7 +806,11 @@ class toc final {
         const identifier ident{name};
         const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
 
-        if (frm.has_var(id)) {
+        if (not id.empty()) {
+            if (is_identifier_register(id) or fields_.has(id)) {
+                return true;
+            }
+            // is a variable
             return frm.get_var_const_ref(id).initiated;
         }
 
@@ -1122,41 +1126,48 @@ class toc final {
     }
 
   private:
+    // returns empty id and frame[0] if 'ident' not found
     auto get_id_and_frame_for_identifier(const std::string& ident)
         -> std::pair<std::string, frame&> {
 
         identifier id{ident};
         std::string id_base{id.id_base()};
-        // traverse the frames and resolve the id_nasm (which might be an alias)
-        // to a variable, field, register or constant
+
+        // traverse the frames and try to find the identifier
         size_t i{frames_.size()};
         while (i) {
             i--;
+            // does scope contain the variable?
+            if (frames_.at(i).has_var(id_base)) {
+                // yes, return result
+                return {std::move(id_base), frames_.at(i)};
+            }
             // is the frame a function?
             if (frames_.at(i).is_func()) {
-                // is it an alias defined by an argument in the function?
+                // is identifier an alias?
                 if (not frames_.at(i).has_alias(id_base)) {
                     // no, done within the context of this function
                     break;
                 }
-                // yes, continue resolving alias until it is a variable, field,
-                // register or constant
-                id = identifier{frames_.at(i).get_alias(id_base)};
-                id_base = id.id_base();
+                // yes, continue resolving alias until it is a variable, field
+                // or register
+
                 // note: when compiling in 'dry-run' at 'stmt_def_func' the
                 //       return variable is in the frame of the function as a
-                //       variable, however when compiling the 'stmt_call' the
-                //       return is added as an alias to a variable in a higher
-                //       context , thus aliases are followed to find the
-                //       variable
+                //       variable, however when compiling the 'stmt_call' and
+                //       the function is inlined the return is added as an alias
+                //       to a variable in a higher context , thus aliases are
+                //       followed to find the variable
+
+                id = identifier{frames_.at(i).get_alias(id_base)};
+                id_base = id.id_base();
+                if (is_identifier_register(id_base) or fields_.has(id_base)) {
+                    return {std::move(id_base), frames_.at(i)};
+                }
                 continue;
             }
-            // does scope contain the variable
-            if (frames_.at(i).has_var(id_base)) {
-                break;
-            }
         }
-        return {std::move(id_base), frames_.at(i)};
+        return {"", frames_.at(0)};
     }
 
     auto get_current_function_stack_size() const -> size_t {
