@@ -2,6 +2,7 @@
     regarding registers (get_id_and_frame_for_identifier is dubious)
 [ ] tokenizer, token etc to std::string_view
 [ ] tokenizer: handle string with escaped " 
+[ ] tokenizer to keep track of line-number instead of computing it
 [ ] token: regex construction to static
 [ ] unary_ops: use std::source_location in panic exception
 [ ] stmt_call: use std::source_location in panic exception
@@ -45,7 +46,6 @@ stage 5
 [ ]   is_const, is_bool_expression, is_number_expression
 [ ] let i=1 creates a constant
 [ ] def table{x,y,z}
-[ ] tokenizer to keep track of line-number instead of computing it
 [ ] token.compile assumes is_str is field (db)
 [ ]   review fragile implementation
 [ ] include source file: i.e. "include io" includes io.baz
