@@ -37,9 +37,9 @@ class expr_type_value final : public statement {
   private:
     // implemented in main.cpp due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
-    inline static void compile_recursive(const expr_type_value& etv, toc& tc,
+    inline static auto compile_recursive(const expr_type_value& etv, toc& tc,
                                          std::ostream& os, size_t indent,
                                          const std::string& src,
                                          const std::string& dst,
-                                         const type& dst_type);
+                                         const type& dst_type) -> void;
 };
