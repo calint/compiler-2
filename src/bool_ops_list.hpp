@@ -32,7 +32,7 @@ class bool_ops_list final : public statement {
                 // not (a == 1 and b == 1)
                 //  vs
                 // not a == 1 and b == 1
-                token pos_tk = tz.current_position_token();
+                token pos_tk{tz.current_position_token()};
                 if (tz.is_next_char('(')) {
                     // e.g. not (a=1 and b=1)
                     // recurse
@@ -51,8 +51,8 @@ class bool_ops_list final : public statement {
                 //      a == 1 and b == 1
                 // 'not_tk' not keyword 'not', put it back in the stream
                 tz.put_back_token(not_tk);
-                token ws = tz.next_whitespace_token();
-                token pos_tk = tz.current_position_token();
+                token ws{tz.next_whitespace_token()};
+                token pos_tk{tz.current_position_token()};
                 if (tz.is_next_char('(')) {
                     // e.g. (a == 1 and b == 1)
                     bools_.emplace_back(bool_ops_list{tc, std::move(pos_tk), tz,
