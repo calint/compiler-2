@@ -61,7 +61,7 @@ func main(){
     c = -(a + -b)
     if not c==-2 exit(16)
     
-#    c = (a - e*b/a) + (b % (-a))
+#    c = a - e*b/a + (b % (-a))
 #    if not c==4 exit(17)
     
     c = (a % b + e/b) * (a/d)
