@@ -36,7 +36,7 @@ class stmt_block final : public statement {
             token tk{tz.next_token()};
             if (tk.is_empty()) {
                 throw compiler_exception(
-                    tk, "unexpected '" + std::string{tz.peek_char()} + "'");
+                    tk, "expected statement or close block with '}'");
             }
 
             if (tk.is_name("var")) {

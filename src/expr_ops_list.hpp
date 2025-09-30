@@ -12,54 +12,59 @@
 // note: quirky parsing but trivial compilation
 class expr_ops_list final : public expression {
     std::vector<std::unique_ptr<statement>> exprs_; // expressions list
-    std::vector<char> ops_; // operators between elements in the vector
-    unary_ops uops_;        // unary ops for all result e.g. ~(a+b)
-    token ws1_;
-    bool enclosed_{}; //  (a+b) vs a+b
-    bool is_root_expression_{};
+    std::vector<char> ops_;     // operators between elements in the vector
+    unary_ops uops_;            // unary ops for all result e.g. ~(a+b)
+    token ws1_;                 // whitespace after parenthesis when enclosed
+    bool enclosed_{};           //  (a+b) vs a+b
+    bool is_base_expression_{}; // false when in implied sub-expressions
 
   public:
     expr_ops_list(toc& tc, tokenizer& tz, const bool in_args = false,
                   const bool enclosed = false,
-                  const bool is_root_expression = true, unary_ops uops = {},
+                  const bool is_base_expression = true, unary_ops uops = {},
                   const char first_op_precedence = initial_precedence,
                   std::unique_ptr<statement> first_expression =
                       std::unique_ptr<statement>{})
         : expression{tz.next_whitespace_token()}, uops_{std::move(uops)},
-          enclosed_{enclosed}, is_root_expression_{is_root_expression} {
+          enclosed_{enclosed}, is_base_expression_{is_base_expression} {
 
         // read first expression e.g. =-a/-(b+1)
+
+        // is this in a recursion?
         if (first_expression) {
-            // called in recursion with first expression provided
+            // yes, add provided first expression provided
             exprs_.emplace_back(std::move(first_expression));
         } else {
-            // check if new recursion is necessary
-            // e.g. =-a/-(-(b+c)+d), tz at "-a/-("
+            // no, read first expression or start a new recursion
+            // e.g. =-(-(b+c)+d)
             const unary_ops uo{tz};
+            // is next a sub-expression?
             if (tz.is_next_char('(')) {
-                // recursion of sub-expression with unary ops
+                // yes, recurse with unary ops
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
                     tc, tz, in_args, true, true, uo));
             } else {
-                // statement, push back the unary ops to attach them to the
+                // no, push back the unary ops to be attached to the
                 // statement
                 uo.put_back(tz);
                 exprs_.emplace_back(create_statement_from_tokenizer(tc, tz));
             }
         }
 
+        // start with provided precedence
         char precedence{first_op_precedence};
+
         while (true) { // +a  +3
-            // if end of subexpression
+            // if end of sub-expression
             if (enclosed_ and tz.is_next_char(')')) {
-                // break recursion
+                // break from recursion
                 ws1_ = tz.next_whitespace_token();
                 break;
             }
 
-            // if parsed in a function call argument list
+            // is it parsed withing a function argument?
             if (in_args) {
-                // if in arguments exit when ',' or ')' is found
+                // yes, exit when ',' or ')' is found
                 if (tz.is_peek_char(',') or tz.is_peek_char(')')) {
                     ws1_ = tz.next_whitespace_token();
                     break;
@@ -88,13 +93,13 @@ class expr_ops_list final : public expression {
             } else if (tz.is_peek_char('>') and tz.is_peek_char2('>')) {
                 ops_.emplace_back('>');
             } else {
-                // no more operations
+                // no more operations, exit
                 break;
             }
 
-            // check if next operation precedence is same or lower
-            // if not then a sub-expression is added to the list with the last
-            // expression in this list being first expression in the
+            // is next operation precedence higher than current?
+            // if so, the implied sub-expression is added to the list with
+            // the last expression in this list being first expression in the
             // sub-expression
             const char next_precedence{precedence_for_op(ops_.back())};
             if (next_precedence > precedence) {
@@ -107,21 +112,28 @@ class expr_ops_list final : public expression {
                 std::unique_ptr<statement> last_stmt_in_expr{
                     std::move(exprs_.back())};
                 exprs_.pop_back();
+                // start new recursion
                 exprs_.emplace_back(make_unique<expr_ops_list>(
                     tc, tz, in_args, false, false, unary_ops{}, next_precedence,
                     std::move(last_stmt_in_expr)));
+                // continue parsing expression starting with next operation
                 continue;
             }
+            // is this in an implied sub-expression and precedence has gone
+            // lower?
             if (precedence != initial_precedence and
-                next_precedence < precedence and not is_root_expression_) {
+                next_precedence < precedence and not is_base_expression_) {
+                // yes, return to parent expression
                 // e.g. a-b*c+3 => becomes a-(b*c+3) otherwise
                 ops_.pop_back();
                 return;
             }
 
-            // if precedence same or lower continue building this list
             precedence = next_precedence;
-            const char ch{tz.next_char()}; // read the peeked operator
+
+            // read the peeked operator
+            const char ch{tz.next_char()};
+
             // handle the two character operator shift
             if (ch == '<') {
                 if (tz.next_char() != '<') {
@@ -133,9 +145,11 @@ class expr_ops_list final : public expression {
                 }
             }
 
-            // check if next statement is a sub-expression
+            // check if next statement is a sub-expression or an expression
+            // element
             // e.g. -(a + b)
             const unary_ops uo{tz}; // read the unary ops, in this case '-'
+
             // is it a sub-expression?
             if (tz.is_next_char('(')) {
                 // yes, recurse and forward the unary ops to be applied on the
@@ -151,18 +165,9 @@ class expr_ops_list final : public expression {
             uo.put_back(tz);
 
             // read next element
-            std::unique_ptr<statement> st{
-                create_statement_from_tokenizer(tc, tz)};
-            // handle the case of malformed code when stream has ended
-            if (st->tok().is_empty()) {
-                throw compiler_exception(st->tok(),
-                                         "unexpected '" +
-                                             std::string{tz.peek_char()} + "'");
-            }
-            // move statement to list
-            exprs_.emplace_back(std::move(st));
+            exprs_.emplace_back(create_statement_from_tokenizer(tc, tz));
 
-            // next op + element or sub-expression
+            // continue to next op + element or sub-expression
         }
     }
 
