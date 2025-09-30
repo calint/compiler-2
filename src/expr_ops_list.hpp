@@ -11,20 +11,22 @@
 // a list of elements / lists connected by operators instead of tree
 // note: quirky parsing but trivial compilation
 class expr_ops_list final : public expression {
-    bool enclosed_{};                               //  (a+b) vs a+b
     std::vector<std::unique_ptr<statement>> exprs_; // expressions list
     std::vector<char> ops_; // operators between elements in the vector
     unary_ops uops_;        // unary ops for all result e.g. ~(a+b)
     token ws1_;
+    bool enclosed_{}; //  (a+b) vs a+b
+    bool is_root_expression_{};
 
   public:
     expr_ops_list(toc& tc, tokenizer& tz, const bool in_args = false,
-                  const bool enclosed = false, unary_ops uops = {},
+                  const bool enclosed = false,
+                  const bool is_root_expression = true, unary_ops uops = {},
                   const char first_op_precedence = initial_precedence,
                   std::unique_ptr<statement> first_expression =
                       std::unique_ptr<statement>{})
-        : expression{tz.next_whitespace_token()}, enclosed_{enclosed},
-          uops_{std::move(uops)} {
+        : expression{tz.next_whitespace_token()}, uops_{std::move(uops)},
+          enclosed_{enclosed}, is_root_expression_{is_root_expression} {
 
         // read first expression e.g. =-a/-(b+1)
         if (first_expression) {
@@ -36,8 +38,8 @@ class expr_ops_list final : public expression {
             const unary_ops uo{tz};
             if (tz.is_next_char('(')) {
                 // recursion of sub-expression with unary ops
-                exprs_.emplace_back(
-                    std::make_unique<expr_ops_list>(tc, tz, in_args, true, uo));
+                exprs_.emplace_back(std::make_unique<expr_ops_list>(
+                    tc, tz, in_args, true, true, uo));
             } else {
                 // statement, push back the unary ops to attach them to the
                 // statement
@@ -101,15 +103,20 @@ class expr_ops_list final : public expression {
                 // list is now =[(=a)(+b)]
                 // move last expression (+b) to sub-expression
                 //   =[(=a) +[(=b)(*c)(+1)]]
-                precedence = next_precedence;
                 ops_.pop_back();
                 std::unique_ptr<statement> last_stmt_in_expr{
                     std::move(exprs_.back())};
                 exprs_.pop_back();
                 exprs_.emplace_back(make_unique<expr_ops_list>(
-                    tc, tz, in_args, false, unary_ops{}, precedence,
+                    tc, tz, in_args, false, false, unary_ops{}, next_precedence,
                     std::move(last_stmt_in_expr)));
                 continue;
+            }
+            if (precedence != initial_precedence and
+                next_precedence < precedence and not is_root_expression_) {
+                // e.g. a-b*c+3 => becomes a-(b*c+3) otherwise
+                ops_.pop_back();
+                return;
             }
 
             // if precedence same or lower continue building this list
@@ -133,8 +140,8 @@ class expr_ops_list final : public expression {
             if (tz.is_next_char('(')) {
                 // yes, recurse and forward the unary ops to be applied on the
                 // whole sub-expression
-                exprs_.emplace_back(
-                    std::make_unique<expr_ops_list>(tc, tz, in_args, true, uo));
+                exprs_.emplace_back(std::make_unique<expr_ops_list>(
+                    tc, tz, in_args, true, false, uo));
                 continue;
             }
 
@@ -306,16 +313,16 @@ class expr_ops_list final : public expression {
     // higher value higher precedence
     static auto precedence_for_op(const char ch) -> char {
         switch (ch) {
-        case '|':
-            return 1;
-        case '&':
-            return 2;
         case '+':
         case '-':
-            return 3;
+            return 1;
         case '*':
         case '/':
         case '%':
+            return 2;
+        case '|':
+            return 3;
+        case '&':
             return 4;
         case '^':
             return 5;

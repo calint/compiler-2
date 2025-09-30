@@ -1,4 +1,4 @@
-[ ] expr_ops_list: does calculate e*b/a + (b % (-a)) 
+[x] expr_ops_list: does calculate e*b/a + (b % (-a)) 
     fix t47.baz:
     c = a - e*b/a + (b % (-a))
     if not c==4 exit(17)
