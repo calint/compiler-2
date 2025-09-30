@@ -43,7 +43,8 @@ class bool_ops_list final : public statement {
                     // the 'not' is part of the bool element, put it back to be
                     // read by the element
                     tz.put_back_token(not_tk);
-                    bools_.emplace_back(bool_op{tc, tz});
+                    bools_.emplace_back(
+                        bool_op{tc, tz.next_whitespace_token(), tz});
                 }
             } else {
                 // e.g. (a == 1 and b == 1)
@@ -58,7 +59,7 @@ class bool_ops_list final : public statement {
                                                       true, std::move(ws)});
                 } else {
                     // e.g. a == 1 and b == 1
-                    bools_.emplace_back(bool_op{tc, tz});
+                    bools_.emplace_back(bool_op{tc, std::move(ws), tz});
                 }
             }
 
@@ -77,7 +78,6 @@ class bool_ops_list final : public statement {
                 break;
             }
 
-            // if first op and is 'and' then create sub-expression
             if (prv_op.is_empty()) {
                 prv_op = op_tk;
             }

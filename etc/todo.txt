@@ -1,3 +1,4 @@
+[ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
 [ ] bool_ops_list fix:
     var h9 : bool = not ( (t1 + t2 + t3 + t4) > 20 and not t5 ) and (t3 / 5 > 1 or t4 / 1 == 2)
 [x] bool_ops_list: there can be no spaces between ( () )

@@ -24,9 +24,11 @@ class bool_op final : public statement {
     bool is_not_{};       // e.g. if not a == b ...
     bool is_shorthand_{}; // e.g. if a ...
     bool is_expression_{};
+    token ws_pre_;
 
   public:
-    bool_op(toc& tc, tokenizer& tz) : statement{tz.next_whitespace_token()} {
+    bool_op(toc& tc, token ws_pre, tokenizer& tz)
+        : statement{tz.next_whitespace_token()}, ws_pre_{std::move(ws_pre)} {
         set_type(tc.get_type_bool());
 
         bool is_not{};
@@ -87,6 +89,7 @@ class bool_op final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
+        ws_pre_.source_to(os);
         for (const token& e : nots_) {
             e.source_to(os);
         }
@@ -106,8 +109,8 @@ class bool_op final : public statement {
         throw panic_exception("unexpected code path bool_op:1");
     }
 
-    // returns an optional bool and if defined the expression evaluated to the
-    // value of the optional
+    // returns an optional bool and if defined the expression evaluated to
+    // the value of the optional
     auto compile_or(toc& tc, std::ostream& os, size_t indent,
                     const std::string& jmp_to_if_true,
                     const bool inverted) const -> std::optional<bool> {
@@ -119,8 +122,8 @@ class bool_op final : public statement {
         if (is_shorthand_) {
             // is 'lhs' a constant?
             if (not lhs_.is_expression()) {
-                // yes, left-hand-side is not a expression, either a constant or
-                // an identifier
+                // yes, left-hand-side is not a expression, either a
+                // constant or an identifier
                 const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
                 if (lhs_info.is_const()) {
                     bool const_eval{lhs_.get_unary_ops().evaluate_constant(
@@ -132,8 +135,8 @@ class bool_op final : public statement {
                     os << "const eval to " << (const_eval ? "true" : "false")
                        << '\n';
                     if (const_eval) {
-                        // since it is an 'or' chain short-circuit expression
-                        // and jump to label for true
+                        // since it is an 'or' chain short-circuit
+                        // expression and jump to label for true
                         toc::indent(os, indent);
                         os << "jmp " << jmp_to_if_true << '\n';
                     }
@@ -179,8 +182,8 @@ class bool_op final : public statement {
             }
         }
 
-        // don't allow left-hand-side to be constant because generated assembler
-        // does not compile
+        // don't allow left-hand-side to be constant because generated
+        // assembler does not compile
         if (not lhs_.is_expression()) {
             const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
             if (lhs_info.is_const()) {
@@ -220,8 +223,8 @@ class bool_op final : public statement {
                     os << "const eval to " << (const_eval ? "true" : "false")
                        << '\n';
                     if (not const_eval) {
-                        // since it is an 'and' chain short-circuit expression
-                        // and jump to label for false
+                        // since it is an 'and' chain short-circuit
+                        // expression and jump to label for false
                         toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_false);
                     }
                     return const_eval;
@@ -264,8 +267,8 @@ class bool_op final : public statement {
             }
         }
 
-        // don't allow left-hand-side to be constant because generated assembler
-        // does not compile
+        // don't allow left-hand-side to be constant because generated
+        // assembler does not compile
         if (not lhs_.is_expression()) {
             const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
             if (lhs_info.is_const()) {
