@@ -1,0 +1,188 @@
+func exit(v:reg_rdi){
+    mov(rax,60) # exit system call
+    mov(rdi,v)  # return code
+    syscall()
+}
+
+func main(){
+
+    var ab = 15
+    var ac = 8
+    var ad = 3
+    var ae = 2
+    var af = ((ab + ac) * ad - (ae * ae)) / (ad + ae)
+
+    if (af != 13) exit(11)
+
+
+    var ag = 10
+    var ah = 5
+    var ai = 3
+    var aj = -(-ag) + -(ah - ai) - (-ai)
+
+    if (aj != 11) exit(12)
+
+
+    var ak = 100
+    var al = 17
+    var am = 4
+    var an = 3
+    var ao = (ak % al) + (al / an) * am
+
+    if (ao != 35) exit(13)
+
+
+    var ap = 50
+    var aq = 12
+    var ar = 5
+    var as = 3
+    var at = 2
+    var au = (ap - (aq + ar * as)) / at + (ar % as) * at
+
+    if (au != 15) exit(14)
+
+
+    var av = 100
+    var aw = 10
+    var ax = 5
+    var ay = 2
+    var az = av / aw / ax * ay
+
+    if (az != 4) exit(15)
+
+
+    var ba = 7
+    var bb = 3
+    var bc = 2
+    var bd = 8
+    var be = 4
+    var bf = ba + bb * bc - bd / be + bb % bc
+
+    if (bf != 12) exit(16)
+
+
+    var bg = 5
+    var bh = 20
+    var bi = 3
+    var bj = 2
+    var bk = (bg - bh) * bi + bj * bj * bj
+
+    if (bk != -37) exit(17)
+
+
+    var bl = 0
+    var bm = 15
+    var bn = 3
+    var bo = 5
+    var bp = bl + bm / bn * bo - bl * bn
+
+    if (bp != 25) exit(18)
+
+
+    var bq = 144
+    var br = 12
+    var bs = 8
+    var bt = 3
+    var bu = 2
+    var bv = bq / br + bs * bt - bu * bu + br % bs
+
+    if (bv != 36) exit(19)
+
+
+    var bw = 50
+    var bx = 7
+    var by = 4
+    var bz = 3
+    var ca = (bw % bx) % by % bz
+
+    if (ca != 1) exit(20)
+
+
+    var cb = 100
+    var cc = 80
+    var cd = 10
+    var ce = 4
+    var cf = cb / (cc / cd - ce)
+
+    if (cf != 25) exit(21)
+
+
+    var cg = 8
+    var ch = 4
+    var ci = 2
+    var cj = -(cg * ch / ci) + cg + ch
+
+    if (cj != -4) exit(22)
+
+
+    var ck = 1000
+    var cl = 10
+    var cm = 5
+    var cn = 2
+    var co = ck / cl / cm * cn * cn
+
+    if (co != 80) exit(23)
+
+
+    var cp = 2
+    var cq = 3
+    var cr = 4
+    var cs = 5
+    var ct = cp + cq * cr - cs / cs + cr % cq
+
+    if (ct != 14) exit(24)
+
+
+    var cu = 10
+    var cv = 5
+    var cw = 2
+    var cx = (((cu - cv) * cw) + (cv / cw)) - (cw % cw)
+
+    if (cx != 12) exit(25)
+
+
+    var cy = 7
+    var cz = 3
+    var da = 2
+    var db = -cy * cz + da * da * da
+
+    if (db != -13) exit(26)
+
+
+    var dc = 50
+    var dd = 12
+    var de = 8
+    var df = 3
+    var dg = dc - dd + de - df
+
+    if (dg != 43) exit(27)
+
+
+    var dh = 48
+    var di = 6
+    var dj = 2
+    var dk = 3
+    var dl = (dh / di) / dj + (di * dk) / dj
+
+    if (dl != 13) exit(28)
+
+
+    var dm = 25
+    var dn = 7
+    var do = 3
+    var dp = 2
+    var dq = dm / dp + dn * do - dn % do + (-dp)
+
+    if (dq != 30) exit(29)
+
+
+    var dr = 100
+    var ds = 12
+    var dt = 4
+    var du = 3
+    var dv = 2
+    var dw = (dr - ds) / (dt + du) + ds / dv
+
+    if (dw != 18) exit(30)
+
+}
