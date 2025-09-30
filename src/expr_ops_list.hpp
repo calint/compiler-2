@@ -56,9 +56,9 @@ class expr_ops_list final : public expression {
         while (true) { // +a  +3
             // if end of sub-expression
             if (enclosed_ and tz.is_next_char(')')) {
-                // break from recursion
+                // return from recursion
                 ws1_ = tz.next_whitespace_token();
-                break;
+                return;
             }
 
             // is it parsed withing a function argument?
@@ -66,7 +66,7 @@ class expr_ops_list final : public expression {
                 // yes, exit when ',' or ')' is found
                 if (tz.is_peek_char(',') or tz.is_peek_char(')')) {
                     ws1_ = tz.next_whitespace_token();
-                    break;
+                    return;
                 }
             }
 
@@ -92,8 +92,8 @@ class expr_ops_list final : public expression {
             } else if (tz.is_peek_char('>') and tz.is_peek_char2('>')) {
                 ops_.emplace_back('>');
             } else {
-                // no more operations, exit
-                break;
+                // no more operations, return
+                return;
             }
 
             // is next operation precedence higher than current?
