@@ -69,16 +69,16 @@ class bool_ops_list final : public statement {
 
             // end of '(...)' enclosed expression?
             if (enclosed_ and tz.is_next_char(')')) {
+                // yes, done
                 ws1_ = tz.next_whitespace_token();
                 success_ = true;
-                // yes, done
                 return;
             }
 
             // read 'and' or 'or'
             token op_tk{tz.next_token()};
             if (not op_tk.is_name("or") and not op_tk.is_name("and")) {
-                // not expected keyword, put it back
+                // not expected keyword, end of expression, put it back
                 tz.put_back_token(op_tk);
                 break;
             }
