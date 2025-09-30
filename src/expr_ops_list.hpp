@@ -32,7 +32,7 @@ class expr_ops_list final : public expression {
 
         // is this in a recursion?
         if (first_expression) {
-            // yes, add provided first expression provided
+            // yes, add provided first expression
             exprs_.emplace_back(std::move(first_expression));
         } else {
             // no, read first expression or start a new recursion
