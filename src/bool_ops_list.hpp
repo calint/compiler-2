@@ -27,7 +27,7 @@ class bool_ops_list final : public statement {
 
         // parse
         while (true) {
-            const token not_tk{tz.next_token()};
+            token not_tk{tz.next_token()};
             if (not_tk.is_name("not")) {
                 // not (a == 1 and b == 1)
                 //  vs
@@ -36,8 +36,8 @@ class bool_ops_list final : public statement {
                 if (tz.is_next_char('(')) {
                     // e.g. not (a=1 and b=1)
                     // recurse
-                    bools_.emplace_back(
-                        bool_ops_list{tc, std::move(pos_tk), tz, true, not_tk});
+                    bools_.emplace_back(bool_ops_list{tc, std::move(pos_tk), tz,
+                                                      true, std::move(not_tk)});
                 } else {
                     // e.g. not a=1 and b=1
                     // the 'not' is part of the bool element, put it back to be
