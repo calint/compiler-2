@@ -168,13 +168,11 @@ class expr_ops_list final : public expression {
     ~expr_ops_list() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
-        expression::source_to(os); // whitespace
         uops_.source_to(os);
-
         if (enclosed_) {
             os << "(";
         }
-
+        expression::source_to(os); // whitespace
         exprs_.at(0)->source_to(os);
         const size_t n{ops_.size()};
         for (size_t i{}; i < n; i++) {
