@@ -17,7 +17,7 @@ func main(){
     var f=a^e
     if not f==0 exit(3)
     
-    var g=1+2*a&2+1
+    var g=1+(2*a&2+1)
     if not g==6 exit(4)
 
     var h=1

@@ -141,7 +141,7 @@ class expr_ops_list final : public expression {
                 // yes, recurse and forward the unary ops to be applied on the
                 // whole sub-expression
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
-                    tc, tz, in_args, true, false, uo));
+                    tc, tz, in_args, true, true, uo));
                 continue;
             }
 
