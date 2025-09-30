@@ -1,5 +1,10 @@
 [ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
 [ ] bool_ops_list fix:
+    var t1 = 5
+    var t2 = 5
+    var t3 = 10
+    var t4 = 2
+    var t5 : bool = false
     var h9 : bool = not ( (t1 + t2 + t3 + t4) > 20 and not t5 ) and (t3 / 5 > 1 or t4 / 1 == 2)
 [x] bool_ops_list: there can be no spaces between ( () )
 [ ] tokenizer to keep track of line-number instead of computing it
