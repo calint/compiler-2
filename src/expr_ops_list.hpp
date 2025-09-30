@@ -23,8 +23,7 @@ class expr_ops_list final : public expression {
                   const bool enclosed = false,
                   const bool is_base_expression = true, unary_ops uops = {},
                   const char first_op_precedence = initial_precedence,
-                  std::unique_ptr<statement> first_expression =
-                      std::unique_ptr<statement>{})
+                  std::unique_ptr<statement> first_expression = {})
         : expression{tz.next_whitespace_token()}, uops_{std::move(uops)},
           enclosed_{enclosed}, is_base_expression_{is_base_expression} {
 
