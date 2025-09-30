@@ -74,7 +74,7 @@ func main(){
     var ii = 5
     var jj = 3
     var kk = 8
-    
+
     var ll = gg - hh / ii * jj + kk % ii * z + jj
     if (ll != 43) exit(12)
 
