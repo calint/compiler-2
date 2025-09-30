@@ -8,6 +8,8 @@ func main(){
     var a=4
     var b=2
     var c=0
+    var d=1
+    var e=5
 
     c=-a/-(-(b+1)+1)
     if not c==-2 exit(1)
@@ -42,5 +44,30 @@ func main(){
     c=a/-(b+1)
     if not c==-1 exit(11)
 
+    c = a + (4*b)/d - e%b * (-a)
+    if not c==14 exit(12)
+
+    a = 4
+
+    c = -(-((a+b)+d) - (-e))
+    if not c==2 exit(13)
+
+    c = (-(a+d) % b) * (e/a) 
+    if not c==-1 exit(14)
+    
+    c = e*d + a*b - a*d
+    if not c==9 exit(15)
+
+    c = -(a + -b)
+    if not c==-2 exit(16)
+    
+#    c = (a - e*b/a) + (b % (-a))
+#    if not c==4 exit(17)
+    
+    c = (a % b + e/b) * (a/d)
+    if not c==8 exit(18)
+
+    c = (e + a) * (b - d) - (a/b) % (b + d)
+    if not c==7 exit(19)
     exit(0)
 }

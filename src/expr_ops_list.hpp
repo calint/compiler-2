@@ -15,6 +15,7 @@ class expr_ops_list final : public expression {
     std::vector<std::unique_ptr<statement>> exprs_; // expressions list
     std::vector<char> ops_; // operators between elements in the vector
     unary_ops uops_;        // unary ops for all result e.g. ~(a+b)
+    token ws1_;
 
   public:
     expr_ops_list(toc& tc, tokenizer& tz, const bool in_args = false,
@@ -50,6 +51,7 @@ class expr_ops_list final : public expression {
             // if end of subexpression
             if (enclosed_ and tz.is_next_char(')')) {
                 // break recursion
+                ws1_ = tz.next_whitespace_token();
                 break;
             }
 
@@ -57,6 +59,7 @@ class expr_ops_list final : public expression {
             if (in_args) {
                 // if in arguments exit when ',' or ')' is found
                 if (tz.is_peek_char(',') or tz.is_peek_char(')')) {
+                    ws1_ = tz.next_whitespace_token();
                     break;
                 }
             }
@@ -186,6 +189,7 @@ class expr_ops_list final : public expression {
 
         if (enclosed_) {
             os << ")";
+            ws1_.source_to(os);
         }
     }
 

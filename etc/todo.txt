@@ -1,3 +1,11 @@
+[ ] expr_ops_list: does calculate e*b/a + (b % (-a)) 
+    fix t47.baz:
+    c = (a - e*b/a) + (b % (-a))
+    if not c==4 exit(17)
+    => c = (a - e*b/a) + (b % (-a))  ok
+       c = a - e*b/a + (b % (-a)) not ok
+       expr_ops_list does:
+       c = a - (   e*b/a + (b % (-a))  ) 
 [ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
 [x] bool_ops_list fix:
     var t1 = 5
