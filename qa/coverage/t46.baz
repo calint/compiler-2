@@ -22,5 +22,68 @@ func main(){
     c=-a/b
     if not c==-1 exit(5)
 
-    exit(0)
+    var d = 10
+    var e = 3
+    var f = 5
+
+    var g = (d * 2) - ((f + e) / e)
+    if (g != 18) exit(6)
+
+    var h = 17
+    var i = 5
+    var j = 4
+
+    var k = (h % i) * j - (-(i * 2) / (j - 1))
+    if (k != 11) exit(7)
+
+    var l = 20
+    var m = 7
+    var n = 3
+    var o = 2
+
+    var p = l / (m - n) + (o * n * 5) - (-l / (n * o))
+    if (p != 38) exit(8)
+
+    var q = 100
+    var r = 13
+    var s = 6
+    var t = 2
+
+    var u = (q - r) / s - ((r % t + 1) * t) + (-(s / t))
+    if (u != 7) exit(9)
+
+    var v = 20
+    var w = 6
+    var x = 4
+    var y = 3
+    var z = 2
+
+    var aa = v / x * w - y % z + w
+    if (aa != 35) exit(10)
+
+    var bb = 15
+    var cc = -2
+    var dd = 4
+    var ee = 7
+    
+    var ff = -bb / dd + cc * y % ee
+    if (ff != -9) exit(11)
+
+    var gg = 40
+    var hh = 12
+    var ii = 5
+    var jj = 3
+    var kk = 8
+    
+    var ll = gg - hh / ii * jj + kk % ii * z + jj
+    if (ll != 43) exit(12)
+
+    var mm = 100
+    var nn = 10
+    var oo = 3
+    var pp = 2
+    var qq = 5
+
+    var rr = mm / nn - oo * pp + qq % pp + nn
+    if (rr != 15) exit(13)
 }
