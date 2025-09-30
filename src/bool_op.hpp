@@ -24,11 +24,10 @@ class bool_op final : public statement {
     bool is_not_{};       // e.g. if not a == b ...
     bool is_shorthand_{}; // e.g. if a ...
     bool is_expression_{};
-    token ws_pre_;
+    token ws1_;
 
   public:
-    bool_op(toc& tc, token ws_pre, tokenizer& tz)
-        : statement{tz.next_whitespace_token()}, ws_pre_{std::move(ws_pre)} {
+    bool_op(toc& tc, tokenizer& tz) : statement{tz.next_whitespace_token()} {
         set_type(tc.get_type_bool());
 
         bool is_not{};
@@ -45,6 +44,8 @@ class bool_op final : public statement {
         is_not_ = is_not;
 
         lhs_ = {tc, tz, true};
+
+        ws1_ = tz.next_whitespace_token();
 
         if (tz.is_next_char('=')) {
             if (not tz.is_next_char('=')) {
@@ -89,11 +90,11 @@ class bool_op final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        ws_pre_.source_to(os);
         for (const token& e : nots_) {
             e.source_to(os);
         }
         lhs_.source_to(os);
+        ws1_.source_to(os);
         if (is_shorthand_) {
             return;
         }

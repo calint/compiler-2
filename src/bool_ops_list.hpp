@@ -14,10 +14,11 @@ class bool_ops_list final : public statement {
     bool enclosed_{};        // e.g. (a==b and c==d) vs a==b and c==d
     token not_token_;        // e.g. not (a==b and c==d)
     token ws1_;              // whitespace after parenthesis
+    bool success_{};
 
   public:
-    bool_ops_list(toc& tc, token tk, tokenizer& tz, const bool enclosed = false,
-                  token not_token = {})
+    bool_ops_list(toc& tc, token tk, tokenizer& tz, bool fail_is_ok = false,
+                  const bool enclosed = false, token not_token = {})
         : statement{std::move(tk)}, enclosed_{enclosed},
           not_token_{std::move(not_token)} {
 
@@ -27,45 +28,49 @@ class bool_ops_list final : public statement {
 
         // parse
         while (true) {
-            token not_tk{tz.next_token()};
-            if (not_tk.is_name("not")) {
-                // not (a == 1 and b == 1)
-                //  vs
-                // not a == 1 and b == 1
-                token pos_tk{tz.current_position_token()};
-                if (tz.is_next_char('(')) {
-                    // e.g. not (a=1 and b=1)
-                    // recurse
-                    bools_.emplace_back(bool_ops_list{tc, std::move(pos_tk), tz,
-                                                      true, std::move(not_tk)});
+            const token rewind_pos_tk{tz.current_position_token()};
+            token maybe_not_tk{tz.next_token()};
+            if (not maybe_not_tk.is_name("not")) {
+                tz.put_back_token(maybe_not_tk);
+                maybe_not_tk = tz.next_whitespace_token();
+            }
+            token pos_tk{tz.current_position_token()};
+            if (tz.is_next_char('(')) {
+                // try as bool_ops_list but it might not be that
+                // e.g.: (t1 + t2) > 3
+                bool_ops_list bol{tc,   std::move(pos_tk),      tz, true,
+                                  true, std::move(maybe_not_tk)};
+                bool ok{bol.success_};
+                // check if bool_ops_list got confused parsing an expression as
+                // short-hand boolean expression
+                //   e.g. not ( (t1 + t2) > 2 )
+                //        where (t1 + t2) is a valid bool_ops_list of 1 element
+                //        with expression 't1 + t2'
+                switch (tz.peek_char()) {
+                case '<':
+                case '>':
+                case '=':
+                case '!':
+                    ok = false;
+                    break;
+                default:
+                    break;
+                }
+                if (ok) {
+                    bools_.emplace_back(std::move(bol));
                 } else {
-                    // e.g. not a=1 and b=1
-                    // the 'not' is part of the bool element, put it back to be
-                    // read by the element
-                    tz.put_back_token(not_tk);
-                    bools_.emplace_back(
-                        bool_op{tc, tz.next_whitespace_token(), tz});
+                    tz.rewind_to_position(rewind_pos_tk);
+                    bools_.emplace_back(bool_op{tc, tz});
                 }
             } else {
-                // e.g. (a == 1 and b == 1)
-                //      a == 1 and b == 1
-                // 'not_tk' not keyword 'not', put it back in the stream
-                tz.put_back_token(not_tk);
-                token ws{tz.next_whitespace_token()};
-                token pos_tk{tz.current_position_token()};
-                if (tz.is_next_char('(')) {
-                    // e.g. (a == 1 and b == 1)
-                    bools_.emplace_back(bool_ops_list{tc, std::move(pos_tk), tz,
-                                                      true, std::move(ws)});
-                } else {
-                    // e.g. a == 1 and b == 1
-                    bools_.emplace_back(bool_op{tc, std::move(ws), tz});
-                }
+                tz.put_back_token(maybe_not_tk);
+                bools_.emplace_back(bool_op{tc, tz});
             }
 
             // end of '(...)' enclosed expression?
             if (enclosed_ and tz.is_next_char(')')) {
                 ws1_ = tz.next_whitespace_token();
+                success_ = true;
                 // yes, done
                 return;
             }
@@ -90,8 +95,12 @@ class bool_ops_list final : public statement {
             ops_.emplace_back(std::move(op_tk));
         }
         if (enclosed_) {
+            if (fail_is_ok) {
+                return;
+            }
             throw compiler_exception{tz, "expected ')' to close expression"};
         }
+        success_ = true;
     }
 
     bool_ops_list() = default;

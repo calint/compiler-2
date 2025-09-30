@@ -57,6 +57,12 @@ class tokenizer final {
         return {"", char_ix_, "", char_ix_, ""};
     }
 
+    auto rewind_to_position(const token& pos_tk) -> void {
+        const size_t new_pos{pos_tk.start_index()};
+        ptr_ = ptr_ - (char_ix_ - new_pos);
+        char_ix_ = new_pos;
+    }
+
     auto put_back_token(const token& t) -> void {
         //? todo. validate token is same as source
         move_back(t.total_length_in_chars());

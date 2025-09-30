@@ -1,5 +1,5 @@
 [ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
-[ ] bool_ops_list fix:
+[x] bool_ops_list fix:
     var t1 = 5
     var t2 = 5
     var t3 = 10

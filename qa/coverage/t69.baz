@@ -102,8 +102,7 @@ func main(){
     var h6 : bool = not (t5 == true and x == 1) or ( (t1 * t4 <= t3 and t3 == 10) or not (z * x != 4 or y == 3) )
     var h7 : bool = ( (t1 == t2 or t3 == t4) and not (z > x and y < z) ) and ( (t5 or x != 1) or (t1 + t4 == 7) )
     var h8 : bool = not (t3 / t4 == t1) and ( (t1 == t2 and z != 4) or not (x == 1 and y == 3 and z == 4) )
-    #var h9 : bool = not ( (t1 + t2 + t3 + t4) > 20 and not t5 ) and (t3 / 5 > 1 or t4 / 1 == 2)
-    var h9 : bool = not ( t1 + t2 + t3 + t4 > 20 and not t5 ) and (t3 / 5 > 1 or t4 / 1 == 2)
+    var h9 : bool = not ( (t1 + t2 + t3 + t4) > 20 and not t5 ) and (t3 / 5 > 1 or t4 / 1 == 2)
     var h10 : bool = ( (t1 * t4 > t3 and t3 / t4 == t1) or (t1 == t2 and t3 == 10) ) and not (t5 and t4 == 2)
 
     assert(not h1)
