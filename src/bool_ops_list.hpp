@@ -14,7 +14,7 @@ class bool_ops_list final : public statement {
     bool enclosed_{};        // e.g. (a==b and c==d) vs a==b and c==d
     token not_token_;        // e.g. not (a==b and c==d)
     token ws1_;              // whitespace after parenthesis
-    bool success_{};
+    bool success_{};         // when compiling without exception throwing
 
   public:
     bool_ops_list(toc& tc, token tk, tokenizer& tz, bool fail_is_ok = false,
