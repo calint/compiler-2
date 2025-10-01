@@ -1,16 +1,14 @@
+[ ] tokenizer: handle string with escaped " 
+[ ] token: regex construction to static
 [ ] considering not parsing multiple return statements
 [ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
 [ ] tokenizer to keep track of line-number instead of computing it
 [ ] consider refactoring to 1 pass compiler making compiling in constructor
     constructor(os data,os code,indent)
 [ ] tokenizer, token etc to std::string_view
-[ ] tokenizer: handle string with escaped " 
-[ ] token: regex construction to static
-[ ] unary_ops: use std::source_location in panic exception
-[ ] stmt_call: use std::source_location in panic exception
 [ ] implement arrays
 [ ] implement strings
-[ ] support for float and double
+[ ] support for float and double?
 [ ] rename compiler_exception
 [ ] stmt_call: check arguments vs parameters in constructor instead of at compile
 [o] check that return value is assigned in functions
@@ -77,6 +75,10 @@ stage 5
       mov qword[rbp-16],r15
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
+[-] stmt_call: use std::source_location in panic exception
+    => string in exception is unique
+[-] unary_ops: use std::source_location in panic exception
+    => string in exception is unique
 [x] fix 'cmp' with left hand side constant 
     => moves lhs to register and makes compilation. todo: if lhs and rhs are constants evaluate
        at compile time
