@@ -1,3 +1,4 @@
+[ ] considering not parsing multiple return statements
 [ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
 [ ] tokenizer to keep track of line-number instead of computing it
 [ ] consider refactoring to 1 pass compiler making compiling in constructor
