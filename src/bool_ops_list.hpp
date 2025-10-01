@@ -14,11 +14,10 @@ class bool_ops_list final : public statement {
     bool enclosed_{};        // e.g. (a==b and c==d) vs a==b and c==d
     token not_token_;        // e.g. not (a==b and c==d)
     token ws1_;              // whitespace after parenthesis
-    bool success_{};         // when compiling without exception throwing
 
   public:
-    bool_ops_list(toc& tc, token tk, tokenizer& tz, bool fail_is_ok = false,
-                  const bool enclosed = false, token not_token = {})
+    bool_ops_list(toc& tc, token tk, tokenizer& tz, const bool enclosed = false,
+                  token not_token = {})
         : statement{std::move(tk)}, enclosed_{enclosed},
           not_token_{std::move(not_token)} {
 
@@ -47,24 +46,20 @@ class bool_ops_list final : public statement {
                 // yes, try as 'bool_ops_list' but it might not be that
                 // e.g.: (t1 + t2) > 3 is not but will compile so further checks
                 // are necessary after the parsing
-                bool_ops_list bol{tc,   std::move(pos_tk),      tz, true,
-                                  true, std::move(maybe_not_tk)};
-                bool ok{bol.success_};
+                bool_ops_list bol{tc, std::move(pos_tk), tz, true,
+                                  std::move(maybe_not_tk)};
                 // check if 'bool_ops_list' parsed an expression, wrongfull, as
                 // short-hand boolean expression
                 //   e.g. not ( (t1 + t2) > 2 )
                 //        where (t1 + t2) is a valid 'bool_ops_list' of 1
                 //        element with expression 't1 + t2'
                 if (std::string_view{"<>=!+-*/%&|^"}.contains(tz.peek_char())) {
-                    ok = false;
-                }
-                if (ok) {
-                    // is not a 'bool_op'
-                    bools_.emplace_back(std::move(bol));
-                } else {
                     // it is a 'bool_op', reposition the tokenizer and parse it
                     tz.rewind_to_position(rewind_pos_tk);
                     bools_.emplace_back(bool_op{tc, tz});
+                } else {
+                    // is not a 'bool_op'
+                    bools_.emplace_back(std::move(bol));
                 }
             } else {
                 // put back the token in the tokenizer for the 'bool_op' to
@@ -77,7 +72,6 @@ class bool_ops_list final : public statement {
             if (enclosed_ and tz.is_next_char(')')) {
                 // yes, done
                 ws1_ = tz.next_whitespace_token();
-                success_ = true;
                 return;
             }
 
@@ -90,16 +84,12 @@ class bool_ops_list final : public statement {
                 // is the expression enclosed and no closing ')' found?
                 if (enclosed_) {
                     // yes, fail
-                    if (fail_is_ok) {
-                        return;
-                    }
                     throw compiler_exception{
-                        tz, "expected ')' to close expression"};
+                        tok(), "expected ')' to close expression"};
                 }
 
                 // success
                 tz.put_back_token(op_tk);
-                success_ = true;
                 return;
             }
 
@@ -111,11 +101,8 @@ class bool_ops_list final : public statement {
             // is it mixing 'and's and 'or's?
             if (not prv_op.is_name(op_tk.name())) {
                 // yes, not allowed
-                if (fail_is_ok) {
-                    return;
-                }
                 throw compiler_exception{
-                    tz, "mixing 'and' and 'or' without parenthesis"};
+                    op_tk, "mixing 'and' and 'or' without parenthesis"};
             }
 
             // add the list of ops
