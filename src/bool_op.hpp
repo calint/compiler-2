@@ -185,14 +185,14 @@ class bool_op final : public statement {
 
         // don't allow left-hand-side to be constant because generated
         // assembler does not compile
-        if (not lhs_.is_expression()) {
-            const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
-            if (lhs_info.is_const()) {
-                throw compiler_exception(
-                    lhs_.tok(),
-                    "left hand side expression may not be a constant");
-            }
-        }
+        // if (not lhs_.is_expression()) {
+        //     const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
+        //     if (lhs_info.is_const()) {
+        //         throw compiler_exception(
+        //             lhs_.tok(),
+        //             "left hand side expression may not be a constant");
+        //     }
+        // }
 
         // left-hand-side or right-hand-side or both are expressions
         resolve_cmp(tc, os, indent, lhs_, rhs_);
@@ -270,14 +270,14 @@ class bool_op final : public statement {
 
         // don't allow left-hand-side to be constant because generated
         // assembler does not compile
-        if (not lhs_.is_expression()) {
-            const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
-            if (lhs_info.is_const()) {
-                throw compiler_exception(
-                    lhs_.tok(),
-                    "left hand side expression may not be a constant");
-            }
-        }
+        // if (not lhs_.is_expression()) {
+        //     const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
+        //     if (lhs_info.is_const()) {
+        //         throw compiler_exception(
+        //             lhs_.tok(),
+        //             "left hand side expression may not be a constant");
+        //     }
+        // }
 
         resolve_cmp(tc, os, indent, lhs_, rhs_);
         toc::indent(os, indent);
@@ -412,9 +412,9 @@ class bool_op final : public statement {
         std::vector<std::string> allocated_registers;
 
         const std::string& dst{
-            resolve_expr(tc, os, indent, lhs, allocated_registers)};
+            resolve_expr(tc, os, indent, lhs, true, allocated_registers)};
         const std::string& src{
-            resolve_expr(tc, os, indent, rhs, allocated_registers)};
+            resolve_expr(tc, os, indent, rhs, false, allocated_registers)};
 
         tc.asm_cmd(tok(), os, indent, "cmp", dst, src);
 
@@ -429,7 +429,7 @@ class bool_op final : public statement {
 
         std::vector<std::string> allocated_registers;
         const std::string& dst{
-            resolve_expr(tc, os, indent, lhs, allocated_registers)};
+            resolve_expr(tc, os, indent, lhs, true, allocated_registers)};
         tc.asm_cmd(tok(), os, indent, "cmp", dst, "false");
         for (const auto& reg : allocated_registers | std::views::reverse) {
             tc.free_scratch_register(os, indent, reg);
@@ -437,7 +437,7 @@ class bool_op final : public statement {
     }
 
     static auto resolve_expr(toc& tc, std::ostream& os, size_t indent,
-                             const expr_ops_list& expr,
+                             const expr_ops_list& expr, const bool is_lhs,
                              std::vector<std::string>& allocated_registers)
         -> std::string {
 
@@ -452,6 +452,13 @@ class bool_op final : public statement {
         // 'expr' is not an expression
         const ident_info& expr_info{tc.make_ident_info(expr, true)};
         if (expr_info.is_const()) {
+            if (is_lhs) {
+                const std::string& reg{
+                    tc.alloc_scratch_register(expr.tok(), os, indent)};
+                allocated_registers.emplace_back(reg);
+                expr.compile(tc, os, indent + 1, reg);
+                return reg;
+            }
             return expr.get_unary_ops().to_string() + expr_info.id_nasm;
         }
 
