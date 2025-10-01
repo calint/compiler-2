@@ -351,7 +351,8 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
         for (const std::string& s : comments) {
             os << s << '\n';
         }
-        os << line2 << "  ; opt1" << '\n';
+        // os << line2 << "  ; opt1" << '\n';
+        os << line2 << '\n';
     }
 }
 
@@ -479,7 +480,8 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         for (const std::string& s : comments2) {
             os << s << '\n';
         }
-        os << ws_before << jxx_inv << " " << jmplbl << "  ; opt2" << '\n';
+        // os << ws_before << jxx_inv << " " << jmplbl << "  ; opt2" << '\n';
+        os << ws_before << jxx_inv << " " << jmplbl << '\n';
         for (const std::string& s : comments3) {
             os << s << '\n';
         }
