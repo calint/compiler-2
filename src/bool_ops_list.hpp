@@ -28,24 +28,33 @@ class bool_ops_list final : public statement {
 
         // parse
         while (true) {
+            // place a marker at this location to be able to rewind if
+            // speculative parsing failed
             const token rewind_pos_tk{tz.current_position_token()};
+            // this token may be "not"
             token maybe_not_tk{tz.next_token()};
+            // is it "not"?
             if (not maybe_not_tk.is_name("not")) {
+                // no, put token back and make it into the whitespace
                 tz.put_back_token(maybe_not_tk);
                 maybe_not_tk = tz.next_whitespace_token();
             }
+            // place the position at the beginning of the parenthesis or start
+            // of expression
             token pos_tk{tz.current_position_token()};
+            // is it start of new sub-expression?
             if (tz.is_next_char('(')) {
-                // try as bool_ops_list but it might not be that
-                // e.g.: (t1 + t2) > 3
+                // yes, try as 'bool_ops_list' but it might not be that
+                // e.g.: (t1 + t2) > 3 is not but will compile so further checks
+                // are necessary after the parsing
                 bool_ops_list bol{tc,   std::move(pos_tk),      tz, true,
                                   true, std::move(maybe_not_tk)};
                 bool ok{bol.success_};
-                // check if bool_ops_list got confused parsing an expression as
+                // check if 'bool_ops_list' parsed an expression, wrongfull, as
                 // short-hand boolean expression
                 //   e.g. not ( (t1 + t2) > 2 )
-                //        where (t1 + t2) is a valid bool_ops_list of 1 element
-                //        with expression 't1 + t2'
+                //        where (t1 + t2) is a valid 'bool_ops_list' of 1
+                //        element with expression 't1 + t2'
                 switch (tz.peek_char()) {
                 case '<':
                 case '>':
@@ -57,12 +66,16 @@ class bool_ops_list final : public statement {
                     break;
                 }
                 if (ok) {
+                    // is not a 'bool_op'
                     bools_.emplace_back(std::move(bol));
                 } else {
+                    // it is a 'bool_op', reposition the tokenizer and parse it
                     tz.rewind_to_position(rewind_pos_tk);
                     bools_.emplace_back(bool_op{tc, tz});
                 }
             } else {
+                // put back the token in the tokenizer for the 'bool_op' to
+                // parse it
                 tz.put_back_token(maybe_not_tk);
                 bools_.emplace_back(bool_op{tc, tz});
             }
@@ -83,15 +96,19 @@ class bool_ops_list final : public statement {
                 break;
             }
 
+            // get the 'and' or 'or' mode of this expression
             if (prv_op.is_empty()) {
                 prv_op = op_tk;
             }
 
+            // is it mixing 'and's and 'or's?
             if (not prv_op.is_name(op_tk.name())) {
+                // yes, not allowed
                 throw compiler_exception{
                     tz, "mixing 'and' and 'or' without parenthesis"};
             }
 
+            // add the list of ops
             ops_.emplace_back(std::move(op_tk));
         }
         if (enclosed_) {
