@@ -1132,7 +1132,7 @@ class toc final {
             // does scope contain the variable?
             if (frm.has_var(id_base)) {
                 // yes, return result
-                return {std::move(id_base), frm};
+                return {id_base, frm};
             }
 
             // is the frame a function?
@@ -1157,7 +1157,7 @@ class toc final {
                 id_base = id.id_base();
 
                 if (is_identifier_register(id_base) or fields_.has(id_base)) {
-                    return {std::move(id_base), frm};
+                    return {id_base, frm};
                 }
             }
         }
