@@ -311,9 +311,6 @@ class expr_ops_list final : public expression {
         return n;
     }
 
-    // higher than the highest precedence
-    static constexpr char initial_precedence{7};
-
     // higher value higher precedence
     static auto precedence_for_op(const char ch) -> char {
         switch (ch) {
@@ -337,6 +334,9 @@ class expr_ops_list final : public expression {
             throw panic_exception("unexpected code path expr_ops_list:1");
         }
     }
+
+    // higher than the highest precedence
+    static constexpr char initial_precedence{7};
 
     static auto asm_op(toc& tc, std::ostream& os, const size_t indent,
                        const char op, const ident_info& dst,
