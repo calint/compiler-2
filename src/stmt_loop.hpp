@@ -40,7 +40,7 @@ class stmt_loop final : public statement {
         toc::indent(os, indent, true);
         tc.comment_token(os, tok());
 
-        const std::string lbl = create_unique_label(tc);
+        const std::string lbl{create_unique_label(tc)};
         toc::asm_label(tok(), os, indent, lbl);
         tc.enter_loop(lbl);
         code_.compile(tc, os, indent);

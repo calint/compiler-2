@@ -95,9 +95,9 @@ class type final {
 
         const std::string& memsize{
             get_memory_operand_for_size(tk, tp_first_field->size())};
-        const std::string& accessor = memsize + "[rsp" +
-                                      std::string{stack_idx > 0 ? "+" : ""} +
-                                      std::to_string(stack_idx) + "]";
+        const std::string& accessor{memsize + "[rsp" +
+                                    std::string{stack_idx > 0 ? "+" : ""} +
+                                    std::to_string(stack_idx) + "]"};
         return {*tp, accessor};
     }
 

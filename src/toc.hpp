@@ -174,7 +174,7 @@ class identifier final {
 
   public:
     explicit identifier(std::string id) : id_{std::move(id)} {
-        auto parts = id_ | std::views::split('.');
+        auto parts{id_ | std::views::split('.')};
         for (auto part : parts) {
             path_.emplace_back(part.begin(), part.end());
         }
