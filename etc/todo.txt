@@ -1,3 +1,5 @@
+[ ] bool_ops_list: does not throw parsing error:
+    var b : bool = (true == false
 [ ] tokenizer: handle string with escaped " 
 [ ] token: regex construction to static
 [ ] considering not parsing multiple return statements

@@ -84,9 +84,23 @@ class bool_ops_list final : public statement {
             // read 'and' or 'or'
             token op_tk{tz.next_token()};
             if (not op_tk.is_name("or") and not op_tk.is_name("and")) {
-                // not expected keyword, end of expression, put it back
+                // not expected keyword, end of expression, put token back and
+                // return
+
+                // is the expression enclosed and no closing ')' found?
+                if (enclosed_) {
+                    // yes, fail
+                    if (fail_is_ok) {
+                        return;
+                    }
+                    throw compiler_exception{
+                        tz, "expected ')' to close expression"};
+                }
+
+                // success
                 tz.put_back_token(op_tk);
-                break;
+                success_ = true;
+                return;
             }
 
             // get the 'and' or 'or' mode of this expression
@@ -97,6 +111,9 @@ class bool_ops_list final : public statement {
             // is it mixing 'and's and 'or's?
             if (not prv_op.is_name(op_tk.name())) {
                 // yes, not allowed
+                if (fail_is_ok) {
+                    return;
+                }
                 throw compiler_exception{
                     tz, "mixing 'and' and 'or' without parenthesis"};
             }
@@ -104,13 +121,6 @@ class bool_ops_list final : public statement {
             // add the list of ops
             ops_.emplace_back(std::move(op_tk));
         }
-        if (enclosed_) {
-            if (fail_is_ok) {
-                return;
-            }
-            throw compiler_exception{tz, "expected ')' to close expression"};
-        }
-        success_ = true;
     }
 
     bool_ops_list() = default;
