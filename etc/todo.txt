@@ -1,24 +1,4 @@
-[x] fix 'cmp' with left hand side constant 
-    => moves lhs to register and makes compilation. todo: if lhs and rhs are constants evaluate
-       at compile time
-       => the if does the constant evaluation never reaching cmp assembler command
-[x] expr_ops_list: does calculate e*b/a + (b % (-a)) 
-    fix t47.baz:
-    c = a - e*b/a + (b % (-a))
-    if not c==4 exit(17)
-    => c = (a - e*b/a) + (b % (-a))  ok
-       c = a - e*b/a + (b % (-a)) not ok
-       expr_ops_list does:
-       c = a - (   e*b/a + (b % (-a))  ) 
 [ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
-[x] bool_ops_list fix:
-    var t1 = 5
-    var t2 = 5
-    var t3 = 10
-    var t4 = 2
-    var t5 : bool = false
-    var h9 : bool = not ( (t1 + t2 + t3 + t4) > 20 and not t5 ) and (t3 / 5 > 1 or t4 / 1 == 2)
-[x] bool_ops_list: there can be no spaces between ( () )
 [ ] tokenizer to keep track of line-number instead of computing it
 [ ] consider refactoring to 1 pass compiler making compiling in constructor
     constructor(os data,os code,indent)
@@ -27,7 +7,6 @@
 [ ] token: regex construction to static
 [ ] unary_ops: use std::source_location in panic exception
 [ ] stmt_call: use std::source_location in panic exception
-[x] find out why toc.source_comment does not remove trailing spaces
 [ ] implement arrays
 [ ] implement strings
 [ ] support for float and double
@@ -97,6 +76,27 @@ stage 5
       mov qword[rbp-16],r15
 [ ] why is the binary so big although in-line is turned off in make.sh?
 -------------------------------------------------------------------------------
+[x] fix 'cmp' with left hand side constant 
+    => moves lhs to register and makes compilation. todo: if lhs and rhs are constants evaluate
+       at compile time
+       => the if does the constant evaluation never reaching cmp assembler command
+[x] expr_ops_list: does calculate e*b/a + (b % (-a)) 
+    fix t47.baz:
+    c = a - e*b/a + (b % (-a))
+    if not c==4 exit(17)
+    => c = (a - e*b/a) + (b % (-a))  ok
+       c = a - e*b/a + (b % (-a)) not ok
+       expr_ops_list does:
+       c = a - (   e*b/a + (b % (-a))  ) 
+[x] bool_ops_list fix:
+    var t1 = 5
+    var t2 = 5
+    var t3 = 10
+    var t4 = 2
+    var t5 : bool = false
+    var h9 : bool = not ( (t1 + t2 + t3 + t4) > 20 and not t5 ) and (t3 / 5 > 1 or t4 / 1 == 2)
+[x] bool_ops_list: there can be no spaces between ( () )
+[x] find out why toc.source_comment does not remove trailing spaces
 [x] var u : bool = not ( (false or true) and not (true and false) ) or (x > 10)
                  => false
 [x] t69.baz has commented samples that break baz
