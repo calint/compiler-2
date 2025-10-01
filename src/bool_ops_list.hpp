@@ -6,7 +6,7 @@
 #include "bool_op.hpp"
 #include "statement.hpp"
 
-// list of boolean expressions / list instead of tree
+// list of boolean expressions / lists instead of tree
 // note: quirky parsing and compiling but supports short-circuiting
 class bool_ops_list final : public statement {
     std::vector<std::variant<bool_op, bool_ops_list>> bools_;
