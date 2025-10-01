@@ -7,6 +7,9 @@ TAG=$(date "+%Y-%m-%d--%H-%M") && git tag $TAG && git push origin $TAG
 # check memory issues
 valgrind --tool=memcheck --track-origins=yes ./baz
 
+# check cache utilization
+valgrind --tool=cachegrind --cache-sim=yes ./baz
+
 # resets current state to HEAD
 git reset --hard HEAD
 
