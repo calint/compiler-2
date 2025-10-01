@@ -27,8 +27,6 @@ class expr_ops_list final : public expression {
         : expression{tz.next_whitespace_token()}, uops_{std::move(uops)},
           enclosed_{enclosed}, is_base_expression_{is_base_expression} {
 
-        // read first expression e.g. =-a/-(b+1)
-
         // is this in a recursion?
         if (first_expression) {
             // yes, add provided first expression
@@ -61,7 +59,7 @@ class expr_ops_list final : public expression {
                 return;
             }
 
-            // is it parsed withing a function argument?
+            // is it parsed within a function argument?
             if (in_args) {
                 // yes, exit when ',' or ')' is found
                 if (tz.is_peek_char(',') or tz.is_peek_char(')')) {
