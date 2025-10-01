@@ -55,8 +55,7 @@ class bool_ops_list final : public statement {
                 //   e.g. not ( (t1 + t2) > 2 )
                 //        where (t1 + t2) is a valid 'bool_ops_list' of 1
                 //        element with expression 't1 + t2'
-                const std::string fail_chars{"<>=!+-*/%&|^"};
-                if (fail_chars.contains(tz.peek_char())) {
+                if (std::string_view{"<>=!+-*/%&|^"}.contains(tz.peek_char())) {
                     ok = false;
                 }
                 if (ok) {

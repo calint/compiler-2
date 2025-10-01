@@ -8,8 +8,7 @@
 #include "token.hpp"
 
 class tokenizer final {
-    std::string delimiters_{
-        " \t\r\n(){}=,:+-*/%&|^<>!\0"}; // NOLINT(bugprone-string-literal-with-embedded-nul)
+    const std::string_view delimiters_{" \t\r\n(){}=,:+-*/%&|^<>!\0"};
     const std::string& src_; // the string to be tokenized
     const char* ptr_{};      // pointer to current position
     size_t char_ix_{};       // current char index in 'src_'
