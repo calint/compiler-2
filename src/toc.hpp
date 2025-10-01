@@ -205,6 +205,7 @@ class toc final {
     std::vector<std::string> all_registers_{
         "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
         "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"};
+    size_t all_registers_initial_size_{all_registers_.size()};
     std::vector<std::string> named_registers_{"rax", "rbx", "rcx", "rdx",
                                               "rsi", "rdi", "rbp"};
     size_t named_registers_initial_size_{named_registers_.size()};
@@ -372,7 +373,7 @@ class toc final {
            << '\n';
         os << ";               max stack size: " << usage_max_stack_size_
            << " B\n";
-        assert(all_registers_.size() == 16);
+        assert(all_registers_.size() == all_registers_initial_size_);
         assert(allocated_registers_.empty());
         assert(allocated_registers_src_locs_.empty());
         assert(frames_.empty());
