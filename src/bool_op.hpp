@@ -183,18 +183,10 @@ class bool_op final : public statement {
             }
         }
 
-        // don't allow left-hand-side to be constant because generated
-        // assembler does not compile
-        // if (not lhs_.is_expression()) {
-        //     const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
-        //     if (lhs_info.is_const()) {
-        //         throw compiler_exception(
-        //             lhs_.tok(),
-        //             "left hand side expression may not be a constant");
-        //     }
-        // }
-
         // left-hand-side or right-hand-side or both are expressions
+        // note: if lhs is constant then a scratch register is used, however the
+        //       if statement compile time evaluates constant expressions prior
+        //       to reaching this
         resolve_cmp(tc, os, indent, lhs_, rhs_);
         toc::indent(os, indent);
         os << (invert ? asm_jxx_for_op_inv(op_) : asm_jxx_for_op(op_));
