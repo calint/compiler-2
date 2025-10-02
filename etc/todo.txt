@@ -11,6 +11,7 @@
            multiplication
        [ ] support assigning strings to i8 arrays
        [ ] support indexing in user defined types: e.g. obj[x].pts[y].x = z
+       [ ] bounds check (optional compiler flag)
 [ ] considering not parsing multiple return statements
 [ ] tokenizer: handle string with escaped " 
 [ ] use asm command 'test' instead of 'cmp' when checking for constant 0
