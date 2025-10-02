@@ -171,7 +171,7 @@ struct ident_info final {
     const std::string id_nasm; // NASM valid source
     const int64_t const_value{};
     const type& type_ref;
-    const int64_t stack_ix_rel_rsp;
+    const int64_t stack_ix;
     const ident_type ident_type{ident_type::CONST};
 
     [[nodiscard]] auto is_const() const -> bool {
@@ -1338,7 +1338,7 @@ class toc final {
                     .id_nasm = acc,
                     .const_value = 0,
                     .type_ref = tp,
-                    .stack_ix_rel_rsp = var.stack_idx,
+                    .stack_ix = var.stack_idx,
                     .ident_type = ident_info::ident_type::VAR};
         }
 
@@ -1349,7 +1349,7 @@ class toc final {
                     .id_nasm = id_base,
                     .const_value = 0,
                     .type_ref = get_type_default(),
-                    .stack_ix_rel_rsp = 0,
+                    .stack_ix = 0,
                     .ident_type = ident_info::ident_type::REGISTER};
         }
 
@@ -1359,7 +1359,7 @@ class toc final {
                     .id_nasm = id_base,
                     .const_value = 0,
                     .type_ref = get_type_default(),
-                    .stack_ix_rel_rsp = 0,
+                    .stack_ix = 0,
                     .ident_type = ident_info::ident_type::REGISTER};
         }
 
@@ -1373,7 +1373,7 @@ class toc final {
                         .id_nasm = id_base + ".len",
                         .const_value = 0,
                         .type_ref = get_type_default(),
-                        .stack_ix_rel_rsp = 0,
+                        .stack_ix = 0,
                         .ident_type = ident_info::ident_type::IMPLIED};
             }
             const field_info& fi{fields_.get_const_ref(id_base)};
@@ -1382,7 +1382,7 @@ class toc final {
                         .id_nasm = id_base,
                         .const_value = 0,
                         .type_ref = get_type_default(),
-                        .stack_ix_rel_rsp = 0,
+                        .stack_ix = 0,
                         .ident_type = ident_info::ident_type::FIELD};
             }
             //? assumes qword
@@ -1390,7 +1390,7 @@ class toc final {
                     .id_nasm = "qword[" + id_base + "]",
                     .const_value = 0,
                     .type_ref = get_type_default(),
-                    .stack_ix_rel_rsp = 0,
+                    .stack_ix = 0,
                     .ident_type = ident_info::ident_type::FIELD};
         }
 
@@ -1402,7 +1402,7 @@ class toc final {
                     .const_value = *value, // * dereference is safe
                                            // inside the if body
                     .type_ref = get_type_default(),
-                    .stack_ix_rel_rsp = 0,
+                    .stack_ix = 0,
                     .ident_type = ident_info::ident_type::CONST};
         }
 
@@ -1412,7 +1412,7 @@ class toc final {
                     .id_nasm = "true",
                     .const_value = 1,
                     .type_ref = get_type_bool(),
-                    .stack_ix_rel_rsp = 0,
+                    .stack_ix = 0,
                     .ident_type = ident_info::ident_type::CONST};
         }
 
@@ -1421,7 +1421,7 @@ class toc final {
                     .id_nasm = "false",
                     .const_value = 0,
                     .type_ref = get_type_bool(),
-                    .stack_ix_rel_rsp = 0,
+                    .stack_ix = 0,
                     .ident_type = ident_info::ident_type::CONST};
         }
 
@@ -1430,7 +1430,7 @@ class toc final {
                 .id_nasm = "",
                 .const_value = 0,
                 .type_ref = get_type_void(),
-                .stack_ix_rel_rsp = 0,
+                .stack_ix = 0,
                 .ident_type = ident_info::ident_type::CONST};
     }
 

@@ -129,7 +129,9 @@ class stmt_def_var final : public statement {
         const ident_info& dst_info{
             tc.make_ident_info(name_tk_, name_tk_.name(), false)};
         tc.asm_cmd(tok(), os, indent, "lea", "rdi",
-                   "[rsp" + std::to_string(dst_info.stack_ix_rel_rsp) + "]");
+                   "[rsp - " + std::to_string(-dst_info.stack_ix) + "]");
+        // note: -dst_info.stack_ix_rel_rsp for nicer source formatting, is
+        //       always negative
         tc.asm_cmd(tok(), os, indent, "mov", "rcx",
                    std::to_string(array_size_ * dst_info.type_ref.size()));
         tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");

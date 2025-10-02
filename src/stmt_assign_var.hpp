@@ -74,13 +74,13 @@ class stmt_assign_var final : public statement {
                 reg_scaled = reg;
                 break;
             case 2:
-                reg_scaled = reg + "*2";
+                reg_scaled = reg + " * 2";
                 break;
             case 4:
-                reg_scaled = reg + "*4";
+                reg_scaled = reg + " * 4";
                 break;
             case 8:
-                reg_scaled = reg + "*8";
+                reg_scaled = reg + " * 8";
                 break;
             default:
                 tc.asm_cmd(array_index_expr_.tok(), os, indent, "imul", reg,
@@ -89,8 +89,9 @@ class stmt_assign_var final : public statement {
                 break;
             }
             tc.asm_cmd(array_index_expr_.tok(), os, indent, "lea", reg,
-                       "[rsp+" + reg_scaled +
-                           std::to_string(dst_info.stack_ix_rel_rsp) + "]");
+                       "[rsp + " + reg_scaled + " - " +
+                           std::to_string(-dst_info.stack_ix) + "]");
+            // note: -dst_info.stack_ix for nicer source formatting
             const std::string& memsize{type::get_memory_operand_for_size(
                 array_index_expr_.tok(), dst_info.type_ref.size())};
             expr_.compile(tc, os, indent, memsize + "[" + reg + "]");
