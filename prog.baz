@@ -61,6 +61,15 @@ func baz(arg) : i64 res {
 }
 
 func main() {
+    var arr : i32[4]
+    arr[1] = 2
+    arr[2] = arr[1]
+    assert(arr[1] == 2)
+    assert(arr[2] == 2)
+
+    var ix = 3
+    arr[ix] = arr[ix - 1]
+
     var p : point = {0, 0}
     foo(p)
     assert(p.x == 2)

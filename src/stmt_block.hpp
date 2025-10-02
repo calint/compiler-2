@@ -5,6 +5,7 @@
 #include "stmt_comment.hpp"
 #include "stmt_continue.hpp"
 #include "stmt_def_var.hpp"
+#include "stmt_identifier.hpp"
 #include "stmt_return.hpp"
 #include "tokenizer.hpp"
 
@@ -63,8 +64,8 @@ class stmt_block final : public statement {
                 last_statement_considered_no_statment = true;
             } else if (tk.is_name("")) {
                 // when last statement did not read the right whitespace
-                stms_.emplace_back(
-                    std::make_unique<statement>(std::move(tk), unary_ops{}));
+                stms_.emplace_back(std::make_unique<stmt_identifier>(
+                    tc, tz, std::move(tk), unary_ops{}));
             } else { // circular reference resolver
                 stms_.emplace_back(create_statement_from_tokenizer(
                     tc, unary_ops{}, std::move(tk), tz));

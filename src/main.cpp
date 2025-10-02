@@ -24,6 +24,7 @@
 #include "statement.hpp"
 #include "stmt_call.hpp"
 #include "stmt_comment.hpp"
+#include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
 #include "toc.hpp"
@@ -127,8 +128,8 @@ inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz)
                                                std::move(tk), tz);
     }
     // e.g. 0x80, rax, identifiers
-    std::unique_ptr<statement> stmt{
-        std::make_unique<statement>(tk, std::move(uops))};
+    std::unique_ptr<stmt_identifier> stmt{
+        std::make_unique<stmt_identifier>(tc, tz, tk, std::move(uops))};
     const ident_info& stmt_info{tc.make_ident_info(*stmt, false)};
     stmt->set_type(stmt_info.type_ref);
     return stmt;
