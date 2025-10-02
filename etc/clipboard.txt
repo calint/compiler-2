@@ -10,6 +10,11 @@ valgrind --tool=memcheck --track-origins=yes ./baz
 # check cache utilization
 valgrind --tool=cachegrind --cache-sim=yes ./baz
 
+# check peak mem usage
+valgrind --tool=massif --massif-out-file=massif.out ./baz >/dev/null 2>/dev/null
+grep mem_heap_B massif.out | sort -g | tail -n 1
+rm massif.out
+
 # resets current state to HEAD
 git reset --hard HEAD
 
