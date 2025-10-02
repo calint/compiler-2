@@ -1,6 +1,2 @@
-Thu Oct  2 01:32:37 PM +07 2025
-/home/c/w/compiler-2/qa/lint/../../src/main.cpp:160:9: warning: variable 'ii' of type 'ident_info' can be declared 'const' [misc-const-correctness]
-  160 |         ident_info ii{tc.make_ident_info(tok(), tok().name(), false)};
-      |         ^
-      |                    const 
-Thu Oct  2 01:33:07 PM +07 2025
+Thu Oct  2 02:57:29 PM +07 2025
+Thu Oct  2 02:57:58 PM +07 2025
