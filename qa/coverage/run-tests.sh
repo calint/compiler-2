@@ -93,6 +93,7 @@ SRC=t74 && EXP=0 && eval $RUN
 SRC=t75 && EXP=0 && eval $RUN
 SRC=t76 && EXP=0 && eval $RUN
 SRC=t77 && EXP=0 && eval $RUN
+SRC=t78 && EXP=0 && eval $RUN
 
 rm gen gen.o gen.s diff.baz out
 

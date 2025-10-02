@@ -720,6 +720,15 @@ class toc final {
         return std::ranges::find(all_registers_, id) != all_registers_.end();
     }
 
+    [[nodiscard]] auto is_identifier_direct_register_indirect_addressing(
+        const std::string& id) const -> bool {
+        if (auto reg{toc::extract_between_brackets(id)}; reg) {
+            if (is_identifier_register(std::string{*reg})) {
+                return true;
+            }
+        }
+        return false;
+    }
     auto asm_cmd(const token& src_loc_tk, std::ostream& os, const size_t indnt,
                  const std::string& op, const std::string& dst_nasm,
                  const std::string& src_nasm) -> void {
@@ -812,7 +821,9 @@ class toc final {
         const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
 
         if (not id.empty()) {
-            if (is_identifier_register(id) or fields_.has(id)) {
+            if (is_identifier_register(id) or
+                is_identifier_direct_register_indirect_addressing(id) or
+                fields_.has(id)) {
                 return;
             }
             // is a variable
@@ -828,7 +839,9 @@ class toc final {
         const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
 
         if (not id.empty()) {
-            if (is_identifier_register(id) or fields_.has(id)) {
+            if (is_identifier_register(id) or
+                is_identifier_direct_register_indirect_addressing(id) or
+                fields_.has(id)) {
                 return true;
             }
             // is a variable
@@ -1223,6 +1236,16 @@ class toc final {
                 if (is_identifier_register(id_base) or fields_.has(id_base)) {
                     return {id_base, frm};
                 }
+
+                // check if destination is of type: e.g. qword[r15]
+                if (std::optional<std::string_view> reg{
+                        toc::extract_between_brackets(id_base)};
+                    reg) {
+                    if (is_identifier_register(std::string{*reg})) {
+                        // a memory reference, e.g. qword[r15]
+                        return {id_base, frm};
+                    }
+                }
             }
         }
 
@@ -1321,19 +1344,14 @@ class toc final {
                     .ident_type = ident_info::ident_type::REGISTER};
         }
 
-        // is it a register index to memory?
-        // todo: fix this
-        std::optional<std::string_view> reg{
-            toc::extract_between_brackets(id_base)};
-        if (reg) {
-            if (is_identifier_register(std::string{*reg})) {
-                return {.id = ident,
-                        .id_nasm = id_base,
-                        .const_value = 0,
-                        .type_ref = get_type_default(),
-                        .stack_ix_rel_rsp = 0,
-                        .ident_type = ident_info::ident_type::REGISTER};
-            }
+        // is it a register reference to memory?
+        if (is_identifier_direct_register_indirect_addressing(id_base)) {
+            return {.id = ident,
+                    .id_nasm = id_base,
+                    .const_value = 0,
+                    .type_ref = get_type_default(),
+                    .stack_ix_rel_rsp = 0,
+                    .ident_type = ident_info::ident_type::REGISTER};
         }
 
         // is it a field?
