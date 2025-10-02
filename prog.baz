@@ -66,8 +66,11 @@ func baz(arg) : i64 res {
 
 func main() {
     var arr : i32[4]
+    # arrays are initialized to 0
+
     arr[1] = 2
     arr[2] = arr[1]
+    
     assert(arr[1] == 2)
     assert(arr[2] == 2)
 
