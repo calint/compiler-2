@@ -1,12 +1,15 @@
 [ ] implement arrays
 [ ] considering not parsing multiple return statements
 [ ] tokenizer: handle string with escaped " 
-[ ] use asm command 'test' instead of 'cmp' when checking for zero
-[ ] tokenizer to keep track of line-number instead of computing it
+[ ] use asm command 'test' instead of 'cmp' when checking for constant 0
+[ ] tokenizer: keep track of line-number instead of computing it
+    => problem when generating comments in the result with excessive calling
+       ok for for reporting parsing error
 [ ] token: regex construction to static
 [ ] lut: change to map
-[ ] stmt_call: check arguments vs parameters in constructor instead of at compile
-[ ] token: consider using a string_view since string for name is not necessary
+[ ] stmt_call: check arguments vs parameters in constructor instead of at
+    compile
+[ ] token: consider using string_view since string for name is not necessary
     because source will not change during its lifetime
 [x] bool_ops_list: does not throw parsing error:
     var b : bool = (true == false
@@ -17,10 +20,11 @@
 [ ] support for float and double?
 [ ] rename compiler_exception
 [o] check that return value is assigned in functions
-    => should check all execution paths to find out if the variable is always assigned
-        now it may result in undefined behavior because the compiler checks that
-        the return value is set in any branch of execution
-[ ] consider mapping execution paths in a tree to find out if a variable is always assigned
+    => should check all execution paths to find out if the variable is always
+       assigned now it may result in undefined behavior because the compiler
+       checks that the return value is set in any branch of execution
+[ ] consider mapping execution paths in a tree to find out if a variable is
+    always assigned
 [ ] review "//?" comments
 [ ] review "todo." comments
 [ ] handle constants when deducing operand size 
