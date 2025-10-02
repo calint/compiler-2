@@ -113,6 +113,13 @@ class stmt_def_var final : public statement {
         // xor eax, eax        ; Zero out RAX (value to store)
         // rep stosb           ; Repeat store byte [RDI] = AL, RCX times
 
+        const ident_info& dst_info{
+            tc.make_ident_info(name_tk_, name_tk_.name(), false)};
+
+        toc::indent(os, indent, true);
+        os << "clear array " << array_size_ << " * " << dst_info.type_ref.size()
+           << " B\n";
+
         if (not tc.alloc_named_register(name_tk_, os, indent, "rdi")) {
             throw compiler_exception{name_tk_,
                                      "could not allocate register RDI"};
@@ -126,8 +133,6 @@ class stmt_def_var final : public statement {
                                      "could not allocate register RAX"};
         }
 
-        const ident_info& dst_info{
-            tc.make_ident_info(name_tk_, name_tk_.name(), false)};
         tc.asm_cmd(tok(), os, indent, "lea", "rdi",
                    "[rsp - " + std::to_string(-dst_info.stack_ix) + "]");
         // note: -dst_info.stack_ix_rel_rsp for nicer source formatting, is

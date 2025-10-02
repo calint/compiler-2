@@ -46,6 +46,7 @@ mov rsp,stk.end
 main:
 ;    var arr: i32[4] @ dword[rsp - 16]
 ;    [68:5]  var arr : i32[4]
+;    clear array 4 * 4 B
 ;    alloc rdi
 ;    alloc rcx
 ;    alloc rax
