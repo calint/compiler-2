@@ -1,4 +1,4 @@
-[ ] parsing error not correct when 'foo(p:point)'
+[x] parsing error not correct when 'foo(p:point)'
     var o1 : object = {{x * 10, y}, 0xff0000}
     foo(o1)
 [ ] implement arrays

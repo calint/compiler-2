@@ -155,7 +155,15 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
     // is it an identifier?
     if (not tok().is_name("")) {
-        // e.g. obj.pos = p
+        // yes, e.g. obj.pos = p
+        // check that identifier type matches expected type
+        ident_info ii{tc.make_ident_info(tok(), tok().name(), false)};
+        if (tp.name() != ii.type_ref.name()) {
+            throw compiler_exception{tok(),
+                                     "type '" + ii.type_ref.name() +
+                                         "' does not match expected type '" +
+                                         tp.name() + "'"};
+        }
         return;
     }
 
