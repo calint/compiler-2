@@ -75,7 +75,7 @@ class stmt_identifier : public statement {
         // note: -dst_info.stack_ix for nicer source formatting
         const std::string& memsize{type::get_memory_operand_for_size(
             array_index_expr_.tok(), dst_type_size)};
-        const std::string src_nasm{memsize + "[" + reg + "]"};
+        const std::string src_nasm{memsize + " [" + reg + "]"};
         tc.asm_cmd(tok(), os, indent, "mov", dst, src_nasm);
         get_unary_ops().compile(tc, os, indent, dst);
         tc.free_scratch_register(os, indent, reg);

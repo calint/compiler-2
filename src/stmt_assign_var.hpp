@@ -94,7 +94,7 @@ class stmt_assign_var final : public statement {
             // note: -dst_info.stack_ix for nicer source formatting
             const std::string& memsize{type::get_memory_operand_for_size(
                 array_index_expr_.tok(), dst_info.type_ref.size())};
-            expr_.compile(tc, os, indent, memsize + "[" + reg + "]");
+            expr_.compile(tc, os, indent, memsize + " [" + reg + "]");
             tc.free_scratch_register(os, indent, reg);
             return;
         }

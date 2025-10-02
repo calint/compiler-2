@@ -12,6 +12,15 @@
        [ ] support assigning strings to i8 arrays
        [ ] support indexing in user defined types: e.g. obj[x].pts[y].x = z
        [ ] bounds check (optional compiler flag)
+[x] nicer formatting of generated source
+        ; Standard Assembly Formatting (Intel/NASM style)
+        mov     qword [rsp - 24], 3
+        mov     r15, qword [rsp - 24]
+        lea     r15, [rsp + r15 * 4 - 16]
+        mov     r13, qword [rsp - 24]
+        sub     r13, 1
+        lea     r13, [rsp + r13 * 4 - 16]
+        movsx   r14, dword [r13]
 [ ] considering not parsing multiple return statements
 [ ] tokenizer: handle string with escaped " 
 [ ] use asm command 'test' instead of 'cmp' when checking for constant 0
