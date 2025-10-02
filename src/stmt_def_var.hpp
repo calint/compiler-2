@@ -61,7 +61,8 @@ class stmt_def_var final : public statement {
 
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
-        tc.add_var(name_tk_, null_strm, 0, name_tk_.name(), tp, false);
+        tc.add_var(name_tk_, null_strm, 0, name_tk_.name(), tp, array_size_,
+                   false);
 
         if (init_required) {
             assign_var_ = {tc, name_tk_, tz};
@@ -98,7 +99,8 @@ class stmt_def_var final : public statement {
                  [[maybe_unused]] const std::string& dst = "") const
         -> void override {
 
-        tc.add_var(name_tk_, os, indent, name_tk_.name(), get_type(), false);
+        tc.add_var(name_tk_, os, indent, name_tk_.name(), get_type(),
+                   array_size_, false);
         tc.comment_source(*this, os, indent);
         if (array_size_tk_.is_empty()) {
             assign_var_.compile(tc, os, indent, name_tk_.name());

@@ -473,7 +473,7 @@ class toc final {
 
     auto add_var(const token& src_loc_tk, std::ostream& os, size_t indnt,
                  const std::string& name, const type& var_type,
-                 const bool initiated) -> void {
+                 size_t array_size, const bool initiated) -> void {
 
         // check if variable is already declared in this scope
         if (frames_.back().has_var(name)) {
@@ -493,8 +493,9 @@ class toc final {
                                 source_location_hr(var.declared_at_tk));
         }
 
-        const int stack_idx{static_cast<int>(get_current_function_stack_size() +
-                                             var_type.size())};
+        const int stack_idx{
+            static_cast<int>(get_current_function_stack_size() +
+                             var_type.size() * (array_size ? array_size : 1))};
         frames_.back().add_var(src_loc_tk, name, var_type, -stack_idx,
                                initiated);
 
@@ -505,8 +506,11 @@ class toc final {
         // comment the resolved name
         const ident_info& name_info{make_ident_info(src_loc_tk, name, false)};
         indent(os, indnt, true);
-        os << "var " << name << ": " << name_info.type_ref.name() << " @ "
-           << name_info.id_nasm << '\n';
+        os << "var " << name << ": " << name_info.type_ref.name();
+        if (array_size) {
+            os << '[' << array_size << ']';
+        }
+        os << " @ " << name_info.id_nasm << '\n';
     }
 
     auto alloc_scratch_register(const token& src_loc_tk, std::ostream& os,
@@ -1202,15 +1206,15 @@ class toc final {
                     return {"", frames_.at(0)};
                 }
 
-                // yes, continue resolving aliases until a variable, field or
-                // register
+                // yes, continue resolving aliases until a variable, field
+                // or register
 
                 // note: when compiling in "dry-run" at 'stmt_def_func' the
-                //       return variable is in the frame of the function as a
-                //       variable, however when compiling the 'stmt_call' the
-                //       function is inlined and the return is added as an alias
-                //       to a variable in a higher context, thus aliases are
-                //       followed to find the variable
+                //       return variable is in the frame of the function as
+                //       a variable, however when compiling the 'stmt_call'
+                //       the function is inlined and the return is added as
+                //       an alias to a variable in a higher context, thus
+                //       aliases are followed to find the variable
 
                 id = identifier{frm.get_alias(id_base)};
                 id_base = id.id_base();
@@ -1271,8 +1275,8 @@ class toc final {
                     // no, it is not
                     break;
                 }
-                // yes, continue resolving alias until it is a variable, field,
-                // register or constant
+                // yes, continue resolving alias until it is a variable,
+                // field, register or constant
                 const identifier new_id{frm.get_alias(id_base)};
                 id_base = new_id.id_base();
                 // is this a path e.g. 'pt.x' or just 'res'?
