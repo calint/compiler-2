@@ -56,6 +56,7 @@ class tokenizer final {
     }
 
     auto rewind_to_position(const token& pos_tk) -> void {
+        //? todo. assert if ok
         const size_t new_pos{pos_tk.start_index()};
         ptr_ = ptr_ - (char_ix_ - new_pos);
         char_ix_ = new_pos;
