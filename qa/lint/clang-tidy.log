@@ -1,2 +1,6 @@
-Thu Oct  2 02:57:29 PM +07 2025
-Thu Oct  2 02:57:58 PM +07 2025
+Thu Oct  2 05:03:26 PM +07 2025
+/home/c/w/compiler-2/qa/lint/../../src/stmt_assign_var.hpp:47:5: warning: function 'expression' should be marked [[nodiscard]] [modernize-use-nodiscard]
+   47 |     auto expression() const -> const expr_any& { return expr_; }
+      |     ^
+      |     [[nodiscard]] 
+Thu Oct  2 05:03:55 PM +07 2025

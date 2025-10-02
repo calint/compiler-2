@@ -43,8 +43,8 @@ class stmt_block final : public statement {
                 stms_.emplace_back(
                     std::make_unique<stmt_def_var>(tc, std::move(tk), tz));
             } else if (tz.is_next_char('=')) {
-                stms_.emplace_back(std::make_unique<stmt_assign_var>(
-                    tc, std::move(tk), token{}, tz));
+                stms_.emplace_back(
+                    std::make_unique<stmt_assign_var>(tc, std::move(tk), tz));
             } else if (tk.is_name("break")) {
                 stms_.emplace_back(
                     std::make_unique<stmt_break>(tc, std::move(tk)));

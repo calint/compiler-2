@@ -1311,19 +1311,13 @@ class toc final {
         }
 
         // is 'id' a constant?
-        char* ep{};
-        const int64_t const_value{strtol(id_base.c_str(), &ep, 10)};
-        if (not *ep) {
-            return {.id = ident,
-                    .id_nasm = id_base,
-                    .const_value = const_value,
-                    .type_ref = get_type_default(),
-                    .ident_type = ident_info::ident_type::CONST};
-        }
 
+        // is it hex?
         if (id_base.starts_with("0x") or id_base.starts_with("0X")) { // hex
-            const int64_t value{strtol(id_base.c_str() + 2, &ep, 16)};
-            if (not *ep) {
+            int64_t value{};
+            auto result = std::from_chars(
+                id_base.data() + 2, id_base.data() + id_base.size(), value, 16);
+            if (result.ec == std::errc{}) {
                 return {.id = ident,
                         .id_nasm = id_base,
                         .const_value = value,
@@ -1332,9 +1326,26 @@ class toc final {
             }
         }
 
+        // is it binary?
         if (id_base.starts_with("0b") or id_base.starts_with("0B")) { // binary
-            const int64_t value{strtol(id_base.c_str() + 2, &ep, 2)};
-            if (not *ep) {
+            int64_t value{};
+            auto result = std::from_chars(
+                id_base.data() + 2, id_base.data() + id_base.size(), value, 2);
+            if (result.ec == std::errc{}) {
+                return {.id = ident,
+                        .id_nasm = id_base,
+                        .const_value = value,
+                        .type_ref = get_type_default(),
+                        .ident_type = ident_info::ident_type::CONST};
+            }
+        }
+
+        // try decimal digit
+        {
+            int64_t value{};
+            auto parse_result = std::from_chars(
+                id_base.data(), id_base.data() + id_base.size(), value);
+            if (parse_result.ec == std::errc{}) {
                 return {.id = ident,
                         .id_nasm = id_base,
                         .const_value = value,

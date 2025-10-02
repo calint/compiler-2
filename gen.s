@@ -46,7 +46,7 @@ mov rsp,stk.end
 main:
 ;    var p: point @ qword[rsp-16]
 ;    [64:5]  var p : point = {0, 0}
-;    [64:9] p : point = {0, 0}
+;    [64:9] p = {0, 0}
 ;    [64:21]  {0, 0}
 ;    [64:21] {0, 0}
 ;    [64:22] 0
@@ -434,7 +434,7 @@ main:
     assert_82_5_end:
 ;    var p0: point @ qword[rsp-56]
 ;    [84:5] var p0 : point = {baz(2), 0}
-;    [84:9] p0 : point = {baz(2), 0}
+;    [84:9] p0 = {baz(2), 0}
 ;    [84:22]  {baz(2), 0}
 ;    [84:22] {baz(2), 0}
 ;    [84:23] baz(2)
@@ -519,7 +519,7 @@ main:
     mov qword[rsp-72], 2
 ;    var o1: object @ qword[rsp-92]
 ;    [90:5] var o1 : object = {{x * 10, y}, 0xff0000}
-;    [90:9] o1 : object = {{x * 10, y}, 0xff0000}
+;    [90:9] o1 = {{x * 10, y}, 0xff0000}
 ;    [90:23]  {{x * 10, y}, 0xff0000}
 ;    [90:23] {{x * 10, y}, 0xff0000}
 ;        [90:24] {x * 10, y}
@@ -675,7 +675,7 @@ main:
     assert_93_5_end:
 ;    var p1: point @ qword[rsp-108]
 ;    [95:5] var p1 : point = {-x, -y}
-;    [95:9] p1 : point = {-x, -y}
+;    [95:9] p1 = {-x, -y}
 ;    [95:22]  {-x, -y}
 ;    [95:22] {-x, -y}
 ;    [95:23] -x
@@ -791,7 +791,7 @@ main:
     assert_98_5_end:
 ;    var o2: object @ qword[rsp-128]
 ;    [100:5] var o2 : object = o1
-;    [100:9] o2 : object = o1
+;    [100:9] o2 = o1
 ;    [100:23]  o1
 ;    [100:23] o1
 ;        [100:23] o1

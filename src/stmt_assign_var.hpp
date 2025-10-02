@@ -4,12 +4,11 @@
 #include "expr_any.hpp"
 
 class stmt_assign_var final : public statement {
-    token type_tk_;
     expr_any expr_;
 
   public:
-    stmt_assign_var(toc& tc, token name, token type, tokenizer& tz)
-        : statement{std::move(name)}, type_tk_{std::move(type)} {
+    stmt_assign_var(toc& tc, token name, tokenizer& tz)
+        : statement{std::move(name)} {
 
         const ident_info& dst_info{tc.make_ident_info(*this, false)};
         set_type(dst_info.type_ref);
@@ -26,10 +25,6 @@ class stmt_assign_var final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        if (not type_tk_.is_empty()) {
-            os << ':';
-            type_tk_.source_to(os);
-        }
         os << "=";
         expr_.source_to(os);
     }
@@ -48,4 +43,6 @@ class stmt_assign_var final : public statement {
         expr_.compile(tc, os, indent, dst_info.id);
         tc.set_var_is_initiated(dst_info.id);
     }
+
+    auto expression() const -> const expr_any& { return expr_; }
 };
