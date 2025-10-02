@@ -5,8 +5,10 @@
 [o] implement arrays
     => exploratory quick and dirty coding of arrays for primitives: ok
        [x] initialize arrays to 0
-       [ ] multiplication by 1 is not necessary, post compilation optimized
        [x] lea instruction should use scaling if type size 2, 4 or 8
+       [x] multiplication by 1 is not necessary, post compilation optimized
+           => types of size 1, 2, 4, 8 are specified in instruction lea
+       [ ] if constant index value don't use scratch register
        [ ] allow types to be power of 2 sizes only and use shift instead of
            multiplication
        [ ] support assigning strings to i8 arrays
