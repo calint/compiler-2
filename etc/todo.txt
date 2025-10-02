@@ -1,11 +1,12 @@
+[ ] tokenizer to keep track of line-number instead of computing it
+[ ] considering not parsing multiple return statements
+[ ] token: regex construction to static
+[ ] lut: change to map
 [x] bool_ops_list: does not throw parsing error:
     var b : bool = (true == false
 [ ] use asm command test instead of cmp when checking for zero
 [ ] tokenizer: handle string with escaped " 
-[ ] token: regex construction to static
-[ ] considering not parsing multiple return statements
 [ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
-[ ] tokenizer to keep track of line-number instead of computing it
 [ ] consider refactoring to 1 pass compiler making compiling in constructor
     constructor(os data,os code,indent)
 [ ] tokenizer, token etc to std::string_view
