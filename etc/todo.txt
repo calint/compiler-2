@@ -4,6 +4,9 @@
     foo(o1)
 [o] implement arrays
     => exploratory quick and dirty coding of arrays for primitives: ok
+       [ ] multiplication by 1 is not necessary, post compilation optimized
+       [ ] allow types to be power of 2 sizes only and use shift instead of
+           multiplication
 [ ] considering not parsing multiple return statements
 [ ] tokenizer: handle string with escaped " 
 [ ] use asm command 'test' instead of 'cmp' when checking for constant 0
