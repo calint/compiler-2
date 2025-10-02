@@ -12,7 +12,6 @@ class tokenizer final {
     const std::string& src_; // the string to be tokenized
     const char* ptr_{};      // pointer to current position
     size_t char_ix_{};       // current char index in 'src_'
-    char last_char_{-1}; // last read character (-1 before any characters read)
 
   public:
     explicit tokenizer(const std::string& src)
@@ -26,7 +25,7 @@ class tokenizer final {
 
     ~tokenizer() = default;
 
-    [[nodiscard]] auto is_eos() const -> bool { return last_char_ == '\0'; }
+    [[nodiscard]] auto is_eos() const -> bool { return *ptr_ == '\0'; }
 
     auto next_token() -> token {
         const std::string ws_before{next_whitespace()};
@@ -112,11 +111,10 @@ class tokenizer final {
     }
 
     auto next_char() -> char {
-        assert(last_char_);
-        last_char_ = *ptr_;
+        const char ch{*ptr_};
         ptr_++;
         char_ix_++;
-        return last_char_;
+        return ch;
     }
 
     [[nodiscard]] auto current_char_index_in_source() const -> size_t {

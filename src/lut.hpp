@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,32 +19,20 @@ template <class T> class lut final {
     };
 
     std::vector<elem> elems_;
-    mutable const elem* last_has_elem_{};
 
   public:
-    auto get(const std::string& key) const -> T {
-        if (last_has_elem_) {
-            if (last_has_elem_->is_key(key)) {
-                return last_has_elem_->data;
-            }
-        }
-        for (const elem& e : elems_) {
-            if (e.is_key(key)) {
-                return e.data;
-            }
-        }
-        throw panic_exception("element not found: " + key);
-    }
+    // auto get(const std::string& key) const -> T {
+    //     for (const elem& e : elems_) {
+    //         if (e.is_key(key)) {
+    //             return e.data;
+    //         }
+    //     }
+    //     throw panic_exception("element not found: " + key);
+    // }
 
-    auto has(const std::string& key) const -> bool {
-        for (const elem& e : elems_) {
-            if (e.is_key(key)) {
-                last_has_elem_ = &e;
-                return true;
-            }
-        }
-        last_has_elem_ = nullptr;
-        return false;
+    [[nodiscard]] auto has(const std::string& key) const -> bool {
+        return std::ranges::any_of(
+            elems_, [&key](const elem& e) { return e.is_key(key); });
     }
 
     auto put(std::string key, T data) -> void {
@@ -60,12 +49,7 @@ template <class T> class lut final {
     }
 
     // note: for clarity get_const_ref instead of overloading get_ref
-    auto get_const_ref(const std::string& key) const -> const T& {
-        if (last_has_elem_) {
-            if (last_has_elem_->is_key(key)) {
-                return last_has_elem_->data;
-            }
-        }
+    [[nodiscard]] auto get_const_ref(const std::string& key) const -> const T& {
         for (const elem& e : elems_) {
             if (e.is_key(key)) {
                 return e.data;
