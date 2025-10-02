@@ -31,10 +31,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    36            811            583           4441
+C/C++ Header                    36            811            583           4479
 C++                              1             51             67            393
 -------------------------------------------------------------------------------
-SUM:                            37            862            650           4834
+SUM:                            37            862            650           4872
 -------------------------------------------------------------------------------
 ```
 
@@ -203,21 +203,17 @@ _start:
 mov rsp,stk.end
 main:
     mov r15, 1
-    imul r15, 4
-    lea r15, [rsp+r15-16]
+    lea r15, [rsp+r15*4-16]
     mov dword[r15], 2
     mov r15, 2
-    imul r15, 4
-    lea r15, [rsp+r15-16]
+    lea r15, [rsp+r15*4-16]
     mov r14, 1
-    imul r14, 4
-    lea r14, [rsp+r14-16]
+    lea r14, [rsp+r14*4-16]
     mov r13d, dword[r14]
     mov dword[r15], r13d
     cmp_67_12:
         mov r13, 1
-        imul r13, 4
-        lea r13, [rsp+r13-16]
+        lea r13, [rsp+r13*4-16]
         movsx r14, dword[r13]
     cmp r14, 2
     jne bool_false_67_12
@@ -242,8 +238,7 @@ main:
     assert_67_5_end:
     cmp_68_12:
         mov r13, 2
-        imul r13, 4
-        lea r13, [rsp+r13-16]
+        lea r13, [rsp+r13*4-16]
         movsx r14, dword[r13]
     cmp r14, 2
     jne bool_false_68_12
@@ -268,12 +263,10 @@ main:
     assert_68_5_end:
     mov qword[rsp-24], 3
     mov r15, qword[rsp-24]
-    imul r15, 4
-    lea r15, [rsp+r15-16]
+    lea r15, [rsp+r15*4-16]
     mov r14, qword[rsp-24]
     sub r14, 1
-    imul r14, 4
-    lea r14, [rsp+r14-16]
+    lea r14, [rsp+r14*4-16]
     mov r13d, dword[r14]
     mov dword[r15], r13d
     mov qword[rsp-40], 0
@@ -821,8 +814,7 @@ main:
 ;    [65:9] 1
 ;    [65:9] r15 = 1
     mov r15, 1
-    imul r15, 4
-    lea r15, [rsp+r15-16]
+    lea r15, [rsp+r15*4-16]
 ;    [65:14]  2
 ;    [65:14] 2
 ;    [65:14] dword[r15] = 2
@@ -834,8 +826,7 @@ main:
 ;    [66:9] 2
 ;    [66:9] r15 = 2
     mov r15, 2
-    imul r15, 4
-    lea r15, [rsp+r15-16]
+    lea r15, [rsp+r15*4-16]
 ;    [66:14]  arr[1]
 ;    [66:14] arr[1]
 ;    [66:14] dword[r15] = arr[1]
@@ -844,8 +835,7 @@ main:
 ;    [66:18] 1
 ;    [66:18] r14 = 1
     mov r14, 1
-    imul r14, 4
-    lea r14, [rsp+r14-16]
+    lea r14, [rsp+r14*4-16]
 ;    alloc r13
     mov r13d, dword[r14]
     mov dword[r15], r13d
@@ -866,8 +856,7 @@ main:
 ;        [67:16] 1
 ;        [67:16] r13 = 1
         mov r13, 1
-        imul r13, 4
-        lea r13, [rsp+r13-16]
+        lea r13, [rsp+r13*4-16]
         movsx r14, dword[r13]
 ;        free r13
     cmp r14, 2
@@ -921,8 +910,7 @@ main:
 ;        [68:16] 2
 ;        [68:16] r13 = 2
         mov r13, 2
-        imul r13, 4
-        lea r13, [rsp+r13-16]
+        lea r13, [rsp+r13*4-16]
         movsx r14, dword[r13]
 ;        free r13
     cmp r14, 2
@@ -975,8 +963,7 @@ main:
 ;    [71:9] ix
 ;    [71:9] r15 = ix
     mov r15, qword[rsp-24]
-    imul r15, 4
-    lea r15, [rsp+r15-16]
+    lea r15, [rsp+r15*4-16]
 ;    [71:15]  arr[ix - 1]
 ;    [71:15] arr[ix - 1]
 ;    [71:15] dword[r15] = arr[ix - 1]
@@ -987,8 +974,7 @@ main:
     mov r14, qword[rsp-24]
 ;    [71:24] r14 - 1
     sub r14, 1
-    imul r14, 4
-    lea r14, [rsp+r14-16]
+    lea r14, [rsp+r14*4-16]
 ;    alloc r13
     mov r13d, dword[r14]
     mov dword[r15], r13d

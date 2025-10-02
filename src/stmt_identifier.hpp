@@ -48,13 +48,32 @@ class stmt_identifier : public statement {
         const std::string& reg{
             tc.alloc_scratch_register(array_index_expr_.tok(), os, indent)};
         array_index_expr_.compile(tc, os, indent, reg);
-        tc.asm_cmd(array_index_expr_.tok(), os, indent, "imul", reg,
-                   std::to_string(dst_info.type_ref.size()));
+        const size_t dst_type_size{dst_info.type_ref.size()};
+        std::string reg_scaled;
+        switch (dst_type_size) {
+        case 1:
+            reg_scaled = reg;
+            break;
+        case 2:
+            reg_scaled = reg + "*2";
+            break;
+        case 4:
+            reg_scaled = reg + "*4";
+            break;
+        case 8:
+            reg_scaled = reg + "*8";
+            break;
+        default:
+            tc.asm_cmd(array_index_expr_.tok(), os, indent, "imul", reg,
+                       std::to_string(dst_type_size));
+            reg_scaled = reg;
+            break;
+        }
         tc.asm_cmd(array_index_expr_.tok(), os, indent, "lea", reg,
-                   "[rsp+" + reg + std::to_string(dst_info.stack_ix_rel_rsp) +
-                       "]");
+                   "[rsp+" + reg_scaled +
+                       std::to_string(dst_info.stack_ix_rel_rsp) + "]");
         const std::string& memsize{type::get_memory_operand_for_size(
-            array_index_expr_.tok(), dst_info.type_ref.size())};
+            array_index_expr_.tok(), dst_type_size)};
         const std::string src_nasm{memsize + "[" + reg + "]"};
         tc.asm_cmd(tok(), os, indent, "mov", dst, src_nasm);
         get_unary_ops().compile(tc, os, indent, dst);
