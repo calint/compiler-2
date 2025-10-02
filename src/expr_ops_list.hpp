@@ -301,7 +301,7 @@ class expr_ops_list final : public expression {
         std::string line;
         size_t n{};
         while (getline(ss, line)) {
-            if (regex_search(line, rxcomment)) {
+            if (std::regex_search(line, rxcomment)) {
                 continue;
             }
             n++;

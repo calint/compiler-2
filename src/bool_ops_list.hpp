@@ -170,7 +170,7 @@ class bool_ops_list final : public statement {
                 std::string jmp_false{jmp_to_if_false};
                 std::string jmp_true{jmp_to_if_true};
                 if (i < n - 1) {
-                    if (!invert) {
+                    if (not invert) {
                         // if not last element check if it is a 'or' or
                         // 'and' list
                         if (ops_.at(i).is_name("or")) {
@@ -257,7 +257,7 @@ class bool_ops_list final : public statement {
             //
             // bool_op
             //
-            if (!invert) {
+            if (not invert) {
                 // a == 1 and b == 2   vs   a == 1 or b == 2
                 const bool_op& e{get<bool_op>(bools_.at(i))};
                 if (i < n - 1) {
@@ -335,7 +335,7 @@ class bool_ops_list final : public statement {
             return true;
         }
 
-        assert(!bools_.empty());
+        assert(not bools_.empty());
 
         // 1 expression in the list
         if (bools_.at(0).index() == 0) {
@@ -350,7 +350,7 @@ class bool_ops_list final : public statement {
             throw panic_exception("unexpected code path bool_ops_list:5");
         }
 
-        assert(!bools_.empty());
+        assert(not bools_.empty());
 
         if (bools_.at(0).index() == 0) {
             return get<bool_op>(bools_.at(0)).identifier();

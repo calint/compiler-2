@@ -674,7 +674,7 @@ class toc final {
         const std::string s{ss.str()};
         std::string res{std::regex_replace(s, regex_ws, " ")};
         // trim end of string
-        if (!res.empty() && res.back() == ' ') {
+        if (not res.empty() && res.back() == ' ') {
             res.pop_back();
         }
         os << res << "\n";
@@ -693,9 +693,9 @@ class toc final {
         ss << " " << dst << " " << op << " ";
         st.source_to(ss);
         const std::string s{ss.str()};
-        std::string res{regex_replace(s, regex_ws, " ")};
+        std::string res{std::regex_replace(s, regex_ws, " ")};
         // trim end of string
-        if (!res.empty() && res.back() == ' ') {
+        if (not res.empty() && res.back() == ' ') {
             res.pop_back();
         }
         os << res << '\n';
@@ -1064,7 +1064,7 @@ class toc final {
         //? todo. move this to a static
         const std::regex rx{R"(r(\d+))"};
         std::smatch match;
-        if (!regex_search(operand, match, rx)) {
+        if (not std::regex_search(operand, match, rx)) {
             throw compiler_exception(src_loc_tk, "unknown register " + operand);
         }
         const std::string rnbr{match[1]};
@@ -1193,7 +1193,7 @@ class toc final {
     }
 
     [[nodiscard]] auto get_current_function_stack_size() const -> size_t {
-        assert(!frames_.empty());
+        assert(not frames_.empty());
         size_t nbytes{};
         for (const auto& frm : frames_ | std::views::reverse) {
             nbytes += frm.allocated_stack_size();
@@ -1206,7 +1206,7 @@ class toc final {
     }
 
     [[nodiscard]] auto get_total_stack_size() const -> size_t {
-        assert(!frames_.empty());
+        assert(not frames_.empty());
         size_t nbytes{};
         for (const auto& frm : frames_ | std::views::reverse) {
             nbytes += frm.allocated_stack_size();
@@ -1313,7 +1313,7 @@ class toc final {
         // is 'id' a constant?
         char* ep{};
         const int64_t const_value{strtol(id_base.c_str(), &ep, 10)};
-        if (!*ep) {
+        if (not *ep) {
             return {.id = ident,
                     .id_nasm = id_base,
                     .const_value = const_value,
@@ -1323,7 +1323,7 @@ class toc final {
 
         if (id_base.starts_with("0x") or id_base.starts_with("0X")) { // hex
             const int64_t value{strtol(id_base.c_str() + 2, &ep, 16)};
-            if (!*ep) {
+            if (not *ep) {
                 return {.id = ident,
                         .id_nasm = id_base,
                         .const_value = value,
@@ -1334,7 +1334,7 @@ class toc final {
 
         if (id_base.starts_with("0b") or id_base.starts_with("0B")) { // binary
             const int64_t value{strtol(id_base.c_str() + 2, &ep, 2)};
-            if (!*ep) {
+            if (not *ep) {
                 return {.id = ident,
                         .id_nasm = id_base,
                         .const_value = value,

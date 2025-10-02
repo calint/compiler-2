@@ -309,7 +309,7 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
             break;
         }
 
-        if (not regex_search(line1, match, rxjmp)) {
+        if (not std::regex_search(line1, match, rxjmp)) {
             os << line1 << '\n';
             continue;
         }
@@ -319,14 +319,14 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
         std::vector<std::string> comments;
         while (true) { // read comments
             getline(is, line2);
-            if (regex_match(line2, rxcomment)) {
+            if (std::regex_match(line2, rxcomment)) {
                 comments.emplace_back(line2);
                 continue;
             }
             break;
         }
 
-        if (not regex_search(line2, match, rxlbl)) {
+        if (not std::regex_search(line2, match, rxlbl)) {
             os << line1 << '\n';
             for (const std::string& s : comments) {
                 os << s << '\n';
@@ -378,7 +378,7 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
             break;
         }
 
-        if (not regex_search(line1, match, rxjxx)) {
+        if (not std::regex_search(line1, match, rxjxx)) {
             os << line1 << '\n';
             continue;
         }
@@ -389,13 +389,13 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         std::vector<std::string> comments2;
         while (true) { // read comments
             getline(is, line2);
-            if (regex_match(line2, rxcomment)) {
+            if (std::regex_match(line2, rxcomment)) {
                 comments2.emplace_back(line2);
                 continue;
             }
             break;
         }
-        if (not regex_search(line2, match, rxjmp)) {
+        if (not std::regex_search(line2, match, rxjmp)) {
             os << line1 << '\n';
             for (const std::string& s : comments2) {
                 os << s << '\n';
@@ -409,14 +409,14 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         std::vector<std::string> comments3;
         while (true) { // read comments
             getline(is, line3);
-            if (regex_match(line3, rxcomment)) {
+            if (std::regex_match(line3, rxcomment)) {
                 comments3.emplace_back(line3);
                 continue;
             }
             break;
         }
 
-        if (not regex_search(line3, match, rxlbl)) {
+        if (not std::regex_search(line3, match, rxlbl)) {
             os << line1 << '\n';
             for (const std::string& s : comments2) {
                 os << s << '\n';

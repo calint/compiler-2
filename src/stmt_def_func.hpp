@@ -133,7 +133,8 @@ class stmt_def_func final : public statement {
 
         const std::string src{ss.str()};
         // make comment friendly string replacing consecutive with one space
-        const std::string res{regex_replace(src, std::regex(R"(\s+)"), " ")};
+        const std::string res{
+            std::regex_replace(src, std::regex(R"(\s+)"), " ")};
         os << res << '\n';
     }
 

@@ -33,8 +33,9 @@ class token final {
             os << ws_left_ << name_ << ws_right_;
             return;
         }
-        os << ws_left_ << '"' << regex_replace(name_, std::regex("\n"), "\\n")
-           << '"' << ws_right_;
+        os << ws_left_ << '"'
+           << std::regex_replace(name_, std::regex("\n"), "\\n") << '"'
+           << ws_right_;
     }
 
     auto compile_to(std::ostream& os) const -> void {
@@ -43,7 +44,7 @@ class token final {
             return;
         }
         //? temporary fix to handle strings
-        os << regex_replace(name_, std::regex(R"(\\n)"), "',10,'");
+        os << std::regex_replace(name_, std::regex(R"(\\n)"), "',10,'");
     }
 
     [[nodiscard]] auto is_name(const std::string& s) const -> bool {
