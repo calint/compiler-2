@@ -6,6 +6,7 @@
 #include <iostream>
 #include <optional>
 #include <ranges>
+#include <string_view>
 
 #include "compiler_exception.hpp"
 #include "lut.hpp"
@@ -68,12 +69,12 @@ class frame final {
           type_{frm_type} {}
 
     auto add_var(token declared_at_tk, const std::string& name,
-                 const type& type_ref, const int stack_idx,
+                 const type& type_ref, size_t array_size, const int stack_idx,
                  const bool initiated) -> void {
 
         if (stack_idx < 0) {
             // variable, increase allocated stack size
-            allocated_stack_ += type_ref.size();
+            allocated_stack_ += type_ref.size() * array_size;
         }
 
         vars_.put(name, {.name = name,
@@ -170,6 +171,7 @@ struct ident_info final {
     const std::string id_nasm; // NASM valid source
     const int64_t const_value{};
     const type& type_ref;
+    const int64_t stack_ix_rel_rsp;
     const ident_type ident_type{ident_type::CONST};
 
     [[nodiscard]] auto is_const() const -> bool {
@@ -493,11 +495,10 @@ class toc final {
                                 source_location_hr(var.declared_at_tk));
         }
 
-        const int stack_idx{
-            static_cast<int>(get_current_function_stack_size() +
-                             var_type.size() * (array_size ? array_size : 1))};
-        frames_.back().add_var(src_loc_tk, name, var_type, -stack_idx,
-                               initiated);
+        const int stack_idx{static_cast<int>(get_current_function_stack_size() +
+                                             (var_type.size() * array_size))};
+        frames_.back().add_var(src_loc_tk, name, var_type, array_size,
+                               -stack_idx, initiated);
 
         const size_t total_stack_size{get_total_stack_size()};
         usage_max_stack_size_ =
@@ -891,7 +892,7 @@ class toc final {
     // statics
     // -------------------------------------------------------------------------
 
-    static auto parse_to_constant(const std::string str)
+    static auto parse_to_constant(const std::string& str)
         -> std::optional<int64_t> {
         // is it hex?
         if (str.starts_with("0x") or str.starts_with("0X")) { // hex
@@ -1305,6 +1306,7 @@ class toc final {
                     .id_nasm = acc,
                     .const_value = 0,
                     .type_ref = tp,
+                    .stack_ix_rel_rsp = var.stack_idx,
                     .ident_type = ident_info::ident_type::VAR};
         }
 
@@ -1315,7 +1317,23 @@ class toc final {
                     .id_nasm = id_base,
                     .const_value = 0,
                     .type_ref = get_type_default(),
+                    .stack_ix_rel_rsp = 0,
                     .ident_type = ident_info::ident_type::REGISTER};
+        }
+
+        // is it a register index to memory?
+        // todo: fix this
+        std::optional<std::string_view> reg{
+            toc::extract_between_brackets(id_base)};
+        if (reg) {
+            if (is_identifier_register(std::string{*reg})) {
+                return {.id = ident,
+                        .id_nasm = id_base,
+                        .const_value = 0,
+                        .type_ref = get_type_default(),
+                        .stack_ix_rel_rsp = 0,
+                        .ident_type = ident_info::ident_type::REGISTER};
+            }
         }
 
         // is it a field?
@@ -1328,6 +1346,7 @@ class toc final {
                         .id_nasm = id_base + ".len",
                         .const_value = 0,
                         .type_ref = get_type_default(),
+                        .stack_ix_rel_rsp = 0,
                         .ident_type = ident_info::ident_type::IMPLIED};
             }
             const field_info& fi{fields_.get_const_ref(id_base)};
@@ -1336,6 +1355,7 @@ class toc final {
                         .id_nasm = id_base,
                         .const_value = 0,
                         .type_ref = get_type_default(),
+                        .stack_ix_rel_rsp = 0,
                         .ident_type = ident_info::ident_type::FIELD};
             }
             //? assumes qword
@@ -1343,6 +1363,7 @@ class toc final {
                     .id_nasm = "qword[" + id_base + "]",
                     .const_value = 0,
                     .type_ref = get_type_default(),
+                    .stack_ix_rel_rsp = 0,
                     .ident_type = ident_info::ident_type::FIELD};
         }
 
@@ -1354,6 +1375,7 @@ class toc final {
                     .const_value = *value, // * dereference is safe
                                            // inside the if body
                     .type_ref = get_type_default(),
+                    .stack_ix_rel_rsp = 0,
                     .ident_type = ident_info::ident_type::CONST};
         }
 
@@ -1363,6 +1385,7 @@ class toc final {
                     .id_nasm = "true",
                     .const_value = 1,
                     .type_ref = get_type_bool(),
+                    .stack_ix_rel_rsp = 0,
                     .ident_type = ident_info::ident_type::CONST};
         }
 
@@ -1371,6 +1394,7 @@ class toc final {
                     .id_nasm = "false",
                     .const_value = 0,
                     .type_ref = get_type_bool(),
+                    .stack_ix_rel_rsp = 0,
                     .ident_type = ident_info::ident_type::CONST};
         }
 
@@ -1379,6 +1403,7 @@ class toc final {
                 .id_nasm = "",
                 .const_value = 0,
                 .type_ref = get_type_void(),
+                .stack_ix_rel_rsp = 0,
                 .ident_type = ident_info::ident_type::CONST};
     }
 
@@ -1392,5 +1417,20 @@ class toc final {
     //------------------------------------------------------------------------
     static auto is_operand_memory(const std::string& operand) -> bool {
         return operand.find_first_of('[') != std::string::npos;
+    }
+
+    static auto extract_between_brackets(std::string_view str)
+        -> std::optional<std::string_view> {
+        auto start = str.find('[');
+        if (start == std::string_view::npos) {
+            return std::nullopt;
+        }
+
+        auto end = str.find(']', start);
+        if (end == std::string_view::npos) {
+            return std::nullopt;
+        }
+
+        return str.substr(start + 1, end - start - 1);
     }
 };

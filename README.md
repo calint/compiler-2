@@ -31,10 +31,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    35            798            578           4286
+C/C++ Header                    35            801            582           4360
 C++                              1             51             67            392
 -------------------------------------------------------------------------------
-SUM:                            36            849            645           4678
+SUM:                            36            852            649           4752
 -------------------------------------------------------------------------------
 ```
 
@@ -730,7 +730,7 @@ mov rsp,stk.end
 ;[52:1]  # default argument type is `i64`
 ;[58:1]  # return target is specified as a variable, in this case `res`
 main:
-;    var p: point @ qword[rsp-16]
+;    var p: point[1] @ qword[rsp-16]
 ;    [64:5]  var p : point = {0, 0}
 ;    [64:9] p = {0, 0}
 ;    [64:21]  {0, 0}
@@ -844,7 +844,7 @@ main:
         if_36_5_67_5_end:
 ;        free r15
     assert_67_5_end:
-;    var i: i64 @ qword[rsp-24]
+;    var i: i64[1] @ qword[rsp-24]
 ;    [69:5] var i = 0
 ;    [69:9] i = 0
 ;    [69:13]  0
@@ -980,14 +980,14 @@ main:
         if_36_5_75_5_end:
 ;        free r15
     assert_75_5_end:
-;    var j: i64 @ qword[rsp-32]
+;    var j: i64[1] @ qword[rsp-32]
 ;    [77:5] var j = 1
 ;    [77:9] j = 1
 ;    [77:13]  1
 ;    [77:13] 1
 ;    [77:13] j = 1
     mov qword[rsp-32], 1
-;    var k: i64 @ qword[rsp-40]
+;    var k: i64[1] @ qword[rsp-40]
 ;    [78:5] var k = baz(j)
 ;    [78:9] k = baz(j)
 ;    [78:13]  baz(j)
@@ -1118,7 +1118,7 @@ main:
         if_36_5_82_5_end:
 ;        free r15
     assert_82_5_end:
-;    var p0: point @ qword[rsp-56]
+;    var p0: point[1] @ qword[rsp-56]
 ;    [84:5] var p0 : point = {baz(2), 0}
 ;    [84:9] p0 = {baz(2), 0}
 ;    [84:22]  {baz(2), 0}
@@ -1189,21 +1189,21 @@ main:
         if_36_5_85_5_end:
 ;        free r15
     assert_85_5_end:
-;    var x: i64 @ qword[rsp-64]
+;    var x: i64[1] @ qword[rsp-64]
 ;    [87:5] var x = 1
 ;    [87:9] x = 1
 ;    [87:13]  1
 ;    [87:13] 1
 ;    [87:13] x = 1
     mov qword[rsp-64], 1
-;    var y: i64 @ qword[rsp-72]
+;    var y: i64[1] @ qword[rsp-72]
 ;    [88:5] var y = 2
 ;    [88:9] y = 2
 ;    [88:13]  2
 ;    [88:13] 2
 ;    [88:13] y = 2
     mov qword[rsp-72], 2
-;    var o1: object @ qword[rsp-92]
+;    var o1: object[1] @ qword[rsp-92]
 ;    [90:5] var o1 : object = {{x * 10, y}, 0xff0000}
 ;    [90:9] o1 = {{x * 10, y}, 0xff0000}
 ;    [90:23]  {{x * 10, y}, 0xff0000}
@@ -1359,7 +1359,7 @@ main:
         if_36_5_93_5_end:
 ;        free r15
     assert_93_5_end:
-;    var p1: point @ qword[rsp-108]
+;    var p1: point[1] @ qword[rsp-108]
 ;    [95:5] var p1 : point = {-x, -y}
 ;    [95:9] p1 = {-x, -y}
 ;    [95:22]  {-x, -y}
@@ -1475,7 +1475,7 @@ main:
         if_36_5_98_5_end:
 ;        free r15
     assert_98_5_end:
-;    var o2: object @ qword[rsp-128]
+;    var o2: object[1] @ qword[rsp-128]
 ;    [100:5] var o2 : object = o1
 ;    [100:9] o2 = o1
 ;    [100:23]  o1
@@ -1669,7 +1669,7 @@ main:
 ;            free rsi
 ;            free rdx
         print_107_9_end:
-;        var len: i64 @ qword[rsp-136]
+;        var len: i64[1] @ qword[rsp-136]
 ;        [108:9] var len = read(input.len, input) - 1
 ;        [108:13] len = read(input.len, input) - 1
 ;        [108:19]  read(input.len, input) - 1

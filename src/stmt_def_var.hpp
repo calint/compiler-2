@@ -20,7 +20,7 @@ class stmt_def_var final : public statement {
     token type_tk_;
     token array_size_tk_;
     stmt_assign_var assign_var_;
-    size_t array_size_{};
+    size_t array_size_{1};
 
   public:
     stmt_def_var(toc& tc, token tk, tokenizer& tz)

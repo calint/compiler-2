@@ -42,6 +42,9 @@ class stmt_block final : public statement {
             if (tk.is_name("var")) {
                 stms_.emplace_back(
                     std::make_unique<stmt_def_var>(tc, std::move(tk), tz));
+            } else if (tz.is_next_char('[')) {
+                stms_.emplace_back(std::make_unique<stmt_assign_var>(
+                    tc, std::move(tk), tz, true));
             } else if (tz.is_next_char('=')) {
                 stms_.emplace_back(
                     std::make_unique<stmt_assign_var>(tc, std::move(tk), tz));

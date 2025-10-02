@@ -1,14 +1,2 @@
-Thu Oct  2 05:51:36 PM +07 2025
-/home/c/w/compiler-2/qa/lint/../../src/stmt_assign_var.hpp:47:5: warning: function 'expression' should be marked [[nodiscard]] [modernize-use-nodiscard]
-   47 |     auto expression() const -> const expr_any& { return expr_; }
-      |     ^
-      |     [[nodiscard]] 
-/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:498:30: warning: '*' has higher precedence than '+'; add parentheses to explicitly specify the order of operations [readability-math-missing-parentheses]
-  498 |                              var_type.size() * (array_size ? array_size : 1))};
-      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      |                              (                                              )
-/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:894:53: warning: the const qualified parameter 'str' is copied for each invocation; consider making it a reference [performance-unnecessary-value-param]
-  894 |     static auto parse_to_constant(const std::string str)
-      |                                                     ^
-      |                                                    &
-Thu Oct  2 05:52:04 PM +07 2025
+Thu Oct  2 07:39:30 PM +07 2025
+Thu Oct  2 07:39:59 PM +07 2025

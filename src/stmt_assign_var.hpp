@@ -1,16 +1,31 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include "compiler_exception.hpp"
 #include "expr_any.hpp"
 
 class stmt_assign_var final : public statement {
     expr_any expr_;
+    expr_any array_index_expr_;
+    token ws1_;
+    bool has_array_index_{};
 
   public:
-    stmt_assign_var(toc& tc, token name, tokenizer& tz)
-        : statement{std::move(name)} {
-
+    stmt_assign_var(toc& tc, token name, tokenizer& tz,
+                    bool has_array_index = false)
+        : statement{std::move(name)}, has_array_index_{has_array_index} {
         const ident_info& dst_info{tc.make_ident_info(*this, false)};
+        if (has_array_index) {
+            array_index_expr_ = {tc, tz, dst_info.type_ref, false};
+            if (not tz.is_next_char(']')) {
+                throw compiler_exception{
+                    tz, "expected ']' after array index expression"};
+            }
+            ws1_ = tz.next_whitespace_token();
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz, "expected '=' and expression"};
+            }
+        }
         set_type(dst_info.type_ref);
         expr_ = {tc, tz, dst_info.type_ref, false};
     }
@@ -25,6 +40,12 @@ class stmt_assign_var final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
+        if (has_array_index_) {
+            os << '[';
+            array_index_expr_.source_to(os);
+            os << ']';
+            ws1_.source_to(os);
+        }
         os << "=";
         expr_.source_to(os);
     }
@@ -40,9 +61,26 @@ class stmt_assign_var final : public statement {
             throw compiler_exception(tok(), "cannot assign to constant '" +
                                                 dst_info.id + "'");
         }
+        // is it index into array?
+        if (has_array_index_) {
+            // indexing into an array
+            const std::string& reg{
+                tc.alloc_scratch_register(array_index_expr_.tok(), os, indent)};
+            array_index_expr_.compile(tc, os, indent, reg);
+            tc.asm_cmd(array_index_expr_.tok(), os, indent, "imul", reg,
+                       std::to_string(dst_info.type_ref.size()));
+            tc.asm_cmd(array_index_expr_.tok(), os, indent, "lea", reg,
+                       "[rsp+" + reg +
+                           std::to_string(dst_info.stack_ix_rel_rsp) + "]");
+            const std::string& memsize{type::get_memory_operand_for_size(
+                array_index_expr_.tok(), dst_info.type_ref.size())};
+            expr_.compile(tc, os, indent, memsize + "[" + reg + "]");
+            tc.free_scratch_register(os, indent, reg);
+            return;
+        }
         expr_.compile(tc, os, indent, dst_info.id);
         tc.set_var_is_initiated(dst_info.id);
     }
 
-    auto expression() const -> const expr_any& { return expr_; }
+    [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 };

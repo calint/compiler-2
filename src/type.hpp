@@ -20,23 +20,6 @@ class type final {
     static constexpr std::string size_word{"word"};
     static constexpr std::string size_byte{"byte"};
 
-    static auto get_memory_operand_for_size(const token& tk, const size_t size)
-        -> const std::string& {
-        switch (size) {
-        case 8:
-            return size_qword;
-        case 4:
-            return size_dword;
-        case 2:
-            return size_word;
-        case 1:
-            return size_byte;
-        default:
-            throw compiler_exception(tk, "illegal size for memory operand: " +
-                                             std::to_string(size));
-        }
-    }
-
     std::string name_;
     size_t size_{};
     std::vector<type_field> fields_;
@@ -94,10 +77,10 @@ class type final {
         }
 
         const std::string& memsize{
-            get_memory_operand_for_size(tk, tp_first_field->size())};
-        const std::string& accessor{memsize + "[rsp" +
-                                    std::string{stack_idx > 0 ? "+" : ""} +
-                                    std::to_string(stack_idx) + "]"};
+            type::get_memory_operand_for_size(tk, tp_first_field->size())};
+        const std::string& accessor{
+            memsize + "[rsp" + std::string{stack_idx > 0 ? "+" : ""} +
+            (stack_idx == 0 ? "" : std::to_string(stack_idx)) + "]"};
         return {*tp, accessor};
     }
 
@@ -111,5 +94,22 @@ class type final {
 
     [[nodiscard]] auto fields() const -> const std::vector<type_field>& {
         return fields_;
+    }
+
+    static auto get_memory_operand_for_size(const token& tk, const size_t size)
+        -> const std::string& {
+        switch (size) {
+        case 8:
+            return size_qword;
+        case 4:
+            return size_dword;
+        case 2:
+            return size_word;
+        case 1:
+            return size_byte;
+        default:
+            throw compiler_exception(tk, "illegal size for memory operand: " +
+                                             std::to_string(size));
+        }
     }
 };
