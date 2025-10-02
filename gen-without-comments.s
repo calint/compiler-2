@@ -24,6 +24,10 @@ global _start
 _start:
 mov rsp,stk.end
 main:
+    lea rdi, [rsp-16]
+    mov rcx, 16
+    xor rax, rax
+    rep stosb
     mov r15, 1
     lea r15, [rsp+r15*4-16]
     mov dword[r15], 2

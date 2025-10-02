@@ -4,7 +4,7 @@
     foo(o1)
 [o] implement arrays
     => exploratory quick and dirty coding of arrays for primitives: ok
-       [ ] initialize arrays to 0
+       [x] initialize arrays to 0
        [ ] multiplication by 1 is not necessary, post compilation optimized
        [x] lea instruction should use scaling if type size 2, 4 or 8
        [ ] allow types to be power of 2 sizes only and use shift instead of

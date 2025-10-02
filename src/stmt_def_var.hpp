@@ -104,6 +104,38 @@ class stmt_def_var final : public statement {
         tc.comment_source(*this, os, indent);
         if (array_size_tk_.is_empty()) {
             assign_var_.compile(tc, os, indent, name_tk_.name());
+            return;
         }
+
+        // zero out the array
+        // ; RDI = destination pointer
+        // ; RCX = number of bytes
+        // xor eax, eax        ; Zero out RAX (value to store)
+        // rep stosb           ; Repeat store byte [RDI] = AL, RCX times
+
+        if (not tc.alloc_named_register(name_tk_, os, indent, "rdi")) {
+            throw compiler_exception{name_tk_,
+                                     "could not allocate register RDI"};
+        }
+        if (not tc.alloc_named_register(name_tk_, os, indent, "rcx")) {
+            throw compiler_exception{name_tk_,
+                                     "could not allocate register RCX"};
+        }
+        if (not tc.alloc_named_register(name_tk_, os, indent, "rax")) {
+            throw compiler_exception{name_tk_,
+                                     "could not allocate register RAX"};
+        }
+
+        const ident_info& dst_info{
+            tc.make_ident_info(name_tk_, name_tk_.name(), false)};
+        tc.asm_cmd(tok(), os, indent, "lea", "rdi",
+                   "[rsp" + std::to_string(dst_info.stack_ix_rel_rsp) + "]");
+        tc.asm_cmd(tok(), os, indent, "mov", "rcx",
+                   std::to_string(array_size_ * dst_info.type_ref.size()));
+        tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
+        toc::asm_rep_stosb(name_tk_, os, indent);
+        tc.free_named_register(os, indent, "rax");
+        tc.free_named_register(os, indent, "rcx");
+        tc.free_named_register(os, indent, "rdi");
     }
 };

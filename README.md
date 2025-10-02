@@ -31,10 +31,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    36            811            583           4479
+C/C++ Header                    36            817            589           4508
 C++                              1             51             67            393
 -------------------------------------------------------------------------------
-SUM:                            37            862            650           4872
+SUM:                            37            868            656           4901
 -------------------------------------------------------------------------------
 ```
 
@@ -207,6 +207,10 @@ global _start
 _start:
 mov rsp,stk.end
 main:
+    lea rdi, [rsp-16]
+    mov rcx, 16
+    xor rax, rax
+    rep stosb
     mov r15, 1
     lea r15, [rsp+r15*4-16]
     mov dword[r15], 2
@@ -842,6 +846,16 @@ mov rsp,stk.end
 main:
 ;    var arr: i32[4] @ dword[rsp-16]
 ;    [68:5]  var arr : i32[4]
+;    alloc rdi
+;    alloc rcx
+;    alloc rax
+    lea rdi, [rsp-16]
+    mov rcx, 16
+    xor rax, rax
+    rep stosb
+;    free rax
+;    free rcx
+;    free rdi
 ;    [69:5]  arr[1] = 2
 ;    alloc r15
 ;    [69:9] 1

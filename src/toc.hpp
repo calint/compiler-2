@@ -399,6 +399,7 @@ class toc final {
         usage_max_scratch_regs_ = 0;
     }
 
+    //? ugly: consolidate these two make_ident_info functions
     [[nodiscard]] auto make_ident_info(const statement& st,
                                        const bool must_be_initiated) const
         -> ident_info {
@@ -729,6 +730,7 @@ class toc final {
         }
         return false;
     }
+
     auto asm_cmd(const token& src_loc_tk, std::ostream& os, const size_t indnt,
                  const std::string& op, const std::string& dst_nasm,
                  const std::string& src_nasm) -> void {
@@ -1180,6 +1182,13 @@ class toc final {
 
         indent(os, indnt);
         os << "not " << operand << '\n';
+    }
+
+    static auto asm_rep_stosb([[maybe_unused]] const token& src_loc_tk,
+                              std::ostream& os, const size_t indnt) -> void {
+
+        indent(os, indnt);
+        os << "rep stosb\n";
     }
 
     static auto indent(std::ostream& os, const size_t indnt,

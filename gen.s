@@ -46,6 +46,16 @@ mov rsp,stk.end
 main:
 ;    var arr: i32[4] @ dword[rsp-16]
 ;    [68:5]  var arr : i32[4]
+;    alloc rdi
+;    alloc rcx
+;    alloc rax
+    lea rdi, [rsp-16]
+    mov rcx, 16
+    xor rax, rax
+    rep stosb
+;    free rax
+;    free rcx
+;    free rdi
 ;    [69:5]  arr[1] = 2
 ;    alloc r15
 ;    [69:9] 1
