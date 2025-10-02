@@ -43,6 +43,7 @@ main:
         movsx r14, dword [r13]
     cmp r14, 2
     jne bool_false_74_12
+    jmp bool_true_74_12
     bool_true_74_12:
     mov r15, true
     jmp bool_end_74_12
@@ -54,6 +55,7 @@ main:
         cmp_36_8_74_5:
         cmp r15, false
         jne if_36_5_74_5_end
+        jmp if_36_8_74_5_code
         if_36_8_74_5_code:
             mov rdi, 1
             exit_36_17_74_5:
@@ -68,6 +70,7 @@ main:
         movsx r14, dword [r13]
     cmp r14, 2
     jne bool_false_75_12
+    jmp bool_true_75_12
     bool_true_75_12:
     mov r15, true
     jmp bool_end_75_12
@@ -79,6 +82,7 @@ main:
         cmp_36_8_75_5:
         cmp r15, false
         jne if_36_5_75_5_end
+        jmp if_36_8_75_5_code
         if_36_8_75_5_code:
             mov rdi, 1
             exit_36_17_75_5:
@@ -105,6 +109,7 @@ main:
         movsx r14, dword [r13]
     cmp r14, 2
     jne bool_false_79_12
+    jmp bool_true_79_12
     bool_true_79_12:
     mov r15, true
     jmp bool_end_79_12
@@ -116,6 +121,7 @@ main:
         cmp_36_8_79_5:
         cmp r15, false
         jne if_36_5_79_5_end
+        jmp if_36_8_79_5_code
         if_36_8_79_5_code:
             mov rdi, 1
             exit_36_17_79_5:
@@ -133,6 +139,7 @@ main:
     cmp_83_12:
     cmp qword [rsp - 40], 2
     jne bool_false_83_12
+    jmp bool_true_83_12
     bool_true_83_12:
     mov r15, true
     jmp bool_end_83_12
@@ -144,6 +151,7 @@ main:
         cmp_36_8_83_5:
         cmp r15, false
         jne if_36_5_83_5_end
+        jmp if_36_8_83_5_code
         if_36_8_83_5_code:
             mov rdi, 1
             exit_36_17_83_5:
@@ -155,6 +163,7 @@ main:
     cmp_84_12:
     cmp qword [rsp - 32], 0xb
     jne bool_false_84_12
+    jmp bool_true_84_12
     bool_true_84_12:
     mov r15, true
     jmp bool_end_84_12
@@ -166,6 +175,7 @@ main:
         cmp_36_8_84_5:
         cmp r15, false
         jne if_36_5_84_5_end
+        jmp if_36_8_84_5_code
         if_36_8_84_5_code:
             mov rdi, 1
             exit_36_17_84_5:
@@ -180,6 +190,7 @@ main:
         cmp_54_8_87_5:
         cmp qword [rsp - 48], 0
         jne if_54_5_87_5_end
+        jmp if_54_8_87_5_code
         if_54_8_87_5_code:
             jmp bar_87_5_end
         if_54_5_87_5_end:
@@ -188,6 +199,7 @@ main:
     cmp_88_12:
     cmp qword [rsp - 48], 0
     jne bool_false_88_12
+    jmp bool_true_88_12
     bool_true_88_12:
     mov r15, true
     jmp bool_end_88_12
@@ -199,6 +211,7 @@ main:
         cmp_36_8_88_5:
         cmp r15, false
         jne if_36_5_88_5_end
+        jmp if_36_8_88_5_code
         if_36_8_88_5_code:
             mov rdi, 1
             exit_36_17_88_5:
@@ -213,6 +226,7 @@ main:
         cmp_54_8_91_5:
         cmp qword [rsp - 48], 0
         jne if_54_5_91_5_end
+        jmp if_54_8_91_5_code
         if_54_8_91_5_code:
             jmp bar_91_5_end
         if_54_5_91_5_end:
@@ -221,6 +235,7 @@ main:
     cmp_92_12:
     cmp qword [rsp - 48], 0xff
     jne bool_false_92_12
+    jmp bool_true_92_12
     bool_true_92_12:
     mov r15, true
     jmp bool_end_92_12
@@ -232,6 +247,7 @@ main:
         cmp_36_8_92_5:
         cmp r15, false
         jne if_36_5_92_5_end
+        jmp if_36_8_92_5_code
         if_36_8_92_5_code:
             mov rdi, 1
             exit_36_17_92_5:
@@ -251,6 +267,7 @@ main:
     cmp_96_12:
     cmp qword [rsp - 64], 2
     jne bool_false_96_12
+    jmp bool_true_96_12
     bool_true_96_12:
     mov r15, true
     jmp bool_end_96_12
@@ -262,6 +279,7 @@ main:
         cmp_36_8_96_5:
         cmp r15, false
         jne if_36_5_96_5_end
+        jmp if_36_8_96_5_code
         if_36_8_96_5_code:
             mov rdi, 1
             exit_36_17_96_5:
@@ -279,6 +297,7 @@ main:
     cmp_99_12:
     cmp qword [rsp - 64], 2
     jne bool_false_99_12
+    jmp bool_true_99_12
     bool_true_99_12:
     mov r15, true
     jmp bool_end_99_12
@@ -290,6 +309,7 @@ main:
         cmp_36_8_99_5:
         cmp r15, false
         jne if_36_5_99_5_end
+        jmp if_36_8_99_5_code
         if_36_8_99_5_code:
             mov rdi, 1
             exit_36_17_99_5:
@@ -308,6 +328,7 @@ main:
     cmp_102_12:
     cmp qword [rsp - 80], 4
     jne bool_false_102_12
+    jmp bool_true_102_12
     bool_true_102_12:
     mov r15, true
     jmp bool_end_102_12
@@ -319,6 +340,7 @@ main:
         cmp_36_8_102_5:
         cmp r15, false
         jne if_36_5_102_5_end
+        jmp if_36_8_102_5_code
         if_36_8_102_5_code:
             mov rdi, 1
             exit_36_17_102_5:
@@ -340,6 +362,7 @@ main:
     cmp_108_12:
     cmp qword [rsp - 116], 10
     jne bool_false_108_12
+    jmp bool_true_108_12
     bool_true_108_12:
     mov r15, true
     jmp bool_end_108_12
@@ -351,6 +374,7 @@ main:
         cmp_36_8_108_5:
         cmp r15, false
         jne if_36_5_108_5_end
+        jmp if_36_8_108_5_code
         if_36_8_108_5_code:
             mov rdi, 1
             exit_36_17_108_5:
@@ -362,6 +386,7 @@ main:
     cmp_109_12:
     cmp qword [rsp - 108], 2
     jne bool_false_109_12
+    jmp bool_true_109_12
     bool_true_109_12:
     mov r15, true
     jmp bool_end_109_12
@@ -373,6 +398,7 @@ main:
         cmp_36_8_109_5:
         cmp r15, false
         jne if_36_5_109_5_end
+        jmp if_36_8_109_5_code
         if_36_8_109_5_code:
             mov rdi, 1
             exit_36_17_109_5:
@@ -384,6 +410,7 @@ main:
     cmp_110_12:
     cmp dword [rsp - 100], 0xff0000
     jne bool_false_110_12
+    jmp bool_true_110_12
     bool_true_110_12:
     mov r15, true
     jmp bool_end_110_12
@@ -395,6 +422,7 @@ main:
         cmp_36_8_110_5:
         cmp r15, false
         jne if_36_5_110_5_end
+        jmp if_36_8_110_5_code
         if_36_8_110_5_code:
             mov rdi, 1
             exit_36_17_110_5:
@@ -416,6 +444,7 @@ main:
     cmp_114_12:
     cmp qword [rsp - 116], -1
     jne bool_false_114_12
+    jmp bool_true_114_12
     bool_true_114_12:
     mov r15, true
     jmp bool_end_114_12
@@ -427,6 +456,7 @@ main:
         cmp_36_8_114_5:
         cmp r15, false
         jne if_36_5_114_5_end
+        jmp if_36_8_114_5_code
         if_36_8_114_5_code:
             mov rdi, 1
             exit_36_17_114_5:
@@ -438,6 +468,7 @@ main:
     cmp_115_12:
     cmp qword [rsp - 108], -2
     jne bool_false_115_12
+    jmp bool_true_115_12
     bool_true_115_12:
     mov r15, true
     jmp bool_end_115_12
@@ -449,6 +480,7 @@ main:
         cmp_36_8_115_5:
         cmp r15, false
         jne if_36_5_115_5_end
+        jmp if_36_8_115_5_code
         if_36_8_115_5_code:
             mov rdi, 1
             exit_36_17_115_5:
@@ -466,6 +498,7 @@ main:
     cmp_118_12:
     cmp qword [rsp - 152], -1
     jne bool_false_118_12
+    jmp bool_true_118_12
     bool_true_118_12:
     mov r15, true
     jmp bool_end_118_12
@@ -477,6 +510,7 @@ main:
         cmp_36_8_118_5:
         cmp r15, false
         jne if_36_5_118_5_end
+        jmp if_36_8_118_5_code
         if_36_8_118_5_code:
             mov rdi, 1
             exit_36_17_118_5:
@@ -488,6 +522,7 @@ main:
     cmp_119_12:
     cmp qword [rsp - 144], -2
     jne bool_false_119_12
+    jmp bool_true_119_12
     bool_true_119_12:
     mov r15, true
     jmp bool_end_119_12
@@ -499,6 +534,7 @@ main:
         cmp_36_8_119_5:
         cmp r15, false
         jne if_36_5_119_5_end
+        jmp if_36_8_119_5_code
         if_36_8_119_5_code:
             mov rdi, 1
             exit_36_17_119_5:
@@ -510,6 +546,7 @@ main:
     cmp_120_12:
     cmp dword [rsp - 136], 0xff0000
     jne bool_false_120_12
+    jmp bool_true_120_12
     bool_true_120_12:
     mov r15, true
     jmp bool_end_120_12
@@ -521,6 +558,7 @@ main:
         cmp_36_8_120_5:
         cmp r15, false
         jne if_36_5_120_5_end
+        jmp if_36_8_120_5_code
         if_36_8_120_5_code:
             mov rdi, 1
             exit_36_17_120_5:
@@ -557,6 +595,7 @@ main:
         cmp_126_12:
         cmp qword [rsp - 160], 0
         jne if_128_19
+        jmp if_126_12_code
         if_126_12_code:
             jmp loop_123_5_end
         jmp if_126_9_end
@@ -564,6 +603,7 @@ main:
         cmp_128_19:
         cmp qword [rsp - 160], 4
         jg if_else_126_9
+        jmp if_128_19_code
         if_128_19_code:
             mov rdx, prompt2.len
             mov rsi, prompt2

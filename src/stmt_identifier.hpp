@@ -8,6 +8,7 @@
 class stmt_identifier : public statement {
     expr_any array_index_expr_;
     bool has_array_index_expr_{};
+    token ws1_;
 
   public:
     stmt_identifier(toc& tc, tokenizer& tz, token tk, unary_ops uops = {})
@@ -22,6 +23,7 @@ class stmt_identifier : public statement {
             throw compiler_exception{
                 tz, "expected '[' to close array index expression"};
         }
+        ws1_ = tz.next_whitespace_token();
     }
 
     stmt_identifier() = default;
@@ -34,6 +36,17 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] auto is_expression() const -> bool override {
         return has_array_index_expr_;
+    }
+
+    auto source_to(std::ostream& os) const -> void override {
+        statement::source_to(os);
+        if (not has_array_index_expr_) {
+            return;
+        }
+        os << '[';
+        array_index_expr_.source_to(os);
+        os << ']';
+        ws1_.source_to(os);
     }
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
@@ -79,15 +92,5 @@ class stmt_identifier : public statement {
         tc.asm_cmd(tok(), os, indent, "mov", dst, src_nasm);
         get_unary_ops().compile(tc, os, indent, dst);
         tc.free_scratch_register(os, indent, reg);
-    }
-
-    auto source_to(std::ostream& os) const -> void override {
-        statement::source_to(os);
-        if (not has_array_index_expr_) {
-            return;
-        }
-        os << '[';
-        array_index_expr_.source_to(os);
-        os << ']';
     }
 };

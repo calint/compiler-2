@@ -173,8 +173,8 @@ class stmt_def_func final : public statement {
         if (not returns().empty()) {
             // yes, declare variable for the return
             const token& id_tkn{returns().at(0).ident_tk};
-            tc.add_var(id_tkn, os, indent + 1, id_tkn.name(), get_type(), 0,
-                       false);
+            tc.add_var(id_tkn, os, indent + 1, id_tkn.name(), get_type(), false,
+                       0, false);
         }
 
         // functions get arguments as aliases
@@ -186,8 +186,8 @@ class stmt_def_func final : public statement {
             // is argument passed as named register?
             if (param_reg.empty()) {
                 // no, add it as variable
-                tc.add_var(tok(), os, indent + 1, param_name, param_type, 0,
-                           true);
+                tc.add_var(tok(), os, indent + 1, param_name, param_type, false,
+                           0, true);
                 continue;
             }
 

@@ -20,7 +20,8 @@ class stmt_def_var final : public statement {
     token type_tk_;
     token array_size_tk_;
     stmt_assign_var assign_var_;
-    size_t array_size_{1};
+    size_t array_size_{};
+    bool is_array_{};
 
   public:
     stmt_def_var(toc& tc, token tk, tokenizer& tz)
@@ -31,6 +32,7 @@ class stmt_def_var final : public statement {
             type_tk_ = tz.next_token();
             if (tz.is_next_char('[')) {
                 array_size_tk_ = tz.next_token();
+                is_array_ = true;
                 if (const std::optional<int64_t> value{
                         toc::parse_to_constant(array_size_tk_.name())};
                     value) {
@@ -61,8 +63,8 @@ class stmt_def_var final : public statement {
 
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
-        tc.add_var(name_tk_, null_strm, 0, name_tk_.name(), tp, array_size_,
-                   false);
+        tc.add_var(name_tk_, null_strm, 0, name_tk_.name(), tp, is_array_,
+                   array_size_, false);
 
         if (init_required) {
             assign_var_ = {tc, name_tk_, tz};
@@ -99,8 +101,9 @@ class stmt_def_var final : public statement {
                  [[maybe_unused]] const std::string& dst = "") const
         -> void override {
 
-        tc.add_var(name_tk_, os, indent, name_tk_.name(), get_type(),
+        tc.add_var(name_tk_, os, indent, name_tk_.name(), get_type(), is_array_,
                    array_size_, false);
+
         tc.comment_source(*this, os, indent);
         if (array_size_tk_.is_empty()) {
             assign_var_.compile(tc, os, indent, name_tk_.name());
@@ -118,20 +121,11 @@ class stmt_def_var final : public statement {
 
         toc::indent(os, indent, true);
         os << "clear array " << array_size_ << " * " << dst_info.type_ref.size()
-           << " B\n";
+           << " B = " << array_size_ * dst_info.type_ref.size() << " B\n";
 
-        if (not tc.alloc_named_register(name_tk_, os, indent, "rdi")) {
-            throw compiler_exception{name_tk_,
-                                     "could not allocate register RDI"};
-        }
-        if (not tc.alloc_named_register(name_tk_, os, indent, "rcx")) {
-            throw compiler_exception{name_tk_,
-                                     "could not allocate register RCX"};
-        }
-        if (not tc.alloc_named_register(name_tk_, os, indent, "rax")) {
-            throw compiler_exception{name_tk_,
-                                     "could not allocate register RAX"};
-        }
+        tc.alloc_named_register_or_throw(*this, os, indent, "rdi");
+        tc.alloc_named_register_or_throw(*this, os, indent, "rcx");
+        tc.alloc_named_register_or_throw(*this, os, indent, "rax");
 
         tc.asm_cmd(tok(), os, indent, "lea", "rdi",
                    "[rsp - " + std::to_string(-dst_info.stack_ix) + "]");
@@ -141,6 +135,7 @@ class stmt_def_var final : public statement {
                    std::to_string(array_size_ * dst_info.type_ref.size()));
         tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
         toc::asm_rep_stosb(name_tk_, os, indent);
+
         tc.free_named_register(os, indent, "rax");
         tc.free_named_register(os, indent, "rcx");
         tc.free_named_register(os, indent, "rdi");

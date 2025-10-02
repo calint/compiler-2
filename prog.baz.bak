@@ -1,0 +1,24 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+type room {
+    name : i8[16],
+    exits : i32 [ 4 ], 
+    numb : i32
+}
+
+type world {
+    rooms : room[8] 
+}
+
+func main() {
+    var rooms : room[7]
+    # rooms[2].numb = 3
+}

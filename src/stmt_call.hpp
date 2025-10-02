@@ -174,6 +174,7 @@ class stmt_call : public expression {
         for (const expr_any& arg : args_) {
             const stmt_def_func_param& param{func.param(i)};
             i++;
+
             // does the parameter want the value passed through a register?
             std::string arg_reg{param.get_register_name_or_empty()};
             if (not arg_reg.empty()) {
@@ -182,6 +183,7 @@ class stmt_call : public expression {
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
+
             // is argument an expression?
             if (arg.is_expression()) {
                 // argument is an expression, evaluate and store in arg_reg
@@ -201,7 +203,7 @@ class stmt_call : public expression {
             }
 
             // argument is not an expression
-            // is argument is passed through register?
+            // is argument passed through register?
             if (arg_reg.empty()) {
                 // argument not passed through register
                 // does unary ops need to be applied?

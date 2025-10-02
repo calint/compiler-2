@@ -69,12 +69,13 @@ class frame final {
           type_{frm_type} {}
 
     auto add_var(token declared_at_tk, const std::string& name,
-                 const type& type_ref, size_t array_size, const int stack_idx,
+                 const type& type_ref, const bool is_array,
+                 const size_t array_size, const int stack_idx,
                  const bool initiated) -> void {
 
         if (stack_idx < 0) {
             // variable, increase allocated stack size
-            allocated_stack_ += type_ref.size() * array_size;
+            allocated_stack_ += type_ref.size() * (is_array ? array_size : 1);
         }
 
         vars_.put(name, {.name = name,
@@ -476,7 +477,8 @@ class toc final {
 
     auto add_var(const token& src_loc_tk, std::ostream& os, size_t indnt,
                  const std::string& name, const type& var_type,
-                 size_t array_size, const bool initiated) -> void {
+                 const bool is_array, const size_t array_size,
+                 const bool initiated) -> void {
 
         // check if variable is already declared in this scope
         if (frames_.back().has_var(name)) {
@@ -496,9 +498,11 @@ class toc final {
                                 source_location_hr(var.declared_at_tk));
         }
 
-        const int stack_idx{static_cast<int>(get_current_function_stack_size() +
-                                             (var_type.size() * array_size))};
-        frames_.back().add_var(src_loc_tk, name, var_type, array_size,
+        const int stack_idx{
+            static_cast<int>(get_current_function_stack_size() +
+                             (var_type.size() * (is_array ? array_size : 1)))};
+
+        frames_.back().add_var(src_loc_tk, name, var_type, is_array, array_size,
                                -stack_idx, initiated);
 
         const size_t total_stack_size{get_total_stack_size()};

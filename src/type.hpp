@@ -11,7 +11,9 @@ class type;
 struct type_field final {
     const std::string name;
     const type& tp;
-    const size_t offset{};
+    const size_t size{};
+    const size_t array_size{};
+    const bool is_array{};
 };
 
 class type final {
@@ -38,10 +40,15 @@ class type final {
     ~type() = default;
 
     auto add_field([[maybe_unused]] const token& tk, std::string name,
-                   const type& tp) -> void {
-        fields_.emplace_back(
-            type_field{.name = std::move(name), .tp = tp, .offset = size_});
-        size_ += tp.size_;
+                   const type& tp, const bool is_array, const size_t array_size)
+        -> void {
+        fields_.emplace_back(type_field{.name = std::move(name),
+                                        .tp = tp,
+                                        .size = size_,
+                                        .array_size = array_size,
+                                        .is_array = is_array});
+
+        size_ += tp.size_ * (is_array ? array_size : 1);
     }
 
     [[nodiscard]] auto field(const token& tk, const std::string& name) const
@@ -65,7 +72,7 @@ class type final {
         size_t offset{};
         for (size_t path_idx{1}; path_idx != path.size(); path_idx++) {
             const type_field& fld{tp->field(tk, path[path_idx])};
-            offset += fld.offset;
+            offset += fld.size;
             tp = &fld.tp;
         }
         const int stack_idx{stack_idx_base + static_cast<int>(offset)};
