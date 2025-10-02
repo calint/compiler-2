@@ -55,6 +55,10 @@ func bar(arg) {
     arg = 0xff
 }
 
+func inv(i : i32) : i32 res {
+    res = ~i
+}
+
 # return target is specified as a variable, in this case `res`
 func baz(arg) : i64 res {
     res = arg * 2
@@ -68,7 +72,8 @@ func main() {
     assert(arr[2] == 2)
 
     var ix = 3
-    arr[ix] = arr[ix - 1]
+    arr[ix] = ~inv(arr[ix - 1])
+    assert(arr[ix] == 2)
 
     var p : point = {0, 0}
     foo(p)
