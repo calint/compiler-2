@@ -1,3 +1,5 @@
+[ ] token: consider using a string_view since string for name is not necessary
+    because source will not change during its lifetime
 [ ] tokenizer to keep track of line-number instead of computing it
 [ ] considering not parsing multiple return statements
 [ ] token: regex construction to static
