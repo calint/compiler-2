@@ -887,6 +887,41 @@ class toc final {
     // statics
     // -------------------------------------------------------------------------
 
+    static auto parse_to_constant(const std::string str)
+        -> std::optional<int64_t> {
+        // is it hex?
+        if (str.starts_with("0x") or str.starts_with("0X")) { // hex
+            int64_t value{};
+            auto result{std::from_chars(str.data() + 2, str.data() + str.size(),
+                                        value, 16)};
+            if (result.ec == std::errc{}) {
+                return value;
+            }
+        }
+
+        // is it binary?
+        if (str.starts_with("0b") or str.starts_with("0B")) { // binary
+            int64_t value{};
+            auto result{std::from_chars(str.data() + 2, str.data() + str.size(),
+                                        value, 2)};
+            if (result.ec == std::errc{}) {
+                return value;
+            }
+        }
+
+        // try decimal digit
+        {
+            int64_t value{};
+            auto parse_result{
+                std::from_chars(str.data(), str.data() + str.size(), value)};
+            if (parse_result.ec == std::errc{}) {
+                return value;
+            }
+        }
+
+        return std::nullopt;
+    }
+
     static auto get_size_from_operand_register(const token& src_loc_tk,
                                                const std::string& operand)
         -> size_t {
@@ -1308,7 +1343,7 @@ class toc final {
         }
 
         // is 'id' an integer?
-        if (const std::optional<int64_t> value = parse_to_constant(id_base);
+        if (const std::optional<int64_t> value{parse_to_constant(id_base)};
             value) {
             return {.id = ident,
                     .id_nasm = id_base,
@@ -1353,40 +1388,5 @@ class toc final {
     //------------------------------------------------------------------------
     static auto is_operand_memory(const std::string& operand) -> bool {
         return operand.find_first_of('[') != std::string::npos;
-    }
-
-    static auto parse_to_constant(const std::string str)
-        -> std::optional<int64_t> {
-        // is it hex?
-        if (str.starts_with("0x") or str.starts_with("0X")) { // hex
-            int64_t value{};
-            auto result = std::from_chars(str.data() + 2,
-                                          str.data() + str.size(), value, 16);
-            if (result.ec == std::errc{}) {
-                return value;
-            }
-        }
-
-        // is it binary?
-        if (str.starts_with("0b") or str.starts_with("0B")) { // binary
-            int64_t value{};
-            auto result = std::from_chars(str.data() + 2,
-                                          str.data() + str.size(), value, 2);
-            if (result.ec == std::errc{}) {
-                return value;
-            }
-        }
-
-        // try decimal digit
-        {
-            int64_t value{};
-            auto parse_result =
-                std::from_chars(str.data(), str.data() + str.size(), value);
-            if (parse_result.ec == std::errc{}) {
-                return value;
-            }
-        }
-
-        return std::nullopt;
     }
 };

@@ -3,6 +3,7 @@
 
 #include "compiler_exception.hpp"
 #include "stmt_assign_var.hpp"
+#include "type.hpp"
 
 class null_stream : public std::ostream {
     class null_buffer : public std::streambuf {
@@ -19,6 +20,7 @@ class stmt_def_var final : public statement {
     token type_tk_;
     token array_size_tk_;
     stmt_assign_var assign_var_;
+    size_t array_size_{};
 
   public:
     stmt_def_var(toc& tc, token tk, tokenizer& tz)
@@ -29,6 +31,14 @@ class stmt_def_var final : public statement {
             type_tk_ = tz.next_token();
             if (tz.is_next_char('[')) {
                 array_size_tk_ = tz.next_token();
+                if (const std::optional<int64_t> value{
+                        toc::parse_to_constant(array_size_tk_.name())};
+                    value) {
+                    array_size_ = static_cast<size_t>(*value);
+                } else {
+                    throw compiler_exception{array_size_tk_,
+                                             "expected array size as constant"};
+                }
                 if (not tz.is_next_char(']')) {
                     throw compiler_exception{type_tk_,
                                              "expected array size and ']'"};
@@ -46,7 +56,7 @@ class stmt_def_var final : public statement {
 
         // expect initialization
         if (init_required and not tz.is_next_char('=')) {
-            throw compiler_exception(name_tk_, "expected '=' and initializer");
+            throw compiler_exception(type_tk_, "expected '=' and initializer");
         }
 
         // add var to toc without causing output by passing a null stream
