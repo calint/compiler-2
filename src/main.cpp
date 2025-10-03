@@ -167,6 +167,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
             tc.make_ident_info(tok(), stmt_ident_->identifier(), false)};
 
         if (tp.name() != ii.type_ref.name()) {
+            // note: checked source location report ok
             throw compiler_exception{tok(),
                                      "type '" + ii.type_ref.name() +
                                          "' does not match expected type '" +
