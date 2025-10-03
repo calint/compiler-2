@@ -108,7 +108,7 @@ inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz, token tk)
 // declared in 'decouple.hpp'
 // called from 'expr_ops_list' to solve circular dependencies with function
 // calls
-inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz)
+inline auto create_statement(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     const unary_ops uops{tz};
@@ -139,9 +139,8 @@ inline auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
 }
 // declared in 'decouple.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-inline auto create_expr_any_from_tokenizer(toc& tc, tokenizer& tz,
-                                           const type& tp, bool in_args)
-    -> std::unique_ptr<expr_any> {
+inline auto create_expr_any(toc& tc, tokenizer& tz, const type& tp,
+                            bool in_args) -> std::unique_ptr<expr_any> {
 
     return std::make_unique<expr_any>(tc, tz, tp, in_args);
 }
@@ -182,8 +181,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         const type_field& fld{flds.at(i)};
         // create expression that assigns to field
         // might recurse creating 'expr_type_value'
-        exprs_.emplace_back(
-            create_expr_any_from_tokenizer(tc, tz, fld.tp, true));
+        exprs_.emplace_back(create_expr_any(tc, tz, fld.tp, true));
 
         if (i < nflds - 1) {
             if (not tz.is_next_char(',')) {

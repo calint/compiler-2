@@ -58,6 +58,9 @@ class stmt_block final : public statement {
                 stms_.emplace_back(std::make_unique<stmt_return>(tc, tk));
             } else if (tk.is_name("loop") or tk.is_name("if") or
                        tk.is_name("mov") or tk.is_name("syscall")) {
+                // note: solves circular reference problem
+                //       'loop' and 'if' uses this class
+                //       'mov' and 'syscall' are 'stmt_call'
                 stms_.emplace_back(create_statement_from_tokenizer(tc, tz, tk));
             } else {
                 if (tk.is_name("")) {
@@ -71,7 +74,8 @@ class stmt_block final : public statement {
                 if (tz.is_next_char('=')) {
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(
                         tc, tz, std::move(si)));
-                } else { // circular reference resolver
+                } else {
+                    // note: solves circular reference
                     stms_.emplace_back(create_stmt_call(tc, tz, si));
                 }
             }
