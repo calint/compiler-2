@@ -3,6 +3,7 @@
 
 #include "compiler_exception.hpp"
 #include "stmt_assign_var.hpp"
+#include "stmt_identifier.hpp"
 #include "type.hpp"
 
 class null_stream : public std::ostream {
@@ -21,6 +22,8 @@ class stmt_def_var final : public statement {
     token array_size_tk_;
     stmt_assign_var assign_var_;
     size_t array_size_{};
+    token ws1_;
+    token ws2_;
     bool is_array_{};
 
   public:
@@ -45,6 +48,7 @@ class stmt_def_var final : public statement {
                     throw compiler_exception{type_tk_,
                                              "expected array size and ']'"};
                 }
+                ws2_ = tz.next_whitespace_token();
             }
         }
 
@@ -61,13 +65,16 @@ class stmt_def_var final : public statement {
             throw compiler_exception(type_tk_, "expected '=' and initializer");
         }
 
+        ws1_ = tz.next_whitespace_token();
+
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
         tc.add_var(name_tk_, null_strm, 0, name_tk_.name(), tp, is_array_,
                    array_size_, false);
 
         if (init_required) {
-            assign_var_ = {tc, name_tk_, tz};
+            stmt_identifier si{tc, tz, name_tk_};
+            assign_var_ = {tc, tz, std::move(si)};
         }
     }
 
@@ -89,10 +96,12 @@ class stmt_def_var final : public statement {
                 os << '[';
                 array_size_tk_.source_to(os);
                 os << ']';
+                ws2_.source_to(os);
             }
         }
         if (array_size_tk_.is_empty()) {
             os << '=';
+            ws1_.source_to(os);
             assign_var_.expression().source_to(os);
         }
     }

@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include "decouple.hpp"
 #include "stmt_break.hpp"
 #include "stmt_comment.hpp"
 #include "stmt_continue.hpp"
@@ -8,10 +9,13 @@
 #include "stmt_identifier.hpp"
 #include "stmt_return.hpp"
 #include "tokenizer.hpp"
+#include "unary_ops.hpp"
 
 class stmt_block final : public statement {
     bool is_one_statement_{};
     std::vector<std::unique_ptr<statement>> stms_;
+    token ws1_;
+    token ws2_;
 
   public:
     stmt_block(toc& tc, tokenizer& tz)
@@ -28,49 +32,49 @@ class stmt_block final : public statement {
             // is it end-of block?
             if (tz.is_next_char('}')) {
                 if (not is_one_statement_) {
+                    ws2_ = tz.next_whitespace_token();
                     break;
                 }
                 throw compiler_exception(
                     tz, "unexpected '}' in single statement block");
             }
 
-            token tk{tz.next_token()};
+            // no more tokens in the block?
+            token tk = tz.next_token();
             if (tk.is_empty()) {
-                throw compiler_exception(
-                    tk, "expected statement or close block with '}'");
+                break;
             }
 
-            if (tk.is_name("var")) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_def_var>(tc, std::move(tk), tz));
-            } else if (tz.is_next_char('[')) {
-                stms_.emplace_back(std::make_unique<stmt_assign_var>(
-                    tc, std::move(tk), tz, true));
-            } else if (tz.is_next_char('=')) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_assign_var>(tc, std::move(tk), tz));
-            } else if (tk.is_name("break")) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_break>(tc, std::move(tk)));
-            } else if (tk.is_name("continue")) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_continue>(tc, std::move(tk)));
-            } else if (tk.is_name("return")) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_return>(tc, std::move(tk)));
-            } else if (tk.name().starts_with("#")) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_comment>(tc, std::move(tk), tz));
+            if (tk.name().starts_with("#")) {
+                stms_.emplace_back(std::make_unique<stmt_comment>(tc, tk, tz));
                 last_statement_considered_no_statment = true;
-            } else if (tk.is_name("")) {
-                // when last statement did not read the right whitespace
-                stms_.emplace_back(std::make_unique<stmt_identifier>(
-                    tc, tz, std::move(tk), unary_ops{}));
-            } else { // circular reference resolver
-                stms_.emplace_back(create_statement_from_tokenizer(
-                    tc, unary_ops{}, std::move(tk), tz));
-            }
+            } else if (tk.is_name("var")) {
+                stms_.emplace_back(std::make_unique<stmt_def_var>(tc, tk, tz));
+            } else if (tk.is_name("break")) {
+                stms_.emplace_back(std::make_unique<stmt_break>(tc, tk));
+            } else if (tk.is_name("continue")) {
+                stms_.emplace_back(std::make_unique<stmt_continue>(tc, tk));
+            } else if (tk.is_name("return")) {
+                stms_.emplace_back(std::make_unique<stmt_return>(tc, tk));
+            } else if (tk.is_name("loop") or tk.is_name("if") or
+                       tk.is_name("mov") or tk.is_name("syscall")) {
+                stms_.emplace_back(create_statement_from_tokenizer(tc, tz, tk));
+            } else {
+                if (tk.is_name("")) {
+                    ws1_ = tk;
+                    continue;
+                }
+                // resolve identifier
+                stmt_identifier si{tc, tz, tk};
 
+                tk = si.first_token();
+                if (tz.is_next_char('=')) {
+                    stms_.emplace_back(std::make_unique<stmt_assign_var>(
+                        tc, tz, std::move(si)));
+                } else { // circular reference resolver
+                    stms_.emplace_back(create_stmt_call(tc, tz, si));
+                }
+            }
             if (is_one_statement_ and
                 not last_statement_considered_no_statment) {
                 break;
@@ -97,7 +101,9 @@ class stmt_block final : public statement {
         }
         if (not is_one_statement_) {
             os << "}";
+            ws2_.source_to(os);
         }
+        ws1_.source_to(os);
     }
 
     auto compile(toc& tc, std::ostream& os, size_t indent,

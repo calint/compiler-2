@@ -56,7 +56,7 @@ auto main(int argc, char* args[]) -> int {
         // with jump optimizations
         std::stringstream ss1;
         std::stringstream ss2;
-        // prg.build(ss1);
+        //        prg.build(ss1);
         prg.build(std::cout); // build without jump optimizations
         optimize_jumps_1(ss1, ss2);
         optimize_jumps_2(ss2, std::cout);
@@ -85,8 +85,7 @@ auto main(int argc, char* args[]) -> int {
 // declared in 'decouple.hpp'
 // called from 'stmt_block' to solve circular dependencies with 'loop', 'if' and
 // function calls
-inline auto create_statement_from_tokenizer(toc& tc, unary_ops uops, token tk,
-                                            tokenizer& tz)
+inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz, token tk)
     -> std::unique_ptr<statement> {
 
     if (tk.is_name("loop")) {
@@ -101,7 +100,9 @@ inline auto create_statement_from_tokenizer(toc& tc, unary_ops uops, token tk,
     if (tk.is_name("syscall")) {
         return std::make_unique<call_asm_syscall>(tc, std::move(tk), tz);
     }
-    return std::make_unique<stmt_call>(tc, std::move(uops), std::move(tk), tz);
+
+    throw compiler_exception{tz.current_position_token(),
+                             "expected a function call"};
 }
 
 // declared in 'decouple.hpp'
@@ -110,8 +111,8 @@ inline auto create_statement_from_tokenizer(toc& tc, unary_ops uops, token tk,
 inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
-    unary_ops uops{tz};
-    token tk{tz.next_token()};
+    const unary_ops uops{tz};
+    const token tk{tz.next_token()};
     if (tk.is_name("")) {
         throw compiler_exception(tk, "unexpected empty expression");
     }
@@ -120,21 +121,22 @@ inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz)
             throw compiler_exception(tk, "unexpected comment after unary ops");
         }
         // e.g.  print("hello") # comment
-        return std::make_unique<stmt_comment>(tc, std::move(tk), tz);
+        return std::make_unique<stmt_comment>(tc, tk, tz);
     }
     if (tz.is_peek_char('(')) {
         // e.g.  foo(...)
-        return create_statement_from_tokenizer(tc, std::move(uops),
-                                               std::move(tk), tz);
+        return std::make_unique<stmt_call>(tc, uops, tk, tz);
     }
     // e.g. 0x80, rax, identifiers
-    std::unique_ptr<stmt_identifier> stmt{
-        std::make_unique<stmt_identifier>(tc, tz, tk, std::move(uops))};
-    const ident_info& stmt_info{tc.make_ident_info(*stmt, false)};
-    stmt->set_type(stmt_info.type_ref);
-    return stmt;
+    return std::make_unique<stmt_identifier>(tc, tz, tk, uops);
 }
 
+// called from 'stmt_block'
+inline auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
+    -> std::unique_ptr<statement> {
+    return std::make_unique<stmt_call>(tc, si.get_unary_ops(), si.first_token(),
+                                       tz);
+}
 // declared in 'decouple.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 inline auto create_expr_any_from_tokenizer(toc& tc, tokenizer& tz,

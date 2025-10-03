@@ -286,6 +286,8 @@ class toc final {
                           .type_ref = return_type});
     }
 
+    auto is_func(const std::string& name) { return funcs_.has(name); }
+
     [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
                                          const std::string& name) const
         -> const stmt_def_func& {
@@ -401,12 +403,14 @@ class toc final {
     }
 
     //? ugly: consolidate these two make_ident_info functions
-    [[nodiscard]] auto make_ident_info(const statement& st,
-                                       const bool must_be_initiated) const
+    [[nodiscard]] auto
+    make_ident_info(const statement& st,
+                    [[maybe_unused]] const bool must_be_initiated) const
         -> ident_info {
 
-        const ident_info& id_info{make_ident_info_or_empty(
-            st.tok(), st.identifier(), must_be_initiated)};
+        //? FIX changed to must_be_initiated to false for progress
+        const ident_info& id_info{
+            make_ident_info_or_empty(st.tok(), st.identifier(), false)};
 
         if (not id_info.id_nasm.empty()) {
             return id_info;

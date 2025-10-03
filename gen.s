@@ -38,11 +38,11 @@ mov rsp,stk.end
 ; program
 ;[9:1] # all functions are inlined
 ;[11:1]  # arguments can be placed in specified register using `reg_...` syntax
-;[39:1]  # user types are defined using keyword `type`
+;[39:1] # user types are defined using keyword `type`
 ;[41:1]  # default type is `i64` and does not need to be specified
 ;[46:1]  # function arguments are equivalent to mutable references
-;[52:1]  # default argument type is `i64`
-;[62:1]  # return target is specified as a variable, in this case `res`
+;[52:1] # default argument type is `i64`
+;[62:1] # return target is specified as a variable, in this case `res`
 main:
 ;    var arr: i32[4] @ dword [rsp - 16]
 ;    [68:5]  var arr : i32[4]
@@ -57,33 +57,33 @@ main:
 ;    free rax
 ;    free rcx
 ;    free rdi
-;    [69:5]  # arrays are initialized to 0
-;    [71:5]  arr[1] = 2
+;    [69:5] # arrays are initialized to 0
+;    [71:8]  arr[1] = 2
 ;    alloc r15
 ;    [71:9] 1
 ;    [71:9] 1
-;    [71:9] r15 = 1
+;    [71:10] r15 = 1
     mov r15, 1
     lea r15, [rsp + r15 * 4 - 16]
 ;    [71:14]  2
 ;    [71:14] 2
-;    [71:14] dword [r15] = 2
+;    [72:5] dword [r15] = 2
     mov dword [r15], 2
 ;    free r15
-;    [72:5] arr[2] = arr[1]
+;    [72:8] arr[2] = arr[1]
 ;    alloc r15
 ;    [72:9] 2
 ;    [72:9] 2
-;    [72:9] r15 = 2
+;    [72:10] r15 = 2
     mov r15, 2
     lea r15, [rsp + r15 * 4 - 16]
 ;    [72:14]  arr[1]
 ;    [72:14] arr[1]
-;    [72:14] dword [r15] = arr[1]
+;    [72:17] dword [r15] = arr[1]
 ;    alloc r14
 ;    [72:18] 1
 ;    [72:18] 1
-;    [72:18] r14 = 1
+;    [72:19] r14 = 1
     mov r14, 1
     lea r14, [rsp + r14 * 4 - 16]
 ;    alloc r13
@@ -100,11 +100,11 @@ main:
     cmp_74_12:
 ;    alloc r14
 ;        [74:12] arr[1]
-;        [74:12] r14 = arr[1]
+;        [74:15] r14 = arr[1]
 ;        alloc r13
 ;        [74:16] 1
 ;        [74:16] 1
-;        [74:16] r13 = 1
+;        [74:17] r13 = 1
         mov r13, 1
         lea r13, [rsp + r13 * 4 - 16]
         movsx r14, dword [r13]
@@ -156,11 +156,11 @@ main:
     cmp_75_12:
 ;    alloc r14
 ;        [75:12] arr[2]
-;        [75:12] r14 = arr[2]
+;        [75:15] r14 = arr[2]
 ;        alloc r13
 ;        [75:16] 2
 ;        [75:16] 2
-;        [75:16] r13 = 2
+;        [75:17] r13 = 2
         mov r13, 2
         lea r13, [rsp + r13 * 4 - 16]
         movsx r14, dword [r13]
@@ -206,16 +206,16 @@ main:
     assert_75_5_end:
 ;    var ix: i64 @ qword [rsp - 24]
 ;    [77:5] var ix = 3
-;    [77:9] ix = 3
-;    [77:14]  3
+;    [77:14] ix =3
 ;    [77:14] 3
-;    [77:14] ix = 3
+;    [77:14] 3
+;    [78:5] ix = 3
     mov qword [rsp - 24], 3
-;    [78:5] arr[ix] = ~inv(arr[ix - 1])
+;    [78:8] arr[ix] = ~inv(arr[ix - 1])
 ;    alloc r15
 ;    [78:9] ix
 ;    [78:9] ix
-;    [78:9] r15 = ix
+;    [78:11] r15 = ix
     mov r15, qword [rsp - 24]
     lea r15, [rsp + r15 * 4 - 16]
 ;    [78:15]  ~inv(arr[ix - 1])
@@ -225,13 +225,13 @@ main:
 ;    alloc r14
 ;    [78:20] arr[ix - 1]
 ;    [78:20] arr[ix - 1]
-;    [78:20] r14 = arr[ix - 1]
+;    [78:23] r14 = arr[ix - 1]
 ;    alloc r13
 ;    [78:24] ix - 1
 ;    [78:24] ix - 1
-;    [78:24] r13 = ix
+;    [78:27] r13 = ix
     mov r13, qword [rsp - 24]
-;    [78:29] r13 - 1
+;    [78:30] r13 - 1
     sub r13, 1
     lea r13, [rsp + r13 * 4 - 16]
     movsx r14, dword [r13]
@@ -240,10 +240,10 @@ main:
     inv_78_16:
 ;        alias res -> dword [r15]
 ;        alias i -> r14
-;        [59:5]  res = ~i
+;        [59:9]  res = ~i
 ;        [59:11]  ~i
 ;        [59:11] ~i
-;        [59:12] res = ~i
+;        [60:1] res = ~i
         mov dword [r15], r14d
         not dword [r15]
 ;        free r14
@@ -258,11 +258,11 @@ main:
     cmp_79_12:
 ;    alloc r14
 ;        [79:12] arr[ix]
-;        [79:12] r14 = arr[ix]
+;        [79:15] r14 = arr[ix]
 ;        alloc r13
 ;        [79:16] ix
 ;        [79:16] ix
-;        [79:16] r13 = ix
+;        [79:18] r13 = ix
         mov r13, qword [rsp - 24]
         lea r13, [rsp + r13 * 4 - 16]
         movsx r14, dword [r13]
@@ -308,31 +308,31 @@ main:
     assert_79_5_end:
 ;    var p: point @ qword [rsp - 40]
 ;    [81:5] var p : point = {0, 0}
-;    [81:9] p = {0, 0}
-;    [81:21]  {0, 0}
+;    [81:21] p ={0, 0}
+;    [81:21] {0, 0}
 ;    [81:21] {0, 0}
 ;    [81:22] 0
 ;    [81:22] 0
-;    [81:22] p.x = 0
+;    [81:23] p.x = 0
     mov qword [rsp - 40], 0
 ;    [81:25]  0
 ;    [81:25] 0
-;    [81:25] p.y = 0
+;    [81:26] p.y = 0
     mov qword [rsp - 32], 0
 ;    [82:5]  foo(p)
 ;    foo(pt : point) 
     foo_82_5:
 ;        alias pt -> p
-;        [48:5]  pt.x = 0b10
+;        [48:7]  pt.x = 0b10
 ;        [48:12]  0b10
 ;        [48:12] 0b10
-;        [48:12] pt.x = 0b10
+;        [48:20] pt.x = 0b10
         mov qword [rsp - 40], 0b10
 ;        [48:20] # binary value 2
-;        [49:5]  pt.y = 0xb
+;        [49:7]  pt.y = 0xb
 ;        [49:12]  0xb
 ;        [49:12] 0xb
-;        [49:12] pt.y = 0xb
+;        [49:20] pt.y = 0xb
         mov qword [rsp - 32], 0xb
 ;        [49:20] # hex value 11
     foo_82_5_end:
@@ -426,10 +426,10 @@ main:
     assert_84_5_end:
 ;    var i: i64 @ qword [rsp - 48]
 ;    [86:5] var i = 0
-;    [86:9] i = 0
-;    [86:13]  0
+;    [86:13] i =0
 ;    [86:13] 0
-;    [86:13] i = 0
+;    [86:13] 0
+;    [87:5] i = 0
     mov qword [rsp - 48], 0
 ;    [87:5] bar(i)
 ;    bar(arg) 
@@ -446,10 +446,10 @@ main:
 ;            [54:17] return
             jmp bar_87_5_end
         if_54_5_87_5_end:
-;        [55:5] arg = 0xff
+;        [55:9] arg = 0xff
 ;        [55:11]  0xff
 ;        [55:11] 0xff
-;        [55:11] arg = 0xff
+;        [56:1] arg = 0xff
         mov qword [rsp - 48], 0xff
     bar_87_5_end:
 ;    [88:5] assert(i == 0)
@@ -496,10 +496,10 @@ main:
         if_36_5_88_5_end:
 ;        free r15
     assert_88_5_end:
-;    [90:5] i = 1
+;    [90:7] i = 1
 ;    [90:9]  1
 ;    [90:9] 1
-;    [90:9] i = 1
+;    [91:5] i = 1
     mov qword [rsp - 48], 1
 ;    [91:5] bar(i)
 ;    bar(arg) 
@@ -516,10 +516,10 @@ main:
 ;            [54:17] return
             jmp bar_91_5_end
         if_54_5_91_5_end:
-;        [55:5] arg = 0xff
+;        [55:9] arg = 0xff
 ;        [55:11]  0xff
 ;        [55:11] 0xff
-;        [55:11] arg = 0xff
+;        [56:1] arg = 0xff
         mov qword [rsp - 48], 0xff
     bar_91_5_end:
 ;    [92:5] assert(i == 0xff)
@@ -568,15 +568,15 @@ main:
     assert_92_5_end:
 ;    var j: i64 @ qword [rsp - 56]
 ;    [94:5] var j = 1
-;    [94:9] j = 1
-;    [94:13]  1
+;    [94:13] j =1
 ;    [94:13] 1
-;    [94:13] j = 1
+;    [94:13] 1
+;    [95:5] j = 1
     mov qword [rsp - 56], 1
 ;    var k: i64 @ qword [rsp - 64]
 ;    [95:5] var k = baz(j)
-;    [95:9] k = baz(j)
-;    [95:13]  baz(j)
+;    [95:13] k =baz(j)
+;    [95:13] baz(j)
 ;    [95:13] baz(j)
 ;    [95:13] k = baz(j)
 ;    [95:13] baz(j)
@@ -584,15 +584,15 @@ main:
     baz_95_13:
 ;        alias res -> k
 ;        alias arg -> j
-;        [64:5]  res = arg * 2
+;        [64:9]  res = arg * 2
 ;        [64:11]  arg * 2
 ;        [64:11] arg * 2
-;        [64:11] res = arg
+;        [64:15] res = arg
 ;        alloc r15
         mov r15, qword [rsp - 56]
         mov qword [rsp - 64], r15
 ;        free r15
-;        [64:17] res * 2
+;        [65:1] res * 2
 ;        alloc r15
         mov r15, qword [rsp - 64]
         imul r15, 2
@@ -643,7 +643,7 @@ main:
         if_36_5_96_5_end:
 ;        free r15
     assert_96_5_end:
-;    [98:5] k = baz(1)
+;    [98:7] k = baz(1)
 ;    [98:9]  baz(1)
 ;    [98:9] baz(1)
 ;    [98:9] k = baz(1)
@@ -652,12 +652,12 @@ main:
     baz_98_9:
 ;        alias res -> k
 ;        alias arg -> 1
-;        [64:5]  res = arg * 2
+;        [64:9]  res = arg * 2
 ;        [64:11]  arg * 2
 ;        [64:11] arg * 2
-;        [64:11] res = arg
+;        [64:15] res = arg
         mov qword [rsp - 64], 1
-;        [64:17] res * 2
+;        [65:1] res * 2
 ;        alloc r15
         mov r15, qword [rsp - 64]
         imul r15, 2
@@ -710,8 +710,8 @@ main:
     assert_99_5_end:
 ;    var p0: point @ qword [rsp - 80]
 ;    [101:5] var p0 : point = {baz(2), 0}
-;    [101:9] p0 = {baz(2), 0}
-;    [101:22]  {baz(2), 0}
+;    [101:22] p0 ={baz(2), 0}
+;    [101:22] {baz(2), 0}
 ;    [101:22] {baz(2), 0}
 ;    [101:23] baz(2)
 ;    [101:23] baz(2)
@@ -721,12 +721,12 @@ main:
     baz_101_23:
 ;        alias res -> p0.x
 ;        alias arg -> 2
-;        [64:5]  res = arg * 2
+;        [64:9]  res = arg * 2
 ;        [64:11]  arg * 2
 ;        [64:11] arg * 2
-;        [64:11] res = arg
+;        [64:15] res = arg
         mov qword [rsp - 80], 2
-;        [64:17] res * 2
+;        [65:1] res * 2
 ;        alloc r15
         mov r15, qword [rsp - 80]
         imul r15, 2
@@ -735,7 +735,7 @@ main:
     baz_101_23_end:
 ;    [101:31]  0
 ;    [101:31] 0
-;    [101:31] p0.y = 0
+;    [101:32] p0.y = 0
     mov qword [rsp - 72], 0
 ;    [102:5]  assert(p0.x == 4)
 ;    alloc r15
@@ -783,32 +783,32 @@ main:
     assert_102_5_end:
 ;    var x: i64 @ qword [rsp - 88]
 ;    [104:5] var x = 1
-;    [104:9] x = 1
-;    [104:13]  1
+;    [104:13] x =1
 ;    [104:13] 1
-;    [104:13] x = 1
+;    [104:13] 1
+;    [105:5] x = 1
     mov qword [rsp - 88], 1
 ;    var y: i64 @ qword [rsp - 96]
 ;    [105:5] var y = 2
-;    [105:9] y = 2
-;    [105:13]  2
+;    [105:13] y =2
 ;    [105:13] 2
-;    [105:13] y = 2
+;    [105:13] 2
+;    [107:5] y = 2
     mov qword [rsp - 96], 2
 ;    var o1: object @ qword [rsp - 116]
 ;    [107:5] var o1 : object = {{x * 10, y}, 0xff0000}
-;    [107:9] o1 = {{x * 10, y}, 0xff0000}
-;    [107:23]  {{x * 10, y}, 0xff0000}
+;    [107:23] o1 ={{x * 10, y}, 0xff0000}
+;    [107:23] {{x * 10, y}, 0xff0000}
 ;    [107:23] {{x * 10, y}, 0xff0000}
 ;        [107:24] {x * 10, y}
 ;        [107:25] x * 10
 ;        [107:25] x * 10
-;        [107:25] o1.pos.x = x
+;        [107:27] o1.pos.x = x
 ;        alloc r15
         mov r15, qword [rsp - 88]
         mov qword [rsp - 116], r15
 ;        free r15
-;        [107:29] o1.pos.x * 10
+;        [107:31] o1.pos.x * 10
 ;        alloc r15
         mov r15, qword [rsp - 116]
         imul r15, 10
@@ -816,14 +816,14 @@ main:
 ;        free r15
 ;        [107:33]  y
 ;        [107:33] y
-;        [107:33] o1.pos.y = y
+;        [107:34] o1.pos.y = y
 ;        alloc r15
         mov r15, qword [rsp - 96]
         mov qword [rsp - 108], r15
 ;        free r15
 ;    [107:37]  0xff0000
 ;    [107:37] 0xff0000
-;    [107:37] o1.color = 0xff0000
+;    [107:45] o1.color = 0xff0000
     mov dword [rsp - 100], 0xff0000
 ;    [108:5]  assert(o1.pos.x == 10)
 ;    alloc r15
@@ -959,12 +959,12 @@ main:
     assert_110_5_end:
 ;    var p1: point @ qword [rsp - 132]
 ;    [112:5] var p1 : point = {-x, -y}
-;    [112:9] p1 = {-x, -y}
-;    [112:22]  {-x, -y}
+;    [112:22] p1 ={-x, -y}
+;    [112:22] {-x, -y}
 ;    [112:22] {-x, -y}
 ;    [112:23] -x
 ;    [112:23] -x
-;    [112:24] p1.x = -x
+;    [112:25] p1.x = -x
 ;    alloc r15
     mov r15, qword [rsp - 88]
     mov qword [rsp - 132], r15
@@ -972,13 +972,13 @@ main:
     neg qword [rsp - 132]
 ;    [112:27]  -y
 ;    [112:27] -y
-;    [112:28] p1.y = -y
+;    [112:29] p1.y = -y
 ;    alloc r15
     mov r15, qword [rsp - 96]
     mov qword [rsp - 124], r15
 ;    free r15
     neg qword [rsp - 124]
-;    [113:5]  o1.pos = p1
+;    [113:7]  o1.pos = p1
 ;    [113:14]  p1
 ;    [113:14] p1
 ;    alloc r15
@@ -1079,8 +1079,8 @@ main:
     assert_115_5_end:
 ;    var o2: object @ qword [rsp - 152]
 ;    [117:5] var o2 : object = o1
-;    [117:9] o2 = o1
-;    [117:23]  o1
+;    [117:23] o2 =o1
+;    [117:23] o1
 ;    [117:23] o1
 ;        [117:23] o1
 ;        alloc r15
@@ -1279,8 +1279,8 @@ main:
         print_124_9_end:
 ;        var len: i64 @ qword [rsp - 160]
 ;        [125:9] var len = read(input.len, input) - 1
-;        [125:13] len = read(input.len, input) - 1
-;        [125:19]  read(input.len, input) - 1
+;        [125:19] len =read(input.len, input) - 1
+;        [125:19] read(input.len, input) - 1
 ;        [125:19] read(input.len, input) - 1
 ;        [125:19] len = read(input.len, input)
 ;        [125:19] read(input.len, input)
@@ -1311,7 +1311,7 @@ main:
 ;            free rsi
 ;            free rdx
         read_125_19_end:
-;        [125:44] len - 1
+;        [125:49] len - 1
         sub qword [rsp - 160], 1
 ;        [125:49] # -1 don't include the '\n'
         if_126_12:
