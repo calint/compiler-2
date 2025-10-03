@@ -156,16 +156,23 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     set_type(tp);
 
     // is it an identifier?
+    // note: token name would be empty at "{ x, y }" type of statement
     if (not tok().is_name("")) {
         // yes, e.g. obj.pos = p
+
+        stmt_ident_ = std::make_shared<stmt_identifier>(tc, tz, tok());
+
         // check that identifier type matches expected type
-        const ident_info ii{tc.make_ident_info(tok(), tok().name(), false)};
+        const ident_info ii{
+            tc.make_ident_info(tok(), stmt_ident_->identifier(), false)};
+
         if (tp.name() != ii.type_ref.name()) {
             throw compiler_exception{tok(),
                                      "type '" + ii.type_ref.name() +
                                          "' does not match expected type '" +
                                          tp.name() + "'"};
         }
+
         return;
     }
 
@@ -203,12 +210,13 @@ expr_type_value::~expr_type_value() = default;
 // declared in 'expr_type_value.hpp'
 // resolves circular reference: expr_type_value -> expr_any -> expr_type_value
 inline void expr_type_value::source_to(std::ostream& os) const {
-    statement::source_to(os);
-
     // is it an identifier? because that was printed by statement
-    if (not tok().is_name("")) {
+    if (is_make_copy()) {
+        stmt_ident_->source_to(os);
         return;
     }
+
+    statement::source_to(os);
 
     // not an identifier
     os << '{';
@@ -224,9 +232,23 @@ inline void expr_type_value::source_to(std::ostream& os) const {
 
 // declared in 'expr_type_value.hpp'
 // resolves circular reference: expr_type_value -> expr_any -> expr_type_values
-inline void expr_type_value::compile_recursive(
-    const expr_type_value& etv, toc& tc, std::ostream& os, size_t indent,
-    const std::string& src, const std::string& dst, const type& dst_type) {
+inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
+                                          size_t indent,
+                                          const std::string& dst) const
+    -> void {
+
+    stmt_identifier::compile_address_calculation(tok(), tc, os, indent,
+                                                 stmt_ident_->elems(), dst);
+}
+
+// declared in 'expr_type_value.hpp'
+// resolves circular reference: expr_type_value -> expr_any -> expr_type_values
+inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
+                                               toc& tc, std::ostream& os,
+                                               size_t indent,
+                                               const std::string& src,
+                                               const std::string& dst,
+                                               const type& dst_type) -> void {
 
     tc.comment_source(etv, os, indent);
 

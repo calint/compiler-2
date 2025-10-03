@@ -1,3 +1,16 @@
+[ ] tidy
+    [ ] use std::format
+    [ ] review the reading of white spaces sprinkled about
+    [ ] review the use of src_loc_tk and adjust for better error locations
+    [ ] rep movsb can be done faster with q if objects are sized to 2^n
+    [ ] toc.allocate_named_register_or_throw requires statement for src_loc_tk
+    [ ] source recreation does not work with comment at end of file and
+        newlines:
+            var objs : object[10]
+            objs[1].pos.y = 0xab
+            # hello
+
+          }
 [x] use C++23 facilities to convert string to number instead of 'strtol'
 [x] parsing error not correct when 'foo(p:point)'
     var o1 : object = {{x * 10, y}, 0xff0000}

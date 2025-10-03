@@ -31,10 +31,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    37            877            614           4642
-C++                              1             52             68            391
+C/C++ Header                    37            896            623           4686
+C++                              1             58             71            404
 -------------------------------------------------------------------------------
-SUM:                            38            929            682           5033
+SUM:                            38            954            694           5090
 -------------------------------------------------------------------------------
 ```
 
@@ -639,10 +639,10 @@ main:
     mov r15, qword [rsp - 96]
     mov qword [rsp - 124], r15
     neg qword [rsp - 124]
-    mov r15, qword [rsp - 132]
-    mov qword [rsp - 116], r15
-    mov r15, qword [rsp - 124]
-    mov qword [rsp - 108], r15
+    lea rdi, [rsp - 116]
+    mov rcx, 16
+    lea rsi, [rsp - 132]
+    rep movsb
     cmp_114_12:
     cmp qword [rsp - 116], -1
     jne bool_false_114_12
@@ -691,12 +691,10 @@ main:
             exit_36_17_115_5_end:
         if_36_5_115_5_end:
     assert_115_5_end:
-        mov r15, qword [rsp - 116]
-        mov qword [rsp - 152], r15
-        mov r15, qword [rsp - 108]
-        mov qword [rsp - 144], r15
-    mov r15d, dword [rsp - 100]
-    mov dword [rsp - 136], r15d
+    lea rdi, [rsp - 152]
+    mov rcx, 20
+    lea rsi, [rsp - 116]
+    rep movsb
     cmp_118_12:
     cmp qword [rsp - 152], -1
     jne bool_false_118_12
@@ -1875,16 +1873,17 @@ main:
 ;    free r15
     neg qword [rsp - 124]
 ;    [113:7]  o1.pos = p1
+;    alloc rsi
+;    alloc rdi
+;    alloc rcx
+    lea rdi, [rsp - 116]
+    mov rcx, 16
 ;    [113:14]  p1
-;    [113:14] p1
-;    alloc r15
-    mov r15, qword [rsp - 132]
-    mov qword [rsp - 116], r15
-;    free r15
-;    alloc r15
-    mov r15, qword [rsp - 124]
-    mov qword [rsp - 108], r15
-;    free r15
+    lea rsi, [rsp - 132]
+    rep movsb
+;    free rcx
+;    free rdi
+;    free rsi
 ;    [114:5] assert(o1.pos.x == -1)
 ;    alloc r15
 ;    [114:12] o1.pos.x == -1
@@ -1976,21 +1975,17 @@ main:
 ;    var o2: object @ qword [rsp - 152]
 ;    [117:5] var o2 : object = o1
 ;    [117:23] o2 =o1
+;    alloc rsi
+;    alloc rdi
+;    alloc rcx
+    lea rdi, [rsp - 152]
+    mov rcx, 20
 ;    [117:23] o1
-;    [117:23] o1
-;        [117:23] o1
-;        alloc r15
-        mov r15, qword [rsp - 116]
-        mov qword [rsp - 152], r15
-;        free r15
-;        alloc r15
-        mov r15, qword [rsp - 108]
-        mov qword [rsp - 144], r15
-;        free r15
-;    alloc r15
-    mov r15d, dword [rsp - 100]
-    mov dword [rsp - 136], r15d
-;    free r15
+    lea rsi, [rsp - 116]
+    rep movsb
+;    free rcx
+;    free rdi
+;    free rsi
 ;    [118:5] assert(o2.pos.x == -1)
 ;    alloc r15
 ;    [118:12] o2.pos.x == -1

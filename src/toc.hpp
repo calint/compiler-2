@@ -1235,6 +1235,13 @@ class toc final {
         os << "rep stosb\n";
     }
 
+    static auto asm_rep_movsb([[maybe_unused]] const token& src_loc_tk,
+                              std::ostream& os, const size_t indnt) -> void {
+
+        indent(os, indnt);
+        os << "rep movsb\n";
+    }
+
     static auto indent(std::ostream& os, const size_t indnt,
                        const bool comment = false) -> void {
 

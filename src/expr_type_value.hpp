@@ -4,9 +4,13 @@
 #include "decouple.hpp"
 #include "statement.hpp"
 #include "type.hpp"
+#include <memory>
+
+class stmt_identifier;
 
 class expr_type_value final : public statement {
     std::vector<std::unique_ptr<expr_any>> exprs_;
+    std::shared_ptr<stmt_identifier> stmt_ident_;
 
   public:
     // note: constructor and destructor is implemented in 'main.cpp' where the
@@ -26,13 +30,25 @@ class expr_type_value final : public statement {
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  const std::string& dst) const -> void override {
 
+        if (is_make_copy()) {
+            compile_copy(tc, os, indent, dst);
+            return;
+        }
+
         expr_type_value::compile_recursive(*this, tc, os, indent, tok().name(),
                                            dst, get_type());
     }
 
+    auto compile_copy(toc& tc, std::ostream& os, size_t indent,
+                      const std::string& dst) const -> void;
+
     // implemented in 'main.cpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
-    inline void source_to(std::ostream& os) const override;
+    auto source_to(std::ostream& os) const -> void override;
+
+    [[nodiscard]] auto is_make_copy() const -> bool {
+        return not tok().is_name("");
+    }
 
   private:
     // implemented in main.cpp due to circular reference:

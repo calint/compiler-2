@@ -57,6 +57,17 @@ class expr_any final : public statement {
         }
     }
 
+    [[nodiscard]] auto is_expr_type_value() const -> size_t {
+        return var_.index() == 2;
+    }
+
+    [[nodiscard]] auto is_expr_type_value_copy() const -> bool {
+        if (not is_expr_type_value()) {
+            return false;
+        }
+        return get<expr_type_value>(var_).is_make_copy();
+    }
+
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  const std::string& dst = "") const -> void override {
 

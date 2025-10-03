@@ -453,10 +453,10 @@ main:
     mov r15, qword [rsp - 96]
     mov qword [rsp - 124], r15
     neg qword [rsp - 124]
-    mov r15, qword [rsp - 132]
-    mov qword [rsp - 116], r15
-    mov r15, qword [rsp - 124]
-    mov qword [rsp - 108], r15
+    lea rdi, [rsp - 116]
+    mov rcx, 16
+    lea rsi, [rsp - 132]
+    rep movsb
     cmp_114_12:
     cmp qword [rsp - 116], -1
     jne bool_false_114_12
@@ -505,12 +505,10 @@ main:
             exit_36_17_115_5_end:
         if_36_5_115_5_end:
     assert_115_5_end:
-        mov r15, qword [rsp - 116]
-        mov qword [rsp - 152], r15
-        mov r15, qword [rsp - 108]
-        mov qword [rsp - 144], r15
-    mov r15d, dword [rsp - 100]
-    mov dword [rsp - 136], r15d
+    lea rdi, [rsp - 152]
+    mov rcx, 20
+    lea rsi, [rsp - 116]
+    rep movsb
     cmp_118_12:
     cmp qword [rsp - 152], -1
     jne bool_false_118_12
