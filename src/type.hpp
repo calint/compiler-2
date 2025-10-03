@@ -51,7 +51,7 @@ class type final {
                        .is_array = is_array,
                        .offset = size_});
 
-        size_ += tp.size_;
+        size_ += tp.size_ * (is_array ? array_size : 1);
     }
 
     [[nodiscard]] auto field(const token& tk, const std::string& name) const

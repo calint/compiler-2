@@ -1,5 +1,5 @@
 section .bss
-stk resd 1024
+stk resd 0x10000
 stk.end:
 true equ 1
 false equ 0
