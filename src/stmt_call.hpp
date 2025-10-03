@@ -40,6 +40,7 @@ class stmt_call : public expression {
                 }
             }
             if (not tz.is_next_char(')')) {
+                // note: checked source location report ok
                 throw compiler_exception(tz, "expected ')' after arguments");
             }
         } else {
