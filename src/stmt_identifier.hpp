@@ -28,8 +28,8 @@ class stmt_identifier : public statement {
                 // thus default type
                 elems_.emplace_back(identifier_elem{
                     .name_tk = tk,
-                    .array_index_expr =
-                        new expr_any(tc, tz, tc.get_type_default(), false),
+                    .array_index_expr = std::make_unique<expr_any>(
+                        tc, tz, tc.get_type_default(), false),
                     .ws1{tz.next_whitespace_token()},
                     .has_array_index_expr = true});
 

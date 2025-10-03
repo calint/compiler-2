@@ -1,12 +1,13 @@
 #pragma once
 
 #include "token.hpp"
+#include <memory>
 
 class expr_any;
 
 struct identifier_elem final {
     token name_tk;
-    expr_any* array_index_expr;
+    std::unique_ptr<expr_any> array_index_expr;
     token ws1;
     bool has_array_index_expr{};
 };

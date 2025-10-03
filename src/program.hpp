@@ -19,6 +19,7 @@ class program final {
 
     std::vector<std::unique_ptr<statement>> statements_;
     toc tc_; // table of contents
+    token ws1_;
 
   public:
     explicit program(const std::string& source) : tc_{source} {
@@ -64,8 +65,7 @@ class program final {
             } else if (tk.is_name("")) {
                 // empty space at end of file; necessary for source reproduction
                 // to be identical
-                statements_.emplace_back(
-                    std::make_unique<statement>(tk, unary_ops{}));
+                ws1_ = tk;
             } else {
                 throw compiler_exception{tk, "unexpected keyword '" +
                                                  tk.name() + "'"};
@@ -85,6 +85,7 @@ class program final {
         for (const auto& st : statements_) {
             st->source_to(os);
         }
+        ws1_.source_to(os);
     }
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
