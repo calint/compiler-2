@@ -115,7 +115,7 @@ class stmt_def_var final : public statement {
                    array_size_, false);
 
         tc.comment_source(*this, os, indent);
-        if (array_size_tk_.is_empty()) {
+        if (not is_array_) {
             assign_var_.compile(tc, os, indent, name_tk_.name());
             return;
         }
