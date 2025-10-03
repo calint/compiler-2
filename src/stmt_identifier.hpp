@@ -24,12 +24,13 @@ class stmt_identifier : public statement {
             if (tz.is_next_char('[')) {
                 // yes, read expression
 
-                // note: array index expression always results into an integer,
-                // thus default type
+                // note: array index expression always results into an
+                //       integer, thus default type
                 elems_.emplace_back(identifier_elem{
                     .name_tk = tk,
-                    .array_index_expr = std::make_unique<expr_any>(
-                        tc, tz, tc.get_type_default(), false),
+                    // .array_index_expr{},
+                    .array_index_expr{std::make_unique<expr_any>(
+                        tc, tz, tc.get_type_default(), false)},
                     .ws1{tz.next_whitespace_token()},
                     .has_array_index_expr = true});
 
