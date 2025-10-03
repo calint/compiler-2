@@ -60,11 +60,15 @@ main:
 ;    [69:5] # arrays are initialized to 0
 ;    [71:8]  arr[1] = 2
 ;    alloc r15
+    lea r15, [rsp - 16]
+;    alloc r14
 ;    [71:9] 1
 ;    [71:9] 1
-;    [71:10] r15 = 1
-    mov r15, 1
-    lea r15, [rsp + r15 * 4 - 16]
+;    [71:10] r14 = 1
+    mov r14, 1
+    imul r14, 4
+    add r15, r14
+;    free r14
 ;    [71:14]  2
 ;    [71:14] 2
 ;    [72:5] dword [r15] = 2
@@ -72,20 +76,29 @@ main:
 ;    free r15
 ;    [72:8] arr[2] = arr[1]
 ;    alloc r15
+    lea r15, [rsp - 16]
+;    alloc r14
 ;    [72:9] 2
 ;    [72:9] 2
-;    [72:10] r15 = 2
-    mov r15, 2
-    lea r15, [rsp + r15 * 4 - 16]
+;    [72:10] r14 = 2
+    mov r14, 2
+    imul r14, 4
+    add r15, r14
+;    free r14
 ;    [72:14]  arr[1]
 ;    [72:14] arr[1]
 ;    [72:17] dword [r15] = arr[1]
+;    [72:17] arr[1]
 ;    alloc r14
+    lea r14, [rsp - 16]
+;    alloc r13
 ;    [72:18] 1
 ;    [72:18] 1
-;    [72:19] r14 = 1
-    mov r14, 1
-    lea r14, [rsp + r14 * 4 - 16]
+;    [72:19] r13 = 1
+    mov r13, 1
+    imul r13, 4
+    add r14, r13
+;    free r13
 ;    alloc r13
     mov r13d, dword [r14]
     mov dword [r15], r13d
@@ -101,12 +114,17 @@ main:
 ;    alloc r14
 ;        [74:12] arr[1]
 ;        [74:15] r14 = arr[1]
+;        [74:15] arr[1]
 ;        alloc r13
+        lea r13, [rsp - 16]
+;        alloc r12
 ;        [74:16] 1
 ;        [74:16] 1
-;        [74:17] r13 = 1
-        mov r13, 1
-        lea r13, [rsp + r13 * 4 - 16]
+;        [74:17] r12 = 1
+        mov r12, 1
+        imul r12, 4
+        add r13, r12
+;        free r12
         movsx r14, dword [r13]
 ;        free r13
     cmp r14, 2
@@ -157,12 +175,17 @@ main:
 ;    alloc r14
 ;        [75:12] arr[2]
 ;        [75:15] r14 = arr[2]
+;        [75:15] arr[2]
 ;        alloc r13
+        lea r13, [rsp - 16]
+;        alloc r12
 ;        [75:16] 2
 ;        [75:16] 2
-;        [75:17] r13 = 2
-        mov r13, 2
-        lea r13, [rsp + r13 * 4 - 16]
+;        [75:17] r12 = 2
+        mov r12, 2
+        imul r12, 4
+        add r13, r12
+;        free r12
         movsx r14, dword [r13]
 ;        free r13
     cmp r14, 2
@@ -213,11 +236,15 @@ main:
     mov qword [rsp - 24], 3
 ;    [78:8] arr[ix] = ~inv(arr[ix - 1])
 ;    alloc r15
+    lea r15, [rsp - 16]
+;    alloc r14
 ;    [78:9] ix
 ;    [78:9] ix
-;    [78:11] r15 = ix
-    mov r15, qword [rsp - 24]
-    lea r15, [rsp + r15 * 4 - 16]
+;    [78:11] r14 = ix
+    mov r14, qword [rsp - 24]
+    imul r14, 4
+    add r15, r14
+;    free r14
 ;    [78:15]  ~inv(arr[ix - 1])
 ;    [78:15] ~inv(arr[ix - 1])
 ;    [78:16] dword [r15] = ~inv(arr[ix - 1])
@@ -226,14 +253,19 @@ main:
 ;    [78:20] arr[ix - 1]
 ;    [78:20] arr[ix - 1]
 ;    [78:23] r14 = arr[ix - 1]
+;    [78:23] arr[ix - 1]
 ;    alloc r13
+    lea r13, [rsp - 16]
+;    alloc r12
 ;    [78:24] ix - 1
 ;    [78:24] ix - 1
-;    [78:27] r13 = ix
-    mov r13, qword [rsp - 24]
-;    [78:30] r13 - 1
-    sub r13, 1
-    lea r13, [rsp + r13 * 4 - 16]
+;    [78:27] r12 = ix
+    mov r12, qword [rsp - 24]
+;    [78:30] r12 - 1
+    sub r12, 1
+    imul r12, 4
+    add r13, r12
+;    free r12
     movsx r14, dword [r13]
 ;    free r13
 ;    inv(i : i32) : i32 res 
@@ -259,12 +291,17 @@ main:
 ;    alloc r14
 ;        [79:12] arr[ix]
 ;        [79:15] r14 = arr[ix]
+;        [79:15] arr[ix]
 ;        alloc r13
+        lea r13, [rsp - 16]
+;        alloc r12
 ;        [79:16] ix
 ;        [79:16] ix
-;        [79:18] r13 = ix
-        mov r13, qword [rsp - 24]
-        lea r13, [rsp + r13 * 4 - 16]
+;        [79:18] r12 = ix
+        mov r12, qword [rsp - 24]
+        imul r12, 4
+        add r13, r12
+;        free r12
         movsx r14, dword [r13]
 ;        free r13
     cmp r14, 2
@@ -1465,6 +1502,6 @@ main:
     mov rdi, 0
     syscall
 
-; max scratch registers in use: 3
+; max scratch registers in use: 4
 ;            max frames in use: 7
 ;               max stack size: 160 B

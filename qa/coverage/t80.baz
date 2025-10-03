@@ -1,0 +1,56 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+type point {x, y}
+type object {pos : point, color : i32}
+
+# function arguments are equivalent to mutable references
+func foo(pt : point) {
+    pt.x = 0b10    # binary value 2
+    pt.y = 0xb     # hex value 11
+}
+
+# default argument type is `i64`
+func bar(arg) {
+    if arg == 0 return
+    arg = 0xff
+}
+
+func inv(i : i32) : i32 res {
+    res = ~i
+}
+
+# return target is specified as a variable, in this case `res`
+func baz(arg) : i64 res {
+    res = arg * 2
+}
+
+func main() {
+    var objs : object[23]
+    objs[3].color = ~2
+    assert(objs[3].color == ~2)
+
+    objs[1].pos.x = 0xfe55e
+    objs[2].pos.y = 0x808
+    objs[1].pos.y = objs[2].pos.y
+    
+    assert(objs[1].pos.x == 0xfe55e)
+    assert(objs[2].pos.y == 0x808)
+    assert(objs[1].pos.y == 0x808)
+
+    objs[1].color = ~inv(2)
+    assert(objs[1].color == 2)
+
+    var ix = 3
+    objs[ix + 1].color = objs[1].color
+    assert(objs[4].color == 2)
+
+    objs[ix + ix].color = ~3
+    assert(objs[6].color == ~3)
+}

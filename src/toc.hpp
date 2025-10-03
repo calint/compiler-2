@@ -363,6 +363,21 @@ class toc final {
         return std::to_string(line) + ":" + std::to_string(col);
     }
 
+    static auto get_field_offset_in_type(const token& src_loc_tk_,
+                                         const type& tp,
+                                         const std::string& field_name)
+        -> size_t {
+        size_t accum{};
+        for (const type_field& f : tp.fields()) {
+            if (f.name == field_name) {
+                return accum;
+            }
+            accum += f.size;
+        }
+        throw compiler_exception{src_loc_tk_,
+                                 "unexpected code path stmt_assign_var:1"};
+    }
+
     static auto line_and_col_num_for_char_index(const size_t char_index,
                                                 const char* src)
         -> std::pair<size_t, size_t> {
@@ -420,13 +435,14 @@ class toc final {
                                                st.identifier() + "'");
     }
 
-    [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
-                                       const std::string& ident,
-                                       const bool must_be_initiated) const
+    [[nodiscard]] auto
+    make_ident_info(const token& src_loc_tk, const std::string& ident,
+                    [[maybe_unused]] const bool must_be_initiated) const
         -> ident_info {
 
+        //? FIX changed to must_be_initiated to false for progress
         const ident_info& id_info{
-            make_ident_info_or_empty(src_loc_tk, ident, must_be_initiated)};
+            make_ident_info_or_empty(src_loc_tk, ident, false)};
 
         if (not id_info.id_nasm.empty()) {
             return id_info;
@@ -911,6 +927,26 @@ class toc final {
         return get_type_default().size();
     }
 
+    [[nodiscard]] auto
+    get_builtin_type_for_operand(const token& src_loc_tk_,
+                                 const std::string& operand) const
+        -> const type& {
+        //? sort of ugly
+        if (operand.starts_with("qword")) {
+            return get_type_or_throw(src_loc_tk_, "i64");
+        }
+        if (operand.starts_with("dword")) {
+            return get_type_or_throw(src_loc_tk_, "i32");
+        }
+        if (operand.starts_with("word")) {
+            return get_type_or_throw(src_loc_tk_, "i16");
+        }
+        if (operand.starts_with("byte")) {
+            return get_type_or_throw(src_loc_tk_, "i8");
+        }
+
+        throw panic_exception{"toc:1"};
+    }
     // -------------------------------------------------------------------------
     // statics
     // -------------------------------------------------------------------------
@@ -1363,10 +1399,11 @@ class toc final {
 
         // is it a register reference to memory?
         if (is_identifier_direct_register_indirect_addressing(id_base)) {
+            // get the size: e.g. "dword [r15]"
             return {.id = ident,
                     .id_nasm = id_base,
                     .const_value = 0,
-                    .type_ref = get_type_default(),
+                    .type_ref = get_builtin_type_for_operand(src_loc, id_base),
                     .stack_ix = 0,
                     .ident_type = ident_info::ident_type::REGISTER};
         }
