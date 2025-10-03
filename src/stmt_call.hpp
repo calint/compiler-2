@@ -155,6 +155,7 @@ class stmt_call : public expression {
         const std::string& ret_jmp_label{func_name + "_" + new_call_path +
                                          "_end"};
 
+        // keep track of allocated registers
         std::vector<std::string> allocated_named_registers;
         std::vector<std::string> allocated_scratch_registers;
         std::vector<std::string> allocated_registers_in_order;
