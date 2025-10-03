@@ -45,90 +45,28 @@ class stmt_assign_var final : public statement {
 
         const ident_info dst_info{
             tc.make_ident_info(tok(), stmt_ident_.identifier(), false)};
+
         if (dst_info.is_const()) {
             throw compiler_exception(tok(), "cannot assign to constant '" +
                                                 dst_info.id + "'");
         }
 
         if (not stmt_ident_.is_expression()) {
-            // no index calculations
             expr_.compile(tc, os, indent, dst_info.id);
             return;
         }
 
-        // identifier contains index offsets
-
-        if (stmt_ident_.elems().size() == 1) {
-            const identifier_elem& ie{stmt_ident_.elems().at(0)};
-            const ident_info ii{
-                tc.make_ident_info(tok(), stmt_ident_.identifier(), false)};
-            if (not ie.has_array_index_expr) {
-                expr_.compile(tc, os, indent, ii.id);
-                return;
-            }
-
-            const std::string& reg_accum{
-                tc.alloc_scratch_register(tok(), os, indent)};
-            tc.asm_cmd(tok(), os, indent, "lea", reg_accum,
-                       "[rsp - " + std::to_string(-ii.stack_ix) + "]");
-            const std::string& reg_index{
-                tc.alloc_scratch_register(tok(), os, indent)};
-            ie.array_index_expr->compile(tc, os, indent, reg_index);
-            tc.asm_cmd(tok(), os, indent, "imul", reg_index,
-                       std::to_string(ii.type_ref.size()));
-            tc.asm_cmd(tok(), os, indent, "add", reg_accum, reg_index);
-            tc.free_scratch_register(os, indent, reg_index);
-            const std::string& memsize{type::get_memory_operand_for_size(
-                tok(), dst_info.type_ref.size())};
-            expr_.compile(tc, os, indent, memsize + " [" + reg_accum + "]");
-            tc.free_scratch_register(os, indent, reg_accum);
-            return;
-        }
-        const identifier_elem& ie_base{stmt_ident_.elems().at(0)};
-        const std::string& reg_accum{
+        const std::string& reg_offset{
             tc.alloc_scratch_register(tok(), os, indent)};
-        std::string path = ie_base.name_tk.name();
-        const ident_info ii_base{tc.make_ident_info(tok(), path, false)};
-        tc.asm_cmd(tok(), os, indent, "lea", reg_accum,
-                   "[rsp - " + std::to_string(-ii_base.stack_ix) + "]");
-        size_t i{0};
-        size_t accum_offset{};
-        while (true) {
-            if (i + 1 == stmt_ident_.elems().size()) {
-                break;
-            }
-            const identifier_elem& ie{stmt_ident_.elems().at(i)};
-            const identifier_elem& ie_nxt{stmt_ident_.elems().at(i + 1)};
-            const ident_info ii{tc.make_ident_info(tok(), path, false)};
-            const std::string path_nxt{path + "." + ie_nxt.name_tk.name()};
-            const ident_info ii_nxt{tc.make_ident_info(tok(), path_nxt, false)};
-            if (not ie.has_array_index_expr) {
-                accum_offset += toc::get_field_offset_in_type(
-                    tok(), ii.type_ref, ie_nxt.name_tk.name());
-                path = path_nxt;
-                i++;
-                continue;
-            }
-            const std::string& reg_index{
-                tc.alloc_scratch_register(tok(), os, indent)};
-            ie.array_index_expr->compile(tc, os, indent, reg_index);
-            tc.asm_cmd(tok(), os, indent, "imul", reg_index,
-                       std::to_string(ii.type_ref.size()));
-            tc.asm_cmd(tok(), os, indent, "add", reg_accum, reg_index);
-            tc.free_scratch_register(os, indent, reg_index);
-            accum_offset += toc::get_field_offset_in_type(
-                tok(), ii.type_ref, ie_nxt.name_tk.name());
-            path = path_nxt;
-            i++;
-        }
-        if (accum_offset != 0) {
-            tc.asm_cmd(tok(), os, indent, "add", reg_accum,
-                       std::to_string(accum_offset));
-        }
+
+        stmt_identifier::compile_address_calculation(
+            tok(), tc, os, indent, stmt_ident_.elems(), reg_offset);
+
         const std::string& memsize{
             type::get_memory_operand_for_size(tok(), dst_info.type_ref.size())};
-        expr_.compile(tc, os, indent, memsize + " [" + reg_accum + "]");
-        tc.free_scratch_register(os, indent, reg_accum);
+        expr_.compile(tc, os, indent, memsize + " [" + reg_offset + "]");
+
+        tc.free_scratch_register(os, indent, reg_offset);
     }
 
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }

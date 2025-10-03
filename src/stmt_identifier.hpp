@@ -128,95 +128,73 @@ class stmt_identifier : public statement {
 
         tc.comment_source(*this, os, indent);
 
+        const ident_info dst_info{tc.make_ident_info(tok(), dst, false)};
+
         if (not is_expression()) {
-            // no index calculations
-            const ident_info di{tc.make_ident_info(tok(), dst, false)};
-            const ident_info ii{tc.make_ident_info(tok(), identifier(), false)};
-            tc.asm_cmd(tok(), os, indent, "mov", di.id_nasm, ii.id_nasm);
-            get_unary_ops().compile(tc, os, indent, di.id_nasm);
+            const ident_info src_info{
+                tc.make_ident_info(tok(), identifier(), false)};
+            tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
+                       src_info.id_nasm);
+            get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
             return;
         }
 
-        if (elems().size() == 1) {
-            const identifier_elem& ie{elems().at(0)};
-            const ident_info ii{tc.make_ident_info(tok(), identifier(), false)};
-            const ident_info di{tc.make_ident_info(tok(), dst, false)};
-            if (not ie.has_array_index_expr) {
-                tc.asm_cmd(tok(), os, indent, "mov", di.id_nasm, ii.id_nasm);
-                get_unary_ops().compile(tc, os, indent, di.id_nasm);
-                return;
-            }
-
-            const std::string& reg_accum{
-                tc.alloc_scratch_register(tok(), os, indent)};
-            tc.asm_cmd(tok(), os, indent, "lea", reg_accum,
-                       "[rsp - " + std::to_string(-ii.stack_ix) + "]");
-            const std::string& reg_index{
-                tc.alloc_scratch_register(tok(), os, indent)};
-            ie.array_index_expr->compile(tc, os, indent, reg_index);
-            tc.asm_cmd(tok(), os, indent, "imul", reg_index,
-                       std::to_string(ii.type_ref.size()));
-            tc.asm_cmd(tok(), os, indent, "add", reg_accum, reg_index);
-            tc.free_scratch_register(os, indent, reg_index);
-            const std::string& memsize{
-                type::get_memory_operand_for_size(tok(), ii.type_ref.size())};
-            tc.asm_cmd(tok(), os, indent, "mov", dst,
-                       memsize + " [" + reg_accum + "]");
-            tc.free_scratch_register(os, indent, reg_accum);
-            get_unary_ops().compile(tc, os, indent, di.id_nasm);
-            return;
-        }
-
-        // identifier contains index offsets
-
-        const identifier_elem& ie_base{elems_.at(0)};
-        const std::string& reg_accum{
+        const std::string& reg_offset{
             tc.alloc_scratch_register(tok(), os, indent)};
-        std::string path = ie_base.name_tk.name();
-        const ident_info ii_base{tc.make_ident_info(tok(), path, false)};
-        tc.asm_cmd(tok(), os, indent, "lea", reg_accum,
-                   "[rsp - " + std::to_string(-ii_base.stack_ix) + "]");
-        size_t i{0};
-        size_t accum_offset{};
-        while (true) {
-            if (i + 1 == elems_.size()) {
-                break;
+
+        stmt_identifier::compile_address_calculation(tok(), tc, os, indent,
+                                                     elems(), reg_offset);
+
+        const ident_info src_info{
+            tc.make_ident_info(tok(), identifier(), false)};
+        const std::string& memsize{
+            type::get_memory_operand_for_size(tok(), src_info.type_ref.size())};
+        tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
+                   memsize + " [" + reg_offset + "]");
+        get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
+        tc.free_scratch_register(os, indent, reg_offset);
+    }
+
+    static auto
+    compile_address_calculation(const token& tok, toc& tc, std::ostream& os,
+                                size_t indent,
+                                const std::vector<identifier_elem>& elems,
+                                const std::string& reg_offset) -> void {
+
+        const identifier_elem& base_elem{elems.front()};
+        std::string path{base_elem.name_tk.name()};
+        const ident_info base_info{tc.make_ident_info(tok, path, false)};
+
+        tc.asm_cmd(tok, os, indent, "lea", reg_offset,
+                   "[rsp - " + std::to_string(-base_info.stack_ix) + "]");
+
+        size_t accum_offset = 0;
+
+        for (size_t i{}; i < elems.size(); ++i) {
+            const identifier_elem& elem{elems.at(i)};
+            const ident_info curr_info{tc.make_ident_info(tok, path, false)};
+
+            if (elem.has_array_index_expr) {
+                const std::string& reg_index{
+                    tc.alloc_scratch_register(tok, os, indent)};
+                elem.array_index_expr->compile(tc, os, indent, reg_index);
+                tc.asm_cmd(tok, os, indent, "imul", reg_index,
+                           std::to_string(curr_info.type_ref.size()));
+                tc.asm_cmd(tok, os, indent, "add", reg_offset, reg_index);
+                tc.free_scratch_register(os, indent, reg_index);
             }
-            const identifier_elem& ie{elems_.at(i)};
-            const identifier_elem& ie_nxt{elems_.at(i + 1)};
-            const ident_info ii{tc.make_ident_info(tok(), path, false)};
-            const std::string path_nxt{path + "." + ie_nxt.name_tk.name()};
-            const ident_info ii_nxt{tc.make_ident_info(tok(), path_nxt, false)};
-            if (not ie.has_array_index_expr) {
+
+            if (i + 1 < elems.size()) {
+                const identifier_elem& next_elem{elems[i + 1]};
                 accum_offset += toc::get_field_offset_in_type(
-                    tok(), ii.type_ref, ie_nxt.name_tk.name());
-                path = path_nxt;
-                i++;
-                continue;
+                    tok, curr_info.type_ref, next_elem.name_tk.name());
+                path += "." + next_elem.name_tk.name();
             }
-            const std::string& reg_index{
-                tc.alloc_scratch_register(tok(), os, indent)};
-            ie.array_index_expr->compile(tc, os, indent, reg_index);
-            tc.asm_cmd(tok(), os, indent, "imul", reg_index,
-                       std::to_string(ii.type_ref.size()));
-            tc.asm_cmd(tok(), os, indent, "add", reg_accum, reg_index);
-            tc.free_scratch_register(os, indent, reg_index);
-            accum_offset += toc::get_field_offset_in_type(
-                tok(), ii.type_ref, ie_nxt.name_tk.name());
-            path = path_nxt;
-            i++;
         }
+
         if (accum_offset != 0) {
-            tc.asm_cmd(tok(), os, indent, "add", reg_accum,
+            tc.asm_cmd(tok, os, indent, "add", reg_offset,
                        std::to_string(accum_offset));
         }
-        const ident_info dst_info{tc.make_ident_info(tok(), dst, false)};
-        const ident_info ii{tc.make_ident_info(tok(), identifier(), false)};
-        const std::string& memsize{
-            type::get_memory_operand_for_size(tok(), ii.type_ref.size())};
-        tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
-                   memsize + " [" + reg_accum + "]");
-        get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
-        tc.free_scratch_register(os, indent, reg_accum);
     }
 };

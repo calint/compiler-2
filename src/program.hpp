@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include "panic_exception.hpp"
 #include "statement.hpp"
 #include "stmt_def_field.hpp"
 #include "stmt_def_func.hpp"
@@ -47,7 +48,10 @@ class program final {
         while (true) {
             const token tk{tz.next_token()};
             if (tk.is_empty()) {
-                assert(tz.is_eos());
+                if (not tz.is_eos()) {
+                    throw panic_exception{"expected file to be fully read "
+                                          "here. something is wrong."};
+                }
                 break;
             }
             if (tk.is_name("field")) {
