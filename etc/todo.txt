@@ -11,6 +11,7 @@
             # hello
 
           }
+    [ ] allow declaration of instance without initializer, zero it
 [x] use C++23 facilities to convert string to number instead of 'strtol'
 [x] parsing error not correct when 'foo(p:point)'
     var o1 : object = {{x * 10, y}, 0xff0000}
