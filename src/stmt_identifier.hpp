@@ -28,7 +28,6 @@ class stmt_identifier : public statement {
                 //       integer, thus default type
                 elems_.emplace_back(identifier_elem{
                     .name_tk = tk,
-                    // .array_index_expr{},
                     .array_index_expr{std::make_unique<expr_any>(
                         tc, tz, tc.get_type_default(), false)},
                     .ws1{tz.next_whitespace_token()},
