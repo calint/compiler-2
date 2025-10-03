@@ -26,7 +26,7 @@
        [ ] allow types to be power of 2 sizes only and use shift instead of
            multiplication
        [ ] support assigning strings to i8 arrays
-       [ ] support indexing in user defined types: e.g. obj[x].pts[y].x = z
+       [x] support indexing in user defined types: e.g. obj[x].pts[y].x = z
        [ ] bounds check (optional compiler flag)
 [x] nicer formatting of generated source
         ; Standard Assembly Formatting (Intel/NASM style)
