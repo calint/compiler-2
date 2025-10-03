@@ -1,10 +1,11 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <ranges>
+
 #include "compiler_exception.hpp"
 #include "stmt_block.hpp"
 #include "stmt_def_func_param.hpp"
-#include <ranges>
 
 class stmt_def_func final : public statement {
     token name_tk_;

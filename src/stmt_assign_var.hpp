@@ -2,7 +2,6 @@
 // reviewed: 2025-09-28
 
 #include "compiler_exception.hpp"
-#include "decouple2.hpp"
 #include "expr_any.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"

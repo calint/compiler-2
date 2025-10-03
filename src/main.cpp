@@ -56,8 +56,8 @@ auto main(int argc, char* args[]) -> int {
         // with jump optimizations
         std::stringstream ss1;
         std::stringstream ss2;
-        //        prg.build(ss1);
-        prg.build(std::cout); // build without jump optimizations
+        prg.build(ss1);
+        // prg.build(std::cout); // build without jump optimizations
         optimize_jumps_1(ss1, ss2);
         optimize_jumps_2(ss2, std::cout);
 
@@ -69,10 +69,10 @@ auto main(int argc, char* args[]) -> int {
                   << '\n';
         return 1;
     } catch (const panic_exception& e) {
-        std::cerr << "\nexception: " << e.what() << '\n';
+        std::cerr << "\npanic: " << e.what() << '\n';
         return 2;
     } catch (...) {
-        std::cerr << "\nexception" << '\n';
+        std::cerr << "\nunknown exception" << '\n';
         return 3;
     }
 }
@@ -101,8 +101,7 @@ inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz, token tk)
         return std::make_unique<call_asm_syscall>(tc, std::move(tk), tz);
     }
 
-    throw compiler_exception{tz.current_position_token(),
-                             "expected a function call"};
+    throw panic_exception{"unexpected code path main:1"};
 }
 
 // declared in 'decouple.hpp'
@@ -114,7 +113,8 @@ inline auto create_statement(toc& tc, tokenizer& tz)
     const unary_ops uops{tz};
     const token tk{tz.next_token()};
     if (tk.is_name("")) {
-        throw compiler_exception(tk, "unexpected empty expression");
+        throw compiler_exception(tk,
+                                 "expected an identifier or a function call");
     }
     if (tk.name().starts_with("#")) {
         if (!uops.is_empty()) {
