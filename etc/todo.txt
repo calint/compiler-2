@@ -15,6 +15,8 @@
 
           }
     [ ] allow declaration of instance without initializer, zero it
+[ ] numbers such as i8 : 255 cause problems when cmp because value is moved
+    to unspecified register size with sign extension
 [ ] consider a built-in function "lea" that returns the address of an
     identifier. purpose: to be able to use "var" for read and write
     to console
