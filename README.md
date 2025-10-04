@@ -16,7 +16,8 @@ x86_64 assembly on Linux.
 * built-in boolean type
 * user defined types
 * inlined functions
-* keywords: `func`, `field`, `var`, `loop`, `if`, `else`, `continue`, `break`, `return`
+* keywords: `func`, `type`, `field`, `var`, `loop`, `if`, `else`, `continue`,
+`break`, `return`
 
 ## Howto
 
