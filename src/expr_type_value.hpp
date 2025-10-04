@@ -11,6 +11,8 @@ class stmt_identifier;
 class expr_type_value final : public statement {
     std::vector<std::unique_ptr<expr_any>> exprs_;
     std::shared_ptr<stmt_identifier> stmt_ident_;
+    // note: 'shared_ptr' because 'unique_ptr' poses compilation issues
+    //       regarding circular references
 
   public:
     // note: constructor and destructor is implemented in 'main.cpp' where the
