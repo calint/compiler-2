@@ -19,8 +19,8 @@ class program final {
     type type_bool{"bool", 1, true};
 
     std::vector<std::unique_ptr<statement>> statements_;
-    toc tc_; // table of contents
-    token ws1_;
+    toc tc_;    // table of contents
+    token ws1_; // whitespace
 
   public:
     explicit program(const std::string& source) : tc_{source} {
