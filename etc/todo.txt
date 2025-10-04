@@ -18,6 +18,7 @@
 [ ] consider a built-in function "lea" that returns the address of an
     identifier. purpose: to be able to use "var" for read and write
     to console
+[ ] array implicit identifiers. var ar[10] ar.len
 [x] use C++23 facilities to convert string to number instead of 'strtol'
 [x] parsing error not correct when 'foo(p:point)'
     var o1 : object = {{x * 10, y}, 0xff0000}
