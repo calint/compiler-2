@@ -36,7 +36,7 @@ template <class T> class lut final {
     }
 
     auto put(std::string key, T data) -> void {
-        elems_.emplace_back(elem{std::move(key), std::move(data)});
+        elems_.emplace_back(std::move(key), std::move(data));
     }
 
     auto get_ref(const std::string& key) -> T& {
