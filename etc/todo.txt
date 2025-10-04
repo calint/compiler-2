@@ -1,3 +1,4 @@
+[ ] argument to the compiler specifying stack size
 [o] implement arrays
     => exploratory quick and dirty coding of arrays for primitives: ok
        [x] initialize arrays to 0
