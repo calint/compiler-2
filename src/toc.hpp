@@ -423,9 +423,8 @@ class toc final {
                     [[maybe_unused]] const bool must_be_initiated) const
         -> ident_info {
 
-        //? FIX changed to must_be_initiated to false for progress
         const ident_info& id_info{
-            make_ident_info_or_empty(st.tok(), st.identifier(), false)};
+            make_ident_info_or_empty(st.tok(), st.identifier())};
 
         if (not id_info.id_nasm.empty()) {
             return id_info;
@@ -440,9 +439,7 @@ class toc final {
                     [[maybe_unused]] const bool must_be_initiated) const
         -> ident_info {
 
-        //? FIX changed to must_be_initiated to false for progress
-        const ident_info& id_info{
-            make_ident_info_or_empty(src_loc_tk, ident, false)};
+        const ident_info& id_info{make_ident_info_or_empty(src_loc_tk, ident)};
 
         if (not id_info.id_nasm.empty()) {
             return id_info;
@@ -1334,9 +1331,9 @@ class toc final {
         return nbytes;
     }
 
-    [[nodiscard]] auto
-    make_ident_info_or_empty(const token& src_loc, const std::string& ident,
-                             const bool must_be_initiated) const -> ident_info {
+    [[nodiscard]] auto make_ident_info_or_empty(const token& src_loc,
+                                                const std::string& ident) const
+        -> ident_info {
 
         identifier id{ident};
         // get the root of an identifier: example p.x -> p
@@ -1379,10 +1376,6 @@ class toc final {
         // is it a variable?
         if (frm.has_var(id_base)) {
             const var_info& var{frm.get_var_const_ref(id_base)};
-            if (must_be_initiated and not var.initiated) {
-                throw compiler_exception(src_loc, "variable '" + var.name +
-                                                      "' is not initiated");
-            }
             auto [tp, acc]{
                 var.type_ref.accessor(src_loc, id.path(), var.stack_idx)};
             return {.id = ident,
