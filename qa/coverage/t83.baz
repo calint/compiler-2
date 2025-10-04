@@ -15,7 +15,7 @@ type vec3 {x, y, z}
 type point {x, y}
 type color_rgba {r : i8, g : i8, b : i8, a : i8}
 type object {pos : point, color : i32, id : i64}
-type cluster {objs: object[10], flags : i8}
+type cluster {objs : object[10], flags : i8}
 type particle {vel : vec3, pos : vec3, mass : i32, active : bool}
 type physics_grid {particles : particle[5], timestamp : i64}
 type scene_layer {clusters : cluster[3], grid : physics_grid, name : i64}
