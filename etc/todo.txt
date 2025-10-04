@@ -32,6 +32,7 @@
        [x] multiplication by 1 is not necessary, post compilation optimized
            => types of size 1, 2, 4, 8 are specified in instruction lea
        [ ] if constant index value don't use scratch register
+       [ ] if array type 1, 2, 4, 8  use lea with scaling
        [ ] allow types to be power of 2 sizes only and use shift instead of
            multiplication
        [ ] support assigning strings to i8 arrays
