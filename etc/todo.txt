@@ -1,3 +1,5 @@
+[ ] usage of ad-hoc strings specifying destination of result from an exception
+    is messy, same as assembler operation size, review
 [ ] tidy
     [ ] review where compiler_exceptions happen and try to make good source
         location reports
