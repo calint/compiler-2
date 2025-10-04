@@ -21,6 +21,9 @@
     identifier. purpose: to be able to use "var" for read and write
     to console
 [ ] array implicit identifiers. var ar[10] ar.len
+[ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
+    sign-extends loads
+[ ] handle case where x86_64 cannot load immediate 64 bit value to memory
 [ ] when passing an array as an argument the call can insert quasi variables
     for length. fat pointers
 [x] use C++23 facilities to convert string to number instead of 'strtol'
