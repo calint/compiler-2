@@ -1,12 +1,12 @@
 #pragma once
 // reviewed: 2025-09-29
 
-#include "bool_ops_list.hpp"
+#include "expr_bool_ops_list.hpp"
 #include "expr_ops_list.hpp"
 #include "expr_type_value.hpp"
 
 class expr_any final : public statement {
-    std::variant<expr_ops_list, bool_ops_list, expr_type_value> var_;
+    std::variant<expr_ops_list, expr_bool_ops_list, expr_type_value> var_;
 
   public:
     expr_any(toc& tc, tokenizer& tz, const type& tp, bool in_args)
@@ -23,7 +23,7 @@ class expr_any final : public statement {
 
         if (tp.name() == tc.get_type_bool().name()) {
             // destination is boolean
-            var_ = bool_ops_list{tc, tz.next_whitespace_token(), tz};
+            var_ = expr_bool_ops_list{tc, tz.next_whitespace_token(), tz};
             return;
         }
 
@@ -47,7 +47,7 @@ class expr_any final : public statement {
             get<expr_ops_list>(var_).source_to(os);
             return;
         case 1:
-            get<bool_ops_list>(var_).source_to(os);
+            get<expr_bool_ops_list>(var_).source_to(os);
             return;
         case 2:
             get<expr_type_value>(var_).source_to(os);
@@ -86,7 +86,7 @@ class expr_any final : public statement {
             return;
         case 1:
             // bool expression
-            const bool_ops_list& bol{get<bool_ops_list>(var_)};
+            const expr_bool_ops_list& bol{get<expr_bool_ops_list>(var_)};
             // resolve the destination
             const ident_info& dst_info{tc.make_ident_info(tok(), dst, false)};
             // if not expression assign to destination
@@ -151,7 +151,7 @@ class expr_any final : public statement {
             return get<expr_ops_list>(var_).is_expression();
         case 1:
             // bool expression
-            return get<bool_ops_list>(var_).is_expression();
+            return get<expr_bool_ops_list>(var_).is_expression();
         case 2:
             // assign type value
             return get<expr_type_value>(var_).is_expression();
@@ -167,7 +167,7 @@ class expr_any final : public statement {
         case 0:
             return get<expr_ops_list>(var_).identifier();
         case 1:
-            return get<bool_ops_list>(var_).identifier();
+            return get<expr_bool_ops_list>(var_).identifier();
         case 2:
             return get<expr_type_value>(var_).identifier();
         default:
@@ -181,7 +181,7 @@ class expr_any final : public statement {
         case 0:
             return get<expr_ops_list>(var_).get_unary_ops();
         case 1:
-            return get<bool_ops_list>(var_).get_unary_ops();
+            return get<expr_bool_ops_list>(var_).get_unary_ops();
         case 2:
             return get<expr_type_value>(var_).get_unary_ops();
         default:

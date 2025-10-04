@@ -3,21 +3,22 @@
 
 #include "stmt_call.hpp"
 
-class call_asm_syscall final : public stmt_call {
+class stmt_call_asm_syscall final : public stmt_call {
   public:
-    call_asm_syscall(toc& tc, token tk, tokenizer& tz)
+    stmt_call_asm_syscall(toc& tc, token tk, tokenizer& tz)
         : stmt_call{tc, {}, std::move(tk), tz} {
 
         set_type(tc.get_type_void());
     }
 
-    call_asm_syscall() = default;
-    call_asm_syscall(const call_asm_syscall&) = default;
-    call_asm_syscall(call_asm_syscall&&) = default;
-    auto operator=(const call_asm_syscall&) -> call_asm_syscall& = default;
-    auto operator=(call_asm_syscall&&) -> call_asm_syscall& = default;
+    stmt_call_asm_syscall() = default;
+    stmt_call_asm_syscall(const stmt_call_asm_syscall&) = default;
+    stmt_call_asm_syscall(stmt_call_asm_syscall&&) = default;
+    auto operator=(const stmt_call_asm_syscall&)
+        -> stmt_call_asm_syscall& = default;
+    auto operator=(stmt_call_asm_syscall&&) -> stmt_call_asm_syscall& = default;
 
-    ~call_asm_syscall() override = default;
+    ~stmt_call_asm_syscall() override = default;
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  [[maybe_unused]] const std::string& dst = "") const

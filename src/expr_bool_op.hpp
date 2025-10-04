@@ -9,7 +9,7 @@
 
 #include "expr_ops_list.hpp"
 
-class bool_op final : public statement {
+class expr_bool_op final : public statement {
     static constexpr std::string asm_je{"je"};
     static constexpr std::string asm_jne{"jne"};
     static constexpr std::string asm_jl{"jl"};
@@ -27,7 +27,8 @@ class bool_op final : public statement {
     token ws1_;
 
   public:
-    bool_op(toc& tc, tokenizer& tz) : statement{tz.next_whitespace_token()} {
+    expr_bool_op(toc& tc, tokenizer& tz)
+        : statement{tz.next_whitespace_token()} {
         set_type(tc.get_type_bool());
 
         bool is_not{};
@@ -80,13 +81,13 @@ class bool_op final : public statement {
         resolve_if_op_is_expression();
     }
 
-    bool_op() = default;
-    bool_op(const bool_op&) = default;
-    bool_op(bool_op&&) = default;
-    auto operator=(const bool_op&) -> bool_op& = default;
-    auto operator=(bool_op&&) -> bool_op& = default;
+    expr_bool_op() = default;
+    expr_bool_op(const expr_bool_op&) = default;
+    expr_bool_op(expr_bool_op&&) = default;
+    auto operator=(const expr_bool_op&) -> expr_bool_op& = default;
+    auto operator=(expr_bool_op&&) -> expr_bool_op& = default;
 
-    ~bool_op() override = default;
+    ~expr_bool_op() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

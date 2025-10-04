@@ -1,11 +1,11 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include "bool_ops_list.hpp"
+#include "expr_bool_ops_list.hpp"
 #include "stmt_block.hpp"
 
 class stmt_if_branch final : public statement {
-    bool_ops_list bol_;
+    expr_bool_ops_list bol_;
     stmt_block code_;
 
   public:

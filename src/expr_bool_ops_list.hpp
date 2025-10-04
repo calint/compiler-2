@@ -3,21 +3,21 @@
 
 #include <variant>
 
-#include "bool_op.hpp"
+#include "expr_bool_op.hpp"
 #include "statement.hpp"
 
 // list of boolean expressions / lists instead of tree
 // note: quirky parsing and compiling but supports short-circuiting
-class bool_ops_list final : public statement {
-    std::vector<std::variant<bool_op, bool_ops_list>> bools_;
+class expr_bool_ops_list final : public statement {
+    std::vector<std::variant<expr_bool_op, expr_bool_ops_list>> bools_;
     std::vector<token> ops_; // 'and' or 'or' ops between element in 'bools_'
     bool enclosed_{};        // e.g. (a==b and c==d) vs a==b and c==d
     token not_token_;        // e.g. not (a==b and c==d)
     token ws1_;              // whitespace after parenthesis
 
   public:
-    bool_ops_list(toc& tc, token tk, tokenizer& tz, const bool enclosed = false,
-                  token not_token = {})
+    expr_bool_ops_list(toc& tc, token tk, tokenizer& tz,
+                       const bool enclosed = false, token not_token = {})
         : statement{std::move(tk)}, enclosed_{enclosed},
           not_token_{std::move(not_token)} {
 
@@ -46,8 +46,8 @@ class bool_ops_list final : public statement {
                 // yes, try as 'bool_ops_list' but it might not be that
                 // e.g.: (t1 + t2) > 3 is not but will compile so further checks
                 // are necessary after the parsing
-                bool_ops_list bol{tc, std::move(pos_tk), tz, true,
-                                  std::move(maybe_not_tk)};
+                expr_bool_ops_list bol{tc, std::move(pos_tk), tz, true,
+                                       std::move(maybe_not_tk)};
                 // check if 'bool_ops_list' parsed an expression, wrongfull, as
                 // short-hand boolean expression
                 //   e.g. not ( (t1 + t2) > 2 )
@@ -56,7 +56,7 @@ class bool_ops_list final : public statement {
                 if (std::string_view{"<>=!+-*/%&|^"}.contains(tz.peek_char())) {
                     // it is a 'bool_op', reposition the tokenizer and parse it
                     tz.rewind_to_position(rewind_pos_tk);
-                    bools_.emplace_back(bool_op{tc, tz});
+                    bools_.emplace_back(expr_bool_op{tc, tz});
                 } else {
                     // is not a 'bool_op'
                     bools_.emplace_back(std::move(bol));
@@ -65,7 +65,7 @@ class bool_ops_list final : public statement {
                 // put back the token in the tokenizer for the 'bool_op' to
                 // parse it
                 tz.put_back_token(maybe_not_tk);
-                bools_.emplace_back(bool_op{tc, tz});
+                bools_.emplace_back(expr_bool_op{tc, tz});
             }
 
             // end of '(...)' enclosed expression?
@@ -110,13 +110,13 @@ class bool_ops_list final : public statement {
         }
     }
 
-    bool_ops_list() = default;
-    bool_ops_list(const bool_ops_list&) = default;
-    bool_ops_list(bool_ops_list&&) = default;
-    auto operator=(const bool_ops_list&) -> bool_ops_list& = default;
-    auto operator=(bool_ops_list&&) -> bool_ops_list& = default;
+    expr_bool_ops_list() = default;
+    expr_bool_ops_list(const expr_bool_ops_list&) = default;
+    expr_bool_ops_list(expr_bool_ops_list&&) = default;
+    auto operator=(const expr_bool_ops_list&) -> expr_bool_ops_list& = default;
+    auto operator=(expr_bool_ops_list&&) -> expr_bool_ops_list& = default;
 
-    ~bool_ops_list() override = default;
+    ~expr_bool_ops_list() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
@@ -127,9 +127,9 @@ class bool_ops_list final : public statement {
         const size_t n{bools_.size()};
         for (size_t i{}; i < n; i++) {
             if (bools_.at(i).index() == 0) {
-                get<bool_op>(bools_.at(i)).source_to(os);
+                get<expr_bool_op>(bools_.at(i)).source_to(os);
             } else {
-                get<bool_ops_list>(bools_.at(i)).source_to(os);
+                get<expr_bool_ops_list>(bools_.at(i)).source_to(os);
             }
             if (i < n - 1) {
                 ops_.at(i).source_to(os);
@@ -165,7 +165,8 @@ class bool_ops_list final : public statement {
                 //
                 // bool_ops_list
                 //
-                const bool_ops_list& el{get<bool_ops_list>(bools_.at(i))};
+                const expr_bool_ops_list& el{
+                    get<expr_bool_ops_list>(bools_.at(i))};
                 toc::asm_label(tok(), os, indent, el.cmp_bgn_label(tc));
                 std::string jmp_false{jmp_to_if_false};
                 std::string jmp_true{jmp_to_if_true};
@@ -259,7 +260,7 @@ class bool_ops_list final : public statement {
             //
             if (not invert) {
                 // a == 1 and b == 2   vs   a == 1 or b == 2
-                const bool_op& e{get<bool_op>(bools_.at(i))};
+                const expr_bool_op& e{get<expr_bool_op>(bools_.at(i))};
                 if (i < n - 1) {
                     // not last element
                     if (ops_.at(i).is_name("or")) {
@@ -292,7 +293,7 @@ class bool_ops_list final : public statement {
             } else {
                 // inverted according to De Morgan's laws
                 // a=1 and b=2   vs   a=1 or b=2
-                const bool_op& e{get<bool_op>(bools_.at(i))};
+                const expr_bool_op& e{get<expr_bool_op>(bools_.at(i))};
                 if (i < n - 1) {
                     // not last element
                     if (ops_.at(i).is_name("and")) {
@@ -339,10 +340,10 @@ class bool_ops_list final : public statement {
 
         // 1 expression in the list
         if (bools_.at(0).index() == 0) {
-            return get<bool_op>(bools_.at(0)).is_expression();
+            return get<expr_bool_op>(bools_.at(0)).is_expression();
         }
 
-        return get<bool_ops_list>(bools_.at(0)).is_expression();
+        return get<expr_bool_ops_list>(bools_.at(0)).is_expression();
     }
 
     [[nodiscard]] auto identifier() const -> const std::string& override {
@@ -353,10 +354,10 @@ class bool_ops_list final : public statement {
         assert(not bools_.empty());
 
         if (bools_.at(0).index() == 0) {
-            return get<bool_op>(bools_.at(0)).identifier();
+            return get<expr_bool_op>(bools_.at(0)).identifier();
         }
 
-        return get<bool_ops_list>(bools_.at(0)).identifier();
+        return get<expr_bool_ops_list>(bools_.at(0)).identifier();
     }
 
   private:
@@ -366,24 +367,26 @@ class bool_ops_list final : public statement {
                (call_path.empty() ? "" : "_" + call_path);
     }
 
-    static auto cmp_label_from(const toc& tc,
-                               const std::variant<bool_op, bool_ops_list>& var)
+    static auto
+    cmp_label_from(const toc& tc,
+                   const std::variant<expr_bool_op, expr_bool_ops_list>& var)
         -> std::string {
 
         if (var.index() == 1) {
-            return get<bool_ops_list>(var).cmp_bgn_label(tc);
+            return get<expr_bool_ops_list>(var).cmp_bgn_label(tc);
         }
 
-        return get<bool_op>(var).cmp_bgn_label(tc);
+        return get<expr_bool_op>(var).cmp_bgn_label(tc);
     }
 
-    static auto token_from(const std::variant<bool_op, bool_ops_list>& var)
+    static auto
+    token_from(const std::variant<expr_bool_op, expr_bool_ops_list>& var)
         -> token {
 
         if (var.index() == 0) {
-            return get<bool_op>(var).tok();
+            return get<expr_bool_op>(var).tok();
         }
 
-        return get<bool_ops_list>(var).tok();
+        return get<expr_bool_ops_list>(var).tok();
     }
 };

@@ -14,8 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "call_asm_mov.hpp"
-#include "call_asm_syscall.hpp"
 #include "compiler_exception.hpp"
 #include "expr_any.hpp"
 #include "expr_type_value.hpp"
@@ -23,6 +21,8 @@
 #include "program.hpp"
 #include "statement.hpp"
 #include "stmt_call.hpp"
+#include "stmt_call_asm_mov.hpp"
+#include "stmt_call_asm_syscall.hpp"
 #include "stmt_comment.hpp"
 #include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
@@ -95,10 +95,10 @@ inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz, token tk)
         return std::make_unique<stmt_if>(tc, std::move(tk), tz);
     }
     if (tk.is_name("mov")) {
-        return std::make_unique<call_asm_mov>(tc, std::move(tk), tz);
+        return std::make_unique<stmt_call_asm_mov>(tc, std::move(tk), tz);
     }
     if (tk.is_name("syscall")) {
-        return std::make_unique<call_asm_syscall>(tc, std::move(tk), tz);
+        return std::make_unique<stmt_call_asm_syscall>(tc, std::move(tk), tz);
     }
 
     throw panic_exception{"unexpected code path main:1"};
