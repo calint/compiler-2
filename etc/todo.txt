@@ -1,3 +1,16 @@
+[o] implement arrays
+    => exploratory quick and dirty coding of arrays for primitives: ok
+       [x] initialize arrays to 0
+       [x] lea instruction should use scaling if type size 2, 4 or 8
+       [x] multiplication by 1 is not necessary, post compilation optimized
+           => types of size 1, 2, 4, 8 are specified in instruction lea
+       [ ] if constant index value don't use scratch register
+       [ ] if array type 1, 2, 4, 8  use lea with scaling
+       [ ] allow types to be power of 2 sizes only and use shift instead of
+           multiplication
+       [ ] support assigning strings to i8 arrays
+       [x] support indexing in user defined types: e.g. obj[x].pts[y].x = z
+       [ ] bounds check (optional compiler flag)
 [ ] usage of ad-hoc strings specifying destination of result from an exception
     is messy, same as assembler operation size, review
 [ ] tidy
@@ -30,19 +43,6 @@
 [x] parsing error not correct when 'foo(p:point)'
     var o1 : object = {{x * 10, y}, 0xff0000}
     foo(o1)
-[o] implement arrays
-    => exploratory quick and dirty coding of arrays for primitives: ok
-       [x] initialize arrays to 0
-       [x] lea instruction should use scaling if type size 2, 4 or 8
-       [x] multiplication by 1 is not necessary, post compilation optimized
-           => types of size 1, 2, 4, 8 are specified in instruction lea
-       [ ] if constant index value don't use scratch register
-       [ ] if array type 1, 2, 4, 8  use lea with scaling
-       [ ] allow types to be power of 2 sizes only and use shift instead of
-           multiplication
-       [ ] support assigning strings to i8 arrays
-       [x] support indexing in user defined types: e.g. obj[x].pts[y].x = z
-       [ ] bounds check (optional compiler flag)
 [x] nicer formatting of generated source
         ; Standard Assembly Formatting (Intel/NASM style)
         mov     qword [rsp - 24], 3
