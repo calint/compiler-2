@@ -1321,9 +1321,8 @@ class toc final {
     }
 
     [[nodiscard]] auto get_total_stack_size() const -> size_t {
-        assert(not frames_.empty());
         size_t nbytes{};
-        for (const auto& frm : frames_ | std::views::reverse) {
+        for (const auto& frm : frames_) {
             nbytes += frm.allocated_stack_size();
         }
         return nbytes;

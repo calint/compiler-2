@@ -388,15 +388,4 @@ class expr_bool_ops_list final : public statement {
 
         return get<expr_bool_op>(var).cmp_bgn_label(tc);
     }
-
-    static auto
-    token_from(const std::variant<expr_bool_op, expr_bool_ops_list>& var)
-        -> token {
-
-        if (var.index() == 0) {
-            return get<expr_bool_op>(var).tok();
-        }
-
-        return get<expr_bool_ops_list>(var).tok();
-    }
 };

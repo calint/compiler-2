@@ -8,7 +8,7 @@ class stmt_comment final : public statement {
     std::string line_;
 
   public:
-    stmt_comment(toc& tc, token tk, tokenizer& tz)
+    stmt_comment(const toc& tc, token tk, tokenizer& tz)
         : statement{std::move(tk)}, line_{tz.read_rest_of_line()} {
 
         set_type(tc.get_type_void());

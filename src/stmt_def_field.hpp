@@ -75,7 +75,7 @@ class stmt_def_field final : public statement {
         return true;
     }
 
-    [[nodiscard]] auto is_string_field() const -> bool {
-        return initial_value_.is_string();
-    }
+    // [[nodiscard]] auto is_string_field() const -> bool {
+    //     return initial_value_.is_string();
+    // }
 };

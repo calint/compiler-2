@@ -7,7 +7,7 @@
 class stmt_loop final : public statement {
     stmt_block code_;
 
-    auto create_unique_label(toc& tc) const -> std::string {
+    [[nodiscard]] auto create_unique_label(const toc& tc) const -> std::string {
         const std::string& call_path{tc.get_call_path(tok())};
         const std::string src_loc{tc.source_location_for_use_in_label(tok())};
         const std::string lbl{"loop_" + (call_path.empty()

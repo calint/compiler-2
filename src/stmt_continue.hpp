@@ -6,7 +6,7 @@
 
 class stmt_continue final : public statement {
   public:
-    stmt_continue(toc& tc, token tk) : statement{std::move(tk)} {
+    stmt_continue(const toc& tc, token tk) : statement{std::move(tk)} {
         set_type(tc.get_type_void());
     }
 

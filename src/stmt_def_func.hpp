@@ -178,26 +178,26 @@ class stmt_def_func final : public statement {
         }
 
         // functions get arguments as aliases
-        for (const stmt_def_func_param& param : params_) {
-            const type& param_type{param.get_type()};
-            const std::string& param_name{param.name()};
-            const std::string& param_reg{param.get_register_name_or_empty()};
+        for (const stmt_def_func_param& prm : params_) {
+            const type& prm_type{prm.get_type()};
+            const std::string& prm_name{prm.name()};
+            const std::string& prm_reg{prm.get_register_name_or_empty()};
 
             // is argument passed as named register?
-            if (param_reg.empty()) {
+            if (prm_reg.empty()) {
                 // no, add it as variable
-                tc.add_var(tok(), os, indent + 1, param_name, param_type, false,
-                           0, true);
+                tc.add_var(tok(), os, indent + 1, prm_name, prm_type, false, 0,
+                           true);
                 continue;
             }
 
             // argument passed as named register
             toc::indent(os, indent + 1, true);
-            os << param_name << ": " << param_reg << '\n';
+            os << prm_name << ": " << prm_reg << '\n';
 
-            tc.alloc_named_register_or_throw(param, os, indent + 1, param_reg);
-            tc.add_alias(param_name, param_reg);
-            allocated_named_registers.emplace_back(param_reg);
+            tc.alloc_named_register_or_throw(prm, os, indent + 1, prm_reg);
+            tc.add_alias(prm_name, prm_reg);
+            allocated_named_registers.emplace_back(prm_reg);
         }
     }
 
