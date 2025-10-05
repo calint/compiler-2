@@ -1,8 +1,6 @@
 #!/bin/bash
 # tools:
 #   clang-tidy: 20.1.8
-
-# change to directory of the script
 cd $(dirname "$0")
 
 SRC=../../src/main.cpp

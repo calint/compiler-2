@@ -62,6 +62,7 @@ class type final {
                 return fld;
             }
         }
+
         throw compiler_exception(tk, "field '" + name +
                                          "' not found in type '" + name_ + "'");
     }
