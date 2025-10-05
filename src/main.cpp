@@ -111,7 +111,7 @@ inline auto create_statement(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     const unary_ops uops{tz};
-    const token tk{tz.next_token()};
+    token tk{tz.next_token()};
     if (tk.is_name("")) {
         throw compiler_exception(tk,
                                  "expected an identifier or a function call");
@@ -121,14 +121,14 @@ inline auto create_statement(toc& tc, tokenizer& tz)
             throw compiler_exception(tk, "unexpected comment after unary ops");
         }
         // e.g.  print("hello") # comment
-        return std::make_unique<stmt_comment>(tc, tk, tz);
+        return std::make_unique<stmt_comment>(tc, std::move(tk), tz);
     }
     if (tz.is_peek_char('(')) {
         // e.g.  foo(...)
-        return std::make_unique<stmt_call>(tc, uops, tk, tz);
+        return std::make_unique<stmt_call>(tc, uops, std::move(tk), tz);
     }
     // e.g. 0x80, rax, identifiers
-    return std::make_unique<stmt_identifier>(tc, tz, tk, uops);
+    return std::make_unique<stmt_identifier>(tc, tz, std::move(tk), uops);
 }
 
 // called from 'stmt_block'

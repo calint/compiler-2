@@ -41,8 +41,8 @@ class stmt_def_func final : public statement {
         if (tz.is_next_char(':')) {
             // function returns
             while (true) {
-                const token type_tk{tz.next_token()};
-                const token ident_tk{tz.next_token()};
+                token type_tk{tz.next_token()};
+                token ident_tk{tz.next_token()};
                 if (ident_tk.name().contains('.')) {
                     throw compiler_exception(
                         ident_tk, "return variable name may not contain '.'");
@@ -55,7 +55,8 @@ class stmt_def_func final : public statement {
                         type_tk, "only built-in types allowed as return"};
                 }
 
-                returns_.emplace_back(type_tk, ident_tk, tp);
+                returns_.emplace_back(std::move(type_tk), std::move(ident_tk),
+                                      tp);
 
                 if (not tz.is_next_char(',')) {
                     break;
