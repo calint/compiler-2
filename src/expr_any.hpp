@@ -138,50 +138,28 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
-        switch (var_.index()) {
-        case 0:
-            // number expression
-            return get<expr_ops_list>(var_).is_expression();
-        case 1:
-            // bool expression
-            return get<expr_bool_ops_list>(var_).is_expression();
-        case 2:
-            // assign type value
-            return get<expr_type_value>(var_).is_expression();
-        default:
-            throw panic_exception("unexpected code path expr_any:3");
-        }
-        // note. 'expr_type_value' cannot be expression but may contain
-        // expressions to be assigned to type members
+        return std::visit([](const auto& itm) { return itm.is_expression(); },
+                          var_);
+        // note: 'expr_type_value' cannot be expression but may contain
+        //       expressions to be assigned to type members
     }
 
     [[nodiscard]] auto identifier() const -> const std::string& override {
-        switch (var_.index()) {
-        case 0:
-            return get<expr_ops_list>(var_).identifier();
-        case 1:
-            return get<expr_bool_ops_list>(var_).identifier();
-        case 2:
-            return get<expr_type_value>(var_).identifier();
-        default:
-            throw panic_exception("unexpected code path expr_any:4");
-        }
+        return std::visit(
+            [](const auto& itm) -> const std::string& {
+                return itm.identifier();
+            },
+            var_);
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
-
-        switch (var_.index()) {
-        case 0:
-            return get<expr_ops_list>(var_).get_unary_ops();
-        case 1:
-            return get<expr_bool_ops_list>(var_).get_unary_ops();
-        case 2:
-            return get<expr_type_value>(var_).get_unary_ops();
-        default:
-            throw panic_exception("unexpected code path expr_any:5");
-        }
-        // note. 'expr_type_value' does not have 'unary_ops' and cannot be
-        // argument in call
+        return std::visit(
+            [](const auto& itm) -> const unary_ops& {
+                return itm.get_unary_ops();
+            },
+            var_);
+        // note: 'expr_type_value' does not have 'unary_ops' and cannot be
+        //       argument in call
     }
 
     [[nodiscard]] auto as_assign_type_value() const -> const expr_type_value& {
