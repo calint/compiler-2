@@ -5,7 +5,7 @@
         path
     [x] use "shl" if type size 2^n
     [ ] use mov [base + index * scale + disp] type of instructions to optimize
-        store to array
+        store to and from array
 [ ] argument to the compiler specifying stack size
 [o] implement arrays
     => exploratory quick and dirty coding of arrays for primitives: ok
