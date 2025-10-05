@@ -18,6 +18,7 @@ CF="-Wfatal-errors -Werror"
 MSAN=
 PROF=
 DBG=-g
+OPT=
 #OPT=-O3
 if [ "$1" = "msan" ]; then
   MSAN="-fsanitize=address,undefined"
