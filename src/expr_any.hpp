@@ -49,17 +49,6 @@ class expr_any final : public statement {
         std::visit([&os](const auto& itm) { itm.source_to(os); }, var_);
     }
 
-    [[nodiscard]] auto is_expr_type_value() const -> size_t {
-        return var_.index() == 2;
-    }
-
-    [[nodiscard]] auto is_expr_type_value_copy() const -> bool {
-        if (not is_expr_type_value()) {
-            return false;
-        }
-        return get<expr_type_value>(var_).is_make_copy();
-    }
-
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  const std::string& dst = "") const -> void override {
 
@@ -160,6 +149,14 @@ class expr_any final : public statement {
             var_);
         // note: 'expr_type_value' does not have 'unary_ops' and cannot be
         //       argument in call
+    }
+
+    [[nodiscard]] auto is_expr_type_value() const -> size_t {
+        return var_.index() == 2;
+    }
+
+    [[nodiscard]] auto as_expr_type_value() const -> const expr_type_value& {
+        return get<expr_type_value>(var_);
     }
 
     [[nodiscard]] auto as_assign_type_value() const -> const expr_type_value& {

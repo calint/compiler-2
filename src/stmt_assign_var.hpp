@@ -42,6 +42,7 @@ class stmt_assign_var final : public statement {
 
         tc.comment_source(*this, os, indent);
 
+        // get information about the destination of the compile
         const ident_info dst_info{
             tc.make_ident_info(tok(), stmt_ident_.identifier(), false)};
 
@@ -51,10 +52,9 @@ class stmt_assign_var final : public statement {
         }
 
         // is it a copy type instance expression?
-        if (expr_.is_expr_type_value_copy()) {
-            // yes, calculate the destination address in register 'rdi' and pass
-            // it as argument to compile and then do a
-            // get_memory_operand_for_size
+        if (expr_.is_expr_type_value() and
+            expr_.as_expr_type_value().is_make_copy()) {
+            // yes, calculate the destination address to register 'rdi'
 
             // ; Copy RCX bytes from RSI to RDI
             // mov rsi, source_addr    ; source pointer
@@ -90,6 +90,8 @@ class stmt_assign_var final : public statement {
             expr_.compile(tc, os, indent, dst_info.id);
             return;
         }
+
+        // is expression, calculate the offset to the built-in type
 
         const std::string& reg_offset{
             tc.alloc_scratch_register(tok(), os, indent)};
