@@ -331,7 +331,7 @@ class expr_bool_ops_list final : public statement {
 
     //? assumes it is not an expression
     [[nodiscard]] auto is_expression() const -> bool override {
-        // is there more than 1 bool in the list
+        // is there more than 1 bool in the list?
         if (bools_.size() > 1) {
             // yes, it is expression
             return true;
@@ -340,9 +340,14 @@ class expr_bool_ops_list final : public statement {
         assert(not bools_.empty());
 
         // 1 expression in the list
+
+        // is it a 'expr_bool_ops'?
         if (bools_.at(0).index() == 0) {
+            // yes, call its 'is_expression'
             return get<expr_bool_op>(bools_.at(0)).is_expression();
         }
+
+        // it is a 'expr_bool_ops_list'
 
         return get<expr_bool_ops_list>(bools_.at(0)).is_expression();
     }
@@ -354,9 +359,13 @@ class expr_bool_ops_list final : public statement {
 
         assert(not bools_.empty());
 
+        // is it a 'expr_bool_ops'?
         if (bools_.at(0).index() == 0) {
+            // yes, call its 'identifier'
             return get<expr_bool_op>(bools_.at(0)).identifier();
         }
+
+        // it is a 'expr_bool_ops_list'
 
         return get<expr_bool_ops_list>(bools_.at(0)).identifier();
     }
