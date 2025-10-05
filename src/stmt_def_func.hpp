@@ -47,18 +47,16 @@ class stmt_def_func final : public statement {
                     throw compiler_exception(
                         ident_tk, "return variable name may not contain '.'");
                 }
-                const struct func_return_info ret_info{
-                    .type_tk = type_tk,
-                    .ident_tk = ident_tk,
-                    .type_ref = tc.get_type_or_throw(type_tk, type_tk.name())};
 
-                if (not ret_info.type_ref.is_built_in()) {
+                const type& tp{tc.get_type_or_throw(type_tk, type_tk.name())};
+
+                if (not tp.is_built_in()) {
                     throw compiler_exception{
-                        ret_info.type_tk,
-                        "only built-in types allowed as return"};
+                        type_tk, "only built-in types allowed as return"};
                 }
 
-                returns_.emplace_back(ret_info);
+                returns_.emplace_back(type_tk, ident_tk, tp);
+
                 if (not tz.is_next_char(',')) {
                     break;
                 }
