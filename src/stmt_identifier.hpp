@@ -52,7 +52,8 @@ class stmt_identifier : public statement {
 
             ws2_ = tz.next_whitespace_token();
 
-            // get the type at the end of path
+            // build a path of element identifiers later used to get the type of
+            // the target element
             for (const identifier_elem& e : elems_) {
                 if (not path_as_string_.empty()) {
                     path_as_string_ = path_as_string_ + ".";
@@ -61,6 +62,8 @@ class stmt_identifier : public statement {
             }
 
             if (tc.is_func(path_as_string_)) {
+                //? todo: should get the type? not necessary right now but for
+                // consistency
                 break;
             }
 
