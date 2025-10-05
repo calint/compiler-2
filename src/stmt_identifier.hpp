@@ -176,8 +176,11 @@ class stmt_identifier : public statement {
                 const std::string& reg_index{
                     tc.alloc_scratch_register(tok, os, indent)};
                 elem.array_index_expr->compile(tc, os, indent, reg_index);
-                tc.asm_cmd(tok, os, indent, "imul", reg_index,
-                           std::to_string(curr_info.type_ref.size()));
+                const size_t curr_type_size{curr_info.type_ref.size()};
+                if (curr_type_size > 1) {
+                    tc.asm_cmd(tok, os, indent, "imul", reg_index,
+                               std::to_string(curr_type_size));
+                }
                 tc.asm_cmd(tok, os, indent, "add", reg_offset, reg_index);
                 tc.free_scratch_register(os, indent, reg_index);
             }
