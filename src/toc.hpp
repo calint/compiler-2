@@ -699,8 +699,7 @@ class toc final {
 
         std::stringstream ss;
         st.source_to(ss);
-        const std::string s{ss.str()};
-        std::string res{std::regex_replace(s, regex_ws, " ")};
+        std::string res{std::regex_replace(ss.str(), regex_ws, " ")};
         // trim end of string
         if (not res.empty() && res.back() == ' ') {
             res.pop_back();
@@ -720,8 +719,7 @@ class toc final {
         std::stringstream ss;
         ss << " " << dst << " " << op << " ";
         st.source_to(ss);
-        const std::string s{ss.str()};
-        std::string res{std::regex_replace(s, regex_ws, " ")};
+        std::string res{std::regex_replace(ss.str(), regex_ws, " ")};
         // trim end of string
         if (not res.empty() && res.back() == ' ') {
             res.pop_back();
