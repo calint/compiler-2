@@ -34,12 +34,12 @@ class expr_ops_list final : public expression {
         } else {
             // no, read first expression or start a new recursion
             // e.g. =-(-(b+c)+d)
-            const unary_ops uo{tz};
+            unary_ops uo{tz};
             // is next a sub-expression?
             if (tz.is_next_char('(')) {
                 // yes, recurse with unary ops
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
-                    tc, tz, in_args, true, true, uo));
+                    tc, tz, in_args, true, true, std::move(uo)));
             } else {
                 // no, push back the unary ops to be attached to the
                 // statement
@@ -145,14 +145,14 @@ class expr_ops_list final : public expression {
             // check if next statement is a sub-expression or an expression
             // element
             // e.g. -(a + b)
-            const unary_ops uo{tz}; // read the unary ops, in this case '-'
+            unary_ops uo{tz}; // read the unary ops, in this case '-'
 
             // is it a sub-expression?
             if (tz.is_next_char('(')) {
                 // yes, recurse and forward the unary ops to be applied on the
                 // whole sub-expression
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
-                    tc, tz, in_args, true, true, uo));
+                    tc, tz, in_args, true, true, std::move(uo)));
                 continue;
             }
 
