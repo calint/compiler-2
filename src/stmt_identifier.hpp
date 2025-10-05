@@ -25,12 +25,10 @@ class stmt_identifier : public statement {
 
                 // note: array index expression always results into an
                 //       integer, thus default type
-                elems_.emplace_back(identifier_elem{
-                    .name_tk = tk,
-                    .array_index_expr{std::make_unique<expr_any>(
-                        tc, tz, tc.get_type_default(), false)},
-                    .ws1{tz.next_whitespace_token()},
-                    .has_array_index_expr = true});
+                elems_.emplace_back(tk,
+                                    std::make_unique<expr_any>(
+                                        tc, tz, tc.get_type_default(), false),
+                                    tz.next_whitespace_token(), true);
 
                 if (not tz.is_next_char(']')) {
                     throw compiler_exception{
@@ -38,11 +36,8 @@ class stmt_identifier : public statement {
                 }
             } else {
                 // no array indexing
-                elems_.emplace_back(
-                    identifier_elem{.name_tk = tk,
-                                    .array_index_expr{},
-                                    .ws1{tz.next_whitespace_token()},
-                                    .has_array_index_expr = false});
+                elems_.emplace_back(tk, nullptr, tz.next_whitespace_token(),
+                                    false);
             }
 
             if (tz.is_next_char('.')) {
@@ -62,7 +57,8 @@ class stmt_identifier : public statement {
             }
 
             if (tc.is_func(path_as_string_)) {
-                //? todo: should get the type? not necessary right now but for
+                //? todo: should get the type? not necessary right now but
+                // for
                 // consistency
                 break;
             }

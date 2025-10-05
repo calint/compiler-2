@@ -43,29 +43,30 @@ class expr_bool_ops_list final : public statement {
             token pos_tk{tz.current_position_token()};
             // is it start of new sub-expression?
             if (tz.is_next_char('(')) {
-                // yes, try as 'bool_ops_list' but it might not be that
+                // yes, try as 'expr_bool_ops_list' but it might not be that
                 // e.g.: (t1 + t2) > 3 is not but will compile so further checks
                 // are necessary after the parsing
                 expr_bool_ops_list bol{tc, std::move(pos_tk), tz, true,
                                        std::move(maybe_not_tk)};
-                // check if 'bool_ops_list' parsed an expression, wrongfull, as
-                // short-hand boolean expression
+                // check if 'expr_bool_ops_list' parsed an expression,
+                // wrongfull, as short-hand boolean expression
                 //   e.g. not ( (t1 + t2) > 2 )
-                //        where (t1 + t2) is a valid 'bool_ops_list' of 1
+                //        where (t1 + t2) is a valid 'expr_bool_ops_list' of 1
                 //        element with expression 't1 + t2'
                 if (std::string_view{"<>=!+-*/%&|^"}.contains(tz.peek_char())) {
                     // it is a 'bool_op', reposition the tokenizer and parse it
                     tz.rewind_to_position(rewind_pos_tk);
-                    bools_.emplace_back(expr_bool_op{tc, tz});
+                    bools_.emplace_back(std::in_place_type<expr_bool_op>, tc,
+                                        tz);
                 } else {
-                    // is not a 'bool_op'
+                    // is not a 'expr_bool_op'
                     bools_.emplace_back(std::move(bol));
                 }
             } else {
-                // put back the token in the tokenizer for the 'bool_op' to
+                // put back the token in the tokenizer for the 'expr_bool_op' to
                 // parse it
                 tz.put_back_token(maybe_not_tk);
-                bools_.emplace_back(expr_bool_op{tc, tz});
+                bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
             }
 
             // end of '(...)' enclosed expression?
@@ -146,7 +147,7 @@ class expr_bool_ops_list final : public statement {
             [[maybe_unused]] size_t indent,
             [[maybe_unused]] const std::string& dst = "") const
         -> void override {
-        throw panic_exception("unexpected code path bool_ops_list:1");
+        throw panic_exception("unexpected code path expr_bool_ops_list:1");
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
@@ -163,7 +164,7 @@ class expr_bool_ops_list final : public statement {
         for (size_t i{}; i < n; i++) {
             if (bools_.at(i).index() == 1) {
                 //
-                // bool_ops_list
+                // expr_bool_ops_list
                 //
                 const expr_bool_ops_list& el{
                     get<expr_bool_ops_list>(bools_.at(i))};
@@ -256,7 +257,7 @@ class expr_bool_ops_list final : public statement {
             }
 
             //
-            // bool_op
+            // expr_bool_op
             //
             if (not invert) {
                 // a == 1 and b == 2   vs   a == 1 or b == 2
@@ -348,7 +349,7 @@ class expr_bool_ops_list final : public statement {
 
     [[nodiscard]] auto identifier() const -> const std::string& override {
         if (bools_.size() > 1) {
-            throw panic_exception("unexpected code path bool_ops_list:5");
+            throw panic_exception("unexpected code path expr_bool_ops_list:5");
         }
 
         assert(not bools_.empty());
