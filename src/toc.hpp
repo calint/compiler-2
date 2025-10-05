@@ -19,8 +19,8 @@ class stmt_def_field;
 class stmt_def_type;
 
 struct func_return_info final {
-    const token type_tk;  // type token
-    const token ident_tk; // identifier token
+    token type_tk;  // type token
+    token ident_tk; // identifier token
     const type& type_ref;
 };
 
@@ -149,19 +149,19 @@ class frame final {
 
 struct field_info final {
     const stmt_def_field* def{};
-    const token declared_at_tk; // token for position in source
-    const bool is_str{};
+    token declared_at_tk; // token for position in source
+    bool is_str{};
 };
 
 struct func_info final {
     const stmt_def_func* def{};
-    const token declared_at_tk; // token for position in source
+    token declared_at_tk; // token for position in source
     const type& type_ref;
 };
 
 struct type_info final {
     const stmt_def_type& def;
-    const token declared_at_tk;
+    token declared_at_tk;
     const type& type_ref;
 };
 

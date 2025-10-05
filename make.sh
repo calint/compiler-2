@@ -20,7 +20,7 @@ PROF=
 DBG=-g
 #OPT=-O3
 if [ "$1" = "msan" ]; then
-  MSAN="-fsanitize=memory,undefined -fsanitize-memory-track-origins=2"
+  MSAN="-fsanitize=address,undefined"
   DBG=-g
 elif [ "$1" = "prof" ]; then
   # profiling, sanitize (note: sanitize crashes unpredictably with core dump)
