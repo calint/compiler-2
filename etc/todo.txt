@@ -1,3 +1,5 @@
+[ ] optimize rep stosb to q, d, w if possible
+    => maybe some heuristics about when to use "rep stosX" 
 [o] optimize array indexing using lea
     [x] does not do the multiplication if type size is 1
     [ ] handle constant array index case
