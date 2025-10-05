@@ -186,6 +186,7 @@ class stmt_identifier : public statement {
                         tc.asm_cmd(tok, os, indent, "shl", reg_index,
                                    std::to_string(*shl));
                     } else {
+                        // no, use multiplication
                         tc.asm_cmd(tok, os, indent, "imul", reg_index,
                                    std::to_string(curr_type_size));
                     }
