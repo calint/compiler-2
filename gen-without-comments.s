@@ -30,23 +30,23 @@ main:
     rep stosb
     lea r15, [rsp - 16]
     mov r14, 1
-    imul r14, 4
+    shl r14, 2
     add r15, r14
     mov dword [r15], 2
     lea r15, [rsp - 16]
     mov r14, 2
-    imul r14, 4
+    shl r14, 2
     add r15, r14
     lea r14, [rsp - 16]
     mov r13, 1
-    imul r13, 4
+    shl r13, 2
     add r14, r13
     mov r13d, dword [r14]
     mov dword [r15], r13d
     cmp_74_12:
         lea r13, [rsp - 16]
         mov r12, 1
-        imul r12, 4
+        shl r12, 2
         add r13, r12
         movsx r14, dword [r13]
     cmp r14, 2
@@ -73,7 +73,7 @@ main:
     cmp_75_12:
         lea r13, [rsp - 16]
         mov r12, 2
-        imul r12, 4
+        shl r12, 2
         add r13, r12
         movsx r14, dword [r13]
     cmp r14, 2
@@ -100,12 +100,12 @@ main:
     mov qword [rsp - 24], 3
     lea r15, [rsp - 16]
     mov r14, qword [rsp - 24]
-    imul r14, 4
+    shl r14, 2
     add r15, r14
     lea r13, [rsp - 16]
     mov r12, qword [rsp - 24]
     sub r12, 1
-    imul r12, 4
+    shl r12, 2
     add r13, r12
     movsx r14, dword [r13]
     inv_78_16:
@@ -116,7 +116,7 @@ main:
     cmp_79_12:
         lea r13, [rsp - 16]
         mov r12, qword [rsp - 24]
-        imul r12, 4
+        shl r12, 2
         add r13, r12
         movsx r14, dword [r13]
     cmp r14, 2

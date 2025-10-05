@@ -178,8 +178,17 @@ class stmt_identifier : public statement {
                 elem.array_index_expr->compile(tc, os, indent, reg_index);
                 const size_t curr_type_size{curr_info.type_ref.size()};
                 if (curr_type_size > 1) {
-                    tc.asm_cmd(tok, os, indent, "imul", reg_index,
-                               std::to_string(curr_type_size));
+                    // is the size a 2^n number?
+                    if (std::optional<int> shl{
+                            get_shift_amount(curr_type_size)};
+                        shl) {
+                        // yes, shift left
+                        tc.asm_cmd(tok, os, indent, "shl", reg_index,
+                                   std::to_string(*shl));
+                    } else {
+                        tc.asm_cmd(tok, os, indent, "imul", reg_index,
+                                   std::to_string(curr_type_size));
+                    }
                 }
                 tc.asm_cmd(tok, os, indent, "add", reg_offset, reg_index);
                 tc.free_scratch_register(os, indent, reg_index);
@@ -197,5 +206,12 @@ class stmt_identifier : public statement {
             tc.asm_cmd(tok, os, indent, "add", reg_offset,
                        std::to_string(accum_offset));
         }
+    }
+
+    static auto get_shift_amount(uint64_t value) -> std::optional<int> {
+        if (value == 0 or not std::has_single_bit(value)) {
+            return std::nullopt;
+        }
+        return std::countr_zero(value);
     }
 };

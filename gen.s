@@ -66,7 +66,7 @@ main:
 ;    [71:9] 1
 ;    [71:10] r14 = 1
     mov r14, 1
-    imul r14, 4
+    shl r14, 2
     add r15, r14
 ;    free r14
 ;    [71:14]  2
@@ -82,7 +82,7 @@ main:
 ;    [72:9] 2
 ;    [72:10] r14 = 2
     mov r14, 2
-    imul r14, 4
+    shl r14, 2
     add r15, r14
 ;    free r14
 ;    [72:14]  arr[1]
@@ -96,7 +96,7 @@ main:
 ;    [72:18] 1
 ;    [72:19] r13 = 1
     mov r13, 1
-    imul r13, 4
+    shl r13, 2
     add r14, r13
 ;    free r13
 ;    alloc r13
@@ -122,7 +122,7 @@ main:
 ;        [74:16] 1
 ;        [74:17] r12 = 1
         mov r12, 1
-        imul r12, 4
+        shl r12, 2
         add r13, r12
 ;        free r12
         movsx r14, dword [r13]
@@ -181,7 +181,7 @@ main:
 ;        [75:16] 2
 ;        [75:17] r12 = 2
         mov r12, 2
-        imul r12, 4
+        shl r12, 2
         add r13, r12
 ;        free r12
         movsx r14, dword [r13]
@@ -238,7 +238,7 @@ main:
 ;    [78:9] ix
 ;    [78:11] r14 = ix
     mov r14, qword [rsp - 24]
-    imul r14, 4
+    shl r14, 2
     add r15, r14
 ;    free r14
 ;    [78:15]  ~inv(arr[ix - 1])
@@ -259,7 +259,7 @@ main:
     mov r12, qword [rsp - 24]
 ;    [78:30] r12 - 1
     sub r12, 1
-    imul r12, 4
+    shl r12, 2
     add r13, r12
 ;    free r12
     movsx r14, dword [r13]
@@ -295,7 +295,7 @@ main:
 ;        [79:16] ix
 ;        [79:18] r12 = ix
         mov r12, qword [rsp - 24]
-        imul r12, 4
+        shl r12, 2
         add r13, r12
 ;        free r12
         movsx r14, dword [r13]
