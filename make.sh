@@ -23,10 +23,12 @@ OPT=
 if [ "$1" = "msan" ]; then
   MSAN="-fsanitize=address,undefined"
   DBG=-g
-elif [ "$1" = "prof" ]; then
+elif [ "$1" = "prof-msan" ]; then
   # profiling, sanitize (note: sanitize crashes unpredictably with core dump)
   #    MSAN="-fsanitize=address,undefined -fno-omit-frame-pointer"
   PROF="-fprofile-instr-generate -fcoverage-mapping"
+  MSAN="-fsanitize=address,undefined"
+  DBG=-g
 fi
 
 SEP="--------------------------------------------------------------------------------"
@@ -39,7 +41,7 @@ echo $SEP
 
 if [ "$1" = "build" ]; then
   exit 0
-elif [ "$1" = "prof" ]; then
+elif [ "$1" = "prof-msan" ]; then
   exit 0
 fi
 
