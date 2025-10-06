@@ -68,7 +68,7 @@ class stmt_assign_var final : public statement {
             tc.alloc_named_register_or_throw(*this, os, indent, "rdi");
             tc.alloc_named_register_or_throw(*this, os, indent, "rcx");
 
-            stmt_identifier::compile_address_calculation(
+            stmt_identifier::compile_effective_address_to_register(
                 tok(), tc, os, indent, stmt_ident_.elems(), "rdi");
 
             const ident_info ii{

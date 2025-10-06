@@ -167,11 +167,10 @@ class stmt_identifier : public statement {
         }
     }
 
-    static auto
-    compile_address_calculation(const token& tok, toc& tc, std::ostream& os,
-                                size_t indent,
-                                const std::vector<identifier_elem>& elems,
-                                const std::string& reg_offset) -> void {
+    static auto compile_effective_address_to_register(
+        const token& tok, toc& tc, std::ostream& os, size_t indent,
+        const std::vector<identifier_elem>& elems,
+        const std::string& reg_offset) -> void {
 
         const identifier_elem& base_elem{elems.front()};
         std::string path{base_elem.name_tk.name()};
@@ -253,8 +252,8 @@ class stmt_identifier : public statement {
             tc.alloc_scratch_register(src_loc_tk, os, indent)};
         allocated_registers.push_back(reg_offset);
 
-        compile_address_calculation(src_loc_tk, tc, os, indent, elems,
-                                    reg_offset);
+        compile_effective_address_to_register(src_loc_tk, tc, os, indent, elems,
+                                              reg_offset);
         return reg_offset;
     }
 

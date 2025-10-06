@@ -251,8 +251,8 @@ inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
                                           const std::string& dst) const
     -> void {
 
-    stmt_identifier::compile_address_calculation(tok(), tc, os, indent,
-                                                 stmt_ident_->elems(), dst);
+    stmt_identifier::compile_effective_address_to_register(
+        tok(), tc, os, indent, stmt_ident_->elems(), dst);
 }
 
 // declared in 'expr_type_value.hpp'
