@@ -745,11 +745,13 @@ class toc final {
 
     [[nodiscard]] auto is_identifier_register(const std::string& id) const
         -> bool {
+
         return std::ranges::find(all_registers_, id) != all_registers_.end();
     }
 
     [[nodiscard]] auto is_identifier_direct_register_indirect_addressing(
         const std::string& id) const -> bool {
+
         if (auto expr{toc::extract_between_brackets(id)}; expr) {
             const std::string reg{
                 extract_base_register_from_indirect_addressing(*expr)};
@@ -757,19 +759,24 @@ class toc final {
                 return true;
             }
         }
+
         return false;
     }
 
+  private:
     static auto
     extract_base_register_from_indirect_addressing(std::string_view addressing)
         -> std::string {
+
         auto pos = addressing.find_first_of(" +");
         if (pos == std::string_view::npos) {
             return std::string{addressing};
         }
+
         return std::string{addressing.substr(0, pos)};
     }
 
+  public:
     auto asm_cmd(const token& src_loc_tk, std::ostream& os, const size_t indnt,
                  const std::string& op, const std::string& dst_nasm,
                  const std::string& src_nasm) -> void {
@@ -1466,6 +1473,7 @@ class toc final {
 
     static auto extract_between_brackets(std::string_view str)
         -> std::optional<std::string_view> {
+
         auto start = str.find('[');
         if (start == std::string_view::npos) {
             return std::nullopt;
