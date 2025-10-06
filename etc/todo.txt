@@ -30,6 +30,7 @@
        [ ] support assigning strings to i8 arrays
        [x] support indexing in user defined types: e.g. obj[x].pts[y].x = z
        [ ] bounds check (optional compiler flag)
+[ ] expr_ops_list: const eval
 [ ] usage of ad-hoc strings specifying destination of result from an exception
     is messy, same as assembler operation size, review
 [ ] tidy
