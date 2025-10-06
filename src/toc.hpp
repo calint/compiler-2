@@ -540,7 +540,7 @@ class toc final {
     }
 
     auto alloc_scratch_register(const token& src_loc_tk, std::ostream& os,
-                                const size_t indnt) -> const std::string& {
+                                const size_t indnt) -> std::string {
 
         if (scratch_registers_.empty()) {
             throw compiler_exception(src_loc_tk,
@@ -548,7 +548,7 @@ class toc final {
                                      "expression complexity");
         }
 
-        const std::string& reg{scratch_registers_.back()};
+        std::string reg{std::move(scratch_registers_.back())};
         scratch_registers_.pop_back();
 
         indent(os, indnt, true);
@@ -558,10 +558,11 @@ class toc final {
                        scratch_registers_.size()};
         usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
 
-        allocated_registers_.emplace_back(reg);
+        allocated_registers_.emplace_back(std::move(reg));
         allocated_registers_src_locs_.emplace_back(
             source_location_hr(src_loc_tk));
-        return reg;
+
+        return allocated_registers_.back();
     }
 
     auto alloc_named_register_or_throw(const statement& st, std::ostream& os,
@@ -636,9 +637,12 @@ class toc final {
         os << "free " << reg << '\n';
 
         assert(allocated_registers_.back() == reg);
+
+        std::string moved_reg{std::move(allocated_registers_.back())};
         allocated_registers_.pop_back();
         allocated_registers_src_locs_.pop_back();
-        scratch_registers_.emplace_back(reg);
+
+        scratch_registers_.emplace_back(std::move(moved_reg));
     }
 
     [[nodiscard]] auto get_loop_label_or_throw(const token& src_loc_tk) const
@@ -840,10 +844,9 @@ class toc final {
             //? todo. this displays nasm identifiers but should be human
             // readable identifiers
             throw compiler_exception(
-                src_loc_tk,
-                std::format(
-                    "cannot move '{}' to '{}' because it would be truncated",
-                    src_nasm, dst_nasm));
+                src_loc_tk, std::format("cannot move '{}' to '{}' because "
+                                        "it would be truncated",
+                                        src_nasm, dst_nasm));
         }
 
         // constant
