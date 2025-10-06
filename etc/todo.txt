@@ -1,3 +1,6 @@
+[ ] adapt to be able to use -Wunsafe-buffer-usage
+    [ ] implement a buffer safe parse integer function in toc
+    [ ] handle arguments to main appropriately 
 [ ] instrumentation to find out max heap and stack usage by the compiler
 [ ] optimize rep stosb to q, d, w if possible
     => maybe some heuristics about when to use "rep stosX" 
