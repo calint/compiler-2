@@ -552,7 +552,7 @@ class toc final {
         scratch_registers_.pop_back();
 
         indent(os, indnt, true);
-        os << "alloc " << reg << '\n';
+        os << "allocate scratch register -> " << reg << "\n";
 
         const size_t n{scratch_registers_initial_size_ -
                        scratch_registers_.size()};
@@ -569,7 +569,7 @@ class toc final {
                                        const size_t indnt,
                                        const std::string& reg) -> void {
         indent(os, indnt, true);
-        os << "alloc " << reg << '\n';
+        os << "allocate named register '" << reg << "'\n";
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
@@ -599,7 +599,7 @@ class toc final {
         -> bool {
 
         indent(os, indnt, true);
-        os << "alloc " << reg;
+        os << "allocate named register '" << reg << '\'';
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
@@ -622,7 +622,7 @@ class toc final {
                              const std::string& reg) -> void {
 
         indent(os, indnt, true);
-        os << "free " << reg << '\n';
+        os << "free named register '" << reg << "'\n";
 
         assert(allocated_registers_.back() == reg);
         allocated_registers_.pop_back();
@@ -634,7 +634,7 @@ class toc final {
                                const std::string& reg) -> void {
 
         indent(os, indnt, true);
-        os << "free " << reg << '\n';
+        os << "free scratch register '" << reg << "'\n";
 
         assert(allocated_registers_.back() == reg);
 
