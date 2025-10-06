@@ -7,6 +7,6 @@ SRC=../../src/main.cpp
 
 date | tee cppcheck.log
 
-cppcheck --enable=all --suppress=missingIncludeSystem $SRC 2>&1 | tee -a cppcheck.log
+cppcheck --std=c++23 --enable=all --suppress=missingIncludeSystem --check-level=exhaustive $SRC 2>&1 | tee -a cppcheck.log
 
 date | tee -a clang-tidy.log

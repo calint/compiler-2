@@ -1,34 +1,37 @@
-Sun Oct  5 02:44:10 PM +07 2025
+Mon Oct  6 09:41:57 AM +07 2025
 Checking ../../src/main.cpp ...
-../../src/main.cpp:0:0: information: Limiting analysis of branches. Use --check-level=exhaustive to analyze all branches. [normalCheckLevelMaxBranches]
-
-^
-../../src/expr_any.hpp:139:38: error: Reference to temporary returned. [returnTempReference]
+../../src/expr_any.hpp:144:38: error: Reference to temporary returned. [returnTempReference]
                 return itm.identifier();
                                      ^
-../../src/type.hpp:61:35: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/type.hpp:62:35: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (fld.name == name) {
                                   ^
-../../src/toc.hpp:195:19: style: Consider using std::transform algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:193:19: style: Consider using std::transform algorithm instead of a raw loop. [useStlAlgorithm]
             path_.emplace_back(part.begin(), part.end());
                   ^
-../../src/toc.hpp:658:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:659:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (frm.is_func()) {
                                ^
-../../src/toc.hpp:671:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:672:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (frm.is_func()) {
                                ^
-../../src/toc.hpp:683:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:684:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (frm.is_func()) {
                                ^
-../../src/toc.hpp:1326:20: style: Consider using std::accumulate algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:1296:20: style: Consider using std::accumulate algorithm instead of a raw loop. [useStlAlgorithm]
             nbytes += frm.allocated_stack_size();
                    ^
-../../src/lut.hpp:44:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/lut.hpp:45:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (e.is_key(key)) {
                                ^
-../../src/lut.hpp:54:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/lut.hpp:55:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (e.is_key(key)) {
                                ^
+../../src/toc.hpp:94:10: style: The function 'get_var_ref' is never used. [unusedFunction]
+    auto get_var_ref(const std::string& name) -> var_info& {
+         ^
+../../src/toc.hpp:680:24: style: The function 'get_func_returns' is never used. [unusedFunction]
+    [[nodiscard]] auto get_func_returns(const token& src_loc_tk) const
+                       ^
 nofile:0:0: information: Active checkers: 169/966 (use --checkers-report=<filename> to see details) [checkersReport]
 
