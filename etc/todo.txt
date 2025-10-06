@@ -29,7 +29,7 @@
 [ ] tidy
     [ ] review where compiler_exceptions happen and try to make good source
         location reports
-    [ ] use std::format
+    [x] use std::format
     [ ] review the reading of white spaces sprinkled about
     [ ] rep movsb can be done faster with q if objects are sized to 2^n
     [ ] toc.allocate_named_register_or_throw requires statement for src_loc_tk
