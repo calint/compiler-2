@@ -284,7 +284,7 @@ class toc final {
                           .type_ref = return_type});
     }
 
-    auto is_func(const std::string& name) const -> bool {
+    [[nodiscard]] auto is_func(const std::string& name) const -> bool {
         return funcs_.has(name);
     }
 
@@ -356,7 +356,8 @@ class toc final {
     }
 
     // human readable source location
-    auto source_location_hr(const token& src_loc_tk) const -> std::string {
+    [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
+        -> std::string {
 
         const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.start_index(), source_.c_str())};
@@ -418,22 +419,13 @@ class toc final {
         usage_max_scratch_regs_ = 0;
     }
 
-    //? ugly: consolidate these two make_ident_info functions
     [[nodiscard]] auto
     make_ident_info(const statement& st,
                     [[maybe_unused]] const bool must_be_initiated) const
         -> ident_info {
 
-        const ident_info& id_info{
-            make_ident_info_or_empty(st.tok(), st.identifier())};
-
-        if (not id_info.id_nasm.empty()) {
-            return id_info;
-        }
-
-        throw compiler_exception(
-            st.tok(),
-            std::format("cannot resolve identifier '{}'", st.identifier()));
+        return make_ident_info_or_throw(st.tok(), st.identifier(),
+                                        must_be_initiated);
     }
 
     [[nodiscard]] auto
@@ -441,8 +433,16 @@ class toc final {
                     [[maybe_unused]] const bool must_be_initiated) const
         -> ident_info {
 
-        const ident_info& id_info{make_ident_info_or_empty(src_loc_tk, ident)};
+        return make_ident_info_or_throw(src_loc_tk, ident, must_be_initiated);
+    }
 
+  private:
+    // helper: call make_ident_info_or_empty and throw if unresolved
+    [[nodiscard]] auto make_ident_info_or_throw(
+        const token& src_loc_tk, const std::string& ident,
+        [[maybe_unused]] const bool must_be_initiated) const -> ident_info {
+
+        const ident_info id_info{make_ident_info_or_empty(src_loc_tk, ident)};
         if (not id_info.id_nasm.empty()) {
             return id_info;
         }
@@ -451,6 +451,7 @@ class toc final {
             src_loc_tk, std::format("cannot resolve identifier '{}'", ident));
     }
 
+  public:
     // note: 'to' is alias or variable in parent frame
     auto add_alias(const std::string& from, const std::string& to) -> void {
         frames_.back().add_alias(from, to);
