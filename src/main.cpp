@@ -10,6 +10,7 @@
 #include <memory>
 #include <ranges>
 #include <regex>
+#include <span>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -40,8 +41,10 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void;
 auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void;
 } // namespace
 
-auto main(int argc, char* args[]) -> int {
+auto main(const int argc, const char* argv[]) -> int {
+    const std::span<const char*> args{argv, static_cast<size_t>(argc)};
     const char* src_file_name{argc == 1 ? "prog.baz" : args[1]};
+
     std::string src;
     try {
         src = read_file_to_string(src_file_name);
@@ -64,7 +67,7 @@ auto main(int argc, char* args[]) -> int {
 
     } catch (const compiler_exception& e) {
         const auto [line, col]{
-            toc::line_and_col_num_for_char_index(e.start_index, src.c_str())};
+            toc::line_and_col_num_for_char_index(e.start_index, src)};
         std::cerr << "\n"
                   << src_file_name << ":" << line << ":" << col << ": " << e.msg
                   << '\n';

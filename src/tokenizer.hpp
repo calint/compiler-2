@@ -1,5 +1,6 @@
 #pragma once
 // reviewed: 2025-09-28
+// refactored: pointer-free implementation
 
 #include <cassert>
 #include <cctype>
@@ -10,12 +11,10 @@
 class tokenizer final {
     const std::string_view delimiters_{" \t\r\n(){}[]=,.:+-*/%&|^<>!\0"};
     const std::string& src_; // the string to be tokenized
-    const char* ptr_{};      // pointer to current position
     size_t char_ix_{};       // current char index in 'src_'
 
   public:
-    explicit tokenizer(const std::string& src)
-        : src_{src}, ptr_{src_.c_str()} {}
+    explicit tokenizer(const std::string& src) : src_{src} {}
 
     tokenizer() = delete;
     tokenizer(const tokenizer&) = default;
@@ -25,7 +24,9 @@ class tokenizer final {
 
     ~tokenizer() = default;
 
-    [[nodiscard]] auto is_eos() const -> bool { return *ptr_ == '\0'; }
+    [[nodiscard]] auto is_eos() const -> bool {
+        return char_ix_ >= src_.size();
+    }
 
     auto next_token() -> token {
         const std::string ws_before{next_whitespace()};
@@ -49,16 +50,15 @@ class tokenizer final {
         return {ws_before, bgn_ix, txt, end_ix, ws_after};
     }
 
-    // returns an token which is a marker at current position with empty name
+    // returns a token which is a marker at current position with empty name
     // and whitespaces
     [[nodiscard]] auto current_position_token() const -> token {
         return {"", char_ix_, "", char_ix_, ""};
     }
 
     auto rewind_to_position(const token& pos_tk) -> void {
-        //? todo. assert if ok
         const size_t new_pos{pos_tk.start_index()};
-        ptr_ = ptr_ - (char_ix_ - new_pos);
+        assert(new_pos <= src_.size());
         char_ix_ = new_pos;
     }
 
@@ -68,8 +68,8 @@ class tokenizer final {
     }
 
     auto put_back_char(const char ch) -> void {
-        assert(char_ix_ > 0 and *(ptr_ - 1) == ch);
-        move_back(sizeof(ch));
+        assert(char_ix_ > 0 and src_[char_ix_ - 1] == ch);
+        move_back(1);
     }
 
     auto next_whitespace_token() -> token {
@@ -77,7 +77,7 @@ class tokenizer final {
     }
 
     auto is_next_char(const char ch) -> bool {
-        if (*ptr_ != ch) {
+        if (is_eos() or src_[char_ix_] != ch) {
             return false;
         }
         (void)next_char(); // return ignored
@@ -85,37 +85,35 @@ class tokenizer final {
     }
 
     [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
-        return *ptr_ == ch;
+        return not is_eos() and src_[char_ix_] == ch;
     }
 
     [[nodiscard]] auto is_peek_char2(const char ch) const -> bool {
-        return *ptr_ == 0 ? false : *(ptr_ + 1) == ch;
+        return char_ix_ + 1 < src_.size() and src_[char_ix_ + 1] == ch;
     }
 
-    [[nodiscard]] auto peek_char() const -> char { return *ptr_; }
+    [[nodiscard]] auto peek_char() const -> char {
+        return is_eos() ? '\0' : src_[char_ix_];
+    }
 
     auto read_rest_of_line() -> std::string {
-        const char* bgn{ptr_};
-        while (true) {
-            if (*ptr_ == '\n') {
+        const size_t bgn{char_ix_};
+        while (not is_eos()) {
+            if (src_[char_ix_] == '\n') {
                 break;
             }
-            if (*ptr_ == '\0') {
-                break;
-            }
-            ptr_++;
+            char_ix_++;
         }
-        const std::string s{bgn, static_cast<size_t>(ptr_ - bgn)};
-        ptr_++;
-        char_ix_ += static_cast<size_t>(ptr_ - bgn);
-        return s;
+        const size_t len{char_ix_ - bgn};
+        if (not is_eos()) {
+            char_ix_++; // skip the '\n'
+        }
+        return src_.substr(bgn, len);
     }
 
     auto next_char() -> char {
-        const char ch{*ptr_};
-        ptr_++;
-        char_ix_++;
-        return ch;
+        assert(not is_eos());
+        return src_[char_ix_++];
     }
 
     [[nodiscard]] auto current_char_index_in_source() const -> size_t {
@@ -128,16 +126,15 @@ class tokenizer final {
             return "";
         }
         const size_t bgn_ix{char_ix_};
-        while (true) {
-            const char ch{next_char()};
-            if (std::isspace(ch)) {
-                continue;
+        while (not is_eos()) {
+            const char ch{src_[char_ix_]};
+            if (not std::isspace(ch)) {
+                break;
             }
-            move_back(1);
-            break;
+            char_ix_++;
         }
         const size_t len{char_ix_ - bgn_ix};
-        return {ptr_ - len, len};
+        return src_.substr(bgn_ix, len);
     }
 
     auto next_token_str() -> std::string {
@@ -145,21 +142,19 @@ class tokenizer final {
             return "";
         }
         const size_t bgn_ix{char_ix_};
-        while (true) {
-            const char ch{next_char()};
+        while (not is_eos()) {
+            const char ch{src_[char_ix_]};
             if (delimiters_.contains(ch)) {
-                move_back(1);
                 break;
             }
+            char_ix_++;
         }
         const size_t len{char_ix_ - bgn_ix};
-        return {ptr_ - len, len};
+        return src_.substr(bgn_ix, len);
     }
 
     auto move_back(const size_t nchars) -> void {
         assert(char_ix_ >= nchars);
-
-        ptr_ -= nchars;
-        char_ix_ = static_cast<size_t>(char_ix_ - nchars);
+        char_ix_ -= nchars;
     }
 };

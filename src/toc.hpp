@@ -349,8 +349,8 @@ class toc final {
     source_location_for_use_in_label(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{line_and_col_num_for_char_index(
-            src_loc_tk.start_index(), source_.c_str())};
+        const auto [line, col]{
+            line_and_col_num_for_char_index(src_loc_tk.start_index(), source_)};
 
         return std::format("{}_{}", line, col);
     }
@@ -359,8 +359,8 @@ class toc final {
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{line_and_col_num_for_char_index(
-            src_loc_tk.start_index(), source_.c_str())};
+        const auto [line, col]{
+            line_and_col_num_for_char_index(src_loc_tk.start_index(), source_)};
 
         return std::format("{}:{}", line, col);
     }
@@ -381,17 +381,18 @@ class toc final {
     }
 
     static auto line_and_col_num_for_char_index(const size_t char_index,
-                                                const char* src)
+                                                const std::string& src)
         -> std::pair<size_t, size_t> {
 
         size_t ix{};  // current index
-        size_t lix{}; // start of line
+        size_t lix{}; // start of line index
         size_t line_num{1};
-        while (true) {
+
+        while (ix < src.size()) {
             if (ix == char_index) {
                 break;
             }
-            if (*src++ == '\n') {
+            if (src[ix] == '\n') {
                 line_num++;
                 ix++;
                 lix = ix;
@@ -399,6 +400,7 @@ class toc final {
             }
             ix++;
         }
+
         return {line_num, ix - lix + 1};
     }
 
@@ -697,8 +699,8 @@ class toc final {
     auto comment_source(const statement& st, std::ostream& os,
                         const size_t indnt) const -> void {
 
-        const auto [line, col]{line_and_col_num_for_char_index(
-            st.tok().start_index(), source_.c_str())};
+        const auto [line, col]{
+            line_and_col_num_for_char_index(st.tok().start_index(), source_)};
 
         indent(os, indnt, true);
         os << "[" << line << ":" << col << "] ";
@@ -717,8 +719,8 @@ class toc final {
                         const std::string& op, const statement& st) const
         -> void {
 
-        const auto [line, col]{line_and_col_num_for_char_index(
-            st.tok().start_index(), source_.c_str())};
+        const auto [line, col]{
+            line_and_col_num_for_char_index(st.tok().start_index(), source_)};
 
         os << "[" << line << ":" << col << "]";
 
@@ -735,7 +737,7 @@ class toc final {
 
     auto comment_token(std::ostream& os, const token& tk) const -> void {
         const auto [line, col]{
-            line_and_col_num_for_char_index(tk.start_index(), source_.c_str())};
+            line_and_col_num_for_char_index(tk.start_index(), source_)};
 
         os << "[" << line << ":" << col << "]";
         os << " " << tk.name() << '\n';
@@ -921,6 +923,7 @@ class toc final {
 
         throw panic_exception{"toc:1"};
     }
+
     // -------------------------------------------------------------------------
     // statics
     // -------------------------------------------------------------------------
@@ -930,8 +933,10 @@ class toc final {
         // is it hex?
         if (str.starts_with("0x") or str.starts_with("0X")) { // hex
             int64_t value{};
-            auto result{std::from_chars(str.data() + 2, str.data() + str.size(),
-                                        value, 16)};
+            std::string_view sv{str};
+            sv.remove_prefix(2); // skip "0x" or "0X"
+            auto result{
+                std::from_chars(sv.data(), sv.data() + sv.size(), value, 16)};
             if (result.ec == std::errc{}) {
                 return value;
             }
@@ -940,8 +945,10 @@ class toc final {
         // is it binary?
         if (str.starts_with("0b") or str.starts_with("0B")) { // binary
             int64_t value{};
-            auto result{std::from_chars(str.data() + 2, str.data() + str.size(),
-                                        value, 2)};
+            std::string_view sv{str};
+            sv.remove_prefix(2); // skip "0b" or "0B"
+            auto result{
+                std::from_chars(sv.data(), sv.data() + sv.size(), value, 2)};
             if (result.ec == std::errc{}) {
                 return value;
             }
@@ -951,6 +958,7 @@ class toc final {
         {
             int64_t value{};
             auto parse_result{
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 std::from_chars(str.data(), str.data() + str.size(), value)};
             if (parse_result.ec == std::errc{}) {
                 return value;
