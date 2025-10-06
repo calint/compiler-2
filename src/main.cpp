@@ -53,8 +53,9 @@ auto main(const int argc, const char* argv[]) -> int {
         prg.source_to(reproduced_source);
         reproduced_source.close();
         if (src != read_file_to_string("diff.baz")) {
-            throw panic_exception("generated source differs. diff " +
-                                  std::string{src_file_name} + " diff.baz");
+            throw panic_exception(
+                std::format("generated source differs. diff {} diff.baz",
+                            std::string{src_file_name}));
         }
 
         // with jump optimizations
