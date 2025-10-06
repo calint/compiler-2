@@ -1382,7 +1382,7 @@ class toc final {
                                       : id.path().at(1); //? bug. not correct
             if (after_dot == "len") {
                 return {.id = ident,
-                        .id_nasm = id_base + ".len",
+                        .id_nasm = std::format("{}.len", id_base),
                         .const_value = 0,
                         .type_ref = get_type_default(),
                         .stack_ix = 0,
