@@ -134,8 +134,6 @@ class expr_any final : public statement {
     [[nodiscard]] auto is_expression() const -> bool override {
         return std::visit([](const auto& itm) { return itm.is_expression(); },
                           var_);
-        // note: 'expr_type_value' cannot be expression but may contain
-        //       expressions to be assigned to type members
     }
 
     [[nodiscard]] auto identifier() const -> const std::string& override {
