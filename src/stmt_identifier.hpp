@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <format>
 #include <ranges>
 #include <string>
 
@@ -197,11 +198,11 @@ class stmt_identifier : public statement {
                         shl) {
                         // yes, shift left
                         tc.asm_cmd(tok, os, indent, "shl", reg_index,
-                                   std::to_string(*shl));
+                                   std::format("{}", *shl));
                     } else {
                         // no, use multiplication
                         tc.asm_cmd(tok, os, indent, "imul", reg_index,
-                                   std::to_string(curr_type_size));
+                                   std::format("{}", curr_type_size));
                     }
                 }
                 tc.asm_cmd(tok, os, indent, "add", reg_offset, reg_index);
@@ -218,7 +219,7 @@ class stmt_identifier : public statement {
 
         if (accum_offset != 0) {
             tc.asm_cmd(tok, os, indent, "add", reg_offset,
-                       std::to_string(accum_offset));
+                       std::format("{}", accum_offset));
         }
     }
 
@@ -242,10 +243,9 @@ class stmt_identifier : public statement {
             if (size == 1) {
                 return std::format("rsp + {} - {}", reg_index,
                                    -base_info.stack_ix);
-            } else {
-                return std::format("rsp + {} * {} - {}", reg_index, size,
-                                   -base_info.stack_ix);
             }
+            return std::format("rsp + {} * {} - {}", reg_index, size,
+                               -base_info.stack_ix);
         }
 
         const std::string& reg_offset{

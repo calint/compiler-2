@@ -5,6 +5,7 @@
 #include "stmt_assign_var.hpp"
 #include "stmt_identifier.hpp"
 #include "type.hpp"
+#include <format>
 
 class null_stream : public std::ostream {
     class null_buffer : public std::streambuf {
@@ -138,11 +139,11 @@ class stmt_def_var final : public statement {
         tc.alloc_named_register_or_throw(*this, os, indent, "rax");
 
         tc.asm_cmd(tok(), os, indent, "lea", "rdi",
-                   "[rsp - " + std::to_string(-dst_info.stack_ix) + "]");
+                   std::format("[rsp - {}]", -dst_info.stack_ix));
         // note: -dst_info.stack_ix_rel_rsp for nicer source formatting, is
         //       always negative
         tc.asm_cmd(tok(), os, indent, "mov", "rcx",
-                   std::to_string(array_size_ * dst_info.type_ref.size()));
+                   std::format("{}", array_size_ * dst_info.type_ref.size()));
         tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
         toc::asm_rep_stosb(name_tk_, os, indent);
 

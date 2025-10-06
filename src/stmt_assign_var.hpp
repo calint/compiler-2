@@ -74,7 +74,7 @@ class stmt_assign_var final : public statement {
                 tc.make_ident_info(tok(), stmt_ident_.identifier(), false)};
 
             tc.asm_cmd(tok(), os, indent, "mov", "rcx",
-                       std::to_string(ii.type_ref.size()));
+                       std::format("{}", ii.type_ref.size()));
 
             expr_.compile(tc, os, indent, "rsi");
 

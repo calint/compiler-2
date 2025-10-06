@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <algorithm>
+#include <format>
 #include <ranges>
 
 #include "expr_any.hpp"
@@ -34,8 +35,8 @@ class stmt_call : public expression {
                 if (i < n) {
                     if (not tz.is_next_char(',')) {
                         throw compiler_exception(
-                            tz, "expected argument " + std::to_string(i + 1) +
-                                    " '" + param.name() + "'");
+                            tz, std::format("expected argument {} '{}'", i + 1,
+                                            param.name()));
                     }
                 }
             }
@@ -113,20 +114,20 @@ class stmt_call : public expression {
                 //? check if it is integral (not bool)
                 if (param_type.size() < arg_type.size()) {
                     throw compiler_exception(
-                        arg.tok(), "argument " + std::to_string(i + 1) +
-                                       " of type '" + arg_type.name() +
-                                       "' would be truncated when passed to "
-                                       "parameter of type '" +
-                                       param_type.name() + "'");
+                        arg.tok(),
+                        std::format(
+                            "argument {} of type '{}' would be truncated when "
+                            "passed to parameter of type '{}'",
+                            i + 1, arg_type.name(), param_type.name()));
                 }
                 continue;
             }
             if (arg_type.name() != param_type.name()) {
                 throw compiler_exception(
-                    arg.tok(), "argument " + std::to_string(i + 1) +
-                                   " of type '" + arg_type.name() +
-                                   "' does not match parameter of type '" +
-                                   param_type.name() + "'");
+                    arg.tok(),
+                    std::format("argument {} of type '{}' does not match "
+                                "parameter of type '{}'",
+                                i + 1, arg_type.name(), param_type.name()));
             }
         }
 

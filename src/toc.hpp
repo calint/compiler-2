@@ -1068,8 +1068,8 @@ class toc final {
                 return "bp";
             default:
                 throw compiler_exception(
-                    src_loc_tk, "illegal size " + std::to_string(size) +
-                                    " for register '" + operand + "'");
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand));
             }
         }
         if (operand == "rsi") {
@@ -1082,8 +1082,8 @@ class toc final {
                 return "si";
             default:
                 throw compiler_exception(
-                    src_loc_tk, "illegal size " + std::to_string(size) +
-                                    " for register '" + operand + "'");
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand));
             }
         }
         if (operand == "rdi") {
@@ -1096,8 +1096,8 @@ class toc final {
                 return "di";
             default:
                 throw compiler_exception(
-                    src_loc_tk, "illegal size " + std::to_string(size) +
-                                    " for register '" + operand + "'");
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand));
             }
         }
         if (operand == "rsp") {
@@ -1110,8 +1110,8 @@ class toc final {
                 return "sp";
             default:
                 throw compiler_exception(
-                    src_loc_tk, "illegal size " + std::to_string(size) +
-                                    " for register '" + operand + "'");
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand));
             }
         }
 
