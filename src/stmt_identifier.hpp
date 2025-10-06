@@ -54,9 +54,9 @@ class stmt_identifier : public statement {
             // the target element
             for (const identifier_elem& e : elems_) {
                 if (not path_as_string_.empty()) {
-                    path_as_string_ = path_as_string_ + ".";
+                    path_as_string_.push_back('.');
                 }
-                path_as_string_ = path_as_string_ + e.name_tk.name();
+                path_as_string_ += e.name_tk.name();
             }
 
             if (tc.is_func(path_as_string_)) {
@@ -213,7 +213,7 @@ class stmt_identifier : public statement {
                 const identifier_elem& next_elem{elems[i + 1]};
                 accum_offset += toc::get_field_offset_in_type(
                     tok, curr_info.type_ref, next_elem.name_tk.name());
-                path += '.';
+                path.push_back('.');
                 path += next_elem.name_tk.name();
             }
         }

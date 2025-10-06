@@ -271,18 +271,21 @@ inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
         for (const type_field& fld : dst_type.fields()) {
             if (fld.tp.is_built_in()) {
                 const std::string& src_info{
-                    tc.make_ident_info(etv.tok(), src + "." + fld.name, false)
+                    tc.make_ident_info(
+                          etv.tok(), std::format("{}.{}", src, fld.name), false)
                         .id_nasm};
                 const std::string& dst_info{
-                    tc.make_ident_info(etv.tok(), dst + "." + fld.name, false)
+                    tc.make_ident_info(
+                          etv.tok(), std::format("{}.{}", dst, fld.name), false)
                         .id_nasm};
                 tc.asm_cmd(etv.tok(), os, indent, "mov", dst_info, src_info);
                 continue;
             }
 
             // not a built-in, recurse
-            compile_recursive(etv, tc, os, indent + 1, src + "." + fld.name,
-                              dst + "." + fld.name, fld.tp);
+            compile_recursive(etv, tc, os, indent + 1,
+                              std::format("{}.{}", src, fld.name),
+                              std::format("{}.{}", dst, fld.name), fld.tp);
         }
         return;
     }
@@ -295,13 +298,14 @@ inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
     for (size_t i{}; i < n; i++) {
         const type_field& fld{flds.at(i)};
         if (fld.tp.is_built_in()) {
-            etv.exprs_.at(i)->compile(tc, os, indent, dst + "." + fld.name);
+            etv.exprs_.at(i)->compile(tc, os, indent,
+                                      std::format("{}.{}", dst, fld.name));
             continue;
         }
         // not a built-in type, recurse
         compile_recursive(etv.exprs_.at(i)->as_assign_type_value(), tc, os,
                           indent + 1, etv.exprs_.at(i)->identifier(),
-                          dst + "." + fld.name, fld.tp);
+                          std::format("{}.{}", dst, fld.name), fld.tp);
     }
 }
 

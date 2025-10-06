@@ -1131,13 +1131,13 @@ class toc final {
         const std::string rnbr{match[1]};
         switch (size) {
         case 8:
-            return std::string("r") + rnbr;
+            return std::format("r{}", rnbr);
         case 4:
-            return std::string("r") + rnbr + "d";
+            return std::format("r{}d", rnbr);
         case 2:
-            return std::string("r") + rnbr + "w";
+            return std::format("r{}w", rnbr);
         case 1:
-            return std::string("r") + rnbr + "b";
+            return std::format("r{}b", rnbr);
         default:
             throw compiler_exception(
                 src_loc_tk, std::format("illegal size {} for register '{}'",

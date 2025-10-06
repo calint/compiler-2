@@ -54,7 +54,8 @@ class stmt_if_branch final : public statement {
         -> std::optional<bool> {
 
         const std::string& if_bgn_lbl{if_bgn_label(tc)};
-        const std::string& jmp_to_if_true_lbl{if_bgn_lbl + "_code"};
+        const std::string jmp_to_if_true_lbl{
+            std::format("{}_code", if_bgn_lbl)};
         // the beginning of this branch
         toc::asm_label(tok(), os, indent, if_bgn_lbl);
         // compile boolean ops list

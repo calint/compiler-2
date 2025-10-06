@@ -27,6 +27,6 @@ class stmt_break final : public statement {
         // get current loop exit label
         const std::string& loop_label{tc.get_loop_label_or_throw(tok())};
         // jump out of the loop
-        toc::asm_jmp(tok(), os, indent, loop_label + "_end");
+        toc::asm_jmp(tok(), os, indent, std::format("{}_end", loop_label));
     }
 };
