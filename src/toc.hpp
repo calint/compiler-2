@@ -588,10 +588,10 @@ class toc final {
                                       reg, loc));
         }
 
-        named_registers_.erase(reg_iter);
-        allocated_registers_.emplace_back(reg);
+        allocated_registers_.emplace_back(std::move(*reg_iter));
         allocated_registers_src_locs_.emplace_back(
             source_location_hr(st.tok()));
+        named_registers_.erase(reg_iter);
     }
 
     auto alloc_named_register(const token& src_loc_tk, std::ostream& os,
@@ -603,17 +603,16 @@ class toc final {
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
-            // not found
-            os << ": false\n";
+            os << ": not available\n";
             return false;
         }
 
         os << '\n';
 
-        named_registers_.erase(reg_iter);
-        allocated_registers_.emplace_back(reg);
+        allocated_registers_.emplace_back(std::move(*reg_iter));
         allocated_registers_src_locs_.emplace_back(
             source_location_hr(src_loc_tk));
+        named_registers_.erase(reg_iter);
 
         return true;
     }
@@ -625,9 +624,10 @@ class toc final {
         os << "free named register '" << reg << "'\n";
 
         assert(allocated_registers_.back() == reg);
+
+        named_registers_.emplace_back(std::move(allocated_registers_.back()));
         allocated_registers_.pop_back();
         allocated_registers_src_locs_.pop_back();
-        named_registers_.emplace_back(reg);
     }
 
     auto free_scratch_register(std::ostream& os, const size_t indnt,
@@ -638,11 +638,9 @@ class toc final {
 
         assert(allocated_registers_.back() == reg);
 
-        std::string moved_reg{std::move(allocated_registers_.back())};
+        scratch_registers_.emplace_back(std::move(allocated_registers_.back()));
         allocated_registers_.pop_back();
         allocated_registers_src_locs_.pop_back();
-
-        scratch_registers_.emplace_back(std::move(moved_reg));
     }
 
     [[nodiscard]] auto get_loop_label_or_throw(const token& src_loc_tk) const
