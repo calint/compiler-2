@@ -25,11 +25,10 @@ struct func_return_info final {
 };
 
 struct var_info final {
-    std::string name;
+    const std::string name;
     const type& type_ref;
-    token declared_at_tk; // token for position in source
-    int stack_idx{};      // location relative to rsp
-    bool initiated{};     // true if variable has been initiated
+    token declared_at_tk;      // token for position in source
+    const int32_t stack_idx{}; // location relative to rsp
 };
 
 class frame final {
@@ -70,8 +69,7 @@ class frame final {
 
     auto add_var(token declared_at_tk, const std::string& name,
                  const type& type_ref, const bool is_array,
-                 const size_t array_size, const int stack_idx,
-                 const bool initiated) -> void {
+                 const size_t array_size, const int stack_idx) -> void {
 
         if (stack_idx < 0) {
             // variable, increase allocated stack size
@@ -81,8 +79,7 @@ class frame final {
         vars_.put(name, {.name = name,
                          .type_ref = type_ref,
                          .declared_at_tk = std::move(declared_at_tk),
-                         .stack_idx = stack_idx,
-                         .initiated = initiated});
+                         .stack_idx = stack_idx});
     }
 
     [[nodiscard]] auto allocated_stack_size() const -> size_t {
@@ -172,7 +169,7 @@ struct ident_info final {
     const std::string id_nasm; // NASM valid source
     const int64_t const_value{};
     const type& type_ref;
-    const int64_t stack_ix;
+    const int32_t stack_ix;
     const ident_type ident_type{ident_type::CONST};
 
     [[nodiscard]] auto is_const() const -> bool {
@@ -494,8 +491,7 @@ class toc final {
 
     auto add_var(const token& src_loc_tk, std::ostream& os, size_t indnt,
                  const std::string& name, const type& var_type,
-                 const bool is_array, const size_t array_size,
-                 const bool initiated) -> void {
+                 const bool is_array, const size_t array_size) -> void {
 
         // check if variable is already declared in this scope
         if (frames_.back().has_var(name)) {
@@ -520,7 +516,7 @@ class toc final {
                              (var_type.size() * (is_array ? array_size : 1)))};
 
         frames_.back().add_var(src_loc_tk, name, var_type, is_array, array_size,
-                               -stack_idx, initiated);
+                               -stack_idx);
 
         const size_t total_stack_size{get_total_stack_size()};
         usage_max_stack_size_ =
@@ -843,53 +839,6 @@ class toc final {
         // constant
         indent(os, indnt);
         os << op << " " << dst_nasm << ", " << src_nasm << '\n';
-    }
-
-    auto set_var_is_initiated(const std::string& name) -> void {
-        if (fields_.has(name) or is_identifier_register(name)) {
-            return;
-        }
-
-        const identifier ident{name};
-        const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
-
-        if (not id.empty()) {
-            if (is_identifier_register(id) or
-                is_identifier_direct_register_indirect_addressing(id) or
-                fields_.has(id)) {
-                return;
-            }
-            // is a variable
-            frm.get_var_ref(id).initiated = true;
-            return;
-        }
-
-        throw panic_exception{"unexpected code path toc:1"};
-    }
-
-    auto is_var_initiated(const std::string& name) -> bool {
-        const identifier ident{name};
-        const auto [id, frm]{get_id_and_frame_for_identifier(ident.id_base())};
-
-        if (not id.empty()) {
-            if (is_identifier_register(id) or
-                is_identifier_direct_register_indirect_addressing(id) or
-                fields_.has(id)) {
-                return true;
-            }
-            // is a variable
-            return frm.get_var_const_ref(id).initiated;
-        }
-
-        if (fields_.has(id)) {
-            return true;
-        }
-
-        if (is_identifier_register(id)) {
-            return true;
-        }
-
-        throw panic_exception{"unexpected code path toc:2"};
     }
 
     auto set_type_void(const type& tpe) -> void { type_void_ = &tpe; }

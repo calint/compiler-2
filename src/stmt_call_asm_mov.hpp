@@ -32,8 +32,6 @@ class stmt_call_asm_mov final : public stmt_call {
         // the assembler command might not need to resolve expressions
         const ident_info& dst_info{tc.make_ident_info(arg(0), false)};
 
-        tc.set_var_is_initiated(dst_info.id);
-
         const statement& src_arg{arg(1)};
         if (src_arg.is_expression()) {
             src_arg.compile(tc, os, indent + 1, dst_info.id);

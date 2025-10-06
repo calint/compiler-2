@@ -71,7 +71,7 @@ class stmt_def_var final : public statement {
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
         tc.add_var(name_tk_, null_strm, 0, name_tk_.name(), tp, is_array_,
-                   array_size_, false);
+                   array_size_);
 
         if (init_required) {
             stmt_identifier si{tc, tz, name_tk_};
@@ -112,7 +112,7 @@ class stmt_def_var final : public statement {
         -> void override {
 
         tc.add_var(name_tk_, os, indent, name_tk_.name(), get_type(), is_array_,
-                   array_size_, false);
+                   array_size_);
 
         tc.comment_source(*this, os, indent);
         if (not is_array_) {

@@ -33,16 +33,6 @@ class stmt_return final : public statement {
             return;
         }
 
-        // check that the return value has been assigned
-        const std::vector<func_return_info>& returns{
-            tc.get_func_returns(tok())};
-        if (not returns.empty()) {
-            const std::string& ret_var{returns.at(0).ident_tk.name()};
-            if (not tc.is_var_initiated(ret_var)) {
-                throw compiler_exception(tok(), "return variable '" + ret_var +
-                                                    "' has not been assigned");
-            }
-        }
         // jump to return labels
         toc::asm_jmp(tok(), os, indent, ret_lbl);
     }
