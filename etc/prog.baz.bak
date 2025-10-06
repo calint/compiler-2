@@ -68,13 +68,15 @@ func main() {
     var arr : i32[4]
     # arrays are initialized to 0
 
-    arr[1] = 2
-    arr[2] = arr[1]
+    var ix = 1
+
+    arr[ix] = 2
+    arr[ix + 1] = arr[ix]
     
     assert(arr[1] == 2)
     assert(arr[2] == 2)
 
-    var ix = 3
+    ix = 3
     arr[ix] = ~inv(arr[ix - 1])
     assert(arr[ix] == 2)
 
