@@ -12,6 +12,5 @@ add_compile_options(
     -Wno-pre-c++20-compat-pedantic
     -Wno-weak-vtables
     -Wno-padded
-    -Wno-unsafe-buffer-usage
 )
 add_executable(baz src/main.cpp)
