@@ -284,7 +284,9 @@ class toc final {
                           .type_ref = return_type});
     }
 
-    auto is_func(const std::string& name) { return funcs_.has(name); }
+    auto is_func(const std::string& name) const -> bool {
+        return funcs_.has(name);
+    }
 
     [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
                                          const std::string& name) const
@@ -354,7 +356,7 @@ class toc final {
     }
 
     // human readable source location
-    auto source_location_hr(const token& src_loc_tk) -> std::string {
+    auto source_location_hr(const token& src_loc_tk) const -> std::string {
 
         const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.start_index(), source_.c_str())};

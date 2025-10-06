@@ -1,2 +1,10 @@
-Mon Oct  6 10:28:15 AM +07 2025
-Mon Oct  6 10:28:47 AM +07 2025
+Mon Oct  6 10:46:33 AM +07 2025
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:287:5: warning: function 'is_func' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  287 |     auto is_func(const std::string& name) const -> bool {
+      |     ^
+      |     [[nodiscard]] 
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:359:5: warning: function 'source_location_hr' should be marked [[nodiscard]] [modernize-use-nodiscard]
+  359 |     auto source_location_hr(const token& src_loc_tk) const -> std::string {
+      |     ^
+      |     [[nodiscard]] 
+Mon Oct  6 10:47:04 AM +07 2025
