@@ -273,10 +273,10 @@ class toc final {
 
         if (funcs_.has(name)) {
             const func_info& fn{funcs_.get_const_ref(name)};
-            const std::string loc{source_location_hr(fn.declared_at_tk)};
             throw compiler_exception(
                 src_loc_tk,
-                std::format("function '{}' already defined at {}", name, loc));
+                std::format("function '{}' already defined at {}", name,
+                            source_location_hr(fn.declared_at_tk)));
         }
 
         funcs_.put(name, {.def = func_def,
