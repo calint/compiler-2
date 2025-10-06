@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <algorithm>
+#include <format>
 #include <string>
 #include <utility>
 #include <vector>
@@ -45,7 +46,7 @@ template <class T> class lut final {
                 return e.data;
             }
         }
-        throw panic_exception("element not found: " + key);
+        throw panic_exception(std::format("element not found: {}", key));
     }
 
     // note: for clarity get_const_ref instead of overloading get_ref
@@ -55,6 +56,6 @@ template <class T> class lut final {
                 return e.data;
             }
         }
-        throw panic_exception("element not found: " + key);
+        throw panic_exception(std::format("element not found: {}", key));
     }
 };

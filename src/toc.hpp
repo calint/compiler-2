@@ -257,9 +257,9 @@ class toc final {
         if (fields_.has(name)) {
             throw compiler_exception(
                 src_loc_tk,
-                "field '" + name + "' already defined at " +
-                    source_location_hr(
-                        fields_.get_const_ref(name).declared_at_tk));
+                std::format("field '{}' already defined at {}", name,
+                            source_location_hr(
+                                fields_.get_const_ref(name).declared_at_tk)));
         }
 
         fields_.put(name, {.def = fld_def,
@@ -274,9 +274,9 @@ class toc final {
         if (funcs_.has(name)) {
             const func_info& fn{funcs_.get_const_ref(name)};
             const std::string loc{source_location_hr(fn.declared_at_tk)};
-            throw compiler_exception(src_loc_tk, "function '" + name +
-                                                     "' already defined at " +
-                                                     loc);
+            throw compiler_exception(
+                src_loc_tk,
+                std::format("function '{}' already defined at {}", name, loc));
         }
 
         funcs_.put(name, {.def = func_def,
@@ -291,8 +291,8 @@ class toc final {
         -> const stmt_def_func& {
 
         if (not funcs_.has(name)) {
-            throw compiler_exception(src_loc_tk,
-                                     "function '" + name + "' not found");
+            throw compiler_exception(
+                src_loc_tk, std::format("function '{}' not found", name));
         }
 
         return *funcs_.get_const_ref(name).def;
@@ -302,8 +302,8 @@ class toc final {
                                        const std::string& name) const -> bool {
 
         if (not funcs_.has(name)) {
-            throw compiler_exception(src_loc_tk,
-                                     "function '" + name + "' not found");
+            throw compiler_exception(
+                src_loc_tk, std::format("function '{}' not found", name));
         }
 
         return funcs_.get_const_ref(name).def == nullptr;
@@ -313,8 +313,8 @@ class toc final {
         const token& src_loc_tk, const std::string& name) const -> const type& {
 
         if (not funcs_.has(name)) {
-            throw compiler_exception(src_loc_tk,
-                                     "function '" + name + "' not found");
+            throw compiler_exception(
+                src_loc_tk, std::format("function '{}' not found", name));
         }
 
         return funcs_.get_const_ref(name).type_ref;
@@ -323,8 +323,9 @@ class toc final {
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
         if (types_.has(tpe.name())) {
             //? todo. specify where the type has been defined
-            throw compiler_exception(src_loc_tk, "type '" + tpe.name() +
-                                                     "' already defined");
+            throw compiler_exception(
+                src_loc_tk,
+                std::format("type '{}' already defined", tpe.name()));
         }
 
         types_.put(tpe.name(), tpe);
@@ -336,7 +337,7 @@ class toc final {
 
         if (not types_.has(name)) {
             throw compiler_exception(src_loc_tk,
-                                     "type '" + name + "' not found");
+                                     std::format("type '{}' not found", name));
         }
 
         return types_.get_const_ref(name);
@@ -428,8 +429,9 @@ class toc final {
             return id_info;
         }
 
-        throw compiler_exception(st.tok(), "cannot resolve identifier '" +
-                                               st.identifier() + "'");
+        throw compiler_exception(
+            st.tok(),
+            std::format("cannot resolve identifier '{}'", st.identifier()));
     }
 
     [[nodiscard]] auto
@@ -443,8 +445,8 @@ class toc final {
             return id_info;
         }
 
-        throw compiler_exception(src_loc_tk,
-                                 "cannot resolve identifier '" + ident + "'");
+        throw compiler_exception(
+            src_loc_tk, std::format("cannot resolve identifier '{}'", ident));
     }
 
     // note: 'to' is alias or variable in parent frame
@@ -498,8 +500,9 @@ class toc final {
         if (frames_.back().has_var(name)) {
             const var_info& var{frames_.back().get_var_const_ref(name)};
             throw compiler_exception(
-                src_loc_tk, "variable '" + name + "' already declared at " +
-                                source_location_hr(var.declared_at_tk));
+                src_loc_tk,
+                std::format("variable '{}' already declared at {}", name,
+                            source_location_hr(var.declared_at_tk)));
         }
 
         // check if variable shadows previously declared variable
@@ -507,9 +510,9 @@ class toc final {
         if (not id.empty()) {
             const var_info& var{frm.get_var_const_ref(id)};
             throw compiler_exception(
-                src_loc_tk, "variable '" + name +
-                                "' shadows variable declared at " +
-                                source_location_hr(var.declared_at_tk));
+                src_loc_tk,
+                std::format("variable '{}' shadows variable declared at {}",
+                            name, source_location_hr(var.declared_at_tk)));
         }
 
         const int stack_idx{
@@ -576,8 +579,9 @@ class toc final {
                 }
             }
             throw compiler_exception(
-                st.tok(), "cannot allocate register '" + reg +
-                              "' because it was allocated at " + loc);
+                st.tok(), std::format("cannot allocate register '{}' because "
+                                      "it was allocated at {}",
+                                      reg, loc));
         }
 
         named_registers_.erase(reg_iter);
@@ -833,8 +837,10 @@ class toc final {
             //? todo. this displays nasm identifiers but should be human
             // readable identifiers
             throw compiler_exception(
-                src_loc_tk, "cannot move '" + src_nasm + "' to '" + dst_nasm +
-                                "' because it would be truncated");
+                src_loc_tk,
+                std::format(
+                    "cannot move '{}' to '{}' because it would be truncated",
+                    src_nasm, dst_nasm));
         }
 
         // constant
@@ -984,7 +990,7 @@ class toc final {
         }
 
         throw compiler_exception(src_loc_tk,
-                                 "unknown register '" + operand + "'");
+                                 std::format("unknown register '{}'", operand));
     }
 
     static auto get_register_operand_for_size(const token& src_loc_tk,
@@ -1119,18 +1125,19 @@ class toc final {
         const std::regex rx{R"(r(\d+))"};
         std::smatch match;
         if (not std::regex_search(operand, match, rx)) {
-            throw compiler_exception(src_loc_tk, "unknown register " + operand);
+            throw compiler_exception(
+                src_loc_tk, std::format("unknown register {}", operand));
         }
         const std::string rnbr{match[1]};
         switch (size) {
         case 8:
-            return "r" + rnbr;
+            return std::string("r") + rnbr;
         case 4:
-            return "r" + rnbr + "d";
+            return std::string("r") + rnbr + "d";
         case 2:
-            return "r" + rnbr + "w";
+            return std::string("r") + rnbr + "w";
         case 1:
-            return "r" + rnbr + "b";
+            return std::string("r") + rnbr + "b";
         default:
             throw compiler_exception(
                 src_loc_tk, std::format("illegal size {} for register '{}'",
@@ -1392,7 +1399,7 @@ class toc final {
             }
             //? assumes qword
             return {.id = ident,
-                    .id_nasm = "qword[" + id_base + "]",
+                    .id_nasm = std::format("qword [{}]", id_base),
                     .const_value = 0,
                     .type_ref = get_type_default(),
                     .stack_ix = 0,

@@ -77,6 +77,23 @@ class stmt_if final : public statement {
         }
     }
 
+  private:
+    static auto make_label_else_branch(const stmt_block& else_code,
+                                       const std::string& call_path,
+                                       const std::string& src_loc,
+                                       const std::string& label_after_if)
+        -> std::string {
+
+        if (else_code.is_empty()) {
+            return label_after_if;
+        }
+
+        return (call_path.empty()
+                    ? std::format("if_else_{}", src_loc)
+                    : std::format("if_else_{}_{}", src_loc, call_path));
+    }
+
+  public:
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  [[maybe_unused]] const std::string& dst = "") const
         -> void override {
@@ -84,12 +101,11 @@ class stmt_if final : public statement {
         // make unique labels considering in-lined functions
         const std::string& call_path{tc.get_call_path(tok())};
         const std::string& src_loc{tc.source_location_for_use_in_label(tok())};
-        const std::string& cp{call_path.empty() ? "" : ("_" + call_path)};
-
-        const std::string& label_after_if{"if_" + src_loc + cp + "_end"};
-        const std::string& label_else_branch{not else_code_.is_empty()
-                                                 ? "if_else_" + src_loc + cp
-                                                 : label_after_if};
+        const std::string label_after_if =
+            call_path.empty() ? std::format("if_{}_end", src_loc)
+                              : std::format("if_{}_{}_end", src_loc, call_path);
+        const std::string label_else_branch = stmt_if::make_label_else_branch(
+            else_code_, call_path, src_loc, label_after_if);
 
         const size_t n{branches_.size()};
 

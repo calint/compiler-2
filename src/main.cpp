@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstring>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -168,10 +169,10 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
         if (tp.name() != ii.type_ref.name()) {
             // note: checked source location report ok
-            throw compiler_exception{tok(),
-                                     "type '" + ii.type_ref.name() +
-                                         "' does not match expected type '" +
-                                         tp.name() + "'"};
+            throw compiler_exception{
+                tok(),
+                std::format("type '{}' does not match expected type '{}'",
+                            ii.type_ref.name(), tp.name())};
         }
 
         return;
@@ -194,15 +195,17 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         if (i < nflds - 1) {
             if (not tz.is_next_char(',')) {
                 throw compiler_exception(
-                    tz, "expected ',' and value of field '" + flds[i + 1].name +
-                            "' in type '" + tp.name() + "'");
+                    tz, std::format(
+                            "expected ',' and value of field '{}' in type '{}'",
+                            flds[i + 1].name, tp.name()));
             }
         }
     }
 
     if (not tz.is_next_char('}')) {
-        throw compiler_exception(tz, "expected '}' to close assign type '" +
-                                         tp.name() + "'");
+        throw compiler_exception(
+            tz,
+            std::format("expected '}}' to close assign type '{}'", tp.name()));
     }
 }
 
@@ -258,11 +261,11 @@ inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
         // yes, e.g. obj.pos = p
         const type& src_type{tc.make_ident_info(etv.tok(), src, true).type_ref};
         if (src_type.name() != dst_type.name()) {
-            throw compiler_exception(etv.tok(),
-                                     "cannot assign '" + src + "' to '" + dst +
-                                         "' because '" + src + "' is '" +
-                                         src_type.name() + "' and '" + dst +
-                                         "' is '" + dst_type.name() + "'");
+            throw compiler_exception(
+                etv.tok(), std::format("cannot assign '{}' to '{}' because "
+                                       "'{}' is '{}' and '{}' is '{}'",
+                                       src, dst, src, src_type.name(), dst,
+                                       dst_type.name()));
         }
 
         for (const type_field& fld : dst_type.fields()) {
@@ -524,8 +527,8 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
 auto read_file_to_string(const char* file_name) -> std::string {
     std::ifstream fs{file_name};
     if (not fs.is_open()) {
-        throw panic_exception("cannot open file '" + std::string{file_name} +
-                              "'");
+        throw panic_exception(
+            std::format("cannot open file '{}'", std::string{file_name}));
     }
     return std::string{std::istreambuf_iterator<char>{fs},
                        std::istreambuf_iterator<char>{}};

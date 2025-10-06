@@ -107,8 +107,9 @@ class stmt_assign_var final : public statement {
         const std::string& size_specifier{
             type::get_size_specifier(tok(), dst_info.type_ref.size())};
 
-        expr_.compile(tc, os, indent,
-                      size_specifier + " [" + effective_address + "]");
+        expr_.compile(
+            tc, os, indent,
+            std::format("{} [{}]", size_specifier, effective_address));
 
         for (const std::string& reg :
              allocated_registers | std::ranges::views::reverse) {

@@ -82,13 +82,18 @@ class expr_any final : public statement {
                         tc.source_location_for_use_in_label(tok())};
 
                     // unique partial label for this assembler location
-                    const std::string& postfix{
-                        src_loc + (call_path.empty() ? "" : ("_" + call_path))};
+                    const std::string postfix{std::format(
+                        "{}{}", src_loc,
+                        (call_path.empty() ? std::string{}
+                                           : std::format("_{}", call_path)))};
 
                     // labels to jump to depending on the evaluation
-                    const std::string& jmp_to_if_true{"bool_true_" + postfix};
-                    const std::string& jmp_to_if_false{"bool_false_" + postfix};
-                    const std::string& jmp_to_end{"bool_end_" + postfix};
+                    const std::string jmp_to_if_true{
+                        std::format("bool_true_{}", postfix)};
+                    const std::string jmp_to_if_false{
+                        std::format("bool_false_{}", postfix)};
+                    const std::string jmp_to_end{
+                        std::format("bool_end_{}", postfix)};
 
                     // compile and possibly evaluate constant expression
                     std::optional<bool> const_eval{

@@ -64,8 +64,8 @@ class type final {
             }
         }
 
-        throw compiler_exception(tk, "field '" + name +
-                                         "' not found in type '" + name_ + "'");
+        throw compiler_exception(
+            tk, std::format("field '{}' not found in type '{}'", name, name_));
     }
 
     [[nodiscard]] auto accessor(const token& tk,

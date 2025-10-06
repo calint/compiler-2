@@ -281,8 +281,10 @@ class expr_bool_op final : public statement {
 
     [[nodiscard]] auto cmp_bgn_label(const toc& tc) const -> std::string {
         const std::string& call_path{tc.get_call_path(tok())};
-        return "cmp_" + tc.source_location_for_use_in_label(tok()) +
-               (call_path.empty() ? "" : "_" + call_path);
+        return std::format("cmp_{}{}",
+                           tc.source_location_for_use_in_label(tok()),
+                           (call_path.empty() ? std::string{}
+                                              : std::format("_{}", call_path)));
     }
 
     [[nodiscard]] auto identifier() const -> const std::string& override {

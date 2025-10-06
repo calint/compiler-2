@@ -65,8 +65,9 @@ class statement {
 
     static auto validate_identifier_name(const token& tk) -> void {
         if (tk.name().ends_with(".")) {
-            throw compiler_exception(tk, "unexpected '.' at the end of '" +
-                                             tk.name() + "'");
+            throw compiler_exception(
+                tk,
+                std::format("unexpected '.' at the end of '{}'", tk.name()));
         }
     }
 };

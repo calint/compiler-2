@@ -35,8 +35,9 @@ class stmt_if_branch final : public statement {
     [[nodiscard]] auto if_bgn_label(const toc& tc) const -> std::string {
         // construct a unique label considering in-lined functions
         const std::string& call_path{tc.get_call_path(tok())};
-        return "if_" + tc.source_location_for_use_in_label(tok()) +
-               (call_path.empty() ? "" : "_" + call_path);
+        const std::string& src_loc{tc.source_location_for_use_in_label(tok())};
+        return call_path.empty() ? std::format("if_{}", src_loc)
+                                 : std::format("if_{}_{}", src_loc, call_path);
     }
 
     [[noreturn]] void

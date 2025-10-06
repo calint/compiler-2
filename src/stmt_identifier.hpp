@@ -157,7 +157,7 @@ class stmt_identifier : public statement {
             type::get_size_specifier(tok(), src_info.type_ref.size())};
 
         tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
-                   size_specifier + " [" + effective_address + "]");
+                   std::format("{} [{}]", size_specifier, effective_address));
 
         get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
 
@@ -213,7 +213,8 @@ class stmt_identifier : public statement {
                 const identifier_elem& next_elem{elems[i + 1]};
                 accum_offset += toc::get_field_offset_in_type(
                     tok, curr_info.type_ref, next_elem.name_tk.name());
-                path += "." + next_elem.name_tk.name();
+                path += '.';
+                path += next_elem.name_tk.name();
             }
         }
 

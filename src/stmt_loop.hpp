@@ -10,9 +10,10 @@ class stmt_loop final : public statement {
     [[nodiscard]] auto create_unique_label(const toc& tc) const -> std::string {
         const std::string& call_path{tc.get_call_path(tok())};
         const std::string src_loc{tc.source_location_for_use_in_label(tok())};
-        const std::string lbl{"loop_" + (call_path.empty()
-                                             ? src_loc
-                                             : (src_loc + "_" + call_path))};
+        const std::string lbl{
+            std::format("loop_{}{}", src_loc,
+                        (call_path.empty() ? std::string{}
+                                           : std::format("_{}", call_path)))};
         return lbl;
     }
 
@@ -45,7 +46,7 @@ class stmt_loop final : public statement {
         tc.enter_loop(lbl);
         code_.compile(tc, os, indent);
         toc::asm_jmp(tok(), os, indent, lbl);
-        toc::asm_label(tok(), os, indent, lbl + "_end");
+        toc::asm_label(tok(), os, indent, std::format("{}_end", lbl));
         tc.exit_loop(lbl);
     }
 

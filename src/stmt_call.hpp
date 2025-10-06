@@ -143,9 +143,10 @@ class stmt_call : public expression {
             //?
             if (dst_info.type_ref.size() < return_type.size()) {
                 throw compiler_exception(
-                    tok(), "return type '" + return_type.name() +
-                               "' would be truncated when copied to '" + dst +
-                               "' of type '" + dst_info.type_ref.name() + "'");
+                    tok(), std::format("return type '{}' would be truncated "
+                                       "when copied to '{}' of type '{}'",
+                                       return_type.name(), dst,
+                                       dst_info.type_ref.name()));
             }
         }
 
@@ -153,10 +154,11 @@ class stmt_call : public expression {
         // source where the call occurred
         const std::string& call_path{tc.get_call_path(tok())};
         const std::string& src_loc{tc.source_location_for_use_in_label(tok())};
-        const std::string& new_call_path{
-            call_path.empty() ? src_loc : (src_loc + "_" + call_path)};
-        const std::string& ret_jmp_label{func_name + "_" + new_call_path +
-                                         "_end"};
+        const std::string new_call_path{
+            call_path.empty() ? src_loc
+                              : std::format("{}_{}", src_loc, call_path)};
+        const std::string ret_jmp_label{
+            std::format("{}_{}_end", func_name, new_call_path)};
 
         // keep track of allocated registers
         std::vector<std::string> allocated_named_registers;
@@ -258,7 +260,8 @@ class stmt_call : public expression {
 
         // note: not necessary but makes reading the generated code without
         // comments easier
-        toc::asm_label(tok(), os, indent, func_name + "_" + new_call_path);
+        toc::asm_label(tok(), os, indent,
+                       std::format("{}_{}", func_name, new_call_path));
 
         // enter function creating a new scope from which prior variables are
         // not visible
