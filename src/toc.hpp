@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <format>
 #include <iostream>
 #include <optional>
 #include <ranges>
@@ -348,7 +349,7 @@ class toc final {
         const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.start_index(), source_.c_str())};
 
-        return std::to_string(line) + "_" + std::to_string(col);
+        return std::format("{}_{}", line, col);
     }
 
     // human readable source location
@@ -357,7 +358,7 @@ class toc final {
         const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.start_index(), source_.c_str())};
 
-        return std::to_string(line) + ":" + std::to_string(col);
+        return std::format("{}:{}", line, col);
     }
 
     static auto get_field_offset_in_type(const token& src_loc_tk_,
@@ -1004,8 +1005,9 @@ class toc final {
                 return "al";
             default:
                 throw compiler_exception(
-                    src_loc_tk, "illegal size " + std::to_string(size) +
-                                    " for register operand '" + operand + "'");
+                    src_loc_tk,
+                    std::format("illegal size {} for register operand '{}'",
+                                size, operand));
             }
         }
         if (operand == "rbx") {
@@ -1020,8 +1022,8 @@ class toc final {
                 return "bl";
             default:
                 throw compiler_exception(
-                    src_loc_tk, "illegal size " + std::to_string(size) +
-                                    " for register '" + operand + "'");
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand));
             }
         }
         if (operand == "rcx") {
@@ -1036,8 +1038,8 @@ class toc final {
                 return "cl";
             default:
                 throw compiler_exception(
-                    src_loc_tk, "illegal size " + std::to_string(size) +
-                                    " for register '" + operand + "'");
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand));
             }
         }
         if (operand == "rdx") {
@@ -1052,8 +1054,8 @@ class toc final {
                 return "dl";
             default:
                 throw compiler_exception(
-                    src_loc_tk, "illegal size " + std::to_string(size) +
-                                    " for register '" + operand + "'");
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand));
             }
         }
         if (operand == "rbp") {
@@ -1130,9 +1132,9 @@ class toc final {
         case 1:
             return "r" + rnbr + "b";
         default:
-            throw compiler_exception(src_loc_tk,
-                                     "illegal size " + std::to_string(size) +
-                                         " for register '" + operand + "'");
+            throw compiler_exception(
+                src_loc_tk, std::format("illegal size {} for register '{}'",
+                                        size, operand));
         }
     }
 

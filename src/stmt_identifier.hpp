@@ -177,7 +177,7 @@ class stmt_identifier : public statement {
         const ident_info base_info{tc.make_ident_info(tok, path, false)};
 
         tc.asm_cmd(tok, os, indent, "lea", reg_offset,
-                   "[rsp - " + std::to_string(-base_info.stack_ix) + "]");
+                   std::format("[rsp - {}]", -base_info.stack_ix));
 
         size_t accum_offset = 0;
 
@@ -239,9 +239,13 @@ class stmt_identifier : public statement {
                 tc.alloc_scratch_register(src_loc_tk, os, indent)};
             allocated_registers.push_back(reg_index);
             base_elem.array_index_expr->compile(tc, os, indent, reg_index);
-            return "rsp + " + reg_index +
-                   (size != 1 ? (" * " + std::to_string(size)) : "") + " - " +
-                   std::to_string(-base_info.stack_ix);
+            if (size == 1) {
+                return std::format("rsp + {} - {}", reg_index,
+                                   -base_info.stack_ix);
+            } else {
+                return std::format("rsp + {} * {} - {}", reg_index, size,
+                                   -base_info.stack_ix);
+            }
         }
 
         const std::string& reg_offset{

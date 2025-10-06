@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <format>
 #include <string>
 #include <vector>
 
@@ -89,8 +90,8 @@ class type final {
 
         const std::string& memsize{
             type::get_size_specifier(tk, tp_first_field->size())};
-        const std::string& accessor{memsize + " [rsp - " +
-                                    std::to_string(-stack_idx) + "]"};
+        const std::string accessor{
+            std::format("{} [rsp - {}]", memsize, -stack_idx)};
         // note: -stack_idx for nicer source formatting
         return {*tp, accessor};
     }
@@ -119,8 +120,8 @@ class type final {
         case 1:
             return size_byte;
         default:
-            throw compiler_exception(tk, "illegal size for memory operand: " +
-                                             std::to_string(size));
+            throw compiler_exception(
+                tk, std::format("illegal size for memory operand: {}", size));
         }
     }
 };

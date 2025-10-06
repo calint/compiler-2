@@ -1,2 +1,11 @@
-Mon Oct  6 08:30:25 AM +07 2025
-Mon Oct  6 08:30:57 AM +07 2025
+Mon Oct  6 08:50:43 AM +07 2025
+/home/c/w/compiler-2/qa/lint/../../src/stmt_identifier.hpp:245:15: warning: do not use 'else' after 'return' [llvm-else-after-return,readability-else-after-return]
+  245 |             } else {
+      |               ^~~~~~
+  246 |                 return std::format("rsp + {} * {} - {}", reg_index, size,
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  247 |                                    -base_info.stack_ix);
+      |                                    ~~~~~~~~~~~~~~~~~~~~~
+  248 |             }
+      |             ~
+Mon Oct  6 08:51:12 AM +07 2025

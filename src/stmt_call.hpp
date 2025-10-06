@@ -95,11 +95,12 @@ class stmt_call : public expression {
         // check that the same number of arguments are provided as expected
         if (func.params().size() != args_.size()) {
             throw compiler_exception(
-                tok(), "function '" + func_name + "' expects " +
-                           std::to_string(func.params().size()) + " argument" +
-                           (func.params().size() == 1 ? "" : "s") + " but " +
-                           std::to_string(args_.size()) + " " +
-                           (args_.size() == 1 ? "is" : "are") + " provided");
+                tok(),
+                std::format(
+                    "function '{}' expects {} argument{} but {} {} provided",
+                    func_name, func.params().size(),
+                    (func.params().size() == 1 ? "" : "s"), args_.size(),
+                    (args_.size() == 1 ? "is" : "are")));
         }
 
         // check that argument types match the parameters
