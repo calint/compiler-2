@@ -184,8 +184,9 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
     // e.g. obj.pos = {x, y}
     if (not tz.is_next_char('{')) {
-        throw compiler_exception(tz, "expected '{' to open assign type '" +
-                                         tp.name() + "'");
+        throw compiler_exception(
+            tz,
+            std::format("expected '{{' to open assign type '{}'", tp.name()));
     }
 
     const std::vector<type_field>& flds{tp.fields()};

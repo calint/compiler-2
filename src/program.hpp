@@ -71,8 +71,8 @@ class program final {
                 // to be identical
                 ws1_ = std::move(tk);
             } else {
-                throw compiler_exception{tk, "unexpected keyword '" +
-                                                 tk.name() + "'"};
+                throw compiler_exception{
+                    tk, std::format("unexpected keyword '{}'", tk.name())};
             }
         }
     }
