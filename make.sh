@@ -9,7 +9,7 @@ cd $(dirname "$0")
 
 # set environment
 CC="clang++ -std=c++23"
-CW="-Weverything -Wno-c++98-compat -Wno-pre-c++20-compat-pedantic -Wno-weak-vtables -Wno-padded -Wno-unsafe-buffer-usage"
+CW="-Weverything -Wno-c++98-compat -Wno-pre-c++20-compat-pedantic -Wno-weak-vtables -Wno-padded"
 
 #CC="g++ -std=c++23"
 #CW="-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow"

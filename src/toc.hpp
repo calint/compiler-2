@@ -928,6 +928,10 @@ class toc final {
     // statics
     // -------------------------------------------------------------------------
 
+    // pragma below for clang++ to not generate warning stemming from
+    // 'std::from_chars' requiring pointers
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
     static auto parse_to_constant(const std::string& str)
         -> std::optional<int64_t> {
         // is it hex?
@@ -957,9 +961,11 @@ class toc final {
         // try decimal digit
         {
             int64_t value{};
+            const std::string_view sv{str};
+            // note: using 'std::string_view' for 'clang-tidy' to not trigger
+            //       warning 'cppcoreguidelines-pro-bounds-pointer-arithmetic'
             auto parse_result{
-                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-                std::from_chars(str.data(), str.data() + str.size(), value)};
+                std::from_chars(sv.data(), sv.data() + sv.size(), value)};
             if (parse_result.ec == std::errc{}) {
                 return value;
             }
@@ -967,6 +973,7 @@ class toc final {
 
         return std::nullopt;
     }
+#pragma clang diagnostic pop
 
     static auto get_size_from_operand_register(const token& src_loc_tk,
                                                const std::string& operand)

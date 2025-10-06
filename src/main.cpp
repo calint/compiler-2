@@ -42,7 +42,12 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void;
 } // namespace
 
 auto main(const int argc, const char* argv[]) -> int {
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-container"
     const std::span<const char*> args{argv, static_cast<size_t>(argc)};
+#pragma clang diagnostic pop
+
     const char* src_file_name{argc == 1 ? "prog.baz" : args[1]};
 
     std::string src;
