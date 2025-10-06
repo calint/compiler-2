@@ -88,7 +88,7 @@ class type final {
         }
 
         const std::string& memsize{
-            type::get_memory_operand_for_size(tk, tp_first_field->size())};
+            type::get_size_specifier(tk, tp_first_field->size())};
         const std::string& accessor{memsize + " [rsp - " +
                                     std::to_string(-stack_idx) + "]"};
         // note: -stack_idx for nicer source formatting
@@ -107,7 +107,7 @@ class type final {
         return fields_;
     }
 
-    static auto get_memory_operand_for_size(const token& tk, const size_t size)
+    static auto get_size_specifier(const token& tk, const size_t size)
         -> const std::string& {
         switch (size) {
         case 8:

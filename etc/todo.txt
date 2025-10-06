@@ -6,8 +6,10 @@
     [ ] the special case of array of built-in type single implement identifier
         path
     [x] use "shl" if type size 2^n
-    [ ] use mov [base + index * scale + disp] type of instructions to optimize
+    [o] use mov [base + index * scale + disp] type of instructions to optimize
         store to and from array
+        [x] support special case of identifier with one element, array index
+            with supported size for effective memory scaling
 [ ] argument to the compiler specifying stack size
 [o] implement arrays
     => exploratory quick and dirty coding of arrays for primitives: ok

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <algorithm>
+#include <ranges>
+#include <string>
 
 #include "compiler_exception.hpp"
 #include "expr_any.hpp"
@@ -120,37 +122,48 @@ class stmt_identifier : public statement {
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  const std::string& dst = "") const -> void override {
 
-        if (dst.empty()) {
-            return;
-        }
-
         tc.comment_source(*this, os, indent);
 
         const ident_info dst_info{tc.make_ident_info(tok(), dst, false)};
 
+        // does identifier contain array indexing?
         if (not is_expression()) {
+            // no, compile to 'dst_info'
             const ident_info src_info{
                 tc.make_ident_info(tok(), identifier(), false)};
+
             tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
                        src_info.id_nasm);
+
             get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
+
             return;
         }
 
-        const std::string& reg_offset{
-            tc.alloc_scratch_register(tok(), os, indent)};
+        // identifier contains array indexing
+        // calculate effective address to built-in type
 
-        stmt_identifier::compile_address_calculation(tok(), tc, os, indent,
-                                                     elems(), reg_offset);
+        std::vector<std::string> allocated_registers;
+
+        const std::string effective_address{
+            stmt_identifier::compile_effective_address(
+                tok(), tc, os, indent, elems(), allocated_registers)};
 
         const ident_info src_info{
             tc.make_ident_info(tok(), identifier(), false)};
-        const std::string& memsize{
-            type::get_memory_operand_for_size(tok(), src_info.type_ref.size())};
+
+        const std::string& size_specifier{
+            type::get_size_specifier(tok(), src_info.type_ref.size())};
+
         tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
-                   memsize + " [" + reg_offset + "]");
+                   size_specifier + " [" + effective_address + "]");
+
         get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
-        tc.free_scratch_register(os, indent, reg_offset);
+
+        for (const std::string& reg :
+             allocated_registers | std::ranges::views::reverse) {
+            tc.free_scratch_register(os, indent, reg);
+        }
     }
 
     static auto
@@ -207,6 +220,37 @@ class stmt_identifier : public statement {
             tc.asm_cmd(tok, os, indent, "add", reg_offset,
                        std::to_string(accum_offset));
         }
+    }
+
+    static auto compile_effective_address(
+        const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
+        const std::vector<identifier_elem>& elems,
+        std::vector<std::string>& allocated_registers) -> std::string {
+
+        const identifier_elem& base_elem{elems.front()};
+        const std::string path{base_elem.name_tk.name()};
+        const ident_info base_info{tc.make_ident_info(src_loc_tk, path, false)};
+
+        // check for special case of 1 element with assembler supported scaling
+        const size_t size{base_info.type_ref.size()};
+        if (elems.size() == 1 and
+            (size == 1 or size == 2 or size == 4 or size == 8)) {
+            const std::string& reg_index{
+                tc.alloc_scratch_register(src_loc_tk, os, indent)};
+            allocated_registers.push_back(reg_index);
+            base_elem.array_index_expr->compile(tc, os, indent, reg_index);
+            return "rsp + " + reg_index +
+                   (size != 1 ? (" * " + std::to_string(size)) : "") + " - " +
+                   std::to_string(-base_info.stack_ix);
+        }
+
+        const std::string& reg_offset{
+            tc.alloc_scratch_register(src_loc_tk, os, indent)};
+        allocated_registers.push_back(reg_offset);
+
+        compile_address_calculation(src_loc_tk, tc, os, indent, elems,
+                                    reg_offset);
+        return reg_offset;
     }
 
     static auto get_shift_amount(uint64_t value) -> std::optional<int> {

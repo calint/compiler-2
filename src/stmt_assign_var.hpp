@@ -5,6 +5,7 @@
 #include "expr_any.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
+#include <ranges>
 
 class stmt_assign_var final : public statement {
     stmt_identifier stmt_ident_;
@@ -86,25 +87,33 @@ class stmt_assign_var final : public statement {
             return;
         }
 
+        // does the identifier contain array indexing?
         if (not stmt_ident_.is_expression()) {
+            // no, compile to 'dst_info'
             expr_.compile(tc, os, indent, dst_info.id);
             return;
         }
 
-        // is expression, calculate the offset to the built-in type
+        // identifier contains array indexing
+        // calculate effective address to built-in type
 
-        const std::string& reg_offset{
-            tc.alloc_scratch_register(tok(), os, indent)};
+        std::vector<std::string> allocated_registers;
 
-        stmt_identifier::compile_address_calculation(
-            tok(), tc, os, indent, stmt_ident_.elems(), reg_offset);
+        const std::string effective_address =
+            stmt_identifier::compile_effective_address(tok(), tc, os, indent,
+                                                       stmt_ident_.elems(),
+                                                       allocated_registers);
 
-        const std::string& memsize{
-            type::get_memory_operand_for_size(tok(), dst_info.type_ref.size())};
+        const std::string& size_specifier{
+            type::get_size_specifier(tok(), dst_info.type_ref.size())};
 
-        expr_.compile(tc, os, indent, memsize + " [" + reg_offset + "]");
+        expr_.compile(tc, os, indent,
+                      size_specifier + " [" + effective_address + "]");
 
-        tc.free_scratch_register(os, indent, reg_offset);
+        for (const std::string& reg :
+             allocated_registers | std::ranges::views::reverse) {
+            tc.free_scratch_register(os, indent, reg);
+        }
     }
 
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }

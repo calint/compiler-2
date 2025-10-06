@@ -28,27 +28,15 @@ main:
     mov rcx, 16
     xor rax, rax
     rep stosb
-    lea r15, [rsp - 16]
+    mov r15, 1
+    mov dword [rsp + r15 * 4 - 16], 2
+    mov r15, 2
     mov r14, 1
-    shl r14, 2
-    add r15, r14
-    mov dword [r15], 2
-    lea r15, [rsp - 16]
-    mov r14, 2
-    shl r14, 2
-    add r15, r14
-    lea r14, [rsp - 16]
-    mov r13, 1
-    shl r13, 2
-    add r14, r13
-    mov r13d, dword [r14]
-    mov dword [r15], r13d
+    mov r13d, dword [rsp + r14 * 4 - 16]
+    mov dword [rsp + r15 * 4 - 16], r13d
     cmp_74_12:
-        lea r13, [rsp - 16]
-        mov r12, 1
-        shl r12, 2
-        add r13, r12
-        movsx r14, dword [r13]
+        mov r13, 1
+        movsx r14, dword [rsp + r13 * 4 - 16]
     cmp r14, 2
     jne bool_false_74_12
     bool_true_74_12:
@@ -71,11 +59,8 @@ main:
         if_36_5_74_5_end:
     assert_74_5_end:
     cmp_75_12:
-        lea r13, [rsp - 16]
-        mov r12, 2
-        shl r12, 2
-        add r13, r12
-        movsx r14, dword [r13]
+        mov r13, 2
+        movsx r14, dword [rsp + r13 * 4 - 16]
     cmp r14, 2
     jne bool_false_75_12
     bool_true_75_12:
@@ -98,27 +83,18 @@ main:
         if_36_5_75_5_end:
     assert_75_5_end:
     mov qword [rsp - 24], 3
-    lea r15, [rsp - 16]
-    mov r14, qword [rsp - 24]
-    shl r14, 2
-    add r15, r14
-    lea r13, [rsp - 16]
-    mov r12, qword [rsp - 24]
-    sub r12, 1
-    shl r12, 2
-    add r13, r12
-    movsx r14, dword [r13]
+    mov r15, qword [rsp - 24]
+    mov r13, qword [rsp - 24]
+    sub r13, 1
+    movsx r14, dword [rsp + r13 * 4 - 16]
     inv_78_16:
-        mov dword [r15], r14d
-        not dword [r15]
+        mov dword [rsp + r15 * 4 - 16], r14d
+        not dword [rsp + r15 * 4 - 16]
     inv_78_16_end:
-    not dword [r15]
+    not dword [rsp + r15 * 4 - 16]
     cmp_79_12:
-        lea r13, [rsp - 16]
-        mov r12, qword [rsp - 24]
-        shl r12, 2
-        add r13, r12
-        movsx r14, dword [r13]
+        mov r13, qword [rsp - 24]
+        movsx r14, dword [rsp + r13 * 4 - 16]
     cmp r14, 2
     jne bool_false_79_12
     bool_true_79_12:
