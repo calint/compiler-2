@@ -1,39 +1,17 @@
-[ ] adapt to be able to use -Wunsafe-buffer-usage
-    [ ] implement a buffer safe parse integer function in toc
-    [ ] handle arguments to main appropriately 
 [ ] instrumentation to find out max heap and stack usage by the compiler
 [ ] optimize rep stosb to q, d, w if possible
     => maybe some heuristics about when to use "rep stosX" 
 [ ] toc: consider abstracting registers into a class for less quirky string
     manipulations
-[o] optimize array indexing using lea
-    [x] does not do the multiplication if type size is 1
-    [ ] handle constant array index case
-    [ ] the special case of array of built-in type single implement identifier
-        path
-    [x] use "shl" if type size 2^n
-    [o] use mov [base + index * scale + disp] type of instructions to optimize
-        store to and from array
-        [x] support special case of identifier with one element, array index
-            with supported size for effective memory scaling
+[ ] handle constant array index case
 [ ] argument to the compiler specifying stack size
-[o] implement arrays
-    => exploratory quick and dirty coding of arrays for primitives: ok
-       [x] initialize arrays to 0
-       [x] lea instruction should use scaling if type size 2, 4 or 8
-       [x] multiplication by 1 is not necessary, post compilation optimized
-           => types of size 1, 2, 4, 8 are specified in instruction lea
-       [ ] if constant index value don't use scratch register
-       [ ] if array type 1, 2, 4, 8  use lea with scaling
-       [ ] allow types to be power of 2 sizes only and use shift instead of
-           multiplication
-       [ ] support assigning strings to i8 arrays
-       [x] support indexing in user defined types: e.g. obj[x].pts[y].x = z
-       [ ] bounds check (optional compiler flag)
+[ ] support assigning strings to i8 arrays
+[ ] bounds check array access (optional compiler flag)
 [ ] expr_ops_list: const eval
 [ ] usage of ad-hoc strings specifying destination of result from an exception
     is messy, same as assembler operation size, review
 [ ] tidy
+    [ ] improve source location token in stmt_identifier
     [ ] review where compiler_exceptions happen and try to make good source
         location reports
     [x] use std::format
@@ -128,6 +106,32 @@ stage 5
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] adapt to be able to use -Wunsafe-buffer-usage
+    [-] implement a buffer safe parse integer function in toc
+        => that portion is marked as "safe" to clang
+    [x] handle arguments to main appropriately 
+        => cannot be done so that section is marked as "safe" to clang
+[x] optimize array indexing using lea
+    [x] does not do the multiplication if type size is 1
+    [x] the special case of array of built-in type single implement identifier
+        path
+        => handled by general case
+    [x] use "shl" if type size 2^n
+    [x] use mov [base + index * scale + disp] type of instructions to optimize
+        store to and from array
+        [x] support special case of identifier with one element, array index
+            with supported size for effective memory scaling
+[x] implement arrays
+    => exploratory quick and dirty coding of arrays for primitives: ok
+       [x] initialize arrays to 0
+       [x] lea instruction should use scaling if type size 2, 4 or 8
+       [x] multiplication by 1 is not necessary, post compilation optimized
+           => types of size 1, 2, 4, 8 are specified in instruction lea
+       [x] if array type 1, 2, 4, 8  use lea with scaling
+       [-] allow types to be power of 2 sizes only and use shift instead of
+           multiplication
+           => the compiler chooses 'shl' if size is 2^n
+       [x] support indexing in user defined types: e.g. obj[x].pts[y].x = z
 [x] bool_ops_list: does not throw parsing error:
     var b : bool = (true == false
 [x] use C++23 facilities to convert string to number instead of 'strtol'
