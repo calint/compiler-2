@@ -229,32 +229,122 @@ class stmt_identifier : public statement {
         std::vector<std::string>& allocated_registers) -> std::string {
 
         const identifier_elem& base_elem{elems.front()};
-        const std::string path{base_elem.name_tk.name()};
+        std::string path{base_elem.name_tk.name()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path, false)};
+        std::string reg_offset{"rsp"};
+        const size_t elems_size{elems.size()};
+        size_t accum_offset{};
 
-        // check for special case of 1 element with assembler supported scaling
-        const size_t size{base_info.type_ref.size()};
-        if (elems.size() == 1 and
-            (size == 1 or size == 2 or size == 4 or size == 8)) {
-            const std::string& reg_index{
-                tc.alloc_scratch_register(src_loc_tk, os, indent)};
-            allocated_registers.push_back(reg_index);
-            base_elem.array_index_expr->compile(tc, os, indent, reg_index);
-            if (size == 1) {
-                return std::format("rsp + {} - {}", reg_index,
-                                   -base_info.stack_ix);
+        for (size_t i{}; i < elems_size; ++i) {
+            const identifier_elem& curr_elem{elems.at(i)};
+            const ident_info curr_info{
+                tc.make_ident_info(src_loc_tk, path, false)};
+            const size_t curr_type_size{curr_info.type_ref.size()};
+
+            // yes, does it have array index?
+            if (curr_elem.has_array_index_expr) {
+                // is it last element?
+                if (i == elems_size - 1) {
+                    // yes, is the size encodable in the instructions?
+                    if ((curr_type_size == 1 or curr_type_size == 2 or
+                         curr_type_size == 4 or curr_type_size == 8)) {
+                        const std::string& reg_index{
+                            tc.alloc_scratch_register(src_loc_tk, os, indent)};
+                        allocated_registers.push_back(reg_index);
+                        base_elem.array_index_expr->compile(tc, os, indent,
+                                                            reg_index);
+                        if (curr_type_size == 1) {
+                            return std::format(
+                                "{} + {} - {}", reg_offset, reg_index,
+                                -base_info.stack_ix +
+                                    static_cast<int32_t>(accum_offset));
+                        }
+                        return std::format(
+                            "{} + {} * {} - {}", reg_offset, reg_index,
+                            curr_type_size,
+                            -base_info.stack_ix +
+                                static_cast<int32_t>(accum_offset));
+                    }
+                    // is it still 'rsp' and needs calculations of the base?
+                    if (reg_offset == "rsp") {
+                        // yes, allocate scratch register and initiate it
+                        reg_offset =
+                            tc.alloc_scratch_register(src_loc_tk, os, indent);
+                        allocated_registers.push_back(reg_offset);
+
+                        tc.asm_cmd(
+                            src_loc_tk, os, indent, "lea", reg_offset,
+                            std::format("[rsp - {}]", -base_info.stack_ix));
+                    }
+                    const std::string& reg_index{
+                        tc.alloc_scratch_register(src_loc_tk, os, indent)};
+                    curr_elem.array_index_expr->compile(tc, os, indent,
+                                                        reg_index);
+                    if (curr_type_size > 1) {
+                        // is the size a 2^n number?
+                        if (std::optional<int> shl{
+                                get_shift_amount(curr_type_size)};
+                            shl) {
+                            // yes, shift left
+                            tc.asm_cmd(src_loc_tk, os, indent, "shl", reg_index,
+                                       std::format("{}", *shl));
+                        } else {
+                            // no, use multiplication
+                            tc.asm_cmd(src_loc_tk, os, indent, "imul",
+                                       reg_index,
+                                       std::format("{}", curr_type_size));
+                        }
+                    }
+                    tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
+                               reg_index);
+                    tc.free_scratch_register(os, indent, reg_index);
+                    return std::format("{}", reg_offset);
+                }
+                // not last element, is the base register "rsp"?
+                if (reg_offset == "rsp") {
+                    // yes, allocate scratch register and initiate it
+                    reg_offset =
+                        tc.alloc_scratch_register(src_loc_tk, os, indent);
+                    allocated_registers.push_back(reg_offset);
+
+                    tc.asm_cmd(src_loc_tk, os, indent, "lea", reg_offset,
+                               std::format("[rsp - {}]", -base_info.stack_ix));
+                }
+                const std::string& reg_index{
+                    tc.alloc_scratch_register(src_loc_tk, os, indent)};
+                curr_elem.array_index_expr->compile(tc, os, indent, reg_index);
+                if (curr_type_size > 1) {
+                    // is the size a 2^n number?
+                    if (std::optional<int> shl{
+                            get_shift_amount(curr_type_size)};
+                        shl) {
+                        // yes, shift left
+                        tc.asm_cmd(src_loc_tk, os, indent, "shl", reg_index,
+                                   std::format("{}", *shl));
+                    } else {
+                        // no, use multiplication
+                        tc.asm_cmd(src_loc_tk, os, indent, "imul", reg_index,
+                                   std::format("{}", curr_type_size));
+                    }
+                }
+                tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
+                           reg_index);
+                tc.free_scratch_register(os, indent, reg_index);
             }
-            return std::format("rsp + {} * {} - {}", reg_index, size,
-                               -base_info.stack_ix);
+
+            if (i + 1 < elems.size()) {
+                const identifier_elem& next_elem{elems[i + 1]};
+                accum_offset += toc::get_field_offset_in_type(
+                    src_loc_tk, curr_info.type_ref, next_elem.name_tk.name());
+                path.push_back('.');
+                path += next_elem.name_tk.name();
+            }
         }
-
-        const std::string& reg_offset{
-            tc.alloc_scratch_register(src_loc_tk, os, indent)};
-        allocated_registers.push_back(reg_offset);
-
-        compile_effective_address_to_register(src_loc_tk, tc, os, indent, elems,
-                                              reg_offset);
-        return reg_offset;
+        if (accum_offset != 0) {
+            tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
+                       std::format("{}", accum_offset));
+        }
+        return std::string{reg_offset};
     }
 
     static auto get_shift_amount(uint64_t value) -> std::optional<int> {
