@@ -250,7 +250,7 @@ class stmt_identifier : public statement {
                     const std::string& reg_idx{
                         tc.alloc_scratch_register(src_loc_tk, os, indent)};
                     allocated_registers.push_back(reg_idx);
-                    base_elem.array_index_expr->compile(tc, os, indent,
+                    curr_elem.array_index_expr->compile(tc, os, indent,
                                                         reg_idx);
 
                     if (curr_type_size == 1) {

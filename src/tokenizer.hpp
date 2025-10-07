@@ -12,6 +12,7 @@ class tokenizer final {
     const std::string_view delimiters_{" \t\r\n(){}[]=,.:+-*/%&|^<>!\0"};
     const std::string& src_; // the string to be tokenized
     size_t char_ix_{};       // current char index in 'src_'
+    const char* curr{};
 
   public:
     explicit tokenizer(const std::string& src) : src_{src} {}
@@ -113,6 +114,7 @@ class tokenizer final {
 
     auto next_char() -> char {
         assert(not is_eos());
+        curr = &src_[char_ix_];
         return src_[char_ix_++];
     }
 

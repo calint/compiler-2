@@ -1,0 +1,27 @@
+# all functions are inlined
+
+# arguments can be placed in specified register using `reg_...` syntax
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+# user types are defined using keyword `type`
+
+type point {x, y}
+type polygon {nindices, indices : i8[8]}
+type object {pos : point, pgons : polygon[8], color : i32}
+
+func main() {
+    var o : object[1]
+    o.pgons[3].nindices = 4
+    o.pgons[3].indices[3] = 7
+
+    assert(o.pgons[3].indices[3] == 7)
+    assert(o.pgons[3].nindices == 4)
+}
