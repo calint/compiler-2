@@ -1,13 +1,13 @@
-[x] source recreation does not work with comment at end of file and
-    newlines:
-        var objs : object[10]
-        objs[1].pos.y = 0xab
-        # hello
-
-      }
-[o] improve source location token in stmt_identifier
-    [x] accurate position on identifier that cannot be found
-[x] assume "x" is "x[0]"
+[o] tidy
+    [x] use std::format
+    [-] rep movsb can be done faster with q if objects are sized to 2^n
+        => duplicate issue
+    [ ] toc.allocate_named_register_or_throw requires statement for src_loc_tk
+[ ] allow declaration of instance without initializer, zero it
+    => var o : object[1] then accessed through o.pos does that
+[ ] review where compiler_exceptions happen and try to make good source
+    location reports
+[ ] review the reading of white spaces sprinkled about
 [ ] instrumentation to find out max heap and stack usage by the compiler
 [ ] optimize rep stosb to q, d, w if possible
     => maybe some heuristics about when to use "rep stosX" 
@@ -20,16 +20,6 @@
 [ ] support assigning strings to i8 arrays
 [ ] bounds check array access (optional compiler flag)
 [ ] expr_ops_list: const eval
-[o] tidy
-    [ ] review where compiler_exceptions happen and try to make good source
-        location reports
-    [x] use std::format
-    [ ] review the reading of white spaces sprinkled about
-    [-] rep movsb can be done faster with q if objects are sized to 2^n
-        => duplicate issue
-    [ ] toc.allocate_named_register_or_throw requires statement for src_loc_tk
-    [ ] allow declaration of instance without initializer, zero it
-        => var o : object[1] then accessed through o.pos does that
 [ ] numbers such as i8 : 255 cause problems when cmp because value is moved
     to unspecified register size with sign extension
 [ ] consider a built-in function "lea" that returns the address of an
@@ -110,6 +100,16 @@ stage 5
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] source recreation does not work with comment at end of file and
+    newlines:
+        var objs : object[10]
+        objs[1].pos.y = 0xab
+        # hello
+
+      }
+[x] improve source location token in stmt_identifier
+    [x] accurate position on identifier that cannot be found
+[x] assume "x" is "x[0]"
 [x] adapt to be able to use -Wunsafe-buffer-usage
     [-] implement a buffer safe parse integer function in toc
         => that portion is marked as "safe" to clang
