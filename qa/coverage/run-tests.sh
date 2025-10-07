@@ -3,11 +3,12 @@
 #   llvm-profdata: ?
 #        llvm-cov: 15.0.7
 #         genhtml: 1.16
-
-# change to directory of the script
+set -e
 cd $(dirname "$0")
 
 ../../make.sh prof-msan
+
+set +e
 
 RUN='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC.baz > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen; e=$?;if test $e -eq $EXP; then echo ok; else echo FAILED. expected $EXP got $e; exit 1; fi'
 DIFF='echo -n "$SRC: " && LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN $SRC.baz > gen.s && nasm -f elf64 gen.s && ld -s -o gen gen.o && ./gen > out; if cmp -s out ${SRC%.*}.out; then echo ok; else echo FAILED; exit 1; fi'
