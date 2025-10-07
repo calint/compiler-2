@@ -254,19 +254,17 @@ class toc final {
                    const stmt_def_field* fld_def, const bool is_str_field)
         -> void {
 
-        std::string const name_str{name};
-        if (fields_.has(name_str)) {
+        if (fields_.has(name)) {
             throw compiler_exception{
                 src_loc_tk,
-                std::format(
-                    "field '{}' already defined at {}", name,
-                    source_location_hr(
-                        fields_.get_const_ref(name_str).declared_at_tk))};
+                std::format("field '{}' already defined at {}", name,
+                            source_location_hr(
+                                fields_.get_const_ref(name).declared_at_tk))};
         }
 
-        fields_.put(name_str, {.def = fld_def,
-                               .declared_at_tk = src_loc_tk,
-                               .is_str = is_str_field});
+        fields_.put(name, {.def = fld_def,
+                           .declared_at_tk = src_loc_tk,
+                           .is_str = is_str_field});
     }
 
     auto add_func(const token& src_loc_tk, std::string_view name,

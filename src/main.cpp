@@ -552,8 +552,7 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
 auto read_file_to_string(const char* file_name) -> std::string {
     std::ifstream fs{file_name};
     if (not fs.is_open()) {
-        throw panic_exception(
-            std::format("cannot open file '{}'", std::string{file_name}));
+        throw panic_exception(std::format("cannot open file '{}'", file_name));
     }
     return std::string{std::istreambuf_iterator<char>{fs},
                        std::istreambuf_iterator<char>{}};
