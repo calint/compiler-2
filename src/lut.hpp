@@ -36,8 +36,8 @@ template <class T> class lut final {
             elems_, [&key](const elem& e) { return e.is_key(key); });
     }
 
-    auto put(std::string_view key, T data) -> void {
-        elems_.emplace_back(std::string{key}, std::move(data));
+    auto put(std::string key, T data) -> void {
+        elems_.emplace_back(std::move(key), std::move(data));
     }
 
     auto get_ref(std::string_view key) -> T& {

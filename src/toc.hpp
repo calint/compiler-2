@@ -77,10 +77,10 @@ class frame final {
             allocated_stack_ += type_ref.size() * (is_array ? array_size : 1);
         }
 
-        vars_.put(name, {.name = std::string{name},
-                         .type_ref = type_ref,
-                         .declared_at_tk = declared_at_tk,
-                         .stack_idx = stack_idx});
+        vars_.put(std::string{name}, {.name = std::string{name},
+                                      .type_ref = type_ref,
+                                      .declared_at_tk = declared_at_tk,
+                                      .stack_idx = stack_idx});
     }
 
     [[nodiscard]] auto allocated_stack_size() const -> size_t {
@@ -101,7 +101,7 @@ class frame final {
     }
 
     auto add_alias(std::string_view from, std::string to) -> void {
-        aliases_.put(from, std::move(to));
+        aliases_.put(std::string{from}, std::move(to));
     }
 
     [[nodiscard]] auto is_func() const -> bool {
@@ -262,9 +262,9 @@ class toc final {
                                 fields_.get_const_ref(name).declared_at_tk))};
         }
 
-        fields_.put(name, {.def = fld_def,
-                           .declared_at_tk = src_loc_tk,
-                           .is_str = is_str_field});
+        fields_.put(std::string{name}, {.def = fld_def,
+                                        .declared_at_tk = src_loc_tk,
+                                        .is_str = is_str_field});
     }
 
     auto add_func(const token& src_loc_tk, std::string_view name,
@@ -279,9 +279,9 @@ class toc final {
                             source_location_hr(fn.declared_at_tk))};
         }
 
-        funcs_.put(name, {.def = func_def,
-                          .declared_at_tk = src_loc_tk,
-                          .type_ref = return_type});
+        funcs_.put(std::string{name}, {.def = func_def,
+                                       .declared_at_tk = src_loc_tk,
+                                       .type_ref = return_type});
     }
 
     [[nodiscard]] auto is_func(const std::string& name) const -> bool {
@@ -331,7 +331,7 @@ class toc final {
                 std::format("type '{}' already defined", tpe.name())};
         }
 
-        types_.put(tpe.name(), tpe);
+        types_.put(std::string{tpe.name()}, tpe);
     }
 
     [[nodiscard]] auto get_type_or_throw(const token& src_loc_tk,
@@ -349,7 +349,6 @@ class toc final {
     [[nodiscard]] auto
     source_location_for_use_in_label(const token& src_loc_tk) const
         -> std::string {
-
         const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
@@ -359,7 +358,6 @@ class toc final {
     // human readable source location
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
-
         const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
@@ -385,7 +383,6 @@ class toc final {
                                                 size_t char_index_in_source,
                                                 const std::string& src)
         -> std::pair<size_t, size_t> {
-
         size_t at_col{0};
         while (src[char_index_in_source] != '\n') {
             at_col++;
@@ -419,7 +416,6 @@ class toc final {
     make_ident_info(const statement& st,
                     [[maybe_unused]] const bool must_be_initiated) const
         -> ident_info {
-
         return make_ident_info_or_throw(st.tok(), st.identifier(),
                                         must_be_initiated);
     }
@@ -428,7 +424,6 @@ class toc final {
     make_ident_info(const token& src_loc_tk, std::string_view ident,
                     [[maybe_unused]] const bool must_be_initiated) const
         -> ident_info {
-
         return make_ident_info_or_throw(src_loc_tk, ident, must_be_initiated);
     }
 
@@ -437,7 +432,6 @@ class toc final {
     [[nodiscard]] auto make_ident_info_or_throw(
         const token& src_loc_tk, std::string_view ident,
         [[maybe_unused]] const bool must_be_initiated) const -> ident_info {
-
         const ident_info id_info{make_ident_info_or_empty(src_loc_tk, ident)};
         if (not id_info.id_nasm.empty()) {
             return id_info;
@@ -457,7 +451,6 @@ class toc final {
                     const std::vector<func_return_info>& returns = {},
                     const std::string& call_path = "",
                     const std::string& return_jmp_label = "") -> void {
-
         frames_.emplace_back(name, frame::frame_type::FUNC, returns, call_path,
                              return_jmp_label);
         refresh_usage();
@@ -494,7 +487,6 @@ class toc final {
     auto add_var(const token& src_loc_tk, std::ostream& os, size_t indnt,
                  std::string_view name, const type& var_type,
                  const bool is_array, const size_t array_size) -> void {
-
         // check if variable is already declared in this scope
         if (frames_.back().has_var(name)) {
             const var_info& var{frames_.back().get_var_const_ref(name)};
@@ -537,7 +529,6 @@ class toc final {
 
     auto alloc_scratch_register(const token& src_loc_tk, std::ostream& os,
                                 const size_t indnt) -> std::string {
-
         if (scratch_registers_.empty()) {
             throw compiler_exception{src_loc_tk,
                                      "out of scratch registers. try to reduce "
@@ -593,7 +584,6 @@ class toc final {
     auto alloc_named_register(const token& src_loc_tk, std::ostream& os,
                               const size_t indnt, const std::string& reg)
         -> bool {
-
         indent(os, indnt, true);
         os << "allocate named register '" << reg << '\'';
 
@@ -615,7 +605,6 @@ class toc final {
 
     auto free_named_register(std::ostream& os, const size_t indnt,
                              const std::string& reg) -> void {
-
         indent(os, indnt, true);
         os << "free named register '" << reg << "'\n";
 
@@ -628,7 +617,6 @@ class toc final {
 
     auto free_scratch_register(std::ostream& os, const size_t indnt,
                                const std::string& reg) -> void {
-
         indent(os, indnt, true);
         os << "free scratch register '" << reg << "'\n";
 
@@ -641,7 +629,6 @@ class toc final {
 
     [[nodiscard]] auto get_loop_label_or_throw(const token& src_loc_tk) const
         -> std::string_view {
-
         for (const auto& frm : frames_ | std::views::reverse) {
             if (frm.is_loop()) {
                 return frm.name();
@@ -668,7 +655,6 @@ class toc final {
     [[nodiscard]] auto
     get_func_return_label_or_throw(const token& src_loc_tk) const
         -> const std::string& {
-
         for (const auto& frm : frames_ | std::views::reverse) {
             if (frm.is_func()) {
                 return frm.func_ret_label();
@@ -680,7 +666,6 @@ class toc final {
 
     [[nodiscard]] auto get_func_returns(const token& src_loc_tk) const
         -> const std::vector<func_return_info>& {
-
         for (const auto& frm : frames_ | std::views::reverse) {
             if (frm.is_func()) {
                 return frm.get_func_returns_infos();
@@ -692,7 +677,6 @@ class toc final {
 
     auto comment_source(const statement& st, std::ostream& os,
                         const size_t indnt) const -> void {
-
         const token& tk{st.tok()};
         const auto [line, col]{line_and_col_num_for_char_index(
             tk.at_line(), tk.start_index(), source_)};
@@ -713,7 +697,6 @@ class toc final {
     auto comment_source(std::ostream& os, const std::string& dst,
                         const std::string& op, const statement& st) const
         -> void {
-
         const token& tk{st.tok()};
         const auto [line, col]{line_and_col_num_for_char_index(
             tk.at_line(), tk.start_index(), source_)};
@@ -741,13 +724,11 @@ class toc final {
 
     [[nodiscard]] auto is_identifier_register(std::string_view id) const
         -> bool {
-
         return std::ranges::find(all_registers_, id) != all_registers_.end();
     }
 
     [[nodiscard]] auto is_identifier_direct_register_indirect_addressing(
         const std::string& id) const -> bool {
-
         if (auto expr{toc::extract_between_brackets(id)}; expr) {
             const std::string reg{
                 extract_base_register_from_indirect_addressing(*expr)};
@@ -763,7 +744,6 @@ class toc final {
     static auto
     extract_base_register_from_indirect_addressing(std::string_view addressing)
         -> std::string {
-
         auto pos{addressing.find_first_of(" +")};
         if (pos == std::string_view::npos) {
             return std::string{addressing};
@@ -776,7 +756,6 @@ class toc final {
     auto asm_cmd(const token& src_loc_tk, std::ostream& os, size_t indnt,
                  std::string_view op, std::string_view dst_nasm,
                  std::string_view src_nasm) -> void {
-
         if (op == "mov" and dst_nasm == src_nasm) {
             return;
         }
@@ -958,8 +937,10 @@ class toc final {
         {
             int64_t value{};
             const std::string_view sv{str};
-            // note: using 'std::string_view' for 'clang-tidy' to not trigger
-            //       warning 'cppcoreguidelines-pro-bounds-pointer-arithmetic'
+            // note: using 'std::string_view' for 'clang-tidy' to not
+            // trigger
+            //       warning
+            //       'cppcoreguidelines-pro-bounds-pointer-arithmetic'
             auto parse_result{
                 std::from_chars(sv.data(), sv.data() + sv.size(), value)};
             if (parse_result.ec == std::errc{}) {
@@ -974,7 +955,6 @@ class toc final {
     static auto get_size_from_operand_register(const token& src_loc_tk,
                                                std::string_view operand)
         -> size_t {
-
         if (operand == "rax" || operand == "rbx" || operand == "rcx" ||
             operand == "rdx" || operand == "rbp" || operand == "rsi" ||
             operand == "rdi" || operand == "rsp" || operand == "r8" ||
@@ -1018,7 +998,6 @@ class toc final {
     static auto get_register_operand_for_size(const token& src_loc_tk,
                                               std::string_view operand,
                                               size_t size) -> std::string {
-
         //? sort of ugly
         if (operand == "rax") {
             switch (size) {
@@ -1170,7 +1149,6 @@ class toc final {
     static auto asm_push([[maybe_unused]] const token& src_loc_tk,
                          std::ostream& os, const size_t indnt,
                          const std::string& operand) -> void {
-
         indent(os, indnt);
         os << "push " << operand << '\n';
     }
@@ -1178,7 +1156,6 @@ class toc final {
     static auto asm_pop([[maybe_unused]] const token& src_loc_tk,
                         std::ostream& os, const size_t indnt,
                         const std::string& operand) -> void {
-
         indent(os, indnt);
         os << "pop " << operand << '\n';
     }
@@ -1186,7 +1163,6 @@ class toc final {
     static auto asm_jmp([[maybe_unused]] const token& src_loc_tk,
                         std::ostream& os, const size_t indnt,
                         const std::string& label) -> void {
-
         indent(os, indnt);
         os << "jmp " << label << '\n';
     }
@@ -1194,7 +1170,6 @@ class toc final {
     static auto asm_label([[maybe_unused]] const token& src_loc_tk,
                           std::ostream& os, const size_t indnt,
                           const std::string& label) -> void {
-
         indent(os, indnt);
         os << label << ":\n";
     }
@@ -1202,7 +1177,6 @@ class toc final {
     static auto asm_neg([[maybe_unused]] const token& src_loc_tk,
                         std::ostream& os, const size_t indnt,
                         const std::string& operand) -> void {
-
         indent(os, indnt);
         os << "neg " << operand << '\n';
     }
@@ -1210,14 +1184,12 @@ class toc final {
     static auto asm_not([[maybe_unused]] const token& src_loc_tk,
                         std::ostream& os, const size_t indnt,
                         const std::string& operand) -> void {
-
         indent(os, indnt);
         os << "not " << operand << '\n';
     }
 
     static auto asm_rep_stosb([[maybe_unused]] const token& src_loc_tk,
                               std::ostream& os, const size_t indnt) -> void {
-
         indent(os, indnt);
         os << "rep stosb\n";
     }
@@ -1225,14 +1197,12 @@ class toc final {
     static auto asm_rep_movs([[maybe_unused]] const token& src_loc_tk,
                              std::ostream& os, const size_t indnt, char size)
         -> void {
-
         indent(os, indnt);
         os << "rep movs" << size << '\n';
     }
 
     static auto indent(std::ostream& os, const size_t indnt,
                        const bool comment = false) -> void {
-
         if (comment) {
             os << ';';
         }
@@ -1248,7 +1218,6 @@ class toc final {
     // returns empty id and frame[0] if 'ident' not found
     auto get_id_and_frame_for_identifier(std::string_view ident)
         -> std::pair<std::string, frame&> {
-
         identifier id{ident};
         std::string id_base{id.id_base()};
 
@@ -1324,7 +1293,6 @@ class toc final {
     [[nodiscard]] auto make_ident_info_or_empty(const token& src_loc,
                                                 std::string_view ident) const
         -> ident_info {
-
         identifier id{std::string{ident}};
         // get the root of an identifier: example p.x -> p
         std::string id_base{id.id_base()};
@@ -1483,7 +1451,6 @@ class toc final {
 
     static auto extract_between_brackets(std::string_view str)
         -> std::optional<std::string_view> {
-
         auto start{str.find('[')};
         if (start == std::string_view::npos) {
             return std::nullopt;
