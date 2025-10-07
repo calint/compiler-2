@@ -39,8 +39,9 @@ class stmt_block final : public statement {
                     tz, "unexpected '}' in single statement block");
             }
 
-            // no more tokens in the block?
             token tk{tz.next_token()};
+
+            // no more tokens in the block?
             if (tk.is_empty()) {
                 break;
             }
@@ -69,14 +70,16 @@ class stmt_block final : public statement {
                 stms_.emplace_back(
                     create_statement_in_stmt_block(tc, tz, std::move(tk)));
             } else {
+                // is it at end of block and there is whitespace before '}'?
                 if (tk.is_name("")) {
+                    // yes, save it as this block whitespace
                     ws1_ = std::move(tk);
                     continue;
                 }
                 // resolve identifier
+                // note: 'unary_ops' not allowed before destination identifier
                 stmt_identifier si{tc, {}, std::move(tk), tz};
 
-                tk = si.first_token();
                 if (tz.is_next_char('=')) {
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(
                         tc, tz, std::move(si)));
