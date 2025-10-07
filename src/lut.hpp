@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <format>
-#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -37,11 +36,11 @@ template <class T> class lut final {
             elems_, [&key](const elem& e) { return e.is_key(key); });
     }
 
-    auto put(std::string key, T data) -> void {
-        elems_.emplace_back(std::move(key), std::move(data));
+    auto put(std::string_view key, T data) -> void {
+        elems_.emplace_back(std::string{key}, std::move(data));
     }
 
-    auto get_ref(const std::string& key) -> T& {
+    auto get_ref(std::string_view key) -> T& {
         for (elem& e : elems_) {
             if (e.is_key(key)) {
                 return e.data;

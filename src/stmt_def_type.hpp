@@ -31,7 +31,7 @@ class stmt_def_type final : public statement {
             }
         }
         // initiate the type definitions
-        type_.set_name(std::string{name_tk_.name()});
+        type_.set_name(name_tk_.name());
 
         // add the fields
         for (const stmt_def_type_field& fld : fields_) {

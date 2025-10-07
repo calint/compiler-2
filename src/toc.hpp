@@ -77,10 +77,10 @@ class frame final {
             allocated_stack_ += type_ref.size() * (is_array ? array_size : 1);
         }
 
-        vars_.put(std::string{name}, {.name = std::string{name},
-                                      .type_ref = type_ref,
-                                      .declared_at_tk = declared_at_tk,
-                                      .stack_idx = stack_idx});
+        vars_.put(name, {.name = std::string{name},
+                         .type_ref = type_ref,
+                         .declared_at_tk = declared_at_tk,
+                         .stack_idx = stack_idx});
     }
 
     [[nodiscard]] auto allocated_stack_size() const -> size_t {

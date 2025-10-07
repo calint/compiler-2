@@ -24,14 +24,14 @@ class type final {
     static constexpr std::string size_word{"word"};
     static constexpr std::string size_byte{"byte"};
 
-    std::string name_;
+    std::string_view name_;
     size_t size_{};
     std::vector<type_field> fields_;
     bool is_built_in_{};
 
   public:
-    type(std::string name, const size_t size, const bool is_built_in)
-        : name_{std::move(name)}, size_{size}, is_built_in_{is_built_in} {}
+    type(std::string_view name, size_t size, bool is_built_in)
+        : name_{name}, size_{size}, is_built_in_{is_built_in} {}
 
     type() = default;
     type(const type&) = default;
@@ -98,9 +98,9 @@ class type final {
 
     [[nodiscard]] auto size() const -> size_t { return size_; }
 
-    [[nodiscard]] auto name() const -> const std::string& { return name_; }
+    [[nodiscard]] auto name() const -> std::string_view { return name_; }
 
-    auto set_name(const std::string& nm) -> void { name_ = nm; }
+    auto set_name(std::string_view nm) -> void { name_ = nm; }
 
     [[nodiscard]] auto is_built_in() const -> bool { return is_built_in_; }
 
