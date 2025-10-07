@@ -4,21 +4,21 @@
 
 #include <cassert>
 #include <cctype>
-#include <string>
 #include <string_view>
 
 #include "token.hpp"
 
 class tokenizer final {
     const std::string_view delimiters_{" \t\r\n(){}[]=,.:+-*/%&|^<>!\0"};
-    const std::string& src_;  // the string to be tokenized
-    std::string_view src_sv_; // source as a string view
-    size_t char_ix_{};        // current char index in 'src_'
-    const char* pos{};        // position in string used for easier debugging
+    const std::string& src_str_; // used for easier debugging with 'pos'
+    std::string_view src_;       // source as a string view
+    size_t char_ix_{};           // current char index in 'src_'
+    const char* pos{};           // position in string used for easier debugging
     size_t at_line_{1};
 
   public:
-    explicit tokenizer(const std::string& src) : src_{src}, src_sv_{src_} {}
+    explicit tokenizer(const std::string& src_str)
+        : src_str_{src_str}, src_{src_str_} {}
 
     tokenizer() = delete;
     tokenizer(const tokenizer&) = default;
@@ -29,7 +29,7 @@ class tokenizer final {
     ~tokenizer() = default;
 
     [[nodiscard]] auto is_eos() const -> bool {
-        return char_ix_ >= src_sv_.size();
+        return char_ix_ >= src_.size();
     }
 
     auto next_token() -> token {
@@ -42,14 +42,13 @@ class tokenizer final {
                 if (is_next_char('"')) {
                     const size_t end_ix{char_ix_};
                     const std::string_view ws_after{next_whitespace()};
-                    return token{
-                        ws_before,
-                        bgn_ix,
-                        src_sv_.substr(bgn_ix + 1, end_ix - bgn_ix - 2),
-                        end_ix,
-                        ws_after,
-                        at_line,
-                        true};
+                    return token{ws_before,
+                                 bgn_ix,
+                                 src_.substr(bgn_ix + 1, end_ix - bgn_ix - 2),
+                                 end_ix,
+                                 ws_after,
+                                 at_line,
+                                 true};
                     // note: +1 and -2 does not include the leading and trailing
                     // quotation
                 }
@@ -72,7 +71,7 @@ class tokenizer final {
     auto rewind_to_position(const token& pos_tk) -> void {
         const size_t new_pos{pos_tk.start_index()};
 
-        assert(new_pos <= src_sv_.size());
+        assert(new_pos <= src_.size());
 
         const size_t n{char_ix_ - new_pos};
         move_back(n);
@@ -84,7 +83,7 @@ class tokenizer final {
     }
 
     auto put_back_char(const char ch) -> void {
-        assert(char_ix_ > 0 and src_sv_[char_ix_ - 1] == ch);
+        assert(char_ix_ > 0 and src_[char_ix_ - 1] == ch);
         move_back(1);
     }
 
@@ -94,28 +93,28 @@ class tokenizer final {
     }
 
     auto is_next_char(const char ch) -> bool {
-        if (is_eos() or src_sv_[char_ix_] != ch) {
+        if (is_eos() or src_[char_ix_] != ch) {
             return false;
         }
         return next_char();
     }
 
     [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
-        return not is_eos() and src_sv_[char_ix_] == ch;
+        return not is_eos() and src_[char_ix_] == ch;
     }
 
     [[nodiscard]] auto is_peek_char2(const char ch) const -> bool {
-        return char_ix_ + 1 < src_sv_.size() and src_sv_[char_ix_ + 1] == ch;
+        return char_ix_ + 1 < src_.size() and src_[char_ix_ + 1] == ch;
     }
 
     [[nodiscard]] auto peek_char() const -> char {
-        return is_eos() ? '\0' : src_sv_[char_ix_];
+        return is_eos() ? '\0' : src_[char_ix_];
     }
 
     auto read_rest_of_line() -> std::string_view {
         const size_t bgn{char_ix_};
         while (not is_eos()) {
-            if (src_sv_[char_ix_] == '\n') {
+            if (src_[char_ix_] == '\n') {
                 break;
             }
             char_ix_++;
@@ -125,18 +124,18 @@ class tokenizer final {
             char_ix_++; // skip the '\n'
             at_line_++;
         }
-        pos = &src_[char_ix_];
-        return src_sv_.substr(bgn, len);
+        pos = &src_str_[char_ix_];
+        return src_.substr(bgn, len);
     }
 
     auto next_char() -> char {
         assert(not is_eos());
         // note: just for easier debugging
-        const char ch{src_sv_[char_ix_++]};
+        const char ch{src_[char_ix_++]};
         if (ch == '\n') {
             at_line_++;
         }
-        pos = &src_sv_[char_ix_];
+        pos = &src_str_[char_ix_];
         return ch;
     }
 
@@ -153,7 +152,7 @@ class tokenizer final {
         }
         const size_t bgn_ix{char_ix_};
         while (not is_eos()) {
-            const char ch{src_sv_[char_ix_]};
+            const char ch{src_[char_ix_]};
             if (not std::isspace(ch)) {
                 break;
             }
@@ -162,9 +161,9 @@ class tokenizer final {
             }
             char_ix_++;
         }
-        pos = &src_[char_ix_];
+        pos = &src_str_[char_ix_];
         const size_t len{char_ix_ - bgn_ix};
-        return src_sv_.substr(bgn_ix, len);
+        return src_.substr(bgn_ix, len);
     }
 
     auto next_token_str() -> std::string_view {
@@ -173,14 +172,14 @@ class tokenizer final {
         }
         const size_t bgn_ix{char_ix_};
         while (not is_eos()) {
-            const char ch{src_sv_[char_ix_]};
+            const char ch{src_[char_ix_]};
             if (delimiters_.contains(ch)) {
                 break;
             }
             char_ix_++;
         }
         const size_t len{char_ix_ - bgn_ix};
-        return src_sv_.substr(bgn_ix, len);
+        return src_.substr(bgn_ix, len);
     }
 
     auto move_back(size_t nchars) -> void {
@@ -188,11 +187,11 @@ class tokenizer final {
 
         while (nchars--) {
             char_ix_--;
-            if (src_sv_[char_ix_] == '\n') {
+            if (src_[char_ix_] == '\n') {
                 at_line_--;
             }
         }
 
-        pos = &src_sv_[char_ix_];
+        pos = &src_str_[char_ix_];
     }
 };
