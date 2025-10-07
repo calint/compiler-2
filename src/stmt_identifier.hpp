@@ -185,7 +185,7 @@ class stmt_identifier : public statement {
         std::string reg_offset{"rsp"};
 
         // the accumulated offset to compensate for type members displacement
-        // from base address on stack of instance
+        // from base address of instance on stack
         int32_t accum_offset{};
         const size_t elems_size{elems.size()};
 
