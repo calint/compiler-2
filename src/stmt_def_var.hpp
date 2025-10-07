@@ -111,7 +111,7 @@ class stmt_def_var final : public statement {
     }
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] const std::string& dst = "") const
+                 [[maybe_unused]] std::string_view dst = "") const
         -> void override {
 
         tc.add_var(name_tk_, os, indent, std::string{name_tk_.name()},
@@ -119,7 +119,7 @@ class stmt_def_var final : public statement {
 
         tc.comment_source(*this, os, indent);
         if (not is_array_) {
-            assign_var_.compile(tc, os, indent, std::string{name_tk_.name()});
+            assign_var_.compile(tc, os, indent, name_tk_.name());
             return;
         }
 

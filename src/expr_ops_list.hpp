@@ -201,7 +201,7 @@ class expr_ops_list final : public expression {
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 const std::string& dst) const -> void override {
+                 std::string_view dst) const -> void override {
 
         const ident_info dst_info{tc.make_ident_info(tok(), dst, false)};
 

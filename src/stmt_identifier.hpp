@@ -133,7 +133,7 @@ class stmt_identifier : public statement {
     }
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 const std::string& dst = "") const -> void override {
+                 std::string_view dst = "") const -> void override {
 
         tc.comment_source(*this, os, indent);
 

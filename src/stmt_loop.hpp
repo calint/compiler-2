@@ -35,7 +35,7 @@ class stmt_loop final : public statement {
     ~stmt_loop() override = default;
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] const std::string& dst = "") const
+                 [[maybe_unused]] std::string_view dst = "") const
         -> void override {
 
         toc::indent(os, indent, true);

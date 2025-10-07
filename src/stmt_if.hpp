@@ -95,7 +95,7 @@ class stmt_if final : public statement {
 
   public:
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] const std::string& dst = "") const
+                 [[maybe_unused]] std::string_view dst = "") const
         -> void override {
 
         // make unique labels considering in-lined functions

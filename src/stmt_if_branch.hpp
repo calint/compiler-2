@@ -43,7 +43,7 @@ class stmt_if_branch final : public statement {
     [[noreturn]] void
     compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
             [[maybe_unused]] size_t indent,
-            [[maybe_unused]] const std::string& dst) const override {
+            [[maybe_unused]] std::string_view dst) const override {
 
         throw panic_exception("unexpected code path");
     }

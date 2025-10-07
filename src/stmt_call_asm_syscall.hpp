@@ -21,7 +21,7 @@ class stmt_call_asm_syscall final : public stmt_call {
     ~stmt_call_asm_syscall() override = default;
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] const std::string& dst = "") const
+                 [[maybe_unused]] std::string_view dst = "") const
         -> void override {
 
         tc.comment_source(*this, os, indent);

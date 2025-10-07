@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <format>
 #include <ranges>
+#include <string_view>
 
 #include "expr_any.hpp"
 #include "stmt_def_func.hpp"
@@ -86,7 +87,7 @@ class stmt_call : public expression {
     }
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 const std::string& dst = "") const -> void override {
+                 std::string_view dst = "") const -> void override {
 
         tc.comment_source(*this, os, indent);
 

@@ -103,10 +103,10 @@ class expr_bool_op final : public statement {
         rhs_.source_to(os);
     }
 
-    [[noreturn]] auto
-    compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
-            [[maybe_unused]] size_t indent,
-            [[maybe_unused]] const std::string& dst = "") const
+    [[noreturn]] auto compile([[maybe_unused]] toc& tc,
+                              [[maybe_unused]] std::ostream& os,
+                              [[maybe_unused]] size_t indent,
+                              [[maybe_unused]] std::string_view dst = "") const
         -> void override {
         throw panic_exception("unexpected code path bool_op:1");
     }
