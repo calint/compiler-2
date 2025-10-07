@@ -123,8 +123,8 @@ inline auto create_statement(toc& tc, tokenizer& tz)
     const unary_ops uops{tz};
     token tk{tz.next_token()};
     if (tk.is_name("")) {
-        throw compiler_exception(tk,
-                                 "expected an identifier or a function call");
+        throw compiler_exception(
+            tk, "expected constant, identifier or function call");
     }
     if (tk.name().starts_with("#")) {
         if (!uops.is_empty()) {

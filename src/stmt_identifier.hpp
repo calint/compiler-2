@@ -185,25 +185,27 @@ class stmt_identifier : public statement {
         std::string reg_offset{"rsp"};
 
         // the accumulated offset to compensate for type members displacement
-        // from base address of instance
+        // from base address on stack of instance
         int32_t accum_offset{};
-
         const size_t elems_size{elems.size()};
 
         for (size_t i{}; i < elems_size; ++i) {
+            // get current element information
             const identifier_elem& curr_elem{elems[i]};
             const ident_info curr_info{
                 tc.make_ident_info(src_loc_tk, path, false)};
             const size_t type_size{curr_info.type_ref.size()};
             const bool is_last{i == elems_size - 1};
-            // is encodable in instruction of type:
-            // [base + index * size + offset]
-            const bool is_encodable{type_size == 1 or type_size == 2 or
-                                    type_size == 4 or type_size == 8};
 
             if (curr_elem.has_array_index_expr) {
+                // is encodable in instruction of type:
+                // [base + index * size + offset]
+                const bool is_encodable{type_size == 1 or type_size == 2 or
+                                        type_size == 4 or type_size == 8};
+
                 // special case: last element with encodable size
                 if (is_last and is_encodable) {
+                    // calculate offset in array and store in 'reg_idx'
                     const std::string& reg_idx{
                         tc.alloc_scratch_register(src_loc_tk, os, indent)};
                     allocated_registers.push_back(reg_idx);
@@ -211,36 +213,28 @@ class stmt_identifier : public statement {
                     curr_elem.array_index_expr->compile(tc, os, indent,
                                                         reg_idx);
 
-                    // is the offset relative to 'rsp'?
-                    // meaning no index operations have been done
-                    if (reg_offset == "rsp") {
-                        // make total offset relative the stack offset relative
-                        // 'rsp'
-                        const int32_t total_offset{base_info.stack_ix +
-                                                   accum_offset};
+                    // is it offset from base register 'rsp' are has it been
+                    // changed to dedicated register for offset calculation?
+                    const int32_t offset{
+                        (reg_offset == "rsp")
+                            ? -(base_info.stack_ix + accum_offset)
+                            : accum_offset};
+                    const char op{(reg_offset == "rsp") ? '-' : '+'};
 
-                        if (type_size == 1) {
-                            return std::format("{} + {} - {}", reg_offset,
-                                               reg_idx, -total_offset);
-                        }
-
-                        return std::format("{} + {} * {} - {}", reg_offset,
-                                           reg_idx, type_size, -total_offset);
-                    }
-                    // base register is not 'rsp' which means that register
-                    // contains the offset of 'rsp'
                     if (type_size == 1) {
-                        return std::format("{} + {} + {}", reg_offset, reg_idx,
-                                           accum_offset);
+                        return std::format("{} + {} {} {}", reg_offset, reg_idx,
+                                           op, offset);
                     }
-                    return std::format("{} + {} * {} + {}", reg_offset, reg_idx,
-                                       type_size, accum_offset);
+                    return std::format("{} + {} * {} {} {}", reg_offset,
+                                       reg_idx, type_size, op, offset);
                 }
 
-                // convert 'rsp' to actual register if needed
+                // convert 'rsp' to dedicated register to calculate offset of
+                // target
                 if (reg_offset == "rsp") {
                     reg_offset =
                         tc.alloc_scratch_register(src_loc_tk, os, indent);
+
                     allocated_registers.push_back(reg_offset);
 
                     tc.asm_cmd(src_loc_tk, os, indent, "lea", reg_offset,
@@ -271,6 +265,7 @@ class stmt_identifier : public statement {
                 tc.free_scratch_register(os, indent, reg_idx);
 
                 if (is_last) {
+                    // last element was an array index
                     // note: constructing new string to avoid clang warning "Not
                     //       eliding copy on return clang (-Wnrvo)""
                     return std::string{reg_offset};
@@ -286,8 +281,19 @@ class stmt_identifier : public statement {
                         next_elem.name_tk.name()));
 
                 // continue in the path of identifiers
-                path += '.' + std::string{next_elem.name_tk.name()};
+                path.push_back('.');
+                path += next_elem.name_tk.name();
             }
+        }
+
+        // last element was not an array index
+
+        // return an expression, possibly with format [base + index * scale +
+        // offset] that is the target address
+
+        if (reg_offset == "rsp") {
+            // still in base case
+            return std::format("rsp - {}", -base_info.stack_ix - accum_offset);
         }
 
         // apply any accumulated offset
@@ -296,10 +302,7 @@ class stmt_identifier : public statement {
                        std::format("{}", accum_offset));
         }
 
-        if (reg_offset == "rsp") {
-            return std::format("rsp - {}", -base_info.stack_ix);
-        }
-
+        // dedicated register
         // note: constructing new string to avoid clang warning "Not eliding
         //       copy on return clang (-Wnrvo)""
         return std::string{reg_offset};
