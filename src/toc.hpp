@@ -68,7 +68,7 @@ class frame final {
           func_ret_label_{std::move(func_ret_label)}, func_rets_{func_rets},
           type_{frm_type} {}
 
-    auto add_var(token declared_at_tk, std::string_view name,
+    auto add_var(token declared_at_tk, const std::string& name,
                  const type& type_ref, const bool is_array,
                  const size_t array_size, const int stack_idx) -> void {
 
@@ -77,10 +77,10 @@ class frame final {
             allocated_stack_ += type_ref.size() * (is_array ? array_size : 1);
         }
 
-        vars_.put(std::string{name}, {.name = std::string{name},
-                                      .type_ref = &type_ref,
-                                      .declared_at_tk = declared_at_tk,
-                                      .stack_idx = stack_idx});
+        vars_.put(name, {.name = name,
+                         .type_ref = &type_ref,
+                         .declared_at_tk = declared_at_tk,
+                         .stack_idx = stack_idx});
     }
 
     [[nodiscard]] auto allocated_stack_size() const -> size_t {
@@ -101,8 +101,8 @@ class frame final {
         return vars_.get_const_ref(name);
     }
 
-    auto add_alias(std::string_view from, std::string to) -> void {
-        aliases_.put(std::string{from}, std::move(to));
+    auto add_alias(std::string from, std::string to) -> void {
+        aliases_.put(std::move(from), std::move(to));
     }
 
     [[nodiscard]] auto is_func() const -> bool {
@@ -251,7 +251,7 @@ class toc final {
 
     ~toc() = default;
 
-    auto add_field(const token& src_loc_tk, std::string_view name,
+    auto add_field(const token& src_loc_tk, std::string name,
                    const stmt_def_field* fld_def, const bool is_str_field)
         -> void {
 
@@ -263,12 +263,12 @@ class toc final {
                                 fields_.get_const_ref(name).declared_at_tk))};
         }
 
-        fields_.put(std::string{name}, {.def = fld_def,
-                                        .declared_at_tk = src_loc_tk,
-                                        .is_str = is_str_field});
+        fields_.put(name, {.def = fld_def,
+                           .declared_at_tk = src_loc_tk,
+                           .is_str = is_str_field});
     }
 
-    auto add_func(const token& src_loc_tk, std::string_view name,
+    auto add_func(const token& src_loc_tk, std::string name,
                   const type& return_type, const stmt_def_func* func_def)
         -> void {
 
@@ -280,9 +280,9 @@ class toc final {
                             source_location_hr(fn.declared_at_tk))};
         }
 
-        funcs_.put(std::string{name}, {.def = func_def,
-                                       .declared_at_tk = src_loc_tk,
-                                       .type_ref = &return_type});
+        funcs_.put(name, {.def = func_def,
+                          .declared_at_tk = src_loc_tk,
+                          .type_ref = &return_type});
     }
 
     [[nodiscard]] auto is_func(const std::string& name) const -> bool {
@@ -452,8 +452,8 @@ class toc final {
 
   public:
     // note: 'to' is alias or variable in parent frame
-    auto add_alias(std::string_view from, std::string to) -> void {
-        frames_.back().add_alias(from, std::move(to));
+    auto add_alias(std::string from, std::string to) -> void {
+        frames_.back().add_alias(std::move(from), std::move(to));
     }
 
     auto enter_func(std::string_view name,
@@ -495,8 +495,8 @@ class toc final {
     }
 
     auto add_var(const token& src_loc_tk, std::ostream& os, size_t indnt,
-                 std::string_view name, const type& var_type,
-                 const bool is_array, const size_t array_size) -> void {
+                 std::string name, const type& var_type, const bool is_array,
+                 const size_t array_size) -> void {
 
         // check if variable is already declared in this scope
         if (frames_.back().has_var(name)) {
@@ -1283,7 +1283,7 @@ class toc final {
                 if (std::optional<std::string_view> reg{
                         toc::extract_between_brackets(id_base)};
                     reg) {
-                    if (is_identifier_register(std::string{*reg})) {
+                    if (is_identifier_register(*reg)) {
                         // a memory reference, e.g. qword[r15]
                         return {id_base, frm};
                     }
@@ -1318,6 +1318,7 @@ class toc final {
     [[nodiscard]] auto make_ident_info_or_empty(const token& src_loc,
                                                 std::string_view ident) const
         -> ident_info {
+
         identifier id{std::string{ident}};
         // get the root of an identifier: example p.x -> p
         std::string id_base{id.id_base()};

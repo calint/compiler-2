@@ -73,8 +73,8 @@ class stmt_def_var final : public statement {
 
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
-        tc.add_var(name_tk_, null_strm, 0, name_tk_.text(), tp, is_array_,
-                   array_size_);
+        tc.add_var(name_tk_, null_strm, 0, std::string{name_tk_.text()}, tp,
+                   is_array_, array_size_);
 
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};

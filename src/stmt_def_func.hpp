@@ -67,7 +67,7 @@ class stmt_def_func final : public statement {
             set_type(tc.get_type_void());
         }
 
-        tc.add_func(name_tk_, name_tk_.text(), get_type(), this);
+        tc.add_func(name_tk_, std::string{name_tk_.text()}, get_type(), this);
         // dry-run compilation to catch errors before called
         tc.enter_func(name(), returns_);
         std::vector<std::string> allocated_named_registers;
@@ -171,8 +171,8 @@ class stmt_def_func final : public statement {
         if (not returns().empty()) {
             // yes, declare variable for the return
             const token& id_tkn{returns().at(0).ident_tk};
-            tc.add_var(id_tkn, os, indent + 1, id_tkn.text(), get_type(), false,
-                       0);
+            tc.add_var(id_tkn, os, indent + 1, std::string{id_tkn.text()},
+                       get_type(), false, 0);
         }
 
         // functions get arguments as aliases
@@ -184,7 +184,8 @@ class stmt_def_func final : public statement {
             // is argument passed as named register?
             if (prm_reg.empty()) {
                 // no, add it as variable
-                tc.add_var(tok(), os, indent + 1, prm_name, prm_type, false, 0);
+                tc.add_var(tok(), os, indent + 1, std::string{prm_name},
+                           prm_type, false, 0);
                 continue;
             }
 
@@ -193,7 +194,7 @@ class stmt_def_func final : public statement {
             os << prm_name << ": " << prm_reg << '\n';
 
             tc.alloc_named_register_or_throw(prm, os, indent + 1, prm_reg);
-            tc.add_alias(prm_name, prm_reg);
+            tc.add_alias(std::string{prm_name}, prm_reg);
             allocated_named_registers.emplace_back(prm_reg);
         }
     }
