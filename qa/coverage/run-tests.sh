@@ -101,6 +101,7 @@ SRC=t82 && EXP=0 && eval $RUN
 SRC=t83 && EXP=0 && eval $RUN
 SRC=t84 && EXP=0 && eval $RUN
 SRC=t85 && EXP=0 && eval $RUN
+SRC=t86 && EXP=0 && eval $RUN
 
 rm gen gen.o gen.s diff.baz out
 

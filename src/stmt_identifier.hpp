@@ -266,6 +266,13 @@ class stmt_identifier : public statement {
 
                 if (is_last) {
                     // last element was an array index
+
+                    // apply any accumulated offset
+                    if (accum_offset != 0) {
+                        tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
+                                   std::format("{}", accum_offset));
+                    }
+
                     // note: constructing new string to avoid clang warning "Not
                     //       eliding copy on return clang (-Wnrvo)""
                     return std::string{reg_offset};
