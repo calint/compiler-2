@@ -203,7 +203,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         const type_field& fld{flds.at(i)};
         // create expression that assigns to field
         // might recurse creating 'expr_type_value'
-        exprs_.emplace_back(create_expr_any(tc, tz, fld.tp, true));
+        exprs_.emplace_back(create_expr_any(tc, tz, *fld.tp, true));
 
         if (i < nflds - 1) {
             if (not tz.is_next_char(',')) {
@@ -289,7 +289,7 @@ inline auto expr_type_value::compile_recursive(
         }
 
         for (const type_field& fld : dst_type.fields()) {
-            if (fld.tp.is_built_in()) {
+            if (fld.tp->is_built_in()) {
                 const std::string& src_info{
                     tc.make_ident_info(
                           etv.tok(), std::format("{}.{}", src, fld.name), false)
@@ -305,7 +305,7 @@ inline auto expr_type_value::compile_recursive(
             // not a built-in, recurse
             compile_recursive(etv, tc, os, indent + 1,
                               std::format("{}.{}", src, fld.name),
-                              std::format("{}.{}", dst, fld.name), fld.tp);
+                              std::format("{}.{}", dst, fld.name), *fld.tp);
         }
         return;
     }
@@ -317,7 +317,7 @@ inline auto expr_type_value::compile_recursive(
     const size_t n{flds.size()};
     for (size_t i{}; i < n; i++) {
         const type_field& fld{flds.at(i)};
-        if (fld.tp.is_built_in()) {
+        if (fld.tp->is_built_in()) {
             etv.exprs_.at(i)->compile(tc, os, indent,
                                       std::format("{}.{}", dst, fld.name));
             continue;
@@ -325,7 +325,7 @@ inline auto expr_type_value::compile_recursive(
         // not a built-in type, recurse
         compile_recursive(etv.exprs_.at(i)->as_assign_type_value(), tc, os,
                           indent + 1, etv.exprs_.at(i)->identifier(),
-                          std::format("{}.{}", dst, fld.name), fld.tp);
+                          std::format("{}.{}", dst, fld.name), *fld.tp);
     }
 }
 

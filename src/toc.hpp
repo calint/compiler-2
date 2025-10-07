@@ -22,14 +22,14 @@ class stmt_def_type;
 struct func_return_info final {
     token type_tk;  // type token
     token ident_tk; // identifier token
-    const type& type_ref;
+    const type* type_ref{};
 };
 
 struct var_info final {
-    const std::string_view name;
-    const type& type_ref;
-    token declared_at_tk;      // token for position in source
-    const int32_t stack_idx{}; // location relative to rsp
+    std::string_view name;
+    const type* type_ref{};
+    token declared_at_tk; // token for position in source
+    int32_t stack_idx{};  // location relative to rsp
 };
 
 class frame final {
@@ -78,7 +78,7 @@ class frame final {
         }
 
         vars_.put(std::string{name}, {.name = std::string{name},
-                                      .type_ref = type_ref,
+                                      .type_ref = &type_ref,
                                       .declared_at_tk = declared_at_tk,
                                       .stack_idx = stack_idx});
     }
@@ -154,11 +154,11 @@ struct field_info final {
 struct func_info final {
     const stmt_def_func* def{};
     token declared_at_tk; // token for position in source
-    const type& type_ref;
+    const type* type_ref;
 };
 
 struct type_info final {
-    const stmt_def_type& def;
+    const stmt_def_type* def{};
     token declared_at_tk;
     const type& type_ref;
 };
@@ -281,7 +281,7 @@ class toc final {
 
         funcs_.put(std::string{name}, {.def = func_def,
                                        .declared_at_tk = src_loc_tk,
-                                       .type_ref = return_type});
+                                       .type_ref = &return_type});
     }
 
     [[nodiscard]] auto is_func(const std::string& name) const -> bool {
@@ -320,7 +320,7 @@ class toc final {
                 src_loc_tk, std::format("function '{}' not found", name)};
         }
 
-        return funcs_.get_const_ref(name).type_ref;
+        return *funcs_.get_const_ref(name).type_ref;
     }
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
@@ -1335,7 +1335,7 @@ class toc final {
         if (frm.has_var(id_base)) {
             const var_info& var{frm.get_var_const_ref(id_base)};
             auto [tp, acc]{
-                var.type_ref.accessor(src_loc, id.path(), var.stack_idx)};
+                var.type_ref->accessor(src_loc, id.path(), var.stack_idx)};
             return {.id = std::string{ident},
                     .id_nasm = acc,
                     .const_value = 0,

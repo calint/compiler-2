@@ -11,7 +11,7 @@
 class type;
 struct type_field final {
     std::string_view name;
-    const type& tp;
+    const type* tp{};
     size_t size{};
     size_t array_size{};
     bool is_array{};
@@ -46,7 +46,7 @@ class type final {
         -> void {
         fields_.emplace_back(
             type_field{.name = name,
-                       .tp = tp,
+                       .tp = &tp,
                        .size = tp.size_ * (is_array ? array_size : 1),
                        .array_size = array_size,
                        .is_array = is_array,
@@ -78,14 +78,14 @@ class type final {
         for (size_t path_idx{1}; path_idx != path.size(); path_idx++) {
             const type_field& fld{tp->field(tk, path[path_idx])};
             offset += fld.offset;
-            tp = &fld.tp;
+            tp = fld.tp;
         }
         const int stack_idx{stack_idx_base + static_cast<int>(offset)};
 
         // find first built-in type to have a valid operand size for the address
         const type* tp_first_field{tp};
         while (not tp_first_field->is_built_in()) {
-            tp_first_field = &tp_first_field->fields_.at(0).tp;
+            tp_first_field = tp_first_field->fields_.at(0).tp;
         }
 
         const std::string& memsize{
