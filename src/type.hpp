@@ -19,10 +19,10 @@ struct type_field final {
 };
 
 class type final {
-    static constexpr std::string size_qword{"qword"};
-    static constexpr std::string size_dword{"dword"};
-    static constexpr std::string size_word{"word"};
-    static constexpr std::string size_byte{"byte"};
+    static constexpr std::string_view size_qword{"qword"};
+    static constexpr std::string_view size_dword{"dword"};
+    static constexpr std::string_view size_word{"word"};
+    static constexpr std::string_view size_byte{"byte"};
 
     std::string_view name_;
     size_t size_{};
@@ -109,7 +109,7 @@ class type final {
     }
 
     static auto get_size_specifier(const token& tk, const size_t size)
-        -> const std::string& {
+        -> std::string_view {
         switch (size) {
         case 8:
             return size_qword;

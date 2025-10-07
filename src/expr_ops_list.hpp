@@ -411,7 +411,8 @@ class expr_ops_list final : public expression {
         if (src_info.is_const()) {
             // move it to 'dst' with unary ops
             tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm,
-                       src.get_unary_ops().to_string() + src_info.id_nasm);
+                       std::format("{}{}", src.get_unary_ops().to_string(),
+                                   src_info.id_nasm));
             return;
         }
 
@@ -449,7 +450,8 @@ class expr_ops_list final : public expression {
         if (dst.is_register()) {
             if (src_info.is_const()) {
                 tc.asm_cmd(src.tok(), os, indent, "imul", dst.id_nasm,
-                           src.get_unary_ops().to_string() + src_info.id_nasm);
+                           std::format("{}{}", src.get_unary_ops().to_string(),
+                                       src_info.id_nasm));
                 return;
             }
 
@@ -475,7 +477,8 @@ class expr_ops_list final : public expression {
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             tc.asm_cmd(src.tok(), os, indent, "mov", reg, dst.id_nasm);
             tc.asm_cmd(src.tok(), os, indent, "imul", reg,
-                       src.get_unary_ops().to_string() + src_info.id_nasm);
+                       std::format("{}{}", src.get_unary_ops().to_string(),
+                                   src_info.id_nasm));
             tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, reg);
             tc.free_scratch_register(os, indent, reg);
             return;
@@ -522,7 +525,8 @@ class expr_ops_list final : public expression {
         const ident_info& src_info{tc.make_ident_info(src, true)};
         if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
-                       src.get_unary_ops().to_string() + src_info.id_nasm);
+                       std::format("{}{}", src.get_unary_ops().to_string(),
+                                   src_info.id_nasm));
             return;
         }
 
@@ -567,7 +571,8 @@ class expr_ops_list final : public expression {
         const ident_info& src_info{tc.make_ident_info(src, true)};
         if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
-                       src.get_unary_ops().to_string() + src_info.id_nasm);
+                       std::format("{}{}", src.get_unary_ops().to_string(),
+                                   src_info.id_nasm));
             return;
         }
 
@@ -617,7 +622,8 @@ class expr_ops_list final : public expression {
         const ident_info& src_info{tc.make_ident_info(src, true)};
         if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
-                       src.get_unary_ops().to_string() + src_info.id_nasm);
+                       std::format("{}{}", src.get_unary_ops().to_string(),
+                                   src_info.id_nasm));
             return;
         }
 
@@ -720,7 +726,8 @@ class expr_ops_list final : public expression {
             const std::string& scratch_reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             tc.asm_cmd(src.tok(), os, indent, "mov", scratch_reg,
-                       src.get_unary_ops().to_string() + src_info.id_nasm);
+                       std::format("{}{}", src.get_unary_ops().to_string(),
+                                   src_info.id_nasm));
             toc::indent(os, indent, false);
             os << "idiv " << scratch_reg << '\n';
             tc.free_scratch_register(os, indent, scratch_reg);

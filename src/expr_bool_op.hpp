@@ -454,7 +454,8 @@ class expr_bool_op final : public statement {
                 expr.compile(tc, os, indent + 1, reg);
                 return reg;
             }
-            return expr.get_unary_ops().to_string() + expr_info.id_nasm;
+            return std::format("{}{}", expr.get_unary_ops().to_string(),
+                               expr_info.id_nasm);
         }
 
         // 'expr' not a constant, it is an identifier

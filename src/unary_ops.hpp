@@ -60,7 +60,7 @@ class unary_ops final {
 
     [[nodiscard]] auto is_empty() const -> bool { return ops_.empty(); }
 
-    [[nodiscard]] auto to_string() const -> std::string {
+    [[nodiscard]] auto to_string() const -> std::string_view {
         return {ops_.begin(), ops_.end()};
     }
 

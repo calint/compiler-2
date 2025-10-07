@@ -6,7 +6,7 @@
 
 class stmt_comment final : public statement {
     unary_ops uops_;
-    std::string line_;
+    std::string_view line_;
     token ws1_;
 
   public:

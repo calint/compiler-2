@@ -42,7 +42,8 @@ class stmt_call_asm_mov final : public stmt_call {
         const ident_info& src_info{tc.make_ident_info(src_arg, true)};
         if (src_info.is_const()) {
             tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
-                       src_arg.get_unary_ops().to_string() + src_info.id_nasm);
+                       std::format("{}{}", src_arg.get_unary_ops().to_string(),
+                                   src_info.id_nasm));
             return;
         }
         // variable, register or field

@@ -246,7 +246,8 @@ class stmt_call : public expression {
                 // argument is a constant
                 // assign it to the register
                 tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
-                           arg.get_unary_ops().to_string() + arg_info.id_nasm);
+                           std::format("{}{}", arg.get_unary_ops().to_string(),
+                                       arg_info.id_nasm));
                 continue;
             }
             // argument is not a constant
