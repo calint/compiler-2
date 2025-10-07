@@ -743,13 +743,14 @@ class toc final {
   private:
     static auto
     extract_base_register_from_indirect_addressing(std::string_view addressing)
-        -> std::string {
+        -> std::string_view {
+
         auto pos{addressing.find_first_of(" +")};
         if (pos == std::string_view::npos) {
-            return std::string{addressing};
+            return addressing;
         }
 
-        return std::string{addressing.substr(0, pos)};
+        return addressing.substr(0, pos);
     }
 
   public:
