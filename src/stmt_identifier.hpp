@@ -232,7 +232,7 @@ class stmt_identifier : public statement {
         std::string path{base_elem.name_tk.name()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path, false)};
         std::string reg_offset{"rsp"};
-        size_t accum_offset{};
+        int32_t accum_offset{};
         const size_t elems_size{elems.size()};
 
         for (size_t i{}; i < elems_size; ++i) {
@@ -253,16 +253,27 @@ class stmt_identifier : public statement {
                     curr_elem.array_index_expr->compile(tc, os, indent,
                                                         reg_idx);
 
-                    if (curr_type_size == 1) {
+                    if (reg_offset == "rsp") {
+                        // include the stack index of the start of this variable
+                        // to the offset
+                        if (curr_type_size == 1) {
+                            return std::format(
+                                "{} + {} - {}", reg_offset, reg_idx,
+                                -(base_info.stack_ix + accum_offset));
+                        }
                         return std::format(
-                            "{} + {} - {}", reg_offset, reg_idx,
-                            -base_info.stack_ix +
-                                static_cast<int32_t>(accum_offset));
+                            "{} + {} * {} - {}", reg_offset, reg_idx,
+                            curr_type_size,
+                            -(base_info.stack_ix + accum_offset));
                     }
-                    return std::format("{} + {} * {} - {}", reg_offset, reg_idx,
-                                       curr_type_size,
-                                       -base_info.stack_ix +
-                                           static_cast<int32_t>(accum_offset));
+                    // it is relative to a register that has the stack offset of
+                    // the start of the variable embedded
+                    if (curr_type_size == 1) {
+                        return std::format("{} + {} + {}", reg_offset, reg_idx,
+                                           accum_offset);
+                    }
+                    return std::format("{} + {} * {} + {}", reg_offset, reg_idx,
+                                       curr_type_size, accum_offset);
                 }
 
                 // is it sill assuming that base register is 'rsp'?
@@ -304,8 +315,10 @@ class stmt_identifier : public statement {
 
             if (i + 1 < elems.size()) {
                 const identifier_elem& next_elem{elems[i + 1]};
-                accum_offset += toc::get_field_offset_in_type(
-                    src_loc_tk, curr_info.type_ref, next_elem.name_tk.name());
+                accum_offset +=
+                    static_cast<int32_t>(toc::get_field_offset_in_type(
+                        src_loc_tk, curr_info.type_ref,
+                        next_elem.name_tk.name()));
                 path += '.' + std::string{next_elem.name_tk.name()};
             }
         }

@@ -24,4 +24,8 @@ func main() {
 
     assert(o.pgons[3].indices[3] == 7)
     assert(o.pgons[3].nindices == 4)
+
+    o.pgons.indices = 1
+    # assert(o[0].pgons[0].indices[0] == 1)
+    assert(o[0].pgons[0].indices[0] == 1)
 }

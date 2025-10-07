@@ -1,3 +1,4 @@
+[x] assume "x" is "x[0]"
 [ ] instrumentation to find out max heap and stack usage by the compiler
 [ ] optimize rep stosb to q, d, w if possible
     => maybe some heuristics about when to use "rep stosX" 
