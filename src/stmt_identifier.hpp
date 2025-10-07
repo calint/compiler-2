@@ -232,118 +232,89 @@ class stmt_identifier : public statement {
         std::string path{base_elem.name_tk.name()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path, false)};
         std::string reg_offset{"rsp"};
-        const size_t elems_size{elems.size()};
         size_t accum_offset{};
+        const size_t elems_size{elems.size()};
 
         for (size_t i{}; i < elems_size; ++i) {
-            const identifier_elem& curr_elem{elems.at(i)};
+            const identifier_elem& curr_elem{elems[i]};
             const ident_info curr_info{
                 tc.make_ident_info(src_loc_tk, path, false)};
             const size_t curr_type_size{curr_info.type_ref.size()};
+            const bool is_last{i == elems_size - 1};
+            const bool is_encodable{curr_type_size == 1 or
+                                    curr_type_size == 2 or
+                                    curr_type_size == 4 or curr_type_size == 8};
 
-            // yes, does it have array index?
             if (curr_elem.has_array_index_expr) {
-                // is it last element?
-                if (i == elems_size - 1) {
-                    // yes, is the size encodable in the instructions?
-                    if ((curr_type_size == 1 or curr_type_size == 2 or
-                         curr_type_size == 4 or curr_type_size == 8)) {
-                        const std::string& reg_index{
-                            tc.alloc_scratch_register(src_loc_tk, os, indent)};
-                        allocated_registers.push_back(reg_index);
-                        base_elem.array_index_expr->compile(tc, os, indent,
-                                                            reg_index);
-                        if (curr_type_size == 1) {
-                            return std::format(
-                                "{} + {} - {}", reg_offset, reg_index,
-                                -base_info.stack_ix +
-                                    static_cast<int32_t>(accum_offset));
-                        }
+                if (is_last and is_encodable) {
+                    const std::string& reg_idx{
+                        tc.alloc_scratch_register(src_loc_tk, os, indent)};
+                    allocated_registers.push_back(reg_idx);
+                    base_elem.array_index_expr->compile(tc, os, indent,
+                                                        reg_idx);
+
+                    if (curr_type_size == 1) {
                         return std::format(
-                            "{} + {} * {} - {}", reg_offset, reg_index,
-                            curr_type_size,
+                            "{} + {} - {}", reg_offset, reg_idx,
                             -base_info.stack_ix +
                                 static_cast<int32_t>(accum_offset));
                     }
-                    // is it still 'rsp' and needs calculations of the base?
-                    if (reg_offset == "rsp") {
-                        // yes, allocate scratch register and initiate it
-                        reg_offset =
-                            tc.alloc_scratch_register(src_loc_tk, os, indent);
-                        allocated_registers.push_back(reg_offset);
-
-                        tc.asm_cmd(
-                            src_loc_tk, os, indent, "lea", reg_offset,
-                            std::format("[rsp - {}]", -base_info.stack_ix));
-                    }
-                    const std::string& reg_index{
-                        tc.alloc_scratch_register(src_loc_tk, os, indent)};
-                    curr_elem.array_index_expr->compile(tc, os, indent,
-                                                        reg_index);
-                    if (curr_type_size > 1) {
-                        // is the size a 2^n number?
-                        if (std::optional<int> shl{
-                                get_shift_amount(curr_type_size)};
-                            shl) {
-                            // yes, shift left
-                            tc.asm_cmd(src_loc_tk, os, indent, "shl", reg_index,
-                                       std::format("{}", *shl));
-                        } else {
-                            // no, use multiplication
-                            tc.asm_cmd(src_loc_tk, os, indent, "imul",
-                                       reg_index,
-                                       std::format("{}", curr_type_size));
-                        }
-                    }
-                    tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
-                               reg_index);
-                    tc.free_scratch_register(os, indent, reg_index);
-                    return std::format("{}", reg_offset);
+                    return std::format("{} + {} * {} - {}", reg_offset, reg_idx,
+                                       curr_type_size,
+                                       -base_info.stack_ix +
+                                           static_cast<int32_t>(accum_offset));
                 }
-                // not last element, is the base register "rsp"?
+
+                // is it sill assuming that base register is 'rsp'?
                 if (reg_offset == "rsp") {
-                    // yes, allocate scratch register and initiate it
+                    // yes, since offset calculations need to be done allocate
+                    // and initiate a register to hold the offset regarding
+                    // arrays
                     reg_offset =
                         tc.alloc_scratch_register(src_loc_tk, os, indent);
                     allocated_registers.push_back(reg_offset);
-
                     tc.asm_cmd(src_loc_tk, os, indent, "lea", reg_offset,
                                std::format("[rsp - {}]", -base_info.stack_ix));
                 }
-                const std::string& reg_index{
+
+                // calculate index
+                const std::string& reg_idx{
                     tc.alloc_scratch_register(src_loc_tk, os, indent)};
-                curr_elem.array_index_expr->compile(tc, os, indent, reg_index);
+                curr_elem.array_index_expr->compile(tc, os, indent, reg_idx);
+
                 if (curr_type_size > 1) {
-                    // is the size a 2^n number?
                     if (std::optional<int> shl{
                             get_shift_amount(curr_type_size)};
                         shl) {
-                        // yes, shift left
-                        tc.asm_cmd(src_loc_tk, os, indent, "shl", reg_index,
+                        tc.asm_cmd(src_loc_tk, os, indent, "shl", reg_idx,
                                    std::format("{}", *shl));
                     } else {
-                        // no, use multiplication
-                        tc.asm_cmd(src_loc_tk, os, indent, "imul", reg_index,
+                        tc.asm_cmd(src_loc_tk, os, indent, "imul", reg_idx,
                                    std::format("{}", curr_type_size));
                     }
                 }
-                tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
-                           reg_index);
-                tc.free_scratch_register(os, indent, reg_index);
+
+                tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset, reg_idx);
+                tc.free_scratch_register(os, indent, reg_idx);
+
+                if (is_last) {
+                    return std::string{reg_offset};
+                }
             }
 
             if (i + 1 < elems.size()) {
                 const identifier_elem& next_elem{elems[i + 1]};
                 accum_offset += toc::get_field_offset_in_type(
                     src_loc_tk, curr_info.type_ref, next_elem.name_tk.name());
-                path.push_back('.');
-                path += next_elem.name_tk.name();
+                path += '.' + std::string{next_elem.name_tk.name()};
             }
         }
+
         if (accum_offset != 0) {
             tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
                        std::format("{}", accum_offset));
         }
+
         return std::string{reg_offset};
     }
 
