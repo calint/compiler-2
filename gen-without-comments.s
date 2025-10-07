@@ -432,8 +432,8 @@ main:
     mov qword [rsp - 124], r15
     neg qword [rsp - 124]
     lea rdi, [rsp - 116]
-    mov rcx, 16
     lea rsi, [rsp - 132]
+    mov rcx, 16
     rep movsb
     cmp_116_12:
     cmp qword [rsp - 116], -1
@@ -484,8 +484,8 @@ main:
         if_36_5_117_5_end:
     assert_117_5_end:
     lea rdi, [rsp - 152]
-    mov rcx, 20
     lea rsi, [rsp - 116]
+    mov rcx, 20
     rep movsb
     cmp_120_12:
     cmp qword [rsp - 152], -1

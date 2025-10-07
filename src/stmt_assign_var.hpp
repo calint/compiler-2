@@ -68,8 +68,15 @@ class stmt_assign_var final : public statement {
             tc.alloc_named_register_or_throw(*this, os, indent, "rdi");
             tc.alloc_named_register_or_throw(*this, os, indent, "rcx");
 
-            stmt_identifier::compile_effective_address_to_register(
-                tok(), tc, os, indent, stmt_ident_.elems(), "rdi");
+            std::vector<std::string> allocated_registers;
+            const std::string offset{stmt_identifier::compile_effective_address(
+                tok(), tc, os, indent, stmt_ident_.elems(),
+                allocated_registers)};
+
+            tc.asm_cmd(tok(), os, indent, "lea", "rdi",
+                       std::format("[{}]", offset));
+
+            expr_.compile(tc, os, indent, "rsi");
 
             const ident_info ii{
                 tc.make_ident_info(tok(), stmt_ident_.identifier(), false)};
@@ -77,10 +84,12 @@ class stmt_assign_var final : public statement {
             tc.asm_cmd(tok(), os, indent, "mov", "rcx",
                        std::format("{}", ii.type_ref.size()));
 
-            expr_.compile(tc, os, indent, "rsi");
-
             toc::asm_rep_movsb(tok(), os, indent);
 
+            for (const std::string& reg :
+                 allocated_registers | std::ranges::views::reverse) {
+                tc.free_scratch_register(os, indent, reg);
+            }
             tc.free_named_register(os, indent, "rcx");
             tc.free_named_register(os, indent, "rdi");
             tc.free_named_register(os, indent, "rsi");

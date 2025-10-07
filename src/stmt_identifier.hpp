@@ -172,62 +172,6 @@ class stmt_identifier : public statement {
         }
     }
 
-    static auto compile_effective_address_to_register(
-        const token& tok, toc& tc, std::ostream& os, size_t indent,
-        const std::vector<identifier_elem>& elems,
-        const std::string& reg_offset) -> void {
-
-        const identifier_elem& base_elem{elems.front()};
-        std::string path{base_elem.name_tk.name()};
-        const ident_info base_info{tc.make_ident_info(tok, path, false)};
-
-        tc.asm_cmd(tok, os, indent, "lea", reg_offset,
-                   std::format("[rsp - {}]", -base_info.stack_ix));
-
-        size_t accum_offset = 0;
-
-        for (size_t i{}; i < elems.size(); ++i) {
-            const identifier_elem& elem{elems.at(i)};
-            const ident_info curr_info{tc.make_ident_info(tok, path, false)};
-
-            if (elem.has_array_index_expr) {
-                const std::string& reg_index{
-                    tc.alloc_scratch_register(tok, os, indent)};
-                elem.array_index_expr->compile(tc, os, indent, reg_index);
-                const size_t curr_type_size{curr_info.type_ref.size()};
-                if (curr_type_size > 1) {
-                    // is the size a 2^n number?
-                    if (std::optional<int> shl{
-                            get_shift_amount(curr_type_size)};
-                        shl) {
-                        // yes, shift left
-                        tc.asm_cmd(tok, os, indent, "shl", reg_index,
-                                   std::format("{}", *shl));
-                    } else {
-                        // no, use multiplication
-                        tc.asm_cmd(tok, os, indent, "imul", reg_index,
-                                   std::format("{}", curr_type_size));
-                    }
-                }
-                tc.asm_cmd(tok, os, indent, "add", reg_offset, reg_index);
-                tc.free_scratch_register(os, indent, reg_index);
-            }
-
-            if (i + 1 < elems.size()) {
-                const identifier_elem& next_elem{elems[i + 1]};
-                accum_offset += toc::get_field_offset_in_type(
-                    tok, curr_info.type_ref, next_elem.name_tk.name());
-                path.push_back('.');
-                path += next_elem.name_tk.name();
-            }
-        }
-
-        if (accum_offset != 0) {
-            tc.asm_cmd(tok, os, indent, "add", reg_offset,
-                       std::format("{}", accum_offset));
-        }
-    }
-
     static auto compile_effective_address(
         const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
         const std::vector<identifier_elem>& elems,
@@ -350,6 +294,10 @@ class stmt_identifier : public statement {
         if (accum_offset != 0) {
             tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
                        std::format("{}", accum_offset));
+        }
+
+        if (reg_offset == "rsp") {
+            return std::format("rsp - {}", -base_info.stack_ix);
         }
 
         // note: constructing new string to avoid clang warning "Not eliding

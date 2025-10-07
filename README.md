@@ -32,10 +32,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    36            939            660           4768
-C++                              1             61             72            418
+C/C++ Header                    36            933            657           4734
+C++                              1             63             72            424
 -------------------------------------------------------------------------------
-SUM:                            37           1000            732           5186
+SUM:                            37            996            729           5158
 -------------------------------------------------------------------------------
 ```
 
@@ -621,8 +621,8 @@ main:
     mov qword [rsp - 124], r15
     neg qword [rsp - 124]
     lea rdi, [rsp - 116]
-    mov rcx, 16
     lea rsi, [rsp - 132]
+    mov rcx, 16
     rep movsb
     cmp_116_12:
     cmp qword [rsp - 116], -1
@@ -673,8 +673,8 @@ main:
         if_36_5_117_5_end:
     assert_117_5_end:
     lea rdi, [rsp - 152]
-    mov rcx, 20
     lea rsi, [rsp - 116]
+    mov rcx, 20
     rep movsb
     cmp_120_12:
     cmp qword [rsp - 152], -1
@@ -1825,9 +1825,9 @@ main:
 ;    allocate named register 'rdi'
 ;    allocate named register 'rcx'
     lea rdi, [rsp - 116]
-    mov rcx, 16
 ;    [115:14]  p1
     lea rsi, [rsp - 132]
+    mov rcx, 16
     rep movsb
 ;    free named register 'rcx'
 ;    free named register 'rdi'
@@ -1927,9 +1927,9 @@ main:
 ;    allocate named register 'rdi'
 ;    allocate named register 'rcx'
     lea rdi, [rsp - 152]
-    mov rcx, 20
 ;    [119:23] o1
     lea rsi, [rsp - 116]
+    mov rcx, 20
     rep movsb
 ;    free named register 'rcx'
 ;    free named register 'rdi'
