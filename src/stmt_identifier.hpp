@@ -263,24 +263,10 @@ class stmt_identifier : public statement {
                 // add the index offset to the base register
                 tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset, reg_idx);
                 tc.free_scratch_register(os, indent, reg_idx);
-
-                if (is_last) {
-                    // last element was an array index
-
-                    // apply any accumulated offset
-                    if (accum_offset != 0) {
-                        tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
-                                   std::format("{}", accum_offset));
-                    }
-
-                    // note: constructing new string to avoid clang warning "Not
-                    //       eliding copy on return clang (-Wnrvo)""
-                    return std::string{reg_offset};
-                }
             }
 
             // accumulate field offsets for nested types
-            if (i + 1 < elems.size()) {
+            if (i + 1 < elems_size) {
                 const identifier_elem& next_elem{elems[i + 1]};
                 accum_offset +=
                     static_cast<int32_t>(toc::get_field_offset_in_type(
@@ -292,8 +278,6 @@ class stmt_identifier : public statement {
                 path += next_elem.name_tk.name();
             }
         }
-
-        // last element was not an array index
 
         // return an expression, possibly with format [base + index * scale +
         // offset] that is the target address
