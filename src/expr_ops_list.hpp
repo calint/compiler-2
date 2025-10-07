@@ -506,8 +506,8 @@ class expr_ops_list final : public expression {
     }
 
     static auto asm_op_add_sub(toc& tc, std::ostream& os, const size_t indent,
-                               const std::string& op,
-                               const std::string& op_when_negated,
+                               std::string_view op,
+                               std::string_view op_when_negated,
                                const ident_info& dst, const statement& src)
         -> void {
 
@@ -553,7 +553,7 @@ class expr_ops_list final : public expression {
     }
 
     static auto asm_op_bitwise(toc& tc, std::ostream& os, const size_t indent,
-                               const std::string& op, const ident_info& dst,
+                               std::string_view op, const ident_info& dst,
                                const statement& src) -> void {
 
         if (src.is_expression()) {
@@ -591,7 +591,7 @@ class expr_ops_list final : public expression {
     }
 
     static auto asm_op_shift(toc& tc, std::ostream& os, const size_t indent,
-                             const std::string& op, const ident_info& dst,
+                             const std::string_view op, const ident_info& dst,
                              const statement& src) -> void {
 
         if (src.is_expression()) {
