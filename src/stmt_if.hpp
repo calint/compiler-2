@@ -79,13 +79,13 @@ class stmt_if final : public statement {
 
   private:
     static auto make_label_else_branch(const stmt_block& else_code,
-                                       const std::string& call_path,
-                                       const std::string& src_loc,
-                                       const std::string& label_after_if)
+                                       std::string_view call_path,
+                                       std::string_view src_loc,
+                                       std::string_view label_after_if)
         -> std::string {
 
         if (else_code.is_empty()) {
-            return label_after_if;
+            return std::string{label_after_if};
         }
 
         return (call_path.empty()
@@ -99,8 +99,8 @@ class stmt_if final : public statement {
         -> void override {
 
         // make unique labels considering in-lined functions
-        const std::string& call_path{tc.get_call_path(tok())};
-        const std::string& src_loc{tc.source_location_for_use_in_label(tok())};
+        const std::string_view call_path{tc.get_call_path(tok())};
+        const std::string src_loc{tc.source_location_for_use_in_label(tok())};
         const std::string label_after_if =
             call_path.empty() ? std::format("if_{}_end", src_loc)
                               : std::format("if_{}_{}_end", src_loc, call_path);

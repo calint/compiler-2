@@ -114,7 +114,7 @@ class stmt_assign_var final : public statement {
                                                        stmt_ident_.elems(),
                                                        allocated_registers);
 
-        const std::string& size_specifier{
+        const std::string_view size_specifier{
             type::get_size_specifier(tok(), dst_info.type_ref->size())};
 
         expr_.compile(

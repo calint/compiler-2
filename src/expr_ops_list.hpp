@@ -220,7 +220,7 @@ class expr_ops_list final : public expression {
 
         // with scratch register
         std::stringstream ss2;
-        const std::string& reg{tc.alloc_scratch_register(tok(), ss2, indent)};
+        const std::string reg{tc.alloc_scratch_register(tok(), ss2, indent)};
         const ident_info dest_reg{tc.make_ident_info(tok(), reg, false)};
         do_compile(tc, ss2, indent, dst_info);
         tc.asm_cmd(tok(), ss2, indent, "mov", dst_info.id_nasm, reg);
@@ -429,7 +429,7 @@ class expr_ops_list final : public expression {
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             // yes, compile it to a scratch register
-            const std::string& reg{
+            const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
             // note 'imul' destination must be a register
@@ -462,7 +462,7 @@ class expr_ops_list final : public expression {
                 return;
             }
 
-            const std::string& reg{
+            const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
             uops.compile(tc, os, indent, reg);
@@ -473,7 +473,7 @@ class expr_ops_list final : public expression {
 
         // 'imul' destination is not a register
         if (src_info.is_const()) {
-            const std::string& reg{
+            const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             tc.asm_cmd(src.tok(), os, indent, "mov", reg, dst.id_nasm);
             tc.asm_cmd(src.tok(), os, indent, "imul", reg,
@@ -487,7 +487,7 @@ class expr_ops_list final : public expression {
         // source is not a constant
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
-            const std::string& reg{
+            const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             tc.asm_cmd(src.tok(), os, indent, "mov", reg, dst.id_nasm);
             tc.asm_cmd(src.tok(), os, indent, "imul", reg, src_info.id_nasm);
@@ -497,8 +497,7 @@ class expr_ops_list final : public expression {
         }
 
         // source is not a constant and unary ops need to be applied
-        const std::string& reg{
-            tc.alloc_scratch_register(src.tok(), os, indent)};
+        const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
         uops.compile(tc, os, indent, reg);
         tc.asm_cmd(src.tok(), os, indent, "imul", reg, dst.id_nasm);
@@ -513,7 +512,7 @@ class expr_ops_list final : public expression {
         -> void {
 
         if (src.is_expression()) {
-            const std::string& reg{
+            const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, reg);
@@ -546,8 +545,7 @@ class expr_ops_list final : public expression {
         }
 
         // multiple unary ops
-        const std::string& reg{
-            tc.alloc_scratch_register(src.tok(), os, indent)};
+        const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
         uops.compile(tc, os, indent, reg);
         tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, reg);
@@ -559,7 +557,7 @@ class expr_ops_list final : public expression {
                                const statement& src) -> void {
 
         if (src.is_expression()) {
-            const std::string& reg{
+            const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, reg);
@@ -585,8 +583,7 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression and not a constant and has unary ops
-        const std::string& reg{
-            tc.alloc_scratch_register(src.tok(), os, indent)};
+        const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
         uops.compile(tc, os, indent, reg);
         tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm, reg);
@@ -670,11 +667,11 @@ class expr_ops_list final : public expression {
     // op is either 'rax' for the quotient or 'rdx' for the reminder to be moved
     // into 'dst'
     static auto asm_op_div(toc& tc, std::ostream& os, const size_t indent,
-                           const std::string& op, const ident_info& dst,
+                           std::string_view op, const ident_info& dst,
                            const statement& src) -> void {
 
         if (src.is_expression()) {
-            const std::string& reg{
+            const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
             const bool rax_allocated{
@@ -723,7 +720,7 @@ class expr_ops_list final : public expression {
             }
             toc::indent(os, indent, false);
             os << "cqo\n";
-            const std::string& scratch_reg{
+            const std::string scratch_reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             tc.asm_cmd(src.tok(), os, indent, "mov", scratch_reg,
                        std::format("{}{}", src.get_unary_ops().to_string(),
@@ -785,8 +782,7 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression and not a constant and has unary ops
-        const std::string& reg{
-            tc.alloc_scratch_register(src.tok(), os, indent)};
+        const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
         uops.compile(tc, os, indent, reg);
         const bool rax_allocated{

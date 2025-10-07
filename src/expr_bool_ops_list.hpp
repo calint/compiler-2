@@ -148,9 +148,9 @@ class expr_bool_ops_list final : public statement {
         throw panic_exception("unexpected code path expr_bool_ops_list:1");
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 const std::string& jmp_to_if_false,
-                 const std::string& jmp_to_if_true, const bool inverted) const
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 std::string_view jmp_to_if_false,
+                 std::string_view jmp_to_if_true, bool inverted) const
         -> std::optional<bool> {
 
         toc::indent(os, indent, true);
@@ -370,7 +370,7 @@ class expr_bool_ops_list final : public statement {
 
   private:
     [[nodiscard]] auto cmp_bgn_label(const toc& tc) const -> std::string {
-        const std::string& call_path{tc.get_call_path(tok())};
+        const std::string_view call_path{tc.get_call_path(tok())};
         return std::format("cmp_{}{}",
                            tc.source_location_for_use_in_label(tok()),
                            (call_path.empty() ? std::string{}

@@ -291,11 +291,11 @@ inline auto expr_type_value::compile_recursive(
 
         for (const type_field& fld : dst_type.fields()) {
             if (fld.tp->is_built_in()) {
-                const std::string& src_info{
+                const std::string src_info{
                     tc.make_ident_info(
                           etv.tok(), std::format("{}.{}", src, fld.name), false)
                         .id_nasm};
-                const std::string& dst_info{
+                const std::string dst_info{
                     tc.make_ident_info(
                           etv.tok(), std::format("{}.{}", dst, fld.name), false)
                         .id_nasm};
@@ -333,8 +333,7 @@ inline auto expr_type_value::compile_recursive(
 // declared in 'unary_ops.hpp'
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
 inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
-                               size_t indnt,
-                               const std::string& dst_info) const {
+                               size_t indnt, std::string_view dst_info) const {
 
     for (auto op : std::views::reverse(ops_)) {
         switch (op) {
@@ -535,7 +534,7 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         //   je if_14_8_code
         //   cmp_14_26:
         // get the whitespaces
-        const std::string& ws_before{
+        const std::string ws_before{
             line1.substr(0, line1.find_first_not_of(" \t\n\r\f\v"))};
         for (const std::string& s : comments2) {
             os << s << '\n';

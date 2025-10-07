@@ -56,7 +56,7 @@ class type final {
         size_ += tp.size_ * (is_array ? array_size : 1);
     }
 
-    [[nodiscard]] auto field(const token& tk, const std::string& name) const
+    [[nodiscard]] auto field(const token& tk, std::string_view name) const
         -> const type_field& {
 
         for (const type_field& fld : fields_) {
@@ -89,7 +89,7 @@ class type final {
             tp_first_field = tp_first_field->fields_.at(0).tp;
         }
 
-        const std::string& memsize{
+        const std::string_view memsize{
             type::get_size_specifier(tk, tp_first_field->size())};
         const std::string accessor{
             std::format("{} [rsp - {}]", memsize, -stack_idx)};

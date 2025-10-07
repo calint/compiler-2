@@ -34,8 +34,8 @@ class stmt_if_branch final : public statement {
     // expression
     [[nodiscard]] auto if_bgn_label(const toc& tc) const -> std::string {
         // construct a unique label considering in-lined functions
-        const std::string& call_path{tc.get_call_path(tok())};
-        const std::string& src_loc{tc.source_location_for_use_in_label(tok())};
+        const std::string_view call_path{tc.get_call_path(tok())};
+        const std::string src_loc{tc.source_location_for_use_in_label(tok())};
         return call_path.empty() ? std::format("if_{}", src_loc)
                                  : std::format("if_{}_{}", src_loc, call_path);
     }
@@ -49,11 +49,11 @@ class stmt_if_branch final : public statement {
     }
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 const std::string& jmp_to_if_false_label,
-                 const std::string& jmp_to_after_code_label) const
+                 std::string_view jmp_to_if_false_label,
+                 std::string_view jmp_to_after_code_label) const
         -> std::optional<bool> {
 
-        const std::string& if_bgn_lbl{if_bgn_label(tc)};
+        const std::string if_bgn_lbl{if_bgn_label(tc)};
         const std::string jmp_to_if_true_lbl{
             std::format("{}_code", if_bgn_lbl)};
         // the beginning of this branch

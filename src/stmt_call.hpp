@@ -92,7 +92,7 @@ class stmt_call : public expression {
         tc.comment_source(*this, os, indent);
 
         const stmt_def_func& func{tc.get_func_or_throw(tok(), identifier())};
-        const std::string& func_name{func.name()};
+        const std::string_view func_name{func.name()};
 
         // check that the same number of arguments are provided as expected
         if (func.params().size() != args_.size()) {
@@ -153,8 +153,8 @@ class stmt_call : public expression {
 
         // create unique labels for in-lined functions based on location of
         // source where the call occurred
-        const std::string& call_path{tc.get_call_path(tok())};
-        const std::string& src_loc{tc.source_location_for_use_in_label(tok())};
+        const std::string_view call_path{tc.get_call_path(tok())};
+        const std::string src_loc{tc.source_location_for_use_in_label(tok())};
         const std::string new_call_path{
             call_path.empty() ? src_loc
                               : std::format("{}_{}", src_loc, call_path)};
@@ -172,8 +172,8 @@ class stmt_call : public expression {
         // if function returns value
         if (not dst.empty()) {
             // alias return identifier to 'dst'
-            const std::string& from{func.returns().at(0).ident_tk.text()};
-            const std::string& to{dst};
+            const std::string_view from{func.returns().at(0).ident_tk.text()};
+            const std::string_view to{dst};
             aliases_to_add.emplace_back(from, to);
         }
 
@@ -217,14 +217,14 @@ class stmt_call : public expression {
                 if (arg.get_unary_ops().is_empty()) {
                     // no unary ops
                     // alias parameter name to the argument identifier
-                    const std::string& arg_id{arg.identifier()};
+                    const std::string_view arg_id{arg.identifier()};
                     aliases_to_add.emplace_back(param.identifier(), arg_id);
                     continue;
                 }
                 // unary ops must be applied
                 // allocate a scratch register and evaluate
                 const ident_info& arg_info{tc.make_ident_info(arg, true)};
-                const std::string& scratch_reg{
+                const std::string scratch_reg{
                     tc.alloc_scratch_register(arg.tok(), os, indent)};
                 allocated_registers_in_order.emplace_back(scratch_reg);
                 allocated_scratch_registers.emplace_back(scratch_reg);
@@ -272,8 +272,8 @@ class stmt_call : public expression {
 
         // add the aliases to the context of the new scope
         for (const auto& alias : aliases_to_add) {
-            const std::string& from{alias.first};
-            const std::string& to{alias.second};
+            const std::string from{alias.first};
+            const std::string to{alias.second};
             tc.add_alias(from, to);
 
             toc::indent(os, indent + 1, true);

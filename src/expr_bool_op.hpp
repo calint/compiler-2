@@ -114,8 +114,8 @@ class expr_bool_op final : public statement {
     // returns an optional bool and if defined the expression evaluated to
     // the value of the optional
     auto compile_or(toc& tc, std::ostream& os, size_t indent,
-                    const std::string& jmp_to_if_true,
-                    const bool inverted) const -> std::optional<bool> {
+                    std::string_view jmp_to_if_true, const bool inverted) const
+        -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
         toc::indent(os, indent, true);
@@ -196,7 +196,7 @@ class expr_bool_op final : public statement {
     }
 
     auto compile_and(toc& tc, std::ostream& os, size_t indent,
-                     const std::string& jmp_to_if_false,
+                     std::string_view jmp_to_if_false,
                      const bool inverted) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
@@ -280,7 +280,7 @@ class expr_bool_op final : public statement {
     }
 
     [[nodiscard]] auto cmp_bgn_label(const toc& tc) const -> std::string {
-        const std::string& call_path{tc.get_call_path(tok())};
+        const std::string_view call_path{tc.get_call_path(tok())};
         return std::format("cmp_{}{}",
                            tc.source_location_for_use_in_label(tok()),
                            (call_path.empty() ? std::string{}
@@ -318,7 +318,7 @@ class expr_bool_op final : public statement {
 
         // if not expression then it is a single statement and identifier is
         // valid
-        const std::string& id{lhs_.identifier()};
+        const std::string_view id{lhs_.identifier()};
         // is it a boolean value?
         if (id == "true" or id == "false") {
             // yes, not an expression
@@ -330,7 +330,7 @@ class expr_bool_op final : public statement {
         is_expression_ = true;
     }
 
-    static auto eval_constant(const int64_t lh, const std::string& op,
+    static auto eval_constant(const int64_t lh, std::string_view op,
                               const int64_t rh) -> bool {
         if (op == "==") {
             return lh == rh;
@@ -353,7 +353,7 @@ class expr_bool_op final : public statement {
         throw panic_exception("unexpected code path bool_op:2");
     }
 
-    static auto asm_jxx_for_op(const std::string& op) -> const std::string& {
+    static auto asm_jxx_for_op(std::string_view op) -> const std::string& {
         if (op == "==") {
             return asm_je;
         }
@@ -376,8 +376,7 @@ class expr_bool_op final : public statement {
         throw panic_exception("unexpected code path bool_op:3");
     }
 
-    static auto asm_jxx_for_op_inv(const std::string& op)
-        -> const std::string& {
+    static auto asm_jxx_for_op_inv(std::string_view op) -> std::string {
 
         if (op == "==") {
             return asm_jne;
@@ -406,9 +405,9 @@ class expr_bool_op final : public statement {
 
         std::vector<std::string> allocated_registers;
 
-        const std::string& dst{
+        const std::string dst{
             resolve_expr(tc, os, indent, lhs, true, allocated_registers)};
-        const std::string& src{
+        const std::string src{
             resolve_expr(tc, os, indent, rhs, false, allocated_registers)};
 
         tc.asm_cmd(tok(), os, indent, "cmp", dst, src);
@@ -423,7 +422,7 @@ class expr_bool_op final : public statement {
                                const expr_ops_list& lhs) const -> void {
 
         std::vector<std::string> allocated_registers;
-        const std::string& dst{
+        const std::string dst{
             resolve_expr(tc, os, indent, lhs, true, allocated_registers)};
         tc.asm_cmd(tok(), os, indent, "cmp", dst, "false");
         for (const auto& reg : allocated_registers | std::views::reverse) {
@@ -437,7 +436,7 @@ class expr_bool_op final : public statement {
         -> std::string {
 
         if (expr.is_expression()) {
-            const std::string& reg{
+            const std::string reg{
                 tc.alloc_scratch_register(expr.tok(), os, indent)};
             allocated_registers.emplace_back(reg);
             expr.compile(tc, os, indent + 1, reg);
@@ -448,7 +447,7 @@ class expr_bool_op final : public statement {
         const ident_info& expr_info{tc.make_ident_info(expr, true)};
         if (expr_info.is_const()) {
             if (is_lhs) {
-                const std::string& reg{
+                const std::string reg{
                     tc.alloc_scratch_register(expr.tok(), os, indent)};
                 allocated_registers.emplace_back(reg);
                 expr.compile(tc, os, indent + 1, reg);
@@ -464,7 +463,7 @@ class expr_bool_op final : public statement {
         }
 
         // 'expr' is not an expression and has unary ops
-        const std::string& reg{
+        const std::string reg{
             tc.alloc_scratch_register(expr.tok(), os, indent)};
         allocated_registers.emplace_back(reg);
         tc.asm_cmd(expr.tok(), os, indent, "mov", reg, expr_info.id_nasm);

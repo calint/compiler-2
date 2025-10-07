@@ -165,7 +165,7 @@ class stmt_identifier : public statement {
         const ident_info src_info{
             tc.make_ident_info(tok(), identifier(), false)};
 
-        const std::string& size_specifier{
+        const std::string_view size_specifier{
             type::get_size_specifier(tok(), src_info.type_ref->size())};
 
         tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
@@ -212,7 +212,7 @@ class stmt_identifier : public statement {
                 // special case: last element with encodable size
                 if (i == elems_size - 1 and is_encodable) {
                     // calculate offset in array and store in 'reg_idx'
-                    const std::string& reg_idx{
+                    const std::string reg_idx{
                         tc.alloc_scratch_register(src_loc_tk, os, indent)};
                     allocated_registers.push_back(reg_idx);
                     curr_elem.array_index_expr->compile(tc, os, indent,
@@ -246,7 +246,7 @@ class stmt_identifier : public statement {
                 }
 
                 // compile and scale the array index
-                const std::string& reg_idx{
+                const std::string reg_idx{
                     tc.alloc_scratch_register(src_loc_tk, os, indent)};
                 curr_elem.array_index_expr->compile(tc, os, indent, reg_idx);
 

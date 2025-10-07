@@ -91,7 +91,7 @@ class frame final {
         return vars_.has(name);
     }
 
-    auto get_var_ref(const std::string& name) -> var_info& {
+    auto get_var_ref(std::string_view name) -> var_info& {
         return vars_.get_ref(name);
     }
 
@@ -798,9 +798,9 @@ class toc final {
 
             // both operands are memory references
             // use scratch register for transfer
-            const std::string& reg{
+            const std::string reg{
                 alloc_scratch_register(src_loc_tk, os, indnt)};
-            const std::string& reg_sized{
+            const std::string reg_sized{
                 get_register_operand_for_size(src_loc_tk, reg, src_size)};
             indent(os, indnt);
             os << "mov " << reg_sized << ", " << src_nasm << '\n';
@@ -824,9 +824,9 @@ class toc final {
 
             // both operands refer to memory
             // use scratch register for transfer
-            const std::string& reg{
+            const std::string reg{
                 alloc_scratch_register(src_loc_tk, os, indnt)};
-            const std::string& reg_sized{
+            const std::string reg_sized{
                 get_register_operand_for_size(src_loc_tk, reg, dst_size)};
             indent(os, indnt);
             os << "movsx " << reg_sized << ", " << src_nasm << '\n';
@@ -839,7 +839,7 @@ class toc final {
         // dst_size < src_size
         //? truncation might change value of signed number
         if (is_identifier_register(src_nasm)) {
-            const std::string& reg_sized{
+            const std::string reg_sized{
                 get_register_operand_for_size(src_loc_tk, src_nasm, dst_size)};
             indent(os, indnt);
             os << op << " " << dst_nasm << ", " << reg_sized << '\n';
@@ -1398,7 +1398,7 @@ class toc final {
 
         // is it a field?
         if (fields_.has(id_base)) {
-            const std::string& after_dot =
+            const std::string after_dot =
                 id.path().size() == 1 ? ""
                                       : id.path().at(1); //? bug. not correct
             if (after_dot == "len") {

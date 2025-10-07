@@ -25,7 +25,7 @@ class stmt_continue final : public statement {
         tc.comment_source(*this, os, indent);
 
         // get current loop start labels
-        const std::string& loop_label{tc.get_loop_label_or_throw(tok())};
+        const std::string_view loop_label{tc.get_loop_label_or_throw(tok())};
         // jump to it
         toc::asm_jmp(tok(), os, indent, loop_label);
     }
