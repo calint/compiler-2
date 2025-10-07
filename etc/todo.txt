@@ -1,3 +1,5 @@
+[ ] use std::string_view where possible instead of std::string
+    e.g. in expr_bool_op to return constexpr strings
 [o] tidy
     [x] use std::format
     [-] rep movsb can be done faster with q if objects are sized to 2^n
