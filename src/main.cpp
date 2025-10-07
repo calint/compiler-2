@@ -114,6 +114,7 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, token tk)
     throw panic_exception{"unexpected code path main:1"};
 }
 
+// declared in 'decouple.hpp'
 // called from 'stmt_block'
 inline auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
     -> std::unique_ptr<statement> {
@@ -160,8 +161,8 @@ inline auto create_expr_any(toc& tc, tokenizer& tz, const type& tp,
 
 // declared in 'expr_type_value.hpp'
 // note: constructor and destructor is implemented in 'main.cpp' where the
-// 'expr_any' definition is known. clang++ -std=c++23 requires it since
-// changes to handling of unique_ptr to incomplete types
+//       'expr_any' definition is known. clang++ -std=c++23 requires it since
+//       changes to handling of unique_ptr to incomplete types
 
 inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     : statement{tz.next_token()} {
