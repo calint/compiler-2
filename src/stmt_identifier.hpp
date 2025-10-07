@@ -11,6 +11,13 @@
 #include "toc.hpp"
 #include "unary_ops.hpp"
 
+struct identifier_elem final {
+    token name_tk;
+    std::unique_ptr<expr_any> array_index_expr;
+    token ws1;
+    bool has_array_index_expr{};
+};
+
 class stmt_identifier : public statement {
     std::vector<identifier_elem> elems_;
     token ws1_;

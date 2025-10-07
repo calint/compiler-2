@@ -93,8 +93,8 @@ auto main(const int argc, const char* argv[]) -> int {
 //
 
 // declared in 'decouple.hpp'
-// called from 'stmt_block' to solve circular dependencies with 'loop', 'if' and
-// function calls
+// called from 'stmt_block' to solve circular dependencies with 'loop', 'if',
+// 'mov', 'syscall'
 inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, token tk)
     -> std::unique_ptr<statement> {
 
@@ -112,6 +112,13 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, token tk)
     }
 
     throw panic_exception{"unexpected code path main:1"};
+}
+
+// called from 'stmt_block'
+inline auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
+    -> std::unique_ptr<statement> {
+    return std::make_unique<stmt_call>(tc, si.get_unary_ops(), si.first_token(),
+                                       tz);
 }
 
 // declared in 'decouple.hpp'
@@ -143,12 +150,6 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     return std::make_unique<stmt_identifier>(tc, uops, std::move(tk), tz);
 }
 
-// called from 'stmt_block'
-inline auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
-    -> std::unique_ptr<statement> {
-    return std::make_unique<stmt_call>(tc, si.get_unary_ops(), si.first_token(),
-                                       tz);
-}
 // declared in 'decouple.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 inline auto create_expr_any(toc& tc, tokenizer& tz, const type& tp,
