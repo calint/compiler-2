@@ -1,18 +1,4 @@
-[o] try different compilation errors and improve messages and source position
-    indicators
-[x] source differs when (notice - and then comment):
-        print(prompt1.len, prompt1)
-        var len = read(input.len, input) -     # -1 don't include the '\n'
-        if len == 0 {
-    => source now ok
-       problem is that expr_ops_list reads comment as an expression
-       it is a not easily fixable bug
-       => fixed with error: unexpected comment in expression
 [ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
-[x] tokenizer: keep track of line-number instead of computing it
-    => problem when generating comments in the result with excessive calling
-       ok for for reporting parsing error
-       => keeps track of line numbers, calculates column at request
 [ ] use std::string_view where possible instead of std::string
     e.g. in expr_bool_op to return constexpr strings
 [o] tidy
@@ -114,6 +100,20 @@ stage 5
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] try different compilation errors and improve messages and source position
+    indicators
+[x] source differs when (notice - and then comment):
+        print(prompt1.len, prompt1)
+        var len = read(input.len, input) -     # -1 don't include the '\n'
+        if len == 0 {
+    => source now ok
+       problem is that expr_ops_list reads comment as an expression
+       it is a not easily fixable bug
+       => fixed with error: unexpected comment in expression
+[x] tokenizer: keep track of line-number instead of computing it
+    => problem when generating comments in the result with excessive calling
+       ok for for reporting parsing error
+       => keeps track of line numbers, calculates column at request
 [x] source recreation does not work with comment at end of file and
     newlines:
         var objs : object[10]
