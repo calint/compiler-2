@@ -19,9 +19,21 @@ class stmt_identifier : public statement {
 
   public:
     stmt_identifier(toc& tc, tokenizer& tz, token tk, unary_ops uops = {})
-        : statement{tz.next_whitespace_token(), std::move(uops)} {
+        : statement{tz.next_whitespace_token(), std::move(uops)},
+          path_as_string_{tk.name()} {
+
+        token tk_prv{tk};
+        // note: keep track of previous token for better compilation error
+        //       message
 
         while (true) {
+            // note: for better compilation error messages
+            if (not tc.is_func(path_as_string_)) {
+                // try to find the identifier
+                const ident_info curr_ident_info{
+                    tc.make_ident_info(tk, path_as_string_, false)};
+            }
+
             // has array index?
             if (tz.is_next_char('[')) {
                 // yes, read expression
@@ -44,30 +56,23 @@ class stmt_identifier : public statement {
             }
 
             if (tz.is_next_char('.')) {
+                tk_prv = tk;
                 tk = tz.next_token();
+                path_as_string_.push_back('.');
+                path_as_string_ += tk.name();
                 continue;
             }
 
             ws2_ = tz.next_whitespace_token();
 
-            // build a path of element identifiers later used to get the type of
-            // the target element
-            for (const identifier_elem& e : elems_) {
-                if (not path_as_string_.empty()) {
-                    path_as_string_.push_back('.');
-                }
-                path_as_string_ += e.name_tk.name();
-            }
-
             if (tc.is_func(path_as_string_)) {
                 //? todo: should get the type? not necessary right now but
-                // for
-                // consistency
+                // for consistency
                 break;
             }
 
             const ident_info ii{
-                tc.make_ident_info(tok(), path_as_string_, false)};
+                tc.make_ident_info(tk_prv, path_as_string_, false)};
 
             set_type(ii.type_ref);
 
@@ -222,6 +227,7 @@ class stmt_identifier : public statement {
                        std::format("{}", accum_offset));
         }
     }
+
     static auto compile_effective_address(
         const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
         const std::vector<identifier_elem>& elems,
@@ -276,16 +282,15 @@ class stmt_identifier : public statement {
 
                         return std::format("{} + {} * {} - {}", reg_offset,
                                            reg_idx, type_size, -total_offset);
-                    } else {
-                        // base register is not 'rsp' which means that register
-                        // contains the offset of 'rsp'
-                        if (type_size == 1) {
-                            return std::format("{} + {} + {}", reg_offset,
-                                               reg_idx, accum_offset);
-                        }
-                        return std::format("{} + {} * {} + {}", reg_offset,
-                                           reg_idx, type_size, accum_offset);
                     }
+                    // base register is not 'rsp' which means that register
+                    // contains the offset of 'rsp'
+                    if (type_size == 1) {
+                        return std::format("{} + {} + {}", reg_offset, reg_idx,
+                                           accum_offset);
+                    }
+                    return std::format("{} + {} * {} + {}", reg_offset, reg_idx,
+                                       type_size, accum_offset);
                 }
 
                 // convert 'rsp' to actual register if needed
