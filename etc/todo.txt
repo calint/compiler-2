@@ -1,5 +1,5 @@
-[ ] refactor to use std::string_view
-[ ] refactor for structs to be POD objects with pointers instead of refs
+[x] refactor to use std::string_view
+[x] refactor for structs to be POD with pointers instead of refs
 [ ] optimize rep stosb to q, d, w if possible
     => maybe some heuristics about when to use "rep stosX" 
        => start with stosq, then mov dword, word and byte
