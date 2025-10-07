@@ -172,7 +172,7 @@ class stmt_call : public expression {
         // if function returns value
         if (not dst.empty()) {
             // alias return identifier to 'dst'
-            const std::string& from{func.returns().at(0).ident_tk.name()};
+            const std::string& from{func.returns().at(0).ident_tk.text()};
             const std::string& to{dst};
             aliases_to_add.emplace_back(from, to);
         }
@@ -327,7 +327,7 @@ class stmt_call : public expression {
 
             // compile the result using the unary ops
             const ident_info& ret_info{tc.make_ident_info(
-                tok(), func.returns().at(0).ident_tk.name(), true)};
+                tok(), func.returns().at(0).ident_tk.text(), true)};
             get_unary_ops().compile(tc, os, indent, ret_info.id_nasm);
         }
         // exit scope

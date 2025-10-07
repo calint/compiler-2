@@ -40,7 +40,7 @@ class expr_type_value final : public statement {
             return;
         }
 
-        expr_type_value::compile_recursive(*this, tc, os, indent, tok().name(),
+        expr_type_value::compile_recursive(*this, tc, os, indent, tok().text(),
                                            dst, get_type());
     }
 
@@ -52,7 +52,7 @@ class expr_type_value final : public statement {
     auto source_to(std::ostream& os) const -> void override;
 
     [[nodiscard]] auto is_make_copy() const -> bool {
-        return not tok().is_name("");
+        return not tok().is_text("");
     }
 
   private:

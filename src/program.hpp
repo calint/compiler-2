@@ -56,25 +56,25 @@ class program final {
                 }
                 break;
             }
-            if (tk.is_name("field")) {
+            if (tk.is_text("field")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_def_field>(tc_, tk, tz));
-            } else if (tk.is_name("func")) {
+            } else if (tk.is_text("func")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_def_func>(tc_, tk, tz));
-            } else if (tk.is_name("type")) {
+            } else if (tk.is_text("type")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_def_type>(tc_, tk, tz));
-            } else if (tk.name().starts_with("#")) {
+            } else if (tk.text().starts_with("#")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_comment>(tc_, unary_ops{}, tk, tz));
-            } else if (tk.is_name("")) {
+            } else if (tk.is_text("")) {
                 // empty space at end of file; necessary for source reproduction
                 // to be identical
                 ws1_ = tk;
             } else {
                 throw compiler_exception{
-                    tk, std::format("unexpected keyword '{}'", tk.name())};
+                    tk, std::format("unexpected keyword '{}'", tk.text())};
             }
         }
     }

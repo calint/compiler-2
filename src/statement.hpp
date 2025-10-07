@@ -50,7 +50,7 @@ class statement {
     [[nodiscard]] virtual auto is_expression() const -> bool { return false; }
 
     [[nodiscard]] virtual auto identifier() const -> std::string_view {
-        return token_.name();
+        return token_.text();
     }
 
     [[nodiscard]] virtual auto get_unary_ops() const -> const unary_ops& {
@@ -64,10 +64,10 @@ class statement {
     }
 
     static auto validate_identifier_name(const token& tk) -> void {
-        if (tk.name().ends_with(".")) {
+        if (tk.text().ends_with(".")) {
             throw compiler_exception{
                 tk,
-                std::format("unexpected '.' at the end of '{}'", tk.name())};
+                std::format("unexpected '.' at the end of '{}'", tk.text())};
         }
     }
 };

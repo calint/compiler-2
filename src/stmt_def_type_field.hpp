@@ -31,7 +31,7 @@ class stmt_def_type_field final : public statement {
             array_size_tk_ = tz.next_token();
 
             if (const std::optional<int64_t> value{
-                    toc::parse_to_constant(array_size_tk_.name())};
+                    toc::parse_to_constant(array_size_tk_.text())};
                 value) {
                 array_size_ = static_cast<size_t>(*value);
             } else {
@@ -71,10 +71,10 @@ class stmt_def_type_field final : public statement {
         }
     }
 
-    [[nodiscard]] auto name() const -> std::string_view { return tok().name(); }
+    [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 
     [[nodiscard]] auto type_str() const -> std::string_view {
-        return type_tk_.name();
+        return type_tk_.text();
     }
 
     [[nodiscard]] auto type_token() const -> const token& { return type_tk_; }

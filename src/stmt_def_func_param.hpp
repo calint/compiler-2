@@ -10,7 +10,7 @@ class stmt_def_func_param final : public statement {
   public:
     stmt_def_func_param(const toc& tc, tokenizer& tz)
         : statement{tz.next_token()} {
-        assert(not tok().is_name(""));
+        assert(not tok().is_text(""));
 
         if (not tz.is_next_char(':')) {
             // no type defined, set default
@@ -20,13 +20,13 @@ class stmt_def_func_param final : public statement {
 
         // get type
         type_tk_ = tz.next_token();
-        if (type_tk_.name().starts_with("reg_")) {
+        if (type_tk_.text().starts_with("reg_")) {
             // register parameter, set default type
             set_type(tc.get_type_default());
             return;
         }
 
-        set_type(tc.get_type_or_throw(type_tk_, type_tk_.name()));
+        set_type(tc.get_type_or_throw(type_tk_, type_tk_.text()));
     }
 
     stmt_def_func_param() = default;
@@ -40,17 +40,17 @@ class stmt_def_func_param final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        if (type_tk_.is_name("")) {
+        if (type_tk_.is_text("")) {
             return;
         }
         os << ":";
         type_tk_.source_to(os);
     }
 
-    [[nodiscard]] auto name() const -> std::string_view { return tok().name(); }
+    [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 
     [[nodiscard]] auto get_register_name_or_empty() const -> std::string_view {
-        const std::string_view type_name{type_tk_.name()};
+        const std::string_view type_name{type_tk_.text()};
         if (type_name.starts_with("reg_")) {
             return type_name.substr(4, type_name.size() - 4);
             // note: 4 is the length of "reg_"

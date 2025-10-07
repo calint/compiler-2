@@ -27,11 +27,11 @@ class stmt_def_type final : public statement {
             if (not tz.is_next_char(',')) {
                 throw compiler_exception{
                     tz, std::format("expected ',' and more fields in type '{}'",
-                                    name_tk_.name())};
+                                    name_tk_.text())};
             }
         }
         // initiate the type definitions
-        type_.set_name(name_tk_.name());
+        type_.set_name(name_tk_.text());
 
         // add the fields
         for (const stmt_def_type_field& fld : fields_) {

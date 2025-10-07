@@ -38,7 +38,7 @@ class stmt_def_var final : public statement {
                 array_size_tk_ = tz.next_token();
                 is_array_ = true;
                 if (const std::optional<int64_t> value{
-                        toc::parse_to_constant(array_size_tk_.name())};
+                        toc::parse_to_constant(array_size_tk_.text())};
                     value) {
                     array_size_ = static_cast<size_t>(*value);
                 } else {
@@ -54,9 +54,9 @@ class stmt_def_var final : public statement {
         }
 
         // get type reference from token
-        const type& tp{type_tk_.name().empty()
+        const type& tp{type_tk_.text().empty()
                            ? tc.get_type_default()
-                           : tc.get_type_or_throw(type_tk_, type_tk_.name())};
+                           : tc.get_type_or_throw(type_tk_, type_tk_.text())};
         set_type(tp);
 
         const bool init_required{array_size_tk_.is_empty()};
@@ -66,14 +66,14 @@ class stmt_def_var final : public statement {
             throw compiler_exception{
                 tz,
                 std::format("expected '=' and initializer for variable '{}'",
-                            name_tk_.name())};
+                            name_tk_.text())};
         }
 
         ws1_ = tz.next_whitespace_token();
 
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
-        tc.add_var(name_tk_, null_strm, 0, name_tk_.name(), tp, is_array_,
+        tc.add_var(name_tk_, null_strm, 0, name_tk_.text(), tp, is_array_,
                    array_size_);
 
         if (init_required) {
@@ -114,12 +114,12 @@ class stmt_def_var final : public statement {
                  [[maybe_unused]] std::string_view dst = "") const
         -> void override {
 
-        tc.add_var(name_tk_, os, indent, std::string{name_tk_.name()},
+        tc.add_var(name_tk_, os, indent, std::string{name_tk_.text()},
                    get_type(), is_array_, array_size_);
 
         tc.comment_source(*this, os, indent);
         if (not is_array_) {
-            assign_var_.compile(tc, os, indent, name_tk_.name());
+            assign_var_.compile(tc, os, indent, name_tk_.text());
             return;
         }
 
@@ -130,7 +130,7 @@ class stmt_def_var final : public statement {
         // rep stosb           ; Repeat store byte [RDI] = AL, RCX times
 
         const ident_info& dst_info{
-            tc.make_ident_info(name_tk_, name_tk_.name(), false)};
+            tc.make_ident_info(name_tk_, name_tk_.text(), false)};
 
         toc::indent(os, indent, true);
         os << "clear array " << array_size_ << " * " << dst_info.type_ref.size()

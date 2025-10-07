@@ -96,16 +96,16 @@ auto main(const int argc, const char* argv[]) -> int {
 inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, token tk)
     -> std::unique_ptr<statement> {
 
-    if (tk.is_name("loop")) {
+    if (tk.is_text("loop")) {
         return std::make_unique<stmt_loop>(tc, tk, tz);
     }
-    if (tk.is_name("if")) {
+    if (tk.is_text("if")) {
         return std::make_unique<stmt_if>(tc, tk, tz);
     }
-    if (tk.is_name("mov")) {
+    if (tk.is_text("mov")) {
         return std::make_unique<stmt_call_asm_mov>(tc, tk, tz);
     }
-    if (tk.is_name("syscall")) {
+    if (tk.is_text("syscall")) {
         return std::make_unique<stmt_call_asm_syscall>(tc, tk, tz);
     }
 
@@ -128,11 +128,11 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
 
     const unary_ops uops{tz};
     const token tk{tz.next_token()};
-    if (tk.is_name("")) {
+    if (tk.is_text("")) {
         throw compiler_exception{
             tk, "expected constant, identifier or function call"};
     }
-    if (tk.name().starts_with("#")) {
+    if (tk.text().starts_with("#")) {
         throw compiler_exception{tk, "unexpected comment in expression"};
     }
     if (tz.is_peek_char('(')) {
@@ -163,7 +163,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
     // is it an identifier?
     // note: token name would be empty at "{ x, y }" type of statement
-    if (not tok().is_name("")) {
+    if (not tok().is_text("")) {
         // yes, e.g. obj.pos = p
 
         stmt_ident_ =

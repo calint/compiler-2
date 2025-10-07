@@ -23,7 +23,7 @@ class stmt_if final : public statement {
 
             // check if it is a 'else if' or 'else' or a new statement
             const token tkn{tz.next_token()};
-            if (not tkn.is_name("else")) {
+            if (not tkn.is_text("else")) {
                 // not 'else', push token back in stream and exit
                 tz.put_back_token(tkn);
                 return;
@@ -31,7 +31,7 @@ class stmt_if final : public statement {
             // is 'else'
             // check if 'else if'
             const token tkn2{tz.next_token()};
-            if (not tkn2.is_name("if")) {
+            if (not tkn2.is_text("if")) {
                 // not 'else if', push token back in stream
                 tz.put_back_token(tkn2);
                 // 'else' branch

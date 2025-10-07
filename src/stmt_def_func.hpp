@@ -34,7 +34,7 @@ class stmt_def_func final : public statement {
             if (not tz.is_next_char(',')) {
                 throw compiler_exception{
                     tz, std::format("expected ',' or ')' after parameter '{}'",
-                                    params_.back().tok().name())};
+                                    params_.back().tok().text())};
             }
         }
         ws_after_params_ = tz.next_whitespace_token();
@@ -48,7 +48,7 @@ class stmt_def_func final : public statement {
                         ident_tk, "return variable name may not contain '.'"};
                 }
 
-                const type& tp{tc.get_type_or_throw(type_tk, type_tk.name())};
+                const type& tp{tc.get_type_or_throw(type_tk, type_tk.text())};
 
                 if (not tp.is_built_in()) {
                     throw compiler_exception{
@@ -67,7 +67,7 @@ class stmt_def_func final : public statement {
             set_type(tc.get_type_void());
         }
 
-        tc.add_func(name_tk_, name_tk_.name(), get_type(), this);
+        tc.add_func(name_tk_, name_tk_.text(), get_type(), this);
         // dry-run compilation to catch errors before called
         tc.enter_func(name(), returns_);
         std::vector<std::string> allocated_named_registers;
@@ -158,7 +158,7 @@ class stmt_def_func final : public statement {
     [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
 
     [[nodiscard]] auto name() const -> std::string_view {
-        return name_tk_.name();
+        return name_tk_.text();
     }
 
   private:
@@ -171,7 +171,7 @@ class stmt_def_func final : public statement {
         if (not returns().empty()) {
             // yes, declare variable for the return
             const token& id_tkn{returns().at(0).ident_tk};
-            tc.add_var(id_tkn, os, indent + 1, id_tkn.name(), get_type(), false,
+            tc.add_var(id_tkn, os, indent + 1, id_tkn.text(), get_type(), false,
                        0);
         }
 

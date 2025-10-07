@@ -46,27 +46,27 @@ class stmt_block final : public statement {
                 break;
             }
 
-            if (tk.name().starts_with("#")) {
+            if (tk.text().starts_with("#")) {
                 stms_.emplace_back(
                     std::make_unique<stmt_comment>(tc, unary_ops{}, tk, tz));
                 last_statement_considered_no_statment = true;
-            } else if (tk.is_name("var")) {
+            } else if (tk.is_text("var")) {
                 stms_.emplace_back(std::make_unique<stmt_def_var>(tc, tk, tz));
-            } else if (tk.is_name("break")) {
+            } else if (tk.is_text("break")) {
                 stms_.emplace_back(std::make_unique<stmt_break>(tc, tk));
-            } else if (tk.is_name("continue")) {
+            } else if (tk.is_text("continue")) {
                 stms_.emplace_back(std::make_unique<stmt_continue>(tc, tk));
-            } else if (tk.is_name("return")) {
+            } else if (tk.is_text("return")) {
                 stms_.emplace_back(std::make_unique<stmt_return>(tc, tk));
-            } else if (tk.is_name("loop") or tk.is_name("if") or
-                       tk.is_name("mov") or tk.is_name("syscall")) {
+            } else if (tk.is_text("loop") or tk.is_text("if") or
+                       tk.is_text("mov") or tk.is_text("syscall")) {
                 // note: solves circular reference problem
                 //       'loop' and 'if' uses this class
                 //       'mov' and 'syscall' are 'stmt_call'
                 stms_.emplace_back(create_statement_in_stmt_block(tc, tz, tk));
             } else {
                 // is it at end of block and there is whitespace before '}'?
-                if (tk.is_name("")) {
+                if (tk.is_text("")) {
                     // yes, save it as this block whitespace
                     ws1_ = tk;
                     continue;

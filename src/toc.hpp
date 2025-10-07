@@ -740,7 +740,7 @@ class toc final {
             tk.at_line(), tk.start_index(), source_)};
 
         os << "[" << line << ":" << col << "]";
-        os << " " << tk.name() << '\n';
+        os << " " << tk.text() << '\n';
     }
 
     [[nodiscard]] auto is_identifier_register(std::string_view id) const

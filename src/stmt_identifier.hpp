@@ -27,7 +27,7 @@ class stmt_identifier : public statement {
   public:
     stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : statement{tz.next_whitespace_token(), std::move(uops)},
-          path_as_string_{tk.name()} {
+          path_as_string_{tk.text()} {
 
         token tk_prv{tk};
         // note: keep track of previous token for better compilation error
@@ -66,7 +66,7 @@ class stmt_identifier : public statement {
                 tk_prv = tk;
                 tk = tz.next_token();
                 path_as_string_.push_back('.');
-                path_as_string_ += tk.name();
+                path_as_string_ += tk.text();
                 continue;
             }
 
@@ -185,7 +185,7 @@ class stmt_identifier : public statement {
         std::vector<std::string>& allocated_registers) -> std::string {
 
         // initialize base element information
-        std::string path{elems.front().name_tk.name()};
+        std::string path{elems.front().name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path, false)};
 
         // start with offset register being the default 'rsp'
@@ -274,9 +274,9 @@ class stmt_identifier : public statement {
                 accum_offset +=
                     static_cast<int32_t>(toc::get_field_offset_in_type(
                         src_loc_tk, curr_info.type_ref,
-                        next_elem.name_tk.name()));
+                        next_elem.name_tk.text()));
                 path.push_back('.');
-                path += next_elem.name_tk.name();
+                path += next_elem.name_tk.text();
             }
         }
 

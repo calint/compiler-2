@@ -32,7 +32,7 @@ class expr_bool_ops_list final : public statement {
             // this token may be "not"
             token maybe_not_tk{tz.next_token()};
             // is it "not"?
-            if (not maybe_not_tk.is_name("not")) {
+            if (not maybe_not_tk.is_text("not")) {
                 // no, put token back and make it into the whitespace
                 tz.put_back_token(maybe_not_tk);
                 maybe_not_tk = tz.next_whitespace_token();
@@ -76,7 +76,7 @@ class expr_bool_ops_list final : public statement {
 
             // read 'and' or 'or'
             const token op_tk{tz.next_token()};
-            if (not op_tk.is_name("or") and not op_tk.is_name("and")) {
+            if (not op_tk.is_text("or") and not op_tk.is_text("and")) {
                 // not expected keyword, end of expression, put token back and
                 // return
 
@@ -98,7 +98,7 @@ class expr_bool_ops_list final : public statement {
             }
 
             // is it mixing 'and's and 'or's?
-            if (not prv_op.is_name(op_tk.name())) {
+            if (not prv_op.is_text(op_tk.text())) {
                 // yes, not allowed
                 throw compiler_exception{
                     op_tk, "mixing 'and' and 'or' without parenthesis"};
@@ -156,8 +156,8 @@ class expr_bool_ops_list final : public statement {
         toc::indent(os, indent, true);
         tc.comment_source(os, "?", inverted ? " inverted: " : " ", *this);
         // invert according to De Morgan's laws
-        const bool invert{inverted ? not not_token_.is_name("not")
-                                   : not_token_.is_name("not")};
+        const bool invert{inverted ? not not_token_.is_text("not")
+                                   : not_token_.is_text("not")};
         const size_t n{bools_.size()};
         for (size_t i{}; i < n; i++) {
             if (bools_.at(i).index() == 1) {
@@ -173,12 +173,12 @@ class expr_bool_ops_list final : public statement {
                     if (not invert) {
                         // if not last element check if it is a 'or' or
                         // 'and' list
-                        if (ops_.at(i).is_name("or")) {
+                        if (ops_.at(i).is_text("or")) {
                             // if evaluation is false and next op is 'or'
                             // then 'jump_false' goes to next bool op in the
                             // list
                             jmp_false = cmp_label_from(tc, bools_.at(i + 1));
-                        } else if (ops_.at(i).is_name("and")) {
+                        } else if (ops_.at(i).is_text("and")) {
                             // if evaluation is true and next op is 'and'
                             // then 'jump_true' goes to next bool op in the
                             // list
@@ -193,12 +193,12 @@ class expr_bool_ops_list final : public statement {
 
                             // if false and in an 'and' list short-circuit
                             // and return evaluation
-                            if (not *const_eval and ops_.at(i).is_name("and")) {
+                            if (not *const_eval and ops_.at(i).is_text("and")) {
                                 return *const_eval;
                             }
                             // if true and in an 'or' list short-circuit and
                             // return result
-                            if (*const_eval and ops_.at(i).is_name("or")) {
+                            if (*const_eval and ops_.at(i).is_text("or")) {
                                 return *const_eval;
                             }
                         }
@@ -206,13 +206,13 @@ class expr_bool_ops_list final : public statement {
                         // invert according to De Morgan's laws
                         // if not last element check if it is a 'or' or
                         // 'and' list
-                        if (ops_.at(i).is_name("and")) {
+                        if (ops_.at(i).is_text("and")) {
                             // 'and' list inverted
                             // if evaluation is false and next op is 'or'
                             // (inverted from 'and') then 'jump_false' is
                             // next bool op in the list
                             jmp_false = cmp_label_from(tc, bools_.at(i + 1));
-                        } else if (ops_.at(i).is_name("or")) {
+                        } else if (ops_.at(i).is_text("or")) {
                             // 'or' list inverted
                             // if evaluation is true and next op is 'and'
                             // (inverted from 'or') then 'jump_true' is next
@@ -230,12 +230,12 @@ class expr_bool_ops_list final : public statement {
 
                             // if 'false' and in an 'and' (inverted 'or')
                             // list short-circuit and return evaluation
-                            if (not *const_eval and ops_.at(i).is_name("or")) {
+                            if (not *const_eval and ops_.at(i).is_text("or")) {
                                 return *const_eval;
                             }
                             // if 'true' and in an 'or' (inverted 'and')
                             // list short-circuit and return evaluation
-                            if (*const_eval and ops_.at(i).is_name("and")) {
+                            if (*const_eval and ops_.at(i).is_text("and")) {
                                 return *const_eval;
                             }
                         }
@@ -262,14 +262,14 @@ class expr_bool_ops_list final : public statement {
                 const expr_bool_op& e{get<expr_bool_op>(bools_.at(i))};
                 if (i < n - 1) {
                     // not last element
-                    if (ops_.at(i).is_name("or")) {
+                    if (ops_.at(i).is_text("or")) {
                         std::optional<bool> const_eval{e.compile_or(
                             tc, os, indent, jmp_to_if_true, invert)};
                         if (const_eval and *const_eval) {
                             // constant evaluated to true, short-circuit
                             return true;
                         }
-                    } else if (ops_.at(i).is_name("and")) {
+                    } else if (ops_.at(i).is_text("and")) {
                         std::optional<bool> const_eval{e.compile_and(
                             tc, os, indent, jmp_to_if_false, invert)};
                         if (const_eval and not *const_eval) {
@@ -295,14 +295,14 @@ class expr_bool_ops_list final : public statement {
                 const expr_bool_op& e{get<expr_bool_op>(bools_.at(i))};
                 if (i < n - 1) {
                     // not last element
-                    if (ops_.at(i).is_name("and")) {
+                    if (ops_.at(i).is_text("and")) {
                         std::optional<bool> const_eval{e.compile_or(
                             tc, os, indent, jmp_to_if_true, invert)};
                         if (const_eval and *const_eval) {
                             // constant evaluated to true, short-circuit
                             return true;
                         }
-                    } else if (ops_.at(i).is_name("or")) {
+                    } else if (ops_.at(i).is_text("or")) {
                         std::optional<bool> const_eval{e.compile_and(
                             tc, os, indent, jmp_to_if_false, invert)};
                         if (const_eval and not *const_eval) {

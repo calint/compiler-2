@@ -29,7 +29,7 @@ class stmt_def_field final : public statement {
             set_type(tc.get_type_default()); //? only default type supported
         }
 
-        tc.add_field(tok(), name_tk_.name(), this, initial_value_.is_string());
+        tc.add_field(tok(), name_tk_.text(), this, initial_value_.is_string());
     }
 
     stmt_def_field() = default;
@@ -53,14 +53,14 @@ class stmt_def_field final : public statement {
         -> void override {
 
         tc.comment_source(*this, os, indent);
-        os << name_tk_.name() << ':';
+        os << name_tk_.text() << ':';
         if (initial_value_.is_string()) {
             os << " db '";
             initial_value_.compile_to(os);
             os << "'\n";
             toc::indent(os, indent);
             // the length of the string
-            os << name_tk_.name() << ".len equ $-" << name_tk_.name() << "\n";
+            os << name_tk_.text() << ".len equ $-" << name_tk_.text() << "\n";
             return;
         }
 

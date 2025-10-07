@@ -35,7 +35,7 @@ class expr_bool_op final : public statement {
         // e.g. if not a == 3 ...
         while (true) {
             const token tk{tz.next_token()};
-            if (not tk.is_name("not")) {
+            if (not tk.is_text("not")) {
                 tz.put_back_token(tk);
                 break;
             }
