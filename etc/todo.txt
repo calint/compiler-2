@@ -1,33 +1,35 @@
+[ ] source recreation does not work with comment at end of file and
+    newlines:
+        var objs : object[10]
+        objs[1].pos.y = 0xab
+        # hello
+
+      }
 [o] improve source location token in stmt_identifier
     [x] accurate position on identifier that cannot be found
 [x] assume "x" is "x[0]"
 [ ] instrumentation to find out max heap and stack usage by the compiler
 [ ] optimize rep stosb to q, d, w if possible
     => maybe some heuristics about when to use "rep stosX" 
-[ ] toc: consider abstracting registers into a class for less quirky string
-    manipulations
+[ ] usage of ad-hoc strings specifying destination of result from an exception
+    is messy, same as assembler operation size, review
+    [ ] toc: consider abstracting registers into a class for less quirky string
+        manipulations
 [ ] handle constant array index case
 [ ] argument to the compiler specifying stack size
 [ ] support assigning strings to i8 arrays
 [ ] bounds check array access (optional compiler flag)
 [ ] expr_ops_list: const eval
-[ ] usage of ad-hoc strings specifying destination of result from an exception
-    is messy, same as assembler operation size, review
 [o] tidy
     [ ] review where compiler_exceptions happen and try to make good source
         location reports
     [x] use std::format
     [ ] review the reading of white spaces sprinkled about
-    [ ] rep movsb can be done faster with q if objects are sized to 2^n
+    [-] rep movsb can be done faster with q if objects are sized to 2^n
+        => duplicate issue
     [ ] toc.allocate_named_register_or_throw requires statement for src_loc_tk
-    [ ] source recreation does not work with comment at end of file and
-        newlines:
-            var objs : object[10]
-            objs[1].pos.y = 0xab
-            # hello
-
-          }
     [ ] allow declaration of instance without initializer, zero it
+        => var o : object[1] then accessed through o.pos does that
 [ ] numbers such as i8 : 255 cause problems when cmp because value is moved
     to unspecified register size with sign extension
 [ ] consider a built-in function "lea" that returns the address of an
