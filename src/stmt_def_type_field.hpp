@@ -78,6 +78,8 @@ class stmt_def_type_field final : public statement {
         return type_tk_.name();
     }
 
+    [[nodiscard]] auto type_token() const -> const token& { return type_tk_; }
+
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
 
     [[nodiscard]] auto array_size() const -> size_t { return array_size_; }

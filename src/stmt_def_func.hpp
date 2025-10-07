@@ -33,9 +33,8 @@ class stmt_def_func final : public statement {
             }
             if (not tz.is_next_char(',')) {
                 throw compiler_exception(
-                    params_.back().tok(),
-                    std::format("expected ',' after parameter '{}'",
-                                params_.back().tok().name()));
+                    tz, std::format("expected ',' or ')' after parameter '{}'",
+                                    params_.back().tok().name()));
             }
         }
         ws_after_params_ = tz.next_whitespace_token();
@@ -44,7 +43,7 @@ class stmt_def_func final : public statement {
             while (true) {
                 token type_tk{tz.next_token()};
                 token ident_tk{tz.next_token()};
-                if (ident_tk.name().contains('.')) {
+                if (tz.is_next_char('.')) {
                     throw compiler_exception(
                         ident_tk, "return variable name may not contain '.'");
                 }

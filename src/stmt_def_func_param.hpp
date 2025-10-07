@@ -26,7 +26,7 @@ class stmt_def_func_param final : public statement {
             return;
         }
 
-        set_type(tc.get_type_or_throw(tok(), type_tk_.name()));
+        set_type(tc.get_type_or_throw(type_tk_, type_tk_.name()));
     }
 
     stmt_def_func_param() = default;

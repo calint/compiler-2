@@ -135,13 +135,7 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
             tk, "expected constant, identifier or function call");
     }
     if (tk.name().starts_with("#")) {
-        if (not uops.is_empty()) {
-            // note: might contain whitespace
-            throw compiler_exception(tk, "unexpected comment after unary ops");
-        }
-
-        // e.g.  print("hello") # comment
-        return std::make_unique<stmt_comment>(tc, uops, std::move(tk), tz);
+        throw compiler_exception(tk, "unexpected comment in expression");
     }
     if (tz.is_peek_char('(')) {
         // e.g.  foo(...)

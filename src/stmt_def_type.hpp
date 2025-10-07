@@ -25,7 +25,9 @@ class stmt_def_type final : public statement {
                 break;
             }
             if (not tz.is_next_char(',')) {
-                throw compiler_exception(tz, "expected ',' and more fields");
+                throw compiler_exception(
+                    tz, std::format("expected ',' and more fields in type '{}'",
+                                    name_tk_.name()));
             }
         }
         // initiate the type definitions
@@ -37,7 +39,7 @@ class stmt_def_type final : public statement {
             const type& tp{
                 fld.type_str().empty()
                     ? tc.get_type_default()
-                    : tc.get_type_or_throw(fld.tok(), fld.type_str())};
+                    : tc.get_type_or_throw(fld.type_token(), fld.type_str())};
 
             type_.add_field(fld.tok(), fld.name(), tp, fld.is_array(),
                             fld.array_size());

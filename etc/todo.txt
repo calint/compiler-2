@@ -1,3 +1,5 @@
+[o] try different compilation errors and improve messages and source position
+    indicators
 [o] source differs when (notice - and then comment):
         print(prompt1.len, prompt1)
         var len = read(input.len, input) -     # -1 don't include the '\n'
