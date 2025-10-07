@@ -121,6 +121,11 @@ func main() {
     assert(o2.pos.y == -2)
     assert(o2.color == 0xff0000)
 
+    var o3 : object[1]
+    # index 0 in an array can be accessed without array index
+    o3.pos.y = 73
+    assert(o3[0].pos.y == 73)
+
     print(hello.len, hello)
     loop {
         print(prompt1.len, prompt1)
