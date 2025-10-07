@@ -1,3 +1,6 @@
+[ ] optimize rep stosb to q, d, w if possible
+    => maybe some heuristics about when to use "rep stosX" 
+       => start with stosq, then mov dword, word and byte
 [ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
 [ ] use std::string_view where possible instead of std::string
     e.g. in expr_bool_op to return constexpr strings
@@ -12,8 +15,6 @@
     location reports
 [ ] review the reading of white spaces sprinkled about
 [ ] instrumentation to find out max heap and stack usage by the compiler
-[ ] optimize rep stosb to q, d, w if possible
-    => maybe some heuristics about when to use "rep stosX" 
 [ ] usage of ad-hoc strings specifying destination of result from an exception
     is messy, same as assembler operation size, review
     [ ] toc: consider abstracting registers into a class for less quirky string
