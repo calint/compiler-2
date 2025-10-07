@@ -25,7 +25,6 @@
 #include "stmt_call.hpp"
 #include "stmt_call_asm_mov.hpp"
 #include "stmt_call_asm_syscall.hpp"
-#include "stmt_comment.hpp"
 #include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
@@ -131,11 +130,11 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     const unary_ops uops{tz};
     token tk{tz.next_token()};
     if (tk.is_name("")) {
-        throw compiler_exception(
-            tk, "expected constant, identifier or function call");
+        throw compiler_exception{
+            tk, "expected constant, identifier or function call"};
     }
     if (tk.name().starts_with("#")) {
-        throw compiler_exception(tk, "unexpected comment in expression");
+        throw compiler_exception{tk, "unexpected comment in expression"};
     }
     if (tz.is_peek_char('(')) {
         // e.g.  foo(...)
@@ -171,6 +170,12 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         stmt_ident_ =
             std::make_shared<stmt_identifier>(tc, unary_ops{}, tok(), tz);
 
+        if (tz.is_next_char('(')) {
+            throw compiler_exception{tok(), "did not expect function call, but "
+                                            "what to copy or initializer for "
+                                            "variable using '{...}'"};
+        }
+
         // check that identifier type matches expected type
         const ident_info ii{
             tc.make_ident_info(tok(), stmt_ident_->identifier(), false)};
@@ -188,9 +193,9 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
     // e.g. obj.pos = {x, y}
     if (not tz.is_next_char('{')) {
-        throw compiler_exception(
+        throw compiler_exception{
             tz,
-            std::format("expected '{{' to open assign type '{}'", tp.name()));
+            std::format("expected '{{' to open assign type '{}'", tp.name())};
     }
 
     const std::vector<type_field>& flds{tp.fields()};
@@ -203,25 +208,26 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
         if (i < nflds - 1) {
             if (not tz.is_next_char(',')) {
-                throw compiler_exception(
+                throw compiler_exception{
                     tz, std::format(
                             "expected ',' and value of field '{}' in type '{}'",
-                            flds[i + 1].name, tp.name()));
+                            flds[i + 1].name, tp.name())};
             }
         }
     }
 
     if (not tz.is_next_char('}')) {
-        throw compiler_exception(
+        throw compiler_exception{
             tz,
-            std::format("expected '}}' to close assign type '{}'", tp.name()));
+            std::format("expected '}}' to close assign type '{}'", tp.name())};
     }
 }
 
 expr_type_value::~expr_type_value() = default;
 
 // declared in 'expr_type_value.hpp'
-// resolves circular reference: expr_type_value -> expr_any -> expr_type_value
+// resolves circular reference: expr_type_value -> expr_any ->
+// expr_type_value
 inline void expr_type_value::source_to(std::ostream& os) const {
     // is it an identifier? because that was printed by statement
     if (is_make_copy()) {
@@ -244,7 +250,8 @@ inline void expr_type_value::source_to(std::ostream& os) const {
 }
 
 // declared in 'expr_type_value.hpp'
-// resolves circular reference: expr_type_value -> expr_any -> expr_type_values
+// resolves circular reference: expr_type_value -> expr_any ->
+// expr_type_values
 inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
                                           size_t indent,
                                           const std::string& dst) const
@@ -263,7 +270,8 @@ inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
 }
 
 // declared in 'expr_type_value.hpp'
-// resolves circular reference: expr_type_value -> expr_any -> expr_type_values
+// resolves circular reference: expr_type_value -> expr_any ->
+// expr_type_values
 inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
                                                toc& tc, std::ostream& os,
                                                size_t indent,
@@ -278,11 +286,11 @@ inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
         // yes, e.g. obj.pos = p
         const type& src_type{tc.make_ident_info(etv.tok(), src, true).type_ref};
         if (src_type.name() != dst_type.name()) {
-            throw compiler_exception(
+            throw compiler_exception{
                 etv.tok(), std::format("cannot assign '{}' to '{}' because "
                                        "'{}' is '{}' and '{}' is '{}'",
                                        src, dst, src, src_type.name(), dst,
-                                       dst_type.name()));
+                                       dst_type.name())};
         }
 
         for (const type_field& fld : dst_type.fields()) {
@@ -536,7 +544,8 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         for (const std::string& s : comments2) {
             os << s << '\n';
         }
-        // os << ws_before << jxx_inv << " " << jmplbl << "  ; opt2" << '\n';
+        // os << ws_before << jxx_inv << " " << jmplbl << "  ; opt2" <<
+        // '\n';
         os << ws_before << jxx_inv << " " << jmplbl << '\n';
         for (const std::string& s : comments3) {
             os << s << '\n';

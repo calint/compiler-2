@@ -26,7 +26,7 @@ class stmt_call_asm_mov final : public stmt_call {
         tc.comment_source(*this, os, indent);
 
         if (arg_count() != 2) {
-            throw compiler_exception(tok(), "expected 2 arguments");
+            throw compiler_exception{tok(), "expected 2 arguments"};
         }
 
         // the assembler command might not need to resolve expressions

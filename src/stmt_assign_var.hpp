@@ -48,9 +48,9 @@ class stmt_assign_var final : public statement {
             tc.make_ident_info(tok(), stmt_ident_.identifier(), false)};
 
         if (dst_info.is_const()) {
-            throw compiler_exception(
+            throw compiler_exception{
                 tok(),
-                std::format("cannot assign to constant '{}'", dst_info.id));
+                std::format("cannot assign to constant '{}'", dst_info.id)};
         }
 
         // is it a copy type instance expression?

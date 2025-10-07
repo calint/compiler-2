@@ -19,8 +19,8 @@ class stmt_def_func final : public statement {
         : statement{std::move(tk)}, name_tk_{tz.next_token()} {
 
         if (not tz.is_next_char('(')) {
-            throw compiler_exception(name_tk_,
-                                     "expected '(' after function name");
+            throw compiler_exception{name_tk_,
+                                     "expected '(' after function name"};
         }
         // read parameters definition
         while (true) {
@@ -32,9 +32,9 @@ class stmt_def_func final : public statement {
                 break;
             }
             if (not tz.is_next_char(',')) {
-                throw compiler_exception(
+                throw compiler_exception{
                     tz, std::format("expected ',' or ')' after parameter '{}'",
-                                    params_.back().tok().name()));
+                                    params_.back().tok().name())};
             }
         }
         ws_after_params_ = tz.next_whitespace_token();
@@ -44,8 +44,8 @@ class stmt_def_func final : public statement {
                 token type_tk{tz.next_token()};
                 token ident_tk{tz.next_token()};
                 if (tz.is_next_char('.')) {
-                    throw compiler_exception(
-                        ident_tk, "return variable name may not contain '.'");
+                    throw compiler_exception{
+                        ident_tk, "return variable name may not contain '.'"};
                 }
 
                 const type& tp{tc.get_type_or_throw(type_tk, type_tk.name())};

@@ -14,11 +14,11 @@ class stmt_def_field final : public statement {
         : statement{std::move(tk)}, name_tk_{tz.next_token()} {
 
         if (name_tk_.is_empty()) {
-            throw compiler_exception(name_tk_, "expected field name");
+            throw compiler_exception{name_tk_, "expected field name"};
         }
 
         if (not tz.is_next_char('=')) {
-            throw compiler_exception(tz, "expected '=' and initial value");
+            throw compiler_exception{tz, "expected '=' and initial value"};
         }
 
         uops_ = unary_ops{tz};

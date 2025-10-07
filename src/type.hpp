@@ -64,8 +64,8 @@ class type final {
             }
         }
 
-        throw compiler_exception(
-            tk, std::format("field '{}' not found in type '{}'", name, name_));
+        throw compiler_exception{
+            tk, std::format("field '{}' not found in type '{}'", name, name_)};
     }
 
     [[nodiscard]] auto accessor(const token& tk,
@@ -120,8 +120,8 @@ class type final {
         case 1:
             return size_byte;
         default:
-            throw compiler_exception(
-                tk, std::format("illegal size for memory operand: {}", size));
+            throw compiler_exception{
+                tk, std::format("illegal size for memory operand: {}", size)};
         }
     }
 };

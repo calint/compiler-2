@@ -63,8 +63,10 @@ class stmt_def_var final : public statement {
 
         // expect initialization
         if (init_required and not tz.is_next_char('=')) {
-            throw compiler_exception(tz,
-                                     "expected '=' and initializer after type");
+            throw compiler_exception{
+                tz,
+                std::format("expected '=' and initializer for variable '{}'",
+                            name_tk_.name())};
         }
 
         ws1_ = tz.next_whitespace_token();

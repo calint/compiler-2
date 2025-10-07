@@ -50,12 +50,12 @@ class expr_bool_op final : public statement {
 
         if (tz.is_next_char('=')) {
             if (not tz.is_next_char('=')) {
-                throw compiler_exception(tz, "expected '=='");
+                throw compiler_exception{tz, "expected '=='"};
             }
             op_ = "==";
         } else if (tz.is_next_char('!')) {
             if (not tz.is_next_char('=')) {
-                throw compiler_exception(tz, "expected '!='");
+                throw compiler_exception{tz, "expected '!='"};
             }
             op_ = "!=";
         } else if (tz.is_next_char('<')) {

@@ -35,8 +35,8 @@ class stmt_block final : public statement {
                     ws2_ = tz.next_whitespace_token();
                     break;
                 }
-                throw compiler_exception(
-                    tz, "unexpected '}' in single statement block");
+                throw compiler_exception{
+                    tz, "unexpected '}' in single statement block"};
             }
 
             token tk{tz.next_token()};

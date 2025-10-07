@@ -27,7 +27,7 @@ class stmt_call_asm_syscall final : public stmt_call {
         tc.comment_source(*this, os, indent);
 
         if (arg_count() != 0) {
-            throw compiler_exception(tok(), "didn't expect arguments");
+            throw compiler_exception{tok(), "didn't expect arguments"};
         }
 
         toc::indent(os, indent);

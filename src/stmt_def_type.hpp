@@ -14,8 +14,8 @@ class stmt_def_type final : public statement {
         : statement{std::move(tk)}, name_tk_{tz.next_token()} {
 
         if (not tz.is_next_char('{')) {
-            throw compiler_exception(
-                name_tk_, "expected '{' to begin declaration of type");
+            throw compiler_exception{
+                name_tk_, "expected '{' to begin declaration of type"};
         }
 
         while (true) {
@@ -25,9 +25,9 @@ class stmt_def_type final : public statement {
                 break;
             }
             if (not tz.is_next_char(',')) {
-                throw compiler_exception(
+                throw compiler_exception{
                     tz, std::format("expected ',' and more fields in type '{}'",
-                                    name_tk_.name()));
+                                    name_tk_.name())};
             }
         }
         // initiate the type definitions

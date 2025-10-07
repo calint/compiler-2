@@ -19,7 +19,7 @@ class stmt_call : public expression {
         set_type(tc.get_func_return_type_or_throw(tok(), identifier()));
 
         if (not tz.is_next_char('(')) {
-            throw compiler_exception(tok(), "expected '(' after function name");
+            throw compiler_exception{tok(), "expected '(' after function name"};
         }
 
         if (not tc.is_func_builtin(tok(), identifier())) {
@@ -34,15 +34,15 @@ class stmt_call : public expression {
                 i++;
                 if (i < n) {
                     if (not tz.is_next_char(',')) {
-                        throw compiler_exception(
+                        throw compiler_exception{
                             tz, std::format("expected argument {} '{}'", i + 1,
-                                            param.name()));
+                                            param.name())};
                     }
                 }
             }
             if (not tz.is_next_char(')')) {
                 // note: checked source location report ok
-                throw compiler_exception(tz, "expected ')' after arguments");
+                throw compiler_exception{tz, "expected ')' after arguments"};
             }
         } else {
             // built-in function
@@ -50,8 +50,8 @@ class stmt_call : public expression {
             while (true) {
                 if (tz.is_next_char(')')) { // foo()
                     if (expect_arg) {
-                        throw compiler_exception(tz,
-                                                 "expected argument after ','");
+                        throw compiler_exception{tz,
+                                                 "expected argument after ','"};
                     }
                     break;
                 }
@@ -95,13 +95,13 @@ class stmt_call : public expression {
 
         // check that the same number of arguments are provided as expected
         if (func.params().size() != args_.size()) {
-            throw compiler_exception(
+            throw compiler_exception{
                 tok(),
                 std::format(
                     "function '{}' expects {} argument{} but {} {} provided",
                     func_name, func.params().size(),
                     (func.params().size() == 1 ? "" : "s"), args_.size(),
-                    (args_.size() == 1 ? "is" : "are")));
+                    (args_.size() == 1 ? "is" : "are"))};
         }
 
         // check that argument types match the parameters
@@ -113,40 +113,40 @@ class stmt_call : public expression {
             if (arg_type.is_built_in() and param_type.is_built_in()) {
                 //? check if it is integral (not bool)
                 if (param_type.size() < arg_type.size()) {
-                    throw compiler_exception(
+                    throw compiler_exception{
                         arg.tok(),
                         std::format(
                             "argument {} of type '{}' would be truncated when "
                             "passed to parameter of type '{}'",
-                            i + 1, arg_type.name(), param_type.name()));
+                            i + 1, arg_type.name(), param_type.name())};
                 }
                 continue;
             }
             if (arg_type.name() != param_type.name()) {
-                throw compiler_exception(
+                throw compiler_exception{
                     arg.tok(),
                     std::format("argument {} of type '{}' does not match "
                                 "parameter of type '{}'",
-                                i + 1, arg_type.name(), param_type.name()));
+                                i + 1, arg_type.name(), param_type.name())};
             }
         }
 
         // check that return value matches the type
         if (not dst.empty()) {
             if (func.returns().empty()) {
-                throw compiler_exception(tok(),
-                                         "function does not return value");
+                throw compiler_exception{tok(),
+                                         "function does not return value"};
             }
 
             const type& return_type{func.get_type()};
             const ident_info& dst_info{tc.make_ident_info(tok(), dst, false)};
             //?
             if (dst_info.type_ref.size() < return_type.size()) {
-                throw compiler_exception(
+                throw compiler_exception{
                     tok(), std::format("return type '{}' would be truncated "
                                        "when copied to '{}' of type '{}'",
                                        return_type.name(), dst,
-                                       dst_info.type_ref.name()));
+                                       dst_info.type_ref.name())};
             }
         }
 
@@ -318,9 +318,9 @@ class stmt_call : public expression {
             // has unary ops
             // does the function have a return?
             if (func.returns().empty()) {
-                throw compiler_exception(
+                throw compiler_exception{
                     tok(), "function call has unary operations but it "
-                           "does not return a value");
+                           "does not return a value"};
             }
 
             // compile the result using the unary ops

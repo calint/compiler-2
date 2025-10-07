@@ -134,11 +134,11 @@ class expr_ops_list final : public expression {
             // handle the two character operator shift
             if (ch == '<') {
                 if (tz.next_char() != '<') {
-                    throw compiler_exception(tz, "expected operator '<<'");
+                    throw compiler_exception{tz, "expected operator '<<'"};
                 }
             } else if (ch == '>') {
                 if (tz.next_char() != '>') {
-                    throw compiler_exception(tz, "expected operator '>>'");
+                    throw compiler_exception{tz, "expected operator '>>'"};
                 }
             }
 
@@ -622,9 +622,9 @@ class expr_ops_list final : public expression {
         }
 
         if (src_info.id_nasm == "rcx") {
-            throw compiler_exception(
+            throw compiler_exception{
                 src.tok(), "cannot use 'rcx' as operand in shift because "
-                           "that registers is used");
+                           "that registers is used"};
         }
 
         const unary_ops& uops{src.get_unary_ops()};
@@ -739,9 +739,9 @@ class expr_ops_list final : public expression {
         }
 
         if (src_info.id_nasm == "rdx" or src_info.id_nasm == "rax") {
-            throw compiler_exception(
+            throw compiler_exception{
                 src.tok(), "cannot use 'rdx' or 'rax' as operands in "
-                           "division because those registers are used");
+                           "division because those registers are used"};
         }
 
         // 'src' is not an expression and not a constant

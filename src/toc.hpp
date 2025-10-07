@@ -255,11 +255,11 @@ class toc final {
         -> void {
 
         if (fields_.has(name)) {
-            throw compiler_exception(
+            throw compiler_exception{
                 src_loc_tk,
                 std::format("field '{}' already defined at {}", name,
                             source_location_hr(
-                                fields_.get_const_ref(name).declared_at_tk)));
+                                fields_.get_const_ref(name).declared_at_tk))};
         }
 
         fields_.put(name, {.def = fld_def,
@@ -273,10 +273,10 @@ class toc final {
 
         if (funcs_.has(name)) {
             const func_info& fn{funcs_.get_const_ref(name)};
-            throw compiler_exception(
+            throw compiler_exception{
                 src_loc_tk,
                 std::format("function '{}' already defined at {}", name,
-                            source_location_hr(fn.declared_at_tk)));
+                            source_location_hr(fn.declared_at_tk))};
         }
 
         funcs_.put(name, {.def = func_def,
@@ -293,8 +293,8 @@ class toc final {
         -> const stmt_def_func& {
 
         if (not funcs_.has(name)) {
-            throw compiler_exception(
-                src_loc_tk, std::format("function '{}' not found", name));
+            throw compiler_exception{
+                src_loc_tk, std::format("function '{}' not found", name)};
         }
 
         return *funcs_.get_const_ref(name).def;
@@ -304,8 +304,8 @@ class toc final {
                                        const std::string& name) const -> bool {
 
         if (not funcs_.has(name)) {
-            throw compiler_exception(
-                src_loc_tk, std::format("function '{}' not found", name));
+            throw compiler_exception{
+                src_loc_tk, std::format("function '{}' not found", name)};
         }
 
         return funcs_.get_const_ref(name).def == nullptr;
@@ -315,8 +315,8 @@ class toc final {
         const token& src_loc_tk, const std::string& name) const -> const type& {
 
         if (not funcs_.has(name)) {
-            throw compiler_exception(
-                src_loc_tk, std::format("function '{}' not found", name));
+            throw compiler_exception{
+                src_loc_tk, std::format("function '{}' not found", name)};
         }
 
         return funcs_.get_const_ref(name).type_ref;
@@ -325,9 +325,9 @@ class toc final {
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
         if (types_.has(tpe.name())) {
             //? todo. specify where the type has been defined
-            throw compiler_exception(
+            throw compiler_exception{
                 src_loc_tk,
-                std::format("type '{}' already defined", tpe.name()));
+                std::format("type '{}' already defined", tpe.name())};
         }
 
         types_.put(tpe.name(), tpe);
@@ -338,8 +338,8 @@ class toc final {
         -> const type& {
 
         if (not types_.has(name)) {
-            throw compiler_exception(src_loc_tk,
-                                     std::format("type '{}' not found", name));
+            throw compiler_exception{src_loc_tk,
+                                     std::format("type '{}' not found", name)};
         }
 
         return types_.get_const_ref(name);
@@ -442,8 +442,8 @@ class toc final {
             return id_info;
         }
 
-        throw compiler_exception(
-            src_loc_tk, std::format("cannot resolve identifier '{}'", ident));
+        throw compiler_exception{
+            src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
     }
 
   public:
@@ -497,20 +497,20 @@ class toc final {
         // check if variable is already declared in this scope
         if (frames_.back().has_var(name)) {
             const var_info& var{frames_.back().get_var_const_ref(name)};
-            throw compiler_exception(
+            throw compiler_exception{
                 src_loc_tk,
                 std::format("variable '{}' already declared at {}", name,
-                            source_location_hr(var.declared_at_tk)));
+                            source_location_hr(var.declared_at_tk))};
         }
 
         // check if variable shadows previously declared variable
         const auto [id, frm]{get_id_and_frame_for_identifier(name)};
         if (not id.empty()) {
             const var_info& var{frm.get_var_const_ref(id)};
-            throw compiler_exception(
+            throw compiler_exception{
                 src_loc_tk,
                 std::format("variable '{}' shadows variable declared at {}",
-                            name, source_location_hr(var.declared_at_tk)));
+                            name, source_location_hr(var.declared_at_tk))};
         }
 
         const int stack_idx{
@@ -538,9 +538,9 @@ class toc final {
                                 const size_t indnt) -> std::string {
 
         if (scratch_registers_.empty()) {
-            throw compiler_exception(src_loc_tk,
+            throw compiler_exception{src_loc_tk,
                                      "out of scratch registers. try to reduce "
-                                     "expression complexity");
+                                     "expression complexity"};
         }
 
         std::string reg{std::move(scratch_registers_.back())};
@@ -577,10 +577,10 @@ class toc final {
                     break;
                 }
             }
-            throw compiler_exception(
+            throw compiler_exception{
                 st.tok(), std::format("cannot allocate register '{}' because "
                                       "it was allocated at {}",
-                                      reg, loc));
+                                      reg, loc)};
         }
 
         allocated_registers_.emplace_back(std::move(*reg_iter));
@@ -646,11 +646,11 @@ class toc final {
                 return frm.name();
             }
             if (frm.is_func()) {
-                throw compiler_exception(src_loc_tk, "not in a loop");
+                throw compiler_exception{src_loc_tk, "not in a loop"};
             }
         }
 
-        throw compiler_exception(src_loc_tk, "unexpected frames");
+        throw compiler_exception{src_loc_tk, "unexpected frames"};
     }
 
     [[nodiscard]] auto get_call_path(const token& src_loc_tk) const
@@ -661,7 +661,7 @@ class toc final {
             }
         }
 
-        throw compiler_exception(src_loc_tk, "not in a function");
+        throw compiler_exception{src_loc_tk, "not in a function"};
     }
 
     [[nodiscard]] auto
@@ -674,7 +674,7 @@ class toc final {
             }
         }
 
-        throw compiler_exception(src_loc_tk, "not in a function");
+        throw compiler_exception{src_loc_tk, "not in a function"};
     }
 
     [[nodiscard]] auto get_func_returns(const token& src_loc_tk) const
@@ -686,7 +686,7 @@ class toc final {
             }
         }
 
-        throw compiler_exception(src_loc_tk, "not in a function");
+        throw compiler_exception{src_loc_tk, "not in a function"};
     }
 
     auto comment_source(const statement& st, std::ostream& os,
@@ -845,10 +845,10 @@ class toc final {
         if (is_operand_memory(src_nasm)) {
             //? todo. this displays nasm identifiers but should be human
             // readable identifiers
-            throw compiler_exception(
+            throw compiler_exception{
                 src_loc_tk, std::format("cannot move '{}' to '{}' because "
                                         "it would be truncated",
-                                        src_nasm, dst_nasm));
+                                        src_nasm, dst_nasm)};
         }
 
         // constant
@@ -1010,8 +1010,8 @@ class toc final {
             return 1;
         }
 
-        throw compiler_exception(src_loc_tk,
-                                 std::format("unknown register '{}'", operand));
+        throw compiler_exception{src_loc_tk,
+                                 std::format("unknown register '{}'", operand)};
     }
 
     static auto get_register_operand_for_size(const token& src_loc_tk,
@@ -1031,10 +1031,10 @@ class toc final {
             case 1:
                 return "al";
             default:
-                throw compiler_exception(
+                throw compiler_exception{
                     src_loc_tk,
                     std::format("illegal size {} for register operand '{}'",
-                                size, operand));
+                                size, operand)};
             }
         }
         if (operand == "rbx") {
@@ -1048,9 +1048,9 @@ class toc final {
             case 1:
                 return "bl";
             default:
-                throw compiler_exception(
+                throw compiler_exception{
                     src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand));
+                                            size, operand)};
             }
         }
         if (operand == "rcx") {
@@ -1064,9 +1064,9 @@ class toc final {
             case 1:
                 return "cl";
             default:
-                throw compiler_exception(
+                throw compiler_exception{
                     src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand));
+                                            size, operand)};
             }
         }
         if (operand == "rdx") {
@@ -1080,9 +1080,9 @@ class toc final {
             case 1:
                 return "dl";
             default:
-                throw compiler_exception(
+                throw compiler_exception{
                     src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand));
+                                            size, operand)};
             }
         }
         if (operand == "rbp") {
@@ -1094,9 +1094,9 @@ class toc final {
             case 2:
                 return "bp";
             default:
-                throw compiler_exception(
+                throw compiler_exception{
                     src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand));
+                                            size, operand)};
             }
         }
         if (operand == "rsi") {
@@ -1108,9 +1108,9 @@ class toc final {
             case 2:
                 return "si";
             default:
-                throw compiler_exception(
+                throw compiler_exception{
                     src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand));
+                                            size, operand)};
             }
         }
         if (operand == "rdi") {
@@ -1122,9 +1122,9 @@ class toc final {
             case 2:
                 return "di";
             default:
-                throw compiler_exception(
+                throw compiler_exception{
                     src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand));
+                                            size, operand)};
             }
         }
         if (operand == "rsp") {
@@ -1136,9 +1136,9 @@ class toc final {
             case 2:
                 return "sp";
             default:
-                throw compiler_exception(
+                throw compiler_exception{
                     src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand));
+                                            size, operand)};
             }
         }
 
@@ -1146,8 +1146,8 @@ class toc final {
         const std::regex rx{R"(r(\d+))"};
         std::smatch match;
         if (not std::regex_search(operand, match, rx)) {
-            throw compiler_exception(
-                src_loc_tk, std::format("unknown register {}", operand));
+            throw compiler_exception{
+                src_loc_tk, std::format("unknown register {}", operand)};
         }
         const std::string rnbr{match[1]};
         switch (size) {
@@ -1160,9 +1160,9 @@ class toc final {
         case 1:
             return std::format("r{}b", rnbr);
         default:
-            throw compiler_exception(
+            throw compiler_exception{
                 src_loc_tk, std::format("illegal size {} for register '{}'",
-                                        size, operand));
+                                        size, operand)};
         }
     }
 
