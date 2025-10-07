@@ -222,16 +222,19 @@ class stmt_identifier : public statement {
                        std::format("{}", accum_offset));
         }
     }
-
     static auto compile_effective_address(
         const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
         const std::vector<identifier_elem>& elems,
         std::vector<std::string>& allocated_registers) -> std::string {
 
+        // initialize base element information
         const identifier_elem& base_elem{elems.front()};
         std::string path{base_elem.name_tk.name()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path, false)};
+
+        // start with offset register being the deafult 'rsp'
         std::string reg_offset{"rsp"};
+        // the accumulated offset relative to 'reg_offset'
         int32_t accum_offset{};
         const size_t elems_size{elems.size()};
 
@@ -239,69 +242,67 @@ class stmt_identifier : public statement {
             const identifier_elem& curr_elem{elems[i]};
             const ident_info curr_info{
                 tc.make_ident_info(src_loc_tk, path, false)};
-            const size_t curr_type_size{curr_info.type_ref.size()};
+            const size_t type_size{curr_info.type_ref.size()};
             const bool is_last{i == elems_size - 1};
-            const bool is_encodable{curr_type_size == 1 or
-                                    curr_type_size == 2 or
-                                    curr_type_size == 4 or curr_type_size == 8};
+            const bool is_encodable{type_size == 1 or type_size == 2 or
+                                    type_size == 4 or type_size == 8};
 
             if (curr_elem.has_array_index_expr) {
+                // special case: last element with encodable size
                 if (is_last and is_encodable) {
                     const std::string& reg_idx{
                         tc.alloc_scratch_register(src_loc_tk, os, indent)};
                     allocated_registers.push_back(reg_idx);
+
                     curr_elem.array_index_expr->compile(tc, os, indent,
                                                         reg_idx);
 
                     if (reg_offset == "rsp") {
-                        // include the stack index of the start of this variable
-                        // to the offset
-                        if (curr_type_size == 1) {
-                            return std::format(
-                                "{} + {} - {}", reg_offset, reg_idx,
-                                -(base_info.stack_ix + accum_offset));
+                        const int32_t total_offset{base_info.stack_ix +
+                                                   accum_offset};
+
+                        if (type_size == 1) {
+                            return std::format("{} + {} - {}", reg_offset,
+                                               reg_idx, -total_offset);
                         }
-                        return std::format(
-                            "{} + {} * {} - {}", reg_offset, reg_idx,
-                            curr_type_size,
-                            -(base_info.stack_ix + accum_offset));
+
+                        return std::format("{} + {} * {} - {}", reg_offset,
+                                           reg_idx, type_size, -total_offset);
+                    } else {
+                        // register contains the offset of 'rsp'
+                        if (type_size == 1) {
+                            return std::format("{} + {} + {}", reg_offset,
+                                               reg_idx, accum_offset);
+                        }
+                        return std::format("{} + {} * {} + {}", reg_offset,
+                                           reg_idx, type_size, accum_offset);
                     }
-                    // it is relative to a register that has the stack offset of
-                    // the start of the variable embedded
-                    if (curr_type_size == 1) {
-                        return std::format("{} + {} + {}", reg_offset, reg_idx,
-                                           accum_offset);
-                    }
-                    return std::format("{} + {} * {} + {}", reg_offset, reg_idx,
-                                       curr_type_size, accum_offset);
                 }
 
-                // is it sill assuming that base register is 'rsp'?
+                // Convert rsp to actual register if needed
                 if (reg_offset == "rsp") {
-                    // yes, since offset calculations need to be done allocate
-                    // and initiate a register to hold the offset regarding
-                    // arrays
                     reg_offset =
                         tc.alloc_scratch_register(src_loc_tk, os, indent);
                     allocated_registers.push_back(reg_offset);
+
                     tc.asm_cmd(src_loc_tk, os, indent, "lea", reg_offset,
                                std::format("[rsp - {}]", -base_info.stack_ix));
                 }
 
-                // calculate index
+                // compile and scale the array index
                 const std::string& reg_idx{
                     tc.alloc_scratch_register(src_loc_tk, os, indent)};
+
                 curr_elem.array_index_expr->compile(tc, os, indent, reg_idx);
 
-                if (curr_type_size > 1) {
-                    if (std::optional<int> shl{
-                            get_shift_amount(curr_type_size)};
+                if (type_size > 1) {
+                    if (std::optional<int> shl{get_shift_amount(type_size)};
                         shl) {
                         tc.asm_cmd(src_loc_tk, os, indent, "shl", reg_idx,
                                    std::format("{}", *shl));
                     } else {
                         tc.asm_cmd(src_loc_tk, os, indent, "imul", reg_idx,
-                                   std::format("{}", curr_type_size));
+                                   std::format("{}", type_size));
                     }
                 }
 
@@ -313,6 +314,7 @@ class stmt_identifier : public statement {
                 }
             }
 
+            // accumulate field offsets for nested types
             if (i + 1 < elems.size()) {
                 const identifier_elem& next_elem{elems[i + 1]};
                 accum_offset +=
@@ -323,6 +325,7 @@ class stmt_identifier : public statement {
             }
         }
 
+        // Apply any accumulated offset
         if (accum_offset != 0) {
             tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
                        std::format("{}", accum_offset));

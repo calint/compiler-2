@@ -1,2 +1,21 @@
-Tue Oct  7 10:18:34 AM +07 2025
-Tue Oct  7 10:19:04 AM +07 2025
+Tue Oct  7 10:30:51 AM +07 2025
+/home/c/w/compiler-2/qa/lint/../../src/stmt_identifier.hpp:271:23: warning: do not use 'else' after 'return' [llvm-else-after-return,readability-else-after-return]
+  271 |                     } else {
+      |                       ^~~~~~
+  272 |                         // register contains the offset of 'rsp'
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  273 |                         if (type_size == 1) {
+      |                         ~~~~~~~~~~~~~~~~~~~~~
+  274 |                             return std::format("{} + {} + {}", reg_offset,
+      |                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  275 |                                                reg_idx, accum_offset);
+      |                                                ~~~~~~~~~~~~~~~~~~~~~~~
+  276 |                         }
+      |                         ~
+  277 |                         return std::format("{} + {} * {} + {}", reg_offset,
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  278 |                                            reg_idx, type_size, accum_offset);
+      |                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  279 |                     }
+      |                     ~
+Tue Oct  7 10:31:21 AM +07 2025
