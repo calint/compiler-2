@@ -9,7 +9,8 @@
 #include "token.hpp"
 
 class type;
-struct type_field final {
+
+struct type_field {
     std::string_view name;
     const type* tp{};
     size_t size{};

@@ -11,7 +11,7 @@
 #include "toc.hpp"
 #include "unary_ops.hpp"
 
-struct identifier_elem final {
+struct identifier_elem {
     token name_tk;
     std::unique_ptr<expr_any> array_index_expr;
     token ws1;

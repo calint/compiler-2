@@ -10,7 +10,7 @@
 #include "panic_exception.hpp"
 
 template <class T> class lut final {
-    struct elem final {
+    struct elem {
         std::string key;
         T data;
 

@@ -19,13 +19,13 @@ class stmt_def_func;
 class stmt_def_field;
 class stmt_def_type;
 
-struct func_return_info final {
+struct func_return_info {
     token type_tk;  // type token
     token ident_tk; // identifier token
     const type* type_ref{};
 };
 
-struct var_info final {
+struct var_info {
     std::string_view name;
     const type* type_ref{};
     token declared_at_tk; // token for position in source
@@ -145,25 +145,25 @@ class frame final {
     }
 };
 
-struct field_info final {
+struct field_info {
     const stmt_def_field* def{};
     token declared_at_tk; // token for position in source
     bool is_str{};
 };
 
-struct func_info final {
+struct func_info {
     const stmt_def_func* def{};
     token declared_at_tk; // token for position in source
     const type* type_ref;
 };
 
-struct type_info final {
+struct type_info {
     const stmt_def_type* def{};
     token declared_at_tk;
     const type& type_ref;
 };
 
-struct ident_info final {
+struct ident_info {
     enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
 
     const std::string id;
