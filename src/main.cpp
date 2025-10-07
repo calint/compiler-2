@@ -95,7 +95,7 @@ auto main(const int argc, const char* argv[]) -> int {
 // declared in 'decouple.hpp'
 // called from 'stmt_block' to solve circular dependencies with 'loop', 'if' and
 // function calls
-inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz, token tk)
+inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, token tk)
     -> std::unique_ptr<statement> {
 
     if (tk.is_name("loop")) {
@@ -117,7 +117,7 @@ inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz, token tk)
 // declared in 'decouple.hpp'
 // called from 'expr_ops_list' to solve circular dependencies with function
 // calls
-inline auto create_statement(toc& tc, tokenizer& tz)
+inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     const unary_ops uops{tz};

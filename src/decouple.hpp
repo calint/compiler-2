@@ -30,10 +30,10 @@ class identifier_path final {
     std::vector<identifier_elem> elems;
 };
 
-inline auto create_statement(toc& tc, tokenizer& tz)
+inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement>;
 
-inline auto create_statement_from_tokenizer(toc& tc, tokenizer& tz, token tk)
+inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, token tk)
     -> std::unique_ptr<statement>;
 
 inline auto create_expr_any(toc& tc, tokenizer& tz, const type& tp,

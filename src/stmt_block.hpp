@@ -67,7 +67,7 @@ class stmt_block final : public statement {
                 //       'loop' and 'if' uses this class
                 //       'mov' and 'syscall' are 'stmt_call'
                 stms_.emplace_back(
-                    create_statement_from_tokenizer(tc, tz, std::move(tk)));
+                    create_statement_in_stmt_block(tc, tz, std::move(tk)));
             } else {
                 if (tk.is_name("")) {
                     ws1_ = std::move(tk);

@@ -44,7 +44,7 @@ class expr_ops_list final : public expression {
                 // no, push back the unary ops to be attached to the
                 // statement
                 uo.put_back(tz);
-                exprs_.emplace_back(create_statement(tc, tz));
+                exprs_.emplace_back(create_statement_in_expr_ops_list(tc, tz));
             }
         }
 
@@ -162,7 +162,7 @@ class expr_ops_list final : public expression {
             uo.put_back(tz);
 
             // read next element
-            exprs_.emplace_back(create_statement(tc, tz));
+            exprs_.emplace_back(create_statement_in_expr_ops_list(tc, tz));
 
             // continue to next op + element or sub-expression
         }
