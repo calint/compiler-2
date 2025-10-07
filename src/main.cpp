@@ -73,7 +73,7 @@ auto main(const int argc, const char* argv[]) -> int {
 
     } catch (const compiler_exception& e) {
         const auto [line, col]{
-            toc::line_and_col_num_for_char_index(e.start_index, src)};
+            toc::line_and_col_num_for_char_index(e.line, e.start_index, src)};
         std::cerr << "\n"
                   << src_file_name << ":" << line << ":" << col << ": " << e.msg
                   << '\n';

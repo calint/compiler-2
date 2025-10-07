@@ -13,6 +13,7 @@ class tokenizer final {
     const std::string& src_; // the string to be tokenized
     size_t char_ix_{};       // current char index in 'src_'
     const char* pos{};       // position in string used for easier debugging
+    size_t at_line_{1};
 
   public:
     explicit tokenizer(const std::string& src) : src_{src} {}
@@ -31,6 +32,7 @@ class tokenizer final {
 
     auto next_token() -> token {
         const std::string ws_before{next_whitespace()};
+        const size_t at_line{at_line_};
         const size_t bgn_ix{char_ix_};
         if (is_next_char('"')) {
             // string token
@@ -39,7 +41,8 @@ class tokenizer final {
                 if (is_next_char('"')) {
                     const size_t end{char_ix_};
                     const std::string ws_after{next_whitespace()};
-                    return token{ws_before, bgn_ix, txt, end, ws_after, true};
+                    return token{ws_before, bgn_ix,  txt, end,
+                                 ws_after,  at_line, true};
                 }
                 txt.push_back(next_char());
             }
@@ -48,19 +51,22 @@ class tokenizer final {
         const std::string txt{next_token_str()};
         const size_t end_ix{char_ix_};
         const std::string ws_after{next_whitespace()};
-        return {ws_before, bgn_ix, txt, end_ix, ws_after};
+        return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line};
     }
 
     // returns a token which is a marker at current position with empty name
     // and whitespaces
     [[nodiscard]] auto current_position_token() const -> token {
-        return {"", char_ix_, "", char_ix_, ""};
+        return {"", char_ix_, "", char_ix_, "", at_line_};
     }
 
     auto rewind_to_position(const token& pos_tk) -> void {
         const size_t new_pos{pos_tk.start_index()};
+
         assert(new_pos <= src_.size());
-        char_ix_ = new_pos;
+
+        const size_t n{char_ix_ - new_pos};
+        move_back(n);
     }
 
     auto put_back_token(const token& t) -> void {
@@ -74,15 +80,15 @@ class tokenizer final {
     }
 
     auto next_whitespace_token() -> token {
-        return {next_whitespace(), char_ix_, "", char_ix_, ""};
+        const size_t at_line{at_line_};
+        return {next_whitespace(), char_ix_, "", char_ix_, "", at_line};
     }
 
     auto is_next_char(const char ch) -> bool {
         if (is_eos() or src_[char_ix_] != ch) {
             return false;
         }
-        (void)next_char(); // return ignored
-        return true;
+        return next_char();
     }
 
     [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
@@ -108,6 +114,7 @@ class tokenizer final {
         const size_t len{char_ix_ - bgn};
         if (not is_eos()) {
             char_ix_++; // skip the '\n'
+            at_line_++;
         }
         return src_.substr(bgn, len);
     }
@@ -116,12 +123,18 @@ class tokenizer final {
         assert(not is_eos());
         // note: just for easier debugging
         pos = &src_[char_ix_ + 1];
-        return src_[char_ix_++];
+        const char ch{src_[char_ix_++]};
+        if (ch == '\n') {
+            at_line_++;
+        }
+        return ch;
     }
 
     [[nodiscard]] auto current_char_index_in_source() const -> size_t {
         return char_ix_;
     }
+
+    [[nodiscard]] auto current_line() const -> size_t { return at_line_; }
 
   private:
     auto next_whitespace() -> std::string {
@@ -133,6 +146,9 @@ class tokenizer final {
             const char ch{src_[char_ix_]};
             if (not std::isspace(ch)) {
                 break;
+            }
+            if (ch == '\n') {
+                at_line_++;
             }
             char_ix_++;
         }
@@ -156,8 +172,14 @@ class tokenizer final {
         return src_.substr(bgn_ix, len);
     }
 
-    auto move_back(const size_t nchars) -> void {
+    auto move_back(size_t nchars) -> void {
         assert(char_ix_ >= nchars);
-        char_ix_ -= nchars;
+
+        while (nchars--) {
+            char_ix_--;
+            if (src_[char_ix_] == '\n') {
+                at_line_--;
+            }
+        }
     }
 };

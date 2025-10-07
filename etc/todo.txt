@@ -1,3 +1,7 @@
+[x] tokenizer: keep track of line-number instead of computing it
+    => problem when generating comments in the result with excessive calling
+       ok for for reporting parsing error
+       => keeps track of line numbers, calculates column at request
 [ ] use std::string_view where possible instead of std::string
     e.g. in expr_bool_op to return constexpr strings
 [o] tidy
@@ -36,9 +40,6 @@
 [ ] considering not parsing multiple return statements
 [ ] tokenizer: handle string with escaped " 
 [ ] use asm command 'test' instead of 'cmp' when checking for constant 0
-[ ] tokenizer: keep track of line-number instead of computing it
-    => problem when generating comments in the result with excessive calling
-       ok for for reporting parsing error
 [ ] token: regex construction to static
 [ ] lut: change to map
 [ ] stmt_call: check arguments vs parameters in constructor instead of at

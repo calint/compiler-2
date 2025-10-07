@@ -11,14 +11,15 @@ class token final {
     std::string name_;     // token text
     size_t end_ix_{};      // token text end index in source
     std::string ws_right_; // whitespace right of token text
-    bool is_str_{};        // true if 'stmt_def_field' was a string
+    size_t at_line_{};
+    bool is_str_{}; // true if 'stmt_def_field' was a string
 
   public:
     token(std::string ws_left, size_t start_ix, std::string name, size_t end_ix,
-          std::string ws_right, bool is_str = false)
+          std::string ws_right, size_t at_line, bool is_str = false)
         : ws_left_{std::move(ws_left)}, start_ix_{start_ix},
           name_{std::move(name)}, end_ix_{end_ix},
-          ws_right_{std::move(ws_right)}, is_str_{is_str} {}
+          ws_right_{std::move(ws_right)}, at_line_(at_line), is_str_{is_str} {}
 
     token() = default;
     token(const token&) = default;
@@ -66,4 +67,6 @@ class token final {
     }
 
     [[nodiscard]] auto is_string() const -> bool { return is_str_; }
+
+    [[nodiscard]] auto at_line() const -> size_t { return at_line_; }
 };

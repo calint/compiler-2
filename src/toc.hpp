@@ -349,8 +349,8 @@ class toc final {
     source_location_for_use_in_label(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{
-            line_and_col_num_for_char_index(src_loc_tk.start_index(), source_)};
+        const auto [line, col]{line_and_col_num_for_char_index(
+            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}_{}", line, col);
     }
@@ -359,8 +359,8 @@ class toc final {
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{
-            line_and_col_num_for_char_index(src_loc_tk.start_index(), source_)};
+        const auto [line, col]{line_and_col_num_for_char_index(
+            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}:{}", line, col);
     }
@@ -380,28 +380,21 @@ class toc final {
                                  "unexpected code path stmt_assign_var:1"};
     }
 
-    static auto line_and_col_num_for_char_index(const size_t char_index,
+    static auto line_and_col_num_for_char_index(const size_t at_line,
+                                                size_t char_index_in_source,
                                                 const std::string& src)
         -> std::pair<size_t, size_t> {
 
-        size_t ix{};  // current index
-        size_t lix{}; // start of line index
-        size_t line_num{1};
-
-        while (ix < src.size()) {
-            if (ix == char_index) {
+        size_t at_col{0};
+        while (src[char_index_in_source] != '\n') {
+            at_col++;
+            if (char_index_in_source == 0) {
                 break;
             }
-            if (src[ix] == '\n') {
-                line_num++;
-                ix++;
-                lix = ix;
-                continue;
-            }
-            ix++;
+            char_index_in_source--;
         }
 
-        return {line_num, ix - lix + 1};
+        return {at_line, at_col};
     }
 
     auto finish(std::ostream& os) -> void {
@@ -699,8 +692,9 @@ class toc final {
     auto comment_source(const statement& st, std::ostream& os,
                         const size_t indnt) const -> void {
 
-        const auto [line, col]{
-            line_and_col_num_for_char_index(st.tok().start_index(), source_)};
+        const token& tk{st.tok()};
+        const auto [line, col]{line_and_col_num_for_char_index(
+            tk.at_line(), tk.start_index(), source_)};
 
         indent(os, indnt, true);
         os << "[" << line << ":" << col << "] ";
@@ -719,8 +713,9 @@ class toc final {
                         const std::string& op, const statement& st) const
         -> void {
 
-        const auto [line, col]{
-            line_and_col_num_for_char_index(st.tok().start_index(), source_)};
+        const token& tk{st.tok()};
+        const auto [line, col]{line_and_col_num_for_char_index(
+            tk.at_line(), tk.start_index(), source_)};
 
         os << "[" << line << ":" << col << "]";
 
@@ -736,8 +731,8 @@ class toc final {
     }
 
     auto comment_token(std::ostream& os, const token& tk) const -> void {
-        const auto [line, col]{
-            line_and_col_num_for_char_index(tk.start_index(), source_)};
+        const auto [line, col]{line_and_col_num_for_char_index(
+            tk.at_line(), tk.start_index(), source_)};
 
         os << "[" << line << ":" << col << "]";
         os << " " << tk.name() << '\n';

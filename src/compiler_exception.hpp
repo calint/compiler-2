@@ -7,15 +7,16 @@
 class compiler_exception final : public std::exception {
   public:
     std::string msg;
+    size_t line{};
     size_t start_index{};
     size_t end_index{};
 
     compiler_exception(const token& tk, std::string message)
-        : msg{std::move(message)}, start_index{tk.start_index()},
-          end_index{tk.end_index()} {}
+        : msg{std::move(message)}, line{tk.at_line()},
+          start_index{tk.start_index()}, end_index{tk.end_index()} {}
 
     compiler_exception(const tokenizer& tz, std::string message)
-        : msg{std::move(message)},
+        : msg{std::move(message)}, line{tz.current_line()},
           start_index{tz.current_char_index_in_source()},
           end_index{tz.current_char_index_in_source()} {}
 
