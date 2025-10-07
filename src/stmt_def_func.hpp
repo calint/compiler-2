@@ -179,8 +179,8 @@ class stmt_def_func final : public statement {
         // functions get arguments as aliases
         for (const stmt_def_func_param& prm : params_) {
             const type& prm_type{prm.get_type()};
-            const std::string& prm_name{prm.name()};
-            const std::string& prm_reg{prm.get_register_name_or_empty()};
+            std::string_view prm_name{prm.name()};
+            const std::string prm_reg{prm.get_register_name_or_empty()};
 
             // is argument passed as named register?
             if (prm_reg.empty()) {

@@ -10,12 +10,12 @@
 
 class type;
 struct type_field final {
-    const std::string name;
+    std::string_view name;
     const type& tp;
-    const size_t size{};
-    const size_t array_size{};
-    const bool is_array{};
-    const size_t offset{};
+    size_t size{};
+    size_t array_size{};
+    bool is_array{};
+    size_t offset{};
 };
 
 class type final {
@@ -41,11 +41,11 @@ class type final {
 
     ~type() = default;
 
-    auto add_field([[maybe_unused]] const token& tk, std::string name,
+    auto add_field([[maybe_unused]] const token& tk, std::string_view name,
                    const type& tp, const bool is_array, const size_t array_size)
         -> void {
         fields_.emplace_back(
-            type_field{.name = std::move(name),
+            type_field{.name = name,
                        .tp = tp,
                        .size = tp.size_ * (is_array ? array_size : 1),
                        .array_size = array_size,

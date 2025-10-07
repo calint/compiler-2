@@ -26,7 +26,7 @@ struct func_return_info final {
 };
 
 struct var_info final {
-    const std::string name;
+    const std::string_view name;
     const type& type_ref;
     token declared_at_tk;      // token for position in source
     const int32_t stack_idx{}; // location relative to rsp
@@ -100,8 +100,8 @@ class frame final {
         return vars_.get_const_ref(name);
     }
 
-    auto add_alias(const std::string& from, const std::string& to) -> void {
-        aliases_.put(from, to);
+    auto add_alias(std::string_view from, std::string to) -> void {
+        aliases_.put(from, std::move(to));
     }
 
     [[nodiscard]] auto is_func() const -> bool {
@@ -451,8 +451,8 @@ class toc final {
 
   public:
     // note: 'to' is alias or variable in parent frame
-    auto add_alias(const std::string& from, const std::string& to) -> void {
-        frames_.back().add_alias(from, to);
+    auto add_alias(std::string_view from, std::string to) -> void {
+        frames_.back().add_alias(from, std::move(to));
     }
 
     auto enter_func(std::string_view name,

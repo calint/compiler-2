@@ -1,2 +1,6 @@
-Wed Oct  8 02:51:03 AM +07 2025
-Wed Oct  8 02:51:34 AM +07 2025
+Wed Oct  8 03:08:32 AM +07 2025
+/home/c/w/compiler-2/qa/lint/../../src/stmt_def_func.hpp:182:13: warning: variable 'prm_name' of type 'std::string_view' (aka 'basic_string_view<char>') can be declared 'const' [misc-const-correctness]
+  182 |             std::string_view prm_name{prm.name()};
+      |             ^
+      |                              const 
+Wed Oct  8 03:09:02 AM +07 2025

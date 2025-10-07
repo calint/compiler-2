@@ -41,8 +41,8 @@ class stmt_def_type final : public statement {
                     ? tc.get_type_default()
                     : tc.get_type_or_throw(fld.type_token(), fld.type_str())};
 
-            type_.add_field(fld.tok(), std::string{fld.name()}, tp,
-                            fld.is_array(), fld.array_size());
+            type_.add_field(fld.tok(), fld.name(), tp, fld.is_array(),
+                            fld.array_size());
         }
 
         tc.add_type(name_tk_, type_);
