@@ -84,7 +84,7 @@ class stmt_assign_var final : public statement {
             tc.asm_cmd(tok(), os, indent, "mov", "rcx",
                        std::format("{}", ii.type_ref.size()));
 
-            toc::asm_rep_movsb(tok(), os, indent);
+            toc::asm_rep_movs(tok(), os, indent, 'b');
 
             for (const std::string& reg :
                  allocated_registers | std::ranges::views::reverse) {

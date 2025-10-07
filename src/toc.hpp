@@ -1221,11 +1221,12 @@ class toc final {
         os << "rep stosb\n";
     }
 
-    static auto asm_rep_movsb([[maybe_unused]] const token& src_loc_tk,
-                              std::ostream& os, const size_t indnt) -> void {
+    static auto asm_rep_movs([[maybe_unused]] const token& src_loc_tk,
+                             std::ostream& os, const size_t indnt, char size)
+        -> void {
 
         indent(os, indnt);
-        os << "rep movsb\n";
+        os << "rep movs" << size << '\n';
     }
 
     static auto indent(std::ostream& os, const size_t indnt,
