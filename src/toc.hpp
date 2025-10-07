@@ -97,6 +97,7 @@ class frame final {
 
     [[nodiscard]] auto get_var_const_ref(std::string_view name) const
         -> const var_info& {
+
         return vars_.get_const_ref(name);
     }
 
