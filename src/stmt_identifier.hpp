@@ -228,14 +228,16 @@ class stmt_identifier : public statement {
         std::vector<std::string>& allocated_registers) -> std::string {
 
         // initialize base element information
-        const identifier_elem& base_elem{elems.front()};
-        std::string path{base_elem.name_tk.name()};
+        std::string path{elems.front().name_tk.name()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path, false)};
 
-        // start with offset register being the deafult 'rsp'
+        // start with offset register being the default 'rsp'
         std::string reg_offset{"rsp"};
-        // the accumulated offset relative to 'reg_offset'
+
+        // the accumulated offset to compensate for type members displacement
+        // from base address of instance
         int32_t accum_offset{};
+
         const size_t elems_size{elems.size()};
 
         for (size_t i{}; i < elems_size; ++i) {
@@ -244,6 +246,8 @@ class stmt_identifier : public statement {
                 tc.make_ident_info(src_loc_tk, path, false)};
             const size_t type_size{curr_info.type_ref.size()};
             const bool is_last{i == elems_size - 1};
+            // is encodable in instruction of type:
+            // [base + index * size + offset]
             const bool is_encodable{type_size == 1 or type_size == 2 or
                                     type_size == 4 or type_size == 8};
 
@@ -257,7 +261,11 @@ class stmt_identifier : public statement {
                     curr_elem.array_index_expr->compile(tc, os, indent,
                                                         reg_idx);
 
+                    // is the offset relative to 'rsp'?
+                    // meaning no index operations have been done
                     if (reg_offset == "rsp") {
+                        // make total offset relative the stack offset relative
+                        // 'rsp'
                         const int32_t total_offset{base_info.stack_ix +
                                                    accum_offset};
 
@@ -269,7 +277,8 @@ class stmt_identifier : public statement {
                         return std::format("{} + {} * {} - {}", reg_offset,
                                            reg_idx, type_size, -total_offset);
                     } else {
-                        // register contains the offset of 'rsp'
+                        // base register is not 'rsp' which means that register
+                        // contains the offset of 'rsp'
                         if (type_size == 1) {
                             return std::format("{} + {} + {}", reg_offset,
                                                reg_idx, accum_offset);
@@ -279,7 +288,7 @@ class stmt_identifier : public statement {
                     }
                 }
 
-                // Convert rsp to actual register if needed
+                // convert 'rsp' to actual register if needed
                 if (reg_offset == "rsp") {
                     reg_offset =
                         tc.alloc_scratch_register(src_loc_tk, os, indent);
@@ -296,6 +305,8 @@ class stmt_identifier : public statement {
                 curr_elem.array_index_expr->compile(tc, os, indent, reg_idx);
 
                 if (type_size > 1) {
+                    // check whether it is possible to shift left instead of
+                    // multiplication
                     if (std::optional<int> shl{get_shift_amount(type_size)};
                         shl) {
                         tc.asm_cmd(src_loc_tk, os, indent, "shl", reg_idx,
@@ -306,10 +317,13 @@ class stmt_identifier : public statement {
                     }
                 }
 
+                // add the index offset to the base register
                 tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset, reg_idx);
                 tc.free_scratch_register(os, indent, reg_idx);
 
                 if (is_last) {
+                    // note: constructing new string to avoid clang warning "Not
+                    //       eliding copy on return clang (-Wnrvo)""
                     return std::string{reg_offset};
                 }
             }
@@ -321,16 +335,20 @@ class stmt_identifier : public statement {
                     static_cast<int32_t>(toc::get_field_offset_in_type(
                         src_loc_tk, curr_info.type_ref,
                         next_elem.name_tk.name()));
+
+                // continue in the path of identifiers
                 path += '.' + std::string{next_elem.name_tk.name()};
             }
         }
 
-        // Apply any accumulated offset
+        // apply any accumulated offset
         if (accum_offset != 0) {
             tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
                        std::format("{}", accum_offset));
         }
 
+        // note: constructing new string to avoid clang warning "Not eliding
+        //       copy on return clang (-Wnrvo)""
         return std::string{reg_offset};
     }
 
