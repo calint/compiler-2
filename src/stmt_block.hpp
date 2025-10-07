@@ -40,7 +40,7 @@ class stmt_block final : public statement {
             }
 
             // no more tokens in the block?
-            token tk = tz.next_token();
+            token tk{tz.next_token()};
             if (tk.is_empty()) {
                 break;
             }

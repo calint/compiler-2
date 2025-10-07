@@ -2,6 +2,7 @@
         print(prompt1.len, prompt1)
         var len = read(input.len, input) -     # -1 don't include the '\n'
         if len == 0 {
+[ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
 [x] tokenizer: keep track of line-number instead of computing it
     => problem when generating comments in the result with excessive calling
        ok for for reporting parsing error

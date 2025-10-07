@@ -763,7 +763,7 @@ class toc final {
     extract_base_register_from_indirect_addressing(std::string_view addressing)
         -> std::string {
 
-        auto pos = addressing.find_first_of(" +");
+        auto pos{addressing.find_first_of(" +")};
         if (pos == std::string_view::npos) {
             return std::string{addressing};
         }
@@ -1482,12 +1482,12 @@ class toc final {
     static auto extract_between_brackets(std::string_view str)
         -> std::optional<std::string_view> {
 
-        auto start = str.find('[');
+        auto start{str.find('[')};
         if (start == std::string_view::npos) {
             return std::nullopt;
         }
 
-        auto end = str.find(']', start);
+        auto end{str.find(']', start)};
         if (end == std::string_view::npos) {
             return std::nullopt;
         }
