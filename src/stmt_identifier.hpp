@@ -171,6 +171,7 @@ class stmt_identifier : public statement {
             tc.free_scratch_register(os, indent, reg);
         }
     }
+
     static auto compile_effective_address(
         const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
         const std::vector<identifier_elem>& elems,
