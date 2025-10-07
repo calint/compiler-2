@@ -33,6 +33,8 @@ class expr_type_value final : public statement {
                  const std::string& dst) const -> void override {
 
         if (is_make_copy()) {
+            // note: sets the 'dst' register to the address of the start of this
+            //       instance. called from 'stmt_assign_var'
             compile_copy(tc, os, indent, dst);
             return;
         }

@@ -67,8 +67,8 @@ class stmt_assign_var final : public statement {
             tc.alloc_named_register_or_throw(*this, os, indent, "rsi");
             tc.alloc_named_register_or_throw(*this, os, indent, "rdi");
             tc.alloc_named_register_or_throw(*this, os, indent, "rcx");
-
             std::vector<std::string> allocated_registers;
+
             const std::string offset{stmt_identifier::compile_effective_address(
                 tok(), tc, os, indent, stmt_ident_.elems(),
                 allocated_registers)};
