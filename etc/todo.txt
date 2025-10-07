@@ -1,4 +1,4 @@
-[ ] source recreation does not work with comment at end of file and
+[x] source recreation does not work with comment at end of file and
     newlines:
         var objs : object[10]
         objs[1].pos.y = 0xab

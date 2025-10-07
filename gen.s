@@ -37,9 +37,9 @@ _start:
 mov rsp,stk.end
 ; program
 ;[9:1] # all functions are inlined
-;[11:1]  # arguments can be placed in specified register using `reg_...` syntax
+;[11:1] # arguments can be placed in specified register using `reg_...` syntax
 ;[39:1] # user types are defined using keyword `type`
-;[41:1]  # default type is `i64` and does not need to be specified
+;[41:1] # default type is `i64` and does not need to be specified
 ;[46:1]  # function arguments are equivalent to mutable references
 ;[52:1] # default argument type is `i64`
 ;[62:1] # return target is specified as a variable, in this case `res`
@@ -59,7 +59,7 @@ main:
 ;    free named register 'rdi'
 ;    [69:5] # arrays are initialized to 0
 ;    var ix: i64 @ qword [rsp - 24]
-;    [71:5]  var ix = 1
+;    [71:5] var ix = 1
 ;    [71:14] ix =1
 ;    [71:14] 1
 ;    [71:14] 1
@@ -146,9 +146,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_76_5_end:
@@ -202,9 +202,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_77_5_end:
@@ -301,9 +301,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_81_5_end:
@@ -333,7 +333,7 @@ main:
 ;        [48:20] pt.x = 0b10
         mov qword [rsp - 40], 0b10
 ;        [48:20] # binary value 2
-;        [49:7]  pt.y = 0xb
+;        [49:7] pt.y = 0xb
 ;        [49:12]  0xb
 ;        [49:12] 0xb
 ;        [49:20] pt.y = 0xb
@@ -375,9 +375,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_85_5_end:
@@ -419,9 +419,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_86_5_end:
@@ -491,9 +491,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_90_5_end:
@@ -561,9 +561,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_94_5_end:
@@ -638,9 +638,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_98_5_end:
@@ -703,9 +703,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_101_5_end:
@@ -776,9 +776,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_104_5_end:
@@ -864,9 +864,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_110_5_end:
@@ -908,9 +908,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_111_5_end:
@@ -952,9 +952,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_112_5_end:
@@ -1029,9 +1029,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_116_5_end:
@@ -1073,9 +1073,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_117_5_end:
@@ -1131,9 +1131,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_120_5_end:
@@ -1175,9 +1175,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_121_5_end:
@@ -1219,9 +1219,9 @@ main:
 ;                [13:5]  mov(rax, 60)
                 mov rax, 60
 ;                [13:19] # exit system call
-;                [14:5]  mov(rdi, v)
+;                [14:5] mov(rdi, v)
 ;                [14:19] # return code
-;                [15:5]  syscall()
+;                [15:5] syscall()
                 syscall
 ;                free named register 'rdi'
             exit_36_17_122_5_end:
@@ -1240,14 +1240,14 @@ main:
 ;        [19:5]  mov(rax, 1)
         mov rax, 1
 ;        [19:19] # write system call
-;        [20:5]  mov(rdi, 1)
+;        [20:5] mov(rdi, 1)
         mov rdi, 1
 ;        [20:19] # file descriptor for standard out
-;        [21:5]  mov(rsi, ptr)
+;        [21:5] mov(rsi, ptr)
 ;        [21:19] # buffer address
-;        [22:5]  mov(rdx, len)
+;        [22:5] mov(rdx, len)
 ;        [22:19] # buffer size
-;        [23:5]  syscall()
+;        [23:5] syscall()
         syscall
 ;        free named register 'rsi'
 ;        free named register 'rdx'
@@ -1266,14 +1266,14 @@ main:
 ;            [19:5]  mov(rax, 1)
             mov rax, 1
 ;            [19:19] # write system call
-;            [20:5]  mov(rdi, 1)
+;            [20:5] mov(rdi, 1)
             mov rdi, 1
 ;            [20:19] # file descriptor for standard out
-;            [21:5]  mov(rsi, ptr)
+;            [21:5] mov(rsi, ptr)
 ;            [21:19] # buffer address
-;            [22:5]  mov(rdx, len)
+;            [22:5] mov(rdx, len)
 ;            [22:19] # buffer size
-;            [23:5]  syscall()
+;            [23:5] syscall()
             syscall
 ;            free named register 'rsi'
 ;            free named register 'rdx'
@@ -1297,14 +1297,14 @@ main:
 ;            [27:5]  mov(rax, 0)
             mov rax, 0
 ;            [27:19] # read system call
-;            [28:5]  mov(rdi, 0)
+;            [28:5] mov(rdi, 0)
             mov rdi, 0
 ;            [28:19] # file descriptor for standard input
-;            [29:5]  mov(rsi, ptr)
+;            [29:5] mov(rsi, ptr)
 ;            [29:19] # buffer address
-;            [30:5]  mov(rdx, len)
+;            [30:5] mov(rdx, len)
 ;            [30:19] # buffer size
-;            [31:5]  syscall()
+;            [31:5] syscall()
             syscall
 ;            [32:5] mov(nbytes, rax)
             mov qword [rsp - 160], rax
@@ -1346,14 +1346,14 @@ main:
 ;                [19:5]  mov(rax, 1)
                 mov rax, 1
 ;                [19:19] # write system call
-;                [20:5]  mov(rdi, 1)
+;                [20:5] mov(rdi, 1)
                 mov rdi, 1
 ;                [20:19] # file descriptor for standard out
-;                [21:5]  mov(rsi, ptr)
+;                [21:5] mov(rsi, ptr)
 ;                [21:19] # buffer address
-;                [22:5]  mov(rdx, len)
+;                [22:5] mov(rdx, len)
 ;                [22:19] # buffer size
-;                [23:5]  syscall()
+;                [23:5] syscall()
                 syscall
 ;                free named register 'rsi'
 ;                free named register 'rdx'
@@ -1374,14 +1374,14 @@ main:
 ;                [19:5]  mov(rax, 1)
                 mov rax, 1
 ;                [19:19] # write system call
-;                [20:5]  mov(rdi, 1)
+;                [20:5] mov(rdi, 1)
                 mov rdi, 1
 ;                [20:19] # file descriptor for standard out
-;                [21:5]  mov(rsi, ptr)
+;                [21:5] mov(rsi, ptr)
 ;                [21:19] # buffer address
-;                [22:5]  mov(rdx, len)
+;                [22:5] mov(rdx, len)
 ;                [22:19] # buffer size
-;                [23:5]  syscall()
+;                [23:5] syscall()
                 syscall
 ;                free named register 'rsi'
 ;                free named register 'rdx'
@@ -1398,14 +1398,14 @@ main:
 ;                [19:5]  mov(rax, 1)
                 mov rax, 1
 ;                [19:19] # write system call
-;                [20:5]  mov(rdi, 1)
+;                [20:5] mov(rdi, 1)
                 mov rdi, 1
 ;                [20:19] # file descriptor for standard out
-;                [21:5]  mov(rsi, ptr)
+;                [21:5] mov(rsi, ptr)
 ;                [21:19] # buffer address
-;                [22:5]  mov(rdx, len)
+;                [22:5] mov(rdx, len)
 ;                [22:19] # buffer size
-;                [23:5]  syscall()
+;                [23:5] syscall()
                 syscall
 ;                free named register 'rsi'
 ;                free named register 'rdx'
@@ -1422,14 +1422,14 @@ main:
 ;                [19:5]  mov(rax, 1)
                 mov rax, 1
 ;                [19:19] # write system call
-;                [20:5]  mov(rdi, 1)
+;                [20:5] mov(rdi, 1)
                 mov rdi, 1
 ;                [20:19] # file descriptor for standard out
-;                [21:5]  mov(rsi, ptr)
+;                [21:5] mov(rsi, ptr)
 ;                [21:19] # buffer address
-;                [22:5]  mov(rdx, len)
+;                [22:5] mov(rdx, len)
 ;                [22:19] # buffer size
-;                [23:5]  syscall()
+;                [23:5] syscall()
                 syscall
 ;                free named register 'rsi'
 ;                free named register 'rdx'
@@ -1446,14 +1446,14 @@ main:
 ;                [19:5]  mov(rax, 1)
                 mov rax, 1
 ;                [19:19] # write system call
-;                [20:5]  mov(rdi, 1)
+;                [20:5] mov(rdi, 1)
                 mov rdi, 1
 ;                [20:19] # file descriptor for standard out
-;                [21:5]  mov(rsi, ptr)
+;                [21:5] mov(rsi, ptr)
 ;                [21:19] # buffer address
-;                [22:5]  mov(rdx, len)
+;                [22:5] mov(rdx, len)
 ;                [22:19] # buffer size
-;                [23:5]  syscall()
+;                [23:5] syscall()
                 syscall
 ;                free named register 'rsi'
 ;                free named register 'rdx'
