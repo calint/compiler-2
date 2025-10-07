@@ -127,18 +127,20 @@ inline auto create_statement(toc& tc, tokenizer& tz)
             tk, "expected constant, identifier or function call");
     }
     if (tk.name().starts_with("#")) {
-        if (!uops.is_empty()) {
+        if (not uops.is_empty()) {
+            // note: might contain whitespace
             throw compiler_exception(tk, "unexpected comment after unary ops");
         }
+
         // e.g.  print("hello") # comment
-        return std::make_unique<stmt_comment>(tc, std::move(tk), tz);
+        return std::make_unique<stmt_comment>(tc, uops, std::move(tk), tz);
     }
     if (tz.is_peek_char('(')) {
         // e.g.  foo(...)
         return std::make_unique<stmt_call>(tc, uops, std::move(tk), tz);
     }
     // e.g. 0x80, rax, identifiers
-    return std::make_unique<stmt_identifier>(tc, tz, std::move(tk), uops);
+    return std::make_unique<stmt_identifier>(tc, uops, std::move(tk), tz);
 }
 
 // called from 'stmt_block'
@@ -170,7 +172,8 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     if (not tok().is_name("")) {
         // yes, e.g. obj.pos = p
 
-        stmt_ident_ = std::make_shared<stmt_identifier>(tc, tz, tok());
+        stmt_ident_ =
+            std::make_shared<stmt_identifier>(tc, unary_ops{}, tok(), tz);
 
         // check that identifier type matches expected type
         const ident_info ii{

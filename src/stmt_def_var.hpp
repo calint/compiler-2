@@ -75,7 +75,7 @@ class stmt_def_var final : public statement {
                    array_size_);
 
         if (init_required) {
-            stmt_identifier si{tc, tz, name_tk_};
+            stmt_identifier si{tc, {}, name_tk_, tz};
             assign_var_ = {tc, tz, std::move(si)};
         }
     }

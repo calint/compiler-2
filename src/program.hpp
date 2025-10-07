@@ -8,6 +8,7 @@
 #include "stmt_def_type.hpp"
 #include "toc.hpp"
 #include "tokenizer.hpp"
+#include "unary_ops.hpp"
 
 class program final {
     // built-in types
@@ -64,8 +65,8 @@ class program final {
                 statements_.emplace_back(
                     std::make_unique<stmt_def_type>(tc_, std::move(tk), tz));
             } else if (tk.name().starts_with("#")) {
-                statements_.emplace_back(
-                    std::make_unique<stmt_comment>(tc_, std::move(tk), tz));
+                statements_.emplace_back(std::make_unique<stmt_comment>(
+                    tc_, unary_ops{}, std::move(tk), tz));
             } else if (tk.is_name("")) {
                 // empty space at end of file; necessary for source reproduction
                 // to be identical

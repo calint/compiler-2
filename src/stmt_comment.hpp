@@ -5,13 +5,14 @@
 #include "toc.hpp"
 
 class stmt_comment final : public statement {
+    unary_ops uops_;
     std::string line_;
     token ws1_;
 
   public:
-    stmt_comment(const toc& tc, token tk, tokenizer& tz)
-        : statement{std::move(tk)}, line_{tz.read_rest_of_line()},
-          ws1_{tz.next_whitespace_token()} {
+    stmt_comment(const toc& tc, unary_ops uops, token tk, tokenizer& tz)
+        : statement{std::move(tk)}, uops_{std::move(uops)},
+          line_{tz.read_rest_of_line()}, ws1_{tz.next_whitespace_token()} {
         set_type(tc.get_type_void());
     }
 
@@ -24,6 +25,7 @@ class stmt_comment final : public statement {
     ~stmt_comment() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
+        uops_.source_to(os);
         statement::source_to(os);
         os << line_ << '\n';
         ws1_.source_to(os);

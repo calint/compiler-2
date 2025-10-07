@@ -116,17 +116,18 @@ class tokenizer final {
             char_ix_++; // skip the '\n'
             at_line_++;
         }
+        pos = &src_[char_ix_];
         return src_.substr(bgn, len);
     }
 
     auto next_char() -> char {
         assert(not is_eos());
         // note: just for easier debugging
-        pos = &src_[char_ix_ + 1];
         const char ch{src_[char_ix_++]};
         if (ch == '\n') {
             at_line_++;
         }
+        pos = &src_[char_ix_];
         return ch;
     }
 
@@ -152,6 +153,7 @@ class tokenizer final {
             }
             char_ix_++;
         }
+        pos = &src_[char_ix_];
         const size_t len{char_ix_ - bgn_ix};
         return src_.substr(bgn_ix, len);
     }
@@ -181,5 +183,7 @@ class tokenizer final {
                 at_line_--;
             }
         }
+
+        pos = &src_[char_ix_];
     }
 };

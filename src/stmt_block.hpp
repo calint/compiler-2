@@ -46,29 +46,35 @@ class stmt_block final : public statement {
             }
 
             if (tk.name().starts_with("#")) {
-                stms_.emplace_back(std::make_unique<stmt_comment>(tc, tk, tz));
+                stms_.emplace_back(std::make_unique<stmt_comment>(
+                    tc, unary_ops{}, std::move(tk), tz));
                 last_statement_considered_no_statment = true;
             } else if (tk.is_name("var")) {
-                stms_.emplace_back(std::make_unique<stmt_def_var>(tc, tk, tz));
+                stms_.emplace_back(
+                    std::make_unique<stmt_def_var>(tc, std::move(tk), tz));
             } else if (tk.is_name("break")) {
-                stms_.emplace_back(std::make_unique<stmt_break>(tc, tk));
+                stms_.emplace_back(
+                    std::make_unique<stmt_break>(tc, std::move(tk)));
             } else if (tk.is_name("continue")) {
-                stms_.emplace_back(std::make_unique<stmt_continue>(tc, tk));
+                stms_.emplace_back(
+                    std::make_unique<stmt_continue>(tc, std::move(tk)));
             } else if (tk.is_name("return")) {
-                stms_.emplace_back(std::make_unique<stmt_return>(tc, tk));
+                stms_.emplace_back(
+                    std::make_unique<stmt_return>(tc, std::move(tk)));
             } else if (tk.is_name("loop") or tk.is_name("if") or
                        tk.is_name("mov") or tk.is_name("syscall")) {
                 // note: solves circular reference problem
                 //       'loop' and 'if' uses this class
                 //       'mov' and 'syscall' are 'stmt_call'
-                stms_.emplace_back(create_statement_from_tokenizer(tc, tz, tk));
+                stms_.emplace_back(
+                    create_statement_from_tokenizer(tc, tz, std::move(tk)));
             } else {
                 if (tk.is_name("")) {
-                    ws1_ = tk;
+                    ws1_ = std::move(tk);
                     continue;
                 }
                 // resolve identifier
-                stmt_identifier si{tc, tz, tk};
+                stmt_identifier si{tc, {}, std::move(tk), tz};
 
                 tk = si.first_token();
                 if (tz.is_next_char('=')) {

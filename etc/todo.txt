@@ -1,7 +1,10 @@
-[ ] source differs when (notice - and then comment):
+[x] source differs when (notice - and then comment):
         print(prompt1.len, prompt1)
         var len = read(input.len, input) -     # -1 don't include the '\n'
         if len == 0 {
+    => source now ok
+       problem is that expr_ops_list reads comment as an expression
+       it is a not easily fixable bug
 [ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
 [x] tokenizer: keep track of line-number instead of computing it
     => problem when generating comments in the result with excessive calling

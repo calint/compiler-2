@@ -18,7 +18,7 @@ class stmt_identifier : public statement {
     std::string path_as_string_;
 
   public:
-    stmt_identifier(toc& tc, tokenizer& tz, token tk, unary_ops uops = {})
+    stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : statement{tz.next_whitespace_token(), std::move(uops)},
           path_as_string_{tk.name()} {
 
