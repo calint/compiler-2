@@ -142,12 +142,12 @@ class stmt_call : public expression {
             const type& return_type{func.get_type()};
             const ident_info& dst_info{tc.make_ident_info(tok(), dst, false)};
             //?
-            if (dst_info.type_ref.size() < return_type.size()) {
+            if (dst_info.type_ref->size() < return_type.size()) {
                 throw compiler_exception{
                     tok(), std::format("return type '{}' would be truncated "
                                        "when copied to '{}' of type '{}'",
                                        return_type.name(), dst,
-                                       dst_info.type_ref.name())};
+                                       dst_info.type_ref->name())};
             }
         }
 

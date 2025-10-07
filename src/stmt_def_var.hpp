@@ -133,8 +133,9 @@ class stmt_def_var final : public statement {
             tc.make_ident_info(name_tk_, name_tk_.text(), false)};
 
         toc::indent(os, indent, true);
-        os << "clear array " << array_size_ << " * " << dst_info.type_ref.size()
-           << " B = " << array_size_ * dst_info.type_ref.size() << " B\n";
+        os << "clear array " << array_size_ << " * "
+           << dst_info.type_ref->size()
+           << " B = " << array_size_ * dst_info.type_ref->size() << " B\n";
 
         tc.alloc_named_register_or_throw(*this, os, indent, "rdi");
         tc.alloc_named_register_or_throw(*this, os, indent, "rcx");
@@ -145,7 +146,7 @@ class stmt_def_var final : public statement {
         // note: -dst_info.stack_ix_rel_rsp for nicer source formatting, is
         //       always negative
         tc.asm_cmd(tok(), os, indent, "mov", "rcx",
-                   std::format("{}", array_size_ * dst_info.type_ref.size()));
+                   std::format("{}", array_size_ * dst_info.type_ref->size()));
         tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
         toc::asm_rep_stosb(name_tk_, os, indent);
 

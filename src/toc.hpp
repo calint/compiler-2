@@ -169,7 +169,7 @@ struct ident_info {
     const std::string id;
     const std::string id_nasm; // NASM valid source
     const int64_t const_value{};
-    const type& type_ref;
+    const type* type_ref;
     const int32_t stack_ix;
     const ident_type ident_type{ident_type::CONST};
 
@@ -530,7 +530,7 @@ class toc final {
         // comment the resolved name
         const ident_info& name_info{make_ident_info(src_loc_tk, name, false)};
         indent(os, indnt, true);
-        os << "var " << name << ": " << name_info.type_ref.name();
+        os << "var " << name << ": " << name_info.type_ref->name();
         if (array_size) {
             os << '[' << array_size << ']';
         }
@@ -1363,7 +1363,7 @@ class toc final {
             return {.id = std::string{ident},
                     .id_nasm = acc,
                     .const_value = 0,
-                    .type_ref = tp,
+                    .type_ref = &tp,
                     .stack_ix = var.stack_idx,
                     .ident_type = ident_info::ident_type::VAR};
         }
@@ -1374,7 +1374,7 @@ class toc final {
             return {.id = std::string{ident},
                     .id_nasm = id_base,
                     .const_value = 0,
-                    .type_ref = get_type_default(),
+                    .type_ref = &get_type_default(),
                     .stack_ix = 0,
                     .ident_type = ident_info::ident_type::REGISTER};
         }
@@ -1385,7 +1385,7 @@ class toc final {
             return {.id = std::string{ident},
                     .id_nasm = id_base,
                     .const_value = 0,
-                    .type_ref = get_builtin_type_for_operand(src_loc, id_base),
+                    .type_ref = &get_builtin_type_for_operand(src_loc, id_base),
                     .stack_ix = 0,
                     .ident_type = ident_info::ident_type::REGISTER};
         }
@@ -1399,7 +1399,7 @@ class toc final {
                 return {.id = std::string{ident},
                         .id_nasm = std::format("{}.len", id_base),
                         .const_value = 0,
-                        .type_ref = get_type_default(),
+                        .type_ref = &get_type_default(),
                         .stack_ix = 0,
                         .ident_type = ident_info::ident_type::IMPLIED};
             }
@@ -1408,7 +1408,7 @@ class toc final {
                 return {.id = std::string{ident},
                         .id_nasm = id_base,
                         .const_value = 0,
-                        .type_ref = get_type_default(),
+                        .type_ref = &get_type_default(),
                         .stack_ix = 0,
                         .ident_type = ident_info::ident_type::FIELD};
             }
@@ -1416,7 +1416,7 @@ class toc final {
             return {.id = std::string{ident},
                     .id_nasm = std::format("qword [{}]", id_base),
                     .const_value = 0,
-                    .type_ref = get_type_default(),
+                    .type_ref = &get_type_default(),
                     .stack_ix = 0,
                     .ident_type = ident_info::ident_type::FIELD};
         }
@@ -1428,7 +1428,7 @@ class toc final {
                     .id_nasm = id_base,
                     .const_value = *value, // * dereference is safe
                                            // inside the if body
-                    .type_ref = get_type_default(),
+                    .type_ref = &get_type_default(),
                     .stack_ix = 0,
                     .ident_type = ident_info::ident_type::CONST};
         }
@@ -1438,7 +1438,7 @@ class toc final {
             return {.id = std::string{ident},
                     .id_nasm = "true",
                     .const_value = 1,
-                    .type_ref = get_type_bool(),
+                    .type_ref = &get_type_bool(),
                     .stack_ix = 0,
                     .ident_type = ident_info::ident_type::CONST};
         }
@@ -1447,7 +1447,7 @@ class toc final {
             return {.id = std::string{ident},
                     .id_nasm = "false",
                     .const_value = 0,
-                    .type_ref = get_type_bool(),
+                    .type_ref = &get_type_bool(),
                     .stack_ix = 0,
                     .ident_type = ident_info::ident_type::CONST};
         }
@@ -1456,7 +1456,7 @@ class toc final {
         return {.id = "",
                 .id_nasm = "",
                 .const_value = 0,
-                .type_ref = get_type_void(),
+                .type_ref = &get_type_void(),
                 .stack_ix = 0,
                 .ident_type = ident_info::ident_type::CONST};
     }

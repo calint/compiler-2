@@ -81,7 +81,7 @@ class stmt_identifier : public statement {
             const ident_info ii{
                 tc.make_ident_info(tk_prv, path_as_string_, false)};
 
-            set_type(ii.type_ref);
+            set_type(*ii.type_ref);
 
             // done
             break;
@@ -166,7 +166,7 @@ class stmt_identifier : public statement {
             tc.make_ident_info(tok(), identifier(), false)};
 
         const std::string& size_specifier{
-            type::get_size_specifier(tok(), src_info.type_ref.size())};
+            type::get_size_specifier(tok(), src_info.type_ref->size())};
 
         tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
                    std::format("{} [{}]", size_specifier, effective_address));
@@ -201,7 +201,7 @@ class stmt_identifier : public statement {
             const identifier_elem& curr_elem{elems[i]};
             const ident_info curr_info{
                 tc.make_ident_info(src_loc_tk, path, false)};
-            const size_t type_size{curr_info.type_ref.size()};
+            const size_t type_size{curr_info.type_ref->size()};
 
             if (curr_elem.has_array_index_expr) {
                 // is encodable in instruction of type:
@@ -273,7 +273,7 @@ class stmt_identifier : public statement {
                 const identifier_elem& next_elem{elems[i + 1]};
                 accum_offset +=
                     static_cast<int32_t>(toc::get_field_offset_in_type(
-                        src_loc_tk, curr_info.type_ref,
+                        src_loc_tk, *curr_info.type_ref,
                         next_elem.name_tk.text()));
                 path.push_back('.');
                 path += next_elem.name_tk.text();
