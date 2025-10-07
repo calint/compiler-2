@@ -269,7 +269,7 @@ class toc final {
                                .is_str = is_str_field});
     }
 
-    auto add_func(const token& src_loc_tk, const std::string& name,
+    auto add_func(const token& src_loc_tk, std::string_view name,
                   const type& return_type, const stmt_def_func* func_def)
         -> void {
 
