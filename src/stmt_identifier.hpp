@@ -171,7 +171,6 @@ class stmt_identifier : public statement {
             tc.free_scratch_register(os, indent, reg);
         }
     }
-
     static auto compile_effective_address(
         const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
         const std::vector<identifier_elem>& elems,
@@ -195,7 +194,6 @@ class stmt_identifier : public statement {
             const ident_info curr_info{
                 tc.make_ident_info(src_loc_tk, path, false)};
             const size_t type_size{curr_info.type_ref.size()};
-            const bool is_last{i == elems_size - 1};
 
             if (curr_elem.has_array_index_expr) {
                 // is encodable in instruction of type:
@@ -204,21 +202,21 @@ class stmt_identifier : public statement {
                                         type_size == 4 or type_size == 8};
 
                 // special case: last element with encodable size
-                if (is_last and is_encodable) {
+                if (i == elems_size - 1 and is_encodable) {
                     // calculate offset in array and store in 'reg_idx'
                     const std::string& reg_idx{
                         tc.alloc_scratch_register(src_loc_tk, os, indent)};
                     allocated_registers.push_back(reg_idx);
-
                     curr_elem.array_index_expr->compile(tc, os, indent,
                                                         reg_idx);
 
-                    // is it offset from base register 'rsp' are has it been
+                    // is it offset from base register 'rsp' or has it been
                     // changed to dedicated register for offset calculation?
                     const int32_t offset{
                         (reg_offset == "rsp")
                             ? -(base_info.stack_ix + accum_offset)
                             : accum_offset};
+
                     const char op{(reg_offset == "rsp") ? '-' : '+'};
 
                     if (type_size == 1) {
@@ -234,9 +232,7 @@ class stmt_identifier : public statement {
                 if (reg_offset == "rsp") {
                     reg_offset =
                         tc.alloc_scratch_register(src_loc_tk, os, indent);
-
                     allocated_registers.push_back(reg_offset);
-
                     tc.asm_cmd(src_loc_tk, os, indent, "lea", reg_offset,
                                std::format("[rsp - {}]", -base_info.stack_ix));
                 }
@@ -244,7 +240,6 @@ class stmt_identifier : public statement {
                 // compile and scale the array index
                 const std::string& reg_idx{
                     tc.alloc_scratch_register(src_loc_tk, os, indent)};
-
                 curr_elem.array_index_expr->compile(tc, os, indent, reg_idx);
 
                 if (type_size > 1) {
@@ -272,28 +267,26 @@ class stmt_identifier : public statement {
                     static_cast<int32_t>(toc::get_field_offset_in_type(
                         src_loc_tk, curr_info.type_ref,
                         next_elem.name_tk.name()));
-
-                // continue in the path of identifiers
                 path.push_back('.');
                 path += next_elem.name_tk.name();
             }
         }
 
-        // return an expression, possibly with format [base + index * scale +
-        // offset] that is the target address
-
         if (reg_offset == "rsp") {
-            // still in base case
-            return std::format("rsp - {}", -base_info.stack_ix - accum_offset);
+            // return expression with format [base + index * scale + offset] as
+            // target address
+            return std::format("rsp - {}",
+                               -(base_info.stack_ix + accum_offset));
         }
 
-        // apply any accumulated offset
+        // it is a dedicated register
+
+        // apply any accumulated offset to dedicated register
         if (accum_offset != 0) {
             tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
                        std::format("{}", accum_offset));
         }
 
-        // dedicated register
         // note: constructing new string to avoid clang warning "Not eliding
         //       copy on return clang (-Wnrvo)""
         return std::string{reg_offset};
