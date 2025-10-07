@@ -39,7 +39,7 @@ class stmt_block final : public statement {
                     tz, "unexpected '}' in single statement block"};
             }
 
-            token tk{tz.next_token()};
+            const token tk{tz.next_token()};
 
             // no more tokens in the block?
             if (tk.is_empty()) {
@@ -47,38 +47,33 @@ class stmt_block final : public statement {
             }
 
             if (tk.name().starts_with("#")) {
-                stms_.emplace_back(std::make_unique<stmt_comment>(
-                    tc, unary_ops{}, std::move(tk), tz));
+                stms_.emplace_back(
+                    std::make_unique<stmt_comment>(tc, unary_ops{}, tk, tz));
                 last_statement_considered_no_statment = true;
             } else if (tk.is_name("var")) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_def_var>(tc, std::move(tk), tz));
+                stms_.emplace_back(std::make_unique<stmt_def_var>(tc, tk, tz));
             } else if (tk.is_name("break")) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_break>(tc, std::move(tk)));
+                stms_.emplace_back(std::make_unique<stmt_break>(tc, tk));
             } else if (tk.is_name("continue")) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_continue>(tc, std::move(tk)));
+                stms_.emplace_back(std::make_unique<stmt_continue>(tc, tk));
             } else if (tk.is_name("return")) {
-                stms_.emplace_back(
-                    std::make_unique<stmt_return>(tc, std::move(tk)));
+                stms_.emplace_back(std::make_unique<stmt_return>(tc, tk));
             } else if (tk.is_name("loop") or tk.is_name("if") or
                        tk.is_name("mov") or tk.is_name("syscall")) {
                 // note: solves circular reference problem
                 //       'loop' and 'if' uses this class
                 //       'mov' and 'syscall' are 'stmt_call'
-                stms_.emplace_back(
-                    create_statement_in_stmt_block(tc, tz, std::move(tk)));
+                stms_.emplace_back(create_statement_in_stmt_block(tc, tz, tk));
             } else {
                 // is it at end of block and there is whitespace before '}'?
                 if (tk.is_name("")) {
                     // yes, save it as this block whitespace
-                    ws1_ = std::move(tk);
+                    ws1_ = tk;
                     continue;
                 }
                 // resolve identifier
                 // note: 'unary_ops' not allowed before destination identifier
-                stmt_identifier si{tc, {}, std::move(tk), tz};
+                stmt_identifier si{tc, {}, tk, tz};
 
                 if (tz.is_next_char('=')) {
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(

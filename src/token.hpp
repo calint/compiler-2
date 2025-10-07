@@ -6,20 +6,20 @@
 #include <string>
 
 class token final {
-    std::string ws_left_;  // whitespace left of token text
-    size_t start_ix_{};    // token text start index in source
-    std::string name_;     // token text
-    size_t end_ix_{};      // token text end index in source
-    std::string ws_right_; // whitespace right of token text
+    std::string_view ws_left_;  // whitespace left of token text
+    size_t start_ix_{};         // token text start index in source
+    std::string_view name_;     // token text
+    size_t end_ix_{};           // token text end index in source
+    std::string_view ws_right_; // whitespace right of token text
     size_t at_line_{};
     bool is_str_{}; // true if 'stmt_def_field' was a string
 
   public:
-    token(std::string ws_left, size_t start_ix, std::string name, size_t end_ix,
-          std::string ws_right, size_t at_line, bool is_str = false)
-        : ws_left_{std::move(ws_left)}, start_ix_{start_ix},
-          name_{std::move(name)}, end_ix_{end_ix},
-          ws_right_{std::move(ws_right)}, at_line_(at_line), is_str_{is_str} {}
+    token(std::string_view ws_left, size_t start_ix, std::string_view name,
+          size_t end_ix, std::string_view ws_right, size_t at_line,
+          bool is_str = false)
+        : ws_left_{ws_left}, start_ix_{start_ix}, name_{name}, end_ix_{end_ix},
+          ws_right_{ws_right}, at_line_(at_line), is_str_{is_str} {}
 
     token() = default;
     token(const token&) = default;
@@ -34,8 +34,9 @@ class token final {
             os << ws_left_ << name_ << ws_right_;
             return;
         }
+        std::string const name_str{name_};
         os << ws_left_ << '"'
-           << std::regex_replace(name_, std::regex("\n"), "\\n") << '"'
+           << std::regex_replace(name_str, std::regex("\n"), "\\n") << '"'
            << ws_right_;
     }
 
@@ -45,14 +46,15 @@ class token final {
             return;
         }
         //? temporary fix to handle strings
-        os << std::regex_replace(name_, std::regex(R"(\\n)"), "',10,'");
+        os << std::regex_replace(std::string{name_}, std::regex(R"(\\n)"),
+                                 "',10,'");
     }
 
-    [[nodiscard]] auto is_name(const std::string& s) const -> bool {
+    [[nodiscard]] auto is_name(std::string_view s) const -> bool {
         return name_ == s;
     }
 
-    [[nodiscard]] auto name() const -> const std::string& { return name_; }
+    [[nodiscard]] auto name() const -> std::string_view { return name_; }
 
     [[nodiscard]] auto start_index() const -> size_t { return start_ix_; }
 

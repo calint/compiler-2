@@ -100,7 +100,7 @@ class stmt_identifier : public statement {
         return elems_.at(0).name_tk;
     }
 
-    [[nodiscard]] auto identifier() const -> const std::string& override {
+    [[nodiscard]] auto identifier() const -> std::string_view override {
         return path_as_string_;
     }
 

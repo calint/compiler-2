@@ -4,6 +4,7 @@
 #include "compiler_exception.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
+#include <string_view>
 
 class stmt_def_type_field final : public statement {
     token type_tk_;
@@ -14,7 +15,7 @@ class stmt_def_type_field final : public statement {
 
   public:
     stmt_def_type_field(const toc& tc, token tk, tokenizer& tz)
-        : statement{std::move(tk)} {
+        : statement{tk} {
 
         set_type(tc.get_type_void());
 
@@ -70,11 +71,9 @@ class stmt_def_type_field final : public statement {
         }
     }
 
-    [[nodiscard]] auto name() const -> const std::string& {
-        return tok().name();
-    }
+    [[nodiscard]] auto name() const -> std::string_view { return tok().name(); }
 
-    [[nodiscard]] auto type_str() const -> const std::string& {
+    [[nodiscard]] auto type_str() const -> std::string_view {
         return type_tk_.name();
     }
 

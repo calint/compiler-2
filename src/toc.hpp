@@ -34,7 +34,7 @@ struct var_info final {
 
 class frame final {
     // optional name
-    std::string name_;
+    std::string_view name_;
 
     // a unique path of source locations of the in-lined call
     std::string call_path_;
@@ -61,14 +61,14 @@ class frame final {
     frame_type type_{frame_type::FUNC}; // frame type
 
   public:
-    frame(std::string name, const frame_type frm_type,
+    frame(std::string_view name, const frame_type frm_type,
           const std::vector<func_return_info>& func_rets = {},
           std::string call_path = "", std::string func_ret_label = "") noexcept
-        : name_{std::move(name)}, call_path_{std::move(call_path)},
+        : name_{name}, call_path_{std::move(call_path)},
           func_ret_label_{std::move(func_ret_label)}, func_rets_{func_rets},
           type_{frm_type} {}
 
-    auto add_var(token declared_at_tk, const std::string& name,
+    auto add_var(token declared_at_tk, std::string_view name,
                  const type& type_ref, const bool is_array,
                  const size_t array_size, const int stack_idx) -> void {
 
@@ -77,17 +77,17 @@ class frame final {
             allocated_stack_ += type_ref.size() * (is_array ? array_size : 1);
         }
 
-        vars_.put(name, {.name = name,
-                         .type_ref = type_ref,
-                         .declared_at_tk = std::move(declared_at_tk),
-                         .stack_idx = stack_idx});
+        vars_.put(std::string{name}, {.name = std::string{name},
+                                      .type_ref = type_ref,
+                                      .declared_at_tk = declared_at_tk,
+                                      .stack_idx = stack_idx});
     }
 
     [[nodiscard]] auto allocated_stack_size() const -> size_t {
         return allocated_stack_;
     }
 
-    [[nodiscard]] auto has_var(const std::string& name) const -> bool {
+    [[nodiscard]] auto has_var(std::string_view name) const -> bool {
         return vars_.has(name);
     }
 
@@ -95,7 +95,7 @@ class frame final {
         return vars_.get_ref(name);
     }
 
-    [[nodiscard]] auto get_var_const_ref(const std::string& name) const
+    [[nodiscard]] auto get_var_const_ref(std::string_view name) const
         -> const var_info& {
         return vars_.get_const_ref(name);
     }
@@ -116,7 +116,7 @@ class frame final {
         return type_ == frame_type::LOOP;
     }
 
-    [[nodiscard]] auto is_name(const std::string& name) const -> bool {
+    [[nodiscard]] auto is_name(std::string_view name) const -> bool {
         return name_ == name;
     }
 
@@ -129,7 +129,7 @@ class frame final {
         return aliases_.get_const_ref(name);
     }
 
-    [[nodiscard]] auto name() const -> const std::string& { return name_; }
+    [[nodiscard]] auto name() const -> std::string_view { return name_; }
 
     [[nodiscard]] auto func_ret_label() const -> const std::string& {
         return func_ret_label_;
@@ -183,11 +183,11 @@ struct ident_info final {
 };
 
 class identifier final {
-    std::string id_;
+    std::string_view id_;
     std::vector<std::string> path_;
 
   public:
-    explicit identifier(std::string id) : id_{std::move(id)} {
+    explicit identifier(std::string_view id) : id_{id} {
         auto parts{id_ | std::views::split('.')};
         for (auto part : parts) {
             path_.emplace_back(part.begin(), part.end());
@@ -250,21 +250,23 @@ class toc final {
 
     ~toc() = default;
 
-    auto add_field(const token& src_loc_tk, const std::string& name,
+    auto add_field(const token& src_loc_tk, std::string_view name,
                    const stmt_def_field* fld_def, const bool is_str_field)
         -> void {
 
-        if (fields_.has(name)) {
+        std::string const name_str{name};
+        if (fields_.has(name_str)) {
             throw compiler_exception{
                 src_loc_tk,
-                std::format("field '{}' already defined at {}", name,
-                            source_location_hr(
-                                fields_.get_const_ref(name).declared_at_tk))};
+                std::format(
+                    "field '{}' already defined at {}", name,
+                    source_location_hr(
+                        fields_.get_const_ref(name_str).declared_at_tk))};
         }
 
-        fields_.put(name, {.def = fld_def,
-                           .declared_at_tk = src_loc_tk,
-                           .is_str = is_str_field});
+        fields_.put(name_str, {.def = fld_def,
+                               .declared_at_tk = src_loc_tk,
+                               .is_str = is_str_field});
     }
 
     auto add_func(const token& src_loc_tk, const std::string& name,
@@ -289,7 +291,7 @@ class toc final {
     }
 
     [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
-                                         const std::string& name) const
+                                         std::string_view name) const
         -> const stmt_def_func& {
 
         if (not funcs_.has(name)) {
@@ -301,7 +303,7 @@ class toc final {
     }
 
     [[nodiscard]] auto is_func_builtin(const token& src_loc_tk,
-                                       const std::string& name) const -> bool {
+                                       std::string_view name) const -> bool {
 
         if (not funcs_.has(name)) {
             throw compiler_exception{
@@ -311,8 +313,9 @@ class toc final {
         return funcs_.get_const_ref(name).def == nullptr;
     }
 
-    [[nodiscard]] auto get_func_return_type_or_throw(
-        const token& src_loc_tk, const std::string& name) const -> const type& {
+    [[nodiscard]] auto
+    get_func_return_type_or_throw(const token& src_loc_tk,
+                                  std::string_view name) const -> const type& {
 
         if (not funcs_.has(name)) {
             throw compiler_exception{
@@ -334,15 +337,15 @@ class toc final {
     }
 
     [[nodiscard]] auto get_type_or_throw(const token& src_loc_tk,
-                                         const std::string& name) const
+                                         std::string_view name) const
         -> const type& {
-
-        if (not types_.has(name)) {
+        std::string const name_str{name};
+        if (not types_.has(name_str)) {
             throw compiler_exception{src_loc_tk,
                                      std::format("type '{}' not found", name)};
         }
 
-        return types_.get_const_ref(name);
+        return types_.get_const_ref(name_str);
     }
 
     [[nodiscard]] auto
@@ -367,7 +370,7 @@ class toc final {
 
     static auto get_field_offset_in_type(const token& src_loc_tk_,
                                          const type& tp,
-                                         const std::string& field_name)
+                                         std::string_view field_name)
         -> size_t {
         size_t accum{};
         for (const type_field& f : tp.fields()) {
@@ -424,7 +427,7 @@ class toc final {
     }
 
     [[nodiscard]] auto
-    make_ident_info(const token& src_loc_tk, const std::string& ident,
+    make_ident_info(const token& src_loc_tk, std::string_view ident,
                     [[maybe_unused]] const bool must_be_initiated) const
         -> ident_info {
 
@@ -434,7 +437,7 @@ class toc final {
   private:
     // helper: call make_ident_info_or_empty and throw if unresolved
     [[nodiscard]] auto make_ident_info_or_throw(
-        const token& src_loc_tk, const std::string& ident,
+        const token& src_loc_tk, std::string_view ident,
         [[maybe_unused]] const bool must_be_initiated) const -> ident_info {
 
         const ident_info id_info{make_ident_info_or_empty(src_loc_tk, ident)};
@@ -452,7 +455,7 @@ class toc final {
         frames_.back().add_alias(from, to);
     }
 
-    auto enter_func(const std::string& name,
+    auto enter_func(std::string_view name,
                     const std::vector<func_return_info>& returns = {},
                     const std::string& call_path = "",
                     const std::string& return_jmp_label = "") -> void {
@@ -472,7 +475,7 @@ class toc final {
         refresh_usage();
     }
 
-    auto exit_func(const std::string& name) -> void {
+    auto exit_func(std::string_view name) -> void {
         const frame& frm{frames_.back()};
         assert(frm.is_func() and frm.is_name(name));
         frames_.pop_back();
@@ -491,7 +494,7 @@ class toc final {
     }
 
     auto add_var(const token& src_loc_tk, std::ostream& os, size_t indnt,
-                 const std::string& name, const type& var_type,
+                 std::string_view name, const type& var_type,
                  const bool is_array, const size_t array_size) -> void {
 
         // check if variable is already declared in this scope
@@ -639,7 +642,7 @@ class toc final {
     }
 
     [[nodiscard]] auto get_loop_label_or_throw(const token& src_loc_tk) const
-        -> const std::string& {
+        -> std::string_view {
 
         for (const auto& frm : frames_ | std::views::reverse) {
             if (frm.is_loop()) {
@@ -738,7 +741,7 @@ class toc final {
         os << " " << tk.name() << '\n';
     }
 
-    [[nodiscard]] auto is_identifier_register(const std::string& id) const
+    [[nodiscard]] auto is_identifier_register(std::string_view id) const
         -> bool {
 
         return std::ranges::find(all_registers_, id) != all_registers_.end();
@@ -772,9 +775,9 @@ class toc final {
     }
 
   public:
-    auto asm_cmd(const token& src_loc_tk, std::ostream& os, const size_t indnt,
-                 const std::string& op, const std::string& dst_nasm,
-                 const std::string& src_nasm) -> void {
+    auto asm_cmd(const token& src_loc_tk, std::ostream& os, size_t indnt,
+                 std::string_view op, std::string_view dst_nasm,
+                 std::string_view src_nasm) -> void {
 
         if (op == "mov" and dst_nasm == src_nasm) {
             return;
@@ -875,7 +878,7 @@ class toc final {
     }
 
     [[nodiscard]] auto get_size_from_operand(const token& src_loc_tk,
-                                             const std::string& operand) const
+                                             std::string_view operand) const
         -> size_t {
         //? sort of ugly
         if (operand.starts_with("qword")) {
@@ -927,7 +930,7 @@ class toc final {
     // 'std::from_chars' requiring pointers
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-    static auto parse_to_constant(const std::string& str)
+    static auto parse_to_constant(std::string_view str)
         -> std::optional<int64_t> {
         // is it hex?
         if (str.starts_with("0x") or str.starts_with("0X")) { // hex
@@ -971,7 +974,7 @@ class toc final {
 #pragma clang diagnostic pop
 
     static auto get_size_from_operand_register(const token& src_loc_tk,
-                                               const std::string& operand)
+                                               std::string_view operand)
         -> size_t {
 
         if (operand == "rax" || operand == "rbx" || operand == "rcx" ||
@@ -1015,9 +1018,8 @@ class toc final {
     }
 
     static auto get_register_operand_for_size(const token& src_loc_tk,
-                                              const std::string& operand,
-                                              const size_t size)
-        -> std::string {
+                                              std::string_view operand,
+                                              size_t size) -> std::string {
 
         //? sort of ugly
         if (operand == "rax") {
@@ -1145,7 +1147,8 @@ class toc final {
         //? todo. move this to a static
         const std::regex rx{R"(r(\d+))"};
         std::smatch match;
-        if (not std::regex_search(operand, match, rx)) {
+        std::string const operand_str{operand};
+        if (not std::regex_search(operand_str, match, rx)) {
             throw compiler_exception{
                 src_loc_tk, std::format("unknown register {}", operand)};
         }
@@ -1245,7 +1248,7 @@ class toc final {
 
   private:
     // returns empty id and frame[0] if 'ident' not found
-    auto get_id_and_frame_for_identifier(const std::string& ident)
+    auto get_id_and_frame_for_identifier(std::string_view ident)
         -> std::pair<std::string, frame&> {
 
         identifier id{ident};
@@ -1321,10 +1324,10 @@ class toc final {
     }
 
     [[nodiscard]] auto make_ident_info_or_empty(const token& src_loc,
-                                                const std::string& ident) const
+                                                std::string_view ident) const
         -> ident_info {
 
-        identifier id{ident};
+        identifier id{std::string{ident}};
         // get the root of an identifier: example p.x -> p
         std::string id_base{id.id_base()};
         // traverse the frames and resolve the id_nasm (which might be an
@@ -1367,7 +1370,7 @@ class toc final {
             const var_info& var{frm.get_var_const_ref(id_base)};
             auto [tp, acc]{
                 var.type_ref.accessor(src_loc, id.path(), var.stack_idx)};
-            return {.id = ident,
+            return {.id = std::string{ident},
                     .id_nasm = acc,
                     .const_value = 0,
                     .type_ref = tp,
@@ -1378,7 +1381,7 @@ class toc final {
         // is it a register?
         if (is_identifier_register(id_base)) {
             //? unary ops?
-            return {.id = ident,
+            return {.id = std::string{ident},
                     .id_nasm = id_base,
                     .const_value = 0,
                     .type_ref = get_type_default(),
@@ -1389,7 +1392,7 @@ class toc final {
         // is it a register reference to memory?
         if (is_identifier_direct_register_indirect_addressing(id_base)) {
             // get the size: e.g. "dword [r15]"
-            return {.id = ident,
+            return {.id = std::string{ident},
                     .id_nasm = id_base,
                     .const_value = 0,
                     .type_ref = get_builtin_type_for_operand(src_loc, id_base),
@@ -1403,7 +1406,7 @@ class toc final {
                 id.path().size() == 1 ? ""
                                       : id.path().at(1); //? bug. not correct
             if (after_dot == "len") {
-                return {.id = ident,
+                return {.id = std::string{ident},
                         .id_nasm = std::format("{}.len", id_base),
                         .const_value = 0,
                         .type_ref = get_type_default(),
@@ -1412,7 +1415,7 @@ class toc final {
             }
             const field_info& fi{fields_.get_const_ref(id_base)};
             if (fi.is_str) {
-                return {.id = ident,
+                return {.id = std::string{ident},
                         .id_nasm = id_base,
                         .const_value = 0,
                         .type_ref = get_type_default(),
@@ -1420,7 +1423,7 @@ class toc final {
                         .ident_type = ident_info::ident_type::FIELD};
             }
             //? assumes qword
-            return {.id = ident,
+            return {.id = std::string{ident},
                     .id_nasm = std::format("qword [{}]", id_base),
                     .const_value = 0,
                     .type_ref = get_type_default(),
@@ -1431,7 +1434,7 @@ class toc final {
         // is 'id' an integer?
         if (const std::optional<int64_t> value{parse_to_constant(id_base)};
             value) {
-            return {.id = ident,
+            return {.id = std::string{ident},
                     .id_nasm = id_base,
                     .const_value = *value, // * dereference is safe
                                            // inside the if body
@@ -1442,7 +1445,7 @@ class toc final {
 
         // is it a boolean constant?
         if (id_base == "true") {
-            return {.id = ident,
+            return {.id = std::string{ident},
                     .id_nasm = "true",
                     .const_value = 1,
                     .type_ref = get_type_bool(),
@@ -1451,7 +1454,7 @@ class toc final {
         }
 
         if (id_base == "false") {
-            return {.id = ident,
+            return {.id = std::string{ident},
                     .id_nasm = "false",
                     .const_value = 0,
                     .type_ref = get_type_bool(),
@@ -1476,7 +1479,7 @@ class toc final {
     //------------------------------------------------------------------------
     // statics
     //------------------------------------------------------------------------
-    static auto is_operand_memory(const std::string& operand) -> bool {
+    static auto is_operand_memory(std::string_view operand) -> bool {
         return operand.find_first_of('[') != std::string::npos;
     }
 

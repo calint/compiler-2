@@ -14,7 +14,7 @@ class stmt_call : public expression {
 
   public:
     stmt_call(toc& tc, unary_ops uops, token tk, tokenizer& tz)
-        : expression{std::move(tk), std::move(uops)} {
+        : expression{tk, std::move(uops)} {
 
         set_type(tc.get_func_return_type_or_throw(tok(), identifier()));
 

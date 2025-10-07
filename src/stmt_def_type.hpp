@@ -11,7 +11,7 @@ class stmt_def_type final : public statement {
 
   public:
     stmt_def_type(toc& tc, token tk, tokenizer& tz)
-        : statement{std::move(tk)}, name_tk_{tz.next_token()} {
+        : statement{tk}, name_tk_{tz.next_token()} {
 
         if (not tz.is_next_char('{')) {
             throw compiler_exception{
@@ -31,7 +31,7 @@ class stmt_def_type final : public statement {
             }
         }
         // initiate the type definitions
-        type_.set_name(name_tk_.name());
+        type_.set_name(std::string{name_tk_.name()});
 
         // add the fields
         for (const stmt_def_type_field& fld : fields_) {
@@ -41,8 +41,8 @@ class stmt_def_type final : public statement {
                     ? tc.get_type_default()
                     : tc.get_type_or_throw(fld.type_token(), fld.type_str())};
 
-            type_.add_field(fld.tok(), fld.name(), tp, fld.is_array(),
-                            fld.array_size());
+            type_.add_field(fld.tok(), std::string{fld.name()}, tp,
+                            fld.is_array(), fld.array_size());
         }
 
         tc.add_type(name_tk_, type_);

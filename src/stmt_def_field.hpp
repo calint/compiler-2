@@ -11,7 +11,7 @@ class stmt_def_field final : public statement {
 
   public:
     stmt_def_field(toc& tc, token tk, tokenizer& tz)
-        : statement{std::move(tk)}, name_tk_{tz.next_token()} {
+        : statement{tk}, name_tk_{tz.next_token()} {
 
         if (name_tk_.is_empty()) {
             throw compiler_exception{name_tk_, "expected field name"};

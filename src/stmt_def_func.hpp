@@ -16,7 +16,7 @@ class stmt_def_func final : public statement {
 
   public:
     stmt_def_func(toc& tc, token tk, tokenizer& tz)
-        : statement{std::move(tk)}, name_tk_{tz.next_token()} {
+        : statement{tk}, name_tk_{tz.next_token()} {
 
         if (not tz.is_next_char('(')) {
             throw compiler_exception{name_tk_,
@@ -41,8 +41,8 @@ class stmt_def_func final : public statement {
         if (tz.is_next_char(':')) {
             // function returns
             while (true) {
-                token type_tk{tz.next_token()};
-                token ident_tk{tz.next_token()};
+                const token type_tk{tz.next_token()};
+                const token ident_tk{tz.next_token()};
                 if (tz.is_next_char('.')) {
                     throw compiler_exception{
                         ident_tk, "return variable name may not contain '.'"};
@@ -55,8 +55,7 @@ class stmt_def_func final : public statement {
                         type_tk, "only built-in types allowed as return"};
                 }
 
-                returns_.emplace_back(std::move(type_tk), std::move(ident_tk),
-                                      tp);
+                returns_.emplace_back(type_tk, ident_tk, tp);
 
                 if (not tz.is_next_char(',')) {
                     break;
@@ -69,7 +68,7 @@ class stmt_def_func final : public statement {
             set_type(tc.get_type_void());
         }
 
-        tc.add_func(name_tk_, name_tk_.name(), get_type(), this);
+        tc.add_func(name_tk_, std::string{name_tk_.name()}, get_type(), this);
         // dry-run compilation to catch errors before called
         tc.enter_func(name(), returns_);
         std::vector<std::string> allocated_named_registers;
@@ -159,7 +158,7 @@ class stmt_def_func final : public statement {
 
     [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
 
-    [[nodiscard]] auto name() const -> const std::string& {
+    [[nodiscard]] auto name() const -> std::string_view {
         return name_tk_.name();
     }
 

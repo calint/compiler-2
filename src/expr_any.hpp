@@ -136,9 +136,9 @@ class expr_any final : public statement {
                           var_);
     }
 
-    [[nodiscard]] auto identifier() const -> const std::string& override {
+    [[nodiscard]] auto identifier() const -> std::string_view override {
         return std::visit(
-            [](const auto& itm) -> const std::string& {
+            [](const auto& itm) -> std::string_view {
                 return itm.identifier();
             },
             var_);

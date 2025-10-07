@@ -11,8 +11,8 @@ class stmt_comment final : public statement {
 
   public:
     stmt_comment(const toc& tc, unary_ops uops, token tk, tokenizer& tz)
-        : statement{std::move(tk)}, uops_{std::move(uops)},
-          line_{tz.read_rest_of_line()}, ws1_{tz.next_whitespace_token()} {
+        : statement{tk}, uops_{std::move(uops)}, line_{tz.read_rest_of_line()},
+          ws1_{tz.next_whitespace_token()} {
         set_type(tc.get_type_void());
     }
 

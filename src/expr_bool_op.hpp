@@ -34,13 +34,13 @@ class expr_bool_op final : public statement {
         bool is_not{};
         // e.g. if not a == 3 ...
         while (true) {
-            token tk{tz.next_token()};
+            const token tk{tz.next_token()};
             if (not tk.is_name("not")) {
                 tz.put_back_token(tk);
                 break;
             }
             is_not = not is_not;
-            nots_.emplace_back(std::move(tk));
+            nots_.emplace_back(tk);
         }
         is_not_ = is_not;
 
@@ -287,7 +287,7 @@ class expr_bool_op final : public statement {
                                               : std::format("_{}", call_path)));
     }
 
-    [[nodiscard]] auto identifier() const -> const std::string& override {
+    [[nodiscard]] auto identifier() const -> std::string_view override {
         assert(not is_expression_);
         return lhs_.identifier();
     }

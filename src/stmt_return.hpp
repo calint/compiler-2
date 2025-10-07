@@ -6,7 +6,7 @@
 
 class stmt_return final : public statement {
   public:
-    stmt_return(const toc& tc, token tk) : statement{std::move(tk)} {
+    stmt_return(const toc& tc, token tk) : statement{tk} {
         set_type(tc.get_type_void());
     }
 

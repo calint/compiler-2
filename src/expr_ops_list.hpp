@@ -238,7 +238,7 @@ class expr_ops_list final : public expression {
         }
     }
 
-    [[nodiscard]] auto identifier() const -> const std::string& override {
+    [[nodiscard]] auto identifier() const -> std::string_view override {
         assert(exprs_.size() == 1);
 
         return exprs_.at(0)->identifier();

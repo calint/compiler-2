@@ -18,7 +18,7 @@ class stmt_loop final : public statement {
     }
 
   public:
-    stmt_loop(toc& tc, token tk, tokenizer& tz) : statement{std::move(tk)} {
+    stmt_loop(toc& tc, token tk, tokenizer& tz) : statement{tk} {
         set_type(tc.get_type_void());
         const std::string lbl{create_unique_label(tc)};
         tc.enter_loop(lbl);

@@ -5,6 +5,7 @@
 #include "statement.hpp"
 #include "type.hpp"
 #include <memory>
+#include <string_view>
 
 class stmt_identifier;
 
@@ -44,7 +45,7 @@ class expr_type_value final : public statement {
     }
 
     auto compile_copy(toc& tc, std::ostream& os, size_t indent,
-                      const std::string& dst) const -> void;
+                      std::string_view dst) const -> void;
 
     // implemented in 'main.cpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
@@ -59,7 +60,7 @@ class expr_type_value final : public statement {
     // expr_type_value -> expr_any -> expr_type_value
     inline static auto compile_recursive(const expr_type_value& etv, toc& tc,
                                          std::ostream& os, size_t indent,
-                                         const std::string& src,
-                                         const std::string& dst,
+                                         std::string_view src,
+                                         std::string_view dst,
                                          const type& dst_type) -> void;
 };

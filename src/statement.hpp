@@ -15,7 +15,7 @@ class statement {
 
   public:
     explicit statement(token tk, unary_ops uops = {})
-        : token_{std::move(tk)}, uops_{std::move(uops)} {
+        : token_{tk}, uops_{std::move(uops)} {
 
         validate_identifier_name(token_);
     }
@@ -49,7 +49,7 @@ class statement {
 
     [[nodiscard]] virtual auto is_expression() const -> bool { return false; }
 
-    [[nodiscard]] virtual auto identifier() const -> const std::string& {
+    [[nodiscard]] virtual auto identifier() const -> std::string_view {
         return token_.name();
     }
 

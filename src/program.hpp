@@ -9,6 +9,7 @@
 #include "toc.hpp"
 #include "tokenizer.hpp"
 #include "unary_ops.hpp"
+#include <string_view>
 
 class program final {
     // built-in types
@@ -47,7 +48,7 @@ class program final {
 
         tokenizer tz{source};
         while (true) {
-            token tk{tz.next_token()};
+            const token tk{tz.next_token()};
             if (tk.is_empty()) {
                 if (not tz.is_eos()) {
                     throw panic_exception{"expected file to be fully read "
@@ -57,20 +58,20 @@ class program final {
             }
             if (tk.is_name("field")) {
                 statements_.emplace_back(
-                    std::make_unique<stmt_def_field>(tc_, std::move(tk), tz));
+                    std::make_unique<stmt_def_field>(tc_, tk, tz));
             } else if (tk.is_name("func")) {
                 statements_.emplace_back(
-                    std::make_unique<stmt_def_func>(tc_, std::move(tk), tz));
+                    std::make_unique<stmt_def_func>(tc_, tk, tz));
             } else if (tk.is_name("type")) {
                 statements_.emplace_back(
-                    std::make_unique<stmt_def_type>(tc_, std::move(tk), tz));
+                    std::make_unique<stmt_def_type>(tc_, tk, tz));
             } else if (tk.name().starts_with("#")) {
-                statements_.emplace_back(std::make_unique<stmt_comment>(
-                    tc_, unary_ops{}, std::move(tk), tz));
+                statements_.emplace_back(
+                    std::make_unique<stmt_comment>(tc_, unary_ops{}, tk, tz));
             } else if (tk.is_name("")) {
                 // empty space at end of file; necessary for source reproduction
                 // to be identical
-                ws1_ = std::move(tk);
+                ws1_ = tk;
             } else {
                 throw compiler_exception{
                     tk, std::format("unexpected keyword '{}'", tk.name())};

@@ -47,9 +47,7 @@ class stmt_def_func_param final : public statement {
         type_tk_.source_to(os);
     }
 
-    [[nodiscard]] auto name() const -> const std::string& {
-        return tok().name();
-    }
+    [[nodiscard]] auto name() const -> std::string_view { return tok().name(); }
 
     [[nodiscard]] auto get_register_name_or_empty() const -> std::string {
         const std::string& type_name{type_tk_.name()};

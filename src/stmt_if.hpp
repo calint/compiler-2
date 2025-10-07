@@ -9,7 +9,7 @@ class stmt_if final : public statement {
     stmt_block else_code_;
 
   public:
-    stmt_if(toc& tc, token tk, tokenizer& tz) : statement{std::move(tk)} {
+    stmt_if(toc& tc, token tk, tokenizer& tz) : statement{tk} {
         set_type(tc.get_type_void());
         // e.g. if a == b {x = 1} else if c == d {y = 2} else {z = 3} broken
         // down in branches 'a == b {x = 1}', 'c == d {y = 2}' ending with an
@@ -22,7 +22,7 @@ class stmt_if final : public statement {
             branches_.emplace_back(tc, tz);
 
             // check if it is a 'else if' or 'else' or a new statement
-            token tkn{tz.next_token()};
+            const token tkn{tz.next_token()};
             if (not tkn.is_name("else")) {
                 // not 'else', push token back in stream and exit
                 tz.put_back_token(tkn);
@@ -30,21 +30,21 @@ class stmt_if final : public statement {
             }
             // is 'else'
             // check if 'else if'
-            token tkn2{tz.next_token()};
+            const token tkn2{tz.next_token()};
             if (not tkn2.is_name("if")) {
                 // not 'else if', push token back in stream
                 tz.put_back_token(tkn2);
                 // 'else' branch
                 // save tokens to be able to reproduce the source
-                else_if_tokens_.emplace_back(std::move(tkn));
+                else_if_tokens_.emplace_back(tkn);
                 // read the 'else' code
                 else_code_ = {tc, tz};
                 return;
             }
             // 'else if': continue reading if branches
             // save tokens to be able to reproduce the source
-            else_if_tokens_.emplace_back(std::move(tkn));
-            else_if_tokens_.emplace_back(std::move(tkn2));
+            else_if_tokens_.emplace_back(tkn);
+            else_if_tokens_.emplace_back(tkn2);
         }
     }
 

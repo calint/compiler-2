@@ -13,7 +13,6 @@
 #include <span>
 #include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "compiler_exception.hpp"
@@ -98,16 +97,16 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, token tk)
     -> std::unique_ptr<statement> {
 
     if (tk.is_name("loop")) {
-        return std::make_unique<stmt_loop>(tc, std::move(tk), tz);
+        return std::make_unique<stmt_loop>(tc, tk, tz);
     }
     if (tk.is_name("if")) {
-        return std::make_unique<stmt_if>(tc, std::move(tk), tz);
+        return std::make_unique<stmt_if>(tc, tk, tz);
     }
     if (tk.is_name("mov")) {
-        return std::make_unique<stmt_call_asm_mov>(tc, std::move(tk), tz);
+        return std::make_unique<stmt_call_asm_mov>(tc, tk, tz);
     }
     if (tk.is_name("syscall")) {
-        return std::make_unique<stmt_call_asm_syscall>(tc, std::move(tk), tz);
+        return std::make_unique<stmt_call_asm_syscall>(tc, tk, tz);
     }
 
     throw panic_exception{"unexpected code path main:1"};
@@ -128,7 +127,7 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     const unary_ops uops{tz};
-    token tk{tz.next_token()};
+    const token tk{tz.next_token()};
     if (tk.is_name("")) {
         throw compiler_exception{
             tk, "expected constant, identifier or function call"};
@@ -138,10 +137,10 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     }
     if (tz.is_peek_char('(')) {
         // e.g.  foo(...)
-        return std::make_unique<stmt_call>(tc, uops, std::move(tk), tz);
+        return std::make_unique<stmt_call>(tc, uops, tk, tz);
     }
     // e.g. 0x80, rax, identifiers
-    return std::make_unique<stmt_identifier>(tc, uops, std::move(tk), tz);
+    return std::make_unique<stmt_identifier>(tc, uops, tk, tz);
 }
 
 // declared in 'decouple.hpp'
@@ -254,8 +253,7 @@ inline void expr_type_value::source_to(std::ostream& os) const {
 // expr_type_values
 inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
                                           size_t indent,
-                                          const std::string& dst) const
-    -> void {
+                                          std::string_view dst) const -> void {
 
     std::vector<std::string> allocated_registers;
     const std::string offset{stmt_identifier::compile_effective_address(
@@ -272,12 +270,9 @@ inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
 // declared in 'expr_type_value.hpp'
 // resolves circular reference: expr_type_value -> expr_any ->
 // expr_type_values
-inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
-                                               toc& tc, std::ostream& os,
-                                               size_t indent,
-                                               const std::string& src,
-                                               const std::string& dst,
-                                               const type& dst_type) -> void {
+inline auto expr_type_value::compile_recursive(
+    const expr_type_value& etv, toc& tc, std::ostream& os, size_t indent,
+    std::string_view src, std::string_view dst, const type& dst_type) -> void {
 
     tc.comment_source(etv, os, indent);
 

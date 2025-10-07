@@ -6,7 +6,7 @@
 class stmt_call_asm_syscall final : public stmt_call {
   public:
     stmt_call_asm_syscall(toc& tc, token tk, tokenizer& tz)
-        : stmt_call{tc, {}, std::move(tk), tz} {
+        : stmt_call{tc, {}, tk, tz} {
 
         set_type(tc.get_type_void());
     }

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <format>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -14,7 +15,7 @@ template <class T> class lut final {
         std::string key;
         T data;
 
-        [[nodiscard]] auto is_key(const std::string& k) const -> bool {
+        [[nodiscard]] auto is_key(std::string_view k) const -> bool {
             return k == key;
         }
     };
@@ -31,7 +32,7 @@ template <class T> class lut final {
     //     throw panic_exception("element not found: " + key);
     // }
 
-    [[nodiscard]] auto has(const std::string& key) const -> bool {
+    [[nodiscard]] auto has(std::string_view key) const -> bool {
         return std::ranges::any_of(
             elems_, [&key](const elem& e) { return e.is_key(key); });
     }
@@ -50,7 +51,7 @@ template <class T> class lut final {
     }
 
     // note: for clarity get_const_ref instead of overloading get_ref
-    [[nodiscard]] auto get_const_ref(const std::string& key) const -> const T& {
+    [[nodiscard]] auto get_const_ref(std::string_view key) const -> const T& {
         for (const elem& e : elems_) {
             if (e.is_key(key)) {
                 return e.data;

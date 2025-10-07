@@ -18,8 +18,7 @@ class expr_bool_ops_list final : public statement {
   public:
     expr_bool_ops_list(toc& tc, token tk, tokenizer& tz,
                        const bool enclosed = false, token not_token = {})
-        : statement{std::move(tk)}, enclosed_{enclosed},
-          not_token_{std::move(not_token)} {
+        : statement{tk}, enclosed_{enclosed}, not_token_{not_token} {
 
         set_type(tc.get_type_bool());
 
@@ -40,14 +39,13 @@ class expr_bool_ops_list final : public statement {
             }
             // place the position at the beginning of the parenthesis or start
             // of expression
-            token pos_tk{tz.current_position_token()};
+            const token pos_tk{tz.current_position_token()};
             // is it start of new sub-expression?
             if (tz.is_next_char('(')) {
                 // yes, try as 'expr_bool_ops_list' but it might not be that
                 // e.g.: (t1 + t2) > 3 is not but will compile so further checks
                 // are necessary after the parsing
-                expr_bool_ops_list bol{tc, std::move(pos_tk), tz, true,
-                                       std::move(maybe_not_tk)};
+                expr_bool_ops_list bol{tc, pos_tk, tz, true, maybe_not_tk};
                 // check if 'expr_bool_ops_list' parsed an expression,
                 // wrongfull, as short-hand boolean expression
                 //   e.g. not ( (t1 + t2) > 2 )
@@ -77,7 +75,7 @@ class expr_bool_ops_list final : public statement {
             }
 
             // read 'and' or 'or'
-            token op_tk{tz.next_token()};
+            const token op_tk{tz.next_token()};
             if (not op_tk.is_name("or") and not op_tk.is_name("and")) {
                 // not expected keyword, end of expression, put token back and
                 // return
@@ -107,7 +105,7 @@ class expr_bool_ops_list final : public statement {
             }
 
             // add the list of ops
-            ops_.emplace_back(std::move(op_tk));
+            ops_.emplace_back(op_tk);
         }
     }
 
@@ -352,7 +350,7 @@ class expr_bool_ops_list final : public statement {
         return get<expr_bool_ops_list>(bools_.at(0)).is_expression();
     }
 
-    [[nodiscard]] auto identifier() const -> const std::string& override {
+    [[nodiscard]] auto identifier() const -> std::string_view override {
         if (bools_.size() > 1) {
             throw panic_exception("unexpected code path expr_bool_ops_list:5");
         }

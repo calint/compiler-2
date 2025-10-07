@@ -29,7 +29,7 @@ class stmt_def_var final : public statement {
 
   public:
     stmt_def_var(toc& tc, token tk, tokenizer& tz)
-        : statement{std::move(tk)}, name_tk_{tz.next_token()} {
+        : statement{tk}, name_tk_{tz.next_token()} {
 
         // check if type declared
         if (tz.is_next_char(':')) {
@@ -73,8 +73,8 @@ class stmt_def_var final : public statement {
 
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
-        tc.add_var(name_tk_, null_strm, 0, name_tk_.name(), tp, is_array_,
-                   array_size_);
+        tc.add_var(name_tk_, null_strm, 0, std::string{name_tk_.name()}, tp,
+                   is_array_, array_size_);
 
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
@@ -114,12 +114,12 @@ class stmt_def_var final : public statement {
                  [[maybe_unused]] const std::string& dst = "") const
         -> void override {
 
-        tc.add_var(name_tk_, os, indent, name_tk_.name(), get_type(), is_array_,
-                   array_size_);
+        tc.add_var(name_tk_, os, indent, std::string{name_tk_.name()},
+                   get_type(), is_array_, array_size_);
 
         tc.comment_source(*this, os, indent);
         if (not is_array_) {
-            assign_var_.compile(tc, os, indent, name_tk_.name());
+            assign_var_.compile(tc, os, indent, std::string{name_tk_.name()});
             return;
         }
 
