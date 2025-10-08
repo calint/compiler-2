@@ -15,6 +15,9 @@ valgrind --tool=massif --massif-out-file=massif.out ./baz >/dev/null 2>/dev/null
 grep mem_heap_B massif.out | sort -g | tail -n 1
 rm massif.out
 
+# print stacktrace
+UBSAN_OPTIONS=print_stacktrace=1 ./baz 2>&1 | tee error.log
+
 # perf
 sudo perf record -g build/baz qa/coverage/t77.ba
 sudo perf report
