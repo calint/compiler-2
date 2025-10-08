@@ -1,5 +1,6 @@
 #pragma once
 // reviewed: 2025-09-28
+//           2025-10-08
 
 #include <algorithm>
 #include <format>
@@ -11,7 +12,7 @@
 
 class stmt_call : public expression {
     std::vector<expr_any> args_;
-    token ws_after_; // whitespace after arguments
+    token ws_after_;
 
   public:
     stmt_call(toc& tc, unary_ops uops, token tk, tokenizer& tz)
@@ -27,13 +28,10 @@ class stmt_call : public expression {
             // user defined function
             const stmt_def_func& func{
                 tc.get_func_or_throw(tok(), identifier())};
-            // try to create argument expressions of same type as parameter
-            size_t i{};
             const size_t n{func.params().size()};
-            for (const stmt_def_func_param& param : func.params()) {
+            for (size_t i{}; const stmt_def_func_param& param : func.params()) {
                 args_.emplace_back(tc, tz, param.get_type(), true);
-                i++;
-                if (i < n) {
+                if (++i < n) {
                     if (not tz.is_next_char(',')) {
                         throw compiler_exception{
                             tz, std::format("expected argument {} '{}'", i + 1,
@@ -42,14 +40,13 @@ class stmt_call : public expression {
                 }
             }
             if (not tz.is_next_char(')')) {
-                // note: checked source location report ok
                 throw compiler_exception{tz, "expected ')' after arguments"};
             }
         } else {
             // built-in function
             bool expect_arg{};
             while (true) {
-                if (tz.is_next_char(')')) { // foo()
+                if (tz.is_next_char(')')) {
                     if (expect_arg) {
                         throw compiler_exception{tz,
                                                  "expected argument after ','"};
@@ -57,7 +54,6 @@ class stmt_call : public expression {
                     break;
                 }
                 args_.emplace_back(tc, tz, tc.get_type_default(), true);
-                // note: default type because built-in function use registers
                 expect_arg = tz.is_next_char(',');
             }
         }
@@ -65,7 +61,6 @@ class stmt_call : public expression {
     }
 
     ~stmt_call() override = default;
-
     stmt_call() = default;
     stmt_call(const stmt_call&) = default;
     stmt_call(stmt_call&&) = default;
@@ -75,8 +70,7 @@ class stmt_call : public expression {
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
         os << "(";
-        size_t i{};
-        for (const expr_any& e : args_) {
+        for (size_t i{}; const expr_any& e : args_) {
             if (i++) {
                 os << ",";
             }
@@ -92,27 +86,26 @@ class stmt_call : public expression {
         tc.comment_source(*this, os, indent);
 
         const stmt_def_func& func{tc.get_func_or_throw(tok(), identifier())};
-        const std::string_view func_name{func.name()};
 
-        // check that the same number of arguments are provided as expected
+        // validate argument count
         if (func.params().size() != args_.size()) {
             throw compiler_exception{
                 tok(),
                 std::format(
                     "function '{}' expects {} argument{} but {} {} provided",
-                    func_name, func.params().size(),
+                    func.name(), func.params().size(),
                     (func.params().size() == 1 ? "" : "s"), args_.size(),
                     (args_.size() == 1 ? "is" : "are"))};
         }
 
-        // check that argument types match the parameters
+        // validate argument types
         for (size_t i{}; i < args_.size(); i++) {
-            const expr_any& arg{args_.at(i)};
+            const expr_any& arg{args_[i]};
             const stmt_def_func_param& param{func.param(i)};
             const type& arg_type{arg.get_type()};
             const type& param_type{param.get_type()};
+
             if (arg_type.is_built_in() and param_type.is_built_in()) {
-                //? check if it is integral (not bool)
                 if (param_type.size() < arg_type.size()) {
                     throw compiler_exception{
                         arg.tok(),
@@ -132,7 +125,7 @@ class stmt_call : public expression {
             }
         }
 
-        // check that return value matches the type
+        // validate return type
         if (not dst.empty()) {
             if (func.returns().empty()) {
                 throw compiler_exception{tok(),
@@ -141,7 +134,7 @@ class stmt_call : public expression {
 
             const type& return_type{func.get_type()};
             const ident_info& dst_info{tc.make_ident_info(tok(), dst, false)};
-            //?
+
             if (dst_info.type_ref->size() < return_type.size()) {
                 throw compiler_exception{
                     tok(), std::format("return type '{}' would be truncated "
@@ -151,17 +144,16 @@ class stmt_call : public expression {
             }
         }
 
-        // create unique labels for in-lined functions based on location of
-        // source where the call occurred
+        // create unique labels for in-lined functions
         const std::string_view call_path{tc.get_call_path(tok())};
         const std::string src_loc{tc.source_location_for_use_in_label(tok())};
         const std::string new_call_path{
             call_path.empty() ? src_loc
                               : std::format("{}_{}", src_loc, call_path)};
         const std::string ret_jmp_label{
-            std::format("{}_{}_end", func_name, new_call_path)};
+            std::format("{}_{}_end", func.name(), new_call_path)};
 
-        // keep track of allocated registers
+        // track allocated registers
         std::vector<std::string> allocated_named_registers;
         std::vector<std::string> allocated_scratch_registers;
         std::vector<std::string> allocated_registers_in_order;
@@ -169,60 +161,47 @@ class stmt_call : public expression {
         // buffer the aliases of arguments
         std::vector<std::pair<std::string, std::string>> aliases_to_add;
 
-        // if function returns value
+        // if function returns value, alias return identifier to 'dst'
         if (not dst.empty()) {
-            // alias return identifier to 'dst'
-            const std::string from{func.returns().at(0).ident_tk.text()};
-            const std::string to{dst};
-            aliases_to_add.emplace_back(from, to);
+            aliases_to_add.emplace_back(
+                std::string{func.returns()[0].ident_tk.text()},
+                std::string{dst});
         }
 
-        size_t i{};
-        for (const expr_any& arg : args_) {
-            const stmt_def_func_param& param{func.param(i)};
-            i++;
+        // process each argument
+        for (size_t i{}; const expr_any& arg : args_) {
+            const stmt_def_func_param& param{func.param(i++)};
 
-            // does the parameter want the value passed through a register?
+            // allocate named register if parameter requires it
             std::string arg_reg{param.get_register_name_or_empty()};
             if (not arg_reg.empty()) {
-                // argument is passed through register
                 tc.alloc_named_register_or_throw(arg, os, indent, arg_reg);
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
 
-            // is argument an expression?
+            // handle expression arguments
             if (arg.is_expression()) {
-                // argument is an expression, evaluate and store in arg_reg
                 if (arg_reg.empty()) {
-                    // no particular register requested for the argument
-                    // re-assign 'arg_reg' to scratch register
                     arg_reg = tc.alloc_scratch_register(arg.tok(), os, indent);
                     allocated_scratch_registers.emplace_back(arg_reg);
                     allocated_registers_in_order.emplace_back(arg_reg);
                 }
-                // compile expression and store result in 'arg_reg'
-                // note: 'unary_ops' are part of 'expr_ops_list'
                 arg.compile(tc, os, indent, arg_reg);
-                // alias parameter name to the register containing its value
-                aliases_to_add.emplace_back(param.identifier(), arg_reg);
+                aliases_to_add.emplace_back(std::string{param.identifier()},
+                                            arg_reg);
                 continue;
             }
 
-            // argument is not an expression
-            // is argument passed through register?
+            // handle non-expression without register and without unary ops
+            if (arg_reg.empty() and arg.get_unary_ops().is_empty()) {
+                aliases_to_add.emplace_back(std::string{param.identifier()},
+                                            std::string{arg.identifier()});
+                continue;
+            }
+
+            // handle non-expression with unary ops but no register
             if (arg_reg.empty()) {
-                // argument not passed through register
-                // does unary ops need to be applied?
-                if (arg.get_unary_ops().is_empty()) {
-                    // no unary ops
-                    // alias parameter name to the argument identifier
-                    const std::string_view arg_id{arg.identifier()};
-                    aliases_to_add.emplace_back(param.identifier(), arg_id);
-                    continue;
-                }
-                // unary ops must be applied
-                // allocate a scratch register and evaluate
                 const ident_info& arg_info{tc.make_ident_info(arg, true)};
                 const std::string scratch_reg{
                     tc.alloc_scratch_register(arg.tok(), os, indent)};
@@ -231,104 +210,75 @@ class stmt_call : public expression {
                 tc.asm_cmd(param.tok(), os, indent, "mov", scratch_reg,
                            arg_info.id_nasm);
                 arg.get_unary_ops().compile(tc, os, indent, scratch_reg);
-                // alias parameter to scratch register
-                aliases_to_add.emplace_back(param.identifier(), scratch_reg);
+                aliases_to_add.emplace_back(std::string{param.identifier()},
+                                            scratch_reg);
                 continue;
             }
 
-            // argument is not an expression and passed through register
-            // alias parameter name to the register
-            aliases_to_add.emplace_back(param.identifier(), arg_reg);
-            // move argument to register specified in param
+            // handle non-expression with register
+            aliases_to_add.emplace_back(std::string{param.identifier()},
+                                        arg_reg);
             const ident_info& arg_info{tc.make_ident_info(arg, true)};
-            // is argument a constant?
+
             if (arg_info.is_const()) {
-                // argument is a constant
-                // assign it to the register
                 tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
                            std::format("{}{}", arg.get_unary_ops().to_string(),
                                        arg_info.id_nasm));
-                continue;
+            } else {
+                tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
+                           arg_info.id_nasm);
+                arg.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
             }
-            // argument is not a constant
-            // assign argument to register
-            tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
-                       arg_info.id_nasm);
-            arg.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
         }
 
         toc::indent(os, indent, true);
         func.source_def_comment_to(os);
 
-        // note: not necessary but makes reading the generated code without
-        // comments easier
         toc::asm_label(tok(), os, indent,
-                       std::format("{}_{}", func_name, new_call_path));
+                       std::format("{}_{}", func.name(), new_call_path));
 
-        // enter function creating a new scope from which prior variables are
-        // not visible
-        const std::vector<func_return_info>& returns{func.returns()};
-        tc.enter_func(func_name, returns, new_call_path, ret_jmp_label);
+        // enter function scope
+        tc.enter_func(func.name(), func.returns(), new_call_path,
+                      ret_jmp_label);
 
-        // add the aliases to the context of the new scope
-        for (const auto& alias : aliases_to_add) {
+        // add aliases
+        for (const auto& [from, to] : aliases_to_add) {
             toc::indent(os, indent + 1, true);
-            os << "alias " << alias.first << " -> " << alias.second << '\n';
-            tc.add_alias(alias.first, alias.second);
+            os << "alias " << from << " -> " << to << '\n';
+            tc.add_alias(from, to);
         }
 
         // compile in-lined code
         func.code().compile(tc, os, indent);
 
-        // if function returns then check that the return variable has been
-        // assigned
-        if (not returns.empty()) {
-            //? FIX temporary disabled for progress
-            // const std::string& ret_var{returns.at(0).ident_tk.name()};
-            // if (not tc.is_var_initiated(ret_var)) {
-            //     throw compiler_exception(returns.at(0).ident_tk,
-            //                              "return variable '" + ret_var +
-            //                                  "' has not been assigned");
-            // }
-        }
-
-        // free allocated registers in reverse order of allocation
+        // free allocated registers in reverse order
         for (const auto& reg :
              allocated_registers_in_order | std::views::reverse) {
-            if (std::ranges::find(allocated_scratch_registers, reg) !=
-                allocated_scratch_registers.end()) {
+            if (std::ranges::contains(allocated_scratch_registers, reg)) {
                 tc.free_scratch_register(os, indent + 1, reg);
-                continue;
-            }
-            if (std::ranges::find(allocated_named_registers, reg) !=
-                allocated_named_registers.end()) {
+            } else if (std::ranges::contains(allocated_named_registers, reg)) {
                 tc.free_named_register(os, indent + 1, reg);
-                continue;
+            } else {
+                throw panic_exception("unexpected code path");
             }
-            throw panic_exception("unexpected code path");
         }
 
-        // provide an exit label for 'return' to jump to
+        // provide exit label for 'return' to jump to
         toc::asm_label(tok(), os, indent, ret_jmp_label);
 
-        // does the result of the call have unary ops?
-        // e.g.: var x = ~foo*()
+        // apply unary ops to result if present
         if (not get_unary_ops().is_empty()) {
-            // has unary ops
-            // does the function have a return?
             if (func.returns().empty()) {
-                throw compiler_exception{
-                    tok(), "function call has unary operations but it "
-                           "does not return a value"};
+                throw compiler_exception{tok(),
+                                         "function call has unary operations "
+                                         "but it does not return a value"};
             }
-
-            // compile the result using the unary ops
             const ident_info& ret_info{tc.make_ident_info(
-                tok(), func.returns().at(0).ident_tk.text(), true)};
+                tok(), func.returns()[0].ident_tk.text(), true)};
             get_unary_ops().compile(tc, os, indent, ret_info.id_nasm);
         }
-        // exit scope
-        tc.exit_func(func_name);
+
+        tc.exit_func(func.name());
     }
 
     [[nodiscard]] auto arg(size_t ix) const -> const statement& {
