@@ -67,7 +67,7 @@ class stmt_def_func final : public statement {
             set_type(tc.get_type_void());
         }
 
-        tc.add_func(name_tk_, name_tk_.text(), get_type(), this);
+        tc.add_func(name_tk_, std::string{name_tk_.text()}, get_type(), this);
         // dry-run compilation to catch errors before called
         tc.enter_func(name(), returns_);
         std::vector<std::string> allocated_named_registers;
@@ -193,7 +193,7 @@ class stmt_def_func final : public statement {
             os << prm_name << ": " << prm_reg << '\n';
 
             tc.alloc_named_register_or_throw(prm, os, indent + 1, prm_reg);
-            tc.add_alias(prm_name, prm_reg);
+            tc.add_alias(std::string{prm_name}, std::string{prm_reg});
             allocated_named_registers.emplace_back(prm_reg);
         }
     }
