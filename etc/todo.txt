@@ -1,19 +1,10 @@
 [o] review before next step
     [x] function signatures
     [ ] code
-[x] refactor to use std::string_view
-[x] refactor for structs to be POD with pointers instead of refs
 [ ] optimize rep stosb to q, d, w if possible
     => maybe some heuristics about when to use "rep stosX" 
        => start with stosq, then mov dword, word and byte
 [ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
-[ ] use std::string_view where possible instead of std::string
-    e.g. in expr_bool_op to return constexpr strings
-[o] tidy
-    [x] use std::format
-    [-] rep movsb can be done faster with q if objects are sized to 2^n
-        => duplicate issue
-    [ ] toc.allocate_named_register_or_throw requires statement for src_loc_tk
 [ ] allow declaration of instance without initializer, zero it
     => var o : object[1] then accessed through o.pos does that
 [ ] review where compiler_exceptions happen and try to make good source
@@ -106,6 +97,15 @@ stage 5
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] refactor to use std::string_view
+[x] refactor for structs to be POD with pointers instead of refs
+[x] use std::string_view where possible instead of std::string
+    e.g. in expr_bool_op to return constexpr strings
+[o] tidy
+    [x] use std::format
+    [-] rep movsb can be done faster with q if objects are sized to 2^n
+        => duplicate issue
+    [-] toc.allocate_named_register_or_throw requires statement for src_loc_tk
 [x] try different compilation errors and improve messages and source position
     indicators
 [x] source differs when (notice - and then comment):
