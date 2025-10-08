@@ -45,6 +45,7 @@ class type final {
     auto add_field([[maybe_unused]] const token& tk, std::string_view name,
                    const type& tp, const bool is_array, const size_t array_size)
         -> void {
+
         fields_.emplace_back(
             type_field{.name = name,
                        .tp = &tp,

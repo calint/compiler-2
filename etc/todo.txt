@@ -1,3 +1,6 @@
+[o] review before next step
+    [x] function signatures
+    [ ] code
 [x] refactor to use std::string_view
 [x] refactor for structs to be POD with pointers instead of refs
 [ ] optimize rep stosb to q, d, w if possible
