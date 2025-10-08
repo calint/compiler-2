@@ -32,10 +32,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    36            943            625           4752
+C/C++ Header                    36            943            626           4752
 C++                              1             65             76            420
 -------------------------------------------------------------------------------
-SUM:                            37           1008            701           5172
+SUM:                            37           1008            702           5172
 -------------------------------------------------------------------------------
 ```
 
@@ -1028,11 +1028,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_76_5_end:
+;                free named register 'rdi'
         if_36_5_76_5_end:
-;        free scratch register 'r15'
     assert_76_5_end:
+;        free scratch register 'r15'
 ;    [77:5] assert(arr[2] == 2)
 ;    allocate scratch register -> r15
 ;    [77:12] arr[2] == 2
@@ -1084,11 +1084,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_77_5_end:
+;                free named register 'rdi'
         if_36_5_77_5_end:
-;        free scratch register 'r15'
     assert_77_5_end:
+;        free scratch register 'r15'
 ;    [79:8] ix = 3
 ;    [79:10]  3
 ;    [79:10] 3
@@ -1128,8 +1128,8 @@ main:
 ;        [60:1] res = ~i
         mov dword [rsp + r15 * 4 - 16], r14d
         not dword [rsp + r15 * 4 - 16]
-;        free scratch register 'r14'
     inv_80_16_end:
+;        free scratch register 'r14'
     not dword [rsp + r15 * 4 - 16]
 ;    free scratch register 'r15'
 ;    [81:5] assert(arr[ix] == 2)
@@ -1183,11 +1183,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_81_5_end:
+;                free named register 'rdi'
         if_36_5_81_5_end:
-;        free scratch register 'r15'
     assert_81_5_end:
+;        free scratch register 'r15'
 ;    var p: point @ qword [rsp - 40]
 ;    [83:5] var p : point = {0, 0}
 ;    [83:21] p ={0, 0}
@@ -1257,11 +1257,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_85_5_end:
+;                free named register 'rdi'
         if_36_5_85_5_end:
-;        free scratch register 'r15'
     assert_85_5_end:
+;        free scratch register 'r15'
 ;    [86:5] assert(p.y == 0xb)
 ;    allocate scratch register -> r15
 ;    [86:12] p.y == 0xb
@@ -1301,11 +1301,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_86_5_end:
+;                free named register 'rdi'
         if_36_5_86_5_end:
-;        free scratch register 'r15'
     assert_86_5_end:
+;        free scratch register 'r15'
 ;    var i: i64 @ qword [rsp - 48]
 ;    [88:5] var i = 0
 ;    [88:13] i =0
@@ -1373,11 +1373,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_90_5_end:
+;                free named register 'rdi'
         if_36_5_90_5_end:
-;        free scratch register 'r15'
     assert_90_5_end:
+;        free scratch register 'r15'
 ;    [92:7] i = 1
 ;    [92:9]  1
 ;    [92:9] 1
@@ -1443,11 +1443,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_94_5_end:
+;                free named register 'rdi'
         if_36_5_94_5_end:
-;        free scratch register 'r15'
     assert_94_5_end:
+;        free scratch register 'r15'
 ;    var j: i64 @ qword [rsp - 56]
 ;    [96:5] var j = 1
 ;    [96:13] j =1
@@ -1520,11 +1520,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_98_5_end:
+;                free named register 'rdi'
         if_36_5_98_5_end:
-;        free scratch register 'r15'
     assert_98_5_end:
+;        free scratch register 'r15'
 ;    [100:7] k = baz(1)
 ;    [100:9]  baz(1)
 ;    [100:9] baz(1)
@@ -1585,11 +1585,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_101_5_end:
+;                free named register 'rdi'
         if_36_5_101_5_end:
-;        free scratch register 'r15'
     assert_101_5_end:
+;        free scratch register 'r15'
 ;    var p0: point @ qword [rsp - 80]
 ;    [103:5] var p0 : point = {baz(2), 0}
 ;    [103:22] p0 ={baz(2), 0}
@@ -1658,11 +1658,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_104_5_end:
+;                free named register 'rdi'
         if_36_5_104_5_end:
-;        free scratch register 'r15'
     assert_104_5_end:
+;        free scratch register 'r15'
 ;    var x: i64 @ qword [rsp - 88]
 ;    [106:5] var x = 1
 ;    [106:13] x =1
@@ -1746,11 +1746,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_110_5_end:
+;                free named register 'rdi'
         if_36_5_110_5_end:
-;        free scratch register 'r15'
     assert_110_5_end:
+;        free scratch register 'r15'
 ;    [111:5] assert(o1.pos.y == 2)
 ;    allocate scratch register -> r15
 ;    [111:12] o1.pos.y == 2
@@ -1790,11 +1790,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_111_5_end:
+;                free named register 'rdi'
         if_36_5_111_5_end:
-;        free scratch register 'r15'
     assert_111_5_end:
+;        free scratch register 'r15'
 ;    [112:5] assert(o1.color == 0xff0000)
 ;    allocate scratch register -> r15
 ;    [112:12] o1.color == 0xff0000
@@ -1834,11 +1834,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_112_5_end:
+;                free named register 'rdi'
         if_36_5_112_5_end:
-;        free scratch register 'r15'
     assert_112_5_end:
+;        free scratch register 'r15'
 ;    var p1: point @ qword [rsp - 132]
 ;    [114:5] var p1 : point = {-x, -y}
 ;    [114:22] p1 ={-x, -y}
@@ -1911,11 +1911,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_116_5_end:
+;                free named register 'rdi'
         if_36_5_116_5_end:
-;        free scratch register 'r15'
     assert_116_5_end:
+;        free scratch register 'r15'
 ;    [117:5] assert(o1.pos.y == -2)
 ;    allocate scratch register -> r15
 ;    [117:12] o1.pos.y == -2
@@ -1955,11 +1955,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_117_5_end:
+;                free named register 'rdi'
         if_36_5_117_5_end:
-;        free scratch register 'r15'
     assert_117_5_end:
+;        free scratch register 'r15'
 ;    var o2: object @ qword [rsp - 152]
 ;    [119:5] var o2 : object = o1
 ;    [119:23] o2 =o1
@@ -2013,11 +2013,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_120_5_end:
+;                free named register 'rdi'
         if_36_5_120_5_end:
-;        free scratch register 'r15'
     assert_120_5_end:
+;        free scratch register 'r15'
 ;    [121:5] assert(o2.pos.y == -2)
 ;    allocate scratch register -> r15
 ;    [121:12] o2.pos.y == -2
@@ -2057,11 +2057,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_121_5_end:
+;                free named register 'rdi'
         if_36_5_121_5_end:
-;        free scratch register 'r15'
     assert_121_5_end:
+;        free scratch register 'r15'
 ;    [122:5] assert(o2.color == 0xff0000)
 ;    allocate scratch register -> r15
 ;    [122:12] o2.color == 0xff0000
@@ -2101,11 +2101,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_122_5_end:
+;                free named register 'rdi'
         if_36_5_122_5_end:
-;        free scratch register 'r15'
     assert_122_5_end:
+;        free scratch register 'r15'
 ;    var o3: object[1] @ qword [rsp - 172]
 ;    [124:5] var o3 : object[1]
 ;    clear array 1 * 20 B = 20 B
@@ -2182,11 +2182,11 @@ main:
 ;                [14:19] # return code
 ;                [15:5] syscall()
                 syscall
-;                free named register 'rdi'
             exit_36_17_127_5_end:
+;                free named register 'rdi'
         if_36_5_127_5_end:
-;        free scratch register 'r15'
     assert_127_5_end:
+;        free scratch register 'r15'
 ;    [129:5] print(hello.len, hello)
 ;    allocate named register 'rdx'
     mov rdx, hello.len
@@ -2208,9 +2208,9 @@ main:
 ;        [22:19] # buffer size
 ;        [23:5] syscall()
         syscall
+    print_129_5_end:
 ;        free named register 'rsi'
 ;        free named register 'rdx'
-    print_129_5_end:
 ;    [130:5] loop
     loop_130_5:
 ;        [131:9]  print(prompt1.len, prompt1)
@@ -2234,9 +2234,9 @@ main:
 ;            [22:19] # buffer size
 ;            [23:5] syscall()
             syscall
+        print_131_9_end:
 ;            free named register 'rsi'
 ;            free named register 'rdx'
-        print_131_9_end:
 ;        var len: i64 @ qword [rsp - 180]
 ;        [132:9] var len = read(input.len, input) - 1
 ;        [132:19] len =read(input.len, input) - 1
@@ -2268,9 +2268,9 @@ main:
 ;            [32:5] mov(nbytes, rax)
             mov qword [rsp - 180], rax
 ;            [32:22] # return value
+        read_132_19_end:
 ;            free named register 'rsi'
 ;            free named register 'rdx'
-        read_132_19_end:
 ;        [132:49] len - 1
         sub qword [rsp - 180], 1
 ;        [132:49] # -1 don't include the '\n'
@@ -2314,9 +2314,9 @@ main:
 ;                [22:19] # buffer size
 ;                [23:5] syscall()
                 syscall
+            print_136_13_end:
 ;                free named register 'rsi'
 ;                free named register 'rdx'
-            print_136_13_end:
 ;            [137:13] continue
             jmp loop_130_5
         jmp if_133_9_end
@@ -2342,9 +2342,9 @@ main:
 ;                [22:19] # buffer size
 ;                [23:5] syscall()
                 syscall
+            print_139_13_end:
 ;                free named register 'rsi'
 ;                free named register 'rdx'
-            print_139_13_end:
 ;            [140:13] print(len, input)
 ;            allocate named register 'rdx'
             mov rdx, qword [rsp - 180]
@@ -2366,9 +2366,9 @@ main:
 ;                [22:19] # buffer size
 ;                [23:5] syscall()
                 syscall
+            print_140_13_end:
 ;                free named register 'rsi'
 ;                free named register 'rdx'
-            print_140_13_end:
 ;            [141:13] print(dot.len, dot)
 ;            allocate named register 'rdx'
             mov rdx, dot.len
@@ -2390,9 +2390,9 @@ main:
 ;                [22:19] # buffer size
 ;                [23:5] syscall()
                 syscall
+            print_141_13_end:
 ;                free named register 'rsi'
 ;                free named register 'rdx'
-            print_141_13_end:
 ;            [142:13] print(nl.len, nl)
 ;            allocate named register 'rdx'
             mov rdx, nl.len
@@ -2414,9 +2414,9 @@ main:
 ;                [22:19] # buffer size
 ;                [23:5] syscall()
                 syscall
+            print_142_13_end:
 ;                free named register 'rsi'
 ;                free named register 'rdx'
-            print_142_13_end:
         if_133_9_end:
     jmp loop_130_5
     loop_130_5_end:
