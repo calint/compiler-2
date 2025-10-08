@@ -243,13 +243,13 @@ class toc final {
   public:
     explicit toc(const std::string& source) : source_{source} {}
 
+    ~toc() = default;
+
     toc() = delete;
     toc(const toc&) = default;
     toc(toc&&) = default;
     auto operator=(const toc&) -> toc& = delete;
     auto operator=(toc&&) -> toc& = delete;
-
-    ~toc() = default;
 
     auto add_field(const token& src_loc_tk, std::string_view name,
                    const stmt_def_field* fld_def, bool is_str_field) -> void {

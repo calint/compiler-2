@@ -109,13 +109,13 @@ class expr_bool_ops_list final : public statement {
         }
     }
 
+    ~expr_bool_ops_list() override = default;
+
     expr_bool_ops_list() = default;
     expr_bool_ops_list(const expr_bool_ops_list&) = default;
     expr_bool_ops_list(expr_bool_ops_list&&) = default;
     auto operator=(const expr_bool_ops_list&) -> expr_bool_ops_list& = default;
     auto operator=(expr_bool_ops_list&&) -> expr_bool_ops_list& = default;
-
-    ~expr_bool_ops_list() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

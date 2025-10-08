@@ -168,13 +168,13 @@ class expr_ops_list final : public expression {
         }
     }
 
+    ~expr_ops_list() override = default;
+
     expr_ops_list() = default;
     expr_ops_list(const expr_ops_list&) = default;
     expr_ops_list(expr_ops_list&&) = default;
     auto operator=(const expr_ops_list&) -> expr_ops_list& = default;
     auto operator=(expr_ops_list&&) -> expr_ops_list& = default;
-
-    ~expr_ops_list() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         uops_.source_to(os);

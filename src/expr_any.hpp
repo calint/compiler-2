@@ -36,13 +36,13 @@ class expr_any final : public statement {
         var_ = expr_ops_list{tc, tz, in_args};
     }
 
+    ~expr_any() override = default;
+
     expr_any() = default;
     expr_any(const expr_any&) = default;
     expr_any(expr_any&&) = default;
     auto operator=(const expr_any&) -> expr_any& = default;
     auto operator=(expr_any&&) -> expr_any& = default;
-
-    ~expr_any() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

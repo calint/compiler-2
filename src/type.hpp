@@ -34,13 +34,13 @@ class type final {
     type(std::string_view name, size_t size, bool is_built_in)
         : name_{name}, size_{size}, is_built_in_{is_built_in} {}
 
+    ~type() = default;
+
     type() = default;
     type(const type&) = default;
     type(type&&) = default;
     auto operator=(const type&) -> type& = default;
     auto operator=(type&&) -> type& = default;
-
-    ~type() = default;
 
     auto add_field([[maybe_unused]] const token& tk, std::string_view name,
                    const type& tp, const bool is_array, const size_t array_size)

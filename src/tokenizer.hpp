@@ -20,13 +20,13 @@ class tokenizer final {
     explicit tokenizer(const std::string& src_str)
         : src_str_{src_str}, src_{src_str_} {}
 
+    ~tokenizer() = default;
+
     tokenizer() = delete;
     tokenizer(const tokenizer&) = default;
     tokenizer(tokenizer&&) = default;
     auto operator=(const tokenizer&) -> tokenizer& = delete;
     auto operator=(tokenizer&&) -> tokenizer& = delete;
-
-    ~tokenizer() = default;
 
     [[nodiscard]] auto is_eos() const -> bool {
         return char_ix_ >= src_.size();

@@ -21,13 +21,13 @@ class token final {
         : ws_left_{ws_left}, start_ix_{start_ix}, text_{name}, end_ix_{end_ix},
           ws_right_{ws_right}, at_line_(at_line), is_str_{is_str} {}
 
+    ~token() = default;
+
     token() = default;
     token(const token&) = default;
     token(token&&) = default;
     auto operator=(const token&) -> token& = default;
     auto operator=(token&&) -> token& = default;
-
-    ~token() = default;
 
     auto source_to(std::ostream& os) const -> void {
         if (not is_str_) {

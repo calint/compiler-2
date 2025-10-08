@@ -26,13 +26,13 @@ class unary_ops final {
         }
     }
 
+    ~unary_ops() = default;
+
     unary_ops() = default;
     unary_ops(const unary_ops&) = default;
     unary_ops(unary_ops&&) = default;
     auto operator=(const unary_ops&) -> unary_ops& = default;
     auto operator=(unary_ops&&) -> unary_ops& = default;
-
-    ~unary_ops() = default;
 
     [[nodiscard]] auto is_only_negated() const -> bool {
         return ops_.size() == 1 && ops_.back() == '-';
