@@ -456,12 +456,13 @@ class toc final {
     }
 
     auto enter_func(std::string_view name,
-                    const std::vector<func_return_info>& returns = {},
-                    std::string call_path = "",
-                    std::string return_jmp_label = "") -> void {
+                    const std::vector<func_return_info>& returns,
+                    std::string_view call_path = {},
+                    std::string_view return_jmp_label = {}) -> void {
 
         frames_.emplace_back(name, frame::frame_type::FUNC, returns,
-                             std::move(call_path), std::move(return_jmp_label));
+                             std::string{call_path},
+                             std::string{return_jmp_label});
         refresh_usage();
     }
 
@@ -494,7 +495,7 @@ class toc final {
     }
 
     auto add_var(const token& src_loc_tk, std::ostream& os, size_t indnt,
-                 std::string name, const type& var_type, bool is_array,
+                 std::string_view name, const type& var_type, bool is_array,
                  size_t array_size) -> void {
 
         // check if variable is already declared in this scope
@@ -520,8 +521,8 @@ class toc final {
             static_cast<int>(get_current_function_stack_size() +
                              (var_type.size() * (is_array ? array_size : 1)))};
 
-        frames_.back().add_var(src_loc_tk, name, var_type, is_array, array_size,
-                               -stack_idx);
+        frames_.back().add_var(src_loc_tk, std::string{name}, var_type,
+                               is_array, array_size, -stack_idx);
 
         const size_t total_stack_size{get_total_stack_size()};
         usage_max_stack_size_ =
@@ -780,6 +781,7 @@ class toc final {
     auto asm_cmd(const token& src_loc_tk, std::ostream& os, size_t indnt,
                  std::string_view op, std::string_view dst_nasm,
                  std::string_view src_nasm) -> void {
+
         if (op == "mov" and dst_nasm == src_nasm) {
             return;
         }
@@ -906,6 +908,7 @@ class toc final {
     get_builtin_type_for_operand(const token& src_loc_tk_,
                                  std::string_view operand) const
         -> const type& {
+
         //? sort of ugly
         if (operand.starts_with("qword")) {
             return get_type_or_throw(src_loc_tk_, "i64");
@@ -979,6 +982,7 @@ class toc final {
     static auto get_size_from_operand_register(const token& src_loc_tk,
                                                std::string_view operand)
         -> size_t {
+
         if (operand == "rax" || operand == "rbx" || operand == "rcx" ||
             operand == "rdx" || operand == "rbp" || operand == "rsi" ||
             operand == "rdi" || operand == "rsp" || operand == "r8" ||
@@ -1022,6 +1026,7 @@ class toc final {
     static auto get_register_operand_for_size(const token& src_loc_tk,
                                               std::string_view operand,
                                               size_t size) -> std::string {
+
         //? sort of ugly
         if (operand == "rax") {
             switch (size) {
@@ -1173,6 +1178,7 @@ class toc final {
     static auto asm_push([[maybe_unused]] const token& src_loc_tk,
                          std::ostream& os, size_t indnt,
                          std::string_view operand) -> void {
+
         indent(os, indnt);
         os << "push " << operand << '\n';
     }
@@ -1180,6 +1186,7 @@ class toc final {
     static auto asm_pop([[maybe_unused]] const token& src_loc_tk,
                         std::ostream& os, size_t indnt,
                         std::string_view operand) -> void {
+
         indent(os, indnt);
         os << "pop " << operand << '\n';
     }
@@ -1187,6 +1194,7 @@ class toc final {
     static auto asm_jmp([[maybe_unused]] const token& src_loc_tk,
                         std::ostream& os, size_t indnt, std::string_view label)
         -> void {
+
         indent(os, indnt);
         os << "jmp " << label << '\n';
     }
@@ -1194,6 +1202,7 @@ class toc final {
     static auto asm_label([[maybe_unused]] const token& src_loc_tk,
                           std::ostream& os, size_t indnt,
                           std::string_view label) -> void {
+
         indent(os, indnt);
         os << label << ":\n";
     }
@@ -1247,6 +1256,7 @@ class toc final {
     // returns empty id and frame[0] if 'ident' not found
     auto get_id_and_frame_for_identifier(std::string_view ident)
         -> std::pair<std::string, frame&> {
+
         identifier id{ident};
         std::string id_base{id.id_base()};
 
@@ -1481,6 +1491,7 @@ class toc final {
 
     static auto extract_between_brackets(std::string_view str)
         -> std::optional<std::string_view> {
+
         auto start{str.find('[')};
         if (start == std::string_view::npos) {
             return std::nullopt;

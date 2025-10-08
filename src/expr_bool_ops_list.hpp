@@ -145,6 +145,7 @@ class expr_bool_ops_list final : public statement {
                               [[maybe_unused]] size_t indent,
                               [[maybe_unused]] std::string_view dst = "") const
         -> void override {
+
         throw panic_exception("unexpected code path expr_bool_ops_list:1");
     }
 
