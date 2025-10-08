@@ -451,8 +451,8 @@ class toc final {
 
   public:
     // note: 'to' is alias or variable in parent frame
-    auto add_alias(std::string_view from, std::string_view to) -> void {
-        frames_.back().add_alias(std::string{from}, std::string{to});
+    auto add_alias(std::string from, std::string to) -> void {
+        frames_.back().add_alias(std::move(from), std::move(to));
     }
 
     auto enter_func(std::string_view name,

@@ -172,8 +172,8 @@ class stmt_call : public expression {
         // if function returns value
         if (not dst.empty()) {
             // alias return identifier to 'dst'
-            const std::string_view from{func.returns().at(0).ident_tk.text()};
-            const std::string_view to{dst};
+            const std::string from{func.returns().at(0).ident_tk.text()};
+            const std::string to{dst};
             aliases_to_add.emplace_back(from, to);
         }
 
@@ -272,8 +272,8 @@ class stmt_call : public expression {
 
         // add the aliases to the context of the new scope
         for (const auto& alias : aliases_to_add) {
-            const std::string_view from{alias.first};
-            const std::string_view to{alias.second};
+            const std::string from{alias.first};
+            const std::string to{alias.second};
             tc.add_alias(from, to);
 
             toc::indent(os, indent + 1, true);

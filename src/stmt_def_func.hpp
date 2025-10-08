@@ -194,7 +194,7 @@ class stmt_def_func final : public statement {
             os << prm_name << ": " << prm_reg << '\n';
 
             tc.alloc_named_register_or_throw(prm, os, indent + 1, prm_reg);
-            tc.add_alias(prm_name, prm_reg);
+            tc.add_alias(std::string{prm_name}, std::string{prm_reg});
             allocated_named_registers.emplace_back(prm_reg);
         }
     }
