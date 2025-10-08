@@ -10,6 +10,7 @@
 #include <string_view>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "lut.hpp"
 #include "panic_exception.hpp"
 #include "statement.hpp"
@@ -19,17 +20,23 @@ class stmt_def_func;
 class stmt_def_field;
 class stmt_def_type;
 
+struct func_info {
+    const stmt_def_func* def{}; // null if built-in function
+    token declared_at_tk;       // token for position in source
+    const type& type_ref;       // return type or void
+};
+
 struct func_return_info {
-    token type_tk;  // type token
-    token ident_tk; // identifier token
-    const type* type_ref{};
+    token type_tk;          // type token
+    token ident_tk;         // identifier token
+    const type& type_ref{}; // type
 };
 
 struct var_info {
     std::string_view name;
-    const type* type_ref{};
+    const type& type_ref{};
     token declared_at_tk; // token for position in source
-    int32_t stack_idx{};  // location relative to rsp
+    int32_t stack_idx{};  // location relative to register rsp
 };
 
 class frame final {
@@ -78,7 +85,7 @@ class frame final {
         }
 
         vars_.put(name, {.name = name,
-                         .type_ref = &type_ref,
+                         .type_ref = type_ref,
                          .declared_at_tk = declared_at_tk,
                          .stack_idx = stack_idx});
     }
@@ -147,19 +154,13 @@ class frame final {
 };
 
 struct field_info {
-    const stmt_def_field* def{};
+    const stmt_def_field& def;
     token declared_at_tk; // token for position in source
     bool is_str{};
 };
 
-struct func_info {
-    const stmt_def_func* def{};
-    token declared_at_tk; // token for position in source
-    const type* type_ref;
-};
-
 struct type_info {
-    const stmt_def_type* def{};
+    const stmt_def_type& def;
     token declared_at_tk;
     const type& type_ref;
 };
@@ -252,7 +253,7 @@ class toc final {
     auto operator=(toc&&) -> toc& = delete;
 
     auto add_field(const token& src_loc_tk, std::string name,
-                   const stmt_def_field* fld_def, bool is_str_field) -> void {
+                   const stmt_def_field& fld_def, bool is_str_field) -> void {
 
         if (fields_.has(name)) {
             throw compiler_exception{
@@ -281,7 +282,7 @@ class toc final {
 
         funcs_.put(std::move(name), {.def = func_def,
                                      .declared_at_tk = src_loc_tk,
-                                     .type_ref = &return_type});
+                                     .type_ref = return_type});
     }
 
     [[nodiscard]] auto is_func(std::string_view name) const -> bool {
@@ -320,7 +321,7 @@ class toc final {
                 src_loc_tk, std::format("function '{}' not found", name)};
         }
 
-        return *funcs_.get_const_ref(name).type_ref;
+        return funcs_.get_const_ref(name).type_ref;
     }
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
@@ -1375,7 +1376,7 @@ class toc final {
         if (frm.has_var(id_base)) {
             const var_info& var{frm.get_var_const_ref(id_base)};
             auto [tp, acc]{
-                var.type_ref->accessor(src_loc, id.path(), var.stack_idx)};
+                var.type_ref.accessor(src_loc, id.path(), var.stack_idx)};
             return {.id = std::string{ident},
                     .id_nasm = acc,
                     .const_value = 0,

@@ -55,13 +55,13 @@ class stmt_def_func final : public statement {
                         type_tk, "only built-in types allowed as return"};
                 }
 
-                returns_.emplace_back(type_tk, ident_tk, &tp);
+                returns_.emplace_back(type_tk, ident_tk, tp);
                 if (not tz.is_next_char(',')) {
                     break;
                 }
             }
             // set function type to first return type
-            set_type(*returns_.at(0).type_ref);
+            set_type(returns_.at(0).type_ref);
         } else {
             // no return, set type to 'void'
             set_type(tc.get_type_void());
