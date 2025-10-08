@@ -1,4 +1,4 @@
-[ ] adjust source so it passes also MSAN  
+[ ] adjust source so it passes also MSAN, remove regex
     -fsanitize=undefined,integer
 [ ] replace the regex with manual string manipulation
 [ ] don't allow indexing on a non-index var
