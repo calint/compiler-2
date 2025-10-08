@@ -7,7 +7,7 @@
 #include "type.hpp"
 #include <format>
 
-class null_stream : public std::ostream {
+class null_stream final : public std::ostream {
     class null_buffer : public std::streambuf {
       public:
         auto overflow(int c) -> int override { return c; }
@@ -82,13 +82,13 @@ class stmt_def_var final : public statement {
         }
     }
 
+    ~stmt_def_var() override = default;
+
     stmt_def_var() = default;
     stmt_def_var(const stmt_def_var&) = default;
     stmt_def_var(stmt_def_var&&) = default;
     auto operator=(const stmt_def_var&) -> stmt_def_var& = default;
     auto operator=(stmt_def_var&&) -> stmt_def_var& = default;
-
-    ~stmt_def_var() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

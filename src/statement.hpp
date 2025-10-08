@@ -20,13 +20,13 @@ class statement {
         validate_identifier_name(token_);
     }
 
+    virtual ~statement() = default;
+
     statement() = default;
     statement(statement&&) = default;
     statement(const statement&) = default;
     auto operator=(const statement&) -> statement& = default;
     auto operator=(statement&&) -> statement& = default;
-
-    virtual ~statement() = default;
 
     virtual auto compile([[maybe_unused]] toc& tc, std::ostream& os,
                          [[maybe_unused]] size_t indent,

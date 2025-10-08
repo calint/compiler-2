@@ -88,13 +88,13 @@ class stmt_identifier : public statement {
         }
     }
 
+    ~stmt_identifier() override = default;
+
     stmt_identifier() = default;
     stmt_identifier(const stmt_identifier&) = default;
     stmt_identifier(stmt_identifier&&) = default;
     auto operator=(const stmt_identifier&) -> stmt_identifier& = default;
     auto operator=(stmt_identifier&&) -> stmt_identifier& = default;
-
-    ~stmt_identifier() override = default;
 
     [[nodiscard]] auto first_token() const -> const token& {
         return elems_.at(0).name_tk;

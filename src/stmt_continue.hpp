@@ -10,13 +10,13 @@ class stmt_continue final : public statement {
         set_type(tc.get_type_void());
     }
 
+    ~stmt_continue() override = default;
+
     stmt_continue() = default;
     stmt_continue(const stmt_continue&) = default;
     stmt_continue(stmt_continue&&) = default;
     auto operator=(const stmt_continue&) -> stmt_continue& = default;
     auto operator=(stmt_continue&&) -> stmt_continue& = default;
-
-    ~stmt_continue() override = default;
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  [[maybe_unused]] std::string_view dst = "") const

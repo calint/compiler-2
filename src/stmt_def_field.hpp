@@ -32,13 +32,13 @@ class stmt_def_field final : public statement {
         tc.add_field(tok(), name_tk_.text(), this, initial_value_.is_string());
     }
 
+    ~stmt_def_field() override = default;
+
     stmt_def_field() = default;
     stmt_def_field(const stmt_def_field&) = default;
     stmt_def_field(stmt_def_field&&) = default;
     auto operator=(const stmt_def_field&) -> stmt_def_field& = default;
     auto operator=(stmt_def_field&&) -> stmt_def_field& = default;
-
-    ~stmt_def_field() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

@@ -22,13 +22,13 @@ class stmt_assign_var final : public statement {
         expr_ = {tc, tz, *dst_info.type_ref, false};
     }
 
+    ~stmt_assign_var() override = default;
+
     stmt_assign_var() = default;
     stmt_assign_var(const stmt_assign_var&) = default;
     stmt_assign_var(stmt_assign_var&&) = default;
     auto operator=(const stmt_assign_var&) -> stmt_assign_var& = default;
     auto operator=(stmt_assign_var&&) -> stmt_assign_var& = default;
-
-    ~stmt_assign_var() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

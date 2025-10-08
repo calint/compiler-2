@@ -64,13 +64,13 @@ class stmt_call : public expression {
         ws_after_ = tz.next_whitespace_token();
     }
 
+    ~stmt_call() override = default;
+
     stmt_call() = default;
     stmt_call(const stmt_call&) = default;
     stmt_call(stmt_call&&) = default;
     auto operator=(const stmt_call&) -> stmt_call& = default;
     auto operator=(stmt_call&&) -> stmt_call& = default;
-
-    ~stmt_call() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);

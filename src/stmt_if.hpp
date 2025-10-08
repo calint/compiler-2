@@ -48,13 +48,13 @@ class stmt_if final : public statement {
         }
     }
 
+    ~stmt_if() override = default;
+
     stmt_if() = default;
     stmt_if(const stmt_if&) = default;
     stmt_if(stmt_if&&) = default;
     auto operator=(const stmt_if&) -> stmt_if& = default;
     auto operator=(stmt_if&&) -> stmt_if& = default;
-
-    ~stmt_if() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

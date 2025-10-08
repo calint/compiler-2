@@ -79,13 +79,13 @@ class stmt_def_func final : public statement {
         tc.exit_func(name());
     }
 
+    ~stmt_def_func() override = default;
+
     stmt_def_func() = default;
     stmt_def_func(const stmt_def_func&) = default;
     stmt_def_func(stmt_def_func&&) = default;
     auto operator=(const stmt_def_func&) -> stmt_def_func& = default;
     auto operator=(stmt_def_func&&) -> stmt_def_func& = default;
-
-    ~stmt_def_func() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         source_def_to(os, false);

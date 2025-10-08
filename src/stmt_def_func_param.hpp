@@ -29,14 +29,14 @@ class stmt_def_func_param final : public statement {
         set_type(tc.get_type_or_throw(type_tk_, type_tk_.text()));
     }
 
+    ~stmt_def_func_param() override = default;
+
     stmt_def_func_param() = default;
     stmt_def_func_param(const stmt_def_func_param&) = default;
     stmt_def_func_param(stmt_def_func_param&&) = default;
     auto operator=(const stmt_def_func_param&)
         -> stmt_def_func_param& = default;
     auto operator=(stmt_def_func_param&&) -> stmt_def_func_param& = default;
-
-    ~stmt_def_func_param() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

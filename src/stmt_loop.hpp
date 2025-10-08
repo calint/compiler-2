@@ -26,13 +26,13 @@ class stmt_loop final : public statement {
         tc.exit_loop(lbl);
     }
 
+    ~stmt_loop() override = default;
+
     stmt_loop() = default;
     stmt_loop(const stmt_loop&) = default;
     stmt_loop(stmt_loop&&) = default;
     auto operator=(const stmt_loop&) -> stmt_loop& = default;
     auto operator=(stmt_loop&&) -> stmt_loop& = default;
-
-    ~stmt_loop() override = default;
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  [[maybe_unused]] std::string_view dst = "") const

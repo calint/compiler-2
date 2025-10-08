@@ -11,14 +11,14 @@ class stmt_call_asm_syscall final : public stmt_call {
         set_type(tc.get_type_void());
     }
 
+    ~stmt_call_asm_syscall() override = default;
+
     stmt_call_asm_syscall() = default;
     stmt_call_asm_syscall(const stmt_call_asm_syscall&) = default;
     stmt_call_asm_syscall(stmt_call_asm_syscall&&) = default;
     auto operator=(const stmt_call_asm_syscall&)
         -> stmt_call_asm_syscall& = default;
     auto operator=(stmt_call_asm_syscall&&) -> stmt_call_asm_syscall& = default;
-
-    ~stmt_call_asm_syscall() override = default;
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  [[maybe_unused]] std::string_view dst = "") const

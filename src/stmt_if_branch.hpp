@@ -16,13 +16,13 @@ class stmt_if_branch final : public statement {
         set_type(tc.get_type_void());
     }
 
+    ~stmt_if_branch() override = default;
+
     stmt_if_branch() = default;
     stmt_if_branch(const stmt_if_branch&) = default;
     stmt_if_branch(stmt_if_branch&&) = default;
     auto operator=(const stmt_if_branch&) -> stmt_if_branch& = default;
     auto operator=(stmt_if_branch&&) -> stmt_if_branch& = default;
-
-    ~stmt_if_branch() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

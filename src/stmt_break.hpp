@@ -10,13 +10,13 @@ class stmt_break final : public statement {
         set_type(tc.get_type_void());
     }
 
+    ~stmt_break() override = default;
+
     stmt_break() = default;
     stmt_break(const stmt_break&) = default;
     stmt_break(stmt_break&&) = default;
     auto operator=(const stmt_break&) -> stmt_break& = default;
     auto operator=(stmt_break&&) -> stmt_break& = default;
-
-    ~stmt_break() override = default;
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  [[maybe_unused]] std::string_view dst = "") const

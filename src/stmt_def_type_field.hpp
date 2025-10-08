@@ -47,14 +47,14 @@ class stmt_def_type_field final : public statement {
         }
     }
 
+    ~stmt_def_type_field() override = default;
+
     stmt_def_type_field() = default;
     stmt_def_type_field(const stmt_def_type_field&) = default;
     stmt_def_type_field(stmt_def_type_field&&) = default;
     auto operator=(const stmt_def_type_field&)
         -> stmt_def_type_field& = default;
     auto operator=(stmt_def_type_field&&) -> stmt_def_type_field& = default;
-
-    ~stmt_def_type_field() override = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
