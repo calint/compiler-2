@@ -251,7 +251,7 @@ class toc final {
 
     ~toc() = default;
 
-    auto add_field(const token& src_loc_tk, std::string name,
+    auto add_field(const token& src_loc_tk, std::string_view name,
                    const stmt_def_field* fld_def, bool is_str_field) -> void {
 
         if (fields_.has(name)) {
@@ -262,12 +262,12 @@ class toc final {
                                 fields_.get_const_ref(name).declared_at_tk))};
         }
 
-        fields_.put(std::move(name), {.def = fld_def,
-                                      .declared_at_tk = src_loc_tk,
-                                      .is_str = is_str_field});
+        fields_.put(std::string{name}, {.def = fld_def,
+                                        .declared_at_tk = src_loc_tk,
+                                        .is_str = is_str_field});
     }
 
-    auto add_func(const token& src_loc_tk, std::string name,
+    auto add_func(const token& src_loc_tk, std::string_view name,
                   const type& return_type, const stmt_def_func* func_def)
         -> void {
 
@@ -279,9 +279,9 @@ class toc final {
                             source_location_hr(fn.declared_at_tk))};
         }
 
-        funcs_.put(std::move(name), {.def = func_def,
-                                     .declared_at_tk = src_loc_tk,
-                                     .type_ref = &return_type});
+        funcs_.put(std::string{name}, {.def = func_def,
+                                       .declared_at_tk = src_loc_tk,
+                                       .type_ref = &return_type});
     }
 
     [[nodiscard]] auto is_func(std::string_view name) const -> bool {
@@ -451,8 +451,8 @@ class toc final {
 
   public:
     // note: 'to' is alias or variable in parent frame
-    auto add_alias(std::string from, std::string to) -> void {
-        frames_.back().add_alias(std::move(from), std::move(to));
+    auto add_alias(std::string_view from, std::string_view to) -> void {
+        frames_.back().add_alias(std::string{from}, std::string{to});
     }
 
     auto enter_func(std::string_view name,

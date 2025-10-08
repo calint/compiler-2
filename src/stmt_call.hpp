@@ -272,8 +272,8 @@ class stmt_call : public expression {
 
         // add the aliases to the context of the new scope
         for (const auto& alias : aliases_to_add) {
-            const std::string from{alias.first};
-            const std::string to{alias.second};
+            const std::string_view from{alias.first};
+            const std::string_view to{alias.second};
             tc.add_alias(from, to);
 
             toc::indent(os, indent + 1, true);
