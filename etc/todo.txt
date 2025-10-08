@@ -1,3 +1,4 @@
+[ ] don't allow indexing on a non-index var
 [o] review before next step
     [x] function signatures
     [ ] code
