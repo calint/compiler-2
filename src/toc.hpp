@@ -21,9 +21,9 @@ class stmt_def_field;
 class stmt_def_type;
 
 struct func_info {
-    const stmt_def_func* def; // null if built-in function
-    token declared_at_tk;     // token for position in source
-    const type& type_ref;     // return type or void
+    const stmt_def_func* def{}; // null if built-in function
+    token declared_at_tk;       // token for position in source
+    const type& type_ref;       // return type or void
 };
 
 struct func_return_info {
@@ -36,7 +36,7 @@ struct var_info {
     std::string_view name;
     const type& type_ref;
     token declared_at_tk; // token for position in source
-    int32_t stack_idx;    // location relative to register rsp
+    int32_t stack_idx{};  // location relative to register rsp
 };
 
 class frame final {
