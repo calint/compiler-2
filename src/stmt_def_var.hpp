@@ -73,8 +73,8 @@ class stmt_def_var final : public statement {
 
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
-        tc.add_var(name_tk_, null_strm, 0, name_tk_.text(), tp, is_array_,
-                   array_size_);
+        tc.add_var(name_tk_, null_strm, 0, std::string{name_tk_.text()}, tp,
+                   is_array_, array_size_);
 
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
@@ -114,8 +114,8 @@ class stmt_def_var final : public statement {
                  [[maybe_unused]] std::string_view dst = "") const
         -> void override {
 
-        tc.add_var(name_tk_, os, indent, name_tk_.text(), get_type(), is_array_,
-                   array_size_);
+        tc.add_var(name_tk_, os, indent, std::string{name_tk_.text()},
+                   get_type(), is_array_, array_size_);
 
         tc.comment_source(*this, os, indent);
         if (not is_array_) {

@@ -29,7 +29,8 @@ class stmt_def_field final : public statement {
             set_type(tc.get_type_default()); //? only default type supported
         }
 
-        tc.add_field(tok(), name_tk_.text(), this, initial_value_.is_string());
+        tc.add_field(tok(), std::string{name_tk_.text()}, this,
+                     initial_value_.is_string());
     }
 
     ~stmt_def_field() override = default;
