@@ -179,12 +179,12 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         const ident_info ii{
             tc.make_ident_info(tok(), stmt_ident_->identifier(), false)};
 
-        if (tp.name() != ii.type_ref->name()) {
+        if (tp.name() != ii.type_ref.name()) {
             // note: checked source location report ok
             throw compiler_exception{
                 tok(),
                 std::format("type '{}' does not match expected type '{}'",
-                            ii.type_ref->name(), tp.name())};
+                            ii.type_ref.name(), tp.name())};
         }
 
         return;
@@ -279,8 +279,7 @@ inline auto expr_type_value::compile_recursive(
     // is it an identifier?
     if (not src.empty()) {
         // yes, e.g. obj.pos = p
-        const type& src_type{
-            *tc.make_ident_info(etv.tok(), src, true).type_ref};
+        const type& src_type{tc.make_ident_info(etv.tok(), src, true).type_ref};
         if (src_type.name() != dst_type.name()) {
             throw compiler_exception{
                 etv.tok(), std::format("cannot assign '{}' to '{}' because "
