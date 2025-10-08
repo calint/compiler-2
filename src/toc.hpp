@@ -59,7 +59,7 @@ class frame final {
     std::string func_ret_label_;
 
     // info about the function returns
-    const std::vector<func_return_info>& func_rets_;
+    std::vector<func_return_info> func_rets_;
 
   public:
     enum class frame_type : uint8_t { FUNC, BLOCK, LOOP };
