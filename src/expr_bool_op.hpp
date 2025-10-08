@@ -10,12 +10,12 @@
 #include "expr_ops_list.hpp"
 
 class expr_bool_op final : public statement {
-    static constexpr std::string asm_je{"je"};
-    static constexpr std::string asm_jne{"jne"};
-    static constexpr std::string asm_jl{"jl"};
-    static constexpr std::string asm_jle{"jle"};
-    static constexpr std::string asm_jg{"jg"};
-    static constexpr std::string asm_jge{"jge"};
+    static constexpr std::string_view asm_je{"je"};
+    static constexpr std::string_view asm_jne{"jne"};
+    static constexpr std::string_view asm_jl{"jl"};
+    static constexpr std::string_view asm_jle{"jle"};
+    static constexpr std::string_view asm_jg{"jg"};
+    static constexpr std::string_view asm_jge{"jge"};
 
     std::vector<token> nots_;
     expr_ops_list lhs_;
@@ -108,6 +108,7 @@ class expr_bool_op final : public statement {
                               [[maybe_unused]] size_t indent,
                               [[maybe_unused]] std::string_view dst = "") const
         -> void override {
+
         throw panic_exception("unexpected code path bool_op:1");
     }
 
@@ -353,7 +354,7 @@ class expr_bool_op final : public statement {
         throw panic_exception("unexpected code path bool_op:2");
     }
 
-    static auto asm_jxx_for_op(std::string_view op) -> const std::string& {
+    static auto asm_jxx_for_op(std::string_view op) -> std::string_view {
         if (op == "==") {
             return asm_je;
         }
@@ -376,8 +377,7 @@ class expr_bool_op final : public statement {
         throw panic_exception("unexpected code path bool_op:3");
     }
 
-    static auto asm_jxx_for_op_inv(std::string_view op) -> std::string {
-
+    static auto asm_jxx_for_op_inv(std::string_view op) -> std::string_view {
         if (op == "==") {
             return asm_jne;
         }
