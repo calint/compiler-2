@@ -172,8 +172,8 @@ struct type_info {
 struct ident_info {
     enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
 
-    const std::string id;
-    const std::string id_nasm; // NASM valid source
+    const std::string id{};
+    const std::string id_nasm{}; // NASM valid source
     const int64_t const_value{};
     const type& type_ref;
     const int32_t stack_ix{};
@@ -1439,8 +1439,7 @@ class toc final {
                     .id_nasm = std::string{id_base},
                     .const_value = *value, // * dereference is safe
                                            // inside the if body
-                    .type_ref = get_type_default(),
-                    .ident_type = ident_info::ident_type::CONST};
+                    .type_ref = get_type_default()};
         }
 
         // is it a boolean constant?
@@ -1448,23 +1447,20 @@ class toc final {
             return {.id = std::string{ident},
                     .id_nasm = "true",
                     .const_value = 1,
-                    .type_ref = get_type_bool(),
-                    .ident_type = ident_info::ident_type::CONST};
+                    .type_ref = get_type_bool()};
         }
 
         if (id_base == "false") {
             return {.id = std::string{ident},
                     .id_nasm = "false",
                     .const_value = 0,
-                    .type_ref = get_type_bool(),
-                    .ident_type = ident_info::ident_type::CONST};
+                    .type_ref = get_type_bool()};
         }
 
         // not resolved, return empty info
-        return {.id = "",
-                .id_nasm = "",
-                .type_ref = get_type_void(),
-                .ident_type = ident_info::ident_type::CONST};
+        return {
+            .type_ref = get_type_void(),
+        };
     }
 
     auto refresh_usage() -> void {
