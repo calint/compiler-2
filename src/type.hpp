@@ -25,6 +25,7 @@ struct accessor_info {
     const type& tp;
     bool is_array{};
     size_t array_size{};
+    size_t size{};
 };
 
 class type final {
@@ -81,18 +82,21 @@ class type final {
     [[nodiscard]] auto
     accessor(const token& tk, const std::vector<std::string_view>& path,
              const int stack_idx_base, const bool base_is_array,
-             const size_t base_array_size) const -> accessor_info {
+             const size_t base_array_size, const size_t base_size) const
+        -> accessor_info {
 
         const type* tp{this};
         size_t offset{};
         bool is_array{base_is_array};
         size_t array_size{base_array_size};
+        size_t size{base_size};
         for (const auto& field_name : path | std::views::drop(1)) {
             const type_field& fld{tp->field(tk, field_name)};
             offset += fld.offset;
             tp = fld.tp;
             is_array = fld.is_array;
             array_size = fld.array_size;
+            size = fld.size;
         }
         const int stack_idx{stack_idx_base + static_cast<int>(offset)};
 
@@ -110,7 +114,8 @@ class type final {
         return {.id_nasm = accessor,
                 .tp = *tp,
                 .is_array = is_array,
-                .array_size = array_size};
+                .array_size = array_size,
+                .size = size};
     }
 
     [[nodiscard]] auto size() const -> size_t { return size_; }

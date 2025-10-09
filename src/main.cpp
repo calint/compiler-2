@@ -30,6 +30,7 @@
 #include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
+#include "stmt_size_of.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
@@ -146,6 +147,9 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     if (tk.is_text("array_size_of")) {
         return std::make_unique<stmt_array_size_of>(tc, std::move(uops), tk,
                                                     tz);
+    }
+    if (tk.is_text("size_of")) {
+        return std::make_unique<stmt_size_of>(tc, std::move(uops), tk, tz);
     }
     if (tz.is_peek_char('(')) {
         // e.g.  foo(...)

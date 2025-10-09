@@ -1,3 +1,5 @@
+[o] implement "size_of"
+    [ ] size_of for fields
 [ ] a way to initiate a i8 array with a string:
     var hello : i8[] = "hello world"
 [x] a way of using "read" and "write" functions with var buffers:

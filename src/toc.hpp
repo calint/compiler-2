@@ -179,6 +179,7 @@ struct ident_info {
     const int32_t stack_ix{};
     const bool is_array{};
     const size_t array_size{};
+    const size_t size{};
     const ident_type ident_type{ident_type::CONST};
 
     [[nodiscard]] auto is_const() const -> bool {
@@ -1378,15 +1379,16 @@ class toc final {
         // is it a variable?
         if (frm.has_var(id_base)) {
             const var_info& var{frm.get_var_const_ref(id_base)};
-            accessor_info ai{var.type_ref.accessor(src_loc, id.path(),
-                                                   var.stack_idx, var.is_array,
-                                                   var.array_size)};
+            accessor_info ai{var.type_ref.accessor(
+                src_loc, id.path(), var.stack_idx, var.is_array, var.array_size,
+                var.type_ref.size() * (var.is_array ? var.array_size : 1))};
             return {.id = std::string{ident},
                     .id_nasm = ai.id_nasm,
                     .type_ref = ai.tp,
                     .stack_ix = var.stack_idx,
                     .is_array = ai.is_array,
                     .array_size = ai.array_size,
+                    .size = ai.size,
                     .ident_type = ident_info::ident_type::VAR};
         }
 
@@ -1396,6 +1398,7 @@ class toc final {
             return {.id = std::string{ident},
                     .id_nasm = std::string{id_base},
                     .type_ref = get_type_default(),
+                    .size = get_type_default().size(),
                     .ident_type = ident_info::ident_type::REGISTER};
         }
 
@@ -1405,6 +1408,7 @@ class toc final {
             return {.id = std::string{ident},
                     .id_nasm = std::string{id_base},
                     .type_ref = get_builtin_type_for_operand(src_loc, id_base),
+                    .size = get_size_from_operand(src_loc, id_base),
                     .ident_type = ident_info::ident_type::REGISTER};
         }
 
@@ -1417,6 +1421,7 @@ class toc final {
                 return {.id = std::string{ident},
                         .id_nasm = std::format("{}.len", id_base),
                         .type_ref = get_type_default(),
+                        .size = get_type_default().size(),
                         .ident_type = ident_info::ident_type::IMPLIED};
             }
             const field_info& fi{fields_.get_const_ref(id_base)};
@@ -1430,6 +1435,7 @@ class toc final {
             return {.id = std::string{ident},
                     .id_nasm = std::format("qword [{}]", id_base),
                     .type_ref = get_type_default(),
+                    .size = get_type_default().size(),
                     .ident_type = ident_info::ident_type::FIELD};
         }
 
@@ -1439,7 +1445,8 @@ class toc final {
             return {.id = std::string{ident},
                     .id_nasm = std::string{id_base},
                     .const_value = *value,
-                    .type_ref = get_type_default()};
+                    .type_ref = get_type_default(),
+                    .size = get_type_default().size()};
         }
 
         // is it a boolean constant?
@@ -1447,14 +1454,16 @@ class toc final {
             return {.id = std::string{ident},
                     .id_nasm = "true",
                     .const_value = 1,
-                    .type_ref = get_type_bool()};
+                    .type_ref = get_type_bool(),
+                    .size = get_type_bool().size()};
         }
 
         if (id_base == "false") {
             return {.id = std::string{ident},
                     .id_nasm = "false",
                     .const_value = 0,
-                    .type_ref = get_type_bool()};
+                    .type_ref = get_type_bool(),
+                    .size = get_type_bool().size()};
         }
 
         // not resolved, return empty info
