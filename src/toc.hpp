@@ -829,10 +829,16 @@ class toc final {
                     os << "movsx " << dst_nasm << ", " << src_nasm << '\n';
                     return;
                 }
+                indent(os, indnt);
+                os << op << ' '
+                   << get_register_operand_for_size(src_loc_tk, dst_nasm,
+                                                    src_size)
+                   << ", " << src_nasm << '\n';
+                return;
             }
 
-            // both operands refer to memory
-            // use scratch register for transfer
+            // both operands refer to memory or operation handles different
+            // sizes, use scratch register for transfer
             const std::string reg{
                 alloc_scratch_register(src_loc_tk, os, indnt)};
             const std::string reg_sized{
