@@ -13,9 +13,8 @@ CW="-Weverything -Wno-c++98-compat -Wno-pre-c++20-compat-pedantic -Wno-weak-vtab
 #CC="g++ -std=c++23"
 #CW="-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow"
 CF="-Wfatal-errors -Werror"
-DBG=-g
-OPT=
-#OPT=-O3
+DBG=-g3
+OPT=-O1
 
 #
 # AddressSanitizer + UndefinedBehaviorSanitizer (can be combined)
@@ -95,7 +94,7 @@ fi
 SANITIZERS="$ASAN$MSAN$TSAN"
 
 SEP="--------------------------------------------------------------------------------"
-CMD="$CC src/main.cpp -o baz $OPT $DBG $CF $CW $SANITIZERS $PROF"
+CMD="$CC src/main.cpp -o baz $DBG $OPT $CF $CW $SANITIZERS $PROF"
 echo $SEP
 echo $CMD
 $CMD

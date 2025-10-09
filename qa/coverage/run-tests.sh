@@ -12,17 +12,24 @@ BIN='../../baz'
 
 set +e
 
+ASAN_SYM=$(which llvm-symbolizer)
+ABS_BIN=$(realpath "$BIN")
+
 export UBSAN_OPTIONS="print_stacktrace=1"
-export ASAN_OPTIONS="detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1:detect_leaks=1:halt_on_error=1"
+
+export ASAN_OPTIONS="fast_unwind_on_fatal=0:print_stacktrace=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1:detect_leaks=1:halt_on_error=1:external_symbolizer=1"
+export ASAN_SYMBOLIZER_PATH="$ASAN_SYM"
+export ASAN_SYMBOLIZE=1
 
 RUN() {
   echo -n "$SRC: "
 
-  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s || return 1
+  rm -f error.log
 
-  if [ -s error.log ]; then
-    echo
-    cat error.log
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s
+
+  if [ $? -ne 0 ]; then
+    echo "compiler failed. see 'error.log' and 'gen.s'" >&2
     exit 1
   fi
 
@@ -43,11 +50,12 @@ RUN() {
 DIFF() {
   echo -n "$SRC: "
 
-  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s || return 1
+  rm -f error.log
 
-  if [ -s error.log ]; then
-    echo
-    cat error.log
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s
+
+  if [ $? -ne 0 ]; then
+    echo "compiler failed. see 'error.log' and 'gen.s'" >&2
     exit 1
   fi
 
@@ -59,7 +67,7 @@ DIFF() {
   if cmp -s out "${SRC%.*}.out"; then
     echo ok
   else
-    echo FAILED
+    echo "FAILED. output differs. see: diff ${SRC%.*}.out out"
     exit 1
   fi
 }
@@ -67,23 +75,24 @@ DIFF() {
 DIFFINP() {
   echo -n "$SRC: "
 
-  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s || return 1
+  rm -f error.log
 
-  if [ -s error.log ]; then
-    echo
-    cat error.log
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s
+
+  if [ $? -ne 0 ]; then
+    echo "compiler failed. see 'error.log' and 'gen.s'" >&2
     exit 1
   fi
 
-  nasm -f elf64 gen.s || return 1
-  ld -s -o gen gen.o || return 1
+  nasm -f elf64 gen.s
+  ld -s -o gen gen.o
 
   ./gen <"${SRC%.*}.in" >out
 
   if cmp -s out "${SRC%.*}.out"; then
     echo ok
   else
-    echo FAILED
+    echo FAILED. output differs. see: diff ${SRC%.*}.out out
     exit 1
   fi
 }
@@ -91,26 +100,24 @@ DIFFINP() {
 DIFFPY() {
   echo -n "$SRC: "
 
-  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s || return 1
+  rm -f error.log
 
-  if [ -s error.log ]; then
-    echo
-    cat error.log
-    exit 1
-  fi
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s
 
-  nasm -f elf64 gen.s || return 1
-  ld -s -o gen gen.o || return 1
+  nasm -f elf64 gen.s
+  ld -s -o gen gen.o
 
   "./${SRC%.*}.py" >out
 
   if cmp -s out "${SRC%.*}.out"; then
     echo ok
   else
-    echo FAILED
+    echo FAILED. output differs. see: diff ${SRC%.*}.out out
     exit 1
   fi
 }
+
+set +e
 
 SRC=t1 && EXP=58 && RUN
 SRC=t2 && EXP=1 && RUN

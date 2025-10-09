@@ -159,13 +159,12 @@ class stmt_call : public expression {
         std::vector<std::string> allocated_registers_in_order;
 
         // buffer the aliases of arguments
-        std::vector<std::pair<std::string, std::string>> aliases_to_add;
+        std::vector<std::pair<std::string_view, std::string>> aliases_to_add;
 
         // if function returns value, alias return identifier to 'dst'
         if (not dst.empty()) {
-            aliases_to_add.emplace_back(
-                std::string{func.returns()[0].ident_tk.text()},
-                std::string{dst});
+            aliases_to_add.emplace_back(func.returns()[0].ident_tk.text(),
+                                        std::string{dst});
         }
 
         // process each argument
@@ -188,14 +187,13 @@ class stmt_call : public expression {
                     allocated_registers_in_order.emplace_back(arg_reg);
                 }
                 arg.compile(tc, os, indent, arg_reg);
-                aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            arg_reg);
+                aliases_to_add.emplace_back(param.identifier(), arg_reg);
                 continue;
             }
 
             // handle non-expression without register and without unary ops
             if (arg_reg.empty() and arg.get_unary_ops().is_empty()) {
-                aliases_to_add.emplace_back(std::string{param.identifier()},
+                aliases_to_add.emplace_back(param.identifier(),
                                             std::string{arg.identifier()});
                 continue;
             }
@@ -210,14 +208,12 @@ class stmt_call : public expression {
                 tc.asm_cmd(param.tok(), os, indent, "mov", scratch_reg,
                            arg_info.id_nasm);
                 arg.get_unary_ops().compile(tc, os, indent, scratch_reg);
-                aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            scratch_reg);
+                aliases_to_add.emplace_back(param.identifier(), scratch_reg);
                 continue;
             }
 
             // handle non-expression with register
-            aliases_to_add.emplace_back(std::string{param.identifier()},
-                                        arg_reg);
+            aliases_to_add.emplace_back(param.identifier(), arg_reg);
             const ident_info& arg_info{tc.make_ident_info(arg, true)};
 
             if (arg_info.is_const()) {
@@ -245,7 +241,7 @@ class stmt_call : public expression {
         for (const auto& [from, to] : aliases_to_add) {
             toc::indent(os, indent + 1, true);
             os << "alias " << from << " -> " << to << '\n';
-            tc.add_alias(from, to);
+            tc.add_alias(std::string{from}, to);
         }
 
         // compile in-lined code
