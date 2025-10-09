@@ -9,7 +9,7 @@
 [ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
 [ ] allow declaration of instance without initializer, zero it
     => var o : object[1] then accessed through o.pos does that
-[ ] review where compiler_exceptions happen and try to make good source
+[o] review where compiler_exceptions happen and try to make good source
     location reports
 [ ] review the reading of white spaces sprinkled about
 [ ] instrumentation to find out max heap and stack usage by the compiler
