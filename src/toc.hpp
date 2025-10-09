@@ -176,7 +176,7 @@ struct ident_info {
     const std::string id_nasm; // NASM valid source
     const int64_t const_value{};
     const type& type_ref;
-    const int32_t stack_ix;
+    const int32_t stack_ix{};
     const bool is_array{};
     const size_t array_size{};
     const ident_type ident_type{ident_type::CONST};
@@ -1382,7 +1382,6 @@ class toc final {
                 var.type_ref.accessor(src_loc, id.path(), var.stack_idx)};
             return {.id = std::string{ident},
                     .id_nasm = acc,
-                    .const_value = 0,
                     .type_ref = tp,
                     .stack_ix = var.stack_idx,
                     .is_array = var.is_array,
@@ -1395,9 +1394,7 @@ class toc final {
             //? unary ops?
             return {.id = std::string{ident},
                     .id_nasm = std::string{id_base},
-                    .const_value = 0,
                     .type_ref = get_type_default(),
-                    .stack_ix = 0,
                     .ident_type = ident_info::ident_type::REGISTER};
         }
 
@@ -1406,9 +1403,7 @@ class toc final {
             // get the size: e.g. "dword [r15]"
             return {.id = std::string{ident},
                     .id_nasm = std::string{id_base},
-                    .const_value = 0,
                     .type_ref = get_builtin_type_for_operand(src_loc, id_base),
-                    .stack_ix = 0,
                     .ident_type = ident_info::ident_type::REGISTER};
         }
 
@@ -1420,26 +1415,20 @@ class toc final {
             if (after_dot == "len") {
                 return {.id = std::string{ident},
                         .id_nasm = std::format("{}.len", id_base),
-                        .const_value = 0,
                         .type_ref = get_type_default(),
-                        .stack_ix = 0,
                         .ident_type = ident_info::ident_type::IMPLIED};
             }
             const field_info& fi{fields_.get_const_ref(id_base)};
             if (fi.is_str) {
                 return {.id = std::string{ident},
                         .id_nasm = std::string{id_base},
-                        .const_value = 0,
                         .type_ref = get_type_default(),
-                        .stack_ix = 0,
                         .ident_type = ident_info::ident_type::FIELD};
             }
             //? assumes qword
             return {.id = std::string{ident},
                     .id_nasm = std::format("qword [{}]", id_base),
-                    .const_value = 0,
                     .type_ref = get_type_default(),
-                    .stack_ix = 0,
                     .ident_type = ident_info::ident_type::FIELD};
         }
 
@@ -1451,7 +1440,6 @@ class toc final {
                     .const_value = *value, // * dereference is safe
                                            // inside the if body
                     .type_ref = get_type_default(),
-                    .stack_ix = 0,
                     .ident_type = ident_info::ident_type::CONST};
         }
 
@@ -1461,7 +1449,6 @@ class toc final {
                     .id_nasm = "true",
                     .const_value = 1,
                     .type_ref = get_type_bool(),
-                    .stack_ix = 0,
                     .ident_type = ident_info::ident_type::CONST};
         }
 
@@ -1470,16 +1457,13 @@ class toc final {
                     .id_nasm = "false",
                     .const_value = 0,
                     .type_ref = get_type_bool(),
-                    .stack_ix = 0,
                     .ident_type = ident_info::ident_type::CONST};
         }
 
         // not resolved, return empty info
         return {.id = "",
                 .id_nasm = "",
-                .const_value = 0,
                 .type_ref = get_type_void(),
-                .stack_ix = 0,
                 .ident_type = ident_info::ident_type::CONST};
     }
 
@@ -1491,6 +1475,7 @@ class toc final {
     //------------------------------------------------------------------------
     // statics
     //------------------------------------------------------------------------
+
     static auto is_operand_memory(std::string_view operand) -> bool {
         return operand.find_first_of('[') != std::string::npos;
     }
