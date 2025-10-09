@@ -19,20 +19,19 @@ MSAN=
 PROF=
 DBG=-g
 OPT=
-#OPT=-O3
+MSAN=
+
+# -fsanitize=integer  gives errors at common pattern: whil(n--)
+MSAN_FLAGS="-fsanitize=address,undefined,leak,nullability,bounds,local-bounds \
+  -fsanitize-address-use-after-scope \
+  -fstack-protector-strong -fno-omit-frame-pointer -fno-optimize-sibling-calls \
+  -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_LIBCPP_ENABLE_ASSERTIONS=1"
+
 if [ "$1" = "msan" ]; then
-  MSAN="-fsanitize=address,undefined,leak,nullability \
-    -fstack-protector-strong -fno-omit-frame-pointer -fno-optimize-sibling-calls \
-    -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_LIBCPP_ENABLE_ASSERTIONS=1"
-  DBG=-g
+  MSAN="$MSAN_FLAGS"
 elif [ "$1" = "prof-msan" ]; then
   PROF="-fprofile-instr-generate -fcoverage-mapping"
-
-  # -fsanitize=integer
-  MSAN="-fsanitize=address,undefined,leak,nullability \
-    -fstack-protector-strong -fno-omit-frame-pointer -fno-optimize-sibling-calls \
-    -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_LIBCPP_ENABLE_ASSERTIONS=1"
-  DBG=-g
+  MSAN="$MSAN_FLAGS"
 fi
 
 SEP="--------------------------------------------------------------------------------"
