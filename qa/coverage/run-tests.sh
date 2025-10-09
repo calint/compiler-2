@@ -20,6 +20,7 @@ RUN() {
     $BIN "$SRC.baz" 2>error.log >gen.s || return 1
 
   if [ -s error.log ]; then
+    echo
     cat error.log
     exit 1
   fi
@@ -45,6 +46,7 @@ DIFF() {
     $BIN "$SRC.baz" 2>error.log >gen.s || return 1
 
   if [ -s error.log ]; then
+    echo
     cat error.log
     exit 1
   fi
@@ -69,6 +71,7 @@ DIFFINP() {
     $BIN "$SRC.baz" 2>error.log >gen.s || return 1
 
   if [ -s error.log ]; then
+    echo
     cat error.log
     exit 1
   fi
@@ -93,6 +96,7 @@ DIFFPY() {
     $BIN "$SRC.baz" 2>error.log >gen.s || return 1
 
   if [ -s error.log ]; then
+    echo
     cat error.log
     exit 1
   fi

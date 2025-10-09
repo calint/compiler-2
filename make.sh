@@ -21,14 +21,14 @@ DBG=-g
 OPT=
 #OPT=-O3
 if [ "$1" = "msan" ]; then
-  MSAN="-fsanitize=address,undefined"
+  MSAN="-fsanitize=address,undefined,leak,nullability \
+    -fstack-protector-strong -fno-omit-frame-pointer -fno-optimize-sibling-calls \
+    -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_LIBCPP_ENABLE_ASSERTIONS=1"
   DBG=-g
 elif [ "$1" = "prof-msan" ]; then
-  # profiling, sanitize (note: sanitize crashes unpredictably with core dump)
-  #    MSAN="-fsanitize=address,undefined -fno-omit-frame-pointer"
   PROF="-fprofile-instr-generate -fcoverage-mapping"
 
-  # -fsanitize=undefined,integer
+  # -fsanitize=integer
   MSAN="-fsanitize=address,undefined,leak,nullability \
     -fstack-protector-strong -fno-omit-frame-pointer -fno-optimize-sibling-calls \
     -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_LIBCPP_ENABLE_ASSERTIONS=1"

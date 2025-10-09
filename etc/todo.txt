@@ -1,5 +1,8 @@
-[ ] adjust source so it passes also MSAN, remove regex
+[ ] replace regex with hand made processing for performance?
+[x] adjust source so it passes also MSAN
     -fsanitize=undefined,integer
+    => undefined passes
+       integer breaks at common use of: while (n--)
 [ ] replace the regex with manual string manipulation
 [ ] don't allow indexing on a non-index var
 [o] review before next step
