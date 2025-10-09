@@ -1,4 +1,5 @@
 [ ] fix the mess of string handling when truncating
+[ ] refactor the string handling of register and memory operand sizes
 [o] implement "size_of"
     [ ] size_of for fields
 [ ] a way to initiate a i8 array with a string:
