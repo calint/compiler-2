@@ -6,7 +6,7 @@
        must be register
 [ ] allow trailing comma at type definition. e.g:
     type object {
-        pos : point.
+        pos : point,
         color : i32,
     }
 [ ] optimize rep stosb to q, d, w if possible
