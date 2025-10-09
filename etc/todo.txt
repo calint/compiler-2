@@ -1,9 +1,4 @@
-[ ] replace regex with hand made processing for performance?
-[x] adjust source so it passes also MSAN
-    -fsanitize=undefined,integer
-    => undefined passes
-       integer breaks at common use of: while (n--)
-[ ] replace the regex with manual string manipulation
+[ ] replace the regex with manual string manipulation for performance?
 [ ] don't allow indexing on a non-index var
 [o] review before next step
     [x] function signatures
@@ -104,6 +99,10 @@ stage 5
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] adjust source so it passes also MSAN
+    -fsanitize=undefined,integer
+    => undefined passes
+       integer breaks at common use of: while (n--)
 [x] refactor to use std::string_view
 [x] refactor for structs to be POD with pointers instead of refs
 [x] use std::string_view where possible instead of std::string
