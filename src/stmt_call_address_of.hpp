@@ -39,9 +39,9 @@ class stmt_call_address_of : public stmt_call {
 
         const ident_info dst_info{tc.make_ident_info(tok(), dst, false)};
 
-        if (not dst_info.is_register()) {
+        if (dst_info.is_const()) {
             throw compiler_exception{arg(0).tok(),
-                                     "destination must be a register"};
+                                     "destination cannot be a constant"};
         }
 
         const ident_info src_info{tc.make_ident_info(arg(0), false)};
@@ -51,8 +51,18 @@ class stmt_call_address_of : public stmt_call {
                                      "argument must be a variable"};
         }
 
-        // variable, register or field
-        tc.asm_cmd(tok(), os, indent, "lea", dst_info.id_nasm,
+        if (dst_info.is_register()) {
+            // variable, register or field
+            tc.asm_cmd(tok(), os, indent, "lea", dst_info.id_nasm,
+                       std::format("[rsp - {}]", -src_info.stack_ix));
+            return;
+        }
+
+        // destination is memory location
+        const std::string reg{tc.alloc_scratch_register(tok(), os, indent)};
+        tc.asm_cmd(tok(), os, indent, "lea", reg,
                    std::format("[rsp - {}]", -src_info.stack_ix));
+        tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm, reg);
+        tc.free_scratch_register(os, indent, reg);
     }
 };

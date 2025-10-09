@@ -37,6 +37,8 @@ struct var_info {
     const type& type_ref;
     token declared_at_tk; // token for position in source
     int32_t stack_idx{};  // location relative to register rsp
+    bool is_array{};
+    size_t array_size{};
 };
 
 class frame final {
@@ -87,7 +89,9 @@ class frame final {
         vars_.put(name, {.name = name,
                          .type_ref = type_ref,
                          .declared_at_tk = declared_at_tk,
-                         .stack_idx = stack_idx});
+                         .stack_idx = stack_idx,
+                         .is_array = is_array,
+                         .array_size = array_size});
     }
 
     [[nodiscard]] auto allocated_stack_size() const -> size_t {
@@ -173,6 +177,8 @@ struct ident_info {
     const int64_t const_value{};
     const type& type_ref;
     const int32_t stack_ix;
+    const bool is_array{};
+    const size_t array_size{};
     const ident_type ident_type{ident_type::CONST};
 
     [[nodiscard]] auto is_const() const -> bool {
@@ -1368,6 +1374,7 @@ class toc final {
         }
 
         const frame& frm{frames_.at(i)};
+
         // is it a variable?
         if (frm.has_var(id_base)) {
             const var_info& var{frm.get_var_const_ref(id_base)};
@@ -1378,6 +1385,8 @@ class toc final {
                     .const_value = 0,
                     .type_ref = tp,
                     .stack_ix = var.stack_idx,
+                    .is_array = var.is_array,
+                    .array_size = var.array_size,
                     .ident_type = ident_info::ident_type::VAR};
         }
 

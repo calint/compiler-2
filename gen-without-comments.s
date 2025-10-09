@@ -552,8 +552,8 @@ main:
             exit_18_17_126_5_end:
         if_18_5_126_5_end:
     assert_126_5_end:
-    lea rdi, [rsp - 300]
-    mov rcx, 128
+    lea rdi, [rsp - 252]
+    mov rcx, 80
     xor rax, rax
     rep stosb
     mov rdx, hello.len
@@ -571,66 +571,66 @@ main:
             mov rdi, 1
             syscall
         print_132_9_end:
-        mov rdx, 128
-        lea rsi, [rsp - 300]
+        mov rdx, 80
+        lea rsi, [rsp - 252]
         read_133_19:
             mov rax, 0
             mov rdi, 0
             syscall
-            mov qword [rsp - 308], rax
+            mov qword [rsp - 260], rax
         read_133_19_end:
-        sub qword [rsp - 308], 1
-        if_134_12:
-        cmp_134_12:
-        cmp qword [rsp - 308], 0
-        jne if_136_19
-        if_134_12_code:
+        sub qword [rsp - 260], 1
+        if_135_12:
+        cmp_135_12:
+        cmp qword [rsp - 260], 0
+        jne if_137_19
+        if_135_12_code:
             jmp loop_131_5_end
-        jmp if_134_9_end
-        if_136_19:
-        cmp_136_19:
-        cmp qword [rsp - 308], 4
-        jg if_else_134_9
-        if_136_19_code:
+        jmp if_135_9_end
+        if_137_19:
+        cmp_137_19:
+        cmp qword [rsp - 260], 4
+        jg if_else_135_9
+        if_137_19_code:
             mov rdx, prompt2.len
             mov rsi, prompt2
-            print_137_13:
+            print_138_13:
                 mov rax, 1
                 mov rdi, 1
                 syscall
-            print_137_13_end:
+            print_138_13_end:
             jmp loop_131_5
-        jmp if_134_9_end
-        if_else_134_9:
+        jmp if_135_9_end
+        if_else_135_9:
             mov rdx, prompt3.len
             mov rsi, prompt3
-            print_140_13:
-                mov rax, 1
-                mov rdi, 1
-                syscall
-            print_140_13_end:
-            mov rdx, qword [rsp - 308]
-            lea rsi, [rsp - 300]
             print_141_13:
                 mov rax, 1
                 mov rdi, 1
                 syscall
             print_141_13_end:
-            mov rdx, dot.len
-            mov rsi, dot
+            mov rdx, qword [rsp - 260]
+            lea rsi, [rsp - 252]
             print_142_13:
                 mov rax, 1
                 mov rdi, 1
                 syscall
             print_142_13_end:
-            mov rdx, nl.len
-            mov rsi, nl
+            mov rdx, dot.len
+            mov rsi, dot
             print_143_13:
                 mov rax, 1
                 mov rdi, 1
                 syscall
             print_143_13_end:
-        if_134_9_end:
+            mov rdx, nl.len
+            mov rsi, nl
+            print_144_13:
+                mov rax, 1
+                mov rdi, 1
+                syscall
+            print_144_13_end:
+        if_135_9_end:
     jmp loop_131_5
     loop_131_5_end:
     mov rax, 60
