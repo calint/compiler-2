@@ -13,7 +13,7 @@ BIN='../../baz'
 set +e
 
 export UBSAN_OPTIONS="print_stacktrace=1"
-export ASAN_OPTIONS="detect_stack_use_after_return=1:check_initialization_order=1"
+export ASAN_OPTIONS="detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1:detect_leaks=1:halt_on_error=1"
 
 RUN() {
   echo -n "$SRC: "
