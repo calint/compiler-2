@@ -3,6 +3,7 @@
 
 #include <format>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "compiler_exception.hpp"
@@ -71,7 +72,7 @@ class type final {
     }
 
     [[nodiscard]] auto accessor(const token& tk,
-                                const std::vector<std::string>& path,
+                                const std::vector<std::string_view>& path,
                                 const int stack_idx_base) const
         -> std::pair<const type&, std::string> {
 

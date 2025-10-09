@@ -186,7 +186,7 @@ struct ident_info {
 
 class identifier final {
     std::string_view id_;
-    std::vector<std::string> path_;
+    std::vector<std::string_view> path_;
 
   public:
     explicit identifier(std::string_view id) : id_{id} {
@@ -196,23 +196,15 @@ class identifier final {
         }
     }
 
-    ~identifier() = default;
-
-    identifier() = default;
-    identifier(identifier&&) = default;
-    identifier(const identifier&) = default;
-    auto operator=(const identifier&) -> identifier& = default;
-    auto operator=(identifier&&) -> identifier& = default;
-
     [[nodiscard]] auto id_base() const -> std::string_view {
         return path_.at(0);
     }
 
-    [[nodiscard]] auto path() const -> const std::vector<std::string>& {
+    [[nodiscard]] auto path() const -> const std::vector<std::string_view>& {
         return path_;
     }
 
-    auto set_base(std::string name) -> void { path_[0] = std::move(name); }
+    auto set_base(std::string_view name) -> void { path_[0] = name; }
 };
 
 class toc final {
@@ -1334,9 +1326,9 @@ class toc final {
                                                 std::string_view ident) const
         -> ident_info {
 
-        identifier id{std::string{ident}};
+        identifier id{ident};
         // get the root of an identifier: example p.x -> p
-        std::string id_base{id.id_base()};
+        std::string_view id_base{id.id_base()};
         // traverse the frames and resolve the id_nasm (which might be an
         // alias) to a variable, field, register or constant
         size_t i{frames_.size()};
@@ -1389,7 +1381,7 @@ class toc final {
         if (is_identifier_register(id_base)) {
             //? unary ops?
             return {.id = std::string{ident},
-                    .id_nasm = id_base,
+                    .id_nasm = std::string{id_base},
                     .const_value = 0,
                     .type_ref = get_type_default(),
                     .stack_ix = 0,
@@ -1400,7 +1392,7 @@ class toc final {
         if (is_identifier_direct_register_indirect_addressing(id_base)) {
             // get the size: e.g. "dword [r15]"
             return {.id = std::string{ident},
-                    .id_nasm = id_base,
+                    .id_nasm = std::string{id_base},
                     .const_value = 0,
                     .type_ref = get_builtin_type_for_operand(src_loc, id_base),
                     .stack_ix = 0,
@@ -1409,7 +1401,7 @@ class toc final {
 
         // is it a field?
         if (fields_.has(id_base)) {
-            const std::string after_dot =
+            const std::string_view after_dot =
                 id.path().size() == 1 ? ""
                                       : id.path().at(1); //? bug. not correct
             if (after_dot == "len") {
@@ -1423,7 +1415,7 @@ class toc final {
             const field_info& fi{fields_.get_const_ref(id_base)};
             if (fi.is_str) {
                 return {.id = std::string{ident},
-                        .id_nasm = id_base,
+                        .id_nasm = std::string{id_base},
                         .const_value = 0,
                         .type_ref = get_type_default(),
                         .stack_ix = 0,
@@ -1442,7 +1434,7 @@ class toc final {
         if (const std::optional<int64_t> value{parse_to_constant(id_base)};
             value) {
             return {.id = std::string{ident},
-                    .id_nasm = id_base,
+                    .id_nasm = std::string{id_base},
                     .const_value = *value, // * dereference is safe
                                            // inside the if body
                     .type_ref = get_type_default(),
