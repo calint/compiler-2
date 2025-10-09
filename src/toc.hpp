@@ -854,16 +854,19 @@ class toc final {
                    << get_register_operand_for_size(src_loc_tk, src_nasm,
                                                     dst_size)
                    << '\n';
-            } else if (is_identifier_register(dst_nasm)) {
+                return;
+            }
+            if (is_identifier_register(dst_nasm)) {
                 os << op << " "
                    << get_register_operand_for_size(src_loc_tk, dst_nasm,
                                                     dst_size)
                    << ", " << src_nasm << '\n';
-            } else {
-                // std::cerr << dst_nasm << "=" << src_nasm << '\n';
-                // throw panic_exception{"unexpected code path toc:6"};
-                os << op << " " << dst_nasm << ", " << src_nasm << '\n';
+                return;
             }
+
+            // std::cerr << dst_nasm << "=" << src_nasm << '\n';
+            // throw panic_exception{"unexpected code path toc:6"};
+            os << op << " " << dst_nasm << ", " << src_nasm << '\n';
             return;
         }
 
