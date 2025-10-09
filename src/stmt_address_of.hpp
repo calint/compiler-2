@@ -93,7 +93,7 @@ class stmt_address_of : public expression {
         }
 
         for (const std::string& reg :
-             allocated_registers | std::ranges::views::reverse) {
+             allocated_registers | std::views::reverse) {
             tc.free_scratch_register(os, indent, reg);
         }
     }

@@ -87,8 +87,8 @@ class type final {
         size_t offset{};
         bool is_array{base_is_array};
         size_t array_size{base_array_size};
-        for (size_t path_idx{1}; path_idx != path.size(); path_idx++) {
-            const type_field& fld{tp->field(tk, path[path_idx])};
+        for (const auto& field_name : path | std::views::drop(1)) {
+            const type_field& fld{tp->field(tk, field_name)};
             offset += fld.offset;
             tp = fld.tp;
             is_array = fld.is_array;

@@ -174,7 +174,7 @@ class stmt_identifier : public statement {
         get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
 
         for (const std::string& reg :
-             allocated_registers | std::ranges::views::reverse) {
+             allocated_registers | std::views::reverse) {
             tc.free_scratch_register(os, indent, reg);
         }
     }
