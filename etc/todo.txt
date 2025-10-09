@@ -1,5 +1,5 @@
 [ ] a way of using "read" and "write" functions with var" buffers:
-    read(address_of(buf)) does:
+    read(address_of(buf), size_of(buf)) does:
     lea dst, [....]
     also handles if "dst" is not  a register
 [ ] allow trailing comma at type definition. e.g:
