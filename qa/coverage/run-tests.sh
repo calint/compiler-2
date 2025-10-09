@@ -6,18 +6,19 @@
 set -e
 cd $(dirname "$0")
 
-../../make.sh build prof msan
+../../make.sh build prof asan
 
 BIN='../../baz'
 
 set +e
 
+export UBSAN_OPTIONS="print_stacktrace=1"
+export ASAN_OPTIONS="detect_stack_use_after_return=1:check_initialization_order=1"
+
 RUN() {
   echo -n "$SRC: "
 
-  LLVM_PROFILE_FILE="${SRC%.*}.profraw" \
-    UBSAN_OPTIONS=print_stacktrace=1 \
-    $BIN "$SRC.baz" 2>error.log >gen.s || return 1
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s || return 1
 
   if [ -s error.log ]; then
     echo
@@ -42,8 +43,7 @@ RUN() {
 DIFF() {
   echo -n "$SRC: "
 
-  LLVM_PROFILE_FILE="${SRC%.*}.profraw" UBSAN_OPTIONS="print_stacktrace=1" \
-    $BIN "$SRC.baz" 2>error.log >gen.s || return 1
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s || return 1
 
   if [ -s error.log ]; then
     echo
@@ -67,8 +67,7 @@ DIFF() {
 DIFFINP() {
   echo -n "$SRC: "
 
-  LLVM_PROFILE_FILE="${SRC%.*}.profraw" UBSAN_OPTIONS="print_stacktrace=1" \
-    $BIN "$SRC.baz" 2>error.log >gen.s || return 1
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s || return 1
 
   if [ -s error.log ]; then
     echo
@@ -92,8 +91,7 @@ DIFFINP() {
 DIFFPY() {
   echo -n "$SRC: "
 
-  LLVM_PROFILE_FILE="${SRC%.*}.profraw" UBSAN_OPTIONS="print_stacktrace=1" \
-    $BIN "$SRC.baz" 2>error.log >gen.s || return 1
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s || return 1
 
   if [ -s error.log ]; then
     echo
