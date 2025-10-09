@@ -4,23 +4,20 @@
 #        llvm-cov: 15.0.7
 #         genhtml: 1.16
 set -e
-cd $(dirname "$0")
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd $SCRIPT_DIR
 
 ../../make.sh build prof asan
 
 BIN='../../baz'
 
-set +e
-
-ASAN_SYM=$(which llvm-symbolizer)
-ABS_BIN=$(realpath "$BIN")
-
 export UBSAN_OPTIONS="print_stacktrace=1"
 
 export ASAN_OPTIONS="fast_unwind_on_fatal=0:print_stacktrace=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1:detect_leaks=1:halt_on_error=1:external_symbolizer=1"
-export ASAN_SYMBOLIZER_PATH="$ASAN_SYM"
+export ASAN_SYMBOLIZER_PATH="$(which llvm-symbolizer)"
 export ASAN_SYMBOLIZE=1
 
+set +e
 RUN() {
   echo -n "$SRC: "
 
@@ -119,92 +116,7 @@ DIFFPY() {
 
 set +e
 
-SRC=t1 && EXP=58 && RUN
-SRC=t2 && EXP=1 && RUN
-SRC=t3 && EXP=7 && RUN
-SRC=t4 && EXP=0 && RUN
-SRC=t5 && EXP=0 && RUN
-SRC=t6 && EXP=0 && RUN
-SRC=t7 && EXP=0 && RUN
-SRC=t8 && EXP=0 && RUN
-SRC=t9 && EXP=0 && RUN
-SRC=t10 && EXP=0 && RUN
-SRC=t11 && EXP=14 && RUN
-SRC=t12 && EXP=24 && RUN
-SRC=t13 && EXP=2 && RUN
-SRC=t14 && EXP=0 && RUN
-SRC=t15 && DIFF
-SRC=t16 && DIFF
-SRC=t17 && DIFF
-SRC=t18 && DIFF
-#SRC=t19 && EXP=120 && RUN
-SRC=t20 && EXP=7 && RUN
-SRC=t21 && EXP=12 && RUN
-SRC=t22 && EXP=16 && RUN
-SRC=t23 && EXP=17 && RUN
-SRC=t24 && EXP=7 && RUN
-SRC=t25 && EXP=0 && RUN
-SRC=t26 && EXP=0 && RUN
-SRC=t27 && EXP=0 && RUN
-SRC=t28 && EXP=0 && RUN
-SRC=t29 && EXP=0 && RUN
-SRC=t30 && EXP=0 && RUN
-SRC=t31 && EXP=0 && RUN
-SRC=t32 && EXP=0 && RUN
-SRC=t33 && EXP=0 && RUN
-SRC=t34 && EXP=0 && RUN
-SRC=t35 && EXP=0 && RUN
-SRC=t36 && DIFFINP
-SRC=t37 && EXP=0 && RUN
-SRC=t38 && EXP=0 && RUN
-SRC=t39 && EXP=0 && RUN
-SRC=t40 && EXP=0 && RUN
-SRC=t41 && EXP=0 && RUN
-SRC=t42 && EXP=0 && RUN
-SRC=t43 && EXP=0 && RUN
-SRC=t44 && EXP=0 && RUN
-SRC=t45 && EXP=0 && RUN
-SRC=t46 && EXP=0 && RUN
-SRC=t47 && EXP=0 && RUN
-SRC=t48 && EXP=0 && RUN
-SRC=t49 && EXP=0 && RUN
-SRC=t50 && EXP=0 && RUN
-SRC=t51 && EXP=0 && RUN
-SRC=t52 && EXP=0 && RUN
-SRC=t53 && EXP=0 && RUN
-SRC=t54 && EXP=0 && RUN
-SRC=t55 && EXP=0 && RUN
-SRC=t56 && EXP=0 && RUN
-SRC=t57 && EXP=0 && RUN
-SRC=t58 && EXP=0 && RUN
-SRC=t59 && EXP=0 && RUN
-SRC=t60 && EXP=0 && RUN
-SRC=t61 && EXP=0 && RUN
-SRC=t62 && EXP=0 && RUN
-SRC=t63 && DIFFPY
-SRC=t64 && EXP=0 && RUN
-SRC=t65 && EXP=0 && RUN
-SRC=t66 && EXP=0 && RUN
-SRC=t67 && EXP=0 && RUN
-SRC=t68 && EXP=0 && RUN
-SRC=t69 && EXP=0 && RUN
-SRC=t70 && EXP=0 && RUN
-SRC=t71 && EXP=0 && RUN
-SRC=t72 && EXP=0 && RUN
-SRC=t73 && EXP=5 && RUN
-SRC=t74 && EXP=0 && RUN
-SRC=t75 && EXP=0 && RUN
-SRC=t76 && EXP=0 && RUN
-SRC=t77 && EXP=0 && RUN
-SRC=t78 && EXP=0 && RUN
-SRC=t79 && EXP=0 && RUN
-SRC=t80 && EXP=0 && RUN
-SRC=t81 && EXP=0 && RUN
-SRC=t82 && EXP=0 && RUN
-SRC=t83 && EXP=0 && RUN
-SRC=t84 && EXP=0 && RUN
-SRC=t85 && EXP=0 && RUN
-SRC=t86 && EXP=0 && RUN
+source "$SCRIPT_DIR/run-tests-cases.sh"
 
 rm gen gen.o gen.s diff.baz out error.log
 
