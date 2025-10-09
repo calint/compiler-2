@@ -879,7 +879,8 @@ class toc final {
                 get_register_operand_for_size(src_loc_tk, reg, dst_size)};
             indent(os, indnt);
             os << "mov " << reg_sized << ", "
-               << resize_memory_operand(src_nasm, get_operand_size(dst_size))
+               << change_memory_operand_size(src_nasm,
+                                             get_operand_size(dst_size))
                << '\n';
             indent(os, indnt);
             os << op << " " << dst_nasm << ", " << reg_sized << '\n';
@@ -893,8 +894,8 @@ class toc final {
     }
 
   private:
-    static auto resize_memory_operand(std::string_view operand,
-                                      std::string_view new_size)
+    static auto change_memory_operand_size(std::string_view operand,
+                                           std::string_view new_size)
         -> std::string {
         auto pos = operand.find('[');
         if (pos == std::string_view::npos) {
