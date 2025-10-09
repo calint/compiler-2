@@ -522,7 +522,7 @@ class toc final {
         }
 
         const int stack_idx{
-            static_cast<int>(get_current_function_stack_size() +
+            static_cast<int>(get_total_stack_size() +
                              (var_type.size() * (is_array ? array_size : 1)))};
 
         frames_.back().add_var(src_loc_tk, name, var_type, is_array, array_size,
@@ -807,7 +807,7 @@ class toc final {
             const std::string reg{
                 alloc_scratch_register(src_loc_tk, os, indnt)};
             const std::string reg_sized{
-                get_register_operand_for_size(src_loc_tk, reg, src_size)};
+                get_register_operand_for_size(src_loc_tk, reg, dst_size)};
             indent(os, indnt);
             os << "mov " << reg_sized << ", " << src_nasm << '\n';
             indent(os, indnt);
@@ -843,22 +843,45 @@ class toc final {
         }
 
         // dst_size < src_size
-        //? truncation might change value of signed number
-        if (is_identifier_register(src_nasm)) {
-            const std::string reg_sized{
-                get_register_operand_for_size(src_loc_tk, src_nasm, dst_size)};
+        // truncation will happen
+
+        if (not is_operand_memory(dst_nasm) or
+            not is_operand_memory(src_nasm)) {
+            // not both operands are memory references
             indent(os, indnt);
-            os << op << " " << dst_nasm << ", " << reg_sized << '\n';
+            if (is_identifier_register(src_nasm)) {
+                os << op << " " << dst_nasm << ", "
+                   << get_register_operand_for_size(src_loc_tk, src_nasm,
+                                                    dst_size)
+                   << '\n';
+            } else if (is_identifier_register(dst_nasm)) {
+                os << op << " "
+                   << get_register_operand_for_size(src_loc_tk, dst_nasm,
+                                                    dst_size)
+                   << ", " << src_nasm << '\n';
+            } else {
+                // std::cerr << dst_nasm << "=" << src_nasm << '\n';
+                // throw panic_exception{"unexpected code path toc:6"};
+                os << op << " " << dst_nasm << ", " << src_nasm << '\n';
+            }
             return;
         }
 
-        if (is_operand_memory(src_nasm)) {
-            //? todo. this displays nasm identifiers but should be human
-            // readable identifiers
-            throw compiler_exception{
-                src_loc_tk, std::format("cannot move '{}' to '{}' because "
-                                        "it would be truncated",
-                                        src_nasm, dst_nasm)};
+        if (is_operand_memory(dst_nasm) and is_operand_memory(src_nasm)) {
+            // both operands are memory references
+            // use scratch register for transfer
+            const std::string reg{
+                alloc_scratch_register(src_loc_tk, os, indnt)};
+            const std::string reg_sized{
+                get_register_operand_for_size(src_loc_tk, reg, dst_size)};
+            indent(os, indnt);
+            os << "mov " << reg_sized << ", "
+               << resize_memory_operand(src_nasm, get_operand_size(dst_size))
+               << '\n';
+            indent(os, indnt);
+            os << op << " " << dst_nasm << ", " << reg_sized << '\n';
+            free_scratch_register(os, indnt, reg);
+            return;
         }
 
         // constant
@@ -866,6 +889,18 @@ class toc final {
         os << op << " " << dst_nasm << ", " << src_nasm << '\n';
     }
 
+  private:
+    static auto resize_memory_operand(std::string_view operand,
+                                      std::string_view new_size)
+        -> std::string {
+        auto pos = operand.find('[');
+        if (pos == std::string_view::npos) {
+            throw panic_exception{"unexpected code path toc:5"};
+        }
+        return std::format("{} {}", new_size, operand.substr(pos));
+    }
+
+  public:
     auto set_type_void(const type& tpe) -> void { type_void_ = &tpe; }
 
     [[nodiscard]] auto get_type_void() const -> const type& {
@@ -906,6 +941,22 @@ class toc final {
 
         // constant
         return get_type_default().size();
+    }
+
+    [[nodiscard]] static auto get_operand_size(const size_t size)
+        -> std::string_view {
+        switch (size) {
+        case 1:
+            return "byte";
+        case 2:
+            return "word";
+        case 4:
+            return "dword";
+        case 8:
+            return "qword";
+        default:
+            throw panic_exception{"unexpected code path toc:4"};
+        }
     }
 
     [[nodiscard]] auto
@@ -1311,7 +1362,6 @@ class toc final {
 
         throw panic_exception{"unexpected code path toc:2"};
     }
-
     [[nodiscard]] auto get_current_function_stack_size() const -> size_t {
         assert(not frames_.empty());
         size_t nbytes{};

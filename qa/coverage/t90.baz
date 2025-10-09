@@ -1,0 +1,57 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+func main() {
+  var b : i8 = 1
+  var b2 : i8 = 11
+  var w : i16 = 2
+  var w2 : i16 = 22
+  var dw : i32 = 3
+  var dw2 : i32 = 33
+  var q : i64 = 4
+  var q2 : i64 = 44
+
+  b = b2
+  assert(b == 11)
+  b = w
+  assert(b == 2)
+  b = dw
+  assert(b == 3)
+  b = q
+  assert(b == 4)
+  b = 1
+
+  w = b
+  assert(w == 1)
+  w = w2
+  assert(w == 22)
+  w = dw
+  assert(w == 3)
+  w = q
+  assert(w == 4)
+  w = 2
+
+  dw = b
+  assert(dw == 1)
+  dw = dw2
+  assert(dw == 33)
+  dw = q
+  assert(dw == 4)
+  dw = 3
+
+  q = b
+  assert(q == 1)
+  q = w
+  assert(q == 2)
+  q = dw
+  assert(q == 3)
+  q = q2
+  assert(q == 44)
+}

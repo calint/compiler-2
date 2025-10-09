@@ -1,3 +1,4 @@
+[ ] fix the mess of string handling when truncating
 [o] implement "size_of"
     [ ] size_of for fields
 [ ] a way to initiate a i8 array with a string:

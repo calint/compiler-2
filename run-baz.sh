@@ -6,10 +6,10 @@ PRG=${1:-prog.baz}
 SEP="..  . .. . . . . .  ......... . ..  . .  . . ....  . .. ....... . . "
 echo $SEP
 ./baz $PRG >gen.s
-ls --color -la gen.s gen-without-comments.s gen
 grep -v -e'^\s*;.*$' -e'^\s*$' gen.s >gen-without-comments.s
 nasm -f elf64 gen.s
 ld -s -o gen gen.o
+ls --color -la gen.s gen-without-comments.s gen
 echo $SEP
 set +e # don't stop att errors
 ./gen

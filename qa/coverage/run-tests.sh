@@ -17,7 +17,6 @@ export ASAN_OPTIONS="fast_unwind_on_fatal=0:print_stacktrace=1:detect_stack_use_
 export ASAN_SYMBOLIZER_PATH="$(which llvm-symbolizer)"
 export ASAN_SYMBOLIZE=1
 
-set +e
 RUN() {
   echo -n "$SRC: "
 
@@ -30,11 +29,13 @@ RUN() {
     exit 1
   fi
 
-  nasm -f elf64 gen.s || return 1
-  ld -s -o gen gen.o || return 1
+  nasm -f elf64 gen.s
+  ld -s -o gen gen.o
 
+  set +e
   ./gen
   e=$?
+  set -e
 
   if test $e -eq $EXP; then
     echo ok
@@ -56,8 +57,8 @@ DIFF() {
     exit 1
   fi
 
-  nasm -f elf64 gen.s || return 1
-  ld -s -o gen gen.o || return 1
+  nasm -f elf64 gen.s
+  ld -s -o gen gen.o
 
   ./gen >out
 
@@ -114,13 +115,9 @@ DIFFPY() {
   fi
 }
 
-set +e
-
 source "$SCRIPT_DIR/run-tests-cases.sh"
 
 rm gen gen.o gen.s diff.baz out error.log
-
-set -e
 
 # process coverage data
 llvm-profdata merge -o baz.profdata -sparse $(ls *.profraw)
