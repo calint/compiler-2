@@ -1,11 +1,11 @@
+[ ] optimize rep stosb to q, d, w if possible
+    => maybe some heuristics about when to use "rep stosX" 
+       => start with stosq, then mov dword, word and byte
 [ ] replace the regex with manual string manipulation for performance?
 [ ] don't allow indexing on a non-index var
 [o] review before next step
     [x] function signatures
     [ ] code
-[ ] optimize rep stosb to q, d, w if possible
-    => maybe some heuristics about when to use "rep stosX" 
-       => start with stosq, then mov dword, word and byte
 [ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
 [ ] allow declaration of instance without initializer, zero it
     => var o : object[1] then accessed through o.pos does that
