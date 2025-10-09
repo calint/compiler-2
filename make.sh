@@ -28,10 +28,8 @@ elif [ "$1" = "prof-msan" ]; then
   #    MSAN="-fsanitize=address,undefined -fno-omit-frame-pointer"
   PROF="-fprofile-instr-generate -fcoverage-mapping"
 
-  # UBSAN_OPTIONS=print_stacktrace=1 ./baz 2>&1 | tee error.log
-  #
   # -fsanitize=undefined,integer
-  MSAN="-fsanitize=address,leak,nullability \
+  MSAN="-fsanitize=address,undefined,leak,nullability \
     -fstack-protector-strong -fno-omit-frame-pointer -fno-optimize-sibling-calls \
     -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_LIBCPP_ENABLE_ASSERTIONS=1"
   DBG=-g
