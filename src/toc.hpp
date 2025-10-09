@@ -514,8 +514,8 @@ class toc final {
             static_cast<int>(get_current_function_stack_size() +
                              (var_type.size() * (is_array ? array_size : 1)))};
 
-        frames_.back().add_var(src_loc_tk, std::string{name}, var_type,
-                               is_array, array_size, -stack_idx);
+        frames_.back().add_var(src_loc_tk, name, var_type, is_array, array_size,
+                               -stack_idx);
 
         const size_t total_stack_size{get_total_stack_size()};
         usage_max_stack_size_ =

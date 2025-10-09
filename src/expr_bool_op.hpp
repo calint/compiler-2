@@ -121,7 +121,7 @@ class expr_bool_op final : public statement {
         const bool invert{inverted ? not is_not_ : is_not_};
         toc::indent(os, indent, true);
         tc.comment_source(os, "?", inverted ? " 'or' inverted: " : " ", *this);
-        toc::asm_label(tok(), os, indent, cmp_bgn_label(tc));
+        toc::asm_label(tok(), os, indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // is 'lhs' a constant?
             if (not lhs_.is_expression()) {
@@ -203,7 +203,7 @@ class expr_bool_op final : public statement {
         const bool invert{inverted ? not is_not_ : is_not_};
         toc::indent(os, indent, true);
         tc.comment_source(os, "?", inverted ? " 'and' inverted: " : " ", *this);
-        toc::asm_label(tok(), os, indent, cmp_bgn_label(tc));
+        toc::asm_label(tok(), os, indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // check case when operand is constant
             if (not lhs_.is_expression()) {
@@ -280,7 +280,9 @@ class expr_bool_op final : public statement {
         return std::nullopt;
     }
 
-    [[nodiscard]] auto cmp_bgn_label(const toc& tc) const -> std::string {
+    [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
+        -> std::string {
+
         const std::string_view call_path{tc.get_call_path(tok())};
         return std::format("cmp_{}{}",
                            tc.source_location_for_use_in_label(tok()),

@@ -78,10 +78,10 @@ class stmt_if final : public statement {
     }
 
   private:
-    static auto make_label_else_branch(const stmt_block& else_code,
-                                       std::string_view call_path,
-                                       std::string_view src_loc,
-                                       std::string_view label_after_if)
+    static auto create_label_else_branch(const stmt_block& else_code,
+                                         std::string_view call_path,
+                                         std::string_view src_loc,
+                                         std::string_view label_after_if)
         -> std::string {
 
         if (else_code.is_empty()) {
@@ -104,7 +104,7 @@ class stmt_if final : public statement {
         const std::string label_after_if =
             call_path.empty() ? std::format("if_{}_end", src_loc)
                               : std::format("if_{}_{}_end", src_loc, call_path);
-        const std::string label_else_branch = stmt_if::make_label_else_branch(
+        const std::string label_else_branch = stmt_if::create_label_else_branch(
             else_code_, call_path, src_loc, label_after_if);
 
         const size_t n{branches_.size()};

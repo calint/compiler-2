@@ -167,7 +167,7 @@ class expr_bool_ops_list final : public statement {
                 //
                 const expr_bool_ops_list& el{
                     get<expr_bool_ops_list>(bools_.at(i))};
-                toc::asm_label(tok(), os, indent, el.cmp_bgn_label(tc));
+                toc::asm_label(tok(), os, indent, el.create_cmp_bgn_label(tc));
                 std::string jmp_false{jmp_to_if_false};
                 std::string jmp_true{jmp_to_if_true};
                 if (i < n - 1) {
@@ -178,12 +178,14 @@ class expr_bool_ops_list final : public statement {
                             // if evaluation is false and next op is 'or'
                             // then 'jump_false' goes to next bool op in the
                             // list
-                            jmp_false = cmp_label_from(tc, bools_.at(i + 1));
+                            jmp_false =
+                                create_cmp_label_from(tc, bools_.at(i + 1));
                         } else if (ops_.at(i).is_text("and")) {
                             // if evaluation is true and next op is 'and'
                             // then 'jump_true' goes to next bool op in the
                             // list
-                            jmp_true = cmp_label_from(tc, bools_.at(i + 1));
+                            jmp_true =
+                                create_cmp_label_from(tc, bools_.at(i + 1));
                         } else {
                             throw panic_exception("expected 'or' or 'and' 1");
                         }
@@ -212,13 +214,15 @@ class expr_bool_ops_list final : public statement {
                             // if evaluation is false and next op is 'or'
                             // (inverted from 'and') then 'jump_false' is
                             // next bool op in the list
-                            jmp_false = cmp_label_from(tc, bools_.at(i + 1));
+                            jmp_false =
+                                create_cmp_label_from(tc, bools_.at(i + 1));
                         } else if (ops_.at(i).is_text("or")) {
                             // 'or' list inverted
                             // if evaluation is true and next op is 'and'
                             // (inverted from 'or') then 'jump_true' is next
                             // bool op in the list
-                            jmp_true = cmp_label_from(tc, bools_.at(i + 1));
+                            jmp_true =
+                                create_cmp_label_from(tc, bools_.at(i + 1));
                         } else {
                             throw panic_exception("expected 'or' or 'and' 2");
                         }
@@ -370,7 +374,9 @@ class expr_bool_ops_list final : public statement {
     }
 
   private:
-    [[nodiscard]] auto cmp_bgn_label(const toc& tc) const -> std::string {
+    [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
+        -> std::string {
+
         const std::string_view call_path{tc.get_call_path(tok())};
         return std::format("cmp_{}{}",
                            tc.source_location_for_use_in_label(tok()),
@@ -378,15 +384,15 @@ class expr_bool_ops_list final : public statement {
                                               : std::format("_{}", call_path)));
     }
 
-    static auto
-    cmp_label_from(const toc& tc,
-                   const std::variant<expr_bool_op, expr_bool_ops_list>& var)
+    static auto create_cmp_label_from(
+        const toc& tc,
+        const std::variant<expr_bool_op, expr_bool_ops_list>& var)
         -> std::string {
 
         if (var.index() == 1) {
-            return get<expr_bool_ops_list>(var).cmp_bgn_label(tc);
+            return get<expr_bool_ops_list>(var).create_cmp_bgn_label(tc);
         }
 
-        return get<expr_bool_op>(var).cmp_bgn_label(tc);
+        return get<expr_bool_op>(var).create_cmp_bgn_label(tc);
     }
 };
