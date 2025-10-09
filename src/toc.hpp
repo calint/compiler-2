@@ -1437,8 +1437,7 @@ class toc final {
             value) {
             return {.id = std::string{ident},
                     .id_nasm = std::string{id_base},
-                    .const_value = *value, // * dereference is safe
-                                           // inside the if body
+                    .const_value = *value,
                     .type_ref = get_type_default()};
         }
 
