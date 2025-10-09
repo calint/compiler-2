@@ -182,6 +182,10 @@ struct ident_info {
     [[nodiscard]] auto is_register() const -> bool {
         return ident_type == ident_type::REGISTER;
     }
+
+    [[nodiscard]] auto is_var() const -> bool {
+        return ident_type == ident_type::VAR;
+    }
 };
 
 class identifier final {

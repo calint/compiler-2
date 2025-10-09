@@ -1,5 +1,4 @@
 field   hello = "hello world from baz\n"
-field   input = "............................................................"
 field prompt1 = "enter name:\n"
 field prompt2 = "that is not a name.\n"
 field prompt3 = "hello "
@@ -13,6 +12,10 @@ func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
     syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
 }
 
 func print(len : reg_rdx, ptr : reg_rsi) {
@@ -30,10 +33,6 @@ func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(rdx, len) # buffer size
     syscall()
     mov(nbytes, rax) # return value
-}
-
-func assert(expr : bool) {
-    if not expr exit(1)
 }
 
 # user types are defined using keyword `type`
@@ -126,10 +125,12 @@ func main() {
     o3.pos.y = 73
     assert(o3[0].pos.y == 73)
 
+    var input_buffer : i8[128]
+
     print(hello.len, hello)
     loop {
         print(prompt1.len, prompt1)
-        var len = read(input.len, input) - 1    # -1 don't include the '\n'
+        var len = read(128, address_of(input_buffer)) - 1    # -1 don't include the '\n'
         if len == 0 {
             break
         } else if len <= 4 {
@@ -137,7 +138,7 @@ func main() {
             continue
         } else {
             print(prompt3.len, prompt3)
-            print(len, input)
+            print(len, address_of(input_buffer))
             print(dot.len, dot)
             print(nl.len, nl)
         }

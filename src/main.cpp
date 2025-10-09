@@ -13,6 +13,7 @@
 #include <span>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "compiler_exception.hpp"
@@ -22,6 +23,7 @@
 #include "program.hpp"
 #include "statement.hpp"
 #include "stmt_call.hpp"
+#include "stmt_call_address_of.hpp"
 #include "stmt_call_asm_mov.hpp"
 #include "stmt_call_asm_syscall.hpp"
 #include "stmt_identifier.hpp"
@@ -64,8 +66,8 @@ auto main(const int argc, const char* argv[]) -> int {
         // with jump optimizations
         std::stringstream ss1;
         std::stringstream ss2;
-        //        prg.build(ss1);
-        prg.build(std::cout); // build without jump optimizations
+        prg.build(ss1);
+        // prg.build(std::cout); // build without jump optimizations
         optimize_jumps_1(ss1, ss2);
         optimize_jumps_2(ss2, std::cout);
 
@@ -96,6 +98,7 @@ auto main(const int argc, const char* argv[]) -> int {
 inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, token tk)
     -> std::unique_ptr<statement> {
 
+    // note: no 'std:move' on 'tk' because it is trivially copyable
     if (tk.is_text("loop")) {
         return std::make_unique<stmt_loop>(tc, tk, tz);
     }
@@ -126,7 +129,8 @@ inline auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
 inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
-    const unary_ops uops{tz};
+    // note: no 'std:move' on 'tk' because it is trivially copyable
+    unary_ops uops{tz};
     const token tk{tz.next_token()};
     if (tk.is_text("")) {
         throw compiler_exception{
@@ -135,12 +139,16 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     if (tk.text().starts_with("#")) {
         throw compiler_exception{tk, "unexpected comment in expression"};
     }
+    if (tk.is_text("address_of")) {
+        return std::make_unique<stmt_call_address_of>(tc, std::move(uops), tk,
+                                                      tz);
+    }
     if (tz.is_peek_char('(')) {
         // e.g.  foo(...)
-        return std::make_unique<stmt_call>(tc, uops, tk, tz);
+        return std::make_unique<stmt_call>(tc, std::move(uops), tk, tz);
     }
     // e.g. 0x80, rax, identifiers
-    return std::make_unique<stmt_identifier>(tc, uops, tk, tz);
+    return std::make_unique<stmt_identifier>(tc, std::move(uops), tk, tz);
 }
 
 // declared in 'decouple.hpp'
