@@ -75,11 +75,6 @@ class stmt_address_of : public expression {
                                      "argument must be a variable"};
         }
 
-        if (not src_info.is_array) {
-            throw compiler_exception{stmt_ident_.first_token(),
-                                     "argument is not an array"};
-        }
-
         std::vector<std::string> allocated_registers;
         const std::string operand = stmt_identifier::compile_effective_address(
             stmt_ident_.first_token(), tc, os, indent, stmt_ident_.elems(),
