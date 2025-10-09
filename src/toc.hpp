@@ -916,7 +916,7 @@ class toc final {
             return get_type_or_throw(src_loc_tk_, "i8");
         }
 
-        throw panic_exception{"toc:1"};
+        throw panic_exception{"unexpected code path toc:1"};
     }
 
     // -------------------------------------------------------------------------
@@ -1298,7 +1298,7 @@ class toc final {
             }
         }
 
-        throw panic_exception{"unexpected code path toc:3"};
+        throw panic_exception{"unexpected code path toc:2"};
     }
 
     [[nodiscard]] auto get_current_function_stack_size() const -> size_t {
@@ -1310,8 +1310,8 @@ class toc final {
                 return nbytes;
             }
         }
-        // top frame, 'main'
-        return nbytes;
+
+        throw panic_exception{"unexpected code path toc:3"};
     }
 
     [[nodiscard]] auto get_total_stack_size() const -> size_t {
