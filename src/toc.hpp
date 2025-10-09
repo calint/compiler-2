@@ -522,13 +522,13 @@ class toc final {
         }
 
         const int stack_idx{
-            static_cast<int>(get_total_stack_size() +
+            static_cast<int>(get_stack_size() +
                              (var_type.size() * (is_array ? array_size : 1)))};
 
         frames_.back().add_var(src_loc_tk, name, var_type, is_array, array_size,
                                -stack_idx);
 
-        const size_t total_stack_size{get_total_stack_size()};
+        const size_t total_stack_size{get_stack_size()};
         usage_max_stack_size_ =
             std::max(total_stack_size, usage_max_stack_size_);
 
@@ -1366,20 +1366,21 @@ class toc final {
 
         throw panic_exception{"unexpected code path toc:2"};
     }
-    [[nodiscard]] auto get_current_function_stack_size() const -> size_t {
-        assert(not frames_.empty());
-        size_t nbytes{};
-        for (const auto& frm : frames_ | std::views::reverse) {
-            nbytes += frm.allocated_stack_size();
-            if (frm.is_func()) {
-                return nbytes;
-            }
-        }
 
-        throw panic_exception{"unexpected code path toc:3"};
-    }
+    // [[nodiscard]] auto get_current_function_stack_size() const -> size_t {
+    //     assert(not frames_.empty());
+    //     size_t nbytes{};
+    //     for (const auto& frm : frames_ | std::views::reverse) {
+    //         nbytes += frm.allocated_stack_size();
+    //         if (frm.is_func()) {
+    //             return nbytes;
+    //         }
+    //     }
+    //
+    //     throw panic_exception{"unexpected code path toc:3"};
+    // }
 
-    [[nodiscard]] auto get_total_stack_size() const -> size_t {
+    [[nodiscard]] auto get_stack_size() const -> size_t {
         size_t nbytes{};
         for (const auto& frm : frames_) {
             nbytes += frm.allocated_stack_size();
