@@ -22,9 +22,9 @@
 #include "panic_exception.hpp"
 #include "program.hpp"
 #include "statement.hpp"
+#include "stmt_address_of.hpp"
+#include "stmt_array_size_of.hpp"
 #include "stmt_call.hpp"
-#include "stmt_call_address_of.hpp"
-#include "stmt_call_array_size_of.hpp"
 #include "stmt_call_asm_mov.hpp"
 #include "stmt_call_asm_syscall.hpp"
 #include "stmt_identifier.hpp"
@@ -141,12 +141,11 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
         throw compiler_exception{tk, "unexpected comment in expression"};
     }
     if (tk.is_text("address_of")) {
-        return std::make_unique<stmt_call_address_of>(tc, std::move(uops), tk,
-                                                      tz);
+        return std::make_unique<stmt_address_of>(tc, std::move(uops), tk, tz);
     }
     if (tk.is_text("array_size_of")) {
-        return std::make_unique<stmt_call_array_size_of>(tc, std::move(uops),
-                                                         tk, tz);
+        return std::make_unique<stmt_array_size_of>(tc, std::move(uops), tk,
+                                                    tz);
     }
     if (tz.is_peek_char('(')) {
         // e.g.  foo(...)
