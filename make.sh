@@ -19,7 +19,6 @@ MSAN=
 PROF=
 DBG=-g
 OPT=
-MSAN=
 
 # -fsanitize=integer  gives errors at common pattern: whil(n--)
 MSAN_FLAGS="-fsanitize=address,undefined,leak,nullability,bounds,local-bounds \
@@ -27,12 +26,26 @@ MSAN_FLAGS="-fsanitize=address,undefined,leak,nullability,bounds,local-bounds \
   -fstack-protector-strong -fno-omit-frame-pointer -fno-optimize-sibling-calls \
   -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_LIBCPP_ENABLE_ASSERTIONS=1"
 
-if [ "$1" = "msan" ]; then
-  MSAN="$MSAN_FLAGS"
-elif [ "$1" = "prof-msan" ]; then
-  PROF="-fprofile-instr-generate -fcoverage-mapping"
-  MSAN="$MSAN_FLAGS"
-fi
+PROF_FLAGS="-fprofile-instr-generate -fcoverage-mapping"
+
+for arg in "$@"; do
+  case "$arg" in
+  msan)
+    MSAN="$MSAN_FLAGS"
+    ;;
+  prof)
+    PROF="$PROF_FLAGS"
+    ;;
+  build)
+    BUILD_ONLY=1
+    ;;
+  *)
+    echo "unknown parameter: $arg"
+    echo "usage: $0 [msan] [prof] [build]"
+    exit 1
+    ;;
+  esac
+done
 
 SEP="--------------------------------------------------------------------------------"
 
@@ -42,9 +55,7 @@ echo $CMD
 $CMD
 echo $SEP
 
-if [ "$1" = "build" ]; then
-  exit 0
-elif [ "$1" = "prof-msan" ]; then
+if [ $BUILD_ONLY -eq 1 ]; then
   exit 0
 fi
 

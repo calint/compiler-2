@@ -6,7 +6,7 @@
 set -e
 cd $(dirname "$0")
 
-../../make.sh prof-msan
+../../make.sh build prof msan
 
 BIN='../../baz'
 
