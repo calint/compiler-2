@@ -794,9 +794,11 @@ class toc final {
         const size_t src_size{get_size_from_operand(src_loc_tk, src_nasm)};
 
         if (dst_size == src_size) {
+            // same size on destination and source
             if (not is_operand_memory(dst_nasm) or
                 not is_operand_memory(src_nasm)) {
                 // not both operands are memory references
+                // src might be constant
                 indent(os, indnt);
                 os << op << " " << dst_nasm << ", " << src_nasm << '\n';
                 return;
@@ -817,6 +819,7 @@ class toc final {
         }
 
         if (dst_size > src_size) {
+            // destination is larger than source
             // mov rax,byte[b] -> movsx
             if (not is_operand_memory(dst_nasm) or
                 not is_operand_memory(src_nasm)) {

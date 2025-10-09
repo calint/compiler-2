@@ -1,5 +1,6 @@
 [ ] fix the mess of string handling when truncating
 [ ] fix the mess in toc::asm_cmd
+[ ] toc::get_stack_size -> keep track of it with a member variable
 [ ] refactor the string handling of register and memory operand sizes
 [o] implement "size_of"
     [ ] size_of for fields
