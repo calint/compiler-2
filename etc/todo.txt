@@ -1,3 +1,12 @@
+[ ] a way of using "read" and "write" functions with var" buffers:
+    read(address_of(buf)) does:
+    lea dst, [....]
+    also handles if "dst" is not  a register
+[ ] allow trailing comma at type definition. e.g:
+    type object {
+        pos : point.
+        color : i32,
+    }
 [ ] optimize rep stosb to q, d, w if possible
     => maybe some heuristics about when to use "rep stosX" 
        => start with stosq, then mov dword, word and byte
