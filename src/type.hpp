@@ -20,6 +20,13 @@ struct type_field {
     size_t offset{};
 };
 
+struct accessor_info {
+    std::string id_nasm;
+    const type& tp;
+    bool is_array{};
+    size_t array_size{};
+};
+
 class type final {
     static constexpr std::string_view size_qword{"qword"};
     static constexpr std::string_view size_dword{"dword"};
@@ -71,17 +78,21 @@ class type final {
             tk, std::format("field '{}' not found in type '{}'", name, name_)};
     }
 
-    [[nodiscard]] auto accessor(const token& tk,
-                                const std::vector<std::string_view>& path,
-                                const int stack_idx_base) const
-        -> std::pair<const type&, std::string> {
+    [[nodiscard]] auto
+    accessor(const token& tk, const std::vector<std::string_view>& path,
+             const int stack_idx_base, const bool base_is_array,
+             const size_t base_array_size) const -> accessor_info {
 
         const type* tp{this};
         size_t offset{};
+        bool is_array{base_is_array};
+        size_t array_size{base_array_size};
         for (size_t path_idx{1}; path_idx != path.size(); path_idx++) {
             const type_field& fld{tp->field(tk, path[path_idx])};
             offset += fld.offset;
             tp = fld.tp;
+            is_array = fld.is_array;
+            array_size = fld.array_size;
         }
         const int stack_idx{stack_idx_base + static_cast<int>(offset)};
 
@@ -96,7 +107,10 @@ class type final {
         const std::string accessor{
             std::format("{} [rsp - {}]", memsize, -stack_idx)};
         // note: -stack_idx for nicer source formatting
-        return {*tp, accessor};
+        return {.id_nasm = accessor,
+                .tp = *tp,
+                .is_array = is_array,
+                .array_size = array_size};
     }
 
     [[nodiscard]] auto size() const -> size_t { return size_; }

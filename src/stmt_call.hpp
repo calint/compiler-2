@@ -277,9 +277,9 @@ class stmt_call : public expression {
         tc.exit_func(func.name());
     }
 
-    [[nodiscard]] auto arg(size_t ix) const -> const statement& {
+    [[nodiscard]] auto argument(size_t ix) const -> const statement& {
         return args_.at(ix);
     }
 
-    [[nodiscard]] auto arg_count() const -> size_t { return args_.size(); }
+    [[nodiscard]] auto arguments_size() const -> size_t { return args_.size(); }
 };

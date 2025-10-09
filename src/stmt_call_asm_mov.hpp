@@ -25,14 +25,14 @@ class stmt_call_asm_mov final : public stmt_call {
 
         tc.comment_source(*this, os, indent);
 
-        if (arg_count() != 2) {
+        if (arguments_size() != 2) {
             throw compiler_exception{tok(), "expected 2 arguments"};
         }
 
         // the assembler command might not need to resolve expressions
-        const ident_info dst_info{tc.make_ident_info(arg(0), false)};
+        const ident_info dst_info{tc.make_ident_info(argument(0), false)};
 
-        const statement& src_arg{arg(1)};
+        const statement& src_arg{argument(1)};
         if (src_arg.is_expression()) {
             src_arg.compile(tc, os, indent + 1, dst_info.id);
             return;

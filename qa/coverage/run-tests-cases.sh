@@ -84,3 +84,5 @@ SRC=t83 && EXP=0 && RUN
 SRC=t84 && EXP=0 && RUN
 SRC=t85 && EXP=0 && RUN
 SRC=t86 && EXP=0 && RUN
+SRC=t87 && DIFFINP
+SRC=t88 && DIFFINP

@@ -1378,14 +1378,15 @@ class toc final {
         // is it a variable?
         if (frm.has_var(id_base)) {
             const var_info& var{frm.get_var_const_ref(id_base)};
-            auto [tp, acc]{
-                var.type_ref.accessor(src_loc, id.path(), var.stack_idx)};
+            accessor_info ai{var.type_ref.accessor(src_loc, id.path(),
+                                                   var.stack_idx, var.is_array,
+                                                   var.array_size)};
             return {.id = std::string{ident},
-                    .id_nasm = acc,
-                    .type_ref = tp,
+                    .id_nasm = ai.id_nasm,
+                    .type_ref = ai.tp,
                     .stack_ix = var.stack_idx,
-                    .is_array = var.is_array,
-                    .array_size = var.array_size,
+                    .is_array = ai.is_array,
+                    .array_size = ai.array_size,
                     .ident_type = ident_info::ident_type::VAR};
         }
 
