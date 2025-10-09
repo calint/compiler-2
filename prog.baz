@@ -131,7 +131,8 @@ func main() {
     loop {
         print(prompt1.len, prompt1)
         var len = read(array_size_of(input_buffer), address_of(input_buffer)) - 1
-        # note: -1 to not include the trailing '\n'
+        # note: array_size_of and address_of are built-in functions
+        #       -1 to not include the trailing '\n'
         if len == 0 {
             break
         } else if len <= 4 {

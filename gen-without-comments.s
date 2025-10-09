@@ -580,57 +580,57 @@ main:
             mov qword [rsp - 260], rax
         read_133_19_end:
         sub qword [rsp - 260], 1
-        if_135_12:
-        cmp_135_12:
+        if_136_12:
+        cmp_136_12:
         cmp qword [rsp - 260], 0
-        jne if_137_19
-        if_135_12_code:
+        jne if_138_19
+        if_136_12_code:
             jmp loop_131_5_end
-        jmp if_135_9_end
-        if_137_19:
-        cmp_137_19:
+        jmp if_136_9_end
+        if_138_19:
+        cmp_138_19:
         cmp qword [rsp - 260], 4
-        jg if_else_135_9
-        if_137_19_code:
+        jg if_else_136_9
+        if_138_19_code:
             mov rdx, prompt2.len
             mov rsi, prompt2
-            print_138_13:
+            print_139_13:
                 mov rax, 1
                 mov rdi, 1
                 syscall
-            print_138_13_end:
+            print_139_13_end:
             jmp loop_131_5
-        jmp if_135_9_end
-        if_else_135_9:
+        jmp if_136_9_end
+        if_else_136_9:
             mov rdx, prompt3.len
             mov rsi, prompt3
-            print_141_13:
-                mov rax, 1
-                mov rdi, 1
-                syscall
-            print_141_13_end:
-            mov rdx, qword [rsp - 260]
-            lea rsi, [rsp - 252]
             print_142_13:
                 mov rax, 1
                 mov rdi, 1
                 syscall
             print_142_13_end:
-            mov rdx, dot.len
-            mov rsi, dot
+            mov rdx, qword [rsp - 260]
+            lea rsi, [rsp - 252]
             print_143_13:
                 mov rax, 1
                 mov rdi, 1
                 syscall
             print_143_13_end:
-            mov rdx, nl.len
-            mov rsi, nl
+            mov rdx, dot.len
+            mov rsi, dot
             print_144_13:
                 mov rax, 1
                 mov rdi, 1
                 syscall
             print_144_13_end:
-        if_135_9_end:
+            mov rdx, nl.len
+            mov rsi, nl
+            print_145_13:
+                mov rax, 1
+                mov rdi, 1
+                syscall
+            print_145_13_end:
+        if_136_9_end:
     jmp loop_131_5
     loop_131_5_end:
     mov rax, 60
