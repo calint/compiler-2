@@ -44,6 +44,10 @@ class stmt_call_address_of : public stmt_call {
                                      "destination cannot be a constant"};
         }
 
+        if (dst_info.type_ref.name() != tc.get_type_default().name()) {
+            throw compiler_exception{tok(), "destination must be type i64"};
+        }
+
         const ident_info src_info{tc.make_ident_info(arg(0), false)};
 
         if (not src_info.is_var()) {

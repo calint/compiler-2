@@ -8,6 +8,7 @@
        must be register
     => implemented "array_size_of(...)"
     => done without the limitation of "address_of" to register only
+    => checks that destination is type i64
 [ ] allow trailing comma at type definition. e.g:
     type object {
         pos : point,

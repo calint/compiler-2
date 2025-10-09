@@ -56,6 +56,10 @@ class stmt_call_array_size_of : public stmt_call {
             throw compiler_exception{arg(0).tok(), "argument is not an array"};
         }
 
+        if (dst_info.type_ref.name() != tc.get_type_default().name()) {
+            throw compiler_exception{tok(), "destination must be type i64"};
+        }
+
         // variable, register or field
         tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
                    std::format("{}", src_info.array_size));
