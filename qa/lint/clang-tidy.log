@@ -1,8 +1,2 @@
-Thu Oct  9 08:30:08 PM +07 2025
-/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:175:25: warning: initializer for member 'id' is redundant [readability-redundant-member-init]
-  175 |     const std::string id{};
-      |                         ^~
-/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:176:30: warning: initializer for member 'id_nasm' is redundant [readability-redundant-member-init]
-  176 |     const std::string id_nasm{}; // NASM valid source
-      |                              ^~
-Thu Oct  9 08:30:43 PM +07 2025
+Thu Oct  9 09:19:48 PM +07 2025
+Thu Oct  9 09:20:23 PM +07 2025

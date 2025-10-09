@@ -172,8 +172,8 @@ struct type_info {
 struct ident_info {
     enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
 
-    const std::string id{};
-    const std::string id_nasm{}; // NASM valid source
+    const std::string id;
+    const std::string id_nasm; // NASM valid source
     const int64_t const_value{};
     const type& type_ref;
     const int32_t stack_ix{};
@@ -793,9 +793,9 @@ class toc final {
         const size_t src_size{get_size_from_operand(src_loc_tk, src_nasm)};
 
         if (dst_size == src_size) {
-            if (not(is_operand_memory(dst_nasm) and
-                    is_operand_memory(src_nasm))) {
-                // both operands are not memory references
+            if (not is_operand_memory(dst_nasm) or
+                not is_operand_memory(src_nasm)) {
+                // not both operands are memory references
                 indent(os, indnt);
                 os << op << " " << dst_nasm << ", " << src_nasm << '\n';
                 return;
@@ -817,9 +817,9 @@ class toc final {
 
         if (dst_size > src_size) {
             // mov rax,byte[b] -> movsx
-            if (not(is_operand_memory(dst_nasm) and
-                    is_operand_memory(src_nasm))) {
-                // not both operands memory references
+            if (not is_operand_memory(dst_nasm) or
+                not is_operand_memory(src_nasm)) {
+                // not both operands are memory references
                 if (op == "mov") {
                     indent(os, indnt);
                     os << "movsx " << dst_nasm << ", " << src_nasm << '\n';
@@ -1458,6 +1458,8 @@ class toc final {
 
         // not resolved, return empty info
         return {
+            .id = "",
+            .id_nasm = "",
             .type_ref = get_type_void(),
         };
     }

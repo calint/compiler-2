@@ -13,8 +13,8 @@ CW="-Weverything -Wno-c++98-compat -Wno-pre-c++20-compat-pedantic -Wno-weak-vtab
 #CC="g++ -std=c++23"
 #CW="-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow"
 CF="-Wfatal-errors -Werror"
-DBG=-g3
-OPT=-O1
+DBG=-g
+OPT=
 
 #
 # AddressSanitizer + UndefinedBehaviorSanitizer (can be combined)
