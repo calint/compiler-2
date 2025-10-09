@@ -873,8 +873,8 @@ class toc final {
                 return;
             }
 
-            // std::cerr << dst_nasm << "=" << src_nasm << '\n';
-            // throw panic_exception{"unexpected code path toc:6"};
+            // constant to memory
+            //? todo: check for overflow
             os << op << " " << dst_nasm << ", " << src_nasm << '\n';
             return;
         }
