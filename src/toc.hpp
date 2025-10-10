@@ -77,6 +77,14 @@ class frame final {
           func_ret_label_{std::move(func_ret_label)}, func_rets_{func_rets},
           type_{frm_type} {}
 
+    // -------------------------------------------------------------------------
+    // public non-special functions (sorted alphabetically)
+    // -------------------------------------------------------------------------
+
+    auto add_alias(std::string from, std::string to) -> void {
+        aliases_.put(std::move(from), std::move(to));
+    }
+
     auto add_var(token declared_at_tk, const std::string& name,
                  const type& type_ref, bool is_array, size_t array_size,
                  int stack_idx) -> void {
@@ -98,12 +106,22 @@ class frame final {
         return allocated_stack_;
     }
 
-    [[nodiscard]] auto has_var(std::string_view name) const -> bool {
-        return vars_.has(name);
+    [[nodiscard]] auto call_path() const -> std::string_view {
+        return call_path_;
     }
 
-    auto get_var_ref(std::string_view name) -> var_info& {
-        return vars_.get_ref(name);
+    [[nodiscard]] auto func_ret_label() const -> std::string_view {
+        return func_ret_label_;
+    }
+
+    [[nodiscard]] auto get_alias(std::string_view name) const
+        -> const std::string& {
+        return aliases_.get_const_ref(name);
+    }
+
+    [[nodiscard]] auto get_func_returns_infos() const
+        -> const std::vector<func_return_info>& {
+        return func_rets_;
     }
 
     [[nodiscard]] auto get_var_const_ref(std::string_view name) const
@@ -112,16 +130,24 @@ class frame final {
         return vars_.get_const_ref(name);
     }
 
-    auto add_alias(std::string from, std::string to) -> void {
-        aliases_.put(std::move(from), std::move(to));
+    auto get_var_ref(std::string_view name) -> var_info& {
+        return vars_.get_ref(name);
     }
 
-    [[nodiscard]] auto is_func() const -> bool {
-        return type_ == frame_type::FUNC;
+    [[nodiscard]] auto has_alias(std::string_view name) const -> bool {
+        return aliases_.has(name);
+    }
+
+    [[nodiscard]] auto has_var(std::string_view name) const -> bool {
+        return vars_.has(name);
     }
 
     [[nodiscard]] auto is_block() const -> bool {
         return type_ == frame_type::BLOCK;
+    }
+
+    [[nodiscard]] auto is_func() const -> bool {
+        return type_ == frame_type::FUNC;
     }
 
     [[nodiscard]] auto is_loop() const -> bool {
@@ -132,29 +158,7 @@ class frame final {
         return name_ == name;
     }
 
-    [[nodiscard]] auto has_alias(std::string_view name) const -> bool {
-        return aliases_.has(name);
-    }
-
-    [[nodiscard]] auto get_alias(std::string_view name) const
-        -> const std::string& {
-        return aliases_.get_const_ref(name);
-    }
-
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
-
-    [[nodiscard]] auto func_ret_label() const -> std::string_view {
-        return func_ret_label_;
-    }
-
-    [[nodiscard]] auto call_path() const -> std::string_view {
-        return call_path_;
-    }
-
-    [[nodiscard]] auto get_func_returns_infos() const
-        -> const std::vector<func_return_info>& {
-        return func_rets_;
-    }
 };
 
 struct field_info {
