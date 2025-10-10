@@ -866,11 +866,13 @@ class toc final {
                 return;
             }
             if (is_identifier_register(dst_nasm)) {
-                os << op << " "
-                   << get_register_operand_for_size(src_loc_tk, dst_nasm,
-                                                    dst_size)
-                   << ", " << src_nasm << '\n';
-                return;
+                //? destination is never a register
+                throw panic_exception{"unexpected code path toc:6"};
+                // os << op << " "
+                //    << get_register_operand_for_size(src_loc_tk, dst_nasm,
+                //                                     dst_size)
+                //    << ", " << src_nasm << '\n';
+                // return;
             }
 
             // constant to memory
