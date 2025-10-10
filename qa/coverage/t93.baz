@@ -60,8 +60,8 @@ func main() {
                 address_of(locations[i].name.data)
             )
         locations[i].name.size = len
-        if len <= 1 break
         i = i + 1
+        if len <= 1 or i == array_size_of(locations) break
     }
    
     var j = 0
