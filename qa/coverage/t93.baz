@@ -1,0 +1,73 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+func print(len : reg_rdx, ptr : reg_rsi) {
+    mov(rax, 1)   # write system call
+    mov(rdi, 1)   # file descriptor for standard out
+    mov(rsi, ptr) # buffer address 
+    mov(rdx, len) # buffer size
+    syscall()
+}
+
+func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+    mov(rax, 0)   # read system call
+    mov(rdi, 0)   # file descriptor for standard input
+    mov(rsi, ptr) # buffer address
+    mov(rdx, len) # buffer size
+    syscall()
+    mov(nbytes, rax) # return value
+}
+
+type str_s {
+    size : i8,
+    data : i8[31]
+}
+
+type str_m {
+    size : i8,
+    data : i8[63]
+}
+
+type str_l {
+    size : i8,
+    data : i8[127]
+}
+
+type link {
+    name : str_s,
+    to : i32
+}
+
+type location {
+    name : str_s,
+    links : link[8]
+}
+
+func main() {
+    var locations : location[8]
+    var i = 0
+    loop {
+        var len = 
+            read(
+                array_size_of(locations[i].name.data),
+                address_of(locations[i].name.data)
+            )
+        locations[i].name.size = len
+        if len <= 1 break
+        i = i + 1
+    }
+   
+    var j = 0
+    loop {
+        if j == i break
+        print(locations[j].name.size, address_of(locations[j].name.data))
+        j = j + 1
+    }
+}
