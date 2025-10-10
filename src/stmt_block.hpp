@@ -102,13 +102,13 @@ class stmt_block final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         if (not is_one_statement_) {
-            os << "{";
+            std::print(os, "{{");
         }
         for (const auto& s : stms_) {
             s->source_to(os);
         }
         if (not is_one_statement_) {
-            os << "}";
+            std::print(os, "}}");
             ws2_.source_to(os);
         }
         ws1_.source_to(os);

@@ -99,7 +99,7 @@ class expr_bool_op final : public statement {
         if (is_shorthand_) {
             return;
         }
-        os << op_;
+        std::print(os, "{}", op_);
         rhs_.source_to(os);
     }
 
@@ -135,13 +135,13 @@ class expr_bool_op final : public statement {
                         const_eval = not const_eval;
                     }
                     toc::indent(os, indent, true);
-                    os << "const eval to " << (const_eval ? "true" : "false")
-                       << '\n';
+                    std::println(os, "const eval to {}",
+                                 (const_eval ? "true" : "false"));
                     if (const_eval) {
                         // since it is an 'or' chain short-circuit
                         // expression and jump to label for true
                         toc::indent(os, indent);
-                        os << "jmp " << jmp_to_if_true << '\n';
+                        std::println(os, "jmp {}", jmp_to_if_true);
                     }
                     return const_eval;
                 }
@@ -151,9 +151,10 @@ class expr_bool_op final : public statement {
             resolve_cmp_shorthand(tc, os, indent, lhs_);
             toc::indent(os, indent);
             // note: shorthand variant checks for "not false"
-            os << (not invert ? asm_jxx_for_op_inv("==") // "not false"
-                              : asm_jxx_for_op("=="));
-            os << " " << jmp_to_if_true << '\n';
+            std::println(os, "{} {}",
+                         (not invert ? asm_jxx_for_op_inv("==") // "not false"
+                                     : asm_jxx_for_op("==")),
+                         jmp_to_if_true);
             return std::nullopt;
         }
 
@@ -174,8 +175,8 @@ class expr_bool_op final : public statement {
                     const_eval = not const_eval;
                 }
                 toc::indent(os, indent, true);
-                os << "const eval to " << (const_eval ? "true" : "false")
-                   << '\n';
+                std::println(os, "const eval to {}",
+                             (const_eval ? "true" : "false"));
                 if (const_eval) {
                     // expression evaluated at compile time and true so
                     // short-circuit and jump to true

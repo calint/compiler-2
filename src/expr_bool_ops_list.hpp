@@ -121,7 +121,7 @@ class expr_bool_ops_list final : public statement {
         statement::source_to(os);
         not_token_.source_to(os);
         if (enclosed_) {
-            os << "(";
+            std::print(os, "(");
         }
         const size_t n{bools_.size()};
         for (size_t i{}; i < n; i++) {
@@ -135,7 +135,7 @@ class expr_bool_ops_list final : public statement {
             }
         }
         if (enclosed_) {
-            os << ")";
+            std::print(os, ")");
             ws1_.source_to(os);
         }
     }
