@@ -8,6 +8,7 @@
 #include <optional>
 #include <ranges>
 #include <string_view>
+#include <utility>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -446,16 +447,71 @@ class toc final {
         const size_t src_size{get_size_from_operand(src_loc_tk, src_nasm)};
 
         if (dst_size == src_size) {
-            // same size on destination and source
-            if (not(is_nasm_memory_operand(dst_nasm) and
-                    is_nasm_memory_operand(src_nasm))) {
-                // not both operands are memory references
-                // src might be constant
+            if (is_nasm_memory_operand(dst_nasm) and
+                is_nasm_memory_operand(src_nasm)) {
+                // both operands are memory references
+                // use scratch register for transfer
+                const std::string reg{
+                    alloc_scratch_register(src_loc_tk, os, indnt)};
+                const std::string reg_sized{
+                    get_sized_register(src_loc_tk, reg, dst_size)};
                 indent(os, indnt);
-                std::println(os, "{} {}, {}", op, dst_nasm, src_nasm);
+                std::println(os, "mov {}, {}", reg_sized, src_nasm);
+                indent(os, indnt);
+                std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
+                free_scratch_register(os, indnt, reg);
                 return;
             }
 
+            // not both operands are memory references, `src_nasm` might be a
+            // constant or a register src might be constant
+            indent(os, indnt);
+            std::println(os, "{} {}, {}", op, dst_nasm, src_nasm);
+            return;
+        }
+
+        if (dst_size > src_size) {
+            // destination is larger than source
+            // mov rax,byte[b] -> movsx
+            if (is_nasm_memory_operand(dst_nasm) and
+                is_nasm_memory_operand(src_nasm)) {
+                // both operands refer to memory
+                // use in-between scratch register
+                const std::string reg{
+                    alloc_scratch_register(src_loc_tk, os, indnt)};
+                const std::string reg_sized{
+                    get_sized_register(src_loc_tk, reg, dst_size)};
+                indent(os, indnt);
+                std::println(os, "movsx {}, {}", reg_sized, src_nasm);
+                indent(os, indnt);
+                std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
+                free_scratch_register(os, indnt, reg);
+                return;
+            }
+
+            // not both of the operands are memory references
+            if (op == "mov") {
+                // special case for `mov` which needs sign extended move
+                indent(os, indnt);
+                std::println(os, "movsx {}, {}", dst_nasm, src_nasm);
+                return;
+            }
+
+            // note: when doing arithmetic between 2 memory locations
+            //       this code path is triggered by the use of an
+            //       in-between scratch register
+            indent(os, indnt);
+            std::println(os, "{} {}, {}", op,
+                         get_sized_register(src_loc_tk, dst_nasm, src_size),
+                         src_nasm);
+            return;
+        }
+
+        // dst_size < src_size
+        // truncation will happen
+
+        if (is_nasm_memory_operand(dst_nasm) and
+            is_nasm_memory_operand(src_nasm)) {
             // both operands are memory references
             // use scratch register for transfer
             const std::string reg{
@@ -463,97 +519,32 @@ class toc final {
             const std::string reg_sized{
                 get_sized_register(src_loc_tk, reg, dst_size)};
             indent(os, indnt);
-            std::println(os, "mov {}, {}", reg_sized, src_nasm);
+            std::println(os, "mov {}, {}", reg_sized,
+                         resize_nasm_memory_operand(
+                             src_nasm, get_operand_size(dst_size)));
             indent(os, indnt);
             std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
             free_scratch_register(os, indnt, reg);
             return;
         }
-
-        if (dst_size > src_size) {
-            // destination is larger than source
-            // mov rax,byte[b] -> movsx
-            if (not(is_nasm_memory_operand(dst_nasm) and
-                    is_nasm_memory_operand(src_nasm))) {
-                // not both operands are memory references
-                if (op == "mov") {
-                    indent(os, indnt);
-                    std::println(os, "movsx {}, {}", dst_nasm, src_nasm);
-                    return;
-                }
-
-                if (is_nasm_register(dst_nasm)) {
-                    // note: when doing arithmetic between 2 memory locations
-                    //       this code path is triggered by the use of an
-                    //       in-between scratch register
-                    indent(os, indnt);
-                    std::println(
-                        os, "{} {}, {}", op,
-                        get_sized_register(src_loc_tk, dst_nasm, src_size),
-                        src_nasm);
-                    return;
-                }
-
-                throw panic_exception{"unexpected code path toc:7"};
-            }
-
-            // both operands refer to memory
-            // use in-between scratch register
-            const std::string reg{
-                alloc_scratch_register(src_loc_tk, os, indnt)};
-            const std::string reg_sized{
-                get_sized_register(src_loc_tk, reg, dst_size)};
+        // not both operands are memory references
+        if (is_nasm_register(src_nasm)) {
             indent(os, indnt);
-            std::println(os, "movsx {}, {}", reg_sized, src_nasm);
-            indent(os, indnt);
-            std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
-            free_scratch_register(os, indnt, reg);
+            std::println(os, "{} {}, {}", op, dst_nasm,
+                         get_sized_register(src_loc_tk, src_nasm, dst_size));
             return;
         }
 
-        // dst_size < src_size
-        // truncation will happen
-
-        if (not(is_nasm_memory_operand(dst_nasm) and
-                is_nasm_memory_operand(src_nasm))) {
-            // not both operands are memory references
-            indent(os, indnt);
-            if (is_nasm_register(src_nasm)) {
-                std::println(
-                    os, "{} {}, {}", op, dst_nasm,
-                    get_sized_register(src_loc_tk, src_nasm, dst_size));
-                return;
-            }
-            if (is_nasm_register(dst_nasm)) {
-                //? destination is never a register
-                throw panic_exception{"unexpected code path toc:6"};
-                // os << op << " "
-                //    << get_register_operand_for_size(src_loc_tk, dst_nasm,
-                //                                     dst_size)
-                //    << ", " << src_nasm << '\n';
-                // return;
-            }
-
-            // constant to memory
-            // note: constants have the default size of qword so when assigning
-            //       to smaller sizes this code path is taken
-            //? todo: check for overflow
-            std::println(os, "{} {}, {}", op, dst_nasm, src_nasm);
-            return;
+        if (is_nasm_register(dst_nasm)) {
+            //? destination is never a register
+            throw panic_exception{"unexpected code path toc:5"};
         }
 
-        // both operands are memory references
-        // use scratch register for transfer
-        const std::string reg{alloc_scratch_register(src_loc_tk, os, indnt)};
-        const std::string reg_sized{
-            get_sized_register(src_loc_tk, reg, dst_size)};
-        indent(os, indnt);
-        std::println(
-            os, "mov {}, {}", reg_sized,
-            resize_nasm_memory_operand(src_nasm, get_operand_size(dst_size)));
-        indent(os, indnt);
-        std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
-        free_scratch_register(os, indnt, reg);
+        // constant to memory
+        // note: constants have the default size of qword so when assigning
+        //       to smaller sizes this code path is taken
+        //? todo: check for overflow
+        std::println(os, "{} {}, {}", op, dst_nasm, src_nasm);
     }
 
     auto comment_source(const statement& st, std::ostream& os,
@@ -1348,7 +1339,7 @@ class toc final {
         case 8:
             return "qword";
         default:
-            throw panic_exception{"unexpected code path toc:4"};
+            throw panic_exception{"unexpected code path toc:3"};
         }
     }
 
@@ -1558,7 +1549,7 @@ class toc final {
 
         auto pos = operand.find('[');
         if (pos == std::string_view::npos) {
-            throw panic_exception{"unexpected code path toc:5"};
+            throw panic_exception{"unexpected code path toc:4"};
         }
         return std::format("{} {}", new_size, operand.substr(pos));
     }
