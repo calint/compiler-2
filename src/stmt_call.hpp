@@ -248,9 +248,6 @@ class stmt_call : public expression {
         // compile in-lined code
         func.code().compile(tc, os, indent);
 
-        // provide exit label for 'return' to jump to
-        toc::asm_label(tok(), os, indent, ret_jmp_label);
-
         // free allocated registers in reverse order
         for (const auto& reg :
              allocated_registers_in_order | std::views::reverse) {
@@ -262,6 +259,9 @@ class stmt_call : public expression {
                 throw panic_exception("unexpected code path");
             }
         }
+
+        // provide exit label for 'return' to jump to
+        toc::asm_label(tok(), os, indent, ret_jmp_label);
 
         // apply unary ops to result if present
         if (not get_unary_ops().is_empty()) {

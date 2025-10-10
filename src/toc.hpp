@@ -1226,7 +1226,12 @@ class toc final {
         if (indnt == 0) {
             return;
         }
-        for (size_t i{}; i < indnt; i++) {
+        if (comment) {
+            std::print(os, "   ");
+        } else {
+            std::print(os, "    ");
+        }
+        for (size_t i{1}; i < indnt; i++) {
             std::print(os, "    ");
         }
     }
