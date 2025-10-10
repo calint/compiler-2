@@ -70,7 +70,9 @@ func main() {
   var i3 : i16 = 420
   var i4 : i64 = 840
   var i5 = -1
-  
+  var i6 = 2147483647  
+  var i7 = -2147483648
+
   print_num(i1)
   print(1, address_of(nl))
   print_num(i2)
@@ -80,5 +82,9 @@ func main() {
   print_num(i4)
   print(1, address_of(nl))
   print_num(i5)
+  print(1, address_of(nl))
+  print_num(i6)
+  print(1, address_of(nl))
+  print_num(i7)
   print(1, address_of(nl))
 }
