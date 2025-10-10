@@ -94,17 +94,17 @@ class stmt_def_var final : public statement {
         statement::source_to(os);
         name_tk_.source_to(os);
         if (not type_tk_.is_empty()) {
-            os << ':';
+            std::print(os, ":");
             type_tk_.source_to(os);
             if (not array_size_tk_.is_empty()) {
-                os << '[';
+                std::print(os, "[");
                 array_size_tk_.source_to(os);
-                os << ']';
+                std::print(os, "]");
                 ws2_.source_to(os);
             }
         }
         if (array_size_tk_.is_empty()) {
-            os << '=';
+            std::print(os, "=");
             ws1_.source_to(os);
             assign_var_.expression().source_to(os);
         }
@@ -133,8 +133,9 @@ class stmt_def_var final : public statement {
             tc.make_ident_info(name_tk_, name_tk_.text(), false)};
 
         toc::indent(os, indent, true);
-        os << "clear array " << array_size_ << " * " << dst_info.type_ref.size()
-           << " B = " << array_size_ * dst_info.type_ref.size() << " B\n";
+        std::println(os, "clear array {} * {}  B = {} B", array_size_,
+                     dst_info.type_ref.size(),
+                     array_size_ * dst_info.type_ref.size());
 
         tc.alloc_named_register_or_throw(*this, os, indent, "rdi");
         tc.alloc_named_register_or_throw(*this, os, indent, "rcx");
