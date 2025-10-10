@@ -179,7 +179,7 @@ class expr_ops_list final : public expression {
     auto source_to(std::ostream& os) const -> void override {
         uops_.source_to(os);
         if (enclosed_) {
-            os << "(";
+            std::print(os, "(");
         }
         expression::source_to(os); // whitespace
         exprs_.at(0)->source_to(os);
@@ -195,7 +195,7 @@ class expr_ops_list final : public expression {
         }
 
         if (enclosed_) {
-            os << ")";
+            std::print(os, ")");
             ws1_.source_to(os);
         }
     }
@@ -232,9 +232,9 @@ class expr_ops_list final : public expression {
 
         // select version with least instructions
         if (ss1_count <= ss2_count) {
-            os << ss1.str();
+            std::print(os, "{}", ss1.str());
         } else {
-            os << ss2.str();
+            std::print(os, "{}", ss2.str());
         }
     }
 
@@ -686,9 +686,9 @@ class expr_ops_list final : public expression {
                 toc::asm_push(src.tok(), os, indent, "rdx");
             }
             toc::indent(os, indent, false);
-            os << "cqo\n";
+            std::println(os, "cqo");
             toc::indent(os, indent, false);
-            os << "idiv " << reg << '\n';
+            std::println(os, "idiv {}", reg);
             tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, op);
             if (rdx_allocated) {
                 tc.free_named_register(os, indent, "rdx");
@@ -719,14 +719,14 @@ class expr_ops_list final : public expression {
                 toc::asm_push(src.tok(), os, indent, "rdx");
             }
             toc::indent(os, indent, false);
-            os << "cqo\n";
+            std::println(os, "cqo");
             const std::string scratch_reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             tc.asm_cmd(src.tok(), os, indent, "mov", scratch_reg,
                        std::format("{}{}", src.get_unary_ops().to_string(),
                                    src_info.id_nasm));
             toc::indent(os, indent, false);
-            os << "idiv " << scratch_reg << '\n';
+            std::println(os, "idiv {}", scratch_reg);
             tc.free_scratch_register(os, indent, scratch_reg);
             tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, op);
             if (rdx_allocated) {
@@ -763,9 +763,9 @@ class expr_ops_list final : public expression {
                 toc::asm_push(src.tok(), os, indent, "rdx");
             }
             toc::indent(os, indent, false);
-            os << "cqo\n";
+            std::println(os, "cqo");
             toc::indent(os, indent, false);
-            os << "idiv " << src_info.id_nasm << '\n';
+            std::println(os, "idiv {}", src_info.id_nasm);
             // op is either 'rax' for the quotient or 'rdx' for the reminder
             tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, op);
             if (rdx_allocated) {
@@ -797,9 +797,9 @@ class expr_ops_list final : public expression {
             toc::asm_push(src.tok(), os, indent, "rdx");
         }
         toc::indent(os, indent, false);
-        os << "cqo\n";
+        std::println(os, "cqo");
         toc::indent(os, indent, false);
-        os << "idiv " << reg << '\n';
+        std::println(os, "idiv {}", reg);
         tc.asm_cmd(src.tok(), os, indent, "mov", dst.id_nasm, op);
         if (rdx_allocated) {
             tc.free_named_register(os, indent, "rdx");

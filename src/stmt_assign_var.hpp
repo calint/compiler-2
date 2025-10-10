@@ -33,7 +33,7 @@ class stmt_assign_var final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         stmt_ident_.source_to(os);
-        os << '=';
+        std::print(os, "=");
         expr_.source_to(os);
     }
 

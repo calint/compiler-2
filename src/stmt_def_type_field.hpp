@@ -61,12 +61,12 @@ class stmt_def_type_field final : public statement {
         if (type_tk_.is_empty()) {
             return;
         }
-        os << ':';
+        std::print(os, ":");
         type_tk_.source_to(os);
         if (is_array_) {
-            os << '[';
+            std::print(os, "[");
             array_size_tk_.source_to(os);
-            os << ']';
+            std::print(os, "]");
             ws1_.source_to(os);
         }
     }
