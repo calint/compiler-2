@@ -66,14 +66,14 @@ class stmt_if_branch final : public statement {
             // yes, was the constant evaluation result true?
             if (*const_eval) {
                 // yes, this branch code will execute
-                code_.compile(tc, os, indent);
+                code_.compile(tc, os, indent, "");
             }
             return *const_eval;
         }
         // the label where to jump if evaluation of condition is true
         toc::asm_label(tok(), os, indent, jmp_to_if_true_lbl);
         // the code of the branch
-        code_.compile(tc, os, indent);
+        code_.compile(tc, os, indent, "");
         // after the code of the branch is executed jump to the end of the 'if
         // ... else if ... else ...' block.
         // if jump label not provided then there is no 'else' and this is the

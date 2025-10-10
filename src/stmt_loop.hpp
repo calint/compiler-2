@@ -35,8 +35,7 @@ class stmt_loop final : public statement {
     auto operator=(stmt_loop&&) -> stmt_loop& = default;
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] std::string_view dst = "") const
-        -> void override {
+                 [[maybe_unused]] std::string_view dst) const -> void override {
 
         toc::indent(os, indent, true);
         tc.comment_token(os, tok());
@@ -44,7 +43,7 @@ class stmt_loop final : public statement {
         const std::string lbl{create_unique_label(tc)};
         toc::asm_label(tok(), os, indent, lbl);
         tc.enter_loop(lbl);
-        code_.compile(tc, os, indent);
+        code_.compile(tc, os, indent, dst);
         toc::asm_jmp(tok(), os, indent, lbl);
         toc::asm_label(tok(), os, indent, std::format("{}_end", lbl));
         tc.exit_loop(lbl);

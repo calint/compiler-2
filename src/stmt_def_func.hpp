@@ -138,8 +138,8 @@ class stmt_def_func final : public statement {
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
                  [[maybe_unused]] size_t indent,
-                 [[maybe_unused]] std::string_view dst = "") const
-        -> void override {}
+                 [[maybe_unused]] std::string_view dst) const -> void override {
+    }
 
     [[nodiscard]] auto returns() const -> const std::vector<func_return_info>& {
         return returns_;

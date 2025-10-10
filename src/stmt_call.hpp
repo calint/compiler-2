@@ -81,7 +81,7 @@ class stmt_call : public expression {
     }
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 std::string_view dst = "") const -> void override {
+                 std::string_view dst) const -> void override {
 
         tc.comment_source(*this, os, indent);
 
@@ -246,7 +246,7 @@ class stmt_call : public expression {
         }
 
         // compile in-lined code
-        func.code().compile(tc, os, indent);
+        func.code().compile(tc, os, indent, dst);
 
         // free allocated registers in reverse order
         for (const auto& reg :

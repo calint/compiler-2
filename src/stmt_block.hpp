@@ -115,12 +115,11 @@ class stmt_block final : public statement {
     }
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] std::string_view dst = "") const
-        -> void override {
+                 [[maybe_unused]] std::string_view dst) const -> void override {
 
         tc.enter_block();
         for (const auto& s : stms_) {
-            s->compile(tc, os, indent + 1);
+            s->compile(tc, os, indent + 1, dst);
         }
         tc.exit_block();
     }

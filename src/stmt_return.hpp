@@ -19,8 +19,7 @@ class stmt_return final : public statement {
     auto operator=(stmt_return&&) -> stmt_return& = default;
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] std::string_view dst = "") const
-        -> void override {
+                 [[maybe_unused]] std::string_view dst) const -> void override {
 
         tc.comment_source(*this, os, indent);
 

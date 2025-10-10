@@ -30,8 +30,7 @@ class statement {
 
     virtual auto compile([[maybe_unused]] toc& tc, std::ostream& os,
                          [[maybe_unused]] size_t indent,
-                         [[maybe_unused]] std::string_view dst = "") const
-        -> void {
+                         [[maybe_unused]] std::string_view dst) const -> void {
         uops_.source_to(os);
         token_.compile_to(os);
     }

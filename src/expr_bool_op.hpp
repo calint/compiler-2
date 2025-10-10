@@ -2,7 +2,6 @@
 // reviewed: 2025-09-29
 
 #include <cassert>
-#include <cstdint>
 #include <optional>
 #include <ostream>
 #include <ranges>
@@ -106,7 +105,7 @@ class expr_bool_op final : public statement {
     [[noreturn]] auto compile([[maybe_unused]] toc& tc,
                               [[maybe_unused]] std::ostream& os,
                               [[maybe_unused]] size_t indent,
-                              [[maybe_unused]] std::string_view dst = "") const
+                              [[maybe_unused]] std::string_view dst) const
         -> void override {
 
         throw panic_exception("unexpected code path bool_op:1");

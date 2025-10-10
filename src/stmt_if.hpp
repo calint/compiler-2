@@ -95,8 +95,7 @@ class stmt_if final : public statement {
 
   public:
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] std::string_view dst = "") const
-        -> void override {
+                 [[maybe_unused]] std::string_view dst) const -> void override {
 
         // make unique labels considering in-lined functions
         const std::string_view call_path{tc.get_call_path(tok())};
@@ -140,7 +139,7 @@ class stmt_if final : public statement {
         if (not branch_evaluated_to_true) {
             if (not else_code_.is_empty()) {
                 toc::asm_label(tok(), os, indent, label_else_branch);
-                else_code_.compile(tc, os, indent);
+                else_code_.compile(tc, os, indent, dst);
             }
         }
 

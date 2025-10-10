@@ -7,7 +7,7 @@
 #include "stmt_identifier.hpp"
 #include "unary_ops.hpp"
 
-class stmt_address_of : public expression {
+class stmt_address_of final : public expression {
     stmt_identifier stmt_ident_;
     token ws1_; // whitespace after ')'
   public:

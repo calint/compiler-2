@@ -1,7 +1,5 @@
 // review: 2025-09-29
 
-#include <cassert>
-#include <cstddef>
 #include <cstring>
 #include <format>
 #include <fstream>

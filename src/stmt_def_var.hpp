@@ -111,8 +111,7 @@ class stmt_def_var final : public statement {
     }
 
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] std::string_view dst = "") const
-        -> void override {
+                 [[maybe_unused]] std::string_view dst) const -> void override {
 
         tc.add_var(name_tk_, os, indent, std::string{name_tk_.text()},
                    get_type(), is_array_, array_size_);
