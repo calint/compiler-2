@@ -348,26 +348,26 @@ class toc final {
         // comment the resolved name
         const ident_info& name_info{make_ident_info(src_loc_tk, name, false)};
         indent(os, indnt, true);
-        os << "var " << name << ": " << name_info.type_ref.name();
+        std::print(os, "var {}: {}", name, name_info.type_ref.name());
         if (array_size) {
-            os << '[' << array_size << ']';
+            std::print(os, "[{}]", array_size);
         }
-        os << " @ " << name_info.id_nasm << '\n';
+        std::println(os, " @ {}", name_info.id_nasm);
     }
 
     auto alloc_named_register(const token& src_loc_tk, std::ostream& os,
                               size_t indnt, std::string_view reg) -> bool {
 
         indent(os, indnt, true);
-        os << "allocate named register '" << reg << '\'';
+        std::print(os, "allocate named register '{}'", reg);
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
-            os << ": not available\n";
+            std::println(os, ": not available");
             return false;
         }
 
-        os << '\n';
+        std::println(os, "");
 
         allocated_registers_.emplace_back(std::move(*reg_iter));
         allocated_registers_src_locs_.emplace_back(
@@ -382,7 +382,7 @@ class toc final {
         -> void {
 
         indent(os, indnt, true);
-        os << "allocate named register '" << reg << "'\n";
+        std::println(os, "allocate named register '{}'", reg);
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
@@ -420,7 +420,7 @@ class toc final {
         scratch_registers_.pop_back();
 
         indent(os, indnt, true);
-        os << "allocate scratch register -> " << reg << "\n";
+        std::println(os, "allocate scratch register -> {}", reg);
 
         const size_t n{scratch_registers_initial_size_ -
                        scratch_registers_.size()};
@@ -451,7 +451,7 @@ class toc final {
                 // not both operands are memory references
                 // src might be constant
                 indent(os, indnt);
-                os << op << " " << dst_nasm << ", " << src_nasm << '\n';
+                std::println(os, "{} {}, {}", op, dst_nasm, src_nasm);
                 return;
             }
 
@@ -462,9 +462,9 @@ class toc final {
             const std::string reg_sized{
                 get_sized_register(src_loc_tk, reg, dst_size)};
             indent(os, indnt);
-            os << "mov " << reg_sized << ", " << src_nasm << '\n';
+            std::println(os, "mov {}, {}", reg_sized, src_nasm);
             indent(os, indnt);
-            os << op << " " << dst_nasm << ", " << reg_sized << '\n';
+            std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
             free_scratch_register(os, indnt, reg);
             return;
         }
@@ -477,7 +477,7 @@ class toc final {
                 // not both operands are memory references
                 if (op == "mov") {
                     indent(os, indnt);
-                    os << "movsx " << dst_nasm << ", " << src_nasm << '\n';
+                    std::println(os, "movsx {}, {}", dst_nasm, src_nasm);
                     return;
                 }
 
@@ -486,9 +486,10 @@ class toc final {
                     //       this code path is triggered by the use of an
                     //       in-between scratch register
                     indent(os, indnt);
-                    os << op << ' '
-                       << get_sized_register(src_loc_tk, dst_nasm, src_size)
-                       << ", " << src_nasm << '\n';
+                    std::println(
+                        os, "{} {}, {}", op,
+                        get_sized_register(src_loc_tk, dst_nasm, src_size),
+                        src_nasm);
                     return;
                 }
 
@@ -502,9 +503,9 @@ class toc final {
             const std::string reg_sized{
                 get_sized_register(src_loc_tk, reg, dst_size)};
             indent(os, indnt);
-            os << "movsx " << reg_sized << ", " << src_nasm << '\n';
+            std::println(os, "movsx {}, {}", reg_sized, src_nasm);
             indent(os, indnt);
-            os << op << " " << dst_nasm << ", " << reg_sized << '\n';
+            std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
             free_scratch_register(os, indnt, reg);
             return;
         }
@@ -517,9 +518,9 @@ class toc final {
             // not both operands are memory references
             indent(os, indnt);
             if (is_nasm_register(src_nasm)) {
-                os << op << " " << dst_nasm << ", "
-                   << get_sized_register(src_loc_tk, src_nasm, dst_size)
-                   << '\n';
+                std::println(
+                    os, "{} {}, {}", op, dst_nasm,
+                    get_sized_register(src_loc_tk, src_nasm, dst_size));
                 return;
             }
             if (is_nasm_register(dst_nasm)) {
@@ -536,7 +537,7 @@ class toc final {
             // note: constants have the default size of qword so when assigning
             //       to smaller sizes this code path is taken
             //? todo: check for overflow
-            os << op << " " << dst_nasm << ", " << src_nasm << '\n';
+            std::println(os, "{} {}, {}", op, dst_nasm, src_nasm);
             return;
         }
 
@@ -546,11 +547,11 @@ class toc final {
         const std::string reg_sized{
             get_sized_register(src_loc_tk, reg, dst_size)};
         indent(os, indnt);
-        os << "mov " << reg_sized << ", "
-           << resize_nasm_memory_operand(src_nasm, get_operand_size(dst_size))
-           << '\n';
+        std::println(
+            os, "mov {}, {}", reg_sized,
+            resize_nasm_memory_operand(src_nasm, get_operand_size(dst_size)));
         indent(os, indnt);
-        os << op << " " << dst_nasm << ", " << reg_sized << '\n';
+        std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
         free_scratch_register(os, indnt, reg);
     }
 
@@ -562,7 +563,7 @@ class toc final {
             tk.at_line(), tk.start_index(), source_)};
 
         indent(os, indnt, true);
-        os << "[" << line << ":" << col << "] ";
+        std::print(os, "[{}:{}] ", line, col);
 
         std::stringstream ss;
         st.source_to(ss);
@@ -571,7 +572,7 @@ class toc final {
         if (not res.empty() && res.back() == ' ') {
             res.pop_back();
         }
-        os << res << "\n";
+        std::println(os, "");
     }
 
     auto comment_source(std::ostream& os, std::string_view dst,
@@ -582,25 +583,24 @@ class toc final {
         const auto [line, col]{line_and_col_num_for_char_index(
             tk.at_line(), tk.start_index(), source_)};
 
-        os << "[" << line << ":" << col << "]";
+        std::print(os, "[{}:{}]", line, col);
 
         std::stringstream ss;
-        ss << " " << dst << " " << op << " ";
+        std::print(ss, " {} {} ", dst, op);
         st.source_to(ss);
         std::string res{std::regex_replace(ss.str(), regex_ws, " ")};
         // trim end of string
         if (not res.empty() && res.back() == ' ') {
             res.pop_back();
         }
-        os << res << '\n';
+        std::println(os, "{}", res);
     }
 
     auto comment_token(std::ostream& os, const token& tk) const -> void {
         const auto [line, col]{line_and_col_num_for_char_index(
             tk.at_line(), tk.start_index(), source_)};
 
-        os << "[" << line << ":" << col << "]";
-        os << " " << tk.text() << '\n';
+        std::println(os, "[{}:{}] {}", line, col, tk.text());
     }
 
     auto enter_block() -> void {
@@ -643,8 +643,8 @@ class toc final {
     }
 
     auto finish(std::ostream& os) -> void {
-        os << "\n; max scratch registers in use: " << usage_max_scratch_regs_
-           << '\n';
+        std::println(os, "\n max scratch registers in use: {}",
+                     usage_max_scratch_regs_);
         os << ";            max frames in use: " << usage_max_frame_count_
            << '\n';
         os << ";               max stack size: " << usage_max_stack_size_
