@@ -1,3 +1,5 @@
+[ ] allow shadowing of variables
+[ ] allow block to be create by user for context: { var i = 2 { var i = 3 }}
 [ ] make unary_ops trivially copyable by using a fixed array instead of vector
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
 [ ] parsing comments in single statement block fails:
