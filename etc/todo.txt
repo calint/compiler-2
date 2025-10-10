@@ -1,3 +1,4 @@
+[ ] immediate value can maximum be 32 bit. handle that at initiation of var
 [ ] parsing comments in single statement block fails:
         if nibble > 9 nibble = nibble + 0x41 # 0 through 9
         else nibble = nibble + 0x30
