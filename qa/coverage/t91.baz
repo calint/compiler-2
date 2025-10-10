@@ -26,28 +26,39 @@ func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
 }
 
 func print_num(num) {
-    var buf : i8[16]
-    var i = 0 
-    var num_iter = num
-    loop {
-       var rest = num_iter / 10
-       var digit = num_iter % 10
-       buf[i] = 48 + digit
-       i = i + 1
-       if rest == 0 break
-       num_iter = rest
+    var buf : i8[20]
+    var n = num
+    var is_negative : bool = false
+    
+    if n < 0 {
+        is_negative = true
+        n = -n
     }
-    var len = i
-    var j = i
-    i = 0
-    var rev : i8[16]
+    
+    var i = 19
     loop {
-      j = j - 1
-      rev[i] = buf[j]
-      i = i + 1
-      if j == 0 break
+        i = i - 1
+        buf[i] = 48 + (n % 10)
+        n = n / 10
+        if n == 0 break
     }
-    print(len, address_of(rev))
+    var first_digit = i
+    
+    if is_negative {
+        i = i - 1
+        buf[i] = 45
+    }
+    var start = i
+    
+    var write_pos = 0
+    loop {
+        buf[write_pos] = buf[i]
+        write_pos = write_pos + 1
+        i = i + 1
+        if i == 20 break
+    }
+    
+    print(write_pos, address_of(buf))
 }
 
 func main() {
@@ -58,6 +69,7 @@ func main() {
   var i2 : i32 = 321
   var i3 : i16 = 420
   var i4 : i64 = 840
+  var i5 = -1
   
   print_num(i1)
   print(1, address_of(nl))
@@ -66,5 +78,7 @@ func main() {
   print_num(i3)
   print(1, address_of(nl))
   print_num(i4)
+  print(1, address_of(nl))
+  print_num(i5)
   print(1, address_of(nl))
 }

@@ -26,29 +26,26 @@ func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
 }
 
 func print_hex_32b(num : i32) {
-    var n : i32 = num
-    var i = 0
     var buf : i8[9]
+    var n : i32 = num
+    
+    var i = 8
     loop {
         var nibble : i8 = n & 0xf
-        if nibble > 9 nibble = nibble + 55
-        else nibble = nibble + 48 
-        buf[i] = nibble
+        if nibble > 9 buf[i] = nibble + 55
+        else buf[i] = nibble + 48
+        # note: 55 is ascii for 'A' - 10
+        #       48 is ascii for '0'
         n = n >> 4
-        i = i + 1
+        if i == 0 break
+        i = i - 1
         if i == 4 {
-            buf[i] = 0x3a
-            i = i + 1
+            buf[i] = 0x3a  # ':' separator
+            i = i - 1
         }
-        if i == 9 break
     }
-    var rev : i8[9]
-    loop {
-      i = i - 1
-      rev[8 - i] = buf[i]
-      if i == 0 break
-    }
-    print(9, address_of(rev))
+    
+    print(9, address_of(buf))
 }
 
 func main() {
