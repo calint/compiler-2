@@ -44,7 +44,7 @@ class stmt_def_field final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);
-        os << "=";
+        std::print(os, "=");
         uops_.source_to(os);
         initial_value_.source_to(os);
     }
@@ -54,22 +54,22 @@ class stmt_def_field final : public statement {
         -> void override {
 
         tc.comment_source(*this, os, indent);
-        os << name_tk_.text() << ':';
+        std::print(os, "{}:", name_tk_.text());
         if (initial_value_.is_string()) {
-            os << " db '";
+            std::print(os, " db '");
             initial_value_.compile_to(os);
-            os << "'\n";
+            std::println(os, "'");
             toc::indent(os, indent);
             // the length of the string
-            os << name_tk_.text() << ".len equ $-" << name_tk_.text() << "\n";
+            std::println(os, "{}.len equ $-{}", name_tk_.text(),
+                         name_tk_.text());
             return;
         }
 
         // default type is i64
-        os << " dq ";
-        os << uops_.to_string();
+        std::print(os, " dq {}", uops_.to_string());
         initial_value_.compile_to(os);
-        os << '\n';
+        std::println(os, "");
     }
 
     [[nodiscard]] auto is_in_data_section() const -> bool override {

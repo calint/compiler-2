@@ -133,7 +133,7 @@ class stmt_def_var final : public statement {
             tc.make_ident_info(name_tk_, name_tk_.text(), false)};
 
         toc::indent(os, indent, true);
-        std::println(os, "clear array {} * {}  B = {} B", array_size_,
+        std::println(os, "clear array {} * {} B = {} B", array_size_,
                      dst_info.type_ref.size(),
                      array_size_ * dst_info.type_ref.size());
 
