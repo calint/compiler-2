@@ -35,20 +35,18 @@ func print_num(num) {
         n = -n
     }
     
-    var i = 19
+    var i = 20
     loop {
         i = i - 1
         buf[i] = 48 + (n % 10)
         n = n / 10
         if n == 0 break
     }
-    var first_digit = i
     
     if is_negative {
         i = i - 1
         buf[i] = 45
     }
-    var start = i
     
     var write_pos = 0
     loop {
