@@ -747,20 +747,16 @@ class toc final {
         os << " " << tk.text() << '\n';
     }
 
-    [[nodiscard]] auto is_identifier_register(std::string_view id) const
+    [[nodiscard]] auto is_nasm_register_operand(std::string_view nasm) const
         -> bool {
-
-        return std::ranges::find(all_registers_, id) != all_registers_.end();
+        return std::ranges::find(all_registers_, nasm) != all_registers_.end();
     }
 
-    [[nodiscard]] auto
-    is_identifier_direct_register_indirect_addressing(std::string_view id) const
-        -> bool {
-
-        if (auto expr{toc::extract_between_brackets(id)}; expr) {
+    [[nodiscard]] auto is_nasm_indirect(std::string_view nasm) const -> bool {
+        if (auto expr{toc::extract_between_brackets(nasm)}; expr) {
             const std::string reg{
                 extract_base_register_from_indirect_addressing(*expr)};
-            if (is_identifier_register(reg)) {
+            if (is_nasm_register_operand(reg)) {
                 return true;
             }
         }
@@ -795,8 +791,8 @@ class toc final {
 
         if (dst_size == src_size) {
             // same size on destination and source
-            if (not is_operand_memory(dst_nasm) or
-                not is_operand_memory(src_nasm)) {
+            if (not is_nasm_memory_operand(dst_nasm) or
+                not is_nasm_memory_operand(src_nasm)) {
                 // not both operands are memory references
                 // src might be constant
                 indent(os, indnt);
@@ -809,7 +805,7 @@ class toc final {
             const std::string reg{
                 alloc_scratch_register(src_loc_tk, os, indnt)};
             const std::string reg_sized{
-                get_register_operand_for_size(src_loc_tk, reg, dst_size)};
+                get_sized_register(src_loc_tk, reg, dst_size)};
             indent(os, indnt);
             os << "mov " << reg_sized << ", " << src_nasm << '\n';
             indent(os, indnt);
@@ -821,8 +817,8 @@ class toc final {
         if (dst_size > src_size) {
             // destination is larger than source
             // mov rax,byte[b] -> movsx
-            if (not is_operand_memory(dst_nasm) or
-                not is_operand_memory(src_nasm)) {
+            if (not is_nasm_memory_operand(dst_nasm) or
+                not is_nasm_memory_operand(src_nasm)) {
                 // not both operands are memory references
                 if (op == "mov") {
                     indent(os, indnt);
@@ -831,9 +827,8 @@ class toc final {
                 }
                 indent(os, indnt);
                 os << op << ' '
-                   << get_register_operand_for_size(src_loc_tk, dst_nasm,
-                                                    src_size)
-                   << ", " << src_nasm << '\n';
+                   << get_sized_register(src_loc_tk, dst_nasm, src_size) << ", "
+                   << src_nasm << '\n';
                 return;
             }
 
@@ -842,7 +837,7 @@ class toc final {
             const std::string reg{
                 alloc_scratch_register(src_loc_tk, os, indnt)};
             const std::string reg_sized{
-                get_register_operand_for_size(src_loc_tk, reg, dst_size)};
+                get_sized_register(src_loc_tk, reg, dst_size)};
             indent(os, indnt);
             os << "movsx " << reg_sized << ", " << src_nasm << '\n';
             indent(os, indnt);
@@ -854,18 +849,17 @@ class toc final {
         // dst_size < src_size
         // truncation will happen
 
-        if (not is_operand_memory(dst_nasm) or
-            not is_operand_memory(src_nasm)) {
+        if (not is_nasm_memory_operand(dst_nasm) or
+            not is_nasm_memory_operand(src_nasm)) {
             // not both operands are memory references
             indent(os, indnt);
-            if (is_identifier_register(src_nasm)) {
+            if (is_nasm_register_operand(src_nasm)) {
                 os << op << " " << dst_nasm << ", "
-                   << get_register_operand_for_size(src_loc_tk, src_nasm,
-                                                    dst_size)
+                   << get_sized_register(src_loc_tk, src_nasm, dst_size)
                    << '\n';
                 return;
             }
-            if (is_identifier_register(dst_nasm)) {
+            if (is_nasm_register_operand(dst_nasm)) {
                 //? destination is never a register
                 throw panic_exception{"unexpected code path toc:6"};
                 // os << op << " "
@@ -881,16 +875,17 @@ class toc final {
             return;
         }
 
-        if (is_operand_memory(dst_nasm) and is_operand_memory(src_nasm)) {
+        if (is_nasm_memory_operand(dst_nasm) and
+            is_nasm_memory_operand(src_nasm)) {
             // both operands are memory references
             // use scratch register for transfer
             const std::string reg{
                 alloc_scratch_register(src_loc_tk, os, indnt)};
             const std::string reg_sized{
-                get_register_operand_for_size(src_loc_tk, reg, dst_size)};
+                get_sized_register(src_loc_tk, reg, dst_size)};
             indent(os, indnt);
             os << "mov " << reg_sized << ", "
-               << change_memory_operand_size(src_nasm,
+               << resize_nasm_memory_operand(src_nasm,
                                              get_operand_size(dst_size))
                << '\n';
             indent(os, indnt);
@@ -905,7 +900,7 @@ class toc final {
     }
 
   private:
-    static auto change_memory_operand_size(std::string_view operand,
+    static auto resize_nasm_memory_operand(std::string_view operand,
                                            std::string_view new_size)
         -> std::string {
         auto pos = operand.find('[');
@@ -950,7 +945,7 @@ class toc final {
         if (operand.starts_with("byte")) {
             return 1;
         }
-        if (is_identifier_register(operand)) {
+        if (is_nasm_register_operand(operand)) {
             return get_size_from_operand_register(src_loc_tk, operand);
         }
 
@@ -1093,9 +1088,9 @@ class toc final {
                                  std::format("unknown register '{}'", operand)};
     }
 
-    static auto get_register_operand_for_size(const token& src_loc_tk,
-                                              std::string_view operand,
-                                              size_t size) -> std::string {
+    static auto get_sized_register(const token& src_loc_tk,
+                                   std::string_view operand, size_t size)
+        -> std::string {
 
         //? sort of ugly
         if (operand == "rax") {
@@ -1359,7 +1354,7 @@ class toc final {
                 id = identifier{frm.get_alias(id_base)};
                 id_base = id.id_base();
 
-                if (is_identifier_register(id_base) or fields_.has(id_base)) {
+                if (is_nasm_register_operand(id_base) or fields_.has(id_base)) {
                     return {id_base, frm};
                 }
 
@@ -1367,7 +1362,7 @@ class toc final {
                 if (std::optional<std::string_view> reg{
                         toc::extract_between_brackets(id_base)};
                     reg) {
-                    if (is_identifier_register(*reg)) {
+                    if (is_nasm_register_operand(*reg)) {
                         // a memory reference, e.g. qword[r15]
                         return {id_base, frm};
                     }
@@ -1459,7 +1454,7 @@ class toc final {
         }
 
         // is it a register?
-        if (is_identifier_register(id_base)) {
+        if (is_nasm_register_operand(id_base)) {
             //? unary ops?
             return {.id = std::string{ident},
                     .id_nasm = std::string{id_base},
@@ -1469,7 +1464,7 @@ class toc final {
         }
 
         // is it a register reference to memory?
-        if (is_identifier_direct_register_indirect_addressing(id_base)) {
+        if (is_nasm_indirect(id_base)) {
             // get the size: e.g. "dword [r15]"
             return {.id = std::string{ident},
                     .id_nasm = std::string{id_base},
@@ -1549,7 +1544,7 @@ class toc final {
     // statics
     //------------------------------------------------------------------------
 
-    static auto is_operand_memory(std::string_view operand) -> bool {
+    static auto is_nasm_memory_operand(std::string_view operand) -> bool {
         return operand.find_first_of('[') != std::string::npos;
     }
 
