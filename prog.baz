@@ -52,6 +52,7 @@ func foo(pt : point) {
 }
 
 # default argument type is `i64`
+
 func bar(arg) {
     if arg == 0 return
     arg = 0xff
