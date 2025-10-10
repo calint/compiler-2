@@ -27,7 +27,7 @@ class stmt_comment final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         uops_.source_to(os);
         statement::source_to(os);
-        os << line_ << '\n';
+        std::println(os, "{}", line_);
         ws1_.source_to(os);
     }
 

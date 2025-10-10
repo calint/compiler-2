@@ -98,25 +98,25 @@ class stmt_def_func final : public statement {
         }
         name_tk_.source_to(os);
         // function has parameters
-        os << "(";
+        std::print(os, "(");
         {
             size_t i{};
             for (const stmt_def_func_param& p : params_) {
                 if (i++) {
-                    os << ",";
+                    std::print(os, ",");
                 }
                 p.source_to(os);
             }
         }
-        os << ")";
+        std::print(os, ")");
         ws_after_params_.source_to(os);
         if (not returns_.empty()) {
             // return parameters
-            os << ":";
+            std::print(os, ":");
             size_t i{};
             for (const func_return_info& ret_info : returns_) {
                 if (i++) {
-                    os << ":";
+                    std::print(os, ":");
                 }
                 ret_info.type_tk.source_to(os);
                 ret_info.ident_tk.source_to(os);
@@ -127,13 +127,13 @@ class stmt_def_func final : public statement {
     auto source_def_comment_to(std::ostream& os) const -> void {
         std::stringstream ss;
         source_def_to(ss, true);
-        ss << '\n';
+        std::println(ss, "");
 
         const std::string src{ss.str()};
         // make comment friendly string replacing consecutive with one space
         const std::string res{
             std::regex_replace(src, std::regex(R"(\s+)"), " ")};
-        os << res << '\n';
+        std::println(os, "{}", res);
     }
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
@@ -191,7 +191,7 @@ class stmt_def_func final : public statement {
 
             // argument passed as named register
             toc::indent(os, indent + 1, true);
-            os << prm_name << ": " << prm_reg << '\n';
+            std::println(os, "{}: {}", prm_name, prm_reg);
 
             tc.alloc_named_register_or_throw(prm, os, indent + 1, prm_reg);
             tc.add_alias(std::string{prm_name}, prm_reg);

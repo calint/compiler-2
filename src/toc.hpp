@@ -643,12 +643,12 @@ class toc final {
     }
 
     auto finish(std::ostream& os) -> void {
-        std::println(os, "\n max scratch registers in use: {}",
+        std::println(os, "\n; max scratch registers in use: {}",
                      usage_max_scratch_regs_);
-        os << ";            max frames in use: " << usage_max_frame_count_
-           << '\n';
-        os << ";               max stack size: " << usage_max_stack_size_
-           << " B\n";
+        std::println(os, ";            max frames in use: {}",
+                     usage_max_frame_count_);
+        std::println(os, ";               max stack size: {} B",
+                     usage_max_stack_size_);
         assert(all_registers_.size() == all_registers_initial_size_);
         assert(allocated_registers_.empty());
         assert(allocated_registers_src_locs_.empty());
@@ -663,7 +663,7 @@ class toc final {
                              std::string_view reg) -> void {
 
         indent(os, indnt, true);
-        os << "free named register '" << reg << "'\n";
+        std::println(os, "free named register '{}'", reg);
 
         assert(allocated_registers_.back() == reg);
 
@@ -676,7 +676,7 @@ class toc final {
                                std::string_view reg) -> void {
 
         indent(os, indnt, true);
-        os << "free scratch register '" << reg << "'\n";
+        std::println(os, "free scratch register '{}'", reg);
 
         assert(allocated_registers_.back() == reg);
 
@@ -1144,7 +1144,7 @@ class toc final {
         -> void {
 
         indent(os, indnt);
-        os << "jmp " << label << '\n';
+        std::println(os, "jmp {}", label);
     }
 
     static auto asm_label([[maybe_unused]] const token& src_loc_tk,
@@ -1152,7 +1152,7 @@ class toc final {
                           std::string_view label) -> void {
 
         indent(os, indnt);
-        os << label << ":\n";
+        std::println(os, "{}:", label);
     }
 
     static auto asm_neg([[maybe_unused]] const token& src_loc_tk,
@@ -1160,7 +1160,7 @@ class toc final {
                         std::string_view operand) -> void {
 
         indent(os, indnt);
-        os << "neg " << operand << '\n';
+        std::println(os, "neg {}", operand);
     }
 
     static auto asm_not([[maybe_unused]] const token& src_loc_tk,
@@ -1168,7 +1168,7 @@ class toc final {
                         std::string_view operand) -> void {
 
         indent(os, indnt);
-        os << "not " << operand << '\n';
+        std::println(os, "not {}", operand);
     }
 
     static auto asm_pop([[maybe_unused]] const token& src_loc_tk,
@@ -1176,7 +1176,7 @@ class toc final {
                         std::string_view operand) -> void {
 
         indent(os, indnt);
-        os << "pop " << operand << '\n';
+        std::println(os, "pop {}", operand);
     }
 
     static auto asm_push([[maybe_unused]] const token& src_loc_tk,
@@ -1184,7 +1184,7 @@ class toc final {
                          std::string_view operand) -> void {
 
         indent(os, indnt);
-        os << "push " << operand << '\n';
+        std::println(os, "push {}", operand);
     }
 
     static auto asm_rep_movs([[maybe_unused]] const token& src_loc_tk,
@@ -1192,14 +1192,14 @@ class toc final {
         -> void {
 
         indent(os, indnt);
-        os << "rep movs" << size << '\n';
+        std::println(os, "rep movs{}", size);
     }
 
     static auto asm_rep_stosb([[maybe_unused]] const token& src_loc_tk,
                               std::ostream& os, size_t indnt) -> void {
 
         indent(os, indnt);
-        os << "rep stosb\n";
+        std::println(os, "rep stosb");
     }
 
     static auto get_field_offset_in_type(const token& src_loc_tk_,
@@ -1222,13 +1222,13 @@ class toc final {
                        const bool comment = false) -> void {
 
         if (comment) {
-            os << ';';
+            std::print(os, ";");
         }
         if (indnt == 0) {
             return;
         }
         for (size_t i{}; i < indnt; i++) {
-            os << "    ";
+            std::print(os, "    ");
         }
     }
 
