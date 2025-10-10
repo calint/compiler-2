@@ -59,16 +59,16 @@ class stmt_def_type final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);
-        os << '{';
+        std::print(os, "{{");
         ws_.source_to(os);
         size_t i{};
         for (const stmt_def_type_field& fld : fields_) {
             if (i++) {
-                os << ',';
+                std::print(os, ",");
             }
             fld.source_to(os);
         }
-        os << '}';
+        std::print(os, "}}");
     }
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,

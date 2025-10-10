@@ -31,6 +31,6 @@ class stmt_call_asm_syscall final : public stmt_call {
         }
 
         toc::indent(os, indent);
-        os << "syscall\n";
+        std::println(os, "syscall");
     }
 };

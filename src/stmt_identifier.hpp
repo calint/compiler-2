@@ -119,13 +119,13 @@ class stmt_identifier : public statement {
         int sep{0};
         for (const identifier_elem& e : elems_) {
             if (sep++) {
-                os << '.';
+                std::print(os, ".");
             }
             e.name_tk.source_to(os);
             if (e.has_array_index_expr) {
-                os << '[';
+                std::print(os, "[");
                 e.array_index_expr->source_to(os);
-                os << ']';
+                std::print(os, "]");
             }
             e.ws1.source_to(os);
         }

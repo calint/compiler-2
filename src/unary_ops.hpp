@@ -49,7 +49,7 @@ class unary_ops final {
     auto source_to(std::ostream& os) const -> void {
         ws_before_.source_to(os);
         for (const char op : ops_) {
-            os << op;
+            std::print(os, "{}", op);
         }
     }
 

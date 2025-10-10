@@ -186,10 +186,10 @@ class expr_ops_list final : public expression {
         const size_t n{ops_.size()};
         for (size_t i{}; i < n; i++) {
             const char op{ops_.at(i)};
-            os << op;
+            std::print(os, "{}", op);
             if (op == '<' or op == '>') {
                 // handle case << and >>
-                os << op;
+                std::print(os, "{}", op);
             }
             exprs_.at(i + 1)->source_to(os);
         }

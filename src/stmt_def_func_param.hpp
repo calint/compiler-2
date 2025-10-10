@@ -43,7 +43,7 @@ class stmt_def_func_param final : public statement {
         if (type_tk_.is_text("")) {
             return;
         }
-        os << ":";
+        std::print(os, ":");
         type_tk_.source_to(os);
     }
 

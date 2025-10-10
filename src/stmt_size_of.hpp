@@ -43,9 +43,9 @@ class stmt_size_of : public expression {
 
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
-        os << "(";
+        std::print(os, "(");
         stmt_ident_.source_to(os);
-        os << ")";
+        std::print(os, ")");
         ws1_.source_to(os);
     }
 

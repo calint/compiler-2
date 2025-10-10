@@ -31,13 +31,13 @@ class token final {
 
     auto source_to(std::ostream& os) const -> void {
         if (not is_str_) {
-            os << ws_left_ << text_ << ws_right_;
+            std::print(os, "{}{}{}", ws_left_, text_, ws_right_);
             return;
         }
         std::string const name_str{text_};
-        os << ws_left_ << '"'
-           << std::regex_replace(name_str, std::regex("\n"), "\\n") << '"'
-           << ws_right_;
+        std::print(os, "{}\"{}\"{}", ws_left_,
+                   std::regex_replace(name_str, std::regex("\n"), "\\n"),
+                   ws_right_);
     }
 
     auto compile_to(std::ostream& os) const -> void {
