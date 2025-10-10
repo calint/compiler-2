@@ -1,0 +1,67 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+func print(len : reg_rdx, ptr : reg_rsi) {
+    mov(rax, 1)   # write system call
+    mov(rdi, 1)   # file descriptor for standard out
+    mov(rsi, ptr) # buffer address 
+    mov(rdx, len) # buffer size
+    syscall()
+}
+
+func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+    mov(rax, 0)   # read system call
+    mov(rdi, 0)   # file descriptor for standard input
+    mov(rsi, ptr) # buffer address
+    mov(rdx, len) # buffer size
+    syscall()
+    mov(nbytes, rax) # return value
+}
+
+func print_hex_32b(num : i32) {
+    var n : i32 = num
+    var i = 0
+    var buf : i8[9]
+    loop {
+        var nibble : i8 = n & 0xf
+        if nibble > 9 nibble = nibble + 55
+        else nibble = nibble + 48 
+        buf[i] = nibble
+        n = n >> 4
+        i = i + 1
+        if i == 4 {
+            buf[i] = 0x3a
+            i = i + 1
+        }
+        if i == 9 break
+    }
+    var rev : i8[9]
+    loop {
+      i = i - 1
+      rev[8 - i] = buf[i]
+      if i == 0 break
+    }
+    print(9, address_of(rev))
+}
+
+func main() {
+    var nl : i8[1]
+    nl[0] = 0x0a
+    print_hex_32b(0x1234abcd)
+    print(1, address_of(nl))
+    print_hex_32b(1)
+    print(1, address_of(nl))
+    print_hex_32b(0xfedc1234)
+    print(1, address_of(nl))
+    print_hex_32b(-1)
+    print(1, address_of(nl))
+    print_hex_32b(0x10a0b0c0)
+    print(1, address_of(nl))
+}
