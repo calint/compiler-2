@@ -247,6 +247,7 @@ class toc final {
     size_t usage_max_frame_count_{};
     size_t usage_max_stack_size_{};
     const std::regex regex_ws{R"(\s+)"};
+    const std::regex regex_trim{R"(^\s+|\s+$)"};
 
   public:
     explicit toc(const std::string& source) : source_{source} {}
@@ -567,13 +568,10 @@ class toc final {
 
         std::stringstream ss;
         st.source_to(ss);
-        std::string res{std::regex_replace(ss.str(), regex_ws, " ")};
-        std::print(os, "{}", res);
-        // trim end of string
-        if (not res.empty() && res.back() == ' ') {
-            res.pop_back();
-        }
-        std::println(os, "");
+        std::print(
+            os, "{}\n",
+            std::regex_replace(std::regex_replace(ss.str(), regex_trim, ""),
+                               regex_ws, " "));
     }
 
     auto comment_source(std::ostream& os, std::string_view dst,
