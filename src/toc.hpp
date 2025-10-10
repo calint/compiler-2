@@ -371,39 +371,6 @@ class toc final {
         return std::format("{}:{}", line, col);
     }
 
-    static auto get_field_offset_in_type(const token& src_loc_tk_,
-                                         const type& tp,
-                                         std::string_view field_name)
-        -> size_t {
-
-        size_t accum{};
-        for (const type_field& f : tp.fields()) {
-            if (f.name == field_name) {
-                return accum;
-            }
-            accum += f.size;
-        }
-        throw compiler_exception{src_loc_tk_,
-                                 "unexpected code path stmt_assign_var:1"};
-    }
-
-    static auto line_and_col_num_for_char_index(size_t at_line,
-                                                size_t char_index_in_source,
-                                                std::string_view src)
-        -> std::pair<size_t, size_t> {
-
-        size_t at_col{0};
-        while (src[char_index_in_source] != '\n') {
-            at_col++;
-            if (char_index_in_source == 0) {
-                break;
-            }
-            char_index_in_source--;
-        }
-
-        return {at_line, at_col};
-    }
-
     auto finish(std::ostream& os) -> void {
         os << "\n; max scratch registers in use: " << usage_max_scratch_regs_
            << '\n';
@@ -686,17 +653,17 @@ class toc final {
         throw compiler_exception{src_loc_tk, "not in a function"};
     }
 
-    [[nodiscard]] auto get_func_returns(const token& src_loc_tk) const
-        -> const std::vector<func_return_info>& {
-
-        for (const auto& frm : frames_ | std::views::reverse) {
-            if (frm.is_func()) {
-                return frm.get_func_returns_infos();
-            }
-        }
-
-        throw compiler_exception{src_loc_tk, "not in a function"};
-    }
+    // [[nodiscard]] auto get_func_returns(const token& src_loc_tk) const
+    //     -> const std::vector<func_return_info>& {
+    //
+    //     for (const auto& frm : frames_ | std::views::reverse) {
+    //         if (frm.is_func()) {
+    //             return frm.get_func_returns_infos();
+    //         }
+    //     }
+    //
+    //     throw compiler_exception{src_loc_tk, "not in a function"};
+    // }
 
     auto comment_source(const statement& st, std::ostream& os,
                         size_t indnt) const -> void {
@@ -747,37 +714,6 @@ class toc final {
         os << " " << tk.text() << '\n';
     }
 
-    [[nodiscard]] auto is_nasm_register_operand(std::string_view nasm) const
-        -> bool {
-        return std::ranges::find(all_registers_, nasm) != all_registers_.end();
-    }
-
-    [[nodiscard]] auto is_nasm_indirect(std::string_view nasm) const -> bool {
-        if (auto expr{toc::extract_between_brackets(nasm)}; expr) {
-            const std::string reg{
-                extract_base_register_from_indirect_addressing(*expr)};
-            if (is_nasm_register_operand(reg)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-  private:
-    static auto
-    extract_base_register_from_indirect_addressing(std::string_view addressing)
-        -> std::string_view {
-
-        auto pos{addressing.find_first_of(" +")};
-        if (pos == std::string_view::npos) {
-            return addressing;
-        }
-
-        return addressing.substr(0, pos);
-    }
-
-  public:
     auto asm_cmd(const token& src_loc_tk, std::ostream& os, size_t indnt,
                  std::string_view op, std::string_view dst_nasm,
                  std::string_view src_nasm) -> void {
@@ -826,7 +762,7 @@ class toc final {
                     return;
                 }
 
-                if (is_nasm_register_operand(dst_nasm)) {
+                if (is_nasm_register(dst_nasm)) {
                     // note: when doing arithmetic between 2 memory locations
                     //       this code path is triggered by the use of an
                     //       in-between scratch register
@@ -861,13 +797,13 @@ class toc final {
                 is_nasm_memory_operand(src_nasm))) {
             // not both operands are memory references
             indent(os, indnt);
-            if (is_nasm_register_operand(src_nasm)) {
+            if (is_nasm_register(src_nasm)) {
                 os << op << " " << dst_nasm << ", "
                    << get_sized_register(src_loc_tk, src_nasm, dst_size)
                    << '\n';
                 return;
             }
-            if (is_nasm_register_operand(dst_nasm)) {
+            if (is_nasm_register(dst_nasm)) {
                 //? destination is never a register
                 throw panic_exception{"unexpected code path toc:6"};
                 // os << op << " "
@@ -899,19 +835,23 @@ class toc final {
         free_scratch_register(os, indnt, reg);
     }
 
-  private:
-    static auto resize_nasm_memory_operand(std::string_view operand,
-                                           std::string_view new_size)
-        -> std::string {
+    static auto line_and_col_num_for_char_index(size_t at_line,
+                                                size_t char_index_in_source,
+                                                std::string_view src)
+        -> std::pair<size_t, size_t> {
 
-        auto pos = operand.find('[');
-        if (pos == std::string_view::npos) {
-            throw panic_exception{"unexpected code path toc:5"};
+        size_t at_col{0};
+        while (src[char_index_in_source] != '\n') {
+            at_col++;
+            if (char_index_in_source == 0) {
+                break;
+            }
+            char_index_in_source--;
         }
-        return std::format("{} {}", new_size, operand.substr(pos));
+
+        return {at_line, at_col};
     }
 
-  public:
     auto set_type_void(const type& tpe) -> void { type_void_ = &tpe; }
 
     [[nodiscard]] auto get_type_void() const -> const type& {
@@ -930,70 +870,8 @@ class toc final {
         return *type_bool_;
     }
 
-    [[nodiscard]] auto get_size_from_operand(const token& src_loc_tk,
-                                             std::string_view operand) const
-        -> size_t {
-        //? sort of ugly
-        if (operand.starts_with("qword")) {
-            return 8;
-        }
-        if (operand.starts_with("dword")) {
-            return 4;
-        }
-        if (operand.starts_with("word")) {
-            return 2;
-        }
-        if (operand.starts_with("byte")) {
-            return 1;
-        }
-        if (is_nasm_register_operand(operand)) {
-            return get_size_from_operand_register(src_loc_tk, operand);
-        }
-
-        // constant
-        return get_type_default().size();
-    }
-
-    [[nodiscard]] static auto get_operand_size(const size_t size)
-        -> std::string_view {
-        switch (size) {
-        case 1:
-            return "byte";
-        case 2:
-            return "word";
-        case 4:
-            return "dword";
-        case 8:
-            return "qword";
-        default:
-            throw panic_exception{"unexpected code path toc:4"};
-        }
-    }
-
-    [[nodiscard]] auto
-    get_builtin_type_for_operand(const token& src_loc_tk_,
-                                 std::string_view operand) const
-        -> const type& {
-
-        //? sort of ugly
-        if (operand.starts_with("qword")) {
-            return get_type_or_throw(src_loc_tk_, "i64");
-        }
-        if (operand.starts_with("dword")) {
-            return get_type_or_throw(src_loc_tk_, "i32");
-        }
-        if (operand.starts_with("word")) {
-            return get_type_or_throw(src_loc_tk_, "i16");
-        }
-        if (operand.starts_with("byte")) {
-            return get_type_or_throw(src_loc_tk_, "i8");
-        }
-
-        throw panic_exception{"unexpected code path toc:1"};
-    }
-
     // -------------------------------------------------------------------------
-    // statics
+    // public statics
     // -------------------------------------------------------------------------
 
     // pragma below for clang++ to not generate warning stemming from
@@ -1045,7 +923,415 @@ class toc final {
         return std::nullopt;
     }
 #pragma clang diagnostic pop
+
+    static auto get_field_offset_in_type(const token& src_loc_tk_,
+                                         const type& tp,
+                                         std::string_view field_name)
+        -> size_t {
+
+        size_t accum{};
+        for (const type_field& f : tp.fields()) {
+            if (f.name == field_name) {
+                return accum;
+            }
+            accum += f.size;
+        }
+        throw compiler_exception{src_loc_tk_,
+                                 "unexpected code path stmt_assign_var:1"};
+    }
+
+    static auto asm_push([[maybe_unused]] const token& src_loc_tk,
+                         std::ostream& os, size_t indnt,
+                         std::string_view operand) -> void {
+
+        indent(os, indnt);
+        os << "push " << operand << '\n';
+    }
+
+    static auto asm_pop([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, size_t indnt,
+                        std::string_view operand) -> void {
+
+        indent(os, indnt);
+        os << "pop " << operand << '\n';
+    }
+
+    static auto asm_jmp([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, size_t indnt, std::string_view label)
+        -> void {
+
+        indent(os, indnt);
+        os << "jmp " << label << '\n';
+    }
+
+    static auto asm_label([[maybe_unused]] const token& src_loc_tk,
+                          std::ostream& os, size_t indnt,
+                          std::string_view label) -> void {
+
+        indent(os, indnt);
+        os << label << ":\n";
+    }
+
+    static auto asm_neg([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, size_t indnt,
+                        std::string_view operand) -> void {
+
+        indent(os, indnt);
+        os << "neg " << operand << '\n';
+    }
+
+    static auto asm_not([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, size_t indnt,
+                        std::string_view operand) -> void {
+
+        indent(os, indnt);
+        os << "not " << operand << '\n';
+    }
+
+    static auto asm_rep_stosb([[maybe_unused]] const token& src_loc_tk,
+                              std::ostream& os, size_t indnt) -> void {
+
+        indent(os, indnt);
+        os << "rep stosb\n";
+    }
+
+    static auto asm_rep_movs([[maybe_unused]] const token& src_loc_tk,
+                             std::ostream& os, size_t indnt, char size)
+        -> void {
+
+        indent(os, indnt);
+        os << "rep movs" << size << '\n';
+    }
+
+    static auto indent(std::ostream& os, size_t indnt,
+                       const bool comment = false) -> void {
+
+        if (comment) {
+            os << ';';
+        }
+        if (indnt == 0) {
+            return;
+        }
+        for (size_t i{}; i < indnt; i++) {
+            os << "    ";
+        }
+    }
+
   private:
+    [[nodiscard]] auto get_size_from_operand(const token& src_loc_tk,
+                                             std::string_view operand) const
+        -> size_t {
+        //? sort of ugly
+        if (operand.starts_with("qword")) {
+            return 8;
+        }
+        if (operand.starts_with("dword")) {
+            return 4;
+        }
+        if (operand.starts_with("word")) {
+            return 2;
+        }
+        if (operand.starts_with("byte")) {
+            return 1;
+        }
+        if (is_nasm_register(operand)) {
+            return get_size_from_operand_register(src_loc_tk, operand);
+        }
+
+        // constant
+        return get_type_default().size();
+    }
+
+    [[nodiscard]] static auto get_operand_size(const size_t size)
+        -> std::string_view {
+        switch (size) {
+        case 1:
+            return "byte";
+        case 2:
+            return "word";
+        case 4:
+            return "dword";
+        case 8:
+            return "qword";
+        default:
+            throw panic_exception{"unexpected code path toc:4"};
+        }
+    }
+
+    [[nodiscard]] auto
+    get_builtin_type_for_operand(const token& src_loc_tk_,
+                                 std::string_view operand) const
+        -> const type& {
+
+        //? sort of ugly
+        if (operand.starts_with("qword")) {
+            return get_type_or_throw(src_loc_tk_, "i64");
+        }
+        if (operand.starts_with("dword")) {
+            return get_type_or_throw(src_loc_tk_, "i32");
+        }
+        if (operand.starts_with("word")) {
+            return get_type_or_throw(src_loc_tk_, "i16");
+        }
+        if (operand.starts_with("byte")) {
+            return get_type_or_throw(src_loc_tk_, "i8");
+        }
+
+        throw panic_exception{"unexpected code path toc:1"};
+    }
+
+    [[nodiscard]] auto is_nasm_register(std::string_view nasm) const -> bool {
+        return std::ranges::find(all_registers_, nasm) != all_registers_.end();
+    }
+
+    [[nodiscard]] auto is_nasm_indirect(std::string_view nasm) const -> bool {
+        if (auto expr{toc::extract_between_brackets(nasm)}; expr) {
+            const std::string reg{
+                extract_base_register_from_indirect_addressing(*expr)};
+            if (is_nasm_register(reg)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    auto refresh_usage() -> void {
+        usage_max_frame_count_ =
+            std::max(frames_.size(), usage_max_frame_count_);
+    }
+
+    // returns empty id and frame[0] if 'ident' not found
+    auto get_id_and_frame_for_identifier(std::string_view ident)
+        -> std::pair<std::string, frame&> {
+
+        identifier id{ident};
+        std::string id_base{id.id_base()};
+
+        // traverse the frames and try to find the identifier
+        for (auto& frm : frames_ | std::views::reverse) {
+            // does scope contain the variable?
+            if (frm.has_var(id_base)) {
+                // yes, return result
+                return {id_base, frm};
+            }
+
+            // is the frame a function?
+            if (frm.is_func()) {
+                // yes, is identifier an alias?
+                if (not frm.has_alias(id_base)) {
+                    // no, return not found
+                    return {"", frames_.at(0)};
+                }
+
+                // yes, continue resolving aliases until a variable, field
+                // or register
+
+                // note: when compiling in "dry-run" at 'stmt_def_func' the
+                //       return variable is in the frame of the function as
+                //       a variable, however when compiling the 'stmt_call'
+                //       the function is inlined and the return is added as
+                //       an alias to a variable in a higher context, thus
+                //       aliases are followed to find the variable
+
+                id = identifier{frm.get_alias(id_base)};
+                id_base = id.id_base();
+
+                if (is_nasm_register(id_base) or fields_.has(id_base)) {
+                    return {id_base, frm};
+                }
+
+                // check if destination is of type: e.g. qword[r15]
+                if (std::optional<std::string_view> reg{
+                        toc::extract_between_brackets(id_base)};
+                    reg) {
+                    if (is_nasm_register(*reg)) {
+                        // a memory reference, e.g. qword[r15]
+                        return {id_base, frm};
+                    }
+                }
+            }
+        }
+
+        throw panic_exception{"unexpected code path toc:2"};
+    }
+
+    [[nodiscard]] auto get_stack_size() const -> size_t {
+        size_t nbytes{};
+        for (const auto& frm : frames_) {
+            nbytes += frm.allocated_stack_size();
+        }
+        return nbytes;
+    }
+
+    [[nodiscard]] auto make_ident_info_or_empty(const token& src_loc,
+                                                std::string_view ident) const
+        -> ident_info {
+
+        identifier id{ident};
+        // get the root of an identifier: example p.x -> p
+        std::string_view id_base{id.id_base()};
+        // traverse the frames and resolve the id_nasm (which might be an
+        // alias) to a variable, field, register or constant
+        size_t i{frames_.size()};
+        while (i) {
+            i--;
+            const frame& frm{frames_.at(i)};
+            // does scope contain the variable?
+            if (frm.has_var(id_base)) {
+                // yes, found
+                break;
+            }
+            // is the frame a function?
+            if (frm.is_func()) {
+                // is it an alias defined by the function?
+                if (not frm.has_alias(id_base)) {
+                    // no, it is not
+                    break;
+                }
+                // yes, continue resolving alias until it is a variable,
+                // field, register or constant
+                const identifier new_id{frm.get_alias(id_base)};
+                id_base = new_id.id_base();
+                // is this a path e.g. 'pt.x' or just 'res'?
+                if (id.path().size() == 1) {
+                    // this is an alias of type: res -> p.x
+                    id = new_id;
+                } else {
+                    // this is an alias of type: pt.x -> p.x
+                    id.set_base(id_base);
+                }
+                continue;
+            }
+        }
+
+        const frame& frm{frames_.at(i)};
+
+        // is it a variable?
+        if (frm.has_var(id_base)) {
+            const var_info& var{frm.get_var_const_ref(id_base)};
+            accessor_info ai{var.type_ref.accessor(
+                src_loc, id.path(), var.stack_idx, var.is_array, var.array_size,
+                var.type_ref.size() * (var.is_array ? var.array_size : 1))};
+            return {.id = std::string{ident},
+                    .id_nasm = ai.id_nasm,
+                    .type_ref = ai.tp,
+                    .stack_ix = var.stack_idx,
+                    .is_array = ai.is_array,
+                    .array_size = ai.array_size,
+                    .size = ai.size,
+                    .ident_type = ident_info::ident_type::VAR};
+        }
+
+        // is it a register?
+        if (is_nasm_register(id_base)) {
+            //? unary ops?
+            return {.id = std::string{ident},
+                    .id_nasm = std::string{id_base},
+                    .type_ref = get_type_default(),
+                    .size = get_type_default().size(),
+                    .ident_type = ident_info::ident_type::REGISTER};
+        }
+
+        // is it a register reference to memory?
+        if (is_nasm_indirect(id_base)) {
+            // get the size: e.g. "dword [r15]"
+            return {.id = std::string{ident},
+                    .id_nasm = std::string{id_base},
+                    .type_ref = get_builtin_type_for_operand(src_loc, id_base),
+                    .size = get_size_from_operand(src_loc, id_base),
+                    .ident_type = ident_info::ident_type::REGISTER};
+        }
+
+        // is it a field?
+        if (fields_.has(id_base)) {
+            const std::string_view after_dot =
+                id.path().size() == 1 ? ""
+                                      : id.path().at(1); //? bug. not correct
+            if (after_dot == "len") {
+                return {.id = std::string{ident},
+                        .id_nasm = std::format("{}.len", id_base),
+                        .type_ref = get_type_default(),
+                        .size = get_type_default().size(),
+                        .ident_type = ident_info::ident_type::IMPLIED};
+            }
+            const field_info& fi{fields_.get_const_ref(id_base)};
+            if (fi.is_str) {
+                return {.id = std::string{ident},
+                        .id_nasm = std::string{id_base},
+                        .type_ref = get_type_default(),
+                        .ident_type = ident_info::ident_type::FIELD};
+            }
+            //? assumes qword
+            return {.id = std::string{ident},
+                    .id_nasm = std::format("qword [{}]", id_base),
+                    .type_ref = get_type_default(),
+                    .size = get_type_default().size(),
+                    .ident_type = ident_info::ident_type::FIELD};
+        }
+
+        // is 'id' an integer?
+        if (const std::optional<int64_t> value{parse_to_constant(id_base)};
+            value) {
+            return {.id = std::string{ident},
+                    .id_nasm = std::string{id_base},
+                    .const_value = *value,
+                    .type_ref = get_type_default(),
+                    .size = get_type_default().size()};
+        }
+
+        // is it a boolean constant?
+        if (id_base == "true") {
+            return {.id = std::string{ident},
+                    .id_nasm = "true",
+                    .const_value = 1,
+                    .type_ref = get_type_bool(),
+                    .size = get_type_bool().size()};
+        }
+
+        if (id_base == "false") {
+            return {.id = std::string{ident},
+                    .id_nasm = "false",
+                    .const_value = 0,
+                    .type_ref = get_type_bool(),
+                    .size = get_type_bool().size()};
+        }
+
+        // not resolved, return empty info
+        return {
+            .id = "",
+            .id_nasm = "",
+            .type_ref = get_type_void(),
+        };
+    }
+
+    //------------------------------------------------------------------------
+    // private statics
+    //------------------------------------------------------------------------
+
+    static auto resize_nasm_memory_operand(std::string_view operand,
+                                           std::string_view new_size)
+        -> std::string {
+
+        auto pos = operand.find('[');
+        if (pos == std::string_view::npos) {
+            throw panic_exception{"unexpected code path toc:5"};
+        }
+        return std::format("{} {}", new_size, operand.substr(pos));
+    }
+
+    static auto
+    extract_base_register_from_indirect_addressing(std::string_view addressing)
+        -> std::string_view {
+
+        auto pos{addressing.find_first_of(" +")};
+        if (pos == std::string_view::npos) {
+            return addressing;
+        }
+
+        return addressing.substr(0, pos);
+    }
+
     static auto get_size_from_operand_register(const token& src_loc_tk,
                                                std::string_view operand)
         -> size_t {
@@ -1241,311 +1527,6 @@ class toc final {
                                         size, operand)};
         }
     }
-
-  public:
-    static auto asm_push([[maybe_unused]] const token& src_loc_tk,
-                         std::ostream& os, size_t indnt,
-                         std::string_view operand) -> void {
-
-        indent(os, indnt);
-        os << "push " << operand << '\n';
-    }
-
-    static auto asm_pop([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt,
-                        std::string_view operand) -> void {
-
-        indent(os, indnt);
-        os << "pop " << operand << '\n';
-    }
-
-    static auto asm_jmp([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt, std::string_view label)
-        -> void {
-
-        indent(os, indnt);
-        os << "jmp " << label << '\n';
-    }
-
-    static auto asm_label([[maybe_unused]] const token& src_loc_tk,
-                          std::ostream& os, size_t indnt,
-                          std::string_view label) -> void {
-
-        indent(os, indnt);
-        os << label << ":\n";
-    }
-
-    static auto asm_neg([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt,
-                        std::string_view operand) -> void {
-
-        indent(os, indnt);
-        os << "neg " << operand << '\n';
-    }
-
-    static auto asm_not([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt,
-                        std::string_view operand) -> void {
-
-        indent(os, indnt);
-        os << "not " << operand << '\n';
-    }
-
-    static auto asm_rep_stosb([[maybe_unused]] const token& src_loc_tk,
-                              std::ostream& os, size_t indnt) -> void {
-
-        indent(os, indnt);
-        os << "rep stosb\n";
-    }
-
-    static auto asm_rep_movs([[maybe_unused]] const token& src_loc_tk,
-                             std::ostream& os, size_t indnt, char size)
-        -> void {
-
-        indent(os, indnt);
-        os << "rep movs" << size << '\n';
-    }
-
-    static auto indent(std::ostream& os, size_t indnt,
-                       const bool comment = false) -> void {
-
-        if (comment) {
-            os << ';';
-        }
-        if (indnt == 0) {
-            return;
-        }
-        for (size_t i{}; i < indnt; i++) {
-            os << "    ";
-        }
-    }
-
-  private:
-    // returns empty id and frame[0] if 'ident' not found
-    auto get_id_and_frame_for_identifier(std::string_view ident)
-        -> std::pair<std::string, frame&> {
-
-        identifier id{ident};
-        std::string id_base{id.id_base()};
-
-        // traverse the frames and try to find the identifier
-        for (auto& frm : frames_ | std::views::reverse) {
-            // does scope contain the variable?
-            if (frm.has_var(id_base)) {
-                // yes, return result
-                return {id_base, frm};
-            }
-
-            // is the frame a function?
-            if (frm.is_func()) {
-                // yes, is identifier an alias?
-                if (not frm.has_alias(id_base)) {
-                    // no, return not found
-                    return {"", frames_.at(0)};
-                }
-
-                // yes, continue resolving aliases until a variable, field
-                // or register
-
-                // note: when compiling in "dry-run" at 'stmt_def_func' the
-                //       return variable is in the frame of the function as
-                //       a variable, however when compiling the 'stmt_call'
-                //       the function is inlined and the return is added as
-                //       an alias to a variable in a higher context, thus
-                //       aliases are followed to find the variable
-
-                id = identifier{frm.get_alias(id_base)};
-                id_base = id.id_base();
-
-                if (is_nasm_register_operand(id_base) or fields_.has(id_base)) {
-                    return {id_base, frm};
-                }
-
-                // check if destination is of type: e.g. qword[r15]
-                if (std::optional<std::string_view> reg{
-                        toc::extract_between_brackets(id_base)};
-                    reg) {
-                    if (is_nasm_register_operand(*reg)) {
-                        // a memory reference, e.g. qword[r15]
-                        return {id_base, frm};
-                    }
-                }
-            }
-        }
-
-        throw panic_exception{"unexpected code path toc:2"};
-    }
-
-    // [[nodiscard]] auto get_current_function_stack_size() const -> size_t {
-    //     assert(not frames_.empty());
-    //     size_t nbytes{};
-    //     for (const auto& frm : frames_ | std::views::reverse) {
-    //         nbytes += frm.allocated_stack_size();
-    //         if (frm.is_func()) {
-    //             return nbytes;
-    //         }
-    //     }
-    //
-    //     throw panic_exception{"unexpected code path toc:3"};
-    // }
-
-    [[nodiscard]] auto get_stack_size() const -> size_t {
-        size_t nbytes{};
-        for (const auto& frm : frames_) {
-            nbytes += frm.allocated_stack_size();
-        }
-        return nbytes;
-    }
-
-    [[nodiscard]] auto make_ident_info_or_empty(const token& src_loc,
-                                                std::string_view ident) const
-        -> ident_info {
-
-        identifier id{ident};
-        // get the root of an identifier: example p.x -> p
-        std::string_view id_base{id.id_base()};
-        // traverse the frames and resolve the id_nasm (which might be an
-        // alias) to a variable, field, register or constant
-        size_t i{frames_.size()};
-        while (i) {
-            i--;
-            const frame& frm{frames_.at(i)};
-            // does scope contain the variable?
-            if (frm.has_var(id_base)) {
-                // yes, found
-                break;
-            }
-            // is the frame a function?
-            if (frm.is_func()) {
-                // is it an alias defined by the function?
-                if (not frm.has_alias(id_base)) {
-                    // no, it is not
-                    break;
-                }
-                // yes, continue resolving alias until it is a variable,
-                // field, register or constant
-                const identifier new_id{frm.get_alias(id_base)};
-                id_base = new_id.id_base();
-                // is this a path e.g. 'pt.x' or just 'res'?
-                if (id.path().size() == 1) {
-                    // this is an alias of type: res -> p.x
-                    id = new_id;
-                } else {
-                    // this is an alias of type: pt.x -> p.x
-                    id.set_base(id_base);
-                }
-                continue;
-            }
-        }
-
-        const frame& frm{frames_.at(i)};
-
-        // is it a variable?
-        if (frm.has_var(id_base)) {
-            const var_info& var{frm.get_var_const_ref(id_base)};
-            accessor_info ai{var.type_ref.accessor(
-                src_loc, id.path(), var.stack_idx, var.is_array, var.array_size,
-                var.type_ref.size() * (var.is_array ? var.array_size : 1))};
-            return {.id = std::string{ident},
-                    .id_nasm = ai.id_nasm,
-                    .type_ref = ai.tp,
-                    .stack_ix = var.stack_idx,
-                    .is_array = ai.is_array,
-                    .array_size = ai.array_size,
-                    .size = ai.size,
-                    .ident_type = ident_info::ident_type::VAR};
-        }
-
-        // is it a register?
-        if (is_nasm_register_operand(id_base)) {
-            //? unary ops?
-            return {.id = std::string{ident},
-                    .id_nasm = std::string{id_base},
-                    .type_ref = get_type_default(),
-                    .size = get_type_default().size(),
-                    .ident_type = ident_info::ident_type::REGISTER};
-        }
-
-        // is it a register reference to memory?
-        if (is_nasm_indirect(id_base)) {
-            // get the size: e.g. "dword [r15]"
-            return {.id = std::string{ident},
-                    .id_nasm = std::string{id_base},
-                    .type_ref = get_builtin_type_for_operand(src_loc, id_base),
-                    .size = get_size_from_operand(src_loc, id_base),
-                    .ident_type = ident_info::ident_type::REGISTER};
-        }
-
-        // is it a field?
-        if (fields_.has(id_base)) {
-            const std::string_view after_dot =
-                id.path().size() == 1 ? ""
-                                      : id.path().at(1); //? bug. not correct
-            if (after_dot == "len") {
-                return {.id = std::string{ident},
-                        .id_nasm = std::format("{}.len", id_base),
-                        .type_ref = get_type_default(),
-                        .size = get_type_default().size(),
-                        .ident_type = ident_info::ident_type::IMPLIED};
-            }
-            const field_info& fi{fields_.get_const_ref(id_base)};
-            if (fi.is_str) {
-                return {.id = std::string{ident},
-                        .id_nasm = std::string{id_base},
-                        .type_ref = get_type_default(),
-                        .ident_type = ident_info::ident_type::FIELD};
-            }
-            //? assumes qword
-            return {.id = std::string{ident},
-                    .id_nasm = std::format("qword [{}]", id_base),
-                    .type_ref = get_type_default(),
-                    .size = get_type_default().size(),
-                    .ident_type = ident_info::ident_type::FIELD};
-        }
-
-        // is 'id' an integer?
-        if (const std::optional<int64_t> value{parse_to_constant(id_base)};
-            value) {
-            return {.id = std::string{ident},
-                    .id_nasm = std::string{id_base},
-                    .const_value = *value,
-                    .type_ref = get_type_default(),
-                    .size = get_type_default().size()};
-        }
-
-        // is it a boolean constant?
-        if (id_base == "true") {
-            return {.id = std::string{ident},
-                    .id_nasm = "true",
-                    .const_value = 1,
-                    .type_ref = get_type_bool(),
-                    .size = get_type_bool().size()};
-        }
-
-        if (id_base == "false") {
-            return {.id = std::string{ident},
-                    .id_nasm = "false",
-                    .const_value = 0,
-                    .type_ref = get_type_bool(),
-                    .size = get_type_bool().size()};
-        }
-
-        // not resolved, return empty info
-        return {
-            .id = "",
-            .id_nasm = "",
-            .type_ref = get_type_void(),
-        };
-    }
-
-    auto refresh_usage() -> void {
-        usage_max_frame_count_ =
-            std::max(frames_.size(), usage_max_frame_count_);
-    }
-
-    //------------------------------------------------------------------------
-    // statics
-    //------------------------------------------------------------------------
 
     static auto is_nasm_memory_operand(std::string_view operand) -> bool {
         return operand.find_first_of('[') != std::string::npos;
