@@ -255,6 +255,10 @@ class toc final {
     auto operator=(const toc&) -> toc& = delete;
     auto operator=(toc&&) -> toc& = delete;
 
+    // -------------------------------------------------------------------------
+    // public non-special functions
+    // -------------------------------------------------------------------------
+
     auto add_field(const token& src_loc_tk, std::string name,
                    const stmt_def_field& fld_def, bool is_str_field) -> void {
 
@@ -405,22 +409,6 @@ class toc final {
         return make_ident_info_or_throw(src_loc_tk, ident, must_be_initiated);
     }
 
-  private:
-    // helper: call make_ident_info_or_empty and throw if unresolved
-    [[nodiscard]] auto make_ident_info_or_throw(
-        const token& src_loc_tk, std::string_view ident,
-        [[maybe_unused]] const bool must_be_initiated) const -> ident_info {
-
-        const ident_info id_info{make_ident_info_or_empty(src_loc_tk, ident)};
-        if (not id_info.id_nasm.empty()) {
-            return id_info;
-        }
-
-        throw compiler_exception{
-            src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
-    }
-
-  public:
     // note: 'to' is alias or variable in parent frame
     auto add_alias(std::string from, std::string to) -> void {
         frames_.back().add_alias(std::move(from), std::move(to));
@@ -835,23 +823,6 @@ class toc final {
         free_scratch_register(os, indnt, reg);
     }
 
-    static auto line_and_col_num_for_char_index(size_t at_line,
-                                                size_t char_index_in_source,
-                                                std::string_view src)
-        -> std::pair<size_t, size_t> {
-
-        size_t at_col{0};
-        while (src[char_index_in_source] != '\n') {
-            at_col++;
-            if (char_index_in_source == 0) {
-                break;
-            }
-            char_index_in_source--;
-        }
-
-        return {at_line, at_col};
-    }
-
     auto set_type_void(const type& tpe) -> void { type_void_ = &tpe; }
 
     [[nodiscard]] auto get_type_void() const -> const type& {
@@ -870,230 +841,23 @@ class toc final {
         return *type_bool_;
     }
 
-    // -------------------------------------------------------------------------
-    // public statics
-    // -------------------------------------------------------------------------
-
-    // pragma below for clang++ to not generate warning stemming from
-    // 'std::from_chars' requiring pointers
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-    static auto parse_to_constant(std::string_view str)
-        -> std::optional<int64_t> {
-
-        // is it hex?
-        if (str.starts_with("0x") or str.starts_with("0X")) { // hex
-            int64_t value{};
-            std::string_view sv{str};
-            sv.remove_prefix(2); // skip "0x" or "0X"
-            auto result{
-                std::from_chars(sv.data(), sv.data() + sv.size(), value, 16)};
-            if (result.ec == std::errc{}) {
-                return value;
-            }
-        }
-
-        // is it binary?
-        if (str.starts_with("0b") or str.starts_with("0B")) { // binary
-            int64_t value{};
-            std::string_view sv{str};
-            sv.remove_prefix(2); // skip "0b" or "0B"
-            auto result{
-                std::from_chars(sv.data(), sv.data() + sv.size(), value, 2)};
-            if (result.ec == std::errc{}) {
-                return value;
-            }
-        }
-
-        // try decimal digit
-        {
-            int64_t value{};
-            const std::string_view sv{str};
-            // note: using 'std::string_view' for 'clang-tidy' to not
-            // trigger
-            //       warning
-            //       'cppcoreguidelines-pro-bounds-pointer-arithmetic'
-            auto parse_result{
-                std::from_chars(sv.data(), sv.data() + sv.size(), value)};
-            if (parse_result.ec == std::errc{}) {
-                return value;
-            }
-        }
-
-        return std::nullopt;
-    }
-#pragma clang diagnostic pop
-
-    static auto get_field_offset_in_type(const token& src_loc_tk_,
-                                         const type& tp,
-                                         std::string_view field_name)
-        -> size_t {
-
-        size_t accum{};
-        for (const type_field& f : tp.fields()) {
-            if (f.name == field_name) {
-                return accum;
-            }
-            accum += f.size;
-        }
-        throw compiler_exception{src_loc_tk_,
-                                 "unexpected code path stmt_assign_var:1"};
-    }
-
-    static auto asm_push([[maybe_unused]] const token& src_loc_tk,
-                         std::ostream& os, size_t indnt,
-                         std::string_view operand) -> void {
-
-        indent(os, indnt);
-        os << "push " << operand << '\n';
-    }
-
-    static auto asm_pop([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt,
-                        std::string_view operand) -> void {
-
-        indent(os, indnt);
-        os << "pop " << operand << '\n';
-    }
-
-    static auto asm_jmp([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt, std::string_view label)
-        -> void {
-
-        indent(os, indnt);
-        os << "jmp " << label << '\n';
-    }
-
-    static auto asm_label([[maybe_unused]] const token& src_loc_tk,
-                          std::ostream& os, size_t indnt,
-                          std::string_view label) -> void {
-
-        indent(os, indnt);
-        os << label << ":\n";
-    }
-
-    static auto asm_neg([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt,
-                        std::string_view operand) -> void {
-
-        indent(os, indnt);
-        os << "neg " << operand << '\n';
-    }
-
-    static auto asm_not([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt,
-                        std::string_view operand) -> void {
-
-        indent(os, indnt);
-        os << "not " << operand << '\n';
-    }
-
-    static auto asm_rep_stosb([[maybe_unused]] const token& src_loc_tk,
-                              std::ostream& os, size_t indnt) -> void {
-
-        indent(os, indnt);
-        os << "rep stosb\n";
-    }
-
-    static auto asm_rep_movs([[maybe_unused]] const token& src_loc_tk,
-                             std::ostream& os, size_t indnt, char size)
-        -> void {
-
-        indent(os, indnt);
-        os << "rep movs" << size << '\n';
-    }
-
-    static auto indent(std::ostream& os, size_t indnt,
-                       const bool comment = false) -> void {
-
-        if (comment) {
-            os << ';';
-        }
-        if (indnt == 0) {
-            return;
-        }
-        for (size_t i{}; i < indnt; i++) {
-            os << "    ";
-        }
-    }
-
   private:
-    [[nodiscard]] auto get_size_from_operand(const token& src_loc_tk,
-                                             std::string_view operand) const
-        -> size_t {
-        //? sort of ugly
-        if (operand.starts_with("qword")) {
-            return 8;
-        }
-        if (operand.starts_with("dword")) {
-            return 4;
-        }
-        if (operand.starts_with("word")) {
-            return 2;
-        }
-        if (operand.starts_with("byte")) {
-            return 1;
-        }
-        if (is_nasm_register(operand)) {
-            return get_size_from_operand_register(src_loc_tk, operand);
+    // -------------------------------------------------------------------------
+    // private non-special functions
+    // -------------------------------------------------------------------------
+
+    // helper: call make_ident_info_or_empty and throw if unresolved
+    [[nodiscard]] auto make_ident_info_or_throw(
+        const token& src_loc_tk, std::string_view ident,
+        [[maybe_unused]] const bool must_be_initiated) const -> ident_info {
+
+        const ident_info id_info{make_ident_info_or_empty(src_loc_tk, ident)};
+        if (not id_info.id_nasm.empty()) {
+            return id_info;
         }
 
-        // constant
-        return get_type_default().size();
-    }
-
-    [[nodiscard]] static auto get_operand_size(const size_t size)
-        -> std::string_view {
-        switch (size) {
-        case 1:
-            return "byte";
-        case 2:
-            return "word";
-        case 4:
-            return "dword";
-        case 8:
-            return "qword";
-        default:
-            throw panic_exception{"unexpected code path toc:4"};
-        }
-    }
-
-    [[nodiscard]] auto
-    get_builtin_type_for_operand(const token& src_loc_tk_,
-                                 std::string_view operand) const
-        -> const type& {
-
-        //? sort of ugly
-        if (operand.starts_with("qword")) {
-            return get_type_or_throw(src_loc_tk_, "i64");
-        }
-        if (operand.starts_with("dword")) {
-            return get_type_or_throw(src_loc_tk_, "i32");
-        }
-        if (operand.starts_with("word")) {
-            return get_type_or_throw(src_loc_tk_, "i16");
-        }
-        if (operand.starts_with("byte")) {
-            return get_type_or_throw(src_loc_tk_, "i8");
-        }
-
-        throw panic_exception{"unexpected code path toc:1"};
-    }
-
-    [[nodiscard]] auto is_nasm_register(std::string_view nasm) const -> bool {
-        return std::ranges::find(all_registers_, nasm) != all_registers_.end();
-    }
-
-    [[nodiscard]] auto is_nasm_indirect(std::string_view nasm) const -> bool {
-        if (auto expr{toc::extract_between_brackets(nasm)}; expr) {
-            const std::string reg{
-                extract_base_register_from_indirect_addressing(*expr)};
-            if (is_nasm_register(reg)) {
-                return true;
-            }
-        }
-
-        return false;
+        throw compiler_exception{
+            src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
     }
 
     auto refresh_usage() -> void {
@@ -1305,9 +1069,253 @@ class toc final {
         };
     }
 
+    [[nodiscard]] auto get_size_from_operand(const token& src_loc_tk,
+                                             std::string_view operand) const
+        -> size_t {
+        //? sort of ugly
+        if (operand.starts_with("qword")) {
+            return 8;
+        }
+        if (operand.starts_with("dword")) {
+            return 4;
+        }
+        if (operand.starts_with("word")) {
+            return 2;
+        }
+        if (operand.starts_with("byte")) {
+            return 1;
+        }
+        if (is_nasm_register(operand)) {
+            return get_size_from_operand_register(src_loc_tk, operand);
+        }
+
+        // constant
+        return get_type_default().size();
+    }
+
+    [[nodiscard]] auto
+    get_builtin_type_for_operand(const token& src_loc_tk_,
+                                 std::string_view operand) const
+        -> const type& {
+
+        //? sort of ugly
+        if (operand.starts_with("qword")) {
+            return get_type_or_throw(src_loc_tk_, "i64");
+        }
+        if (operand.starts_with("dword")) {
+            return get_type_or_throw(src_loc_tk_, "i32");
+        }
+        if (operand.starts_with("word")) {
+            return get_type_or_throw(src_loc_tk_, "i16");
+        }
+        if (operand.starts_with("byte")) {
+            return get_type_or_throw(src_loc_tk_, "i8");
+        }
+
+        throw panic_exception{"unexpected code path toc:1"};
+    }
+
+    [[nodiscard]] auto is_nasm_register(std::string_view nasm) const -> bool {
+        return std::ranges::find(all_registers_, nasm) != all_registers_.end();
+    }
+
+    [[nodiscard]] auto is_nasm_indirect(std::string_view nasm) const -> bool {
+        if (auto expr{toc::extract_between_brackets(nasm)}; expr) {
+            const std::string reg{
+                extract_base_register_from_indirect_addressing(*expr)};
+            if (is_nasm_register(reg)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+  public:
+    // -------------------------------------------------------------------------
+    // public statics
+    // -------------------------------------------------------------------------
+
+    static auto line_and_col_num_for_char_index(size_t at_line,
+                                                size_t char_index_in_source,
+                                                std::string_view src)
+        -> std::pair<size_t, size_t> {
+
+        size_t at_col{0};
+        while (src[char_index_in_source] != '\n') {
+            at_col++;
+            if (char_index_in_source == 0) {
+                break;
+            }
+            char_index_in_source--;
+        }
+
+        return {at_line, at_col};
+    }
+
+    // pragma below for clang++ to not generate warning stemming from
+    // 'std::from_chars' requiring pointers
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+    static auto parse_to_constant(std::string_view str)
+        -> std::optional<int64_t> {
+
+        // is it hex?
+        if (str.starts_with("0x") or str.starts_with("0X")) { // hex
+            int64_t value{};
+            std::string_view sv{str};
+            sv.remove_prefix(2); // skip "0x" or "0X"
+            auto result{
+                std::from_chars(sv.data(), sv.data() + sv.size(), value, 16)};
+            if (result.ec == std::errc{}) {
+                return value;
+            }
+        }
+
+        // is it binary?
+        if (str.starts_with("0b") or str.starts_with("0B")) { // binary
+            int64_t value{};
+            std::string_view sv{str};
+            sv.remove_prefix(2); // skip "0b" or "0B"
+            auto result{
+                std::from_chars(sv.data(), sv.data() + sv.size(), value, 2)};
+            if (result.ec == std::errc{}) {
+                return value;
+            }
+        }
+
+        // try decimal digit
+        {
+            int64_t value{};
+            const std::string_view sv{str};
+            // note: using 'std::string_view' for 'clang-tidy' to not
+            // trigger
+            //       warning
+            //       'cppcoreguidelines-pro-bounds-pointer-arithmetic'
+            auto parse_result{
+                std::from_chars(sv.data(), sv.data() + sv.size(), value)};
+            if (parse_result.ec == std::errc{}) {
+                return value;
+            }
+        }
+
+        return std::nullopt;
+    }
+#pragma clang diagnostic pop
+
+    static auto get_field_offset_in_type(const token& src_loc_tk_,
+                                         const type& tp,
+                                         std::string_view field_name)
+        -> size_t {
+
+        size_t accum{};
+        for (const type_field& f : tp.fields()) {
+            if (f.name == field_name) {
+                return accum;
+            }
+            accum += f.size;
+        }
+        throw compiler_exception{src_loc_tk_,
+                                 "unexpected code path stmt_assign_var:1"};
+    }
+
+    static auto asm_push([[maybe_unused]] const token& src_loc_tk,
+                         std::ostream& os, size_t indnt,
+                         std::string_view operand) -> void {
+
+        indent(os, indnt);
+        os << "push " << operand << '\n';
+    }
+
+    static auto asm_pop([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, size_t indnt,
+                        std::string_view operand) -> void {
+
+        indent(os, indnt);
+        os << "pop " << operand << '\n';
+    }
+
+    static auto asm_jmp([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, size_t indnt, std::string_view label)
+        -> void {
+
+        indent(os, indnt);
+        os << "jmp " << label << '\n';
+    }
+
+    static auto asm_label([[maybe_unused]] const token& src_loc_tk,
+                          std::ostream& os, size_t indnt,
+                          std::string_view label) -> void {
+
+        indent(os, indnt);
+        os << label << ":\n";
+    }
+
+    static auto asm_neg([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, size_t indnt,
+                        std::string_view operand) -> void {
+
+        indent(os, indnt);
+        os << "neg " << operand << '\n';
+    }
+
+    static auto asm_not([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, size_t indnt,
+                        std::string_view operand) -> void {
+
+        indent(os, indnt);
+        os << "not " << operand << '\n';
+    }
+
+    static auto asm_rep_stosb([[maybe_unused]] const token& src_loc_tk,
+                              std::ostream& os, size_t indnt) -> void {
+
+        indent(os, indnt);
+        os << "rep stosb\n";
+    }
+
+    static auto asm_rep_movs([[maybe_unused]] const token& src_loc_tk,
+                             std::ostream& os, size_t indnt, char size)
+        -> void {
+
+        indent(os, indnt);
+        os << "rep movs" << size << '\n';
+    }
+
+    static auto indent(std::ostream& os, size_t indnt,
+                       const bool comment = false) -> void {
+
+        if (comment) {
+            os << ';';
+        }
+        if (indnt == 0) {
+            return;
+        }
+        for (size_t i{}; i < indnt; i++) {
+            os << "    ";
+        }
+    }
+
+  private:
     //------------------------------------------------------------------------
     // private statics
     //------------------------------------------------------------------------
+
+    [[nodiscard]] static auto get_operand_size(const size_t size)
+        -> std::string_view {
+        switch (size) {
+        case 1:
+            return "byte";
+        case 2:
+            return "word";
+        case 4:
+            return "dword";
+        case 8:
+            return "qword";
+        default:
+            throw panic_exception{"unexpected code path toc:4"};
+        }
+    }
 
     static auto resize_nasm_memory_operand(std::string_view operand,
                                            std::string_view new_size)
