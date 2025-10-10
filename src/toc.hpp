@@ -527,6 +527,7 @@ class toc final {
             free_scratch_register(os, indnt, reg);
             return;
         }
+
         // not both operands are memory references
         if (is_nasm_register(src_nasm)) {
             indent(os, indnt);
