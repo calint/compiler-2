@@ -46,8 +46,9 @@ class token final {
             return;
         }
         //? temporary fix to handle strings
-        os << std::regex_replace(std::string{text_}, std::regex(R"(\\n)"),
-                                 "',10,'");
+        std::print(os, "{}",
+                   std::regex_replace(std::string{text_}, std::regex(R"(\\n)"),
+                                      "',10,'"));
     }
 
     [[nodiscard]] auto is_text(std::string_view s) const -> bool {

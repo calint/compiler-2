@@ -1,6 +1,6 @@
-[o] switch from streams to std::print
+[x] switch from streams to std::print
     [x] toc
-    [ ] rest
+    [x] rest
 [ ] allow shadowing of variables
 [ ] allow block to be create by user for context: { var i = 2 { var i = 3 }}
 [ ] make unary_ops trivially copyable by using a fixed array instead of vector
