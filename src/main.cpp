@@ -253,15 +253,15 @@ inline void expr_type_value::source_to(std::ostream& os) const {
     statement::source_to(os);
 
     // not an identifier
-    os << '{';
+    std::print(os, "{{");
     size_t i{};
     for (const std::unique_ptr<expr_any>& ea : exprs_) {
         if (i++) {
-            os << ',';
+            std::print(os, ",");
         }
         ea->source_to(os);
     }
-    os << '}';
+    std::print(os, "}}");
 }
 
 // declared in 'expr_type_value.hpp'
@@ -383,7 +383,7 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
         }
 
         if (not std::regex_search(line1, match, rxjmp)) {
-            os << line1 << '\n';
+            std::println(os, "{}", line1);
             continue;
         }
         const std::string jmplbl{match[1]};
@@ -400,11 +400,11 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
         }
 
         if (not std::regex_search(line2, match, rxlbl)) {
-            os << line1 << '\n';
+            std::println(os, "{}", line1);
             for (const std::string& s : comments) {
-                os << s << '\n';
+                std::println(os, "{}", s);
             }
-            os << line2 << '\n';
+            std::println(os, "{}", line2);
             continue;
         }
 
@@ -412,20 +412,19 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
 
         // if not same label then output the buffered data and continues
         if (jmplbl != lbl) {
-            os << line1 << '\n';
+            std::println(os, "{}", line1);
             for (const std::string& s : comments) {
-                os << s << '\n';
+                std::println(os, "{}", s);
             }
-            os << line2 << '\n';
+            std::println(os, "{}", line2);
             continue;
         }
 
         // write the label without the preceding jmp
         for (const std::string& s : comments) {
-            os << s << '\n';
+            std::println(os, "{}", s);
         }
-        // os << line2 << "  ; opt1" << '\n';
-        os << line2 << '\n';
+        std::println(os, "{}", line2);
     }
 }
 
@@ -469,11 +468,11 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
             break;
         }
         if (not std::regex_search(line2, match, rxjmp)) {
-            os << line1 << '\n';
+            std::println(os, "{}", line1);
             for (const std::string& s : comments2) {
-                os << s << '\n';
+                std::println(os, "{}", s);
             }
-            os << line2 << '\n';
+            std::println(os, "{}", line2);
             continue;
         }
         const std::string jmplbl{match[1]};
@@ -490,30 +489,30 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         }
 
         if (not std::regex_search(line3, match, rxlbl)) {
-            os << line1 << '\n';
+            std::println(os, "{}", line1);
             for (const std::string& s : comments2) {
-                os << s << '\n';
+                std::println(os, "{}", s);
             }
-            os << line2 << '\n';
+            std::println(os, "{}", line2);
             for (const std::string& s : comments3) {
-                os << s << '\n';
+                std::println(os, "{}", s);
             }
-            os << line3 << '\n';
+            std::println(os, "{}", line3);
             continue;
         }
 
         const std::string lbl{match[1]};
 
         if (jxxlbl != lbl) {
-            os << line1 << '\n';
+            std::println(os, "{}", line1);
             for (const std::string& s : comments2) {
-                os << s << '\n';
+                std::println(os, "{}", s);
             }
-            os << line2 << '\n';
+            std::println(os, "{}", line2);
             for (const std::string& s : comments3) {
-                os << s << '\n';
+                std::println(os, "{}", s);
             }
-            os << line3 << '\n';
+            std::println(os, "{}", line3);
             continue;
         }
 
@@ -534,15 +533,15 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         } else if (jxx == "jle") {
             jxx_inv = "jg";
         } else {
-            os << line1 << '\n';
+            std::println(os, "{}", line1);
             for (const std::string& s : comments2) {
-                os << s << '\n';
+                std::println(os, "{}", s);
             }
-            os << line2 << '\n';
+            std::println(os, "{}", line2);
             for (const std::string& s : comments3) {
-                os << s << '\n';
+                std::println(os, "{}", s);
             }
-            os << line3 << '\n';
+            std::println(os, "{}", line3);
             continue;
         }
         //   je if_14_8_code
@@ -551,15 +550,15 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         const std::string ws_before{
             line1.substr(0, line1.find_first_not_of(" \t\n\r\f\v"))};
         for (const std::string& s : comments2) {
-            os << s << '\n';
+            std::println(os, "{}", s);
         }
         // os << ws_before << jxx_inv << " " << jmplbl << "  ; opt2" <<
         // '\n';
-        os << ws_before << jxx_inv << " " << jmplbl << '\n';
+        std::println(os, "{}{} {}", ws_before, jxx_inv, jmplbl);
         for (const std::string& s : comments3) {
-            os << s << '\n';
+            std::println(os, "{}", s);
         }
-        os << line3 << '\n';
+        std::println(os, "{}", line3);
     }
 }
 
