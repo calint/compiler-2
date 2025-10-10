@@ -568,6 +568,7 @@ class toc final {
         std::stringstream ss;
         st.source_to(ss);
         std::string res{std::regex_replace(ss.str(), regex_ws, " ")};
+        std::print(os, "{}", res);
         // trim end of string
         if (not res.empty() && res.back() == ' ') {
             res.pop_back();
