@@ -30,7 +30,7 @@ class stmt_return final : public statement {
 
         if (ret_lbl.empty()) {
             // note: return from 'main' is exit
-            os << "mov rdi, 0\nmov rax, 60\nsyscall\n";
+            std::println(os, "mov rdi, 0\nmov rax, 60\nsyscall");
             return;
         }
 

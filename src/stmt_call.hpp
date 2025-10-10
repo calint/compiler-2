@@ -69,14 +69,14 @@ class stmt_call : public expression {
 
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
-        os << "(";
+        std::print(os, "(");
         for (size_t i{}; const expr_any& e : args_) {
             if (i++) {
-                os << ",";
+                std::print(os, ",");
             }
             e.source_to(os);
         }
-        os << ")";
+        std::print(os, ")");
         ws_after_.source_to(os);
     }
 
@@ -241,7 +241,7 @@ class stmt_call : public expression {
         // add aliases
         for (const auto& [from, to] : aliases_to_add) {
             toc::indent(os, indent + 1, true);
-            os << "alias " << from << " -> " << to << '\n';
+            std::println(os, "alias {} -> {}", from, to);
             tc.add_alias(std::string{from}, to);
         }
 
