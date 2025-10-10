@@ -451,7 +451,7 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         }
 
         if (not std::regex_search(line1, match, rxjxx)) {
-            os << line1 << '\n';
+            std::println(os, "{}", line1);
             continue;
         }
         const std::string jxx{match[1]};
@@ -552,8 +552,6 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         for (const std::string& s : comments2) {
             std::println(os, "{}", s);
         }
-        // os << ws_before << jxx_inv << " " << jmplbl << "  ; opt2" <<
-        // '\n';
         std::println(os, "{}{} {}", ws_before, jxx_inv, jmplbl);
         for (const std::string& s : comments3) {
             std::println(os, "{}", s);

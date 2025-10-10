@@ -192,8 +192,9 @@ class expr_bool_op final : public statement {
         //       to reaching this
         resolve_cmp(tc, os, indent, lhs_, rhs_);
         toc::indent(os, indent);
-        os << (invert ? asm_jxx_for_op_inv(op_) : asm_jxx_for_op(op_));
-        os << " " << jmp_to_if_true << '\n';
+        std::println(os, "{} {}",
+                     invert ? asm_jxx_for_op_inv(op_) : asm_jxx_for_op(op_),
+                     jmp_to_if_true);
         return std::nullopt;
     }
 
@@ -216,8 +217,8 @@ class expr_bool_op final : public statement {
                         const_eval = not const_eval;
                     }
                     toc::indent(os, indent, true);
-                    os << "const eval to " << (const_eval ? "true" : "false")
-                       << '\n';
+                    std::println(os, "const eval to {}",
+                                 (const_eval ? "true" : "false"));
                     if (not const_eval) {
                         // since it is an 'and' chain short-circuit
                         // expression and jump to label for false
@@ -231,9 +232,10 @@ class expr_bool_op final : public statement {
             resolve_cmp_shorthand(tc, os, indent, lhs_);
             toc::indent(os, indent);
             // note: jump to "if false label" if result is "false"
-            os << (not invert ? asm_jxx_for_op("==")
-                              : asm_jxx_for_op_inv("=="));
-            os << " " << jmp_to_if_false << '\n';
+            std::println(
+                os, "{} {}",
+                (not invert ? asm_jxx_for_op("==") : asm_jxx_for_op_inv("==")),
+                jmp_to_if_false);
             return std::nullopt;
         }
 
@@ -253,8 +255,8 @@ class expr_bool_op final : public statement {
                     const_eval = not const_eval;
                 }
                 toc::indent(os, indent, true);
-                os << "const eval to " << (const_eval ? "true" : "false")
-                   << '\n';
+                std::println(os, "const eval to {}",
+                             (const_eval ? "true" : "false"));
                 if (not const_eval) {
                     // short circuit 'and' chain
                     toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_false);
@@ -276,8 +278,9 @@ class expr_bool_op final : public statement {
 
         resolve_cmp(tc, os, indent, lhs_, rhs_);
         toc::indent(os, indent);
-        os << (invert ? asm_jxx_for_op(op_) : asm_jxx_for_op_inv(op_));
-        os << " " << jmp_to_if_false << '\n';
+        std::println(os, "{} {}",
+                     invert ? asm_jxx_for_op(op_) : asm_jxx_for_op_inv(op_),
+                     jmp_to_if_false);
         return std::nullopt;
     }
 

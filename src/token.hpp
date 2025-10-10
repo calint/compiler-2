@@ -42,7 +42,7 @@ class token final {
 
     auto compile_to(std::ostream& os) const -> void {
         if (not is_str_) {
-            os << text_;
+            std::print(os, "{}", text_);
             return;
         }
         //? temporary fix to handle strings
