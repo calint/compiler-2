@@ -1,7 +1,4 @@
-[ ] fix the mess of string handling when truncating
-[ ] fix the mess in toc::asm_cmd
 [ ] toc::get_stack_size -> keep track of it with a member variable
-[ ] refactor the string handling of register and memory operand sizes
 [o] implement "size_of"
     [ ] size_of for fields
 [ ] a way to initiate a i8 array with a string:
@@ -121,6 +118,12 @@ stage 5
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] fix the mess of string handling when truncating
+    => remarkably, a few surgical string handling and it functions as intended
+[x] fix the mess in toc::asm_cmd
+    => it is not too bad. all complexity regarding different sized arguments
+       isolated in that functions
+[-] refactor the string handling of register and memory operand sizes
 [x] adjust source so it passes also MSAN
     -fsanitize=undefined,integer
     => undefined passes
