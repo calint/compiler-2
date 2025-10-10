@@ -4,14 +4,12 @@
 #include <algorithm>
 #include <cstdint>
 #include <format>
-#include <iostream>
 #include <optional>
 #include <ranges>
 #include <string_view>
 #include <utility>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "lut.hpp"
 #include "panic_exception.hpp"
 #include "statement.hpp"
