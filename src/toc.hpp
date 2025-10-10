@@ -903,6 +903,7 @@ class toc final {
     static auto resize_nasm_memory_operand(std::string_view operand,
                                            std::string_view new_size)
         -> std::string {
+
         auto pos = operand.find('[');
         if (pos == std::string_view::npos) {
             throw panic_exception{"unexpected code path toc:5"};
@@ -1001,6 +1002,7 @@ class toc final {
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
     static auto parse_to_constant(std::string_view str)
         -> std::optional<int64_t> {
+
         // is it hex?
         if (str.starts_with("0x") or str.starts_with("0X")) { // hex
             int64_t value{};
@@ -1043,7 +1045,7 @@ class toc final {
         return std::nullopt;
     }
 #pragma clang diagnostic pop
-
+  private:
     static auto get_size_from_operand_register(const token& src_loc_tk,
                                                std::string_view operand)
         -> size_t {
@@ -1240,6 +1242,7 @@ class toc final {
         }
     }
 
+  public:
     static auto asm_push([[maybe_unused]] const token& src_loc_tk,
                          std::ostream& os, size_t indnt,
                          std::string_view operand) -> void {
