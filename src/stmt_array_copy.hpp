@@ -115,6 +115,14 @@ class stmt_array_copy final : public statement {
         const ident_info from_info{tc.make_ident_info(from_, false)};
         const ident_info to_info{tc.make_ident_info(to_, false)};
 
+        if (from_info.type_ref.name() != to_info.type_ref.name()) {
+            throw compiler_exception{
+                tok(), std::format("source and destination types are not the "
+                                   "same. source is '{}' vs destination '{}'",
+                                   from_info.type_ref.name(),
+                                   to_info.type_ref.name())};
+        }
+
         const size_t type_size{from_info.type_ref.size()};
 
         if (type_size > 1) {

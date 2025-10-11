@@ -3,7 +3,7 @@
     copies from second element to base 10 elements
     => array_copy(src, dst, nelements)
        works with non arrays also as side effect
-[ ] array_copy: validate that source and destination same type
+[x] array_copy: validate that source and destination same type
 [o] implement "size_of"
     [ ] size_of for fields
 [o] review before next step
@@ -25,6 +25,8 @@
 [ ] parsing comments in single statement block fails:
         if nibble > 9 nibble = nibble + 0x41 # 0 through 9
         else nibble = nibble + 0x30
+[ ] bounds check array access (optional compiler flag)
+    and built in function array_copy
 [ ] etc/run-test with peak memory usage and inspect why some test cases use so
     much more memory than other
 [ ] toc::get_stack_size -> keep track of it with a member variable
@@ -44,7 +46,6 @@
 [ ] instrumentation to find out max heap and stack usage by the compiler
 [ ] handle constant array index case
 [ ] argument to the compiler specifying stack size
-[ ] bounds check array access (optional compiler flag)
 [ ] expr_ops_list: const eval
 [ ] numbers such as i8 : 255 cause problems when cmp because value is moved
     to unspecified register size with sign extension
