@@ -279,7 +279,7 @@ inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
 
     std::vector<std::string> allocated_registers;
     const std::string offset{stmt_identifier::compile_effective_address(
-        tok(), tc, os, indent, stmt_ident_->elems(), allocated_registers)};
+        tok(), tc, os, indent, stmt_ident_->elems(), allocated_registers, "")};
 
     tc.asm_cmd(tok(), os, indent, "lea", dst, std::format("[{}]", offset));
 

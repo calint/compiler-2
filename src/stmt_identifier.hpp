@@ -160,7 +160,7 @@ class stmt_identifier : public statement {
 
         const std::string effective_address{
             stmt_identifier::compile_effective_address(
-                tok(), tc, os, indent, elems(), allocated_registers)};
+                tok(), tc, os, indent, elems(), allocated_registers, "")};
 
         const ident_info src_info{
             tc.make_ident_info(tok(), identifier(), false)};
@@ -184,7 +184,7 @@ class stmt_identifier : public statement {
                               std::ostream& os, size_t indent,
                               const std::vector<identifier_elem>& elems,
                               std::vector<std::string>& allocated_registers,
-                              std::string_view reg_size = "") -> std::string {
+                              std::string_view reg_size) -> std::string {
 
         // initialize base element information
         std::string path{elems.front().name_tk.text()};

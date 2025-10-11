@@ -69,8 +69,8 @@ class stmt_assign_var final : public statement {
             std::vector<std::string> allocated_registers;
 
             const std::string offset{stmt_identifier::compile_effective_address(
-                tok(), tc, os, indent, stmt_ident_.elems(),
-                allocated_registers)};
+                tok(), tc, os, indent, stmt_ident_.elems(), allocated_registers,
+                "")};
 
             tc.asm_cmd(tok(), os, indent, "lea", "rdi",
                        std::format("[{}]", offset));
@@ -111,7 +111,7 @@ class stmt_assign_var final : public statement {
         const std::string effective_address =
             stmt_identifier::compile_effective_address(tok(), tc, os, indent,
                                                        stmt_ident_.elems(),
-                                                       allocated_registers);
+                                                       allocated_registers, "");
 
         const std::string_view size_specifier{
             type::get_size_specifier(tok(), dst_info.type_ref.size())};
