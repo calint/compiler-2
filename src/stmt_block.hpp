@@ -41,7 +41,7 @@ class stmt_block final : public statement {
                     tz, "unexpected '}' in single statement block"};
             }
 
-            // is it a sub-block?
+            // is it a subblock?
             if (tz.peek_char() == '{') {
                 stms_.emplace_back(std::make_unique<stmt_block>(tc, tz));
                 continue;
