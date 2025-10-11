@@ -32,10 +32,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    39           1003            634           4927
+C/C++ Header                    40           1035            642           5034
 C++                              1             65             75            431
 -------------------------------------------------------------------------------
-SUM:                            40           1068            709           5358
+SUM:                            41           1100            717           5465
 -------------------------------------------------------------------------------
 ```
 
@@ -232,7 +232,7 @@ main:
     rep stosb
     mov qword [rsp - 24], 1
     mov r15, qword [rsp - 24]
-mov dword [rsp + r15 * 4 - 16], 2
+    mov dword [rsp + r15 * 4 - 16], 2
     mov r15, qword [rsp - 24]
     add r15, 1
     mov r14, qword [rsp - 24]
@@ -532,7 +532,7 @@ mov dword [rsp + r15 * 4 - 16], 2
         mov qword [rsp - 116], r15
         mov r15, qword [rsp - 96]
         mov qword [rsp - 108], r15
-mov dword [rsp - 100], 0xff0000
+    mov dword [rsp - 100], 0xff0000
     cmp_114_12:
     cmp qword [rsp - 116], 10
     jne bool_false_114_12
@@ -578,7 +578,7 @@ mov dword [rsp - 100], 0xff0000
         if_19_5_115_5_end:
     assert_115_5_end:
     cmp_116_12:
-cmp dword [rsp - 100], 0xff0000
+    cmp dword [rsp - 100], 0xff0000
     jne bool_false_116_12
     bool_true_116_12:
     mov r15, true
@@ -702,7 +702,7 @@ cmp dword [rsp - 100], 0xff0000
         if_19_5_125_5_end:
     assert_125_5_end:
     cmp_126_12:
-cmp dword [rsp - 136], 0xff0000
+    cmp dword [rsp - 136], 0xff0000
     jne bool_false_126_12
     bool_true_126_12:
     mov r15, true
@@ -919,7 +919,7 @@ main:
 ;   [77:15] 2
 ;   [77:15] 2
 ;   [78:5] dword [rsp + r15 * 4 - 16] = 2
-mov dword [rsp + r15 * 4 - 16], 2
+    mov dword [rsp + r15 * 4 - 16], 2
 ;   free scratch register 'r15'
 ;   [78:8] arr[ix + 1] = arr[ix]
 ;   allocate scratch register -> r15
@@ -1651,7 +1651,7 @@ mov dword [rsp + r15 * 4 - 16], 2
 ;   [113:37] 0xff0000
 ;   [113:37] 0xff0000
 ;   [113:45] o1.color = 0xff0000
-mov dword [rsp - 100], 0xff0000
+    mov dword [rsp - 100], 0xff0000
 ;   [114:5] assert(o1.pos.x == 10)
 ;   allocate scratch register -> r15
 ;   [114:12] o1.pos.x == 10
@@ -1742,7 +1742,7 @@ mov dword [rsp - 100], 0xff0000
 ;   [116:12] ? o1.color == 0xff0000
 ;   [116:12] ? o1.color == 0xff0000
     cmp_116_12:
-cmp dword [rsp - 100], 0xff0000
+    cmp dword [rsp - 100], 0xff0000
     jne bool_false_116_12
     bool_true_116_12:
     mov r15, true
@@ -1999,7 +1999,7 @@ cmp dword [rsp - 100], 0xff0000
 ;   [126:12] ? o2.color == 0xff0000
 ;   [126:12] ? o2.color == 0xff0000
     cmp_126_12:
-cmp dword [rsp - 136], 0xff0000
+    cmp dword [rsp - 136], 0xff0000
     jne bool_false_126_12
     bool_true_126_12:
     mov r15, true

@@ -533,6 +533,7 @@ class toc final {
         // note: constants have the default size of qword so when assigning
         //       to smaller sizes this code path is taken
         //? todo: check for overflow
+        indent(os, indnt);
         std::println(os, "{} {}, {}", op, dst_nasm, src_nasm);
     }
 

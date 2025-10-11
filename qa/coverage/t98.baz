@@ -1,0 +1,40 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+func print(len : reg_rdx, ptr : reg_rsi) {
+    mov(rax, 1)   # write system call
+    mov(rdi, 1)   # file descriptor for standard out
+    mov(rsi, ptr) # buffer address 
+    mov(rdx, len) # buffer size
+    syscall()
+}
+
+func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+    mov(rax, 0)   # read system call
+    mov(rdi, 0)   # file descriptor for standard input
+    mov(rsi, ptr) # buffer address
+    mov(rdx, len) # buffer size
+    syscall()
+    mov(nbytes, rax) # return value
+}
+
+type object {
+    size : i16,
+}
+
+func main() {
+    var objs : object[3]
+    objs[1].size = 2
+
+    array_copy(objs[1], objs, 2)
+
+    assert(objs[0].size == 2)
+    assert(objs[1].size == 0)
+}

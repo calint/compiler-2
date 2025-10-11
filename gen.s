@@ -71,7 +71,7 @@ main:
 ;   [77:15] 2
 ;   [77:15] 2
 ;   [78:5] dword [rsp + r15 * 4 - 16] = 2
-mov dword [rsp + r15 * 4 - 16], 2
+    mov dword [rsp + r15 * 4 - 16], 2
 ;   free scratch register 'r15'
 ;   [78:8] arr[ix + 1] = arr[ix]
 ;   allocate scratch register -> r15
@@ -803,7 +803,7 @@ mov dword [rsp + r15 * 4 - 16], 2
 ;   [113:37] 0xff0000
 ;   [113:37] 0xff0000
 ;   [113:45] o1.color = 0xff0000
-mov dword [rsp - 100], 0xff0000
+    mov dword [rsp - 100], 0xff0000
 ;   [114:5] assert(o1.pos.x == 10)
 ;   allocate scratch register -> r15
 ;   [114:12] o1.pos.x == 10
@@ -894,7 +894,7 @@ mov dword [rsp - 100], 0xff0000
 ;   [116:12] ? o1.color == 0xff0000
 ;   [116:12] ? o1.color == 0xff0000
     cmp_116_12:
-cmp dword [rsp - 100], 0xff0000
+    cmp dword [rsp - 100], 0xff0000
     jne bool_false_116_12
     bool_true_116_12:
     mov r15, true
@@ -1151,7 +1151,7 @@ cmp dword [rsp - 100], 0xff0000
 ;   [126:12] ? o2.color == 0xff0000
 ;   [126:12] ? o2.color == 0xff0000
     cmp_126_12:
-cmp dword [rsp - 136], 0xff0000
+    cmp dword [rsp - 136], 0xff0000
     jne bool_false_126_12
     bool_true_126_12:
     mov r15, true

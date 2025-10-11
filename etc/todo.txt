@@ -1,6 +1,8 @@
-[ ] a way to efficiently copy arrays:
-    e.g., copy_array(address_of(buf[2]), address_of(buf), 10)
+[x] a way to efficiently copy arrays:
+    e.g., copy_array(buf[2], buf, 10)
     copies from second element to base 10 elements
+    => array_copy(src, dst, nelements)
+       works with non arrays also as side effect
 [o] implement "size_of"
     [ ] size_of for fields
 [o] review before next step

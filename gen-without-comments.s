@@ -28,7 +28,7 @@ main:
     rep stosb
     mov qword [rsp - 24], 1
     mov r15, qword [rsp - 24]
-mov dword [rsp + r15 * 4 - 16], 2
+    mov dword [rsp + r15 * 4 - 16], 2
     mov r15, qword [rsp - 24]
     add r15, 1
     mov r14, qword [rsp - 24]
@@ -328,7 +328,7 @@ mov dword [rsp + r15 * 4 - 16], 2
         mov qword [rsp - 116], r15
         mov r15, qword [rsp - 96]
         mov qword [rsp - 108], r15
-mov dword [rsp - 100], 0xff0000
+    mov dword [rsp - 100], 0xff0000
     cmp_114_12:
     cmp qword [rsp - 116], 10
     jne bool_false_114_12
@@ -374,7 +374,7 @@ mov dword [rsp - 100], 0xff0000
         if_19_5_115_5_end:
     assert_115_5_end:
     cmp_116_12:
-cmp dword [rsp - 100], 0xff0000
+    cmp dword [rsp - 100], 0xff0000
     jne bool_false_116_12
     bool_true_116_12:
     mov r15, true
@@ -498,7 +498,7 @@ cmp dword [rsp - 100], 0xff0000
         if_19_5_125_5_end:
     assert_125_5_end:
     cmp_126_12:
-cmp dword [rsp - 136], 0xff0000
+    cmp dword [rsp - 136], 0xff0000
     jne bool_false_126_12
     bool_true_126_12:
     mov r15, true
