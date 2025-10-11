@@ -39,6 +39,13 @@ class stmt_identifier : public statement {
                 // try to find the identifier
                 const ident_info curr_ident_info{
                     tc.make_ident_info(tk, path_as_string_, false)};
+
+                // trying to index a non-array?
+                if (tz.peek_char() == '[' and not curr_ident_info.is_array) {
+                    throw compiler_exception{
+                        tk,
+                        std::format("'{}' is not an array", path_as_string_)};
+                }
             }
 
             // has array index?
