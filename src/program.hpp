@@ -130,8 +130,9 @@ class program final {
         std::println(os, "    syscall");
         std::println();
         if (tc.is_bounds_check()) {
+            std::println(os);
             std::println(os, "panic_bounds:");
-            std::println(os, "    ; system call: exit -1");
+            std::println(os, "    ; system call: exit 255");
             std::println(os, "    mov rax, 60");
             std::println(os, "    mov rdi, 255");
             std::println(os, "    syscall");

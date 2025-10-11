@@ -2042,8 +2042,9 @@ main:
     mov rax, 60
     mov rdi, 0
     syscall
+
 panic_bounds:
-    ; system call: exit -1
+    ; system call: exit 255
     mov rax, 60
     mov rdi, 255
     syscall
