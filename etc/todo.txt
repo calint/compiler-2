@@ -1,11 +1,5 @@
 [ ] bounds check array access (optional compiler flag)
     and built in function array_copy
-[x] a way to efficiently copy arrays:
-    e.g., copy_array(buf[2], buf, 10)
-    copies from second element to base 10 elements
-    => array_copy(src, dst, nelements)
-       works with non arrays also as side effect
-[x] array_copy: validate that source and destination same type
 [o] implement "size_of"
     [ ] size_of for fields
 [o] review before next step
@@ -74,6 +68,12 @@
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] a way to efficiently copy arrays:
+    e.g., copy_array(buf[2], buf, 10)
+    copies from second element to base 10 elements
+    => array_copy(src, dst, nelements)
+       works with non arrays also as side effect
+[x] array_copy: validate that source and destination same type
 [x] tokenizer: handle string with escaped " 
 [x] token: handle character ' in string 
 [x] considering not parsing multiple return statements
