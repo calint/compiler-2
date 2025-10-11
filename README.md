@@ -126,6 +126,11 @@ func main() {
     assert(arr[1] == 2)
     assert(arr[2] == 2)
 
+    array_copy(arr[2], arr, 2)
+    # copy from, to, number of elements
+
+    assert(arr[0] == 2)
+
     ix = 3
     arr[ix] = ~inv(arr[ix - 1])
     assert(arr[ix] == 2)
@@ -288,70 +293,50 @@ main:
             exit_19_17_81_5_end:
         if_19_5_81_5_end:
     assert_81_5_end:
+    mov r15, 2
+    lea rsi, [rsp + r15 * 4 - 16]
+    lea rdi, [rsp - 16]
+    mov rcx, 2
+    shl rcx, 2
+    rep movsb
+    cmp_86_12:
+        mov r13, 0
+        movsx r14, dword [rsp + r13 * 4 - 16]
+    cmp r14, 2
+    jne bool_false_86_12
+    bool_true_86_12:
+    mov r15, true
+    jmp bool_end_86_12
+    bool_false_86_12:
+    mov r15, false
+    bool_end_86_12:
+    assert_86_5:
+        if_19_8_86_5:
+        cmp_19_8_86_5:
+        cmp r15, false
+        jne if_19_5_86_5_end
+        if_19_8_86_5_code:
+            mov rdi, 1
+            exit_19_17_86_5:
+                mov rax, 60
+                syscall
+            exit_19_17_86_5_end:
+        if_19_5_86_5_end:
+    assert_86_5_end:
     mov qword [rsp - 24], 3
     mov r15, qword [rsp - 24]
     mov r13, qword [rsp - 24]
     sub r13, 1
     movsx r14, dword [rsp + r13 * 4 - 16]
-    inv_84_16:
+    inv_89_16:
         mov dword [rsp + r15 * 4 - 16], r14d
         not dword [rsp + r15 * 4 - 16]
-    inv_84_16_end:
+    inv_89_16_end:
     not dword [rsp + r15 * 4 - 16]
-    cmp_85_12:
+    cmp_90_12:
         mov r13, qword [rsp - 24]
         movsx r14, dword [rsp + r13 * 4 - 16]
     cmp r14, 2
-    jne bool_false_85_12
-    bool_true_85_12:
-    mov r15, true
-    jmp bool_end_85_12
-    bool_false_85_12:
-    mov r15, false
-    bool_end_85_12:
-    assert_85_5:
-        if_19_8_85_5:
-        cmp_19_8_85_5:
-        cmp r15, false
-        jne if_19_5_85_5_end
-        if_19_8_85_5_code:
-            mov rdi, 1
-            exit_19_17_85_5:
-                mov rax, 60
-                syscall
-            exit_19_17_85_5_end:
-        if_19_5_85_5_end:
-    assert_85_5_end:
-    mov qword [rsp - 40], 0
-    mov qword [rsp - 32], 0
-    foo_88_5:
-        mov qword [rsp - 40], 0b10
-        mov qword [rsp - 32], 0xb
-    foo_88_5_end:
-    cmp_89_12:
-    cmp qword [rsp - 40], 2
-    jne bool_false_89_12
-    bool_true_89_12:
-    mov r15, true
-    jmp bool_end_89_12
-    bool_false_89_12:
-    mov r15, false
-    bool_end_89_12:
-    assert_89_5:
-        if_19_8_89_5:
-        cmp_19_8_89_5:
-        cmp r15, false
-        jne if_19_5_89_5_end
-        if_19_8_89_5_code:
-            mov rdi, 1
-            exit_19_17_89_5:
-                mov rax, 60
-                syscall
-            exit_19_17_89_5_end:
-        if_19_5_89_5_end:
-    assert_89_5_end:
-    cmp_90_12:
-    cmp qword [rsp - 32], 0xb
     jne bool_false_90_12
     bool_true_90_12:
     mov r15, true
@@ -372,19 +357,14 @@ main:
             exit_19_17_90_5_end:
         if_19_5_90_5_end:
     assert_90_5_end:
-    mov qword [rsp - 48], 0
-    bar_93_5:
-        if_57_8_93_5:
-        cmp_57_8_93_5:
-        cmp qword [rsp - 48], 0
-        jne if_57_5_93_5_end
-        if_57_8_93_5_code:
-            jmp bar_93_5_end
-        if_57_5_93_5_end:
-        mov qword [rsp - 48], 0xff
-    bar_93_5_end:
+    mov qword [rsp - 40], 0
+    mov qword [rsp - 32], 0
+    foo_93_5:
+        mov qword [rsp - 40], 0b10
+        mov qword [rsp - 32], 0xb
+    foo_93_5_end:
     cmp_94_12:
-    cmp qword [rsp - 48], 0
+    cmp qword [rsp - 40], 2
     jne bool_false_94_12
     bool_true_94_12:
     mov r15, true
@@ -405,126 +385,181 @@ main:
             exit_19_17_94_5_end:
         if_19_5_94_5_end:
     assert_94_5_end:
-    mov qword [rsp - 48], 1
-    bar_97_5:
-        if_57_8_97_5:
-        cmp_57_8_97_5:
-        cmp qword [rsp - 48], 0
-        jne if_57_5_97_5_end
-        if_57_8_97_5_code:
-            jmp bar_97_5_end
-        if_57_5_97_5_end:
-        mov qword [rsp - 48], 0xff
-    bar_97_5_end:
-    cmp_98_12:
-    cmp qword [rsp - 48], 0xff
-    jne bool_false_98_12
-    bool_true_98_12:
+    cmp_95_12:
+    cmp qword [rsp - 32], 0xb
+    jne bool_false_95_12
+    bool_true_95_12:
     mov r15, true
-    jmp bool_end_98_12
-    bool_false_98_12:
+    jmp bool_end_95_12
+    bool_false_95_12:
     mov r15, false
-    bool_end_98_12:
-    assert_98_5:
-        if_19_8_98_5:
-        cmp_19_8_98_5:
+    bool_end_95_12:
+    assert_95_5:
+        if_19_8_95_5:
+        cmp_19_8_95_5:
         cmp r15, false
-        jne if_19_5_98_5_end
-        if_19_8_98_5_code:
+        jne if_19_5_95_5_end
+        if_19_8_95_5_code:
             mov rdi, 1
-            exit_19_17_98_5:
+            exit_19_17_95_5:
                 mov rax, 60
                 syscall
-            exit_19_17_98_5_end:
-        if_19_5_98_5_end:
-    assert_98_5_end:
+            exit_19_17_95_5_end:
+        if_19_5_95_5_end:
+    assert_95_5_end:
+    mov qword [rsp - 48], 0
+    bar_98_5:
+        if_57_8_98_5:
+        cmp_57_8_98_5:
+        cmp qword [rsp - 48], 0
+        jne if_57_5_98_5_end
+        if_57_8_98_5_code:
+            jmp bar_98_5_end
+        if_57_5_98_5_end:
+        mov qword [rsp - 48], 0xff
+    bar_98_5_end:
+    cmp_99_12:
+    cmp qword [rsp - 48], 0
+    jne bool_false_99_12
+    bool_true_99_12:
+    mov r15, true
+    jmp bool_end_99_12
+    bool_false_99_12:
+    mov r15, false
+    bool_end_99_12:
+    assert_99_5:
+        if_19_8_99_5:
+        cmp_19_8_99_5:
+        cmp r15, false
+        jne if_19_5_99_5_end
+        if_19_8_99_5_code:
+            mov rdi, 1
+            exit_19_17_99_5:
+                mov rax, 60
+                syscall
+            exit_19_17_99_5_end:
+        if_19_5_99_5_end:
+    assert_99_5_end:
+    mov qword [rsp - 48], 1
+    bar_102_5:
+        if_57_8_102_5:
+        cmp_57_8_102_5:
+        cmp qword [rsp - 48], 0
+        jne if_57_5_102_5_end
+        if_57_8_102_5_code:
+            jmp bar_102_5_end
+        if_57_5_102_5_end:
+        mov qword [rsp - 48], 0xff
+    bar_102_5_end:
+    cmp_103_12:
+    cmp qword [rsp - 48], 0xff
+    jne bool_false_103_12
+    bool_true_103_12:
+    mov r15, true
+    jmp bool_end_103_12
+    bool_false_103_12:
+    mov r15, false
+    bool_end_103_12:
+    assert_103_5:
+        if_19_8_103_5:
+        cmp_19_8_103_5:
+        cmp r15, false
+        jne if_19_5_103_5_end
+        if_19_8_103_5_code:
+            mov rdi, 1
+            exit_19_17_103_5:
+                mov rax, 60
+                syscall
+            exit_19_17_103_5_end:
+        if_19_5_103_5_end:
+    assert_103_5_end:
     mov qword [rsp - 56], 1
-    baz_101_13:
+    baz_106_13:
         mov r15, qword [rsp - 56]
         mov qword [rsp - 64], r15
         mov r15, qword [rsp - 64]
         imul r15, 2
         mov qword [rsp - 64], r15
-    baz_101_13_end:
-    cmp_102_12:
+    baz_106_13_end:
+    cmp_107_12:
     cmp qword [rsp - 64], 2
-    jne bool_false_102_12
-    bool_true_102_12:
+    jne bool_false_107_12
+    bool_true_107_12:
     mov r15, true
-    jmp bool_end_102_12
-    bool_false_102_12:
+    jmp bool_end_107_12
+    bool_false_107_12:
     mov r15, false
-    bool_end_102_12:
-    assert_102_5:
-        if_19_8_102_5:
-        cmp_19_8_102_5:
+    bool_end_107_12:
+    assert_107_5:
+        if_19_8_107_5:
+        cmp_19_8_107_5:
         cmp r15, false
-        jne if_19_5_102_5_end
-        if_19_8_102_5_code:
+        jne if_19_5_107_5_end
+        if_19_8_107_5_code:
             mov rdi, 1
-            exit_19_17_102_5:
+            exit_19_17_107_5:
                 mov rax, 60
                 syscall
-            exit_19_17_102_5_end:
-        if_19_5_102_5_end:
-    assert_102_5_end:
-    baz_104_9:
+            exit_19_17_107_5_end:
+        if_19_5_107_5_end:
+    assert_107_5_end:
+    baz_109_9:
         mov qword [rsp - 64], 1
         mov r15, qword [rsp - 64]
         imul r15, 2
         mov qword [rsp - 64], r15
-    baz_104_9_end:
-    cmp_105_12:
+    baz_109_9_end:
+    cmp_110_12:
     cmp qword [rsp - 64], 2
-    jne bool_false_105_12
-    bool_true_105_12:
+    jne bool_false_110_12
+    bool_true_110_12:
     mov r15, true
-    jmp bool_end_105_12
-    bool_false_105_12:
+    jmp bool_end_110_12
+    bool_false_110_12:
     mov r15, false
-    bool_end_105_12:
-    assert_105_5:
-        if_19_8_105_5:
-        cmp_19_8_105_5:
+    bool_end_110_12:
+    assert_110_5:
+        if_19_8_110_5:
+        cmp_19_8_110_5:
         cmp r15, false
-        jne if_19_5_105_5_end
-        if_19_8_105_5_code:
+        jne if_19_5_110_5_end
+        if_19_8_110_5_code:
             mov rdi, 1
-            exit_19_17_105_5:
+            exit_19_17_110_5:
                 mov rax, 60
                 syscall
-            exit_19_17_105_5_end:
-        if_19_5_105_5_end:
-    assert_105_5_end:
-    baz_107_23:
+            exit_19_17_110_5_end:
+        if_19_5_110_5_end:
+    assert_110_5_end:
+    baz_112_23:
         mov qword [rsp - 80], 2
         mov r15, qword [rsp - 80]
         imul r15, 2
         mov qword [rsp - 80], r15
-    baz_107_23_end:
+    baz_112_23_end:
     mov qword [rsp - 72], 0
-    cmp_108_12:
+    cmp_113_12:
     cmp qword [rsp - 80], 4
-    jne bool_false_108_12
-    bool_true_108_12:
+    jne bool_false_113_12
+    bool_true_113_12:
     mov r15, true
-    jmp bool_end_108_12
-    bool_false_108_12:
+    jmp bool_end_113_12
+    bool_false_113_12:
     mov r15, false
-    bool_end_108_12:
-    assert_108_5:
-        if_19_8_108_5:
-        cmp_19_8_108_5:
+    bool_end_113_12:
+    assert_113_5:
+        if_19_8_113_5:
+        cmp_19_8_113_5:
         cmp r15, false
-        jne if_19_5_108_5_end
-        if_19_8_108_5_code:
+        jne if_19_5_113_5_end
+        if_19_8_113_5_code:
             mov rdi, 1
-            exit_19_17_108_5:
+            exit_19_17_113_5:
                 mov rax, 60
                 syscall
-            exit_19_17_108_5_end:
-        if_19_5_108_5_end:
-    assert_108_5_end:
+            exit_19_17_113_5_end:
+        if_19_5_113_5_end:
+    assert_113_5_end:
     mov qword [rsp - 88], 1
     mov qword [rsp - 96], 2
         mov r15, qword [rsp - 88]
@@ -535,84 +570,30 @@ main:
         mov r15, qword [rsp - 96]
         mov qword [rsp - 108], r15
     mov dword [rsp - 100], 0xff0000
-    cmp_114_12:
+    cmp_119_12:
     cmp qword [rsp - 116], 10
-    jne bool_false_114_12
-    bool_true_114_12:
+    jne bool_false_119_12
+    bool_true_119_12:
     mov r15, true
-    jmp bool_end_114_12
-    bool_false_114_12:
+    jmp bool_end_119_12
+    bool_false_119_12:
     mov r15, false
-    bool_end_114_12:
-    assert_114_5:
-        if_19_8_114_5:
-        cmp_19_8_114_5:
+    bool_end_119_12:
+    assert_119_5:
+        if_19_8_119_5:
+        cmp_19_8_119_5:
         cmp r15, false
-        jne if_19_5_114_5_end
-        if_19_8_114_5_code:
+        jne if_19_5_119_5_end
+        if_19_8_119_5_code:
             mov rdi, 1
-            exit_19_17_114_5:
+            exit_19_17_119_5:
                 mov rax, 60
                 syscall
-            exit_19_17_114_5_end:
-        if_19_5_114_5_end:
-    assert_114_5_end:
-    cmp_115_12:
-    cmp qword [rsp - 108], 2
-    jne bool_false_115_12
-    bool_true_115_12:
-    mov r15, true
-    jmp bool_end_115_12
-    bool_false_115_12:
-    mov r15, false
-    bool_end_115_12:
-    assert_115_5:
-        if_19_8_115_5:
-        cmp_19_8_115_5:
-        cmp r15, false
-        jne if_19_5_115_5_end
-        if_19_8_115_5_code:
-            mov rdi, 1
-            exit_19_17_115_5:
-                mov rax, 60
-                syscall
-            exit_19_17_115_5_end:
-        if_19_5_115_5_end:
-    assert_115_5_end:
-    cmp_116_12:
-    cmp dword [rsp - 100], 0xff0000
-    jne bool_false_116_12
-    bool_true_116_12:
-    mov r15, true
-    jmp bool_end_116_12
-    bool_false_116_12:
-    mov r15, false
-    bool_end_116_12:
-    assert_116_5:
-        if_19_8_116_5:
-        cmp_19_8_116_5:
-        cmp r15, false
-        jne if_19_5_116_5_end
-        if_19_8_116_5_code:
-            mov rdi, 1
-            exit_19_17_116_5:
-                mov rax, 60
-                syscall
-            exit_19_17_116_5_end:
-        if_19_5_116_5_end:
-    assert_116_5_end:
-    mov r15, qword [rsp - 88]
-    mov qword [rsp - 132], r15
-    neg qword [rsp - 132]
-    mov r15, qword [rsp - 96]
-    mov qword [rsp - 124], r15
-    neg qword [rsp - 124]
-    lea rdi, [rsp - 116]
-    lea rsi, [rsp - 132]
-    mov rcx, 16
-    rep movsb
+            exit_19_17_119_5_end:
+        if_19_5_119_5_end:
+    assert_119_5_end:
     cmp_120_12:
-    cmp qword [rsp - 116], -1
+    cmp qword [rsp - 108], 2
     jne bool_false_120_12
     bool_true_120_12:
     mov r15, true
@@ -634,7 +615,7 @@ main:
         if_19_5_120_5_end:
     assert_120_5_end:
     cmp_121_12:
-    cmp qword [rsp - 108], -2
+    cmp dword [rsp - 100], 0xff0000
     jne bool_false_121_12
     bool_true_121_12:
     mov r15, true
@@ -655,34 +636,18 @@ main:
             exit_19_17_121_5_end:
         if_19_5_121_5_end:
     assert_121_5_end:
-    lea rdi, [rsp - 152]
-    lea rsi, [rsp - 116]
-    mov rcx, 20
+    mov r15, qword [rsp - 88]
+    mov qword [rsp - 132], r15
+    neg qword [rsp - 132]
+    mov r15, qword [rsp - 96]
+    mov qword [rsp - 124], r15
+    neg qword [rsp - 124]
+    lea rdi, [rsp - 116]
+    lea rsi, [rsp - 132]
+    mov rcx, 16
     rep movsb
-    cmp_124_12:
-    cmp qword [rsp - 152], -1
-    jne bool_false_124_12
-    bool_true_124_12:
-    mov r15, true
-    jmp bool_end_124_12
-    bool_false_124_12:
-    mov r15, false
-    bool_end_124_12:
-    assert_124_5:
-        if_19_8_124_5:
-        cmp_19_8_124_5:
-        cmp r15, false
-        jne if_19_5_124_5_end
-        if_19_8_124_5_code:
-            mov rdi, 1
-            exit_19_17_124_5:
-                mov rax, 60
-                syscall
-            exit_19_17_124_5_end:
-        if_19_5_124_5_end:
-    assert_124_5_end:
     cmp_125_12:
-    cmp qword [rsp - 144], -2
+    cmp qword [rsp - 116], -1
     jne bool_false_125_12
     bool_true_125_12:
     mov r15, true
@@ -704,7 +669,7 @@ main:
         if_19_5_125_5_end:
     assert_125_5_end:
     cmp_126_12:
-    cmp dword [rsp - 136], 0xff0000
+    cmp qword [rsp - 108], -2
     jne bool_false_126_12
     bool_true_126_12:
     mov r15, true
@@ -725,19 +690,56 @@ main:
             exit_19_17_126_5_end:
         if_19_5_126_5_end:
     assert_126_5_end:
-    lea rdi, [rsp - 172]
+    lea rdi, [rsp - 152]
+    lea rsi, [rsp - 116]
     mov rcx, 20
-    xor rax, rax
-    rep stosb
-    mov qword [rsp - 164], 73
+    rep movsb
+    cmp_129_12:
+    cmp qword [rsp - 152], -1
+    jne bool_false_129_12
+    bool_true_129_12:
+    mov r15, true
+    jmp bool_end_129_12
+    bool_false_129_12:
+    mov r15, false
+    bool_end_129_12:
+    assert_129_5:
+        if_19_8_129_5:
+        cmp_19_8_129_5:
+        cmp r15, false
+        jne if_19_5_129_5_end
+        if_19_8_129_5_code:
+            mov rdi, 1
+            exit_19_17_129_5:
+                mov rax, 60
+                syscall
+            exit_19_17_129_5_end:
+        if_19_5_129_5_end:
+    assert_129_5_end:
+    cmp_130_12:
+    cmp qword [rsp - 144], -2
+    jne bool_false_130_12
+    bool_true_130_12:
+    mov r15, true
+    jmp bool_end_130_12
+    bool_false_130_12:
+    mov r15, false
+    bool_end_130_12:
+    assert_130_5:
+        if_19_8_130_5:
+        cmp_19_8_130_5:
+        cmp r15, false
+        jne if_19_5_130_5_end
+        if_19_8_130_5_code:
+            mov rdi, 1
+            exit_19_17_130_5:
+                mov rax, 60
+                syscall
+            exit_19_17_130_5_end:
+        if_19_5_130_5_end:
+    assert_130_5_end:
     cmp_131_12:
-        lea r13, [rsp - 172]
-        mov r12, 0
-        imul r12, 20
-        add r13, r12
-        add r13, 8
-        mov r14, qword [r13]
-    cmp r14, 73
+    cmp dword [rsp - 136], 0xff0000
     jne bool_false_131_12
     bool_true_131_12:
     mov r15, true
@@ -758,87 +760,120 @@ main:
             exit_19_17_131_5_end:
         if_19_5_131_5_end:
     assert_131_5_end:
+    lea rdi, [rsp - 172]
+    mov rcx, 20
+    xor rax, rax
+    rep stosb
+    mov qword [rsp - 164], 73
+    cmp_136_12:
+        lea r13, [rsp - 172]
+        mov r12, 0
+        imul r12, 20
+        add r13, r12
+        add r13, 8
+        mov r14, qword [r13]
+    cmp r14, 73
+    jne bool_false_136_12
+    bool_true_136_12:
+    mov r15, true
+    jmp bool_end_136_12
+    bool_false_136_12:
+    mov r15, false
+    bool_end_136_12:
+    assert_136_5:
+        if_19_8_136_5:
+        cmp_19_8_136_5:
+        cmp r15, false
+        jne if_19_5_136_5_end
+        if_19_8_136_5_code:
+            mov rdi, 1
+            exit_19_17_136_5:
+                mov rax, 60
+                syscall
+            exit_19_17_136_5_end:
+        if_19_5_136_5_end:
+    assert_136_5_end:
     lea rdi, [rsp - 252]
     mov rcx, 80
     xor rax, rax
     rep stosb
     mov rdx, hello.len
     mov rsi, hello
-    print_135_5:
+    print_140_5:
         mov rax, 1
         mov rdi, 1
         syscall
-    print_135_5_end:
-    loop_136_5:
+    print_140_5_end:
+    loop_141_5:
         mov rdx, prompt1.len
         mov rsi, prompt1
-        print_137_9:
+        print_142_9:
             mov rax, 1
             mov rdi, 1
             syscall
-        print_137_9_end:
+        print_142_9_end:
         mov rdx, 80
         lea rsi, [rsp - 252]
-        read_139_19:
+        read_144_19:
             mov rax, 0
             mov rdi, 0
             syscall
             mov qword [rsp - 260], rax
-        read_139_19_end:
+        read_144_19_end:
         sub qword [rsp - 260], 1
-        if_143_12:
-        cmp_143_12:
+        if_148_12:
+        cmp_148_12:
         cmp qword [rsp - 260], 0
-        jne if_145_19
-        if_143_12_code:
-            jmp loop_136_5_end
-        jmp if_143_9_end
-        if_145_19:
-        cmp_145_19:
+        jne if_150_19
+        if_148_12_code:
+            jmp loop_141_5_end
+        jmp if_148_9_end
+        if_150_19:
+        cmp_150_19:
         cmp qword [rsp - 260], 4
-        jg if_else_143_9
-        if_145_19_code:
+        jg if_else_148_9
+        if_150_19_code:
             mov rdx, prompt2.len
             mov rsi, prompt2
-            print_146_13:
-                mov rax, 1
-                mov rdi, 1
-                syscall
-            print_146_13_end:
-            jmp loop_136_5
-        jmp if_143_9_end
-        if_else_143_9:
-            mov rdx, prompt3.len
-            mov rsi, prompt3
-            print_149_13:
-                mov rax, 1
-                mov rdi, 1
-                syscall
-            print_149_13_end:
-            mov rdx, qword [rsp - 260]
-            lea rsi, [rsp - 252]
-            print_150_13:
-                mov rax, 1
-                mov rdi, 1
-                syscall
-            print_150_13_end:
-            mov rdx, dot.len
-            mov rsi, dot
             print_151_13:
                 mov rax, 1
                 mov rdi, 1
                 syscall
             print_151_13_end:
-            mov rdx, nl.len
-            mov rsi, nl
-            print_152_13:
+            jmp loop_141_5
+        jmp if_148_9_end
+        if_else_148_9:
+            mov rdx, prompt3.len
+            mov rsi, prompt3
+            print_154_13:
                 mov rax, 1
                 mov rdi, 1
                 syscall
-            print_152_13_end:
-        if_143_9_end:
-    jmp loop_136_5
-    loop_136_5_end:
+            print_154_13_end:
+            mov rdx, qword [rsp - 260]
+            lea rsi, [rsp - 252]
+            print_155_13:
+                mov rax, 1
+                mov rdi, 1
+                syscall
+            print_155_13_end:
+            mov rdx, dot.len
+            mov rsi, dot
+            print_156_13:
+                mov rax, 1
+                mov rdi, 1
+                syscall
+            print_156_13_end:
+            mov rdx, nl.len
+            mov rsi, nl
+            print_157_13:
+                mov rax, 1
+                mov rdi, 1
+                syscall
+            print_157_13_end:
+        if_148_9_end:
+    jmp loop_141_5
+    loop_141_5_end:
     mov rax, 60
     mov rdi, 0
     syscall
@@ -1054,37 +1089,113 @@ main:
         if_19_5_81_5_end:
 ;       free scratch register 'r15'
     assert_81_5_end:
-;   [83:8] ix = 3
-;   [83:10] 3
-;   [83:10] 3
-;   [84:5] ix = 3
-    mov qword [rsp - 24], 3
-;   [84:8] arr[ix] = ~inv(arr[ix - 1])
+;   [83:5] array_copy(arr[2], arr, 2)
+;   allocate named register 'rsi'
+;   allocate named register 'rdi'
+;   allocate named register 'rcx'
 ;   allocate scratch register -> r15
-;   [84:9] ix
-;   [84:9] ix
-;   [84:11] r15 = ix
-    mov r15, qword [rsp - 24]
-;   [84:15] ~inv(arr[ix - 1])
-;   [84:15] ~inv(arr[ix - 1])
-;   [84:16] dword [rsp + r15 * 4 - 16] = ~inv(arr[ix - 1])
-;   [84:16] ~inv(arr[ix - 1])
+;   [83:20] 2
+;   [83:20] 2
+;   [83:21] r15 = 2
+    mov r15, 2
+    lea rsi, [rsp + r15 * 4 - 16]
+;   free scratch register 'r15'
+    lea rdi, [rsp - 16]
+;   [83:29] 2
+;   [83:29] 2
+;   [83:30] rcx = 2
+    mov rcx, 2
+    shl rcx, 2
+    rep movsb
+;   free named register 'rcx'
+;   free named register 'rdi'
+;   free named register 'rsi'
+;   [84:5] # copy from, to, number of elements
+;   [86:5] assert(arr[0] == 2)
+;   allocate scratch register -> r15
+;   [86:12] arr[0] == 2
+;   [86:12] ? arr[0] == 2
+;   [86:12] ? arr[0] == 2
+    cmp_86_12:
 ;   allocate scratch register -> r14
-;   [84:20] arr[ix - 1]
-;   [84:20] arr[ix - 1]
-;   [84:23] r14 = arr[ix - 1]
-;   [84:23] arr[ix - 1]
+;       [86:12] arr[0]
+;       [86:15] r14 = arr[0]
+;       [86:15] arr[0]
+;       allocate scratch register -> r13
+;       [86:16] 0
+;       [86:16] 0
+;       [86:17] r13 = 0
+        mov r13, 0
+        movsx r14, dword [rsp + r13 * 4 - 16]
+;       free scratch register 'r13'
+    cmp r14, 2
+;   free scratch register 'r14'
+    jne bool_false_86_12
+    bool_true_86_12:
+    mov r15, true
+    jmp bool_end_86_12
+    bool_false_86_12:
+    mov r15, false
+    bool_end_86_12:
+;   assert(expr : bool) 
+    assert_86_5:
+;       alias expr -> r15
+        if_19_8_86_5:
+;       [19:8] ? not expr
+;       [19:8] ? not expr
+        cmp_19_8_86_5:
+        cmp r15, false
+        jne if_19_5_86_5_end
+        if_19_8_86_5_code:
+;           [19:17] exit(1)
+;           allocate named register 'rdi'
+            mov rdi, 1
+;           exit(v : reg_rdi) 
+            exit_19_17_86_5:
+;               alias v -> rdi
+;               [13:5] mov(rax, 60)
+                mov rax, 60
+;               [13:19] # exit system call
+;               [14:5] mov(rdi, v)
+;               [14:19] # return code
+;               [15:5] syscall()
+                syscall
+;               free named register 'rdi'
+            exit_19_17_86_5_end:
+        if_19_5_86_5_end:
+;       free scratch register 'r15'
+    assert_86_5_end:
+;   [88:8] ix = 3
+;   [88:10] 3
+;   [88:10] 3
+;   [89:5] ix = 3
+    mov qword [rsp - 24], 3
+;   [89:8] arr[ix] = ~inv(arr[ix - 1])
+;   allocate scratch register -> r15
+;   [89:9] ix
+;   [89:9] ix
+;   [89:11] r15 = ix
+    mov r15, qword [rsp - 24]
+;   [89:15] ~inv(arr[ix - 1])
+;   [89:15] ~inv(arr[ix - 1])
+;   [89:16] dword [rsp + r15 * 4 - 16] = ~inv(arr[ix - 1])
+;   [89:16] ~inv(arr[ix - 1])
+;   allocate scratch register -> r14
+;   [89:20] arr[ix - 1]
+;   [89:20] arr[ix - 1]
+;   [89:23] r14 = arr[ix - 1]
+;   [89:23] arr[ix - 1]
 ;   allocate scratch register -> r13
-;   [84:24] ix - 1
-;   [84:24] ix - 1
-;   [84:27] r13 = ix
+;   [89:24] ix - 1
+;   [89:24] ix - 1
+;   [89:27] r13 = ix
     mov r13, qword [rsp - 24]
-;   [84:30] r13 - 1
+;   [89:30] r13 - 1
     sub r13, 1
     movsx r14, dword [rsp + r13 * 4 - 16]
 ;   free scratch register 'r13'
 ;   inv(i : i32) : i32 res 
-    inv_84_16:
+    inv_89_16:
 ;       alias res -> dword [rsp + r15 * 4 - 16]
 ;       alias i -> r14
 ;       [64:9] res = ~i
@@ -1094,142 +1205,28 @@ main:
         mov dword [rsp + r15 * 4 - 16], r14d
         not dword [rsp + r15 * 4 - 16]
 ;       free scratch register 'r14'
-    inv_84_16_end:
+    inv_89_16_end:
     not dword [rsp + r15 * 4 - 16]
 ;   free scratch register 'r15'
-;   [85:5] assert(arr[ix] == 2)
+;   [90:5] assert(arr[ix] == 2)
 ;   allocate scratch register -> r15
-;   [85:12] arr[ix] == 2
-;   [85:12] ? arr[ix] == 2
-;   [85:12] ? arr[ix] == 2
-    cmp_85_12:
+;   [90:12] arr[ix] == 2
+;   [90:12] ? arr[ix] == 2
+;   [90:12] ? arr[ix] == 2
+    cmp_90_12:
 ;   allocate scratch register -> r14
-;       [85:12] arr[ix]
-;       [85:15] r14 = arr[ix]
-;       [85:15] arr[ix]
+;       [90:12] arr[ix]
+;       [90:15] r14 = arr[ix]
+;       [90:15] arr[ix]
 ;       allocate scratch register -> r13
-;       [85:16] ix
-;       [85:16] ix
-;       [85:18] r13 = ix
+;       [90:16] ix
+;       [90:16] ix
+;       [90:18] r13 = ix
         mov r13, qword [rsp - 24]
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       free scratch register 'r13'
     cmp r14, 2
 ;   free scratch register 'r14'
-    jne bool_false_85_12
-    bool_true_85_12:
-    mov r15, true
-    jmp bool_end_85_12
-    bool_false_85_12:
-    mov r15, false
-    bool_end_85_12:
-;   assert(expr : bool) 
-    assert_85_5:
-;       alias expr -> r15
-        if_19_8_85_5:
-;       [19:8] ? not expr
-;       [19:8] ? not expr
-        cmp_19_8_85_5:
-        cmp r15, false
-        jne if_19_5_85_5_end
-        if_19_8_85_5_code:
-;           [19:17] exit(1)
-;           allocate named register 'rdi'
-            mov rdi, 1
-;           exit(v : reg_rdi) 
-            exit_19_17_85_5:
-;               alias v -> rdi
-;               [13:5] mov(rax, 60)
-                mov rax, 60
-;               [13:19] # exit system call
-;               [14:5] mov(rdi, v)
-;               [14:19] # return code
-;               [15:5] syscall()
-                syscall
-;               free named register 'rdi'
-            exit_19_17_85_5_end:
-        if_19_5_85_5_end:
-;       free scratch register 'r15'
-    assert_85_5_end:
-;   var p: point @ qword [rsp - 40]
-;   [87:5] var p : point = {0, 0}
-;   [87:21] p ={0, 0}
-;   [87:21] {0, 0}
-;   [87:21] {0, 0}
-;   [87:22] 0
-;   [87:22] 0
-;   [87:23] p.x = 0
-    mov qword [rsp - 40], 0
-;   [87:25] 0
-;   [87:25] 0
-;   [87:26] p.y = 0
-    mov qword [rsp - 32], 0
-;   [88:5] foo(p)
-;   foo(pt : point) 
-    foo_88_5:
-;       alias pt -> p
-;       [50:7] pt.x = 0b10
-;       [50:12] 0b10
-;       [50:12] 0b10
-;       [50:20] pt.x = 0b10
-        mov qword [rsp - 40], 0b10
-;       [50:20] # binary value 2
-;       [51:7] pt.y = 0xb
-;       [51:12] 0xb
-;       [51:12] 0xb
-;       [51:20] pt.y = 0xb
-        mov qword [rsp - 32], 0xb
-;       [51:20] # hex value 11
-    foo_88_5_end:
-;   [89:5] assert(p.x == 2)
-;   allocate scratch register -> r15
-;   [89:12] p.x == 2
-;   [89:12] ? p.x == 2
-;   [89:12] ? p.x == 2
-    cmp_89_12:
-    cmp qword [rsp - 40], 2
-    jne bool_false_89_12
-    bool_true_89_12:
-    mov r15, true
-    jmp bool_end_89_12
-    bool_false_89_12:
-    mov r15, false
-    bool_end_89_12:
-;   assert(expr : bool) 
-    assert_89_5:
-;       alias expr -> r15
-        if_19_8_89_5:
-;       [19:8] ? not expr
-;       [19:8] ? not expr
-        cmp_19_8_89_5:
-        cmp r15, false
-        jne if_19_5_89_5_end
-        if_19_8_89_5_code:
-;           [19:17] exit(1)
-;           allocate named register 'rdi'
-            mov rdi, 1
-;           exit(v : reg_rdi) 
-            exit_19_17_89_5:
-;               alias v -> rdi
-;               [13:5] mov(rax, 60)
-                mov rax, 60
-;               [13:19] # exit system call
-;               [14:5] mov(rdi, v)
-;               [14:19] # return code
-;               [15:5] syscall()
-                syscall
-;               free named register 'rdi'
-            exit_19_17_89_5_end:
-        if_19_5_89_5_end:
-;       free scratch register 'r15'
-    assert_89_5_end:
-;   [90:5] assert(p.y == 0xb)
-;   allocate scratch register -> r15
-;   [90:12] p.y == 0xb
-;   [90:12] ? p.y == 0xb
-;   [90:12] ? p.y == 0xb
-    cmp_90_12:
-    cmp qword [rsp - 32], 0xb
     jne bool_false_90_12
     bool_true_90_12:
     mov r15, true
@@ -1265,40 +1262,43 @@ main:
         if_19_5_90_5_end:
 ;       free scratch register 'r15'
     assert_90_5_end:
-;   var i: i64 @ qword [rsp - 48]
-;   [92:5] var i = 0
-;   [92:13] i =0
-;   [92:13] 0
-;   [92:13] 0
-;   [93:5] i = 0
-    mov qword [rsp - 48], 0
-;   [93:5] bar(i)
-;   bar(arg) 
-    bar_93_5:
-;       alias arg -> i
-        if_57_8_93_5:
-;       [57:8] ? arg == 0
-;       [57:8] ? arg == 0
-        cmp_57_8_93_5:
-        cmp qword [rsp - 48], 0
-        jne if_57_5_93_5_end
-        if_57_8_93_5_code:
-;           [57:17] return
-            jmp bar_93_5_end
-        if_57_5_93_5_end:
-;       [58:9] arg = 0xff
-;       [58:11] 0xff
-;       [58:11] 0xff
-;       [59:1] arg = 0xff
-        mov qword [rsp - 48], 0xff
-    bar_93_5_end:
-;   [94:5] assert(i == 0)
+;   var p: point @ qword [rsp - 40]
+;   [92:5] var p : point = {0, 0}
+;   [92:21] p ={0, 0}
+;   [92:21] {0, 0}
+;   [92:21] {0, 0}
+;   [92:22] 0
+;   [92:22] 0
+;   [92:23] p.x = 0
+    mov qword [rsp - 40], 0
+;   [92:25] 0
+;   [92:25] 0
+;   [92:26] p.y = 0
+    mov qword [rsp - 32], 0
+;   [93:5] foo(p)
+;   foo(pt : point) 
+    foo_93_5:
+;       alias pt -> p
+;       [50:7] pt.x = 0b10
+;       [50:12] 0b10
+;       [50:12] 0b10
+;       [50:20] pt.x = 0b10
+        mov qword [rsp - 40], 0b10
+;       [50:20] # binary value 2
+;       [51:7] pt.y = 0xb
+;       [51:12] 0xb
+;       [51:12] 0xb
+;       [51:20] pt.y = 0xb
+        mov qword [rsp - 32], 0xb
+;       [51:20] # hex value 11
+    foo_93_5_end:
+;   [94:5] assert(p.x == 2)
 ;   allocate scratch register -> r15
-;   [94:12] i == 0
-;   [94:12] ? i == 0
-;   [94:12] ? i == 0
+;   [94:12] p.x == 2
+;   [94:12] ? p.x == 2
+;   [94:12] ? p.x == 2
     cmp_94_12:
-    cmp qword [rsp - 48], 0
+    cmp qword [rsp - 40], 2
     jne bool_false_94_12
     bool_true_94_12:
     mov r15, true
@@ -1334,60 +1334,35 @@ main:
         if_19_5_94_5_end:
 ;       free scratch register 'r15'
     assert_94_5_end:
-;   [96:7] i = 1
-;   [96:9] 1
-;   [96:9] 1
-;   [97:5] i = 1
-    mov qword [rsp - 48], 1
-;   [97:5] bar(i)
-;   bar(arg) 
-    bar_97_5:
-;       alias arg -> i
-        if_57_8_97_5:
-;       [57:8] ? arg == 0
-;       [57:8] ? arg == 0
-        cmp_57_8_97_5:
-        cmp qword [rsp - 48], 0
-        jne if_57_5_97_5_end
-        if_57_8_97_5_code:
-;           [57:17] return
-            jmp bar_97_5_end
-        if_57_5_97_5_end:
-;       [58:9] arg = 0xff
-;       [58:11] 0xff
-;       [58:11] 0xff
-;       [59:1] arg = 0xff
-        mov qword [rsp - 48], 0xff
-    bar_97_5_end:
-;   [98:5] assert(i == 0xff)
+;   [95:5] assert(p.y == 0xb)
 ;   allocate scratch register -> r15
-;   [98:12] i == 0xff
-;   [98:12] ? i == 0xff
-;   [98:12] ? i == 0xff
-    cmp_98_12:
-    cmp qword [rsp - 48], 0xff
-    jne bool_false_98_12
-    bool_true_98_12:
+;   [95:12] p.y == 0xb
+;   [95:12] ? p.y == 0xb
+;   [95:12] ? p.y == 0xb
+    cmp_95_12:
+    cmp qword [rsp - 32], 0xb
+    jne bool_false_95_12
+    bool_true_95_12:
     mov r15, true
-    jmp bool_end_98_12
-    bool_false_98_12:
+    jmp bool_end_95_12
+    bool_false_95_12:
     mov r15, false
-    bool_end_98_12:
+    bool_end_95_12:
 ;   assert(expr : bool) 
-    assert_98_5:
+    assert_95_5:
 ;       alias expr -> r15
-        if_19_8_98_5:
+        if_19_8_95_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
-        cmp_19_8_98_5:
+        cmp_19_8_95_5:
         cmp r15, false
-        jne if_19_5_98_5_end
-        if_19_8_98_5_code:
+        jne if_19_5_95_5_end
+        if_19_8_95_5_code:
 ;           [19:17] exit(1)
 ;           allocate named register 'rdi'
             mov rdi, 1
 ;           exit(v : reg_rdi) 
-            exit_19_17_98_5:
+            exit_19_17_95_5:
 ;               alias v -> rdi
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
@@ -1397,26 +1372,162 @@ main:
 ;               [15:5] syscall()
                 syscall
 ;               free named register 'rdi'
-            exit_19_17_98_5_end:
-        if_19_5_98_5_end:
+            exit_19_17_95_5_end:
+        if_19_5_95_5_end:
 ;       free scratch register 'r15'
-    assert_98_5_end:
+    assert_95_5_end:
+;   var i: i64 @ qword [rsp - 48]
+;   [97:5] var i = 0
+;   [97:13] i =0
+;   [97:13] 0
+;   [97:13] 0
+;   [98:5] i = 0
+    mov qword [rsp - 48], 0
+;   [98:5] bar(i)
+;   bar(arg) 
+    bar_98_5:
+;       alias arg -> i
+        if_57_8_98_5:
+;       [57:8] ? arg == 0
+;       [57:8] ? arg == 0
+        cmp_57_8_98_5:
+        cmp qword [rsp - 48], 0
+        jne if_57_5_98_5_end
+        if_57_8_98_5_code:
+;           [57:17] return
+            jmp bar_98_5_end
+        if_57_5_98_5_end:
+;       [58:9] arg = 0xff
+;       [58:11] 0xff
+;       [58:11] 0xff
+;       [59:1] arg = 0xff
+        mov qword [rsp - 48], 0xff
+    bar_98_5_end:
+;   [99:5] assert(i == 0)
+;   allocate scratch register -> r15
+;   [99:12] i == 0
+;   [99:12] ? i == 0
+;   [99:12] ? i == 0
+    cmp_99_12:
+    cmp qword [rsp - 48], 0
+    jne bool_false_99_12
+    bool_true_99_12:
+    mov r15, true
+    jmp bool_end_99_12
+    bool_false_99_12:
+    mov r15, false
+    bool_end_99_12:
+;   assert(expr : bool) 
+    assert_99_5:
+;       alias expr -> r15
+        if_19_8_99_5:
+;       [19:8] ? not expr
+;       [19:8] ? not expr
+        cmp_19_8_99_5:
+        cmp r15, false
+        jne if_19_5_99_5_end
+        if_19_8_99_5_code:
+;           [19:17] exit(1)
+;           allocate named register 'rdi'
+            mov rdi, 1
+;           exit(v : reg_rdi) 
+            exit_19_17_99_5:
+;               alias v -> rdi
+;               [13:5] mov(rax, 60)
+                mov rax, 60
+;               [13:19] # exit system call
+;               [14:5] mov(rdi, v)
+;               [14:19] # return code
+;               [15:5] syscall()
+                syscall
+;               free named register 'rdi'
+            exit_19_17_99_5_end:
+        if_19_5_99_5_end:
+;       free scratch register 'r15'
+    assert_99_5_end:
+;   [101:7] i = 1
+;   [101:9] 1
+;   [101:9] 1
+;   [102:5] i = 1
+    mov qword [rsp - 48], 1
+;   [102:5] bar(i)
+;   bar(arg) 
+    bar_102_5:
+;       alias arg -> i
+        if_57_8_102_5:
+;       [57:8] ? arg == 0
+;       [57:8] ? arg == 0
+        cmp_57_8_102_5:
+        cmp qword [rsp - 48], 0
+        jne if_57_5_102_5_end
+        if_57_8_102_5_code:
+;           [57:17] return
+            jmp bar_102_5_end
+        if_57_5_102_5_end:
+;       [58:9] arg = 0xff
+;       [58:11] 0xff
+;       [58:11] 0xff
+;       [59:1] arg = 0xff
+        mov qword [rsp - 48], 0xff
+    bar_102_5_end:
+;   [103:5] assert(i == 0xff)
+;   allocate scratch register -> r15
+;   [103:12] i == 0xff
+;   [103:12] ? i == 0xff
+;   [103:12] ? i == 0xff
+    cmp_103_12:
+    cmp qword [rsp - 48], 0xff
+    jne bool_false_103_12
+    bool_true_103_12:
+    mov r15, true
+    jmp bool_end_103_12
+    bool_false_103_12:
+    mov r15, false
+    bool_end_103_12:
+;   assert(expr : bool) 
+    assert_103_5:
+;       alias expr -> r15
+        if_19_8_103_5:
+;       [19:8] ? not expr
+;       [19:8] ? not expr
+        cmp_19_8_103_5:
+        cmp r15, false
+        jne if_19_5_103_5_end
+        if_19_8_103_5_code:
+;           [19:17] exit(1)
+;           allocate named register 'rdi'
+            mov rdi, 1
+;           exit(v : reg_rdi) 
+            exit_19_17_103_5:
+;               alias v -> rdi
+;               [13:5] mov(rax, 60)
+                mov rax, 60
+;               [13:19] # exit system call
+;               [14:5] mov(rdi, v)
+;               [14:19] # return code
+;               [15:5] syscall()
+                syscall
+;               free named register 'rdi'
+            exit_19_17_103_5_end:
+        if_19_5_103_5_end:
+;       free scratch register 'r15'
+    assert_103_5_end:
 ;   var j: i64 @ qword [rsp - 56]
-;   [100:5] var j = 1
-;   [100:13] j =1
-;   [100:13] 1
-;   [100:13] 1
-;   [101:5] j = 1
+;   [105:5] var j = 1
+;   [105:13] j =1
+;   [105:13] 1
+;   [105:13] 1
+;   [106:5] j = 1
     mov qword [rsp - 56], 1
 ;   var k: i64 @ qword [rsp - 64]
-;   [101:5] var k = baz(j)
-;   [101:13] k =baz(j)
-;   [101:13] baz(j)
-;   [101:13] baz(j)
-;   [101:13] k = baz(j)
-;   [101:13] baz(j)
+;   [106:5] var k = baz(j)
+;   [106:13] k =baz(j)
+;   [106:13] baz(j)
+;   [106:13] baz(j)
+;   [106:13] k = baz(j)
+;   [106:13] baz(j)
 ;   baz(arg) : i64 res 
-    baz_101_13:
+    baz_106_13:
 ;       alias res -> k
 ;       alias arg -> j
 ;       [68:9] res = arg * 2
@@ -1433,36 +1544,36 @@ main:
         imul r15, 2
         mov qword [rsp - 64], r15
 ;       free scratch register 'r15'
-    baz_101_13_end:
-;   [102:5] assert(k == 2)
+    baz_106_13_end:
+;   [107:5] assert(k == 2)
 ;   allocate scratch register -> r15
-;   [102:12] k == 2
-;   [102:12] ? k == 2
-;   [102:12] ? k == 2
-    cmp_102_12:
+;   [107:12] k == 2
+;   [107:12] ? k == 2
+;   [107:12] ? k == 2
+    cmp_107_12:
     cmp qword [rsp - 64], 2
-    jne bool_false_102_12
-    bool_true_102_12:
+    jne bool_false_107_12
+    bool_true_107_12:
     mov r15, true
-    jmp bool_end_102_12
-    bool_false_102_12:
+    jmp bool_end_107_12
+    bool_false_107_12:
     mov r15, false
-    bool_end_102_12:
+    bool_end_107_12:
 ;   assert(expr : bool) 
-    assert_102_5:
+    assert_107_5:
 ;       alias expr -> r15
-        if_19_8_102_5:
+        if_19_8_107_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
-        cmp_19_8_102_5:
+        cmp_19_8_107_5:
         cmp r15, false
-        jne if_19_5_102_5_end
-        if_19_8_102_5_code:
+        jne if_19_5_107_5_end
+        if_19_8_107_5_code:
 ;           [19:17] exit(1)
 ;           allocate named register 'rdi'
             mov rdi, 1
 ;           exit(v : reg_rdi) 
-            exit_19_17_102_5:
+            exit_19_17_107_5:
 ;               alias v -> rdi
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
@@ -1472,17 +1583,17 @@ main:
 ;               [15:5] syscall()
                 syscall
 ;               free named register 'rdi'
-            exit_19_17_102_5_end:
-        if_19_5_102_5_end:
+            exit_19_17_107_5_end:
+        if_19_5_107_5_end:
 ;       free scratch register 'r15'
-    assert_102_5_end:
-;   [104:7] k = baz(1)
-;   [104:9] baz(1)
-;   [104:9] baz(1)
-;   [104:9] k = baz(1)
-;   [104:9] baz(1)
+    assert_107_5_end:
+;   [109:7] k = baz(1)
+;   [109:9] baz(1)
+;   [109:9] baz(1)
+;   [109:9] k = baz(1)
+;   [109:9] baz(1)
 ;   baz(arg) : i64 res 
-    baz_104_9:
+    baz_109_9:
 ;       alias res -> k
 ;       alias arg -> 1
 ;       [68:9] res = arg * 2
@@ -1496,36 +1607,36 @@ main:
         imul r15, 2
         mov qword [rsp - 64], r15
 ;       free scratch register 'r15'
-    baz_104_9_end:
-;   [105:5] assert(k == 2)
+    baz_109_9_end:
+;   [110:5] assert(k == 2)
 ;   allocate scratch register -> r15
-;   [105:12] k == 2
-;   [105:12] ? k == 2
-;   [105:12] ? k == 2
-    cmp_105_12:
+;   [110:12] k == 2
+;   [110:12] ? k == 2
+;   [110:12] ? k == 2
+    cmp_110_12:
     cmp qword [rsp - 64], 2
-    jne bool_false_105_12
-    bool_true_105_12:
+    jne bool_false_110_12
+    bool_true_110_12:
     mov r15, true
-    jmp bool_end_105_12
-    bool_false_105_12:
+    jmp bool_end_110_12
+    bool_false_110_12:
     mov r15, false
-    bool_end_105_12:
+    bool_end_110_12:
 ;   assert(expr : bool) 
-    assert_105_5:
+    assert_110_5:
 ;       alias expr -> r15
-        if_19_8_105_5:
+        if_19_8_110_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
-        cmp_19_8_105_5:
+        cmp_19_8_110_5:
         cmp r15, false
-        jne if_19_5_105_5_end
-        if_19_8_105_5_code:
+        jne if_19_5_110_5_end
+        if_19_8_110_5_code:
 ;           [19:17] exit(1)
 ;           allocate named register 'rdi'
             mov rdi, 1
 ;           exit(v : reg_rdi) 
-            exit_19_17_105_5:
+            exit_19_17_110_5:
 ;               alias v -> rdi
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
@@ -1535,21 +1646,21 @@ main:
 ;               [15:5] syscall()
                 syscall
 ;               free named register 'rdi'
-            exit_19_17_105_5_end:
-        if_19_5_105_5_end:
+            exit_19_17_110_5_end:
+        if_19_5_110_5_end:
 ;       free scratch register 'r15'
-    assert_105_5_end:
+    assert_110_5_end:
 ;   var p0: point @ qword [rsp - 80]
-;   [107:5] var p0 : point = {baz(2), 0}
-;   [107:22] p0 ={baz(2), 0}
-;   [107:22] {baz(2), 0}
-;   [107:22] {baz(2), 0}
-;   [107:23] baz(2)
-;   [107:23] baz(2)
-;   [107:23] p0.x = baz(2)
-;   [107:23] baz(2)
+;   [112:5] var p0 : point = {baz(2), 0}
+;   [112:22] p0 ={baz(2), 0}
+;   [112:22] {baz(2), 0}
+;   [112:22] {baz(2), 0}
+;   [112:23] baz(2)
+;   [112:23] baz(2)
+;   [112:23] p0.x = baz(2)
+;   [112:23] baz(2)
 ;   baz(arg) : i64 res 
-    baz_107_23:
+    baz_112_23:
 ;       alias res -> p0.x
 ;       alias arg -> 2
 ;       [68:9] res = arg * 2
@@ -1563,40 +1674,40 @@ main:
         imul r15, 2
         mov qword [rsp - 80], r15
 ;       free scratch register 'r15'
-    baz_107_23_end:
-;   [107:31] 0
-;   [107:31] 0
-;   [107:32] p0.y = 0
+    baz_112_23_end:
+;   [112:31] 0
+;   [112:31] 0
+;   [112:32] p0.y = 0
     mov qword [rsp - 72], 0
-;   [108:5] assert(p0.x == 4)
+;   [113:5] assert(p0.x == 4)
 ;   allocate scratch register -> r15
-;   [108:12] p0.x == 4
-;   [108:12] ? p0.x == 4
-;   [108:12] ? p0.x == 4
-    cmp_108_12:
+;   [113:12] p0.x == 4
+;   [113:12] ? p0.x == 4
+;   [113:12] ? p0.x == 4
+    cmp_113_12:
     cmp qword [rsp - 80], 4
-    jne bool_false_108_12
-    bool_true_108_12:
+    jne bool_false_113_12
+    bool_true_113_12:
     mov r15, true
-    jmp bool_end_108_12
-    bool_false_108_12:
+    jmp bool_end_113_12
+    bool_false_113_12:
     mov r15, false
-    bool_end_108_12:
+    bool_end_113_12:
 ;   assert(expr : bool) 
-    assert_108_5:
+    assert_113_5:
 ;       alias expr -> r15
-        if_19_8_108_5:
+        if_19_8_113_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
-        cmp_19_8_108_5:
+        cmp_19_8_113_5:
         cmp r15, false
-        jne if_19_5_108_5_end
-        if_19_8_108_5_code:
+        jne if_19_5_113_5_end
+        if_19_8_113_5_code:
 ;           [19:17] exit(1)
 ;           allocate named register 'rdi'
             mov rdi, 1
 ;           exit(v : reg_rdi) 
-            exit_19_17_108_5:
+            exit_19_17_113_5:
 ;               alias v -> rdi
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
@@ -1606,83 +1717,83 @@ main:
 ;               [15:5] syscall()
                 syscall
 ;               free named register 'rdi'
-            exit_19_17_108_5_end:
-        if_19_5_108_5_end:
+            exit_19_17_113_5_end:
+        if_19_5_113_5_end:
 ;       free scratch register 'r15'
-    assert_108_5_end:
+    assert_113_5_end:
 ;   var x: i64 @ qword [rsp - 88]
-;   [110:5] var x = 1
-;   [110:13] x =1
-;   [110:13] 1
-;   [110:13] 1
-;   [111:5] x = 1
+;   [115:5] var x = 1
+;   [115:13] x =1
+;   [115:13] 1
+;   [115:13] 1
+;   [116:5] x = 1
     mov qword [rsp - 88], 1
 ;   var y: i64 @ qword [rsp - 96]
-;   [111:5] var y = 2
-;   [111:13] y =2
-;   [111:13] 2
-;   [111:13] 2
-;   [113:5] y = 2
+;   [116:5] var y = 2
+;   [116:13] y =2
+;   [116:13] 2
+;   [116:13] 2
+;   [118:5] y = 2
     mov qword [rsp - 96], 2
 ;   var o1: object @ qword [rsp - 116]
-;   [113:5] var o1 : object = {{x * 10, y}, 0xff0000}
-;   [113:23] o1 ={{x * 10, y}, 0xff0000}
-;   [113:23] {{x * 10, y}, 0xff0000}
-;   [113:23] {{x * 10, y}, 0xff0000}
-;       [113:24] {x * 10, y}
-;       [113:25] x * 10
-;       [113:25] x * 10
-;       [113:27] o1.pos.x = x
+;   [118:5] var o1 : object = {{x * 10, y}, 0xff0000}
+;   [118:23] o1 ={{x * 10, y}, 0xff0000}
+;   [118:23] {{x * 10, y}, 0xff0000}
+;   [118:23] {{x * 10, y}, 0xff0000}
+;       [118:24] {x * 10, y}
+;       [118:25] x * 10
+;       [118:25] x * 10
+;       [118:27] o1.pos.x = x
 ;       allocate scratch register -> r15
         mov r15, qword [rsp - 88]
         mov qword [rsp - 116], r15
 ;       free scratch register 'r15'
-;       [113:31] o1.pos.x * 10
+;       [118:31] o1.pos.x * 10
 ;       allocate scratch register -> r15
         mov r15, qword [rsp - 116]
         imul r15, 10
         mov qword [rsp - 116], r15
 ;       free scratch register 'r15'
-;       [113:33] y
-;       [113:33] y
-;       [113:34] o1.pos.y = y
+;       [118:33] y
+;       [118:33] y
+;       [118:34] o1.pos.y = y
 ;       allocate scratch register -> r15
         mov r15, qword [rsp - 96]
         mov qword [rsp - 108], r15
 ;       free scratch register 'r15'
-;   [113:37] 0xff0000
-;   [113:37] 0xff0000
-;   [113:45] o1.color = 0xff0000
+;   [118:37] 0xff0000
+;   [118:37] 0xff0000
+;   [118:45] o1.color = 0xff0000
     mov dword [rsp - 100], 0xff0000
-;   [114:5] assert(o1.pos.x == 10)
+;   [119:5] assert(o1.pos.x == 10)
 ;   allocate scratch register -> r15
-;   [114:12] o1.pos.x == 10
-;   [114:12] ? o1.pos.x == 10
-;   [114:12] ? o1.pos.x == 10
-    cmp_114_12:
+;   [119:12] o1.pos.x == 10
+;   [119:12] ? o1.pos.x == 10
+;   [119:12] ? o1.pos.x == 10
+    cmp_119_12:
     cmp qword [rsp - 116], 10
-    jne bool_false_114_12
-    bool_true_114_12:
+    jne bool_false_119_12
+    bool_true_119_12:
     mov r15, true
-    jmp bool_end_114_12
-    bool_false_114_12:
+    jmp bool_end_119_12
+    bool_false_119_12:
     mov r15, false
-    bool_end_114_12:
+    bool_end_119_12:
 ;   assert(expr : bool) 
-    assert_114_5:
+    assert_119_5:
 ;       alias expr -> r15
-        if_19_8_114_5:
+        if_19_8_119_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
-        cmp_19_8_114_5:
+        cmp_19_8_119_5:
         cmp r15, false
-        jne if_19_5_114_5_end
-        if_19_8_114_5_code:
+        jne if_19_5_119_5_end
+        if_19_8_119_5_code:
 ;           [19:17] exit(1)
 ;           allocate named register 'rdi'
             mov rdi, 1
 ;           exit(v : reg_rdi) 
-            exit_19_17_114_5:
+            exit_19_17_119_5:
 ;               alias v -> rdi
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
@@ -1692,134 +1803,17 @@ main:
 ;               [15:5] syscall()
                 syscall
 ;               free named register 'rdi'
-            exit_19_17_114_5_end:
-        if_19_5_114_5_end:
+            exit_19_17_119_5_end:
+        if_19_5_119_5_end:
 ;       free scratch register 'r15'
-    assert_114_5_end:
-;   [115:5] assert(o1.pos.y == 2)
+    assert_119_5_end:
+;   [120:5] assert(o1.pos.y == 2)
 ;   allocate scratch register -> r15
-;   [115:12] o1.pos.y == 2
-;   [115:12] ? o1.pos.y == 2
-;   [115:12] ? o1.pos.y == 2
-    cmp_115_12:
-    cmp qword [rsp - 108], 2
-    jne bool_false_115_12
-    bool_true_115_12:
-    mov r15, true
-    jmp bool_end_115_12
-    bool_false_115_12:
-    mov r15, false
-    bool_end_115_12:
-;   assert(expr : bool) 
-    assert_115_5:
-;       alias expr -> r15
-        if_19_8_115_5:
-;       [19:8] ? not expr
-;       [19:8] ? not expr
-        cmp_19_8_115_5:
-        cmp r15, false
-        jne if_19_5_115_5_end
-        if_19_8_115_5_code:
-;           [19:17] exit(1)
-;           allocate named register 'rdi'
-            mov rdi, 1
-;           exit(v : reg_rdi) 
-            exit_19_17_115_5:
-;               alias v -> rdi
-;               [13:5] mov(rax, 60)
-                mov rax, 60
-;               [13:19] # exit system call
-;               [14:5] mov(rdi, v)
-;               [14:19] # return code
-;               [15:5] syscall()
-                syscall
-;               free named register 'rdi'
-            exit_19_17_115_5_end:
-        if_19_5_115_5_end:
-;       free scratch register 'r15'
-    assert_115_5_end:
-;   [116:5] assert(o1.color == 0xff0000)
-;   allocate scratch register -> r15
-;   [116:12] o1.color == 0xff0000
-;   [116:12] ? o1.color == 0xff0000
-;   [116:12] ? o1.color == 0xff0000
-    cmp_116_12:
-    cmp dword [rsp - 100], 0xff0000
-    jne bool_false_116_12
-    bool_true_116_12:
-    mov r15, true
-    jmp bool_end_116_12
-    bool_false_116_12:
-    mov r15, false
-    bool_end_116_12:
-;   assert(expr : bool) 
-    assert_116_5:
-;       alias expr -> r15
-        if_19_8_116_5:
-;       [19:8] ? not expr
-;       [19:8] ? not expr
-        cmp_19_8_116_5:
-        cmp r15, false
-        jne if_19_5_116_5_end
-        if_19_8_116_5_code:
-;           [19:17] exit(1)
-;           allocate named register 'rdi'
-            mov rdi, 1
-;           exit(v : reg_rdi) 
-            exit_19_17_116_5:
-;               alias v -> rdi
-;               [13:5] mov(rax, 60)
-                mov rax, 60
-;               [13:19] # exit system call
-;               [14:5] mov(rdi, v)
-;               [14:19] # return code
-;               [15:5] syscall()
-                syscall
-;               free named register 'rdi'
-            exit_19_17_116_5_end:
-        if_19_5_116_5_end:
-;       free scratch register 'r15'
-    assert_116_5_end:
-;   var p1: point @ qword [rsp - 132]
-;   [118:5] var p1 : point = {-x, -y}
-;   [118:22] p1 ={-x, -y}
-;   [118:22] {-x, -y}
-;   [118:22] {-x, -y}
-;   [118:23] -x
-;   [118:23] -x
-;   [118:25] p1.x = -x
-;   allocate scratch register -> r15
-    mov r15, qword [rsp - 88]
-    mov qword [rsp - 132], r15
-;   free scratch register 'r15'
-    neg qword [rsp - 132]
-;   [118:27] -y
-;   [118:27] -y
-;   [118:29] p1.y = -y
-;   allocate scratch register -> r15
-    mov r15, qword [rsp - 96]
-    mov qword [rsp - 124], r15
-;   free scratch register 'r15'
-    neg qword [rsp - 124]
-;   [119:7] o1.pos = p1
-;   allocate named register 'rsi'
-;   allocate named register 'rdi'
-;   allocate named register 'rcx'
-    lea rdi, [rsp - 116]
-;   [119:14] p1
-    lea rsi, [rsp - 132]
-    mov rcx, 16
-    rep movsb
-;   free named register 'rcx'
-;   free named register 'rdi'
-;   free named register 'rsi'
-;   [120:5] assert(o1.pos.x == -1)
-;   allocate scratch register -> r15
-;   [120:12] o1.pos.x == -1
-;   [120:12] ? o1.pos.x == -1
-;   [120:12] ? o1.pos.x == -1
+;   [120:12] o1.pos.y == 2
+;   [120:12] ? o1.pos.y == 2
+;   [120:12] ? o1.pos.y == 2
     cmp_120_12:
-    cmp qword [rsp - 116], -1
+    cmp qword [rsp - 108], 2
     jne bool_false_120_12
     bool_true_120_12:
     mov r15, true
@@ -1855,13 +1849,13 @@ main:
         if_19_5_120_5_end:
 ;       free scratch register 'r15'
     assert_120_5_end:
-;   [121:5] assert(o1.pos.y == -2)
+;   [121:5] assert(o1.color == 0xff0000)
 ;   allocate scratch register -> r15
-;   [121:12] o1.pos.y == -2
-;   [121:12] ? o1.pos.y == -2
-;   [121:12] ? o1.pos.y == -2
+;   [121:12] o1.color == 0xff0000
+;   [121:12] ? o1.color == 0xff0000
+;   [121:12] ? o1.color == 0xff0000
     cmp_121_12:
-    cmp qword [rsp - 108], -2
+    cmp dword [rsp - 100], 0xff0000
     jne bool_false_121_12
     bool_true_121_12:
     mov r15, true
@@ -1897,69 +1891,46 @@ main:
         if_19_5_121_5_end:
 ;       free scratch register 'r15'
     assert_121_5_end:
-;   var o2: object @ qword [rsp - 152]
-;   [123:5] var o2 : object = o1
-;   [123:23] o2 =o1
+;   var p1: point @ qword [rsp - 132]
+;   [123:5] var p1 : point = {-x, -y}
+;   [123:22] p1 ={-x, -y}
+;   [123:22] {-x, -y}
+;   [123:22] {-x, -y}
+;   [123:23] -x
+;   [123:23] -x
+;   [123:25] p1.x = -x
+;   allocate scratch register -> r15
+    mov r15, qword [rsp - 88]
+    mov qword [rsp - 132], r15
+;   free scratch register 'r15'
+    neg qword [rsp - 132]
+;   [123:27] -y
+;   [123:27] -y
+;   [123:29] p1.y = -y
+;   allocate scratch register -> r15
+    mov r15, qword [rsp - 96]
+    mov qword [rsp - 124], r15
+;   free scratch register 'r15'
+    neg qword [rsp - 124]
+;   [124:7] o1.pos = p1
 ;   allocate named register 'rsi'
 ;   allocate named register 'rdi'
 ;   allocate named register 'rcx'
-    lea rdi, [rsp - 152]
-;   [123:23] o1
-    lea rsi, [rsp - 116]
-    mov rcx, 20
+    lea rdi, [rsp - 116]
+;   [124:14] p1
+    lea rsi, [rsp - 132]
+    mov rcx, 16
     rep movsb
 ;   free named register 'rcx'
 ;   free named register 'rdi'
 ;   free named register 'rsi'
-;   [124:5] assert(o2.pos.x == -1)
+;   [125:5] assert(o1.pos.x == -1)
 ;   allocate scratch register -> r15
-;   [124:12] o2.pos.x == -1
-;   [124:12] ? o2.pos.x == -1
-;   [124:12] ? o2.pos.x == -1
-    cmp_124_12:
-    cmp qword [rsp - 152], -1
-    jne bool_false_124_12
-    bool_true_124_12:
-    mov r15, true
-    jmp bool_end_124_12
-    bool_false_124_12:
-    mov r15, false
-    bool_end_124_12:
-;   assert(expr : bool) 
-    assert_124_5:
-;       alias expr -> r15
-        if_19_8_124_5:
-;       [19:8] ? not expr
-;       [19:8] ? not expr
-        cmp_19_8_124_5:
-        cmp r15, false
-        jne if_19_5_124_5_end
-        if_19_8_124_5_code:
-;           [19:17] exit(1)
-;           allocate named register 'rdi'
-            mov rdi, 1
-;           exit(v : reg_rdi) 
-            exit_19_17_124_5:
-;               alias v -> rdi
-;               [13:5] mov(rax, 60)
-                mov rax, 60
-;               [13:19] # exit system call
-;               [14:5] mov(rdi, v)
-;               [14:19] # return code
-;               [15:5] syscall()
-                syscall
-;               free named register 'rdi'
-            exit_19_17_124_5_end:
-        if_19_5_124_5_end:
-;       free scratch register 'r15'
-    assert_124_5_end:
-;   [125:5] assert(o2.pos.y == -2)
-;   allocate scratch register -> r15
-;   [125:12] o2.pos.y == -2
-;   [125:12] ? o2.pos.y == -2
-;   [125:12] ? o2.pos.y == -2
+;   [125:12] o1.pos.x == -1
+;   [125:12] ? o1.pos.x == -1
+;   [125:12] ? o1.pos.x == -1
     cmp_125_12:
-    cmp qword [rsp - 144], -2
+    cmp qword [rsp - 116], -1
     jne bool_false_125_12
     bool_true_125_12:
     mov r15, true
@@ -1995,13 +1966,13 @@ main:
         if_19_5_125_5_end:
 ;       free scratch register 'r15'
     assert_125_5_end:
-;   [126:5] assert(o2.color == 0xff0000)
+;   [126:5] assert(o1.pos.y == -2)
 ;   allocate scratch register -> r15
-;   [126:12] o2.color == 0xff0000
-;   [126:12] ? o2.color == 0xff0000
-;   [126:12] ? o2.color == 0xff0000
+;   [126:12] o1.pos.y == -2
+;   [126:12] ? o1.pos.y == -2
+;   [126:12] ? o1.pos.y == -2
     cmp_126_12:
-    cmp dword [rsp - 136], 0xff0000
+    cmp qword [rsp - 108], -2
     jne bool_false_126_12
     bool_true_126_12:
     mov r15, true
@@ -2037,50 +2008,111 @@ main:
         if_19_5_126_5_end:
 ;       free scratch register 'r15'
     assert_126_5_end:
-;   var o3: object[1] @ qword [rsp - 172]
-;   [128:5] var o3 : object[1]
-;   clear array 1 * 20 B = 20 B
+;   var o2: object @ qword [rsp - 152]
+;   [128:5] var o2 : object = o1
+;   [128:23] o2 =o1
+;   allocate named register 'rsi'
 ;   allocate named register 'rdi'
 ;   allocate named register 'rcx'
-;   allocate named register 'rax'
-    lea rdi, [rsp - 172]
+    lea rdi, [rsp - 152]
+;   [128:23] o1
+    lea rsi, [rsp - 116]
     mov rcx, 20
-    xor rax, rax
-    rep stosb
-;   free named register 'rax'
+    rep movsb
 ;   free named register 'rcx'
 ;   free named register 'rdi'
-;   [129:5] # index 0 in an array can be accessed without array index
-;   [130:7] o3.pos.y = 73
-;   [130:16] 73
-;   [130:16] 73
-;   [131:5] o3.pos.y = 73
-    mov qword [rsp - 164], 73
-;   [131:5] assert(o3[0].pos.y == 73)
+;   free named register 'rsi'
+;   [129:5] assert(o2.pos.x == -1)
 ;   allocate scratch register -> r15
-;   [131:12] o3[0].pos.y == 73
-;   [131:12] ? o3[0].pos.y == 73
-;   [131:12] ? o3[0].pos.y == 73
+;   [129:12] o2.pos.x == -1
+;   [129:12] ? o2.pos.x == -1
+;   [129:12] ? o2.pos.x == -1
+    cmp_129_12:
+    cmp qword [rsp - 152], -1
+    jne bool_false_129_12
+    bool_true_129_12:
+    mov r15, true
+    jmp bool_end_129_12
+    bool_false_129_12:
+    mov r15, false
+    bool_end_129_12:
+;   assert(expr : bool) 
+    assert_129_5:
+;       alias expr -> r15
+        if_19_8_129_5:
+;       [19:8] ? not expr
+;       [19:8] ? not expr
+        cmp_19_8_129_5:
+        cmp r15, false
+        jne if_19_5_129_5_end
+        if_19_8_129_5_code:
+;           [19:17] exit(1)
+;           allocate named register 'rdi'
+            mov rdi, 1
+;           exit(v : reg_rdi) 
+            exit_19_17_129_5:
+;               alias v -> rdi
+;               [13:5] mov(rax, 60)
+                mov rax, 60
+;               [13:19] # exit system call
+;               [14:5] mov(rdi, v)
+;               [14:19] # return code
+;               [15:5] syscall()
+                syscall
+;               free named register 'rdi'
+            exit_19_17_129_5_end:
+        if_19_5_129_5_end:
+;       free scratch register 'r15'
+    assert_129_5_end:
+;   [130:5] assert(o2.pos.y == -2)
+;   allocate scratch register -> r15
+;   [130:12] o2.pos.y == -2
+;   [130:12] ? o2.pos.y == -2
+;   [130:12] ? o2.pos.y == -2
+    cmp_130_12:
+    cmp qword [rsp - 144], -2
+    jne bool_false_130_12
+    bool_true_130_12:
+    mov r15, true
+    jmp bool_end_130_12
+    bool_false_130_12:
+    mov r15, false
+    bool_end_130_12:
+;   assert(expr : bool) 
+    assert_130_5:
+;       alias expr -> r15
+        if_19_8_130_5:
+;       [19:8] ? not expr
+;       [19:8] ? not expr
+        cmp_19_8_130_5:
+        cmp r15, false
+        jne if_19_5_130_5_end
+        if_19_8_130_5_code:
+;           [19:17] exit(1)
+;           allocate named register 'rdi'
+            mov rdi, 1
+;           exit(v : reg_rdi) 
+            exit_19_17_130_5:
+;               alias v -> rdi
+;               [13:5] mov(rax, 60)
+                mov rax, 60
+;               [13:19] # exit system call
+;               [14:5] mov(rdi, v)
+;               [14:19] # return code
+;               [15:5] syscall()
+                syscall
+;               free named register 'rdi'
+            exit_19_17_130_5_end:
+        if_19_5_130_5_end:
+;       free scratch register 'r15'
+    assert_130_5_end:
+;   [131:5] assert(o2.color == 0xff0000)
+;   allocate scratch register -> r15
+;   [131:12] o2.color == 0xff0000
+;   [131:12] ? o2.color == 0xff0000
+;   [131:12] ? o2.color == 0xff0000
     cmp_131_12:
-;   allocate scratch register -> r14
-;       [131:12] o3[0].pos.y
-;       [131:14] r14 = o3[0].pos.y
-;       [131:14] o3[0].pos.y
-;       allocate scratch register -> r13
-        lea r13, [rsp - 172]
-;       allocate scratch register -> r12
-;       [131:15] 0
-;       [131:15] 0
-;       [131:16] r12 = 0
-        mov r12, 0
-        imul r12, 20
-        add r13, r12
-;       free scratch register 'r12'
-        add r13, 8
-        mov r14, qword [r13]
-;       free scratch register 'r13'
-    cmp r14, 73
-;   free scratch register 'r14'
+    cmp dword [rsp - 136], 0xff0000
     jne bool_false_131_12
     bool_true_131_12:
     mov r15, true
@@ -2116,8 +2148,87 @@ main:
         if_19_5_131_5_end:
 ;       free scratch register 'r15'
     assert_131_5_end:
+;   var o3: object[1] @ qword [rsp - 172]
+;   [133:5] var o3 : object[1]
+;   clear array 1 * 20 B = 20 B
+;   allocate named register 'rdi'
+;   allocate named register 'rcx'
+;   allocate named register 'rax'
+    lea rdi, [rsp - 172]
+    mov rcx, 20
+    xor rax, rax
+    rep stosb
+;   free named register 'rax'
+;   free named register 'rcx'
+;   free named register 'rdi'
+;   [134:5] # index 0 in an array can be accessed without array index
+;   [135:7] o3.pos.y = 73
+;   [135:16] 73
+;   [135:16] 73
+;   [136:5] o3.pos.y = 73
+    mov qword [rsp - 164], 73
+;   [136:5] assert(o3[0].pos.y == 73)
+;   allocate scratch register -> r15
+;   [136:12] o3[0].pos.y == 73
+;   [136:12] ? o3[0].pos.y == 73
+;   [136:12] ? o3[0].pos.y == 73
+    cmp_136_12:
+;   allocate scratch register -> r14
+;       [136:12] o3[0].pos.y
+;       [136:14] r14 = o3[0].pos.y
+;       [136:14] o3[0].pos.y
+;       allocate scratch register -> r13
+        lea r13, [rsp - 172]
+;       allocate scratch register -> r12
+;       [136:15] 0
+;       [136:15] 0
+;       [136:16] r12 = 0
+        mov r12, 0
+        imul r12, 20
+        add r13, r12
+;       free scratch register 'r12'
+        add r13, 8
+        mov r14, qword [r13]
+;       free scratch register 'r13'
+    cmp r14, 73
+;   free scratch register 'r14'
+    jne bool_false_136_12
+    bool_true_136_12:
+    mov r15, true
+    jmp bool_end_136_12
+    bool_false_136_12:
+    mov r15, false
+    bool_end_136_12:
+;   assert(expr : bool) 
+    assert_136_5:
+;       alias expr -> r15
+        if_19_8_136_5:
+;       [19:8] ? not expr
+;       [19:8] ? not expr
+        cmp_19_8_136_5:
+        cmp r15, false
+        jne if_19_5_136_5_end
+        if_19_8_136_5_code:
+;           [19:17] exit(1)
+;           allocate named register 'rdi'
+            mov rdi, 1
+;           exit(v : reg_rdi) 
+            exit_19_17_136_5:
+;               alias v -> rdi
+;               [13:5] mov(rax, 60)
+                mov rax, 60
+;               [13:19] # exit system call
+;               [14:5] mov(rdi, v)
+;               [14:19] # return code
+;               [15:5] syscall()
+                syscall
+;               free named register 'rdi'
+            exit_19_17_136_5_end:
+        if_19_5_136_5_end:
+;       free scratch register 'r15'
+    assert_136_5_end:
 ;   var input_buffer: i8[80] @ byte [rsp - 252]
-;   [133:5] var input_buffer : i8[80]
+;   [138:5] var input_buffer : i8[80]
 ;   clear array 80 * 1 B = 80 B
 ;   allocate named register 'rdi'
 ;   allocate named register 'rcx'
@@ -2129,13 +2240,13 @@ main:
 ;   free named register 'rax'
 ;   free named register 'rcx'
 ;   free named register 'rdi'
-;   [135:5] print(hello.len, hello)
+;   [140:5] print(hello.len, hello)
 ;   allocate named register 'rdx'
     mov rdx, hello.len
 ;   allocate named register 'rsi'
     mov rsi, hello
 ;   print(len : reg_rdx, ptr : reg_rsi) 
-    print_135_5:
+    print_140_5:
 ;       alias len -> rdx
 ;       alias ptr -> rsi
 ;       [23:5] mov(rax, 1)
@@ -2152,16 +2263,16 @@ main:
         syscall
 ;       free named register 'rsi'
 ;       free named register 'rdx'
-    print_135_5_end:
-;   [136:5] loop
-    loop_136_5:
-;       [137:9] print(prompt1.len, prompt1)
+    print_140_5_end:
+;   [141:5] loop
+    loop_141_5:
+;       [142:9] print(prompt1.len, prompt1)
 ;       allocate named register 'rdx'
         mov rdx, prompt1.len
 ;       allocate named register 'rsi'
         mov rsi, prompt1
 ;       print(len : reg_rdx, ptr : reg_rsi) 
-        print_137_9:
+        print_142_9:
 ;           alias len -> rdx
 ;           alias ptr -> rsi
 ;           [23:5] mov(rax, 1)
@@ -2178,28 +2289,28 @@ main:
             syscall
 ;           free named register 'rsi'
 ;           free named register 'rdx'
-        print_137_9_end:
+        print_142_9_end:
 ;       var len: i64 @ qword [rsp - 260]
-;       [139:9] var len = read(array_size_of(input_buffer), address_of(input_buffer)) - 1
-;       [139:19] len =read(array_size_of(input_buffer), address_of(input_buffer)) - 1
-;       [139:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
-;       [139:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
-;       [139:19] len = read(array_size_of(input_buffer), address_of(input_buffer))
-;       [139:19] read(array_size_of(input_buffer), address_of(input_buffer))
+;       [144:9] var len = read(array_size_of(input_buffer), address_of(input_buffer)) - 1
+;       [144:19] len =read(array_size_of(input_buffer), address_of(input_buffer)) - 1
+;       [144:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
+;       [144:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
+;       [144:19] len = read(array_size_of(input_buffer), address_of(input_buffer))
+;       [144:19] read(array_size_of(input_buffer), address_of(input_buffer))
 ;       allocate named register 'rdx'
-;       [139:24] array_size_of(input_buffer)
-;       [139:24] array_size_of(input_buffer)
-;       [139:24] rdx = array_size_of(input_buffer)
-;       [139:24] array_size_of(input_buffer)
+;       [144:24] array_size_of(input_buffer)
+;       [144:24] array_size_of(input_buffer)
+;       [144:24] rdx = array_size_of(input_buffer)
+;       [144:24] array_size_of(input_buffer)
         mov rdx, 80
 ;       allocate named register 'rsi'
-;       [139:53] address_of(input_buffer)
-;       [139:53] address_of(input_buffer)
-;       [139:53] rsi = address_of(input_buffer)
-;       [139:53] address_of(input_buffer)
+;       [144:53] address_of(input_buffer)
+;       [144:53] address_of(input_buffer)
+;       [144:53] rsi = address_of(input_buffer)
+;       [144:53] address_of(input_buffer)
         lea rsi, [rsp - 252]
 ;       read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes 
-        read_139_19:
+        read_144_19:
 ;           alias nbytes -> len
 ;           alias len -> rdx
 ;           alias ptr -> rsi
@@ -2220,113 +2331,33 @@ main:
 ;           [36:22] # return value
 ;           free named register 'rsi'
 ;           free named register 'rdx'
-        read_139_19_end:
-;       [140:9] len - 1
+        read_144_19_end:
+;       [145:9] len - 1
         sub qword [rsp - 260], 1
-;       [140:9] # note: `array_size_of` and `address_of` are built-in functions
-;       [141:9] # -1 to not include the trailing '\n'
-        if_143_12:
-;       [143:12] ? len == 0
-;       [143:12] ? len == 0
-        cmp_143_12:
+;       [145:9] # note: `array_size_of` and `address_of` are built-in functions
+;       [146:9] # -1 to not include the trailing '\n'
+        if_148_12:
+;       [148:12] ? len == 0
+;       [148:12] ? len == 0
+        cmp_148_12:
         cmp qword [rsp - 260], 0
-        jne if_145_19
-        if_143_12_code:
-;           [144:13] break
-            jmp loop_136_5_end
-        jmp if_143_9_end
-        if_145_19:
-;       [145:19] ? len <= 4
-;       [145:19] ? len <= 4
-        cmp_145_19:
+        jne if_150_19
+        if_148_12_code:
+;           [149:13] break
+            jmp loop_141_5_end
+        jmp if_148_9_end
+        if_150_19:
+;       [150:19] ? len <= 4
+;       [150:19] ? len <= 4
+        cmp_150_19:
         cmp qword [rsp - 260], 4
-        jg if_else_143_9
-        if_145_19_code:
-;           [146:13] print(prompt2.len, prompt2)
+        jg if_else_148_9
+        if_150_19_code:
+;           [151:13] print(prompt2.len, prompt2)
 ;           allocate named register 'rdx'
             mov rdx, prompt2.len
 ;           allocate named register 'rsi'
             mov rsi, prompt2
-;           print(len : reg_rdx, ptr : reg_rsi) 
-            print_146_13:
-;               alias len -> rdx
-;               alias ptr -> rsi
-;               [23:5] mov(rax, 1)
-                mov rax, 1
-;               [23:19] # write system call
-;               [24:5] mov(rdi, 1)
-                mov rdi, 1
-;               [24:19] # file descriptor for standard out
-;               [25:5] mov(rsi, ptr)
-;               [25:19] # buffer address
-;               [26:5] mov(rdx, len)
-;               [26:19] # buffer size
-;               [27:5] syscall()
-                syscall
-;               free named register 'rsi'
-;               free named register 'rdx'
-            print_146_13_end:
-;           [147:13] continue
-            jmp loop_136_5
-        jmp if_143_9_end
-        if_else_143_9:
-;           [149:13] print(prompt3.len, prompt3)
-;           allocate named register 'rdx'
-            mov rdx, prompt3.len
-;           allocate named register 'rsi'
-            mov rsi, prompt3
-;           print(len : reg_rdx, ptr : reg_rsi) 
-            print_149_13:
-;               alias len -> rdx
-;               alias ptr -> rsi
-;               [23:5] mov(rax, 1)
-                mov rax, 1
-;               [23:19] # write system call
-;               [24:5] mov(rdi, 1)
-                mov rdi, 1
-;               [24:19] # file descriptor for standard out
-;               [25:5] mov(rsi, ptr)
-;               [25:19] # buffer address
-;               [26:5] mov(rdx, len)
-;               [26:19] # buffer size
-;               [27:5] syscall()
-                syscall
-;               free named register 'rsi'
-;               free named register 'rdx'
-            print_149_13_end:
-;           [150:13] print(len, address_of(input_buffer))
-;           allocate named register 'rdx'
-            mov rdx, qword [rsp - 260]
-;           allocate named register 'rsi'
-;           [150:24] address_of(input_buffer)
-;           [150:24] address_of(input_buffer)
-;           [150:24] rsi = address_of(input_buffer)
-;           [150:24] address_of(input_buffer)
-            lea rsi, [rsp - 252]
-;           print(len : reg_rdx, ptr : reg_rsi) 
-            print_150_13:
-;               alias len -> rdx
-;               alias ptr -> rsi
-;               [23:5] mov(rax, 1)
-                mov rax, 1
-;               [23:19] # write system call
-;               [24:5] mov(rdi, 1)
-                mov rdi, 1
-;               [24:19] # file descriptor for standard out
-;               [25:5] mov(rsi, ptr)
-;               [25:19] # buffer address
-;               [26:5] mov(rdx, len)
-;               [26:19] # buffer size
-;               [27:5] syscall()
-                syscall
-;               free named register 'rsi'
-;               free named register 'rdx'
-            print_150_13_end:
-;           [151:13] print(dot.len, dot)
-;           allocate named register 'rdx'
-            mov rdx, dot.len
-;           allocate named register 'rsi'
-            mov rsi, dot
 ;           print(len : reg_rdx, ptr : reg_rsi) 
             print_151_13:
 ;               alias len -> rdx
@@ -2346,13 +2377,17 @@ main:
 ;               free named register 'rsi'
 ;               free named register 'rdx'
             print_151_13_end:
-;           [152:13] print(nl.len, nl)
+;           [152:13] continue
+            jmp loop_141_5
+        jmp if_148_9_end
+        if_else_148_9:
+;           [154:13] print(prompt3.len, prompt3)
 ;           allocate named register 'rdx'
-            mov rdx, nl.len
+            mov rdx, prompt3.len
 ;           allocate named register 'rsi'
-            mov rsi, nl
+            mov rsi, prompt3
 ;           print(len : reg_rdx, ptr : reg_rsi) 
-            print_152_13:
+            print_154_13:
 ;               alias len -> rdx
 ;               alias ptr -> rsi
 ;               [23:5] mov(rax, 1)
@@ -2369,10 +2404,86 @@ main:
                 syscall
 ;               free named register 'rsi'
 ;               free named register 'rdx'
-            print_152_13_end:
-        if_143_9_end:
-    jmp loop_136_5
-    loop_136_5_end:
+            print_154_13_end:
+;           [155:13] print(len, address_of(input_buffer))
+;           allocate named register 'rdx'
+            mov rdx, qword [rsp - 260]
+;           allocate named register 'rsi'
+;           [155:24] address_of(input_buffer)
+;           [155:24] address_of(input_buffer)
+;           [155:24] rsi = address_of(input_buffer)
+;           [155:24] address_of(input_buffer)
+            lea rsi, [rsp - 252]
+;           print(len : reg_rdx, ptr : reg_rsi) 
+            print_155_13:
+;               alias len -> rdx
+;               alias ptr -> rsi
+;               [23:5] mov(rax, 1)
+                mov rax, 1
+;               [23:19] # write system call
+;               [24:5] mov(rdi, 1)
+                mov rdi, 1
+;               [24:19] # file descriptor for standard out
+;               [25:5] mov(rsi, ptr)
+;               [25:19] # buffer address
+;               [26:5] mov(rdx, len)
+;               [26:19] # buffer size
+;               [27:5] syscall()
+                syscall
+;               free named register 'rsi'
+;               free named register 'rdx'
+            print_155_13_end:
+;           [156:13] print(dot.len, dot)
+;           allocate named register 'rdx'
+            mov rdx, dot.len
+;           allocate named register 'rsi'
+            mov rsi, dot
+;           print(len : reg_rdx, ptr : reg_rsi) 
+            print_156_13:
+;               alias len -> rdx
+;               alias ptr -> rsi
+;               [23:5] mov(rax, 1)
+                mov rax, 1
+;               [23:19] # write system call
+;               [24:5] mov(rdi, 1)
+                mov rdi, 1
+;               [24:19] # file descriptor for standard out
+;               [25:5] mov(rsi, ptr)
+;               [25:19] # buffer address
+;               [26:5] mov(rdx, len)
+;               [26:19] # buffer size
+;               [27:5] syscall()
+                syscall
+;               free named register 'rsi'
+;               free named register 'rdx'
+            print_156_13_end:
+;           [157:13] print(nl.len, nl)
+;           allocate named register 'rdx'
+            mov rdx, nl.len
+;           allocate named register 'rsi'
+            mov rsi, nl
+;           print(len : reg_rdx, ptr : reg_rsi) 
+            print_157_13:
+;               alias len -> rdx
+;               alias ptr -> rsi
+;               [23:5] mov(rax, 1)
+                mov rax, 1
+;               [23:19] # write system call
+;               [24:5] mov(rdi, 1)
+                mov rdi, 1
+;               [24:19] # file descriptor for standard out
+;               [25:5] mov(rsi, ptr)
+;               [25:19] # buffer address
+;               [26:5] mov(rdx, len)
+;               [26:19] # buffer size
+;               [27:5] syscall()
+                syscall
+;               free named register 'rsi'
+;               free named register 'rdx'
+            print_157_13_end:
+        if_148_9_end:
+    jmp loop_141_5
+    loop_141_5_end:
     ; system call: exit 0
     mov rax, 60
     mov rdi, 0

@@ -3,6 +3,7 @@
     copies from second element to base 10 elements
     => array_copy(src, dst, nelements)
        works with non arrays also as side effect
+[ ] array_copy: validate that source and destination same type
 [o] implement "size_of"
     [ ] size_of for fields
 [o] review before next step

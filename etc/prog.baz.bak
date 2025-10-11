@@ -80,6 +80,11 @@ func main() {
     assert(arr[1] == 2)
     assert(arr[2] == 2)
 
+    array_copy(arr[2], arr, 2)
+    # copy from, to, number of elements
+
+    assert(arr[0] == 2)
+
     ix = 3
     arr[ix] = ~inv(arr[ix - 1])
     assert(arr[ix] == 2)
