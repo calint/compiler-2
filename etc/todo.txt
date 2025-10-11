@@ -1,4 +1,4 @@
-[ ] stmt_identifier generates: mov qword [r15 + r14 * 8 + 0], 0xffee
+[x] stmt_identifier generates: mov qword [r15 + r14 * 8 + 0], 0xffee
 [x] arguments to baz regarding stack size and bounds checking
     ./baz (prog.baz 131072 checked)
     ./baz file.baz (131072 checked)
