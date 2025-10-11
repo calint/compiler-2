@@ -42,7 +42,7 @@ class stmt_assign_var final : public statement {
 
         tc.comment_source(*this, os, indent);
 
-        // get information about the destination of the compile
+        // get information about the destination of the compilation
         const ident_info dst_info{
             tc.make_ident_info(tok(), stmt_ident_.identifier(), false)};
 
@@ -104,7 +104,7 @@ class stmt_assign_var final : public statement {
         }
 
         // identifier contains array indexing
-        // calculate effective address to built-in type
+        // calculate effective address to the built-in type
 
         std::vector<std::string> allocated_registers;
 

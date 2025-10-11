@@ -29,7 +29,7 @@ class stmt_block final : public statement {
             // comments, semi-colon not considered a statement
             bool last_statement_considered_no_statment{};
 
-            // is it end-of block?
+            // is it the end of the block?
             if (tz.is_next_char('}')) {
                 if (not is_one_statement_) {
                     ws2_ = tz.next_whitespace_token();

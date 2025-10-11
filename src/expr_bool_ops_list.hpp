@@ -33,7 +33,7 @@ class expr_bool_ops_list final : public statement {
             token maybe_not_tk{tz.next_token()};
             // is it "not"?
             if (not maybe_not_tk.is_text("not")) {
-                // no, put token back and make it into the whitespace
+                // no, put the token back and make it into the whitespace
                 tz.put_back_token(maybe_not_tk);
                 maybe_not_tk = tz.next_whitespace_token();
             }
@@ -47,17 +47,17 @@ class expr_bool_ops_list final : public statement {
                 // are necessary after the parsing
                 expr_bool_ops_list bol{tc, pos_tk, tz, true, maybe_not_tk};
                 // check if 'expr_bool_ops_list' parsed an expression,
-                // wrongfull, as short-hand boolean expression
-                //   e.g. not ( (t1 + t2) > 2 )
+                // wrongfully, as the shorthand boolean expression
+                //   e.g. not ((t1 + t2) > 2)
                 //        where (t1 + t2) is a valid 'expr_bool_ops_list' of 1
-                //        element with expression 't1 + t2'
+                //        element with the expression 't1 + t2'
                 if (std::string_view{"<>=!+-*/%&|^"}.contains(tz.peek_char())) {
                     // it is a 'bool_op', reposition the tokenizer and parse it
                     tz.rewind_to_position(rewind_pos_tk);
                     bools_.emplace_back(std::in_place_type<expr_bool_op>, tc,
                                         tz);
                 } else {
-                    // is not a 'expr_bool_op'
+                    // is not an 'expr_bool_op'
                     bools_.emplace_back(std::move(bol));
                 }
             } else {
@@ -143,7 +143,7 @@ class expr_bool_ops_list final : public statement {
     [[noreturn]] auto compile([[maybe_unused]] toc& tc,
                               [[maybe_unused]] std::ostream& os,
                               [[maybe_unused]] size_t indent,
-                              [[maybe_unused]] std::string_view dst = "") const
+                              [[maybe_unused]] std::string_view dst) const
         -> void override {
 
         throw panic_exception("unexpected code path expr_bool_ops_list:1");
@@ -156,7 +156,7 @@ class expr_bool_ops_list final : public statement {
 
         toc::indent(os, indent, true);
         tc.comment_source(os, "?", inverted ? " inverted: " : " ", *this);
-        // invert according to De Morgan's laws
+        // invert, according to De Morgan's laws
         const bool invert{inverted ? not not_token_.is_text("not")
                                    : not_token_.is_text("not")};
         const size_t n{bools_.size()};
@@ -172,17 +172,17 @@ class expr_bool_ops_list final : public statement {
                 std::string jmp_true{jmp_to_if_true};
                 if (i < n - 1) {
                     if (not invert) {
-                        // if not last element check if it is a 'or' or
+                        // if not last element check if it is an 'or' or
                         // 'and' list
                         if (ops_.at(i).is_text("or")) {
-                            // if evaluation is false and next op is 'or'
-                            // then 'jump_false' goes to next bool op in the
-                            // list
+                            // if evaluation is false and the next op is 'or'
+                            // then 'jump_false' goes to the next bool op in
+                            // the list
                             jmp_false =
                                 create_cmp_label_from(tc, bools_.at(i + 1));
                         } else if (ops_.at(i).is_text("and")) {
                             // if evaluation is true and next op is 'and'
-                            // then 'jump_true' goes to next bool op in the
+                            // then 'jump_true' goes to the next bool op in the
                             // list
                             jmp_true =
                                 create_cmp_label_from(tc, bools_.at(i + 1));
@@ -206,20 +206,20 @@ class expr_bool_ops_list final : public statement {
                             }
                         }
                     } else {
-                        // invert according to De Morgan's laws
-                        // if not last element check if it is a 'or' or
+                        // invert, according to De Morgan's laws
+                        // if not, the last element check if it is an 'or' or
                         // 'and' list
                         if (ops_.at(i).is_text("and")) {
                             // 'and' list inverted
-                            // if evaluation is false and next op is 'or'
+                            // if evaluation is false and the next op is 'or'
                             // (inverted from 'and') then 'jump_false' is
-                            // next bool op in the list
+                            // the next bool op in the list
                             jmp_false =
                                 create_cmp_label_from(tc, bools_.at(i + 1));
                         } else if (ops_.at(i).is_text("or")) {
                             // 'or' list inverted
-                            // if evaluation is true and next op is 'and'
-                            // (inverted from 'or') then 'jump_true' is next
+                            // if evaluation is true and the next op is 'and'
+                            // (inverted from 'or') then 'jump_true' is the next
                             // bool op in the list
                             jmp_true =
                                 create_cmp_label_from(tc, bools_.at(i + 1));
@@ -246,8 +246,8 @@ class expr_bool_ops_list final : public statement {
                         }
                     }
                 } else {
-                    // last bool op in the list
-                    // 'jmp_false' is next bool ops list
+                    // the last bool op in the list
+                    // 'jmp_false' is the next bool ops list
                     std::optional<bool> const_eval{el.compile(
                         tc, os, indent, jmp_false, jmp_true, invert)};
                     // did expression evaluate to a constant?
@@ -336,7 +336,7 @@ class expr_bool_ops_list final : public statement {
     [[nodiscard]] auto is_expression() const -> bool override {
         // is there more than 1 bool in the list?
         if (bools_.size() > 1) {
-            // yes, it is expression
+            // yes, it is an expression
             return true;
         }
 
@@ -344,13 +344,13 @@ class expr_bool_ops_list final : public statement {
 
         // 1 expression in the list
 
-        // is it a 'expr_bool_ops'?
+        // is it an 'expr_bool_ops'?
         if (bools_.at(0).index() == 0) {
             // yes, call its 'is_expression'
             return get<expr_bool_op>(bools_.at(0)).is_expression();
         }
 
-        // it is a 'expr_bool_ops_list'
+        // it is an 'expr_bool_ops_list'
 
         return get<expr_bool_ops_list>(bools_.at(0)).is_expression();
     }
@@ -362,13 +362,13 @@ class expr_bool_ops_list final : public statement {
 
         assert(not bools_.empty());
 
-        // is it a 'expr_bool_ops'?
+        // is it an 'expr_bool_ops'?
         if (bools_.at(0).index() == 0) {
             // yes, call its 'identifier'
             return get<expr_bool_op>(bools_.at(0)).identifier();
         }
 
-        // it is a 'expr_bool_ops_list'
+        // it is an 'expr_bool_ops_list'
 
         return get<expr_bool_ops_list>(bools_.at(0)).identifier();
     }

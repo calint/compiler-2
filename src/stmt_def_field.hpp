@@ -65,7 +65,7 @@ class stmt_def_field final : public statement {
             return;
         }
 
-        // default type is i64
+        // the default type is i64
         std::print(os, " dq {}", uops_.to_string());
         initial_value_.compile_to(os);
         std::println(os, "");

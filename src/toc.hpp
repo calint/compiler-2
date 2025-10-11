@@ -21,7 +21,7 @@ class stmt_def_type;
 
 struct func_info {
     const stmt_def_func* def{}; // null if built-in function
-    token declared_at_tk;       // token for position in source
+    token declared_at_tk;       // token for position in the source
     const type& type_ref;       // return type or void
 };
 
@@ -34,7 +34,7 @@ struct func_return_info {
 struct var_info {
     std::string_view name;
     const type& type_ref;
-    token declared_at_tk; // token for position in source
+    token declared_at_tk; // token for position in the source
     int32_t stack_idx{};  // location relative to register rsp
     bool is_array{};
     size_t array_size{};
@@ -53,10 +53,10 @@ class frame final {
     // variables declared in this frame
     lut<var_info> vars_;
 
-    // aliases that refers to previous frame(s) alias or variable
+    // aliases that refer to previous frame(s) alias or variable
     lut<std::string> aliases_;
 
-    // the label to jump to when exiting a in-lined function
+    // the label to jump to when exiting an in-lined function
     std::string func_ret_label_;
 
     // info about the function returns
@@ -162,7 +162,7 @@ class frame final {
 
 struct field_info {
     const stmt_def_field& def;
-    token declared_at_tk; // token for position in source
+    token declared_at_tk; // token for position in the source
     bool is_str{};
 };
 
@@ -315,7 +315,7 @@ class toc final {
                  std::string name, const type& var_type, bool is_array,
                  size_t array_size) -> void {
 
-        // check if variable is already declared in this scope
+        // check if the variable is already declared in this scope
         if (frames_.back().has_var(name)) {
             const var_info& var{frames_.back().get_var_const_ref(name)};
             throw compiler_exception{
@@ -495,7 +495,7 @@ class toc final {
                 return;
             }
 
-            // note: when doing arithmetic between 2 memory locations
+            // note: when doing arithmetic between 2 memory locations,
             //       this code path is triggered by the use of an
             //       in-between scratch register
             indent(os, indnt);
@@ -811,7 +811,7 @@ class toc final {
         return std::format("{}_{}", line, col);
     }
 
-    // human readable source location
+    // human-readable source location
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
 
@@ -888,7 +888,7 @@ class toc final {
 
                 // note: when compiling in "dry-run" at 'stmt_def_func' the
                 //       return variable is in the frame of the function as
-                //       a variable, however when compiling the 'stmt_call'
+                //       a variable, however, when compiling the 'stmt_call'
                 //       the function is inlined and the return is added as
                 //       an alias to a variable in a higher context, thus
                 //       aliases are followed to find the variable
@@ -900,12 +900,12 @@ class toc final {
                     return {id_base, frm};
                 }
 
-                // check if destination is of type: e.g. qword[r15]
+                // check if the destination is of the type: e.g., qword[r15]
                 if (std::optional<std::string_view> reg{
                         toc::extract_between_brackets(id_base)};
                     reg) {
                     if (is_nasm_register(*reg)) {
-                        // a memory reference, e.g. qword[r15]
+                        // a memory reference, e.g., qword[r15]
                         return {id_base, frm};
                     }
                 }
@@ -994,10 +994,10 @@ class toc final {
                 id_base = new_id.id_base();
                 // is this a path e.g. 'pt.x' or just 'res'?
                 if (id.path().size() == 1) {
-                    // this is an alias of type: res -> p.x
+                    // this is an alias of the type: res -> p.x
                     id = new_id;
                 } else {
-                    // this is an alias of type: pt.x -> p.x
+                    // this is an alias of the type: pt.x -> p.x
                     id.set_base(id_base);
                 }
                 continue;
@@ -1279,8 +1279,7 @@ class toc final {
             int64_t value{};
             const std::string_view sv{str};
             // note: using 'std::string_view' for 'clang-tidy' to not
-            // trigger
-            //       warning
+            //       trigger the warning
             //       'cppcoreguidelines-pro-bounds-pointer-arithmetic'
             auto parse_result{
                 std::from_chars(sv.data(), sv.data() + sv.size(), value)};

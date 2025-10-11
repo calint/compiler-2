@@ -11,7 +11,7 @@
 // a list of elements / lists connected by operators instead of tree
 // note: quirky parsing but trivial compilation
 class expr_ops_list final : public expression {
-    std::vector<std::unique_ptr<statement>> exprs_; // expressions list
+    std::vector<std::unique_ptr<statement>> exprs_; // expression list
     std::vector<char> ops_;     // operators between elements in the vector
     unary_ops uops_;            // unary ops for all result e.g. ~(a+b)
     token ws1_;                 // whitespace after parenthesis when enclosed
@@ -32,7 +32,7 @@ class expr_ops_list final : public expression {
             // yes, add provided first expression
             exprs_.emplace_back(std::move(first_expression));
         } else {
-            // no, read first expression or start a new recursion
+            // no, read the first expression or start a new recursion
             // e.g. =-(-(b+c)+d)
             unary_ops uo{tz};
             // is next a sub-expression?
@@ -52,7 +52,7 @@ class expr_ops_list final : public expression {
         char precedence{first_op_precedence};
 
         while (true) { // +a  +3
-            // if end of sub-expression
+            // if the end of sub-expression
             if (enclosed_ and tz.is_next_char(')')) {
                 // return from recursion
                 ws1_ = tz.next_whitespace_token();
@@ -96,12 +96,12 @@ class expr_ops_list final : public expression {
 
             // is next operation precedence higher than current?
             // if so, the implied sub-expression is added to the list with
-            // the last expression in this list being first expression in the
-            // sub-expression
+            // the last expression in this list being the first expression in
+            // the sub-expression
             const char next_precedence{precedence_for_op(ops_.back())};
             if (next_precedence > precedence) {
                 // e.g. =a+b*c+1 where the peeked char is '*'
-                // next operation has higher precedence than current
+                // next operation has higher precedence than the current
                 // list is now =[(=a)(+b)]
                 // move last expression (+b) to sub-expression
                 //   =[(=a) +[(=b)(*c)(+1)]]
@@ -120,7 +120,7 @@ class expr_ops_list final : public expression {
             // lower?
             if (precedence != initial_precedence and
                 next_precedence < precedence and not is_base_expression_) {
-                // yes, return to parent expression
+                // yes, return to the parent expression
                 // e.g. a-b*c+3 => becomes a-(b*c+3) otherwise
                 ops_.pop_back();
                 return;
@@ -131,7 +131,7 @@ class expr_ops_list final : public expression {
             // read the peeked operator
             const char ch{tz.next_char()};
 
-            // handle the two character operator shift
+            // handle the 2 characters operator shift
             if (ch == '<') {
                 if (tz.next_char() != '<') {
                     throw compiler_exception{tz, "expected operator '<<'"};
@@ -142,7 +142,7 @@ class expr_ops_list final : public expression {
                 }
             }
 
-            // check if next statement is a sub-expression or an expression
+            // check if the next statement is a sub-expression or an expression
             // element
             // e.g. -(a + b)
             unary_ops uo{tz}; // read the unary ops, in this case '-'
@@ -161,7 +161,7 @@ class expr_ops_list final : public expression {
             // e.g. -a+b
             uo.put_back(tz);
 
-            // read next element
+            // read the next element
             exprs_.emplace_back(create_statement_in_expr_ops_list(tc, tz));
 
             // continue to next op + element or sub-expression
@@ -207,12 +207,13 @@ class expr_ops_list final : public expression {
 
         // is destination a register?
         if (dst_info.is_register()) {
-            // yes, compile with result placed in it
+            // yes, compile with the result placed in it
             do_compile(tc, os, indent, dst_info);
             return;
         }
 
-        // compile with and without scratch register to find best compilation
+        // compile with and without the scratch register to find the best
+        // compilation
 
         // without scratch register
         std::stringstream ss1;
@@ -230,7 +231,7 @@ class expr_ops_list final : public expression {
         const size_t ss1_count{count_instructions(ss1)};
         const size_t ss2_count{count_instructions(ss2)};
 
-        // select version with least instructions
+        // select the version with the fewest instructions
         if (ss1_count <= ss2_count) {
             std::print(os, "{}", ss1.str());
         } else {
@@ -250,7 +251,7 @@ class expr_ops_list final : public expression {
             // then the unary ops are on the first element
             return exprs_.at(0)->get_unary_ops();
         }
-        // in multi-element list, unary ops for all are on the current list
+        // in the multi-element list, unary ops for all are on the current list
         // element
         return uops_;
     }
@@ -263,7 +264,8 @@ class expr_ops_list final : public expression {
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
-        // if unary operators on list then it will need to compile expression
+        // if unary operators on the list then it will need to compile the
+        // expression
         if (not uops_.is_empty()) {
             return true;
         }
@@ -283,7 +285,7 @@ class expr_ops_list final : public expression {
 
         tc.comment_source(*this, os, indent);
 
-        // first element is assigned to destination, operator '='
+        // the first element is assigned to destination, operator '='
         asm_op(tc, os, indent, '=', dst_info, *exprs_.at(0));
 
         // remaining elements are +,-,*,/,%,|,&,^,<<,>>

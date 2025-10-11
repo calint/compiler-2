@@ -192,7 +192,7 @@ class stmt_call : public expression {
                 continue;
             }
 
-            // handle non-expression without register and without unary ops
+            // handle non-expression without the register and without unary ops
             if (arg_reg.empty() and arg.get_unary_ops().is_empty()) {
                 aliases_to_add.emplace_back(param.identifier(),
                                             std::string{arg.identifier()});
@@ -260,7 +260,7 @@ class stmt_call : public expression {
             }
         }
 
-        // provide exit label for 'return' to jump to
+        // provide the exit label for 'return' to jump to
         toc::asm_label(tok(), os, indent, ret_jmp_label);
 
         // apply unary ops to result if present

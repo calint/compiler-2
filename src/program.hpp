@@ -26,7 +26,7 @@ class program final {
 
   public:
     explicit program(const std::string& source) : tc_{source} {
-        // create dummy token to use `toc` functions
+        // create a placeholder token to use with `toc` functions
         const token prgtk{};
 
         // add built-in assembler calls
@@ -71,8 +71,8 @@ class program final {
                 statements_.emplace_back(
                     std::make_unique<stmt_comment>(tc_, unary_ops{}, tk, tz));
             } else if (tk.is_text("")) {
-                // empty space at end of file; necessary for source reproduction
-                // to be identical
+                // empty space at the end of the file; necessary for source
+                // reproduction to be identical
                 ws1_ = tk;
             } else {
                 throw compiler_exception{

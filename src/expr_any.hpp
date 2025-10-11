@@ -20,7 +20,7 @@ class expr_any final : public statement {
         set_type(tp);
 
         if (not tp.is_built_in()) {
-            // destination is not built-in (register) value
+            // destination is not a built-in (register) value
             // assume assign type value
             var_ = expr_type_value{tc, tz, tp};
             return;
@@ -32,7 +32,7 @@ class expr_any final : public statement {
             return;
         }
 
-        // destination is built-in (register) value
+        // destination is a built-in (register) value
         var_ = expr_ops_list{tc, tz, in_args};
     }
 
@@ -151,7 +151,7 @@ class expr_any final : public statement {
             },
             var_);
         // note: 'expr_type_value' does not have 'unary_ops' and cannot be
-        //       argument in call
+        //       an argument in call
     }
 
     [[nodiscard]] auto is_expr_type_value() const -> size_t {

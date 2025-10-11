@@ -19,7 +19,7 @@ class stmt_def_type final : public statement {
         }
 
         while (true) {
-            // read field definition with next token being name
+            // read field definition with the next token being the name
             fields_.emplace_back(tc, tz.next_token(), tz);
             if (tz.is_next_char('}')) {
                 break;
@@ -35,7 +35,7 @@ class stmt_def_type final : public statement {
 
         // add the fields
         for (const stmt_def_type_field& fld : fields_) {
-            // get type of field. no type name means default
+            // get the type of field. no type name means default
             const type& tp{
                 fld.type_str().empty()
                     ? tc.get_type_default()

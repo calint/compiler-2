@@ -53,7 +53,7 @@ class stmt_def_var final : public statement {
             }
         }
 
-        // get type reference from token
+        // get type reference from the token
         const type& tp{type_tk_.text().empty()
                            ? tc.get_type_default()
                            : tc.get_type_or_throw(type_tk_, type_tk_.text())};
@@ -142,7 +142,7 @@ class stmt_def_var final : public statement {
 
         tc.asm_cmd(tok(), os, indent, "lea", "rdi",
                    std::format("[rsp - {}]", -dst_info.stack_ix));
-        // note: -dst_info.stack_ix_rel_rsp for nicer source formatting, is
+        // note: -dst_info.stack_ix_rel_rsp for nicer source formatting; is
         //       always negative
         tc.asm_cmd(tok(), os, indent, "mov", "rcx",
                    std::format("{}", array_size_ * dst_info.type_ref.size()));

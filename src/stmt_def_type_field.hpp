@@ -19,7 +19,7 @@ class stmt_def_type_field final : public statement {
 
         set_type(tc.get_type_void());
 
-        // is type specified?
+        // is the type specified?
         if (not tz.is_next_char(':')) {
             // it is not
             return;

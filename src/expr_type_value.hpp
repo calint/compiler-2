@@ -15,7 +15,7 @@ class expr_type_value final : public statement {
     //       regarding circular references
 
   public:
-    // note: constructor and destructor is implemented in 'main.cpp' where the
+    // note: constructor and destructor are implemented in 'main.cpp' where the
     // 'expr_any' definition is known. clang++ -std=c++23 requires it since
     // changes to handling of unique_ptr to incomplete types
     inline expr_type_value(toc& tc, tokenizer& tz, const type& tp);

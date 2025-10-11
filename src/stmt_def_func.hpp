@@ -167,7 +167,7 @@ class stmt_def_func final : public statement {
                    std::vector<std::string>& allocated_named_registers) const
         -> void {
 
-        // does function have return?
+        // does the function have return?
         if (not returns().empty()) {
             // yes, declare variable for the return
             const token& id_tkn{returns().at(0).ident_tk};
@@ -183,13 +183,13 @@ class stmt_def_func final : public statement {
 
             // is argument passed as named register?
             if (prm_reg.empty()) {
-                // no, add it as variable
+                // no, add it as a variable
                 tc.add_var(tok(), os, indent + 1, std::string{prm_name},
                            prm_type, false, 0);
                 continue;
             }
 
-            // argument passed as named register
+            // argument passed as a  named register
             toc::indent(os, indent + 1, true);
             std::println(os, "{}: {}", prm_name, prm_reg);
 

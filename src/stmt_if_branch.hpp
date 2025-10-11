@@ -58,7 +58,7 @@ class stmt_if_branch final : public statement {
             std::format("{}_code", if_bgn_lbl)};
         // the beginning of this branch
         toc::asm_label(tok(), os, indent, if_bgn_lbl);
-        // compile boolean ops list
+        // compile the boolean ops list
         std::optional<bool> const_eval{bol_.compile(
             tc, os, indent, jmp_to_if_false_label, jmp_to_if_true_lbl, false)};
         // did boolean evaluation result in a constant?
@@ -70,14 +70,14 @@ class stmt_if_branch final : public statement {
             }
             return *const_eval;
         }
-        // the label where to jump if evaluation of condition is true
+        // the label where to jump if evaluation of the condition is true
         toc::asm_label(tok(), os, indent, jmp_to_if_true_lbl);
         // the code of the branch
         code_.compile(tc, os, indent, "");
-        // after the code of the branch is executed jump to the end of the 'if
+        // after the code of the branch is executed, jump to the end of the 'if
         // ... else if ... else ...' block.
-        // if jump label not provided then there is no 'else' and this is the
-        // last 'if' so just continue execution
+        // if the jump label is not provided, then there is no 'else' and this
+        // is the last 'if' so just continue execution
         if (not jmp_to_after_code_label.empty()) {
             toc::asm_jmp(tok(), os, indent, jmp_to_after_code_label);
         }

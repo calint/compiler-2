@@ -46,7 +46,7 @@ class stmt_identifier : public statement {
                 // yes, read expression
 
                 // note: array index expression always results into an
-                //       integer, thus default type
+                //       integer, thus the default type
                 elems_.emplace_back(tk,
                                     std::make_unique<expr_any>(
                                         tc, tz, tc.get_type_default(), false),
@@ -154,7 +154,7 @@ class stmt_identifier : public statement {
         }
 
         // identifier contains array indexing
-        // calculate effective address to built-in type
+        // calculate effective address to the built-in type
 
         std::vector<std::string> allocated_registers;
 
@@ -204,14 +204,14 @@ class stmt_identifier : public statement {
             const size_t type_size{curr_info.type_ref.size()};
 
             if (curr_elem.has_array_index_expr) {
-                // is encodable in instruction of type:
+                // is encodable in instruction of the type:
                 // [base + index * size + offset]
                 const bool is_encodable{type_size == 1 or type_size == 2 or
                                         type_size == 4 or type_size == 8};
 
                 // special case: last element with encodable size
                 if (i == elems_size - 1 and is_encodable) {
-                    // calculate offset in array and store in 'reg_idx'
+                    // calculate offset in the array and store in 'reg_idx'
                     const std::string reg_idx{
                         tc.alloc_scratch_register(src_loc_tk, os, indent)};
                     allocated_registers.push_back(reg_idx);
@@ -235,8 +235,8 @@ class stmt_identifier : public statement {
                                        reg_idx, type_size, op, offset);
                 }
 
-                // convert 'rsp' to dedicated register to calculate offset of
-                // target
+                // convert 'rsp' to a dedicated register to calculate offset
+                // of target
                 if (reg_offset == "rsp") {
                     reg_offset =
                         tc.alloc_scratch_register(src_loc_tk, os, indent);
@@ -282,7 +282,7 @@ class stmt_identifier : public statement {
 
         if (reg_offset == "rsp") {
             // return expression with format [base + index * scale + offset] as
-            // target address
+            // the target address
             return std::format("rsp - {}",
                                -(base_info.stack_ix + accum_offset));
         }

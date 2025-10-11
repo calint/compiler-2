@@ -21,10 +21,10 @@ class stmt_if final : public statement {
             // read branch e.g. a == b {x = 1}
             branches_.emplace_back(tc, tz);
 
-            // check if it is a 'else if' or 'else' or a new statement
+            // check if it is an 'else if' or 'else' or a new statement
             const token tkn{tz.next_token()};
             if (not tkn.is_text("else")) {
-                // not 'else', push token back in stream and exit
+                // not 'else', push the token back in stream and exit
                 tz.put_back_token(tkn);
                 return;
             }
@@ -117,7 +117,7 @@ class stmt_if final : public statement {
                 // if branch is false jump to next if
                 jmp_if_false = branches_.at(i + 1).if_bgn_label(tc);
             } else {
-                // if last branch and no 'else' then no need to jump to
+                // if the last branch and no 'else', then no need to jump to
                 // 'after_if' after the code of the branch has been executed.
                 // just continue
                 if (else_code_.is_empty()) {
@@ -128,13 +128,14 @@ class stmt_if final : public statement {
             // constant evaluation
             std::optional<bool> const_eval{
                 if_branch.compile(tc, os, indent, jmp_if_false, jmp_if_done)};
-            // if condition was a constant evaluation and result was true
+            // if the condition was a constant evaluation and the result was
+            // true
             if (const_eval and *const_eval) {
                 branch_evaluated_to_true = true;
                 break;
             }
         }
-        // if it wasn't a constant evaluation that was true generate the else
+        // if it wasn't a constant evaluation that was true, generate the else
         // code
         if (not branch_evaluated_to_true) {
             if (not else_code_.is_empty()) {

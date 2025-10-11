@@ -1,6 +1,8 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <print>
+
 #include "statement.hpp"
 #include "toc.hpp"
 
@@ -28,7 +30,7 @@ class stmt_return final : public statement {
             tc.get_func_return_label_or_throw(tok())};
 
         if (ret_lbl.empty()) {
-            // note: return from 'main' is exit
+            // note: return from 'main' is exiting
             std::println(os, "mov rdi, 0\nmov rax, 60\nsyscall");
             return;
         }
