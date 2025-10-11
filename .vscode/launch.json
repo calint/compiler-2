@@ -6,7 +6,11 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/baz",
-            "args": [],
+            "args": [
+                "prog.baz",
+                "131072",
+                "checked"
+            ],
             "cwd": "${workspaceFolder}",
         }
     ]

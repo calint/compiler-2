@@ -104,7 +104,7 @@ if [ $BUILD_ONLY -eq 1 ]; then
   exit 0
 fi
 
-./baz prog.baz >gen.s
+./baz prog.baz 131072 checked >gen.s
 grep -v -e'^\s*;.*$' -e'^\s*$' gen.s >gen-without-comments.s
 nasm -f elf64 gen.s
 ld -s -o gen gen.o

@@ -1,5 +1,5 @@
 section .bss
-stk resd 0x10000
+stk resd 131072
 stk.end:
 true equ 1
 false equ 0
@@ -99,6 +99,8 @@ main:
     cmp r14, 4
     jg panic_bounds
     lea rsi, [rsp + r15 * 4 - 16]
+    cmp rcx, 4
+    jg panic_bounds
     lea rdi, [rsp - 16]
     shl rcx, 2
     rep movsb
@@ -133,14 +135,22 @@ main:
     xor rax, rax
     rep stosb
     mov rcx, 4
+    cmp rcx, 4
+    jg panic_bounds
     lea rsi, [rsp - 16]
+    cmp rcx, 8
+    jg panic_bounds
     lea rdi, [rsp - 56]
     shl rcx, 2
     rep movsb
     cmp_88_12:
-        lea rsi, [rsp - 16]
-        lea rdi, [rsp - 56]
         mov rcx, 4
+        cmp rcx, 4
+        jg panic_bounds
+        lea rsi, [rsp - 16]
+        cmp rcx, 8
+        jg panic_bounds
+        lea rdi, [rsp - 56]
         shl rcx, 2
         repe cmpsb
         je cmps_eq_88_12
@@ -175,9 +185,13 @@ main:
     jge panic_bounds
     mov dword [rsp + r15 * 4 - 56], -1
     cmp_91_12:
-        lea rsi, [rsp - 16]
-        lea rdi, [rsp - 56]
         mov rcx, 4
+        cmp rcx, 4
+        jg panic_bounds
+        lea rsi, [rsp - 16]
+        cmp rcx, 8
+        jg panic_bounds
+        lea rdi, [rsp - 56]
         shl rcx, 2
         repe cmpsb
         je cmps_eq_91_16

@@ -184,7 +184,7 @@ class stmt_identifier : public statement {
                               std::ostream& os, size_t indent,
                               const std::vector<identifier_elem>& elems,
                               std::vector<std::string>& allocated_registers,
-                              std::string_view offset_reg = "") -> std::string {
+                              std::string_view reg_size = "") -> std::string {
 
         // initialize base element information
         std::string path{elems.front().name_tk.text()};
@@ -198,7 +198,13 @@ class stmt_identifier : public statement {
         int32_t accum_offset{};
         const size_t elems_size{elems.size()};
 
+        bool last_elem_is_bounds_checked{};
+        // note: used to figure out whether the last element that is an array is
+        //       not indexed and thus no bounds check when provided `reg_size`
+
         for (size_t i{}; i < elems_size; ++i) {
+            last_elem_is_bounds_checked = false;
+
             // get current element information
             const identifier_elem& curr_elem{elems[i]};
             const ident_info curr_info{
@@ -225,13 +231,13 @@ class stmt_identifier : public statement {
                     if (tc.is_bounds_check()) {
                         // does the statement have a register holding a length
                         // that needs to be regarded when checking bounds?
-                        if (not offset_reg.empty()) {
+                        if (not reg_size.empty()) {
                             const std::string reg_top_idx{
                                 tc.alloc_scratch_register(
                                     curr_elem.array_index_expr->tok(), os,
                                     indent)};
                             tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
-                                       indent, "mov", reg_top_idx, offset_reg);
+                                       indent, "mov", reg_top_idx, reg_size);
                             tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
                                        indent, "add", reg_top_idx, reg_idx);
                             tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
@@ -289,11 +295,11 @@ class stmt_identifier : public statement {
                 if (tc.is_bounds_check()) {
                     // does the statement have a register holding a length
                     // that needs to be regarded when checking bounds?
-                    if (not offset_reg.empty()) {
+                    if (not reg_size.empty()) {
                         const std::string reg_top_idx{tc.alloc_scratch_register(
                             curr_elem.array_index_expr->tok(), os, indent)};
                         tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
-                                   indent, "mov", reg_top_idx, offset_reg);
+                                   indent, "mov", reg_top_idx, reg_size);
                         tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
                                    indent, "add", reg_top_idx, reg_idx);
                         tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
@@ -314,6 +320,8 @@ class stmt_identifier : public statement {
                         toc::asm_jxx(curr_elem.array_index_expr->tok(), os,
                                      indent, "ge", "panic_bounds");
                     }
+                    // mark that the bounds have been checked
+                    last_elem_is_bounds_checked = true;
                 }
 
                 if (type_size > 1) {
@@ -343,6 +351,23 @@ class stmt_identifier : public statement {
                         next_elem.name_tk.text()));
                 path.push_back('.');
                 path += next_elem.name_tk.text();
+            }
+        }
+
+        // is this a type `arrays_equals(arr1, arr2, 4)` type of instruction
+        // without indexing? or `arrays_equals(objs[1].arr, objs[2].arr, 4)`,
+        // that is with last element being an array but not indexed and
+        // `reg_size` is provided suggesting usage of that many elements
+        if (not last_elem_is_bounds_checked and not reg_size.empty() and
+            tc.is_bounds_check()) {
+            // this is the last element and no array indexing has been done on
+            // it, check if offset register is greater than array size
+            const ident_info curr_info{
+                tc.make_ident_info(src_loc_tk, path, false)};
+            if (curr_info.is_array) {
+                tc.asm_cmd(src_loc_tk, os, indent, "cmp", reg_size,
+                           std::to_string(curr_info.array_size));
+                toc::asm_jxx(src_loc_tk, os, indent, "g", "panic_bounds");
             }
         }
 

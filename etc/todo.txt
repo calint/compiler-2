@@ -1,3 +1,8 @@
+[x] arguments to baz regarding stack size and bounds checking
+    ./baz (prog.baz 131072 checked)
+    ./baz file.baz (131072 checked)
+    ./baz file.baz 65536 (checked)
+    ./baz file.baz 65536 unchecked
 [x] bounds check array access (optional compiler flag)
     [x] least intrusive is two instructions:
         cmp r14, 8 ; r14 is result of index calculation, 8 is array size

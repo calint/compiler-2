@@ -50,12 +50,15 @@ auto main(const int argc, const char* argv[]) -> int {
     const std::span<const char*> args{argv, static_cast<size_t>(argc)};
 #pragma clang diagnostic pop
 
-    const char* src_file_name{argc == 1 ? "prog.baz" : args[1]};
+    const char* src_file_name = (argc > 1) ? args[1] : "prog.baz";
+    const size_t stack_size =
+        (argc > 2) ? std::stoul(args[2], nullptr, 0) : 0x10000;
+    const bool checked = (argc > 3) && (std::string_view{args[3]} == "checked");
 
     std::string src;
     try {
         src = read_file_to_string(src_file_name);
-        program prg{src, true};
+        program prg{src, stack_size, checked};
         std::ofstream reproduced_source{"diff.baz"};
         prg.source_to(reproduced_source);
         reproduced_source.close();
