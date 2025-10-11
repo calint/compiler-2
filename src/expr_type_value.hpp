@@ -16,7 +16,7 @@ class expr_type_value final : public statement {
 
   public:
     // note: constructor and destructor are implemented in 'main.cpp' where the
-    // 'expr_any' definition is known. clang++ -std=c++23 requires it since
+    // 'expr_any' definition is known. clang++ -std=c++23 has required it since
     // changes to handling of unique_ptr to incomplete types
     inline expr_type_value(toc& tc, tokenizer& tz, const type& tp);
 

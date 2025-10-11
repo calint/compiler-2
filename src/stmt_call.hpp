@@ -18,16 +18,17 @@ class stmt_call : public expression {
     stmt_call(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : expression{tk, std::move(uops)} {
 
-        set_type(tc.get_func_return_type_or_throw(tok(), identifier()));
+        set_type(
+            tc.get_func_return_type_or_throw(tok(), statement::identifier()));
 
         if (not tz.is_next_char('(')) {
             throw compiler_exception{tok(), "expected '(' after function name"};
         }
 
-        if (not tc.is_func_builtin(tok(), identifier())) {
+        if (not tc.is_func_builtin(tok(), statement::identifier())) {
             // user defined function
             const stmt_def_func& func{
-                tc.get_func_or_throw(tok(), identifier())};
+                tc.get_func_or_throw(tok(), statement::identifier())};
             const size_t n{func.params().size()};
             for (size_t i{}; const stmt_def_func_param& param : func.params()) {
                 args_.emplace_back(tc, tz, param.get_type(), true);
@@ -85,7 +86,8 @@ class stmt_call : public expression {
 
         tc.comment_source(*this, os, indent);
 
-        const stmt_def_func& func{tc.get_func_or_throw(tok(), identifier())};
+        const stmt_def_func& func{
+            tc.get_func_or_throw(tok(), statement::identifier())};
 
         // validate argument count
         if (func.params().size() != args_.size()) {

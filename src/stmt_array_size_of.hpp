@@ -15,7 +15,7 @@ class stmt_array_size_of final : public expression {
 
         set_type(tc.get_type_default());
 
-        if (not get_unary_ops().is_empty()) {
+        if (not statement::get_unary_ops().is_empty()) {
             throw compiler_exception{tok(), "unary operations are not allowed "
                                             "on this built-in function"};
         }

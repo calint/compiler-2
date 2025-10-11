@@ -67,7 +67,8 @@ class stmt_def_func final : public statement {
             set_type(tc.get_type_void());
         }
 
-        tc.add_func(name_tk_, std::string{name_tk_.text()}, get_type(), this);
+        tc.add_func(name_tk_, std::string{name_tk_.text()},
+                    statement::get_type(), this);
         // dry-run compilation to catch errors before called
         tc.enter_func(name(), returns_);
         std::vector<std::string> allocated_named_registers;
