@@ -890,9 +890,9 @@ class toc final {
     }
 
     [[nodiscard]] auto is_nasm_indirect(std::string_view nasm) const -> bool {
-        if (auto expr{toc::extract_between_brackets(nasm)}; expr) {
+        if (auto expr{toc::get_text_between_brackets(nasm)}; expr) {
             const std::string reg{
-                extract_base_register_from_indirect_addressing(*expr)};
+                get_base_register_from_indirect_addressing(*expr)};
             if (is_nasm_register(reg)) {
                 return true;
             }
@@ -1261,7 +1261,7 @@ class toc final {
     //------------------------------------------------------------------------
 
     static auto
-    extract_base_register_from_indirect_addressing(std::string_view addressing)
+    get_base_register_from_indirect_addressing(std::string_view addressing)
         -> std::string_view {
 
         auto pos{addressing.find_first_of(" +")};
@@ -1272,7 +1272,7 @@ class toc final {
         return addressing.substr(0, pos);
     }
 
-    static auto extract_between_brackets(std::string_view str)
+    static auto get_text_between_brackets(std::string_view str)
         -> std::optional<std::string_view> {
 
         auto start{str.find('[')};
