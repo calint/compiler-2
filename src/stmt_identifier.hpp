@@ -236,64 +236,69 @@ class stmt_identifier : public statement {
 
             // from here: array access with indexing
 
-            // is encodable in instruction of the type:
-            // [base + index * size + offset]
-            const bool is_encodable{type_size == 1 or type_size == 2 or
-                                    type_size == 4 or type_size == 8};
-
             // special case: last element with encodable size
-            if (is_last and is_encodable) {
-                const std::string reg_idx{
-                    tc.alloc_scratch_register(src_loc_tk, os, indent)};
-                allocated_registers.push_back(reg_idx);
-                curr_elem.array_index_expr->compile(tc, os, indent, reg_idx);
+            if (is_last) {
+                // is encodable in instruction of the type:
+                // [base + index * size + offset]
+                const bool is_encodable{type_size == 1 or type_size == 2 or
+                                        type_size == 4 or type_size == 8};
+                if (is_encodable) {
+                    const std::string reg_idx{
+                        tc.alloc_scratch_register(src_loc_tk, os, indent)};
+                    allocated_registers.push_back(reg_idx);
+                    curr_elem.array_index_expr->compile(tc, os, indent,
+                                                        reg_idx);
 
-                // bounds check
-                if (tc.is_bounds_check()) {
-                    const bool use_reg_size{not reg_size.empty()};
-                    if (use_reg_size) {
-                        const std::string reg_top_idx{tc.alloc_scratch_register(
-                            curr_elem.array_index_expr->tok(), os, indent)};
-                        tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
-                                   indent, "mov", reg_top_idx, reg_size);
-                        tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
-                                   indent, "add", reg_top_idx, reg_idx);
-                        tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
-                                   indent, "cmp", reg_top_idx,
-                                   std::to_string(curr_info.array_size));
-                        toc::asm_jxx(curr_elem.array_index_expr->tok(), os,
-                                     indent, "g", "panic_bounds");
-                        // note: jg because `reg_top_ix` contains the number
-                        // of elements including current at `reg_idx`
-                        //             ___  reg_top_idx = 2
-                        //       [ 0 1 2 3 ]
-                        //             | reg_idx = 2
-                        tc.free_scratch_register(os, indent, reg_top_idx);
-                    } else {
-                        tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
-                                   indent, "cmp", reg_idx,
-                                   std::to_string(curr_info.array_size));
-                        toc::asm_jxx(curr_elem.array_index_expr->tok(), os,
-                                     indent, "ge", "panic_bounds");
+                    // bounds check
+                    if (tc.is_bounds_check()) {
+                        const bool use_reg_size{not reg_size.empty()};
+                        if (use_reg_size) {
+                            const std::string reg_top_idx{
+                                tc.alloc_scratch_register(
+                                    curr_elem.array_index_expr->tok(), os,
+                                    indent)};
+                            tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
+                                       indent, "mov", reg_top_idx, reg_size);
+                            tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
+                                       indent, "add", reg_top_idx, reg_idx);
+                            tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
+                                       indent, "cmp", reg_top_idx,
+                                       std::to_string(curr_info.array_size));
+                            toc::asm_jxx(curr_elem.array_index_expr->tok(), os,
+                                         indent, "g", "panic_bounds");
+                            // note: jg because `reg_top_ix` contains the number
+                            // of elements including current at `reg_idx`
+                            //             ___  reg_top_idx = 2
+                            //       [ 0 1 2 3 ]
+                            //             | reg_idx = 2
+                            tc.free_scratch_register(os, indent, reg_top_idx);
+                        } else {
+                            tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
+                                       indent, "cmp", reg_idx,
+                                       std::to_string(curr_info.array_size));
+                            toc::asm_jxx(curr_elem.array_index_expr->tok(), os,
+                                         indent, "ge", "panic_bounds");
+                        }
                     }
-                }
 
-                // is it offset from base register 'rsp' or has it been
-                // changed to dedicated register for offset calculation?
-                const int32_t offset{(reg_offset == "rsp")
-                                         ? -(base_info.stack_ix + accum_offset)
-                                         : accum_offset};
-                const char op{(reg_offset == "rsp") ? '-' : '+'};
+                    // is it offset from base register 'rsp' or has it been
+                    // changed to dedicated register for offset calculation?
+                    const int32_t offset{
+                        (reg_offset == "rsp")
+                            ? -(base_info.stack_ix + accum_offset)
+                            : accum_offset};
+                    const char op{(reg_offset == "rsp") ? '-' : '+'};
 
-                if (type_size == 1) {
-                    return std::format("{} + {} {} {}", reg_offset, reg_idx, op,
-                                       offset);
+                    if (type_size == 1) {
+                        return std::format("{} + {} {} {}", reg_offset, reg_idx,
+                                           op, offset);
+                    }
+                    return std::format("{} + {} * {} {} {}", reg_offset,
+                                       reg_idx, type_size, op, offset);
                 }
-                return std::format("{} + {} * {} {} {}", reg_offset, reg_idx,
-                                   type_size, op, offset);
             }
 
-            // from here: not last element or not encodable
+            // from here: not last element
 
             // convert 'rsp' to a dedicated register to calculate offset of
             // target
