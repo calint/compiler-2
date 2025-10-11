@@ -44,6 +44,8 @@ type point {x, y}
 
 type object {pos : point, color : i32}
 
+type world { locations : i64[8] }
+
 # function arguments are equivalent to mutable references
 
 func foo(pt : point) {
@@ -141,6 +143,17 @@ func main() {
     assert(o3[0].pos.y == 73)
 
     var input_buffer : i8[80]
+
+    var worlds : world[8]
+    worlds[1].locations[1] = 0xffee
+    assert(worlds[1].locations[1] == 0xffee)
+
+    array_copy(
+        worlds[1].locations,
+        worlds[0].locations,
+        array_size_of(worlds[1].locations)
+    )
+    assert(worlds[0].locations[1] == 0xffee)
 
     print(hello.len, hello)
     loop {
