@@ -25,7 +25,12 @@ sudo perf report
 # resets current state to HEAD
 git reset --hard HEAD
 
-   ; sign extended mov
+
+while read line; do echo "$line"; sleep 0.001; done < t99.in | ./gen
+
+
+
+; sign extended mov
    movsx rax,byte[rbp-8]
    movsx rax,word[rbp-8]
    movsx rax,dword[rbp-8]

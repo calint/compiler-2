@@ -95,6 +95,34 @@ DIFFINP() {
   fi
 }
 
+DIFFINP2() {
+  echo -n "$SRC: "
+
+  rm -f error.log
+
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 2>error.log >gen.s
+
+  if [ $? -ne 0 ]; then
+    echo "compiler failed. see 'error.log' and 'gen.s'" >&2
+    exit 1
+  fi
+
+  nasm -f elf64 gen.s
+  ld -s -o gen gen.o
+
+  while read line; do
+    echo "$line"
+    sleep 0.001 # arbitrary small wait for that single line to be received by `read`
+  done <"${SRC%.*}.in" | ./gen >out
+
+  if cmp -s out "${SRC%.*}.out"; then
+    echo ok
+  else
+    echo FAILED. output differs. see: diff ${SRC%.*}.out out
+    exit 1
+  fi
+}
+
 DIFFPY() {
   echo -n "$SRC: "
 
