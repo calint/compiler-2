@@ -3,20 +3,6 @@
       if: don't follow assume it might not be set
       else: follow
       loop: follow and if set before a break then ok
-[x] stmt_identifier generates: mov qword [r15 + r14 * 8 + 0], 0xffee
-[x] arguments to baz regarding stack size and bounds checking
-    ./baz (prog.baz 131072 checked)
-    ./baz file.baz (131072 checked)
-    ./baz file.baz 65536 (checked)
-    ./baz file.baz 65536 unchecked
-[x] bounds check array access (optional compiler flag)
-    [x] least intrusive is two instructions:
-        cmp r14, 8 ; r14 is result of index calculation, 8 is array size
-        jge panic
-    [x] handle offset in array: e.g, 2 + 6 <= array_size_of(arr1)
-        array_copy(arr1[2], arr2, 6)
-        arrays_equal(arr1[2], arr2[1], 3)
-    => boolean argument to toc if bounds checks to be done
 [o] implement "size_of"
     [ ] size_of for fields
 [o] review before next step
@@ -85,6 +71,20 @@
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] stmt_identifier generates: mov qword [r15 + r14 * 8 + 0], 0xffee
+[x] arguments to baz regarding stack size and bounds checking
+    ./baz (prog.baz 131072 checked)
+    ./baz file.baz (131072 checked)
+    ./baz file.baz 65536 (checked)
+    ./baz file.baz 65536 unchecked
+[x] bounds check array access (optional compiler flag)
+    [x] least intrusive is two instructions:
+        cmp r14, 8 ; r14 is result of index calculation, 8 is array size
+        jge panic
+    [x] handle offset in array: e.g, 2 + 6 <= array_size_of(arr1)
+        array_copy(arr1[2], arr2, 6)
+        arrays_equal(arr1[2], arr2[1], 3)
+    => boolean argument to toc if bounds checks to be done
 [x] an efficient way of comparing two arrays or instances:
     bool equal = array_equal(src, dst, nelements)
       works with instances also when nelements is 1 
