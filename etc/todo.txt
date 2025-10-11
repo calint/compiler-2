@@ -1,4 +1,8 @@
 [ ] var x = foo() becomes UB if foo does not set the return value
+    analyze code path:
+      if: don't follow assume it might not be set
+      else: follow
+      loop: follow and if set before a break then ok
 [x] stmt_identifier generates: mov qword [r15 + r14 * 8 + 0], 0xffee
 [x] arguments to baz regarding stack size and bounds checking
     ./baz (prog.baz 131072 checked)
