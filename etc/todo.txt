@@ -131,9 +131,9 @@ stage 5
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
 [x] fix the mess of string handling when truncating
-    => remarkably, a few surgical string handling and it functions as intended
+    => remarkably, a few string based handling and it functions as intended
 [x] fix the mess in toc::asm_cmd
-    => it is not too bad. all complexity regarding different sized arguments
+    => it is not too bad. the complexity regarding different sized arguments
        isolated in that functions
 [-] refactor the string handling of register and memory operand sizes
 [x] adjust source so it passes also MSAN
