@@ -4,6 +4,7 @@
       if: follow and find if set
       else: follow and find if set
       loop: follow and if set before a break then ok
+    [ ] check use before initialized
 [o] implement "size_of"
     [ ] size_of for fields
 [o] review before next step
