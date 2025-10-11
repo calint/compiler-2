@@ -716,7 +716,7 @@ main:
     mov r14, 1
     cmp r14, 8
     jge panic_bounds
-    mov qword [r15 + r14 * 8], 0xffee
+    mov qword [r15 + r14 * 8 + 0], 0xffee
     cmp_149_12:
         lea r13, [rsp - 796]
         mov r12, 1
@@ -727,7 +727,7 @@ main:
         mov r12, 1
         cmp r12, 8
         jge panic_bounds
-        mov r14, qword [r13 + r12 * 8]
+        mov r14, qword [r13 + r12 * 8 + 0]
     cmp r14, 0xffee
     jne bool_false_149_12
     bool_true_149_12:
@@ -780,7 +780,7 @@ main:
         mov r12, 1
         cmp r12, 8
         jge panic_bounds
-        mov r14, qword [r13 + r12 * 8]
+        mov r14, qword [r13 + r12 * 8 + 0]
     cmp r14, 0xffee
     jne bool_false_156_12
     bool_true_156_12:

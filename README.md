@@ -35,10 +35,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    41           1078            677           5247
+C/C++ Header                    41           1081            675           5247
 C++                              1             65             75            438
 -------------------------------------------------------------------------------
-SUM:                            42           1143            752           5685
+SUM:                            42           1146            750           5685
 -------------------------------------------------------------------------------
 ```
 
@@ -946,7 +946,7 @@ main:
     mov r14, 1
     cmp r14, 8
     jge panic_bounds
-    mov qword [r15 + r14 * 8], 0xffee
+    mov qword [r15 + r14 * 8 + 0], 0xffee
     cmp_149_12:
         lea r13, [rsp - 796]
         mov r12, 1
@@ -957,7 +957,7 @@ main:
         mov r12, 1
         cmp r12, 8
         jge panic_bounds
-        mov r14, qword [r13 + r12 * 8]
+        mov r14, qword [r13 + r12 * 8 + 0]
     cmp r14, 0xffee
     jne bool_false_149_12
     bool_true_149_12:
@@ -1010,7 +1010,7 @@ main:
         mov r12, 1
         cmp r12, 8
         jge panic_bounds
-        mov r14, qword [r13 + r12 * 8]
+        mov r14, qword [r13 + r12 * 8 + 0]
     cmp r14, 0xffee
     jne bool_false_156_12
     bool_true_156_12:
@@ -2730,8 +2730,8 @@ main:
     jge panic_bounds
 ;   [148:30] 0xffee
 ;   [148:30] 0xffee
-;   [149:5] qword [r15 + r14 * 8] = 0xffee
-    mov qword [r15 + r14 * 8], 0xffee
+;   [149:5] qword [r15 + r14 * 8 + 0] = 0xffee
+    mov qword [r15 + r14 * 8 + 0], 0xffee
 ;   free scratch register 'r14'
 ;   free scratch register 'r15'
 ;   [149:5] assert(worlds[1].locations[1] == 0xffee)
@@ -2763,7 +2763,7 @@ main:
         mov r12, 1
         cmp r12, 8
         jge panic_bounds
-        mov r14, qword [r13 + r12 * 8]
+        mov r14, qword [r13 + r12 * 8 + 0]
 ;       free scratch register 'r12'
 ;       free scratch register 'r13'
     cmp r14, 0xffee
@@ -2878,7 +2878,7 @@ main:
         mov r12, 1
         cmp r12, 8
         jge panic_bounds
-        mov r14, qword [r13 + r12 * 8]
+        mov r14, qword [r13 + r12 * 8 + 0]
 ;       free scratch register 'r12'
 ;       free scratch register 'r13'
     cmp r14, 0xffee

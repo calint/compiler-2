@@ -1606,8 +1606,8 @@ main:
     jge panic_bounds
 ;   [148:30] 0xffee
 ;   [148:30] 0xffee
-;   [149:5] qword [r15 + r14 * 8] = 0xffee
-    mov qword [r15 + r14 * 8], 0xffee
+;   [149:5] qword [r15 + r14 * 8 + 0] = 0xffee
+    mov qword [r15 + r14 * 8 + 0], 0xffee
 ;   free scratch register 'r14'
 ;   free scratch register 'r15'
 ;   [149:5] assert(worlds[1].locations[1] == 0xffee)
@@ -1639,7 +1639,7 @@ main:
         mov r12, 1
         cmp r12, 8
         jge panic_bounds
-        mov r14, qword [r13 + r12 * 8]
+        mov r14, qword [r13 + r12 * 8 + 0]
 ;       free scratch register 'r12'
 ;       free scratch register 'r13'
     cmp r14, 0xffee
@@ -1754,7 +1754,7 @@ main:
         mov r12, 1
         cmp r12, 8
         jge panic_bounds
-        mov r14, qword [r13 + r12 * 8]
+        mov r14, qword [r13 + r12 * 8 + 0]
 ;       free scratch register 'r12'
 ;       free scratch register 'r13'
     cmp r14, 0xffee
