@@ -127,24 +127,18 @@ class stmt_call : public expression {
             }
         }
 
+        // buffer the aliases of arguments and return
+        std::vector<std::pair<std::string_view, std::string>> aliases_to_add;
+
         // validate return type
         if (not dst.empty()) {
-            if (not func.returns()) {
+            std::optional<func_return_info> ret{func.returns()};
+            if (not ret) {
                 throw compiler_exception{tok(),
                                          "function does not return value"};
             }
-
-            // const type& return_type{func.get_type()};
-            // const ident_info& dst_info{tc.make_ident_info(tok(), dst,
-            // false)};
-            //
-            // if (dst_info.type_ref.size() < return_type.size()) {
-            //     throw compiler_exception{
-            //         tok(), std::format("return type '{}' would be truncated "
-            //                            "when copied to '{}' of type '{}'",
-            //                            return_type.name(), dst,
-            //                            dst_info.type_ref.name())};
-            // }
+            // alias return identifier to 'dst'
+            aliases_to_add.emplace_back(ret->ident_tk.text(), std::string{dst});
         }
 
         // create unique labels for in-lined functions
@@ -160,15 +154,6 @@ class stmt_call : public expression {
         std::vector<std::string> allocated_named_registers;
         std::vector<std::string> allocated_scratch_registers;
         std::vector<std::string> allocated_registers_in_order;
-
-        // buffer the aliases of arguments
-        std::vector<std::pair<std::string_view, std::string>> aliases_to_add;
-
-        // if function returns value, alias return identifier to 'dst'
-        if (not dst.empty()) {
-            aliases_to_add.emplace_back(func.returns()->ident_tk.text(),
-                                        std::string{dst});
-        }
 
         // process each argument
         for (size_t i{}; const expr_any& arg : args_) {

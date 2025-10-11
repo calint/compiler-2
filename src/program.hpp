@@ -1,7 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include "panic_exception.hpp"
+#include "compiler_exception.hpp"
 #include "statement.hpp"
 #include "stmt_def_field.hpp"
 #include "stmt_def_func.hpp"
@@ -53,8 +53,7 @@ class program final {
             const token tk{tz.next_token()};
             if (tk.is_empty()) {
                 if (not tz.is_eos()) {
-                    throw panic_exception{"expected file to be fully read "
-                                          "here. something is wrong."};
+                    throw compiler_exception{tk, "unexpected empty token"};
                 }
                 break;
             }

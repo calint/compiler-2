@@ -55,8 +55,9 @@ class stmt_def_func final : public statement {
             }
 
             returns_.emplace(type_tk, ident_tk, tp);
+
             // set function type to first return type
-            set_type(returns_->type_ref);
+            set_type(tp);
         } else {
             // no return, set type to 'void'
             set_type(tc.get_type_void());

@@ -1,5 +1,2 @@
-Sat Oct 11 12:34:46 PM +07 2025
-/home/c/w/compiler-2/qa/lint/../../src/stmt_call.hpp:169:41: warning: unchecked access to optional value [bugprone-unchecked-optional-access]
-  169 |             aliases_to_add.emplace_back(func.returns()->ident_tk.text(),
-      |                                         ^
-Sat Oct 11 12:35:24 PM +07 2025
+Sat Oct 11 12:53:50 PM +07 2025
+Sat Oct 11 12:54:26 PM +07 2025

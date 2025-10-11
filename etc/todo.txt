@@ -10,7 +10,6 @@
        assigned now it may result in undefined behavior because the compiler
        checks that the return value is set in any branch of execution
 [ ] lut: change to map
-[x] considering not parsing multiple return statements
 [ ] optimize rep stosb to q, d, w if possible
     => maybe some heuristics about when to use "rep stosX" 
        => start with stosq, then mov dword, word and byte
@@ -69,6 +68,8 @@
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] considering not parsing multiple return statements
+    => done
 [x] handle constants when deducing operand size 
      => deduce if possible to the size of the desired type
      => constant is sized to destination type size
