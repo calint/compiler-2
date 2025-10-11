@@ -6,25 +6,32 @@
 #include "stmt_identifier.hpp"
 #include "unary_ops.hpp"
 
-class stmt_array_copy final : public statement {
+class stmt_array_equal final : public expression {
     stmt_identifier from_;
     stmt_identifier to_;
     expr_any count_;
     token ws1_; // whitespace after ')'
   public:
-    stmt_array_copy(toc& tc, token tk, tokenizer& tz) : statement{tk} {
+    stmt_array_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
+        : expression{tk, std::move(uops)} {
 
-        set_type(tc.get_type_void());
+        set_type(tc.get_type_bool());
+
+        if (not statement::get_unary_ops().is_empty()) {
+            throw compiler_exception{tok(), "unary operations are not allowed "
+                                            "on this built-in function"};
+        }
 
         if (not tz.is_next_char('(')) {
             throw compiler_exception{
-                tz, "expected '(' and 'from', 'to' and 'count'"};
+                tz, "expected '(' and 'source', 'compare' and 'count'"};
         }
 
         from_ = {tc, {}, tz.next_token(), tz};
 
         if (not tz.is_next_char(',')) {
-            throw compiler_exception{tz, "expected ',' then 'to' and 'count'"};
+            throw compiler_exception{tz,
+                                     "expected ',' then 'compare' and 'count'"};
         }
 
         to_ = {tc, {}, tz.next_token(), tz};
@@ -43,13 +50,13 @@ class stmt_array_copy final : public statement {
         ws1_ = tz.next_whitespace_token();
     }
 
-    ~stmt_array_copy() override = default;
+    ~stmt_array_equal() override = default;
 
-    stmt_array_copy() = default;
-    stmt_array_copy(const stmt_array_copy&) = default;
-    stmt_array_copy(stmt_array_copy&&) = default;
-    auto operator=(const stmt_array_copy&) -> stmt_array_copy& = default;
-    auto operator=(stmt_array_copy&&) -> stmt_array_copy& = default;
+    stmt_array_equal() = default;
+    stmt_array_equal(const stmt_array_equal&) = default;
+    stmt_array_equal(stmt_array_equal&&) = default;
+    auto operator=(const stmt_array_equal&) -> stmt_array_equal& = default;
+    auto operator=(stmt_array_equal&&) -> stmt_array_equal& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
@@ -135,10 +142,23 @@ class stmt_array_copy final : public statement {
         }
 
         // copy
-        toc::asm_rep_movs(tok(), os, indent, 'b');
+        toc::asm_repe_cmps(tok(), os, indent, 'b');
 
         tc.free_named_register(os, indent, "rcx");
         tc.free_named_register(os, indent, "rdi");
         tc.free_named_register(os, indent, "rsi");
+
+        // the labels
+        const std::string lbl_if_equal{
+            toc::create_unique_label(tc, tok(), "cmps_eq")};
+        const std::string lbl_end{
+            toc::create_unique_label(tc, tok(), "cmps_end")};
+
+        toc::asm_jxx(tok(), os, indent, "e", lbl_if_equal); // je
+        tc.asm_cmd(tok(), os, indent, "mov", dst, "false");
+        toc::asm_jmp(tok(), os, indent, lbl_end);
+        toc::asm_label(tok(), os, indent, lbl_if_equal);
+        tc.asm_cmd(tok(), os, indent, "mov", dst, "true");
+        toc::asm_label(tok(), os, indent, lbl_end);
     }
 };

@@ -729,6 +729,31 @@ class toc final {
         throw compiler_exception{src_loc_tk, "unexpected frames"};
     }
 
+    [[nodiscard]] auto get_size_from_operand(const token& src_loc_tk,
+                                             std::string_view operand) const
+        -> size_t {
+
+        //? sort of ugly
+        if (operand.starts_with("qword")) {
+            return 8;
+        }
+        if (operand.starts_with("dword")) {
+            return 4;
+        }
+        if (operand.starts_with("word")) {
+            return 2;
+        }
+        if (operand.starts_with("byte")) {
+            return 1;
+        }
+        if (is_nasm_register(operand)) {
+            return get_size_from_operand_register(src_loc_tk, operand);
+        }
+
+        // constant
+        return get_type_default().size();
+    }
+
     [[nodiscard]] auto get_type_bool() const -> const type& {
         return *type_bool_;
     }
@@ -837,30 +862,6 @@ class toc final {
         }
 
         throw panic_exception{"unexpected code path toc:1"};
-    }
-
-    [[nodiscard]] auto get_size_from_operand(const token& src_loc_tk,
-                                             std::string_view operand) const
-        -> size_t {
-        //? sort of ugly
-        if (operand.starts_with("qword")) {
-            return 8;
-        }
-        if (operand.starts_with("dword")) {
-            return 4;
-        }
-        if (operand.starts_with("word")) {
-            return 2;
-        }
-        if (operand.starts_with("byte")) {
-            return 1;
-        }
-        if (is_nasm_register(operand)) {
-            return get_size_from_operand_register(src_loc_tk, operand);
-        }
-
-        // constant
-        return get_type_default().size();
     }
 
     [[nodiscard]] auto get_stack_size() const -> size_t {
@@ -1060,6 +1061,15 @@ class toc final {
         std::println(os, "jmp {}", label);
     }
 
+    static auto asm_jxx([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, size_t indnt,
+                        std::string_view comparison, std::string_view label)
+        -> void {
+
+        indent(os, indnt);
+        std::println(os, "j{} {}", comparison, label);
+    }
+
     static auto asm_label([[maybe_unused]] const token& src_loc_tk,
                           std::ostream& os, size_t indnt,
                           std::string_view label) -> void {
@@ -1100,6 +1110,7 @@ class toc final {
         std::println(os, "push {}", operand);
     }
 
+    // size: b, w, d, q for different sizings
     static auto asm_rep_movs([[maybe_unused]] const token& src_loc_tk,
                              std::ostream& os, size_t indnt, char size)
         -> void {
@@ -1108,13 +1119,36 @@ class toc final {
         std::println(os, "rep movs{}", size);
     }
 
-    // type: b, w, d, q for different sizings
+    // size: b, w, d, q for different sizings
     static auto asm_rep_stos([[maybe_unused]] const token& src_loc_tk,
-                             std::ostream& os, size_t indnt, char type)
+                             std::ostream& os, size_t indnt, char size)
         -> void {
 
         indent(os, indnt);
-        std::println(os, "rep stos{}", type);
+        std::println(os, "rep stos{}", size);
+    }
+
+    // size: b, w, d, q for different sizings
+    static auto asm_repe_cmps([[maybe_unused]] const token& src_loc_tk,
+                              std::ostream& os, size_t indnt, char size)
+        -> void {
+
+        indent(os, indnt);
+        std::println(os, "repe cmps{}", size);
+    }
+
+    [[nodiscard]] static auto create_unique_label(const toc& tc,
+                                                  const token& tk,
+                                                  const std::string_view prefix)
+        -> std::string {
+
+        const std::string_view call_path{tc.get_call_path(tk)};
+        const std::string src_loc{tc.source_location_for_use_in_label(tk)};
+        const std::string lbl{
+            std::format("{}_{}{}", prefix, src_loc,
+                        (call_path.empty() ? std::string{}
+                                           : std::format("_{}", call_path)))};
+        return lbl;
     }
 
     static auto get_field_offset_in_type(const token& src_loc_tk_,

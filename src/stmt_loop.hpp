@@ -7,20 +7,10 @@
 class stmt_loop final : public statement {
     stmt_block code_;
 
-    [[nodiscard]] auto create_unique_label(const toc& tc) const -> std::string {
-        const std::string_view call_path{tc.get_call_path(tok())};
-        const std::string src_loc{tc.source_location_for_use_in_label(tok())};
-        const std::string lbl{
-            std::format("loop_{}{}", src_loc,
-                        (call_path.empty() ? std::string{}
-                                           : std::format("_{}", call_path)))};
-        return lbl;
-    }
-
   public:
     stmt_loop(toc& tc, token tk, tokenizer& tz) : statement{tk} {
         set_type(tc.get_type_void());
-        const std::string lbl{create_unique_label(tc)};
+        const std::string lbl{toc::create_unique_label(tc, tok(), "loop")};
         tc.enter_loop(lbl);
         code_ = {tc, tz};
         tc.exit_loop(lbl);
@@ -40,7 +30,7 @@ class stmt_loop final : public statement {
         toc::indent(os, indent, true);
         tc.comment_token(os, tok());
 
-        const std::string lbl{create_unique_label(tc)};
+        const std::string lbl{toc::create_unique_label(tc, tok(), "loop")};
         toc::asm_label(tok(), os, indent, lbl);
         tc.enter_loop(lbl);
         code_.compile(tc, os, indent, dst);

@@ -83,6 +83,13 @@ func main() {
     # copy from, to, number of elements
     assert(arr[0] == 2)
 
+    var arr1 : i32[4]
+    array_copy(arr, arr1, 4)
+    assert(array_equal(arr, arr1, 4))
+
+    arr1[2] = -1
+    assert(not array_equal(arr, arr1, 4))
+
     ix = 3
     arr[ix] = ~inv(arr[ix - 1])
     assert(arr[ix] == 2)

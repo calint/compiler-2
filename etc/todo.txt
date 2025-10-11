@@ -1,5 +1,5 @@
 [ ] an efficient way of comparing two arrays or instances:
-    bool equal = array_is_equal(src, dst, nelements)
+    bool equal = array_equal(src, dst, nelements)
       works with instances also when nelements is 1 
     ; Compare two memory regions
     ; rsi = pointer to slice1

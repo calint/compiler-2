@@ -22,6 +22,7 @@
 #include "program.hpp"
 #include "statement.hpp"
 #include "stmt_address_of.hpp"
+#include "stmt_array_equal.hpp"
 #include "stmt_array_size_of.hpp"
 #include "stmt_call.hpp"
 #include "stmt_call_asm_mov.hpp"
@@ -149,6 +150,9 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     }
     if (tk.is_text("size_of")) {
         return std::make_unique<stmt_size_of>(tc, std::move(uops), tk, tz);
+    }
+    if (tk.is_text("array_equal")) {
+        return std::make_unique<stmt_array_equal>(tc, std::move(uops), tk, tz);
     }
     if (tz.is_peek_char('(')) {
         // e.g.  foo(...)
