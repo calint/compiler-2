@@ -19,7 +19,7 @@ x86_64 assembly on Linux.
 * inlined functions
 * keywords: `func`, `type`, `field`, `var`, `loop`, `if`, `else`, `continue`,
 `break`, `return`
-* built-in functions: `array_copy`, `array_size_of`, `array_equal`, `address_of`, `mov`, `syscall`
+* built-in functions: `array_copy`, `array_size_of`, `arrays_equal`, `address_of`, `mov`, `syscall`
 
 ## Howto
 
@@ -131,10 +131,10 @@ func main() {
 
     var arr1 : i32[4]
     array_copy(arr, arr1, 4)
-    assert(array_equal(arr, arr1, 4))
+    assert(arrays_equal(arr, arr1, 4))
 
     arr1[2] = -1
-    assert(not array_equal(arr, arr1, 4))
+    assert(not arrays_equal(arr, arr1, 4))
 
     ix = 3
     arr[ix] = ~inv(arr[ix - 1])
@@ -1275,24 +1275,24 @@ main:
 ;   free named register 'rcx'
 ;   free named register 'rdi'
 ;   free named register 'rsi'
-;   [88:5] assert(array_equal(arr, arr1, 4))
+;   [88:5] assert(arrays_equal(arr, arr1, 4))
 ;   allocate scratch register -> r15
-;   [88:12] array_equal(arr, arr1, 4)
-;   [88:12] ? array_equal(arr, arr1, 4)
-;   [88:12] ? array_equal(arr, arr1, 4)
+;   [88:12] arrays_equal(arr, arr1, 4)
+;   [88:12] ? arrays_equal(arr, arr1, 4)
+;   [88:12] ? arrays_equal(arr, arr1, 4)
     cmp_88_12:
 ;   allocate scratch register -> r14
-;       [88:12] array_equal(arr, arr1, 4)
-;       [88:12] r14 = array_equal(arr, arr1, 4)
-;       [88:12] array_equal(arr, arr1, 4)
+;       [88:12] arrays_equal(arr, arr1, 4)
+;       [88:12] r14 = arrays_equal(arr, arr1, 4)
+;       [88:12] arrays_equal(arr, arr1, 4)
 ;       allocate named register 'rsi'
 ;       allocate named register 'rdi'
 ;       allocate named register 'rcx'
         lea rsi, [rsp - 16]
         lea rdi, [rsp - 40]
-;       [88:35] 4
-;       [88:35] 4
-;       [88:36] rcx = 4
+;       [88:36] 4
+;       [88:36] 4
+;       [88:37] rcx = 4
         mov rcx, 4
         shl rcx, 2
         repe cmpsb
@@ -1353,24 +1353,24 @@ main:
 ;   [91:5] dword [rsp + r15 * 4 - 40] = -1
     mov dword [rsp + r15 * 4 - 40], -1
 ;   free scratch register 'r15'
-;   [91:5] assert(not array_equal(arr, arr1, 4))
+;   [91:5] assert(not arrays_equal(arr, arr1, 4))
 ;   allocate scratch register -> r15
-;   [91:12] not array_equal(arr, arr1, 4)
-;   [91:12] ? not array_equal(arr, arr1, 4)
-;   [91:12] ? not array_equal(arr, arr1, 4)
+;   [91:12] not arrays_equal(arr, arr1, 4)
+;   [91:12] ? not arrays_equal(arr, arr1, 4)
+;   [91:12] ? not arrays_equal(arr, arr1, 4)
     cmp_91_12:
 ;   allocate scratch register -> r14
-;       [91:16] array_equal(arr, arr1, 4)
-;       [91:16] r14 = array_equal(arr, arr1, 4)
-;       [91:16] array_equal(arr, arr1, 4)
+;       [91:16] arrays_equal(arr, arr1, 4)
+;       [91:16] r14 = arrays_equal(arr, arr1, 4)
+;       [91:16] arrays_equal(arr, arr1, 4)
 ;       allocate named register 'rsi'
 ;       allocate named register 'rdi'
 ;       allocate named register 'rcx'
         lea rsi, [rsp - 16]
         lea rdi, [rsp - 40]
-;       [91:39] 4
-;       [91:39] 4
-;       [91:40] rcx = 4
+;       [91:40] 4
+;       [91:40] 4
+;       [91:41] rcx = 4
         mov rcx, 4
         shl rcx, 2
         repe cmpsb

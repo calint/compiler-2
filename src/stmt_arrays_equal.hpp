@@ -6,13 +6,13 @@
 #include "stmt_identifier.hpp"
 #include "unary_ops.hpp"
 
-class stmt_array_equal final : public expression {
+class stmt_arrays_equal final : public expression {
     stmt_identifier from_;
     stmt_identifier to_;
     expr_any count_;
     token ws1_; // whitespace after ')'
   public:
-    stmt_array_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
+    stmt_arrays_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : expression{tk, std::move(uops)} {
 
         set_type(tc.get_type_bool());
@@ -50,13 +50,13 @@ class stmt_array_equal final : public expression {
         ws1_ = tz.next_whitespace_token();
     }
 
-    ~stmt_array_equal() override = default;
+    ~stmt_arrays_equal() override = default;
 
-    stmt_array_equal() = default;
-    stmt_array_equal(const stmt_array_equal&) = default;
-    stmt_array_equal(stmt_array_equal&&) = default;
-    auto operator=(const stmt_array_equal&) -> stmt_array_equal& = default;
-    auto operator=(stmt_array_equal&&) -> stmt_array_equal& = default;
+    stmt_arrays_equal() = default;
+    stmt_arrays_equal(const stmt_arrays_equal&) = default;
+    stmt_arrays_equal(stmt_arrays_equal&&) = default;
+    auto operator=(const stmt_arrays_equal&) -> stmt_arrays_equal& = default;
+    auto operator=(stmt_arrays_equal&&) -> stmt_arrays_equal& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
