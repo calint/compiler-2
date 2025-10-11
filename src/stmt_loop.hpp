@@ -10,7 +10,7 @@ class stmt_loop final : public statement {
   public:
     stmt_loop(toc& tc, token tk, tokenizer& tz) : statement{tk} {
         set_type(tc.get_type_void());
-        const std::string lbl{toc::create_unique_label(tc, tok(), "loop")};
+        const std::string lbl{tc.create_unique_label(tok(), "loop")};
         tc.enter_loop(lbl);
         code_ = {tc, tz};
         tc.exit_loop(lbl);
@@ -29,7 +29,7 @@ class stmt_loop final : public statement {
 
         tc.comment_token(tok(), os, indent);
 
-        const std::string lbl{toc::create_unique_label(tc, tok(), "loop")};
+        const std::string lbl{tc.create_unique_label(tok(), "loop")};
         toc::asm_label(tok(), os, indent, lbl);
         tc.enter_loop(lbl);
         code_.compile(tc, os, indent, dst);

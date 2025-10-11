@@ -585,6 +585,19 @@ class toc final {
         std::println(os, "{}", tk.text());
     }
 
+    [[nodiscard]] auto create_unique_label(const token& tk,
+                                           const std::string_view prefix) const
+        -> std::string {
+
+        const std::string_view call_path{get_call_path(tk)};
+        const std::string src_loc{source_location_for_use_in_label(tk)};
+        const std::string lbl{
+            std::format("{}_{}{}", prefix, src_loc,
+                        (call_path.empty() ? std::string{}
+                                           : std::format("_{}", call_path)))};
+        return lbl;
+    }
+
     auto enter_block() -> void {
         frames_.emplace_back("", frame::frame_type::BLOCK);
         refresh_usage();
@@ -1141,21 +1154,7 @@ class toc final {
         std::println(os, "repe cmps{}", size);
     }
 
-    [[nodiscard]] static auto create_unique_label(const toc& tc,
-                                                  const token& tk,
-                                                  const std::string_view prefix)
-        -> std::string {
-
-        const std::string_view call_path{tc.get_call_path(tk)};
-        const std::string src_loc{tc.source_location_for_use_in_label(tk)};
-        const std::string lbl{
-            std::format("{}_{}{}", prefix, src_loc,
-                        (call_path.empty() ? std::string{}
-                                           : std::format("_{}", call_path)))};
-        return lbl;
-    }
-
-    static auto get_field_offset_in_type(const token& src_loc_tk_,
+    static auto get_field_offset_in_type(const token& src_loc_tk,
                                          const type& tp,
                                          std::string_view field_name)
         -> size_t {
@@ -1167,7 +1166,7 @@ class toc final {
             }
             accum += f.size;
         }
-        throw compiler_exception{src_loc_tk_,
+        throw compiler_exception{src_loc_tk,
                                  "unexpected code path stmt_assign_var:1"};
     }
 

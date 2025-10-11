@@ -149,9 +149,8 @@ class stmt_arrays_equal final : public expression {
 
         // the labels
         const std::string lbl_if_equal{
-            toc::create_unique_label(tc, tok(), "cmps_eq")};
-        const std::string lbl_end{
-            toc::create_unique_label(tc, tok(), "cmps_end")};
+            tc.create_unique_label(tok(), "cmps_eq")};
+        const std::string lbl_end{tc.create_unique_label(tok(), "cmps_end")};
 
         toc::asm_jxx(tok(), os, indent, "e", lbl_if_equal); // je
         tc.asm_cmd(tok(), os, indent, "mov", dst, "false");
