@@ -342,7 +342,7 @@ class toc final {
         const ident_info& name_info{make_ident_info(src_loc_tk, name, false)};
 
         comment_start(src_loc_tk, os, indnt);
-        std::print(os, "var {}: {}", name, name_info.type_ref.name());
+        std::print(os, "{}: {}", name, name_info.type_ref.name());
         if (array_size) {
             std::print(os, "[{}]", array_size);
         }

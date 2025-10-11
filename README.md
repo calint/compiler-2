@@ -1166,8 +1166,8 @@ mov rsp,stk.end
 ;[56:1] # default argument type is `i64`
 ;[63:1] # return target is specified as a variable, in this case `res`
 main:
-;   [74:9] var arr: i32[4] @ dword [rsp - 16]
 ;   [74:5] var arr : i32[4]
+;   [74:9] arr: i32[4] @ dword [rsp - 16]
 ;   [74:9] clear array 4 * 4 B = 16 B
 ;   [74:5] allocate named register 'rdi'
 ;   [74:5] allocate named register 'rcx'
@@ -1180,8 +1180,8 @@ main:
 ;   [74:5] free named register 'rcx'
 ;   [74:5] free named register 'rdi'
 ;   [75:5] # arrays are initialized to 0
-;   [77:9] var ix: i64 @ qword [rsp - 24]
 ;   [77:5] var ix = 1
+;   [77:9] ix: i64 @ qword [rsp - 24]
 ;   [77:14] ix =1
 ;   [77:14] 1
 ;   [77:14] 1
@@ -1425,8 +1425,8 @@ main:
         if_19_5_86_5_end:
 ;       [86:5] free scratch register 'r15'
     assert_86_5_end:
-;   [88:9] var arr1: i32[8] @ dword [rsp - 56]
 ;   [88:5] var arr1 : i32[8]
+;   [88:9] arr1: i32[8] @ dword [rsp - 56]
 ;   [88:9] clear array 8 * 4 B = 32 B
 ;   [88:5] allocate named register 'rdi'
 ;   [88:5] allocate named register 'rcx'
@@ -1715,8 +1715,8 @@ main:
         if_19_5_97_5_end:
 ;       [97:5] free scratch register 'r15'
     assert_97_5_end:
-;   [99:9] var p: point @ qword [rsp - 72]
 ;   [99:5] var p : point = {0, 0}
+;   [99:9] p: point @ qword [rsp - 72]
 ;   [99:21] p ={0, 0}
 ;   [99:21] {0, 0}
 ;   [99:21] {0, 0}
@@ -1829,8 +1829,8 @@ main:
         if_19_5_102_5_end:
 ;       [102:5] free scratch register 'r15'
     assert_102_5_end:
-;   [104:9] var i: i64 @ qword [rsp - 80]
 ;   [104:5] var i = 0
+;   [104:9] i: i64 @ qword [rsp - 80]
 ;   [104:13] i =0
 ;   [104:13] 0
 ;   [104:13] 0
@@ -1965,15 +1965,15 @@ main:
         if_19_5_110_5_end:
 ;       [110:5] free scratch register 'r15'
     assert_110_5_end:
-;   [112:9] var j: i64 @ qword [rsp - 88]
 ;   [112:5] var j = 1
+;   [112:9] j: i64 @ qword [rsp - 88]
 ;   [112:13] j =1
 ;   [112:13] 1
 ;   [112:13] 1
 ;   [113:5] j = 1
     mov qword [rsp - 88], 1
-;   [113:9] var k: i64 @ qword [rsp - 96]
 ;   [113:5] var k = baz(j)
+;   [113:9] k: i64 @ qword [rsp - 96]
 ;   [113:13] k =baz(j)
 ;   [113:13] baz(j)
 ;   [113:13] baz(j)
@@ -2103,8 +2103,8 @@ main:
         if_19_5_117_5_end:
 ;       [117:5] free scratch register 'r15'
     assert_117_5_end:
-;   [119:9] var p0: point @ qword [rsp - 112]
 ;   [119:5] var p0 : point = {baz(2), 0}
+;   [119:9] p0: point @ qword [rsp - 112]
 ;   [119:22] p0 ={baz(2), 0}
 ;   [119:22] {baz(2), 0}
 ;   [119:22] {baz(2), 0}
@@ -2174,22 +2174,22 @@ main:
         if_19_5_120_5_end:
 ;       [120:5] free scratch register 'r15'
     assert_120_5_end:
-;   [122:9] var x: i64 @ qword [rsp - 120]
 ;   [122:5] var x = 1
+;   [122:9] x: i64 @ qword [rsp - 120]
 ;   [122:13] x =1
 ;   [122:13] 1
 ;   [122:13] 1
 ;   [123:5] x = 1
     mov qword [rsp - 120], 1
-;   [123:9] var y: i64 @ qword [rsp - 128]
 ;   [123:5] var y = 2
+;   [123:9] y: i64 @ qword [rsp - 128]
 ;   [123:13] y =2
 ;   [123:13] 2
 ;   [123:13] 2
 ;   [125:5] y = 2
     mov qword [rsp - 128], 2
-;   [125:9] var o1: object @ qword [rsp - 148]
 ;   [125:5] var o1 : object = {{x * 10, y}, 0xff0000}
+;   [125:9] o1: object @ qword [rsp - 148]
 ;   [125:23] o1 ={{x * 10, y}, 0xff0000}
 ;   [125:23] {{x * 10, y}, 0xff0000}
 ;   [125:23] {{x * 10, y}, 0xff0000}
@@ -2344,8 +2344,8 @@ main:
         if_19_5_128_5_end:
 ;       [128:5] free scratch register 'r15'
     assert_128_5_end:
-;   [130:9] var p1: point @ qword [rsp - 164]
 ;   [130:5] var p1 : point = {-x, -y}
+;   [130:9] p1: point @ qword [rsp - 164]
 ;   [130:22] p1 ={-x, -y}
 ;   [130:22] {-x, -y}
 ;   [130:22] {-x, -y}
@@ -2461,8 +2461,8 @@ main:
         if_19_5_133_5_end:
 ;       [133:5] free scratch register 'r15'
     assert_133_5_end:
-;   [135:9] var o2: object @ qword [rsp - 184]
 ;   [135:5] var o2 : object = o1
+;   [135:9] o2: object @ qword [rsp - 184]
 ;   [135:23] o2 =o1
 ;   [135:23] allocate named register 'rsi'
 ;   [135:23] allocate named register 'rdi'
@@ -2601,8 +2601,8 @@ main:
         if_19_5_138_5_end:
 ;       [138:5] free scratch register 'r15'
     assert_138_5_end:
-;   [140:9] var o3: object[1] @ qword [rsp - 204]
 ;   [140:5] var o3 : object[1]
+;   [140:9] o3: object[1] @ qword [rsp - 204]
 ;   [140:9] clear array 1 * 20 B = 20 B
 ;   [140:5] allocate named register 'rdi'
 ;   [140:5] allocate named register 'rcx'
@@ -2682,8 +2682,8 @@ main:
         if_19_5_143_5_end:
 ;       [143:5] free scratch register 'r15'
     assert_143_5_end:
-;   [145:9] var input_buffer: i8[80] @ byte [rsp - 284]
 ;   [145:5] var input_buffer : i8[80]
+;   [145:9] input_buffer: i8[80] @ byte [rsp - 284]
 ;   [145:9] clear array 80 * 1 B = 80 B
 ;   [145:5] allocate named register 'rdi'
 ;   [145:5] allocate named register 'rcx'
@@ -2695,8 +2695,8 @@ main:
 ;   [145:5] free named register 'rax'
 ;   [145:5] free named register 'rcx'
 ;   [145:5] free named register 'rdi'
-;   [147:9] var worlds: world[8] @ qword [rsp - 796]
 ;   [147:5] var worlds : world[8]
+;   [147:9] worlds: world[8] @ qword [rsp - 796]
 ;   [147:9] clear array 8 * 64 B = 512 B
 ;   [147:5] allocate named register 'rdi'
 ;   [147:5] allocate named register 'rcx'
@@ -2968,8 +2968,8 @@ main:
 ;           [160:9] free named register 'rsi'
 ;           [160:9] free named register 'rdx'
         print_160_9_end:
-;       [162:13] var len: i64 @ qword [rsp - 804]
 ;       [162:9] var len = read(array_size_of(input_buffer), address_of(input_buffer)) - 1
+;       [162:13] len: i64 @ qword [rsp - 804]
 ;       [162:19] len =read(array_size_of(input_buffer), address_of(input_buffer)) - 1
 ;       [162:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
 ;       [162:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
