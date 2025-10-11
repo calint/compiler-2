@@ -1,17 +1,6 @@
-[x] an efficient way of comparing two arrays or instances:
-    bool equal = array_equal(src, dst, nelements)
-      works with instances also when nelements is 1 
-    ; Compare two memory regions
-    ; rsi = pointer to slice1
-    ; rdi = pointer to slice2
-    ; rcx = length in bytes
-    ; Returns: ZF=1 if equal, ZF=0 if different
-    cld              ; Clear direction flag (forward)
-    repe cmpsb       ; Repeat while equal, compare bytes
-    ; After: ZF=1 if equal, ZF=0 if not equal
-    je equal
-    jne not_equal
-    => arrays_equal(arr1, arr2, nelements)
+[ ] optimize rep stosX and repe cmpsX to q, d, w if possible
+    => maybe some heuristics about when to use "rep stosX" 
+       => start with stosq, then mov dword, word and byte
 [ ] bounds check array access (optional compiler flag)
     and built in function array_copy
 [o] implement "size_of"
@@ -26,9 +15,6 @@
        assigned now it may result in undefined behavior because the compiler
        checks that the return value is set in any branch of execution
 [ ] lut: change to map
-[ ] optimize rep stosb to q, d, w if possible
-    => maybe some heuristics about when to use "rep stosX" 
-       => start with stosq, then mov dword, word and byte
 [ ] make unary_ops trivially copyable by using a fixed array instead of vector
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
 [ ] use asm command 'test' instead of 'cmp' when checking for constant 0
@@ -82,6 +68,20 @@
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] an efficient way of comparing two arrays or instances:
+    bool equal = array_equal(src, dst, nelements)
+      works with instances also when nelements is 1 
+    ; Compare two memory regions
+    ; rsi = pointer to slice1
+    ; rdi = pointer to slice2
+    ; rcx = length in bytes
+    ; Returns: ZF=1 if equal, ZF=0 if different
+    cld              ; Clear direction flag (forward)
+    repe cmpsb       ; Repeat while equal, compare bytes
+    ; After: ZF=1 if equal, ZF=0 if not equal
+    je equal
+    jne not_equal
+    => arrays_equal(arr1, arr2, nelements)
 [x] a way to efficiently copy arrays:
     e.g., copy_array(buf[2], buf, 10)
     copies from second element to base 10 elements
