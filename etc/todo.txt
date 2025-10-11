@@ -1,3 +1,6 @@
+[ ] a way to efficiently copy arrays:
+    e.g., copy_array(address_of(buf[2]), address_of(buf), 10)
+    copies from second element to base 10 elements
 [o] implement "size_of"
     [ ] size_of for fields
 [o] review before next step
@@ -15,8 +18,6 @@
        => start with stosq, then mov dword, word and byte
 [ ] make unary_ops trivially copyable by using a fixed array instead of vector
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
-[x] tokenizer: handle string with escaped " 
-[x] token: handle character ' in string 
 [ ] use asm command 'test' instead of 'cmp' when checking for constant 0
 [ ] parsing comments in single statement block fails:
         if nibble > 9 nibble = nibble + 0x41 # 0 through 9
@@ -69,6 +70,8 @@
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] tokenizer: handle string with escaped " 
+[x] token: handle character ' in string 
 [x] considering not parsing multiple return statements
     => done
 [x] handle constants when deducing operand size 
