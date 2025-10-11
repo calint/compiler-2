@@ -215,8 +215,7 @@ class stmt_call : public expression {
             }
         }
 
-        toc::indent(os, indent, true);
-        func.source_def_comment_to(os);
+        func.source_def_comment_to(tc, os, indent);
 
         toc::asm_label(tok(), os, indent,
                        std::format("{}_{}", func.name(), new_call_path));
@@ -227,7 +226,7 @@ class stmt_call : public expression {
 
         // add aliases
         for (const auto& [from, to] : aliases_to_add) {
-            toc::indent(os, indent + 1, true);
+            tc.comment_start(os, indent + 1, tok());
             std::println(os, "alias {} -> {}", from, to);
             tc.add_alias(std::string{from}, to);
         }
@@ -239,9 +238,9 @@ class stmt_call : public expression {
         for (const auto& reg :
              allocated_registers_in_order | std::views::reverse) {
             if (std::ranges::contains(allocated_scratch_registers, reg)) {
-                tc.free_scratch_register(os, indent + 1, reg);
+                tc.free_scratch_register(os, indent + 1, tok(), reg);
             } else if (std::ranges::contains(allocated_named_registers, reg)) {
-                tc.free_named_register(os, indent + 1, reg);
+                tc.free_named_register(os, indent + 1, tok(), reg);
             } else {
                 throw panic_exception("unexpected code path");
             }

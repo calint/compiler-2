@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <format>
 #include <optional>
+#include <ostream>
 #include <ranges>
 #include <string_view>
 #include <utility>
@@ -339,7 +340,8 @@ class toc final {
 
         // comment the resolved name
         const ident_info& name_info{make_ident_info(src_loc_tk, name, false)};
-        indent(os, indnt, true);
+
+        comment_start(os, indnt, src_loc_tk);
         std::print(os, "var {}: {}", name, name_info.type_ref.name());
         if (array_size) {
             std::print(os, "[{}]", array_size);
@@ -350,7 +352,7 @@ class toc final {
     auto alloc_named_register(const token& src_loc_tk, std::ostream& os,
                               size_t indnt, std::string_view reg) -> bool {
 
-        indent(os, indnt, true);
+        comment_start(os, indnt, src_loc_tk);
         std::print(os, "allocate named register '{}'", reg);
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
@@ -373,7 +375,7 @@ class toc final {
                                        size_t indnt, std::string_view reg)
         -> void {
 
-        indent(os, indnt, true);
+        comment_start(os, indnt, st.tok());
         std::println(os, "allocate named register '{}'", reg);
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
@@ -411,7 +413,7 @@ class toc final {
         std::string reg{std::move(scratch_registers_.back())};
         scratch_registers_.pop_back();
 
-        indent(os, indnt, true);
+        comment_start(os, indnt, src_loc_tk);
         std::println(os, "allocate scratch register -> {}", reg);
 
         const size_t n{scratch_registers_initial_size_ -
@@ -449,7 +451,7 @@ class toc final {
                 std::println(os, "mov {}, {}", reg_sized, src_nasm);
                 indent(os, indnt);
                 std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
-                free_scratch_register(os, indnt, reg);
+                free_scratch_register(os, indnt, src_loc_tk, reg);
                 return;
             }
 
@@ -475,7 +477,7 @@ class toc final {
                 std::println(os, "movsx {}, {}", reg_sized, src_nasm);
                 indent(os, indnt);
                 std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
-                free_scratch_register(os, indnt, reg);
+                free_scratch_register(os, indnt, src_loc_tk, reg);
                 return;
             }
 
@@ -514,7 +516,7 @@ class toc final {
                              src_nasm, get_operand_size(dst_size)));
             indent(os, indnt);
             std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
-            free_scratch_register(os, indnt, reg);
+            free_scratch_register(os, indnt, src_loc_tk, reg);
             return;
         }
 
@@ -542,33 +544,22 @@ class toc final {
     auto comment_source(const statement& st, std::ostream& os,
                         size_t indnt) const -> void {
 
-        const token& tk{st.tok()};
-        const auto [line, col]{line_and_col_num_for_char_index(
-            tk.at_line(), tk.start_index(), source_)};
-
-        indent(os, indnt, true);
-        std::print(os, "[{}:{}] ", line, col);
-
+        comment_start(os, indnt, st.tok());
         std::stringstream ss;
         st.source_to(ss);
-        std::print(
-            os, "{}\n",
+        std::println(
+            os, "{}",
             std::regex_replace(std::regex_replace(ss.str(), regex_trim, ""),
                                regex_ws, " "));
     }
 
-    auto comment_source(std::ostream& os, std::string_view dst,
-                        std::string_view op, const statement& st) const
-        -> void {
+    auto comment_source(std::ostream& os, const size_t indnt,
+                        std::string_view dst, std::string_view op,
+                        const statement& st) const -> void {
 
-        const token& tk{st.tok()};
-        const auto [line, col]{line_and_col_num_for_char_index(
-            tk.at_line(), tk.start_index(), source_)};
-
-        std::print(os, "[{}:{}]", line, col);
-
+        comment_start(os, indnt, st.tok());
         std::stringstream ss;
-        std::print(ss, " {} {} ", dst, op);
+        std::print(ss, "{} {} ", dst, op);
         st.source_to(ss);
         std::string res{std::regex_replace(ss.str(), regex_ws, " ")};
         // trim end of string
@@ -578,11 +569,20 @@ class toc final {
         std::println(os, "{}", res);
     }
 
-    auto comment_token(std::ostream& os, const token& tk) const -> void {
-        const auto [line, col]{line_and_col_num_for_char_index(
-            tk.at_line(), tk.start_index(), source_)};
+    auto comment_start(std::ostream& os, const size_t indnt,
+                       const token& src_loc_tk) const -> void {
 
-        std::println(os, "[{}:{}] {}", line, col, tk.text());
+        const auto [line, col]{line_and_col_num_for_char_index(
+            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
+        indent(os, indnt, true);
+        std::print(os, "[{}:{}] ", line, col);
+    }
+
+    auto comment_token(std::ostream& os, const size_t indnt,
+                       const token& tk) const -> void {
+
+        comment_start(os, indnt, tk);
+        std::println(os, "{}", tk.text());
     }
 
     auto enter_block() -> void {
@@ -642,9 +642,10 @@ class toc final {
     }
 
     auto free_named_register(std::ostream& os, size_t indnt,
-                             std::string_view reg) -> void {
+                             const token& src_loc_tk, std::string_view reg)
+        -> void {
 
-        indent(os, indnt, true);
+        comment_start(os, indnt, src_loc_tk);
         std::println(os, "free named register '{}'", reg);
 
         assert(allocated_registers_.back() == reg);
@@ -655,9 +656,10 @@ class toc final {
     }
 
     auto free_scratch_register(std::ostream& os, size_t indnt,
-                               std::string_view reg) -> void {
+                               const token& src_loc_tk, std::string_view reg)
+        -> void {
 
-        indent(os, indnt, true);
+        comment_start(os, indnt, src_loc_tk);
         std::println(os, "free scratch register '{}'", reg);
 
         assert(allocated_registers_.back() == reg);

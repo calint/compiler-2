@@ -88,12 +88,12 @@ class stmt_address_of final : public expression {
             tc.asm_cmd(tok(), os, indent, "lea", reg,
                        std::format("[{}]", operand));
             tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm, reg);
-            tc.free_scratch_register(os, indent, reg);
+            tc.free_scratch_register(os, indent, tok(), reg);
         }
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
-            tc.free_scratch_register(os, indent, reg);
+            tc.free_scratch_register(os, indent, tok(), reg);
         }
     }
 };

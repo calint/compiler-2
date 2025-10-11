@@ -118,8 +118,8 @@ class expr_bool_op final : public statement {
         -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
-        toc::indent(os, indent, true);
-        tc.comment_source(os, "?", inverted ? " 'or' inverted: " : " ", *this);
+        tc.comment_source(os, indent, "?", inverted ? " 'or' inverted: " : " ",
+                          *this);
         toc::asm_label(tok(), os, indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // is 'lhs' a constant?
@@ -202,8 +202,8 @@ class expr_bool_op final : public statement {
                      const bool inverted) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
-        toc::indent(os, indent, true);
-        tc.comment_source(os, "?", inverted ? " 'and' inverted: " : " ", *this);
+        tc.comment_source(os, indent, "?", inverted ? " 'and' inverted: " : " ",
+                          *this);
         toc::asm_label(tok(), os, indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // check case when operand is constant
@@ -419,7 +419,7 @@ class expr_bool_op final : public statement {
 
         // free allocated registers in reverse order
         for (const auto& reg : allocated_registers | std::views::reverse) {
-            tc.free_scratch_register(os, indent, reg);
+            tc.free_scratch_register(os, indent, tok(), reg);
         }
     }
 
@@ -431,7 +431,7 @@ class expr_bool_op final : public statement {
             resolve_expr(tc, os, indent, lhs, true, allocated_registers)};
         tc.asm_cmd(tok(), os, indent, "cmp", dst, "false");
         for (const auto& reg : allocated_registers | std::views::reverse) {
-            tc.free_scratch_register(os, indent, reg);
+            tc.free_scratch_register(os, indent, tok(), reg);
         }
     }
 

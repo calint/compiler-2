@@ -92,7 +92,7 @@ class stmt_array_copy final : public statement {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            tc.free_scratch_register(os, indent, reg);
+            tc.free_scratch_register(os, indent, tok(), reg);
         }
 
         // to operand to 'rdi'
@@ -106,7 +106,7 @@ class stmt_array_copy final : public statement {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            tc.free_scratch_register(os, indent, reg);
+            tc.free_scratch_register(os, indent, tok(), reg);
         }
 
         if (from_info.type_ref.name() != to_info.type_ref.name()) {
@@ -136,8 +136,8 @@ class stmt_array_copy final : public statement {
         // copy
         toc::asm_rep_movs(tok(), os, indent, 'b');
 
-        tc.free_named_register(os, indent, "rcx");
-        tc.free_named_register(os, indent, "rdi");
-        tc.free_named_register(os, indent, "rsi");
+        tc.free_named_register(os, indent, tok(), "rcx");
+        tc.free_named_register(os, indent, tok(), "rdi");
+        tc.free_named_register(os, indent, tok(), "rsi");
     }
 };

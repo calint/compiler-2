@@ -1,3 +1,4 @@
+[o] review that source locations are accurate in gen.s comments
 [ ] var x = foo() becomes UB if foo does not set the return value
     analyze code path:
       if: don't follow assume it might not be set

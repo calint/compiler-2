@@ -99,7 +99,7 @@ class stmt_arrays_equal final : public expression {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            tc.free_scratch_register(os, indent, reg);
+            tc.free_scratch_register(os, indent, tok(), reg);
         }
 
         // to operand to 'rdi'
@@ -113,7 +113,7 @@ class stmt_arrays_equal final : public expression {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            tc.free_scratch_register(os, indent, reg);
+            tc.free_scratch_register(os, indent, tok(), reg);
         }
 
         if (from_info.type_ref.name() != to_info.type_ref.name()) {
@@ -143,9 +143,9 @@ class stmt_arrays_equal final : public expression {
         // copy
         toc::asm_repe_cmps(tok(), os, indent, 'b');
 
-        tc.free_named_register(os, indent, "rcx");
-        tc.free_named_register(os, indent, "rdi");
-        tc.free_named_register(os, indent, "rsi");
+        tc.free_named_register(os, indent, tok(), "rcx");
+        tc.free_named_register(os, indent, tok(), "rdi");
+        tc.free_named_register(os, indent, tok(), "rsi");
 
         // the labels
         const std::string lbl_if_equal{

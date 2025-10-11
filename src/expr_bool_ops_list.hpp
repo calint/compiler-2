@@ -154,8 +154,8 @@ class expr_bool_ops_list final : public statement {
                  std::string_view jmp_to_if_true, bool inverted) const
         -> std::optional<bool> {
 
-        toc::indent(os, indent, true);
-        tc.comment_source(os, "?", inverted ? " inverted: " : " ", *this);
+        tc.comment_source(os, indent, "?", inverted ? " inverted: " : " ",
+                          *this);
         // invert, according to De Morgan's laws
         const bool invert{inverted ? not not_token_.is_text("not")
                                    : not_token_.is_text("not")};

@@ -71,7 +71,7 @@ class stmt_def_func final : public statement {
         null_stream null_strm; // don't make output
         init_variables(tc, null_strm, 0, allocated_named_registers);
         code_ = {tc, tz};
-        free_allocated_named_registers(tc, null_strm, 0,
+        free_allocated_named_registers(tc, null_strm, 0, tok(),
                                        allocated_named_registers);
         tc.exit_func(name());
     }
@@ -115,7 +115,9 @@ class stmt_def_func final : public statement {
         }
     }
 
-    auto source_def_comment_to(std::ostream& os) const -> void {
+    auto source_def_comment_to(toc& tc, std::ostream& os,
+                               const size_t indent) const -> void {
+
         std::stringstream ss;
         source_def_to(ss, true);
         std::println(ss, "");
@@ -124,6 +126,8 @@ class stmt_def_func final : public statement {
         // make comment friendly string replacing consecutive with one space
         const std::string res{
             std::regex_replace(src, std::regex(R"(\s+)"), " ")};
+
+        tc.comment_start(os, indent, name_tk_);
         std::println(os, "{}", res);
     }
 
@@ -192,14 +196,13 @@ class stmt_def_func final : public statement {
         }
     }
 
-    static auto
-    free_allocated_named_registers(toc& tc, std::ostream& os, size_t indent,
-                                   const std::vector<std::string>& registers)
-        -> void {
+    static auto free_allocated_named_registers(
+        toc& tc, std::ostream& os, size_t indent, const token& src_loc_tk,
+        const std::vector<std::string>& registers) -> void {
 
         // free allocated named register in reverse order
         for (const auto& reg : registers | std::views::reverse) {
-            tc.free_named_register(os, indent + 1, reg);
+            tc.free_named_register(os, indent + 1, src_loc_tk, reg);
         }
     }
 };

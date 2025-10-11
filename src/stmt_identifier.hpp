@@ -182,7 +182,7 @@ class stmt_identifier : public statement {
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
-            tc.free_scratch_register(os, indent, reg);
+            tc.free_scratch_register(os, indent, tok(), reg);
         }
     }
 
@@ -278,7 +278,9 @@ class stmt_identifier : public statement {
                             //             ___  reg_top_idx = 2
                             //       [ 0 1 2 3 ]
                             //             | reg_idx = 2
-                            tc.free_scratch_register(os, indent, reg_top_idx);
+                            tc.free_scratch_register(
+                                os, indent, curr_elem.array_index_expr->tok(),
+                                reg_top_idx);
                         } else {
                             tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
                                        indent, "cmp", reg_idx,
@@ -341,7 +343,9 @@ class stmt_identifier : public statement {
                     //             ___  reg_top_idx = 2
                     //       [ 0 1 2 3 ]
                     //             | reg_idx = 2
-                    tc.free_scratch_register(os, indent, reg_top_idx);
+                    tc.free_scratch_register(os, indent,
+                                             curr_elem.array_index_expr->tok(),
+                                             reg_top_idx);
                 } else {
                     tc.asm_cmd(curr_elem.array_index_expr->tok(), os, indent,
                                "cmp", reg_idx,
@@ -366,7 +370,7 @@ class stmt_identifier : public statement {
 
             // add the index offset to the base register
             tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset, reg_idx);
-            tc.free_scratch_register(os, indent, reg_idx);
+            tc.free_scratch_register(os, indent, src_loc_tk, reg_idx);
 
             // accumulate field offsets for nested types
             if (i + 1 < elems_size) {

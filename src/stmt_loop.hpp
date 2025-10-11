@@ -27,8 +27,7 @@ class stmt_loop final : public statement {
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  [[maybe_unused]] std::string_view dst) const -> void override {
 
-        toc::indent(os, indent, true);
-        tc.comment_token(os, tok());
+        tc.comment_token(os, indent, tok());
 
         const std::string lbl{toc::create_unique_label(tc, tok(), "loop")};
         toc::asm_label(tok(), os, indent, lbl);
