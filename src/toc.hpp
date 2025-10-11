@@ -341,7 +341,7 @@ class toc final {
         // comment the resolved name
         const ident_info& name_info{make_ident_info(src_loc_tk, name, false)};
 
-        comment_start(os, indnt, src_loc_tk);
+        comment_start(src_loc_tk, os, indnt);
         std::print(os, "var {}: {}", name, name_info.type_ref.name());
         if (array_size) {
             std::print(os, "[{}]", array_size);
@@ -352,7 +352,7 @@ class toc final {
     auto alloc_named_register(const token& src_loc_tk, std::ostream& os,
                               size_t indnt, std::string_view reg) -> bool {
 
-        comment_start(os, indnt, src_loc_tk);
+        comment_start(src_loc_tk, os, indnt);
         std::print(os, "allocate named register '{}'", reg);
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
@@ -375,7 +375,7 @@ class toc final {
                                        size_t indnt, std::string_view reg)
         -> void {
 
-        comment_start(os, indnt, st.tok());
+        comment_start(st.tok(), os, indnt);
         std::println(os, "allocate named register '{}'", reg);
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
@@ -413,7 +413,7 @@ class toc final {
         std::string reg{std::move(scratch_registers_.back())};
         scratch_registers_.pop_back();
 
-        comment_start(os, indnt, src_loc_tk);
+        comment_start(src_loc_tk, os, indnt);
         std::println(os, "allocate scratch register -> {}", reg);
 
         const size_t n{scratch_registers_initial_size_ -
@@ -451,7 +451,7 @@ class toc final {
                 std::println(os, "mov {}, {}", reg_sized, src_nasm);
                 indent(os, indnt);
                 std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
-                free_scratch_register(os, indnt, src_loc_tk, reg);
+                free_scratch_register(src_loc_tk, os, indnt, reg);
                 return;
             }
 
@@ -477,7 +477,7 @@ class toc final {
                 std::println(os, "movsx {}, {}", reg_sized, src_nasm);
                 indent(os, indnt);
                 std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
-                free_scratch_register(os, indnt, src_loc_tk, reg);
+                free_scratch_register(src_loc_tk, os, indnt, reg);
                 return;
             }
 
@@ -516,7 +516,7 @@ class toc final {
                              src_nasm, get_operand_size(dst_size)));
             indent(os, indnt);
             std::println(os, "{} {}, {}", op, dst_nasm, reg_sized);
-            free_scratch_register(os, indnt, src_loc_tk, reg);
+            free_scratch_register(src_loc_tk, os, indnt, reg);
             return;
         }
 
@@ -544,7 +544,7 @@ class toc final {
     auto comment_source(const statement& st, std::ostream& os,
                         size_t indnt) const -> void {
 
-        comment_start(os, indnt, st.tok());
+        comment_start(st.tok(), os, indnt);
         std::stringstream ss;
         st.source_to(ss);
         std::println(
@@ -553,11 +553,11 @@ class toc final {
                                regex_ws, " "));
     }
 
-    auto comment_source(std::ostream& os, const size_t indnt,
-                        std::string_view dst, std::string_view op,
-                        const statement& st) const -> void {
+    auto comment_source(const statement& st, std::ostream& os,
+                        const size_t indnt, std::string_view dst,
+                        std::string_view op) const -> void {
 
-        comment_start(os, indnt, st.tok());
+        comment_start(st.tok(), os, indnt);
         std::stringstream ss;
         std::print(ss, "{} {} ", dst, op);
         st.source_to(ss);
@@ -569,8 +569,8 @@ class toc final {
         std::println(os, "{}", res);
     }
 
-    auto comment_start(std::ostream& os, const size_t indnt,
-                       const token& src_loc_tk) const -> void {
+    auto comment_start(const token& src_loc_tk, std::ostream& os,
+                       const size_t indnt) const -> void {
 
         const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
@@ -578,10 +578,10 @@ class toc final {
         std::print(os, "[{}:{}] ", line, col);
     }
 
-    auto comment_token(std::ostream& os, const size_t indnt,
-                       const token& tk) const -> void {
+    auto comment_token(const token& tk, std::ostream& os,
+                       const size_t indnt) const -> void {
 
-        comment_start(os, indnt, tk);
+        comment_start(tk, os, indnt);
         std::println(os, "{}", tk.text());
     }
 
@@ -641,11 +641,10 @@ class toc final {
         usage_max_scratch_regs_ = 0;
     }
 
-    auto free_named_register(std::ostream& os, size_t indnt,
-                             const token& src_loc_tk, std::string_view reg)
-        -> void {
+    auto free_named_register(const token& src_loc_tk, std::ostream& os,
+                             size_t indnt, std::string_view reg) -> void {
 
-        comment_start(os, indnt, src_loc_tk);
+        comment_start(src_loc_tk, os, indnt);
         std::println(os, "free named register '{}'", reg);
 
         assert(allocated_registers_.back() == reg);
@@ -655,11 +654,10 @@ class toc final {
         allocated_registers_src_locs_.pop_back();
     }
 
-    auto free_scratch_register(std::ostream& os, size_t indnt,
-                               const token& src_loc_tk, std::string_view reg)
-        -> void {
+    auto free_scratch_register(const token& src_loc_tk, std::ostream& os,
+                               size_t indnt, std::string_view reg) -> void {
 
-        comment_start(os, indnt, src_loc_tk);
+        comment_start(src_loc_tk, os, indnt);
         std::println(os, "free scratch register '{}'", reg);
 
         assert(allocated_registers_.back() == reg);
@@ -849,22 +847,22 @@ class toc final {
     // -------------------------------------------------------------------------
 
     [[nodiscard]] auto
-    get_builtin_type_for_operand(const token& src_loc_tk_,
+    get_builtin_type_for_operand(const token& src_loc_tk,
                                  std::string_view operand) const
         -> const type& {
 
         //? sort of ugly
         if (operand.starts_with("qword")) {
-            return get_type_or_throw(src_loc_tk_, "i64");
+            return get_type_or_throw(src_loc_tk, "i64");
         }
         if (operand.starts_with("dword")) {
-            return get_type_or_throw(src_loc_tk_, "i32");
+            return get_type_or_throw(src_loc_tk, "i32");
         }
         if (operand.starts_with("word")) {
-            return get_type_or_throw(src_loc_tk_, "i16");
+            return get_type_or_throw(src_loc_tk, "i16");
         }
         if (operand.starts_with("byte")) {
-            return get_type_or_throw(src_loc_tk_, "i8");
+            return get_type_or_throw(src_loc_tk, "i8");
         }
 
         throw panic_exception{"unexpected code path toc:1"};

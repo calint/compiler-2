@@ -1,8 +1,8 @@
 [o] review that source locations are accurate in gen.s comments
 [ ] var x = foo() becomes UB if foo does not set the return value
     analyze code path:
-      if: don't follow assume it might not be set
-      else: follow
+      if: follow and find if set
+      else: follow and find if set
       loop: follow and if set before a break then ok
 [o] implement "size_of"
     [ ] size_of for fields

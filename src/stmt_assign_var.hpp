@@ -87,11 +87,11 @@ class stmt_assign_var final : public statement {
 
             for (const std::string& reg :
                  allocated_registers | std::views::reverse) {
-                tc.free_scratch_register(os, indent, tok(), reg);
+                tc.free_scratch_register(tok(), os, indent, reg);
             }
-            tc.free_named_register(os, indent, tok(), "rcx");
-            tc.free_named_register(os, indent, tok(), "rdi");
-            tc.free_named_register(os, indent, tok(), "rsi");
+            tc.free_named_register(tok(), os, indent, "rcx");
+            tc.free_named_register(tok(), os, indent, "rdi");
+            tc.free_named_register(tok(), os, indent, "rsi");
 
             return;
         }
@@ -122,7 +122,7 @@ class stmt_assign_var final : public statement {
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
-            tc.free_scratch_register(os, indent, tok(), reg);
+            tc.free_scratch_register(tok(), os, indent, reg);
         }
     }
 

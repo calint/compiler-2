@@ -226,7 +226,7 @@ class stmt_call : public expression {
 
         // add aliases
         for (const auto& [from, to] : aliases_to_add) {
-            tc.comment_start(os, indent + 1, tok());
+            tc.comment_start(tok(), os, indent + 1);
             std::println(os, "alias {} -> {}", from, to);
             tc.add_alias(std::string{from}, to);
         }
@@ -238,9 +238,9 @@ class stmt_call : public expression {
         for (const auto& reg :
              allocated_registers_in_order | std::views::reverse) {
             if (std::ranges::contains(allocated_scratch_registers, reg)) {
-                tc.free_scratch_register(os, indent + 1, tok(), reg);
+                tc.free_scratch_register(tok(), os, indent + 1, reg);
             } else if (std::ranges::contains(allocated_named_registers, reg)) {
-                tc.free_named_register(os, indent + 1, tok(), reg);
+                tc.free_named_register(tok(), os, indent + 1, reg);
             } else {
                 throw panic_exception("unexpected code path");
             }

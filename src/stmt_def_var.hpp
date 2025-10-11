@@ -131,7 +131,7 @@ class stmt_def_var final : public statement {
         const ident_info& dst_info{
             tc.make_ident_info(name_tk_, name_tk_.text(), false)};
 
-        tc.comment_start(os, indent, name_tk_);
+        tc.comment_start(name_tk_, os, indent);
         std::println(os, "clear array {} * {} B = {} B", array_size_,
                      dst_info.type_ref.size(),
                      array_size_ * dst_info.type_ref.size());
@@ -149,8 +149,8 @@ class stmt_def_var final : public statement {
         tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
         toc::asm_rep_stos(name_tk_, os, indent, 'b');
 
-        tc.free_named_register(os, indent, tok(), "rax");
-        tc.free_named_register(os, indent, tok(), "rcx");
-        tc.free_named_register(os, indent, tok(), "rdi");
+        tc.free_named_register(tok(), os, indent, "rax");
+        tc.free_named_register(tok(), os, indent, "rcx");
+        tc.free_named_register(tok(), os, indent, "rdi");
     }
 };

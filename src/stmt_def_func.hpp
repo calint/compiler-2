@@ -127,7 +127,7 @@ class stmt_def_func final : public statement {
         const std::string res{
             std::regex_replace(src, std::regex(R"(\s+)"), " ")};
 
-        tc.comment_start(os, indent, name_tk_);
+        tc.comment_start(name_tk_, os, indent);
         std::println(os, "{}", res);
     }
 
@@ -202,7 +202,7 @@ class stmt_def_func final : public statement {
 
         // free allocated named register in reverse order
         for (const auto& reg : registers | std::views::reverse) {
-            tc.free_named_register(os, indent + 1, src_loc_tk, reg);
+            tc.free_named_register(src_loc_tk, os, indent + 1, reg);
         }
     }
 };
