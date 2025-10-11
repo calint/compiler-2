@@ -77,23 +77,6 @@ class stmt_if final : public statement {
         }
     }
 
-  private:
-    static auto create_label_else_branch(const stmt_block& else_code,
-                                         std::string_view call_path,
-                                         std::string_view src_loc,
-                                         std::string_view label_after_if)
-        -> std::string {
-
-        if (else_code.is_empty()) {
-            return std::string{label_after_if};
-        }
-
-        return (call_path.empty()
-                    ? std::format("if_else_{}", src_loc)
-                    : std::format("if_else_{}_{}", src_loc, call_path));
-    }
-
-  public:
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  [[maybe_unused]] std::string_view dst) const -> void override {
 
@@ -145,5 +128,21 @@ class stmt_if final : public statement {
         }
 
         toc::asm_label(tok(), os, indent, label_after_if);
+    }
+
+  private:
+    static auto create_label_else_branch(const stmt_block& else_code,
+                                         std::string_view call_path,
+                                         std::string_view src_loc,
+                                         std::string_view label_after_if)
+        -> std::string {
+
+        if (else_code.is_empty()) {
+            return std::string{label_after_if};
+        }
+
+        return (call_path.empty()
+                    ? std::format("if_else_{}", src_loc)
+                    : std::format("if_else_{}_{}", src_loc, call_path));
     }
 };

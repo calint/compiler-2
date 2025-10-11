@@ -30,16 +30,6 @@ class stmt_if_branch final : public statement {
         code_.source_to(os);
     }
 
-    // returns the label where the if branch begins evaluating the boolean
-    // expression
-    [[nodiscard]] auto if_bgn_label(const toc& tc) const -> std::string {
-        // construct a unique label considering in-lined functions
-        const std::string_view call_path{tc.get_call_path(tok())};
-        const std::string src_loc{tc.source_location_for_use_in_label(tok())};
-        return call_path.empty() ? std::format("if_{}", src_loc)
-                                 : std::format("if_{}_{}", src_loc, call_path);
-    }
-
     [[noreturn]] void
     compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
             [[maybe_unused]] size_t indent,
@@ -82,5 +72,15 @@ class stmt_if_branch final : public statement {
             toc::asm_jmp(tok(), os, indent, jmp_to_after_code_label);
         }
         return std::nullopt;
+    }
+
+    // returns the label where the if branch begins evaluating the boolean
+    // expression
+    [[nodiscard]] auto if_bgn_label(const toc& tc) const -> std::string {
+        // construct a unique label considering in-lined functions
+        const std::string_view call_path{tc.get_call_path(tok())};
+        const std::string src_loc{tc.source_location_for_use_in_label(tok())};
+        return call_path.empty() ? std::format("if_{}", src_loc)
+                                 : std::format("if_{}_{}", src_loc, call_path);
     }
 };
