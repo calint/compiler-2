@@ -76,13 +76,11 @@ func main() {
 
     arr[ix] = 2
     arr[ix + 1] = arr[ix]
-    
     assert(arr[1] == 2)
     assert(arr[2] == 2)
 
     array_copy(arr[2], arr, 2)
     # copy from, to, number of elements
-
     assert(arr[0] == 2)
 
     ix = 3
