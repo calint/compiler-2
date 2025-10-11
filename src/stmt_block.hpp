@@ -10,6 +10,7 @@
 #include "stmt_return.hpp"
 #include "tokenizer.hpp"
 #include "unary_ops.hpp"
+#include <memory>
 
 class stmt_block final : public statement {
     bool is_one_statement_{};
@@ -37,6 +38,12 @@ class stmt_block final : public statement {
                 }
                 throw compiler_exception{
                     tz, "unexpected '}' in single statement block"};
+            }
+
+            // is it a sub-block?
+            if (tz.peek_char() == '{') {
+                stms_.emplace_back(std::make_unique<stmt_block>(tc, tz));
+                continue;
             }
 
             const token tk{tz.next_token()};

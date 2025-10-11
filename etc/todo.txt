@@ -32,7 +32,7 @@
 [ ] optimize rep stosb to q, d, w if possible
     => maybe some heuristics about when to use "rep stosX" 
        => start with stosq, then mov dword, word and byte
-[ ] allow anonymous blocks inside block {...}
+[x] allow anonymous blocks inside block {...}
 [ ] replace the regex with manual string manipulation for performance?
 [ ] don't allow indexing on a non-index var
 [o] review before next step
