@@ -63,9 +63,9 @@ class stmt_assign_var final : public statement {
             // mov rcx, byte_count     ; number of bytes
             // rep movsb               ; repeat: copy byte [RSI++] to [RDI++]
 
-            tc.alloc_named_register_or_throw(*this, os, indent, "rsi");
-            tc.alloc_named_register_or_throw(*this, os, indent, "rdi");
-            tc.alloc_named_register_or_throw(*this, os, indent, "rcx");
+            tc.alloc_named_register_or_throw(tok(), os, indent, "rsi");
+            tc.alloc_named_register_or_throw(tok(), os, indent, "rdi");
+            tc.alloc_named_register_or_throw(tok(), os, indent, "rcx");
             std::vector<std::string> allocated_registers;
 
             const std::string offset{stmt_identifier::compile_effective_address(

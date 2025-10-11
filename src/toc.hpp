@@ -371,11 +371,11 @@ class toc final {
         return true;
     }
 
-    auto alloc_named_register_or_throw(const statement& st, std::ostream& os,
-                                       size_t indnt, std::string_view reg)
-        -> void {
+    auto alloc_named_register_or_throw(const token& src_loc_tk,
+                                       std::ostream& os, size_t indnt,
+                                       std::string_view reg) -> void {
 
-        comment_start(st.tok(), os, indnt);
+        comment_start(src_loc_tk, os, indnt);
         std::println(os, "allocate named register '{}'", reg);
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
@@ -390,14 +390,14 @@ class toc final {
                 }
             }
             throw compiler_exception{
-                st.tok(), std::format("cannot allocate register '{}' because "
-                                      "it was allocated at {}",
-                                      reg, loc)};
+                src_loc_tk, std::format("cannot allocate register '{}' because "
+                                        "it was allocated at {}",
+                                        reg, loc)};
         }
 
         allocated_registers_.emplace_back(std::move(*reg_iter));
         allocated_registers_src_locs_.emplace_back(
-            source_location_hr(st.tok()));
+            source_location_hr(src_loc_tk));
         named_registers_.erase(reg_iter);
     }
 

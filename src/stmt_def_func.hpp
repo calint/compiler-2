@@ -190,7 +190,8 @@ class stmt_def_func final : public statement {
             toc::indent(os, indent + 1, true);
             std::println(os, "{}: {}", prm_name, prm_reg);
 
-            tc.alloc_named_register_or_throw(prm, os, indent + 1, prm_reg);
+            tc.alloc_named_register_or_throw(prm.tok(), os, indent + 1,
+                                             prm_reg);
             tc.add_alias(std::string{prm_name}, prm_reg);
             allocated_named_registers.emplace_back(prm_reg);
         }

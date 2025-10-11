@@ -162,7 +162,8 @@ class stmt_call : public expression {
             // allocate named register if parameter requires it
             std::string arg_reg{param.get_register_name_or_empty()};
             if (not arg_reg.empty()) {
-                tc.alloc_named_register_or_throw(arg, os, indent, arg_reg);
+                tc.alloc_named_register_or_throw(arg.tok(), os, indent,
+                                                 arg_reg);
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
             }

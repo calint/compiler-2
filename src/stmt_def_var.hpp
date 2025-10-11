@@ -136,9 +136,9 @@ class stmt_def_var final : public statement {
                      dst_info.type_ref.size(),
                      array_size_ * dst_info.type_ref.size());
 
-        tc.alloc_named_register_or_throw(*this, os, indent, "rdi");
-        tc.alloc_named_register_or_throw(*this, os, indent, "rcx");
-        tc.alloc_named_register_or_throw(*this, os, indent, "rax");
+        tc.alloc_named_register_or_throw(tok(), os, indent, "rdi");
+        tc.alloc_named_register_or_throw(tok(), os, indent, "rcx");
+        tc.alloc_named_register_or_throw(tok(), os, indent, "rax");
 
         tc.asm_cmd(tok(), os, indent, "lea", "rdi",
                    std::format("[rsp - {}]", -dst_info.stack_ix));
