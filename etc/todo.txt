@@ -1,20 +1,98 @@
-[x] switch from streams to std::print
-    [x] toc
-    [x] rest
-[x] allow shadowing of variables
-[ ] allow block to be create by user for context: { var i = 2 { var i = 3 }}
+[o] implement "size_of"
+    [ ] size_of for fields
+[o] review before next step
+    [x] function signatures
+    [ ] code
+[o] review where compiler_exceptions happen and try to make good source
+    location reports
+[o] check that return value is assigned in functions
+    => should check all execution paths to find out if the variable is always
+       assigned now it may result in undefined behavior because the compiler
+       checks that the return value is set in any branch of execution
+[ ] lut: change to map
+[ ] considering not parsing multiple return statements
+[ ] optimize rep stosb to q, d, w if possible
+    => maybe some heuristics about when to use "rep stosX" 
+       => start with stosq, then mov dword, word and byte
 [ ] make unary_ops trivially copyable by using a fixed array instead of vector
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
+[ ] tokenizer: handle string with escaped " 
+[ ] use asm command 'test' instead of 'cmp' when checking for constant 0
 [ ] parsing comments in single statement block fails:
         if nibble > 9 nibble = nibble + 0x41 # 0 through 9
         else nibble = nibble + 0x30
 [ ] etc/run-test with peak memory usage and inspect why some test cases use so
     much more memory than other
 [ ] toc::get_stack_size -> keep track of it with a member variable
-[o] implement "size_of"
-    [ ] size_of for fields
 [ ] a way to initiate a i8 array with a string:
     var hello : i8[] = "hello world"
+[ ] allow trailing comma at type definition. e.g:
+    type object {
+        pos : point,
+        color : i32,
+    }
+[ ] replace the regex with manual string manipulation for performance?
+[ ] don't allow indexing on a non-index var
+[ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
+[ ] allow declaration of instance without initializer, zero it
+    => var o : object[1] then accessed through o.pos does that
+[ ] review the reading of white spaces sprinkled about
+[ ] instrumentation to find out max heap and stack usage by the compiler
+[ ] handle constant array index case
+[ ] argument to the compiler specifying stack size
+[ ] bounds check array access (optional compiler flag)
+[ ] expr_ops_list: const eval
+[ ] numbers such as i8 : 255 cause problems when cmp because value is moved
+    to unspecified register size with sign extension
+[ ] array implicit identifiers. var ar[10] ar.len
+[ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
+    sign-extends loads
+[ ] handle case where x86_64 cannot load immediate 64 bit value to memory
+[ ] when passing an array as an argument the call can insert quasi variables
+    for length. fat pointers
+[ ] token: regex construction to static
+[ ] stmt_call: check arguments vs parameters in constructor instead of at
+    compile
+[ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
+[ ] consider refactoring to 1 pass compiler making compiling in constructor
+    constructor(os data,os code,indent)
+[ ] implement strings
+[ ] support for float and double?
+[ ] rename compiler_exception
+[ ] consider mapping execution paths in a tree to find out if a variable is
+    always assigned
+[ ] review "//?" comments
+[ ] review "todo." comments
+[ ] specify whether ok for an op to truncate value instead of error
+    => it is no longer an error
+
+-------------------------------------------------------------------------------
+resolved ([x]: done [-]: not completed with reason specified)
+-------------------------------------------------------------------------------
+[x] handle constants when deducing operand size 
+     => deduce if possible to the size of the desired type
+     => constant is sized to destination type size
+[x] token: consider using string_view since string for name is not necessary
+    because source will not change during its lifetime
+[-] support assigning strings to i8 arrays
+    => duplicate issue
+[-] consider a built-in function "lea" that returns the address of an
+    identifier. purpose: to be able to use "var" for read and write
+    to console
+    => implemented as `address_of`
+[x] usage of ad-hoc strings specifying destination of result from an exception
+    is messy, same as assembler operation size, review
+    [-] toc: consider abstracting registers into a class for less quirky string
+        manipulations
+    => toc::asm_cmd handles that with some minimal string handling
+       the idea is that when compiler requires assembler it sends the src and
+       dst with size specified in the strings and asm_cmd handles the
+       conversions since it is a assembler level operation
+[x] allow block to be create by user for context: { var i = 2 { var i = 3 }}
+[x] switch from streams to std::print
+    [x] toc
+    [x] rest
+[x] allow shadowing of variables
 [x] a way of using "read" and "write" functions with var buffers:
     read(address_of(buf), size_of(buf)) does:
     lea dst, [....]
@@ -24,113 +102,7 @@
     => implemented "array_size_of(...)"
     => done without the limitation of "address_of" to register only
     => checks that destination is type i64
-[ ] allow trailing comma at type definition. e.g:
-    type object {
-        pos : point,
-        color : i32,
-    }
-[ ] optimize rep stosb to q, d, w if possible
-    => maybe some heuristics about when to use "rep stosX" 
-       => start with stosq, then mov dword, word and byte
 [x] allow anonymous blocks inside block {...}
-[ ] replace the regex with manual string manipulation for performance?
-[ ] don't allow indexing on a non-index var
-[o] review before next step
-    [x] function signatures
-    [ ] code
-[ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
-[ ] allow declaration of instance without initializer, zero it
-    => var o : object[1] then accessed through o.pos does that
-[o] review where compiler_exceptions happen and try to make good source
-    location reports
-[ ] review the reading of white spaces sprinkled about
-[ ] instrumentation to find out max heap and stack usage by the compiler
-[ ] usage of ad-hoc strings specifying destination of result from an exception
-    is messy, same as assembler operation size, review
-    [ ] toc: consider abstracting registers into a class for less quirky string
-        manipulations
-[ ] handle constant array index case
-[ ] argument to the compiler specifying stack size
-[ ] support assigning strings to i8 arrays
-[ ] bounds check array access (optional compiler flag)
-[ ] expr_ops_list: const eval
-[ ] numbers such as i8 : 255 cause problems when cmp because value is moved
-    to unspecified register size with sign extension
-[ ] consider a built-in function "lea" that returns the address of an
-    identifier. purpose: to be able to use "var" for read and write
-    to console
-[ ] array implicit identifiers. var ar[10] ar.len
-[ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
-    sign-extends loads
-[ ] handle case where x86_64 cannot load immediate 64 bit value to memory
-[ ] when passing an array as an argument the call can insert quasi variables
-    for length. fat pointers
-[ ] considering not parsing multiple return statements
-[ ] tokenizer: handle string with escaped " 
-[ ] use asm command 'test' instead of 'cmp' when checking for constant 0
-[ ] token: regex construction to static
-[ ] lut: change to map
-[ ] stmt_call: check arguments vs parameters in constructor instead of at
-    compile
-[ ] token: consider using string_view since string for name is not necessary
-    because source will not change during its lifetime
-[ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
-[ ] consider refactoring to 1 pass compiler making compiling in constructor
-    constructor(os data,os code,indent)
-[ ] implement strings
-[ ] support for float and double?
-[ ] rename compiler_exception
-[o] check that return value is assigned in functions
-    => should check all execution paths to find out if the variable is always
-       assigned now it may result in undefined behavior because the compiler
-       checks that the return value is set in any branch of execution
-[ ] consider mapping execution paths in a tree to find out if a variable is
-    always assigned
-[ ] review "//?" comments
-[ ] review "todo." comments
-[ ] handle constants when deducing operand size 
-     => deduce if possible to the size of the desired type
-[ ] specify whether ok for an op to truncate value instead of error
-
--------------------------------------------------------------------------------
-stage 5
--------------------------------------------------------------------------------
-[ ] function return of non-register passable type
-[ ]     var pos : point = foo()
-[ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
-[ ] func f(p : point copy) copies point to callee stack
-[ ] func f(p : point const) const is default. same as "func f(p : point)"
-[ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
-[ ] func foo(object& self, arg) can be called with o.foo(arg)
-[ ] string type
-[ ]   var str = "hello world"
-[ ]   var len = str.len
-[ ] var points : point[10] = {{1, 2}, {3, 4}}
-[ ]   points[1].x = 1
-[ ]   points.len
-[ ] multiple return values: func f() : point pos, point vel { ... }
-[ ]    var p,v = f()
-[ ] consider cmovxx when evaluating a boolean expression
-[ ] floating point numbers
-[ ] func f(p : point) {} ... f({x, y})
-[ ] expr_any: deduce expression type to bool or numbers
-[ ]   is_const, is_bool_expression, is_number_expression
-[ ] let i=1 creates a constant
-[ ] def table{x,y,z}
-[ ] token.compile assumes is_str is field (db)
-[ ]   review fragile implementation
-[ ] include source file: i.e. "include io" includes io.baz
-[ ] inlined function call: if a named register is not available: push/pop?
-[ ] post processing optimization for: var b=-(-a*-a)
-      mov r15,qword[rbp-8]
-      neg r15
-      neg r15
-      mov qword[rbp-16],r15
-[ ] why is the binary so big although in-line is turned off in make.sh?
-
--------------------------------------------------------------------------------
-resolved ([x]: done [-]: not completed with reason specified)
--------------------------------------------------------------------------------
 [x] fix the mess of string handling when truncating
     => remarkably, a few string based handling and it functions as intended
 [x] fix the mess in toc::asm_cmd
@@ -489,3 +461,78 @@ resolved ([x]: done [-]: not completed with reason specified)
 [x] stmt_assign_var.compile
       -> try evaluation with scratch register and evaluation without scratch register
          select the one that generates fewest instructions
+-------------------------------------------------------------------------------
+stage 5
+-------------------------------------------------------------------------------
+[ ] function return of non-register passable type
+[ ]     var pos : point = foo()
+[ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
+[ ] func f(p : point copy) copies point to callee stack
+[ ] func f(p : point const) const is default. same as "func f(p : point)"
+[ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
+[ ] func foo(object& self, arg) can be called with o.foo(arg)
+[ ] string type
+[ ]   var str = "hello world"
+[ ]   var len = str.len
+[ ] var points : point[10] = {{1, 2}, {3, 4}}
+[ ]   points[1].x = 1
+[ ]   points.len
+[ ] multiple return values: func f() : point pos, point vel { ... }
+[ ]    var p,v = f()
+[ ] consider cmovxx when evaluating a boolean expression
+[ ] floating point numbers
+[ ] func f(p : point) {} ... f({x, y})
+[ ] expr_any: deduce expression type to bool or numbers
+[ ]   is_const, is_bool_expression, is_number_expression
+[ ] let i=1 creates a constant
+[ ] def table{x,y,z}
+[ ] token.compile assumes is_str is field (db)
+[ ]   review fragile implementation
+[ ] include source file: i.e. "include io" includes io.baz
+[ ] inlined function call: if a named register is not available: push/pop?
+[ ] post processing optimization for: var b=-(-a*-a)
+      mov r15,qword[rbp-8]
+      neg r15
+      neg r15
+      mov qword[rbp-16],r15
+[ ] why is the binary so big although in-line is turned off in make.sh?
+
+
+
+
+-------------------------------------------------------------------------------
+stage 5
+-------------------------------------------------------------------------------
+[ ] function return of non-register passable type
+[ ]     var pos : point = foo()
+[ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
+[ ] func f(p : point copy) copies point to callee stack
+[ ] func f(p : point const) const is default. same as "func f(p : point)"
+[ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
+[ ] func foo(object& self, arg) can be called with o.foo(arg)
+[ ] string type
+[ ]   var str = "hello world"
+[ ]   var len = str.len
+[ ] var points : point[10] = {{1, 2}, {3, 4}}
+[ ]   points[1].x = 1
+[ ]   points.len
+[ ] multiple return values: func f() : point pos, point vel { ... }
+[ ]    var p,v = f()
+[ ] consider cmovxx when evaluating a boolean expression
+[ ] floating point numbers
+[ ] func f(p : point) {} ... f({x, y})
+[ ] expr_any: deduce expression type to bool or numbers
+[ ]   is_const, is_bool_expression, is_number_expression
+[ ] let i=1 creates a constant
+[ ] def table{x,y,z}
+[ ] token.compile assumes is_str is field (db)
+[ ]   review fragile implementation
+[ ] include source file: i.e. "include io" includes io.baz
+[ ] inlined function call: if a named register is not available: push/pop?
+[ ] post processing optimization for: var b=-(-a*-a)
+      mov r15,qword[rbp-8]
+      neg r15
+      neg r15
+      mov qword[rbp-16],r15
+[ ] why is the binary so big although in-line is turned off in make.sh?
+
