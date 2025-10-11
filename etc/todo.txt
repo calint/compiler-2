@@ -1,3 +1,16 @@
+[ ] an efficient way of comparing two arrays or instances:
+    bool equal = array_is_equal(src, dst, nelements)
+      works with instances also when nelements is 1 
+    ; Compare two memory regions
+    ; rsi = pointer to slice1
+    ; rdi = pointer to slice2
+    ; rcx = length in bytes
+    ; Returns: ZF=1 if equal, ZF=0 if different
+    cld              ; Clear direction flag (forward)
+    repe cmpsb       ; Repeat while equal, compare bytes
+    ; After: ZF=1 if equal, ZF=0 if not equal
+    je equal
+    jne not_equal
 [ ] bounds check array access (optional compiler flag)
     and built in function array_copy
 [o] implement "size_of"
