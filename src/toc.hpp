@@ -324,16 +324,6 @@ class toc final {
                             source_location_hr(var.declared_at_tk))};
         }
 
-        // check if variable shadows previously declared variable
-        const auto [id, frm]{get_id_and_frame_for_identifier(name)};
-        if (not id.empty()) {
-            const var_info& var{frm.get_var_const_ref(id)};
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("variable '{}' shadows variable declared at {}",
-                            name, source_location_hr(var.declared_at_tk))};
-        }
-
         const int stack_idx{
             static_cast<int>(get_stack_size() +
                              (var_type.size() * (is_array ? array_size : 1)))};
