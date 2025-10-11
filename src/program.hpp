@@ -53,7 +53,7 @@ class program final {
             const token tk{tz.next_token()};
             if (tk.is_empty()) {
                 if (not tz.is_eos()) {
-                    throw compiler_exception{tk, "unexpected empty token"};
+                    throw compiler_exception{tk, "unexpected character"};
                 }
                 break;
             }
