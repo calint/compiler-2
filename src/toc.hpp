@@ -130,10 +130,6 @@ class frame final {
         return vars_.get_const_ref(name);
     }
 
-    auto get_var_ref(std::string_view name) -> var_info& {
-        return vars_.get_ref(name);
-    }
-
     [[nodiscard]] auto has_alias(std::string_view name) const -> bool {
         return aliases_.has(name);
     }
