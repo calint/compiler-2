@@ -15,9 +15,11 @@ x86_64 assembly on Linux.
 * built-in integer types (64, 32, 16, 8 bit)
 * built-in boolean type
 * user defined types
+* arrays
 * inlined functions
 * keywords: `func`, `type`, `field`, `var`, `loop`, `if`, `else`, `continue`,
 `break`, `return`
+* built-in functions: `array_copy`, `array_size_of`, `address_of`, `mov`, `syscall`
 
 ## Howto
 
