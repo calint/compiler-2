@@ -11,7 +11,7 @@ class stmt_def_func final : public statement {
     token name_tk_;
     std::vector<stmt_def_func_param> params_;
     token ws_after_params_; // whitespace after ')'
-    std::vector<func_return_info> returns_;
+    std::optional<func_return_info> returns_;
     stmt_block code_;
 
   public:
@@ -40,28 +40,23 @@ class stmt_def_func final : public statement {
         ws_after_params_ = tz.next_whitespace_token();
         if (tz.is_next_char(':')) {
             // function returns
-            while (true) {
-                const token type_tk{tz.next_token()};
-                const token ident_tk{tz.next_token()};
-                if (tz.is_next_char('.')) {
-                    throw compiler_exception{
-                        ident_tk, "return variable name may not contain '.'"};
-                }
-
-                const type& tp{tc.get_type_or_throw(type_tk, type_tk.text())};
-
-                if (not tp.is_built_in()) {
-                    throw compiler_exception{
-                        type_tk, "only built-in types allowed as return"};
-                }
-
-                returns_.emplace_back(type_tk, ident_tk, tp);
-                if (not tz.is_next_char(',')) {
-                    break;
-                }
+            const token type_tk{tz.next_token()};
+            const token ident_tk{tz.next_token()};
+            if (tz.is_next_char('.')) {
+                throw compiler_exception{
+                    ident_tk, "return variable name may not contain '.'"};
             }
+
+            const type& tp{tc.get_type_or_throw(type_tk, type_tk.text())};
+
+            if (not tp.is_built_in()) {
+                throw compiler_exception{
+                    type_tk, "only built-in types allowed as return"};
+            }
+
+            returns_.emplace(type_tk, ident_tk, tp);
             // set function type to first return type
-            set_type(returns_.at(0).type_ref);
+            set_type(returns_->type_ref);
         } else {
             // no return, set type to 'void'
             set_type(tc.get_type_void());
@@ -85,8 +80,8 @@ class stmt_def_func final : public statement {
     stmt_def_func() = default;
     stmt_def_func(const stmt_def_func&) = default;
     stmt_def_func(stmt_def_func&&) = default;
-    auto operator=(const stmt_def_func&) -> stmt_def_func& = default;
-    auto operator=(stmt_def_func&&) -> stmt_def_func& = default;
+    auto operator=(const stmt_def_func&) -> stmt_def_func& = delete;
+    auto operator=(stmt_def_func&&) -> stmt_def_func& = delete;
 
     auto source_to(std::ostream& os) const -> void override {
         source_def_to(os, false);
@@ -111,17 +106,11 @@ class stmt_def_func final : public statement {
         }
         std::print(os, ")");
         ws_after_params_.source_to(os);
-        if (not returns_.empty()) {
+        if (returns_) {
             // return parameters
             std::print(os, ":");
-            size_t i{};
-            for (const func_return_info& ret_info : returns_) {
-                if (i++) {
-                    std::print(os, ":");
-                }
-                ret_info.type_tk.source_to(os);
-                ret_info.ident_tk.source_to(os);
-            }
+            returns_->type_tk.source_to(os);
+            returns_->ident_tk.source_to(os);
         }
     }
 
@@ -142,7 +131,9 @@ class stmt_def_func final : public statement {
                  [[maybe_unused]] std::string_view dst) const -> void override {
     }
 
-    [[nodiscard]] auto returns() const -> const std::vector<func_return_info>& {
+    [[nodiscard]] auto returns() const
+        -> const std::optional<func_return_info>& {
+
         return returns_;
     }
 
@@ -169,9 +160,9 @@ class stmt_def_func final : public statement {
         -> void {
 
         // does the function have return?
-        if (not returns().empty()) {
+        if (returns_) {
             // yes, declare variable for the return
-            const token& id_tkn{returns().at(0).ident_tk};
+            const token& id_tkn{returns_->ident_tk};
             tc.add_var(id_tkn, os, indent + 1, std::string{id_tkn.text()},
                        get_type(), false, 0);
         }

@@ -129,7 +129,7 @@ class stmt_call : public expression {
 
         // validate return type
         if (not dst.empty()) {
-            if (func.returns().empty()) {
+            if (not func.returns()) {
                 throw compiler_exception{tok(),
                                          "function does not return value"};
             }
@@ -166,7 +166,7 @@ class stmt_call : public expression {
 
         // if function returns value, alias return identifier to 'dst'
         if (not dst.empty()) {
-            aliases_to_add.emplace_back(func.returns()[0].ident_tk.text(),
+            aliases_to_add.emplace_back(func.returns()->ident_tk.text(),
                                         std::string{dst});
         }
 
@@ -267,13 +267,13 @@ class stmt_call : public expression {
 
         // apply unary ops to result if present
         if (not get_unary_ops().is_empty()) {
-            if (func.returns().empty()) {
+            if (not func.returns()) {
                 throw compiler_exception{tok(),
                                          "function call has unary operations "
                                          "but it does not return a value"};
             }
             const ident_info& ret_info{tc.make_ident_info(
-                tok(), func.returns()[0].ident_tk.text(), true)};
+                tok(), func.returns()->ident_tk.text(), true)};
             get_unary_ops().compile(tc, os, indent, ret_info.id_nasm);
         }
 

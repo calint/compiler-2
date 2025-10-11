@@ -60,7 +60,7 @@ class frame final {
     std::string func_ret_label_;
 
     // info about the function returns
-    std::vector<func_return_info> func_rets_;
+    std::optional<func_return_info> func_rets_;
 
   public:
     enum class frame_type : uint8_t { FUNC, BLOCK, LOOP };
@@ -70,7 +70,7 @@ class frame final {
 
   public:
     frame(std::string_view name, frame_type frm_type,
-          const std::vector<func_return_info>& func_rets = {},
+          const std::optional<func_return_info>& func_rets = {},
           std::string call_path = "", std::string func_ret_label = "") noexcept
         : name_{name}, call_path_{std::move(call_path)},
           func_ret_label_{std::move(func_ret_label)}, func_rets_{func_rets},
@@ -119,7 +119,7 @@ class frame final {
     }
 
     [[nodiscard]] auto get_func_returns_infos() const
-        -> const std::vector<func_return_info>& {
+        -> const std::optional<func_return_info>& {
         return func_rets_;
     }
 
@@ -588,7 +588,7 @@ class toc final {
     }
 
     auto enter_func(std::string_view name,
-                    const std::vector<func_return_info>& returns,
+                    const std::optional<func_return_info>& returns,
                     std::string_view call_path = {},
                     std::string_view return_jmp_label = {}) -> void {
 
