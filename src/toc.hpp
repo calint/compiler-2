@@ -811,18 +811,6 @@ class toc final {
         return std::format("{}:{}", line, col);
     }
 
-    // [[nodiscard]] auto get_func_returns(const token& src_loc_tk) const
-    //     -> const std::vector<func_return_info>& {
-    //
-    //     for (const auto& frm : frames_ | std::views::reverse) {
-    //         if (frm.is_func()) {
-    //             return frm.get_func_returns_infos();
-    //         }
-    //     }
-    //
-    //     throw compiler_exception{src_loc_tk, "not in a function"};
-    // }
-
   private:
     // -------------------------------------------------------------------------
     // private non-special functions (sorted alphabetically)
@@ -1119,11 +1107,13 @@ class toc final {
         std::println(os, "rep movs{}", size);
     }
 
-    static auto asm_rep_stosb([[maybe_unused]] const token& src_loc_tk,
-                              std::ostream& os, size_t indnt) -> void {
+    // type: b, w, d, q for different sizings
+    static auto asm_rep_stos([[maybe_unused]] const token& src_loc_tk,
+                             std::ostream& os, size_t indnt, char type)
+        -> void {
 
         indent(os, indnt);
-        std::println(os, "rep stosb");
+        std::println(os, "rep stos{}", type);
     }
 
     static auto get_field_offset_in_type(const token& src_loc_tk_,

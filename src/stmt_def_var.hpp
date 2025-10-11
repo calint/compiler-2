@@ -147,7 +147,7 @@ class stmt_def_var final : public statement {
         tc.asm_cmd(tok(), os, indent, "mov", "rcx",
                    std::format("{}", array_size_ * dst_info.type_ref.size()));
         tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
-        toc::asm_rep_stosb(name_tk_, os, indent);
+        toc::asm_rep_stos(name_tk_, os, indent, 'b');
 
         tc.free_named_register(os, indent, "rax");
         tc.free_named_register(os, indent, "rcx");
