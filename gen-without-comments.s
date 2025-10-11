@@ -4,17 +4,17 @@ stk.end:
 true equ 1
 false equ 0
 section .data
-hello: db 'hello world from baz',10,''
+hello: db 'hello world from baz', 10,''
 hello.len equ $-hello
-prompt1: db 'enter name:',10,''
+prompt1: db 'enter name:', 10,''
 prompt1.len equ $-prompt1
-prompt2: db 'that is not a name.',10,''
+prompt2: db 'that is not a name.', 10,''
 prompt2.len equ $-prompt2
 prompt3: db 'hello '
 prompt3.len equ $-prompt3
 dot: db '.'
 dot.len equ $-dot
-nl: db '',10,''
+nl: db '', 10,''
 nl.len equ $-nl
 section .text
 bits 64

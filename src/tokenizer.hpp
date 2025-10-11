@@ -36,9 +36,15 @@ class tokenizer final {
         const std::string_view ws_before{next_whitespace()};
         const size_t at_line{at_line_};
         const size_t bgn_ix{char_ix_};
+
+        // is it a string token?
         if (is_next_char('"')) {
-            // string token
             while (true) {
+                if (is_next_char('\\')) {
+                    // read the escaped character
+                    (void)next_char();
+                    continue;
+                }
                 if (is_next_char('"')) {
                     const size_t end_ix{char_ix_};
                     const std::string_view ws_after{next_whitespace()};

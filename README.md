@@ -32,10 +32,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    39           1002            632           4921
+C/C++ Header                    39           1003            634           4927
 C++                              1             65             75            431
 -------------------------------------------------------------------------------
-SUM:                            40           1067            707           5352
+SUM:                            40           1068            709           5358
 -------------------------------------------------------------------------------
 ```
 
@@ -208,17 +208,17 @@ stk.end:
 true equ 1
 false equ 0
 section .data
-hello: db 'hello world from baz',10,''
+hello: db 'hello world from baz', 10,''
 hello.len equ $-hello
-prompt1: db 'enter name:',10,''
+prompt1: db 'enter name:', 10,''
 prompt1.len equ $-prompt1
-prompt2: db 'that is not a name.',10,''
+prompt2: db 'that is not a name.', 10,''
 prompt2.len equ $-prompt2
 prompt3: db 'hello '
 prompt3.len equ $-prompt3
 dot: db '.'
 dot.len equ $-dot
-nl: db '',10,''
+nl: db '', 10,''
 nl.len equ $-nl
 section .text
 bits 64
@@ -857,13 +857,13 @@ false equ 0
 
 section .data
 ;[1:1] field hello = "hello world from baz\n"
-hello: db 'hello world from baz',10,''
+hello: db 'hello world from baz', 10,''
 hello.len equ $-hello
 ;[2:1] field prompt1 = "enter name:\n"
-prompt1: db 'enter name:',10,''
+prompt1: db 'enter name:', 10,''
 prompt1.len equ $-prompt1
 ;[3:1] field prompt2 = "that is not a name.\n"
-prompt2: db 'that is not a name.',10,''
+prompt2: db 'that is not a name.', 10,''
 prompt2.len equ $-prompt2
 ;[4:1] field prompt3 = "hello "
 prompt3: db 'hello '
@@ -872,7 +872,7 @@ prompt3.len equ $-prompt3
 dot: db '.'
 dot.len equ $-dot
 ;[6:1] field nl = "\n"
-nl: db '',10,''
+nl: db '', 10,''
 nl.len equ $-nl
 
 section .text

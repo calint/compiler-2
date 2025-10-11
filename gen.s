@@ -9,13 +9,13 @@ false equ 0
 
 section .data
 ;[1:1] field hello = "hello world from baz\n"
-hello: db 'hello world from baz',10,''
+hello: db 'hello world from baz', 10,''
 hello.len equ $-hello
 ;[2:1] field prompt1 = "enter name:\n"
-prompt1: db 'enter name:',10,''
+prompt1: db 'enter name:', 10,''
 prompt1.len equ $-prompt1
 ;[3:1] field prompt2 = "that is not a name.\n"
-prompt2: db 'that is not a name.',10,''
+prompt2: db 'that is not a name.', 10,''
 prompt2.len equ $-prompt2
 ;[4:1] field prompt3 = "hello "
 prompt3: db 'hello '
@@ -24,7 +24,7 @@ prompt3.len equ $-prompt3
 dot: db '.'
 dot.len equ $-dot
 ;[6:1] field nl = "\n"
-nl: db '',10,''
+nl: db '', 10,''
 nl.len equ $-nl
 
 section .text

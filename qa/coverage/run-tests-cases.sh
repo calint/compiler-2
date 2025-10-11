@@ -93,3 +93,4 @@ SRC=t92 && DIFF
 SRC=t93 && DIFFINP
 SRC=t94 && EXP=0 && RUN
 SRC=t95 && EXP=0 && RUN
+SRC=t96 && DIFF
