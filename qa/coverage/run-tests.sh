@@ -8,7 +8,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-../../make.sh build prof asan
+if [ "$1" != "nomake" ]; then
+  ../../make.sh build prof asan
+fi
+
 BIN='../../baz'
 
 export UBSAN_OPTIONS="print_stacktrace=1"
