@@ -1,6 +1,3 @@
-[ ] optimize rep stosX and repe cmpsX to q, d, w if possible
-    => maybe some heuristics about when to use "rep stosX" 
-       => start with stosq, then mov dword, word and byte
 [ ] bounds check array access (optional compiler flag)
     and built in function array_copy
 [o] implement "size_of"
@@ -21,6 +18,9 @@
 [ ] parsing comments in single statement block fails:
         if nibble > 9 nibble = nibble + 0x41 # 0 through 9
         else nibble = nibble + 0x30
+[ ] optimize rep stosX and repe cmpsX to q, d, w if possible
+    => maybe some heuristics about when to use "rep stosX" 
+       => start with stosq, then mov dword, word and byte
 [ ] etc/run-test with peak memory usage and inspect why some test cases use so
     much more memory than other
 [ ] toc::get_stack_size -> keep track of it with a member variable
