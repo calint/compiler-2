@@ -259,12 +259,23 @@ class stmt_identifier : public statement {
                             : accum_offset};
                     const char op{(reg_offset == "rsp") ? '-' : '+'};
 
+                    // nicer output when multiplier is 1
                     if (type_size == 1) {
-                        return std::format("{} + {} {} {}", reg_offset, reg_idx,
-                                           op, offset);
+                        // nicer output when offset is 0 by omitting it
+                        if (offset != 0) {
+                            return std::format("{} + {} {} {}", reg_offset,
+                                               reg_idx, op, offset);
+                        }
+                        return std::format("{} + {}", reg_offset, reg_idx);
                     }
-                    return std::format("{} + {} * {} {} {}", reg_offset,
-                                       reg_idx, type_size, op, offset);
+
+                    // nicer output when offset is 0 by omitting it
+                    if (offset != 0) {
+                        return std::format("{} + {} * {} {} {}", reg_offset,
+                                           reg_idx, type_size, op, offset);
+                    }
+                    return std::format("{} + {} * {}", reg_offset, reg_idx,
+                                       type_size);
                 }
 
                 // convert 'rsp' to a dedicated register to calculate offset of
