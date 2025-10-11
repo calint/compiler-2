@@ -178,7 +178,6 @@ class stmt_identifier : public statement {
             tc.free_scratch_register(os, indent, reg);
         }
     }
-
     static auto
     compile_effective_address(const token& src_loc_tk, toc& tc,
                               std::ostream& os, size_t indent,
@@ -204,30 +203,26 @@ class stmt_identifier : public statement {
             const ident_info curr_info{
                 tc.make_ident_info(src_loc_tk, path, false)};
             const size_t type_size{curr_info.type_ref.size()};
+            const bool is_last{i == elems_size - 1};
 
             if (curr_elem.has_array_index_expr) {
-                // calculate the index in the array and store in 'reg_idx'
-
-                // compile and scale the array index
-
                 // is encodable in instruction of the type:
                 // [base + index * size + offset]
                 const bool is_encodable{type_size == 1 or type_size == 2 or
                                         type_size == 4 or type_size == 8};
 
                 // special case: last element with encodable size
-                if (i == elems_size - 1 and is_encodable) {
+                if (is_last and is_encodable) {
                     const std::string reg_idx{
                         tc.alloc_scratch_register(src_loc_tk, os, indent)};
                     allocated_registers.push_back(reg_idx);
                     curr_elem.array_index_expr->compile(tc, os, indent,
                                                         reg_idx);
+
                     if (tc.is_bounds_check()) {
                         // does the statement have a register holding a length
                         // that needs to be regarded when checking bounds?
-                        if (i == elems_size - 1 and not reg_size.empty()) {
-                            // this is the last element and a size register has
-                            // been provided, check bounds considering that
+                        if (not reg_size.empty()) {
                             const std::string reg_top_idx{
                                 tc.alloc_scratch_register(
                                     curr_elem.array_index_expr->tok(), os,
@@ -241,8 +236,8 @@ class stmt_identifier : public statement {
                                        std::to_string(curr_info.array_size));
                             toc::asm_jxx(curr_elem.array_index_expr->tok(), os,
                                          indent, "g", "panic_bounds");
-                            // note: jg because `reg_top_ix` contains the number
-                            // of elements including current at `reg_idx`
+                            // note: jg because `reg_top_idx` contains the
+                            // number of elements including current at `reg_idx`
                             //             ___  reg_top_idx = 2
                             //       [ 0 1 2 3 ]
                             //             | reg_idx = 2
@@ -262,7 +257,6 @@ class stmt_identifier : public statement {
                         (reg_offset == "rsp")
                             ? -(base_info.stack_ix + accum_offset)
                             : accum_offset};
-
                     const char op{(reg_offset == "rsp") ? '-' : '+'};
 
                     if (type_size == 1) {
@@ -273,8 +267,8 @@ class stmt_identifier : public statement {
                                        reg_idx, type_size, op, offset);
                 }
 
-                // convert 'rsp' to a dedicated register to calculate offset
-                // of target
+                // convert 'rsp' to a dedicated register to calculate offset of
+                // target
                 if (reg_offset == "rsp") {
                     reg_offset =
                         tc.alloc_scratch_register(src_loc_tk, os, indent);
@@ -291,7 +285,7 @@ class stmt_identifier : public statement {
                 if (tc.is_bounds_check()) {
                     // does the statement have a register holding a length
                     // that needs to be regarded when checking bounds?
-                    if (i == elems_size - 1 and not reg_size.empty()) {
+                    if (is_last and not reg_size.empty()) {
                         const std::string reg_top_idx{tc.alloc_scratch_register(
                             curr_elem.array_index_expr->tok(), os, indent)};
                         tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
@@ -334,7 +328,8 @@ class stmt_identifier : public statement {
                 // add the index offset to the base register
                 tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset, reg_idx);
                 tc.free_scratch_register(os, indent, reg_idx);
-            } else if (tc.is_bounds_check() and i == elems_size - 1 and
+
+            } else if (tc.is_bounds_check() and is_last and
                        not reg_size.empty() and curr_info.is_array) {
                 // this is the last element of the array without indexing
                 // does the statement have a register holding a length
