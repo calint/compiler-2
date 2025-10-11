@@ -1,4 +1,4 @@
-[ ] an efficient way of comparing two arrays or instances:
+[x] an efficient way of comparing two arrays or instances:
     bool equal = array_equal(src, dst, nelements)
       works with instances also when nelements is 1 
     ; Compare two memory regions
@@ -11,6 +11,7 @@
     ; After: ZF=1 if equal, ZF=0 if not equal
     je equal
     jne not_equal
+    => arrays_equal(arr1, arr2, nelements)
 [ ] bounds check array access (optional compiler flag)
     and built in function array_copy
 [o] implement "size_of"
