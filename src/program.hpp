@@ -25,7 +25,8 @@ class program final {
     token ws1_; // whitespace
 
   public:
-    explicit program(const std::string& source) : tc_{source} {
+    program(const std::string& source, const bool bounds_check)
+        : tc_{source, bounds_check} {
         // create a placeholder token to use with `toc` functions
         const token prgtk{};
 
@@ -124,6 +125,12 @@ class program final {
         std::println(os, "    ; system call: exit 0");
         std::println(os, "    mov rax, 60");
         std::println(os, "    mov rdi, 0");
+        std::println(os, "    syscall");
+        std::println();
+        std::println(os, "panic_bounds:");
+        std::println(os, "    ; system call: exit -1");
+        std::println(os, "    mov rax, 60");
+        std::println(os, "    mov rdi, 255");
         std::println(os, "    syscall");
     }
 

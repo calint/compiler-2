@@ -68,6 +68,9 @@ class stmt_array_copy final : public statement {
 
         tc.comment_source(*this, os, indent);
 
+        const ident_info from_info{tc.make_ident_info(from_, false)};
+        const ident_info to_info{tc.make_ident_info(to_, false)};
+
         // allocate the register for rep movs
         tc.alloc_named_register_or_throw(*this, os, indent, "rsi");
         tc.alloc_named_register_or_throw(*this, os, indent, "rdi");
@@ -75,11 +78,14 @@ class stmt_array_copy final : public statement {
 
         std::vector<std::string> allocated_scratch_registers;
 
+        // size to 'rcx'
+        count_.compile(tc, os, indent, "rcx");
+
         // from operand to rsi
-        const std::string from_operand =
+        const std::string from_operand{
             stmt_identifier::compile_effective_address(
                 from_.first_token(), tc, os, indent, from_.elems(),
-                allocated_scratch_registers);
+                allocated_scratch_registers, "rcx")};
 
         tc.asm_cmd(tok(), os, indent, "lea", "rsi",
                    std::format("[{}]", from_operand));
@@ -91,10 +97,9 @@ class stmt_array_copy final : public statement {
 
         // to operand to 'rdi'
         allocated_scratch_registers.clear();
-        const std::string to_operand =
-            stmt_identifier::compile_effective_address(
-                to_.first_token(), tc, os, indent, to_.elems(),
-                allocated_scratch_registers);
+        const std::string to_operand{stmt_identifier::compile_effective_address(
+            to_.first_token(), tc, os, indent, to_.elems(),
+            allocated_scratch_registers, "rcx")};
 
         tc.asm_cmd(tok(), os, indent, "lea", "rdi",
                    std::format("[{}]", to_operand));
@@ -103,12 +108,6 @@ class stmt_array_copy final : public statement {
              allocated_scratch_registers | std::views::reverse) {
             tc.free_scratch_register(os, indent, reg);
         }
-
-        // size to 'rcx'
-        count_.compile(tc, os, indent, "rcx");
-
-        const ident_info from_info{tc.make_ident_info(from_, false)};
-        const ident_info to_info{tc.make_ident_info(to_, false)};
 
         if (from_info.type_ref.name() != to_info.type_ref.name()) {
             throw compiler_exception{

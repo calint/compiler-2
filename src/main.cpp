@@ -55,7 +55,7 @@ auto main(const int argc, const char* argv[]) -> int {
     std::string src;
     try {
         src = read_file_to_string(src_file_name);
-        program prg{src};
+        program prg{src, true};
         std::ofstream reproduced_source{"diff.baz"};
         prg.source_to(reproduced_source);
         reproduced_source.close();

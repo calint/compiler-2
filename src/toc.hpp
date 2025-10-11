@@ -247,9 +247,11 @@ class toc final {
     size_t usage_max_stack_size_{};
     const std::regex regex_ws{R"(\s+)"};
     const std::regex regex_trim{R"(^\s+|\s+$)"};
+    const bool bounds_check_{};
 
   public:
-    explicit toc(const std::string& source) : source_{source} {}
+    toc(const std::string& source, const bool bounds_check)
+        : source_{source}, bounds_check_(bounds_check) {}
 
     ~toc() = default;
 
@@ -778,6 +780,8 @@ class toc final {
     [[nodiscard]] auto get_type_void() const -> const type& {
         return *type_void_;
     }
+
+    [[nodiscard]] auto is_bounds_check() const -> bool { return bounds_check_; }
 
     [[nodiscard]] auto is_func(std::string_view name) const -> bool {
         return funcs_.has(name);

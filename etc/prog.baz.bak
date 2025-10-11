@@ -83,7 +83,7 @@ func main() {
     # copy from, to, number of elements
     assert(arr[0] == 2)
 
-    var arr1 : i32[4]
+    var arr1 : i32[8]
     array_copy(arr, arr1, 4)
     assert(arrays_equal(arr, arr1, 4))
 

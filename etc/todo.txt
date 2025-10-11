@@ -1,5 +1,11 @@
-[ ] bounds check array access (optional compiler flag)
-    and built in function array_copy
+[x] bounds check array access (optional compiler flag)
+    [x] least intrusive is two instructions:
+        cmp r14, 8 ; r14 is result of index calculation, 8 is array size
+        jge panic
+    [x] handle offset in array: e.g, 2 + 6 <= array_size_of(arr1)
+        array_copy(arr1[2], arr2, 6)
+        arrays_equal(arr1[2], arr2[1], 3)
+    => boolean argument to toc if bounds checks to be done
 [o] implement "size_of"
     [ ] size_of for fields
 [o] review before next step

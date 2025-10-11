@@ -179,10 +179,12 @@ class stmt_identifier : public statement {
         }
     }
 
-    static auto compile_effective_address(
-        const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
-        const std::vector<identifier_elem>& elems,
-        std::vector<std::string>& allocated_registers) -> std::string {
+    static auto
+    compile_effective_address(const token& src_loc_tk, toc& tc,
+                              std::ostream& os, size_t indent,
+                              const std::vector<identifier_elem>& elems,
+                              std::vector<std::string>& allocated_registers,
+                              std::string_view offset_reg = "") -> std::string {
 
         // initialize base element information
         std::string path{elems.front().name_tk.text()};
@@ -204,6 +206,10 @@ class stmt_identifier : public statement {
             const size_t type_size{curr_info.type_ref.size()};
 
             if (curr_elem.has_array_index_expr) {
+                // calculate the index in the array and store in 'reg_idx'
+
+                // compile and scale the array index
+
                 // is encodable in instruction of the type:
                 // [base + index * size + offset]
                 const bool is_encodable{type_size == 1 or type_size == 2 or
@@ -211,12 +217,42 @@ class stmt_identifier : public statement {
 
                 // special case: last element with encodable size
                 if (i == elems_size - 1 and is_encodable) {
-                    // calculate offset in the array and store in 'reg_idx'
                     const std::string reg_idx{
                         tc.alloc_scratch_register(src_loc_tk, os, indent)};
                     allocated_registers.push_back(reg_idx);
                     curr_elem.array_index_expr->compile(tc, os, indent,
                                                         reg_idx);
+                    if (tc.is_bounds_check()) {
+                        // does the statement have a register holding a length
+                        // that needs to be regarded when checking bounds?
+                        if (not offset_reg.empty()) {
+                            const std::string reg_top_idx{
+                                tc.alloc_scratch_register(
+                                    curr_elem.array_index_expr->tok(), os,
+                                    indent)};
+                            tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
+                                       indent, "mov", reg_top_idx, offset_reg);
+                            tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
+                                       indent, "add", reg_top_idx, reg_idx);
+                            tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
+                                       indent, "cmp", reg_top_idx,
+                                       std::to_string(curr_info.array_size));
+                            toc::asm_jxx(curr_elem.array_index_expr->tok(), os,
+                                         indent, "g", "panic_bounds");
+                            // note: jg because `reg_top_ix` contains the number
+                            // of elements including current at `reg_idx`
+                            //             ___  reg_top_idx = 2
+                            //       [ 0 1 2 3 ]
+                            //             | reg_idx = 2
+                            tc.free_scratch_register(os, indent, reg_top_idx);
+                        } else {
+                            tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
+                                       indent, "cmp", reg_idx,
+                                       std::to_string(curr_info.array_size));
+                            toc::asm_jxx(curr_elem.array_index_expr->tok(), os,
+                                         indent, "ge", "panic_bounds");
+                        }
+                    }
 
                     // is it offset from base register 'rsp' or has it been
                     // changed to dedicated register for offset calculation?
@@ -245,10 +281,40 @@ class stmt_identifier : public statement {
                                std::format("[rsp - {}]", -base_info.stack_ix));
                 }
 
-                // compile and scale the array index
+                // calculate the array index and store it in `reg_idx`
                 const std::string reg_idx{
                     tc.alloc_scratch_register(src_loc_tk, os, indent)};
                 curr_elem.array_index_expr->compile(tc, os, indent, reg_idx);
+
+                if (tc.is_bounds_check()) {
+                    // does the statement have a register holding a length
+                    // that needs to be regarded when checking bounds?
+                    if (not offset_reg.empty()) {
+                        const std::string reg_top_idx{tc.alloc_scratch_register(
+                            curr_elem.array_index_expr->tok(), os, indent)};
+                        tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
+                                   indent, "mov", reg_top_idx, offset_reg);
+                        tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
+                                   indent, "add", reg_top_idx, reg_idx);
+                        tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
+                                   indent, "cmp", reg_top_idx,
+                                   std::to_string(curr_info.array_size));
+                        toc::asm_jxx(curr_elem.array_index_expr->tok(), os,
+                                     indent, "g", "panic_bounds");
+                        // note: jg because `reg_top_ix` contains the number of
+                        // elements including current at `reg_idx`
+                        //             ___  reg_top_idx = 2
+                        //       [ 0 1 2 3 ]
+                        //             | reg_idx = 2
+                        tc.free_scratch_register(os, indent, reg_top_idx);
+                    } else {
+                        tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
+                                   indent, "cmp", reg_idx,
+                                   std::to_string(curr_info.array_size));
+                        toc::asm_jxx(curr_elem.array_index_expr->tok(), os,
+                                     indent, "ge", "panic_bounds");
+                    }
+                }
 
                 if (type_size > 1) {
                     // check whether it is possible to shift left instead of

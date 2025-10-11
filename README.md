@@ -34,10 +34,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    41           1075            653           5174
+C/C++ Header                    41           1079            668           5231
 C++                              1             65             75            435
 -------------------------------------------------------------------------------
-SUM:                            42           1140            728           5609
+SUM:                            42           1144            743           5666
 -------------------------------------------------------------------------------
 ```
 
@@ -129,7 +129,7 @@ func main() {
     # copy from, to, number of elements
     assert(arr[0] == 2)
 
-    var arr1 : i32[4]
+    var arr1 : i32[8]
     array_copy(arr, arr1, 4)
     assert(arrays_equal(arr, arr1, 4))
 
@@ -244,14 +244,22 @@ main:
     rep stosb
     mov qword [rsp - 24], 1
     mov r15, qword [rsp - 24]
+    cmp r15, 4
+    jge panic_bounds
     mov dword [rsp + r15 * 4 - 16], 2
     mov r15, qword [rsp - 24]
     add r15, 1
+    cmp r15, 4
+    jge panic_bounds
     mov r14, qword [rsp - 24]
+    cmp r14, 4
+    jge panic_bounds
     mov r13d, dword [rsp + r14 * 4 - 16]
     mov dword [rsp + r15 * 4 - 16], r13d
     cmp_79_12:
         mov r13, 1
+        cmp r13, 4
+        jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
     cmp r14, 2
     jne bool_false_79_12
@@ -276,6 +284,8 @@ main:
     assert_79_5_end:
     cmp_80_12:
         mov r13, 2
+        cmp r13, 4
+        jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
     cmp r14, 2
     jne bool_false_80_12
@@ -298,14 +308,20 @@ main:
             exit_19_17_80_5_end:
         if_19_5_80_5_end:
     assert_80_5_end:
+    mov rcx, 2
     mov r15, 2
+    mov r14, rcx
+    add r14, r15
+    cmp r14, 4
+    jg panic_bounds
     lea rsi, [rsp + r15 * 4 - 16]
     lea rdi, [rsp - 16]
-    mov rcx, 2
     shl rcx, 2
     rep movsb
     cmp_84_12:
         mov r13, 0
+        cmp r13, 4
+        jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
     cmp r14, 2
     jne bool_false_84_12
@@ -328,18 +344,18 @@ main:
             exit_19_17_84_5_end:
         if_19_5_84_5_end:
     assert_84_5_end:
-    lea rdi, [rsp - 40]
-    mov rcx, 16
+    lea rdi, [rsp - 56]
+    mov rcx, 32
     xor rax, rax
     rep stosb
-    lea rsi, [rsp - 16]
-    lea rdi, [rsp - 40]
     mov rcx, 4
+    lea rsi, [rsp - 16]
+    lea rdi, [rsp - 56]
     shl rcx, 2
     rep movsb
     cmp_88_12:
         lea rsi, [rsp - 16]
-        lea rdi, [rsp - 40]
+        lea rdi, [rsp - 56]
         mov rcx, 4
         shl rcx, 2
         repe cmpsb
@@ -371,10 +387,12 @@ main:
         if_19_5_88_5_end:
     assert_88_5_end:
     mov r15, 2
-    mov dword [rsp + r15 * 4 - 40], -1
+    cmp r15, 8
+    jge panic_bounds
+    mov dword [rsp + r15 * 4 - 56], -1
     cmp_91_12:
         lea rsi, [rsp - 16]
-        lea rdi, [rsp - 40]
+        lea rdi, [rsp - 56]
         mov rcx, 4
         shl rcx, 2
         repe cmpsb
@@ -407,8 +425,12 @@ main:
     assert_91_5_end:
     mov qword [rsp - 24], 3
     mov r15, qword [rsp - 24]
+    cmp r15, 4
+    jge panic_bounds
     mov r13, qword [rsp - 24]
     sub r13, 1
+    cmp r13, 4
+    jge panic_bounds
     movsx r14, dword [rsp + r13 * 4 - 16]
     inv_94_16:
         mov dword [rsp + r15 * 4 - 16], r14d
@@ -417,6 +439,8 @@ main:
     not dword [rsp + r15 * 4 - 16]
     cmp_95_12:
         mov r13, qword [rsp - 24]
+        cmp r13, 4
+        jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
     cmp r14, 2
     jne bool_false_95_12
@@ -439,14 +463,14 @@ main:
             exit_19_17_95_5_end:
         if_19_5_95_5_end:
     assert_95_5_end:
-    mov qword [rsp - 56], 0
-    mov qword [rsp - 48], 0
+    mov qword [rsp - 72], 0
+    mov qword [rsp - 64], 0
     foo_98_5:
-        mov qword [rsp - 56], 0b10
-        mov qword [rsp - 48], 0xb
+        mov qword [rsp - 72], 0b10
+        mov qword [rsp - 64], 0xb
     foo_98_5_end:
     cmp_99_12:
-    cmp qword [rsp - 56], 2
+    cmp qword [rsp - 72], 2
     jne bool_false_99_12
     bool_true_99_12:
     mov r15, true
@@ -468,7 +492,7 @@ main:
         if_19_5_99_5_end:
     assert_99_5_end:
     cmp_100_12:
-    cmp qword [rsp - 48], 0xb
+    cmp qword [rsp - 64], 0xb
     jne bool_false_100_12
     bool_true_100_12:
     mov r15, true
@@ -489,19 +513,19 @@ main:
             exit_19_17_100_5_end:
         if_19_5_100_5_end:
     assert_100_5_end:
-    mov qword [rsp - 64], 0
+    mov qword [rsp - 80], 0
     bar_103_5:
         if_57_8_103_5:
         cmp_57_8_103_5:
-        cmp qword [rsp - 64], 0
+        cmp qword [rsp - 80], 0
         jne if_57_5_103_5_end
         if_57_8_103_5_code:
             jmp bar_103_5_end
         if_57_5_103_5_end:
-        mov qword [rsp - 64], 0xff
+        mov qword [rsp - 80], 0xff
     bar_103_5_end:
     cmp_104_12:
-    cmp qword [rsp - 64], 0
+    cmp qword [rsp - 80], 0
     jne bool_false_104_12
     bool_true_104_12:
     mov r15, true
@@ -522,19 +546,19 @@ main:
             exit_19_17_104_5_end:
         if_19_5_104_5_end:
     assert_104_5_end:
-    mov qword [rsp - 64], 1
+    mov qword [rsp - 80], 1
     bar_107_5:
         if_57_8_107_5:
         cmp_57_8_107_5:
-        cmp qword [rsp - 64], 0
+        cmp qword [rsp - 80], 0
         jne if_57_5_107_5_end
         if_57_8_107_5_code:
             jmp bar_107_5_end
         if_57_5_107_5_end:
-        mov qword [rsp - 64], 0xff
+        mov qword [rsp - 80], 0xff
     bar_107_5_end:
     cmp_108_12:
-    cmp qword [rsp - 64], 0xff
+    cmp qword [rsp - 80], 0xff
     jne bool_false_108_12
     bool_true_108_12:
     mov r15, true
@@ -555,16 +579,16 @@ main:
             exit_19_17_108_5_end:
         if_19_5_108_5_end:
     assert_108_5_end:
-    mov qword [rsp - 72], 1
+    mov qword [rsp - 88], 1
     baz_111_13:
-        mov r15, qword [rsp - 72]
-        mov qword [rsp - 80], r15
-        mov r15, qword [rsp - 80]
+        mov r15, qword [rsp - 88]
+        mov qword [rsp - 96], r15
+        mov r15, qword [rsp - 96]
         imul r15, 2
-        mov qword [rsp - 80], r15
+        mov qword [rsp - 96], r15
     baz_111_13_end:
     cmp_112_12:
-    cmp qword [rsp - 80], 2
+    cmp qword [rsp - 96], 2
     jne bool_false_112_12
     bool_true_112_12:
     mov r15, true
@@ -586,13 +610,13 @@ main:
         if_19_5_112_5_end:
     assert_112_5_end:
     baz_114_9:
-        mov qword [rsp - 80], 1
-        mov r15, qword [rsp - 80]
+        mov qword [rsp - 96], 1
+        mov r15, qword [rsp - 96]
         imul r15, 2
-        mov qword [rsp - 80], r15
+        mov qword [rsp - 96], r15
     baz_114_9_end:
     cmp_115_12:
-    cmp qword [rsp - 80], 2
+    cmp qword [rsp - 96], 2
     jne bool_false_115_12
     bool_true_115_12:
     mov r15, true
@@ -614,14 +638,14 @@ main:
         if_19_5_115_5_end:
     assert_115_5_end:
     baz_117_23:
-        mov qword [rsp - 96], 2
-        mov r15, qword [rsp - 96]
+        mov qword [rsp - 112], 2
+        mov r15, qword [rsp - 112]
         imul r15, 2
-        mov qword [rsp - 96], r15
+        mov qword [rsp - 112], r15
     baz_117_23_end:
-    mov qword [rsp - 88], 0
+    mov qword [rsp - 104], 0
     cmp_118_12:
-    cmp qword [rsp - 96], 4
+    cmp qword [rsp - 112], 4
     jne bool_false_118_12
     bool_true_118_12:
     mov r15, true
@@ -642,18 +666,18 @@ main:
             exit_19_17_118_5_end:
         if_19_5_118_5_end:
     assert_118_5_end:
-    mov qword [rsp - 104], 1
-    mov qword [rsp - 112], 2
-        mov r15, qword [rsp - 104]
-        mov qword [rsp - 132], r15
-        mov r15, qword [rsp - 132]
+    mov qword [rsp - 120], 1
+    mov qword [rsp - 128], 2
+        mov r15, qword [rsp - 120]
+        mov qword [rsp - 148], r15
+        mov r15, qword [rsp - 148]
         imul r15, 10
-        mov qword [rsp - 132], r15
-        mov r15, qword [rsp - 112]
-        mov qword [rsp - 124], r15
-    mov dword [rsp - 116], 0xff0000
+        mov qword [rsp - 148], r15
+        mov r15, qword [rsp - 128]
+        mov qword [rsp - 140], r15
+    mov dword [rsp - 132], 0xff0000
     cmp_124_12:
-    cmp qword [rsp - 132], 10
+    cmp qword [rsp - 148], 10
     jne bool_false_124_12
     bool_true_124_12:
     mov r15, true
@@ -675,7 +699,7 @@ main:
         if_19_5_124_5_end:
     assert_124_5_end:
     cmp_125_12:
-    cmp qword [rsp - 124], 2
+    cmp qword [rsp - 140], 2
     jne bool_false_125_12
     bool_true_125_12:
     mov r15, true
@@ -697,7 +721,7 @@ main:
         if_19_5_125_5_end:
     assert_125_5_end:
     cmp_126_12:
-    cmp dword [rsp - 116], 0xff0000
+    cmp dword [rsp - 132], 0xff0000
     jne bool_false_126_12
     bool_true_126_12:
     mov r15, true
@@ -718,18 +742,18 @@ main:
             exit_19_17_126_5_end:
         if_19_5_126_5_end:
     assert_126_5_end:
-    mov r15, qword [rsp - 104]
-    mov qword [rsp - 148], r15
-    neg qword [rsp - 148]
-    mov r15, qword [rsp - 112]
-    mov qword [rsp - 140], r15
-    neg qword [rsp - 140]
-    lea rdi, [rsp - 132]
-    lea rsi, [rsp - 148]
+    mov r15, qword [rsp - 120]
+    mov qword [rsp - 164], r15
+    neg qword [rsp - 164]
+    mov r15, qword [rsp - 128]
+    mov qword [rsp - 156], r15
+    neg qword [rsp - 156]
+    lea rdi, [rsp - 148]
+    lea rsi, [rsp - 164]
     mov rcx, 16
     rep movsb
     cmp_130_12:
-    cmp qword [rsp - 132], -1
+    cmp qword [rsp - 148], -1
     jne bool_false_130_12
     bool_true_130_12:
     mov r15, true
@@ -751,7 +775,7 @@ main:
         if_19_5_130_5_end:
     assert_130_5_end:
     cmp_131_12:
-    cmp qword [rsp - 124], -2
+    cmp qword [rsp - 140], -2
     jne bool_false_131_12
     bool_true_131_12:
     mov r15, true
@@ -772,12 +796,12 @@ main:
             exit_19_17_131_5_end:
         if_19_5_131_5_end:
     assert_131_5_end:
-    lea rdi, [rsp - 168]
-    lea rsi, [rsp - 132]
+    lea rdi, [rsp - 184]
+    lea rsi, [rsp - 148]
     mov rcx, 20
     rep movsb
     cmp_134_12:
-    cmp qword [rsp - 168], -1
+    cmp qword [rsp - 184], -1
     jne bool_false_134_12
     bool_true_134_12:
     mov r15, true
@@ -799,7 +823,7 @@ main:
         if_19_5_134_5_end:
     assert_134_5_end:
     cmp_135_12:
-    cmp qword [rsp - 160], -2
+    cmp qword [rsp - 176], -2
     jne bool_false_135_12
     bool_true_135_12:
     mov r15, true
@@ -821,7 +845,7 @@ main:
         if_19_5_135_5_end:
     assert_135_5_end:
     cmp_136_12:
-    cmp dword [rsp - 152], 0xff0000
+    cmp dword [rsp - 168], 0xff0000
     jne bool_false_136_12
     bool_true_136_12:
     mov r15, true
@@ -842,14 +866,16 @@ main:
             exit_19_17_136_5_end:
         if_19_5_136_5_end:
     assert_136_5_end:
-    lea rdi, [rsp - 188]
+    lea rdi, [rsp - 204]
     mov rcx, 20
     xor rax, rax
     rep stosb
-    mov qword [rsp - 180], 73
+    mov qword [rsp - 196], 73
     cmp_141_12:
-        lea r13, [rsp - 188]
+        lea r13, [rsp - 204]
         mov r12, 0
+        cmp r12, 1
+        jge panic_bounds
         imul r12, 20
         add r13, r12
         add r13, 8
@@ -875,7 +901,7 @@ main:
             exit_19_17_141_5_end:
         if_19_5_141_5_end:
     assert_141_5_end:
-    lea rdi, [rsp - 268]
+    lea rdi, [rsp - 284]
     mov rcx, 80
     xor rax, rax
     rep stosb
@@ -895,24 +921,24 @@ main:
             syscall
         print_147_9_end:
         mov rdx, 80
-        lea rsi, [rsp - 268]
+        lea rsi, [rsp - 284]
         read_149_19:
             mov rax, 0
             mov rdi, 0
             syscall
-            mov qword [rsp - 276], rax
+            mov qword [rsp - 292], rax
         read_149_19_end:
-        sub qword [rsp - 276], 1
+        sub qword [rsp - 292], 1
         if_153_12:
         cmp_153_12:
-        cmp qword [rsp - 276], 0
+        cmp qword [rsp - 292], 0
         jne if_155_19
         if_153_12_code:
             jmp loop_146_5_end
         jmp if_153_9_end
         if_155_19:
         cmp_155_19:
-        cmp qword [rsp - 276], 4
+        cmp qword [rsp - 292], 4
         jg if_else_153_9
         if_155_19_code:
             mov rdx, prompt2.len
@@ -932,8 +958,8 @@ main:
                 mov rdi, 1
                 syscall
             print_159_13_end:
-            mov rdx, qword [rsp - 276]
-            lea rsi, [rsp - 268]
+            mov rdx, qword [rsp - 292]
+            lea rsi, [rsp - 284]
             print_160_13:
                 mov rax, 1
                 mov rdi, 1
@@ -959,11 +985,16 @@ main:
     mov rax, 60
     mov rdi, 0
     syscall
+panic_bounds:
+    mov rax, 60
+    mov rdi, 255
+    syscall
 ```
 
 ## With comments
 
 ```nasm
+
 
 ; generated by baz
 
@@ -1035,6 +1066,8 @@ main:
 ;   [77:9] ix
 ;   [77:11] r15 = ix
     mov r15, qword [rsp - 24]
+    cmp r15, 4
+    jge panic_bounds
 ;   [77:15] 2
 ;   [77:15] 2
 ;   [78:5] dword [rsp + r15 * 4 - 16] = 2
@@ -1048,6 +1081,8 @@ main:
     mov r15, qword [rsp - 24]
 ;   [78:15] r15 + 1
     add r15, 1
+    cmp r15, 4
+    jge panic_bounds
 ;   [78:19] arr[ix]
 ;   [78:19] arr[ix]
 ;   [78:22] dword [rsp + r15 * 4 - 16] = arr[ix]
@@ -1057,6 +1092,8 @@ main:
 ;   [78:23] ix
 ;   [78:25] r14 = ix
     mov r14, qword [rsp - 24]
+    cmp r14, 4
+    jge panic_bounds
 ;   allocate scratch register -> r13
     mov r13d, dword [rsp + r14 * 4 - 16]
     mov dword [rsp + r15 * 4 - 16], r13d
@@ -1078,6 +1115,8 @@ main:
 ;       [79:16] 1
 ;       [79:17] r13 = 1
         mov r13, 1
+        cmp r13, 4
+        jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       free scratch register 'r13'
     cmp r14, 2
@@ -1132,6 +1171,8 @@ main:
 ;       [80:16] 2
 ;       [80:17] r13 = 2
         mov r13, 2
+        cmp r13, 4
+        jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       free scratch register 'r13'
     cmp r14, 2
@@ -1175,18 +1216,24 @@ main:
 ;   allocate named register 'rsi'
 ;   allocate named register 'rdi'
 ;   allocate named register 'rcx'
+;   [82:29] 2
+;   [82:29] 2
+;   [82:30] rcx = 2
+    mov rcx, 2
 ;   allocate scratch register -> r15
 ;   [82:20] 2
 ;   [82:20] 2
 ;   [82:21] r15 = 2
     mov r15, 2
+;   allocate scratch register -> r14
+    mov r14, rcx
+    add r14, r15
+    cmp r14, 4
+    jg panic_bounds
+;   free scratch register 'r14'
     lea rsi, [rsp + r15 * 4 - 16]
 ;   free scratch register 'r15'
     lea rdi, [rsp - 16]
-;   [82:29] 2
-;   [82:29] 2
-;   [82:30] rcx = 2
-    mov rcx, 2
     shl rcx, 2
     rep movsb
 ;   free named register 'rcx'
@@ -1208,6 +1255,8 @@ main:
 ;       [84:16] 0
 ;       [84:17] r13 = 0
         mov r13, 0
+        cmp r13, 4
+        jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       free scratch register 'r13'
     cmp r14, 2
@@ -1247,14 +1296,14 @@ main:
         if_19_5_84_5_end:
 ;       free scratch register 'r15'
     assert_84_5_end:
-;   var arr1: i32[4] @ dword [rsp - 40]
-;   [86:5] var arr1 : i32[4]
-;   clear array 4 * 4 B = 16 B
+;   var arr1: i32[8] @ dword [rsp - 56]
+;   [86:5] var arr1 : i32[8]
+;   clear array 8 * 4 B = 32 B
 ;   allocate named register 'rdi'
 ;   allocate named register 'rcx'
 ;   allocate named register 'rax'
-    lea rdi, [rsp - 40]
-    mov rcx, 16
+    lea rdi, [rsp - 56]
+    mov rcx, 32
     xor rax, rax
     rep stosb
 ;   free named register 'rax'
@@ -1264,12 +1313,12 @@ main:
 ;   allocate named register 'rsi'
 ;   allocate named register 'rdi'
 ;   allocate named register 'rcx'
-    lea rsi, [rsp - 16]
-    lea rdi, [rsp - 40]
 ;   [87:27] 4
 ;   [87:27] 4
 ;   [87:28] rcx = 4
     mov rcx, 4
+    lea rsi, [rsp - 16]
+    lea rdi, [rsp - 56]
     shl rcx, 2
     rep movsb
 ;   free named register 'rcx'
@@ -1289,7 +1338,7 @@ main:
 ;       allocate named register 'rdi'
 ;       allocate named register 'rcx'
         lea rsi, [rsp - 16]
-        lea rdi, [rsp - 40]
+        lea rdi, [rsp - 56]
 ;       [88:36] 4
 ;       [88:36] 4
 ;       [88:37] rcx = 4
@@ -1348,10 +1397,12 @@ main:
 ;   [90:10] 2
 ;   [90:11] r15 = 2
     mov r15, 2
+    cmp r15, 8
+    jge panic_bounds
 ;   [90:15] -1
 ;   [90:15] -1
-;   [91:5] dword [rsp + r15 * 4 - 40] = -1
-    mov dword [rsp + r15 * 4 - 40], -1
+;   [91:5] dword [rsp + r15 * 4 - 56] = -1
+    mov dword [rsp + r15 * 4 - 56], -1
 ;   free scratch register 'r15'
 ;   [91:5] assert(not arrays_equal(arr, arr1, 4))
 ;   allocate scratch register -> r15
@@ -1367,7 +1418,7 @@ main:
 ;       allocate named register 'rdi'
 ;       allocate named register 'rcx'
         lea rsi, [rsp - 16]
-        lea rdi, [rsp - 40]
+        lea rdi, [rsp - 56]
 ;       [91:40] 4
 ;       [91:40] 4
 ;       [91:41] rcx = 4
@@ -1431,6 +1482,8 @@ main:
 ;   [94:9] ix
 ;   [94:11] r15 = ix
     mov r15, qword [rsp - 24]
+    cmp r15, 4
+    jge panic_bounds
 ;   [94:15] ~inv(arr[ix - 1])
 ;   [94:15] ~inv(arr[ix - 1])
 ;   [94:16] dword [rsp + r15 * 4 - 16] = ~inv(arr[ix - 1])
@@ -1447,6 +1500,8 @@ main:
     mov r13, qword [rsp - 24]
 ;   [94:30] r13 - 1
     sub r13, 1
+    cmp r13, 4
+    jge panic_bounds
     movsx r14, dword [rsp + r13 * 4 - 16]
 ;   free scratch register 'r13'
 ;   inv(i : i32) : i32 res 
@@ -1478,6 +1533,8 @@ main:
 ;       [95:16] ix
 ;       [95:18] r13 = ix
         mov r13, qword [rsp - 24]
+        cmp r13, 4
+        jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       free scratch register 'r13'
     cmp r14, 2
@@ -1517,7 +1574,7 @@ main:
         if_19_5_95_5_end:
 ;       free scratch register 'r15'
     assert_95_5_end:
-;   var p: point @ qword [rsp - 56]
+;   var p: point @ qword [rsp - 72]
 ;   [97:5] var p : point = {0, 0}
 ;   [97:21] p ={0, 0}
 ;   [97:21] {0, 0}
@@ -1525,11 +1582,11 @@ main:
 ;   [97:22] 0
 ;   [97:22] 0
 ;   [97:23] p.x = 0
-    mov qword [rsp - 56], 0
+    mov qword [rsp - 72], 0
 ;   [97:25] 0
 ;   [97:25] 0
 ;   [97:26] p.y = 0
-    mov qword [rsp - 48], 0
+    mov qword [rsp - 64], 0
 ;   [98:5] foo(p)
 ;   foo(pt : point) 
     foo_98_5:
@@ -1538,13 +1595,13 @@ main:
 ;       [50:12] 0b10
 ;       [50:12] 0b10
 ;       [50:20] pt.x = 0b10
-        mov qword [rsp - 56], 0b10
+        mov qword [rsp - 72], 0b10
 ;       [50:20] # binary value 2
 ;       [51:7] pt.y = 0xb
 ;       [51:12] 0xb
 ;       [51:12] 0xb
 ;       [51:20] pt.y = 0xb
-        mov qword [rsp - 48], 0xb
+        mov qword [rsp - 64], 0xb
 ;       [51:20] # hex value 11
     foo_98_5_end:
 ;   [99:5] assert(p.x == 2)
@@ -1553,7 +1610,7 @@ main:
 ;   [99:12] ? p.x == 2
 ;   [99:12] ? p.x == 2
     cmp_99_12:
-    cmp qword [rsp - 56], 2
+    cmp qword [rsp - 72], 2
     jne bool_false_99_12
     bool_true_99_12:
     mov r15, true
@@ -1595,7 +1652,7 @@ main:
 ;   [100:12] ? p.y == 0xb
 ;   [100:12] ? p.y == 0xb
     cmp_100_12:
-    cmp qword [rsp - 48], 0xb
+    cmp qword [rsp - 64], 0xb
     jne bool_false_100_12
     bool_true_100_12:
     mov r15, true
@@ -1631,13 +1688,13 @@ main:
         if_19_5_100_5_end:
 ;       free scratch register 'r15'
     assert_100_5_end:
-;   var i: i64 @ qword [rsp - 64]
+;   var i: i64 @ qword [rsp - 80]
 ;   [102:5] var i = 0
 ;   [102:13] i =0
 ;   [102:13] 0
 ;   [102:13] 0
 ;   [103:5] i = 0
-    mov qword [rsp - 64], 0
+    mov qword [rsp - 80], 0
 ;   [103:5] bar(i)
 ;   bar(arg) 
     bar_103_5:
@@ -1646,7 +1703,7 @@ main:
 ;       [57:8] ? arg == 0
 ;       [57:8] ? arg == 0
         cmp_57_8_103_5:
-        cmp qword [rsp - 64], 0
+        cmp qword [rsp - 80], 0
         jne if_57_5_103_5_end
         if_57_8_103_5_code:
 ;           [57:17] return
@@ -1656,7 +1713,7 @@ main:
 ;       [58:11] 0xff
 ;       [58:11] 0xff
 ;       [59:1] arg = 0xff
-        mov qword [rsp - 64], 0xff
+        mov qword [rsp - 80], 0xff
     bar_103_5_end:
 ;   [104:5] assert(i == 0)
 ;   allocate scratch register -> r15
@@ -1664,7 +1721,7 @@ main:
 ;   [104:12] ? i == 0
 ;   [104:12] ? i == 0
     cmp_104_12:
-    cmp qword [rsp - 64], 0
+    cmp qword [rsp - 80], 0
     jne bool_false_104_12
     bool_true_104_12:
     mov r15, true
@@ -1704,7 +1761,7 @@ main:
 ;   [106:9] 1
 ;   [106:9] 1
 ;   [107:5] i = 1
-    mov qword [rsp - 64], 1
+    mov qword [rsp - 80], 1
 ;   [107:5] bar(i)
 ;   bar(arg) 
     bar_107_5:
@@ -1713,7 +1770,7 @@ main:
 ;       [57:8] ? arg == 0
 ;       [57:8] ? arg == 0
         cmp_57_8_107_5:
-        cmp qword [rsp - 64], 0
+        cmp qword [rsp - 80], 0
         jne if_57_5_107_5_end
         if_57_8_107_5_code:
 ;           [57:17] return
@@ -1723,7 +1780,7 @@ main:
 ;       [58:11] 0xff
 ;       [58:11] 0xff
 ;       [59:1] arg = 0xff
-        mov qword [rsp - 64], 0xff
+        mov qword [rsp - 80], 0xff
     bar_107_5_end:
 ;   [108:5] assert(i == 0xff)
 ;   allocate scratch register -> r15
@@ -1731,7 +1788,7 @@ main:
 ;   [108:12] ? i == 0xff
 ;   [108:12] ? i == 0xff
     cmp_108_12:
-    cmp qword [rsp - 64], 0xff
+    cmp qword [rsp - 80], 0xff
     jne bool_false_108_12
     bool_true_108_12:
     mov r15, true
@@ -1767,14 +1824,14 @@ main:
         if_19_5_108_5_end:
 ;       free scratch register 'r15'
     assert_108_5_end:
-;   var j: i64 @ qword [rsp - 72]
+;   var j: i64 @ qword [rsp - 88]
 ;   [110:5] var j = 1
 ;   [110:13] j =1
 ;   [110:13] 1
 ;   [110:13] 1
 ;   [111:5] j = 1
-    mov qword [rsp - 72], 1
-;   var k: i64 @ qword [rsp - 80]
+    mov qword [rsp - 88], 1
+;   var k: i64 @ qword [rsp - 96]
 ;   [111:5] var k = baz(j)
 ;   [111:13] k =baz(j)
 ;   [111:13] baz(j)
@@ -1790,14 +1847,14 @@ main:
 ;       [68:11] arg * 2
 ;       [68:15] res = arg
 ;       allocate scratch register -> r15
-        mov r15, qword [rsp - 72]
-        mov qword [rsp - 80], r15
+        mov r15, qword [rsp - 88]
+        mov qword [rsp - 96], r15
 ;       free scratch register 'r15'
 ;       [69:1] res * 2
 ;       allocate scratch register -> r15
-        mov r15, qword [rsp - 80]
+        mov r15, qword [rsp - 96]
         imul r15, 2
-        mov qword [rsp - 80], r15
+        mov qword [rsp - 96], r15
 ;       free scratch register 'r15'
     baz_111_13_end:
 ;   [112:5] assert(k == 2)
@@ -1806,7 +1863,7 @@ main:
 ;   [112:12] ? k == 2
 ;   [112:12] ? k == 2
     cmp_112_12:
-    cmp qword [rsp - 80], 2
+    cmp qword [rsp - 96], 2
     jne bool_false_112_12
     bool_true_112_12:
     mov r15, true
@@ -1855,12 +1912,12 @@ main:
 ;       [68:11] arg * 2
 ;       [68:11] arg * 2
 ;       [68:15] res = arg
-        mov qword [rsp - 80], 1
+        mov qword [rsp - 96], 1
 ;       [69:1] res * 2
 ;       allocate scratch register -> r15
-        mov r15, qword [rsp - 80]
+        mov r15, qword [rsp - 96]
         imul r15, 2
-        mov qword [rsp - 80], r15
+        mov qword [rsp - 96], r15
 ;       free scratch register 'r15'
     baz_114_9_end:
 ;   [115:5] assert(k == 2)
@@ -1869,7 +1926,7 @@ main:
 ;   [115:12] ? k == 2
 ;   [115:12] ? k == 2
     cmp_115_12:
-    cmp qword [rsp - 80], 2
+    cmp qword [rsp - 96], 2
     jne bool_false_115_12
     bool_true_115_12:
     mov r15, true
@@ -1905,7 +1962,7 @@ main:
         if_19_5_115_5_end:
 ;       free scratch register 'r15'
     assert_115_5_end:
-;   var p0: point @ qword [rsp - 96]
+;   var p0: point @ qword [rsp - 112]
 ;   [117:5] var p0 : point = {baz(2), 0}
 ;   [117:22] p0 ={baz(2), 0}
 ;   [117:22] {baz(2), 0}
@@ -1922,25 +1979,25 @@ main:
 ;       [68:11] arg * 2
 ;       [68:11] arg * 2
 ;       [68:15] res = arg
-        mov qword [rsp - 96], 2
+        mov qword [rsp - 112], 2
 ;       [69:1] res * 2
 ;       allocate scratch register -> r15
-        mov r15, qword [rsp - 96]
+        mov r15, qword [rsp - 112]
         imul r15, 2
-        mov qword [rsp - 96], r15
+        mov qword [rsp - 112], r15
 ;       free scratch register 'r15'
     baz_117_23_end:
 ;   [117:31] 0
 ;   [117:31] 0
 ;   [117:32] p0.y = 0
-    mov qword [rsp - 88], 0
+    mov qword [rsp - 104], 0
 ;   [118:5] assert(p0.x == 4)
 ;   allocate scratch register -> r15
 ;   [118:12] p0.x == 4
 ;   [118:12] ? p0.x == 4
 ;   [118:12] ? p0.x == 4
     cmp_118_12:
-    cmp qword [rsp - 96], 4
+    cmp qword [rsp - 112], 4
     jne bool_false_118_12
     bool_true_118_12:
     mov r15, true
@@ -1976,21 +2033,21 @@ main:
         if_19_5_118_5_end:
 ;       free scratch register 'r15'
     assert_118_5_end:
-;   var x: i64 @ qword [rsp - 104]
+;   var x: i64 @ qword [rsp - 120]
 ;   [120:5] var x = 1
 ;   [120:13] x =1
 ;   [120:13] 1
 ;   [120:13] 1
 ;   [121:5] x = 1
-    mov qword [rsp - 104], 1
-;   var y: i64 @ qword [rsp - 112]
+    mov qword [rsp - 120], 1
+;   var y: i64 @ qword [rsp - 128]
 ;   [121:5] var y = 2
 ;   [121:13] y =2
 ;   [121:13] 2
 ;   [121:13] 2
 ;   [123:5] y = 2
-    mov qword [rsp - 112], 2
-;   var o1: object @ qword [rsp - 132]
+    mov qword [rsp - 128], 2
+;   var o1: object @ qword [rsp - 148]
 ;   [123:5] var o1 : object = {{x * 10, y}, 0xff0000}
 ;   [123:23] o1 ={{x * 10, y}, 0xff0000}
 ;   [123:23] {{x * 10, y}, 0xff0000}
@@ -2000,33 +2057,33 @@ main:
 ;       [123:25] x * 10
 ;       [123:27] o1.pos.x = x
 ;       allocate scratch register -> r15
-        mov r15, qword [rsp - 104]
-        mov qword [rsp - 132], r15
+        mov r15, qword [rsp - 120]
+        mov qword [rsp - 148], r15
 ;       free scratch register 'r15'
 ;       [123:31] o1.pos.x * 10
 ;       allocate scratch register -> r15
-        mov r15, qword [rsp - 132]
+        mov r15, qword [rsp - 148]
         imul r15, 10
-        mov qword [rsp - 132], r15
+        mov qword [rsp - 148], r15
 ;       free scratch register 'r15'
 ;       [123:33] y
 ;       [123:33] y
 ;       [123:34] o1.pos.y = y
 ;       allocate scratch register -> r15
-        mov r15, qword [rsp - 112]
-        mov qword [rsp - 124], r15
+        mov r15, qword [rsp - 128]
+        mov qword [rsp - 140], r15
 ;       free scratch register 'r15'
 ;   [123:37] 0xff0000
 ;   [123:37] 0xff0000
 ;   [123:45] o1.color = 0xff0000
-    mov dword [rsp - 116], 0xff0000
+    mov dword [rsp - 132], 0xff0000
 ;   [124:5] assert(o1.pos.x == 10)
 ;   allocate scratch register -> r15
 ;   [124:12] o1.pos.x == 10
 ;   [124:12] ? o1.pos.x == 10
 ;   [124:12] ? o1.pos.x == 10
     cmp_124_12:
-    cmp qword [rsp - 132], 10
+    cmp qword [rsp - 148], 10
     jne bool_false_124_12
     bool_true_124_12:
     mov r15, true
@@ -2068,7 +2125,7 @@ main:
 ;   [125:12] ? o1.pos.y == 2
 ;   [125:12] ? o1.pos.y == 2
     cmp_125_12:
-    cmp qword [rsp - 124], 2
+    cmp qword [rsp - 140], 2
     jne bool_false_125_12
     bool_true_125_12:
     mov r15, true
@@ -2110,7 +2167,7 @@ main:
 ;   [126:12] ? o1.color == 0xff0000
 ;   [126:12] ? o1.color == 0xff0000
     cmp_126_12:
-    cmp dword [rsp - 116], 0xff0000
+    cmp dword [rsp - 132], 0xff0000
     jne bool_false_126_12
     bool_true_126_12:
     mov r15, true
@@ -2146,7 +2203,7 @@ main:
         if_19_5_126_5_end:
 ;       free scratch register 'r15'
     assert_126_5_end:
-;   var p1: point @ qword [rsp - 148]
+;   var p1: point @ qword [rsp - 164]
 ;   [128:5] var p1 : point = {-x, -y}
 ;   [128:22] p1 ={-x, -y}
 ;   [128:22] {-x, -y}
@@ -2155,25 +2212,25 @@ main:
 ;   [128:23] -x
 ;   [128:25] p1.x = -x
 ;   allocate scratch register -> r15
-    mov r15, qword [rsp - 104]
-    mov qword [rsp - 148], r15
+    mov r15, qword [rsp - 120]
+    mov qword [rsp - 164], r15
 ;   free scratch register 'r15'
-    neg qword [rsp - 148]
+    neg qword [rsp - 164]
 ;   [128:27] -y
 ;   [128:27] -y
 ;   [128:29] p1.y = -y
 ;   allocate scratch register -> r15
-    mov r15, qword [rsp - 112]
-    mov qword [rsp - 140], r15
+    mov r15, qword [rsp - 128]
+    mov qword [rsp - 156], r15
 ;   free scratch register 'r15'
-    neg qword [rsp - 140]
+    neg qword [rsp - 156]
 ;   [129:7] o1.pos = p1
 ;   allocate named register 'rsi'
 ;   allocate named register 'rdi'
 ;   allocate named register 'rcx'
-    lea rdi, [rsp - 132]
+    lea rdi, [rsp - 148]
 ;   [129:14] p1
-    lea rsi, [rsp - 148]
+    lea rsi, [rsp - 164]
     mov rcx, 16
     rep movsb
 ;   free named register 'rcx'
@@ -2185,7 +2242,7 @@ main:
 ;   [130:12] ? o1.pos.x == -1
 ;   [130:12] ? o1.pos.x == -1
     cmp_130_12:
-    cmp qword [rsp - 132], -1
+    cmp qword [rsp - 148], -1
     jne bool_false_130_12
     bool_true_130_12:
     mov r15, true
@@ -2227,7 +2284,7 @@ main:
 ;   [131:12] ? o1.pos.y == -2
 ;   [131:12] ? o1.pos.y == -2
     cmp_131_12:
-    cmp qword [rsp - 124], -2
+    cmp qword [rsp - 140], -2
     jne bool_false_131_12
     bool_true_131_12:
     mov r15, true
@@ -2263,15 +2320,15 @@ main:
         if_19_5_131_5_end:
 ;       free scratch register 'r15'
     assert_131_5_end:
-;   var o2: object @ qword [rsp - 168]
+;   var o2: object @ qword [rsp - 184]
 ;   [133:5] var o2 : object = o1
 ;   [133:23] o2 =o1
 ;   allocate named register 'rsi'
 ;   allocate named register 'rdi'
 ;   allocate named register 'rcx'
-    lea rdi, [rsp - 168]
+    lea rdi, [rsp - 184]
 ;   [133:23] o1
-    lea rsi, [rsp - 132]
+    lea rsi, [rsp - 148]
     mov rcx, 20
     rep movsb
 ;   free named register 'rcx'
@@ -2283,7 +2340,7 @@ main:
 ;   [134:12] ? o2.pos.x == -1
 ;   [134:12] ? o2.pos.x == -1
     cmp_134_12:
-    cmp qword [rsp - 168], -1
+    cmp qword [rsp - 184], -1
     jne bool_false_134_12
     bool_true_134_12:
     mov r15, true
@@ -2325,7 +2382,7 @@ main:
 ;   [135:12] ? o2.pos.y == -2
 ;   [135:12] ? o2.pos.y == -2
     cmp_135_12:
-    cmp qword [rsp - 160], -2
+    cmp qword [rsp - 176], -2
     jne bool_false_135_12
     bool_true_135_12:
     mov r15, true
@@ -2367,7 +2424,7 @@ main:
 ;   [136:12] ? o2.color == 0xff0000
 ;   [136:12] ? o2.color == 0xff0000
     cmp_136_12:
-    cmp dword [rsp - 152], 0xff0000
+    cmp dword [rsp - 168], 0xff0000
     jne bool_false_136_12
     bool_true_136_12:
     mov r15, true
@@ -2403,13 +2460,13 @@ main:
         if_19_5_136_5_end:
 ;       free scratch register 'r15'
     assert_136_5_end:
-;   var o3: object[1] @ qword [rsp - 188]
+;   var o3: object[1] @ qword [rsp - 204]
 ;   [138:5] var o3 : object[1]
 ;   clear array 1 * 20 B = 20 B
 ;   allocate named register 'rdi'
 ;   allocate named register 'rcx'
 ;   allocate named register 'rax'
-    lea rdi, [rsp - 188]
+    lea rdi, [rsp - 204]
     mov rcx, 20
     xor rax, rax
     rep stosb
@@ -2421,7 +2478,7 @@ main:
 ;   [140:16] 73
 ;   [140:16] 73
 ;   [141:5] o3.pos.y = 73
-    mov qword [rsp - 180], 73
+    mov qword [rsp - 196], 73
 ;   [141:5] assert(o3[0].pos.y == 73)
 ;   allocate scratch register -> r15
 ;   [141:12] o3[0].pos.y == 73
@@ -2433,12 +2490,14 @@ main:
 ;       [141:14] r14 = o3[0].pos.y
 ;       [141:14] o3[0].pos.y
 ;       allocate scratch register -> r13
-        lea r13, [rsp - 188]
+        lea r13, [rsp - 204]
 ;       allocate scratch register -> r12
 ;       [141:15] 0
 ;       [141:15] 0
 ;       [141:16] r12 = 0
         mov r12, 0
+        cmp r12, 1
+        jge panic_bounds
         imul r12, 20
         add r13, r12
 ;       free scratch register 'r12'
@@ -2482,13 +2541,13 @@ main:
         if_19_5_141_5_end:
 ;       free scratch register 'r15'
     assert_141_5_end:
-;   var input_buffer: i8[80] @ byte [rsp - 268]
+;   var input_buffer: i8[80] @ byte [rsp - 284]
 ;   [143:5] var input_buffer : i8[80]
 ;   clear array 80 * 1 B = 80 B
 ;   allocate named register 'rdi'
 ;   allocate named register 'rcx'
 ;   allocate named register 'rax'
-    lea rdi, [rsp - 268]
+    lea rdi, [rsp - 284]
     mov rcx, 80
     xor rax, rax
     rep stosb
@@ -2545,7 +2604,7 @@ main:
 ;           free named register 'rsi'
 ;           free named register 'rdx'
         print_147_9_end:
-;       var len: i64 @ qword [rsp - 276]
+;       var len: i64 @ qword [rsp - 292]
 ;       [149:9] var len = read(array_size_of(input_buffer), address_of(input_buffer)) - 1
 ;       [149:19] len =read(array_size_of(input_buffer), address_of(input_buffer)) - 1
 ;       [149:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
@@ -2563,7 +2622,7 @@ main:
 ;       [149:53] address_of(input_buffer)
 ;       [149:53] rsi = address_of(input_buffer)
 ;       [149:53] address_of(input_buffer)
-        lea rsi, [rsp - 268]
+        lea rsi, [rsp - 284]
 ;       read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes 
         read_149_19:
 ;           alias nbytes -> len
@@ -2582,20 +2641,20 @@ main:
 ;           [35:5] syscall()
             syscall
 ;           [36:5] mov(nbytes, rax)
-            mov qword [rsp - 276], rax
+            mov qword [rsp - 292], rax
 ;           [36:22] # return value
 ;           free named register 'rsi'
 ;           free named register 'rdx'
         read_149_19_end:
 ;       [150:9] len - 1
-        sub qword [rsp - 276], 1
+        sub qword [rsp - 292], 1
 ;       [150:9] # note: `array_size_of` and `address_of` are built-in functions
 ;       [151:9] # -1 to not include the trailing '\n'
         if_153_12:
 ;       [153:12] ? len == 0
 ;       [153:12] ? len == 0
         cmp_153_12:
-        cmp qword [rsp - 276], 0
+        cmp qword [rsp - 292], 0
         jne if_155_19
         if_153_12_code:
 ;           [154:13] break
@@ -2605,7 +2664,7 @@ main:
 ;       [155:19] ? len <= 4
 ;       [155:19] ? len <= 4
         cmp_155_19:
-        cmp qword [rsp - 276], 4
+        cmp qword [rsp - 292], 4
         jg if_else_153_9
         if_155_19_code:
 ;           [156:13] print(prompt2.len, prompt2)
@@ -2662,13 +2721,13 @@ main:
             print_159_13_end:
 ;           [160:13] print(len, address_of(input_buffer))
 ;           allocate named register 'rdx'
-            mov rdx, qword [rsp - 276]
+            mov rdx, qword [rsp - 292]
 ;           allocate named register 'rsi'
 ;           [160:24] address_of(input_buffer)
 ;           [160:24] address_of(input_buffer)
 ;           [160:24] rsi = address_of(input_buffer)
 ;           [160:24] address_of(input_buffer)
-            lea rsi, [rsp - 268]
+            lea rsi, [rsp - 284]
 ;           print(len : reg_rdx, ptr : reg_rsi) 
             print_160_13:
 ;               alias len -> rdx
@@ -2743,8 +2802,13 @@ main:
     mov rax, 60
     mov rdi, 0
     syscall
+panic_bounds:
+    ; system call: exit -1
+    mov rax, 60
+    mov rdi, 255
+    syscall
 
 ; max scratch registers in use: 4
 ;            max frames in use: 7
-;               max stack size: 276 B
+;               max stack size: 292 B
 ```
