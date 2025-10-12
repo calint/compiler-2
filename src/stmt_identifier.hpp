@@ -26,8 +26,7 @@ class stmt_identifier : public statement {
 
   public:
     stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz)
-        : statement{tz.next_whitespace_token(), std::move(uops)},
-          path_as_string_{tk.text()} {
+        : statement{tk, std::move(uops)}, path_as_string_{tk.text()} {
 
         token tk_prv{tk};
         // note: keep track of previous token for better compilation error
@@ -122,8 +121,10 @@ class stmt_identifier : public statement {
     }
 
     auto source_to(std::ostream& os) const -> void override {
-        statement::source_to(os);
-        int sep{0};
+        // note: only write the `uops` because the token in statement is in
+        //       first `identifier_elem`
+        get_unary_ops().source_to(os);
+        int sep{};
         for (const identifier_elem& e : elems_) {
             if (sep++) {
                 std::print(os, ".");

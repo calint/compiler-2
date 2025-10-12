@@ -31,7 +31,8 @@ class stmt_assign_var final : public statement {
     auto operator=(stmt_assign_var&&) -> stmt_assign_var& = default;
 
     auto source_to(std::ostream& os) const -> void override {
-        statement::source_to(os);
+        // note: all the source info is in `stmt_ident_`
+        // statement::source_to(os);
         stmt_ident_.source_to(os);
         std::print(os, "=");
         expr_.source_to(os);

@@ -58,51 +58,51 @@ main:
 ;   [75:5] # arrays are initialized to 0
 ;   [77:5] var ix = 1
 ;   [77:9] ix: i64 @ qword [rsp - 24]
-;   [77:14] ix =1
+;   [77:9] ix =1
 ;   [77:14] 1
 ;   [77:14] 1
-;   [79:5] ix = 1
+;   [77:14] ix = 1
     mov qword [rsp - 24], 1
-;   [79:8] arr[ix] = 2
-;   [79:8] allocate scratch register -> r15
+;   [79:5] arr[ix] = 2
+;   [79:5] allocate scratch register -> r15
 ;   [79:9] ix
 ;   [79:9] ix
-;   [79:11] r15 = ix
+;   [79:9] r15 = ix
     mov r15, qword [rsp - 24]
     cmp r15, 4
     jge panic_bounds
 ;   [79:15] 2
 ;   [79:15] 2
-;   [80:5] dword [rsp + r15 * 4 - 16] = 2
+;   [79:15] dword [rsp + r15 * 4 - 16] = 2
     mov dword [rsp + r15 * 4 - 16], 2
-;   [79:8] free scratch register 'r15'
-;   [80:8] arr[ix + 1] = arr[ix]
-;   [80:8] allocate scratch register -> r15
+;   [79:5] free scratch register 'r15'
+;   [80:5] arr[ix + 1] = arr[ix]
+;   [80:5] allocate scratch register -> r15
 ;   [80:9] ix + 1
 ;   [80:9] ix + 1
-;   [80:12] r15 = ix
+;   [80:9] r15 = ix
     mov r15, qword [rsp - 24]
-;   [80:15] r15 + 1
+;   [80:14] r15 + 1
     add r15, 1
     cmp r15, 4
     jge panic_bounds
 ;   [80:19] arr[ix]
 ;   [80:19] arr[ix]
-;   [80:22] dword [rsp + r15 * 4 - 16] = arr[ix]
-;   [80:22] arr[ix]
-;   [80:22] allocate scratch register -> r14
+;   [80:19] dword [rsp + r15 * 4 - 16] = arr[ix]
+;   [80:19] arr[ix]
+;   [80:19] allocate scratch register -> r14
 ;   [80:23] ix
 ;   [80:23] ix
-;   [80:25] r14 = ix
+;   [80:23] r14 = ix
     mov r14, qword [rsp - 24]
     cmp r14, 4
     jge panic_bounds
-;   [80:22] allocate scratch register -> r13
+;   [80:19] allocate scratch register -> r13
     mov r13d, dword [rsp + r14 * 4 - 16]
     mov dword [rsp + r15 * 4 - 16], r13d
-;   [80:22] free scratch register 'r13'
-;   [80:22] free scratch register 'r14'
-;   [80:8] free scratch register 'r15'
+;   [80:19] free scratch register 'r13'
+;   [80:19] free scratch register 'r14'
+;   [80:5] free scratch register 'r15'
 ;   [81:5] assert(arr[1] == 2)
 ;   [81:12] allocate scratch register -> r15
 ;   [81:12] arr[1] == 2
@@ -111,17 +111,17 @@ main:
     cmp_81_12:
 ;   [81:12] allocate scratch register -> r14
 ;       [81:12] arr[1]
-;       [81:15] r14 = arr[1]
-;       [81:15] arr[1]
-;       [81:15] allocate scratch register -> r13
+;       [81:12] r14 = arr[1]
+;       [81:12] arr[1]
+;       [81:12] allocate scratch register -> r13
 ;       [81:16] 1
 ;       [81:16] 1
-;       [81:17] r13 = 1
+;       [81:16] r13 = 1
         mov r13, 1
         cmp r13, 4
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
-;       [81:15] free scratch register 'r13'
+;       [81:12] free scratch register 'r13'
     cmp r14, 2
 ;   [81:12] free scratch register 'r14'
     jne bool_false_81_12
@@ -167,17 +167,17 @@ main:
     cmp_82_12:
 ;   [82:12] allocate scratch register -> r14
 ;       [82:12] arr[2]
-;       [82:15] r14 = arr[2]
-;       [82:15] arr[2]
-;       [82:15] allocate scratch register -> r13
+;       [82:12] r14 = arr[2]
+;       [82:12] arr[2]
+;       [82:12] allocate scratch register -> r13
 ;       [82:16] 2
 ;       [82:16] 2
-;       [82:17] r13 = 2
+;       [82:16] r13 = 2
         mov r13, 2
         cmp r13, 4
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
-;       [82:15] free scratch register 'r13'
+;       [82:12] free scratch register 'r13'
     cmp r14, 2
 ;   [82:12] free scratch register 'r14'
     jne bool_false_82_12
@@ -221,12 +221,12 @@ main:
 ;   [84:5] allocate named register 'rcx'
 ;   [84:29] 2
 ;   [84:29] 2
-;   [84:30] rcx = 2
+;   [84:29] rcx = 2
     mov rcx, 2
 ;   [84:16] allocate scratch register -> r15
 ;   [84:20] 2
 ;   [84:20] 2
-;   [84:21] r15 = 2
+;   [84:20] r15 = 2
     mov r15, 2
 ;   [84:20] allocate scratch register -> r14
     mov r14, rcx
@@ -253,17 +253,17 @@ main:
     cmp_86_12:
 ;   [86:12] allocate scratch register -> r14
 ;       [86:12] arr[0]
-;       [86:15] r14 = arr[0]
-;       [86:15] arr[0]
-;       [86:15] allocate scratch register -> r13
+;       [86:12] r14 = arr[0]
+;       [86:12] arr[0]
+;       [86:12] allocate scratch register -> r13
 ;       [86:16] 0
 ;       [86:16] 0
-;       [86:17] r13 = 0
+;       [86:16] r13 = 0
         mov r13, 0
         cmp r13, 4
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
-;       [86:15] free scratch register 'r13'
+;       [86:12] free scratch register 'r13'
     cmp r14, 2
 ;   [86:12] free scratch register 'r14'
     jne bool_false_86_12
@@ -320,7 +320,7 @@ main:
 ;   [89:5] allocate named register 'rcx'
 ;   [89:27] 4
 ;   [89:27] 4
-;   [89:28] rcx = 4
+;   [89:27] rcx = 4
     mov rcx, 4
     cmp rcx, 4
     jg panic_bounds
@@ -348,7 +348,7 @@ main:
 ;       [90:12] allocate named register 'rcx'
 ;       [90:36] 4
 ;       [90:36] 4
-;       [90:37] rcx = 4
+;       [90:36] rcx = 4
         mov rcx, 4
         cmp rcx, 4
         jg panic_bounds
@@ -404,19 +404,19 @@ main:
         if_19_5_90_5_end:
 ;       [90:5] free scratch register 'r15'
     assert_90_5_end:
-;   [92:9] arr1[2] = -1
-;   [92:9] allocate scratch register -> r15
+;   [92:5] arr1[2] = -1
+;   [92:5] allocate scratch register -> r15
 ;   [92:10] 2
 ;   [92:10] 2
-;   [92:11] r15 = 2
+;   [92:10] r15 = 2
     mov r15, 2
     cmp r15, 8
     jge panic_bounds
 ;   [92:15] -1
 ;   [92:15] -1
-;   [93:5] dword [rsp + r15 * 4 - 56] = -1
+;   [92:16] dword [rsp + r15 * 4 - 56] = -1
     mov dword [rsp + r15 * 4 - 56], -1
-;   [92:9] free scratch register 'r15'
+;   [92:5] free scratch register 'r15'
 ;   [93:5] assert(not arrays_equal(arr, arr1, 4))
 ;   [93:12] allocate scratch register -> r15
 ;   [93:12] not arrays_equal(arr, arr1, 4)
@@ -432,7 +432,7 @@ main:
 ;       [93:16] allocate named register 'rcx'
 ;       [93:40] 4
 ;       [93:40] 4
-;       [93:41] rcx = 4
+;       [93:40] rcx = 4
         mov rcx, 4
         cmp rcx, 4
         jg panic_bounds
@@ -488,16 +488,16 @@ main:
         if_19_5_93_5_end:
 ;       [93:5] free scratch register 'r15'
     assert_93_5_end:
-;   [95:8] ix = 3
+;   [95:5] ix = 3
 ;   [95:10] 3
 ;   [95:10] 3
-;   [96:5] ix = 3
+;   [95:10] ix = 3
     mov qword [rsp - 24], 3
-;   [96:8] arr[ix] = ~inv(arr[ix - 1])
-;   [96:8] allocate scratch register -> r15
+;   [96:5] arr[ix] = ~inv(arr[ix - 1])
+;   [96:5] allocate scratch register -> r15
 ;   [96:9] ix
 ;   [96:9] ix
-;   [96:11] r15 = ix
+;   [96:9] r15 = ix
     mov r15, qword [rsp - 24]
     cmp r15, 4
     jge panic_bounds
@@ -508,33 +508,33 @@ main:
 ;   [96:20] allocate scratch register -> r14
 ;   [96:20] arr[ix - 1]
 ;   [96:20] arr[ix - 1]
-;   [96:23] r14 = arr[ix - 1]
-;   [96:23] arr[ix - 1]
-;   [96:23] allocate scratch register -> r13
+;   [96:20] r14 = arr[ix - 1]
+;   [96:20] arr[ix - 1]
+;   [96:20] allocate scratch register -> r13
 ;   [96:24] ix - 1
 ;   [96:24] ix - 1
-;   [96:27] r13 = ix
+;   [96:24] r13 = ix
     mov r13, qword [rsp - 24]
-;   [96:30] r13 - 1
+;   [96:29] r13 - 1
     sub r13, 1
     cmp r13, 4
     jge panic_bounds
     movsx r14, dword [rsp + r13 * 4 - 16]
-;   [96:23] free scratch register 'r13'
+;   [96:20] free scratch register 'r13'
 ;   [65:6] inv(i : i32) : i32 res 
     inv_96_16:
 ;       [96:16] alias res -> dword [rsp + r15 * 4 - 16]
 ;       [96:16] alias i -> r14
-;       [66:9] res = ~i
+;       [66:5] res = ~i
 ;       [66:11] ~i
 ;       [66:11] ~i
-;       [67:1] res = ~i
+;       [66:12] res = ~i
         mov dword [rsp + r15 * 4 - 16], r14d
         not dword [rsp + r15 * 4 - 16]
 ;       [96:16] free scratch register 'r14'
     inv_96_16_end:
     not dword [rsp + r15 * 4 - 16]
-;   [96:8] free scratch register 'r15'
+;   [96:5] free scratch register 'r15'
 ;   [97:5] assert(arr[ix] == 2)
 ;   [97:12] allocate scratch register -> r15
 ;   [97:12] arr[ix] == 2
@@ -543,17 +543,17 @@ main:
     cmp_97_12:
 ;   [97:12] allocate scratch register -> r14
 ;       [97:12] arr[ix]
-;       [97:15] r14 = arr[ix]
-;       [97:15] arr[ix]
-;       [97:15] allocate scratch register -> r13
+;       [97:12] r14 = arr[ix]
+;       [97:12] arr[ix]
+;       [97:12] allocate scratch register -> r13
 ;       [97:16] ix
 ;       [97:16] ix
-;       [97:18] r13 = ix
+;       [97:16] r13 = ix
         mov r13, qword [rsp - 24]
         cmp r13, 4
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
-;       [97:15] free scratch register 'r13'
+;       [97:12] free scratch register 'r13'
     cmp r14, 2
 ;   [97:12] free scratch register 'r14'
     jne bool_false_97_12
@@ -593,31 +593,31 @@ main:
     assert_97_5_end:
 ;   [99:5] var p : point = {0, 0}
 ;   [99:9] p: point @ qword [rsp - 72]
-;   [99:21] p ={0, 0}
+;   [99:9] p ={0, 0}
 ;   [99:21] {0, 0}
 ;   [99:21] {0, 0}
 ;   [99:22] 0
 ;   [99:22] 0
-;   [99:23] p.x = 0
+;   [99:22] p.x = 0
     mov qword [rsp - 72], 0
 ;   [99:25] 0
 ;   [99:25] 0
-;   [99:26] p.y = 0
+;   [99:25] p.y = 0
     mov qword [rsp - 64], 0
 ;   [100:5] foo(p)
 ;   [51:6] foo(pt : point) 
     foo_100_5:
 ;       [100:5] alias pt -> p
-;       [52:7] pt.x = 0b10
+;       [52:5] pt.x = 0b10
 ;       [52:12] 0b10
 ;       [52:12] 0b10
-;       [52:20] pt.x = 0b10
+;       [52:12] pt.x = 0b10
         mov qword [rsp - 72], 0b10
 ;       [52:20] # binary value 2
-;       [53:7] pt.y = 0xb
+;       [53:5] pt.y = 0xb
 ;       [53:12] 0xb
 ;       [53:12] 0xb
-;       [53:20] pt.y = 0xb
+;       [53:12] pt.y = 0xb
         mov qword [rsp - 64], 0xb
 ;       [53:20] # hex value 11
     foo_100_5_end:
@@ -707,10 +707,10 @@ main:
     assert_102_5_end:
 ;   [104:5] var i = 0
 ;   [104:9] i: i64 @ qword [rsp - 80]
-;   [104:13] i =0
+;   [104:9] i =0
 ;   [104:13] 0
 ;   [104:13] 0
-;   [105:5] i = 0
+;   [104:13] i = 0
     mov qword [rsp - 80], 0
 ;   [105:5] bar(i)
 ;   [58:6] bar(arg) 
@@ -726,10 +726,10 @@ main:
 ;           [59:17] return
             jmp bar_105_5_end
         if_59_5_105_5_end:
-;       [60:9] arg = 0xff
+;       [60:5] arg = 0xff
 ;       [60:11] 0xff
 ;       [60:11] 0xff
-;       [61:1] arg = 0xff
+;       [60:11] arg = 0xff
         mov qword [rsp - 80], 0xff
     bar_105_5_end:
 ;   [106:5] assert(i == 0)
@@ -774,10 +774,10 @@ main:
         if_19_5_106_5_end:
 ;       [106:5] free scratch register 'r15'
     assert_106_5_end:
-;   [108:7] i = 1
+;   [108:5] i = 1
 ;   [108:9] 1
 ;   [108:9] 1
-;   [109:5] i = 1
+;   [108:9] i = 1
     mov qword [rsp - 80], 1
 ;   [109:5] bar(i)
 ;   [58:6] bar(arg) 
@@ -793,10 +793,10 @@ main:
 ;           [59:17] return
             jmp bar_109_5_end
         if_59_5_109_5_end:
-;       [60:9] arg = 0xff
+;       [60:5] arg = 0xff
 ;       [60:11] 0xff
 ;       [60:11] 0xff
-;       [61:1] arg = 0xff
+;       [60:11] arg = 0xff
         mov qword [rsp - 80], 0xff
     bar_109_5_end:
 ;   [110:5] assert(i == 0xff)
@@ -843,14 +843,14 @@ main:
     assert_110_5_end:
 ;   [112:5] var j = 1
 ;   [112:9] j: i64 @ qword [rsp - 88]
-;   [112:13] j =1
+;   [112:9] j =1
 ;   [112:13] 1
 ;   [112:13] 1
-;   [113:5] j = 1
+;   [112:13] j = 1
     mov qword [rsp - 88], 1
 ;   [113:5] var k = baz(j)
 ;   [113:9] k: i64 @ qword [rsp - 96]
-;   [113:13] k =baz(j)
+;   [113:9] k =baz(j)
 ;   [113:13] baz(j)
 ;   [113:13] baz(j)
 ;   [113:13] k = baz(j)
@@ -859,20 +859,20 @@ main:
     baz_113_13:
 ;       [113:13] alias res -> k
 ;       [113:13] alias arg -> j
-;       [70:9] res = arg * 2
+;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
-;       [70:15] res = arg
-;       [70:15] allocate scratch register -> r15
+;       [70:11] res = arg
+;       [70:11] allocate scratch register -> r15
         mov r15, qword [rsp - 88]
         mov qword [rsp - 96], r15
-;       [70:15] free scratch register 'r15'
-;       [71:1] res * 2
-;       [71:1] allocate scratch register -> r15
+;       [70:11] free scratch register 'r15'
+;       [70:17] res * 2
+;       [70:17] allocate scratch register -> r15
         mov r15, qword [rsp - 96]
         imul r15, 2
         mov qword [rsp - 96], r15
-;       [71:1] free scratch register 'r15'
+;       [70:17] free scratch register 'r15'
     baz_113_13_end:
 ;   [114:5] assert(k == 2)
 ;   [114:12] allocate scratch register -> r15
@@ -916,7 +916,7 @@ main:
         if_19_5_114_5_end:
 ;       [114:5] free scratch register 'r15'
     assert_114_5_end:
-;   [116:7] k = baz(1)
+;   [116:5] k = baz(1)
 ;   [116:9] baz(1)
 ;   [116:9] baz(1)
 ;   [116:9] k = baz(1)
@@ -925,17 +925,17 @@ main:
     baz_116_9:
 ;       [116:9] alias res -> k
 ;       [116:9] alias arg -> 1
-;       [70:9] res = arg * 2
+;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
-;       [70:15] res = arg
+;       [70:11] res = arg
         mov qword [rsp - 96], 1
-;       [71:1] res * 2
-;       [71:1] allocate scratch register -> r15
+;       [70:17] res * 2
+;       [70:17] allocate scratch register -> r15
         mov r15, qword [rsp - 96]
         imul r15, 2
         mov qword [rsp - 96], r15
-;       [71:1] free scratch register 'r15'
+;       [70:17] free scratch register 'r15'
     baz_116_9_end:
 ;   [117:5] assert(k == 2)
 ;   [117:12] allocate scratch register -> r15
@@ -981,7 +981,7 @@ main:
     assert_117_5_end:
 ;   [119:5] var p0 : point = {baz(2), 0}
 ;   [119:9] p0: point @ qword [rsp - 112]
-;   [119:22] p0 ={baz(2), 0}
+;   [119:9] p0 ={baz(2), 0}
 ;   [119:22] {baz(2), 0}
 ;   [119:22] {baz(2), 0}
 ;   [119:23] baz(2)
@@ -992,21 +992,21 @@ main:
     baz_119_23:
 ;       [119:23] alias res -> p0.x
 ;       [119:23] alias arg -> 2
-;       [70:9] res = arg * 2
+;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
-;       [70:15] res = arg
+;       [70:11] res = arg
         mov qword [rsp - 112], 2
-;       [71:1] res * 2
-;       [71:1] allocate scratch register -> r15
+;       [70:17] res * 2
+;       [70:17] allocate scratch register -> r15
         mov r15, qword [rsp - 112]
         imul r15, 2
         mov qword [rsp - 112], r15
-;       [71:1] free scratch register 'r15'
+;       [70:17] free scratch register 'r15'
     baz_119_23_end:
 ;   [119:31] 0
 ;   [119:31] 0
-;   [119:32] p0.y = 0
+;   [119:31] p0.y = 0
     mov qword [rsp - 104], 0
 ;   [120:5] assert(p0.x == 4)
 ;   [120:12] allocate scratch register -> r15
@@ -1052,47 +1052,47 @@ main:
     assert_120_5_end:
 ;   [122:5] var x = 1
 ;   [122:9] x: i64 @ qword [rsp - 120]
-;   [122:13] x =1
+;   [122:9] x =1
 ;   [122:13] 1
 ;   [122:13] 1
-;   [123:5] x = 1
+;   [122:13] x = 1
     mov qword [rsp - 120], 1
 ;   [123:5] var y = 2
 ;   [123:9] y: i64 @ qword [rsp - 128]
-;   [123:13] y =2
+;   [123:9] y =2
 ;   [123:13] 2
 ;   [123:13] 2
-;   [125:5] y = 2
+;   [123:13] y = 2
     mov qword [rsp - 128], 2
 ;   [125:5] var o1 : object = {{x * 10, y}, 0xff0000}
 ;   [125:9] o1: object @ qword [rsp - 148]
-;   [125:23] o1 ={{x * 10, y}, 0xff0000}
+;   [125:9] o1 ={{x * 10, y}, 0xff0000}
 ;   [125:23] {{x * 10, y}, 0xff0000}
 ;   [125:23] {{x * 10, y}, 0xff0000}
 ;       [125:24] {x * 10, y}
 ;       [125:25] x * 10
 ;       [125:25] x * 10
-;       [125:27] o1.pos.x = x
-;       [125:27] allocate scratch register -> r15
+;       [125:25] o1.pos.x = x
+;       [125:25] allocate scratch register -> r15
         mov r15, qword [rsp - 120]
         mov qword [rsp - 148], r15
-;       [125:27] free scratch register 'r15'
-;       [125:31] o1.pos.x * 10
-;       [125:31] allocate scratch register -> r15
+;       [125:25] free scratch register 'r15'
+;       [125:29] o1.pos.x * 10
+;       [125:29] allocate scratch register -> r15
         mov r15, qword [rsp - 148]
         imul r15, 10
         mov qword [rsp - 148], r15
-;       [125:31] free scratch register 'r15'
+;       [125:29] free scratch register 'r15'
 ;       [125:33] y
 ;       [125:33] y
-;       [125:34] o1.pos.y = y
-;       [125:34] allocate scratch register -> r15
+;       [125:33] o1.pos.y = y
+;       [125:33] allocate scratch register -> r15
         mov r15, qword [rsp - 128]
         mov qword [rsp - 140], r15
-;       [125:34] free scratch register 'r15'
+;       [125:33] free scratch register 'r15'
 ;   [125:37] 0xff0000
 ;   [125:37] 0xff0000
-;   [125:45] o1.color = 0xff0000
+;   [125:37] o1.color = 0xff0000
     mov dword [rsp - 132], 0xff0000
 ;   [126:5] assert(o1.pos.x == 10)
 ;   [126:12] allocate scratch register -> r15
@@ -1222,37 +1222,37 @@ main:
     assert_128_5_end:
 ;   [130:5] var p1 : point = {-x, -y}
 ;   [130:9] p1: point @ qword [rsp - 164]
-;   [130:22] p1 ={-x, -y}
+;   [130:9] p1 ={-x, -y}
 ;   [130:22] {-x, -y}
 ;   [130:22] {-x, -y}
 ;   [130:23] -x
 ;   [130:23] -x
-;   [130:25] p1.x = -x
-;   [130:25] allocate scratch register -> r15
+;   [130:24] p1.x = -x
+;   [130:24] allocate scratch register -> r15
     mov r15, qword [rsp - 120]
     mov qword [rsp - 164], r15
-;   [130:25] free scratch register 'r15'
+;   [130:24] free scratch register 'r15'
     neg qword [rsp - 164]
 ;   [130:27] -y
 ;   [130:27] -y
-;   [130:29] p1.y = -y
-;   [130:29] allocate scratch register -> r15
+;   [130:28] p1.y = -y
+;   [130:28] allocate scratch register -> r15
     mov r15, qword [rsp - 128]
     mov qword [rsp - 156], r15
-;   [130:29] free scratch register 'r15'
+;   [130:28] free scratch register 'r15'
     neg qword [rsp - 156]
-;   [131:7] o1.pos = p1
-;   [131:7] allocate named register 'rsi'
-;   [131:7] allocate named register 'rdi'
-;   [131:7] allocate named register 'rcx'
+;   [131:5] o1.pos = p1
+;   [131:5] allocate named register 'rsi'
+;   [131:5] allocate named register 'rdi'
+;   [131:5] allocate named register 'rcx'
     lea rdi, [rsp - 148]
 ;   [131:14] p1
     lea rsi, [rsp - 164]
     mov rcx, 16
     rep movsb
-;   [131:7] free named register 'rcx'
-;   [131:7] free named register 'rdi'
-;   [131:7] free named register 'rsi'
+;   [131:5] free named register 'rcx'
+;   [131:5] free named register 'rdi'
+;   [131:5] free named register 'rsi'
 ;   [132:5] assert(o1.pos.x == -1)
 ;   [132:12] allocate scratch register -> r15
 ;   [132:12] o1.pos.x == -1
@@ -1339,18 +1339,18 @@ main:
     assert_133_5_end:
 ;   [135:5] var o2 : object = o1
 ;   [135:9] o2: object @ qword [rsp - 184]
-;   [135:23] o2 =o1
-;   [135:23] allocate named register 'rsi'
-;   [135:23] allocate named register 'rdi'
-;   [135:23] allocate named register 'rcx'
+;   [135:9] o2 =o1
+;   [135:9] allocate named register 'rsi'
+;   [135:9] allocate named register 'rdi'
+;   [135:9] allocate named register 'rcx'
     lea rdi, [rsp - 184]
 ;   [135:23] o1
     lea rsi, [rsp - 148]
     mov rcx, 20
     rep movsb
-;   [135:23] free named register 'rcx'
-;   [135:23] free named register 'rdi'
-;   [135:23] free named register 'rsi'
+;   [135:9] free named register 'rcx'
+;   [135:9] free named register 'rdi'
+;   [135:9] free named register 'rsi'
 ;   [136:5] assert(o2.pos.x == -1)
 ;   [136:12] allocate scratch register -> r15
 ;   [136:12] o2.pos.x == -1
@@ -1491,10 +1491,10 @@ main:
 ;   [140:5] free named register 'rcx'
 ;   [140:5] free named register 'rdi'
 ;   [141:5] # index 0 in an array can be accessed without array index
-;   [142:7] o3.pos.y = 73
+;   [142:5] o3.pos.y = 73
 ;   [142:16] 73
 ;   [142:16] 73
-;   [143:5] o3.pos.y = 73
+;   [142:16] o3.pos.y = 73
     mov qword [rsp - 196], 73
 ;   [143:5] assert(o3[0].pos.y == 73)
 ;   [143:12] allocate scratch register -> r15
@@ -1504,23 +1504,23 @@ main:
     cmp_143_12:
 ;   [143:12] allocate scratch register -> r14
 ;       [143:12] o3[0].pos.y
-;       [143:14] r14 = o3[0].pos.y
-;       [143:14] o3[0].pos.y
-;       [143:14] allocate scratch register -> r13
+;       [143:12] r14 = o3[0].pos.y
+;       [143:12] o3[0].pos.y
+;       [143:12] allocate scratch register -> r13
         lea r13, [rsp - 204]
-;       [143:14] allocate scratch register -> r12
+;       [143:12] allocate scratch register -> r12
 ;       [143:15] 0
 ;       [143:15] 0
-;       [143:16] r12 = 0
+;       [143:15] r12 = 0
         mov r12, 0
         cmp r12, 1
         jge panic_bounds
         imul r12, 20
         add r13, r12
-;       [143:14] free scratch register 'r12'
+;       [143:12] free scratch register 'r12'
         add r13, 8
         mov r14, qword [r13]
-;       [143:14] free scratch register 'r13'
+;       [143:12] free scratch register 'r13'
     cmp r14, 73
 ;   [143:12] free scratch register 'r14'
     jne bool_false_143_12
@@ -1584,32 +1584,32 @@ main:
 ;   [147:5] free named register 'rax'
 ;   [147:5] free named register 'rcx'
 ;   [147:5] free named register 'rdi'
-;   [148:11] worlds[1].locations[1] = 0xffee
-;   [148:11] allocate scratch register -> r15
+;   [148:5] worlds[1].locations[1] = 0xffee
+;   [148:5] allocate scratch register -> r15
     lea r15, [rsp - 796]
-;   [148:11] allocate scratch register -> r14
+;   [148:5] allocate scratch register -> r14
 ;   [148:12] 1
 ;   [148:12] 1
-;   [148:13] r14 = 1
+;   [148:12] r14 = 1
     mov r14, 1
     cmp r14, 8
     jge panic_bounds
     shl r14, 6
     add r15, r14
-;   [148:11] free scratch register 'r14'
-;   [148:11] allocate scratch register -> r14
+;   [148:5] free scratch register 'r14'
+;   [148:5] allocate scratch register -> r14
 ;   [148:25] 1
 ;   [148:25] 1
-;   [148:26] r14 = 1
+;   [148:25] r14 = 1
     mov r14, 1
     cmp r14, 8
     jge panic_bounds
 ;   [148:30] 0xffee
 ;   [148:30] 0xffee
-;   [149:5] qword [r15 + r14 * 8 + 0] = 0xffee
+;   [148:30] qword [r15 + r14 * 8 + 0] = 0xffee
     mov qword [r15 + r14 * 8 + 0], 0xffee
-;   [148:11] free scratch register 'r14'
-;   [148:11] free scratch register 'r15'
+;   [148:5] free scratch register 'r14'
+;   [148:5] free scratch register 'r15'
 ;   [149:5] assert(worlds[1].locations[1] == 0xffee)
 ;   [149:12] allocate scratch register -> r15
 ;   [149:12] worlds[1].locations[1] == 0xffee
@@ -1618,30 +1618,30 @@ main:
     cmp_149_12:
 ;   [149:12] allocate scratch register -> r14
 ;       [149:12] worlds[1].locations[1]
-;       [149:18] r14 = worlds[1].locations[1]
-;       [149:18] worlds[1].locations[1]
-;       [149:18] allocate scratch register -> r13
+;       [149:12] r14 = worlds[1].locations[1]
+;       [149:12] worlds[1].locations[1]
+;       [149:12] allocate scratch register -> r13
         lea r13, [rsp - 796]
-;       [149:18] allocate scratch register -> r12
+;       [149:12] allocate scratch register -> r12
 ;       [149:19] 1
 ;       [149:19] 1
-;       [149:20] r12 = 1
+;       [149:19] r12 = 1
         mov r12, 1
         cmp r12, 8
         jge panic_bounds
         shl r12, 6
         add r13, r12
-;       [149:18] free scratch register 'r12'
-;       [149:18] allocate scratch register -> r12
+;       [149:12] free scratch register 'r12'
+;       [149:12] allocate scratch register -> r12
 ;       [149:32] 1
 ;       [149:32] 1
-;       [149:33] r12 = 1
+;       [149:32] r12 = 1
         mov r12, 1
         cmp r12, 8
         jge panic_bounds
         mov r14, qword [r13 + r12 * 8 + 0]
-;       [149:18] free scratch register 'r12'
-;       [149:18] free scratch register 'r13'
+;       [149:12] free scratch register 'r12'
+;       [149:12] free scratch register 'r13'
     cmp r14, 0xffee
 ;   [149:12] free scratch register 'r14'
     jne bool_false_149_12
@@ -1693,7 +1693,7 @@ main:
 ;   [152:9] allocate scratch register -> r14
 ;   [152:16] 1
 ;   [152:16] 1
-;   [152:17] r14 = 1
+;   [152:16] r14 = 1
     mov r14, 1
     cmp r14, 8
     jge panic_bounds
@@ -1709,7 +1709,7 @@ main:
 ;   [153:9] allocate scratch register -> r14
 ;   [153:16] 0
 ;   [153:16] 0
-;   [153:17] r14 = 0
+;   [153:16] r14 = 0
     mov r14, 0
     cmp r14, 8
     jge panic_bounds
@@ -1733,30 +1733,30 @@ main:
     cmp_156_12:
 ;   [156:12] allocate scratch register -> r14
 ;       [156:12] worlds[0].locations[1]
-;       [156:18] r14 = worlds[0].locations[1]
-;       [156:18] worlds[0].locations[1]
-;       [156:18] allocate scratch register -> r13
+;       [156:12] r14 = worlds[0].locations[1]
+;       [156:12] worlds[0].locations[1]
+;       [156:12] allocate scratch register -> r13
         lea r13, [rsp - 796]
-;       [156:18] allocate scratch register -> r12
+;       [156:12] allocate scratch register -> r12
 ;       [156:19] 0
 ;       [156:19] 0
-;       [156:20] r12 = 0
+;       [156:19] r12 = 0
         mov r12, 0
         cmp r12, 8
         jge panic_bounds
         shl r12, 6
         add r13, r12
-;       [156:18] free scratch register 'r12'
-;       [156:18] allocate scratch register -> r12
+;       [156:12] free scratch register 'r12'
+;       [156:12] allocate scratch register -> r12
 ;       [156:32] 1
 ;       [156:32] 1
-;       [156:33] r12 = 1
+;       [156:32] r12 = 1
         mov r12, 1
         cmp r12, 8
         jge panic_bounds
         mov r14, qword [r13 + r12 * 8 + 0]
-;       [156:18] free scratch register 'r12'
-;       [156:18] free scratch register 'r13'
+;       [156:12] free scratch register 'r12'
+;       [156:12] free scratch register 'r13'
     cmp r14, 0xffee
 ;   [156:12] free scratch register 'r14'
     jne bool_false_156_12
@@ -1846,7 +1846,7 @@ main:
         print_160_9_end:
 ;       [162:9] var len = read(array_size_of(input_buffer), address_of(input_buffer)) - 1
 ;       [162:13] len: i64 @ qword [rsp - 804]
-;       [162:19] len =read(array_size_of(input_buffer), address_of(input_buffer)) - 1
+;       [162:13] len =read(array_size_of(input_buffer), address_of(input_buffer)) - 1
 ;       [162:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
 ;       [162:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
 ;       [162:19] len = read(array_size_of(input_buffer), address_of(input_buffer))
@@ -1886,7 +1886,7 @@ main:
 ;           [162:19] free named register 'rsi'
 ;           [162:19] free named register 'rdx'
         read_162_19_end:
-;       [163:9] len - 1
+;       [162:81] len - 1
         sub qword [rsp - 804], 1
 ;       [163:9] # note: `array_size_of` and `address_of` are built-in functions
 ;       [164:9] # -1 to not include the trailing '\n'
