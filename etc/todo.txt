@@ -21,7 +21,7 @@
 [o] review before next step
     [x] function signatures
     [ ] code
-[o] review where compiler_exceptions happen and try to make good source
+[x] review where compiler_exceptions happen and try to make good source
     location reports
 [o] check that return value is assigned in functions
     => should check all execution paths to find out if the variable is always
