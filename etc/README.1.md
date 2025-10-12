@@ -29,6 +29,8 @@ x86_64 assembly on Linux.
 code run `./make.sh`
 * after that use `./run-baz.sh myprogram.baz` or `./run-baz.sh` to compile and
 run `prog.baz`
+  * optional parameters: stack size, bounds check, with line number
+  e.g: `./run-baz.sh myprogram.baz 262144 checked line`
 * to run the tests `qa/coverage/run-tests.sh` and see coverage report in `qa/coverage/report/`
 
 ## Source
