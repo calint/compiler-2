@@ -9,10 +9,6 @@
 [o] review before next step
     [x] function signatures
     [ ] code
-[o] check that return value is assigned in functions
-    => should check all execution paths to find out if the variable is always
-       assigned now it may result in undefined behavior because the compiler
-       checks that the return value is set in any branch of execution
 [ ] lut: change to map
 [ ] make unary_ops trivially copyable by using a fixed array instead of vector
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
@@ -60,8 +56,6 @@
 [ ] implement strings
 [ ] support for float and double?
 [ ] rename compiler_exception
-[ ] consider mapping execution paths in a tree to find out if a variable is
-    always assigned
 [ ] review "//?" comments
 [ ] review "todo." comments
 [ ] specify whether ok for an op to truncate value instead of error
@@ -70,6 +64,14 @@
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[-] consider mapping execution paths in a tree to find out if a variable is
+    always assigned
+    => duplicate, only valid for returns
+[-] check that return value is assigned in functions
+    => should check all execution paths to find out if the variable is always
+       assigned now it may result in undefined behavior because the compiler
+       checks that the return value is set in any branch of execution
+       => duplicate
 [x] a more detailed compilation option: bounds check with line numbers
     cmp r14, 8
     mov rsi, 42           ; Line number for first check
