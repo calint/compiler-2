@@ -85,9 +85,9 @@ class frame final {
         aliases_.put(std::move(from), std::move(to));
     }
 
-    auto add_var(token declared_at_tk, const std::string& name,
-                 const type& type_ref, bool is_array, size_t array_size,
-                 int stack_idx) -> void {
+    auto add_var(const token declared_at_tk, const std::string& name,
+                 const type& type_ref, const bool is_array,
+                 const size_t array_size, const int stack_idx) -> void {
 
         if (stack_idx < 0) {
             // variable, increase allocated stack size
@@ -124,17 +124,17 @@ class frame final {
         return func_rets_;
     }
 
-    [[nodiscard]] auto get_var_const_ref(std::string_view name) const
+    [[nodiscard]] auto get_var_const_ref(const std::string_view name) const
         -> const var_info& {
 
         return vars_.get_const_ref(name);
     }
 
-    [[nodiscard]] auto has_alias(std::string_view name) const -> bool {
+    [[nodiscard]] auto has_alias(const std::string_view name) const -> bool {
         return aliases_.has(name);
     }
 
-    [[nodiscard]] auto has_var(std::string_view name) const -> bool {
+    [[nodiscard]] auto has_var(const std::string_view name) const -> bool {
         return vars_.has(name);
     }
 
@@ -150,7 +150,7 @@ class frame final {
         return type_ == frame_type::LOOP;
     }
 
-    [[nodiscard]] auto is_name(std::string_view name) const -> bool {
+    [[nodiscard]] auto is_name(const std::string_view name) const -> bool {
         return name_ == name;
     }
 
