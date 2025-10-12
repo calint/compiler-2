@@ -122,9 +122,8 @@ auto main(const int argc, const char* argv[]) -> int {
         prg.source_to(reproduced_source);
         reproduced_source.close();
         if (src != read_file_to_string("diff.baz")) {
-            std::println(stderr, "generated source differs. diff {} diff.baz",
-                         src_file_name);
-            return 1;
+            throw panic_exception{std::format(
+                "generated source differs. diff {} diff.baz", src_file_name)};
         }
 
         // with jump optimizations
@@ -141,13 +140,13 @@ auto main(const int argc, const char* argv[]) -> int {
         std::cerr << "\n"
                   << src_file_name << ":" << line << ":" << col << ": " << e.msg
                   << '\n';
-        return 2;
+        return 1;
     } catch (const panic_exception& e) {
         std::cerr << "\npanic: " << e.what() << '\n';
-        return 3;
+        return 2;
     } catch (...) {
         std::cerr << "\nunknown exception" << '\n';
-        return 4;
+        return 3;
     }
 }
 
