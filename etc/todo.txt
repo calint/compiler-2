@@ -1,3 +1,15 @@
+[ ] a more detailed compilation option: bounds check with line numbers
+    cmp r14, 8
+    mov rsi, 42           ; Line number for first check
+    cmovge rax, rsi       ; Move line number to rax if r14 >= 8
+    jge panic_bounds
+
+    ; For the second check
+    cmp rcx, 8
+    mov rsi, 87           ; Line number for second check
+    cmovg rax, rsi        ; Move line number to rax if rcx > 8
+    jg panic_bounds
+    
 [ ] var x = foo() becomes UB if foo does not set the return value
     analyze code path:
       if: follow and find if set
