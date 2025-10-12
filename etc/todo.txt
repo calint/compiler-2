@@ -1,15 +1,3 @@
-[x] a more detailed compilation option: bounds check with line numbers
-    cmp r14, 8
-    mov rsi, 42           ; Line number for first check
-    cmovge rax, rsi       ; Move line number to rax if r14 >= 8
-    jge panic_bounds
-
-    ; For the second check
-    cmp rcx, 8
-    mov rsi, 87           ; Line number for second check
-    cmovg rax, rsi        ; Move line number to rax if rcx > 8
-    jg panic_bounds
-    => ./baz prog.baz 65536 checked line
 [ ] var x = foo() becomes UB if foo does not set the return value
     analyze code path:
       if: follow and find if set
@@ -21,8 +9,6 @@
 [o] review before next step
     [x] function signatures
     [ ] code
-[x] review where compiler_exceptions happen and try to make good source
-    location reports
 [o] check that return value is assigned in functions
     => should check all execution paths to find out if the variable is always
        assigned now it may result in undefined behavior because the compiler
@@ -84,6 +70,20 @@
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] a more detailed compilation option: bounds check with line numbers
+    cmp r14, 8
+    mov rsi, 42           ; Line number for first check
+    cmovge rax, rsi       ; Move line number to rax if r14 >= 8
+    jge panic_bounds
+
+    ; For the second check
+    cmp rcx, 8
+    mov rsi, 87           ; Line number for second check
+    cmovg rax, rsi        ; Move line number to rax if rcx > 8
+    jg panic_bounds
+    => ./baz prog.baz 65536 checked line
+[x] review where compiler_exceptions happen and try to make good source
+    location reports
 [x] review that source locations are accurate in gen.s comments
     [x] stmt_address_of.hpp
     [x] stmt_array_copy.hpp: more comments about src and dst
