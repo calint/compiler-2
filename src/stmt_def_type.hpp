@@ -72,7 +72,7 @@ class stmt_def_type final : public statement {
     }
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
-                 [[maybe_unused]] size_t indent,
-                 [[maybe_unused]] std::string_view dst) const -> void override {
-    }
+                 [[maybe_unused]] const size_t indent,
+                 [[maybe_unused]] const std::string_view dst) const
+        -> void override {}
 };

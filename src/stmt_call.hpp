@@ -81,8 +81,8 @@ class stmt_call : public expression {
         ws_after_.source_to(os);
     }
 
-    auto compile(toc& tc, std::ostream& os, size_t indent,
-                 std::string_view dst) const -> void override {
+    auto compile(toc& tc, std::ostream& os, const size_t indent,
+                 const std::string_view dst) const -> void override {
 
         tc.comment_source(*this, os, indent);
 
@@ -265,7 +265,7 @@ class stmt_call : public expression {
         tc.exit_func(func.name());
     }
 
-    [[nodiscard]] auto argument(size_t ix) const -> const statement& {
+    [[nodiscard]] auto argument(const size_t ix) const -> const statement& {
         return args_.at(ix);
     }
 

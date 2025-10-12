@@ -32,15 +32,15 @@ class stmt_if_branch final : public statement {
 
     [[noreturn]] void
     compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
-            [[maybe_unused]] size_t indent,
-            [[maybe_unused]] std::string_view dst) const override {
+            [[maybe_unused]] const size_t indent,
+            [[maybe_unused]] const std::string_view dst) const override {
 
         throw panic_exception("unexpected code path");
     }
 
-    auto compile(toc& tc, std::ostream& os, size_t indent,
-                 std::string_view jmp_to_if_false_label,
-                 std::string_view jmp_to_after_code_label) const
+    auto compile(toc& tc, std::ostream& os, const size_t indent,
+                 const std::string_view jmp_to_if_false_label,
+                 const std::string_view jmp_to_after_code_label) const
         -> std::optional<bool> {
 
         const std::string if_bgn_lbl{if_bgn_label(tc)};

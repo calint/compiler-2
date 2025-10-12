@@ -132,9 +132,9 @@ class stmt_def_func final : public statement {
     }
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
-                 [[maybe_unused]] size_t indent,
-                 [[maybe_unused]] std::string_view dst) const -> void override {
-    }
+                 [[maybe_unused]] const size_t indent,
+                 [[maybe_unused]] const std::string_view dst) const
+        -> void override {}
 
     [[nodiscard]] auto returns() const
         -> const std::optional<func_return_info>& {
@@ -160,7 +160,7 @@ class stmt_def_func final : public statement {
 
   private:
     auto
-    init_variables(toc& tc, std::ostream& os, size_t indent,
+    init_variables(toc& tc, std::ostream& os, const size_t indent,
                    std::vector<std::string>& allocated_named_registers) const
         -> void {
 
@@ -198,7 +198,7 @@ class stmt_def_func final : public statement {
     }
 
     static auto free_allocated_named_registers(
-        toc& tc, std::ostream& os, size_t indent, const token& src_loc_tk,
+        toc& tc, std::ostream& os, const size_t indent, const token& src_loc_tk,
         const std::vector<std::string>& registers) -> void {
 
         // free allocated named register in reverse order

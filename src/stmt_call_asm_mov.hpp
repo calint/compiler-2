@@ -19,8 +19,9 @@ class stmt_call_asm_mov final : public stmt_call {
     auto operator=(const stmt_call_asm_mov&) -> stmt_call_asm_mov& = default;
     auto operator=(stmt_call_asm_mov&&) -> stmt_call_asm_mov& = default;
 
-    auto compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] std::string_view dst) const -> void override {
+    auto compile(toc& tc, std::ostream& os, const size_t indent,
+                 [[maybe_unused]] const std::string_view dst) const
+        -> void override {
 
         tc.comment_source(*this, os, indent);
 

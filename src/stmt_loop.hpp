@@ -24,8 +24,9 @@ class stmt_loop final : public statement {
     auto operator=(const stmt_loop&) -> stmt_loop& = default;
     auto operator=(stmt_loop&&) -> stmt_loop& = default;
 
-    auto compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] std::string_view dst) const -> void override {
+    auto compile(toc& tc, std::ostream& os, const size_t indent,
+                 [[maybe_unused]] const std::string_view dst) const
+        -> void override {
 
         tc.comment_token(tok(), os, indent);
 

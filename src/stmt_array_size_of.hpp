@@ -49,8 +49,9 @@ class stmt_array_size_of final : public expression {
         ws1_.source_to(os);
     }
 
-    auto compile(toc& tc, std::ostream& os, size_t indent,
-                 [[maybe_unused]] std::string_view dst) const -> void override {
+    auto compile(toc& tc, std::ostream& os, const size_t indent,
+                 [[maybe_unused]] const std::string_view dst) const
+        -> void override {
 
         tc.comment_source(*this, os, indent);
 

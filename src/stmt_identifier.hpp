@@ -123,8 +123,8 @@ class stmt_identifier : public statement {
         ws2_.source_to(os);
     }
 
-    auto compile(toc& tc, std::ostream& os, size_t indent,
-                 std::string_view dst) const -> void override {
+    auto compile(toc& tc, std::ostream& os, const size_t indent,
+                 const std::string_view dst) const -> void override {
 
         tc.comment_source(*this, os, indent);
 
@@ -166,10 +166,10 @@ class stmt_identifier : public statement {
 
     static auto
     compile_effective_address(const token& src_loc_tk, toc& tc,
-                              std::ostream& os, size_t indent,
+                              std::ostream& os, const size_t indent,
                               const std::vector<identifier_elem>& elems,
                               std::vector<std::string>& allocated_registers,
-                              std::string_view reg_size) -> std::string {
+                              const std::string_view reg_size) -> std::string {
 
         std::string path{elems.front().name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path, false)};
@@ -301,7 +301,7 @@ class stmt_identifier : public statement {
         return std::string{reg_offset};
     }
 
-    static auto get_shift_amount(uint64_t value) -> std::optional<int> {
+    static auto get_shift_amount(const uint64_t value) -> std::optional<int> {
         if (value == 0 or not std::has_single_bit(value)) {
             return std::nullopt;
         }
@@ -311,10 +311,13 @@ class stmt_identifier : public statement {
   private:
     // helper function to emit bounds checking code
     static auto emit_bounds_check(const token& tk, toc& tc, std::ostream& os,
-                                  size_t indent, std::string_view reg_to_check,
-                                  size_t array_size,
-                                  std::string_view comparison,
-                                  std::string_view reg_size = "") -> void {
+                                  const size_t indent,
+                                  const std::string_view reg_to_check,
+                                  const size_t array_size,
+                                  const std::string_view comparison,
+                                  const std::string_view reg_size = "")
+        -> void {
+
         if (not tc.is_bounds_check()) {
             return;
         }
