@@ -18,6 +18,7 @@
 [ ] optimize rep stosX and repe cmpsX to q, d, w if possible
     => maybe some heuristics about when to use "rep stosX" 
        => start with stosq, then mov dword, word and byte
+       => works when size is known at compile-time
 [ ] etc/run-test with peak memory usage and inspect why some test cases use so
     much more memory than other
 [ ] toc::get_stack_size -> keep track of it with a member variable
