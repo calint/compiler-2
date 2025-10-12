@@ -40,7 +40,7 @@ class type final {
     bool is_built_in_{};
 
   public:
-    type(std::string_view name, size_t size, bool is_built_in)
+    type(const std::string_view name, const size_t size, const bool is_built_in)
         : name_{name}, size_{size}, is_built_in_{is_built_in} {}
 
     ~type() = default;
@@ -51,9 +51,9 @@ class type final {
     auto operator=(const type&) -> type& = default;
     auto operator=(type&&) -> type& = default;
 
-    auto add_field([[maybe_unused]] const token& tk, std::string_view name,
-                   const type& tp, const bool is_array, const size_t array_size)
-        -> void {
+    auto add_field([[maybe_unused]] const token& tk,
+                   const std::string_view name, const type& tp,
+                   const bool is_array, const size_t array_size) -> void {
 
         fields_.emplace_back(
             type_field{.name = name,
@@ -66,7 +66,7 @@ class type final {
         size_ += tp.size_ * (is_array ? array_size : 1);
     }
 
-    [[nodiscard]] auto field(const token& tk, std::string_view name) const
+    [[nodiscard]] auto field(const token& tk, const std::string_view name) const
         -> const type_field& {
 
         for (const type_field& fld : fields_) {
@@ -123,7 +123,7 @@ class type final {
 
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
 
-    auto set_name(std::string_view nm) -> void { name_ = nm; }
+    auto set_name(const std::string_view nm) -> void { name_ = nm; }
 
     [[nodiscard]] auto is_built_in() const -> bool { return is_built_in_; }
 

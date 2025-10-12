@@ -70,7 +70,7 @@ class frame final {
     frame_type type_{frame_type::FUNC}; // frame type
 
   public:
-    frame(std::string_view name, frame_type frm_type,
+    frame(const std::string_view name, const frame_type frm_type,
           const std::optional<func_return_info>& func_rets = {},
           std::string call_path = "", std::string func_ret_label = "") noexcept
         : name_{name}, call_path_{std::move(call_path)},

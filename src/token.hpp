@@ -15,9 +15,10 @@ class token final {
     bool is_str_{};             // true if 'stmt_def_field' was a string
 
   public:
-    token(std::string_view ws_left, size_t start_ix, std::string_view name,
-          size_t end_ix, std::string_view ws_right, size_t at_line,
-          bool is_str = false)
+    token(const std::string_view ws_left, const size_t start_ix,
+          const std::string_view name, const size_t end_ix,
+          const std::string_view ws_right, const size_t at_line,
+          const bool is_str = false)
         : ws_left_{ws_left}, start_ix_{start_ix}, text_{name}, end_ix_{end_ix},
           ws_right_{ws_right}, at_line_(at_line), is_str_{is_str} {}
 
