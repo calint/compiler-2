@@ -83,12 +83,14 @@ class stmt_arrays_equal final : public expression {
         std::vector<std::string> allocated_scratch_registers;
 
         // size to 'rcx'
+        tc.comment_source(count_, os, indent);
         count_.compile(tc, os, indent, "rcx");
 
         const ident_info from_info{tc.make_ident_info(from_, false)};
         const ident_info to_info{tc.make_ident_info(to_, false)};
 
         // from operand to rsi
+        tc.comment_source(from_, os, indent);
         const std::string from_operand{
             stmt_identifier::compile_effective_address(
                 from_.first_token(), tc, os, indent, from_.elems(),
@@ -104,6 +106,7 @@ class stmt_arrays_equal final : public expression {
 
         // to operand to 'rdi'
         allocated_scratch_registers.clear();
+        tc.comment_source(to_, os, indent);
         const std::string to_operand{stmt_identifier::compile_effective_address(
             to_.first_token(), tc, os, indent, to_.elems(),
             allocated_scratch_registers, "rcx")};

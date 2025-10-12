@@ -221,8 +221,10 @@ main:
 ;   [84:5] allocate named register 'rcx'
 ;   [84:29] 2
 ;   [84:29] 2
+;   [84:29] 2
 ;   [84:29] rcx = 2
     mov rcx, 2
+;   [84:16] arr[2]
 ;   [84:16] allocate scratch register -> r15
 ;   [84:20] 2
 ;   [84:20] 2
@@ -236,6 +238,7 @@ main:
 ;   [84:20] free scratch register 'r14'
     lea rsi, [rsp + r15 * 4 - 16]
 ;   [84:5] free scratch register 'r15'
+;   [84:24] arr
     cmp rcx, 4
     jg panic_bounds
     lea rdi, [rsp - 16]
@@ -320,11 +323,14 @@ main:
 ;   [89:5] allocate named register 'rcx'
 ;   [89:27] 4
 ;   [89:27] 4
+;   [89:27] 4
 ;   [89:27] rcx = 4
     mov rcx, 4
+;   [89:16] arr
     cmp rcx, 4
     jg panic_bounds
     lea rsi, [rsp - 16]
+;   [89:21] arr1
     cmp rcx, 8
     jg panic_bounds
     lea rdi, [rsp - 56]
@@ -348,11 +354,14 @@ main:
 ;       [90:12] allocate named register 'rcx'
 ;       [90:36] 4
 ;       [90:36] 4
+;       [90:36] 4
 ;       [90:36] rcx = 4
         mov rcx, 4
+;       [90:25] arr
         cmp rcx, 4
         jg panic_bounds
         lea rsi, [rsp - 16]
+;       [90:30] arr1
         cmp rcx, 8
         jg panic_bounds
         lea rdi, [rsp - 56]
@@ -432,11 +441,14 @@ main:
 ;       [93:16] allocate named register 'rcx'
 ;       [93:40] 4
 ;       [93:40] 4
+;       [93:40] 4
 ;       [93:40] rcx = 4
         mov rcx, 4
+;       [93:29] arr
         cmp rcx, 4
         jg panic_bounds
         lea rsi, [rsp - 16]
+;       [93:34] arr1
         cmp rcx, 8
         jg panic_bounds
         lea rdi, [rsp - 56]
@@ -1684,10 +1696,12 @@ main:
 ;   [151:5] allocate named register 'rdi'
 ;   [151:5] allocate named register 'rcx'
 ;   [153:9] array_size_of(worlds[1].locations)
+;   [153:9] array_size_of(worlds[1].locations)
 ;   [154:9] array_size_of(worlds[1].locations)
 ;   [154:9] rcx = array_size_of(worlds[1].locations)
 ;   [154:9] array_size_of(worlds[1].locations)
     mov rcx, 8
+;   [152:9] worlds[1].locations
 ;   [152:9] allocate scratch register -> r15
     lea r15, [rsp - 796]
 ;   [152:9] allocate scratch register -> r14
@@ -1704,6 +1718,7 @@ main:
     jg panic_bounds
     lea rsi, [r15]
 ;   [151:5] free scratch register 'r15'
+;   [153:9] worlds[0].locations
 ;   [153:9] allocate scratch register -> r15
     lea r15, [rsp - 796]
 ;   [153:9] allocate scratch register -> r14

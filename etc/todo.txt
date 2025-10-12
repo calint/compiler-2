@@ -1,33 +1,33 @@
 [o] review that source locations are accurate in gen.s comments
     [x] stmt_address_of.hpp
-    [ ] stmt_array_copy.hpp
-        stmt_arrays_equal.hpp
-        stmt_array_size_of.hpp
+    [x] stmt_array_copy.hpp: more comments about src and dst
+    [x] stmt_arrays_equal.hpp: more comments about src and dst
+    [x] stmt_array_size_of.hpp
     [x] stmt_assign_var.hpp
-        stmt_block.hpp
-        stmt_break.hpp
-        stmt_call_asm_mov.hpp
-        stmt_call_asm_syscall.hpp
-        stmt_call.hpp
-        stmt_comment.hpp
-        stmt_continue.hpp
-        stmt_def_field.hpp
-        stmt_def_func.hpp
-        stmt_def_func_param.hpp
-        stmt_def_type_field.hpp
-        stmt_def_type.hpp
-        stmt_def_var.hpp
+    [x] stmt_block.hpp
+    [x] stmt_break.hpp
+    [x] stmt_call_asm_mov.hpp
+    [x] stmt_call_asm_syscall.hpp
+    [x] stmt_call.hpp
+    [x] stmt_comment.hpp
+    [x] stmt_continue.hpp
+    [x] stmt_def_field.hpp
+    [x] stmt_def_func.hpp: no comments
+    [x] stmt_def_func_param.hpp: no comments
+    [x] stmt_def_type_field.hpp: no comments
+    [x] stmt_def_type.hpp: no comments
+    [x] stmt_def_var.hpp
     [x] stmt_identifier.hpp
-        stmt_if_branch.hpp
-        stmt_if.hpp
-        stmt_loop.hpp
-        stmt_return.hpp
-        stmt_size_of.hpp
-        expr_any.hpp
-        expr_bool_op.hpp
-        expr_bool_ops_list.hpp
-        expr_ops_list.hpp
-        expr_type_value.hpp
+    [x] stmt_if_branch.hpp
+    [x] stmt_if.hpp
+    [x] stmt_loop.hpp
+    [x] stmt_return.hpp
+    [x] stmt_size_of.hpp
+    [x] expr_any.hpp
+    [x] expr_bool_op.hpp
+    [x] expr_bool_ops_list.hpp
+    [x] expr_ops_list.hpp
+    [x] expr_type_value.hpp
 [ ] var x = foo() becomes UB if foo does not set the return value
     analyze code path:
       if: follow and find if set

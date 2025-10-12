@@ -79,9 +79,11 @@ class stmt_array_copy final : public statement {
         std::vector<std::string> allocated_scratch_registers;
 
         // size to 'rcx'
+        tc.comment_source(count_, os, indent);
         count_.compile(tc, os, indent, "rcx");
 
         // from operand to rsi
+        tc.comment_source(from_, os, indent);
         const std::string from_operand{
             stmt_identifier::compile_effective_address(
                 from_.first_token(), tc, os, indent, from_.elems(),
@@ -97,6 +99,7 @@ class stmt_array_copy final : public statement {
 
         // to operand to 'rdi'
         allocated_scratch_registers.clear();
+        tc.comment_source(to_, os, indent);
         const std::string to_operand{stmt_identifier::compile_effective_address(
             to_.first_token(), tc, os, indent, to_.elems(),
             allocated_scratch_registers, "rcx")};
