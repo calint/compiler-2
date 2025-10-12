@@ -242,17 +242,17 @@ true equ 1
 false equ 0
 section .data
 hello: db 'hello world from baz', 10,''
-hello.len equ $-hello
+hello.len equ $ - hello
 prompt1: db 'enter name:', 10,''
-prompt1.len equ $-prompt1
+prompt1.len equ $ - prompt1
 prompt2: db 'that is not a name.', 10,''
-prompt2.len equ $-prompt2
+prompt2.len equ $ - prompt2
 prompt3: db 'hello '
-prompt3.len equ $-prompt3
+prompt3.len equ $ - prompt3
 dot: db '.'
-dot.len equ $-dot
+dot.len equ $ - dot
 nl: db '', 10,''
-nl.len equ $-nl
+nl.len equ $ - nl
 section .text
 bits 64
 global _start
@@ -1187,9 +1187,9 @@ panic_bounds:
     lea rdi, [num_buffer + 19]
     mov byte [rdi], 10
     dec rdi
+    mov rcx, 10
 .convert_loop:
     xor rdx, rdx
-    mov rcx, 10
     div rcx
     add dl, '0'
     mov [rdi], dl
@@ -1229,22 +1229,22 @@ false equ 0
 section .data
 ;[1:1] field hello = "hello world from baz\n"
 hello: db 'hello world from baz', 10,''
-hello.len equ $-hello
+hello.len equ $ - hello
 ;[2:1] field prompt1 = "enter name:\n"
 prompt1: db 'enter name:', 10,''
-prompt1.len equ $-prompt1
+prompt1.len equ $ - prompt1
 ;[3:1] field prompt2 = "that is not a name.\n"
 prompt2: db 'that is not a name.', 10,''
-prompt2.len equ $-prompt2
+prompt2.len equ $ - prompt2
 ;[4:1] field prompt3 = "hello "
 prompt3: db 'hello '
-prompt3.len equ $-prompt3
+prompt3.len equ $ - prompt3
 ;[5:1] field dot = "."
 dot: db '.'
-dot.len equ $-dot
+dot.len equ $ - dot
 ;[6:1] field nl = "\n"
 nl: db '', 10,''
-nl.len equ $-nl
+nl.len equ $ - nl
 
 section .text
 bits 64
@@ -3463,9 +3463,9 @@ panic_bounds:
     lea rdi, [num_buffer + 19]
     mov byte [rdi], 10
     dec rdi
+    mov rcx, 10
 .convert_loop:
     xor rdx, rdx
-    mov rcx, 10
     div rcx
     add dl, '0'
     mov [rdi], dl

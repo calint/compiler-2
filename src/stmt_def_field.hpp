@@ -61,7 +61,7 @@ class stmt_def_field final : public statement {
             std::println(os, "'");
             toc::indent(os, indent);
             // the length of the string
-            std::println(os, "{}.len equ $-{}", name_tk_.text(),
+            std::println(os, "{}.len equ $ - {}", name_tk_.text(),
                          name_tk_.text());
             return;
         }

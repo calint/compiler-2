@@ -153,9 +153,9 @@ class program final {
                 std::println(os, "    lea rdi, [num_buffer + 19]");
                 std::println(os, "    mov byte [rdi], 10");
                 std::println(os, "    dec rdi");
+                std::println(os, "    mov rcx, 10");
                 std::println(os, ".convert_loop:");
                 std::println(os, "    xor rdx, rdx");
-                std::println(os, "    mov rcx, 10");
                 std::println(os, "    div rcx");
                 std::println(os, "    add dl, '0'");
                 std::println(os, "    mov [rdi], dl");
