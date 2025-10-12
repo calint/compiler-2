@@ -1,3 +1,5 @@
+[x] check that everything that can be const is in function arguments also
+[ ] check that everything that can be const is in constructors
 [ ] var x = foo() becomes UB if foo does not set the return value
     analyze code path:
       if: follow and find if set
