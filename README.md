@@ -301,7 +301,7 @@ main:
     assert_81_5:
         if_19_8_81_5:
         cmp_19_8_81_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_81_5_end
         if_19_8_81_5_code:
             mov rdi, 1
@@ -329,7 +329,7 @@ main:
     assert_82_5:
         if_19_8_82_5:
         cmp_19_8_82_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_82_5_end
         if_19_8_82_5_code:
             mov rdi, 1
@@ -373,7 +373,7 @@ main:
     assert_86_5:
         if_19_8_86_5:
         cmp_19_8_86_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_86_5_end
         if_19_8_86_5_code:
             mov rdi, 1
@@ -420,7 +420,7 @@ main:
         cmps_eq_90_12:
         mov r14, true
         cmps_end_90_12:
-    cmp r14, false
+    test r14, r14
     je bool_false_90_12
     bool_true_90_12:
     mov r15, true
@@ -431,7 +431,7 @@ main:
     assert_90_5:
         if_19_8_90_5:
         cmp_19_8_90_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_90_5_end
         if_19_8_90_5_code:
             mov rdi, 1
@@ -467,7 +467,7 @@ main:
         cmps_eq_93_16:
         mov r14, true
         cmps_end_93_16:
-    cmp r14, false
+    test r14, r14
     jne bool_false_93_12
     bool_true_93_12:
     mov r15, true
@@ -478,7 +478,7 @@ main:
     assert_93_5:
         if_19_8_93_5:
         cmp_19_8_93_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_93_5_end
         if_19_8_93_5_code:
             mov rdi, 1
@@ -524,7 +524,7 @@ main:
     assert_97_5:
         if_19_8_97_5:
         cmp_19_8_97_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_97_5_end
         if_19_8_97_5_code:
             mov rdi, 1
@@ -552,7 +552,7 @@ main:
     assert_101_5:
         if_19_8_101_5:
         cmp_19_8_101_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_101_5_end
         if_19_8_101_5_code:
             mov rdi, 1
@@ -574,7 +574,7 @@ main:
     assert_102_5:
         if_19_8_102_5:
         cmp_19_8_102_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_102_5_end
         if_19_8_102_5_code:
             mov rdi, 1
@@ -607,7 +607,7 @@ main:
     assert_106_5:
         if_19_8_106_5:
         cmp_19_8_106_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_106_5_end
         if_19_8_106_5_code:
             mov rdi, 1
@@ -640,7 +640,7 @@ main:
     assert_110_5:
         if_19_8_110_5:
         cmp_19_8_110_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_110_5_end
         if_19_8_110_5_code:
             mov rdi, 1
@@ -670,7 +670,7 @@ main:
     assert_114_5:
         if_19_8_114_5:
         cmp_19_8_114_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_114_5_end
         if_19_8_114_5_code:
             mov rdi, 1
@@ -698,7 +698,7 @@ main:
     assert_117_5:
         if_19_8_117_5:
         cmp_19_8_117_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_117_5_end
         if_19_8_117_5_code:
             mov rdi, 1
@@ -727,7 +727,7 @@ main:
     assert_120_5:
         if_19_8_120_5:
         cmp_19_8_120_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_120_5_end
         if_19_8_120_5_code:
             mov rdi, 1
@@ -759,7 +759,7 @@ main:
     assert_126_5:
         if_19_8_126_5:
         cmp_19_8_126_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_126_5_end
         if_19_8_126_5_code:
             mov rdi, 1
@@ -781,7 +781,7 @@ main:
     assert_127_5:
         if_19_8_127_5:
         cmp_19_8_127_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_127_5_end
         if_19_8_127_5_code:
             mov rdi, 1
@@ -803,7 +803,7 @@ main:
     assert_128_5:
         if_19_8_128_5:
         cmp_19_8_128_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_128_5_end
         if_19_8_128_5_code:
             mov rdi, 1
@@ -835,7 +835,7 @@ main:
     assert_132_5:
         if_19_8_132_5:
         cmp_19_8_132_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_132_5_end
         if_19_8_132_5_code:
             mov rdi, 1
@@ -857,7 +857,7 @@ main:
     assert_133_5:
         if_19_8_133_5:
         cmp_19_8_133_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_133_5_end
         if_19_8_133_5_code:
             mov rdi, 1
@@ -883,7 +883,7 @@ main:
     assert_136_5:
         if_19_8_136_5:
         cmp_19_8_136_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_136_5_end
         if_19_8_136_5_code:
             mov rdi, 1
@@ -905,7 +905,7 @@ main:
     assert_137_5:
         if_19_8_137_5:
         cmp_19_8_137_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_137_5_end
         if_19_8_137_5_code:
             mov rdi, 1
@@ -927,7 +927,7 @@ main:
     assert_138_5:
         if_19_8_138_5:
         cmp_19_8_138_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_138_5_end
         if_19_8_138_5_code:
             mov rdi, 1
@@ -964,7 +964,7 @@ main:
     assert_143_5:
         if_19_8_143_5:
         cmp_19_8_143_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_143_5_end
         if_19_8_143_5_code:
             mov rdi, 1
@@ -1022,7 +1022,7 @@ main:
     assert_149_5:
         if_19_8_149_5:
         cmp_19_8_149_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_149_5_end
         if_19_8_149_5_code:
             mov rdi, 1
@@ -1087,7 +1087,7 @@ main:
     assert_156_5:
         if_19_8_156_5:
         cmp_19_8_156_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_156_5_end
         if_19_8_156_5_code:
             mov rdi, 1
@@ -1380,7 +1380,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_81_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_81_5_end
         if_19_8_81_5_code:
 ;           [19:17] exit(1)
@@ -1442,7 +1442,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_82_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_82_5_end
         if_19_8_82_5_code:
 ;           [19:17] exit(1)
@@ -1549,7 +1549,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_86_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_86_5_end
         if_19_8_86_5_code:
 ;           [19:17] exit(1)
@@ -1666,7 +1666,7 @@ main:
         cmps_eq_90_12:
         mov r14, true
         cmps_end_90_12:
-    cmp r14, false
+    test r14, r14
 ;   [90:12] free scratch register 'r14'
     je bool_false_90_12
     bool_true_90_12:
@@ -1682,7 +1682,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_90_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_90_5_end
         if_19_8_90_5_code:
 ;           [19:17] exit(1)
@@ -1771,7 +1771,7 @@ main:
         cmps_eq_93_16:
         mov r14, true
         cmps_end_93_16:
-    cmp r14, false
+    test r14, r14
 ;   [93:12] free scratch register 'r14'
     jne bool_false_93_12
     bool_true_93_12:
@@ -1787,7 +1787,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_93_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_93_5_end
         if_19_8_93_5_code:
 ;           [19:17] exit(1)
@@ -1908,7 +1908,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_97_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_97_5_end
         if_19_8_97_5_code:
 ;           [19:17] exit(1)
@@ -1980,7 +1980,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_101_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_101_5_end
         if_19_8_101_5_code:
 ;           [19:17] exit(1)
@@ -2022,7 +2022,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_102_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_102_5_end
         if_19_8_102_5_code:
 ;           [19:17] exit(1)
@@ -2091,7 +2091,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_106_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_106_5_end
         if_19_8_106_5_code:
 ;           [19:17] exit(1)
@@ -2158,7 +2158,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_110_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_110_5_end
         if_19_8_110_5_code:
 ;           [19:17] exit(1)
@@ -2233,7 +2233,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_114_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_114_5_end
         if_19_8_114_5_code:
 ;           [19:17] exit(1)
@@ -2296,7 +2296,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_117_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_117_5_end
         if_19_8_117_5_code:
 ;           [19:17] exit(1)
@@ -2367,7 +2367,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_120_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_120_5_end
         if_19_8_120_5_code:
 ;           [19:17] exit(1)
@@ -2453,7 +2453,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_126_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_126_5_end
         if_19_8_126_5_code:
 ;           [19:17] exit(1)
@@ -2495,7 +2495,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_127_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_127_5_end
         if_19_8_127_5_code:
 ;           [19:17] exit(1)
@@ -2537,7 +2537,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_128_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_128_5_end
         if_19_8_128_5_code:
 ;           [19:17] exit(1)
@@ -2612,7 +2612,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_132_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_132_5_end
         if_19_8_132_5_code:
 ;           [19:17] exit(1)
@@ -2654,7 +2654,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_133_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_133_5_end
         if_19_8_133_5_code:
 ;           [19:17] exit(1)
@@ -2710,7 +2710,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_136_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_136_5_end
         if_19_8_136_5_code:
 ;           [19:17] exit(1)
@@ -2752,7 +2752,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_137_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_137_5_end
         if_19_8_137_5_code:
 ;           [19:17] exit(1)
@@ -2794,7 +2794,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_138_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_138_5_end
         if_19_8_138_5_code:
 ;           [19:17] exit(1)
@@ -2881,7 +2881,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_143_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_143_5_end
         if_19_8_143_5_code:
 ;           [19:17] exit(1)
@@ -3026,7 +3026,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_149_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_149_5_end
         if_19_8_149_5_code:
 ;           [19:17] exit(1)
@@ -3180,7 +3180,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_156_5:
-        cmp r15, false
+        test r15, r15
         jne if_19_5_156_5_end
         if_19_8_156_5_code:
 ;           [19:17] exit(1)

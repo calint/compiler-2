@@ -12,7 +12,6 @@
 [ ] lut: change to map
 [ ] make unary_ops trivially copyable by using a fixed array instead of vector
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
-[ ] use asm command 'test' instead of 'cmp' when checking for constant 0
 [ ] parsing comments in single statement block fails:
         if nibble > 9 nibble = nibble + 0x41 # 0 through 9
         else nibble = nibble + 0x30
@@ -64,6 +63,7 @@
 -------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
+[x] use asm command 'test' instead of 'cmp' when checking for constant 0
 [-] consider mapping execution paths in a tree to find out if a variable is
     always assigned
     => duplicate, only valid for returns
