@@ -270,7 +270,8 @@ class toc final {
     }
 
     auto add_field(const token& src_loc_tk, std::string name,
-                   const stmt_def_field& fld_def, bool is_str_field) -> void {
+                   const stmt_def_field& fld_def, const bool is_str_field)
+        -> void {
 
         if (fields_.has(name)) {
             throw compiler_exception{
@@ -313,9 +314,9 @@ class toc final {
         types_.put(std::string{tpe.name()}, tpe);
     }
 
-    auto add_var(const token& src_loc_tk, std::ostream& os, size_t indnt,
-                 std::string name, const type& var_type, bool is_array,
-                 size_t array_size) -> void {
+    auto add_var(const token& src_loc_tk, std::ostream& os, const size_t indnt,
+                 const std::string& name, const type& var_type,
+                 const bool is_array, const size_t array_size) -> void {
 
         // check if the variable is already declared in this scope
         if (frames_.back().has_var(name)) {
@@ -349,7 +350,8 @@ class toc final {
     }
 
     auto alloc_named_register(const token& src_loc_tk, std::ostream& os,
-                              size_t indnt, std::string_view reg) -> bool {
+                              const size_t indnt, const std::string_view reg)
+        -> bool {
 
         comment_start(src_loc_tk, os, indnt);
         std::print(os, "allocate named register '{}'", reg);
@@ -371,8 +373,8 @@ class toc final {
     }
 
     auto alloc_named_register_or_throw(const token& src_loc_tk,
-                                       std::ostream& os, size_t indnt,
-                                       std::string_view reg) -> void {
+                                       std::ostream& os, const size_t indnt,
+                                       const std::string_view reg) -> void {
 
         comment_start(src_loc_tk, os, indnt);
         std::println(os, "allocate named register '{}'", reg);
@@ -401,7 +403,7 @@ class toc final {
     }
 
     auto alloc_scratch_register(const token& src_loc_tk, std::ostream& os,
-                                size_t indnt) -> std::string {
+                                const size_t indnt) -> std::string {
 
         if (scratch_registers_.empty()) {
             throw compiler_exception{src_loc_tk,
@@ -426,9 +428,9 @@ class toc final {
         return allocated_registers_.back();
     }
 
-    auto asm_cmd(const token& src_loc_tk, std::ostream& os, size_t indnt,
-                 std::string_view op, std::string_view dst_nasm,
-                 std::string_view src_nasm) -> void {
+    auto asm_cmd(const token& src_loc_tk, std::ostream& os, const size_t indnt,
+                 const std::string_view op, const std::string_view dst_nasm,
+                 const std::string_view src_nasm) -> void {
 
         if (op == "mov" and dst_nasm == src_nasm) {
             return;
@@ -541,7 +543,7 @@ class toc final {
     }
 
     auto comment_source(const statement& st, std::ostream& os,
-                        size_t indnt) const -> void {
+                        const size_t indnt) const -> void {
 
         comment_start(st.tok(), os, indnt);
         std::stringstream ss;
@@ -553,8 +555,8 @@ class toc final {
     }
 
     auto comment_source(const statement& st, std::ostream& os,
-                        const size_t indnt, std::string_view dst,
-                        std::string_view op) const -> void {
+                        const size_t indnt, const std::string_view dst,
+                        const std::string_view op) const -> void {
 
         comment_start(st.tok(), os, indnt);
         std::stringstream ss;
@@ -604,8 +606,8 @@ class toc final {
 
     auto enter_func(std::string_view name,
                     const std::optional<func_return_info>& returns,
-                    std::string_view call_path = {},
-                    std::string_view return_jmp_label = {}) -> void {
+                    const std::string_view call_path = {},
+                    const std::string_view return_jmp_label = {}) -> void {
 
         frames_.emplace_back(name, frame::frame_type::FUNC, returns,
                              std::string{call_path},
@@ -613,7 +615,7 @@ class toc final {
         refresh_usage();
     }
 
-    auto enter_loop(std::string_view name) -> void {
+    auto enter_loop(const std::string_view name) -> void {
         frames_.emplace_back(name, frame::frame_type::LOOP);
         refresh_usage();
     }
@@ -624,13 +626,13 @@ class toc final {
         frames_.pop_back();
     }
 
-    auto exit_func(std::string_view name) -> void {
+    auto exit_func(const std::string_view name) -> void {
         const frame& frm{frames_.back()};
         assert(frm.is_func() and frm.is_name(name));
         frames_.pop_back();
     }
 
-    auto exit_loop(std::string_view name) -> void {
+    auto exit_loop(const std::string_view name) -> void {
         const frame& frm{frames_.back()};
         assert(frm.is_loop() and frm.is_name(name));
         frames_.pop_back();
@@ -654,7 +656,8 @@ class toc final {
     }
 
     auto free_named_register(const token& src_loc_tk, std::ostream& os,
-                             size_t indnt, std::string_view reg) -> void {
+                             const size_t indnt, const std::string_view reg)
+        -> void {
 
         comment_start(src_loc_tk, os, indnt);
         std::println(os, "free named register '{}'", reg);
@@ -667,7 +670,8 @@ class toc final {
     }
 
     auto free_scratch_register(const token& src_loc_tk, std::ostream& os,
-                               size_t indnt, std::string_view reg) -> void {
+                               const size_t indnt, const std::string_view reg)
+        -> void {
 
         comment_start(src_loc_tk, os, indnt);
         std::println(os, "free scratch register '{}'", reg);
@@ -692,7 +696,7 @@ class toc final {
     }
 
     [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
-                                         std::string_view name) const
+                                         const std::string_view name) const
         -> const stmt_def_func& {
 
         if (not funcs_.has(name)) {
@@ -718,7 +722,8 @@ class toc final {
 
     [[nodiscard]] auto
     get_func_return_type_or_throw(const token& src_loc_tk,
-                                  std::string_view name) const -> const type& {
+                                  const std::string_view name) const
+        -> const type& {
 
         if (not funcs_.has(name)) {
             throw compiler_exception{
@@ -743,9 +748,9 @@ class toc final {
         throw compiler_exception{src_loc_tk, "unexpected frames"};
     }
 
-    [[nodiscard]] auto get_size_from_operand(const token& src_loc_tk,
-                                             std::string_view operand) const
-        -> size_t {
+    [[nodiscard]] auto
+    get_size_from_operand(const token& src_loc_tk,
+                          const std::string_view operand) const -> size_t {
 
         //? sort of ugly
         if (operand.starts_with("qword")) {
@@ -777,7 +782,7 @@ class toc final {
     }
 
     [[nodiscard]] auto get_type_or_throw(const token& src_loc_tk,
-                                         std::string_view name) const
+                                         const std::string_view name) const
         -> const type& {
 
         std::string const name_str{name};
@@ -799,12 +804,13 @@ class toc final {
         return bounds_check_with_line_;
     }
 
-    [[nodiscard]] auto is_func(std::string_view name) const -> bool {
+    [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         return funcs_.has(name);
     }
 
     [[nodiscard]] auto is_func_builtin(const token& src_loc_tk,
-                                       std::string_view name) const -> bool {
+                                       const std::string_view name) const
+        -> bool {
 
         if (not funcs_.has(name)) {
             throw compiler_exception{
@@ -824,7 +830,7 @@ class toc final {
     }
 
     [[nodiscard]] auto
-    make_ident_info(const token& src_loc_tk, std::string_view ident,
+    make_ident_info(const token& src_loc_tk, const std::string_view ident,
                     [[maybe_unused]] const bool must_be_initiated) const
         -> ident_info {
 
@@ -864,7 +870,7 @@ class toc final {
 
     [[nodiscard]] auto
     get_builtin_type_for_operand(const token& src_loc_tk,
-                                 std::string_view operand) const
+                                 const std::string_view operand) const
         -> const type& {
 
         //? sort of ugly
@@ -892,7 +898,9 @@ class toc final {
         return nbytes;
     }
 
-    [[nodiscard]] auto is_nasm_indirect(std::string_view nasm) const -> bool {
+    [[nodiscard]] auto is_nasm_indirect(const std::string_view nasm) const
+        -> bool {
+
         if (auto expr{toc::get_text_between_brackets(nasm)}; expr) {
             const std::string reg{
                 get_base_register_from_indirect_addressing(*expr)};
@@ -904,13 +912,15 @@ class toc final {
         return false;
     }
 
-    [[nodiscard]] auto is_nasm_register(std::string_view nasm) const -> bool {
+    [[nodiscard]] auto is_nasm_register(const std::string_view nasm) const
+        -> bool {
+
         return std::ranges::find(all_registers_, nasm) != all_registers_.end();
     }
 
-    [[nodiscard]] auto make_ident_info_or_empty(const token& src_loc,
-                                                std::string_view ident) const
-        -> ident_info {
+    [[nodiscard]] auto
+    make_ident_info_or_empty(const token& src_loc,
+                             const std::string_view ident) const -> ident_info {
 
         identifier id{ident};
         // get the root of an identifier: example p.x -> p
@@ -1051,7 +1061,7 @@ class toc final {
 
     // helper: call make_ident_info_or_empty and throw if unresolved
     [[nodiscard]] auto make_ident_info_or_throw(
-        const token& src_loc_tk, std::string_view ident,
+        const token& src_loc_tk, const std::string_view ident,
         [[maybe_unused]] const bool must_be_initiated) const -> ident_info {
 
         const ident_info id_info{make_ident_info_or_empty(src_loc_tk, ident)};
@@ -1074,57 +1084,57 @@ class toc final {
     // -------------------------------------------------------------------------
 
     static auto asm_jmp([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt, std::string_view label)
-        -> void {
+                        std::ostream& os, const size_t indnt,
+                        const std::string_view label) -> void {
 
         indent(os, indnt);
         std::println(os, "jmp {}", label);
     }
 
     static auto asm_jxx([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt,
-                        std::string_view comparison, std::string_view label)
-        -> void {
+                        std::ostream& os, const size_t indnt,
+                        const std::string_view comparison,
+                        const std::string_view label) -> void {
 
         indent(os, indnt);
         std::println(os, "j{} {}", comparison, label);
     }
 
     static auto asm_label([[maybe_unused]] const token& src_loc_tk,
-                          std::ostream& os, size_t indnt,
-                          std::string_view label) -> void {
+                          std::ostream& os, const size_t indnt,
+                          const std::string_view label) -> void {
 
         indent(os, indnt);
         std::println(os, "{}:", label);
     }
 
     static auto asm_neg([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt,
-                        std::string_view operand) -> void {
+                        std::ostream& os, const size_t indnt,
+                        const std::string_view operand) -> void {
 
         indent(os, indnt);
         std::println(os, "neg {}", operand);
     }
 
     static auto asm_not([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt,
-                        std::string_view operand) -> void {
+                        std::ostream& os, const size_t indnt,
+                        const std::string_view operand) -> void {
 
         indent(os, indnt);
         std::println(os, "not {}", operand);
     }
 
     static auto asm_pop([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, size_t indnt,
-                        std::string_view operand) -> void {
+                        std::ostream& os, const size_t indnt,
+                        const std::string_view operand) -> void {
 
         indent(os, indnt);
         std::println(os, "pop {}", operand);
     }
 
     static auto asm_push([[maybe_unused]] const token& src_loc_tk,
-                         std::ostream& os, size_t indnt,
-                         std::string_view operand) -> void {
+                         std::ostream& os, const size_t indnt,
+                         const std::string_view operand) -> void {
 
         indent(os, indnt);
         std::println(os, "push {}", operand);
@@ -1132,8 +1142,8 @@ class toc final {
 
     // size: b, w, d, q for different sizings
     static auto asm_rep_movs([[maybe_unused]] const token& src_loc_tk,
-                             std::ostream& os, size_t indnt, char size)
-        -> void {
+                             std::ostream& os, const size_t indnt,
+                             const char size) -> void {
 
         indent(os, indnt);
         std::println(os, "rep movs{}", size);
@@ -1141,8 +1151,8 @@ class toc final {
 
     // size: b, w, d, q for different sizings
     static auto asm_rep_stos([[maybe_unused]] const token& src_loc_tk,
-                             std::ostream& os, size_t indnt, char size)
-        -> void {
+                             std::ostream& os, const size_t indnt,
+                             const char size) -> void {
 
         indent(os, indnt);
         std::println(os, "rep stos{}", size);
@@ -1150,8 +1160,8 @@ class toc final {
 
     // size: b, w, d, q for different sizings
     static auto asm_repe_cmps([[maybe_unused]] const token& src_loc_tk,
-                              std::ostream& os, size_t indnt, char size)
-        -> void {
+                              std::ostream& os, const size_t indnt,
+                              const char size) -> void {
 
         indent(os, indnt);
         std::println(os, "repe cmps{}", size);
@@ -1159,7 +1169,7 @@ class toc final {
 
     static auto get_field_offset_in_type(const token& src_loc_tk,
                                          const type& tp,
-                                         std::string_view field_name)
+                                         const std::string_view field_name)
         -> size_t {
 
         size_t accum{};
@@ -1173,7 +1183,7 @@ class toc final {
                                  "unexpected code path stmt_assign_var:1"};
     }
 
-    static auto indent(std::ostream& os, size_t indnt,
+    static auto indent(std::ostream& os, const size_t indnt,
                        const bool comment = false) -> void {
 
         if (comment) {
@@ -1192,9 +1202,9 @@ class toc final {
         }
     }
 
-    static auto line_and_col_num_for_char_index(size_t at_line,
+    static auto line_and_col_num_for_char_index(const size_t at_line,
                                                 size_t char_index_in_source,
-                                                std::string_view src)
+                                                const std::string_view src)
         -> std::pair<size_t, size_t> {
 
         size_t at_col{0};
@@ -1213,7 +1223,7 @@ class toc final {
     // 'std::from_chars' requiring pointers
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-    static auto parse_to_constant(std::string_view str)
+    static auto parse_to_constant(const std::string_view str)
         -> std::optional<int64_t> {
 
         // is it hex?
@@ -1263,9 +1273,8 @@ class toc final {
     // private statics (sorted alphabetically)
     //------------------------------------------------------------------------
 
-    static auto
-    get_base_register_from_indirect_addressing(std::string_view addressing)
-        -> std::string_view {
+    static auto get_base_register_from_indirect_addressing(
+        const std::string_view addressing) -> std::string_view {
 
         auto pos{addressing.find_first_of(" +")};
         if (pos == std::string_view::npos) {
@@ -1275,7 +1284,7 @@ class toc final {
         return addressing.substr(0, pos);
     }
 
-    static auto get_text_between_brackets(std::string_view str)
+    static auto get_text_between_brackets(const std::string_view str)
         -> std::optional<std::string_view> {
 
         auto start{str.find('[')};
@@ -1308,7 +1317,7 @@ class toc final {
     }
 
     static auto get_size_from_operand_register(const token& src_loc_tk,
-                                               std::string_view operand)
+                                               const std::string_view operand)
         -> size_t {
 
         if (operand == "rax" || operand == "rbx" || operand == "rcx" ||
@@ -1352,8 +1361,8 @@ class toc final {
     }
 
     static auto get_sized_register(const token& src_loc_tk,
-                                   std::string_view operand, size_t size)
-        -> std::string {
+                                   const std::string_view operand,
+                                   const size_t size) -> std::string {
 
         //? sort of ugly
         if (operand == "rax") {
@@ -1503,12 +1512,12 @@ class toc final {
         }
     }
 
-    static auto is_nasm_memory_operand(std::string_view operand) -> bool {
+    static auto is_nasm_memory_operand(const std::string_view operand) -> bool {
         return operand.find_first_of('[') != std::string::npos;
     }
 
-    static auto resize_nasm_memory_operand(std::string_view operand,
-                                           std::string_view new_size)
+    static auto resize_nasm_memory_operand(const std::string_view operand,
+                                           const std::string_view new_size)
         -> std::string {
 
         auto pos = operand.find('[');
