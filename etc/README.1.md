@@ -29,13 +29,12 @@ x86_64 assembly on Linux.
 code run `./make.sh`
 * after that use `./run-baz.sh myprogram.baz` or `./run-baz.sh` to compile and
 run `prog.baz`
-  * optional parameters: stack size, bounds check, with line number e.g:
-    * `./run-baz.sh myprogram.baz 262144`: defaults to bounds checked with line
-    number information
-    * `./run-baz.sh myprogram.baz 262144 checked noline`: checks bounds without
+  * optional parameters: _stack size_, _bounds check_, with _line number information_ e.g:
+    * `./run-baz.sh myprogram.baz --stack=262144`: stack size, no runtime checks
+    * `./run-baz.sh myprogram.baz --stack=262144 --check=bounds`: checks bounds without
     line number information (faster)
-    * `./run-baz.sh myprogram.baz 262144 unchecked`: unchecked, memory
-    corruption can occur
+    * `./run-baz.sh myprogram.baz --stack=262144 --checks=bounds,line`: checks
+    bounds with line number information
 * to run the tests `qa/coverage/run-tests.sh` and see coverage report in `qa/coverage/report/`
 
 ## Source

@@ -29,13 +29,12 @@ x86_64 assembly on Linux.
 code run `./make.sh`
 * after that use `./run-baz.sh myprogram.baz` or `./run-baz.sh` to compile and
 run `prog.baz`
-  * optional parameters: stack size, bounds check, with line number e.g:
-    * `./run-baz.sh myprogram.baz 262144`: defaults to bounds checked with line
-    number information
-    * `./run-baz.sh myprogram.baz 262144 checked noline`: checks bounds without
+  * optional parameters: _stack size_, _bounds check_, with _line number information_ e.g:
+    * `./run-baz.sh myprogram.baz --stack=262144`: stack size, no runtime checks
+    * `./run-baz.sh myprogram.baz --stack=262144 --check=bounds`: checks bounds without
     line number information (faster)
-    * `./run-baz.sh myprogram.baz 262144 unchecked`: unchecked, memory
-    corruption can occur
+    * `./run-baz.sh myprogram.baz --stack=262144 --checks=bounds,line`: checks
+    bounds with line number information
 * to run the tests `qa/coverage/run-tests.sh` and see coverage report in `qa/coverage/report/`
 
 ## Source
@@ -44,9 +43,9 @@ run `prog.baz`
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
 C/C++ Header                    41           1081            672           5330
-C++                              1             65             76            441
+C++                              1             67             80            490
 -------------------------------------------------------------------------------
-SUM:                            42           1146            748           5771
+SUM:                            42           1148            752           5820
 -------------------------------------------------------------------------------
 ```
 
@@ -267,20 +266,28 @@ main:
     mov qword [rsp - 24], 1
     mov r15, qword [rsp - 24]
     cmp r15, 4
+    mov r14, 79
+    cmovge rbp, r14
     jge panic_bounds
     mov dword [rsp + r15 * 4 - 16], 2
     mov r15, qword [rsp - 24]
     add r15, 1
     cmp r15, 4
+    mov r14, 80
+    cmovge rbp, r14
     jge panic_bounds
     mov r14, qword [rsp - 24]
     cmp r14, 4
+    mov r13, 80
+    cmovge rbp, r13
     jge panic_bounds
     mov r13d, dword [rsp + r14 * 4 - 16]
     mov dword [rsp + r15 * 4 - 16], r13d
     cmp_81_12:
         mov r13, 1
         cmp r13, 4
+        mov r12, 81
+        cmovge rbp, r12
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
     cmp r14, 2
@@ -307,6 +314,8 @@ main:
     cmp_82_12:
         mov r13, 2
         cmp r13, 4
+        mov r12, 82
+        cmovge rbp, r12
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
     cmp r14, 2
@@ -335,6 +344,8 @@ main:
     mov r14, rcx
     add r14, r15
     cmp r14, 4
+    mov r13, 84
+    cmovg rbp, r13
     jg panic_bounds
     lea rsi, [rsp + r15 * 4 - 16]
     cmp rcx, 4
@@ -345,6 +356,8 @@ main:
     cmp_86_12:
         mov r13, 0
         cmp r13, 4
+        mov r12, 86
+        cmovge rbp, r12
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
     cmp r14, 2
@@ -420,6 +433,8 @@ main:
     assert_90_5_end:
     mov r15, 2
     cmp r15, 8
+    mov r14, 92
+    cmovge rbp, r14
     jge panic_bounds
     mov dword [rsp + r15 * 4 - 56], -1
     cmp_93_12:
@@ -462,10 +477,14 @@ main:
     mov qword [rsp - 24], 3
     mov r15, qword [rsp - 24]
     cmp r15, 4
+    mov r14, 96
+    cmovge rbp, r14
     jge panic_bounds
     mov r13, qword [rsp - 24]
     sub r13, 1
     cmp r13, 4
+    mov r12, 96
+    cmovge rbp, r12
     jge panic_bounds
     movsx r14, dword [rsp + r13 * 4 - 16]
     inv_96_16:
@@ -476,6 +495,8 @@ main:
     cmp_97_12:
         mov r13, qword [rsp - 24]
         cmp r13, 4
+        mov r12, 97
+        cmovge rbp, r12
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
     cmp r14, 2
@@ -911,6 +932,8 @@ main:
         lea r13, [rsp - 204]
         mov r12, 0
         cmp r12, 1
+        mov r11, 143
+        cmovge rbp, r11
         jge panic_bounds
         imul r12, 20
         add r13, r12
@@ -948,22 +971,30 @@ main:
     lea r15, [rsp - 796]
     mov r14, 1
     cmp r14, 8
+    mov r13, 148
+    cmovge rbp, r13
     jge panic_bounds
     shl r14, 6
     add r15, r14
     mov r14, 1
     cmp r14, 8
+    mov r13, 148
+    cmovge rbp, r13
     jge panic_bounds
     mov qword [r15 + r14 * 8 + 0], 0xffee
     cmp_149_12:
         lea r13, [rsp - 796]
         mov r12, 1
         cmp r12, 8
+        mov r11, 149
+        cmovge rbp, r11
         jge panic_bounds
         shl r12, 6
         add r13, r12
         mov r12, 1
         cmp r12, 8
+        mov r11, 149
+        cmovge rbp, r11
         jge panic_bounds
         mov r14, qword [r13 + r12 * 8 + 0]
     cmp r14, 0xffee
@@ -991,6 +1022,8 @@ main:
     lea r15, [rsp - 796]
     mov r14, 1
     cmp r14, 8
+    mov r13, 152
+    cmovge rbp, r13
     jge panic_bounds
     shl r14, 6
     add r15, r14
@@ -1000,6 +1033,8 @@ main:
     lea r15, [rsp - 796]
     mov r14, 0
     cmp r14, 8
+    mov r13, 153
+    cmovge rbp, r13
     jge panic_bounds
     shl r14, 6
     add r15, r14
@@ -1012,11 +1047,15 @@ main:
         lea r13, [rsp - 796]
         mov r12, 0
         cmp r12, 8
+        mov r11, 156
+        cmovge rbp, r11
         jge panic_bounds
         shl r12, 6
         add r13, r12
         mov r12, 1
         cmp r12, 8
+        mov r11, 156
+        cmovge rbp, r11
         jge panic_bounds
         mov r14, qword [r13 + r12 * 8 + 0]
     cmp r14, 0xffee
@@ -1121,9 +1160,39 @@ main:
     mov rdi, 0
     syscall
 panic_bounds:
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [rel msg_panic]
+    mov rdx, msg_panic_len
+    syscall
+    mov rax, rbp
+    lea rdi, [rel num_buffer + 19]
+    mov byte [rdi], 10
+    dec rdi
+.convert_loop:
+    xor rdx, rdx
+    mov rcx, 10
+    div rcx
+    add dl, '0'
+    mov [rdi], dl
+    dec rdi
+    test rax, rax
+    jnz .convert_loop
+    inc rdi
+    mov rax, 1
+    mov rsi, rdi
+    lea rdx, [rel num_buffer + 20]
+    sub rdx, rdi
+    mov rdi, 2
+    syscall
     mov rax, 60
     mov rdi, 255
     syscall
+section .rodata
+    msg_panic: db 'panic: bounds at line '
+    msg_panic_len equ $ - msg_panic
+section .bss
+    num_buffer: resb 21
 ```
 
 ## With comments
@@ -1201,6 +1270,10 @@ main:
 ;   [79:9] r15 = ix
     mov r15, qword [rsp - 24]
     cmp r15, 4
+;   [79:9] allocate scratch register -> r14
+    mov r14, 79
+    cmovge rbp, r14
+;   [79:9] free scratch register 'r14'
     jge panic_bounds
 ;   [79:15] 2
 ;   [79:15] 2
@@ -1216,6 +1289,10 @@ main:
 ;   [80:14] r15 + 1
     add r15, 1
     cmp r15, 4
+;   [80:9] allocate scratch register -> r14
+    mov r14, 80
+    cmovge rbp, r14
+;   [80:9] free scratch register 'r14'
     jge panic_bounds
 ;   [80:19] arr[ix]
 ;   [80:19] arr[ix]
@@ -1227,6 +1304,10 @@ main:
 ;   [80:23] r14 = ix
     mov r14, qword [rsp - 24]
     cmp r14, 4
+;   [80:23] allocate scratch register -> r13
+    mov r13, 80
+    cmovge rbp, r13
+;   [80:23] free scratch register 'r13'
     jge panic_bounds
 ;   [80:19] allocate scratch register -> r13
     mov r13d, dword [rsp + r14 * 4 - 16]
@@ -1250,6 +1331,10 @@ main:
 ;       [81:16] r13 = 1
         mov r13, 1
         cmp r13, 4
+;       [81:16] allocate scratch register -> r12
+        mov r12, 81
+        cmovge rbp, r12
+;       [81:16] free scratch register 'r12'
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       [81:12] free scratch register 'r13'
@@ -1306,6 +1391,10 @@ main:
 ;       [82:16] r13 = 2
         mov r13, 2
         cmp r13, 4
+;       [82:16] allocate scratch register -> r12
+        mov r12, 82
+        cmovge rbp, r12
+;       [82:16] free scratch register 'r12'
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       [82:12] free scratch register 'r13'
@@ -1366,6 +1455,10 @@ main:
     mov r14, rcx
     add r14, r15
     cmp r14, 4
+;   [84:20] allocate scratch register -> r13
+    mov r13, 84
+    cmovg rbp, r13
+;   [84:20] free scratch register 'r13'
     jg panic_bounds
 ;   [84:20] free scratch register 'r14'
     lea rsi, [rsp + r15 * 4 - 16]
@@ -1396,6 +1489,10 @@ main:
 ;       [86:16] r13 = 0
         mov r13, 0
         cmp r13, 4
+;       [86:16] allocate scratch register -> r12
+        mov r12, 86
+        cmovge rbp, r12
+;       [86:16] free scratch register 'r12'
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       [86:12] free scratch register 'r13'
@@ -1552,6 +1649,10 @@ main:
 ;   [92:10] r15 = 2
     mov r15, 2
     cmp r15, 8
+;   [92:10] allocate scratch register -> r14
+    mov r14, 92
+    cmovge rbp, r14
+;   [92:10] free scratch register 'r14'
     jge panic_bounds
 ;   [92:15] -1
 ;   [92:15] -1
@@ -1644,6 +1745,10 @@ main:
 ;   [96:9] r15 = ix
     mov r15, qword [rsp - 24]
     cmp r15, 4
+;   [96:9] allocate scratch register -> r14
+    mov r14, 96
+    cmovge rbp, r14
+;   [96:9] free scratch register 'r14'
     jge panic_bounds
 ;   [96:15] ~inv(arr[ix - 1])
 ;   [96:15] ~inv(arr[ix - 1])
@@ -1662,6 +1767,10 @@ main:
 ;   [96:29] r13 - 1
     sub r13, 1
     cmp r13, 4
+;   [96:24] allocate scratch register -> r12
+    mov r12, 96
+    cmovge rbp, r12
+;   [96:24] free scratch register 'r12'
     jge panic_bounds
     movsx r14, dword [rsp + r13 * 4 - 16]
 ;   [96:20] free scratch register 'r13'
@@ -1695,6 +1804,10 @@ main:
 ;       [97:16] r13 = ix
         mov r13, qword [rsp - 24]
         cmp r13, 4
+;       [97:16] allocate scratch register -> r12
+        mov r12, 97
+        cmovge rbp, r12
+;       [97:16] free scratch register 'r12'
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       [97:12] free scratch register 'r13'
@@ -2658,6 +2771,10 @@ main:
 ;       [143:15] r12 = 0
         mov r12, 0
         cmp r12, 1
+;       [143:15] allocate scratch register -> r11
+        mov r11, 143
+        cmovge rbp, r11
+;       [143:15] free scratch register 'r11'
         jge panic_bounds
         imul r12, 20
         add r13, r12
@@ -2737,6 +2854,10 @@ main:
 ;   [148:12] r14 = 1
     mov r14, 1
     cmp r14, 8
+;   [148:12] allocate scratch register -> r13
+    mov r13, 148
+    cmovge rbp, r13
+;   [148:12] free scratch register 'r13'
     jge panic_bounds
     shl r14, 6
     add r15, r14
@@ -2747,6 +2868,10 @@ main:
 ;   [148:25] r14 = 1
     mov r14, 1
     cmp r14, 8
+;   [148:25] allocate scratch register -> r13
+    mov r13, 148
+    cmovge rbp, r13
+;   [148:25] free scratch register 'r13'
     jge panic_bounds
 ;   [148:30] 0xffee
 ;   [148:30] 0xffee
@@ -2772,6 +2897,10 @@ main:
 ;       [149:19] r12 = 1
         mov r12, 1
         cmp r12, 8
+;       [149:19] allocate scratch register -> r11
+        mov r11, 149
+        cmovge rbp, r11
+;       [149:19] free scratch register 'r11'
         jge panic_bounds
         shl r12, 6
         add r13, r12
@@ -2782,6 +2911,10 @@ main:
 ;       [149:32] r12 = 1
         mov r12, 1
         cmp r12, 8
+;       [149:32] allocate scratch register -> r11
+        mov r11, 149
+        cmovge rbp, r11
+;       [149:32] free scratch register 'r11'
         jge panic_bounds
         mov r14, qword [r13 + r12 * 8 + 0]
 ;       [149:12] free scratch register 'r12'
@@ -2842,6 +2975,10 @@ main:
 ;   [152:16] r14 = 1
     mov r14, 1
     cmp r14, 8
+;   [152:16] allocate scratch register -> r13
+    mov r13, 152
+    cmovge rbp, r13
+;   [152:16] free scratch register 'r13'
     jge panic_bounds
     shl r14, 6
     add r15, r14
@@ -2859,6 +2996,10 @@ main:
 ;   [153:16] r14 = 0
     mov r14, 0
     cmp r14, 8
+;   [153:16] allocate scratch register -> r13
+    mov r13, 153
+    cmovge rbp, r13
+;   [153:16] free scratch register 'r13'
     jge panic_bounds
     shl r14, 6
     add r15, r14
@@ -2890,6 +3031,10 @@ main:
 ;       [156:19] r12 = 0
         mov r12, 0
         cmp r12, 8
+;       [156:19] allocate scratch register -> r11
+        mov r11, 156
+        cmovge rbp, r11
+;       [156:19] free scratch register 'r11'
         jge panic_bounds
         shl r12, 6
         add r13, r12
@@ -2900,6 +3045,10 @@ main:
 ;       [156:32] r12 = 1
         mov r12, 1
         cmp r12, 8
+;       [156:32] allocate scratch register -> r11
+        mov r11, 156
+        cmovge rbp, r11
+;       [156:32] free scratch register 'r11'
         jge panic_bounds
         mov r14, qword [r13 + r12 * 8 + 0]
 ;       [156:12] free scratch register 'r12'
@@ -3190,14 +3339,47 @@ main:
     mov rdi, 0
     syscall
 
-
 panic_bounds:
-    ; system call: exit 255
+;   print message to stderr
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [rel msg_panic]
+    mov rdx, msg_panic_len
+    syscall
+;   line number is in `rbp`
+    mov rax, rbp
+;   convert to string
+    lea rdi, [rel num_buffer + 19]
+    mov byte [rdi], 10
+    dec rdi
+.convert_loop:
+    xor rdx, rdx
+    mov rcx, 10
+    div rcx
+    add dl, '0'
+    mov [rdi], dl
+    dec rdi
+    test rax, rax
+    jnz .convert_loop
+    inc rdi
+;   print line number to stderr
+    mov rax, 1
+    mov rsi, rdi
+    lea rdx, [rel num_buffer + 20]
+    sub rdx, rdi
+    mov rdi, 2
+    syscall
+;   exit with error code 255
     mov rax, 60
     mov rdi, 255
     syscall
+section .rodata
+    msg_panic: db 'panic: bounds at line '
+    msg_panic_len equ $ - msg_panic
+section .bss
+    num_buffer: resb 21
 
-; max scratch registers in use: 4
+; max scratch registers in use: 5
 ;            max frames in use: 7
 ;               max stack size: 804 B
 ```

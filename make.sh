@@ -98,17 +98,11 @@ CMD="$CC src/main.cpp -o baz $DBG $OPT $CF $CW $SANITIZERS $PROF"
 echo $SEP
 echo $CMD
 $CMD
-echo $SEP
 
 if [ $BUILD_ONLY -eq 1 ]; then
   exit 0
 fi
 
-./baz prog.baz 131072 checked >gen.s
-grep -v -e'^\s*;.*$' -e'^\s*$' gen.s >gen-without-comments.s
-nasm -f elf64 gen.s
-ld -s -o gen gen.o
-ls --color -la baz gen.s gen-without-comments.s gen
 echo $SEP
 echo '              lines   words   chars'
 echo -n '    source: '
@@ -123,6 +117,5 @@ echo -n 'asm source: '
 cat gen-without-comments.s | wc
 echo -n '   gzipped: '
 cat gen-without-comments.s | gzip | wc
-echo $SEP
-./gen
-echo $SEP
+
+./run-baz.sh prog.baz --stack=131072 --checks=bounds,line

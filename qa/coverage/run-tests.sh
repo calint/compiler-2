@@ -12,7 +12,13 @@ if [ "$1" != "nomake" ]; then
   ../../make.sh build prof asan
 fi
 
-BIN='../../baz'
+BIN="../../baz"
+OPTS="--stack=65536 --checks=bounds,line"
+
+SEP="--------------------------------------------------------------------------------"
+echo $SEP
+echo "running: $BIN $OPTS"
+echo $SEP
 
 export UBSAN_OPTIONS="print_stacktrace=1"
 export ASAN_OPTIONS="fast_unwind_on_fatal=0:print_stacktrace=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1:detect_leaks=1:halt_on_error=1:external_symbolizer=1"
@@ -22,7 +28,7 @@ export ASAN_SYMBOLIZE=1
 # Common: compile and assemble
 compile_and_build() {
   rm -f error.log
-  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" 131072 checked line 2>error.log >gen.s
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $OPTS 2>error.log >gen.s
   if [ $? -ne 0 ]; then
     echo "compiler failed. see 'error.log' and 'gen.s'" >&2
     exit 1
@@ -103,6 +109,8 @@ source "$SCRIPT_DIR/run-tests-cases.sh"
 # Cleanup
 rm -f gen gen.o gen.s diff.baz out error.log
 
+echo $SEP
+
 # Process coverage data
 llvm-profdata merge -o baz.profdata -sparse $(ls *.profraw)
 llvm-cov export --format=lcov --instr-profile baz.profdata --object $BIN >lcov.info
@@ -110,8 +118,7 @@ llvm-cov export --format=lcov --instr-profile baz.profdata --object $BIN >lcov.i
 # Generate report
 genhtml --ignore-errors unsupported -quiet lcov.info --output-directory report/
 
-echo
+echo $SEP
 echo "coverage report generated in $(realpath "report/")"
-echo
-
 rm -f *.profraw baz.profdata lcov.info
+echo $SEP

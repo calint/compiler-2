@@ -2,13 +2,9 @@
 set -e
 cd $(dirname "$0")
 
-PRG=${1:-prog.baz}
-STK=${2:-131072}
-CHK=${3:-checked}
-CHKLINE=${4:-line}
-SEP="..  . .. . . . . .  ......... . ..  . .  . . ....  . .. ....... . . "
+SEP="--------------------------------------------------------------------------------"
 echo $SEP
-CMD="./baz $PRG $STK $CHK $CHKLINE"
+CMD="./baz $@"
 echo $CMD
 $CMD >gen.s
 echo $SEP

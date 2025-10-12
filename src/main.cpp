@@ -12,6 +12,7 @@
 #include <span>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -43,6 +44,7 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void;
 auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void;
 } // namespace
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 auto main(const int argc, const char* argv[]) -> int {
 
 #pragma clang diagnostic push
@@ -50,13 +52,66 @@ auto main(const int argc, const char* argv[]) -> int {
     const std::span<const char*> args{argv, static_cast<size_t>(argc)};
 #pragma clang diagnostic pop
 
-    const char* src_file_name = (argc > 1) ? args[1] : "prog.baz";
-    const size_t stack_size =
-        (argc > 2) ? std::stoul(args[2], nullptr, 0) : 0x10000;
-    const bool checked =
-        (argc > 3) and (std::string_view{args[3]} == "checked");
-    const bool checked_line =
-        (argc > 4) and (std::string_view(args[4]) == "line");
+    // default values
+    const char* src_file_name = "prog.baz";
+    size_t stack_size = 0x10000;
+    bool checked = false;
+    bool checked_line = false;
+
+    // parse arguments
+    for (size_t i = 1; i < args.size(); i++) {
+        const std::string_view arg{args[i]};
+
+        if (arg == "--help" || arg == "-h") {
+            const std::string_view prg{args[0]};
+            std::println("Usage: {} [OPTIONS] [filename]", prg);
+            std::println("");
+            std::println("Options:");
+            std::println("  --stack=SIZE        Set stack size (default: "
+                         "0x10000/65536)");
+            std::println(
+                "                      Supports decimal and hex (0x prefix) ");
+            std::println("  --checks=TYPE       Enable runtime checks:");
+            std::println(
+                "                        bounds      - bounds checking");
+            std::println(
+                "                        line        - with line tracking");
+            std::println("                        bounds,line - both");
+            std::println("  --help, -h          Show this help message");
+            std::println("");
+            std::println("Arguments:");
+            std::println(
+                "  filename            Source file (default: prog.baz)");
+            std::println("");
+            std::println("Examples:");
+            std::println("  {} myfile.baz", prg);
+            std::println("  {} --stack=131072 --checks=bounds prog.baz", prg);
+            std::println("  {} --checks=bounds,line", prg);
+            return 0;
+        }
+        if (arg.starts_with("--stack=")) {
+            try {
+                stack_size = std::stoul(std::string{arg.substr(8)}, nullptr, 0);
+            } catch (...) {
+                std::println(stderr,
+                             "Error: Could not parse stack size: \"{}\"",
+                             arg.substr(8));
+                std::println(stderr, "Use --help for usage information");
+                return 1;
+            }
+        } else if (arg.starts_with("--checks=")) {
+            const std::string_view checks{arg.substr(9)};
+            checked = checks.contains("bounds");
+            checked_line = checks.contains("line");
+        } else if (not arg.starts_with("--")) {
+            // Assume it's the filename
+            src_file_name = args[i];
+        } else {
+            std::println(stderr, "Error: Unknown option: {}", arg);
+            std::println(stderr, "Use --help for usage information");
+            return 1;
+        }
+    }
 
     std::string src;
     try {
@@ -67,9 +122,9 @@ auto main(const int argc, const char* argv[]) -> int {
         prg.source_to(reproduced_source);
         reproduced_source.close();
         if (src != read_file_to_string("diff.baz")) {
-            throw panic_exception(
-                std::format("generated source differs. diff {} diff.baz",
-                            std::string{src_file_name}));
+            std::println(stderr, "generated source differs. diff {} diff.baz",
+                         src_file_name);
+            return 1;
         }
 
         // with jump optimizations
@@ -86,24 +141,24 @@ auto main(const int argc, const char* argv[]) -> int {
         std::cerr << "\n"
                   << src_file_name << ":" << line << ":" << col << ": " << e.msg
                   << '\n';
-        return 1;
+        return 2;
     } catch (const panic_exception& e) {
         std::cerr << "\npanic: " << e.what() << '\n';
-        return 2;
+        return 3;
     } catch (...) {
         std::cerr << "\nunknown exception" << '\n';
-        return 3;
+        return 4;
     }
 }
 
 //
-// implementation of functions that could not be implemented in headers due to
-// circular references
+// implementation of functions that could not be implemented in headers due
+// to circular references
 //
 
 // declared in 'decouple.hpp'
-// called from 'stmt_block' to solve circular dependencies with 'loop', 'if',
-// 'mov', 'syscall'
+// called from 'stmt_block' to solve circular dependencies with 'loop',
+// 'if', 'mov', 'syscall'
 inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, token tk)
     -> std::unique_ptr<statement> {
 
@@ -179,8 +234,8 @@ inline auto create_expr_any(toc& tc, tokenizer& tz, const type& tp,
 
 // declared in 'expr_type_value.hpp'
 // note: constructor and destructor is implemented in 'main.cpp' where the
-//       'expr_any' definition is known. clang++ -std=c++23 requires it since
-//       changes to handling of unique_ptr to incomplete types
+//       'expr_any' definition is known. clang++ -std=c++23 requires it
+//       since changes to handling of unique_ptr to incomplete types
 
 inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     : statement{tz.next_token()} {

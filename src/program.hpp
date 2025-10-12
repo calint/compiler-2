@@ -140,13 +140,13 @@ class program final {
                 std::println(os, "    syscall");
             } else {
                 std::println(os, "panic_bounds:");
-                std::println(os, ";   print message");
+                std::println(os, ";   print message to stderr");
                 std::println(os, "    mov rax, 1");
-                std::println(os, "    mov rdi, 1");
+                std::println(os, "    mov rdi, 2");
                 std::println(os, "    lea rsi, [rel msg_panic]");
                 std::println(os, "    mov rdx, msg_panic_len");
                 std::println(os, "    syscall");
-                std::println(os, ";   line number is in `rbgp`");
+                std::println(os, ";   line number is in `rbp`");
                 std::println(os, "    mov rax, rbp");
                 std::println(os, ";   convert to string");
                 std::println(os, "    lea rdi, [rel num_buffer + 19]");
@@ -162,12 +162,12 @@ class program final {
                 std::println(os, "    test rax, rax");
                 std::println(os, "    jnz .convert_loop");
                 std::println(os, "    inc rdi");
-                std::println(os, ";   print line number");
+                std::println(os, ";   print line number to stderr");
                 std::println(os, "    mov rax, 1");
                 std::println(os, "    mov rsi, rdi");
                 std::println(os, "    lea rdx, [rel num_buffer + 20]");
                 std::println(os, "    sub rdx, rdi");
-                std::println(os, "    mov rdi, 1");
+                std::println(os, "    mov rdi, 2");
                 std::println(os, "    syscall");
                 std::println(os, ";   exit with error code 255");
                 std::println(os, "    mov rax, 60");
