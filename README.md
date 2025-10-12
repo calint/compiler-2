@@ -42,10 +42,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    41           1081            672           5330
+C/C++ Header                    41           1081            621           5308
 C++                              1             67             80            489
 -------------------------------------------------------------------------------
-SUM:                            42           1148            752           5819
+SUM:                            42           1148            701           5797
 -------------------------------------------------------------------------------
 ```
 
@@ -349,6 +349,8 @@ main:
     jg panic_bounds
     lea rsi, [rsp + r15 * 4 - 16]
     cmp rcx, 4
+    mov r15, 84
+    cmovg rbp, r15
     jg panic_bounds
     lea rdi, [rsp - 16]
     shl rcx, 2
@@ -387,9 +389,13 @@ main:
     rep stosb
     mov rcx, 4
     cmp rcx, 4
+    mov r15, 89
+    cmovg rbp, r15
     jg panic_bounds
     lea rsi, [rsp - 16]
     cmp rcx, 8
+    mov r15, 89
+    cmovg rbp, r15
     jg panic_bounds
     lea rdi, [rsp - 56]
     shl rcx, 2
@@ -397,9 +403,13 @@ main:
     cmp_90_12:
         mov rcx, 4
         cmp rcx, 4
+        mov r13, 90
+        cmovg rbp, r13
         jg panic_bounds
         lea rsi, [rsp - 16]
         cmp rcx, 8
+        mov r13, 90
+        cmovg rbp, r13
         jg panic_bounds
         lea rdi, [rsp - 56]
         shl rcx, 2
@@ -440,9 +450,13 @@ main:
     cmp_93_12:
         mov rcx, 4
         cmp rcx, 4
+        mov r13, 93
+        cmovg rbp, r13
         jg panic_bounds
         lea rsi, [rsp - 16]
         cmp rcx, 8
+        mov r13, 93
+        cmovg rbp, r13
         jg panic_bounds
         lea rdi, [rsp - 56]
         shl rcx, 2
@@ -1028,6 +1042,8 @@ main:
     shl r14, 6
     add r15, r14
     cmp rcx, 8
+    mov r14, 152
+    cmovg rbp, r14
     jg panic_bounds
     lea rsi, [r15]
     lea r15, [rsp - 796]
@@ -1039,6 +1055,8 @@ main:
     shl r14, 6
     add r15, r14
     cmp rcx, 8
+    mov r14, 153
+    cmovg rbp, r14
     jg panic_bounds
     lea rdi, [r15]
     shl rcx, 3
@@ -1269,8 +1287,10 @@ main:
 ;   [79:9] ix
 ;   [79:9] r15 = ix
     mov r15, qword [rsp - 24]
+;   [79:9] bounds check
     cmp r15, 4
 ;   [79:9] allocate scratch register -> r14
+;   [79:9] line number
     mov r14, 79
     cmovge rbp, r14
 ;   [79:9] free scratch register 'r14'
@@ -1288,8 +1308,10 @@ main:
     mov r15, qword [rsp - 24]
 ;   [80:14] r15 + 1
     add r15, 1
+;   [80:9] bounds check
     cmp r15, 4
 ;   [80:9] allocate scratch register -> r14
+;   [80:9] line number
     mov r14, 80
     cmovge rbp, r14
 ;   [80:9] free scratch register 'r14'
@@ -1303,8 +1325,10 @@ main:
 ;   [80:23] ix
 ;   [80:23] r14 = ix
     mov r14, qword [rsp - 24]
+;   [80:23] bounds check
     cmp r14, 4
 ;   [80:23] allocate scratch register -> r13
+;   [80:23] line number
     mov r13, 80
     cmovge rbp, r13
 ;   [80:23] free scratch register 'r13'
@@ -1330,8 +1354,10 @@ main:
 ;       [81:16] 1
 ;       [81:16] r13 = 1
         mov r13, 1
+;       [81:16] bounds check
         cmp r13, 4
 ;       [81:16] allocate scratch register -> r12
+;       [81:16] line number
         mov r12, 81
         cmovge rbp, r12
 ;       [81:16] free scratch register 'r12'
@@ -1390,8 +1416,10 @@ main:
 ;       [82:16] 2
 ;       [82:16] r13 = 2
         mov r13, 2
+;       [82:16] bounds check
         cmp r13, 4
 ;       [82:16] allocate scratch register -> r12
+;       [82:16] line number
         mov r12, 82
         cmovge rbp, r12
 ;       [82:16] free scratch register 'r12'
@@ -1456,15 +1484,22 @@ main:
     add r14, r15
     cmp r14, 4
 ;   [84:20] allocate scratch register -> r13
+;   [84:20] line number
     mov r13, 84
     cmovg rbp, r13
 ;   [84:20] free scratch register 'r13'
-    jg panic_bounds
 ;   [84:20] free scratch register 'r14'
+    jg panic_bounds
     lea rsi, [rsp + r15 * 4 - 16]
 ;   [84:5] free scratch register 'r15'
 ;   [84:24] arr
+;   [84:24] bounds check
     cmp rcx, 4
+;   [84:24] allocate scratch register -> r15
+;   [84:24] line number
+    mov r15, 84
+    cmovg rbp, r15
+;   [84:24] free scratch register 'r15'
     jg panic_bounds
     lea rdi, [rsp - 16]
     shl rcx, 2
@@ -1488,8 +1523,10 @@ main:
 ;       [86:16] 0
 ;       [86:16] r13 = 0
         mov r13, 0
+;       [86:16] bounds check
         cmp r13, 4
 ;       [86:16] allocate scratch register -> r12
+;       [86:16] line number
         mov r12, 86
         cmovge rbp, r12
 ;       [86:16] free scratch register 'r12'
@@ -1556,11 +1593,23 @@ main:
 ;   [89:27] rcx = 4
     mov rcx, 4
 ;   [89:16] arr
+;   [89:16] bounds check
     cmp rcx, 4
+;   [89:16] allocate scratch register -> r15
+;   [89:16] line number
+    mov r15, 89
+    cmovg rbp, r15
+;   [89:16] free scratch register 'r15'
     jg panic_bounds
     lea rsi, [rsp - 16]
 ;   [89:21] arr1
+;   [89:21] bounds check
     cmp rcx, 8
+;   [89:21] allocate scratch register -> r15
+;   [89:21] line number
+    mov r15, 89
+    cmovg rbp, r15
+;   [89:21] free scratch register 'r15'
     jg panic_bounds
     lea rdi, [rsp - 56]
     shl rcx, 2
@@ -1587,11 +1636,23 @@ main:
 ;       [90:36] rcx = 4
         mov rcx, 4
 ;       [90:25] arr
+;       [90:25] bounds check
         cmp rcx, 4
+;       [90:25] allocate scratch register -> r13
+;       [90:25] line number
+        mov r13, 90
+        cmovg rbp, r13
+;       [90:25] free scratch register 'r13'
         jg panic_bounds
         lea rsi, [rsp - 16]
 ;       [90:30] arr1
+;       [90:30] bounds check
         cmp rcx, 8
+;       [90:30] allocate scratch register -> r13
+;       [90:30] line number
+        mov r13, 90
+        cmovg rbp, r13
+;       [90:30] free scratch register 'r13'
         jg panic_bounds
         lea rdi, [rsp - 56]
         shl rcx, 2
@@ -1648,8 +1709,10 @@ main:
 ;   [92:10] 2
 ;   [92:10] r15 = 2
     mov r15, 2
+;   [92:10] bounds check
     cmp r15, 8
 ;   [92:10] allocate scratch register -> r14
+;   [92:10] line number
     mov r14, 92
     cmovge rbp, r14
 ;   [92:10] free scratch register 'r14'
@@ -1678,11 +1741,23 @@ main:
 ;       [93:40] rcx = 4
         mov rcx, 4
 ;       [93:29] arr
+;       [93:29] bounds check
         cmp rcx, 4
+;       [93:29] allocate scratch register -> r13
+;       [93:29] line number
+        mov r13, 93
+        cmovg rbp, r13
+;       [93:29] free scratch register 'r13'
         jg panic_bounds
         lea rsi, [rsp - 16]
 ;       [93:34] arr1
+;       [93:34] bounds check
         cmp rcx, 8
+;       [93:34] allocate scratch register -> r13
+;       [93:34] line number
+        mov r13, 93
+        cmovg rbp, r13
+;       [93:34] free scratch register 'r13'
         jg panic_bounds
         lea rdi, [rsp - 56]
         shl rcx, 2
@@ -1744,8 +1819,10 @@ main:
 ;   [96:9] ix
 ;   [96:9] r15 = ix
     mov r15, qword [rsp - 24]
+;   [96:9] bounds check
     cmp r15, 4
 ;   [96:9] allocate scratch register -> r14
+;   [96:9] line number
     mov r14, 96
     cmovge rbp, r14
 ;   [96:9] free scratch register 'r14'
@@ -1766,8 +1843,10 @@ main:
     mov r13, qword [rsp - 24]
 ;   [96:29] r13 - 1
     sub r13, 1
+;   [96:24] bounds check
     cmp r13, 4
 ;   [96:24] allocate scratch register -> r12
+;   [96:24] line number
     mov r12, 96
     cmovge rbp, r12
 ;   [96:24] free scratch register 'r12'
@@ -1803,8 +1882,10 @@ main:
 ;       [97:16] ix
 ;       [97:16] r13 = ix
         mov r13, qword [rsp - 24]
+;       [97:16] bounds check
         cmp r13, 4
 ;       [97:16] allocate scratch register -> r12
+;       [97:16] line number
         mov r12, 97
         cmovge rbp, r12
 ;       [97:16] free scratch register 'r12'
@@ -2770,8 +2851,10 @@ main:
 ;       [143:15] 0
 ;       [143:15] r12 = 0
         mov r12, 0
+;       [143:15] bounds check
         cmp r12, 1
 ;       [143:15] allocate scratch register -> r11
+;       [143:15] line number
         mov r11, 143
         cmovge rbp, r11
 ;       [143:15] free scratch register 'r11'
@@ -2853,8 +2936,10 @@ main:
 ;   [148:12] 1
 ;   [148:12] r14 = 1
     mov r14, 1
+;   [148:12] bounds check
     cmp r14, 8
 ;   [148:12] allocate scratch register -> r13
+;   [148:12] line number
     mov r13, 148
     cmovge rbp, r13
 ;   [148:12] free scratch register 'r13'
@@ -2867,8 +2952,10 @@ main:
 ;   [148:25] 1
 ;   [148:25] r14 = 1
     mov r14, 1
+;   [148:25] bounds check
     cmp r14, 8
 ;   [148:25] allocate scratch register -> r13
+;   [148:25] line number
     mov r13, 148
     cmovge rbp, r13
 ;   [148:25] free scratch register 'r13'
@@ -2896,8 +2983,10 @@ main:
 ;       [149:19] 1
 ;       [149:19] r12 = 1
         mov r12, 1
+;       [149:19] bounds check
         cmp r12, 8
 ;       [149:19] allocate scratch register -> r11
+;       [149:19] line number
         mov r11, 149
         cmovge rbp, r11
 ;       [149:19] free scratch register 'r11'
@@ -2910,8 +2999,10 @@ main:
 ;       [149:32] 1
 ;       [149:32] r12 = 1
         mov r12, 1
+;       [149:32] bounds check
         cmp r12, 8
 ;       [149:32] allocate scratch register -> r11
+;       [149:32] line number
         mov r11, 149
         cmovge rbp, r11
 ;       [149:32] free scratch register 'r11'
@@ -2974,8 +3065,10 @@ main:
 ;   [152:16] 1
 ;   [152:16] r14 = 1
     mov r14, 1
+;   [152:16] bounds check
     cmp r14, 8
 ;   [152:16] allocate scratch register -> r13
+;   [152:16] line number
     mov r13, 152
     cmovge rbp, r13
 ;   [152:16] free scratch register 'r13'
@@ -2983,7 +3076,13 @@ main:
     shl r14, 6
     add r15, r14
 ;   [152:9] free scratch register 'r14'
+;   [152:9] bounds check
     cmp rcx, 8
+;   [152:9] allocate scratch register -> r14
+;   [152:9] line number
+    mov r14, 152
+    cmovg rbp, r14
+;   [152:9] free scratch register 'r14'
     jg panic_bounds
     lea rsi, [r15]
 ;   [151:5] free scratch register 'r15'
@@ -2995,8 +3094,10 @@ main:
 ;   [153:16] 0
 ;   [153:16] r14 = 0
     mov r14, 0
+;   [153:16] bounds check
     cmp r14, 8
 ;   [153:16] allocate scratch register -> r13
+;   [153:16] line number
     mov r13, 153
     cmovge rbp, r13
 ;   [153:16] free scratch register 'r13'
@@ -3004,7 +3105,13 @@ main:
     shl r14, 6
     add r15, r14
 ;   [153:9] free scratch register 'r14'
+;   [153:9] bounds check
     cmp rcx, 8
+;   [153:9] allocate scratch register -> r14
+;   [153:9] line number
+    mov r14, 153
+    cmovg rbp, r14
+;   [153:9] free scratch register 'r14'
     jg panic_bounds
     lea rdi, [r15]
 ;   [151:5] free scratch register 'r15'
@@ -3030,8 +3137,10 @@ main:
 ;       [156:19] 0
 ;       [156:19] r12 = 0
         mov r12, 0
+;       [156:19] bounds check
         cmp r12, 8
 ;       [156:19] allocate scratch register -> r11
+;       [156:19] line number
         mov r11, 156
         cmovge rbp, r11
 ;       [156:19] free scratch register 'r11'
@@ -3044,8 +3153,10 @@ main:
 ;       [156:32] 1
 ;       [156:32] r12 = 1
         mov r12, 1
+;       [156:32] bounds check
         cmp r12, 8
 ;       [156:32] allocate scratch register -> r11
+;       [156:32] line number
         mov r11, 156
         cmovge rbp, r11
 ;       [156:32] free scratch register 'r11'

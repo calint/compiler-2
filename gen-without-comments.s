@@ -112,6 +112,8 @@ main:
     jg panic_bounds
     lea rsi, [rsp + r15 * 4 - 16]
     cmp rcx, 4
+    mov r15, 84
+    cmovg rbp, r15
     jg panic_bounds
     lea rdi, [rsp - 16]
     shl rcx, 2
@@ -150,9 +152,13 @@ main:
     rep stosb
     mov rcx, 4
     cmp rcx, 4
+    mov r15, 89
+    cmovg rbp, r15
     jg panic_bounds
     lea rsi, [rsp - 16]
     cmp rcx, 8
+    mov r15, 89
+    cmovg rbp, r15
     jg panic_bounds
     lea rdi, [rsp - 56]
     shl rcx, 2
@@ -160,9 +166,13 @@ main:
     cmp_90_12:
         mov rcx, 4
         cmp rcx, 4
+        mov r13, 90
+        cmovg rbp, r13
         jg panic_bounds
         lea rsi, [rsp - 16]
         cmp rcx, 8
+        mov r13, 90
+        cmovg rbp, r13
         jg panic_bounds
         lea rdi, [rsp - 56]
         shl rcx, 2
@@ -203,9 +213,13 @@ main:
     cmp_93_12:
         mov rcx, 4
         cmp rcx, 4
+        mov r13, 93
+        cmovg rbp, r13
         jg panic_bounds
         lea rsi, [rsp - 16]
         cmp rcx, 8
+        mov r13, 93
+        cmovg rbp, r13
         jg panic_bounds
         lea rdi, [rsp - 56]
         shl rcx, 2
@@ -791,6 +805,8 @@ main:
     shl r14, 6
     add r15, r14
     cmp rcx, 8
+    mov r14, 152
+    cmovg rbp, r14
     jg panic_bounds
     lea rsi, [r15]
     lea r15, [rsp - 796]
@@ -802,6 +818,8 @@ main:
     shl r14, 6
     add r15, r14
     cmp rcx, 8
+    mov r14, 153
+    cmovg rbp, r14
     jg panic_bounds
     lea rdi, [r15]
     shl rcx, 3
