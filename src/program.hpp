@@ -27,8 +27,9 @@ class program final {
 
   public:
     program(const std::string& source, const size_t stack_size,
-            const bool bounds_check)
-        : tc_{source, bounds_check}, stack_size_{stack_size} {
+            const bool bounds_check, const bool bounds_check_with_line)
+        : tc_{source, bounds_check, bounds_check_with_line},
+          stack_size_{stack_size} {
         // create a placeholder token to use with `toc` functions
         const token prgtk{};
 
@@ -128,14 +129,56 @@ class program final {
         std::println(os, "    mov rax, 60");
         std::println(os, "    mov rdi, 0");
         std::println(os, "    syscall");
-        std::println();
+        std::println(os);
         if (tc.is_bounds_check()) {
-            std::println(os);
-            std::println(os, "panic_bounds:");
-            std::println(os, "    ; system call: exit 255");
-            std::println(os, "    mov rax, 60");
-            std::println(os, "    mov rdi, 255");
-            std::println(os, "    syscall");
+            if (not tc.is_bounds_check_with_line()) {
+                std::println(os);
+                std::println(os, "panic_bounds:");
+                std::println(os, "    ; system call: exit 255");
+                std::println(os, "    mov rax, 60");
+                std::println(os, "    mov rdi, 255");
+                std::println(os, "    syscall");
+            } else {
+                std::println(os, "panic_bounds:");
+                std::println(os, ";   print message");
+                std::println(os, "    mov rax, 1");
+                std::println(os, "    mov rdi, 1");
+                std::println(os, "    lea rsi, [rel msg_panic]");
+                std::println(os, "    mov rdx, msg_panic_len");
+                std::println(os, "    syscall");
+                std::println(os, ";   line number is in `rbgp`");
+                std::println(os, "    mov rax, rbp");
+                std::println(os, ";   convert to string");
+                std::println(os, "    lea rdi, [rel num_buffer + 19]");
+                std::println(os, "    mov byte [rdi], 10");
+                std::println(os, "    dec rdi");
+                std::println(os, ".convert_loop:");
+                std::println(os, "    xor rdx, rdx");
+                std::println(os, "    mov rcx, 10");
+                std::println(os, "    div rcx");
+                std::println(os, "    add dl, '0'");
+                std::println(os, "    mov [rdi], dl");
+                std::println(os, "    dec rdi");
+                std::println(os, "    test rax, rax");
+                std::println(os, "    jnz .convert_loop");
+                std::println(os, "    inc rdi");
+                std::println(os, ";   print line number");
+                std::println(os, "    mov rax, 1");
+                std::println(os, "    mov rsi, rdi");
+                std::println(os, "    lea rdx, [rel num_buffer + 20]");
+                std::println(os, "    sub rdx, rdi");
+                std::println(os, "    mov rdi, 1");
+                std::println(os, "    syscall");
+                std::println(os, ";   exit with error code 255");
+                std::println(os, "    mov rax, 60");
+                std::println(os, "    mov rdi, 255");
+                std::println(os, "    syscall");
+                std::println(os, "section .rodata");
+                std::println(os, "    msg_panic: db 'panic: bounds at line '");
+                std::println(os, "    msg_panic_len equ $ - msg_panic");
+                std::println(os, "section .bss");
+                std::println(os, "    num_buffer: resb 21");
+            }
         }
     }
 

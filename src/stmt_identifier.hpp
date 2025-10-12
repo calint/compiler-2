@@ -260,34 +260,50 @@ class stmt_identifier : public statement {
                     // bounds check
                     if (tc.is_bounds_check()) {
                         const bool use_reg_size{not reg_size.empty()};
+                        const token& tk{curr_elem.array_index_expr->tok()};
                         if (use_reg_size) {
+                            tc.comment_start(tk, os, indent);
+                            std::println(os, "bounds check");
                             const std::string reg_top_idx{
-                                tc.alloc_scratch_register(
-                                    curr_elem.array_index_expr->tok(), os,
-                                    indent)};
-                            tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
-                                       indent, "mov", reg_top_idx, reg_size);
-                            tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
-                                       indent, "add", reg_top_idx, reg_idx);
-                            tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
-                                       indent, "cmp", reg_top_idx,
+                                tc.alloc_scratch_register(tk, os, indent)};
+                            tc.asm_cmd(tk, os, indent, "mov", reg_top_idx,
+                                       reg_size);
+                            tc.asm_cmd(tk, os, indent, "add", reg_top_idx,
+                                       reg_idx);
+                            tc.asm_cmd(tk, os, indent, "cmp", reg_top_idx,
                                        std::to_string(curr_info.array_size));
-                            toc::asm_jxx(curr_elem.array_index_expr->tok(), os,
-                                         indent, "g", "panic_bounds");
+                            if (tc.is_bounds_check_with_line()) {
+                                const std::string reg_line_num{
+                                    tc.alloc_scratch_register(tk, os, indent)};
+                                tc.asm_cmd(tk, os, indent, "mov", reg_line_num,
+                                           std::to_string(tk.at_line()));
+                                tc.asm_cmd(tk, os, indent, "cmovg", "rbp",
+                                           reg_line_num);
+                                tc.free_scratch_register(tk, os, indent,
+                                                         reg_line_num);
+                            }
+                            toc::asm_jxx(tk, os, indent, "g", "panic_bounds");
                             // note: jg because `reg_top_ix` contains the number
                             // of elements including current at `reg_idx`
                             //             ___  reg_top_idx = 2
                             //       [ 0 1 2 3 ]
                             //             | reg_idx = 2
-                            tc.free_scratch_register(
-                                curr_elem.array_index_expr->tok(), os, indent,
-                                reg_top_idx);
+                            tc.free_scratch_register(tk, os, indent,
+                                                     reg_top_idx);
                         } else {
-                            tc.asm_cmd(curr_elem.array_index_expr->tok(), os,
-                                       indent, "cmp", reg_idx,
+                            tc.asm_cmd(tk, os, indent, "cmp", reg_idx,
                                        std::to_string(curr_info.array_size));
-                            toc::asm_jxx(curr_elem.array_index_expr->tok(), os,
-                                         indent, "ge", "panic_bounds");
+                            if (tc.is_bounds_check_with_line()) {
+                                const std::string reg_line_num{
+                                    tc.alloc_scratch_register(tk, os, indent)};
+                                tc.asm_cmd(tk, os, indent, "mov", reg_line_num,
+                                           std::to_string(tk.at_line()));
+                                tc.asm_cmd(tk, os, indent, "cmovge", "rbp",
+                                           reg_line_num);
+                                tc.free_scratch_register(tk, os, indent,
+                                                         reg_line_num);
+                            }
+                            toc::asm_jxx(tk, os, indent, "ge", "panic_bounds");
                         }
                     }
 
@@ -327,31 +343,43 @@ class stmt_identifier : public statement {
             // bounds check
             if (tc.is_bounds_check()) {
                 const bool use_reg_size{is_last and not reg_size.empty()};
+                const token& tk{curr_elem.array_index_expr->tok()};
                 if (use_reg_size) {
-                    const std::string reg_top_idx{tc.alloc_scratch_register(
-                        curr_elem.array_index_expr->tok(), os, indent)};
-                    tc.asm_cmd(curr_elem.array_index_expr->tok(), os, indent,
-                               "mov", reg_top_idx, reg_size);
-                    tc.asm_cmd(curr_elem.array_index_expr->tok(), os, indent,
-                               "add", reg_top_idx, reg_idx);
-                    tc.asm_cmd(curr_elem.array_index_expr->tok(), os, indent,
-                               "cmp", reg_top_idx,
+                    const std::string reg_top_idx{
+                        tc.alloc_scratch_register(tk, os, indent)};
+                    tc.asm_cmd(tk, os, indent, "mov", reg_top_idx, reg_size);
+                    tc.asm_cmd(tk, os, indent, "add", reg_top_idx, reg_idx);
+                    tc.asm_cmd(tk, os, indent, "cmp", reg_top_idx,
                                std::to_string(curr_info.array_size));
-                    toc::asm_jxx(curr_elem.array_index_expr->tok(), os, indent,
-                                 "g", "panic_bounds");
+                    if (tc.is_bounds_check_with_line()) {
+                        const std::string reg_line_num{
+                            tc.alloc_scratch_register(tk, os, indent)};
+                        tc.asm_cmd(tk, os, indent, "mov", reg_line_num,
+                                   std::to_string(tk.at_line()));
+                        tc.asm_cmd(tk, os, indent, "cmovg", "rbp",
+                                   reg_line_num);
+                        tc.free_scratch_register(tk, os, indent, reg_line_num);
+                    }
+                    toc::asm_jxx(tk, os, indent, "g", "panic_bounds");
                     // note: jg because `reg_top_ix` contains the number of
                     // elements including current at `reg_idx`
                     //             ___  reg_top_idx = 2
                     //       [ 0 1 2 3 ]
                     //             | reg_idx = 2
-                    tc.free_scratch_register(curr_elem.array_index_expr->tok(),
-                                             os, indent, reg_top_idx);
+                    tc.free_scratch_register(tk, os, indent, reg_top_idx);
                 } else {
-                    tc.asm_cmd(curr_elem.array_index_expr->tok(), os, indent,
-                               "cmp", reg_idx,
+                    tc.asm_cmd(tk, os, indent, "cmp", reg_idx,
                                std::to_string(curr_info.array_size));
-                    toc::asm_jxx(curr_elem.array_index_expr->tok(), os, indent,
-                                 "ge", "panic_bounds");
+                    if (tc.is_bounds_check_with_line()) {
+                        const std::string reg_line_num{
+                            tc.alloc_scratch_register(tk, os, indent)};
+                        tc.asm_cmd(tk, os, indent, "mov", reg_line_num,
+                                   std::to_string(tk.at_line()));
+                        tc.asm_cmd(tk, os, indent, "cmovge", "rbp",
+                                   reg_line_num);
+                        tc.free_scratch_register(tk, os, indent, reg_line_num);
+                    }
+                    toc::asm_jxx(tk, os, indent, "ge", "panic_bounds");
                 }
             }
 

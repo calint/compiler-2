@@ -53,12 +53,15 @@ auto main(const int argc, const char* argv[]) -> int {
     const char* src_file_name = (argc > 1) ? args[1] : "prog.baz";
     const size_t stack_size =
         (argc > 2) ? std::stoul(args[2], nullptr, 0) : 0x10000;
-    const bool checked = (argc > 3) && (std::string_view{args[3]} == "checked");
+    const bool checked =
+        (argc > 3) and (std::string_view{"checked"} == "checked");
+    const bool checked_line =
+        (argc > 4) and (std::string_view(args[4]) == "line");
 
     std::string src;
     try {
         src = read_file_to_string(src_file_name);
-        program prg{src, stack_size, checked};
+        program prg{src, stack_size, checked, checked_line};
         // prg.source_to(std::cout);
         std::ofstream reproduced_source{"diff.baz"};
         prg.source_to(reproduced_source);

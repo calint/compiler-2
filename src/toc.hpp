@@ -245,10 +245,13 @@ class toc final {
     const std::regex regex_ws{R"(\s+)"};
     const std::regex regex_trim{R"(^\s+|\s+$)"};
     const bool bounds_check_{};
+    const bool bounds_check_with_line_{};
 
   public:
-    toc(const std::string& source, const bool bounds_check)
-        : source_{source}, bounds_check_(bounds_check) {}
+    toc(const std::string& source, const bool bounds_check,
+        const bool bounds_check_with_line)
+        : source_{source}, bounds_check_{bounds_check},
+          bounds_check_with_line_{bounds_check_with_line} {}
 
     ~toc() = default;
 
@@ -791,6 +794,10 @@ class toc final {
     }
 
     [[nodiscard]] auto is_bounds_check() const -> bool { return bounds_check_; }
+
+    [[nodiscard]] auto is_bounds_check_with_line() const -> bool {
+        return bounds_check_with_line_;
+    }
 
     [[nodiscard]] auto is_func(std::string_view name) const -> bool {
         return funcs_.has(name);

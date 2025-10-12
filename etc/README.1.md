@@ -17,6 +17,7 @@ x86_64 assembly on Linux.
 * user defined types
 * arrays
 * optional bounds checking at runtime
+  * optional line number
 * inlined functions
 * keywords: `func`, `type`, `field`, `var`, `loop`, `if`, `else`, `continue`,
 `break`, `return`
