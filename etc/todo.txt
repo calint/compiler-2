@@ -30,7 +30,6 @@
         color : i32,
     }
 [ ] replace the regex with manual string manipulation for performance?
-[ ] don't allow indexing on a non-index var
 [ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
 [ ] allow declaration of instance without initializer, zero it
     => var o : object[1] then accessed through o.pos does that
@@ -61,9 +60,10 @@
 [ ] specify whether ok for an op to truncate value instead of error
     => it is no longer an error
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+[x] don't allow indexing on a non-index var
 [x] check that everything that can be const is in function arguments also
 [x] check that everything that can be const is in constructors
 [x] use asm command 'test' instead of 'cmp' when checking for constant 0
