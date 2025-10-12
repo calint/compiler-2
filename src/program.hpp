@@ -144,13 +144,13 @@ class program final {
                 std::println(os, ";   print message to stderr");
                 std::println(os, "    mov rax, 1");
                 std::println(os, "    mov rdi, 2");
-                std::println(os, "    lea rsi, [rel msg_panic]");
+                std::println(os, "    lea rsi, [msg_panic]");
                 std::println(os, "    mov rdx, msg_panic_len");
                 std::println(os, "    syscall");
                 std::println(os, ";   line number is in `rbp`");
                 std::println(os, "    mov rax, rbp");
                 std::println(os, ";   convert to string");
-                std::println(os, "    lea rdi, [rel num_buffer + 19]");
+                std::println(os, "    lea rdi, [num_buffer + 19]");
                 std::println(os, "    mov byte [rdi], 10");
                 std::println(os, "    dec rdi");
                 std::println(os, ".convert_loop:");
@@ -166,7 +166,7 @@ class program final {
                 std::println(os, ";   print line number to stderr");
                 std::println(os, "    mov rax, 1");
                 std::println(os, "    mov rsi, rdi");
-                std::println(os, "    lea rdx, [rel num_buffer + 20]");
+                std::println(os, "    lea rdx, [num_buffer + 20]");
                 std::println(os, "    sub rdx, rdi");
                 std::println(os, "    mov rdi, 2");
                 std::println(os, "    syscall");

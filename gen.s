@@ -2235,13 +2235,13 @@ panic_bounds:
 ;   print message to stderr
     mov rax, 1
     mov rdi, 2
-    lea rsi, [rel msg_panic]
+    lea rsi, [msg_panic]
     mov rdx, msg_panic_len
     syscall
 ;   line number is in `rbp`
     mov rax, rbp
 ;   convert to string
-    lea rdi, [rel num_buffer + 19]
+    lea rdi, [num_buffer + 19]
     mov byte [rdi], 10
     dec rdi
 .convert_loop:
@@ -2257,7 +2257,7 @@ panic_bounds:
 ;   print line number to stderr
     mov rax, 1
     mov rsi, rdi
-    lea rdx, [rel num_buffer + 20]
+    lea rdx, [num_buffer + 20]
     sub rdx, rdi
     mov rdi, 2
     syscall
