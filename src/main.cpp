@@ -158,7 +158,8 @@ auto main(const int argc, const char* argv[]) -> int {
 // declared in 'decouple.hpp'
 // called from 'stmt_block' to solve circular dependencies with 'loop',
 // 'if', 'mov', 'syscall'
-inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, token tk)
+inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
+                                           const token tk)
     -> std::unique_ptr<statement> {
 
     // note: no 'std:move' on 'tk' because it is trivially copyable
@@ -182,6 +183,7 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, token tk)
 // called from 'stmt_block'
 inline auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
     -> std::unique_ptr<statement> {
+
     return std::make_unique<stmt_call>(tc, si.get_unary_ops(), si.first_token(),
                                        tz);
 }
@@ -226,7 +228,7 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
 // declared in 'decouple.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 inline auto create_expr_any(toc& tc, tokenizer& tz, const type& tp,
-                            bool in_args) -> std::unique_ptr<expr_any> {
+                            const bool in_args) -> std::unique_ptr<expr_any> {
 
     return std::make_unique<expr_any>(tc, tz, tp, in_args);
 }
@@ -332,8 +334,9 @@ inline void expr_type_value::source_to(std::ostream& os) const {
 // resolves circular reference: expr_type_value -> expr_any ->
 // expr_type_values
 inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
-                                          size_t indent,
-                                          std::string_view dst) const -> void {
+                                          const size_t indent,
+                                          const std::string_view dst) const
+    -> void {
 
     std::vector<std::string> allocated_registers;
     const std::string offset{stmt_identifier::compile_effective_address(
@@ -349,9 +352,12 @@ inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
 // declared in 'expr_type_value.hpp'
 // resolves circular reference: expr_type_value -> expr_any ->
 // expr_type_values
-inline auto expr_type_value::compile_recursive(
-    const expr_type_value& etv, toc& tc, std::ostream& os, size_t indent,
-    std::string_view src, std::string_view dst, const type& dst_type) -> void {
+inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
+                                               toc& tc, std::ostream& os,
+                                               const size_t indent,
+                                               const std::string_view src,
+                                               const std::string_view dst,
+                                               const type& dst_type) -> void {
 
     tc.comment_source(etv, os, indent);
 
@@ -411,7 +417,8 @@ inline auto expr_type_value::compile_recursive(
 // declared in 'unary_ops.hpp'
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
 inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
-                               size_t indnt, std::string_view dst_info) const {
+                               const size_t indnt,
+                               const std::string_view dst_info) const {
 
     for (auto op : std::views::reverse(ops_)) {
         switch (op) {

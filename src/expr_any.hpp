@@ -14,7 +14,7 @@ class expr_any final : public statement {
     };
 
   public:
-    expr_any(toc& tc, tokenizer& tz, const type& tp, bool in_args)
+    expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args)
         : statement{tz.next_whitespace_token()} {
 
         set_type(tp);
@@ -49,8 +49,8 @@ class expr_any final : public statement {
         std::visit([&os](const auto& itm) { itm.source_to(os); }, var_);
     }
 
-    auto compile(toc& tc, std::ostream& os, size_t indent,
-                 std::string_view dst) const -> void override {
+    auto compile(toc& tc, std::ostream& os, const size_t indent,
+                 const std::string_view dst) const -> void override {
 
         tc.comment_source(*this, os, indent);
         std::visit(

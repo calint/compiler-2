@@ -201,7 +201,7 @@ class expr_ops_list final : public expression {
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 std::string_view dst) const -> void override {
+                 const std::string_view dst) const -> void override {
 
         const ident_info dst_info{tc.make_ident_info(tok(), dst, false)};
 
@@ -508,8 +508,8 @@ class expr_ops_list final : public expression {
     }
 
     static auto asm_op_add_sub(toc& tc, std::ostream& os, const size_t indent,
-                               std::string_view op,
-                               std::string_view op_when_negated,
+                               const std::string_view op,
+                               const std::string_view op_when_negated,
                                const ident_info& dst, const statement& src)
         -> void {
 
@@ -555,7 +555,7 @@ class expr_ops_list final : public expression {
     }
 
     static auto asm_op_bitwise(toc& tc, std::ostream& os, const size_t indent,
-                               std::string_view op, const ident_info& dst,
+                               const std::string_view op, const ident_info& dst,
                                const statement& src) -> void {
 
         if (src.is_expression()) {
@@ -669,7 +669,7 @@ class expr_ops_list final : public expression {
     // op is either 'rax' for the quotient or 'rdx' for the reminder to be moved
     // into 'dst'
     static auto asm_op_div(toc& tc, std::ostream& os, const size_t indent,
-                           std::string_view op, const ident_info& dst,
+                           const std::string_view op, const ident_info& dst,
                            const statement& src) -> void {
 
         if (src.is_expression()) {

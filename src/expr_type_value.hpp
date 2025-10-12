@@ -29,8 +29,8 @@ class expr_type_value final : public statement {
     auto operator=(expr_type_value&&) -> expr_type_value& = default;
     // note: copy and assignment constructor will not compile if used
 
-    auto compile(toc& tc, std::ostream& os, size_t indent,
-                 std::string_view dst) const -> void override {
+    auto compile(toc& tc, std::ostream& os, const size_t indent,
+                 const std::string_view dst) const -> void override {
 
         if (is_make_copy()) {
             // note: sets the 'dst' register to the address of the start of this

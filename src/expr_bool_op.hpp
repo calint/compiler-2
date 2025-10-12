@@ -104,8 +104,8 @@ class expr_bool_op final : public statement {
 
     [[noreturn]] auto compile([[maybe_unused]] toc& tc,
                               [[maybe_unused]] std::ostream& os,
-                              [[maybe_unused]] size_t indent,
-                              [[maybe_unused]] std::string_view dst) const
+                              [[maybe_unused]] const size_t indent,
+                              [[maybe_unused]] const std::string_view dst) const
         -> void override {
 
         throw panic_exception("unexpected code path bool_op:1");
@@ -113,9 +113,9 @@ class expr_bool_op final : public statement {
 
     // returns an optional bool and if defined the expression evaluated to
     // the value of the optional
-    auto compile_or(toc& tc, std::ostream& os, size_t indent,
-                    std::string_view jmp_to_if_true, const bool inverted) const
-        -> std::optional<bool> {
+    auto compile_or(toc& tc, std::ostream& os, const size_t indent,
+                    const std::string_view jmp_to_if_true,
+                    const bool inverted) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
         tc.comment_source(*this, os, indent, "?",
@@ -197,8 +197,8 @@ class expr_bool_op final : public statement {
         return std::nullopt;
     }
 
-    auto compile_and(toc& tc, std::ostream& os, size_t indent,
-                     std::string_view jmp_to_if_false,
+    auto compile_and(toc& tc, std::ostream& os, const size_t indent,
+                     const std::string_view jmp_to_if_false,
                      const bool inverted) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
@@ -336,8 +336,9 @@ class expr_bool_op final : public statement {
         is_expression_ = true;
     }
 
-    static auto eval_constant(const int64_t lh, std::string_view op,
+    static auto eval_constant(const int64_t lh, const std::string_view op,
                               const int64_t rh) -> bool {
+
         if (op == "==") {
             return lh == rh;
         }
@@ -359,7 +360,7 @@ class expr_bool_op final : public statement {
         throw panic_exception("unexpected code path bool_op:2");
     }
 
-    static auto asm_jxx_for_op(std::string_view op) -> std::string_view {
+    static auto asm_jxx_for_op(const std::string_view op) -> std::string_view {
         if (op == "==") {
             return asm_je;
         }
@@ -382,7 +383,9 @@ class expr_bool_op final : public statement {
         throw panic_exception("unexpected code path bool_op:3");
     }
 
-    static auto asm_jxx_for_op_inv(std::string_view op) -> std::string_view {
+    static auto asm_jxx_for_op_inv(const std::string_view op)
+        -> std::string_view {
+
         if (op == "==") {
             return asm_jne;
         }
@@ -404,7 +407,7 @@ class expr_bool_op final : public statement {
         throw panic_exception("unexpected code path bool_op:4");
     }
 
-    auto resolve_cmp(toc& tc, std::ostream& os, size_t indent,
+    auto resolve_cmp(toc& tc, std::ostream& os, const size_t indent,
                      const expr_ops_list& lhs, const expr_ops_list& rhs) const
         -> void {
 
@@ -423,7 +426,7 @@ class expr_bool_op final : public statement {
         }
     }
 
-    auto resolve_cmp_shorthand(toc& tc, std::ostream& os, size_t indent,
+    auto resolve_cmp_shorthand(toc& tc, std::ostream& os, const size_t indent,
                                const expr_ops_list& lhs) const -> void {
 
         std::vector<std::string> allocated_registers;
@@ -435,7 +438,7 @@ class expr_bool_op final : public statement {
         }
     }
 
-    static auto resolve_expr(toc& tc, std::ostream& os, size_t indent,
+    static auto resolve_expr(toc& tc, std::ostream& os, const size_t indent,
                              const expr_ops_list& expr, const bool is_lhs,
                              std::vector<std::string>& allocated_registers)
         -> std::string {

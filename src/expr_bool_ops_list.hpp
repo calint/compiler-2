@@ -142,17 +142,17 @@ class expr_bool_ops_list final : public statement {
 
     [[noreturn]] auto compile([[maybe_unused]] toc& tc,
                               [[maybe_unused]] std::ostream& os,
-                              [[maybe_unused]] size_t indent,
-                              [[maybe_unused]] std::string_view dst) const
+                              [[maybe_unused]] const size_t indent,
+                              [[maybe_unused]] const std::string_view dst) const
         -> void override {
 
         throw panic_exception("unexpected code path expr_bool_ops_list:1");
     }
 
-    auto compile(toc& tc, std::ostream& os, size_t indent,
-                 std::string_view jmp_to_if_false,
-                 std::string_view jmp_to_if_true, bool inverted) const
-        -> std::optional<bool> {
+    auto compile(toc& tc, std::ostream& os, const size_t indent,
+                 const std::string_view jmp_to_if_false,
+                 const std::string_view jmp_to_if_true,
+                 const bool inverted) const -> std::optional<bool> {
 
         tc.comment_source(*this, os, indent, "?",
                           inverted ? " inverted: " : " ");
