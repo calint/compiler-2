@@ -29,8 +29,13 @@ x86_64 assembly on Linux.
 code run `./make.sh`
 * after that use `./run-baz.sh myprogram.baz` or `./run-baz.sh` to compile and
 run `prog.baz`
-  * optional parameters: stack size, bounds check, with line number
-  e.g: `./run-baz.sh myprogram.baz 262144 checked line`
+  * optional parameters: stack size, bounds check, with line number e.g:
+    * `./run-baz.sh myprogram.baz 262144`: defaults to bounds checked with line
+    number information
+    * `./run-baz.sh myprogram.baz 262144 checked noline`: checks bounds without
+    line number information (faster)
+    * `./run-baz.sh myprogram.baz 262144 unchecked`: unchecked, memory
+    corruption can occur
 * to run the tests `qa/coverage/run-tests.sh` and see coverage report in `qa/coverage/report/`
 
 ## Source

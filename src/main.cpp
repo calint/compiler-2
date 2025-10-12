@@ -54,7 +54,7 @@ auto main(const int argc, const char* argv[]) -> int {
     const size_t stack_size =
         (argc > 2) ? std::stoul(args[2], nullptr, 0) : 0x10000;
     const bool checked =
-        (argc > 3) and (std::string_view{"checked"} == "checked");
+        (argc > 3) and (std::string_view{args[3]} == "checked");
     const bool checked_line =
         (argc > 4) and (std::string_view(args[4]) == "line");
 
