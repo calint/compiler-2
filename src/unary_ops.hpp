@@ -39,7 +39,7 @@ class unary_ops final {
 
     auto put_back(tokenizer& tz) const -> void {
         // put back in reverse order
-        for (const char op : std::views::reverse(ops_)) {
+        for (const char op : ops_ | std::views::reverse) {
             tz.put_back_char(op);
         }
         tz.put_back_token(ws_before_);
@@ -64,7 +64,7 @@ class unary_ops final {
     }
 
     [[nodiscard]] auto evaluate_constant(int64_t v) const -> int64_t {
-        for (const char op : std::views::reverse(ops_)) {
+        for (const char op : ops_ | std::views::reverse) {
             switch (op) {
             case '-':
                 v = -v;

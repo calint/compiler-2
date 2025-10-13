@@ -433,7 +433,7 @@ inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
                                const size_t indnt,
                                const std::string_view dst_info) const {
 
-    for (auto op : std::views::reverse(ops_)) {
+    for (const char op : ops_ | std::views::reverse) {
         switch (op) {
         case '~':
             toc::asm_not(ws_before_, os, indnt, dst_info);
