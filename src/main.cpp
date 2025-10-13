@@ -142,15 +142,13 @@ auto main(const int argc, const char* argv[]) -> int {
     } catch (const compiler_exception& e) {
         const auto [line, col]{
             toc::line_and_col_num_for_char_index(e.line, e.start_index, src)};
-        std::cerr << "\n"
-                  << src_file_name << ":" << line << ":" << col << ": " << e.msg
-                  << '\n';
+        std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col, e.msg);
         return 1;
     } catch (const panic_exception& e) {
-        std::cerr << "\npanic: " << e.what() << '\n';
+        std::println(stderr, "\npanic: {}", e.what());
         return 2;
     } catch (...) {
-        std::cerr << "\nunknown exception" << '\n';
+        std::println(stderr, "\nunknown exception");
         return 3;
     }
 }

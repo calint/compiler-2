@@ -16,15 +16,20 @@
 class stmt_block final : public statement {
     bool is_one_statement_{};
     std::vector<std::unique_ptr<statement>> stms_;
-    token ws1_;
-    token ws2_;
+    token ws1_; // leading whitespace
+    token ws2_; // end of block additional whitespace
+    token ws3_; // whitespace after '}'
 
   public:
+    // note: parser assumes tokenizer is at a '{' or it is considered a single
+    //       statement block
     stmt_block(toc& tc, tokenizer& tz)
-        : statement{tz.next_whitespace_token()},
+        : statement{tz.current_position_token()},
           is_one_statement_{not tz.is_next_char('{')} {
 
         set_type(tc.get_type_void());
+
+        ws1_ = tz.next_whitespace_token();
 
         tc.enter_block();
         while (true) {
@@ -34,7 +39,7 @@ class stmt_block final : public statement {
             // is it the end of the block?
             if (tz.is_next_char('}')) {
                 if (not is_one_statement_) {
-                    ws2_ = tz.next_whitespace_token();
+                    ws3_ = tz.next_whitespace_token();
                     break;
                 }
                 throw compiler_exception{
@@ -80,7 +85,7 @@ class stmt_block final : public statement {
                 // is it at end of block and there is whitespace before '}'?
                 if (tk.is_text("")) {
                     // yes, save it as this block whitespace
-                    ws1_ = tk;
+                    ws2_ = tk;
                     continue;
                 }
                 // resolve identifier
@@ -112,18 +117,18 @@ class stmt_block final : public statement {
     auto operator=(stmt_block&&) -> stmt_block& = default;
 
     auto source_to(std::ostream& os) const -> void override {
-        statement::source_to(os);
         if (not is_one_statement_) {
             std::print(os, "{{");
         }
+        ws1_.source_to(os);
         for (const auto& s : stms_) {
             s->source_to(os);
         }
         if (not is_one_statement_) {
             std::print(os, "}}");
-            ws2_.source_to(os);
+            ws3_.source_to(os);
         }
-        ws1_.source_to(os);
+        ws2_.source_to(os);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
