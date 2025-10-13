@@ -1087,8 +1087,8 @@ class toc final {
         if (is_nasm_register(id_base)) {
             //? unary ops?
             return {
-                .id = std::string{ident},
-                .id_nasm = std::string{id_base},
+                .id{ident},
+                .id_nasm{id_base},
                 .type_ref = get_type_default(),
                 .size = get_type_default().size(),
                 .ident_type = ident_info::ident_type::REGISTER,
@@ -1099,8 +1099,8 @@ class toc final {
         if (is_nasm_indirect(id_base)) {
             // get the size: e.g. "dword [r15]"
             return {
-                .id = std::string{ident},
-                .id_nasm = std::string{id_base},
+                .id{ident},
+                .id_nasm{id_base},
                 .type_ref = get_builtin_type_for_operand(src_loc, id_base),
                 .size = get_size_from_operand(src_loc, id_base),
                 .ident_type = ident_info::ident_type::REGISTER,
@@ -1114,8 +1114,8 @@ class toc final {
                                       : id.path().at(1); //? bug. not correct
             if (after_dot == "len") {
                 return {
-                    .id = std::string{ident},
-                    .id_nasm = std::format("{}.len", id_base),
+                    .id{ident},
+                    .id_nasm{std::format("{}.len", id_base)},
                     .type_ref = get_type_default(),
                     .size = get_type_default().size(),
                     .ident_type = ident_info::ident_type::IMPLIED,
@@ -1124,16 +1124,16 @@ class toc final {
             const field_info& fi{fields_.get_const_ref(id_base)};
             if (fi.is_str) {
                 return {
-                    .id = std::string{ident},
-                    .id_nasm = std::string{id_base},
+                    .id{ident},
+                    .id_nasm{id_base},
                     .type_ref = get_type_default(),
                     .ident_type = ident_info::ident_type::FIELD,
                 };
             }
             //? assumes qword
             return {
-                .id = std::string{ident},
-                .id_nasm = std::format("qword [{}]", id_base),
+                .id{ident},
+                .id_nasm{std::format("qword [{}]", id_base)},
                 .type_ref = get_type_default(),
                 .size = get_type_default().size(),
                 .ident_type = ident_info::ident_type::FIELD,
@@ -1144,8 +1144,8 @@ class toc final {
         if (const std::optional<int64_t> value{parse_to_constant(id_base)};
             value) {
             return {
-                .id = std::string{ident},
-                .id_nasm = std::string{id_base},
+                .id{ident},
+                .id_nasm{id_base},
                 .const_value = *value,
                 .type_ref = get_type_default(),
                 .size = get_type_default().size(),
@@ -1155,8 +1155,8 @@ class toc final {
         // is it a boolean constant?
         if (id_base == "true") {
             return {
-                .id = std::string{ident},
-                .id_nasm = "true",
+                .id{ident},
+                .id_nasm{"true"},
                 .const_value = 1,
                 .type_ref = get_type_bool(),
                 .size = get_type_bool().size(),
@@ -1165,8 +1165,8 @@ class toc final {
 
         if (id_base == "false") {
             return {
-                .id = std::string{ident},
-                .id_nasm = "false",
+                .id{ident},
+                .id_nasm{"false"},
                 .const_value = 0,
                 .type_ref = get_type_bool(),
                 .size = get_type_bool().size(),
@@ -1175,8 +1175,8 @@ class toc final {
 
         // not resolved, return empty info
         return {
-            .id = "",
-            .id_nasm = "",
+            .id{""},
+            .id_nasm{""},
             .type_ref = get_type_void(),
         };
     }
