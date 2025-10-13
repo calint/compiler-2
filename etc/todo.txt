@@ -1,5 +1,3 @@
-[x] put all regex construction in toc
-    => public members: regex_XXX
 [ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
     stack
@@ -35,7 +33,6 @@
         pos : point,
         color : i32,
     }
-[ ] replace the regex with manual string manipulation for performance?
 [ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
 [ ] allow declaration of instance without initializer, zero it
     => var o : object[1] then accessed through o.pos does that
@@ -52,7 +49,6 @@
 [ ] handle case where x86_64 cannot load immediate 64 bit value to memory
 [ ] when passing an array as an argument the call can insert quasi variables
     for length. fat pointers
-[ ] token: regex construction to static
 [ ] stmt_call: check arguments vs parameters in constructor instead of at
     compile
 [ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
@@ -69,6 +65,12 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[-] replace the regex with manual string manipulation for performance?
+    => duplicate
+[x] put all regex construction in toc
+    => public members: regex_XXX
+[x] token: regex construction to static
+    => all regex pre-compiled as const in toc
 [x] don't allow indexing on a non-index var
 [x] check that everything that can be const is in function arguments also
 [x] check that everything that can be const is in constructors
