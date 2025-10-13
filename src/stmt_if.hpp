@@ -140,9 +140,9 @@ class stmt_if final : public statement {
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
 
-        std::ranges::for_each(branches_, [&var](const stmt_if_branch& e) {
+        for (const stmt_if_branch& e : branches_) {
             e.assert_var_not_used(var);
-        });
+        }
     }
 
   private:

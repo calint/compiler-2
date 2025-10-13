@@ -283,10 +283,9 @@ class expr_ops_list final : public expression {
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
 
-        std::ranges::for_each(exprs_,
-                              [&var](const std::unique_ptr<statement>& e) {
-                                  e->assert_var_not_used(var);
-                              });
+        for (const std::unique_ptr<statement>& e : exprs_) {
+            e->assert_var_not_used(var);
+        }
     }
 
   private:

@@ -1,6 +1,5 @@
 // review: 2025-09-29
 
-#include <algorithm>
 #include <cstring>
 #include <format>
 #include <fstream>
@@ -423,9 +422,9 @@ inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
 auto expr_type_value::assert_var_not_used(const std::string_view var) const
     -> void {
 
-    std::ranges::for_each(exprs_, [&var](const std::unique_ptr<expr_any>& e) {
+    for (const std::unique_ptr<expr_any>& e : exprs_) {
         e->assert_var_not_used(var);
-    });
+    }
 }
 
 // declared in 'unary_ops.hpp'

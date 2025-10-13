@@ -274,7 +274,8 @@ class stmt_call : public expression {
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
 
-        std::ranges::for_each(
-            args_, [&var](const expr_any& e) { e.assert_var_not_used(var); });
+        for (const expr_any& e : args_) {
+            e.assert_var_not_used(var);
+        }
     }
 };
