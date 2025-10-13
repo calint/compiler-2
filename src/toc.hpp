@@ -233,6 +233,7 @@ class toc final {
     size_t scratch_registers_initial_size_{scratch_registers_.size()};
     std::vector<std::string> allocated_registers_;
     std::vector<std::string> allocated_registers_src_locs_; // source locations
+    std::vector<const stmt_def_func*> func_defs_;
     lut<field_info> fields_;
     lut<func_info> funcs_;
     lut<const type&> types_;
@@ -304,6 +305,10 @@ class toc final {
         funcs_.put(std::move(name), {.def = func_def,
                                      .declared_at_tk = src_loc_tk,
                                      .type_ref = return_type});
+
+        if (func_def) {
+            func_defs_.emplace_back(func_def);
+        }
     }
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
@@ -696,6 +701,11 @@ class toc final {
         }
 
         throw compiler_exception{src_loc_tk, "not in a function"};
+    }
+
+    [[nodiscard]] auto get_func_defs() const
+        -> const std::vector<const stmt_def_func*>& {
+        return func_defs_;
     }
 
     [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,

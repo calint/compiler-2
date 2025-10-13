@@ -137,5 +137,7 @@ class stmt_block final : public statement {
         tc.exit_block();
     }
 
+    [[nodiscard]] auto is_var_set(std::string_view var) const -> bool;
+
     [[nodiscard]] auto is_empty() const -> bool { return stms_.empty(); }
 };

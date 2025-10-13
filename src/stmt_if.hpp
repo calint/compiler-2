@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include "stmt_block.hpp"
 #include "stmt_if_branch.hpp"
 
 class stmt_if final : public statement {
@@ -129,6 +130,10 @@ class stmt_if final : public statement {
         }
 
         toc::asm_label(tok(), os, indent, label_after_if);
+    }
+
+    [[nodiscard]] auto else_block() const -> const stmt_block& {
+        return else_code_;
     }
 
   private:

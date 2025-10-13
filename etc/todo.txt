@@ -1,20 +1,4 @@
-[ ] var x = foo() becomes UB if foo does not set the return value
-    is_var_set(var, block) : bool
-      for each s in statements:
-        s is assign var return true
-        s is if: (ignored since condition is not known at compile time)
-                 return is_var_set(else_block, var)
-        s is call: return is_var_set(func_block, func_var_bound_to_var)
-                                 can be argument or return
-        s is break return false
-    stmt_block::is_var_set(var_name) -> bool
-    stmt_assign_var::is_var_set(var_name) -> bool
-    stmt_if::is_var_set(var_name) -> bool
-    stmt_call::is_arg_set(arg_idx) - > bool
-    stmt_call::is_return_set() -> bool
-    program:
-      for each f in funcs:
-        if f returns stmt_call::is_return_set()
+[ ] UB if the return value is used as an argument in a expr_any
 [ ] break: exit current block instead of just loop?
 [ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
@@ -77,6 +61,27 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] var x = foo() becomes UB if foo does not set the return value
+    is_var_set(var, block) : bool
+      for each s in statements:
+        s is assign var return true
+        s is if: (ignored since condition is not known at compile time)
+                 return is_var_set(else_block, var)
+        s is call: return is_var_set(func_block, func_var_bound_to_var)
+                                 can be argument or return
+        s is break return false
+    stmt_block::is_var_set(var_name) -> bool
+       stmt_assign_var::is_var_set(var_name) -> bool
+          ? what if expr_any contains uninitialized var_name?
+          stmt_expr_any::is_var_used(var_name) -> bool
+       stmt_if::is_var_set(var_name) -> bool
+          else_.is_var_set(var_name)
+       stmt_call::is_arg_set(arg_idx) - > bool
+       stmt_call::is_return_set() -> bool
+    program:
+      for each f in funcs:
+        if f returns stmt_func::is_return_set()
+    => done in a simpler way
 [-] replace the regex with manual string manipulation for performance?
     => duplicate
 [x] put all regex construction in toc

@@ -25,6 +25,9 @@
 #include "stmt_address_of.hpp"
 #include "stmt_array_size_of.hpp"
 #include "stmt_arrays_equal.hpp"
+#include "stmt_assign_var.hpp"
+#include "stmt_block.hpp"
+#include "stmt_break.hpp"
 #include "stmt_call.hpp"
 #include "stmt_call_asm_mov.hpp"
 #include "stmt_call_asm_syscall.hpp"
@@ -117,7 +120,7 @@ auto main(const int argc, const char* argv[]) -> int {
     try {
         src = read_file_to_string(src_file_name);
         program prg{src, stack_size, checked, checked_line};
-        // prg.source_to(std::cout);
+        // prg.source_to(std::cerr);
         std::ofstream reproduced_source{"diff.baz"};
         prg.source_to(reproduced_source);
         reproduced_source.close();
@@ -432,6 +435,41 @@ inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
             throw panic_exception("unexpected code path main:1");
         }
     }
+}
+
+[[nodiscard]] auto stmt_block::is_var_set(const std::string_view var) const
+    -> bool {
+    for (const std::unique_ptr<statement>& st : stms_) {
+        if (dynamic_cast<stmt_break*>(st.get())) {
+            return false;
+        }
+        if (auto* ptr = dynamic_cast<stmt_assign_var*>(st.get())) {
+            if (ptr->identifier() == var) {
+                return true;
+            }
+        }
+        if (auto* ptr = dynamic_cast<stmt_call_asm_mov*>(st.get())) {
+            if (ptr->argument(0).identifier() == var) {
+                return true;
+            }
+        }
+        if (auto* ptr = dynamic_cast<stmt_block*>(st.get())) {
+            if (ptr->is_var_set(var)) {
+                return true;
+            }
+        }
+        if (auto* ptr = dynamic_cast<stmt_if*>(st.get())) {
+            if (ptr->else_block().is_var_set(var)) {
+                return true;
+            }
+        }
+        if (auto* ptr = dynamic_cast<stmt_loop*>(st.get())) {
+            if (ptr->code().is_var_set(var)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 namespace {

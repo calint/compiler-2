@@ -83,6 +83,8 @@ class program final {
                     tk, std::format("unexpected keyword '{}'", tk.text())};
             }
         }
+
+        assert_functions_set_return_value(tc_.get_func_defs());
     }
 
     program() = delete;
@@ -186,5 +188,21 @@ class program final {
     auto build(std::ostream& os) -> void {
         compile(tc_, os, 0);
         tc_.finish(os);
+    }
+
+    static auto assert_functions_set_return_value(
+        const std::vector<const stmt_def_func*>& funcs) -> void {
+
+        for (const stmt_def_func* f : funcs) {
+            std::optional<func_return_info> ret_info{f->returns()};
+            if (not ret_info) {
+                continue;
+            }
+            if (f->code().is_var_set(ret_info->ident_tk.text())) {
+                continue;
+            }
+            throw compiler_exception(
+                f->tok(), "cannot guarantee that function return value is set");
+        }
     }
 };

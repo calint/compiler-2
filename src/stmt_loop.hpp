@@ -43,4 +43,6 @@ class stmt_loop final : public statement {
         statement::source_to(os);
         code_.source_to(os);
     }
+
+    [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
 };
