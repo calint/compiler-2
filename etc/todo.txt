@@ -10,6 +10,11 @@
             e2 = e1
         } 
       }
+      for_each(e1 in arr1) {
+        for_each(e2 in arr2) {
+            e2 = e1
+        } 
+      }
 [ ] ponder whether a compiler flag to check for over/underflow in arithmetics
 [ ] a return reference might be used as an argument to a function that set it.
     current UB detection does not allow that
