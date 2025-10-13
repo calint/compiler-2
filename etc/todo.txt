@@ -1,4 +1,4 @@
-[ ] think of an iterator of elements in array to make bounds checking only
+[ ] ponder an iterator of elements in array to make bounds checking only
     once:
       iterate(arr1 : e1) {
         iterate(arr2 : e2) {
