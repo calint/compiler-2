@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <memory>
 #include <sstream>
 #include <vector>
 
@@ -277,6 +278,17 @@ class expr_ops_list final : public expression {
 
         // more than 1 element, automatically an expression
         return true;
+    }
+
+    [[nodiscard]] auto is_var_used(const std::string_view var) const
+        -> bool override {
+
+        for (const std::unique_ptr<statement>& st : exprs_) {
+            if (st->is_var_used(var)) {
+                return true;
+            }
+        }
+        return false;
     }
 
   private:

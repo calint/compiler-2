@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include "stmt_call.hpp"
+#include <string_view>
 
 class stmt_call_asm_mov final : public stmt_call {
   public:
@@ -50,5 +51,11 @@ class stmt_call_asm_mov final : public stmt_call {
         tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
                    src_info.id_nasm);
         src_arg.get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
+    }
+
+    [[nodiscard]] auto is_var_used(const std::string_view var) const
+        -> bool override {
+
+        return argument(1).is_var_used(var);
     }
 };

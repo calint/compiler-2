@@ -3,6 +3,7 @@
 
 #include "stmt_block.hpp"
 #include "stmt_if_branch.hpp"
+#include <algorithm>
 
 class stmt_if final : public statement {
     std::vector<stmt_if_branch> branches_;
@@ -134,6 +135,14 @@ class stmt_if final : public statement {
 
     [[nodiscard]] auto else_block() const -> const stmt_block& {
         return else_code_;
+    }
+
+    [[nodiscard]] auto is_var_used(const std::string_view var) const
+        -> bool override {
+
+        return std::ranges::any_of(branches_, [&var](const stmt_if_branch& e) {
+            return e.is_var_used(var);
+        });
     }
 
   private:

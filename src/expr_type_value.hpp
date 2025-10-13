@@ -1,10 +1,11 @@
 #pragma once
 // reviewed: 2025-09-29
 
-#include "decouple.hpp"
-#include "statement.hpp"
 #include <memory>
 #include <string_view>
+
+#include "decouple.hpp"
+#include "statement.hpp"
 
 class stmt_identifier;
 
@@ -53,6 +54,8 @@ class expr_type_value final : public statement {
     [[nodiscard]] auto is_make_copy() const -> bool {
         return not tok().is_text("");
     }
+
+    [[nodiscard]] auto is_var_used(std::string_view var) const -> bool override;
 
   private:
     // implemented in main.cpp due to circular reference:

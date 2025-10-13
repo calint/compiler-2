@@ -302,6 +302,19 @@ class expr_bool_op final : public statement {
         return is_expression_;
     }
 
+    [[nodiscard]] auto is_var_used(const std::string_view var) const
+        -> bool override {
+
+        if (lhs_.is_var_used(var)) {
+            return true;
+        }
+        if (rhs_.is_var_used(var)) {
+            return true;
+        }
+
+        return false;
+    }
+
   private:
     auto resolve_if_op_is_expression() -> void {
         // is it a negated expression?

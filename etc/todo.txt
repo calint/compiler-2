@@ -1,4 +1,6 @@
-[ ] UB if the return value is used as an argument in a expr_any
+[ ] a return value might be used as a reference to be set by a function call
+    current UB detection does not allow that
+[x] UB if the return value is used as an argument in a expr_any before set
 [ ] break: exit current block instead of just loop?
 [ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the

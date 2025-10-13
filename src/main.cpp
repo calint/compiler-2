@@ -1,5 +1,6 @@
 // review: 2025-09-29
 
+#include <algorithm>
 #include <cstring>
 #include <format>
 #include <fstream>
@@ -417,6 +418,18 @@ inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
     }
 }
 
+// declared in 'expr_type_value.hpp'
+// resolves circular reference: expr_type_value -> expr_any ->
+// expr_type_values
+[[nodiscard]] auto
+expr_type_value::is_var_used(const std::string_view var) const -> bool {
+
+    return std::ranges::any_of(exprs_,
+                               [&var](const std::unique_ptr<expr_any>& e) {
+                                   return e->is_var_used(var);
+                               });
+}
+
 // declared in 'unary_ops.hpp'
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
 inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
@@ -439,37 +452,92 @@ inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
 
 [[nodiscard]] auto stmt_block::is_var_set(const std::string_view var) const
     -> bool {
+
     for (const std::unique_ptr<statement>& st : stms_) {
         if (dynamic_cast<stmt_break*>(st.get())) {
             return false;
         }
-        if (auto* ptr = dynamic_cast<stmt_assign_var*>(st.get())) {
+        // check that var is not used in expression before assigned or used in
+        // call
+        if (auto* ptr{dynamic_cast<stmt_assign_var*>(st.get())}) {
             if (ptr->identifier() == var) {
                 return true;
             }
         }
-        if (auto* ptr = dynamic_cast<stmt_call_asm_mov*>(st.get())) {
+        if (auto* ptr{dynamic_cast<stmt_call_asm_mov*>(st.get())}) {
             if (ptr->argument(0).identifier() == var) {
                 return true;
             }
         }
-        if (auto* ptr = dynamic_cast<stmt_block*>(st.get())) {
+        if (auto* ptr{dynamic_cast<stmt_block*>(st.get())}) {
             if (ptr->is_var_set(var)) {
                 return true;
             }
         }
-        if (auto* ptr = dynamic_cast<stmt_if*>(st.get())) {
+        if (auto* ptr{dynamic_cast<stmt_if*>(st.get())}) {
             if (ptr->else_block().is_var_set(var)) {
                 return true;
             }
         }
-        if (auto* ptr = dynamic_cast<stmt_loop*>(st.get())) {
+        if (auto* ptr{dynamic_cast<stmt_loop*>(st.get())}) {
             if (ptr->code().is_var_set(var)) {
                 return true;
             }
         }
     }
     return false;
+}
+
+auto stmt_block::assert_no_ub_for_var(const std::string_view var) const
+    -> void {
+
+    for (const std::unique_ptr<statement>& st : stms_) {
+        if (dynamic_cast<stmt_break*>(st.get())) {
+            return;
+        }
+        // check that var is not used in expression before assigned or used in
+        // call
+        if (auto* ptr{dynamic_cast<stmt_assign_var*>(st.get())}) {
+            if (ptr->is_var_used(var)) {
+                throw compiler_exception{
+                    ptr->tok(),
+                    std::format("use of uninitialized variable '{}'", var)};
+            }
+            if (ptr->identifier() == var) {
+                return;
+            }
+        }
+        if (auto* ptr{dynamic_cast<stmt_call_asm_mov*>(st.get())}) {
+            if (ptr->is_var_used(var)) {
+                throw compiler_exception{
+                    ptr->tok(),
+                    std::format("use of uninitialized variable '{}'", var)};
+            }
+            if (ptr->argument(0).identifier() == var) {
+                return;
+            }
+        }
+        if (auto* ptr{dynamic_cast<stmt_call*>(st.get())}) {
+            if (ptr->is_var_used(var)) {
+                throw compiler_exception{
+                    ptr->tok(),
+                    std::format("use of uninitialized variable '{}'", var)};
+            }
+        }
+        if (auto* ptr{dynamic_cast<stmt_if*>(st.get())}) {
+            if (ptr->is_var_used(var)) {
+                throw compiler_exception{
+                    ptr->tok(),
+                    std::format("use of uninitialized variable '{}'", var)};
+            }
+        }
+        if (auto* ptr{dynamic_cast<stmt_loop*>(st.get())}) {
+            ptr->code().assert_no_ub_for_var(var);
+        }
+        if (auto* ptr{dynamic_cast<stmt_block*>(st.get())}) {
+            ptr->assert_no_ub_for_var(var);
+        }
+    }
 }
 
 namespace {

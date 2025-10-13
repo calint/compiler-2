@@ -139,5 +139,7 @@ class stmt_block final : public statement {
 
     [[nodiscard]] auto is_var_set(std::string_view var) const -> bool;
 
+    auto assert_no_ub_for_var(std::string_view var) const -> void;
+
     [[nodiscard]] auto is_empty() const -> bool { return stms_.empty(); }
 };

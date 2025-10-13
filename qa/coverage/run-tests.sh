@@ -116,7 +116,8 @@ llvm-profdata merge -o baz.profdata -sparse $(ls *.profraw)
 llvm-cov export --format=lcov --instr-profile baz.profdata --object $BIN >lcov.info
 
 # Generate report
-genhtml --ignore-errors unsupported -quiet lcov.info --output-directory report/
+# note: ignore "inconsistent" because of problems with understanding lambdas
+genhtml --ignore-errors inconsistent,unsupported --quiet lcov.info --output-directory report/
 
 echo $SEP
 echo "coverage report generated in $(realpath "report/")"

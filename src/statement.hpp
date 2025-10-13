@@ -40,8 +40,6 @@ class statement {
         token_.source_to(os);
     }
 
-    [[nodiscard]] auto tok() const -> const token& { return token_; }
-
     [[nodiscard]] virtual auto is_in_data_section() const -> bool {
         return false;
     }
@@ -56,11 +54,19 @@ class statement {
         return uops_;
     }
 
-    auto set_type(const type& tp) -> void { type_ = &tp; }
-
     [[nodiscard]] virtual auto get_type() const -> const type& {
         return *type_;
     }
+
+    [[nodiscard]] virtual auto is_var_used(const std::string_view var) const
+        -> bool {
+
+        return identifier() == var;
+    }
+
+    [[nodiscard]] auto tok() const -> const token& { return token_; }
+
+    auto set_type(const type& tp) -> void { type_ = &tp; }
 
     static auto validate_identifier_name(const token& tk) -> void {
         if (tk.text().ends_with(".")) {

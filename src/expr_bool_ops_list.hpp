@@ -15,6 +15,11 @@ class expr_bool_ops_list final : public statement {
     token not_token_;        // e.g. not (a==b and c==d)
     token ws1_;              // whitespace after parenthesis
 
+    // helper template for nicer handling of variants using overloaded lambdas
+    template <class... Ts> struct overloaded : Ts... {
+        using Ts::operator()...;
+    };
+
   public:
     expr_bool_ops_list(toc& tc, token tk, tokenizer& tz,
                        const bool enclosed = false, token not_token = {})
@@ -371,6 +376,19 @@ class expr_bool_ops_list final : public statement {
         // it is an 'expr_bool_ops_list'
 
         return get<expr_bool_ops_list>(bools_.at(0)).identifier();
+    }
+
+    [[nodiscard]] auto is_var_used(const std::string_view var) const
+        -> bool override {
+
+        for (const auto& st : bools_) {
+            if (std::visit(
+                    [&var](const auto& itm) { return itm.is_var_used(var); },
+                    st)) {
+                return true;
+            }
+        }
+        return false;
     }
 
   private:
