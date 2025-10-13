@@ -201,8 +201,7 @@ class ident_path final {
 
   public:
     explicit ident_path(std::string_view id) : id_{id} {
-        auto parts{id_ | std::views::split('.')};
-        for (auto part : parts) {
+        for (auto part : id_ | std::views::split('.')) {
             path_.emplace_back(part.begin(), part.end());
         }
     }
