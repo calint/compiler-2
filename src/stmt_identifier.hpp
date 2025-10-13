@@ -213,7 +213,7 @@ class stmt_identifier : public statement {
 
                     tc.comment_start(curr_elem.array_index_expr->tok(), os,
                                      indent);
-                    std::println(os, "compile array index");
+                    std::println(os, "set array index");
 
                     curr_elem.array_index_expr->compile(tc, os, indent,
                                                         reg_idx);
@@ -253,7 +253,7 @@ class stmt_identifier : public statement {
                 tc.alloc_scratch_register(src_loc_tk, os, indent)};
 
             tc.comment_start(curr_elem.array_index_expr->tok(), os, indent);
-            std::println(os, "compile array index");
+            std::println(os, "set array index");
 
             curr_elem.array_index_expr->compile(tc, os, indent, reg_idx);
 
