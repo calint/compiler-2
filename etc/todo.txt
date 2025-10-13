@@ -1,3 +1,4 @@
+[ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
     stack
     => do perf tests first using etc/perf.sh
