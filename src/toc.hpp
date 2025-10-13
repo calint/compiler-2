@@ -195,21 +195,19 @@ struct ident_info {
     }
 };
 
-class identifier final {
+class ident_path final {
     std::string_view id_;
     std::vector<std::string_view> path_;
 
   public:
-    explicit identifier(std::string_view id) : id_{id} {
+    explicit ident_path(std::string_view id) : id_{id} {
         auto parts{id_ | std::views::split('.')};
         for (auto part : parts) {
             path_.emplace_back(part.begin(), part.end());
         }
     }
 
-    [[nodiscard]] auto id_base() const -> std::string_view {
-        return path_.at(0);
-    }
+    [[nodiscard]] auto base() const -> std::string_view { return path_.at(0); }
 
     [[nodiscard]] auto path() const -> const std::vector<std::string_view>& {
         return path_;
@@ -1082,9 +1080,9 @@ class toc final {
     make_ident_info_or_empty(const token& src_loc,
                              const std::string_view ident) const -> ident_info {
 
-        identifier id{ident};
+        ident_path id{ident};
         // get the root of an identifier: example p.x -> p
-        std::string_view id_base{id.id_base()};
+        std::string_view id_base{id.base()};
         // traverse the frames and resolve the id_nasm (which might be an
         // alias) to a variable, field, register or constant
         size_t i{frames_.size()};
@@ -1105,8 +1103,8 @@ class toc final {
                 }
                 // yes, continue resolving alias until it is a variable,
                 // field, register or constant
-                const identifier new_id{frm.get_alias(id_base)};
-                id_base = new_id.id_base();
+                const ident_path new_id{frm.get_alias(id_base)};
+                id_base = new_id.base();
                 // is this a path e.g. 'pt.x' or just 'res'?
                 if (id.path().size() == 1) {
                     // this is an alias of the type: res -> p.x
