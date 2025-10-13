@@ -1,4 +1,6 @@
-[ ] check function argument is array or not vs argument
+[o] check function argument is array or not vs argument
+    [x] for simple foo(arr) when arr can be aliased
+    [ ] for other foo(polygons[1].indices) not easy
 [x] function arguments as arrays:
     func write_to_array(res : i64[]) {
         res[1] = 2

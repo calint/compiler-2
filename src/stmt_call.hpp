@@ -7,6 +7,7 @@
 #include <ranges>
 #include <string_view>
 
+#include "compiler_exception.hpp"
 #include "expr_any.hpp"
 #include "stmt_def_func.hpp"
 
@@ -107,6 +108,14 @@ class stmt_call : public expression {
             const type& arg_type{arg.get_type()};
             const type& param_type{param.get_type()};
 
+            if (param.is_array()) {
+                const ident_info arg_info{tc.make_ident_info(arg)};
+                if (not arg_info.is_array) {
+                    throw compiler_exception{
+                        arg.tok(),
+                        std::format("parameter {} expected an array", i + 1)};
+                }
+            }
             if (arg_type.is_built_in() and param_type.is_built_in()) {
                 if (param_type.size() < arg_type.size()) {
                     throw compiler_exception{

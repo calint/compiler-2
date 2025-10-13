@@ -70,6 +70,12 @@ func baz(arg) : i64 res {
     res = arg * 2
 }
 
+# array arguments are declared with type and []
+
+func faz(arg : i32[]) {
+    arg[1] = 0xfe
+}
+
 func main() {
     var arr : i32[4]
     # arrays are initialized to 0
@@ -95,6 +101,9 @@ func main() {
     ix = 3
     arr[ix] = ~inv(arr[ix - 1])
     assert(arr[ix] == 2)
+
+    faz(arr)
+    assert(arr[1] == 0xfe)
 
     var p : point = {0, 0}
     foo(p)
