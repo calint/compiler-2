@@ -1,10 +1,12 @@
 [ ] var x = foo() becomes UB if foo does not set the return value
-    is_var_set(block, var) : bool:
-      if assigned then return true
-      ifs: ignored since condition is not known at compile time
-      else: return is_var_set(else_block, var)
-      call: return is_var_set(func_block, func_var_bound_to_var)
-      always return false at break
+    is_var_set(block, var) : bool
+      for each s: in statements:
+        s is assign and var return true
+        s is if: ignored since condition is not known at compile time
+                 else: return is_var_set(else_block, var)
+        s is call: return is_var_set(func_block, func_var_bound_to_var)
+                                 can be argument or return
+        s is break return false
 [ ] break: exit current block instead of just loop?
 [ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
