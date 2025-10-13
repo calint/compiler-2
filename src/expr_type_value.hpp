@@ -57,6 +57,17 @@ class expr_type_value final : public statement {
 
     auto assert_var_not_used(std::string_view var) const -> void override;
 
+    [[nodiscard]] auto is_identifier() const -> bool override {
+        return stmt_ident_ != nullptr;
+    }
+
+    [[nodiscard]] auto identifier() const -> std::string_view override;
+
+    auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
+                     size_t indent,
+                     std::vector<std::string>& allocated_registers,
+                     const std::string& reg_size) const -> std::string override;
+
   private:
     // implemented in main.cpp due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value

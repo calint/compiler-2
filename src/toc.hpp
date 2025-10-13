@@ -85,21 +85,15 @@ class frame final {
         aliases_.put(std::move(from), std::move(to));
     }
 
-    auto add_var(const token declared_at_tk, const std::string& name,
-                 const type& type_ref, const bool is_array,
-                 const size_t array_size, const int stack_idx) -> void {
+    auto add_var(var_info var) -> void {
 
-        if (stack_idx < 0) {
+        if (var.stack_idx < 0) {
             // variable, increase allocated stack size
-            allocated_stack_ += type_ref.size() * (is_array ? array_size : 1);
+            allocated_stack_ +=
+                var.type_ref.size() * (var.is_array ? var.array_size : 1);
         }
 
-        vars_.put(name, {.name = name,
-                         .type_ref = type_ref,
-                         .declared_at_tk = declared_at_tk,
-                         .stack_idx = stack_idx,
-                         .is_array = is_array,
-                         .array_size = array_size});
+        vars_.put(std::string{var.name}, var);
     }
 
     [[nodiscard]] auto allocated_stack_size() const -> size_t {
@@ -320,36 +314,36 @@ class toc final {
     }
 
     auto add_var(const token& src_loc_tk, std::ostream& os, const size_t indnt,
-                 const std::string& name, const type& var_type,
-                 const bool is_array, const size_t array_size) -> void {
+                 var_info var) -> void {
 
         // check if the variable is already declared in this scope
-        if (frames_.back().has_var(name)) {
-            const var_info& var{frames_.back().get_var_const_ref(name)};
+        if (frames_.back().has_var(var.name)) {
+            const var_info& decl_var{
+                frames_.back().get_var_const_ref(var.name)};
             throw compiler_exception{
                 src_loc_tk,
-                std::format("variable '{}' already declared at {}", name,
-                            source_location_hr(var.declared_at_tk))};
+                std::format("variable '{}' already declared at {}", var.name,
+                            source_location_hr(decl_var.declared_at_tk))};
         }
 
-        const int stack_idx{
-            static_cast<int>(get_stack_size() +
-                             (var_type.size() * (is_array ? array_size : 1)))};
+        const int stack_idx{static_cast<int>(
+            get_stack_size() +
+            (var.type_ref.size() * (var.is_array ? var.array_size : 1)))};
 
-        frames_.back().add_var(src_loc_tk, name, var_type, is_array, array_size,
-                               -stack_idx);
+        var.stack_idx = -stack_idx;
+        frames_.back().add_var(var);
 
         const size_t total_stack_size{get_stack_size()};
         usage_max_stack_size_ =
             std::max(total_stack_size, usage_max_stack_size_);
 
         // comment the resolved name
-        const ident_info& name_info{make_ident_info(src_loc_tk, name)};
+        const ident_info& name_info{make_ident_info(src_loc_tk, var.name)};
 
         comment_start(src_loc_tk, os, indnt);
-        std::print(os, "{}: {}", name, name_info.type_ref.name());
-        if (array_size) {
-            std::print(os, "[{}]", array_size);
+        std::print(os, "{}: {}", var.name, name_info.type_ref.name());
+        if (var.array_size) {
+            std::print(os, "[{}]", var.array_size);
         }
         std::println(os, " @ {}", name_info.id_nasm);
     }

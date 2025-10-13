@@ -288,6 +288,20 @@ class expr_ops_list final : public expression {
         }
     }
 
+    [[nodiscard]] auto is_identifier() const -> bool override {
+        return exprs_.size() == 1 and exprs_.at(0)->is_identifier();
+    }
+
+    auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
+                     size_t indent,
+                     std::vector<std::string>& allocated_registers,
+                     const std::string& reg_size) const
+        -> std::string override {
+
+        return exprs_.at(0)->compile_lea(src_loc_tk, tc, os, indent,
+                                         allocated_registers, reg_size);
+    }
+
   private:
     auto do_compile(toc& tc, std::ostream& os, const size_t indent,
                     const ident_info& dst_info) const -> void {

@@ -1,12 +1,13 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <format>
+#include <string_view>
+
 #include "compiler_exception.hpp"
 #include "stmt_assign_var.hpp"
 #include "stmt_identifier.hpp"
 #include "type.hpp"
-#include <format>
-#include <string_view>
 
 class null_stream final : public std::ostream {
     class null_buffer : public std::streambuf {
@@ -74,8 +75,12 @@ class stmt_def_var final : public statement {
 
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
-        tc.add_var(name_tk_, null_strm, 0, std::string{name_tk_.text()}, tp,
-                   is_array_, array_size_);
+        const var_info var{.name{name_tk_.text()},
+                           .type_ref = tp,
+                           .declared_at_tk{name_tk_},
+                           .is_array = is_array_,
+                           .array_size = array_size_};
+        tc.add_var(name_tk_, null_strm, 0, var);
 
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
@@ -120,8 +125,14 @@ class stmt_def_var final : public statement {
         -> void override {
 
         tc.comment_source(*this, os, indent);
-        tc.add_var(name_tk_, os, indent, std::string{name_tk_.text()},
-                   get_type(), is_array_, array_size_);
+        const var_info var{
+            .name{name_tk_.text()},
+            .type_ref = get_type(),
+            .declared_at_tk{name_tk_},
+            .is_array = is_array_,
+            .array_size = array_size_,
+        };
+        tc.add_var(name_tk_, os, indent, var);
 
         if (not is_array_) {
             assign_var_.compile(tc, os, indent, name_tk_.text());

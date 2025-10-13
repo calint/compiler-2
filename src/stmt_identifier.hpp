@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <format>
-#include <ranges>
 #include <string>
 
 #include "compiler_exception.hpp"
@@ -102,6 +101,8 @@ class stmt_identifier : public statement {
         });
     }
 
+    [[nodiscard]] auto is_identifier() const -> bool override { return true; }
+
     auto source_to(std::ostream& os) const -> void override {
         get_unary_ops().source_to(os);
         int sep{};
@@ -157,6 +158,17 @@ class stmt_identifier : public statement {
              allocated_registers | std::views::reverse) {
             tc.free_scratch_register(tok(), os, indent, reg);
         }
+    }
+
+    auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
+                     size_t indent,
+                     std::vector<std::string>& allocated_registers,
+                     const std::string& reg_size) const
+        -> std::string override {
+
+        return compile_effective_address(src_loc_tk, tc, os, indent, elems_,
+                                         allocated_registers,
+                                         std::move(reg_size));
     }
 
     static auto

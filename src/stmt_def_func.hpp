@@ -166,9 +166,13 @@ class stmt_def_func final : public statement {
         // does the function have return?
         if (returns_) {
             // yes, declare variable for the return
-            const token& id_tkn{returns_->ident_tk};
-            tc.add_var(id_tkn, os, indent + 1, std::string{id_tkn.text()},
-                       get_type(), false, 0);
+            const token& ret_tk{returns_->ident_tk};
+            const var_info var{
+                .name{ret_tk.text()},
+                .type_ref = get_type(),
+                .declared_at_tk{ret_tk},
+            };
+            tc.add_var(ret_tk, os, indent + 1, var);
         }
 
         // functions get arguments as aliases
@@ -180,8 +184,13 @@ class stmt_def_func final : public statement {
             // is argument passed as named register?
             if (prm_reg.empty()) {
                 // no, add it as a variable
-                tc.add_var(tok(), os, indent + 1, std::string{prm_name},
-                           prm_type, prm.is_array(), 0);
+                const var_info var{
+                    .name{prm_name},
+                    .type_ref = prm_type,
+                    .declared_at_tk{prm.tok()},
+                    .is_array = prm.is_array(),
+                };
+                tc.add_var(tok(), os, indent + 1, var);
                 continue;
             }
 

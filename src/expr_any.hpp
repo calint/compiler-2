@@ -158,8 +158,26 @@ class expr_any final : public statement {
         //       an argument in call
     }
 
-    [[nodiscard]] auto is_expr_type_value() const -> size_t {
+    [[nodiscard]] auto is_expr_type_value() const -> bool {
         return var_.index() == 2;
+    }
+
+    [[nodiscard]] auto is_expr_ops_list() const -> bool {
+        return var_.index() == 0;
+    }
+
+    [[nodiscard]] auto is_identifier() const -> bool override {
+        return is_expr_type_value() and std::get<2>(var_).is_identifier();
+    }
+
+    auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
+                     size_t indent,
+                     std::vector<std::string>& allocated_registers,
+                     const std::string& reg_size) const
+        -> std::string override {
+
+        return std::get<2>(var_).compile_lea(src_loc_tk, tc, os, indent,
+                                             allocated_registers, reg_size);
     }
 
     [[nodiscard]] auto as_expr_type_value() const -> const expr_type_value& {

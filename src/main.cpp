@@ -130,7 +130,7 @@ auto main(const int argc, const char* argv[]) -> int {
         std::stringstream ss1;
         std::stringstream ss2;
         prg.build(ss1);
-        // prg.build(std::cout); // build without jump optimizations
+        // prg.build(std::cstd); // build without jump optimizations
         optimize_jumps_1(ss1, ss2);
         optimize_jumps_2(ss2, std::cout);
 
@@ -426,6 +426,23 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
     for (const std::unique_ptr<expr_any>& e : exprs_) {
         e->assert_var_not_used(var);
     }
+}
+
+auto expr_type_value::compile_lea(const token& src_loc_tk, toc& tc,
+                                  std::ostream& os, size_t indent,
+                                  std::vector<std::string>& allocated_registers,
+                                  const std::string& reg_size) const
+    -> std::string {
+
+    return stmt_ident_->compile_lea(src_loc_tk, tc, os, indent,
+                                    allocated_registers, reg_size);
+}
+
+[[nodiscard]] auto expr_type_value::identifier() const -> std::string_view {
+    if (stmt_ident_) {
+        return stmt_ident_->identifier();
+    }
+    return statement::identifier();
 }
 
 // declared in 'unary_ops.hpp'
