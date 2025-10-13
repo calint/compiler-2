@@ -177,9 +177,9 @@ struct ident_info {
     const int64_t const_value{};
     const type& type_ref;
     const int32_t stack_ix{};
-    const bool is_array{};
-    const size_t array_size{};
     const size_t size{};
+    const size_t array_size{};
+    const bool is_array{};
     const ident_type ident_type{ident_type::CONST};
 
     [[nodiscard]] auto is_const() const -> bool {
@@ -1127,34 +1127,40 @@ class toc final {
             accessor_info ai{var.type_ref.accessor(
                 src_loc, id.path(), var.stack_idx, var.is_array, var.array_size,
                 var.type_ref.size() * (var.is_array ? var.array_size : 1))};
-            return {.id = std::string{ident},
-                    .id_nasm = ai.id_nasm,
-                    .type_ref = ai.tp,
-                    .stack_ix = var.stack_idx,
-                    .is_array = ai.is_array,
-                    .array_size = ai.array_size,
-                    .size = ai.size,
-                    .ident_type = ident_info::ident_type::VAR};
+            return {
+                .id = std::string{ident},
+                .id_nasm = ai.id_nasm,
+                .type_ref = ai.tp,
+                .stack_ix = var.stack_idx,
+                .size = ai.size,
+                .array_size = ai.array_size,
+                .is_array = ai.is_array,
+                .ident_type = ident_info::ident_type::VAR,
+            };
         }
 
         // is it a register?
         if (is_nasm_register(id_base)) {
             //? unary ops?
-            return {.id = std::string{ident},
-                    .id_nasm = std::string{id_base},
-                    .type_ref = get_type_default(),
-                    .size = get_type_default().size(),
-                    .ident_type = ident_info::ident_type::REGISTER};
+            return {
+                .id = std::string{ident},
+                .id_nasm = std::string{id_base},
+                .type_ref = get_type_default(),
+                .size = get_type_default().size(),
+                .ident_type = ident_info::ident_type::REGISTER,
+            };
         }
 
         // is it a register reference to memory?
         if (is_nasm_indirect(id_base)) {
             // get the size: e.g. "dword [r15]"
-            return {.id = std::string{ident},
-                    .id_nasm = std::string{id_base},
-                    .type_ref = get_builtin_type_for_operand(src_loc, id_base),
-                    .size = get_size_from_operand(src_loc, id_base),
-                    .ident_type = ident_info::ident_type::REGISTER};
+            return {
+                .id = std::string{ident},
+                .id_nasm = std::string{id_base},
+                .type_ref = get_builtin_type_for_operand(src_loc, id_base),
+                .size = get_size_from_operand(src_loc, id_base),
+                .ident_type = ident_info::ident_type::REGISTER,
+            };
         }
 
         // is it a field?
@@ -1163,52 +1169,64 @@ class toc final {
                 id.path().size() == 1 ? ""
                                       : id.path().at(1); //? bug. not correct
             if (after_dot == "len") {
-                return {.id = std::string{ident},
-                        .id_nasm = std::format("{}.len", id_base),
-                        .type_ref = get_type_default(),
-                        .size = get_type_default().size(),
-                        .ident_type = ident_info::ident_type::IMPLIED};
+                return {
+                    .id = std::string{ident},
+                    .id_nasm = std::format("{}.len", id_base),
+                    .type_ref = get_type_default(),
+                    .size = get_type_default().size(),
+                    .ident_type = ident_info::ident_type::IMPLIED,
+                };
             }
             const field_info& fi{fields_.get_const_ref(id_base)};
             if (fi.is_str) {
-                return {.id = std::string{ident},
-                        .id_nasm = std::string{id_base},
-                        .type_ref = get_type_default(),
-                        .ident_type = ident_info::ident_type::FIELD};
+                return {
+                    .id = std::string{ident},
+                    .id_nasm = std::string{id_base},
+                    .type_ref = get_type_default(),
+                    .ident_type = ident_info::ident_type::FIELD,
+                };
             }
             //? assumes qword
-            return {.id = std::string{ident},
-                    .id_nasm = std::format("qword [{}]", id_base),
-                    .type_ref = get_type_default(),
-                    .size = get_type_default().size(),
-                    .ident_type = ident_info::ident_type::FIELD};
+            return {
+                .id = std::string{ident},
+                .id_nasm = std::format("qword [{}]", id_base),
+                .type_ref = get_type_default(),
+                .size = get_type_default().size(),
+                .ident_type = ident_info::ident_type::FIELD,
+            };
         }
 
         // is 'id' an integer?
         if (const std::optional<int64_t> value{parse_to_constant(id_base)};
             value) {
-            return {.id = std::string{ident},
-                    .id_nasm = std::string{id_base},
-                    .const_value = *value,
-                    .type_ref = get_type_default(),
-                    .size = get_type_default().size()};
+            return {
+                .id = std::string{ident},
+                .id_nasm = std::string{id_base},
+                .const_value = *value,
+                .type_ref = get_type_default(),
+                .size = get_type_default().size(),
+            };
         }
 
         // is it a boolean constant?
         if (id_base == "true") {
-            return {.id = std::string{ident},
-                    .id_nasm = "true",
-                    .const_value = 1,
-                    .type_ref = get_type_bool(),
-                    .size = get_type_bool().size()};
+            return {
+                .id = std::string{ident},
+                .id_nasm = "true",
+                .const_value = 1,
+                .type_ref = get_type_bool(),
+                .size = get_type_bool().size(),
+            };
         }
 
         if (id_base == "false") {
-            return {.id = std::string{ident},
-                    .id_nasm = "false",
-                    .const_value = 0,
-                    .type_ref = get_type_bool(),
-                    .size = get_type_bool().size()};
+            return {
+                .id = std::string{ident},
+                .id_nasm = "false",
+                .const_value = 0,
+                .type_ref = get_type_bool(),
+                .size = get_type_bool().size(),
+            };
         }
 
         // not resolved, return empty info
