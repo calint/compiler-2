@@ -58,4 +58,9 @@ class stmt_call_asm_mov final : public stmt_call {
 
         argument(1).assert_var_not_used(var);
     }
+
+    [[nodiscard]] auto is_var_set(const std::string_view var) const
+        -> bool override {
+        return argument(0).identifier() == var;
+    }
 };

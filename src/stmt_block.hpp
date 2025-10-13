@@ -142,9 +142,25 @@ class stmt_block final : public statement {
         tc.exit_block();
     }
 
-    [[nodiscard]] auto is_var_set(std::string_view var) const -> bool;
+    [[nodiscard]] auto is_var_set(const std::string_view var) const
+        -> bool override {
 
-    auto assert_no_ub_for_var(std::string_view var) const -> void;
+        for (const std::unique_ptr<statement>& st : stms_) {
+            if (st->is_var_set(var)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    auto assert_no_ub_for_var(const std::string_view var) const -> void {
+        for (const std::unique_ptr<statement>& st : stms_) {
+            st->assert_var_not_used(var);
+            if (st->is_var_set(var)) {
+                return;
+            }
+        }
+    }
 
     [[nodiscard]] auto is_empty() const -> bool { return stms_.empty(); }
 };

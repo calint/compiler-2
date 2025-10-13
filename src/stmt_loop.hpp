@@ -45,4 +45,11 @@ class stmt_loop final : public statement {
     }
 
     [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
+
+    [[nodiscard]] auto
+    is_var_set([[maybe_unused]] const std::string_view var) const
+        -> bool override {
+
+        return code_.is_var_set(var);
+    }
 };

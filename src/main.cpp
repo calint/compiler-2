@@ -25,13 +25,9 @@
 #include "stmt_address_of.hpp"
 #include "stmt_array_size_of.hpp"
 #include "stmt_arrays_equal.hpp"
-#include "stmt_assign_var.hpp"
-#include "stmt_block.hpp"
-#include "stmt_break.hpp"
 #include "stmt_call.hpp"
 #include "stmt_call_asm_mov.hpp"
 #include "stmt_call_asm_syscall.hpp"
-#include "stmt_def_var.hpp"
 #include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
@@ -443,80 +439,6 @@ inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
             break;
         default:
             throw panic_exception("unexpected code path main:1");
-        }
-    }
-}
-
-[[nodiscard]] auto stmt_block::is_var_set(const std::string_view var) const
-    -> bool {
-
-    for (const std::unique_ptr<statement>& st : stms_) {
-        if (dynamic_cast<stmt_break*>(st.get())) {
-            return false;
-        }
-        // check that var is not used in expression before assigned or used in
-        // call
-        if (auto* ptr{dynamic_cast<stmt_assign_var*>(st.get())}) {
-            if (ptr->identifier() == var) {
-                return true;
-            }
-        }
-        if (auto* ptr{dynamic_cast<stmt_call_asm_mov*>(st.get())}) {
-            if (ptr->argument(0).identifier() == var) {
-                return true;
-            }
-        }
-        if (auto* ptr{dynamic_cast<stmt_block*>(st.get())}) {
-            if (ptr->is_var_set(var)) {
-                return true;
-            }
-        }
-        if (auto* ptr{dynamic_cast<stmt_if*>(st.get())}) {
-            if (ptr->else_block().is_var_set(var)) {
-                return true;
-            }
-        }
-        if (auto* ptr{dynamic_cast<stmt_loop*>(st.get())}) {
-            if (ptr->code().is_var_set(var)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-auto stmt_block::assert_no_ub_for_var(const std::string_view var) const
-    -> void {
-
-    for (const std::unique_ptr<statement>& st : stms_) {
-        if (dynamic_cast<stmt_break*>(st.get())) {
-            return;
-        }
-        if (auto* ptr1{dynamic_cast<stmt_assign_var*>(st.get())}) {
-            // check that var is not used in expression before assigned or used
-            // in call
-            ptr1->assert_var_not_used(var);
-            if (ptr1->identifier() == var) {
-                return;
-            }
-        } else if (auto* ptr2{dynamic_cast<stmt_def_var*>(st.get())}) {
-            ptr2->assert_var_not_used(var);
-            if (ptr2->identifier() == var) {
-                return;
-            }
-        } else if (auto* ptr3{dynamic_cast<stmt_call_asm_mov*>(st.get())}) {
-            ptr3->assert_var_not_used(var);
-            if (ptr3->argument(0).identifier() == var) {
-                return;
-            }
-        } else if (auto* ptr4{dynamic_cast<stmt_call*>(st.get())}) {
-            ptr4->assert_var_not_used(var);
-        } else if (auto* ptr5{dynamic_cast<stmt_if*>(st.get())}) {
-            ptr5->assert_var_not_used(var);
-        } else if (auto* ptr6{dynamic_cast<stmt_loop*>(st.get())}) {
-            ptr6->code().assert_no_ub_for_var(var);
-        } else if (auto* ptr7{dynamic_cast<stmt_block*>(st.get())}) {
-            ptr7->assert_no_ub_for_var(var);
         }
     }
 }

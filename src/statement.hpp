@@ -58,6 +58,12 @@ class statement {
         return *type_;
     }
 
+    [[nodiscard]] virtual auto
+    is_var_set([[maybe_unused]] const std::string_view var) const -> bool {
+
+        return false;
+    }
+
     virtual auto assert_var_not_used(const std::string_view var) const -> void {
         if (identifier() == var) {
             throw compiler_exception{

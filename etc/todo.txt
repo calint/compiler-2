@@ -1,3 +1,5 @@
+[ ] code after "break" or "continue" is dead code. generate error or UB check
+    can be fooled by code after "break" or "continue"
 [o] check function argument is array or not vs argument
     [x] for simple foo(arr) when arr can be aliased
     [ ] for other foo(polygons[1].indices) not easy
