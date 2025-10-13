@@ -179,15 +179,15 @@ class stmt_identifier : public statement {
             const size_t type_size{curr_info.type_ref.size()};
             const bool is_last{i == elems_size - 1};
 
-            // Handle array access without indexing
+            // handle array access without indexing
             if (not curr_elem.array_index_expr) {
-                // Bounds check for last element without indexing
+                // bounds check for last element without indexing
                 if (is_last and not reg_size.empty() and curr_info.is_array) {
                     emit_bounds_check(src_loc_tk, tc, os, indent, reg_size,
                                       curr_info.array_size, "g");
                 }
 
-                // Accumulate field offsets
+                // accumulate field offsets
                 if (i + 1 < elems_size) {
                     const identifier_elem& next_elem{elems[i + 1]};
                     accum_offset +=
@@ -210,6 +210,11 @@ class stmt_identifier : public statement {
                     const std::string reg_idx{
                         tc.alloc_scratch_register(src_loc_tk, os, indent)};
                     allocated_registers.push_back(reg_idx);
+
+                    tc.comment_start(curr_elem.array_index_expr->tok(), os,
+                                     indent);
+                    std::println(os, "compile array index");
+
                     curr_elem.array_index_expr->compile(tc, os, indent,
                                                         reg_idx);
 
@@ -246,6 +251,10 @@ class stmt_identifier : public statement {
             // calculate array index
             const std::string reg_idx{
                 tc.alloc_scratch_register(src_loc_tk, os, indent)};
+
+            tc.comment_start(curr_elem.array_index_expr->tok(), os, indent);
+            std::println(os, "compile array index");
+
             curr_elem.array_index_expr->compile(tc, os, indent, reg_idx);
 
             // bounds check

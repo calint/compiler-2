@@ -42,10 +42,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    41           1126            625           5447
+C/C++ Header                    41           1130            625           5452
 C++                              1             74             87            569
 -------------------------------------------------------------------------------
-SUM:                            42           1200            712           6016
+SUM:                            42           1204            712           6021
 -------------------------------------------------------------------------------
 ```
 
@@ -1329,6 +1329,7 @@ main:
     mov qword [rsp - 24], 1
 ;   [85:5] arr[ix] = 2
 ;   [85:5] allocate scratch register -> r15
+;   [85:9] compile array index
 ;   [85:9] ix
 ;   [85:9] ix
 ;   [85:9] r15 = ix
@@ -1348,6 +1349,7 @@ main:
 ;   [85:5] free scratch register 'r15'
 ;   [86:5] arr[ix + 1] = arr[ix]
 ;   [86:5] allocate scratch register -> r15
+;   [86:9] compile array index
 ;   [86:9] ix + 1
 ;   [86:9] ix + 1
 ;   [86:9] r15 = ix
@@ -1367,6 +1369,7 @@ main:
 ;   [86:19] dword [rsp + r15 * 4 - 16] = arr[ix]
 ;   [86:19] arr[ix]
 ;   [86:19] allocate scratch register -> r14
+;   [86:23] compile array index
 ;   [86:23] ix
 ;   [86:23] ix
 ;   [86:23] r14 = ix
@@ -1396,6 +1399,7 @@ main:
 ;       [87:12] r14 = arr[1]
 ;       [87:12] arr[1]
 ;       [87:12] allocate scratch register -> r13
+;       [87:16] compile array index
 ;       [87:16] 1
 ;       [87:16] 1
 ;       [87:16] r13 = 1
@@ -1458,6 +1462,7 @@ main:
 ;       [88:12] r14 = arr[2]
 ;       [88:12] arr[2]
 ;       [88:12] allocate scratch register -> r13
+;       [88:16] compile array index
 ;       [88:16] 2
 ;       [88:16] 2
 ;       [88:16] r13 = 2
@@ -1520,6 +1525,7 @@ main:
     mov rcx, 2
 ;   [90:16] arr[2]
 ;   [90:16] allocate scratch register -> r15
+;   [90:20] compile array index
 ;   [90:20] 2
 ;   [90:20] 2
 ;   [90:20] r15 = 2
@@ -1565,6 +1571,7 @@ main:
 ;       [92:12] r14 = arr[0]
 ;       [92:12] arr[0]
 ;       [92:12] allocate scratch register -> r13
+;       [92:16] compile array index
 ;       [92:16] 0
 ;       [92:16] 0
 ;       [92:16] r13 = 0
@@ -1751,6 +1758,7 @@ main:
     assert_96_5_end:
 ;   [98:5] arr1[2] = -1
 ;   [98:5] allocate scratch register -> r15
+;   [98:10] compile array index
 ;   [98:10] 2
 ;   [98:10] 2
 ;   [98:10] r15 = 2
@@ -1861,6 +1869,7 @@ main:
     mov qword [rsp - 24], 3
 ;   [102:5] arr[ix] = ~inv(arr[ix - 1])
 ;   [102:5] allocate scratch register -> r15
+;   [102:9] compile array index
 ;   [102:9] ix
 ;   [102:9] ix
 ;   [102:9] r15 = ix
@@ -1883,6 +1892,7 @@ main:
 ;   [102:20] r14 = arr[ix - 1]
 ;   [102:20] arr[ix - 1]
 ;   [102:20] allocate scratch register -> r13
+;   [102:24] compile array index
 ;   [102:24] ix - 1
 ;   [102:24] ix - 1
 ;   [102:24] r13 = ix
@@ -1924,6 +1934,7 @@ main:
 ;       [103:12] r14 = arr[ix]
 ;       [103:12] arr[ix]
 ;       [103:12] allocate scratch register -> r13
+;       [103:16] compile array index
 ;       [103:16] ix
 ;       [103:16] ix
 ;       [103:16] r13 = ix
@@ -1981,6 +1992,7 @@ main:
 ;       [105:5] alias arg -> arr
 ;       [76:5] arg[1] = 0xfe
 ;       [76:5] allocate scratch register -> r15
+;       [76:9] compile array index
 ;       [76:9] 1
 ;       [76:9] 1
 ;       [76:9] r15 = 1
@@ -2010,6 +2022,7 @@ main:
 ;       [106:12] r14 = arr[1]
 ;       [106:12] arr[1]
 ;       [106:12] allocate scratch register -> r13
+;       [106:16] compile array index
 ;       [106:16] 1
 ;       [106:16] 1
 ;       [106:16] r13 = 1
@@ -2979,6 +2992,7 @@ main:
 ;       [152:12] allocate scratch register -> r13
         lea r13, [rsp - 204]
 ;       [152:12] allocate scratch register -> r12
+;       [152:15] compile array index
 ;       [152:15] 0
 ;       [152:15] 0
 ;       [152:15] r12 = 0
@@ -3064,6 +3078,7 @@ main:
 ;   [157:5] allocate scratch register -> r15
     lea r15, [rsp - 796]
 ;   [157:5] allocate scratch register -> r14
+;   [157:12] compile array index
 ;   [157:12] 1
 ;   [157:12] 1
 ;   [157:12] r14 = 1
@@ -3080,6 +3095,7 @@ main:
     add r15, r14
 ;   [157:5] free scratch register 'r14'
 ;   [157:5] allocate scratch register -> r14
+;   [157:25] compile array index
 ;   [157:25] 1
 ;   [157:25] 1
 ;   [157:25] r14 = 1
@@ -3111,6 +3127,7 @@ main:
 ;       [158:12] allocate scratch register -> r13
         lea r13, [rsp - 796]
 ;       [158:12] allocate scratch register -> r12
+;       [158:19] compile array index
 ;       [158:19] 1
 ;       [158:19] 1
 ;       [158:19] r12 = 1
@@ -3127,6 +3144,7 @@ main:
         add r13, r12
 ;       [158:12] free scratch register 'r12'
 ;       [158:12] allocate scratch register -> r12
+;       [158:32] compile array index
 ;       [158:32] 1
 ;       [158:32] 1
 ;       [158:32] r12 = 1
@@ -3193,6 +3211,7 @@ main:
 ;   [161:9] allocate scratch register -> r15
     lea r15, [rsp - 796]
 ;   [161:9] allocate scratch register -> r14
+;   [161:16] compile array index
 ;   [161:16] 1
 ;   [161:16] 1
 ;   [161:16] r14 = 1
@@ -3222,6 +3241,7 @@ main:
 ;   [162:9] allocate scratch register -> r15
     lea r15, [rsp - 796]
 ;   [162:9] allocate scratch register -> r14
+;   [162:16] compile array index
 ;   [162:16] 0
 ;   [162:16] 0
 ;   [162:16] r14 = 0
@@ -3265,6 +3285,7 @@ main:
 ;       [165:12] allocate scratch register -> r13
         lea r13, [rsp - 796]
 ;       [165:12] allocate scratch register -> r12
+;       [165:19] compile array index
 ;       [165:19] 0
 ;       [165:19] 0
 ;       [165:19] r12 = 0
@@ -3281,6 +3302,7 @@ main:
         add r13, r12
 ;       [165:12] free scratch register 'r12'
 ;       [165:12] allocate scratch register -> r12
+;       [165:32] compile array index
 ;       [165:32] 1
 ;       [165:32] 1
 ;       [165:32] r12 = 1
