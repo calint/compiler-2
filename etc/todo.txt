@@ -1,17 +1,7 @@
 [ ] ponder an iterator of elements in array to make bounds checking only
     once:
-      iterate(arr1 : e1) {
-        iterate(arr2 : e2) {
-            e2 = e1
-        } 
-      }
       for(e1 : arr1) {
         for(e2 : arr2) {
-            e2 = e1
-        } 
-      }
-      for_each(e1 in arr1) {
-        for_each(e2 in arr2) {
             e2 = e1
         } 
       }
