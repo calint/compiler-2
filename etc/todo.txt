@@ -1,11 +1,15 @@
 [ ] var x = foo() becomes UB if foo does not set the return value
     analyze code path:
       if set in normal flow return true
-      if: follow and find if set
-      else: follow and find if set
-        if set in else return true
+      if:
+        set in normal flow return true
+        recurse ifs
+        recurse functions with parameter which argument to track
+                                               or return
+      else: recurse with var name to track
       loop: follow and if set before a break then return true
     [ ] check use before initialized
+[ ] break: exit current block instead of just loop?
 [ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
     stack
