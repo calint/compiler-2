@@ -1,3 +1,10 @@
+[ ] think of an iterator of elements in array to make bounds checking only
+    once:
+      iterate(arr1 : e1) {
+        iterate(arr2 : e2) {
+            e2 = e1
+        } 
+      }
 [ ] a return reference might be used as an argument to a function that set it.
     current UB detection does not allow that
 [x] UB if the return value is used as an argument in a expr_any before set
