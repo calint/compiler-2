@@ -1,13 +1,13 @@
-[ ] regex is not performant. replace with hand-rolled string operations
-[ ] some improvements (performance wise) of toc::indent using a buffer on the
-    stack
-    => do perf tests first using etc/perf.sh
 [ ] var x = foo() becomes UB if foo does not set the return value
     analyze code path:
       if: follow and find if set
       else: follow and find if set
       loop: follow and if set before a break then ok
     [ ] check use before initialized
+[ ] regex is not performant. replace with hand-rolled string operations
+[ ] some improvements (performance wise) of toc::indent using a buffer on the
+    stack
+    => do perf tests first using etc/perf.sh
 [o] implement "size_of"
     [ ] size_of for fields
 [o] review before next step
