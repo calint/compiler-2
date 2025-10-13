@@ -1,7 +1,7 @@
 [ ] var x = foo() becomes UB if foo does not set the return value
     is_var_set(block, var) : bool
       for each s: in statements:
-        s is assign and var return true
+        s is assign var return true
         s is if: ignored since condition is not known at compile time
                  else: return is_var_set(else_block, var)
         s is call: return is_var_set(func_block, func_var_bound_to_var)
