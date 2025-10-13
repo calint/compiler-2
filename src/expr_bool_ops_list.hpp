@@ -378,17 +378,13 @@ class expr_bool_ops_list final : public statement {
         return get<expr_bool_ops_list>(bools_.at(0)).identifier();
     }
 
-    [[nodiscard]] auto is_var_used(const std::string_view var) const
-        -> bool override {
+    auto assert_var_not_used(const std::string_view var) const
+        -> void override {
 
-        for (const auto& st : bools_) {
-            if (std::visit(
-                    [&var](const auto& itm) { return itm.is_var_used(var); },
-                    st)) {
-                return true;
-            }
+        for (const auto& e : bools_) {
+            std::visit(
+                [&var](const auto& itm) { itm.assert_var_not_used(var); }, e);
         }
-        return false;
     }
 
   private:

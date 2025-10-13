@@ -280,15 +280,13 @@ class expr_ops_list final : public expression {
         return true;
     }
 
-    [[nodiscard]] auto is_var_used(const std::string_view var) const
-        -> bool override {
+    auto assert_var_not_used(const std::string_view var) const
+        -> void override {
 
-        for (const std::unique_ptr<statement>& st : exprs_) {
-            if (st->is_var_used(var)) {
-                return true;
-            }
-        }
-        return false;
+        std::ranges::for_each(exprs_,
+                              [&var](const std::unique_ptr<statement>& e) {
+                                  e->assert_var_not_used(var);
+                              });
     }
 
   private:

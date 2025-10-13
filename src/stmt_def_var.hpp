@@ -82,11 +82,9 @@ class stmt_def_var final : public statement {
             assign_var_ = {tc, tz, std::move(si)};
         }
 
-        if (assign_var_.is_var_used(name_tk_.text())) {
-            throw compiler_exception(
-                tok(), std::format("use of un-initialized variable '{}'",
-                                   name_tk_.text()));
-        }
+        assert_var_not_used(name_tk_.text());
+        // note: asserts that the newly defined variable isn't used in the
+        //       initialization
     }
 
     ~stmt_def_var() override = default;
@@ -162,9 +160,13 @@ class stmt_def_var final : public statement {
         tc.free_named_register(tok(), os, indent, "rdi");
     }
 
-    [[nodiscard]] auto is_var_used(const std::string_view var) const
-        -> bool override {
+    auto assert_var_not_used(const std::string_view var) const
+        -> void override {
 
-        return assign_var_.is_var_used(var);
+        assign_var_.assert_var_not_used(var);
+    }
+
+    [[nodiscard]] auto identifier() const -> std::string_view override {
+        return name_tk_.text();
     }
 };

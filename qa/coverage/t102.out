@@ -1,2 +1,2 @@
 
-t102.baz:2:5: use of un-initialized variable 'x'
+t102.baz:2:13: uninitialized variable 'x'

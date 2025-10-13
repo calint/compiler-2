@@ -58,10 +58,12 @@ class statement {
         return *type_;
     }
 
-    [[nodiscard]] virtual auto is_var_used(const std::string_view var) const
-        -> bool {
-
-        return identifier() == var;
+    virtual auto assert_var_not_used(const std::string_view var) const -> void {
+        if (identifier() == var) {
+            throw compiler_exception{
+                token_,
+                std::format("uninitialized variable '{}'", identifier())};
+        }
     }
 
     [[nodiscard]] auto tok() const -> const token& { return token_; }

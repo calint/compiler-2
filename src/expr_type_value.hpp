@@ -55,7 +55,7 @@ class expr_type_value final : public statement {
         return not tok().is_text("");
     }
 
-    [[nodiscard]] auto is_var_used(std::string_view var) const -> bool override;
+    auto assert_var_not_used(std::string_view var) const -> void override;
 
   private:
     // implemented in main.cpp due to circular reference:

@@ -130,9 +130,9 @@ class stmt_assign_var final : public statement {
 
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 
-    [[nodiscard]] auto is_var_used(const std::string_view var) const
-        -> bool override {
+    auto assert_var_not_used(const std::string_view var) const
+        -> void override {
 
-        return expr_.is_var_used(var);
+        expr_.assert_var_not_used(var);
     }
 };

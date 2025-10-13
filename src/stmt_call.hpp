@@ -271,10 +271,10 @@ class stmt_call : public expression {
 
     [[nodiscard]] auto arguments_size() const -> size_t { return args_.size(); }
 
-    [[nodiscard]] auto is_var_used(const std::string_view var) const
-        -> bool override {
+    auto assert_var_not_used(const std::string_view var) const
+        -> void override {
 
-        return std::ranges::any_of(
-            args_, [&var](const expr_any& e) { return e.is_var_used(var); });
+        std::ranges::for_each(
+            args_, [&var](const expr_any& e) { e.assert_var_not_used(var); });
     }
 };

@@ -137,11 +137,11 @@ class stmt_if final : public statement {
         return else_code_;
     }
 
-    [[nodiscard]] auto is_var_used(const std::string_view var) const
-        -> bool override {
+    auto assert_var_not_used(const std::string_view var) const
+        -> void override {
 
-        return std::ranges::any_of(branches_, [&var](const stmt_if_branch& e) {
-            return e.is_var_used(var);
+        std::ranges::for_each(branches_, [&var](const stmt_if_branch& e) {
+            e.assert_var_not_used(var);
         });
     }
 

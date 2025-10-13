@@ -144,11 +144,10 @@ class expr_any final : public statement {
             var_);
     }
 
-    [[nodiscard]] auto is_var_used(const std::string_view var) const
-        -> bool override {
-        return std::visit(
-            [&var](const auto& itm) -> bool { return itm.is_var_used(var); },
-            var_);
+    auto assert_var_not_used(const std::string_view var) const
+        -> void override {
+        std::visit([&var](const auto& itm) { itm.assert_var_not_used(var); },
+                   var_);
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {

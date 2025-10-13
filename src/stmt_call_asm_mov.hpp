@@ -53,9 +53,9 @@ class stmt_call_asm_mov final : public stmt_call {
         src_arg.get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
     }
 
-    [[nodiscard]] auto is_var_used(const std::string_view var) const
-        -> bool override {
+    auto assert_var_not_used(const std::string_view var) const
+        -> void override {
 
-        return argument(1).is_var_used(var);
+        argument(1).assert_var_not_used(var);
     }
 };

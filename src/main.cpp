@@ -422,13 +422,12 @@ inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
 // declared in 'expr_type_value.hpp'
 // resolves circular reference: expr_type_value -> expr_any ->
 // expr_type_values
-[[nodiscard]] auto
-expr_type_value::is_var_used(const std::string_view var) const -> bool {
+auto expr_type_value::assert_var_not_used(const std::string_view var) const
+    -> void {
 
-    return std::ranges::any_of(exprs_,
-                               [&var](const std::unique_ptr<expr_any>& e) {
-                                   return e->is_var_used(var);
-                               });
+    std::ranges::for_each(exprs_, [&var](const std::unique_ptr<expr_any>& e) {
+        e->assert_var_not_used(var);
+    });
 }
 
 // declared in 'unary_ops.hpp'
@@ -496,57 +495,31 @@ auto stmt_block::assert_no_ub_for_var(const std::string_view var) const
         if (dynamic_cast<stmt_break*>(st.get())) {
             return;
         }
-        // check that var is not used in expression before assigned or used in
-        // call
-        if (auto* ptr{dynamic_cast<stmt_assign_var*>(st.get())}) {
-            if (ptr->is_var_used(var)) {
-                throw compiler_exception{
-                    ptr->tok(),
-                    std::format("use of uninitialized variable '{}'", var)};
-            }
-            if (ptr->identifier() == var) {
+        if (auto* ptr1{dynamic_cast<stmt_assign_var*>(st.get())}) {
+            // check that var is not used in expression before assigned or used
+            // in call
+            ptr1->assert_var_not_used(var);
+            if (ptr1->identifier() == var) {
                 return;
             }
-        }
-        if (auto* ptr{dynamic_cast<stmt_def_var*>(st.get())}) {
-            if (ptr->is_var_used(var)) {
-                throw compiler_exception{
-                    ptr->tok(),
-                    std::format("use of uninitialized variable '{}'", var)};
-            }
-            if (ptr->identifier() == var) {
+        } else if (auto* ptr2{dynamic_cast<stmt_def_var*>(st.get())}) {
+            ptr2->assert_var_not_used(var);
+            if (ptr2->identifier() == var) {
                 return;
             }
-        }
-        if (auto* ptr{dynamic_cast<stmt_call_asm_mov*>(st.get())}) {
-            if (ptr->is_var_used(var)) {
-                throw compiler_exception{
-                    ptr->tok(),
-                    std::format("use of uninitialized variable '{}'", var)};
-            }
-            if (ptr->argument(0).identifier() == var) {
+        } else if (auto* ptr3{dynamic_cast<stmt_call_asm_mov*>(st.get())}) {
+            ptr3->assert_var_not_used(var);
+            if (ptr3->argument(0).identifier() == var) {
                 return;
             }
-        }
-        if (auto* ptr{dynamic_cast<stmt_call*>(st.get())}) {
-            if (ptr->is_var_used(var)) {
-                throw compiler_exception{
-                    ptr->tok(),
-                    std::format("use of uninitialized variable '{}'", var)};
-            }
-        }
-        if (auto* ptr{dynamic_cast<stmt_if*>(st.get())}) {
-            if (ptr->is_var_used(var)) {
-                throw compiler_exception{
-                    ptr->tok(),
-                    std::format("use of uninitialized variable '{}'", var)};
-            }
-        }
-        if (auto* ptr{dynamic_cast<stmt_loop*>(st.get())}) {
-            ptr->code().assert_no_ub_for_var(var);
-        }
-        if (auto* ptr{dynamic_cast<stmt_block*>(st.get())}) {
-            ptr->assert_no_ub_for_var(var);
+        } else if (auto* ptr4{dynamic_cast<stmt_call*>(st.get())}) {
+            ptr4->assert_var_not_used(var);
+        } else if (auto* ptr5{dynamic_cast<stmt_if*>(st.get())}) {
+            ptr5->assert_var_not_used(var);
+        } else if (auto* ptr6{dynamic_cast<stmt_loop*>(st.get())}) {
+            ptr6->code().assert_no_ub_for_var(var);
+        } else if (auto* ptr7{dynamic_cast<stmt_block*>(st.get())}) {
+            ptr7->assert_no_ub_for_var(var);
         }
     }
 }

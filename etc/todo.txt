@@ -1,6 +1,6 @@
-[ ] more precise indication of where in the source the uninitialized variable
+[x] more precise indication of where in the source the uninitialized variable
     is used
-[ ] a return value might be used as a reference to be set by a function call.
+[ ] a return reference might be used as an argument to a function that set it.
     current UB detection does not allow that
 [x] UB if the return value is used as an argument in a expr_any before set
 [ ] break: exit current block instead of just loop?

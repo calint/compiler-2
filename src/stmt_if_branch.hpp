@@ -84,9 +84,9 @@ class stmt_if_branch final : public statement {
                                  : std::format("if_{}_{}", src_loc, call_path);
     }
 
-    [[nodiscard]] auto is_var_used(const std::string_view var) const
-        -> bool override {
+    auto assert_var_not_used(const std::string_view var) const
+        -> void override {
 
-        return bol_.is_var_used(var);
+        bol_.assert_var_not_used(var);
     }
 };
