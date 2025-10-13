@@ -1,5 +1,3 @@
-[x] more precise indication of where in the source the uninitialized variable
-    is used
 [ ] a return reference might be used as an argument to a function that set it.
     current UB detection does not allow that
 [x] UB if the return value is used as an argument in a expr_any before set
@@ -65,6 +63,8 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] more precise indication of where in the source the uninitialized variable
+    is used
 [x] var x = foo() becomes UB if foo does not set the return value
     is_var_set(var, block) : bool
       for each s in statements:
