@@ -1,5 +1,5 @@
-[ ] ponder an iterator of elements in array to make bounds checking only
-    once:
+[ ] ponder an iterator of elements in array that does not require bounds
+    checking:
       for(e1 : arr1) {
         for(e2 : arr2) {
             e2 = e1
