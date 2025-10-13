@@ -3,7 +3,6 @@
 
 #include "stmt_block.hpp"
 #include "stmt_if_branch.hpp"
-#include <algorithm>
 
 class stmt_if final : public statement {
     std::vector<stmt_if_branch> branches_;
