@@ -6,6 +6,7 @@
 #include "stmt_identifier.hpp"
 #include "type.hpp"
 #include <format>
+#include <string_view>
 
 class null_stream final : public std::ostream {
     class null_buffer : public std::streambuf {
@@ -80,6 +81,12 @@ class stmt_def_var final : public statement {
             stmt_identifier si{tc, {}, name_tk_, tz};
             assign_var_ = {tc, tz, std::move(si)};
         }
+
+        if (assign_var_.is_var_used(name_tk_.text())) {
+            throw compiler_exception(
+                tok(), std::format("use of un-initialized variable '{}'",
+                                   name_tk_.text()));
+        }
     }
 
     ~stmt_def_var() override = default;
@@ -153,5 +160,11 @@ class stmt_def_var final : public statement {
         tc.free_named_register(tok(), os, indent, "rax");
         tc.free_named_register(tok(), os, indent, "rcx");
         tc.free_named_register(tok(), os, indent, "rdi");
+    }
+
+    [[nodiscard]] auto is_var_used(const std::string_view var) const
+        -> bool override {
+
+        return assign_var_.is_var_used(var);
     }
 };

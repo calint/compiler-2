@@ -1,0 +1,7 @@
+func foo(i) : i64 res {
+    res = 1
+}
+
+func main() {
+    var x = foo(x)
+}

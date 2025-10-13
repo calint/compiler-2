@@ -8,8 +8,8 @@
             "program": "${workspaceFolder}/baz",
             "args": [
                 "prog.baz",
-                "131072",
-                "checked"
+                "--stack=131072",
+                "--checks=bounds,line"
             ],
             "cwd": "${workspaceFolder}",
         }

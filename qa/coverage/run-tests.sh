@@ -37,6 +37,14 @@ compile_and_build() {
   ld -s -o gen gen.o
 }
 
+# Common: compile and assemble
+compile_expect_error() {
+  rm -f error.log
+  set +e
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $OPTS 2>out
+  set -e
+}
+
 # Common: compare output with expected
 check_output() {
   local expected="$1"
@@ -100,6 +108,13 @@ DIFFPY() {
   echo -n "$SRC: "
   compile_and_build
   "./${SRC%.*}.py" >out
+  check_output "${SRC%.*}.out"
+}
+
+# Test with output comparison of compiler (no input)
+COMPERR() {
+  echo -n "$SRC: "
+  compile_expect_error
   check_output "${SRC%.*}.out"
 }
 

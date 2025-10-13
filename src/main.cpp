@@ -32,6 +32,7 @@
 #include "stmt_call.hpp"
 #include "stmt_call_asm_mov.hpp"
 #include "stmt_call_asm_syscall.hpp"
+#include "stmt_def_var.hpp"
 #include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
@@ -498,6 +499,16 @@ auto stmt_block::assert_no_ub_for_var(const std::string_view var) const
         // check that var is not used in expression before assigned or used in
         // call
         if (auto* ptr{dynamic_cast<stmt_assign_var*>(st.get())}) {
+            if (ptr->is_var_used(var)) {
+                throw compiler_exception{
+                    ptr->tok(),
+                    std::format("use of uninitialized variable '{}'", var)};
+            }
+            if (ptr->identifier() == var) {
+                return;
+            }
+        }
+        if (auto* ptr{dynamic_cast<stmt_def_var*>(st.get())}) {
             if (ptr->is_var_used(var)) {
                 throw compiler_exception{
                     ptr->tok(),
