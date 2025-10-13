@@ -1,10 +1,10 @@
 [ ] var x = foo() becomes UB if foo does not set the return value
-    analyze code path:
-      if set in without condition done true 
-      if: ignore since condition is not known at compile time
-      else: recurse with var to check
-      call: recurse with argument or ret to check
-      loop: recurse and if set before a break then done 
+    is_var_set(block, var) : bool:
+      if assigned then return true
+      ifs: ignored since condition is not known at compile time
+      else: return is_var_set(else_block, var)
+      call: return is_var_set(func_block, func_var_bound_to_var)
+      always return false at break
 [ ] break: exit current block instead of just loop?
 [ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
