@@ -70,10 +70,6 @@ func baz(arg) : i64 res {
     res = arg * 2
 }
 
-func write_to_array(res : i64[]) {
-    res[1] = 2
-}
-
 func main() {
     var arr : i32[4]
     # arrays are initialized to 0

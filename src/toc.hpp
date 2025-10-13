@@ -347,7 +347,7 @@ class toc final {
             std::max(total_stack_size, usage_max_stack_size_);
 
         // comment the resolved name
-        const ident_info& name_info{make_ident_info(src_loc_tk, name, false)};
+        const ident_info& name_info{make_ident_info(src_loc_tk, name)};
 
         comment_start(src_loc_tk, os, indnt);
         std::print(os, "{}: {}", name, name_info.type_ref.name());
@@ -984,21 +984,17 @@ class toc final {
         return funcs_.get_const_ref(name).def == nullptr;
     }
 
-    [[nodiscard]] auto
-    make_ident_info(const statement& st,
-                    [[maybe_unused]] const bool must_be_initiated) const
+    [[nodiscard]] auto make_ident_info(const statement& st) const
         -> ident_info {
 
-        return make_ident_info_or_throw(st.tok(), st.identifier(),
-                                        must_be_initiated);
+        return make_ident_info_or_throw(st.tok(), st.identifier());
     }
 
-    [[nodiscard]] auto
-    make_ident_info(const token& src_loc_tk, const std::string_view ident,
-                    [[maybe_unused]] const bool must_be_initiated) const
+    [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
+                                       const std::string_view ident) const
         -> ident_info {
 
-        return make_ident_info_or_throw(src_loc_tk, ident, must_be_initiated);
+        return make_ident_info_or_throw(src_loc_tk, ident);
     }
 
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
@@ -1224,9 +1220,9 @@ class toc final {
     }
 
     // helper: call make_ident_info_or_empty and throw if unresolved
-    [[nodiscard]] auto make_ident_info_or_throw(
-        const token& src_loc_tk, const std::string_view ident,
-        [[maybe_unused]] const bool must_be_initiated) const -> ident_info {
+    [[nodiscard]] auto
+    make_ident_info_or_throw(const token& src_loc_tk,
+                             const std::string_view ident) const -> ident_info {
 
         const ident_info id_info{make_ident_info_or_empty(src_loc_tk, ident)};
         if (not id_info.id_nasm.empty()) {

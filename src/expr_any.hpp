@@ -63,13 +63,11 @@ class expr_any final : public statement {
                 },
                 [&](const expr_bool_ops_list& bol) {
                     // resolve the destination
-                    const ident_info& dst_info{
-                        tc.make_ident_info(tok(), dst, false)};
+                    const ident_info& dst_info{tc.make_ident_info(tok(), dst)};
 
                     // if not expression assign to destination
                     if (not bol.is_expression()) {
-                        const ident_info& src_info{
-                            tc.make_ident_info(bol, false)};
+                        const ident_info& src_info{tc.make_ident_info(bol)};
                         tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
                                    src_info.id_nasm);
                         return;

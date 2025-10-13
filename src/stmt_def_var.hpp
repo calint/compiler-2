@@ -135,7 +135,7 @@ class stmt_def_var final : public statement {
         // rep stosb           ; Repeat store byte [RDI] = AL, RCX times
 
         const ident_info& dst_info{
-            tc.make_ident_info(name_tk_, name_tk_.text(), false)};
+            tc.make_ident_info(name_tk_, name_tk_.text())};
 
         tc.comment_start(name_tk_, os, indent);
         std::println(os, "clear array {} * {} B = {} B", array_size_,

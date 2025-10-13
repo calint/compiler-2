@@ -69,8 +69,8 @@ class stmt_array_copy final : public statement {
 
         tc.comment_source(*this, os, indent);
 
-        const ident_info from_info{tc.make_ident_info(from_, false)};
-        const ident_info to_info{tc.make_ident_info(to_, false)};
+        const ident_info from_info{tc.make_ident_info(from_)};
+        const ident_info to_info{tc.make_ident_info(to_)};
 
         // allocate the register for rep movs
         tc.alloc_named_register_or_throw(tok(), os, indent, "rsi");

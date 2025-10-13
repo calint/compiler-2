@@ -55,14 +55,14 @@ class stmt_size_of final : public expression {
 
         tc.comment_source(*this, os, indent);
 
-        const ident_info dst_info{tc.make_ident_info(tok(), dst, false)};
+        const ident_info dst_info{tc.make_ident_info(tok(), dst)};
 
         if (dst_info.type_ref.name() != tc.get_type_default().name()) {
             throw compiler_exception{tok(), "destination must be type i64"};
         }
 
-        const ident_info src_info{tc.make_ident_info(
-            stmt_ident_.tok(), stmt_ident_.identifier(), false)};
+        const ident_info src_info{
+            tc.make_ident_info(stmt_ident_.tok(), stmt_ident_.identifier())};
 
         // variable, register or field
         tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,

@@ -55,7 +55,7 @@ class stmt_array_size_of final : public expression {
 
         tc.comment_source(*this, os, indent);
 
-        const ident_info dst_info{tc.make_ident_info(tok(), dst, false)};
+        const ident_info dst_info{tc.make_ident_info(tok(), dst)};
 
         if (dst_info.is_const()) {
             throw compiler_exception{tok(), "destination cannot be a constant"};
@@ -65,8 +65,8 @@ class stmt_array_size_of final : public expression {
             throw compiler_exception{tok(), "destination must be type i64"};
         }
 
-        const ident_info src_info{tc.make_ident_info(
-            stmt_ident_.tok(), stmt_ident_.identifier(), false)};
+        const ident_info src_info{
+            tc.make_ident_info(stmt_ident_.tok(), stmt_ident_.identifier())};
 
         if (not src_info.is_var()) {
             throw compiler_exception{stmt_ident_.first_token(),

@@ -87,8 +87,8 @@ class stmt_arrays_equal final : public expression {
         tc.comment_source(count_, os, indent);
         count_.compile(tc, os, indent, "rcx");
 
-        const ident_info from_info{tc.make_ident_info(from_, false)};
-        const ident_info to_info{tc.make_ident_info(to_, false)};
+        const ident_info from_info{tc.make_ident_info(from_)};
+        const ident_info to_info{tc.make_ident_info(to_)};
 
         // from operand to rsi
         tc.comment_source(from_, os, indent);

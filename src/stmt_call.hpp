@@ -189,7 +189,7 @@ class stmt_call : public expression {
 
             // handle non-expression with unary ops but no register
             if (arg_reg.empty()) {
-                const ident_info& arg_info{tc.make_ident_info(arg, true)};
+                const ident_info& arg_info{tc.make_ident_info(arg)};
                 const std::string scratch_reg{
                     tc.alloc_scratch_register(arg.tok(), os, indent)};
                 allocated_registers_in_order.emplace_back(scratch_reg);
@@ -203,7 +203,7 @@ class stmt_call : public expression {
 
             // handle non-expression with register
             aliases_to_add.emplace_back(param.identifier(), arg_reg);
-            const ident_info& arg_info{tc.make_ident_info(arg, true)};
+            const ident_info& arg_info{tc.make_ident_info(arg)};
 
             if (arg_info.is_const()) {
                 tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
@@ -257,8 +257,8 @@ class stmt_call : public expression {
                                          "function call has unary operations "
                                          "but it does not return a value"};
             }
-            const ident_info& ret_info{tc.make_ident_info(
-                tok(), func.returns()->ident_tk.text(), true)};
+            const ident_info& ret_info{
+                tc.make_ident_info(tok(), func.returns()->ident_tk.text())};
             get_unary_ops().compile(tc, os, indent, ret_info.id_nasm);
         }
 

@@ -33,7 +33,7 @@ class stmt_identifier : public statement {
         while (true) {
             if (not tc.is_func(path_as_string_)) {
                 const ident_info curr_ident_info{
-                    tc.make_ident_info(tk, path_as_string_, false)};
+                    tc.make_ident_info(tk, path_as_string_)};
 
                 if (tz.peek_char() == '[' and not curr_ident_info.is_array) {
                     throw compiler_exception{
@@ -71,8 +71,7 @@ class stmt_identifier : public statement {
                 break;
             }
 
-            const ident_info ii{
-                tc.make_ident_info(tk_prv, path_as_string_, false)};
+            const ident_info ii{tc.make_ident_info(tk_prv, path_as_string_)};
 
             set_type(ii.type_ref);
             break;
@@ -128,11 +127,10 @@ class stmt_identifier : public statement {
 
         tc.comment_source(*this, os, indent);
 
-        const ident_info dst_info{tc.make_ident_info(tok(), dst, false)};
+        const ident_info dst_info{tc.make_ident_info(tok(), dst)};
 
         if (not is_expression()) {
-            const ident_info src_info{
-                tc.make_ident_info(tok(), identifier(), false)};
+            const ident_info src_info{tc.make_ident_info(tok(), identifier())};
 
             tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
                        src_info.id_nasm);
@@ -147,8 +145,7 @@ class stmt_identifier : public statement {
             stmt_identifier::compile_effective_address(
                 tok(), tc, os, indent, elems(), allocated_registers, "")};
 
-        const ident_info src_info{
-            tc.make_ident_info(tok(), identifier(), false)};
+        const ident_info src_info{tc.make_ident_info(tok(), identifier())};
 
         const std::string_view size_specifier{
             type::get_size_specifier(tok(), src_info.type_ref.size())};
@@ -172,7 +169,7 @@ class stmt_identifier : public statement {
                               const std::string_view reg_size) -> std::string {
 
         std::string path{elems.front().name_tk.text()};
-        const ident_info base_info{tc.make_ident_info(src_loc_tk, path, false)};
+        const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
 
         std::string reg_offset{"rsp"};
         int32_t accum_offset{};
@@ -180,8 +177,7 @@ class stmt_identifier : public statement {
 
         for (size_t i{}; i < elems_size; i++) {
             const identifier_elem& curr_elem{elems[i]};
-            const ident_info curr_info{
-                tc.make_ident_info(src_loc_tk, path, false)};
+            const ident_info curr_info{tc.make_ident_info(src_loc_tk, path)};
             const size_t type_size{curr_info.type_ref.size()};
             const bool is_last{i == elems_size - 1};
 

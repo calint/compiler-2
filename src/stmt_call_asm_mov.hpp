@@ -31,7 +31,7 @@ class stmt_call_asm_mov final : public stmt_call {
         }
 
         // the assembler command might not need to resolve expressions
-        const ident_info dst_info{tc.make_ident_info(argument(0), false)};
+        const ident_info dst_info{tc.make_ident_info(argument(0))};
 
         const statement& src_arg{argument(1)};
         if (src_arg.is_expression()) {
@@ -40,7 +40,7 @@ class stmt_call_asm_mov final : public stmt_call {
         }
 
         // 'src_arg' is not an expression
-        const ident_info src_info{tc.make_ident_info(src_arg, true)};
+        const ident_info src_info{tc.make_ident_info(src_arg)};
         if (src_info.is_const()) {
             tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
                        std::format("{}{}", src_arg.get_unary_ops().to_string(),

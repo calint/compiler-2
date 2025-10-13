@@ -204,7 +204,7 @@ class expr_ops_list final : public expression {
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const std::string_view dst) const -> void override {
 
-        const ident_info dst_info{tc.make_ident_info(tok(), dst, false)};
+        const ident_info dst_info{tc.make_ident_info(tok(), dst)};
 
         // is destination a register?
         if (dst_info.is_register()) {
@@ -223,7 +223,7 @@ class expr_ops_list final : public expression {
         // with scratch register
         std::stringstream ss2;
         const std::string reg{tc.alloc_scratch_register(tok(), ss2, indent)};
-        const ident_info dest_reg{tc.make_ident_info(tok(), reg, false)};
+        const ident_info dest_reg{tc.make_ident_info(tok(), reg)};
         do_compile(tc, ss2, indent, dst_info);
         tc.asm_cmd(tok(), ss2, indent, "mov", dst_info.id_nasm, reg);
         tc.free_scratch_register(tok(), ss2, indent, reg);
@@ -418,7 +418,7 @@ class expr_ops_list final : public expression {
             return;
         }
 
-        const ident_info& src_info{tc.make_ident_info(src, true)};
+        const ident_info& src_info{tc.make_ident_info(src)};
         // is 'src' a constant?
         if (src_info.is_const()) {
             // move it to 'dst' with unary ops
@@ -457,7 +457,7 @@ class expr_ops_list final : public expression {
         }
 
         // not an expression, either a register or memory location
-        const ident_info& src_info{tc.make_ident_info(src, true)};
+        const ident_info& src_info{tc.make_ident_info(src)};
         // 'imul' destination operand must be register
         if (dst.is_register()) {
             if (src_info.is_const()) {
@@ -533,7 +533,7 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression
-        const ident_info& src_info{tc.make_ident_info(src, true)};
+        const ident_info& src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
                        std::format("{}{}", src.get_unary_ops().to_string(),
@@ -578,7 +578,7 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression
-        const ident_info& src_info{tc.make_ident_info(src, true)};
+        const ident_info& src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
                        std::format("{}{}", src.get_unary_ops().to_string(),
@@ -628,7 +628,7 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression
-        const ident_info& src_info{tc.make_ident_info(src, true)};
+        const ident_info& src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
                        std::format("{}{}", src.get_unary_ops().to_string(),
@@ -717,7 +717,7 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression
-        const ident_info& src_info{tc.make_ident_info(src, true)};
+        const ident_info& src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
             const bool rax_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rax")};

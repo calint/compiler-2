@@ -16,7 +16,7 @@ class stmt_assign_var final : public statement {
         : statement{si.tok()}, stmt_ident_{std::move(si)} {
 
         const ident_info& dst_info{
-            tc.make_ident_info(tok(), stmt_ident_.identifier(), false)};
+            tc.make_ident_info(tok(), stmt_ident_.identifier())};
 
         set_type(dst_info.type_ref);
         expr_ = {tc, tz, dst_info.type_ref, false};
@@ -46,7 +46,7 @@ class stmt_assign_var final : public statement {
 
         // get information about the destination of the compilation
         const ident_info dst_info{
-            tc.make_ident_info(tok(), stmt_ident_.identifier(), false)};
+            tc.make_ident_info(tok(), stmt_ident_.identifier())};
 
         if (dst_info.is_const()) {
             throw compiler_exception{
@@ -80,7 +80,7 @@ class stmt_assign_var final : public statement {
             expr_.compile(tc, os, indent, "rsi");
 
             const ident_info ii{
-                tc.make_ident_info(tok(), stmt_ident_.identifier(), false)};
+                tc.make_ident_info(tok(), stmt_ident_.identifier())};
 
             tc.asm_cmd(tok(), os, indent, "mov", "rcx",
                        std::format("{}", ii.type_ref.size()));

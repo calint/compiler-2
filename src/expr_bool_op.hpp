@@ -126,7 +126,7 @@ class expr_bool_op final : public statement {
             if (not lhs_.is_expression()) {
                 // yes, left-hand-side is not a expression, either a
                 // constant or an identifier
-                const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
+                const ident_info& lhs_info{tc.make_ident_info(lhs_)};
                 if (lhs_info.is_const()) {
                     bool const_eval{lhs_.get_unary_ops().evaluate_constant(
                                         lhs_info.const_value) != 0};
@@ -161,8 +161,8 @@ class expr_bool_op final : public statement {
 
         // check case when both operands are constants
         if (not lhs_.is_expression() and not rhs_.is_expression()) {
-            const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
-            const ident_info& rhs_info{tc.make_ident_info(rhs_, false)};
+            const ident_info& lhs_info{tc.make_ident_info(lhs_)};
+            const ident_info& rhs_info{tc.make_ident_info(rhs_)};
             if (lhs_info.is_const() and rhs_info.is_const()) {
                 bool const_eval{
                     eval_constant(lhs_.get_unary_ops().evaluate_constant(
@@ -208,7 +208,7 @@ class expr_bool_op final : public statement {
         if (is_shorthand_) {
             // check case when operand is constant
             if (not lhs_.is_expression()) {
-                const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
+                const ident_info& lhs_info{tc.make_ident_info(lhs_)};
                 if (lhs_info.is_const()) {
                     bool const_eval{lhs_.get_unary_ops().evaluate_constant(
                                         lhs_info.const_value) != 0};
@@ -241,8 +241,8 @@ class expr_bool_op final : public statement {
         // not shorthand expression
         // check the case when both operands are constants
         if (not lhs_.is_expression() and not rhs_.is_expression()) {
-            const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
-            const ident_info& rhs_info{tc.make_ident_info(rhs_, false)};
+            const ident_info& lhs_info{tc.make_ident_info(lhs_)};
+            const ident_info& rhs_info{tc.make_ident_info(rhs_)};
             if (lhs_info.is_const() and rhs_info.is_const()) {
                 bool const_eval{
                     eval_constant(lhs_.get_unary_ops().evaluate_constant(
@@ -459,7 +459,7 @@ class expr_bool_op final : public statement {
         }
 
         // 'expr' is not an expression
-        const ident_info& expr_info{tc.make_ident_info(expr, true)};
+        const ident_info& expr_info{tc.make_ident_info(expr)};
         if (expr_info.is_const()) {
             if (is_lhs) {
                 const std::string reg{

@@ -1,11 +1,13 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include "compiler_exception.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 
 class stmt_def_func_param final : public statement {
     token type_tk_;
+    bool is_array{};
 
   public:
     stmt_def_func_param(const toc& tc, tokenizer& tz)
@@ -27,6 +29,13 @@ class stmt_def_func_param final : public statement {
         }
 
         set_type(tc.get_type_or_throw(type_tk_, type_tk_.text()));
+
+        if (tz.is_next_char('[')) {
+            if (not tz.is_next_char(']')) {
+                throw compiler_exception{tz, "expected ']'"};
+            }
+            is_array = true;
+        }
     }
 
     ~stmt_def_func_param() override = default;

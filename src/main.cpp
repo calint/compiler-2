@@ -261,7 +261,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
         // check that identifier type matches expected type
         const ident_info ii{
-            tc.make_ident_info(tok(), stmt_ident_->identifier(), false)};
+            tc.make_ident_info(tok(), stmt_ident_->identifier())};
 
         if (tp.name() != ii.type_ref.name()) {
             // note: checked source location report ok
@@ -366,7 +366,7 @@ inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
     // is it an identifier?
     if (not src.empty()) {
         // yes, e.g. obj.pos = p
-        const type& src_type{tc.make_ident_info(etv.tok(), src, true).type_ref};
+        const type& src_type{tc.make_ident_info(etv.tok(), src).type_ref};
         if (src_type.name() != dst_type.name()) {
             throw compiler_exception{
                 etv.tok(), std::format("cannot assign '{}' to '{}' because "
@@ -378,12 +378,12 @@ inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
         for (const type_field& fld : dst_type.fields()) {
             if (fld.tp->is_built_in()) {
                 const std::string src_info{
-                    tc.make_ident_info(
-                          etv.tok(), std::format("{}.{}", src, fld.name), false)
+                    tc.make_ident_info(etv.tok(),
+                                       std::format("{}.{}", src, fld.name))
                         .id_nasm};
                 const std::string dst_info{
-                    tc.make_ident_info(
-                          etv.tok(), std::format("{}.{}", dst, fld.name), false)
+                    tc.make_ident_info(etv.tok(),
+                                       std::format("{}.{}", dst, fld.name))
                         .id_nasm};
                 tc.asm_cmd(etv.tok(), os, indent, "mov", dst_info, src_info);
                 continue;
