@@ -7,9 +7,14 @@
         s is call: return is_var_set(func_block, func_var_bound_to_var)
                                  can be argument or return
         s is break return false
+    stmt_block::is_var_set(var_name) -> bool
+    stmt_assign_var::is_var_set(var_name) -> bool
+    stmt_if::is_var_set(var_name) -> bool
+    stmt_call::is_arg_set(arg_idx) - > bool
+    stmt_call::is_return_set() -> bool
     program:
       for each f in funcs:
-        if f returns is_var_set(func_block, ret_var_name)
+        if f returns stmt_call::is_return_set()
 [ ] break: exit current block instead of just loop?
 [ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
