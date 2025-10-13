@@ -1,13 +1,15 @@
 [ ] var x = foo() becomes UB if foo does not set the return value
-    is_var_set(block, var) : bool
-      for each s: in statements:
+    is_var_set(var, block) : bool
+      for each s in statements:
         s is assign var return true
         s is if: (ignored since condition is not known at compile time)
                  return is_var_set(else_block, var)
         s is call: return is_var_set(func_block, func_var_bound_to_var)
                                  can be argument or return
         s is break return false
-    recursion start: is_var_set(func_block, var)
+    program:
+      for each f in funcs:
+        if f returns is_var_set(func_block, ret_var_name)
 [ ] break: exit current block instead of just loop?
 [ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
