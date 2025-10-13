@@ -1,9 +1,7 @@
 [ ] ponder an iterator of elements in array that does not require bounds
     checking:
-      for(e1 : arr1) {
-        for(e2 : arr2) {
-            e2 = e1
-        } 
+      for(e : arr) {
+        e2 = 0
       }
 [ ] ponder whether a compiler flag to check for over/underflow in arithmetics
 [ ] a return reference might be used as an argument to a function that set it.
