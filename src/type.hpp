@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "token.hpp"
 
 class type;
@@ -18,14 +19,6 @@ struct type_field {
     size_t array_size{};
     bool is_array{};
     size_t offset{};
-};
-
-struct accessor_info {
-    std::string id_nasm;
-    const type& tp;
-    bool is_array{};
-    size_t array_size{};
-    size_t size{};
 };
 
 class type final {
@@ -79,17 +72,15 @@ class type final {
             tk, std::format("field '{}' not found in type '{}'", name, name_)};
     }
 
-    [[nodiscard]] auto
-    accessor(const token& tk, const std::vector<std::string_view>& path,
-             const int stack_idx_base, const bool base_is_array,
-             const size_t base_array_size, const size_t base_size) const
-        -> accessor_info {
+    [[nodiscard]] auto accessor(const token& tk, const std::string_view ident,
+                                const std::vector<std::string_view>& path,
+                                var_info var) const -> ident_info {
 
         const type* tp{this};
         size_t offset{};
-        bool is_array{base_is_array};
-        size_t array_size{base_array_size};
-        size_t size{base_size};
+        bool is_array{var.is_array};
+        size_t array_size{var.array_size};
+        size_t size{var.type_ref.size() * (var.is_array ? var.array_size : 1)};
         for (const auto& field_name : path | std::views::drop(1)) {
             const type_field& fld{tp->field(tk, field_name)};
             offset += fld.offset;
@@ -98,7 +89,7 @@ class type final {
             array_size = fld.array_size;
             size = fld.size;
         }
-        const int stack_idx{stack_idx_base + static_cast<int>(offset)};
+        const int stack_idx{var.stack_idx + static_cast<int>(offset)};
 
         // find the first built-in type to have a valid operand size for the
         // address
@@ -112,11 +103,17 @@ class type final {
         const std::string accessor{
             std::format("{} [rsp - {}]", memsize, -stack_idx)};
         // note: -stack_idx for nicer source formatting
-        return {.id_nasm = accessor,
-                .tp = *tp,
-                .is_array = is_array,
-                .array_size = array_size,
-                .size = size};
+
+        return {
+            .id{ident},
+            .id_nasm{accessor},
+            .type_ref{*tp},
+            .stack_ix = var.stack_idx,
+            .size = size,
+            .array_size = array_size,
+            .is_array = is_array,
+            .ident_type = ident_info::ident_type::VAR,
+        };
     }
 
     [[nodiscard]] auto size() const -> size_t { return size_; }

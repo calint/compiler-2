@@ -6,13 +6,49 @@
 
 #include <memory>
 
+#include "token.hpp"
+
 class toc;
 class tokenizer;
-class token;
 class statement;
 class stmt_identifier;
 class type;
 class expr_any;
+
+struct ident_info {
+    enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
+
+    const std::string id;
+    const std::string id_nasm; // NASM valid source
+    const int64_t const_value{};
+    const type& type_ref;
+    const int32_t stack_ix{};
+    const size_t size{};
+    const size_t array_size{};
+    const bool is_array{};
+    const ident_type ident_type{ident_type::CONST};
+
+    [[nodiscard]] auto is_const() const -> bool {
+        return ident_type == ident_type::CONST;
+    }
+
+    [[nodiscard]] auto is_register() const -> bool {
+        return ident_type == ident_type::REGISTER;
+    }
+
+    [[nodiscard]] auto is_var() const -> bool {
+        return ident_type == ident_type::VAR;
+    }
+};
+
+struct var_info {
+    std::string_view name;
+    const type& type_ref;
+    token declared_at_tk; // token for position in the source
+    int32_t stack_idx{};  // location relative to register rsp
+    bool is_array{};
+    size_t array_size{};
+};
 
 //
 // functions necessary to solve circular references implemented in 'main.cpp'

@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "expr_any.hpp"
 #include "expr_type_value.hpp"
 #include "panic_exception.hpp"

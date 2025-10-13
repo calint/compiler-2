@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "lut.hpp"
 #include "panic_exception.hpp"
 #include "statement.hpp"
@@ -30,15 +31,6 @@ struct func_return_info {
     token type_tk;        // type token
     token ident_tk;       // identifier token
     const type& type_ref; // type
-};
-
-struct var_info {
-    std::string_view name;
-    const type& type_ref;
-    token declared_at_tk; // token for position in the source
-    int32_t stack_idx{};  // location relative to register rsp
-    bool is_array{};
-    size_t array_size{};
 };
 
 class frame final {
@@ -86,7 +78,6 @@ class frame final {
     }
 
     auto add_var(var_info var) -> void {
-
         if (var.stack_idx < 0) {
             // variable, increase allocated stack size
             allocated_stack_ +=
@@ -161,32 +152,6 @@ struct type_info {
     const stmt_def_type& def;
     token declared_at_tk;
     const type& type_ref;
-};
-
-struct ident_info {
-    enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
-
-    const std::string id;
-    const std::string id_nasm; // NASM valid source
-    const int64_t const_value{};
-    const type& type_ref;
-    const int32_t stack_ix{};
-    const size_t size{};
-    const size_t array_size{};
-    const bool is_array{};
-    const ident_type ident_type{ident_type::CONST};
-
-    [[nodiscard]] auto is_const() const -> bool {
-        return ident_type == ident_type::CONST;
-    }
-
-    [[nodiscard]] auto is_register() const -> bool {
-        return ident_type == ident_type::REGISTER;
-    }
-
-    [[nodiscard]] auto is_var() const -> bool {
-        return ident_type == ident_type::VAR;
-    }
 };
 
 class ident_path final {
@@ -1115,19 +1080,7 @@ class toc final {
         // is it a variable?
         if (frm.has_var(id_base)) {
             const var_info& var{frm.get_var_const_ref(id_base)};
-            accessor_info ai{var.type_ref.accessor(
-                src_loc, id.path(), var.stack_idx, var.is_array, var.array_size,
-                var.type_ref.size() * (var.is_array ? var.array_size : 1))};
-            return {
-                .id = std::string{ident},
-                .id_nasm = ai.id_nasm,
-                .type_ref = ai.tp,
-                .stack_ix = var.stack_idx,
-                .size = ai.size,
-                .array_size = ai.array_size,
-                .is_array = ai.is_array,
-                .ident_type = ident_info::ident_type::VAR,
-            };
+            return var.type_ref.accessor(src_loc, ident, id.path(), var);
         }
 
         // is it a register?
