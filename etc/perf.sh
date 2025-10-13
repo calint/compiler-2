@@ -19,5 +19,7 @@ perf report --stdio --no-children --sort symbol,overhead |
   grep -E "^\s+[0-9]+\.[0-9]+%\s+\[.*\]" |
   sed 's/\s\+-\s\+-.*$//' |
   grep -v "\[k\]" |
-  sort -t'%' -k1 -rn | tee perf-report.txt
+  sort -t'%' -k1 -rn |
+  tee perf-report.txt
+
 echo $SEP
