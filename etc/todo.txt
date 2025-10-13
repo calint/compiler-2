@@ -1,3 +1,7 @@
+[ ] function arguments as arrays:
+    func write_to_array(res : i64[]) {
+        res[1] = 2
+    }
 [ ] ponder an iterator of elements in array that does not require bounds
     checking:
       for(e : arr) {
