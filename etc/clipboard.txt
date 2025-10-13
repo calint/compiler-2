@@ -19,7 +19,7 @@ rm massif.out
 UBSAN_OPTIONS=print_stacktrace=1 ./baz 2>&1 | tee error.log
 
 # perf
-sudo perf record -g build/baz qa/coverage/t77.ba
+sudo perf record -g build/baz qa/coverage/t77.baz
 sudo perf report
 
 # resets current state to HEAD

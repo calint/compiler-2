@@ -1,3 +1,5 @@
+[ ] some improvements (performance wise) of toc::indent using a buffer on the
+    stack
 [ ] var x = foo() becomes UB if foo does not set the return value
     analyze code path:
       if: follow and find if set
