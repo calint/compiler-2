@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "stmt_array_copy.hpp"
 #include "stmt_break.hpp"
@@ -95,9 +96,15 @@ class stmt_block final : public statement {
                 if (tz.is_next_char('=')) {
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(
                         tc, tz, std::move(si)));
-                } else {
+
+                } else if (tz.is_peek_char('(')) {
                     // note: solves circular reference
                     stms_.emplace_back(create_stmt_call(tc, tz, si));
+
+                } else {
+                    throw compiler_exception{
+                        tz, "unexpected character. expected '=' for assignment "
+                            "or '(' for function call"};
                 }
             }
             if (is_one_statement_ and

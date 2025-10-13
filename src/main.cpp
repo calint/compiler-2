@@ -182,6 +182,11 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
 inline auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
     -> std::unique_ptr<statement> {
 
+    if (si.elems().size() != 1) {
+        throw compiler_exception{si.first_token(),
+                                 "did not expect '.' in function name"};
+    }
+
     return std::make_unique<stmt_call>(tc, si.get_unary_ops(), si.first_token(),
                                        tz);
 }
