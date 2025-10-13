@@ -15,7 +15,6 @@ struct identifier_elem {
     token name_tk;
     std::unique_ptr<expr_any> array_index_expr;
     token ws1;
-    bool has_array_index_expr{};
 };
 
 class stmt_identifier : public statement {
@@ -46,15 +45,14 @@ class stmt_identifier : public statement {
                 elems_.emplace_back(tk,
                                     std::make_unique<expr_any>(
                                         tc, tz, tc.get_type_default(), false),
-                                    tz.next_whitespace_token(), true);
+                                    tz.next_whitespace_token());
 
                 if (not tz.is_next_char(']')) {
                     throw compiler_exception{
                         tz, "expected '[' to close array index expression"};
                 }
             } else {
-                elems_.emplace_back(tk, nullptr, tz.next_whitespace_token(),
-                                    false);
+                elems_.emplace_back(tk, nullptr, tz.next_whitespace_token());
             }
 
             if (tz.is_next_char('.')) {
@@ -100,7 +98,7 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] auto is_expression() const -> bool override {
         return std::ranges::any_of(elems_, [](const identifier_elem& e) {
-            return e.has_array_index_expr;
+            return e.array_index_expr != nullptr;
         });
     }
 
@@ -112,7 +110,7 @@ class stmt_identifier : public statement {
                 std::print(os, ".");
             }
             e.name_tk.source_to(os);
-            if (e.has_array_index_expr) {
+            if (e.array_index_expr) {
                 std::print(os, "[");
                 e.array_index_expr->source_to(os);
                 std::print(os, "]");
@@ -182,7 +180,7 @@ class stmt_identifier : public statement {
             const bool is_last{i == elems_size - 1};
 
             // Handle array access without indexing
-            if (not curr_elem.has_array_index_expr) {
+            if (not curr_elem.array_index_expr) {
                 // Bounds check for last element without indexing
                 if (is_last and not reg_size.empty() and curr_info.is_array) {
                     emit_bounds_check(src_loc_tk, tc, os, indent, reg_size,
