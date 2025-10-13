@@ -1,0 +1,19 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+func arrarg(arg : i64[]) {
+    arg[1] = 0xfe
+}
+
+func main() {
+    var arr : i64[7]
+    arrarg(arr)
+    assert(arr[1] == 0xfe)
+}

@@ -1,4 +1,4 @@
-[ ] function arguments as arrays:
+[x] function arguments as arrays:
     func write_to_array(res : i64[]) {
         res[1] = 2
     }

@@ -181,7 +181,7 @@ class stmt_def_func final : public statement {
             if (prm_reg.empty()) {
                 // no, add it as a variable
                 tc.add_var(tok(), os, indent + 1, std::string{prm_name},
-                           prm_type, false, 0);
+                           prm_type, prm.is_array(), 0);
                 continue;
             }
 

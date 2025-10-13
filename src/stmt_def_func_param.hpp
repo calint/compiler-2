@@ -7,7 +7,7 @@
 
 class stmt_def_func_param final : public statement {
     token type_tk_;
-    bool is_array{};
+    bool is_array_{};
 
   public:
     stmt_def_func_param(const toc& tc, tokenizer& tz)
@@ -34,7 +34,7 @@ class stmt_def_func_param final : public statement {
             if (not tz.is_next_char(']')) {
                 throw compiler_exception{tz, "expected ']'"};
             }
-            is_array = true;
+            is_array_ = true;
         }
     }
 
@@ -54,6 +54,9 @@ class stmt_def_func_param final : public statement {
         }
         std::print(os, ":");
         type_tk_.source_to(os);
+        if (is_array_) {
+            std::print(os, "[]");
+        }
     }
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
@@ -66,4 +69,6 @@ class stmt_def_func_param final : public statement {
         }
         return "";
     }
+
+    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
 };
