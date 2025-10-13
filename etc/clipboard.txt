@@ -22,6 +22,10 @@ UBSAN_OPTIONS=print_stacktrace=1 ./baz 2>&1 | tee error.log
 sudo perf record -g build/baz qa/coverage/t77.baz
 sudo perf report
 
+sudo perf record --call-graph dwarf,65528 -F 997 build/baz
+sudo perf report --stdio -g graph
+
+
 # resets current state to HEAD
 git reset --hard HEAD
 

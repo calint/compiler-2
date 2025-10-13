@@ -1,3 +1,5 @@
+[x] put all regex construction in toc
+    => public members: regex_XXX
 [ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
     stack

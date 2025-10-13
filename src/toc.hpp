@@ -242,12 +242,15 @@ class toc final {
     size_t usage_max_scratch_regs_{};
     size_t usage_max_frame_count_{};
     size_t usage_max_stack_size_{};
-    const std::regex regex_ws{R"(\s+)"};
-    const std::regex regex_trim{R"(^\s+|\s+$)"};
     const bool bounds_check_{};
     const bool bounds_check_with_line_{};
 
   public:
+    const std::regex regex_ws{R"(\s+)"};
+    const std::regex regex_trim{R"(^\s+|\s+$)"};
+    const std::regex regex_nasm_comment{R"(^\s*;.*$)"};
+    const std::regex regex_nasm_number_register{R"(r(\d+))"};
+
     toc(const std::string& source, const bool bounds_check,
         const bool bounds_check_with_line)
         : source_{source}, bounds_check_{bounds_check},
@@ -771,6 +774,157 @@ class toc final {
 
         // constant
         return get_type_default().size();
+    }
+
+    auto get_sized_register(const token& src_loc_tk,
+                            const std::string_view operand, const size_t size)
+        -> std::string {
+
+        //? sort of ugly
+        if (operand == "rax") {
+            switch (size) {
+            case 8:
+                return "rax";
+            case 4:
+                return "eax";
+            case 2:
+                return "ax";
+            case 1:
+                return "al";
+            default:
+                throw compiler_exception{
+                    src_loc_tk,
+                    std::format("illegal size {} for register operand '{}'",
+                                size, operand)};
+            }
+        }
+        if (operand == "rbx") {
+            switch (size) {
+            case 8:
+                return "rbx";
+            case 4:
+                return "ebx";
+            case 2:
+                return "bx";
+            case 1:
+                return "bl";
+            default:
+                throw compiler_exception{
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand)};
+            }
+        }
+        if (operand == "rcx") {
+            switch (size) {
+            case 8:
+                return "rcx";
+            case 4:
+                return "ecx";
+            case 2:
+                return "cx";
+            case 1:
+                return "cl";
+            default:
+                throw compiler_exception{
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand)};
+            }
+        }
+        if (operand == "rdx") {
+            switch (size) {
+            case 8:
+                return "rdx";
+            case 4:
+                return "edx";
+            case 2:
+                return "dx";
+            case 1:
+                return "dl";
+            default:
+                throw compiler_exception{
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand)};
+            }
+        }
+        if (operand == "rbp") {
+            switch (size) {
+            case 8:
+                return "rbp";
+            case 4:
+                return "ebp";
+            case 2:
+                return "bp";
+            default:
+                throw compiler_exception{
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand)};
+            }
+        }
+        if (operand == "rsi") {
+            switch (size) {
+            case 8:
+                return "rsi";
+            case 4:
+                return "esi";
+            case 2:
+                return "si";
+            default:
+                throw compiler_exception{
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand)};
+            }
+        }
+        if (operand == "rdi") {
+            switch (size) {
+            case 8:
+                return "rdi";
+            case 4:
+                return "edi";
+            case 2:
+                return "di";
+            default:
+                throw compiler_exception{
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand)};
+            }
+        }
+        if (operand == "rsp") {
+            switch (size) {
+            case 8:
+                return "rsp";
+            case 4:
+                return "esp";
+            case 2:
+                return "sp";
+            default:
+                throw compiler_exception{
+                    src_loc_tk, std::format("illegal size {} for register '{}'",
+                                            size, operand)};
+            }
+        }
+
+        std::smatch match;
+        std::string const operand_str{operand};
+        if (not std::regex_search(operand_str, match,
+                                  regex_nasm_number_register)) {
+            throw compiler_exception{
+                src_loc_tk, std::format("unknown register {}", operand)};
+        }
+        const std::string rnbr{match[1]};
+        switch (size) {
+        case 8:
+            return std::format("r{}", rnbr);
+        case 4:
+            return std::format("r{}d", rnbr);
+        case 2:
+            return std::format("r{}w", rnbr);
+        case 1:
+            return std::format("r{}b", rnbr);
+        default:
+            throw compiler_exception{
+                src_loc_tk, std::format("illegal size {} for register '{}'",
+                                        size, operand)};
+        }
     }
 
     [[nodiscard]] auto get_type_bool() const -> const type& {
@@ -1358,158 +1512,6 @@ class toc final {
 
         throw compiler_exception{src_loc_tk,
                                  std::format("unknown register '{}'", operand)};
-    }
-
-    static auto get_sized_register(const token& src_loc_tk,
-                                   const std::string_view operand,
-                                   const size_t size) -> std::string {
-
-        //? sort of ugly
-        if (operand == "rax") {
-            switch (size) {
-            case 8:
-                return "rax";
-            case 4:
-                return "eax";
-            case 2:
-                return "ax";
-            case 1:
-                return "al";
-            default:
-                throw compiler_exception{
-                    src_loc_tk,
-                    std::format("illegal size {} for register operand '{}'",
-                                size, operand)};
-            }
-        }
-        if (operand == "rbx") {
-            switch (size) {
-            case 8:
-                return "rbx";
-            case 4:
-                return "ebx";
-            case 2:
-                return "bx";
-            case 1:
-                return "bl";
-            default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
-            }
-        }
-        if (operand == "rcx") {
-            switch (size) {
-            case 8:
-                return "rcx";
-            case 4:
-                return "ecx";
-            case 2:
-                return "cx";
-            case 1:
-                return "cl";
-            default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
-            }
-        }
-        if (operand == "rdx") {
-            switch (size) {
-            case 8:
-                return "rdx";
-            case 4:
-                return "edx";
-            case 2:
-                return "dx";
-            case 1:
-                return "dl";
-            default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
-            }
-        }
-        if (operand == "rbp") {
-            switch (size) {
-            case 8:
-                return "rbp";
-            case 4:
-                return "ebp";
-            case 2:
-                return "bp";
-            default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
-            }
-        }
-        if (operand == "rsi") {
-            switch (size) {
-            case 8:
-                return "rsi";
-            case 4:
-                return "esi";
-            case 2:
-                return "si";
-            default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
-            }
-        }
-        if (operand == "rdi") {
-            switch (size) {
-            case 8:
-                return "rdi";
-            case 4:
-                return "edi";
-            case 2:
-                return "di";
-            default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
-            }
-        }
-        if (operand == "rsp") {
-            switch (size) {
-            case 8:
-                return "rsp";
-            case 4:
-                return "esp";
-            case 2:
-                return "sp";
-            default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
-            }
-        }
-
-        //? todo. move this to a static
-        const std::regex rx{R"(r(\d+))"};
-        std::smatch match;
-        std::string const operand_str{operand};
-        if (not std::regex_search(operand_str, match, rx)) {
-            throw compiler_exception{
-                src_loc_tk, std::format("unknown register {}", operand)};
-        }
-        const std::string rnbr{match[1]};
-        switch (size) {
-        case 8:
-            return std::format("r{}", rnbr);
-        case 4:
-            return std::format("r{}d", rnbr);
-        case 2:
-            return std::format("r{}w", rnbr);
-        case 1:
-            return std::format("r{}b", rnbr);
-        default:
-            throw compiler_exception{
-                src_loc_tk, std::format("illegal size {} for register '{}'",
-                                        size, operand)};
-        }
     }
 
     static auto is_nasm_memory_operand(const std::string_view operand) -> bool {

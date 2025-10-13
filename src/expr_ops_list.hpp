@@ -228,8 +228,8 @@ class expr_ops_list final : public expression {
         tc.free_scratch_register(tok(), ss2, indent, reg);
 
         // compare instruction count
-        const size_t ss1_count{count_instructions(ss1)};
-        const size_t ss2_count{count_instructions(ss2)};
+        const size_t ss1_count{count_instructions(tc, ss1)};
+        const size_t ss2_count{count_instructions(tc, ss2)};
 
         // select the version with the fewest instructions
         if (ss1_count <= ss2_count) {
@@ -298,12 +298,13 @@ class expr_ops_list final : public expression {
         uops_.compile(tc, os, indent, dst_info.id_nasm);
     }
 
-    static auto count_instructions(std::stringstream& ss) -> size_t {
-        const std::regex rxcomment{R"(^\s*;.*$)"};
+    static auto count_instructions(const toc& tc, std::stringstream& ss)
+        -> size_t {
+
         std::string line;
         size_t n{};
         while (getline(ss, line)) {
-            if (std::regex_search(line, rxcomment)) {
+            if (std::regex_search(line, tc.regex_nasm_comment)) {
                 continue;
             }
             n++;
