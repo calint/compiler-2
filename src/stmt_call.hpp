@@ -191,6 +191,7 @@ class stmt_call : public expression {
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             std::string{arg.identifier()}, lea);
+                continue;
             }
             // handle expression arguments
             if (arg.is_expression()) {
