@@ -148,7 +148,7 @@ class stmt_call : public expression {
             }
             // alias return identifier to 'dst'
             aliases_to_add.emplace_back(std::string{ret->ident_tk.text()},
-                                        std::string{dst});
+                                        std::string{dst}, "", ret->type_ref);
         }
 
         // create unique labels for in-lined functions
@@ -190,7 +190,8 @@ class stmt_call : public expression {
                 }
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            std::string{arg.identifier()}, lea);
+                                            std::string{arg.identifier()}, lea,
+                                            param.get_type());
                 continue;
             }
             // handle expression arguments
@@ -202,14 +203,15 @@ class stmt_call : public expression {
                 }
                 arg.compile(tc, os, indent, arg_reg);
                 aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            arg_reg, "");
+                                            arg_reg, "", param.get_type());
                 continue;
             }
 
             // handle non-expression without the register and without unary ops
             if (arg_reg.empty() and arg.get_unary_ops().is_empty()) {
                 aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            std::string{arg.identifier()}, "");
+                                            std::string{arg.identifier()}, "",
+                                            param.get_type());
                 continue;
             }
 
@@ -224,13 +226,13 @@ class stmt_call : public expression {
                            arg_info.id_nasm);
                 arg.get_unary_ops().compile(tc, os, indent, scratch_reg);
                 aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            scratch_reg, "");
+                                            scratch_reg, "", param.get_type());
                 continue;
             }
 
             // handle non-expression with register
             aliases_to_add.emplace_back(std::string{param.identifier()},
-                                        arg_reg, "");
+                                        arg_reg, "", param.get_type());
             const ident_info& arg_info{tc.make_ident_info(arg)};
 
             if (arg_info.is_const()) {

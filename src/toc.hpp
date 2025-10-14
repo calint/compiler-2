@@ -38,6 +38,7 @@ struct alias_info {
     std::string from;
     std::string to;
     std::string lea;
+    const type& tp;
 };
 
 class frame final {
@@ -1112,6 +1113,7 @@ class toc final {
                 .id_nasm{id.str()},
                 .type_ref = get_type_default(),
                 .size = get_type_default().size(),
+                .lea{},
                 .ident_type = ident_info::ident_type::REGISTER,
             };
         }
@@ -1124,6 +1126,7 @@ class toc final {
                 .id_nasm{id.str()},
                 .type_ref = get_builtin_type_for_operand(src_loc, id.str()),
                 .size = get_size_from_operand(src_loc, id.str()),
+                .lea{},
                 .ident_type = ident_info::ident_type::REGISTER,
             };
         }
@@ -1139,6 +1142,7 @@ class toc final {
                     .id_nasm{std::format("{}.len", id.base())},
                     .type_ref = get_type_default(),
                     .size = get_type_default().size(),
+                    .lea{},
                     .ident_type = ident_info::ident_type::IMPLIED,
                 };
             }
@@ -1148,6 +1152,7 @@ class toc final {
                     .id{ident},
                     .id_nasm{id.base()},
                     .type_ref = get_type_default(),
+                    .lea{},
                     .ident_type = ident_info::ident_type::FIELD,
                 };
             }
@@ -1157,6 +1162,7 @@ class toc final {
                 .id_nasm{std::format("qword [{}]", id.base())},
                 .type_ref = get_type_default(),
                 .size = get_type_default().size(),
+                .lea{},
                 .ident_type = ident_info::ident_type::FIELD,
             };
         }
@@ -1170,6 +1176,7 @@ class toc final {
                 .const_value = *value,
                 .type_ref = get_type_default(),
                 .size = get_type_default().size(),
+                .lea{},
             };
         }
 
@@ -1181,6 +1188,7 @@ class toc final {
                 .const_value = 1,
                 .type_ref = get_type_bool(),
                 .size = get_type_bool().size(),
+                .lea{},
             };
         }
 
@@ -1191,14 +1199,16 @@ class toc final {
                 .const_value = 0,
                 .type_ref = get_type_bool(),
                 .size = get_type_bool().size(),
+                .lea{},
             };
         }
 
         // not resolved, return empty info
         return {
-            .id{""},
-            .id_nasm{""},
+            .id{},
+            .id_nasm{},
             .type_ref = get_type_void(),
+            .lea{},
         };
     }
 

@@ -200,8 +200,10 @@ class stmt_def_func final : public statement {
 
             tc.alloc_named_register_or_throw(prm.tok(), os, indent + 1,
                                              prm_reg);
-            tc.add_alias(
-                {.from = std::string{prm_name}, .to = prm_reg, .lea = ""});
+            tc.add_alias({.from = std::string{prm_name},
+                          .to = prm_reg,
+                          .lea = "",
+                          .tp = prm_type});
             allocated_named_registers.emplace_back(prm_reg);
         }
     }

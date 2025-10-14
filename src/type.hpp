@@ -108,6 +108,7 @@ class type final {
             .size = size,
             .array_size = array_size,
             .is_array = is_array,
+            .lea{},
             .ident_type = ident_info::ident_type::VAR,
         };
     }
