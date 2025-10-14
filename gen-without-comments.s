@@ -1,3 +1,4 @@
+DEFAULT ABS
 section .bss
 stk resd 131072
 stk.end:
