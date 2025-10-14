@@ -13,7 +13,7 @@
 class type;
 
 struct type_field {
-    std::string_view name;
+    std::string name;
     const type* tp{};
     size_t size{};
     size_t array_size{};
@@ -27,7 +27,7 @@ class type final {
     static constexpr std::string_view size_word{"word"};
     static constexpr std::string_view size_byte{"byte"};
 
-    std::string_view name_;
+    std::string name_;
     size_t size_{};
     std::vector<type_field> fields_;
     bool is_built_in_{};
@@ -49,7 +49,7 @@ class type final {
                    const bool is_array, const size_t array_size) -> void {
 
         fields_.emplace_back(
-            type_field{.name = name,
+            type_field{.name{name},
                        .tp = &tp,
                        .size = tp.size_ * (is_array ? array_size : 1),
                        .array_size = array_size,
@@ -73,8 +73,8 @@ class type final {
     }
 
     [[nodiscard]] auto accessor(const token& tk, const std::string_view ident,
-                                const std::vector<std::string_view>& path,
-                                var_info var) const -> ident_info {
+                                const std::vector<std::string>& path,
+                                const var_info& var) const -> ident_info {
 
         const type* tp{this};
         size_t offset{};
@@ -118,7 +118,7 @@ class type final {
 
     [[nodiscard]] auto size() const -> size_t { return size_; }
 
-    [[nodiscard]] auto name() const -> std::string_view { return name_; }
+    [[nodiscard]] auto name() const -> std::string { return name_; }
 
     auto set_name(const std::string_view nm) -> void { name_ = nm; }
 

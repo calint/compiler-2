@@ -42,7 +42,7 @@ struct ident_info {
 };
 
 struct var_info {
-    std::string_view name;
+    std::string name;
     const type& type_ref;
     token declared_at_tk; // token for position in the source
     int32_t stack_idx{};  // location relative to register rsp

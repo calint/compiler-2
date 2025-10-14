@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <format>
+#include <iostream>
 #include <optional>
 #include <ostream>
 #include <ranges>
@@ -77,14 +78,14 @@ class frame final {
         aliases_.put(std::move(from), std::move(to));
     }
 
-    auto add_var(var_info var) -> void {
+    auto add_var(const var_info& var) -> void {
         if (var.stack_idx < 0) {
             // variable, increase allocated stack size
             allocated_stack_ +=
                 var.type_ref.size() * (var.is_array ? var.array_size : 1);
         }
 
-        vars_.put(std::string{var.name}, var);
+        vars_.put(var.name, var);
     }
 
     [[nodiscard]] auto allocated_stack_size() const -> size_t {
@@ -155,20 +156,30 @@ struct type_info {
 };
 
 class ident_path final {
-    std::string_view id_;
-    std::vector<std::string_view> path_;
+    std::string id_;
+    std::vector<std::string> path_;
 
-  public:
-    explicit ident_path(std::string_view id) : id_{id} {
+    auto refresh_path() {
+        path_.clear();
         for (auto part : id_ | std::views::split('.')) {
             path_.emplace_back(part.begin(), part.end());
         }
     }
 
+  public:
+    explicit ident_path(std::string id) : id_{std::move(id)} { refresh_path(); }
+
     [[nodiscard]] auto base() const -> std::string_view { return path_.at(0); }
 
-    [[nodiscard]] auto path() const -> const std::vector<std::string_view>& {
+    [[nodiscard]] auto path() const -> const std::vector<std::string>& {
         return path_;
+    }
+
+    [[nodiscard]] auto str() const -> const std::string& { return id_; }
+
+    auto append(const std::string_view path_elem) {
+        id_ = std::format("{}.{}", id_, path_elem);
+        refresh_path();
     }
 
     auto set_base(std::string_view name) -> void { path_[0] = name; }
@@ -275,7 +286,7 @@ class toc final {
                 std::format("type '{}' already defined", tpe.name())};
         }
 
-        types_.put(std::string{tpe.name()}, tpe);
+        types_.put(tpe.name(), tpe);
     }
 
     auto add_var(const token& src_loc_tk, std::ostream& os, const size_t indnt,
@@ -1038,9 +1049,8 @@ class toc final {
     make_ident_info_or_empty(const token& src_loc,
                              const std::string_view ident) const -> ident_info {
 
-        ident_path id{ident};
+        ident_path id{std::string{ident}};
         // get the root of an identifier: example p.x -> p
-        std::string_view id_base{id.base()};
         // traverse the frames and resolve the id_nasm (which might be an
         // alias) to a variable, field, register or constant
         size_t i{frames_.size()};
@@ -1048,29 +1058,31 @@ class toc final {
             i--;
             const frame& frm{frames_.at(i)};
             // does scope contain the variable?
-            if (frm.has_var(id_base)) {
+            if (frm.has_var(id.base())) {
                 // yes, found
                 break;
             }
             // is the frame a function?
             if (frm.is_func()) {
-                // is it an alias defined by the function?
-                if (not frm.has_alias(id_base)) {
+                // yes, is there an alias defined by the function?
+                if (not frm.has_alias(id.base())) {
                     // no, it is not
                     break;
                 }
+
                 // yes, continue resolving alias until it is a variable,
                 // field, register or constant
-                const ident_path new_id{frm.get_alias(id_base)};
-                id_base = new_id.base();
-                // is this a path e.g. 'pt.x' or just 'res'?
-                if (id.path().size() == 1) {
-                    // this is an alias of the type: res -> p.x
-                    id = new_id;
-                } else {
-                    // this is an alias of the type: pt.x -> p.x
-                    id.set_base(id_base);
+                ident_path new_id{frm.get_alias(id.base())};
+
+                // this is an alias of the type:
+                //   res -> pt.x becomes pt.x
+                //   pt.x -> p becomes p.x
+                //   lnk.count -> world.roome.link becomes
+                //      world.roome.link.count
+                for (const std::string& s : id.path() | std::views::drop(1)) {
+                    new_id.append(s);
                 }
+                id = new_id;
                 continue;
             }
         }
@@ -1078,17 +1090,17 @@ class toc final {
         const frame& frm{frames_.at(i)};
 
         // is it a variable?
-        if (frm.has_var(id_base)) {
-            const var_info& var{frm.get_var_const_ref(id_base)};
+        if (frm.has_var(id.base())) {
+            const var_info& var{frm.get_var_const_ref(id.base())};
             return var.type_ref.accessor(src_loc, ident, id.path(), var);
         }
 
         // is it a register?
-        if (is_nasm_register(id_base)) {
+        if (is_nasm_register(id.str())) {
             //? unary ops?
             return {
                 .id{ident},
-                .id_nasm{id_base},
+                .id_nasm{id.str()},
                 .type_ref = get_type_default(),
                 .size = get_type_default().size(),
                 .ident_type = ident_info::ident_type::REGISTER,
@@ -1096,36 +1108,36 @@ class toc final {
         }
 
         // is it a register reference to memory?
-        if (is_nasm_indirect(id_base)) {
+        if (is_nasm_indirect(id.str())) {
             // get the size: e.g. "dword [r15]"
             return {
                 .id{ident},
-                .id_nasm{id_base},
-                .type_ref = get_builtin_type_for_operand(src_loc, id_base),
-                .size = get_size_from_operand(src_loc, id_base),
+                .id_nasm{id.str()},
+                .type_ref = get_builtin_type_for_operand(src_loc, id.str()),
+                .size = get_size_from_operand(src_loc, id.str()),
                 .ident_type = ident_info::ident_type::REGISTER,
             };
         }
 
         // is it a field?
-        if (fields_.has(id_base)) {
-            const std::string_view after_dot =
+        if (fields_.has(id.base())) {
+            const std::string after_dot =
                 id.path().size() == 1 ? ""
                                       : id.path().at(1); //? bug. not correct
             if (after_dot == "len") {
                 return {
                     .id{ident},
-                    .id_nasm{std::format("{}.len", id_base)},
+                    .id_nasm{std::format("{}.len", id.base())},
                     .type_ref = get_type_default(),
                     .size = get_type_default().size(),
                     .ident_type = ident_info::ident_type::IMPLIED,
                 };
             }
-            const field_info& fi{fields_.get_const_ref(id_base)};
+            const field_info& fi{fields_.get_const_ref(id.base())};
             if (fi.is_str) {
                 return {
                     .id{ident},
-                    .id_nasm{id_base},
+                    .id_nasm{id.base()},
                     .type_ref = get_type_default(),
                     .ident_type = ident_info::ident_type::FIELD,
                 };
@@ -1133,7 +1145,7 @@ class toc final {
             //? assumes qword
             return {
                 .id{ident},
-                .id_nasm{std::format("qword [{}]", id_base)},
+                .id_nasm{std::format("qword [{}]", id.base())},
                 .type_ref = get_type_default(),
                 .size = get_type_default().size(),
                 .ident_type = ident_info::ident_type::FIELD,
@@ -1141,11 +1153,11 @@ class toc final {
         }
 
         // is 'id' an integer?
-        if (const std::optional<int64_t> value{parse_to_constant(id_base)};
+        if (const std::optional<int64_t> value{parse_to_constant(id.str())};
             value) {
             return {
                 .id{ident},
-                .id_nasm{id_base},
+                .id_nasm{id.str()},
                 .const_value = *value,
                 .type_ref = get_type_default(),
                 .size = get_type_default().size(),
@@ -1153,7 +1165,7 @@ class toc final {
         }
 
         // is it a boolean constant?
-        if (id_base == "true") {
+        if (id.base() == "true") {
             return {
                 .id{ident},
                 .id_nasm{"true"},
@@ -1163,7 +1175,7 @@ class toc final {
             };
         }
 
-        if (id_base == "false") {
+        if (id.base() == "false") {
             return {
                 .id{ident},
                 .id_nasm{"false"},
