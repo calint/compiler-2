@@ -34,6 +34,12 @@ struct func_return_info {
     const type& type_ref; // type
 };
 
+struct alias_info {
+    std::string from;
+    std::string to;
+    std::string lea;
+};
+
 class frame final {
     // optional name
     std::string_view name_;
@@ -48,7 +54,7 @@ class frame final {
     lut<var_info> vars_;
 
     // aliases that refer to previous frame(s) alias or variable
-    lut<std::string> aliases_;
+    lut<alias_info> aliases_;
 
     // the label to jump to when exiting an in-lined function
     std::string func_ret_label_;
@@ -74,8 +80,8 @@ class frame final {
     // public non-special functions (sorted alphabetically)
     // -------------------------------------------------------------------------
 
-    auto add_alias(std::string from, std::string to) -> void {
-        aliases_.put(std::move(from), std::move(to));
+    auto add_alias(const alias_info& ai) -> void {
+        aliases_.put(std::string{ai.from}, ai);
     }
 
     auto add_var(const var_info& var) -> void {
@@ -101,7 +107,7 @@ class frame final {
     }
 
     [[nodiscard]] auto get_alias(std::string_view name) const
-        -> const std::string& {
+        -> const alias_info& {
         return aliases_.get_const_ref(name);
     }
 
@@ -236,8 +242,8 @@ class toc final {
     // public non-special functions (sorted alphabetically)
     // -------------------------------------------------------------------------
 
-    auto add_alias(std::string from, std::string to) -> void {
-        frames_.back().add_alias(std::move(from), std::move(to));
+    auto add_alias(const alias_info& ai) -> void {
+        frames_.back().add_alias(ai);
     }
 
     auto add_field(const token& src_loc_tk, std::string name,
@@ -1072,7 +1078,8 @@ class toc final {
 
                 // yes, continue resolving alias until it is a variable,
                 // field, register or constant
-                ident_path new_id{frm.get_alias(id.base())};
+                alias_info const alias{frm.get_alias(id.base())};
+                ident_path new_id{std::string{alias.to}};
 
                 // this is an alias of the type:
                 //   res -> pt.x becomes pt.x

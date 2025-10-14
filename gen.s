@@ -161,7 +161,7 @@ main:
     bool_end_87_12:
 ;   [18:6] assert(expr : bool) 
     assert_87_5:
-;       [87:5] alias expr -> r15
+;       [87:5] alias expr -> r15   lea: 
         if_19_8_87_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -174,7 +174,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_87_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -224,7 +224,7 @@ main:
     bool_end_88_12:
 ;   [18:6] assert(expr : bool) 
     assert_88_5:
-;       [88:5] alias expr -> r15
+;       [88:5] alias expr -> r15   lea: 
         if_19_8_88_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -237,7 +237,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_88_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -333,7 +333,7 @@ main:
     bool_end_92_12:
 ;   [18:6] assert(expr : bool) 
     assert_92_5:
-;       [92:5] alias expr -> r15
+;       [92:5] alias expr -> r15   lea: 
         if_19_8_92_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -346,7 +346,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_92_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -466,7 +466,7 @@ main:
     bool_end_96_12:
 ;   [18:6] assert(expr : bool) 
     assert_96_5:
-;       [96:5] alias expr -> r15
+;       [96:5] alias expr -> r15   lea: 
         if_19_8_96_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -479,7 +479,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_96_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -572,7 +572,7 @@ main:
     bool_end_99_12:
 ;   [18:6] assert(expr : bool) 
     assert_99_5:
-;       [99:5] alias expr -> r15
+;       [99:5] alias expr -> r15   lea: 
         if_19_8_99_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -585,7 +585,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_99_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -647,8 +647,8 @@ main:
 ;   [102:20] free scratch register 'r13'
 ;   [65:6] inv(i : i32) : i32 res 
     inv_102_16:
-;       [102:16] alias res -> dword [rsp + r15 * 4 - 16]
-;       [102:16] alias i -> r14
+;       [102:16] alias res -> dword [rsp + r15 * 4 - 16]   lea: 
+;       [102:16] alias i -> r14   lea: 
 ;       [66:5] res = ~i
 ;       [66:11] ~i
 ;       [66:11] ~i
@@ -696,7 +696,7 @@ main:
     bool_end_103_12:
 ;   [18:6] assert(expr : bool) 
     assert_103_5:
-;       [103:5] alias expr -> r15
+;       [103:5] alias expr -> r15   lea: 
         if_19_8_103_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -709,7 +709,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_103_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -725,7 +725,7 @@ main:
 ;   [105:5] faz(arr)
 ;   [75:6] faz(arg : i32[]) 
     faz_105_5:
-;       [105:5] alias arg -> arr
+;       [105:5] alias arg -> arr   lea: 
 ;       [76:5] arg[1] = 0xfe
 ;       [76:5] allocate scratch register -> r15
 ;       [76:9] set array index
@@ -784,7 +784,7 @@ main:
     bool_end_106_12:
 ;   [18:6] assert(expr : bool) 
     assert_106_5:
-;       [106:5] alias expr -> r15
+;       [106:5] alias expr -> r15   lea: 
         if_19_8_106_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -797,7 +797,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_106_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -826,7 +826,8 @@ main:
 ;   [109:5] foo(p)
 ;   [51:6] foo(pt : point) 
     foo_109_5:
-;       [109:5] alias pt -> p
+;       [109:5] alias pt -> p   lea: rsp - 72
+;       [109:5] alias pt -> p   lea: 
 ;       [52:5] pt.x = 0b10
 ;       [52:12] 0b10
 ;       [52:12] 0b10
@@ -856,7 +857,7 @@ main:
     bool_end_110_12:
 ;   [18:6] assert(expr : bool) 
     assert_110_5:
-;       [110:5] alias expr -> r15
+;       [110:5] alias expr -> r15   lea: 
         if_19_8_110_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -869,7 +870,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_110_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -898,7 +899,7 @@ main:
     bool_end_111_12:
 ;   [18:6] assert(expr : bool) 
     assert_111_5:
-;       [111:5] alias expr -> r15
+;       [111:5] alias expr -> r15   lea: 
         if_19_8_111_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -911,7 +912,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_111_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -934,7 +935,7 @@ main:
 ;   [114:5] bar(i)
 ;   [58:6] bar(arg) 
     bar_114_5:
-;       [114:5] alias arg -> i
+;       [114:5] alias arg -> i   lea: 
         if_59_8_114_5:
 ;       [59:8] ? arg == 0
 ;       [59:8] ? arg == 0
@@ -967,7 +968,7 @@ main:
     bool_end_115_12:
 ;   [18:6] assert(expr : bool) 
     assert_115_5:
-;       [115:5] alias expr -> r15
+;       [115:5] alias expr -> r15   lea: 
         if_19_8_115_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -980,7 +981,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_115_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1001,7 +1002,7 @@ main:
 ;   [118:5] bar(i)
 ;   [58:6] bar(arg) 
     bar_118_5:
-;       [118:5] alias arg -> i
+;       [118:5] alias arg -> i   lea: 
         if_59_8_118_5:
 ;       [59:8] ? arg == 0
 ;       [59:8] ? arg == 0
@@ -1034,7 +1035,7 @@ main:
     bool_end_119_12:
 ;   [18:6] assert(expr : bool) 
     assert_119_5:
-;       [119:5] alias expr -> r15
+;       [119:5] alias expr -> r15   lea: 
         if_19_8_119_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1047,7 +1048,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_119_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1076,8 +1077,8 @@ main:
 ;   [122:13] baz(j)
 ;   [69:6] baz(arg) : i64 res 
     baz_122_13:
-;       [122:13] alias res -> k
-;       [122:13] alias arg -> j
+;       [122:13] alias res -> k   lea: 
+;       [122:13] alias arg -> j   lea: 
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
@@ -1109,7 +1110,7 @@ main:
     bool_end_123_12:
 ;   [18:6] assert(expr : bool) 
     assert_123_5:
-;       [123:5] alias expr -> r15
+;       [123:5] alias expr -> r15   lea: 
         if_19_8_123_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1122,7 +1123,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_123_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1142,8 +1143,8 @@ main:
 ;   [125:9] baz(1)
 ;   [69:6] baz(arg) : i64 res 
     baz_125_9:
-;       [125:9] alias res -> k
-;       [125:9] alias arg -> 1
+;       [125:9] alias res -> k   lea: 
+;       [125:9] alias arg -> 1   lea: 
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
@@ -1172,7 +1173,7 @@ main:
     bool_end_126_12:
 ;   [18:6] assert(expr : bool) 
     assert_126_5:
-;       [126:5] alias expr -> r15
+;       [126:5] alias expr -> r15   lea: 
         if_19_8_126_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1185,7 +1186,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_126_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1209,8 +1210,8 @@ main:
 ;   [128:23] baz(2)
 ;   [69:6] baz(arg) : i64 res 
     baz_128_23:
-;       [128:23] alias res -> p0.x
-;       [128:23] alias arg -> 2
+;       [128:23] alias res -> p0.x   lea: 
+;       [128:23] alias arg -> 2   lea: 
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
@@ -1243,7 +1244,7 @@ main:
     bool_end_129_12:
 ;   [18:6] assert(expr : bool) 
     assert_129_5:
-;       [129:5] alias expr -> r15
+;       [129:5] alias expr -> r15   lea: 
         if_19_8_129_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1256,7 +1257,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_129_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1329,7 +1330,7 @@ main:
     bool_end_135_12:
 ;   [18:6] assert(expr : bool) 
     assert_135_5:
-;       [135:5] alias expr -> r15
+;       [135:5] alias expr -> r15   lea: 
         if_19_8_135_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1342,7 +1343,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_135_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1371,7 +1372,7 @@ main:
     bool_end_136_12:
 ;   [18:6] assert(expr : bool) 
     assert_136_5:
-;       [136:5] alias expr -> r15
+;       [136:5] alias expr -> r15   lea: 
         if_19_8_136_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1384,7 +1385,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_136_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1413,7 +1414,7 @@ main:
     bool_end_137_12:
 ;   [18:6] assert(expr : bool) 
     assert_137_5:
-;       [137:5] alias expr -> r15
+;       [137:5] alias expr -> r15   lea: 
         if_19_8_137_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1426,7 +1427,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_137_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1488,7 +1489,7 @@ main:
     bool_end_141_12:
 ;   [18:6] assert(expr : bool) 
     assert_141_5:
-;       [141:5] alias expr -> r15
+;       [141:5] alias expr -> r15   lea: 
         if_19_8_141_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1501,7 +1502,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_141_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1530,7 +1531,7 @@ main:
     bool_end_142_12:
 ;   [18:6] assert(expr : bool) 
     assert_142_5:
-;       [142:5] alias expr -> r15
+;       [142:5] alias expr -> r15   lea: 
         if_19_8_142_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1543,7 +1544,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_142_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1586,7 +1587,7 @@ main:
     bool_end_145_12:
 ;   [18:6] assert(expr : bool) 
     assert_145_5:
-;       [145:5] alias expr -> r15
+;       [145:5] alias expr -> r15   lea: 
         if_19_8_145_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1599,7 +1600,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_145_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1628,7 +1629,7 @@ main:
     bool_end_146_12:
 ;   [18:6] assert(expr : bool) 
     assert_146_5:
-;       [146:5] alias expr -> r15
+;       [146:5] alias expr -> r15   lea: 
         if_19_8_146_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1641,7 +1642,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_146_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1670,7 +1671,7 @@ main:
     bool_end_147_12:
 ;   [18:6] assert(expr : bool) 
     assert_147_5:
-;       [147:5] alias expr -> r15
+;       [147:5] alias expr -> r15   lea: 
         if_19_8_147_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1683,7 +1684,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_147_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1758,7 +1759,7 @@ main:
     bool_end_152_12:
 ;   [18:6] assert(expr : bool) 
     assert_152_5:
-;       [152:5] alias expr -> r15
+;       [152:5] alias expr -> r15   lea: 
         if_19_8_152_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1771,7 +1772,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_152_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1907,7 +1908,7 @@ main:
     bool_end_158_12:
 ;   [18:6] assert(expr : bool) 
     assert_158_5:
-;       [158:5] alias expr -> r15
+;       [158:5] alias expr -> r15   lea: 
         if_19_8_158_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -1920,7 +1921,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_158_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -2065,7 +2066,7 @@ main:
     bool_end_165_12:
 ;   [18:6] assert(expr : bool) 
     assert_165_5:
-;       [165:5] alias expr -> r15
+;       [165:5] alias expr -> r15   lea: 
         if_19_8_165_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
@@ -2078,7 +2079,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_165_5:
-;               [19:17] alias v -> rdi
+;               [19:17] alias v -> rdi   lea: 
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -2098,8 +2099,8 @@ main:
     mov rsi, hello
 ;   [22:6] print(len : reg_rdx, ptr : reg_rsi) 
     print_167_5:
-;       [167:5] alias len -> rdx
-;       [167:5] alias ptr -> rsi
+;       [167:5] alias len -> rdx   lea: 
+;       [167:5] alias ptr -> rsi   lea: 
 ;       [23:5] mov(rax, 1)
         mov rax, 1
 ;       [23:19] # write system call
@@ -2124,8 +2125,8 @@ main:
         mov rsi, prompt1
 ;       [22:6] print(len : reg_rdx, ptr : reg_rsi) 
         print_169_9:
-;           [169:9] alias len -> rdx
-;           [169:9] alias ptr -> rsi
+;           [169:9] alias len -> rdx   lea: 
+;           [169:9] alias ptr -> rsi   lea: 
 ;           [23:5] mov(rax, 1)
             mov rax, 1
 ;           [23:19] # write system call
@@ -2162,9 +2163,9 @@ main:
         lea rsi, [rsp - 284]
 ;       [30:6] read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes 
         read_171_19:
-;           [171:19] alias nbytes -> len
-;           [171:19] alias len -> rdx
-;           [171:19] alias ptr -> rsi
+;           [171:19] alias nbytes -> len   lea: 
+;           [171:19] alias len -> rdx   lea: 
+;           [171:19] alias ptr -> rsi   lea: 
 ;           [31:5] mov(rax, 0)
             mov rax, 0
 ;           [31:19] # read system call
@@ -2211,8 +2212,8 @@ main:
             mov rsi, prompt2
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_178_13:
-;               [178:13] alias len -> rdx
-;               [178:13] alias ptr -> rsi
+;               [178:13] alias len -> rdx   lea: 
+;               [178:13] alias ptr -> rsi   lea: 
 ;               [23:5] mov(rax, 1)
                 mov rax, 1
 ;               [23:19] # write system call
@@ -2239,8 +2240,8 @@ main:
             mov rsi, prompt3
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_181_13:
-;               [181:13] alias len -> rdx
-;               [181:13] alias ptr -> rsi
+;               [181:13] alias len -> rdx   lea: 
+;               [181:13] alias ptr -> rsi   lea: 
 ;               [23:5] mov(rax, 1)
                 mov rax, 1
 ;               [23:19] # write system call
@@ -2267,8 +2268,8 @@ main:
             lea rsi, [rsp - 284]
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_182_13:
-;               [182:13] alias len -> rdx
-;               [182:13] alias ptr -> rsi
+;               [182:13] alias len -> rdx   lea: 
+;               [182:13] alias ptr -> rsi   lea: 
 ;               [23:5] mov(rax, 1)
                 mov rax, 1
 ;               [23:19] # write system call
@@ -2291,8 +2292,8 @@ main:
             mov rsi, dot
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_183_13:
-;               [183:13] alias len -> rdx
-;               [183:13] alias ptr -> rsi
+;               [183:13] alias len -> rdx   lea: 
+;               [183:13] alias ptr -> rsi   lea: 
 ;               [23:5] mov(rax, 1)
                 mov rax, 1
 ;               [23:19] # write system call
@@ -2315,8 +2316,8 @@ main:
             mov rsi, nl
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_184_13:
-;               [184:13] alias len -> rdx
-;               [184:13] alias ptr -> rsi
+;               [184:13] alias len -> rdx   lea: 
+;               [184:13] alias ptr -> rsi   lea: 
 ;               [23:5] mov(rax, 1)
                 mov rax, 1
 ;               [23:19] # write system call

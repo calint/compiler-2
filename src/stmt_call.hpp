@@ -137,7 +137,7 @@ class stmt_call : public expression {
         }
 
         // buffer the aliases of arguments and return
-        std::vector<std::pair<std::string_view, std::string>> aliases_to_add;
+        std::vector<alias_info> aliases_to_add;
 
         // validate return type
         if (not dst.empty()) {
@@ -147,7 +147,8 @@ class stmt_call : public expression {
                                          "function does not return value"};
             }
             // alias return identifier to 'dst'
-            aliases_to_add.emplace_back(ret->ident_tk.text(), std::string{dst});
+            aliases_to_add.emplace_back(std::string{ret->ident_tk.text()},
+                                        std::string{dst});
         }
 
         // create unique labels for in-lined functions
@@ -177,6 +178,20 @@ class stmt_call : public expression {
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
 
+            if (arg.is_identifier()) {
+                std::vector<std::string> regs_lea;
+
+                std::string const lea{
+                    arg.compile_lea(arg.tok(), tc, os, indent, regs_lea, "")};
+
+                for (const std::string& r : regs_lea) {
+                    allocated_scratch_registers.emplace_back(r);
+                    allocated_registers_in_order.emplace_back(r);
+                }
+
+                aliases_to_add.emplace_back(std::string{param.identifier()},
+                                            std::string{arg.identifier()}, lea);
+            }
             // handle expression arguments
             if (arg.is_expression()) {
                 if (arg_reg.empty()) {
@@ -185,14 +200,15 @@ class stmt_call : public expression {
                     allocated_registers_in_order.emplace_back(arg_reg);
                 }
                 arg.compile(tc, os, indent, arg_reg);
-                aliases_to_add.emplace_back(param.identifier(), arg_reg);
+                aliases_to_add.emplace_back(std::string{param.identifier()},
+                                            arg_reg, "");
                 continue;
             }
 
             // handle non-expression without the register and without unary ops
             if (arg_reg.empty() and arg.get_unary_ops().is_empty()) {
-                aliases_to_add.emplace_back(param.identifier(),
-                                            std::string{arg.identifier()});
+                aliases_to_add.emplace_back(std::string{param.identifier()},
+                                            std::string{arg.identifier()}, "");
                 continue;
             }
 
@@ -206,12 +222,14 @@ class stmt_call : public expression {
                 tc.asm_cmd(param.tok(), os, indent, "mov", scratch_reg,
                            arg_info.id_nasm);
                 arg.get_unary_ops().compile(tc, os, indent, scratch_reg);
-                aliases_to_add.emplace_back(param.identifier(), scratch_reg);
+                aliases_to_add.emplace_back(std::string{param.identifier()},
+                                            scratch_reg, "");
                 continue;
             }
 
             // handle non-expression with register
-            aliases_to_add.emplace_back(param.identifier(), arg_reg);
+            aliases_to_add.emplace_back(std::string{param.identifier()},
+                                        arg_reg, "");
             const ident_info& arg_info{tc.make_ident_info(arg)};
 
             if (arg_info.is_const()) {
@@ -235,10 +253,10 @@ class stmt_call : public expression {
                       ret_jmp_label);
 
         // add aliases
-        for (const auto& [from, to] : aliases_to_add) {
+        for (const alias_info& e : aliases_to_add) {
             tc.comment_start(tok(), os, indent + 1);
-            std::println(os, "alias {} -> {}", from, to);
-            tc.add_alias(std::string{from}, to);
+            std::println(os, "alias {} -> {}   lea: {}", e.from, e.to, e.lea);
+            tc.add_alias(e);
         }
 
         // compile in-lined code
