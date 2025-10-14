@@ -75,11 +75,14 @@ class stmt_def_var final : public statement {
 
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
-        const var_info var{.name{name_tk_.text()},
-                           .type_ref = tp,
-                           .declared_at_tk{name_tk_},
-                           .is_array = is_array_,
-                           .array_size = array_size_};
+        const var_info var{
+            .name{name_tk_.text()},
+            .type_ref = tp,
+            .declared_at_tk{name_tk_},
+            .is_array = is_array_,
+            .array_size = array_size_,
+            .lea{},
+        };
         tc.add_var(name_tk_, null_strm, 0, var);
 
         if (init_required) {
@@ -131,6 +134,7 @@ class stmt_def_var final : public statement {
             .declared_at_tk{name_tk_},
             .is_array = is_array_,
             .array_size = array_size_,
+            .lea{},
         };
         tc.add_var(name_tk_, os, indent, var);
 

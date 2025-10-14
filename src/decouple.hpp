@@ -60,6 +60,7 @@ struct var_info {
     int32_t stack_idx{};  // location relative to register rsp
     bool is_array{};
     size_t array_size{};
+    std::string lea;
 };
 
 //
