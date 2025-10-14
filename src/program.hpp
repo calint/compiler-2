@@ -186,6 +186,9 @@ class program final {
     }
 
     auto build(std::ostream& os) -> void {
+        // std::println(
+        //     std::cerr,
+        //     " ------------------------ C O M P I L E ------------------");
         compile(tc_, os, 0);
         tc_.finish(os);
     }

@@ -31,7 +31,7 @@ type string {
 }
 
 type location {
-    name : string,
+    name : string
 }
 
 func main() {

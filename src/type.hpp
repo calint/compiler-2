@@ -48,13 +48,9 @@ class type final {
                    const std::string_view name, const type& tp,
                    const bool is_array, const size_t array_size) -> void {
 
-        fields_.emplace_back(
-            type_field{.name{name},
-                       .tp = &tp,
-                       .size = tp.size_ * (is_array ? array_size : 1),
-                       .array_size = array_size,
-                       .is_array = is_array,
-                       .offset = size_});
+        const size_t size{tp.size_ * (is_array ? array_size : 1)};
+        fields_.emplace_back(std::string{name}, &tp, size, array_size, is_array,
+                             size_);
 
         size_ += tp.size_ * (is_array ? array_size : 1);
     }
@@ -108,7 +104,7 @@ class type final {
             .id{ident},
             .id_nasm{accessor},
             .type_ref{*tp},
-            .stack_ix = var.stack_idx,
+            .stack_ix = stack_idx,
             .size = size,
             .array_size = array_size,
             .is_array = is_array,

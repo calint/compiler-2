@@ -1091,6 +1091,8 @@ class toc final {
 
         // is it a variable?
         if (frm.has_var(id.base())) {
+            // std::cerr << src_loc.at_line() << ": " << ident << " -> "
+            //           << id.str() << "\n";
             const var_info& var{frm.get_var_const_ref(id.base())};
             return var.type_ref.accessor(src_loc, ident, id.path(), var);
         }

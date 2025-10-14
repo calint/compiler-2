@@ -1,0 +1,42 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+type link {
+    name : i8[64],
+    name_len : i8
+}
+
+type location {
+    name : i8[64],
+    name_len : i8,
+    links : link[4]
+}
+
+type world {
+    time,
+    loc : location
+}
+
+func faaz(sz : i8) {
+    sz = 1
+}
+
+func fooz(lnk : link) {
+    lnk.name[0] = 0x61 # 'a'
+    faaz(lnk.name_len)
+    # lnk.name_len = 1
+}
+
+func main() {
+    var wld : world[1]
+    fooz(wld.loc.links)
+    assert(wld.loc.links.name_len == 1)
+    assert(wld.loc.links.name[0] == 0x61 )
+}
