@@ -15,45 +15,61 @@ main:
     mov rcx, 8640
     xor rax, rax
     rep stosb
-    baz_44_5:
+    baz_45_5:
         lea r15, [rsp - 8640]
         mov r14, 1
         cmp r14, 2
-        mov r13, 39
+        mov r13, 40
         cmovge rbp, r13
         jge panic_bounds
         imul r14, 4320
         add r15, r14
         add r15, 8
-        bar_39_5_44_5:
-            lea r14, [rsp - 8632]
-            mov r13, 2
+        bar_40_5_45_5:
+            mov r14, r15
+            mov r13, 1
             cmp r13, 7
             mov r12, 35
             cmovge rbp, r12
             jge panic_bounds
             imul r13, 616
             add r14, r13
-            mov r13, 1
-            cmp r13, 8
-            mov r12, 35
-            cmovge rbp, r12
-            jge panic_bounds
-            imul r13, 69
-            add r14, r13
-            add r14, 64
-            foo_35_5_39_5_44_5:
+            foo_35_5_40_5_45_5:
                 mov dword [r14 + 65], 2
                 mov byte [r14 + 64], 1
-                mov r13, 0
-                cmp r13, 64
-                mov r12, 31
-                cmovge rbp, r12
+                mov r13, r14
+                mov r12, 0
+                cmp r12, 8
+                mov r11, 31
+                cmovge rbp, r11
                 jge panic_bounds
-                mov byte [rsp + r13 - 8568], 0x61
-            foo_35_5_39_5_44_5_end:
-        bar_39_5_44_5_end:
-    baz_44_5_end:
+                imul r12, 69
+                add r13, r12
+                mov byte [r13], 0x61
+            foo_35_5_40_5_45_5_end:
+            mov r14, r15
+            mov r13, 5
+            cmp r13, 7
+            mov r12, 36
+            cmovge rbp, r12
+            jge panic_bounds
+            imul r13, 616
+            add r14, r13
+            foo_36_5_40_5_45_5:
+                mov dword [r14 + 65], 2
+                mov byte [r14 + 64], 1
+                mov r13, r14
+                mov r12, 0
+                cmp r12, 8
+                mov r11, 31
+                cmovge rbp, r11
+                jge panic_bounds
+                imul r12, 69
+                add r13, r12
+                mov byte [r13], 0x61
+            foo_36_5_40_5_45_5_end:
+        bar_40_5_45_5_end:
+    baz_45_5_end:
     mov rax, 60
     mov rdi, 0
     syscall

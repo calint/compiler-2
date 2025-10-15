@@ -33,6 +33,7 @@ func foo(lnk : link){
 
 func bar(locs : location[]) {
     foo(locs[2].links[1])
+    foo(locs[3].links[5])
 }
 
 func baz(wld : world[]) {

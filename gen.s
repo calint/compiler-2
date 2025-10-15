@@ -21,67 +21,50 @@ mov rsp,stk.end
 ; program
 ;[22:1] # size: 4320
 main:
-;   [43:5] var worlds : world[2]
-;   [43:9] worlds: world[2] @ qword [rsp - 8640]
-;   [43:9] clear array 2 * 4320 B = 8640 B
-;   [43:5] allocate named register 'rdi'
-;   [43:5] allocate named register 'rcx'
-;   [43:5] allocate named register 'rax'
+;   [44:5] var worlds : world[2]
+;   [44:9] worlds: world[2] @ qword [rsp - 8640]
+;   [44:9] clear array 2 * 4320 B = 8640 B
+;   [44:5] allocate named register 'rdi'
+;   [44:5] allocate named register 'rcx'
+;   [44:5] allocate named register 'rax'
     lea rdi, [rsp - 8640]
     mov rcx, 8640
     xor rax, rax
     rep stosb
-;   [43:5] free named register 'rax'
-;   [43:5] free named register 'rcx'
-;   [43:5] free named register 'rdi'
-;   [44:5] baz(worlds)
-;   [38:6] baz(wld : world[]) 
-    baz_44_5:
-;       [44:5] alias wld -> worlds  (lea: , len: 0)
-;       [39:5] bar(wld[1].locations)
-;       [39:9] allocate scratch register -> r15
+;   [44:5] free named register 'rax'
+;   [44:5] free named register 'rcx'
+;   [44:5] free named register 'rdi'
+;   [45:5] baz(worlds)
+;   [39:6] baz(wld : world[]) 
+    baz_45_5:
+;       [45:5] alias wld -> worlds  (lea: , len: 0)
+;       [40:5] bar(wld[1].locations)
+;       [40:9] allocate scratch register -> r15
         lea r15, [rsp - 8640]
-;       [39:9] allocate scratch register -> r14
-;       [39:13] set array index
-;       [39:13] 1
-;       [39:13] 1
-;       [39:13] r14 = 1
+;       [40:9] allocate scratch register -> r14
+;       [40:13] set array index
+;       [40:13] 1
+;       [40:13] 1
+;       [40:13] r14 = 1
         mov r14, 1
-;       [39:13] bounds check
+;       [40:13] bounds check
         cmp r14, 2
-;       [39:13] allocate scratch register -> r13
-;       [39:13] line number
-        mov r13, 39
+;       [40:13] allocate scratch register -> r13
+;       [40:13] line number
+        mov r13, 40
         cmovge rbp, r13
-;       [39:13] free scratch register 'r13'
+;       [40:13] free scratch register 'r13'
         jge panic_bounds
         imul r14, 4320
         add r15, r14
-;       [39:9] free scratch register 'r14'
+;       [40:9] free scratch register 'r14'
         add r15, 8
 ;       [34:6] bar(locs : location[]) 
-        bar_39_5_44_5:
-;           [39:5] alias locs -> wld.locations  (lea: r15, len: 7)
+        bar_40_5_45_5:
+;           [40:5] alias locs -> wld.locations  (lea: r15, len: 7)
 ;           [35:5] foo(locs[2].links[1])
 ;           [35:9] allocate scratch register -> r14
-            lea r14, [rsp - 8632]
-;           [35:9] allocate scratch register -> r13
-;           [35:14] set array index
-;           [35:14] 2
-;           [35:14] 2
-;           [35:14] r13 = 2
-            mov r13, 2
-;           [35:14] bounds check
-            cmp r13, 7
-;           [35:14] allocate scratch register -> r12
-;           [35:14] line number
-            mov r12, 35
-            cmovge rbp, r12
-;           [35:14] free scratch register 'r12'
-            jge panic_bounds
-            imul r13, 616
-            add r14, r13
-;           [35:9] free scratch register 'r13'
+            mov r14, r15
 ;           [35:9] allocate scratch register -> r13
 ;           [35:23] set array index
 ;           [35:23] 1
@@ -89,19 +72,18 @@ main:
 ;           [35:23] r13 = 1
             mov r13, 1
 ;           [35:23] bounds check
-            cmp r13, 8
+            cmp r13, 7
 ;           [35:23] allocate scratch register -> r12
 ;           [35:23] line number
             mov r12, 35
             cmovge rbp, r12
 ;           [35:23] free scratch register 'r12'
             jge panic_bounds
-            imul r13, 69
+            imul r13, 616
             add r14, r13
 ;           [35:9] free scratch register 'r13'
-            add r14, 64
 ;           [28:6] foo(lnk : link) 
-            foo_35_5_39_5_44_5:
+            foo_35_5_40_5_45_5:
 ;               [35:5] alias lnk -> locs.links  (lea: r14, len: 8)
 ;               [29:5] lnk.loc = 2
 ;               [29:15] 2
@@ -115,30 +97,96 @@ main:
                 mov byte [r14 + 64], 1
 ;               [31:5] lnk.name[0] = 0x61
 ;               [31:5] allocate scratch register -> r13
+                mov r13, r14
+;               [31:5] allocate scratch register -> r12
 ;               [31:14] set array index
 ;               [31:14] 0
 ;               [31:14] 0
-;               [31:14] r13 = 0
-                mov r13, 0
+;               [31:14] r12 = 0
+                mov r12, 0
 ;               [31:14] bounds check
-                cmp r13, 64
-;               [31:14] allocate scratch register -> r12
+                cmp r12, 8
+;               [31:14] allocate scratch register -> r11
 ;               [31:14] line number
-                mov r12, 31
-                cmovge rbp, r12
-;               [31:14] free scratch register 'r12'
+                mov r11, 31
+                cmovge rbp, r11
+;               [31:14] free scratch register 'r11'
                 jge panic_bounds
+                imul r12, 69
+                add r13, r12
+;               [31:5] free scratch register 'r12'
 ;               [31:19] 0x61
 ;               [31:19] 0x61
-;               [31:19] byte [rsp + r13 - 8568] = 0x61
-                mov byte [rsp + r13 - 8568], 0x61
+;               [31:19] byte [r13] = 0x61
+                mov byte [r13], 0x61
 ;               [31:5] free scratch register 'r13'
 ;               [31:24] # 'a'
 ;               [35:5] free scratch register 'r14'
-            foo_35_5_39_5_44_5_end:
-;           [39:5] free scratch register 'r15'
-        bar_39_5_44_5_end:
-    baz_44_5_end:
+            foo_35_5_40_5_45_5_end:
+;           [36:5] foo(locs[3].links[5])
+;           [36:9] allocate scratch register -> r14
+            mov r14, r15
+;           [36:9] allocate scratch register -> r13
+;           [36:23] set array index
+;           [36:23] 5
+;           [36:23] 5
+;           [36:23] r13 = 5
+            mov r13, 5
+;           [36:23] bounds check
+            cmp r13, 7
+;           [36:23] allocate scratch register -> r12
+;           [36:23] line number
+            mov r12, 36
+            cmovge rbp, r12
+;           [36:23] free scratch register 'r12'
+            jge panic_bounds
+            imul r13, 616
+            add r14, r13
+;           [36:9] free scratch register 'r13'
+;           [28:6] foo(lnk : link) 
+            foo_36_5_40_5_45_5:
+;               [36:5] alias lnk -> locs.links  (lea: r14, len: 8)
+;               [29:5] lnk.loc = 2
+;               [29:15] 2
+;               [29:15] 2
+;               [29:15] dword [r14 + 65] = 2
+                mov dword [r14 + 65], 2
+;               [30:5] lnk.name_len = 1
+;               [30:20] 1
+;               [30:20] 1
+;               [30:20] byte [r14 + 64] = 1
+                mov byte [r14 + 64], 1
+;               [31:5] lnk.name[0] = 0x61
+;               [31:5] allocate scratch register -> r13
+                mov r13, r14
+;               [31:5] allocate scratch register -> r12
+;               [31:14] set array index
+;               [31:14] 0
+;               [31:14] 0
+;               [31:14] r12 = 0
+                mov r12, 0
+;               [31:14] bounds check
+                cmp r12, 8
+;               [31:14] allocate scratch register -> r11
+;               [31:14] line number
+                mov r11, 31
+                cmovge rbp, r11
+;               [31:14] free scratch register 'r11'
+                jge panic_bounds
+                imul r12, 69
+                add r13, r12
+;               [31:5] free scratch register 'r12'
+;               [31:19] 0x61
+;               [31:19] 0x61
+;               [31:19] byte [r13] = 0x61
+                mov byte [r13], 0x61
+;               [31:5] free scratch register 'r13'
+;               [31:24] # 'a'
+;               [36:5] free scratch register 'r14'
+            foo_36_5_40_5_45_5_end:
+;           [40:5] free scratch register 'r15'
+        bar_40_5_45_5_end:
+    baz_45_5_end:
     ; system call: exit 0
     mov rax, 60
     mov rdi, 0
@@ -184,6 +232,6 @@ section .rodata
 section .bss
     num_buffer: resb 21
 
-; max scratch registers in use: 4
+; max scratch registers in use: 5
 ;            max frames in use: 8
 ;               max stack size: 8640 B

@@ -218,14 +218,51 @@ class stmt_identifier : public statement {
         [[maybe_unused]] const std::vector<std::string>& lea_path)
         -> std::string {
 
-        std::string path{elems.front().name_tk.text()};
+        // pick the last n elements from lea_path since it is a path to root
+        // while elems might be not example: world.locations.links   while
+        // elems is   loc.link
+        std::vector<std::string> leas;
+        leas.reserve(elems.size());
+        for (size_t i{lea_path.size() - elems.size()}; i < lea_path.size();
+             i++) {
+            leas.push_back(lea_path[i]);
+        }
+
+        // find the first element that has a "lea" and get accessor relative to
+        // that "lea"
+        size_t elems_index_with_lea{leas.size()};
+        bool found{};
+        std::string lea;
+        while (elems_index_with_lea) {
+            elems_index_with_lea--;
+            if (leas[elems_index_with_lea] != "") {
+                found = true;
+                lea = leas[elems_index_with_lea];
+                break;
+            }
+        }
+
+        // todo explain why -1
+        std::string path{
+            elems[elems_index_with_lea ? elems_index_with_lea - 1 : 0]
+                .name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
 
-        std::string reg_offset{"rsp"};
+        std::string reg_offset;
+        if (found) {
+            const std::string index_reg{
+                tc.alloc_scratch_register(src_loc_tk, os, indent)};
+            allocated_registers.push_back(index_reg);
+            tc.asm_cmd(src_loc_tk, os, indent, "mov", index_reg,
+                       leas[elems_index_with_lea]);
+            reg_offset = index_reg;
+        } else {
+            reg_offset = "rsp";
+        }
         int32_t accum_offset{};
         const size_t elems_size{elems.size()};
 
-        for (size_t i{}; i < elems_size; i++) {
+        for (size_t i{elems_index_with_lea}; i < elems_size; i++) {
             const identifier_elem& curr_elem{elems[i]};
             const ident_info curr_info{tc.make_ident_info(src_loc_tk, path)};
             const size_t type_size{curr_info.type_ref.size()};
@@ -381,7 +418,8 @@ class stmt_identifier : public statement {
         std::println(os, "bounds check");
 
         if (not reg_size.empty()) {
-            // check with size register (reg_to_check + reg_size vs array_size)
+            // check with size register (reg_to_check + reg_size vs
+            // array_size)
             const std::string reg_top_idx{
                 tc.alloc_scratch_register(tk, os, indent)};
             tc.asm_cmd(tk, os, indent, "mov", reg_top_idx, reg_size);
