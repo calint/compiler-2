@@ -1175,7 +1175,7 @@ class toc final {
                                                 type_path)};
 
             ii.elem_path = id.path();
-            // ? fishy stuff adjusting lea_path size
+            //? fishy stuff adjusting lea_path size
             // pad the lea path to have same size as the other vectors
             ii.type_path = type_path;
             for (size_t j{lea_path.size()}; j < id.path().size(); j++) {
