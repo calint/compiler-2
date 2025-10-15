@@ -95,7 +95,7 @@ class stmt_arrays_equal final : public expression {
         const std::string from_operand{
             stmt_identifier::compile_effective_address(
                 from_.first_token(), tc, os, indent, from_.elems(),
-                allocated_scratch_registers, "rcx", {})};
+                allocated_scratch_registers, "rcx", from_info.lea_path)};
 
         tc.asm_cmd(tok(), os, indent, "lea", "rsi",
                    std::format("[{}]", from_operand));
@@ -110,7 +110,7 @@ class stmt_arrays_equal final : public expression {
         tc.comment_source(to_, os, indent);
         const std::string to_operand{stmt_identifier::compile_effective_address(
             to_.first_token(), tc, os, indent, to_.elems(),
-            allocated_scratch_registers, "rcx", {})};
+            allocated_scratch_registers, "rcx", to_info.lea_path)};
 
         tc.asm_cmd(tok(), os, indent, "lea", "rdi",
                    std::format("[{}]", to_operand));

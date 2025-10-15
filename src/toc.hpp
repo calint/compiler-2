@@ -1119,6 +1119,14 @@ class toc final {
         // alias) to a variable, field, register or constant
         size_t i{frames_.size()};
         std::vector<std::string> lea_path;
+        // ignore the elements after the base:
+        //  e.g: lnks[1].pos.y
+        //   ignore pos.y since those cannot have lea, add empty leas for those
+        size_t n{id.path().size()};
+        for (size_t j{1}; j < n; j++) {
+            lea_path.emplace_back("");
+        }
+
         while (i) {
             i--;
             const frame& frm{frames_.at(i)};
@@ -1169,10 +1177,10 @@ class toc final {
             ii.elem_path = id.path();
             // pad the lea path to have same size as the other vectors
             ii.type_path = type_path;
-            std::ranges::reverse(lea_path);
             for (size_t j{lea_path.size()}; j < id.path().size(); j++) {
                 lea_path.emplace_back("");
             }
+            std::ranges::reverse(lea_path);
             ii.lea_path = lea_path;
 
             return ii;

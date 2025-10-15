@@ -1,6 +1,7 @@
 #pragma once
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "expr_any.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
@@ -88,7 +89,7 @@ class stmt_array_copy final : public statement {
         const std::string from_operand{
             stmt_identifier::compile_effective_address(
                 from_.first_token(), tc, os, indent, from_.elems(),
-                allocated_scratch_registers, "rcx", {})};
+                allocated_scratch_registers, "rcx", from_info.lea_path)};
 
         tc.asm_cmd(tok(), os, indent, "lea", "rsi",
                    std::format("[{}]", from_operand));
@@ -103,7 +104,7 @@ class stmt_array_copy final : public statement {
         tc.comment_source(to_, os, indent);
         const std::string to_operand{stmt_identifier::compile_effective_address(
             to_.first_token(), tc, os, indent, to_.elems(),
-            allocated_scratch_registers, "rcx", {})};
+            allocated_scratch_registers, "rcx", to_info.lea_path)};
 
         tc.asm_cmd(tok(), os, indent, "lea", "rdi",
                    std::format("[{}]", to_operand));

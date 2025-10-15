@@ -72,9 +72,10 @@ class stmt_assign_var final : public statement {
             tc.alloc_named_register_or_throw(tok(), os, indent, "rcx");
             std::vector<std::string> allocated_registers;
 
+            const ident_info stmt_info{tc.make_ident_info(stmt_ident_)};
             const std::string offset{stmt_identifier::compile_effective_address(
                 tok(), tc, os, indent, stmt_ident_.elems(), allocated_registers,
-                "", {})};
+                "", stmt_info.lea_path)};
 
             tc.asm_cmd(tok(), os, indent, "lea", "rdi",
                        std::format("[{}]", offset));
