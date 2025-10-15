@@ -78,7 +78,7 @@ class stmt_address_of final : public expression {
         std::vector<std::string> allocated_registers;
         const std::string operand = stmt_identifier::compile_effective_address(
             stmt_ident_.first_token(), tc, os, indent, stmt_ident_.elems(),
-            allocated_registers, "", {});
+            allocated_registers, "", src_info.lea_path);
 
         if (dst_info.is_register()) {
             tc.asm_cmd(tok(), os, indent, "lea", dst_info.id_nasm,

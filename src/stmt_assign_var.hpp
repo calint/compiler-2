@@ -1,13 +1,13 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <ranges>
+
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
-#include <cinttypes>
-#include <ranges>
 
 class stmt_assign_var final : public statement {
     stmt_identifier stmt_ident_;
