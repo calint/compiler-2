@@ -124,18 +124,12 @@ class stmt_assign_var final : public statement {
 
         std::string dst_accessor{dst_info.id};
         if (found) {
-            // todo explain why -1
-            size_t offset = dst_info.type_path[i - 1]->field_offset(
-                tok(), dst_info.elem_path, i);
             const std::string_view size_specifier{
                 type::get_size_specifier(tok(), dst_info.type_ref.size())};
-            if (offset == 0) {
-                dst_accessor = std::format("{} [{}]", size_specifier,
-                                           dst_info.lea_path[i]);
-            } else {
-                dst_accessor = std::format("{} [{} + {}]", size_specifier,
-                                           dst_info.lea_path[i], offset);
-            }
+            const size_t offset{dst_info.type_path[i]->field_offset(
+                tok(), dst_info.elem_path, i)};
+            dst_accessor = std::format("{} [{} + {}]", size_specifier,
+                                       dst_info.lea_path[i], offset);
         }
 
         // does the identifier contain array indexing?

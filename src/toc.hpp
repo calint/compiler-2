@@ -1133,7 +1133,7 @@ class toc final {
             // does scope contain the variable?
             if (frm.has_var(id.base())) {
                 // yes, found
-                lea_path.emplace_back("");
+                // lea_path.emplace_back("");
                 break;
             }
             if (frm.is_func()) {

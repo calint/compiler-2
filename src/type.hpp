@@ -123,7 +123,9 @@ class type final {
 
         const type* tp{this};
         size_t offset{};
-        for (const auto& field_name : path | std::views::drop(start_at_index)) {
+        for (const auto& field_name :
+             path | std::views::drop(start_at_index + 1)) {
+            // note: +1 because first element is retrieved outside the loop
             const type_field& fld{tp->field(src_loc_tk, field_name)};
             offset += fld.offset;
             tp = fld.tp;
