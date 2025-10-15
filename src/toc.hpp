@@ -1175,10 +1175,14 @@ class toc final {
                                                 type_path)};
 
             ii.elem_path = id.path();
+            // ? fishy stuff adjusting lea_path size
             // pad the lea path to have same size as the other vectors
             ii.type_path = type_path;
             for (size_t j{lea_path.size()}; j < id.path().size(); j++) {
                 lea_path.emplace_back("");
+            }
+            while (lea_path.size() != id.path().size()) {
+                lea_path.pop_back();
             }
             std::ranges::reverse(lea_path);
             ii.lea_path = lea_path;
