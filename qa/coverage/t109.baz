@@ -1,0 +1,33 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+type flags {
+    data : i8[8]
+}
+
+type world {
+    time,
+    flgs : flags[4]
+}
+
+func foo(data : i8[]) {
+    assert(array_size_of(data) == 8)
+}
+
+func bar(flg : flags) {
+    assert(array_size_of(flg) == 4)
+}
+
+func main() {
+    var worlds : world[2]
+    foo(worlds[1].flgs[2].data)
+    bar(worlds[1].flgs[1])
+}
+
