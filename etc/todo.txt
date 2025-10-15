@@ -1,3 +1,5 @@
+[ ] find where displacement in generated assembler is 0 and fix it:
+    e.g. r15 + r14 * 4 - 0
 [x] function arguments as array of user types (nested)
 [ ] refactor the passing first token to every constructor. push back and
     construct

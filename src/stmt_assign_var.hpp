@@ -110,8 +110,8 @@ class stmt_assign_var final : public statement {
         //                  dst_info.lea_path[i]);
         // }
 
-        // find the first element that has a "lea" and get accessor relative to
-        // that "lea"
+        // find the first element from top that has a "lea" and get accessor
+        // relative to that "lea"
         size_t i{dst_info.elem_path.size()};
         bool found{};
         while (i) {
@@ -124,6 +124,7 @@ class stmt_assign_var final : public statement {
 
         std::string dst_accessor{dst_info.id};
         if (found) {
+            // todo explain why -1
             size_t offset = dst_info.type_path[i - 1]->field_offset(
                 tok(), dst_info.elem_path, i);
             const std::string_view size_specifier{
