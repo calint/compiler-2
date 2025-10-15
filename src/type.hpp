@@ -105,6 +105,8 @@ class type final {
             .stack_ix = stack_idx,
             .array_size = array_size,
             .is_array = is_array,
+            .elem_path{},
+            .type_path{},
             .lea_path{},
             .ident_type = ident_info::ident_type::VAR,
         };

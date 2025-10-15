@@ -25,6 +25,8 @@ struct ident_info {
     const int32_t stack_ix{};
     const size_t array_size{};
     const bool is_array{};
+    const std::vector<std::string> elem_path;
+    const std::vector<const type*> type_path;
     const std::vector<std::string> lea_path;
     const ident_type ident_type{ident_type::CONST};
 

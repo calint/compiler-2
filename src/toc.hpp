@@ -1119,6 +1119,7 @@ class toc final {
         // alias) to a variable, field, register or constant
         size_t i{frames_.size()};
         std::vector<std::string> lea_path;
+        std::vector<const type*> type_path;
         while (i) {
             i--;
             const frame& frm{frames_.at(i)};
@@ -1140,6 +1141,7 @@ class toc final {
                 const alias_info alias{frm.get_alias(id.base())};
 
                 lea_path.emplace_back(alias.lea);
+                type_path.emplace_back(&alias.type_ref);
 
                 ident_path new_id{std::string{alias.to}};
 
@@ -1176,7 +1178,9 @@ class toc final {
                 .id{ident},
                 .id_nasm{id.str()},
                 .type_ref = get_type_default(),
-                .lea_path{},
+                .elem_path{id.str()},
+                .type_path{&get_type_default()},
+                .lea_path{""},
                 .ident_type = ident_info::ident_type::REGISTER,
             };
         }
@@ -1188,7 +1192,9 @@ class toc final {
                 .id{ident},
                 .id_nasm{id.str()},
                 .type_ref = get_builtin_type_for_operand(src_loc, id.str()),
-                .lea_path{},
+                .elem_path{id.str()},
+                .type_path{&get_type_default()},
+                .lea_path{""},
                 .ident_type = ident_info::ident_type::REGISTER,
             };
         }
@@ -1203,7 +1209,9 @@ class toc final {
                     .id{ident},
                     .id_nasm{std::format("{}.len", id.base())},
                     .type_ref = get_type_default(),
-                    .lea_path{},
+                    .elem_path{id.str()},
+                    .type_path{&get_type_default()},
+                    .lea_path{""},
                     .ident_type = ident_info::ident_type::IMPLIED,
                 };
             }
@@ -1213,7 +1221,9 @@ class toc final {
                     .id{ident},
                     .id_nasm{id.base()},
                     .type_ref = get_type_default(),
-                    .lea_path{},
+                    .elem_path{id.str()},
+                    .type_path{&get_type_default()},
+                    .lea_path{""},
                     .ident_type = ident_info::ident_type::FIELD,
                 };
             }
@@ -1222,7 +1232,9 @@ class toc final {
                 .id{ident},
                 .id_nasm{std::format("qword [{}]", id.base())},
                 .type_ref = get_type_default(),
-                .lea_path{},
+                .elem_path{id.str()},
+                .type_path{&get_type_default()},
+                .lea_path{""},
                 .ident_type = ident_info::ident_type::FIELD,
             };
         }
@@ -1235,7 +1247,9 @@ class toc final {
                 .id_nasm{id.str()},
                 .const_value = *value,
                 .type_ref = get_type_default(),
-                .lea_path{},
+                .elem_path{id.str()},
+                .type_path{&get_type_default()},
+                .lea_path{""},
             };
         }
 
@@ -1246,7 +1260,9 @@ class toc final {
                 .id_nasm{"true"},
                 .const_value = 1,
                 .type_ref = get_type_bool(),
-                .lea_path{},
+                .elem_path{id.str()},
+                .type_path{&get_type_default()},
+                .lea_path{""},
             };
         }
 
@@ -1256,7 +1272,9 @@ class toc final {
                 .id_nasm{"false"},
                 .const_value = 0,
                 .type_ref = get_type_bool(),
-                .lea_path{},
+                .elem_path{id.str()},
+                .type_path{&get_type_default()},
+                .lea_path{""},
             };
         }
 
@@ -1265,6 +1283,8 @@ class toc final {
             .id{},
             .id_nasm{},
             .type_ref = get_type_void(),
+            .elem_path{},
+            .type_path{},
             .lea_path{},
         };
     }
