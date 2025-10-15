@@ -146,7 +146,7 @@ class stmt_identifier : public statement {
         std::string lea;
         while (elems_index_with_lea) {
             elems_index_with_lea--;
-            if (src_info.lea_path[elems_index_with_lea] != "") {
+            if (not src_info.lea_path[elems_index_with_lea].empty()) {
                 found = true;
                 lea = src_info.lea_path[elems_index_with_lea];
                 break;
@@ -235,7 +235,7 @@ class stmt_identifier : public statement {
         std::string lea;
         while (elems_index_with_lea) {
             elems_index_with_lea--;
-            if (leas[elems_index_with_lea] != "") {
+            if (not leas[elems_index_with_lea].empty()) {
                 found = true;
                 lea = leas[elems_index_with_lea];
                 break;

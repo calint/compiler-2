@@ -1122,7 +1122,7 @@ class toc final {
         // ignore the elements after the base:
         //  e.g: lnks[1].pos.y
         //   ignore pos.y since those cannot have lea, add empty leas for those
-        size_t n{id.path().size()};
+        const size_t n{id.path().size()};
         for (size_t j{1}; j < n; j++) {
             lea_path.emplace_back("");
         }

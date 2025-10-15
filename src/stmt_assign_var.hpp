@@ -102,12 +102,13 @@ class stmt_assign_var final : public statement {
         }
 
         // DEBUG
-        std::println(std::cerr, "[{}] identifier path: {}", tok().at_line(),
-                     dst_info.id);
-        for (size_t i = 0; i < dst_info.elem_path.size(); i++) {
-            std::println(std::cerr, "  {} ; {} ; {}", dst_info.elem_path[i],
-                         dst_info.type_path[i]->name(), dst_info.lea_path[i]);
-        }
+        // std::println(std::cerr, "[{}] identifier path: {}", tok().at_line(),
+        //              dst_info.id);
+        // for (size_t i = 0; i < dst_info.elem_path.size(); i++) {
+        //     std::println(std::cerr, "  {} ; {} ; {}", dst_info.elem_path[i],
+        //                  dst_info.type_path[i]->name(),
+        //                  dst_info.lea_path[i]);
+        // }
 
         // find the first element that has a "lea" and get accessor relative to
         // that "lea"
@@ -115,7 +116,7 @@ class stmt_assign_var final : public statement {
         bool found{};
         while (i) {
             i--;
-            if (dst_info.lea_path[i] != "") {
+            if (not dst_info.lea_path[i].empty()) {
                 found = true;
                 break;
             }
