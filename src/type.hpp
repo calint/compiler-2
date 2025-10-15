@@ -70,9 +70,12 @@ class type final {
 
     [[nodiscard]] auto accessor(const token& tk, const std::string_view ident,
                                 const std::vector<std::string>& path,
-                                const var_info& var) const -> ident_info {
+                                const var_info& var,
+                                std::vector<const type*>& type_path) const
+        -> ident_info {
 
         const type* tp{this};
+        type_path.emplace_back(this);
         size_t offset{};
         bool is_array{var.is_array};
         size_t array_size{var.array_size};
@@ -80,6 +83,7 @@ class type final {
             const type_field& fld{tp->field(tk, field_name)};
             offset += fld.offset;
             tp = fld.tp;
+            type_path.emplace_back(tp);
             is_array = fld.is_array;
             array_size = fld.array_size;
         }
@@ -110,6 +114,21 @@ class type final {
             .lea_path{},
             .ident_type = ident_info::ident_type::VAR,
         };
+    }
+
+    [[nodiscard]] auto field_offset(const token& src_loc_tk,
+                                    const std::vector<std::string>& path,
+                                    const size_t start_at_index) const
+        -> size_t {
+
+        const type* tp{this};
+        size_t offset{};
+        for (const auto& field_name : path | std::views::drop(start_at_index)) {
+            const type_field& fld{tp->field(src_loc_tk, field_name)};
+            offset += fld.offset;
+            tp = fld.tp;
+        }
+        return offset;
     }
 
     [[nodiscard]] auto size() const -> size_t { return size_; }

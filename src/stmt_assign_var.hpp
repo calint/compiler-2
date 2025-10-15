@@ -2,9 +2,11 @@
 // reviewed: 2025-09-28
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "expr_any.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
+#include <cinttypes>
 #include <ranges>
 
 class stmt_assign_var final : public statement {
@@ -98,10 +100,45 @@ class stmt_assign_var final : public statement {
             return;
         }
 
+        // DEBUG
+        std::println(std::cerr, "[{}] identifier path: {}", tok().at_line(),
+                     dst_info.id);
+        for (size_t i = 0; i < dst_info.elem_path.size(); i++) {
+            std::println(std::cerr, "  {} ; {} ; {}", dst_info.elem_path[i],
+                         dst_info.type_path[i]->name(), dst_info.lea_path[i]);
+        }
+
+        // find the first element that has a "lea" and get accessor relative to
+        // that "lea"
+        size_t i{dst_info.elem_path.size()};
+        bool found{};
+        while (i) {
+            i--;
+            if (dst_info.lea_path[i] != "") {
+                found = true;
+                break;
+            }
+        }
+
+        std::string dst_accessor{dst_info.id};
+        if (found) {
+            size_t offset = dst_info.type_path[i - 1]->field_offset(
+                tok(), dst_info.elem_path, i);
+            const std::string_view size_specifier{
+                type::get_size_specifier(tok(), dst_info.type_ref.size())};
+            if (offset == 0) {
+                dst_accessor = std::format("{} [{}]", size_specifier,
+                                           dst_info.lea_path[i]);
+            } else {
+                dst_accessor = std::format("{} [{} + {}]", size_specifier,
+                                           dst_info.lea_path[i], offset);
+            }
+        }
+
         // does the identifier contain array indexing?
         if (not stmt_ident_.is_expression()) {
             // no, compile to 'dst_info'
-            expr_.compile(tc, os, indent, dst_info.id);
+            expr_.compile(tc, os, indent, dst_accessor);
             return;
         }
 

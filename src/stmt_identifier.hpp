@@ -128,12 +128,51 @@ class stmt_identifier : public statement {
 
         const ident_info dst_info{tc.make_ident_info(tok(), dst)};
 
+        // DEBUG
+        // std::println(std::cerr, "[{}] identifier path: {}", tok().at_line(),
+        //              dst_info.id);
+        // for (size_t i = 0; i < dst_info.elem_path.size(); i++) {
+        //     std::println(std::cerr, "  {} ; {} ; {}", dst_info.elem_path[i],
+        //                  dst_info.type_path[i]->name(),
+        //                  dst_info.lea_path[i]);
+        // }
+
+        const ident_info src_info{tc.make_ident_info(tok(), identifier())};
+
+        // find the first element that has a "lea" and get accessor relative to
+        // that "lea"
+        size_t elems_index_with_lea{src_info.elem_path.size()};
+        bool found{};
+        std::string lea;
+        while (elems_index_with_lea) {
+            elems_index_with_lea--;
+            if (src_info.lea_path[elems_index_with_lea] != "") {
+                found = true;
+                lea = src_info.lea_path[elems_index_with_lea];
+                break;
+            }
+        }
+        std::string src_accessor{src_info.id};
+        if (found) {
+            size_t offset =
+                src_info.type_path[elems_index_with_lea - 1]->field_offset(
+                    tok(), src_info.elem_path, elems_index_with_lea);
+            const std::string_view size_specifier{
+                type::get_size_specifier(tok(), src_info.type_ref.size())};
+            if (offset == 0) {
+                src_accessor =
+                    std::format("{} [{}]", size_specifier,
+                                dst_info.lea_path[elems_index_with_lea]);
+            } else {
+                src_accessor = std::format(
+                    "{} [{} + {}]", size_specifier,
+                    dst_info.lea_path[elems_index_with_lea], offset);
+            }
+        }
+
         if (not is_expression()) {
-            const ident_info src_info{tc.make_ident_info(tok(), identifier())};
-
             tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
-                       src_info.id_nasm);
-
+                       src_accessor);
             get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
             return;
         }
@@ -143,9 +182,7 @@ class stmt_identifier : public statement {
         const std::string effective_address{
             stmt_identifier::compile_effective_address(
                 tok(), tc, os, indent, elems(), allocated_registers, "",
-                dst_info.lea_path)};
-
-        const ident_info src_info{tc.make_ident_info(tok(), identifier())};
+                src_info.lea_path)};
 
         const std::string_view size_specifier{
             type::get_size_specifier(tok(), src_info.type_ref.size())};

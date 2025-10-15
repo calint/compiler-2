@@ -18,16 +18,16 @@ class expr_any;
 struct ident_info {
     enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
 
-    const std::string id;
-    const std::string id_nasm; // NASM valid source
-    const int64_t const_value{};
+    std::string id;
+    std::string id_nasm; // NASM valid source
+    int64_t const_value{};
     const type& type_ref;
-    const int32_t stack_ix{};
-    const size_t array_size{};
-    const bool is_array{};
-    const std::vector<std::string> elem_path;
-    const std::vector<const type*> type_path;
-    const std::vector<std::string> lea_path;
+    int32_t stack_ix{};
+    size_t array_size{};
+    bool is_array{};
+    std::vector<std::string> elem_path;
+    std::vector<const type*> type_path;
+    std::vector<std::string> lea_path;
     const ident_type ident_type{ident_type::CONST};
 
     [[nodiscard]] auto is_const() const -> bool {

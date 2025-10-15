@@ -1119,20 +1119,18 @@ class toc final {
         // alias) to a variable, field, register or constant
         size_t i{frames_.size()};
         std::vector<std::string> lea_path;
-        std::vector<const type*> type_path;
         while (i) {
             i--;
             const frame& frm{frames_.at(i)};
             // does scope contain the variable?
             if (frm.has_var(id.base())) {
                 // yes, found
+                lea_path.emplace_back("");
                 break;
             }
-            // is the frame a function?
             if (frm.is_func()) {
-                // yes, is there an alias defined by the function?
                 if (not frm.has_alias(id.base())) {
-                    // no, it is not
+                    lea_path.emplace_back("");
                     break;
                 }
 
@@ -1141,7 +1139,6 @@ class toc final {
                 const alias_info alias{frm.get_alias(id.base())};
 
                 lea_path.emplace_back(alias.lea);
-                type_path.emplace_back(&alias.type_ref);
 
                 ident_path new_id{std::string{alias.to}};
 
@@ -1160,15 +1157,25 @@ class toc final {
 
         const frame& frm{frames_.at(i)};
 
-        // the lea path now includes array offset for each element in the path
-        std::ranges::reverse(lea_path);
-
         // is it a variable?
         if (frm.has_var(id.base())) {
             // std::cerr << src_loc.at_line() << ": " << ident << " -> "
             //           << id.str() << "\n";
             const var_info& var{frm.get_var_const_ref(id.base())};
-            return var.type_ref.accessor(src_loc, ident, id.path(), var);
+            std::vector<const type*> type_path;
+            ident_info ii{var.type_ref.accessor(src_loc, ident, id.path(), var,
+                                                type_path)};
+
+            ii.elem_path = id.path();
+            // pad the lea path to have same size as the other vectors
+            ii.type_path = type_path;
+            std::ranges::reverse(lea_path);
+            for (size_t j{lea_path.size()}; j < id.path().size(); j++) {
+                lea_path.emplace_back("");
+            }
+            ii.lea_path = lea_path;
+
+            return ii;
         }
 
         // is it a register?
