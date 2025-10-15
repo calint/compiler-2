@@ -253,8 +253,14 @@ class stmt_identifier : public statement {
             const std::string index_reg{
                 tc.alloc_scratch_register(src_loc_tk, os, indent)};
             allocated_registers.push_back(index_reg);
-            tc.asm_cmd(src_loc_tk, os, indent, "mov", index_reg,
-                       leas[elems_index_with_lea]);
+            nasm_operand nasmop{leas[elems_index_with_lea]};
+            if (not nasmop.index_register.empty() or nasmop.displacement != 0) {
+                tc.asm_cmd(src_loc_tk, os, indent, "lea", index_reg,
+                           std::format("[{}]", leas[elems_index_with_lea]));
+            } else {
+                tc.asm_cmd(src_loc_tk, os, indent, "mov", index_reg,
+                           leas[elems_index_with_lea]);
+            }
             reg_offset = index_reg;
         } else {
             reg_offset = "rsp";
