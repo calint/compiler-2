@@ -830,7 +830,7 @@ main:
 ;   [109:5] foo(p)
 ;   [51:6] foo(pt : point) 
     foo_109_5:
-;       [109:5] alias pt -> p   lea: rsp - 72
+;       [109:5] alias pt -> p   lea: 
 ;       [52:5] pt.x = 0b10
 ;       [52:12] 0b10
 ;       [52:12] 0b10

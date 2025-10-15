@@ -178,7 +178,9 @@ class stmt_call : public expression {
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
 
-            if (arg.is_identifier()) {
+            // if the parameter is array and argument is identifier then save
+            // the "lea" address to the base of that array
+            if (param.is_array() and arg.is_identifier()) {
                 std::vector<std::string> regs_lea;
 
                 std::string const lea{
