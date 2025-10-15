@@ -253,7 +253,7 @@ class stmt_identifier : public statement {
             const std::string index_reg{
                 tc.alloc_scratch_register(src_loc_tk, os, indent)};
             allocated_registers.push_back(index_reg);
-            nasm_operand nasmop{leas[elems_index_with_lea]};
+            const nasm_operand nasmop{leas[elems_index_with_lea]};
             if (not nasmop.index_register.empty() or nasmop.displacement != 0) {
                 tc.asm_cmd(src_loc_tk, os, indent, "lea", index_reg,
                            std::format("[{}]", leas[elems_index_with_lea]));

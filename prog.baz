@@ -1,3 +1,14 @@
+field   hello = "hello world from baz\n"
+field prompt1 = "enter name:\n"
+field prompt2 = "that is not a name.\n"
+field prompt3 = "hello "
+field     dot = "."
+field      nl = "\n"
+
+# all functions are inlined
+
+# arguments can be placed in specified register using `reg_...` syntax
+
 func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
@@ -8,26 +19,169 @@ func assert(expr : bool) {
     if not expr exit(1)
 }
 
-type flags {
-    data : i8[8]
+func print(len : reg_rdx, ptr : reg_rsi) {
+    mov(rax, 1)   # write system call
+    mov(rdi, 1)   # file descriptor for standard out
+    mov(rsi, ptr) # buffer address 
+    mov(rdx, len) # buffer size
+    syscall()
 }
 
-type world {
-    time,
-    flgs : flags[4]
+func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+    mov(rax, 0)   # read system call
+    mov(rdi, 0)   # file descriptor for standard input
+    mov(rsi, ptr) # buffer address
+    mov(rdx, len) # buffer size
+    syscall()
+    mov(nbytes, rax) # return value
 }
 
-func foo(data : i8[]) {
-    data[2] = 0x10
+# user types are defined using keyword `type`
+
+# default type is `i64` and does not need to be specified
+
+type point {x, y}
+
+type object {pos : point, color : i32}
+
+type world { locations : i64[8] }
+
+# function arguments are equivalent to mutable references
+
+func foo(pt : point) {
+    pt.x = 0b10    # binary value 2
+    pt.y = 0xb     # hex value 11
 }
 
-func bar(flg : flags) {
-    flg.data[2] = 0x10
+# default argument type is `i64`
+
+func bar(arg) {
+    if arg == 0 return
+    arg = 0xff
+}
+
+# return target is specified as a variable, in this case `res`
+
+func inv(i : i32) : i32 res {
+    res = ~i
+}
+
+func baz(arg) : i64 res {
+    res = arg * 2
+}
+
+# array arguments are declared with type and []
+
+func faz(arg : i32[]) {
+    arg[1] = 0xfe
 }
 
 func main() {
-    var worlds : world[2]
-    foo(worlds[1].flgs[2].data)
-    bar(worlds[1].flgs[1])
-}
+    var arr : i32[4]
+    # arrays are initialized to 0
 
+    var ix = 1
+
+    arr[ix] = 2
+    arr[ix + 1] = arr[ix]
+    assert(arr[1] == 2)
+    assert(arr[2] == 2)
+
+    array_copy(arr[2], arr, 2)
+    # copy from, to, number of elements
+    assert(arr[0] == 2)
+
+    var arr1 : i32[8]
+    array_copy(arr, arr1, 4)
+    assert(arrays_equal(arr, arr1, 4))
+
+    arr1[2] = -1
+    assert(not arrays_equal(arr, arr1, 4))
+
+    ix = 3
+    arr[ix] = ~inv(arr[ix - 1])
+    assert(arr[ix] == 2)
+
+    faz(arr)
+    assert(arr[1] == 0xfe)
+
+    var p : point = {0, 0}
+    foo(p)
+    assert(p.x == 2)
+    assert(p.y == 0xb)
+
+    var i = 0
+    bar(i)
+    assert(i == 0)
+
+    i = 1
+    bar(i)
+    assert(i == 0xff)
+
+    var j = 1
+    var k = baz(j)
+    assert(k == 2)
+
+    k = baz(1)
+    assert(k == 2)
+
+    var p0 : point = {baz(2), 0}
+    assert(p0.x == 4)
+
+    var x = 1
+    var y = 2
+
+    var o1 : object = {{x * 10, y}, 0xff0000}
+    assert(o1.pos.x == 10)
+    assert(o1.pos.y == 2)
+    assert(o1.color == 0xff0000)
+    
+    var p1 : point = {-x, -y}
+    o1.pos = p1
+    assert(o1.pos.x == -1)
+    assert(o1.pos.y == -2)
+
+    var o2 : object = o1
+    assert(o2.pos.x == -1)
+    assert(o2.pos.y == -2)
+    assert(o2.color == 0xff0000)
+
+    var o3 : object[1]
+    # index 0 in an array can be accessed without array index
+    o3.pos.y = 73
+    assert(o3[0].pos.y == 73)
+
+    var input_buffer : i8[80]
+
+    var worlds : world[8]
+    worlds[1].locations[1] = 0xffee
+    assert(worlds[1].locations[1] == 0xffee)
+
+    array_copy(
+        worlds[1].locations,
+        worlds[0].locations,
+        array_size_of(worlds[1].locations)
+    )
+    assert(worlds[0].locations[1] == 0xffee)
+
+    print(hello.len, hello)
+    loop {
+        print(prompt1.len, prompt1)
+        
+        var len = read(array_size_of(input_buffer), address_of(input_buffer)) - 1
+        # note: `array_size_of` and `address_of` are built-in functions
+        #       -1 to not include the trailing '\n'
+
+        if len == 0 {
+            break
+        } else if len <= 4 {
+            print(prompt2.len, prompt2)
+            continue
+        } else {
+            print(prompt3.len, prompt3)
+            print(len, address_of(input_buffer))
+            print(dot.len, dot)
+            print(nl.len, nl)
+        }
+    }
+}

@@ -1,0 +1,35 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+type flags {
+    data : i8[8]
+}
+
+type world {
+    time,
+    flgs : flags[4]
+}
+
+func foo(data : i8[]) {
+    data[2] = 0x10
+}
+
+func bar(flg : flags) {
+    flg.data[3] = 0x20
+}
+
+func main() {
+    var worlds : world[2]
+    foo(worlds[1].flgs[2].data)
+    bar(worlds[1].flgs[1])
+    assert(worlds[1].flgs[2].data[2] == 0x10)
+    assert(worlds[1].flgs[1].data[3] == 0x20)
+}
+

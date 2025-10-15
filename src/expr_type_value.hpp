@@ -52,6 +52,7 @@ class expr_type_value final : public statement {
     auto source_to(std::ostream& os) const -> void override;
 
     [[nodiscard]] auto is_make_copy() const -> bool {
+        // todo explain this
         return not tok().is_text("");
     }
 

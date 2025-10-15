@@ -33,7 +33,8 @@ class stmt_call : public expression {
                 tc.get_func_or_throw(tok(), statement::identifier())};
             const size_t n{func.params().size()};
             for (size_t i{}; const stmt_def_func_param& param : func.params()) {
-                args_.emplace_back(tc, tz, param.get_type(), true);
+                args_.emplace_back(tc, tz, param.get_type(), true,
+                                   param.is_array());
                 if (++i < n) {
                     if (not tz.is_next_char(',')) {
                         throw compiler_exception{
