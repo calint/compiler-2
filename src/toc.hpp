@@ -192,6 +192,62 @@ class ident_path final {
     auto set_base(std::string_view name) -> void { path_[0] = name; }
 };
 
+struct nasm_operand {
+    std::string base_register;
+    std::string index_register;
+    int32_t displacement;
+    uint8_t scale;
+
+    nasm_operand() : displacement{0}, scale{1} {}
+
+    explicit nasm_operand(const std::string& operand_str)
+        : displacement{0}, scale{1} {
+
+        if (operand_str.empty()) {
+            return;
+        }
+
+        const std::regex pattern(
+            R"(^\s*)"                     // optional leading whitespace
+            R"(([a-z0-9]+)?)"             // optional base register
+            R"((?:\s*\+\s*([a-z0-9]+))?)" // optional +index with surrounding
+                                          // whitespace
+            R"((?:\s*\*\s*([1248]))?)"    // optional *scale with surrounding
+                                          // whitespace
+            R"((?:\s*([+-])\s*(\d+))?)"   // optional +/- and displacement
+                                          // (captured separately)
+            R"(\s*$)"                     // optional trailing whitespace
+        );
+
+        std::smatch matches;
+        if (not std::regex_match(operand_str, matches, pattern)) {
+            throw std::invalid_argument("invalid NASM operand format: " +
+                                        operand_str);
+        }
+
+        if (matches[1].matched) {
+            base_register = matches[1].str();
+        }
+
+        if (matches[2].matched) {
+            index_register = matches[2].str();
+        }
+
+        if (matches[3].matched) {
+            scale = static_cast<uint8_t>(std::stoi(matches[3].str()));
+        }
+
+        if (matches[4].matched and matches[5].matched) {
+            const int disp_value = std::stoi(matches[5].str());
+            if (matches[4].str() == "-") {
+                displacement = -disp_value;
+            } else {
+                displacement = disp_value;
+            }
+        }
+    }
+};
+
 class toc final {
     const std::string& source_;
     std::vector<frame> frames_;
