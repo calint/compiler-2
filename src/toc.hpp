@@ -944,7 +944,7 @@ class toc final {
         }
 
         std::smatch match;
-        std::string const operand_str{operand};
+        const std::string operand_str{operand};
         if (not std::regex_search(operand_str, match,
                                   regex_nasm_number_register)) {
             throw compiler_exception{
@@ -979,7 +979,7 @@ class toc final {
                                          const std::string_view name) const
         -> const type& {
 
-        std::string const name_str{name};
+        const std::string name_str{name};
         if (not types_.has(name_str)) {
             throw compiler_exception{src_loc_tk,
                                      std::format("type '{}' not found", name)};
@@ -1135,7 +1135,7 @@ class toc final {
 
                 // yes, continue resolving alias until it is a variable,
                 // field, register or constant
-                alias_info const alias{frm.get_alias(id.base())};
+                const alias_info alias{frm.get_alias(id.base())};
                 ident_path new_id{std::string{alias.to}};
 
                 // this is an alias of the type:

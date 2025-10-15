@@ -35,7 +35,7 @@ class token final {
             std::print(os, "{}{}{}", ws_left_, text_, ws_right_);
             return;
         }
-        std::string const name_str{text_};
+        const std::string name_str{text_};
         std::print(os, "{}\"{}\"{}", ws_left_,
                    std::regex_replace(name_str, std::regex(R"(\n)"), "\\n"),
                    ws_right_);

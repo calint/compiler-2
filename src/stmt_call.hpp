@@ -183,7 +183,7 @@ class stmt_call : public expression {
             if (param.is_array() and arg.is_identifier()) {
                 std::vector<std::string> regs_lea;
 
-                std::string const lea{
+                const std::string lea{
                     arg.compile_lea(arg.tok(), tc, os, indent, regs_lea, "")};
 
                 for (const std::string& r : regs_lea) {
