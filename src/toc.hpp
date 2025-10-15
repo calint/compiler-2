@@ -38,7 +38,8 @@ struct alias_info {
     std::string from;
     std::string to;
     std::string lea;
-    const type& tp;
+    const type& type_ref;
+    size_t array_size;
 };
 
 class frame final {
@@ -1117,6 +1118,7 @@ class toc final {
         // traverse the frames and resolve the id_nasm (which might be an
         // alias) to a variable, field, register or constant
         size_t i{frames_.size()};
+        std::vector<std::string> lea_path;
         while (i) {
             i--;
             const frame& frm{frames_.at(i)};
@@ -1136,6 +1138,9 @@ class toc final {
                 // yes, continue resolving alias until it is a variable,
                 // field, register or constant
                 const alias_info alias{frm.get_alias(id.base())};
+
+                lea_path.emplace_back(alias.lea);
+
                 ident_path new_id{std::string{alias.to}};
 
                 // this is an alias of the type:
@@ -1153,6 +1158,9 @@ class toc final {
 
         const frame& frm{frames_.at(i)};
 
+        // the lea path now includes array offset for each element in the path
+        std::ranges::reverse(lea_path);
+
         // is it a variable?
         if (frm.has_var(id.base())) {
             // std::cerr << src_loc.at_line() << ": " << ident << " -> "
@@ -1168,7 +1176,7 @@ class toc final {
                 .id{ident},
                 .id_nasm{id.str()},
                 .type_ref = get_type_default(),
-                .lea{},
+                .lea_path{},
                 .ident_type = ident_info::ident_type::REGISTER,
             };
         }
@@ -1180,7 +1188,7 @@ class toc final {
                 .id{ident},
                 .id_nasm{id.str()},
                 .type_ref = get_builtin_type_for_operand(src_loc, id.str()),
-                .lea{},
+                .lea_path{},
                 .ident_type = ident_info::ident_type::REGISTER,
             };
         }
@@ -1195,7 +1203,7 @@ class toc final {
                     .id{ident},
                     .id_nasm{std::format("{}.len", id.base())},
                     .type_ref = get_type_default(),
-                    .lea{},
+                    .lea_path{},
                     .ident_type = ident_info::ident_type::IMPLIED,
                 };
             }
@@ -1205,7 +1213,7 @@ class toc final {
                     .id{ident},
                     .id_nasm{id.base()},
                     .type_ref = get_type_default(),
-                    .lea{},
+                    .lea_path{},
                     .ident_type = ident_info::ident_type::FIELD,
                 };
             }
@@ -1214,7 +1222,7 @@ class toc final {
                 .id{ident},
                 .id_nasm{std::format("qword [{}]", id.base())},
                 .type_ref = get_type_default(),
-                .lea{},
+                .lea_path{},
                 .ident_type = ident_info::ident_type::FIELD,
             };
         }
@@ -1227,7 +1235,7 @@ class toc final {
                 .id_nasm{id.str()},
                 .const_value = *value,
                 .type_ref = get_type_default(),
-                .lea{},
+                .lea_path{},
             };
         }
 
@@ -1238,7 +1246,7 @@ class toc final {
                 .id_nasm{"true"},
                 .const_value = 1,
                 .type_ref = get_type_bool(),
-                .lea{},
+                .lea_path{},
             };
         }
 
@@ -1248,7 +1256,7 @@ class toc final {
                 .id_nasm{"false"},
                 .const_value = 0,
                 .type_ref = get_type_bool(),
-                .lea{},
+                .lea_path{},
             };
         }
 
@@ -1257,7 +1265,7 @@ class toc final {
             .id{},
             .id_nasm{},
             .type_ref = get_type_void(),
-            .lea{},
+            .lea_path{},
         };
     }
 

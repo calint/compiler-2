@@ -129,8 +129,8 @@ auto main(const int argc, const char* argv[]) -> int {
         // with jump optimizations
         std::stringstream ss1;
         std::stringstream ss2;
-        prg.build(ss1);
-        // prg.build(std::cstd); // build without jump optimizations
+        // prg.build(ss1);
+        prg.build(std::cout); // build without jump optimizations
         optimize_jumps_1(ss1, ss2);
         optimize_jumps_2(ss2, std::cout);
 
@@ -340,7 +340,8 @@ inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
 
     std::vector<std::string> allocated_registers;
     const std::string offset{stmt_identifier::compile_effective_address(
-        tok(), tc, os, indent, stmt_ident_->elems(), allocated_registers, "")};
+        tok(), tc, os, indent, stmt_ident_->elems(), allocated_registers, "",
+        {})};
 
     tc.asm_cmd(tok(), os, indent, "lea", dst, std::format("[{}]", offset));
 
@@ -425,14 +426,13 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
     }
 }
 
-auto expr_type_value::compile_lea(const token& src_loc_tk, toc& tc,
-                                  std::ostream& os, size_t indent,
-                                  std::vector<std::string>& allocated_registers,
-                                  const std::string& reg_size) const
-    -> std::string {
+auto expr_type_value::compile_lea(
+    const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
+    std::vector<std::string>& allocated_registers, const std::string& reg_size,
+    const std::vector<std::string>& lea_path) const -> std::string {
 
     return stmt_ident_->compile_lea(src_loc_tk, tc, os, indent,
-                                    allocated_registers, reg_size);
+                                    allocated_registers, reg_size, lea_path);
 }
 
 [[nodiscard]] auto expr_type_value::identifier() const -> std::string_view {
@@ -440,6 +440,13 @@ auto expr_type_value::compile_lea(const token& src_loc_tk, toc& tc,
         return stmt_ident_->identifier();
     }
     return statement::identifier();
+}
+
+[[nodiscard]] auto expr_type_value::is_expression() const -> bool {
+    if (stmt_ident_) {
+        return stmt_ident_->is_expression();
+    }
+    return false;
 }
 
 // declared in 'unary_ops.hpp'

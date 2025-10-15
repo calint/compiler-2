@@ -16,14 +16,7 @@ class type;
 class expr_any;
 
 struct ident_info {
-    enum class ident_type : uint8_t {
-        CONST,
-        VAR,
-        REGISTER,
-        FIELD,
-        IMPLIED,
-        LEA
-    };
+    enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
 
     const std::string id;
     const std::string id_nasm; // NASM valid source
@@ -32,7 +25,7 @@ struct ident_info {
     const int32_t stack_ix{};
     const size_t array_size{};
     const bool is_array{};
-    const std::string lea;
+    const std::vector<std::string> lea_path;
     const ident_type ident_type{ident_type::CONST};
 
     [[nodiscard]] auto is_const() const -> bool {
@@ -45,10 +38,6 @@ struct ident_info {
 
     [[nodiscard]] auto is_var() const -> bool {
         return ident_type == ident_type::VAR;
-    }
-
-    [[nodiscard]] auto is_lea() const -> bool {
-        return ident_type == ident_type::LEA;
     }
 };
 

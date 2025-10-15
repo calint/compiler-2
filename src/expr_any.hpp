@@ -173,11 +173,13 @@ class expr_any final : public statement {
     auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
                      size_t indent,
                      std::vector<std::string>& allocated_registers,
-                     const std::string& reg_size) const
+                     const std::string& reg_size,
+                     const std::vector<std::string>& lea_path) const
         -> std::string override {
 
         return std::get<2>(var_).compile_lea(src_loc_tk, tc, os, indent,
-                                             allocated_registers, reg_size);
+                                             allocated_registers, reg_size,
+                                             lea_path);
     }
 
     [[nodiscard]] auto as_expr_type_value() const -> const expr_type_value& {

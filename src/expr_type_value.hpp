@@ -61,12 +61,16 @@ class expr_type_value final : public statement {
         return stmt_ident_ != nullptr;
     }
 
+    [[nodiscard]] auto is_expression() const -> bool override;
+
     [[nodiscard]] auto identifier() const -> std::string_view override;
 
     auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
                      size_t indent,
                      std::vector<std::string>& allocated_registers,
-                     const std::string& reg_size) const -> std::string override;
+                     const std::string& reg_size,
+                     const std::vector<std::string>& lea) const
+        -> std::string override;
 
   private:
     // implemented in main.cpp due to circular reference:

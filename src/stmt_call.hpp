@@ -8,6 +8,7 @@
 #include <string_view>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "expr_any.hpp"
 #include "stmt_def_func.hpp"
 
@@ -178,13 +179,16 @@ class stmt_call : public expression {
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
 
-            // if the parameter is array and argument is identifier then save
-            // the "lea" address to the base of that array
-            if (param.is_array() and arg.is_identifier()) {
+            // if the argument is an identifier with indexing then save the
+            // "lea" address to the base of that array
+            if (arg.is_identifier() and arg.is_expression()) {
+
+                const ident_info ii{tc.make_ident_info(arg)};
+
                 std::vector<std::string> regs_lea;
 
-                const std::string lea{
-                    arg.compile_lea(arg.tok(), tc, os, indent, regs_lea, "")};
+                const std::string lea{arg.compile_lea(
+                    arg.tok(), tc, os, indent, regs_lea, "", ii.lea_path)};
 
                 for (const std::string& r : regs_lea) {
                     allocated_scratch_registers.emplace_back(r);
@@ -193,9 +197,10 @@ class stmt_call : public expression {
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             std::string{arg.identifier()}, lea,
-                                            param.get_type());
+                                            param.get_type(), ii.array_size);
                 continue;
             }
+
             // handle expression arguments
             if (arg.is_expression()) {
                 if (arg_reg.empty()) {
@@ -209,7 +214,8 @@ class stmt_call : public expression {
                 continue;
             }
 
-            // handle non-expression without the register and without unary ops
+            // handle non-expression without the register and without unary
+            // ops
             if (arg_reg.empty() and arg.get_unary_ops().is_empty()) {
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             std::string{arg.identifier()}, "",
@@ -260,7 +266,8 @@ class stmt_call : public expression {
         // add aliases
         for (const alias_info& e : aliases_to_add) {
             tc.comment_start(tok(), os, indent + 1);
-            std::println(os, "alias {} -> {}   lea: {}", e.from, e.to, e.lea);
+            std::println(os, "alias {} -> {}  (lea: {}, len: {})", e.from, e.to,
+                         e.lea, e.array_size);
             tc.add_alias(e);
         }
 

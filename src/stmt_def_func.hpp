@@ -205,7 +205,10 @@ class stmt_def_func final : public statement {
             tc.add_alias({.from = std::string{prm_name},
                           .to = prm_reg,
                           .lea = "",
-                          .tp = prm_type});
+                          .type_ref = prm_type,
+                          .array_size = 0});
+            // note: this is a dry run compilation so array size is not known
+            //       here
             allocated_named_registers.emplace_back(prm_reg);
         }
     }

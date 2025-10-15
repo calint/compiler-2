@@ -157,6 +157,7 @@ main:
     cmp r14, 2
 ;   [87:12] free scratch register 'r14'
     jne bool_false_87_12
+    jmp bool_true_87_12
     bool_true_87_12:
     mov r15, true
     jmp bool_end_87_12
@@ -165,20 +166,21 @@ main:
     bool_end_87_12:
 ;   [18:6] assert(expr : bool) 
     assert_87_5:
-;       [87:5] alias expr -> r15   lea: 
+;       [87:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_87_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_87_5:
         test r15, r15
         jne if_19_5_87_5_end
+        jmp if_19_8_87_5_code
         if_19_8_87_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_87_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -220,6 +222,7 @@ main:
     cmp r14, 2
 ;   [88:12] free scratch register 'r14'
     jne bool_false_88_12
+    jmp bool_true_88_12
     bool_true_88_12:
     mov r15, true
     jmp bool_end_88_12
@@ -228,20 +231,21 @@ main:
     bool_end_88_12:
 ;   [18:6] assert(expr : bool) 
     assert_88_5:
-;       [88:5] alias expr -> r15   lea: 
+;       [88:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_88_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_88_5:
         test r15, r15
         jne if_19_5_88_5_end
+        jmp if_19_8_88_5_code
         if_19_8_88_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_88_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -329,6 +333,7 @@ main:
     cmp r14, 2
 ;   [92:12] free scratch register 'r14'
     jne bool_false_92_12
+    jmp bool_true_92_12
     bool_true_92_12:
     mov r15, true
     jmp bool_end_92_12
@@ -337,20 +342,21 @@ main:
     bool_end_92_12:
 ;   [18:6] assert(expr : bool) 
     assert_92_5:
-;       [92:5] alias expr -> r15   lea: 
+;       [92:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_92_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_92_5:
         test r15, r15
         jne if_19_5_92_5_end
+        jmp if_19_8_92_5_code
         if_19_8_92_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_92_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -462,6 +468,7 @@ main:
     test r14, r14
 ;   [96:12] free scratch register 'r14'
     je bool_false_96_12
+    jmp bool_true_96_12
     bool_true_96_12:
     mov r15, true
     jmp bool_end_96_12
@@ -470,20 +477,21 @@ main:
     bool_end_96_12:
 ;   [18:6] assert(expr : bool) 
     assert_96_5:
-;       [96:5] alias expr -> r15   lea: 
+;       [96:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_96_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_96_5:
         test r15, r15
         jne if_19_5_96_5_end
+        jmp if_19_8_96_5_code
         if_19_8_96_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_96_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -568,6 +576,7 @@ main:
     test r14, r14
 ;   [99:12] free scratch register 'r14'
     jne bool_false_99_12
+    jmp bool_true_99_12
     bool_true_99_12:
     mov r15, true
     jmp bool_end_99_12
@@ -576,20 +585,21 @@ main:
     bool_end_99_12:
 ;   [18:6] assert(expr : bool) 
     assert_99_5:
-;       [99:5] alias expr -> r15   lea: 
+;       [99:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_99_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_99_5:
         test r15, r15
         jne if_19_5_99_5_end
+        jmp if_19_8_99_5_code
         if_19_8_99_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_99_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -651,8 +661,8 @@ main:
 ;   [102:20] free scratch register 'r13'
 ;   [65:6] inv(i : i32) : i32 res 
     inv_102_16:
-;       [102:16] alias res -> dword [rsp + r15 * 4 - 16]   lea: 
-;       [102:16] alias i -> r14   lea: 
+;       [102:16] alias res -> dword [rsp + r15 * 4 - 16]  (lea: , len: 0)
+;       [102:16] alias i -> r14  (lea: , len: 0)
 ;       [66:5] res = ~i
 ;       [66:11] ~i
 ;       [66:11] ~i
@@ -692,6 +702,7 @@ main:
     cmp r14, 2
 ;   [103:12] free scratch register 'r14'
     jne bool_false_103_12
+    jmp bool_true_103_12
     bool_true_103_12:
     mov r15, true
     jmp bool_end_103_12
@@ -700,20 +711,21 @@ main:
     bool_end_103_12:
 ;   [18:6] assert(expr : bool) 
     assert_103_5:
-;       [103:5] alias expr -> r15   lea: 
+;       [103:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_103_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_103_5:
         test r15, r15
         jne if_19_5_103_5_end
+        jmp if_19_8_103_5_code
         if_19_8_103_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_103_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -729,7 +741,7 @@ main:
 ;   [105:5] faz(arr)
 ;   [75:6] faz(arg : i32[]) 
     faz_105_5:
-;       [105:5] alias arg -> arr   lea: 
+;       [105:5] alias arg -> arr  (lea: , len: 0)
 ;       [76:5] arg[1] = 0xfe
 ;       [76:5] allocate scratch register -> r15
 ;       [76:9] set array index
@@ -780,6 +792,7 @@ main:
     cmp r14, 0xfe
 ;   [106:12] free scratch register 'r14'
     jne bool_false_106_12
+    jmp bool_true_106_12
     bool_true_106_12:
     mov r15, true
     jmp bool_end_106_12
@@ -788,20 +801,21 @@ main:
     bool_end_106_12:
 ;   [18:6] assert(expr : bool) 
     assert_106_5:
-;       [106:5] alias expr -> r15   lea: 
+;       [106:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_106_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_106_5:
         test r15, r15
         jne if_19_5_106_5_end
+        jmp if_19_8_106_5_code
         if_19_8_106_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_106_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -830,7 +844,7 @@ main:
 ;   [109:5] foo(p)
 ;   [51:6] foo(pt : point) 
     foo_109_5:
-;       [109:5] alias pt -> p   lea: 
+;       [109:5] alias pt -> p  (lea: , len: 0)
 ;       [52:5] pt.x = 0b10
 ;       [52:12] 0b10
 ;       [52:12] 0b10
@@ -852,6 +866,7 @@ main:
     cmp_110_12:
     cmp qword [rsp - 72], 2
     jne bool_false_110_12
+    jmp bool_true_110_12
     bool_true_110_12:
     mov r15, true
     jmp bool_end_110_12
@@ -860,20 +875,21 @@ main:
     bool_end_110_12:
 ;   [18:6] assert(expr : bool) 
     assert_110_5:
-;       [110:5] alias expr -> r15   lea: 
+;       [110:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_110_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_110_5:
         test r15, r15
         jne if_19_5_110_5_end
+        jmp if_19_8_110_5_code
         if_19_8_110_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_110_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -894,6 +910,7 @@ main:
     cmp_111_12:
     cmp qword [rsp - 64], 0xb
     jne bool_false_111_12
+    jmp bool_true_111_12
     bool_true_111_12:
     mov r15, true
     jmp bool_end_111_12
@@ -902,20 +919,21 @@ main:
     bool_end_111_12:
 ;   [18:6] assert(expr : bool) 
     assert_111_5:
-;       [111:5] alias expr -> r15   lea: 
+;       [111:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_111_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_111_5:
         test r15, r15
         jne if_19_5_111_5_end
+        jmp if_19_8_111_5_code
         if_19_8_111_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_111_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -938,13 +956,14 @@ main:
 ;   [114:5] bar(i)
 ;   [58:6] bar(arg) 
     bar_114_5:
-;       [114:5] alias arg -> i   lea: 
+;       [114:5] alias arg -> i  (lea: , len: 0)
         if_59_8_114_5:
 ;       [59:8] ? arg == 0
 ;       [59:8] ? arg == 0
         cmp_59_8_114_5:
         cmp qword [rsp - 80], 0
         jne if_59_5_114_5_end
+        jmp if_59_8_114_5_code
         if_59_8_114_5_code:
 ;           [59:17] return
             jmp bar_114_5_end
@@ -963,6 +982,7 @@ main:
     cmp_115_12:
     cmp qword [rsp - 80], 0
     jne bool_false_115_12
+    jmp bool_true_115_12
     bool_true_115_12:
     mov r15, true
     jmp bool_end_115_12
@@ -971,20 +991,21 @@ main:
     bool_end_115_12:
 ;   [18:6] assert(expr : bool) 
     assert_115_5:
-;       [115:5] alias expr -> r15   lea: 
+;       [115:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_115_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_115_5:
         test r15, r15
         jne if_19_5_115_5_end
+        jmp if_19_8_115_5_code
         if_19_8_115_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_115_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1005,13 +1026,14 @@ main:
 ;   [118:5] bar(i)
 ;   [58:6] bar(arg) 
     bar_118_5:
-;       [118:5] alias arg -> i   lea: 
+;       [118:5] alias arg -> i  (lea: , len: 0)
         if_59_8_118_5:
 ;       [59:8] ? arg == 0
 ;       [59:8] ? arg == 0
         cmp_59_8_118_5:
         cmp qword [rsp - 80], 0
         jne if_59_5_118_5_end
+        jmp if_59_8_118_5_code
         if_59_8_118_5_code:
 ;           [59:17] return
             jmp bar_118_5_end
@@ -1030,6 +1052,7 @@ main:
     cmp_119_12:
     cmp qword [rsp - 80], 0xff
     jne bool_false_119_12
+    jmp bool_true_119_12
     bool_true_119_12:
     mov r15, true
     jmp bool_end_119_12
@@ -1038,20 +1061,21 @@ main:
     bool_end_119_12:
 ;   [18:6] assert(expr : bool) 
     assert_119_5:
-;       [119:5] alias expr -> r15   lea: 
+;       [119:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_119_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_119_5:
         test r15, r15
         jne if_19_5_119_5_end
+        jmp if_19_8_119_5_code
         if_19_8_119_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_119_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1080,8 +1104,8 @@ main:
 ;   [122:13] baz(j)
 ;   [69:6] baz(arg) : i64 res 
     baz_122_13:
-;       [122:13] alias res -> k   lea: 
-;       [122:13] alias arg -> j   lea: 
+;       [122:13] alias res -> k  (lea: , len: 0)
+;       [122:13] alias arg -> j  (lea: , len: 0)
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
@@ -1105,6 +1129,7 @@ main:
     cmp_123_12:
     cmp qword [rsp - 96], 2
     jne bool_false_123_12
+    jmp bool_true_123_12
     bool_true_123_12:
     mov r15, true
     jmp bool_end_123_12
@@ -1113,20 +1138,21 @@ main:
     bool_end_123_12:
 ;   [18:6] assert(expr : bool) 
     assert_123_5:
-;       [123:5] alias expr -> r15   lea: 
+;       [123:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_123_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_123_5:
         test r15, r15
         jne if_19_5_123_5_end
+        jmp if_19_8_123_5_code
         if_19_8_123_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_123_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1146,8 +1172,8 @@ main:
 ;   [125:9] baz(1)
 ;   [69:6] baz(arg) : i64 res 
     baz_125_9:
-;       [125:9] alias res -> k   lea: 
-;       [125:9] alias arg -> 1   lea: 
+;       [125:9] alias res -> k  (lea: , len: 0)
+;       [125:9] alias arg -> 1  (lea: , len: 0)
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
@@ -1168,6 +1194,7 @@ main:
     cmp_126_12:
     cmp qword [rsp - 96], 2
     jne bool_false_126_12
+    jmp bool_true_126_12
     bool_true_126_12:
     mov r15, true
     jmp bool_end_126_12
@@ -1176,20 +1203,21 @@ main:
     bool_end_126_12:
 ;   [18:6] assert(expr : bool) 
     assert_126_5:
-;       [126:5] alias expr -> r15   lea: 
+;       [126:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_126_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_126_5:
         test r15, r15
         jne if_19_5_126_5_end
+        jmp if_19_8_126_5_code
         if_19_8_126_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_126_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1213,8 +1241,8 @@ main:
 ;   [128:23] baz(2)
 ;   [69:6] baz(arg) : i64 res 
     baz_128_23:
-;       [128:23] alias res -> p0.x   lea: 
-;       [128:23] alias arg -> 2   lea: 
+;       [128:23] alias res -> p0.x  (lea: , len: 0)
+;       [128:23] alias arg -> 2  (lea: , len: 0)
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
@@ -1239,6 +1267,7 @@ main:
     cmp_129_12:
     cmp qword [rsp - 112], 4
     jne bool_false_129_12
+    jmp bool_true_129_12
     bool_true_129_12:
     mov r15, true
     jmp bool_end_129_12
@@ -1247,20 +1276,21 @@ main:
     bool_end_129_12:
 ;   [18:6] assert(expr : bool) 
     assert_129_5:
-;       [129:5] alias expr -> r15   lea: 
+;       [129:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_129_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_129_5:
         test r15, r15
         jne if_19_5_129_5_end
+        jmp if_19_8_129_5_code
         if_19_8_129_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_129_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1325,6 +1355,7 @@ main:
     cmp_135_12:
     cmp qword [rsp - 148], 10
     jne bool_false_135_12
+    jmp bool_true_135_12
     bool_true_135_12:
     mov r15, true
     jmp bool_end_135_12
@@ -1333,20 +1364,21 @@ main:
     bool_end_135_12:
 ;   [18:6] assert(expr : bool) 
     assert_135_5:
-;       [135:5] alias expr -> r15   lea: 
+;       [135:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_135_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_135_5:
         test r15, r15
         jne if_19_5_135_5_end
+        jmp if_19_8_135_5_code
         if_19_8_135_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_135_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1367,6 +1399,7 @@ main:
     cmp_136_12:
     cmp qword [rsp - 140], 2
     jne bool_false_136_12
+    jmp bool_true_136_12
     bool_true_136_12:
     mov r15, true
     jmp bool_end_136_12
@@ -1375,20 +1408,21 @@ main:
     bool_end_136_12:
 ;   [18:6] assert(expr : bool) 
     assert_136_5:
-;       [136:5] alias expr -> r15   lea: 
+;       [136:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_136_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_136_5:
         test r15, r15
         jne if_19_5_136_5_end
+        jmp if_19_8_136_5_code
         if_19_8_136_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_136_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1409,6 +1443,7 @@ main:
     cmp_137_12:
     cmp dword [rsp - 132], 0xff0000
     jne bool_false_137_12
+    jmp bool_true_137_12
     bool_true_137_12:
     mov r15, true
     jmp bool_end_137_12
@@ -1417,20 +1452,21 @@ main:
     bool_end_137_12:
 ;   [18:6] assert(expr : bool) 
     assert_137_5:
-;       [137:5] alias expr -> r15   lea: 
+;       [137:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_137_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_137_5:
         test r15, r15
         jne if_19_5_137_5_end
+        jmp if_19_8_137_5_code
         if_19_8_137_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_137_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1484,6 +1520,7 @@ main:
     cmp_141_12:
     cmp qword [rsp - 148], -1
     jne bool_false_141_12
+    jmp bool_true_141_12
     bool_true_141_12:
     mov r15, true
     jmp bool_end_141_12
@@ -1492,20 +1529,21 @@ main:
     bool_end_141_12:
 ;   [18:6] assert(expr : bool) 
     assert_141_5:
-;       [141:5] alias expr -> r15   lea: 
+;       [141:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_141_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_141_5:
         test r15, r15
         jne if_19_5_141_5_end
+        jmp if_19_8_141_5_code
         if_19_8_141_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_141_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1526,6 +1564,7 @@ main:
     cmp_142_12:
     cmp qword [rsp - 140], -2
     jne bool_false_142_12
+    jmp bool_true_142_12
     bool_true_142_12:
     mov r15, true
     jmp bool_end_142_12
@@ -1534,20 +1573,21 @@ main:
     bool_end_142_12:
 ;   [18:6] assert(expr : bool) 
     assert_142_5:
-;       [142:5] alias expr -> r15   lea: 
+;       [142:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_142_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_142_5:
         test r15, r15
         jne if_19_5_142_5_end
+        jmp if_19_8_142_5_code
         if_19_8_142_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_142_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1582,6 +1622,7 @@ main:
     cmp_145_12:
     cmp qword [rsp - 184], -1
     jne bool_false_145_12
+    jmp bool_true_145_12
     bool_true_145_12:
     mov r15, true
     jmp bool_end_145_12
@@ -1590,20 +1631,21 @@ main:
     bool_end_145_12:
 ;   [18:6] assert(expr : bool) 
     assert_145_5:
-;       [145:5] alias expr -> r15   lea: 
+;       [145:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_145_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_145_5:
         test r15, r15
         jne if_19_5_145_5_end
+        jmp if_19_8_145_5_code
         if_19_8_145_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_145_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1624,6 +1666,7 @@ main:
     cmp_146_12:
     cmp qword [rsp - 176], -2
     jne bool_false_146_12
+    jmp bool_true_146_12
     bool_true_146_12:
     mov r15, true
     jmp bool_end_146_12
@@ -1632,20 +1675,21 @@ main:
     bool_end_146_12:
 ;   [18:6] assert(expr : bool) 
     assert_146_5:
-;       [146:5] alias expr -> r15   lea: 
+;       [146:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_146_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_146_5:
         test r15, r15
         jne if_19_5_146_5_end
+        jmp if_19_8_146_5_code
         if_19_8_146_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_146_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1666,6 +1710,7 @@ main:
     cmp_147_12:
     cmp dword [rsp - 168], 0xff0000
     jne bool_false_147_12
+    jmp bool_true_147_12
     bool_true_147_12:
     mov r15, true
     jmp bool_end_147_12
@@ -1674,20 +1719,21 @@ main:
     bool_end_147_12:
 ;   [18:6] assert(expr : bool) 
     assert_147_5:
-;       [147:5] alias expr -> r15   lea: 
+;       [147:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_147_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_147_5:
         test r15, r15
         jne if_19_5_147_5_end
+        jmp if_19_8_147_5_code
         if_19_8_147_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_147_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1754,6 +1800,7 @@ main:
     cmp r14, 73
 ;   [152:12] free scratch register 'r14'
     jne bool_false_152_12
+    jmp bool_true_152_12
     bool_true_152_12:
     mov r15, true
     jmp bool_end_152_12
@@ -1762,20 +1809,21 @@ main:
     bool_end_152_12:
 ;   [18:6] assert(expr : bool) 
     assert_152_5:
-;       [152:5] alias expr -> r15   lea: 
+;       [152:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_152_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_152_5:
         test r15, r15
         jne if_19_5_152_5_end
+        jmp if_19_8_152_5_code
         if_19_8_152_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_152_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -1903,6 +1951,7 @@ main:
     cmp r14, 0xffee
 ;   [158:12] free scratch register 'r14'
     jne bool_false_158_12
+    jmp bool_true_158_12
     bool_true_158_12:
     mov r15, true
     jmp bool_end_158_12
@@ -1911,20 +1960,21 @@ main:
     bool_end_158_12:
 ;   [18:6] assert(expr : bool) 
     assert_158_5:
-;       [158:5] alias expr -> r15   lea: 
+;       [158:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_158_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_158_5:
         test r15, r15
         jne if_19_5_158_5_end
+        jmp if_19_8_158_5_code
         if_19_8_158_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_158_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -2061,6 +2111,7 @@ main:
     cmp r14, 0xffee
 ;   [165:12] free scratch register 'r14'
     jne bool_false_165_12
+    jmp bool_true_165_12
     bool_true_165_12:
     mov r15, true
     jmp bool_end_165_12
@@ -2069,20 +2120,21 @@ main:
     bool_end_165_12:
 ;   [18:6] assert(expr : bool) 
     assert_165_5:
-;       [165:5] alias expr -> r15   lea: 
+;       [165:5] alias expr -> r15  (lea: , len: 0)
         if_19_8_165_5:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_165_5:
         test r15, r15
         jne if_19_5_165_5_end
+        jmp if_19_8_165_5_code
         if_19_8_165_5_code:
 ;           [19:17] exit(1)
 ;           [19:22] allocate named register 'rdi'
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_19_17_165_5:
-;               [19:17] alias v -> rdi   lea: 
+;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
                 mov rax, 60
 ;               [13:19] # exit system call
@@ -2102,8 +2154,8 @@ main:
     mov rsi, hello
 ;   [22:6] print(len : reg_rdx, ptr : reg_rsi) 
     print_167_5:
-;       [167:5] alias len -> rdx   lea: 
-;       [167:5] alias ptr -> rsi   lea: 
+;       [167:5] alias len -> rdx  (lea: , len: 0)
+;       [167:5] alias ptr -> rsi  (lea: , len: 0)
 ;       [23:5] mov(rax, 1)
         mov rax, 1
 ;       [23:19] # write system call
@@ -2128,8 +2180,8 @@ main:
         mov rsi, prompt1
 ;       [22:6] print(len : reg_rdx, ptr : reg_rsi) 
         print_169_9:
-;           [169:9] alias len -> rdx   lea: 
-;           [169:9] alias ptr -> rsi   lea: 
+;           [169:9] alias len -> rdx  (lea: , len: 0)
+;           [169:9] alias ptr -> rsi  (lea: , len: 0)
 ;           [23:5] mov(rax, 1)
             mov rax, 1
 ;           [23:19] # write system call
@@ -2166,9 +2218,9 @@ main:
         lea rsi, [rsp - 284]
 ;       [30:6] read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes 
         read_171_19:
-;           [171:19] alias nbytes -> len   lea: 
-;           [171:19] alias len -> rdx   lea: 
-;           [171:19] alias ptr -> rsi   lea: 
+;           [171:19] alias nbytes -> len  (lea: , len: 0)
+;           [171:19] alias len -> rdx  (lea: , len: 0)
+;           [171:19] alias ptr -> rsi  (lea: , len: 0)
 ;           [31:5] mov(rax, 0)
             mov rax, 0
 ;           [31:19] # read system call
@@ -2197,6 +2249,7 @@ main:
         cmp_175_12:
         cmp qword [rsp - 804], 0
         jne if_177_19
+        jmp if_175_12_code
         if_175_12_code:
 ;           [176:13] break
             jmp loop_168_5_end
@@ -2207,6 +2260,7 @@ main:
         cmp_177_19:
         cmp qword [rsp - 804], 4
         jg if_else_175_9
+        jmp if_177_19_code
         if_177_19_code:
 ;           [178:13] print(prompt2.len, prompt2)
 ;           [178:19] allocate named register 'rdx'
@@ -2215,8 +2269,8 @@ main:
             mov rsi, prompt2
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_178_13:
-;               [178:13] alias len -> rdx   lea: 
-;               [178:13] alias ptr -> rsi   lea: 
+;               [178:13] alias len -> rdx  (lea: , len: 0)
+;               [178:13] alias ptr -> rsi  (lea: , len: 0)
 ;               [23:5] mov(rax, 1)
                 mov rax, 1
 ;               [23:19] # write system call
@@ -2243,8 +2297,8 @@ main:
             mov rsi, prompt3
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_181_13:
-;               [181:13] alias len -> rdx   lea: 
-;               [181:13] alias ptr -> rsi   lea: 
+;               [181:13] alias len -> rdx  (lea: , len: 0)
+;               [181:13] alias ptr -> rsi  (lea: , len: 0)
 ;               [23:5] mov(rax, 1)
                 mov rax, 1
 ;               [23:19] # write system call
@@ -2271,8 +2325,8 @@ main:
             lea rsi, [rsp - 284]
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_182_13:
-;               [182:13] alias len -> rdx   lea: 
-;               [182:13] alias ptr -> rsi   lea: 
+;               [182:13] alias len -> rdx  (lea: , len: 0)
+;               [182:13] alias ptr -> rsi  (lea: , len: 0)
 ;               [23:5] mov(rax, 1)
                 mov rax, 1
 ;               [23:19] # write system call
@@ -2295,8 +2349,8 @@ main:
             mov rsi, dot
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_183_13:
-;               [183:13] alias len -> rdx   lea: 
-;               [183:13] alias ptr -> rsi   lea: 
+;               [183:13] alias len -> rdx  (lea: , len: 0)
+;               [183:13] alias ptr -> rsi  (lea: , len: 0)
 ;               [23:5] mov(rax, 1)
                 mov rax, 1
 ;               [23:19] # write system call
@@ -2319,8 +2373,8 @@ main:
             mov rsi, nl
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_184_13:
-;               [184:13] alias len -> rdx   lea: 
-;               [184:13] alias ptr -> rsi   lea: 
+;               [184:13] alias len -> rdx  (lea: , len: 0)
+;               [184:13] alias ptr -> rsi  (lea: , len: 0)
 ;               [23:5] mov(rax, 1)
                 mov rax, 1
 ;               [23:19] # write system call

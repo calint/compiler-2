@@ -142,7 +142,8 @@ class stmt_identifier : public statement {
 
         const std::string effective_address{
             stmt_identifier::compile_effective_address(
-                tok(), tc, os, indent, elems(), allocated_registers, "")};
+                tok(), tc, os, indent, elems(), allocated_registers, "",
+                dst_info.lea_path)};
 
         const ident_info src_info{tc.make_ident_info(tok(), identifier())};
 
@@ -163,20 +164,22 @@ class stmt_identifier : public statement {
     auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
                      size_t indent,
                      std::vector<std::string>& allocated_registers,
-                     const std::string& reg_size) const
+                     const std::string& reg_size,
+                     const std::vector<std::string>& lea_path) const
         -> std::string override {
 
         return compile_effective_address(src_loc_tk, tc, os, indent, elems_,
-                                         allocated_registers,
-                                         std::move(reg_size));
+                                         allocated_registers, reg_size,
+                                         lea_path);
     }
 
-    static auto
-    compile_effective_address(const token& src_loc_tk, toc& tc,
-                              std::ostream& os, const size_t indent,
-                              const std::vector<identifier_elem>& elems,
-                              std::vector<std::string>& allocated_registers,
-                              const std::string_view reg_size) -> std::string {
+    static auto compile_effective_address(
+        const token& src_loc_tk, toc& tc, std::ostream& os, const size_t indent,
+        const std::vector<identifier_elem>& elems,
+        std::vector<std::string>& allocated_registers,
+        const std::string_view reg_size,
+        [[maybe_unused]] const std::vector<std::string>& lea_path)
+        -> std::string {
 
         std::string path{elems.front().name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
