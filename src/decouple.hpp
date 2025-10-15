@@ -30,7 +30,6 @@ struct ident_info {
     const int64_t const_value{};
     const type& type_ref;
     const int32_t stack_ix{};
-    const size_t size{};
     const size_t array_size{};
     const bool is_array{};
     const std::string lea;

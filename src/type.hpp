@@ -76,14 +76,12 @@ class type final {
         size_t offset{};
         bool is_array{var.is_array};
         size_t array_size{var.array_size};
-        size_t size{var.type_ref.size() * (var.is_array ? var.array_size : 1)};
         for (const auto& field_name : path | std::views::drop(1)) {
             const type_field& fld{tp->field(tk, field_name)};
             offset += fld.offset;
             tp = fld.tp;
             is_array = fld.is_array;
             array_size = fld.array_size;
-            size = fld.size;
         }
         const int stack_idx{var.stack_idx + static_cast<int>(offset)};
 
@@ -105,7 +103,6 @@ class type final {
             .id_nasm{accessor},
             .type_ref{*tp},
             .stack_ix = stack_idx,
-            .size = size,
             .array_size = array_size,
             .is_array = is_array,
             .lea{},

@@ -34,12 +34,12 @@ func main() {
     print(ok.len, ok)
 
     # expect same word input for both
-    var len1 = read(size_of(word1), address_of(word1))
+    var len1 = read(array_size_of(word1), address_of(word1))
     print(len1, address_of(word1))
 
     print(ok.len, ok)
 
-    var len2 = read(size_of(word2), address_of(word2))
+    var len2 = read(array_size_of(word2), address_of(word2))
     print(len2, address_of(word2))
   
     assert(arrays_equal(word1, word2, len1))
@@ -47,12 +47,12 @@ func main() {
     print(ok.len, ok)
 
     # expect not same word input for both
-    len1 = read(size_of(word1), address_of(word1))
+    len1 = read(array_size_of(word1), address_of(word1))
     print(len1, address_of(word1))
 
     print(ok.len, ok)
     
-    len2 = read(size_of(word2), address_of(word2))
+    len2 = read(array_size_of(word2), address_of(word2))
     print(len2, address_of(word2))
     
     assert(not arrays_equal(word1, word2, len1))
