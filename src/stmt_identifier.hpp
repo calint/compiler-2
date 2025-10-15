@@ -243,9 +243,9 @@ class stmt_identifier : public statement {
         }
 
         // todo explain why -1
-        std::string path{
-            elems[elems_index_with_lea ? elems_index_with_lea - 1 : 0]
-                .name_tk.text()};
+        const size_t start_at_elem_ix{
+            elems_index_with_lea ? elems_index_with_lea - 1 : 0};
+        std::string path{elems[start_at_elem_ix].name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
 
         std::string reg_offset;
@@ -262,7 +262,7 @@ class stmt_identifier : public statement {
         int32_t accum_offset{};
         const size_t elems_size{elems.size()};
 
-        for (size_t i{elems_index_with_lea}; i < elems_size; i++) {
+        for (size_t i{start_at_elem_ix}; i < elems_size; i++) {
             const identifier_elem& curr_elem{elems[i]};
             const ident_info curr_info{tc.make_ident_info(src_loc_tk, path)};
             const size_t type_size{curr_info.type_ref.size()};

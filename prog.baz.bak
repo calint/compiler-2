@@ -8,12 +8,14 @@ func assert(expr : bool) {
     if not expr exit(1)
 }
 
+# size 69
 type link {
     name : i8[64],
     name_len : i8,
     loc : i32
 }
 
+# size 616
 type location {
     name : i8[64],
     links : link[8]
@@ -33,11 +35,21 @@ func foo(lnk : link){
 
 func bar(locs : location[]) {
     foo(locs[2].links[1])
+    foo(locs[3].links[5])
+}
+
+func baz(wld : world[]) {
+    bar(wld[1].locations)
 }
 
 func main() {
-   var worlds : world[2]
-   var i = 1
-   bar(worlds[i].locations)
+    var worlds : world[2]
+    baz(worlds)
+    assert(worlds[1].locations[2].links[1].loc == 2)
+    assert(worlds[1].locations[2].links[1].name_len == 1)
+    assert(worlds[1].locations[2].links[1].name[0] == 0x61)
+    assert(worlds[1].locations[3].links[5].loc == 2)
+    assert(worlds[1].locations[3].links[5].name_len == 1)
+    assert(worlds[1].locations[3].links[5].name[0] == 0x61)
 }
 
