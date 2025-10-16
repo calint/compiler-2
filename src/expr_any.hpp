@@ -175,7 +175,7 @@ class expr_any final : public statement {
                      size_t indent,
                      std::vector<std::string>& allocated_registers,
                      const std::string& reg_size,
-                     const std::vector<std::string>& lea_path) const
+                     const std::span<const std::string> lea_path) const
         -> std::string override {
 
         return std::get<2>(var_).compile_lea(src_loc_tk, tc, os, indent,

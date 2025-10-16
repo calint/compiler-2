@@ -146,8 +146,7 @@ class stmt_def_func final : public statement {
         return params_.at(ix);
     }
 
-    [[nodiscard]] auto params() const
-        -> const std::vector<stmt_def_func_param>& {
+    [[nodiscard]] auto params() const -> std::span<const stmt_def_func_param> {
         return params_;
     }
 
@@ -213,7 +212,7 @@ class stmt_def_func final : public statement {
 
     static auto free_allocated_named_registers(
         toc& tc, std::ostream& os, const size_t indent, const token& src_loc_tk,
-        const std::vector<std::string>& registers) -> void {
+        const std::span<const std::string> registers) -> void {
 
         // free allocated named register in reverse order
         for (const auto& reg : registers | std::views::reverse) {

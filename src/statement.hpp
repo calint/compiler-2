@@ -74,13 +74,12 @@ class statement {
 
     [[nodiscard]] virtual auto is_identifier() const -> bool { return false; }
 
-    virtual auto
-    compile_lea([[maybe_unused]] const token& src_loc_tk,
-                [[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
-                [[maybe_unused]] const size_t indent,
-                [[maybe_unused]] std::vector<std::string>& allocated_registers,
-                [[maybe_unused]] const std::string& reg_size,
-                [[maybe_unused]] const std::vector<std::string>& lea_path) const
+    virtual auto compile_lea(
+        [[maybe_unused]] const token& src_loc_tk, [[maybe_unused]] toc& tc,
+        [[maybe_unused]] std::ostream& os, [[maybe_unused]] const size_t indent,
+        [[maybe_unused]] std::vector<std::string>& allocated_registers,
+        [[maybe_unused]] const std::string& reg_size,
+        [[maybe_unused]] const std::span<const std::string> lea_path) const
         -> std::string {
         return "";
     }

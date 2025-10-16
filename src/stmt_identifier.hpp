@@ -91,7 +91,7 @@ class stmt_identifier : public statement {
         return path_as_string_;
     }
 
-    [[nodiscard]] auto elems() const -> const std::vector<identifier_elem>& {
+    [[nodiscard]] auto elems() const -> std::span<const identifier_elem> {
         return elems_;
     }
 
@@ -202,7 +202,7 @@ class stmt_identifier : public statement {
                      size_t indent,
                      std::vector<std::string>& allocated_registers,
                      const std::string& reg_size,
-                     const std::vector<std::string>& lea_path) const
+                     std::span<const std::string> lea_path) const
         -> std::string override {
 
         return compile_effective_address(src_loc_tk, tc, os, indent, elems_,
@@ -212,11 +212,10 @@ class stmt_identifier : public statement {
 
     static auto compile_effective_address(
         const token& src_loc_tk, toc& tc, std::ostream& os, const size_t indent,
-        const std::vector<identifier_elem>& elems,
+        const std::span<const identifier_elem> elems,
         std::vector<std::string>& allocated_registers,
         const std::string_view reg_size,
-        [[maybe_unused]] const std::vector<std::string>& lea_path)
-        -> std::string {
+        const std::span<const std::string> lea_path) -> std::string {
 
         // pick the last n elements from lea_path since it is a path to root
         // while elems might be not example: world.locations.links   while

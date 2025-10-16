@@ -69,7 +69,7 @@ class type final {
     }
 
     [[nodiscard]] auto accessor(const token& tk, const std::string_view ident,
-                                const std::vector<std::string>& path,
+                                const std::span<const std::string> path,
                                 const var_info& var,
                                 std::vector<const type*>& type_path) const
         -> ident_info {
@@ -117,7 +117,7 @@ class type final {
     }
 
     [[nodiscard]] auto field_offset(const token& src_loc_tk,
-                                    const std::vector<std::string>& path,
+                                    const std::span<const std::string> path,
                                     const size_t start_at_index) const
         -> size_t {
 
@@ -141,7 +141,7 @@ class type final {
 
     [[nodiscard]] auto is_built_in() const -> bool { return is_built_in_; }
 
-    [[nodiscard]] auto fields() const -> const std::vector<type_field>& {
+    [[nodiscard]] auto fields() const -> std::span<const type_field> {
         return fields_;
     }
 

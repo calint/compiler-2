@@ -194,7 +194,7 @@ class program final {
     }
 
     static auto assert_functions_set_return_value(
-        const std::vector<const stmt_def_func*>& funcs) -> void {
+        const std::span<const stmt_def_func* const>& funcs) -> void {
 
         for (const stmt_def_func* f : funcs) {
             std::optional<func_return_info> ret_info{f->returns()};

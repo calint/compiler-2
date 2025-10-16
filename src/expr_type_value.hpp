@@ -70,7 +70,7 @@ class expr_type_value final : public statement {
                      size_t indent,
                      std::vector<std::string>& allocated_registers,
                      const std::string& reg_size,
-                     const std::vector<std::string>& lea) const
+                     const std::span<const std::string> lea) const
         -> std::string override;
 
   private:

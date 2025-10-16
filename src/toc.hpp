@@ -179,7 +179,7 @@ class ident_path final {
 
     [[nodiscard]] auto base() const -> std::string_view { return path_.at(0); }
 
-    [[nodiscard]] auto path() const -> const std::vector<std::string>& {
+    [[nodiscard]] auto path() const -> std::span<const std::string> {
         return path_;
     }
 
@@ -735,7 +735,7 @@ class toc final {
     }
 
     [[nodiscard]] auto get_func_defs() const
-        -> const std::vector<const stmt_def_func*>& {
+        -> std::span<const stmt_def_func* const> {
         return func_defs_;
     }
 
@@ -1174,7 +1174,7 @@ class toc final {
             ident_info ii{var.type_ref.accessor(src_loc, ident, id.path(), var,
                                                 type_path)};
 
-            ii.elem_path = id.path();
+            ii.elem_path = std::vector(id.path().begin(), id.path().end());
             //? fishy stuff adjusting lea_path size
             // pad the lea path to have same size as the other vectors
             ii.type_path = type_path;
@@ -1221,8 +1221,7 @@ class toc final {
         // is it a field?
         if (fields_.has(id.base())) {
             const std::string after_dot =
-                id.path().size() == 1 ? ""
-                                      : id.path().at(1); //? bug. not correct
+                id.path().size() == 1 ? "" : id.path()[1]; //? bug. not correct
             if (after_dot == "len") {
                 return {
                     .id{ident},

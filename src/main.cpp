@@ -279,10 +279,10 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
             std::format("expected '{{' to open assign type '{}'", tp.name())};
     }
 
-    const std::vector<type_field>& flds{tp.fields()};
+    const std::span<const type_field> flds{tp.fields()};
     const size_t nflds{flds.size()};
     for (size_t i{}; i < nflds; i++) {
-        const type_field& fld{flds.at(i)};
+        const type_field& fld{flds[i]};
         // create expression that assigns to field
         // might recurse creating 'expr_type_value'
         exprs_.emplace_back(create_expr_any(tc, tz, *fld.tp, true));
@@ -399,10 +399,10 @@ inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
     // e.g. obj.pos = {x, foo(y), z}
     // e.g. o2 = {p, p2, z}
     // e.g. o2 = {{1, 2, 3}, p2, z}
-    const std::vector<type_field>& flds{dst_type.fields()};
+    const std::span<const type_field> flds{dst_type.fields()};
     const size_t n{flds.size()};
     for (size_t i{}; i < n; i++) {
-        const type_field& fld{flds.at(i)};
+        const type_field& fld{flds[i]};
         if (fld.tp->is_built_in()) {
             etv.exprs_.at(i)->compile(tc, os, indent,
                                       std::format("{}.{}", dst, fld.name));
@@ -429,7 +429,7 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 auto expr_type_value::compile_lea(
     const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
     std::vector<std::string>& allocated_registers, const std::string& reg_size,
-    const std::vector<std::string>& lea_path) const -> std::string {
+    const std::span<const std::string> lea_path) const -> std::string {
 
     return stmt_ident_->compile_lea(src_loc_tk, tc, os, indent,
                                     allocated_registers, reg_size, lea_path);
