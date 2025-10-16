@@ -162,3 +162,52 @@ main:
 section .data
     fmt db "Result: %f", 10, 0   ; printf format string
 -----------------------------------------------------------
+
+
+
+func p(len : reg_rdx, ptr : reg_rsi) {
+    mov(rax, 1)   # write system call
+    mov(rdi, 1)   # file descriptor for standard out
+    mov(rsi, ptr) # buffer address 
+    mov(rdx, len) # buffer size
+    syscall()
+}
+
+field nl_str = "\n"
+
+func nl() p(nl_str.len, nl_str)
+
+func pn(num) {
+    var buf : i8[20]
+    var n = num
+    var is_negative : bool = false
+    
+    if n < 0 {
+        is_negative = true
+        n = -n
+    }
+    
+    var i = 20
+    loop {
+        i = i - 1
+        buf[i] = 48 + (n % 10)
+        n = n / 10
+        if n == 0 break
+    }
+    
+    if is_negative {
+        i = i - 1
+        buf[i] = 45
+    }
+    
+    var write_pos = 0
+    loop {
+        buf[write_pos] = buf[i]
+        write_pos = write_pos + 1
+        i = i + 1
+        if i == 20 break
+    }
+    
+    p(write_pos, address_of(buf))
+}
+
