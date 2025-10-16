@@ -1,4 +1,4 @@
-[ ] arguments const vector and returns of const vector to span
+[x] arguments const vector and returns of const vector to span
 [ ] find where displacement in generated assembler is 0 and fix it:
     e.g. r15 + r14 * 4 - 0
 [x] function arguments as array of user types (nested)
