@@ -171,7 +171,6 @@ class stmt_def_func final : public statement {
                 .name{ret_tk.text()},
                 .type_ref = get_type(),
                 .declared_at_tk{ret_tk},
-                .lea{},
             };
             tc.add_var(ret_tk, os, indent + 1, var);
         }
@@ -190,7 +189,6 @@ class stmt_def_func final : public statement {
                     .type_ref = prm_type,
                     .declared_at_tk{prm.tok()},
                     .is_array = prm.is_array(),
-                    .lea{},
                 };
                 tc.add_var(tok(), os, indent + 1, var);
                 continue;

@@ -24,7 +24,7 @@ struct ident_info {
     const type& type_ref;
     int32_t stack_ix{};
     size_t array_size{};
-    bool is_array{};
+    const bool is_array{};
     std::vector<std::string> elem_path;
     std::vector<const type*> type_path;
     std::vector<std::string> lea_path;
@@ -50,7 +50,6 @@ struct var_info {
     int32_t stack_idx{};  // location relative to register rsp
     bool is_array{};
     size_t array_size{};
-    std::string lea;
 };
 
 //
