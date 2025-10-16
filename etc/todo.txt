@@ -1,3 +1,5 @@
+[ ] brace initializers offer no performance advantage and the narrowing issues
+    do not exist in this project. they are ugly. ponder switching to =
 [ ] find where displacement in generated assembler is 0 and fix it:
     e.g. r15 + r14 * 4 - 0
 [ ] refactor the passing first token to every constructor. push back and
