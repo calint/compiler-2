@@ -188,30 +188,28 @@ class stmt_identifier : public statement {
         const std::span<const std::string> lea_path) -> std::string {
 
         // pick the last n elements from lea_path since it is a path to root
-        // while elems might be not example: world.locations.links   while
-        // elems is   loc.link
+        // while elems might not be
+        //   e.g:`world.locations.links` while elems is `loc.link`
         std::vector<std::string> leas;
         leas.reserve(elems.size());
-        for (size_t i{lea_path.size() - elems.size()}; i < lea_path.size();
-             i++) {
+        const size_t n{lea_path.size()};
+        for (size_t i{lea_path.size() - elems.size()}; i < n; i++) {
             leas.push_back(lea_path[i]);
         }
 
         // find the first element from the top that has a "lea" and get accessor
         // relative to that "lea"
-        size_t elems_index_with_lea{leas.size()};
+        size_t elem_index_with_lea{leas.size()};
         bool found{};
-        std::string lea;
-        while (elems_index_with_lea) {
-            elems_index_with_lea--;
-            if (not leas[elems_index_with_lea].empty()) {
+        while (elem_index_with_lea) {
+            elem_index_with_lea--;
+            if (not leas[elem_index_with_lea].empty()) {
                 found = true;
-                lea = leas[elems_index_with_lea];
                 break;
             }
         }
 
-        std::string path{elems[elems_index_with_lea].name_tk.text()};
+        std::string path{elems[elem_index_with_lea].name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
 
         std::string reg_offset;
@@ -219,13 +217,13 @@ class stmt_identifier : public statement {
             const std::string index_reg{
                 tc.alloc_scratch_register(src_loc_tk, os, indent)};
             allocated_registers.push_back(index_reg);
-            const nasm_operand nasmop{leas[elems_index_with_lea]};
+            const nasm_operand nasmop{leas[elem_index_with_lea]};
             if (not nasmop.index_register.empty() or nasmop.displacement != 0) {
                 tc.asm_cmd(src_loc_tk, os, indent, "lea", index_reg,
-                           std::format("[{}]", leas[elems_index_with_lea]));
+                           std::format("[{}]", leas[elem_index_with_lea]));
             } else {
                 tc.asm_cmd(src_loc_tk, os, indent, "mov", index_reg,
-                           leas[elems_index_with_lea]);
+                           leas[elem_index_with_lea]);
             }
             reg_offset = index_reg;
         } else {
@@ -234,7 +232,7 @@ class stmt_identifier : public statement {
         int32_t accum_offset{};
         const size_t elems_size{elems.size()};
 
-        for (size_t i{elems_index_with_lea}; i < elems_size; i++) {
+        for (size_t i{elem_index_with_lea}; i < elems_size; i++) {
             const identifier_elem& curr_elem{elems[i]};
             const ident_info curr_info{tc.make_ident_info(src_loc_tk, path)};
             const size_t type_size{curr_info.type_ref.size()};
