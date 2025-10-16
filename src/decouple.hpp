@@ -4,6 +4,7 @@
 
 // reviewed: 2025-09-28
 
+#include <algorithm>
 #include <memory>
 
 #include "token.hpp"
@@ -44,6 +45,11 @@ struct ident_info {
 
     [[nodiscard]] auto is_memory_operand() const -> bool {
         return id_nasm.find_first_of('[') != std::string::npos;
+    }
+
+    [[nodiscard]] auto has_lea() const -> bool {
+        return std::ranges::any_of(
+            lea_path, [](const std::string s) { return not s.empty(); });
     }
 };
 

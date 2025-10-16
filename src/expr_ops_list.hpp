@@ -310,8 +310,14 @@ class expr_ops_list final : public expression {
 
         tc.comment_source(*this, os, indent);
 
-        // the first element is assigned to destination, operator '='
-        asm_op(tc, os, indent, '=', dst_info, *exprs_.at(0));
+        if (exprs_[0]->is_identifier()) {
+            std::println(std::cerr, "dst_info: id: {}   id_nasm: {}",
+                         dst_info.id, dst_info.id_nasm);
+            exprs_[0]->compile(tc, os, indent, dst_info.id);
+        } else {
+            // the first element is assigned to destination, operator '='
+            asm_op(tc, os, indent, '=', dst_info, *exprs_.at(0));
+        }
 
         // remaining elements are +,-,*,/,%,|,&,^,<<,>>
         const size_t n{ops_.size()};
@@ -430,6 +436,7 @@ class expr_ops_list final : public expression {
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             // yes, compile with destination to 'dst'
+            // todo explain why id and not nasm_id
             src.compile(tc, os, indent, dst.id);
             return;
         }

@@ -14,7 +14,7 @@ CW="-Weverything -Wno-c++98-compat -Wno-pre-c++20-compat-pedantic -Wno-weak-vtab
 #CW="-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow"
 CF="-Wfatal-errors -Werror"
 DBG=-g
-OPT=
+OPT=-O0
 
 #
 # AddressSanitizer + UndefinedBehaviorSanitizer (can be combined)

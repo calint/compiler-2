@@ -450,7 +450,7 @@ class expr_bool_op final : public statement {
                              std::vector<std::string>& allocated_registers)
         -> std::string {
 
-        if (expr.is_expression()) {
+        if (expr.is_expression() or expr.is_identifier()) {
             const std::string reg{
                 tc.alloc_scratch_register(expr.tok(), os, indent)};
             allocated_registers.emplace_back(reg);

@@ -39,8 +39,6 @@ type world {
 func init_mesh(m : mesh, id_val : i32) {
     m.id = id_val
 
-    return
-
     var i = 0
     loop {
         m.vertices[i].x = i * 10
@@ -60,7 +58,6 @@ func init_mesh(m : mesh, id_val : i32) {
 
 func verify_mesh(m : mesh, id_val : i32) {
     assert(m.id == id_val)
-    return
     var i = 0
     loop {
         assert(m.vertices[i].x == i * 10)
@@ -106,10 +103,8 @@ func main() {
     }
     
     # test 2: verify nested array element access
-    verify_mesh(w[0].scenes[0].meshes[0], 0)
-    assert(w[0].scenes[0].meshes[3].id == 3) 
+    #verify_mesh(w[0].scenes[0].meshes[0], 0)
     verify_mesh(w[0].scenes[0].meshes[3], 3)
-    return
     
     # test 3: deep nested access and modification
     w[0].scenes[1].meshes[2].vertices[5].x = 0xff
