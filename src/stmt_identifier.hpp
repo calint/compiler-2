@@ -139,41 +139,10 @@ class stmt_identifier : public statement {
 
         const ident_info src_info{tc.make_ident_info(tok(), identifier())};
 
-        // find the first element from the end that has a "lea" and get accessor
-        // relative to that "lea"
-        size_t elems_index_with_lea{src_info.elem_path.size()};
-        bool found{};
-        std::string lea;
-        while (elems_index_with_lea) {
-            elems_index_with_lea--;
-            if (not src_info.lea_path[elems_index_with_lea].empty()) {
-                found = true;
-                lea = src_info.lea_path[elems_index_with_lea];
-                break;
-            }
-        }
-        std::string src_accessor{src_info.id};
-        if (found) {
-            size_t offset =
-                src_info.type_path[elems_index_with_lea - 1]->field_offset(
-                    tok(), std::span{src_info.elem_path}.subspan(
-                               elems_index_with_lea));
-            const std::string_view size_specifier{
-                type::get_size_specifier(tok(), src_info.type_ref.size())};
-            if (offset == 0) {
-                src_accessor =
-                    std::format("{} [{}]", size_specifier,
-                                dst_info.lea_path[elems_index_with_lea]);
-            } else {
-                src_accessor = std::format(
-                    "{} [{} + {}]", size_specifier,
-                    dst_info.lea_path[elems_index_with_lea], offset);
-            }
-        }
-
         if (not is_expression()) {
+            // note: contains no array indexing, e.g. world.location.link
             tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
-                       src_accessor);
+                       src_info.id_nasm);
             get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
             return;
         }
@@ -228,8 +197,8 @@ class stmt_identifier : public statement {
             leas.push_back(lea_path[i]);
         }
 
-        // find the first element that has a "lea" and get accessor relative to
-        // that "lea"
+        // find the first element from the top that has a "lea" and get accessor
+        // relative to that "lea"
         size_t elems_index_with_lea{leas.size()};
         bool found{};
         std::string lea;
@@ -242,10 +211,7 @@ class stmt_identifier : public statement {
             }
         }
 
-        // todo explain why -1
-        const size_t start_at_elem_ix{
-            elems_index_with_lea ? elems_index_with_lea - 1 : 0};
-        std::string path{elems[start_at_elem_ix].name_tk.text()};
+        std::string path{elems[elems_index_with_lea].name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
 
         std::string reg_offset;
@@ -268,7 +234,7 @@ class stmt_identifier : public statement {
         int32_t accum_offset{};
         const size_t elems_size{elems.size()};
 
-        for (size_t i{start_at_elem_ix}; i < elems_size; i++) {
+        for (size_t i{elems_index_with_lea}; i < elems_size; i++) {
             const identifier_elem& curr_elem{elems[i]};
             const ident_info curr_info{tc.make_ident_info(src_loc_tk, path)};
             const size_t type_size{curr_info.type_ref.size()};
