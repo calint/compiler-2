@@ -139,8 +139,8 @@ class stmt_identifier : public statement {
 
         const ident_info src_info{tc.make_ident_info(tok(), identifier())};
 
-        // find the first element that has a "lea" and get accessor relative to
-        // that "lea"
+        // find the first element from the end that has a "lea" and get accessor
+        // relative to that "lea"
         size_t elems_index_with_lea{src_info.elem_path.size()};
         bool found{};
         std::string lea;
@@ -156,7 +156,8 @@ class stmt_identifier : public statement {
         if (found) {
             size_t offset =
                 src_info.type_path[elems_index_with_lea - 1]->field_offset(
-                    tok(), src_info.elem_path, elems_index_with_lea);
+                    tok(), std::span{src_info.elem_path}.subspan(
+                               elems_index_with_lea));
             const std::string_view size_specifier{
                 type::get_size_specifier(tok(), src_info.type_ref.size())};
             if (offset == 0) {

@@ -1,5 +1,2 @@
-Thu Oct 16 10:04:03 AM +07 2025
-/home/c/w/compiler-2/qa/lint/../../src/expr_type_value.hpp:73:22: warning: parameter 'lea' is const-qualified in the function declaration; const-qualification of parameters only has an effect in function definitions [readability-avoid-const-params-in-decls]
-   73 |                      const std::span<const std::string> lea) const
-      |                      ^~~~~
-Thu Oct 16 10:04:44 AM +07 2025
+Thu Oct 16 10:12:11 AM +07 2025
+Thu Oct 16 10:12:52 AM +07 2025

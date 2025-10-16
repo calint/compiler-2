@@ -116,16 +116,14 @@ class type final {
         };
     }
 
-    [[nodiscard]] auto field_offset(const token& src_loc_tk,
-                                    const std::span<const std::string> path,
-                                    const size_t start_at_index) const
-        -> size_t {
+    [[nodiscard]] auto
+    field_offset(const token& src_loc_tk,
+                 const std::span<const std::string> path) const -> size_t {
 
         const type* tp{this};
         size_t offset{};
-        for (const auto& field_name :
-             path | std::views::drop(start_at_index + 1)) {
-            // note: +1 because first element is retrieved outside the loop
+        for (const auto& field_name : path | std::views::drop(1)) {
+            // note: drop 1 because first element is retrieved outside the loop
             const type_field& fld{tp->field(src_loc_tk, field_name)};
             offset += fld.offset;
             tp = fld.tp;
