@@ -40,7 +40,6 @@ class stmt_arrays_equal final : public expression {
             throw compiler_exception{tz, "expected ',' then 'count'"};
         }
 
-        // expr_any(toc& tc, tokenizer& tz, const type& tp, bool in_args)
         count_ = {tc, tz, tc.get_type_default(), true};
 
         if (not tz.is_next_char(')')) {

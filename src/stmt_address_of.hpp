@@ -76,6 +76,7 @@ class stmt_address_of final : public expression {
         }
 
         std::vector<std::string> allocated_registers;
+
         const std::string operand = stmt_identifier::compile_effective_address(
             stmt_ident_.first_token(), tc, os, indent, stmt_ident_.elems(),
             allocated_registers, "", src_info.lea_path);
