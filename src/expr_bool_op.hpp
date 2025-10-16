@@ -76,7 +76,7 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        rhs_ = {tc, tz};
+        rhs_ = {tc, tz, true};
         resolve_if_op_is_expression();
     }
 
