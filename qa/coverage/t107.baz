@@ -10,7 +10,6 @@ func assert(expr : bool) {
 
 type point {x, y}
 
-# size 85
 type link {
     pos : point,
     name : i8[64],
@@ -18,13 +17,11 @@ type link {
     loc : i32
 }
 
-# size 744
 type location {
     name : i8[64],
     links : link[8]
 }
 
-# size: 4320
 type world {
     time : i64,
     locations : location[7]

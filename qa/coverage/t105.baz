@@ -8,20 +8,17 @@ func assert(expr : bool) {
     if not expr exit(1)
 }
 
-# size 69
 type link {
     name : i8[64],
     name_len : i8,
     loc : i32
 }
 
-# size 616
 type location {
     name : i8[64],
     links : link[8]
 }
 
-# size: 4320
 type world {
     time : i64,
     locations : location[7]
