@@ -129,12 +129,13 @@ class stmt_identifier : public statement {
         const ident_info dst_info{tc.make_ident_info(tok(), dst)};
 
         // DEBUG
-        std::println(std::cerr, "[{}] identifier path: {}", tok().at_line(),
-                     dst_info.id);
-        for (size_t i = 0; i < dst_info.elem_path.size(); i++) {
-            std::println(std::cerr, "  {} ; {} ; {}", dst_info.elem_path[i],
-                         dst_info.type_path[i]->name(), dst_info.lea_path[i]);
-        }
+        // std::println(std::cerr, "[{}] identifier path: {}", tok().at_line(),
+        //              dst_info.id);
+        // for (size_t i = 0; i < dst_info.elem_path.size(); i++) {
+        //     std::println(std::cerr, "  {} ; {} ; {}", dst_info.elem_path[i],
+        //                  dst_info.type_path[i]->name(),
+        //                  dst_info.lea_path[i]);
+        // }
 
         const ident_info src_info{tc.make_ident_info(tok(), identifier())};
 
@@ -146,7 +147,8 @@ class stmt_identifier : public statement {
         }
 
         if (not is_expression() and not src_info.has_lea()) {
-            // note: contains no array indexing, e.g. world.location.link
+            // note: contains no array indexing and is not relative a lea,
+            //       e.g. world.location.link
             tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
                        src_info.id_nasm);
             get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);

@@ -11,14 +11,6 @@ func assert(expr : bool) {
     if not expr exit(1)
 }
 
-func print(len : reg_rdx, ptr : reg_rsi) {
-    mov(rax, 1)
-    mov(rdi, 1)
-    mov(rsi, ptr)
-    mov(rdx, len)
-    syscall()
-}
-
 type vec3 { x : i32, y : i32, z : i32 }
 
 type mesh {
@@ -182,6 +174,5 @@ func main() {
         if verify_idx == 4 break
     }
     
-    print(test_passed.len, test_passed)
     exit(0)
 }

@@ -311,8 +311,6 @@ class expr_ops_list final : public expression {
         tc.comment_source(*this, os, indent);
 
         if (exprs_[0]->is_identifier()) {
-            std::println(std::cerr, "dst_info: id: {}   id_nasm: {}",
-                         dst_info.id, dst_info.id_nasm);
             exprs_[0]->compile(tc, os, indent, dst_info.id);
         } else {
             // the first element is assigned to destination, operator '='
@@ -436,8 +434,7 @@ class expr_ops_list final : public expression {
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             // yes, compile with destination to 'dst'
-            // todo explain why id and not nasm_id
-            src.compile(tc, os, indent, dst.id);
+            src.compile(tc, os, indent, dst.id_nasm);
             return;
         }
 
