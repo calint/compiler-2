@@ -1,7 +1,5 @@
-[x] arguments const vector and returns of const vector to span
 [ ] find where displacement in generated assembler is 0 and fix it:
     e.g. r15 + r14 * 4 - 0
-[x] function arguments as array of user types (nested)
 [ ] refactor the passing first token to every constructor. push back and
     construct
 [ ] code after "break" or "continue" is dead code. generate error or UB check
@@ -9,10 +7,6 @@
 [o] check function argument is array or not vs argument
     [x] for simple foo(arr) when arr can be aliased
     [ ] for other foo(polygons[1].indices) not easy
-[x] function arguments as arrays:
-    func write_to_array(res : i64[]) {
-        res[1] = 2
-    }
 [ ] ponder an iterator of elements in array that does not require bounds
     checking:
       for(e : arr) {
@@ -21,7 +15,6 @@
 [ ] ponder whether a compiler flag to check for over/underflow in arithmetics
 [ ] a return reference might be used as an argument to a function that set it.
     current UB detection does not allow that
-[x] UB if the return value is used as an argument in a expr_any before set
 [ ] break: exit current block instead of just loop?
 [ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
@@ -84,6 +77,13 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] arguments const vector and returns of const vector to span
+[x] function arguments as array of user types (nested)
+[x] function arguments as arrays:
+    func write_to_array(res : i64[]) {
+        res[1] = 2
+    }
+[x] UB if the return value is used as an argument in a expr_any before set
 [x] more precise indication of where in the source the uninitialized variable
     is used
 [x] var x = foo() becomes UB if foo does not set the return value
