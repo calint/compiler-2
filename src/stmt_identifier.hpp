@@ -209,7 +209,7 @@ class stmt_identifier : public statement {
             }
         }
 
-        // todo explain this
+        // start at element with "lea" or 0 when no "lea" found
         std::string path{elems[elem_index_with_lea].name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
 
