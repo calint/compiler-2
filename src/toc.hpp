@@ -1356,6 +1356,15 @@ class toc final {
         std::println(os, "{}:", label);
     }
 
+    static auto asm_lea([[maybe_unused]] const token& src_loc_tk,
+                        std::ostream& os, const size_t indnt,
+                        const std::string_view dst,
+                        const std::string_view operand) -> void {
+
+        indent(os, indnt);
+        std::println(os, "lea {}, [{}]", dst, operand);
+    }
+
     static auto asm_neg([[maybe_unused]] const token& src_loc_tk,
                         std::ostream& os, const size_t indnt,
                         const std::string_view operand) -> void {

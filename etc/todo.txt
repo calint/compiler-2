@@ -1,3 +1,4 @@
+[x] toc::lea instead of generic command
 [ ] brace initializers offer no performance advantage and the narrowing issues
     do not exist in this project. they are ugly. ponder switching to =
 [ ] find where displacement in generated assembler is 0 and fix it:

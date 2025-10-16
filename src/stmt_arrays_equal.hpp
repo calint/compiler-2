@@ -96,8 +96,7 @@ class stmt_arrays_equal final : public expression {
                 from_.first_token(), tc, os, indent, from_.elems(),
                 allocated_scratch_registers, "rcx", from_info.lea_path)};
 
-        tc.asm_cmd(tok(), os, indent, "lea", "rsi",
-                   std::format("[{}]", from_operand));
+        toc::asm_lea(tok(), os, indent, "rsi", from_operand);
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -111,8 +110,7 @@ class stmt_arrays_equal final : public expression {
             to_.first_token(), tc, os, indent, to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};
 
-        tc.asm_cmd(tok(), os, indent, "lea", "rdi",
-                   std::format("[{}]", to_operand));
+        toc::asm_lea(tok(), os, indent, "rdi", to_operand);
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {

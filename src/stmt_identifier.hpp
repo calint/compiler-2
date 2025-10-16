@@ -220,8 +220,8 @@ class stmt_identifier : public statement {
             allocated_registers.push_back(index_reg);
             const nasm_operand nasmop{leas[elem_index_with_lea]};
             if (not nasmop.index_register.empty() or nasmop.displacement != 0) {
-                tc.asm_cmd(src_loc_tk, os, indent, "lea", index_reg,
-                           std::format("[{}]", leas[elem_index_with_lea]));
+                toc::asm_lea(src_loc_tk, os, indent, index_reg,
+                             leas[elem_index_with_lea]);
             } else {
                 tc.asm_cmd(src_loc_tk, os, indent, "mov", index_reg,
                            leas[elem_index_with_lea]);
@@ -304,8 +304,8 @@ class stmt_identifier : public statement {
             if (reg_offset == "rsp") {
                 reg_offset = tc.alloc_scratch_register(src_loc_tk, os, indent);
                 allocated_registers.push_back(reg_offset);
-                tc.asm_cmd(src_loc_tk, os, indent, "lea", reg_offset,
-                           std::format("[rsp - {}]", -base_info.stack_ix));
+                toc::asm_lea(src_loc_tk, os, indent, reg_offset,
+                             std::format("rsp - {}", -base_info.stack_ix));
             }
 
             // calculate array index

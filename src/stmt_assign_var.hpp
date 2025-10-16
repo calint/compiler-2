@@ -77,8 +77,7 @@ class stmt_assign_var final : public statement {
                 tok(), tc, os, indent, stmt_ident_.elems(), allocated_registers,
                 "", stmt_info.lea_path)};
 
-            tc.asm_cmd(tok(), os, indent, "lea", "rdi",
-                       std::format("[{}]", offset));
+            toc::asm_lea(tok(), os, indent, "rdi", offset);
 
             expr_.compile(tc, os, indent, "rsi");
 
