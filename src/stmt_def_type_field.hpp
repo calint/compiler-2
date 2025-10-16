@@ -74,6 +74,11 @@ class stmt_def_type_field final : public statement {
         }
     }
 
+    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
+                 [[maybe_unused]] const size_t indent,
+                 [[maybe_unused]] const std::string_view dst) const
+        -> void override {}
+
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 
     [[nodiscard]] auto type_str() const -> std::string_view {

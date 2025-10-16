@@ -2,8 +2,10 @@
 // reviewed: 2025-09-28
 
 #include "compiler_exception.hpp"
+#include "panic_exception.hpp"
 #include "token.hpp"
 #include "unary_ops.hpp"
+#include <iostream>
 
 class toc;
 class type;
@@ -28,12 +30,11 @@ class statement {
     auto operator=(const statement&) -> statement& = default;
     auto operator=(statement&&) -> statement& = default;
 
-    virtual auto compile([[maybe_unused]] toc& tc, std::ostream& os,
+    virtual auto compile([[maybe_unused]] toc& tc,
+                         [[maybe_unused]] std::ostream& os,
                          [[maybe_unused]] size_t indent,
-                         [[maybe_unused]] std::string_view dst) const -> void {
-        uops_.source_to(os);
-        token_.compile_to(os);
-    }
+                         [[maybe_unused]] std::string_view dst) const
+        -> void = 0;
 
     virtual auto source_to(std::ostream& os) const -> void {
         uops_.source_to(os);

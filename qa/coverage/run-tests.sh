@@ -28,7 +28,7 @@ export ASAN_SYMBOLIZE=1
 # Common: compile and assemble
 compile_and_build() {
   rm -f error.log
-  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $OPTS 2>error.log >gen.s
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $OPTS >gen.s
   if [ $? -ne 0 ]; then
     echo "compiler failed. see 'error.log' and 'gen.s'" >&2
     exit 1
