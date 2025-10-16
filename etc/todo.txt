@@ -1,4 +1,4 @@
-[ ] expr_ops_list:313 and bool_ops_list: 453 are a hack. fix
+[ ] expr_ops_list: 313 and expr_bool_op: 453 are a hack. fix
 [x] toc::lea instead of generic command
 [ ] brace initializers offer no performance advantage and the narrowing issues
     do not exist in this project. they are ugly. ponder switching to =
