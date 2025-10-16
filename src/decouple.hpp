@@ -49,7 +49,7 @@ struct ident_info {
 
     [[nodiscard]] auto has_lea() const -> bool {
         return std::ranges::any_of(
-            lea_path, [](const std::string s) { return not s.empty(); });
+            lea_path, [](const std::string& s) { return not s.empty(); });
     }
 };
 

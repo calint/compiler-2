@@ -2,10 +2,8 @@
 // reviewed: 2025-09-28
 
 #include "compiler_exception.hpp"
-#include "panic_exception.hpp"
 #include "token.hpp"
 #include "unary_ops.hpp"
-#include <iostream>
 
 class toc;
 class type;

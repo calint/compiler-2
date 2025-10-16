@@ -1,9 +1,17 @@
-field test_passed = "test passed\n"
-field test_failed = "test failed\n"
+field   hello = "hello world from baz\n"
+field prompt1 = "enter name:\n"
+field prompt2 = "that is not a name.\n"
+field prompt3 = "hello "
+field     dot = "."
+field      nl = "\n"
+
+# all functions are inlined
+
+# arguments can be placed in specified register using `reg_...` syntax
 
 func exit(v : reg_rdi) {
-    mov(rax, 60)
-    mov(rdi, v)
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
     syscall()
 }
 
@@ -12,176 +20,168 @@ func assert(expr : bool) {
 }
 
 func print(len : reg_rdx, ptr : reg_rsi) {
-    mov(rax, 1)
-    mov(rdi, 1)
-    mov(rsi, ptr)
-    mov(rdx, len)
+    mov(rax, 1)   # write system call
+    mov(rdi, 1)   # file descriptor for standard out
+    mov(rsi, ptr) # buffer address 
+    mov(rdx, len) # buffer size
     syscall()
 }
 
-type vec3 { x : i32, y : i32, z : i32 }
-
-type mesh {
-    vertices : vec3[8],
-    indices : i32[12],
-    id : i32
+func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+    mov(rax, 0)   # read system call
+    mov(rdi, 0)   # file descriptor for standard input
+    mov(rsi, ptr) # buffer address
+    mov(rdx, len) # buffer size
+    syscall()
+    mov(nbytes, rax) # return value
 }
 
-type scene {
-    meshes : mesh[4],
-    time : i64
+# user types are defined using keyword `type`
+
+# default type is `i64` and does not need to be specified
+
+type point {x, y}
+
+type object {pos : point, color : i32}
+
+type world { locations : i64[8] }
+
+# function arguments are equivalent to mutable references
+
+func foo(pt : point) {
+    pt.x = 0b10    # binary value 2
+    pt.y = 0xb     # hex value 11
 }
 
-type world {
-    scenes : scene[3]
+# default argument type is `i64`
+
+func bar(arg) {
+    if arg == 0 return
+    arg = 0xff
 }
 
-func init_mesh(m : mesh, id_val : i32) {
-    m.id = id_val
+# return target is specified as a variable, in this case `res`
 
-    var i = 0
-    loop {
-        m.vertices[i].x = i * 10
-        m.vertices[i].y = i * 20
-        m.vertices[i].z = i * 30
-        i = i + 1
-        if i == 8 break
-    }
-    
-    i = 0
-    loop {
-        m.indices[i] = i
-        i = i + 1
-        if i == 12 break
-    }
+func inv(i : i32) : i32 res {
+    res = ~i
 }
 
-func verify_mesh(m : mesh, id_val : i32) {
-    assert(m.id == id_val)
-    var i = 0
-    loop {
-        assert(m.vertices[i].x == i * 10)
-        assert(m.vertices[i].y == i * 20)
-        assert(m.vertices[i].z == i * 30)
-        i = i + 1
-        if i == 8 break
-    }
+func baz(arg) : i64 res {
+    res = arg * 2
 }
 
-func transform_vertices(s : scene, offset : vec3) {
-    var i = 0
-    loop {
-        var j = 0
-        loop {
-            s.meshes[i].vertices[j].x = s.meshes[i].vertices[j].x + offset.x
-            s.meshes[i].vertices[j].y = s.meshes[i].vertices[j].y + offset.y
-            s.meshes[i].vertices[j].z = s.meshes[i].vertices[j].z + offset.z
-            j = j + 1
-            if j == 8 break
-        }
-        i = i + 1
-        if i == 4 break
-    }
+# array arguments are declared with type and []
+
+func faz(arg : i32[]) {
+    arg[1] = 0xfe
 }
 
 func main() {
-    var w : world[2]
-    
-    # test 1: initialize nested array structures
-    var offset : vec3 = {5, 10, 15}
-    
-    var i = 0
-    loop {
-        var j = 0
-        loop {
-            init_mesh(w[0].scenes[0].meshes[j], j)
-            j = j + 1
-            if j == 4 break
-        }
-        i = i + 1
-        if i == 1 break
-    }
-    
-    # test 2: verify nested array element access
-    #verify_mesh(w[0].scenes[0].meshes[0], 0)
-    verify_mesh(w[0].scenes[0].meshes[3], 3)
-    
-    # test 3: deep nested access and modification
-    w[0].scenes[1].meshes[2].vertices[5].x = 0xff
-    w[0].scenes[1].meshes[2].vertices[5].y = 0xaa
-    w[0].scenes[1].meshes[2].vertices[5].z = 0xbb
-    assert(w[0].scenes[1].meshes[2].vertices[5].x == 0xff)
-    assert(w[0].scenes[1].meshes[2].vertices[5].y == 0xaa)
-    assert(w[0].scenes[1].meshes[2].vertices[5].z == 0xbb)
-    
-    # test 4: array_copy on nested structures
-    array_copy(
-        w[0].scenes[0].meshes,
-        w[1].scenes[2].meshes,
-        array_size_of(w[0].scenes[0].meshes)
-    )
-    
-    # verify copy succeeded
-    var k = 0
-    loop {
-        assert(w[1].scenes[2].meshes[k].id == k)
-        k = k + 1
-        if k == 4 break
-    }
-    
-    # test 5: arrays_equal on nested arrays
-    var ok : bool = arrays_equal(
-        w[0].scenes[0].meshes[1].vertices,
-        w[1].scenes[2].meshes[1].vertices,
-        array_size_of(w[0].scenes[0].meshes[1].vertices)
-    )
-    assert(ok)
-    
-    # test 6: array_copy partial nested arrays
-    array_copy(
-        w[0].scenes[0].meshes[2].indices,
-        w[0].scenes[1].meshes[1].indices,
-        6
-    )
-    
-    var idx = 0
-    loop {
-        assert(w[0].scenes[1].meshes[1].indices[idx] == idx)
-        idx = idx + 1
-        if idx == 6 break
-    }
-    
-    # test 7: modify through function with nested refs
-    # Initialize w[1].scenes[0] first
-    var ii = 0
-    loop {
-        init_mesh(w[1].scenes[0].meshes[ii], ii + 100)
-        ii = ii + 1
-        if ii == 4 break
-    }
+    var arr : i32[4]
+    # arrays are initialized to 0
 
-    transform_vertices(w[1].scenes[0], offset)
-    assert(w[1].scenes[0].meshes[0].vertices[0].x == 0 + 5)      # 0 + offset.x
-    assert(w[1].scenes[0].meshes[1].vertices[3].y == 60 + 10)    # (3*20) + offset.y = 70
-    assert(w[1].scenes[0].meshes[2].vertices[7].z == 210 + 15)   # (7*30) + offset.z = 225   
+    var ix = 1
+
+    arr[ix] = 2
+    arr[ix + 1] = arr[ix]
+    assert(arr[1] == 2)
+    assert(arr[2] == 2)
+
+    array_copy(arr[2], arr, 2)
+    # copy from, to, number of elements
+    assert(arr[0] == 2)
+
+    var arr1 : i32[8]
+    array_copy(arr, arr1, 4)
+    assert(arrays_equal(arr, arr1, 4))
+
+    arr1[2] = -1
+    assert(not arrays_equal(arr, arr1, 4))
+
+    ix = 3
+    arr[ix] = ~inv(arr[ix - 1])
+    assert(arr[ix] == 2)
+
+    faz(arr)
+    assert(arr[1] == 0xfe)
+
+    var p : point = {0, 0}
+    foo(p)
+    assert(p.x == 2)
+    assert(p.y == 0xb)
+
+    var i = 0
+    bar(i)
+    assert(i == 0)
+
+    i = 1
+    bar(i)
+    assert(i == 0xff)
+
+    var j = 1
+    var k = baz(j)
+    assert(k == 2)
+
+    k = baz(1)
+    assert(k == 2)
+
+    var p0 : point = {baz(2), 0}
+    assert(p0.x == 4)
+
+    var x = 1
+    var y = 2
+
+    var o1 : object = {{x * 10, y}, 0xff0000}
+    assert(o1.pos.x == 10)
+    assert(o1.pos.y == 2)
+    assert(o1.color == 0xff0000)
     
-    # test 8: struct array initialization
-    var mesh_array : mesh[4]
-    var m = 0
+    var p1 : point = {-x, -y}
+    o1.pos = p1
+    assert(o1.pos.x == -1)
+    assert(o1.pos.y == -2)
+
+    var o2 : object = o1
+    assert(o2.pos.x == -1)
+    assert(o2.pos.y == -2)
+    assert(o2.color == 0xff0000)
+
+    var o3 : object[1]
+    # index 0 in an array can be accessed without array index
+    o3.pos.y = 73
+    assert(o3[0].pos.y == 73)
+
+    var input_buffer : i8[80]
+
+    var worlds : world[8]
+    worlds[1].locations[1] = 0xffee
+    assert(worlds[1].locations[1] == 0xffee)
+
+    array_copy(
+        worlds[1].locations,
+        worlds[0].locations,
+        array_size_of(worlds[1].locations)
+    )
+    assert(worlds[0].locations[1] == 0xffee)
+
+    print(hello.len, hello)
     loop {
-        init_mesh(mesh_array[m], m * 100)
-        m = m + 1
-        if m == 4 break
+        print(prompt1.len, prompt1)
+        
+        var len = read(array_size_of(input_buffer), address_of(input_buffer)) - 1
+        # note: `array_size_of` and `address_of` are built-in functions
+        #       -1 to not include the trailing '\n'
+
+        if len == 0 {
+            break
+        } else if len <= 4 {
+            print(prompt2.len, prompt2)
+            continue
+        } else {
+            print(prompt3.len, prompt3)
+            print(len, address_of(input_buffer))
+            print(dot.len, dot)
+            print(nl.len, nl)
+        }
     }
-    
-    # test 9: verify struct array
-    var verify_idx = 0
-    loop {
-        assert(mesh_array[verify_idx].id == verify_idx * 100)
-        verify_idx = verify_idx + 1
-        if verify_idx == 4 break
-    }
-    
-    print(test_passed.len, test_passed)
-    exit(0)
 }
