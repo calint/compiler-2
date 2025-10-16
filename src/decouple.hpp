@@ -41,6 +41,10 @@ struct ident_info {
     [[nodiscard]] auto is_var() const -> bool {
         return ident_type == ident_type::VAR;
     }
+
+    [[nodiscard]] auto is_memory_operand() const -> bool {
+        return id_nasm.find_first_of('[') != std::string::npos;
+    }
 };
 
 struct var_info {

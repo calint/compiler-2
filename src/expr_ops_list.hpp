@@ -461,7 +461,7 @@ class expr_ops_list final : public expression {
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
             // note 'imul' destination must be a register
-            if (dst.is_register()) {
+            if (dst.is_register() and not dst.is_memory_operand()) {
                 tc.asm_cmd(src.tok(), os, indent, "imul", dst.id_nasm, reg);
             } else {
                 // 'imul' destination is not a register
@@ -473,9 +473,10 @@ class expr_ops_list final : public expression {
         }
 
         // not an expression, either a register or memory location
+
         const ident_info& src_info{tc.make_ident_info(src)};
         // 'imul' destination operand must be register
-        if (dst.is_register()) {
+        if (dst.is_register() and not dst.is_memory_operand()) {
             if (src_info.is_const()) {
                 tc.asm_cmd(src.tok(), os, indent, "imul", dst.id_nasm,
                            std::format("{}{}", src.get_unary_ops().to_string(),
@@ -500,6 +501,7 @@ class expr_ops_list final : public expression {
         }
 
         // 'imul' destination is not a register
+
         if (src_info.is_const()) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
@@ -513,6 +515,7 @@ class expr_ops_list final : public expression {
         }
 
         // source is not a constant
+
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
             const std::string reg{
@@ -525,6 +528,7 @@ class expr_ops_list final : public expression {
         }
 
         // source is not a constant and unary ops need to be applied
+
         const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
         uops.compile(tc, os, indent, reg);

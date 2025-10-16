@@ -1,0 +1,192 @@
+field test_passed = "test passed\n"
+field test_failed = "test failed\n"
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+func print(len : reg_rdx, ptr : reg_rsi) {
+    mov(rax, 1)
+    mov(rdi, 1)
+    mov(rsi, ptr)
+    mov(rdx, len)
+    syscall()
+}
+
+type vec3 { x : i32, y : i32, z : i32 }
+
+type mesh {
+    vertices : vec3[8],
+    indices : i32[12],
+    id : i32
+}
+
+type scene {
+    meshes : mesh[4],
+    time : i64
+}
+
+type world {
+    scenes : scene[3]
+}
+
+func init_mesh(m : mesh, id_val : i32) {
+    m.id = id_val
+
+    return
+
+    var i = 0
+    loop {
+        m.vertices[i].x = i * 10
+        m.vertices[i].y = i * 20
+        m.vertices[i].z = i * 30
+        i = i + 1
+        if i == 8 break
+    }
+    
+    i = 0
+    loop {
+        m.indices[i] = i
+        i = i + 1
+        if i == 12 break
+    }
+}
+
+func verify_mesh(m : mesh, id_val : i32) {
+    assert(m.id == id_val)
+    return
+    var i = 0
+    loop {
+        assert(m.vertices[i].x == i * 10)
+        assert(m.vertices[i].y == i * 20)
+        assert(m.vertices[i].z == i * 30)
+        i = i + 1
+        if i == 8 break
+    }
+}
+
+func transform_vertices(s : scene, offset : vec3) {
+    var i = 0
+    loop {
+        var j = 0
+        loop {
+            s.meshes[i].vertices[j].x = s.meshes[i].vertices[j].x + offset.x
+            s.meshes[i].vertices[j].y = s.meshes[i].vertices[j].y + offset.y
+            s.meshes[i].vertices[j].z = s.meshes[i].vertices[j].z + offset.z
+            j = j + 1
+            if j == 8 break
+        }
+        i = i + 1
+        if i == 4 break
+    }
+}
+
+func main() {
+    var w : world[2]
+    
+    # test 1: initialize nested array structures
+    var offset : vec3 = {5, 10, 15}
+    
+    var i = 0
+    loop {
+        var j = 0
+        loop {
+            init_mesh(w[0].scenes[0].meshes[j], j)
+            j = j + 1
+            if j == 4 break
+        }
+        i = i + 1
+        if i == 1 break
+    }
+    
+    # test 2: verify nested array element access
+    verify_mesh(w[0].scenes[0].meshes[0], 0)
+    assert(w[0].scenes[0].meshes[3].id == 3) 
+    verify_mesh(w[0].scenes[0].meshes[3], 3)
+    return
+    
+    # test 3: deep nested access and modification
+    w[0].scenes[1].meshes[2].vertices[5].x = 0xff
+    w[0].scenes[1].meshes[2].vertices[5].y = 0xaa
+    w[0].scenes[1].meshes[2].vertices[5].z = 0xbb
+    assert(w[0].scenes[1].meshes[2].vertices[5].x == 0xff)
+    assert(w[0].scenes[1].meshes[2].vertices[5].y == 0xaa)
+    assert(w[0].scenes[1].meshes[2].vertices[5].z == 0xbb)
+    
+    # test 4: array_copy on nested structures
+    array_copy(
+        w[0].scenes[0].meshes,
+        w[1].scenes[2].meshes,
+        array_size_of(w[0].scenes[0].meshes)
+    )
+    
+    # verify copy succeeded
+    var k = 0
+    loop {
+        assert(w[1].scenes[2].meshes[k].id == k)
+        k = k + 1
+        if k == 4 break
+    }
+    
+    # test 5: arrays_equal on nested arrays
+    var ok : bool = arrays_equal(
+        w[0].scenes[0].meshes[1].vertices,
+        w[1].scenes[2].meshes[1].vertices,
+        array_size_of(w[0].scenes[0].meshes[1].vertices)
+    )
+    assert(ok)
+    
+    # test 6: array_copy partial nested arrays
+    array_copy(
+        w[0].scenes[0].meshes[2].indices,
+        w[0].scenes[1].meshes[1].indices,
+        6
+    )
+    
+    var idx = 0
+    loop {
+        assert(w[0].scenes[1].meshes[1].indices[idx] == idx)
+        idx = idx + 1
+        if idx == 6 break
+    }
+    
+    # test 7: modify through function with nested refs
+    # Initialize w[1].scenes[0] first
+    var ii = 0
+    loop {
+        init_mesh(w[1].scenes[0].meshes[ii], ii + 100)
+        ii = ii + 1
+        if ii == 4 break
+    }
+
+    transform_vertices(w[1].scenes[0], offset)
+    assert(w[1].scenes[0].meshes[0].vertices[0].x == 0 + 5)      # 0 + offset.x
+    assert(w[1].scenes[0].meshes[1].vertices[3].y == 60 + 10)    # (3*20) + offset.y = 70
+    assert(w[1].scenes[0].meshes[2].vertices[7].z == 210 + 15)   # (7*30) + offset.z = 225   
+    
+    # test 8: struct array initialization
+    var mesh_array : mesh[4]
+    var m = 0
+    loop {
+        init_mesh(mesh_array[m], m * 100)
+        m = m + 1
+        if m == 4 break
+    }
+    
+    # test 9: verify struct array
+    var verify_idx = 0
+    loop {
+        assert(mesh_array[verify_idx].id == verify_idx * 100)
+        verify_idx = verify_idx + 1
+        if verify_idx == 4 break
+    }
+    
+    print(test_passed.len, test_passed)
+    exit(0)
+}
