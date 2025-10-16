@@ -108,3 +108,4 @@ SRC=t107 && EXP=0 && RUN
 SRC=t108 && EXP=0 && RUN
 SRC=t109 && EXP=0 && RUN
 SRC=t110 && EXP=0 && RUN
+SRC=t111 && EXP=0 && RUN

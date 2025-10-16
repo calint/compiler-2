@@ -41,6 +41,9 @@ mov rsp,stk.end
 ;[10:1] # arguments can be placed in specified register using `reg_...` syntax
 ;[39:1] # user types are defined using keyword `type`
 ;[41:1] # default type is `i64` and does not need to be specified
+;[43:1] type 'point' size: 16 B
+;[45:1] type 'object' size: 20 B
+;[47:1] type 'world' size: 64 B
 ;[49:1] # function arguments are equivalent to mutable references
 ;[56:1] # default argument type is `i64`
 ;[63:1] # return target is specified as a variable, in this case `res`

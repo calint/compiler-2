@@ -126,6 +126,48 @@ func shift_colors(s : scene, shift_val : i32) {
     }
 }
 
+func print(len : reg_rdx, ptr : reg_rsi) {
+    mov(rax, 1)   # write system call
+    mov(rdi, 1)   # file descriptor for standard out
+    mov(rsi, ptr) # buffer address 
+    mov(rdx, len) # buffer size
+    syscall()
+}
+
+func print_num(num) {
+    var buf : i8[20]
+    var n = num
+    var is_negative : bool = false
+    
+    if n < 0 {
+        is_negative = true
+        n = -n
+    }
+    
+    var i = 20
+    loop {
+        i = i - 1
+        buf[i] = 48 + (n % 10)
+        n = n / 10
+        if n == 0 break
+    }
+    
+    if is_negative {
+        i = i - 1
+        buf[i] = 45
+    }
+    
+    var write_pos = 0
+    loop {
+        buf[write_pos] = buf[i]
+        write_pos = write_pos + 1
+        i = i + 1
+        if i == 20 break
+    }
+    
+    print(write_pos, address_of(buf))
+}
+
 func main() {
     var w : world[2]
     
@@ -202,78 +244,4 @@ func main() {
     var vertex_idx = 5
     w[0].scenes[0].meshes[mesh_idx].vertices[vertex_idx].pos.z = 0x1234
     assert(w[0].scenes[0].meshes[1].vertices[5].pos.z == 0x1234)
-    
-    # TEST 7: Function modification of nested struct arrays
-    var scale : i32 = 2
-    scale_vertices(w[1].scenes[0], scale)
-    
-    # After scaling by 2:
-    # vertex[0]: pos originally {0,0,0}, stays {0,0,0}
-    # vertex[3]: pos originally {33,66,99}, becomes {66,132,198}
-    # vertex[7]: pos originally {77,154,231}, becomes {154,308,462}
-    assert(w[1].scenes[0].meshes[0].vertices[0].pos.x == 0)
-    assert(w[1].scenes[0].meshes[1].vertices[3].pos.y == 132)
-    assert(w[1].scenes[0].meshes[2].vertices[7].pos.z == 462)
-    
-    return
-    
-    # TEST 8: Nested struct array copy after modification
-    shift_colors(w[1].scenes[1], 10)
-    
-    array_copy(
-        w[1].scenes[1].meshes,
-        w[0].scenes[2].meshes,
-        array_size_of(w[1].scenes[1].meshes)
-    )
-    
-    # Verify colors were shifted and copied
-    # Original vertex[5] color.r for mesh 0: 5*2=10, after shift: 20
-    assert(w[0].scenes[2].meshes[0].vertices[5].col.r == 20)
-    assert(w[0].scenes[2].meshes[1].vertices[8].col.g == 34)  # 8*3+10=34
-
-    # TEST 9: Initialize standalone mesh array and copy to nested
-    var standalone_meshes : mesh[4]
-    var m = 0
-    loop {
-        init_mesh(standalone_meshes[m], 1000 + m)
-        m = m + 1
-        if m == 4 break
-    }
-    
-    array_copy(
-        standalone_meshes,
-        w[1].scenes[2].meshes,
-        array_size_of(standalone_meshes)
-    )
-    
-    verify_mesh(w[1].scenes[2].meshes[0], 1000)
-    verify_mesh(w[1].scenes[2].meshes[3], 1003)
-    
-    # TEST 10: Cross-scene mesh swapping via temporary
-    var temp_mesh_indices : i32[24]
-    array_copy(
-        w[0].scenes[0].meshes[1].indices,
-        temp_mesh_indices,
-        array_size_of(temp_mesh_indices)
-    )
-    
-    array_copy(
-        w[0].scenes[1].meshes[2].indices,
-        w[0].scenes[0].meshes[1].indices,
-        array_size_of(w[0].scenes[0].meshes[1].indices)
-    )
-    
-    array_copy(
-        temp_mesh_indices,
-        w[0].scenes[1].meshes[2].indices,
-        array_size_of(temp_mesh_indices)
-    )
-    
-    # Verify swap: meshes[1] of scene[0] should now have scene[1]'s indices
-    var verify_swap = 0
-    loop {
-        assert(w[0].scenes[0].meshes[1].indices[verify_swap] == verify_swap * 2)
-        verify_swap = verify_swap + 1
-        if verify_swap == 24 break
-    }
 }

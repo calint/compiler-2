@@ -74,5 +74,9 @@ class stmt_def_type final : public statement {
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
                  [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const std::string_view dst) const
-        -> void override {}
+        -> void override {
+        tc.comment_start(tok(), os, indent);
+        std::println(os, "type '{}' size: {} B", name_tk_.text(),
+                     tc.get_type_or_throw(tok(), name_tk_.text()).size());
+    }
 };
