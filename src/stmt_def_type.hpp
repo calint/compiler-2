@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include "stmt_def_type_field.hpp"
+#include "type.hpp"
 
 class stmt_def_type final : public statement {
     token name_tk_;
@@ -75,8 +76,22 @@ class stmt_def_type final : public statement {
                  [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const std::string_view dst) const
         -> void override {
+
+        const type& tp{tc.get_type_or_throw(tok(), name_tk_.text())};
+
         tc.comment_start(tok(), os, indent);
-        std::println(os, "type '{}' size: {} B", name_tk_.text(),
-                     tc.get_type_or_throw(tok(), name_tk_.text()).size());
+        std::println(os, "{} : {} B    fields: ", name_tk_.text(), tp.size());
+
+        tc.comment_start(tok(), os, indent);
+        std::println(os, "{:>10} : {:>5} : {:>7} : {:>7} : {:>10}", "name",
+                     "size", "offset", "array?", "array size");
+
+        for (const type_field& f : tp.fields()) {
+            tc.comment_start(tok(), os, indent);
+            std::println(os, "{:>10} : {:>5} : {:>7} : {:>7} : {:>10}", f.name,
+                         f.size, f.offset, f.is_array ? "yes" : "no",
+                         f.is_array ? std::to_string(f.array_size) : "");
+        }
+        std::println(os);
     }
 };

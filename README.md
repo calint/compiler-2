@@ -42,10 +42,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    40           1185            669           5736
+C/C++ Header                    40           1189            669           5747
 C++                              1             75             83            520
 -------------------------------------------------------------------------------
-SUM:                            41           1260            752           6256
+SUM:                            41           1264            752           6267
 -------------------------------------------------------------------------------
 ```
 
@@ -1431,9 +1431,20 @@ mov rsp,stk.end
 ;[10:1] # arguments can be placed in specified register using `reg_...` syntax
 ;[39:1] # user types are defined using keyword `type`
 ;[41:1] # default type is `i64` and does not need to be specified
-;[43:1] type 'point' size: 16 B
-;[45:1] type 'object' size: 20 B
-;[47:1] type 'world' size: 64 B
+;[43:1] point : 16 B    fields: 
+;[43:1]       name :  size :  offset :  array? : array size
+;[43:1]          x :     8 :       0 :      no :           
+;[43:1]          y :     8 :       8 :      no :           
+
+;[45:1] object : 20 B    fields: 
+;[45:1]       name :  size :  offset :  array? : array size
+;[45:1]        pos :    16 :       0 :      no :           
+;[45:1]      color :     4 :      16 :      no :           
+
+;[47:1] world : 64 B    fields: 
+;[47:1]       name :  size :  offset :  array? : array size
+;[47:1]  locations :    64 :       0 :     yes :          8
+
 ;[49:1] # function arguments are equivalent to mutable references
 ;[56:1] # default argument type is `i64`
 ;[63:1] # return target is specified as a variable, in this case `res`

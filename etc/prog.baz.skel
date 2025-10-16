@@ -1,12 +1,13 @@
+field nl_str = "\n"
+
 func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
     syscall()
 }
 
-func assert(expr : bool) {
-    if not expr exit(1)
-}
+func assert(expr : bool) if not expr exit(1)
+
 
 func print(len : reg_rdx, ptr : reg_rsi) {
     mov(rax, 1)   # write system call
@@ -25,5 +26,37 @@ func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(nbytes, rax) # return value
 }
 
+func nl() print(nl_str.len, nl_str)
+
+func pn(num) {
+    var buf : i8[20]
+    var n = num
+    var is_negative : bool = false
+
+    if n < 0 {
+        is_negative = true
+        n = -n
+    }
+
+    var i = 20
+    loop {
+        i = i - 1
+        buf[i] = 48 + (n % 10)
+        n = n / 10
+        if n == 0 break
+    }
+
+    if is_negative {
+        i = i - 1
+        buf[i] = 45  # '-'
+    }
+
+    print(20 - i, address_of(buf[i]))
+}
+
 func main() {
+    pn(1) nl()
+    pn(-1) nl()
+    pn(2048) nl()
+    pn(-2048) nl()
 }
