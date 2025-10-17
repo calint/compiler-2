@@ -1,14 +1,6 @@
-[x] t56: fails with negative numbers because they are not sign extended when
-    using scratch register in expr_ops_list
-[x] see edge case t116 'c' should not be 2
-    => it should be 2 because the returned value is not a reference to the
-       argument
-[ ] array_copy does not handle when destination overlaps source
 [ ] bounds checking does not catch negative array indexes
+[ ] array_copy does not handle when destination overlaps source
 [ ] lea_path not be necessary since only most recent lea relevant
-[x] find where displacement in generated assembler is 0 and fix it:
-    e.g. r15 + r14 * 4 - 0
-    => in stmt_assign_var: fixed
 [ ] fix better the re-occurring code:
             if (arg.is_identifier() and
                 (arg.is_expression() or tc.make_ident_info(arg).has_lea())) {
@@ -94,6 +86,14 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] t56: fails with negative numbers because they are not sign extended when
+    using scratch register in expr_ops_list
+[x] see edge case t116 'c' should not be 2
+    => it should be 2 because the returned value is not a reference to the
+       argument
+[x] find where displacement in generated assembler is 0 and fix it:
+    e.g. r15 + r14 * 4 - 0
+    => in stmt_assign_var: fixed
 [x] t79 generates asm: mov dword [rsp + r15 * 4 - 16 + 0], r13d
 [x] stmt_call: 176: see comment, is that correct? 
     => was a bug
