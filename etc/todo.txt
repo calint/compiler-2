@@ -1,23 +1,9 @@
 [ ] fix better the re-occurring code:
             if (arg.is_identifier() and
                 (arg.is_expression() or tc.make_ident_info(arg).has_lea())) {
-[x] stmt_call: 176: see comment, is that correct? 
-    => was a bug
 [ ] stmt_identifier: 358: if register will be just offset without indexing
     register then that can be calculated in init_reg_offset
-[x] ident_info: the stack of "lea" might not be necessary: lea is set when base
-    identifier address is in a register
-[x] t112: optimize:
-            mov r11, r15
-            movsx r12, byte [r11 + 128]
-          to
-            ; mov r11, r15
-            movsx r12, byte [r15 + 128]
-[x] stmt_identifier: optimize known offset by returning "r15 + 20" etc instead
-    of add r15, 20
 [ ] expr_ops_list: tidy asm_op_xxx with more streamlined flow of make_ident
-[x] expr_ops_list: 313 and expr_bool_op: 453 are a hack. fix
-[x] toc::lea instead of generic command
 [ ] brace initializers offer no performance advantage and the narrowing issues
     do not exist in this project. they are ugly. ponder switching to =
 [ ] find where displacement in generated assembler is 0 and fix it:
@@ -99,6 +85,21 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] t79 generates asm: mov dword [rsp + r15 * 4 - 16 + 0], r13d
+[x] stmt_call: 176: see comment, is that correct? 
+    => was a bug
+[x] ident_info: the stack of "lea" might not be necessary: lea is set when base
+    identifier address is in a register
+[x] t112: optimize:
+            mov r11, r15
+            movsx r12, byte [r11 + 128]
+          to
+            ; mov r11, r15
+            movsx r12, byte [r15 + 128]
+[x] stmt_identifier: optimize known offset by returning "r15 + 20" etc instead
+    of add r15, 20
+[x] expr_ops_list: 313 and expr_bool_op: 453 are a hack. fix
+[x] toc::lea instead of generic command
 [x] arguments const vector and returns of const vector to span
 [x] function arguments as array of user types (nested)
 [x] function arguments as arrays:

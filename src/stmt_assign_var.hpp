@@ -112,23 +112,32 @@ class stmt_assign_var final : public statement {
         // find the first element from top that has a "lea" and get accessor
         // relative to that "lea"
         size_t i{dst_info.elem_path.size()};
-        bool found{};
+        std::string lea;
         while (i) {
             i--;
             if (not dst_info.lea_path[i].empty()) {
-                found = true;
+                lea = dst_info.lea_path[i];
                 break;
             }
         }
 
         std::string dst_accessor{dst_info.id};
-        if (found) {
+        if (not lea.empty()) {
             const std::string_view size_specifier{
                 type::get_size_specifier(tok(), dst_info.type_ref.size())};
+
             const size_t offset{dst_info.type_path[i]->field_offset(
                 tok(), std::span{dst_info.elem_path}.subspan(i))};
-            dst_accessor = std::format("{} [{} + {}]", size_specifier,
-                                       dst_info.lea_path[i], offset);
+
+            if (offset != 0) {
+                nasm_operand operand{lea};
+                operand.displacement += static_cast<int>(offset);
+                dst_accessor =
+                    std::format("{} [{}]", size_specifier, operand.to_string());
+            } else {
+                dst_accessor = std::format("{} [{} + {}]", size_specifier,
+                                           dst_info.lea_path[i], offset);
+            }
         }
 
         // does the identifier contain array indexing?

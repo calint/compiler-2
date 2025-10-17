@@ -251,6 +251,38 @@ struct nasm_operand {
     [[nodiscard]] auto is_indexed() const -> bool {
         return not index_register.empty() or displacement != 0;
     }
+
+    [[nodiscard]] auto to_string() const -> std::string {
+        std::string result;
+
+        if (not base_register.empty()) {
+            result += base_register;
+        }
+
+        if (not index_register.empty()) {
+            if (not result.empty()) {
+                result += " + ";
+            }
+            result += index_register;
+            if (scale > 1) {
+                result += " * " + std::to_string(scale);
+            }
+        }
+
+        if (displacement != 0) {
+            if (not result.empty()) {
+                if (displacement > 0) {
+                    result += " + ";
+                } else {
+                    result += " - ";
+                }
+            }
+            result +=
+                std::to_string(displacement < 0 ? -displacement : displacement);
+        }
+
+        return result;
+    }
 };
 
 class toc final {
