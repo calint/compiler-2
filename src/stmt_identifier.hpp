@@ -146,6 +146,8 @@ class stmt_identifier : public statement {
             return;
         }
 
+        // simple identifier or is indexing in array or relative to "lea"
+
         if (not is_expression() and not src_info.has_lea()) {
             // note: contains no array indexing and is not relative a lea,
             //       e.g. world.location.link
@@ -154,6 +156,8 @@ class stmt_identifier : public statement {
             get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
             return;
         }
+
+        // is indexing in array or relative to "lea"
 
         std::vector<std::string> allocated_registers;
 
