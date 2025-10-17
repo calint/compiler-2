@@ -1,120 +1,158 @@
-const BAZ_KEYWORDS = {
-  FIELD: 'field',
-  FUNC: 'func',
-  RETURN: 'return',
-};
-
 module.exports = grammar({
   name: 'baz',
 
-  // Treat comments and standard whitespace as extra content that can appear anywhere
+  // Treat whitespace and comments as ignorable extras that can appear anywhere
   extras: $ => [
-    /\s/,
+    /\s/, // standard whitespace
     $.comment,
   ],
 
-  // Define tokens that don't need a rule (like keywords)
-  word: $ => $.identifier,
-
-  // Rule that the parser attempts to match first
+  // Root of the program structure
   rules: {
-    // The top-level container: a sequence of zero or more definitions
-    program: $ => repeat(
-      choice(
-        $.field_definition,
-        $.function_definition,
-      ),
-    ),
+    program: $ => repeat($._definition),
 
-    // --- Keywords ---
-    field_keyword: $ => BAZ_KEYWORDS.FIELD,
-    func_keyword: $ => BAZ_KEYWORDS.FUNC,
-    return_keyword: $ => BAZ_KEYWORDS.RETURN,
+    _definition: $ => choice(
+      $.field_definition,
+      $.function_definition,
+    ),
 
     // --- Definitions ---
 
-    // field identifier = (string | number)
+    // field identifier = expression
     field_definition: $ => seq(
       $.field_keyword,
-      $.identifier,
+      field('name', $.identifier), // Named field for highlighting the variable name
       '=',
-      $._literal,
+      $._expression, // Now uses _expression
     ),
 
     // func identifier ( parameters ) body
     function_definition: $ => seq(
       $.func_keyword,
-      $.identifier,
+      field('name', $.identifier), // Named field for highlighting the function name
       '(',
-      optional($.parameter_list),
+      field('parameters', optional($.parameter_list)), // Fixed: parameter_list is now non-empty
       ')',
       $._function_body,
     ),
 
-    // --- Function Components ---
+    // Fixed: Must contain at least one parameter, handles comma separation internally
+    parameter_list: $ => seq(
+      $.parameter,
+      repeat(seq(',', $.parameter))
+    ),
 
-    parameter_list: $ => sep1($.parameter, ','),
-
-    // parameter: identifier optional(: type)
+    // identifier : type_name (type is optional)
     parameter: $ => seq(
       $.identifier,
-      optional(seq(
-        ':',
-        $.type_name
-      )),
+      optional(seq(':', $.type_name)),
     ),
 
-    // function body can be a single statement or a block
+    type_name: $ => $.identifier,
+
+    // --- Function Body and Statements ---
+
     _function_body: $ => choice(
-      $.block,
-      $._statement,
+      $._statement, // Single statement body
+      $.block,      // Block statement body
     ),
 
-    // { statement... }
+    // Block: { statements | calls | control flow }
     block: $ => seq(
       '{',
       repeat($._statement),
       '}',
     ),
 
-    // --- Statements ---
-
+    // A statement can be an assignment, return, function call, if, or loop
     _statement: $ => choice(
       $.assignment_statement,
       $.return_statement,
+      $.function_call,
+      $.if_statement,
+      $.loop_statement,
     ),
 
-    // var = (string | number)
+    // identifier = expression
     assignment_statement: $ => seq(
-      field('destination', $.identifier),
+      field('destination', $.identifier), // Named field for highlighting the variable being assigned to
       '=',
-      $._literal,
+      $._expression, // Now uses _expression
     ),
 
-    // return (with no arguments, as per new rule)
+    // return (no arguments)
     return_statement: $ => $.return_keyword,
 
-    // --- Basic Primitives ---
+    // function_call identifier ( arguments )
+    function_call: $ => seq(
+      field('function', $.identifier), // Named field for highlighting the function name
+      '(',
+      field('arguments', optional($.argument_list)), // Fixed: argument_list is now non-empty
+      ')',
+    ),
 
+    // Fixed: Must contain at least one expression, handles comma separation internally
+    argument_list: $ => seq(
+      $._expression,
+      repeat(seq(',', $._expression))
+    ),
+
+    // if statement: if expression block
+    if_statement: $ => seq(
+      $.if_keyword,
+      $._expression, // Now uses _expression for the condition
+      $.block,
+    ),
+
+    // loop statement: loop block
+    loop_statement: $ => seq(
+      $.loop_keyword,
+      $.block,
+    ),
+
+    // --- Expressions (The core unit of value) ---
+    // Expression is now literal, identifier, function call, or parenthesized sub-expression
+    _expression: $ => choice(
+      $._literal,
+      $.identifier,
+      $.function_call,                 // Function call as an expression (e.g., as an argument)
+      $.parenthesized_expression,      // NEW: Sub-expressions
+    ),
+
+    // NEW: ( expression )
+    parenthesized_expression: $ => seq(
+      '(',
+      $._expression,
+      ')'
+    ),
+
+    // --- Tokens (Keywords, Identifiers, Literals) ---
+
+    // Keywords
+    field_keyword: $ => 'field',
+    func_keyword: $ => 'func',
+    return_keyword: $ => 'return',
+    if_keyword: $ => 'if',
+    loop_keyword: $ => 'loop',
+
+    // Identifiers (variable, function, type names)
+    identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,
+
+    // Literals
     _literal: $ => choice(
       $.string_literal,
       $.number_literal,
     ),
 
-    // A type name is just an identifier (e.g., Int, Float)
-    type_name: $ => $.identifier,
+    string_literal: $ => seq(
+      '"',
+      repeat(/[^"\n]/), // Any character except quote or newline
+      '"',
+    ),
 
-    // An identifier (variable or function name)
-    identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,
+    number_literal: $ => /\d+(\.\d+)?/, // Simple integer or float
 
-    string_literal: $ => /"[^"\n]*"/,
-    number_literal: $ => /-?[0-9]+(\.[0-9]+)?/,
-
-    // Comments start with # and consume the rest of the line
+    // Comments
     comment: $ => /#.*/,
-  },
+  }
 });
-
-function sep1(rule, separator) {
-  return seq(rule, repeat(seq(separator, rule)));
-}
