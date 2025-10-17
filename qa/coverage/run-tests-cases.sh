@@ -112,3 +112,5 @@ SRC=t111 && EXP=0 && RUN
 SRC=t112 && EXP=0 && RUN
 SRC=t113 && EXP=0 && RUN
 SRC=t114 && EXP=0 && RUN
+SRC=t115 && EXP=0 && RUN
+SRC=t116 && EXP=0 && RUN

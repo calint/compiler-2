@@ -142,8 +142,8 @@ class stmt_call : public expression {
         std::vector<alias_info> aliases_to_add;
 
         // validate return type
+        std::optional<func_return_info> ret{func.returns()};
         if (not dst.empty()) {
-            std::optional<func_return_info> ret{func.returns()};
             if (not ret) {
                 throw compiler_exception{tok(),
                                          "function does not return value"};
@@ -151,6 +151,9 @@ class stmt_call : public expression {
             // alias return identifier to 'dst'
             aliases_to_add.emplace_back(std::string{ret->ident_tk.text()},
                                         std::string{dst}, "", ret->type_ref);
+        } else if (ret) {
+            throw compiler_exception{tok(),
+                                     "function returns but value is discarded"};
         }
 
         // track allocated registers

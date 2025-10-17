@@ -1,0 +1,33 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func mutate_and_return(x) : i64 res {
+    x = x * 2
+    res = x + 1
+}
+
+func mutate_only(x : i32) {
+    x = 0xff
+}
+
+func main() {
+    var a = 5
+    var r = mutate_and_return(a)
+    assert(a == 10)  # Verify reference semantics
+    assert(r == 11)
+    
+    var b : i32 = 100
+    mutate_only(b)
+    assert(b == 0xff)
+    
+    # Nested function calls with mutations
+    var c = 1
+    var d = mutate_and_return(mutate_and_return(c))
+    assert(c == 2)
+    assert(d == 7)
+}
