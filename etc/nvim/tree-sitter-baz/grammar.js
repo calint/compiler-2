@@ -1,245 +1,282 @@
-// grammar.js
-// Final conflict-free Tree-sitter grammar for your custom DSL
-
 module.exports = grammar({
   name: 'baz',
 
-  extras: $ => [/\s/, $.comment],
-
-  conflicts: $ => [
-    [$.statement, $.expression_statement],
-    [$.statement, $.expression_statement, $._expression],
+  precedences: $ => [
+    [$.logical_or],
+    [$.logical_and],
+    [$.equality],
+    [$.comparison],
+    [$.bitwise_or],
+    [$.bitwise_xor],
+    [$.bitwise_and],
+    [$.shift],
+    [$.additive],
+    [$.multiplicative],
   ],
 
   rules: {
     source_file: $ => repeat($._definition),
 
     _definition: $ => choice(
-      $.function_definition,
+      $.field_declaration,
       $.type_definition,
-      $.field_definition
-    ),
-
-    // -------------------------------
-    // Comments
-    // -------------------------------
-    comment: _ => token(seq('#', /.*/)),
-
-    // -------------------------------
-    // Field definition: field x = 42
-    // -------------------------------
-    field_definition: $ => seq(
-      'field',
-      field('name', $.identifier),
-      '=',
-      field('value', $._expression)
-    ),
-
-    // -------------------------------
-    // Type definitions
-    // -------------------------------
-    type_definition: $ => seq(
-      'type',
-      field('name', $.identifier),
-      '{',
-      commaSep($.field_declaration),
-      '}'
+      $.function_definition
     ),
 
     field_declaration: $ => seq(
-      field('name', $.identifier),
-      optional(seq(':', field('type', $.type)))
+      'field',
+      $.identifier,
+      '=',
+      $._expression
     ),
 
-    // -------------------------------
-    // Function definitions
-    // -------------------------------
+    type_definition: $ => seq(
+      'type',
+      $.identifier,
+      '{',
+      optional($.field_list),
+      '}'
+    ),
+
+    field_list: $ => seq(
+      $.type_field,
+      repeat(seq(',', optional(/\s/), $.type_field))
+    ),
+
+    type_field: $ => seq(
+      $.identifier,
+      optional(seq(':', $._type))
+    ),
+
     function_definition: $ => seq(
       'func',
-      field('name', $.identifier),
-      field('params', $.parameter_list),
-      optional(seq(':', field('return_type', $.type), field('return_var', $.identifier))),
-      choice($.block, $.statement)
+      $.identifier,
+      $.parameter_list,
+      optional($.return_type),
+      $.block
     ),
 
     parameter_list: $ => seq(
       '(',
-      optional(commaSep($.parameter)),
+      optional($.parameters),
       ')'
     ),
 
-    parameter: $ => seq(
-      field('name', $.identifier),
-      optional(seq(':', field('type', $.type)))
+    parameters: $ => seq(
+      $.parameter,
+      repeat(seq(',', optional(/\s/), $.parameter))
     ),
 
-    // -------------------------------
-    // Types
-    // -------------------------------
-    type: $ => prec.right(seq(
+    parameter: $ => seq(
       $.identifier,
-      optional(seq('[', optional($._expression), ']'))
-    )),
+      optional(seq(':', $.param_type))
+    ),
 
-    // -------------------------------
-    // Blocks and statements
-    // -------------------------------
-    block: $ => seq('{', repeat($.statement), '}'),
+    param_type: $ => choice(
+      /reg_[a-z0-9]+/,
+      $._type
+    ),
 
-    statement: $ => prec.right(1, choice(
+    return_type: $ => seq(
+      ':',
+      $._type,
+      $.identifier
+    ),
+
+    _type: $ => choice(
+      'bool',
+      'i8',
+      'i16',
+      'i32',
+      'i64',
+      $.identifier,
+      $.array_type
+    ),
+
+    array_type: $ => seq(
+      $._type,
+      '[',
+      optional($._expression),
+      ']'
+    ),
+
+    block: $ => seq(
+      '{',
+      repeat($._statement),
+      '}'
+    ),
+
+    _statement: $ => choice(
       $.variable_declaration,
       $.assignment,
       $.if_statement,
       $.loop_statement,
-      $.return_statement,
-      $.function_call,
-      $.expression_statement,
       $.break_statement,
-      $.continue_statement
-    )),
+      $.continue_statement,
+      $.return_statement,
+      $.expression_statement,
+      $.block
+    ),
 
     variable_declaration: $ => seq(
       'var',
-      field('name', $.identifier),
-      optional(seq(':', field('type', $.type))),
-      '=',
-      field('value', $._expression)
+      $.identifier,
+      optional(seq(':', $._type)),
+      optional(seq('=', choice($.struct_literal, $._expression)))
     ),
 
     assignment: $ => seq(
-      field('target', $.lvalue),
+      $._lvalue,
       '=',
-      field('value', $._expression)
+      choice($.struct_literal, $._expression)
     ),
 
-    lvalue: $ => prec(3, seq(
-      $.identifier,
-      repeat(choice(
-        seq('.', $.identifier),
-        seq('[', $._expression, ']')
-      ))
-    )),
-    
+    _lvalue: $ => $.postfix,
+
     if_statement: $ => prec.right(seq(
       'if',
-      field('condition', $._expression),
-      choice($.statement, $.block),
-      optional(seq('else', choice($.statement, $.block)))
+      $._expression,
+      $._simple_statement,
+      optional(seq(
+        'else',
+        $._simple_statement
+      ))
     )),
+
+    _simple_statement: $ => choice(
+      $.block,
+      $.variable_declaration,
+      $.assignment,
+      $.break_statement,
+      $.continue_statement,
+      $.return_statement,
+      $.loop_statement,
+      $.if_statement
+    ),
 
     loop_statement: $ => seq(
       'loop',
-      choice($.block, $.statement)
+      $.block
     ),
 
-    break_statement: _ => 'break',
-    continue_statement: _ => 'continue',
+    break_statement: $ => 'break',
 
-    return_statement: _ => 'return',
+    continue_statement: $ => 'continue',
 
-    // Restrict expressions allowed as statements (no struct literals here)
-    expression_statement: $ =>
-      prec.left(1, choice(
-        $.function_call,
-        $.identifier,
-        $.binary_expression,
-        $.unary_expression,
-        $.field_access,
-        $.index_expression,
-        $.literal,
-        $.parenthesized_expression
-      )),
+    return_statement: $ => 'return',
 
-    // -------------------------------
-    // Expressions
-    // -------------------------------
+    expression_statement: $ => $._expression,
+
     _expression: $ => choice(
-      $.binary_expression,
-      $.unary_expression,
-      $.function_call,
-      $.field_access,
-      $.index_expression,
-      $.struct_literal,
-      $.literal,
-      $.identifier,
-      $.parenthesized_expression
+      $.logical_or
     ),
 
-    parenthesized_expression: $ => seq('(', $._expression, ')'),
-
-    // Operator precedence (lowest → highest)
-    binary_expression: $ => choice(
-      prec.left(1, seq($._expression, 'or', $._expression)),
-      prec.left(2, seq($._expression, 'and', $._expression)),
-      prec.left(3, seq($._expression, choice('==', '!=', '<', '<=', '>', '>='), $._expression)),
-      prec.left(4, seq($._expression, choice('|', '^'), $._expression)),
-      prec.left(5, seq($._expression, '&', $._expression)),
-      prec.left(6, seq($._expression, choice('<<', '>>'), $._expression)),
-      prec.left(7, seq($._expression, choice('+', '-'), $._expression)),
-      prec.left(8, seq($._expression, choice('*', '/', '%'), $._expression))
+    logical_or: $ => seq(
+      $.logical_and,
+      repeat(seq('or', $.logical_and))
     ),
 
-    // Unary binds tighter than field/index
-    unary_expression: $ => prec(10, seq(
-      choice('-', 'not', '~'),
-      $._expression
+    logical_and: $ => seq(
+      $.equality,
+      repeat(seq('and', $.equality))
+    ),
+
+    equality: $ => seq(
+      $.comparison,
+      repeat(seq(choice('==', '!='), $.comparison))
+    ),
+
+    comparison: $ => seq(
+      $.bitwise_or,
+      repeat(seq(choice('<', '<=', '>', '>='), $.bitwise_or))
+    ),
+
+    bitwise_or: $ => seq(
+      $.bitwise_xor,
+      repeat(seq('|', $.bitwise_xor))
+    ),
+
+    bitwise_xor: $ => seq(
+      $.bitwise_and,
+      repeat(seq('^', $.bitwise_and))
+    ),
+
+    bitwise_and: $ => seq(
+      $.shift,
+      repeat(seq('&', $.shift))
+    ),
+
+    shift: $ => seq(
+      $.additive,
+      repeat(seq(choice('<<', '>>'), $.additive))
+    ),
+
+    additive: $ => prec.left(seq(
+      $.multiplicative,
+      repeat(seq(choice('+', '-'), $.multiplicative))
     )),
 
-    // Field and index bind just below unary
-    field_access: $ => prec(9, seq(
-      $._expression,
-      '.',
-      $.identifier
+    multiplicative: $ => prec.left(seq(
+      $.unary,
+      repeat(seq(choice('*', '/', '%'), $.unary))
     )),
 
-    index_expression: $ => prec(9, seq(
-      $._expression,
-      '[',
-      $._expression,
-      ']'
+    unary: $ => seq(
+      repeat(choice('not', '-', '~')),
+      $.postfix
+    ),
+
+    postfix: $ => prec.left(seq(
+      $.primary,
+      repeat(choice(
+        seq('.', $.identifier),
+        seq('[', $._expression, ']'),
+        seq('(', optional($.arguments), ')')
+      ))
     )),
 
-    // Function call tighter than identifier
-    function_call: $ => prec(11, seq(
+    primary: $ => choice(
       $.identifier,
-      '(',
-      optional(commaSep($._expression)),
-      ')'
-    )),
-
-    // Struct literal (cannot appear directly as a statement)
-    struct_literal: $ => prec(8, seq(
-      '{',
-      commaSep($._expression),
-      '}'
-    )),
-
-    // -------------------------------
-    // Literals
-    // -------------------------------
-    literal: $ => choice(
       $.number,
       $.string,
-      $.boolean
+      $.boolean,
+      seq('(', $._expression, ')')
     ),
 
-    number: _ => token(choice(
-      /0x[0-9A-Fa-f]+/,
+    arguments: $ => seq(
+      $._expression,
+      repeat(seq(',', optional(/\s/), $._expression))
+    ),
+
+    struct_literal: $ => seq(
+      '{',
+      $._expression,
+      repeat(seq(',', optional(/\s/), $._expression)),
+      '}'
+    ),
+
+    number: $ => choice(
+      /0x[0-9a-fA-F]+/,
       /0b[01]+/,
-      /[0-9]+/
-    )),
+      /-?\d+/
+    ),
 
-    string: _ => token(seq('"', /[^"]*/, '"')),
+    string: $ => seq(
+      '"',
+      repeat(choice(
+        /[^"\\]/,
+        seq('\\', /./)
+      )),
+      '"'
+    ),
 
-    boolean: _ => choice('true', 'false'),
+    boolean: $ => choice('true', 'false'),
 
-    identifier: _ => /[A-Za-z_][A-Za-z0-9_]*/
-  }
+    identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/
+  },
+
+  extras: $ => [
+    /\s/,
+    /#.*/
+  ]
 });
-
-// -------------------------------
-// Helper
-// -------------------------------
-function commaSep(rule) {
-  return seq(rule, repeat(seq(',', rule)), optional(','));
-}
