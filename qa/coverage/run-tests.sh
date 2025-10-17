@@ -28,9 +28,9 @@ export ASAN_SYMBOLIZE=1
 # Common: compile and assemble
 compile_and_build() {
   rm -f error.log
-  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $OPTS 2>error.log >gen.s
+  LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $OPTS 2>err >gen.s
   if [ $? -ne 0 ]; then
-    echo "compiler failed. see 'error.log' and 'gen.s'" >&2
+    echo "compiler failed. see 'err' and 'gen.s'" >&2
     exit 1
   fi
   nasm -f elf64 gen.s
@@ -62,7 +62,7 @@ RUN() {
   compile_and_build
 
   set +e
-  ./gen
+  ./gen 2>err
   local exit_code=$?
   set -e
 
@@ -122,7 +122,7 @@ COMPERR() {
 source "$SCRIPT_DIR/run-tests-cases.sh"
 
 # Cleanup
-rm -f gen gen.o gen.s diff.baz out error.log
+rm -f gen gen.o gen.s diff.baz out err
 
 echo $SEP
 

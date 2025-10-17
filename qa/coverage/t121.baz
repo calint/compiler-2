@@ -1,0 +1,15 @@
+# bounds check underflow
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func main() {
+    var arr : i8[8]
+
+    arr[-1] = 0x61
+}

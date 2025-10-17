@@ -29,6 +29,10 @@ main:
     rep stosb
     mov qword [rsp - 24], 1
     mov r15, qword [rsp - 24]
+    cmp r15, 0
+    mov r14, 85
+    cmovl rbp, r14
+    jl panic_bounds
     cmp r15, 4
     mov r14, 85
     cmovge rbp, r14
@@ -36,11 +40,19 @@ main:
     mov dword [rsp + r15 * 4 - 16], 2
     mov r15, qword [rsp - 24]
     add r15, 1
+    cmp r15, 0
+    mov r14, 86
+    cmovl rbp, r14
+    jl panic_bounds
     cmp r15, 4
     mov r14, 86
     cmovge rbp, r14
     jge panic_bounds
     mov r14, qword [rsp - 24]
+    cmp r14, 0
+    mov r13, 86
+    cmovl rbp, r13
+    jl panic_bounds
     cmp r14, 4
     mov r13, 86
     cmovge rbp, r13
@@ -49,6 +61,10 @@ main:
     mov dword [rsp + r15 * 4 - 16], r13d
     cmp_87_12:
         mov r13, 1
+        cmp r13, 0
+        mov r12, 87
+        cmovl rbp, r12
+        jl panic_bounds
         cmp r13, 4
         mov r12, 87
         cmovge rbp, r12
@@ -79,6 +95,10 @@ main:
     assert_87_5_end:
     cmp_88_12:
         mov r13, 2
+        cmp r13, 0
+        mov r12, 88
+        cmovl rbp, r12
+        jl panic_bounds
         cmp r13, 4
         mov r12, 88
         cmovge rbp, r12
@@ -109,6 +129,10 @@ main:
     assert_88_5_end:
     mov rcx, 2
     mov r15, 2
+    cmp r15, 0
+    mov r14, 90
+    cmovl rbp, r14
+    jl panic_bounds
     mov r14, rcx
     add r14, r15
     cmp r14, 4
@@ -116,6 +140,10 @@ main:
     cmovg rbp, r13
     jg panic_bounds
     lea rsi, [rsp + r15 * 4 - 16]
+    cmp rcx, 0
+    mov r15, 90
+    cmovl rbp, r15
+    jl panic_bounds
     cmp rcx, 4
     mov r15, 90
     cmovg rbp, r15
@@ -125,6 +153,10 @@ main:
     rep movsb
     cmp_92_12:
         mov r13, 0
+        cmp r13, 0
+        mov r12, 92
+        cmovl rbp, r12
+        jl panic_bounds
         cmp r13, 4
         mov r12, 92
         cmovge rbp, r12
@@ -158,11 +190,19 @@ main:
     xor rax, rax
     rep stosb
     mov rcx, 4
+    cmp rcx, 0
+    mov r15, 95
+    cmovl rbp, r15
+    jl panic_bounds
     cmp rcx, 4
     mov r15, 95
     cmovg rbp, r15
     jg panic_bounds
     lea rsi, [rsp - 16]
+    cmp rcx, 0
+    mov r15, 95
+    cmovl rbp, r15
+    jl panic_bounds
     cmp rcx, 8
     mov r15, 95
     cmovg rbp, r15
@@ -172,11 +212,19 @@ main:
     rep movsb
     cmp_96_12:
         mov rcx, 4
+        cmp rcx, 0
+        mov r13, 96
+        cmovl rbp, r13
+        jl panic_bounds
         cmp rcx, 4
         mov r13, 96
         cmovg rbp, r13
         jg panic_bounds
         lea rsi, [rsp - 16]
+        cmp rcx, 0
+        mov r13, 96
+        cmovl rbp, r13
+        jl panic_bounds
         cmp rcx, 8
         mov r13, 96
         cmovg rbp, r13
@@ -214,6 +262,10 @@ main:
         if_19_5_96_5_end:
     assert_96_5_end:
     mov r15, 2
+    cmp r15, 0
+    mov r14, 98
+    cmovl rbp, r14
+    jl panic_bounds
     cmp r15, 8
     mov r14, 98
     cmovge rbp, r14
@@ -221,11 +273,19 @@ main:
     mov dword [rsp + r15 * 4 - 56], -1
     cmp_99_12:
         mov rcx, 4
+        cmp rcx, 0
+        mov r13, 99
+        cmovl rbp, r13
+        jl panic_bounds
         cmp rcx, 4
         mov r13, 99
         cmovg rbp, r13
         jg panic_bounds
         lea rsi, [rsp - 16]
+        cmp rcx, 0
+        mov r13, 99
+        cmovl rbp, r13
+        jl panic_bounds
         cmp rcx, 8
         mov r13, 99
         cmovg rbp, r13
@@ -264,12 +324,20 @@ main:
     assert_99_5_end:
     mov qword [rsp - 24], 3
     mov r15, qword [rsp - 24]
+    cmp r15, 0
+    mov r14, 102
+    cmovl rbp, r14
+    jl panic_bounds
     cmp r15, 4
     mov r14, 102
     cmovge rbp, r14
     jge panic_bounds
     mov r14, qword [rsp - 24]
     sub r14, 1
+    cmp r14, 0
+    mov r13, 102
+    cmovl rbp, r13
+    jl panic_bounds
     cmp r14, 4
     mov r13, 102
     cmovge rbp, r13
@@ -283,6 +351,10 @@ main:
     not dword [rsp + r15 * 4 - 16]
     cmp_103_12:
         mov r13, qword [rsp - 24]
+        cmp r13, 0
+        mov r12, 103
+        cmovl rbp, r12
+        jl panic_bounds
         cmp r13, 4
         mov r12, 103
         cmovge rbp, r12
@@ -313,6 +385,10 @@ main:
     assert_103_5_end:
     faz_105_5:
         mov r15, 1
+        cmp r15, 0
+        mov r14, 76
+        cmovl rbp, r14
+        jl panic_bounds
         cmp r15, 4
         mov r14, 76
         cmovge rbp, r14
@@ -321,6 +397,10 @@ main:
     faz_105_5_end:
     cmp_106_12:
         mov r13, 1
+        cmp r13, 0
+        mov r12, 106
+        cmovl rbp, r12
+        jl panic_bounds
         cmp r13, 4
         mov r12, 106
         cmovge rbp, r12
@@ -786,6 +866,10 @@ main:
     cmp_152_12:
         lea r13, [rsp - 204]
         mov r12, 0
+        cmp r12, 0
+        mov r11, 152
+        cmovl rbp, r11
+        jl panic_bounds
         cmp r12, 1
         mov r11, 152
         cmovge rbp, r11
@@ -826,6 +910,10 @@ main:
     rep stosb
     lea r15, [rsp - 796]
     mov r14, 1
+    cmp r14, 0
+    mov r13, 157
+    cmovl rbp, r13
+    jl panic_bounds
     cmp r14, 8
     mov r13, 157
     cmovge rbp, r13
@@ -833,6 +921,10 @@ main:
     shl r14, 6
     add r15, r14
     mov r14, 1
+    cmp r14, 0
+    mov r13, 157
+    cmovl rbp, r13
+    jl panic_bounds
     cmp r14, 8
     mov r13, 157
     cmovge rbp, r13
@@ -841,6 +933,10 @@ main:
     cmp_158_12:
         lea r13, [rsp - 796]
         mov r12, 1
+        cmp r12, 0
+        mov r11, 158
+        cmovl rbp, r11
+        jl panic_bounds
         cmp r12, 8
         mov r11, 158
         cmovge rbp, r11
@@ -848,6 +944,10 @@ main:
         shl r12, 6
         add r13, r12
         mov r12, 1
+        cmp r12, 0
+        mov r11, 158
+        cmovl rbp, r11
+        jl panic_bounds
         cmp r12, 8
         mov r11, 158
         cmovge rbp, r11
@@ -879,12 +979,20 @@ main:
     mov rcx, 8
     lea r15, [rsp - 796]
     mov r14, 1
+    cmp r14, 0
+    mov r13, 161
+    cmovl rbp, r13
+    jl panic_bounds
     cmp r14, 8
     mov r13, 161
     cmovge rbp, r13
     jge panic_bounds
     shl r14, 6
     add r15, r14
+    cmp rcx, 0
+    mov r14, 161
+    cmovl rbp, r14
+    jl panic_bounds
     cmp rcx, 8
     mov r14, 161
     cmovg rbp, r14
@@ -892,12 +1000,20 @@ main:
     lea rsi, [r15]
     lea r15, [rsp - 796]
     mov r14, 0
+    cmp r14, 0
+    mov r13, 162
+    cmovl rbp, r13
+    jl panic_bounds
     cmp r14, 8
     mov r13, 162
     cmovge rbp, r13
     jge panic_bounds
     shl r14, 6
     add r15, r14
+    cmp rcx, 0
+    mov r14, 162
+    cmovl rbp, r14
+    jl panic_bounds
     cmp rcx, 8
     mov r14, 162
     cmovg rbp, r14
@@ -908,6 +1024,10 @@ main:
     cmp_165_12:
         lea r13, [rsp - 796]
         mov r12, 0
+        cmp r12, 0
+        mov r11, 165
+        cmovl rbp, r11
+        jl panic_bounds
         cmp r12, 8
         mov r11, 165
         cmovge rbp, r11
@@ -915,6 +1035,10 @@ main:
         shl r12, 6
         add r13, r12
         mov r12, 1
+        cmp r12, 0
+        mov r11, 165
+        cmovl rbp, r11
+        jl panic_bounds
         cmp r12, 8
         mov r11, 165
         cmovge rbp, r11

@@ -400,6 +400,23 @@ class stmt_identifier : public statement {
         tc.comment_start(tk, os, indent);
         std::println(os, "bounds check");
 
+        // check for negative index
+        tc.asm_cmd(tk, os, indent, "cmp", reg_to_check, "0");
+
+        if (tc.is_bounds_check_with_line()) {
+            const std::string reg_line_num{
+                tc.alloc_scratch_register(tk, os, indent)};
+            tc.comment_start(tk, os, indent);
+            std::println(os, "line number");
+            tc.asm_cmd(tk, os, indent, "mov", reg_line_num,
+                       std::to_string(tk.at_line()));
+            tc.asm_cmd(tk, os, indent, "cmovl", "rbp", reg_line_num);
+            toc::asm_jxx(tk, os, indent, "l", "panic_bounds");
+            tc.free_scratch_register(tk, os, indent, reg_line_num);
+        } else {
+            toc::asm_jxx(tk, os, indent, "l", "panic_bounds");
+        }
+
         if (not reg_size.empty()) {
             // check with size register (reg_to_check + reg_size vs
             // array_size)

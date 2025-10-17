@@ -1,4 +1,4 @@
-[ ] bounds checking does not catch negative array indexes
+[x] bounds checking does not catch negative array indexes
 [ ] array_copy does not handle when destination overlaps source
 [ ] lea_path not be necessary since only most recent lea relevant
 [ ] fix better the re-occurring code:
