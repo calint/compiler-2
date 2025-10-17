@@ -1,3 +1,4 @@
+[ ] neovim: tree-sitter and color scheme, LSP?
 [x] bounds checking does not catch negative array indexes
 [ ] array_copy does not handle when destination overlaps source
 [ ] lea_path not be necessary since only most recent lea relevant
