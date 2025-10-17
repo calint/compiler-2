@@ -365,8 +365,7 @@ class stmt_identifier : public statement {
         }
 
         if (accum_offset != 0) {
-            tc.asm_cmd(src_loc_tk, os, indent, "add", reg_offset,
-                       std::format("{}", accum_offset));
+            return std::format("{} + {}", reg_offset, accum_offset);
         }
 
         return std::string{reg_offset};
