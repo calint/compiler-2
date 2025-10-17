@@ -48,3 +48,10 @@ zig-out/
 *.tar.gz
 *.tgz
 *.zip
+
+bindings/
+Cargo.toml
+binding.gyp
+.editorconfig
+src/
+

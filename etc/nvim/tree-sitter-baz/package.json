@@ -1,0 +1,16 @@
+{
+  "name": "tree-sitter-baz",
+  "version": "0.1.0",
+  "main": "grammar.js",
+  "dependencies": {
+    "tree-sitter": "^0.22.0"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.baz",
+      "file-types": ["baz"],
+      "injection-regex": "^baz$",
+      "highlights": "queries/highlights.scm"
+    }
+  ]
+}
