@@ -1,6 +1,8 @@
 [x] t56: fails with negative numbers because they are not sign extended when
     using scratch register in expr_ops_list
-[ ] see edge case t116 'c' should not be 2
+[x] see edge case t116 'c' should not be 2
+    => it should be 2 because the returned value is not a reference to the
+       argument
 [ ] array_copy does not handle when destination overlaps source
 [ ] bounds checking does not catch negative array indexes
 [ ] lea_path not be necessary since only most recent lea relevant
