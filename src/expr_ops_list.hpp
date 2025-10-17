@@ -299,6 +299,8 @@ class expr_ops_list final : public expression {
                      const std::span<const std::string> lea_path) const
         -> std::string override {
 
+        assert(exprs_.size() == 1);
+
         return exprs_.at(0)->compile_lea(src_loc_tk, tc, os, indent,
                                          allocated_registers, reg_size,
                                          lea_path);

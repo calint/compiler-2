@@ -161,7 +161,6 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override {
-        // return is_expr_type_value() and std::get<2>(var_).is_identifier();
         return std::visit(
             [](const auto& e) -> bool { return e.is_identifier(); }, var_);
     }
