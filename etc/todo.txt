@@ -1,4 +1,5 @@
-[ ] stmt_call: 176: see comment, is that correct? 
+[x] stmt_call: 176: see comment, is that correct? 
+    => was a bug
 [ ] stmt_identifier: 358: if register will be just offset without indexing
     register then that can be calculated in init_reg_offset
 [x] ident_info: the stack of "lea" might not be necessary: lea is set when base

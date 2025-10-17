@@ -1,0 +1,80 @@
+field nl_str = "\n"
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func print(len : reg_rdx, ptr : reg_rsi) {
+    mov(rax, 1)   # write system call
+    mov(rdi, 0)   # file descriptor for standard out
+    mov(rsi, ptr) # buffer address 
+    mov(rdx, len) # buffer size
+    syscall()
+}
+
+func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+    mov(rax, 0)   # read system call
+    mov(rdi, 0)   # file descriptor for standard input
+    mov(rsi, ptr) # buffer address
+    mov(rdx, len) # buffer size
+    syscall()
+    mov(nbytes, rax) # return value
+}
+
+func nl() print(nl_str.len, nl_str)
+
+func pn(num) {
+    var buf : i8[20]
+    var n = num
+    var is_negative : bool = false
+
+    if n < 0 {
+        is_negative = true
+        n = -n
+    }
+
+    var i = 20
+    loop {
+        i = i - 1
+        buf[i] = 48 + (n % 10)
+        n = n / 10
+        if n == 0 break
+    }
+
+    if is_negative {
+        i = i - 1
+        buf[i] = 45  # '-'
+    }
+
+    print(20 - i, address_of(buf[i]))
+}
+
+type str {
+    size : i8,
+    chars : i8[127]
+}
+
+type world {
+    name : str,
+    note : str
+}
+
+func foo(w1 : world, w2 : world){
+    assert(w1.note.size + w2.note.size == 3)
+}
+
+func bar(w1 : world, w2 : world){
+    foo(w1, w2)
+}
+
+func main() {
+    var wlds : world[2]
+    wlds[0].note.size = 1
+    wlds[1].note.size = 2
+    
+    bar(wlds[0], wlds[1])
+}
