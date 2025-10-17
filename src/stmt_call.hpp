@@ -153,15 +153,6 @@ class stmt_call : public expression {
                                         std::string{dst}, "", ret->type_ref);
         }
 
-        // create unique labels for in-lined functions
-        const std::string_view call_path{tc.get_call_path(tok())};
-        const std::string src_loc{tc.source_location_for_use_in_label(tok())};
-        const std::string new_call_path{
-            call_path.empty() ? src_loc
-                              : std::format("{}_{}", src_loc, call_path)};
-        const std::string ret_jmp_label{
-            std::format("{}_{}_end", func.name(), new_call_path)};
-
         // track allocated registers
         std::vector<std::string> allocated_named_registers;
         std::vector<std::string> allocated_scratch_registers;
@@ -183,7 +174,9 @@ class stmt_call : public expression {
             // if the argument is an identifier with indexing then save the
             // "lea" address to the base of that array
             if (arg.is_identifier() and arg.is_expression()) {
-
+                // if (arg.is_identifier() and
+                //     (arg.is_expression() or
+                //     tc.make_ident_info(arg).has_lea())) {
                 const ident_info ii{tc.make_ident_info(arg)};
 
                 std::vector<std::string> regs_lea;
@@ -255,6 +248,14 @@ class stmt_call : public expression {
             }
         }
 
+        // create unique labels for in-lined functions
+        const std::string_view call_path{tc.get_call_path(tok())};
+        const std::string src_loc{tc.source_location_for_use_in_label(tok())};
+        const std::string new_call_path{
+            call_path.empty() ? src_loc
+                              : std::format("{}_{}", src_loc, call_path)};
+        const std::string ret_jmp_label{
+            std::format("{}_{}_end", func.name(), new_call_path)};
         func.source_def_comment_to(tc, os, indent);
 
         toc::asm_label(tok(), os, indent,

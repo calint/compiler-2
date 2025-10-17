@@ -34,7 +34,7 @@ class stmt_call_asm_mov final : public stmt_call {
         const ident_info dst_info{tc.make_ident_info(argument(0))};
 
         const statement& src_arg{argument(1)};
-        if (src_arg.is_expression()) {
+        if (src_arg.is_expression() or src_arg.is_identifier()) {
             src_arg.compile(tc, os, indent + 1, dst_info.id);
             return;
         }

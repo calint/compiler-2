@@ -72,7 +72,7 @@ main:
         if_19_8_87_5_code:
             mov rdi, 1
             exit_19_17_87_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_87_5_end:
         if_19_5_87_5_end:
@@ -102,7 +102,7 @@ main:
         if_19_8_88_5_code:
             mov rdi, 1
             exit_19_17_88_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_88_5_end:
         if_19_5_88_5_end:
@@ -148,7 +148,7 @@ main:
         if_19_8_92_5_code:
             mov rdi, 1
             exit_19_17_92_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_92_5_end:
         if_19_5_92_5_end:
@@ -208,7 +208,7 @@ main:
         if_19_8_96_5_code:
             mov rdi, 1
             exit_19_17_96_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_96_5_end:
         if_19_5_96_5_end:
@@ -257,7 +257,7 @@ main:
         if_19_8_99_5_code:
             mov rdi, 1
             exit_19_17_99_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_99_5_end:
         if_19_5_99_5_end:
@@ -268,15 +268,16 @@ main:
     mov r14, 102
     cmovge rbp, r14
     jge panic_bounds
-    mov r13, qword [rsp - 24]
-    sub r13, 1
-    cmp r13, 4
-    mov r12, 102
-    cmovge rbp, r12
+    mov r14, qword [rsp - 24]
+    sub r14, 1
+    cmp r14, 4
+    mov r13, 102
+    cmovge rbp, r13
     jge panic_bounds
-    movsx r14, dword [rsp + r13 * 4 - 16]
     inv_102_16:
-        mov dword [rsp + r15 * 4 - 16], r14d
+        lea r13, [rsp + r14 * 4 - 16]
+        mov r12d, dword [r13]
+        mov dword [rsp + r15 * 4 - 16], r12d
         not dword [rsp + r15 * 4 - 16]
     inv_102_16_end:
     not dword [rsp + r15 * 4 - 16]
@@ -305,7 +306,7 @@ main:
         if_19_8_103_5_code:
             mov rdi, 1
             exit_19_17_103_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_103_5_end:
         if_19_5_103_5_end:
@@ -343,7 +344,7 @@ main:
         if_19_8_106_5_code:
             mov rdi, 1
             exit_19_17_106_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_106_5_end:
         if_19_5_106_5_end:
@@ -373,7 +374,7 @@ main:
         if_19_8_110_5_code:
             mov rdi, 1
             exit_19_17_110_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_110_5_end:
         if_19_5_110_5_end:
@@ -397,7 +398,7 @@ main:
         if_19_8_111_5_code:
             mov rdi, 1
             exit_19_17_111_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_111_5_end:
         if_19_5_111_5_end:
@@ -433,7 +434,7 @@ main:
         if_19_8_115_5_code:
             mov rdi, 1
             exit_19_17_115_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_115_5_end:
         if_19_5_115_5_end:
@@ -469,7 +470,7 @@ main:
         if_19_8_119_5_code:
             mov rdi, 1
             exit_19_17_119_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_119_5_end:
         if_19_5_119_5_end:
@@ -501,7 +502,7 @@ main:
         if_19_8_123_5_code:
             mov rdi, 1
             exit_19_17_123_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_123_5_end:
         if_19_5_123_5_end:
@@ -531,7 +532,7 @@ main:
         if_19_8_126_5_code:
             mov rdi, 1
             exit_19_17_126_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_126_5_end:
         if_19_5_126_5_end:
@@ -562,7 +563,7 @@ main:
         if_19_8_129_5_code:
             mov rdi, 1
             exit_19_17_129_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_129_5_end:
         if_19_5_129_5_end:
@@ -596,7 +597,7 @@ main:
         if_19_8_135_5_code:
             mov rdi, 1
             exit_19_17_135_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_135_5_end:
         if_19_5_135_5_end:
@@ -620,7 +621,7 @@ main:
         if_19_8_136_5_code:
             mov rdi, 1
             exit_19_17_136_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_136_5_end:
         if_19_5_136_5_end:
@@ -644,7 +645,7 @@ main:
         if_19_8_137_5_code:
             mov rdi, 1
             exit_19_17_137_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_137_5_end:
         if_19_5_137_5_end:
@@ -678,7 +679,7 @@ main:
         if_19_8_141_5_code:
             mov rdi, 1
             exit_19_17_141_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_141_5_end:
         if_19_5_141_5_end:
@@ -702,7 +703,7 @@ main:
         if_19_8_142_5_code:
             mov rdi, 1
             exit_19_17_142_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_142_5_end:
         if_19_5_142_5_end:
@@ -730,7 +731,7 @@ main:
         if_19_8_145_5_code:
             mov rdi, 1
             exit_19_17_145_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_145_5_end:
         if_19_5_145_5_end:
@@ -754,7 +755,7 @@ main:
         if_19_8_146_5_code:
             mov rdi, 1
             exit_19_17_146_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_146_5_end:
         if_19_5_146_5_end:
@@ -778,7 +779,7 @@ main:
         if_19_8_147_5_code:
             mov rdi, 1
             exit_19_17_147_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_147_5_end:
         if_19_5_147_5_end:
@@ -816,7 +817,7 @@ main:
         if_19_8_152_5_code:
             mov rdi, 1
             exit_19_17_152_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_152_5_end:
         if_19_5_152_5_end:
@@ -876,7 +877,7 @@ main:
         if_19_8_158_5_code:
             mov rdi, 1
             exit_19_17_158_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_158_5_end:
         if_19_5_158_5_end:
@@ -943,7 +944,7 @@ main:
         if_19_8_165_5_code:
             mov rdi, 1
             exit_19_17_165_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_165_5_end:
         if_19_5_165_5_end:
@@ -951,25 +952,25 @@ main:
     mov rdx, hello.len
     mov rsi, hello
     print_167_5:
-        mov rax, 1
-        mov rdi, 1
+            mov rax, 1
+            mov rdi, 1
         syscall
     print_167_5_end:
     loop_168_5:
         mov rdx, prompt1.len
         mov rsi, prompt1
         print_169_9:
-            mov rax, 1
-            mov rdi, 1
+                mov rax, 1
+                mov rdi, 1
             syscall
         print_169_9_end:
         mov rdx, 80
         lea rsi, [rsp - 284]
         read_171_19:
-            mov rax, 0
-            mov rdi, 0
+                mov rax, 0
+                mov rdi, 0
             syscall
-            mov qword [rsp - 804], rax
+                mov qword [rsp - 804], rax
         read_171_19_end:
         sub qword [rsp - 804], 1
         if_175_12:
@@ -989,8 +990,8 @@ main:
             mov rdx, prompt2.len
             mov rsi, prompt2
             print_178_13:
-                mov rax, 1
-                mov rdi, 1
+                    mov rax, 1
+                    mov rdi, 1
                 syscall
             print_178_13_end:
             jmp loop_168_5
@@ -999,29 +1000,29 @@ main:
             mov rdx, prompt3.len
             mov rsi, prompt3
             print_181_13:
-                mov rax, 1
-                mov rdi, 1
+                    mov rax, 1
+                    mov rdi, 1
                 syscall
             print_181_13_end:
             mov rdx, qword [rsp - 804]
             lea rsi, [rsp - 284]
             print_182_13:
-                mov rax, 1
-                mov rdi, 1
+                    mov rax, 1
+                    mov rdi, 1
                 syscall
             print_182_13_end:
             mov rdx, dot.len
             mov rsi, dot
             print_183_13:
-                mov rax, 1
-                mov rdi, 1
+                    mov rax, 1
+                    mov rdi, 1
                 syscall
             print_183_13_end:
             mov rdx, nl.len
             mov rsi, nl
             print_184_13:
-                mov rax, 1
-                mov rdi, 1
+                    mov rax, 1
+                    mov rdi, 1
                 syscall
             print_184_13_end:
         if_175_9_end:

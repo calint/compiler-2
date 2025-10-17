@@ -56,19 +56,17 @@ class expr_any final : public statement {
         tc.comment_source(*this, os, indent);
         std::visit(
             overloaded{
-                [&](const expr_ops_list& expr) {
-                    expr.compile(tc, os, indent, dst);
+                [&](const expr_ops_list& e) { e.compile(tc, os, indent, dst); },
+                [&](const expr_type_value& e) {
+                    e.compile(tc, os, indent, dst);
                 },
-                [&](const expr_type_value& expr) {
-                    expr.compile(tc, os, indent, dst);
-                },
-                [&](const expr_bool_ops_list& bol) {
+                [&](const expr_bool_ops_list& e) {
                     // resolve the destination
                     const ident_info& dst_info{tc.make_ident_info(tok(), dst)};
 
                     // if not expression assign to destination
-                    if (not bol.is_expression()) {
-                        const ident_info& src_info{tc.make_ident_info(bol)};
+                    if (not e.is_expression()) {
+                        const ident_info& src_info{tc.make_ident_info(e)};
                         tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
                                    src_info.id_nasm);
                         return;
@@ -96,8 +94,8 @@ class expr_any final : public statement {
 
                     // compile and possibly evaluate constant expression
                     std::optional<bool> const_eval{
-                        bol.compile(tc, os, indent, jmp_to_if_false,
-                                    jmp_to_if_true, false)};
+                        e.compile(tc, os, indent, jmp_to_if_false,
+                                  jmp_to_if_true, false)};
 
                     // did the evaluation result in a constant?
                     if (const_eval) {
@@ -131,44 +129,41 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
-        return std::visit([](const auto& itm) { return itm.is_expression(); },
+        return std::visit([](const auto& e) { return e.is_expression(); },
                           var_);
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
         return std::visit(
-            [](const auto& itm) -> std::string_view {
-                return itm.identifier();
-            },
+            [](const auto& e) -> std::string_view { return e.identifier(); },
             var_);
     }
 
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
-        std::visit([&var](const auto& itm) { itm.assert_var_not_used(var); },
-                   var_);
+        std::visit([&var](const auto& e) { e.assert_var_not_used(var); }, var_);
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
         return std::visit(
-            [](const auto& itm) -> const unary_ops& {
-                return itm.get_unary_ops();
-            },
+            [](const auto& e) -> const unary_ops& { return e.get_unary_ops(); },
             var_);
         // note: 'expr_type_value' does not have 'unary_ops' and cannot be
         //       an argument in call
-    }
-
-    [[nodiscard]] auto is_expr_type_value() const -> bool {
-        return var_.index() == 2;
     }
 
     [[nodiscard]] auto is_expr_ops_list() const -> bool {
         return var_.index() == 0;
     }
 
+    [[nodiscard]] auto is_expr_type_value() const -> bool {
+        return var_.index() == 2;
+    }
+
     [[nodiscard]] auto is_identifier() const -> bool override {
-        return is_expr_type_value() and std::get<2>(var_).is_identifier();
+        // return is_expr_type_value() and std::get<2>(var_).is_identifier();
+        return std::visit(
+            [](const auto& e) -> bool { return e.is_identifier(); }, var_);
     }
 
     auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
@@ -178,16 +173,15 @@ class expr_any final : public statement {
                      const std::span<const std::string> lea_path) const
         -> std::string override {
 
-        return std::get<2>(var_).compile_lea(src_loc_tk, tc, os, indent,
-                                             allocated_registers, reg_size,
-                                             lea_path);
+        return std::visit(
+            [&](const auto& e) -> std::string {
+                return e.compile_lea(src_loc_tk, tc, os, indent,
+                                     allocated_registers, reg_size, lea_path);
+            },
+            var_);
     }
 
     [[nodiscard]] auto as_expr_type_value() const -> const expr_type_value& {
-        return get<expr_type_value>(var_);
-    }
-
-    [[nodiscard]] auto as_assign_type_value() const -> const expr_type_value& {
         return get<expr_type_value>(var_);
     }
 };

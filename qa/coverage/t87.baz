@@ -1,3 +1,5 @@
+field nl_str = "\n"
+
 func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
@@ -30,19 +32,54 @@ type location {
     name_len
 }
 
+func nl() print(nl_str.len, nl_str)
+
+func pn(num) {
+    var buf : i8[20]
+    var n = num
+    var is_negative : bool = false
+
+    if n < 0 {
+        is_negative = true
+        n = -n
+    }
+
+    var i = 20
+    loop {
+        i = i - 1
+        buf[i] = 48 + (n % 10)
+        n = n / 10
+        if n == 0 break
+    }
+
+    if is_negative {
+        i = i - 1
+        buf[i] = 45  # '-'
+    }
+
+    print(20 - i, address_of(buf[i]))
+}
+
 func main() {
     var locations : location[4]
 
     var i = 0
     loop {
       locations[i].name_len = read(array_size_of(locations[i].name), address_of(locations[i].name))
+      pn(locations[i].name_len)
+      nl()
+      print(locations[i].name_len, address_of(locations[i].name))
+      nl()
       i = i + 1
       if i == 4 break
     }
 
     i = 0
     loop {
+      pn(locations[i].name_len)
+      nl()
       print(locations[i].name_len, address_of(locations[i].name))
+      nl()
       i = i + 1
       if i == 4 break
     }

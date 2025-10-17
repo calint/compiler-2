@@ -409,7 +409,7 @@ inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
             continue;
         }
         // not a built-in type, recurse
-        compile_recursive(etv.exprs_.at(i)->as_assign_type_value(), tc, os,
+        compile_recursive(etv.exprs_.at(i)->as_expr_type_value(), tc, os,
                           indent + 1, etv.exprs_.at(i)->identifier(),
                           std::format("{}.{}", dst, fld.name), *fld.tp);
     }

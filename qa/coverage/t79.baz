@@ -30,5 +30,6 @@ func main() {
     assert(arr[off] == 3)
 
     op_on_arr2(arr[off])
-    assert(arr[off] == 3)
+    assert(arr[off] == 5)
+    return
 }

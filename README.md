@@ -42,10 +42,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    40           1209            673           5781
+C/C++ Header                    40           1206            677           5775
 C++                              1             75             83            520
 -------------------------------------------------------------------------------
-SUM:                            41           1284            756           6301
+SUM:                            41           1281            760           6295
 -------------------------------------------------------------------------------
 ```
 
@@ -318,7 +318,7 @@ main:
         if_19_8_87_5_code:
             mov rdi, 1
             exit_19_17_87_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_87_5_end:
         if_19_5_87_5_end:
@@ -348,7 +348,7 @@ main:
         if_19_8_88_5_code:
             mov rdi, 1
             exit_19_17_88_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_88_5_end:
         if_19_5_88_5_end:
@@ -394,7 +394,7 @@ main:
         if_19_8_92_5_code:
             mov rdi, 1
             exit_19_17_92_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_92_5_end:
         if_19_5_92_5_end:
@@ -454,7 +454,7 @@ main:
         if_19_8_96_5_code:
             mov rdi, 1
             exit_19_17_96_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_96_5_end:
         if_19_5_96_5_end:
@@ -503,7 +503,7 @@ main:
         if_19_8_99_5_code:
             mov rdi, 1
             exit_19_17_99_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_99_5_end:
         if_19_5_99_5_end:
@@ -514,15 +514,16 @@ main:
     mov r14, 102
     cmovge rbp, r14
     jge panic_bounds
-    mov r13, qword [rsp - 24]
-    sub r13, 1
-    cmp r13, 4
-    mov r12, 102
-    cmovge rbp, r12
+    mov r14, qword [rsp - 24]
+    sub r14, 1
+    cmp r14, 4
+    mov r13, 102
+    cmovge rbp, r13
     jge panic_bounds
-    movsx r14, dword [rsp + r13 * 4 - 16]
     inv_102_16:
-        mov dword [rsp + r15 * 4 - 16], r14d
+        lea r13, [rsp + r14 * 4 - 16]
+        mov r12d, dword [r13]
+        mov dword [rsp + r15 * 4 - 16], r12d
         not dword [rsp + r15 * 4 - 16]
     inv_102_16_end:
     not dword [rsp + r15 * 4 - 16]
@@ -551,7 +552,7 @@ main:
         if_19_8_103_5_code:
             mov rdi, 1
             exit_19_17_103_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_103_5_end:
         if_19_5_103_5_end:
@@ -589,7 +590,7 @@ main:
         if_19_8_106_5_code:
             mov rdi, 1
             exit_19_17_106_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_106_5_end:
         if_19_5_106_5_end:
@@ -619,7 +620,7 @@ main:
         if_19_8_110_5_code:
             mov rdi, 1
             exit_19_17_110_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_110_5_end:
         if_19_5_110_5_end:
@@ -643,7 +644,7 @@ main:
         if_19_8_111_5_code:
             mov rdi, 1
             exit_19_17_111_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_111_5_end:
         if_19_5_111_5_end:
@@ -679,7 +680,7 @@ main:
         if_19_8_115_5_code:
             mov rdi, 1
             exit_19_17_115_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_115_5_end:
         if_19_5_115_5_end:
@@ -715,7 +716,7 @@ main:
         if_19_8_119_5_code:
             mov rdi, 1
             exit_19_17_119_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_119_5_end:
         if_19_5_119_5_end:
@@ -747,7 +748,7 @@ main:
         if_19_8_123_5_code:
             mov rdi, 1
             exit_19_17_123_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_123_5_end:
         if_19_5_123_5_end:
@@ -777,7 +778,7 @@ main:
         if_19_8_126_5_code:
             mov rdi, 1
             exit_19_17_126_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_126_5_end:
         if_19_5_126_5_end:
@@ -808,7 +809,7 @@ main:
         if_19_8_129_5_code:
             mov rdi, 1
             exit_19_17_129_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_129_5_end:
         if_19_5_129_5_end:
@@ -842,7 +843,7 @@ main:
         if_19_8_135_5_code:
             mov rdi, 1
             exit_19_17_135_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_135_5_end:
         if_19_5_135_5_end:
@@ -866,7 +867,7 @@ main:
         if_19_8_136_5_code:
             mov rdi, 1
             exit_19_17_136_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_136_5_end:
         if_19_5_136_5_end:
@@ -890,7 +891,7 @@ main:
         if_19_8_137_5_code:
             mov rdi, 1
             exit_19_17_137_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_137_5_end:
         if_19_5_137_5_end:
@@ -924,7 +925,7 @@ main:
         if_19_8_141_5_code:
             mov rdi, 1
             exit_19_17_141_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_141_5_end:
         if_19_5_141_5_end:
@@ -948,7 +949,7 @@ main:
         if_19_8_142_5_code:
             mov rdi, 1
             exit_19_17_142_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_142_5_end:
         if_19_5_142_5_end:
@@ -976,7 +977,7 @@ main:
         if_19_8_145_5_code:
             mov rdi, 1
             exit_19_17_145_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_145_5_end:
         if_19_5_145_5_end:
@@ -1000,7 +1001,7 @@ main:
         if_19_8_146_5_code:
             mov rdi, 1
             exit_19_17_146_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_146_5_end:
         if_19_5_146_5_end:
@@ -1024,7 +1025,7 @@ main:
         if_19_8_147_5_code:
             mov rdi, 1
             exit_19_17_147_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_147_5_end:
         if_19_5_147_5_end:
@@ -1062,7 +1063,7 @@ main:
         if_19_8_152_5_code:
             mov rdi, 1
             exit_19_17_152_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_152_5_end:
         if_19_5_152_5_end:
@@ -1122,7 +1123,7 @@ main:
         if_19_8_158_5_code:
             mov rdi, 1
             exit_19_17_158_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_158_5_end:
         if_19_5_158_5_end:
@@ -1189,7 +1190,7 @@ main:
         if_19_8_165_5_code:
             mov rdi, 1
             exit_19_17_165_5:
-                mov rax, 60
+                    mov rax, 60
                 syscall
             exit_19_17_165_5_end:
         if_19_5_165_5_end:
@@ -1197,25 +1198,25 @@ main:
     mov rdx, hello.len
     mov rsi, hello
     print_167_5:
-        mov rax, 1
-        mov rdi, 1
+            mov rax, 1
+            mov rdi, 1
         syscall
     print_167_5_end:
     loop_168_5:
         mov rdx, prompt1.len
         mov rsi, prompt1
         print_169_9:
-            mov rax, 1
-            mov rdi, 1
+                mov rax, 1
+                mov rdi, 1
             syscall
         print_169_9_end:
         mov rdx, 80
         lea rsi, [rsp - 284]
         read_171_19:
-            mov rax, 0
-            mov rdi, 0
+                mov rax, 0
+                mov rdi, 0
             syscall
-            mov qword [rsp - 804], rax
+                mov qword [rsp - 804], rax
         read_171_19_end:
         sub qword [rsp - 804], 1
         if_175_12:
@@ -1235,8 +1236,8 @@ main:
             mov rdx, prompt2.len
             mov rsi, prompt2
             print_178_13:
-                mov rax, 1
-                mov rdi, 1
+                    mov rax, 1
+                    mov rdi, 1
                 syscall
             print_178_13_end:
             jmp loop_168_5
@@ -1245,29 +1246,29 @@ main:
             mov rdx, prompt3.len
             mov rsi, prompt3
             print_181_13:
-                mov rax, 1
-                mov rdi, 1
+                    mov rax, 1
+                    mov rdi, 1
                 syscall
             print_181_13_end:
             mov rdx, qword [rsp - 804]
             lea rsi, [rsp - 284]
             print_182_13:
-                mov rax, 1
-                mov rdi, 1
+                    mov rax, 1
+                    mov rdi, 1
                 syscall
             print_182_13_end:
             mov rdx, dot.len
             mov rsi, dot
             print_183_13:
-                mov rax, 1
-                mov rdi, 1
+                    mov rax, 1
+                    mov rdi, 1
                 syscall
             print_183_13_end:
             mov rdx, nl.len
             mov rsi, nl
             print_184_13:
-                mov rax, 1
-                mov rdi, 1
+                    mov rax, 1
+                    mov rdi, 1
                 syscall
             print_184_13_end:
         if_175_9_end:
@@ -1514,9 +1515,15 @@ main:
             exit_19_17_87_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -1578,9 +1585,15 @@ main:
             exit_19_17_88_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -1688,9 +1701,15 @@ main:
             exit_19_17_92_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -1823,9 +1842,15 @@ main:
             exit_19_17_96_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -1931,9 +1956,15 @@ main:
             exit_19_17_99_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -1967,37 +1998,37 @@ main:
 ;   [102:16] dword [rsp + r15 * 4 - 16] = ~inv(arr[ix - 1])
 ;   [102:16] ~inv(arr[ix - 1])
 ;   [102:20] allocate scratch register -> r14
-;   [102:20] arr[ix - 1]
-;   [102:20] arr[ix - 1]
-;   [102:20] arr[ix - 1]
-;   [102:20] allocate scratch register -> r13
 ;   [102:24] set array index
 ;   [102:24] ix - 1
 ;   [102:24] ix - 1
 ;   [102:24] ix
-    mov r13, qword [rsp - 24]
-;   [102:29] r13 - 1
-    sub r13, 1
+    mov r14, qword [rsp - 24]
+;   [102:29] r14 - 1
+    sub r14, 1
 ;   [102:24] bounds check
-    cmp r13, 4
-;   [102:24] allocate scratch register -> r12
+    cmp r14, 4
+;   [102:24] allocate scratch register -> r13
 ;   [102:24] line number
-    mov r12, 102
-    cmovge rbp, r12
-;   [102:24] free scratch register 'r12'
+    mov r13, 102
+    cmovge rbp, r13
+;   [102:24] free scratch register 'r13'
     jge panic_bounds
-    movsx r14, dword [rsp + r13 * 4 - 16]
-;   [102:20] free scratch register 'r13'
 ;   [65:6] inv(i : i32) : i32 res 
     inv_102_16:
 ;       [102:16] alias res -> dword [rsp + r15 * 4 - 16]  (lea: , len: 0)
-;       [102:16] alias i -> r14  (lea: , len: 0)
+;       [102:16] alias i -> arr  (lea: rsp + r14 * 4 - 16, len: 4)
 ;       [66:5] res = ~i
 ;       [66:11] ~i
 ;       [66:11] ~i
 ;       [66:12] ~i
-        mov dword [rsp + r15 * 4 - 16], r14d
+;       [66:12] allocate scratch register -> r13
+        lea r13, [rsp + r14 * 4 - 16]
+;       [66:12] allocate scratch register -> r12
+        mov r12d, dword [r13]
+        mov dword [rsp + r15 * 4 - 16], r12d
+;       [66:12] free scratch register 'r12'
         not dword [rsp + r15 * 4 - 16]
+;       [66:12] free scratch register 'r13'
 ;       [102:16] free scratch register 'r14'
     inv_102_16_end:
     not dword [rsp + r15 * 4 - 16]
@@ -2055,9 +2086,15 @@ main:
             exit_19_17_103_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2144,9 +2181,15 @@ main:
             exit_19_17_106_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2218,9 +2261,15 @@ main:
             exit_19_17_110_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2262,9 +2311,15 @@ main:
             exit_19_17_111_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2334,9 +2389,15 @@ main:
             exit_19_17_115_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2404,9 +2465,15 @@ main:
             exit_19_17_119_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2481,9 +2548,15 @@ main:
             exit_19_17_123_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2546,9 +2619,15 @@ main:
             exit_19_17_126_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2619,9 +2698,15 @@ main:
             exit_19_17_129_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2707,9 +2792,15 @@ main:
             exit_19_17_135_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2751,9 +2842,15 @@ main:
             exit_19_17_136_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2795,9 +2892,15 @@ main:
             exit_19_17_137_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2872,9 +2975,15 @@ main:
             exit_19_17_141_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2916,9 +3025,15 @@ main:
             exit_19_17_142_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -2974,9 +3089,15 @@ main:
             exit_19_17_145_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -3018,9 +3139,15 @@ main:
             exit_19_17_146_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -3062,9 +3189,15 @@ main:
             exit_19_17_147_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -3150,9 +3283,15 @@ main:
             exit_19_17_152_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -3300,9 +3439,15 @@ main:
             exit_19_17_158_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -3459,9 +3604,15 @@ main:
             exit_19_17_165_5:
 ;               [19:17] alias v -> rdi  (lea: , len: 0)
 ;               [13:5] mov(rax, 60)
-                mov rax, 60
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
                 syscall
@@ -3480,14 +3631,26 @@ main:
 ;       [167:5] alias len -> rdx  (lea: , len: 0)
 ;       [167:5] alias ptr -> rsi  (lea: , len: 0)
 ;       [23:5] mov(rax, 1)
-        mov rax, 1
+;           [23:14] 1
+;           [23:14] 1
+;           [23:14] 1
+            mov rax, 1
 ;       [23:19] # write system call
 ;       [24:5] mov(rdi, 1)
-        mov rdi, 1
+;           [24:14] 1
+;           [24:14] 1
+;           [24:14] 1
+            mov rdi, 1
 ;       [24:19] # file descriptor for standard out
 ;       [25:5] mov(rsi, ptr)
+;           [25:14] ptr
+;           [25:14] ptr
+;           [25:14] ptr
 ;       [25:19] # buffer address
 ;       [26:5] mov(rdx, len)
+;           [26:14] len
+;           [26:14] len
+;           [26:14] len
 ;       [26:19] # buffer size
 ;       [27:5] syscall()
         syscall
@@ -3506,14 +3669,26 @@ main:
 ;           [169:9] alias len -> rdx  (lea: , len: 0)
 ;           [169:9] alias ptr -> rsi  (lea: , len: 0)
 ;           [23:5] mov(rax, 1)
-            mov rax, 1
+;               [23:14] 1
+;               [23:14] 1
+;               [23:14] 1
+                mov rax, 1
 ;           [23:19] # write system call
 ;           [24:5] mov(rdi, 1)
-            mov rdi, 1
+;               [24:14] 1
+;               [24:14] 1
+;               [24:14] 1
+                mov rdi, 1
 ;           [24:19] # file descriptor for standard out
 ;           [25:5] mov(rsi, ptr)
+;               [25:14] ptr
+;               [25:14] ptr
+;               [25:14] ptr
 ;           [25:19] # buffer address
 ;           [26:5] mov(rdx, len)
+;               [26:14] len
+;               [26:14] len
+;               [26:14] len
 ;           [26:19] # buffer size
 ;           [27:5] syscall()
             syscall
@@ -3545,19 +3720,34 @@ main:
 ;           [171:19] alias len -> rdx  (lea: , len: 0)
 ;           [171:19] alias ptr -> rsi  (lea: , len: 0)
 ;           [31:5] mov(rax, 0)
-            mov rax, 0
+;               [31:14] 0
+;               [31:14] 0
+;               [31:14] 0
+                mov rax, 0
 ;           [31:19] # read system call
 ;           [32:5] mov(rdi, 0)
-            mov rdi, 0
+;               [32:14] 0
+;               [32:14] 0
+;               [32:14] 0
+                mov rdi, 0
 ;           [32:19] # file descriptor for standard input
 ;           [33:5] mov(rsi, ptr)
+;               [33:14] ptr
+;               [33:14] ptr
+;               [33:14] ptr
 ;           [33:19] # buffer address
 ;           [34:5] mov(rdx, len)
+;               [34:14] len
+;               [34:14] len
+;               [34:14] len
 ;           [34:19] # buffer size
 ;           [35:5] syscall()
             syscall
 ;           [36:5] mov(nbytes, rax)
-            mov qword [rsp - 804], rax
+;               [36:17] rax
+;               [36:17] rax
+;               [36:17] rax
+                mov qword [rsp - 804], rax
 ;           [36:22] # return value
 ;           [171:19] free named register 'rsi'
 ;           [171:19] free named register 'rdx'
@@ -3595,14 +3785,26 @@ main:
 ;               [178:13] alias len -> rdx  (lea: , len: 0)
 ;               [178:13] alias ptr -> rsi  (lea: , len: 0)
 ;               [23:5] mov(rax, 1)
-                mov rax, 1
+;                   [23:14] 1
+;                   [23:14] 1
+;                   [23:14] 1
+                    mov rax, 1
 ;               [23:19] # write system call
 ;               [24:5] mov(rdi, 1)
-                mov rdi, 1
+;                   [24:14] 1
+;                   [24:14] 1
+;                   [24:14] 1
+                    mov rdi, 1
 ;               [24:19] # file descriptor for standard out
 ;               [25:5] mov(rsi, ptr)
+;                   [25:14] ptr
+;                   [25:14] ptr
+;                   [25:14] ptr
 ;               [25:19] # buffer address
 ;               [26:5] mov(rdx, len)
+;                   [26:14] len
+;                   [26:14] len
+;                   [26:14] len
 ;               [26:19] # buffer size
 ;               [27:5] syscall()
                 syscall
@@ -3623,14 +3825,26 @@ main:
 ;               [181:13] alias len -> rdx  (lea: , len: 0)
 ;               [181:13] alias ptr -> rsi  (lea: , len: 0)
 ;               [23:5] mov(rax, 1)
-                mov rax, 1
+;                   [23:14] 1
+;                   [23:14] 1
+;                   [23:14] 1
+                    mov rax, 1
 ;               [23:19] # write system call
 ;               [24:5] mov(rdi, 1)
-                mov rdi, 1
+;                   [24:14] 1
+;                   [24:14] 1
+;                   [24:14] 1
+                    mov rdi, 1
 ;               [24:19] # file descriptor for standard out
 ;               [25:5] mov(rsi, ptr)
+;                   [25:14] ptr
+;                   [25:14] ptr
+;                   [25:14] ptr
 ;               [25:19] # buffer address
 ;               [26:5] mov(rdx, len)
+;                   [26:14] len
+;                   [26:14] len
+;                   [26:14] len
 ;               [26:19] # buffer size
 ;               [27:5] syscall()
                 syscall
@@ -3651,14 +3865,26 @@ main:
 ;               [182:13] alias len -> rdx  (lea: , len: 0)
 ;               [182:13] alias ptr -> rsi  (lea: , len: 0)
 ;               [23:5] mov(rax, 1)
-                mov rax, 1
+;                   [23:14] 1
+;                   [23:14] 1
+;                   [23:14] 1
+                    mov rax, 1
 ;               [23:19] # write system call
 ;               [24:5] mov(rdi, 1)
-                mov rdi, 1
+;                   [24:14] 1
+;                   [24:14] 1
+;                   [24:14] 1
+                    mov rdi, 1
 ;               [24:19] # file descriptor for standard out
 ;               [25:5] mov(rsi, ptr)
+;                   [25:14] ptr
+;                   [25:14] ptr
+;                   [25:14] ptr
 ;               [25:19] # buffer address
 ;               [26:5] mov(rdx, len)
+;                   [26:14] len
+;                   [26:14] len
+;                   [26:14] len
 ;               [26:19] # buffer size
 ;               [27:5] syscall()
                 syscall
@@ -3675,14 +3901,26 @@ main:
 ;               [183:13] alias len -> rdx  (lea: , len: 0)
 ;               [183:13] alias ptr -> rsi  (lea: , len: 0)
 ;               [23:5] mov(rax, 1)
-                mov rax, 1
+;                   [23:14] 1
+;                   [23:14] 1
+;                   [23:14] 1
+                    mov rax, 1
 ;               [23:19] # write system call
 ;               [24:5] mov(rdi, 1)
-                mov rdi, 1
+;                   [24:14] 1
+;                   [24:14] 1
+;                   [24:14] 1
+                    mov rdi, 1
 ;               [24:19] # file descriptor for standard out
 ;               [25:5] mov(rsi, ptr)
+;                   [25:14] ptr
+;                   [25:14] ptr
+;                   [25:14] ptr
 ;               [25:19] # buffer address
 ;               [26:5] mov(rdx, len)
+;                   [26:14] len
+;                   [26:14] len
+;                   [26:14] len
 ;               [26:19] # buffer size
 ;               [27:5] syscall()
                 syscall
@@ -3699,14 +3937,26 @@ main:
 ;               [184:13] alias len -> rdx  (lea: , len: 0)
 ;               [184:13] alias ptr -> rsi  (lea: , len: 0)
 ;               [23:5] mov(rax, 1)
-                mov rax, 1
+;                   [23:14] 1
+;                   [23:14] 1
+;                   [23:14] 1
+                    mov rax, 1
 ;               [23:19] # write system call
 ;               [24:5] mov(rdi, 1)
-                mov rdi, 1
+;                   [24:14] 1
+;                   [24:14] 1
+;                   [24:14] 1
+                    mov rdi, 1
 ;               [24:19] # file descriptor for standard out
 ;               [25:5] mov(rsi, ptr)
+;                   [25:14] ptr
+;                   [25:14] ptr
+;                   [25:14] ptr
 ;               [25:19] # buffer address
 ;               [26:5] mov(rdx, len)
+;                   [26:14] len
+;                   [26:14] len
+;                   [26:14] len
 ;               [26:19] # buffer size
 ;               [27:5] syscall()
                 syscall
