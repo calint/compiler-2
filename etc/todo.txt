@@ -1,3 +1,4 @@
+[ ] bounds checking does not catch negative array indexes
 [ ] lea_path not be necessary since only most recent lea relevant
 [x] find where displacement in generated assembler is 0 and fix it:
     e.g. r15 + r14 * 4 - 0
