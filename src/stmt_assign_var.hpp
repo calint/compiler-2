@@ -135,8 +135,8 @@ class stmt_assign_var final : public statement {
                 dst_accessor =
                     std::format("{} [{}]", size_specifier, operand.to_string());
             } else {
-                dst_accessor = std::format("{} [{} + {}]", size_specifier,
-                                           dst_info.lea_path[i], offset);
+                dst_accessor = std::format("{} [{}]", size_specifier,
+                                           dst_info.lea_path[i]);
             }
         }
 

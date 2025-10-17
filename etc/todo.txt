@@ -1,3 +1,7 @@
+[ ] lea_path not be necessary since only most recent lea relevant
+[x] find where displacement in generated assembler is 0 and fix it:
+    e.g. r15 + r14 * 4 - 0
+    => in stmt_assign_var: fixed
 [ ] fix better the re-occurring code:
             if (arg.is_identifier() and
                 (arg.is_expression() or tc.make_ident_info(arg).has_lea())) {
@@ -6,8 +10,6 @@
 [ ] expr_ops_list: tidy asm_op_xxx with more streamlined flow of make_ident
 [ ] brace initializers offer no performance advantage and the narrowing issues
     do not exist in this project. they are ugly. ponder switching to =
-[ ] find where displacement in generated assembler is 0 and fix it:
-    e.g. r15 + r14 * 4 - 0
 [ ] refactor the passing first token to every constructor. push back and
     construct
 [ ] code after "break" or "continue" is dead code. generate error or UB check
