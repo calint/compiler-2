@@ -1,4 +1,4 @@
-[ ] fix better the re-occuring code:
+[ ] fix better the re-occurring code:
             if (arg.is_identifier() and
                 (arg.is_expression() or tc.make_ident_info(arg).has_lea())) {
 [x] stmt_call: 176: see comment, is that correct? 
