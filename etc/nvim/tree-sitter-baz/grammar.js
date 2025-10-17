@@ -70,10 +70,24 @@ module.exports = grammar({
       optional(seq(':', $.type_name)), // IS OPTIONAL
     ),
 
-    // type_name can be an identifier (user-defined) or a built-in type
+    // type_name can be a simple type OR an array type (NEW)
     type_name: $ => choice(
+      $._base_type,
+      $.array_type,
+    ),
+
+    // NEW: Array Type Definition (e.g., i32[10])
+    array_type: $ => seq(
+      $._base_type, // The base type (e.g., i32 or a Vector)
+      '[',
+      $.number_literal, // Size must be a constant (a number literal)
+      ']'
+    ),
+
+    // NEW: Helper rule for simple, non-array types
+    _base_type: $ => choice(
       $.identifier,
-      $._built_in_type, // NEW
+      $._built_in_type,
     ),
 
     // NEW: Built-in types (all are treated as keywords)
@@ -197,13 +211,18 @@ module.exports = grammar({
       $.number_literal,
     ),
 
+    // UPDATED: To accept hexadecimal (0x...), binary (0b...), and decimal/float numbers.
+    number_literal: $ => choice(
+      /0x[0-9a-fA-F]+/, // Hexadecimal
+      /0b[01]+/,       // Binary
+      /\d+(\.\d+)?/    // Decimal (integer or float)
+    ),
+
     string_literal: $ => seq(
       '"',
       repeat(/[^"\n]/), // Any character except quote or newline
       '"',
     ),
-
-    number_literal: $ => /\d+(\.\d+)?/, // Simple integer or float
 
     // Comments
     comment: $ => /#.*/,
