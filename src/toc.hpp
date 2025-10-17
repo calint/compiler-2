@@ -247,6 +247,10 @@ struct nasm_operand {
             }
         }
     }
+
+    [[nodiscard]] auto is_indexed() const -> bool {
+        return not index_register.empty() or displacement != 0;
+    }
 };
 
 class toc final {

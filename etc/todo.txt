@@ -1,3 +1,13 @@
+[ ] stmt_identifier: 358: if register will be just offset without indexing
+    register then that can be calculated in init_reg_offset
+[x] ident_info: the stack of "lea" might not be necessary: lea is set when base
+    identifier address is in a register
+[x] t112: optimize:
+            mov r11, r15
+            movsx r12, byte [r11 + 128]
+          to
+            ; mov r11, r15
+            movsx r12, byte [r15 + 128]
 [x] stmt_identifier: optimize known offset by returning "r15 + 20" etc instead
     of add r15, 20
 [ ] expr_ops_list: tidy asm_op_xxx with more streamlined flow of make_ident

@@ -208,11 +208,11 @@ class stmt_identifier : public statement {
         // find the first element from the top that has a "lea" and get accessor
         // relative to that "lea"
         size_t elem_index_with_lea{leas.size()};
-        bool found{};
+        std::string lea;
         while (elem_index_with_lea) {
             elem_index_with_lea--;
             if (not leas[elem_index_with_lea].empty()) {
-                found = true;
+                lea = leas[elem_index_with_lea];
                 break;
             }
         }
@@ -222,22 +222,6 @@ class stmt_identifier : public statement {
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
 
         std::string reg_offset;
-        if (found) {
-            const std::string index_reg{
-                tc.alloc_scratch_register(src_loc_tk, os, indent)};
-            allocated_registers.push_back(index_reg);
-            const nasm_operand nasmop{leas[elem_index_with_lea]};
-            if (not nasmop.index_register.empty() or nasmop.displacement != 0) {
-                toc::asm_lea(src_loc_tk, os, indent, index_reg,
-                             leas[elem_index_with_lea]);
-            } else {
-                tc.asm_cmd(src_loc_tk, os, indent, "mov", index_reg,
-                           leas[elem_index_with_lea]);
-            }
-            reg_offset = index_reg;
-        } else {
-            reg_offset = "rsp";
-        }
         int32_t accum_offset{};
         const size_t elems_size{elems.size()};
 
@@ -293,6 +277,12 @@ class stmt_identifier : public statement {
                                       use_reg_size ? "g" : "ge",
                                       use_reg_size ? reg_size : "");
 
+                    if (reg_offset.empty()) {
+                        reg_offset =
+                            init_reg_offset(src_loc_tk, tc, os, indent, lea,
+                                            allocated_registers, true, true);
+                    }
+
                     const int32_t offset{
                         (reg_offset == "rsp")
                             ? -(base_info.stack_ix + accum_offset)
@@ -309,6 +299,12 @@ class stmt_identifier : public statement {
             }
 
             // convert 'rsp' to dedicated register
+
+            if (reg_offset.empty()) {
+                reg_offset = init_reg_offset(src_loc_tk, tc, os, indent, lea,
+                                             allocated_registers, false, true);
+            }
+
             if (reg_offset == "rsp") {
                 reg_offset = tc.alloc_scratch_register(src_loc_tk, os, indent);
                 allocated_registers.push_back(reg_offset);
@@ -357,6 +353,11 @@ class stmt_identifier : public statement {
                 path.push_back('.');
                 path += next_elem.name_tk.text();
             }
+        }
+
+        if (reg_offset.empty()) {
+            reg_offset = init_reg_offset(src_loc_tk, tc, os, indent, lea,
+                                         allocated_registers, true, true);
         }
 
         if (reg_offset == "rsp") {
@@ -437,5 +438,39 @@ class stmt_identifier : public statement {
         }
 
         toc::asm_jxx(tk, os, indent, comparison, "panic_bounds");
+    }
+
+    static auto init_reg_offset(const token& src_loc_tk, toc& tc,
+                                std::ostream& os, const size_t indent,
+                                const std::string& lea,
+                                std::vector<std::string>& allocated_registers,
+                                const bool no_changes_to_reg_offset_after_this,
+                                const bool will_be_indirect_indexed)
+        -> std::string {
+
+        if (not lea.empty()) {
+            // if no change will be done to the lea register just return it
+            if (no_changes_to_reg_offset_after_this and
+                not(will_be_indirect_indexed and
+                    nasm_operand{lea}.is_indexed())) {
+                return lea;
+            }
+
+            const std::string index_reg{
+                tc.alloc_scratch_register(src_loc_tk, os, indent)};
+            allocated_registers.push_back(index_reg);
+            const nasm_operand nasmop{lea};
+
+            // changes will be made to the register so return an allocated
+            // register
+            if (not nasmop.index_register.empty() or nasmop.displacement != 0) {
+                toc::asm_lea(src_loc_tk, os, indent, index_reg, lea);
+            } else {
+                tc.asm_cmd(src_loc_tk, os, indent, "mov", index_reg, lea);
+            }
+            return index_reg;
+        }
+
+        return "rsp";
     }
 };
