@@ -42,10 +42,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    40           1199            670           5756
+C/C++ Header                    40           1199            670           5755
 C++                              1             75             83            520
 -------------------------------------------------------------------------------
-SUM:                            41           1274            753           6276
+SUM:                            41           1274            753           6275
 -------------------------------------------------------------------------------
 ```
 
@@ -1043,8 +1043,7 @@ main:
         jge panic_bounds
         imul r12, 20
         add r13, r12
-        add r13, 8
-        mov r14, qword [r13]
+        mov r14, qword [r13 + 8]
     cmp r14, 73
     jne bool_false_152_12
     jmp bool_true_152_12
@@ -3121,8 +3120,7 @@ main:
         imul r12, 20
         add r13, r12
 ;       [152:12] free scratch register 'r12'
-        add r13, 8
-        mov r14, qword [r13]
+        mov r14, qword [r13 + 8]
 ;       [152:12] free scratch register 'r13'
     cmp r14, 73
 ;   [152:12] free scratch register 'r14'
