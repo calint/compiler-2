@@ -10,7 +10,7 @@ func assert(expr : bool) if not expr exit(1)
 
 func print(len : reg_rdx, ptr : reg_rsi) {
     mov(rax, 1)   # write system call
-    mov(rdi, 0)   # file descriptor for standard out
+    mov(rdi, 1)   # file descriptor for standard out
     mov(rsi, ptr) # buffer address 
     mov(rdx, len) # buffer size
     syscall()

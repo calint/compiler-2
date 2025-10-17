@@ -115,7 +115,7 @@ class program final {
         }
         std::println(os,
                      "\nsection .text\nbits 64\nglobal _start\n_start:\nmov "
-                     "rsp,stk.end\n; program");
+                     "rsp,stk.end\n;\n; program\n;");
         for (const auto& st : statements_) {
             if (not st->is_in_data_section()) {
                 st->compile(tc, os, indent, "");
@@ -186,9 +186,6 @@ class program final {
     }
 
     auto build(std::ostream& os) -> void {
-        // std::println(
-        //     std::cerr,
-        //     " ------------------------ C O M P I L E ------------------");
         compile(tc_, os, 0);
         tc_.finish(os);
     }

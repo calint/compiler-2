@@ -36,7 +36,9 @@ bits 64
 global _start
 _start:
 mov rsp,stk.end
+;
 ; program
+;
 ;[8:1] # all functions are inlined
 ;[10:1] # arguments can be placed in specified register using `reg_...` syntax
 ;[39:1] # user types are defined using keyword `type`
@@ -166,12 +168,7 @@ main:
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       [87:12] free scratch register 'r13'
-;   [87:22] allocate scratch register -> r13
-;       [87:22] 2
-;       [87:22] 2
-        mov r13, 2
-    cmp r14, r13
-;   [87:12] free scratch register 'r13'
+    cmp r14, 2
 ;   [87:12] free scratch register 'r14'
     jne bool_false_87_12
     jmp bool_true_87_12
@@ -188,12 +185,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_87_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_87_5_end
         jmp if_19_8_87_5_code
         if_19_8_87_5_code:
@@ -240,12 +232,7 @@ main:
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       [88:12] free scratch register 'r13'
-;   [88:22] allocate scratch register -> r13
-;       [88:22] 2
-;       [88:22] 2
-        mov r13, 2
-    cmp r14, r13
-;   [88:12] free scratch register 'r13'
+    cmp r14, 2
 ;   [88:12] free scratch register 'r14'
     jne bool_false_88_12
     jmp bool_true_88_12
@@ -262,12 +249,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_88_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_88_5_end
         jmp if_19_8_88_5_code
         if_19_8_88_5_code:
@@ -360,12 +342,7 @@ main:
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       [92:12] free scratch register 'r13'
-;   [92:22] allocate scratch register -> r13
-;       [92:22] 2
-;       [92:22] 2
-        mov r13, 2
-    cmp r14, r13
-;   [92:12] free scratch register 'r13'
+    cmp r14, 2
 ;   [92:12] free scratch register 'r14'
     jne bool_false_92_12
     jmp bool_true_92_12
@@ -382,12 +359,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_92_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_92_5_end
         jmp if_19_8_92_5_code
         if_19_8_92_5_code:
@@ -522,12 +494,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_96_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_96_5_end
         jmp if_19_8_96_5_code
         if_19_8_96_5_code:
@@ -635,12 +602,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_99_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_99_5_end
         jmp if_19_8_99_5_code
         if_19_8_99_5_code:
@@ -747,12 +709,7 @@ main:
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       [103:12] free scratch register 'r13'
-;   [103:23] allocate scratch register -> r13
-;       [103:23] 2
-;       [103:23] 2
-        mov r13, 2
-    cmp r14, r13
-;   [103:12] free scratch register 'r13'
+    cmp r14, 2
 ;   [103:12] free scratch register 'r14'
     jne bool_false_103_12
     jmp bool_true_103_12
@@ -769,12 +726,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_103_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_103_5_end
         jmp if_19_8_103_5_code
         if_19_8_103_5_code:
@@ -846,12 +798,7 @@ main:
         jge panic_bounds
         movsx r14, dword [rsp + r13 * 4 - 16]
 ;       [106:12] free scratch register 'r13'
-;   [106:22] allocate scratch register -> r13
-;       [106:22] 0xfe
-;       [106:22] 0xfe
-        mov r13, 0xfe
-    cmp r14, r13
-;   [106:12] free scratch register 'r13'
+    cmp r14, 0xfe
 ;   [106:12] free scratch register 'r14'
     jne bool_false_106_12
     jmp bool_true_106_12
@@ -868,12 +815,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_106_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_106_5_end
         jmp if_19_8_106_5_code
         if_19_8_106_5_code:
@@ -931,17 +873,7 @@ main:
 ;   [110:12] ? p.x == 2
 ;   [110:12] ? p.x == 2
     cmp_110_12:
-;   [110:12] allocate scratch register -> r14
-;       [110:12] p.x
-;       [110:12] p.x
-        mov r14, qword [rsp - 72]
-;   [110:19] allocate scratch register -> r13
-;       [110:19] 2
-;       [110:19] 2
-        mov r13, 2
-    cmp r14, r13
-;   [110:12] free scratch register 'r13'
-;   [110:12] free scratch register 'r14'
+    cmp qword [rsp - 72], 2
     jne bool_false_110_12
     jmp bool_true_110_12
     bool_true_110_12:
@@ -957,12 +889,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_110_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_110_5_end
         jmp if_19_8_110_5_code
         if_19_8_110_5_code:
@@ -990,17 +917,7 @@ main:
 ;   [111:12] ? p.y == 0xb
 ;   [111:12] ? p.y == 0xb
     cmp_111_12:
-;   [111:12] allocate scratch register -> r14
-;       [111:12] p.y
-;       [111:12] p.y
-        mov r14, qword [rsp - 64]
-;   [111:19] allocate scratch register -> r13
-;       [111:19] 0xb
-;       [111:19] 0xb
-        mov r13, 0xb
-    cmp r14, r13
-;   [111:12] free scratch register 'r13'
-;   [111:12] free scratch register 'r14'
+    cmp qword [rsp - 64], 0xb
     jne bool_false_111_12
     jmp bool_true_111_12
     bool_true_111_12:
@@ -1016,12 +933,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_111_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_111_5_end
         jmp if_19_8_111_5_code
         if_19_8_111_5_code:
@@ -1058,17 +970,7 @@ main:
 ;       [59:8] ? arg == 0
 ;       [59:8] ? arg == 0
         cmp_59_8_114_5:
-;       [59:8] allocate scratch register -> r15
-;           [59:8] arg
-;           [59:8] arg
-            mov r15, qword [rsp - 80]
-;       [59:15] allocate scratch register -> r14
-;           [59:15] 0
-;           [59:15] 0
-            mov r14, 0
-        cmp r15, r14
-;       [59:8] free scratch register 'r14'
-;       [59:8] free scratch register 'r15'
+        cmp qword [rsp - 80], 0
         jne if_59_5_114_5_end
         jmp if_59_8_114_5_code
         if_59_8_114_5_code:
@@ -1087,17 +989,7 @@ main:
 ;   [115:12] ? i == 0
 ;   [115:12] ? i == 0
     cmp_115_12:
-;   [115:12] allocate scratch register -> r14
-;       [115:12] i
-;       [115:12] i
-        mov r14, qword [rsp - 80]
-;   [115:17] allocate scratch register -> r13
-;       [115:17] 0
-;       [115:17] 0
-        mov r13, 0
-    cmp r14, r13
-;   [115:12] free scratch register 'r13'
-;   [115:12] free scratch register 'r14'
+    cmp qword [rsp - 80], 0
     jne bool_false_115_12
     jmp bool_true_115_12
     bool_true_115_12:
@@ -1113,12 +1005,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_115_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_115_5_end
         jmp if_19_8_115_5_code
         if_19_8_115_5_code:
@@ -1153,17 +1040,7 @@ main:
 ;       [59:8] ? arg == 0
 ;       [59:8] ? arg == 0
         cmp_59_8_118_5:
-;       [59:8] allocate scratch register -> r15
-;           [59:8] arg
-;           [59:8] arg
-            mov r15, qword [rsp - 80]
-;       [59:15] allocate scratch register -> r14
-;           [59:15] 0
-;           [59:15] 0
-            mov r14, 0
-        cmp r15, r14
-;       [59:8] free scratch register 'r14'
-;       [59:8] free scratch register 'r15'
+        cmp qword [rsp - 80], 0
         jne if_59_5_118_5_end
         jmp if_59_8_118_5_code
         if_59_8_118_5_code:
@@ -1182,17 +1059,7 @@ main:
 ;   [119:12] ? i == 0xff
 ;   [119:12] ? i == 0xff
     cmp_119_12:
-;   [119:12] allocate scratch register -> r14
-;       [119:12] i
-;       [119:12] i
-        mov r14, qword [rsp - 80]
-;   [119:17] allocate scratch register -> r13
-;       [119:17] 0xff
-;       [119:17] 0xff
-        mov r13, 0xff
-    cmp r14, r13
-;   [119:12] free scratch register 'r13'
-;   [119:12] free scratch register 'r14'
+    cmp qword [rsp - 80], 0xff
     jne bool_false_119_12
     jmp bool_true_119_12
     bool_true_119_12:
@@ -1208,12 +1075,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_119_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_119_5_end
         jmp if_19_8_119_5_code
         if_19_8_119_5_code:
@@ -1274,17 +1136,7 @@ main:
 ;   [123:12] ? k == 2
 ;   [123:12] ? k == 2
     cmp_123_12:
-;   [123:12] allocate scratch register -> r14
-;       [123:12] k
-;       [123:12] k
-        mov r14, qword [rsp - 96]
-;   [123:17] allocate scratch register -> r13
-;       [123:17] 2
-;       [123:17] 2
-        mov r13, 2
-    cmp r14, r13
-;   [123:12] free scratch register 'r13'
-;   [123:12] free scratch register 'r14'
+    cmp qword [rsp - 96], 2
     jne bool_false_123_12
     jmp bool_true_123_12
     bool_true_123_12:
@@ -1300,12 +1152,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_123_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_123_5_end
         jmp if_19_8_123_5_code
         if_19_8_123_5_code:
@@ -1354,17 +1201,7 @@ main:
 ;   [126:12] ? k == 2
 ;   [126:12] ? k == 2
     cmp_126_12:
-;   [126:12] allocate scratch register -> r14
-;       [126:12] k
-;       [126:12] k
-        mov r14, qword [rsp - 96]
-;   [126:17] allocate scratch register -> r13
-;       [126:17] 2
-;       [126:17] 2
-        mov r13, 2
-    cmp r14, r13
-;   [126:12] free scratch register 'r13'
-;   [126:12] free scratch register 'r14'
+    cmp qword [rsp - 96], 2
     jne bool_false_126_12
     jmp bool_true_126_12
     bool_true_126_12:
@@ -1380,12 +1217,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_126_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_126_5_end
         jmp if_19_8_126_5_code
         if_19_8_126_5_code:
@@ -1442,17 +1274,7 @@ main:
 ;   [129:12] ? p0.x == 4
 ;   [129:12] ? p0.x == 4
     cmp_129_12:
-;   [129:12] allocate scratch register -> r14
-;       [129:12] p0.x
-;       [129:12] p0.x
-        mov r14, qword [rsp - 112]
-;   [129:20] allocate scratch register -> r13
-;       [129:20] 4
-;       [129:20] 4
-        mov r13, 4
-    cmp r14, r13
-;   [129:12] free scratch register 'r13'
-;   [129:12] free scratch register 'r14'
+    cmp qword [rsp - 112], 4
     jne bool_false_129_12
     jmp bool_true_129_12
     bool_true_129_12:
@@ -1468,12 +1290,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_129_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_129_5_end
         jmp if_19_8_129_5_code
         if_19_8_129_5_code:
@@ -1545,17 +1362,7 @@ main:
 ;   [135:12] ? o1.pos.x == 10
 ;   [135:12] ? o1.pos.x == 10
     cmp_135_12:
-;   [135:12] allocate scratch register -> r14
-;       [135:12] o1.pos.x
-;       [135:12] o1.pos.x
-        mov r14, qword [rsp - 148]
-;   [135:24] allocate scratch register -> r13
-;       [135:24] 10
-;       [135:24] 10
-        mov r13, 10
-    cmp r14, r13
-;   [135:12] free scratch register 'r13'
-;   [135:12] free scratch register 'r14'
+    cmp qword [rsp - 148], 10
     jne bool_false_135_12
     jmp bool_true_135_12
     bool_true_135_12:
@@ -1571,12 +1378,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_135_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_135_5_end
         jmp if_19_8_135_5_code
         if_19_8_135_5_code:
@@ -1604,17 +1406,7 @@ main:
 ;   [136:12] ? o1.pos.y == 2
 ;   [136:12] ? o1.pos.y == 2
     cmp_136_12:
-;   [136:12] allocate scratch register -> r14
-;       [136:12] o1.pos.y
-;       [136:12] o1.pos.y
-        mov r14, qword [rsp - 140]
-;   [136:24] allocate scratch register -> r13
-;       [136:24] 2
-;       [136:24] 2
-        mov r13, 2
-    cmp r14, r13
-;   [136:12] free scratch register 'r13'
-;   [136:12] free scratch register 'r14'
+    cmp qword [rsp - 140], 2
     jne bool_false_136_12
     jmp bool_true_136_12
     bool_true_136_12:
@@ -1630,12 +1422,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_136_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_136_5_end
         jmp if_19_8_136_5_code
         if_19_8_136_5_code:
@@ -1663,17 +1450,7 @@ main:
 ;   [137:12] ? o1.color == 0xff0000
 ;   [137:12] ? o1.color == 0xff0000
     cmp_137_12:
-;   [137:12] allocate scratch register -> r14
-;       [137:12] o1.color
-;       [137:12] o1.color
-        movsx r14, dword [rsp - 132]
-;   [137:24] allocate scratch register -> r13
-;       [137:24] 0xff0000
-;       [137:24] 0xff0000
-        mov r13, 0xff0000
-    cmp r14, r13
-;   [137:12] free scratch register 'r13'
-;   [137:12] free scratch register 'r14'
+    cmp dword [rsp - 132], 0xff0000
     jne bool_false_137_12
     jmp bool_true_137_12
     bool_true_137_12:
@@ -1689,12 +1466,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_137_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_137_5_end
         jmp if_19_8_137_5_code
         if_19_8_137_5_code:
@@ -1755,17 +1527,7 @@ main:
 ;   [141:12] ? o1.pos.x == -1
 ;   [141:12] ? o1.pos.x == -1
     cmp_141_12:
-;   [141:12] allocate scratch register -> r14
-;       [141:12] o1.pos.x
-;       [141:12] o1.pos.x
-        mov r14, qword [rsp - 148]
-;   [141:24] allocate scratch register -> r13
-;       [141:24] -1
-;       [141:25] -1
-        mov r13, -1
-    cmp r14, r13
-;   [141:12] free scratch register 'r13'
-;   [141:12] free scratch register 'r14'
+    cmp qword [rsp - 148], -1
     jne bool_false_141_12
     jmp bool_true_141_12
     bool_true_141_12:
@@ -1781,12 +1543,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_141_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_141_5_end
         jmp if_19_8_141_5_code
         if_19_8_141_5_code:
@@ -1814,17 +1571,7 @@ main:
 ;   [142:12] ? o1.pos.y == -2
 ;   [142:12] ? o1.pos.y == -2
     cmp_142_12:
-;   [142:12] allocate scratch register -> r14
-;       [142:12] o1.pos.y
-;       [142:12] o1.pos.y
-        mov r14, qword [rsp - 140]
-;   [142:24] allocate scratch register -> r13
-;       [142:24] -2
-;       [142:25] -2
-        mov r13, -2
-    cmp r14, r13
-;   [142:12] free scratch register 'r13'
-;   [142:12] free scratch register 'r14'
+    cmp qword [rsp - 140], -2
     jne bool_false_142_12
     jmp bool_true_142_12
     bool_true_142_12:
@@ -1840,12 +1587,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_142_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_142_5_end
         jmp if_19_8_142_5_code
         if_19_8_142_5_code:
@@ -1887,17 +1629,7 @@ main:
 ;   [145:12] ? o2.pos.x == -1
 ;   [145:12] ? o2.pos.x == -1
     cmp_145_12:
-;   [145:12] allocate scratch register -> r14
-;       [145:12] o2.pos.x
-;       [145:12] o2.pos.x
-        mov r14, qword [rsp - 184]
-;   [145:24] allocate scratch register -> r13
-;       [145:24] -1
-;       [145:25] -1
-        mov r13, -1
-    cmp r14, r13
-;   [145:12] free scratch register 'r13'
-;   [145:12] free scratch register 'r14'
+    cmp qword [rsp - 184], -1
     jne bool_false_145_12
     jmp bool_true_145_12
     bool_true_145_12:
@@ -1913,12 +1645,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_145_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_145_5_end
         jmp if_19_8_145_5_code
         if_19_8_145_5_code:
@@ -1946,17 +1673,7 @@ main:
 ;   [146:12] ? o2.pos.y == -2
 ;   [146:12] ? o2.pos.y == -2
     cmp_146_12:
-;   [146:12] allocate scratch register -> r14
-;       [146:12] o2.pos.y
-;       [146:12] o2.pos.y
-        mov r14, qword [rsp - 176]
-;   [146:24] allocate scratch register -> r13
-;       [146:24] -2
-;       [146:25] -2
-        mov r13, -2
-    cmp r14, r13
-;   [146:12] free scratch register 'r13'
-;   [146:12] free scratch register 'r14'
+    cmp qword [rsp - 176], -2
     jne bool_false_146_12
     jmp bool_true_146_12
     bool_true_146_12:
@@ -1972,12 +1689,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_146_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_146_5_end
         jmp if_19_8_146_5_code
         if_19_8_146_5_code:
@@ -2005,17 +1717,7 @@ main:
 ;   [147:12] ? o2.color == 0xff0000
 ;   [147:12] ? o2.color == 0xff0000
     cmp_147_12:
-;   [147:12] allocate scratch register -> r14
-;       [147:12] o2.color
-;       [147:12] o2.color
-        movsx r14, dword [rsp - 168]
-;   [147:24] allocate scratch register -> r13
-;       [147:24] 0xff0000
-;       [147:24] 0xff0000
-        mov r13, 0xff0000
-    cmp r14, r13
-;   [147:12] free scratch register 'r13'
-;   [147:12] free scratch register 'r14'
+    cmp dword [rsp - 168], 0xff0000
     jne bool_false_147_12
     jmp bool_true_147_12
     bool_true_147_12:
@@ -2031,12 +1733,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_147_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_147_5_end
         jmp if_19_8_147_5_code
         if_19_8_147_5_code:
@@ -2108,12 +1805,7 @@ main:
         add r13, 8
         mov r14, qword [r13]
 ;       [152:12] free scratch register 'r13'
-;   [152:27] allocate scratch register -> r13
-;       [152:27] 73
-;       [152:27] 73
-        mov r13, 73
-    cmp r14, r13
-;   [152:12] free scratch register 'r13'
+    cmp r14, 73
 ;   [152:12] free scratch register 'r14'
     jne bool_false_152_12
     jmp bool_true_152_12
@@ -2130,12 +1822,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_152_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_152_5_end
         jmp if_19_8_152_5_code
         if_19_8_152_5_code:
@@ -2268,12 +1955,7 @@ main:
         mov r14, qword [r13 + r12 * 8 + 0]
 ;       [158:12] free scratch register 'r12'
 ;       [158:12] free scratch register 'r13'
-;   [158:38] allocate scratch register -> r13
-;       [158:38] 0xffee
-;       [158:38] 0xffee
-        mov r13, 0xffee
-    cmp r14, r13
-;   [158:12] free scratch register 'r13'
+    cmp r14, 0xffee
 ;   [158:12] free scratch register 'r14'
     jne bool_false_158_12
     jmp bool_true_158_12
@@ -2290,12 +1972,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_158_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_158_5_end
         jmp if_19_8_158_5_code
         if_19_8_158_5_code:
@@ -2437,12 +2114,7 @@ main:
         mov r14, qword [r13 + r12 * 8 + 0]
 ;       [165:12] free scratch register 'r12'
 ;       [165:12] free scratch register 'r13'
-;   [165:38] allocate scratch register -> r13
-;       [165:38] 0xffee
-;       [165:38] 0xffee
-        mov r13, 0xffee
-    cmp r14, r13
-;   [165:12] free scratch register 'r13'
+    cmp r14, 0xffee
 ;   [165:12] free scratch register 'r14'
     jne bool_false_165_12
     jmp bool_true_165_12
@@ -2459,12 +2131,7 @@ main:
 ;       [19:8] ? not expr
 ;       [19:8] ? not expr
         cmp_19_8_165_5:
-;       [19:12] allocate scratch register -> r14
-;           [19:12] expr
-;           [19:12] expr
-            mov r14, r15
-        test r14, r14
-;       [19:8] free scratch register 'r14'
+        test r15, r15
         jne if_19_5_165_5_end
         jmp if_19_8_165_5_code
         if_19_8_165_5_code:
@@ -2586,17 +2253,7 @@ main:
 ;       [175:12] ? len == 0
 ;       [175:12] ? len == 0
         cmp_175_12:
-;       [175:12] allocate scratch register -> r15
-;           [175:12] len
-;           [175:12] len
-            mov r15, qword [rsp - 804]
-;       [175:19] allocate scratch register -> r14
-;           [175:19] 0
-;           [175:19] 0
-            mov r14, 0
-        cmp r15, r14
-;       [175:12] free scratch register 'r14'
-;       [175:12] free scratch register 'r15'
+        cmp qword [rsp - 804], 0
         jne if_177_19
         jmp if_175_12_code
         if_175_12_code:
@@ -2607,17 +2264,7 @@ main:
 ;       [177:19] ? len <= 4
 ;       [177:19] ? len <= 4
         cmp_177_19:
-;       [177:19] allocate scratch register -> r15
-;           [177:19] len
-;           [177:19] len
-            mov r15, qword [rsp - 804]
-;       [177:26] allocate scratch register -> r14
-;           [177:26] 4
-;           [177:26] 4
-            mov r14, 4
-        cmp r15, r14
-;       [177:19] free scratch register 'r14'
-;       [177:19] free scratch register 'r15'
+        cmp qword [rsp - 804], 4
         jg if_else_175_9
         jmp if_177_19_code
         if_177_19_code:

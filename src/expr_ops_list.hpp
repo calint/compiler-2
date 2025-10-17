@@ -310,17 +310,19 @@ class expr_ops_list final : public expression {
 
         tc.comment_source(*this, os, indent);
 
-        if (exprs_[0]->is_identifier()) {
-            exprs_[0]->compile(tc, os, indent, dst_info.id);
+        const statement& st0{*exprs_[0]};
+        if (st0.is_identifier()) {
+            st0.compile(tc, os, indent, dst_info.id);
         } else {
             // the first element is assigned to destination, operator '='
-            asm_op(tc, os, indent, '=', dst_info, *exprs_.at(0));
+            asm_op(tc, os, indent, '=', dst_info, st0);
         }
 
         // remaining elements are +,-,*,/,%,|,&,^,<<,>>
         const size_t n{ops_.size()};
         for (size_t i{}; i < n; i++) {
-            asm_op(tc, os, indent, ops_.at(i), dst_info, *exprs_.at(i + 1));
+            const statement& st{*exprs_[i + 1]};
+            asm_op(tc, os, indent, ops_.at(i), dst_info, st);
         }
 
         // apply unary expressions on destination
@@ -432,13 +434,15 @@ class expr_ops_list final : public expression {
         -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression()) {
+        if (src.is_expression() or
+            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
             // yes, compile with destination to 'dst'
             src.compile(tc, os, indent, dst.id_nasm);
             return;
         }
 
         const ident_info& src_info{tc.make_ident_info(src)};
+
         // is 'src' a constant?
         if (src_info.is_const()) {
             // move it to 'dst' with unary ops
@@ -459,7 +463,8 @@ class expr_ops_list final : public expression {
         -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression()) {
+        if (src.is_expression() or
+            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
             // yes, compile it to a scratch register
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
@@ -478,8 +483,8 @@ class expr_ops_list final : public expression {
 
         // not an expression, either a register or memory location
 
-        const ident_info& src_info{tc.make_ident_info(src)};
-        // 'imul' destination operand must be register
+        const ident_info src_info{tc.make_ident_info(src)};
+        // note: 'imul' destination operand must be register
         if (dst.is_register() and not dst.is_memory_operand()) {
             if (src_info.is_const()) {
                 tc.asm_cmd(src.tok(), os, indent, "imul", dst.id_nasm,
@@ -547,7 +552,9 @@ class expr_ops_list final : public expression {
                                const ident_info& dst, const statement& src)
         -> void {
 
-        if (src.is_expression()) {
+        // does 'src' need to be compiled?
+        if (src.is_expression() or
+            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
@@ -557,7 +564,8 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression
-        const ident_info& src_info{tc.make_ident_info(src)};
+
+        const ident_info src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
                        std::format("{}{}", src.get_unary_ops().to_string(),
@@ -574,6 +582,7 @@ class expr_ops_list final : public expression {
         }
 
         // has unary ops
+
         if (uops.is_only_negated()) {
             tc.asm_cmd(src.tok(), os, indent, op_when_negated, dst.id_nasm,
                        src_info.id_nasm);
@@ -581,6 +590,7 @@ class expr_ops_list final : public expression {
         }
 
         // multiple unary ops
+
         const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
         uops.compile(tc, os, indent, reg);
@@ -592,7 +602,9 @@ class expr_ops_list final : public expression {
                                const std::string_view op, const ident_info& dst,
                                const statement& src) -> void {
 
-        if (src.is_expression()) {
+        // does 'src' need to be compiled?
+        if (src.is_expression() or
+            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
@@ -602,7 +614,8 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression
-        const ident_info& src_info{tc.make_ident_info(src)};
+
+        const ident_info src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
                        std::format("{}{}", src.get_unary_ops().to_string(),
@@ -611,6 +624,7 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression and not a constant
+
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
@@ -619,6 +633,7 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression and not a constant and has unary ops
+
         const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.id_nasm);
         uops.compile(tc, os, indent, reg);
@@ -630,7 +645,9 @@ class expr_ops_list final : public expression {
                              const std::string_view op, const ident_info& dst,
                              const statement& src) -> void {
 
-        if (src.is_expression()) {
+        // does 'src' need to be compiled?
+        if (src.is_expression() or
+            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
             // the operand must be stored in register 'CL'
             //? todo. BMI2 (Bit Manipulation Instruction Set 2)
             //        look at shlx/shrx/sarx which can use any register for the
@@ -652,7 +669,8 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression
-        const ident_info& src_info{tc.make_ident_info(src)};
+
+        const ident_info src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
             tc.asm_cmd(src.tok(), os, indent, op, dst.id_nasm,
                        std::format("{}{}", src.get_unary_ops().to_string(),
@@ -685,6 +703,7 @@ class expr_ops_list final : public expression {
         }
 
         // unary ops need to be applied on the argument src
+
         const bool rcx_allocated{
             tc.alloc_named_register(src.tok(), os, indent, "rcx")};
         if (not rcx_allocated) {
@@ -706,7 +725,9 @@ class expr_ops_list final : public expression {
                            const std::string_view op, const ident_info& dst,
                            const statement& src) -> void {
 
-        if (src.is_expression()) {
+        // does 'src' need to be compiled?
+        if (src.is_expression() or
+            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
@@ -741,7 +762,8 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression
-        const ident_info& src_info{tc.make_ident_info(src)};
+
+        const ident_info src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
             const bool rax_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rax")};

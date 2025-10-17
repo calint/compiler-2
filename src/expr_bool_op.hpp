@@ -450,7 +450,8 @@ class expr_bool_op final : public statement {
                              std::vector<std::string>& allocated_registers)
         -> std::string {
 
-        if (expr.is_expression() or expr.is_identifier()) {
+        if (expr.is_expression() or
+            (expr.is_identifier() and tc.make_ident_info(expr).has_lea())) {
             const std::string reg{
                 tc.alloc_scratch_register(expr.tok(), os, indent)};
             allocated_registers.emplace_back(reg);
@@ -459,7 +460,7 @@ class expr_bool_op final : public statement {
         }
 
         // 'expr' is not an expression
-        const ident_info& expr_info{tc.make_ident_info(expr)};
+        const ident_info expr_info{tc.make_ident_info(expr)};
         if (expr_info.is_const()) {
             if (is_lhs) {
                 const std::string reg{

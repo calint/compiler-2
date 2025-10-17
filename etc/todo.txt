@@ -1,4 +1,7 @@
-[ ] expr_ops_list: 313 and expr_bool_op: 453 are a hack. fix
+[ ] stmt_identifier: optimize known offset by returning "r15 + 20" etc instead
+    of add r15, 20
+[ ] expr_ops_list: tidy asm_op_xxx with more streamlined flow of make_ident
+[x] expr_ops_list: 313 and expr_bool_op: 453 are a hack. fix
 [x] toc::lea instead of generic command
 [ ] brace initializers offer no performance advantage and the narrowing issues
     do not exist in this project. they are ugly. ponder switching to =
