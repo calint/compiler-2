@@ -1,51 +1,56 @@
 ;; --- highlights.scm ---
-;; Defines highlighting queries for the Baz language based on the grammar.js
-;; This version uses specific captures to allow for fine-grained coloring
-;; of keywords, function arguments, and types.
+;; Defines highlighting queries for the Baz language.
+;; NOTE: THIS VERSION USES ANONYMOUS NODE MATCHING (no 'name:' or 'destination:').
+;; This resolves the "Invalid field name" error that occurs when the parser is
+;; not synchronized with the grammar that uses named fields.
 
-;; === Keywords ===
-(field_keyword) @keyword.declaration  ;; For 'field'
-(func_keyword) @keyword.function     ;; For 'func'
-(return_keyword) @keyword.control    ;; For 'return'
+;; === General ===
+(comment) @comment
+
+;; === Keywords and Control Flow ===
+(field_keyword) @keyword.declaration
+(func_keyword) @keyword.function
+(return_keyword) @keyword.control
 
 ;; === Literals ===
 (string_literal) @string
 (number_literal) @number
 
-;; === Definitions and Declarations ===
+;; === Definitions and Declarations (Anonymous Matching) ===
 
-;; Top-level field names (variables)
+;; Field names: Matches the second child (the identifier) of the field_definition node.
+;; Color: @variable.declaration
 (field_definition
-  name: (identifier) @variable.declaration
+  (_)
+  (identifier) @variable.declaration  ; The field name is the second child of field_definition
 )
 
-;; Function names
+;; Function names: Matches the second child (the identifier) of the function_definition node.
+;; Color: @function.declaration
 (function_definition
-  name: (identifier) @function.declaration
+  (_)
+  (identifier) @function.declaration ; The function name is the second child of function_definition
 )
 
 ;; === Parameters and Types ===
 
 ;; Highlight the name of function arguments (parameters).
-;; Using @parameter.function for a distinct color for arguments.
+;; Color: @parameter.function
 (parameter
-  name: (identifier) @parameter.function
+  (identifier) @parameter.function
 )
 
 ;; Highlight type annotations.
-;; Using @type.builtin for a distinct color for types like Int, Float, etc.
+;; Color: @type.builtin
 (parameter
-  type: (type_name) @type.builtin
+  (type_name) @type.builtin
 )
 
 ;; === Statements (Inside function bodies) ===
 
-;; Highlight the destination of an assignment as a regular variable (e.g., in `x = 10`)
+;; Highlight the assignment destination: Matches the first identifier in the assignment_statement.
+;; Color: @variable
 (assignment_statement
-  destination: (identifier) @variable
-)
-
-;; Highlight the returned literal value (the value itself is caught by @string/@number)
-(return_statement
-  value: (_) @variable.builtin
+  (identifier) @variable ; The assignment destination is the first child (identifier)
+  (_)
 )
