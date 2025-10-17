@@ -42,10 +42,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    40           1224            683           5820
+C/C++ Header                    40           1225            684           5820
 C++                              1             75             83            520
 -------------------------------------------------------------------------------
-SUM:                            41           1299            766           6340
+SUM:                            41           1300            767           6340
 -------------------------------------------------------------------------------
 ```
 
@@ -1357,18 +1357,18 @@ mov rsp,stk.end
 ;[39:1] # user types are defined using keyword `type`
 ;[41:1] # default type is `i64` and does not need to be specified
 ;[43:1] point : 16 B    fields: 
-;[43:1]       name :  size :  offset :  array? : array size
-;[43:1]          x :     8 :       0 :      no :           
-;[43:1]          y :     8 :       8 :      no :           
+;[43:1]       name :  offset :    size :  array? : array size
+;[43:1]          x :       0 :       8 :      no :           
+;[43:1]          y :       8 :       8 :      no :           
 
 ;[45:1] object : 20 B    fields: 
-;[45:1]       name :  size :  offset :  array? : array size
-;[45:1]        pos :    16 :       0 :      no :           
-;[45:1]      color :     4 :      16 :      no :           
+;[45:1]       name :  offset :    size :  array? : array size
+;[45:1]        pos :       0 :      16 :      no :           
+;[45:1]      color :      16 :       4 :      no :           
 
 ;[47:1] world : 64 B    fields: 
-;[47:1]       name :  size :  offset :  array? : array size
-;[47:1]  locations :    64 :       0 :     yes :          8
+;[47:1]       name :  offset :    size :  array? : array size
+;[47:1]  locations :       0 :      64 :     yes :          8
 
 ;[49:1] # function arguments are equivalent to mutable references
 ;[56:1] # default argument type is `i64`

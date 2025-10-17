@@ -567,12 +567,13 @@ class toc final {
                 return;
             }
 
-            // sign-extend src to scratch register, do the op then mov the
-            // sign-extended register to destination
+            // sign-extend `src_nasm` to scratch register, then do the op then
+            // mov the sign-extended register to destination
 
-            // note: when doing arithmetic between 2 memory locations,
-            //       this code path is triggered by the use of an
-            //       in-between scratch register
+            // note: when doing arithmetic between 2 memory locations, this code
+            //       path is triggered by the use of an in-between scratch
+            //       register
+
             const std::string reg_sx{
                 alloc_scratch_register(src_loc_tk, os, indnt)};
 
@@ -580,6 +581,7 @@ class toc final {
             std::println(os, "movsx {}, {}", reg_sx, src_nasm);
 
             // todo fix for dst_nasm is memory operand
+            // note: this path is never taken?
             if (is_nasm_memory_operand(dst_nasm)) {
                 throw panic_exception{"toc:6"};
             }

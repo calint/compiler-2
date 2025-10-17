@@ -83,13 +83,13 @@ class stmt_def_type final : public statement {
         std::println(os, "{} : {} B    fields: ", name_tk_.text(), tp.size());
 
         tc.comment_start(tok(), os, indent);
-        std::println(os, "{:>10} : {:>5} : {:>7} : {:>7} : {:>10}", "name",
-                     "size", "offset", "array?", "array size");
+        std::println(os, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", "name",
+                     "offset", "size", "array?", "array size");
 
         for (const type_field& f : tp.fields()) {
             tc.comment_start(tok(), os, indent);
-            std::println(os, "{:>10} : {:>5} : {:>7} : {:>7} : {:>10}", f.name,
-                         f.size, f.offset, f.is_array ? "yes" : "no",
+            std::println(os, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", f.name,
+                         f.offset, f.size, f.is_array ? "yes" : "no",
                          f.is_array ? std::to_string(f.array_size) : "");
         }
         std::println(os);
