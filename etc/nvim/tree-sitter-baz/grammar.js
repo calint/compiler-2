@@ -3,7 +3,7 @@ module.exports = grammar({
 
   // Treat whitespace and comments as ignorable extras that can appear anywhere
   extras: $ => [
-    /\s/, // standard whitespace
+    /\s/,
     $.comment,
   ],
 
@@ -19,98 +19,89 @@ module.exports = grammar({
 
     // --- Definitions ---
 
-    // type Identifier { member_fields }
-    type_definition: $ => seq(
-      $.type_keyword,
-      field('name', $.identifier), // Named field for the Type Name
-      '{',
-      optional($.member_field_list), // Use a comma-separated list
-      '}',
-    ),
-
-    // NEW RULE: list of fields separated by commas
-    member_field_list: $ => seq(
-      $.member_field,
-      repeat(seq(',', $.member_field))
-    ),
-
-    // identifier : _definition_type (e.g., x: i32[10]). Type is now optional.
-    member_field: $ => seq(
-      $.identifier,
-      // UPDATED: Must use the definition-specific type rule (supports sized arrays)
-      optional(seq(':', $._definition_type)),
-    ),
-
     // field identifier = expression
     field_definition: $ => seq(
       $.field_keyword,
-      field('name', $.identifier),
+      field('name', $.identifier), // Named field for highlighting the variable name
       '=',
       $._expression,
     ),
 
-    // func identifier ( parameters ) body
+    // type Identifier { member_field_list }
+    type_definition: $ => seq(
+      $.type_keyword,
+      field('name', $.identifier), // Named field for highlighting the type name
+      '{',
+      optional($.member_field_list),
+      '}',
+    ),
+
+    member_field_list: $ => sep1($.member_field, ','),
+
+    // member_field name: type
+    member_field: $ => seq(
+      field('name', $.identifier), // Named field for highlighting the member name
+      optional(seq(':', $._definition_type)),
+    ),
+
+    // func identifier ( parameters ) return_annotation body
     function_definition: $ => seq(
       $.func_keyword,
-      field('name', $.identifier),
+      field('name', $.identifier), // Named field for highlighting the function name
       '(',
-      field('parameters', optional($.parameter_list)),
+      optional($.parameter_list),
       ')',
+      optional($.return_annotation), // Optional return type
       $._function_body,
     ),
 
-    // Fixed: Must contain at least one parameter, handles comma separation internally
-    parameter_list: $ => seq(
-      $.parameter,
-      repeat(seq(',', $.parameter))
+    return_annotation: $ => seq(
+      ':',
+      $._definition_type,
+      field('return_name', $.identifier) // Named field for quasi-variable
     ),
 
-    // identifier : _parameter_type (e.g., data: i32[]). Type is optional.
+    parameter_list: $ => sep1($.parameter, ','),
+
+    // identifier : type_name (type is optional)
     parameter: $ => seq(
-      $.identifier,
-      // UPDATED: Must use the parameter-specific type rule (supports unsized arrays)
+      field('name', $.identifier),
       optional(seq(':', $._parameter_type)),
     ),
 
-    // NEW RULE: Types used in Definitions (must be sized arrays if array)
+    // --- Types ---
+
+    // Type used in definitions (member fields, function returns) - requires size for arrays
     _definition_type: $ => choice(
       $._base_type,
       $.sized_array_type,
     ),
 
-    // NEW RULE: Types used in Function Parameters (must be unsized arrays if array)
+    // Type used in parameters - arrays must be unsized
     _parameter_type: $ => choice(
       $._base_type,
       $.unsized_array_type,
     ),
 
-    // Sized Array Type Definition (e.g., i32[10])
-    sized_array_type: $ => seq(
-      $._base_type, // The base type (e.g., i32 or a Vector)
-      '[',
-      $.number_literal, // Size must be a constant (a number literal)
-      ']'
-    ),
-
-    // Unsized Array Type (e.g., i32[]). Used for function parameters.
-    unsized_array_type: $ => seq(
-      $._base_type, // The base type
-      '[]'
-    ),
-
-    // Helper rule for simple, non-array types
+    // Base type is either built-in or a custom identifier
     _base_type: $ => choice(
-      $.identifier,
-      $._built_in_type,
+      $.bool_type, $.i8_type, $.i16_type, $.i32_type, $.i64_type,
+      $.identifier // Custom type identifier
     ),
 
-    // Built-in types (all are treated as keywords)
-    _built_in_type: $ => choice(
-      $.type_i64,
-      $.type_bool,
-      $.type_i8,
-      $.type_i16,
-      $.type_i32,
+    // Array type for definitions (must have size)
+    sized_array_type: $ => seq(
+      $._base_type,
+      '[',
+      $.number_literal, // Size is a constant
+      ']',
+    ),
+
+    // Array type for parameters (no size allowed)
+    unsized_array_type: $ => seq(
+      $._base_type,
+      '[',
+      ']',
     ),
 
     // --- Function Body and Statements ---
@@ -127,20 +118,20 @@ module.exports = grammar({
       '}',
     ),
 
-    // A statement can be an assignment, variable declaration, return, function call, if, or loop
+    // A statement can be an assignment, declaration, return, function call, if, or loop
     _statement: $ => choice(
-      $.variable_declaration,
       $.assignment_statement,
+      $.variable_declaration, // var declaration
       $.return_statement,
       $.function_call,
-      $.if_statement,
-      $.loop_statement,
+      $.if_statement, // NEW
+      $.loop_statement, // NEW
     ),
 
     // var identifier = expression
     variable_declaration: $ => seq(
       $.var_keyword,
-      field('name', $.identifier), // Named field for highlighting the variable name
+      field('destination', $.identifier),
       '=',
       $._expression,
     ),
@@ -159,44 +150,37 @@ module.exports = grammar({
     function_call: $ => seq(
       field('function', $.identifier), // Named field for highlighting the function name
       '(',
-      field('arguments', optional($.argument_list)),
+      optional($.argument_list),
       ')',
     ),
 
-    // Fixed: Must contain at least one expression, handles comma separation internally
-    argument_list: $ => seq(
-      $._expression,
-      repeat(seq(',', $._expression))
-    ),
+    argument_list: $ => sep1($._expression, ','),
 
-    // if statement: if expression block
+    // NEW: if statement: if expression block
     if_statement: $ => seq(
       $.if_keyword,
-      $._expression, // Now uses _expression for the condition
+      $._expression,
       $.block,
     ),
 
-    // loop statement: loop expression block
+    // NEW: loop statement: loop block
     loop_statement: $ => seq(
       $.loop_keyword,
-      $._expression, // Expression for loop condition (or iterator)
       $.block,
     ),
 
-    // --- Expressions (The core unit of value) ---
-    // Expression is now literal, identifier, function call, or parenthesized sub-expression
+    // Expression can be a literal, identifier (variable), function call, or sub-expression
     _expression: $ => choice(
       $._literal,
       $.identifier,
-      $.function_call,                 // Function call as an expression (e.g., as an argument)
-      $.parenthesized_expression,      // Sub-expressions
+      $.function_call,
+      $.parenthesized_expression,
     ),
 
-    // ( expression )
     parenthesized_expression: $ => seq(
       '(',
       $._expression,
-      ')'
+      ')',
     ),
 
     // --- Tokens (Keywords, Identifiers, Literals) ---
@@ -204,18 +188,18 @@ module.exports = grammar({
     // Keywords
     field_keyword: $ => 'field',
     func_keyword: $ => 'func',
+    type_keyword: $ => 'type', // NEW
+    var_keyword: $ => 'var',   // NEW
     return_keyword: $ => 'return',
     if_keyword: $ => 'if',
     loop_keyword: $ => 'loop',
-    var_keyword: $ => 'var',
-    type_keyword: $ => 'type',
 
-    // Built-in Type Tokens
-    type_i64: $ => 'i64',
-    type_bool: $ => 'bool',
-    type_i8: $ => 'i8',
-    type_i16: $ => 'i16',
-    type_i32: $ => 'i32',
+    // Built-in Types (Keywords)
+    bool_type: $ => 'bool',
+    i8_type: $ => 'i8',
+    i16_type: $ => 'i16',
+    i32_type: $ => 'i32',
+    i64_type: $ => 'i64',
 
     // Identifiers (variable, function, type names)
     identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,
@@ -226,20 +210,27 @@ module.exports = grammar({
       $.number_literal,
     ),
 
-    // To accept hexadecimal (0x...), binary (0b...), and decimal/float numbers.
-    number_literal: $ => choice(
-      /0x[0-9a-fA-F]+/, // Hexadecimal
-      /0b[01]+/,       // Binary
-      /\d+(\.\d+)?/    // Decimal (integer or float)
-    ),
-
     string_literal: $ => seq(
       '"',
       repeat(/[^"\n]/), // Any character except quote or newline
       '"',
     ),
 
+    number_literal: $ => choice(
+      // Hex: 0x followed by one or more hex digits
+      /0x[0-9a-fA-F]+/,
+      // Binary: 0b followed by one or more binary digits
+      /0b[01]+/,
+      // Decimal (Integer or Float)
+      /\d+(\.\d+)?/,
+    ),
+
     // Comments
     comment: $ => /#.*/,
   }
 });
+
+// Helper function for separated lists that must have at least one element
+function sep1(rule, separator) {
+  return seq(rule, repeat(seq(separator, rule)));
+}

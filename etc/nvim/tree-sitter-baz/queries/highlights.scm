@@ -1,6 +1,5 @@
 ;; --- highlights.scm ---
-;; NOTE: This file uses anonymous node matching (no 'name:' or 'destination:') 
-;; and has been fixed to avoid querying the problematic '_expression' node.
+;; Synchronized with the latest grammar.js (Types, Arrays, Return Annotations)
 
 ;; === General ===
 (comment) @comment
@@ -8,95 +7,94 @@
 ;; === Keywords and Control Flow ===
 (field_keyword) @keyword.declaration
 (func_keyword) @keyword.function
+(type_keyword) @keyword.declaration
+(var_keyword) @keyword.declaration
 (return_keyword) @keyword.control
+
+;; Control Flow Keywords
 (if_keyword) @keyword.control
 (loop_keyword) @keyword.control
-(var_keyword) @keyword.declaration
-(type_keyword) @keyword.declaration
+
+;; === Types and Built-ins ===
+(bool_type) @type.builtin
+(i8_type) @type.builtin
+(i16_type) @type.builtin
+(i32_type) @type.builtin
+(i64_type) @type.builtin
+
+;; Custom Type Definitions (The name of the type itself)
+(type_definition
+  name: (identifier) @type.definition
+)
+
+;; Type Name Usage inside member fields/function types (custom types)
+(sized_array_type
+  (identifier) @type.name
+)
+(unsized_array_type
+  (identifier) @type.name
+)
 
 ;; === Literals ===
 (string_literal) @string
 (number_literal) @number
 
-;; === Definitions and Declarations (Anonymous Matching) ===
+;; === Punctuation ===
+[ "{" "}" "(" ")" "=" ":" "," ] @punctuation.bracket
+[ "[" "]" ] @punctuation.delimiter
 
-;; Field names: Matches the second child (the identifier) of the field_definition node.
+;; === Definitions and Declarations ===
+
+;; Top-level field names
 (field_definition
-  (_)
-  (identifier) @variable.declaration
+  name: (identifier) @variable.declaration
 )
 
-;; Function names: Matches the second child (the identifier) of the function_definition node.
+;; Function names
 (function_definition
-  (_)
-  (identifier) @function.declaration
+  name: (identifier) @function.declaration
 )
 
-;; Type definition name
-(type_definition
-  (identifier) @type.definition
-)
-
-;; Member field names (first identifier in the rule)
+;; Member field names inside a type definition
 (member_field
-  (identifier) @field
+  name: (identifier) @field
 )
 
-;; === Parameters and Types ===
+;; Variables declared with 'var'
+(variable_declaration
+  destination: (identifier) @variable.declaration
+)
 
-;; Highlight the name of function arguments (parameters).
+;; === Function Signature and Return ===
+
+;; Highlight the name of function arguments (parameters)
 (parameter
   (identifier) @parameter.function
 )
 
-;; Highlight Custom Type Identifiers when used as array base types
-(sized_array_type
-  (identifier) @type.builtin
-)
-(unsized_array_type
-  (identifier) @type.builtin
+;; Highlight the quasi-variable name in the return annotation
+(return_annotation
+  (identifier) @variable.return
 )
 
-;; Built-in Type Tokens
-(type_i64) @type.builtin
-(type_bool) @type.builtin
-(type_i8) @type.builtin
-(type_i16) @type.builtin
-(type_i32) @type.builtin
+;; === Statements and Expressions (Variable Usage) ===
 
-;; Highlight Array Brackets as Punctuation
-(sized_array_type "[" @punctuation.bracket)
-(sized_array_type "]" @punctuation.bracket)
-(unsized_array_type "[]" @punctuation.bracket) @punctuation.bracket
-
-;; === Statements and Expressions ===
-
-;; Highlight the assignment destination: Matches the identifier being assigned to.
+;; Assignment destination (variable being modified)
 (assignment_statement
-  (identifier) @variable
+  destination: (identifier) @variable
 )
 
-;; NEW: Variable declaration name
-(variable_declaration
-  (identifier) @variable.declaration
-)
-
-;; Function Call name
+;; Identifiers used as arguments in function calls
 (function_call
-  (identifier) @function.call
-)
-
-;; Fix: Highlight identifiers used as function arguments (expressions)
-;; Query the identifier directly, assuming it's a child of argument_list or an intermediary parent
-(argument_list
   (identifier) @variable.call
 )
 
-;; Fix: Highlight condition identifiers in if/loop statements
-;; Query the identifier directly, assuming it's a child of if_statement/loop_statement
+;; Identifiers used as bare expressions (e.g., condition in if_statement or lone statement)
 (if_statement
   (identifier) @variable.call
 )
-(loop_statement
+
+;; Identifiers used in parenthesized expressions (covers nested calls/expressions)
+(parenthesized_expression
   (identifier) @variable.call
 )
