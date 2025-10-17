@@ -533,6 +533,7 @@ class toc final {
 
             // not both operands are memory references, `src_nasm` might be a
             // constant or a register src might be constant
+
             indent(os, indnt);
             std::println(os, "{} {}, {}", op, dst_nasm, src_nasm);
             return;
@@ -558,6 +559,7 @@ class toc final {
             }
 
             // not both of the operands are memory references
+
             if (op == "mov") {
                 // special case for `mov` which needs sign extended move
                 indent(os, indnt);
@@ -565,13 +567,29 @@ class toc final {
                 return;
             }
 
+            // sign-extend src to scratch register, do the op then mov the
+            // sign-extended register to destination
+
             // note: when doing arithmetic between 2 memory locations,
             //       this code path is triggered by the use of an
             //       in-between scratch register
+            const std::string reg_sx{
+                alloc_scratch_register(src_loc_tk, os, indnt)};
+
             indent(os, indnt);
-            std::println(os, "{} {}, {}", op,
-                         get_sized_register(src_loc_tk, dst_nasm, src_size),
-                         src_nasm);
+            std::println(os, "movsx {}, {}", reg_sx, src_nasm);
+
+            // todo fix for dst_nasm is memory operand
+            if (is_nasm_memory_operand(dst_nasm)) {
+                throw panic_exception{"toc:6"};
+            }
+
+            // dst_nasm is a register
+
+            indent(os, indnt);
+            std::println(os, "{} {}, {}", op, dst_nasm, reg_sx);
+
+            free_scratch_register(src_loc_tk, os, indnt, reg_sx);
             return;
         }
 

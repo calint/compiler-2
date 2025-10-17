@@ -1,4 +1,4 @@
-[ ] t56: fails with negative numbers because they are not sign extended when
+[x] t56: fails with negative numbers because they are not sign extended when
     using scratch register in expr_ops_list
 [ ] see edge case t116 'c' should not be 2
 [ ] array_copy does not handle when destination overlaps source

@@ -53,7 +53,7 @@ SRC=t52 && EXP=0 && RUN
 SRC=t53 && EXP=0 && RUN
 SRC=t54 && EXP=0 && RUN
 SRC=t55 && EXP=0 && RUN
-#SRC=t56 && EXP=0 && RUN
+SRC=t56 && EXP=0 && RUN
 SRC=t57 && EXP=0 && RUN
 SRC=t58 && EXP=0 && RUN
 SRC=t59 && EXP=0 && RUN
