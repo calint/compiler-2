@@ -1,0 +1,29 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+# Verify struct field ordering and padding
+type packed_small { a : i8, b : i8, c : i8, d : i8 }
+type mixed_sizes { x : i64, y : i8, z : i32, w : i16 }
+
+# Test that field offsets are as expected
+func main() {
+    var p : packed_small = {1, 2, 3, 4}
+    var m : mixed_sizes = {0x7FFFFFFF, 0x99, -0x7FFFFFFF, 0xeeff}
+    
+    # Verify individual fields survive assignment (catches alignment issues)
+    assert(p.a == 1 and p.d == 4)
+    assert(m.x == 0x7FFFFFFF)
+    assert(m.z == 0x7FFFFFFF)
+    
+    # Array of these types to verify stride
+    var ps : packed_small[3]
+    ps[0].a = 10
+    ps[1].a = 20
+    ps[2].a = 30
+    assert(ps[0].a == 10 and ps[2].a == 30)
+}
