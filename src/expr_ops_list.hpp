@@ -223,10 +223,14 @@ class expr_ops_list final : public expression {
         // with scratch register
         std::stringstream ss2;
         const std::string reg{tc.alloc_scratch_register(tok(), ss2, indent)};
-        const ident_info dest_reg{tc.make_ident_info(tok(), reg)};
-        do_compile(tc, ss2, indent, dst_info);
+        const ident_info dst_reg{tc.make_ident_info(tok(), reg)};
+        do_compile(tc, ss2, indent, dst_reg);
         tc.asm_cmd(tok(), ss2, indent, "mov", dst_info.id_nasm, reg);
         tc.free_scratch_register(tok(), ss2, indent, reg);
+        // std::println(
+        //     std::cerr,
+        //     "without scratch register:{}\nwith scratch register:\n{}\n",
+        //     ss1.str(), ss2.str());
 
         // compare instruction count
         const size_t ss1_count{count_instructions(tc, ss1)};

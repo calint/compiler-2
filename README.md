@@ -42,10 +42,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    40           1216            675           5814
+C/C++ Header                    40           1216            679           5814
 C++                              1             75             83            520
 -------------------------------------------------------------------------------
-SUM:                            41           1291            758           6334
+SUM:                            41           1291            762           6334
 -------------------------------------------------------------------------------
 ```
 
@@ -724,11 +724,9 @@ main:
     mov qword [rsp - 88], 1
     baz_122_13:
         mov r15, qword [rsp - 88]
-        mov qword [rsp - 96], r15
-        mov r15, qword [rsp - 96]
         imul r15, 2
-        mov qword [rsp - 96], r15
     baz_122_13_end:
+    mov qword [rsp - 96], r15
     cmp_123_12:
     cmp qword [rsp - 96], 2
     jne bool_false_123_12
@@ -754,11 +752,10 @@ main:
         if_19_5_123_5_end:
     assert_123_5_end:
     baz_125_9:
-        mov qword [rsp - 96], 1
-        mov r15, qword [rsp - 96]
+        mov r15, 1
         imul r15, 2
-        mov qword [rsp - 96], r15
     baz_125_9_end:
+    mov qword [rsp - 96], r15
     cmp_126_12:
     cmp qword [rsp - 96], 2
     jne bool_false_126_12
@@ -784,11 +781,10 @@ main:
         if_19_5_126_5_end:
     assert_126_5_end:
     baz_128_23:
-        mov qword [rsp - 112], 2
-        mov r15, qword [rsp - 112]
+        mov r15, 2
         imul r15, 2
-        mov qword [rsp - 112], r15
     baz_128_23_end:
+    mov qword [rsp - 112], r15
     mov qword [rsp - 104], 0
     cmp_129_12:
     cmp qword [rsp - 112], 4
@@ -817,8 +813,6 @@ main:
     mov qword [rsp - 120], 1
     mov qword [rsp - 128], 2
         mov r15, qword [rsp - 120]
-        mov qword [rsp - 148], r15
-        mov r15, qword [rsp - 148]
         imul r15, 10
         mov qword [rsp - 148], r15
         mov r15, qword [rsp - 128]
@@ -2493,28 +2487,24 @@ main:
 ;   [122:9] k: i64 @ qword [rsp - 96]
 ;   [122:9] k =baz(j)
 ;   [122:13] baz(j)
+;   [122:13] allocate scratch register -> r15
 ;   [122:13] baz(j)
-;   [122:13] k = baz(j)
+;   [122:13] r15 = baz(j)
 ;   [122:13] baz(j)
 ;   [69:6] baz(arg) : i64 res 
     baz_122_13:
-;       [122:13] alias res -> qword [rsp - 96]  (lea: , len: 0)
+;       [122:13] alias res -> r15  (lea: , len: 0)
 ;       [122:13] alias arg -> j  (lea: , len: 0)
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg
-;       [70:11] allocate scratch register -> r15
         mov r15, qword [rsp - 88]
-        mov qword [rsp - 96], r15
-;       [70:11] free scratch register 'r15'
 ;       [70:17] res * 2
-;       [70:17] allocate scratch register -> r15
-        mov r15, qword [rsp - 96]
         imul r15, 2
-        mov qword [rsp - 96], r15
-;       [70:17] free scratch register 'r15'
     baz_122_13_end:
+    mov qword [rsp - 96], r15
+;   [122:13] free scratch register 'r15'
 ;   [123:5] assert(k == 2)
 ;   [123:12] allocate scratch register -> r15
 ;   [123:12] k == 2
@@ -2567,25 +2557,24 @@ main:
     assert_123_5_end:
 ;   [125:5] k = baz(1)
 ;   [125:9] baz(1)
+;   [125:9] allocate scratch register -> r15
 ;   [125:9] baz(1)
-;   [125:9] k = baz(1)
+;   [125:9] r15 = baz(1)
 ;   [125:9] baz(1)
 ;   [69:6] baz(arg) : i64 res 
     baz_125_9:
-;       [125:9] alias res -> qword [rsp - 96]  (lea: , len: 0)
+;       [125:9] alias res -> r15  (lea: , len: 0)
 ;       [125:9] alias arg -> 1  (lea: , len: 0)
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg
-        mov qword [rsp - 96], 1
+        mov r15, 1
 ;       [70:17] res * 2
-;       [70:17] allocate scratch register -> r15
-        mov r15, qword [rsp - 96]
         imul r15, 2
-        mov qword [rsp - 96], r15
-;       [70:17] free scratch register 'r15'
     baz_125_9_end:
+    mov qword [rsp - 96], r15
+;   [125:9] free scratch register 'r15'
 ;   [126:5] assert(k == 2)
 ;   [126:12] allocate scratch register -> r15
 ;   [126:12] k == 2
@@ -2642,25 +2631,24 @@ main:
 ;   [128:22] {baz(2), 0}
 ;   [128:22] {baz(2), 0}
 ;   [128:23] baz(2)
+;   [128:23] allocate scratch register -> r15
 ;   [128:23] baz(2)
-;   [128:23] p0.x = baz(2)
+;   [128:23] r15 = baz(2)
 ;   [128:23] baz(2)
 ;   [69:6] baz(arg) : i64 res 
     baz_128_23:
-;       [128:23] alias res -> qword [rsp - 112]  (lea: , len: 0)
+;       [128:23] alias res -> r15  (lea: , len: 0)
 ;       [128:23] alias arg -> 2  (lea: , len: 0)
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg
-        mov qword [rsp - 112], 2
+        mov r15, 2
 ;       [70:17] res * 2
-;       [70:17] allocate scratch register -> r15
-        mov r15, qword [rsp - 112]
         imul r15, 2
-        mov qword [rsp - 112], r15
-;       [70:17] free scratch register 'r15'
     baz_128_23_end:
+    mov qword [rsp - 112], r15
+;   [128:23] free scratch register 'r15'
 ;   [128:31] 0
 ;   [128:31] 0
 ;   [128:31] 0
@@ -2736,18 +2724,14 @@ main:
 ;   [134:23] {{x * 10, y}, 0xff0000}
 ;       [134:24] {x * 10, y}
 ;       [134:25] x * 10
+;       [134:25] allocate scratch register -> r15
 ;       [134:25] x * 10
 ;       [134:25] x
-;       [134:25] allocate scratch register -> r15
         mov r15, qword [rsp - 120]
-        mov qword [rsp - 148], r15
-;       [134:25] free scratch register 'r15'
-;       [134:29] o1.pos.x * 10
-;       [134:29] allocate scratch register -> r15
-        mov r15, qword [rsp - 148]
+;       [134:29] r15 * 10
         imul r15, 10
         mov qword [rsp - 148], r15
-;       [134:29] free scratch register 'r15'
+;       [134:25] free scratch register 'r15'
 ;       [134:33] y
 ;       [134:33] y
 ;       [134:33] y

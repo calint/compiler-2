@@ -478,11 +478,9 @@ main:
     mov qword [rsp - 88], 1
     baz_122_13:
         mov r15, qword [rsp - 88]
-        mov qword [rsp - 96], r15
-        mov r15, qword [rsp - 96]
         imul r15, 2
-        mov qword [rsp - 96], r15
     baz_122_13_end:
+    mov qword [rsp - 96], r15
     cmp_123_12:
     cmp qword [rsp - 96], 2
     jne bool_false_123_12
@@ -508,11 +506,10 @@ main:
         if_19_5_123_5_end:
     assert_123_5_end:
     baz_125_9:
-        mov qword [rsp - 96], 1
-        mov r15, qword [rsp - 96]
+        mov r15, 1
         imul r15, 2
-        mov qword [rsp - 96], r15
     baz_125_9_end:
+    mov qword [rsp - 96], r15
     cmp_126_12:
     cmp qword [rsp - 96], 2
     jne bool_false_126_12
@@ -538,11 +535,10 @@ main:
         if_19_5_126_5_end:
     assert_126_5_end:
     baz_128_23:
-        mov qword [rsp - 112], 2
-        mov r15, qword [rsp - 112]
+        mov r15, 2
         imul r15, 2
-        mov qword [rsp - 112], r15
     baz_128_23_end:
+    mov qword [rsp - 112], r15
     mov qword [rsp - 104], 0
     cmp_129_12:
     cmp qword [rsp - 112], 4
@@ -571,8 +567,6 @@ main:
     mov qword [rsp - 120], 1
     mov qword [rsp - 128], 2
         mov r15, qword [rsp - 120]
-        mov qword [rsp - 148], r15
-        mov r15, qword [rsp - 148]
         imul r15, 10
         mov qword [rsp - 148], r15
         mov r15, qword [rsp - 128]
