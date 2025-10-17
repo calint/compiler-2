@@ -22,7 +22,7 @@ module.exports = grammar({
     // field identifier = expression
     field_definition: $ => seq(
       $.field_keyword,
-      field('name', $.identifier), // Named field for highlighting the variable name
+      field('name', $.identifier),
       '=',
       $._expression,
     ),
@@ -30,7 +30,7 @@ module.exports = grammar({
     // type Identifier { member_field_list }
     type_definition: $ => seq(
       $.type_keyword,
-      field('name', $.identifier), // Named field for highlighting the type name
+      field('name', $.identifier),
       '{',
       optional($.member_field_list),
       '}',
@@ -40,28 +40,32 @@ module.exports = grammar({
 
     // member_field name: type
     member_field: $ => seq(
-      field('name', $.identifier), // Named field for highlighting the member name
+      field('name', $.identifier),
       optional(seq(':', $._definition_type)),
     ),
 
     // func identifier ( parameters ) return_annotation body
     function_definition: $ => seq(
       $.func_keyword,
-      field('name', $.identifier), // Named field for highlighting the function name
+      field('name', $.identifier),
       '(',
-      optional($.parameter_list),
+      optional($.parameter_list), // List is optional (avoids runtime error for ())
       ')',
-      optional($.return_annotation), // Optional return type
+      optional($.return_annotation),
       $._function_body,
     ),
 
     return_annotation: $ => seq(
       ':',
       $._definition_type,
-      field('return_name', $.identifier) // Named field for quasi-variable
+      field('return_name', $.identifier)
     ),
 
-    parameter_list: $ => sep1($.parameter, ','),
+    // parameter_list is explicitly defined to require 1 or more elements (No empty match allowed!)
+    parameter_list: $ => seq(
+      $.parameter,
+      repeat(seq(',', $.parameter)),
+    ),
 
     // identifier : type_name (type is optional)
     parameter: $ => seq(
@@ -71,33 +75,28 @@ module.exports = grammar({
 
     // --- Types ---
 
-    // Type used in definitions (member fields, function returns) - requires size for arrays
     _definition_type: $ => choice(
       $._base_type,
       $.sized_array_type,
     ),
 
-    // Type used in parameters - arrays must be unsized
     _parameter_type: $ => choice(
       $._base_type,
       $.unsized_array_type,
     ),
 
-    // Base type is either built-in or a custom identifier
     _base_type: $ => choice(
       $.bool_type, $.i8_type, $.i16_type, $.i32_type, $.i64_type,
-      $.identifier // Custom type identifier
+      $.identifier
     ),
 
-    // Array type for definitions (must have size)
     sized_array_type: $ => seq(
       $._base_type,
       '[',
-      $.number_literal, // Size is a constant
+      $.number_literal,
       ']',
     ),
 
-    // Array type for parameters (no size allowed)
     unsized_array_type: $ => seq(
       $._base_type,
       '[',
@@ -107,38 +106,37 @@ module.exports = grammar({
     // --- Function Body and Statements ---
 
     _function_body: $ => choice(
-      $._statement, // Single statement body
-      $.block,      // Block statement body
+      $._statement,
+      $.block,
     ),
 
-    // Block: { statements | calls | control flow }
     block: $ => seq(
       '{',
       repeat($._statement),
       '}',
     ),
 
-    // A statement can be an assignment, declaration, return, function call, if, or loop
     _statement: $ => choice(
       $.assignment_statement,
-      $.variable_declaration, // var declaration
+      $.variable_declaration,
       $.return_statement,
       $.function_call,
-      $.if_statement, // NEW
-      $.loop_statement, // NEW
+      $.if_statement,
+      $.loop_statement,
     ),
 
-    // var identifier = expression
+    // var identifier : type = expression
     variable_declaration: $ => seq(
       $.var_keyword,
       field('destination', $.identifier),
-      '=',
-      $._expression,
+      optional(seq(':', $._definition_type)),
+      // Initializer is now optional
+      optional(seq('=', $._expression)),
     ),
 
-    // identifier = expression
+    // access_chain = expression
     assignment_statement: $ => seq(
-      field('destination', $.identifier), // Named field for highlighting the variable being assigned to
+      field('destination', $._access_chain),
       '=',
       $._expression,
     ),
@@ -148,33 +146,83 @@ module.exports = grammar({
 
     // function_call identifier ( arguments )
     function_call: $ => seq(
-      field('function', $.identifier), // Named field for highlighting the function name
+      field('function', $.identifier),
       '(',
-      optional($.argument_list),
+      optional($.argument_list), // List is optional (avoids runtime error for ())
       ')',
     ),
 
-    argument_list: $ => sep1($._expression, ','),
-
-    // NEW: if statement: if expression block
-    if_statement: $ => seq(
-      $.if_keyword,
+    // argument_list is explicitly defined to require 1 or more elements (No empty match allowed!)
+    argument_list: $ => seq(
       $._expression,
-      $.block,
+      repeat(seq(',', $._expression)),
     ),
 
-    // NEW: loop statement: loop block
-    loop_statement: $ => seq(
-      $.loop_keyword,
-      $.block,
-    ),
+    // --- Expressions and Access ---
 
-    // Expression can be a literal, identifier (variable), function call, or sub-expression
+    // Expression can be a literal, access_chain, function call, comparison, struct literal, or sub-expression
     _expression: $ => choice(
       $._literal,
-      $.identifier,
+      $._access_chain,
       $.function_call,
+      $.comparison_expression,
+      $.struct_literal, // Allows { name: value, ... } syntax for initialization
       $.parenthesized_expression,
+    ),
+    
+    // Structure initialization literal (e.g., var p: Point = { x: 10, y: 20 })
+    struct_literal: $ => seq(
+      '{',
+      optional($.field_initializer_list),
+      '}',
+    ),
+
+    field_initializer_list: $ => sep1($.field_initializer, ','),
+
+    field_initializer: $ => seq(
+      field('name', $.identifier),
+      ':',
+      field('value', $._expression),
+    ),
+
+
+    // Boolean comparison expression
+    // prec.left(10) gives this a medium precedence for operator chaining
+    comparison_expression: $ => prec.left(10, seq(
+        field('left', $._expression),
+        field('operator', $.comparison_operator),
+        field('right', $._expression),
+    )),
+
+    // Comparison operators (already defined as distinct tokens)
+    comparison_operator: $ => choice(
+        '==',
+        '!=',
+        '<=',
+        '<',
+        '>',
+        '>=',
+    ),
+
+    // --- Existing Access and Control Flow Rules ---
+
+    _access_chain: $ => seq(
+      $.identifier,
+      repeat(choice(
+        $.member_access,
+        $.array_indexing,
+      )),
+    ),
+
+    member_access: $ => seq(
+      '.',
+      $.identifier,
+    ),
+
+    array_indexing: $ => seq(
+      '[',
+      $._expression,
+      ']',
     ),
 
     parenthesized_expression: $ => seq(
@@ -183,49 +231,79 @@ module.exports = grammar({
       ')',
     ),
 
+    // Full if/else if/else structure
+    if_statement: $ => seq(
+      $.if_keyword,
+      $._expression, // Handles both full comparison and shorthand check (e.g., `if count`)
+      $.block,
+      repeat($.else_if_clause), // Zero or more else if blocks
+      optional($.else_clause),  // Optional else block at the end
+    ),
+    
+    // else if clause
+    else_if_clause: $ => seq(
+        $.else_if_keyword,
+        $._expression,
+        $.block,
+    ),
+
+    // else clause
+    else_clause: $ => seq(
+        $.else_keyword,
+        $.block,
+    ),
+
+    loop_statement: $ => seq(
+      $.loop_keyword,
+      $.block,
+    ),
+
     // --- Tokens (Keywords, Identifiers, Literals) ---
 
-    // Keywords
     field_keyword: $ => 'field',
     func_keyword: $ => 'func',
-    type_keyword: $ => 'type', // NEW
-    var_keyword: $ => 'var',   // NEW
+    type_keyword: $ => 'type',
+    var_keyword: $ => 'var',
     return_keyword: $ => 'return',
     if_keyword: $ => 'if',
     loop_keyword: $ => 'loop',
+    
+    // Keywords for control flow
+    else_if_keyword: $ => prec(1, seq('else', /\s+/, 'if')),
+    else_keyword: $ => 'else',
 
-    // Built-in Types (Keywords)
     bool_type: $ => 'bool',
     i8_type: $ => 'i8',
     i16_type: $ => 'i16',
     i32_type: $ => 'i32',
     i64_type: $ => 'i64',
 
-    // Identifiers (variable, function, type names)
     identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,
 
-    // Literals
     _literal: $ => choice(
       $.string_literal,
       $.number_literal,
+      $.boolean_literal,
+    ),
+    
+    // Boolean literals
+    boolean_literal: $ => choice(
+        'true',
+        'false',
     ),
 
     string_literal: $ => seq(
       '"',
-      repeat(/[^"\n]/), // Any character except quote or newline
+      repeat(/[^"\n]/),
       '"',
     ),
 
     number_literal: $ => choice(
-      // Hex: 0x followed by one or more hex digits
       /0x[0-9a-fA-F]+/,
-      // Binary: 0b followed by one or more binary digits
       /0b[01]+/,
-      // Decimal (Integer or Float)
       /\d+(\.\d+)?/,
     ),
 
-    // Comments
     comment: $ => /#.*/,
   }
 });
