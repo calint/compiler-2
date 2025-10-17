@@ -14,16 +14,38 @@ module.exports = grammar({
     _definition: $ => choice(
       $.field_definition,
       $.function_definition,
+      $.type_definition,
     ),
 
     // --- Definitions ---
+
+    // type Identifier { member_fields }
+    type_definition: $ => seq(
+      $.type_keyword,
+      field('name', $.identifier), // Named field for the Type Name
+      '{',
+      optional($.member_field_list), // NEW: Use a comma-separated list
+      '}',
+    ),
+
+    // NEW RULE: list of fields separated by commas
+    member_field_list: $ => seq(
+      $.member_field,
+      repeat(seq(',', $.member_field))
+    ),
+
+    // identifier : type_name (e.g., x: Int). Type is now optional.
+    member_field: $ => seq(
+      $.identifier,
+      optional(seq(':', $.type_name)),
+    ),
 
     // field identifier = expression
     field_definition: $ => seq(
       $.field_keyword,
       field('name', $.identifier), // Named field for highlighting the variable name
       '=',
-      $._expression, // Now uses _expression
+      $._expression,
     ),
 
     // func identifier ( parameters ) body
@@ -31,7 +53,7 @@ module.exports = grammar({
       $.func_keyword,
       field('name', $.identifier), // Named field for highlighting the function name
       '(',
-      field('parameters', optional($.parameter_list)), // Fixed: parameter_list is now non-empty
+      field('parameters', optional($.parameter_list)),
       ')',
       $._function_body,
     ),
@@ -42,13 +64,26 @@ module.exports = grammar({
       repeat(seq(',', $.parameter))
     ),
 
-    // identifier : type_name (type is optional)
+    // identifier : type_name. Type is already optional here.
     parameter: $ => seq(
       $.identifier,
-      optional(seq(':', $.type_name)),
+      optional(seq(':', $.type_name)), // IS OPTIONAL
     ),
 
-    type_name: $ => $.identifier,
+    // type_name can be an identifier (user-defined) or a built-in type
+    type_name: $ => choice(
+      $.identifier,
+      $._built_in_type, // NEW
+    ),
+
+    // NEW: Built-in types (all are treated as keywords)
+    _built_in_type: $ => choice(
+      $.type_i64,
+      $.type_bool,
+      $.type_i8,
+      $.type_i16,
+      $.type_i32,
+    ),
 
     // --- Function Body and Statements ---
 
@@ -64,8 +99,9 @@ module.exports = grammar({
       '}',
     ),
 
-    // A statement can be an assignment, return, function call, if, or loop
+    // A statement can be an assignment, variable declaration, return, function call, if, or loop
     _statement: $ => choice(
+      $.variable_declaration,
       $.assignment_statement,
       $.return_statement,
       $.function_call,
@@ -73,11 +109,19 @@ module.exports = grammar({
       $.loop_statement,
     ),
 
+    // var identifier = expression
+    variable_declaration: $ => seq(
+      $.var_keyword,
+      field('name', $.identifier), // Named field for highlighting the variable name
+      '=',
+      $._expression,
+    ),
+
     // identifier = expression
     assignment_statement: $ => seq(
       field('destination', $.identifier), // Named field for highlighting the variable being assigned to
       '=',
-      $._expression, // Now uses _expression
+      $._expression,
     ),
 
     // return (no arguments)
@@ -87,7 +131,7 @@ module.exports = grammar({
     function_call: $ => seq(
       field('function', $.identifier), // Named field for highlighting the function name
       '(',
-      field('arguments', optional($.argument_list)), // Fixed: argument_list is now non-empty
+      field('arguments', optional($.argument_list)),
       ')',
     ),
 
@@ -116,10 +160,10 @@ module.exports = grammar({
       $._literal,
       $.identifier,
       $.function_call,                 // Function call as an expression (e.g., as an argument)
-      $.parenthesized_expression,      // NEW: Sub-expressions
+      $.parenthesized_expression,      // Sub-expressions
     ),
 
-    // NEW: ( expression )
+    // ( expression )
     parenthesized_expression: $ => seq(
       '(',
       $._expression,
@@ -134,6 +178,15 @@ module.exports = grammar({
     return_keyword: $ => 'return',
     if_keyword: $ => 'if',
     loop_keyword: $ => 'loop',
+    var_keyword: $ => 'var',
+    type_keyword: $ => 'type',
+
+    // NEW Built-in Type Tokens
+    type_i64: $ => 'i64',
+    type_bool: $ => 'bool',
+    type_i8: $ => 'i8',
+    type_i16: $ => 'i16',
+    type_i32: $ => 'i32',
 
     // Identifiers (variable, function, type names)
     identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,

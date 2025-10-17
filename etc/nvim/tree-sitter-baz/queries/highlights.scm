@@ -1,6 +1,7 @@
 ;; --- highlights.scm ---
 ;; NOTE: This version uses ANONYMOUS NODE MATCHING (no named fields)
-;; to avoid the "Invalid field name" error, while still providing good semantic coloring.
+;; to ensure compatibility and avoid the "Invalid field name" error, 
+;; while still providing good semantic coloring.
 
 ;; === General ===
 (comment) @comment
@@ -13,6 +14,7 @@
 ;; Control Flow Keywords
 (if_keyword) @keyword.control
 (loop_keyword) @keyword.control
+(var_keyword) @keyword.declaration  ;; NEW: Highlight 'var' keyword
 
 ;; === Literals ===
 (string_literal) @string
@@ -22,6 +24,13 @@
 
 ;; Field names: Matches the identifier in the field_definition node.
 (field_definition
+  (_)
+  (identifier) @variable.declaration
+)
+
+;; NEW: Variable Declaration names (e.g., 'my_local_var' in var my_local_var = 1)
+;; Matches the second child (the identifier) in the variable_declaration node.
+(variable_declaration
   (_)
   (identifier) @variable.declaration
 )
@@ -40,6 +49,7 @@
 )
 
 ;; 2. Arguments (Identifiers only): Use a distinct color for identifiers being passed into the function.
+;; This targets usage of variables as arguments.
 (argument_list
   (identifier) @variable.call
 )
@@ -56,16 +66,17 @@
   (type_name) @type.builtin
 )
 
-;; === Statements (Inside function bodies) ===
+;; === Variables (Inside function bodies) ===
 
 ;; Highlight the assignment destination: Matches the first identifier in the assignment_statement.
+;; This catches simple reassignment (my_var = 5)
 (assignment_statement
   (identifier) @variable
   (_)
 )
 
-;; Highlight identifiers used in conditions or field values that aren't declarations or calls.
-;; We specifically target identifiers nested within the _expression structure here:
+;; Highlight identifiers used in conditions or field values that are BEING USED.
+;; We use @variable.call to clearly distinguish variable usage from declarations/assignments.
 
 ;; Identifiers within the parenthesized expression (e.g., a function argument like (x))
 (parenthesized_expression
@@ -77,7 +88,7 @@
   (identifier) @variable.call
 )
 
-;; Identifiers used as field values
+;; Identifiers used as field values (when the field value is an identifier)
 (field_definition
   (identifier) @variable.call
 )
