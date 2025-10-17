@@ -1,73 +1,51 @@
-; Keywords in context
-(field_declaration "field" @keyword)
-(type_definition "type" @keyword)
-(function_definition "func" @keyword)
-(variable_declaration "var" @keyword)
-(if_statement "if" @keyword)
-(if_statement "else" @keyword)
-(loop_statement "loop" @keyword)
-(break_statement) @keyword
-(continue_statement) @keyword
-(return_statement) @keyword
+;; --- highlights.scm ---
+;; Defines highlighting queries for the Baz language based on the grammar.js
+;; This version uses specific captures to allow for fine-grained coloring
+;; of keywords, function arguments, and types.
 
-(logical_and "and" @keyword)
-(logical_or "or" @keyword)
-(unary "not" @keyword)
+;; === Keywords ===
+(field_keyword) @keyword.declaration  ;; For 'field'
+(func_keyword) @keyword.function     ;; For 'func'
+(return_keyword) @keyword.control    ;; For 'return'
 
-; Built-in types
-"i8" @type
-"i16" @type
-"i32" @type
-"i64" @type
-"bool" @type
+;; === Literals ===
+(string_literal) @string
+(number_literal) @number
 
-(boolean) @constant.builtin
+;; === Definitions and Declarations ===
 
-; Numbers and strings
-(number) @number
-(string) @string
+;; Top-level field names (variables)
+(field_definition
+  name: (identifier) @variable.declaration
+)
 
-; Operators
-"+" @operator
-"-" @operator
-"*" @operator
-"/" @operator
-"%" @operator
-"<<" @operator
-">>" @operator
-"&" @operator
-"|" @operator
-"^" @operator
-"~" @operator
-"=" @operator
-"==" @operator
-"!=" @operator
-"<" @operator
-"<=" @operator
-">" @operator
-">=" @operator
+;; Function names
+(function_definition
+  name: (identifier) @function.declaration
+)
 
-; Delimiters
-"(" @punctuation.bracket
-")" @punctuation.bracket
-"{" @punctuation.bracket
-"}" @punctuation.bracket
-"[" @punctuation.bracket
-"]" @punctuation.bracket
+;; === Parameters and Types ===
 
-"." @punctuation.delimiter
-"," @punctuation.delimiter
-":" @punctuation.delimiter
+;; Highlight the name of function arguments (parameters).
+;; Using @parameter.function for a distinct color for arguments.
+(parameter
+  name: (identifier) @parameter.function
+)
 
-; Type and function definitions - highlight the first identifier specially
-(type_definition (identifier) @type.definition)
-(function_definition (identifier) @function)
+;; Highlight type annotations.
+;; Using @type.builtin for a distinct color for types like Int, Float, etc.
+(parameter
+  type: (type_name) @type.builtin
+)
 
-; Variable declarations - highlight the first identifier specially
-(variable_declaration (identifier) @variable.definition)
+;; === Statements (Inside function bodies) ===
 
-; Parameters
-(parameter (identifier) @parameter)
+;; Highlight the destination of an assignment as a regular variable (e.g., in `x = 10`)
+(assignment_statement
+  destination: (identifier) @variable
+)
 
-; General identifiers - lowest priority
-(identifier) @variable
+;; Highlight the returned literal value (the value itself is caught by @string/@number)
+(return_statement
+  value: (_) @variable.builtin
+)

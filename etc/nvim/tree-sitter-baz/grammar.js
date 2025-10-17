@@ -1,282 +1,122 @@
+// --- grammar.js ---
+
+/**
+ * Tree-sitter grammar definition for the Baz language.
+ * This defines the formal syntax rules for parsing Baz code.
+ */
 module.exports = grammar({
+  // The name must match the directory name (e.g., 'tree-sitter-baz')
   name: 'baz',
 
-  precedences: $ => [
-    [$.logical_or],
-    [$.logical_and],
-    [$.equality],
-    [$.comparison],
-    [$.bitwise_or],
-    [$.bitwise_xor],
-    [$.bitwise_and],
-    [$.shift],
-    [$.additive],
-    [$.multiplicative],
-  ],
-
   rules: {
-    source_file: $ => repeat($._definition),
+    // The top-level rule: a program is a sequence of definitions.
+    program: $ => repeat($._definition),
 
+    // An internal rule to group fields and functions as definitions.
     _definition: $ => choice(
-      $.field_declaration,
-      $.type_definition,
+      $.field_definition,
       $.function_definition
     ),
 
-    field_declaration: $ => seq(
-      'field',
-      $.identifier,
+    // Rule 1: A field definition
+    // Example: field my_var = "hello"
+    field_definition: $ => seq(
+      $.field_keyword,
+      // 'name' field used for easy highlighting/querying
+      field('name', $.identifier),
       '=',
-      $._expression
+      // 'value' field used for easy highlighting/querying
+      field('value', $._literal)
     ),
 
-    type_definition: $ => seq(
-      'type',
-      $.identifier,
-      '{',
-      optional($.field_list),
-      '}'
-    ),
-
-    field_list: $ => seq(
-      $.type_field,
-      repeat(seq(',', optional(/\s/), $.type_field))
-    ),
-
-    type_field: $ => seq(
-      $.identifier,
-      optional(seq(':', $._type))
-    ),
-
+    // Rule 2: A function definition
+    // Example: func calculate(a: Int, b: Float) { return 0 } or func get_name() "Baz"
     function_definition: $ => seq(
-      'func',
-      $.identifier,
-      $.parameter_list,
-      optional($.return_type),
-      $.block
-    ),
-
-    parameter_list: $ => seq(
+      $.func_keyword,
+      // 'name' field used for easy highlighting/querying
+      field('name', $.identifier),
       '(',
-      optional($.parameters),
-      ')'
+      optional($.parameter_list),
+      ')',
+      // Function body, which can be a single statement or a block
+      field('body', choice(
+        $._statement,
+        $.block
+      ))
     ),
 
-    parameters: $ => seq(
-      $.parameter,
-      repeat(seq(',', optional(/\s/), $.parameter))
-    ),
+    // A list of parameters separated by commas (used inside func definition)
+    parameter_list: $ => sep1($.parameter, ','),
 
+    // Defines a single parameter with optional type annotation
     parameter: $ => seq(
-      $.identifier,
-      optional(seq(':', $.param_type))
+      field('name', $.identifier),
+      optional(seq(
+        ':',
+        field('type', $.type_name)
+      ))
     ),
 
-    param_type: $ => choice(
-      /reg_[a-z0-9]+/,
-      $._type
-    ),
+    // Type names are currently just identifiers (e.g., Int, String, etc.)
+    type_name: $ => $.identifier,
 
-    return_type: $ => seq(
-      ':',
-      $._type,
-      $.identifier
-    ),
-
-    _type: $ => choice(
-      'bool',
-      'i8',
-      'i16',
-      'i32',
-      'i64',
-      $.identifier,
-      $.array_type
-    ),
-
-    array_type: $ => seq(
-      $._type,
-      '[',
-      optional($._expression),
-      ']'
-    ),
-
+    // A block is a sequence of statements enclosed in braces
     block: $ => seq(
       '{',
       repeat($._statement),
       '}'
     ),
 
+    // General statement (assignment and return)
     _statement: $ => choice(
-      $.variable_declaration,
-      $.assignment,
-      $.if_statement,
-      $.loop_statement,
-      $.break_statement,
-      $.continue_statement,
-      $.return_statement,
-      $.expression_statement,
-      $.block
+      $.assignment_statement,
+      $.return_statement
     ),
 
-    variable_declaration: $ => seq(
-      'var',
-      $.identifier,
-      optional(seq(':', $._type)),
-      optional(seq('=', choice($.struct_literal, $._expression)))
-    ),
-
-    assignment: $ => seq(
-      $._lvalue,
+    // Simple assignment statement (for use inside functions)
+    // Example: x = 10
+    assignment_statement: $ => seq(
+      field('destination', $.identifier),
       '=',
-      choice($.struct_literal, $._expression)
+      field('source', $._literal)
     ),
 
-    _lvalue: $ => $.postfix,
-
-    if_statement: $ => prec.right(seq(
-      'if',
-      $._expression,
-      $._simple_statement,
-      optional(seq(
-        'else',
-        $._simple_statement
-      ))
-    )),
-
-    _simple_statement: $ => choice(
-      $.block,
-      $.variable_declaration,
-      $.assignment,
-      $.break_statement,
-      $.continue_statement,
-      $.return_statement,
-      $.loop_statement,
-      $.if_statement
+    // Simple return statement
+    // Example: return 0
+    return_statement: $ => seq(
+      $.return_keyword,
+      optional(field('value', $._literal))
     ),
 
-    loop_statement: $ => seq(
-      'loop',
-      $.block
+    // Internal rule for constants that can be assigned to a field or returned
+    _literal: $ => choice(
+      $.string_literal,
+      $.number_literal
     ),
 
-    break_statement: $ => 'break',
+    // --- LEXICAL TOKENS (Keywords and Primitives) ---
 
-    continue_statement: $ => 'continue',
+    // Keywords defined by the user request
+    field_keyword: $ => 'field',
+    func_keyword: $ => 'func',
+    return_keyword: $ => 'return',
 
-    return_statement: $ => 'return',
+    // Standard identifier format
+    identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,
 
-    expression_statement: $ => $._expression,
+    // String literal (simple double-quoted strings)
+    string_literal: $ => /"([^"\n]|\\(.|\n))*"/,
 
-    _expression: $ => choice(
-      $.logical_or
-    ),
-
-    logical_or: $ => seq(
-      $.logical_and,
-      repeat(seq('or', $.logical_and))
-    ),
-
-    logical_and: $ => seq(
-      $.equality,
-      repeat(seq('and', $.equality))
-    ),
-
-    equality: $ => seq(
-      $.comparison,
-      repeat(seq(choice('==', '!='), $.comparison))
-    ),
-
-    comparison: $ => seq(
-      $.bitwise_or,
-      repeat(seq(choice('<', '<=', '>', '>='), $.bitwise_or))
-    ),
-
-    bitwise_or: $ => seq(
-      $.bitwise_xor,
-      repeat(seq('|', $.bitwise_xor))
-    ),
-
-    bitwise_xor: $ => seq(
-      $.bitwise_and,
-      repeat(seq('^', $.bitwise_and))
-    ),
-
-    bitwise_and: $ => seq(
-      $.shift,
-      repeat(seq('&', $.shift))
-    ),
-
-    shift: $ => seq(
-      $.additive,
-      repeat(seq(choice('<<', '>>'), $.additive))
-    ),
-
-    additive: $ => prec.left(seq(
-      $.multiplicative,
-      repeat(seq(choice('+', '-'), $.multiplicative))
-    )),
-
-    multiplicative: $ => prec.left(seq(
-      $.unary,
-      repeat(seq(choice('*', '/', '%'), $.unary))
-    )),
-
-    unary: $ => seq(
-      repeat(choice('not', '-', '~')),
-      $.postfix
-    ),
-
-    postfix: $ => prec.left(seq(
-      $.primary,
-      repeat(choice(
-        seq('.', $.identifier),
-        seq('[', $._expression, ']'),
-        seq('(', optional($.arguments), ')')
-      ))
-    )),
-
-    primary: $ => choice(
-      $.identifier,
-      $.number,
-      $.string,
-      $.boolean,
-      seq('(', $._expression, ')')
-    ),
-
-    arguments: $ => seq(
-      $._expression,
-      repeat(seq(',', optional(/\s/), $._expression))
-    ),
-
-    struct_literal: $ => seq(
-      '{',
-      $._expression,
-      repeat(seq(',', optional(/\s/), $._expression)),
-      '}'
-    ),
-
-    number: $ => choice(
-      /0x[0-9a-fA-F]+/,
-      /0b[01]+/,
-      /-?\d+/
-    ),
-
-    string: $ => seq(
-      '"',
-      repeat(choice(
-        /[^"\\]/,
-        seq('\\', /./)
-      )),
-      '"'
-    ),
-
-    boolean: $ => choice('true', 'false'),
-
-    identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/
-  },
-
-  extras: $ => [
-    /\s/,
-    /#.*/
-  ]
+    // Numeric constant (integers or decimals)
+    number_literal: $ => /[0-9]+(\.[0-9]+)?/,
+  }
 });
+
+/**
+ * Helper function to define a separated list (e.g., a, b, c)
+ * @param {Rule} rule The rule for the items (e.g., $.identifier)
+ * @param {string} separator The string separating items (e.g., ',')
+ */
+function sep1(rule, separator) {
+  return seq(rule, repeat(seq(separator, rule)));
+}
