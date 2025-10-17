@@ -1,7 +1,6 @@
 ;; --- highlights.scm ---
-;; NOTE: This version uses ANONYMOUS NODE MATCHING (no named fields)
-;; to ensure compatibility and avoid the "Invalid field name" error, 
-;; while still providing good semantic coloring.
+;; NOTE: This file uses anonymous node matching (no 'name:' or 'destination:') 
+;; and has been fixed to avoid querying the problematic '_expression' node.
 
 ;; === General ===
 (comment) @comment
@@ -10,11 +9,10 @@
 (field_keyword) @keyword.declaration
 (func_keyword) @keyword.function
 (return_keyword) @keyword.control
-
-;; Control Flow Keywords
 (if_keyword) @keyword.control
 (loop_keyword) @keyword.control
-(var_keyword) @keyword.declaration  ;; NEW: Highlight 'var' keyword
+(var_keyword) @keyword.declaration
+(type_keyword) @keyword.declaration
 
 ;; === Literals ===
 (string_literal) @string
@@ -22,73 +20,83 @@
 
 ;; === Definitions and Declarations (Anonymous Matching) ===
 
-;; Field names: Matches the identifier in the field_definition node.
+;; Field names: Matches the second child (the identifier) of the field_definition node.
 (field_definition
   (_)
   (identifier) @variable.declaration
 )
 
-;; NEW: Variable Declaration names (e.g., 'my_local_var' in var my_local_var = 1)
-;; Matches the second child (the identifier) in the variable_declaration node.
-(variable_declaration
-  (_)
-  (identifier) @variable.declaration
-)
-
-;; Function names: Matches the identifier in the function_definition node.
+;; Function names: Matches the second child (the identifier) of the function_definition node.
 (function_definition
   (_)
   (identifier) @function.declaration
 )
 
-;; === Function Calls and Arguments ===
-
-;; 1. Function Call name (e.g., 'calculate' in calculate(x, y))
-(function_call
-  (identifier) @function.call
+;; Type definition name
+(type_definition
+  (identifier) @type.definition
 )
 
-;; 2. Arguments (Identifiers only): Use a distinct color for identifiers being passed into the function.
-;; This targets usage of variables as arguments.
-(argument_list
-  (identifier) @variable.call
+;; Member field names (first identifier in the rule)
+(member_field
+  (identifier) @field
 )
 
 ;; === Parameters and Types ===
 
-;; Highlight the name of function arguments (parameters) using the specific parameter capture group.
+;; Highlight the name of function arguments (parameters).
 (parameter
   (identifier) @parameter.function
 )
 
-;; Highlight type annotations.
-(parameter
-  (type_name) @type.builtin
+;; Highlight Custom Type Identifiers when used as array base types
+(sized_array_type
+  (identifier) @type.builtin
+)
+(unsized_array_type
+  (identifier) @type.builtin
 )
 
-;; === Variables (Inside function bodies) ===
+;; Built-in Type Tokens
+(type_i64) @type.builtin
+(type_bool) @type.builtin
+(type_i8) @type.builtin
+(type_i16) @type.builtin
+(type_i32) @type.builtin
 
-;; Highlight the assignment destination: Matches the first identifier in the assignment_statement.
-;; This catches simple reassignment (my_var = 5)
+;; Highlight Array Brackets as Punctuation
+(sized_array_type "[" @punctuation.bracket)
+(sized_array_type "]" @punctuation.bracket)
+(unsized_array_type "[]" @punctuation.bracket) @punctuation.bracket
+
+;; === Statements and Expressions ===
+
+;; Highlight the assignment destination: Matches the identifier being assigned to.
 (assignment_statement
   (identifier) @variable
-  (_)
 )
 
-;; Highlight identifiers used in conditions or field values that are BEING USED.
-;; We use @variable.call to clearly distinguish variable usage from declarations/assignments.
+;; NEW: Variable declaration name
+(variable_declaration
+  (identifier) @variable.declaration
+)
 
-;; Identifiers within the parenthesized expression (e.g., a function argument like (x))
-(parenthesized_expression
+;; Function Call name
+(function_call
+  (identifier) @function.call
+)
+
+;; Fix: Highlight identifiers used as function arguments (expressions)
+;; Query the identifier directly, assuming it's a child of argument_list or an intermediary parent
+(argument_list
   (identifier) @variable.call
 )
 
-;; Identifiers used as conditions in an if statement
+;; Fix: Highlight condition identifiers in if/loop statements
+;; Query the identifier directly, assuming it's a child of if_statement/loop_statement
 (if_statement
   (identifier) @variable.call
 )
-
-;; Identifiers used as field values (when the field value is an identifier)
-(field_definition
+(loop_statement
   (identifier) @variable.call
 )

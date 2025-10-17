@@ -24,7 +24,7 @@ module.exports = grammar({
       $.type_keyword,
       field('name', $.identifier), // Named field for the Type Name
       '{',
-      optional($.member_field_list), // NEW: Use a comma-separated list
+      optional($.member_field_list), // Use a comma-separated list
       '}',
     ),
 
@@ -34,16 +34,17 @@ module.exports = grammar({
       repeat(seq(',', $.member_field))
     ),
 
-    // identifier : type_name (e.g., x: Int). Type is now optional.
+    // identifier : _definition_type (e.g., x: i32[10]). Type is now optional.
     member_field: $ => seq(
       $.identifier,
-      optional(seq(':', $.type_name)),
+      // UPDATED: Must use the definition-specific type rule (supports sized arrays)
+      optional(seq(':', $._definition_type)),
     ),
 
     // field identifier = expression
     field_definition: $ => seq(
       $.field_keyword,
-      field('name', $.identifier), // Named field for highlighting the variable name
+      field('name', $.identifier),
       '=',
       $._expression,
     ),
@@ -51,7 +52,7 @@ module.exports = grammar({
     // func identifier ( parameters ) body
     function_definition: $ => seq(
       $.func_keyword,
-      field('name', $.identifier), // Named field for highlighting the function name
+      field('name', $.identifier),
       '(',
       field('parameters', optional($.parameter_list)),
       ')',
@@ -64,33 +65,46 @@ module.exports = grammar({
       repeat(seq(',', $.parameter))
     ),
 
-    // identifier : type_name. Type is already optional here.
+    // identifier : _parameter_type (e.g., data: i32[]). Type is optional.
     parameter: $ => seq(
       $.identifier,
-      optional(seq(':', $.type_name)), // IS OPTIONAL
+      // UPDATED: Must use the parameter-specific type rule (supports unsized arrays)
+      optional(seq(':', $._parameter_type)),
     ),
 
-    // type_name can be a simple type OR an array type (NEW)
-    type_name: $ => choice(
+    // NEW RULE: Types used in Definitions (must be sized arrays if array)
+    _definition_type: $ => choice(
       $._base_type,
-      $.array_type,
+      $.sized_array_type,
     ),
 
-    // NEW: Array Type Definition (e.g., i32[10])
-    array_type: $ => seq(
+    // NEW RULE: Types used in Function Parameters (must be unsized arrays if array)
+    _parameter_type: $ => choice(
+      $._base_type,
+      $.unsized_array_type,
+    ),
+
+    // Sized Array Type Definition (e.g., i32[10])
+    sized_array_type: $ => seq(
       $._base_type, // The base type (e.g., i32 or a Vector)
       '[',
       $.number_literal, // Size must be a constant (a number literal)
       ']'
     ),
 
-    // NEW: Helper rule for simple, non-array types
+    // Unsized Array Type (e.g., i32[]). Used for function parameters.
+    unsized_array_type: $ => seq(
+      $._base_type, // The base type
+      '[]'
+    ),
+
+    // Helper rule for simple, non-array types
     _base_type: $ => choice(
       $.identifier,
       $._built_in_type,
     ),
 
-    // NEW: Built-in types (all are treated as keywords)
+    // Built-in types (all are treated as keywords)
     _built_in_type: $ => choice(
       $.type_i64,
       $.type_bool,
@@ -162,9 +176,10 @@ module.exports = grammar({
       $.block,
     ),
 
-    // loop statement: loop block
+    // loop statement: loop expression block
     loop_statement: $ => seq(
       $.loop_keyword,
+      $._expression, // Expression for loop condition (or iterator)
       $.block,
     ),
 
@@ -195,7 +210,7 @@ module.exports = grammar({
     var_keyword: $ => 'var',
     type_keyword: $ => 'type',
 
-    // NEW Built-in Type Tokens
+    // Built-in Type Tokens
     type_i64: $ => 'i64',
     type_bool: $ => 'bool',
     type_i8: $ => 'i8',
@@ -211,7 +226,7 @@ module.exports = grammar({
       $.number_literal,
     ),
 
-    // UPDATED: To accept hexadecimal (0x...), binary (0b...), and decimal/float numbers.
+    // To accept hexadecimal (0x...), binary (0b...), and decimal/float numbers.
     number_literal: $ => choice(
       /0x[0-9a-fA-F]+/, // Hexadecimal
       /0b[01]+/,       // Binary
