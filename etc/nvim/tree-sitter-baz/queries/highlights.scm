@@ -22,12 +22,15 @@
 (i16_type) @type
 (i32_type) @type
 (i64_type) @type
+(sized_array_type) @type
+(unsized_array_type) @type
 
 ; Identifiers
 (identifier) @variable
 (function_definition name: (identifier) @function)
 (type_definition name: (identifier) @type.definition)
 (member_field name: (identifier) @variable.member)
+(member_field ":" (_)? @type)
 (parameter name: (identifier) @variable.parameter)
 
 ; Function calls
