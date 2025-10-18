@@ -2522,97 +2522,97 @@ main:
 ;       [166:12] allocate named register 'rsi'
 ;       [166:12] allocate named register 'rdi'
 ;       [166:12] allocate named register 'rcx'
-;       [168:13] array_size_of(worlds[0].locations)
-;       [168:13] array_size_of(worlds[0].locations)
-;       [169:13] array_size_of(worlds[0].locations)
-;       [169:13] rcx = array_size_of(worlds[0].locations)
-;       [169:13] array_size_of(worlds[0].locations)
+;       [168:14] array_size_of(worlds[0].locations)
+;       [168:14] array_size_of(worlds[0].locations)
+;       [169:14] array_size_of(worlds[0].locations)
+;       [169:14] rcx = array_size_of(worlds[0].locations)
+;       [169:14] array_size_of(worlds[0].locations)
         mov rcx, 8
-;       [167:13] worlds[0].locations
-;       [167:13] allocate scratch register -> r13
+;       [167:14] worlds[0].locations
+;       [167:14] allocate scratch register -> r13
         lea r13, [rsp - 796]
-;       [167:13] allocate scratch register -> r12
-;       [167:20] set array index
-;       [167:20] 0
-;       [167:20] 0
-;       [167:20] 0
+;       [167:14] allocate scratch register -> r12
+;       [167:21] set array index
+;       [167:21] 0
+;       [167:21] 0
+;       [167:21] 0
         mov r12, 0
-;       [167:20] bounds check
+;       [167:21] bounds check
         cmp r12, 0
-;       [167:20] allocate scratch register -> r11
-;       [167:20] line number
+;       [167:21] allocate scratch register -> r11
+;       [167:21] line number
         mov r11, 167
         cmovl rbp, r11
         jl panic_bounds
-;       [167:20] free scratch register 'r11'
+;       [167:21] free scratch register 'r11'
         cmp r12, 8
-;       [167:20] allocate scratch register -> r11
-;       [167:20] line number
+;       [167:21] allocate scratch register -> r11
+;       [167:21] line number
         mov r11, 167
         cmovge rbp, r11
-;       [167:20] free scratch register 'r11'
+;       [167:21] free scratch register 'r11'
         jge panic_bounds
         shl r12, 6
         add r13, r12
-;       [167:13] free scratch register 'r12'
-;       [167:13] bounds check
+;       [167:14] free scratch register 'r12'
+;       [167:14] bounds check
         cmp rcx, 0
-;       [167:13] allocate scratch register -> r12
-;       [167:13] line number
+;       [167:14] allocate scratch register -> r12
+;       [167:14] line number
         mov r12, 167
         cmovl rbp, r12
         jl panic_bounds
-;       [167:13] free scratch register 'r12'
+;       [167:14] free scratch register 'r12'
         cmp rcx, 8
-;       [167:13] allocate scratch register -> r12
-;       [167:13] line number
+;       [167:14] allocate scratch register -> r12
+;       [167:14] line number
         mov r12, 167
         cmovg rbp, r12
-;       [167:13] free scratch register 'r12'
+;       [167:14] free scratch register 'r12'
         jg panic_bounds
         lea rsi, [r13]
 ;       [166:12] free scratch register 'r13'
-;       [168:13] worlds[1].locations
-;       [168:13] allocate scratch register -> r13
+;       [168:14] worlds[1].locations
+;       [168:14] allocate scratch register -> r13
         lea r13, [rsp - 796]
-;       [168:13] allocate scratch register -> r12
-;       [168:20] set array index
-;       [168:20] 1
-;       [168:20] 1
-;       [168:20] 1
+;       [168:14] allocate scratch register -> r12
+;       [168:21] set array index
+;       [168:21] 1
+;       [168:21] 1
+;       [168:21] 1
         mov r12, 1
-;       [168:20] bounds check
+;       [168:21] bounds check
         cmp r12, 0
-;       [168:20] allocate scratch register -> r11
-;       [168:20] line number
+;       [168:21] allocate scratch register -> r11
+;       [168:21] line number
         mov r11, 168
         cmovl rbp, r11
         jl panic_bounds
-;       [168:20] free scratch register 'r11'
+;       [168:21] free scratch register 'r11'
         cmp r12, 8
-;       [168:20] allocate scratch register -> r11
-;       [168:20] line number
+;       [168:21] allocate scratch register -> r11
+;       [168:21] line number
         mov r11, 168
         cmovge rbp, r11
-;       [168:20] free scratch register 'r11'
+;       [168:21] free scratch register 'r11'
         jge panic_bounds
         shl r12, 6
         add r13, r12
-;       [168:13] free scratch register 'r12'
-;       [168:13] bounds check
+;       [168:14] free scratch register 'r12'
+;       [168:14] bounds check
         cmp rcx, 0
-;       [168:13] allocate scratch register -> r12
-;       [168:13] line number
+;       [168:14] allocate scratch register -> r12
+;       [168:14] line number
         mov r12, 168
         cmovl rbp, r12
         jl panic_bounds
-;       [168:13] free scratch register 'r12'
+;       [168:14] free scratch register 'r12'
         cmp rcx, 8
-;       [168:13] allocate scratch register -> r12
-;       [168:13] line number
+;       [168:14] allocate scratch register -> r12
+;       [168:14] line number
         mov r12, 168
         cmovg rbp, r12
-;       [168:13] free scratch register 'r12'
+;       [168:14] free scratch register 'r12'
         jg panic_bounds
         lea rdi, [r13]
 ;       [166:12] free scratch register 'r13'
