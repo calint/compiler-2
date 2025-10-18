@@ -123,6 +123,9 @@ module.exports = grammar({
       $.function_call,
       $.if_statement,
       $.loop_statement,
+      // Add break and continue statements
+      $.break_statement,
+      $.continue_statement,
     ),
 
     // var identifier : type = expression
@@ -143,6 +146,10 @@ module.exports = grammar({
 
     // return (no arguments)
     return_statement: $ => $.return_keyword,
+
+    // Statements for loop control
+    break_statement: $ => $.break_keyword,
+    continue_statement: $ => $.continue_keyword,
 
     // function_call identifier ( arguments )
     function_call: $ => seq(
@@ -346,6 +353,10 @@ module.exports = grammar({
     // Keywords for control flow
     else_if_keyword: $ => prec(1, seq('else', /\s+/, 'if')),
     else_keyword: $ => 'else',
+
+    // New loop control keywords
+    break_keyword: $ => 'break',
+    continue_keyword: $ => 'continue',
 
     // Keywords for boolean logic
     not_keyword: $ => 'not',
