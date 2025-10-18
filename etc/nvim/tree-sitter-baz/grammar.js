@@ -165,7 +165,7 @@ module.exports = grammar({
       $._literal,
       $._access_chain,
       $.function_call,
-      $.struct_literal,
+      $.initializer_block, // Renamed from struct_literal
       $.parenthesized_expression,
       
       // NEW: Unary Arithmetic/Bitwise (~, -) - Precedence 16 (Highest)
@@ -250,20 +250,16 @@ module.exports = grammar({
         field('right', $._expression),
     )),
 
-    // Structure initialization literal (e.g., var p: Point = { x: 10, y: 20 })
-    struct_literal: $ => seq(
+    // Structure or Array positional initialization block (replaces struct_literal)
+    // Supports recursive initialization: { {x*10, y}, 0xff0000 }
+    initializer_block: $ => seq(
       '{',
-      optional($.field_initializer_list),
+      optional($.initializer_list),
       '}',
     ),
 
-    field_initializer_list: $ => sep1($.field_initializer, ','),
-
-    field_initializer: $ => seq(
-      field('name', $.identifier),
-      ':',
-      field('value', $._expression),
-    ),
+    // List of expressions used for positional initialization
+    initializer_list: $ => sep1($._expression, ','),
 
 
     // Boolean comparison expression - Precedence 5
