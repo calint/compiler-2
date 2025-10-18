@@ -27,8 +27,10 @@ class program final {
 
   public:
     program(const std::string& source, const size_t stack_size,
-            const bool bounds_check, const bool bounds_check_with_line)
-        : tc_{source, bounds_check, bounds_check_with_line},
+            const bool bounds_check_upper, const bool bounds_check_lower,
+            const bool bounds_check_with_line)
+        : tc_{source, bounds_check_upper, bounds_check_lower,
+              bounds_check_with_line},
           stack_size_{stack_size} {
 
         // create a placeholder token to use with `toc` functions
@@ -133,7 +135,7 @@ class program final {
         std::println(os, "    mov rdi, 0");
         std::println(os, "    syscall");
         std::println(os);
-        if (tc.is_bounds_check()) {
+        if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
             if (not tc.is_bounds_check_with_line()) {
                 std::println(os);
                 std::println(os, "panic_bounds:");

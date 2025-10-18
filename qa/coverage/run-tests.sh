@@ -13,7 +13,7 @@ if [ "$1" != "nomake" ]; then
 fi
 
 BIN="../../baz"
-OPTS="--stack=65536 --checks=bounds,line"
+OPTS="--stack=65536 --checks=upper,lower,line"
 
 SEP="--------------------------------------------------------------------------------"
 echo $SEP

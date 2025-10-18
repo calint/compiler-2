@@ -55,8 +55,9 @@ auto main(const int argc, const char* argv[]) -> int {
     // default values
     const char* src_file_name = "prog.baz";
     size_t stack_size = 0x10000;
-    bool checked = false;
-    bool checked_line = false;
+    bool checks_upper = false;
+    bool checks_show_line = false;
+    bool checks_lower = false;
 
     // parse arguments
     for (size_t i = 1; i < args.size(); i++) {
@@ -73,10 +74,11 @@ auto main(const int argc, const char* argv[]) -> int {
                 "                      Supports decimal and hex (0x prefix) ");
             std::println("  --checks=TYPE       Enable runtime checks:");
             std::println(
-                "                        bounds      - bounds checking");
+                "                        upper - check upper array bounds");
             std::println(
-                "                        line        - with line tracking");
-            std::println("                        bounds,line - both");
+                "                        lower - check lower array bounds");
+            std::println("                         line - report line number");
+            std::println("             upper,lower,line - all");
             std::println("  --help, -h          Show this help message");
             std::println("");
             std::println("Arguments:");
@@ -85,24 +87,45 @@ auto main(const int argc, const char* argv[]) -> int {
             std::println("");
             std::println("Examples:");
             std::println("  {} myfile.baz", prg);
-            std::println("  {} --stack=131072 --checks=bounds prog.baz", prg);
-            std::println("  {} --checks=bounds,line", prg);
+            std::println("  {} --stack=131072 --checks=upper prog.baz", prg);
+            std::println("  {} --checks=upper,lower,line prog.baz", prg);
+            std::println("  {} --checks=upper prog.baz", prg);
             return 0;
         }
         if (arg.starts_with("--stack=")) {
             try {
                 stack_size = std::stoul(std::string{arg.substr(8)}, nullptr, 0);
             } catch (...) {
-                std::println(stderr,
-                             "Error: Could not parse stack size: \"{}\"",
+                std::println(stderr, "Could not parse stack size: \"{}\"",
                              arg.substr(8));
                 std::println(stderr, "Use --help for usage information");
                 return 1;
             }
         } else if (arg.starts_with("--checks=")) {
             const std::string_view checks{arg.substr(9)};
-            checked = checks.contains("bounds");
-            checked_line = checks.contains("line");
+            std::istringstream iss{std::string{checks}};
+
+            checks_upper = false;
+            checks_lower = false;
+            checks_show_line = false;
+
+            std::string option;
+            while (std::getline(iss, option, ',')) {
+                if (option == "upper") {
+                    checks_upper = true;
+                } else if (option == "lower") {
+                    checks_lower = true;
+                } else if (option == "line") {
+                    checks_show_line = true;
+                } else if (not option.empty()) {
+                    std::println(std::cerr,
+                                 "Invalid --checks option: '{}'. Supported "
+                                 "options are: upper, lower, line.",
+                                 option);
+                    std::println(stderr, "Use --help for usage information");
+                    return 1; // or some other error handling mechanism
+                }
+            }
         } else if (not arg.starts_with("--")) {
             // Assume it's the filename
             src_file_name = args[i];
@@ -116,7 +139,8 @@ auto main(const int argc, const char* argv[]) -> int {
     std::string src;
     try {
         src = read_file_to_string(src_file_name);
-        program prg{src, stack_size, checked, checked_line};
+        program prg{src, stack_size, checks_upper, checks_lower,
+                    checks_show_line};
         // prg.source_to(std::cerr);
         std::ofstream reproduced_source{"diff.baz"};
         prg.source_to(reproduced_source);

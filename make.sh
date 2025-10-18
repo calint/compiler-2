@@ -118,4 +118,4 @@ cat gen-without-comments.s | wc
 echo -n '   gzipped: '
 cat gen-without-comments.s | gzip | wc
 
-./run-baz.sh prog.baz --stack=131072 --checks=bounds,line
+./run-baz.sh prog.baz --stack=131072 --checks=upper,lower,line

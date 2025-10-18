@@ -1,8 +1,11 @@
-[ ] bounds checking: line number is moved twice during the same check. fix
-[ ] test and js slightly better
-[ ] bounds checking: if array indexing are within a range a single unsigned
+[x] ;       [156:32] free scratch register 'r11'
+            mov r14, qword [r13 + r12 * 8 + 0]
+[x] bounds checking: line number is moved twice during the same check. fix
+[x] test and js slightly better
+[x] bounds checking: if array indexing are within a range a single unsigned
     comparison is enough assuming positive negative numbers are smaller than
     possible positive numbers. compiler flag
+    => use option "upper"
 [ ] neovim: tree-sitter and color scheme, LSP?
 [x] bounds checking does not catch negative array indexes
 [ ] array_copy does not handle when destination overlaps source

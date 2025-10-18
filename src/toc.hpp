@@ -310,8 +310,9 @@ class toc final {
     size_t usage_max_scratch_regs_{};
     size_t usage_max_frame_count_{};
     size_t usage_max_stack_size_{};
-    const bool bounds_check_{};
+    const bool bounds_check_upper_{};
     const bool bounds_check_with_line_{};
+    const bool bounds_check_lower_{};
 
   public:
     const std::regex regex_ws{R"(\s+)"};
@@ -319,10 +320,11 @@ class toc final {
     const std::regex regex_nasm_comment{R"(^\s*;.*$)"};
     const std::regex regex_nasm_number_register{R"(r(\d+))"};
 
-    toc(const std::string& source, const bool bounds_check,
-        const bool bounds_check_with_line)
-        : source_{source}, bounds_check_{bounds_check},
-          bounds_check_with_line_{bounds_check_with_line} {}
+    toc(const std::string& source, const bool bounds_check_upper,
+        const bool bounds_check_lower, const bool bounds_check_with_line)
+        : source_{source}, bounds_check_upper_{bounds_check_upper},
+          bounds_check_with_line_{bounds_check_with_line},
+          bounds_check_lower_{bounds_check_lower} {}
 
     ~toc() = default;
 
@@ -1049,10 +1051,16 @@ class toc final {
         return *type_void_;
     }
 
-    [[nodiscard]] auto is_bounds_check() const -> bool { return bounds_check_; }
+    [[nodiscard]] auto is_bounds_check_upper() const -> bool {
+        return bounds_check_upper_;
+    }
 
     [[nodiscard]] auto is_bounds_check_with_line() const -> bool {
         return bounds_check_with_line_;
+    }
+
+    [[nodiscard]] auto is_bounds_check_lower() const -> bool {
+        return bounds_check_lower_;
     }
 
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {

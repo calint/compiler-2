@@ -9,7 +9,7 @@
             "args": [
                 "prog.baz",
                 "--stack=131072",
-                "--checks=bounds,line"
+                "--checks=upper,lower,line"
             ],
             "cwd": "${workspaceFolder}",
         }
