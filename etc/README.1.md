@@ -41,7 +41,7 @@ run `prog.baz`
     bounds with line number information
 * to run the tests `qa/coverage/run-tests.sh` and see coverage report in `qa/coverage/report/`
 * syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)
-* todo list in `etc/todo.txt`
+* todo list of planned fixes and features in `etc/todo.txt`
 
 ## Source
 
