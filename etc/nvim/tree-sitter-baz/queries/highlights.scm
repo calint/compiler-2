@@ -1,5 +1,12 @@
 ; highlights.scm
 
+"(" @comment
+")" @comment
+"[" @comment
+"]" @comment
+"{" @comment
+"}" @comment
+
 ; Keywords
 (func_keyword) @keyword.function
 (type_keyword) @keyword.type
