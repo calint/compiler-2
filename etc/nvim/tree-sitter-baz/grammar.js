@@ -17,7 +17,7 @@ module.exports = grammar({
       $.type_definition,
     ),
 
-    // --- Definitions ---
+    // --- Definitions (Top-Level Declarations) ---
 
     // field identifier = expression
     field_definition: $ => seq(
@@ -52,7 +52,7 @@ module.exports = grammar({
       optional($.parameter_list), // List is optional (avoids runtime error for ())
       ')',
       optional($.return_annotation),
-      $._function_body,
+      $._function_body, // Now uses the flexible body rule
     ),
 
     return_annotation: $ => seq(
@@ -61,11 +61,8 @@ module.exports = grammar({
       field('return_name', $.identifier)
     ),
 
-    // parameter_list is explicitly defined to require 1 or more elements (No empty match allowed!)
-    parameter_list: $ => seq(
-      $.parameter,
-      repeat(seq(',', $.parameter)),
-    ),
+    // parameter_list requires 1 or more elements
+    parameter_list: $ => sep1($.parameter, ','),
 
     // identifier : type_name (type is optional)
     parameter: $ => seq(
@@ -105,9 +102,16 @@ module.exports = grammar({
 
     // --- Function Body and Statements ---
 
+    // Allows either a block or a single statement for function body.
     _function_body: $ => choice(
+      prec.right(1, $.block), // Prefer parsing a block as the explicit function body (resolves conflict)
+      $._statement,           // Allow a single statement (e.g., `if not b exit(1)`)
+    ),
+    
+    // Allows either a block or a single statement for control flow bodies
+    _body: $ => choice(
+      prec.right(1, $.block), // RESOLUTION: Prefer parsing block directly (resolves conflict with _statement)
       $._statement,
-      $.block,
     ),
 
     block: $ => seq(
@@ -117,13 +121,18 @@ module.exports = grammar({
     ),
 
     _statement: $ => choice(
-      $.assignment_statement,
+      // Structural Block (Allows nesting for scope)
+      $.block,
+      // Data/State management
       $.variable_declaration,
-      $.return_statement,
+      $.assignment_statement,
+      // Actions
       $.function_call,
+      $.return_statement,
+      // Control Flow
       $.if_statement,
       $.loop_statement,
-      // Add break and continue statements
+      // Loop Control
       $.break_statement,
       $.continue_statement,
     ),
@@ -133,7 +142,7 @@ module.exports = grammar({
       $.var_keyword,
       field('destination', $.identifier),
       optional(seq(':', $._definition_type)),
-      // Initializer is now optional
+      // Initializer is optional
       optional(seq('=', $._expression)),
     ),
 
@@ -155,110 +164,149 @@ module.exports = grammar({
     function_call: $ => seq(
       field('function', $.identifier),
       '(',
-      optional($.argument_list), // List is optional (avoids runtime error for ())
+      optional($.argument_list),
       ')',
     ),
 
-    // argument_list is explicitly defined to require 1 or more elements (No empty match allowed!)
-    argument_list: $ => seq(
+    // argument_list requires 1 or more elements
+    argument_list: $ => sep1($._expression, ','),
+
+    // Full if/else if/else structure
+    if_statement: $ => prec.right(1, seq( // FIXED: Added prec.right(1) to resolve dangling else conflict
+      $.if_keyword,
       $._expression,
-      repeat(seq(',', $._expression)),
+      field('consequence', $._body), // Now uses flexible body
+      repeat($.else_if_clause),
+      optional($.else_clause),
+    )),
+    
+    // else if clause (REVERTED to use custom token for stability)
+    else_if_clause: $ => seq(
+        $.else_if_keyword, // Use the custom token
+        $._expression,
+        field('consequence', $._body), // Now uses flexible body
     ),
 
-    // --- Expressions and Access ---
+    // else clause
+    else_clause: $ => seq(
+        $.else_keyword,
+        field('alternative', $._body), // Now uses flexible body
+    ),
 
-    // Expression types ordered by precedence (highest to lowest)
+    loop_statement: $ => seq(
+      $.loop_keyword,
+      field('body', $._body), // Now uses flexible body
+    ),
+
+    // --- Expressions and Access (Ordered by Precedence, Highest to Lowest) ---
+
     _expression: $ => choice(
       $._literal,
       $._access_chain,
       $.function_call,
-      $.initializer_block, // Renamed from struct_literal
+      $.initializer_block,
       $.parenthesized_expression,
       
-      // NEW: Unary Arithmetic/Bitwise (~, -) - Precedence 16 (Highest)
+      // Precedence 16: Unary Arithmetic/Bitwise (~, -)
       $.unary_expression, 
       
-      // Unary Logic (not) - Precedence 15
+      // Precedence 15: Unary Logic (not)
       $.not_expression, 
       
-      // Arithmetic and Bitwise (High Precedence)
-      $.multiplicative_expression, // 12
-      $.additive_expression,       // 11
-      $.shift_expression,          // 10
-      $.bitwise_and_expression,    // 9
-      $.bitwise_or_expression,     // 8
+      // Precedence 12: Multiplicative/Modulo (*, /, %)
+      $.multiplicative_expression, 
       
-      // Logical AND/OR (Medium Precedence)
-      $.and_expression,            // 7
-      $.or_expression,             // 6
+      // Precedence 11: Additive (+, -)
+      $.additive_expression,       
       
-      // Comparison (Lowest Precedence)
-      $.comparison_expression,     // 5
+      // Precedence 10: Shift (<<, >>)
+      $.shift_expression,          
+      
+      // Precedence 9: Bitwise AND (&)
+      $.bitwise_and_expression,    
+      
+      // Precedence 8: Bitwise OR (|)
+      $.bitwise_or_expression,     
+      
+      // Precedence 7: Logical AND (and)
+      $.and_expression,            
+      
+      // Precedence 6: Logical OR (or)
+      $.or_expression,             
+      
+      // Precedence 5: Comparison (==, !=, <=, <, >, >=)
+      $.comparison_expression,     
     ),
 
-    // NEW: Unary Negation/Complement (- and ~) - Precedence 16
+    // Precedence 16
     unary_expression: $ => prec(16, seq(
         field('operator', choice('-', '~')),
         field('operand', $._expression),
     )),
     
-    // Logical NOT (not) - Precedence 15 (Unary)
+    // Precedence 15
     not_expression: $ => prec(15, seq(
         $.not_keyword,
         $._expression,
     )),
 
-    // Logical AND (and) - Precedence 7
-    and_expression: $ => prec.left(7, seq(
-        field('left', $._expression),
-        field('operator', $.and_keyword),
-        field('right', $._expression),
-    )),
-
-    // Logical OR (or) - Precedence 6
-    or_expression: $ => prec.left(6, seq(
-        field('left', $._expression),
-        field('operator', $.or_keyword),
-        field('right', $._expression),
-    )),
-
-    // Multiplicative/Modulo (*, /, %) - Precedence 12
+    // Precedence 12 (Left Associative)
     multiplicative_expression: $ => prec.left(12, seq(
         field('left', $._expression),
         field('operator', choice('*', '/', '%')),
         field('right', $._expression),
     )),
     
-    // Additive (+, -) - Precedence 11 (Handles Binary +/-)
+    // Precedence 11 (Left Associative)
     additive_expression: $ => prec.left(11, seq(
         field('left', $._expression),
         field('operator', choice('+', '-')),
         field('right', $._expression),
     )),
     
-    // Shift (<<, >>) - Precedence 10
+    // Precedence 10 (Left Associative)
     shift_expression: $ => prec.left(10, seq(
         field('left', $._expression),
         field('operator', choice('<<', '>>')),
         field('right', $._expression),
     )),
     
-    // Bitwise AND (&) - Precedence 9
+    // Precedence 9 (Left Associative)
     bitwise_and_expression: $ => prec.left(9, seq(
         field('left', $._expression),
         field('operator', '&'),
         field('right', $._expression),
     )),
     
-    // Bitwise OR (|) - Precedence 8
+    // Precedence 8 (Left Associative)
     bitwise_or_expression: $ => prec.left(8, seq(
         field('left', $._expression),
         field('operator', '|'),
         field('right', $._expression),
     )),
 
-    // Structure or Array positional initialization block (replaces struct_literal)
-    // Supports recursive initialization: { {x*10, y}, 0xff0000 }
+    // Precedence 7 (Left Associative)
+    and_expression: $ => prec.left(7, seq(
+        field('left', $._expression),
+        field('operator', $.and_keyword),
+        field('right', $._expression),
+    )),
+
+    // Precedence 6 (Left Associative)
+    or_expression: $ => prec.left(6, seq(
+        field('left', $._expression),
+        field('operator', $.or_keyword),
+        field('right', $._expression),
+    )),
+
+    // Precedence 5 (Left Associative)
+    comparison_expression: $ => prec.left(5, seq(
+        field('left', $._expression),
+        field('operator', $.comparison_operator),
+        field('right', $._expression),
+    )),
+
+    // Structure or Array positional initialization block
     initializer_block: $ => seq(
       '{',
       optional($.initializer_list),
@@ -268,15 +316,6 @@ module.exports = grammar({
     // List of expressions used for positional initialization
     initializer_list: $ => sep1($._expression, ','),
 
-
-    // Boolean comparison expression - Precedence 5
-    comparison_expression: $ => prec.left(5, seq(
-        field('left', $._expression),
-        field('operator', $.comparison_operator),
-        field('right', $._expression),
-    )),
-
-    // Comparison operators (already defined as distinct tokens)
     comparison_operator: $ => choice(
         '==',
         '!=',
@@ -285,8 +324,6 @@ module.exports = grammar({
         '>',
         '>=',
     ),
-
-    // --- Existing Access and Control Flow Rules ---
 
     _access_chain: $ => seq(
       $.identifier,
@@ -313,56 +350,31 @@ module.exports = grammar({
       ')',
     ),
 
-    // Full if/else if/else structure
-    if_statement: $ => seq(
-      $.if_keyword,
-      $._expression, // Handles both full comparison and shorthand check (e.g., `if count`)
-      $.block,
-      repeat($.else_if_clause), // Zero or more else if blocks
-      optional($.else_clause),  // Optional else block at the end
-    ),
-    
-    // else if clause
-    else_if_clause: $ => seq(
-        $.else_if_keyword,
-        $._expression,
-        $.block,
-    ),
-
-    // else clause
-    else_clause: $ => seq(
-        $.else_keyword,
-        $.block,
-    ),
-
-    loop_statement: $ => seq(
-      $.loop_keyword,
-      $.block,
-    ),
-
     // --- Tokens (Keywords, Identifiers, Literals) ---
 
+    // Definition Keywords
     field_keyword: $ => 'field',
     func_keyword: $ => 'func',
     type_keyword: $ => 'type',
+
+    // Statement Keywords
     var_keyword: $ => 'var',
     return_keyword: $ => 'return',
     if_keyword: $ => 'if',
     loop_keyword: $ => 'loop',
     
-    // Keywords for control flow
+    // Flow Control Keywords (REVERTED)
     else_if_keyword: $ => prec(1, seq('else', /\s+/, 'if')),
     else_keyword: $ => 'else',
-
-    // New loop control keywords
     break_keyword: $ => 'break',
     continue_keyword: $ => 'continue',
 
-    // Keywords for boolean logic
+    // Logical Keywords
     not_keyword: $ => 'not',
     and_keyword: $ => 'and',
     or_keyword: $ => 'or',
 
+    // Type Keywords
     bool_type: $ => 'bool',
     i8_type: $ => 'i8',
     i16_type: $ => 'i16',
@@ -377,7 +389,7 @@ module.exports = grammar({
       $.boolean_literal,
     ),
     
-    // Boolean literals
+    // Literal definitions
     boolean_literal: $ => choice(
         'true',
         'false',
@@ -390,9 +402,9 @@ module.exports = grammar({
     ),
 
     number_literal: $ => choice(
-      /0x[0-9a-fA-F]+/,
-      /0b[01]+/,
-      /\d+(\.\d+)?/,
+      /0x[0-9a-fA-F]+/, // Hex
+      /0b[01]+/,        // Binary
+      /\d+(\.\d+)?/,    // Decimal (int or float)
     ),
 
     comment: $ => /#.*/,
