@@ -1,3 +1,8 @@
+[ ] bounds checking: line number is moved twice during the same check. fix
+[ ] test and js slightly better
+[ ] bounds checking: if array indexing are within a range a single unsigned
+    comparison is enough assuming positive negative numbers are smaller than
+    possible positive numbers. compiler flag
 [ ] neovim: tree-sitter and color scheme, LSP?
 [x] bounds checking does not catch negative array indexes
 [ ] array_copy does not handle when destination overlaps source
