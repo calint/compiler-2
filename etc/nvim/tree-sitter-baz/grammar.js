@@ -160,16 +160,96 @@ module.exports = grammar({
 
     // --- Expressions and Access ---
 
-    // Expression can be a literal, access_chain, function call, comparison, struct literal, or sub-expression
+    // Expression types ordered by precedence (highest to lowest)
     _expression: $ => choice(
       $._literal,
       $._access_chain,
       $.function_call,
-      $.comparison_expression,
-      $.struct_literal, // Allows { name: value, ... } syntax for initialization
+      $.struct_literal,
       $.parenthesized_expression,
+      
+      // NEW: Unary Arithmetic/Bitwise (~, -) - Precedence 16 (Highest)
+      $.unary_expression, 
+      
+      // Unary Logic (not) - Precedence 15
+      $.not_expression, 
+      
+      // Arithmetic and Bitwise (High Precedence)
+      $.multiplicative_expression, // 12
+      $.additive_expression,       // 11
+      $.shift_expression,          // 10
+      $.bitwise_and_expression,    // 9
+      $.bitwise_or_expression,     // 8
+      
+      // Logical AND/OR (Medium Precedence)
+      $.and_expression,            // 7
+      $.or_expression,             // 6
+      
+      // Comparison (Lowest Precedence)
+      $.comparison_expression,     // 5
     ),
+
+    // NEW: Unary Negation/Complement (- and ~) - Precedence 16
+    unary_expression: $ => prec(16, seq(
+        field('operator', choice('-', '~')),
+        field('operand', $._expression),
+    )),
     
+    // Logical NOT (not) - Precedence 15 (Unary)
+    not_expression: $ => prec(15, seq(
+        $.not_keyword,
+        $._expression,
+    )),
+
+    // Logical AND (and) - Precedence 7
+    and_expression: $ => prec.left(7, seq(
+        field('left', $._expression),
+        field('operator', $.and_keyword),
+        field('right', $._expression),
+    )),
+
+    // Logical OR (or) - Precedence 6
+    or_expression: $ => prec.left(6, seq(
+        field('left', $._expression),
+        field('operator', $.or_keyword),
+        field('right', $._expression),
+    )),
+
+    // Multiplicative/Modulo (*, /, %) - Precedence 12
+    multiplicative_expression: $ => prec.left(12, seq(
+        field('left', $._expression),
+        field('operator', choice('*', '/', '%')),
+        field('right', $._expression),
+    )),
+    
+    // Additive (+, -) - Precedence 11 (Handles Binary +/-)
+    additive_expression: $ => prec.left(11, seq(
+        field('left', $._expression),
+        field('operator', choice('+', '-')),
+        field('right', $._expression),
+    )),
+    
+    // Shift (<<, >>) - Precedence 10
+    shift_expression: $ => prec.left(10, seq(
+        field('left', $._expression),
+        field('operator', choice('<<', '>>')),
+        field('right', $._expression),
+    )),
+    
+    // Bitwise AND (&) - Precedence 9
+    bitwise_and_expression: $ => prec.left(9, seq(
+        field('left', $._expression),
+        field('operator', '&'),
+        field('right', $._expression),
+    )),
+    
+    // Bitwise OR (|) - Precedence 8
+    bitwise_or_expression: $ => prec.left(8, seq(
+        field('left', $._expression),
+        field('operator', '|'),
+        field('right', $._expression),
+    )),
+
     // Structure initialization literal (e.g., var p: Point = { x: 10, y: 20 })
     struct_literal: $ => seq(
       '{',
@@ -186,9 +266,8 @@ module.exports = grammar({
     ),
 
 
-    // Boolean comparison expression
-    // prec.left(10) gives this a medium precedence for operator chaining
-    comparison_expression: $ => prec.left(10, seq(
+    // Boolean comparison expression - Precedence 5
+    comparison_expression: $ => prec.left(5, seq(
         field('left', $._expression),
         field('operator', $.comparison_operator),
         field('right', $._expression),
@@ -271,6 +350,11 @@ module.exports = grammar({
     // Keywords for control flow
     else_if_keyword: $ => prec(1, seq('else', /\s+/, 'if')),
     else_keyword: $ => 'else',
+
+    // Keywords for boolean logic
+    not_keyword: $ => 'not',
+    and_keyword: $ => 'and',
+    or_keyword: $ => 'or',
 
     bool_type: $ => 'bool',
     i8_type: $ => 'i8',
