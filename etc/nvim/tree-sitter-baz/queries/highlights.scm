@@ -1,100 +1,51 @@
-;; --- highlights.scm ---
-;; Synchronized with the latest grammar.js (Types, Arrays, Return Annotations)
+; highlights.scm
 
-;; === General ===
-(comment) @comment
-
-;; === Keywords and Control Flow ===
-(field_keyword) @keyword.declaration
+; Keywords
 (func_keyword) @keyword.function
-(type_keyword) @keyword.declaration
-(var_keyword) @keyword.declaration
-(return_keyword) @keyword.control
+(type_keyword) @keyword.type
+(field_keyword) @keyword
+(var_keyword) @keyword
+(if_keyword) @keyword.conditional
+(loop_keyword) @keyword.repeat
+(else_keyword) @keyword.conditional
+(else_if_keyword) @keyword.conditional
+(break_keyword) @keyword.control
+(continue_keyword) @keyword.control
+(return_keyword) @keyword.return
+(not_keyword) @keyword.operator
+(and_keyword) @keyword.operator
+(or_keyword) @keyword.operator
 
-;; Control Flow Keywords
-(if_keyword) @keyword.control
-(loop_keyword) @keyword.control
+; Types
+(bool_type) @type
+(i8_type) @type
+(i16_type) @type
+(i32_type) @type
+(i64_type) @type
 
-;; === Types and Built-ins ===
-(bool_type) @type.builtin
-(i8_type) @type.builtin
-(i16_type) @type.builtin
-(i32_type) @type.builtin
-(i64_type) @type.builtin
+; Identifiers
+(identifier) @variable
+(function_definition name: (identifier) @function)
+(type_definition name: (identifier) @type.definition)
+(member_field name: (identifier) @variable.member)
+(parameter name: (identifier) @variable.parameter)
 
-;; Custom Type Definitions (The name of the type itself)
-(type_definition
-  name: (identifier) @type.definition
-)
+; Function calls
+(function_call function: (identifier) @function.call)
 
-;; Type Name Usage inside member fields/function types (custom types)
-(sized_array_type
-  (identifier) @type.name
-)
-(unsized_array_type
-  (identifier) @type.name
-)
-
-;; === Literals ===
+; Literals
 (string_literal) @string
 (number_literal) @number
+(boolean_literal) @boolean
 
-;; === Punctuation ===
-[ "{" "}" "(" ")" "=" ":" "," ] @punctuation.bracket
-[ "[" "]" ] @punctuation.delimiter
+; Comments
+(comment) @comment
 
-;; === Definitions and Declarations ===
-
-;; Top-level field names
-(field_definition
-  name: (identifier) @variable.declaration
-)
-
-;; Function names
-(function_definition
-  name: (identifier) @function.declaration
-)
-
-;; Member field names inside a type definition
-(member_field
-  name: (identifier) @field
-)
-
-;; Variables declared with 'var'
-(variable_declaration
-  destination: (identifier) @variable.declaration
-)
-
-;; === Function Signature and Return ===
-
-;; Highlight the name of function arguments (parameters)
-(parameter
-  (identifier) @parameter.function
-)
-
-;; Highlight the quasi-variable name in the return annotation
-(return_annotation
-  (identifier) @variable.return
-)
-
-;; === Statements and Expressions (Variable Usage) ===
-
-;; Assignment destination (variable being modified)
-(assignment_statement
-  destination: (identifier) @variable
-)
-
-;; Identifiers used as arguments in function calls
-(function_call
-  (identifier) @variable.call
-)
-
-;; Identifiers used as bare expressions (e.g., condition in if_statement or lone statement)
-(if_statement
-  (identifier) @variable.call
-)
-
-;; Identifiers used in parenthesized expressions (covers nested calls/expressions)
-(parenthesized_expression
-  (identifier) @variable.call
-)
+; Operators
+(comparison_operator) @operator
+(unary_expression operator: ["-" "~"] @operator)
+(multiplicative_expression operator: ["*" "/" "%"] @operator)
+(additive_expression operator: ["+" "-"] @operator)
+(shift_expression operator: ["<<" ">>"] @operator)
+(bitwise_and_expression operator: ["&"] @operator)
+(bitwise_or_expression operator: ["|"] @operator)
