@@ -15,9 +15,7 @@ func exit(v : reg_rdi) {
     syscall()
 }
 
-func assert(expr : bool) {
-    if not expr exit(1)
-}
+func assert(expr : bool) if not expr exit(1)
 
 func print(len : reg_rdx, ptr : reg_rsi) {
     mov(rax, 1)   # write system call
