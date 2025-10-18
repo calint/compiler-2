@@ -2302,15 +2302,15 @@ main:
         if_18_26_156_5_end:
 ;       [156:5] free scratch register 'r15'
     assert_156_5_end:
-;   [158:5] array_copy( worlds[1].locations, worlds[0].locations, array_size_of(worlds[1].locations) )
+;   [158:5] array_copy( worlds[1].locations, worlds[0].locations, array_size_of(worlds.locations) )
 ;   [158:5] allocate named register 'rsi'
 ;   [158:5] allocate named register 'rdi'
 ;   [158:5] allocate named register 'rcx'
-;   [160:9] array_size_of(worlds[1].locations)
-;   [160:9] array_size_of(worlds[1].locations)
-;   [161:9] array_size_of(worlds[1].locations)
-;   [161:9] rcx = array_size_of(worlds[1].locations)
-;   [161:9] array_size_of(worlds[1].locations)
+;   [160:9] array_size_of(worlds.locations)
+;   [160:9] array_size_of(worlds.locations)
+;   [161:9] array_size_of(worlds.locations)
+;   [161:9] rcx = array_size_of(worlds.locations)
+;   [161:9] array_size_of(worlds.locations)
     mov rcx, 8
 ;   [159:9] worlds[1].locations
 ;   [159:9] allocate scratch register -> r15
@@ -2509,24 +2509,24 @@ main:
         if_18_26_163_5_end:
 ;       [163:5] free scratch register 'r15'
     assert_163_5_end:
-;   [164:5] assert(arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) ))
+;   [164:5] assert(arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) ))
 ;   [164:12] allocate scratch register -> r15
-;   [164:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) )
-;   [164:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) )
-;   [164:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) )
+;   [164:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
+;   [164:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
+;   [164:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
     cmp_164_12:
 ;   [164:12] allocate scratch register -> r14
-;       [164:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) )
-;       [164:12] r14 = arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) )
-;       [164:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) )
+;       [164:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
+;       [164:12] r14 = arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
+;       [164:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;       [164:12] allocate named register 'rsi'
 ;       [164:12] allocate named register 'rdi'
 ;       [164:12] allocate named register 'rcx'
-;       [166:14] array_size_of(worlds[0].locations)
-;       [166:14] array_size_of(worlds[0].locations)
-;       [167:14] array_size_of(worlds[0].locations)
-;       [167:14] rcx = array_size_of(worlds[0].locations)
-;       [167:14] array_size_of(worlds[0].locations)
+;       [166:14] array_size_of(worlds.locations)
+;       [166:14] array_size_of(worlds.locations)
+;       [167:14] array_size_of(worlds.locations)
+;       [167:14] rcx = array_size_of(worlds.locations)
+;       [167:14] array_size_of(worlds.locations)
         mov rcx, 8
 ;       [165:14] worlds[0].locations
 ;       [165:14] allocate scratch register -> r13
