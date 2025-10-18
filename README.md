@@ -29,13 +29,19 @@ x86_64 assembly on Linux.
 code run `./make.sh`
 * after that use `./run-baz.sh myprogram.baz` or `./run-baz.sh` to compile and
 run `prog.baz`
-  * optional parameters: _stack size_, _bounds check_, with _line number information_ e.g:
+  * optional parameters: _stack size_, _bounds check_, with _line number
+    information_ e.g:
     * `./run-baz.sh myprogram.baz --stack=262144`: stack size, no runtime checks
-    * `./run-baz.sh myprogram.baz --stack=262144 --check=bounds`: checks bounds without
-    line number information (faster)
-    * `./run-baz.sh myprogram.baz --stack=262144 --checks=bounds,line`: checks
+    * `./run-baz.sh myprogram.baz --stack=262144 --check=upper`: checks upper
+    bounds without line number information and is often enough to ensure catching
+    negative values (faster)
+    * `./run-baz.sh myprogram.baz --stack=262144 --checks=upper,line`: checks
+    upper bounds with line number information
+    * `./run-baz.sh myprogram.baz --stack=262144 --checks=upper,lower,line`: checks
     bounds with line number information
 * to run the tests `qa/coverage/run-tests.sh` and see coverage report in `qa/coverage/report/`
+* syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)
+* todo list in `etc/todo.txt`
 
 ## Source
 
