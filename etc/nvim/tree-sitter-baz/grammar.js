@@ -172,7 +172,7 @@ module.exports = grammar({
     argument_list: $ => sep1($._expression, ','),
 
     // Full if/else if/else structure
-    if_statement: $ => prec.right(1, seq( // FIXED: Added prec.right(1) to resolve dangling else conflict
+    if_statement: $ => prec.right(1, seq( // Precedence to resolve dangling else conflict
       $.if_keyword,
       $._expression,
       field('consequence', $._body), // Now uses flexible body
@@ -180,17 +180,20 @@ module.exports = grammar({
       optional($.else_clause),
     )),
     
-    // else if clause (REVERTED to use custom token for stability)
+    // else if clause
     else_if_clause: $ => seq(
         $.else_if_keyword, // Use the custom token
         $._expression,
         field('consequence', $._body), // Now uses flexible body
     ),
 
-    // else clause
+    // else clause (FIXED: Inlining _body logic to resolve token boundary error)
     else_clause: $ => seq(
         $.else_keyword,
-        field('alternative', $._body), // Now uses flexible body
+        field('alternative', choice(
+          prec.right(1, $.block), // Prioritize block if present
+          $._statement,          // Otherwise, look for a single statement
+        )),
     ),
 
     loop_statement: $ => seq(
@@ -363,7 +366,7 @@ module.exports = grammar({
     if_keyword: $ => 'if',
     loop_keyword: $ => 'loop',
     
-    // Flow Control Keywords (REVERTED)
+    // Flow Control Keywords
     else_if_keyword: $ => prec(1, seq('else', /\s+/, 'if')),
     else_keyword: $ => 'else',
     break_keyword: $ => 'break',
