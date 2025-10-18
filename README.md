@@ -217,6 +217,11 @@ func main() {
         array_size_of(worlds[1].locations)
     )
     assert(worlds[0].locations[1] == 0xffee)
+    assert(arrays_equal(
+            worlds[0].locations,
+            worlds[1].locations,
+            array_size_of(worlds[0].locations)
+          ))
 
     print(hello.len, hello)
     loop {
@@ -1313,85 +1318,160 @@ main:
             exit_19_17_165_5_end:
         if_19_5_165_5_end:
     assert_165_5_end:
+    cmp_166_12:
+        mov rcx, 8
+        lea r13, [rsp - 796]
+        mov r12, 0
+        cmp r12, 0
+        mov r11, 167
+        cmovl rbp, r11
+        jl panic_bounds
+        cmp r12, 8
+        mov r11, 167
+        cmovge rbp, r11
+        jge panic_bounds
+        shl r12, 6
+        add r13, r12
+        cmp rcx, 0
+        mov r12, 167
+        cmovl rbp, r12
+        jl panic_bounds
+        cmp rcx, 8
+        mov r12, 167
+        cmovg rbp, r12
+        jg panic_bounds
+        lea rsi, [r13]
+        lea r13, [rsp - 796]
+        mov r12, 1
+        cmp r12, 0
+        mov r11, 168
+        cmovl rbp, r11
+        jl panic_bounds
+        cmp r12, 8
+        mov r11, 168
+        cmovge rbp, r11
+        jge panic_bounds
+        shl r12, 6
+        add r13, r12
+        cmp rcx, 0
+        mov r12, 168
+        cmovl rbp, r12
+        jl panic_bounds
+        cmp rcx, 8
+        mov r12, 168
+        cmovg rbp, r12
+        jg panic_bounds
+        lea rdi, [r13]
+        shl rcx, 3
+        repe cmpsb
+        je cmps_eq_166_12
+        mov r14, false
+        jmp cmps_end_166_12
+        cmps_eq_166_12:
+        mov r14, true
+        cmps_end_166_12:
+    test r14, r14
+    je bool_false_166_12
+    jmp bool_true_166_12
+    bool_true_166_12:
+    mov r15, true
+    jmp bool_end_166_12
+    bool_false_166_12:
+    mov r15, false
+    bool_end_166_12:
+    assert_166_5:
+        if_19_8_166_5:
+        cmp_19_8_166_5:
+        test r15, r15
+        jne if_19_5_166_5_end
+        jmp if_19_8_166_5_code
+        if_19_8_166_5_code:
+            mov rdi, 1
+            exit_19_17_166_5:
+                    mov rax, 60
+                syscall
+            exit_19_17_166_5_end:
+        if_19_5_166_5_end:
+    assert_166_5_end:
     mov rdx, hello.len
     mov rsi, hello
-    print_167_5:
+    print_172_5:
             mov rax, 1
             mov rdi, 1
         syscall
-    print_167_5_end:
-    loop_168_5:
+    print_172_5_end:
+    loop_173_5:
         mov rdx, prompt1.len
         mov rsi, prompt1
-        print_169_9:
+        print_174_9:
                 mov rax, 1
                 mov rdi, 1
             syscall
-        print_169_9_end:
+        print_174_9_end:
         mov rdx, 80
         lea rsi, [rsp - 284]
-        read_171_19:
+        read_176_19:
                 mov rax, 0
                 mov rdi, 0
             syscall
                 mov qword [rsp - 804], rax
-        read_171_19_end:
+        read_176_19_end:
         sub qword [rsp - 804], 1
-        if_175_12:
-        cmp_175_12:
+        if_180_12:
+        cmp_180_12:
         cmp qword [rsp - 804], 0
-        jne if_177_19
-        jmp if_175_12_code
-        if_175_12_code:
-            jmp loop_168_5_end
-        jmp if_175_9_end
-        if_177_19:
-        cmp_177_19:
+        jne if_182_19
+        jmp if_180_12_code
+        if_180_12_code:
+            jmp loop_173_5_end
+        jmp if_180_9_end
+        if_182_19:
+        cmp_182_19:
         cmp qword [rsp - 804], 4
-        jg if_else_175_9
-        jmp if_177_19_code
-        if_177_19_code:
+        jg if_else_180_9
+        jmp if_182_19_code
+        if_182_19_code:
             mov rdx, prompt2.len
             mov rsi, prompt2
-            print_178_13:
-                    mov rax, 1
-                    mov rdi, 1
-                syscall
-            print_178_13_end:
-            jmp loop_168_5
-        jmp if_175_9_end
-        if_else_175_9:
-            mov rdx, prompt3.len
-            mov rsi, prompt3
-            print_181_13:
-                    mov rax, 1
-                    mov rdi, 1
-                syscall
-            print_181_13_end:
-            mov rdx, qword [rsp - 804]
-            lea rsi, [rsp - 284]
-            print_182_13:
-                    mov rax, 1
-                    mov rdi, 1
-                syscall
-            print_182_13_end:
-            mov rdx, dot.len
-            mov rsi, dot
             print_183_13:
                     mov rax, 1
                     mov rdi, 1
                 syscall
             print_183_13_end:
-            mov rdx, nl.len
-            mov rsi, nl
-            print_184_13:
+            jmp loop_173_5
+        jmp if_180_9_end
+        if_else_180_9:
+            mov rdx, prompt3.len
+            mov rsi, prompt3
+            print_186_13:
                     mov rax, 1
                     mov rdi, 1
                 syscall
-            print_184_13_end:
-        if_175_9_end:
-    jmp loop_168_5
-    loop_168_5_end:
+            print_186_13_end:
+            mov rdx, qword [rsp - 804]
+            lea rsi, [rsp - 284]
+            print_187_13:
+                    mov rax, 1
+                    mov rdi, 1
+                syscall
+            print_187_13_end:
+            mov rdx, dot.len
+            mov rsi, dot
+            print_188_13:
+                    mov rax, 1
+                    mov rdi, 1
+                syscall
+            print_188_13_end:
+            mov rdx, nl.len
+            mov rsi, nl
+            print_189_13:
+                    mov rax, 1
+                    mov rdi, 1
+                syscall
+            print_189_13_end:
+        if_180_9_end:
+    jmp loop_173_5
+    loop_173_5_end:
     mov rax, 60
     mov rdi, 0
     syscall
@@ -3946,15 +4026,178 @@ main:
         if_19_5_165_5_end:
 ;       [165:5] free scratch register 'r15'
     assert_165_5_end:
-;   [167:5] print(hello.len, hello)
-;   [167:11] allocate named register 'rdx'
+;   [166:5] assert(arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) ))
+;   [166:12] allocate scratch register -> r15
+;   [166:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) )
+;   [166:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) )
+;   [166:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) )
+    cmp_166_12:
+;   [166:12] allocate scratch register -> r14
+;       [166:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) )
+;       [166:12] r14 = arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) )
+;       [166:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds[0].locations) )
+;       [166:12] allocate named register 'rsi'
+;       [166:12] allocate named register 'rdi'
+;       [166:12] allocate named register 'rcx'
+;       [168:13] array_size_of(worlds[0].locations)
+;       [168:13] array_size_of(worlds[0].locations)
+;       [169:13] array_size_of(worlds[0].locations)
+;       [169:13] rcx = array_size_of(worlds[0].locations)
+;       [169:13] array_size_of(worlds[0].locations)
+        mov rcx, 8
+;       [167:13] worlds[0].locations
+;       [167:13] allocate scratch register -> r13
+        lea r13, [rsp - 796]
+;       [167:13] allocate scratch register -> r12
+;       [167:20] set array index
+;       [167:20] 0
+;       [167:20] 0
+;       [167:20] 0
+        mov r12, 0
+;       [167:20] bounds check
+        cmp r12, 0
+;       [167:20] allocate scratch register -> r11
+;       [167:20] line number
+        mov r11, 167
+        cmovl rbp, r11
+        jl panic_bounds
+;       [167:20] free scratch register 'r11'
+        cmp r12, 8
+;       [167:20] allocate scratch register -> r11
+;       [167:20] line number
+        mov r11, 167
+        cmovge rbp, r11
+;       [167:20] free scratch register 'r11'
+        jge panic_bounds
+        shl r12, 6
+        add r13, r12
+;       [167:13] free scratch register 'r12'
+;       [167:13] bounds check
+        cmp rcx, 0
+;       [167:13] allocate scratch register -> r12
+;       [167:13] line number
+        mov r12, 167
+        cmovl rbp, r12
+        jl panic_bounds
+;       [167:13] free scratch register 'r12'
+        cmp rcx, 8
+;       [167:13] allocate scratch register -> r12
+;       [167:13] line number
+        mov r12, 167
+        cmovg rbp, r12
+;       [167:13] free scratch register 'r12'
+        jg panic_bounds
+        lea rsi, [r13]
+;       [166:12] free scratch register 'r13'
+;       [168:13] worlds[1].locations
+;       [168:13] allocate scratch register -> r13
+        lea r13, [rsp - 796]
+;       [168:13] allocate scratch register -> r12
+;       [168:20] set array index
+;       [168:20] 1
+;       [168:20] 1
+;       [168:20] 1
+        mov r12, 1
+;       [168:20] bounds check
+        cmp r12, 0
+;       [168:20] allocate scratch register -> r11
+;       [168:20] line number
+        mov r11, 168
+        cmovl rbp, r11
+        jl panic_bounds
+;       [168:20] free scratch register 'r11'
+        cmp r12, 8
+;       [168:20] allocate scratch register -> r11
+;       [168:20] line number
+        mov r11, 168
+        cmovge rbp, r11
+;       [168:20] free scratch register 'r11'
+        jge panic_bounds
+        shl r12, 6
+        add r13, r12
+;       [168:13] free scratch register 'r12'
+;       [168:13] bounds check
+        cmp rcx, 0
+;       [168:13] allocate scratch register -> r12
+;       [168:13] line number
+        mov r12, 168
+        cmovl rbp, r12
+        jl panic_bounds
+;       [168:13] free scratch register 'r12'
+        cmp rcx, 8
+;       [168:13] allocate scratch register -> r12
+;       [168:13] line number
+        mov r12, 168
+        cmovg rbp, r12
+;       [168:13] free scratch register 'r12'
+        jg panic_bounds
+        lea rdi, [r13]
+;       [166:12] free scratch register 'r13'
+        shl rcx, 3
+        repe cmpsb
+;       [166:12] free named register 'rcx'
+;       [166:12] free named register 'rdi'
+;       [166:12] free named register 'rsi'
+        je cmps_eq_166_12
+        mov r14, false
+        jmp cmps_end_166_12
+        cmps_eq_166_12:
+        mov r14, true
+        cmps_end_166_12:
+    test r14, r14
+;   [166:12] free scratch register 'r14'
+    je bool_false_166_12
+    jmp bool_true_166_12
+    bool_true_166_12:
+    mov r15, true
+    jmp bool_end_166_12
+    bool_false_166_12:
+    mov r15, false
+    bool_end_166_12:
+;   [18:6] assert(expr : bool) 
+    assert_166_5:
+;       [166:5] alias expr -> r15  (lea: , len: 0)
+        if_19_8_166_5:
+;       [19:8] ? not expr
+;       [19:8] ? not expr
+        cmp_19_8_166_5:
+        test r15, r15
+        jne if_19_5_166_5_end
+        jmp if_19_8_166_5_code
+        if_19_8_166_5_code:
+;           [19:17] exit(1)
+;           [19:22] allocate named register 'rdi'
+            mov rdi, 1
+;           [12:6] exit(v : reg_rdi) 
+            exit_19_17_166_5:
+;               [19:17] alias v -> rdi  (lea: , len: 0)
+;               [13:5] mov(rax, 60)
+;                   [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
+;               [13:19] # exit system call
+;               [14:5] mov(rdi, v)
+;                   [14:14] v
+;                   [14:14] v
+;                   [14:14] v
+;               [14:19] # return code
+;               [15:5] syscall()
+                syscall
+;               [19:17] free named register 'rdi'
+            exit_19_17_166_5_end:
+        if_19_5_166_5_end:
+;       [166:5] free scratch register 'r15'
+    assert_166_5_end:
+;   [172:5] print(hello.len, hello)
+;   [172:11] allocate named register 'rdx'
     mov rdx, hello.len
-;   [167:22] allocate named register 'rsi'
+;   [172:22] allocate named register 'rsi'
     mov rsi, hello
 ;   [22:6] print(len : reg_rdx, ptr : reg_rsi) 
-    print_167_5:
-;       [167:5] alias len -> rdx  (lea: , len: 0)
-;       [167:5] alias ptr -> rsi  (lea: , len: 0)
+    print_172_5:
+;       [172:5] alias len -> rdx  (lea: , len: 0)
+;       [172:5] alias ptr -> rsi  (lea: , len: 0)
 ;       [23:5] mov(rax, 1)
 ;           [23:14] 1
 ;           [23:14] 1
@@ -3979,20 +4222,20 @@ main:
 ;       [26:19] # buffer size
 ;       [27:5] syscall()
         syscall
-;       [167:5] free named register 'rsi'
-;       [167:5] free named register 'rdx'
-    print_167_5_end:
-;   [168:5] loop
-    loop_168_5:
-;       [169:9] print(prompt1.len, prompt1)
-;       [169:15] allocate named register 'rdx'
+;       [172:5] free named register 'rsi'
+;       [172:5] free named register 'rdx'
+    print_172_5_end:
+;   [173:5] loop
+    loop_173_5:
+;       [174:9] print(prompt1.len, prompt1)
+;       [174:15] allocate named register 'rdx'
         mov rdx, prompt1.len
-;       [169:28] allocate named register 'rsi'
+;       [174:28] allocate named register 'rsi'
         mov rsi, prompt1
 ;       [22:6] print(len : reg_rdx, ptr : reg_rsi) 
-        print_169_9:
-;           [169:9] alias len -> rdx  (lea: , len: 0)
-;           [169:9] alias ptr -> rsi  (lea: , len: 0)
+        print_174_9:
+;           [174:9] alias len -> rdx  (lea: , len: 0)
+;           [174:9] alias ptr -> rsi  (lea: , len: 0)
 ;           [23:5] mov(rax, 1)
 ;               [23:14] 1
 ;               [23:14] 1
@@ -4017,33 +4260,33 @@ main:
 ;           [26:19] # buffer size
 ;           [27:5] syscall()
             syscall
-;           [169:9] free named register 'rsi'
-;           [169:9] free named register 'rdx'
-        print_169_9_end:
-;       [171:9] var len = read(array_size_of(input_buffer), address_of(input_buffer)) - 1
-;       [171:13] len: i64 @ qword [rsp - 804]
-;       [171:13] len =read(array_size_of(input_buffer), address_of(input_buffer)) - 1
-;       [171:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
-;       [171:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
-;       [171:19] len = read(array_size_of(input_buffer), address_of(input_buffer))
-;       [171:19] read(array_size_of(input_buffer), address_of(input_buffer))
-;       [171:24] allocate named register 'rdx'
-;       [171:24] array_size_of(input_buffer)
-;       [171:24] array_size_of(input_buffer)
-;       [171:24] rdx = array_size_of(input_buffer)
-;       [171:24] array_size_of(input_buffer)
+;           [174:9] free named register 'rsi'
+;           [174:9] free named register 'rdx'
+        print_174_9_end:
+;       [176:9] var len = read(array_size_of(input_buffer), address_of(input_buffer)) - 1
+;       [176:13] len: i64 @ qword [rsp - 804]
+;       [176:13] len =read(array_size_of(input_buffer), address_of(input_buffer)) - 1
+;       [176:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
+;       [176:19] read(array_size_of(input_buffer), address_of(input_buffer)) - 1
+;       [176:19] len = read(array_size_of(input_buffer), address_of(input_buffer))
+;       [176:19] read(array_size_of(input_buffer), address_of(input_buffer))
+;       [176:24] allocate named register 'rdx'
+;       [176:24] array_size_of(input_buffer)
+;       [176:24] array_size_of(input_buffer)
+;       [176:24] rdx = array_size_of(input_buffer)
+;       [176:24] array_size_of(input_buffer)
         mov rdx, 80
-;       [171:53] allocate named register 'rsi'
-;       [171:53] address_of(input_buffer)
-;       [171:53] address_of(input_buffer)
-;       [171:53] rsi = address_of(input_buffer)
-;       [171:53] address_of(input_buffer)
+;       [176:53] allocate named register 'rsi'
+;       [176:53] address_of(input_buffer)
+;       [176:53] address_of(input_buffer)
+;       [176:53] rsi = address_of(input_buffer)
+;       [176:53] address_of(input_buffer)
         lea rsi, [rsp - 284]
 ;       [30:6] read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes 
-        read_171_19:
-;           [171:19] alias nbytes -> qword [rsp - 804]  (lea: , len: 0)
-;           [171:19] alias len -> rdx  (lea: , len: 0)
-;           [171:19] alias ptr -> rsi  (lea: , len: 0)
+        read_176_19:
+;           [176:19] alias nbytes -> qword [rsp - 804]  (lea: , len: 0)
+;           [176:19] alias len -> rdx  (lea: , len: 0)
+;           [176:19] alias ptr -> rsi  (lea: , len: 0)
 ;           [31:5] mov(rax, 0)
 ;               [31:14] 0
 ;               [31:14] 0
@@ -4074,153 +4317,37 @@ main:
 ;               [36:17] rax
                 mov qword [rsp - 804], rax
 ;           [36:22] # return value
-;           [171:19] free named register 'rsi'
-;           [171:19] free named register 'rdx'
-        read_171_19_end:
-;       [171:81] len - 1
+;           [176:19] free named register 'rsi'
+;           [176:19] free named register 'rdx'
+        read_176_19_end:
+;       [176:81] len - 1
         sub qword [rsp - 804], 1
-;       [172:9] # note: `array_size_of` and `address_of` are built-in functions
-;       [173:9] # -1 to not include the trailing '\n'
-        if_175_12:
-;       [175:12] ? len == 0
-;       [175:12] ? len == 0
-        cmp_175_12:
+;       [177:9] # note: `array_size_of` and `address_of` are built-in functions
+;       [178:9] # -1 to not include the trailing '\n'
+        if_180_12:
+;       [180:12] ? len == 0
+;       [180:12] ? len == 0
+        cmp_180_12:
         cmp qword [rsp - 804], 0
-        jne if_177_19
-        jmp if_175_12_code
-        if_175_12_code:
-;           [176:13] break
-            jmp loop_168_5_end
-        jmp if_175_9_end
-        if_177_19:
-;       [177:19] ? len <= 4
-;       [177:19] ? len <= 4
-        cmp_177_19:
+        jne if_182_19
+        jmp if_180_12_code
+        if_180_12_code:
+;           [181:13] break
+            jmp loop_173_5_end
+        jmp if_180_9_end
+        if_182_19:
+;       [182:19] ? len <= 4
+;       [182:19] ? len <= 4
+        cmp_182_19:
         cmp qword [rsp - 804], 4
-        jg if_else_175_9
-        jmp if_177_19_code
-        if_177_19_code:
-;           [178:13] print(prompt2.len, prompt2)
-;           [178:19] allocate named register 'rdx'
-            mov rdx, prompt2.len
-;           [178:32] allocate named register 'rsi'
-            mov rsi, prompt2
-;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
-            print_178_13:
-;               [178:13] alias len -> rdx  (lea: , len: 0)
-;               [178:13] alias ptr -> rsi  (lea: , len: 0)
-;               [23:5] mov(rax, 1)
-;                   [23:14] 1
-;                   [23:14] 1
-;                   [23:14] 1
-                    mov rax, 1
-;               [23:19] # write system call
-;               [24:5] mov(rdi, 1)
-;                   [24:14] 1
-;                   [24:14] 1
-;                   [24:14] 1
-                    mov rdi, 1
-;               [24:19] # file descriptor for standard out
-;               [25:5] mov(rsi, ptr)
-;                   [25:14] ptr
-;                   [25:14] ptr
-;                   [25:14] ptr
-;               [25:19] # buffer address
-;               [26:5] mov(rdx, len)
-;                   [26:14] len
-;                   [26:14] len
-;                   [26:14] len
-;               [26:19] # buffer size
-;               [27:5] syscall()
-                syscall
-;               [178:13] free named register 'rsi'
-;               [178:13] free named register 'rdx'
-            print_178_13_end:
-;           [179:13] continue
-            jmp loop_168_5
-        jmp if_175_9_end
-        if_else_175_9:
-;           [181:13] print(prompt3.len, prompt3)
-;           [181:19] allocate named register 'rdx'
-            mov rdx, prompt3.len
-;           [181:32] allocate named register 'rsi'
-            mov rsi, prompt3
-;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
-            print_181_13:
-;               [181:13] alias len -> rdx  (lea: , len: 0)
-;               [181:13] alias ptr -> rsi  (lea: , len: 0)
-;               [23:5] mov(rax, 1)
-;                   [23:14] 1
-;                   [23:14] 1
-;                   [23:14] 1
-                    mov rax, 1
-;               [23:19] # write system call
-;               [24:5] mov(rdi, 1)
-;                   [24:14] 1
-;                   [24:14] 1
-;                   [24:14] 1
-                    mov rdi, 1
-;               [24:19] # file descriptor for standard out
-;               [25:5] mov(rsi, ptr)
-;                   [25:14] ptr
-;                   [25:14] ptr
-;                   [25:14] ptr
-;               [25:19] # buffer address
-;               [26:5] mov(rdx, len)
-;                   [26:14] len
-;                   [26:14] len
-;                   [26:14] len
-;               [26:19] # buffer size
-;               [27:5] syscall()
-                syscall
-;               [181:13] free named register 'rsi'
-;               [181:13] free named register 'rdx'
-            print_181_13_end:
-;           [182:13] print(len, address_of(input_buffer))
-;           [182:19] allocate named register 'rdx'
-            mov rdx, qword [rsp - 804]
-;           [182:24] allocate named register 'rsi'
-;           [182:24] address_of(input_buffer)
-;           [182:24] address_of(input_buffer)
-;           [182:24] rsi = address_of(input_buffer)
-;           [182:24] address_of(input_buffer)
-            lea rsi, [rsp - 284]
-;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
-            print_182_13:
-;               [182:13] alias len -> rdx  (lea: , len: 0)
-;               [182:13] alias ptr -> rsi  (lea: , len: 0)
-;               [23:5] mov(rax, 1)
-;                   [23:14] 1
-;                   [23:14] 1
-;                   [23:14] 1
-                    mov rax, 1
-;               [23:19] # write system call
-;               [24:5] mov(rdi, 1)
-;                   [24:14] 1
-;                   [24:14] 1
-;                   [24:14] 1
-                    mov rdi, 1
-;               [24:19] # file descriptor for standard out
-;               [25:5] mov(rsi, ptr)
-;                   [25:14] ptr
-;                   [25:14] ptr
-;                   [25:14] ptr
-;               [25:19] # buffer address
-;               [26:5] mov(rdx, len)
-;                   [26:14] len
-;                   [26:14] len
-;                   [26:14] len
-;               [26:19] # buffer size
-;               [27:5] syscall()
-                syscall
-;               [182:13] free named register 'rsi'
-;               [182:13] free named register 'rdx'
-            print_182_13_end:
-;           [183:13] print(dot.len, dot)
+        jg if_else_180_9
+        jmp if_182_19_code
+        if_182_19_code:
+;           [183:13] print(prompt2.len, prompt2)
 ;           [183:19] allocate named register 'rdx'
-            mov rdx, dot.len
-;           [183:28] allocate named register 'rsi'
-            mov rsi, dot
+            mov rdx, prompt2.len
+;           [183:32] allocate named register 'rsi'
+            mov rsi, prompt2
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_183_13:
 ;               [183:13] alias len -> rdx  (lea: , len: 0)
@@ -4252,15 +4379,19 @@ main:
 ;               [183:13] free named register 'rsi'
 ;               [183:13] free named register 'rdx'
             print_183_13_end:
-;           [184:13] print(nl.len, nl)
-;           [184:19] allocate named register 'rdx'
-            mov rdx, nl.len
-;           [184:27] allocate named register 'rsi'
-            mov rsi, nl
+;           [184:13] continue
+            jmp loop_173_5
+        jmp if_180_9_end
+        if_else_180_9:
+;           [186:13] print(prompt3.len, prompt3)
+;           [186:19] allocate named register 'rdx'
+            mov rdx, prompt3.len
+;           [186:32] allocate named register 'rsi'
+            mov rsi, prompt3
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
-            print_184_13:
-;               [184:13] alias len -> rdx  (lea: , len: 0)
-;               [184:13] alias ptr -> rsi  (lea: , len: 0)
+            print_186_13:
+;               [186:13] alias len -> rdx  (lea: , len: 0)
+;               [186:13] alias ptr -> rsi  (lea: , len: 0)
 ;               [23:5] mov(rax, 1)
 ;                   [23:14] 1
 ;                   [23:14] 1
@@ -4285,12 +4416,124 @@ main:
 ;               [26:19] # buffer size
 ;               [27:5] syscall()
                 syscall
-;               [184:13] free named register 'rsi'
-;               [184:13] free named register 'rdx'
-            print_184_13_end:
-        if_175_9_end:
-    jmp loop_168_5
-    loop_168_5_end:
+;               [186:13] free named register 'rsi'
+;               [186:13] free named register 'rdx'
+            print_186_13_end:
+;           [187:13] print(len, address_of(input_buffer))
+;           [187:19] allocate named register 'rdx'
+            mov rdx, qword [rsp - 804]
+;           [187:24] allocate named register 'rsi'
+;           [187:24] address_of(input_buffer)
+;           [187:24] address_of(input_buffer)
+;           [187:24] rsi = address_of(input_buffer)
+;           [187:24] address_of(input_buffer)
+            lea rsi, [rsp - 284]
+;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
+            print_187_13:
+;               [187:13] alias len -> rdx  (lea: , len: 0)
+;               [187:13] alias ptr -> rsi  (lea: , len: 0)
+;               [23:5] mov(rax, 1)
+;                   [23:14] 1
+;                   [23:14] 1
+;                   [23:14] 1
+                    mov rax, 1
+;               [23:19] # write system call
+;               [24:5] mov(rdi, 1)
+;                   [24:14] 1
+;                   [24:14] 1
+;                   [24:14] 1
+                    mov rdi, 1
+;               [24:19] # file descriptor for standard out
+;               [25:5] mov(rsi, ptr)
+;                   [25:14] ptr
+;                   [25:14] ptr
+;                   [25:14] ptr
+;               [25:19] # buffer address
+;               [26:5] mov(rdx, len)
+;                   [26:14] len
+;                   [26:14] len
+;                   [26:14] len
+;               [26:19] # buffer size
+;               [27:5] syscall()
+                syscall
+;               [187:13] free named register 'rsi'
+;               [187:13] free named register 'rdx'
+            print_187_13_end:
+;           [188:13] print(dot.len, dot)
+;           [188:19] allocate named register 'rdx'
+            mov rdx, dot.len
+;           [188:28] allocate named register 'rsi'
+            mov rsi, dot
+;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
+            print_188_13:
+;               [188:13] alias len -> rdx  (lea: , len: 0)
+;               [188:13] alias ptr -> rsi  (lea: , len: 0)
+;               [23:5] mov(rax, 1)
+;                   [23:14] 1
+;                   [23:14] 1
+;                   [23:14] 1
+                    mov rax, 1
+;               [23:19] # write system call
+;               [24:5] mov(rdi, 1)
+;                   [24:14] 1
+;                   [24:14] 1
+;                   [24:14] 1
+                    mov rdi, 1
+;               [24:19] # file descriptor for standard out
+;               [25:5] mov(rsi, ptr)
+;                   [25:14] ptr
+;                   [25:14] ptr
+;                   [25:14] ptr
+;               [25:19] # buffer address
+;               [26:5] mov(rdx, len)
+;                   [26:14] len
+;                   [26:14] len
+;                   [26:14] len
+;               [26:19] # buffer size
+;               [27:5] syscall()
+                syscall
+;               [188:13] free named register 'rsi'
+;               [188:13] free named register 'rdx'
+            print_188_13_end:
+;           [189:13] print(nl.len, nl)
+;           [189:19] allocate named register 'rdx'
+            mov rdx, nl.len
+;           [189:27] allocate named register 'rsi'
+            mov rsi, nl
+;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
+            print_189_13:
+;               [189:13] alias len -> rdx  (lea: , len: 0)
+;               [189:13] alias ptr -> rsi  (lea: , len: 0)
+;               [23:5] mov(rax, 1)
+;                   [23:14] 1
+;                   [23:14] 1
+;                   [23:14] 1
+                    mov rax, 1
+;               [23:19] # write system call
+;               [24:5] mov(rdi, 1)
+;                   [24:14] 1
+;                   [24:14] 1
+;                   [24:14] 1
+                    mov rdi, 1
+;               [24:19] # file descriptor for standard out
+;               [25:5] mov(rsi, ptr)
+;                   [25:14] ptr
+;                   [25:14] ptr
+;                   [25:14] ptr
+;               [25:19] # buffer address
+;               [26:5] mov(rdx, len)
+;                   [26:14] len
+;                   [26:14] len
+;                   [26:14] len
+;               [26:19] # buffer size
+;               [27:5] syscall()
+                syscall
+;               [189:13] free named register 'rsi'
+;               [189:13] free named register 'rdx'
+            print_189_13_end:
+        if_180_9_end:
+    jmp loop_173_5
+    loop_173_5_end:
     ; system call: exit 0
     mov rax, 60
     mov rdi, 0

@@ -163,6 +163,11 @@ func main() {
         array_size_of(worlds[1].locations)
     )
     assert(worlds[0].locations[1] == 0xffee)
+    assert(arrays_equal(
+            worlds[0].locations,
+            worlds[1].locations,
+            array_size_of(worlds[0].locations)
+          ))
 
     print(hello.len, hello)
     loop {
