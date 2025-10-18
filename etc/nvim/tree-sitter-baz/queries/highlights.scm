@@ -41,6 +41,16 @@
 (parameter name: (identifier) @variable.parameter)
 (return_annotation return_name: (identifier) @variable.parameter)
 
+; function parameters type
+(parameter
+  name: (identifier) @variable.parameter
+  (identifier) @type)
+
+; Variable declaration types
+(variable_declaration
+  destination: (identifier) @variable
+  (identifier) @type)
+
 ; Function calls
 (function_call function: (identifier) @function.call)
 
