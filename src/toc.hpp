@@ -26,20 +26,20 @@ class stmt_def_type;
 struct func_info {
     const stmt_def_func* def{}; // null if built-in function
     token declared_at_tk;       // token for position in the source
-    const type& type_ref;       // return type or void
+    const type* type_ref;       // return type or void
 };
 
 struct func_return_info {
     token type_tk;        // type token
     token ident_tk;       // identifier token
-    const type& type_ref; // type
+    const type* type_ref; // type
 };
 
 struct alias_info {
     std::string from;
     std::string to;
     std::string lea;
-    const type& type_ref;
+    const type* type_ref;
     size_t array_size;
 };
 
@@ -91,7 +91,7 @@ class frame final {
         if (var.stack_idx < 0) {
             // variable, increase allocated stack size
             allocated_stack_ +=
-                var.type_ref.size() * (var.is_array ? var.array_size : 1);
+                var.type_ref->size() * (var.is_array ? var.array_size : 1);
         }
 
         vars_.put(var.name, var);
@@ -153,15 +153,9 @@ class frame final {
 };
 
 struct field_info {
-    const stmt_def_field& def;
+    const stmt_def_field* def;
     token declared_at_tk; // token for position in the source
     bool is_str{};
-};
-
-struct type_info {
-    const stmt_def_type& def;
-    token declared_at_tk;
-    const type& type_ref;
 };
 
 class ident_path final {
@@ -295,7 +289,7 @@ struct nasm_operand {
 };
 
 class toc final {
-    const std::string& source_;
+    std::string_view source_;
     std::vector<frame> frames_;
     std::vector<std::string> all_registers_{
         "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
@@ -312,7 +306,7 @@ class toc final {
     std::vector<const stmt_def_func*> func_defs_;
     lut<field_info> fields_;
     lut<func_info> funcs_;
-    lut<const type&> types_;
+    lut<const type*> types_;
     const type* type_void_{};
     const type* type_default_{};
     const type* type_bool_{};
@@ -334,7 +328,7 @@ class toc final {
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
 
-    toc(const std::string& source, const bool bounds_check_upper,
+    toc(const std::string_view source, const bool bounds_check_upper,
         const bool bounds_check_lower, const bool bounds_check_with_line)
         : source_{source}, bounds_check_upper_{bounds_check_upper},
           bounds_check_with_line_{bounds_check_with_line},
@@ -368,7 +362,7 @@ class toc final {
                                 fields_.get_const_ref(name).declared_at_tk))};
         }
 
-        fields_.put(std::move(name), {.def = fld_def,
+        fields_.put(std::move(name), {.def = &fld_def,
                                       .declared_at_tk = src_loc_tk,
                                       .is_str = is_str_field});
     }
@@ -387,7 +381,7 @@ class toc final {
 
         funcs_.put(std::move(name), {.def = func_def,
                                      .declared_at_tk = src_loc_tk,
-                                     .type_ref = return_type});
+                                     .type_ref = &return_type});
 
         if (func_def) {
             func_defs_.emplace_back(func_def);
@@ -402,7 +396,7 @@ class toc final {
                 std::format("type '{}' already defined", tpe.name())};
         }
 
-        types_.put(tpe.name(), tpe);
+        types_.put(tpe.name(), &tpe);
     }
 
     auto add_var(const token& src_loc_tk, std::ostream& os, const size_t indnt,
@@ -420,7 +414,7 @@ class toc final {
 
         const int stack_idx{static_cast<int>(
             get_stack_size() +
-            (var.type_ref.size() * (var.is_array ? var.array_size : 1)))};
+            (var.type_ref->size() * (var.is_array ? var.array_size : 1)))};
 
         var.stack_idx = -stack_idx;
         frames_.back().add_var(var);
@@ -433,7 +427,7 @@ class toc final {
         const ident_info& name_info{make_ident_info(src_loc_tk, var.name)};
 
         comment_start(src_loc_tk, os, indnt);
-        std::print(os, "{}: {}", var.name, name_info.type_ref.name());
+        std::print(os, "{}: {}", var.name, name_info.type_ref->name());
         if (var.array_size) {
             std::print(os, "[{}]", var.array_size);
         }
@@ -846,7 +840,7 @@ class toc final {
                 src_loc_tk, std::format("function '{}' not found", name)};
         }
 
-        return funcs_.get_const_ref(name).type_ref;
+        return *funcs_.get_const_ref(name).type_ref;
     }
 
     [[nodiscard]] auto get_loop_label_or_throw(const token& src_loc_tk) const
@@ -1058,7 +1052,7 @@ class toc final {
                                      std::format("type '{}' not found", name)};
         }
 
-        return types_.get_const_ref(name_str);
+        return *types_.get_const_ref(name_str);
     }
 
     [[nodiscard]] auto get_type_void() const -> const type& {
@@ -1265,8 +1259,8 @@ class toc final {
             //           << id.str() << "\n";
             const var_info& var{frm.get_var_const_ref(id.base())};
             std::vector<const type*> type_path;
-            ident_info ii{var.type_ref.accessor(src_loc, ident, id.path(), var,
-                                                type_path)};
+            ident_info ii{var.type_ref->accessor(src_loc, ident, id.path(), var,
+                                                 type_path)};
 
             ii.elem_path = std::vector(id.path().begin(), id.path().end());
             //? fishy stuff adjusting lea_path size
@@ -1290,7 +1284,7 @@ class toc final {
             return {
                 .id{ident},
                 .id_nasm{id.str()},
-                .type_ref = get_type_default(),
+                .type_ref = &get_type_default(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
@@ -1304,7 +1298,7 @@ class toc final {
             return {
                 .id{ident},
                 .id_nasm{id.str()},
-                .type_ref = get_builtin_type_for_operand(src_loc, id.str()),
+                .type_ref = &get_builtin_type_for_operand(src_loc, id.str()),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
@@ -1320,7 +1314,7 @@ class toc final {
                 return {
                     .id{ident},
                     .id_nasm{std::format("{}.len", id.base())},
-                    .type_ref = get_type_default(),
+                    .type_ref = &get_type_default(),
                     .elem_path{id.str()},
                     .type_path{&get_type_default()},
                     .lea_path{""},
@@ -1332,7 +1326,7 @@ class toc final {
                 return {
                     .id{ident},
                     .id_nasm{id.base()},
-                    .type_ref = get_type_default(),
+                    .type_ref = &get_type_default(),
                     .elem_path{id.str()},
                     .type_path{&get_type_default()},
                     .lea_path{""},
@@ -1343,7 +1337,7 @@ class toc final {
             return {
                 .id{ident},
                 .id_nasm{std::format("qword [{}]", id.base())},
-                .type_ref = get_type_default(),
+                .type_ref = &get_type_default(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
@@ -1358,7 +1352,7 @@ class toc final {
                 .id{ident},
                 .id_nasm{id.str()},
                 .const_value = *value,
-                .type_ref = get_type_default(),
+                .type_ref = &get_type_default(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
@@ -1371,7 +1365,7 @@ class toc final {
                 .id{ident},
                 .id_nasm{"true"},
                 .const_value = 1,
-                .type_ref = get_type_bool(),
+                .type_ref = &get_type_bool(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
@@ -1383,7 +1377,7 @@ class toc final {
                 .id{ident},
                 .id_nasm{"false"},
                 .const_value = 0,
-                .type_ref = get_type_bool(),
+                .type_ref = &get_type_bool(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
@@ -1394,7 +1388,7 @@ class toc final {
         return {
             .id{},
             .id_nasm{},
-            .type_ref = get_type_void(),
+            .type_ref = &get_type_void(),
             .elem_path{},
             .type_path{},
             .lea_path{},

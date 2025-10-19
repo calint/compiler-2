@@ -100,7 +100,7 @@ class type final {
         return {
             .id{ident},
             .id_nasm{accessor},
-            .type_ref{*tp},
+            .type_ref = tp,
             .stack_ix = stack_idx,
             .array_size = array_size,
             .is_array = is_array,

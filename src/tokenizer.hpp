@@ -9,15 +9,15 @@
 #include "token.hpp"
 
 class tokenizer final {
-    const std::string& src_str_; // used for easier debugging with 'pos'
-    std::string_view src_;       // source as a string view
-    std::string_view delimiters_{" \t\r\n(){}[]=,.:+-*/%&|^<>!\0"};
-    size_t char_ix_{}; // current char index in 'src_'
-    const char* pos{}; // position in string used for easier debugging
+    std::string_view src_str_; // used for easier debugging with 'pos'
+    std::string_view src_;     // source as a string view
+    size_t char_ix_{};         // current char index in 'src_'
+    std::string_view pos_;     // position in string used for easier debugging
     size_t at_line_{1};
+    std::string_view delimiters_{" \t\r\n(){}[]=,.:+-*/%&|^<>!\0"};
 
   public:
-    explicit tokenizer(const std::string& src_str)
+    explicit tokenizer(const std::string_view src_str)
         : src_str_{src_str}, src_{src_str_} {}
 
     ~tokenizer() = default;
@@ -130,7 +130,7 @@ class tokenizer final {
             char_ix_++; // skip the '\n'
             at_line_++;
         }
-        pos = &src_str_[char_ix_];
+        pos_ = &src_str_[char_ix_];
         return src_.substr(bgn, len);
     }
 
@@ -141,7 +141,7 @@ class tokenizer final {
         if (ch == '\n') {
             at_line_++;
         }
-        pos = &src_str_[char_ix_];
+        pos_ = &src_str_[char_ix_];
         return ch;
     }
 
@@ -167,7 +167,7 @@ class tokenizer final {
             }
             char_ix_++;
         }
-        pos = &src_str_[char_ix_];
+        pos_ = src_str_.substr(char_ix_);
         const size_t len{char_ix_ - bgn_ix};
         return src_.substr(bgn_ix, len);
     }
@@ -198,6 +198,6 @@ class tokenizer final {
             }
         }
 
-        pos = &src_str_[char_ix_];
+        pos_ = &src_str_[char_ix_];
     }
 };

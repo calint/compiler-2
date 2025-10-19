@@ -22,7 +22,7 @@ struct ident_info {
     std::string id;
     std::string id_nasm; // NASM valid source
     int64_t const_value{};
-    const type& type_ref;
+    const type* type_ref;
     int32_t stack_ix{};
     size_t array_size{};
     bool is_array{};
@@ -55,7 +55,7 @@ struct ident_info {
 
 struct var_info {
     std::string name;
-    const type& type_ref;
+    const type* type_ref;
     token declared_at_tk; // token for position in the source
     int32_t stack_idx{};  // location relative to register rsp
     bool is_array{};
