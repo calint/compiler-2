@@ -15,6 +15,9 @@
 [ ] stmt_identifier: 358: if register will be just offset without indexing
     register then that can be calculated in init_reg_offset
 [ ] expr_ops_list: tidy asm_op_xxx with more streamlined flow of make_ident
+[ ] const allowed in function declaration and code
+    foo(ix : const i32) { const x = ix }
+[ ] expr_*: pre-calculate consts
 [ ] C++ brace initializers offer no performance advantage and the narrowing
     issues do not exist in this project. they are ugly. ponder switching to =
 [ ] refactor the passing first token to every constructor. push back and
@@ -80,8 +83,6 @@
 [ ] rename compiler_exception
 [ ] specify whether ok for an op to truncate value instead of error
     => it is no longer an error
-[ ] const allowed in function declaration and code
-    foo(ix : const i32) { const x = ix }
 [ ] simple LSP supporting rename
 
 --------------------------------------------------------------------------------
