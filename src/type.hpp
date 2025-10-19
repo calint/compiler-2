@@ -22,11 +22,6 @@ struct type_field {
 };
 
 class type final {
-    static constexpr std::string_view size_qword{"qword"};
-    static constexpr std::string_view size_dword{"dword"};
-    static constexpr std::string_view size_word{"word"};
-    static constexpr std::string_view size_byte{"byte"};
-
     std::string name_;
     size_t size_{};
     std::vector<type_field> fields_;
@@ -97,7 +92,7 @@ class type final {
         }
 
         const std::string_view memsize{
-            type::get_size_specifier(tk, tp_first_field->size())};
+            get_size_specifier(tk, tp_first_field->size())};
         const std::string accessor{
             std::format("{} [rsp - {}]", memsize, -stack_idx)};
         // note: -stack_idx for nicer source formatting
@@ -143,17 +138,24 @@ class type final {
         return fields_;
     }
 
+    // note: duplicate responsibility with `toc` because of circular dependency
     static auto get_size_specifier(const token& tk, const size_t size)
         -> std::string_view {
+
+        constexpr size_t size_qword{8};
+        constexpr size_t size_dword{4};
+        constexpr size_t size_word{2};
+        constexpr size_t size_byte{1};
+
         switch (size) {
-        case 8:
-            return size_qword;
-        case 4:
-            return size_dword;
-        case 2:
-            return size_word;
-        case 1:
-            return size_byte;
+        case size_qword:
+            return "qword";
+        case size_dword:
+            return "dword";
+        case size_word:
+            return "word";
+        case size_byte:
+            return "byte";
         default:
             throw compiler_exception{
                 tk, std::format("illegal size for memory operand: {}", size)};

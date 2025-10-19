@@ -23,7 +23,7 @@ class expr_ops_list final : public expression {
     expr_ops_list(toc& tc, tokenizer& tz, const bool in_args = false,
                   const bool enclosed = false,
                   const bool is_base_expression = true, unary_ops uops = {},
-                  const char first_op_precedence = initial_precedence,
+                  const uint8_t first_op_precedence = initial_precedence,
                   std::unique_ptr<statement> first_expression = {})
         : expression{tz.next_whitespace_token()}, uops_{std::move(uops)},
           enclosed_{enclosed}, is_base_expression_{is_base_expression} {
@@ -50,7 +50,7 @@ class expr_ops_list final : public expression {
         }
 
         // start with provided precedence
-        char precedence{first_op_precedence};
+        uint8_t precedence{first_op_precedence};
 
         while (true) { // +a  +3
             // if the end of sub-expression
@@ -99,7 +99,7 @@ class expr_ops_list final : public expression {
             // if so, the implied sub-expression is added to the list with
             // the last expression in this list being the first expression in
             // the sub-expression
-            const char next_precedence{precedence_for_op(ops_.back())};
+            const uint8_t next_precedence{precedence_for_op(ops_.back())};
             if (next_precedence > precedence) {
                 // e.g. =a+b*c+1 where the peeked char is '*'
                 // next operation has higher precedence than the current
@@ -349,25 +349,32 @@ class expr_ops_list final : public expression {
         return n;
     }
 
+    static constexpr char precedence_additive{1};
+    static constexpr char precedence_multiplicative{2};
+    static constexpr char precedence_bitwise_or{3};
+    static constexpr char precedence_bitwise_and{4};
+    static constexpr char precedence_bitwise_xor{5};
+    static constexpr char precedence_shift{6};
+
     // higher value higher precedence
-    static auto precedence_for_op(const char ch) -> char {
+    static auto precedence_for_op(const char ch) -> uint8_t {
         switch (ch) {
         case '+':
         case '-':
-            return 1;
+            return precedence_additive;
         case '*':
         case '/':
         case '%':
-            return 2;
+            return precedence_multiplicative;
         case '|':
-            return 3;
+            return precedence_bitwise_or;
         case '&':
-            return 4;
+            return precedence_bitwise_and;
         case '^':
-            return 5;
+            return precedence_bitwise_xor;
         case '<': // shift left
         case '>': // shift right
-            return 6;
+            return precedence_shift;
         default:
             throw panic_exception("unexpected code path expr_ops_list:1");
         }

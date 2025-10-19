@@ -220,27 +220,35 @@ struct nasm_operand {
             R"(\s*$)"                     // optional trailing whitespace
         );
 
+        constexpr size_t match_base_register{1};
+        constexpr size_t match_index_register{2};
+        constexpr size_t match_scale{3};
+        constexpr size_t match_displacement_op{4};
+        constexpr size_t match_displacement{5};
+
         std::smatch matches;
         if (not std::regex_match(operand_str, matches, pattern)) {
             throw std::invalid_argument("invalid NASM operand format: " +
                                         operand_str);
         }
 
-        if (matches[1].matched) {
-            base_register = matches[1].str();
+        if (matches[match_base_register].matched) {
+            base_register = matches[match_base_register].str();
         }
 
-        if (matches[2].matched) {
-            index_register = matches[2].str();
+        if (matches[match_index_register].matched) {
+            index_register = matches[match_index_register].str();
         }
 
-        if (matches[3].matched) {
-            scale = static_cast<uint8_t>(std::stoi(matches[3].str()));
+        if (matches[match_scale].matched) {
+            scale = static_cast<uint8_t>(std::stoi(matches[match_scale].str()));
         }
 
-        if (matches[4].matched and matches[5].matched) {
-            const int disp_value = std::stoi(matches[5].str());
-            if (matches[4].str() == "-") {
+        if (matches[match_displacement_op].matched and
+            matches[match_displacement].matched) {
+
+            const int disp_value = std::stoi(matches[match_displacement].str());
+            if (matches[match_displacement_op].str() == "-") {
                 displacement = -disp_value;
             } else {
                 displacement = disp_value;
@@ -315,6 +323,11 @@ class toc final {
     const bool bounds_check_lower_{};
 
   public:
+    static constexpr size_t size_qword{8};
+    static constexpr size_t size_dword{4};
+    static constexpr size_t size_word{2};
+    static constexpr size_t size_byte{1};
+
     const std::regex regex_ws{R"(\s+)"};
     const std::regex regex_trim{R"(^\s+|\s+$)"};
     const std::regex regex_nasm_comment{R"(^\s*;.*$)"};
@@ -856,16 +869,16 @@ class toc final {
 
         //? sort of ugly
         if (operand.starts_with("qword")) {
-            return 8;
+            return size_qword;
         }
         if (operand.starts_with("dword")) {
-            return 4;
+            return size_dword;
         }
         if (operand.starts_with("word")) {
-            return 2;
+            return size_word;
         }
         if (operand.starts_with("byte")) {
-            return 1;
+            return size_byte;
         }
         if (is_nasm_register(operand)) {
             return get_size_from_operand_register(src_loc_tk, operand);
@@ -882,13 +895,13 @@ class toc final {
         //? sort of ugly
         if (operand == "rax") {
             switch (size) {
-            case 8:
+            case size_qword:
                 return "rax";
-            case 4:
+            case size_dword:
                 return "eax";
-            case 2:
+            case size_word:
                 return "ax";
-            case 1:
+            case size_byte:
                 return "al";
             default:
                 throw compiler_exception{
@@ -899,13 +912,13 @@ class toc final {
         }
         if (operand == "rbx") {
             switch (size) {
-            case 8:
+            case size_qword:
                 return "rbx";
-            case 4:
+            case size_dword:
                 return "ebx";
-            case 2:
+            case size_word:
                 return "bx";
-            case 1:
+            case size_byte:
                 return "bl";
             default:
                 throw compiler_exception{
@@ -915,13 +928,13 @@ class toc final {
         }
         if (operand == "rcx") {
             switch (size) {
-            case 8:
+            case size_qword:
                 return "rcx";
-            case 4:
+            case size_dword:
                 return "ecx";
-            case 2:
+            case size_word:
                 return "cx";
-            case 1:
+            case size_byte:
                 return "cl";
             default:
                 throw compiler_exception{
@@ -931,13 +944,13 @@ class toc final {
         }
         if (operand == "rdx") {
             switch (size) {
-            case 8:
+            case size_qword:
                 return "rdx";
-            case 4:
+            case size_dword:
                 return "edx";
-            case 2:
+            case size_word:
                 return "dx";
-            case 1:
+            case size_byte:
                 return "dl";
             default:
                 throw compiler_exception{
@@ -947,11 +960,11 @@ class toc final {
         }
         if (operand == "rbp") {
             switch (size) {
-            case 8:
+            case size_qword:
                 return "rbp";
-            case 4:
+            case size_dword:
                 return "ebp";
-            case 2:
+            case size_word:
                 return "bp";
             default:
                 throw compiler_exception{
@@ -961,11 +974,11 @@ class toc final {
         }
         if (operand == "rsi") {
             switch (size) {
-            case 8:
+            case size_qword:
                 return "rsi";
-            case 4:
+            case size_dword:
                 return "esi";
-            case 2:
+            case size_word:
                 return "si";
             default:
                 throw compiler_exception{
@@ -975,11 +988,11 @@ class toc final {
         }
         if (operand == "rdi") {
             switch (size) {
-            case 8:
+            case size_qword:
                 return "rdi";
-            case 4:
+            case size_dword:
                 return "edi";
-            case 2:
+            case size_word:
                 return "di";
             default:
                 throw compiler_exception{
@@ -989,11 +1002,11 @@ class toc final {
         }
         if (operand == "rsp") {
             switch (size) {
-            case 8:
+            case size_qword:
                 return "rsp";
-            case 4:
+            case size_dword:
                 return "esp";
-            case 2:
+            case size_word:
                 return "sp";
             default:
                 throw compiler_exception{
@@ -1011,13 +1024,13 @@ class toc final {
         }
         const std::string rnbr{match[1]};
         switch (size) {
-        case 8:
+        case size_qword:
             return std::format("r{}", rnbr);
-        case 4:
+        case size_dword:
             return std::format("r{}d", rnbr);
-        case 2:
+        case size_word:
             return std::format("r{}w", rnbr);
-        case 1:
+        case size_byte:
             return std::format("r{}b", rnbr);
         default:
             throw compiler_exception{
@@ -1504,6 +1517,24 @@ class toc final {
                                  "unexpected code path stmt_assign_var:1"};
     }
 
+    static auto get_size_specifier(const token& tk, const size_t size)
+        -> std::string_view {
+
+        switch (size) {
+        case size_qword:
+            return "qword";
+        case size_dword:
+            return "dword";
+        case size_word:
+            return "word";
+        case size_byte:
+            return "byte";
+        default:
+            throw compiler_exception{
+                tk, std::format("illegal size for memory operand: {}", size)};
+        }
+    }
+
     static auto indent(std::ostream& os, const size_t indnt,
                        const bool comment = false) -> void {
 
@@ -1547,13 +1578,16 @@ class toc final {
     static auto parse_to_constant(const std::string_view str)
         -> std::optional<int64_t> {
 
+        constexpr size_t base_hex{16};
+        constexpr size_t base_binary{2};
+
         // is it hex?
         if (str.starts_with("0x") or str.starts_with("0X")) { // hex
             int64_t value{};
             std::string_view sv{str};
             sv.remove_prefix(2); // skip "0x" or "0X"
-            auto result{
-                std::from_chars(sv.data(), sv.data() + sv.size(), value, 16)};
+            auto result{std::from_chars(sv.data(), sv.data() + sv.size(), value,
+                                        base_hex)};
             if (result.ec == std::errc{}) {
                 return value;
             }
@@ -1564,8 +1598,8 @@ class toc final {
             int64_t value{};
             std::string_view sv{str};
             sv.remove_prefix(2); // skip "0b" or "0B"
-            auto result{
-                std::from_chars(sv.data(), sv.data() + sv.size(), value, 2)};
+            auto result{std::from_chars(sv.data(), sv.data() + sv.size(), value,
+                                        base_binary)};
             if (result.ec == std::errc{}) {
                 return value;
             }
@@ -1624,13 +1658,13 @@ class toc final {
     [[nodiscard]] static auto get_operand_size(const size_t size)
         -> std::string_view {
         switch (size) {
-        case 1:
+        case size_byte:
             return "byte";
-        case 2:
+        case size_word:
             return "word";
-        case 4:
+        case size_dword:
             return "dword";
-        case 8:
+        case size_qword:
             return "qword";
         default:
             throw panic_exception{"unexpected code path toc:3"};
@@ -1647,7 +1681,7 @@ class toc final {
             operand == "r9" || operand == "r10" || operand == "r11" ||
             operand == "r12" || operand == "r13" || operand == "r14" ||
             operand == "r15") {
-            return 8;
+            return size_qword;
         }
 
         if (operand == "eax" || operand == "ebx" || operand == "ecx" ||
@@ -1656,7 +1690,7 @@ class toc final {
             operand == "r9d" || operand == "r10d" || operand == "r11d" ||
             operand == "r12d" || operand == "r13d" || operand == "r14d" ||
             operand == "r15d") {
-            return 4;
+            return size_dword;
         }
 
         if (operand == "ax" || operand == "bx" || operand == "cx" ||
@@ -1665,7 +1699,7 @@ class toc final {
             operand == "r9w" || operand == "r10w" || operand == "r11w" ||
             operand == "r12w" || operand == "r13w" || operand == "r14w" ||
             operand == "r15w") {
-            return 2;
+            return size_word;
         }
 
         if (operand == "al" || operand == "ah" || operand == "bl" ||
@@ -1674,7 +1708,7 @@ class toc final {
             operand == "r9b" || operand == "r10b" || operand == "r11b" ||
             operand == "r12b" || operand == "r13b" || operand == "r14b" ||
             operand == "r15b") {
-            return 1;
+            return size_byte;
         }
 
         throw compiler_exception{src_loc_tk,

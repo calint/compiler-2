@@ -167,7 +167,7 @@ class stmt_identifier : public statement {
                 src_info.lea_path)};
 
         const std::string_view size_specifier{
-            type::get_size_specifier(tok(), src_info.type_ref.size())};
+            toc::get_size_specifier(tok(), src_info.type_ref.size())};
 
         tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
                    std::format("{} [{}]", size_specifier, effective_address));

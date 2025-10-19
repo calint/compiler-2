@@ -14,11 +14,11 @@
 class program final {
     // built-in types
     type type_void{"void", 0, true};
-    type type_i64{"i64", 8, true};
-    type type_i32{"i32", 4, true};
-    type type_i16{"i16", 2, true};
-    type type_i8{"i8", 1, true};
-    type type_bool{"bool", 1, true};
+    type type_i64{"i64", toc::size_qword, true};
+    type type_i32{"i32", toc::size_dword, true};
+    type type_i16{"i16", toc::size_word, true};
+    type type_i8{"i8", toc::size_byte, true};
+    type type_bool{"bool", toc::size_byte, true};
 
     std::vector<std::unique_ptr<statement>> statements_;
     toc tc_;    // table of contents

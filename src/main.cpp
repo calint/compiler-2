@@ -52,9 +52,12 @@ auto main(const int argc, const char* argv[]) -> int {
     const std::span<const char*> args{argv, static_cast<size_t>(argc)};
 #pragma clang diagnostic pop
 
+    constexpr size_t default_stack_size{0x10000};
+    // note: to avoid "magic number" lint
+
     // default values
     const char* src_file_name = "prog.baz";
-    size_t stack_size = 0x10000;
+    size_t stack_size = default_stack_size;
     bool checks_upper = false;
     bool checks_show_line = false;
     bool checks_lower = false;
@@ -92,13 +95,14 @@ auto main(const int argc, const char* argv[]) -> int {
             std::println("  {} --checks=upper prog.baz", prg);
             return 0;
         }
-        if (arg.starts_with("--stack=")) {
+        constexpr std::string_view stack_option{"--stack="};
+        if (arg.starts_with(stack_option)) {
             try {
-                stack_size = std::stoul(std::string{arg.substr(8)}, nullptr, 0);
-                // note: 8 is size of "--stack="
+                stack_size = std::stoul(
+                    std::string{arg.substr(stack_option.size())}, nullptr, 0);
             } catch (...) {
                 std::println(stderr, "Could not parse stack size: \"{}\"",
-                             arg.substr(8));
+                             arg.substr(stack_option.size()));
                 std::println(stderr, "Use --help for usage information");
                 return 1;
             }
