@@ -1,10 +1,9 @@
+[ ] review "//?" comments
+[ ] review "todo" comments
 [ ] the last issue when using cppcoreguidelines-avoid-const-or-ref-data-members
     at linting are the const refs
 [ ] code after "break" or "continue" is dead code. generate error because UB
    check can be fooled by code after "break" or "continue"
-[x] neovim: tree-sitter and color scheme
-    => tree-sitter color scheme done
-[ ] simple LSP supporting rename
 [ ] array_copy does not handle when destination overlaps source
 [ ] lea_path not be necessary since only most recent lea relevant
 [ ] fix better the re-occurring code:
@@ -17,15 +16,11 @@
     issues do not exist in this project. they are ugly. ponder switching to =
 [ ] refactor the passing first token to every constructor. push back and
     construct
-[o] check function argument is array or not vs argument
-    [x] for simple foo(arr) when arr can be aliased
-    [ ] for other foo(polygons[1].indices) not easy
 [ ] ponder an iterator of elements in array that does not require bounds
     checking:
       for(e : arr) {
         e2 = 0
       }
-[ ] ponder having traditional return statement instead of return variable
 [ ] ponder whether a compiler flag to check for over/underflow in arithmetics
 [ ] a return reference might be used as an argument to a function that set it.
     current UB detection does not allow that
@@ -34,11 +29,8 @@
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
     stack
     => do perf tests first using etc/perf.sh
-[o] implement "size_of"
-    [ ] size_of for fields
-[o] review before next step
-    [x] function signatures
-    [ ] code
+[ ] implement "size_of" for fields
+[ ] review code before next step
 [ ] lut: change to map
 [ ] make unary_ops trivially copyable by using a fixed array instead of vector
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
@@ -83,14 +75,23 @@
 [ ] implement strings
 [ ] support for float and double?
 [ ] rename compiler_exception
-[ ] review "//?" comments
-[ ] review "todo." comments
 [ ] specify whether ok for an op to truncate value instead of error
     => it is no longer an error
+[ ] simple LSP supporting rename
 
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] neovim: tree-sitter and color scheme
+    => tree-sitter color scheme done
+[x] review function signatures
+[x] check function argument is array or not vs argument
+    [x] for simple foo(arr) when arr can be aliased
+    [x] for other foo(polygons[1].indices) not easy
+[-] ponder having traditional return statement instead of return variable
+    => return variable is a reference. if returns expression then it might be
+       necessary to create temporary variables while computing the result
+       instead of just writing to the reference
 [x] ;       [156:32] free scratch register 'r11'
             mov r14, qword [r13 + r12 * 8 + 0]
 [x] bounds checking: line number is moved twice during the same check. fix
