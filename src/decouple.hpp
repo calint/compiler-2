@@ -25,11 +25,11 @@ struct ident_info {
     const type& type_ref;
     int32_t stack_ix{};
     size_t array_size{};
-    const bool is_array{};
+    bool is_array{};
     std::vector<std::string> elem_path;
     std::vector<const type*> type_path;
     std::vector<std::string> lea_path;
-    const ident_type ident_type{ident_type::CONST};
+    ident_type ident_type{ident_type::CONST};
 
     [[nodiscard]] auto is_const() const -> bool {
         return ident_type == ident_type::CONST;
