@@ -9,11 +9,11 @@
 #include "token.hpp"
 
 class tokenizer final {
-    const std::string_view delimiters_{" \t\r\n(){}[]=,.:+-*/%&|^<>!\0"};
     const std::string& src_str_; // used for easier debugging with 'pos'
     std::string_view src_;       // source as a string view
-    size_t char_ix_{};           // current char index in 'src_'
-    const char* pos{};           // position in string used for easier debugging
+    std::string_view delimiters_{" \t\r\n(){}[]=,.:+-*/%&|^<>!\0"};
+    size_t char_ix_{}; // current char index in 'src_'
+    const char* pos{}; // position in string used for easier debugging
     size_t at_line_{1};
 
   public:
