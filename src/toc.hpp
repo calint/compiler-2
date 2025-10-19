@@ -8,6 +8,7 @@
 #include <optional>
 #include <ostream>
 #include <ranges>
+#include <regex>
 #include <string_view>
 #include <utility>
 
@@ -322,16 +323,16 @@ class toc final {
     const bool bounds_check_with_line_{};
     const bool bounds_check_lower_{};
 
+    const std::regex regex_ws_{R"(\s+)"};
+    const std::regex regex_trim_{R"(^\s+|\s+$)"};
+    const std::regex regex_nasm_comment_{R"(^\s*;.*$)"};
+    const std::regex regex_nasm_number_register_{R"(r(\d+))"};
+
   public:
     static constexpr size_t size_qword{8};
     static constexpr size_t size_dword{4};
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
-
-    const std::regex regex_ws{R"(\s+)"};
-    const std::regex regex_trim{R"(^\s+|\s+$)"};
-    const std::regex regex_nasm_comment{R"(^\s*;.*$)"};
-    const std::regex regex_nasm_number_register{R"(r(\d+))"};
 
     toc(const std::string& source, const bool bounds_check_upper,
         const bool bounds_check_lower, const bool bounds_check_with_line)
@@ -660,8 +661,8 @@ class toc final {
         st.source_to(ss);
         std::println(
             os, "{}",
-            std::regex_replace(std::regex_replace(ss.str(), regex_trim, ""),
-                               regex_ws, " "));
+            std::regex_replace(std::regex_replace(ss.str(), regex_trim_, ""),
+                               regex_ws_, " "));
     }
 
     auto comment_source(const statement& st, std::ostream& os,
@@ -672,7 +673,7 @@ class toc final {
         std::stringstream ss;
         std::print(ss, "{} {} ", dst, op);
         st.source_to(ss);
-        std::string res{std::regex_replace(ss.str(), regex_ws, " ")};
+        std::string res{std::regex_replace(ss.str(), regex_ws_, " ")};
         // trim end of string
         if (not res.empty() && res.back() == ' ') {
             res.pop_back();
@@ -1018,7 +1019,7 @@ class toc final {
         std::smatch match;
         const std::string operand_str{operand};
         if (not std::regex_search(operand_str, match,
-                                  regex_nasm_number_register)) {
+                                  regex_nasm_number_register_)) {
             throw compiler_exception{
                 src_loc_tk, std::format("unknown register {}", operand)};
         }
@@ -1103,6 +1104,22 @@ class toc final {
         -> ident_info {
 
         return make_ident_info_or_throw(src_loc_tk, ident);
+    }
+
+    [[nodiscard]] auto regex_ws() const -> const std::regex& {
+        return regex_ws_;
+    }
+
+    [[nodiscard]] auto regex_nams_number_register() const -> const std::regex& {
+        return regex_nasm_number_register_;
+    }
+
+    [[nodiscard]] auto regex_trim() const -> const std::regex& {
+        return regex_trim_;
+    }
+
+    [[nodiscard]] auto regex_nasm_comment() const -> const std::regex& {
+        return regex_nasm_comment_;
     }
 
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
