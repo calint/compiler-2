@@ -95,6 +95,7 @@ auto main(const int argc, const char* argv[]) -> int {
         if (arg.starts_with("--stack=")) {
             try {
                 stack_size = std::stoul(std::string{arg.substr(8)}, nullptr, 0);
+                // note: 8 is size of "--stack="
             } catch (...) {
                 std::println(stderr, "Could not parse stack size: \"{}\"",
                              arg.substr(8));
