@@ -96,6 +96,7 @@ auto main(const int argc, const char* argv[]) -> int {
             return 0;
         }
         constexpr std::string_view stack_option{"--stack="};
+        constexpr std::string_view checks_option{"--checks="};
         if (arg.starts_with(stack_option)) {
             try {
                 stack_size = std::stoul(
@@ -106,8 +107,8 @@ auto main(const int argc, const char* argv[]) -> int {
                 std::println(stderr, "Use --help for usage information");
                 return 1;
             }
-        } else if (arg.starts_with("--checks=")) {
-            const std::string_view checks{arg.substr(9)};
+        } else if (arg.starts_with(checks_option)) {
+            const std::string_view checks{arg.substr(checks_option.size())};
             std::istringstream iss{std::string{checks}};
 
             checks_upper = false;
