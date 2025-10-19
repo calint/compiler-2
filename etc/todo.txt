@@ -77,6 +77,8 @@
 [ ] rename compiler_exception
 [ ] specify whether ok for an op to truncate value instead of error
     => it is no longer an error
+[ ] const allowed in function declaration and code
+    foo(ix : const i32) { const x = ix }
 [ ] simple LSP supporting rename
 
 --------------------------------------------------------------------------------
