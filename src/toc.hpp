@@ -26,20 +26,20 @@ class stmt_def_type;
 struct func_info {
     const stmt_def_func* def{}; // null if built-in function
     token declared_at_tk;       // token for position in the source
-    const type* type_ref;       // return type or void
+    const type* type_ptr;       // return type or void
 };
 
 struct func_return_info {
     token type_tk;        // type token
     token ident_tk;       // identifier token
-    const type* type_ref; // type
+    const type* type_ptr; // type
 };
 
 struct alias_info {
     std::string from;
     std::string to;
     std::string lea;
-    const type* type_ref;
+    const type* type_ptr;
     size_t array_size;
 };
 
@@ -91,7 +91,7 @@ class frame final {
         if (var.stack_idx < 0) {
             // variable, increase allocated stack size
             allocated_stack_ +=
-                var.type_ref->size() * (var.is_array ? var.array_size : 1);
+                var.type_ptr->size() * (var.is_array ? var.array_size : 1);
         }
 
         vars_.put(var.name, var);
@@ -381,7 +381,7 @@ class toc final {
 
         funcs_.put(std::move(name), {.def = func_def,
                                      .declared_at_tk = src_loc_tk,
-                                     .type_ref = &return_type});
+                                     .type_ptr = &return_type});
 
         if (func_def) {
             func_defs_.emplace_back(func_def);
@@ -414,7 +414,7 @@ class toc final {
 
         const int stack_idx{static_cast<int>(
             get_stack_size() +
-            (var.type_ref->size() * (var.is_array ? var.array_size : 1)))};
+            (var.type_ptr->size() * (var.is_array ? var.array_size : 1)))};
 
         var.stack_idx = -stack_idx;
         frames_.back().add_var(var);
@@ -427,7 +427,7 @@ class toc final {
         const ident_info& name_info{make_ident_info(src_loc_tk, var.name)};
 
         comment_start(src_loc_tk, os, indnt);
-        std::print(os, "{}: {}", var.name, name_info.type_ref->name());
+        std::print(os, "{}: {}", var.name, name_info.type_ptr->name());
         if (var.array_size) {
             std::print(os, "[{}]", var.array_size);
         }
@@ -840,7 +840,7 @@ class toc final {
                 src_loc_tk, std::format("function '{}' not found", name)};
         }
 
-        return *funcs_.get_const_ref(name).type_ref;
+        return *funcs_.get_const_ref(name).type_ptr;
     }
 
     [[nodiscard]] auto get_loop_label_or_throw(const token& src_loc_tk) const
@@ -1259,7 +1259,7 @@ class toc final {
             //           << id.str() << "\n";
             const var_info& var{frm.get_var_const_ref(id.base())};
             std::vector<const type*> type_path;
-            ident_info ii{var.type_ref->accessor(src_loc, ident, id.path(), var,
+            ident_info ii{var.type_ptr->accessor(src_loc, ident, id.path(), var,
                                                  type_path)};
 
             ii.elem_path = std::vector(id.path().begin(), id.path().end());
@@ -1284,7 +1284,7 @@ class toc final {
             return {
                 .id{ident},
                 .id_nasm{id.str()},
-                .type_ref = &get_type_default(),
+                .type_ptr = &get_type_default(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
@@ -1298,7 +1298,7 @@ class toc final {
             return {
                 .id{ident},
                 .id_nasm{id.str()},
-                .type_ref = &get_builtin_type_for_operand(src_loc, id.str()),
+                .type_ptr = &get_builtin_type_for_operand(src_loc, id.str()),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
@@ -1314,7 +1314,7 @@ class toc final {
                 return {
                     .id{ident},
                     .id_nasm{std::format("{}.len", id.base())},
-                    .type_ref = &get_type_default(),
+                    .type_ptr = &get_type_default(),
                     .elem_path{id.str()},
                     .type_path{&get_type_default()},
                     .lea_path{""},
@@ -1326,7 +1326,7 @@ class toc final {
                 return {
                     .id{ident},
                     .id_nasm{id.base()},
-                    .type_ref = &get_type_default(),
+                    .type_ptr = &get_type_default(),
                     .elem_path{id.str()},
                     .type_path{&get_type_default()},
                     .lea_path{""},
@@ -1337,7 +1337,7 @@ class toc final {
             return {
                 .id{ident},
                 .id_nasm{std::format("qword [{}]", id.base())},
-                .type_ref = &get_type_default(),
+                .type_ptr = &get_type_default(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
@@ -1352,7 +1352,7 @@ class toc final {
                 .id{ident},
                 .id_nasm{id.str()},
                 .const_value = *value,
-                .type_ref = &get_type_default(),
+                .type_ptr = &get_type_default(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
@@ -1365,7 +1365,7 @@ class toc final {
                 .id{ident},
                 .id_nasm{"true"},
                 .const_value = 1,
-                .type_ref = &get_type_bool(),
+                .type_ptr = &get_type_bool(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
@@ -1377,7 +1377,7 @@ class toc final {
                 .id{ident},
                 .id_nasm{"false"},
                 .const_value = 0,
-                .type_ref = &get_type_bool(),
+                .type_ptr = &get_type_bool(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
@@ -1388,7 +1388,7 @@ class toc final {
         return {
             .id{},
             .id_nasm{},
-            .type_ref = &get_type_void(),
+            .type_ptr = &get_type_void(),
             .elem_path{},
             .type_path{},
             .lea_path{},

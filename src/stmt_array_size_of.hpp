@@ -61,7 +61,7 @@ class stmt_array_size_of final : public expression {
             throw compiler_exception{tok(), "destination cannot be a constant"};
         }
 
-        if (dst_info.type_ref->name() != tc.get_type_default().name()) {
+        if (dst_info.type_ptr->name() != tc.get_type_default().name()) {
             throw compiler_exception{tok(), "destination must be type i64"};
         }
 

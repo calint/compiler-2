@@ -168,7 +168,7 @@ class stmt_def_func final : public statement {
             const token& ret_tk{returns_->ident_tk};
             const var_info var{
                 .name{ret_tk.text()},
-                .type_ref = &get_type(),
+                .type_ptr = &get_type(),
                 .declared_at_tk{ret_tk},
             };
             tc.add_var(ret_tk, os, indent + 1, var);
@@ -185,7 +185,7 @@ class stmt_def_func final : public statement {
                 // no, add it as a variable
                 const var_info var{
                     .name{prm_name},
-                    .type_ref = &prm_type,
+                    .type_ptr = &prm_type,
                     .declared_at_tk{prm.tok()},
                     .is_array = prm.is_array(),
                 };
@@ -202,7 +202,7 @@ class stmt_def_func final : public statement {
             tc.add_alias({.from = std::string{prm_name},
                           .to = prm_reg,
                           .lea = "",
-                          .type_ref = &prm_type,
+                          .type_ptr = &prm_type,
                           .array_size = 0});
             // note: this is a dry run compilation so array size is not known
             //       here

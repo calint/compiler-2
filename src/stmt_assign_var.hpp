@@ -20,8 +20,8 @@ class stmt_assign_var final : public statement {
         const ident_info& dst_info{
             tc.make_ident_info(tok(), stmt_ident_.identifier())};
 
-        set_type(*dst_info.type_ref);
-        expr_ = {tc, tz, *dst_info.type_ref, false};
+        set_type(*dst_info.type_ptr);
+        expr_ = {tc, tz, *dst_info.type_ptr, false};
     }
 
     ~stmt_assign_var() override = default;
@@ -85,7 +85,7 @@ class stmt_assign_var final : public statement {
                 tc.make_ident_info(tok(), stmt_ident_.identifier())};
 
             tc.asm_cmd(tok(), os, indent, "mov", "rcx",
-                       std::format("{}", ii.type_ref->size()));
+                       std::format("{}", ii.type_ptr->size()));
 
             toc::asm_rep_movs(tok(), os, indent, 'b');
 
@@ -124,7 +124,7 @@ class stmt_assign_var final : public statement {
         std::string dst_accessor{dst_info.id};
         if (not lea.empty()) {
             const std::string_view size_specifier{
-                toc::get_size_specifier(tok(), dst_info.type_ref->size())};
+                toc::get_size_specifier(tok(), dst_info.type_ptr->size())};
 
             const size_t offset{dst_info.type_path[i]->field_offset(
                 tok(), std::span{dst_info.elem_path}.subspan(i))};
@@ -158,7 +158,7 @@ class stmt_assign_var final : public statement {
                 "", dst_info.lea_path);
 
         const std::string_view size_specifier{
-            toc::get_size_specifier(tok(), dst_info.type_ref->size())};
+            toc::get_size_specifier(tok(), dst_info.type_ptr->size())};
 
         expr_.compile(
             tc, os, indent,

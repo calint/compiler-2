@@ -150,7 +150,7 @@ class stmt_call : public expression {
             }
             // alias return identifier to 'dst'
             aliases_to_add.emplace_back(std::string{ret->ident_tk.text()},
-                                        std::string{dst}, "", ret->type_ref);
+                                        std::string{dst}, "", ret->type_ptr);
         } else if (ret) {
             throw compiler_exception{tok(),
                                      "function returns but value is discarded"};

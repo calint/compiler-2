@@ -77,7 +77,7 @@ class stmt_def_var final : public statement {
         null_stream null_strm;
         const var_info var{
             .name{name_tk_.text()},
-            .type_ref = &tp,
+            .type_ptr = &tp,
             .declared_at_tk{name_tk_},
             .is_array = is_array_,
             .array_size = array_size_,
@@ -129,7 +129,7 @@ class stmt_def_var final : public statement {
         tc.comment_source(*this, os, indent);
         const var_info var{
             .name{name_tk_.text()},
-            .type_ref = &get_type(),
+            .type_ptr = &get_type(),
             .declared_at_tk{name_tk_},
             .is_array = is_array_,
             .array_size = array_size_,
@@ -152,8 +152,8 @@ class stmt_def_var final : public statement {
 
         tc.comment_start(name_tk_, os, indent);
         std::println(os, "clear array {} * {} B = {} B", array_size_,
-                     dst_info.type_ref->size(),
-                     array_size_ * dst_info.type_ref->size());
+                     dst_info.type_ptr->size(),
+                     array_size_ * dst_info.type_ptr->size());
 
         tc.alloc_named_register_or_throw(tok(), os, indent, "rdi");
         tc.alloc_named_register_or_throw(tok(), os, indent, "rcx");
@@ -164,7 +164,7 @@ class stmt_def_var final : public statement {
         // note: -dst_info.stack_ix_rel_rsp for nicer source formatting; is
         //       always negative
         tc.asm_cmd(tok(), os, indent, "mov", "rcx",
-                   std::format("{}", array_size_ * dst_info.type_ref->size()));
+                   std::format("{}", array_size_ * dst_info.type_ptr->size()));
         tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
         toc::asm_rep_stos(name_tk_, os, indent, 'b');
 

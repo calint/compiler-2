@@ -117,15 +117,15 @@ class stmt_arrays_equal final : public expression {
             tc.free_scratch_register(tok(), os, indent, reg);
         }
 
-        if (from_info.type_ref->name() != to_info.type_ref->name()) {
+        if (from_info.type_ptr->name() != to_info.type_ptr->name()) {
             throw compiler_exception{
                 tok(), std::format("source and destination types are not the "
                                    "same. source is '{}' vs destination '{}'",
-                                   from_info.type_ref->name(),
-                                   to_info.type_ref->name())};
+                                   from_info.type_ptr->name(),
+                                   to_info.type_ptr->name())};
         }
 
-        const size_t type_size{from_info.type_ref->size()};
+        const size_t type_size{from_info.type_ptr->size()};
 
         if (type_size > 1) {
             // check whether it is possible to shift left instead of
