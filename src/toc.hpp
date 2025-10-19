@@ -319,14 +319,14 @@ class toc final {
     size_t usage_max_scratch_regs_{};
     size_t usage_max_frame_count_{};
     size_t usage_max_stack_size_{};
-    const bool bounds_check_upper_{};
-    const bool bounds_check_with_line_{};
-    const bool bounds_check_lower_{};
+    bool bounds_check_upper_{};
+    bool bounds_check_with_line_{};
+    bool bounds_check_lower_{};
 
-    const std::regex regex_ws_{R"(\s+)"};
-    const std::regex regex_trim_{R"(^\s+|\s+$)"};
-    const std::regex regex_nasm_comment_{R"(^\s*;.*$)"};
-    const std::regex regex_nasm_number_register_{R"(r(\d+))"};
+    std::regex regex_ws_{R"(\s+)"};
+    std::regex regex_trim_{R"(^\s+|\s+$)"};
+    std::regex regex_nasm_comment_{R"(^\s*;.*$)"};
+    std::regex regex_nasm_number_register_{R"(r(\d+))"};
 
   public:
     static constexpr size_t size_qword{8};

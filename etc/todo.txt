@@ -1,3 +1,5 @@
+[ ] the last issue when using cppcoreguidelines-avoid-const-or-ref-data-members
+    at linting are the const refs
 [ ] code after "break" or "continue" is dead code. generate error because UB
    check can be fooled by code after "break" or "continue"
 [x] neovim: tree-sitter and color scheme
