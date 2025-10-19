@@ -15,6 +15,8 @@ func exit(v : reg_rdi) {
     syscall()
 }
 
+# single statement blocks can ommit { ... }
+
 func assert(expr : bool) if not expr exit(1)
 
 func print(len : reg_rdx, ptr : reg_rsi) {
@@ -92,6 +94,7 @@ func main() {
     var arr1 : i32[8]
     array_copy(arr, arr1, 4)
     assert(arrays_equal(arr, arr1, 4))
+    # note: `arrays_equal` is built-in function
 
     arr1[2] = -1
     assert(not arrays_equal(arr, arr1, 4))
@@ -160,6 +163,7 @@ func main() {
         worlds[0].locations,
         array_size_of(worlds.locations)
     )
+    # note: `array_copy` is built-in and can start at indexed location
     assert(worlds[0].locations[1] == 0xffee)
     assert(arrays_equal(
              worlds[0].locations,
@@ -172,7 +176,7 @@ func main() {
         print(prompt1.len, prompt1)
         
         var len = read(array_size_of(input_buffer), address_of(input_buffer)) - 1
-        # note: `array_size_of` and `address_of` are built-in functions
+        # note: `address_of` is built-in function
         #       -1 to not include the trailing '\n'
 
         if len == 0 {
