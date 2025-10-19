@@ -2,7 +2,7 @@
 [ ] review "todo" comments
 [x] the last issue when using cppcoreguidelines-avoid-const-or-ref-data-members
     at linting are the const refs
-    => pointers instead of refs in structs and classes
+    => pointers instead of refs in structs and classes, better?
 [ ] code after "break" or "continue" is dead code. generate error because UB
    check can be fooled by code after "break" or "continue"
 [ ] array_copy does not handle when destination overlaps source
