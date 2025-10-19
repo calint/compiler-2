@@ -59,7 +59,6 @@ class statement {
 
     [[nodiscard]] virtual auto
     is_var_set([[maybe_unused]] const std::string_view var) const -> bool {
-
         return false;
     }
 
@@ -87,6 +86,7 @@ class statement {
 
     auto set_type(const type& tp) -> void { type_ = &tp; }
 
+  private:
     static auto validate_identifier_name(const token& tk) -> void {
         if (tk.text().ends_with(".")) {
             throw compiler_exception{

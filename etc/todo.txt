@@ -1,6 +1,8 @@
 [ ] code after "break" or "continue" is dead code. generate error because UB
    check can be fooled by code after "break" or "continue"
-[ ] neovim: tree-sitter and color scheme, LSP?
+[x] neovim: tree-sitter and color scheme
+    => tree-sitter color scheme done
+[ ] simple LSP supporting rename
 [ ] array_copy does not handle when destination overlaps source
 [ ] lea_path not be necessary since only most recent lea relevant
 [ ] fix better the re-occurring code:
