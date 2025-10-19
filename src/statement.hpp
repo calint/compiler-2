@@ -72,7 +72,7 @@ class statement {
 
     [[nodiscard]] virtual auto is_identifier() const -> bool { return false; }
 
-    virtual auto compile_lea(
+    [[nodiscard]] virtual auto compile_lea(
         [[maybe_unused]] const token& src_loc_tk, [[maybe_unused]] toc& tc,
         [[maybe_unused]] std::ostream& os, [[maybe_unused]] const size_t indent,
         [[maybe_unused]] std::vector<std::string>& allocated_registers,
