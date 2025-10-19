@@ -5,7 +5,7 @@
 ```
 tree-sitter generate
 tree-sitter build
-mv baz.so ~/.local/share/nvim/site/parser
+mv baz.so ~/.local/share/nvim/site/parser/
 mkdir -p ~/.local/share/nvim/site/queries/baz
 cp queries/baz/highlights.scm ~/.local/share/nvim/site/queries/baz/
 
@@ -32,4 +32,3 @@ vim.filetype.add({
 })
 ...
 ```
-
