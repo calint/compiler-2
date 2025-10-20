@@ -43,9 +43,15 @@ class stmt_def_var final : public statement {
                         toc::parse_to_constant(array_size_tk_.text())};
                     value) {
                     array_size_ = static_cast<size_t>(*value);
+                    if (array_size_ <= 0) {
+                        throw compiler_exception{
+                            array_size_tk_,
+                            "array sizes must be greater than 0"};
+                    }
                 } else {
-                    throw compiler_exception{array_size_tk_,
-                                             "expected array size as constant"};
+                    throw compiler_exception{
+                        array_size_tk_,
+                        "expected array size as a positive constant"};
                 }
                 if (not tz.is_next_char(']')) {
                     throw compiler_exception{type_tk_,

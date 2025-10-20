@@ -21,7 +21,7 @@ func assert(expr : bool) if not expr exit(1)
 
 func print(len : reg_rdx, ptr : reg_rsi) {
     mov(rax, 1)   # write system call
-    mov(rdi, 1)   # file descriptor for standard out
+    mov(rdi, 0)   # file descriptor for standard out
     mov(rsi, ptr) # buffer address 
     mov(rdx, len) # buffer size
     syscall()
@@ -75,6 +75,28 @@ func baz(arg) : i64 res {
 func faz(arg : i32[]) {
     arg[1] = 0xfe
 }
+
+type str {
+    len : i8,
+    data : i8[127]
+}
+
+func inp(s : str) {
+    mov(rax, 0)   # read system call
+    mov(rdi, 0)   # file descriptor for standard input
+    mov(rsi, address_of(s.data)) # buffer address
+    mov(rdx, array_size_of(s.data)) # buffer size
+    syscall()
+    mov(s.len, rax - 1) # return value
+} 
+
+func pstr(s : str) {
+    mov(rax, 1)   # write system call
+    mov(rdi, 0)   # file descriptor for standard out
+    mov(rsi, address_of(s.data)) # buffer address 
+    mov(rdx, s.len) # buffer size
+    syscall()
+} 
 
 func main() {
     var arr : i32[4]
@@ -152,8 +174,6 @@ func main() {
     o3.pos.y = 73
     assert(o3[0].pos.y == 73)
 
-    var input_buffer : i8[80]
-
     var worlds : world[8]
     worlds[1].locations[1] = 0xffee
     assert(worlds[1].locations[1] == 0xffee)
@@ -172,22 +192,19 @@ func main() {
              array_size_of(worlds.locations)
           ))
 
+    var input_buffer : str[1] 
     print(hello.len, hello)
     loop {
         print(prompt1.len, prompt1)
-        
-        var len = read(array_size_of(input_buffer), address_of(input_buffer)) - 1
-        # note: `address_of` is built-in function
-        #       -1 to not include the trailing '\n'
-
-        if len == 0 {
+        inp(input_buffer)
+        if input_buffer.len == 0 {
             break
-        } else if len <= 4 {
+        } else if input_buffer.len <= 4 {
             print(prompt2.len, prompt2)
             continue
         } else {
             print(prompt3.len, prompt3)
-            print(len, address_of(input_buffer))
+            pstr(input_buffer)
             print(dot.len, dot)
             print(nl.len, nl)
         }
