@@ -81,7 +81,7 @@ type str {
     data : i8[127]
 }
 
-func inp(s : str) {
+func str_in(s : str) {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, address_of(s.data)) # buffer address
@@ -90,7 +90,7 @@ func inp(s : str) {
     mov(s.len, rax - 1) # return value
 } 
 
-func pstr(s : str) {
+func str_out(s : str) {
     mov(rax, 1)   # write system call
     mov(rdi, 0)   # file descriptor for standard out
     mov(rsi, address_of(s.data)) # buffer address 
@@ -192,19 +192,19 @@ func main() {
              array_size_of(worlds.locations)
           ))
 
-    var input_buffer : str[1] 
+    var nm : str[1] 
     print(hello.len, hello)
     loop {
         print(prompt1.len, prompt1)
-        inp(input_buffer)
-        if input_buffer.len == 0 {
+        str_in(nm)
+        if nm.len == 0 {
             break
-        } else if input_buffer.len <= 4 {
+        } else if nm.len <= 4 {
             print(prompt2.len, prompt2)
             continue
         } else {
             print(prompt3.len, prompt3)
-            pstr(input_buffer)
+            str_out(nm)
             print(dot.len, dot)
             print(nl.len, nl)
         }

@@ -1122,7 +1122,7 @@ main:
                 mov rdi, 0
             syscall
         print_198_9_end:
-        inp_199_9:
+        str_in_199_9:
                 mov rax, 0
                 mov rdi, 0
                 lea rsi, [rsp - 843]
@@ -1130,7 +1130,7 @@ main:
             syscall
                 mov byte [rsp - 844], al
                 sub byte [rsp - 844], 1
-        inp_199_9_end:
+        str_in_199_9_end:
         if_200_12:
         cmp_200_12:
         cmp byte [rsp - 844], 0
@@ -1162,13 +1162,13 @@ main:
                     mov rdi, 0
                 syscall
             print_206_13_end:
-            pstr_207_13:
+            str_out_207_13:
                     mov rax, 1
                     mov rdi, 0
                     lea rsi, [rsp - 843]
                     movsx rdx, byte [rsp - 844]
                 syscall
-            pstr_207_13_end:
+            str_out_207_13_end:
             mov rdx, dot.len
             mov rsi, dot
             print_208_13:

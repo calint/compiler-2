@@ -2528,8 +2528,8 @@ main:
         if_20_26_189_5_end:
 ;       [189:5] free scratch register 'r15'
     assert_189_5_end:
-;   [195:5] var input_buffer : str[1]
-;   [195:9] input_buffer: str[1] @ byte [rsp - 844]
+;   [195:5] var nm : str[1]
+;   [195:9] nm: str[1] @ byte [rsp - 844]
 ;   [195:9] clear array 1 * 128 B = 128 B
 ;   [195:5] allocate named register 'rdi'
 ;   [195:5] allocate named register 'rcx'
@@ -2615,10 +2615,10 @@ main:
 ;           [198:9] free named register 'rsi'
 ;           [198:9] free named register 'rdx'
         print_198_9_end:
-;       [199:9] inp(input_buffer)
-;       [84:6] inp(s : str) 
-        inp_199_9:
-;           [199:9] alias s -> input_buffer  (lea: , len: 0)
+;       [199:9] str_in(nm)
+;       [84:6] str_in(s : str) 
+        str_in_199_9:
+;           [199:9] alias s -> nm  (lea: , len: 0)
 ;           [85:5] mov(rax, 0)
 ;               [85:14] 0
 ;               [85:14] 0
@@ -2655,10 +2655,10 @@ main:
 ;               [90:22] s.len - 1
                 sub byte [rsp - 844], 1
 ;           [90:25] # return value
-        inp_199_9_end:
+        str_in_199_9_end:
         if_200_12:
-;       [200:12] ? input_buffer.len == 0
-;       [200:12] ? input_buffer.len == 0
+;       [200:12] ? nm.len == 0
+;       [200:12] ? nm.len == 0
         cmp_200_12:
         cmp byte [rsp - 844], 0
         jne if_202_19
@@ -2668,8 +2668,8 @@ main:
             jmp loop_197_5_end
         jmp if_200_9_end
         if_202_19:
-;       [202:19] ? input_buffer.len <= 4
-;       [202:19] ? input_buffer.len <= 4
+;       [202:19] ? nm.len <= 4
+;       [202:19] ? nm.len <= 4
         cmp_202_19:
         cmp byte [rsp - 844], 4
         jg if_else_200_9
@@ -2751,10 +2751,10 @@ main:
 ;               [206:13] free named register 'rsi'
 ;               [206:13] free named register 'rdx'
             print_206_13_end:
-;           [207:13] pstr(input_buffer)
-;           [93:6] pstr(s : str) 
-            pstr_207_13:
-;               [207:13] alias s -> input_buffer  (lea: , len: 0)
+;           [207:13] str_out(nm)
+;           [93:6] str_out(s : str) 
+            str_out_207_13:
+;               [207:13] alias s -> nm  (lea: , len: 0)
 ;               [94:5] mov(rax, 1)
 ;                   [94:14] 1
 ;                   [94:14] 1
@@ -2782,7 +2782,7 @@ main:
 ;               [97:21] # buffer size
 ;               [98:5] syscall()
                 syscall
-            pstr_207_13_end:
+            str_out_207_13_end:
 ;           [208:13] print(dot.len, dot)
 ;           [208:19] allocate named register 'rdx'
             mov rdx, dot.len
