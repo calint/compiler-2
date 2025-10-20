@@ -332,6 +332,8 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
             tz,
             std::format("expected '}}' to close assign type '{}'", tp.name())};
     }
+
+    ws1_ = tz.next_whitespace_token();
 }
 
 expr_type_value::~expr_type_value() = default;
@@ -358,6 +360,7 @@ inline void expr_type_value::source_to(std::ostream& os) const {
         ea->source_to(os);
     }
     std::print(os, "}}");
+    ws1_.source_to(os);
 }
 
 // declared in 'expr_type_value.hpp'
