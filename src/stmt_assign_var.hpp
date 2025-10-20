@@ -56,59 +56,6 @@ class stmt_assign_var final : public statement {
                 std::format("cannot assign to constant '{}'", dst_info.id)};
         }
 
-        // is it a copy type instance expression?
-        if (expr_.is_expr_type_value() and
-            expr_.as_expr_type_value().is_make_copy()) {
-            // yes, calculate the destination address to register 'rdi'
-
-            // ; Copy RCX bytes from RSI to RDI
-            // mov rsi, source_addr    ; source pointer
-            // mov rdi, dest_addr      ; destination pointer
-            // mov rcx, byte_count     ; number of bytes
-            // rep movsb               ; repeat: copy byte [RSI++] to [RDI++]
-
-            tc.alloc_named_register_or_throw(tok(), os, indent, "rsi");
-            tc.alloc_named_register_or_throw(tok(), os, indent, "rdi");
-            tc.alloc_named_register_or_throw(tok(), os, indent, "rcx");
-            std::vector<std::string> allocated_registers;
-
-            const ident_info stmt_info{tc.make_ident_info(stmt_ident_)};
-            const std::string offset{stmt_identifier::compile_effective_address(
-                tok(), tc, os, indent, stmt_ident_.elems(), allocated_registers,
-                "", stmt_info.lea_path)};
-
-            toc::asm_lea(tok(), os, indent, "rdi", offset);
-
-            expr_.compile(tc, os, indent, "rsi");
-
-            const ident_info ii{
-                tc.make_ident_info(tok(), stmt_ident_.identifier())};
-
-            // try moving qwords
-            const size_t bytes_count{ii.type_ptr->size()};
-            const size_t qword_count{bytes_count / toc::size_qword};
-            const size_t rest_bytes_count{bytes_count -
-                                          (qword_count * toc::size_qword)};
-            const size_t reps{rest_bytes_count == 0 ? qword_count
-                                                    : bytes_count};
-            const char rep_size{rest_bytes_count ? 'b' : 'q'};
-
-            tc.asm_cmd(tok(), os, indent, "mov", "rcx",
-                       std::format("{}", reps));
-
-            toc::asm_rep_movs(tok(), os, indent, rep_size);
-
-            for (const std::string& reg :
-                 allocated_registers | std::views::reverse) {
-                tc.free_scratch_register(tok(), os, indent, reg);
-            }
-            tc.free_named_register(tok(), os, indent, "rcx");
-            tc.free_named_register(tok(), os, indent, "rdi");
-            tc.free_named_register(tok(), os, indent, "rsi");
-
-            return;
-        }
-
         // DEBUG
         // std::println(std::cerr, "[{}] identifier path: {}", tok().at_line(),
         //              dst_info.id);
@@ -183,16 +130,29 @@ class stmt_assign_var final : public statement {
 
         // not-builtin type
 
-        if (expr_.is_expr_type_value()) {
-            nasm_operand dst_nasmop;
+        nasm_operand dst_nasmop;
+        std::vector<std::string> allocated_registers;
+        if (stmt_ident_.is_identifier() and
+            (stmt_ident_.is_expression() or dst_info.has_lea())) {
+
+            dst_nasmop = nasm_operand{stmt_ident_.compile_lea(
+                tok(), tc, os, indent, allocated_registers, "",
+                dst_info.lea_path)};
+        } else {
             if (lea.empty()) {
                 dst_nasmop =
                     toc::get_nasm_operand_from_id_nasm(dst_info.id_nasm);
             } else {
                 dst_nasmop = nasm_operand{lea};
             }
-            expr_.as_expr_type_value().compile_assign(
-                tc, os, indent, *dst_info.type_ptr, dst_nasmop);
+        }
+
+        expr_.as_expr_type_value().compile_assign(
+            tc, os, indent, *dst_info.type_ptr, dst_nasmop);
+
+        for (const std::string& reg :
+             allocated_registers | std::views::reverse) {
+            tc.free_scratch_register(tok(), os, indent, reg);
         }
     }
 

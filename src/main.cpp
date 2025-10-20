@@ -367,6 +367,28 @@ inline void expr_type_value::source_to(std::ostream& os) const {
 auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                      const type& dst_type,
                                      nasm_operand& dst_nasmop) const -> void {
+    if (is_identifier()) {
+        std::string src_nasm;
+        const ident_info src_info{tc.make_ident_info(tok(), identifier())};
+        std::vector<std::string> allocated_registers;
+        if (is_expression() or tc.make_ident_info(*this).has_lea()) {
+            src_nasm =
+                this->compile_lea(tok(), tc, os, indent, allocated_registers,
+                                  "", src_info.lea_path);
+        } else {
+            src_nasm = toc::get_nasm_operand_from_id_nasm(src_info.id_nasm)
+                           .to_string();
+        }
+        tc.rep_movs(tok(), os, indent, src_nasm, dst_nasmop.to_string(),
+                    dst_type.size());
+        dst_nasmop.displacement += static_cast<int32_t>(dst_type.size());
+
+        for (const std::string& reg :
+             allocated_registers | std::views::reverse) {
+            tc.free_scratch_register(tok(), os, indent, reg);
+        }
+        return;
+    }
 
     size_t i{};
     for (const type_field& fld : dst_type.fields()) {
@@ -402,26 +424,6 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
 
         // expression is `expr_type_value`
         const expr_type_value& expr{exprs_[i]->as_expr_type_value()};
-
-        if (expr.is_identifier()) {
-            std::string src_nasm;
-            const ident_info src_info{
-                tc.make_ident_info(expr.tok(), expr.identifier())};
-            std::vector<std::string> allocated_registers;
-            if (expr.is_expression() or tc.make_ident_info(expr).has_lea()) {
-                src_nasm = expr.compile_lea(expr.tok(), tc, os, indent,
-                                            allocated_registers, "",
-                                            src_info.lea_path);
-            } else {
-                src_nasm = toc::get_nasm_operand_from_id_nasm(src_info.id_nasm)
-                               .to_string();
-            }
-            tc.rep_movs(expr.tok(), os, indent, src_nasm,
-                        dst_nasmop.to_string(), fld.tp->size());
-            dst_nasmop.displacement += static_cast<int32_t>(fld.tp->size());
-            i++;
-            continue;
-        }
         expr.compile_assign(tc, os, indent, *fld.tp, dst_nasmop);
         i++;
     }
