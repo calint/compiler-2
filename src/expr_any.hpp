@@ -15,12 +15,12 @@ class expr_any final : public statement {
 
   public:
     expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args,
-             const bool is_array = false)
+             [[maybe_unused]] const bool is_array = false)
         : statement{tz.next_whitespace_token()} {
 
         set_type(tp);
 
-        if (not tp.is_built_in() or is_array) {
+        if (not tp.is_built_in()) {
             // destination is not a built-in (register) value
             // assume assign type value
             var_ = expr_type_value{tc, tz, tp};
