@@ -6,6 +6,8 @@
     => affected: stmt_def_var, stmt_assign_var, stmt_arrays_equal
     => see vmovntdq for 32 B aligned data
        see AVX-512
+    [x] if evenly divisible of 8 then rep stoq
+        [ ] for non evenly divisible do the mov dword, word, byte
 [ ] initializer for types that contain array does not work as intended:
     var input_buffer : str = {0, 0} where second element is an array
 [x] array size 0 or negative should not be allowed

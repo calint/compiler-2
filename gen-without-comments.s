@@ -23,10 +23,10 @@ global _start
 _start:
 mov rsp,stk.end
 main:
-    mov rcx, 16
+    mov rcx, 2
     lea rdi, [rsp - 16]
     xor rax, rax
-    rep stosb
+    rep stosq
     mov qword [rsp - 24], 1
     mov r15, qword [rsp - 24]
     mov r14, 107
@@ -171,10 +171,10 @@ main:
             exit_20_38_114_5_end:
         if_20_26_114_5_end:
     assert_114_5_end:
-    mov rcx, 32
+    mov rcx, 4
     lea rdi, [rsp - 56]
     xor rax, rax
-    rep stosb
+    rep stosq
     mov rcx, 4
     mov r15, 117
     test rcx, rcx
@@ -676,8 +676,8 @@ main:
     neg qword [rsp - 156]
     lea rdi, [rsp - 148]
     lea rsi, [rsp - 164]
-    mov rcx, 16
-    rep movsb
+    mov rcx, 2
+    rep movsq
     cmp_164_12:
     cmp qword [rsp - 148], -1
     jne bool_false_164_12
@@ -831,10 +831,10 @@ main:
             exit_20_38_175_5_end:
         if_20_26_175_5_end:
     assert_175_5_end:
-    mov rcx, 512
+    mov rcx, 64
     lea rdi, [rsp - 716]
     xor rax, rax
-    rep stosb
+    rep stosq
     lea r15, [rsp - 716]
     mov r14, 1
     mov r13, 178
@@ -1049,10 +1049,10 @@ main:
             exit_20_38_189_5_end:
         if_20_26_189_5_end:
     assert_189_5_end:
-    mov rcx, 128
+    mov rcx, 16
     lea rdi, [rsp - 844]
     xor rax, rax
-    rep stosb
+    rep stosq
     mov rdx, hello.len
     mov rsi, hello
     print_196_5:

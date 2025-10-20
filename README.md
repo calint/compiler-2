@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    40           1237            693           5888
+C/C++ Header                    40           1239            695           5900
 C++                              1             78             84            546
 -------------------------------------------------------------------------------
-SUM:                            41           1315            777           6434
+SUM:                            41           1317            779           6446
 -------------------------------------------------------------------------------
 ```
 
@@ -300,10 +300,10 @@ global _start
 _start:
 mov rsp,stk.end
 main:
-    mov rcx, 16
+    mov rcx, 2
     lea rdi, [rsp - 16]
     xor rax, rax
-    rep stosb
+    rep stosq
     mov qword [rsp - 24], 1
     mov r15, qword [rsp - 24]
     mov r14, 107
@@ -448,10 +448,10 @@ main:
             exit_20_38_114_5_end:
         if_20_26_114_5_end:
     assert_114_5_end:
-    mov rcx, 32
+    mov rcx, 4
     lea rdi, [rsp - 56]
     xor rax, rax
-    rep stosb
+    rep stosq
     mov rcx, 4
     mov r15, 117
     test rcx, rcx
@@ -953,8 +953,8 @@ main:
     neg qword [rsp - 156]
     lea rdi, [rsp - 148]
     lea rsi, [rsp - 164]
-    mov rcx, 16
-    rep movsb
+    mov rcx, 2
+    rep movsq
     cmp_164_12:
     cmp qword [rsp - 148], -1
     jne bool_false_164_12
@@ -1108,10 +1108,10 @@ main:
             exit_20_38_175_5_end:
         if_20_26_175_5_end:
     assert_175_5_end:
-    mov rcx, 512
+    mov rcx, 64
     lea rdi, [rsp - 716]
     xor rax, rax
-    rep stosb
+    rep stosq
     lea r15, [rsp - 716]
     mov r14, 1
     mov r13, 178
@@ -1326,10 +1326,10 @@ main:
             exit_20_38_189_5_end:
         if_20_26_189_5_end:
     assert_189_5_end:
-    mov rcx, 128
+    mov rcx, 16
     lea rdi, [rsp - 844]
     xor rax, rax
-    rep stosb
+    rep stosq
     mov rdx, hello.len
     mov rsi, hello
     print_196_5:
@@ -1526,10 +1526,10 @@ main:
 ;   [102:5] allocate named register 'rcx'
 ;   [102:5] allocate named register 'rdi'
 ;   [102:5] allocate named register 'rax'
-    mov rcx, 16
+    mov rcx, 2
     lea rdi, [rsp - 16]
     xor rax, rax
-    rep stosb
+    rep stosq
 ;   [102:5] free named register 'rax'
 ;   [102:5] free named register 'rdi'
 ;   [102:5] free named register 'rcx'
@@ -1881,10 +1881,10 @@ main:
 ;   [116:5] allocate named register 'rcx'
 ;   [116:5] allocate named register 'rdi'
 ;   [116:5] allocate named register 'rax'
-    mov rcx, 32
+    mov rcx, 4
     lea rdi, [rsp - 56]
     xor rax, rax
-    rep stosb
+    rep stosq
 ;   [116:5] free named register 'rax'
 ;   [116:5] free named register 'rdi'
 ;   [116:5] free named register 'rcx'
@@ -3091,8 +3091,8 @@ main:
     lea rdi, [rsp - 148]
 ;   [163:14] p1
     lea rsi, [rsp - 164]
-    mov rcx, 16
-    rep movsb
+    mov rcx, 2
+    rep movsq
 ;   [163:5] free named register 'rcx'
 ;   [163:5] free named register 'rdi'
 ;   [163:5] free named register 'rsi'
@@ -3451,10 +3451,10 @@ main:
 ;   [177:5] allocate named register 'rcx'
 ;   [177:5] allocate named register 'rdi'
 ;   [177:5] allocate named register 'rax'
-    mov rcx, 512
+    mov rcx, 64
     lea rdi, [rsp - 716]
     xor rax, rax
-    rep stosb
+    rep stosq
 ;   [177:5] free named register 'rax'
 ;   [177:5] free named register 'rdi'
 ;   [177:5] free named register 'rcx'
@@ -3932,10 +3932,10 @@ main:
 ;   [195:5] allocate named register 'rcx'
 ;   [195:5] allocate named register 'rdi'
 ;   [195:5] allocate named register 'rax'
-    mov rcx, 128
+    mov rcx, 16
     lea rdi, [rsp - 844]
     xor rax, rax
-    rep stosb
+    rep stosq
 ;   [195:5] free named register 'rax'
 ;   [195:5] free named register 'rdi'
 ;   [195:5] free named register 'rcx'

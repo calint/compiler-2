@@ -84,10 +84,19 @@ class stmt_assign_var final : public statement {
             const ident_info ii{
                 tc.make_ident_info(tok(), stmt_ident_.identifier())};
 
-            tc.asm_cmd(tok(), os, indent, "mov", "rcx",
-                       std::format("{}", ii.type_ptr->size()));
+            // try moving qwords
+            const size_t bytes_count{ii.type_ptr->size()};
+            const size_t qword_count{bytes_count / toc::size_qword};
+            const size_t rest_bytes_count{bytes_count -
+                                          (qword_count * toc::size_qword)};
+            const size_t reps{rest_bytes_count == 0 ? qword_count
+                                                    : bytes_count};
+            const char rep_size{rest_bytes_count ? 'b' : 'q'};
 
-            toc::asm_rep_movs(tok(), os, indent, 'b');
+            tc.asm_cmd(tok(), os, indent, "mov", "rcx",
+                       std::format("{}", reps));
+
+            toc::asm_rep_movs(tok(), os, indent, rep_size);
 
             for (const std::string& reg :
                  allocated_registers | std::views::reverse) {

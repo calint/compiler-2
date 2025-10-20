@@ -74,10 +74,10 @@ main:
 ;   [102:5] allocate named register 'rcx'
 ;   [102:5] allocate named register 'rdi'
 ;   [102:5] allocate named register 'rax'
-    mov rcx, 16
+    mov rcx, 2
     lea rdi, [rsp - 16]
     xor rax, rax
-    rep stosb
+    rep stosq
 ;   [102:5] free named register 'rax'
 ;   [102:5] free named register 'rdi'
 ;   [102:5] free named register 'rcx'
@@ -429,10 +429,10 @@ main:
 ;   [116:5] allocate named register 'rcx'
 ;   [116:5] allocate named register 'rdi'
 ;   [116:5] allocate named register 'rax'
-    mov rcx, 32
+    mov rcx, 4
     lea rdi, [rsp - 56]
     xor rax, rax
-    rep stosb
+    rep stosq
 ;   [116:5] free named register 'rax'
 ;   [116:5] free named register 'rdi'
 ;   [116:5] free named register 'rcx'
@@ -1639,8 +1639,8 @@ main:
     lea rdi, [rsp - 148]
 ;   [163:14] p1
     lea rsi, [rsp - 164]
-    mov rcx, 16
-    rep movsb
+    mov rcx, 2
+    rep movsq
 ;   [163:5] free named register 'rcx'
 ;   [163:5] free named register 'rdi'
 ;   [163:5] free named register 'rsi'
@@ -1999,10 +1999,10 @@ main:
 ;   [177:5] allocate named register 'rcx'
 ;   [177:5] allocate named register 'rdi'
 ;   [177:5] allocate named register 'rax'
-    mov rcx, 512
+    mov rcx, 64
     lea rdi, [rsp - 716]
     xor rax, rax
-    rep stosb
+    rep stosq
 ;   [177:5] free named register 'rax'
 ;   [177:5] free named register 'rdi'
 ;   [177:5] free named register 'rcx'
@@ -2480,10 +2480,10 @@ main:
 ;   [195:5] allocate named register 'rcx'
 ;   [195:5] allocate named register 'rdi'
 ;   [195:5] allocate named register 'rax'
-    mov rcx, 128
+    mov rcx, 16
     lea rdi, [rsp - 844]
     xor rax, rax
-    rep stosb
+    rep stosq
 ;   [195:5] free named register 'rax'
 ;   [195:5] free named register 'rdi'
 ;   [195:5] free named register 'rcx'
