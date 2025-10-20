@@ -1,29 +1,7 @@
-[ ] optimize rep stosX, movX and repe cmpsX to q, d, w if possible
-    => if more than X number of required mov use `rep`
-    => heuristics about when to use "rep stosX" 
-       => start with stosq, then mov dword, word and byte
-       => works when size is known at compile-time
-       [x] if less than 32 bytes do moves, else try rep stosq and
-           if not evenly divisible by 8 rep stosb
-    => affected: stmt_def_var, stmt_assign_var, stmt_arrays_equal
-    => see vmovntdq for 32 B aligned data
-       see AVX-512
-    [x] if evenly divisible of 8 then rep stoq
-        [ ] for non evenly divisible do the mov dword, word, byte
 [ ] initializer for types that contain array does not work as intended:
     var input_buffer : str = {0, 0} where second element is an array
-[x] array size 0 or negative should not be allowed
-[x] initializer of variable optional and if omitted zero
 [ ] review "//?" comments
 [ ] review "todo" comments
-[x] the last issue when using cppcoreguidelines-avoid-const-or-ref-data-members
-    at linting are the const refs
-    => pointers instead of refs in structs and classes, better? unless
-       shared_ptr still dangling problem
-[x] code after "return", "break" and "continue" is dead code. generate error
-    because UB check can be fooled by code after "break" or "continue"
-    => ignore statements after "end-of-code-path" statement
-       => virtual statement::is_code_after_this_unreachable()
 [ ] array_copy does not handle when destination overlaps source
 [ ] lea_path not be necessary since only most recent lea relevant
     => also index of where in elems  path lea was found
@@ -102,6 +80,29 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] the last issue when using cppcoreguidelines-avoid-const-or-ref-data-members
+    at linting are the const refs
+    => pointers instead of refs in structs and classes, better? unless
+       shared_ptr still dangling problem
+[x] code after "return", "break" and "continue" is dead code. generate error
+    because UB check can be fooled by code after "break" or "continue"
+    => ignore statements after "end-of-code-path" statement
+       => virtual statement::is_code_after_this_unreachable()
+[x] array size 0 or negative should not be allowed
+[x] initializer of variable optional and if omitted zero
+[x] optimize rep stosX, movX and repe cmpsX to q, d, w if possible
+    => if more than X number of required mov use `rep`
+    => heuristics about when to use "rep stosX" 
+       => start with stosq, then mov dword, word and byte
+       => works when size is known at compile-time
+       [x] if less than 32 bytes do moves, else try rep stosq and
+           if not evenly divisible by 8 rep stosb
+    => affected: stmt_def_var, stmt_assign_var, stmt_arrays_equal
+       => stmt_arrays_equal size not known at compile-time
+    => see vmovntdq for 32 B aligned data
+       see AVX-512
+    [x] if evenly divisible of 8 then rep stoq
+        [x] for non evenly divisible do the mov dword, word, byte
 [x] neovim: tree-sitter and color scheme
     => tree-sitter color scheme done
 [x] review function signatures
