@@ -373,7 +373,7 @@ inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
         tok(), tc, os, indent, stmt_ident_->elems(), allocated_registers, "",
         {})};
 
-    tc.asm_cmd(tok(), os, indent, "lea", dst, std::format("[{}]", offset));
+    toc::asm_lea(tok(), os, indent, dst, offset);
 
     for (const std::string& reg : allocated_registers | std::views::reverse) {
         tc.free_scratch_register(tok(), os, indent, reg);
