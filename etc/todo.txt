@@ -1,3 +1,4 @@
+[ ] initializer of variable optional and if omitted zero
 [ ] review "//?" comments
 [ ] review "todo" comments
 [x] the last issue when using cppcoreguidelines-avoid-const-or-ref-data-members
