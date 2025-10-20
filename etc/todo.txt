@@ -1,6 +1,6 @@
-[ ] expr_type_value has 2 responsibilities: when it is "= { ... }" or
-    "= obj.x". should be split in: expr_type_value_assignment and
-    expr_type_value_initializer
+[ ] expr_type_value has 3 responsibilities: when it is "= { ... }" or
+    "= obj.x" or reference to an array. should be split. start with:
+    expr_type_value_assign and expr_type_value_initialize
 [ ] initializer for types that contain array does not work as intended:
     var input_buffer : str = {0, 0} where second element is an array
 [ ] review "//?" comments
