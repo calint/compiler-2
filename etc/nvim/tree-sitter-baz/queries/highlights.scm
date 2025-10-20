@@ -44,7 +44,7 @@
 ; function parameters type
 (parameter
   name: (identifier) @variable.parameter
-  (identifier) @type)
+  type: (identifier)? @type)
 
 ; Variable declaration
 (variable_declaration

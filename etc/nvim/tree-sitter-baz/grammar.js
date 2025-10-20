@@ -105,7 +105,9 @@ module.exports = grammar({
     // identifier : type_name (type is optional)
     parameter: $ => seq(
       field('name', $.identifier),
-      optional(seq(':', $._parameter_type)),
+      optional(
+        seq(':', field('type', $._parameter_type))
+      ),
     ),
 
     member_field_list: $ => sep1($.member_field, ','),
