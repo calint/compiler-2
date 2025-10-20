@@ -74,7 +74,7 @@ class statement {
     }
 
     // used in UB check
-    // returns true if `var` is set at this statment
+    // returns true if `var` is set at this statement
     [[nodiscard]] virtual auto
     is_var_set([[maybe_unused]] const std::string_view var) const -> bool {
         return false;
