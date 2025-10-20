@@ -152,10 +152,6 @@ class expr_any final : public statement {
         //       an argument in call
     }
 
-    [[nodiscard]] auto is_expr_ops_list() const -> bool {
-        return var_.index() == 0;
-    }
-
     [[nodiscard]] auto is_expr_type_value() const -> bool {
         return var_.index() == 2;
     }
@@ -182,9 +178,5 @@ class expr_any final : public statement {
 
     [[nodiscard]] auto as_expr_type_value() const -> const expr_type_value& {
         return get<expr_type_value>(var_);
-    }
-
-    [[nodiscard]] auto as_expr_ops_list() const -> const expr_ops_list& {
-        return get<expr_ops_list>(var_);
     }
 };
