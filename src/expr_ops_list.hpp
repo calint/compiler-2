@@ -261,13 +261,6 @@ class expr_ops_list final : public expression {
         return uops_;
     }
 
-    [[nodiscard]] auto get_type() const -> const type& override {
-        assert(not exprs_.empty());
-        // return size of first element
-        //? todo.  find the size of the largest integral element
-        return exprs_.at(0)->get_type();
-    }
-
     [[nodiscard]] auto is_expression() const -> bool override {
         // if unary operators on the list then it will need to compile the
         // expression

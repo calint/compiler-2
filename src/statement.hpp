@@ -40,6 +40,8 @@ class statement {
 
     auto set_type(const type& tp) -> void { type_ = &tp; }
 
+    [[nodiscard]] auto get_type() const -> const type& { return *type_; }
+
     [[nodiscard]] virtual auto is_in_data_section() const -> bool {
         return false;
     }
@@ -52,10 +54,6 @@ class statement {
 
     [[nodiscard]] virtual auto get_unary_ops() const -> const unary_ops& {
         return uops_;
-    }
-
-    [[nodiscard]] virtual auto get_type() const -> const type& {
-        return *type_;
     }
 
     [[nodiscard]] virtual auto is_identifier() const -> bool { return false; }
