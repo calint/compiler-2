@@ -189,7 +189,6 @@ main:
     cmp r14, 2
 ;   [109:12] free scratch register 'r14'
     jne bool_false_109_12
-    jmp bool_true_109_12
     bool_true_109_12:
     mov r15, true
     jmp bool_end_109_12
@@ -205,7 +204,6 @@ main:
         cmp_20_29_109_5:
         test r15, r15
         jne if_20_26_109_5_end
-        jmp if_20_29_109_5_code
         if_20_29_109_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -262,7 +260,6 @@ main:
     cmp r14, 2
 ;   [110:12] free scratch register 'r14'
     jne bool_false_110_12
-    jmp bool_true_110_12
     bool_true_110_12:
     mov r15, true
     jmp bool_end_110_12
@@ -278,7 +275,6 @@ main:
         cmp_20_29_110_5:
         test r15, r15
         jne if_20_26_110_5_end
-        jmp if_20_29_110_5_code
         if_20_29_110_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -387,7 +383,6 @@ main:
     cmp r14, 2
 ;   [114:12] free scratch register 'r14'
     jne bool_false_114_12
-    jmp bool_true_114_12
     bool_true_114_12:
     mov r15, true
     jmp bool_end_114_12
@@ -403,7 +398,6 @@ main:
         cmp_20_29_114_5:
         test r15, r15
         jne if_20_26_114_5_end
-        jmp if_20_29_114_5_code
         if_20_29_114_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -540,7 +534,6 @@ main:
     test r14, r14
 ;   [118:12] free scratch register 'r14'
     je bool_false_118_12
-    jmp bool_true_118_12
     bool_true_118_12:
     mov r15, true
     jmp bool_end_118_12
@@ -556,7 +549,6 @@ main:
         cmp_20_29_118_5:
         test r15, r15
         jne if_20_26_118_5_end
-        jmp if_20_29_118_5_code
         if_20_29_118_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -664,7 +656,6 @@ main:
     test r14, r14
 ;   [122:12] free scratch register 'r14'
     jne bool_false_122_12
-    jmp bool_true_122_12
     bool_true_122_12:
     mov r15, true
     jmp bool_end_122_12
@@ -680,7 +671,6 @@ main:
         cmp_20_29_122_5:
         test r15, r15
         jne if_20_26_122_5_end
-        jmp if_20_29_122_5_code
         if_20_29_122_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -803,7 +793,6 @@ main:
     cmp r14, 2
 ;   [126:12] free scratch register 'r14'
     jne bool_false_126_12
-    jmp bool_true_126_12
     bool_true_126_12:
     mov r15, true
     jmp bool_end_126_12
@@ -819,7 +808,6 @@ main:
         cmp_20_29_126_5:
         test r15, r15
         jne if_20_26_126_5_end
-        jmp if_20_29_126_5_code
         if_20_29_126_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -904,7 +892,6 @@ main:
     cmp r14, 0xfe
 ;   [129:12] free scratch register 'r14'
     jne bool_false_129_12
-    jmp bool_true_129_12
     bool_true_129_12:
     mov r15, true
     jmp bool_end_129_12
@@ -920,7 +907,6 @@ main:
         cmp_20_29_129_5:
         test r15, r15
         jne if_20_26_129_5_end
-        jmp if_20_29_129_5_code
         if_20_29_129_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -984,7 +970,6 @@ main:
     cmp_133_12:
     cmp qword [rsp - 72], 2
     jne bool_false_133_12
-    jmp bool_true_133_12
     bool_true_133_12:
     mov r15, true
     jmp bool_end_133_12
@@ -1000,7 +985,6 @@ main:
         cmp_20_29_133_5:
         test r15, r15
         jne if_20_26_133_5_end
-        jmp if_20_29_133_5_code
         if_20_29_133_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1034,7 +1018,6 @@ main:
     cmp_134_12:
     cmp qword [rsp - 64], 0xb
     jne bool_false_134_12
-    jmp bool_true_134_12
     bool_true_134_12:
     mov r15, true
     jmp bool_end_134_12
@@ -1050,7 +1033,6 @@ main:
         cmp_20_29_134_5:
         test r15, r15
         jne if_20_26_134_5_end
-        jmp if_20_29_134_5_code
         if_20_29_134_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1093,7 +1075,6 @@ main:
         cmp_59_8_137_5:
         cmp qword [rsp - 80], 0
         jne if_59_5_137_5_end
-        jmp if_59_8_137_5_code
         if_59_8_137_5_code:
 ;           [59:17] return
             jmp bar_137_5_end
@@ -1112,7 +1093,6 @@ main:
     cmp_138_12:
     cmp qword [rsp - 80], 0
     jne bool_false_138_12
-    jmp bool_true_138_12
     bool_true_138_12:
     mov r15, true
     jmp bool_end_138_12
@@ -1128,7 +1108,6 @@ main:
         cmp_20_29_138_5:
         test r15, r15
         jne if_20_26_138_5_end
-        jmp if_20_29_138_5_code
         if_20_29_138_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1169,7 +1148,6 @@ main:
         cmp_59_8_141_5:
         cmp qword [rsp - 80], 0
         jne if_59_5_141_5_end
-        jmp if_59_8_141_5_code
         if_59_8_141_5_code:
 ;           [59:17] return
             jmp bar_141_5_end
@@ -1188,7 +1166,6 @@ main:
     cmp_142_12:
     cmp qword [rsp - 80], 0xff
     jne bool_false_142_12
-    jmp bool_true_142_12
     bool_true_142_12:
     mov r15, true
     jmp bool_end_142_12
@@ -1204,7 +1181,6 @@ main:
         cmp_20_29_142_5:
         test r15, r15
         jne if_20_26_142_5_end
-        jmp if_20_29_142_5_code
         if_20_29_142_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1267,7 +1243,6 @@ main:
     cmp_146_12:
     cmp qword [rsp - 96], 2
     jne bool_false_146_12
-    jmp bool_true_146_12
     bool_true_146_12:
     mov r15, true
     jmp bool_end_146_12
@@ -1283,7 +1258,6 @@ main:
         cmp_20_29_146_5:
         test r15, r15
         jne if_20_26_146_5_end
-        jmp if_20_29_146_5_code
         if_20_29_146_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1337,7 +1311,6 @@ main:
     cmp_149_12:
     cmp qword [rsp - 96], 2
     jne bool_false_149_12
-    jmp bool_true_149_12
     bool_true_149_12:
     mov r15, true
     jmp bool_end_149_12
@@ -1353,7 +1326,6 @@ main:
         cmp_20_29_149_5:
         test r15, r15
         jne if_20_26_149_5_end
-        jmp if_20_29_149_5_code
         if_20_29_149_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1415,7 +1387,6 @@ main:
     cmp_152_12:
     cmp qword [rsp - 112], 4
     jne bool_false_152_12
-    jmp bool_true_152_12
     bool_true_152_12:
     mov r15, true
     jmp bool_end_152_12
@@ -1431,7 +1402,6 @@ main:
         cmp_20_29_152_5:
         test r15, r15
         jne if_20_26_152_5_end
-        jmp if_20_29_152_5_code
         if_20_29_152_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1505,7 +1475,6 @@ main:
     cmp_158_12:
     cmp qword [rsp - 148], 10
     jne bool_false_158_12
-    jmp bool_true_158_12
     bool_true_158_12:
     mov r15, true
     jmp bool_end_158_12
@@ -1521,7 +1490,6 @@ main:
         cmp_20_29_158_5:
         test r15, r15
         jne if_20_26_158_5_end
-        jmp if_20_29_158_5_code
         if_20_29_158_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1555,7 +1523,6 @@ main:
     cmp_159_12:
     cmp qword [rsp - 140], 2
     jne bool_false_159_12
-    jmp bool_true_159_12
     bool_true_159_12:
     mov r15, true
     jmp bool_end_159_12
@@ -1571,7 +1538,6 @@ main:
         cmp_20_29_159_5:
         test r15, r15
         jne if_20_26_159_5_end
-        jmp if_20_29_159_5_code
         if_20_29_159_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1605,7 +1571,6 @@ main:
     cmp_160_12:
     cmp dword [rsp - 132], 0xff0000
     jne bool_false_160_12
-    jmp bool_true_160_12
     bool_true_160_12:
     mov r15, true
     jmp bool_end_160_12
@@ -1621,7 +1586,6 @@ main:
         cmp_20_29_160_5:
         test r15, r15
         jne if_20_26_160_5_end
-        jmp if_20_29_160_5_code
         if_20_29_160_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1688,7 +1652,6 @@ main:
     cmp_164_12:
     cmp qword [rsp - 148], -1
     jne bool_false_164_12
-    jmp bool_true_164_12
     bool_true_164_12:
     mov r15, true
     jmp bool_end_164_12
@@ -1704,7 +1667,6 @@ main:
         cmp_20_29_164_5:
         test r15, r15
         jne if_20_26_164_5_end
-        jmp if_20_29_164_5_code
         if_20_29_164_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1738,7 +1700,6 @@ main:
     cmp_165_12:
     cmp qword [rsp - 140], -2
     jne bool_false_165_12
-    jmp bool_true_165_12
     bool_true_165_12:
     mov r15, true
     jmp bool_end_165_12
@@ -1754,7 +1715,6 @@ main:
         cmp_20_29_165_5:
         test r15, r15
         jne if_20_26_165_5_end
-        jmp if_20_29_165_5_code
         if_20_29_165_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1802,7 +1762,6 @@ main:
     cmp_168_12:
     cmp qword [rsp - 184], -1
     jne bool_false_168_12
-    jmp bool_true_168_12
     bool_true_168_12:
     mov r15, true
     jmp bool_end_168_12
@@ -1818,7 +1777,6 @@ main:
         cmp_20_29_168_5:
         test r15, r15
         jne if_20_26_168_5_end
-        jmp if_20_29_168_5_code
         if_20_29_168_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1852,7 +1810,6 @@ main:
     cmp_169_12:
     cmp qword [rsp - 176], -2
     jne bool_false_169_12
-    jmp bool_true_169_12
     bool_true_169_12:
     mov r15, true
     jmp bool_end_169_12
@@ -1868,7 +1825,6 @@ main:
         cmp_20_29_169_5:
         test r15, r15
         jne if_20_26_169_5_end
-        jmp if_20_29_169_5_code
         if_20_29_169_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1902,7 +1858,6 @@ main:
     cmp_170_12:
     cmp dword [rsp - 168], 0xff0000
     jne bool_false_170_12
-    jmp bool_true_170_12
     bool_true_170_12:
     mov r15, true
     jmp bool_end_170_12
@@ -1918,7 +1873,6 @@ main:
         cmp_20_29_170_5:
         test r15, r15
         jne if_20_26_170_5_end
-        jmp if_20_29_170_5_code
         if_20_29_170_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -1999,7 +1953,6 @@ main:
     cmp r14, 73
 ;   [175:12] free scratch register 'r14'
     jne bool_false_175_12
-    jmp bool_true_175_12
     bool_true_175_12:
     mov r15, true
     jmp bool_end_175_12
@@ -2015,7 +1968,6 @@ main:
         cmp_20_29_175_5:
         test r15, r15
         jne if_20_26_175_5_end
-        jmp if_20_29_175_5_code
         if_20_29_175_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -2154,7 +2106,6 @@ main:
     cmp r14, 0xffee
 ;   [179:12] free scratch register 'r14'
     jne bool_false_179_12
-    jmp bool_true_179_12
     bool_true_179_12:
     mov r15, true
     jmp bool_end_179_12
@@ -2170,7 +2121,6 @@ main:
         cmp_20_29_179_5:
         test r15, r15
         jne if_20_26_179_5_end
-        jmp if_20_29_179_5_code
         if_20_29_179_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -2339,7 +2289,6 @@ main:
     cmp r14, 0xffee
 ;   [188:12] free scratch register 'r14'
     jne bool_false_188_12
-    jmp bool_true_188_12
     bool_true_188_12:
     mov r15, true
     jmp bool_end_188_12
@@ -2355,7 +2304,6 @@ main:
         cmp_20_29_188_5:
         test r15, r15
         jne if_20_26_188_5_end
-        jmp if_20_29_188_5_code
         if_20_29_188_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -2486,7 +2434,6 @@ main:
     test r14, r14
 ;   [189:12] free scratch register 'r14'
     je bool_false_189_12
-    jmp bool_true_189_12
     bool_true_189_12:
     mov r15, true
     jmp bool_end_189_12
@@ -2502,7 +2449,6 @@ main:
         cmp_20_29_189_5:
         test r15, r15
         jne if_20_26_189_5_end
-        jmp if_20_29_189_5_code
         if_20_29_189_5_code:
 ;           [20:38] exit(1)
 ;           [20:43] allocate named register 'rdi'
@@ -2662,7 +2608,6 @@ main:
         cmp_200_12:
         cmp byte [rsp - 844], 0
         jne if_202_19
-        jmp if_200_12_code
         if_200_12_code:
 ;           [201:13] break
             jmp loop_197_5_end
@@ -2673,7 +2618,6 @@ main:
         cmp_202_19:
         cmp byte [rsp - 844], 4
         jg if_else_200_9
-        jmp if_202_19_code
         if_202_19_code:
 ;           [203:13] print(prompt2.len, prompt2)
 ;           [203:19] allocate named register 'rdx'

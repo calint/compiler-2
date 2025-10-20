@@ -15,6 +15,8 @@ fi
 BIN="../../baz"
 OPTS="--stack=65536 --checks=upper,lower,line"
 
+rm -f gen.s out err
+
 SEP="--------------------------------------------------------------------------------"
 echo $SEP
 echo "running: $BIN $OPTS"
@@ -27,7 +29,6 @@ export ASAN_SYMBOLIZE=1
 
 # Common: compile and assemble
 compile_and_build() {
-  rm -f error.log
   LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $OPTS 2>err >gen.s
   if [ $? -ne 0 ]; then
     echo "compiler failed. see 'err' and 'gen.s'" >&2
@@ -39,7 +40,6 @@ compile_and_build() {
 
 # Common: compile and assemble
 compile_expect_error() {
-  rm -f error.log
   set +e
   LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $OPTS 2>out
   set -e
