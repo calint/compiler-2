@@ -71,16 +71,9 @@ main:
 ;   [102:5] var arr : i32[4]
 ;   [102:9] arr: i32[4] @ dword [rsp - 16]
 ;   [102:9] clear 4 * 4 B = 16 B
-;   [102:5] allocate named register 'rcx'
-;   [102:5] allocate named register 'rdi'
-;   [102:5] allocate named register 'rax'
-    mov rcx, 2
-    lea rdi, [rsp - 16]
-    xor rax, rax
-    rep stosq
-;   [102:5] free named register 'rax'
-;   [102:5] free named register 'rdi'
-;   [102:5] free named register 'rcx'
+;   [102:5] size < 32 B, use mov
+    mov qword [rsp - 16], 0
+    mov qword [rsp - 8], 0
 ;   [103:5] # arrays are initialized to 0
 ;   [105:5] var ix = 1
 ;   [105:9] ix: i64 @ qword [rsp - 24]
@@ -426,16 +419,11 @@ main:
 ;   [116:5] var arr1 : i32[8]
 ;   [116:9] arr1: i32[8] @ dword [rsp - 56]
 ;   [116:9] clear 8 * 4 B = 32 B
-;   [116:5] allocate named register 'rcx'
-;   [116:5] allocate named register 'rdi'
-;   [116:5] allocate named register 'rax'
-    mov rcx, 4
-    lea rdi, [rsp - 56]
-    xor rax, rax
-    rep stosq
-;   [116:5] free named register 'rax'
-;   [116:5] free named register 'rdi'
-;   [116:5] free named register 'rcx'
+;   [116:5] size < 32 B, use mov
+    mov qword [rsp - 56], 0
+    mov qword [rsp - 48], 0
+    mov qword [rsp - 40], 0
+    mov qword [rsp - 32], 0
 ;   [117:5] array_copy(arr, arr1, 4)
 ;   [117:5] allocate named register 'rsi'
 ;   [117:5] allocate named register 'rdi'
@@ -1901,16 +1889,10 @@ main:
 ;   [172:5] var o3 : object[1]
 ;   [172:9] o3: object[1] @ qword [rsp - 204]
 ;   [172:9] clear 1 * 20 B = 20 B
-;   [172:5] allocate named register 'rcx'
-;   [172:5] allocate named register 'rdi'
-;   [172:5] allocate named register 'rax'
-    mov rcx, 20
-    lea rdi, [rsp - 204]
-    xor rax, rax
-    rep stosb
-;   [172:5] free named register 'rax'
-;   [172:5] free named register 'rdi'
-;   [172:5] free named register 'rcx'
+;   [172:5] size < 32 B, use mov
+    mov qword [rsp - 204], 0
+    mov qword [rsp - 196], 0
+    mov dword [rsp - 188], 0
 ;   [173:5] # index 0 in an array can be accessed without array index
 ;   [174:5] o3.pos.y = 73
 ;   [174:16] 73

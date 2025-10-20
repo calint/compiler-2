@@ -23,10 +23,8 @@ global _start
 _start:
 mov rsp,stk.end
 main:
-    mov rcx, 2
-    lea rdi, [rsp - 16]
-    xor rax, rax
-    rep stosq
+    mov qword [rsp - 16], 0
+    mov qword [rsp - 8], 0
     mov qword [rsp - 24], 1
     mov r15, qword [rsp - 24]
     mov r14, 107
@@ -171,10 +169,10 @@ main:
             exit_20_38_114_5_end:
         if_20_26_114_5_end:
     assert_114_5_end:
-    mov rcx, 4
-    lea rdi, [rsp - 56]
-    xor rax, rax
-    rep stosq
+    mov qword [rsp - 56], 0
+    mov qword [rsp - 48], 0
+    mov qword [rsp - 40], 0
+    mov qword [rsp - 32], 0
     mov rcx, 4
     mov r15, 117
     test rcx, rcx
@@ -792,10 +790,9 @@ main:
             exit_20_38_170_5_end:
         if_20_26_170_5_end:
     assert_170_5_end:
-    mov rcx, 20
-    lea rdi, [rsp - 204]
-    xor rax, rax
-    rep stosb
+    mov qword [rsp - 204], 0
+    mov qword [rsp - 196], 0
+    mov dword [rsp - 188], 0
     mov qword [rsp - 196], 73
     cmp_175_12:
         lea r13, [rsp - 204]

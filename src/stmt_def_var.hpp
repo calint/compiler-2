@@ -23,6 +23,8 @@ class null_stream final : public std::ostream {
 };
 
 class stmt_def_var final : public statement {
+    static constexpr size_t threshold_for_rep_stos{32};
+
     token name_tk_;
     token type_tk_;
     token array_size_tk_;
@@ -162,28 +164,83 @@ class stmt_def_var final : public statement {
         std::println(os, "clear {} * {} B = {} B", instance_count,
                      dst_info.type_ptr->size(), bytes_count);
 
-        // try storing qwords
-        const size_t qword_count{bytes_count / toc::size_qword};
-        const size_t rest_bytes_count{bytes_count -
-                                      (qword_count * toc::size_qword)};
-        const size_t reps{rest_bytes_count == 0 ? qword_count : bytes_count};
-        const char rep_size{rest_bytes_count ? 'b' : 'q'};
+        if (bytes_count > threshold_for_rep_stos) {
+            // try storing qwords
+            const size_t qword_count{bytes_count / toc::size_qword};
+            const size_t rest_bytes_count{bytes_count -
+                                          (qword_count * toc::size_qword)};
+            const size_t reps{rest_bytes_count == 0 ? qword_count
+                                                    : bytes_count};
+            const char rep_size{rest_bytes_count ? 'b' : 'q'};
 
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rcx");
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rdi");
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rax");
+            tc.alloc_named_register_or_throw(tok(), os, indent, "rcx");
+            tc.alloc_named_register_or_throw(tok(), os, indent, "rdi");
+            tc.alloc_named_register_or_throw(tok(), os, indent, "rax");
 
-        tc.asm_cmd(tok(), os, indent, "mov", "rcx", std::to_string(reps));
-        toc::asm_lea(tok(), os, indent, "rdi",
-                     std::format("rsp - {}", -dst_info.stack_ix));
-        // note: -dst_info.stack_ix_rel_rsp for nicer source formatting; is
-        //       always negative
-        tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
-        toc::asm_rep_stos(name_tk_, os, indent, rep_size);
+            tc.asm_cmd(tok(), os, indent, "mov", "rcx", std::to_string(reps));
+            toc::asm_lea(tok(), os, indent, "rdi",
+                         std::format("rsp - {}", -dst_info.stack_ix));
+            // note: -dst_info.stack_ix_rel_rsp for nicer source formatting; is
+            //       always negative
+            tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
+            toc::asm_rep_stos(name_tk_, os, indent, rep_size);
 
-        tc.free_named_register(tok(), os, indent, "rax");
-        tc.free_named_register(tok(), os, indent, "rdi");
-        tc.free_named_register(tok(), os, indent, "rcx");
+            tc.free_named_register(tok(), os, indent, "rax");
+            tc.free_named_register(tok(), os, indent, "rdi");
+            tc.free_named_register(tok(), os, indent, "rcx");
+            return;
+        }
+
+        // mov less than threshold for rep stos
+
+        tc.comment_start(tok(), os, indent);
+        std::println(os, "size < 32 B, use mov");
+
+        size_t rest{bytes_count};
+        int32_t displacement{dst_info.stack_ix};
+        const size_t qword_movs{rest / toc::size_qword};
+        const std::string size_qword{
+            toc::get_size_specifier(tok(), toc::size_qword)};
+
+        for (size_t i{}; i < qword_movs; i++) {
+            tc.asm_cmd(tok(), os, indent, "mov",
+                       std::format("{} [rsp - {}]", size_qword, -displacement),
+                       "0");
+            displacement += toc::size_qword;
+            rest -= toc::size_qword;
+        }
+
+        // mov the reminder
+        if ((rest / toc::size_dword) != 0) {
+            tc.asm_cmd(
+                tok(), os, indent, "mov",
+                std::format("{} [rsp - {}]",
+                            toc::get_size_specifier(tok(), toc::size_dword),
+                            -displacement),
+                "0");
+            displacement += toc::size_dword;
+            rest -= toc::size_dword;
+        }
+
+        if ((rest / toc::size_word) != 0) {
+            tc.asm_cmd(
+                tok(), os, indent, "mov",
+                std::format("{} [rsp - {}]",
+                            toc::get_size_specifier(tok(), toc::size_word),
+                            -displacement),
+                "0");
+            displacement += toc::size_word;
+            rest -= toc::size_word;
+        }
+
+        if (rest) {
+            tc.asm_cmd(
+                tok(), os, indent, "mov",
+                std::format("{} [rsp - {}]",
+                            toc::get_size_specifier(tok(), toc::size_byte),
+                            -displacement),
+                "0");
+        }
     }
 
     auto assert_var_not_used(const std::string_view var) const

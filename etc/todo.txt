@@ -3,6 +3,8 @@
     => heuristics about when to use "rep stosX" 
        => start with stosq, then mov dword, word and byte
        => works when size is known at compile-time
+       [x] if less than 32 bytes do moves, else try rep stosq and
+           if not evenly divisible by 8 rep stosb
     => affected: stmt_def_var, stmt_assign_var, stmt_arrays_equal
     => see vmovntdq for 32 B aligned data
        see AVX-512
