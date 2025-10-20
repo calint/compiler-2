@@ -6,6 +6,7 @@
 
 #include "decouple.hpp"
 #include "statement.hpp"
+#include "toc.hpp"
 
 class stmt_identifier;
 
@@ -41,7 +42,7 @@ class expr_type_value final : public statement {
             return;
         }
 
-        expr_type_value::compile_recursive(*this, tc, os, indent, tok().text(),
+        expr_type_value::compile_recursive(*this, tc, os, indent, identifier(),
                                            dst, get_type());
     }
 
@@ -56,6 +57,10 @@ class expr_type_value final : public statement {
         // todo explain this
         return not tok().is_text("");
     }
+
+    auto compile_assign(toc& tc, std::ostream& os, size_t indent,
+                        const type& dst_type, nasm_operand& nasmop) const
+        -> void;
 
     auto assert_var_not_used(std::string_view var) const -> void override;
 

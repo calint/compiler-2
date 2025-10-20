@@ -937,15 +937,7 @@ main:
 ;   [131:5] var p : point = {0, 0}
 ;   [131:9] p: point (16 B @ qword [rsp - 72])
 ;   [131:9] p ={0, 0}
-;   [131:21] {0, 0}
-;   [131:21] {0, 0}
-;   [131:22] 0
-;   [131:22] 0
-;   [131:22] 0
     mov qword [rsp - 72], 0
-;   [131:25] 0
-;   [131:25] 0
-;   [131:25] 0
     mov qword [rsp - 64], 0
 ;   [132:5] foo(p)
 ;   [51:6] foo(pt : point) 
@@ -1370,30 +1362,26 @@ main:
 ;   [151:5] var p0 : point = {baz(2), 0}
 ;   [151:9] p0: point (16 B @ qword [rsp - 112])
 ;   [151:9] p0 ={baz(2), 0}
-;   [151:22] {baz(2), 0}
-;   [151:22] {baz(2), 0}
 ;   [151:23] baz(2)
-;   [151:23] allocate scratch register -> r15
 ;   [151:23] baz(2)
-;   [151:23] r15 = baz(2)
+;   [151:23] qword [rsp - 112] = baz(2)
 ;   [151:23] baz(2)
 ;   [69:6] baz(arg) : i64 res 
     baz_151_23:
-;       [151:23] alias res -> r15  (lea: , len: 0)
+;       [151:23] alias res -> qword [rsp - 112]  (lea: , len: 0)
 ;       [151:23] alias arg -> 2  (lea: , len: 0)
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg
-        mov r15, 2
+        mov qword [rsp - 112], 2
 ;       [70:17] res * 2
+;       [70:17] allocate scratch register -> r15
+        mov r15, qword [rsp - 112]
         imul r15, 2
+        mov qword [rsp - 112], r15
+;       [70:17] free scratch register 'r15'
     baz_151_23_end:
-    mov qword [rsp - 112], r15
-;   [151:23] free scratch register 'r15'
-;   [151:31] 0
-;   [151:31] 0
-;   [151:31] 0
     mov qword [rsp - 104], 0
 ;   [152:5] assert(p0.x == 4)
 ;   [152:12] allocate scratch register -> r15
@@ -1462,28 +1450,23 @@ main:
 ;   [157:5] var o1 : object = {{x * 10, y}, 0xff0000}
 ;   [157:9] o1: object (20 B @ qword [rsp - 148])
 ;   [157:9] o1 ={{x * 10, y}, 0xff0000}
-;   [157:23] {{x * 10, y}, 0xff0000}
-;   [157:23] {{x * 10, y}, 0xff0000}
-;       [157:24] {x * 10, y}
-;       [157:25] x * 10
-;       [157:25] allocate scratch register -> r15
-;       [157:25] x * 10
-;       [157:25] x
-        mov r15, qword [rsp - 120]
-;       [157:29] r15 * 10
-        imul r15, 10
-        mov qword [rsp - 148], r15
-;       [157:25] free scratch register 'r15'
-;       [157:33] y
-;       [157:33] y
-;       [157:33] y
-;       [157:33] allocate scratch register -> r15
-        mov r15, qword [rsp - 128]
-        mov qword [rsp - 140], r15
-;       [157:33] free scratch register 'r15'
-;   [157:37] 0xff0000
-;   [157:37] 0xff0000
-;   [157:37] 0xff0000
+;   [157:25] x * 10
+;   [157:25] x * 10
+;   [157:25] x
+;   [157:25] allocate scratch register -> r15
+    mov r15, qword [rsp - 120]
+    mov qword [rsp - 148], r15
+;   [157:25] free scratch register 'r15'
+;   [157:29] qword [rsp - 148] * 10
+;   [157:29] allocate scratch register -> r15
+    mov r15, qword [rsp - 148]
+    imul r15, 10
+    mov qword [rsp - 148], r15
+;   [157:29] free scratch register 'r15'
+;   [157:24] allocate scratch register -> r15
+    mov r15, qword [rsp - 128]
+    mov qword [rsp - 140], r15
+;   [157:24] free scratch register 'r15'
     mov dword [rsp - 132], 0xff0000
 ;   [158:5] assert(o1.pos.x == 10)
 ;   [158:12] allocate scratch register -> r15
@@ -1638,23 +1621,15 @@ main:
 ;   [162:5] var p1 : point = {-x, -y}
 ;   [162:9] p1: point (16 B @ qword [rsp - 164])
 ;   [162:9] p1 ={-x, -y}
-;   [162:22] {-x, -y}
-;   [162:22] {-x, -y}
-;   [162:23] -x
-;   [162:23] -x
-;   [162:24] -x
-;   [162:24] allocate scratch register -> r15
+;   [162:22] allocate scratch register -> r15
     mov r15, qword [rsp - 120]
     mov qword [rsp - 164], r15
-;   [162:24] free scratch register 'r15'
+;   [162:22] free scratch register 'r15'
     neg qword [rsp - 164]
-;   [162:27] -y
-;   [162:27] -y
-;   [162:28] -y
-;   [162:28] allocate scratch register -> r15
+;   [162:22] allocate scratch register -> r15
     mov r15, qword [rsp - 128]
     mov qword [rsp - 156], r15
-;   [162:28] free scratch register 'r15'
+;   [162:22] free scratch register 'r15'
     neg qword [rsp - 156]
 ;   [163:5] o1.pos = p1
 ;   [163:5] allocate named register 'rsi'

@@ -119,7 +119,7 @@ class stmt_assign_var final : public statement {
         // }
 
         // find the first element from top that has a "lea" and get accessor
-        // relative to that "lea"
+        // relative to that
         size_t i{dst_info.elem_path.size()};
         std::string lea;
         while (i) {
@@ -130,57 +130,70 @@ class stmt_assign_var final : public statement {
             }
         }
 
-        std::string dst_accessor{dst_info.id};
-        if (not lea.empty()) {
+        if (dst_info.type_ptr->is_built_in()) {
+            std::string dst_accessor{dst_info.id};
+            if (not lea.empty()) {
+                const std::string_view size_specifier{
+                    toc::get_size_specifier(tok(), dst_info.type_ptr->size())};
+
+                const size_t offset{dst_info.type_path[i]->field_offset(
+                    tok(), std::span{dst_info.elem_path}.subspan(i))};
+
+                if (offset != 0) {
+                    nasm_operand operand{lea};
+                    operand.displacement += static_cast<int>(offset);
+                    dst_accessor = std::format("{} [{}]", size_specifier,
+                                               operand.to_string());
+                } else {
+                    dst_accessor = std::format("{} [{}]", size_specifier,
+                                               dst_info.lea_path[i]);
+                }
+            }
+
+            // does the identifier contain array indexing?
+            if (not stmt_ident_.is_expression()) {
+                // no, compile to 'dst_info'
+                expr_.compile(tc, os, indent, dst_accessor);
+                return;
+            }
+
+            // identifier contains array indexing
+            // calculate effective address to the built-in type
+
+            std::vector<std::string> allocated_registers;
+
+            const std::string effective_address =
+                stmt_identifier::compile_effective_address(
+                    tok(), tc, os, indent, stmt_ident_.elems(),
+                    allocated_registers, "", dst_info.lea_path);
+
             const std::string_view size_specifier{
                 toc::get_size_specifier(tok(), dst_info.type_ptr->size())};
 
-            const size_t offset{dst_info.type_path[i]->field_offset(
-                tok(), std::span{dst_info.elem_path}.subspan(i))};
+            expr_.compile(
+                tc, os, indent,
+                std::format("{} [{}]", size_specifier, effective_address));
 
-            if (offset != 0) {
-                nasm_operand operand{lea};
-                operand.displacement += static_cast<int>(offset);
-                dst_accessor =
-                    std::format("{} [{}]", size_specifier, operand.to_string());
-            } else {
-                dst_accessor = std::format("{} [{}]", size_specifier,
-                                           dst_info.lea_path[i]);
+            for (const std::string& reg :
+                 allocated_registers | std::views::reverse) {
+                tc.free_scratch_register(tok(), os, indent, reg);
             }
-        }
-
-        // does the identifier contain array indexing?
-        if (not stmt_ident_.is_expression()) {
-            // no, compile to 'dst_info'
-            expr_.compile(tc, os, indent, dst_accessor);
             return;
         }
 
-        // identifier contains array indexing
-        // calculate effective address to the built-in type
-
-        std::vector<std::string> allocated_registers;
-
-        const std::string effective_address =
-            stmt_identifier::compile_effective_address(
-                tok(), tc, os, indent, stmt_ident_.elems(), allocated_registers,
-                "", dst_info.lea_path);
-
-        const std::string_view size_specifier{
-            toc::get_size_specifier(tok(), dst_info.type_ptr->size())};
-
-        expr_.compile(
-            tc, os, indent,
-            std::format("{} [{}]", size_specifier, effective_address));
-
-        for (const std::string& reg :
-             allocated_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), os, indent, reg);
-        }
-        //      return;
-
         // not-builtin type
-        //        std::unreachable();
+
+        if (expr_.is_expr_type_value()) {
+            nasm_operand dst_nasmop;
+            if (lea.empty()) {
+                dst_nasmop =
+                    toc::get_nasm_operand_from_id_nasm(dst_info.id_nasm);
+            } else {
+                dst_nasmop = nasm_operand{lea};
+            }
+            expr_.as_expr_type_value().compile_assign(
+                tc, os, indent, *dst_info.type_ptr, dst_nasmop);
+        }
     }
 
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }

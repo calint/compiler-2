@@ -183,4 +183,8 @@ class expr_any final : public statement {
     [[nodiscard]] auto as_expr_type_value() const -> const expr_type_value& {
         return get<expr_type_value>(var_);
     }
+
+    [[nodiscard]] auto as_expr_ops_list() const -> const expr_ops_list& {
+        return get<expr_ops_list>(var_);
+    }
 };

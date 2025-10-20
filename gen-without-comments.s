@@ -593,10 +593,11 @@ main:
         if_20_26_149_5_end:
     assert_149_5_end:
     baz_151_23:
-        mov r15, 2
+        mov qword [rsp - 112], 2
+        mov r15, qword [rsp - 112]
         imul r15, 2
+        mov qword [rsp - 112], r15
     baz_151_23_end:
-    mov qword [rsp - 112], r15
     mov qword [rsp - 104], 0
     cmp_152_12:
     cmp qword [rsp - 112], 4
@@ -624,11 +625,13 @@ main:
     assert_152_5_end:
     mov qword [rsp - 120], 1
     mov qword [rsp - 128], 2
-        mov r15, qword [rsp - 120]
-        imul r15, 10
-        mov qword [rsp - 148], r15
-        mov r15, qword [rsp - 128]
-        mov qword [rsp - 140], r15
+    mov r15, qword [rsp - 120]
+    mov qword [rsp - 148], r15
+    mov r15, qword [rsp - 148]
+    imul r15, 10
+    mov qword [rsp - 148], r15
+    mov r15, qword [rsp - 128]
+    mov qword [rsp - 140], r15
     mov dword [rsp - 132], 0xff0000
     cmp_158_12:
     cmp qword [rsp - 148], 10

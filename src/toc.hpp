@@ -1101,9 +1101,9 @@ class toc final {
         return make_ident_info_or_throw(src_loc_tk, ident);
     }
 
-    auto memcpy(const token& src_loc_tk, std::ostream& os, const size_t indnt,
-                const std::string_view src, std::string_view dst,
-                const size_t bytes_count) -> void {
+    auto rep_movs(const token& src_loc_tk, std::ostream& os, const size_t indnt,
+                  const std::string_view src, std::string_view dst,
+                  const size_t bytes_count) -> void {
 
         // ; Copy RCX bytes from RSI to RDI
         // mov rsi, source_addr    ; source pointer
@@ -1562,6 +1562,20 @@ class toc final {
                                  "unexpected code path stmt_assign_var:1"};
     }
 
+    static auto get_nasm_operand_from_id_nasm(const std::string& operand)
+        -> nasm_operand {
+
+        std::optional<std::string> between_brackets{
+            get_text_between_brackets(operand)};
+
+        if (not between_brackets) {
+            throw panic_exception{
+                std::format("could not decode id nasm {}", operand)};
+        }
+
+        return nasm_operand{*between_brackets};
+    }
+
     static auto get_size_specifier(const token& tk, const size_t size)
         -> std::string_view {
 
@@ -1666,6 +1680,7 @@ class toc final {
 
         return std::nullopt;
     }
+
 #pragma clang diagnostic pop
 
   private:

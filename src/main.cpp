@@ -1,5 +1,6 @@
 // review: 2025-09-29
 
+#include <cstdint>
 #include <cstring>
 #include <format>
 #include <fstream>
@@ -361,6 +362,69 @@ inline void expr_type_value::source_to(std::ostream& os) const {
     }
     std::print(os, "}}");
     ws1_.source_to(os);
+}
+
+auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
+                                     const type& dst_type,
+                                     nasm_operand& dst_nasmop) const -> void {
+
+    size_t i{};
+    for (const type_field& fld : dst_type.fields()) {
+        if (fld.tp->is_built_in()) {
+            const expr_any& expr{*exprs_[i]};
+            const std::string dst{std::format(
+                "{} [{}]", toc::get_size_specifier(tok(), fld.tp->size()),
+                dst_nasmop.to_string())};
+
+            if (expr.is_expression() or
+                (expr.is_identifier() and tc.make_ident_info(expr).has_lea())) {
+
+                expr.compile(tc, os, indent, dst);
+
+            } else {
+                const ident_info src_info{tc.make_ident_info(expr)};
+                if (src_info.is_const()) {
+                    tc.asm_cmd(tok(), os, indent, "mov", dst,
+                               std::format("{}{}",
+                                           expr.get_unary_ops().to_string(),
+                                           src_info.id_nasm));
+                } else {
+                    tc.asm_cmd(tok(), os, indent, "mov", dst, src_info.id_nasm);
+                    expr.get_unary_ops().compile(tc, os, indent, dst);
+                }
+            }
+            dst_nasmop.displacement += static_cast<int32_t>(
+                fld.is_array ? fld.array_size * fld.tp->size()
+                             : fld.tp->size());
+            i++;
+            continue;
+        }
+
+        // expression is `expr_type_value`
+        const expr_type_value& expr{exprs_[i]->as_expr_type_value()};
+
+        if (expr.is_identifier()) {
+            std::string src_nasm;
+            const ident_info src_info{
+                tc.make_ident_info(expr.tok(), expr.identifier())};
+            std::vector<std::string> allocated_registers;
+            if (expr.is_expression() or tc.make_ident_info(expr).has_lea()) {
+                src_nasm = expr.compile_lea(expr.tok(), tc, os, indent,
+                                            allocated_registers, "",
+                                            src_info.lea_path);
+            } else {
+                src_nasm = toc::get_nasm_operand_from_id_nasm(src_info.id_nasm)
+                               .to_string();
+            }
+            tc.rep_movs(expr.tok(), os, indent, src_nasm,
+                        dst_nasmop.to_string(), fld.tp->size());
+            dst_nasmop.displacement += static_cast<int32_t>(fld.tp->size());
+            i++;
+            continue;
+        }
+        expr.compile_assign(tc, os, indent, *fld.tp, dst_nasmop);
+        i++;
+    }
 }
 
 // declared in 'expr_type_value.hpp'
