@@ -1,0 +1,10 @@
+func foo(i) : i64 res {
+    loop {
+        break
+        res = i * 2
+    }
+}
+
+func main() {
+    var x = foo(2)
+}

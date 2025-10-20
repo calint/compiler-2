@@ -1,0 +1,8 @@
+func foo(i) : i64 res {
+    return
+    res = i * 2
+}
+
+func main() {
+    var x = foo(2)
+}

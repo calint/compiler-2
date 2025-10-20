@@ -1,0 +1,7 @@
+func foo(i) {
+
+}
+
+func main() {
+    var x = foo(x)
+}
