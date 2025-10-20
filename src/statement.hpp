@@ -39,6 +39,10 @@ class statement {
         token_.source_to(os);
     }
 
+    [[nodiscard]] auto tok() const -> const token& { return token_; }
+
+    auto set_type(const type& tp) -> void { type_ = &tp; }
+
     [[nodiscard]] virtual auto is_in_data_section() const -> bool {
         return false;
     }
@@ -57,19 +61,6 @@ class statement {
         return *type_;
     }
 
-    [[nodiscard]] virtual auto
-    is_var_set([[maybe_unused]] const std::string_view var) const -> bool {
-        return false;
-    }
-
-    virtual auto assert_var_not_used(const std::string_view var) const -> void {
-        if (identifier() == var) {
-            throw compiler_exception{
-                token_, std::format("use of uninitialized variable '{}'",
-                                    identifier())};
-        }
-    }
-
     [[nodiscard]] virtual auto is_identifier() const -> bool { return false; }
 
     [[nodiscard]] virtual auto compile_lea(
@@ -82,15 +73,29 @@ class statement {
         return "";
     }
 
-    // returns true if code after statement in block is considered "dead code"
-    // applies to: `return`, `break`, `continue` and is used in UB check
-    [[nodiscard]] virtual auto is_code_after_this_unreachable() const -> bool {
+    // used in UB check
+    // returns true if `var` is set at this statment
+    [[nodiscard]] virtual auto
+    is_var_set([[maybe_unused]] const std::string_view var) const -> bool {
         return false;
     }
 
-    [[nodiscard]] auto tok() const -> const token& { return token_; }
+    // used in UB check
+    // throws if `var` is used in this statement
+    virtual auto assert_var_not_used(const std::string_view var) const -> void {
+        if (identifier() == var) {
+            throw compiler_exception{
+                token_, std::format("use of uninitialized variable '{}'",
+                                    identifier())};
+        }
+    }
 
-    auto set_type(const type& tp) -> void { type_ = &tp; }
+    // used in UB check
+    // returns true if code after statement in block is considered "dead code"
+    // applies to: `return`, `break`, `continue`
+    [[nodiscard]] virtual auto is_code_after_this_unreachable() const -> bool {
+        return false;
+    }
 
   private:
     static auto validate_identifier_name(const token& tk) -> void {
