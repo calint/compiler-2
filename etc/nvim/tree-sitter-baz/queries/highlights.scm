@@ -46,10 +46,11 @@
   name: (identifier) @variable.parameter
   (identifier) @type)
 
-; Variable declaration types
+; Variable declaration
 (variable_declaration
   destination: (identifier) @variable
-  (identifier) @type)
+  type: (identifier)? @type
+  initializer: (_)? @initializer)
 
 ; Sized array types
 (sized_array_type (identifier) @type)
