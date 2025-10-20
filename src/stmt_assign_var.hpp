@@ -177,6 +177,10 @@ class stmt_assign_var final : public statement {
              allocated_registers | std::views::reverse) {
             tc.free_scratch_register(tok(), os, indent, reg);
         }
+        //      return;
+
+        // not-builtin type
+        //        std::unreachable();
     }
 
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
