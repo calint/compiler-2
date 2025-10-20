@@ -29,4 +29,8 @@ class stmt_continue final : public statement {
         // jump to it
         toc::asm_jmp(tok(), os, indent, loop_label);
     }
+
+    [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {
+        return true;
+    }
 };

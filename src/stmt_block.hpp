@@ -156,6 +156,9 @@ class stmt_block final : public statement {
             if (st->is_var_set(var)) {
                 return true;
             }
+            if (st->is_code_after_this_unreachable()) {
+                break;
+            }
         }
         return false;
     }

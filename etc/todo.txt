@@ -9,9 +9,10 @@
     at linting are the const refs
     => pointers instead of refs in structs and classes, better? unless
        shared_ptr still dangling problem
-[ ] code after "break" or "continue" is dead code. generate error because UB
-    check can be fooled by code after "break" or "continue"
+[x] code after "return", "break" and "continue" is dead code. generate error
+    because UB check can be fooled by code after "break" or "continue"
     => ignore statements after "end-of-code-path" statement
+       => virtual statement::is_code_after_this_unreachable()
 [ ] array_copy does not handle when destination overlaps source
 [ ] lea_path not be necessary since only most recent lea relevant
     => also index of where in elems  path lea was found

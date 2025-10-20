@@ -39,4 +39,8 @@ class stmt_return final : public statement {
         // jump to return labels
         toc::asm_jmp(tok(), os, indent, ret_lbl);
     }
+
+    [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {
+        return true;
+    }
 };

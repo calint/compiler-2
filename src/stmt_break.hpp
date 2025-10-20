@@ -29,4 +29,8 @@ class stmt_break final : public statement {
         // jump out of the loop
         toc::asm_jmp(tok(), os, indent, std::format("{}_end", loop_label));
     }
+
+    [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {
+        return true;
+    }
 };

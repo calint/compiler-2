@@ -65,8 +65,8 @@ class statement {
     virtual auto assert_var_not_used(const std::string_view var) const -> void {
         if (identifier() == var) {
             throw compiler_exception{
-                token_,
-                std::format("uninitialized variable '{}'", identifier())};
+                token_, std::format("use of uninitialized variable '{}'",
+                                    identifier())};
         }
     }
 
@@ -80,6 +80,12 @@ class statement {
         [[maybe_unused]] const std::span<const std::string> lea_path) const
         -> std::string {
         return "";
+    }
+
+    // returns true if code after statement in block is considered "dead code"
+    // applies to: `return`, `break`, `continue` and is used in UB check
+    [[nodiscard]] virtual auto is_code_after_this_unreachable() const -> bool {
+        return false;
     }
 
     [[nodiscard]] auto tok() const -> const token& { return token_; }
