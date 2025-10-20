@@ -41,7 +41,7 @@
 (parameter name: (identifier) @variable.parameter)
 (return_annotation return_name: (identifier) @variable.parameter)
 
-; function parameters type
+; Function parameters type
 (parameter
   name: (identifier) @variable.parameter
   type: (identifier)? @type)
@@ -50,7 +50,7 @@
 (variable_declaration
   destination: (identifier) @variable
   type: (identifier)? @type
-  initializer: (_)? @initializer)
+  initializer: (_)? @variable)
 
 ; Sized array types
 (sized_array_type (identifier) @type)
