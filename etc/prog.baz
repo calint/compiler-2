@@ -1,0 +1,73 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) {
+    if not expr exit(1)
+}
+
+type vector {x, y : i32, z : i16, w : i8}
+
+type position {x, y}
+
+type object { pos : vector, vel : vector, valid : bool }
+
+func foo(o1 : object, o2 : object) {
+    var tmp : object = o1
+    o1 = o2
+    o2 = tmp
+    o1 = {o2.pos, {1, 2, 3, 4}, true}
+    
+}
+
+func main(){
+    var x : i32 = 10
+    var v1 : vector = {x, 2 * x, 12, 13}
+    assert(v1.x == 10)
+    assert(v1.y == 20)
+    assert(v1.z == 12)
+    assert(v1.w == 13)
+
+    var v2 : vector = v1
+
+    var o1 : object = {{x + x, 2, 3, 4}, {5, 6, 7, 8}, true}
+    assert(o1.pos.x == 20)
+    assert(o1.pos.y == 2)
+    assert(o1.pos.z == 3)
+    assert(o1.pos.w == 4)
+    assert(o1.vel.x == 5)
+    assert(o1.vel.y == 6)
+    assert(o1.vel.z == 7)
+    assert(o1.vel.w == 8)
+    assert(o1.valid == true)
+
+    var p : vector = {-1, -2, -3, -4}
+    o1.pos = p
+    assert(o1.pos.x == -1)
+    assert(o1.pos.y == -2)
+    assert(o1.pos.z == -3)
+    assert(o1.pos.w == -4)
+
+    var p2 : vector = {-11, -22, -33, -44}
+    var o2 : object = {p, p2, x == 10}
+    assert(o2.pos.x == -1)
+    assert(o2.pos.y == -2)
+    assert(o2.pos.z == -3)
+    assert(o2.pos.w == -4)
+    assert(o2.vel.x == -11)
+    assert(o2.vel.y == -22)
+    assert(o2.vel.z == -33)
+    assert(o2.vel.w == -44)
+    assert(o2.valid == true)
+
+    var o3 : object = o2
+    assert(o3.pos.x == -1)
+    assert(o3.pos.y == -2)
+    assert(o3.pos.z == -3)
+    assert(o3.pos.w == -4)
+
+    var objs : object[2]
+    foo(objs[0], objs[1])
+}

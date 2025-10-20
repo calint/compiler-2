@@ -1101,6 +1101,39 @@ class toc final {
         return make_ident_info_or_throw(src_loc_tk, ident);
     }
 
+    auto memcpy(const token& src_loc_tk, std::ostream& os, const size_t indnt,
+                const std::string_view src, std::string_view dst,
+                const size_t bytes_count) -> void {
+
+        // ; Copy RCX bytes from RSI to RDI
+        // mov rsi, source_addr    ; source pointer
+        // mov rdi, dest_addr      ; destination pointer
+        // mov rcx, byte_count     ; number of bytes
+        // rep movsb               ; repeat: copy byte [RSI++] to [RDI++]
+
+        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rsi");
+        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
+        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
+
+        toc::asm_lea(src_loc_tk, os, indnt, "rsi", src);
+        toc::asm_lea(src_loc_tk, os, indnt, "rdi", dst);
+
+        // try moving qwords
+        const size_t qword_count{bytes_count / toc::size_qword};
+        const size_t rest_bytes_count{bytes_count -
+                                      (qword_count * toc::size_qword)};
+        const size_t reps{rest_bytes_count == 0 ? qword_count : bytes_count};
+        const char rep_size{rest_bytes_count ? 'b' : 'q'};
+
+        asm_cmd(src_loc_tk, os, indnt, "mov", "rcx", std::format("{}", reps));
+
+        toc::asm_rep_movs(src_loc_tk, os, indnt, rep_size);
+
+        free_named_register(src_loc_tk, os, indnt, "rcx");
+        free_named_register(src_loc_tk, os, indnt, "rdi");
+        free_named_register(src_loc_tk, os, indnt, "rsi");
+    }
+
     [[nodiscard]] auto regex_ws() const -> const std::regex& {
         return regex_ws_;
     }
