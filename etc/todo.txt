@@ -2,7 +2,7 @@
     var input_buffer : str = {0, 0} where second element is an array
 [x] array size 0 or negative should not be allowed
 [ ] initializer of variable optional and if omitted zero
-    [ ] heuristics about when rep stosb is advantageous
+[ ] heuristics about when rep stosb is advantageous
 [ ] review "//?" comments
 [ ] review "todo" comments
 [x] the last issue when using cppcoreguidelines-avoid-const-or-ref-data-members
