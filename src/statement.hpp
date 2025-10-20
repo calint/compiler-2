@@ -15,10 +15,7 @@ class statement {
 
   public:
     explicit statement(token tk, unary_ops uops = {})
-        : token_{tk}, uops_{std::move(uops)} {
-
-        validate_identifier_name(token_);
-    }
+        : token_{tk}, uops_{std::move(uops)} {}
 
     virtual ~statement() = default;
 
@@ -74,7 +71,7 @@ class statement {
     }
 
     // used in UB check
-    // returns true if `var` is set at this statement
+    // returns true if `var` is set in this statement
     [[nodiscard]] virtual auto
     is_var_set([[maybe_unused]] const std::string_view var) const -> bool {
         return false;
@@ -91,18 +88,9 @@ class statement {
     }
 
     // used in UB check
-    // returns true if code after statement in block is considered "dead code"
+    // returns true if code after this statement is considered "dead code"
     // applies to: `return`, `break`, `continue`
     [[nodiscard]] virtual auto is_code_after_this_unreachable() const -> bool {
         return false;
-    }
-
-  private:
-    static auto validate_identifier_name(const token& tk) -> void {
-        if (tk.text().ends_with(".")) {
-            throw compiler_exception{
-                tk,
-                std::format("unexpected '.' at the end of '{}'", tk.text())};
-        }
     }
 };
