@@ -1,3 +1,5 @@
+[ ] initializer for types that contain array does not work as intended:
+    var input_buffer : str = {0, 0} where second element is an array
 [ ] array size 0 or negative should not be allowed
 [ ] initializer of variable optional and if omitted zero
     [ ] heuristics about when rep stosb is advantageous
