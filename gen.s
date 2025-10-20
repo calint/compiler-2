@@ -70,7 +70,7 @@ mov rsp,stk.end
 main:
 ;   [102:5] var arr : i32[4]
 ;   [102:9] arr: i32[4] @ dword [rsp - 16]
-;   [102:9] clear array 4 * 4 B = 16 B
+;   [102:9] clear 4 * 4 B = 16 B
 ;   [102:5] allocate named register 'rdi'
 ;   [102:5] allocate named register 'rcx'
 ;   [102:5] allocate named register 'rax'
@@ -425,7 +425,7 @@ main:
     assert_114_5_end:
 ;   [116:5] var arr1 : i32[8]
 ;   [116:9] arr1: i32[8] @ dword [rsp - 56]
-;   [116:9] clear array 8 * 4 B = 32 B
+;   [116:9] clear 8 * 4 B = 32 B
 ;   [116:5] allocate named register 'rdi'
 ;   [116:5] allocate named register 'rcx'
 ;   [116:5] allocate named register 'rax'
@@ -1900,7 +1900,7 @@ main:
     assert_170_5_end:
 ;   [172:5] var o3 : object[1]
 ;   [172:9] o3: object[1] @ qword [rsp - 204]
-;   [172:9] clear array 1 * 20 B = 20 B
+;   [172:9] clear 1 * 20 B = 20 B
 ;   [172:5] allocate named register 'rdi'
 ;   [172:5] allocate named register 'rcx'
 ;   [172:5] allocate named register 'rax'
@@ -1995,7 +1995,7 @@ main:
     assert_175_5_end:
 ;   [177:5] var worlds : world[8]
 ;   [177:9] worlds: world[8] @ qword [rsp - 716]
-;   [177:9] clear array 8 * 64 B = 512 B
+;   [177:9] clear 8 * 64 B = 512 B
 ;   [177:5] allocate named register 'rdi'
 ;   [177:5] allocate named register 'rcx'
 ;   [177:5] allocate named register 'rax'
@@ -2476,7 +2476,7 @@ main:
     assert_189_5_end:
 ;   [195:5] var nm : str[1]
 ;   [195:9] nm: str[1] @ byte [rsp - 844]
-;   [195:9] clear array 1 * 128 B = 128 B
+;   [195:9] clear 1 * 128 B = 128 B
 ;   [195:5] allocate named register 'rdi'
 ;   [195:5] allocate named register 'rcx'
 ;   [195:5] allocate named register 'rax'

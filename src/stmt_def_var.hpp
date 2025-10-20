@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <format>
+#include <memory>
 #include <string_view>
 
 #include "compiler_exception.hpp"
@@ -23,7 +24,7 @@ class stmt_def_var final : public statement {
     token name_tk_;
     token type_tk_;
     token array_size_tk_;
-    stmt_assign_var assign_var_;
+    std::unique_ptr<stmt_assign_var> assign_var_;
     size_t array_size_{};
     token ws1_;
     token ws2_;
@@ -67,15 +68,8 @@ class stmt_def_var final : public statement {
                            : tc.get_type_or_throw(type_tk_, type_tk_.text())};
         set_type(tp);
 
-        const bool init_required{array_size_tk_.is_empty()};
-
         // expect initialization
-        if (init_required and not tz.is_next_char('=')) {
-            throw compiler_exception{
-                tz,
-                std::format("expected '=' and initializer for variable '{}'",
-                            name_tk_.text())};
-        }
+        const bool init_required{tz.is_next_char('=')};
 
         ws1_ = tz.next_whitespace_token();
 
@@ -92,7 +86,8 @@ class stmt_def_var final : public statement {
 
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
-            assign_var_ = {tc, tz, std::move(si)};
+            assign_var_ =
+                std::make_unique<stmt_assign_var>(tc, tz, std::move(si));
         }
 
         assert_var_not_used(name_tk_.text());
@@ -103,9 +98,9 @@ class stmt_def_var final : public statement {
     ~stmt_def_var() override = default;
 
     stmt_def_var() = default;
-    stmt_def_var(const stmt_def_var&) = default;
+    stmt_def_var(const stmt_def_var&) = delete;
     stmt_def_var(stmt_def_var&&) = default;
-    auto operator=(const stmt_def_var&) -> stmt_def_var& = default;
+    auto operator=(const stmt_def_var&) -> stmt_def_var& = delete;
     auto operator=(stmt_def_var&&) -> stmt_def_var& = default;
 
     auto source_to(std::ostream& os) const -> void override {
@@ -121,10 +116,10 @@ class stmt_def_var final : public statement {
                 ws2_.source_to(os);
             }
         }
-        if (array_size_tk_.is_empty()) {
+        if (assign_var_) {
             std::print(os, "=");
             ws1_.source_to(os);
-            assign_var_.expression().source_to(os);
+            assign_var_->expression().source_to(os);
         }
     }
 
@@ -142,10 +137,12 @@ class stmt_def_var final : public statement {
         };
         tc.add_var(name_tk_, os, indent, var);
 
-        if (not is_array_) {
-            assign_var_.compile(tc, os, indent, name_tk_.text());
+        if (assign_var_) {
+            assign_var_->compile(tc, os, indent, name_tk_.text());
             return;
         }
+
+        // zero the variable data
 
         // zero out the array
         // ; RDI = destination pointer
@@ -156,10 +153,12 @@ class stmt_def_var final : public statement {
         const ident_info& dst_info{
             tc.make_ident_info(name_tk_, name_tk_.text())};
 
+        const size_t instance_count{array_size_ ? array_size_ : 1};
+
         tc.comment_start(name_tk_, os, indent);
-        std::println(os, "clear array {} * {} B = {} B", array_size_,
+        std::println(os, "clear {} * {} B = {} B", instance_count,
                      dst_info.type_ptr->size(),
-                     array_size_ * dst_info.type_ptr->size());
+                     instance_count * dst_info.type_ptr->size());
 
         tc.alloc_named_register_or_throw(tok(), os, indent, "rdi");
         tc.alloc_named_register_or_throw(tok(), os, indent, "rcx");
@@ -169,8 +168,9 @@ class stmt_def_var final : public statement {
                      std::format("rsp - {}", -dst_info.stack_ix));
         // note: -dst_info.stack_ix_rel_rsp for nicer source formatting; is
         //       always negative
-        tc.asm_cmd(tok(), os, indent, "mov", "rcx",
-                   std::format("{}", array_size_ * dst_info.type_ptr->size()));
+        tc.asm_cmd(
+            tok(), os, indent, "mov", "rcx",
+            std::format("{}", instance_count * dst_info.type_ptr->size()));
         tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
         toc::asm_rep_stos(name_tk_, os, indent, 'b');
 
@@ -182,7 +182,9 @@ class stmt_def_var final : public statement {
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
 
-        assign_var_.assert_var_not_used(var);
+        if (assign_var_) {
+            assign_var_->assert_var_not_used(var);
+        }
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {

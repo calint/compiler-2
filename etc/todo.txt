@@ -1,8 +1,13 @@
+[ ] optimize rep stosX, movX and repe cmpsX to q, d, w if possible
+    => if more than X number of required mov use `rep`
+    => heuristics about when to use "rep stosX" 
+       => start with stosq, then mov dword, word and byte
+       => works when size is known at compile-time
+    => affected: stmt_def_var, stmt_assign_var, stmt_arrays_equal
 [ ] initializer for types that contain array does not work as intended:
     var input_buffer : str = {0, 0} where second element is an array
 [x] array size 0 or negative should not be allowed
-[ ] initializer of variable optional and if omitted zero
-[ ] heuristics about when rep stosb is advantageous
+[x] initializer of variable optional and if omitted zero
 [ ] review "//?" comments
 [ ] review "todo" comments
 [x] the last issue when using cppcoreguidelines-avoid-const-or-ref-data-members
@@ -50,10 +55,6 @@
 [ ] parsing comments in single statement block fails:
         if nibble > 9 nibble = nibble + 0x41 # 0 through 9
         else nibble = nibble + 0x30
-[ ] optimize rep stosX and repe cmpsX to q, d, w if possible
-    => maybe some heuristics about when to use "rep stosX" 
-       => start with stosq, then mov dword, word and byte
-       => works when size is known at compile-time
 [ ] etc/run-test with peak memory usage and inspect why some test cases use so
     much more memory than other
 [ ] toc::get_stack_size -> keep track of it with a member variable
