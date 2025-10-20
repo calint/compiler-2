@@ -4,6 +4,8 @@
        => start with stosq, then mov dword, word and byte
        => works when size is known at compile-time
     => affected: stmt_def_var, stmt_assign_var, stmt_arrays_equal
+    => see vmovntdq for 32 B aligned data
+       see AVX-512
 [ ] initializer for types that contain array does not work as intended:
     var input_buffer : str = {0, 0} where second element is an array
 [x] array size 0 or negative should not be allowed
