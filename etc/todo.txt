@@ -5,7 +5,8 @@
     => pointers instead of refs in structs and classes, better? unless
        shared_ptr still dangling problem
 [ ] code after "break" or "continue" is dead code. generate error because UB
-   check can be fooled by code after "break" or "continue"
+    check can be fooled by code after "break" or "continue"
+    => ignore statements after "end-of-code-path" statement
 [ ] array_copy does not handle when destination overlaps source
 [ ] lea_path not be necessary since only most recent lea relevant
     => also index of where in elems  path lea was found
