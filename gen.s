@@ -69,14 +69,14 @@ mov rsp,stk.end
 
 main:
 ;   [102:5] var arr : i32[4]
-;   [102:9] arr: i32[4] @ dword [rsp - 16]
+;   [102:9] arr: i32[4] (4 B @ dword [rsp - 16])
 ;   [102:9] clear 4 * 4 B = 16 B
 ;   [102:5] size < 32 B, use mov
     mov qword [rsp - 16], 0
     mov qword [rsp - 8], 0
 ;   [103:5] # arrays are initialized to 0
 ;   [105:5] var ix = 1
-;   [105:9] ix: i64 @ qword [rsp - 24]
+;   [105:9] ix: i64 (8 B @ qword [rsp - 24])
 ;   [105:9] ix =1
 ;   [105:14] 1
 ;   [105:14] 1
@@ -417,7 +417,7 @@ main:
 ;       [114:5] free scratch register 'r15'
     assert_114_5_end:
 ;   [116:5] var arr1 : i32[8]
-;   [116:9] arr1: i32[8] @ dword [rsp - 56]
+;   [116:9] arr1: i32[8] (4 B @ dword [rsp - 56])
 ;   [116:9] clear 8 * 4 B = 32 B
 ;   [116:5] size < 32 B, use mov
     mov qword [rsp - 56], 0
@@ -921,7 +921,7 @@ main:
 ;       [129:5] free scratch register 'r15'
     assert_129_5_end:
 ;   [131:5] var p : point = {0, 0}
-;   [131:9] p: point @ qword [rsp - 72]
+;   [131:9] p: point (16 B @ qword [rsp - 72])
 ;   [131:9] p ={0, 0}
 ;   [131:21] {0, 0}
 ;   [131:21] {0, 0}
@@ -1047,7 +1047,7 @@ main:
 ;       [134:5] free scratch register 'r15'
     assert_134_5_end:
 ;   [136:5] var i = 0
-;   [136:9] i: i64 @ qword [rsp - 80]
+;   [136:9] i: i64 (8 B @ qword [rsp - 80])
 ;   [136:9] i =0
 ;   [136:13] 0
 ;   [136:13] 0
@@ -1195,14 +1195,14 @@ main:
 ;       [142:5] free scratch register 'r15'
     assert_142_5_end:
 ;   [144:5] var j = 1
-;   [144:9] j: i64 @ qword [rsp - 88]
+;   [144:9] j: i64 (8 B @ qword [rsp - 88])
 ;   [144:9] j =1
 ;   [144:13] 1
 ;   [144:13] 1
 ;   [144:13] 1
     mov qword [rsp - 88], 1
 ;   [145:5] var k = baz(j)
-;   [145:9] k: i64 @ qword [rsp - 96]
+;   [145:9] k: i64 (8 B @ qword [rsp - 96])
 ;   [145:9] k =baz(j)
 ;   [145:13] baz(j)
 ;   [145:13] allocate scratch register -> r15
@@ -1340,7 +1340,7 @@ main:
 ;       [149:5] free scratch register 'r15'
     assert_149_5_end:
 ;   [151:5] var p0 : point = {baz(2), 0}
-;   [151:9] p0: point @ qword [rsp - 112]
+;   [151:9] p0: point (16 B @ qword [rsp - 112])
 ;   [151:9] p0 ={baz(2), 0}
 ;   [151:22] {baz(2), 0}
 ;   [151:22] {baz(2), 0}
@@ -1416,21 +1416,21 @@ main:
 ;       [152:5] free scratch register 'r15'
     assert_152_5_end:
 ;   [154:5] var x = 1
-;   [154:9] x: i64 @ qword [rsp - 120]
+;   [154:9] x: i64 (8 B @ qword [rsp - 120])
 ;   [154:9] x =1
 ;   [154:13] 1
 ;   [154:13] 1
 ;   [154:13] 1
     mov qword [rsp - 120], 1
 ;   [155:5] var y = 2
-;   [155:9] y: i64 @ qword [rsp - 128]
+;   [155:9] y: i64 (8 B @ qword [rsp - 128])
 ;   [155:9] y =2
 ;   [155:13] 2
 ;   [155:13] 2
 ;   [155:13] 2
     mov qword [rsp - 128], 2
 ;   [157:5] var o1 : object = {{x * 10, y}, 0xff0000}
-;   [157:9] o1: object @ qword [rsp - 148]
+;   [157:9] o1: object (20 B @ qword [rsp - 148])
 ;   [157:9] o1 ={{x * 10, y}, 0xff0000}
 ;   [157:23] {{x * 10, y}, 0xff0000}
 ;   [157:23] {{x * 10, y}, 0xff0000}
@@ -1600,7 +1600,7 @@ main:
 ;       [160:5] free scratch register 'r15'
     assert_160_5_end:
 ;   [162:5] var p1 : point = {-x, -y}
-;   [162:9] p1: point @ qword [rsp - 164]
+;   [162:9] p1: point (16 B @ qword [rsp - 164])
 ;   [162:9] p1 ={-x, -y}
 ;   [162:22] {-x, -y}
 ;   [162:22] {-x, -y}
@@ -1729,7 +1729,7 @@ main:
 ;       [165:5] free scratch register 'r15'
     assert_165_5_end:
 ;   [167:5] var o2 : object = o1
-;   [167:9] o2: object @ qword [rsp - 184]
+;   [167:9] o2: object (20 B @ qword [rsp - 184])
 ;   [167:9] o2 =o1
 ;   [167:9] allocate named register 'rsi'
 ;   [167:9] allocate named register 'rdi'
@@ -1887,7 +1887,7 @@ main:
 ;       [170:5] free scratch register 'r15'
     assert_170_5_end:
 ;   [172:5] var o3 : object[1]
-;   [172:9] o3: object[1] @ qword [rsp - 204]
+;   [172:9] o3: object[1] (20 B @ qword [rsp - 204])
 ;   [172:9] clear 1 * 20 B = 20 B
 ;   [172:5] size < 32 B, use mov
     mov qword [rsp - 204], 0
@@ -1976,7 +1976,7 @@ main:
 ;       [175:5] free scratch register 'r15'
     assert_175_5_end:
 ;   [177:5] var worlds : world[8]
-;   [177:9] worlds: world[8] @ qword [rsp - 716]
+;   [177:9] worlds: world[8] (64 B @ qword [rsp - 716])
 ;   [177:9] clear 8 * 64 B = 512 B
 ;   [177:5] allocate named register 'rcx'
 ;   [177:5] allocate named register 'rdi'
@@ -2457,7 +2457,7 @@ main:
 ;       [189:5] free scratch register 'r15'
     assert_189_5_end:
 ;   [195:5] var nm : str
-;   [195:9] nm: str @ byte [rsp - 844]
+;   [195:9] nm: str (128 B @ byte [rsp - 844])
 ;   [195:9] clear 1 * 128 B = 128 B
 ;   [195:5] allocate named register 'rcx'
 ;   [195:5] allocate named register 'rdi'

@@ -431,7 +431,8 @@ class toc final {
         if (var.array_size) {
             std::print(os, "[{}]", var.array_size);
         }
-        std::println(os, " @ {}", name_info.id_nasm);
+        std::println(os, " ({} B @ {})", name_info.type_ptr->size(),
+                     name_info.id_nasm);
     }
 
     auto alloc_named_register(const token& src_loc_tk, std::ostream& os,
