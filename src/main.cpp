@@ -160,8 +160,8 @@ auto main(const int argc, const char* argv[]) -> int {
         // with jump optimizations
         std::stringstream ss1;
         std::stringstream ss2;
-        // prg.build(ss1);
-        prg.build(std::cout); // build without jump optimizations
+        prg.build(ss1);
+        // prg.build(std::cout); // build without jump optimizations
         optimize_jumps_1(ss1, ss2);
         optimize_jumps_2(ss2, std::cout);
 
@@ -426,93 +426,6 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         const expr_type_value& expr{exprs_[i]->as_expr_type_value()};
         expr.compile_assign(tc, os, indent, *fld.tp, dst_nasmop);
         i++;
-    }
-}
-
-// declared in 'expr_type_value.hpp'
-// resolves circular reference: expr_type_value -> expr_any ->
-// expr_type_values
-inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
-                                          const size_t indent,
-                                          const std::string_view dst) const
-    -> void {
-
-    const ident_info src_info{
-        tc.make_ident_info(stmt_ident_->tok(), stmt_ident_->identifier())};
-    std::vector<std::string> allocated_registers;
-    const std::string offset{stmt_identifier::compile_effective_address(
-        tok(), tc, os, indent, stmt_ident_->elems(), allocated_registers, "",
-        src_info.lea_path)};
-
-    toc::asm_lea(tok(), os, indent, dst, offset);
-
-    for (const std::string& reg : allocated_registers | std::views::reverse) {
-        tc.free_scratch_register(tok(), os, indent, reg);
-    }
-}
-
-// declared in 'expr_type_value.hpp'
-// resolves circular reference: expr_type_value -> expr_any ->
-// expr_type_values
-inline auto expr_type_value::compile_recursive(const expr_type_value& etv,
-                                               toc& tc, std::ostream& os,
-                                               const size_t indent,
-                                               const std::string_view src,
-                                               const std::string_view dst,
-                                               const type& dst_type) -> void {
-
-    tc.comment_source(etv, os, indent);
-
-    // is it an identifier?
-    if (not src.empty()) {
-        // yes, e.g. obj.pos = p
-        const type& src_type{*tc.make_ident_info(etv.tok(), src).type_ptr};
-        if (src_type.name() != dst_type.name()) {
-            throw compiler_exception{
-                etv.tok(), std::format("cannot assign '{}' to '{}' because "
-                                       "'{}' is '{}' and '{}' is '{}'",
-                                       src, dst, src, src_type.name(), dst,
-                                       dst_type.name())};
-        }
-
-        for (const type_field& fld : dst_type.fields()) {
-            if (fld.tp->is_built_in()) {
-                const std::string src_info{
-                    tc.make_ident_info(etv.tok(),
-                                       std::format("{}.{}", src, fld.name))
-                        .id_nasm};
-                const std::string dst_info{
-                    tc.make_ident_info(etv.tok(),
-                                       std::format("{}.{}", dst, fld.name))
-                        .id_nasm};
-                tc.asm_cmd(etv.tok(), os, indent, "mov", dst_info, src_info);
-                continue;
-            }
-
-            // not a built-in, recurse
-            compile_recursive(etv, tc, os, indent + 1,
-                              std::format("{}.{}", src, fld.name),
-                              std::format("{}.{}", dst, fld.name), *fld.tp);
-        }
-        return;
-    }
-
-    // e.g. obj.pos = {x, foo(y), z}
-    // e.g. o2 = {p, p2, z}
-    // e.g. o2 = {{1, 2, 3}, p2, z}
-    const std::span<const type_field> flds{dst_type.fields()};
-    const size_t n{flds.size()};
-    for (size_t i{}; i < n; i++) {
-        const type_field& fld{flds[i]};
-        if (fld.tp->is_built_in()) {
-            etv.exprs_.at(i)->compile(tc, os, indent,
-                                      std::format("{}.{}", dst, fld.name));
-            continue;
-        }
-        // not a built-in type, recurse
-        compile_recursive(etv.exprs_.at(i)->as_expr_type_value(), tc, os,
-                          indent + 1, etv.exprs_.at(i)->identifier(),
-                          std::format("{}.{}", dst, fld.name), *fld.tp);
     }
 }
 

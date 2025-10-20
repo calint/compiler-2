@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string_view>
+#include <utility>
 
 #include "decouple.hpp"
 #include "statement.hpp"
@@ -32,18 +33,12 @@ class expr_type_value final : public statement {
     auto operator=(expr_type_value&&) -> expr_type_value& = default;
     // note: copy and assignment constructor will not compile if used
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 const std::string_view dst) const -> void override {
+    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
+                 [[maybe_unused]] const size_t indent,
+                 [[maybe_unused]] const std::string_view dst) const
+        -> void override {
 
-        if (is_make_copy()) {
-            // note: sets the 'dst' register to the address of the start of this
-            //       instance. called from 'stmt_assign_var'
-            compile_copy(tc, os, indent, dst);
-            return;
-        }
-
-        expr_type_value::compile_recursive(*this, tc, os, indent, identifier(),
-                                           dst, get_type());
+        std::unreachable();
     }
 
     auto compile_copy(toc& tc, std::ostream& os, size_t indent,
@@ -78,13 +73,4 @@ class expr_type_value final : public statement {
                      const std::string& reg_size,
                      std::span<const std::string> lea) const
         -> std::string override;
-
-  private:
-    // implemented in main.cpp due to circular reference:
-    // expr_type_value -> expr_any -> expr_type_value
-    inline static auto compile_recursive(const expr_type_value& etv, toc& tc,
-                                         std::ostream& os, size_t indent,
-                                         std::string_view src,
-                                         std::string_view dst,
-                                         const type& dst_type) -> void;
 };
