@@ -23,8 +23,8 @@ global _start
 _start:
 mov rsp,stk.end
 main:
-    lea rdi, [rsp - 16]
     mov rcx, 16
+    lea rdi, [rsp - 16]
     xor rax, rax
     rep stosb
     mov qword [rsp - 24], 1
@@ -171,8 +171,8 @@ main:
             exit_20_38_114_5_end:
         if_20_26_114_5_end:
     assert_114_5_end:
-    lea rdi, [rsp - 56]
     mov rcx, 32
+    lea rdi, [rsp - 56]
     xor rax, rax
     rep stosb
     mov rcx, 4
@@ -792,8 +792,8 @@ main:
             exit_20_38_170_5_end:
         if_20_26_170_5_end:
     assert_170_5_end:
-    lea rdi, [rsp - 204]
     mov rcx, 20
+    lea rdi, [rsp - 204]
     xor rax, rax
     rep stosb
     mov qword [rsp - 196], 73
@@ -831,8 +831,8 @@ main:
             exit_20_38_175_5_end:
         if_20_26_175_5_end:
     assert_175_5_end:
-    lea rdi, [rsp - 716]
     mov rcx, 512
+    lea rdi, [rsp - 716]
     xor rax, rax
     rep stosb
     lea r15, [rsp - 716]
@@ -1049,8 +1049,8 @@ main:
             exit_20_38_189_5_end:
         if_20_26_189_5_end:
     assert_189_5_end:
-    lea rdi, [rsp - 844]
     mov rcx, 128
+    lea rdi, [rsp - 844]
     xor rax, rax
     rep stosb
     mov rdx, hello.len

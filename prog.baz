@@ -192,7 +192,7 @@ func main() {
              array_size_of(worlds.locations)
           ))
 
-    var nm : str[1] 
+    var nm : str
     print(hello.len, hello)
     loop {
         print(prompt1.len, prompt1)

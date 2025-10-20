@@ -71,16 +71,16 @@ main:
 ;   [102:5] var arr : i32[4]
 ;   [102:9] arr: i32[4] @ dword [rsp - 16]
 ;   [102:9] clear 4 * 4 B = 16 B
-;   [102:5] allocate named register 'rdi'
 ;   [102:5] allocate named register 'rcx'
+;   [102:5] allocate named register 'rdi'
 ;   [102:5] allocate named register 'rax'
-    lea rdi, [rsp - 16]
     mov rcx, 16
+    lea rdi, [rsp - 16]
     xor rax, rax
     rep stosb
 ;   [102:5] free named register 'rax'
-;   [102:5] free named register 'rcx'
 ;   [102:5] free named register 'rdi'
+;   [102:5] free named register 'rcx'
 ;   [103:5] # arrays are initialized to 0
 ;   [105:5] var ix = 1
 ;   [105:9] ix: i64 @ qword [rsp - 24]
@@ -426,16 +426,16 @@ main:
 ;   [116:5] var arr1 : i32[8]
 ;   [116:9] arr1: i32[8] @ dword [rsp - 56]
 ;   [116:9] clear 8 * 4 B = 32 B
-;   [116:5] allocate named register 'rdi'
 ;   [116:5] allocate named register 'rcx'
+;   [116:5] allocate named register 'rdi'
 ;   [116:5] allocate named register 'rax'
-    lea rdi, [rsp - 56]
     mov rcx, 32
+    lea rdi, [rsp - 56]
     xor rax, rax
     rep stosb
 ;   [116:5] free named register 'rax'
-;   [116:5] free named register 'rcx'
 ;   [116:5] free named register 'rdi'
+;   [116:5] free named register 'rcx'
 ;   [117:5] array_copy(arr, arr1, 4)
 ;   [117:5] allocate named register 'rsi'
 ;   [117:5] allocate named register 'rdi'
@@ -1901,16 +1901,16 @@ main:
 ;   [172:5] var o3 : object[1]
 ;   [172:9] o3: object[1] @ qword [rsp - 204]
 ;   [172:9] clear 1 * 20 B = 20 B
-;   [172:5] allocate named register 'rdi'
 ;   [172:5] allocate named register 'rcx'
+;   [172:5] allocate named register 'rdi'
 ;   [172:5] allocate named register 'rax'
-    lea rdi, [rsp - 204]
     mov rcx, 20
+    lea rdi, [rsp - 204]
     xor rax, rax
     rep stosb
 ;   [172:5] free named register 'rax'
-;   [172:5] free named register 'rcx'
 ;   [172:5] free named register 'rdi'
+;   [172:5] free named register 'rcx'
 ;   [173:5] # index 0 in an array can be accessed without array index
 ;   [174:5] o3.pos.y = 73
 ;   [174:16] 73
@@ -1996,16 +1996,16 @@ main:
 ;   [177:5] var worlds : world[8]
 ;   [177:9] worlds: world[8] @ qword [rsp - 716]
 ;   [177:9] clear 8 * 64 B = 512 B
-;   [177:5] allocate named register 'rdi'
 ;   [177:5] allocate named register 'rcx'
+;   [177:5] allocate named register 'rdi'
 ;   [177:5] allocate named register 'rax'
-    lea rdi, [rsp - 716]
     mov rcx, 512
+    lea rdi, [rsp - 716]
     xor rax, rax
     rep stosb
 ;   [177:5] free named register 'rax'
-;   [177:5] free named register 'rcx'
 ;   [177:5] free named register 'rdi'
+;   [177:5] free named register 'rcx'
 ;   [178:5] worlds[1].locations[1] = 0xffee
 ;   [178:5] allocate scratch register -> r15
     lea r15, [rsp - 716]
@@ -2474,19 +2474,19 @@ main:
         if_20_26_189_5_end:
 ;       [189:5] free scratch register 'r15'
     assert_189_5_end:
-;   [195:5] var nm : str[1]
-;   [195:9] nm: str[1] @ byte [rsp - 844]
+;   [195:5] var nm : str
+;   [195:9] nm: str @ byte [rsp - 844]
 ;   [195:9] clear 1 * 128 B = 128 B
-;   [195:5] allocate named register 'rdi'
 ;   [195:5] allocate named register 'rcx'
+;   [195:5] allocate named register 'rdi'
 ;   [195:5] allocate named register 'rax'
-    lea rdi, [rsp - 844]
     mov rcx, 128
+    lea rdi, [rsp - 844]
     xor rax, rax
     rep stosb
 ;   [195:5] free named register 'rax'
-;   [195:5] free named register 'rcx'
 ;   [195:5] free named register 'rdi'
+;   [195:5] free named register 'rcx'
 ;   [196:5] print(hello.len, hello)
 ;   [196:11] allocate named register 'rdx'
     mov rdx, hello.len
