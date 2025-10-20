@@ -159,8 +159,8 @@ auto main(const int argc, const char* argv[]) -> int {
         // with jump optimizations
         std::stringstream ss1;
         std::stringstream ss2;
-        prg.build(ss1);
-        // prg.build(std::cout); // build without jump optimizations
+        // prg.build(ss1);
+        prg.build(std::cout); // build without jump optimizations
         optimize_jumps_1(ss1, ss2);
         optimize_jumps_2(ss2, std::cout);
 
@@ -371,10 +371,12 @@ inline auto expr_type_value::compile_copy(toc& tc, std::ostream& os,
                                           const std::string_view dst) const
     -> void {
 
+    const ident_info src_info{
+        tc.make_ident_info(stmt_ident_->tok(), stmt_ident_->identifier())};
     std::vector<std::string> allocated_registers;
     const std::string offset{stmt_identifier::compile_effective_address(
         tok(), tc, os, indent, stmt_ident_->elems(), allocated_registers, "",
-        {})};
+        src_info.lea_path)};
 
     toc::asm_lea(tok(), os, indent, dst, offset);
 
