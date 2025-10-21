@@ -289,15 +289,15 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         }
 
         // check that identifier type matches expected type
-        const ident_info ii{
+        const ident_info src_info{
             tc.make_ident_info(tok(), stmt_ident_->identifier())};
 
-        if (tp.name() != ii.type_ptr->name()) {
+        if (tp.name() != src_info.type_ptr->name()) {
             // note: checked source location report ok
             throw compiler_exception{
                 tok(),
                 std::format("type '{}' does not match expected type '{}'",
-                            ii.type_ptr->name(), tp.name())};
+                            src_info.type_ptr->name(), tp.name())};
         }
 
         return;
@@ -369,24 +369,25 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                      nasm_operand& dst_nasmop) const -> void {
     if (is_identifier()) {
         std::string src_nasm;
-        const ident_info ii{tc.make_ident_info(*this)};
-        if (dst_type.name() != ii.type_ptr->name()) {
+        const ident_info src_info{tc.make_ident_info(*this)};
+        if (dst_type.name() != src_info.type_ptr->name()) {
             throw compiler_exception{
                 tok(),
                 std::format(
                     "destination type '{}' does not match source type '{}'",
-                    dst_type.name(), ii.type_ptr->name())};
+                    dst_type.name(), src_info.type_ptr->name())};
         }
         std::vector<std::string> allocated_registers;
-        if (is_expression() or ii.has_lea()) {
+        if (is_expression() or src_info.has_lea()) {
             src_nasm = compile_lea(tok(), tc, os, indent, allocated_registers,
-                                   "", ii.lea_path);
+                                   "", src_info.lea_path);
         } else {
-            src_nasm =
-                toc::get_nasm_operand_from_id_nasm(ii.id_nasm).to_string();
+            src_nasm = toc::get_nasm_operand_from_id_nasm(src_info.id_nasm)
+                           .to_string();
         }
-        const size_t nbytes{ii.is_array ? ii.array_size * dst_type.size()
-                                        : dst_type.size()};
+        const size_t nbytes{src_info.is_array
+                                ? src_info.array_size * dst_type.size()
+                                : dst_type.size()};
         tc.rep_movs(tok(), os, indent, src_nasm, dst_nasmop.to_string(),
                     nbytes);
 
@@ -405,52 +406,52 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         std::println(os, "copy field '{}'", fld.name);
         if (fld.type_ptr->is_built_in()) {
             // built-in
-            const expr_any& expr{*exprs_[i]};
+            const expr_any& src{*exprs_[i]};
             const std::string dst{std::format(
                 "{} [{}]",
-                toc::get_size_specifier(expr.tok(), fld.type_ptr->size()),
+                toc::get_size_specifier(src.tok(), fld.type_ptr->size()),
                 dst_nasmop.to_string())};
 
-            if (expr.is_expression() or
-                (expr.is_identifier() and tc.make_ident_info(expr).has_lea())) {
+            if (src.is_expression() or
+                (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
                 // built-in, expression
                 if (fld.is_array) {
                     // built-in, expression, array
-                    const ident_info src_info{tc.make_ident_info(expr)};
-                    validate_array_assignment(expr.tok(), fld, src_info);
+                    const ident_info src_info{tc.make_ident_info(src)};
+                    validate_array_assignment(src.tok(), fld, src_info);
                     tc.rep_movs(
-                        expr.tok(), os, indent, expr, src_info,
+                        src.tok(), os, indent, src, src_info,
                         toc::get_nasm_operand_from_id_nasm(dst).to_string(),
                         fld.size);
                 } else {
                     // built-in, expression, not array
-                    expr.compile(tc, os, indent, dst);
+                    src.compile(tc, os, indent, dst);
                 }
             } else {
                 // built-in, not expression
-                const ident_info src_info{tc.make_ident_info(expr)};
+                const ident_info src_info{tc.make_ident_info(src)};
                 if (src_info.is_const()) {
                     // built-in, not expression, constant
-                    tc.asm_cmd(expr.tok(), os, indent, "mov", dst,
+                    tc.asm_cmd(src.tok(), os, indent, "mov", dst,
                                std::format("{}{}",
-                                           expr.get_unary_ops().to_string(),
+                                           src.get_unary_ops().to_string(),
                                            src_info.id_nasm));
                 } else {
                     // built-in, not expression, not constant
                     if (fld.is_array) {
                         // built-in, not expression, not constant, array
-                        validate_array_assignment(expr.tok(), fld, src_info);
+                        validate_array_assignment(src.tok(), fld, src_info);
                         tc.rep_movs(
-                            expr.tok(), os, indent,
+                            src.tok(), os, indent,
                             toc::get_nasm_operand_from_id_nasm(src_info.id_nasm)
                                 .to_string(),
                             toc::get_nasm_operand_from_id_nasm(dst).to_string(),
                             fld.size);
                     } else {
                         // built-in, not expression, not constant, not array
-                        tc.asm_cmd(expr.tok(), os, indent, "mov", dst,
+                        tc.asm_cmd(src.tok(), os, indent, "mov", dst,
                                    src_info.id_nasm);
-                        expr.get_unary_ops().compile(tc, os, indent, dst);
+                        src.get_unary_ops().compile(tc, os, indent, dst);
                     }
                 }
             }
