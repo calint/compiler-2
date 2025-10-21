@@ -404,8 +404,8 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         tc.comment_start(tok(), os, indent);
         std::println(os, "copy field '{}'", fld.name);
         if (fld.type_ptr->is_built_in()) {
+            // built-in
             const expr_any& expr{*exprs_[i]};
-
             const std::string dst{std::format(
                 "{} [{}]",
                 toc::get_size_specifier(expr.tok(), fld.type_ptr->size()),
@@ -413,8 +413,9 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
 
             if (expr.is_expression() or
                 (expr.is_identifier() and tc.make_ident_info(expr).has_lea())) {
-
+                // built-in, expression
                 if (fld.is_array) {
+                    // built-in, expression, array
                     const ident_info src_info{tc.make_ident_info(expr)};
                     validate_array_assignment(expr.tok(), fld, src_info);
                     tc.rep_movs(
@@ -425,11 +426,11 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                     // built-in, expression, not array
                     expr.compile(tc, os, indent, dst);
                 }
-
             } else {
                 // built-in, not expression
                 const ident_info src_info{tc.make_ident_info(expr)};
                 if (src_info.is_const()) {
+                    // built-in, not expression, constant
                     tc.asm_cmd(expr.tok(), os, indent, "mov", dst,
                                std::format("{}{}",
                                            expr.get_unary_ops().to_string(),
@@ -437,6 +438,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                 } else {
                     // built-in, not expression, not constant
                     if (fld.is_array) {
+                        // built-in, not expression, not constant, array
                         validate_array_assignment(expr.tok(), fld, src_info);
                         tc.rep_movs(
                             expr.tok(), os, indent,
