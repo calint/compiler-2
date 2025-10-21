@@ -475,13 +475,13 @@ auto expr_type_value::validate_array_assignment(const token& tok,
     if (not src_info.is_array) {
         throw compiler_exception{tok, "source is not an array"};
     }
-    if (fld.type_ptr->name() not_eq src_info.type_ptr->name()) {
+    if (fld.type_ptr->name() != src_info.type_ptr->name()) {
         throw compiler_exception{
             tok, std::format("destination type '{}' does not match "
                              "source type '{}'",
                              fld.type_ptr->name(), src_info.type_ptr->name())};
     }
-    if (fld.array_size not_eq src_info.array_size) {
+    if (fld.array_size != src_info.array_size) {
         throw compiler_exception{
             tok, std::format("destination array size ({}) does not "
                              "match source array size ({})",
