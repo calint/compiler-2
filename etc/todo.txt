@@ -1,6 +1,7 @@
 [x] expr_type_value::compile_assign: checks types, array sizes etc
 [ ] toc::rep_movs: heuristics around when to switch from movs to rep
-[ ] expr_type_value: is a mess. make nicer
+[x] expr_type_value: is a mess. make nicer
+    => reduced indentation by one level. a tree och code paths, not too bad
 [x] expr_type_value has 2 responsibilities: when it is "= { ... }" or
     "= obj.x". should be split into: expr_type_value_assign and
     expr_type_value_initialize
