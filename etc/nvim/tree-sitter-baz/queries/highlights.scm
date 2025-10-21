@@ -55,6 +55,10 @@
 ; Sized array types
 (sized_array_type (identifier) @type)
 
+; Unsized array types
+(unsized_array_type
+  (identifier) @type)
+
 ; Function calls
 (function_call function: (identifier) @function.call)
 

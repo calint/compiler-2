@@ -408,6 +408,25 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
 
                 if (fld.is_array) {
                     const ident_info src_info{tc.make_ident_info(expr)};
+                    if (not src_info.is_array) {
+                        throw compiler_exception{expr.tok(),
+                                                 "source is not an array"};
+                    }
+                    if (fld.tp->name() != src_info.type_ptr->name()) {
+                        throw compiler_exception{
+                            expr.tok(),
+                            std::format("destination type '{}' does not match "
+                                        "source type '{}'",
+                                        fld.tp->name(),
+                                        src_info.type_ptr->name())};
+                    }
+                    if (fld.array_size != src_info.array_size) {
+                        throw compiler_exception{
+                            expr.tok(),
+                            std::format("destination array size ({}) does not "
+                                        "match source array ({})",
+                                        fld.array_size, src_info.array_size)};
+                    }
                     tc.rep_movs(
                         tok(), os, indent, expr, src_info,
                         toc::get_nasm_operand_from_id_nasm(dst).to_string(),
@@ -425,6 +444,26 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                            src_info.id_nasm));
                 } else {
                     if (fld.is_array) {
+                        if (not src_info.is_array) {
+                            throw compiler_exception{expr.tok(),
+                                                     "source is not an array"};
+                        }
+                        if (fld.tp->name() != src_info.type_ptr->name()) {
+                            throw compiler_exception{
+                                expr.tok(),
+                                std::format(
+                                    "destination type '{}' does not match "
+                                    "source type '{}'",
+                                    fld.tp->name(), src_info.type_ptr->name())};
+                        }
+                        if (fld.array_size != src_info.array_size) {
+                            throw compiler_exception{
+                                expr.tok(),
+                                std::format(
+                                    "destination array size ({}) does not "
+                                    "match source array ({})",
+                                    fld.array_size, src_info.array_size)};
+                        }
                         tc.rep_movs(
                             tok(), os, indent,
                             toc::get_nasm_operand_from_id_nasm(src_info.id_nasm)
