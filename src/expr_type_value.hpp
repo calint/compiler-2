@@ -20,8 +20,8 @@ class expr_type_value final : public statement {
 
   public:
     // note: constructor and destructor are implemented in 'main.cpp' where the
-    // 'expr_any' definition is known. clang++ -std=c++23 has required it since
-    // changes to handling of unique_ptr to incomplete types
+    //       'expr_any' definition is known. clang++ -std=c++23 has required it
+    //       since changes to handling of unique_ptr to incomplete types
     inline expr_type_value(toc& tc, tokenizer& tz, const type& tp);
 
     inline ~expr_type_value() override;
@@ -33,6 +33,7 @@ class expr_type_value final : public statement {
     auto operator=(expr_type_value&&) -> expr_type_value& = default;
     // note: copy and assignment constructor will not compile if used
 
+    // unreachable
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
                  [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const std::string_view dst) const
@@ -46,24 +47,32 @@ class expr_type_value final : public statement {
     auto source_to(std::ostream& os) const -> void override;
 
     [[nodiscard]] auto is_make_copy() const -> bool {
-        // todo explain this
         return not tok().is_text("");
+        // note: if token is empty then it is an expression of type `{ ... }`
+        //       otherwise e.g. `p = pt`
     }
 
+    // implemented in 'main.cpp' due to circular reference:
+    // expr_type_value -> expr_any -> expr_type_value
     auto compile_assign(toc& tc, std::ostream& os, size_t indent,
                         const type& dst_type, nasm_operand& nasmop) const
         -> void;
 
+    // implemented in 'main.cpp' due to circular reference
     auto assert_var_not_used(std::string_view var) const -> void override;
 
+    // implemented in 'main.cpp' due to circular reference
     [[nodiscard]] auto is_identifier() const -> bool override {
         return stmt_ident_ != nullptr;
     }
 
+    // implemented in 'main.cpp' due to circular reference
     [[nodiscard]] auto is_expression() const -> bool override;
 
+    // implemented in 'main.cpp' due to circular reference:
     [[nodiscard]] auto identifier() const -> std::string_view override;
 
+    // implemented in 'main.cpp' due to circular reference
     auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
                      size_t indent,
                      std::vector<std::string>& allocated_registers,
@@ -71,6 +80,8 @@ class expr_type_value final : public statement {
                      std::span<const std::string> lea) const
         -> std::string override;
 
+  private:
+    // implemented in 'main.cpp'
     static auto validate_array_assignment(const token& tok,
                                           const type_field& fld,
                                           const ident_info& src_info) -> void;
