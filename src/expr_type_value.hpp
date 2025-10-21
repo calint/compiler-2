@@ -58,10 +58,10 @@ class expr_type_value final : public statement {
                         const type& dst_type, nasm_operand& nasmop) const
         -> void;
 
-    // implemented in 'main.cpp' due to circular reference
+    // implemented in 'main.cpp' due to circular reference:
+    // expr_type_value -> expr_any -> expr_type_value
     auto assert_var_not_used(std::string_view var) const -> void override;
 
-    // implemented in 'main.cpp' due to circular reference
     [[nodiscard]] auto is_identifier() const -> bool override {
         return stmt_ident_ != nullptr;
     }
@@ -69,7 +69,7 @@ class expr_type_value final : public statement {
     // implemented in 'main.cpp' due to circular reference
     [[nodiscard]] auto is_expression() const -> bool override;
 
-    // implemented in 'main.cpp' due to circular reference:
+    // implemented in 'main.cpp' due to circular reference
     [[nodiscard]] auto identifier() const -> std::string_view override;
 
     // implemented in 'main.cpp' due to circular reference
