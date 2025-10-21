@@ -1,7 +1,8 @@
 [ ] exprt_type_vale: is a mess. make nicer
-[ ] expr_type_value has 2 responsibilities: when it is "= { ... }" or
+[x] expr_type_value has 2 responsibilities: when it is "= { ... }" or
     "= obj.x". should be split into: expr_type_value_assign and
     expr_type_value_initialize
+    => unified and better recursion, but it is a mess
 [ ] initializer for types that contain array does not work as intended:
     var input_buffer : str = {0, 0} where second element is an array
 [ ] review "//?" comments

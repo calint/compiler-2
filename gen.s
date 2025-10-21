@@ -1424,6 +1424,7 @@ main:
 ;   [157:5] var o1 : object = {{x * 10, y}, 0xff0000}
 ;   [157:9] o1: object (20 B @ qword [rsp - 148])
 ;   [157:9] o1 ={{x * 10, y}, 0xff0000}
+;   [157:23] copy field 'pos'
 ;   [157:24] copy field 'x'
 ;   [157:25] x * 10
 ;   [157:25] x * 10

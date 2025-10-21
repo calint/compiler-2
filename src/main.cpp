@@ -394,12 +394,12 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
 
     size_t i{};
     for (const type_field& fld : dst_type.fields()) {
+        tc.comment_start(tok(), os, indent);
+        std::println(os, "copy field '{}'", fld.name);
         if (fld.tp->is_built_in()) {
-            tc.comment_start(tok(), os, indent);
-            std::println(os, "copy field '{}'", fld.name);
             const expr_any& expr{*exprs_[i]};
             const std::string dst{std::format(
-                "{} [{}]", toc::get_size_specifier(tok(), fld.tp->size()),
+                "{} [{}]", toc::get_size_specifier(expr.tok(), fld.tp->size()),
                 dst_nasmop.to_string())};
 
             if (expr.is_expression() or
