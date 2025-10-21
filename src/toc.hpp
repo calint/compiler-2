@@ -1688,6 +1688,8 @@ class toc final {
             int64_t value{};
             std::string_view sv{str};
             sv.remove_prefix(2); // skip "0x" or "0X"
+
+            // NOLINTNEXTLINE
             auto result{std::from_chars(sv.data(), sv.data() + sv.size(), value,
                                         base_hex)};
             if (result.ec == std::errc{}) {
@@ -1700,6 +1702,8 @@ class toc final {
             int64_t value{};
             std::string_view sv{str};
             sv.remove_prefix(2); // skip "0b" or "0B"
+
+            // NOLINTNEXTLINE
             auto result{std::from_chars(sv.data(), sv.data() + sv.size(), value,
                                         base_binary)};
             if (result.ec == std::errc{}) {
@@ -1714,7 +1718,9 @@ class toc final {
             // note: using 'std::string_view' for 'clang-tidy' to not
             //       trigger the warning
             //       'cppcoreguidelines-pro-bounds-pointer-arithmetic'
+
             auto parse_result{
+                // NOLINTNEXTLINE
                 std::from_chars(sv.data(), sv.data() + sv.size(), value)};
             if (parse_result.ec == std::errc{}) {
                 return value;

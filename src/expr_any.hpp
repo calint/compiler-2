@@ -47,7 +47,7 @@ class expr_any final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        std::visit([&os](const auto& itm) { itm.source_to(os); }, var_);
+        std::visit([&os](const auto& itm) -> auto { itm.source_to(os); }, var_);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
@@ -56,11 +56,13 @@ class expr_any final : public statement {
         tc.comment_source(*this, os, indent);
         std::visit(
             overloaded{
-                [&](const expr_ops_list& e) { e.compile(tc, os, indent, dst); },
-                [&](const expr_type_value& e) {
+                [&](const expr_ops_list& e) -> void {
                     e.compile(tc, os, indent, dst);
                 },
-                [&](const expr_bool_ops_list& e) {
+                [&](const expr_type_value& e) -> void {
+                    e.compile(tc, os, indent, dst);
+                },
+                [&](const expr_bool_ops_list& e) -> void {
                     // resolve the destination
                     const ident_info& dst_info{tc.make_ident_info(tok(), dst)};
 
@@ -129,8 +131,8 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
-        return std::visit([](const auto& e) { return e.is_expression(); },
-                          var_);
+        return std::visit(
+            [](const auto& e) -> auto { return e.is_expression(); }, var_);
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
@@ -141,7 +143,9 @@ class expr_any final : public statement {
 
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
-        std::visit([&var](const auto& e) { e.assert_var_not_used(var); }, var_);
+        std::visit(
+            [&var](const auto& e) -> auto { e.assert_var_not_used(var); },
+            var_);
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {

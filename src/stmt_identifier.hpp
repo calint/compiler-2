@@ -96,9 +96,10 @@ class stmt_identifier : public statement {
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
-        return std::ranges::any_of(elems_, [](const identifier_elem& e) {
-            return e.array_index_expr != nullptr;
-        });
+        return std::ranges::any_of(elems_,
+                                   [](const identifier_elem& e) -> bool {
+                                       return e.array_index_expr != nullptr;
+                                   });
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override { return true; }
