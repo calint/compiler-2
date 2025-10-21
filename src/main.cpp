@@ -378,10 +378,12 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             src_nasm =
                 toc::get_nasm_operand_from_id_nasm(ii.id_nasm).to_string();
         }
+        const size_t nbytes{ii.is_array ? ii.array_size * dst_type.size()
+                                        : dst_type.size()};
         tc.rep_movs(tok(), os, indent, src_nasm, dst_nasmop.to_string(),
-                    dst_type.size());
-        dst_nasmop.displacement += static_cast<int32_t>(
-            ii.is_array ? ii.array_size * dst_type.size() : dst_type.size());
+                    nbytes);
+
+        dst_nasmop.displacement += static_cast<int32_t>(nbytes);
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
