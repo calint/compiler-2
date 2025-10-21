@@ -41,9 +41,6 @@ class expr_type_value final : public statement {
         std::unreachable();
     }
 
-    auto compile_copy(toc& tc, std::ostream& os, size_t indent,
-                      std::string_view dst) const -> void;
-
     // implemented in 'main.cpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
     auto source_to(std::ostream& os) const -> void override;

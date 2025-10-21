@@ -135,9 +135,10 @@ class stmt_assign_var final : public statement {
         if (stmt_ident_.is_identifier() and
             (stmt_ident_.is_expression() or dst_info.has_lea())) {
 
-            dst_nasmop = nasm_operand{stmt_ident_.compile_lea(
+            const std::string& dst_lea{stmt_ident_.compile_lea(
                 tok(), tc, os, indent, allocated_registers, "",
                 dst_info.lea_path)};
+            dst_nasmop = nasm_operand{dst_lea};
         } else {
             if (lea.empty()) {
                 dst_nasmop =

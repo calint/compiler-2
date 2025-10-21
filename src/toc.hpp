@@ -202,18 +202,14 @@ struct nasm_operand {
         if (operand_str.empty()) {
             return;
         }
-
         const std::regex pattern(
-            R"(^\s*)"                     // optional leading whitespace
-            R"(([a-z0-9]+)?)"             // optional base register
-            R"((?:\s*\+\s*([a-z0-9]+))?)" // optional +index with surrounding
-                                          // whitespace
-            R"((?:\s*\*\s*([1248]))?)"    // optional *scale with surrounding
-                                          // whitespace
-            R"((?:\s*([+-])\s*(\d+))?)"   // optional +/- and displacement
-                                          // (captured separately)
-            R"(\s*$)"                     // optional trailing whitespace
-        );
+            R"(^\s*)"
+            R"(([a-z0-9]+)?)"                              // base register
+            R"((?:\s*\+\s*(r[a-z0-9]+|[a-z][a-z0-9]*?))?)" // +index (must start
+                                                           // with letter)
+            R"((?:\s*\*\s*([1248]))?)"                     // *scale
+            R"((?:\s*([+-])\s*(\d+))?)"                    // +/- displacement
+            R"(\s*$)");
 
         constexpr size_t match_base_register{1};
         constexpr size_t match_index_register{2};

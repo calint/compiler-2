@@ -14,11 +14,11 @@ class type;
 
 struct type_field {
     std::string name;
-    const type* tp{};
-    size_t size{};
-    size_t array_size{};
-    bool is_array{};
-    size_t offset{};
+    const type* tp{};    // element type
+    size_t size{};       // total size in bytes
+    size_t array_size{}; // array size in elements
+    bool is_array{};     //
+    size_t offset{};     // offset relative to instance address
 };
 
 class type final {

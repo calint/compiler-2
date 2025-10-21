@@ -398,6 +398,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         std::println(os, "copy field '{}'", fld.name);
         if (fld.tp->is_built_in()) {
             const expr_any& expr{*exprs_[i]};
+
             const std::string dst{std::format(
                 "{} [{}]", toc::get_size_specifier(expr.tok(), fld.tp->size()),
                 dst_nasmop.to_string())};
@@ -429,7 +430,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                             toc::get_nasm_operand_from_id_nasm(src_info.id_nasm)
                                 .to_string(),
                             toc::get_nasm_operand_from_id_nasm(dst).to_string(),
-                            fld.array_size * fld.size);
+                            fld.size);
                     } else {
                         tc.asm_cmd(tok(), os, indent, "mov", dst,
                                    src_info.id_nasm);
