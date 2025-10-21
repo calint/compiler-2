@@ -364,6 +364,9 @@ inline void expr_type_value::source_to(std::ostream& os) const {
     ws1_.source_to(os);
 }
 
+// declared in 'expr_type_value.hpp'
+// resolves circular reference: expr_type_value -> expr_any ->
+// expr_type_value
 auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                      const type& dst_type,
                                      nasm_operand& dst_nasmop) const -> void {
