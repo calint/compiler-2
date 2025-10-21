@@ -1,3 +1,4 @@
+[ ] nasm_operand in ident_info for less text processing sprinkled in the code?
 [x] expr_type_value::compile_assign: checks types, array sizes etc
 [ ] toc::rep_movs: heuristics around when to switch from movs to rep
 [x] expr_type_value: is a mess. make nicer
@@ -29,7 +30,7 @@
 [ ] ponder an iterator of elements in array that does not require bounds
     checking:
       for(e : arr) {
-        e2 = 0
+        e = 0
       }
 [ ] ponder whether a compiler flag to check for over/underflow in arithmetics
 [ ] a return reference might be used as an argument to a function that set it.
