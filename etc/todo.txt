@@ -1,3 +1,4 @@
+[ ] toc::rep_movs: heuristics around when to switch from movs to rep
 [ ] exprt_type_vale: is a mess. make nicer
 [x] expr_type_value has 2 responsibilities: when it is "= { ... }" or
     "= obj.x". should be split into: expr_type_value_assign and
