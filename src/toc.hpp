@@ -1152,8 +1152,9 @@ class toc final {
                                                     "", src_info.lea_path)};
             toc::asm_lea(src_loc_tk, os, indnt, "rsi", addr);
         } else {
-            toc::asm_lea(src_loc_tk, os, indnt, "rsi",
-                         nasm_operand{src_info.id_nasm}.to_string());
+            toc::asm_lea(
+                src_loc_tk, os, indnt, "rsi",
+                get_nasm_operand_from_id_nasm(src_info.id_nasm).to_string());
         }
         toc::asm_lea(src_loc_tk, os, indnt, "rdi", dst);
 
@@ -1612,8 +1613,7 @@ class toc final {
             get_text_between_brackets(operand)};
 
         if (not between_brackets) {
-            throw panic_exception{
-                std::format("could not decode id nasm {}", operand)};
+            return nasm_operand{operand};
         }
 
         return nasm_operand{*between_brackets};
