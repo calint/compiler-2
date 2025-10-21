@@ -14,11 +14,11 @@ class type;
 
 struct type_field {
     std::string name;
-    const type* tp{};    // element type
-    size_t size{};       // total size in bytes
-    size_t array_size{}; // array size in elements
-    bool is_array{};     //
-    size_t offset{};     // offset relative to instance address
+    const type* type_ptr{}; // element type
+    size_t size{};          // total size in bytes
+    size_t array_size{};    // array size in elements
+    bool is_array{};        //
+    size_t offset{};        // offset relative to instance address
 };
 
 class type final {
@@ -77,7 +77,7 @@ class type final {
         for (const auto& field_name : path | std::views::drop(1)) {
             const type_field& fld{tp->field(tk, field_name)};
             offset += fld.offset;
-            tp = fld.tp;
+            tp = fld.type_ptr;
             type_path.emplace_back(tp);
             is_array = fld.is_array;
             array_size = fld.array_size;
@@ -88,7 +88,7 @@ class type final {
         // address
         const type* tp_first_field{tp};
         while (not tp_first_field->is_built_in()) {
-            tp_first_field = tp_first_field->fields_.at(0).tp;
+            tp_first_field = tp_first_field->fields_.at(0).type_ptr;
         }
 
         const std::string_view memsize{
@@ -121,7 +121,7 @@ class type final {
             // note: drop 1 because first element is retrieved outside the loop
             const type_field& fld{tp->field(src_loc_tk, field_name)};
             offset += fld.offset;
-            tp = fld.tp;
+            tp = fld.type_ptr;
         }
         return offset;
     }

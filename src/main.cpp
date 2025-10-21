@@ -316,7 +316,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         const type_field& fld{flds[i]};
         // create expression that assigns to field
         // might recurse creating 'expr_type_value'
-        exprs_.emplace_back(create_expr_any(tc, tz, *fld.tp, true));
+        exprs_.emplace_back(create_expr_any(tc, tz, *fld.type_ptr, true));
 
         if (i < nflds - 1) {
             if (not tz.is_next_char(',')) {
@@ -370,10 +370,17 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
     if (is_identifier()) {
         std::string src_nasm;
         const ident_info ii{tc.make_ident_info(*this)};
+        if (dst_type.name() != ii.type_ptr->name()) {
+            throw compiler_exception{
+                tok(),
+                std::format(
+                    "destination type '{}' does not match source type '{}'",
+                    dst_type.name(), ii.type_ptr->name())};
+        }
         std::vector<std::string> allocated_registers;
         if (is_expression() or ii.has_lea()) {
-            src_nasm = this->compile_lea(tok(), tc, os, indent,
-                                         allocated_registers, "", ii.lea_path);
+            src_nasm = compile_lea(tok(), tc, os, indent, allocated_registers,
+                                   "", ii.lea_path);
         } else {
             src_nasm =
                 toc::get_nasm_operand_from_id_nasm(ii.id_nasm).to_string();
@@ -396,11 +403,12 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
     for (const type_field& fld : dst_type.fields()) {
         tc.comment_start(tok(), os, indent);
         std::println(os, "copy field '{}'", fld.name);
-        if (fld.tp->is_built_in()) {
+        if (fld.type_ptr->is_built_in()) {
             const expr_any& expr{*exprs_[i]};
 
             const std::string dst{std::format(
-                "{} [{}]", toc::get_size_specifier(expr.tok(), fld.tp->size()),
+                "{} [{}]",
+                toc::get_size_specifier(expr.tok(), fld.type_ptr->size()),
                 dst_nasmop.to_string())};
 
             if (expr.is_expression() or
@@ -408,27 +416,9 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
 
                 if (fld.is_array) {
                     const ident_info src_info{tc.make_ident_info(expr)};
-                    if (not src_info.is_array) {
-                        throw compiler_exception{expr.tok(),
-                                                 "source is not an array"};
-                    }
-                    if (fld.tp->name() != src_info.type_ptr->name()) {
-                        throw compiler_exception{
-                            expr.tok(),
-                            std::format("destination type '{}' does not match "
-                                        "source type '{}'",
-                                        fld.tp->name(),
-                                        src_info.type_ptr->name())};
-                    }
-                    if (fld.array_size != src_info.array_size) {
-                        throw compiler_exception{
-                            expr.tok(),
-                            std::format("destination array size ({}) does not "
-                                        "match source array size ({})",
-                                        fld.array_size, src_info.array_size)};
-                    }
+                    validate_array_assignment(expr.tok(), fld, src_info);
                     tc.rep_movs(
-                        tok(), os, indent, expr, src_info,
+                        expr.tok(), os, indent, expr, src_info,
                         toc::get_nasm_operand_from_id_nasm(dst).to_string(),
                         fld.size);
                 } else {
@@ -440,42 +430,23 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                 // built-in, not expression
                 const ident_info src_info{tc.make_ident_info(expr)};
                 if (src_info.is_const()) {
-                    tc.asm_cmd(tok(), os, indent, "mov", dst,
+                    tc.asm_cmd(expr.tok(), os, indent, "mov", dst,
                                std::format("{}{}",
                                            expr.get_unary_ops().to_string(),
                                            src_info.id_nasm));
                 } else {
                     // built-in, not expression, not constant
                     if (fld.is_array) {
-                        if (not src_info.is_array) {
-                            throw compiler_exception{expr.tok(),
-                                                     "source is not an array"};
-                        }
-                        if (fld.tp->name() != src_info.type_ptr->name()) {
-                            throw compiler_exception{
-                                expr.tok(),
-                                std::format(
-                                    "destination type '{}' does not match "
-                                    "source type '{}'",
-                                    fld.tp->name(), src_info.type_ptr->name())};
-                        }
-                        if (fld.array_size != src_info.array_size) {
-                            throw compiler_exception{
-                                expr.tok(),
-                                std::format(
-                                    "destination array size ({}) does not "
-                                    "match source array size ({})",
-                                    fld.array_size, src_info.array_size)};
-                        }
+                        validate_array_assignment(expr.tok(), fld, src_info);
                         tc.rep_movs(
-                            tok(), os, indent,
+                            expr.tok(), os, indent,
                             toc::get_nasm_operand_from_id_nasm(src_info.id_nasm)
                                 .to_string(),
                             toc::get_nasm_operand_from_id_nasm(dst).to_string(),
                             fld.size);
                     } else {
                         // built-in, not expression, not constant, not array
-                        tc.asm_cmd(tok(), os, indent, "mov", dst,
+                        tc.asm_cmd(expr.tok(), os, indent, "mov", dst,
                                    src_info.id_nasm);
                         expr.get_unary_ops().compile(tc, os, indent, dst);
                     }
@@ -489,8 +460,30 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         // not-builtin, expression is `expr_type_value`
 
         const expr_type_value& expr{exprs_[i]->as_expr_type_value()};
-        expr.compile_assign(tc, os, indent, *fld.tp, dst_nasmop);
+        expr.compile_assign(tc, os, indent, *fld.type_ptr, dst_nasmop);
         i++;
+    }
+}
+
+auto expr_type_value::validate_array_assignment(const token& tok,
+                                                const type_field& fld,
+                                                const ident_info& src_info)
+    -> void {
+
+    if (not src_info.is_array) {
+        throw compiler_exception{tok, "source is not an array"};
+    }
+    if (fld.type_ptr->name() not_eq src_info.type_ptr->name()) {
+        throw compiler_exception{
+            tok, std::format("destination type '{}' does not match "
+                             "source type '{}'",
+                             fld.type_ptr->name(), src_info.type_ptr->name())};
+    }
+    if (fld.array_size not_eq src_info.array_size) {
+        throw compiler_exception{
+            tok, std::format("destination array size ({}) does not "
+                             "match source array size ({})",
+                             fld.array_size, src_info.array_size)};
     }
 }
 

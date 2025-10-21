@@ -70,4 +70,8 @@ class expr_type_value final : public statement {
                      const std::string& reg_size,
                      std::span<const std::string> lea) const
         -> std::string override;
+
+    static auto validate_array_assignment(const token& tok,
+                                          const type_field& fld,
+                                          const ident_info& src_info) -> void;
 };

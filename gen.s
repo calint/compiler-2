@@ -1440,10 +1440,10 @@ main:
     mov qword [rsp - 148], r15
 ;   [157:29] free scratch register 'r15'
 ;   [157:24] copy field 'y'
-;   [157:24] allocate scratch register -> r15
+;   [157:33] allocate scratch register -> r15
     mov r15, qword [rsp - 128]
     mov qword [rsp - 140], r15
-;   [157:24] free scratch register 'r15'
+;   [157:33] free scratch register 'r15'
 ;   [157:23] copy field 'color'
     mov dword [rsp - 132], 0xff0000
 ;   [158:5] assert(o1.pos.x == 10)
@@ -1594,16 +1594,16 @@ main:
 ;   [162:9] p1: point (16 B @ qword [rsp - 164])
 ;   [162:9] p1 ={-x, -y}
 ;   [162:22] copy field 'x'
-;   [162:22] allocate scratch register -> r15
+;   [162:23] allocate scratch register -> r15
     mov r15, qword [rsp - 120]
     mov qword [rsp - 164], r15
-;   [162:22] free scratch register 'r15'
+;   [162:23] free scratch register 'r15'
     neg qword [rsp - 164]
 ;   [162:22] copy field 'y'
-;   [162:22] allocate scratch register -> r15
+;   [162:27] allocate scratch register -> r15
     mov r15, qword [rsp - 128]
     mov qword [rsp - 156], r15
-;   [162:22] free scratch register 'r15'
+;   [162:27] free scratch register 'r15'
     neg qword [rsp - 156]
 ;   [163:5] o1.pos = p1
 ;   [163:14] allocate named register 'rsi'
