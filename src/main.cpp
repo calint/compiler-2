@@ -444,6 +444,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         }
 
         // expression is `expr_type_value`
+
         const expr_type_value& expr{exprs_[i]->as_expr_type_value()};
         expr.compile_assign(tc, os, indent, *fld.tp, dst_nasmop);
         i++;

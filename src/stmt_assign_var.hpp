@@ -132,12 +132,14 @@ class stmt_assign_var final : public statement {
 
         nasm_operand dst_nasmop;
         std::vector<std::string> allocated_registers;
+
         if (stmt_ident_.is_identifier() and
             (stmt_ident_.is_expression() or dst_info.has_lea())) {
 
             const std::string& dst_lea{stmt_ident_.compile_lea(
                 tok(), tc, os, indent, allocated_registers, "",
                 dst_info.lea_path)};
+
             dst_nasmop = nasm_operand{dst_lea};
         } else {
             if (lea.empty()) {
