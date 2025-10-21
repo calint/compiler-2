@@ -424,7 +424,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                         throw compiler_exception{
                             expr.tok(),
                             std::format("destination array size ({}) does not "
-                                        "match source array ({})",
+                                        "match source array size ({})",
                                         fld.array_size, src_info.array_size)};
                     }
                     tc.rep_movs(
@@ -461,7 +461,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                 expr.tok(),
                                 std::format(
                                     "destination array size ({}) does not "
-                                    "match source array ({})",
+                                    "match source array size ({})",
                                     fld.array_size, src_info.array_size)};
                         }
                         tc.rep_movs(

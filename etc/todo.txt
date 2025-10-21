@@ -1,4 +1,4 @@
-[ ] expr_type_value::compile_assign: checks types, array sizes etc
+[x] expr_type_value::compile_assign: checks types, array sizes etc
 [ ] toc::rep_movs: heuristics around when to switch from movs to rep
 [ ] expr_type_value: is a mess. make nicer
 [x] expr_type_value has 2 responsibilities: when it is "= { ... }" or
