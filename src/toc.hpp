@@ -1689,7 +1689,7 @@ class toc final {
             std::string_view sv{str};
             sv.remove_prefix(2); // skip "0x" or "0X"
 
-            // NOLINTNEXTLINE
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             auto result{std::from_chars(sv.data(), sv.data() + sv.size(), value,
                                         base_hex)};
             if (result.ec == std::errc{}) {
@@ -1703,7 +1703,7 @@ class toc final {
             std::string_view sv{str};
             sv.remove_prefix(2); // skip "0b" or "0B"
 
-            // NOLINTNEXTLINE
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             auto result{std::from_chars(sv.data(), sv.data() + sv.size(), value,
                                         base_binary)};
             if (result.ec == std::errc{}) {
@@ -1720,7 +1720,7 @@ class toc final {
             //       'cppcoreguidelines-pro-bounds-pointer-arithmetic'
 
             auto parse_result{
-                // NOLINTNEXTLINE
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 std::from_chars(sv.data(), sv.data() + sv.size(), value)};
             if (parse_result.ec == std::errc{}) {
                 return value;

@@ -1,6 +1,6 @@
 #!/bin/bash
 # tools:
-#   clang-tidy: 20.1.8
+#   clang-tidy: 21.1.3
 cd $(dirname "$0")
 
 SRC=../../src/main.cpp
