@@ -432,10 +432,12 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                         toc::get_nasm_operand_from_id_nasm(dst).to_string(),
                         fld.size);
                 } else {
+                    // built-in, expression, not array
                     expr.compile(tc, os, indent, dst);
                 }
 
             } else {
+                // built-in, not expression
                 const ident_info src_info{tc.make_ident_info(expr)};
                 if (src_info.is_const()) {
                     tc.asm_cmd(tok(), os, indent, "mov", dst,
@@ -443,6 +445,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                            expr.get_unary_ops().to_string(),
                                            src_info.id_nasm));
                 } else {
+                    // built-in, not expression, not constant
                     if (fld.is_array) {
                         if (not src_info.is_array) {
                             throw compiler_exception{expr.tok(),
@@ -471,6 +474,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                             toc::get_nasm_operand_from_id_nasm(dst).to_string(),
                             fld.size);
                     } else {
+                        // built-in, not expression, not constant, not array
                         tc.asm_cmd(tok(), os, indent, "mov", dst,
                                    src_info.id_nasm);
                         expr.get_unary_ops().compile(tc, os, indent, dst);
@@ -482,7 +486,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             continue;
         }
 
-        // expression is `expr_type_value`
+        // not-builtin, expression is `expr_type_value`
 
         const expr_type_value& expr{exprs_[i]->as_expr_type_value()};
         expr.compile_assign(tc, os, indent, *fld.tp, dst_nasmop);
