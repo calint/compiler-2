@@ -1,0 +1,99 @@
+# all functions are inlined
+
+# arguments can be placed in specified register using `reg_...` syntax
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+# single statement blocks can ommit braces
+
+func assert(expr : bool) if not expr exit(1)
+
+# limited built-in assembler just enough to interface with OS
+
+func print(len : reg_rdx, ptr : reg_rsi) {
+    mov(rax, 1)   # write system call
+    mov(rdi, 0)   # file descriptor for standard out
+    mov(rsi, ptr) # buffer address 
+    mov(rdx, len) # buffer size
+    syscall()
+}
+
+func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+    mov(rax, 0)   # read system call
+    mov(rdi, 0)   # file descriptor for standard input
+    mov(rsi, ptr) # buffer address
+    mov(rdx, len) # buffer size
+    syscall()
+    mov(nbytes, rax) # return value
+}
+
+type str {
+    len : i8,
+    data : i8[127]
+}
+
+func str_in(s : str) {
+    mov(rax, 0)   # read system call
+    mov(rdi, 0)   # file descriptor for standard input
+    mov(rsi, address_of(s.data)) # buffer address
+    mov(rdx, array_size_of(s.data)) # buffer size
+    syscall()
+    mov(s.len, rax - 1) # return value
+} 
+
+func str_out(s : str) {
+    mov(rax, 1)   # write system call
+    mov(rdi, 0)   # file descriptor for standard out
+    mov(rsi, address_of(s.data)) # buffer address 
+    mov(rdx, s.len) # buffer size
+    syscall()
+} 
+
+type list {
+    len : i8,
+    data : i8[127]
+}
+
+type exit {
+    name : str,
+    to : i8
+}
+
+type object {
+    name : str
+}
+
+type entity {
+    name : str,
+    location: i8,
+    inventory : list
+}
+
+type location {
+    name : str,
+    note : str,
+    entities : list,
+    objects : list,
+    exits : list
+}
+
+func foo(src : location, dst : location) {
+    dst.name = {src.name.len, src.name.data}
+    dst.note = src.note
+}
+
+func main() {
+    var locations : location[128]
+    var entities : entity[128]
+    var exits : exit[1024]
+    
+    locations[0].name.data[1] = 0x61
+
+    foo(locations[0], locations[1])
+    assert(locations[1].name.data[1] == 0x61)
+
+}

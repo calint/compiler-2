@@ -1,4 +1,4 @@
-[ ] exprt_type_vale: is a mess. make nicer 
+[ ] exprt_type_vale: is a mess. make nicer
 [ ] expr_type_value has 2 responsibilities: when it is "= { ... }" or
     "= obj.x". should be split into: expr_type_value_assign and
     expr_type_value_initialize

@@ -395,6 +395,8 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
     size_t i{};
     for (const type_field& fld : dst_type.fields()) {
         if (fld.tp->is_built_in()) {
+            tc.comment_start(tok(), os, indent);
+            std::println(os, "copy field '{}'", fld.name);
             const expr_any& expr{*exprs_[i]};
             const std::string dst{std::format(
                 "{} [{}]", toc::get_size_specifier(tok(), fld.tp->size()),
@@ -403,7 +405,15 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             if (expr.is_expression() or
                 (expr.is_identifier() and tc.make_ident_info(expr).has_lea())) {
 
-                expr.compile(tc, os, indent, dst);
+                if (fld.is_array) {
+                    const ident_info src_info{tc.make_ident_info(expr)};
+                    tc.rep_movs(
+                        tok(), os, indent, expr, src_info,
+                        toc::get_nasm_operand_from_id_nasm(dst).to_string(),
+                        fld.size);
+                } else {
+                    expr.compile(tc, os, indent, dst);
+                }
 
             } else {
                 const ident_info src_info{tc.make_ident_info(expr)};
@@ -413,13 +423,21 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                            expr.get_unary_ops().to_string(),
                                            src_info.id_nasm));
                 } else {
-                    tc.asm_cmd(tok(), os, indent, "mov", dst, src_info.id_nasm);
-                    expr.get_unary_ops().compile(tc, os, indent, dst);
+                    if (fld.is_array) {
+                        tc.rep_movs(
+                            tok(), os, indent,
+                            toc::get_nasm_operand_from_id_nasm(src_info.id_nasm)
+                                .to_string(),
+                            toc::get_nasm_operand_from_id_nasm(dst).to_string(),
+                            fld.array_size * fld.size);
+                    } else {
+                        tc.asm_cmd(tok(), os, indent, "mov", dst,
+                                   src_info.id_nasm);
+                        expr.get_unary_ops().compile(tc, os, indent, dst);
+                    }
                 }
             }
-            dst_nasmop.displacement += static_cast<int32_t>(
-                fld.is_array ? fld.array_size * fld.tp->size()
-                             : fld.tp->size());
+            dst_nasmop.displacement += static_cast<int32_t>(fld.size);
             i++;
             continue;
         }

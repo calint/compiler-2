@@ -1134,6 +1134,52 @@ class toc final {
         free_named_register(src_loc_tk, os, indnt, "rsi");
     }
 
+    auto rep_movs(const token& src_loc_tk, std::ostream& os, const size_t indnt,
+                  const statement& src, const ident_info& src_info,
+                  std::string_view dst, const size_t bytes_count) -> void {
+
+        // ; Copy RCX bytes from RSI to RDI
+        // mov rsi, source_addr    ; source pointer
+        // mov rdi, dest_addr      ; destination pointer
+        // mov rcx, byte_count     ; number of bytes
+        // rep movsb               ; repeat: copy byte [RSI++] to [RDI++]
+
+        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rsi");
+        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
+        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
+
+        std::vector<std::string> allocated_registers;
+        if (src_info.has_lea()) {
+            const std::string& addr{src.compile_lea(src_loc_tk, *this, os,
+                                                    indnt, allocated_registers,
+                                                    "", src_info.lea_path)};
+            toc::asm_lea(src_loc_tk, os, indnt, "rsi", addr);
+        } else {
+            toc::asm_lea(src_loc_tk, os, indnt, "rsi",
+                         nasm_operand{src_info.id_nasm}.to_string());
+        }
+        toc::asm_lea(src_loc_tk, os, indnt, "rdi", dst);
+
+        // try moving qwords
+        const size_t qword_count{bytes_count / toc::size_qword};
+        const size_t rest_bytes_count{bytes_count -
+                                      (qword_count * toc::size_qword)};
+        const size_t reps{rest_bytes_count == 0 ? qword_count : bytes_count};
+        const char rep_size{rest_bytes_count ? 'b' : 'q'};
+
+        asm_cmd(src_loc_tk, os, indnt, "mov", "rcx", std::format("{}", reps));
+
+        toc::asm_rep_movs(src_loc_tk, os, indnt, rep_size);
+
+        for (const std::string& reg :
+             allocated_registers | std::views::reverse) {
+            free_scratch_register(src_loc_tk, os, indnt, reg);
+        }
+        free_named_register(src_loc_tk, os, indnt, "rcx");
+        free_named_register(src_loc_tk, os, indnt, "rdi");
+        free_named_register(src_loc_tk, os, indnt, "rsi");
+    }
+
     [[nodiscard]] auto regex_ws() const -> const std::regex& {
         return regex_ws_;
     }
