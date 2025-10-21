@@ -1149,7 +1149,8 @@ class toc final {
         alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
 
         std::vector<std::string> allocated_registers;
-        if (src_info.has_lea()) {
+        if (src.is_identifier() and
+            (src.is_expression() or src_info.has_lea())) {
             const std::string& addr{src.compile_lea(src_loc_tk, *this, os,
                                                     indnt, allocated_registers,
                                                     "", src_info.lea_path)};
