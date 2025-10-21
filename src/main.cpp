@@ -368,7 +368,6 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                      const type& dst_type,
                                      nasm_operand& dst_nasmop) const -> void {
     if (is_identifier()) {
-        std::string src_nasm;
         const ident_info src_info{tc.make_ident_info(*this)};
         if (dst_type.name() != src_info.type_ptr->name()) {
             throw compiler_exception{
@@ -378,6 +377,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                     dst_type.name(), src_info.type_ptr->name())};
         }
         std::vector<std::string> allocated_registers;
+        std::string src_nasm;
         if (is_expression() or src_info.has_lea()) {
             src_nasm = compile_lea(tok(), tc, os, indent, allocated_registers,
                                    "", src_info.lea_path);
