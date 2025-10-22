@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    40           1271            709           6044
+C/C++ Header                    40           1271            709           6046
 C++                              1             80             84            581
 -------------------------------------------------------------------------------
-SUM:                            41           1351            793           6625
+SUM:                            41           1351            793           6627
 -------------------------------------------------------------------------------
 ```
 
@@ -588,9 +588,8 @@ main:
     cmovge rbp, r13
     jge panic_bounds
     inv_125_16:
-        lea r13, [rsp + r14 * 4 - 16]
-        mov r12d, dword [r13]
-        mov dword [rsp + r15 * 4 - 16], r12d
+        mov r13d, dword [rsp + r14 * 4 - 16]
+        mov dword [rsp + r15 * 4 - 16], r13d
         not dword [rsp + r15 * 4 - 16]
     inv_125_16_end:
     not dword [rsp + r15 * 4 - 16]
@@ -2168,13 +2167,10 @@ main:
 ;       [66:11] ~i
 ;       [66:12] ~i
 ;       [66:12] allocate scratch register -> r13
-        lea r13, [rsp + r14 * 4 - 16]
-;       [66:12] allocate scratch register -> r12
-        mov r12d, dword [r13]
-        mov dword [rsp + r15 * 4 - 16], r12d
-;       [66:12] free scratch register 'r12'
-        not dword [rsp + r15 * 4 - 16]
+        mov r13d, dword [rsp + r14 * 4 - 16]
+        mov dword [rsp + r15 * 4 - 16], r13d
 ;       [66:12] free scratch register 'r13'
+        not dword [rsp + r15 * 4 - 16]
 ;       [125:16] free scratch register 'r14'
     inv_125_16_end:
     not dword [rsp + r15 * 4 - 16]

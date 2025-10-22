@@ -311,9 +311,8 @@ main:
     cmovge rbp, r13
     jge panic_bounds
     inv_125_16:
-        lea r13, [rsp + r14 * 4 - 16]
-        mov r12d, dword [r13]
-        mov dword [rsp + r15 * 4 - 16], r12d
+        mov r13d, dword [rsp + r14 * 4 - 16]
+        mov dword [rsp + r15 * 4 - 16], r13d
         not dword [rsp + r15 * 4 - 16]
     inv_125_16_end:
     not dword [rsp + r15 * 4 - 16]

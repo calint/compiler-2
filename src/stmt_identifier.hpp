@@ -371,7 +371,7 @@ class stmt_identifier : public statement {
 
         if (reg_offset.empty()) {
             reg_offset = init_reg_offset(src_loc_tk, tc, os, indent, lea,
-                                         allocated_registers, true, true);
+                                         allocated_registers, true, false);
         }
 
         if (reg_offset == "rsp") {
@@ -380,7 +380,9 @@ class stmt_identifier : public statement {
         }
 
         if (accum_offset != 0) {
-            return std::format("{} + {}", reg_offset, accum_offset);
+            operand op{reg_offset};
+            op.displacement += accum_offset;
+            return op.to_string();
         }
 
         return std::string{reg_offset};
@@ -475,11 +477,11 @@ class stmt_identifier : public statement {
             const std::string index_reg{
                 tc.alloc_scratch_register(src_loc_tk, os, indent)};
             allocated_registers.push_back(index_reg);
-            const operand p{lea};
+            const operand op{lea};
 
             // changes will be made to the register so return an allocated
             // register
-            if (not p.index_register.empty() or p.displacement != 0) {
+            if (not op.index_register.empty() or op.displacement != 0) {
                 toc::asm_lea(src_loc_tk, os, indent, index_reg, lea);
             } else {
                 tc.asm_cmd(src_loc_tk, os, indent, "mov", index_reg, lea);

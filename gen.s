@@ -724,13 +724,10 @@ main:
 ;       [66:11] ~i
 ;       [66:12] ~i
 ;       [66:12] allocate scratch register -> r13
-        lea r13, [rsp + r14 * 4 - 16]
-;       [66:12] allocate scratch register -> r12
-        mov r12d, dword [r13]
-        mov dword [rsp + r15 * 4 - 16], r12d
-;       [66:12] free scratch register 'r12'
-        not dword [rsp + r15 * 4 - 16]
+        mov r13d, dword [rsp + r14 * 4 - 16]
+        mov dword [rsp + r15 * 4 - 16], r13d
 ;       [66:12] free scratch register 'r13'
+        not dword [rsp + r15 * 4 - 16]
 ;       [125:16] free scratch register 'r14'
     inv_125_16_end:
     not dword [rsp + r15 * 4 - 16]

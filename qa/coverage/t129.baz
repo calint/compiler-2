@@ -1,0 +1,25 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+type pair {
+    key : i16,
+    value : i16
+}
+
+func foo(kv : pair) {
+    kv.value = 0x50
+}
+
+func main() {
+    var lut : pair[2]
+    lut[0] = {1, 0x20}
+    lut[1] = {2, 0x40}
+
+    foo(lut[1])
+    assert(lut[1].value == 0x50)
+}

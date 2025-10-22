@@ -1,6 +1,6 @@
 [ ] bool_ops_list: if destination is a boolean ponder howto use cmov instead
     of the jmps
-[ ] t78: lea r13 is unnecessary
+[x] t78: lea r13 is unnecessary
     inv_28_17:
 ;       [28:17] alias res -> dword [rsp + r15 * 4 - 16]  (lea: , len: 0)
 ;       [28:17] alias i -> arr  (lea: rsp + r14 * 4 - 16, len: 4)
