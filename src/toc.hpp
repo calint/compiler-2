@@ -1151,7 +1151,7 @@ class toc final {
             toc::asm_lea(src_loc_tk, os, indnt, "rsi", addr);
         } else {
             toc::asm_lea(src_loc_tk, os, indnt, "rsi",
-                         get_operand_address(src_info.operand).to_string());
+                         get_operand_address_str(src_info.operand));
         }
         toc::asm_lea(src_loc_tk, os, indnt, "rdi", dst);
 
@@ -1602,16 +1602,16 @@ class toc final {
                                  "unexpected code path stmt_assign_var:1"};
     }
 
-    static auto get_operand_address(const std::string& op) -> operand {
+    static auto get_operand_address_str(const std::string& op) -> std::string {
 
         std::optional<std::string> between_brackets{
             get_text_between_brackets(op)};
 
         if (not between_brackets) {
-            return operand{op};
+            return op;
         }
 
-        return operand{*between_brackets};
+        return *between_brackets;
     }
 
     static auto get_size_specifier(const token& tk, const size_t size)

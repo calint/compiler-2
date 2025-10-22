@@ -385,7 +385,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             src_op = compile_lea(tok(), tc, os, indent, allocated_registers, "",
                                  src_info.lea_path);
         } else {
-            src_op = toc::get_operand_address(src_info.operand).to_string();
+            src_op = toc::get_operand_address_str(src_info.operand);
         }
         const size_t nbytes{src_info.is_array
                                 ? src_info.array_size * dst_type.size()
@@ -448,10 +448,9 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                 if (fld.is_array) {
                     // built-in, not expression, not constant, array
                     validate_array_assignment(src.tok(), fld, src_info);
-                    tc.rep_movs(
-                        src.tok(), os, indent,
-                        toc::get_operand_address(src_info.operand).to_string(),
-                        dst_op.to_string(), fld.size);
+                    tc.rep_movs(src.tok(), os, indent,
+                                toc::get_operand_address_str(src_info.operand),
+                                dst_op.to_string(), fld.size);
                 } else {
                     // built-in, not expression, not constant, not array
                     tc.asm_cmd(src.tok(), os, indent, "mov", dst_accessor,
