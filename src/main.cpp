@@ -283,9 +283,9 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
             std::make_shared<stmt_identifier>(tc, unary_ops{}, tok(), tz);
 
         if (tz.is_next_char('(')) {
-            throw compiler_exception{tok(), "did not expect function call, but "
-                                            "what to copy or initializer for "
-                                            "variable using '{...}'"};
+            throw compiler_exception{tok(),
+                                     "did not expect function call, but what "
+                                     "to copy or initializer using '{...}'"};
         }
 
         // check that identifier type matches expected type
