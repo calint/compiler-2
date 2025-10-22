@@ -1,12 +1,6 @@
+[ ] initializer of arrays: var str : i8[] = {0x61, 0x41}
 [ ] nasm_operand in ident_info for less text processing sprinkled in the code?
-[x] expr_type_value::compile_assign: checks types, array sizes etc
 [ ] toc::rep_movs: heuristics around when to switch from movs to rep
-[x] expr_type_value: is a mess. make nicer
-    => reduced indentation by one level. a tree och code paths, not too bad
-[x] expr_type_value has 2 responsibilities: when it is "= { ... }" or
-    "= obj.x". should be split into: expr_type_value_assign and
-    expr_type_value_initialize
-    => unified and better recursion, but it is a mess
 [ ] initializer for types that contain array does not work as intended:
     var input_buffer : str = {0, 0} where second element is an array
 [ ] review "//?" comments
@@ -89,6 +83,13 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] expr_type_value::compile_assign: checks types, array sizes etc
+[x] expr_type_value: is a mess. make nicer
+    => reduced indentation by one level. a tree och code paths, not too bad
+[x] expr_type_value has 2 responsibilities: when it is "= { ... }" or
+    "= obj.x". should be split into: expr_type_value_assign and
+    expr_type_value_initialize
+    => unified and better recursion, but it is a mess
 [x] the last issue when using cppcoreguidelines-avoid-const-or-ref-data-members
     at linting are the const refs
     => pointers instead of refs in structs and classes, better? unless
