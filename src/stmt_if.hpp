@@ -65,10 +65,10 @@ class stmt_if final : public statement {
         // output the remaining 'else if' branches
         const size_t n{branches_.size()};
         for (size_t i{1}; i < n; i++) {
-            const stmt_if_branch& else_if_branch{branches_.at(i)};
+            const stmt_if_branch& else_if_branch{branches_[i]};
             // 'else if' tokens as read from source
-            else_if_tokens_.at((i - 1) << 1U).source_to(os);
-            else_if_tokens_.at(((i - 1) << 1U) + 1).source_to(os);
+            else_if_tokens_[(i - 1) << 1U].source_to(os);
+            else_if_tokens_[((i - 1) << 1U) + 1].source_to(os);
             else_if_branch.source_to(os);
         }
         // the 'else' code
@@ -95,12 +95,12 @@ class stmt_if final : public statement {
 
         bool branch_evaluated_to_true{};
         for (size_t i{}; i < n; i++) {
-            const stmt_if_branch& if_branch{branches_.at(i)};
+            const stmt_if_branch& if_branch{branches_[i]};
             std::string jmp_if_false{label_else_branch};
             std::string jmp_if_done{label_after_if};
             if (i < n - 1) {
                 // if branch is false jump to next if
-                jmp_if_false = branches_.at(i + 1).if_bgn_label(tc);
+                jmp_if_false = branches_[i + 1].if_bgn_label(tc);
             } else {
                 // if the last branch and no 'else', then no need to jump to
                 // 'after_if' after the code of the branch has been executed.

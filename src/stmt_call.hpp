@@ -311,7 +311,7 @@ class stmt_call : public expression {
     }
 
     [[nodiscard]] auto argument(const size_t ix) const -> const statement& {
-        return args_.at(ix);
+        return args_[ix];
     }
 
     [[nodiscard]] auto arguments_size() const -> size_t { return args_.size(); }

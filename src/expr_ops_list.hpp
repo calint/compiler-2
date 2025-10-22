@@ -187,13 +187,13 @@ class expr_ops_list final : public expression {
         exprs_[0]->source_to(os);
         const size_t n{ops_.size()};
         for (size_t i{}; i < n; i++) {
-            const char op{ops_.at(i)};
+            const char op{ops_[i]};
             std::print(os, "{}", op);
             if (op == '<' or op == '>') {
                 // handle case << and >>
                 std::print(os, "{}", op);
             }
-            exprs_.at(i + 1)->source_to(os);
+            exprs_[i + 1]->source_to(os);
         }
 
         if (enclosed_) {
@@ -321,7 +321,7 @@ class expr_ops_list final : public expression {
         const size_t n{ops_.size()};
         for (size_t i{}; i < n; i++) {
             const statement& st{*exprs_[i + 1]};
-            asm_op(tc, os, indent, ops_.at(i), dst_info, st);
+            asm_op(tc, os, indent, ops_[i], dst_info, st);
         }
 
         // apply unary expressions on destination

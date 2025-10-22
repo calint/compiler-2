@@ -143,7 +143,7 @@ class stmt_def_func final : public statement {
 
     [[nodiscard]] auto param(const size_t ix) const
         -> const stmt_def_func_param& {
-        return params_.at(ix);
+        return params_[ix];
     }
 
     [[nodiscard]] auto params() const -> std::span<const stmt_def_func_param> {

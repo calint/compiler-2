@@ -467,8 +467,8 @@ class toc final {
             std::string loc;
             const size_t n{allocated_registers_.size()};
             for (size_t i{}; i < n; i++) {
-                if (allocated_registers_.at(i) == reg) {
-                    loc = allocated_registers_src_locs_.at(i);
+                if (allocated_registers_[i] == reg) {
+                    loc = allocated_registers_src_locs_[i];
                     break;
                 }
             }
@@ -1291,7 +1291,7 @@ class toc final {
 
         while (i) {
             i--;
-            const frame& frm{frames_.at(i)};
+            const frame& frm{frames_[i]};
             // does scope contain the variable?
             if (frm.has_var(id.base())) {
                 // yes, found
@@ -1325,7 +1325,7 @@ class toc final {
             }
         }
 
-        const frame& frm{frames_.at(i)};
+        const frame& frm{frames_[i]};
 
         // is it a variable?
         if (frm.has_var(id.base())) {
