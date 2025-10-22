@@ -193,8 +193,7 @@ class stmt_call : public expression {
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             std::string{arg.identifier()}, lea,
-                                            &param.get_type(),
-                                            arg_info.array_size);
+                                            &param.get_type());
                 continue;
             }
 
@@ -271,8 +270,7 @@ class stmt_call : public expression {
         // add aliases
         for (const alias_info& e : aliases_to_add) {
             tc.comment_start(tok(), os, indent + 1);
-            std::println(os, "alias {} -> {}  (lea: {}, array: {})", e.from,
-                         e.to, e.lea, e.array_size);
+            std::println(os, "alias {} -> {}  (lea: {})", e.from, e.to, e.lea);
             tc.add_alias(e);
         }
 

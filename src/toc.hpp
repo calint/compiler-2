@@ -40,7 +40,6 @@ struct alias_info {
     std::string to;
     std::string lea;
     const type* type_ptr;
-    size_t array_size;
 };
 
 class frame final {
