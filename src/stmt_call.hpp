@@ -226,7 +226,7 @@ class stmt_call : public expression {
                 allocated_registers_in_order.emplace_back(scratch_reg);
                 allocated_scratch_registers.emplace_back(scratch_reg);
                 tc.asm_cmd(param.tok(), os, indent, "mov", scratch_reg,
-                           arg_info.id_nasm);
+                           arg_info.operand);
                 arg.get_unary_ops().compile(tc, os, indent, scratch_reg);
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             scratch_reg, "", &param.get_type());
@@ -241,10 +241,10 @@ class stmt_call : public expression {
             if (arg_info.is_const()) {
                 tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
                            std::format("{}{}", arg.get_unary_ops().to_string(),
-                                       arg_info.id_nasm));
+                                       arg_info.operand));
             } else {
                 tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
-                           arg_info.id_nasm);
+                           arg_info.operand);
                 arg.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
             }
         }
@@ -301,7 +301,7 @@ class stmt_call : public expression {
             }
             const ident_info& ret_info{
                 tc.make_ident_info(tok(), func.returns()->ident_tk.text())};
-            get_unary_ops().compile(tc, os, indent, ret_info.id_nasm);
+            get_unary_ops().compile(tc, os, indent, ret_info.operand);
         }
 
         tc.exit_func(func.name());

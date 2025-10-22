@@ -69,8 +69,8 @@ class expr_any final : public statement {
                     // if not expression assign to destination
                     if (not e.is_expression()) {
                         const ident_info& src_info{tc.make_ident_info(e)};
-                        tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
-                                   src_info.id_nasm);
+                        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
+                                   src_info.operand);
                         return;
                     }
 
@@ -106,24 +106,24 @@ class expr_any final : public statement {
                             // constant evaluation is true
                             toc::asm_label(tok(), os, indent, jmp_to_if_true);
                             tc.asm_cmd(tok(), os, indent, "mov",
-                                       dst_info.id_nasm, "true");
+                                       dst_info.operand, "true");
                             return;
                         }
                         // constant evaluation is false
                         toc::asm_label(tok(), os, indent, jmp_to_if_false);
-                        tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
+                        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
                                    "false");
                         return;
                     }
 
                     // not constant evaluation
                     toc::asm_label(tok(), os, indent, jmp_to_if_true);
-                    tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
+                    tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
                                "true");
                     toc::asm_jmp(tok(), os, indent, jmp_to_end);
 
                     toc::asm_label(tok(), os, indent, jmp_to_if_false);
-                    tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
+                    tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
                                "false");
                     toc::asm_label(tok(), os, indent, jmp_to_end);
                 }},

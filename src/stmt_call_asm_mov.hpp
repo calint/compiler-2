@@ -42,15 +42,15 @@ class stmt_call_asm_mov final : public stmt_call {
         // 'src_arg' is not an expression
         const ident_info src_info{tc.make_ident_info(src_arg)};
         if (src_info.is_const()) {
-            tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
+            tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
                        std::format("{}{}", src_arg.get_unary_ops().to_string(),
-                                   src_info.id_nasm));
+                                   src_info.operand));
             return;
         }
         // variable, register or field
-        tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
-                   src_info.id_nasm);
-        src_arg.get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
+        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
+                   src_info.operand);
+        src_arg.get_unary_ops().compile(tc, os, indent, dst_info.operand);
     }
 
     auto assert_var_not_used(const std::string_view var) const

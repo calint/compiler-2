@@ -141,9 +141,9 @@ class stmt_identifier : public statement {
         const ident_info src_info{tc.make_ident_info(tok(), identifier())};
 
         if (src_info.is_const()) {
-            tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
+            tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
                        std::format("{}{}", get_unary_ops().to_string(),
-                                   src_info.id_nasm));
+                                   src_info.operand));
             return;
         }
 
@@ -152,9 +152,9 @@ class stmt_identifier : public statement {
         if (not is_expression() and not src_info.has_lea()) {
             // note: contains no array indexing and is not relative a lea,
             //       e.g. world.location.link
-            tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
-                       src_info.id_nasm);
-            get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
+            tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
+                       src_info.operand);
+            get_unary_ops().compile(tc, os, indent, dst_info.operand);
             return;
         }
 
@@ -170,10 +170,10 @@ class stmt_identifier : public statement {
         const std::string_view size_specifier{
             toc::get_size_specifier(tok(), src_info.type_ptr->size())};
 
-        tc.asm_cmd(tok(), os, indent, "mov", dst_info.id_nasm,
+        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
                    std::format("{} [{}]", size_specifier, effective_address));
 
-        get_unary_ops().compile(tc, os, indent, dst_info.id_nasm);
+        get_unary_ops().compile(tc, os, indent, dst_info.operand);
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
@@ -468,19 +468,18 @@ class stmt_identifier : public statement {
         if (not lea.empty()) {
             // if no change will be done to the lea register just return it
             if (no_changes_to_reg_offset_after_this and
-                not(will_be_indirect_indexed and
-                    nasm_operand{lea}.is_indexed())) {
+                not(will_be_indirect_indexed and operand{lea}.is_indexed())) {
                 return lea;
             }
 
             const std::string index_reg{
                 tc.alloc_scratch_register(src_loc_tk, os, indent)};
             allocated_registers.push_back(index_reg);
-            const nasm_operand nasmop{lea};
+            const operand p{lea};
 
             // changes will be made to the register so return an allocated
             // register
-            if (not nasmop.index_register.empty() or nasmop.displacement != 0) {
+            if (not p.index_register.empty() or p.displacement != 0) {
                 toc::asm_lea(src_loc_tk, os, indent, index_reg, lea);
             } else {
                 tc.asm_cmd(src_loc_tk, os, indent, "mov", index_reg, lea);

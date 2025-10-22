@@ -55,8 +55,7 @@ class expr_type_value final : public statement {
     // implemented in 'main.cpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
     auto compile_assign(toc& tc, std::ostream& os, size_t indent,
-                        const type& dst_type, nasm_operand& nasmop) const
-        -> void;
+                        const type& dst_type, operand& op) const -> void;
 
     // implemented in 'main.cpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value

@@ -20,7 +20,7 @@ struct ident_info {
     enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
 
     std::string id;
-    std::string id_nasm; // NASM valid source
+    std::string operand; // NASM valid source
     int64_t const_value{};
     const type* type_ptr;
     int32_t stack_ix{};
@@ -44,7 +44,7 @@ struct ident_info {
     }
 
     [[nodiscard]] auto is_memory_operand() const -> bool {
-        return id_nasm.find_first_of('[') != std::string::npos;
+        return operand.find_first_of('[') != std::string::npos;
     }
 
     [[nodiscard]] auto has_lea() const -> bool {

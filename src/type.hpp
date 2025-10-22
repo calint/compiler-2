@@ -99,7 +99,7 @@ class type final {
 
         return {
             .id{ident},
-            .id_nasm{accessor},
+            .operand{accessor},
             .type_ptr = tp,
             .stack_ix = stack_idx,
             .array_size = array_size,

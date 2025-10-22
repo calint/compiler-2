@@ -369,7 +369,7 @@ inline void expr_type_value::source_to(std::ostream& os) const {
 // expr_type_value
 auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                      const type& dst_type,
-                                     nasm_operand& dst_nasmop) const -> void {
+                                     operand& dst_op) const -> void {
     if (is_identifier()) {
         const ident_info src_info{tc.make_ident_info(*this)};
         if (dst_type.name() != src_info.type_ptr->name()) {
@@ -380,21 +380,20 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                     dst_type.name(), src_info.type_ptr->name())};
         }
         std::vector<std::string> allocated_registers;
-        std::string src_nasm;
+        std::string src_op;
         if (is_expression() or src_info.has_lea()) {
-            src_nasm = compile_lea(tok(), tc, os, indent, allocated_registers,
-                                   "", src_info.lea_path);
+            src_op = compile_lea(tok(), tc, os, indent, allocated_registers, "",
+                                 src_info.lea_path);
         } else {
-            src_nasm = toc::get_nasm_operand_from_id_nasm(src_info.id_nasm)
-                           .to_string();
+            src_op = toc::get_effective_address_from_operand(src_info.operand)
+                         .to_string();
         }
         const size_t nbytes{src_info.is_array
                                 ? src_info.array_size * dst_type.size()
                                 : dst_type.size()};
-        tc.rep_movs(tok(), os, indent, src_nasm, dst_nasmop.to_string(),
-                    nbytes);
+        tc.rep_movs(tok(), os, indent, src_op, dst_op.to_string(), nbytes);
 
-        dst_nasmop.displacement += static_cast<int32_t>(nbytes);
+        dst_op.displacement += static_cast<int32_t>(nbytes);
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
@@ -411,7 +410,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         if (not fld.type_ptr->is_built_in()) {
             // not-builtin, statement is `expr_type_value`
             const expr_type_value& expr{exprs_[i]->as_expr_type_value()};
-            expr.compile_assign(tc, os, indent, *fld.type_ptr, dst_nasmop);
+            expr.compile_assign(tc, os, indent, *fld.type_ptr, dst_op);
             i++;
             continue;
         }
@@ -422,7 +421,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
 
         const std::string dst_accessor{std::format(
             "{} [{}]", toc::get_size_specifier(src.tok(), fld.type_ptr->size()),
-            dst_nasmop.to_string())};
+            dst_op.to_string())};
 
         if (src.is_expression() or
             (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
@@ -432,7 +431,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                 const ident_info src_info{tc.make_ident_info(src)};
                 validate_array_assignment(src.tok(), fld, src_info);
                 tc.rep_movs(src.tok(), os, indent, src, src_info,
-                            dst_nasmop.to_string(), fld.size);
+                            dst_op.to_string(), fld.size);
             } else {
                 // built-in, expression, not array
                 src.compile(tc, os, indent, dst_accessor);
@@ -444,26 +443,26 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                 // built-in, not expression, constant
                 tc.asm_cmd(src.tok(), os, indent, "mov", dst_accessor,
                            std::format("{}{}", src.get_unary_ops().to_string(),
-                                       src_info.id_nasm));
+                                       src_info.operand));
             } else {
                 // built-in, not expression, not constant
                 if (fld.is_array) {
                     // built-in, not expression, not constant, array
                     validate_array_assignment(src.tok(), fld, src_info);
-                    tc.rep_movs(
-                        src.tok(), os, indent,
-                        toc::get_nasm_operand_from_id_nasm(src_info.id_nasm)
-                            .to_string(),
-                        dst_nasmop.to_string(), fld.size);
+                    tc.rep_movs(src.tok(), os, indent,
+                                toc::get_effective_address_from_operand(
+                                    src_info.operand)
+                                    .to_string(),
+                                dst_op.to_string(), fld.size);
                 } else {
                     // built-in, not expression, not constant, not array
                     tc.asm_cmd(src.tok(), os, indent, "mov", dst_accessor,
-                               src_info.id_nasm);
+                               src_info.operand);
                     src.get_unary_ops().compile(tc, os, indent, dst_accessor);
                 }
             }
         }
-        dst_nasmop.displacement += static_cast<int32_t>(fld.size);
+        dst_op.displacement += static_cast<int32_t>(fld.size);
         i++;
     }
 }

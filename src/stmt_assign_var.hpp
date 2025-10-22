@@ -87,7 +87,7 @@ class stmt_assign_var final : public statement {
                     tok(), std::span{dst_info.elem_path}.subspan(i))};
 
                 if (offset != 0) {
-                    nasm_operand operand{lea};
+                    operand operand{lea};
                     operand.displacement += static_cast<int>(offset);
                     dst_accessor = std::format("{} [{}]", size_specifier,
                                                operand.to_string());
@@ -130,7 +130,7 @@ class stmt_assign_var final : public statement {
 
         // not-builtin type
 
-        nasm_operand dst_nasmop;
+        operand dst_op;
         std::vector<std::string> allocated_registers;
 
         if (stmt_ident_.is_identifier() and
@@ -140,18 +140,18 @@ class stmt_assign_var final : public statement {
                 tok(), tc, os, indent, allocated_registers, "",
                 dst_info.lea_path)};
 
-            dst_nasmop = nasm_operand{dst_lea};
+            dst_op = operand{dst_lea};
         } else {
             if (lea.empty()) {
-                dst_nasmop =
-                    toc::get_nasm_operand_from_id_nasm(dst_info.id_nasm);
+                dst_op =
+                    toc::get_effective_address_from_operand(dst_info.operand);
             } else {
-                dst_nasmop = nasm_operand{lea};
+                dst_op = operand{lea};
             }
         }
 
-        expr_.as_expr_type_value().compile_assign(
-            tc, os, indent, *dst_info.type_ptr, dst_nasmop);
+        expr_.as_expr_type_value().compile_assign(tc, os, indent,
+                                                  *dst_info.type_ptr, dst_op);
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
