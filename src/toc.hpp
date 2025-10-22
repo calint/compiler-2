@@ -1151,8 +1151,7 @@ class toc final {
             toc::asm_lea(src_loc_tk, os, indnt, "rsi", addr);
         } else {
             toc::asm_lea(src_loc_tk, os, indnt, "rsi",
-                         get_effective_address_from_operand(src_info.operand)
-                             .to_string());
+                         get_operand_address(src_info.operand).to_string());
         }
         toc::asm_lea(src_loc_tk, os, indnt, "rdi", dst);
 
@@ -1225,20 +1224,20 @@ class toc final {
 
     [[nodiscard]] auto
     get_builtin_type_for_operand(const token& src_loc_tk,
-                                 const std::string_view operand) const
+                                 const std::string_view op) const
         -> const type& {
 
         //? sort of ugly
-        if (operand.starts_with("qword")) {
+        if (op.starts_with("qword")) {
             return get_type_or_throw(src_loc_tk, "i64");
         }
-        if (operand.starts_with("dword")) {
+        if (op.starts_with("dword")) {
             return get_type_or_throw(src_loc_tk, "i32");
         }
-        if (operand.starts_with("word")) {
+        if (op.starts_with("word")) {
             return get_type_or_throw(src_loc_tk, "i16");
         }
-        if (operand.starts_with("byte")) {
+        if (op.starts_with("byte")) {
             return get_type_or_throw(src_loc_tk, "i8");
         }
 
@@ -1257,8 +1256,7 @@ class toc final {
     is_operand_indirect_addressing(const std::string_view op) const -> bool {
 
         if (auto expr{toc::get_text_between_brackets(op)}; expr) {
-            const std::string reg{
-                get_base_register_from_indirect_addressing(*expr)};
+            const std::string reg{get_operand_base_register(*expr)};
             if (is_operand_register(reg)) {
                 return true;
             }
@@ -1604,8 +1602,7 @@ class toc final {
                                  "unexpected code path stmt_assign_var:1"};
     }
 
-    static auto get_effective_address_from_operand(const std::string& op)
-        -> operand {
+    static auto get_operand_address(const std::string& op) -> operand {
 
         std::optional<std::string> between_brackets{
             get_text_between_brackets(op)};
@@ -1735,8 +1732,8 @@ class toc final {
     // private statics (sorted alphabetically)
     //------------------------------------------------------------------------
 
-    static auto get_base_register_from_indirect_addressing(
-        const std::string_view addressing) -> std::string_view {
+    static auto get_operand_base_register(const std::string_view addressing)
+        -> std::string_view {
 
         auto pos{addressing.find_first_of(" +")};
         if (pos == std::string_view::npos) {

@@ -143,8 +143,7 @@ class stmt_assign_var final : public statement {
             dst_op = operand{dst_lea};
         } else {
             if (lea.empty()) {
-                dst_op =
-                    toc::get_effective_address_from_operand(dst_info.operand);
+                dst_op = toc::get_operand_address(dst_info.operand);
             } else {
                 dst_op = operand{lea};
             }
