@@ -178,12 +178,13 @@ class stmt_call : public expression {
             // "lea" address to the base of that array
             if (arg.is_identifier() and
                 (arg.is_expression() or tc.make_ident_info(arg).has_lea())) {
-                const ident_info ii{tc.make_ident_info(arg)};
+                const ident_info arg_info{tc.make_ident_info(arg)};
 
                 std::vector<std::string> regs_lea;
 
-                const std::string lea{arg.compile_lea(
-                    arg.tok(), tc, os, indent, regs_lea, "", ii.lea_path)};
+                const std::string lea{arg.compile_lea(arg.tok(), tc, os, indent,
+                                                      regs_lea, "",
+                                                      arg_info.lea_path)};
 
                 for (const std::string& r : regs_lea) {
                     allocated_scratch_registers.emplace_back(r);
@@ -192,7 +193,8 @@ class stmt_call : public expression {
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             std::string{arg.identifier()}, lea,
-                                            &param.get_type(), ii.array_size);
+                                            &param.get_type(),
+                                            arg_info.array_size);
                 continue;
             }
 
