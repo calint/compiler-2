@@ -1,3 +1,4 @@
+[ ] generalize array_equal to work on non-array types
 [ ] consolidate the various initiations of rep stosX into common code in toc
     implementing heuristics of when to switch from mov to rep
 [ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
