@@ -1628,7 +1628,7 @@ main:
     bool_end_109_12:
 ;   [20:6] assert(expr : bool) 
     assert_109_5:
-;       [109:5] alias expr -> r15  (lea: , len: 0)
+;       [109:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_109_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -1641,7 +1641,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_109_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -1694,7 +1694,7 @@ main:
     bool_end_110_12:
 ;   [20:6] assert(expr : bool) 
     assert_110_5:
-;       [110:5] alias expr -> r15  (lea: , len: 0)
+;       [110:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_110_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -1707,7 +1707,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_110_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -1812,7 +1812,7 @@ main:
     bool_end_114_12:
 ;   [20:6] assert(expr : bool) 
     assert_114_5:
-;       [114:5] alias expr -> r15  (lea: , len: 0)
+;       [114:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_114_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -1825,7 +1825,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_114_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -1958,7 +1958,7 @@ main:
     bool_end_118_12:
 ;   [20:6] assert(expr : bool) 
     assert_118_5:
-;       [118:5] alias expr -> r15  (lea: , len: 0)
+;       [118:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_118_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -1971,7 +1971,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_118_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2080,7 +2080,7 @@ main:
     bool_end_122_12:
 ;   [20:6] assert(expr : bool) 
     assert_122_5:
-;       [122:5] alias expr -> r15  (lea: , len: 0)
+;       [122:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_122_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2093,7 +2093,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_122_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2160,8 +2160,8 @@ main:
 ;   [125:24] free scratch register 'r13'
 ;   [65:6] inv(i : i32) : i32 res 
     inv_125_16:
-;       [125:16] alias res -> dword [rsp + r15 * 4 - 16]  (lea: , len: 0)
-;       [125:16] alias i -> arr  (lea: rsp + r14 * 4 - 16, len: 4)
+;       [125:16] alias res -> dword [rsp + r15 * 4 - 16]  (lea: , array: 0)
+;       [125:16] alias i -> arr  (lea: rsp + r14 * 4 - 16, array: 4)
 ;       [66:5] res = ~i
 ;       [66:11] ~i
 ;       [66:11] ~i
@@ -2209,7 +2209,7 @@ main:
     bool_end_126_12:
 ;   [20:6] assert(expr : bool) 
     assert_126_5:
-;       [126:5] alias expr -> r15  (lea: , len: 0)
+;       [126:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_126_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2222,7 +2222,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_126_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2244,7 +2244,7 @@ main:
 ;   [128:5] faz(arr)
 ;   [75:6] faz(arg : i32[]) 
     faz_128_5:
-;       [128:5] alias arg -> arr  (lea: , len: 0)
+;       [128:5] alias arg -> arr  (lea: , array: 0)
 ;       [76:5] arg[1] = 0xfe
 ;       [76:5] allocate scratch register -> r15
 ;       [76:9] set array index
@@ -2303,7 +2303,7 @@ main:
     bool_end_129_12:
 ;   [20:6] assert(expr : bool) 
     assert_129_5:
-;       [129:5] alias expr -> r15  (lea: , len: 0)
+;       [129:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_129_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2316,7 +2316,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_129_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2345,7 +2345,7 @@ main:
 ;   [132:5] foo(p)
 ;   [51:6] foo(pt : point) 
     foo_132_5:
-;       [132:5] alias pt -> p  (lea: , len: 0)
+;       [132:5] alias pt -> p  (lea: , array: 0)
 ;       [52:5] pt.x = 0b10
 ;       [52:12] 0b10
 ;       [52:12] 0b10
@@ -2375,7 +2375,7 @@ main:
     bool_end_133_12:
 ;   [20:6] assert(expr : bool) 
     assert_133_5:
-;       [133:5] alias expr -> r15  (lea: , len: 0)
+;       [133:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_133_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2388,7 +2388,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_133_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2423,7 +2423,7 @@ main:
     bool_end_134_12:
 ;   [20:6] assert(expr : bool) 
     assert_134_5:
-;       [134:5] alias expr -> r15  (lea: , len: 0)
+;       [134:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_134_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2436,7 +2436,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_134_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2465,7 +2465,7 @@ main:
 ;   [137:5] bar(i)
 ;   [58:6] bar(arg) 
     bar_137_5:
-;       [137:5] alias arg -> i  (lea: , len: 0)
+;       [137:5] alias arg -> i  (lea: , array: 0)
         if_59_8_137_5:
 ;       [59:8] ? arg == 0
 ;       [59:8] ? arg == 0
@@ -2498,7 +2498,7 @@ main:
     bool_end_138_12:
 ;   [20:6] assert(expr : bool) 
     assert_138_5:
-;       [138:5] alias expr -> r15  (lea: , len: 0)
+;       [138:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_138_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2511,7 +2511,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_138_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2538,7 +2538,7 @@ main:
 ;   [141:5] bar(i)
 ;   [58:6] bar(arg) 
     bar_141_5:
-;       [141:5] alias arg -> i  (lea: , len: 0)
+;       [141:5] alias arg -> i  (lea: , array: 0)
         if_59_8_141_5:
 ;       [59:8] ? arg == 0
 ;       [59:8] ? arg == 0
@@ -2571,7 +2571,7 @@ main:
     bool_end_142_12:
 ;   [20:6] assert(expr : bool) 
     assert_142_5:
-;       [142:5] alias expr -> r15  (lea: , len: 0)
+;       [142:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_142_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2584,7 +2584,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_142_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2620,8 +2620,8 @@ main:
 ;   [145:13] baz(j)
 ;   [69:6] baz(arg) : i64 res 
     baz_145_13:
-;       [145:13] alias res -> r15  (lea: , len: 0)
-;       [145:13] alias arg -> j  (lea: , len: 0)
+;       [145:13] alias res -> r15  (lea: , array: 0)
+;       [145:13] alias arg -> j  (lea: , array: 0)
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
@@ -2648,7 +2648,7 @@ main:
     bool_end_146_12:
 ;   [20:6] assert(expr : bool) 
     assert_146_5:
-;       [146:5] alias expr -> r15  (lea: , len: 0)
+;       [146:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_146_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2661,7 +2661,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_146_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2688,8 +2688,8 @@ main:
 ;   [148:9] baz(1)
 ;   [69:6] baz(arg) : i64 res 
     baz_148_9:
-;       [148:9] alias res -> r15  (lea: , len: 0)
-;       [148:9] alias arg -> 1  (lea: , len: 0)
+;       [148:9] alias res -> r15  (lea: , array: 0)
+;       [148:9] alias arg -> 1  (lea: , array: 0)
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
@@ -2716,7 +2716,7 @@ main:
     bool_end_149_12:
 ;   [20:6] assert(expr : bool) 
     assert_149_5:
-;       [149:5] alias expr -> r15  (lea: , len: 0)
+;       [149:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_149_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2729,7 +2729,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_149_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2758,8 +2758,8 @@ main:
 ;   [151:23] baz(2)
 ;   [69:6] baz(arg) : i64 res 
     baz_151_23:
-;       [151:23] alias res -> qword [rsp - 112]  (lea: , len: 0)
-;       [151:23] alias arg -> 2  (lea: , len: 0)
+;       [151:23] alias res -> qword [rsp - 112]  (lea: , array: 0)
+;       [151:23] alias arg -> 2  (lea: , array: 0)
 ;       [70:5] res = arg * 2
 ;       [70:11] arg * 2
 ;       [70:11] arg * 2
@@ -2790,7 +2790,7 @@ main:
     bool_end_152_12:
 ;   [20:6] assert(expr : bool) 
     assert_152_5:
-;       [152:5] alias expr -> r15  (lea: , len: 0)
+;       [152:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_152_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2803,7 +2803,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_152_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2877,7 +2877,7 @@ main:
     bool_end_158_12:
 ;   [20:6] assert(expr : bool) 
     assert_158_5:
-;       [158:5] alias expr -> r15  (lea: , len: 0)
+;       [158:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_158_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2890,7 +2890,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_158_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2925,7 +2925,7 @@ main:
     bool_end_159_12:
 ;   [20:6] assert(expr : bool) 
     assert_159_5:
-;       [159:5] alias expr -> r15  (lea: , len: 0)
+;       [159:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_159_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2938,7 +2938,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_159_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -2973,7 +2973,7 @@ main:
     bool_end_160_12:
 ;   [20:6] assert(expr : bool) 
     assert_160_5:
-;       [160:5] alias expr -> r15  (lea: , len: 0)
+;       [160:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_160_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -2986,7 +2986,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_160_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -3047,7 +3047,7 @@ main:
     bool_end_164_12:
 ;   [20:6] assert(expr : bool) 
     assert_164_5:
-;       [164:5] alias expr -> r15  (lea: , len: 0)
+;       [164:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_164_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -3060,7 +3060,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_164_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -3095,7 +3095,7 @@ main:
     bool_end_165_12:
 ;   [20:6] assert(expr : bool) 
     assert_165_5:
-;       [165:5] alias expr -> r15  (lea: , len: 0)
+;       [165:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_165_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -3108,7 +3108,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_165_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -3156,7 +3156,7 @@ main:
     bool_end_168_12:
 ;   [20:6] assert(expr : bool) 
     assert_168_5:
-;       [168:5] alias expr -> r15  (lea: , len: 0)
+;       [168:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_168_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -3169,7 +3169,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_168_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -3204,7 +3204,7 @@ main:
     bool_end_169_12:
 ;   [20:6] assert(expr : bool) 
     assert_169_5:
-;       [169:5] alias expr -> r15  (lea: , len: 0)
+;       [169:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_169_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -3217,7 +3217,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_169_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -3252,7 +3252,7 @@ main:
     bool_end_170_12:
 ;   [20:6] assert(expr : bool) 
     assert_170_5:
-;       [170:5] alias expr -> r15  (lea: , len: 0)
+;       [170:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_170_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -3265,7 +3265,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_170_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -3336,7 +3336,7 @@ main:
     bool_end_175_12:
 ;   [20:6] assert(expr : bool) 
     assert_175_5:
-;       [175:5] alias expr -> r15  (lea: , len: 0)
+;       [175:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_175_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -3349,7 +3349,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_175_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -3484,7 +3484,7 @@ main:
     bool_end_179_12:
 ;   [20:6] assert(expr : bool) 
     assert_179_5:
-;       [179:5] alias expr -> r15  (lea: , len: 0)
+;       [179:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_179_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -3497,7 +3497,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_179_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -3662,7 +3662,7 @@ main:
     bool_end_188_12:
 ;   [20:6] assert(expr : bool) 
     assert_188_5:
-;       [188:5] alias expr -> r15  (lea: , len: 0)
+;       [188:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_188_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -3675,7 +3675,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_188_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -3807,7 +3807,7 @@ main:
     bool_end_189_12:
 ;   [20:6] assert(expr : bool) 
     assert_189_5:
-;       [189:5] alias expr -> r15  (lea: , len: 0)
+;       [189:5] alias expr -> r15  (lea: , array: 0)
         if_20_29_189_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
@@ -3820,7 +3820,7 @@ main:
             mov rdi, 1
 ;           [12:6] exit(v : reg_rdi) 
             exit_20_38_189_5:
-;               [20:38] alias v -> rdi  (lea: , len: 0)
+;               [20:38] alias v -> rdi  (lea: , array: 0)
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
 ;                   [13:14] 60
@@ -3859,8 +3859,8 @@ main:
     mov rsi, hello
 ;   [22:6] print(len : reg_rdx, ptr : reg_rsi) 
     print_196_5:
-;       [196:5] alias len -> rdx  (lea: , len: 0)
-;       [196:5] alias ptr -> rsi  (lea: , len: 0)
+;       [196:5] alias len -> rdx  (lea: , array: 0)
+;       [196:5] alias ptr -> rsi  (lea: , array: 0)
 ;       [23:5] mov(rax, 1)
 ;           [23:14] 1
 ;           [23:14] 1
@@ -3897,8 +3897,8 @@ main:
         mov rsi, prompt1
 ;       [22:6] print(len : reg_rdx, ptr : reg_rsi) 
         print_198_9:
-;           [198:9] alias len -> rdx  (lea: , len: 0)
-;           [198:9] alias ptr -> rsi  (lea: , len: 0)
+;           [198:9] alias len -> rdx  (lea: , array: 0)
+;           [198:9] alias ptr -> rsi  (lea: , array: 0)
 ;           [23:5] mov(rax, 1)
 ;               [23:14] 1
 ;               [23:14] 1
@@ -3929,7 +3929,7 @@ main:
 ;       [199:9] str_in(nm)
 ;       [84:6] str_in(s : str) 
         str_in_199_9:
-;           [199:9] alias s -> nm  (lea: , len: 0)
+;           [199:9] alias s -> nm  (lea: , array: 0)
 ;           [85:5] mov(rax, 0)
 ;               [85:14] 0
 ;               [85:14] 0
@@ -3991,8 +3991,8 @@ main:
             mov rsi, prompt2
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_203_13:
-;               [203:13] alias len -> rdx  (lea: , len: 0)
-;               [203:13] alias ptr -> rsi  (lea: , len: 0)
+;               [203:13] alias len -> rdx  (lea: , array: 0)
+;               [203:13] alias ptr -> rsi  (lea: , array: 0)
 ;               [23:5] mov(rax, 1)
 ;                   [23:14] 1
 ;                   [23:14] 1
@@ -4031,8 +4031,8 @@ main:
             mov rsi, prompt3
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_206_13:
-;               [206:13] alias len -> rdx  (lea: , len: 0)
-;               [206:13] alias ptr -> rsi  (lea: , len: 0)
+;               [206:13] alias len -> rdx  (lea: , array: 0)
+;               [206:13] alias ptr -> rsi  (lea: , array: 0)
 ;               [23:5] mov(rax, 1)
 ;                   [23:14] 1
 ;                   [23:14] 1
@@ -4063,7 +4063,7 @@ main:
 ;           [207:13] str_out(nm)
 ;           [93:6] str_out(s : str) 
             str_out_207_13:
-;               [207:13] alias s -> nm  (lea: , len: 0)
+;               [207:13] alias s -> nm  (lea: , array: 0)
 ;               [94:5] mov(rax, 1)
 ;                   [94:14] 1
 ;                   [94:14] 1
@@ -4099,8 +4099,8 @@ main:
             mov rsi, dot
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_208_13:
-;               [208:13] alias len -> rdx  (lea: , len: 0)
-;               [208:13] alias ptr -> rsi  (lea: , len: 0)
+;               [208:13] alias len -> rdx  (lea: , array: 0)
+;               [208:13] alias ptr -> rsi  (lea: , array: 0)
 ;               [23:5] mov(rax, 1)
 ;                   [23:14] 1
 ;                   [23:14] 1
@@ -4135,8 +4135,8 @@ main:
             mov rsi, nl
 ;           [22:6] print(len : reg_rdx, ptr : reg_rsi) 
             print_209_13:
-;               [209:13] alias len -> rdx  (lea: , len: 0)
-;               [209:13] alias ptr -> rsi  (lea: , len: 0)
+;               [209:13] alias len -> rdx  (lea: , array: 0)
+;               [209:13] alias ptr -> rsi  (lea: , array: 0)
 ;               [23:5] mov(rax, 1)
 ;                   [23:14] 1
 ;                   [23:14] 1

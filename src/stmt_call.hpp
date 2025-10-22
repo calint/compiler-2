@@ -271,8 +271,8 @@ class stmt_call : public expression {
         // add aliases
         for (const alias_info& e : aliases_to_add) {
             tc.comment_start(tok(), os, indent + 1);
-            std::println(os, "alias {} -> {}  (lea: {}, len: {})", e.from, e.to,
-                         e.lea, e.array_size);
+            std::println(os, "alias {} -> {}  (lea: {}, array: {})", e.from,
+                         e.to, e.lea, e.array_size);
             tc.add_alias(e);
         }
 
