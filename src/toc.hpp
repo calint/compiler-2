@@ -1762,9 +1762,10 @@ class toc final {
     [[nodiscard]] static auto get_before_dot(std::string_view str)
         -> std::string_view {
 
-        if (auto pos = str.find('.'); pos != std::string_view::npos) {
+        if (const size_t pos{str.find('.')}; pos != std::string_view::npos) {
             return str.substr(0, pos);
         }
+
         return str;
     }
 
@@ -1863,10 +1864,8 @@ class toc final {
                                       const std::string_view new_size)
         -> std::string {
 
-        auto pos = operand.find('[');
-        if (pos == std::string_view::npos) {
-            std::unreachable();
-        }
+        const size_t pos = operand.find('[');
+        assert(pos != std::string_view::npos);
         return std::format("{} {}", new_size, operand.substr(pos));
     }
 };
