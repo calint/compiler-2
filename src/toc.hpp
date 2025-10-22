@@ -1073,7 +1073,6 @@ class toc final {
                     return true;
                 }
                 id_base = get_before_dot(alias.to);
-                continue;
             }
         }
 
