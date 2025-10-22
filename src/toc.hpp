@@ -518,8 +518,8 @@ class toc final {
             return;
         }
 
-        const size_t dst_size{get_size_from_operand(src_loc_tk, dst_op)};
-        const size_t src_size{get_size_from_operand(src_loc_tk, src_op)};
+        const size_t dst_size{get_operand_size(src_loc_tk, dst_op)};
+        const size_t src_size{get_operand_size(src_loc_tk, src_op)};
 
         if (dst_size == src_size) {
             if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
@@ -853,9 +853,9 @@ class toc final {
         throw compiler_exception{src_loc_tk, "unexpected frames"};
     }
 
-    [[nodiscard]] auto
-    get_size_from_operand(const token& src_loc_tk,
-                          const std::string_view operand) const -> size_t {
+    [[nodiscard]] auto get_operand_size(const token& src_loc_tk,
+                                        const std::string_view operand) const
+        -> size_t {
 
         //? sort of ugly
         if (operand.starts_with("qword")) {
@@ -871,7 +871,7 @@ class toc final {
             return size_byte;
         }
         if (is_operand_register(operand)) {
-            return get_size_from_operand_register(src_loc_tk, operand);
+            return get_size_from_register_operand(src_loc_tk, operand);
         }
 
         // constant
@@ -1778,7 +1778,7 @@ class toc final {
         }
     }
 
-    static auto get_size_from_operand_register(const token& src_loc_tk,
+    static auto get_size_from_register_operand(const token& src_loc_tk,
                                                const std::string_view operand)
         -> size_t {
 
