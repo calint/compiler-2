@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-29
 
+#include <utility>
 #include <variant>
 
 #include "expr_bool_op.hpp"
@@ -151,7 +152,7 @@ class expr_bool_ops_list final : public statement {
                               [[maybe_unused]] const std::string_view dst) const
         -> void override {
 
-        throw panic_exception("unexpected code path expr_bool_ops_list:1");
+        std::unreachable();
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
@@ -350,32 +351,28 @@ class expr_bool_ops_list final : public statement {
         // 1 expression in the list
 
         // is it an 'expr_bool_ops'?
-        if (bools_.at(0).index() == 0) {
+        if (bools_[0].index() == 0) {
             // yes, call its 'is_expression'
-            return get<expr_bool_op>(bools_.at(0)).is_expression();
+            return get<expr_bool_op>(bools_[0]).is_expression();
         }
 
         // it is an 'expr_bool_ops_list'
 
-        return get<expr_bool_ops_list>(bools_.at(0)).is_expression();
+        return get<expr_bool_ops_list>(bools_[0]).is_expression();
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
-        if (bools_.size() > 1) {
-            throw panic_exception("unexpected code path expr_bool_ops_list:5");
-        }
-
-        assert(not bools_.empty());
+        assert(bools_.size() == 1);
 
         // is it an 'expr_bool_ops'?
-        if (bools_.at(0).index() == 0) {
+        if (bools_[0].index() == 0) {
             // yes, call its 'identifier'
-            return get<expr_bool_op>(bools_.at(0)).identifier();
+            return get<expr_bool_op>(bools_[0]).identifier();
         }
 
         // it is an 'expr_bool_ops_list'
 
-        return get<expr_bool_ops_list>(bools_.at(0)).identifier();
+        return get<expr_bool_ops_list>(bools_[0]).identifier();
     }
 
     auto assert_var_not_used(const std::string_view var) const

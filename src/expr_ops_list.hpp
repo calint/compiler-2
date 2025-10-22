@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "decouple.hpp"
@@ -183,7 +184,7 @@ class expr_ops_list final : public expression {
             std::print(os, "(");
         }
         expression::source_to(os); // whitespace
-        exprs_.at(0)->source_to(os);
+        exprs_[0]->source_to(os);
         const size_t n{ops_.size()};
         for (size_t i{}; i < n; i++) {
             const char op{ops_.at(i)};
@@ -247,14 +248,14 @@ class expr_ops_list final : public expression {
     [[nodiscard]] auto identifier() const -> std::string_view override {
         assert(exprs_.size() == 1);
 
-        return exprs_.at(0)->identifier();
+        return exprs_[0]->identifier();
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
         // is this list one element?
         if (exprs_.size() == 1) {
             // then the unary ops are on the first element
-            return exprs_.at(0)->get_unary_ops();
+            return exprs_[0]->get_unary_ops();
         }
         // in the multi-element list, unary ops for all are on the current list
         // element
@@ -270,7 +271,7 @@ class expr_ops_list final : public expression {
 
         // if only 1 element then it decides if it is an expression
         if (exprs_.size() == 1) {
-            return exprs_.at(0)->is_expression();
+            return exprs_[0]->is_expression();
         }
 
         // more than 1 element, automatically an expression
@@ -286,7 +287,7 @@ class expr_ops_list final : public expression {
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override {
-        return exprs_.size() == 1 and exprs_.at(0)->is_identifier();
+        return exprs_.size() == 1 and exprs_[0]->is_identifier();
     }
 
     auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
@@ -298,9 +299,8 @@ class expr_ops_list final : public expression {
 
         assert(exprs_.size() == 1);
 
-        return exprs_.at(0)->compile_lea(src_loc_tk, tc, os, indent,
-                                         allocated_registers, reg_size,
-                                         lea_path);
+        return exprs_[0]->compile_lea(src_loc_tk, tc, os, indent,
+                                      allocated_registers, reg_size, lea_path);
     }
 
   private:
@@ -369,7 +369,7 @@ class expr_ops_list final : public expression {
         case '>': // shift right
             return precedence_shift;
         default:
-            throw panic_exception("unexpected code path expr_ops_list:1");
+            std::unreachable();
         }
     }
 

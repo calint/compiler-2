@@ -172,7 +172,7 @@ class ident_path final {
   public:
     explicit ident_path(std::string id) : id_{std::move(id)} { refresh_path(); }
 
-    [[nodiscard]] auto base() const -> std::string_view { return path_.at(0); }
+    [[nodiscard]] auto base() const -> std::string_view { return path_[0]; }
 
     [[nodiscard]] auto path() const -> std::span<const std::string> {
         return path_;
@@ -631,7 +631,7 @@ class toc final {
 
         if (is_operand_register(dst_op)) {
             //? destination is never a register
-            throw panic_exception{"unexpected code path toc:5"};
+            std::unreachable();
         }
 
         // constant to memory
@@ -1241,7 +1241,7 @@ class toc final {
             return get_type_or_throw(src_loc_tk, "i8");
         }
 
-        throw panic_exception{"unexpected code path toc:1"};
+        std::unreachable();
     }
 
     [[nodiscard]] auto get_stack_size() const -> size_t {
@@ -1598,8 +1598,10 @@ class toc final {
             }
             accum += f.size;
         }
-        throw compiler_exception{src_loc_tk,
-                                 "unexpected code path stmt_assign_var:1"};
+
+        throw compiler_exception(
+            src_loc_tk, std::format("field '{}' not found in type '{}'",
+                                    field_name, tp.name()));
     }
 
     static auto get_operand_address_str(const std::string& op) -> std::string {
@@ -1771,7 +1773,7 @@ class toc final {
         case size_qword:
             return "qword";
         default:
-            throw panic_exception{"unexpected code path toc:3"};
+            std::unreachable();
         }
     }
 
@@ -1829,7 +1831,7 @@ class toc final {
 
         auto pos = operand.find('[');
         if (pos == std::string_view::npos) {
-            throw panic_exception{"unexpected code path toc:4"};
+            std::unreachable();
         }
         return std::format("{} {}", new_size, operand.substr(pos));
     }

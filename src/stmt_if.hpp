@@ -60,7 +60,7 @@ class stmt_if final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         // output first branch
-        const stmt_if_branch& branch{branches_.at(0)};
+        const stmt_if_branch& branch{branches_[0]};
         branch.source_to(os);
         // output the remaining 'else if' branches
         const size_t n{branches_.size()};

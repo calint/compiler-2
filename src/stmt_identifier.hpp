@@ -84,7 +84,7 @@ class stmt_identifier : public statement {
     auto operator=(stmt_identifier&&) -> stmt_identifier& = default;
 
     [[nodiscard]] auto first_token() const -> const token& {
-        return elems_.at(0).name_tk;
+        return elems_[0].name_tk;
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {

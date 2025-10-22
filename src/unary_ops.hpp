@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <utility>
 #include <vector>
 
 #include "panic_exception.hpp"
@@ -73,7 +74,7 @@ class unary_ops final {
                 v = ~v; // NOLINT(hicpp-signed-bitwise)
                 break;
             default:
-                throw panic_exception("unexpected code path");
+                std::unreachable();
             }
         }
         return v;

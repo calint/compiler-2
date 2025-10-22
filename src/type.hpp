@@ -88,7 +88,7 @@ class type final {
         // address
         const type* tp_first_field{tp};
         while (not tp_first_field->is_built_in()) {
-            tp_first_field = tp_first_field->fields_.at(0).type_ptr;
+            tp_first_field = tp_first_field->fields_[0].type_ptr;
         }
 
         const std::string_view memsize{

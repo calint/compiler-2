@@ -3,6 +3,7 @@
 
 #include "expr_bool_ops_list.hpp"
 #include "stmt_block.hpp"
+#include <utility>
 
 class stmt_if_branch final : public statement {
     expr_bool_ops_list bol_;
@@ -35,7 +36,7 @@ class stmt_if_branch final : public statement {
             [[maybe_unused]] const size_t indent,
             [[maybe_unused]] const std::string_view dst) const override {
 
-        throw panic_exception("unexpected code path");
+        std::unreachable();
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,

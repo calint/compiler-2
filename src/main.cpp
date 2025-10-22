@@ -205,7 +205,7 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
         return std::make_unique<stmt_call_asm_syscall>(tc, tk, tz);
     }
 
-    throw panic_exception{"unexpected code path main:1"};
+    std::unreachable();
 }
 
 // declared in 'decouple.hpp'
@@ -535,7 +535,7 @@ inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
             toc::asm_neg(ws_before_, os, indnt, dst_info);
             break;
         default:
-            throw panic_exception("unexpected code path main:1");
+            std::unreachable();
         }
     }
 }

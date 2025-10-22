@@ -6,6 +6,7 @@
 #include <format>
 #include <ranges>
 #include <string_view>
+#include <utility>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -287,7 +288,7 @@ class stmt_call : public expression {
             } else if (std::ranges::contains(allocated_named_registers, reg)) {
                 tc.free_named_register(tok(), os, indent + 1, reg);
             } else {
-                throw panic_exception("unexpected code path");
+                std::unreachable();
             }
         }
 

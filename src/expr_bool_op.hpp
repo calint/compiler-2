@@ -5,6 +5,7 @@
 #include <optional>
 #include <ostream>
 #include <ranges>
+#include <utility>
 
 #include "expr_ops_list.hpp"
 
@@ -108,7 +109,7 @@ class expr_bool_op final : public statement {
                               [[maybe_unused]] const std::string_view dst) const
         -> void override {
 
-        throw panic_exception("unexpected code path bool_op:1");
+        std::unreachable();
     }
 
     // returns an optional bool and if defined the expression evaluated to
@@ -364,7 +365,7 @@ class expr_bool_op final : public statement {
         if (op == ">=") {
             return lh >= rh;
         }
-        throw panic_exception("unexpected code path bool_op:2");
+        std::unreachable();
     }
 
     static auto asm_jxx_for_op(const std::string_view op) -> std::string_view {
@@ -386,8 +387,7 @@ class expr_bool_op final : public statement {
         if (op == ">=") {
             return asm_jge;
         }
-
-        throw panic_exception("unexpected code path bool_op:3");
+        std::unreachable();
     }
 
     static auto asm_jxx_for_op_inv(const std::string_view op)
@@ -411,7 +411,7 @@ class expr_bool_op final : public statement {
         if (op == ">=") {
             return asm_jl;
         }
-        throw panic_exception("unexpected code path bool_op:4");
+        std::unreachable();
     }
 
     auto resolve_cmp(toc& tc, std::ostream& os, const size_t indent,
