@@ -1,3 +1,5 @@
+[ ] bool_ops_list: if destination is a boolean ponder howto use cmov instead
+    of the jmps
 [ ] this is not optimal
         mov r14, qword [r13 + r12 * 8]
 ;       [188:12] free scratch register 'r12'
