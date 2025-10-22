@@ -451,7 +451,7 @@ class expr_bool_op final : public statement {
         -> std::string {
 
         if (expr.is_expression() or
-            (expr.is_identifier() and tc.make_ident_info(expr).has_lea())) {
+            (expr.is_identifier() and tc.has_lea(expr))) {
             const std::string reg{
                 tc.alloc_scratch_register(expr.tok(), os, indent)};
             allocated_registers.emplace_back(reg);

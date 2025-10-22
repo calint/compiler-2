@@ -111,6 +111,7 @@ class frame final {
 
     [[nodiscard]] auto get_alias(std::string_view name) const
         -> const alias_info& {
+
         return aliases_.get_const_ref(name);
     }
 
@@ -1054,6 +1055,31 @@ class toc final {
         return *type_void_;
     }
 
+    [[nodiscard]] auto has_lea(const statement& st) const -> bool {
+        std::string_view id_base{get_before_dot(st.identifier())};
+        size_t i{frames_.size()};
+        while (i) {
+            i--;
+            const frame& frm{frames_[i]};
+            if (frm.has_var(id_base)) {
+                return false;
+            }
+            if (frm.is_func()) {
+                if (not frm.has_alias(id_base)) {
+                    return false;
+                }
+                const alias_info& alias{frm.get_alias(id_base)};
+                if (not alias.lea.empty()) {
+                    return true;
+                }
+                id_base = get_before_dot(alias.to);
+                continue;
+            }
+        }
+
+        return false;
+    }
+
     [[nodiscard]] auto is_bounds_check_upper() const -> bool {
         return bounds_check_upper_;
     }
@@ -1306,7 +1332,7 @@ class toc final {
 
                 // yes, continue resolving alias until it is a variable,
                 // field, register or constant
-                const alias_info alias{frm.get_alias(id.base())};
+                const alias_info& alias{frm.get_alias(id.base())};
 
                 lea_path.emplace_back(alias.lea);
 
@@ -1775,6 +1801,15 @@ class toc final {
         default:
             std::unreachable();
         }
+    }
+
+    [[nodiscard]] static auto get_before_dot(std::string_view str)
+        -> std::string_view {
+
+        if (auto pos = str.find('.'); pos != std::string_view::npos) {
+            return str.substr(0, pos);
+        }
+        return str;
     }
 
     static auto get_size_from_register_operand(const token& src_loc_tk,

@@ -440,8 +440,7 @@ class expr_ops_list final : public expression {
         -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or
-            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
+        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // yes, compile with destination to 'dst'
             src.compile(tc, os, indent, dst.operand);
             return;
@@ -469,8 +468,7 @@ class expr_ops_list final : public expression {
         -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or
-            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
+        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // yes, compile it to a scratch register
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
@@ -559,8 +557,7 @@ class expr_ops_list final : public expression {
         -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or
-            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
+        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
@@ -609,8 +606,7 @@ class expr_ops_list final : public expression {
                                const statement& src) -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or
-            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
+        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
@@ -652,8 +648,7 @@ class expr_ops_list final : public expression {
                              const statement& src) -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or
-            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
+        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // the operand must be stored in register 'CL'
             //? todo. BMI2 (Bit Manipulation Instruction Set 2)
             //        look at shlx/shrx/sarx which can use any register for the
@@ -732,8 +727,7 @@ class expr_ops_list final : public expression {
                            const statement& src) -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or
-            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
+        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);

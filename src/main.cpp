@@ -422,8 +422,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             "{} [{}]", toc::get_size_specifier(src.tok(), fld.type_ptr->size()),
             dst_op.to_string())};
 
-        if (src.is_expression() or
-            (src.is_identifier() and tc.make_ident_info(src).has_lea())) {
+        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
             if (fld.is_array) {
                 // built-in, expression, array

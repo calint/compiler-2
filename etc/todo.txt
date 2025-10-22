@@ -11,6 +11,7 @@
 [ ] fix better the re-occurring code:
             if (arg.is_identifier() and
                 (arg.is_expression() or tc.make_ident_info(arg).has_lea())) {
+    => made tc::has_lea(stmt) for a faster version than making the ident_info
 [ ] stmt_identifier: 358: if register will be just offset without indexing
     register then that can be calculated in init_reg_offset
 [ ] expr_ops_list: tidy asm_op_xxx with more streamlined flow of make_ident
