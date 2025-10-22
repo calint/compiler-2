@@ -1,3 +1,8 @@
+[ ] this is not optimal
+        mov r14, qword [r13 + r12 * 8]
+;       [188:12] free scratch register 'r12'
+;       [188:12] free scratch register 'r13'
+    cmp r14, 0xffee
 [ ] handle boolean expression of == between types, allow?
 [ ] generalize array_equal to work on non-array types
 [ ] consolidate the various initiations of rep stosX into common code in toc
