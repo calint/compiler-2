@@ -1,3 +1,4 @@
+[ ] consolidate the various initiations of rep stosX into common code in toc
 [ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
     sign-extends loads
 [ ] numbers such as i8 : 255 cause problems when cmp because value is moved
