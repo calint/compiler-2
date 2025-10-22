@@ -24,7 +24,7 @@ template <class T> class lut final {
   public:
     [[nodiscard]] auto has(std::string_view key) const -> bool {
         return std::ranges::any_of(
-            elems_, [&key](const elem& e) -> auto { return e.is_key(key); });
+            elems_, [&key](const elem& e) -> bool { return e.is_key(key); });
     }
 
     auto put(std::string key, T data) -> void {

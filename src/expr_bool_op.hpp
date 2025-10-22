@@ -450,6 +450,17 @@ class expr_bool_op final : public statement {
                              std::vector<std::string>& allocated_registers)
         -> std::string {
 
+        if (expr.is_indexed() or tc.has_lea(expr)) {
+            const ident_info expr_info{tc.make_ident_info(expr)};
+            std::string reg{expr.compile_lea(expr.tok(), tc, os, indent,
+                                             allocated_registers, "",
+                                             expr_info.lea_path)};
+            return std::format(
+                "{} [{}]",
+                tc.get_size_specifier(expr.tok(), expr_info.type_ptr->size()),
+                reg);
+        }
+
         if (expr.is_expression() or
             (expr.is_identifier() and tc.has_lea(expr))) {
             const std::string reg{

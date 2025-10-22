@@ -1056,6 +1056,9 @@ class toc final {
     }
 
     [[nodiscard]] auto has_lea(const statement& st) const -> bool {
+        if (not st.is_identifier()) {
+            return false;
+        }
         std::string_view id_base{get_before_dot(st.identifier())};
         size_t i{frames_.size()};
         while (i) {
@@ -1168,8 +1171,7 @@ class toc final {
         alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
 
         std::vector<std::string> allocated_registers;
-        if (src.is_identifier() and
-            (src.is_expression() or src_info.has_lea())) {
+        if (src.is_indexed() or src_info.has_lea()) {
             const std::string& addr{src.compile_lea(src_loc_tk, *this, os,
                                                     indnt, allocated_registers,
                                                     "", src_info.lea_path)};

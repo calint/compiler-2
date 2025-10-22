@@ -177,8 +177,7 @@ class stmt_call : public expression {
 
             // if the argument is an identifier with indexing then save the
             // "lea" address to the base of that array
-            if (arg.is_identifier() and
-                (arg.is_expression() or tc.has_lea(arg))) {
+            if (arg.is_indexed() or tc.has_lea(arg)) {
                 const ident_info arg_info{tc.make_ident_info(arg)};
 
                 std::vector<std::string> regs_lea;

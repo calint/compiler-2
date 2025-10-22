@@ -47,7 +47,7 @@ class expr_any final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        std::visit([&os](const auto& itm) -> auto { itm.source_to(os); }, var_);
+        std::visit([&os](const auto& itm) -> void { itm.source_to(os); }, var_);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
@@ -132,7 +132,12 @@ class expr_any final : public statement {
 
     [[nodiscard]] auto is_expression() const -> bool override {
         return std::visit(
-            [](const auto& e) -> auto { return e.is_expression(); }, var_);
+            [](const auto& e) -> bool { return e.is_expression(); }, var_);
+    }
+
+    [[nodiscard]] auto is_indexed() const -> bool override {
+        return std::visit([](const auto& e) -> bool { return e.is_indexed(); },
+                          var_);
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
@@ -144,7 +149,7 @@ class expr_any final : public statement {
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
         std::visit(
-            [&var](const auto& e) -> auto { e.assert_var_not_used(var); },
+            [&var](const auto& e) -> void { e.assert_var_not_used(var); },
             var_);
     }
 

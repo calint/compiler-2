@@ -378,7 +378,7 @@ class expr_bool_ops_list final : public statement {
 
         for (const auto& e : bools_) {
             std::visit(
-                [&var](const auto& itm) -> auto {
+                [&var](const auto& itm) -> void {
                     itm.assert_var_not_used(var);
                 },
                 e);

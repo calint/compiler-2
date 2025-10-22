@@ -160,8 +160,8 @@ auto main(const int argc, const char* argv[]) -> int {
         // with jump optimizations
         std::stringstream ss1;
         std::stringstream ss2;
-        prg.build(ss1);
-        // prg.build(std::cout); // build without jump optimizations
+        // prg.build(ss1);
+        prg.build(std::cout); // build without jump optimizations
         optimize_jumps_1(ss1, ss2);
         optimize_jumps_2(ss2, std::cout);
 
@@ -381,7 +381,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         }
         std::vector<std::string> allocated_registers;
         std::string src_op;
-        if (is_expression() or src_info.has_lea()) {
+        if (is_indexed() or src_info.has_lea()) {
             src_op = compile_lea(tok(), tc, os, indent, allocated_registers, "",
                                  src_info.lea_path);
         } else {
@@ -512,11 +512,12 @@ auto expr_type_value::compile_lea(
     return statement::identifier();
 }
 
+[[nodiscard]] auto expr_type_value::is_indexed() const -> bool {
+    return stmt_ident_ and stmt_ident_->is_indexed();
+}
+
 [[nodiscard]] auto expr_type_value::is_expression() const -> bool {
-    if (stmt_ident_) {
-        return stmt_ident_->is_expression();
-    }
-    return false;
+    return stmt_ident_ and stmt_ident_->is_expression();
 }
 
 // declared in 'unary_ops.hpp'

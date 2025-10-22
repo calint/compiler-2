@@ -95,7 +95,7 @@ class stmt_identifier : public statement {
         return elems_;
     }
 
-    [[nodiscard]] auto is_expression() const -> bool override {
+    [[nodiscard]] auto is_indexed() const -> bool override {
         return std::ranges::any_of(elems_,
                                    [](const identifier_elem& e) -> bool {
                                        return e.array_index_expr != nullptr;
@@ -149,7 +149,7 @@ class stmt_identifier : public statement {
 
         // simple identifier or is indexing in array or relative to "lea"
 
-        if (not is_expression() and not src_info.has_lea()) {
+        if (not is_indexed() and not src_info.has_lea()) {
             // note: contains no array indexing and is not relative a lea,
             //       e.g. world.location.link
             tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,

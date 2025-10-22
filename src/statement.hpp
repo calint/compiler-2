@@ -58,6 +58,8 @@ class statement {
 
     [[nodiscard]] virtual auto is_identifier() const -> bool { return false; }
 
+    [[nodiscard]] virtual auto is_indexed() const -> bool { return false; }
+
     [[nodiscard]] virtual auto compile_lea(
         [[maybe_unused]] const token& src_loc_tk, [[maybe_unused]] toc& tc,
         [[maybe_unused]] std::ostream& os, [[maybe_unused]] const size_t indent,

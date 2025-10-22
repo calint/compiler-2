@@ -98,7 +98,7 @@ class stmt_assign_var final : public statement {
             }
 
             // does the identifier contain array indexing?
-            if (not stmt_ident_.is_expression()) {
+            if (not stmt_ident_.is_indexed()) {
                 // no, compile to 'dst_info'
                 expr_.compile(tc, os, indent, dst_accessor);
                 return;
@@ -133,9 +133,7 @@ class stmt_assign_var final : public statement {
         operand dst_op;
         std::vector<std::string> allocated_registers;
 
-        if (stmt_ident_.is_identifier() and
-            (stmt_ident_.is_expression() or dst_info.has_lea())) {
-
+        if (stmt_ident_.is_indexed() or dst_info.has_lea()) {
             const std::string& dst_lea{stmt_ident_.compile_lea(
                 tok(), tc, os, indent, allocated_registers, "",
                 dst_info.lea_path)};

@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <algorithm>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -278,6 +279,13 @@ class expr_ops_list final : public expression {
         return true;
     }
 
+    [[nodiscard]] auto is_indexed() const -> bool override {
+        return std::ranges::any_of(
+            exprs_, [](const std::unique_ptr<statement>& e) -> bool {
+                return e->is_indexed();
+            });
+    }
+
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
 
@@ -440,7 +448,7 @@ class expr_ops_list final : public expression {
         -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
+        if (src.is_expression() or src.is_indexed() or tc.has_lea(src)) {
             // yes, compile with destination to 'dst'
             src.compile(tc, os, indent, dst.operand);
             return;
@@ -468,7 +476,7 @@ class expr_ops_list final : public expression {
         -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
+        if (src.is_expression() or src.is_indexed() or tc.has_lea(src)) {
             // yes, compile it to a scratch register
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
@@ -557,7 +565,7 @@ class expr_ops_list final : public expression {
         -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
+        if (src.is_expression() or src.is_indexed() or tc.has_lea(src)) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
@@ -606,7 +614,7 @@ class expr_ops_list final : public expression {
                                const statement& src) -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
+        if (src.is_expression() or src.is_indexed() or tc.has_lea(src)) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
@@ -727,7 +735,7 @@ class expr_ops_list final : public expression {
                            const statement& src) -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
+        if (src.is_expression() or src.is_indexed() or tc.has_lea(src)) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
