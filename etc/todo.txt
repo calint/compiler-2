@@ -7,7 +7,7 @@
 [ ] review "todo" comments
 [ ] array_copy does not handle when destination overlaps source
 [ ] lea_path not be necessary since only most recent lea relevant
-    => also index of where in elems  path lea was found
+    => also index of where in elems path lea was found
 [ ] fix better the re-occurring code:
             if (arg.is_identifier() and
                 (arg.is_expression() or tc.make_ident_info(arg).has_lea())) {
