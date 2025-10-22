@@ -1267,10 +1267,10 @@ class toc final {
         return false;
     }
 
-    [[nodiscard]] auto is_operand_register(const std::string_view nasm) const
+    [[nodiscard]] auto is_operand_register(const std::string_view op) const
         -> bool {
 
-        return std::ranges::find(all_registers_, nasm) != all_registers_.end();
+        return std::ranges::find(all_registers_, op) != all_registers_.end();
     }
 
     [[nodiscard]] auto
@@ -1279,8 +1279,8 @@ class toc final {
 
         ident_path id{std::string{ident}};
         // get the root of an identifier: example p.x -> p
-        // traverse the frames and resolve the id_nasm (which might be an
-        // alias) to a variable, field, register or constant
+        // traverse the frames and resolve the `ident` (which might be an alias)
+        // to a variable, field, register or constant
         size_t i{frames_.size()};
         std::vector<std::string> lea_path;
         // ignore the elements after the base:
