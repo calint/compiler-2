@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    40           1268            709           6023
-C++                              1             80             84            584
+C/C++ Header                    40           1271            709           6044
+C++                              1             80             84            581
 -------------------------------------------------------------------------------
-SUM:                            41           1348            793           6607
+SUM:                            41           1351            793           6625
 -------------------------------------------------------------------------------
 ```
 
@@ -332,16 +332,15 @@ main:
     mov r13d, dword [rsp + r14 * 4 - 16]
     mov dword [rsp + r15 * 4 - 16], r13d
     cmp_109_12:
-        mov r13, 1
-        mov r12, 109
-        test r13, r13
-        cmovs rbp, r12
-        js panic_bounds
-        cmp r13, 4
-        cmovge rbp, r12
-        jge panic_bounds
-        movsx r14, dword [rsp + r13 * 4 - 16]
-    cmp r14, 2
+    mov r14, 1
+    mov r13, 109
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+    cmp dword [rsp + r14 * 4 - 16], 2
     jne bool_false_109_12
     bool_true_109_12:
     mov r15, true
@@ -363,16 +362,15 @@ main:
         if_20_26_109_5_end:
     assert_109_5_end:
     cmp_110_12:
-        mov r13, 2
-        mov r12, 110
-        test r13, r13
-        cmovs rbp, r12
-        js panic_bounds
-        cmp r13, 4
-        cmovge rbp, r12
-        jge panic_bounds
-        movsx r14, dword [rsp + r13 * 4 - 16]
-    cmp r14, 2
+    mov r14, 2
+    mov r13, 110
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+    cmp dword [rsp + r14 * 4 - 16], 2
     jne bool_false_110_12
     bool_true_110_12:
     mov r15, true
@@ -416,16 +414,15 @@ main:
     shl rcx, 2
     rep movsb
     cmp_114_12:
-        mov r13, 0
-        mov r12, 114
-        test r13, r13
-        cmovs rbp, r12
-        js panic_bounds
-        cmp r13, 4
-        cmovge rbp, r12
-        jge panic_bounds
-        movsx r14, dword [rsp + r13 * 4 - 16]
-    cmp r14, 2
+    mov r14, 0
+    mov r13, 114
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+    cmp dword [rsp + r14 * 4 - 16], 2
     jne bool_false_114_12
     bool_true_114_12:
     mov r15, true
@@ -598,16 +595,15 @@ main:
     inv_125_16_end:
     not dword [rsp + r15 * 4 - 16]
     cmp_126_12:
-        mov r13, qword [rsp - 24]
-        mov r12, 126
-        test r13, r13
-        cmovs rbp, r12
-        js panic_bounds
-        cmp r13, 4
-        cmovge rbp, r12
-        jge panic_bounds
-        movsx r14, dword [rsp + r13 * 4 - 16]
-    cmp r14, 2
+    mov r14, qword [rsp - 24]
+    mov r13, 126
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+    cmp dword [rsp + r14 * 4 - 16], 2
     jne bool_false_126_12
     bool_true_126_12:
     mov r15, true
@@ -640,16 +636,15 @@ main:
         mov dword [rsp + r15 * 4 - 16], 0xfe
     faz_128_5_end:
     cmp_129_12:
-        mov r13, 1
-        mov r12, 129
-        test r13, r13
-        cmovs rbp, r12
-        js panic_bounds
-        cmp r13, 4
-        cmovge rbp, r12
-        jge panic_bounds
-        movsx r14, dword [rsp + r13 * 4 - 16]
-    cmp r14, 0xfe
+    mov r14, 1
+    mov r13, 129
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+    cmp dword [rsp + r14 * 4 - 16], 0xfe
     jne bool_false_129_12
     bool_true_129_12:
     mov r15, true
@@ -1075,19 +1070,18 @@ main:
     mov dword [rsp - 188], 0
     mov qword [rsp - 196], 73
     cmp_175_12:
-        lea r13, [rsp - 204]
-        mov r12, 0
-        mov r11, 175
-        test r12, r12
-        cmovs rbp, r11
-        js panic_bounds
-        cmp r12, 1
-        cmovge rbp, r11
-        jge panic_bounds
-        imul r12, 20
-        add r13, r12
-        mov r14, qword [r13 + 8]
-    cmp r14, 73
+    lea r14, [rsp - 204]
+    mov r13, 0
+    mov r12, 175
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 1
+    cmovge rbp, r12
+    jge panic_bounds
+    imul r13, 20
+    add r14, r13
+    cmp qword [r14 + 8], 73
     jne bool_false_175_12
     bool_true_175_12:
     mov r15, true
@@ -1133,27 +1127,26 @@ main:
     jge panic_bounds
     mov qword [r15 + r14 * 8], 0xffee
     cmp_179_12:
-        lea r13, [rsp - 716]
-        mov r12, 1
-        mov r11, 179
-        test r12, r12
-        cmovs rbp, r11
-        js panic_bounds
-        cmp r12, 8
-        cmovge rbp, r11
-        jge panic_bounds
-        shl r12, 6
-        add r13, r12
-        mov r12, 1
-        mov r11, 179
-        test r12, r12
-        cmovs rbp, r11
-        js panic_bounds
-        cmp r12, 8
-        cmovge rbp, r11
-        jge panic_bounds
-        mov r14, qword [r13 + r12 * 8]
-    cmp r14, 0xffee
+    lea r14, [rsp - 716]
+    mov r13, 1
+    mov r12, 179
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+    shl r13, 6
+    add r14, r13
+    mov r13, 1
+    mov r12, 179
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+    cmp qword [r14 + r13 * 8], 0xffee
     jne bool_false_179_12
     bool_true_179_12:
     mov r15, true
@@ -1216,27 +1209,26 @@ main:
     shl rcx, 3
     rep movsb
     cmp_188_12:
-        lea r13, [rsp - 716]
-        mov r12, 0
-        mov r11, 188
-        test r12, r12
-        cmovs rbp, r11
-        js panic_bounds
-        cmp r12, 8
-        cmovge rbp, r11
-        jge panic_bounds
-        shl r12, 6
-        add r13, r12
-        mov r12, 1
-        mov r11, 188
-        test r12, r12
-        cmovs rbp, r11
-        js panic_bounds
-        cmp r12, 8
-        cmovge rbp, r11
-        jge panic_bounds
-        mov r14, qword [r13 + r12 * 8]
-    cmp r14, 0xffee
+    lea r14, [rsp - 716]
+    mov r13, 0
+    mov r12, 188
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+    shl r13, 6
+    add r14, r13
+    mov r13, 1
+    mov r12, 188
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+    cmp qword [r14 + r13 * 8], 0xffee
     jne bool_false_188_12
     bool_true_188_12:
     mov r15, true
@@ -1610,28 +1602,23 @@ main:
 ;   [109:12] ? arr[1] == 2
     cmp_109_12:
 ;   [109:12] allocate scratch register -> r14
-;       [109:12] arr[1]
-;       [109:12] arr[1]
-;       [109:12] allocate scratch register -> r13
-;       [109:16] set array index
-;       [109:16] 1
-;       [109:16] 1
-;       [109:16] 1
-        mov r13, 1
-;       [109:16] bounds check
-;       [109:16] allocate scratch register -> r12
-;       [109:16] line number
-        mov r12, 109
-        test r13, r13
-        cmovs rbp, r12
-        js panic_bounds
-        cmp r13, 4
-        cmovge rbp, r12
-        jge panic_bounds
-;       [109:16] free scratch register 'r12'
-        movsx r14, dword [rsp + r13 * 4 - 16]
-;       [109:12] free scratch register 'r13'
-    cmp r14, 2
+;   [109:16] set array index
+;   [109:16] 1
+;   [109:16] 1
+;   [109:16] 1
+    mov r14, 1
+;   [109:16] bounds check
+;   [109:16] allocate scratch register -> r13
+;   [109:16] line number
+    mov r13, 109
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+;   [109:16] free scratch register 'r13'
+    cmp dword [rsp + r14 * 4 - 16], 2
 ;   [109:12] free scratch register 'r14'
     jne bool_false_109_12
     bool_true_109_12:
@@ -1681,28 +1668,23 @@ main:
 ;   [110:12] ? arr[2] == 2
     cmp_110_12:
 ;   [110:12] allocate scratch register -> r14
-;       [110:12] arr[2]
-;       [110:12] arr[2]
-;       [110:12] allocate scratch register -> r13
-;       [110:16] set array index
-;       [110:16] 2
-;       [110:16] 2
-;       [110:16] 2
-        mov r13, 2
-;       [110:16] bounds check
-;       [110:16] allocate scratch register -> r12
-;       [110:16] line number
-        mov r12, 110
-        test r13, r13
-        cmovs rbp, r12
-        js panic_bounds
-        cmp r13, 4
-        cmovge rbp, r12
-        jge panic_bounds
-;       [110:16] free scratch register 'r12'
-        movsx r14, dword [rsp + r13 * 4 - 16]
-;       [110:12] free scratch register 'r13'
-    cmp r14, 2
+;   [110:16] set array index
+;   [110:16] 2
+;   [110:16] 2
+;   [110:16] 2
+    mov r14, 2
+;   [110:16] bounds check
+;   [110:16] allocate scratch register -> r13
+;   [110:16] line number
+    mov r13, 110
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+;   [110:16] free scratch register 'r13'
+    cmp dword [rsp + r14 * 4 - 16], 2
 ;   [110:12] free scratch register 'r14'
     jne bool_false_110_12
     bool_true_110_12:
@@ -1804,28 +1786,23 @@ main:
 ;   [114:12] ? arr[0] == 2
     cmp_114_12:
 ;   [114:12] allocate scratch register -> r14
-;       [114:12] arr[0]
-;       [114:12] arr[0]
-;       [114:12] allocate scratch register -> r13
-;       [114:16] set array index
-;       [114:16] 0
-;       [114:16] 0
-;       [114:16] 0
-        mov r13, 0
-;       [114:16] bounds check
-;       [114:16] allocate scratch register -> r12
-;       [114:16] line number
-        mov r12, 114
-        test r13, r13
-        cmovs rbp, r12
-        js panic_bounds
-        cmp r13, 4
-        cmovge rbp, r12
-        jge panic_bounds
-;       [114:16] free scratch register 'r12'
-        movsx r14, dword [rsp + r13 * 4 - 16]
-;       [114:12] free scratch register 'r13'
-    cmp r14, 2
+;   [114:16] set array index
+;   [114:16] 0
+;   [114:16] 0
+;   [114:16] 0
+    mov r14, 0
+;   [114:16] bounds check
+;   [114:16] allocate scratch register -> r13
+;   [114:16] line number
+    mov r13, 114
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+;   [114:16] free scratch register 'r13'
+    cmp dword [rsp + r14 * 4 - 16], 2
 ;   [114:12] free scratch register 'r14'
     jne bool_false_114_12
     bool_true_114_12:
@@ -2209,28 +2186,23 @@ main:
 ;   [126:12] ? arr[ix] == 2
     cmp_126_12:
 ;   [126:12] allocate scratch register -> r14
-;       [126:12] arr[ix]
-;       [126:12] arr[ix]
-;       [126:12] allocate scratch register -> r13
-;       [126:16] set array index
-;       [126:16] ix
-;       [126:16] ix
-;       [126:16] ix
-        mov r13, qword [rsp - 24]
-;       [126:16] bounds check
-;       [126:16] allocate scratch register -> r12
-;       [126:16] line number
-        mov r12, 126
-        test r13, r13
-        cmovs rbp, r12
-        js panic_bounds
-        cmp r13, 4
-        cmovge rbp, r12
-        jge panic_bounds
-;       [126:16] free scratch register 'r12'
-        movsx r14, dword [rsp + r13 * 4 - 16]
-;       [126:12] free scratch register 'r13'
-    cmp r14, 2
+;   [126:16] set array index
+;   [126:16] ix
+;   [126:16] ix
+;   [126:16] ix
+    mov r14, qword [rsp - 24]
+;   [126:16] bounds check
+;   [126:16] allocate scratch register -> r13
+;   [126:16] line number
+    mov r13, 126
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+;   [126:16] free scratch register 'r13'
+    cmp dword [rsp + r14 * 4 - 16], 2
 ;   [126:12] free scratch register 'r14'
     jne bool_false_126_12
     bool_true_126_12:
@@ -2308,28 +2280,23 @@ main:
 ;   [129:12] ? arr[1] == 0xfe
     cmp_129_12:
 ;   [129:12] allocate scratch register -> r14
-;       [129:12] arr[1]
-;       [129:12] arr[1]
-;       [129:12] allocate scratch register -> r13
-;       [129:16] set array index
-;       [129:16] 1
-;       [129:16] 1
-;       [129:16] 1
-        mov r13, 1
-;       [129:16] bounds check
-;       [129:16] allocate scratch register -> r12
-;       [129:16] line number
-        mov r12, 129
-        test r13, r13
-        cmovs rbp, r12
-        js panic_bounds
-        cmp r13, 4
-        cmovge rbp, r12
-        jge panic_bounds
-;       [129:16] free scratch register 'r12'
-        movsx r14, dword [rsp + r13 * 4 - 16]
-;       [129:12] free scratch register 'r13'
-    cmp r14, 0xfe
+;   [129:16] set array index
+;   [129:16] 1
+;   [129:16] 1
+;   [129:16] 1
+    mov r14, 1
+;   [129:16] bounds check
+;   [129:16] allocate scratch register -> r13
+;   [129:16] line number
+    mov r13, 129
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+;   [129:16] free scratch register 'r13'
+    cmp dword [rsp + r14 * 4 - 16], 0xfe
 ;   [129:12] free scratch register 'r14'
     jne bool_false_129_12
     bool_true_129_12:
@@ -3341,33 +3308,28 @@ main:
 ;   [175:12] ? o3[0].pos.y == 73
     cmp_175_12:
 ;   [175:12] allocate scratch register -> r14
-;       [175:12] o3[0].pos.y
-;       [175:12] o3[0].pos.y
-;       [175:12] allocate scratch register -> r13
-        lea r13, [rsp - 204]
-;       [175:12] allocate scratch register -> r12
-;       [175:15] set array index
-;       [175:15] 0
-;       [175:15] 0
-;       [175:15] 0
-        mov r12, 0
-;       [175:15] bounds check
-;       [175:15] allocate scratch register -> r11
-;       [175:15] line number
-        mov r11, 175
-        test r12, r12
-        cmovs rbp, r11
-        js panic_bounds
-        cmp r12, 1
-        cmovge rbp, r11
-        jge panic_bounds
-;       [175:15] free scratch register 'r11'
-        imul r12, 20
-        add r13, r12
-;       [175:12] free scratch register 'r12'
-        mov r14, qword [r13 + 8]
-;       [175:12] free scratch register 'r13'
-    cmp r14, 73
+    lea r14, [rsp - 204]
+;   [175:12] allocate scratch register -> r13
+;   [175:15] set array index
+;   [175:15] 0
+;   [175:15] 0
+;   [175:15] 0
+    mov r13, 0
+;   [175:15] bounds check
+;   [175:15] allocate scratch register -> r12
+;   [175:15] line number
+    mov r12, 175
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 1
+    cmovge rbp, r12
+    jge panic_bounds
+;   [175:15] free scratch register 'r12'
+    imul r13, 20
+    add r14, r13
+;   [175:12] free scratch register 'r13'
+    cmp qword [r14 + 8], 73
 ;   [175:12] free scratch register 'r14'
     jne bool_false_175_12
     bool_true_175_12:
@@ -3476,51 +3438,46 @@ main:
 ;   [179:12] ? worlds[1].locations[1] == 0xffee
     cmp_179_12:
 ;   [179:12] allocate scratch register -> r14
-;       [179:12] worlds[1].locations[1]
-;       [179:12] worlds[1].locations[1]
-;       [179:12] allocate scratch register -> r13
-        lea r13, [rsp - 716]
-;       [179:12] allocate scratch register -> r12
-;       [179:19] set array index
-;       [179:19] 1
-;       [179:19] 1
-;       [179:19] 1
-        mov r12, 1
-;       [179:19] bounds check
-;       [179:19] allocate scratch register -> r11
-;       [179:19] line number
-        mov r11, 179
-        test r12, r12
-        cmovs rbp, r11
-        js panic_bounds
-        cmp r12, 8
-        cmovge rbp, r11
-        jge panic_bounds
-;       [179:19] free scratch register 'r11'
-        shl r12, 6
-        add r13, r12
-;       [179:12] free scratch register 'r12'
-;       [179:12] allocate scratch register -> r12
-;       [179:32] set array index
-;       [179:32] 1
-;       [179:32] 1
-;       [179:32] 1
-        mov r12, 1
-;       [179:32] bounds check
-;       [179:32] allocate scratch register -> r11
-;       [179:32] line number
-        mov r11, 179
-        test r12, r12
-        cmovs rbp, r11
-        js panic_bounds
-        cmp r12, 8
-        cmovge rbp, r11
-        jge panic_bounds
-;       [179:32] free scratch register 'r11'
-        mov r14, qword [r13 + r12 * 8]
-;       [179:12] free scratch register 'r12'
-;       [179:12] free scratch register 'r13'
-    cmp r14, 0xffee
+    lea r14, [rsp - 716]
+;   [179:12] allocate scratch register -> r13
+;   [179:19] set array index
+;   [179:19] 1
+;   [179:19] 1
+;   [179:19] 1
+    mov r13, 1
+;   [179:19] bounds check
+;   [179:19] allocate scratch register -> r12
+;   [179:19] line number
+    mov r12, 179
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+;   [179:19] free scratch register 'r12'
+    shl r13, 6
+    add r14, r13
+;   [179:12] free scratch register 'r13'
+;   [179:12] allocate scratch register -> r13
+;   [179:32] set array index
+;   [179:32] 1
+;   [179:32] 1
+;   [179:32] 1
+    mov r13, 1
+;   [179:32] bounds check
+;   [179:32] allocate scratch register -> r12
+;   [179:32] line number
+    mov r12, 179
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+;   [179:32] free scratch register 'r12'
+    cmp qword [r14 + r13 * 8], 0xffee
+;   [179:12] free scratch register 'r13'
 ;   [179:12] free scratch register 'r14'
     jne bool_false_179_12
     bool_true_179_12:
@@ -3659,51 +3616,46 @@ main:
 ;   [188:12] ? worlds[0].locations[1] == 0xffee
     cmp_188_12:
 ;   [188:12] allocate scratch register -> r14
-;       [188:12] worlds[0].locations[1]
-;       [188:12] worlds[0].locations[1]
-;       [188:12] allocate scratch register -> r13
-        lea r13, [rsp - 716]
-;       [188:12] allocate scratch register -> r12
-;       [188:19] set array index
-;       [188:19] 0
-;       [188:19] 0
-;       [188:19] 0
-        mov r12, 0
-;       [188:19] bounds check
-;       [188:19] allocate scratch register -> r11
-;       [188:19] line number
-        mov r11, 188
-        test r12, r12
-        cmovs rbp, r11
-        js panic_bounds
-        cmp r12, 8
-        cmovge rbp, r11
-        jge panic_bounds
-;       [188:19] free scratch register 'r11'
-        shl r12, 6
-        add r13, r12
-;       [188:12] free scratch register 'r12'
-;       [188:12] allocate scratch register -> r12
-;       [188:32] set array index
-;       [188:32] 1
-;       [188:32] 1
-;       [188:32] 1
-        mov r12, 1
-;       [188:32] bounds check
-;       [188:32] allocate scratch register -> r11
-;       [188:32] line number
-        mov r11, 188
-        test r12, r12
-        cmovs rbp, r11
-        js panic_bounds
-        cmp r12, 8
-        cmovge rbp, r11
-        jge panic_bounds
-;       [188:32] free scratch register 'r11'
-        mov r14, qword [r13 + r12 * 8]
-;       [188:12] free scratch register 'r12'
-;       [188:12] free scratch register 'r13'
-    cmp r14, 0xffee
+    lea r14, [rsp - 716]
+;   [188:12] allocate scratch register -> r13
+;   [188:19] set array index
+;   [188:19] 0
+;   [188:19] 0
+;   [188:19] 0
+    mov r13, 0
+;   [188:19] bounds check
+;   [188:19] allocate scratch register -> r12
+;   [188:19] line number
+    mov r12, 188
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+;   [188:19] free scratch register 'r12'
+    shl r13, 6
+    add r14, r13
+;   [188:12] free scratch register 'r13'
+;   [188:12] allocate scratch register -> r13
+;   [188:32] set array index
+;   [188:32] 1
+;   [188:32] 1
+;   [188:32] 1
+    mov r13, 1
+;   [188:32] bounds check
+;   [188:32] allocate scratch register -> r12
+;   [188:32] line number
+    mov r12, 188
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+;   [188:32] free scratch register 'r12'
+    cmp qword [r14 + r13 * 8], 0xffee
+;   [188:12] free scratch register 'r13'
 ;   [188:12] free scratch register 'r14'
     jne bool_false_188_12
     bool_true_188_12:

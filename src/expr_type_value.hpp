@@ -65,10 +65,8 @@ class expr_type_value final : public statement {
         return stmt_ident_ != nullptr;
     }
 
-    [[nodiscard]] auto is_indexed() const -> bool override;
-
     // implemented in 'main.cpp' due to circular reference
-    [[nodiscard]] auto is_expression() const -> bool override;
+    [[nodiscard]] auto is_indexed() const -> bool override;
 
     // implemented in 'main.cpp' due to circular reference
     [[nodiscard]] auto identifier() const -> std::string_view override;

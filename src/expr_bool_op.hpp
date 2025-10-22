@@ -457,12 +457,11 @@ class expr_bool_op final : public statement {
                                              expr_info.lea_path)};
             return std::format(
                 "{} [{}]",
-                tc.get_size_specifier(expr.tok(), expr_info.type_ptr->size()),
+                toc::get_size_specifier(expr.tok(), expr_info.type_ptr->size()),
                 reg);
         }
 
-        if (expr.is_expression() or
-            (expr.is_identifier() and tc.has_lea(expr))) {
+        if (expr.is_expression()) {
             const std::string reg{
                 tc.alloc_scratch_register(expr.tok(), os, indent)};
             allocated_registers.emplace_back(reg);
