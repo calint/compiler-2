@@ -1759,6 +1759,15 @@ class toc final {
     // private statics (sorted alphabetically)
     //------------------------------------------------------------------------
 
+    [[nodiscard]] static auto get_before_dot(std::string_view str)
+        -> std::string_view {
+
+        if (auto pos = str.find('.'); pos != std::string_view::npos) {
+            return str.substr(0, pos);
+        }
+        return str;
+    }
+
     static auto get_operand_base_register(const std::string_view addressing)
         -> std::string_view {
 
@@ -1768,22 +1777,6 @@ class toc final {
         }
 
         return addressing.substr(0, pos);
-    }
-
-    static auto get_text_between_brackets(const std::string_view str)
-        -> std::optional<std::string_view> {
-
-        auto start{str.find('[')};
-        if (start == std::string_view::npos) {
-            return std::nullopt;
-        }
-
-        auto end{str.find(']', start)};
-        if (end == std::string_view::npos) {
-            return std::nullopt;
-        }
-
-        return str.substr(start + 1, end - start - 1);
     }
 
     [[nodiscard]] static auto get_operand_size(const size_t size)
@@ -1800,15 +1793,6 @@ class toc final {
         default:
             std::unreachable();
         }
-    }
-
-    [[nodiscard]] static auto get_before_dot(std::string_view str)
-        -> std::string_view {
-
-        if (auto pos = str.find('.'); pos != std::string_view::npos) {
-            return str.substr(0, pos);
-        }
-        return str;
     }
 
     static auto get_size_from_register_operand(const token& src_loc_tk,
@@ -1853,6 +1837,22 @@ class toc final {
 
         throw compiler_exception{src_loc_tk,
                                  std::format("unknown register '{}'", operand)};
+    }
+
+    static auto get_text_between_brackets(const std::string_view str)
+        -> std::optional<std::string_view> {
+
+        auto start{str.find('[')};
+        if (start == std::string_view::npos) {
+            return std::nullopt;
+        }
+
+        auto end{str.find(']', start)};
+        if (end == std::string_view::npos) {
+            return std::nullopt;
+        }
+
+        return str.substr(start + 1, end - start - 1);
     }
 
     static auto is_memory_operand(const std::string_view operand) -> bool {
