@@ -1,11 +1,11 @@
-[o] expr_ops_list: handling of non-expression but indexed or lea sources
+[x] expr_ops_list: handling of non-expression but indexed or lea sources
     => allocates scratch register although when indexed or lea only operand
        change is needed
        => fixed: asm_mov, asm_add_sub, asm_bitwise
           todo:
-          [ ] asm_mov
-          [ ] asm_div
-          [ ] asm_shift
+          [x] asm_mul
+          [x] asm_div
+          [x] asm_shift
 [ ] bool_ops_list: if destination is a boolean ponder howto use cmov instead
     of the jmps
 [ ] handle boolean expression of == between types, allow?
