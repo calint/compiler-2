@@ -280,10 +280,9 @@ class expr_ops_list final : public expression {
     }
 
     [[nodiscard]] auto is_indexed() const -> bool override {
-        return std::ranges::any_of(
-            exprs_, [](const std::unique_ptr<statement>& e) -> bool {
-                return e->is_indexed();
-            });
+        assert(exprs_.size() == 1);
+
+        return exprs_[0]->is_indexed();
     }
 
     auto assert_var_not_used(const std::string_view var) const
