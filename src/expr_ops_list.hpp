@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <memory>
+#include <ostream>
 #include <ranges>
 #include <sstream>
 #include <utility>
@@ -467,18 +468,8 @@ class expr_ops_list final : public expression {
         // 'src' is not a constant
 
         std::vector<std::string> lea_registers;
-        std::string src_operand;
-        if (src.is_indexed() or tc.has_lea(src)) {
-            std::string lea{src.compile_lea(src.tok(), tc, os, indent,
-                                            lea_registers, "",
-                                            src_info.lea_path)};
-            src_operand = std::format(
-                "{} [{}]",
-                toc::get_size_specifier(src.tok(), src_info.type_ptr->size()),
-                lea);
-        } else {
-            src_operand = src_info.operand;
-        }
+        const std::string src_operand{
+            get_operand(tc, os, indent, src, src_info, lea_registers)};
 
         // move 'dst' to 'src' and compile the unary ops since 'src' is not a
         // constant
@@ -523,30 +514,20 @@ class expr_ops_list final : public expression {
             }
 
             std::vector<std::string> lea_registers;
-
-            std::string operand;
-            if (src.is_indexed() or tc.has_lea(src)) {
-                std::string lea{src.compile_lea(src.tok(), tc, os, indent,
-                                                lea_registers, "",
-                                                src_info.lea_path)};
-                operand = std::format("{} [{}]",
-                                      toc::get_size_specifier(
-                                          src.tok(), src_info.type_ptr->size()),
-                                      lea);
-            } else {
-                operand = src_info.operand;
-            }
+            const std::string src_operand{
+                get_operand(tc, os, indent, src, src_info, lea_registers)};
 
             const unary_ops& uops{src.get_unary_ops()};
             if (uops.is_empty()) {
-                tc.asm_cmd(src.tok(), os, indent, "imul", dst.operand, operand);
+                tc.asm_cmd(src.tok(), os, indent, "imul", dst.operand,
+                           src_operand);
                 free_registers(src, tc, os, indent, lea_registers);
                 return;
             }
 
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
-            tc.asm_cmd(src.tok(), os, indent, "mov", reg, operand);
+            tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_operand);
             uops.compile(tc, os, indent, reg);
             tc.asm_cmd(src.tok(), os, indent, "imul", dst.operand, reg);
             tc.free_scratch_register(src.tok(), os, indent, reg);
@@ -571,18 +552,8 @@ class expr_ops_list final : public expression {
         // source is not a constant
 
         std::vector<std::string> lea_registers;
-        std::string src_operand;
-        if (src.is_indexed() or tc.has_lea(src)) {
-            std::string lea{src.compile_lea(src.tok(), tc, os, indent,
-                                            lea_registers, "",
-                                            src_info.lea_path)};
-            src_operand = std::format(
-                "{} [{}]",
-                toc::get_size_specifier(src.tok(), src_info.type_ptr->size()),
-                lea);
-        } else {
-            src_operand = src_info.operand;
-        }
+        const std::string src_operand{
+            get_operand(tc, os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -636,18 +607,8 @@ class expr_ops_list final : public expression {
         // 'src' is not a constant
 
         std::vector<std::string> lea_registers;
-        std::string src_operand;
-        if (src.is_indexed() or tc.has_lea(src)) {
-            std::string lea{src.compile_lea(src.tok(), tc, os, indent,
-                                            lea_registers, "",
-                                            src_info.lea_path)};
-            src_operand = std::format(
-                "{} [{}]",
-                toc::get_size_specifier(src.tok(), src_info.type_ptr->size()),
-                lea);
-        } else {
-            src_operand = src_info.operand;
-        }
+        const std::string src_operand{
+            get_operand(tc, os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -703,23 +664,12 @@ class expr_ops_list final : public expression {
         // 'src' is not an expression and not a constant, an identifier
 
         std::vector<std::string> lea_registers;
-
-        std::string operand;
-        if (src.is_indexed() or tc.has_lea(src)) {
-            std::string lea{src.compile_lea(src.tok(), tc, os, indent,
-                                            lea_registers, "",
-                                            src_info.lea_path)};
-            operand = std::format(
-                "{} [{}]",
-                toc::get_size_specifier(src.tok(), src_info.type_ptr->size()),
-                lea);
-        } else {
-            operand = src_info.operand;
-        }
+        const std::string src_operand{
+            get_operand(tc, os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
-            tc.asm_cmd(src.tok(), os, indent, op, dst.operand, operand);
+            tc.asm_cmd(src.tok(), os, indent, op, dst.operand, src_operand);
             free_registers(src, tc, os, indent, lea_registers);
             return;
         }
@@ -727,7 +677,7 @@ class expr_ops_list final : public expression {
         // 'src' is not an expression and not a constant and has unary ops
         //
         const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
-        tc.asm_cmd(src.tok(), os, indent, "mov", reg, operand);
+        tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_operand);
         uops.compile(tc, os, indent, reg);
         tc.asm_cmd(src.tok(), os, indent, op, dst.operand, reg);
         tc.free_scratch_register(src.tok(), os, indent, reg);
@@ -779,19 +729,8 @@ class expr_ops_list final : public expression {
         // 'src' is not a constant
 
         std::vector<std::string> lea_registers;
-
-        std::string operand;
-        if (src.is_indexed() or tc.has_lea(src)) {
-            std::string lea{src.compile_lea(src.tok(), tc, os, indent,
-                                            lea_registers, "",
-                                            src_info.lea_path)};
-            operand = std::format(
-                "{} [{}]",
-                toc::get_size_specifier(src.tok(), src_info.type_ptr->size()),
-                lea);
-        } else {
-            operand = src_info.operand;
-        }
+        const std::string src_operand{
+            get_operand(tc, os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -801,7 +740,7 @@ class expr_ops_list final : public expression {
             if (not rcx_allocated) {
                 toc::asm_push(src.tok(), os, indent, "rcx");
             }
-            tc.asm_cmd(src.tok(), os, indent, "mov", "rcx", operand);
+            tc.asm_cmd(src.tok(), os, indent, "mov", "rcx", src_operand);
             tc.asm_cmd(src.tok(), os, indent, op, dst.operand, "cl");
             if (rcx_allocated) {
                 tc.free_named_register(src.tok(), os, indent, "rcx");
@@ -819,7 +758,7 @@ class expr_ops_list final : public expression {
         if (not rcx_allocated) {
             toc::asm_push(src.tok(), os, indent, "rcx");
         }
-        tc.asm_cmd(src.tok(), os, indent, "mov", "rcx", operand);
+        tc.asm_cmd(src.tok(), os, indent, "mov", "rcx", src_operand);
         uops.compile(tc, os, indent, "rcx");
         tc.asm_cmd(src.tok(), os, indent, op, dst.operand, "cl");
         if (rcx_allocated) {
@@ -919,18 +858,8 @@ class expr_ops_list final : public expression {
         // 'src' is not an expression and not a constant
 
         std::vector<std::string> lea_registers;
-        std::string src_operand;
-        if (src.is_indexed() or tc.has_lea(src)) {
-            std::string lea{src.compile_lea(src.tok(), tc, os, indent,
-                                            lea_registers, "",
-                                            src_info.lea_path)};
-            src_operand = std::format(
-                "{} [{}]",
-                toc::get_size_specifier(src.tok(), src_info.type_ptr->size()),
-                lea);
-        } else {
-            src_operand = src_info.operand;
-        }
+        std::string src_operand{
+            get_operand(tc, os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -966,6 +895,7 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression and not a constant and has unary ops
+
         const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_operand);
         uops.compile(tc, os, indent, reg);
@@ -997,6 +927,26 @@ class expr_ops_list final : public expression {
         }
         tc.free_scratch_register(src.tok(), os, indent, reg);
         free_registers(src, tc, os, indent, lea_registers);
+    }
+
+    static auto get_operand(toc& tc, std::ostream& os, const size_t indent,
+                            const statement& src, const ident_info& src_info,
+                            std::vector<std::string>& lea_registers)
+        -> std::string {
+
+        std::string src_operand;
+        if (src.is_indexed() or tc.has_lea(src)) {
+            std::string lea{src.compile_lea(src.tok(), tc, os, indent,
+                                            lea_registers, "",
+                                            src_info.lea_path)};
+            src_operand = std::format(
+                "{} [{}]",
+                toc::get_size_specifier(src.tok(), src_info.type_ptr->size()),
+                lea);
+        } else {
+            src_operand = src_info.operand;
+        }
+        return src_operand;
     }
 
     static auto free_registers(const statement& st, toc& tc, std::ostream& os,
