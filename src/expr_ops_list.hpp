@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <memory>
+#include <ranges>
 #include <sstream>
 #include <utility>
 #include <vector>
@@ -446,7 +447,7 @@ class expr_ops_list final : public expression {
         -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or src.is_indexed() or tc.has_lea(src)) {
+        if (src.is_expression()) {
             // yes, compile with destination to 'dst'
             src.compile(tc, os, indent, dst.operand);
             return;
@@ -463,10 +464,27 @@ class expr_ops_list final : public expression {
             return;
         }
 
+        std::vector<std::string> lea_registers;
+
+        std::string operand;
+        if (src.is_indexed() or tc.has_lea(src)) {
+            std::string lea{src.compile_lea(src.tok(), tc, os, indent,
+                                            lea_registers, "",
+                                            src_info.lea_path)};
+            operand = std::format(
+                "{} [{}]",
+                toc::get_size_specifier(src.tok(), src_info.type_ptr->size()),
+                lea);
+        } else {
+            operand = src_info.operand;
+        }
+
         // move 'dst' to 'src' and compile the unary ops since 'src' is not a
         // constant
-        tc.asm_cmd(src.tok(), os, indent, "mov", dst.operand, src_info.operand);
+        tc.asm_cmd(src.tok(), os, indent, "mov", dst.operand, operand);
         src.get_unary_ops().compile(tc, os, indent, dst.operand);
+
+        free_registers(src, tc, os, indent, lea_registers);
     }
 
     static auto asm_op_mul(toc& tc, std::ostream& os, const size_t indent,
@@ -563,7 +581,7 @@ class expr_ops_list final : public expression {
         -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or src.is_indexed() or tc.has_lea(src)) {
+        if (src.is_expression()) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
@@ -583,28 +601,47 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not a constant
+
+        std::vector<std::string> lea_registers;
+
+        std::string operand;
+        if (src.is_indexed() or tc.has_lea(src)) {
+            std::string lea{src.compile_lea(src.tok(), tc, os, indent,
+                                            lea_registers, "",
+                                            src_info.lea_path)};
+            operand = std::format(
+                "{} [{}]",
+                toc::get_size_specifier(src.tok(), src_info.type_ptr->size()),
+                lea);
+        } else {
+            operand = src_info.operand;
+        }
+
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
-            tc.asm_cmd(src.tok(), os, indent, op, dst.operand,
-                       src_info.operand);
+            tc.asm_cmd(src.tok(), os, indent, op, dst.operand, operand);
+            free_registers(src, tc, os, indent, lea_registers);
             return;
         }
 
         // has unary ops
 
         if (uops.is_only_negated()) {
+            // has unary ops
             tc.asm_cmd(src.tok(), os, indent, op_when_negated, dst.operand,
-                       src_info.operand);
+                       operand);
+            free_registers(src, tc, os, indent, lea_registers);
             return;
         }
 
         // multiple unary ops
 
         const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
-        tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.operand);
+        tc.asm_cmd(src.tok(), os, indent, "mov", reg, operand);
         uops.compile(tc, os, indent, reg);
         tc.asm_cmd(src.tok(), os, indent, op, dst.operand, reg);
         tc.free_scratch_register(src.tok(), os, indent, reg);
+        free_registers(src, tc, os, indent, lea_registers);
     }
 
     static auto asm_op_bitwise(toc& tc, std::ostream& os, const size_t indent,
@@ -612,7 +649,7 @@ class expr_ops_list final : public expression {
                                const statement& src) -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or src.is_indexed() or tc.has_lea(src)) {
+        if (src.is_expression()) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
@@ -631,22 +668,38 @@ class expr_ops_list final : public expression {
             return;
         }
 
-        // 'src' is not an expression and not a constant
+        // 'src' is not an expression and not a constant, an identifier
+
+        std::vector<std::string> lea_registers;
+
+        std::string operand;
+        if (src.is_indexed() or tc.has_lea(src)) {
+            std::string lea{src.compile_lea(src.tok(), tc, os, indent,
+                                            lea_registers, "",
+                                            src_info.lea_path)};
+            operand = std::format(
+                "{} [{}]",
+                toc::get_size_specifier(src.tok(), src_info.type_ptr->size()),
+                lea);
+        } else {
+            operand = src_info.operand;
+        }
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
-            tc.asm_cmd(src.tok(), os, indent, op, dst.operand,
-                       src_info.operand);
+            tc.asm_cmd(src.tok(), os, indent, op, dst.operand, operand);
+            free_registers(src, tc, os, indent, lea_registers);
             return;
         }
 
         // 'src' is not an expression and not a constant and has unary ops
-
+        //
         const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
-        tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_info.operand);
+        tc.asm_cmd(src.tok(), os, indent, "mov", reg, operand);
         uops.compile(tc, os, indent, reg);
         tc.asm_cmd(src.tok(), os, indent, op, dst.operand, reg);
         tc.free_scratch_register(src.tok(), os, indent, reg);
+        free_registers(src, tc, os, indent, lea_registers);
     }
 
     static auto asm_op_shift(toc& tc, std::ostream& os, const size_t indent,
@@ -876,5 +929,15 @@ class expr_ops_list final : public expression {
             toc::asm_pop(src.tok(), os, indent, "rax");
         }
         tc.free_scratch_register(src.tok(), os, indent, reg);
+    }
+
+    static auto free_registers(const statement& st, toc& tc, std::ostream& os,
+                               const size_t indent,
+                               const std::span<const std::string> registers)
+        -> void {
+
+        for (const std::string& reg : registers | std::views::reverse) {
+            tc.free_scratch_register(st.tok(), os, indent, reg);
+        }
     }
 };
