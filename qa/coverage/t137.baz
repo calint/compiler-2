@@ -7,13 +7,23 @@ func exit(v : reg_rdi) {
 func assert(expr : bool) if not expr exit(1)
 
 func fiz(x : i32, y : i32) : i32 res {
-    res = x * 2 + y
+    res = x * y + x * 2 
+}
+
+func fuz(x : i32, y : i32) : i32 res {
+    res = x * ~y 
 }
 
 func main() {
     var arr : i32[4]
-    var ix = 1
+    var ix : i32 = 1
     arr[ix] = 2
     arr[3] = fiz(arr[ix], ix)
-    assert(arr[3] == 5)
+    assert(arr[3] == 6)
+    var c : i32 = fuz(arr[ix], ix)
+    assert(c == -4)
+    var d : i32 = fiz(arr[ix], ix)
+    assert(d == 6)
+    arr[3] = fuz(arr[ix], ix)
+    assert(arr[3] == -4)
 }

@@ -1185,6 +1185,7 @@ main:
 ;       [70:11] arg
         mov r15, qword [rsp - 88]
 ;       [70:17] res * 2
+;       [70:17] imul: dst is reg, src is const
         imul r15, 2
     baz_145_13_end:
     mov qword [rsp - 96], r15
@@ -1253,6 +1254,7 @@ main:
 ;       [70:11] arg
         mov r15, 1
 ;       [70:17] res * 2
+;       [70:17] imul: dst is reg, src is const
         imul r15, 2
     baz_148_9_end:
     mov qword [rsp - 96], r15
@@ -1323,6 +1325,7 @@ main:
 ;       [70:11] arg
         mov qword [rsp - 112], 2
 ;       [70:17] res * 2
+;       [70:17] imul: dst is not reg, src is const
 ;       [70:17] allocate scratch register -> r15
         mov r15, qword [rsp - 112]
         imul r15, 2
@@ -1406,6 +1409,7 @@ main:
     mov qword [rsp - 148], r15
 ;   [157:25] free scratch register 'r15'
 ;   [157:29] qword [rsp - 148] * 10
+;   [157:29] imul: dst is not reg, src is const
 ;   [157:29] allocate scratch register -> r15
     mov r15, qword [rsp - 148]
     imul r15, 10
