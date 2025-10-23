@@ -518,8 +518,8 @@ class toc final {
             return;
         }
 
-        const size_t dst_size{get_operand_size(src_loc_tk, dst_op)};
-        const size_t src_size{get_operand_size(src_loc_tk, src_op)};
+        const size_t dst_size{get_operand_size(dst_op)};
+        const size_t src_size{get_operand_size(src_op)};
 
         if (dst_size == src_size) {
             if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
@@ -569,6 +569,12 @@ class toc final {
                 // special case for `mov` which needs sign extended move
                 indent(os, indnt);
                 std::println(os, "movsx {}, {}", dst_op, src_op);
+                return;
+            }
+
+            if (op == "sal" or op == "sar") {
+                indent(os, indnt);
+                std::println(os, "{} {}, {}", op, dst_op, src_op);
                 return;
             }
 
@@ -853,8 +859,7 @@ class toc final {
         throw compiler_exception{src_loc_tk, "unexpected frames"};
     }
 
-    [[nodiscard]] auto get_operand_size(const token& src_loc_tk,
-                                        const std::string_view operand) const
+    [[nodiscard]] auto get_operand_size(const std::string_view operand) const
         -> size_t {
 
         //? sort of ugly
@@ -871,9 +876,12 @@ class toc final {
             return size_byte;
         }
         if (is_operand_register(operand)) {
-            return get_size_from_register_operand(src_loc_tk, operand);
+            return get_size_from_register_operand(operand);
         }
-
+        const size_t reg_size{get_size_from_register_operand(operand)};
+        if (reg_size) {
+            return reg_size;
+        }
         // constant
         return get_type_default().size();
     }
@@ -1270,6 +1278,24 @@ class toc final {
         std::unreachable();
     }
 
+    // todo formalize this
+    [[nodiscard]] auto get_builtin_type_for_size(const size_t size) const
+        -> const type& {
+
+        switch (size) {
+        case size_qword:
+            return *types_.get_const_ref("i64");
+        case size_dword:
+            return *types_.get_const_ref("i32");
+        case size_word:
+            return *types_.get_const_ref("i16");
+        case size_byte:
+            return *types_.get_const_ref("i8");
+        default:
+            std::unreachable();
+        }
+    }
+
     [[nodiscard]] auto get_stack_size() const -> size_t {
         size_t nbytes{};
         for (const auto& frm : frames_) {
@@ -1379,14 +1405,16 @@ class toc final {
         }
 
         // is it a register?
-        if (is_operand_register(id.str())) {
+        if (const size_t reg_size{get_size_from_register_operand(id.str())};
+            reg_size != 0) {
+            const type& tpe{get_builtin_type_for_size(reg_size)};
             //? unary ops?
             return {
                 .id{ident},
                 .operand{id.str()},
-                .type_ptr = &get_type_default(),
+                .type_ptr = &tpe,
                 .elem_path{id.str()},
-                .type_path{&get_type_default()},
+                .type_path{&tpe},
                 .lea_path{""},
                 .ident_type = ident_info::ident_type::REGISTER,
             };
@@ -1797,8 +1825,8 @@ class toc final {
         }
     }
 
-    static auto get_size_from_register_operand(const token& src_loc_tk,
-                                               const std::string_view operand)
+    // returns 0 if not a register
+    static auto get_size_from_register_operand(const std::string_view operand)
         -> size_t {
 
         if (operand == "rax" || operand == "rbx" || operand == "rcx" ||
@@ -1837,8 +1865,7 @@ class toc final {
             return size_byte;
         }
 
-        throw compiler_exception{src_loc_tk,
-                                 std::format("unknown register '{}'", operand)};
+        return 0;
     }
 
     static auto get_text_between_brackets(const std::string_view str)
