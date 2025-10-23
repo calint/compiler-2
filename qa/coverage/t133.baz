@@ -1,0 +1,20 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func fiz(x, y) : i64 res {
+    res = x + x + y
+}
+
+func main() {
+    var arr : i64[4]
+    var ix = 1
+    arr[ix] = 2
+    arr[3] = 3
+    var c = fiz(arr[ix], arr[3])
+    assert(c == 7)
+}

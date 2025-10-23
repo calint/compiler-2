@@ -1,3 +1,4 @@
+[ ] t134: not optimal due to movsx from dword to qword
 [x] expr_ops_list: handling of non-expression but indexed or lea sources
     => allocates scratch register although when indexed or lea only operand
        change is needed
