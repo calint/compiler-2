@@ -81,7 +81,7 @@ class stmt_assign_var final : public statement {
             std::string dst_accessor{dst_info.id};
             if (not lea.empty()) {
                 const std::string_view size_specifier{
-                    toc::get_size_specifier(tok(), dst_info.type_ptr->size())};
+                    toc::get_size_specifier(dst_info.type_ptr->size())};
 
                 const size_t offset{dst_info.type_path[i]->field_offset(
                     tok(), std::span{dst_info.elem_path}.subspan(i))};
@@ -115,7 +115,7 @@ class stmt_assign_var final : public statement {
                     allocated_registers, "", dst_info.lea_path);
 
             const std::string_view size_specifier{
-                toc::get_size_specifier(tok(), dst_info.type_ptr->size())};
+                toc::get_size_specifier(dst_info.type_ptr->size())};
 
             expr_.compile(
                 tc, os, indent,

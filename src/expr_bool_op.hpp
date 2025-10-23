@@ -457,8 +457,7 @@ class expr_bool_op final : public statement {
                                              allocated_registers, "",
                                              expr_info.lea_path)};
             return std::format(
-                "{} [{}]",
-                toc::get_size_specifier(expr.tok(), expr_info.type_ptr->size()),
+                "{} [{}]", toc::get_size_specifier(expr_info.type_ptr->size()),
                 reg);
         }
 

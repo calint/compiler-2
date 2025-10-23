@@ -571,6 +571,8 @@ class toc final {
                 return;
             }
 
+            // note: special case for shift operations which have the shift
+            // amount in 'cl'
             if (op == "sal" or op == "sar") {
                 indent(os, indnt);
                 std::println(os, "{} {}, {}", op, dst_op, src_op);
@@ -616,9 +618,8 @@ class toc final {
             const std::string reg_sized{
                 get_sized_register_operand(reg, dst_size)};
             indent(os, indnt);
-            std::println(
-                os, "mov {}, {}", reg_sized,
-                resize_memory_operand(src_op, get_operand_size(dst_size)));
+            std::println(os, "mov {}, {}", reg_sized,
+                         get_sized_memory_operand(src_op, dst_size));
             indent(os, indnt);
             std::println(os, "{} {}, {}", op, dst_op, reg_sized);
             free_scratch_register(src_loc_tk, os, indnt, reg);
@@ -626,6 +627,17 @@ class toc final {
         }
 
         // not both operands are memory references
+
+        if (is_operand_register(dst_op)) {
+            indent(os, indnt);
+            std::println(os, "{} {}, {}", op, dst_op,
+                         is_memory_operand(src_op)
+                             ? get_sized_memory_operand(src_op, dst_size)
+                             : src_op);
+            // note: handle constants by not applying size on 'src_op'
+            return;
+        }
+
         if (is_operand_register(src_op)) {
             indent(os, indnt);
             std::println(os, "{} {}, {}", op, dst_op,
@@ -633,12 +645,8 @@ class toc final {
             return;
         }
 
-        if (is_operand_register(dst_op)) {
-            //? destination is never a register
-            std::unreachable();
-        }
-
         // constant to memory
+
         // note: constants have the default size of qword so when assigning
         //       to smaller sizes this code path is taken
         //? todo: check for overflow
@@ -1282,25 +1290,6 @@ class toc final {
     }
 
     [[nodiscard]] auto
-    is_operand_indirect_addressing(const std::string_view op) const -> bool {
-
-        if (auto expr{toc::get_text_between_brackets(op)}; expr) {
-            const std::string reg{get_operand_base_register(*expr)};
-            if (is_operand_register(reg)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    [[nodiscard]] auto is_operand_register(const std::string_view op) const
-        -> bool {
-
-        return std::ranges::find(all_registers_, op) != all_registers_.end();
-    }
-
-    [[nodiscard]] auto
     make_ident_info_or_empty(const token& src_loc,
                              const std::string_view ident) const -> ident_info {
 
@@ -1647,9 +1636,7 @@ class toc final {
         return *between_brackets;
     }
 
-    static auto get_size_specifier(const token& tk, const size_t size)
-        -> std::string_view {
-
+    static auto get_size_specifier(const size_t size) -> std::string_view {
         switch (size) {
         case size_qword:
             return "qword";
@@ -1660,8 +1647,7 @@ class toc final {
         case size_byte:
             return "byte";
         default:
-            throw compiler_exception{
-                tk, std::format("illegal size for memory operand: {}", size)};
+            std::unreachable();
         }
     }
 
@@ -1682,6 +1668,24 @@ class toc final {
         for (size_t i{1}; i < indnt; i++) {
             std::print(os, "    ");
         }
+    }
+
+    [[nodiscard]] static auto
+    is_operand_indirect_addressing(const std::string_view op) -> bool {
+        if (auto expr{toc::get_text_between_brackets(op)}; expr) {
+            const std::string reg{get_operand_base_register(*expr)};
+            if (is_operand_register(reg)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    [[nodiscard]] static auto is_operand_register(const std::string_view op)
+        -> bool {
+        const size_t size{get_size_from_register_operand(op)};
+        return size != 0;
     }
 
     static auto line_and_col_num_for_char_index(const size_t at_line,
@@ -1865,12 +1869,12 @@ class toc final {
         return operand.find_first_of('[') != std::string::npos;
     }
 
-    static auto resize_memory_operand(const std::string_view operand,
-                                      const std::string_view new_size)
-        -> std::string {
+    static auto get_sized_memory_operand(const std::string_view operand,
+                                         const size_t new_size) -> std::string {
 
         const size_t pos = operand.find('[');
         assert(pos != std::string_view::npos);
-        return std::format("{} {}", new_size, operand.substr(pos));
+        return std::format("{} {}", get_size_specifier(new_size),
+                           operand.substr(pos));
     }
 };

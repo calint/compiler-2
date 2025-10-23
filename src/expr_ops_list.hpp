@@ -985,8 +985,7 @@ class expr_ops_list final : public expression {
                                             lea_registers, "",
                                             src_info.lea_path)};
             src_operand = std::format(
-                "{} [{}]",
-                toc::get_size_specifier(src.tok(), src_info.type_ptr->size()),
+                "{} [{}]", toc::get_size_specifier(src_info.type_ptr->size()),
                 lea);
         } else {
             src_operand = src_info.operand;

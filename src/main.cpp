@@ -419,7 +419,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         const expr_any& src{*exprs_[i]};
 
         const std::string dst_accessor{std::format(
-            "{} [{}]", toc::get_size_specifier(src.tok(), fld.type_ptr->size()),
+            "{} [{}]", toc::get_size_specifier(fld.type_ptr->size()),
             dst_op.to_string())};
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
