@@ -15,7 +15,6 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "lut.hpp"
-#include "panic_exception.hpp"
 #include "statement.hpp"
 #include "type.hpp"
 
@@ -528,7 +527,7 @@ class toc final {
                 const std::string reg{
                     alloc_scratch_register(src_loc_tk, os, indnt)};
                 const std::string reg_sized{
-                    get_sized_register_operand(src_loc_tk, reg, dst_size)};
+                    get_sized_register_operand(reg, dst_size)};
                 indent(os, indnt);
                 std::println(os, "mov {}, {}", reg_sized, src_op);
                 indent(os, indnt);
@@ -554,7 +553,7 @@ class toc final {
                 const std::string reg{
                     alloc_scratch_register(src_loc_tk, os, indnt)};
                 const std::string reg_sized{
-                    get_sized_register_operand(src_loc_tk, reg, dst_size)};
+                    get_sized_register_operand(reg, dst_size)};
                 indent(os, indnt);
                 std::println(os, "movsx {}, {}", reg_sized, src_op);
                 indent(os, indnt);
@@ -615,7 +614,7 @@ class toc final {
             const std::string reg{
                 alloc_scratch_register(src_loc_tk, os, indnt)};
             const std::string reg_sized{
-                get_sized_register_operand(src_loc_tk, reg, dst_size)};
+                get_sized_register_operand(reg, dst_size)};
             indent(os, indnt);
             std::println(
                 os, "mov {}, {}", reg_sized,
@@ -629,9 +628,8 @@ class toc final {
         // not both operands are memory references
         if (is_operand_register(src_op)) {
             indent(os, indnt);
-            std::println(
-                os, "{} {}, {}", op, dst_op,
-                get_sized_register_operand(src_loc_tk, src_op, dst_size));
+            std::println(os, "{} {}, {}", op, dst_op,
+                         get_sized_register_operand(src_op, dst_size));
             return;
         }
 
@@ -886,8 +884,7 @@ class toc final {
         return get_type_default().size();
     }
 
-    auto get_sized_register_operand(const token& src_loc_tk,
-                                    const std::string_view operand,
+    auto get_sized_register_operand(const std::string_view operand,
                                     const size_t size) -> std::string {
 
         //? sort of ugly
@@ -902,10 +899,7 @@ class toc final {
             case size_byte:
                 return "al";
             default:
-                throw compiler_exception{
-                    src_loc_tk,
-                    std::format("illegal size {} for register operand '{}'",
-                                size, operand)};
+                std::unreachable();
             }
         }
         if (operand == "rbx") {
@@ -919,9 +913,7 @@ class toc final {
             case size_byte:
                 return "bl";
             default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
+                std::unreachable();
             }
         }
         if (operand == "rcx") {
@@ -935,9 +927,7 @@ class toc final {
             case size_byte:
                 return "cl";
             default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
+                std::unreachable();
             }
         }
         if (operand == "rdx") {
@@ -951,9 +941,7 @@ class toc final {
             case size_byte:
                 return "dl";
             default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
+                std::unreachable();
             }
         }
         if (operand == "rbp") {
@@ -965,9 +953,7 @@ class toc final {
             case size_word:
                 return "bp";
             default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
+                std::unreachable();
             }
         }
         if (operand == "rsi") {
@@ -979,9 +965,7 @@ class toc final {
             case size_word:
                 return "si";
             default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
+                std::unreachable();
             }
         }
         if (operand == "rdi") {
@@ -993,9 +977,7 @@ class toc final {
             case size_word:
                 return "di";
             default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
+                std::unreachable();
             }
         }
         if (operand == "rsp") {
@@ -1007,9 +989,7 @@ class toc final {
             case size_word:
                 return "sp";
             default:
-                throw compiler_exception{
-                    src_loc_tk, std::format("illegal size {} for register '{}'",
-                                            size, operand)};
+                std::unreachable();
             }
         }
 
@@ -1017,8 +997,7 @@ class toc final {
         const std::string operand_str{operand};
         if (not std::regex_search(operand_str, match,
                                   regex_nasm_number_register_)) {
-            throw compiler_exception{
-                src_loc_tk, std::format("unknown register {}", operand)};
+            std::unreachable();
         }
         const std::string rnbr{match[1]};
         switch (size) {
@@ -1031,9 +1010,7 @@ class toc final {
         case size_byte:
             return std::format("r{}b", rnbr);
         default:
-            throw compiler_exception{
-                src_loc_tk, std::format("illegal size {} for register '{}'",
-                                        size, operand)};
+            std::unreachable();
         }
     }
 

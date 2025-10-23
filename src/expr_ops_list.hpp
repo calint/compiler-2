@@ -226,8 +226,9 @@ class expr_ops_list final : public expression {
         // with scratch register
         std::stringstream ss2;
         const std::string reg{tc.alloc_scratch_register(tok(), ss2, indent)};
-        const std::string reg_sized{tc.get_sized_register_operand(
-            tok(), reg, dst_info.type_ptr->size())};
+        const std::string reg_sized{
+            tc.get_sized_register_operand(reg, dst_info.type_ptr->size())};
+        // note: sized register to propagate operation to destination size
         const ident_info dst_reg{tc.make_ident_info(tok(), reg_sized)};
         do_compile(tc, ss2, indent, dst_reg);
         tc.asm_cmd(tok(), ss2, indent, "mov", dst_info.operand, reg_sized);
