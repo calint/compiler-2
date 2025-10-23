@@ -1,4 +1,5 @@
 [ ] expr_ops_list::asm_div: compile expression case 
+[ ] expr_ops_list::asm_div: test 140.baz op size dword
 [x] expr_ops_list::asm_div: test t139.baz
 ;       [10:15] div not const, no uops
 ;       [18:17] div not const,    uops
