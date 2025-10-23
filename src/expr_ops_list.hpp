@@ -450,36 +450,16 @@ class expr_ops_list final : public expression {
                            const ident_info& dst_info, const statement& src)
         -> void {
 
+        tc.comment_start(src.tok(), os, indent);
         // does 'src' need to be compiled?
         if (src.is_expression()) {
+            std::println(os, "= expression");
             // yes, compile with destination to 'dst'
             src.compile(tc, os, indent, dst_info.operand);
             return;
         }
 
-        const ident_info& src_info{tc.make_ident_info(src)};
-
-        // is 'src' a constant?
-        if (src_info.is_const()) {
-            // move it to 'dst' with unary ops
-            tc.asm_cmd(src.tok(), os, indent, "mov", dst_info.operand,
-                       std::format("{}{}", src.get_unary_ops().to_string(),
-                                   src_info.operand));
-            return;
-        }
-
-        // 'src' is not a constant
-
-        std::vector<std::string> lea_registers;
-        const std::string src_operand{
-            get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
-
-        // move 'dst' to 'src' and compile the unary ops since 'src' is not a
-        // constant
-        tc.asm_cmd(src.tok(), os, indent, "mov", dst_info.operand, src_operand);
-        src.get_unary_ops().compile(tc, os, indent, dst_info.operand);
-
-        free_registers(src, tc, os, indent, lea_registers);
+        std::unreachable();
     }
 
     static auto asm_op_mul(toc& tc, std::ostream& os, const size_t indent,
@@ -520,7 +500,9 @@ class expr_ops_list final : public expression {
 
         tc.comment_start(src.tok(), os, indent);
 
-        // handle special case of byte sized imul
+        // note: special case for byte sized multiplication because
+        //       x86_64 does not support constant as second operand for
+        //       byte size operation
         if (dst_info.type_ptr->size() == 1) {
             std::vector<std::string> lea_registers;
             const std::string src_operand{
@@ -558,26 +540,6 @@ class expr_ops_list final : public expression {
         if (not dst_info.is_memory_operand()) {
             // destination is a register
             if (src_info.is_const()) {
-                // note: special case for byte sized multiplication because
-                //       x86_64 does not support constant as second operand for
-                //       byte size operation
-                if (dst_info.type_ptr->size() == 1) {
-                    std::println(os, "dst is reg, src is const byte");
-                    const std::string& r1{
-                        tc.alloc_scratch_register(src.tok(), os, indent)};
-                    tc.asm_cmd(src.tok(), os, indent, "mov", r1,
-                               dst_info.operand);
-                    const std::string& r2{
-                        tc.alloc_scratch_register(src.tok(), os, indent)};
-                    tc.asm_cmd(src.tok(), os, indent, "mov", r2,
-                               src_info.operand);
-                    tc.asm_cmd(src.tok(), os, indent, "imul", r1, r2);
-                    tc.asm_cmd(src.tok(), os, indent, "mov", dst_info.operand,
-                               r1);
-                    tc.free_scratch_register(src.tok(), os, indent, r2);
-                    tc.free_scratch_register(src.tok(), os, indent, r1);
-                    return;
-                }
                 std::println(os, "dst is reg, src is const");
                 tc.asm_cmd(src.tok(), os, indent, "imul", dst_info.operand,
                            std::format("{}{}", src.get_unary_ops().to_string(),
@@ -615,23 +577,6 @@ class expr_ops_list final : public expression {
         // 'imul' destination is not a register
 
         if (src_info.is_const()) {
-            // note: special case for byte sized multiplication because
-            //       x86_64 does not support constant as second operand for
-            //       byte size operation
-            if (dst_info.type_ptr->size() == 1) {
-                std::println(os, "dst is not reg, src is const byte");
-                const std::string& r1{
-                    tc.alloc_scratch_register(src.tok(), os, indent)};
-                tc.asm_cmd(src.tok(), os, indent, "mov", r1, dst_info.operand);
-                const std::string& r2{
-                    tc.alloc_scratch_register(src.tok(), os, indent)};
-                tc.asm_cmd(src.tok(), os, indent, "mov", r2, src_info.operand);
-                tc.asm_cmd(src.tok(), os, indent, "imul", r1, r2);
-                tc.asm_cmd(src.tok(), os, indent, "mov", dst_info.operand, r1);
-                tc.free_scratch_register(src.tok(), os, indent, r2);
-                tc.free_scratch_register(src.tok(), os, indent, r1);
-                return;
-            }
             std::println(os, "dst is not reg, src is const");
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};

@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    40           1301            726           6208
+C/C++ Header                    40           1296            717           6167
 C++                              1             81             84            587
 -------------------------------------------------------------------------------
-SUM:                            41           1382            810           6795
+SUM:                            41           1377            801           6754
 -------------------------------------------------------------------------------
 ```
 
@@ -1901,6 +1901,7 @@ main:
 ;   [118:12] allocate scratch register -> r14
 ;       [118:12] arrays_equal(arr, arr1, 4)
 ;       [118:12] r14 = arrays_equal(arr, arr1, 4)
+;       [118:12] = expression
 ;       [118:12] arrays_equal(arr, arr1, 4)
 ;       [118:12] allocate named register 'rsi'
 ;       [118:12] allocate named register 'rdi'
@@ -2023,6 +2024,7 @@ main:
 ;   [122:16] allocate scratch register -> r14
 ;       [122:16] arrays_equal(arr, arr1, 4)
 ;       [122:16] r14 = arrays_equal(arr, arr1, 4)
+;       [122:16] = expression
 ;       [122:16] arrays_equal(arr, arr1, 4)
 ;       [122:16] allocate named register 'rsi'
 ;       [122:16] allocate named register 'rdi'
@@ -2138,6 +2140,7 @@ main:
 ;   [125:15] ~inv(arr[ix - 1])
 ;   [125:15] ~inv(arr[ix - 1])
 ;   [125:16] dword [rsp + r15 * 4 - 16] = ~inv(arr[ix - 1])
+;   [125:16] = expression
 ;   [125:16] ~inv(arr[ix - 1])
 ;   [125:20] allocate scratch register -> r14
 ;   [125:24] set array index
@@ -2617,6 +2620,7 @@ main:
 ;   [145:13] allocate scratch register -> r15
 ;   [145:13] baz(j)
 ;   [145:13] r15 = baz(j)
+;   [145:13] = expression
 ;   [145:13] baz(j)
 ;   [69:6] baz(arg) : i64 res 
     baz_145_13:
@@ -2686,6 +2690,7 @@ main:
 ;   [148:9] allocate scratch register -> r15
 ;   [148:9] baz(1)
 ;   [148:9] r15 = baz(1)
+;   [148:9] = expression
 ;   [148:9] baz(1)
 ;   [69:6] baz(arg) : i64 res 
     baz_148_9:
@@ -2757,6 +2762,7 @@ main:
 ;   [151:23] baz(2)
 ;   [151:23] baz(2)
 ;   [151:23] qword [rsp - 112] = baz(2)
+;   [151:23] = expression
 ;   [151:23] baz(2)
 ;   [69:6] baz(arg) : i64 res 
     baz_151_23:
@@ -3528,6 +3534,7 @@ main:
 ;   [183:9] array_size_of(worlds.locations)
 ;   [184:9] array_size_of(worlds.locations)
 ;   [184:9] rcx = array_size_of(worlds.locations)
+;   [184:9] = expression
 ;   [184:9] array_size_of(worlds.locations)
     mov rcx, 8
 ;   [182:9] worlds[1].locations
@@ -3707,6 +3714,7 @@ main:
 ;   [189:12] allocate scratch register -> r14
 ;       [189:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;       [189:12] r14 = arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
+;       [189:12] = expression
 ;       [189:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;       [189:12] allocate named register 'rsi'
 ;       [189:12] allocate named register 'rdi'
@@ -3715,6 +3723,7 @@ main:
 ;       [191:14] array_size_of(worlds.locations)
 ;       [192:14] array_size_of(worlds.locations)
 ;       [192:14] rcx = array_size_of(worlds.locations)
+;       [192:14] = expression
 ;       [192:14] array_size_of(worlds.locations)
         mov rcx, 8
 ;       [190:14] worlds[0].locations
@@ -3950,6 +3959,7 @@ main:
 ;               [87:14] address_of(s.data)
 ;               [87:14] address_of(s.data)
 ;               [87:14] rsi = address_of(s.data)
+;               [87:14] = expression
 ;               [87:14] address_of(s.data)
                 lea rsi, [rsp - 843]
 ;           [87:34] # buffer address
@@ -3957,6 +3967,7 @@ main:
 ;               [88:14] array_size_of(s.data)
 ;               [88:14] array_size_of(s.data)
 ;               [88:14] rdx = array_size_of(s.data)
+;               [88:14] = expression
 ;               [88:14] array_size_of(s.data)
                 mov rdx, 127
 ;           [88:37] # buffer size
@@ -4084,6 +4095,7 @@ main:
 ;                   [96:14] address_of(s.data)
 ;                   [96:14] address_of(s.data)
 ;                   [96:14] rsi = address_of(s.data)
+;                   [96:14] = expression
 ;                   [96:14] address_of(s.data)
                     lea rsi, [rsp - 843]
 ;               [96:34] # buffer address

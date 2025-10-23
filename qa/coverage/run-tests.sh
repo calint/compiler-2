@@ -128,13 +128,7 @@ echo $SEP
 
 # Process coverage data
 llvm-profdata merge -o baz.profdata -sparse $(ls *.profraw)
-llvm-cov export --format=lcov --instr-profile baz.profdata --object $BIN >lcov.info
+llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata -object=$BIN
 
-# Generate report
-# note: ignore "inconsistent" because of problems with understanding lambdas
-genhtml --ignore-errors inconsistent,inconsistent,unsupported --quiet lcov.info --output-directory report/
-
-echo $SEP
 echo "coverage report generated in $(realpath "report/")"
-rm -f *.profraw baz.profdata lcov.info
 echo $SEP
