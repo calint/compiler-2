@@ -865,7 +865,9 @@ class expr_ops_list final : public expression {
             std::println(os, "div expression");
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
-            src.compile(tc, os, indent, reg);
+            const std::string reg_sized{
+                tc.get_sized_register_operand(reg, dst_size)};
+            src.compile(tc, os, indent, reg_sized);
             const bool rax_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rax")};
             if (not rax_allocated) {
