@@ -506,7 +506,7 @@ class expr_ops_list final : public expression {
         if (dst_info.type_ptr->size() == 1) {
             std::vector<std::string> lea_registers;
             const std::string src_operand{
-                get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
+                tc.get_lea_operand(os, indent, src, src_info, lea_registers)};
             const unary_ops& uops{src.get_unary_ops()};
             const std::string r1{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
@@ -549,7 +549,7 @@ class expr_ops_list final : public expression {
 
             std::vector<std::string> lea_registers;
             const std::string src_operand{
-                get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
+                tc.get_lea_operand(os, indent, src, src_info, lea_registers)};
 
             const unary_ops& uops{src.get_unary_ops()};
             if (uops.is_empty()) {
@@ -597,7 +597,7 @@ class expr_ops_list final : public expression {
 
         std::vector<std::string> lea_registers;
         const std::string src_operand{
-            get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
+            tc.get_lea_operand(os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -662,7 +662,7 @@ class expr_ops_list final : public expression {
 
         std::vector<std::string> lea_registers;
         const std::string src_operand{
-            get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
+            tc.get_lea_operand(os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -723,7 +723,7 @@ class expr_ops_list final : public expression {
 
         std::vector<std::string> lea_registers;
         const std::string src_operand{
-            get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
+            tc.get_lea_operand(os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -790,7 +790,7 @@ class expr_ops_list final : public expression {
 
         std::vector<std::string> lea_registers;
         const std::string src_operand{
-            get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
+            tc.get_lea_operand(os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -920,7 +920,7 @@ class expr_ops_list final : public expression {
 
         std::vector<std::string> lea_registers;
         std::string src_operand{
-            get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
+            tc.get_lea_operand(os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -988,26 +988,6 @@ class expr_ops_list final : public expression {
         }
         tc.free_scratch_register(src.tok(), os, indent, reg);
         free_registers(src, tc, os, indent, lea_registers);
-    }
-
-    static auto get_lea_operand(toc& tc, std::ostream& os, const size_t indent,
-                                const statement& src,
-                                const ident_info& src_info,
-                                std::vector<std::string>& lea_registers)
-        -> std::string {
-
-        std::string src_operand;
-        if (src.is_indexed() or tc.has_lea(src)) {
-            std::string lea{src.compile_lea(src.tok(), tc, os, indent,
-                                            lea_registers, "",
-                                            src_info.lea_path)};
-            src_operand = std::format(
-                "{} [{}]", toc::get_size_specifier(src_info.type_ptr->size()),
-                lea);
-        } else {
-            src_operand = src_info.operand;
-        }
-        return src_operand;
     }
 
     static auto free_registers(const statement& st, toc& tc, std::ostream& os,

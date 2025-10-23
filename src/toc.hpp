@@ -846,6 +846,21 @@ class toc final {
         throw compiler_exception{src_loc_tk, "not in a function"};
     }
 
+    auto get_lea_operand(std::ostream& os, const size_t indent,
+                         const statement& src, const ident_info& src_info,
+                         std::vector<std::string>& lea_registers)
+        -> std::string {
+
+        if (not src.is_indexed() and not src_info.has_lea()) {
+            return src_info.operand;
+        }
+
+        std::string lea{src.compile_lea(src.tok(), *this, os, indent,
+                                        lea_registers, "", src_info.lea_path)};
+        return std::format(
+            "{} [{}]", toc::get_size_specifier(src_info.type_ptr->size()), lea);
+    }
+
     [[nodiscard]] auto
     get_func_return_type_or_throw(const token& src_loc_tk,
                                   const std::string_view name) const
