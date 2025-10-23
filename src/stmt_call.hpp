@@ -192,6 +192,12 @@ class stmt_call : public expression {
                     allocated_registers_in_order.emplace_back(r);
                 }
 
+                if (not arg.get_unary_ops().is_empty()) {
+                    throw compiler_exception(
+                        arg.tok(),
+                        "unary operations not allowed on references");
+                }
+
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             std::string{arg.identifier()}, lea,
                                             &param.get_type());

@@ -837,7 +837,9 @@ class expr_ops_list final : public expression {
         -> void {
 
         // does 'src' need to be compiled?
-        if (src.is_expression() or src.is_indexed() or tc.has_lea(src)) {
+        if (src.is_expression()) {
+            tc.comment_start(src.tok(), os, indent);
+            std::println(os, "div expression");
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             src.compile(tc, os, indent, reg);
@@ -875,6 +877,8 @@ class expr_ops_list final : public expression {
 
         const ident_info src_info{tc.make_ident_info(src)};
         if (src_info.is_const()) {
+            tc.comment_start(src.tok(), os, indent);
+            std::println(os, "div const");
             const bool rax_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rax")};
             if (not rax_allocated) {
@@ -924,6 +928,8 @@ class expr_ops_list final : public expression {
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
+            tc.comment_start(src.tok(), os, indent);
+            std::println(os, "div not const, no uops");
             const bool rax_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rax")};
             if (not rax_allocated) {
@@ -957,6 +963,8 @@ class expr_ops_list final : public expression {
 
         // 'src' is not an expression and not a constant and has unary ops
 
+        tc.comment_start(src.tok(), os, indent);
+        std::println(os, "div not const, uops");
         const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_operand);
         uops.compile(tc, os, indent, reg);

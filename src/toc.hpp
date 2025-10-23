@@ -846,6 +846,19 @@ class toc final {
         throw compiler_exception{src_loc_tk, "not in a function"};
     }
 
+    [[nodiscard]] auto
+    get_func_return_type_or_throw(const token& src_loc_tk,
+                                  const std::string_view name) const
+        -> const type& {
+
+        if (not funcs_.has(name)) {
+            throw compiler_exception{
+                src_loc_tk, std::format("function '{}' not found", name)};
+        }
+
+        return *funcs_.get_const_ref(name).type_ptr;
+    }
+
     auto get_lea_operand(std::ostream& os, const size_t indent,
                          const statement& src, const ident_info& src_info,
                          std::vector<std::string>& lea_registers)
@@ -859,19 +872,6 @@ class toc final {
                                         lea_registers, "", src_info.lea_path)};
         return std::format(
             "{} [{}]", toc::get_size_specifier(src_info.type_ptr->size()), lea);
-    }
-
-    [[nodiscard]] auto
-    get_func_return_type_or_throw(const token& src_loc_tk,
-                                  const std::string_view name) const
-        -> const type& {
-
-        if (not funcs_.has(name)) {
-            throw compiler_exception{
-                src_loc_tk, std::format("function '{}' not found", name)};
-        }
-
-        return *funcs_.get_const_ref(name).type_ptr;
     }
 
     [[nodiscard]] auto get_loop_label_or_throw(const token& src_loc_tk) const
