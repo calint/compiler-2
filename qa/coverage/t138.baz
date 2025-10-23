@@ -1,0 +1,29 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func faz(x : i8, y : i8) : i8 res {
+    res = x * y 
+}
+
+func fez(x : i8, y : i8) : i8 res {
+    res = x * ~y 
+}
+
+func main() {
+    var arr : i32[4]
+    var ix : i32 = 2
+    arr[ix] = 3
+    var a : i8 = faz(arr[ix], ix)
+    assert(a == 6)
+    var b : i8 = fez(arr[ix], ix)
+    assert(b == -9)
+    var c : i8 = fez(3, ix)
+    assert(c == -9)
+    var d : i8 = fez(3, 2)
+    assert(d == -9)
+}

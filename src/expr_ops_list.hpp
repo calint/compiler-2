@@ -519,7 +519,41 @@ class expr_ops_list final : public expression {
         // note: 'imul' destination operand must be register
 
         tc.comment_start(src.tok(), os, indent);
-        std::print(os, "imul: ");
+
+        // handle special case of byte sized imul
+        if (dst_info.type_ptr->size() == 1) {
+            std::vector<std::string> lea_registers;
+            const std::string src_operand{
+                get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
+            const unary_ops& uops{src.get_unary_ops()};
+            const std::string r1{
+                tc.alloc_scratch_register(src.tok(), os, indent)};
+            const std::string r2{
+                tc.alloc_scratch_register(src.tok(), os, indent)};
+
+            tc.asm_cmd(src.tok(), os, indent, "mov", r1, dst_info.operand);
+
+            if (src_info.is_const()) {
+                tc.comment_start(src.tok(), os, indent);
+                std::println(os, "imul: byte const");
+                tc.asm_cmd(
+                    src.tok(), os, indent, "mov", r2,
+                    std::format("{}{}", uops.to_string(), src_info.operand));
+            } else {
+                tc.comment_start(src.tok(), os, indent);
+                std::println(os, "imul: byte not const");
+                tc.asm_cmd(src.tok(), os, indent, "mov", r2, src_operand);
+                uops.compile(tc, os, indent, r2);
+            }
+
+            tc.asm_cmd(src.tok(), os, indent, "imul", r1, r2);
+            tc.asm_cmd(src.tok(), os, indent, "mov", dst_info.operand, r1);
+
+            tc.free_scratch_register(src.tok(), os, indent, r2);
+            tc.free_scratch_register(src.tok(), os, indent, r1);
+            free_registers(src, tc, os, indent, lea_registers);
+            return;
+        }
 
         if (not dst_info.is_memory_operand()) {
             // destination is a register

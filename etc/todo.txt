@@ -1,4 +1,5 @@
-[ ] expr_ops_list::asm_mul: special byte sized operation handling with imul
+[ ] expr_ops_list::asm_mul: compile expression case
+[x] expr_ops_list::asm_mul: special byte sized operation handling with imul
 [x] expr_ops_list::asm_mul: rewrite cleaner
     => quirky code because of imul format, t137 tests code paths:
     imul: dst is not reg, src is not const, no uops
