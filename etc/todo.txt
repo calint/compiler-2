@@ -1,3 +1,4 @@
+[ ] expr_ops_list: handling of indexed or lea sources not as expression
 [ ] bool_ops_list: if destination is a boolean ponder howto use cmov instead
     of the jmps
 [x] t78: lea r13 is unnecessary
