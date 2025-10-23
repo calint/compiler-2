@@ -38,7 +38,9 @@ func print_num(num) {
     var i = 20
     loop {
         i = i - 1
-        buf[i] = 48 + (n % 10)
+        var ascii = 48 + (n % 10)
+        # note: not buf[i] = 48 + ... because expression will be executed as byte sized and n overflows
+        buf[i] = ascii 
         n = n / 10
         if n == 0 break
     }

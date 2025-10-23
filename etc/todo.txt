@@ -1,4 +1,5 @@
-[ ] t134: not optimal due to movsx from dword to qword
+[ ] expr_ops_list::asm_div, asm_shf do not size the register when expression
+[x] t134: not optimal due to movsx from dword to qword
 [x] expr_ops_list: handling of non-expression but indexed or lea sources
     => allocates scratch register although when indexed or lea only operand
        change is needed

@@ -491,16 +491,19 @@ class expr_ops_list final : public expression {
             // yes, compile it to a scratch register
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
-            src.compile(tc, os, indent, reg);
+            const std::string reg_sized{
+                tc.get_sized_register_operand(reg, dst_info.type_ptr->size())};
+            src.compile(tc, os, indent, reg_sized);
             // note 'imul' destination must be a register
             if (dst_info.is_register() and not dst_info.is_memory_operand()) {
                 tc.asm_cmd(src.tok(), os, indent, "imul", dst_info.operand,
-                           reg);
+                           reg_sized);
             } else {
                 // 'imul' destination is not a register
-                tc.asm_cmd(src.tok(), os, indent, "imul", reg,
+                tc.asm_cmd(src.tok(), os, indent, "imul", reg_sized,
                            dst_info.operand);
-                tc.asm_cmd(src.tok(), os, indent, "mov", dst_info.operand, reg);
+                tc.asm_cmd(src.tok(), os, indent, "mov", dst_info.operand,
+                           reg_sized);
             }
             tc.free_scratch_register(src.tok(), os, indent, reg);
             return;
@@ -628,8 +631,10 @@ class expr_ops_list final : public expression {
         if (src.is_expression()) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
-            src.compile(tc, os, indent, reg);
-            tc.asm_cmd(src.tok(), os, indent, op, dst_info.operand, reg);
+            const std::string reg_sized{
+                tc.get_sized_register_operand(reg, dst_info.type_ptr->size())};
+            src.compile(tc, os, indent, reg_sized);
+            tc.asm_cmd(src.tok(), os, indent, op, dst_info.operand, reg_sized);
             tc.free_scratch_register(src.tok(), os, indent, reg);
             return;
         }
@@ -687,8 +692,10 @@ class expr_ops_list final : public expression {
         if (src.is_expression()) {
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
-            src.compile(tc, os, indent, reg);
-            tc.asm_cmd(src.tok(), os, indent, op, dst_info.operand, reg);
+            const std::string reg_sized{
+                tc.get_sized_register_operand(reg, dst_info.type_ptr->size())};
+            src.compile(tc, os, indent, reg_sized);
+            tc.asm_cmd(src.tok(), os, indent, op, dst_info.operand, reg_sized);
             tc.free_scratch_register(src.tok(), os, indent, reg);
             return;
         }

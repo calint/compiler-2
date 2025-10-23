@@ -627,8 +627,17 @@ class toc final {
         }
 
         // not both operands are memory references
+        const bool dst_is_reg{is_operand_register(dst_op)};
+        const bool src_is_reg{is_operand_register(src_op)};
 
-        if (is_operand_register(dst_op)) {
+        if (dst_is_reg and src_is_reg) {
+            indent(os, indnt);
+            std::println(os, "{} {}, {}", op, dst_op,
+                         get_sized_register_operand(src_op, dst_size));
+            return;
+        }
+
+        if (dst_is_reg) {
             indent(os, indnt);
             std::println(os, "{} {}, {}", op, dst_op,
                          is_memory_operand(src_op)
@@ -638,7 +647,7 @@ class toc final {
             return;
         }
 
-        if (is_operand_register(src_op)) {
+        if (src_is_reg) {
             indent(os, indnt);
             std::println(os, "{} {}, {}", op, dst_op,
                          get_sized_register_operand(src_op, dst_size));
