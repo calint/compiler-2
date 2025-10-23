@@ -472,7 +472,7 @@ class expr_ops_list final : public expression {
 
         std::vector<std::string> lea_registers;
         const std::string src_operand{
-            get_operand(tc, os, indent, src, src_info, lea_registers)};
+            get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
 
         // move 'dst' to 'src' and compile the unary ops since 'src' is not a
         // constant
@@ -491,10 +491,13 @@ class expr_ops_list final : public expression {
             // yes, compile it to a scratch register
             const std::string reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
+            // make register sized to destination
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_info.type_ptr->size())};
+
             src.compile(tc, os, indent, reg_sized);
-            // note 'imul' destination must be a register
+
+            // note: 'imul' destination must be a register
             if (dst_info.is_register() and not dst_info.is_memory_operand()) {
                 tc.asm_cmd(src.tok(), os, indent, "imul", dst_info.operand,
                            reg_sized);
@@ -542,7 +545,7 @@ class expr_ops_list final : public expression {
 
             std::vector<std::string> lea_registers;
             const std::string src_operand{
-                get_operand(tc, os, indent, src, src_info, lea_registers)};
+                get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
 
             const unary_ops& uops{src.get_unary_ops()};
             if (uops.is_empty()) {
@@ -596,7 +599,7 @@ class expr_ops_list final : public expression {
 
         std::vector<std::string> lea_registers;
         const std::string src_operand{
-            get_operand(tc, os, indent, src, src_info, lea_registers)};
+            get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -653,7 +656,7 @@ class expr_ops_list final : public expression {
 
         std::vector<std::string> lea_registers;
         const std::string src_operand{
-            get_operand(tc, os, indent, src, src_info, lea_registers)};
+            get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -714,7 +717,7 @@ class expr_ops_list final : public expression {
 
         std::vector<std::string> lea_registers;
         const std::string src_operand{
-            get_operand(tc, os, indent, src, src_info, lea_registers)};
+            get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -781,7 +784,7 @@ class expr_ops_list final : public expression {
 
         std::vector<std::string> lea_registers;
         const std::string src_operand{
-            get_operand(tc, os, indent, src, src_info, lea_registers)};
+            get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -911,7 +914,7 @@ class expr_ops_list final : public expression {
 
         std::vector<std::string> lea_registers;
         std::string src_operand{
-            get_operand(tc, os, indent, src, src_info, lea_registers)};
+            get_lea_operand(tc, os, indent, src, src_info, lea_registers)};
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
@@ -981,9 +984,10 @@ class expr_ops_list final : public expression {
         free_registers(src, tc, os, indent, lea_registers);
     }
 
-    static auto get_operand(toc& tc, std::ostream& os, const size_t indent,
-                            const statement& src, const ident_info& src_info,
-                            std::vector<std::string>& lea_registers)
+    static auto get_lea_operand(toc& tc, std::ostream& os, const size_t indent,
+                                const statement& src,
+                                const ident_info& src_info,
+                                std::vector<std::string>& lea_registers)
         -> std::string {
 
         std::string src_operand;

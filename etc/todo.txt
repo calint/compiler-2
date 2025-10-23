@@ -1,8 +1,8 @@
 [ ] expr_ops_list::asm_mul: rewrite cleaner
 [ ] expr_ops_list:: size the register when expression
-    [ ] asm_div: handle register resize, rea
-    [ ] asm_shf: handle lea
-    [ ] asm_mul: handle lea
+    [ ] asm_div: handle register resize, lea
+    [x] asm_shf: handle lea, handle expression
+    [ ] asm_mul: handle lea 
 [x] stmt_call:: argument register is not sized to parameter
 [ ] bool_ops_list: if destination is a boolean ponder howto use cmov instead
     of the jmps
