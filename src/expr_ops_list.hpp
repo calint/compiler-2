@@ -228,10 +228,10 @@ class expr_ops_list final : public expression {
         do_compile(tc, ss2, indent, dst_reg);
         tc.asm_cmd(tok(), ss2, indent, "mov", dst_info.operand, reg);
         tc.free_scratch_register(tok(), ss2, indent, reg);
-        // std::println(
-        //     std::cerr,
-        //     "without scratch register:{}\nwith scratch register:\n{}\n",
-        //     ss1.str(), ss2.str());
+
+        // std::println(std::cerr,
+        //              "---------\nwithout scratch register:\n{}\nwith scratch
+        //              " "register:\n{}\n---------\n", ss1.str(), ss2.str());
 
         // compare instruction count
         const size_t ss1_count{count_instructions(tc, ss1)};
