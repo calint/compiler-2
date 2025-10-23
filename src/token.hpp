@@ -1,9 +1,12 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstddef>
 #include <ostream>
+#include <print>
 #include <regex>
 #include <string>
+#include <string_view>
 
 class token final {
     std::string_view ws_left_;  // whitespace left of token text

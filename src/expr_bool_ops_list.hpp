@@ -1,8 +1,13 @@
 #pragma once
 // reviewed: 2025-09-29
 
+#include <optional>
+#include <ostream>
+#include <string>
+#include <string_view>
 #include <utility>
 #include <variant>
+#include <vector>
 
 #include "expr_bool_op.hpp"
 #include "statement.hpp"

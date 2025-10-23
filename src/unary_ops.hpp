@@ -1,6 +1,11 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstdint>
+#include <ostream>
+#include <print>
+#include <ranges>
+#include <string_view>
 #include <utility>
 #include <vector>
 

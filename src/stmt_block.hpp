@@ -13,6 +13,10 @@
 #include "tokenizer.hpp"
 #include "unary_ops.hpp"
 #include <memory>
+#include <ostream>
+#include <print>
+#include <string_view>
+#include <vector>
 
 class stmt_block final : public statement {
     bool is_one_statement_{};

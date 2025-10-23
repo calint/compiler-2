@@ -9,7 +9,13 @@
 #include "toc.hpp"
 #include "tokenizer.hpp"
 #include "unary_ops.hpp"
+#include <cstddef>
+#include <memory>
+#include <ostream>
+#include <span>
+#include <string>
 #include <string_view>
+#include <vector>
 
 class program final {
     // built-in types

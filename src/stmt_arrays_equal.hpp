@@ -1,5 +1,14 @@
 #pragma once
 
+#include <format>
+#include <optional>
+#include <ostream>
+#include <print>
+#include <ranges>
+#include <string>
+#include <string_view>
+#include <vector>
+
 #include "compiler_exception.hpp"
 #include "expr_any.hpp"
 #include "statement.hpp"

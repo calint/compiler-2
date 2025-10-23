@@ -1,8 +1,16 @@
 #pragma once
 
 #include <algorithm>
+#include <cstdint>
 #include <format>
+#include <memory>
+#include <optional>
+#include <ostream>
+#include <ranges>
+#include <span>
 #include <string>
+#include <string_view>
+#include <vector>
 
 #include "compiler_exception.hpp"
 #include "expr_any.hpp"

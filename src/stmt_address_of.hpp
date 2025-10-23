@@ -1,6 +1,11 @@
 #pragma once
 
+#include <ostream>
+#include <print>
 #include <ranges>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include "compiler_exception.hpp"
 #include "expression.hpp"

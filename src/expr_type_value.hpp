@@ -2,8 +2,12 @@
 // reviewed: 2025-09-29
 
 #include <memory>
+#include <ostream>
+#include <span>
+#include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "decouple.hpp"
 #include "statement.hpp"

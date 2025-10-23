@@ -1,7 +1,14 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstddef>
+#include <optional>
+#include <ostream>
 #include <ranges>
+#include <span>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include "compiler_exception.hpp"
 #include "stmt_block.hpp"

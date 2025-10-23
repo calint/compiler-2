@@ -1,7 +1,10 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstddef>
 #include <format>
+#include <ranges>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>

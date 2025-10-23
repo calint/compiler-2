@@ -1,6 +1,10 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstddef>
+#include <exception>
+#include <string>
+
 #include "token.hpp"
 #include "tokenizer.hpp"
 

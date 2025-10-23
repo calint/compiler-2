@@ -1,6 +1,15 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstddef>
+#include <format>
+#include <ostream>
+#include <span>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
 #include "compiler_exception.hpp"
 #include "token.hpp"
 #include "unary_ops.hpp"
@@ -40,7 +49,15 @@ class statement {
 
     auto set_type(const type& tp) -> void { type_ = &tp; }
 
-    [[nodiscard]] auto get_type() const -> const type& { return *type_; }
+    [[nodiscard]] auto has_type() const -> bool { return type_ != nullptr; }
+
+    [[nodiscard]] auto get_type() const -> const type& {
+        if (type_ == nullptr) {
+            throw compiler_exception{token_,
+                                     "internal error: statement type not set"};
+        }
+        return *type_;
+    }
 
     [[nodiscard]] virtual auto is_in_data_section() const -> bool {
         return false;

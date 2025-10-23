@@ -1,5 +1,10 @@
 #pragma once
 
+#include <format>
+#include <ostream>
+#include <print>
+#include <string_view>
+
 #include "compiler_exception.hpp"
 #include "expression.hpp"
 #include "stmt_identifier.hpp"

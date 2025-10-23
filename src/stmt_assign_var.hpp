@@ -1,7 +1,12 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <format>
+#include <print>
 #include <ranges>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"

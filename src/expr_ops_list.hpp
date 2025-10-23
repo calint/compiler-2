@@ -4,6 +4,7 @@
 #include <memory>
 #include <ostream>
 #include <ranges>
+#include <span>
 #include <sstream>
 #include <utility>
 #include <vector>
@@ -829,6 +830,20 @@ class expr_ops_list final : public expression {
         free_registers(src, tc, os, indent, lea_registers);
     }
 
+    static auto asm_op_div_reg_ext(const size_t op_size) -> std::string {
+        switch (op_size) {
+        case toc::size_qword:
+            return "cqo";
+        case toc::size_dword:
+            return "cdq";
+        case toc::size_word:
+            return "cwde";
+        case toc::size_byte:
+            return "cbw";
+        default:
+            std::unreachable();
+        }
+    }
     // op is either 'rax' for the quotient or 'rdx' for the reminder to be moved
     // into 'dst'
     static auto asm_op_div(toc& tc, std::ostream& os, const size_t indent,
@@ -848,14 +863,18 @@ class expr_ops_list final : public expression {
             if (not rax_allocated) {
                 toc::asm_push(src.tok(), os, indent, "rax");
             }
-            tc.asm_cmd(src.tok(), os, indent, "mov", "rax", dst_info.operand);
+            tc.asm_cmd(
+                src.tok(), os, indent, "mov",
+                tc.get_sized_register_operand("rax", dst_info.type_ptr->size()),
+                dst_info.operand);
             const bool rdx_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rdx")};
             if (not rdx_allocated) {
                 toc::asm_push(src.tok(), os, indent, "rdx");
             }
             toc::indent(os, indent, false);
-            std::println(os, "cqo");
+            std::println(os, "{}",
+                         asm_op_div_reg_ext(dst_info.type_ptr->size()));
             toc::indent(os, indent, false);
             std::println(os, "idiv {}", reg);
             tc.asm_cmd(src.tok(), os, indent, "mov", dst_info.operand, op);
@@ -884,14 +903,18 @@ class expr_ops_list final : public expression {
             if (not rax_allocated) {
                 toc::asm_push(src.tok(), os, indent, "rax");
             }
-            tc.asm_cmd(src.tok(), os, indent, "mov", "rax", dst_info.operand);
+            tc.asm_cmd(
+                src.tok(), os, indent, "mov",
+                tc.get_sized_register_operand("rax", dst_info.type_ptr->size()),
+                dst_info.operand);
             const bool rdx_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rdx")};
             if (not rdx_allocated) {
                 toc::asm_push(src.tok(), os, indent, "rdx");
             }
             toc::indent(os, indent, false);
-            std::println(os, "cqo");
+            std::println(os, "{}",
+                         asm_op_div_reg_ext(dst_info.type_ptr->size()));
             const std::string scratch_reg{
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             tc.asm_cmd(src.tok(), os, indent, "mov", scratch_reg,
@@ -935,14 +958,18 @@ class expr_ops_list final : public expression {
             if (not rax_allocated) {
                 toc::asm_push(src.tok(), os, indent, "rax");
             }
-            tc.asm_cmd(src.tok(), os, indent, "mov", "rax", dst_info.operand);
+            tc.asm_cmd(
+                src.tok(), os, indent, "mov",
+                tc.get_sized_register_operand("rax", dst_info.type_ptr->size()),
+                dst_info.operand);
             const bool rdx_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rdx")};
             if (not rdx_allocated) {
                 toc::asm_push(src.tok(), os, indent, "rdx");
             }
             toc::indent(os, indent, false);
-            std::println(os, "cqo");
+            std::println(os, "{}",
+                         asm_op_div_reg_ext(dst_info.type_ptr->size()));
             toc::indent(os, indent, false);
             std::println(os, "idiv {}", src_operand);
             // op is either 'rax' for the quotient or 'rdx' for the reminder
@@ -966,23 +993,28 @@ class expr_ops_list final : public expression {
         tc.comment_start(src.tok(), os, indent);
         std::println(os, "div not const, uops");
         const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
-        tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_operand);
-        uops.compile(tc, os, indent, reg);
+        const std::string reg_sized{
+            tc.get_sized_register_operand(reg, dst_info.type_ptr->size())};
+        tc.asm_cmd(src.tok(), os, indent, "mov", reg_sized, src_operand);
+        uops.compile(tc, os, indent, reg_sized);
         const bool rax_allocated{
             tc.alloc_named_register(src.tok(), os, indent, "rax")};
         if (not rax_allocated) {
             toc::asm_push(src.tok(), os, indent, "rax");
         }
-        tc.asm_cmd(src.tok(), os, indent, "mov", "rax", dst_info.operand);
+        tc.asm_cmd(
+            src.tok(), os, indent, "mov",
+            tc.get_sized_register_operand("rax", dst_info.type_ptr->size()),
+            dst_info.operand);
         const bool rdx_allocated{
             tc.alloc_named_register(src.tok(), os, indent, "rdx")};
         if (not rdx_allocated) {
             toc::asm_push(src.tok(), os, indent, "rdx");
         }
         toc::indent(os, indent, false);
-        std::println(os, "cqo");
+        std::println(os, "{}", asm_op_div_reg_ext(dst_info.type_ptr->size()));
         toc::indent(os, indent, false);
-        std::println(os, "idiv {}", reg);
+        std::println(os, "idiv {}", reg_sized);
         tc.asm_cmd(src.tok(), os, indent, "mov", dst_info.operand, op);
         if (rdx_allocated) {
             tc.free_named_register(src.tok(), os, indent, "rdx");

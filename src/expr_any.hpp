@@ -1,6 +1,15 @@
 #pragma once
 // reviewed: 2025-09-29
 
+#include <format>
+#include <optional>
+#include <ostream>
+#include <span>
+#include <string>
+#include <string_view>
+#include <variant>
+#include <vector>
+
 #include "expr_bool_ops_list.hpp"
 #include "expr_ops_list.hpp"
 #include "expr_type_value.hpp"

@@ -2,13 +2,16 @@
 // review: 2025-09-29
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <iostream>
 #include <optional>
 #include <ostream>
+#include <print>
 #include <ranges>
 #include <regex>
+#include <span>
 #include <string_view>
 #include <utility>
 
