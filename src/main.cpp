@@ -548,6 +548,7 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
     const std::regex rxlbl{R"(^\s*(.+):.*$)"};
     const std::regex rxcomment{R"(^\s*;.*$)"};
     std::smatch match;
+    size_t optimizations{};
     while (true) {
         std::string line1;
         getline(is, line1);
@@ -598,7 +599,9 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
             std::println(os, "{}", s);
         }
         std::println(os, "{}", line2);
+        optimizations++;
     }
+    std::println(os, ";          optimization pass 1: {}", optimizations);
 }
 
 // opt2
@@ -616,6 +619,7 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
     const std::regex rxcomment{R"(^\s*;.*$)"};
     std::smatch match;
 
+    size_t optimizations{};
     while (true) {
         std::string line1;
         getline(is, line1);
@@ -730,7 +734,10 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
             std::println(os, "{}", s);
         }
         std::println(os, "{}", line3);
+        optimizations++;
     }
+
+    std::println(os, ";          optimization pass 2: {}", optimizations);
 }
 
 auto read_file_to_string(const char* file_name) -> std::string {

@@ -2776,3 +2776,5 @@ section .bss
 ; max scratch registers in use: 5
 ;            max frames in use: 7
 ;               max stack size: 844 B
+;          optimization pass 1: 56
+;          optimization pass 2: 0

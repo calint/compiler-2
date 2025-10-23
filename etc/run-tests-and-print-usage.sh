@@ -6,5 +6,5 @@ cd ..
 
 for file in qa/coverage/*.baz; do
   echo "File: $file"
-  ./baz "$file" | tail -n 3
+  ./baz "$file" | tail -n 5
 done
