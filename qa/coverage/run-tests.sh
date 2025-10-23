@@ -1,8 +1,7 @@
 #!/bin/sh
 # tools:
-#   llvm-profdata: ?
-#        llvm-cov: 15.0.7
-#         genhtml: 1.16
+#   llvm-profdata: 21.1.4
+#        llvm-cov: 21.1.4
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
