@@ -1,31 +1,6 @@
-[ ] expr_ops_list: handling of indexed or lea sources not as expression
+[ ] expr_ops_list: handling of non-expression but indexed or lea sources
 [ ] bool_ops_list: if destination is a boolean ponder howto use cmov instead
     of the jmps
-[x] t78: lea r13 is unnecessary
-    inv_28_17:
-;       [28:17] alias res -> dword [rsp + r15 * 4 - 16]  (lea: , len: 0)
-;       [28:17] alias i -> arr  (lea: rsp + r14 * 4 - 16, len: 4)
-;       [12:5] res = ~i
-;       [12:11] ~i
-;       [12:11] ~i
-;       [12:12] ~i
-;       [12:12] allocate scratch register -> r13
-        lea r13, [rsp + r14 * 4 - 16]
-;       [12:12] allocate scratch register -> r12
-        mov r12d, dword [r13]
-        mov dword [rsp + r15 * 4 - 16], r12d
-;       [12:12] free scratch register 'r12'
-        not dword [rsp + r15 * 4 - 16]
-;       [12:12] free scratch register 'r13'
-;       [28:17] free scratch register 'r14'
-    inv_28_17_end:
-    => fixed better interpretation of when lea needs dedicated register
-[x] this is not optimal
-        mov r14, qword [r13 + r12 * 8]
-;       [188:12] free scratch register 'r12'
-;       [188:12] free scratch register 'r13'
-    cmp r14, 0xffee
-    => fixed to skip the intermediary register and use lea instead
 [ ] handle boolean expression of == between types, allow?
 [ ] generalize array_equal to work on non-array types
 [ ] consolidate the various initiations of rep stosX into common code in toc
@@ -113,6 +88,31 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] t78: lea r13 is unnecessary
+    inv_28_17:
+;       [28:17] alias res -> dword [rsp + r15 * 4 - 16]  (lea: , len: 0)
+;       [28:17] alias i -> arr  (lea: rsp + r14 * 4 - 16, len: 4)
+;       [12:5] res = ~i
+;       [12:11] ~i
+;       [12:11] ~i
+;       [12:12] ~i
+;       [12:12] allocate scratch register -> r13
+        lea r13, [rsp + r14 * 4 - 16]
+;       [12:12] allocate scratch register -> r12
+        mov r12d, dword [r13]
+        mov dword [rsp + r15 * 4 - 16], r12d
+;       [12:12] free scratch register 'r12'
+        not dword [rsp + r15 * 4 - 16]
+;       [12:12] free scratch register 'r13'
+;       [28:17] free scratch register 'r14'
+    inv_28_17_end:
+    => fixed better interpretation of when lea needs dedicated register
+[x] this is not optimal
+        mov r14, qword [r13 + r12 * 8]
+;       [188:12] free scratch register 'r12'
+;       [188:12] free scratch register 'r13'
+    cmp r14, 0xffee
+    => fixed to skip the intermediary register and use lea instead
 [x] expr_ops_list: tidy asm_op_xxx with more streamlined flow of make_ident
     => better now using toc::has_lea
 [x] allow declaration of instance without initializer, zero it
