@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    40           1291            723           6154
+C/C++ Header                    40           1291            723           6156
 C++                              1             80             84            581
 -------------------------------------------------------------------------------
-SUM:                            41           1371            807           6735
+SUM:                            41           1371            807           6737
 -------------------------------------------------------------------------------
 ```
 
@@ -343,15 +343,15 @@ main:
     cmp dword [rsp + r14 * 4 - 16], 2
     jne bool_false_109_12
     bool_true_109_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_109_12
     bool_false_109_12:
-    mov r15, false
+    mov r15b, false
     bool_end_109_12:
     assert_109_5:
         if_20_29_109_5:
         cmp_20_29_109_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_109_5_end
         if_20_29_109_5_code:
             mov rdi, 1
@@ -373,15 +373,15 @@ main:
     cmp dword [rsp + r14 * 4 - 16], 2
     jne bool_false_110_12
     bool_true_110_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_110_12
     bool_false_110_12:
-    mov r15, false
+    mov r15b, false
     bool_end_110_12:
     assert_110_5:
         if_20_29_110_5:
         cmp_20_29_110_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_110_5_end
         if_20_29_110_5_code:
             mov rdi, 1
@@ -425,15 +425,15 @@ main:
     cmp dword [rsp + r14 * 4 - 16], 2
     jne bool_false_114_12
     bool_true_114_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_114_12
     bool_false_114_12:
-    mov r15, false
+    mov r15b, false
     bool_end_114_12:
     assert_114_5:
         if_20_29_114_5:
         cmp_20_29_114_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_114_5_end
         if_20_29_114_5_code:
             mov rdi, 1
@@ -495,15 +495,15 @@ main:
     test r14, r14
     je bool_false_118_12
     bool_true_118_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_118_12
     bool_false_118_12:
-    mov r15, false
+    mov r15b, false
     bool_end_118_12:
     assert_118_5:
         if_20_29_118_5:
         cmp_20_29_118_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_118_5_end
         if_20_29_118_5_code:
             mov rdi, 1
@@ -551,15 +551,15 @@ main:
     test r14, r14
     jne bool_false_122_12
     bool_true_122_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_122_12
     bool_false_122_12:
-    mov r15, false
+    mov r15b, false
     bool_end_122_12:
     assert_122_5:
         if_20_29_122_5:
         cmp_20_29_122_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_122_5_end
         if_20_29_122_5_code:
             mov rdi, 1
@@ -605,15 +605,15 @@ main:
     cmp dword [rsp + r14 * 4 - 16], 2
     jne bool_false_126_12
     bool_true_126_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_126_12
     bool_false_126_12:
-    mov r15, false
+    mov r15b, false
     bool_end_126_12:
     assert_126_5:
         if_20_29_126_5:
         cmp_20_29_126_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_126_5_end
         if_20_29_126_5_code:
             mov rdi, 1
@@ -646,15 +646,15 @@ main:
     cmp dword [rsp + r14 * 4 - 16], 0xfe
     jne bool_false_129_12
     bool_true_129_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_129_12
     bool_false_129_12:
-    mov r15, false
+    mov r15b, false
     bool_end_129_12:
     assert_129_5:
         if_20_29_129_5:
         cmp_20_29_129_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_129_5_end
         if_20_29_129_5_code:
             mov rdi, 1
@@ -674,15 +674,15 @@ main:
     cmp qword [rsp - 72], 2
     jne bool_false_133_12
     bool_true_133_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_133_12
     bool_false_133_12:
-    mov r15, false
+    mov r15b, false
     bool_end_133_12:
     assert_133_5:
         if_20_29_133_5:
         cmp_20_29_133_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_133_5_end
         if_20_29_133_5_code:
             mov rdi, 1
@@ -696,15 +696,15 @@ main:
     cmp qword [rsp - 64], 0xb
     jne bool_false_134_12
     bool_true_134_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_134_12
     bool_false_134_12:
-    mov r15, false
+    mov r15b, false
     bool_end_134_12:
     assert_134_5:
         if_20_29_134_5:
         cmp_20_29_134_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_134_5_end
         if_20_29_134_5_code:
             mov rdi, 1
@@ -729,15 +729,15 @@ main:
     cmp qword [rsp - 80], 0
     jne bool_false_138_12
     bool_true_138_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_138_12
     bool_false_138_12:
-    mov r15, false
+    mov r15b, false
     bool_end_138_12:
     assert_138_5:
         if_20_29_138_5:
         cmp_20_29_138_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_138_5_end
         if_20_29_138_5_code:
             mov rdi, 1
@@ -762,15 +762,15 @@ main:
     cmp qword [rsp - 80], 0xff
     jne bool_false_142_12
     bool_true_142_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_142_12
     bool_false_142_12:
-    mov r15, false
+    mov r15b, false
     bool_end_142_12:
     assert_142_5:
         if_20_29_142_5:
         cmp_20_29_142_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_142_5_end
         if_20_29_142_5_code:
             mov rdi, 1
@@ -790,15 +790,15 @@ main:
     cmp qword [rsp - 96], 2
     jne bool_false_146_12
     bool_true_146_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_146_12
     bool_false_146_12:
-    mov r15, false
+    mov r15b, false
     bool_end_146_12:
     assert_146_5:
         if_20_29_146_5:
         cmp_20_29_146_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_146_5_end
         if_20_29_146_5_code:
             mov rdi, 1
@@ -817,15 +817,15 @@ main:
     cmp qword [rsp - 96], 2
     jne bool_false_149_12
     bool_true_149_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_149_12
     bool_false_149_12:
-    mov r15, false
+    mov r15b, false
     bool_end_149_12:
     assert_149_5:
         if_20_29_149_5:
         cmp_20_29_149_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_149_5_end
         if_20_29_149_5_code:
             mov rdi, 1
@@ -846,15 +846,15 @@ main:
     cmp qword [rsp - 112], 4
     jne bool_false_152_12
     bool_true_152_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_152_12
     bool_false_152_12:
-    mov r15, false
+    mov r15b, false
     bool_end_152_12:
     assert_152_5:
         if_20_29_152_5:
         cmp_20_29_152_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_152_5_end
         if_20_29_152_5_code:
             mov rdi, 1
@@ -878,15 +878,15 @@ main:
     cmp qword [rsp - 148], 10
     jne bool_false_158_12
     bool_true_158_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_158_12
     bool_false_158_12:
-    mov r15, false
+    mov r15b, false
     bool_end_158_12:
     assert_158_5:
         if_20_29_158_5:
         cmp_20_29_158_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_158_5_end
         if_20_29_158_5_code:
             mov rdi, 1
@@ -900,15 +900,15 @@ main:
     cmp qword [rsp - 140], 2
     jne bool_false_159_12
     bool_true_159_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_159_12
     bool_false_159_12:
-    mov r15, false
+    mov r15b, false
     bool_end_159_12:
     assert_159_5:
         if_20_29_159_5:
         cmp_20_29_159_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_159_5_end
         if_20_29_159_5_code:
             mov rdi, 1
@@ -922,15 +922,15 @@ main:
     cmp dword [rsp - 132], 0xff0000
     jne bool_false_160_12
     bool_true_160_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_160_12
     bool_false_160_12:
-    mov r15, false
+    mov r15b, false
     bool_end_160_12:
     assert_160_5:
         if_20_29_160_5:
         cmp_20_29_160_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_160_5_end
         if_20_29_160_5_code:
             mov rdi, 1
@@ -954,15 +954,15 @@ main:
     cmp qword [rsp - 148], -1
     jne bool_false_164_12
     bool_true_164_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_164_12
     bool_false_164_12:
-    mov r15, false
+    mov r15b, false
     bool_end_164_12:
     assert_164_5:
         if_20_29_164_5:
         cmp_20_29_164_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_164_5_end
         if_20_29_164_5_code:
             mov rdi, 1
@@ -976,15 +976,15 @@ main:
     cmp qword [rsp - 140], -2
     jne bool_false_165_12
     bool_true_165_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_165_12
     bool_false_165_12:
-    mov r15, false
+    mov r15b, false
     bool_end_165_12:
     assert_165_5:
         if_20_29_165_5:
         cmp_20_29_165_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_165_5_end
         if_20_29_165_5_code:
             mov rdi, 1
@@ -1002,15 +1002,15 @@ main:
     cmp qword [rsp - 184], -1
     jne bool_false_168_12
     bool_true_168_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_168_12
     bool_false_168_12:
-    mov r15, false
+    mov r15b, false
     bool_end_168_12:
     assert_168_5:
         if_20_29_168_5:
         cmp_20_29_168_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_168_5_end
         if_20_29_168_5_code:
             mov rdi, 1
@@ -1024,15 +1024,15 @@ main:
     cmp qword [rsp - 176], -2
     jne bool_false_169_12
     bool_true_169_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_169_12
     bool_false_169_12:
-    mov r15, false
+    mov r15b, false
     bool_end_169_12:
     assert_169_5:
         if_20_29_169_5:
         cmp_20_29_169_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_169_5_end
         if_20_29_169_5_code:
             mov rdi, 1
@@ -1046,15 +1046,15 @@ main:
     cmp dword [rsp - 168], 0xff0000
     jne bool_false_170_12
     bool_true_170_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_170_12
     bool_false_170_12:
-    mov r15, false
+    mov r15b, false
     bool_end_170_12:
     assert_170_5:
         if_20_29_170_5:
         cmp_20_29_170_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_170_5_end
         if_20_29_170_5_code:
             mov rdi, 1
@@ -1083,15 +1083,15 @@ main:
     cmp qword [r14 + 8], 73
     jne bool_false_175_12
     bool_true_175_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_175_12
     bool_false_175_12:
-    mov r15, false
+    mov r15b, false
     bool_end_175_12:
     assert_175_5:
         if_20_29_175_5:
         cmp_20_29_175_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_175_5_end
         if_20_29_175_5_code:
             mov rdi, 1
@@ -1148,15 +1148,15 @@ main:
     cmp qword [r14 + r13 * 8], 0xffee
     jne bool_false_179_12
     bool_true_179_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_179_12
     bool_false_179_12:
-    mov r15, false
+    mov r15b, false
     bool_end_179_12:
     assert_179_5:
         if_20_29_179_5:
         cmp_20_29_179_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_179_5_end
         if_20_29_179_5_code:
             mov rdi, 1
@@ -1230,15 +1230,15 @@ main:
     cmp qword [r14 + r13 * 8], 0xffee
     jne bool_false_188_12
     bool_true_188_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_188_12
     bool_false_188_12:
-    mov r15, false
+    mov r15b, false
     bool_end_188_12:
     assert_188_5:
         if_20_29_188_5:
         cmp_20_29_188_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_188_5_end
         if_20_29_188_5_code:
             mov rdi, 1
@@ -1299,15 +1299,15 @@ main:
     test r14, r14
     je bool_false_189_12
     bool_true_189_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_189_12
     bool_false_189_12:
-    mov r15, false
+    mov r15b, false
     bool_end_189_12:
     assert_189_5:
         if_20_29_189_5:
         cmp_20_29_189_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_189_5_end
         if_20_29_189_5_code:
             mov rdi, 1
@@ -1621,19 +1621,19 @@ main:
 ;   [109:12] free scratch register 'r14'
     jne bool_false_109_12
     bool_true_109_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_109_12
     bool_false_109_12:
-    mov r15, false
+    mov r15b, false
     bool_end_109_12:
 ;   [20:6] assert(expr : bool) 
     assert_109_5:
-;       [109:5] alias expr -> r15  (lea: )
+;       [109:5] alias expr -> r15b  (lea: )
         if_20_29_109_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_109_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_109_5_end
         if_20_29_109_5_code:
 ;           [20:38] exit(1)
@@ -1687,19 +1687,19 @@ main:
 ;   [110:12] free scratch register 'r14'
     jne bool_false_110_12
     bool_true_110_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_110_12
     bool_false_110_12:
-    mov r15, false
+    mov r15b, false
     bool_end_110_12:
 ;   [20:6] assert(expr : bool) 
     assert_110_5:
-;       [110:5] alias expr -> r15  (lea: )
+;       [110:5] alias expr -> r15b  (lea: )
         if_20_29_110_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_110_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_110_5_end
         if_20_29_110_5_code:
 ;           [20:38] exit(1)
@@ -1805,19 +1805,19 @@ main:
 ;   [114:12] free scratch register 'r14'
     jne bool_false_114_12
     bool_true_114_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_114_12
     bool_false_114_12:
-    mov r15, false
+    mov r15b, false
     bool_end_114_12:
 ;   [20:6] assert(expr : bool) 
     assert_114_5:
-;       [114:5] alias expr -> r15  (lea: )
+;       [114:5] alias expr -> r15b  (lea: )
         if_20_29_114_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_114_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_114_5_end
         if_20_29_114_5_code:
 ;           [20:38] exit(1)
@@ -1951,19 +1951,19 @@ main:
 ;   [118:12] free scratch register 'r14'
     je bool_false_118_12
     bool_true_118_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_118_12
     bool_false_118_12:
-    mov r15, false
+    mov r15b, false
     bool_end_118_12:
 ;   [20:6] assert(expr : bool) 
     assert_118_5:
-;       [118:5] alias expr -> r15  (lea: )
+;       [118:5] alias expr -> r15b  (lea: )
         if_20_29_118_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_118_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_118_5_end
         if_20_29_118_5_code:
 ;           [20:38] exit(1)
@@ -2073,19 +2073,19 @@ main:
 ;   [122:12] free scratch register 'r14'
     jne bool_false_122_12
     bool_true_122_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_122_12
     bool_false_122_12:
-    mov r15, false
+    mov r15b, false
     bool_end_122_12:
 ;   [20:6] assert(expr : bool) 
     assert_122_5:
-;       [122:5] alias expr -> r15  (lea: )
+;       [122:5] alias expr -> r15b  (lea: )
         if_20_29_122_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_122_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_122_5_end
         if_20_29_122_5_code:
 ;           [20:38] exit(1)
@@ -2202,19 +2202,19 @@ main:
 ;   [126:12] free scratch register 'r14'
     jne bool_false_126_12
     bool_true_126_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_126_12
     bool_false_126_12:
-    mov r15, false
+    mov r15b, false
     bool_end_126_12:
 ;   [20:6] assert(expr : bool) 
     assert_126_5:
-;       [126:5] alias expr -> r15  (lea: )
+;       [126:5] alias expr -> r15b  (lea: )
         if_20_29_126_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_126_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_126_5_end
         if_20_29_126_5_code:
 ;           [20:38] exit(1)
@@ -2296,19 +2296,19 @@ main:
 ;   [129:12] free scratch register 'r14'
     jne bool_false_129_12
     bool_true_129_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_129_12
     bool_false_129_12:
-    mov r15, false
+    mov r15b, false
     bool_end_129_12:
 ;   [20:6] assert(expr : bool) 
     assert_129_5:
-;       [129:5] alias expr -> r15  (lea: )
+;       [129:5] alias expr -> r15b  (lea: )
         if_20_29_129_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_129_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_129_5_end
         if_20_29_129_5_code:
 ;           [20:38] exit(1)
@@ -2368,19 +2368,19 @@ main:
     cmp qword [rsp - 72], 2
     jne bool_false_133_12
     bool_true_133_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_133_12
     bool_false_133_12:
-    mov r15, false
+    mov r15b, false
     bool_end_133_12:
 ;   [20:6] assert(expr : bool) 
     assert_133_5:
-;       [133:5] alias expr -> r15  (lea: )
+;       [133:5] alias expr -> r15b  (lea: )
         if_20_29_133_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_133_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_133_5_end
         if_20_29_133_5_code:
 ;           [20:38] exit(1)
@@ -2416,19 +2416,19 @@ main:
     cmp qword [rsp - 64], 0xb
     jne bool_false_134_12
     bool_true_134_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_134_12
     bool_false_134_12:
-    mov r15, false
+    mov r15b, false
     bool_end_134_12:
 ;   [20:6] assert(expr : bool) 
     assert_134_5:
-;       [134:5] alias expr -> r15  (lea: )
+;       [134:5] alias expr -> r15b  (lea: )
         if_20_29_134_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_134_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_134_5_end
         if_20_29_134_5_code:
 ;           [20:38] exit(1)
@@ -2491,19 +2491,19 @@ main:
     cmp qword [rsp - 80], 0
     jne bool_false_138_12
     bool_true_138_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_138_12
     bool_false_138_12:
-    mov r15, false
+    mov r15b, false
     bool_end_138_12:
 ;   [20:6] assert(expr : bool) 
     assert_138_5:
-;       [138:5] alias expr -> r15  (lea: )
+;       [138:5] alias expr -> r15b  (lea: )
         if_20_29_138_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_138_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_138_5_end
         if_20_29_138_5_code:
 ;           [20:38] exit(1)
@@ -2564,19 +2564,19 @@ main:
     cmp qword [rsp - 80], 0xff
     jne bool_false_142_12
     bool_true_142_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_142_12
     bool_false_142_12:
-    mov r15, false
+    mov r15b, false
     bool_end_142_12:
 ;   [20:6] assert(expr : bool) 
     assert_142_5:
-;       [142:5] alias expr -> r15  (lea: )
+;       [142:5] alias expr -> r15b  (lea: )
         if_20_29_142_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_142_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_142_5_end
         if_20_29_142_5_code:
 ;           [20:38] exit(1)
@@ -2641,19 +2641,19 @@ main:
     cmp qword [rsp - 96], 2
     jne bool_false_146_12
     bool_true_146_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_146_12
     bool_false_146_12:
-    mov r15, false
+    mov r15b, false
     bool_end_146_12:
 ;   [20:6] assert(expr : bool) 
     assert_146_5:
-;       [146:5] alias expr -> r15  (lea: )
+;       [146:5] alias expr -> r15b  (lea: )
         if_20_29_146_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_146_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_146_5_end
         if_20_29_146_5_code:
 ;           [20:38] exit(1)
@@ -2709,19 +2709,19 @@ main:
     cmp qword [rsp - 96], 2
     jne bool_false_149_12
     bool_true_149_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_149_12
     bool_false_149_12:
-    mov r15, false
+    mov r15b, false
     bool_end_149_12:
 ;   [20:6] assert(expr : bool) 
     assert_149_5:
-;       [149:5] alias expr -> r15  (lea: )
+;       [149:5] alias expr -> r15b  (lea: )
         if_20_29_149_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_149_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_149_5_end
         if_20_29_149_5_code:
 ;           [20:38] exit(1)
@@ -2783,19 +2783,19 @@ main:
     cmp qword [rsp - 112], 4
     jne bool_false_152_12
     bool_true_152_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_152_12
     bool_false_152_12:
-    mov r15, false
+    mov r15b, false
     bool_end_152_12:
 ;   [20:6] assert(expr : bool) 
     assert_152_5:
-;       [152:5] alias expr -> r15  (lea: )
+;       [152:5] alias expr -> r15b  (lea: )
         if_20_29_152_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_152_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_152_5_end
         if_20_29_152_5_code:
 ;           [20:38] exit(1)
@@ -2870,19 +2870,19 @@ main:
     cmp qword [rsp - 148], 10
     jne bool_false_158_12
     bool_true_158_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_158_12
     bool_false_158_12:
-    mov r15, false
+    mov r15b, false
     bool_end_158_12:
 ;   [20:6] assert(expr : bool) 
     assert_158_5:
-;       [158:5] alias expr -> r15  (lea: )
+;       [158:5] alias expr -> r15b  (lea: )
         if_20_29_158_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_158_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_158_5_end
         if_20_29_158_5_code:
 ;           [20:38] exit(1)
@@ -2918,19 +2918,19 @@ main:
     cmp qword [rsp - 140], 2
     jne bool_false_159_12
     bool_true_159_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_159_12
     bool_false_159_12:
-    mov r15, false
+    mov r15b, false
     bool_end_159_12:
 ;   [20:6] assert(expr : bool) 
     assert_159_5:
-;       [159:5] alias expr -> r15  (lea: )
+;       [159:5] alias expr -> r15b  (lea: )
         if_20_29_159_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_159_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_159_5_end
         if_20_29_159_5_code:
 ;           [20:38] exit(1)
@@ -2966,19 +2966,19 @@ main:
     cmp dword [rsp - 132], 0xff0000
     jne bool_false_160_12
     bool_true_160_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_160_12
     bool_false_160_12:
-    mov r15, false
+    mov r15b, false
     bool_end_160_12:
 ;   [20:6] assert(expr : bool) 
     assert_160_5:
-;       [160:5] alias expr -> r15  (lea: )
+;       [160:5] alias expr -> r15b  (lea: )
         if_20_29_160_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_160_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_160_5_end
         if_20_29_160_5_code:
 ;           [20:38] exit(1)
@@ -3040,19 +3040,19 @@ main:
     cmp qword [rsp - 148], -1
     jne bool_false_164_12
     bool_true_164_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_164_12
     bool_false_164_12:
-    mov r15, false
+    mov r15b, false
     bool_end_164_12:
 ;   [20:6] assert(expr : bool) 
     assert_164_5:
-;       [164:5] alias expr -> r15  (lea: )
+;       [164:5] alias expr -> r15b  (lea: )
         if_20_29_164_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_164_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_164_5_end
         if_20_29_164_5_code:
 ;           [20:38] exit(1)
@@ -3088,19 +3088,19 @@ main:
     cmp qword [rsp - 140], -2
     jne bool_false_165_12
     bool_true_165_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_165_12
     bool_false_165_12:
-    mov r15, false
+    mov r15b, false
     bool_end_165_12:
 ;   [20:6] assert(expr : bool) 
     assert_165_5:
-;       [165:5] alias expr -> r15  (lea: )
+;       [165:5] alias expr -> r15b  (lea: )
         if_20_29_165_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_165_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_165_5_end
         if_20_29_165_5_code:
 ;           [20:38] exit(1)
@@ -3149,19 +3149,19 @@ main:
     cmp qword [rsp - 184], -1
     jne bool_false_168_12
     bool_true_168_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_168_12
     bool_false_168_12:
-    mov r15, false
+    mov r15b, false
     bool_end_168_12:
 ;   [20:6] assert(expr : bool) 
     assert_168_5:
-;       [168:5] alias expr -> r15  (lea: )
+;       [168:5] alias expr -> r15b  (lea: )
         if_20_29_168_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_168_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_168_5_end
         if_20_29_168_5_code:
 ;           [20:38] exit(1)
@@ -3197,19 +3197,19 @@ main:
     cmp qword [rsp - 176], -2
     jne bool_false_169_12
     bool_true_169_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_169_12
     bool_false_169_12:
-    mov r15, false
+    mov r15b, false
     bool_end_169_12:
 ;   [20:6] assert(expr : bool) 
     assert_169_5:
-;       [169:5] alias expr -> r15  (lea: )
+;       [169:5] alias expr -> r15b  (lea: )
         if_20_29_169_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_169_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_169_5_end
         if_20_29_169_5_code:
 ;           [20:38] exit(1)
@@ -3245,19 +3245,19 @@ main:
     cmp dword [rsp - 168], 0xff0000
     jne bool_false_170_12
     bool_true_170_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_170_12
     bool_false_170_12:
-    mov r15, false
+    mov r15b, false
     bool_end_170_12:
 ;   [20:6] assert(expr : bool) 
     assert_170_5:
-;       [170:5] alias expr -> r15  (lea: )
+;       [170:5] alias expr -> r15b  (lea: )
         if_20_29_170_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_170_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_170_5_end
         if_20_29_170_5_code:
 ;           [20:38] exit(1)
@@ -3329,19 +3329,19 @@ main:
 ;   [175:12] free scratch register 'r14'
     jne bool_false_175_12
     bool_true_175_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_175_12
     bool_false_175_12:
-    mov r15, false
+    mov r15b, false
     bool_end_175_12:
 ;   [20:6] assert(expr : bool) 
     assert_175_5:
-;       [175:5] alias expr -> r15  (lea: )
+;       [175:5] alias expr -> r15b  (lea: )
         if_20_29_175_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_175_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_175_5_end
         if_20_29_175_5_code:
 ;           [20:38] exit(1)
@@ -3477,19 +3477,19 @@ main:
 ;   [179:12] free scratch register 'r14'
     jne bool_false_179_12
     bool_true_179_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_179_12
     bool_false_179_12:
-    mov r15, false
+    mov r15b, false
     bool_end_179_12:
 ;   [20:6] assert(expr : bool) 
     assert_179_5:
-;       [179:5] alias expr -> r15  (lea: )
+;       [179:5] alias expr -> r15b  (lea: )
         if_20_29_179_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_179_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_179_5_end
         if_20_29_179_5_code:
 ;           [20:38] exit(1)
@@ -3655,19 +3655,19 @@ main:
 ;   [188:12] free scratch register 'r14'
     jne bool_false_188_12
     bool_true_188_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_188_12
     bool_false_188_12:
-    mov r15, false
+    mov r15b, false
     bool_end_188_12:
 ;   [20:6] assert(expr : bool) 
     assert_188_5:
-;       [188:5] alias expr -> r15  (lea: )
+;       [188:5] alias expr -> r15b  (lea: )
         if_20_29_188_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_188_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_188_5_end
         if_20_29_188_5_code:
 ;           [20:38] exit(1)
@@ -3800,19 +3800,19 @@ main:
 ;   [189:12] free scratch register 'r14'
     je bool_false_189_12
     bool_true_189_12:
-    mov r15, true
+    mov r15b, true
     jmp bool_end_189_12
     bool_false_189_12:
-    mov r15, false
+    mov r15b, false
     bool_end_189_12:
 ;   [20:6] assert(expr : bool) 
     assert_189_5:
-;       [189:5] alias expr -> r15  (lea: )
+;       [189:5] alias expr -> r15b  (lea: )
         if_20_29_189_5:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_189_5:
-        test r15, r15
+        test r15b, r15b
         jne if_20_26_189_5_end
         if_20_29_189_5_code:
 ;           [20:38] exit(1)

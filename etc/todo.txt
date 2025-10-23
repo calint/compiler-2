@@ -1,3 +1,4 @@
+[x] stmt_call:: argument register is not sized to parameter
 [ ] expr_ops_list::asm_div, asm_shf do not size the register when expression
 [ ] bool_ops_list: if destination is a boolean ponder howto use cmov instead
     of the jmps

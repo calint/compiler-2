@@ -205,9 +205,11 @@ class stmt_call : public expression {
                     allocated_scratch_registers.emplace_back(arg_reg);
                     allocated_registers_in_order.emplace_back(arg_reg);
                 }
-                arg.compile(tc, os, indent, arg_reg);
+                const std::string& reg_sized{tc.get_sized_register_operand(
+                    arg_reg, param.get_type().size())};
+                arg.compile(tc, os, indent, reg_sized);
                 aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            arg_reg, "", &param.get_type());
+                                            reg_sized, "", &param.get_type());
                 continue;
             }
 
