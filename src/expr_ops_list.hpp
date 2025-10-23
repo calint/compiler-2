@@ -1,7 +1,6 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include <algorithm>
 #include <memory>
 #include <sstream>
 #include <utility>
