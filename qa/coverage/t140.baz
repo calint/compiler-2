@@ -38,7 +38,6 @@ func main() {
 
     values[3] = foz(values[2], values[1])
     assert(values[3] == 1)
-return
 
     values[3] = fuz(values[2], values[1])
     assert(values[3] == -4)
