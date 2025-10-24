@@ -64,7 +64,7 @@ class frame final {
     std::string func_ret_label_;
 
     // info about the function returns
-    std::optional<func_return_info> func_rets_;
+    std::optional<func_return_info> func_ret_;
 
   public:
     enum class frame_type : uint8_t { FUNC, BLOCK, LOOP };
@@ -74,10 +74,10 @@ class frame final {
 
   public:
     frame(const std::string_view name, const frame_type frm_type,
-          const std::optional<func_return_info>& func_rets = {},
+          const std::optional<func_return_info> func_ret_info = {},
           std::string call_path = "", std::string func_ret_label = "") noexcept
         : name_{name}, call_path_{std::move(call_path)},
-          func_ret_label_{std::move(func_ret_label)}, func_rets_{func_rets},
+          func_ret_label_{std::move(func_ret_label)}, func_ret_{func_ret_info},
           type_{frm_type} {}
 
     // -------------------------------------------------------------------------
@@ -116,9 +116,9 @@ class frame final {
         return aliases_.get_const_ref(name);
     }
 
-    [[nodiscard]] auto get_func_returns_infos() const
+    [[nodiscard]] auto get_func_return_info() const
         -> const std::optional<func_return_info>& {
-        return func_rets_;
+        return func_ret_;
     }
 
     [[nodiscard]] auto get_var_const_ref(const std::string_view name) const
