@@ -1,8 +1,8 @@
-[ ] expr_bool_ops_list: understand why the last element const eval works
+[x] expr_bool_ops_list: understand why the last element const eval works
     look at coverage and notice is never returns const eval unless only 1
     element
-    => t145: returns when invert is false
-       [ ] test case for when invert is true
+    => t145: isolates the case where last element in a bool ops list is
+       const evaluated
 [ ] bool_ops_list: if destination is a boolean ponder howto use cmov instead
     of the jmps
 [ ] handle boolean expression of == between types, allow?
