@@ -1,0 +1,27 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+
+
+func main() {
+    var values : i32[4]
+    values[1] = 4
+    values[2] = 3
+
+    assert(values[1] == 4 and values[2] == 3)
+
+    var values_byte : i8[4]
+    values_byte[1] = 4
+    values_byte[2] = 3
+    assert(values_byte[1] == 4 or values_byte[2] == 3)
+
+    assert(values[1] == values_byte[1] and values[2] == values_byte[2])
+    
+    assert(values_byte[1] == values[1] and values_byte[2] == values[2])
+
+}
