@@ -261,8 +261,41 @@ class expr_bool_ops_list final : public statement {
                         tc, os, indent, jmp_false, jmp_true, invert)};
                     // did expression evaluate to a constant?
                     if (const_eval) {
-                        // yes, return it
-                        return *const_eval;
+                        // expression evaluated to a constant
+                        if (not inverted) {
+                            // if only element return evaluation
+                            if (i == 0) {
+                                return *const_eval;
+                            }
+                            // if false and in an 'and' list short-circuit
+                            // and return evaluation
+                            if (not *const_eval and
+                                ops_[i - 1].is_text("and")) {
+                                return *const_eval;
+                            }
+                            // if true and in an 'or' list short-circuit and
+                            // return result
+                            if (*const_eval and ops_[i - 1].is_text("or")) {
+                                return *const_eval;
+                            }
+                        } else {
+                            // inverted
+
+                            // if only element return evaluation inverted
+                            if (i == 0) {
+                                return not *const_eval;
+                            }
+                            // if 'false' and in an 'and' (inverted 'or')
+                            // list short-circuit and return evaluation
+                            if (not *const_eval and ops_[i - 1].is_text("or")) {
+                                return *const_eval;
+                            }
+                            // if 'true' and in an 'or' (inverted 'and')
+                            // list short-circuit and return evaluation
+                            if (*const_eval and ops_[i - 1].is_text("and")) {
+                                return *const_eval;
+                            }
+                        }
                     }
                 }
                 continue;

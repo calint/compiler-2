@@ -6,7 +6,9 @@ func exit(v : reg_rdi) {
 
 func assert(expr : bool) if not expr exit(1)
 
-
+func foo(x : i8, y : i16) {
+    assert((x == y) and (x == 4 or y == 4))
+}
 
 func main() {
     var values : i32[4]
@@ -23,5 +25,7 @@ func main() {
     assert(values[1] == values_byte[1] and values[2] == values_byte[2])
     
     assert(values_byte[1] == values[1] and values_byte[2] == values[2])
+    
+    foo(values[1], 4)
 
 }
