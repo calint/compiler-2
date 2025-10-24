@@ -58,8 +58,9 @@ class stmt_if_branch final : public statement {
             if (*const_eval) {
                 // yes, this branch code will execute
 
-                // label is necessary and is optimized away with the jump
                 toc::asm_label(tok(), os, indent, jmp_to_if_true_lbl);
+                // note: label is necessary because of a `jmp` that gets
+                //       optimized away
                 code_.compile(tc, os, indent, "");
             }
             return *const_eval;

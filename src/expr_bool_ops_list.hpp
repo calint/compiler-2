@@ -255,9 +255,6 @@ class expr_bool_ops_list final : public statement {
                         }
                     }
                 } else {
-                    // todo understand why code coverage only returns in code
-                    // path of `if(i==0)`
-
                     // the last bool op in the list
                     // 'jmp_false' is the next bool ops list
                     std::optional<bool> const_eval{el.compile(
@@ -296,13 +293,6 @@ class expr_bool_ops_list final : public statement {
                             }
                         }
                     }
-
-                    // std::println(
-                    //     std::cerr,
-                    //     "line: {}  i: {}  n: {} const eval: {} invert: {}",
-                    //     tok().at_line(), i, n,
-                    //     const_eval ? (*const_eval ? "true" : "false") : "-",
-                    //     invert);
                 }
                 continue;
             }
