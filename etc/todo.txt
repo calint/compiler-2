@@ -1,3 +1,6 @@
+[ ] expr_bool_ops_list: understand why the last element const eval works
+    look at coverage and notice is never returns const eval unless only 1
+    element
 [ ] bool_ops_list: if destination is a boolean ponder howto use cmov instead
     of the jmps
 [ ] handle boolean expression of == between types, allow?
