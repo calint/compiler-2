@@ -28,20 +28,20 @@ class stmt_def_type;
 struct func_info {
     const stmt_def_func* def{}; // null if built-in function
     token declared_at_tk;       // token for position in the source
-    const type* type_ptr;       // return type or void
+    const type* type_ptr{};     // return type or void
 };
 
 struct func_return_info {
-    token type_tk;        // type token
-    token ident_tk;       // identifier token
-    const type* type_ptr; // type
+    token type_tk;          // type token
+    token ident_tk;         // identifier token
+    const type* type_ptr{}; // type
 };
 
 struct alias_info {
     std::string from;
     std::string to;
     std::string lea;
-    const type* type_ptr;
+    const type* type_ptr{};
 };
 
 class frame final {
@@ -155,7 +155,7 @@ class frame final {
 };
 
 struct field_info {
-    const stmt_def_field* def;
+    const stmt_def_field* def{};
     token declared_at_tk; // token for position in the source
     bool is_str{};
 };
