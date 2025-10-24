@@ -1,3 +1,8 @@
+[ ] expr_ops_list: tends to write the same comment 3 times:
+                    [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
 [x] expr_bool_ops_list: understand why the last element const eval works
     look at coverage and notice is never returns const eval unless only 1
     element
