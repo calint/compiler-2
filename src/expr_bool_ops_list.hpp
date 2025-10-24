@@ -271,8 +271,8 @@ class expr_bool_ops_list final : public statement {
                             return *const_eval;
                         }
                         if (not invert) {
-                            // if false and in an 'and' list short-circuit
-                            // and return evaluation if false
+                            // if false and in an 'and' list short-circuit and
+                            // return evaluation if false
                             if (not *const_eval and
                                 ops_[i - 1].is_text("and")) {
                                 return *const_eval;
@@ -283,8 +283,9 @@ class expr_bool_ops_list final : public statement {
                                 return *const_eval;
                             }
                         } else {
-                            // if 'false' and in an 'and' (inverted 'or')
-                            // list short-circuit and return evaluation
+                            // in invert mode according to De Morgan's law
+                            // if 'false' and in an 'and' (inverted 'or') list
+                            // short-circuit and return evaluation
                             if (not *const_eval and ops_[i - 1].is_text("or")) {
                                 return *const_eval;
                             }

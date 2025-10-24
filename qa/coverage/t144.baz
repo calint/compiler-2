@@ -7,5 +7,5 @@ func exit(v : reg_rdi) {
 func assert(expr : bool) if not expr exit(1)
 
 func main() {
-    if(not (false and false)) assert(true)
+    if not (false or false or false) assert(true)
 }
