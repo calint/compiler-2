@@ -198,10 +198,10 @@ struct operand {
 
     operand() : displacement{0}, scale{1} {}
 
-    explicit operand(const std::string& operand_str)
+    explicit operand(const std::string_view operand_sv)
         : displacement{0}, scale{1} {
 
-        if (operand_str.empty()) {
+        if (operand_sv.empty()) {
             return;
         }
         const std::regex pattern(
@@ -220,9 +220,10 @@ struct operand {
         constexpr size_t match_displacement{5};
 
         std::smatch matches;
+        const std::string operand_str{operand_sv};
         if (not std::regex_match(operand_str, matches, pattern)) {
-            throw std::invalid_argument("invalid NASM operand format: " +
-                                        operand_str);
+            throw std::invalid_argument(
+                std::format("invalid NASM operand format: {}", operand_str));
         }
 
         if (matches[match_base_register].matched) {
@@ -1651,13 +1652,14 @@ class toc final {
                                     field_name, tp.name()));
     }
 
-    static auto get_operand_address_str(const std::string& op) -> std::string {
+    static auto get_operand_address_str(const std::string_view op)
+        -> std::string {
 
         std::optional<std::string> between_brackets{
             get_text_between_brackets(op)};
 
         if (not between_brackets) {
-            return op;
+            return std::string{op};
         }
 
         return *between_brackets;

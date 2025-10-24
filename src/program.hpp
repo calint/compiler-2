@@ -32,7 +32,7 @@ class program final {
     size_t stack_size_{};
 
   public:
-    program(const std::string& source, const size_t stack_size,
+    program(const std::string_view source, const size_t stack_size,
             const bool bounds_check_upper, const bool bounds_check_lower,
             const bool bounds_check_with_line)
         : tc_{source, bounds_check_upper, bounds_check_lower,
