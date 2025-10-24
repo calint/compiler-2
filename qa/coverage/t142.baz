@@ -1,0 +1,43 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+
+func fez(val : i32[]) : i32 res {
+    res = val[2] << (val[1] + val[1]) 
+}
+
+func foz(x : i32, y : i32) : i32 res {
+    res = x << y 
+}
+
+func fuz(x) : i64 res {
+    res = x << 3
+}
+
+func faz(x : i32, y : i32) : i32 res {
+    res = x << ~y 
+}
+
+func main() {
+    var values : i32[4]
+    values[1] = 4
+    values[2] = 3
+
+    values[0] = fez(values)
+    assert(values[0] == 768)
+
+    values[3] = foz(values[2], values[1])
+    assert(values[3] == 48)
+
+    values[0] = fuz(values[1])
+    assert(values[0] == 32)
+
+    var a = -2
+    values[0] = faz(values[1], a)
+    assert(values[0] == 8)
+}

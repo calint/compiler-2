@@ -763,6 +763,8 @@ class expr_ops_list final : public expression {
                              const ident_info& dst_info, const statement& src)
         -> void {
 
+        const size_t dst_size{dst_info.type_ptr->size()};
+
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             tc.comment_start(src.tok(), os, indent);
@@ -776,8 +778,10 @@ class expr_ops_list final : public expression {
             if (not rcx_allocated) {
                 toc::asm_push(src.tok(), os, indent, "rcx");
             }
+            const std::string rcx_sized{
+                tc.get_sized_register_operand("rcx", dst_size)};
             // the number of bits to shift is an expression, compile it to 'rcx'
-            src.compile(tc, os, indent, "rcx");
+            src.compile(tc, os, indent, rcx_sized);
             tc.asm_cmd(src.tok(), os, indent, op, dst_info.operand, "cl");
             if (rcx_allocated) {
                 tc.free_named_register(src.tok(), os, indent, "rcx");
@@ -821,7 +825,9 @@ class expr_ops_list final : public expression {
             if (not rcx_allocated) {
                 toc::asm_push(src.tok(), os, indent, "rcx");
             }
-            tc.asm_cmd(src.tok(), os, indent, "mov", "rcx", src_operand);
+            const std::string rcx_sized{
+                tc.get_sized_register_operand("rcx", dst_size)};
+            tc.asm_cmd(src.tok(), os, indent, "mov", rcx_sized, src_operand);
             tc.asm_cmd(src.tok(), os, indent, op, dst_info.operand, "cl");
             if (rcx_allocated) {
                 tc.free_named_register(src.tok(), os, indent, "rcx");
@@ -842,8 +848,10 @@ class expr_ops_list final : public expression {
         if (not rcx_allocated) {
             toc::asm_push(src.tok(), os, indent, "rcx");
         }
+        const std::string rcx_sized{
+            tc.get_sized_register_operand("rcx", dst_size)};
         tc.asm_cmd(src.tok(), os, indent, "mov", "rcx", src_operand);
-        uops.compile(tc, os, indent, "rcx");
+        uops.compile(tc, os, indent, rcx_sized);
         tc.asm_cmd(src.tok(), os, indent, op, dst_info.operand, "cl");
         if (rcx_allocated) {
             tc.free_named_register(src.tok(), os, indent, "rcx");

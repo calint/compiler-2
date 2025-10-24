@@ -1,12 +1,16 @@
-[ ] expr_ops_list::asm_shf: compile expression case
-[ ] expr_ops_list::asm_shf: register size
+[x] expr_ops_list::asm_shf: t142
+    shf: expr
+    shf: not const, no uops
+    shf: not const,    uops
+    shf: const
+[x] expr_ops_list::asm_shf: register size
 [x] expr_ops_list::asm_div: compile expression case 
 [x] expr_ops_list::asm_mul: compile expression case 
 [x] expr_ops_list::asm_div: test 140.baz op size dword
 [x] expr_ops_list::asm_div: test t139.baz
-;       [10:15] div not const, no uops
-;       [18:17] div not const,    uops
-;       [10:15] div const
+    div not const, no uops
+    div not const,    uops
+    div const
 [x] expr_ops_list:: size the register when expression
     [x] asm_div: handle register resize, lea
     [x] asm_mul: handle lea 
