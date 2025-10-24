@@ -5,6 +5,7 @@
 // reviewed: 2025-09-28
 
 #include <algorithm>
+#include <cstdint>
 #include <memory>
 
 #include "token.hpp"
@@ -22,7 +23,7 @@ struct ident_info {
     std::string id;
     std::string operand; // NASM valid source
     int64_t const_value{};
-    const type* type_ptr;
+    const type* type_ptr{};
     int32_t stack_ix{};
     size_t array_size{};
     bool is_array{};
@@ -56,7 +57,7 @@ struct ident_info {
 
 struct var_info {
     std::string name;
-    const type* type_ptr;
+    const type* type_ptr{};
     token declared_at_tk; // token for position in the source
     int32_t stack_idx{};  // location relative to register rsp
     bool is_array{};
