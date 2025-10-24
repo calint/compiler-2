@@ -255,23 +255,24 @@ class expr_bool_ops_list final : public statement {
                         }
                     }
                 } else {
-                    // todo understand why never `invert` here and why only
-                    // ops_[i-1] == `and`
+                    // todo understand why code coverage only returns in code
+                    // path of `if(i==0)`
 
                     // the last bool op in the list
                     // 'jmp_false' is the next bool ops list
                     std::optional<bool> const_eval{el.compile(
                         tc, os, indent, jmp_false, jmp_true, invert)};
+
                     // did expression evaluate to a constant?
+                    // is it only element? then it is sure true or false
                     if (const_eval) {
-                        // expression evaluated to a constant
+                        // if only element return evaluation
+                        if (i == 0) {
+                            return *const_eval;
+                        }
                         if (not invert) {
-                            // if only element return evaluation
-                            if (i == 0) {
-                                return *const_eval;
-                            }
                             // if false and in an 'and' list short-circuit
-                            // and return evaluation
+                            // and return evaluation if false
                             if (not *const_eval and
                                 ops_[i - 1].is_text("and")) {
                                 return *const_eval;
@@ -282,12 +283,6 @@ class expr_bool_ops_list final : public statement {
                                 return *const_eval;
                             }
                         } else {
-                            // inverted
-
-                            // if only element return evaluation inverted
-                            if (i == 0) {
-                                return not *const_eval;
-                            }
                             // if 'false' and in an 'and' (inverted 'or')
                             // list short-circuit and return evaluation
                             if (not *const_eval and ops_[i - 1].is_text("or")) {
@@ -300,6 +295,13 @@ class expr_bool_ops_list final : public statement {
                             }
                         }
                     }
+
+                    // std::println(
+                    //     std::cerr,
+                    //     "line: {}  i: {}  n: {} const eval: {} invert: {}",
+                    //     tok().at_line(), i, n,
+                    //     const_eval ? (*const_eval ? "true" : "false") : "-",
+                    //     invert);
                 }
                 continue;
             }
