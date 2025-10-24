@@ -11,6 +11,17 @@ func foo(x : i8, y : i16) {
 }
 
 func main() {
+    if true assert(true)
+    if not true assert(false)
+    if false  assert(false)
+    if not false assert(true)
+    if false and false assert(false)
+    if true and true assert(true)
+    if not (true) assert(false)
+    if not (false)  assert(true)
+    if not (true and false) assert(true)
+    if not (false or true)  assert(false)
+
     var values : i32[4]
     values[1] = 4
     values[2] = 3
@@ -27,5 +38,4 @@ func main() {
     assert(values_byte[1] == values[1] and values_byte[2] == values[2])
     
     foo(values[1], 4)
-
 }

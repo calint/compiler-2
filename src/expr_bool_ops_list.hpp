@@ -197,7 +197,7 @@ class expr_bool_ops_list final : public statement {
                             // list
                             jmp_true = create_cmp_label_from(tc, bools_[i + 1]);
                         } else {
-                            throw panic_exception("expected 'or' or 'and' 1");
+                            std::unreachable();
                         }
                         std::optional<bool> const_eval{el.compile(
                             tc, os, indent, jmp_false, jmp_true, invert)};
@@ -233,7 +233,7 @@ class expr_bool_ops_list final : public statement {
                             // bool op in the list
                             jmp_true = create_cmp_label_from(tc, bools_[i + 1]);
                         } else {
-                            throw panic_exception("expected 'or' or 'and' 2");
+                            std::unreachable();
                         }
 
                         std::optional<bool> const_eval{el.compile(
@@ -255,6 +255,9 @@ class expr_bool_ops_list final : public statement {
                         }
                     }
                 } else {
+                    // todo understand why never `invert` here and why only
+                    // ops_[i-1] == `and`
+
                     // the last bool op in the list
                     // 'jmp_false' is the next bool ops list
                     std::optional<bool> const_eval{el.compile(
@@ -262,7 +265,7 @@ class expr_bool_ops_list final : public statement {
                     // did expression evaluate to a constant?
                     if (const_eval) {
                         // expression evaluated to a constant
-                        if (not inverted) {
+                        if (not invert) {
                             // if only element return evaluation
                             if (i == 0) {
                                 return *const_eval;
@@ -324,7 +327,7 @@ class expr_bool_ops_list final : public statement {
                             return false;
                         }
                     } else {
-                        throw panic_exception("expected 'or' or 'and' 3");
+                        std::unreachable();
                     }
                 } else {
                     // last element
@@ -357,7 +360,7 @@ class expr_bool_ops_list final : public statement {
                             return false;
                         }
                     } else {
-                        throw panic_exception("expected 'or' or 'and' 4");
+                        std::unreachable();
                     }
                 } else {
                     // last element

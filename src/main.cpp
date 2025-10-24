@@ -161,7 +161,7 @@ auto main(const int argc, const char* argv[]) -> int {
         std::stringstream ss1;
         std::stringstream ss2;
         prg.build(ss1);
-        // prg.build(std::cerr); // build without jump optimizations
+        // prg.build(std::cout); // build without jump optimizations
         optimize_jumps_1(ss1, ss2);
         optimize_jumps_2(ss2, std::cout);
 
