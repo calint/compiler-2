@@ -10,12 +10,12 @@
 #include "stmt_identifier.hpp"
 #include "unary_ops.hpp"
 
-class stmt_array_size_of final : public expression {
+class stmt_builtin_array_size_of final : public expression {
     stmt_identifier stmt_ident_;
     token ws1_; // whitespace after ')'
 
   public:
-    stmt_array_size_of(toc& tc, unary_ops uops, token tk, tokenizer& tz)
+    stmt_builtin_array_size_of(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : expression{tk, std::move(uops)} {
 
         set_type(tc.get_type_default());
@@ -38,13 +38,15 @@ class stmt_array_size_of final : public expression {
         ws1_ = tz.next_whitespace_token();
     }
 
-    ~stmt_array_size_of() override = default;
+    ~stmt_builtin_array_size_of() override = default;
 
-    stmt_array_size_of() = default;
-    stmt_array_size_of(const stmt_array_size_of&) = default;
-    stmt_array_size_of(stmt_array_size_of&&) = default;
-    auto operator=(const stmt_array_size_of&) -> stmt_array_size_of& = default;
-    auto operator=(stmt_array_size_of&&) -> stmt_array_size_of& = default;
+    stmt_builtin_array_size_of() = default;
+    stmt_builtin_array_size_of(const stmt_builtin_array_size_of&) = default;
+    stmt_builtin_array_size_of(stmt_builtin_array_size_of&&) = default;
+    auto operator=(const stmt_builtin_array_size_of&)
+        -> stmt_builtin_array_size_of& = default;
+    auto operator=(stmt_builtin_array_size_of&&)
+        -> stmt_builtin_array_size_of& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);

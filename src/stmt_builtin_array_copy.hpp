@@ -16,13 +16,13 @@
 #include "stmt_identifier.hpp"
 #include "unary_ops.hpp"
 
-class stmt_array_copy final : public statement {
+class stmt_builtin_array_copy final : public statement {
     stmt_identifier from_;
     stmt_identifier to_;
     expr_any count_;
     token ws1_; // whitespace after ')'
   public:
-    stmt_array_copy(toc& tc, token tk, tokenizer& tz) : statement{tk} {
+    stmt_builtin_array_copy(toc& tc, token tk, tokenizer& tz) : statement{tk} {
 
         set_type(tc.get_type_void());
 
@@ -52,13 +52,15 @@ class stmt_array_copy final : public statement {
         ws1_ = tz.next_whitespace_token();
     }
 
-    ~stmt_array_copy() override = default;
+    ~stmt_builtin_array_copy() override = default;
 
-    stmt_array_copy() = default;
-    stmt_array_copy(const stmt_array_copy&) = default;
-    stmt_array_copy(stmt_array_copy&&) = default;
-    auto operator=(const stmt_array_copy&) -> stmt_array_copy& = default;
-    auto operator=(stmt_array_copy&&) -> stmt_array_copy& = default;
+    stmt_builtin_array_copy() = default;
+    stmt_builtin_array_copy(const stmt_builtin_array_copy&) = default;
+    stmt_builtin_array_copy(stmt_builtin_array_copy&&) = default;
+    auto operator=(const stmt_builtin_array_copy&)
+        -> stmt_builtin_array_copy& = default;
+    auto operator=(stmt_builtin_array_copy&&)
+        -> stmt_builtin_array_copy& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

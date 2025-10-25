@@ -13,12 +13,12 @@
 #include "stmt_identifier.hpp"
 #include "unary_ops.hpp"
 
-class stmt_equal final : public expression {
+class stmt_builtin_equal final : public expression {
     stmt_identifier lhs_;
     stmt_identifier rhs_;
     token ws1_; // whitespace after ')'
   public:
-    stmt_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
+    stmt_builtin_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : expression{tk, std::move(uops)} {
 
         set_type(tc.get_type_bool());
@@ -48,13 +48,13 @@ class stmt_equal final : public expression {
         ws1_ = tz.next_whitespace_token();
     }
 
-    ~stmt_equal() override = default;
+    ~stmt_builtin_equal() override = default;
 
-    stmt_equal() = default;
-    stmt_equal(const stmt_equal&) = default;
-    stmt_equal(stmt_equal&&) = default;
-    auto operator=(const stmt_equal&) -> stmt_equal& = default;
-    auto operator=(stmt_equal&&) -> stmt_equal& = default;
+    stmt_builtin_equal() = default;
+    stmt_builtin_equal(const stmt_builtin_equal&) = default;
+    stmt_builtin_equal(stmt_builtin_equal&&) = default;
+    auto operator=(const stmt_builtin_equal&) -> stmt_builtin_equal& = default;
+    auto operator=(stmt_builtin_equal&&) -> stmt_builtin_equal& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

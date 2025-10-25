@@ -24,13 +24,13 @@
 #include "panic_exception.hpp"
 #include "program.hpp"
 #include "statement.hpp"
-#include "stmt_address_of.hpp"
-#include "stmt_array_size_of.hpp"
-#include "stmt_arrays_equal.hpp"
+#include "stmt_builtin_address_of.hpp"
+#include "stmt_builtin_array_size_of.hpp"
+#include "stmt_builtin_arrays_equal.hpp"
+#include "stmt_builtin_equal.hpp"
+#include "stmt_builtin_mov.hpp"
+#include "stmt_builtin_syscall.hpp"
 #include "stmt_call.hpp"
-#include "stmt_call_asm_mov.hpp"
-#include "stmt_call_asm_syscall.hpp"
-#include "stmt_equal.hpp"
 #include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
@@ -200,10 +200,10 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
         return std::make_unique<stmt_if>(tc, tk, tz);
     }
     if (tk.is_text("mov")) {
-        return std::make_unique<stmt_call_asm_mov>(tc, tk, tz);
+        return std::make_unique<stmt_builtin_mov>(tc, tk, tz);
     }
     if (tk.is_text("syscall")) {
-        return std::make_unique<stmt_call_asm_syscall>(tc, tk, tz);
+        return std::make_unique<stmt_builtin_syscall>(tc, tk, tz);
     }
 
     std::unreachable();
@@ -240,17 +240,20 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
         throw compiler_exception{tk, "unexpected comment in expression"};
     }
     if (tk.is_text("address_of")) {
-        return std::make_unique<stmt_address_of>(tc, std::move(uops), tk, tz);
+        return std::make_unique<stmt_builtin_address_of>(tc, std::move(uops),
+                                                         tk, tz);
     }
     if (tk.is_text("array_size_of")) {
-        return std::make_unique<stmt_array_size_of>(tc, std::move(uops), tk,
-                                                    tz);
+        return std::make_unique<stmt_builtin_array_size_of>(tc, std::move(uops),
+                                                            tk, tz);
     }
     if (tk.is_text("arrays_equal")) {
-        return std::make_unique<stmt_arrays_equal>(tc, std::move(uops), tk, tz);
+        return std::make_unique<stmt_builtin_arrays_equal>(tc, std::move(uops),
+                                                           tk, tz);
     }
     if (tk.is_text("equal")) {
-        return std::make_unique<stmt_equal>(tc, std::move(uops), tk, tz);
+        return std::make_unique<stmt_builtin_equal>(tc, std::move(uops), tk,
+                                                    tz);
     }
     if (tz.is_peek_char('(')) {
         // e.g.  foo(...)

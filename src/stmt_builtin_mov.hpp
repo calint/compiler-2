@@ -4,21 +4,21 @@
 #include "stmt_call.hpp"
 #include <string_view>
 
-class stmt_call_asm_mov final : public stmt_call {
+class stmt_builtin_mov final : public stmt_call {
   public:
-    stmt_call_asm_mov(toc& tc, token tk, tokenizer& tz)
+    stmt_builtin_mov(toc& tc, token tk, tokenizer& tz)
         : stmt_call{tc, {}, tk, tz} {
 
         set_type(tc.get_type_void());
     }
 
-    ~stmt_call_asm_mov() override = default;
+    ~stmt_builtin_mov() override = default;
 
-    stmt_call_asm_mov() = default;
-    stmt_call_asm_mov(const stmt_call_asm_mov&) = default;
-    stmt_call_asm_mov(stmt_call_asm_mov&&) = default;
-    auto operator=(const stmt_call_asm_mov&) -> stmt_call_asm_mov& = default;
-    auto operator=(stmt_call_asm_mov&&) -> stmt_call_asm_mov& = default;
+    stmt_builtin_mov() = default;
+    stmt_builtin_mov(const stmt_builtin_mov&) = default;
+    stmt_builtin_mov(stmt_builtin_mov&&) = default;
+    auto operator=(const stmt_builtin_mov&) -> stmt_builtin_mov& = default;
+    auto operator=(stmt_builtin_mov&&) -> stmt_builtin_mov& = default;
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  [[maybe_unused]] const std::string_view dst) const

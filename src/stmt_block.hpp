@@ -3,8 +3,8 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
-#include "stmt_array_copy.hpp"
 #include "stmt_break.hpp"
+#include "stmt_builtin_array_copy.hpp"
 #include "stmt_comment.hpp"
 #include "stmt_continue.hpp"
 #include "stmt_def_var.hpp"
@@ -78,7 +78,7 @@ class stmt_block final : public statement {
                 stms_.emplace_back(std::make_unique<stmt_return>(tc, tk));
             } else if (tk.is_text("array_copy")) {
                 stms_.emplace_back(
-                    std::make_unique<stmt_array_copy>(tc, tk, tz));
+                    std::make_unique<stmt_builtin_array_copy>(tc, tk, tz));
             } else if (tk.is_text("loop") or tk.is_text("if") or
                        tk.is_text("mov") or tk.is_text("syscall")) {
                 // note: solves circular reference problem
