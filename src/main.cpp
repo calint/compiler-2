@@ -63,6 +63,7 @@ auto main(const int argc, const char* argv[]) -> int {
     bool checks_upper = false;
     bool checks_show_line = false;
     bool checks_lower = false;
+    bool optimize_jumps = true;
 
     // parse arguments
     for (size_t i = 1; i < args.size(); i++) {
@@ -84,6 +85,7 @@ auto main(const int argc, const char* argv[]) -> int {
                 "                        lower - check lower array bounds");
             std::println("                         line - report line number");
             std::println("             upper,lower,line - all");
+            std::println("  --nopt              No jump optimizations");
             std::println("  --help, -h          Show this help message");
             std::println("");
             std::println("Arguments:");
@@ -99,6 +101,7 @@ auto main(const int argc, const char* argv[]) -> int {
         }
         constexpr std::string_view stack_option{"--stack="};
         constexpr std::string_view checks_option{"--checks="};
+        constexpr std::string_view nopt_option{"--nopt"};
         if (arg.starts_with(stack_option)) {
             try {
                 stack_size = std::stoul(
@@ -134,6 +137,8 @@ auto main(const int argc, const char* argv[]) -> int {
                     return 1; // or some other error handling mechanism
                 }
             }
+        } else if (arg == nopt_option) {
+            optimize_jumps = false;
         } else if (not arg.starts_with("--")) {
             // Assume it's the filename
             src_file_name = args[i];
@@ -158,13 +163,16 @@ auto main(const int argc, const char* argv[]) -> int {
                 "generated source differs. diff {} diff.baz", src_file_name)};
         }
 
-        // with jump optimizations
-        std::stringstream ss1;
-        std::stringstream ss2;
-        prg.build(ss1);
-        // prg.build(std::cout); // build without jump optimizations
-        optimize_jumps_1(ss1, ss2);
-        optimize_jumps_2(ss2, std::cout);
+        if (optimize_jumps) {
+            // with jump optimizations
+            std::stringstream ss1;
+            std::stringstream ss2;
+            prg.build(ss1);
+            optimize_jumps_1(ss1, ss2);
+            optimize_jumps_2(ss2, std::cout);
+        } else {
+            prg.build(std::cout);
+        }
 
     } catch (const compiler_exception& e) {
         const auto [line, col]{
