@@ -135,7 +135,8 @@ func main() {
 
     var q : point = p
     assert(equal(p, q))
-    # use `equal` to compare for equality
+    # note: `equal` is built-in function to compare user types for equality
+    #       or same size arrays
 
     q.x = 3
     assert(not equal(p, q))
