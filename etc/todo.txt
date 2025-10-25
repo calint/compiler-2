@@ -1,13 +1,10 @@
-[ ] bool_ops_list: if destination is a boolean ponder howto use cmov instead
-    of the jmps
-[ ] handle boolean expression of == between types, allow?
-[x] generalize array_equal to work on non-array types
-    => added "equal" to compare user defined types
+[ ] bool_ops_list: if destination is a boolean ponder how to use setcc
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
     if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] a way of doing x += y like operations. maybe detect patter x = x + 1?
-[ ] consolidate the various initiations of rep stosX into common code in toc
+[o] consolidate the various initiations of rep stosX into common code in toc
     implementing heuristics of when to switch from mov to rep
+    => toc::rep_stos
 [ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
     sign-extends loads
 [ ] numbers such as i8 : 255 cause problems when cmp because value is moved
@@ -95,6 +92,10 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] handle boolean expression of == between types, allow?
+    => added built-in function "equal"
+[x] generalize array_equal to work on non-array types
+    => added "equal" to compare user defined types
 [x] expr_ops_list: tends to write the same comment 3 times:
                     [13:14] 60
 ;                   [13:14] 60
