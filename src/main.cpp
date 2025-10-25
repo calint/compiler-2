@@ -540,10 +540,10 @@ inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
     for (const char op : ops_ | std::views::reverse) {
         switch (op) {
         case '~':
-            toc::asm_not(ws_before_, os, indnt, dst_info);
+            toc::asm_not(os, indnt, dst_info);
             break;
         case '-':
-            toc::asm_neg(ws_before_, os, indnt, dst_info);
+            toc::asm_neg(os, indnt, dst_info);
             break;
         default:
             std::unreachable();

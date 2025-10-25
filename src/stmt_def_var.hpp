@@ -178,12 +178,12 @@ class stmt_def_var final : public statement {
             tc.alloc_named_register_or_throw(tok(), os, indent, "rax");
 
             tc.asm_cmd(tok(), os, indent, "mov", "rcx", std::to_string(reps));
-            toc::asm_lea(tok(), os, indent, "rdi",
+            toc::asm_lea(os, indent, "rdi",
                          std::format("rsp - {}", -dst_info.stack_ix));
             // note: -dst_info.stack_ix_rel_rsp for nicer source formatting; is
             //       always negative
             tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
-            toc::asm_rep_stos(name_tk_, os, indent, rep_size);
+            toc::asm_rep_stos(os, indent, rep_size);
 
             tc.free_named_register(tok(), os, indent, "rax");
             tc.free_named_register(tok(), os, indent, "rdi");

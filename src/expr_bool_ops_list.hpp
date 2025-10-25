@@ -178,7 +178,7 @@ class expr_bool_ops_list final : public statement {
                 //
                 const expr_bool_ops_list& el{
                     get<expr_bool_ops_list>(bools_[i])};
-                toc::asm_label(tok(), os, indent, el.create_cmp_bgn_label(tc));
+                toc::asm_label(os, indent, el.create_cmp_bgn_label(tc));
                 std::string jmp_false{jmp_to_if_false};
                 std::string jmp_true{jmp_to_if_true};
                 if (i < n - 1) {
@@ -331,7 +331,7 @@ class expr_bool_ops_list final : public statement {
                         return *const_eval;
                     }
                     // if not yet jumped to false then jump to true
-                    toc::asm_jmp(tok(), os, indent, jmp_to_if_true);
+                    toc::asm_jmp(os, indent, jmp_to_if_true);
                 }
             } else {
                 // inverted according to De Morgan's laws
@@ -364,7 +364,7 @@ class expr_bool_ops_list final : public statement {
                         return *const_eval;
                     }
                     // if not yet jumped to false then jump to true
-                    toc::asm_jmp(tok(), os, indent, jmp_to_if_true);
+                    toc::asm_jmp(os, indent, jmp_to_if_true);
                 }
             }
         }

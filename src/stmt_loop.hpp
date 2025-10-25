@@ -31,11 +31,11 @@ class stmt_loop final : public statement {
         tc.comment_token(tok(), os, indent);
 
         const std::string lbl{tc.create_unique_label(tok(), "loop")};
-        toc::asm_label(tok(), os, indent, lbl);
+        toc::asm_label(os, indent, lbl);
         tc.enter_loop(lbl);
         code_.compile(tc, os, indent, dst);
-        toc::asm_jmp(tok(), os, indent, lbl);
-        toc::asm_label(tok(), os, indent, std::format("{}_end", lbl));
+        toc::asm_jmp(os, indent, lbl);
+        toc::asm_label(os, indent, std::format("{}_end", lbl));
         tc.exit_loop(lbl);
     }
 

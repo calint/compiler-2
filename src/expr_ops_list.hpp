@@ -774,7 +774,7 @@ class expr_ops_list final : public expression {
             const bool rcx_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rcx")};
             if (not rcx_allocated) {
-                toc::asm_push(src.tok(), os, indent, "rcx");
+                toc::asm_push(os, indent, "rcx");
             }
             const std::string rcx_sized{
                 tc.get_sized_register_operand("rcx", dst_size)};
@@ -784,7 +784,7 @@ class expr_ops_list final : public expression {
             if (rcx_allocated) {
                 tc.free_named_register(src.tok(), os, indent, "rcx");
             } else {
-                toc::asm_pop(src.tok(), os, indent, "rcx");
+                toc::asm_pop(os, indent, "rcx");
             }
             return;
         }
@@ -821,7 +821,7 @@ class expr_ops_list final : public expression {
             const bool rcx_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rcx")};
             if (not rcx_allocated) {
-                toc::asm_push(src.tok(), os, indent, "rcx");
+                toc::asm_push(os, indent, "rcx");
             }
             const std::string rcx_sized{
                 tc.get_sized_register_operand("rcx", dst_size)};
@@ -830,7 +830,7 @@ class expr_ops_list final : public expression {
             if (rcx_allocated) {
                 tc.free_named_register(src.tok(), os, indent, "rcx");
             } else {
-                toc::asm_pop(src.tok(), os, indent, "rcx");
+                toc::asm_pop(os, indent, "rcx");
             }
             free_registers(src, tc, os, indent, lea_registers);
             return;
@@ -844,7 +844,7 @@ class expr_ops_list final : public expression {
         const bool rcx_allocated{
             tc.alloc_named_register(src.tok(), os, indent, "rcx")};
         if (not rcx_allocated) {
-            toc::asm_push(src.tok(), os, indent, "rcx");
+            toc::asm_push(os, indent, "rcx");
         }
         const std::string rcx_sized{
             tc.get_sized_register_operand("rcx", dst_size)};
@@ -854,7 +854,7 @@ class expr_ops_list final : public expression {
         if (rcx_allocated) {
             tc.free_named_register(src.tok(), os, indent, "rcx");
         } else {
-            toc::asm_pop(src.tok(), os, indent, "rcx");
+            toc::asm_pop(os, indent, "rcx");
         }
         free_registers(src, tc, os, indent, lea_registers);
     }
@@ -894,7 +894,7 @@ class expr_ops_list final : public expression {
             const bool rax_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rax")};
             if (not rax_allocated) {
-                toc::asm_push(src.tok(), os, indent, "rax");
+                toc::asm_push(os, indent, "rax");
             }
             tc.asm_cmd(src.tok(), os, indent, "mov",
                        tc.get_sized_register_operand("rax", dst_size),
@@ -902,7 +902,7 @@ class expr_ops_list final : public expression {
             const bool rdx_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rdx")};
             if (not rdx_allocated) {
-                toc::asm_push(src.tok(), os, indent, "rdx");
+                toc::asm_push(os, indent, "rdx");
             }
             toc::indent(os, indent, false);
             std::println(os, "{}", asm_op_div_reg_ext(dst_size));
@@ -912,12 +912,12 @@ class expr_ops_list final : public expression {
             if (rdx_allocated) {
                 tc.free_named_register(src.tok(), os, indent, "rdx");
             } else {
-                toc::asm_pop(src.tok(), os, indent, "rdx");
+                toc::asm_pop(os, indent, "rdx");
             }
             if (rax_allocated) {
                 tc.free_named_register(src.tok(), os, indent, "rax");
             } else {
-                toc::asm_pop(src.tok(), os, indent, "rax");
+                toc::asm_pop(os, indent, "rax");
             }
             tc.free_scratch_register(src.tok(), os, indent, reg);
             return;
@@ -932,7 +932,7 @@ class expr_ops_list final : public expression {
             const bool rax_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rax")};
             if (not rax_allocated) {
-                toc::asm_push(src.tok(), os, indent, "rax");
+                toc::asm_push(os, indent, "rax");
             }
             tc.asm_cmd(src.tok(), os, indent, "mov",
                        tc.get_sized_register_operand("rax", dst_size),
@@ -940,7 +940,7 @@ class expr_ops_list final : public expression {
             const bool rdx_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rdx")};
             if (not rdx_allocated) {
-                toc::asm_push(src.tok(), os, indent, "rdx");
+                toc::asm_push(os, indent, "rdx");
             }
             toc::indent(os, indent, false);
             std::println(os, "{}", asm_op_div_reg_ext(dst_size));
@@ -956,12 +956,12 @@ class expr_ops_list final : public expression {
             if (rdx_allocated) {
                 tc.free_named_register(src.tok(), os, indent, "rdx");
             } else {
-                toc::asm_pop(src.tok(), os, indent, "rdx");
+                toc::asm_pop(os, indent, "rdx");
             }
             if (rax_allocated) {
                 tc.free_named_register(src.tok(), os, indent, "rax");
             } else {
-                toc::asm_pop(src.tok(), os, indent, "rax");
+                toc::asm_pop(os, indent, "rax");
             }
             return;
         }
@@ -985,7 +985,7 @@ class expr_ops_list final : public expression {
             const bool rax_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rax")};
             if (not rax_allocated) {
-                toc::asm_push(src.tok(), os, indent, "rax");
+                toc::asm_push(os, indent, "rax");
             }
             tc.asm_cmd(src.tok(), os, indent, "mov",
                        tc.get_sized_register_operand("rax", dst_size),
@@ -993,7 +993,7 @@ class expr_ops_list final : public expression {
             const bool rdx_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rdx")};
             if (not rdx_allocated) {
-                toc::asm_push(src.tok(), os, indent, "rdx");
+                toc::asm_push(os, indent, "rdx");
             }
             toc::indent(os, indent, false);
             std::println(os, "{}", asm_op_div_reg_ext(dst_size));
@@ -1004,12 +1004,12 @@ class expr_ops_list final : public expression {
             if (rdx_allocated) {
                 tc.free_named_register(src.tok(), os, indent, "rdx");
             } else {
-                toc::asm_pop(src.tok(), os, indent, "rdx");
+                toc::asm_pop(os, indent, "rdx");
             }
             if (rax_allocated) {
                 tc.free_named_register(src.tok(), os, indent, "rax");
             } else {
-                toc::asm_pop(src.tok(), os, indent, "rax");
+                toc::asm_pop(os, indent, "rax");
             }
             free_registers(src, tc, os, indent, lea_registers);
             return;
@@ -1027,7 +1027,7 @@ class expr_ops_list final : public expression {
         const bool rax_allocated{
             tc.alloc_named_register(src.tok(), os, indent, "rax")};
         if (not rax_allocated) {
-            toc::asm_push(src.tok(), os, indent, "rax");
+            toc::asm_push(os, indent, "rax");
         }
         tc.asm_cmd(src.tok(), os, indent, "mov",
                    tc.get_sized_register_operand("rax", dst_size),
@@ -1035,7 +1035,7 @@ class expr_ops_list final : public expression {
         const bool rdx_allocated{
             tc.alloc_named_register(src.tok(), os, indent, "rdx")};
         if (not rdx_allocated) {
-            toc::asm_push(src.tok(), os, indent, "rdx");
+            toc::asm_push(os, indent, "rdx");
         }
         toc::indent(os, indent, false);
         std::println(os, "{}", asm_op_div_reg_ext(dst_size));
@@ -1045,12 +1045,12 @@ class expr_ops_list final : public expression {
         if (rdx_allocated) {
             tc.free_named_register(src.tok(), os, indent, "rdx");
         } else {
-            toc::asm_pop(src.tok(), os, indent, "rdx");
+            toc::asm_pop(os, indent, "rdx");
         }
         if (rax_allocated) {
             tc.free_named_register(src.tok(), os, indent, "rax");
         } else {
-            toc::asm_pop(src.tok(), os, indent, "rax");
+            toc::asm_pop(os, indent, "rax");
         }
         tc.free_scratch_register(src.tok(), os, indent, reg);
         free_registers(src, tc, os, indent, lea_registers);

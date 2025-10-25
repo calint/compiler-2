@@ -89,7 +89,7 @@ class stmt_builtin_equal final : public expression {
                 lhs_.first_token(), tc, os, indent, lhs_.elems(),
                 allocated_scratch_registers, "", lhs_info.lea_path)};
 
-        toc::asm_lea(tok(), os, indent, "rsi", lhs_operand);
+        toc::asm_lea(os, indent, "rsi", lhs_operand);
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -104,7 +104,7 @@ class stmt_builtin_equal final : public expression {
                 rhs_.first_token(), tc, os, indent, rhs_.elems(),
                 allocated_scratch_registers, "", rhs_info.lea_path)};
 
-        toc::asm_lea(tok(), os, indent, "rdi", rhs_operand);
+        toc::asm_lea(os, indent, "rdi", rhs_operand);
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -150,7 +150,7 @@ class stmt_builtin_equal final : public expression {
         tc.asm_cmd(tok(), os, indent, "mov", "rcx", std::to_string(rcx));
 
         // copy
-        toc::asm_repe_cmps(tok(), os, indent, rep_size);
+        toc::asm_repe_cmps(os, indent, rep_size);
 
         tc.free_named_register(tok(), os, indent, "rcx");
         tc.free_named_register(tok(), os, indent, "rdi");
@@ -161,11 +161,11 @@ class stmt_builtin_equal final : public expression {
             tc.create_unique_label(tok(), "cmps_eq")};
         const std::string lbl_end{tc.create_unique_label(tok(), "cmps_end")};
 
-        toc::asm_jxx(tok(), os, indent, "e", lbl_if_equal); // je
+        toc::asm_jxx(os, indent, "e", lbl_if_equal); // je
         tc.asm_cmd(tok(), os, indent, "mov", dst, "false");
-        toc::asm_jmp(tok(), os, indent, lbl_end);
-        toc::asm_label(tok(), os, indent, lbl_if_equal);
+        toc::asm_jmp(os, indent, lbl_end);
+        toc::asm_label(os, indent, lbl_if_equal);
         tc.asm_cmd(tok(), os, indent, "mov", dst, "true");
-        toc::asm_label(tok(), os, indent, lbl_end);
+        toc::asm_label(os, indent, lbl_end);
     }
 };

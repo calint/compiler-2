@@ -1,4 +1,6 @@
 [ ] bool_ops_list: if destination is a boolean ponder how to use setcc
+    => exploratory coding did not pan out well giving marginal less jmps
+       with more complexity
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
     if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] a way of doing x += y like operations. maybe detect patter x = x + 1?

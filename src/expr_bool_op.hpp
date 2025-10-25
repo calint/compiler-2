@@ -121,7 +121,7 @@ class expr_bool_op final : public statement {
         const bool invert{inverted ? not is_not_ : is_not_};
         tc.comment_source(*this, os, indent, "?",
                           inverted ? " 'or' inverted: " : " ");
-        toc::asm_label(tok(), os, indent, create_cmp_bgn_label(tc));
+        toc::asm_label(os, indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // is 'lhs' a constant?
             if (not lhs_.is_expression()) {
@@ -180,7 +180,7 @@ class expr_bool_op final : public statement {
                 if (const_eval) {
                     // expression evaluated at compile time and true so
                     // short-circuit and jump to true
-                    toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_true);
+                    toc::asm_jmp(os, indent, jmp_to_if_true);
                 }
                 return const_eval;
             }
@@ -205,7 +205,7 @@ class expr_bool_op final : public statement {
         const bool invert{inverted ? not is_not_ : is_not_};
         tc.comment_source(*this, os, indent, "?",
                           inverted ? " 'and' inverted: " : " ");
-        toc::asm_label(tok(), os, indent, create_cmp_bgn_label(tc));
+        toc::asm_label(os, indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // check case when operand is constant
             if (not lhs_.is_expression()) {
@@ -222,7 +222,7 @@ class expr_bool_op final : public statement {
                     if (not const_eval) {
                         // since it is an 'and' chain short-circuit
                         // expression and jump to label for false
-                        toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_false);
+                        toc::asm_jmp(os, indent, jmp_to_if_false);
                     }
                     return const_eval;
                 }
@@ -259,7 +259,7 @@ class expr_bool_op final : public statement {
                              (const_eval ? "true" : "false"));
                 if (not const_eval) {
                     // short circuit 'and' chain
-                    toc::asm_jmp(lhs_.tok(), os, indent, jmp_to_if_false);
+                    toc::asm_jmp(os, indent, jmp_to_if_false);
                 }
                 return const_eval;
             }

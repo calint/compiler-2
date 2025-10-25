@@ -27,7 +27,7 @@ class stmt_continue final : public statement {
         // get current loop start labels
         const std::string_view loop_label{tc.get_loop_label_or_throw(tok())};
         // jump to it
-        toc::asm_jmp(tok(), os, indent, loop_label);
+        toc::asm_jmp(os, indent, loop_label);
     }
 
     [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {

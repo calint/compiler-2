@@ -269,7 +269,7 @@ class stmt_call : public expression {
             std::format("{}_{}_end", func.name(), new_call_path)};
         func.source_def_comment_to(tc, os, indent);
 
-        toc::asm_label(tok(), os, indent,
+        toc::asm_label(os, indent,
                        std::format("{}_{}", func.name(), new_call_path));
 
         // enter function scope
@@ -299,7 +299,7 @@ class stmt_call : public expression {
         }
 
         // provide the exit label for 'return' to jump to
-        toc::asm_label(tok(), os, indent, ret_jmp_label);
+        toc::asm_label(os, indent, ret_jmp_label);
 
         // apply unary ops to result if present
         if (not get_unary_ops().is_empty()) {

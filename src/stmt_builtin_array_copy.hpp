@@ -101,7 +101,7 @@ class stmt_builtin_array_copy final : public statement {
                 from_.first_token(), tc, os, indent, from_.elems(),
                 allocated_scratch_registers, "rcx", from_info.lea_path)};
 
-        toc::asm_lea(tok(), os, indent, "rsi", from_operand);
+        toc::asm_lea(os, indent, "rsi", from_operand);
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -115,7 +115,7 @@ class stmt_builtin_array_copy final : public statement {
             to_.first_token(), tc, os, indent, to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};
 
-        toc::asm_lea(tok(), os, indent, "rdi", to_operand);
+        toc::asm_lea(os, indent, "rdi", to_operand);
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -147,7 +147,7 @@ class stmt_builtin_array_copy final : public statement {
         }
 
         // copy
-        toc::asm_rep_movs(tok(), os, indent, 'b');
+        toc::asm_rep_movs(os, indent, 'b');
 
         tc.free_named_register(tok(), os, indent, "rcx");
         tc.free_named_register(tok(), os, indent, "rdi");

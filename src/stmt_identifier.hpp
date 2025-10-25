@@ -334,7 +334,7 @@ class stmt_identifier : public statement {
             if (reg_offset == "rsp") {
                 reg_offset = tc.alloc_scratch_register(src_loc_tk, os, indent);
                 allocated_registers.push_back(reg_offset);
-                toc::asm_lea(src_loc_tk, os, indent, reg_offset,
+                toc::asm_lea(os, indent, reg_offset,
                              std::format("rsp - {}", -base_info.stack_ix));
             }
 
@@ -440,7 +440,7 @@ class stmt_identifier : public statement {
             if (tc.is_bounds_check_with_line()) {
                 tc.asm_cmd(tk, os, indent, "cmovs", "rbp", reg_line_num);
             }
-            toc::asm_jxx(tk, os, indent, "s", "panic_bounds");
+            toc::asm_jxx(os, indent, "s", "panic_bounds");
         }
 
         if (tc.is_bounds_check_upper()) {
@@ -461,7 +461,7 @@ class stmt_identifier : public statement {
                            "rbp", reg_line_num);
             }
             if (tc.is_bounds_check_upper()) {
-                toc::asm_jxx(tk, os, indent, comparison, "panic_bounds");
+                toc::asm_jxx(os, indent, comparison, "panic_bounds");
             }
         }
 
@@ -494,7 +494,7 @@ class stmt_identifier : public statement {
             // changes will be made to the register so return an allocated
             // register
             if (not op.index_register.empty() or op.displacement != 0) {
-                toc::asm_lea(src_loc_tk, os, indent, index_reg, lea);
+                toc::asm_lea(os, indent, index_reg, lea);
             } else {
                 tc.asm_cmd(src_loc_tk, os, indent, "mov", index_reg, lea);
             }

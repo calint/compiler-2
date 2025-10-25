@@ -1157,8 +1157,8 @@ class toc final {
         alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
         alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
 
-        toc::asm_lea(src_loc_tk, os, indnt, "rsi", src);
-        toc::asm_lea(src_loc_tk, os, indnt, "rdi", dst);
+        toc::asm_lea(os, indnt, "rsi", src);
+        toc::asm_lea(os, indnt, "rdi", dst);
 
         // try moving qwords
         const size_t qword_count{bytes_count / toc::size_qword};
@@ -1169,7 +1169,7 @@ class toc final {
 
         asm_cmd(src_loc_tk, os, indnt, "mov", "rcx", std::format("{}", reps));
 
-        toc::asm_rep_movs(src_loc_tk, os, indnt, rep_size);
+        toc::asm_rep_movs(os, indnt, rep_size);
 
         free_named_register(src_loc_tk, os, indnt, "rcx");
         free_named_register(src_loc_tk, os, indnt, "rdi");
@@ -1195,12 +1195,12 @@ class toc final {
             const std::string& addr{src.compile_lea(src_loc_tk, *this, os,
                                                     indnt, allocated_registers,
                                                     "", src_info.lea_path)};
-            toc::asm_lea(src_loc_tk, os, indnt, "rsi", addr);
+            toc::asm_lea(os, indnt, "rsi", addr);
         } else {
-            toc::asm_lea(src_loc_tk, os, indnt, "rsi",
+            toc::asm_lea(os, indnt, "rsi",
                          get_operand_address_str(src_info.operand));
         }
-        toc::asm_lea(src_loc_tk, os, indnt, "rdi", dst);
+        toc::asm_lea(os, indnt, "rdi", dst);
 
         // try moving qwords
         const size_t qword_count{bytes_count / toc::size_qword};
@@ -1211,7 +1211,7 @@ class toc final {
 
         asm_cmd(src_loc_tk, os, indnt, "mov", "rcx", std::format("{}", reps));
 
-        toc::asm_rep_movs(src_loc_tk, os, indnt, rep_size);
+        toc::asm_rep_movs(os, indnt, rep_size);
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
@@ -1541,16 +1541,14 @@ class toc final {
     // public statics (sorted alphabetically)
     // -------------------------------------------------------------------------
 
-    static auto asm_jmp([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, const size_t indnt,
+    static auto asm_jmp(std::ostream& os, const size_t indnt,
                         const std::string_view label) -> void {
 
         indent(os, indnt);
         std::println(os, "jmp {}", label);
     }
 
-    static auto asm_jxx([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, const size_t indnt,
+    static auto asm_jxx(std::ostream& os, const size_t indnt,
                         const std::string_view comparison,
                         const std::string_view label) -> void {
 
@@ -1558,16 +1556,14 @@ class toc final {
         std::println(os, "j{} {}", comparison, label);
     }
 
-    static auto asm_label([[maybe_unused]] const token& src_loc_tk,
-                          std::ostream& os, const size_t indnt,
+    static auto asm_label(std::ostream& os, const size_t indnt,
                           const std::string_view label) -> void {
 
         indent(os, indnt);
         std::println(os, "{}:", label);
     }
 
-    static auto asm_lea([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, const size_t indnt,
+    static auto asm_lea(std::ostream& os, const size_t indnt,
                         const std::string_view dst,
                         const std::string_view operand) -> void {
 
@@ -1575,32 +1571,28 @@ class toc final {
         std::println(os, "lea {}, [{}]", dst, operand);
     }
 
-    static auto asm_neg([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, const size_t indnt,
+    static auto asm_neg(std::ostream& os, const size_t indnt,
                         const std::string_view operand) -> void {
 
         indent(os, indnt);
         std::println(os, "neg {}", operand);
     }
 
-    static auto asm_not([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, const size_t indnt,
+    static auto asm_not(std::ostream& os, const size_t indnt,
                         const std::string_view operand) -> void {
 
         indent(os, indnt);
         std::println(os, "not {}", operand);
     }
 
-    static auto asm_pop([[maybe_unused]] const token& src_loc_tk,
-                        std::ostream& os, const size_t indnt,
+    static auto asm_pop(std::ostream& os, const size_t indnt,
                         const std::string_view operand) -> void {
 
         indent(os, indnt);
         std::println(os, "pop {}", operand);
     }
 
-    static auto asm_push([[maybe_unused]] const token& src_loc_tk,
-                         std::ostream& os, const size_t indnt,
+    static auto asm_push(std::ostream& os, const size_t indnt,
                          const std::string_view operand) -> void {
 
         indent(os, indnt);
@@ -1608,8 +1600,7 @@ class toc final {
     }
 
     // size: b, w, d, q for different sizings
-    static auto asm_rep_movs([[maybe_unused]] const token& src_loc_tk,
-                             std::ostream& os, const size_t indnt,
+    static auto asm_rep_movs(std::ostream& os, const size_t indnt,
                              const char size) -> void {
 
         indent(os, indnt);
@@ -1617,8 +1608,7 @@ class toc final {
     }
 
     // size: b, w, d, q for different sizings
-    static auto asm_rep_stos([[maybe_unused]] const token& src_loc_tk,
-                             std::ostream& os, const size_t indnt,
+    static auto asm_rep_stos(std::ostream& os, const size_t indnt,
                              const char size) -> void {
 
         indent(os, indnt);
@@ -1626,8 +1616,7 @@ class toc final {
     }
 
     // size: b, w, d, q for different sizings
-    static auto asm_repe_cmps([[maybe_unused]] const token& src_loc_tk,
-                              std::ostream& os, const size_t indnt,
+    static auto asm_repe_cmps(std::ostream& os, const size_t indnt,
                               const char size) -> void {
 
         indent(os, indnt);

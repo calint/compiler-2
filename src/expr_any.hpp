@@ -112,28 +112,28 @@ class expr_any final : public statement {
                         // yes, constant evaluation
                         if (*const_eval) {
                             // constant evaluation is true
-                            toc::asm_label(tok(), os, indent, jmp_to_if_true);
+                            toc::asm_label(os, indent, jmp_to_if_true);
                             tc.asm_cmd(tok(), os, indent, "mov",
                                        dst_info.operand, "true");
                             return;
                         }
                         // constant evaluation is false
-                        toc::asm_label(tok(), os, indent, jmp_to_if_false);
+                        toc::asm_label(os, indent, jmp_to_if_false);
                         tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
                                    "false");
                         return;
                     }
 
                     // not constant evaluation
-                    toc::asm_label(tok(), os, indent, jmp_to_if_true);
+                    toc::asm_label(os, indent, jmp_to_if_true);
                     tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
                                "true");
-                    toc::asm_jmp(tok(), os, indent, jmp_to_end);
+                    toc::asm_jmp(os, indent, jmp_to_end);
 
-                    toc::asm_label(tok(), os, indent, jmp_to_if_false);
+                    toc::asm_label(os, indent, jmp_to_if_false);
                     tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
                                "false");
-                    toc::asm_label(tok(), os, indent, jmp_to_end);
+                    toc::asm_label(os, indent, jmp_to_end);
                 }},
             var_);
     }

@@ -107,7 +107,7 @@ class stmt_builtin_arrays_equal final : public expression {
                 from_.first_token(), tc, os, indent, from_.elems(),
                 allocated_scratch_registers, "rcx", from_info.lea_path)};
 
-        toc::asm_lea(tok(), os, indent, "rsi", from_operand);
+        toc::asm_lea(os, indent, "rsi", from_operand);
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -121,7 +121,7 @@ class stmt_builtin_arrays_equal final : public expression {
             to_.first_token(), tc, os, indent, to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};
 
-        toc::asm_lea(tok(), os, indent, "rdi", to_operand);
+        toc::asm_lea(os, indent, "rdi", to_operand);
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -153,7 +153,7 @@ class stmt_builtin_arrays_equal final : public expression {
         }
 
         // copy
-        toc::asm_repe_cmps(tok(), os, indent, 'b');
+        toc::asm_repe_cmps(os, indent, 'b');
 
         tc.free_named_register(tok(), os, indent, "rcx");
         tc.free_named_register(tok(), os, indent, "rdi");
@@ -164,11 +164,11 @@ class stmt_builtin_arrays_equal final : public expression {
             tc.create_unique_label(tok(), "cmps_eq")};
         const std::string lbl_end{tc.create_unique_label(tok(), "cmps_end")};
 
-        toc::asm_jxx(tok(), os, indent, "e", lbl_if_equal); // je
+        toc::asm_jxx(os, indent, "e", lbl_if_equal); // je
         tc.asm_cmd(tok(), os, indent, "mov", dst, "false");
-        toc::asm_jmp(tok(), os, indent, lbl_end);
-        toc::asm_label(tok(), os, indent, lbl_if_equal);
+        toc::asm_jmp(os, indent, lbl_end);
+        toc::asm_label(os, indent, lbl_if_equal);
         tc.asm_cmd(tok(), os, indent, "mov", dst, "true");
-        toc::asm_label(tok(), os, indent, lbl_end);
+        toc::asm_label(os, indent, lbl_end);
     }
 };
