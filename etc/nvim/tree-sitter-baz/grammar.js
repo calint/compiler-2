@@ -222,11 +222,9 @@ module.exports = grammar({
     // else clause (inlining _body to resolve the token boundary error)
     else_clause: $ => seq(
         $.else_keyword,
-        field('alternative', choice(
-          prec.right(1, $.block),
-          $._statement,
-        )),
+        field('alternative', $._body),
     ),
+
 
     loop_statement: $ => seq(
       $.loop_keyword,
@@ -417,7 +415,7 @@ module.exports = grammar({
 
     // Flow Control Keywords
     // Use prec(1) on this rule to define the 'else if' token
-    else_if_keyword: $ => prec(1, seq('else', /\s+/, 'if')),
+    else_if_keyword: $ => token(seq('else', /\s+/, 'if')),
     else_keyword: $ => 'else',
     break_keyword: $ => 'break',
     continue_keyword: $ => 'continue',
