@@ -123,6 +123,20 @@ class stmt_builtin_equal final : public expression {
 
         char rep_size{'b'};
         size_t rcx{type_size};
+
+        // check comparing 2 arrays of same size without indexing
+        if (lhs_info.is_array and not lhs_.is_indexed() and
+            rhs_info.is_array and not rhs_.is_indexed()) {
+
+            if (lhs_info.array_size != rhs_info.array_size) {
+                throw compiler_exception(lhs_.tok(),
+                                         "cannot compare arrays of different "
+                                         "sizes. see `arrays_equal`");
+            }
+
+            rcx *= lhs_info.array_size;
+        }
+
         if ((rcx % toc::size_qword) == 0) {
             rep_size = 'q';
             rcx /= toc::size_qword;

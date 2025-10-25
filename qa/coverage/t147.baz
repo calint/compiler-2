@@ -1,0 +1,16 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func main() {
+    var p : i32[4]
+    var q : i32[4]
+    assert(equal(p, q))
+
+    q[1] = 2
+    assert(not equal(p, q))
+}
