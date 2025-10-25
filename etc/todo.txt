@@ -1,4 +1,7 @@
 [ ] bool_ops_list: if destination is a boolean ponder how to use setcc
+    => exp_any::compile -> bool_ops_list::compile(dest) where dest is the
+       end-point of the evaluation. in expr_bool_op if jmp to false or true
+       is end-point do setcc
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
     if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] a way of doing x += y like operations. maybe detect patter x = x + 1?
