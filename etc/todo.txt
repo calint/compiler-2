@@ -1,13 +1,3 @@
-[ ] expr_ops_list: tends to write the same comment 3 times:
-                    [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
-                    mov rax, 60
-[x] expr_bool_ops_list: understand why the last element const eval works
-    look at coverage and notice is never returns const eval unless only 1
-    element
-    => t145: isolates the case where last element in a bool ops list is
-       const evaluated
 [ ] bool_ops_list: if destination is a boolean ponder howto use cmov instead
     of the jmps
 [ ] handle boolean expression of == between types, allow?
@@ -97,6 +87,17 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] expr_ops_list: tends to write the same comment 3 times:
+                    [13:14] 60
+;                   [13:14] 60
+;                   [13:14] 60
+                    mov rax, 60
+    => improved it slightly
+[x] expr_bool_ops_list: understand why the last element const eval works
+    look at coverage and notice is never returns const eval unless only 1
+    element
+    => t145: isolates the case where last element in a bool ops list is
+       const evaluated
 [x] expr_ops_list::asm_shf: t142
     shf: expr
     shf: not const, no uops
