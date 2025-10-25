@@ -319,8 +319,6 @@ class expr_ops_list final : public expression {
     auto do_compile(toc& tc, std::ostream& os, const size_t indent,
                     const ident_info& dst_info) const -> void {
 
-        tc.comment_source(*this, os, indent);
-
         const statement& st0{*exprs_[0]};
         if (st0.is_identifier()) {
             st0.compile(tc, os, indent, dst_info.id);

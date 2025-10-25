@@ -91,7 +91,7 @@ class stmt_def_var final : public statement {
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
             assign_var_ =
-                std::make_unique<stmt_assign_var>(tc, tz, std::move(si));
+                std::make_unique<stmt_assign_var>(tc, tz, std::move(si), ws1_);
         }
 
         assert_var_not_used(name_tk_.text());

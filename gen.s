@@ -77,16 +77,12 @@ main:
 ;   [103:5] # arrays are initialized to 0
 ;   [105:5] var ix = 1
 ;   [105:9] ix: i64 (8 B @ qword [rsp - 24])
-;   [105:9] ix =1
-;   [105:14] 1
-;   [105:14] 1
+;   [105:9] ix = 1
 ;   [105:14] 1
     mov qword [rsp - 24], 1
 ;   [107:5] arr[ix] = 2
 ;   [107:5] allocate scratch register -> r15
 ;   [107:9] set array index
-;   [107:9] ix
-;   [107:9] ix
 ;   [107:9] ix
     mov r15, qword [rsp - 24]
 ;   [107:9] bounds check
@@ -101,15 +97,11 @@ main:
     jge panic_bounds
 ;   [107:9] free scratch register 'r14'
 ;   [107:15] 2
-;   [107:15] 2
-;   [107:15] 2
     mov dword [rsp + r15 * 4 - 16], 2
 ;   [107:5] free scratch register 'r15'
 ;   [108:5] arr[ix + 1] = arr[ix]
 ;   [108:5] allocate scratch register -> r15
 ;   [108:9] set array index
-;   [108:9] ix + 1
-;   [108:9] ix + 1
 ;   [108:9] ix
     mov r15, qword [rsp - 24]
 ;   [108:14] r15 + 1
@@ -126,12 +118,8 @@ main:
     jge panic_bounds
 ;   [108:9] free scratch register 'r14'
 ;   [108:19] arr[ix]
-;   [108:19] arr[ix]
-;   [108:19] arr[ix]
 ;   [108:19] allocate scratch register -> r14
 ;   [108:23] set array index
-;   [108:23] ix
-;   [108:23] ix
 ;   [108:23] ix
     mov r14, qword [rsp - 24]
 ;   [108:23] bounds check
@@ -153,14 +141,11 @@ main:
 ;   [108:5] free scratch register 'r15'
 ;   [109:5] assert(arr[1] == 2)
 ;   [109:12] allocate scratch register -> r15
-;   [109:12] arr[1] == 2
 ;   [109:12] ? arr[1] == 2
 ;   [109:12] ? arr[1] == 2
     cmp_109_12:
 ;   [109:12] allocate scratch register -> r14
 ;   [109:16] set array index
-;   [109:16] 1
-;   [109:16] 1
 ;   [109:16] 1
     mov r14, 1
 ;   [109:16] bounds check
@@ -201,13 +186,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -219,14 +200,11 @@ main:
     assert_109_5_end:
 ;   [110:5] assert(arr[2] == 2)
 ;   [110:12] allocate scratch register -> r15
-;   [110:12] arr[2] == 2
 ;   [110:12] ? arr[2] == 2
 ;   [110:12] ? arr[2] == 2
     cmp_110_12:
 ;   [110:12] allocate scratch register -> r14
 ;   [110:16] set array index
-;   [110:16] 2
-;   [110:16] 2
 ;   [110:16] 2
     mov r14, 2
 ;   [110:16] bounds check
@@ -267,13 +245,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -289,14 +263,10 @@ main:
 ;   [112:5] allocate named register 'rcx'
 ;   [112:29] 2
 ;   [112:29] 2
-;   [112:29] 2
-;   [112:29] 2
     mov rcx, 2
 ;   [112:16] arr[2]
 ;   [112:16] allocate scratch register -> r15
 ;   [112:20] set array index
-;   [112:20] 2
-;   [112:20] 2
 ;   [112:20] 2
     mov r15, 2
 ;   [112:20] bounds check
@@ -337,14 +307,11 @@ main:
 ;   [113:5] # copy from, to, number of elements
 ;   [114:5] assert(arr[0] == 2)
 ;   [114:12] allocate scratch register -> r15
-;   [114:12] arr[0] == 2
 ;   [114:12] ? arr[0] == 2
 ;   [114:12] ? arr[0] == 2
     cmp_114_12:
 ;   [114:12] allocate scratch register -> r14
 ;   [114:16] set array index
-;   [114:16] 0
-;   [114:16] 0
 ;   [114:16] 0
     mov r14, 0
 ;   [114:16] bounds check
@@ -385,13 +352,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -413,8 +376,6 @@ main:
 ;   [117:5] allocate named register 'rsi'
 ;   [117:5] allocate named register 'rdi'
 ;   [117:5] allocate named register 'rcx'
-;   [117:27] 4
-;   [117:27] 4
 ;   [117:27] 4
 ;   [117:27] 4
     mov rcx, 4
@@ -451,20 +412,16 @@ main:
 ;   [117:5] free named register 'rsi'
 ;   [118:5] assert(arrays_equal(arr, arr1, 4))
 ;   [118:12] allocate scratch register -> r15
-;   [118:12] arrays_equal(arr, arr1, 4)
 ;   [118:12] ? arrays_equal(arr, arr1, 4)
 ;   [118:12] ? arrays_equal(arr, arr1, 4)
     cmp_118_12:
 ;   [118:12] allocate scratch register -> r14
-;       [118:12] arrays_equal(arr, arr1, 4)
 ;       [118:12] r14 = arrays_equal(arr, arr1, 4)
 ;       [118:12] = expression
 ;       [118:12] arrays_equal(arr, arr1, 4)
 ;       [118:12] allocate named register 'rsi'
 ;       [118:12] allocate named register 'rdi'
 ;       [118:12] allocate named register 'rcx'
-;       [118:36] 4
-;       [118:36] 4
 ;       [118:36] 4
 ;       [118:36] 4
         mov rcx, 4
@@ -532,13 +489,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -553,8 +506,6 @@ main:
 ;   [121:5] allocate scratch register -> r15
 ;   [121:10] set array index
 ;   [121:10] 2
-;   [121:10] 2
-;   [121:10] 2
     mov r15, 2
 ;   [121:10] bounds check
 ;   [121:10] allocate scratch register -> r14
@@ -567,27 +518,21 @@ main:
     cmovge rbp, r14
     jge panic_bounds
 ;   [121:10] free scratch register 'r14'
-;   [121:15] -1
-;   [121:15] -1
 ;   [121:16] -1
     mov dword [rsp + r15 * 4 - 56], -1
 ;   [121:5] free scratch register 'r15'
 ;   [122:5] assert(not arrays_equal(arr, arr1, 4))
 ;   [122:12] allocate scratch register -> r15
-;   [122:12] not arrays_equal(arr, arr1, 4)
 ;   [122:12] ? not arrays_equal(arr, arr1, 4)
 ;   [122:12] ? not arrays_equal(arr, arr1, 4)
     cmp_122_12:
 ;   [122:16] allocate scratch register -> r14
-;       [122:16] arrays_equal(arr, arr1, 4)
 ;       [122:16] r14 = arrays_equal(arr, arr1, 4)
 ;       [122:16] = expression
 ;       [122:16] arrays_equal(arr, arr1, 4)
 ;       [122:16] allocate named register 'rsi'
 ;       [122:16] allocate named register 'rdi'
 ;       [122:16] allocate named register 'rcx'
-;       [122:40] 4
-;       [122:40] 4
 ;       [122:40] 4
 ;       [122:40] 4
         mov rcx, 4
@@ -655,13 +600,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -673,14 +614,10 @@ main:
     assert_122_5_end:
 ;   [124:5] ix = 3
 ;   [124:10] 3
-;   [124:10] 3
-;   [124:10] 3
     mov qword [rsp - 24], 3
 ;   [125:5] arr[ix] = ~inv(arr[ix - 1])
 ;   [125:5] allocate scratch register -> r15
 ;   [125:9] set array index
-;   [125:9] ix
-;   [125:9] ix
 ;   [125:9] ix
     mov r15, qword [rsp - 24]
 ;   [125:9] bounds check
@@ -694,15 +631,11 @@ main:
     cmovge rbp, r14
     jge panic_bounds
 ;   [125:9] free scratch register 'r14'
-;   [125:15] ~inv(arr[ix - 1])
-;   [125:15] ~inv(arr[ix - 1])
 ;   [125:16] dword [rsp + r15 * 4 - 16] = ~inv(arr[ix - 1])
 ;   [125:16] = expression
 ;   [125:16] ~inv(arr[ix - 1])
 ;   [125:20] allocate scratch register -> r14
 ;   [125:24] set array index
-;   [125:24] ix - 1
-;   [125:24] ix - 1
 ;   [125:24] ix
     mov r14, qword [rsp - 24]
 ;   [125:29] r14 - 1
@@ -723,8 +656,6 @@ main:
 ;       [125:16] alias res -> dword [rsp + r15 * 4 - 16]  (lea: )
 ;       [125:16] alias i -> arr  (lea: rsp + r14 * 4 - 16)
 ;       [66:5] res = ~i
-;       [66:11] ~i
-;       [66:11] ~i
 ;       [66:12] ~i
 ;       [66:12] allocate scratch register -> r13
         mov r13d, dword [rsp + r14 * 4 - 16]
@@ -737,14 +668,11 @@ main:
 ;   [125:5] free scratch register 'r15'
 ;   [126:5] assert(arr[ix] == 2)
 ;   [126:12] allocate scratch register -> r15
-;   [126:12] arr[ix] == 2
 ;   [126:12] ? arr[ix] == 2
 ;   [126:12] ? arr[ix] == 2
     cmp_126_12:
 ;   [126:12] allocate scratch register -> r14
 ;   [126:16] set array index
-;   [126:16] ix
-;   [126:16] ix
 ;   [126:16] ix
     mov r14, qword [rsp - 24]
 ;   [126:16] bounds check
@@ -785,13 +713,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -809,8 +733,6 @@ main:
 ;       [76:5] allocate scratch register -> r15
 ;       [76:9] set array index
 ;       [76:9] 1
-;       [76:9] 1
-;       [76:9] 1
         mov r15, 1
 ;       [76:9] bounds check
 ;       [76:9] allocate scratch register -> r14
@@ -824,21 +746,16 @@ main:
         jge panic_bounds
 ;       [76:9] free scratch register 'r14'
 ;       [76:14] 0xfe
-;       [76:14] 0xfe
-;       [76:14] 0xfe
         mov dword [rsp + r15 * 4 - 16], 0xfe
 ;       [76:5] free scratch register 'r15'
     faz_128_5_end:
 ;   [129:5] assert(arr[1] == 0xfe)
 ;   [129:12] allocate scratch register -> r15
-;   [129:12] arr[1] == 0xfe
 ;   [129:12] ? arr[1] == 0xfe
 ;   [129:12] ? arr[1] == 0xfe
     cmp_129_12:
 ;   [129:12] allocate scratch register -> r14
 ;   [129:16] set array index
-;   [129:16] 1
-;   [129:16] 1
 ;   [129:16] 1
     mov r14, 1
 ;   [129:16] bounds check
@@ -879,13 +796,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -897,7 +810,7 @@ main:
     assert_129_5_end:
 ;   [131:5] var p : point = {0, 0}
 ;   [131:9] p: point (16 B @ qword [rsp - 72])
-;   [131:9] p ={0, 0}
+;   [131:9] p = {0, 0}
 ;   [131:21] copy field 'x'
     mov qword [rsp - 72], 0
 ;   [131:21] copy field 'y'
@@ -908,20 +821,15 @@ main:
 ;       [132:5] alias pt -> p  (lea: )
 ;       [52:5] pt.x = 0b10
 ;       [52:12] 0b10
-;       [52:12] 0b10
-;       [52:12] 0b10
         mov qword [rsp - 72], 0b10
 ;       [52:20] # binary value 2
 ;       [53:5] pt.y = 0xb
-;       [53:12] 0xb
-;       [53:12] 0xb
 ;       [53:12] 0xb
         mov qword [rsp - 64], 0xb
 ;       [53:20] # hex value 11
     foo_132_5_end:
 ;   [133:5] assert(p.x == 2)
 ;   [133:12] allocate scratch register -> r15
-;   [133:12] p.x == 2
 ;   [133:12] ? p.x == 2
 ;   [133:12] ? p.x == 2
     cmp_133_12:
@@ -951,13 +859,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -969,7 +873,6 @@ main:
     assert_133_5_end:
 ;   [134:5] assert(p.y == 0xb)
 ;   [134:12] allocate scratch register -> r15
-;   [134:12] p.y == 0xb
 ;   [134:12] ? p.y == 0xb
 ;   [134:12] ? p.y == 0xb
     cmp_134_12:
@@ -999,13 +902,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1017,9 +916,7 @@ main:
     assert_134_5_end:
 ;   [136:5] var i = 0
 ;   [136:9] i: i64 (8 B @ qword [rsp - 80])
-;   [136:9] i =0
-;   [136:13] 0
-;   [136:13] 0
+;   [136:9] i = 0
 ;   [136:13] 0
     mov qword [rsp - 80], 0
 ;   [137:5] bar(i)
@@ -1038,13 +935,10 @@ main:
         if_59_5_137_5_end:
 ;       [60:5] arg = 0xff
 ;       [60:11] 0xff
-;       [60:11] 0xff
-;       [60:11] 0xff
         mov qword [rsp - 80], 0xff
     bar_137_5_end:
 ;   [138:5] assert(i == 0)
 ;   [138:12] allocate scratch register -> r15
-;   [138:12] i == 0
 ;   [138:12] ? i == 0
 ;   [138:12] ? i == 0
     cmp_138_12:
@@ -1074,13 +968,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1091,8 +981,6 @@ main:
 ;       [138:5] free scratch register 'r15'
     assert_138_5_end:
 ;   [140:5] i = 1
-;   [140:9] 1
-;   [140:9] 1
 ;   [140:9] 1
     mov qword [rsp - 80], 1
 ;   [141:5] bar(i)
@@ -1111,13 +999,10 @@ main:
         if_59_5_141_5_end:
 ;       [60:5] arg = 0xff
 ;       [60:11] 0xff
-;       [60:11] 0xff
-;       [60:11] 0xff
         mov qword [rsp - 80], 0xff
     bar_141_5_end:
 ;   [142:5] assert(i == 0xff)
 ;   [142:12] allocate scratch register -> r15
-;   [142:12] i == 0xff
 ;   [142:12] ? i == 0xff
 ;   [142:12] ? i == 0xff
     cmp_142_12:
@@ -1147,13 +1032,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1165,17 +1046,13 @@ main:
     assert_142_5_end:
 ;   [144:5] var j = 1
 ;   [144:9] j: i64 (8 B @ qword [rsp - 88])
-;   [144:9] j =1
-;   [144:13] 1
-;   [144:13] 1
+;   [144:9] j = 1
 ;   [144:13] 1
     mov qword [rsp - 88], 1
 ;   [145:5] var k = baz(j)
 ;   [145:9] k: i64 (8 B @ qword [rsp - 96])
-;   [145:9] k =baz(j)
-;   [145:13] baz(j)
+;   [145:9] k = baz(j)
 ;   [145:13] allocate scratch register -> r15
-;   [145:13] baz(j)
 ;   [145:13] r15 = baz(j)
 ;   [145:13] = expression
 ;   [145:13] baz(j)
@@ -1184,8 +1061,6 @@ main:
 ;       [145:13] alias res -> r15  (lea: )
 ;       [145:13] alias arg -> j  (lea: )
 ;       [70:5] res = arg * 2
-;       [70:11] arg * 2
-;       [70:11] arg * 2
 ;       [70:11] arg
         mov r15, qword [rsp - 88]
 ;       [70:17] res * 2
@@ -1196,7 +1071,6 @@ main:
 ;   [145:13] free scratch register 'r15'
 ;   [146:5] assert(k == 2)
 ;   [146:12] allocate scratch register -> r15
-;   [146:12] k == 2
 ;   [146:12] ? k == 2
 ;   [146:12] ? k == 2
     cmp_146_12:
@@ -1226,13 +1100,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1243,9 +1113,7 @@ main:
 ;       [146:5] free scratch register 'r15'
     assert_146_5_end:
 ;   [148:5] k = baz(1)
-;   [148:9] baz(1)
 ;   [148:9] allocate scratch register -> r15
-;   [148:9] baz(1)
 ;   [148:9] r15 = baz(1)
 ;   [148:9] = expression
 ;   [148:9] baz(1)
@@ -1254,8 +1122,6 @@ main:
 ;       [148:9] alias res -> r15  (lea: )
 ;       [148:9] alias arg -> 1  (lea: )
 ;       [70:5] res = arg * 2
-;       [70:11] arg * 2
-;       [70:11] arg * 2
 ;       [70:11] arg
         mov r15, 1
 ;       [70:17] res * 2
@@ -1266,7 +1132,6 @@ main:
 ;   [148:9] free scratch register 'r15'
 ;   [149:5] assert(k == 2)
 ;   [149:12] allocate scratch register -> r15
-;   [149:12] k == 2
 ;   [149:12] ? k == 2
 ;   [149:12] ? k == 2
     cmp_149_12:
@@ -1296,13 +1161,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1314,10 +1175,8 @@ main:
     assert_149_5_end:
 ;   [151:5] var p0 : point = {baz(2), 0}
 ;   [151:9] p0: point (16 B @ qword [rsp - 112])
-;   [151:9] p0 ={baz(2), 0}
+;   [151:9] p0 = {baz(2), 0}
 ;   [151:22] copy field 'x'
-;   [151:23] baz(2)
-;   [151:23] baz(2)
 ;   [151:23] qword [rsp - 112] = baz(2)
 ;   [151:23] = expression
 ;   [151:23] baz(2)
@@ -1326,8 +1185,6 @@ main:
 ;       [151:23] alias res -> qword [rsp - 112]  (lea: )
 ;       [151:23] alias arg -> 2  (lea: )
 ;       [70:5] res = arg * 2
-;       [70:11] arg * 2
-;       [70:11] arg * 2
 ;       [70:11] arg
         mov qword [rsp - 112], 2
 ;       [70:17] res * 2
@@ -1342,7 +1199,6 @@ main:
     mov qword [rsp - 104], 0
 ;   [152:5] assert(p0.x == 4)
 ;   [152:12] allocate scratch register -> r15
-;   [152:12] p0.x == 4
 ;   [152:12] ? p0.x == 4
 ;   [152:12] ? p0.x == 4
     cmp_152_12:
@@ -1372,13 +1228,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1390,25 +1242,19 @@ main:
     assert_152_5_end:
 ;   [154:5] var x = 1
 ;   [154:9] x: i64 (8 B @ qword [rsp - 120])
-;   [154:9] x =1
-;   [154:13] 1
-;   [154:13] 1
+;   [154:9] x = 1
 ;   [154:13] 1
     mov qword [rsp - 120], 1
 ;   [155:5] var y = 2
 ;   [155:9] y: i64 (8 B @ qword [rsp - 128])
-;   [155:9] y =2
-;   [155:13] 2
-;   [155:13] 2
+;   [155:9] y = 2
 ;   [155:13] 2
     mov qword [rsp - 128], 2
 ;   [157:5] var o1 : object = {{x * 10, y}, 0xff0000}
 ;   [157:9] o1: object (20 B @ qword [rsp - 148])
-;   [157:9] o1 ={{x * 10, y}, 0xff0000}
+;   [157:9] o1 = {{x * 10, y}, 0xff0000}
 ;   [157:23] copy field 'pos'
 ;   [157:24] copy field 'x'
-;   [157:25] x * 10
-;   [157:25] x * 10
 ;   [157:25] x
 ;   [157:25] allocate scratch register -> r15
     mov r15, qword [rsp - 120]
@@ -1430,7 +1276,6 @@ main:
     mov dword [rsp - 132], 0xff0000
 ;   [158:5] assert(o1.pos.x == 10)
 ;   [158:12] allocate scratch register -> r15
-;   [158:12] o1.pos.x == 10
 ;   [158:12] ? o1.pos.x == 10
 ;   [158:12] ? o1.pos.x == 10
     cmp_158_12:
@@ -1460,13 +1305,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1478,7 +1319,6 @@ main:
     assert_158_5_end:
 ;   [159:5] assert(o1.pos.y == 2)
 ;   [159:12] allocate scratch register -> r15
-;   [159:12] o1.pos.y == 2
 ;   [159:12] ? o1.pos.y == 2
 ;   [159:12] ? o1.pos.y == 2
     cmp_159_12:
@@ -1508,13 +1348,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1526,7 +1362,6 @@ main:
     assert_159_5_end:
 ;   [160:5] assert(o1.color == 0xff0000)
 ;   [160:12] allocate scratch register -> r15
-;   [160:12] o1.color == 0xff0000
 ;   [160:12] ? o1.color == 0xff0000
 ;   [160:12] ? o1.color == 0xff0000
     cmp_160_12:
@@ -1556,13 +1391,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1574,7 +1405,7 @@ main:
     assert_160_5_end:
 ;   [162:5] var p1 : point = {-x, -y}
 ;   [162:9] p1: point (16 B @ qword [rsp - 164])
-;   [162:9] p1 ={-x, -y}
+;   [162:9] p1 = {-x, -y}
 ;   [162:22] copy field 'x'
 ;   [162:23] allocate scratch register -> r15
     mov r15, qword [rsp - 120]
@@ -1600,7 +1431,6 @@ main:
 ;   [163:14] free named register 'rsi'
 ;   [164:5] assert(o1.pos.x == -1)
 ;   [164:12] allocate scratch register -> r15
-;   [164:12] o1.pos.x == -1
 ;   [164:12] ? o1.pos.x == -1
 ;   [164:12] ? o1.pos.x == -1
     cmp_164_12:
@@ -1630,13 +1460,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1648,7 +1474,6 @@ main:
     assert_164_5_end:
 ;   [165:5] assert(o1.pos.y == -2)
 ;   [165:12] allocate scratch register -> r15
-;   [165:12] o1.pos.y == -2
 ;   [165:12] ? o1.pos.y == -2
 ;   [165:12] ? o1.pos.y == -2
     cmp_165_12:
@@ -1678,13 +1503,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1696,7 +1517,7 @@ main:
     assert_165_5_end:
 ;   [167:5] var o2 : object = o1
 ;   [167:9] o2: object (20 B @ qword [rsp - 184])
-;   [167:9] o2 =o1
+;   [167:9] o2 = o1
 ;   [167:23] allocate named register 'rsi'
 ;   [167:23] allocate named register 'rdi'
 ;   [167:23] allocate named register 'rcx'
@@ -1709,7 +1530,6 @@ main:
 ;   [167:23] free named register 'rsi'
 ;   [168:5] assert(o2.pos.x == -1)
 ;   [168:12] allocate scratch register -> r15
-;   [168:12] o2.pos.x == -1
 ;   [168:12] ? o2.pos.x == -1
 ;   [168:12] ? o2.pos.x == -1
     cmp_168_12:
@@ -1739,13 +1559,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1757,7 +1573,6 @@ main:
     assert_168_5_end:
 ;   [169:5] assert(o2.pos.y == -2)
 ;   [169:12] allocate scratch register -> r15
-;   [169:12] o2.pos.y == -2
 ;   [169:12] ? o2.pos.y == -2
 ;   [169:12] ? o2.pos.y == -2
     cmp_169_12:
@@ -1787,13 +1602,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1805,7 +1616,6 @@ main:
     assert_169_5_end:
 ;   [170:5] assert(o2.color == 0xff0000)
 ;   [170:12] allocate scratch register -> r15
-;   [170:12] o2.color == 0xff0000
 ;   [170:12] ? o2.color == 0xff0000
 ;   [170:12] ? o2.color == 0xff0000
     cmp_170_12:
@@ -1835,13 +1645,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1861,12 +1667,9 @@ main:
 ;   [173:5] # index 0 in an array can be accessed without array index
 ;   [174:5] o3.pos.y = 73
 ;   [174:16] 73
-;   [174:16] 73
-;   [174:16] 73
     mov qword [rsp - 196], 73
 ;   [175:5] assert(o3[0].pos.y == 73)
 ;   [175:12] allocate scratch register -> r15
-;   [175:12] o3[0].pos.y == 73
 ;   [175:12] ? o3[0].pos.y == 73
 ;   [175:12] ? o3[0].pos.y == 73
     cmp_175_12:
@@ -1874,8 +1677,6 @@ main:
     lea r14, [rsp - 204]
 ;   [175:12] allocate scratch register -> r13
 ;   [175:15] set array index
-;   [175:15] 0
-;   [175:15] 0
 ;   [175:15] 0
     mov r13, 0
 ;   [175:15] bounds check
@@ -1919,13 +1720,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -1954,8 +1751,6 @@ main:
 ;   [178:5] allocate scratch register -> r14
 ;   [178:12] set array index
 ;   [178:12] 1
-;   [178:12] 1
-;   [178:12] 1
     mov r14, 1
 ;   [178:12] bounds check
 ;   [178:12] allocate scratch register -> r13
@@ -1974,8 +1769,6 @@ main:
 ;   [178:5] allocate scratch register -> r14
 ;   [178:25] set array index
 ;   [178:25] 1
-;   [178:25] 1
-;   [178:25] 1
     mov r14, 1
 ;   [178:25] bounds check
 ;   [178:25] allocate scratch register -> r13
@@ -1989,14 +1782,11 @@ main:
     jge panic_bounds
 ;   [178:25] free scratch register 'r13'
 ;   [178:30] 0xffee
-;   [178:30] 0xffee
-;   [178:30] 0xffee
     mov qword [r15 + r14 * 8], 0xffee
 ;   [178:5] free scratch register 'r14'
 ;   [178:5] free scratch register 'r15'
 ;   [179:5] assert(worlds[1].locations[1] == 0xffee)
 ;   [179:12] allocate scratch register -> r15
-;   [179:12] worlds[1].locations[1] == 0xffee
 ;   [179:12] ? worlds[1].locations[1] == 0xffee
 ;   [179:12] ? worlds[1].locations[1] == 0xffee
     cmp_179_12:
@@ -2004,8 +1794,6 @@ main:
     lea r14, [rsp - 716]
 ;   [179:12] allocate scratch register -> r13
 ;   [179:19] set array index
-;   [179:19] 1
-;   [179:19] 1
 ;   [179:19] 1
     mov r13, 1
 ;   [179:19] bounds check
@@ -2024,8 +1812,6 @@ main:
 ;   [179:12] free scratch register 'r13'
 ;   [179:12] allocate scratch register -> r13
 ;   [179:32] set array index
-;   [179:32] 1
-;   [179:32] 1
 ;   [179:32] 1
     mov r13, 1
 ;   [179:32] bounds check
@@ -2067,13 +1853,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -2088,8 +1870,6 @@ main:
 ;   [181:5] allocate named register 'rdi'
 ;   [181:5] allocate named register 'rcx'
 ;   [183:9] array_size_of(worlds.locations)
-;   [183:9] array_size_of(worlds.locations)
-;   [184:9] array_size_of(worlds.locations)
 ;   [184:9] rcx = array_size_of(worlds.locations)
 ;   [184:9] = expression
 ;   [184:9] array_size_of(worlds.locations)
@@ -2099,8 +1879,6 @@ main:
     lea r15, [rsp - 716]
 ;   [182:9] allocate scratch register -> r14
 ;   [182:16] set array index
-;   [182:16] 1
-;   [182:16] 1
 ;   [182:16] 1
     mov r14, 1
 ;   [182:16] bounds check
@@ -2135,8 +1913,6 @@ main:
     lea r15, [rsp - 716]
 ;   [183:9] allocate scratch register -> r14
 ;   [183:16] set array index
-;   [183:16] 0
-;   [183:16] 0
 ;   [183:16] 0
     mov r14, 0
 ;   [183:16] bounds check
@@ -2175,7 +1951,6 @@ main:
 ;   [187:5] # `array_size_of` is built-in
 ;   [188:5] assert(worlds[0].locations[1] == 0xffee)
 ;   [188:12] allocate scratch register -> r15
-;   [188:12] worlds[0].locations[1] == 0xffee
 ;   [188:12] ? worlds[0].locations[1] == 0xffee
 ;   [188:12] ? worlds[0].locations[1] == 0xffee
     cmp_188_12:
@@ -2183,8 +1958,6 @@ main:
     lea r14, [rsp - 716]
 ;   [188:12] allocate scratch register -> r13
 ;   [188:19] set array index
-;   [188:19] 0
-;   [188:19] 0
 ;   [188:19] 0
     mov r13, 0
 ;   [188:19] bounds check
@@ -2203,8 +1976,6 @@ main:
 ;   [188:12] free scratch register 'r13'
 ;   [188:12] allocate scratch register -> r13
 ;   [188:32] set array index
-;   [188:32] 1
-;   [188:32] 1
 ;   [188:32] 1
     mov r13, 1
 ;   [188:32] bounds check
@@ -2246,13 +2017,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -2264,12 +2031,10 @@ main:
     assert_188_5_end:
 ;   [189:5] assert(arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) ))
 ;   [189:12] allocate scratch register -> r15
-;   [189:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;   [189:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;   [189:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
     cmp_189_12:
 ;   [189:12] allocate scratch register -> r14
-;       [189:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;       [189:12] r14 = arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
 ;       [189:12] = expression
 ;       [189:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_size_of(worlds.locations) )
@@ -2277,8 +2042,6 @@ main:
 ;       [189:12] allocate named register 'rdi'
 ;       [189:12] allocate named register 'rcx'
 ;       [191:14] array_size_of(worlds.locations)
-;       [191:14] array_size_of(worlds.locations)
-;       [192:14] array_size_of(worlds.locations)
 ;       [192:14] rcx = array_size_of(worlds.locations)
 ;       [192:14] = expression
 ;       [192:14] array_size_of(worlds.locations)
@@ -2288,8 +2051,6 @@ main:
         lea r13, [rsp - 716]
 ;       [190:14] allocate scratch register -> r12
 ;       [190:21] set array index
-;       [190:21] 0
-;       [190:21] 0
 ;       [190:21] 0
         mov r12, 0
 ;       [190:21] bounds check
@@ -2324,8 +2085,6 @@ main:
         lea r13, [rsp - 716]
 ;       [191:14] allocate scratch register -> r12
 ;       [191:21] set array index
-;       [191:21] 1
-;       [191:21] 1
 ;       [191:21] 1
         mov r12, 1
 ;       [191:21] bounds check
@@ -2393,13 +2152,9 @@ main:
 ;               [20:38] alias v -> rdi  (lea: )
 ;               [13:5] mov(rax, 60)
 ;                   [13:14] 60
-;                   [13:14] 60
-;                   [13:14] 60
                     mov rax, 60
 ;               [13:19] # exit system call
 ;               [14:5] mov(rdi, v)
-;                   [14:14] v
-;                   [14:14] v
 ;                   [14:14] v
 ;               [14:19] # return code
 ;               [15:5] syscall()
@@ -2433,24 +2188,16 @@ main:
 ;       [196:5] alias ptr -> rsi  (lea: )
 ;       [23:5] mov(rax, 1)
 ;           [23:14] 1
-;           [23:14] 1
-;           [23:14] 1
             mov rax, 1
 ;       [23:19] # write system call
 ;       [24:5] mov(rdi, 0)
-;           [24:14] 0
-;           [24:14] 0
 ;           [24:14] 0
             mov rdi, 0
 ;       [24:19] # file descriptor for standard out
 ;       [25:5] mov(rsi, ptr)
 ;           [25:14] ptr
-;           [25:14] ptr
-;           [25:14] ptr
 ;       [25:19] # buffer address
 ;       [26:5] mov(rdx, len)
-;           [26:14] len
-;           [26:14] len
 ;           [26:14] len
 ;       [26:19] # buffer size
 ;       [27:5] syscall()
@@ -2471,24 +2218,16 @@ main:
 ;           [198:9] alias ptr -> rsi  (lea: )
 ;           [23:5] mov(rax, 1)
 ;               [23:14] 1
-;               [23:14] 1
-;               [23:14] 1
                 mov rax, 1
 ;           [23:19] # write system call
 ;           [24:5] mov(rdi, 0)
-;               [24:14] 0
-;               [24:14] 0
 ;               [24:14] 0
                 mov rdi, 0
 ;           [24:19] # file descriptor for standard out
 ;           [25:5] mov(rsi, ptr)
 ;               [25:14] ptr
-;               [25:14] ptr
-;               [25:14] ptr
 ;           [25:19] # buffer address
 ;           [26:5] mov(rdx, len)
-;               [26:14] len
-;               [26:14] len
 ;               [26:14] len
 ;           [26:19] # buffer size
 ;           [27:5] syscall()
@@ -2502,27 +2241,19 @@ main:
 ;           [199:9] alias s -> nm  (lea: )
 ;           [85:5] mov(rax, 0)
 ;               [85:14] 0
-;               [85:14] 0
-;               [85:14] 0
                 mov rax, 0
 ;           [85:19] # read system call
 ;           [86:5] mov(rdi, 0)
 ;               [86:14] 0
-;               [86:14] 0
-;               [86:14] 0
                 mov rdi, 0
 ;           [86:19] # file descriptor for standard input
 ;           [87:5] mov(rsi, address_of(s.data))
-;               [87:14] address_of(s.data)
-;               [87:14] address_of(s.data)
 ;               [87:14] rsi = address_of(s.data)
 ;               [87:14] = expression
 ;               [87:14] address_of(s.data)
                 lea rsi, [rsp - 843]
 ;           [87:34] # buffer address
 ;           [88:5] mov(rdx, array_size_of(s.data))
-;               [88:14] array_size_of(s.data)
-;               [88:14] array_size_of(s.data)
 ;               [88:14] rdx = array_size_of(s.data)
 ;               [88:14] = expression
 ;               [88:14] array_size_of(s.data)
@@ -2531,8 +2262,6 @@ main:
 ;           [89:5] syscall()
             syscall
 ;           [90:5] mov(s.len, rax - 1)
-;               [90:16] rax - 1
-;               [90:16] rax - 1
 ;               [90:16] rax
                 mov byte [rsp - 844], al
 ;               [90:22] s.len - 1
@@ -2567,24 +2296,16 @@ main:
 ;               [203:13] alias ptr -> rsi  (lea: )
 ;               [23:5] mov(rax, 1)
 ;                   [23:14] 1
-;                   [23:14] 1
-;                   [23:14] 1
                     mov rax, 1
 ;               [23:19] # write system call
 ;               [24:5] mov(rdi, 0)
-;                   [24:14] 0
-;                   [24:14] 0
 ;                   [24:14] 0
                     mov rdi, 0
 ;               [24:19] # file descriptor for standard out
 ;               [25:5] mov(rsi, ptr)
 ;                   [25:14] ptr
-;                   [25:14] ptr
-;                   [25:14] ptr
 ;               [25:19] # buffer address
 ;               [26:5] mov(rdx, len)
-;                   [26:14] len
-;                   [26:14] len
 ;                   [26:14] len
 ;               [26:19] # buffer size
 ;               [27:5] syscall()
@@ -2607,24 +2328,16 @@ main:
 ;               [206:13] alias ptr -> rsi  (lea: )
 ;               [23:5] mov(rax, 1)
 ;                   [23:14] 1
-;                   [23:14] 1
-;                   [23:14] 1
                     mov rax, 1
 ;               [23:19] # write system call
 ;               [24:5] mov(rdi, 0)
-;                   [24:14] 0
-;                   [24:14] 0
 ;                   [24:14] 0
                     mov rdi, 0
 ;               [24:19] # file descriptor for standard out
 ;               [25:5] mov(rsi, ptr)
 ;                   [25:14] ptr
-;                   [25:14] ptr
-;                   [25:14] ptr
 ;               [25:19] # buffer address
 ;               [26:5] mov(rdx, len)
-;                   [26:14] len
-;                   [26:14] len
 ;                   [26:14] len
 ;               [26:19] # buffer size
 ;               [27:5] syscall()
@@ -2638,27 +2351,19 @@ main:
 ;               [207:13] alias s -> nm  (lea: )
 ;               [94:5] mov(rax, 1)
 ;                   [94:14] 1
-;                   [94:14] 1
-;                   [94:14] 1
                     mov rax, 1
 ;               [94:19] # write system call
 ;               [95:5] mov(rdi, 0)
 ;                   [95:14] 0
-;                   [95:14] 0
-;                   [95:14] 0
                     mov rdi, 0
 ;               [95:19] # file descriptor for standard out
 ;               [96:5] mov(rsi, address_of(s.data))
-;                   [96:14] address_of(s.data)
-;                   [96:14] address_of(s.data)
 ;                   [96:14] rsi = address_of(s.data)
 ;                   [96:14] = expression
 ;                   [96:14] address_of(s.data)
                     lea rsi, [rsp - 843]
 ;               [96:34] # buffer address
 ;               [97:5] mov(rdx, s.len)
-;                   [97:14] s.len
-;                   [97:14] s.len
 ;                   [97:14] s.len
                     movsx rdx, byte [rsp - 844]
 ;               [97:21] # buffer size
@@ -2676,24 +2381,16 @@ main:
 ;               [208:13] alias ptr -> rsi  (lea: )
 ;               [23:5] mov(rax, 1)
 ;                   [23:14] 1
-;                   [23:14] 1
-;                   [23:14] 1
                     mov rax, 1
 ;               [23:19] # write system call
 ;               [24:5] mov(rdi, 0)
-;                   [24:14] 0
-;                   [24:14] 0
 ;                   [24:14] 0
                     mov rdi, 0
 ;               [24:19] # file descriptor for standard out
 ;               [25:5] mov(rsi, ptr)
 ;                   [25:14] ptr
-;                   [25:14] ptr
-;                   [25:14] ptr
 ;               [25:19] # buffer address
 ;               [26:5] mov(rdx, len)
-;                   [26:14] len
-;                   [26:14] len
 ;                   [26:14] len
 ;               [26:19] # buffer size
 ;               [27:5] syscall()
@@ -2712,24 +2409,16 @@ main:
 ;               [209:13] alias ptr -> rsi  (lea: )
 ;               [23:5] mov(rax, 1)
 ;                   [23:14] 1
-;                   [23:14] 1
-;                   [23:14] 1
                     mov rax, 1
 ;               [23:19] # write system call
 ;               [24:5] mov(rdi, 0)
-;                   [24:14] 0
-;                   [24:14] 0
 ;                   [24:14] 0
                     mov rdi, 0
 ;               [24:19] # file descriptor for standard out
 ;               [25:5] mov(rsi, ptr)
 ;                   [25:14] ptr
-;                   [25:14] ptr
-;                   [25:14] ptr
 ;               [25:19] # buffer address
 ;               [26:5] mov(rdx, len)
-;                   [26:14] len
-;                   [26:14] len
 ;                   [26:14] len
 ;               [26:19] # buffer size
 ;               [27:5] syscall()

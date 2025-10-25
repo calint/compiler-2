@@ -56,13 +56,12 @@ class expr_any final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        std::visit([&os](const auto& itm) -> void { itm.source_to(os); }, var_);
+        std::visit([&os](const auto& e) -> void { e.source_to(os); }, var_);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const std::string_view dst) const -> void override {
 
-        tc.comment_source(*this, os, indent);
         std::visit(
             overloaded{
                 [&](const expr_ops_list& e) -> void {
