@@ -1,7 +1,6 @@
 #pragma once
 
 #include <format>
-#include <optional>
 #include <ostream>
 #include <print>
 #include <ranges>
@@ -10,18 +9,16 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
-#include "expr_any.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
 #include "unary_ops.hpp"
 
-class stmt_arrays_equal final : public expression {
-    stmt_identifier from_;
-    stmt_identifier to_;
-    expr_any count_;
+class stmt_equal final : public expression {
+    stmt_identifier lhs_;
+    stmt_identifier rhs_;
     token ws1_; // whitespace after ')'
   public:
-    stmt_arrays_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
+    stmt_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : expression{tk, std::move(uops)} {
 
         set_type(tc.get_type_bool());
@@ -33,23 +30,16 @@ class stmt_arrays_equal final : public expression {
 
         if (not tz.is_next_char('(')) {
             throw compiler_exception{
-                tz, "expected '(' then 'source', 'compare' and 'count'"};
+                tz, "expected '(' then 'source' and 'compare'"};
         }
 
-        from_ = {tc, {}, tz.next_token(), tz};
+        lhs_ = {tc, {}, tz.next_token(), tz};
 
         if (not tz.is_next_char(',')) {
-            throw compiler_exception{tz,
-                                     "expected ',' then 'compare' and 'count'"};
+            throw compiler_exception{tz, "expected ',' then 'compare'"};
         }
 
-        to_ = {tc, {}, tz.next_token(), tz};
-
-        if (not tz.is_next_char(',')) {
-            throw compiler_exception{tz, "expected ',' then 'count'"};
-        }
-
-        count_ = {tc, tz, tc.get_type_default(), true};
+        rhs_ = {tc, {}, tz.next_token(), tz};
 
         if (not tz.is_next_char(')')) {
             throw compiler_exception{tok(), "expected ')' after the argument"};
@@ -58,22 +48,20 @@ class stmt_arrays_equal final : public expression {
         ws1_ = tz.next_whitespace_token();
     }
 
-    ~stmt_arrays_equal() override = default;
+    ~stmt_equal() override = default;
 
-    stmt_arrays_equal() = default;
-    stmt_arrays_equal(const stmt_arrays_equal&) = default;
-    stmt_arrays_equal(stmt_arrays_equal&&) = default;
-    auto operator=(const stmt_arrays_equal&) -> stmt_arrays_equal& = default;
-    auto operator=(stmt_arrays_equal&&) -> stmt_arrays_equal& = default;
+    stmt_equal() = default;
+    stmt_equal(const stmt_equal&) = default;
+    stmt_equal(stmt_equal&&) = default;
+    auto operator=(const stmt_equal&) -> stmt_equal& = default;
+    auto operator=(stmt_equal&&) -> stmt_equal& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         std::print(os, "(");
-        from_.source_to(os);
+        lhs_.source_to(os);
         std::print(os, ",");
-        to_.source_to(os);
-        std::print(os, ",");
-        count_.source_to(os);
+        rhs_.source_to(os);
         std::print(os, ")");
         ws1_.source_to(os);
     }
@@ -91,21 +79,17 @@ class stmt_arrays_equal final : public expression {
 
         std::vector<std::string> allocated_scratch_registers;
 
-        // size to 'rcx'
-        tc.comment_source(count_, os, indent);
-        count_.compile(tc, os, indent, "rcx");
-
-        const ident_info from_info{tc.make_ident_info(from_)};
-        const ident_info to_info{tc.make_ident_info(to_)};
+        const ident_info lhs_info{tc.make_ident_info(lhs_)};
+        const ident_info rhs_info{tc.make_ident_info(rhs_)};
 
         // from operand to rsi
-        tc.comment_source(from_, os, indent);
-        const std::string from_operand{
+        tc.comment_source(lhs_, os, indent);
+        const std::string lhs_operand{
             stmt_identifier::compile_effective_address(
-                from_.first_token(), tc, os, indent, from_.elems(),
-                allocated_scratch_registers, "rcx", from_info.lea_path)};
+                lhs_.first_token(), tc, os, indent, lhs_.elems(),
+                allocated_scratch_registers, "", lhs_info.lea_path)};
 
-        toc::asm_lea(tok(), os, indent, "rsi", from_operand);
+        toc::asm_lea(tok(), os, indent, "rsi", lhs_operand);
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -114,41 +98,30 @@ class stmt_arrays_equal final : public expression {
 
         // to operand to 'rdi'
         allocated_scratch_registers.clear();
-        tc.comment_source(to_, os, indent);
-        const std::string to_operand{stmt_identifier::compile_effective_address(
-            to_.first_token(), tc, os, indent, to_.elems(),
-            allocated_scratch_registers, "rcx", to_info.lea_path)};
+        tc.comment_source(rhs_, os, indent);
+        const std::string rhs_operand{
+            stmt_identifier::compile_effective_address(
+                rhs_.first_token(), tc, os, indent, rhs_.elems(),
+                allocated_scratch_registers, "", rhs_info.lea_path)};
 
-        toc::asm_lea(tok(), os, indent, "rdi", to_operand);
+        toc::asm_lea(tok(), os, indent, "rdi", rhs_operand);
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
             tc.free_scratch_register(tok(), os, indent, reg);
         }
 
-        if (from_info.type_ptr->name() != to_info.type_ptr->name()) {
+        if (lhs_info.type_ptr->name() != rhs_info.type_ptr->name()) {
             throw compiler_exception{
                 tok(), std::format("source and destination types are not the "
                                    "same. source is '{}' vs destination '{}'",
-                                   from_info.type_ptr->name(),
-                                   to_info.type_ptr->name())};
+                                   lhs_info.type_ptr->name(),
+                                   rhs_info.type_ptr->name())};
         }
 
-        const size_t type_size{from_info.type_ptr->size()};
+        const size_t type_size{lhs_info.type_ptr->size()};
 
-        if (type_size > 1) {
-            // check whether it is possible to shift left instead of
-            // multiplication
-            if (std::optional<int> shl{
-                    stmt_identifier::get_shift_amount(type_size)};
-                shl) {
-                tc.asm_cmd(tok(), os, indent, "shl", "rcx",
-                           std::format("{}", *shl));
-            } else {
-                tc.asm_cmd(tok(), os, indent, "imul", "rcx",
-                           std::format("{}", type_size));
-            }
-        }
+        tc.asm_cmd(tok(), os, indent, "mov", "rcx", std::to_string(type_size));
 
         // copy
         toc::asm_repe_cmps(tok(), os, indent, 'b');

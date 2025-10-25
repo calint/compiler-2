@@ -1,0 +1,18 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+type point {x : i32, y : i32}
+
+func main() {
+    var p : point = {2, 4}
+    var q : point = p
+    assert(equal(p, q))
+
+    q.x = 3
+    assert(not equal(p, q))
+}

@@ -30,6 +30,7 @@
 #include "stmt_call.hpp"
 #include "stmt_call_asm_mov.hpp"
 #include "stmt_call_asm_syscall.hpp"
+#include "stmt_equal.hpp"
 #include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
@@ -247,6 +248,9 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     }
     if (tk.is_text("arrays_equal")) {
         return std::make_unique<stmt_arrays_equal>(tc, std::move(uops), tk, tz);
+    }
+    if (tk.is_text("equal")) {
+        return std::make_unique<stmt_equal>(tc, std::move(uops), tk, tz);
     }
     if (tz.is_peek_char('(')) {
         // e.g.  foo(...)

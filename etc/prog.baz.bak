@@ -133,6 +133,13 @@ func main() {
     assert(p.x == 2)
     assert(p.y == 0xb)
 
+    var q : point = p
+    assert(equal(p, q))
+    # use `equal` to compare for equality
+
+    q.x = 3
+    assert(not equal(p, q))
+
     var i = 0
     bar(i)
     assert(i == 0)

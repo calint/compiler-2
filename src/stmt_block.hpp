@@ -79,7 +79,6 @@ class stmt_block final : public statement {
             } else if (tk.is_text("array_copy")) {
                 stms_.emplace_back(
                     std::make_unique<stmt_array_copy>(tc, tk, tz));
-
             } else if (tk.is_text("loop") or tk.is_text("if") or
                        tk.is_text("mov") or tk.is_text("syscall")) {
                 // note: solves circular reference problem

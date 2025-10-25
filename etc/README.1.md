@@ -21,7 +21,7 @@ x86_64 assembly on Linux.
 * inlined functions
 * keywords: `func`, `type`, `field`, `var`, `loop`, `if`, `else`, `continue`,
 `break`, `return`
-* built-in functions: `array_copy`, `array_size_of`, `arrays_equal`, `address_of`, `mov`, `syscall`
+* built-in functions: `array_copy`, `array_size_of`, `arrays_equal`, `address_of`, `equal`, `mov`, `syscall`
 
 ## Howto
 
