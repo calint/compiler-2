@@ -3,11 +3,13 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
+TREESITTER="../../../../tree-sitter-baz"
+
 tree-sitter generate
 cc -o baz.so -shared src/parser.c -I./node_modules/tree-sitter/lib/include -fPIC
 mv -f baz.so ~/.local/share/nvim/site/parser/
 cp queries/highlights.scm ~/.local/share/nvim/site/queries/baz/highlights.scm
 # copy to `tree-sitter-baz` project
-cp grammar.js ../../../../tree-sitter-baz/
-cp queries/highlights.scm ../../../../tree-sitter-baz/queries/baz/
-cp README.md ../../../../tree-sitter-baz/
+cp grammar.js $TREESITTER/
+cp README.md $TREESITTER/
+cp queries/highlights.scm $TREESITTER/queries/baz/
