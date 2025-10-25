@@ -3,6 +3,8 @@
 [ ] handle boolean expression of == between types, allow?
 [x] generalize array_equal to work on non-array types
     => added "equal" to compare user defined types
+[ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
+    if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] consolidate the various initiations of rep stosX into common code in toc
     implementing heuristics of when to switch from mov to rep
 [ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
