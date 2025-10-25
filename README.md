@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    41           1344            737           6467
+C/C++ Header                    41           1344            737           6479
 C++                              1             81             84            591
 -------------------------------------------------------------------------------
-SUM:                            42           1425            821           7058
+SUM:                            42           1425            821           7070
 -------------------------------------------------------------------------------
 ```
 
@@ -728,8 +728,8 @@ main:
     cmp_137_12:
         lea rsi, [rsp - 72]
         lea rdi, [rsp - 88]
-        mov rcx, 16
-        repe cmpsb
+        mov rcx, 2
+        repe cmpsq
         je cmps_eq_137_12
         mov r14, false
         jmp cmps_end_137_12
@@ -761,8 +761,8 @@ main:
     cmp_141_12:
         lea rsi, [rsp - 72]
         lea rdi, [rsp - 88]
-        mov rcx, 16
-        repe cmpsb
+        mov rcx, 2
+        repe cmpsq
         je cmps_eq_141_16
         mov r14, false
         jmp cmps_end_141_16
@@ -2462,8 +2462,8 @@ main:
         lea rsi, [rsp - 72]
 ;       [137:21] q
         lea rdi, [rsp - 88]
-        mov rcx, 16
-        repe cmpsb
+        mov rcx, 2
+        repe cmpsq
 ;       [137:12] free named register 'rcx'
 ;       [137:12] free named register 'rdi'
 ;       [137:12] free named register 'rsi'
@@ -2532,8 +2532,8 @@ main:
         lea rsi, [rsp - 72]
 ;       [141:25] q
         lea rdi, [rsp - 88]
-        mov rcx, 16
-        repe cmpsb
+        mov rcx, 2
+        repe cmpsq
 ;       [141:16] free named register 'rcx'
 ;       [141:16] free named register 'rdi'
 ;       [141:16] free named register 'rsi'

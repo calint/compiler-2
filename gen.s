@@ -943,8 +943,8 @@ main:
         lea rsi, [rsp - 72]
 ;       [137:21] q
         lea rdi, [rsp - 88]
-        mov rcx, 16
-        repe cmpsb
+        mov rcx, 2
+        repe cmpsq
 ;       [137:12] free named register 'rcx'
 ;       [137:12] free named register 'rdi'
 ;       [137:12] free named register 'rsi'
@@ -1013,8 +1013,8 @@ main:
         lea rsi, [rsp - 72]
 ;       [141:25] q
         lea rdi, [rsp - 88]
-        mov rcx, 16
-        repe cmpsb
+        mov rcx, 2
+        repe cmpsq
 ;       [141:16] free named register 'rcx'
 ;       [141:16] free named register 'rdi'
 ;       [141:16] free named register 'rsi'

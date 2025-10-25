@@ -444,8 +444,8 @@ main:
     cmp_137_12:
         lea rsi, [rsp - 72]
         lea rdi, [rsp - 88]
-        mov rcx, 16
-        repe cmpsb
+        mov rcx, 2
+        repe cmpsq
         je cmps_eq_137_12
         mov r14, false
         jmp cmps_end_137_12
@@ -477,8 +477,8 @@ main:
     cmp_141_12:
         lea rsi, [rsp - 72]
         lea rdi, [rsp - 88]
-        mov rcx, 16
-        repe cmpsb
+        mov rcx, 2
+        repe cmpsq
         je cmps_eq_141_16
         mov r14, false
         jmp cmps_end_141_16

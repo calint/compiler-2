@@ -121,10 +121,22 @@ class stmt_equal final : public expression {
 
         const size_t type_size{lhs_info.type_ptr->size()};
 
-        tc.asm_cmd(tok(), os, indent, "mov", "rcx", std::to_string(type_size));
+        char rep_size{'b'};
+        size_t rcx{type_size};
+        if ((rcx % toc::size_qword) == 0) {
+            rep_size = 'q';
+            rcx /= toc::size_qword;
+        } else if ((rcx % toc::size_dword) == 0) {
+            rep_size = 'd';
+            rcx /= toc::size_dword;
+        } else if ((rcx % toc::size_word) == 0) {
+            rep_size = 'w';
+            rcx /= toc::size_word;
+        }
+        tc.asm_cmd(tok(), os, indent, "mov", "rcx", std::to_string(rcx));
 
         // copy
-        toc::asm_repe_cmps(tok(), os, indent, 'b');
+        toc::asm_repe_cmps(tok(), os, indent, rep_size);
 
         tc.free_named_register(tok(), os, indent, "rcx");
         tc.free_named_register(tok(), os, indent, "rdi");
