@@ -80,7 +80,7 @@ class stmt_def_type final : public statement {
         const type& tp{tc.get_type_or_throw(tok(), name_tk_.text())};
 
         tc.comment_start(tok(), os, indent);
-        std::println(os, "{} : {} B    fields: ", name_tk_.text(), tp.size());
+        std::println(os, "{} : {}B    fields: ", name_tk_.text(), tp.size());
 
         tc.comment_start(tok(), os, indent);
         std::println(os, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", "name",

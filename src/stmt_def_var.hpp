@@ -161,7 +161,7 @@ class stmt_def_var final : public statement {
         const size_t bytes_count{instance_count * dst_info.type_ptr->size()};
 
         tc.comment_start(name_tk_, os, indent);
-        std::println(os, "clear {} * {} B = {} B", instance_count,
+        std::println(os, "clear {} * {}B = {}B", instance_count,
                      dst_info.type_ptr->size(), bytes_count);
 
         if (bytes_count > threshold_for_rep_stos) {
@@ -194,7 +194,7 @@ class stmt_def_var final : public statement {
         // mov less than threshold for rep stos
 
         tc.comment_start(tok(), os, indent);
-        std::println(os, "size < 32 B, use mov");
+        std::println(os, "size <= {}B, use mov", threshold_for_rep_stos);
 
         size_t rest{bytes_count};
         int32_t displacement{dst_info.stack_ix};

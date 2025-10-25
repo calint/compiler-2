@@ -430,7 +430,7 @@ class toc final {
         if (var.array_size) {
             std::print(os, "[{}]", var.array_size);
         }
-        std::println(os, " ({} B @ {})", name_info.type_ptr->size(),
+        std::println(os, " ({}B @ {})", name_info.type_ptr->size(),
                      name_info.operand);
     }
 
@@ -768,7 +768,7 @@ class toc final {
                      usage_max_scratch_regs_);
         std::println(os, ";            max frames in use: {}",
                      usage_max_frame_count_);
-        std::println(os, ";               max stack size: {} B",
+        std::println(os, ";               max stack size: {}B",
                      usage_max_stack_size_);
         assert(all_registers_.size() == all_registers_initial_size_);
         assert(allocated_registers_.empty());
