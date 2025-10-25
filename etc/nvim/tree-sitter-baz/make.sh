@@ -12,4 +12,4 @@ cp queries/highlights.scm ~/.local/share/nvim/site/queries/baz/highlights.scm
 # copy to `tree-sitter-baz` project
 cp grammar.js $TREESITTER/
 cp README.md $TREESITTER/
-cp queries/highlights.scm $TREESITTER/queries/baz/
+cp queries/highlights.scm $TREESITTER/queries/

@@ -5,6 +5,7 @@
     => added "equal" to compare user defined types
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
     if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
+[ ] a way of doing x += y like operations. maybe detect patter x = x + 1?
 [ ] consolidate the various initiations of rep stosX into common code in toc
     implementing heuristics of when to switch from mov to rep
 [ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
@@ -82,6 +83,10 @@
     constructor(os data,os code,indent)
 [ ] implement strings
 [ ] support for float and double?
+    [ ] support avx512 operations
+    [ ] a way to tell the compiler to align variables on 4, 8, 16 etc boundaries
+[ ] limited integration with some C functions from stdlib
+    [ ] declare external functions
 [ ] rename compiler_exception
 [ ] specify whether ok for an op to truncate value instead of error
     => it is no longer an error
