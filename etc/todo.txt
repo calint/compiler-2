@@ -1,12 +1,8 @@
+[ ] array initializer: var i : vec2[] = {{1, 2}, {2, 3}, {3, 4}}
+[ ] initializer for types that contain array does not work as intended:
+    var input_buffer : str = {0, 0} where second element is an array
 [ ] ponder representing nasm instructions in classes to have better opportunity
     to optmize compared to current text based optmize_jump_x
-[x] expr_bool_op: revert from "test" to  "cmp" because testing memory operand
-    results in 2 instructions while "cmp" is 1
-    => maybe check if operand is register and use test in that case? worth it?
-[x] bool_ops_list: if destination is a boolean ponder how to use setcc
-    => exploratory coding did not pan out well giving marginal less jmps
-       with more complexity
-    => done, relies heavily on optmize_1 which is remarkably ugly code
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
     if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] a way of doing x += y like operations. maybe detect patter x = x + 1?
@@ -25,17 +21,11 @@
 [ ] initializer of arrays: var str : i8[] = {0x61, 0x41}
 [ ] nasm_operand in ident_info for less text processing sprinkled in the code?
 [ ] toc::rep_movs: heuristics around when to switch from movs to rep
-[ ] initializer for types that contain array does not work as intended:
-    var input_buffer : str = {0, 0} where second element is an array
 [ ] review "//?" comments
 [ ] review "todo" comments
 [ ] array_copy does not handle when destination overlaps source
 [ ] lea_path may not be necessary since only most recent lea relevant
     => also index of where in elems path lea was found
-[ ] fix better the re-occurring code:
-      if (arg.is_identifier() and (arg.is_expression() or 
-        tc.make_ident_info(arg).has_lea())) {
-    => made tc::has_lea(stmt) for a faster version than making the ident_info
 [ ] stmt_identifier: 357: if register will be just offset without indexing
     register then that can be calculated in init_reg_offset
 [ ] const allowed in function declaration and code
@@ -100,6 +90,17 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] expr_bool_op: revert from "test" to  "cmp" because testing memory operand
+    results in 2 instructions while "cmp" is 1
+    => maybe check if operand is register and use test in that case? worth it?
+[x] bool_ops_list: if destination is a boolean ponder how to use setcc
+    => exploratory coding did not pan out well giving marginal less jmps
+       with more complexity
+    => done, relies heavily on optmize_1 which is remarkably ugly code
+[x] fix better the re-occurring code:
+      if (arg.is_identifier() and (arg.is_expression() or 
+        tc.make_ident_info(arg).has_lea())) {
+    => made tc::has_lea(stmt) for a faster version than making the ident_info
 [x] handle boolean expression of == between types, allow?
     => added built-in function "equal"
 [x] generalize array_equal to work on non-array types
