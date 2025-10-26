@@ -169,6 +169,7 @@ auto main(const int argc, const char* argv[]) -> int {
             std::stringstream ss2;
             prg.build(ss1);
             optimize_jumps_1(ss1, ss2);
+            // note: a second pass to remove e.g. "jne X; jmp X; X:"
             optimize_jumps_2(ss2, std::cout);
         } else {
             prg.build(std::cout);
@@ -554,67 +555,122 @@ inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
 namespace {
 //  opt1
 //  example:
+//    je cmp_13_26
 //    jmp cmp_13_26
 //    cmp_13_26:
 //  to
 //    cmp_13_26:
 auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
-    const std::regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
+    const std::regex rxjmp{R"(^\s*j[a-z]{1,2}\s+(.+)\s*$)"};
     const std::regex rxlbl{R"(^\s*(.+):.*$)"};
     const std::regex rxcomment{R"(^\s*;.*$)"};
     std::smatch match;
     size_t optimizations{};
     while (true) {
         std::string line1;
-        getline(is, line1);
-        if (is.eof()) { //? what if there is no new line at end of file?
+        if (not std::getline(is, line1)) {
             break;
         }
-
         if (not std::regex_search(line1, match, rxjmp)) {
             std::println(os, "{}", line1);
             continue;
         }
-        const std::string jmplbl{match[1]};
-
+        const std::string jmplbl1{match[1]};
         std::string line2;
         std::vector<std::string> comments;
         while (true) { // read comments
-            getline(is, line2);
+            if (not std::getline(is, line2)) {
+                std::println(os, "{}", line1);
+                for (const std::string& s : comments) {
+                    std::println(os, "{}", s);
+                }
+                return;
+            }
             if (std::regex_match(line2, rxcomment)) {
                 comments.emplace_back(line2);
                 continue;
             }
             break;
         }
+        // Check if line2 is a label matching the first jump
+        if (std::regex_search(line2, match, rxlbl) && jmplbl1 == match[1]) {
+            // Optimization: output comments and the label
+            for (const std::string& s : comments) {
+                std::println(os, "{}", s);
+            }
+            std::println(os, "{}", line2);
+            optimizations++;
+            continue;
+        }
 
-        if (not std::regex_search(line2, match, rxlbl)) {
+        // Check if line2 is a jump instruction
+        if (std::regex_search(line2, match, rxjmp)) {
+            const std::string jmplbl2{match[1]};
+            std::string line3;
+            std::vector<std::string> comments2;
+            while (true) { // read more comments
+                if (not std::getline(is, line3)) {
+                    std::println(os, "{}", line1);
+                    for (const std::string& s : comments) {
+                        std::println(os, "{}", s);
+                    }
+                    std::println(os, "{}", line2);
+                    for (const std::string& s : comments2) {
+                        std::println(os, "{}", s);
+                    }
+                    return;
+                }
+                if (std::regex_match(line3, rxcomment)) {
+                    comments2.emplace_back(line3);
+                    continue;
+                }
+                break;
+            }
+            // Check if line3 is a label matching both jump targets
+            if (std::regex_search(line3, match, rxlbl) && jmplbl1 == match[1] &&
+                jmplbl2 == match[1]) {
+                // Optimization: output comments from both jumps and the label
+                for (const std::string& s : comments) {
+                    std::println(os, "{}", s);
+                }
+                for (const std::string& s : comments2) {
+                    std::println(os, "{}", s);
+                }
+                std::println(os, "{}", line3);
+                optimizations++;
+                continue;
+            }
+            // No optimization: output all buffered data
             std::println(os, "{}", line1);
             for (const std::string& s : comments) {
                 std::println(os, "{}", s);
             }
             std::println(os, "{}", line2);
-            continue;
-        }
-
-        const std::string lbl{match[1]};
-
-        // if not same label then output the buffered data and continues
-        if (jmplbl != lbl) {
-            std::println(os, "{}", line1);
-            for (const std::string& s : comments) {
+            for (const std::string& s : comments2) {
                 std::println(os, "{}", s);
             }
-            std::println(os, "{}", line2);
+            std::println(os, "{}", line3);
             continue;
         }
-
-        // write the label without the preceding jmp
+        // line2 is not a jump, check if it's a label matching the first jump
+        if (std::regex_search(line2, match, rxlbl)) {
+            const std::string lbl{match[1]};
+            if (jmplbl1 == lbl) {
+                // Optimization: output comments and the label
+                for (const std::string& s : comments) {
+                    std::println(os, "{}", s);
+                }
+                std::println(os, "{}", line2);
+                optimizations++;
+                continue;
+            }
+        }
+        // No optimization: output all buffered data
+        std::println(os, "{}", line1);
         for (const std::string& s : comments) {
             std::println(os, "{}", s);
         }
         std::println(os, "{}", line2);
-        optimizations++;
     }
     std::println(os, ";          optimization pass 1: {}", optimizations);
 }

@@ -162,8 +162,8 @@ class expr_bool_ops_list final : public statement {
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const std::string_view jmp_to_if_false,
-                 const std::string_view jmp_to_if_true,
-                 const bool inverted) const -> std::optional<bool> {
+                 const std::string_view jmp_to_if_true, const bool inverted,
+                 const std::string_view dst) const -> std::optional<bool> {
 
         tc.comment_source(*this, os, indent, "?",
                           inverted ? " inverted: " : " ");
@@ -200,7 +200,7 @@ class expr_bool_ops_list final : public statement {
                             std::unreachable();
                         }
                         std::optional<bool> const_eval{el.compile(
-                            tc, os, indent, jmp_false, jmp_true, invert)};
+                            tc, os, indent, jmp_false, jmp_true, invert, dst)};
                         if (const_eval) {
                             // expression evaluated to a constant
 
@@ -237,7 +237,7 @@ class expr_bool_ops_list final : public statement {
                         }
 
                         std::optional<bool> const_eval{el.compile(
-                            tc, os, indent, jmp_false, jmp_true, invert)};
+                            tc, os, indent, jmp_false, jmp_true, invert, dst)};
                         // did expression evaluate to a constant?
                         if (const_eval) {
                             // yes, short-circuit
@@ -259,7 +259,7 @@ class expr_bool_ops_list final : public statement {
                     // 'jmp_false' is the next bool ops list
                     std::optional<bool> const_eval{
                         el.compile(tc, os, indent, jmp_to_if_false,
-                                   jmp_to_if_true, invert)};
+                                   jmp_to_if_true, invert, dst)};
 
                     // did expression evaluate to a constant?
                     // is it only element? then it is sure true or false
@@ -308,14 +308,14 @@ class expr_bool_ops_list final : public statement {
                     // not last element
                     if (ops_[i].is_text("or")) {
                         std::optional<bool> const_eval{e.compile_or(
-                            tc, os, indent, jmp_to_if_true, invert)};
+                            tc, os, indent, jmp_to_if_true, invert, dst)};
                         if (const_eval and *const_eval) {
                             // constant evaluated to true, short-circuit
                             return true;
                         }
                     } else if (ops_[i].is_text("and")) {
                         std::optional<bool> const_eval{e.compile_and(
-                            tc, os, indent, jmp_to_if_false, invert)};
+                            tc, os, indent, jmp_to_if_false, invert, dst)};
                         if (const_eval and not *const_eval) {
                             // constant evaluated to false, short-circuit
                             return false;
@@ -325,8 +325,8 @@ class expr_bool_ops_list final : public statement {
                     }
                 } else {
                     // last element
-                    std::optional<bool> const_eval{
-                        e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
+                    std::optional<bool> const_eval{e.compile_and(
+                        tc, os, indent, jmp_to_if_false, invert, dst)};
                     if (const_eval) {
                         return *const_eval;
                     }
@@ -341,14 +341,14 @@ class expr_bool_ops_list final : public statement {
                     // not last element
                     if (ops_[i].is_text("and")) {
                         std::optional<bool> const_eval{e.compile_or(
-                            tc, os, indent, jmp_to_if_true, invert)};
+                            tc, os, indent, jmp_to_if_true, invert, dst)};
                         if (const_eval and *const_eval) {
                             // constant evaluated to true, short-circuit
                             return true;
                         }
                     } else if (ops_[i].is_text("or")) {
                         std::optional<bool> const_eval{e.compile_and(
-                            tc, os, indent, jmp_to_if_false, invert)};
+                            tc, os, indent, jmp_to_if_false, invert, dst)};
                         if (const_eval and not *const_eval) {
                             // constant evaluated to false, short-circuit
                             return false;
@@ -358,8 +358,8 @@ class expr_bool_ops_list final : public statement {
                     }
                 } else {
                     // last element
-                    std::optional<bool> const_eval{
-                        e.compile_and(tc, os, indent, jmp_to_if_false, invert)};
+                    std::optional<bool> const_eval{e.compile_and(
+                        tc, os, indent, jmp_to_if_false, invert, dst)};
                     if (const_eval) {
                         return *const_eval;
                     }

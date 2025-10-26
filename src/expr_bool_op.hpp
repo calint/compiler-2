@@ -107,8 +107,8 @@ class expr_bool_op final : public statement {
     // returns an optional bool and if defined the expression evaluated to
     // the value of the optional
     auto compile_or(toc& tc, std::ostream& os, const size_t indent,
-                    const std::string_view jmp_to_if_true,
-                    const bool inverted) const -> std::optional<bool> {
+                    const std::string_view jmp_to_if_true, const bool inverted,
+                    const std::string_view dst) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
         tc.comment_source(*this, os, indent, "?",
@@ -142,6 +142,9 @@ class expr_bool_op final : public statement {
             resolve_cmp_shorthand(tc, os, indent, lhs_);
             // note: compares with 0
 
+            if (not dst.empty()) {
+                toc::asm_setcc(os, indent, asm_cc_for_op("!=", invert), dst);
+            }
             toc::asm_jcc(os, indent, asm_cc_for_op("!=", invert),
                          jmp_to_if_true);
 
@@ -181,13 +184,17 @@ class expr_bool_op final : public statement {
         //       if statement compile time evaluates constant expressions prior
         //       to reaching this
         resolve_cmp(tc, os, indent, lhs_, rhs_);
+        if (not dst.empty()) {
+            toc::asm_setcc(os, indent, asm_cc_for_op(op_, invert), dst);
+        }
         toc::asm_jcc(os, indent, asm_cc_for_op(op_, invert), jmp_to_if_true);
         return std::nullopt;
     }
 
     auto compile_and(toc& tc, std::ostream& os, const size_t indent,
                      const std::string_view jmp_to_if_false,
-                     const bool inverted) const -> std::optional<bool> {
+                     const bool inverted, const std::string_view dst) const
+        -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
         tc.comment_source(*this, os, indent, "?",
@@ -219,6 +226,9 @@ class expr_bool_op final : public statement {
             resolve_cmp_shorthand(tc, os, indent, lhs_);
             // note: compares with 0
 
+            if (not dst.empty()) {
+                toc::asm_setcc(os, indent, asm_cc_for_op("!=", invert), dst);
+            }
             toc::asm_jcc(os, indent, asm_cc_for_op("==", invert),
                          jmp_to_if_false);
 
@@ -263,6 +273,9 @@ class expr_bool_op final : public statement {
         // }
 
         resolve_cmp(tc, os, indent, lhs_, rhs_);
+        if (not dst.empty()) {
+            toc::asm_setcc(os, indent, asm_cc_for_op(op_, invert), dst);
+        }
         toc::asm_jcc(os, indent, asm_cc_for_op(op_, not invert),
                      jmp_to_if_false);
         return std::nullopt;

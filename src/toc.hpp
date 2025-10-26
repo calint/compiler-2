@@ -1625,10 +1625,10 @@ class toc final {
 
     static auto asm_setcc(std::ostream& os, const size_t indnt,
                           const std::string_view comparison,
-                          const std::string_view label) -> void {
+                          const std::string_view operand) -> void {
 
         indent(os, indnt);
-        std::println(os, "set{} {}", comparison, label);
+        std::println(os, "set{} {}", comparison, operand);
     }
 
     static auto get_field_offset_in_type(const token& src_loc_tk,

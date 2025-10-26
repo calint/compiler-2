@@ -103,19 +103,4 @@ if [ $BUILD_ONLY -eq 1 ]; then
   exit 0
 fi
 
-echo $SEP
-echo '              lines   words   chars'
-echo -n '    source: '
-cat src/* | wc
-echo -n '   gzipped: '
-cat src/* | gzip | wc
-echo -n 'baz source: '
-cat prog.baz | grep -v -e'^\s*$' | wc
-echo -n '   gzipped: '
-cat prog.baz | grep -v -e'^\s*$' | gzip | wc
-echo -n 'asm source: '
-cat gen-without-comments.s | wc
-echo -n '   gzipped: '
-cat gen-without-comments.s | gzip | wc
-
 ./run-baz.sh prog.baz --stack=131072 --checks=upper,lower,line

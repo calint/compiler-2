@@ -95,45 +95,30 @@ class expr_any final : public statement {
                                            : std::format("_{}", call_path)))};
 
                     // labels to jump to depending on the evaluation
-                    const std::string jmp_to_if_true{
-                        std::format("bool_true_{}", postfix)};
-                    const std::string jmp_to_if_false{
-                        std::format("bool_false_{}", postfix)};
                     const std::string jmp_to_end{
                         std::format("bool_end_{}", postfix)};
 
                     // compile and possibly evaluate constant expression
                     std::optional<bool> const_eval{
-                        e.compile(tc, os, indent, jmp_to_if_false,
-                                  jmp_to_if_true, false)};
+                        e.compile(tc, os, indent, jmp_to_end, jmp_to_end, false,
+                                  dst_info.operand)};
+
+                    // not constant evaluation
+                    toc::asm_label(os, indent, jmp_to_end);
 
                     // did the evaluation result in a constant?
                     if (const_eval) {
                         // yes, constant evaluation
                         if (*const_eval) {
                             // constant evaluation is true
-                            toc::asm_label(os, indent, jmp_to_if_true);
                             tc.asm_cmd(tok(), os, indent, "mov",
                                        dst_info.operand, "true");
-                            return;
+                        } else {
+                            // constant evaluation is false
+                            tc.asm_cmd(tok(), os, indent, "mov",
+                                       dst_info.operand, "false");
                         }
-                        // constant evaluation is false
-                        toc::asm_label(os, indent, jmp_to_if_false);
-                        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
-                                   "false");
-                        return;
                     }
-
-                    // not constant evaluation
-                    toc::asm_label(os, indent, jmp_to_if_true);
-                    tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
-                               "true");
-                    toc::asm_jmp(os, indent, jmp_to_end);
-
-                    toc::asm_label(os, indent, jmp_to_if_false);
-                    tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
-                               "false");
-                    toc::asm_label(os, indent, jmp_to_end);
                 }},
             var_);
     }

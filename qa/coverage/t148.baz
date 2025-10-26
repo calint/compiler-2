@@ -1,0 +1,26 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func main() {
+    var x = 1
+    var y = 2
+
+    var b : bool
+
+    b = x == 1
+    assert(b)
+
+    b = x
+    assert(b)
+    
+    b = x == 1 and y == 2
+    assert(b)
+
+    b = x == 1 or y == 2
+    assert(b)
+}
