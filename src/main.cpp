@@ -554,6 +554,8 @@ inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
 namespace {
 
 //
+// jump optimizer, pass 1
+//
 //  example:
 //    jmp cmp_13_26
 //    cmp_13_26:
@@ -567,7 +569,7 @@ namespace {
 //  to
 //    bool_end_15_9:
 //
-// note: re-write to something that handles comments
+// note: add support for comments
 //
 auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
     const std::regex rx_jcc{R"(^\s*j[a-z]{1,2}\s+(.+)\s*$)"};
@@ -592,32 +594,30 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
 
     std::string line;
     while (getline(is, line)) {
-        // note: type 1: jcc,  type 2: label
         if (std::regex_search(line, match, rx_jcc)) {
-            // matched a jcc
+            // matched a jcc (conditional or unconditional jump)
             if (buffer.empty() or (buffer.back().type == elem::type::JCC and
                                    buffer.back().label == match[1])) {
-                // buffer jumps to same label
+                // buffer jccs to same label
                 buffer.emplace_back(line, match[1], elem::type::JCC);
             } else {
-                // a jump to a different label than buffered, flush buffered
-                // code
+                // jcc to a different label than the buffer, flush buffer
                 flush_buffer();
-                // add it to the buffer starting a new sequence
+                // add it to the buffer to start a new sequence
                 buffer.emplace_back(line, match[1], elem::type::JCC);
             }
         } else if (std::regex_search(line, match, rx_lbl)) {
             // matched a label
             if (not buffer.empty() and buffer.back().type == elem::type::JCC and
                 buffer.back().label == match[1]) {
-                // label after jump(s) to this label, remove the jumps, print
+                // label after jccs to this label, remove the jccs, print
                 // the label
                 opts_count += buffer.size();
                 buffer.clear();
                 std::println(os, "{}", line);
             } else {
-                // a label that differs from the buffered jumps, flush buffer
-                // and print the label
+                // label that differs from the buffered jccs, flush buffer and
+                // print the label
                 flush_buffer();
                 std::println(os, "{}", line);
             }
@@ -630,7 +630,9 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
     std::println(os, ";          optimization pass 1: {}", opts_count);
 }
 
-// opt2
+//
+// jump optimizer, pass 2
+//
 // example:
 //   jne cmp_14_26
 //   jmp if_14_8_code
