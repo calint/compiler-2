@@ -595,6 +595,8 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
             buffer[0].label == buffer[1].label and
             buffer[1].label == buffer[2].label) {
 
+            // std::println(os, ";{}", buffer[0].line);
+            // std::println(os, ";{}", buffer[1].line);
             std::println(os, "{}", buffer[2].line);
             buffer.clear();
             opts_type_1++;
@@ -602,6 +604,7 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
         } else if (buffer.size() == 2 and buffer[0].type == 1 and
                    buffer[1].type == 2 and buffer[0].label == buffer[1].label) {
 
+            // std::println(os, ";{}", buffer[0].line);
             std::println(os, "{}", buffer[1].line);
             buffer.clear();
             opts_type_2++;
@@ -616,20 +619,24 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
         if (is.eof()) { //? what if there is no new line at end of file?
             break;
         }
-
+        // note: type 1: jmp,  type 2: label
         if (std::regex_search(line, match, rxjmp)) {
-            if (buffer.empty() or buffer.back().label == match[1]) {
+            if (buffer.empty() or
+                (buffer.back().type == 1 and buffer.back().label == match[1])) {
                 buffer.emplace_back(line, match[1], 1);
             } else {
                 process_buffer();
                 buffer.emplace_back(line, match[1], 1);
             }
         } else if (std::regex_search(line, match, rxlbl)) {
-            if (buffer.empty() or buffer.back().label == match[1]) {
+            if (not buffer.empty() and buffer.back().type == 1 and
+                buffer.back().label == match[1]) {
+
                 buffer.emplace_back(line, match[1], 2);
+                process_buffer();
             } else {
                 process_buffer();
-                buffer.emplace_back(line, match[1], 1);
+                std::println(os, "{}", line);
             }
         } else {
             process_buffer();
