@@ -609,14 +609,14 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
                 buffer.emplace_back(line, match[1], 1);
             }
         } else if (std::regex_search(line, match, rxlbl)) {
-            // a label
+            // matched a label
             if (not buffer.empty() and buffer.back().type == 1 and
                 buffer.back().label == match[1]) {
-                // label after jump(s) to this label, remove the jumps, keep the
-                // label
-                std::println(os, "{}", line);
+                // label after jump(s) to this label, remove the jumps, print
+                // the label
                 buffer.clear();
                 opts_count++;
+                std::println(os, "{}", line);
             } else {
                 // a label that differs from the buffered jumps, flush buffer
                 // and print the label
@@ -624,7 +624,7 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
                 std::println(os, "{}", line);
             }
         } else {
-            // an instruction, flush buffer, print instruction
+            // matched something else, flush buffer, print it
             flush_buffer();
             std::println(os, "{}", line);
         }
