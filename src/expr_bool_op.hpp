@@ -10,12 +10,12 @@
 #include "expr_ops_list.hpp"
 
 class expr_bool_op final : public statement {
-    static constexpr std::string_view asm_je{"je"};
-    static constexpr std::string_view asm_jne{"jne"};
-    static constexpr std::string_view asm_jl{"jl"};
-    static constexpr std::string_view asm_jle{"jle"};
-    static constexpr std::string_view asm_jg{"jg"};
-    static constexpr std::string_view asm_jge{"jge"};
+    static constexpr std::string_view asm_je{"e"};
+    static constexpr std::string_view asm_jne{"ne"};
+    static constexpr std::string_view asm_jl{"l"};
+    static constexpr std::string_view asm_jle{"le"};
+    static constexpr std::string_view asm_jg{"g"};
+    static constexpr std::string_view asm_jge{"ge"};
 
     std::vector<token> nots_;
     expr_ops_list lhs_;
@@ -140,8 +140,7 @@ class expr_bool_op final : public statement {
                     if (const_eval) {
                         // since it is an 'or' chain short-circuit
                         // expression and jump to label for true
-                        toc::indent(os, indent);
-                        std::println(os, "jmp {}", jmp_to_if_true);
+                        toc::asm_jmp(os, indent, jmp_to_if_true);
                     }
                     return const_eval;
                 }
@@ -149,12 +148,13 @@ class expr_bool_op final : public statement {
 
             // 'lhs' is an expression
             resolve_cmp_shorthand(tc, os, indent, lhs_);
-            toc::indent(os, indent);
-            // note: shorthand variant checks for "not false"
-            std::println(os, "{} {}",
+
+            toc::asm_jxx(os, indent,
                          (not invert ? asm_jxx_for_op_inv("==") // "not false"
                                      : asm_jxx_for_op("==")),
                          jmp_to_if_true);
+            // note: shorthand variant checks for "not false"
+
             return std::nullopt;
         }
 
@@ -191,8 +191,7 @@ class expr_bool_op final : public statement {
         //       if statement compile time evaluates constant expressions prior
         //       to reaching this
         resolve_cmp(tc, os, indent, lhs_, rhs_);
-        toc::indent(os, indent);
-        std::println(os, "{} {}",
+        toc::asm_jxx(os, indent,
                      invert ? asm_jxx_for_op_inv(op_) : asm_jxx_for_op(op_),
                      jmp_to_if_true);
         return std::nullopt;
@@ -230,10 +229,8 @@ class expr_bool_op final : public statement {
 
             // left-hand-side is expression
             resolve_cmp_shorthand(tc, os, indent, lhs_);
-            toc::indent(os, indent);
-            // note: jump to "if false label" if result is "false"
-            std::println(
-                os, "{} {}",
+            toc::asm_jxx(
+                os, indent,
                 (not invert ? asm_jxx_for_op("==") : asm_jxx_for_op_inv("==")),
                 jmp_to_if_false);
             return std::nullopt;
@@ -277,8 +274,7 @@ class expr_bool_op final : public statement {
         // }
 
         resolve_cmp(tc, os, indent, lhs_, rhs_);
-        toc::indent(os, indent);
-        std::println(os, "{} {}",
+        toc::asm_jxx(os, indent,
                      invert ? asm_jxx_for_op(op_) : asm_jxx_for_op_inv(op_),
                      jmp_to_if_false);
         return std::nullopt;
