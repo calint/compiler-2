@@ -650,9 +650,8 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
     std::smatch match;
 
     size_t optimizations{};
-    while (true) {
-        std::string line1;
-        getline(is, line1);
+    std::string line1;
+    while (getline(is, line1)) {
         if (is.eof()) { //? what if there is no new line at end of file?
             break;
         }
@@ -664,10 +663,9 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         const std::string jxx{match[1]};
         const std::string jxxlbl{match[2]};
 
-        std::string line2;
         std::vector<std::string> comments2;
-        while (true) { // read comments
-            getline(is, line2);
+        std::string line2;
+        while (getline(is, line2)) { // read comments
             if (std::regex_match(line2, rxcomment)) {
                 comments2.emplace_back(line2);
                 continue;
@@ -684,10 +682,9 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         }
         const std::string jmplbl{match[1]};
 
-        std::string line3;
         std::vector<std::string> comments3;
-        while (true) { // read comments
-            getline(is, line3);
+        std::string line3;
+        while (getline(is, line3)) { // read comments
             if (std::regex_match(line3, rxcomment)) {
                 comments3.emplace_back(line3);
                 continue;
