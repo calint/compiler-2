@@ -590,6 +590,7 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
     };
 
     auto process_buffer = [&]() -> void {
+        // check for the jxx label, jxx label, label: case
         if (buffer.size() == 3 and buffer[0].type == 1 and
             buffer[1].type == 1 and buffer[2].type == 2 and
             buffer[0].label == buffer[1].label and
@@ -601,6 +602,7 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
             buffer.clear();
             opts_type_1++;
 
+            // check for the jxx label, label: case
         } else if (buffer.size() == 2 and buffer[0].type == 1 and
                    buffer[1].type == 2 and buffer[0].label == buffer[1].label) {
 
@@ -621,24 +623,31 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
         }
         // note: type 1: jmp,  type 2: label
         if (std::regex_search(line, match, rxjmp)) {
+            // matched a jump
             if (buffer.empty() or
                 (buffer.back().type == 1 and buffer.back().label == match[1])) {
+                // buffer jumps to same label
                 buffer.emplace_back(line, match[1], 1);
             } else {
+                // a jump to a different label, process buffered code
                 process_buffer();
+                // add it to the buffer starting a new sequence
                 buffer.emplace_back(line, match[1], 1);
             }
         } else if (std::regex_search(line, match, rxlbl)) {
+            // a label
             if (not buffer.empty() and buffer.back().type == 1 and
                 buffer.back().label == match[1]) {
-
+                // label after jump to same label, add and process
                 buffer.emplace_back(line, match[1], 2);
                 process_buffer();
             } else {
+                // a label that differs from the buffered jumps
                 process_buffer();
                 std::println(os, "{}", line);
             }
         } else {
+            // an instruction, process buffer, print instruction
             process_buffer();
             std::println(os, "{}", line);
         }
