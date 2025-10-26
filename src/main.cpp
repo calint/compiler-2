@@ -1,6 +1,7 @@
 // review: 2025-09-29
 
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <format>
 #include <fstream>
@@ -569,8 +570,6 @@ namespace {
 //  to
 //    bool_end_15_9:
 //
-// note: add support for comments
-//
 auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
     const std::regex rx_jcc{R"(^\s*j[a-z]{1,2}\s+(.+)\s*$)"};
     const std::regex rx_lbl{R"(^\s*([a-zA-Z_][a-zA-Z0-9_]*):\s*$)"};
@@ -641,81 +640,57 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
 //   je if_14_8_code
 //   cmp_14_26:
 //
-// note: ugly code
 auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
-    const std::regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
-    const std::regex rxjxx{R"(^\s*(j[a-z][a-z]?)\s+(.+)\s*$)"};
-    const std::regex rxlbl{R"(^\s*(.+):.*$)"};
-    const std::regex rxcomment{R"(^\s*;.*$)"};
+    const std::regex rx_jmp{R"(^\s*jmp\s+(.+)\s*$)"};
+    const std::regex rx_jcc{R"(^\s*(j[a-z][a-z]?)\s+(.+)\s*$)"};
+    const std::regex rx_lbl{R"(^\s*(.+):.*$)"};
     std::smatch match;
 
     size_t optimizations{};
+
     std::string line1;
     while (getline(is, line1)) {
-        if (is.eof()) { //? what if there is no new line at end of file?
-            break;
-        }
-
-        if (not std::regex_search(line1, match, rxjxx)) {
+        if (not std::regex_search(line1, match, rx_jcc)) {
             std::println(os, "{}", line1);
             continue;
         }
-        const std::string jxx{match[1]};
-        const std::string jxxlbl{match[2]};
 
-        std::vector<std::string> comments2;
+        const std::string jcc{match[1]};
+        const std::string jcc_lbl{match[2]};
+
         std::string line2;
-        while (getline(is, line2)) { // read comments
-            if (std::regex_match(line2, rxcomment)) {
-                comments2.emplace_back(line2);
-                continue;
-            }
-            break;
-        }
-        if (not std::regex_search(line2, match, rxjmp)) {
+        if (not getline(is, line2)) {
             std::println(os, "{}", line1);
-            for (const std::string& s : comments2) {
-                std::println(os, "{}", s);
-            }
+            return;
+        }
+
+        if (not std::regex_search(line2, match, rx_jmp)) {
+            std::println(os, "{}", line1);
             std::println(os, "{}", line2);
             continue;
         }
-        const std::string jmplbl{match[1]};
 
-        std::vector<std::string> comments3;
+        const std::string jmp_lbl{match[1]};
+
         std::string line3;
-        while (getline(is, line3)) { // read comments
-            if (std::regex_match(line3, rxcomment)) {
-                comments3.emplace_back(line3);
-                continue;
-            }
-            break;
+        if (not getline(is, line3)) {
+            std::println(os, "{}", line1);
+            std::println(os, "{}", line2);
+            return;
         }
 
-        if (not std::regex_search(line3, match, rxlbl)) {
+        if (not std::regex_search(line3, match, rx_lbl)) {
             std::println(os, "{}", line1);
-            for (const std::string& s : comments2) {
-                std::println(os, "{}", s);
-            }
             std::println(os, "{}", line2);
-            for (const std::string& s : comments3) {
-                std::println(os, "{}", s);
-            }
             std::println(os, "{}", line3);
             continue;
         }
 
         const std::string lbl{match[1]};
 
-        if (jxxlbl != lbl) {
+        if (jcc_lbl != lbl) {
             std::println(os, "{}", line1);
-            for (const std::string& s : comments2) {
-                std::println(os, "{}", s);
-            }
             std::println(os, "{}", line2);
-            for (const std::string& s : comments3) {
-                std::println(os, "{}", s);
-            }
             std::println(os, "{}", line3);
             continue;
         }
@@ -724,42 +699,32 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
         //   jmp if_14_8_code
         //   cmp_14_26:
         std::string jxx_inv;
-        if (jxx == "jne") {
+        if (jcc == "jne") {
             jxx_inv = "je";
-        } else if (jxx == "je") {
+        } else if (jcc == "je") {
             jxx_inv = "jne";
-        } else if (jxx == "jg") {
+        } else if (jcc == "jg") {
             jxx_inv = "jle";
-        } else if (jxx == "jge") {
+        } else if (jcc == "jge") {
             jxx_inv = "jl";
-        } else if (jxx == "jl") {
+        } else if (jcc == "jl") {
             jxx_inv = "jge";
-        } else if (jxx == "jle") {
+        } else if (jcc == "jle") {
             jxx_inv = "jg";
         } else {
             std::println(os, "{}", line1);
-            for (const std::string& s : comments2) {
-                std::println(os, "{}", s);
-            }
             std::println(os, "{}", line2);
-            for (const std::string& s : comments3) {
-                std::println(os, "{}", s);
-            }
             std::println(os, "{}", line3);
             continue;
         }
         //   je if_14_8_code
         //   cmp_14_26:
+
         // get the whitespaces
         const std::string ws_before{
             line1.substr(0, line1.find_first_not_of(" \t\n\r\f\v"))};
-        for (const std::string& s : comments2) {
-            std::println(os, "{}", s);
-        }
-        std::println(os, "{}{} {}", ws_before, jxx_inv, jmplbl);
-        for (const std::string& s : comments3) {
-            std::println(os, "{}", s);
-        }
+
+        std::println(os, "{}{} {}", ws_before, jxx_inv, jmp_lbl);
         std::println(os, "{}", line3);
         optimizations++;
     }
