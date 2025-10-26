@@ -4,19 +4,11 @@
 #include <cassert>
 #include <optional>
 #include <ostream>
-#include <ranges>
 #include <utility>
 
 #include "expr_ops_list.hpp"
 
 class expr_bool_op final : public statement {
-    static constexpr std::string_view asm_je{"e"};
-    static constexpr std::string_view asm_jne{"ne"};
-    static constexpr std::string_view asm_jl{"l"};
-    static constexpr std::string_view asm_jle{"le"};
-    static constexpr std::string_view asm_jg{"g"};
-    static constexpr std::string_view asm_jge{"ge"};
-
     std::vector<token> nots_;
     expr_ops_list lhs_;
     std::string op_; // '<', '<=', '>', '>=', '==', '!='
@@ -149,9 +141,7 @@ class expr_bool_op final : public statement {
             // 'lhs' is an expression
             resolve_cmp_shorthand(tc, os, indent, lhs_);
 
-            toc::asm_jxx(os, indent,
-                         (not invert ? asm_jxx_for_op_inv("==") // "not false"
-                                     : asm_jxx_for_op("==")),
+            toc::asm_jxx(os, indent, asm_cc_for_op("!=", invert),
                          jmp_to_if_true);
             // note: shorthand variant checks for "not false"
 
@@ -227,8 +217,11 @@ class expr_bool_op final : public statement {
 
             // left-hand-side is expression
             resolve_cmp_shorthand(tc, os, indent, lhs_);
+
             toc::asm_jxx(os, indent, asm_cc_for_op("==", invert),
                          jmp_to_if_false);
+            // note: shorthand variant checks for "not false"
+
             return std::nullopt;
         }
 
@@ -270,9 +263,8 @@ class expr_bool_op final : public statement {
         // }
 
         resolve_cmp(tc, os, indent, lhs_, rhs_);
-        toc::asm_jxx(os, indent,
-                     // invert ? asm_jxx_for_op(op_) : asm_jxx_for_op_inv(op_),
-                     asm_cc_for_op(op_, not invert), jmp_to_if_false);
+        toc::asm_jxx(os, indent, asm_cc_for_op(op_, not invert),
+                     jmp_to_if_false);
         return std::nullopt;
     }
 
@@ -360,28 +352,6 @@ class expr_bool_op final : public statement {
         std::unreachable();
     }
 
-    static auto asm_jxx_for_op(const std::string_view op) -> std::string_view {
-        if (op == "==") {
-            return asm_je;
-        }
-        if (op == "!=") {
-            return asm_jne;
-        }
-        if (op == "<") {
-            return asm_jl;
-        }
-        if (op == "<=") {
-            return asm_jle;
-        }
-        if (op == ">") {
-            return asm_jg;
-        }
-        if (op == ">=") {
-            return asm_jge;
-        }
-        std::unreachable();
-    }
-
     static auto asm_cc_for_op(const std::string_view op, const bool inverted)
         -> std::string_view {
         if (op == "==") {
@@ -401,30 +371,6 @@ class expr_bool_op final : public statement {
         }
         if (op == ">=") {
             return inverted ? "l" : "ge";
-        }
-        std::unreachable();
-    }
-
-    static auto asm_jxx_for_op_inv(const std::string_view op)
-        -> std::string_view {
-
-        if (op == "==") {
-            return asm_jne;
-        }
-        if (op == "!=") {
-            return asm_je;
-        }
-        if (op == "<") {
-            return asm_jge;
-        }
-        if (op == "<=") {
-            return asm_jg;
-        }
-        if (op == ">") {
-            return asm_jle;
-        }
-        if (op == ">=") {
-            return asm_jl;
         }
         std::unreachable();
     }
@@ -454,7 +400,7 @@ class expr_bool_op final : public statement {
         std::vector<std::string> allocated_registers;
         const std::string dst{
             resolve_expr(tc, os, indent, lhs, true, allocated_registers)};
-        tc.asm_cmd(tok(), os, indent, "test", dst, dst);
+        tc.asm_cmd(tok(), os, indent, "cmp", dst, "false");
         for (const auto& reg : allocated_registers | std::views::reverse) {
             tc.free_scratch_register(tok(), os, indent, reg);
         }
