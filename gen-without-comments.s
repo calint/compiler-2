@@ -71,7 +71,6 @@ main:
         cmp_20_29_109_5:
         cmp r15b, false
         jne if_20_26_109_5_end
-        jmp if_20_29_109_5_code
         if_20_29_109_5_code:
             mov rdi, 1
             exit_20_38_109_5:
@@ -97,7 +96,6 @@ main:
         cmp_20_29_110_5:
         cmp r15b, false
         jne if_20_26_110_5_end
-        jmp if_20_29_110_5_code
         if_20_29_110_5_code:
             mov rdi, 1
             exit_20_38_110_5:
@@ -145,7 +143,6 @@ main:
         cmp_20_29_114_5:
         cmp r15b, false
         jne if_20_26_114_5_end
-        jmp if_20_29_114_5_code
         if_20_29_114_5_code:
             mov rdi, 1
             exit_20_38_114_5:
@@ -211,7 +208,6 @@ main:
         cmp_20_29_118_5:
         cmp r15b, false
         jne if_20_26_118_5_end
-        jmp if_20_29_118_5_code
         if_20_29_118_5_code:
             mov rdi, 1
             exit_20_38_118_5:
@@ -263,7 +259,6 @@ main:
         cmp_20_29_122_5:
         cmp r15b, false
         jne if_20_26_122_5_end
-        jmp if_20_29_122_5_code
         if_20_29_122_5_code:
             mov rdi, 1
             exit_20_38_122_5:
@@ -313,7 +308,6 @@ main:
         cmp_20_29_126_5:
         cmp r15b, false
         jne if_20_26_126_5_end
-        jmp if_20_29_126_5_code
         if_20_29_126_5_code:
             mov rdi, 1
             exit_20_38_126_5:
@@ -350,7 +344,6 @@ main:
         cmp_20_29_129_5:
         cmp r15b, false
         jne if_20_26_129_5_end
-        jmp if_20_29_129_5_code
         if_20_29_129_5_code:
             mov rdi, 1
             exit_20_38_129_5:
@@ -374,7 +367,6 @@ main:
         cmp_20_29_133_5:
         cmp r15b, false
         jne if_20_26_133_5_end
-        jmp if_20_29_133_5_code
         if_20_29_133_5_code:
             mov rdi, 1
             exit_20_38_133_5:
@@ -392,7 +384,6 @@ main:
         cmp_20_29_134_5:
         cmp r15b, false
         jne if_20_26_134_5_end
-        jmp if_20_29_134_5_code
         if_20_29_134_5_code:
             mov rdi, 1
             exit_20_38_134_5:
@@ -424,7 +415,6 @@ main:
         cmp_20_29_137_5:
         cmp r15b, false
         jne if_20_26_137_5_end
-        jmp if_20_29_137_5_code
         if_20_29_137_5_code:
             mov rdi, 1
             exit_20_38_137_5:
@@ -453,7 +443,6 @@ main:
         cmp_20_29_142_5:
         cmp r15b, false
         jne if_20_26_142_5_end
-        jmp if_20_29_142_5_code
         if_20_29_142_5_code:
             mov rdi, 1
             exit_20_38_142_5:
@@ -468,7 +457,6 @@ main:
         cmp_59_8_145_5:
         cmp qword [rsp - 96], 0
         jne if_59_5_145_5_end
-        jmp if_59_8_145_5_code
         if_59_8_145_5_code:
             jmp bar_145_5_end
         if_59_5_145_5_end:
@@ -483,7 +471,6 @@ main:
         cmp_20_29_146_5:
         cmp r15b, false
         jne if_20_26_146_5_end
-        jmp if_20_29_146_5_code
         if_20_29_146_5_code:
             mov rdi, 1
             exit_20_38_146_5:
@@ -498,7 +485,6 @@ main:
         cmp_59_8_149_5:
         cmp qword [rsp - 96], 0
         jne if_59_5_149_5_end
-        jmp if_59_8_149_5_code
         if_59_8_149_5_code:
             jmp bar_149_5_end
         if_59_5_149_5_end:
@@ -513,7 +499,6 @@ main:
         cmp_20_29_150_5:
         cmp r15b, false
         jne if_20_26_150_5_end
-        jmp if_20_29_150_5_code
         if_20_29_150_5_code:
             mov rdi, 1
             exit_20_38_150_5:
@@ -537,7 +522,6 @@ main:
         cmp_20_29_154_5:
         cmp r15b, false
         jne if_20_26_154_5_end
-        jmp if_20_29_154_5_code
         if_20_29_154_5_code:
             mov rdi, 1
             exit_20_38_154_5:
@@ -560,7 +544,6 @@ main:
         cmp_20_29_157_5:
         cmp r15b, false
         jne if_20_26_157_5_end
-        jmp if_20_29_157_5_code
         if_20_29_157_5_code:
             mov rdi, 1
             exit_20_38_157_5:
@@ -585,7 +568,6 @@ main:
         cmp_20_29_160_5:
         cmp r15b, false
         jne if_20_26_160_5_end
-        jmp if_20_29_160_5_code
         if_20_29_160_5_code:
             mov rdi, 1
             exit_20_38_160_5:
@@ -613,7 +595,6 @@ main:
         cmp_20_29_166_5:
         cmp r15b, false
         jne if_20_26_166_5_end
-        jmp if_20_29_166_5_code
         if_20_29_166_5_code:
             mov rdi, 1
             exit_20_38_166_5:
@@ -631,7 +612,6 @@ main:
         cmp_20_29_167_5:
         cmp r15b, false
         jne if_20_26_167_5_end
-        jmp if_20_29_167_5_code
         if_20_29_167_5_code:
             mov rdi, 1
             exit_20_38_167_5:
@@ -649,7 +629,6 @@ main:
         cmp_20_29_168_5:
         cmp r15b, false
         jne if_20_26_168_5_end
-        jmp if_20_29_168_5_code
         if_20_29_168_5_code:
             mov rdi, 1
             exit_20_38_168_5:
@@ -677,7 +656,6 @@ main:
         cmp_20_29_172_5:
         cmp r15b, false
         jne if_20_26_172_5_end
-        jmp if_20_29_172_5_code
         if_20_29_172_5_code:
             mov rdi, 1
             exit_20_38_172_5:
@@ -695,7 +673,6 @@ main:
         cmp_20_29_173_5:
         cmp r15b, false
         jne if_20_26_173_5_end
-        jmp if_20_29_173_5_code
         if_20_29_173_5_code:
             mov rdi, 1
             exit_20_38_173_5:
@@ -717,7 +694,6 @@ main:
         cmp_20_29_176_5:
         cmp r15b, false
         jne if_20_26_176_5_end
-        jmp if_20_29_176_5_code
         if_20_29_176_5_code:
             mov rdi, 1
             exit_20_38_176_5:
@@ -735,7 +711,6 @@ main:
         cmp_20_29_177_5:
         cmp r15b, false
         jne if_20_26_177_5_end
-        jmp if_20_29_177_5_code
         if_20_29_177_5_code:
             mov rdi, 1
             exit_20_38_177_5:
@@ -753,7 +728,6 @@ main:
         cmp_20_29_178_5:
         cmp r15b, false
         jne if_20_26_178_5_end
-        jmp if_20_29_178_5_code
         if_20_29_178_5_code:
             mov rdi, 1
             exit_20_38_178_5:
@@ -786,7 +760,6 @@ main:
         cmp_20_29_183_5:
         cmp r15b, false
         jne if_20_26_183_5_end
-        jmp if_20_29_183_5_code
         if_20_29_183_5_code:
             mov rdi, 1
             exit_20_38_183_5:
@@ -847,7 +820,6 @@ main:
         cmp_20_29_187_5:
         cmp r15b, false
         jne if_20_26_187_5_end
-        jmp if_20_29_187_5_code
         if_20_29_187_5_code:
             mov rdi, 1
             exit_20_38_187_5:
@@ -925,7 +897,6 @@ main:
         cmp_20_29_196_5:
         cmp r15b, false
         jne if_20_26_196_5_end
-        jmp if_20_29_196_5_code
         if_20_29_196_5_code:
             mov rdi, 1
             exit_20_38_196_5:
@@ -990,7 +961,6 @@ main:
         cmp_20_29_197_5:
         cmp r15b, false
         jne if_20_26_197_5_end
-        jmp if_20_29_197_5_code
         if_20_29_197_5_code:
             mov rdi, 1
             exit_20_38_197_5:
@@ -1031,7 +1001,6 @@ main:
         cmp_208_12:
         cmp byte [rsp - 860], 0
         jne if_210_19
-        jmp if_208_12_code
         if_208_12_code:
             jmp loop_205_5_end
         jmp if_208_9_end
@@ -1039,7 +1008,6 @@ main:
         cmp_210_19:
         cmp byte [rsp - 860], 4
         jg if_else_208_9
-        jmp if_210_19_code
         if_210_19_code:
             mov rdx, prompt2.len
             mov rsi, prompt2

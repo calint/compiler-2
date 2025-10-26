@@ -169,7 +169,6 @@ auto main(const int argc, const char* argv[]) -> int {
             std::stringstream ss2;
             prg.build(ss1);
             optimize_jumps_1(ss1, ss2);
-            // note: a second pass to remove e.g. "jne X; jmp X; X:"
             optimize_jumps_2(ss2, std::cout);
         } else {
             prg.build(std::cout);
@@ -553,128 +552,93 @@ inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
 }
 
 namespace {
-//  opt1
+//
 //  example:
-//    je cmp_13_26
 //    jmp cmp_13_26
 //    cmp_13_26:
 //  to
 //    cmp_13_26:
+//
+//  example:
+//    jne bool_end_15_9
+//    jmp bool_end_15_9
+//    bool_end_15_9:
+//  to
+//    bool_end_15_9:
+//
+// note: re-write to something that handles comments
+//       this is ugly code
 auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
     const std::regex rxjmp{R"(^\s*j[a-z]{1,2}\s+(.+)\s*$)"};
-    const std::regex rxlbl{R"(^\s*(.+):.*$)"};
-    const std::regex rxcomment{R"(^\s*;.*$)"};
+    const std::regex rxlbl{R"(^\s*([a-zA-Z_][a-zA-Z0-9_]*):\s*$)"};
     std::smatch match;
-    size_t optimizations{};
+    size_t opts_type_1{};
+    size_t opts_type_2{};
+
+    struct elem {
+        std::string line;
+        std::string label;
+        uint8_t type{}; // 1: jcc, 2: label
+    };
+
+    std::vector<elem> buffer;
+    auto flush_buffer = [&buffer, &os]() -> void {
+        for (auto& e : buffer) {
+            std::println(os, "{}", e.line);
+        }
+        buffer.clear();
+    };
+
     while (true) {
-        std::string line1;
-        if (not std::getline(is, line1)) {
+        std::string line;
+        getline(is, line);
+        if (is.eof()) { //? what if there is no new line at end of file?
             break;
-        }
-        if (not std::regex_search(line1, match, rxjmp)) {
-            std::println(os, "{}", line1);
-            continue;
-        }
-        const std::string jmplbl1{match[1]};
-        std::string line2;
-        std::vector<std::string> comments;
-        while (true) { // read comments
-            if (not std::getline(is, line2)) {
-                std::println(os, "{}", line1);
-                for (const std::string& s : comments) {
-                    std::println(os, "{}", s);
-                }
-                return;
-            }
-            if (std::regex_match(line2, rxcomment)) {
-                comments.emplace_back(line2);
-                continue;
-            }
-            break;
-        }
-        // Check if line2 is a label matching the first jump
-        if (std::regex_search(line2, match, rxlbl) && jmplbl1 == match[1]) {
-            // Optimization: output comments and the label
-            for (const std::string& s : comments) {
-                std::println(os, "{}", s);
-            }
-            std::println(os, "{}", line2);
-            optimizations++;
-            continue;
         }
 
-        // Check if line2 is a jump instruction
-        if (std::regex_search(line2, match, rxjmp)) {
-            const std::string jmplbl2{match[1]};
-            std::string line3;
-            std::vector<std::string> comments2;
-            while (true) { // read more comments
-                if (not std::getline(is, line3)) {
-                    std::println(os, "{}", line1);
-                    for (const std::string& s : comments) {
-                        std::println(os, "{}", s);
-                    }
-                    std::println(os, "{}", line2);
-                    for (const std::string& s : comments2) {
-                        std::println(os, "{}", s);
-                    }
-                    return;
-                }
-                if (std::regex_match(line3, rxcomment)) {
-                    comments2.emplace_back(line3);
-                    continue;
-                }
-                break;
+        if (std::regex_search(line, match, rxjmp)) {
+            if (buffer.empty() or buffer.back().label == match[1]) {
+                buffer.emplace_back(line, match[1], 1);
+            } else {
+                flush_buffer();
+                buffer.emplace_back(line, match[1], 1);
             }
-            // Check if line3 is a label matching both jump targets
-            if (std::regex_search(line3, match, rxlbl) && jmplbl1 == match[1] &&
-                jmplbl2 == match[1]) {
-                // Optimization: output comments from both jumps and the label
-                for (const std::string& s : comments) {
-                    std::println(os, "{}", s);
-                }
-                for (const std::string& s : comments2) {
-                    std::println(os, "{}", s);
-                }
-                std::println(os, "{}", line3);
-                optimizations++;
-                continue;
+        } else if (std::regex_search(line, match, rxlbl)) {
+            if (buffer.empty() or buffer.back().label == match[1]) {
+                buffer.emplace_back(line, match[1], 2);
+            } else {
+                flush_buffer();
+                std::println(os, "{}", line);
             }
-            // No optimization: output all buffered data
-            std::println(os, "{}", line1);
-            for (const std::string& s : comments) {
-                std::println(os, "{}", s);
-            }
-            std::println(os, "{}", line2);
-            for (const std::string& s : comments2) {
-                std::println(os, "{}", s);
-            }
-            std::println(os, "{}", line3);
-            continue;
-        }
-        // line2 is not a jump, check if it's a label matching the first jump
-        if (std::regex_search(line2, match, rxlbl)) {
-            const std::string lbl{match[1]};
-            if (jmplbl1 == lbl) {
-                // Optimization: output comments and the label
-                for (const std::string& s : comments) {
-                    std::println(os, "{}", s);
-                }
-                std::println(os, "{}", line2);
-                optimizations++;
-                continue;
+        } else {
+            if (buffer.size() == 3 and buffer[0].type == 1 and
+                buffer[1].type == 1 and buffer[2].type == 2 and
+                buffer[0].label == buffer[1].label and
+                buffer[1].label == buffer[2].label) {
+
+                std::println(os, "{}", buffer[2].line);
+                std::println(os, "{}", line);
+                buffer.clear();
+                opts_type_1++;
+
+            } else if (buffer.size() == 2 and buffer[0].type == 1 and
+                       buffer[1].type == 2 and
+                       buffer[0].label == buffer[1].label) {
+
+                std::println(os, "{}", buffer[1].line);
+                std::println(os, "{}", line);
+                buffer.clear();
+                opts_type_2++;
+
+            } else {
+                flush_buffer();
+                std::println(os, "{}", line);
             }
         }
-        // No optimization: output all buffered data
-        std::println(os, "{}", line1);
-        for (const std::string& s : comments) {
-            std::println(os, "{}", s);
-        }
-        std::println(os, "{}", line2);
     }
-    std::println(os, ";          optimization pass 1: {}", optimizations);
+    std::println(os, ";          optimization type 1: {}", opts_type_1);
+    std::println(os, ";          optimization type 2: {}", opts_type_2);
 }
-
 // opt2
 // example:
 //   jne cmp_14_26
@@ -683,6 +647,8 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
 // to
 //   je if_14_8_code
 //   cmp_14_26:
+//
+// note: ugly code
 auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
     const std::regex rxjmp{R"(^\s*jmp\s+(.+)\s*$)"};
     const std::regex rxjxx{R"(^\s*(j[a-z][a-z]?)\s+(.+)\s*$)"};
