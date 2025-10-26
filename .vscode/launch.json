@@ -10,7 +10,7 @@
                 "prog.baz",
                 "--stack=131072",
                 "--checks=upper,lower,line",
-                "--nopt"
+                //"--nopt"
             ],
             "cwd": "${workspaceFolder}",
         }

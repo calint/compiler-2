@@ -589,6 +589,27 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
         buffer.clear();
     };
 
+    auto process_buffer = [&]() -> void {
+        if (buffer.size() == 3 and buffer[0].type == 1 and
+            buffer[1].type == 1 and buffer[2].type == 2 and
+            buffer[0].label == buffer[1].label and
+            buffer[1].label == buffer[2].label) {
+
+            std::println(os, "{}", buffer[2].line);
+            buffer.clear();
+            opts_type_1++;
+
+        } else if (buffer.size() == 2 and buffer[0].type == 1 and
+                   buffer[1].type == 2 and buffer[0].label == buffer[1].label) {
+
+            std::println(os, "{}", buffer[1].line);
+            buffer.clear();
+            opts_type_2++;
+        }
+
+        flush_buffer();
+    };
+
     while (true) {
         std::string line;
         getline(is, line);
@@ -600,40 +621,19 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
             if (buffer.empty() or buffer.back().label == match[1]) {
                 buffer.emplace_back(line, match[1], 1);
             } else {
-                flush_buffer();
+                process_buffer();
                 buffer.emplace_back(line, match[1], 1);
             }
         } else if (std::regex_search(line, match, rxlbl)) {
             if (buffer.empty() or buffer.back().label == match[1]) {
                 buffer.emplace_back(line, match[1], 2);
             } else {
-                flush_buffer();
-                std::println(os, "{}", line);
+                process_buffer();
+                buffer.emplace_back(line, match[1], 1);
             }
         } else {
-            if (buffer.size() == 3 and buffer[0].type == 1 and
-                buffer[1].type == 1 and buffer[2].type == 2 and
-                buffer[0].label == buffer[1].label and
-                buffer[1].label == buffer[2].label) {
-
-                std::println(os, "{}", buffer[2].line);
-                std::println(os, "{}", line);
-                buffer.clear();
-                opts_type_1++;
-
-            } else if (buffer.size() == 2 and buffer[0].type == 1 and
-                       buffer[1].type == 2 and
-                       buffer[0].label == buffer[1].label) {
-
-                std::println(os, "{}", buffer[1].line);
-                std::println(os, "{}", line);
-                buffer.clear();
-                opts_type_2++;
-
-            } else {
-                flush_buffer();
-                std::println(os, "{}", line);
-            }
+            process_buffer();
+            std::println(os, "{}", line);
         }
     }
     std::println(os, ";          optimization type 1: {}", opts_type_1);
