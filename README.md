@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    41           1350            737           6480
+C/C++ Header                    41           1349            736           6445
 C++                              1             81             83            603
 -------------------------------------------------------------------------------
-SUM:                            42           1431            820           7083
+SUM:                            42           1430            819           7048
 -------------------------------------------------------------------------------
 ```
 
@@ -359,7 +359,7 @@ main:
     assert_109_5:
         if_20_29_109_5:
         cmp_20_29_109_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_109_5_end
         if_20_29_109_5_code:
             mov rdi, 1
@@ -389,7 +389,7 @@ main:
     assert_110_5:
         if_20_29_110_5:
         cmp_20_29_110_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_110_5_end
         if_20_29_110_5_code:
             mov rdi, 1
@@ -441,7 +441,7 @@ main:
     assert_114_5:
         if_20_29_114_5:
         cmp_20_29_114_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_114_5_end
         if_20_29_114_5_code:
             mov rdi, 1
@@ -500,7 +500,7 @@ main:
         cmps_eq_118_12:
         mov r14, true
         cmps_end_118_12:
-    test r14, r14
+    cmp r14, false
     je bool_false_118_12
     bool_true_118_12:
     mov r15b, true
@@ -511,7 +511,7 @@ main:
     assert_118_5:
         if_20_29_118_5:
         cmp_20_29_118_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_118_5_end
         if_20_29_118_5_code:
             mov rdi, 1
@@ -556,7 +556,7 @@ main:
         cmps_eq_122_16:
         mov r14, true
         cmps_end_122_16:
-    test r14, r14
+    cmp r14, false
     jne bool_false_122_12
     bool_true_122_12:
     mov r15b, true
@@ -567,7 +567,7 @@ main:
     assert_122_5:
         if_20_29_122_5:
         cmp_20_29_122_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_122_5_end
         if_20_29_122_5_code:
             mov rdi, 1
@@ -621,7 +621,7 @@ main:
     assert_126_5:
         if_20_29_126_5:
         cmp_20_29_126_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_126_5_end
         if_20_29_126_5_code:
             mov rdi, 1
@@ -662,7 +662,7 @@ main:
     assert_129_5:
         if_20_29_129_5:
         cmp_20_29_129_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_129_5_end
         if_20_29_129_5_code:
             mov rdi, 1
@@ -690,7 +690,7 @@ main:
     assert_133_5:
         if_20_29_133_5:
         cmp_20_29_133_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_133_5_end
         if_20_29_133_5_code:
             mov rdi, 1
@@ -712,7 +712,7 @@ main:
     assert_134_5:
         if_20_29_134_5:
         cmp_20_29_134_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_134_5_end
         if_20_29_134_5_code:
             mov rdi, 1
@@ -737,7 +737,7 @@ main:
         cmps_eq_137_12:
         mov r14, true
         cmps_end_137_12:
-    test r14, r14
+    cmp r14, false
     je bool_false_137_12
     bool_true_137_12:
     mov r15b, true
@@ -748,7 +748,7 @@ main:
     assert_137_5:
         if_20_29_137_5:
         cmp_20_29_137_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_137_5_end
         if_20_29_137_5_code:
             mov rdi, 1
@@ -770,7 +770,7 @@ main:
         cmps_eq_142_16:
         mov r14, true
         cmps_end_142_16:
-    test r14, r14
+    cmp r14, false
     jne bool_false_142_12
     bool_true_142_12:
     mov r15b, true
@@ -781,7 +781,7 @@ main:
     assert_142_5:
         if_20_29_142_5:
         cmp_20_29_142_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_142_5_end
         if_20_29_142_5_code:
             mov rdi, 1
@@ -814,7 +814,7 @@ main:
     assert_146_5:
         if_20_29_146_5:
         cmp_20_29_146_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_146_5_end
         if_20_29_146_5_code:
             mov rdi, 1
@@ -847,7 +847,7 @@ main:
     assert_150_5:
         if_20_29_150_5:
         cmp_20_29_150_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_150_5_end
         if_20_29_150_5_code:
             mov rdi, 1
@@ -875,7 +875,7 @@ main:
     assert_154_5:
         if_20_29_154_5:
         cmp_20_29_154_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_154_5_end
         if_20_29_154_5_code:
             mov rdi, 1
@@ -902,7 +902,7 @@ main:
     assert_157_5:
         if_20_29_157_5:
         cmp_20_29_157_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_157_5_end
         if_20_29_157_5_code:
             mov rdi, 1
@@ -931,7 +931,7 @@ main:
     assert_160_5:
         if_20_29_160_5:
         cmp_20_29_160_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_160_5_end
         if_20_29_160_5_code:
             mov rdi, 1
@@ -963,7 +963,7 @@ main:
     assert_166_5:
         if_20_29_166_5:
         cmp_20_29_166_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_166_5_end
         if_20_29_166_5_code:
             mov rdi, 1
@@ -985,7 +985,7 @@ main:
     assert_167_5:
         if_20_29_167_5:
         cmp_20_29_167_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_167_5_end
         if_20_29_167_5_code:
             mov rdi, 1
@@ -1007,7 +1007,7 @@ main:
     assert_168_5:
         if_20_29_168_5:
         cmp_20_29_168_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_168_5_end
         if_20_29_168_5_code:
             mov rdi, 1
@@ -1039,7 +1039,7 @@ main:
     assert_172_5:
         if_20_29_172_5:
         cmp_20_29_172_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_172_5_end
         if_20_29_172_5_code:
             mov rdi, 1
@@ -1061,7 +1061,7 @@ main:
     assert_173_5:
         if_20_29_173_5:
         cmp_20_29_173_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_173_5_end
         if_20_29_173_5_code:
             mov rdi, 1
@@ -1087,7 +1087,7 @@ main:
     assert_176_5:
         if_20_29_176_5:
         cmp_20_29_176_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_176_5_end
         if_20_29_176_5_code:
             mov rdi, 1
@@ -1109,7 +1109,7 @@ main:
     assert_177_5:
         if_20_29_177_5:
         cmp_20_29_177_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_177_5_end
         if_20_29_177_5_code:
             mov rdi, 1
@@ -1131,7 +1131,7 @@ main:
     assert_178_5:
         if_20_29_178_5:
         cmp_20_29_178_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_178_5_end
         if_20_29_178_5_code:
             mov rdi, 1
@@ -1168,7 +1168,7 @@ main:
     assert_183_5:
         if_20_29_183_5:
         cmp_20_29_183_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_183_5_end
         if_20_29_183_5_code:
             mov rdi, 1
@@ -1233,7 +1233,7 @@ main:
     assert_187_5:
         if_20_29_187_5:
         cmp_20_29_187_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_187_5_end
         if_20_29_187_5_code:
             mov rdi, 1
@@ -1315,7 +1315,7 @@ main:
     assert_196_5:
         if_20_29_196_5:
         cmp_20_29_196_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_196_5_end
         if_20_29_196_5_code:
             mov rdi, 1
@@ -1373,7 +1373,7 @@ main:
         cmps_eq_197_12:
         mov r14, true
         cmps_end_197_12:
-    test r14, r14
+    cmp r14, false
     je bool_false_197_12
     bool_true_197_12:
     mov r15b, true
@@ -1384,7 +1384,7 @@ main:
     assert_197_5:
         if_20_29_197_5:
         cmp_20_29_197_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_197_5_end
         if_20_29_197_5_code:
             mov rdi, 1
@@ -1695,7 +1695,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_109_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_109_5_end
         if_20_29_109_5_code:
 ;           [20:38] exit(1)
@@ -1754,7 +1754,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_110_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_110_5_end
         if_20_29_110_5_code:
 ;           [20:38] exit(1)
@@ -1861,7 +1861,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_114_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_114_5_end
         if_20_29_114_5_code:
 ;           [20:38] exit(1)
@@ -1982,7 +1982,7 @@ main:
         cmps_eq_118_12:
         mov r14, true
         cmps_end_118_12:
-    test r14, r14
+    cmp r14, false
 ;   [118:12] free scratch register 'r14'
     je bool_false_118_12
     bool_true_118_12:
@@ -1998,7 +1998,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_118_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_118_5_end
         if_20_29_118_5_code:
 ;           [20:38] exit(1)
@@ -2093,7 +2093,7 @@ main:
         cmps_eq_122_16:
         mov r14, true
         cmps_end_122_16:
-    test r14, r14
+    cmp r14, false
 ;   [122:12] free scratch register 'r14'
     jne bool_false_122_12
     bool_true_122_12:
@@ -2109,7 +2109,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_122_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_122_5_end
         if_20_29_122_5_code:
 ;           [20:38] exit(1)
@@ -2222,7 +2222,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_126_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_126_5_end
         if_20_29_126_5_code:
 ;           [20:38] exit(1)
@@ -2305,7 +2305,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_129_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_129_5_end
         if_20_29_129_5_code:
 ;           [20:38] exit(1)
@@ -2368,7 +2368,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_133_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_133_5_end
         if_20_29_133_5_code:
 ;           [20:38] exit(1)
@@ -2411,7 +2411,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_134_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_134_5_end
         if_20_29_134_5_code:
 ;           [20:38] exit(1)
@@ -2474,7 +2474,7 @@ main:
         cmps_eq_137_12:
         mov r14, true
         cmps_end_137_12:
-    test r14, r14
+    cmp r14, false
 ;   [137:12] free scratch register 'r14'
     je bool_false_137_12
     bool_true_137_12:
@@ -2490,7 +2490,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_137_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_137_5_end
         if_20_29_137_5_code:
 ;           [20:38] exit(1)
@@ -2545,7 +2545,7 @@ main:
         cmps_eq_142_16:
         mov r14, true
         cmps_end_142_16:
-    test r14, r14
+    cmp r14, false
 ;   [142:12] free scratch register 'r14'
     jne bool_false_142_12
     bool_true_142_12:
@@ -2561,7 +2561,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_142_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_142_5_end
         if_20_29_142_5_code:
 ;           [20:38] exit(1)
@@ -2627,7 +2627,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_146_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_146_5_end
         if_20_29_146_5_code:
 ;           [20:38] exit(1)
@@ -2691,7 +2691,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_150_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_150_5_end
         if_20_29_150_5_code:
 ;           [20:38] exit(1)
@@ -2759,7 +2759,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_154_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_154_5_end
         if_20_29_154_5_code:
 ;           [20:38] exit(1)
@@ -2820,7 +2820,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_157_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_157_5_end
         if_20_29_157_5_code:
 ;           [20:38] exit(1)
@@ -2887,7 +2887,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_160_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_160_5_end
         if_20_29_160_5_code:
 ;           [20:38] exit(1)
@@ -2964,7 +2964,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_166_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_166_5_end
         if_20_29_166_5_code:
 ;           [20:38] exit(1)
@@ -3007,7 +3007,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_167_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_167_5_end
         if_20_29_167_5_code:
 ;           [20:38] exit(1)
@@ -3050,7 +3050,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_168_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_168_5_end
         if_20_29_168_5_code:
 ;           [20:38] exit(1)
@@ -3119,7 +3119,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_172_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_172_5_end
         if_20_29_172_5_code:
 ;           [20:38] exit(1)
@@ -3162,7 +3162,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_173_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_173_5_end
         if_20_29_173_5_code:
 ;           [20:38] exit(1)
@@ -3218,7 +3218,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_176_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_176_5_end
         if_20_29_176_5_code:
 ;           [20:38] exit(1)
@@ -3261,7 +3261,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_177_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_177_5_end
         if_20_29_177_5_code:
 ;           [20:38] exit(1)
@@ -3304,7 +3304,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_178_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_178_5_end
         if_20_29_178_5_code:
 ;           [20:38] exit(1)
@@ -3379,7 +3379,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_183_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_183_5_end
         if_20_29_183_5_code:
 ;           [20:38] exit(1)
@@ -3512,7 +3512,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_187_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_187_5_end
         if_20_29_187_5_code:
 ;           [20:38] exit(1)
@@ -3676,7 +3676,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_196_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_196_5_end
         if_20_29_196_5_code:
 ;           [20:38] exit(1)
@@ -3795,7 +3795,7 @@ main:
         cmps_eq_197_12:
         mov r14, true
         cmps_end_197_12:
-    test r14, r14
+    cmp r14, false
 ;   [197:12] free scratch register 'r14'
     je bool_false_197_12
     bool_true_197_12:
@@ -3811,7 +3811,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_197_5:
-        test r15b, r15b
+        cmp r15b, false
         jne if_20_26_197_5_end
         if_20_29_197_5_code:
 ;           [20:38] exit(1)

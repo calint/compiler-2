@@ -143,7 +143,6 @@ class expr_bool_op final : public statement {
 
             toc::asm_jxx(os, indent, asm_cc_for_op("!=", invert),
                          jmp_to_if_true);
-            // note: shorthand variant checks for "not false"
 
             return std::nullopt;
         }
@@ -220,7 +219,6 @@ class expr_bool_op final : public statement {
 
             toc::asm_jxx(os, indent, asm_cc_for_op("==", invert),
                          jmp_to_if_false);
-            // note: shorthand variant checks for "not false"
 
             return std::nullopt;
         }
