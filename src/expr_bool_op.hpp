@@ -140,6 +140,7 @@ class expr_bool_op final : public statement {
 
             // 'lhs' is an expression
             resolve_cmp_shorthand(tc, os, indent, lhs_);
+            // note: compares with 0
 
             toc::asm_jxx(os, indent, asm_cc_for_op("!=", invert),
                          jmp_to_if_true);
@@ -216,6 +217,7 @@ class expr_bool_op final : public statement {
 
             // left-hand-side is expression
             resolve_cmp_shorthand(tc, os, indent, lhs_);
+            // note: compares with 0
 
             toc::asm_jxx(os, indent, asm_cc_for_op("==", invert),
                          jmp_to_if_false);
