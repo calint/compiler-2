@@ -49,9 +49,9 @@ run `prog.baz`
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
 C/C++ Header                    41           1350            738           6451
-C++                              1             82            107            616
+C++                              1             77            105            599
 -------------------------------------------------------------------------------
-SUM:                            42           1432            845           7067
+SUM:                            42           1427            843           7050
 -------------------------------------------------------------------------------
 ```
 
@@ -3867,7 +3867,6 @@ section .bss
 ; max scratch registers in use: 5
 ;            max frames in use: 7
 ;               max stack size: 860B
-;          optimization type 1: 28
-;          optimization type 2: 32
+;          optimization pass 1: 60
 ;          optimization pass 2: 0
 ```

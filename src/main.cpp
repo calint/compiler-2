@@ -572,8 +572,7 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
     const std::regex rxjmp{R"(^\s*j[a-z]{1,2}\s+(.+)\s*$)"};
     const std::regex rxlbl{R"(^\s*([a-zA-Z_][a-zA-Z0-9_]*):\s*$)"};
     std::smatch match;
-    size_t opts_type_1{};
-    size_t opts_type_2{};
+    size_t opts_count{};
 
     struct elem {
         std::string line;
@@ -582,37 +581,11 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
     };
 
     std::vector<elem> buffer;
-    auto flush_buffer = [&buffer, &os]() -> void {
-        for (auto& e : buffer) {
+    auto flush_buffer = [&]() -> void {
+        for (const auto& e : buffer) {
             std::println(os, "{}", e.line);
         }
         buffer.clear();
-    };
-
-    auto process_buffer = [&]() -> void {
-        // check for the jxx label, jxx label, label: case
-        if (buffer.size() == 3 and buffer[0].type == 1 and
-            buffer[1].type == 1 and buffer[2].type == 2 and
-            buffer[0].label == buffer[1].label and
-            buffer[1].label == buffer[2].label) {
-
-            // std::println(os, ";{}", buffer[0].line);
-            // std::println(os, ";{}", buffer[1].line);
-            std::println(os, "{}", buffer[2].line);
-            buffer.clear();
-            opts_type_1++;
-
-            // check for the jxx label, label: case
-        } else if (buffer.size() == 2 and buffer[0].type == 1 and
-                   buffer[1].type == 2 and buffer[0].label == buffer[1].label) {
-
-            // std::println(os, ";{}", buffer[0].line);
-            std::println(os, "{}", buffer[1].line);
-            buffer.clear();
-            opts_type_2++;
-        }
-
-        flush_buffer();
     };
 
     while (true) {
@@ -629,8 +602,9 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
                 // buffer jumps to same label
                 buffer.emplace_back(line, match[1], 1);
             } else {
-                // a jump to a different label, process buffered code
-                process_buffer();
+                // a jump to a different label than buffered, flush buffered
+                // code
+                flush_buffer();
                 // add it to the buffer starting a new sequence
                 buffer.emplace_back(line, match[1], 1);
             }
@@ -638,22 +612,24 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
             // a label
             if (not buffer.empty() and buffer.back().type == 1 and
                 buffer.back().label == match[1]) {
-                // label after jump to same label, add and process
-                buffer.emplace_back(line, match[1], 2);
-                process_buffer();
+                // label after jump(s) to this label, remove the jumps, keep the
+                // label
+                std::println(os, "{}", line);
+                buffer.clear();
+                opts_count++;
             } else {
-                // a label that differs from the buffered jumps
-                process_buffer();
+                // a label that differs from the buffered jumps, flush buffer
+                // and print the label
+                flush_buffer();
                 std::println(os, "{}", line);
             }
         } else {
-            // an instruction, process buffer, print instruction
-            process_buffer();
+            // an instruction, flush buffer, print instruction
+            flush_buffer();
             std::println(os, "{}", line);
         }
     }
-    std::println(os, ";          optimization type 1: {}", opts_type_1);
-    std::println(os, ";          optimization type 2: {}", opts_type_2);
+    std::println(os, ";          optimization pass 1: {}", opts_count);
 }
 // opt2
 // example:
