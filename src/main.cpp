@@ -552,6 +552,7 @@ inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
 }
 
 namespace {
+
 //
 //  example:
 //    jmp cmp_13_26
@@ -567,55 +568,52 @@ namespace {
 //    bool_end_15_9:
 //
 // note: re-write to something that handles comments
-//       this is ugly code
+//
 auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
-    const std::regex rxjmp{R"(^\s*j[a-z]{1,2}\s+(.+)\s*$)"};
-    const std::regex rxlbl{R"(^\s*([a-zA-Z_][a-zA-Z0-9_]*):\s*$)"};
+    const std::regex rx_jcc{R"(^\s*j[a-z]{1,2}\s+(.+)\s*$)"};
+    const std::regex rx_lbl{R"(^\s*([a-zA-Z_][a-zA-Z0-9_]*):\s*$)"};
     std::smatch match;
     size_t opts_count{};
 
     struct elem {
+        enum class type : uint8_t { JCC, LABEL };
         std::string line;
         std::string label;
-        uint8_t type{}; // 1: jcc, 2: label
+        type type{};
     };
 
     std::vector<elem> buffer;
     auto flush_buffer = [&]() -> void {
-        for (const auto& e : buffer) {
+        for (const elem& e : buffer) {
             std::println(os, "{}", e.line);
         }
         buffer.clear();
     };
 
-    while (true) {
-        std::string line;
-        getline(is, line);
-        if (is.eof()) { //? what if there is no new line at end of file?
-            break;
-        }
-        // note: type 1: jmp,  type 2: label
-        if (std::regex_search(line, match, rxjmp)) {
-            // matched a jump
-            if (buffer.empty() or
-                (buffer.back().type == 1 and buffer.back().label == match[1])) {
+    std::string line;
+    while (getline(is, line)) {
+        // note: type 1: jcc,  type 2: label
+        if (std::regex_search(line, match, rx_jcc)) {
+            // matched a jcc
+            if (buffer.empty() or (buffer.back().type == elem::type::JCC and
+                                   buffer.back().label == match[1])) {
                 // buffer jumps to same label
-                buffer.emplace_back(line, match[1], 1);
+                buffer.emplace_back(line, match[1], elem::type::JCC);
             } else {
                 // a jump to a different label than buffered, flush buffered
                 // code
                 flush_buffer();
                 // add it to the buffer starting a new sequence
-                buffer.emplace_back(line, match[1], 1);
+                buffer.emplace_back(line, match[1], elem::type::JCC);
             }
-        } else if (std::regex_search(line, match, rxlbl)) {
+        } else if (std::regex_search(line, match, rx_lbl)) {
             // matched a label
-            if (not buffer.empty() and buffer.back().type == 1 and
+            if (not buffer.empty() and buffer.back().type == elem::type::JCC and
                 buffer.back().label == match[1]) {
                 // label after jump(s) to this label, remove the jumps, print
                 // the label
+                opts_count += buffer.size();
                 buffer.clear();
-                opts_count++;
                 std::println(os, "{}", line);
             } else {
                 // a label that differs from the buffered jumps, flush buffer
@@ -631,6 +629,7 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
     }
     std::println(os, ";          optimization pass 1: {}", opts_count);
 }
+
 // opt2
 // example:
 //   jne cmp_14_26

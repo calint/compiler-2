@@ -1,3 +1,5 @@
+[ ] ponder representing nasm instructions in classes to have better opportunity
+    to optmize compared to current text based optmize_jump_x
 [x] expr_bool_op: revert from "test" to  "cmp" because testing memory operand
     results in 2 instructions while "cmp" is 1
     => maybe check if operand is register and use test in that case? worth it?
