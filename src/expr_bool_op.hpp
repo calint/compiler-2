@@ -191,9 +191,7 @@ class expr_bool_op final : public statement {
         //       if statement compile time evaluates constant expressions prior
         //       to reaching this
         resolve_cmp(tc, os, indent, lhs_, rhs_);
-        toc::asm_jxx(os, indent,
-                     invert ? asm_jxx_for_op_inv(op_) : asm_jxx_for_op(op_),
-                     jmp_to_if_true);
+        toc::asm_jxx(os, indent, asm_cc_for_op(op_, invert), jmp_to_if_true);
         return std::nullopt;
     }
 
@@ -229,10 +227,8 @@ class expr_bool_op final : public statement {
 
             // left-hand-side is expression
             resolve_cmp_shorthand(tc, os, indent, lhs_);
-            toc::asm_jxx(
-                os, indent,
-                (not invert ? asm_jxx_for_op("==") : asm_jxx_for_op_inv("==")),
-                jmp_to_if_false);
+            toc::asm_jxx(os, indent, asm_cc_for_op("==", invert),
+                         jmp_to_if_false);
             return std::nullopt;
         }
 
@@ -275,8 +271,8 @@ class expr_bool_op final : public statement {
 
         resolve_cmp(tc, os, indent, lhs_, rhs_);
         toc::asm_jxx(os, indent,
-                     invert ? asm_jxx_for_op(op_) : asm_jxx_for_op_inv(op_),
-                     jmp_to_if_false);
+                     // invert ? asm_jxx_for_op(op_) : asm_jxx_for_op_inv(op_),
+                     asm_cc_for_op(op_, not invert), jmp_to_if_false);
         return std::nullopt;
     }
 
@@ -382,6 +378,29 @@ class expr_bool_op final : public statement {
         }
         if (op == ">=") {
             return asm_jge;
+        }
+        std::unreachable();
+    }
+
+    static auto asm_cc_for_op(const std::string_view op, const bool inverted)
+        -> std::string_view {
+        if (op == "==") {
+            return inverted ? "ne" : "e";
+        }
+        if (op == "!=") {
+            return inverted ? "e" : "ne";
+        }
+        if (op == "<") {
+            return inverted ? "ge" : "l";
+        }
+        if (op == "<=") {
+            return inverted ? "g" : "le";
+        }
+        if (op == ">") {
+            return inverted ? "le" : "g";
+        }
+        if (op == ">=") {
+            return inverted ? "l" : "ge";
         }
         std::unreachable();
     }
