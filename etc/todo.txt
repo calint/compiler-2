@@ -1,9 +1,10 @@
 [x] expr_bool_op: revert from "test" to  "cmp" because testing memory operand
     results in 2 instructions while "cmp" is 1
     => maybe check if operand is register and use test in that case? worth it?
-[ ] bool_ops_list: if destination is a boolean ponder how to use setcc
+[x] bool_ops_list: if destination is a boolean ponder how to use setcc
     => exploratory coding did not pan out well giving marginal less jmps
        with more complexity
+    => done, relies heavily on optmize_1 which is remarkably ugly code
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
     if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] a way of doing x += y like operations. maybe detect patter x = x + 1?
