@@ -1,3 +1,6 @@
+[x] expr_bool_op: revert from "test" to  "cmp" because testing memory operand
+    results in 2 instructions while "cmp" is 1
+    => maybe check if operand is register and use test in that case? worth it?
 [ ] bool_ops_list: if destination is a boolean ponder how to use setcc
     => exploratory coding did not pan out well giving marginal less jmps
        with more complexity
