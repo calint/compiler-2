@@ -161,7 +161,7 @@ class stmt_builtin_equal final : public expression {
             tc.create_unique_label(tok(), "cmps_eq")};
         const std::string lbl_end{tc.create_unique_label(tok(), "cmps_end")};
 
-        toc::asm_jxx(os, indent, "e", lbl_if_equal); // je
+        toc::asm_jcc(os, indent, "e", lbl_if_equal); // je
         tc.asm_cmd(tok(), os, indent, "mov", dst, "false");
         toc::asm_jmp(os, indent, lbl_end);
         toc::asm_label(os, indent, lbl_if_equal);

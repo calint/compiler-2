@@ -440,7 +440,7 @@ class stmt_identifier : public statement {
             if (tc.is_bounds_check_with_line()) {
                 tc.asm_cmd(tk, os, indent, "cmovs", "rbp", reg_line_num);
             }
-            toc::asm_jxx(os, indent, "s", "panic_bounds");
+            toc::asm_jcc(os, indent, "s", "panic_bounds");
         }
 
         if (tc.is_bounds_check_upper()) {
@@ -461,7 +461,7 @@ class stmt_identifier : public statement {
                            "rbp", reg_line_num);
             }
             if (tc.is_bounds_check_upper()) {
-                toc::asm_jxx(os, indent, comparison, "panic_bounds");
+                toc::asm_jcc(os, indent, comparison, "panic_bounds");
             }
         }
 

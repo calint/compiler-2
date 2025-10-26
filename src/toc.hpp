@@ -1548,7 +1548,7 @@ class toc final {
         std::println(os, "jmp {}", label);
     }
 
-    static auto asm_jxx(std::ostream& os, const size_t indnt,
+    static auto asm_jcc(std::ostream& os, const size_t indnt,
                         const std::string_view comparison,
                         const std::string_view label) -> void {
 
@@ -1621,6 +1621,14 @@ class toc final {
 
         indent(os, indnt);
         std::println(os, "repe cmps{}", size);
+    }
+
+    static auto asm_setcc(std::ostream& os, const size_t indnt,
+                          const std::string_view comparison,
+                          const std::string_view label) -> void {
+
+        indent(os, indnt);
+        std::println(os, "set{} {}", comparison, label);
     }
 
     static auto get_field_offset_in_type(const token& src_loc_tk,
