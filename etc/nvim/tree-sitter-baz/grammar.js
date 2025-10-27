@@ -115,7 +115,7 @@ module.exports = grammar({
     // member_field name: type
     member_field: $ => seq(
       field('name', $.identifier),
-      optional(seq(':', $._definition_type)),
+      optional(seq(':', field('type', $._definition_type))),
     ),
 
     // -------------------------------------------------------------------------
@@ -140,14 +140,14 @@ module.exports = grammar({
     ),
 
     sized_array_type: $ => seq(
-      $._base_type,
+      field('type', $._base_type),
       '[',
-      $.number_literal,
+      field('size', $.number_literal),
       ']',
     ),
 
     unsized_array_type: $ => seq(
-      $._base_type,
+      field('type', $._base_type),
       '[',
       ']',
     ),
