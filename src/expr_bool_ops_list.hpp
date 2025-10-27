@@ -217,7 +217,7 @@ class expr_bool_ops_list final : public statement {
                         }
                     } else {
                         // invert, according to De Morgan's laws,
-                        // if not, the last element check if it is an 'or' or
+                        // if not the last element check if it is an 'or' or
                         // 'and' list
                         if (ops_[i].is_text("and")) {
                             // 'and' list inverted
