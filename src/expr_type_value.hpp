@@ -2,7 +2,6 @@
 // reviewed: 2025-09-29
 
 #include <memory>
-#include <ostream>
 #include <span>
 #include <string>
 #include <string_view>
@@ -52,7 +51,7 @@ class expr_type_value final : public statement {
 
     [[nodiscard]] auto is_make_copy() const -> bool {
         return not tok().is_text("");
-        // note: if token is empty then it is an expression of type `{ ... }`
+        // note: if token is empty then it is an expression of a type `{ ... }`
         //       otherwise e.g. `p = pt`
     }
 

@@ -175,7 +175,7 @@ class stmt_call : public expression {
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
 
-            // if the argument is an identifier with indexing then save the
+            // if the argument is an identifier with indexing, then save the
             // "lea" address to the base of that array
             if (not arg.is_expression() and
                 (arg.is_indexed() or tc.has_lea(arg))) {

@@ -56,7 +56,7 @@ class expr_ops_list final : public expression {
         // start with provided precedence
         uint8_t precedence{first_op_precedence};
 
-        while (true) { // +a  +3
+        while (true) { // +a +3
             // if the end of sub-expression
             if (enclosed_ and tz.is_next_char(')')) {
                 // return from recursion
@@ -126,7 +126,7 @@ class expr_ops_list final : public expression {
             if (precedence != initial_precedence and
                 next_precedence < precedence and not is_base_expression_) {
                 // yes, return to the parent expression
-                // e.g. a-b*c+3 => becomes a-(b*c+3) otherwise
+                // e.g., a-b*c+3 => becomes a-(b*c+3) otherwise
                 ops_.pop_back();
                 return;
             }
@@ -275,7 +275,7 @@ class expr_ops_list final : public expression {
             return true;
         }
 
-        // if only 1 element then it decides if it is an expression
+        // if only 1 element, then it decides if it is an expression
         if (exprs_.size() == 1) {
             return exprs_[0]->is_expression();
         }
@@ -504,7 +504,7 @@ class expr_ops_list final : public expression {
         // note: 'imul' destination operand must be register
 
         // note: special case for byte sized multiplication because
-        //       x86_64 does not support constant as second operand for
+        //       x86_64 does not support constant as a second operand for
         //       byte size operation
         if (dst_size == 1) {
             std::vector<std::string> lea_registers;

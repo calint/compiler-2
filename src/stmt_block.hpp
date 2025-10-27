@@ -26,8 +26,8 @@ class stmt_block final : public statement {
     token ws3_; // whitespace after '}'
 
   public:
-    // note: parser assumes tokenizer is at a '{' or it is considered a single
-    //       statement block
+    // note: parser assumes the tokenizer is at a '{' or it is considered a
+    // single statement block
     stmt_block(toc& tc, tokenizer& tz)
         : statement{tz.current_position_token()},
           is_one_statement_{not tz.is_next_char('{')} {

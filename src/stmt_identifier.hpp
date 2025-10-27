@@ -159,7 +159,7 @@ class stmt_identifier : public statement {
             return;
         }
 
-        // simple identifier or is indexing in array or relative to "lea"
+        // simple identifier or is indexing in an array or relative to "lea"
 
         if (not is_indexed() and not src_info.has_lea()) {
             // note: contains no array indexing and is not relative a lea,
@@ -170,7 +170,7 @@ class stmt_identifier : public statement {
             return;
         }
 
-        // is indexing in array or relative to "lea"
+        // is indexing in an array or relative to "lea"
 
         std::vector<std::string> allocated_registers;
 
@@ -234,7 +234,7 @@ class stmt_identifier : public statement {
             }
         }
 
-        // start at element with "lea" or 0 when no "lea" found
+        // start at an element with "lea" or 0 when no "lea" found
         std::string path{elems[elem_index_with_lea].name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
 
@@ -250,7 +250,7 @@ class stmt_identifier : public statement {
 
             // handle array access without indexing
             if (not curr_elem.array_index_expr) {
-                // bounds check for last element without indexing
+                // bounds check for the last element without indexing
                 if (is_last and not reg_size.empty() and curr_info.is_array) {
                     emit_bounds_check(src_loc_tk, tc, os, indent, reg_size,
                                       curr_info.array_size, "g");
@@ -306,7 +306,7 @@ class stmt_identifier : public statement {
                             : accum_offset};
                     const char op{(reg_offset == "rsp") ? '-' : '+'};
 
-                    // make nice output with un-necessary assembler such as * 1
+                    // make nice output with unnecessary assembler such as * 1
                     // + 0 etc
                     if (type_size == 1) {
                         if (offset != 0) {
@@ -408,7 +408,7 @@ class stmt_identifier : public statement {
     }
 
   private:
-    // helper function to emit bounds checking code
+    // helper function to emit bound checking code
     static auto emit_bounds_check(const token& tk, toc& tc, std::ostream& os,
                                   const size_t indent,
                                   const std::string_view reg_to_check,
@@ -480,7 +480,7 @@ class stmt_identifier : public statement {
         -> std::string {
 
         if (not lea.empty()) {
-            // if no change will be done to the lea register just return it
+            // if no change is done to the lea register, just return it
             if (no_changes_to_reg_offset_after_this and
                 not(will_be_indirect_indexed and operand{lea}.is_indexed())) {
                 return lea;

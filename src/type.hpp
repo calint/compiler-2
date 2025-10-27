@@ -1,7 +1,6 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include <cstddef>
 #include <format>
 #include <ranges>
 #include <span>
@@ -121,7 +120,8 @@ class type final {
         const type* tp{this};
         size_t offset{};
         for (const auto& field_name : path | std::views::drop(1)) {
-            // note: drop 1 because first element is retrieved outside the loop
+            // note: drop 1 because the first element is retrieved outside the
+            // loop
             const type_field& fld{tp->field(src_loc_tk, field_name)};
             offset += fld.offset;
             tp = fld.type_ptr;

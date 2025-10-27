@@ -1,7 +1,6 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include <cstddef>
 #include <format>
 #include <memory>
 #include <string>
@@ -191,7 +190,7 @@ class stmt_def_var final : public statement {
             return;
         }
 
-        // mov less than threshold for rep stos
+        // mov less than a threshold for rep stos
 
         tc.comment_start(tok(), os, indent);
         std::println(os, "size <= {}B, use mov", threshold_for_rep_stos);

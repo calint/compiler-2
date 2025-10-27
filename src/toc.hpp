@@ -2,10 +2,8 @@
 // review: 2025-09-29
 
 #include <algorithm>
-#include <cstddef>
 #include <cstdint>
 #include <format>
-#include <iostream>
 #include <optional>
 #include <ostream>
 #include <print>
@@ -74,7 +72,7 @@ class frame final {
 
   public:
     frame(const std::string_view name, const frame_type frm_type,
-          const std::optional<func_return_info> func_ret_info = {},
+          const std::optional<func_return_info>& func_ret_info = {},
           std::string call_path = "", std::string func_ret_label = "") noexcept
         : name_{name}, call_path_{std::move(call_path)},
           func_ret_label_{std::move(func_ret_label)}, func_ret_{func_ret_info},
@@ -208,7 +206,7 @@ struct operand {
             R"(^\s*)"
             R"(([a-z0-9]+)?)"                              // base register
             R"((?:\s*\+\s*(r[a-z0-9]+|[a-z][a-z0-9]*?))?)" // +index (must start
-                                                           // with letter)
+                                                           // with a letter)
             R"((?:\s*\*\s*([1248]))?)"                     // *scale
             R"((?:\s*([+-])\s*(\d+))?)"                    // +/- displacement
             R"(\s*$)");
@@ -583,7 +581,7 @@ class toc final {
                 return;
             }
 
-            // sign-extend `src_op` to scratch register, then do the op then
+            // sign-extend `src_op` to scratch register, then do the op, then
             // mov the sign-extended register to destination
 
             // note: when doing arithmetic between 2 memory locations, this code
@@ -912,16 +910,16 @@ class toc final {
         if (is_operand_register(operand)) {
             return get_size_from_register_operand(operand);
         }
-        const size_t reg_size{get_size_from_register_operand(operand)};
-        if (reg_size) {
+        if (const size_t reg_size{get_size_from_register_operand(operand)}) {
             return reg_size;
         }
         // constant
         return get_type_default().size();
     }
 
-    auto get_sized_register_operand(const std::string_view operand,
-                                    const size_t size) -> std::string {
+    [[nodiscard]] auto
+    get_sized_register_operand(const std::string_view operand,
+                               const size_t size) const -> std::string {
 
         //? sort of ugly
         if (operand == "rax") {
@@ -1328,8 +1326,9 @@ class toc final {
         size_t i{frames_.size()};
         std::vector<std::string> lea_path;
         // ignore the elements after the base:
-        //  e.g: lnks[1].pos.y
-        //   ignore pos.y since those cannot have lea, add empty leas for those
+        //  e.g.: lnks[1].pos.y
+        //   ignore pos.y since those cannot have a lea, add empty leas for
+        //   those
         const size_t n{id.path().size()};
         for (size_t j{1}; j < n; j++) {
             lea_path.emplace_back("");
@@ -1384,7 +1383,7 @@ class toc final {
 
             ii.elem_path = std::vector(id.path().begin(), id.path().end());
             //? fishy stuff adjusting lea_path size
-            // pad the lea path to have same size as the other vectors
+            // pad the lea path to have the same size as the other vectors
             ii.type_path = type_path;
             for (size_t j{lea_path.size()}; j < id.path().size(); j++) {
                 lea_path.emplace_back("");
@@ -1738,11 +1737,10 @@ class toc final {
     static auto parse_to_constant(const std::string_view str)
         -> std::optional<int64_t> {
 
-        constexpr size_t base_hex{16};
-        constexpr size_t base_binary{2};
-
         // is it hex?
-        if (str.starts_with("0x") or str.starts_with("0X")) { // hex
+        if (str.starts_with("0x") or str.starts_with("0X")) {
+            constexpr size_t base_hex{16};
+            // hex
             int64_t value{};
             std::string_view sv{str};
             sv.remove_prefix(2); // skip "0x" or "0X"
@@ -1756,7 +1754,9 @@ class toc final {
         }
 
         // is it binary?
-        if (str.starts_with("0b") or str.starts_with("0B")) { // binary
+        if (str.starts_with("0b") or str.starts_with("0B")) {
+            constexpr size_t base_binary{2};
+            // binary
             int64_t value{};
             std::string_view sv{str};
             sv.remove_prefix(2); // skip "0b" or "0B"

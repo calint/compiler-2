@@ -59,9 +59,9 @@ class expr_bool_ops_list final : public statement {
                 expr_bool_ops_list bol{tc, pos_tk, tz, true, maybe_not_tk};
                 // check if 'expr_bool_ops_list' parsed an expression,
                 // wrongfully, as the shorthand boolean expression
-                //   e.g. not ((t1 + t2) > 2)
-                //        where (t1 + t2) is a valid 'expr_bool_ops_list' of 1
-                //        element with the expression 't1 + t2'
+                //   e.g., not ((t1 + t2) > 2)
+                //         where (t1 + t2) is a valid 'expr_bool_ops_list' of 1
+                //         element with the expression 't1 + t2'
                 if (std::string_view{"<>=!+-*/%&|^"}.contains(tz.peek_char())) {
                     // it is a 'bool_op', reposition the tokenizer and parse it
                     tz.rewind_to_position(rewind_pos_tk);
@@ -186,7 +186,7 @@ class expr_bool_ops_list final : public statement {
                         // if not last element check if it is an 'or' or
                         // 'and' list
                         if (ops_[i].is_text("or")) {
-                            // if evaluation is false and the next op is 'or'
+                            // if evaluation is false and the next op is 'or',
                             // then 'jump_false' goes to the next bool op in
                             // the list
                             jmp_false =
@@ -216,21 +216,21 @@ class expr_bool_ops_list final : public statement {
                             }
                         }
                     } else {
-                        // invert, according to De Morgan's laws
+                        // invert, according to De Morgan's laws,
                         // if not, the last element check if it is an 'or' or
                         // 'and' list
                         if (ops_[i].is_text("and")) {
                             // 'and' list inverted
                             // if evaluation is false and the next op is 'or'
-                            // (inverted from 'and') then 'jump_false' is
+                            // (inverted from 'and'), then 'jump_false' is
                             // the next bool op in the list
                             jmp_false =
                                 create_cmp_label_from(tc, bools_[i + 1]);
                         } else if (ops_[i].is_text("or")) {
                             // 'or' list inverted
                             // if evaluation is true and the next op is 'and'
-                            // (inverted from 'or') then 'jump_true' is the next
-                            // bool op in the list
+                            // (inverted from 'or'), then 'jump_true' is the
+                            // next bool op in the list
                             jmp_true = create_cmp_label_from(tc, bools_[i + 1]);
                         } else {
                             std::unreachable();
@@ -262,7 +262,7 @@ class expr_bool_ops_list final : public statement {
                                    jmp_to_if_true, invert, dst)};
 
                     // did expression evaluate to a constant?
-                    // is it only element? then it is sure true or false
+                    // is it only an element? then it is sure true or false
                     if (const_eval) {
                         // if only element return evaluation
                         if (i == 0) {
@@ -302,7 +302,7 @@ class expr_bool_ops_list final : public statement {
             // expr_bool_op
             //
             if (not invert) {
-                // a == 1 and b == 2   vs   a == 1 or b == 2
+                // a == 1 and b == 2 vs. a == 1 or b == 2
                 const expr_bool_op& e{get<expr_bool_op>(bools_[i])};
                 if (i < n - 1) {
                     // not last element
@@ -330,12 +330,12 @@ class expr_bool_ops_list final : public statement {
                     if (const_eval) {
                         return *const_eval;
                     }
-                    // if not yet jumped to false then jump to true
+                    // if not yet jumped to false, then jump to true
                     toc::asm_jmp(os, indent, jmp_to_if_true);
                 }
             } else {
                 // inverted according to De Morgan's laws
-                // a=1 and b=2   vs   a=1 or b=2
+                // a=1 and b=2 vs. a=1 or b=2
                 const expr_bool_op& e{get<expr_bool_op>(bools_[i])};
                 if (i < n - 1) {
                     // not last element
@@ -363,7 +363,7 @@ class expr_bool_ops_list final : public statement {
                     if (const_eval) {
                         return *const_eval;
                     }
-                    // if not yet jumped to false then jump to true
+                    // if not yet jumped to false, then jump to true
                     toc::asm_jmp(os, indent, jmp_to_if_true);
                 }
             }

@@ -124,7 +124,7 @@ class stmt_builtin_equal final : public expression {
         char rep_size{'b'};
         size_t rcx{type_size};
 
-        // check comparing 2 arrays of same size without indexing
+        // check comparing 2 arrays of the same size without indexing
         if (lhs_info.is_array and not lhs_.is_indexed() and
             rhs_info.is_array and not rhs_.is_indexed()) {
 

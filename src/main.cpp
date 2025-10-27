@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <cstdio>
-#include <cstring>
 #include <format>
 #include <fstream>
 #include <iostream>
@@ -282,7 +281,7 @@ inline auto create_expr_any(toc& tc, tokenizer& tz, const type& tp,
 
 // declared in 'expr_type_value.hpp'
 // note: constructor and destructor is implemented in 'main.cpp' where the
-//       'expr_any' definition is known. clang++ -std=c++23 requires it
+//       'expr_any' definition is known. clang++ -std=c++23 has required it
 //       since changes to handling of unique_ptr to incomplete types
 
 inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
@@ -291,7 +290,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     set_type(tp);
 
     // is it an identifier?
-    // note: token name would be empty at "{ x, y }" type of statement
+    // note: token name would be empty at the "{x, y}" type of statement
     if (not tok().is_text("")) {
         // yes, e.g. obj.pos = p
 
@@ -304,12 +303,12 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
                                      "to copy or initializer using '{...}'"};
         }
 
-        // check that identifier type matches expected type
+        // check that an identifier type matches the expected type
         const ident_info src_info{
             tc.make_ident_info(tok(), stmt_ident_->identifier())};
 
         if (tp.name() != src_info.type_ptr->name()) {
-            // note: checked source location report ok
+            // note: checked a source location report ok
             throw compiler_exception{
                 tok(),
                 std::format("type '{}' does not match expected type '{}'",
@@ -330,7 +329,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     const size_t nflds{flds.size()};
     for (size_t i{}; i < nflds; i++) {
         const type_field& fld{flds[i]};
-        // create expression that assigns to field
+        // create an expression that assigns to field
         // might recurse creating 'expr_type_value'
         exprs_.emplace_back(create_expr_any(tc, tz, *fld.type_ptr, true));
 
@@ -359,7 +358,7 @@ expr_type_value::~expr_type_value() = default;
 // resolves circular reference: expr_type_value -> expr_any ->
 // expr_type_value
 inline void expr_type_value::source_to(std::ostream& os) const {
-    // is it an identifier? because that was printed by statement
+    // is it an identifier? because statement printed that
     if (is_make_copy()) {
         stmt_ident_->source_to(os);
         return;
@@ -423,7 +422,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         std::println(os, "copy field '{}'", fld.name);
 
         if (not fld.type_ptr->is_built_in()) {
-            // not-builtin, statement is `expr_type_value`
+            // a not-builtin statement is `expr_type_value`
             const expr_type_value& expr{exprs_[i]->as_expr_type_value()};
             expr.compile_assign(tc, os, indent, *fld.type_ptr, dst_op);
             i++;

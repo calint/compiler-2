@@ -9,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "panic_exception.hpp"
 #include "tokenizer.hpp"
 
 class toc;

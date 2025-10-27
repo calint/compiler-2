@@ -3,7 +3,6 @@
 
 #include <format>
 #include <optional>
-#include <ostream>
 #include <span>
 #include <string>
 #include <string_view>

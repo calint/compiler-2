@@ -1,7 +1,6 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include <cstddef>
 #include <optional>
 #include <ostream>
 #include <ranges>
@@ -200,7 +199,7 @@ class stmt_def_func final : public statement {
                 continue;
             }
 
-            // argument passed as a  named register
+            // argument passed as a named register
             toc::indent(os, indent + 1, true);
             std::println(os, "{}: {}", prm_name, prm_reg);
 
@@ -212,7 +211,7 @@ class stmt_def_func final : public statement {
                 .lea = "",
                 .type_ptr = &prm_type,
             });
-            // note: this is a dry run compilation so array size is not known
+            // note: this is a dry run compilation, so array size is not known
             //       here
             allocated_named_registers.emplace_back(prm_reg);
         }

@@ -104,7 +104,7 @@ class expr_bool_op final : public statement {
         std::unreachable();
     }
 
-    // returns an optional bool and if defined the expression evaluated to
+    // returns an optional bool, and if defined the expression evaluated to
     // the value of the optional
     auto compile_or(toc& tc, std::ostream& os, const size_t indent,
                     const std::string_view jmp_to_if_true, const bool inverted,
@@ -117,7 +117,7 @@ class expr_bool_op final : public statement {
         if (is_shorthand_) {
             // is 'lhs' a constant?
             if (not lhs_.is_expression()) {
-                // yes, left-hand-side is not a expression, either a
+                // yes, the left-hand-side is not an expression, either a
                 // constant or an identifier
                 const ident_info& lhs_info{tc.make_ident_info(lhs_)};
                 if (lhs_info.is_const()) {
@@ -180,14 +180,17 @@ class expr_bool_op final : public statement {
         }
 
         // left-hand-side or right-hand-side or both are expressions
-        // note: if lhs is constant then a scratch register is used, however the
+        // note: if lhs is constant, then a scratch register is used, however,
+        // the
         //       if statement compile time evaluates constant expressions prior
         //       to reaching this
         resolve_cmp(tc, os, indent, lhs_, rhs_);
+
         if (not dst.empty()) {
             toc::asm_setcc(os, indent, asm_cc_for_op(op_, invert), dst);
         }
         toc::asm_jcc(os, indent, asm_cc_for_op(op_, invert), jmp_to_if_true);
+
         return std::nullopt;
     }
 
@@ -231,6 +234,7 @@ class expr_bool_op final : public statement {
             }
             toc::asm_jcc(os, indent, asm_cc_for_op("==", invert),
                          jmp_to_if_false);
+            // note: `==` because it jumps to "if false" label
 
             return std::nullopt;
         }
@@ -278,6 +282,8 @@ class expr_bool_op final : public statement {
         }
         toc::asm_jcc(os, indent, asm_cc_for_op(op_, not invert),
                      jmp_to_if_false);
+        // note: `not invert` because it jumps to "if false" label
+
         return std::nullopt;
     }
 
@@ -321,13 +327,13 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        // short-hand expressions
+        // shorthand expressions
         if (lhs_.is_expression()) {
             is_expression_ = true;
             return;
         }
 
-        // if not expression then it is a single statement and identifier is
+        // if not expression, then it is a single statement and identifier is
         // valid
         const std::string_view id{lhs_.identifier()};
         // is it a boolean value?
@@ -367,6 +373,7 @@ class expr_bool_op final : public statement {
 
     static auto asm_cc_for_op(const std::string_view op, const bool inverted)
         -> std::string_view {
+
         if (op == "==") {
             return inverted ? "ne" : "e";
         }

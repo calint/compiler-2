@@ -31,7 +31,7 @@ template <class T> class lut final {
         elems_.emplace_back(std::move(key), std::move(data));
     }
 
-    // note: for clarity get_const_ref instead of overloading get_ref
+    // note: for clarity, get_const_ref instead of overloading get_ref
     [[nodiscard]] auto get_const_ref(std::string_view key) const -> const T& {
         for (const elem& e : elems_) {
             if (e.is_key(key)) {

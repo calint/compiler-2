@@ -76,7 +76,7 @@ class stmt_assign_var final : public statement {
         //                  dst_info.lea_path[i]);
         // }
 
-        // find the first element from top that has a "lea" and get accessor
+        // find the first element from the top that has a "lea" and get accessor
         // relative to that
         size_t i{dst_info.elem_path.size()};
         std::string lea;

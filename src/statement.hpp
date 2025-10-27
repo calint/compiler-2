@@ -1,9 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include <cstddef>
 #include <format>
-#include <ostream>
 #include <span>
 #include <string>
 #include <string_view>
