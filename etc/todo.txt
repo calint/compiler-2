@@ -79,6 +79,7 @@
     issues do not exist in this project. they are ugly. ponder switching to =
 [ ] consider refactoring to 1 pass compiler making compiling in constructor
     constructor(os data,os code,indent)
+[ ] rv32i backend
 [ ] simple LSP supporting rename
 
 --------------------------------------------------------------------------------
