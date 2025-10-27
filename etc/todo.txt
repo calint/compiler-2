@@ -1,28 +1,38 @@
-[ ] array initializer: var i : vec2[] = {{1, 2}, {2, 3}, {3, 4}}
-[ ] initializer for types that contain array does not work as intended:
-    var input_buffer : str = {0, 0} where second element is an array
-[ ] ponder representing nasm instructions in classes to have better opportunity
-    to optmize compared to current text based optmize_jump_x
-[ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
-    if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
-[ ] a way of doing x += y like operations. maybe detect patter x = x + 1?
-[o] consolidate the various initiations of rep stosX into common code in toc
-    implementing heuristics of when to switch from mov to rep
-    => toc::rep_stos
+[ ] allow trailing comma at type definition. e.g.,
+    type object {
+        pos : point,
+        color : i32,
+    }
+[ ] parsing comments in single statement block fails:
+        if nibble > 9 nibble = nibble + 0x41 # 0 through 9
+        else nibble = nibble + 0x30
 [ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
     sign-extends loads
 [ ] numbers such as i8 : 255 cause problems when cmp because value is moved
     to unspecified register size with sign extension
     => 255 is outside the range of i8: -128 -> 127
+[ ] handle case where x86_64 cannot load immediate 64 bit value to memory
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
-[ ] parsing comments in single statement block fails:
-        if nibble > 9 nibble = nibble + 0x41 # 0 through 9
-        else nibble = nibble + 0x30
-[ ] initializer of arrays: var str : i8[] = {0x61, 0x41}
-[ ] nasm_operand in ident_info for less text processing sprinkled in the code?
+[ ] array initializer: var i : vec2[] = {{1, 2}, {2, 3}, {3, 4}}
+[ ] a way to initiate a i8 array with a string:
+    var hello : i8[] = "hello world"
+[ ] initializer for types that contain array does not work as intended:
+    var input_buffer : str = {0, 0} where second element is an array
+[ ] ponder an iterator of elements in array that does not require bounds
+    checking:
+      for(e : arr) {
+        e = 0
+      }
+[ ] ponder representing nasm instructions in classes to have better opportunity
+    to optmize compared to current text based optmize_jump_x
+[ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
+    if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] toc::rep_movs: heuristics around when to switch from movs to rep
-[ ] review "//?" comments
-[ ] review "todo" comments
+[ ] a way of doing x += y like operations. maybe detect pattern x = x + 1?
+[o] consolidate the various initiations of rep stosX into common code in toc
+    implementing heuristics of when to switch from mov to rep
+    => toc::rep_stos
+[ ] nasm_operand in ident_info for less text processing sprinkled in the code?
 [ ] array_copy does not handle when destination overlaps source
 [ ] lea_path may not be necessary since only most recent lea relevant
     => also index of where in elems path lea was found
@@ -31,65 +41,60 @@
 [ ] const allowed in function declaration and code
     foo(ix : const i32) { const x = ix }
 [ ] expr_*: pre-calculate consts
-[ ] C++ brace initializers offer no performance advantage and the narrowing
-    issues do not exist in this project. they are ugly. ponder switching to =
 [ ] refactor the passing first token to every constructor. push back and
     construct
-[ ] ponder an iterator of elements in array that does not require bounds
-    checking:
-      for(e : arr) {
-        e = 0
-      }
-[ ] ponder whether a compiler flag to check for overflow in arithmetics
 [ ] a return reference might be used as an argument to a function that set it.
     current UB detection does not allow that
-[ ] break: exit current block instead of just loop?
 [ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
     stack
     => do perf tests first using etc/perf.sh
 [ ] implement "size_of" for fields
-[ ] review code before next step
 [ ] lut: change to map
 [ ] make unary_ops trivially copyable by using a fixed array instead of vector
 [ ] etc/run-test with peak memory usage and inspect why some test cases use so
     much more memory than other
 [ ] toc::get_stack_size -> keep track of it with a member variable
-[ ] a way to initiate a i8 array with a string:
-    var hello : i8[] = "hello world"
-[ ] allow trailing comma at type definition. e.g:
-    type object {
-        pos : point,
-        color : i32,
-    }
 [ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
 [ ] review the reading of white spaces sprinkled about
 [ ] instrumentation to find out max heap and stack usage by the compiler
-[ ] handle constant array index case
 [ ] expr_ops_list: const eval
-[ ] array implicit identifiers. var ar[10] ar.len
-[ ] handle case where x86_64 cannot load immediate 64 bit value to memory
-[ ] when passing an array as an argument the call can insert quasi variables
-    for length. fat pointers
 [ ] stmt_call: check arguments vs parameters in constructor instead of at
     compile
 [ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
-[ ] consider refactoring to 1 pass compiler making compiling in constructor
-    constructor(os data,os code,indent)
 [ ] implement strings
 [ ] support for float and double?
     [ ] support avx512 operations
-    [ ] a way to tell the compiler to align variables on 4, 8, 16 etc boundaries
+[ ] a way to tell the compiler to align variables on 4, 8, 16 etc boundaries
 [ ] limited integration with some C functions from stdlib
     [ ] declare external functions
 [ ] rename compiler_exception
 [ ] specify whether ok for an op to truncate value instead of error
     => it is no longer an error
+[ ] array implicit identifiers. var ar[10] ar.len
+[ ] handle constant array index case
+[ ] break: exit current block instead of just loop?
+[ ] ponder whether a compiler flag to check for overflow in arithmetics
+[ ] C++ brace initializers offer no performance advantage and the narrowing
+    issues do not exist in this project. they are ugly. ponder switching to =
+[ ] consider refactoring to 1 pass compiler making compiling in constructor
+    constructor(os data,os code,indent)
 [ ] simple LSP supporting rename
 
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[-] when passing an array as an argument the call can insert quasi variables
+    for length. fat pointers
+    => irrelevant since in-lines only
+[-] initializer of arrays: var str : i8[] = {0x61, 0x41}
+    => duplicate
+[-] review "//?" comments
+    => standing issue
+[-] review "todo" comments
+    => standing issue
+[-] review code before next step
+    => standing issue
 [x] expr_bool_op: revert from "test" to  "cmp" because testing memory operand
     results in 2 instructions while "cmp" is 1
     => maybe check if operand is register and use test in that case? worth it?
