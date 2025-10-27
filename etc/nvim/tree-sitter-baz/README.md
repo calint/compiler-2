@@ -13,11 +13,9 @@ cp queries/highlights.scm ~/.local/share/nvim/site/queries/baz/
 ~/.config/nvim/lua/plugins/treesitter-baz.lua 
 ---------------------------------------------
 return {
-  {
-    "nvim-treesitter/nvim-treesitter",
-    opts = {
-      ensure_installed = { "baz" },
-    },
+  "nvim-treesitter/nvim-treesitter",
+  opts = {
+    ensure_installed = { "baz" },
   },
 }
 
