@@ -39,7 +39,7 @@
 (member_field name: (identifier) @variable.member)
 (member_field ":" (_)? @type)
 (parameter name: (identifier) @variable.parameter)
-(return_annotation return_name: (identifier) @variable.parameter)
+(return_annotation name: (identifier) @variable.parameter)
 
 ; Function parameters type
 (parameter

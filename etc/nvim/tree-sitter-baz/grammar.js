@@ -96,8 +96,8 @@ module.exports = grammar({
     // Function/Type Metadata
     return_annotation: $ => seq(
       ':',
-      $._definition_type,
-      field('return_name', $.identifier)
+      field('type', $._definition_type),
+      field('name', $.identifier)
     ),
 
     parameter_list: $ => sep1($.parameter, ','),
