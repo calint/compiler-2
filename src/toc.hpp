@@ -203,7 +203,7 @@ struct operand {
             return;
         }
         // note: regex handles only "base + index * scale +/- displacement" with
-        //       optional index * scale and displacement
+        //       optional index, scale and displacement
         const std::regex pattern(
             // whitespace
             R"(^\s*)"
