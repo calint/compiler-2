@@ -1,3 +1,5 @@
+[ ] a way of doing x += y like operations. maybe detect pattern x = x + 1?
+    => expr_ops_list::do_compile starts with '=', start with operator
 [ ] allow trailing comma at type definition. e.g.,
     type object {
         pos : point,
@@ -33,7 +35,6 @@
     built-in functions declared in program
 [ ] ponder representing nasm instructions in classes to have better opportunity
     to optmize compared to current text based optmize_jump_x
-[ ] a way of doing x += y like operations. maybe detect pattern x = x + 1?
 [o] consolidate the various initiations of rep stosX into common code in toc
     implementing heuristics of when to switch from mov to rep
     => toc::rep_stos
