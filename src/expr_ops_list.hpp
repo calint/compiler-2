@@ -503,9 +503,9 @@ class expr_ops_list final : public expression {
 
         // note: 'imul' destination operand must be register
 
-        // note: special case for byte sized multiplication because
-        //       x86_64 does not support constant as a second operand for
-        //       byte size operation
+        // note: special case for byte sized multiplication because x86_64 does
+        //       not support constant as a second operand for byte size
+        //       operation
         if (dst_size == 1) {
             std::vector<std::string> lea_registers;
             const std::string src_operand{
@@ -747,7 +747,7 @@ class expr_ops_list final : public expression {
         }
 
         // 'src' is not an expression and not a constant and has unary ops
-        //
+
         const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent)};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_operand);
         uops.compile(tc, os, indent, reg);

@@ -1780,8 +1780,8 @@ class toc final {
         {
             int64_t value{};
             const std::string_view sv{str};
-            // note: using 'std::string_view' for 'clang-tidy' to not
-            //       trigger the warning
+            // note: using 'std::string_view' for 'clang-tidy' to not trigger
+            //       the warning
             //       'cppcoreguidelines-pro-bounds-pointer-arithmetic'
 
             auto parse_result{
