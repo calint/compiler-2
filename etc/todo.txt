@@ -18,6 +18,9 @@
     var hello : i8[] = "hello world"
 [ ] initializer for types that contain array does not work as intended:
     var input_buffer : str = {0, 0} where second element is an array
+[ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
+    if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
+[ ] toc::rep_movs: heuristics around when to switch from movs to rep
 [ ] ponder an iterator of elements in array that does not require bounds
     checking:
       for(e : arr) {
@@ -30,9 +33,6 @@
     built-in functions declared in program
 [ ] ponder representing nasm instructions in classes to have better opportunity
     to optmize compared to current text based optmize_jump_x
-[ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
-    if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
-[ ] toc::rep_movs: heuristics around when to switch from movs to rep
 [ ] a way of doing x += y like operations. maybe detect pattern x = x + 1?
 [o] consolidate the various initiations of rep stosX into common code in toc
     implementing heuristics of when to switch from mov to rep
