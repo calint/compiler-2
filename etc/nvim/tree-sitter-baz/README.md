@@ -1,6 +1,6 @@
 # baz treesitter
 
-## summary from project root
+## howto in lazyvim
 
 ```
 tree-sitter generate
