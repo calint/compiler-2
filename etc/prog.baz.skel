@@ -40,7 +40,10 @@ func pn(num) {
     var i = 20
     loop {
         i = i - 1
-        buf[i] = 48 + (n % 10)
+        var ascii = 48 + (n % 10)
+        # note: not buf[i] = ... because calculation will be done in byte and
+        #       n overflows
+        buf[i] = ascii 
         n = n / 10
         if n == 0 break
     }
