@@ -1,3 +1,5 @@
+[ ] regex is not performant. replace with hand-rolled string operations
+    especially in operand which creates a regex in the constructor
 [ ] built-in: mov and syscall functions to statements and remove special
     built-in functions
 [ ] allow trailing comma at type definition. e.g.,
@@ -48,7 +50,6 @@
     construct
 [ ] a return reference might be used as an argument to a function that set it.
     current UB detection does not allow that
-[ ] regex is not performant. replace with hand-rolled string operations
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
     stack
     => do perf tests first using etc/perf.sh
