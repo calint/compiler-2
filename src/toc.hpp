@@ -202,13 +202,20 @@ struct operand {
         if (operand_sv.empty()) {
             return;
         }
+        // note: regex handles only "base + index * scale +/- displacement" with
+        //       optional index * scale and displacement
         const std::regex pattern(
+            // whitespace
             R"(^\s*)"
-            R"(([a-z0-9]+)?)"                              // base register
-            R"((?:\s*\+\s*(r[a-z0-9]+|[a-z][a-z0-9]*?))?)" // +index (must start
-                                                           // with a letter)
-            R"((?:\s*\*\s*([1248]))?)"                     // *scale
-            R"((?:\s*([+-])\s*(\d+))?)"                    // +/- displacement
+            // base register (must start with a letter)
+            R"(([a-z][a-z0-9]*)?)"
+            // +index (must start with a letter)
+            R"((?:\s*\+\s*([a-z][a-z0-9]*?))?)"
+            // *scale
+            R"((?:\s*\*\s*([1248]))?)"
+            // +/- displacement
+            R"((?:\s*([+-])\s*(\d+))?)"
+            // whitespace
             R"(\s*$)");
 
         constexpr size_t match_base_register{1};
