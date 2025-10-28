@@ -1,3 +1,5 @@
+[ ] built-in: mov and syscall functions to statements and remove special
+    built-in functions
 [ ] allow trailing comma at type definition. e.g.,
     type object {
         pos : point,

@@ -44,8 +44,6 @@ class program final {
         // add built-in assembler calls
         tc_.add_func(prgtk, "mov", type_void, nullptr);
         tc_.add_func(prgtk, "syscall", type_void, nullptr);
-        tc_.add_func(prgtk, "address_of", type_i64, nullptr);
-        tc_.add_func(prgtk, "array_size_of", type_i64, nullptr);
 
         // add built-in types
         tc_.add_type(prgtk, type_i64);
