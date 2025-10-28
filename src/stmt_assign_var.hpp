@@ -118,22 +118,14 @@ class stmt_assign_var final : public statement {
             // identifier contains array indexing
             // calculate effective address to the built-in type
 
-            std::vector<std::string> allocated_registers;
+            std::vector<std::string> lea_registers;
 
-            const std::string effective_address =
-                stmt_identifier::compile_effective_address(
-                    tok(), tc, os, indent, stmt_ident_.elems(),
-                    allocated_registers, "", dst_info.lea_path);
+            const std::string& dst_operand{tc.get_lea_operand(
+                os, indent, stmt_ident_, dst_info, lea_registers)};
 
-            const std::string_view size_specifier{
-                toc::get_size_specifier(dst_info.type_ptr->size())};
+            expr_.compile(tc, os, indent, dst_operand);
 
-            expr_.compile(
-                tc, os, indent,
-                std::format("{} [{}]", size_specifier, effective_address));
-
-            for (const std::string& reg :
-                 allocated_registers | std::views::reverse) {
+            for (const std::string& reg : lea_registers | std::views::reverse) {
                 tc.free_scratch_register(tok(), os, indent, reg);
             }
             return;
