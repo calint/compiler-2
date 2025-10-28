@@ -23,6 +23,7 @@
       for(e : arr) {
         e = 0
       }
+[ ] function call of type lst.add(x) that calls list_add(self, x)
 [ ] ponder representing nasm instructions in classes to have better opportunity
     to optmize compared to current text based optmize_jump_x
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
