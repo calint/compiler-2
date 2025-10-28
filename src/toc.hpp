@@ -11,7 +11,6 @@
 #include <regex>
 #include <span>
 #include <string_view>
-#include <utility>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -879,6 +878,7 @@ class toc final {
 
         std::string lea{src.compile_lea(src.tok(), *this, os, indent,
                                         lea_registers, "", src_info.lea_path)};
+
         return std::format(
             "{} [{}]", toc::get_size_specifier(src_info.type_ptr->size()), lea);
     }

@@ -181,9 +181,8 @@ class expr_bool_op final : public statement {
 
         // left-hand-side or right-hand-side or both are expressions
         // note: if lhs is constant, then a scratch register is used, however,
-        // the
-        //       if statement compile time evaluates constant expressions prior
-        //       to reaching this
+        //       the if statement compile time evaluates constant expressions
+        //       before reaching this
         resolve_cmp(tc, os, indent, lhs_, rhs_);
 
         if (not dst.empty()) {
