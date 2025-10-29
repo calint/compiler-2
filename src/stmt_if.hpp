@@ -111,11 +111,10 @@ class stmt_if final : public statement {
             }
             // compile the condition which might return that the condition was a
             // constant evaluation
-            std::optional<bool> const_eval{
-                if_branch.compile(tc, os, indent, jmp_if_false, jmp_if_done)};
-            // if the condition was a constant evaluation and the result was
-            // true
-            if (const_eval and *const_eval) {
+            if (const std::optional<bool> const_eval{if_branch.compile(
+                    tc, os, indent, jmp_if_false, jmp_if_done)};
+                const_eval and *const_eval) {
+
                 branch_evaluated_to_true = true;
                 break;
             }

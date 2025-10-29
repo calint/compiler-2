@@ -1658,14 +1658,14 @@ class toc final {
     static auto get_operand_address_str(const std::string_view op)
         -> std::string {
 
-        std::optional<std::string> between_brackets{
-            get_text_between_brackets(op)};
+        if (const std::optional<std::string> between_brackets{
+                get_text_between_brackets(op)};
+            between_brackets) {
 
-        if (not between_brackets) {
-            return std::string{op};
+            return *between_brackets;
         }
 
-        return *between_brackets;
+        return std::string{op};
     }
 
     static auto get_size_specifier(const size_t size) -> std::string_view {

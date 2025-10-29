@@ -50,11 +50,11 @@ class stmt_if_branch final : public statement {
         // the beginning of this branch
         toc::asm_label(os, indent, if_bgn_lbl);
         // compile the boolean ops list
-        std::optional<bool> const_eval{
-            bol_.compile(tc, os, indent, jmp_to_if_false_label,
-                         jmp_to_if_true_lbl, false, "")};
-        // did boolean evaluation result in a constant?
-        if (const_eval) {
+        if (const std::optional<bool> const_eval{
+                bol_.compile(tc, os, indent, jmp_to_if_false_label,
+                             jmp_to_if_true_lbl, false, "")};
+            const_eval) {
+
             // yes, was the constant evaluation result true?
             if (*const_eval) {
                 // yes, this branch code will execute

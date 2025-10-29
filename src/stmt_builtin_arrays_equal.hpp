@@ -144,6 +144,7 @@ class stmt_builtin_arrays_equal final : public expression {
             if (std::optional<int> shl{
                     stmt_identifier::get_shift_amount(type_size)};
                 shl) {
+
                 tc.asm_cmd(tok(), os, indent, "shl", "rcx",
                            std::format("{}", *shl));
             } else {

@@ -98,7 +98,7 @@ class expr_any final : public statement {
                         std::format("bool_end_{}", postfix)};
 
                     // compile and possibly evaluate constant expression
-                    std::optional<bool> const_eval{
+                    const std::optional<bool> const_eval{
                         e.compile(tc, os, indent, jmp_to_end, jmp_to_end, false,
                                   dst_info.operand)};
 

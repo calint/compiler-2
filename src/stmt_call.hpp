@@ -143,7 +143,7 @@ class stmt_call : public expression {
         std::vector<alias_info> aliases_to_add;
 
         // validate return type
-        std::optional<func_return_info> ret{func.returns()};
+        const std::optional<func_return_info> ret{func.returns()};
         if (not dst.empty()) {
             if (not ret) {
                 throw compiler_exception{tok(),

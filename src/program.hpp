@@ -199,7 +199,7 @@ class program final {
         const std::span<const stmt_def_func* const>& funcs) -> void {
 
         for (const stmt_def_func* f : funcs) {
-            std::optional<func_return_info> ret_info{f->returns()};
+            const std::optional<func_return_info> ret_info{f->returns()};
             if (not ret_info) {
                 continue;
             }

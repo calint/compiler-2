@@ -135,9 +135,10 @@ class stmt_builtin_array_copy final : public statement {
         if (type_size > 1) {
             // check whether it is possible to shift left instead of
             // multiplication
-            if (std::optional<int> shl{
+            if (const std::optional<int> shl{
                     stmt_identifier::get_shift_amount(type_size)};
                 shl) {
+
                 tc.asm_cmd(tok(), os, indent, "shl", "rcx",
                            std::format("{}", *shl));
             } else {
