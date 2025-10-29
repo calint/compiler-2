@@ -1,5 +1,3 @@
-; highlights.scm
-
 "(" @comment
 ")" @comment
 "[" @comment
@@ -7,7 +5,6 @@
 "{" @comment
 "}" @comment
 
-; Keywords
 (func_keyword) @keyword.function
 (type_keyword) @keyword.type
 (field_keyword) @keyword
@@ -23,7 +20,6 @@
 (and_keyword) @keyword.operator
 (or_keyword) @keyword.operator
 
-; Types
 (bool_type) @type
 (i8_type) @type
 (i16_type) @type
@@ -32,7 +28,6 @@
 (sized_array_type) @type
 (unsized_array_type) @type
 
-; Identifiers
 (identifier) @variable
 (function_definition name: (identifier) @function)
 (type_definition name: (identifier) @type.definition)
@@ -41,30 +36,27 @@
 (parameter name: (identifier) @variable.parameter)
 (return_annotation name: (identifier) @variable.parameter)
 
-; Function parameters type
 (parameter
   name: (identifier) @variable.parameter
   type: (identifier)? @type)
 
-; Variable declaration
 (variable_declaration
   destination: (identifier) @variable
   type: (identifier)? @type
   initializer: (_)? @variable)
 
 (sized_array_type type: (identifier) @type)
+
 (unsized_array_type type: (identifier) @type)
+
 (function_call function: (identifier) @function.call)
 
-; Literals
 (string_literal) @string
 (number_literal) @number
 (boolean_literal) @boolean
 
-; Comments
 (comment) @comment
 
-; Operators
 (comparison_operator) @operator
 (unary_expression operator: ["-" "~"] @operator)
 (multiplicative_expression operator: ["*" "/" "%"] @operator)
