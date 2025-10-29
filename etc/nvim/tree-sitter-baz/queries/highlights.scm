@@ -37,7 +37,7 @@
 (function_definition name: (identifier) @function)
 (type_definition name: (identifier) @type.definition)
 (member_field name: (identifier) @variable.member)
-(member_field ":" (_)? @type)
+(member_field ":" type: (_) @type)
 (parameter name: (identifier) @variable.parameter)
 (return_annotation name: (identifier) @variable.parameter)
 
@@ -52,14 +52,8 @@
   type: (identifier)? @type
   initializer: (_)? @variable)
 
-; Sized array types
-(sized_array_type (identifier) @type)
-
-; Unsized array types
-(unsized_array_type
-  (identifier) @type)
-
-; Function calls
+(sized_array_type type: (identifier) @type)
+(unsized_array_type type: (identifier) @type)
 (function_call function: (identifier) @function.call)
 
 ; Literals
