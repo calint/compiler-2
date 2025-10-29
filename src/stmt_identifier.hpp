@@ -194,10 +194,10 @@ class stmt_identifier : public statement {
     }
 
     auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
-                     size_t indent,
+                     const size_t indent,
                      std::vector<std::string>& allocated_registers,
                      const std::string& reg_size,
-                     std::span<const std::string> lea_path) const
+                     const std::span<const std::string> lea_path) const
         -> std::string override {
 
         return compile_effective_address(src_loc_tk, tc, os, indent, elems_,
