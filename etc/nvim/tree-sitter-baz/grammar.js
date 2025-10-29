@@ -234,23 +234,27 @@ module.exports = grammar({
     // -------------------------------------------------------------------------
     // 5. EXPRESSIONS & OPERATOR PRECEDENCE (Highest to Lowest)
     // -------------------------------------------------------------------------
-
     _expression: $ => choice(
-      $._literal,
-      $._access_chain,
+      // Lowest precedence (evaluated last)
+      $.comparison_expression,
+      $.or_expression,
+      $.and_expression,
+      $.not_expression,
+      
+      $.bitwise_xor_expression,
+      $.bitwise_or_expression,
+      $.bitwise_and_expression,
+      $.additive_expression,
+      $.multiplicative_expression,
+      $.shift_expression,
+      $.unary_expression,
+      
+      // Highest precedence (evaluated first)
       $.function_call,
-      $.initializer_block,
       $.parenthesized_expression,
-      $.unary_expression,          // Precedence 16: Unary Arithmetic/Bitwise (~, -)
-      $.not_expression,            // Precedence 15: Unary Logic (not)
-      $.multiplicative_expression, // Precedence 12: Multiplicative/Modulo (*, /, %)
-      $.additive_expression,       // Precedence 11: Additive (+, -)
-      $.shift_expression,          // Precedence 10: Shift (<<, >>)
-      $.bitwise_and_expression,    // Precedence 9: Bitwise AND (&)
-      $.bitwise_or_expression,     // Precedence 8: Bitwise OR (|)
-      $.and_expression,            // Precedence 7: Logical AND (and)
-      $.or_expression,             // Precedence 6: Logical OR (or)
-      $.comparison_expression,     // Precedence 5: Comparison (==, !=, <=, <, >, >=)
+      $.initializer_block,
+      $._access_chain,
+      $._literal,
     ),
 
     parenthesized_expression: $ => seq(
@@ -259,69 +263,66 @@ module.exports = grammar({
       ')',
     ),
 
-    // Precedence 16
     unary_expression: $ => prec(16, seq(
         field('operator', choice('-', '~')),
         field('operand', $._expression),
     )),
 
-    // Precedence 15
-    not_expression: $ => prec(15, seq(
-        $.not_keyword,
-        field('operand', $._expression),
-    )),
 
-    // Precedence 12 (Left Associative)
-    multiplicative_expression: $ => prec.left(12, seq(
-        field('left', $._expression),
-        field('operator', choice('*', '/', '%')),
-        field('right', $._expression),
-    )),
-
-    // Precedence 11 (Left Associative)
-    additive_expression: $ => prec.left(11, seq(
-        field('left', $._expression),
-        field('operator', choice('+', '-')),
-        field('right', $._expression),
-    )),
-
-    // Precedence 10 (Left Associative)
-    shift_expression: $ => prec.left(10, seq(
+    shift_expression: $ => prec.left(15, seq(
         field('left', $._expression),
         field('operator', choice('<<', '>>')),
         field('right', $._expression),
     )),
 
-    // Precedence 9 (Left Associative)
-    bitwise_and_expression: $ => prec.left(9, seq(
+    bitwise_xor_expression: $ => prec.left(14, seq(
+        field('left', $._expression),
+        field('operator', '^'),
+        field('right', $._expression),
+    )),
+
+    bitwise_and_expression: $ => prec.left(13, seq(
         field('left', $._expression),
         field('operator', '&'),
         field('right', $._expression),
     )),
 
-    // Precedence 8 (Left Associative)
-    bitwise_or_expression: $ => prec.left(8, seq(
+    bitwise_or_expression: $ => prec.left(12, seq(
         field('left', $._expression),
         field('operator', '|'),
         field('right', $._expression),
     )),
 
-    // Precedence 7 (Left Associative)
-    and_expression: $ => prec.left(7, seq(
+    multiplicative_expression: $ => prec.left(11, seq(
+        field('left', $._expression),
+        field('operator', choice('*', '/', '%')),
+        field('right', $._expression),
+    )),
+
+    additive_expression: $ => prec.left(10, seq(
+        field('left', $._expression),
+        field('operator', choice('+', '-')),
+        field('right', $._expression),
+    )),
+
+    and_expression: $ => prec.left(9, seq(
         field('left', $._expression),
         field('operator', $.and_keyword),
         field('right', $._expression),
     )),
 
-    // Precedence 6 (Left Associative)
-    or_expression: $ => prec.left(6, seq(
+    not_expression: $ => prec(8, seq(
+        $.not_keyword,
+        field('operand', $._expression),
+    )),
+
+    or_expression: $ => prec.left(7, seq(
         field('left', $._expression),
         field('operator', $.or_keyword),
         field('right', $._expression),
     )),
 
-    // Precedence 5 (Left Associative)
-    comparison_expression: $ => prec.left(5, seq(
+    comparison_expression: $ => prec.left(6, seq(
         field('left', $._expression),
         field('operator', $.comparison_operator),
         field('right', $._expression),
