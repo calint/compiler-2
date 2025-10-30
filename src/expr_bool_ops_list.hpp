@@ -136,11 +136,8 @@ class expr_bool_ops_list final : public statement {
         }
         const size_t n{bools_.size()};
         for (size_t i{}; i < n; i++) {
-            if (bools_[i].index() == 0) {
-                get<expr_bool_op>(bools_[i]).source_to(os);
-            } else {
-                get<expr_bool_ops_list>(bools_[i]).source_to(os);
-            }
+            std::visit([&](const auto& e) -> auto { e.source_to(os); },
+                       bools_[i]);
             if (i < n - 1) {
                 ops_[i].source_to(os);
             }
@@ -172,10 +169,7 @@ class expr_bool_ops_list final : public statement {
                                    : not_token_.is_text("not")};
         const size_t n{bools_.size()};
         for (size_t i{}; i < n; i++) {
-            if (bools_[i].index() == 1) {
-                //
-                // expr_bool_ops_list
-                //
+            if (std::holds_alternative<expr_bool_ops_list>(bools_[i])) {
                 const expr_bool_ops_list& el{
                     get<expr_bool_ops_list>(bools_[i])};
                 toc::asm_label(os, indent, el.create_cmp_bgn_label(tc));
@@ -303,9 +297,8 @@ class expr_bool_ops_list final : public statement {
                 continue;
             }
 
-            //
             // expr_bool_op
-            //
+
             if (not invert) {
                 // a == 1 and b == 2 vs. a == 1 or b == 2
                 const expr_bool_op& e{get<expr_bool_op>(bools_[i])};
@@ -394,29 +387,15 @@ class expr_bool_ops_list final : public statement {
 
         // 1 expression in the list
 
-        // is it an 'expr_bool_ops'?
-        if (bools_[0].index() == 0) {
-            // yes, call its 'is_expression'
-            return get<expr_bool_op>(bools_[0]).is_expression();
-        }
-
-        // it is an 'expr_bool_ops_list'
-
-        return get<expr_bool_ops_list>(bools_[0]).is_expression();
+        return std::visit(
+            [](const auto& e) -> auto { return e.is_expression(); }, bools_[0]);
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
         assert(bools_.size() == 1);
 
-        // is it an 'expr_bool_ops'?
-        if (bools_[0].index() == 0) {
-            // yes, call its 'identifier'
-            return get<expr_bool_op>(bools_[0]).identifier();
-        }
-
-        // it is an 'expr_bool_ops_list'
-
-        return get<expr_bool_ops_list>(bools_[0]).identifier();
+        return std::visit([](const auto& e) -> auto { return e.identifier(); },
+                          bools_[0]);
     }
 
     auto assert_var_not_used(const std::string_view var) const
@@ -447,10 +426,8 @@ class expr_bool_ops_list final : public statement {
         const std::variant<expr_bool_op, expr_bool_ops_list>& var)
         -> std::string {
 
-        if (var.index() == 1) {
-            return get<expr_bool_ops_list>(var).create_cmp_bgn_label(tc);
-        }
-
-        return get<expr_bool_op>(var).create_cmp_bgn_label(tc);
+        return std::visit(
+            [&](const auto& e) -> auto { return e.create_cmp_bgn_label(tc); },
+            var);
     }
 };

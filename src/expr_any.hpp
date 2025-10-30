@@ -154,7 +154,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_expr_type_value() const -> bool {
-        return var_.index() == 2;
+        return std::holds_alternative<expr_type_value>(var_);
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override {
