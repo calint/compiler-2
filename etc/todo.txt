@@ -4,6 +4,7 @@
     of an identifier including indexing, type offset navigation etc
     => make_ident_info should do that and then passed around instead of
        destination as a string
+       => resolving operand might involve allocating registers to resolve lea
 [ ] a way of doing x += y like operations. maybe detect pattern x = x + 1? 
     => expr_ops_list::do_compile starts with '=', start with operator
 [ ] allow trailing comma at type definition. e.g.,
