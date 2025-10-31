@@ -2,6 +2,8 @@
     depending on context (already in `if`)
 [ ] stmt_assign_var::compile: unified way of determining the effective address
     of an identifier including indexing, type offset navigation etc
+    => make_ident_info does that and is passed around instead of destination as
+       a string
 [ ] a way of doing x += y like operations. maybe detect pattern x = x + 1?
     => expr_ops_list::do_compile starts with '=', start with operator
 [ ] allow trailing comma at type definition. e.g.,
