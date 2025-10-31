@@ -37,15 +37,9 @@
     especially in `operand` which creates a regex in the constructor
 [ ] built-in: mov and syscall functions to statements and remove special
     built-in functions declared in program
-[ ] ponder representing nasm instructions in classes to have better opportunity
-    to optmize compared to current text based optmize_jump_x
 [o] consolidate the various initiations of rep stosX into common code in toc
     implementing heuristics of when to switch from mov to rep
     => toc::rep_stos
-[ ] nasm_operand in ident_info for less text processing sprinkled in the code?
-[ ] array_copy does not handle when destination overlaps source
-[ ] lea_path may not be necessary since only most recent lea relevant
-    => also index of where in elems path lea was found
 [ ] stmt_identifier: 357: if register will be just offset without indexing
     register then that can be calculated in init_reg_offset
 [ ] const allowed in function declaration and code
@@ -83,6 +77,13 @@
 [ ] array implicit identifiers. var ar[10] ar.len
 [ ] handle constant array index case
 [ ] break: exit current block instead of just loop?
+[ ] ponder representing nasm instructions in classes to have better opportunity
+    to optmize compared to current text based optmize_jump_x
+[ ] nasm_operand in ident_info for less text processing sprinkled in the code?
+[ ] array_copy does not handle when destination overlaps source
+    => issue warning when that can be detected at compile-time
+[ ] lea_path may not be necessary since only most recent lea relevant
+    => also index of where in elems path lea was found
 [ ] ponder whether a compiler flag to check for overflow in arithmetics
 [ ] C++ brace initializers offer no performance advantage and the narrowing
     issues do not exist in this project. they are ugly. ponder switching to =
