@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <iostream>
 #include <memory>
 #include <ostream>
 #include <ranges>
@@ -236,8 +237,9 @@ class expr_ops_list final : public expression {
         tc.free_scratch_register(tok(), ss2, indent, reg);
 
         // std::println(std::cerr,
-        //              "---------\nwithout scratch register:\n{}\nwith scratch
-        //              " "register:\n{}\n---------\n", ss1.str(), ss2.str());
+        //              "---------\nwithout scratch register:\n{}\nwith scratch"
+        //              " register:\n{}\n---------\n",
+        //              ss1.str(), ss2.str());
 
         // compare instruction count
         const size_t ss1_count{count_instructions(tc, ss1)};

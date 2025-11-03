@@ -1137,23 +1137,23 @@ main:
 ;   [153:5] var k = baz(j)
 ;   [153:9] k: i64 (8B @ qword [rsp - 112])
 ;   [153:9] k = baz(j)
-;   [153:13] allocate scratch register -> r15
-;   [153:13] r15 = baz(j)
+;   [153:13] qword [rsp - 112] = baz(j)
 ;   [153:13] = expression
 ;   [153:13] baz(j)
 ;   [69:6] baz(arg) : i64 res 
     baz_153_13:
-;       [153:13] alias res -> r15  (lea: )
+;       [153:13] alias res -> qword [rsp - 112]  (lea: )
 ;       [153:13] alias arg -> j  (lea: )
 ;       [70:5] res = arg * 2
+;       [70:11] allocate scratch register -> r15
 ;       [70:11] arg
         mov r15, qword [rsp - 104]
-;       [70:17] res * 2
+;       [70:17] r15 * 2
 ;       [70:17] dst is reg, src is const
         imul r15, 2
+        mov qword [rsp - 112], r15
+;       [70:11] free scratch register 'r15'
     baz_153_13_end:
-    mov qword [rsp - 112], r15
-;   [153:13] free scratch register 'r15'
 ;   [154:5] assert(k == 2)
 ;   [154:12] allocate scratch register -> r15
 ;   [154:12] ? k == 2
@@ -1193,23 +1193,23 @@ main:
 ;       [154:5] free scratch register 'r15'
     assert_154_5_end:
 ;   [156:5] k = baz(1)
-;   [156:9] allocate scratch register -> r15
-;   [156:9] r15 = baz(1)
+;   [156:9] qword [rsp - 112] = baz(1)
 ;   [156:9] = expression
 ;   [156:9] baz(1)
 ;   [69:6] baz(arg) : i64 res 
     baz_156_9:
-;       [156:9] alias res -> r15  (lea: )
+;       [156:9] alias res -> qword [rsp - 112]  (lea: )
 ;       [156:9] alias arg -> 1  (lea: )
 ;       [70:5] res = arg * 2
+;       [70:11] allocate scratch register -> r15
 ;       [70:11] arg
         mov r15, 1
-;       [70:17] res * 2
+;       [70:17] r15 * 2
 ;       [70:17] dst is reg, src is const
         imul r15, 2
+        mov qword [rsp - 112], r15
+;       [70:11] free scratch register 'r15'
     baz_156_9_end:
-    mov qword [rsp - 112], r15
-;   [156:9] free scratch register 'r15'
 ;   [157:5] assert(k == 2)
 ;   [157:12] allocate scratch register -> r15
 ;   [157:12] ? k == 2
@@ -1260,15 +1260,14 @@ main:
 ;       [159:23] alias res -> qword [rsp - 128]  (lea: )
 ;       [159:23] alias arg -> 2  (lea: )
 ;       [70:5] res = arg * 2
+;       [70:11] allocate scratch register -> r15
 ;       [70:11] arg
-        mov qword [rsp - 128], 2
-;       [70:17] res * 2
-;       [70:17] dst is not reg, src is const
-;       [70:17] allocate scratch register -> r15
-        mov r15, qword [rsp - 128]
+        mov r15, 2
+;       [70:17] r15 * 2
+;       [70:17] dst is reg, src is const
         imul r15, 2
         mov qword [rsp - 128], r15
-;       [70:17] free scratch register 'r15'
+;       [70:11] free scratch register 'r15'
     baz_159_23_end:
 ;   [159:22] copy field 'y'
     mov qword [rsp - 120], 0
@@ -1325,18 +1324,14 @@ main:
 ;   [165:9] o1 = {{x * 10, y}, 0xff0000}
 ;   [165:23] copy field 'pos'
 ;   [165:24] copy field 'x'
-;   [165:25] x
 ;   [165:25] allocate scratch register -> r15
+;   [165:25] x
     mov r15, qword [rsp - 136]
-    mov qword [rsp - 164], r15
-;   [165:25] free scratch register 'r15'
-;   [165:29] qword [rsp - 164] * 10
-;   [165:29] dst is not reg, src is const
-;   [165:29] allocate scratch register -> r15
-    mov r15, qword [rsp - 164]
+;   [165:29] r15 * 10
+;   [165:29] dst is reg, src is const
     imul r15, 10
     mov qword [rsp - 164], r15
-;   [165:29] free scratch register 'r15'
+;   [165:25] free scratch register 'r15'
 ;   [165:24] copy field 'y'
 ;   [165:33] allocate scratch register -> r15
     mov r15, qword [rsp - 144]

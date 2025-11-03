@@ -69,27 +69,13 @@ class stmt_assign_var final : public statement {
         }
 
         if (dst_info.type_ptr->is_built_in()) {
-            // does the identifier contain array indexing?
-            if (not stmt_ident_.is_indexed()) {
-                // no, compile to 'dst_info'
-                expr_.compile(tc, os, indent, dst_info.id);
-                return;
-            }
-
-            // identifier contains array indexing
-            // calculate effective address to the built-in type
-
             std::vector<std::string> lea_registers;
-
             const std::string& dst_operand{tc.get_lea_operand(
                 os, indent, stmt_ident_, dst_info, lea_registers)};
-
             expr_.compile(tc, os, indent, dst_operand);
-
             for (const std::string& reg : lea_registers | std::views::reverse) {
                 tc.free_scratch_register(tok(), os, indent, reg);
             }
-
             return;
         }
 

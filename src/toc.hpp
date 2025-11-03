@@ -600,14 +600,6 @@ class toc final {
             indent(os, indnt);
             std::println(os, "movsx {}, {}", reg_sx, src_op);
 
-            // todo fix for dst_op is memory operand
-            // note: this path is never taken?
-            if (is_memory_operand(dst_op)) {
-                throw panic_exception{"toc:6"};
-            }
-
-            // dst_op is a register
-
             indent(os, indnt);
             std::println(os, "{} {}, {}", op, dst_op, reg_sx);
 
@@ -1327,6 +1319,7 @@ class toc final {
                              const std::string_view ident) const -> ident_info {
 
         ident_path id{std::string{ident}};
+
         // get the root of an identifier: example p.x -> p
         // traverse the frames and resolve the `ident` (which might be an alias)
         // to a variable, field, register or constant
@@ -1472,10 +1465,16 @@ class toc final {
                 .type_path{&get_type_default()},
                 .lea_path{},
                 .lea{},
-                .ident_type = ident_info::ident_type::REGISTER,
+                .ident_type = ident_info::ident_type::VAR,
             };
         }
 
+        // if ident is "bracketed" extract
+        std::optional<std::string> ident_bracketed{
+            get_text_between_brackets(ident)};
+        if (ident_bracketed) {
+            id = ident_path{*ident_bracketed};
+        }
         // is it a field?
         if (fields_.has(id.base())) {
             const std::string after_dot =
@@ -1754,10 +1753,7 @@ class toc final {
     [[nodiscard]] static auto
     is_operand_indirect_addressing(const std::string_view op) -> bool {
         if (auto expr{toc::get_text_between_brackets(op)}; expr) {
-            const std::string reg{get_operand_base_register(*expr)};
-            if (is_operand_register(reg)) {
-                return true;
-            }
+            return true;
         }
 
         return false;
