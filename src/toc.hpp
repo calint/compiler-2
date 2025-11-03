@@ -1323,7 +1323,7 @@ class toc final {
     }
 
     [[nodiscard]] auto
-    make_ident_info_or_empty(const token& src_loc,
+    make_ident_info_or_empty(const token& src_loc_tk,
                              const std::string_view ident) const -> ident_info {
 
         ident_path id{std::string{ident}};
@@ -1385,8 +1385,8 @@ class toc final {
             //           << id.str() << "\n";
             const var_info& var{frm.get_var_const_ref(id.base())};
             std::vector<const type*> type_path;
-            ident_info ii{var.type_ptr->accessor(src_loc, ident, id.path(), var,
-                                                 type_path)};
+            ident_info ii{var.type_ptr->accessor(src_loc_tk, ident, id.path(),
+                                                 var, type_path)};
 
             ii.elem_path = std::vector(id.path().begin(), id.path().end());
             //? fishy stuff adjusting lea_path size
@@ -1419,24 +1419,26 @@ class toc final {
                 }
             }
 
-            std::string dst_accessor{ii.id};
-            if (not ii.lea.empty()) {
-                const std::string_view size_specifier{
-                    toc::get_size_specifier(ii.type_ptr->size())};
+            if (ii.lea.empty()) {
+                return ii;
+            }
 
-                const size_t offset{ii.type_path[j]->field_offset(
-                    src_loc, std::span{ii.elem_path}.subspan(j))};
+            // identifier has lea path
 
-                if (offset != 0) {
-                    operand operand{ii.lea};
-                    operand.displacement += static_cast<int>(offset);
-                    dst_accessor = std::format("{} [{}]", size_specifier,
-                                               operand.to_string());
-                } else {
-                    dst_accessor =
-                        std::format("{} [{}]", size_specifier, ii.lea_path[j]);
-                }
-                ii.operand = dst_accessor;
+            const std::string_view size_specifier{
+                toc::get_size_specifier(ii.type_ptr->size())};
+
+            const size_t offset{ii.type_path[j]->field_offset(
+                src_loc_tk, std::span{ii.elem_path}.subspan(j))};
+
+            if (offset != 0) {
+                operand operand{ii.lea};
+                operand.displacement += static_cast<int>(offset);
+                ii.operand =
+                    std::format("{} [{}]", size_specifier, operand.to_string());
+            } else {
+                ii.operand =
+                    std::format("{} [{}]", size_specifier, ii.lea_path[j]);
             }
 
             return ii;
@@ -1465,7 +1467,7 @@ class toc final {
             return {
                 .id{ident},
                 .operand{id.str()},
-                .type_ptr = &get_builtin_type_for_operand(src_loc, id.str()),
+                .type_ptr = &get_builtin_type_for_operand(src_loc_tk, id.str()),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
