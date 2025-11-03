@@ -1,8 +1,9 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include "stmt_call.hpp"
 #include <string_view>
+
+#include "stmt_call.hpp"
 
 class stmt_builtin_mov final : public stmt_call {
   public:

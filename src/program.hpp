@@ -1,6 +1,13 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <memory>
+#include <ostream>
+#include <span>
+#include <string>
+#include <string_view>
+#include <vector>
+
 #include "compiler_exception.hpp"
 #include "statement.hpp"
 #include "stmt_def_field.hpp"
@@ -9,12 +16,6 @@
 #include "toc.hpp"
 #include "tokenizer.hpp"
 #include "unary_ops.hpp"
-#include <memory>
-#include <ostream>
-#include <span>
-#include <string>
-#include <string_view>
-#include <vector>
 
 class program final {
     // built-in types

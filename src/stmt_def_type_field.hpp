@@ -1,10 +1,11 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <string_view>
+
 #include "compiler_exception.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
-#include <string_view>
 
 class stmt_def_type_field final : public statement {
     token type_tk_;
