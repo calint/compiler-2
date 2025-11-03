@@ -68,51 +68,11 @@ class stmt_assign_var final : public statement {
                 std::format("cannot assign to constant '{}'", dst_info.id)};
         }
 
-        // DEBUG
-        // std::println(std::cerr, "[{}] identifier path: {}", tok().at_line(),
-        //              dst_info.id);
-        // for (size_t i = 0; i < dst_info.elem_path.size(); i++) {
-        //     std::println(std::cerr, "  {} ; {} ; {}", dst_info.elem_path[i],
-        //                  dst_info.type_path[i]->name(),
-        //                  dst_info.lea_path[i]);
-        // }
-
-        // find the first element from the top that has a "lea" and get accessor
-        // relative to that
-        size_t i{dst_info.elem_path.size()};
-        std::string lea;
-        while (i) {
-            i--;
-            if (not dst_info.lea_path[i].empty()) {
-                lea = dst_info.lea_path[i];
-                break;
-            }
-        }
-
         if (dst_info.type_ptr->is_built_in()) {
-            std::string dst_accessor{dst_info.id};
-            if (not lea.empty()) {
-                const std::string_view size_specifier{
-                    toc::get_size_specifier(dst_info.type_ptr->size())};
-
-                const size_t offset{dst_info.type_path[i]->field_offset(
-                    tok(), std::span{dst_info.elem_path}.subspan(i))};
-
-                if (offset != 0) {
-                    operand operand{lea};
-                    operand.displacement += static_cast<int>(offset);
-                    dst_accessor = std::format("{} [{}]", size_specifier,
-                                               operand.to_string());
-                } else {
-                    dst_accessor = std::format("{} [{}]", size_specifier,
-                                               dst_info.lea_path[i]);
-                }
-            }
-
             // does the identifier contain array indexing?
             if (not stmt_ident_.is_indexed()) {
                 // no, compile to 'dst_info'
-                expr_.compile(tc, os, indent, dst_accessor);
+                expr_.compile(tc, os, indent, dst_info.id);
                 return;
             }
 
@@ -129,6 +89,7 @@ class stmt_assign_var final : public statement {
             for (const std::string& reg : lea_registers | std::views::reverse) {
                 tc.free_scratch_register(tok(), os, indent, reg);
             }
+
             return;
         }
 
@@ -144,11 +105,11 @@ class stmt_assign_var final : public statement {
 
             dst_op = operand{dst_lea};
         } else {
-            if (lea.empty()) {
+            if (dst_info.lea.empty()) {
                 dst_op =
                     operand{toc::get_operand_address_str(dst_info.operand)};
             } else {
-                dst_op = operand{lea};
+                dst_op = operand{dst_info.lea};
             }
         }
 

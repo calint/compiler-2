@@ -30,6 +30,7 @@ struct ident_info {
     std::vector<std::string> elem_path;
     std::vector<const type*> type_path;
     std::vector<std::string> lea_path;
+    std::string lea;
     ident_type ident_type{ident_type::CONST};
 
     [[nodiscard]] auto is_const() const -> bool {

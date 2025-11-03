@@ -109,6 +109,7 @@ class type final {
             .elem_path{},
             .type_path{},
             .lea_path{},
+            .lea{},
             .ident_type = ident_info::ident_type::VAR,
         };
     }

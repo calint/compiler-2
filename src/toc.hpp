@@ -1401,6 +1401,44 @@ class toc final {
             std::ranges::reverse(lea_path);
             ii.lea_path = lea_path;
 
+            if (not ii.type_ptr->is_built_in()) {
+                return ii;
+            }
+
+            // identifier is built-in type
+
+            // find the first element from the top that has a "lea" and get
+            // accessor relative to that
+
+            size_t j{ii.elem_path.size()};
+            while (j) {
+                j--;
+                if (not ii.lea_path[j].empty()) {
+                    ii.lea = ii.lea_path[j];
+                    break;
+                }
+            }
+
+            std::string dst_accessor{ii.id};
+            if (not ii.lea.empty()) {
+                const std::string_view size_specifier{
+                    toc::get_size_specifier(ii.type_ptr->size())};
+
+                const size_t offset{ii.type_path[j]->field_offset(
+                    src_loc, std::span{ii.elem_path}.subspan(j))};
+
+                if (offset != 0) {
+                    operand operand{ii.lea};
+                    operand.displacement += static_cast<int>(offset);
+                    dst_accessor = std::format("{} [{}]", size_specifier,
+                                               operand.to_string());
+                } else {
+                    dst_accessor =
+                        std::format("{} [{}]", size_specifier, ii.lea_path[j]);
+                }
+                ii.operand = dst_accessor;
+            }
+
             return ii;
         }
 
@@ -1416,6 +1454,7 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&tpe},
                 .lea_path{""},
+                .lea{},
                 .ident_type = ident_info::ident_type::REGISTER,
             };
         }
@@ -1430,6 +1469,7 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
+                .lea{},
                 .ident_type = ident_info::ident_type::REGISTER,
             };
         }
@@ -1446,6 +1486,7 @@ class toc final {
                     .elem_path{id.str()},
                     .type_path{&get_type_default()},
                     .lea_path{""},
+                    .lea{},
                     .ident_type = ident_info::ident_type::IMPLIED,
                 };
             }
@@ -1458,6 +1499,7 @@ class toc final {
                     .elem_path{id.str()},
                     .type_path{&get_type_default()},
                     .lea_path{""},
+                    .lea{},
                     .ident_type = ident_info::ident_type::FIELD,
                 };
             }
@@ -1469,6 +1511,7 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
+                .lea{},
                 .ident_type = ident_info::ident_type::FIELD,
             };
         }
@@ -1484,6 +1527,7 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
+                .lea{},
             };
         }
 
@@ -1497,6 +1541,7 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
+                .lea{},
             };
         }
 
@@ -1509,6 +1554,7 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
+                .lea{},
             };
         }
 
@@ -1520,6 +1566,7 @@ class toc final {
             .elem_path{},
             .type_path{},
             .lea_path{},
+            .lea{},
         };
     }
 
@@ -1780,7 +1827,8 @@ class toc final {
         {
             int64_t value{};
             const std::string_view sv{str};
-            // note: using 'std::string_view' for 'clang-tidy' to not trigger
+            // note: using 'std::string_view' for 'clang-tidy' to not
+            // trigger
             //       the warning
             //       'cppcoreguidelines-pro-bounds-pointer-arithmetic'
 
