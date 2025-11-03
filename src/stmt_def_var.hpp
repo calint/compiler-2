@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "stmt_assign_var.hpp"
 #include "stmt_identifier.hpp"
 #include "type.hpp"
@@ -127,7 +128,7 @@ class stmt_def_var final : public statement {
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 [[maybe_unused]] const std::string_view dst) const
+                 [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
         tc.comment_source(*this, os, indent);
@@ -140,8 +141,11 @@ class stmt_def_var final : public statement {
         };
         tc.add_var(name_tk_, os, indent, var);
 
+        const ident_info& dst_info{
+            tc.make_ident_info(name_tk_, name_tk_.text())};
+
         if (assign_var_) {
-            assign_var_->compile(tc, os, indent, name_tk_.text());
+            assign_var_->compile(tc, os, indent, dst_info);
             return;
         }
 
@@ -152,9 +156,6 @@ class stmt_def_var final : public statement {
         // ; RCX = number of bytes
         // xor eax, eax        ; Zero out RAX (value to store)
         // rep stosb           ; Repeat store byte [RDI] = AL, RCX times
-
-        const ident_info& dst_info{
-            tc.make_ident_info(name_tk_, name_tk_.text())};
 
         const size_t instance_count{array_size_ ? array_size_ : 1};
         const size_t bytes_count{instance_count * dst_info.type_ptr->size()};

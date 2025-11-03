@@ -87,11 +87,6 @@ class stmt_call : public expression {
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const ident_info& dst_info) const -> void override {
-        compile(tc, os, indent, dst_info.operand);
-    }
-
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 const std::string_view dst) const -> void override {
 
         tc.comment_source(*this, os, indent);
 
@@ -149,14 +144,14 @@ class stmt_call : public expression {
 
         // validate return type
         const std::optional<func_return_info> ret{func.returns()};
-        if (not dst.empty()) {
+        if (not dst_info.operand.empty()) {
             if (not ret) {
                 throw compiler_exception{tok(),
                                          "function does not return value"};
             }
             // alias return identifier to 'dst'
             aliases_to_add.emplace_back(std::string{ret->ident_tk.text()},
-                                        std::string{dst}, "", ret->type_ptr);
+                                        dst_info.operand, "", ret->type_ptr);
         } else if (ret) {
             throw compiler_exception{tok(),
                                      "function returns but value is discarded"};
@@ -290,7 +285,7 @@ class stmt_call : public expression {
         }
 
         // compile in-lined code
-        func.code().compile(tc, os, indent, dst);
+        func.code().compile(tc, os, indent, dst_info);
 
         // free allocated registers in reverse order
         for (const auto& reg :

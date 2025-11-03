@@ -36,14 +36,6 @@ class stmt_if_branch final : public statement {
     [[noreturn]] void
     compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
             [[maybe_unused]] const size_t indent,
-            [[maybe_unused]] const std::string_view dst) const override {
-
-        std::unreachable();
-    }
-
-    [[noreturn]] void
-    compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
-            [[maybe_unused]] const size_t indent,
             [[maybe_unused]] const ident_info& dst_info) const override {
         std::unreachable();
     }
@@ -70,14 +62,14 @@ class stmt_if_branch final : public statement {
                 toc::asm_label(os, indent, jmp_to_if_true_lbl);
                 // note: label is necessary because of a `jmp` that gets
                 //       optimized away
-                code_.compile(tc, os, indent, "");
+                code_.compile(tc, os, indent, tc.make_ident_info_empty());
             }
             return *const_eval;
         }
         // the label where to jump if evaluation of the condition is true
         toc::asm_label(os, indent, jmp_to_if_true_lbl);
         // the code of the branch
-        code_.compile(tc, os, indent, "");
+        code_.compile(tc, os, indent, tc.make_ident_info_empty());
         // after the code of the branch is executed, jump to the end of the 'if
         // ... else if ... else ...' block.
         // if the jump label is not provided, then there is no 'else' and this

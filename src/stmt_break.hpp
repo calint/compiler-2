@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include "decouple.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 
@@ -19,7 +20,7 @@ class stmt_break final : public statement {
     auto operator=(stmt_break&&) -> stmt_break& = default;
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 [[maybe_unused]] const std::string_view dst) const
+                 [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
         tc.comment_source(*this, os, indent);

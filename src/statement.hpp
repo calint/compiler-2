@@ -35,15 +35,6 @@ class statement {
 
     virtual auto compile([[maybe_unused]] toc& tc,
                          [[maybe_unused]] std::ostream& os,
-                         [[maybe_unused]] const size_t indent,
-                         [[maybe_unused]] const std::string_view dst) const
-        -> void {
-
-        std::unreachable();
-    }
-
-    virtual auto compile([[maybe_unused]] toc& tc,
-                         [[maybe_unused]] std::ostream& os,
                          [[maybe_unused]] size_t indent,
                          [[maybe_unused]] const ident_info& ident_info) const
         -> void {

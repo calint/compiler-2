@@ -116,7 +116,7 @@ class program final {
         std::println(os, "\nsection .data");
         for (const auto& st : statements_) {
             if (st->is_in_data_section()) {
-                st->compile(tc, os, indent, "");
+                st->compile(tc, os, indent, tc.make_ident_info_empty());
             }
         }
         std::println(os,
@@ -124,7 +124,7 @@ class program final {
                      "rsp,stk.end\n;\n; program\n;");
         for (const auto& st : statements_) {
             if (not st->is_in_data_section()) {
-                st->compile(tc, os, indent, "");
+                st->compile(tc, os, indent, tc.make_ident_info_empty());
             }
         }
 
@@ -132,7 +132,7 @@ class program final {
         const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
         std::println(os, "main:"); // note: not necessary
         tc.enter_func("main", {});
-        func_main.code().compile(tc, os, indent, "");
+        func_main.code().compile(tc, os, indent, tc.make_ident_info_empty());
         tc.exit_func("main");
         std::println(os, "    ; system call: exit 0");
         std::println(os, "    mov rax, 60");

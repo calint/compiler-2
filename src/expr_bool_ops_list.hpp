@@ -151,15 +151,6 @@ class expr_bool_ops_list final : public statement {
     [[noreturn]] auto compile([[maybe_unused]] toc& tc,
                               [[maybe_unused]] std::ostream& os,
                               [[maybe_unused]] const size_t indent,
-                              [[maybe_unused]] const std::string_view dst) const
-        -> void override {
-
-        std::unreachable();
-    }
-
-    [[noreturn]] auto compile([[maybe_unused]] toc& tc,
-                              [[maybe_unused]] std::ostream& os,
-                              [[maybe_unused]] const size_t indent,
                               [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 

@@ -3,6 +3,7 @@
 
 #include <string_view>
 
+#include "decouple.hpp"
 #include "stmt_call.hpp"
 
 class stmt_builtin_mov final : public stmt_call {
@@ -22,7 +23,7 @@ class stmt_builtin_mov final : public stmt_call {
     auto operator=(stmt_builtin_mov&&) -> stmt_builtin_mov& = default;
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 [[maybe_unused]] const std::string_view dst) const
+                 [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
         tc.comment_source(*this, os, indent);

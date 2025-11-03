@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include "decouple.hpp"
 #include "stmt_block.hpp"
 #include "stmt_if_branch.hpp"
 
@@ -79,7 +80,7 @@ class stmt_if final : public statement {
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 [[maybe_unused]] const std::string_view dst) const
+                 [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
         // make unique labels considering in-lined functions
@@ -124,7 +125,7 @@ class stmt_if final : public statement {
         if (not branch_evaluated_to_true) {
             if (not else_code_.is_empty()) {
                 toc::asm_label(os, indent, label_else_branch);
-                else_code_.compile(tc, os, indent, dst);
+                else_code_.compile(tc, os, indent, dst_info);
             }
         }
 

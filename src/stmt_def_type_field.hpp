@@ -4,6 +4,7 @@
 #include <string_view>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 
@@ -77,7 +78,7 @@ class stmt_def_type_field final : public statement {
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
                  [[maybe_unused]] const size_t indent,
-                 [[maybe_unused]] const std::string_view dst) const
+                 [[maybe_unused]] const ident_info& dst_info) const
         -> void override {}
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }

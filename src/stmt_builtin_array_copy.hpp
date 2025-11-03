@@ -75,7 +75,7 @@ class stmt_builtin_array_copy final : public statement {
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 [[maybe_unused]] const std::string_view dst) const
+                 [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
         tc.comment_source(*this, os, indent);

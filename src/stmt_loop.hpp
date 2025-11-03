@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include "decouple.hpp"
 #include "statement.hpp"
 #include "stmt_block.hpp"
 
@@ -25,7 +26,7 @@ class stmt_loop final : public statement {
     auto operator=(stmt_loop&&) -> stmt_loop& = default;
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 [[maybe_unused]] const std::string_view dst) const
+                 [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
         tc.comment_token(tok(), os, indent);
@@ -33,7 +34,7 @@ class stmt_loop final : public statement {
         const std::string lbl{tc.create_unique_label(tok(), "loop")};
         toc::asm_label(os, indent, lbl);
         tc.enter_loop(lbl);
-        code_.compile(tc, os, indent, dst);
+        code_.compile(tc, os, indent, dst_info);
         toc::asm_jmp(os, indent, lbl);
         toc::asm_label(os, indent, std::format("{}_end", lbl));
         tc.exit_loop(lbl);

@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include "decouple.hpp"
 #include "stmt_call.hpp"
 
 class stmt_builtin_syscall final : public stmt_call {
@@ -21,7 +22,7 @@ class stmt_builtin_syscall final : public stmt_call {
     auto operator=(stmt_builtin_syscall&&) -> stmt_builtin_syscall& = default;
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 [[maybe_unused]] const std::string_view dst) const
+                 [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
         tc.comment_source(*this, os, indent);
