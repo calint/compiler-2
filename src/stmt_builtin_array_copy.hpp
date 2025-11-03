@@ -92,7 +92,7 @@ class stmt_builtin_array_copy final : public statement {
 
         // size to 'rcx'
         tc.comment_source(count_, os, indent);
-        count_.compile(tc, os, indent, "rcx");
+        count_.compile(tc, os, indent, tc.make_ident_info_for_register("rcx"));
 
         // from operand to rsi
         tc.comment_source(from_, os, indent);

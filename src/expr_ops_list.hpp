@@ -207,9 +207,7 @@ class expr_ops_list final : public expression {
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 const std::string_view dst) const -> void override {
-
-        const ident_info dst_info{tc.make_ident_info(tok(), dst)};
+                 const ident_info& dst_info) const -> void override {
 
         // is destination a register?
         if (dst_info.is_register()) {
@@ -323,7 +321,7 @@ class expr_ops_list final : public expression {
 
         const statement& st0{*exprs_[0]};
         if (st0.is_identifier()) {
-            st0.compile(tc, os, indent, dst_info.id);
+            st0.compile(tc, os, indent, dst_info);
         } else {
             // the first element is assigned to destination, operator '='
             asm_op(tc, os, indent, '=', dst_info, st0);
@@ -456,7 +454,7 @@ class expr_ops_list final : public expression {
         if (src.is_expression()) {
             std::println(os, "= expression");
             // yes, compile with destination to 'dst'
-            src.compile(tc, os, indent, dst_info.operand);
+            src.compile(tc, os, indent, dst_info);
             return;
         }
 
@@ -478,7 +476,8 @@ class expr_ops_list final : public expression {
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
 
-            src.compile(tc, os, indent, reg_sized);
+            src.compile(tc, os, indent,
+                        tc.make_ident_info_for_register(reg_sized));
 
             // note: 'imul' destination must be a register
             if (dst_info.is_register() and not dst_info.is_memory_operand()) {
@@ -655,7 +654,8 @@ class expr_ops_list final : public expression {
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
-            src.compile(tc, os, indent, reg_sized);
+            src.compile(tc, os, indent,
+                        tc.make_ident_info_for_register(reg_sized));
             tc.asm_cmd(src.tok(), os, indent, op, dst_info.operand, reg_sized);
             tc.free_scratch_register(src.tok(), os, indent, reg);
             return;
@@ -718,7 +718,8 @@ class expr_ops_list final : public expression {
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
-            src.compile(tc, os, indent, reg_sized);
+            src.compile(tc, os, indent,
+                        tc.make_ident_info_for_register(reg_sized));
             tc.asm_cmd(src.tok(), os, indent, op, dst_info.operand, reg_sized);
             tc.free_scratch_register(src.tok(), os, indent, reg);
             return;
@@ -781,7 +782,8 @@ class expr_ops_list final : public expression {
             const std::string rcx_sized{
                 tc.get_sized_register_operand("rcx", dst_size)};
             // the number of bits to shift is an expression, compile it to 'rcx'
-            src.compile(tc, os, indent, rcx_sized);
+            src.compile(tc, os, indent,
+                        tc.make_ident_info_for_register(rcx_sized));
             tc.asm_cmd(src.tok(), os, indent, op, dst_info.operand, "cl");
             if (rcx_allocated) {
                 tc.free_named_register(src.tok(), os, indent, "rcx");
@@ -892,7 +894,8 @@ class expr_ops_list final : public expression {
                 tc.alloc_scratch_register(src.tok(), os, indent)};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
-            src.compile(tc, os, indent, reg_sized);
+            src.compile(tc, os, indent,
+                        tc.make_ident_info_for_register(reg_sized));
             const bool rax_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rax")};
             if (not rax_allocated) {

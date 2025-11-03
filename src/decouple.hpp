@@ -17,6 +17,15 @@ class stmt_identifier;
 class type;
 class expr_any;
 
+struct var_info {
+    std::string name;
+    const type* type_ptr{};
+    token declared_at_tk; // token for position in the source
+    int32_t stack_idx{};  // location relative to register rsp
+    bool is_array{};
+    size_t array_size{};
+};
+
 struct ident_info {
     enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
 
@@ -54,15 +63,6 @@ struct ident_info {
             return not s.empty();
         });
     }
-};
-
-struct var_info {
-    std::string name;
-    const type* type_ptr{};
-    token declared_at_tk; // token for position in the source
-    int32_t stack_idx{};  // location relative to register rsp
-    bool is_array{};
-    size_t array_size{};
 };
 
 //

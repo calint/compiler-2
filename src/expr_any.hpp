@@ -6,9 +6,11 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
+#include "decouple.hpp"
 #include "expr_bool_ops_list.hpp"
 #include "expr_ops_list.hpp"
 #include "expr_type_value.hpp"
@@ -59,20 +61,16 @@ class expr_any final : public statement {
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 const std::string_view dst) const -> void override {
-
+                 const ident_info& dst_info) const -> void override {
         std::visit(
             overloaded{
                 [&](const expr_ops_list& e) -> void {
-                    e.compile(tc, os, indent, dst);
+                    e.compile(tc, os, indent, dst_info);
                 },
-                [&](const expr_type_value& e) -> void {
-                    e.compile(tc, os, indent, dst);
+                [&]([[maybe_unused]] const expr_type_value& e) -> void {
+                    std::unreachable();
                 },
                 [&](const expr_bool_ops_list& e) -> void {
-                    // resolve the destination
-                    const ident_info& dst_info{tc.make_ident_info(tok(), dst)};
-
                     // if not expression assign to destination
                     if (not e.is_expression()) {
                         const ident_info& src_info{tc.make_ident_info(e)};

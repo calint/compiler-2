@@ -6,6 +6,7 @@
 #include <ostream>
 #include <utility>
 
+#include "decouple.hpp"
 #include "expr_ops_list.hpp"
 
 class expr_bool_op final : public statement {
@@ -93,15 +94,6 @@ class expr_bool_op final : public statement {
         }
         std::print(os, "{}", op_);
         rhs_.source_to(os);
-    }
-
-    [[noreturn]] auto compile([[maybe_unused]] toc& tc,
-                              [[maybe_unused]] std::ostream& os,
-                              [[maybe_unused]] const size_t indent,
-                              [[maybe_unused]] const std::string_view dst) const
-        -> void override {
-
-        std::unreachable();
     }
 
     // returns an optional bool, and if defined the expression evaluated to
@@ -445,7 +437,8 @@ class expr_bool_op final : public statement {
             const std::string reg{
                 tc.alloc_scratch_register(expr.tok(), os, indent)};
             allocated_registers.emplace_back(reg);
-            expr.compile(tc, os, indent + 1, reg);
+            expr.compile(tc, os, indent + 1,
+                         tc.make_ident_info_for_register(reg));
             return reg;
         }
 
@@ -456,7 +449,8 @@ class expr_bool_op final : public statement {
                 const std::string reg{
                     tc.alloc_scratch_register(expr.tok(), os, indent)};
                 allocated_registers.emplace_back(reg);
-                expr.compile(tc, os, indent + 1, reg);
+                expr.compile(tc, os, indent + 1,
+                             tc.make_ident_info_for_register(reg));
                 return reg;
             }
             return std::format("{}{}", expr.get_unary_ops().to_string(),

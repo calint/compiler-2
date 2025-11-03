@@ -3,6 +3,7 @@
 
 #include <utility>
 
+#include "decouple.hpp"
 #include "expr_bool_ops_list.hpp"
 #include "stmt_block.hpp"
 
@@ -40,11 +41,17 @@ class stmt_if_branch final : public statement {
         std::unreachable();
     }
 
+    [[noreturn]] void
+    compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
+            [[maybe_unused]] const size_t indent,
+            [[maybe_unused]] const ident_info& dst_info) const override {
+        std::unreachable();
+    }
+
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const std::string_view jmp_to_if_false_label,
                  const std::string_view jmp_to_after_code_label) const
         -> std::optional<bool> {
-
         const std::string if_bgn_lbl{if_bgn_label(tc)};
         const std::string jmp_to_if_true_lbl{
             std::format("{}_code", if_bgn_lbl)};
@@ -93,7 +100,6 @@ class stmt_if_branch final : public statement {
 
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
-
         bol_.assert_var_not_used(var);
     }
 };

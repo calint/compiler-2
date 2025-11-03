@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
 #include "unary_ops.hpp"
@@ -67,8 +68,7 @@ class stmt_builtin_equal final : public expression {
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 [[maybe_unused]] const std::string_view dst) const
-        -> void override {
+                 const ident_info& dst_info) const -> void override {
 
         tc.comment_source(*this, os, indent);
 
@@ -162,10 +162,10 @@ class stmt_builtin_equal final : public expression {
         const std::string lbl_end{tc.create_unique_label(tok(), "cmps_end")};
 
         toc::asm_jcc(os, indent, "e", lbl_if_equal); // je
-        tc.asm_cmd(tok(), os, indent, "mov", dst, "false");
+        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand, "false");
         toc::asm_jmp(os, indent, lbl_end);
         toc::asm_label(os, indent, lbl_if_equal);
-        tc.asm_cmd(tok(), os, indent, "mov", dst, "true");
+        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand, "true");
         toc::asm_label(os, indent, lbl_end);
     }
 };

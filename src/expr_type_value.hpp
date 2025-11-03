@@ -5,7 +5,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
 
 #include "decouple.hpp"
@@ -35,15 +34,6 @@ class expr_type_value final : public statement {
     auto operator=(const expr_type_value&) -> expr_type_value& = default;
     auto operator=(expr_type_value&&) -> expr_type_value& = default;
     // note: copy and assignment constructor will not compile if used
-
-    // unreachable
-    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
-                 [[maybe_unused]] const size_t indent,
-                 [[maybe_unused]] const std::string_view dst) const
-        -> void override {
-
-        std::unreachable();
-    }
 
     // implemented in 'main.cpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value

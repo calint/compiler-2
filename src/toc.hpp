@@ -1140,6 +1140,25 @@ class toc final {
         return make_ident_info_or_throw(src_loc_tk, ident);
     }
 
+    [[nodiscard]] auto
+    make_ident_info_for_register(const std::string_view reg) const
+        -> ident_info {
+
+        const size_t reg_size{get_size_from_register_operand(reg)};
+        const type& tpe{get_builtin_type_for_size(reg_size)};
+        //? unary ops?
+        return {
+            .id{reg},
+            .operand{reg},
+            .type_ptr = &tpe,
+            .elem_path{std::string{reg}},
+            .type_path{&tpe},
+            .lea_path{},
+            .lea{},
+            .ident_type = ident_info::ident_type::REGISTER,
+        };
+    }
+
     auto rep_movs(const token& src_loc_tk, std::ostream& os, const size_t indnt,
                   const std::string_view src, std::string_view dst,
                   const size_t bytes_count) -> void {
@@ -1321,8 +1340,8 @@ class toc final {
         ident_path id{std::string{ident}};
 
         // get the root of an identifier: example p.x -> p
-        // traverse the frames and resolve the `ident` (which might be an alias)
-        // to a variable, field, register or constant
+        // traverse the frames and resolve the `ident` (which might be an
+        // alias) to a variable, field, register or constant
         size_t i{frames_.size()};
         std::vector<std::string> lea_path;
         // ignore the elements after the base:
@@ -1782,8 +1801,8 @@ class toc final {
         return {at_line, at_col};
     }
 
-    // pragma below for clang++ to not generate warning stemming from
-    // 'std::from_chars' requiring pointers
+// pragma below for clang++ to not generate warning stemming from
+// 'std::from_chars' requiring pointers
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
     static auto parse_to_constant(const std::string_view str)

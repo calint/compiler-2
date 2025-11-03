@@ -36,7 +36,7 @@ class stmt_builtin_mov final : public stmt_call {
 
         const statement& src_arg{argument(1)};
         if (src_arg.is_expression() or src_arg.is_identifier()) {
-            src_arg.compile(tc, os, indent + 1, dst_info.id);
+            src_arg.compile(tc, os, indent + 1, dst_info);
             return;
         }
 

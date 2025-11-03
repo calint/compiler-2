@@ -59,7 +59,7 @@ class stmt_assign_var final : public statement {
         tc.comment_source(*this, os, indent);
 
         // get information about the destination of the compilation
-        const ident_info dst_info{
+        ident_info dst_info{
             tc.make_ident_info(tok(), stmt_ident_.identifier())};
 
         if (dst_info.is_const()) {
@@ -72,7 +72,8 @@ class stmt_assign_var final : public statement {
             std::vector<std::string> lea_registers;
             const std::string& dst_operand{tc.get_lea_operand(
                 os, indent, stmt_ident_, dst_info, lea_registers)};
-            expr_.compile(tc, os, indent, dst_operand);
+            dst_info.operand = dst_operand;
+            expr_.compile(tc, os, indent, dst_info);
             for (const std::string& reg : lea_registers | std::views::reverse) {
                 tc.free_scratch_register(tok(), os, indent, reg);
             }

@@ -10,9 +10,11 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "expr_any.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
@@ -134,12 +136,16 @@ class stmt_identifier : public statement {
         ws2_.source_to(os);
     }
 
+    // auto compile(toc& tc, std::ostream& os, const size_t indent,
+    //              const std::string_view dst) const -> void override {
+    //
+    //     std::unreachable();
+    // }
+
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 const std::string_view dst) const -> void override {
+                 const ident_info& dst_info) const -> void override {
 
         tc.comment_source(*this, os, indent);
-
-        const ident_info dst_info{tc.make_ident_info(tok(), dst)};
 
         // DEBUG
         // std::println(std::cerr, "[{}] identifier path: {}", tok().at_line(),
@@ -284,8 +290,9 @@ class stmt_identifier : public statement {
                                      indent);
                     std::println(os, "set array index");
 
-                    curr_elem.array_index_expr->compile(tc, os, indent,
-                                                        reg_idx);
+                    curr_elem.array_index_expr->compile(
+                        tc, os, indent,
+                        tc.make_ident_info_for_register(reg_idx));
 
                     const token& tk{curr_elem.array_index_expr->tok()};
                     const bool use_reg_size{not reg_size.empty()};
@@ -345,7 +352,8 @@ class stmt_identifier : public statement {
             tc.comment_start(curr_elem.array_index_expr->tok(), os, indent);
             std::println(os, "set array index");
 
-            curr_elem.array_index_expr->compile(tc, os, indent, reg_idx);
+            curr_elem.array_index_expr->compile(
+                tc, os, indent, tc.make_ident_info_for_register(reg_idx));
 
             // bounds check
             const token& tk{curr_elem.array_index_expr->tok()};

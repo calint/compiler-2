@@ -447,7 +447,9 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                             dst_op.to_string(), fld.size);
             } else {
                 // built-in, expression, not array
-                src.compile(tc, os, indent, dst_accessor);
+                const ident_info dst_info{
+                    tc.make_ident_info(src.tok(), dst_accessor)};
+                src.compile(tc, os, indent, dst_info);
             }
         } else {
             // built-in, not expression

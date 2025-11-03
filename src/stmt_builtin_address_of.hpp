@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "expression.hpp"
 #include "stmt_identifier.hpp"
 #include "unary_ops.hpp"
@@ -58,12 +59,9 @@ class stmt_builtin_address_of final : public expression {
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 [[maybe_unused]] const std::string_view dst) const
-        -> void override {
+                 const ident_info& dst_info) const -> void override {
 
         tc.comment_source(*this, os, indent);
-
-        const ident_info dst_info{tc.make_ident_info(tok(), dst)};
 
         if (dst_info.is_const()) {
             throw compiler_exception{stmt_ident_.first_token(),

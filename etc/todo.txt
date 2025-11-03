@@ -1,3 +1,5 @@
+[ ] stmt_builtin_equal: use setcc 164
+[ ] stmt_builtin_arrays_equal: use setcc line 168
 [ ] consider having custom compile instead of generic statement::compile
     depending on context (already in `if`)
 [ ] stmt_assign_var::compile: unified way of determining the effective address

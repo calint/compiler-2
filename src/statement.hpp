@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
+#include "decouple.hpp"
 #include "token.hpp"
 #include "unary_ops.hpp"
 
@@ -34,9 +35,21 @@ class statement {
 
     virtual auto compile([[maybe_unused]] toc& tc,
                          [[maybe_unused]] std::ostream& os,
+                         [[maybe_unused]] const size_t indent,
+                         [[maybe_unused]] const std::string_view dst) const
+        -> void {
+
+        std::unreachable();
+    }
+
+    virtual auto compile([[maybe_unused]] toc& tc,
+                         [[maybe_unused]] std::ostream& os,
                          [[maybe_unused]] size_t indent,
-                         [[maybe_unused]] std::string_view dst) const
-        -> void = 0;
+                         [[maybe_unused]] const ident_info& ident_info) const
+        -> void {
+
+        std::unreachable();
+    }
 
     virtual auto source_to(std::ostream& os) const -> void {
         uops_.source_to(os);

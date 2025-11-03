@@ -86,6 +86,11 @@ class stmt_call : public expression {
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
+                 const ident_info& dst_info) const -> void override {
+        compile(tc, os, indent, dst_info.operand);
+    }
+
+    auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const std::string_view dst) const -> void override {
 
         tc.comment_source(*this, os, indent);
@@ -213,7 +218,8 @@ class stmt_call : public expression {
                 }
                 const std::string& reg_sized{tc.get_sized_register_operand(
                     arg_reg, param.get_type().size())};
-                arg.compile(tc, os, indent, reg_sized);
+                arg.compile(tc, os, indent,
+                            tc.make_ident_info_for_register(reg_sized));
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             reg_sized, "", &param.get_type());
                 continue;

@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    41           1366            726           6431
-C++                              1             84            104            555
+C/C++ Header                    41           1364            730           6472
+C++                              1             84            104            557
 -------------------------------------------------------------------------------
-SUM:                            42           1450            830           6986
+SUM:                            42           1448            834           7029
 -------------------------------------------------------------------------------
 ```
 
@@ -1983,7 +1983,7 @@ main:
     cmovge rbp, r14
     jge panic_bounds
 ;   [125:9] free scratch register 'r14'
-;   [125:16] dword [rsp + r15 * 4 - 16] = ~inv(arr[ix - 1])
+;   [125:16] arr = ~inv(arr[ix - 1])
 ;   [125:16] = expression
 ;   [125:16] ~inv(arr[ix - 1])
 ;   [125:20] allocate scratch register -> r14
@@ -2514,7 +2514,7 @@ main:
 ;   [153:5] var k = baz(j)
 ;   [153:9] k: i64 (8B @ qword [rsp - 112])
 ;   [153:9] k = baz(j)
-;   [153:13] qword [rsp - 112] = baz(j)
+;   [153:13] k = baz(j)
 ;   [153:13] = expression
 ;   [153:13] baz(j)
 ;   [69:6] baz(arg) : i64 res 
@@ -2570,7 +2570,7 @@ main:
 ;       [154:5] free scratch register 'r15'
     assert_154_5_end:
 ;   [156:5] k = baz(1)
-;   [156:9] qword [rsp - 112] = baz(1)
+;   [156:9] k = baz(1)
 ;   [156:9] = expression
 ;   [156:9] baz(1)
 ;   [69:6] baz(arg) : i64 res 

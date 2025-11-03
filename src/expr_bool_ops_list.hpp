@@ -157,6 +157,15 @@ class expr_bool_ops_list final : public statement {
         std::unreachable();
     }
 
+    [[noreturn]] auto compile([[maybe_unused]] toc& tc,
+                              [[maybe_unused]] std::ostream& os,
+                              [[maybe_unused]] const size_t indent,
+                              [[maybe_unused]] const ident_info& dst_info) const
+        -> void override {
+
+        std::unreachable();
+    }
+
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const std::string_view jmp_to_if_false,
                  const std::string_view jmp_to_if_true, const bool inverted,
