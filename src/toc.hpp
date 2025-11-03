@@ -1453,7 +1453,7 @@ class toc final {
                 .type_ptr = &tpe,
                 .elem_path{id.str()},
                 .type_path{&tpe},
-                .lea_path{""},
+                .lea_path{},
                 .lea{},
                 .ident_type = ident_info::ident_type::REGISTER,
             };
@@ -1468,7 +1468,7 @@ class toc final {
                 .type_ptr = &get_builtin_type_for_operand(src_loc, id.str()),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
-                .lea_path{""},
+                .lea_path{},
                 .lea{},
                 .ident_type = ident_info::ident_type::REGISTER,
             };
@@ -1485,7 +1485,7 @@ class toc final {
                     .type_ptr = &get_type_default(),
                     .elem_path{id.str()},
                     .type_path{&get_type_default()},
-                    .lea_path{""},
+                    .lea_path{},
                     .lea{},
                     .ident_type = ident_info::ident_type::IMPLIED,
                 };
@@ -1498,7 +1498,7 @@ class toc final {
                     .type_ptr = &get_type_default(),
                     .elem_path{id.str()},
                     .type_path{&get_type_default()},
-                    .lea_path{""},
+                    .lea_path{},
                     .lea{},
                     .ident_type = ident_info::ident_type::FIELD,
                 };
@@ -1510,7 +1510,7 @@ class toc final {
                 .type_ptr = &get_type_default(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
-                .lea_path{""},
+                .lea_path{},
                 .lea{},
                 .ident_type = ident_info::ident_type::FIELD,
             };
@@ -1526,7 +1526,7 @@ class toc final {
                 .type_ptr = &get_type_default(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
-                .lea_path{""},
+                .lea_path{},
                 .lea{},
             };
         }
@@ -1540,7 +1540,7 @@ class toc final {
                 .type_ptr = &get_type_bool(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
-                .lea_path{""},
+                .lea_path{},
                 .lea{},
             };
         }
@@ -1553,7 +1553,7 @@ class toc final {
                 .type_ptr = &get_type_bool(),
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
-                .lea_path{""},
+                .lea_path{},
                 .lea{},
             };
         }
