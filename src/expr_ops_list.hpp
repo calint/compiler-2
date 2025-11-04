@@ -308,7 +308,7 @@ class expr_ops_list final : public expression {
                      std::vector<std::string>& allocated_registers,
                      const std::string& reg_size,
                      const std::span<const std::string> lea_path) const
-        -> std::string override {
+        -> operand override {
 
         assert(exprs_.size() == 1);
 

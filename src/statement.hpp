@@ -85,8 +85,9 @@ class statement {
         [[maybe_unused]] std::vector<std::string>& allocated_registers,
         [[maybe_unused]] const std::string& reg_size,
         [[maybe_unused]] const std::span<const std::string> lea_path) const
-        -> std::string {
-        return "";
+        -> operand {
+
+        std::unreachable();
     }
 
     // used in UB check

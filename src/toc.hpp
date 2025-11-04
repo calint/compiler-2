@@ -763,11 +763,8 @@ class toc final {
             return src_info.operand;
         }
 
-        const std::string lea{src.compile_lea(src.tok(), *this, os, indent,
-                                              lea_registers, "",
-                                              src_info.lea_path)};
-
-        operand op{lea};
+        operand op{src.compile_lea(src.tok(), *this, os, indent, lea_registers,
+                                   "", src_info.lea_path)};
         op.size = src_info.type_ptr->size();
         return op;
     }
@@ -1091,10 +1088,10 @@ class toc final {
 
         std::vector<std::string> allocated_registers;
         if (src.is_indexed() or src_info.has_lea()) {
-            const std::string& addr{src.compile_lea(src_loc_tk, *this, os,
-                                                    indnt, allocated_registers,
-                                                    "", src_info.lea_path)};
-            toc::asm_lea(os, indnt, "rsi", addr);
+            const operand addr{src.compile_lea(src_loc_tk, *this, os, indnt,
+                                               allocated_registers, "",
+                                               src_info.lea_path)};
+            toc::asm_lea(os, indnt, "rsi", addr.address_str());
         } else {
             toc::asm_lea(os, indnt, "rsi", src_info.operand.address_str());
         }

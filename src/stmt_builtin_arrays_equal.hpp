@@ -102,12 +102,11 @@ class stmt_builtin_arrays_equal final : public expression {
 
         // from operand to rsi
         tc.comment_source(from_, os, indent);
-        const std::string from_operand{
-            stmt_identifier::compile_effective_address(
-                from_.first_token(), tc, os, indent, from_.elems(),
-                allocated_scratch_registers, "rcx", from_info.lea_path)};
+        const operand from_operand{stmt_identifier::compile_effective_address(
+            from_.first_token(), tc, os, indent, from_.elems(),
+            allocated_scratch_registers, "rcx", from_info.lea_path)};
 
-        toc::asm_lea(os, indent, "rsi", from_operand);
+        toc::asm_lea(os, indent, "rsi", from_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -117,11 +116,11 @@ class stmt_builtin_arrays_equal final : public expression {
         // to operand to 'rdi'
         allocated_scratch_registers.clear();
         tc.comment_source(to_, os, indent);
-        const std::string to_operand{stmt_identifier::compile_effective_address(
+        const operand to_operand{stmt_identifier::compile_effective_address(
             to_.first_token(), tc, os, indent, to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};
 
-        toc::asm_lea(os, indent, "rdi", to_operand);
+        toc::asm_lea(os, indent, "rdi", to_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {

@@ -85,13 +85,11 @@ class stmt_assign_var final : public statement {
         std::vector<std::string> lea_registers;
 
         if (stmt_ident_.is_indexed() or dst_info.has_lea()) {
-            const std::string& dst_lea{stmt_ident_.compile_lea(
-                tok(), tc, os, indent, lea_registers, "", dst_info.lea_path)};
-
-            dst_op = operand{dst_lea};
+            dst_op = stmt_ident_.compile_lea(
+                tok(), tc, os, indent, lea_registers, "", dst_info.lea_path);
         } else {
             if (dst_info.lea.empty()) {
-                dst_op = operand{dst_info.operand.address_str()};
+                dst_op = dst_info.operand;
             } else {
                 dst_op = operand{dst_info.lea};
             }

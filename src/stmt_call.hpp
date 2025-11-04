@@ -184,9 +184,9 @@ class stmt_call : public expression {
 
                 std::vector<std::string> regs_lea;
 
-                const std::string lea{arg.compile_lea(arg.tok(), tc, os, indent,
-                                                      regs_lea, "",
-                                                      arg_info.lea_path)};
+                const operand lea{arg.compile_lea(arg.tok(), tc, os, indent,
+                                                  regs_lea, "",
+                                                  arg_info.lea_path)};
 
                 for (const std::string& r : regs_lea) {
                     allocated_scratch_registers.emplace_back(r);
@@ -200,7 +200,8 @@ class stmt_call : public expression {
                 }
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            std::string{arg.identifier()}, lea,
+                                            std::string{arg.identifier()},
+                                            lea.address_str(),
                                             &param.get_type());
                 continue;
             }

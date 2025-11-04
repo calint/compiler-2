@@ -200,7 +200,7 @@ class stmt_identifier : public statement {
                      std::vector<std::string>& allocated_registers,
                      const std::string& reg_size,
                      const std::span<const std::string> lea_path) const
-        -> std::string override {
+        -> operand override {
 
         return compile_effective_address(src_loc_tk, tc, os, indent, elems_,
                                          allocated_registers, reg_size,
@@ -212,7 +212,7 @@ class stmt_identifier : public statement {
         const std::span<const identifier_elem> elems,
         std::vector<std::string>& allocated_registers,
         const std::string_view reg_size,
-        const std::span<const std::string> lea_path) -> std::string {
+        const std::span<const std::string> lea_path) -> operand {
 
         // pick the last n elements from lea_path since it is a path to root
         // while elems might not be
@@ -313,17 +313,30 @@ class stmt_identifier : public statement {
                     // + 0 etc
                     if (type_size == 1) {
                         if (offset != 0) {
-                            return std::format("{} + {} {} {}", reg_offset,
-                                               reg_idx, op, offset);
+                            operand oper;
+                            oper.base_register = reg_offset;
+                            oper.index_register = reg_idx;
+                            oper.displacement = op == '-' ? -offset : offset;
+                            return oper;
                         }
-                        return std::format("{} + {}", reg_offset, reg_idx);
+                        operand oper;
+                        oper.base_register = reg_offset;
+                        oper.index_register = reg_idx;
+                        return oper;
                     }
                     if (offset != 0) {
-                        return std::format("{} + {} * {} {} {}", reg_offset,
-                                           reg_idx, type_size, op, offset);
+                        operand oper;
+                        oper.base_register = reg_offset;
+                        oper.index_register = reg_idx;
+                        oper.scale = static_cast<uint8_t>(type_size);
+                        oper.displacement = op == '-' ? -offset : offset;
+                        return oper;
                     }
-                    return std::format("{} + {} * {}", reg_offset, reg_idx,
-                                       type_size);
+                    operand oper;
+                    oper.base_register = reg_offset;
+                    oper.index_register = reg_idx;
+                    oper.scale = static_cast<uint8_t>(type_size);
+                    return oper;
                 }
             }
 
@@ -391,17 +404,19 @@ class stmt_identifier : public statement {
         }
 
         if (reg_offset == "rsp") {
-            return std::format("rsp - {}",
-                               -(base_info.stack_ix + accum_offset));
+            operand oper;
+            oper.base_register = "rsp";
+            oper.displacement = base_info.stack_ix + accum_offset;
+            return oper;
         }
 
         if (accum_offset != 0) {
-            operand op{reg_offset};
-            op.displacement += accum_offset;
-            return op.address_str();
+            operand oper{reg_offset};
+            oper.displacement += accum_offset;
+            return oper;
         }
 
-        return std::string{reg_offset};
+        return operand{reg_offset};
     }
 
     static auto get_shift_amount(const uint64_t value) -> std::optional<int> {

@@ -70,7 +70,7 @@ class expr_type_value final : public statement {
                      std::vector<std::string>& allocated_registers,
                      const std::string& reg_size,
                      std::span<const std::string> lea) const
-        -> std::string override;
+        -> operand override;
 
   private:
     // implemented in 'main.cpp'

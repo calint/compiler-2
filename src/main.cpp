@@ -395,17 +395,18 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                     dst_type.name(), src_info.type_ptr->name())};
         }
         std::vector<std::string> allocated_registers;
-        std::string src_op;
+        operand src_op;
         if (is_indexed() or src_info.has_lea()) {
             src_op = compile_lea(tok(), tc, os, indent, allocated_registers, "",
                                  src_info.lea_path);
         } else {
-            src_op = src_info.operand.address_str();
+            src_op = src_info.operand;
         }
         const size_t nbytes{src_info.is_array
                                 ? src_info.array_size * dst_type.size()
                                 : dst_type.size()};
-        tc.rep_movs(tok(), os, indent, src_op, dst_op.address_str(), nbytes);
+        tc.rep_movs(tok(), os, indent, src_op.address_str(),
+                    dst_op.address_str(), nbytes);
 
         dst_op.displacement += static_cast<int32_t>(nbytes);
 
@@ -514,7 +515,7 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 auto expr_type_value::compile_lea(
     const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
     std::vector<std::string>& allocated_registers, const std::string& reg_size,
-    const std::span<const std::string> lea_path) const -> std::string {
+    const std::span<const std::string> lea_path) const -> operand {
 
     return stmt_ident_->compile_lea(src_loc_tk, tc, os, indent,
                                     allocated_registers, reg_size, lea_path);

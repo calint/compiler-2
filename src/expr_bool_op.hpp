@@ -425,10 +425,9 @@ class expr_bool_op final : public statement {
         if (not expr.is_expression() and
             (expr.is_indexed() or tc.has_lea(expr))) {
             const ident_info expr_info{tc.make_ident_info(expr)};
-            const std::string lea{expr.compile_lea(expr.tok(), tc, os, indent,
-                                                   allocated_registers, "",
-                                                   expr_info.lea_path)};
-            const operand op{lea};
+            const operand op{expr.compile_lea(expr.tok(), tc, os, indent,
+                                              allocated_registers, "",
+                                              expr_info.lea_path)};
             return op.str(expr_info.type_ptr->size());
         }
 

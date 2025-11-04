@@ -166,10 +166,10 @@ class expr_any final : public statement {
                      std::vector<std::string>& allocated_registers,
                      const std::string& reg_size,
                      const std::span<const std::string> lea_path) const
-        -> std::string override {
+        -> operand override {
 
         return std::visit(
-            [&](const auto& e) -> std::string {
+            [&](const auto& e) -> operand {
                 return e.compile_lea(src_loc_tk, tc, os, indent,
                                      allocated_registers, reg_size, lea_path);
             },

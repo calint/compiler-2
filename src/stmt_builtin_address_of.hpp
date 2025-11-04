@@ -82,16 +82,17 @@ class stmt_builtin_address_of final : public expression {
 
         std::vector<std::string> allocated_registers;
 
-        const std::string operand = stmt_identifier::compile_effective_address(
+        const operand oper = stmt_identifier::compile_effective_address(
             stmt_ident_.first_token(), tc, os, indent, stmt_ident_.elems(),
             allocated_registers, "", src_info.lea_path);
 
         if (dst_info.is_register()) {
-            toc::asm_lea(os, indent, dst_info.operand.address_str(), operand);
+            toc::asm_lea(os, indent, dst_info.operand.address_str(),
+                         oper.address_str());
         } else {
             // destination is memory location
             const std::string reg{tc.alloc_scratch_register(tok(), os, indent)};
-            toc::asm_lea(os, indent, reg, operand);
+            toc::asm_lea(os, indent, reg, oper.address_str());
             tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(), reg);
             tc.free_scratch_register(tok(), os, indent, reg);
         }
