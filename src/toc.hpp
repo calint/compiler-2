@@ -1411,7 +1411,8 @@ class toc final {
         }
 
         // is 'id' an integer?
-        if (const std::optional<int64_t> value{parse_to_constant(id.str())};
+        if (const std::optional<int64_t> value{
+                parse_to_constant(src_loc_tk, id.str())};
             value) {
             return {
                 .id{ident},
@@ -1679,7 +1680,8 @@ class toc final {
 // 'std::from_chars' requiring pointers
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-    static auto parse_to_constant(const std::string_view str)
+    static auto parse_to_constant(const token& src_loc_tk,
+                                  const std::string_view str)
         -> std::optional<int64_t> {
 
         // is it hex?
@@ -1693,6 +1695,11 @@ class toc final {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             auto result{std::from_chars(sv.data(), sv.data() + sv.size(), value,
                                         base_hex)};
+            if (result.ec == std::errc::result_out_of_range) {
+                throw compiler_exception{
+                    src_loc_tk,
+                    std::format("constant '{}' is out of range", str)};
+            }
             if (result.ec == std::errc{}) {
                 return value;
             }
@@ -1709,6 +1716,11 @@ class toc final {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             auto result{std::from_chars(sv.data(), sv.data() + sv.size(), value,
                                         base_binary)};
+            if (result.ec == std::errc::result_out_of_range) {
+                throw compiler_exception{
+                    src_loc_tk,
+                    std::format("constant '{}' is out of range", str)};
+            }
             if (result.ec == std::errc{}) {
                 return value;
             }
@@ -1719,14 +1731,18 @@ class toc final {
             int64_t value{};
             const std::string_view sv{str};
             // note: using 'std::string_view' for 'clang-tidy' to not
-            // trigger
-            //       the warning
-            //       'cppcoreguidelines-pro-bounds-pointer-arithmetic'
+            // trigger the warning
+            // 'cppcoreguidelines-pro-bounds-pointer-arithmetic'
 
-            auto parse_result{
+            auto result{
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 std::from_chars(sv.data(), sv.data() + sv.size(), value)};
-            if (parse_result.ec == std::errc{}) {
+            if (result.ec == std::errc::result_out_of_range) {
+                throw compiler_exception{
+                    src_loc_tk,
+                    std::format("constant '{}' is out of range", str)};
+            }
+            if (result.ec == std::errc{}) {
                 return value;
             }
         }

@@ -35,8 +35,8 @@ class stmt_def_type_field final : public statement {
             is_array_ = true;
             array_size_tk_ = tz.next_token();
 
-            if (const std::optional<int64_t> value{
-                    toc::parse_to_constant(array_size_tk_.text())};
+            if (const std::optional<int64_t> value{toc::parse_to_constant(
+                    array_size_tk_, array_size_tk_.text())};
                 value) {
                 array_size_ = static_cast<size_t>(*value);
             } else {

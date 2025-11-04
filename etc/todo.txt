@@ -1,3 +1,4 @@
+[x] fix constant out of range for i64
 [ ] operand: fix hack for base register to hold field name
     allows "._" in identifier
 [x] stmt_builtin_equal: use setcc 164
