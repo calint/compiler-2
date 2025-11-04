@@ -1,11 +1,12 @@
 [x] fix constant out of range for i64
-[ ] operand: fix hack for base register to hold field name
+[x] operand: fix hack for base register to hold field name
     allows "._" in identifier
+    => operand now allowed to be a string without interpretation
 [x] stmt_builtin_equal: use setcc 164
 [x] stmt_builtin_arrays_equal: use setcc line 168
 [x] consider having custom compile instead of generic statement::compile
     depending on context (already in `if`)
-[x] stmt_assign_var::compile: unified way of determining the effective address
+[o] stmt_assign_var::compile: unified way of determining the effective address
     of an identifier including indexing, type offset navigation etc
     => make_ident_info should do that and then passed around instead of
        destination as a string
