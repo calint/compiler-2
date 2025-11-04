@@ -1,4 +1,4 @@
-[x] fix constant out of range for i64
+[x] report error if constant out of range for i64
 [x] operand: fix hack for base register to hold field name
     allows "._" in identifier
     => operand now allowed to be a string without interpretation
