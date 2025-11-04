@@ -29,13 +29,25 @@ struct operand {
     int32_t displacement{};
     uint8_t scale{1};
     size_t size{};
+    bool is_str{};
 
     operand() = default;
 
-    explicit operand(const std::string_view operand_sv) {
+    // note: when 'treat_as_string' then operand is assumed to be a constant or
+    //       an identifier
+    explicit operand(const std::string_view operand_sv,
+                     bool treat_as_string = false)
+        : is_str{treat_as_string} {
+
         if (operand_sv.empty()) {
             return;
         }
+
+        if (treat_as_string) {
+            base_register = operand_sv;
+            return;
+        }
+
         // note: regex handles only "base + index * scale +/- displacement" with
         //       optional index, scale and displacement
         const std::regex pattern_with_brackets(
@@ -159,7 +171,7 @@ struct operand {
             }
         } else {
             // try to match a standalone register
-            const std::regex register_pattern(R"(^\s*([a-z][a-z0-9._]*)\s*$)");
+            const std::regex register_pattern(R"(^\s*([a-z][a-z0-9]*)\s*$)");
             std::smatch register_match;
             if (std::regex_match(operand_str, register_match,
                                  register_pattern)) {
@@ -214,7 +226,9 @@ struct operand {
         return s;
     }
 
-    [[nodiscard]] auto str() const -> std::string { return str(size); }
+    [[nodiscard]] auto str() const -> std::string {
+        return is_str ? base_register : str(size);
+    }
 
     [[nodiscard]] auto str(const size_t opsize) const -> std::string {
         std::string s;

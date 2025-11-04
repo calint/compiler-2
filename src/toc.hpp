@@ -1375,7 +1375,7 @@ class toc final {
             if (after_dot == "len") {
                 return {
                     .id{ident},
-                    .operand{ident},
+                    .operand{id.str(), true},
                     .type_ptr = &get_type_default(),
                     .elem_path{id.str()},
                     .type_path{&get_type_default()},
@@ -1388,7 +1388,7 @@ class toc final {
             if (fi.is_str) {
                 return {
                     .id{ident},
-                    .operand{id.base()},
+                    .operand{id.str(), true},
                     .type_ptr = &get_type_default(),
                     .elem_path{id.str()},
                     .type_path{&get_type_default()},
@@ -1416,7 +1416,7 @@ class toc final {
             value) {
             return {
                 .id{ident},
-                .operand{},
+                .operand{id.str(), true},
                 .const_value = *value,
                 .type_ptr = &get_type_default(),
                 .elem_path{id.str()},
@@ -1430,7 +1430,7 @@ class toc final {
         if (id.base() == "true") {
             return {
                 .id{ident},
-                .operand{"true"},
+                .operand{"true", true},
                 .const_value = 1,
                 .type_ptr = &get_type_bool(),
                 .elem_path{id.str()},
@@ -1443,7 +1443,7 @@ class toc final {
         if (id.base() == "false") {
             return {
                 .id{ident},
-                .operand{"false"},
+                .operand{"false", true},
                 .const_value = 0,
                 .type_ptr = &get_type_bool(),
                 .elem_path{id.str()},
