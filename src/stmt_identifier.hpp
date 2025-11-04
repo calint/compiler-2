@@ -159,9 +159,9 @@ class stmt_identifier : public statement {
         const ident_info src_info{tc.make_ident_info(tok(), identifier())};
 
         if (src_info.is_const()) {
-            tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
+            tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(),
                        std::format("{}{}", get_unary_ops().to_string(),
-                                   src_info.operand));
+                                   src_info.const_value));
             return;
         }
 
@@ -170,9 +170,9 @@ class stmt_identifier : public statement {
         if (not is_indexed() and not src_info.has_lea()) {
             // note: contains no array indexing and is not relative a lea,
             //       e.g. world.location.link
-            tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
-                       src_info.operand);
-            get_unary_ops().compile(tc, os, indent, dst_info.operand);
+            tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(),
+                       src_info.operand.str());
+            get_unary_ops().compile(tc, os, indent, dst_info.operand.str());
             return;
         }
 
@@ -188,10 +188,10 @@ class stmt_identifier : public statement {
         const std::string_view size_specifier{
             toc::get_size_specifier(src_info.type_ptr->size())};
 
-        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
+        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(),
                    std::format("{} [{}]", size_specifier, effective_address));
 
-        get_unary_ops().compile(tc, os, indent, dst_info.operand);
+        get_unary_ops().compile(tc, os, indent, dst_info.operand.str());
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
@@ -402,7 +402,7 @@ class stmt_identifier : public statement {
         if (accum_offset != 0) {
             operand op{reg_offset};
             op.displacement += accum_offset;
-            return op.to_string();
+            return op.address_str();
         }
 
         return std::string{reg_offset};

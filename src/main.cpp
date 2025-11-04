@@ -400,12 +400,12 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             src_op = compile_lea(tok(), tc, os, indent, allocated_registers, "",
                                  src_info.lea_path);
         } else {
-            src_op = toc::get_operand_address_str(src_info.operand);
+            src_op = src_info.operand.address_str();
         }
         const size_t nbytes{src_info.is_array
                                 ? src_info.array_size * dst_type.size()
                                 : dst_type.size()};
-        tc.rep_movs(tok(), os, indent, src_op, dst_op.to_string(), nbytes);
+        tc.rep_movs(tok(), os, indent, src_op, dst_op.address_str(), nbytes);
 
         dst_op.displacement += static_cast<int32_t>(nbytes);
 
@@ -433,9 +433,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
 
         const expr_any& src{*exprs_[i]};
 
-        const std::string dst_accessor{std::format(
-            "{} [{}]", toc::get_size_specifier(fld.type_ptr->size()),
-            dst_op.to_string())};
+        const std::string dst_accessor{dst_op.str(fld.type_ptr->size())};
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
@@ -444,7 +442,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                 const ident_info src_info{tc.make_ident_info(src)};
                 validate_array_assignment(src.tok(), fld, src_info);
                 tc.rep_movs(src.tok(), os, indent, src, src_info,
-                            dst_op.to_string(), fld.size);
+                            dst_op.address_str(), fld.size);
             } else {
                 // built-in, expression, not array
                 const ident_info dst_info{
@@ -458,19 +456,19 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                 // built-in, not expression, constant
                 tc.asm_cmd(src.tok(), os, indent, "mov", dst_accessor,
                            std::format("{}{}", src.get_unary_ops().to_string(),
-                                       src_info.operand));
+                                       src_info.const_value));
             } else {
                 // built-in, not expression, not constant
                 if (fld.is_array) {
                     // built-in, not expression, not constant, array
                     validate_array_assignment(src.tok(), fld, src_info);
                     tc.rep_movs(src.tok(), os, indent,
-                                toc::get_operand_address_str(src_info.operand),
-                                dst_op.to_string(), fld.size);
+                                src_info.operand.address_str(),
+                                dst_op.address_str(), fld.size);
                 } else {
                     // built-in, not expression, not constant, not array
                     tc.asm_cmd(src.tok(), os, indent, "mov", dst_accessor,
-                               src_info.operand);
+                               src_info.operand.str());
                     src.get_unary_ops().compile(tc, os, indent, dst_accessor);
                 }
             }

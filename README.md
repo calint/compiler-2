@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    41           1358            730           6469
-C++                              1             84            104            557
+C/C++ Header                    41           1366            741           6594
+C++                              1             84            104            555
 -------------------------------------------------------------------------------
-SUM:                            42           1442            834           7026
+SUM:                            42           1450            845           7149
 -------------------------------------------------------------------------------
 ```
 
@@ -610,7 +610,7 @@ main:
         cmp r15, 4
         cmovge rbp, r14
         jge panic_bounds
-        mov dword [rsp + r15 * 4 - 16], 0xfe
+        mov dword [rsp + r15 * 4 - 16], 254
     faz_128_5_end:
     cmp_129_12:
     mov r14, 1
@@ -621,7 +621,7 @@ main:
     cmp r14, 4
     cmovge rbp, r13
     jge panic_bounds
-    cmp dword [rsp + r14 * 4 - 16], 0xfe
+    cmp dword [rsp + r14 * 4 - 16], 254
     sete r15b
     bool_end_129_12:
     assert_129_5:
@@ -640,8 +640,8 @@ main:
     mov qword [rsp - 72], 0
     mov qword [rsp - 64], 0
     foo_132_5:
-        mov qword [rsp - 72], 0b10
-        mov qword [rsp - 64], 0xb
+        mov qword [rsp - 72], 2
+        mov qword [rsp - 64], 11
     foo_132_5_end:
     cmp_133_12:
     cmp qword [rsp - 72], 2
@@ -661,7 +661,7 @@ main:
         if_20_26_133_5_end:
     assert_133_5_end:
     cmp_134_12:
-    cmp qword [rsp - 64], 0xb
+    cmp qword [rsp - 64], 11
     sete r15b
     bool_end_134_12:
     assert_134_5:
@@ -745,7 +745,7 @@ main:
         if_59_8_145_5_code:
             jmp bar_145_5_end
         if_59_5_145_5_end:
-        mov qword [rsp - 96], 0xff
+        mov qword [rsp - 96], 255
     bar_145_5_end:
     cmp_146_12:
     cmp qword [rsp - 96], 0
@@ -773,10 +773,10 @@ main:
         if_59_8_149_5_code:
             jmp bar_149_5_end
         if_59_5_149_5_end:
-        mov qword [rsp - 96], 0xff
+        mov qword [rsp - 96], 255
     bar_149_5_end:
     cmp_150_12:
-    cmp qword [rsp - 96], 0xff
+    cmp qword [rsp - 96], 255
     sete r15b
     bool_end_150_12:
     assert_150_5:
@@ -867,7 +867,7 @@ main:
     mov qword [rsp - 164], r15
     mov r15, qword [rsp - 144]
     mov qword [rsp - 156], r15
-    mov dword [rsp - 148], 0xff0000
+    mov dword [rsp - 148], 16711680
     cmp_166_12:
     cmp qword [rsp - 164], 10
     sete r15b
@@ -903,7 +903,7 @@ main:
         if_20_26_167_5_end:
     assert_167_5_end:
     cmp_168_12:
-    cmp dword [rsp - 148], 0xff0000
+    cmp dword [rsp - 148], 16711680
     sete r15b
     bool_end_168_12:
     assert_168_5:
@@ -1002,7 +1002,7 @@ main:
         if_20_26_177_5_end:
     assert_177_5_end:
     cmp_178_12:
-    cmp dword [rsp - 184], 0xff0000
+    cmp dword [rsp - 184], 16711680
     sete r15b
     bool_end_178_12:
     assert_178_5:
@@ -1073,7 +1073,7 @@ main:
     cmp r14, 8
     cmovge rbp, r13
     jge panic_bounds
-    mov qword [r15 + r14 * 8], 0xffee
+    mov qword [r15 + r14 * 8], 65518
     cmp_187_12:
     lea r14, [rsp - 732]
     mov r13, 1
@@ -1094,7 +1094,7 @@ main:
     cmp r13, 8
     cmovge rbp, r12
     jge panic_bounds
-    cmp qword [r14 + r13 * 8], 0xffee
+    cmp qword [r14 + r13 * 8], 65518
     sete r15b
     bool_end_187_12:
     assert_187_5:
@@ -1171,7 +1171,7 @@ main:
     cmp r13, 8
     cmovge rbp, r12
     jge panic_bounds
-    cmp qword [r14 + r13 * 8], 0xffee
+    cmp qword [r14 + r13 * 8], 65518
     sete r15b
     bool_end_196_12:
     assert_196_5:
@@ -2093,7 +2093,7 @@ main:
         jge panic_bounds
 ;       [76:9] free scratch register 'r14'
 ;       [76:14] 0xfe
-        mov dword [rsp + r15 * 4 - 16], 0xfe
+        mov dword [rsp + r15 * 4 - 16], 254
 ;       [76:5] free scratch register 'r15'
     faz_128_5_end:
 ;   [129:5] assert(arr[1] == 0xfe)
@@ -2116,7 +2116,7 @@ main:
     cmovge rbp, r13
     jge panic_bounds
 ;   [129:16] free scratch register 'r13'
-    cmp dword [rsp + r14 * 4 - 16], 0xfe
+    cmp dword [rsp + r14 * 4 - 16], 254
 ;   [129:12] free scratch register 'r14'
     sete r15b
     bool_end_129_12:
@@ -2163,11 +2163,11 @@ main:
 ;       [132:5] alias pt -> p  (lea: )
 ;       [52:5] pt.x = 0b10
 ;       [52:12] 0b10
-        mov qword [rsp - 72], 0b10
+        mov qword [rsp - 72], 2
 ;       [52:20] # binary value 2
 ;       [53:5] pt.y = 0xb
 ;       [53:12] 0xb
-        mov qword [rsp - 64], 0xb
+        mov qword [rsp - 64], 11
 ;       [53:20] # hex value 11
     foo_132_5_end:
 ;   [133:5] assert(p.x == 2)
@@ -2213,7 +2213,7 @@ main:
 ;   [134:12] ? p.y == 0xb
 ;   [134:12] ? p.y == 0xb
     cmp_134_12:
-    cmp qword [rsp - 64], 0xb
+    cmp qword [rsp - 64], 11
     sete r15b
     bool_end_134_12:
 ;   [20:6] assert(expr : bool) 
@@ -2407,7 +2407,7 @@ main:
         if_59_5_145_5_end:
 ;       [60:5] arg = 0xff
 ;       [60:11] 0xff
-        mov qword [rsp - 96], 0xff
+        mov qword [rsp - 96], 255
     bar_145_5_end:
 ;   [146:5] assert(i == 0)
 ;   [146:12] allocate scratch register -> r15
@@ -2466,14 +2466,14 @@ main:
         if_59_5_149_5_end:
 ;       [60:5] arg = 0xff
 ;       [60:11] 0xff
-        mov qword [rsp - 96], 0xff
+        mov qword [rsp - 96], 255
     bar_149_5_end:
 ;   [150:5] assert(i == 0xff)
 ;   [150:12] allocate scratch register -> r15
 ;   [150:12] ? i == 0xff
 ;   [150:12] ? i == 0xff
     cmp_150_12:
-    cmp qword [rsp - 96], 0xff
+    cmp qword [rsp - 96], 255
     sete r15b
     bool_end_150_12:
 ;   [20:6] assert(expr : bool) 
@@ -2715,7 +2715,7 @@ main:
     mov qword [rsp - 156], r15
 ;   [165:33] free scratch register 'r15'
 ;   [165:23] copy field 'color'
-    mov dword [rsp - 148], 0xff0000
+    mov dword [rsp - 148], 16711680
 ;   [166:5] assert(o1.pos.x == 10)
 ;   [166:12] allocate scratch register -> r15
 ;   [166:12] ? o1.pos.x == 10
@@ -2797,7 +2797,7 @@ main:
 ;   [168:12] ? o1.color == 0xff0000
 ;   [168:12] ? o1.color == 0xff0000
     cmp_168_12:
-    cmp dword [rsp - 148], 0xff0000
+    cmp dword [rsp - 148], 16711680
     sete r15b
     bool_end_168_12:
 ;   [20:6] assert(expr : bool) 
@@ -3026,7 +3026,7 @@ main:
 ;   [178:12] ? o2.color == 0xff0000
 ;   [178:12] ? o2.color == 0xff0000
     cmp_178_12:
-    cmp dword [rsp - 184], 0xff0000
+    cmp dword [rsp - 184], 16711680
     sete r15b
     bool_end_178_12:
 ;   [20:6] assert(expr : bool) 
@@ -3179,7 +3179,7 @@ main:
     jge panic_bounds
 ;   [186:25] free scratch register 'r13'
 ;   [186:30] 0xffee
-    mov qword [r15 + r14 * 8], 0xffee
+    mov qword [r15 + r14 * 8], 65518
 ;   [186:5] free scratch register 'r14'
 ;   [186:5] free scratch register 'r15'
 ;   [187:5] assert(worlds[1].locations[1] == 0xffee)
@@ -3222,7 +3222,7 @@ main:
     cmovge rbp, r12
     jge panic_bounds
 ;   [187:32] free scratch register 'r12'
-    cmp qword [r14 + r13 * 8], 0xffee
+    cmp qword [r14 + r13 * 8], 65518
 ;   [187:12] free scratch register 'r13'
 ;   [187:12] free scratch register 'r14'
     sete r15b
@@ -3381,7 +3381,7 @@ main:
     cmovge rbp, r12
     jge panic_bounds
 ;   [196:32] free scratch register 'r12'
-    cmp qword [r14 + r13 * 8], 0xffee
+    cmp qword [r14 + r13 * 8], 65518
 ;   [196:12] free scratch register 'r13'
 ;   [196:12] free scratch register 'r14'
     sete r15b

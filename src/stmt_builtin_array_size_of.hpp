@@ -84,7 +84,7 @@ class stmt_builtin_array_size_of final : public expression {
         }
 
         // variable, register or field
-        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand,
+        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(),
                    std::format("{}", src_info.array_size));
     }
 };

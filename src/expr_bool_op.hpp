@@ -454,19 +454,19 @@ class expr_bool_op final : public statement {
                 return reg;
             }
             return std::format("{}{}", expr.get_unary_ops().to_string(),
-                               expr_info.operand);
+                               expr_info.const_value);
         }
 
         // 'expr' not a constant, it is an identifier
         if (expr.get_unary_ops().is_empty()) {
-            return expr_info.operand;
+            return expr_info.operand.str();
         }
 
         // 'expr' is not an expression and has unary ops
         const std::string reg{
             tc.alloc_scratch_register(expr.tok(), os, indent)};
         allocated_registers.emplace_back(reg);
-        tc.asm_cmd(expr.tok(), os, indent, "mov", reg, expr_info.operand);
+        tc.asm_cmd(expr.tok(), os, indent, "mov", reg, expr_info.operand.str());
         expr.get_unary_ops().compile(tc, os, indent, reg);
         return reg;
     }

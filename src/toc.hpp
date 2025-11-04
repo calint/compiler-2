@@ -187,110 +187,6 @@ class ident_path final {
     auto set_base(std::string_view name) -> void { path_[0] = name; }
 };
 
-struct operand {
-    std::string base_register;
-    std::string index_register;
-    int32_t displacement;
-    uint8_t scale;
-
-    operand() : displacement{0}, scale{1} {}
-
-    explicit operand(const std::string_view operand_sv)
-        : displacement{0}, scale{1} {
-
-        if (operand_sv.empty()) {
-            return;
-        }
-        // note: regex handles only "base + index * scale +/- displacement" with
-        //       optional index, scale and displacement
-        const std::regex pattern(
-            // whitespace
-            R"(^\s*)"
-            // base register (must start with a letter)
-            R"(([a-z][a-z0-9]*)?)"
-            // +index (must start with a letter)
-            R"((?:\s*\+\s*([a-z][a-z0-9]*?))?)"
-            // *scale
-            R"((?:\s*\*\s*([1248]))?)"
-            // +/- displacement
-            R"((?:\s*([+-])\s*(\d+))?)"
-            // whitespace
-            R"(\s*$)");
-
-        constexpr size_t match_base_register{1};
-        constexpr size_t match_index_register{2};
-        constexpr size_t match_scale{3};
-        constexpr size_t match_displacement_op{4};
-        constexpr size_t match_displacement{5};
-
-        std::smatch matches;
-        const std::string operand_str{operand_sv};
-        if (not std::regex_match(operand_str, matches, pattern)) {
-            throw std::invalid_argument(
-                std::format("invalid NASM operand format: {}", operand_str));
-        }
-
-        if (matches[match_base_register].matched) {
-            base_register = matches[match_base_register].str();
-        }
-
-        if (matches[match_index_register].matched) {
-            index_register = matches[match_index_register].str();
-        }
-
-        if (matches[match_scale].matched) {
-            scale = static_cast<uint8_t>(std::stoi(matches[match_scale].str()));
-        }
-
-        if (matches[match_displacement_op].matched and
-            matches[match_displacement].matched) {
-
-            const int disp_value = std::stoi(matches[match_displacement].str());
-            if (matches[match_displacement_op].str() == "-") {
-                displacement = -disp_value;
-            } else {
-                displacement = disp_value;
-            }
-        }
-    }
-
-    [[nodiscard]] auto is_indexed() const -> bool {
-        return not index_register.empty() or displacement != 0;
-    }
-
-    [[nodiscard]] auto to_string() const -> std::string {
-        std::string result;
-
-        if (not base_register.empty()) {
-            result += base_register;
-        }
-
-        if (not index_register.empty()) {
-            if (not result.empty()) {
-                result += " + ";
-            }
-            result += index_register;
-            if (scale > 1) {
-                result += " * " + std::to_string(scale);
-            }
-        }
-
-        if (displacement != 0) {
-            if (not result.empty()) {
-                if (displacement > 0) {
-                    result += " + ";
-                } else {
-                    result += " - ";
-                }
-            }
-            result +=
-                std::to_string(displacement < 0 ? -displacement : displacement);
-        }
-
-        return result;
-    }
-};
-
 class toc final {
     std::string_view source_;
     std::vector<frame> frames_;
@@ -435,7 +331,7 @@ class toc final {
             std::print(os, "[{}]", var.array_size);
         }
         std::println(os, " ({}B @ {})", name_info.type_ptr->size(),
-                     name_info.operand);
+                     name_info.operand.str());
     }
 
     auto alloc_named_register(const token& src_loc_tk, std::ostream& os,
@@ -861,18 +757,19 @@ class toc final {
 
     auto get_lea_operand(std::ostream& os, const size_t indent,
                          const statement& src, const ident_info& src_info,
-                         std::vector<std::string>& lea_registers)
-        -> std::string {
+                         std::vector<std::string>& lea_registers) -> operand {
 
         if (not src.is_indexed() and not src_info.has_lea()) {
             return src_info.operand;
         }
 
-        std::string lea{src.compile_lea(src.tok(), *this, os, indent,
-                                        lea_registers, "", src_info.lea_path)};
+        const std::string lea{src.compile_lea(src.tok(), *this, os, indent,
+                                              lea_registers, "",
+                                              src_info.lea_path)};
 
-        return std::format(
-            "{} [{}]", toc::get_size_specifier(src_info.type_ptr->size()), lea);
+        operand op{lea};
+        op.size = src_info.type_ptr->size();
+        return op;
     }
 
     [[nodiscard]] auto get_loop_label_or_throw(const token& src_loc_tk) const
@@ -1225,8 +1122,7 @@ class toc final {
                                                     "", src_info.lea_path)};
             toc::asm_lea(os, indnt, "rsi", addr);
         } else {
-            toc::asm_lea(os, indnt, "rsi",
-                         get_operand_address_str(src_info.operand));
+            toc::asm_lea(os, indnt, "rsi", src_info.operand.address_str());
         }
         toc::asm_lea(os, indnt, "rdi", dst);
 
@@ -1449,21 +1345,16 @@ class toc final {
 
             // identifier has lea path
 
-            const std::string_view size_specifier{
-                toc::get_size_specifier(ii.type_ptr->size())};
-
             const size_t offset{ii.type_path[j]->field_offset(
                 src_loc_tk, std::span{ii.elem_path}.subspan(j))};
 
             if (offset != 0) {
-                operand operand{ii.lea};
-                operand.displacement += static_cast<int>(offset);
-                ii.operand =
-                    std::format("{} [{}]", size_specifier, operand.to_string());
+                ii.operand = operand{ii.lea};
+                ii.operand.displacement += static_cast<int>(offset);
             } else {
-                ii.operand =
-                    std::format("{} [{}]", size_specifier, ii.lea_path[j]);
+                ii.operand = operand{ii.lea_path[j]};
             }
+            ii.operand.size = ii.type_ptr->size();
 
             return ii;
         }
@@ -1513,7 +1404,7 @@ class toc final {
             if (after_dot == "len") {
                 return {
                     .id{ident},
-                    .operand{std::format("{}.len", id.base())},
+                    .operand{ident},
                     .type_ptr = &get_type_default(),
                     .elem_path{id.str()},
                     .type_path{&get_type_default()},
@@ -1553,7 +1444,7 @@ class toc final {
             value) {
             return {
                 .id{ident},
-                .operand{id.str()},
+                .operand{},
                 .const_value = *value,
                 .type_ptr = &get_type_default(),
                 .elem_path{id.str()},
@@ -1608,7 +1499,7 @@ class toc final {
                              const std::string_view ident) const -> ident_info {
 
         const ident_info id_info{make_ident_info_or_empty(src_loc_tk, ident)};
-        if (not id_info.operand.empty()) {
+        if (not id_info.id.empty()) {
             return id_info;
         }
 

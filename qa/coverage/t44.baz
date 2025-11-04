@@ -11,7 +11,7 @@ func main(){
     if not c==0 exit(1)
 
     var d=a|b
-    if not d==0xffffffffffffffff exit(2)
+    if not d==-1 exit(2)
     
     var e=a
     var f=a^e
@@ -23,7 +23,7 @@ func main(){
     var h=1
     var i=1
     var j=~h|i
-    if not j==0xffffffffffffffff exit(5)
+    if not j==-1 exit(5)
 
     var k=1+2*(h&1)
     if not k==3 exit(6)

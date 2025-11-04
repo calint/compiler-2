@@ -64,15 +64,14 @@ class stmt_assign_var final : public statement {
 
         if (dst_info.is_const()) {
             throw compiler_exception{
-                tok(),
-                std::format("cannot assign to constant '{}'", dst_info.id)};
+                tok(), std::format("cannot assign to constant '{}'",
+                                   dst_info.const_value)};
         }
 
         if (dst_info.type_ptr->is_built_in()) {
             std::vector<std::string> lea_registers;
-            const std::string& dst_operand{tc.get_lea_operand(
-                os, indent, stmt_ident_, dst_info, lea_registers)};
-            dst_info.operand = dst_operand;
+            dst_info.operand = tc.get_lea_operand(os, indent, stmt_ident_,
+                                                  dst_info, lea_registers);
             expr_.compile(tc, os, indent, dst_info);
             for (const std::string& reg : lea_registers | std::views::reverse) {
                 tc.free_scratch_register(tok(), os, indent, reg);
@@ -92,8 +91,7 @@ class stmt_assign_var final : public statement {
             dst_op = operand{dst_lea};
         } else {
             if (dst_info.lea.empty()) {
-                dst_op =
-                    operand{toc::get_operand_address_str(dst_info.operand)};
+                dst_op = operand{dst_info.operand.address_str()};
             } else {
                 dst_op = operand{dst_info.lea};
             }

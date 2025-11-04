@@ -144,14 +144,15 @@ class stmt_call : public expression {
 
         // validate return type
         const std::optional<func_return_info> ret{func.returns()};
-        if (not dst_info.operand.empty()) {
+        if (not dst_info.operand.is_empty()) {
             if (not ret) {
                 throw compiler_exception{tok(),
                                          "function does not return value"};
             }
             // alias return identifier to 'dst'
             aliases_to_add.emplace_back(std::string{ret->ident_tk.text()},
-                                        dst_info.operand, "", ret->type_ptr);
+                                        dst_info.operand.str(), "",
+                                        ret->type_ptr);
         } else if (ret) {
             throw compiler_exception{tok(),
                                      "function returns but value is discarded"};
@@ -232,15 +233,26 @@ class stmt_call : public expression {
             // handle non-expression with unary ops but no register
             if (arg_reg.empty()) {
                 const ident_info& arg_info{tc.make_ident_info(arg)};
-                const std::string scratch_reg{
-                    tc.alloc_scratch_register(arg.tok(), os, indent)};
-                allocated_registers_in_order.emplace_back(scratch_reg);
-                allocated_scratch_registers.emplace_back(scratch_reg);
-                tc.asm_cmd(param.tok(), os, indent, "mov", scratch_reg,
-                           arg_info.operand);
-                arg.get_unary_ops().compile(tc, os, indent, scratch_reg);
-                aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            scratch_reg, "", &param.get_type());
+                if (arg_info.is_const()) {
+                    // handle constant
+                    aliases_to_add.emplace_back(
+                        std::string{param.identifier()},
+                        std::format("{}{}", arg.get_unary_ops().to_string(),
+                                    arg_info.const_value),
+                        "", &param.get_type());
+                } else {
+                    // identifier with unary ops
+                    const std::string scratch_reg{
+                        tc.alloc_scratch_register(arg.tok(), os, indent)};
+                    allocated_registers_in_order.emplace_back(scratch_reg);
+                    allocated_scratch_registers.emplace_back(scratch_reg);
+                    tc.asm_cmd(param.tok(), os, indent, "mov", scratch_reg,
+                               arg_info.operand.str());
+                    arg.get_unary_ops().compile(tc, os, indent, scratch_reg);
+                    aliases_to_add.emplace_back(std::string{param.identifier()},
+                                                scratch_reg, "",
+                                                &param.get_type());
+                }
                 continue;
             }
 
@@ -252,10 +264,10 @@ class stmt_call : public expression {
             if (arg_info.is_const()) {
                 tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
                            std::format("{}{}", arg.get_unary_ops().to_string(),
-                                       arg_info.operand));
+                                       arg_info.const_value));
             } else {
                 tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
-                           arg_info.operand);
+                           arg_info.operand.str());
                 arg.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
             }
         }
@@ -311,7 +323,7 @@ class stmt_call : public expression {
             }
             const ident_info& ret_info{
                 tc.make_ident_info(tok(), func.returns()->ident_tk.text())};
-            get_unary_ops().compile(tc, os, indent, ret_info.operand);
+            get_unary_ops().compile(tc, os, indent, ret_info.operand.str());
         }
 
         tc.exit_func(func.name());

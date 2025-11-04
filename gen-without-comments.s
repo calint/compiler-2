@@ -325,7 +325,7 @@ main:
         cmp r15, 4
         cmovge rbp, r14
         jge panic_bounds
-        mov dword [rsp + r15 * 4 - 16], 0xfe
+        mov dword [rsp + r15 * 4 - 16], 254
     faz_128_5_end:
     cmp_129_12:
     mov r14, 1
@@ -336,7 +336,7 @@ main:
     cmp r14, 4
     cmovge rbp, r13
     jge panic_bounds
-    cmp dword [rsp + r14 * 4 - 16], 0xfe
+    cmp dword [rsp + r14 * 4 - 16], 254
     sete r15b
     bool_end_129_12:
     assert_129_5:
@@ -355,8 +355,8 @@ main:
     mov qword [rsp - 72], 0
     mov qword [rsp - 64], 0
     foo_132_5:
-        mov qword [rsp - 72], 0b10
-        mov qword [rsp - 64], 0xb
+        mov qword [rsp - 72], 2
+        mov qword [rsp - 64], 11
     foo_132_5_end:
     cmp_133_12:
     cmp qword [rsp - 72], 2
@@ -376,7 +376,7 @@ main:
         if_20_26_133_5_end:
     assert_133_5_end:
     cmp_134_12:
-    cmp qword [rsp - 64], 0xb
+    cmp qword [rsp - 64], 11
     sete r15b
     bool_end_134_12:
     assert_134_5:
@@ -460,7 +460,7 @@ main:
         if_59_8_145_5_code:
             jmp bar_145_5_end
         if_59_5_145_5_end:
-        mov qword [rsp - 96], 0xff
+        mov qword [rsp - 96], 255
     bar_145_5_end:
     cmp_146_12:
     cmp qword [rsp - 96], 0
@@ -488,10 +488,10 @@ main:
         if_59_8_149_5_code:
             jmp bar_149_5_end
         if_59_5_149_5_end:
-        mov qword [rsp - 96], 0xff
+        mov qword [rsp - 96], 255
     bar_149_5_end:
     cmp_150_12:
-    cmp qword [rsp - 96], 0xff
+    cmp qword [rsp - 96], 255
     sete r15b
     bool_end_150_12:
     assert_150_5:
@@ -582,7 +582,7 @@ main:
     mov qword [rsp - 164], r15
     mov r15, qword [rsp - 144]
     mov qword [rsp - 156], r15
-    mov dword [rsp - 148], 0xff0000
+    mov dword [rsp - 148], 16711680
     cmp_166_12:
     cmp qword [rsp - 164], 10
     sete r15b
@@ -618,7 +618,7 @@ main:
         if_20_26_167_5_end:
     assert_167_5_end:
     cmp_168_12:
-    cmp dword [rsp - 148], 0xff0000
+    cmp dword [rsp - 148], 16711680
     sete r15b
     bool_end_168_12:
     assert_168_5:
@@ -717,7 +717,7 @@ main:
         if_20_26_177_5_end:
     assert_177_5_end:
     cmp_178_12:
-    cmp dword [rsp - 184], 0xff0000
+    cmp dword [rsp - 184], 16711680
     sete r15b
     bool_end_178_12:
     assert_178_5:
@@ -788,7 +788,7 @@ main:
     cmp r14, 8
     cmovge rbp, r13
     jge panic_bounds
-    mov qword [r15 + r14 * 8], 0xffee
+    mov qword [r15 + r14 * 8], 65518
     cmp_187_12:
     lea r14, [rsp - 732]
     mov r13, 1
@@ -809,7 +809,7 @@ main:
     cmp r13, 8
     cmovge rbp, r12
     jge panic_bounds
-    cmp qword [r14 + r13 * 8], 0xffee
+    cmp qword [r14 + r13 * 8], 65518
     sete r15b
     bool_end_187_12:
     assert_187_5:
@@ -886,7 +886,7 @@ main:
     cmp r13, 8
     cmovge rbp, r12
     jge panic_bounds
-    cmp qword [r14 + r13 * 8], 0xffee
+    cmp qword [r14 + r13 * 8], 65518
     sete r15b
     bool_end_196_12:
     assert_196_5:

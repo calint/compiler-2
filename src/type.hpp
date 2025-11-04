@@ -93,15 +93,14 @@ class type final {
             tp_first_field = tp_first_field->fields_[0].type_ptr;
         }
 
-        const std::string_view memsize{
-            get_size_specifier(tk, tp_first_field->size())};
-        const std::string accessor{
-            std::format("{} [rsp - {}]", memsize, -stack_idx)};
-        // note: -stack_idx for nicer source formatting
+        operand op;
+        op.size = tp_first_field->size();
+        op.base_register = "rsp";
+        op.displacement = stack_idx;
 
         return {
             .id{ident},
-            .operand{accessor},
+            .operand{op},
             .type_ptr = tp,
             .stack_ix = stack_idx,
             .array_size = array_size,
