@@ -787,32 +787,6 @@ class toc final {
         throw compiler_exception{src_loc_tk, "unexpected frames"};
     }
 
-    [[nodiscard]] auto get_operand_size(const std::string_view operand) const
-        -> size_t {
-
-        //? sort of ugly
-        if (operand.starts_with("qword")) {
-            return size_qword;
-        }
-        if (operand.starts_with("dword")) {
-            return size_dword;
-        }
-        if (operand.starts_with("word")) {
-            return size_word;
-        }
-        if (operand.starts_with("byte")) {
-            return size_byte;
-        }
-        if (is_operand_register(operand)) {
-            return get_size_from_register_operand(operand);
-        }
-        if (const size_t reg_size{get_size_from_register_operand(operand)}) {
-            return reg_size;
-        }
-        // constant
-        return get_type_default().size();
-    }
-
     [[nodiscard]] auto
     get_sized_register_operand(const std::string_view operand,
                                const size_t size) const -> std::string {
@@ -1791,20 +1765,30 @@ class toc final {
         return addressing.substr(0, pos);
     }
 
-    [[nodiscard]] static auto get_operand_size(const size_t size)
-        -> std::string_view {
-        switch (size) {
-        case size_byte:
-            return "byte";
-        case size_word:
-            return "word";
-        case size_dword:
-            return "dword";
-        case size_qword:
-            return "qword";
-        default:
-            std::unreachable();
+    [[nodiscard]] auto get_operand_size(const std::string_view operand) const
+        -> size_t {
+
+        //? sort of ugly
+        if (operand.starts_with("qword")) {
+            return size_qword;
         }
+        if (operand.starts_with("dword")) {
+            return size_dword;
+        }
+        if (operand.starts_with("word")) {
+            return size_word;
+        }
+        if (operand.starts_with("byte")) {
+            return size_byte;
+        }
+        if (is_operand_register(operand)) {
+            return get_size_from_register_operand(operand);
+        }
+        if (const size_t reg_size{get_size_from_register_operand(operand)}) {
+            return reg_size;
+        }
+        // constant
+        return get_type_default().size();
     }
 
     // returns 0 if not a register
@@ -1866,10 +1850,6 @@ class toc final {
         return str.substr(start + 1, end - start - 1);
     }
 
-    static auto is_memory_operand(const std::string_view operand) -> bool {
-        return operand.find_first_of('[') != std::string::npos;
-    }
-
     static auto get_sized_memory_operand(const std::string_view operand,
                                          const size_t new_size) -> std::string {
 
@@ -1877,5 +1857,9 @@ class toc final {
         assert(pos != std::string_view::npos);
         return std::format("{} {}", get_size_specifier(new_size),
                            operand.substr(pos));
+    }
+
+    static auto is_memory_operand(const std::string_view operand) -> bool {
+        return operand.find_first_of('[') != std::string::npos;
     }
 };

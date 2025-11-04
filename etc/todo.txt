@@ -1,3 +1,5 @@
+[ ] operand: fix hack for base register to hold field name
+    allows "._" in identifier
 [ ] stmt_builtin_equal: use setcc 164
 [ ] stmt_builtin_arrays_equal: use setcc line 168
 [ ] consider having custom compile instead of generic statement::compile

@@ -197,44 +197,36 @@ class stmt_def_var final : public statement {
         std::println(os, "size <= {}B, use mov", threshold_for_rep_stos);
 
         size_t rest{bytes_count};
-        int32_t displacement{dst_info.stack_ix};
         const size_t qword_movs{rest / toc::size_qword};
-        const std::string size_qword{toc::get_size_specifier(toc::size_qword)};
+
+        operand op;
+        op.base_register = "rsp";
+        op.displacement = dst_info.stack_ix;
 
         for (size_t i{}; i < qword_movs; i++) {
-            tc.asm_cmd(tok(), os, indent, "mov",
-                       std::format("{} [rsp - {}]", size_qword, -displacement),
+            tc.asm_cmd(tok(), os, indent, "mov", op.str(operand::size_qword),
                        "0");
-            displacement += toc::size_qword;
-            rest -= toc::size_qword;
+            op.displacement += operand::size_qword;
+            rest -= operand::size_qword;
         }
 
         // mov the reminder
         if ((rest / toc::size_dword) != 0) {
-            tc.asm_cmd(tok(), os, indent, "mov",
-                       std::format("{} [rsp - {}]",
-                                   toc::get_size_specifier(toc::size_dword),
-                                   -displacement),
+            tc.asm_cmd(tok(), os, indent, "mov", op.str(operand::size_dword),
                        "0");
-            displacement += toc::size_dword;
-            rest -= toc::size_dword;
+            op.displacement += operand::size_dword;
+            rest -= operand::size_dword;
         }
 
         if ((rest / toc::size_word) != 0) {
-            tc.asm_cmd(tok(), os, indent, "mov",
-                       std::format("{} [rsp - {}]",
-                                   toc::get_size_specifier(toc::size_word),
-                                   -displacement),
+            tc.asm_cmd(tok(), os, indent, "mov", op.str(operand::size_word),
                        "0");
-            displacement += toc::size_word;
-            rest -= toc::size_word;
+            op.displacement += operand::size_word;
+            rest -= operand::size_word;
         }
 
         if (rest) {
-            tc.asm_cmd(tok(), os, indent, "mov",
-                       std::format("{} [rsp - {}]",
-                                   toc::get_size_specifier(toc::size_byte),
-                                   -displacement),
+            tc.asm_cmd(tok(), os, indent, "mov", op.str(operand::size_byte),
                        "0");
         }
     }

@@ -180,16 +180,12 @@ class stmt_identifier : public statement {
 
         std::vector<std::string> allocated_registers;
 
-        const std::string effective_address{
-            stmt_identifier::compile_effective_address(
-                tok(), tc, os, indent, elems(), allocated_registers, "",
-                src_info.lea_path)};
-
-        const std::string_view size_specifier{
-            toc::get_size_specifier(src_info.type_ptr->size())};
+        const operand op{stmt_identifier::compile_effective_address(
+            tok(), tc, os, indent, elems(), allocated_registers, "",
+            src_info.lea_path)};
 
         tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(),
-                   std::format("{} [{}]", size_specifier, effective_address));
+                   op.str(src_info.type_ptr->size()));
 
         get_unary_ops().compile(tc, os, indent, dst_info.operand.str());
 
