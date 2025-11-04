@@ -441,12 +441,7 @@ main:
 ;       [118:12] free named register 'rcx'
 ;       [118:12] free named register 'rdi'
 ;       [118:12] free named register 'rsi'
-        je cmps_eq_118_12
-        mov r14, false
-        jmp cmps_end_118_12
-        cmps_eq_118_12:
-        mov r14, true
-        cmps_end_118_12:
+        sete r14b
     cmp r14, false
 ;   [118:12] free scratch register 'r14'
     setne r15b
@@ -547,12 +542,7 @@ main:
 ;       [122:16] free named register 'rcx'
 ;       [122:16] free named register 'rdi'
 ;       [122:16] free named register 'rsi'
-        je cmps_eq_122_16
-        mov r14, false
-        jmp cmps_end_122_16
-        cmps_eq_122_16:
-        mov r14, true
-        cmps_end_122_16:
+        sete r14b
     cmp r14, false
 ;   [122:12] free scratch register 'r14'
     sete r15b
@@ -903,12 +893,7 @@ main:
 ;       [137:12] free named register 'rcx'
 ;       [137:12] free named register 'rdi'
 ;       [137:12] free named register 'rsi'
-        je cmps_eq_137_12
-        mov r14, false
-        jmp cmps_end_137_12
-        cmps_eq_137_12:
-        mov r14, true
-        cmps_end_137_12:
+        sete r14b
     cmp r14, false
 ;   [137:12] free scratch register 'r14'
     setne r15b
@@ -969,12 +954,7 @@ main:
 ;       [142:16] free named register 'rcx'
 ;       [142:16] free named register 'rdi'
 ;       [142:16] free named register 'rsi'
-        je cmps_eq_142_16
-        mov r14, false
-        jmp cmps_end_142_16
-        cmps_eq_142_16:
-        mov r14, true
-        cmps_end_142_16:
+        sete r14b
     cmp r14, false
 ;   [142:12] free scratch register 'r14'
     sete r15b
@@ -2129,12 +2109,7 @@ main:
 ;       [197:12] free named register 'rcx'
 ;       [197:12] free named register 'rdi'
 ;       [197:12] free named register 'rsi'
-        je cmps_eq_197_12
-        mov r14, false
-        jmp cmps_end_197_12
-        cmps_eq_197_12:
-        mov r14, true
-        cmps_end_197_12:
+        sete r14b
     cmp r14, false
 ;   [197:12] free scratch register 'r14'
     setne r15b

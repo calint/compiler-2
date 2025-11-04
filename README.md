@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    41           1364            741           6575
+C/C++ Header                    41           1368            743           6573
 C++                              1             84            104            556
 -------------------------------------------------------------------------------
-SUM:                            42           1448            845           7131
+SUM:                            42           1452            847           7129
 -------------------------------------------------------------------------------
 ```
 
@@ -479,12 +479,7 @@ main:
         lea rdi, [rsp - 56]
         shl rcx, 2
         repe cmpsb
-        je cmps_eq_118_12
-        mov r14, false
-        jmp cmps_end_118_12
-        cmps_eq_118_12:
-        mov r14, true
-        cmps_end_118_12:
+        sete r14b
     cmp r14, false
     setne r15b
     bool_end_118_12:
@@ -530,12 +525,7 @@ main:
         lea rdi, [rsp - 56]
         shl rcx, 2
         repe cmpsb
-        je cmps_eq_122_16
-        mov r14, false
-        jmp cmps_end_122_16
-        cmps_eq_122_16:
-        mov r14, true
-        cmps_end_122_16:
+        sete r14b
     cmp r14, false
     sete r15b
     bool_end_122_12:
@@ -686,12 +676,7 @@ main:
         lea rdi, [rsp - 88]
         mov rcx, 2
         repe cmpsq
-        je cmps_eq_137_12
-        mov r14, false
-        jmp cmps_end_137_12
-        cmps_eq_137_12:
-        mov r14, true
-        cmps_end_137_12:
+        sete r14b
     cmp r14, false
     setne r15b
     bool_end_137_12:
@@ -714,12 +699,7 @@ main:
         lea rdi, [rsp - 88]
         mov rcx, 2
         repe cmpsq
-        je cmps_eq_142_16
-        mov r14, false
-        jmp cmps_end_142_16
-        cmps_eq_142_16:
-        mov r14, true
-        cmps_end_142_16:
+        sete r14b
     cmp r14, false
     sete r15b
     bool_end_142_12:
@@ -1229,12 +1209,7 @@ main:
         lea rdi, [r13]
         shl rcx, 3
         repe cmpsb
-        je cmps_eq_197_12
-        mov r14, false
-        jmp cmps_end_197_12
-        cmps_eq_197_12:
-        mov r14, true
-        cmps_end_197_12:
+        sete r14b
     cmp r14, false
     setne r15b
     bool_end_197_12:
@@ -1818,12 +1793,7 @@ main:
 ;       [118:12] free named register 'rcx'
 ;       [118:12] free named register 'rdi'
 ;       [118:12] free named register 'rsi'
-        je cmps_eq_118_12
-        mov r14, false
-        jmp cmps_end_118_12
-        cmps_eq_118_12:
-        mov r14, true
-        cmps_end_118_12:
+        sete r14b
     cmp r14, false
 ;   [118:12] free scratch register 'r14'
     setne r15b
@@ -1924,12 +1894,7 @@ main:
 ;       [122:16] free named register 'rcx'
 ;       [122:16] free named register 'rdi'
 ;       [122:16] free named register 'rsi'
-        je cmps_eq_122_16
-        mov r14, false
-        jmp cmps_end_122_16
-        cmps_eq_122_16:
-        mov r14, true
-        cmps_end_122_16:
+        sete r14b
     cmp r14, false
 ;   [122:12] free scratch register 'r14'
     sete r15b
@@ -2280,12 +2245,7 @@ main:
 ;       [137:12] free named register 'rcx'
 ;       [137:12] free named register 'rdi'
 ;       [137:12] free named register 'rsi'
-        je cmps_eq_137_12
-        mov r14, false
-        jmp cmps_end_137_12
-        cmps_eq_137_12:
-        mov r14, true
-        cmps_end_137_12:
+        sete r14b
     cmp r14, false
 ;   [137:12] free scratch register 'r14'
     setne r15b
@@ -2346,12 +2306,7 @@ main:
 ;       [142:16] free named register 'rcx'
 ;       [142:16] free named register 'rdi'
 ;       [142:16] free named register 'rsi'
-        je cmps_eq_142_16
-        mov r14, false
-        jmp cmps_end_142_16
-        cmps_eq_142_16:
-        mov r14, true
-        cmps_end_142_16:
+        sete r14b
     cmp r14, false
 ;   [142:12] free scratch register 'r14'
     sete r15b
@@ -3506,12 +3461,7 @@ main:
 ;       [197:12] free named register 'rcx'
 ;       [197:12] free named register 'rdi'
 ;       [197:12] free named register 'rsi'
-        je cmps_eq_197_12
-        mov r14, false
-        jmp cmps_end_197_12
-        cmps_eq_197_12:
-        mov r14, true
-        cmps_end_197_12:
+        sete r14b
     cmp r14, false
 ;   [197:12] free scratch register 'r14'
     setne r15b

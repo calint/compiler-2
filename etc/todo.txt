@@ -1,10 +1,10 @@
 [ ] operand: fix hack for base register to hold field name
     allows "._" in identifier
-[ ] stmt_builtin_equal: use setcc 164
-[ ] stmt_builtin_arrays_equal: use setcc line 168
-[ ] consider having custom compile instead of generic statement::compile
+[x] stmt_builtin_equal: use setcc 164
+[x] stmt_builtin_arrays_equal: use setcc line 168
+[x] consider having custom compile instead of generic statement::compile
     depending on context (already in `if`)
-[ ] stmt_assign_var::compile: unified way of determining the effective address
+[x] stmt_assign_var::compile: unified way of determining the effective address
     of an identifier including indexing, type offset navigation etc
     => make_ident_info should do that and then passed around instead of
        destination as a string

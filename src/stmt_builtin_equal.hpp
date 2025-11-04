@@ -154,16 +154,18 @@ class stmt_builtin_equal final : public expression {
         tc.free_named_register(tok(), os, indent, "rdi");
         tc.free_named_register(tok(), os, indent, "rsi");
 
-        // the labels
-        const std::string lbl_if_equal{
-            tc.create_unique_label(tok(), "cmps_eq")};
-        const std::string lbl_end{tc.create_unique_label(tok(), "cmps_end")};
+        // set true if equal
 
-        toc::asm_jcc(os, indent, "e", lbl_if_equal); // je
-        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(), "false");
-        toc::asm_jmp(os, indent, lbl_end);
-        toc::asm_label(os, indent, lbl_if_equal);
-        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(), "true");
-        toc::asm_label(os, indent, lbl_end);
+        if (dst_info.operand.is_memory()) {
+            toc::asm_setcc(os, indent, "e",
+                           dst_info.operand.str(operand::size_byte));
+            return;
+        }
+
+        // assumed register
+
+        toc::asm_setcc(os, indent, "e",
+                       tc.get_sized_register_operand(dst_info.operand.str(),
+                                                     operand::size_byte));
     }
 };

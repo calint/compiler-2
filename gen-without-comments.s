@@ -194,12 +194,7 @@ main:
         lea rdi, [rsp - 56]
         shl rcx, 2
         repe cmpsb
-        je cmps_eq_118_12
-        mov r14, false
-        jmp cmps_end_118_12
-        cmps_eq_118_12:
-        mov r14, true
-        cmps_end_118_12:
+        sete r14b
     cmp r14, false
     setne r15b
     bool_end_118_12:
@@ -245,12 +240,7 @@ main:
         lea rdi, [rsp - 56]
         shl rcx, 2
         repe cmpsb
-        je cmps_eq_122_16
-        mov r14, false
-        jmp cmps_end_122_16
-        cmps_eq_122_16:
-        mov r14, true
-        cmps_end_122_16:
+        sete r14b
     cmp r14, false
     sete r15b
     bool_end_122_12:
@@ -401,12 +391,7 @@ main:
         lea rdi, [rsp - 88]
         mov rcx, 2
         repe cmpsq
-        je cmps_eq_137_12
-        mov r14, false
-        jmp cmps_end_137_12
-        cmps_eq_137_12:
-        mov r14, true
-        cmps_end_137_12:
+        sete r14b
     cmp r14, false
     setne r15b
     bool_end_137_12:
@@ -429,12 +414,7 @@ main:
         lea rdi, [rsp - 88]
         mov rcx, 2
         repe cmpsq
-        je cmps_eq_142_16
-        mov r14, false
-        jmp cmps_end_142_16
-        cmps_eq_142_16:
-        mov r14, true
-        cmps_end_142_16:
+        sete r14b
     cmp r14, false
     sete r15b
     bool_end_142_12:
@@ -944,12 +924,7 @@ main:
         lea rdi, [r13]
         shl rcx, 3
         repe cmpsb
-        je cmps_eq_197_12
-        mov r14, false
-        jmp cmps_end_197_12
-        cmps_eq_197_12:
-        mov r14, true
-        cmps_end_197_12:
+        sete r14b
     cmp r14, false
     setne r15b
     bool_end_197_12:
