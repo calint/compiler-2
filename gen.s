@@ -8,8 +8,6 @@ section .bss
 stk resd 131072
 stk.end:
 
-true equ 1
-false equ 0
 
 section .data
 ;[1:1] field hello = "hello world from baz\n"
@@ -170,7 +168,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_109_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_109_5_end
         if_20_29_109_5_code:
 ;           [20:38] exit(1)
@@ -224,7 +222,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_110_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_110_5_end
         if_20_29_110_5_code:
 ;           [20:38] exit(1)
@@ -326,7 +324,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_114_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_114_5_end
         if_20_29_114_5_code:
 ;           [20:38] exit(1)
@@ -442,7 +440,7 @@ main:
 ;       [118:12] free named register 'rdi'
 ;       [118:12] free named register 'rsi'
         sete r14b
-    cmp r14, false
+    cmp r14, 0
 ;   [118:12] free scratch register 'r14'
     setne r15b
     bool_end_118_12:
@@ -453,7 +451,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_118_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_118_5_end
         if_20_29_118_5_code:
 ;           [20:38] exit(1)
@@ -543,7 +541,7 @@ main:
 ;       [122:16] free named register 'rdi'
 ;       [122:16] free named register 'rsi'
         sete r14b
-    cmp r14, false
+    cmp r14, 0
 ;   [122:12] free scratch register 'r14'
     sete r15b
     bool_end_122_12:
@@ -554,7 +552,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_122_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_122_5_end
         if_20_29_122_5_code:
 ;           [20:38] exit(1)
@@ -662,7 +660,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_126_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_126_5_end
         if_20_29_126_5_code:
 ;           [20:38] exit(1)
@@ -740,7 +738,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_129_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_129_5_end
         if_20_29_129_5_code:
 ;           [20:38] exit(1)
@@ -798,7 +796,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_133_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_133_5_end
         if_20_29_133_5_code:
 ;           [20:38] exit(1)
@@ -836,7 +834,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_134_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_134_5_end
         if_20_29_134_5_code:
 ;           [20:38] exit(1)
@@ -894,7 +892,7 @@ main:
 ;       [137:12] free named register 'rdi'
 ;       [137:12] free named register 'rsi'
         sete r14b
-    cmp r14, false
+    cmp r14, 0
 ;   [137:12] free scratch register 'r14'
     setne r15b
     bool_end_137_12:
@@ -905,7 +903,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_137_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_137_5_end
         if_20_29_137_5_code:
 ;           [20:38] exit(1)
@@ -955,7 +953,7 @@ main:
 ;       [142:16] free named register 'rdi'
 ;       [142:16] free named register 'rsi'
         sete r14b
-    cmp r14, false
+    cmp r14, 0
 ;   [142:12] free scratch register 'r14'
     sete r15b
     bool_end_142_12:
@@ -966,7 +964,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_142_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_142_5_end
         if_20_29_142_5_code:
 ;           [20:38] exit(1)
@@ -1027,7 +1025,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_146_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_146_5_end
         if_20_29_146_5_code:
 ;           [20:38] exit(1)
@@ -1086,7 +1084,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_150_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_150_5_end
         if_20_29_150_5_code:
 ;           [20:38] exit(1)
@@ -1149,7 +1147,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_154_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_154_5_end
         if_20_29_154_5_code:
 ;           [20:38] exit(1)
@@ -1205,7 +1203,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_157_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_157_5_end
         if_20_29_157_5_code:
 ;           [20:38] exit(1)
@@ -1266,7 +1264,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_160_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_160_5_end
         if_20_29_160_5_code:
 ;           [20:38] exit(1)
@@ -1334,7 +1332,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_166_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_166_5_end
         if_20_29_166_5_code:
 ;           [20:38] exit(1)
@@ -1372,7 +1370,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_167_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_167_5_end
         if_20_29_167_5_code:
 ;           [20:38] exit(1)
@@ -1410,7 +1408,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_168_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_168_5_end
         if_20_29_168_5_code:
 ;           [20:38] exit(1)
@@ -1474,7 +1472,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_172_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_172_5_end
         if_20_29_172_5_code:
 ;           [20:38] exit(1)
@@ -1512,7 +1510,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_173_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_173_5_end
         if_20_29_173_5_code:
 ;           [20:38] exit(1)
@@ -1563,7 +1561,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_176_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_176_5_end
         if_20_29_176_5_code:
 ;           [20:38] exit(1)
@@ -1601,7 +1599,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_177_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_177_5_end
         if_20_29_177_5_code:
 ;           [20:38] exit(1)
@@ -1639,7 +1637,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_178_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_178_5_end
         if_20_29_178_5_code:
 ;           [20:38] exit(1)
@@ -1709,7 +1707,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_183_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_183_5_end
         if_20_29_183_5_code:
 ;           [20:38] exit(1)
@@ -1837,7 +1835,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_187_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_187_5_end
         if_20_29_187_5_code:
 ;           [20:38] exit(1)
@@ -1996,7 +1994,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_196_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_196_5_end
         if_20_29_196_5_code:
 ;           [20:38] exit(1)
@@ -2110,7 +2108,7 @@ main:
 ;       [197:12] free named register 'rdi'
 ;       [197:12] free named register 'rsi'
         sete r14b
-    cmp r14, false
+    cmp r14, 0
 ;   [197:12] free scratch register 'r14'
     setne r15b
     bool_end_197_12:
@@ -2121,7 +2119,7 @@ main:
 ;       [20:29] ? not expr
 ;       [20:29] ? not expr
         cmp_20_29_197_5:
-        cmp r15b, false
+        cmp r15b, 0
         jne if_20_26_197_5_end
         if_20_29_197_5_code:
 ;           [20:38] exit(1)

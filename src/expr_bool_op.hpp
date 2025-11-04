@@ -411,7 +411,7 @@ class expr_bool_op final : public statement {
         std::vector<std::string> allocated_registers;
         const std::string dst{
             resolve_expr(tc, os, indent, lhs, true, allocated_registers)};
-        tc.asm_cmd(tok(), os, indent, "cmp", dst, "false");
+        tc.asm_cmd(tok(), os, indent, "cmp", dst, "0");
         for (const auto& reg : allocated_registers | std::views::reverse) {
             tc.free_scratch_register(tok(), os, indent, reg);
         }

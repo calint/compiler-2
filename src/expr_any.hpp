@@ -74,6 +74,12 @@ class expr_any final : public statement {
                     // if not expression assign to destination
                     if (not e.is_expression()) {
                         const ident_info& src_info{tc.make_ident_info(e)};
+                        if (src_info.is_const()) {
+                            tc.asm_cmd(tok(), os, indent, "mov",
+                                       dst_info.operand.str(),
+                                       std::to_string(src_info.const_value));
+                            return;
+                        }
                         tc.asm_cmd(tok(), os, indent, "mov",
                                    dst_info.operand.str(),
                                    src_info.operand.str());
@@ -110,11 +116,11 @@ class expr_any final : public statement {
                         if (*const_eval) {
                             // constant evaluation is true
                             tc.asm_cmd(tok(), os, indent, "mov",
-                                       dst_info.operand.str(), "true");
+                                       dst_info.operand.str(), "1");
                         } else {
                             // constant evaluation is false
                             tc.asm_cmd(tok(), os, indent, "mov",
-                                       dst_info.operand.str(), "false");
+                                       dst_info.operand.str(), "0");
                         }
                     }
                 }},
