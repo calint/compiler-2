@@ -304,7 +304,7 @@ section .text
 bits 64
 global _start
 _start:
-mov rsp,stk.end
+mov rsp, stk.end
 main:
     mov qword [rsp - 16], 0
     mov qword [rsp - 8], 0
@@ -1358,7 +1358,6 @@ section .bss
 stk resd 131072
 stk.end:
 
-
 section .data
 ;[1:1] field hello = "hello world from baz\n"
 hello: db 'hello world from baz', 10,''
@@ -1383,7 +1382,7 @@ section .text
 bits 64
 global _start
 _start:
-mov rsp,stk.end
+mov rsp, stk.end
 ;
 ; program
 ;

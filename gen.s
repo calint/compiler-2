@@ -8,7 +8,6 @@ section .bss
 stk resd 131072
 stk.end:
 
-
 section .data
 ;[1:1] field hello = "hello world from baz\n"
 hello: db 'hello world from baz', 10,''
@@ -33,7 +32,7 @@ section .text
 bits 64
 global _start
 _start:
-mov rsp,stk.end
+mov rsp, stk.end
 ;
 ; program
 ;

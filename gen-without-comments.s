@@ -19,7 +19,7 @@ section .text
 bits 64
 global _start
 _start:
-mov rsp,stk.end
+mov rsp, stk.end
 main:
     mov qword [rsp - 16], 0
     mov qword [rsp - 8], 0
