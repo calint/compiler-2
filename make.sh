@@ -5,7 +5,7 @@
 #      nasm: 3.01
 #        ld: 2.45
 set -e
-cd $(dirname "$0")
+cd "$(dirname "$0")"
 
 # set environment
 CC="clang++ -std=c++23"
@@ -46,37 +46,37 @@ PROF=
 BUILD_ONLY=0
 
 for arg in "$@"; do
-  case "$arg" in
-  asan)
-    ASAN="$ASAN_FLAGS"
-    ;;
-  msan)
-    MSAN="$MSAN_FLAGS"
-    ;;
-  tsan)
-    TSAN="$TSAN_FLAGS"
-    ;;
-  prof)
-    PROF="$PROF_FLAGS"
-    ;;
-  build)
-    BUILD_ONLY=1
-    ;;
-  *)
-    echo "unknown parameter: $arg"
-    echo "usage: $0 [asan|msan|tsan] [prof] [build]"
-    echo ""
-    echo "sanitizers (choose one option):"
-    echo "  asan - AddressSanitizer + UndefinedBehaviorSanitizer"
-    echo "  msan - uninitialized memory, requires special build"
-    echo "  tsan - data races, for multi-threaded code"
-    echo ""
-    echo "options:"
-    echo "  prof  - enable profiling/coverage"
-    echo "  build - build only, don't run"
-    exit 1
-    ;;
-  esac
+    case "$arg" in
+    asan)
+        ASAN="$ASAN_FLAGS"
+        ;;
+    msan)
+        MSAN="$MSAN_FLAGS"
+        ;;
+    tsan)
+        TSAN="$TSAN_FLAGS"
+        ;;
+    prof)
+        PROF="$PROF_FLAGS"
+        ;;
+    build)
+        BUILD_ONLY=1
+        ;;
+    *)
+        echo "unknown parameter: $arg"
+        echo "usage: $0 [asan|msan|tsan] [prof] [build]"
+        echo ""
+        echo "sanitizers (choose one option):"
+        echo "  asan - AddressSanitizer + UndefinedBehaviorSanitizer"
+        echo "  msan - uninitialized memory, requires special build"
+        echo "  tsan - data races, for multi-threaded code"
+        echo ""
+        echo "options:"
+        echo "  prof  - enable profiling/coverage"
+        echo "  build - build only, don't run"
+        exit 1
+        ;;
+    esac
 done
 
 # Check for incompatible sanitizer combinations
@@ -86,9 +86,9 @@ SANITIZER_COUNT=0
 [ -n "$TSAN" ] && SANITIZER_COUNT=$((SANITIZER_COUNT + 1))
 
 if [ $SANITIZER_COUNT -gt 1 ]; then
-  echo "Error: Cannot combine multiple sanitizers (asan/msan/tsan)"
-  echo "Use only one at a time"
-  exit 1
+    echo "Error: Cannot combine multiple sanitizers (asan/msan/tsan)"
+    echo "Use only one at a time"
+    exit 1
 fi
 
 SANITIZERS="$ASAN$MSAN$TSAN"
@@ -96,11 +96,11 @@ SANITIZERS="$ASAN$MSAN$TSAN"
 SEP="--------------------------------------------------------------------------------"
 CMD="$CC src/main.cpp -o baz $DBG $OPT $CF $CW $SANITIZERS $PROF"
 echo $SEP
-echo $CMD
+echo "$CMD"
 $CMD
 
 if [ $BUILD_ONLY -eq 1 ]; then
-  exit 0
+    exit 0
 fi
 
 ./run-baz.sh prog.baz --stack=131072 --checks=upper,lower,line

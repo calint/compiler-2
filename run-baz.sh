@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
-cd $(dirname "$0")
+cd "$(dirname "$0")"
 
 SEP="--------------------------------------------------------------------------------"
 echo $SEP
-CMD="./baz $@"
-echo $CMD
+CMD="./baz $*"
+echo "$CMD"
 $CMD >gen.s
 echo $SEP
 grep -v -e'^\s*;.*$' -e'^\s*$' gen.s >gen-without-comments.s
@@ -18,7 +18,7 @@ ld -s -o gen gen.o
 ls --color -la gen.s gen-without-comments.s gen
 echo $SEP
 set +e # don't stop att errors
-./gen $PRG $STK $CHK
+./gen
 RET=$?
 echo $SEP
 echo returned: $RET
