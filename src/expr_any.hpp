@@ -24,8 +24,7 @@ class expr_any final : public statement {
     };
 
   public:
-    expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args,
-             [[maybe_unused]] const bool is_array = false)
+    expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args)
         : statement{tz.next_whitespace_token()} {
 
         set_type(tp);
