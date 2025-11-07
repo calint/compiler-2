@@ -12,8 +12,11 @@
        destination as a string
        => resolving operand might involve allocating registers to resolve lea
        => instead of string for operand use toc `operand`
-[ ] a way of doing x += y like operations. maybe detect pattern x = x + 1? 
+[-] a way of doing x += y like operations. maybe detect pattern x = x + 1? 
     => expr_ops_list::do_compile starts with '=', start with operator
+    => did implement but it has no effect on the generated assembler since if
+       first operand is same as destination then that is omitted by the 'mov'
+       keeping it as is for concise syntax
 [ ] allow trailing comma at type definition. e.g.,
     type object {
         pos : point,
