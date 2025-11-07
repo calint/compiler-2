@@ -1,23 +1,14 @@
-[x] report error if constant out of range for i64
-[x] operand: fix hack for base register to hold field name
-    allows "._" in identifier
-    => operand now allowed to be a string without interpretation
-[x] stmt_builtin_equal: use setcc 164
-[x] stmt_builtin_arrays_equal: use setcc line 168
-[x] consider having custom compile instead of generic statement::compile
-    depending on context (already in `if`)
-[ ] stmt_assign_var::compile: unified way of determining the effective address
+[o] stmt_assign_var::compile: unified way of determining the effective address
     of an identifier including indexing, type offset navigation etc
     => make_ident_info should do that and then passed around instead of
        destination as a string
        => resolving operand might involve allocating registers to resolve lea
        => instead of string for operand use toc `operand`
-[-] a way of doing x += y like operations. maybe detect pattern x = x + 1? 
-    => expr_ops_list::do_compile starts with '=', start with operator
-    => did implement but it has no effect on the generated assembler since if
-       first operand is same as destination then it starts by moving the source
-       to destination which is same and omitted by the 'mov'.
-       keeping it as is for concise syntax
+[o] consolidate the various initiations of rep stosX into common code in toc
+    implementing heuristics of when to switch from mov to rep
+    => toc::rep_stos
+[ ] regex is not performant. replace with hand-rolled string operations
+    especially in `operand` which creates a regex in the constructor
 [ ] allow trailing comma at type definition. e.g.,
     type object {
         pos : point,
@@ -31,38 +22,35 @@
 [ ] numbers such as i8 : 255 cause problems when cmp because value is moved
     to unspecified register size with sign extension
     => 255 is outside the range of i8: -128 -> 127
-[ ] handle case where x86_64 cannot load immediate 64 bit value to memory
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
 [ ] array initializer: var i : vec2[] = {{1, 2}, {2, 3}, {3, 4}}
 [ ] a way to initiate a i8 array with a string:
     var hello : i8[] = "hello world"
+[ ] built-in: mov and syscall functions to statements and remove special
+    built-in functions declared in program
 [ ] initializer for types that contain array does not work as intended:
     var input_buffer : str = {0, 0} where second element is an array
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
     if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] toc::rep_movs: heuristics around when to switch from movs to rep
+[ ] handle case where x86_64 cannot load immediate 64 bit value to memory
+[ ] function call of type lst.add(x) that calls list_add(self, x)
 [ ] ponder an iterator of elements in array that does not require bounds
     checking:
       for(e : arr) {
         e = 0
       }
-[ ] function call of type lst.add(x) that calls list_add(self, x)
-[ ] regex is not performant. replace with hand-rolled string operations
-    especially in `operand` which creates a regex in the constructor
-[ ] built-in: mov and syscall functions to statements and remove special
-    built-in functions declared in program
-[o] consolidate the various initiations of rep stosX into common code in toc
-    implementing heuristics of when to switch from mov to rep
-    => toc::rep_stos
-[ ] stmt_identifier: 357: if register will be just offset without indexing
-    register then that can be calculated in init_reg_offset
 [ ] const allowed in function declaration and code
     foo(ix : const i32) { const x = ix }
-[ ] expr_*: pre-calculate consts
-[ ] refactor the passing first token to every constructor. push back and
-    construct
+[ ] array implicit identifiers. var ar[10] ar.len
 [ ] a return reference might be used as an argument to a function that set it.
     current UB detection does not allow that
+[ ] stmt_identifier: 357: if register will be just offset without indexing
+    register then that can be calculated in init_reg_offset
+[ ] expr_*: pre-calculate consts
+[ ] expr_ops_list: const eval
+[ ] refactor the passing first token to every constructor. push back and
+    construct
 [ ] some improvements (performance wise) of toc::indent using a buffer on the
     stack
     => do perf tests first using etc/perf.sh
@@ -74,26 +62,23 @@
 [ ] toc::get_stack_size -> keep track of it with a member variable
 [ ] using size_t (8 bytes) is a bit much for certain uses cases such as lineno
 [ ] review the reading of white spaces sprinkled about
+[ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
 [ ] instrumentation to find out max heap and stack usage by the compiler
-[ ] expr_ops_list: const eval
 [ ] stmt_call: check arguments vs parameters in constructor instead of at
     compile
-[ ] review bool_ops_list + bool_op parsing considering the whitespaces handling
 [ ] implement strings
 [ ] support for float and double?
-    [ ] support avx512 operations
+[ ] support avx512 operations
 [ ] a way to tell the compiler to align variables on 4, 8, 16 etc boundaries
 [ ] limited integration with some C functions from stdlib
-    [ ] declare external functions
+[ ] declare external C functions
 [ ] rename compiler_exception
 [ ] specify whether ok for an op to truncate value instead of error
     => it is no longer an error
-[ ] array implicit identifiers. var ar[10] ar.len
 [ ] handle constant array index case
 [ ] break: exit current block instead of just loop?
 [ ] ponder representing nasm instructions in classes to have better opportunity
     to optmize compared to current text based optmize_jump_x
-[ ] nasm_operand in ident_info for less text processing sprinkled in the code?
 [ ] array_copy does not handle when destination overlaps source
     => issue warning when that can be detected at compile-time
 [ ] lea_path may not be necessary since only most recent lea relevant
@@ -109,6 +94,21 @@
 --------------------------------------------------------------------------------
 resolved ([x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] nasm_operand in ident_info for less text processing sprinkled in the code?
+[x] report error if constant out of range for i64
+[x] operand: fix hack for base register to hold field name
+    allows "._" in identifier
+    => operand now allowed to be a string without interpretation
+[x] stmt_builtin_equal: use setcc 164
+[x] stmt_builtin_arrays_equal: use setcc line 168
+[x] consider having custom compile instead of generic statement::compile
+    depending on context (already in `if`)
+[-] a way of doing x += y like operations. maybe detect pattern x = x + 1? 
+    => expr_ops_list::do_compile starts with '=', start with operator
+    => did implement but it has no effect on the generated assembler since if
+       first operand is same as destination then it starts by moving the source
+       to destination which is same and omitted by the 'mov'.
+       keeping it as is for concise syntax
 [-] when passing an array as an argument the call can insert quasi variables
     for length. fat pointers
     => irrelevant since in-lines only
