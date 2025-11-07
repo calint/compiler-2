@@ -755,9 +755,11 @@ class toc final {
         return *funcs_.get_const_ref(name).type_ptr;
     }
 
-    auto get_lea_operand(std::ostream& os, const size_t indent,
-                         const statement& src, const ident_info& src_info,
-                         std::vector<std::string>& lea_registers) -> operand {
+    [[nodiscard]] auto get_lea_operand(std::ostream& os, const size_t indent,
+                                       const statement& src,
+                                       const ident_info& src_info,
+                                       std::vector<std::string>& lea_registers)
+        -> operand {
 
         if (not src.is_indexed() and not src_info.has_lea()) {
             return src_info.operand;

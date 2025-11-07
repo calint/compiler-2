@@ -21,9 +21,9 @@ class expr_ops_list final : public expression {
     std::vector<char> ops_;     // operators between elements in the vector
     unary_ops uops_;            // unary ops for all result e.g. ~(a+b)
     token ws1_;                 // whitespace after parenthesis when enclosed
-    bool enclosed_{};           //  (a+b) vs a+b
+    bool enclosed_{};           // (a+b) vs a+b
     bool is_base_expression_{}; // false when in implied sub-expressions
-    char compound_op_{};
+    char compound_op_{};        // if operation is `+=`, `-=` etc
 
   public:
     expr_ops_list(toc& tc, tokenizer& tz, const bool in_args = false,
@@ -232,6 +232,11 @@ class expr_ops_list final : public expression {
             tc.get_sized_register_operand(reg, dst_info.type_ptr->size())};
         // note: sized register to propagate operation to destination size
         const ident_info dst_reg{tc.make_ident_info(tok(), reg_sized)};
+        if (compound_op_) {
+            // e.g. `+=` then copy the destination to the scratch register
+            tc.asm_cmd(tok(), ss2, indent, "mov", reg_sized,
+                       dst_info.operand.str());
+        }
         do_compile(tc, ss2, indent, dst_reg);
         tc.asm_cmd(tok(), ss2, indent, "mov", dst_info.operand.str(),
                    reg_sized);
@@ -323,7 +328,8 @@ class expr_ops_list final : public expression {
                     const ident_info& dst_info) const -> void {
 
         const statement& st0{*exprs_[0]};
-        if (st0.is_identifier()) {
+        if (st0.is_identifier() and compound_op_ == 0) {
+            // copy identifier to destination
             st0.compile(tc, os, indent, dst_info);
         } else {
             // the first element is assigned to destination, operator '='
@@ -453,16 +459,30 @@ class expr_ops_list final : public expression {
                            const ident_info& dst_info, const statement& src)
         -> void {
 
-        tc.comment_start(src.tok(), os, indent);
         // does 'src' need to be compiled?
         if (src.is_expression()) {
+            tc.comment_start(src.tok(), os, indent);
             std::println(os, "= expression");
             // yes, compile with destination to 'dst'
             src.compile(tc, os, indent, dst_info);
             return;
         }
 
-        std::unreachable();
+        const ident_info src_info{tc.make_ident_info(src)};
+
+        std::vector<std::string> lea_registers;
+
+        const operand src_operand{
+            tc.get_lea_operand(os, indent, src, src_info, lea_registers)};
+
+        tc.asm_cmd(src.tok(), os, indent, "mov", dst_info.operand.str(),
+                   src_operand.str());
+
+        src.get_unary_ops().compile(tc, os, indent, dst_info.operand.str());
+
+        for (const std::string& reg : lea_registers | std::views::reverse) {
+            tc.free_scratch_register(src.tok(), os, indent, reg);
+        }
     }
 
     static auto asm_op_mul(toc& tc, std::ostream& os, const size_t indent,

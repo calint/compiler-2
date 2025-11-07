@@ -12,7 +12,7 @@
        destination as a string
        => resolving operand might involve allocating registers to resolve lea
        => instead of string for operand use toc `operand`
-[ ] a way of doing x += y like operations. maybe detect pattern x = x + 1? 
+[x] a way of doing x += y like operations. maybe detect pattern x = x + 1? 
     => expr_ops_list::do_compile starts with '=', start with operator
 [ ] allow trailing comma at type definition. e.g.,
     type object {
