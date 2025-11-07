@@ -43,7 +43,7 @@ class stmt_builtin_array_copy final : public statement {
             throw compiler_exception{tz, "expected ',' then 'count'"};
         }
 
-        count_ = {tc, tz, tc.get_type_default(), true};
+        count_ = {tc, tz, tc.get_type_default(), true, 0};
 
         if (not tz.is_next_char(')')) {
             throw compiler_exception{tok(), "expected ')' after the argument"};

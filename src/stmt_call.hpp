@@ -58,7 +58,7 @@ class stmt_call : public expression {
                     }
                     break;
                 }
-                args_.emplace_back(tc, tz, tc.get_type_default(), true);
+                args_.emplace_back(tc, tz, tc.get_type_default(), true, 0);
                 expect_arg = tz.is_next_char(',');
             }
         }

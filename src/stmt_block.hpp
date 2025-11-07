@@ -97,7 +97,11 @@ class stmt_block final : public statement {
                 // note: 'unary_ops' not allowed before destination identifier
                 stmt_identifier si{tc, {}, tk, tz};
 
-                if (tz.is_next_char('=')) {
+                if (const char op{compound_assignment(tz)}; op) {
+                    stms_.emplace_back(std::make_unique<stmt_assign_var>(
+                        tc, tz, std::move(si), token{}, op));
+
+                } else if (tz.is_next_char('=')) {
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(
                         tc, tz, std::move(si)));
 
@@ -177,4 +181,87 @@ class stmt_block final : public statement {
     }
 
     [[nodiscard]] auto is_empty() const -> bool { return stms_.empty(); }
+
+    [[nodiscard]] static auto compound_assignment(tokenizer& tz) -> char {
+        if (tz.is_next_char('+')) {
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz.current_position_token(),
+                                         "expected '+='"};
+            }
+            return '+';
+        }
+        if (tz.is_next_char('-')) {
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz.current_position_token(),
+                                         "expected '-='"};
+            }
+            return '-';
+        }
+        if (tz.is_next_char('*')) {
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz.current_position_token(),
+                                         "expected '*='"};
+            }
+            return '*';
+        }
+        if (tz.is_next_char('/')) {
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz.current_position_token(),
+                                         "expected '/='"};
+            }
+            return '/';
+        }
+        if (tz.is_next_char('%')) {
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz.current_position_token(),
+                                         "expected '%='"};
+            }
+            return '%';
+        }
+        if (tz.is_next_char('<')) {
+            if (not tz.is_next_char('<')) {
+                throw compiler_exception{tz.current_position_token(),
+                                         "expected '<<='"};
+            }
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz.current_position_token(),
+                                         "expected '<<='"};
+            }
+            return '<';
+        }
+        if (tz.is_next_char('>')) {
+            if (not tz.is_next_char('>')) {
+                throw compiler_exception{tz.current_position_token(),
+                                         "expected '>>='"};
+            }
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz.current_position_token(),
+                                         "expected '>>='"};
+            }
+            return '>';
+        }
+        if (tz.is_next_char('|')) {
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz.current_position_token(),
+                                         "expected '|='"};
+            }
+            return '|';
+        }
+        if (tz.is_next_char('&')) {
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz.current_position_token(),
+                                         "expected '&='"};
+            }
+            return '&';
+        }
+        if (tz.is_next_char('^')) {
+            if (not tz.is_next_char('=')) {
+                throw compiler_exception{tz.current_position_token(),
+                                         "expected '^='"};
+            }
+            return '^';
+        }
+
+        return 0;
+    }
 };

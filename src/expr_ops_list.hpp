@@ -23,15 +23,17 @@ class expr_ops_list final : public expression {
     token ws1_;                 // whitespace after parenthesis when enclosed
     bool enclosed_{};           //  (a+b) vs a+b
     bool is_base_expression_{}; // false when in implied sub-expressions
+    char compound_op_{};
 
   public:
     expr_ops_list(toc& tc, tokenizer& tz, const bool in_args = false,
-                  const bool enclosed = false,
+                  const char compound_op = 0, const bool enclosed = false,
                   const bool is_base_expression = true, unary_ops uops = {},
                   const uint8_t first_op_precedence = initial_precedence,
                   std::unique_ptr<statement> first_expression = {})
         : expression{tz.next_whitespace_token()}, uops_{std::move(uops)},
-          enclosed_{enclosed}, is_base_expression_{is_base_expression} {
+          enclosed_{enclosed}, is_base_expression_{is_base_expression},
+          compound_op_{compound_op} {
 
         // is this in a recursion?
         if (first_expression) {
@@ -45,7 +47,7 @@ class expr_ops_list final : public expression {
             if (tz.is_next_char('(')) {
                 // yes, recurse with unary ops
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
-                    tc, tz, in_args, true, true, std::move(uo)));
+                    tc, tz, in_args, '=', true, true, std::move(uo)));
             } else {
                 // no, push back the unary ops to be attached to the
                 // statement
@@ -117,8 +119,8 @@ class expr_ops_list final : public expression {
                 exprs_.pop_back();
                 // start new recursion
                 exprs_.emplace_back(make_unique<expr_ops_list>(
-                    tc, tz, in_args, false, false, unary_ops{}, next_precedence,
-                    std::move(last_stmt_in_expr)));
+                    tc, tz, in_args, '=', false, false, unary_ops{},
+                    next_precedence, std::move(last_stmt_in_expr)));
                 // continue parsing expression starting with next operation
                 continue;
             }
@@ -158,7 +160,7 @@ class expr_ops_list final : public expression {
                 // yes, recurse and forward the unary ops to be applied on the
                 // whole sub-expression
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
-                    tc, tz, in_args, true, true, std::move(uo)));
+                    tc, tz, in_args, '=', true, true, std::move(uo)));
                 continue;
             }
 
@@ -325,7 +327,8 @@ class expr_ops_list final : public expression {
             st0.compile(tc, os, indent, dst_info);
         } else {
             // the first element is assigned to destination, operator '='
-            asm_op(tc, os, indent, '=', dst_info, st0);
+            asm_op(tc, os, indent, compound_op_ ? compound_op_ : '=', dst_info,
+                   st0);
         }
 
         // remaining elements are +,-,*,/,%,|,&,^,<<,>>

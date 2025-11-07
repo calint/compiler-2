@@ -276,7 +276,7 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
 inline auto create_expr_any(toc& tc, tokenizer& tz, const type& tp,
                             const bool in_args) -> std::unique_ptr<expr_any> {
 
-    return std::make_unique<expr_any>(tc, tz, tp, in_args);
+    return std::make_unique<expr_any>(tc, tz, tp, in_args, 0);
 }
 
 // declared in 'expr_type_value.hpp'

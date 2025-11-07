@@ -55,10 +55,11 @@ class stmt_identifier : public statement {
             }
 
             if (tz.is_next_char('[')) {
-                elems_.emplace_back(tk,
-                                    std::make_unique<expr_any>(
-                                        tc, tz, tc.get_type_default(), false),
-                                    tz.next_whitespace_token());
+                elems_.emplace_back(
+                    tk,
+                    std::make_unique<expr_any>(tc, tz, tc.get_type_default(),
+                                               false, 0),
+                    tz.next_whitespace_token());
 
                 if (not tz.is_next_char(']')) {
                     throw compiler_exception{

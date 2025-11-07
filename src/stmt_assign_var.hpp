@@ -19,10 +19,13 @@ class stmt_assign_var final : public statement {
     stmt_identifier stmt_ident_;
     expr_any expr_;
     token ws1_;
+    char compound_op_{};
 
   public:
-    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token ws1 = {})
-        : statement{si.tok()}, stmt_ident_{std::move(si)}, ws1_{ws1} {
+    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token ws1 = {},
+                    char compound_op = 0)
+        : statement{si.tok()}, stmt_ident_{std::move(si)}, ws1_{ws1},
+          compound_op_{compound_op} {
 
         // note: ws1 is forwarded by `stmt_def_var` to make the `source_to`
         //       accurate when `stmt_assign_var` is created within the context
@@ -32,7 +35,7 @@ class stmt_assign_var final : public statement {
             tc.make_ident_info(tok(), stmt_ident_.identifier())};
 
         set_type(*dst_info.type_ptr);
-        expr_ = {tc, tz, *dst_info.type_ptr, false};
+        expr_ = {tc, tz, *dst_info.type_ptr, false, compound_op};
     }
 
     ~stmt_assign_var() override = default;
@@ -47,7 +50,43 @@ class stmt_assign_var final : public statement {
         // note: all the source info is in `stmt_ident_`
         // statement::source_to(os);
         stmt_ident_.source_to(os);
-        std::print(os, "=");
+        switch (compound_op_) {
+        case 0:
+            std::print(os, "=");
+            break;
+        case '+':
+            std::print(os, "+=");
+            break;
+        case '-':
+            std::print(os, "-=");
+            break;
+        case '*':
+            std::print(os, "*=");
+            break;
+        case '/':
+            std::print(os, "/=");
+            break;
+        case '%':
+            std::print(os, "%=");
+            break;
+        case '<':
+            std::print(os, "<<=");
+            break;
+        case '>':
+            std::print(os, ">>=");
+            break;
+        case '&':
+            std::print(os, "&=");
+            break;
+        case '|':
+            std::print(os, "|=");
+            break;
+        case '^':
+            std::print(os, "^=");
+            break;
+        default:
+            std::unreachable();
+        }
         ws1_.source_to(os);
         expr_.source_to(os);
     }

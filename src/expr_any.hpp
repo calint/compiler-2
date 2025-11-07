@@ -25,7 +25,7 @@ class expr_any final : public statement {
 
   public:
     expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args,
-             [[maybe_unused]] const bool is_array = false)
+             const char compound_op)
         : statement{tz.next_whitespace_token()} {
 
         set_type(tp);
@@ -44,7 +44,7 @@ class expr_any final : public statement {
         }
 
         // destination is a built-in (register) value
-        var_ = expr_ops_list{tc, tz, in_args};
+        var_ = expr_ops_list{tc, tz, in_args, compound_op};
     }
 
     ~expr_any() override = default;
