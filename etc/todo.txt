@@ -828,52 +828,15 @@ stage 5
 [ ]   points.len
 [ ] multiple return values: func f() : point pos, point vel { ... }
 [ ]    var p,v = f()
-[ ] consider cmovxx when evaluating a boolean expression
+[x] consider cmovxx when evaluating a boolean expression
+    => used setxx
 [ ] floating point numbers
 [ ] func f(p : point) {} ... f({x, y})
 [ ] expr_any: deduce expression type to bool or numbers
 [ ]   is_const, is_bool_expression, is_number_expression
 [ ] let i=1 creates a constant
-[ ] def table{x,y,z}
-[ ] token.compile assumes is_str is field (db)
-[ ]   review fragile implementation
-[ ] include source file: i.e. "include io" includes io.baz
-[ ] inlined function call: if a named register is not available: push/pop?
-[ ] post processing optimization for: var b=-(-a*-a)
-      mov r15,qword[rbp-8]
-      neg r15
-      neg r15
-      mov qword[rbp-16],r15
-[ ] why is the binary so big although in-line is turned off in make.sh?
-
-
-
-
--------------------------------------------------------------------------------
-stage 5
--------------------------------------------------------------------------------
-[ ] function return of non-register passable type
-[ ]     var pos : point = foo()
-[ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
-[ ] func f(p : point copy) copies point to callee stack
-[ ] func f(p : point const) const is default. same as "func f(p : point)"
-[ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
-[ ] func foo(object& self, arg) can be called with o.foo(arg)
-[ ] string type
-[ ]   var str = "hello world"
-[ ]   var len = str.len
-[ ] var points : point[10] = {{1, 2}, {3, 4}}
-[ ]   points[1].x = 1
-[ ]   points.len
-[ ] multiple return values: func f() : point pos, point vel { ... }
-[ ]    var p,v = f()
-[ ] consider cmovxx when evaluating a boolean expression
-[ ] floating point numbers
-[ ] func f(p : point) {} ... f({x, y})
-[ ] expr_any: deduce expression type to bool or numbers
-[ ]   is_const, is_bool_expression, is_number_expression
-[ ] let i=1 creates a constant
-[ ] def table{x,y,z}
+[x] def table{x,y,z}
+    => implemented by `type`
 [ ] token.compile assumes is_str is field (db)
 [ ]   review fragile implementation
 [ ] include source file: i.e. "include io" includes io.baz
