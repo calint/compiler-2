@@ -79,22 +79,13 @@ class stmt_assign_var final : public statement {
 
         // not-builtin type
 
-        operand dst_op;
         std::vector<std::string> lea_registers;
 
-        if (stmt_ident_.is_indexed() or dst_info.has_lea()) {
-            dst_op = stmt_ident_.compile_lea(
-                tok(), tc, os, indent, lea_registers, "", dst_info.lea_path);
-        } else {
-            if (dst_info.lea.empty()) {
-                dst_op = dst_info.operand;
-            } else {
-                dst_op = operand{dst_info.lea};
-            }
-        }
+        operand dst_operand{tc.get_lea_operand(os, indent, stmt_ident_,
+                                               dst_info, lea_registers)};
 
-        expr_.as_expr_type_value().compile_assign(tc, os, indent,
-                                                  *dst_info.type_ptr, dst_op);
+        expr_.as_expr_type_value().compile_assign(
+            tc, os, indent, *dst_info.type_ptr, dst_operand);
 
         for (const std::string& reg : lea_registers | std::views::reverse) {
             tc.free_scratch_register(tok(), os, indent, reg);
