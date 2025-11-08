@@ -334,8 +334,9 @@ class toc final {
                      name_info.operand.str());
     }
 
-    auto alloc_named_register(const token& src_loc_tk, std::ostream& os,
-                              const size_t indnt, const std::string_view reg)
+    [[nodiscard]] auto
+    alloc_named_register(const token& src_loc_tk, std::ostream& os,
+                         const size_t indnt, const std::string_view reg)
         -> bool {
 
         comment_start(src_loc_tk, os, indnt);
@@ -387,8 +388,10 @@ class toc final {
         named_registers_.erase(reg_iter);
     }
 
-    auto alloc_scratch_register(const token& src_loc_tk, std::ostream& os,
-                                const size_t indnt) -> std::string {
+    [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
+                                              std::ostream& os,
+                                              const size_t indnt)
+        -> std::string {
 
         if (scratch_registers_.empty()) {
             throw compiler_exception{src_loc_tk,
@@ -714,6 +717,7 @@ class toc final {
 
     [[nodiscard]] auto get_func_defs() const
         -> std::span<const stmt_def_func* const> {
+
         return func_defs_;
     }
 
@@ -755,9 +759,11 @@ class toc final {
         return *funcs_.get_const_ref(name).type_ptr;
     }
 
-    auto get_lea_operand(std::ostream& os, const size_t indent,
-                         const statement& src, const ident_info& src_info,
-                         std::vector<std::string>& lea_registers) -> operand {
+    [[nodiscard]] auto get_lea_operand(std::ostream& os, const size_t indent,
+                                       const statement& src,
+                                       const ident_info& src_info,
+                                       std::vector<std::string>& lea_registers)
+        -> operand {
 
         if (not src.is_indexed() and not src_info.has_lea()) {
             return src_info.operand;
@@ -1579,10 +1585,9 @@ class toc final {
         std::println(os, "set{} {}", comparison, operand);
     }
 
-    static auto get_field_offset_in_type(const token& src_loc_tk,
-                                         const type& tp,
-                                         const std::string_view field_name)
-        -> size_t {
+    [[nodiscard]] static auto
+    get_field_offset_in_type(const token& src_loc_tk, const type& tp,
+                             const std::string_view field_name) -> size_t {
 
         size_t accum{};
         for (const type_field& f : tp.fields()) {
@@ -1597,7 +1602,7 @@ class toc final {
                                     field_name, tp.name()));
     }
 
-    static auto get_operand_address_str(const std::string_view op)
+    [[nodiscard]] static auto get_operand_address_str(const std::string_view op)
         -> std::string {
 
         if (const std::optional<std::string> between_brackets{
@@ -1610,7 +1615,9 @@ class toc final {
         return std::string{op};
     }
 
-    static auto get_size_specifier(const size_t size) -> std::string_view {
+    [[nodiscard]] static auto get_size_specifier(const size_t size)
+        -> std::string_view {
+
         switch (size) {
         case size_qword:
             return "qword";
@@ -1655,14 +1662,14 @@ class toc final {
 
     [[nodiscard]] static auto is_operand_register(const std::string_view op)
         -> bool {
+
         const size_t size{get_size_from_register_operand(op)};
         return size != 0;
     }
 
-    static auto line_and_col_num_for_char_index(const size_t at_line,
-                                                size_t char_index_in_source,
-                                                const std::string_view src)
-        -> std::pair<size_t, size_t> {
+    [[nodiscard]] static auto line_and_col_num_for_char_index(
+        const size_t at_line, size_t char_index_in_source,
+        const std::string_view src) -> std::pair<size_t, size_t> {
 
         size_t at_col{0};
         while (src[char_index_in_source] != '\n') {
@@ -1680,8 +1687,8 @@ class toc final {
 // 'std::from_chars' requiring pointers
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-    static auto parse_to_constant(const token& src_loc_tk,
-                                  const std::string_view str)
+    [[nodiscard]] static auto parse_to_constant(const token& src_loc_tk,
+                                                const std::string_view str)
         -> std::optional<int64_t> {
 
         // is it hex?
@@ -1767,7 +1774,8 @@ class toc final {
         return str;
     }
 
-    static auto get_operand_base_register(const std::string_view addressing)
+    [[nodiscard]] static auto
+    get_operand_base_register(const std::string_view addressing)
         -> std::string_view {
 
         auto pos{addressing.find_first_of(" +")};
@@ -1847,7 +1855,8 @@ class toc final {
         return 0;
     }
 
-    static auto get_text_between_brackets(const std::string_view str)
+    [[nodiscard]] static auto
+    get_text_between_brackets(const std::string_view str)
         -> std::optional<std::string_view> {
 
         auto start{str.find('[')};
@@ -1863,8 +1872,9 @@ class toc final {
         return str.substr(start + 1, end - start - 1);
     }
 
-    static auto get_sized_memory_operand(const std::string_view operand,
-                                         const size_t new_size) -> std::string {
+    [[nodiscard]] static auto
+    get_sized_memory_operand(const std::string_view operand,
+                             const size_t new_size) -> std::string {
 
         const size_t pos = operand.find('[');
         assert(pos != std::string_view::npos);
@@ -1872,7 +1882,9 @@ class toc final {
                            operand.substr(pos));
     }
 
-    static auto is_memory_operand(const std::string_view operand) -> bool {
+    [[nodiscard]] static auto is_memory_operand(const std::string_view operand)
+        -> bool {
+
         return operand.find_first_of('[') != std::string::npos;
     }
 };
