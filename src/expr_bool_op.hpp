@@ -98,9 +98,10 @@ class expr_bool_op final : public statement {
 
     // returns an optional bool, and if defined the expression evaluated to
     // the value of the optional
-    auto compile_or(toc& tc, std::ostream& os, const size_t indent,
-                    const std::string_view jmp_to_if_true, const bool inverted,
-                    const std::string_view dst) const -> std::optional<bool> {
+    [[nodiscard]] auto
+    compile_or(toc& tc, std::ostream& os, const size_t indent,
+               const std::string_view jmp_to_if_true, const bool inverted,
+               const std::string_view dst) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
         tc.comment_source(*this, os, indent, "?",
@@ -185,10 +186,10 @@ class expr_bool_op final : public statement {
         return std::nullopt;
     }
 
-    auto compile_and(toc& tc, std::ostream& os, const size_t indent,
-                     const std::string_view jmp_to_if_false,
-                     const bool inverted, const std::string_view dst) const
-        -> std::optional<bool> {
+    [[nodiscard]] auto
+    compile_and(toc& tc, std::ostream& os, const size_t indent,
+                const std::string_view jmp_to_if_false, const bool inverted,
+                const std::string_view dst) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
         tc.comment_source(*this, os, indent, "?",
@@ -338,8 +339,9 @@ class expr_bool_op final : public statement {
         is_expression_ = true;
     }
 
-    static auto eval_constant(const int64_t lh, const std::string_view op,
-                              const int64_t rh) -> bool {
+    [[nodiscard]] static auto eval_constant(const int64_t lh,
+                                            const std::string_view op,
+                                            const int64_t rh) -> bool {
 
         if (op == "==") {
             return lh == rh;
@@ -362,7 +364,8 @@ class expr_bool_op final : public statement {
         std::unreachable();
     }
 
-    static auto asm_cc_for_op(const std::string_view op, const bool inverted)
+    [[nodiscard]] static auto asm_cc_for_op(const std::string_view op,
+                                            const bool inverted)
         -> std::string_view {
 
         if (op == "==") {
@@ -417,10 +420,10 @@ class expr_bool_op final : public statement {
         }
     }
 
-    static auto resolve_expr(toc& tc, std::ostream& os, const size_t indent,
-                             const expr_ops_list& expr, const bool is_lhs,
-                             std::vector<std::string>& allocated_registers)
-        -> std::string {
+    [[nodiscard]] static auto
+    resolve_expr(toc& tc, std::ostream& os, const size_t indent,
+                 const expr_ops_list& expr, const bool is_lhs,
+                 std::vector<std::string>& allocated_registers) -> std::string {
 
         if (not expr.is_expression() and
             (expr.is_indexed() or tc.has_lea(expr))) {

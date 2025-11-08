@@ -146,14 +146,14 @@ class stmt_if final : public statement {
 
     [[nodiscard]] auto is_var_set(const std::string_view var) const
         -> bool override {
+
         return else_block().is_var_set(var);
     }
 
   private:
-    static auto create_label_else_branch(const stmt_block& else_code,
-                                         const std::string_view call_path,
-                                         const std::string_view src_loc,
-                                         const std::string_view label_after_if)
+    [[nodiscard]] static auto create_label_else_branch(
+        const stmt_block& else_code, const std::string_view call_path,
+        const std::string_view src_loc, const std::string_view label_after_if)
         -> std::string {
 
         if (else_code.is_empty()) {

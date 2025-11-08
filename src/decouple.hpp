@@ -311,14 +311,18 @@ struct ident_info {
 // functions necessary to solve circular references implemented in 'main.cpp'
 //
 
-inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
+[[nodiscard]] inline auto create_statement_in_expr_ops_list(toc& tc,
+                                                            tokenizer& tz)
     -> std::unique_ptr<statement>;
 
-inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, token tk)
+[[nodiscard]] inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
+                                                         token tk)
     -> std::unique_ptr<statement>;
 
-inline auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
+[[nodiscard]] inline auto create_stmt_call(toc& tc, tokenizer& tz,
+                                           const stmt_identifier& si)
     -> std::unique_ptr<statement>;
 
-inline auto create_expr_any(toc& tc, tokenizer& tz, const type& tp,
-                            bool in_args) -> std::unique_ptr<expr_any>;
+[[nodiscard]] inline auto create_expr_any(toc& tc, tokenizer& tz,
+                                          const type& tp, bool in_args)
+    -> std::unique_ptr<expr_any>;

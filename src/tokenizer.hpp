@@ -32,7 +32,7 @@ class tokenizer final {
         return char_ix_ >= src_.size();
     }
 
-    auto next_token() -> token {
+    [[nodiscard]] auto next_token() -> token {
         const std::string_view ws_before{next_whitespace()};
         const size_t at_line{at_line_};
         const size_t bgn_ix{char_ix_};
@@ -93,12 +93,12 @@ class tokenizer final {
         move_back(1);
     }
 
-    auto next_whitespace_token() -> token {
+    [[nodiscard]] auto next_whitespace_token() -> token {
         const size_t at_line{at_line_};
         return {next_whitespace(), char_ix_, "", char_ix_, "", at_line};
     }
 
-    auto is_next_char(const char ch) -> bool {
+    [[nodiscard]] auto is_next_char(const char ch) -> bool {
         if (is_eos() or src_[char_ix_] != ch) {
             return false;
         }
@@ -117,7 +117,7 @@ class tokenizer final {
         return is_eos() ? '\0' : src_[char_ix_];
     }
 
-    auto read_rest_of_line() -> std::string_view {
+    [[nodiscard]] auto read_rest_of_line() -> std::string_view {
         const size_t bgn{char_ix_};
         while (not is_eos()) {
             if (src_[char_ix_] == '\n') {
@@ -134,7 +134,7 @@ class tokenizer final {
         return src_.substr(bgn, len);
     }
 
-    auto next_char() -> char {
+    [[nodiscard]] auto next_char() -> char {
         assert(not is_eos());
         // note: just for easier debugging
         const char ch{src_[char_ix_++]};
@@ -152,7 +152,7 @@ class tokenizer final {
     [[nodiscard]] auto current_line() const -> size_t { return at_line_; }
 
   private:
-    auto next_whitespace() -> std::string_view {
+    [[nodiscard]] auto next_whitespace() -> std::string_view {
         if (is_eos()) {
             return "";
         }
@@ -172,7 +172,7 @@ class tokenizer final {
         return src_.substr(bgn_ix, len);
     }
 
-    auto next_token_str() -> std::string_view {
+    [[nodiscard]] auto next_token_str() -> std::string_view {
         if (is_eos()) {
             return "";
         }

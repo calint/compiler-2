@@ -196,8 +196,8 @@ auto main(const int argc, const char* argv[]) -> int {
 // declared in 'decouple.hpp'
 // called from 'stmt_block' to solve circular dependencies with 'loop',
 // 'if', 'mov', 'syscall'
-inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
-                                           const token tk)
+[[nodiscard]] inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
+                                                         const token tk)
     -> std::unique_ptr<statement> {
 
     // note: no 'std:move' on 'tk' because it is trivially copyable
@@ -219,7 +219,8 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
 
 // declared in 'decouple.hpp'
 // called from 'stmt_block'
-inline auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
+[[nodiscard]] inline auto create_stmt_call(toc& tc, tokenizer& tz,
+                                           const stmt_identifier& si)
     -> std::unique_ptr<statement> {
 
     if (si.elems().size() != 1) {
@@ -234,7 +235,8 @@ inline auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
 // declared in 'decouple.hpp'
 // called from 'expr_ops_list' to solve circular dependencies with function
 // calls
-inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
+[[nodiscard]] inline auto create_statement_in_expr_ops_list(toc& tc,
+                                                            tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     // note: no 'std:move' on 'tk' because it is trivially copyable
@@ -273,8 +275,9 @@ inline auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
 
 // declared in 'decouple.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-inline auto create_expr_any(toc& tc, tokenizer& tz, const type& tp,
-                            const bool in_args) -> std::unique_ptr<expr_any> {
+[[nodiscard]] inline auto create_expr_any(toc& tc, tokenizer& tz,
+                                          const type& tp, const bool in_args)
+    -> std::unique_ptr<expr_any> {
 
     return std::make_unique<expr_any>(tc, tz, tp, in_args);
 }
@@ -356,7 +359,7 @@ expr_type_value::~expr_type_value() = default;
 // declared in 'expr_type_value.hpp'
 // resolves circular reference: expr_type_value -> expr_any ->
 // expr_type_value
-inline void expr_type_value::source_to(std::ostream& os) const {
+inline auto expr_type_value::source_to(std::ostream& os) const -> void {
     // is it an identifier? because statement printed that
     if (is_make_copy()) {
         stmt_ident_->source_to(os);
@@ -511,7 +514,7 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
     }
 }
 
-auto expr_type_value::compile_lea(
+[[nodiscard]] auto expr_type_value::compile_lea(
     const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
     std::vector<std::string>& allocated_registers, const std::string& reg_size,
     const std::span<const std::string> lea_path) const -> operand {
@@ -533,9 +536,9 @@ auto expr_type_value::compile_lea(
 
 // declared in 'unary_ops.hpp'
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-inline void unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
+inline auto unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
                                const size_t indnt,
-                               const std::string_view dst_info) const {
+                               const std::string_view dst_info) const -> void {
 
     for (const char op : ops_ | std::views::reverse) {
         switch (op) {
@@ -731,7 +734,7 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
     std::println(os, ";          optimization pass 2: {}", optimizations);
 }
 
-auto read_file_to_string(const char* file_name) -> std::string {
+[[nodiscard]] auto read_file_to_string(const char* file_name) -> std::string {
     std::ifstream fs{file_name};
     if (not fs.is_open()) {
         throw panic_exception(std::format("cannot open file '{}'", file_name));

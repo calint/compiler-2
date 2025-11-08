@@ -303,11 +303,11 @@ class expr_ops_list final : public expression {
         return exprs_.size() == 1 and exprs_[0]->is_identifier();
     }
 
-    auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
-                     size_t indent,
-                     std::vector<std::string>& allocated_registers,
-                     const std::string& reg_size,
-                     const std::span<const std::string> lea_path) const
+    [[nodiscard]] auto
+    compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
+                size_t indent, std::vector<std::string>& allocated_registers,
+                const std::string& reg_size,
+                const std::span<const std::string> lea_path) const
         -> operand override {
 
         assert(exprs_.size() == 1);
@@ -339,7 +339,8 @@ class expr_ops_list final : public expression {
         uops_.compile(tc, os, indent, dst_info.operand.str());
     }
 
-    static auto count_instructions(const toc& tc, std::stringstream& ss)
+    [[nodiscard]] static auto count_instructions(const toc& tc,
+                                                 std::stringstream& ss)
         -> size_t {
 
         std::string line;
@@ -361,7 +362,7 @@ class expr_ops_list final : public expression {
     static constexpr char precedence_shift{6};
 
     // higher value higher precedence
-    static auto precedence_for_op(const char ch) -> uint8_t {
+    [[nodiscard]] static auto precedence_for_op(const char ch) -> uint8_t {
         switch (ch) {
         case '+':
         case '-':
@@ -874,7 +875,8 @@ class expr_ops_list final : public expression {
         free_registers(src, tc, os, indent, lea_registers);
     }
 
-    static auto asm_op_div_reg_ext(const size_t op_size) -> std::string_view {
+    [[nodiscard]] static auto asm_op_div_reg_ext(const size_t op_size)
+        -> std::string_view {
         switch (op_size) {
         case toc::size_qword:
             return "cqo";

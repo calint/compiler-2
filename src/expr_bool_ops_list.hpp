@@ -157,10 +157,12 @@ class expr_bool_ops_list final : public statement {
         std::unreachable();
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
-                 const std::string_view jmp_to_if_false,
-                 const std::string_view jmp_to_if_true, const bool inverted,
-                 const std::string_view dst) const -> std::optional<bool> {
+    [[nodiscard]] auto compile(toc& tc, std::ostream& os, const size_t indent,
+                               const std::string_view jmp_to_if_false,
+                               const std::string_view jmp_to_if_true,
+                               const bool inverted,
+                               const std::string_view dst) const
+        -> std::optional<bool> {
 
         tc.comment_source(*this, os, indent, "?",
                           inverted ? " inverted: " : " ");
@@ -421,7 +423,7 @@ class expr_bool_ops_list final : public statement {
                                               : std::format("_{}", call_path)));
     }
 
-    static auto create_cmp_label_from(
+    [[nodiscard]] static auto create_cmp_label_from(
         const toc& tc,
         const std::variant<expr_bool_op, expr_bool_ops_list>& var)
         -> std::string {

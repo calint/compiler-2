@@ -142,7 +142,8 @@ class type final {
     }
 
     // note: duplicate responsibility with `toc` because of circular dependency
-    static auto get_size_specifier(const token& tk, const size_t size)
+    [[nodiscard]] static auto get_size_specifier(const token& tk,
+                                                 const size_t size)
         -> std::string_view {
 
         constexpr size_t size_qword{8};

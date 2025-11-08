@@ -195,19 +195,18 @@ class stmt_identifier : public statement {
         }
     }
 
-    auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
-                     const size_t indent,
-                     std::vector<std::string>& allocated_registers,
-                     const std::string& reg_size,
-                     const std::span<const std::string> lea_path) const
-        -> operand override {
+    [[nodiscard]] auto compile_lea(
+        const token& src_loc_tk, toc& tc, std::ostream& os, const size_t indent,
+        std::vector<std::string>& allocated_registers,
+        const std::string& reg_size,
+        const std::span<const std::string> lea_path) const -> operand override {
 
         return compile_effective_address(src_loc_tk, tc, os, indent, elems_,
                                          allocated_registers, reg_size,
                                          lea_path);
     }
 
-    static auto compile_effective_address(
+    [[nodiscard]] static auto compile_effective_address(
         const token& src_loc_tk, toc& tc, std::ostream& os, const size_t indent,
         const std::span<const identifier_elem> elems,
         std::vector<std::string>& allocated_registers,
@@ -419,7 +418,8 @@ class stmt_identifier : public statement {
         return operand{reg_offset};
     }
 
-    static auto get_shift_amount(const uint64_t value) -> std::optional<int> {
+    [[nodiscard]] static auto get_shift_amount(const uint64_t value)
+        -> std::optional<int> {
         if (value == 0 or not std::has_single_bit(value)) {
             return std::nullopt;
         }
@@ -490,13 +490,12 @@ class stmt_identifier : public statement {
         }
     }
 
-    static auto init_reg_offset(const token& src_loc_tk, toc& tc,
-                                std::ostream& os, const size_t indent,
-                                const std::string& lea,
-                                std::vector<std::string>& allocated_registers,
-                                const bool no_changes_to_reg_offset_after_this,
-                                const bool will_be_indirect_indexed)
-        -> std::string {
+    [[nodiscard]] static auto
+    init_reg_offset(const token& src_loc_tk, toc& tc, std::ostream& os,
+                    const size_t indent, const std::string& lea,
+                    std::vector<std::string>& allocated_registers,
+                    const bool no_changes_to_reg_offset_after_this,
+                    const bool will_be_indirect_indexed) -> std::string {
 
         if (not lea.empty()) {
             // if no change is done to the lea register, just return it

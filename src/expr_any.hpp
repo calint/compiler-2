@@ -166,11 +166,11 @@ class expr_any final : public statement {
             [](const auto& e) -> bool { return e.is_identifier(); }, var_);
     }
 
-    auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
-                     size_t indent,
-                     std::vector<std::string>& allocated_registers,
-                     const std::string& reg_size,
-                     const std::span<const std::string> lea_path) const
+    [[nodiscard]] auto
+    compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
+                size_t indent, std::vector<std::string>& allocated_registers,
+                const std::string& reg_size,
+                const std::span<const std::string> lea_path) const
         -> operand override {
 
         return std::visit(
