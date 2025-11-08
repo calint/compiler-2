@@ -81,9 +81,9 @@ class stmt_builtin_address_of final : public expression {
 
         std::vector<std::string> allocated_registers;
 
-        const operand oper = stmt_identifier::compile_effective_address(
+        const operand oper{stmt_identifier::compile_effective_address(
             stmt_ident_.first_token(), tc, os, indent, stmt_ident_.elems(),
-            allocated_registers, "", src_info.lea_path);
+            allocated_registers, "", src_info.lea_path)};
 
         if (dst_info.is_register()) {
             toc::asm_lea(os, indent, dst_info.operand.address_str(),
