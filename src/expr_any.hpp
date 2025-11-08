@@ -63,13 +63,13 @@ class expr_any final : public statement {
                  const ident_info& dst_info) const -> void override {
         std::visit(
             overloaded{
-                [&](const expr_ops_list& e) -> void {
+                [&](const expr_ops_list& e) -> auto {
                     e.compile(tc, os, indent, dst_info);
                 },
-                [&]([[maybe_unused]] const expr_type_value& e) -> void {
+                [&]([[maybe_unused]] const expr_type_value& e) -> auto {
                     std::unreachable();
                 },
-                [&](const expr_bool_ops_list& e) -> void {
+                [&](const expr_bool_ops_list& e) -> auto {
                     // if not expression assign to destination
                     if (not e.is_expression()) {
                         const ident_info& src_info{tc.make_ident_info(e)};
@@ -174,7 +174,7 @@ class expr_any final : public statement {
         -> operand override {
 
         return std::visit(
-            [&](const auto& e) -> operand {
+            [&](const auto& e) -> auto {
                 return e.compile_lea(src_loc_tk, tc, os, indent,
                                      allocated_registers, reg_size, lea_path);
             },
