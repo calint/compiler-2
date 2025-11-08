@@ -28,8 +28,7 @@ class stmt_assign_var final : public statement {
         //       accurate when `stmt_assign_var` is created within the context
         //       of `stmt_def_var`
 
-        const ident_info& dst_info{
-            tc.make_ident_info(tok(), stmt_ident_.identifier())};
+        const ident_info& dst_info{tc.make_ident_info(stmt_ident_)};
 
         set_type(*dst_info.type_ptr);
         expr_ = {tc, tz, *dst_info.type_ptr, false};
@@ -59,8 +58,7 @@ class stmt_assign_var final : public statement {
         tc.comment_source(*this, os, indent);
 
         // get information about the destination of the compilation
-        ident_info dst_info{
-            tc.make_ident_info(tok(), stmt_ident_.identifier())};
+        ident_info dst_info{tc.make_ident_info(stmt_ident_)};
 
         if (dst_info.is_const()) {
             throw compiler_exception{

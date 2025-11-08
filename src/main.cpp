@@ -304,8 +304,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         }
 
         // check that an identifier type matches the expected type
-        const ident_info src_info{
-            tc.make_ident_info(tok(), stmt_ident_->identifier())};
+        const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
 
         if (tp.name() != src_info.type_ptr->name()) {
             // note: checked a source location report ok

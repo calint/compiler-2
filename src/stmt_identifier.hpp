@@ -156,7 +156,7 @@ class stmt_identifier : public statement {
         //                  dst_info.lea_path[i]);
         // }
 
-        const ident_info src_info{tc.make_ident_info(tok(), identifier())};
+        const ident_info src_info{tc.make_ident_info(*this)};
 
         if (src_info.is_const()) {
             tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(),
