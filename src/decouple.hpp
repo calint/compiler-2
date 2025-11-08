@@ -92,7 +92,7 @@ struct operand {
         if (std::regex_match(operand_str, matches, pattern_with_brackets)) {
             // handle pattern with brackets
             if (matches[match_size].matched) {
-                const auto size_str = matches[match_size].str();
+                const auto size_str{matches[match_size].str()};
                 if (size_str == "byte") {
                     size = size_byte;
                 } else if (size_str == "word") {
@@ -132,7 +132,7 @@ struct operand {
                                     pattern_without_brackets)) {
             // handle pattern without brackets
             if (matches[match_size].matched) {
-                const auto size_str = matches[match_size].str();
+                const auto size_str{matches[match_size].str()};
                 if (size_str == "byte") {
                     size = size_byte;
                 } else if (size_str == "word") {

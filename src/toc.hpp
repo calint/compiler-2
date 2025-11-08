@@ -1876,7 +1876,7 @@ class toc final {
     get_sized_memory_operand(const std::string_view operand,
                              const size_t new_size) -> std::string {
 
-        const size_t pos = operand.find('[');
+        const size_t pos{operand.find('[')};
         assert(pos != std::string_view::npos);
         return std::format("{} {}", get_size_specifier(new_size),
                            operand.substr(pos));
