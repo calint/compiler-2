@@ -229,8 +229,8 @@ class expr_ops_list final : public expression {
         const std::string reg_sized{
             tc.get_sized_register_operand(reg, dst_info.type_ptr->size())};
         // note: sized register to propagate operation to destination size
-        const ident_info dst_reg{tc.make_ident_info(tok(), reg_sized)};
-        do_compile(tc, ss2, indent, dst_reg);
+        const ident_info dst_reg_info{tc.make_ident_info(tok(), reg_sized)};
+        do_compile(tc, ss2, indent, dst_reg_info);
         tc.asm_cmd(tok(), ss2, indent, "mov", dst_info.operand.str(),
                    reg_sized);
         tc.free_scratch_register(tok(), ss2, indent, reg);
