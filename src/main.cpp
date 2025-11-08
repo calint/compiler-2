@@ -58,15 +58,15 @@ auto main(const int argc, const char* argv[]) -> int {
     // note: to avoid "magic number" lint
 
     // default values
-    const char* src_file_name = "prog.baz";
-    size_t stack_size = default_stack_size;
-    bool checks_upper = false;
-    bool checks_show_line = false;
-    bool checks_lower = false;
-    bool optimize_jumps = true;
+    const char* src_file_name{"prog.baz"};
+    size_t stack_size{default_stack_size};
+    bool checks_upper{};
+    bool checks_show_line{};
+    bool checks_lower{};
+    bool optimize_jumps{true};
 
     // parse arguments
-    for (size_t i = 1; i < args.size(); i++) {
+    for (size_t i{1}; i < args.size(); i++) {
         const std::string_view arg{args[i]};
 
         if (arg == "--help" || arg == "-h") {
