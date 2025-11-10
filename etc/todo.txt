@@ -4,6 +4,7 @@
       func inv(i : i32) : res i32 {
     or minimal
       func inv(i i32) res i32 {
+      func inv(i) res {
 [o] stmt_assign_var::compile: unified way of determining the effective address
     of an identifier including indexing, type offset navigation etc
     => make_ident_info should do that and then passed around instead of
