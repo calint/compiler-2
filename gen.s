@@ -66,7 +66,7 @@ mov rsp, stk.end
 
 main:
 ;   [102:5] var arr : i32[4]
-;   [102:9] arr: i32[4] (4B @ dword [rsp - 16])
+;   [102:9] arr: i32[4] (16B @ dword [rsp - 16])
 ;   [102:9] clear 4 * 4B = 16B
 ;   [102:5] size <= 32B, use mov
     mov qword [rsp - 16], 0
@@ -347,7 +347,7 @@ main:
 ;       [114:5] free scratch register 'r15'
     assert_114_5_end:
 ;   [116:5] var arr1 : i32[8]
-;   [116:9] arr1: i32[8] (4B @ dword [rsp - 56])
+;   [116:9] arr1: i32[8] (32B @ dword [rsp - 56])
 ;   [116:9] clear 8 * 4B = 32B
 ;   [116:5] size <= 32B, use mov
     mov qword [rsp - 56], 0
@@ -1730,7 +1730,7 @@ main:
 ;       [183:5] free scratch register 'r15'
     assert_183_5_end:
 ;   [185:5] var worlds : world[8]
-;   [185:9] worlds: world[8] (64B @ qword [rsp - 732])
+;   [185:9] worlds: world[8] (512B @ qword [rsp - 732])
 ;   [185:9] clear 8 * 64B = 512B
 ;   [185:5] allocate named register 'rcx'
 ;   [185:5] allocate named register 'rdi'
