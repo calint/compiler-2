@@ -330,10 +330,10 @@ class toc final {
         if (var.array_size) {
             std::print(os, "[{}]", var.array_size);
         }
-        std::println(os, " ({}B @ {})",
+        std::println(os, " ({}B @ [{}])",
                      name_info.type_ptr->size() *
                          (name_info.is_array ? name_info.array_size : 1),
-                     name_info.operand.str());
+                     name_info.operand.address_str());
     }
 
     [[nodiscard]] auto

@@ -66,14 +66,14 @@ mov rsp, stk.end
 
 main:
 ;   [102:5] var arr : i32[4]
-;   [102:9] arr: i32[4] (16B @ dword [rsp - 16])
+;   [102:9] arr: i32[4] (16B @ [rsp - 16])
 ;   [102:9] clear 4 * 4B = 16B
 ;   [102:5] size <= 32B, use mov
     mov qword [rsp - 16], 0
     mov qword [rsp - 8], 0
 ;   [103:5] # arrays are initialized to 0
 ;   [105:5] var ix = 1
-;   [105:9] ix: i64 (8B @ qword [rsp - 24])
+;   [105:9] ix: i64 (8B @ [rsp - 24])
 ;   [105:9] ix = 1
 ;   [105:14] 1
     mov qword [rsp - 24], 1
@@ -347,7 +347,7 @@ main:
 ;       [114:5] free scratch register 'r15'
     assert_114_5_end:
 ;   [116:5] var arr1 : i32[8]
-;   [116:9] arr1: i32[8] (32B @ dword [rsp - 56])
+;   [116:9] arr1: i32[8] (32B @ [rsp - 56])
 ;   [116:9] clear 8 * 4B = 32B
 ;   [116:5] size <= 32B, use mov
     mov qword [rsp - 56], 0
@@ -761,7 +761,7 @@ main:
 ;       [129:5] free scratch register 'r15'
     assert_129_5_end:
 ;   [131:5] var p : point = {0, 0}
-;   [131:9] p: point (16B @ qword [rsp - 72])
+;   [131:9] p: point (16B @ [rsp - 72])
 ;   [131:9] p = {0, 0}
 ;   [131:21] copy field 'x'
     mov qword [rsp - 72], 0
@@ -857,7 +857,7 @@ main:
 ;       [134:5] free scratch register 'r15'
     assert_134_5_end:
 ;   [136:5] var q : point = p
-;   [136:9] q: point (16B @ qword [rsp - 88])
+;   [136:9] q: point (16B @ [rsp - 88])
 ;   [136:9] q = p
 ;   [136:21] allocate named register 'rsi'
 ;   [136:21] allocate named register 'rdi'
@@ -987,7 +987,7 @@ main:
 ;       [142:5] free scratch register 'r15'
     assert_142_5_end:
 ;   [144:5] var i = 0
-;   [144:9] i: i64 (8B @ qword [rsp - 96])
+;   [144:9] i: i64 (8B @ [rsp - 96])
 ;   [144:9] i = 0
 ;   [144:13] 0
     mov qword [rsp - 96], 0
@@ -1107,12 +1107,12 @@ main:
 ;       [150:5] free scratch register 'r15'
     assert_150_5_end:
 ;   [152:5] var j = 1
-;   [152:9] j: i64 (8B @ qword [rsp - 104])
+;   [152:9] j: i64 (8B @ [rsp - 104])
 ;   [152:9] j = 1
 ;   [152:13] 1
     mov qword [rsp - 104], 1
 ;   [153:5] var k = baz(j)
-;   [153:9] k: i64 (8B @ qword [rsp - 112])
+;   [153:9] k: i64 (8B @ [rsp - 112])
 ;   [153:9] k = baz(j)
 ;   [153:13] k = baz(j)
 ;   [153:13] = expression
@@ -1226,7 +1226,7 @@ main:
 ;       [157:5] free scratch register 'r15'
     assert_157_5_end:
 ;   [159:5] var p0 : point = {baz(2), 0}
-;   [159:9] p0: point (16B @ qword [rsp - 128])
+;   [159:9] p0: point (16B @ [rsp - 128])
 ;   [159:9] p0 = {baz(2), 0}
 ;   [159:22] copy field 'x'
 ;   [159:23] qword [rsp - 128] = baz(2)
@@ -1287,17 +1287,17 @@ main:
 ;       [160:5] free scratch register 'r15'
     assert_160_5_end:
 ;   [162:5] var x = 1
-;   [162:9] x: i64 (8B @ qword [rsp - 136])
+;   [162:9] x: i64 (8B @ [rsp - 136])
 ;   [162:9] x = 1
 ;   [162:13] 1
     mov qword [rsp - 136], 1
 ;   [163:5] var y = 2
-;   [163:9] y: i64 (8B @ qword [rsp - 144])
+;   [163:9] y: i64 (8B @ [rsp - 144])
 ;   [163:9] y = 2
 ;   [163:13] 2
     mov qword [rsp - 144], 2
 ;   [165:5] var o1 : object = {{x * 10, y}, 0xff0000}
-;   [165:9] o1: object (20B @ qword [rsp - 164])
+;   [165:9] o1: object (20B @ [rsp - 164])
 ;   [165:9] o1 = {{x * 10, y}, 0xff0000}
 ;   [165:23] copy field 'pos'
 ;   [165:24] copy field 'x'
@@ -1431,7 +1431,7 @@ main:
 ;       [168:5] free scratch register 'r15'
     assert_168_5_end:
 ;   [170:5] var p1 : point = {-x, -y}
-;   [170:9] p1: point (16B @ qword [rsp - 180])
+;   [170:9] p1: point (16B @ [rsp - 180])
 ;   [170:9] p1 = {-x, -y}
 ;   [170:22] copy field 'x'
 ;   [170:23] allocate scratch register -> r15
@@ -1533,7 +1533,7 @@ main:
 ;       [173:5] free scratch register 'r15'
     assert_173_5_end:
 ;   [175:5] var o2 : object = o1
-;   [175:9] o2: object (20B @ qword [rsp - 200])
+;   [175:9] o2: object (20B @ [rsp - 200])
 ;   [175:9] o2 = o1
 ;   [175:23] allocate named register 'rsi'
 ;   [175:23] allocate named register 'rdi'
@@ -1660,7 +1660,7 @@ main:
 ;       [178:5] free scratch register 'r15'
     assert_178_5_end:
 ;   [180:5] var o3 : object[1]
-;   [180:9] o3: object[1] (20B @ qword [rsp - 220])
+;   [180:9] o3: object[1] (20B @ [rsp - 220])
 ;   [180:9] clear 1 * 20B = 20B
 ;   [180:5] size <= 32B, use mov
     mov qword [rsp - 220], 0
@@ -1730,7 +1730,7 @@ main:
 ;       [183:5] free scratch register 'r15'
     assert_183_5_end:
 ;   [185:5] var worlds : world[8]
-;   [185:9] worlds: world[8] (512B @ qword [rsp - 732])
+;   [185:9] worlds: world[8] (512B @ [rsp - 732])
 ;   [185:9] clear 8 * 64B = 512B
 ;   [185:5] allocate named register 'rcx'
 ;   [185:5] allocate named register 'rdi'
@@ -2142,7 +2142,7 @@ main:
 ;       [197:5] free scratch register 'r15'
     assert_197_5_end:
 ;   [203:5] var nm : str
-;   [203:9] nm: str (128B @ byte [rsp - 860])
+;   [203:9] nm: str (128B @ [rsp - 860])
 ;   [203:9] clear 1 * 128B = 128B
 ;   [203:5] allocate named register 'rcx'
 ;   [203:5] allocate named register 'rdi'
