@@ -122,7 +122,7 @@ class stmt_def_func final : public statement {
         }
     }
 
-    auto source_def_comment_to(toc& tc, std::ostream& os,
+    auto source_def_comment_to(const toc& tc, std::ostream& os,
                                const size_t indent) const -> void {
 
         std::stringstream ss;

@@ -31,7 +31,7 @@ class stmt_if final : public statement {
                 return;
             }
             // is 'else'
-            // check if 'else if'
+            // check if it is 'else if'
             const token tkn2{tz.next_token()};
             if (not tkn2.is_text("if")) {
                 // not 'else if', push token back in stream

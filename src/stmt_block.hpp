@@ -40,7 +40,7 @@ class stmt_block final : public statement {
         tc.enter_block();
         while (true) {
             // comments, semi-colon not considered a statement
-            bool last_statement_considered_no_statment{};
+            bool last_statement_considered_no_statement{};
 
             // is it the end of the block?
             if (tz.is_next_char('}')) {
@@ -68,7 +68,7 @@ class stmt_block final : public statement {
             if (tk.text().starts_with("#")) {
                 stms_.emplace_back(
                     std::make_unique<stmt_comment>(tc, unary_ops{}, tk, tz));
-                last_statement_considered_no_statment = true;
+                last_statement_considered_no_statement = true;
             } else if (tk.is_text("var")) {
                 stms_.emplace_back(std::make_unique<stmt_def_var>(tc, tk, tz));
             } else if (tk.is_text("break")) {
@@ -112,7 +112,7 @@ class stmt_block final : public statement {
                 }
             }
             if (is_one_statement_ and
-                not last_statement_considered_no_statment) {
+                not last_statement_considered_no_statement) {
                 break;
             }
         }

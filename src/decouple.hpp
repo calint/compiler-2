@@ -230,10 +230,10 @@ struct operand {
         return is_str ? base_register : str(size);
     }
 
-    [[nodiscard]] auto str(const size_t opsize) const -> std::string {
+    [[nodiscard]] auto str(const size_t size_specifier) const -> std::string {
         std::string s;
-        if (opsize != 0) {
-            switch (opsize) {
+        if (size_specifier != 0) {
+            switch (size_specifier) {
             case size_byte:
                 s.append("byte");
                 break;
@@ -252,7 +252,7 @@ struct operand {
             s.append(" [");
         }
         s.append(address_str());
-        if (opsize != 0) {
+        if (size_specifier != 0) {
             s.append("]");
         }
         return s;

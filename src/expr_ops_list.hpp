@@ -1,7 +1,6 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include <iostream>
 #include <memory>
 #include <ostream>
 #include <ranges>

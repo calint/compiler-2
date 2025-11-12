@@ -1,6 +1,8 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <format>
+
 #include "decouple.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
