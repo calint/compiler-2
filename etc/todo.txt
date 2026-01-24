@@ -1,3 +1,7 @@
+[ ] constant initialized variables in "main" have the initial data directly
+    written by the compiler into the stack prepared for execution removing
+    initiation stage using code
+[ ] remove the global "field"
 [ ] consider changing function signatures from
       func inv(i : i32) : i32 res {
     to
