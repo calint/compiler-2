@@ -21,7 +21,7 @@ class stmt_def_type_field final : public statement {
 
         set_type(tc.get_type_void());
 
-        if (tk.is_text("")) {
+        if (tk.text().empty()) {
             throw compiler_exception{tk, "expected field name"};
         }
         // is the type specified?

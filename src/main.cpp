@@ -242,7 +242,7 @@ auto main(const int argc, const char* argv[]) -> int {
     // note: no 'std:move' on 'tk' because it is trivially copyable
     unary_ops uops{tz};
     const token tk{tz.next_token()};
-    if (tk.is_text("")) {
+    if (tk.text().empty()) {
         throw compiler_exception{
             tk, "expected constant, identifier or function call"};
     }
@@ -294,7 +294,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
     // is it an identifier?
     // note: token name would be empty at the "{x, y}" type of statement
-    if (not tok().is_text("")) {
+    if (not tok().text().empty()) {
         // yes, e.g. obj.pos = p
 
         stmt_ident_ =

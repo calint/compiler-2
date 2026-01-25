@@ -80,7 +80,7 @@ class program final {
             } else if (tk.text().starts_with("#")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_comment>(tc_, unary_ops{}, tk, tz));
-            } else if (tk.is_text("")) {
+            } else if (tk.text().empty()) {
                 // empty space at the end of the file; necessary for source
                 // reproduction to be identical
                 ws1_ = tk;

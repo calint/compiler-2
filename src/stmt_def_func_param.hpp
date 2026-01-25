@@ -13,7 +13,7 @@ class stmt_def_func_param final : public statement {
   public:
     stmt_def_func_param(const toc& tc, tokenizer& tz)
         : statement{tz.next_token()} {
-        assert(not tok().is_text(""));
+        assert(not tok().text().empty());
 
         if (not tz.is_next_char(':')) {
             // no type defined, set default
@@ -50,7 +50,7 @@ class stmt_def_func_param final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        if (type_tk_.is_text("")) {
+        if (type_tk_.text().empty()) {
             return;
         }
         std::print(os, ":");

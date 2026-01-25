@@ -40,7 +40,7 @@ class expr_type_value final : public statement {
     auto source_to(std::ostream& os) const -> void override;
 
     [[nodiscard]] auto is_make_copy() const -> bool {
-        return not tok().is_text("");
+        return not tok().text().empty();
         // note: if token is empty then it is an expression of a type `{ ... }`
         //       otherwise e.g. `p = pt`
     }

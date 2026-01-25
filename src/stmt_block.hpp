@@ -88,7 +88,7 @@ class stmt_block final : public statement {
                 stms_.emplace_back(create_statement_in_stmt_block(tc, tz, tk));
             } else {
                 // is it at end of block and there is whitespace before '}'?
-                if (tk.is_text("")) {
+                if (tk.text().empty()) {
                     // yes, save it as this block whitespace
                     ws2_ = tk;
                     continue;
