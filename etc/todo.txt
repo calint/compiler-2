@@ -1,5 +1,3 @@
-[ ] remove "field" and have initiated variables in "main" that are stored on 
-    the stack
 [ ] modern CPU does rep stosb as fast for any alignment and size
 [ ] constant initialized variables in "main" have the initial data directly
     written by the compiler into the stack prepared for execution removing
