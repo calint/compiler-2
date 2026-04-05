@@ -1,7 +1,7 @@
 [ ] modern CPU does rep stosb as fast for any alignment and size
 [ ] constant initialized variables in "main" have the initial data directly
     written by the compiler into the stack prepared for execution removing
-    initiation stage using code
+    initiation stage using code and removing "field"
 [ ] remove the global "field"
 [ ] consider changing function signatures from
       func inv(i : i32) : i32 res {
