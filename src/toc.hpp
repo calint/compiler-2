@@ -60,7 +60,7 @@ class frame final {
     // the label to jump to when exiting an in-lined function
     std::string func_ret_label_;
 
-    // info about the function returns
+    // info about the function return
     std::optional<func_return_info> func_ret_;
 
   public:
