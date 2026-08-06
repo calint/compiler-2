@@ -50,7 +50,7 @@ struct operand {
 
         // note: regex handles only "base + index * scale +/- displacement" with
         //       optional index, scale and displacement
-        const std::regex pattern_with_brackets(
+        const std::regex pattern_with_brackets{
             // whitespace and size specifier
             R"(^\s*(?:(byte|word|dword|qword)\s*)?)"
             // opening bracket
@@ -64,9 +64,9 @@ struct operand {
             // +/- displacement
             R"((?:\s*([+-])\s*(\d+))?)"
             // closing bracket
-            R"(\]\s*$)");
+            R"(\]\s*$)"};
 
-        const std::regex pattern_without_brackets(
+        const std::regex pattern_without_brackets{
             // whitespace and size specifier
             R"(^\s*(?:(byte|word|dword|qword)\s*)?)"
             // base register (must start with a letter)
@@ -78,7 +78,7 @@ struct operand {
             // +/- displacement
             R"((?:\s*([+-])\s*(\d+))?)"
             // whitespace
-            R"(\s*$)");
+            R"(\s*$)"};
 
         constexpr size_t match_size{1};
         constexpr size_t match_base_register{2};
@@ -171,7 +171,7 @@ struct operand {
             }
         } else {
             // try to match a standalone register
-            const std::regex register_pattern(R"(^\s*([a-z][a-z0-9]*)\s*$)");
+            const std::regex register_pattern{R"(^\s*([a-z][a-z0-9]*)\s*$)"};
             std::smatch register_match;
             if (std::regex_match(operand_str, register_match,
                                  register_pattern)) {

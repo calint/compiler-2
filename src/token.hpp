@@ -39,7 +39,7 @@ class token final {
         }
         const std::string name_str{text_};
         std::print(os, "{}\"{}\"{}", ws_left_,
-                   std::regex_replace(name_str, std::regex(R"(\n)"), "\\n"),
+                   std::regex_replace(name_str, std::regex{R"(\n)"}, "\\n"),
                    ws_right_);
     }
 
@@ -51,9 +51,9 @@ class token final {
         //? temporary fix to handle strings
         // NASM encoding of data as string
         std::string str{text_};
-        str = std::regex_replace(str, std::regex(R"(')"), "', \"'\", '");
-        str = std::regex_replace(str, std::regex(R"(\\")"), "\"");
-        str = std::regex_replace(str, std::regex(R"(\\n)"), "', 10,'");
+        str = std::regex_replace(str, std::regex{R"(')"}, "', \"'\", '");
+        str = std::regex_replace(str, std::regex{R"(\\")"}, "\"");
+        str = std::regex_replace(str, std::regex{R"(\\n)"}, "', 10,'");
         std::print(os, "{}", str);
     }
 
