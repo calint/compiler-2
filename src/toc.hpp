@@ -10,6 +10,7 @@
 #include <ranges>
 #include <regex>
 #include <span>
+#include <sstream>
 #include <string_view>
 
 #include "compiler_exception.hpp"
