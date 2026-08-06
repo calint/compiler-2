@@ -743,10 +743,10 @@ main:
             exit_20_38_183_5_end:
         if_20_26_183_5_end:
     assert_183_5_end:
-    mov rcx, 64
+    mov rcx, 512
     lea rdi, [rsp - 732]
     xor rax, rax
-    rep stosq
+    rep stosb
     lea r15, [rsp - 732]
     mov r14, 1
     mov r13, 186
@@ -939,10 +939,10 @@ main:
             exit_20_38_197_5_end:
         if_20_26_197_5_end:
     assert_197_5_end:
-    mov rcx, 16
+    mov rcx, 128
     lea rdi, [rsp - 860]
     xor rax, rax
-    rep stosq
+    rep stosb
     mov rdx, hello.len
     mov rsi, hello
     print_204_5:
