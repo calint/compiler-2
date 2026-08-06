@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    41           1379            744           6611
+C/C++ Header                    41           1378            743           6607
 C++                              1             84            104            558
 -------------------------------------------------------------------------------
-SUM:                            42           1463            848           7169
+SUM:                            42           1462            847           7165
 -------------------------------------------------------------------------------
 ```
 
@@ -1028,10 +1028,10 @@ main:
             exit_20_38_183_5_end:
         if_20_26_183_5_end:
     assert_183_5_end:
-    mov rcx, 64
+    mov rcx, 512
     lea rdi, [rsp - 732]
     xor rax, rax
-    rep stosq
+    rep stosb
     lea r15, [rsp - 732]
     mov r14, 1
     mov r13, 186
@@ -1224,10 +1224,10 @@ main:
             exit_20_38_197_5_end:
         if_20_26_197_5_end:
     assert_197_5_end:
-    mov rcx, 16
+    mov rcx, 128
     lea rdi, [rsp - 860]
     xor rax, rax
-    rep stosq
+    rep stosb
     mov rdx, hello.len
     mov rsi, hello
     print_204_5:
@@ -3085,10 +3085,10 @@ main:
 ;   [185:5] allocate named register 'rcx'
 ;   [185:5] allocate named register 'rdi'
 ;   [185:5] allocate named register 'rax'
-    mov rcx, 64
+    mov rcx, 512
     lea rdi, [rsp - 732]
     xor rax, rax
-    rep stosq
+    rep stosb
 ;   [185:5] free named register 'rax'
 ;   [185:5] free named register 'rdi'
 ;   [185:5] free named register 'rcx'
@@ -3497,10 +3497,10 @@ main:
 ;   [203:5] allocate named register 'rcx'
 ;   [203:5] allocate named register 'rdi'
 ;   [203:5] allocate named register 'rax'
-    mov rcx, 16
+    mov rcx, 128
     lea rdi, [rsp - 860]
     xor rax, rax
-    rep stosq
+    rep stosb
 ;   [203:5] free named register 'rax'
 ;   [203:5] free named register 'rdi'
 ;   [203:5] free named register 'rcx'
