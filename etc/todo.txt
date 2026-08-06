@@ -1,5 +1,6 @@
 [ ] array_copy with source offset, destination offset with bounds check
-[ ] modern CPU does rep stosb as fast for any alignment and size
+    => if not constant runtime check
+[x] modern CPU does rep stosb as fast for any alignment and size (stmt_def_var)
 [ ] constant initialized variables in "main" have the initial data directly
     written by the compiler into the stack prepared for execution removing
     initiation stage using code and removing "field"
