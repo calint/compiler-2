@@ -2,7 +2,7 @@
   {
     "arguments": [
       "clang++",
-      "-std=c++23",
+      "-std=c++26",
       "-Wfatal-errors",
       "-Werror",
       "-Weverything",
