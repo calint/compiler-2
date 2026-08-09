@@ -30,8 +30,8 @@ class stmt_def_var final : public statement {
     token array_size_tk_;
     std::unique_ptr<stmt_assign_var> assign_var_;
     size_t array_size_{};
-    token ws1_;
-    token ws2_;
+    token ws1_; // whitespace after '='
+    token ws2_; // whitespace after ']'
     bool is_array_{};
 
   public:
