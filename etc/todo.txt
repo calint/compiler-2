@@ -1,11 +1,13 @@
+[ ] constant initialized variables in "main" have the initial data directly
+    written by the compiler into the stack prepared for execution removing
+    initiation stage using code and removing "field"
+    => data written to stack saved in .rodata
+[ ] a way to define constants in global name space
+[ ] remove the global "field"
 [x] array_copy with source offset, destination offset with bounds check
     => if not constant runtime check
     => already
 [x] modern CPU does rep stosb as fast for any alignment and size (stmt_def_var)
-[ ] constant initialized variables in "main" have the initial data directly
-    written by the compiler into the stack prepared for execution removing
-    initiation stage using code and removing "field"
-[ ] remove the global "field"
 [ ] consider changing function signatures from
       func inv(i : i32) : i32 res {
     to
