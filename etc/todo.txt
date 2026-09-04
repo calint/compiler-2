@@ -4,6 +4,7 @@
     => data written to stack saved in .rodata
 [ ] a way to define constants in global name space
 [ ] remove the global "field"
+[ ] update tree sitter syntax highlight
 [x] array_copy with source offset, destination offset with bounds check
     => if not constant runtime check
     => already
