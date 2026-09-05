@@ -4,8 +4,6 @@ func exit(v:reg_rdi){
     syscall()
 }
 
-field len=-2
-
 func foo(x:reg_rdx):i64 res{
     res=-x
 }
@@ -15,6 +13,7 @@ func bar(x):i64 res{
 }
 
 func main(){
+    dat len=-2
     var a=-1
     var b=~-foo(-a)
     var c=~-(len)

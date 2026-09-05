@@ -4,45 +4,45 @@ func exit(v:reg_rdi){
 	syscall()
 }
 
-field fld=42
-field str="hello world"
-
 type vector{x,y}
 type object{pos:vector,vel:vector,color}
 
-func f(){
+func f(str:i8[],fld){
 	var obj:object={{1,0},{0,0},0}
 	if not obj.pos.x==1 exit(1)
 	obj.pos.x=1
 	obj.pos.y=2
 	obj.vel.x=4
-	obj.vel.y=str
-	obj.color=str.len
+	obj.vel.y=address_of(str)
+	obj.color=array_size_of(str)
 	
 	if not fld==42 exit(2)
 	if not obj.pos.x==1 exit(3)
 	if not obj.pos.y==2 exit(4)
 	if not obj.vel.x==4 exit(5)
-	if not obj.vel.y==str exit(6)
-	if not obj.color==str.len exit(7)
+	if not obj.vel.y==address_of(str) exit(6)
+	if not obj.color==array_size_of(str) exit(7)
 }
 
 func main(){
+    dat fld=42
+    dat str:i8[]="hello world"
+
 	var obj:object={{1,0},{0,0},0}
 	if not obj.pos.x==1 exit(1)
 	obj.pos.x=1
 	obj.pos.y=2
 	obj.vel.x=4
-	obj.vel.y=str
-	obj.color=str.len
+	obj.vel.y=address_of(str)
+	obj.color=array_size_of(str)
 	
 	if not fld==42 exit(2)
 	if not obj.pos.x==1 exit(3)
 	if not obj.pos.y==2 exit(4)
 	if not obj.vel.x==4 exit(5)
-	if not obj.vel.y==str exit(6)
-	if not obj.color==str.len exit(7)
+	if not obj.vel.y==address_of(str) exit(6)
+	if not obj.color==array_size_of(str) exit(7)
 	
-	f()
+	f(str,fld)
 	exit(0)
 }

@@ -1,5 +1,3 @@
-field ok = "ok\n"
-
 func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
@@ -28,34 +26,36 @@ func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
 }
 
 func main() {
+    dat ok : i8[] = "ok\n"
+
     var word1 : i8[64]
     var word2 : i8[64]
-    
-    print(ok.len, ok)
+
+    print(array_size_of(ok), address_of(ok))
 
     # expect same word input for both
     var len1 = read(array_size_of(word1), address_of(word1))
     print(len1, address_of(word1))
 
-    print(ok.len, ok)
+    print(array_size_of(ok), address_of(ok))
 
     var len2 = read(array_size_of(word2), address_of(word2))
     print(len2, address_of(word2))
   
     assert(arrays_equal(word1, word2, len1))
 
-    print(ok.len, ok)
+    print(array_size_of(ok), address_of(ok))
 
     # expect not same word input for both
     len1 = read(array_size_of(word1), address_of(word1))
     print(len1, address_of(word1))
 
-    print(ok.len, ok)
-    
+    print(array_size_of(ok), address_of(ok))
+ 
     len2 = read(array_size_of(word2), address_of(word2))
     print(len2, address_of(word2))
-    
+ 
     assert(not arrays_equal(word1, word2, len1))
 
-    print(ok.len, ok)
+    print(array_size_of(ok), address_of(ok))
 }

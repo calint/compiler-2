@@ -1,5 +1,3 @@
-field    count = 1
-
 func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
@@ -15,6 +13,7 @@ func foo(i) {
 }
 
 func main() {
+    dat count = 1
     assert(count == 1)
     foo(count)
     assert(count == 0xfe5f)

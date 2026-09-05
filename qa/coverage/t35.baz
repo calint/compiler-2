@@ -4,9 +4,8 @@ func exit(v:reg_rdi){
     syscall()
 }
 
-field len=2
-
 func main(){
+    dat len=2
     var a=-1
     a=-a
     var b=-(len)

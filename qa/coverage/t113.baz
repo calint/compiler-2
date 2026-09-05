@@ -1,5 +1,3 @@
-field nl_str = "\n"
-
 func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
@@ -24,8 +22,6 @@ func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     syscall()
     mov(nbytes, rax) # return value
 }
-
-func nl() print(nl_str.len, nl_str)
 
 func pn(num) {
     var buf : i8[20]

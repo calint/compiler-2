@@ -68,10 +68,7 @@ class program final {
                 }
                 break;
             }
-            if (tk.is_text("field")) {
-                statements_.emplace_back(
-                    std::make_unique<stmt_def_field>(tc_, tk, tz));
-            } else if (tk.is_text("func")) {
+            if (tk.is_text("func")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_def_func>(tc_, tk, tz));
             } else if (tk.is_text("type")) {

@@ -1,6 +1,3 @@
-field hello="hello\n"
-field world="world\n"
-
 func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
@@ -15,23 +12,25 @@ func print(len:reg_rdx,ptr:reg_rsi){
     syscall()
 }
 
-func bar(a,b){
+func bar(a,b,hello:i8[]){
     loop{
         if b==0 return
-        print(hello.len,hello)
+        print(array_size_of(hello),address_of(hello))
         b=b-1
     }
 }
 
-func foo(){
-    print(world.len,world)
+func foo(world:i8[]){
+    print(array_size_of(world),address_of(world))
 }
 
 func main(){
+    dat hello:i8[]="hello\n"
+    dat world:i8[]="world\n"
     var a=1
     var b=2
     var c=3
-    bar(a,b)
-    foo()
+    bar(a,b,hello)
+    foo(world)
     exit(0)
 }

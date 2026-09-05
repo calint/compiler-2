@@ -6,14 +6,13 @@ func exit(v : reg_rdi) {
 
 func assert(expr : bool) if not expr exit(1)
 
-field state = 0
-
-func f1() : i64 res { state = state + 1; res = state }
+func f1(state) : i64 res { state = state + 1; res = state }
 func f2(x) : i64 res { res = x * 2 }
 func f3(x) : i64 res { res = x + 10 }
 
 func main() {
-    var r = f3(f2(f1()))
+    dat state = 0
+    var r = f3(f2(f1(state)))
     # f1() returns 1, state = 1
     # f2(1) returns 2
     # f3(2) returns 12

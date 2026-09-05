@@ -4,9 +4,8 @@ func exit(v:reg_rdi){
     syscall()
 }
 
-field x=1
-
 func main(){
+    dat x = 1
     x=2
     exit(x)
 }

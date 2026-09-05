@@ -1,11 +1,3 @@
-field   hello = "hello world from baz\n"
-field   input = "............................................................"
-field prompt1 = "enter name:\n"
-field prompt2 = "that is not a name.\n"
-field prompt3 = "hello "
-field     dot = "."
-field      nl = "\n"
-
 func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
@@ -30,20 +22,28 @@ func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
 }
 
 func main(){
-    print(hello.len, hello)
+    dat   hello:i8[] = "hello world from baz\n"
+    dat   input:i8[] = "............................................................"
+    dat prompt1:i8[] = "enter name:\n"
+    dat prompt2:i8[] = "that is not a name.\n"
+    dat prompt3:i8[] = "hello "
+    dat     dot:i8[] = "."
+    dat      nl:i8[] = "\n"
+
+    print(array_size_of(hello), address_of(hello))
     loop {
-        print(prompt1.len, prompt1)
-        var len = read(input.len, input) - 1    # -1 don't include the '\n'
+        print(array_size_of(prompt1), address_of(prompt1))
+        var len = read(array_size_of(input), address_of(input)) - 1    # -1 don't include the '\n'
         if len == 0 {
             break
         }
         if len <= 4 {
-            print(prompt2.len, prompt2)
+            print(array_size_of(prompt2), address_of(prompt2))
             continue
         }
-        print(prompt3.len, prompt3)
-        print(len, input)
-        print(dot.len, dot)
-        print(nl.len, nl)
+        print(array_size_of(prompt3), address_of(prompt3))
+        print(len, address_of(input))
+        print(array_size_of(dot), address_of(dot))
+        print(array_size_of(nl), address_of(nl))
     }
 }

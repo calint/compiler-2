@@ -1,11 +1,3 @@
-field   hello = "hello world from baz\n"
-field   input = "............................................................"
-field prompt1 = "enter name:\n"
-field prompt2 = "that is not a name.\n"
-field prompt3 = "hello "
-field     dot = "."
-field      nl = "\n"
-
 # all functions are inlined
 
 # arguments can be placed in specified register using `reg_...` syntax 
@@ -13,23 +5,6 @@ func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
     syscall()
-}
-
-func print(len : reg_rdx, ptr : reg_rsi) {
-    mov(rax, 1)   # write system call
-    mov(rdi, 1)   # file descriptor for standard out
-    mov(rsi, ptr) # buffer address 
-    mov(rdx, len) # buffer size
-    syscall()
-}
-
-func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
-    mov(rax, 0)   # read system call
-    mov(rdi, 0)   # file descriptor for standard input
-    mov(rsi, ptr) # buffer address
-    mov(rdx, len) # buffer size
-    syscall()
-    mov(nbytes, rax) # return value
 }
 
 func assert(expr : bool) {

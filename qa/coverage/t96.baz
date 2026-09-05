@@ -1,5 +1,3 @@
-field   hello = "hello \"world\" \n from 'baz'\n  "
-
 func exit(v : reg_rdi) {
     mov(rax, 60)  # exit system call
     mov(rdi, v)   # return code
@@ -19,5 +17,6 @@ func print(len : reg_rdx, ptr : reg_rsi) {
 }
 
 func main() {
-    print(hello.len, hello)
+    dat hello : i8[] = "hello \"world\" \n from 'baz'\n  "
+    print(array_size_of(hello), address_of(hello))
 }
