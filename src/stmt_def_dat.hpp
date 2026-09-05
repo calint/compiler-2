@@ -146,7 +146,6 @@ class stmt_def_dat final : public statement {
         const type& tp{get_type()};
         if (tp.is_built_in()) {
             std::string_view dd{tc.get_data_def(tp.size())};
-            // zero the data
             if (not is_array_) {
                 std::println(os, "; {}: {}", name_tk_.text(), tp.name());
                 if (elems_.empty()) {
