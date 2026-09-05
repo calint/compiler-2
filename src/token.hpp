@@ -53,7 +53,7 @@ class token final {
         std::string str{text_};
         str = std::regex_replace(str, std::regex{R"(')"}, "', \"'\", '");
         str = std::regex_replace(str, std::regex{R"(\\")"}, "\"");
-        str = std::regex_replace(str, std::regex{R"(\\n)"}, "', 10,'");
+        str = std::regex_replace(str, std::regex{R"(\\n)"}, "', 10, '");
         std::print(os, "{}", str);
     }
 
@@ -78,4 +78,19 @@ class token final {
     [[nodiscard]] auto is_string() const -> bool { return is_str_; }
 
     [[nodiscard]] auto at_line() const -> size_t { return at_line_; }
+
+    [[nodiscard]] auto string_size_bytes() const -> size_t {
+        size_t len{0};
+        const std::string_view s = text_;
+        for (size_t i{0}; i < s.size(); ++i, ++len) {
+            if (s[i] == '\\' and i + 1 < s.size()) {
+                if (s[i + 1] == 'x' and i + 3 < s.size()) {
+                    i += 3; // skip \xHH
+                } else {
+                    ++i; // skip 2-character escape sequence
+                }
+            }
+        }
+        return len;
+    }
 };

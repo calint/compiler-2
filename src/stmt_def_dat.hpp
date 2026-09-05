@@ -32,6 +32,8 @@ class stmt_def_dat final : public statement {
     token ws2_; // whitespace after ']'
     bool is_array_{};
     std::vector<elem> elems_;
+    token tk_str_;
+    bool is_string_{};
 
   public:
     stmt_def_dat(toc& tc, token tk, tokenizer& tz)
@@ -117,6 +119,15 @@ class stmt_def_dat final : public statement {
                 ws2_.source_to(os);
             }
         }
+
+        // special case for i8 string
+        if (tk_str_.is_string()) {
+            std::print(os, "=");
+            ws1_.source_to(os);
+            tk_str_.source_to(os);
+            return;
+        }
+
         if (elems_.empty()) {
             return;
         }
@@ -124,6 +135,7 @@ class stmt_def_dat final : public statement {
         const type& tp{get_type()};
         std::print(os, "=");
         ws1_.source_to(os);
+
         print_source(os, tp, elems_);
     }
 
@@ -161,11 +173,25 @@ class stmt_def_dat final : public statement {
             std::println(os, "; {}: {}[{}]", name_tk_.text(), tp.name(),
                          array_size_);
 
+            // special case for strings
+            if (tk_str_.is_string()) {
+                std::print(os, "{} '", dd);
+                tk_str_.compile_to(os);
+                std::println(os, "'");
+                size_t sz{tk_str_.string_size_bytes()};
+                if (array_size_ != 0 and sz < array_size_) {
+                    std::println(os, "times {} {} 0", array_size_ - sz, dd);
+                }
+                return;
+            }
+
+            // arrau without initializer
             if (elems_.empty()) {
                 std::println(os, "times {} {} 0", array_size_, dd);
                 return;
             }
 
+            // initializer
             std::print(os, "{} ", dd);
             int32_t counter{0};
             for (const elem& e : elems_) {
@@ -177,6 +203,7 @@ class stmt_def_dat final : public statement {
 
             std::println(os);
 
+            // pad remaining array with 0
             if (array_size_ != elems_.size()) {
                 std::println(os, "times {} {} 0", array_size_ - elems_.size(),
                              dd);
@@ -215,6 +242,22 @@ class stmt_def_dat final : public statement {
             }
 
             // array of built-ins
+            // special case for strings
+            tk_str_ = tz.next_token();
+            if (tk_str_.is_string()) {
+                is_string_ = true;
+                if (array_size_ == 0) {
+                    array_size_ = tk_str_.string_size_bytes();
+                }
+                if (tp.name() == "i8") {
+                    return;
+                }
+                throw compiler_exception(tk_str_,
+                                         "only 'i8' arrays can be strings");
+            }
+
+            tz.put_back_token(tk_str_);
+
             if (not tz.is_next_char('{')) {
                 throw compiler_exception(
                     tz, "expected '{' to open array initializer");

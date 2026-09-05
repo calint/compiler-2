@@ -17,6 +17,8 @@ func main() {
     dat data_i : i8[128]
     dat data_j : bool = false
     dat data_k : bool[] = {true, false}
+    dat data_l : i8[] = "hello world\n"
+    dat data_m : i8[10] = "a"
 
     assert(data_a == 0)
     data_a = 0xff
@@ -57,4 +59,12 @@ func main() {
 
     data_i[127] = 0xfe
     assert(data_i[127] == 0xfe)
+
+    assert(array_size_of(data_l) == 12)
+    assert(data_l[0] == 104) # 'h'
+    assert(data_l[11] == 10) # '\n'
+
+    assert(array_size_of(data_m) == 10)
+    assert(data_m[0] == 97) # 'a'
+    assert(data_m[9] == 0) # '\0'
 }
