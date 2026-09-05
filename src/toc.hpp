@@ -12,6 +12,7 @@
 #include <span>
 #include <sstream>
 #include <string_view>
+#include <utility>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -64,6 +65,9 @@ class frame final {
     // info about the function return
     std::optional<func_return_info> func_ret_;
 
+    // true if var that is not dat has been added
+    bool non_dat_var_has_been_added_{};
+
   public:
     enum class frame_type : uint8_t { FUNC, BLOCK, LOOP };
 
@@ -86,7 +90,7 @@ class frame final {
         aliases_.put(std::string{ai.from}, ai);
     }
 
-    auto add_var(const var_info& var) -> void {
+    auto add_var(const var_info& var, bool is_data = false) -> void {
         if (var.stack_idx < 0) {
             // variable, increase allocated stack size
             allocated_stack_ +=
@@ -94,6 +98,10 @@ class frame final {
         }
 
         vars_.put(var.name, var);
+
+        if (not is_data) {
+            non_dat_var_has_been_added_ = true;
+        }
     }
 
     [[nodiscard]] auto allocated_stack_size() const -> size_t {
@@ -127,6 +135,10 @@ class frame final {
 
     [[nodiscard]] auto has_alias(const std::string_view name) const -> bool {
         return aliases_.has(name);
+    }
+
+    [[nodiscard]] auto has_non_data_var_been_added() const -> bool {
+        return non_dat_var_has_been_added_;
     }
 
     [[nodiscard]] auto has_var(const std::string_view name) const -> bool {
@@ -216,6 +228,7 @@ class toc final {
     bool bounds_check_upper_{};
     bool bounds_check_with_line_{};
     bool bounds_check_lower_{};
+    std::vector<const statement*> data_;
 
     std::regex regex_ws_{R"(\s+)"};
     std::regex regex_trim_{R"(^\s+|\s+$)"};
@@ -227,6 +240,10 @@ class toc final {
     static constexpr size_t size_dword{4};
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
+    static constexpr std::string def_data_qword{"dq"};
+    static constexpr std::string def_data_dword{"dd"};
+    static constexpr std::string def_data_word{"dw"};
+    static constexpr std::string def_data_byte{"db"};
 
     toc(const std::string_view source, const bool bounds_check_upper,
         const bool bounds_check_lower, const bool bounds_check_with_line)
@@ -248,6 +265,18 @@ class toc final {
 
     auto add_alias(const alias_info& ai) -> void {
         frames_.back().add_alias(ai);
+    }
+
+    auto add_dat(const statement* stmt) -> void {
+        if (not is_in_main()) {
+            throw compiler_exception(stmt->tok(),
+                                     "dat can only be added in function main");
+        }
+        if (frames_.back().has_non_data_var_been_added()) {
+            throw compiler_exception(stmt->tok(),
+                                     "dat can only be added before any var");
+        }
+        data_.emplace_back(stmt);
     }
 
     auto add_field(const token& src_loc_tk, std::string name,
@@ -300,7 +329,7 @@ class toc final {
     }
 
     auto add_var(const token& src_loc_tk, std::ostream& os, const size_t indnt,
-                 var_info var) -> void {
+                 var_info var, bool is_dat) -> void {
 
         // check if the variable is already declared in this scope
         if (frames_.back().has_var(var.name)) {
@@ -317,7 +346,7 @@ class toc final {
             (var.type_ptr->size() * (var.is_array ? var.array_size : 1)))};
 
         var.stack_idx = -stack_idx;
-        frames_.back().add_var(var);
+        frames_.back().add_var(var, is_dat);
 
         const size_t total_stack_size{get_stack_size()};
         usage_max_stack_size_ =
@@ -716,6 +745,27 @@ class toc final {
         }
 
         throw compiler_exception{src_loc_tk, "not in a function"};
+    }
+
+    [[nodiscard]] auto get_data_def(const size_t size) const
+        -> std::string_view {
+        switch (size) {
+        case 8:
+            return def_data_qword;
+        case 4:
+            return def_data_dword;
+        case 2:
+            return def_data_word;
+        case 1:
+            return def_data_byte;
+        default:
+            std::unreachable();
+        }
+    }
+
+    [[nodiscard]] auto get_data() const
+        -> const std::vector<const statement*>& {
+        return data_;
     }
 
     [[nodiscard]] auto get_func_defs() const
@@ -1219,6 +1269,16 @@ class toc final {
             nbytes += frm.allocated_stack_size();
         }
         return nbytes;
+    }
+
+    [[nodiscard]] auto is_in_main() const -> bool {
+        for (const auto& frm : frames_ | std::views::reverse) {
+            if (frm.is_func()) {
+                return frm.name() == "main";
+            }
+        }
+
+        return false;
     }
 
     [[nodiscard]] auto

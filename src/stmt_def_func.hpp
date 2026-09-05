@@ -178,7 +178,7 @@ class stmt_def_func final : public statement {
                 .type_ptr = &get_type(),
                 .declared_at_tk{ret_tk},
             };
-            tc.add_var(ret_tk, os, indent + 1, var);
+            tc.add_var(ret_tk, os, indent + 1, var, false);
         }
 
         // functions get arguments as aliases
@@ -196,7 +196,7 @@ class stmt_def_func final : public statement {
                     .declared_at_tk{prm.tok()},
                     .is_array = prm.is_array(),
                 };
-                tc.add_var(tok(), os, indent + 1, var);
+                tc.add_var(tok(), os, indent + 1, var, false);
                 continue;
             }
 

@@ -1,0 +1,60 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func main() {
+    dat data_a
+    dat data_b : i32 = 32
+    dat data_c : i16[4] = { 1, 2, 3, 4 }
+    dat data_e : i8
+    dat data_f : bool = true
+    dat data_g : i16[] = {  1  , 2  ,  3  }
+    dat data_h : i16[5] = {1,2}
+    dat data_i : i8[128]
+    dat data_j : bool = false
+    dat data_k : bool[] = {true, false}
+
+    assert(data_a == 0)
+    data_a = 0xff
+    assert(data_a == 0xff)
+
+    assert(data_b == 32)
+    data_b = 10
+    assert(data_b == 10)
+
+    assert(data_c[0] == 1)
+    assert(data_c[1] == 2)
+    assert(data_c[2] == 3)
+    assert(data_c[3] == 4)
+    data_c[0] = 5
+    data_c[1] = 6
+    data_c[2] = 7
+    data_c[3] = 8
+    assert(data_c[0] == 5)
+    assert(data_c[1] == 6)
+    assert(data_c[2] == 7)
+    assert(data_c[3] == 8)
+
+    assert(data_e == 0)
+    data_e = 1
+    assert(data_e == 1)
+
+    assert(data_f == true)
+    data_f = false
+    assert(data_f == false)
+
+    assert(data_g[0] == 1)
+    assert(data_g[1] == 2)
+    assert(data_g[2] == 3)
+
+    assert(data_h[2] == 0)
+    assert(data_h[3] == 0)
+    assert(data_h[4] == 0)
+
+    data_i[127] = 0xfe
+    assert(data_i[127] == 0xfe)
+}

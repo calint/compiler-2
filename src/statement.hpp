@@ -79,6 +79,10 @@ class statement {
 
     [[nodiscard]] virtual auto is_indexed() const -> bool { return false; }
 
+    virtual auto compile_data([[maybe_unused]] const toc& tc,
+                              [[maybe_unused]] std::ostream& os) const -> void {
+    }
+
     [[nodiscard]] virtual auto compile_lea(
         [[maybe_unused]] const token& src_loc_tk, [[maybe_unused]] toc& tc,
         [[maybe_unused]] std::ostream& os, [[maybe_unused]] const size_t indent,

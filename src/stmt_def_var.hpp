@@ -8,19 +8,10 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "null_stream.hpp"
 #include "stmt_assign_var.hpp"
 #include "stmt_identifier.hpp"
 #include "type.hpp"
-
-class null_stream final : public std::ostream {
-    class null_buffer : public std::streambuf {
-      public:
-        auto overflow(int c) -> int override { return c; }
-    } nb_{};
-
-  public:
-    null_stream() : std::ostream(&nb_) {}
-};
 
 class stmt_def_var final : public statement {
     static constexpr size_t threshold_for_rep_stos{32};
@@ -86,7 +77,7 @@ class stmt_def_var final : public statement {
             .is_array = is_array_,
             .array_size = array_size_,
         };
-        tc.add_var(name_tk_, null_strm, 0, var);
+        tc.add_var(name_tk_, null_strm, 0, var, false);
 
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
@@ -113,7 +104,7 @@ class stmt_def_var final : public statement {
         if (not type_tk_.is_empty()) {
             std::print(os, ":");
             type_tk_.source_to(os);
-            if (not array_size_tk_.is_empty()) {
+            if (is_array_) {
                 std::print(os, "[");
                 array_size_tk_.source_to(os);
                 std::print(os, "]");
@@ -139,7 +130,7 @@ class stmt_def_var final : public statement {
             .is_array = is_array_,
             .array_size = array_size_,
         };
-        tc.add_var(name_tk_, os, indent, var);
+        tc.add_var(name_tk_, os, indent, var, false);
 
         const ident_info& dst_info{
             tc.make_ident_info(name_tk_, name_tk_.text())};

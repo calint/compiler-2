@@ -19,6 +19,12 @@ section .text
 bits 64
 global _start
 _start:
+lea rsi, [dat]
+lea rdi, [stk.end]
+sub rdi, dat.len
+mov rcx, dat.len
+cld
+rep movsb
 mov rsp, stk.end
 main:
     mov qword [rsp - 16], 0
@@ -1057,3 +1063,6 @@ section .rodata
     msg_panic_len equ $ - msg_panic
 section .bss
     num_buffer: resb 21
+section .rodata
+dat:
+dat.len equ $ - dat

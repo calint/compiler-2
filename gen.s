@@ -32,6 +32,16 @@ section .text
 bits 64
 global _start
 _start:
+
+; copy data to stack
+lea rsi, [dat]
+lea rdi, [stk.end]
+sub rdi, dat.len
+mov rcx, dat.len
+cld
+rep movsb
+
+; initialize stack pointer
 mov rsp, stk.end
 ;
 ; program
@@ -2450,6 +2460,10 @@ section .rodata
     msg_panic_len equ $ - msg_panic
 section .bss
     num_buffer: resb 21
+
+section .rodata
+dat:
+dat.len equ $ - dat
 
 ; max scratch registers in use: 5
 ;            max frames in use: 7

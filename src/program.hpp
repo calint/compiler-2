@@ -118,9 +118,19 @@ class program final {
                 st->compile(tc, os, indent, tc.make_ident_info_empty());
             }
         }
-        std::println(os,
-                     "\nsection .text\nbits 64\nglobal _start\n_start:\nmov "
-                     "rsp, stk.end\n;\n; program\n;");
+        std::println(os, "\nsection .text\nbits 64\nglobal _start\n_start:\n");
+        std::println(os, "; copy data to stack");
+        std::println(os, "lea rsi, [dat]");
+        std::println(os, "lea rdi, [stk.end]");
+        std::println(os, "sub rdi, dat.len");
+        std::println(os, "mov rcx, dat.len");
+        std::println(os, "cld");
+        std::println(os, "rep movsb\n");
+
+        std::println(
+            os,
+            "; initialize stack pointer\nmov rsp, stk.end\n;\n; program\n;");
+
         for (const auto& st : statements_) {
             if (not st->is_in_data_section()) {
                 st->compile(tc, os, indent, tc.make_ident_info_empty());
@@ -188,6 +198,14 @@ class program final {
                 std::println(os, "    num_buffer: resb 21");
             }
         }
+
+        // data section
+        std::vector<const statement*> data{tc.get_data()};
+        std::println(os, "\nsection .rodata\ndat:");
+        for (const auto* stmt : data | std::views::reverse) {
+            stmt->compile_data(tc, os);
+        }
+        std::println(os, "dat.len equ $ - dat");
     }
 
     auto build(std::ostream& os) -> void {
