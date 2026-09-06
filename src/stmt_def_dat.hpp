@@ -20,9 +20,9 @@ class stmt_def_dat final : public statement {
 
     class elem {
       public:
+        unary_ops uops;
         token tk;
         int64_t value{};
-        std::vector<unary_ops> uops;
         std::vector<elem> elems;
     };
 
@@ -33,7 +33,6 @@ class stmt_def_dat final : public statement {
     token ws1_; // whitespace after '='
     token ws2_; // whitespace after ']'
     bool is_array_{};
-    std::vector<unary_ops> uops_;
     std::vector<elem> elems_;
     token tk_str_;
     bool is_string_{};
@@ -93,7 +92,7 @@ class stmt_def_dat final : public statement {
         tc.add_var(name_tk_, null_strm, 0, var, true);
 
         if (init_required) {
-            parse(tc, tz, tp, uops_, elems_);
+            parse(tc, tz, tp, elems_);
         }
 
         tc.add_dat(this);
@@ -139,7 +138,7 @@ class stmt_def_dat final : public statement {
         std::print(os, "=");
         ws1_.source_to(os);
 
-        print_source(os, tp, uops_, elems_);
+        print_source(os, tp, elems_);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
@@ -169,7 +168,7 @@ class stmt_def_dat final : public statement {
                 }
 
                 std::print(os, "{} ", dd);
-                uops_[0].source_to(os);
+                elems_[0].uops.source_to(os);
                 std::println(os, "{}", elems_[0].value);
                 return;
             }
@@ -218,21 +217,17 @@ class stmt_def_dat final : public statement {
     }
 
   private:
-    auto parse(toc& tc, tokenizer& tz, const type& tp,
-               std::vector<unary_ops>& uops, std::vector<elem>& els) -> void {
+    auto parse(toc& tc, tokenizer& tz, const type& tp, std::vector<elem>& els)
+        -> void {
         if (tp.is_built_in()) {
             if (not is_array_) {
                 unary_ops uo{tz};
                 token tk{tz.next_token()};
                 if (&tp == &tc.get_type_bool()) {
                     if (tk.is_text("true")) {
-                        uops.emplace_back(uo);
-                        els.emplace_back(tk, 1, std::vector<unary_ops>{},
-                                         std::vector<elem>{});
+                        els.emplace_back(uo, tk, 1, std::vector<elem>{});
                     } else if (tk.is_text("false")) {
-                        uops.emplace_back(uo);
-                        els.emplace_back(tk, 0, std::vector<unary_ops>{},
-                                         std::vector<elem>{});
+                        els.emplace_back(uo, tk, 0, std::vector<elem>{});
                     } else {
                         throw compiler_exception(
                             tk, std::format(
@@ -243,9 +238,7 @@ class stmt_def_dat final : public statement {
                 }
                 if (std::optional<int64_t> num{
                         tc.parse_to_constant(tk, tk.text())}) {
-                    uops.emplace_back(uo);
-                    els.emplace_back(tk, *num, std::vector<unary_ops>{},
-                                     std::vector<elem>{});
+                    els.emplace_back(uo, tk, *num, std::vector<elem>{});
                     return;
                 }
                 throw compiler_exception(
@@ -281,13 +274,9 @@ class stmt_def_dat final : public statement {
                 token tk{tz.next_token()};
                 if (&tp == &tc.get_type_bool()) {
                     if (tk.is_text("true")) {
-                        uops.emplace_back(uo);
-                        els.emplace_back(tk, 1, std::vector<unary_ops>{},
-                                         std::vector<elem>{});
+                        els.emplace_back(uo, tk, 1, std::vector<elem>{});
                     } else if (tk.is_text("false")) {
-                        uops.emplace_back(uo);
-                        els.emplace_back(tk, 0, std::vector<unary_ops>{},
-                                         std::vector<elem>{});
+                        els.emplace_back(uo, tk, 0, std::vector<elem>{});
                     } else {
                         throw compiler_exception(
                             tk,
@@ -302,9 +291,7 @@ class stmt_def_dat final : public statement {
                 }
                 if (std::optional<int64_t> num{
                         tc.parse_to_constant(tk, tk.text())}) {
-                    uops.emplace_back(uo);
-                    els.emplace_back(tk, *num, std::vector<unary_ops>{},
-                                     std::vector<elem>{});
+                    els.emplace_back(uo, tk, *num, std::vector<elem>{});
                     if (tz.is_next_char(',')) {
                         continue;
                     }
@@ -332,11 +319,11 @@ class stmt_def_dat final : public statement {
     }
 
     auto print_source(std::ostream& os, const type& tp,
-                      const std::vector<unary_ops> uops,
                       const std::vector<elem>& els) const -> void {
+
         if (tp.is_built_in()) {
             if (not is_array_) {
-                uops[0].source_to(os);
+                els[0].uops.source_to(os);
                 els[0].tk.source_to(os);
                 return;
             }
@@ -346,7 +333,7 @@ class stmt_def_dat final : public statement {
                 if (counter++) {
                     std::print(os, ",");
                 }
-                uops[counter - 1].source_to(os);
+                e.uops.source_to(os);
                 e.tk.source_to(os);
             }
             std::print(os, "}}");
