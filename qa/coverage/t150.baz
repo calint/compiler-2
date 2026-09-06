@@ -10,6 +10,8 @@ type point { x, y }
 
 type world { locations : i64[4] }
 
+type exits {  from : i32[4], to : i32[4] }
+
 func main() {
     dat data_a
     dat data_b : i32 = 32
@@ -28,6 +30,7 @@ func main() {
 
     dat  point : point = { -1, -2 }
     dat  world : world = {  {-1,   2}    }
+    dat  exits : exits = { { 1 , 2 } , { 3 , 4 } }
 
     assert(data_a == 0)
     data_a = 0xff
@@ -92,4 +95,9 @@ func main() {
 
     assert(world.locations[0] == -1)
     assert(world.locations[1] == 2)
+
+    assert(exits.from[0] == 1)
+    assert(exits.from[1] == 2)
+    assert(exits.to[0] == 3)
+    assert(exits.to[1] == 4)
 }
