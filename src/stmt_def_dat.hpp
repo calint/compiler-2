@@ -24,8 +24,8 @@ class stmt_def_dat final : public statement {
         unary_ops uops;
         token tk;
         int64_t value{};
-        token ws1_; // when field is array the whitespace after initializer '{'
-        token ws2_; // when field is array the whitespace before initializer '}'
+        token ws1; // when field is array the whitespace after initializer '{'
+        token ws2; // when field is array the whitespace before initializer '}'
         std::vector<elem> elems;
     };
 
@@ -141,7 +141,9 @@ class stmt_def_dat final : public statement {
         std::print(os, "=");
         ws1_.source_to(os);
 
-        print_source(os, tp, elems_, token{}, token{});
+        // note: incredibly ugly hack
+        //       first element contains the whitespaces
+        print_source(os, tp, elems_, elems_[0].ws1, elems_[0].ws2);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
@@ -406,6 +408,7 @@ class stmt_def_dat final : public statement {
             throw compiler_exception(tz,
                                      "expected '{' to open type initializer");
         }
+        token ws1{tz.next_whitespace_token()};
 
         size_t counter{0};
         for (const type_field& f : tp.fields()) {
@@ -420,10 +423,13 @@ class stmt_def_dat final : public statement {
             parse_type_field(tc, tz, f, els);
         }
 
+        token ws2{tz.next_whitespace_token()};
         if (not tz.is_next_char('}')) {
             throw compiler_exception(tz,
                                      "expected '}' to close type initializer");
         }
+        els.front().ws1 = ws1;
+        els.front().ws2 = ws2;
     }
 
     auto parse_type_field(toc& tc, tokenizer& tz, const type_field& tf,

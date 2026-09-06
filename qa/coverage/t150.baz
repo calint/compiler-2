@@ -27,7 +27,7 @@ func main() {
     dat data_o : bool[2] = { true, false }
 
     dat     pt : point = { -1, -2 }
-    dat  world : world = {{-1,2}}
+    dat  world : world = {  {-1,2}   }
 
     assert(data_a == 0)
     data_a = 0xff
