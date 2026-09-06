@@ -91,5 +91,5 @@ func main() {
     assert(data_o[1] == false)
 
     assert(world.locations[0] == -1)
-#    assert(world.locations[1] == 2)
+    assert(world.locations[1] == 2)
 }
