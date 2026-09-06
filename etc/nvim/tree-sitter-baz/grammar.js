@@ -42,6 +42,7 @@ module.exports = grammar({
       // Structural Block
       $.block,
       // State Management
+      $.data_declaration,
       $.variable_declaration,
       $.assignment_statement,
       // Actions
@@ -60,17 +61,8 @@ module.exports = grammar({
     // -------------------------------------------------------------------------
 
     _definition: $ => choice(
-      $.field_definition,
       $.function_definition,
       $.type_definition,
-    ),
-
-    // field identifier = expression
-    field_definition: $ => seq(
-      $.field_keyword,
-      field('name', $.identifier),
-      '=',
-      $._expression,
     ),
 
     // func identifier ( parameters ) return_annotation body
@@ -126,6 +118,7 @@ module.exports = grammar({
     _definition_type: $ => choice(
       $._base_type,
       $.sized_array_type,
+      $.unsized_array_type,
     ),
 
     // Types that can be passed as a parameter (allows unsized arrays)
@@ -155,6 +148,30 @@ module.exports = grammar({
     // -------------------------------------------------------------------------
     // 4. STATEMENT IMPLEMENTATIONS
     // -------------------------------------------------------------------------
+
+    // dat identifier : type = expression
+    data_declaration: $ => seq(
+      $.dat_keyword,
+      field('destination', $.identifier),
+      choice(
+        seq(
+          optional(seq(
+            ':',
+            field('type', $._definition_type)
+          )),
+          '=',
+          field('initializer', $._expression)
+        ),
+        seq(
+          ':',
+          field('type', $._definition_type),
+          optional(seq(
+            '=',
+            field('initializer', $._expression)
+          ))
+        )
+      )
+    ),
 
     // var identifier : type = expression
     variable_declaration: $ => seq(
@@ -404,7 +421,7 @@ module.exports = grammar({
     comment: $ => /#.*/,
 
     // Definition Keywords
-    field_keyword: $ => 'field',
+    dat_keyword: $ => 'dat',
     func_keyword: $ => 'func',
     type_keyword: $ => 'type',
 
