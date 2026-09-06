@@ -164,12 +164,6 @@ class frame final {
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
 };
 
-struct field_info {
-    const stmt_def_field* def{};
-    token declared_at_tk; // token for position in the source
-    bool is_str{};
-};
-
 class ident_path final {
     std::string id_;
     std::vector<std::string> path_;
@@ -216,7 +210,6 @@ class toc final {
     std::vector<std::string> allocated_registers_;
     std::vector<std::string> allocated_registers_src_locs_; // source locations
     std::vector<const stmt_def_func*> func_defs_;
-    lut<field_info> fields_;
     lut<func_info> funcs_;
     lut<const type*> types_;
     const type* type_void_{};
@@ -277,23 +270,6 @@ class toc final {
                                      "dat can only be added before any var");
         }
         data_.emplace_back(stmt);
-    }
-
-    auto add_field(const token& src_loc_tk, std::string name,
-                   const stmt_def_field& fld_def, const bool is_str_field)
-        -> void {
-
-        if (fields_.has(name)) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("field '{}' already defined at {}", name,
-                            source_location_hr(
-                                fields_.get_const_ref(name).declared_at_tk))};
-        }
-
-        fields_.put(std::move(name), {.def = &fld_def,
-                                      .declared_at_tk = src_loc_tk,
-                                      .is_str = is_str_field});
     }
 
     auto add_func(const token& src_loc_tk, std::string name,
@@ -1436,47 +1412,6 @@ class toc final {
             get_text_between_brackets(ident)};
         if (ident_bracketed) {
             id = ident_path{*ident_bracketed};
-        }
-        // is it a field?
-        if (fields_.has(id.base())) {
-            const std::string after_dot =
-                id.path().size() == 1 ? "" : id.path()[1]; //? bug. not correct
-            if (after_dot == "len") {
-                return {
-                    .id{ident},
-                    .operand{id.str(), true},
-                    .type_ptr = &get_type_default(),
-                    .elem_path{id.str()},
-                    .type_path{&get_type_default()},
-                    .lea_path{},
-                    .lea{},
-                    .ident_type = ident_info::ident_type::IMPLIED,
-                };
-            }
-            const field_info& fi{fields_.get_const_ref(id.base())};
-            if (fi.is_str) {
-                return {
-                    .id{ident},
-                    .operand{id.str(), true},
-                    .type_ptr = &get_type_default(),
-                    .elem_path{id.str()},
-                    .type_path{&get_type_default()},
-                    .lea_path{},
-                    .lea{},
-                    .ident_type = ident_info::ident_type::FIELD,
-                };
-            }
-            //? assumes qword
-            return {
-                .id{ident},
-                .operand{std::format("qword [{}]", id.base())},
-                .type_ptr = &get_type_default(),
-                .elem_path{id.str()},
-                .type_path{&get_type_default()},
-                .lea_path{},
-                .lea{},
-                .ident_type = ident_info::ident_type::FIELD,
-            };
         }
 
         // is 'id' an integer?

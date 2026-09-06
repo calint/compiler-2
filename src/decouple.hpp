@@ -269,7 +269,7 @@ struct var_info {
 };
 
 struct ident_info {
-    enum class ident_type : uint8_t { CONST, VAR, REGISTER, FIELD, IMPLIED };
+    enum class ident_type : uint8_t { CONST, VAR, REGISTER };
 
     std::string id;
     operand operand; // NASM valid source
