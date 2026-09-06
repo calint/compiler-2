@@ -24,6 +24,8 @@ class stmt_def_dat final : public statement {
         unary_ops uops;
         token tk;
         int64_t value{};
+        token ws1_; // when field is array the whitespace after initializer '{'
+        token ws2_; // when field is array the whitespace before initializer '}'
         std::vector<elem> elems;
     };
 
@@ -139,7 +141,7 @@ class stmt_def_dat final : public statement {
         std::print(os, "=");
         ws1_.source_to(os);
 
-        print_source(os, tp, elems_);
+        print_source(os, tp, elems_, token{}, token{});
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
@@ -218,7 +220,11 @@ class stmt_def_dat final : public statement {
         }
 
         // user type
-        compile_data_type(tc, os, name_tk_.text(), tp, elems_);
+
+        if (not is_array_) {
+            compile_data_type(tc, os, name_tk_.text(), tp, elems_);
+            return;
+        }
     }
 
   private:
@@ -227,9 +233,10 @@ class stmt_def_dat final : public statement {
                            const std::vector<elem>& els) const -> void {
 
         std::println(os, "; {}: {}", nm, tp.name());
+        const std::span<const type_field>& flds{tp.fields()};
         size_t counter{0};
         for (const elem& e : els) {
-            const type_field& tf{tp.fields()[counter]};
+            const type_field& tf{flds[counter]};
             compile_data_type_field(tc, os, tf, e);
             ++counter;
         }
@@ -239,8 +246,8 @@ class stmt_def_dat final : public statement {
                                  const type_field& tf, const elem& el) const
         -> void {
 
+        std::string_view dd{tc.get_data_def(tf.type_ptr->size())};
         if (not tf.is_array) {
-            std::string_view dd{tc.get_data_def(tf.type_ptr->size())};
             if (tf.type_ptr->is_built_in()) {
                 std::println(os, "; {}: {}", tf.name, tf.type_ptr->name());
                 if (el.tk.is_empty()) {
@@ -253,7 +260,31 @@ class stmt_def_dat final : public statement {
                 std::println(os, "{}", el.value);
                 return;
             }
+
+            // user type
         }
+
+        // field is array
+
+        if (tf.type_ptr->is_built_in()) {
+            std::println(os, "; {}: {}[{}]", tf.name, tf.type_ptr->name(),
+                         tf.array_size);
+            size_t counter{0};
+            for (const elem& e : el.elems) {
+                std::print(os, "{} ", dd);
+                e.uops.source_to(os);
+                std::println(os, "{}", e.value);
+                ++counter;
+            }
+
+            size_t pad{tf.array_size - counter};
+            if (pad > 0) {
+                std::println(os, "times {} {} 0", pad, dd);
+            }
+            return;
+        }
+
+        // user type array
     }
 
     auto parse(toc& tc, tokenizer& tz, const type& tp, std::vector<elem>& els)
@@ -322,14 +353,15 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        // array user type
+        // array of user type
 
         if (not tz.is_next_char('{')) {
             throw compiler_exception(tz,
                                      "expected '{' to open array initializer");
         }
 
-        els.emplace_back(unary_ops{}, token{}, 0, std::vector<elem>{});
+        els.emplace_back(unary_ops{}, token{}, 0, token{}, token{},
+                         std::vector<elem>{});
         parse_type(tc, tz, tp, els.back().elems);
 
         if (not tz.is_next_char('}')) {
@@ -345,9 +377,11 @@ class stmt_def_dat final : public statement {
         token tk{tz.next_token()};
         if (&tp == &tc.get_type_bool()) {
             if (tk.is_text("true")) {
-                els.emplace_back(uo, tk, 1, std::vector<elem>{});
+                els.emplace_back(uo, tk, 1, token{}, token{},
+                                 std::vector<elem>{});
             } else if (tk.is_text("false")) {
-                els.emplace_back(uo, tk, 0, std::vector<elem>{});
+                els.emplace_back(uo, tk, 0, token{}, token{},
+                                 std::vector<elem>{});
             } else {
                 throw compiler_exception(
                     tk, std::format("boolean field '{}' must be true or false",
@@ -356,7 +390,8 @@ class stmt_def_dat final : public statement {
             return;
         }
         if (std::optional<int64_t> num{tc.parse_to_constant(tk, tk.text())}) {
-            els.emplace_back(uo, tk, *num, std::vector<elem>{});
+            els.emplace_back(uo, tk, *num, token{}, token{},
+                             std::vector<elem>{});
             return;
         }
         throw compiler_exception(
@@ -407,10 +442,20 @@ class stmt_def_dat final : public statement {
                     tz, "expected '{' to open array initializer");
             }
 
+            els.emplace_back(unary_ops{}, token{}, 0, token{}, token{},
+                             std::vector<elem>{});
+            size_t counter{0};
             while (true) {
-                parse_builtin(tc, tz, *tf.type_ptr, els);
+                parse_builtin(tc, tz, *tf.type_ptr, els.back().elems);
+                ++counter;
                 if (not tz.is_next_char(',')) {
                     break;
+                }
+                if (counter == tf.array_size) {
+                    throw compiler_exception(
+                        tz, std::format("initializer has more elements than "
+                                        "the array size of {}",
+                                        tf.array_size));
                 }
             }
 
@@ -426,7 +471,8 @@ class stmt_def_dat final : public statement {
     }
 
     auto print_source(std::ostream& os, const type& tp,
-                      const std::vector<elem>& els) const -> void {
+                      const std::vector<elem>& els, token ws1, token ws2) const
+        -> void {
 
         if (tp.is_built_in()) {
             if (not is_array_) {
@@ -454,6 +500,7 @@ class stmt_def_dat final : public statement {
 
         if (not is_array_) {
             std::print(os, "{{");
+            ws1.source_to(os);
             size_t counter{0};
             for (const type_field& f : tp.fields()) {
                 if (counter++) {
@@ -461,6 +508,7 @@ class stmt_def_dat final : public statement {
                 }
                 print_source_field(os, f, els[counter - 1]);
             }
+            ws2.source_to(os);
             std::print(os, "}}");
             return;
         }
@@ -480,6 +528,7 @@ class stmt_def_dat final : public statement {
 
             // array
 
+            std::print(os, "{{");
             size_t counter{0};
             for (const elem& e : el.elems) {
                 if (counter++) {
@@ -488,6 +537,7 @@ class stmt_def_dat final : public statement {
                 e.uops.source_to(os);
                 e.tk.source_to(os);
             }
+            std::print(os, "}}");
 
             return;
         }

@@ -8,7 +8,7 @@ func assert(expr : bool) if not expr exit(1)
 
 type point { x, y }
 
-type world { locations : i64[8] }
+type world { locations : i64[4] }
 
 func main() {
     dat data_a
@@ -27,7 +27,7 @@ func main() {
     dat data_o : bool[2] = { true, false }
 
     dat     pt : point = { -1, -2 }
- #   dat  world : world ={{-1,2}}
+    dat  world : world = {{-1,2}}
 
     assert(data_a == 0)
     data_a = 0xff
@@ -89,4 +89,7 @@ func main() {
 
     assert(data_o[0] == true)
     assert(data_o[1] == false)
+
+    assert(world.locations[0] == -1)
+#    assert(world.locations[1] == 2)
 }
