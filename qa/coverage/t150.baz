@@ -6,6 +6,8 @@ func exit(v : reg_rdi) {
 
 func assert(expr : bool) if not expr exit(1)
 
+type point {x, y}
+
 func main() {
     dat data_a
     dat data_b : i32 = 32
@@ -19,6 +21,7 @@ func main() {
     dat data_k : bool[] = {true, false}
     dat data_l : i8[] = "hello world\n"
     dat data_m : i8[10] = "a"
+    dat     pt : point = { -1, -2 }
 
     assert(data_a == 0)
     data_a = 0xff
@@ -67,4 +70,11 @@ func main() {
     assert(array_size_of(data_m) == 10)
     assert(data_m[0] == 97) # 'a'
     assert(data_m[9] == 0) # '\0'
+
+    assert(pt.x == -1)
+    assert(pt.y == -2)
+    pt.x = 3
+    pt.y = 4
+    assert(pt.x == 3)
+    assert(pt.y == 4)
 }

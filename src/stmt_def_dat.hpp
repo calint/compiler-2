@@ -214,11 +214,49 @@ class stmt_def_dat final : public statement {
             }
             return;
         }
+
+        // user type
+        compile_data_type(tc, os, name_tk_.text(), tp, elems_);
     }
 
   private:
+    auto compile_data_type(const toc& tc, std::ostream& os,
+                           const std::string_view nm, const type& tp,
+                           const std::vector<elem>& els) const -> void {
+
+        std::println(os, "; {}: {}", nm, tp.name());
+        size_t counter{0};
+        for (const elem& e : els) {
+            const type_field& tf{tp.fields()[counter]};
+            compile_data_type_field(tc, os, tf, e);
+            ++counter;
+        }
+    }
+
+    auto compile_data_type_field(const toc& tc, std::ostream& os,
+                                 const type_field& tf, const elem& el) const
+        -> void {
+
+        if (not tf.is_array) {
+            std::string_view dd{tc.get_data_def(tf.type_ptr->size())};
+            if (tf.type_ptr->is_built_in()) {
+                std::println(os, "; {}: {}", tf.name, tf.type_ptr->name());
+                if (el.tk.is_empty()) {
+                    std::println(os, "{} 0", dd);
+                    return;
+                }
+
+                std::print(os, "{} ", dd);
+                el.uops.source_to(os);
+                std::println(os, "{}", el.value);
+                return;
+            }
+        }
+    }
+
     auto parse(toc& tc, tokenizer& tz, const type& tp, std::vector<elem>& els)
         -> void {
+
         if (tp.is_built_in()) {
             if (not is_array_) {
                 unary_ops uo{tz};
@@ -247,6 +285,7 @@ class stmt_def_dat final : public statement {
             }
 
             // array of built-ins
+
             // special case for strings
             tk_str_ = tz.next_token();
             if (tk_str_.is_string()) {
@@ -263,6 +302,7 @@ class stmt_def_dat final : public statement {
 
             tz.put_back_token(tk_str_);
 
+            // normal case
             if (not tz.is_next_char('{')) {
                 throw compiler_exception(
                     tz, "expected '{' to open array initializer");
@@ -315,6 +355,94 @@ class stmt_def_dat final : public statement {
             if (array_size_ == 0) {
                 array_size_ = ninitializers;
             }
+
+            return;
+        }
+
+        // user type
+
+        if (not is_array_) {
+            parse_type(tc, tz, tp, els);
+            return;
+        }
+
+        if (not tz.is_next_char('{')) {
+            throw compiler_exception(tz,
+                                     "expected '{' to open array initializer");
+        }
+
+        parse_type(tc, tz, tp, els);
+
+        if (not tz.is_next_char('}')) {
+            throw compiler_exception(tz,
+                                     "expected '}' to close array initializer");
+        }
+    }
+
+    auto parse_type(toc& tc, tokenizer& tz, const type& tp,
+                    std::vector<elem>& els) -> void {
+
+        if (not tz.is_next_char('{')) {
+            throw compiler_exception(tz,
+                                     "expected '{' to open type initializer");
+        }
+
+        size_t counter{0};
+        for (const type_field& f : tp.fields()) {
+            if (counter++) {
+                if (not tz.is_next_char(',')) {
+                    throw compiler_exception(
+                        tz, std::format(
+                                "expected ',' and initializer for field '{}'",
+                                f.name));
+                }
+            }
+            parse_type_field(tc, tz, f, els);
+        }
+
+        if (not tz.is_next_char('}')) {
+            throw compiler_exception(tz,
+                                     "expected '}' to close type initializer");
+        }
+    }
+
+    auto parse_type_field(toc& tc, tokenizer& tz, const type_field& tf,
+                          std::vector<elem>& els) -> void {
+
+        if (tf.type_ptr->is_built_in()) {
+            unary_ops uo{tz};
+            token tk{tz.next_token()};
+            if (tf.type_ptr == &tc.get_type_bool()) {
+                if (tk.is_text("true")) {
+                    els.emplace_back(uo, tk, 1, std::vector<elem>{});
+                } else if (tk.is_text("false")) {
+                    els.emplace_back(uo, tk, 0, std::vector<elem>{});
+                } else {
+                    throw compiler_exception(
+                        tk,
+                        std::format("boolean field '{}' must be true or false",
+                                    tf.name));
+                }
+                return;
+            }
+            if (std::optional<int64_t> num{
+                    tc.parse_to_constant(tk, tk.text())}) {
+                els.emplace_back(uo, tk, *num, std::vector<elem>{});
+                return;
+            }
+            throw compiler_exception(
+                tk, std::format("field '{}' must be a constant", tf.name));
+        }
+
+        // array
+        if (not tz.is_next_char('{')) {
+            throw compiler_exception(tz,
+                                     "expected '{' to open array initializer");
+        }
+
+        if (not tz.is_next_char('}')) {
+            throw compiler_exception(tz,
+                                     "expected '}' to close array initializer");
         }
     }
 
@@ -337,6 +465,27 @@ class stmt_def_dat final : public statement {
                 e.tk.source_to(os);
             }
             std::print(os, "}}");
+            return;
+        }
+
+        // user type
+        std::print(os, "{{");
+        size_t counter{0};
+        for (const type_field& f : tp.fields()) {
+            if (counter++) {
+                std::print(os, ",");
+            }
+            print_source_field(os, f, els[counter - 1]);
+        }
+        std::print(os, "}}");
+    }
+
+    auto print_source_field(std::ostream& os, const type_field& tf,
+                            const elem& el) const -> void {
+
+        if (tf.type_ptr->is_built_in()) {
+            el.uops.source_to(os);
+            el.tk.source_to(os);
             return;
         }
     }
