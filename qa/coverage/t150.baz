@@ -6,7 +6,9 @@ func exit(v : reg_rdi) {
 
 func assert(expr : bool) if not expr exit(1)
 
-type point {x, y}
+type point { x, y }
+
+type world { locations : i64[8] }
 
 func main() {
     dat data_a
@@ -25,6 +27,7 @@ func main() {
     dat data_o : bool[2] = { true, false }
 
     dat     pt : point = { -1, -2 }
+ #   dat  world : world ={{-1,2}}
 
     assert(data_a == 0)
     data_a = 0xff

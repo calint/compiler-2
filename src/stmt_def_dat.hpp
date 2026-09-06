@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -328,7 +329,8 @@ class stmt_def_dat final : public statement {
                                      "expected '{' to open array initializer");
         }
 
-        parse_type(tc, tz, tp, els);
+        els.emplace_back(unary_ops{}, token{}, 0, std::vector<elem>{});
+        parse_type(tc, tz, tp, els.back().elems);
 
         if (not tz.is_next_char('}')) {
             throw compiler_exception(tz,
@@ -394,28 +396,8 @@ class stmt_def_dat final : public statement {
 
         if (tf.type_ptr->is_built_in()) {
             if (not tf.is_array) {
-                unary_ops uo{tz};
-                token tk{tz.next_token()};
-                if (tf.type_ptr == &tc.get_type_bool()) {
-                    if (tk.is_text("true")) {
-                        els.emplace_back(uo, tk, 1, std::vector<elem>{});
-                    } else if (tk.is_text("false")) {
-                        els.emplace_back(uo, tk, 0, std::vector<elem>{});
-                    } else {
-                        throw compiler_exception(
-                            tk, std::format(
-                                    "boolean field '{}' must be true or false",
-                                    tf.name));
-                    }
-                    return;
-                }
-                if (std::optional<int64_t> num{
-                        tc.parse_to_constant(tk, tk.text())}) {
-                    els.emplace_back(uo, tk, *num, std::vector<elem>{});
-                    return;
-                }
-                throw compiler_exception(
-                    tk, std::format("field '{}' must be a constant", tf.name));
+                parse_builtin(tc, tz, *tf.type_ptr, els);
+                return;
             }
 
             // array
@@ -425,10 +407,19 @@ class stmt_def_dat final : public statement {
                     tz, "expected '{' to open array initializer");
             }
 
+            while (true) {
+                parse_builtin(tc, tz, *tf.type_ptr, els);
+                if (not tz.is_next_char(',')) {
+                    break;
+                }
+            }
+
             if (not tz.is_next_char('}')) {
                 throw compiler_exception(
                     tz, "expected '}' to close array initializer");
             }
+
+            return;
         }
 
         // user type
@@ -461,15 +452,20 @@ class stmt_def_dat final : public statement {
 
         // user type
 
-        std::print(os, "{{");
-        size_t counter{0};
-        for (const type_field& f : tp.fields()) {
-            if (counter++) {
-                std::print(os, ",");
+        if (not is_array_) {
+            std::print(os, "{{");
+            size_t counter{0};
+            for (const type_field& f : tp.fields()) {
+                if (counter++) {
+                    std::print(os, ",");
+                }
+                print_source_field(os, f, els[counter - 1]);
             }
-            print_source_field(os, f, els[counter - 1]);
+            std::print(os, "}}");
+            return;
         }
-        std::print(os, "}}");
+
+        // user type array
     }
 
     auto print_source_field(std::ostream& os, const type_field& tf,
@@ -483,6 +479,17 @@ class stmt_def_dat final : public statement {
             }
 
             // array
+
+            size_t counter{0};
+            for (const elem& e : el.elems) {
+                if (counter++) {
+                    std::print(os, ",");
+                }
+                e.uops.source_to(os);
+                e.tk.source_to(os);
+            }
+
+            return;
         }
 
         // user type
