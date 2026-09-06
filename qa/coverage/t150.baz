@@ -21,6 +21,8 @@ func main() {
     dat data_k : bool[] = {true, false}
     dat data_l : i8[] = "hello world\n"
     dat data_m : i8[10] = "a"
+    dat data_n : i8[4] = { -1, 2 }
+
     dat     pt : point = { -1, -2 }
 
     assert(data_a == 0)
@@ -77,4 +79,7 @@ func main() {
     pt.y = 4
     assert(pt.x == 3)
     assert(pt.y == 4)
+
+    assert(data_n[0] == -1)
+    assert(data_n[1] == 2)
 }

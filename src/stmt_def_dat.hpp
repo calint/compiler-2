@@ -202,6 +202,7 @@ class stmt_def_dat final : public statement {
                 if (counter++) {
                     std::print(os, ", ");
                 }
+                e.uops.source_to(os);
                 std::print(os, "{}", e.value);
             }
 
@@ -259,29 +260,8 @@ class stmt_def_dat final : public statement {
 
         if (tp.is_built_in()) {
             if (not is_array_) {
-                unary_ops uo{tz};
-                token tk{tz.next_token()};
-                if (&tp == &tc.get_type_bool()) {
-                    if (tk.is_text("true")) {
-                        els.emplace_back(uo, tk, 1, std::vector<elem>{});
-                    } else if (tk.is_text("false")) {
-                        els.emplace_back(uo, tk, 0, std::vector<elem>{});
-                    } else {
-                        throw compiler_exception(
-                            tk, std::format(
-                                    "boolean field '{}' must be true or false",
-                                    tp.name()));
-                    }
-                    return;
-                }
-                if (std::optional<int64_t> num{
-                        tc.parse_to_constant(tk, tk.text())}) {
-                    els.emplace_back(uo, tk, *num, std::vector<elem>{});
-                    return;
-                }
-                throw compiler_exception(
-                    tk, std::format("element of type '{}' must be a constant",
-                                    tp.name()));
+                parse_builtin(tc, tz, tp, els);
+                return;
             }
 
             // array of built-ins
@@ -299,46 +279,21 @@ class stmt_def_dat final : public statement {
                 throw compiler_exception(tk_str_,
                                          "only 'i8' arrays can be strings");
             }
-
             tz.put_back_token(tk_str_);
 
             // normal case
+
             if (not tz.is_next_char('{')) {
                 throw compiler_exception(
                     tz, "expected '{' to open array initializer");
             }
-            size_t ninitializers{0};
+            size_t counter{0};
             while (true) {
-                ++ninitializers;
-                unary_ops uo{tz};
-                token tk{tz.next_token()};
-                if (&tp == &tc.get_type_bool()) {
-                    if (tk.is_text("true")) {
-                        els.emplace_back(uo, tk, 1, std::vector<elem>{});
-                    } else if (tk.is_text("false")) {
-                        els.emplace_back(uo, tk, 0, std::vector<elem>{});
-                    } else {
-                        throw compiler_exception(
-                            tk,
-                            std::format(
-                                "boolean field '{}' must be 'true' or 'false'",
-                                tp.name()));
-                    }
-                    if (tz.is_next_char(',')) {
-                        continue;
-                    }
+                parse_builtin(tc, tz, tp, els);
+                ++counter;
+                if (not tz.is_next_char(',')) {
                     break;
                 }
-                if (std::optional<int64_t> num{
-                        tc.parse_to_constant(tk, tk.text())}) {
-                    els.emplace_back(uo, tk, *num, std::vector<elem>{});
-                    if (tz.is_next_char(',')) {
-                        continue;
-                    }
-                    break;
-                }
-                throw compiler_exception(
-                    tk, std::format("'{}' must be a constant", tp.name()));
             }
             if (not tz.is_next_char('}')) {
                 throw compiler_exception(
@@ -353,7 +308,7 @@ class stmt_def_dat final : public statement {
             }
 
             if (array_size_ == 0) {
-                array_size_ = ninitializers;
+                array_size_ = counter;
             }
 
             return;
@@ -366,6 +321,8 @@ class stmt_def_dat final : public statement {
             return;
         }
 
+        // array user type
+
         if (not tz.is_next_char('{')) {
             throw compiler_exception(tz,
                                      "expected '{' to open array initializer");
@@ -377,6 +334,32 @@ class stmt_def_dat final : public statement {
             throw compiler_exception(tz,
                                      "expected '}' to close array initializer");
         }
+    }
+
+    auto parse_builtin(toc& tc, tokenizer& tz, const type& tp,
+                       std::vector<elem>& els) -> void {
+
+        unary_ops uo{tz};
+        token tk{tz.next_token()};
+        if (&tp == &tc.get_type_bool()) {
+            if (tk.is_text("true")) {
+                els.emplace_back(uo, tk, 1, std::vector<elem>{});
+            } else if (tk.is_text("false")) {
+                els.emplace_back(uo, tk, 0, std::vector<elem>{});
+            } else {
+                throw compiler_exception(
+                    tk, std::format("boolean field '{}' must be true or false",
+                                    tp.name()));
+            }
+            return;
+        }
+        if (std::optional<int64_t> num{tc.parse_to_constant(tk, tk.text())}) {
+            els.emplace_back(uo, tk, *num, std::vector<elem>{});
+            return;
+        }
+        throw compiler_exception(
+            tk,
+            std::format("element of type '{}' must be a constant", tp.name()));
     }
 
     auto parse_type(toc& tc, tokenizer& tz, const type& tp,
