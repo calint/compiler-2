@@ -22,6 +22,7 @@ class stmt_def_dat final : public statement {
       public:
         token tk;
         int64_t value{};
+        std::vector<unary_ops> uops;
         std::vector<elem> elems;
     };
 
@@ -226,10 +227,12 @@ class stmt_def_dat final : public statement {
                 if (&tp == &tc.get_type_bool()) {
                     if (tk.is_text("true")) {
                         uops.emplace_back(uo);
-                        els.emplace_back(tk, 1, std::vector<elem>{});
+                        els.emplace_back(tk, 1, std::vector<unary_ops>{},
+                                         std::vector<elem>{});
                     } else if (tk.is_text("false")) {
                         uops.emplace_back(uo);
-                        els.emplace_back(tk, 0, std::vector<elem>{});
+                        els.emplace_back(tk, 0, std::vector<unary_ops>{},
+                                         std::vector<elem>{});
                     } else {
                         throw compiler_exception(
                             tk, std::format(
@@ -241,7 +244,8 @@ class stmt_def_dat final : public statement {
                 if (std::optional<int64_t> num{
                         tc.parse_to_constant(tk, tk.text())}) {
                     uops.emplace_back(uo);
-                    els.emplace_back(tk, *num, std::vector<elem>{});
+                    els.emplace_back(tk, *num, std::vector<unary_ops>{},
+                                     std::vector<elem>{});
                     return;
                 }
                 throw compiler_exception(
@@ -278,10 +282,12 @@ class stmt_def_dat final : public statement {
                 if (&tp == &tc.get_type_bool()) {
                     if (tk.is_text("true")) {
                         uops.emplace_back(uo);
-                        els.emplace_back(tk, 1, std::vector<elem>{});
+                        els.emplace_back(tk, 1, std::vector<unary_ops>{},
+                                         std::vector<elem>{});
                     } else if (tk.is_text("false")) {
                         uops.emplace_back(uo);
-                        els.emplace_back(tk, 0, std::vector<elem>{});
+                        els.emplace_back(tk, 0, std::vector<unary_ops>{},
+                                         std::vector<elem>{});
                     } else {
                         throw compiler_exception(
                             tk,
@@ -297,7 +303,8 @@ class stmt_def_dat final : public statement {
                 if (std::optional<int64_t> num{
                         tc.parse_to_constant(tk, tk.text())}) {
                     uops.emplace_back(uo);
-                    els.emplace_back(tk, *num, std::vector<elem>{});
+                    els.emplace_back(tk, *num, std::vector<unary_ops>{},
+                                     std::vector<elem>{});
                     if (tz.is_next_char(',')) {
                         continue;
                     }
