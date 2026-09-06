@@ -102,7 +102,7 @@ func main() {
     dat prompt3 : i8[] = "hello "
     dat     dot : i8[] = "."
     dat      nl : i8[] = "\n"
-    
+
     var arr : i32[4]
     # arrays are initialized to 0
 
