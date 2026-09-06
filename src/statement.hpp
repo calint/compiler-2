@@ -61,10 +61,6 @@ class statement {
         return *type_;
     }
 
-    [[nodiscard]] virtual auto is_in_data_section() const -> bool {
-        return false;
-    }
-
     [[nodiscard]] virtual auto is_expression() const -> bool { return false; }
 
     [[nodiscard]] virtual auto identifier() const -> std::string_view {

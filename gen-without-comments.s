@@ -1,8 +1,7 @@
-DEFAULT REL
+default rel
 section .bss
 stk resd 131072
 stk.end:
-section .data
 section .text
 bits 64
 global _start
