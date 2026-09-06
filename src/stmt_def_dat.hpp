@@ -410,40 +410,45 @@ class stmt_def_dat final : public statement {
                           std::vector<elem>& els) -> void {
 
         if (tf.type_ptr->is_built_in()) {
-            unary_ops uo{tz};
-            token tk{tz.next_token()};
-            if (tf.type_ptr == &tc.get_type_bool()) {
-                if (tk.is_text("true")) {
-                    els.emplace_back(uo, tk, 1, std::vector<elem>{});
-                } else if (tk.is_text("false")) {
-                    els.emplace_back(uo, tk, 0, std::vector<elem>{});
-                } else {
-                    throw compiler_exception(
-                        tk,
-                        std::format("boolean field '{}' must be true or false",
+            if (not tf.is_array) {
+                unary_ops uo{tz};
+                token tk{tz.next_token()};
+                if (tf.type_ptr == &tc.get_type_bool()) {
+                    if (tk.is_text("true")) {
+                        els.emplace_back(uo, tk, 1, std::vector<elem>{});
+                    } else if (tk.is_text("false")) {
+                        els.emplace_back(uo, tk, 0, std::vector<elem>{});
+                    } else {
+                        throw compiler_exception(
+                            tk, std::format(
+                                    "boolean field '{}' must be true or false",
                                     tf.name));
+                    }
+                    return;
                 }
-                return;
+                if (std::optional<int64_t> num{
+                        tc.parse_to_constant(tk, tk.text())}) {
+                    els.emplace_back(uo, tk, *num, std::vector<elem>{});
+                    return;
+                }
+                throw compiler_exception(
+                    tk, std::format("field '{}' must be a constant", tf.name));
             }
-            if (std::optional<int64_t> num{
-                    tc.parse_to_constant(tk, tk.text())}) {
-                els.emplace_back(uo, tk, *num, std::vector<elem>{});
-                return;
+
+            // array
+
+            if (not tz.is_next_char('{')) {
+                throw compiler_exception(
+                    tz, "expected '{' to open array initializer");
             }
-            throw compiler_exception(
-                tk, std::format("field '{}' must be a constant", tf.name));
+
+            if (not tz.is_next_char('}')) {
+                throw compiler_exception(
+                    tz, "expected '}' to close array initializer");
+            }
         }
 
-        // array
-        if (not tz.is_next_char('{')) {
-            throw compiler_exception(tz,
-                                     "expected '{' to open array initializer");
-        }
-
-        if (not tz.is_next_char('}')) {
-            throw compiler_exception(tz,
-                                     "expected '}' to close array initializer");
-        }
+        // user type
     }
 
     auto print_source(std::ostream& os, const type& tp,
@@ -455,6 +460,9 @@ class stmt_def_dat final : public statement {
                 els[0].tk.source_to(os);
                 return;
             }
+
+            // array
+
             std::print(os, "{{");
             size_t counter{0};
             for (const elem& e : elems_) {
@@ -469,6 +477,7 @@ class stmt_def_dat final : public statement {
         }
 
         // user type
+
         std::print(os, "{{");
         size_t counter{0};
         for (const type_field& f : tp.fields()) {
@@ -484,9 +493,15 @@ class stmt_def_dat final : public statement {
                             const elem& el) const -> void {
 
         if (tf.type_ptr->is_built_in()) {
-            el.uops.source_to(os);
-            el.tk.source_to(os);
-            return;
+            if (not tf.is_array) {
+                el.uops.source_to(os);
+                el.tk.source_to(os);
+                return;
+            }
+
+            // array
         }
+
+        // user type
     }
 };
