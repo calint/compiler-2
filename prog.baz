@@ -96,12 +96,12 @@ func str_out(s : str) {
 } 
 
 func main() {
-    dat hello : i8[] = "hello world from baz\n"
+    dat   hello : i8[] = "hello world from baz\n"
     dat prompt1 : i8[] = "enter name:\n"
     dat prompt2 : i8[] = "that is not a name.\n"
     dat prompt3 : i8[] = "hello "
-    dat dot : i8[] = "."
-    dat nl : i8[] = "\n"
+    dat     dot : i8[] = "."
+    dat      nl : i8[] = "\n"
 
     var arr : i32[4]
     # arrays are initialized to 0

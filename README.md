@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    43           1430            759           6978
+C/C++ Header                    42           1411            751           6868
 C++                              1             84            104            558
 -------------------------------------------------------------------------------
-SUM:                            44           1514            863           7536
+SUM:                            43           1495            855           7426
 -------------------------------------------------------------------------------
 ```
 
@@ -156,12 +156,12 @@ func str_out(s : str) {
 } 
 
 func main() {
-    dat hello : i8[] = "hello world from baz\n"
+    dat   hello : i8[] = "hello world from baz\n"
     dat prompt1 : i8[] = "enter name:\n"
     dat prompt2 : i8[] = "that is not a name.\n"
     dat prompt3 : i8[] = "hello "
-    dat dot : i8[] = "."
-    dat nl : i8[] = "\n"
+    dat     dot : i8[] = "."
+    dat      nl : i8[] = "\n"
 
     var arr : i32[4]
     # arrays are initialized to 0
@@ -1427,7 +1427,7 @@ mov rsp, stk.end
 
 main:
 ;   [99:5] dat hello : i8[] = "hello world from baz\n"
-;   [99:9] hello: i8[21] (21B @ [rsp - 21])
+;   [99:11] hello: i8[21] (21B @ [rsp - 21])
 ;   [100:5] dat prompt1 : i8[] = "enter name:\n"
 ;   [100:9] prompt1: i8[12] (12B @ [rsp - 33])
 ;   [101:5] dat prompt2 : i8[] = "that is not a name.\n"
@@ -1435,9 +1435,9 @@ main:
 ;   [102:5] dat prompt3 : i8[] = "hello "
 ;   [102:9] prompt3: i8[6] (6B @ [rsp - 59])
 ;   [103:5] dat dot : i8[] = "."
-;   [103:9] dot: i8[1] (1B @ [rsp - 60])
+;   [103:13] dot: i8[1] (1B @ [rsp - 60])
 ;   [104:5] dat nl : i8[] = "\n"
-;   [104:9] nl: i8[1] (1B @ [rsp - 61])
+;   [104:14] nl: i8[1] (1B @ [rsp - 61])
 ;   [106:5] var arr : i32[4]
 ;   [106:9] arr: i32[4] (16B @ [rsp - 77])
 ;   [106:9] clear 4 * 4B = 16B
