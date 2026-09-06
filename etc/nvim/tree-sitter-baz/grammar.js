@@ -153,48 +153,28 @@ module.exports = grammar({
     data_declaration: $ => seq(
       $.dat_keyword,
       field('destination', $.identifier),
-      choice(
-        seq(
-          optional(seq(
-            ':',
-            field('type', $._definition_type)
-          )),
-          '=',
-          field('initializer', $._expression)
-        ),
-        seq(
-          ':',
-          field('type', $._definition_type),
-          optional(seq(
-            '=',
-            field('initializer', $._expression)
-          ))
-        )
-      )
+      optional(seq(
+        ':',
+        field('type', $._definition_type)
+      )),
+      optional(seq(
+        '=',
+        field('initializer', $._expression)
+      ))
     ),
 
     // var identifier : type = expression
     variable_declaration: $ => seq(
       $.var_keyword,
       field('destination', $.identifier),
-      choice(
-        seq(
-          optional(seq(
-            ':',
-            field('type', $._definition_type)
-          )),
-          '=',
-          field('initializer', $._expression)
-        ),
-        seq(
-          ':',
-          field('type', $._definition_type),
-          optional(seq(
-            '=',
-            field('initializer', $._expression)
-          ))
-        )
-      )
+      optional(seq(
+        ':',
+        field('type', $._definition_type)
+      )),
+      optional(seq(
+        '=',
+        field('initializer', $._expression)
+      ))
     ),
 
     // access_chain = expression
