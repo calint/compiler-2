@@ -26,8 +26,8 @@ func main() {
     dat data_n : i8[4] = { -1, 2 }
     dat data_o : bool[2] = { true, false }
 
-    dat     pt : point = { -1, -2 }
-    dat  world : world = {  {-1,2}   }
+    dat  point : point = { -1, -2 }
+    dat  world : world = {  {-1,   2}    }
 
     assert(data_a == 0)
     data_a = 0xff
@@ -77,12 +77,12 @@ func main() {
     assert(data_m[0] == 97) # 'a'
     assert(data_m[9] == 0) # '\0'
 
-    assert(pt.x == -1)
-    assert(pt.y == -2)
-    pt.x = 3
-    pt.y = 4
-    assert(pt.x == 3)
-    assert(pt.y == 4)
+    assert(point.x == -1)
+    assert(point.y == -2)
+    point.x = 3
+    point.y = 4
+    assert(point.x == 3)
+    assert(point.y == 4)
 
     assert(data_n[0] == -1)
     assert(data_n[1] == 2)

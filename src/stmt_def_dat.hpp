@@ -141,9 +141,7 @@ class stmt_def_dat final : public statement {
         std::print(os, "=");
         ws1_.source_to(os);
 
-        // note: incredibly ugly hack
-        //       first element contains the whitespaces
-        print_source(os, tp, elems_, elems_[0].ws1, elems_[0].ws2);
+        print_source(os, tp, elems_);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
@@ -408,7 +406,6 @@ class stmt_def_dat final : public statement {
             throw compiler_exception(tz,
                                      "expected '{' to open type initializer");
         }
-        token ws1{tz.next_whitespace_token()};
 
         size_t counter{0};
         for (const type_field& f : tp.fields()) {
@@ -420,16 +417,17 @@ class stmt_def_dat final : public statement {
                                 f.name));
                 }
             }
+            token ws1{tz.next_whitespace_token()};
             parse_type_field(tc, tz, f, els);
+            token ws2{tz.next_whitespace_token()};
+            els.back().ws1 = ws1;
+            els.back().ws2 = ws2;
         }
 
-        token ws2{tz.next_whitespace_token()};
         if (not tz.is_next_char('}')) {
             throw compiler_exception(tz,
                                      "expected '}' to close type initializer");
         }
-        els.front().ws1 = ws1;
-        els.front().ws2 = ws2;
     }
 
     auto parse_type_field(toc& tc, tokenizer& tz, const type_field& tf,
@@ -477,13 +475,14 @@ class stmt_def_dat final : public statement {
     }
 
     auto print_source(std::ostream& os, const type& tp,
-                      const std::vector<elem>& els, token ws1, token ws2) const
-        -> void {
+                      const std::vector<elem>& els) const -> void {
 
         if (tp.is_built_in()) {
             if (not is_array_) {
+                els[0].ws1.source_to(os);
                 els[0].uops.source_to(os);
                 els[0].tk.source_to(os);
+                els[0].ws2.source_to(os);
                 return;
             }
 
@@ -495,8 +494,10 @@ class stmt_def_dat final : public statement {
                 if (counter++) {
                     std::print(os, ",");
                 }
+                e.ws1.source_to(os);
                 e.uops.source_to(os);
                 e.tk.source_to(os);
+                e.ws2.source_to(os);
             }
             std::print(os, "}}");
             return;
@@ -506,15 +507,15 @@ class stmt_def_dat final : public statement {
 
         if (not is_array_) {
             std::print(os, "{{");
-            ws1.source_to(os);
             size_t counter{0};
             for (const type_field& f : tp.fields()) {
                 if (counter++) {
                     std::print(os, ",");
                 }
+                els[counter - 1].ws1.source_to(os);
                 print_source_field(os, f, els[counter - 1]);
+                els[counter - 1].ws2.source_to(os);
             }
-            ws2.source_to(os);
             std::print(os, "}}");
             return;
         }
