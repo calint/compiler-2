@@ -52,6 +52,10 @@ class unary_ops final {
 
     auto source_to(std::ostream& os) const -> void {
         ws_before_.source_to(os);
+        source_to_without_whitespace(os);
+    }
+
+    auto source_to_without_whitespace(std::ostream& os) const -> void {
         for (const char op : ops_) {
             std::print(os, "{}", op);
         }

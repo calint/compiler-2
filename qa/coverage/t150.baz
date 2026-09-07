@@ -12,6 +12,8 @@ type world { locations : i64[4] }
 
 type exits {  from : i32[4], to : i32[4] }
 
+type line { points : point[2] }
+
 func main() {
     dat data_a
     dat data_b : i32 = 32
@@ -31,6 +33,7 @@ func main() {
     dat  point : point = { -1, -2 }
     dat  world : world = {  {-1,   2}    }
     dat  exits : exits = { { 1 , 2 } , { 3 , 4 } }
+ #   dat  lines : line[2] = {{-1,-2},{4,5}}
 
     assert(data_a == 0)
     data_a = 0xff

@@ -38,7 +38,6 @@ class stmt_def_dat final : public statement {
     bool is_array_{};
     std::vector<elem> elems_;
     token tk_str_;
-    bool is_string_{};
 
   public:
     stmt_def_dat(toc& tc, token tk, tokenizer& tz)
@@ -162,6 +161,7 @@ class stmt_def_dat final : public statement {
     auto compile_data(const toc& tc, std::ostream& os) const -> void override {
         const type& tp{get_type()};
         if (tp.is_built_in()) {
+            // nasm define data token
             std::string_view dd{tc.get_data_def(tp.size())};
             if (not is_array_) {
                 std::println(os, "; {}: {}", name_tk_.text(), tp.name());
@@ -186,13 +186,14 @@ class stmt_def_dat final : public statement {
                 tk_str_.compile_to(os);
                 std::println(os, "'");
                 size_t sz{tk_str_.string_size_bytes()};
+                // pad remaining array with 0
                 if (array_size_ != 0 and sz < array_size_) {
                     std::println(os, "times {} {} 0", array_size_ - sz, dd);
                 }
                 return;
             }
 
-            // arrau without initializer
+            // array without initializer
             if (elems_.empty()) {
                 std::println(os, "times {} {} 0", array_size_, dd);
                 return;
@@ -205,7 +206,7 @@ class stmt_def_dat final : public statement {
                 if (counter++) {
                     std::print(os, ", ");
                 }
-                e.uops.source_to(os);
+                e.uops.source_to_without_whitespace(os);
                 std::print(os, "{}", e.value);
             }
 
@@ -246,9 +247,10 @@ class stmt_def_dat final : public statement {
                                  const type_field& tf, const elem& el) const
         -> void {
 
-        std::string_view dd{tc.get_data_def(tf.type_ptr->size())};
-        if (not tf.is_array) {
-            if (tf.type_ptr->is_built_in()) {
+        if (tf.type_ptr->is_built_in()) {
+            // nasm define data token
+            std::string_view dd{tc.get_data_def(tf.type_ptr->size())};
+            if (not tf.is_array) {
                 std::println(os, "; {}: {}", tf.name, tf.type_ptr->name());
                 if (el.tk.is_empty()) {
                     std::println(os, "{} 0", dd);
@@ -261,21 +263,20 @@ class stmt_def_dat final : public statement {
                 return;
             }
 
-            // user type
-        }
+            // array of builtin
 
-        // field is array
-
-        if (tf.type_ptr->is_built_in()) {
             std::println(os, "; {}: {}[{}]", tf.name, tf.type_ptr->name(),
                          tf.array_size);
+            std::print(os, "{} ", dd);
             size_t counter{0};
             for (const elem& e : el.elems) {
-                std::print(os, "{} ", dd);
-                e.uops.source_to(os);
-                std::println(os, "{}", e.value);
-                ++counter;
+                if (counter++) {
+                    std::print(os, ", ");
+                }
+                e.uops.source_to_without_whitespace(os);
+                std::print(os, "{}", e.value);
             }
+            std::println(os);
 
             size_t pad{tf.array_size - counter};
             if (pad > 0) {
@@ -284,7 +285,11 @@ class stmt_def_dat final : public statement {
             return;
         }
 
+        // user type
+        // todo
+
         // user type array
+        // todo
     }
 
     auto parse(toc& tc, tokenizer& tz, const type& tp, std::vector<elem>& els)
@@ -301,7 +306,6 @@ class stmt_def_dat final : public statement {
             // special case for strings
             tk_str_ = tz.next_token();
             if (tk_str_.is_string()) {
-                is_string_ = true;
                 if (array_size_ == 0) {
                     array_size_ = tk_str_.string_size_bytes();
                 }
@@ -353,16 +357,24 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        // array of user type
+        // user type array
 
         if (not tz.is_next_char('{')) {
             throw compiler_exception(tz,
                                      "expected '{' to open array initializer");
         }
 
+        // root element with subelements being the array elements
         els.emplace_back(unary_ops{}, token{}, 0, token{}, token{},
                          std::vector<elem>{});
+
+        // the whitespace after '{'
+        token ws1{tz.next_whitespace_token()};
         parse_type(tc, tz, tp, els.back().elems);
+        // the whitespace before '}'
+        token ws2{tz.next_whitespace_token()};
+        els.back().elems.back().ws1 = ws1;
+        els.back().elems.back().ws2 = ws2;
 
         if (not tz.is_next_char('}')) {
             throw compiler_exception(tz,
@@ -446,6 +458,7 @@ class stmt_def_dat final : public statement {
                     tz, "expected '{' to open array initializer");
             }
 
+            // root element with subelements being the array elements
             els.emplace_back(unary_ops{}, token{}, 0, token{}, token{},
                              std::vector<elem>{});
             size_t counter{0};
@@ -472,6 +485,15 @@ class stmt_def_dat final : public statement {
         }
 
         // user type
+
+        if (not tf.is_array) {
+            // todo
+            return;
+        }
+
+        // user type array
+
+        // todo
     }
 
     auto print_source(std::ostream& os, const type& tp,
