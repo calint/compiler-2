@@ -156,6 +156,7 @@ auto main(const int argc, const char* argv[]) -> int {
                     checks_show_line};
         // prg.source_to(std::cerr);
         std::ofstream reproduced_source{"diff.baz"};
+        // reproduced_source << std::unitbuf;
         prg.source_to(reproduced_source);
         reproduced_source.close();
         if (src != read_file_to_string("diff.baz")) {

@@ -25,8 +25,10 @@ class stmt_def_dat final : public statement {
         unary_ops uops;
         token tk;
         int64_t value{};
-        token ws1; // when field is array the whitespace after initializer '{'
+        token ws1; // whitespace after '{'
         token ws2; // when field is array the whitespace before initializer '}'
+        token ws3; // whitespace before '{'
+        token ws4;
         bool is_array{};
         size_t array_size{};
         std::vector<elem> elems;
@@ -95,7 +97,7 @@ class stmt_def_dat final : public statement {
         tc.add_var(name_tk_, null_strm, 0, var, true);
 
         if (has_init_) {
-            parse(tc, tz, tp, elroot_);
+            parse_elem(tc, tz, tp, elroot_);
         }
 
         tc.add_dat(this);
@@ -169,13 +171,7 @@ class stmt_def_dat final : public statement {
 
         // user type
 
-        if (not elroot_.is_array) {
-            compile_data_type(tc, os, name_tk_.text(), tp, elroot_);
-            return;
-        }
-
-        // array of user type
-        // todo
+        compile_data_type(tc, os, name_tk_.text(), tp, elroot_);
     }
 
   private:
@@ -243,21 +239,49 @@ class stmt_def_dat final : public statement {
             std::println(os, "times {} {} 0",
                          elroot.array_size - elroot.elems.size(), dd);
         }
-        return;
     }
 
     static auto compile_data_type(const toc& tc, std::ostream& os,
                                   const std::string_view nm, const type& tp,
                                   const elem& elroot) -> void {
 
-        std::println(os, "; {}: {}", nm, tp.name());
-        const std::span<const type_field>& flds{tp.fields()};
-        size_t counter{0};
-        for (const elem& e : elroot.elems) {
-            const type_field& tf{flds[counter]};
-            compile_data_type_field(tc, os, tf, e);
-            ++counter;
+        if (not elroot.is_array) {
+            std::println(os, "; {}: {}", nm, tp.name());
+            const std::span<const type_field>& flds{tp.fields()};
+            size_t counter{0};
+            for (const elem& e : elroot.elems) {
+                const type_field& tf{flds[counter]};
+                compile_data_type_field(tc, os, tf, e);
+                ++counter;
+            }
+            return;
         }
+
+        // array
+
+        std::println(os, "; {}: {}[{}]", nm, tp.name(), elroot.array_size);
+        size_t elem_counter{0};
+        for (const elem& el : elroot.elems) {
+            std::println(os, "; {}[{}]", nm, elem_counter);
+            ++elem_counter;
+            const std::span<const type_field>& flds{tp.fields()};
+            size_t field_counter{0};
+            for (const elem& e : el.elems) {
+                const type_field& tf{flds[field_counter]};
+                compile_data_type_field(tc, os, tf, e);
+                ++field_counter;
+            }
+        }
+
+        const size_t diff = elroot.array_size - elem_counter;
+
+        if (diff == 0) {
+            return;
+        }
+
+        std::println(os, "; pad {} '{}' elements of size {}", diff, tp.name(),
+                     tp.size());
+        std::println(os, "times {} db 0", diff * tp.size());
     }
 
     static auto compile_data_type_field(const toc& tc, std::ostream& os,
@@ -270,13 +294,11 @@ class stmt_def_dat final : public statement {
         }
 
         // user type
-        // todo
 
-        // user type array
-        // todo
+        compile_data_type(tc, os, tf.name, *tf.type_ptr, elroot);
     }
 
-    static auto parse(toc& tc, tokenizer& tz, const type& tp, elem& elroot)
+    static auto parse_elem(toc& tc, tokenizer& tz, const type& tp, elem& elroot)
         -> void {
 
         if (not elroot.is_array) {
@@ -294,7 +316,7 @@ class stmt_def_dat final : public statement {
         // array
 
         if (tp.is_built_in()) {
-            // special case for strings
+            // special case for string
 
             elroot.tk = tz.next_token();
             if (elroot.tk.is_string()) {
@@ -308,17 +330,21 @@ class stmt_def_dat final : public statement {
                                          "only 'i8' arrays can be strings");
             }
             tz.put_back_token(elroot.tk);
+            elroot.tk = {};
 
             // normal case
 
+            elroot.ws3 = tz.next_whitespace_token();
             if (not tz.is_next_char('{')) {
                 throw compiler_exception(
                     tz, "expected '{' to open array initializer");
             }
+            elroot.ws1 = tz.next_whitespace_token();
+
             size_t counter{0};
             while (true) {
                 elroot.elems.emplace_back(unary_ops{}, token{}, 0, token{},
-                                          token{}, false, 0,
+                                          token{}, token{}, token{}, false, 0,
                                           std::vector<elem>{});
                 parse_builtin(tc, tz, tp, elroot.elems.back());
                 ++counter;
@@ -326,10 +352,13 @@ class stmt_def_dat final : public statement {
                     break;
                 }
             }
+
+            elroot.ws2 = tz.next_whitespace_token();
             if (not tz.is_next_char('}')) {
                 throw compiler_exception(
                     tz, "expected '}' to close array initializer");
             }
+            elroot.ws4 = tz.next_whitespace_token();
 
             if (elroot.array_size != 0 and
                 elroot.elems.size() > elroot.array_size) {
@@ -347,16 +376,44 @@ class stmt_def_dat final : public statement {
         }
 
         // user type array
-        // todo
 
+        elroot.ws3 = tz.next_whitespace_token();
         if (not tz.is_next_char('{')) {
             throw compiler_exception(tz,
                                      "expected '{' to open array initializer");
         }
+        elroot.ws1 = tz.next_whitespace_token();
 
+        size_t counter{0};
+        while (true) {
+            elroot.elems.emplace_back(unary_ops{}, token{}, 0, token{}, token{},
+                                      token{}, token{}, false, 0,
+                                      std::vector<elem>{});
+            // elroot.elems.back().ws1 = tz.next_whitespace_token();
+            parse_type(tc, tz, tp, elroot.elems.back());
+            // elroot.elems.back().ws2 = tz.next_whitespace_token();
+            ++counter;
+            if (not tz.is_next_char(',')) {
+                break;
+            }
+        }
+
+        elroot.ws2 = tz.next_whitespace_token();
         if (not tz.is_next_char('}')) {
             throw compiler_exception(tz,
                                      "expected '}' to close array initializer");
+        }
+        elroot.ws4 = tz.next_whitespace_token();
+
+        if (elroot.array_size != 0 and
+            elroot.elems.size() > elroot.array_size) {
+            throw compiler_exception(
+                tz, std::format("array size is {} but contains {} initializers",
+                                elroot.array_size, elroot.elems.size()));
+        }
+
+        if (elroot.array_size == 0) {
+            elroot.array_size = counter;
         }
     }
 
@@ -391,11 +448,11 @@ class stmt_def_dat final : public statement {
     static auto parse_type(toc& tc, tokenizer& tz, const type& tp, elem& elroot)
         -> void {
 
+        elroot.ws3 = tz.next_whitespace_token();
         if (not tz.is_next_char('{')) {
             throw compiler_exception(tz,
                                      "expected '{' to open type initializer");
         }
-
         elroot.ws1 = tz.next_whitespace_token();
 
         size_t counter{0};
@@ -409,91 +466,19 @@ class stmt_def_dat final : public statement {
                 }
             }
             elroot.elems.emplace_back(unary_ops{}, token{}, 0, token{}, token{},
-                                      tf.is_array, tf.array_size,
-                                      std::vector<elem>{});
-            elroot.elems.back().ws1 = tz.next_whitespace_token();
-            parse_type_field(tc, tz, tf, elroot.elems.back());
-            elroot.elems.back().ws2 = tz.next_whitespace_token();
+                                      token{}, token{}, tf.is_array,
+                                      tf.array_size, std::vector<elem>{});
+            //   elroot.elems.back().ws1 = tz.next_whitespace_token();
+            parse_elem(tc, tz, *tf.type_ptr, elroot.elems.back());
+            // elroot.elems.back().ws2 = tz.next_whitespace_token();
         }
 
         elroot.ws2 = tz.next_whitespace_token();
-
         if (not tz.is_next_char('}')) {
             throw compiler_exception(tz,
                                      "expected '}' to close type initializer");
         }
-    }
-
-    static auto parse_type_field(toc& tc, tokenizer& tz, const type_field& tf,
-                                 elem& elroot) -> void {
-
-        if (tf.type_ptr->is_built_in()) {
-            if (not tf.is_array) {
-                parse_builtin(tc, tz, *tf.type_ptr, elroot);
-                return;
-            }
-
-            // array
-
-            // special case for strings
-
-            elroot.tk = tz.next_token();
-            if (elroot.tk.is_string()) {
-                if (elroot.array_size == 0) {
-                    elroot.array_size = elroot.tk.string_size_bytes();
-                }
-                if (tf.type_ptr->name() == "i8") {
-                    return;
-                }
-                throw compiler_exception(elroot.tk,
-                                         "only 'i8' arrays can be strings");
-            }
-            elroot.tk = {};
-            tz.put_back_token(elroot.tk);
-
-            // normal case
-
-            if (not tz.is_next_char('{')) {
-                throw compiler_exception(
-                    tz, "expected '{' to open array initializer");
-            }
-
-            size_t counter{0};
-            while (true) {
-                elroot.elems.emplace_back(unary_ops{}, token{}, 0, token{},
-                                          token{}, false, 0,
-                                          std::vector<elem>{});
-                parse_builtin(tc, tz, *tf.type_ptr, elroot.elems.back());
-                ++counter;
-                if (not tz.is_next_char(',')) {
-                    break;
-                }
-                if (counter == tf.array_size) {
-                    throw compiler_exception(
-                        tz, std::format("initializer has more elements than "
-                                        "the array size of {}",
-                                        tf.array_size));
-                }
-            }
-
-            if (not tz.is_next_char('}')) {
-                throw compiler_exception(
-                    tz, "expected '}' to close array initializer");
-            }
-
-            return;
-        }
-
-        // user type
-
-        if (not tf.is_array) {
-            // todo
-            return;
-        }
-
-        // user type array
-
-        // todo
+        elroot.ws4 = tz.next_whitespace_token();
     }
 
     static auto print_source(std::ostream& os, const type& tp,
@@ -508,27 +493,17 @@ class stmt_def_dat final : public statement {
 
             // user type
 
-            std::print(os, "{{");
-            elroot.ws1.source_to(os);
-            size_t counter{0};
-            for (const type_field& tf : tp.fields()) {
-                if (counter++) {
-                    std::print(os, ",");
-                }
-                elroot.elems[counter - 1].ws1.source_to(os);
-                print_source_field(os, tf, elroot.elems[counter - 1]);
-                elroot.elems[counter - 1].ws2.source_to(os);
-            }
-            elroot.ws2.source_to(os);
-            std::print(os, "}}");
+            print_source_type(os, tp, elroot);
             return;
         }
 
         // array
 
         if (tp.is_built_in()) {
+            elroot.ws3.source_to(os);
             std::print(os, "{{");
             elroot.ws1.source_to(os);
+
             size_t counter{0};
             for (const elem& e : elroot.elems) {
                 if (counter++) {
@@ -539,21 +514,67 @@ class stmt_def_dat final : public statement {
                 e.tk.source_to(os);
                 e.ws2.source_to(os);
             }
+
             elroot.ws2.source_to(os);
             std::print(os, "}}");
+            elroot.ws4.source_to(os);
             return;
         }
 
         // user type array
     }
 
+    static auto print_source_type(std::ostream& os, const type& tp,
+                                  const elem& elroot) -> void {
+
+        if (not elroot.is_array) {
+            elroot.ws3.source_to(os);
+            std::print(os, "{{");
+            elroot.ws1.source_to(os);
+
+            size_t counter{0};
+            for (const type_field& tf : tp.fields()) {
+                if (counter++) {
+                    std::print(os, ",");
+                }
+                // elroot.elems[counter - 1].ws1.source_to(os);
+                print_source_field(os, tf, elroot.elems[counter - 1]);
+                // elroot.elems[counter - 1].ws2.source_to(os);
+            }
+
+            elroot.ws2.source_to(os);
+            std::print(os, "}}");
+            elroot.ws4.source_to(os);
+
+            return;
+        }
+
+        // array
+
+        elroot.ws3.source_to(os);
+        std::print(os, "{{");
+        elroot.ws1.source_to(os);
+
+        size_t counter{0};
+        for (const elem& e : elroot.elems) {
+            if (counter++) {
+                std::print(os, ",");
+            }
+            print_source(os, tp, e);
+        }
+
+        elroot.ws2.source_to(os);
+        std::print(os, "}}");
+        elroot.ws4.source_to(os);
+    }
+
     static auto print_source_field(std::ostream& os, const type_field& tf,
-                                   const elem& el) -> void {
+                                   const elem& elroot) -> void {
 
         if (tf.type_ptr->is_built_in()) {
             if (not tf.is_array) {
-                el.uops.source_to(os);
-                el.tk.source_to(os);
+                elroot.uops.source_to(os);
+                elroot.tk.source_to(os);
                 return;
             }
 
@@ -561,27 +582,35 @@ class stmt_def_dat final : public statement {
 
             // special case for string
 
-            if (el.tk.is_string()) {
-                el.tk.source_to(os);
+            if (elroot.tk.is_string()) {
+                elroot.tk.source_to(os);
                 return;
             }
 
             // normal case
 
+            elroot.ws3.source_to(os);
             std::print(os, "{{");
+            elroot.ws1.source_to(os);
+
             size_t counter{0};
-            for (const elem& e : el.elems) {
+            for (const elem& e : elroot.elems) {
                 if (counter++) {
                     std::print(os, ",");
                 }
                 e.uops.source_to(os);
                 e.tk.source_to(os);
             }
+
+            elroot.ws2.source_to(os);
             std::print(os, "}}");
+            elroot.ws4.source_to(os);
 
             return;
         }
 
         // user type
+
+        print_source_type(os, *tf.type_ptr, elroot);
     }
 };
