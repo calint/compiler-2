@@ -1,0 +1,21 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+type point { x, y }
+
+func main() {
+    var x = -1
+    var y = -2
+
+    var pts1 : point[4]
+    pts1 = { { x, x + y }, { -6, 4 } }
+
+    var pts2 : point[] = { { x * 2, y }, { 3, 4 } }
+
+    var pts3 : point[4] = { { y * 2, x }, { 7, 6 } }
+}
