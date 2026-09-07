@@ -8,6 +8,7 @@
 (func_keyword) @keyword.function
 (type_keyword) @keyword.type
 (dat_keyword) @keyword.storage
+(const_keyword) @keyword.storage
 (var_keyword) @keyword
 (if_keyword) @keyword.conditional
 (loop_keyword) @keyword.repeat

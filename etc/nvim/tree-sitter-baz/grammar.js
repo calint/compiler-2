@@ -63,6 +63,7 @@ module.exports = grammar({
     _definition: $ => choice(
       $.function_definition,
       $.type_definition,
+      $.const_definition,
     ),
 
     // func identifier ( parameters ) return_annotation body
@@ -148,6 +149,14 @@ module.exports = grammar({
     // -------------------------------------------------------------------------
     // 4. STATEMENT IMPLEMENTATIONS
     // -------------------------------------------------------------------------
+
+    // const identifier: type = expression
+    const_definition: $ => seq(
+      $.const_keyword,
+      field('destination', $.identifier),
+      '=',
+      field('initializer', $._expression)
+    ),
 
     // dat identifier : type = expression
     data_declaration: $ => seq(
@@ -401,6 +410,7 @@ module.exports = grammar({
     comment: $ => /#.*/,
 
     // Definition Keywords
+    const_keyword: $ => 'const',
     dat_keyword: $ => 'dat',
     func_keyword: $ => 'func',
     type_keyword: $ => 'type',

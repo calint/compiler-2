@@ -3,7 +3,8 @@
 --------------------------------------------------------------------------------
 [x] fix the token string escaping
 [x] stmt_def_dat: instead of writing to elem create and return in function
-[ ] a way to define constants in global name space
+[x] a way to define constants in global name space
+    => e.g. const yes = 1
 [ ] a way to use character e.g. 'a' instead of ascii code
 [o] a way to initiate a i8 array with a string:
     var hello : i8[] = "hello world"

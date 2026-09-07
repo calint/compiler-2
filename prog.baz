@@ -78,7 +78,7 @@ type str {
     data : i8[127]
 }
 
-# constant can be declared globally
+# constants are declared in global scope
 
 const yes = 1
 const no = 0
