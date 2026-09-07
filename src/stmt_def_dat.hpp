@@ -123,13 +123,16 @@ class stmt_def_dat final : public statement {
             }
         }
 
-        // special case for i8 string
+        // special case for string
+
         if (elroot_.tk.is_string()) {
             std::print(os, "=");
             ws2.source_to(os);
             elroot_.tk.source_to(os);
             return;
         }
+
+        // normal case
 
         if (not has_init_) {
             return;
@@ -200,7 +203,8 @@ class stmt_def_dat final : public statement {
 
         std::println(os, "; {}: {}[{}]", fldnm, tp.name(), elroot.array_size);
 
-        // special case for strings
+        // special case for string
+
         if (elroot.tk.is_string()) {
             std::print(os, "{} '", dd);
             elroot.tk.compile_to(os);
@@ -212,6 +216,8 @@ class stmt_def_dat final : public statement {
             }
             return;
         }
+
+        // normal case
 
         // array without initializer
         if (elroot.elems.empty()) {
@@ -289,6 +295,7 @@ class stmt_def_dat final : public statement {
 
         if (tp.is_built_in()) {
             // special case for strings
+
             elroot.tk = tz.next_token();
             if (elroot.tk.is_string()) {
                 if (elroot.array_size == 0) {
@@ -428,6 +435,24 @@ class stmt_def_dat final : public statement {
 
             // array
 
+            // special case for strings
+
+            elroot.tk = tz.next_token();
+            if (elroot.tk.is_string()) {
+                if (elroot.array_size == 0) {
+                    elroot.array_size = elroot.tk.string_size_bytes();
+                }
+                if (tf.type_ptr->name() == "i8") {
+                    return;
+                }
+                throw compiler_exception(elroot.tk,
+                                         "only 'i8' arrays can be strings");
+            }
+            elroot.tk = {};
+            tz.put_back_token(elroot.tk);
+
+            // normal case
+
             if (not tz.is_next_char('{')) {
                 throw compiler_exception(
                     tz, "expected '{' to open array initializer");
@@ -533,6 +558,15 @@ class stmt_def_dat final : public statement {
             }
 
             // array
+
+            // special case for string
+
+            if (el.tk.is_string()) {
+                el.tk.source_to(os);
+                return;
+            }
+
+            // normal case
 
             std::print(os, "{{");
             size_t counter{0};
