@@ -332,9 +332,9 @@ class stmt_def_dat final : public statement {
                 } else {
                     if (strsz > el.array_size) {
                         throw compiler_exception(
-                            el.tk,
-                            std::format("string size {} overflows array size{}",
-                                        strsz, el.array_size));
+                            el.tk, std::format(
+                                       "string size {} overflows array size {}",
+                                       strsz, el.array_size));
                     }
                     // todo check for overflow
                 }
