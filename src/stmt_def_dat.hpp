@@ -35,8 +35,8 @@ class stmt_def_dat final : public statement {
     token name_tk_;
     token type_tk_;
     token array_size_tk_;
-    token ws1_; // whitespace after '='
-    token ws2_; // whitespace after ']'
+    token ws1_; // whitespace after ']'
+    token ws2;  // whitespace after '='
     elem elroot_;
     bool has_init_{};
 
@@ -68,7 +68,7 @@ class stmt_def_dat final : public statement {
                     throw compiler_exception{type_tk_,
                                              "expected array size and ']'"};
                 }
-                ws2_ = tz.next_whitespace_token();
+                ws1_ = tz.next_whitespace_token();
             }
         }
 
@@ -81,7 +81,7 @@ class stmt_def_dat final : public statement {
         // expect initialization
         has_init_ = {tz.is_next_char('=')};
 
-        ws1_ = tz.next_whitespace_token();
+        ws2 = tz.next_whitespace_token();
 
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
@@ -119,14 +119,14 @@ class stmt_def_dat final : public statement {
                 std::print(os, "[");
                 array_size_tk_.source_to(os);
                 std::print(os, "]");
-                ws2_.source_to(os);
+                ws1_.source_to(os);
             }
         }
 
         // special case for i8 string
         if (elroot_.tk.is_string()) {
             std::print(os, "=");
-            ws1_.source_to(os);
+            ws2.source_to(os);
             elroot_.tk.source_to(os);
             return;
         }
@@ -137,7 +137,7 @@ class stmt_def_dat final : public statement {
 
         const type& tp{get_type()};
         std::print(os, "=");
-        ws1_.source_to(os);
+        ws2.source_to(os);
 
         print_source(os, tp, elroot_);
     }
