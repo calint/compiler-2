@@ -37,7 +37,7 @@ func main() {
     dat  point : point = { -1, -2 }
     dat  world : world = {  {-1,   2}    }
     dat  exits : exits =  {   {    1 ,  2   }  ,  {  3  ,  4  }  }
- #   dat  lines : line[2] = {{-1,-2},{4,5}}
+    dat  lines : line[2] = { {  { {-1,-2}, {4,5} } } }
     dat    str : string = {   "hello world\n"   }
     dat   hero : entity = { {  {   "msg1"    }     ,      {       "msg2"        }         }          }
     dat   strs : string[4] = { {"hello\n"} ,  {"world"} }
@@ -112,6 +112,11 @@ return
     assert(exits.from[1] == 2)
     assert(exits.to[0] == 3)
     assert(exits.to[1] == 4)
+
+    assert(lines[0].points[0].x == -1)
+    assert(lines[0].points[0].y == -2)
+    assert(lines[0].points[1].x == 4)
+    assert(lines[0].points[1].y == 5)
 
     assert(str.data[0] == 104) # 'h'
     assert(str.data[11] == 10) # '\n'

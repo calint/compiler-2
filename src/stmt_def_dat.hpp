@@ -48,17 +48,20 @@ class stmt_def_dat final : public statement {
             throw compiler_exception(name_tk_, "expected name of data");
         }
 
+        bool is_array{false};
+        size_t array_size{0};
+
         // check if type declared
         if (tz.is_next_char(':')) {
             type_tk_ = tz.next_token();
             if (tz.is_next_char('[')) {
-                elroot_.is_array = true;
+                is_array = true;
                 array_size_tk_ = tz.next_token();
                 if (const std::optional<int64_t> value{toc::parse_to_constant(
                         array_size_tk_, array_size_tk_.text())};
                     value) {
-                    elroot_.array_size = static_cast<size_t>(*value);
-                    if (elroot_.array_size <= 0) {
+                    array_size = static_cast<size_t>(*value);
+                    if (array_size <= 0) {
                         throw compiler_exception{
                             array_size_tk_,
                             "array sizes must be greater than 0"};
@@ -89,13 +92,16 @@ class stmt_def_dat final : public statement {
             .name{name_tk_.text()},
             .type_ptr = &tp,
             .declared_at_tk{name_tk_},
-            .is_array = elroot_.is_array,
-            .array_size = elroot_.array_size,
+            .is_array = is_array,
+            .array_size = array_size,
         };
         tc.add_var(name_tk_, null_strm, 0, var, true);
 
         if (has_init_) {
-            parse_elem(tc, tz, tp, elroot_);
+            elroot_ = parse_elem(tc, tz, tp, is_array, array_size);
+        } else {
+            elroot_.is_array = is_array;
+            elroot_.array_size = array_size;
         }
 
         tc.add_dat(this);
@@ -142,7 +148,7 @@ class stmt_def_dat final : public statement {
         std::print(os, "=");
         ws2.source_to(os);
 
-        print_source(os, tp, elroot_);
+        print_source_elem(os, tp, elroot_);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
@@ -296,162 +302,164 @@ class stmt_def_dat final : public statement {
         compile_data_type(tc, os, tf.name, *tf.type_ptr, elroot);
     }
 
-    static auto parse_elem(toc& tc, tokenizer& tz, const type& tp, elem& elroot)
-        -> void {
+    static auto parse_elem(toc& tc, tokenizer& tz, const type& tp,
+                           const bool is_array, const size_t array_size)
+        -> elem {
 
-        if (not elroot.is_array) {
+        if (not is_array) {
             if (tp.is_built_in()) {
-                parse_builtin(tc, tz, tp, elroot);
-                return;
+                return parse_builtin(tc, tz, tp);
             }
 
             // user type
 
-            parse_type(tc, tz, tp, elroot);
-            return;
+            return parse_type(tc, tz, tp);
         }
 
         // array
 
+        elem el{};
+        el.is_array = is_array;
+        el.array_size = array_size;
+
         if (tp.is_built_in()) {
             // special case for string
-
-            elroot.tk = tz.next_token();
-            if (elroot.tk.is_string()) {
-                if (elroot.array_size == 0) {
-                    elroot.array_size = elroot.tk.string_size_bytes();
+            el.tk = tz.next_token();
+            if (el.tk.is_string()) {
+                const size_t strsz{el.tk.string_size_bytes()};
+                if (el.array_size == 0) {
+                    el.array_size = strsz;
+                } else {
+                    if (strsz > el.array_size) {
+                        throw compiler_exception(
+                            el.tk,
+                            std::format("string size {} overflows array size{}",
+                                        strsz, el.array_size));
+                    }
+                    // todo check for overflow
                 }
                 if (tp.name() == "i8") {
-                    return;
+                    return el;
                 }
-                throw compiler_exception(elroot.tk,
+                throw compiler_exception(el.tk,
                                          "only 'i8' arrays can be strings");
             }
-            tz.put_back_token(elroot.tk);
-            elroot.tk = {};
+            tz.put_back_token(el.tk);
 
             // normal case
 
-            elroot.ws1 = tz.next_whitespace_token();
+            el.ws1 = tz.next_whitespace_token();
             if (not tz.is_next_char('{')) {
                 throw compiler_exception(
                     tz, "expected '{' to open array initializer");
             }
-            elroot.ws2 = tz.next_whitespace_token();
+            el.ws2 = tz.next_whitespace_token();
 
             size_t counter{0};
             while (true) {
-                elroot.elems.emplace_back(unary_ops{}, token{}, 0, token{},
-                                          token{}, token{}, token{}, false, 0,
-                                          std::vector<elem>{});
-                parse_builtin(tc, tz, tp, elroot.elems.back());
+                el.elems.emplace_back(parse_builtin(tc, tz, tp));
                 ++counter;
                 if (not tz.is_next_char(',')) {
                     break;
                 }
             }
 
-            elroot.ws3 = tz.next_whitespace_token();
+            el.ws3 = tz.next_whitespace_token();
             if (not tz.is_next_char('}')) {
                 throw compiler_exception(
                     tz, "expected '}' to close array initializer");
             }
-            elroot.ws4 = tz.next_whitespace_token();
+            el.ws4 = tz.next_whitespace_token();
 
-            if (elroot.array_size != 0 and
-                elroot.elems.size() > elroot.array_size) {
+            if (el.array_size != 0 and el.elems.size() > el.array_size) {
                 throw compiler_exception(
                     tz,
                     std::format("array size is {} but contains {} initializers",
-                                elroot.array_size, elroot.elems.size()));
+                                el.array_size, el.elems.size()));
             }
 
-            if (elroot.array_size == 0) {
-                elroot.array_size = counter;
+            if (el.array_size == 0) {
+                el.array_size = counter;
             }
 
-            return;
+            return el;
         }
 
         // user type array
 
-        elroot.ws1 = tz.next_whitespace_token();
+        el.ws1 = tz.next_whitespace_token();
         if (not tz.is_next_char('{')) {
             throw compiler_exception(tz,
                                      "expected '{' to open array initializer");
         }
-        elroot.ws2 = tz.next_whitespace_token();
+        el.ws2 = tz.next_whitespace_token();
 
         size_t counter{0};
         while (true) {
-            elroot.elems.emplace_back(unary_ops{}, token{}, 0, token{}, token{},
-                                      token{}, token{}, false, 0,
-                                      std::vector<elem>{});
-            // elroot.elems.back().ws1 = tz.next_whitespace_token();
-            parse_type(tc, tz, tp, elroot.elems.back());
-            // elroot.elems.back().ws2 = tz.next_whitespace_token();
+            el.elems.emplace_back(parse_type(tc, tz, tp));
             ++counter;
             if (not tz.is_next_char(',')) {
                 break;
             }
         }
 
-        elroot.ws3 = tz.next_whitespace_token();
+        el.ws3 = tz.next_whitespace_token();
         if (not tz.is_next_char('}')) {
             throw compiler_exception(tz,
                                      "expected '}' to close array initializer");
         }
-        elroot.ws4 = tz.next_whitespace_token();
+        el.ws4 = tz.next_whitespace_token();
 
-        if (elroot.array_size != 0 and
-            elroot.elems.size() > elroot.array_size) {
+        if (array_size != 0 and el.elems.size() > el.array_size) {
             throw compiler_exception(
                 tz, std::format("array size is {} but contains {} initializers",
-                                elroot.array_size, elroot.elems.size()));
+                                array_size, el.elems.size()));
         }
 
-        if (elroot.array_size == 0) {
-            elroot.array_size = counter;
+        if (array_size == 0) {
+            el.array_size = counter;
         }
+
+        return el;
     }
 
-    static auto parse_builtin(toc& tc, tokenizer& tz, const type& tp,
-                              elem& elroot) -> void {
-
-        unary_ops uops{tz};
-        token tk{tz.next_token()};
-        elroot.uops = uops;
-        elroot.tk = tk;
+    static auto parse_builtin(toc& tc, tokenizer& tz, const type& tp) -> elem {
+        elem el{};
+        el.uops = unary_ops{tz};
+        el.tk = tz.next_token();
         if (&tp == &tc.get_type_bool()) {
-            if (tk.is_text("true")) {
-                elroot.value = 1;
-            } else if (tk.is_text("false")) {
-                elroot.value = 0;
+            if (el.tk.is_text("true")) {
+                el.value = 1;
+            } else if (el.tk.is_text("false")) {
+                el.value = 0;
             } else {
                 throw compiler_exception(
-                    tk, std::format("boolean field '{}' must be true or false",
-                                    tp.name()));
+                    el.tk,
+                    std::format("boolean field '{}' must be true or false",
+                                tp.name()));
             }
-            return;
+            return el;
         }
-        if (std::optional<int64_t> num{tc.parse_to_constant(tk, tk.text())}) {
-            elroot.value = *num;
-            return;
+        if (std::optional<int64_t> num{
+                tc.parse_to_constant(el.tk, el.tk.text())}) {
+            el.value = *num;
+            return el;
         }
         throw compiler_exception(
-            tk,
+            el.tk,
             std::format("element of type '{}' must be a constant", tp.name()));
     }
 
-    static auto parse_type(toc& tc, tokenizer& tz, const type& tp, elem& elroot)
-        -> void {
+    static auto parse_type(toc& tc, tokenizer& tz, const type& tp) -> elem {
 
-        elroot.ws1 = tz.next_whitespace_token();
+        elem el{};
+
+        el.ws1 = tz.next_whitespace_token();
         if (not tz.is_next_char('{')) {
             throw compiler_exception(tz,
                                      "expected '{' to open type initializer");
         }
-        elroot.ws2 = tz.next_whitespace_token();
+        el.ws2 = tz.next_whitespace_token();
 
         size_t counter{0};
         for (const type_field& tf : tp.fields()) {
@@ -463,24 +471,22 @@ class stmt_def_dat final : public statement {
                                 tf.name));
                 }
             }
-            elroot.elems.emplace_back(unary_ops{}, token{}, 0, token{}, token{},
-                                      token{}, token{}, tf.is_array,
-                                      tf.array_size, std::vector<elem>{});
-            //   elroot.elems.back().ws1 = tz.next_whitespace_token();
-            parse_elem(tc, tz, *tf.type_ptr, elroot.elems.back());
-            // elroot.elems.back().ws2 = tz.next_whitespace_token();
+            el.elems.emplace_back(
+                parse_elem(tc, tz, *tf.type_ptr, tf.is_array, tf.array_size));
         }
 
-        elroot.ws3 = tz.next_whitespace_token();
+        el.ws3 = tz.next_whitespace_token();
         if (not tz.is_next_char('}')) {
             throw compiler_exception(tz,
                                      "expected '}' to close type initializer");
         }
-        elroot.ws4 = tz.next_whitespace_token();
+        el.ws4 = tz.next_whitespace_token();
+
+        return el;
     }
 
-    static auto print_source(std::ostream& os, const type& tp,
-                             const elem& elroot) -> void {
+    static auto print_source_elem(std::ostream& os, const type& tp,
+                                  const elem& elroot) -> void {
 
         if (not elroot.is_array) {
             if (tp.is_built_in()) {
@@ -558,7 +564,7 @@ class stmt_def_dat final : public statement {
             if (counter++) {
                 std::print(os, ",");
             }
-            print_source(os, tp, e);
+            print_source_elem(os, tp, e);
         }
 
         elroot.ws3.source_to(os);
