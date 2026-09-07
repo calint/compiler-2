@@ -140,7 +140,7 @@ auto main(const int argc, const char* argv[]) -> int {
         } else if (arg == nopt_option) {
             optimize_jumps = false;
         } else if (not arg.starts_with("--")) {
-            // Assume it's the filename
+            // assume it's the filename
             src_file_name = args[i];
         } else {
             std::println(stderr, "Error: Unknown option: {}", arg);
