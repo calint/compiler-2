@@ -10,7 +10,8 @@
       "-Wno-pre-c++20-compat-pedantic",
       "-Wno-weak-vtables",
       "-Wno-padded",
-      "-Wno-undefined-inline"
+      "-Wno-undefined-inline",
+      "-Wno-braced-scalar-init"
     ],
     "directory": "/home/c/w/compiler-2",
     "file": "src/main.cpp"

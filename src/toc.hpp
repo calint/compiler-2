@@ -277,9 +277,9 @@ class toc final {
                             source_location_hr(fn.declared_at_tk))};
         }
 
-        funcs_.put(std::move(name), {.def = func_def,
-                                     .declared_at_tk = src_loc_tk,
-                                     .type_ptr = &return_type});
+        funcs_.put(std::move(name), {.def{func_def},
+                                     .declared_at_tk{src_loc_tk},
+                                     .type_ptr{&return_type}});
 
         if (func_def) {
             func_defs_.emplace_back(func_def);
@@ -1024,7 +1024,7 @@ class toc final {
         return {
             .id{},
             .operand{},
-            .type_ptr = &get_type_void(),
+            .type_ptr{&get_type_void()},
             .elem_path{},
             .type_path{},
             .lea_path{},
@@ -1042,12 +1042,12 @@ class toc final {
         return {
             .id{reg},
             .operand{reg},
-            .type_ptr = &tpe,
+            .type_ptr{&tpe},
             .elem_path{std::string{reg}},
             .type_path{&tpe},
             .lea_path{},
             .lea{},
-            .ident_type = ident_info::ident_type::REGISTER,
+            .ident_type{ident_info::ident_type::REGISTER},
         };
     }
 
@@ -1352,12 +1352,12 @@ class toc final {
             return {
                 .id{ident},
                 .operand{id.str()},
-                .type_ptr = &tpe,
+                .type_ptr{&tpe},
                 .elem_path{id.str()},
                 .type_path{&tpe},
                 .lea_path{},
                 .lea{},
-                .ident_type = ident_info::ident_type::REGISTER,
+                .ident_type{ident_info::ident_type::REGISTER},
             };
         }
 
@@ -1367,12 +1367,12 @@ class toc final {
             return {
                 .id{ident},
                 .operand{id.str()},
-                .type_ptr = &get_builtin_type_for_operand(src_loc_tk, id.str()),
+                .type_ptr{&get_builtin_type_for_operand(src_loc_tk, id.str())},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
                 .lea{},
-                .ident_type = ident_info::ident_type::VAR,
+                .ident_type{ident_info::ident_type::VAR},
             };
         }
 
@@ -1390,8 +1390,8 @@ class toc final {
             return {
                 .id{ident},
                 .operand{id.str(), true},
-                .const_value = *value,
-                .type_ptr = &get_type_default(),
+                .const_value{*value},
+                .type_ptr{&get_type_default()},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
@@ -1404,8 +1404,8 @@ class toc final {
             return {
                 .id{ident},
                 .operand{"true", true},
-                .const_value = 1,
-                .type_ptr = &get_type_bool(),
+                .const_value{1},
+                .type_ptr{&get_type_bool()},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
@@ -1417,8 +1417,8 @@ class toc final {
             return {
                 .id{ident},
                 .operand{"false", true},
-                .const_value = 0,
-                .type_ptr = &get_type_bool(),
+                .const_value{0},
+                .type_ptr{&get_type_bool()},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
@@ -1430,7 +1430,7 @@ class toc final {
         return {
             .id{},
             .operand{},
-            .type_ptr = &get_type_void(),
+            .type_ptr{&get_type_void()},
             .elem_path{},
             .type_path{},
             .lea_path{},

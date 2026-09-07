@@ -85,10 +85,10 @@ class stmt_def_dat final : public statement {
         null_stream null_strm;
         const var_info var{
             .name{name_tk_.text()},
-            .type_ptr = &tp,
+            .type_ptr{&tp},
             .declared_at_tk{name_tk_},
-            .is_array = is_array,
-            .array_size = array_size,
+            .is_array{is_array},
+            .array_size{array_size},
         };
         tc.add_var(name_tk_, null_strm, 0, var, true);
 
@@ -153,10 +153,10 @@ class stmt_def_dat final : public statement {
         tc.comment_source(*this, os, indent);
         const var_info var{
             .name{name_tk_.text()},
-            .type_ptr = &get_type(),
+            .type_ptr{&get_type()},
             .declared_at_tk{name_tk_},
-            .is_array = elroot_.is_array,
-            .array_size = elroot_.array_size,
+            .is_array{elroot_.is_array},
+            .array_size{elroot_.array_size},
         };
         tc.add_var(name_tk_, os, indent, var, true);
     }
