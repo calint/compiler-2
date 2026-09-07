@@ -40,6 +40,7 @@ func main() {
  #   dat  lines : line[2] = {{-1,-2},{4,5}}
     dat    str : string = {   "hello world\n"   }
     dat   hero : entity = { {  {   "msg1"    }     ,      {       "msg2"        }         }          }
+    dat   strs : string[2] = { {"hello\n"} ,  {"world"} }
 
     assert(data_a == 0)
     data_a = 0xff
@@ -113,4 +114,8 @@ return
 
     assert(str.data[0] == 104) # 'h'
     assert(str.data[11] == 10) # '\n'
+
+    assert(strs[0].data[0] == 104) # 'h'
+    assert(strs[0].data[11] == 10) # '\n'
+    assert(strs[1].data[0] == 119) # 'w'
 }

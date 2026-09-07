@@ -25,10 +25,10 @@ class stmt_def_dat final : public statement {
         unary_ops uops;
         token tk;
         int64_t value{};
-        token ws1; // whitespace after '{'
-        token ws2; // when field is array the whitespace before initializer '}'
-        token ws3; // whitespace before '{'
-        token ws4;
+        token ws1; // whitespace before '{'
+        token ws2; // whitespace after '{'
+        token ws3; // whitespace before '}'
+        token ws4; // whitespace after '}'
         bool is_array{};
         size_t array_size{};
         std::vector<elem> elems;
@@ -279,7 +279,7 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        std::println(os, "; pad {} '{}' elements of size {}", diff, tp.name(),
+        std::println(os, "; pad {} '{}' of size {}", diff, tp.name(),
                      tp.size());
         std::println(os, "times {} db 0", diff * tp.size());
     }
@@ -334,12 +334,12 @@ class stmt_def_dat final : public statement {
 
             // normal case
 
-            elroot.ws3 = tz.next_whitespace_token();
+            elroot.ws1 = tz.next_whitespace_token();
             if (not tz.is_next_char('{')) {
                 throw compiler_exception(
                     tz, "expected '{' to open array initializer");
             }
-            elroot.ws1 = tz.next_whitespace_token();
+            elroot.ws2 = tz.next_whitespace_token();
 
             size_t counter{0};
             while (true) {
@@ -353,7 +353,7 @@ class stmt_def_dat final : public statement {
                 }
             }
 
-            elroot.ws2 = tz.next_whitespace_token();
+            elroot.ws3 = tz.next_whitespace_token();
             if (not tz.is_next_char('}')) {
                 throw compiler_exception(
                     tz, "expected '}' to close array initializer");
@@ -377,12 +377,12 @@ class stmt_def_dat final : public statement {
 
         // user type array
 
-        elroot.ws3 = tz.next_whitespace_token();
+        elroot.ws1 = tz.next_whitespace_token();
         if (not tz.is_next_char('{')) {
             throw compiler_exception(tz,
                                      "expected '{' to open array initializer");
         }
-        elroot.ws1 = tz.next_whitespace_token();
+        elroot.ws2 = tz.next_whitespace_token();
 
         size_t counter{0};
         while (true) {
@@ -398,7 +398,7 @@ class stmt_def_dat final : public statement {
             }
         }
 
-        elroot.ws2 = tz.next_whitespace_token();
+        elroot.ws3 = tz.next_whitespace_token();
         if (not tz.is_next_char('}')) {
             throw compiler_exception(tz,
                                      "expected '}' to close array initializer");
@@ -448,12 +448,12 @@ class stmt_def_dat final : public statement {
     static auto parse_type(toc& tc, tokenizer& tz, const type& tp, elem& elroot)
         -> void {
 
-        elroot.ws3 = tz.next_whitespace_token();
+        elroot.ws1 = tz.next_whitespace_token();
         if (not tz.is_next_char('{')) {
             throw compiler_exception(tz,
                                      "expected '{' to open type initializer");
         }
-        elroot.ws1 = tz.next_whitespace_token();
+        elroot.ws2 = tz.next_whitespace_token();
 
         size_t counter{0};
         for (const type_field& tf : tp.fields()) {
@@ -473,7 +473,7 @@ class stmt_def_dat final : public statement {
             // elroot.elems.back().ws2 = tz.next_whitespace_token();
         }
 
-        elroot.ws2 = tz.next_whitespace_token();
+        elroot.ws3 = tz.next_whitespace_token();
         if (not tz.is_next_char('}')) {
             throw compiler_exception(tz,
                                      "expected '}' to close type initializer");
@@ -500,49 +500,49 @@ class stmt_def_dat final : public statement {
         // array
 
         if (tp.is_built_in()) {
-            elroot.ws3.source_to(os);
-            std::print(os, "{{");
             elroot.ws1.source_to(os);
+            std::print(os, "{{");
+            elroot.ws2.source_to(os);
 
             size_t counter{0};
             for (const elem& e : elroot.elems) {
                 if (counter++) {
                     std::print(os, ",");
                 }
-                e.ws1.source_to(os);
+                e.ws2.source_to(os);
                 e.uops.source_to(os);
                 e.tk.source_to(os);
-                e.ws2.source_to(os);
+                e.ws3.source_to(os);
             }
 
-            elroot.ws2.source_to(os);
+            elroot.ws3.source_to(os);
             std::print(os, "}}");
             elroot.ws4.source_to(os);
             return;
         }
 
         // user type array
+
+        print_source_type(os, tp, elroot);
     }
 
     static auto print_source_type(std::ostream& os, const type& tp,
                                   const elem& elroot) -> void {
 
         if (not elroot.is_array) {
-            elroot.ws3.source_to(os);
-            std::print(os, "{{");
             elroot.ws1.source_to(os);
+            std::print(os, "{{");
+            elroot.ws2.source_to(os);
 
             size_t counter{0};
             for (const type_field& tf : tp.fields()) {
                 if (counter++) {
                     std::print(os, ",");
                 }
-                // elroot.elems[counter - 1].ws1.source_to(os);
                 print_source_field(os, tf, elroot.elems[counter - 1]);
-                // elroot.elems[counter - 1].ws2.source_to(os);
             }
 
-            elroot.ws2.source_to(os);
+            elroot.ws3.source_to(os);
             std::print(os, "}}");
             elroot.ws4.source_to(os);
 
@@ -551,9 +551,9 @@ class stmt_def_dat final : public statement {
 
         // array
 
-        elroot.ws3.source_to(os);
-        std::print(os, "{{");
         elroot.ws1.source_to(os);
+        std::print(os, "{{");
+        elroot.ws2.source_to(os);
 
         size_t counter{0};
         for (const elem& e : elroot.elems) {
@@ -563,7 +563,7 @@ class stmt_def_dat final : public statement {
             print_source(os, tp, e);
         }
 
-        elroot.ws2.source_to(os);
+        elroot.ws3.source_to(os);
         std::print(os, "}}");
         elroot.ws4.source_to(os);
     }
@@ -589,9 +589,9 @@ class stmt_def_dat final : public statement {
 
             // normal case
 
-            elroot.ws3.source_to(os);
-            std::print(os, "{{");
             elroot.ws1.source_to(os);
+            std::print(os, "{{");
+            elroot.ws2.source_to(os);
 
             size_t counter{0};
             for (const elem& e : elroot.elems) {
@@ -602,7 +602,7 @@ class stmt_def_dat final : public statement {
                 e.tk.source_to(os);
             }
 
-            elroot.ws2.source_to(os);
+            elroot.ws3.source_to(os);
             std::print(os, "}}");
             elroot.ws4.source_to(os);
 
