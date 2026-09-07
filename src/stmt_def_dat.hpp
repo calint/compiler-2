@@ -18,8 +18,6 @@
 #include "unary_ops.hpp"
 
 class stmt_def_dat final : public statement {
-    static constexpr size_t threshold_for_rep_stos{32};
-
     class elem {
       public:
         unary_ops uops;
