@@ -48,10 +48,10 @@ run `prog.baz`
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    42           1471            770           6998
+C/C++ Header                    42           1471            770           7004
 C++                              1             84            105            558
 -------------------------------------------------------------------------------
-SUM:                            43           1555            875           7556
+SUM:                            43           1555            875           7562
 -------------------------------------------------------------------------------
 ```
 
@@ -1353,12 +1353,12 @@ section .bss
     num_buffer: resb 21
 section .rodata
 dat:
-db '', 10, ''
-db '.'
-db 'hello '
-db 'that is not a name.', 10, ''
-db 'enter name:', 10, ''
-db 'hello world from baz', 10, ''
+db `\n`
+db `.`
+db `hello `
+db `that is not a name.\n`
+db `enter name:\n`
+db `hello world from baz\n`
 dat.len equ $ - dat
 ```
 
@@ -3892,17 +3892,17 @@ section .bss
 section .rodata
 dat:
 ; nl: i8[1]
-db '', 10, ''
+db `\n`
 ; dot: i8[1]
-db '.'
+db `.`
 ; prompt3: i8[6]
-db 'hello '
+db `hello `
 ; prompt2: i8[20]
-db 'that is not a name.', 10, ''
+db `that is not a name.\n`
 ; prompt1: i8[12]
-db 'enter name:', 10, ''
+db `enter name:\n`
 ; hello: i8[21]
-db 'hello world from baz', 10, ''
+db `hello world from baz\n`
 dat.len equ $ - dat
 
 ; max scratch registers in use: 5
