@@ -1,11 +1,11 @@
 --------------------------------------------------------------------------------
 [o]: ongoing [x]: done [-]: not completed with reason specified
 --------------------------------------------------------------------------------
+[ ] a way to use character e.g. 'a' instead of ascii code
 [x] fix the token string escaping
 [x] stmt_def_dat: instead of writing to elem create and return in function
 [x] a way to define constants in global name space
     => e.g. const yes = 1
-[ ] a way to use character e.g. 'a' instead of ascii code
 [o] a way to initiate a i8 array with a string:
     var hello : i8[] = "hello world"
     => on dat
@@ -14,13 +14,6 @@
     var input_buffer : str = {0, 0} where second element is an array
     => on dat
     [ ] on var
-[ ] consider changing function signatures from
-      func inv(i : i32) : i32 res {
-    to
-      func inv(i : i32) : res i32 {
-    or minimal
-      func inv(i i32) res i32 {
-      func inv(i) res {
 [o] stmt_assign_var::compile: unified way of determining the effective address
     of an identifier including indexing, type offset navigation etc
     => make_ident_info should do that and then passed around instead of
@@ -46,13 +39,20 @@
     to unspecified register size with sign extension
     => 255 is outside the range of i8: -128 -> 127
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
-[ ] built-in: mov and syscall functions to statements and remove special
-    built-in functions declared in program
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
     if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] toc::rep_movs: heuristics around when to switch from movs to rep
 [ ] handle case where x86_64 cannot load immediate 64 bit value to memory
 [ ] function call of type lst.add(x) that calls list_add(self, x)
+[ ] consider changing function signatures from
+      func inv(i : i32) : i32 res {
+    to
+      func inv(i : i32) : res i32 {
+    or minimal
+      func inv(i i32) res i32 {
+      func inv(i) res {
+[ ] built-in: mov and syscall functions to statements and remove special
+    built-in functions declared in program
 [ ] ponder an iterator of elements in array that does not require bounds
     checking:
       for(e : arr) {
@@ -60,7 +60,8 @@
       }
 [ ] const allowed in function declaration and code
     foo(ix : const i32) { const x = ix }
-[ ] array implicit identifiers. var ar[10] ar.len
+[x] array implicit identifiers. var ar[10] ar.len
+    => array_size_of(...)
 [ ] a return reference might be used as an argument to a function that set it.
     current UB detection does not allow that
 [ ] stmt_identifier: 357: if register will be just offset without indexing
@@ -84,7 +85,6 @@
 [ ] instrumentation to find out max heap and stack usage by the compiler
 [ ] stmt_call: check arguments vs parameters in constructor instead of at
     compile
-[ ] implement strings
 [ ] support for float and double?
 [ ] support avx512 operations
 [ ] a way to tell the compiler to align variables on 4, 8, 16 etc boundaries
@@ -96,7 +96,7 @@
 [ ] handle constant array index case
 [ ] break: exit current block instead of just loop?
 [ ] ponder representing nasm instructions in classes to have better opportunity
-    to optmize compared to current text based optmize_jump_x
+    to optimize compared to current text based optimize_jump_x
 [ ] array_copy does not handle when destination overlaps source
     => issue warning when that can be detected at compile-time
 [ ] lea_path may not be necessary since only most recent lea relevant
