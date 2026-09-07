@@ -10,6 +10,7 @@
 
 #include "compiler_exception.hpp"
 #include "statement.hpp"
+#include "stmt_def_const.hpp"
 #include "stmt_def_func.hpp"
 #include "stmt_def_type.hpp"
 #include "toc.hpp"
@@ -73,6 +74,9 @@ class program final {
             } else if (tk.is_text("type")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_def_type>(tc_, tk, tz));
+            } else if (tk.is_text("const")) {
+                statements_.emplace_back(
+                    std::make_unique<stmt_def_const>(tc_, tk, tz));
             } else if (tk.text().starts_with("#")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_comment>(tc_, unary_ops{}, tk, tz));

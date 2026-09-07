@@ -215,6 +215,11 @@ class toc final {
     bool bounds_check_with_line_{};
     bool bounds_check_lower_{};
     std::vector<const statement*> data_;
+    struct constant {
+        token src_loc_tk;
+        int64_t value;
+    };
+    lut<constant> constants_;
 
     std::regex regex_ws_{R"(\s+)"};
     std::regex regex_trim_{R"(^\s+|\s+$)"};
@@ -251,6 +256,18 @@ class toc final {
 
     auto add_alias(const alias_info& ai) -> void {
         frames_.back().add_alias(ai);
+    }
+
+    auto add_const(const token& src_loc_tk, const std::string_view name,
+                   const int64_t value) {
+        if (constants_.has(name)) {
+            constant c{constants_.get_const_ref(name)};
+            throw compiler_exception(
+                src_loc_tk,
+                std::format("constant '{}' already defined at {}", name,
+                            source_location_hr(c.src_loc_tk)));
+        }
+        constants_.put(std::string{name}, {src_loc_tk, value});
     }
 
     auto add_dat(const statement* stmt) -> void {
@@ -1396,6 +1413,7 @@ class toc final {
                 .type_path{&get_type_default()},
                 .lea_path{},
                 .lea{},
+                .ident_type{ident_info::ident_type::CONST},
             };
         }
 
@@ -1410,6 +1428,7 @@ class toc final {
                 .type_path{&get_type_default()},
                 .lea_path{},
                 .lea{},
+                .ident_type{ident_info::ident_type::CONST},
             };
         }
 
@@ -1423,6 +1442,23 @@ class toc final {
                 .type_path{&get_type_default()},
                 .lea_path{},
                 .lea{},
+                .ident_type{ident_info::ident_type::CONST},
+            };
+        }
+
+        // is 'id' a constant?
+        if (constants_.has(id.str())) {
+            constant c{constants_.get_const_ref(id.str())};
+            return {
+                .id{ident},
+                .operand{id.str(), true},
+                .const_value{c.value},
+                .type_ptr{&get_type_default()},
+                .elem_path{id.str()},
+                .type_path{&get_type_default()},
+                .lea_path{},
+                .lea{},
+                .ident_type{ident_info::ident_type::CONST},
             };
         }
 

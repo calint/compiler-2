@@ -147,3 +147,4 @@ SRC=t147 && EXP=0 && RUN
 SRC=t148 && EXP=0 && RUN
 SRC=t149 && EXP=0 && RUN
 SRC=t150 && EXP=0 && RUN
+SRC=t151 && EXP=0 && RUN
