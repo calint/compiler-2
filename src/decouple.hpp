@@ -282,7 +282,7 @@ struct ident_info {
     std::vector<const type*> type_path;
     std::vector<std::string> lea_path;
     std::string lea;
-    ident_type ident_type{ident_type::CONST};
+    ident_type ident_type{};
 
     [[nodiscard]] auto is_const() const -> bool {
         return ident_type == ident_type::CONST;
