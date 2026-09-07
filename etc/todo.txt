@@ -1,9 +1,9 @@
-[o] constant initialized variables in "main" have the initial data directly
+[x] constant initialized variables in "main" have the initial data directly
     written by the compiler into the stack prepared for execution removing
     initiation stage using code and removing "field"
     => data written to stack saved in .rodata
     [x] built-in types
-    [ ] user types
+    [x] user types
 [ ] a way to define constants in global name space
 [ ] a way to use character e.g. 'a' instead of ascii code
 [x] remove the global "field"
