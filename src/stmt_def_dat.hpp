@@ -173,6 +173,9 @@ class stmt_def_dat final : public statement {
             compile_data_type(tc, os, name_tk_.text(), tp, elems_);
             return;
         }
+
+        // array of user type
+        // todo
     }
 
   private:
@@ -241,9 +244,9 @@ class stmt_def_dat final : public statement {
         return;
     }
 
-    auto compile_data_type(const toc& tc, std::ostream& os,
-                           const std::string_view nm, const type& tp,
-                           const std::vector<elem>& els) const -> void {
+    static auto compile_data_type(const toc& tc, std::ostream& os,
+                                  const std::string_view nm, const type& tp,
+                                  const std::vector<elem>& els) -> void {
 
         std::println(os, "; {}: {}", nm, tp.name());
         const std::span<const type_field>& flds{tp.fields()};
@@ -255,8 +258,8 @@ class stmt_def_dat final : public statement {
         }
     }
 
-    auto compile_data_type_field(const toc& tc, std::ostream& os,
-                                 const type_field& tf, const elem& el) const
+    static auto compile_data_type_field(const toc& tc, std::ostream& os,
+                                        const type_field& tf, const elem& el)
         -> void {
 
         if (tf.type_ptr->is_built_in()) {
