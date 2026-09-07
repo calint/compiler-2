@@ -122,11 +122,6 @@ class frame final {
         return aliases_.get_const_ref(name);
     }
 
-    [[nodiscard]] auto get_func_return_info() const
-        -> const std::optional<func_return_info>& {
-        return func_ret_;
-    }
-
     [[nodiscard]] auto get_var_const_ref(const std::string_view name) const
         -> const var_info& {
 
@@ -190,8 +185,6 @@ class ident_path final {
         id_ = std::format("{}.{}", id_, path_elem);
         refresh_path();
     }
-
-    auto set_base(std::string_view name) -> void { path_[0] = name; }
 };
 
 class toc final {
@@ -233,10 +226,10 @@ class toc final {
     static constexpr size_t size_dword{4};
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
-    static constexpr std::string def_data_qword{"dq"};
-    static constexpr std::string def_data_dword{"dd"};
-    static constexpr std::string def_data_word{"dw"};
-    static constexpr std::string def_data_byte{"db"};
+    static constexpr std::string_view def_data_qword{"dq"};
+    static constexpr std::string_view def_data_dword{"dd"};
+    static constexpr std::string_view def_data_word{"dw"};
+    static constexpr std::string_view def_data_byte{"db"};
 
     toc(const std::string_view source, const bool bounds_check_upper,
         const bool bounds_check_lower, const bool bounds_check_with_line)
@@ -1140,14 +1133,6 @@ class toc final {
         return regex_ws_;
     }
 
-    [[nodiscard]] auto regex_nams_number_register() const -> const std::regex& {
-        return regex_nasm_number_register_;
-    }
-
-    [[nodiscard]] auto regex_trim() const -> const std::regex& {
-        return regex_trim_;
-    }
-
     [[nodiscard]] auto regex_nasm_comment() const -> const std::regex& {
         return regex_nasm_comment_;
     }
@@ -1570,13 +1555,13 @@ class toc final {
     [[nodiscard]] static auto get_data_def(const size_t size)
         -> std::string_view {
         switch (size) {
-        case 8:
+        case size_qword:
             return def_data_qword;
-        case 4:
+        case size_dword:
             return def_data_dword;
-        case 2:
+        case size_word:
             return def_data_word;
-        case 1:
+        case size_byte:
             return def_data_byte;
         default:
             std::unreachable();
@@ -1598,19 +1583,6 @@ class toc final {
         throw compiler_exception(
             src_loc_tk, std::format("field '{}' not found in type '{}'",
                                     field_name, tp.name()));
-    }
-
-    [[nodiscard]] static auto get_operand_address_str(const std::string_view op)
-        -> std::string {
-
-        if (const std::optional<std::string> between_brackets{
-                get_text_between_brackets(op)};
-            between_brackets) {
-
-            return *between_brackets;
-        }
-
-        return std::string{op};
     }
 
     [[nodiscard]] static auto get_size_specifier(const size_t size)
@@ -1770,18 +1742,6 @@ class toc final {
         }
 
         return str;
-    }
-
-    [[nodiscard]] static auto
-    get_operand_base_register(const std::string_view addressing)
-        -> std::string_view {
-
-        auto pos{addressing.find_first_of(" +")};
-        if (pos == std::string_view::npos) {
-            return addressing;
-        }
-
-        return addressing.substr(0, pos);
     }
 
     [[nodiscard]] auto get_operand_size(const std::string_view operand) const

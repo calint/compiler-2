@@ -51,8 +51,6 @@ class statement {
 
     auto set_type(const type& tp) -> void { type_ = &tp; }
 
-    [[nodiscard]] auto has_type() const -> bool { return type_ != nullptr; }
-
     [[nodiscard]] auto get_type() const -> const type& {
         if (type_ == nullptr) {
             throw compiler_exception{token_,

@@ -157,10 +157,6 @@ class expr_any final : public statement {
         //       an argument in call
     }
 
-    [[nodiscard]] auto is_expr_type_value() const -> bool {
-        return std::holds_alternative<expr_type_value>(var_);
-    }
-
     [[nodiscard]] auto is_identifier() const -> bool override {
         return std::visit(
             [](const auto& e) -> bool { return e.is_identifier(); }, var_);

@@ -61,11 +61,6 @@ class stmt_def_dat final : public statement {
                         array_size_tk_, array_size_tk_.text())};
                     value) {
                     array_size = static_cast<size_t>(*value);
-                    if (array_size <= 0) {
-                        throw compiler_exception{
-                            array_size_tk_,
-                            "array sizes must be greater than 0"};
-                    }
                 }
                 if (not tz.is_next_char(']')) {
                     throw compiler_exception{type_tk_,

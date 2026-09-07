@@ -1,37 +1,100 @@
-Mon Oct  6 09:52:31 AM +07 2025
+Mon Sep  7 08:06:27 PM +07 2026
 Checking ../../src/main.cpp ...
-../../src/expr_any.hpp:144:38: error: Reference to temporary returned. [returnTempReference]
-                return itm.identifier();
+../../src/type.hpp:134:24: performance: Function 'name()' should return member 'name_' by const reference. [returnByReference]
+    [[nodiscard]] auto name() const -> std::string { return name_; }
+                       ^
+../../src/toc.hpp:1188:9: error: Found an exit path from function with non-void return type that has missing return statement [missingReturn]
+        }
+        ^
+../../src/expr_bool_op.hpp:363:9: error: Found an exit path from function with non-void return type that has missing return statement [missingReturn]
+        }
+        ^
+../../src/expr_bool_op.hpp:388:9: error: Found an exit path from function with non-void return type that has missing return statement [missingReturn]
+        }
+        ^
+../../src/main.cpp:216:5: error: Found an exit path from function with non-void return type that has missing return statement [missingReturn]
+    }
+    ^
+../../src/expr_bool_ops_list.hpp:178:29: style: The scope of the variable 'jmp_false' can be reduced. [variableScope]
+                std::string jmp_false{jmp_to_if_false};
+                            ^
+../../src/expr_bool_ops_list.hpp:179:29: style: The scope of the variable 'jmp_true' can be reduced. [variableScope]
+                std::string jmp_true{jmp_to_if_true};
+                            ^
+../../src/expression.hpp:8:31: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    explicit expression(token tk, unary_ops uops = {})
+                              ^
+../../src/expr_bool_ops_list.hpp:31:59: performance: Function parameter 'not_token' should be passed by const reference. [passedByValue]
+                       const bool enclosed = false, token not_token = {})
+                                                          ^
+../../src/stmt_break.hpp:12:37: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_break(const toc& tc, token tk) : statement{tk} {
+                                    ^
+../../src/stmt_builtin_array_copy.hpp:25:44: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_builtin_array_copy(toc& tc, token tk, tokenizer& tz) : statement{tk} {
+                                           ^
+../../src/stmt_continue.hpp:9:40: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_continue(const toc& tc, token tk) : statement{tk} {
+                                       ^
+../../src/stmt_assign_var.hpp:24:71: performance: Function parameter 'ws1' should be passed by const reference. [passedByValue]
+    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token ws1 = {})
+                                                                      ^
+../../src/stmt_return.hpp:11:38: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_return(const toc& tc, token tk) : statement{tk} {
                                      ^
-../../src/type.hpp:62:35: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/stmt_def_type_field.hpp:19:46: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_def_type_field(const toc& tc, token tk, tokenizer& tz)
+                                             ^
+../../src/stmt_builtin_address_of.hpp:20:60: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_builtin_address_of(toc& tc, unary_ops uops, token tk, tokenizer& tz)
+                                                           ^
+../../src/stmt_builtin_array_size_of.hpp:19:63: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_builtin_array_size_of(toc& tc, unary_ops uops, token tk, tokenizer& tz)
+                                                              ^
+../../src/stmt_builtin_arrays_equal.hpp:25:62: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_builtin_arrays_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
+                                                             ^
+../../src/stmt_builtin_equal.hpp:22:55: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_builtin_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
+                                                      ^
+../../src/stmt_call.hpp:21:46: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_call(toc& tc, unary_ops uops, token tk, tokenizer& tz)
+                                             ^
+../../src/stmt_builtin_mov.hpp:11:37: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_builtin_mov(toc& tc, token tk, tokenizer& tz)
+                                    ^
+../../src/stmt_builtin_syscall.hpp:9:41: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_builtin_syscall(toc& tc, token tk, tokenizer& tz)
+                                        ^
+../../src/stmt_if.hpp:14:28: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_if(toc& tc, token tk, tokenizer& tz) : statement{tk} {
+                           ^
+../../src/stmt_loop.hpp:12:30: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+    stmt_loop(toc& tc, token tk, tokenizer& tz) : statement{tk} {
+                             ^
+../../src/main.cpp:201:70: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+                                                         const token tk)
+                                                                     ^
+../../src/type.hpp:59:35: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (fld.name == name) {
                                   ^
-../../src/toc.hpp:193:19: style: Consider using std::transform algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:169:19: style: Consider using std::transform algorithm instead of a raw loop. [useStlAlgorithm]
             path_.emplace_back(part.begin(), part.end());
                   ^
-../../src/toc.hpp:659:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:711:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (frm.is_func()) {
                                ^
-../../src/toc.hpp:672:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:747:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (frm.is_func()) {
                                ^
-../../src/toc.hpp:684:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
-            if (frm.is_func()) {
-                               ^
-../../src/toc.hpp:1296:20: style: Consider using std::accumulate algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:1214:20: style: Consider using std::accumulate algorithm instead of a raw loop. [useStlAlgorithm]
             nbytes += frm.allocated_stack_size();
                    ^
-../../src/lut.hpp:45:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:1221:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+            if (frm.is_func()) {
+                               ^
+../../src/lut.hpp:37:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (e.is_key(key)) {
                                ^
-../../src/lut.hpp:55:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
-            if (e.is_key(key)) {
-                               ^
-../../src/toc.hpp:94:10: style: The function 'get_var_ref' is never used. [unusedFunction]
-    auto get_var_ref(const std::string& name) -> var_info& {
-         ^
-../../src/toc.hpp:680:24: style: The function 'get_func_returns' is never used. [unusedFunction]
-    [[nodiscard]] auto get_func_returns(const token& src_loc_tk) const
-                       ^
-nofile:0:0: information: Active checkers: 169/966 (use --checkers-report=<filename> to see details) [checkersReport]
+nofile:0:0: information: Active checkers: 173/186 (use --checkers-report=<filename> to see details) [checkersReport]
 
