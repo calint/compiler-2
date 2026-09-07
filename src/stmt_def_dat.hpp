@@ -140,7 +140,7 @@ class stmt_def_dat final : public statement {
         std::print(os, "=");
         ws1_.source_to(os);
 
-        print_source(os, tp, elems_);
+        print_source(os, tp, is_array_, elems_);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
@@ -362,8 +362,8 @@ class stmt_def_dat final : public statement {
         }
     }
 
-    auto parse_builtin(toc& tc, tokenizer& tz, const type& tp,
-                       std::vector<elem>& els) -> void {
+    static auto parse_builtin(toc& tc, tokenizer& tz, const type& tp,
+                              std::vector<elem>& els) -> void {
 
         unary_ops uo{tz};
         token tk{tz.next_token()};
@@ -422,8 +422,8 @@ class stmt_def_dat final : public statement {
         }
     }
 
-    auto parse_type_field(toc& tc, tokenizer& tz, const type_field& tf,
-                          std::vector<elem>& els) -> void {
+    static auto parse_type_field(toc& tc, tokenizer& tz, const type_field& tf,
+                                 std::vector<elem>& els) -> void {
 
         if (tf.type_ptr->is_built_in()) {
             if (not tf.is_array) {
@@ -476,11 +476,12 @@ class stmt_def_dat final : public statement {
         // todo
     }
 
-    auto print_source(std::ostream& os, const type& tp,
-                      const std::vector<elem>& els) const -> void {
+    static auto print_source(std::ostream& os, const type& tp,
+                             const bool is_array, const std::vector<elem>& els)
+        -> void {
 
         if (tp.is_built_in()) {
-            if (not is_array_) {
+            if (not is_array) {
                 els[0].ws1.source_to(os);
                 els[0].uops.source_to(os);
                 els[0].tk.source_to(os);
@@ -492,7 +493,7 @@ class stmt_def_dat final : public statement {
 
             std::print(os, "{{");
             size_t counter{0};
-            for (const elem& e : elems_) {
+            for (const elem& e : els) {
                 if (counter++) {
                     std::print(os, ",");
                 }
@@ -507,7 +508,7 @@ class stmt_def_dat final : public statement {
 
         // user type
 
-        if (not is_array_) {
+        if (not is_array) {
             std::print(os, "{{");
             size_t counter{0};
             for (const type_field& f : tp.fields()) {
@@ -525,8 +526,8 @@ class stmt_def_dat final : public statement {
         // user type array
     }
 
-    auto print_source_field(std::ostream& os, const type_field& tf,
-                            const elem& el) const -> void {
+    static auto print_source_field(std::ostream& os, const type_field& tf,
+                                   const elem& el) -> void {
 
         if (tf.type_ptr->is_built_in()) {
             if (not tf.is_array) {
