@@ -61,6 +61,11 @@ class stmt_def_var final : public statement {
         // expect initialization
         const bool init_required{tz.is_next_char('=')};
 
+        if (init_required and is_array_) {
+            throw compiler_exception(
+                tz, "initialization of array is not supported");
+        }
+
         ws1_ = tz.next_whitespace_token();
 
         // add var to toc without causing output by passing a null stream
