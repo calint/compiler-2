@@ -189,7 +189,7 @@ class expr_ops_list final : public expression {
         expression::source_to(os); // whitespace
         exprs_[0]->source_to(os);
         const size_t n{ops_.size()};
-        for (size_t i{}; i < n; i++) {
+        for (size_t i{}; i < n; ++i) {
             const char op{ops_[i]};
             std::print(os, "{}", op);
             if (op == '<' or op == '>') {
@@ -330,7 +330,7 @@ class expr_ops_list final : public expression {
 
         // remaining elements are +,-,*,/,%,|,&,^,<<,>>
         const size_t n{ops_.size()};
-        for (size_t i{}; i < n; i++) {
+        for (size_t i{}; i < n; ++i) {
             const statement& st{*exprs_[i + 1]};
             asm_op(tc, os, indent, ops_[i], dst_info, st);
         }
@@ -349,7 +349,7 @@ class expr_ops_list final : public expression {
             if (std::regex_search(line, tc.regex_nasm_comment())) {
                 continue;
             }
-            n++;
+            ++n;
         }
         return n;
     }

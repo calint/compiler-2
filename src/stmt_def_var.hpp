@@ -187,7 +187,7 @@ class stmt_def_var final : public statement {
         op.base_register = "rsp";
         op.displacement = dst_info.stack_ix;
 
-        for (size_t i{}; i < qword_movs; i++) {
+        for (size_t i{}; i < qword_movs; ++i) {
             tc.asm_cmd(tok(), os, indent, "mov", op.str(operand::size_qword),
                        "0");
             op.displacement += operand::size_qword;

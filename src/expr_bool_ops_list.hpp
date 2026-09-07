@@ -135,7 +135,7 @@ class expr_bool_ops_list final : public statement {
             std::print(os, "(");
         }
         const size_t n{bools_.size()};
-        for (size_t i{}; i < n; i++) {
+        for (size_t i{}; i < n; ++i) {
             std::visit([&](const auto& e) -> auto { e.source_to(os); },
                        bools_[i]);
             if (i < n - 1) {
@@ -170,7 +170,7 @@ class expr_bool_ops_list final : public statement {
         const bool invert{inverted ? not not_token_.is_text("not")
                                    : not_token_.is_text("not")};
         const size_t n{bools_.size()};
-        for (size_t i{}; i < n; i++) {
+        for (size_t i{}; i < n; ++i) {
             if (std::holds_alternative<expr_bool_ops_list>(bools_[i])) {
                 const expr_bool_ops_list& el{
                     get<expr_bool_ops_list>(bools_[i])};

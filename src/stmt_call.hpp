@@ -75,9 +75,10 @@ class stmt_call : public expression {
         expression::source_to(os);
         std::print(os, "(");
         for (size_t i{}; const expr_any& e : args_) {
-            if (i++) {
+            if (i) {
                 std::print(os, ",");
             }
+            ++i;
             e.source_to(os);
         }
         std::print(os, ")");
@@ -104,7 +105,7 @@ class stmt_call : public expression {
         }
 
         // validate argument types
-        for (size_t i{}; i < args_.size(); i++) {
+        for (size_t i{}; i < args_.size(); ++i) {
             const expr_any& arg{args_[i]};
             const stmt_def_func_param& param{func.param(i)};
             const type& arg_type{arg.get_type()};
@@ -164,7 +165,8 @@ class stmt_call : public expression {
 
         // process each argument
         for (size_t i{}; const expr_any& arg : args_) {
-            const stmt_def_func_param& param{func.param(i++)};
+            const stmt_def_func_param& param{func.param(i)};
+            ++i;
 
             // allocate named register if parameter requires it
             std::string arg_reg{param.get_register_name_or_empty()};

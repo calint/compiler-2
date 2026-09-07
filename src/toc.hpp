@@ -388,7 +388,7 @@ class toc final {
             // not found
             std::string loc;
             const size_t n{allocated_registers_.size()};
-            for (size_t i{}; i < n; i++) {
+            for (size_t i{}; i < n; ++i) {
                 if (allocated_registers_[i] == reg) {
                     loc = allocated_registers_src_locs_[i];
                     break;
@@ -1072,6 +1072,9 @@ class toc final {
                   const std::string_view src, std::string_view dst,
                   const size_t bytes_count) -> void {
 
+        // todo: movs in x86_64 is optimized for bytes, no need for further
+        //       optimization
+
         // ; Copy RCX bytes from RSI to RDI
         // mov rsi, source_addr    ; source pointer
         // mov rdi, dest_addr      ; destination pointer
@@ -1259,7 +1262,7 @@ class toc final {
         //   ignore pos.y since those cannot have a lea, add empty leas for
         //   those
         const size_t n{id.path().size()};
-        for (size_t j{1}; j < n; j++) {
+        for (size_t j{1}; j < n; ++j) {
             lea_path.emplace_back("");
         }
 
@@ -1314,7 +1317,7 @@ class toc final {
             //? fishy stuff adjusting lea_path size
             // pad the lea path to have the same size as the other vectors
             ii.type_path = type_path;
-            for (size_t j{lea_path.size()}; j < id.path().size(); j++) {
+            for (size_t j{lea_path.size()}; j < id.path().size(); ++j) {
                 lea_path.emplace_back("");
             }
             while (lea_path.size() != id.path().size()) {
@@ -1436,7 +1439,7 @@ class toc final {
             return {
                 .id{ident},
                 .operand{"false", true},
-                .const_value{0},
+                .const_value{},
                 .type_ptr{&get_type_bool()},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
@@ -1652,7 +1655,7 @@ class toc final {
         } else {
             std::print(os, "    ");
         }
-        for (size_t i{1}; i < indnt; i++) {
+        for (size_t i{1}; i < indnt; ++i) {
             std::print(os, "    ");
         }
     }
@@ -1677,9 +1680,9 @@ class toc final {
         const size_t at_line, size_t char_index_in_source,
         const std::string_view src) -> std::pair<size_t, size_t> {
 
-        size_t at_col{0};
+        size_t at_col{};
         while (src[char_index_in_source] != '\n') {
-            at_col++;
+            ++at_col;
             if (char_index_in_source == 0) {
                 break;
             }

@@ -37,7 +37,7 @@ class stmt_def_const final : public statement {
         std::string num_str{uops_.to_string()};
         num_str += value_tk_.text();
 
-        int64_t value{0};
+        int64_t value{};
         if (std::optional<int64_t> num{
                 toc::parse_to_constant(value_tk_, num_str)}) {
             value = *num;

@@ -106,9 +106,10 @@ class stmt_def_func final : public statement {
         {
             size_t i{};
             for (const stmt_def_func_param& p : params_) {
-                if (i++) {
+                if (i) {
                     std::print(os, ",");
                 }
+                ++i;
                 p.source_to(os);
             }
         }

@@ -122,9 +122,10 @@ class stmt_identifier : public statement {
         get_unary_ops().source_to(os);
         int sep{};
         for (const identifier_elem& e : elems_) {
-            if (sep++) {
+            if (sep) {
                 std::print(os, ".");
             }
+            ++sep;
             e.name_tk.source_to(os);
             if (e.array_index_expr) {
                 std::print(os, "[");
@@ -219,7 +220,7 @@ class stmt_identifier : public statement {
         std::vector<std::string> leas;
         leas.reserve(elems.size());
         const size_t n{lea_path.size()};
-        for (size_t i{lea_path.size() - elems.size()}; i < n; i++) {
+        for (size_t i{lea_path.size() - elems.size()}; i < n; ++i) {
             leas.push_back(lea_path[i]);
         }
 
@@ -243,7 +244,7 @@ class stmt_identifier : public statement {
         int32_t accum_offset{};
         const size_t elems_size{elems.size()};
 
-        for (size_t i{elem_index_with_lea}; i < elems_size; i++) {
+        for (size_t i{elem_index_with_lea}; i < elems_size; ++i) {
             const identifier_elem& curr_elem{elems[i]};
             const ident_info curr_info{tc.make_ident_info(src_loc_tk, path)};
             const size_t type_size{curr_info.type_ptr->size()};

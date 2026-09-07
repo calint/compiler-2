@@ -49,7 +49,7 @@ class stmt_def_dat final : public statement {
         }
 
         bool is_array{false};
-        size_t array_size{0};
+        size_t array_size{};
 
         // check if type declared
         if (tz.is_next_char(':')) {
@@ -222,7 +222,7 @@ class stmt_def_dat final : public statement {
 
         // initializer
         std::print(os, "{} ", dd);
-        int32_t counter{0};
+        int32_t counter{};
         for (const elem& e : elroot.elems) {
             if (counter++) {
                 std::print(os, ", ");
@@ -247,7 +247,7 @@ class stmt_def_dat final : public statement {
         if (not elroot.is_array) {
             std::println(os, "; {}: {}", nm, tp.name());
             const std::span<const type_field>& flds{tp.fields()};
-            size_t counter{0};
+            size_t counter{};
             for (const elem& e : elroot.elems) {
                 const type_field& tf{flds[counter]};
                 compile_data_type_field(tc, os, tf, e);
@@ -259,12 +259,12 @@ class stmt_def_dat final : public statement {
         // array
 
         std::println(os, "; {}: {}[{}]", nm, tp.name(), elroot.array_size);
-        size_t elem_counter{0};
+        size_t elem_counter{};
         for (const elem& el : elroot.elems) {
             std::println(os, "; {}[{}]", nm, elem_counter);
             ++elem_counter;
             const std::span<const type_field>& flds{tp.fields()};
-            size_t field_counter{0};
+            size_t field_counter{};
             for (const elem& e : el.elems) {
                 const type_field& tf{flds[field_counter]};
                 compile_data_type_field(tc, os, tf, e);
@@ -350,7 +350,7 @@ class stmt_def_dat final : public statement {
             }
             el.ws2 = tz.next_whitespace_token();
 
-            size_t counter{0};
+            size_t counter{};
             while (true) {
                 el.elems.emplace_back(parse_builtin(tc, tz, tp));
                 ++counter;
@@ -389,7 +389,7 @@ class stmt_def_dat final : public statement {
         }
         el.ws2 = tz.next_whitespace_token();
 
-        size_t counter{0};
+        size_t counter{};
         while (true) {
             el.elems.emplace_back(parse_type(tc, tz, tp));
             ++counter;
@@ -459,7 +459,7 @@ class stmt_def_dat final : public statement {
         }
         el.ws2 = tz.next_whitespace_token();
 
-        size_t counter{0};
+        size_t counter{};
         for (const type_field& tf : tp.fields()) {
             if (counter++) {
                 if (not tz.is_next_char(',')) {
@@ -506,7 +506,7 @@ class stmt_def_dat final : public statement {
             std::print(os, "{{");
             elroot.ws2.source_to(os);
 
-            size_t counter{0};
+            size_t counter{};
             for (const elem& e : elroot.elems) {
                 if (counter++) {
                     std::print(os, ",");
@@ -536,7 +536,7 @@ class stmt_def_dat final : public statement {
             std::print(os, "{{");
             elroot.ws2.source_to(os);
 
-            size_t counter{0};
+            size_t counter{};
             for (const type_field& tf : tp.fields()) {
                 if (counter++) {
                     std::print(os, ",");
@@ -557,7 +557,7 @@ class stmt_def_dat final : public statement {
         std::print(os, "{{");
         elroot.ws2.source_to(os);
 
-        size_t counter{0};
+        size_t counter{};
         for (const elem& e : elroot.elems) {
             if (counter++) {
                 std::print(os, ",");
@@ -595,7 +595,7 @@ class stmt_def_dat final : public statement {
             std::print(os, "{{");
             elroot.ws2.source_to(os);
 
-            size_t counter{0};
+            size_t counter{};
             for (const elem& e : elroot.elems) {
                 if (counter++) {
                     std::print(os, ",");

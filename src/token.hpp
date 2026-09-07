@@ -50,7 +50,7 @@ class token final {
         }
         // NASM encoding of data as string
         // using backticks for delimiter and escaping them
-        size_t pos{0};
+        size_t pos{};
         const size_t len{text_.size()};
         while (pos < len) {
             const size_t next{text_.find('`', pos)};
@@ -86,9 +86,9 @@ class token final {
     [[nodiscard]] auto at_line() const -> size_t { return at_line_; }
 
     [[nodiscard]] auto string_size_bytes() const -> size_t {
-        size_t len{0};
+        size_t len{};
         const std::string_view s{text_};
-        for (size_t i{0}; i < s.size(); ++i, ++len) {
+        for (size_t i{}; i < s.size(); ++i, ++len) {
             if (s[i] == '\\' and i + 1 < s.size()) {
                 if (s[i + 1] == 'x' and i + 3 < s.size()) {
                     i += 3; // skip \xHH

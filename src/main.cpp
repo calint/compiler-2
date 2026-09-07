@@ -66,7 +66,7 @@ auto main(const int argc, const char* argv[]) -> int {
     bool optimize_jumps{true};
 
     // parse arguments
-    for (size_t i{1}; i < args.size(); i++) {
+    for (size_t i{1}; i < args.size(); ++i) {
         const std::string_view arg{args[i]};
 
         if (arg == "--help" || arg == "-h") {
@@ -330,7 +330,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
     const std::span<const type_field> flds{tp.fields()};
     const size_t nflds{flds.size()};
-    for (size_t i{}; i < nflds; i++) {
+    for (size_t i{}; i < nflds; ++i) {
         const type_field& fld{flds[i]};
         // create an expression that assigns to field
         // might recurse creating 'expr_type_value'
@@ -373,9 +373,10 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
     std::print(os, "{{");
     size_t i{};
     for (const std::unique_ptr<expr_any>& ea : exprs_) {
-        if (i++) {
+        if (i) {
             std::print(os, ",");
         }
+        ++i;
         ea->source_to(os);
     }
     std::print(os, "}}");
@@ -388,6 +389,8 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
 auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                      const type& dst_type,
                                      operand& dst_op) const -> void {
+
+    // is it e.g. pt1 = pt2?
     if (is_identifier()) {
         const ident_info src_info{tc.make_ident_info(*this)};
         if (dst_type.name() != src_info.type_ptr->name()) {
@@ -420,6 +423,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         return;
     }
 
+    // initialize fields
     size_t i{};
     for (const type_field& fld : dst_type.fields()) {
         tc.comment_start(tok(), os, indent);
@@ -429,7 +433,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             // a not-builtin statement is `expr_type_value`
             const expr_type_value& expr{exprs_[i]->as_expr_type_value()};
             expr.compile_assign(tc, os, indent, *fld.type_ptr, dst_op);
-            i++;
+            ++i;
             continue;
         }
 
@@ -478,7 +482,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             }
         }
         dst_op.displacement += static_cast<int32_t>(fld.size);
-        i++;
+        ++i;
     }
 }
 
@@ -729,7 +733,7 @@ auto optimize_jumps_2(std::istream& is, std::ostream& os) -> void {
 
         std::println(os, "{}{} {}", ws_before, jxx_inv, jmp_lbl);
         std::println(os, "{}", line3);
-        optimizations++;
+        ++optimizations;
     }
 
     std::println(os, ";          optimization pass 2: {}", optimizations);

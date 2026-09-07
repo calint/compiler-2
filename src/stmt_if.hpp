@@ -65,7 +65,7 @@ class stmt_if final : public statement {
         branch.source_to(os);
         // output the remaining 'else if' branches
         const size_t n{branches_.size()};
-        for (size_t i{1}; i < n; i++) {
+        for (size_t i{1}; i < n; ++i) {
             const stmt_if_branch& else_if_branch{branches_[i]};
             // 'else if' tokens as read from source
             else_if_tokens_[(i - 1) << 1U].source_to(os);
@@ -96,7 +96,7 @@ class stmt_if final : public statement {
         const size_t n{branches_.size()};
 
         bool branch_evaluated_to_true{};
-        for (size_t i{}; i < n; i++) {
+        for (size_t i{}; i < n; ++i) {
             const stmt_if_branch& if_branch{branches_[i]};
             std::string jmp_if_false{label_else_branch};
             std::string jmp_if_done{label_after_if};

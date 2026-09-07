@@ -62,9 +62,9 @@ class stmt_def_type final : public statement {
         name_tk_.source_to(os);
         std::print(os, "{{");
         ws_.source_to(os);
-        size_t i{};
+        size_t counter{};
         for (const stmt_def_type_field& fld : fields_) {
-            if (i++) {
+            if (counter++) {
                 std::print(os, ",");
             }
             fld.source_to(os);
