@@ -78,6 +78,12 @@ type str {
     data : i8[127]
 }
 
+# constant can be declared globally
+
+const yes = 1
+const no = 0
+const maybe = -1
+
 func str_in(s : str) {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
@@ -102,6 +108,9 @@ func main() {
     dat prompt3 : i8[] = "hello "
     dat     dot : i8[] = "."
     dat      nl : i8[] = "\n"
+
+    var answer = maybe
+    assert(answer == -1)
 
     var arr : i32[4]
     # arrays are initialized to 0
