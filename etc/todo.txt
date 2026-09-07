@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 [o]: ongoing [x]: done [-]: not completed with reason specified
 --------------------------------------------------------------------------------
+[ ] stmt_def_dat: instead of writing to elem create and return in function
 [ ] a way to define constants in global name space
 [ ] a way to use character e.g. 'a' instead of ascii code
 [o] a way to initiate a i8 array with a string:
