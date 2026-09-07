@@ -1,1 +1,17 @@
-Sun Sep  6 05:25:06 AM +07 2026
+Mon Sep  7 07:20:43 PM +07 2026
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:236:5: warning: static objects are disallowed; if possible, use a constexpr constructor instead [fuchsia-statically-constructed-objects]
+  236 |     static constexpr std::string def_data_qword{"dq"};
+      |     ^
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:237:5: warning: static objects are disallowed; if possible, use a constexpr constructor instead [fuchsia-statically-constructed-objects]
+  237 |     static constexpr std::string def_data_dword{"dd"};
+      |     ^
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:238:5: warning: static objects are disallowed; if possible, use a constexpr constructor instead [fuchsia-statically-constructed-objects]
+  238 |     static constexpr std::string def_data_word{"dw"};
+      |     ^
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:239:5: warning: static objects are disallowed; if possible, use a constexpr constructor instead [fuchsia-statically-constructed-objects]
+  239 |     static constexpr std::string def_data_byte{"db"};
+      |     ^
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:1573:14: warning: 8 is a magic number; consider replacing it with a named constant [cppcoreguidelines-avoid-magic-numbers]
+ 1573 |         case 8:
+      |              ^
+Mon Sep  7 07:33:31 PM +07 2026

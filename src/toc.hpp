@@ -723,22 +723,6 @@ class toc final {
         throw compiler_exception{src_loc_tk, "not in a function"};
     }
 
-    [[nodiscard]] auto get_data_def(const size_t size) const
-        -> std::string_view {
-        switch (size) {
-        case 8:
-            return def_data_qword;
-        case 4:
-            return def_data_dword;
-        case 2:
-            return def_data_word;
-        case 1:
-            return def_data_byte;
-        default:
-            std::unreachable();
-        }
-    }
-
     [[nodiscard]] auto get_data() const
         -> const std::vector<const statement*>& {
         return data_;
@@ -1581,6 +1565,22 @@ class toc final {
 
         indent(os, indnt);
         std::println(os, "set{} {}", comparison, operand);
+    }
+
+    [[nodiscard]] static auto get_data_def(const size_t size)
+        -> std::string_view {
+        switch (size) {
+        case 8:
+            return def_data_qword;
+        case 4:
+            return def_data_dword;
+        case 2:
+            return def_data_word;
+        case 1:
+            return def_data_byte;
+        default:
+            std::unreachable();
+        }
     }
 
     [[nodiscard]] static auto

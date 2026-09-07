@@ -169,7 +169,7 @@ class stmt_def_dat final : public statement {
     auto compile_data(const toc& tc, std::ostream& os) const -> void override {
         const type& tp{get_type()};
         if (tp.is_built_in()) {
-            compile_data_builtin(tc, os, name_tk_.text(), tp, elroot_);
+            compile_data_builtin(os, name_tk_.text(), tp, elroot_);
             return;
         }
 
@@ -179,13 +179,13 @@ class stmt_def_dat final : public statement {
     }
 
   private:
-    static auto compile_data_builtin(const toc& tc, std::ostream& os,
+    static auto compile_data_builtin(std::ostream& os,
                                      const std::string_view fldnm,
                                      const type& tp, const elem& elroot)
         -> void {
 
         // nasm define data token
-        std::string_view dd{tc.get_data_def(tp.size())};
+        std::string_view dd{toc::get_data_def(tp.size())};
         if (not elroot.is_array) {
             std::println(os, "; {}: {}", fldnm, tp.name());
             if (elroot.tk.text().empty()) {
@@ -209,7 +209,7 @@ class stmt_def_dat final : public statement {
             std::print(os, "{} '", dd);
             elroot.tk.compile_to(os);
             std::println(os, "'");
-            size_t sz{elroot.tk.string_size_bytes()};
+            const size_t sz{elroot.tk.string_size_bytes()};
             // pad remaining array with 0
             if (elroot.array_size != 0 and sz < elroot.array_size) {
                 std::println(os, "times {} {} 0", elroot.array_size - sz, dd);
@@ -293,7 +293,7 @@ class stmt_def_dat final : public statement {
                                         const elem& elroot) -> void {
 
         if (tf.type_ptr->is_built_in()) {
-            compile_data_builtin(tc, os, tf.name, *tf.type_ptr, elroot);
+            compile_data_builtin(os, tf.name, *tf.type_ptr, elroot);
             return;
         }
 
@@ -302,7 +302,7 @@ class stmt_def_dat final : public statement {
         compile_data_type(tc, os, tf.name, *tf.type_ptr, elroot);
     }
 
-    static auto parse_elem(toc& tc, tokenizer& tz, const type& tp,
+    static auto parse_elem(const toc& tc, tokenizer& tz, const type& tp,
                            const bool is_array, const size_t array_size)
         -> elem {
 
@@ -423,7 +423,9 @@ class stmt_def_dat final : public statement {
         return el;
     }
 
-    static auto parse_builtin(toc& tc, tokenizer& tz, const type& tp) -> elem {
+    static auto parse_builtin(const toc& tc, tokenizer& tz, const type& tp)
+        -> elem {
+
         elem el{};
         el.uops = unary_ops{tz};
         el.tk = tz.next_token();
@@ -441,7 +443,7 @@ class stmt_def_dat final : public statement {
             return el;
         }
         if (std::optional<int64_t> num{
-                tc.parse_to_constant(el.tk, el.tk.text())}) {
+                toc::parse_to_constant(el.tk, el.tk.text())}) {
             el.value = *num;
             return el;
         }
@@ -450,7 +452,8 @@ class stmt_def_dat final : public statement {
             std::format("element of type '{}' must be a constant", tp.name()));
     }
 
-    static auto parse_type(toc& tc, tokenizer& tz, const type& tp) -> elem {
+    static auto parse_type(const toc& tc, tokenizer& tz, const type& tp)
+        -> elem {
 
         elem el{};
 
