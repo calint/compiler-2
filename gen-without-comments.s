@@ -1064,10 +1064,10 @@ section .bss
     num_buffer: resb 21
 section .rodata
 dat:
-db '', 10, ''
-db '.'
-db 'hello '
-db 'that is not a name.', 10, ''
-db 'enter name:', 10, ''
-db 'hello world from baz', 10, ''
+db `\n`
+db `.`
+db `hello `
+db `that is not a name.\n`
+db `enter name:\n`
+db `hello world from baz\n`
 dat.len equ $ - dat

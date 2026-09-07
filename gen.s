@@ -2524,17 +2524,17 @@ section .bss
 section .rodata
 dat:
 ; nl: i8[1]
-db '', 10, ''
+db `\n`
 ; dot: i8[1]
-db '.'
+db `.`
 ; prompt3: i8[6]
-db 'hello '
+db `hello `
 ; prompt2: i8[20]
-db 'that is not a name.', 10, ''
+db `that is not a name.\n`
 ; prompt1: i8[12]
-db 'enter name:', 10, ''
+db `enter name:\n`
 ; hello: i8[21]
-db 'hello world from baz', 10, ''
+db `hello world from baz\n`
 dat.len equ $ - dat
 
 ; max scratch registers in use: 5

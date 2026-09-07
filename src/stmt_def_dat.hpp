@@ -201,9 +201,9 @@ class stmt_def_dat final : public statement {
         // special case for string
 
         if (elroot.tk.is_string()) {
-            std::print(os, "{} '", dd);
+            std::print(os, "{} `", dd);
             elroot.tk.compile_to(os);
-            std::println(os, "'");
+            std::println(os, "`");
             const size_t sz{elroot.tk.string_size_bytes()};
             // pad remaining array with 0
             if (elroot.array_size != 0 and sz < elroot.array_size) {

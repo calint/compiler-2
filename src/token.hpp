@@ -48,13 +48,19 @@ class token final {
             std::print(os, "{}", text_);
             return;
         }
-        //? temporary fix to handle strings
         // NASM encoding of data as string
-        std::string str{text_};
-        str = std::regex_replace(str, std::regex{R"(')"}, "', \"'\", '");
-        str = std::regex_replace(str, std::regex{R"(\\")"}, "\"");
-        str = std::regex_replace(str, std::regex{R"(\\n)"}, "', 10, '");
-        std::print(os, "{}", str);
+        // using backticks for delimiter and escaping them
+        size_t pos{0};
+        const size_t len{text_.size()};
+        while (pos < len) {
+            const size_t next{text_.find('`', pos)};
+            if (next == std::string_view::npos) {
+                std::print(os, "{}", text_.substr(pos));
+                break;
+            }
+            std::print(os, "{}\\`", text_.substr(pos, next - pos));
+            pos = next + 1;
+        }
     }
 
     [[nodiscard]] auto is_text(std::string_view s) const -> bool {
