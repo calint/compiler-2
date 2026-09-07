@@ -1,17 +1,16 @@
-[x] constant initialized variables in "main" have the initial data directly
-    written by the compiler into the stack prepared for execution removing
-    initiation stage using code and removing "field"
-    => data written to stack saved in .rodata
-    [x] built-in types
-    [x] user types
+--------------------------------------------------------------------------------
+[o]: ongoing [x]: done [-]: not completed with reason specified
+--------------------------------------------------------------------------------
 [ ] a way to define constants in global name space
 [ ] a way to use character e.g. 'a' instead of ascii code
-[x] remove the global "field"
-[x] update tree sitter syntax highlight
-[x] array_copy with source offset, destination offset with bounds check
-    => if not constant runtime check
-    => already
-[x] modern CPU does rep stosb as fast for any alignment and size (stmt_def_var)
+[o] a way to initiate a i8 array with a string:
+    var hello : i8[] = "hello world"
+    => on dat
+    [ ] on var
+[o] initializer for types that contain array does not work as intended:
+    var input_buffer : str = {0, 0} where second element is an array
+    => on dat
+    [ ] on var
 [ ] consider changing function signatures from
       func inv(i : i32) : i32 res {
     to
@@ -44,13 +43,8 @@
     to unspecified register size with sign extension
     => 255 is outside the range of i8: -128 -> 127
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
-[ ] array initializer: var i : vec2[] = {{1, 2}, {2, 3}, {3, 4}}
-[ ] a way to initiate a i8 array with a string:
-    var hello : i8[] = "hello world"
 [ ] built-in: mov and syscall functions to statements and remove special
     built-in functions declared in program
-[ ] initializer for types that contain array does not work as intended:
-    var input_buffer : str = {0, 0} where second element is an array
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
     if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] toc::rep_movs: heuristics around when to switch from movs to rep
@@ -113,8 +107,21 @@
 [ ] simple LSP supporting rename
 
 --------------------------------------------------------------------------------
-resolved ([x]: done [-]: not completed with reason specified)
+resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] constant initialized variables in "main" have the initial data directly
+    written by the compiler into the stack prepared for execution removing
+    initiation stage using code and removing "field"
+    => data written to stack saved in .rodata
+    [x] built-in types
+    [x] user types
+[x] array initializer: var i : vec2[] = {{1, 2}, {2, 3}, {3, 4}}
+[x] remove the global "field"
+[x] update tree sitter syntax highlight
+[x] array_copy with source offset, destination offset with bounds check
+    => if not constant runtime check
+    => already
+[x] modern CPU does rep stosb as fast for any alignment and size (stmt_def_var)
 [x] nasm_operand in ident_info for less text processing sprinkled in the code?
 [x] report error if constant out of range for i64
 [x] operand: fix hack for base register to hold field name
