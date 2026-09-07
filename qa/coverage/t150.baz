@@ -32,7 +32,7 @@ func main() {
 
     dat  point : point = { -1, -2 }
     dat  world : world = {  {-1,   2}    }
-    dat  exits : exits = { { 1 , 2 } , { 3 , 4 } }
+    dat  exits : exits =  {   {    1 ,  2   }  ,  {  3  ,  4  }  }
  #   dat  lines : line[2] = {{-1,-2},{4,5}}
 
     assert(data_a == 0)
