@@ -161,62 +161,9 @@ class stmt_def_dat final : public statement {
     auto compile_data(const toc& tc, std::ostream& os) const -> void override {
         const type& tp{get_type()};
         if (tp.is_built_in()) {
-            // nasm define data token
-            std::string_view dd{tc.get_data_def(tp.size())};
-            if (not is_array_) {
-                std::println(os, "; {}: {}", name_tk_.text(), tp.name());
-                if (elems_.empty()) {
-                    std::println(os, "{} 0", dd);
-                    return;
-                }
-
-                std::print(os, "{} ", dd);
-                elems_[0].uops.source_to(os);
-                std::println(os, "{}", elems_[0].value);
-                return;
-            }
-
-            // array of built-ins
-            std::println(os, "; {}: {}[{}]", name_tk_.text(), tp.name(),
-                         array_size_);
-
-            // special case for strings
-            if (tk_str_.is_string()) {
-                std::print(os, "{} '", dd);
-                tk_str_.compile_to(os);
-                std::println(os, "'");
-                size_t sz{tk_str_.string_size_bytes()};
-                // pad remaining array with 0
-                if (array_size_ != 0 and sz < array_size_) {
-                    std::println(os, "times {} {} 0", array_size_ - sz, dd);
-                }
-                return;
-            }
-
-            // array without initializer
-            if (elems_.empty()) {
-                std::println(os, "times {} {} 0", array_size_, dd);
-                return;
-            }
-
-            // initializer
-            std::print(os, "{} ", dd);
-            int32_t counter{0};
-            for (const elem& e : elems_) {
-                if (counter++) {
-                    std::print(os, ", ");
-                }
-                e.uops.source_to_without_whitespace(os);
-                std::print(os, "{}", e.value);
-            }
-
-            std::println(os);
-
-            // pad remaining array with 0
-            if (array_size_ != elems_.size()) {
-                std::println(os, "times {} {} 0", array_size_ - elems_.size(),
-                             dd);
-            }
+            compile_data_builtin(tc, os, name_tk_.text(), tk_str_, tp,
+                                 is_array_, array_size_,
+                                 elems_.empty() ? nullptr : &elems_[0], elems_);
             return;
         }
 
@@ -229,6 +176,71 @@ class stmt_def_dat final : public statement {
     }
 
   private:
+    static auto compile_data_builtin(const toc& tc, std::ostream& os,
+                                     const std::string_view fldnm,
+                                     const token tk_str, const type& tp,
+                                     const bool is_array,
+                                     const size_t array_size,
+                                     const elem* elroot,
+                                     const std::vector<elem>& subels) -> void {
+
+        // nasm define data token
+        std::string_view dd{tc.get_data_def(tp.size())};
+        if (not is_array) {
+            std::println(os, "; {}: {}", fldnm, tp.name());
+            if (not elroot) {
+                std::println(os, "{} 0", dd);
+                return;
+            }
+
+            std::print(os, "{} ", dd);
+            elroot->uops.source_to_without_whitespace(os);
+            std::println(os, "{}", elroot->value);
+            return;
+        }
+
+        // array of built-ins
+        std::println(os, "; {}: {}[{}]", fldnm, tp.name(), array_size);
+
+        // special case for strings
+        if (tk_str.is_string()) {
+            std::print(os, "{} '", dd);
+            tk_str.compile_to(os);
+            std::println(os, "'");
+            size_t sz{tk_str.string_size_bytes()};
+            // pad remaining array with 0
+            if (array_size != 0 and sz < array_size) {
+                std::println(os, "times {} {} 0", array_size - sz, dd);
+            }
+            return;
+        }
+
+        // array without initializer
+        if (subels.empty()) {
+            std::println(os, "times {} {} 0", array_size, dd);
+            return;
+        }
+
+        // initializer
+        std::print(os, "{} ", dd);
+        int32_t counter{0};
+        for (const elem& e : subels) {
+            if (counter++) {
+                std::print(os, ", ");
+            }
+            e.uops.source_to_without_whitespace(os);
+            std::print(os, "{}", e.value);
+        }
+
+        std::println(os);
+
+        // pad remaining array with 0
+        if (array_size != subels.size()) {
+            std::println(os, "times {} {} 0", array_size - subels.size(), dd);
+        }
+        return;
+    }
+
     auto compile_data_type(const toc& tc, std::ostream& os,
                            const std::string_view nm, const type& tp,
                            const std::vector<elem>& els) const -> void {
@@ -248,40 +260,8 @@ class stmt_def_dat final : public statement {
         -> void {
 
         if (tf.type_ptr->is_built_in()) {
-            // nasm define data token
-            std::string_view dd{tc.get_data_def(tf.type_ptr->size())};
-            if (not tf.is_array) {
-                std::println(os, "; {}: {}", tf.name, tf.type_ptr->name());
-                if (el.tk.is_empty()) {
-                    std::println(os, "{} 0", dd);
-                    return;
-                }
-
-                std::print(os, "{} ", dd);
-                el.uops.source_to(os);
-                std::println(os, "{}", el.value);
-                return;
-            }
-
-            // array of builtin
-
-            std::println(os, "; {}: {}[{}]", tf.name, tf.type_ptr->name(),
-                         tf.array_size);
-            std::print(os, "{} ", dd);
-            size_t counter{0};
-            for (const elem& e : el.elems) {
-                if (counter++) {
-                    std::print(os, ", ");
-                }
-                e.uops.source_to_without_whitespace(os);
-                std::print(os, "{}", e.value);
-            }
-            std::println(os);
-
-            size_t pad{tf.array_size - counter};
-            if (pad > 0) {
-                std::println(os, "times {} {} 0", pad, dd);
-            }
+            compile_data_builtin(tc, os, tf.name, el.tk, *tf.type_ptr,
+                                 tf.is_array, tf.array_size, &el, el.elems);
             return;
         }
 
