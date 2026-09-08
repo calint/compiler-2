@@ -376,8 +376,7 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
 
     // not an identifier
     std::print(os, "{{");
-    size_t counter{};
-    for (const std::unique_ptr<expr_any>& ea : exprs_) {
+    for (size_t counter{}; const std::unique_ptr<expr_any>& ea : exprs_) {
         if (counter++) {
             std::print(os, ",");
         }

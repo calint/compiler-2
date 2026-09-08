@@ -290,8 +290,7 @@ class stmt_def_dat final : public statement {
 
         // initializer
         std::print(os, "{} ", dd);
-        int32_t counter{};
-        for (const elem& e : elroot.elems) {
+        for (size_t counter{}; const elem& e : elroot.elems) {
             if (counter++) {
                 std::print(os, ", ");
             }
@@ -479,8 +478,8 @@ class stmt_def_dat final : public statement {
         }
         el.ws2 = tz.next_whitespace_token();
 
-        size_t counter{};
         const std::span<const type_field> flds{tp.fields()};
+        size_t counter{};
         while (true) {
             const token tk = tz.next_whitespace_token();
             if (tz.is_next_char('}')) {
@@ -533,8 +532,7 @@ class stmt_def_dat final : public statement {
             std::print(os, "{{");
             elroot.ws2.source_to(os);
 
-            size_t counter{};
-            for (const elem& e : elroot.elems) {
+            for (size_t counter{}; const elem& e : elroot.elems) {
                 if (counter++) {
                     std::print(os, ",");
                 }
@@ -563,9 +561,8 @@ class stmt_def_dat final : public statement {
             std::print(os, "{{");
             elroot.ws2.source_to(os);
 
-            size_t counter{};
             const std::span<const type_field>& flds{tp.fields()};
-            for (const elem& e : elroot.elems) {
+            for (size_t counter{}; const elem& e : elroot.elems) {
                 if (counter++) {
                     std::print(os, ",");
                 }
@@ -585,8 +582,7 @@ class stmt_def_dat final : public statement {
         std::print(os, "{{");
         elroot.ws2.source_to(os);
 
-        size_t counter{};
-        for (const elem& e : elroot.elems) {
+        for (size_t counter{}; const elem& e : elroot.elems) {
             if (counter++) {
                 std::print(os, ",");
             }
@@ -623,8 +619,7 @@ class stmt_def_dat final : public statement {
             std::print(os, "{{");
             elroot.ws2.source_to(os);
 
-            size_t counter{};
-            for (const elem& e : elroot.elems) {
+            for (size_t counter{}; const elem& e : elroot.elems) {
                 if (counter++) {
                     std::print(os, ",");
                 }
