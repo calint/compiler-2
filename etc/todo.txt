@@ -2,6 +2,8 @@
 [ ]: pending [o]: ongoing [x]: done [-]: not completed with reason specified
 --------------------------------------------------------------------------------
 [ ] a way to use character e.g. 'a' instead of ascii code
+[ ] toc: heuristic aware rep stosb. switches from stosb to mov depending on
+    number of bytes to be set (1 to 64 bytes unrolled)
 [x] fix the token string escaping
 [x] stmt_def_dat: instead of writing to elem create and return in function
 [x] a way to define constants in global name space
@@ -16,12 +18,10 @@
     var pts : point[2] = { {x1, y1} } # zeroes the remaining uninitialized array
     [x] on dat
     [ ] on var
-[o] incomplete initializer writes 0 to remaining fields
+[x] incomplete initializer writes 0 to remaining fields
     => var pt : point = {1} # writes 0 to remaining fields
     [x] on dat
-    [ ] on var
-[ ] toc: heuristic aware rep stosb. switches from stosb to mov depending on
-    number of bytes to be set (1 to 64 bytes unrolled)
+    [x] on var
 [o] stmt_assign_var::compile: unified way of determining the effective address
     of an identifier including indexing, type offset navigation etc
     => make_ident_info should do that and then passed around instead of

@@ -5,7 +5,6 @@
 #include <format>
 #include <fstream>
 #include <iostream>
-#include <iterator>
 #include <memory>
 #include <print>
 #include <ranges>
@@ -330,29 +329,30 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
     const std::span<const type_field> flds{tp.fields()};
     const size_t nflds{flds.size()};
-    for (size_t i{}; i < nflds; ++i) {
-        const type_field& fld{flds[i]};
-        // create an expression that assigns to field
-        // might recurse creating 'expr_type_value'
-        exprs_.emplace_back(create_expr_any(tc, tz, *fld.type_ptr, true));
-
-        if (i < nflds - 1) {
+    size_t counter{};
+    while (true) {
+        if (tz.is_next_char('}')) {
+            ws1_ = tz.next_whitespace_token();
+            break;
+        }
+        if (counter == nflds) {
+            throw compiler_exception{
+                tz, std::format("too many fields specified for type '{}'",
+                                tp.name())};
+        }
+        const type_field& tf{flds[counter]};
+        if (counter++) {
             if (not tz.is_next_char(',')) {
                 throw compiler_exception{
                     tz, std::format(
                             "expected ',' and value of field '{}' in type '{}'",
-                            flds[i + 1].name, tp.name())};
+                            flds[counter].name, tp.name())};
             }
         }
+        // create an expression that assigns to field
+        // might recurse creating 'expr_type_value'
+        exprs_.emplace_back(create_expr_any(tc, tz, *tf.type_ptr, true));
     }
-
-    if (not tz.is_next_char('}')) {
-        throw compiler_exception{
-            tz,
-            std::format("expected '}}' to close assign type '{}'", tp.name())};
-    }
-
-    ws1_ = tz.next_whitespace_token();
 }
 
 expr_type_value::~expr_type_value() = default;
@@ -371,12 +371,11 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
 
     // not an identifier
     std::print(os, "{{");
-    size_t i{};
+    size_t counter{};
     for (const std::unique_ptr<expr_any>& ea : exprs_) {
-        if (i) {
+        if (counter++) {
             std::print(os, ",");
         }
-        ++i;
         ea->source_to(os);
     }
     std::print(os, "}}");
@@ -424,33 +423,35 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
     }
 
     // initialize fields
-    size_t i{};
-    for (const type_field& fld : dst_type.fields()) {
+    size_t counter{};
+    const std::span<const type_field>& flds{dst_type.fields()};
+    for (const std::unique_ptr<expr_any>& exp : exprs_) {
         tc.comment_start(tok(), os, indent);
-        std::println(os, "copy field '{}'", fld.name);
+        const type_field& tf{flds[counter]};
+        std::println(os, "copy field '{}'", tf.name);
 
-        if (not fld.type_ptr->is_built_in()) {
+        if (not tf.type_ptr->is_built_in()) {
             // a not-builtin statement is `expr_type_value`
-            const expr_type_value& expr{exprs_[i]->as_expr_type_value()};
-            expr.compile_assign(tc, os, indent, *fld.type_ptr, dst_op);
-            ++i;
+            const expr_type_value& expr{exp->as_expr_type_value()};
+            expr.compile_assign(tc, os, indent, *tf.type_ptr, dst_op);
+            ++counter;
             continue;
         }
 
         // built-in
 
-        const expr_any& src{*exprs_[i]};
+        const expr_any& src{*exprs_[counter]};
 
-        const std::string dst_accessor{dst_op.str(fld.type_ptr->size())};
+        const std::string dst_accessor{dst_op.str(tf.type_ptr->size())};
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
-            if (fld.is_array) {
+            if (tf.is_array) {
                 // built-in, expression, array
                 const ident_info src_info{tc.make_ident_info(src)};
-                validate_array_assignment(src.tok(), fld, src_info);
+                validate_array_assignment(src.tok(), tf, src_info);
                 tc.rep_movs(src.tok(), os, indent, src, src_info,
-                            dst_op.address_str(), fld.size);
+                            dst_op.address_str(), tf.size);
             } else {
                 // built-in, expression, not array
                 const ident_info dst_info{
@@ -467,12 +468,12 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                        src_info.const_value));
             } else {
                 // built-in, not expression, not constant
-                if (fld.is_array) {
+                if (tf.is_array) {
                     // built-in, not expression, not constant, array
-                    validate_array_assignment(src.tok(), fld, src_info);
+                    validate_array_assignment(src.tok(), tf, src_info);
                     tc.rep_movs(src.tok(), os, indent,
                                 src_info.operand.address_str(),
-                                dst_op.address_str(), fld.size);
+                                dst_op.address_str(), tf.size);
                 } else {
                     // built-in, not expression, not constant, not array
                     tc.asm_cmd(src.tok(), os, indent, "mov", dst_accessor,
@@ -481,9 +482,31 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                 }
             }
         }
-        dst_op.displacement += static_cast<int32_t>(fld.size);
-        ++i;
+        dst_op.displacement += static_cast<int32_t>(tf.size);
+        ++counter;
     }
+
+    // zero out the remaining fields
+
+    const size_t diff{dst_type.fields().size() - counter};
+
+    if (diff == 0) {
+        // all fields have been assigned
+        return;
+    }
+
+    // calculate remaining bytes of the type to zero
+
+    const size_t n{flds.size()};
+    size_t nbytes{};
+    for (size_t i{counter}; i < n; ++i) {
+        nbytes += flds[i].size;
+    }
+
+    tc.comment_start(tok(), os, indent);
+    std::println(os, "zero out remaining fields: {} bytes", nbytes);
+    tc.rep_stos(tok(), os, indent, dst_op, nbytes, 0);
+    dst_op.displacement += nbytes;
 }
 
 auto expr_type_value::validate_array_assignment(const token& tok,
@@ -622,8 +645,8 @@ auto optimize_jumps_1(std::istream& is, std::ostream& os) -> void {
                 buffer.clear();
                 std::println(os, "{}", line);
             } else {
-                // label that differs from the buffered jccs, flush buffer and
-                // print the label
+                // label that differs from the buffered jccs, flush buffer
+                // and print the label
                 flush_buffer();
                 std::println(os, "{}", line);
             }

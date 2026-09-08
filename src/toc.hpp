@@ -1153,6 +1153,33 @@ class toc final {
         free_named_register(src_loc_tk, os, indnt, "rsi");
     }
 
+    auto rep_stos(const token& src_loc_tk, std::ostream& os, const size_t indnt,
+                  const operand& dst_op, const size_t bytes_count,
+                  const int8_t value) -> void {
+
+        // todo heuristics to use mov when less than 64 bytes
+
+        // mov al, byte_val        ; byte value to store (e.g., 0x00)
+        // mov rdi, dest_addr      ; destination pointer
+        // mov rcx, byte_count     ; number of bytes to write
+        // rep stosb               ; store al into [rdi], rcx times (rdi++)
+
+        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rax");
+        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
+        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
+
+        toc::asm_cmd(src_loc_tk, os, indnt, "mov", "al",
+                     std::format("{}", value));
+        toc::asm_lea(os, indnt, "rdi", dst_op.address_str());
+        toc::asm_cmd(src_loc_tk, os, indnt, "mov", "rcx",
+                     std::format("{}", bytes_count));
+        toc::asm_rep_stos(os, indnt, 'b');
+
+        free_named_register(src_loc_tk, os, indnt, "rcx");
+        free_named_register(src_loc_tk, os, indnt, "rdi");
+        free_named_register(src_loc_tk, os, indnt, "rax");
+    }
+
     [[nodiscard]] auto regex_ws() const -> const std::regex& {
         return regex_ws_;
     }
