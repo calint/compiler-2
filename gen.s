@@ -2614,7 +2614,6 @@ section .bss
 
 section .rodata
 dat:
-; s1: str
 ; len: i8
 db 3
 ; zero remaining fields

@@ -162,18 +162,89 @@ class stmt_def_dat final : public statement {
     }
 
     auto compile_data(const toc& tc, std::ostream& os) const -> void override {
-        const type& tp{get_type()};
+        compile_data_rec(tc, os, name_tk_.text(), get_type(), elroot_);
+    }
+
+  private:
+    static auto compile_data_rec(const toc& tc, std::ostream& os,
+                                 const std::string_view nm, const type& tp,
+                                 const elem& elroot) -> void {
+
+        if (not elroot.is_array) {
+            compile_data_elem(tc, os, nm, tp, elroot);
+            return;
+        }
+
+        // array
+
+        // special case for string
+
+        if (tp.name() == "i8" and elroot.tk.is_string()) {
+            compile_data_builtin(os, nm, tp, elroot);
+            return;
+        }
+
+        // regular arrays
+
+        std::println(os, "; {}: {}[{}]", nm, tp.name(), elroot.array_size);
+        size_t counter{};
+        for (const elem& el : elroot.elems) {
+            std::println(os, "; [{}]", counter);
+            compile_data_elem(tc, os, nm, tp, el);
+            ++counter;
+        }
+
+        // zero out remaining array
+
+        const size_t diff{elroot.array_size - counter};
+
+        if (diff == 0) {
+            return;
+        }
+
+        std::println(os, "; pad {} '{}' of size {}", diff, tp.name(),
+                     tp.size());
+        std::println(os, "times {} db 0", diff * tp.size());
+    }
+
+    static auto compile_data_elem(const toc& tc, std::ostream& os,
+                                  const std::string_view& nm, const type& tp,
+                                  const elem& elroot) -> void {
+
         if (tp.is_built_in()) {
-            compile_data_builtin(os, name_tk_.text(), tp, elroot_);
+            compile_data_builtin(os, nm, tp, elroot);
             return;
         }
 
         // user type
 
-        compile_data_type(tc, os, name_tk_.text(), tp, elroot_);
+        const std::span<const type_field>& flds{tp.fields()};
+        size_t counter{};
+        for (const elem& el : elroot.elems) {
+            const type_field& tf{flds[counter]};
+            if (tf.type_ptr->is_built_in()) {
+                compile_data_builtin(os, tf.name, *tf.type_ptr, el);
+            } else {
+                compile_data_rec(tc, os, tf.name, *tf.type_ptr, el);
+            }
+            ++counter;
+        }
+
+        // zero out remaining fields, if any
+
+        const size_t n{flds.size()};
+        const size_t diff{n - counter};
+        if (diff == 0) {
+            return;
+        }
+        size_t nbytes{};
+        for (size_t i{counter}; i < n; ++i) {
+            nbytes += flds[i].size;
+        }
+        std::println(os, "; zero remaining fields");
+        std::println(os, "times {} db 0", nbytes);
     }
 
-  private:
     static auto compile_data_builtin(std::ostream& os,
                                      const std::string_view fldnm,
                                      const type& tp, const elem& elroot)
@@ -200,13 +271,14 @@ class stmt_def_dat final : public statement {
 
         // special case for string
 
-        if (elroot.tk.is_string()) {
+        if (tp.name() == "i8" and elroot.tk.is_string()) {
             std::print(os, "{} `", dd);
             elroot.tk.compile_to(os);
             std::println(os, "`");
             const size_t sz{elroot.tk.string_size_bytes()};
             // pad remaining array with 0
             if (elroot.array_size != 0 and sz < elroot.array_size) {
+                std::println(os, "; zero remaining array");
                 std::println(os, "times {} {} 0", elroot.array_size - sz, dd);
             }
             return;
@@ -238,70 +310,6 @@ class stmt_def_dat final : public statement {
             std::println(os, "times {} {} 0",
                          elroot.array_size - elroot.elems.size(), dd);
         }
-    }
-
-    static auto compile_data_type(const toc& tc, std::ostream& os,
-                                  const std::string_view nm, const type& tp,
-                                  const elem& elroot) -> void {
-
-        if (not elroot.is_array) {
-            std::println(os, "; {}: {}", nm, tp.name());
-            compile_data_type_elem(tc, os, tp, elroot);
-            return;
-        }
-
-        // array
-
-        std::println(os, "; {}: {}[{}]", nm, tp.name(), elroot.array_size);
-        size_t counter{};
-        for (const elem& el : elroot.elems) {
-            std::println(os, "; {}[{}]", nm, counter);
-            compile_data_type_elem(tc, os, tp, el);
-            ++counter;
-        }
-
-        // zero out remaining array
-
-        const size_t diff{elroot.array_size - counter};
-
-        if (diff == 0) {
-            return;
-        }
-
-        std::println(os, "; pad {} '{}' of size {}", diff, tp.name(),
-                     tp.size());
-        std::println(os, "times {} db 0", diff * tp.size());
-    }
-
-    static auto compile_data_type_elem(const toc& tc, std::ostream& os,
-                                       const type& tp, const elem& elroot)
-        -> void {
-
-        const std::span<const type_field>& flds{tp.fields()};
-        size_t counter{};
-        for (const elem& el : elroot.elems) {
-            const type_field& tf{flds[counter]};
-            if (tf.type_ptr->is_built_in()) {
-                compile_data_builtin(os, tf.name, *tf.type_ptr, el);
-            } else {
-                compile_data_type(tc, os, tf.name, *tf.type_ptr, el);
-            }
-            ++counter;
-        }
-
-        // zero out remaining fields, if any
-
-        const size_t n{flds.size()};
-        const size_t diff{n - counter};
-        if (diff == 0) {
-            return;
-        }
-        size_t nbytes{};
-        for (size_t i{counter}; i < n; ++i) {
-            nbytes += flds[i].size;
-        }
-        std::println(os, "; zero remaining fields");
-        std::println(os, "times {} db 0", nbytes);
     }
 
     static auto parse_elem(const toc& tc, tokenizer& tz, const type& tp,
