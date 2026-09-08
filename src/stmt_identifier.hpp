@@ -224,12 +224,12 @@ class stmt_identifier : public statement {
             leas.push_back(lea_path[i]);
         }
 
-        // find the first element from the top that has a "lea" and get accessor
+        // find the first element from the top that has a 'lea' and get accessor
         // relative to that "lea"
         size_t elem_index_with_lea{leas.size()};
         std::string lea;
         while (elem_index_with_lea) {
-            elem_index_with_lea--;
+            --elem_index_with_lea;
             if (not leas[elem_index_with_lea].empty()) {
                 lea = leas[elem_index_with_lea];
                 break;

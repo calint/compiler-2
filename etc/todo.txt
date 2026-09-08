@@ -4,6 +4,8 @@
 [ ] a way to use character e.g. 'a' instead of ascii code
 [ ] toc: heuristic aware rep stosb. switches from stosb to mov depending on
     number of bytes to be set (1 to 64 bytes unrolled)
+[ ] regex is not performant. replace with hand-rolled string operations
+    especially in `operand` which create regex in the constructor
 [x] fix the token string escaping
 [x] stmt_def_dat: instead of writing to elem create and return in function
 [x] a way to define constants in global name space
@@ -31,6 +33,7 @@
 [o] consolidate the various initiations of rep stosX into common code in toc
     implementing heuristics of when to switch from mov to rep
     => toc::rep_stos
+[ ] make an extensive comment file explaining lea, indexing array etc
 [ ] consider making '}' a token to not have to do:
         token tk{tz.next_whitespace_token()};
         if (tz.is_next_char('}')) {
@@ -39,8 +42,6 @@
             break;
         }
         tz.put_back_token(tk);
-[ ] regex is not performant. replace with hand-rolled string operations
-    especially in `operand` which creates a regex in the constructor
 [ ] allow trailing comma at type definition. e.g.,
     type object {
         pos : point,
