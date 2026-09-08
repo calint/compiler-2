@@ -48,7 +48,7 @@ class stmt_def_dat final : public statement {
             throw compiler_exception(name_tk_, "expected name of data");
         }
 
-        bool is_array{false};
+        bool is_array{};
         size_t array_size{};
 
         // check if type declared
