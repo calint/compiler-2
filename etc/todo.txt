@@ -8,11 +8,11 @@
     => e.g. const yes = 1
 [o] a way to initiate a i8 array with a string:
     var hello : i8[] = "hello world"
-    => on dat
+    [x] on dat
     [ ] on var
 [o] initializer for types that contain array does not work as intended:
     var input_buffer : str = {0, 0} where second element is an array
-    => on dat
+    [x] on dat
     [ ] on var
 [o] stmt_assign_var::compile: unified way of determining the effective address
     of an identifier including indexing, type offset navigation etc
