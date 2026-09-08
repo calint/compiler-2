@@ -733,17 +733,6 @@ class toc final {
         throw compiler_exception{src_loc_tk, "not in a function"};
     }
 
-    auto get_const(const token& src_loc_tk, const std::string_view name) const
-        -> int64_t {
-
-        if (not constants_.has(name)) {
-            throw compiler_exception(
-                src_loc_tk, std::format("'{}' is not a constant", name,
-                                        source_location_hr(src_loc_tk)));
-        }
-        return constants_.get_const_ref(name).value;
-    }
-
     [[nodiscard]] auto get_data() const
         -> const std::vector<const statement*>& {
         return data_;
