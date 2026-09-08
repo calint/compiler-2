@@ -331,7 +331,6 @@ class stmt_def_dat final : public statement {
                                        "string size {} overflows array size {}",
                                        strsz, el.array_size));
                     }
-                    // todo check for overflow
                 }
                 if (tp.name() == "i8") {
                     return el;
@@ -346,7 +345,9 @@ class stmt_def_dat final : public statement {
             el.ws1 = tz.next_whitespace_token();
             if (not tz.is_next_char('{')) {
                 throw compiler_exception(
-                    tz, "expected '{' to open array initializer");
+                    tz, std::format(
+                            "expected '{{' to open array initializer for '{}'",
+                            tp.name()));
             }
             el.ws2 = tz.next_whitespace_token();
 
@@ -362,7 +363,9 @@ class stmt_def_dat final : public statement {
             el.ws3 = tz.next_whitespace_token();
             if (not tz.is_next_char('}')) {
                 throw compiler_exception(
-                    tz, "expected '}' to close array initializer");
+                    tz, std::format(
+                            "expected '}}' to open array initializer for '{}'",
+                            tp.name()));
             }
             el.ws4 = tz.next_whitespace_token();
 
@@ -384,8 +387,10 @@ class stmt_def_dat final : public statement {
 
         el.ws1 = tz.next_whitespace_token();
         if (not tz.is_next_char('{')) {
-            throw compiler_exception(tz,
-                                     "expected '{' to open array initializer");
+            throw compiler_exception(
+                tz,
+                std::format("expected '{{' to open array initializer for '{}'",
+                            tp.name()));
         }
         el.ws2 = tz.next_whitespace_token();
 
@@ -400,8 +405,10 @@ class stmt_def_dat final : public statement {
 
         el.ws3 = tz.next_whitespace_token();
         if (not tz.is_next_char('}')) {
-            throw compiler_exception(tz,
-                                     "expected '}' to close array initializer");
+            throw compiler_exception(
+                tz,
+                std::format("expected '}}' to open array initializer for '{}'",
+                            tp.name()));
         }
         el.ws4 = tz.next_whitespace_token();
 
@@ -454,8 +461,10 @@ class stmt_def_dat final : public statement {
 
         el.ws1 = tz.next_whitespace_token();
         if (not tz.is_next_char('{')) {
-            throw compiler_exception(tz,
-                                     "expected '{' to open type initializer");
+            throw compiler_exception(
+                tz,
+                std::format("expected '{{' to open type initializer for '{}'",
+                            tp.name()));
         }
         el.ws2 = tz.next_whitespace_token();
 
@@ -464,9 +473,11 @@ class stmt_def_dat final : public statement {
             if (counter++) {
                 if (not tz.is_next_char(',')) {
                     throw compiler_exception(
-                        tz, std::format(
-                                "expected ',' and initializer for field '{}'",
-                                tf.name));
+                        tz,
+                        std::format("expected ',' and initializer for "
+                                    "field '{}' in type '{}' of type '{}{}'",
+                                    tf.name, tp.name(), tf.type_ptr->name(),
+                                    tf.is_array ? "[]" : ""));
                 }
             }
             el.elems.emplace_back(
@@ -475,8 +486,9 @@ class stmt_def_dat final : public statement {
 
         el.ws3 = tz.next_whitespace_token();
         if (not tz.is_next_char('}')) {
-            throw compiler_exception(tz,
-                                     "expected '}' to close type initializer");
+            throw compiler_exception(
+                tz, std::format("expected '}}' to close type '{}' initializer",
+                                tp.name()));
         }
         el.ws4 = tz.next_whitespace_token();
 
