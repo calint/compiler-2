@@ -16,9 +16,9 @@
     var pts : point[2] = { {x1, y1} } # zeroes the remaining uninitialized array
     [x] on dat
     [ ] on var
-[ ] incomplete initializer writes 0 to remaining fields
+[o] incomplete initializer writes 0 to remaining fields
     => var pt : point = {1} # writes 0 to remaining fields
-    [ ] on dat
+    [o] on dat
     [ ] on var
 [ ] toc: heuristic aware rep stosb. switches from stosb to mov depending on
     number of bytes to be set (1 to 64 bytes unrolled)
