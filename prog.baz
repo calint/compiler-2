@@ -115,13 +115,14 @@ func main() {
     # arrays are initialized to 0
 
     var answer
-    # variables without initializer are zeroed
     assert(answer == 0)
+    # variables without initializer are zeroed
 
     answer = maybe
     assert(answer == -1)
 
     var ix = 1
+    # variables can have an initial value using expressions
 
     arr[ix] = 2
     arr[ix + 1] = arr[ix]
