@@ -102,6 +102,7 @@ const no = 0
 const maybe = -1
 
 func main() {
+    # initial data declared first in main and are initialized with constants
     dat   hello : i8[] = "hello world from baz\n"
     dat prompt1 : i8[] = "enter name:\n"
     dat prompt2 : i8[] = "that is not a name.\n"
@@ -109,11 +110,16 @@ func main() {
     dat     dot : i8[] = "."
     dat      nl : i8[] = "\n"
 
-    var answer = maybe
-    assert(answer == -1)
 
     var arr : i32[4]
     # arrays are initialized to 0
+
+    var answer
+    # variables without initializer are zeroed
+    assert(answer == 0)
+
+    answer = maybe
+    assert(answer == -1)
 
     var ix = 1
 
