@@ -131,7 +131,7 @@ class type final {
 
     [[nodiscard]] auto size() const -> size_t { return size_; }
 
-    [[nodiscard]] auto name() const -> std::string { return name_; }
+    [[nodiscard]] auto name() const -> const std::string& { return name_; }
 
     auto set_name(const std::string_view nm) -> void { name_ = nm; }
 

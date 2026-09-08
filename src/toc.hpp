@@ -217,7 +217,7 @@ class toc final {
     std::vector<const statement*> data_;
     struct constant {
         token src_loc_tk;
-        int64_t value;
+        int64_t value{};
     };
     lut<constant> constants_;
 
@@ -261,13 +261,14 @@ class toc final {
     auto add_const(const token& src_loc_tk, const std::string_view name,
                    const int64_t value) {
         if (constants_.has(name)) {
-            constant c{constants_.get_const_ref(name)};
+            const constant c{constants_.get_const_ref(name)};
             throw compiler_exception(
                 src_loc_tk,
                 std::format("constant '{}' already defined at {}", name,
                             source_location_hr(c.src_loc_tk)));
         }
-        constants_.put(std::string{name}, {src_loc_tk, value});
+        constants_.put(std::string{name},
+                       {.src_loc_tk{src_loc_tk}, .value{value}});
     }
 
     auto add_dat(const statement* stmt) -> void {
@@ -1089,7 +1090,7 @@ class toc final {
         alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
         alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
 
-        toc::asm_lea(os, indnt, "rsi", src);
+        asm_lea(os, indnt, "rsi", src);
         toc::asm_lea(os, indnt, "rdi", dst);
 
         // try moving qwords
@@ -1482,7 +1483,7 @@ class toc final {
 
         // is 'id' a constant?
         if (constants_.has(id.str())) {
-            constant c{constants_.get_const_ref(id.str())};
+            const constant& c{constants_.get_const_ref(id.str())};
             return {
                 .id{ident},
                 .operand{id.str(), true},

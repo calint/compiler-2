@@ -5,6 +5,7 @@
 #include <format>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <print>
 #include <ranges>
@@ -331,7 +332,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     const size_t nflds{flds.size()};
     size_t counter{};
     while (true) {
-        token tk{tz.next_whitespace_token()};
+        const token tk{tz.next_whitespace_token()};
         if (tz.is_next_char('}')) {
             ws1_ = tk;
             ws2_ = tz.next_whitespace_token();
@@ -512,7 +513,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
     tc.comment_start(tok(), os, indent);
     std::println(os, "zero out remaining fields: {} bytes", nbytes);
     tc.rep_stos(tok(), os, indent, dst_op, nbytes, 0);
-    dst_op.displacement += nbytes;
+    dst_op.displacement += static_cast<int32_t>(nbytes);
 }
 
 auto expr_type_value::validate_array_assignment(const token& tok,
