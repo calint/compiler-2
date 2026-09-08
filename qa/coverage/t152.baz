@@ -47,4 +47,12 @@ func main() {
  #   assert(msg2.subject[0] == 1)
  #   assert(msg2.subject[1] == 2)
  #   assert(msg2.subject[127] == 128)
+ 
+    var arr1 : i8[128]
+    arr1[0] = 3
+    arr1[1] = 4
+
+    msg1.subject = arr1
+    assert(msg1.subject[0] == 3)
+#    assert(msg1.subject[1] == 4)
 }

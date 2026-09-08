@@ -306,7 +306,7 @@ class toc final {
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
         if (types_.has(tpe.name())) {
-            //? todo. specify where the type has been defined
+            // todo: specify where the type has been defined
             throw compiler_exception{
                 src_loc_tk,
                 std::format("type '{}' already defined", tpe.name())};
@@ -576,7 +576,7 @@ class toc final {
 
         // note: constants have the default size of qword so when assigning
         //       to smaller sizes this code path is taken
-        //? todo: check for overflow
+        // todo: check for overflow
         indent(os, indnt);
         std::println(os, "{} {}, {}", op, dst_op, src_op);
     }
@@ -1158,7 +1158,7 @@ class toc final {
                   const operand& dst_op, const size_t bytes_count,
                   const int8_t value) -> void {
 
-        // todo heuristics to use mov when less than 64 bytes
+        // todo: heuristics to use mov when less than 64 bytes
 
         // mov al, byte_val        ; byte value to store (e.g., 0x00)
         // mov rdi, dest_addr      ; destination pointer
@@ -1242,7 +1242,7 @@ class toc final {
         std::unreachable();
     }
 
-    // todo formalize this
+    // todo: formalize this
     [[nodiscard]] auto get_builtin_type_for_size(const size_t size) const
         -> const type& {
 

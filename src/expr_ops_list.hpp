@@ -782,9 +782,9 @@ class expr_ops_list final : public expression {
             tc.comment_start(src.tok(), os, indent);
             std::println(os, "shf: expr");
             // the operand must be stored in register 'CL'
-            //? todo. BMI2 (Bit Manipulation Instruction Set 2)
-            //        look at shlx/shrx/sarx which can use any register for the
-            //        shift amount
+            // todo: BMI2 (Bit Manipulation Instruction Set 2)
+            //       look at shlx/shrx/sarx which can use any register for the
+            //       shift amount
             const bool rcx_allocated{
                 tc.alloc_named_register(src.tok(), os, indent, "rcx")};
             if (not rcx_allocated) {

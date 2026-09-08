@@ -84,7 +84,7 @@ class tokenizer final {
     }
 
     auto put_back_token(const token& t) -> void {
-        //? todo. validate token is same as source
+        // todo: validate token is same as source
         move_back(t.total_length_in_chars());
     }
 

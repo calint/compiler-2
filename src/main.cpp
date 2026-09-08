@@ -474,8 +474,8 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                            std::format("{}{}", src.get_unary_ops().to_string(),
                                        src_info.const_value));
             } else {
-                // todo this code is not covered by the tests, find how to
-                //      trigger it
+                // todo: this code is not covered by the tests, find how to
+                //       trigger it
 
                 // built-in, not expression, not constant
                 if (tf.is_array) {
