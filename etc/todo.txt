@@ -31,6 +31,14 @@
 [o] consolidate the various initiations of rep stosX into common code in toc
     implementing heuristics of when to switch from mov to rep
     => toc::rep_stos
+[ ] consider making '}' a token to not have to do:
+        token tk{tz.next_whitespace_token()};
+        if (tz.is_next_char('}')) {
+            ws0_ = tk;
+            ws1_ = tz.next_whitespace_token();
+            break;
+        }
+        tz.put_back_token(tk);
 [ ] regex is not performant. replace with hand-rolled string operations
     especially in `operand` which creates a regex in the constructor
 [ ] allow trailing comma at type definition. e.g.,

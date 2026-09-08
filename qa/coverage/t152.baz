@@ -31,7 +31,7 @@ func main() {
     assert(ln2.to.x == 0)
     assert(ln2.to.y == 0)
 
-    var ln3 : line = {}
+    var ln3 : line = { }
 
     var msg : message = { 8 }
 }

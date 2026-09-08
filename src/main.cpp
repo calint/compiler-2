@@ -331,10 +331,14 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     const size_t nflds{flds.size()};
     size_t counter{};
     while (true) {
+        token tk{tz.next_whitespace_token()};
         if (tz.is_next_char('}')) {
-            ws1_ = tz.next_whitespace_token();
+            ws1_ = tk;
+            ws2_ = tz.next_whitespace_token();
             break;
         }
+        tz.put_back_token(tk);
+
         if (counter == nflds) {
             throw compiler_exception{
                 tz, std::format("too many fields specified for type '{}'",
@@ -378,8 +382,10 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
         }
         ea->source_to(os);
     }
-    std::print(os, "}}");
+
     ws1_.source_to(os);
+    std::print(os, "}}");
+    ws2_.source_to(os);
 }
 
 // declared in 'expr_type_value.hpp'

@@ -18,7 +18,8 @@ class expr_type_value final : public statement {
     std::shared_ptr<stmt_identifier> stmt_ident_;
     // note: 'shared_ptr' because 'unique_ptr' poses compilation issues
     //       regarding circular references
-    token ws1_;
+    token ws1_; // before '}'
+    token ws2_; // after '}'
 
   public:
     // note: constructor and destructor are implemented in 'main.cpp' where the
