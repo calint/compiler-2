@@ -221,10 +221,10 @@ class toc final {
     };
     lut<constant> constants_;
 
-    std::regex regex_ws_{R"(\s+)"};
-    std::regex regex_trim_{R"(^\s+|\s+$)"};
-    std::regex regex_nasm_comment_{R"(^\s*;.*$)"};
-    std::regex regex_nasm_number_register_{R"(r(\d+))"};
+    const std::regex regex_ws_{R"(\s+)"};
+    const std::regex regex_trim_{R"(^\s+|\s+$)"};
+    const std::regex regex_nasm_comment_{R"(^\s*;.*$)"};
+    const std::regex regex_nasm_number_register_{R"(r(\d+))"};
 
   public:
     static constexpr size_t size_qword{8};
