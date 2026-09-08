@@ -246,58 +246,23 @@ class stmt_def_dat final : public statement {
 
         if (not elroot.is_array) {
             std::println(os, "; {}: {}", nm, tp.name());
-            const std::span<const type_field>& flds{tp.fields()};
-            size_t counter{};
-            for (const elem& e : elroot.elems) {
-                const type_field& tf{flds[counter]};
-                compile_data_type_field(tc, os, tf, e);
-                ++counter;
-            }
-
-            // zero out remaining fields, if any
-            const size_t n{flds.size()};
-            const size_t diff{n - counter};
-            if (diff == 0) {
-                return;
-            }
-            size_t nbytes{};
-            for (size_t i{counter}; i < n; ++i) {
-                nbytes += flds[i].size;
-            }
-            std::println(os, "; zero remaining fields");
-            std::println(os, "times {} db 0", nbytes);
+            compile_data_type_elem(tc, os, tp, elroot);
             return;
         }
 
         // array
 
         std::println(os, "; {}: {}[{}]", nm, tp.name(), elroot.array_size);
-        size_t elem_counter{};
+        size_t counter{};
         for (const elem& el : elroot.elems) {
-            std::println(os, "; {}[{}]", nm, elem_counter);
-            ++elem_counter;
-            const std::span<const type_field>& flds{tp.fields()};
-            size_t field_counter{};
-            for (const elem& e : el.elems) {
-                const type_field& tf{flds[field_counter]};
-                compile_data_type_field(tc, os, tf, e);
-                ++field_counter;
-            }
-            // zero out remaining fields, if any
-            const size_t n{flds.size()};
-            const size_t diff{n - field_counter};
-            if (diff == 0) {
-                continue;
-            }
-            size_t nbytes{};
-            for (size_t i{field_counter}; i < n; ++i) {
-                nbytes += flds[i].size;
-            }
-            std::println(os, "; zero remaining fields");
-            std::println(os, "times {} db 0", nbytes);
+            std::println(os, "; {}[{}]", nm, counter);
+            compile_data_type_elem(tc, os, tp, el);
+            ++counter;
         }
 
-        const size_t diff{elroot.array_size - elem_counter};
+        // zero out remaining array
+
+        const size_t diff{elroot.array_size - counter};
 
         if (diff == 0) {
             return;
@@ -308,18 +273,35 @@ class stmt_def_dat final : public statement {
         std::println(os, "times {} db 0", diff * tp.size());
     }
 
-    static auto compile_data_type_field(const toc& tc, std::ostream& os,
-                                        const type_field& tf,
-                                        const elem& elroot) -> void {
+    static auto compile_data_type_elem(const toc& tc, std::ostream& os,
+                                       const type& tp, const elem& elroot)
+        -> void {
 
-        if (tf.type_ptr->is_built_in()) {
-            compile_data_builtin(os, tf.name, *tf.type_ptr, elroot);
-            return;
+        const std::span<const type_field>& flds{tp.fields()};
+        size_t counter{};
+        for (const elem& el : elroot.elems) {
+            const type_field& tf{flds[counter]};
+            if (tf.type_ptr->is_built_in()) {
+                compile_data_builtin(os, tf.name, *tf.type_ptr, el);
+            } else {
+                compile_data_type(tc, os, tf.name, *tf.type_ptr, el);
+            }
+            ++counter;
         }
 
-        // user type
+        // zero out remaining fields, if any
 
-        compile_data_type(tc, os, tf.name, *tf.type_ptr, elroot);
+        const size_t n{flds.size()};
+        const size_t diff{n - counter};
+        if (diff == 0) {
+            return;
+        }
+        size_t nbytes{};
+        for (size_t i{counter}; i < n; ++i) {
+            nbytes += flds[i].size;
+        }
+        std::println(os, "; zero remaining fields");
+        std::println(os, "times {} db 0", nbytes);
     }
 
     static auto parse_elem(const toc& tc, tokenizer& tz, const type& tp,
