@@ -178,8 +178,9 @@ class stmt_def_dat final : public statement {
         // array
 
         // special case for string
+        // note: only i8[] can be initialized with string token
 
-        if (tp.name() == "i8" and elroot.tk.is_string()) {
+        if (elroot.tk.is_string()) {
             compile_data_builtin(os, nm, tp, elroot);
             return;
         }
@@ -270,8 +271,9 @@ class stmt_def_dat final : public statement {
         std::println(os, "; {}: {}[{}]", fldnm, tp.name(), elroot.array_size);
 
         // special case for string
+        // note: only i8[] can be initialized with string token
 
-        if (tp.name() == "i8" and elroot.tk.is_string()) {
+        if (elroot.tk.is_string()) {
             std::print(os, "{} `", dd);
             elroot.tk.compile_to(os);
             std::println(os, "`");
