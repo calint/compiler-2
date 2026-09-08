@@ -26,5 +26,4 @@ func main() {
     var p2 : point = { no, yes }
     assert (p2.x == no)
     assert (p2.y == yes)
-
 }
