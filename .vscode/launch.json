@@ -7,10 +7,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/baz",
             "args": [
-                //"qa/coverage/t104.baz",
-                "prog.baz",
+                "qa/coverage/t153.baz",
+                //"prog.baz",
                 "--stack=131072",
-                "--checks=upper,lower,line",
+                //"--checks=upper,lower,line",
                 "--nopt"
             ],
             "cwd": "${workspaceFolder}",
