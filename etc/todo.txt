@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-[o]: ongoing [x]: done [-]: not completed with reason specified
+[ ]: pending [o]: ongoing [x]: done [-]: not completed with reason specified
 --------------------------------------------------------------------------------
 [ ] a way to use character e.g. 'a' instead of ascii code
 [x] fix the token string escaping
