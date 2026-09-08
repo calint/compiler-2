@@ -437,12 +437,13 @@ class stmt_def_dat final : public statement {
             }
             return el;
         }
-        if (std::optional<int64_t> num{
-                toc::parse_to_constant(el.tk, el.tk.text())}) {
-            el.value = *num;
-            return el;
+
+        const ident_info ii{tc.make_ident_info(el.tk, el.tk.text())};
+        if (not ii.is_const()) {
+            throw compiler_exception(
+                el.tk, std::format("'{}' is not a constant", el.tk.text()));
         }
-        el.value = tc.get_const(el.tk, el.tk.text());
+        el.value = ii.const_value;
         return el;
     }
 
