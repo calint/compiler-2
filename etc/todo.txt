@@ -16,6 +16,8 @@
     var pts : point[2] = { {x1, y1} } # zeroes the remaining uninitialized array
     [x] on dat
     [ ] on var
+[ ] incomplete initializer writes 0 to remaining fields
+    => var pt : point = {1} # writes 0 to remaining fields
 [o] stmt_assign_var::compile: unified way of determining the effective address
     of an identifier including indexing, type offset navigation etc
     => make_ident_info should do that and then passed around instead of
