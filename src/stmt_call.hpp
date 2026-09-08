@@ -177,8 +177,10 @@ class stmt_call : public expression {
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
 
-            // if the argument is an identifier with indexing, then save the
-            // "lea" address to the base of that array
+            // if the argument is an identifier containing indexing, then save
+            // the 'lea' address to access the argument
+            // examples: [rsp + r14 * 4 - 205] or [r15 + r14] or simply [r15]
+
             if (not arg.is_expression() and
                 (arg.is_indexed() or tc.has_lea(arg))) {
                 const ident_info arg_info{tc.make_ident_info(arg)};
