@@ -240,7 +240,7 @@ auto main(const int argc, const char* argv[]) -> int {
                                                             tokenizer& tz)
     -> std::unique_ptr<statement> {
 
-    // note: no 'std:move' on 'tk' because it is trivially copyable
+    // note: no 'std::move' on 'tk' because it is trivially copyable
     unary_ops uops{tz};
     const token tk{tz.next_token()};
     if (tk.text().empty()) {
