@@ -47,6 +47,8 @@ func main() {
     dat   hero : entity = { {  {   "msg1"    }     ,      {       "msg2"        }         }          }
     dat   strs : string[4] = { {"hello\n"} ,  {"world"} }
     dat  strs2 : string[] = { {"hello\n"} ,  {"world"} }
+    dat    dds : i32[4]
+    dat   str3 : i8[128] = ""
 
     assert(data_a == 0)
     data_a = 0xff

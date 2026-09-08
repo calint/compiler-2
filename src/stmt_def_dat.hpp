@@ -286,12 +286,6 @@ class stmt_def_dat final : public statement {
 
         // normal case
 
-        // array without initializer
-        if (elroot.elems.empty()) {
-            std::println(os, "times {} {} 0", elroot.array_size, dd);
-            return;
-        }
-
         // initializer
         std::print(os, "{} ", dd);
         int32_t counter{};
