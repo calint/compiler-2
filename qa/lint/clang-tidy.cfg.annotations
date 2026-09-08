@@ -1,0 +1,26 @@
+Checks: '
+  *,
+  -misc-multiple-inheritance,                                                    # used in visit variant code
+  -altera-*,                                                                     # altera specific for hardware
+  -bugprone-easily-swappable-parameters,                                         # it is ok with lsp
+  -bugprone-optional-value-conversion,                                           # dereferencing std::optional is ok
+  -fuchsia-default-arguments-calls,                                              # some cases have great use of it
+  -fuchsia-default-arguments-declarations,                                       # default arguments are useful in the cases used
+  -fuchsia-multiple-inheritance,                                                 # used in visit variant code
+  -fuchsia-trailing-return,                                                      # trailing returns preferred
+  -google-default-arguments,                                                     # some cases have great use of it
+  -llvm-header-guard,                                                            # pragma once preferred
+  -llvm-prefer-static-over-anonymous-namespace,                                  # recommendations are anonymous namespace rather
+  -llvmlibc-*,                                                                   # relevant to libc developer
+  -misc-non-private-member-variables-in-classes,                                 # reports public fields in structs also
+  -misc-no-recursion,                                                            # recursion in many cases are more readable
+  -portability-avoid-pragma-once,                                                # pragma once prefered
+  -readability-function-cognitive-complexity,                                    # some few functions are better big and complex
+  -readability-identifier-length,                                                # the smaller the context the less length, 1 or 2 letters many times ok
+  -readability-implicit-bool-conversion,                                         # does not allow construct such as if (counter++) due to implicit conversion to bool
+  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,                # array indexing ok in debug mode
+  -cert-dcl03-c,                                                                 # false positives on asserts that cannot be static assert
+  -hicpp-static-assert,                                                          # same 
+  -misc-static-assert,                                                           # same
+  -clang-diagnostic-braced-scalar-init,                                          # all initialization done with braces
+'

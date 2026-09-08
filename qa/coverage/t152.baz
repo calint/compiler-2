@@ -33,5 +33,18 @@ func main() {
 
     var ln3 : line = { }
 
-    var msg : message = { 8 }
+    var msg1 : message = { 8 }
+    assert(msg1.len == 8)
+    msg1.subject[0] = 1
+    msg1.subject[1] = 2
+    msg1.subject[127] = 128
+    assert(msg1.subject[0] == 1)
+    assert(msg1.subject[1] == 2)
+    assert(msg1.subject[127] == 128)
+
+ #   var msg2 : message
+ #   msg2.subject = msg1.subject
+ #   assert(msg2.subject[0] == 1)
+ #   assert(msg2.subject[1] == 2)
+ #   assert(msg2.subject[127] == 128)
 }
