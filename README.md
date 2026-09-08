@@ -29,7 +29,7 @@ x86_64 assembly on Linux.
 code run `./make.sh`
 * after that use `./run-baz.sh myprogram.baz` or `./run-baz.sh` to compile and
 run `prog.baz`
-  * optional parameters: _stack size_, _bounds check_, with _line number
+  * optional parameters: _stack size_, _bounds check_, with _line number_
     information_ e.g:
     * `./run-baz.sh myprogram.baz --stack=262144`: stack size, no runtime checks
     * `./run-baz.sh myprogram.baz --stack=262144 --check=upper`: checks upper
@@ -39,6 +39,8 @@ run `prog.baz`
     upper bounds with line number information
     * `./run-baz.sh myprogram.baz --stack=262144 --checks=upper,lower,line`: checks
     bounds with line number information
+    * option `--nopt` disables post processing optimization of jumps in boolean
+    expressions
 * to run the tests `qa/coverage/run-tests.sh` and see coverage report in `qa/coverage/report/`
 * syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)
 * todo list of planned fixes and features in `etc/todo.txt`
