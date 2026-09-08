@@ -12,6 +12,7 @@
     [ ] on var
 [o] initializer for types that contain array does not work as intended:
     var input_buffer : str = {0, 0} where second element is an array
+    var pts : point[2] = { {x1, y1}, {x2, y2} }
     [x] on dat
     [ ] on var
 [o] stmt_assign_var::compile: unified way of determining the effective address
