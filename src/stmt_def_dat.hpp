@@ -442,9 +442,8 @@ class stmt_def_dat final : public statement {
             el.value = *num;
             return el;
         }
-        throw compiler_exception(
-            el.tk,
-            std::format("element of type '{}' must be a constant", tp.name()));
+        el.value = tc.get_const(el.tk, el.tk.text());
+        return el;
     }
 
     static auto parse_type(const toc& tc, tokenizer& tz, const type& tp)

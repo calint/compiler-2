@@ -10,10 +10,22 @@ const yes = 1
 const no = 0
 const maybe = -1
 
+type point { x, y }
+
 func main() {
+    dat p1 : point = { yes, no }
+    var p2 : point = { no, yes }
+
     var answer = maybe
     assert(answer == -1)
 
     answer = yes
     assert(answer == 1)
+
+    assert (p1.x == yes)
+    assert (p1.y == no)
+
+    assert (p2.x == no)
+    assert (p2.y == yes)
+
 }
