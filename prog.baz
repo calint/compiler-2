@@ -78,12 +78,6 @@ type str {
     data : i8[127]
 }
 
-# constants are declared in global scope
-
-const yes = 1
-const no = 0
-const maybe = -1
-
 func str_in(s : str) {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
@@ -100,6 +94,12 @@ func str_out(s : str) {
     mov(rdx, s.len) # buffer size
     syscall()
 } 
+
+# constants are declared in global scope
+
+const yes = 1
+const no = 0
+const maybe = -1
 
 func main() {
     dat   hello : i8[] = "hello world from baz\n"

@@ -56,7 +56,7 @@ mov rsp, stk.end
 ;[76:1]        len :       0 :       1 :      no :           
 ;[76:1]       data :       1 :     127 :     yes :        127
 
-;[81:1] # constants are declared in global scope
+;[98:1] # constants are declared in global scope
 main:
 ;   [105:5] dat hello : i8[] = "hello world from baz\n"
 ;   [105:11] hello: i8[21] (21B @ [rsp - 21])
@@ -2283,37 +2283,37 @@ main:
             print_24_4_219_9_end:
         print_str_219_9_end:
 ;       [220:9] str_in(nm)
-;       [87:6] str_in(s : str) 
+;       [81:6] str_in(s : str) 
         str_in_220_9:
 ;           [220:9] alias s -> nm  (lea: )
-;           [88:5] mov(rax, 0)
-;               [88:14] 0
+;           [82:5] mov(rax, 0)
+;               [82:14] 0
                 mov rax, 0
-;           [88:19] # read system call
-;           [89:5] mov(rdi, 0)
-;               [89:14] 0
+;           [82:19] # read system call
+;           [83:5] mov(rdi, 0)
+;               [83:14] 0
                 mov rdi, 0
-;           [89:19] # file descriptor for standard input
-;           [90:5] mov(rsi, address_of(s.data))
-;               [90:14] rsi = address_of(s.data)
-;               [90:14] = expression
-;               [90:14] address_of(s.data)
+;           [83:19] # file descriptor for standard input
+;           [84:5] mov(rsi, address_of(s.data))
+;               [84:14] rsi = address_of(s.data)
+;               [84:14] = expression
+;               [84:14] address_of(s.data)
                 lea rsi, [rsp - 928]
-;           [90:34] # buffer address
-;           [91:5] mov(rdx, array_size_of(s.data))
-;               [91:14] rdx = array_size_of(s.data)
-;               [91:14] = expression
-;               [91:14] array_size_of(s.data)
+;           [84:34] # buffer address
+;           [85:5] mov(rdx, array_size_of(s.data))
+;               [85:14] rdx = array_size_of(s.data)
+;               [85:14] = expression
+;               [85:14] array_size_of(s.data)
                 mov rdx, 127
-;           [91:37] # buffer size
-;           [92:5] syscall()
+;           [85:37] # buffer size
+;           [86:5] syscall()
             syscall
-;           [93:5] mov(s.len, rax - 1)
-;               [93:16] rax
+;           [87:5] mov(s.len, rax - 1)
+;               [87:16] rax
                 mov byte [rsp - 929], al
-;               [93:22] s.len - 1
+;               [87:22] s.len - 1
                 sub byte [rsp - 929], 1
-;           [93:25] # return value
+;           [87:25] # return value
         str_in_220_9_end:
         if_221_12:
 ;       [221:12] ? nm.len == 0
@@ -2415,28 +2415,28 @@ main:
                 print_24_4_227_13_end:
             print_str_227_13_end:
 ;           [228:13] str_out(nm)
-;           [96:6] str_out(s : str) 
+;           [90:6] str_out(s : str) 
             str_out_228_13:
 ;               [228:13] alias s -> nm  (lea: )
-;               [97:5] mov(rax, 1)
-;                   [97:14] 1
+;               [91:5] mov(rax, 1)
+;                   [91:14] 1
                     mov rax, 1
-;               [97:19] # write system call
-;               [98:5] mov(rdi, 0)
-;                   [98:14] 0
+;               [91:19] # write system call
+;               [92:5] mov(rdi, 0)
+;                   [92:14] 0
                     mov rdi, 0
-;               [98:19] # file descriptor for standard out
-;               [99:5] mov(rsi, address_of(s.data))
-;                   [99:14] rsi = address_of(s.data)
-;                   [99:14] = expression
-;                   [99:14] address_of(s.data)
+;               [92:19] # file descriptor for standard out
+;               [93:5] mov(rsi, address_of(s.data))
+;                   [93:14] rsi = address_of(s.data)
+;                   [93:14] = expression
+;                   [93:14] address_of(s.data)
                     lea rsi, [rsp - 928]
-;               [99:34] # buffer address
-;               [100:5] mov(rdx, s.len)
-;                   [100:14] s.len
+;               [93:34] # buffer address
+;               [94:5] mov(rdx, s.len)
+;                   [94:14] s.len
                     movsx rdx, byte [rsp - 929]
-;               [100:21] # buffer size
-;               [101:5] syscall()
+;               [94:21] # buffer size
+;               [95:5] syscall()
                 syscall
             str_out_228_13_end:
 ;           [229:13] print_str(dot)
