@@ -281,7 +281,7 @@ struct ident_info {
     std::vector<std::string> elem_path;
     std::vector<const type*> type_path;
     std::vector<std::string> lea_path;
-    std::string lea;
+    std::string lea; // e.g. "rsp + r14 * 4 - 205"
     ident_type ident_type{};
 
     [[nodiscard]] auto is_const() const -> bool {

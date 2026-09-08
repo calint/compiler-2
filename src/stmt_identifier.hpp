@@ -120,12 +120,11 @@ class stmt_identifier : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         get_unary_ops().source_to(os);
-        int sep{};
+        int counter{};
         for (const identifier_elem& e : elems_) {
-            if (sep) {
+            if (counter++) {
                 std::print(os, ".");
             }
-            ++sep;
             e.name_tk.source_to(os);
             if (e.array_index_expr) {
                 std::print(os, "[");
