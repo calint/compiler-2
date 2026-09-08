@@ -18,7 +18,7 @@
     [ ] on var
 [o] incomplete initializer writes 0 to remaining fields
     => var pt : point = {1} # writes 0 to remaining fields
-    [o] on dat
+    [x] on dat
     [ ] on var
 [ ] toc: heuristic aware rep stosb. switches from stosb to mov depending on
     number of bytes to be set (1 to 64 bytes unrolled)

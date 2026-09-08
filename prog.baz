@@ -109,6 +109,9 @@ func main() {
     dat     dot : i8[] = "."
     dat      nl : i8[] = "\n"
 
+    dat      s1 : str = { 3 }
+    # remaining uninitialized fields are zeroed
+
     # initial data declared before any variables and initialized with constants
 
     var arr : i32[4]

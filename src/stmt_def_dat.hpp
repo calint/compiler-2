@@ -253,6 +253,19 @@ class stmt_def_dat final : public statement {
                 compile_data_type_field(tc, os, tf, e);
                 ++counter;
             }
+
+            // zero out remaining fields, if any
+            const size_t n{flds.size()};
+            const size_t diff{n - counter};
+            if (diff == 0) {
+                return;
+            }
+            size_t nbytes{};
+            for (size_t i{counter}; i < n; ++i) {
+                nbytes += flds[i].size;
+            }
+            std::println(os, "; zero remaining fields");
+            std::println(os, "times {} db 0", nbytes);
             return;
         }
 
@@ -270,9 +283,21 @@ class stmt_def_dat final : public statement {
                 compile_data_type_field(tc, os, tf, e);
                 ++field_counter;
             }
+            // zero out remaining fields, if any
+            const size_t n{flds.size()};
+            const size_t diff{n - field_counter};
+            if (diff == 0) {
+                continue;
+            }
+            size_t nbytes{};
+            for (size_t i{field_counter}; i < n; ++i) {
+                nbytes += flds[i].size;
+            }
+            std::println(os, "; zero remaining fields");
+            std::println(os, "times {} db 0", nbytes);
         }
 
-        const size_t diff = elroot.array_size - elem_counter;
+        const size_t diff{elroot.array_size - elem_counter};
 
         if (diff == 0) {
             return;
@@ -469,7 +494,19 @@ class stmt_def_dat final : public statement {
         el.ws2 = tz.next_whitespace_token();
 
         size_t counter{};
-        for (const type_field& tf : tp.fields()) {
+        const std::span<const type_field> flds{tp.fields()};
+        while (true) {
+            const token tk = tz.next_whitespace_token();
+            if (tz.is_next_char('}')) {
+                el.ws3 = tk;
+                el.ws4 = tz.next_whitespace_token();
+                break;
+            }
+            tz.put_back_token(tk);
+
+            const type_field& tf{flds[counter]};
+
+            // for (const type_field& tf : tp.fields()) {
             if (counter++) {
                 if (not tz.is_next_char(',')) {
                     throw compiler_exception(
@@ -483,14 +520,6 @@ class stmt_def_dat final : public statement {
             el.elems.emplace_back(
                 parse_elem(tc, tz, *tf.type_ptr, tf.is_array, tf.array_size));
         }
-
-        el.ws3 = tz.next_whitespace_token();
-        if (not tz.is_next_char('}')) {
-            throw compiler_exception(
-                tz, std::format("expected '}}' to close type '{}' initializer",
-                                tp.name()));
-        }
-        el.ws4 = tz.next_whitespace_token();
 
         return el;
     }
@@ -549,11 +578,12 @@ class stmt_def_dat final : public statement {
             elroot.ws2.source_to(os);
 
             size_t counter{};
-            for (const type_field& tf : tp.fields()) {
+            const std::span<const type_field>& flds{tp.fields()};
+            for (const elem& e : elroot.elems) {
                 if (counter++) {
                     std::print(os, ",");
                 }
-                print_source_field(os, tf, elroot.elems[counter - 1]);
+                print_source_field(os, flds[counter - 1], e);
             }
 
             elroot.ws3.source_to(os);

@@ -19,6 +19,11 @@ type string { data : i8[128] }
 type entity { messages : string[8] }
 
 func main() {
+    dat    pt0 : point = { -1 }
+    dat    pt1 : point = {  }
+    dat    pt2 : point[2] = { {-1} }
+    dat   wld0 : world = {}
+
     dat data_a
     dat data_b : i32 = 32
     dat data_c : i16[4] = { 1, 2, 3, 4 }
@@ -51,7 +56,6 @@ func main() {
     data_b = 10
     assert(data_b == 10)
 
-return
     assert(data_c[0] == 1)
     assert(data_c[1] == 2)
     assert(data_c[2] == 3)
@@ -120,7 +124,7 @@ return
     lines[0].points[0].x = -5
     lines[0].points[0].y = -4
     lines[0].points[1].x = -3
-    lines[0].points[1].x = -2
+    lines[0].points[1].y = -2
     assert(lines[0].points[0].x == -5)
     assert(lines[0].points[0].y == -4)
     assert(lines[0].points[1].x == -3)
@@ -130,10 +134,10 @@ return
     assert(str.data[11] == 10) # '\n'
 
     assert(strs[0].data[0] == 104) # 'h'
-    assert(strs[0].data[11] == 10) # '\n'
+    assert(strs[0].data[5] == 10) # '\n'
     assert(strs[1].data[0] == 119) # 'w'
 
     assert(strs2[0].data[0] == 104) # 'h'
-    assert(strs2[0].data[11] == 10) # '\n'
+    assert(strs2[0].data[5] == 10) # '\n'
     assert(strs2[1].data[0] == 119) # 'w'
 }
