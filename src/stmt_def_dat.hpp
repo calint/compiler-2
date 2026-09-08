@@ -364,7 +364,7 @@ class stmt_def_dat final : public statement {
             if (not tz.is_next_char('}')) {
                 throw compiler_exception(
                     tz, std::format(
-                            "expected '}}' to open array initializer for '{}'",
+                            "expected '}}' to close array initializer for '{}'",
                             tp.name()));
             }
             el.ws4 = tz.next_whitespace_token();
