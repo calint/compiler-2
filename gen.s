@@ -2634,6 +2634,6 @@ dat.len equ $ - dat
 
 ; max scratch registers in use: 5
 ;            max frames in use: 9
-;               max stack size: 1057B
+;               max stack size: 1057 B
 ;          optimization pass 1: 94
 ;          optimization pass 2: 0

@@ -51,10 +51,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    43           1501            785           7150
+C/C++ Header                    43           1501            785           7149
 C++                              1             91            112            581
 -------------------------------------------------------------------------------
-SUM:                            44           1592            897           7731
+SUM:                            44           1592            897           7730
 -------------------------------------------------------------------------------
 ```
 
@@ -4062,7 +4062,7 @@ dat.len equ $ - dat
 
 ; max scratch registers in use: 5
 ;            max frames in use: 9
-;               max stack size: 1057B
+;               max stack size: 1057 B
 ;          optimization pass 1: 94
 ;          optimization pass 2: 0
 ```
