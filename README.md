@@ -165,7 +165,6 @@ const no = 0
 const maybe = -1
 
 func main() {
-    # initial data declared first in main and are initialized with constants
     dat   hello : i8[] = "hello world from baz\n"
     dat prompt1 : i8[] = "enter name:\n"
     dat prompt2 : i8[] = "that is not a name.\n"
@@ -173,6 +172,7 @@ func main() {
     dat     dot : i8[] = "."
     dat      nl : i8[] = "\n"
 
+    # initial data declared before any variables and initialized with constants
 
     var arr : i32[4]
     # arrays are initialized to 0
@@ -185,7 +185,7 @@ func main() {
     assert(answer == -1)
 
     var ix = 1
-    # variables can have an initial value using expressions
+    # variables can have an initial value
 
     arr[ix] = 2
     arr[ix + 1] = arr[ix]
@@ -1481,19 +1481,19 @@ mov rsp, stk.end
 
 ;[98:1] # constants are declared in global scope
 main:
-;   [105:5] # initial data declared first in main and are initialized with constants
-;   [106:5] dat hello : i8[] = "hello world from baz\n"
-;   [106:11] hello: i8[21] (21B @ [rsp - 21])
-;   [107:5] dat prompt1 : i8[] = "enter name:\n"
-;   [107:9] prompt1: i8[12] (12B @ [rsp - 33])
-;   [108:5] dat prompt2 : i8[] = "that is not a name.\n"
-;   [108:9] prompt2: i8[20] (20B @ [rsp - 53])
-;   [109:5] dat prompt3 : i8[] = "hello "
-;   [109:9] prompt3: i8[6] (6B @ [rsp - 59])
-;   [110:5] dat dot : i8[] = "."
-;   [110:13] dot: i8[1] (1B @ [rsp - 60])
-;   [111:5] dat nl : i8[] = "\n"
-;   [111:14] nl: i8[1] (1B @ [rsp - 61])
+;   [105:5] dat hello : i8[] = "hello world from baz\n"
+;   [105:11] hello: i8[21] (21B @ [rsp - 21])
+;   [106:5] dat prompt1 : i8[] = "enter name:\n"
+;   [106:9] prompt1: i8[12] (12B @ [rsp - 33])
+;   [107:5] dat prompt2 : i8[] = "that is not a name.\n"
+;   [107:9] prompt2: i8[20] (20B @ [rsp - 53])
+;   [108:5] dat prompt3 : i8[] = "hello "
+;   [108:9] prompt3: i8[6] (6B @ [rsp - 59])
+;   [109:5] dat dot : i8[] = "."
+;   [109:13] dot: i8[1] (1B @ [rsp - 60])
+;   [110:5] dat nl : i8[] = "\n"
+;   [110:14] nl: i8[1] (1B @ [rsp - 61])
+;   [112:5] # initial data declared before any variables and initialized with constants
 ;   [114:5] var arr : i32[4]
 ;   [114:9] arr: i32[4] (16B @ [rsp - 77])
 ;   [114:9] clear 4 * 4B = 16B
@@ -1591,7 +1591,7 @@ main:
 ;   [124:9] ix = 1
 ;   [124:14] 1
     mov qword [rsp - 93], 1
-;   [125:5] # variables can have an initial value using expressions
+;   [125:5] # variables can have an initial value
 ;   [127:5] arr[ix] = 2
 ;   [127:5] allocate scratch register -> r15
 ;   [127:9] set array index
