@@ -30,7 +30,7 @@ code run `./make.sh`
 * after that use `./run-baz.sh myprogram.baz` or `./run-baz.sh` to compile and
 run `prog.baz`
   * optional parameters: _stack size_, _bounds check_, with _line number_
-    information_ e.g:
+    information and _jump optimizations_ e.g:
     * `./run-baz.sh myprogram.baz --stack=262144`: stack size, no runtime checks
     * `./run-baz.sh myprogram.baz --stack=262144 --check=upper`: checks upper
     bounds without line number information and is often enough to ensure catching
