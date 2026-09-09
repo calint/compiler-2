@@ -8,30 +8,23 @@ func assert(expr : bool) if not expr exit(1)
 
 type string { len : i8, data : i8[127] }
 
-type room { name : string, description : string, note : string }
+type link { id : i16, from : i16, to : i16 }
+
+type room { name : string, description : string, note : string, links : link[6] }
 
 type world { rooms : room[128] }
 
 func action_look(rm : room) {
 }
 
-func bar(i : i8) {
-    var x = i
+func fab(from : i16) {
 }
 
-func foo(ch : i8) {
-    bar(ch)
-}
-
-func fab(str_dat : i8[]) {
-    foo(str_dat[2])
-}
-
-func fuz(rm : room) {
-    fab(rm.description.data)
+func fuz(link : link) {
+    fab(link.from)
 }
 
 func main() {
     var wld : world
-    fuz(wld.rooms[1])
+    fuz(wld.rooms[1].links[2])
 }

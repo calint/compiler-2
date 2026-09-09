@@ -1346,6 +1346,8 @@ class toc final {
                 const size_t lea_sz{lea_path.size()};
                 if ((nid_sz > lea_sz) and (nid_sz - lea_sz > 1)) {
                     lea_path.resize(lea_path.size() + new_id.path().size() - 2);
+                    // note: -2 because last element is current element and
+                    //       first will be processed
                 }
 
                 // this is an alias
