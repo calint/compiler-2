@@ -975,11 +975,10 @@ class toc final {
         if (not st.is_identifier()) {
             return false;
         }
+
         std::string_view id_base{get_before_dot(st.identifier())};
-        size_t i{frames_.size()};
-        while (i) {
-            i--;
-            const frame& frm{frames_[i]};
+
+        for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.has_var(id_base)) {
                 return false;
             }
@@ -1296,7 +1295,7 @@ class toc final {
         //       'lea_path' elements will match each component of the identifier
         //       using the top most being the most recent in the call stack
 
-        // ignore the elements after the base:
+        // ignore the elements after the first element:
         //  e.g.: lnks[1].pos.y
         //   ignore pos.y since those cannot have a lea, add empty leas for
         //   those
@@ -1304,6 +1303,7 @@ class toc final {
         //         elements have corresponding lea
 
         lea_path.insert(lea_path.end(), id.path().size() - 1, "");
+        // note: -1 to exclude the first element
 
         size_t i{frames_.size()};
         while (i) {
@@ -1771,7 +1771,7 @@ class toc final {
             if (char_index_in_source == 0) {
                 break;
             }
-            char_index_in_source--;
+            --char_index_in_source;
         }
 
         return {at_line, at_col};
