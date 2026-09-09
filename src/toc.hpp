@@ -1381,11 +1381,11 @@ class toc final {
             // find the first element from the top that has a 'lea' and get
             // accessor relative to that
 
-            size_t j{ii.elem_path.size()};
-            while (j) {
-                j--;
-                if (not ii.lea_path[j].empty()) {
-                    ii.lea = ii.lea_path[j];
+            size_t lea_index{ii.elem_path.size()};
+            while (lea_index) {
+                --lea_index;
+                if (not ii.lea_path[lea_index].empty()) {
+                    ii.lea = ii.lea_path[lea_index];
                     break;
                 }
             }
@@ -1394,16 +1394,19 @@ class toc final {
                 return ii;
             }
 
-            // identifier has lea path
+            // identifier has lea, construct operand
 
-            const size_t offset{ii.type_path[j]->field_offset(
-                src_loc_tk, std::span{ii.elem_path}.subspan(j))};
+            // start from the lea address and calculate offset to referred field
+            const std::span<std::string> elem_path_from_lea{
+                std::span{ii.elem_path}.subspan(lea_index)};
 
+            // navigate to referred element and get offset
+            const size_t offset{ii.type_path[lea_index]->field_offset(
+                src_loc_tk, elem_path_from_lea)};
+
+            ii.operand = operand{ii.lea};
             if (offset != 0) {
-                ii.operand = operand{ii.lea};
                 ii.operand.displacement += static_cast<int>(offset);
-            } else {
-                ii.operand = operand{ii.lea_path[j]};
             }
             ii.operand.size = ii.type_ptr->size();
 
