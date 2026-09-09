@@ -22,8 +22,12 @@ func foo(str : i8[]) {
     bar(str[5])
 }
 
+func fuz(rm : room) {
+    foo(rm.name.data)
+}
+
 func main() {
     var wld : world
     action_look(wld.rooms[2])
-    foo(wld.rooms[2].name.data[3])
+    fuz(wld.rooms[2])
 }

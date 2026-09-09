@@ -1279,6 +1279,7 @@ class toc final {
         return false;
     }
 
+    // reviewed: 2026-09-09
     [[nodiscard]] auto
     make_ident_info_or_empty(const token& src_loc_tk,
                              const std::string_view ident) const -> ident_info {
@@ -1396,6 +1397,20 @@ class toc final {
 
             // identifier has lea, construct operand
 
+            // example of resulting data structure:
+            //
+            // id path  |  type  |  lea          |
+            // ---------|--------|---------------|
+            // wld      | world  | -             |
+            // rooms[2] | room   | -             |
+            // name     | string | r15           |
+            // data     | i8     | r15 + 1       |
+            //
+
+            // the indexing in 'rooms' is done at runtime thus the memory
+            // location of 'rooms[3]' can no longer be deduced statically thus
+            // the top most lea is the starting point when accessing identifiers
+
             // start from the lea address and calculate offset to referred field
             const std::span<std::string> elem_path_from_lea{
                 std::span{ii.elem_path}.subspan(lea_index)};
@@ -1445,9 +1460,10 @@ class toc final {
             };
         }
 
-        // if ident is "bracketed" extract
+        // if ident is "bracketed" extract the contents between the brackets
         std::optional<std::string> ident_bracketed{
             get_text_between_brackets(ident)};
+
         if (ident_bracketed) {
             id = ident_path{*ident_bracketed};
         }
