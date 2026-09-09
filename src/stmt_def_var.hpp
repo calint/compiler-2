@@ -1,5 +1,6 @@
 #pragma once
 // reviewed: 2025-09-28
+//           2026-09-09
 
 #include <format>
 #include <memory>
@@ -123,6 +124,7 @@ class stmt_def_var final : public statement {
         -> void override {
 
         tc.comment_source(*this, os, indent);
+
         const var_info var{
             .name{name_tk_.text()},
             .type_ptr{&get_type()},
@@ -164,8 +166,8 @@ class stmt_def_var final : public statement {
                        std::to_string(bytes_count));
             toc::asm_lea(os, indent, "rdi",
                          std::format("rsp - {}", -dst_info.stack_ix));
-            // note: -dst_info.stack_ix_rel_rsp for nicer source formatting; is
-            //       always negative
+            // note: -dst_info.stack_ix for nicer source formatting; is always
+            //       negative
             tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
             toc::asm_rep_stos(os, indent, 'b');
 
@@ -178,7 +180,7 @@ class stmt_def_var final : public statement {
         // mov less than a threshold for rep stos
 
         tc.comment_start(tok(), os, indent);
-        std::println(os, "size <= {}B, use mov", threshold_for_rep_stos);
+        std::println(os, "size <= {} B, use mov", threshold_for_rep_stos);
 
         size_t rest{bytes_count};
         const size_t qword_movs{rest / toc::size_qword};

@@ -175,7 +175,7 @@ class ident_path final {
 
     [[nodiscard]] auto base() const -> std::string_view { return path_[0]; }
 
-    [[nodiscard]] auto path() const -> std::span<const std::string> {
+    [[nodiscard]] auto path() const -> const std::vector<std::string>& {
         return path_;
     }
 
@@ -260,6 +260,7 @@ class toc final {
 
     auto add_const(const token& src_loc_tk, const std::string_view name,
                    const int64_t value) {
+
         if (constants_.has(name)) {
             const constant c{constants_.get_const_ref(name)};
             throw compiler_exception(
@@ -1284,78 +1285,91 @@ class toc final {
 
         ident_path id{std::string{ident}};
 
-        // get the root of an identifier: example p.x -> p
-        // traverse the frames and resolve the `ident` (which might be an
-        // alias) to a variable, field, register or constant
-        size_t i{frames_.size()};
+        // get the base of the identifier: e.g. lnks[1].pos.y -> lnks
+        // traverse the frames and resolve to a variable, register or constant
+
         std::vector<std::string> lea_path;
+        // note: 'lea' is a register operand pointing to the data of the
+        //       identifier combined with assembler instruction 'lea' to load
+        //       the effective address of that data
+        //       'lea_path' elements will match each component of the identifier
+        //       using the top most being the most recent in the call stack
+
         // ignore the elements after the base:
         //  e.g.: lnks[1].pos.y
         //   ignore pos.y since those cannot have a lea, add empty leas for
         //   those
-        const size_t n{id.path().size()};
-        for (size_t j{1}; j < n; ++j) {
-            lea_path.emplace_back("");
-        }
+        //   note: 'lea_path' will be reversed so that 'ident_path'
+        //         elements have corresponding lea
 
+        lea_path.insert(lea_path.end(), id.path().size() - 1, "");
+
+        size_t i{frames_.size()};
         while (i) {
-            i--;
+            --i;
+
             const frame& frm{frames_[i]};
-            // does scope contain the variable?
+
+            // does this frame contain the variable?
             if (frm.has_var(id.base())) {
-                // yes, found
                 // lea_path.emplace_back("");
                 break;
             }
+
             if (frm.is_func()) {
+
+                // root frame of the function, from here on aliases are followed
+                // to the actual variable referred to in the call stack
+
                 if (not frm.has_alias(id.base())) {
                     lea_path.emplace_back("");
                     break;
                 }
 
-                // yes, continue resolving alias until it is a variable,
-                // field, register or constant
+                // this is an alias, continue resolving until it is a variable,
+                // register or constant
+
                 const alias_info& alias{frm.get_alias(id.base())};
 
                 lea_path.emplace_back(alias.lea);
 
                 ident_path new_id{std::string{alias.to}};
 
-                // this is an alias of the type:
+                // this is an alias
+                // e.g.
                 //   res -> pt.x becomes pt.x
                 //   pt.x -> p becomes p.x
                 //   lnk.count -> world.roome.link becomes
-                //      world.roome.link.count
+                //   world.roome.link.count
+
                 for (const std::string& s : id.path() | std::views::drop(1)) {
                     new_id.append(s);
                 }
                 id = new_id;
+
                 continue;
             }
         }
 
         const frame& frm{frames_[i]};
 
-        // is it a variable?
         if (frm.has_var(id.base())) {
-            // std::cerr << src_loc.at_line() << ": " << ident << " -> "
-            //           << id.str() << "\n";
+
             const var_info& var{frm.get_var_const_ref(id.base())};
+
             std::vector<const type*> type_path;
+
             ident_info ii{var.type_ptr->accessor(src_loc_tk, ident, id.path(),
                                                  var, type_path)};
 
-            ii.elem_path = std::vector(id.path().begin(), id.path().end());
-            //? fishy stuff adjusting lea_path size
-            // pad the lea path to have the same size as the other vectors
+            ii.elem_path = id.path();
             ii.type_path = type_path;
-            for (size_t j{lea_path.size()}; j < id.path().size(); ++j) {
-                lea_path.emplace_back("");
-            }
-            while (lea_path.size() != id.path().size()) {
-                lea_path.pop_back();
-            }
+            lea_path.resize(id.path().size());
+            // note: pad with "" to adjust for the variable accessor
             std::ranges::reverse(lea_path);
+            // note: reverse it since it was constructed while traversing
+            //       upwards in the frame stack but 'elem_path' and 'type_path'
+            //       are ordered from the top down
             ii.lea_path = lea_path;
 
             if (not ii.type_ptr->is_built_in()) {
@@ -1364,7 +1378,7 @@ class toc final {
 
             // identifier is built-in type
 
-            // find the first element from the top that has a "lea" and get
+            // find the first element from the top that has a 'lea' and get
             // accessor relative to that
 
             size_t j{ii.elem_path.size()};
