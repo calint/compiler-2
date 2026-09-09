@@ -1376,7 +1376,7 @@ class toc final {
                 var.type_ptr->accessor(src_loc_tk, ident, id.path(), var)};
 
             lea_path.resize(id.path().size());
-            // note: pad with empty for the remaining elements in the type path
+            // note: pad with empty for the remaining elements in the id path
 
             std::ranges::reverse(lea_path);
             // note: reverse it since it was constructed while traversing
