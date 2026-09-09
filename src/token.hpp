@@ -22,7 +22,7 @@ class token final {
           const std::string_view ws_right, const size_t at_line,
           const bool is_str = false)
         : ws_left_{ws_left}, start_ix_{start_ix}, text_{name}, end_ix_{end_ix},
-          ws_right_{ws_right}, at_line_(at_line), is_str_{is_str} {}
+          ws_right_{ws_right}, at_line_{at_line}, is_str_{is_str} {}
 
     ~token() = default;
 
