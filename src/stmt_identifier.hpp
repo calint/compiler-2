@@ -224,7 +224,7 @@ class stmt_identifier : public statement {
         }
 
         // find the first element from the top that has a 'lea' and get accessor
-        // relative to that "lea"
+        // relative to that 'lea'
         size_t elem_index_with_lea{leas.size()};
         std::string lea;
         while (elem_index_with_lea) {
@@ -235,7 +235,7 @@ class stmt_identifier : public statement {
             }
         }
 
-        // start at an element with "lea" or 0 when no "lea" found
+        // start at an element with 'lea' or 0 when no 'lea' found
         std::string path{elems[elem_index_with_lea].name_tk.text()};
         const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
 

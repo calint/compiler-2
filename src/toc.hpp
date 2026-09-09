@@ -1339,8 +1339,8 @@ class toc final {
                 // big note: the fishy resizing of the 'lea_path' happens when
                 //           the 'new_id' extended past fields that do not need
                 //           lea
-                //           if 'lea_path' is not extended then the types, elems
-                //           and lea path vectors are not in sync
+                //           if 'lea_path' is not extended then the types, id
+                //           path elems and lea path vectors are not in sync
 
                 const size_t nid_sz{new_id.path().size()};
                 const size_t lea_sz{lea_path.size()};

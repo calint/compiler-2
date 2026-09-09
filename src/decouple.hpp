@@ -272,7 +272,7 @@ struct ident_info {
     enum class ident_type : uint8_t { CONST, VAR, REGISTER };
 
     std::string id;
-    operand operand; // NASM valid source
+    operand operand; // nasm valid source
     int64_t const_value{};
     const type* type_ptr{};
     int32_t stack_ix{};
