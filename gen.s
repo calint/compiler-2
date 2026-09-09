@@ -77,14 +77,14 @@ main:
 ;   [117:5] var arr : i32[4]
 ;   [117:9] arr: i32[4] (16B @ [rsp - 205])
 ;   [117:9] clear 4 * 4B = 16B
-;   [117:5] size <= 32B, use mov
+;   [117:5] size <= 32 B, use mov
     mov qword [rsp - 205], 0
     mov qword [rsp - 197], 0
 ;   [118:5] # arrays are initialized to 0
 ;   [120:5] var answer
 ;   [120:9] answer: i64 (8B @ [rsp - 213])
 ;   [120:9] clear 1 * 8B = 8B
-;   [120:5] size <= 32B, use mov
+;   [120:5] size <= 32 B, use mov
     mov qword [rsp - 213], 0
 ;   [121:5] assert(answer == 0)
 ;   [121:12] allocate scratch register -> r15
@@ -444,7 +444,7 @@ main:
 ;   [139:5] var arr1 : i32[8]
 ;   [139:9] arr1: i32[8] (32B @ [rsp - 253])
 ;   [139:9] clear 8 * 4B = 32B
-;   [139:5] size <= 32B, use mov
+;   [139:5] size <= 32 B, use mov
     mov qword [rsp - 253], 0
     mov qword [rsp - 245], 0
     mov qword [rsp - 237], 0
@@ -1757,7 +1757,7 @@ main:
 ;   [203:5] var o3 : object[1]
 ;   [203:9] o3: object[1] (20B @ [rsp - 417])
 ;   [203:9] clear 1 * 20B = 20B
-;   [203:5] size <= 32B, use mov
+;   [203:5] size <= 32 B, use mov
     mov qword [rsp - 417], 0
     mov qword [rsp - 409], 0
     mov dword [rsp - 401], 0
