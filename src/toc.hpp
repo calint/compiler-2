@@ -1290,17 +1290,17 @@ class toc final {
 
         std::vector<std::string> lea_path;
         // note: 'lea' is a register operand pointing to the data of the
-        //       identifier combined with assembler instruction 'lea' to load
-        //       the effective address of that data
-        //       'lea_path' elements will match each component of the identifier
+        //       identifier combined which combined assembler instruction 'lea'
+        //       to loads the effective address of that data
+        //       'lea_path' elements will match components of the identifier
         //       using the top most being the most recent in the call stack
 
         // ignore the elements after the first element:
         //  e.g.: lnks[1].pos.y
-        //   ignore pos.y since those cannot have a lea, add empty leas for
-        //   those
-        //   note: 'lea_path' will be reversed so that 'ident_path'
-        //         elements have corresponding lea
+        //   ignore pos.y since those cannot have a lea
+        //   add empty leas for those
+        //   note: 'lea_path' will be reversed when complete so that
+        //          'ident_path' elements have corresponding lea
 
         lea_path.insert(lea_path.end(), id.path().size() - 1, "");
         // note: -1 to exclude the first element
@@ -1313,16 +1313,17 @@ class toc final {
 
             // does this frame contain the variable?
             if (frm.has_var(id.base())) {
-                // lea_path.emplace_back("");
                 break;
             }
 
             if (frm.is_func()) {
 
-                // root frame of the function, from here on aliases are followed
-                // to the actual variable referred to in the call stack
+                // root frame of the function
+                // from here on aliases are followed to the actual variable
+                // referred to
 
                 if (not frm.has_alias(id.base())) {
+                    // add an empty
                     lea_path.emplace_back("");
                     break;
                 }
@@ -1340,7 +1341,7 @@ class toc final {
                 //           the 'new_id' extended past fields that do not need
                 //           lea
                 //           if 'lea_path' is not extended then the types, id
-                //           path elems and lea path vectors are not in sync
+                //           path elements and lea path vectors are not in sync
 
                 const size_t nid_sz{new_id.path().size()};
                 const size_t lea_sz{lea_path.size()};
@@ -1350,7 +1351,7 @@ class toc final {
                     //       first will be processed
                 }
 
-                // this is an alias
+                // this is an alia
                 // e.g.
                 //   res -> pt.x becomes pt.x
                 //   pt.x -> p becomes p.x
@@ -1421,10 +1422,9 @@ class toc final {
             // description | string | -             |
             // data        | i8     | r15 + 129     |
             //
-
             // the indexing in 'rooms' is done at runtime thus the memory
-            // location of 'rooms[2]' can no longer be deduced statically, thus
-            // the top most lea is the starting point when accessing identifiers
+            // location of 'rooms[2]' cannot  be deduced statically, thus the
+            // top most lea is the starting point when accessing identifiers
 
             // start from the lea address and calculate offset to referred field
             const std::span<std::string> elem_path_from_lea{
