@@ -20,14 +20,14 @@
 #include "toc.hpp"
 #include "unary_ops.hpp"
 
-struct identifier_elem {
-    token name_tk;
-    std::unique_ptr<expr_any> array_index_expr;
-    token ws1;
-};
-
 class stmt_identifier : public statement {
-    std::vector<identifier_elem> elems_;
+    struct ident_elem {
+        token name_tk;
+        std::unique_ptr<expr_any> array_index_expr;
+        token ws1;
+    };
+
+    std::vector<ident_elem> elems_;
     token ws1_;
     token ws2_;
     std::string path_as_string_;
@@ -105,15 +105,14 @@ class stmt_identifier : public statement {
         return path_as_string_;
     }
 
-    [[nodiscard]] auto elems() const -> std::span<const identifier_elem> {
+    [[nodiscard]] auto elems() const -> std::span<const ident_elem> {
         return elems_;
     }
 
     [[nodiscard]] auto is_indexed() const -> bool override {
-        return std::ranges::any_of(elems_,
-                                   [](const identifier_elem& e) -> bool {
-                                       return e.array_index_expr != nullptr;
-                                   });
+        return std::ranges::any_of(elems_, [](const ident_elem& e) -> bool {
+            return e.array_index_expr != nullptr;
+        });
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override { return true; }
@@ -121,7 +120,7 @@ class stmt_identifier : public statement {
     auto source_to(std::ostream& os) const -> void override {
         get_unary_ops().source_to(os);
         int counter{};
-        for (const identifier_elem& e : elems_) {
+        for (const ident_elem& e : elems_) {
             if (counter++) {
                 std::print(os, ".");
             }
@@ -208,7 +207,7 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] static auto compile_effective_address(
         const token& src_loc_tk, toc& tc, std::ostream& os, const size_t indent,
-        const std::span<const identifier_elem> elems,
+        const std::span<const ident_elem> elems,
         std::vector<std::string>& allocated_registers,
         const std::string_view reg_size,
         const std::span<const std::string> lea_path) -> operand {
@@ -244,7 +243,7 @@ class stmt_identifier : public statement {
         const size_t elems_size{elems.size()};
 
         for (size_t i{elem_index_with_lea}; i < elems_size; ++i) {
-            const identifier_elem& curr_elem{elems[i]};
+            const ident_elem& curr_elem{elems[i]};
             const ident_info curr_info{tc.make_ident_info(src_loc_tk, path)};
             const size_t type_size{curr_info.type_ptr->size()};
             const bool is_last{i == elems_size - 1};
@@ -259,7 +258,7 @@ class stmt_identifier : public statement {
 
                 // accumulate field offsets
                 if (i + 1 < elems_size) {
-                    const identifier_elem& next_elem{elems[i + 1]};
+                    const ident_elem& next_elem{elems[i + 1]};
                     accum_offset +=
                         static_cast<int32_t>(toc::get_field_offset_in_type(
                             src_loc_tk, *curr_info.type_ptr,
@@ -387,7 +386,7 @@ class stmt_identifier : public statement {
 
             // accumulate field offsets
             if (i + 1 < elems_size) {
-                const identifier_elem& next_elem{elems[i + 1]};
+                const ident_elem& next_elem{elems[i + 1]};
                 accum_offset +=
                     static_cast<int32_t>(toc::get_field_offset_in_type(
                         src_loc_tk, *curr_info.type_ptr,
