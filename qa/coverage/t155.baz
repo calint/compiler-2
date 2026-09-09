@@ -1,0 +1,37 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+type string { len : i8, data : i8[127] }
+
+type room { name : string, description : string, note : string }
+
+type world { rooms : room[128] }
+
+func action_look(rm : room) {
+}
+
+func bar(i : i8) {
+    var x = i
+}
+
+func foo(ch : i8) {
+    bar(ch)
+}
+
+func fab(str_dat : i8[]) {
+    foo(str_dat[2])
+}
+
+func fuz(rm : room) {
+    fab(rm.description.data)
+}
+
+func main() {
+    var wld : world
+    fuz(wld.rooms[1])
+}

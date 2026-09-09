@@ -1336,6 +1336,18 @@ class toc final {
 
                 ident_path new_id{std::string{alias.to}};
 
+                // big note: the fishy resizing of the 'lea_path' happens when
+                //           the 'new_id' extended past fields that do not need
+                //           lea
+                //           if 'lea_path' is not extended then the types, elems
+                //           and lea path vectors are not in sync
+
+                const size_t nid_sz{new_id.path().size()};
+                const size_t lea_sz{lea_path.size()};
+                if ((nid_sz > lea_sz) and (nid_sz - lea_sz > 1)) {
+                    lea_path.resize(lea_path.size() + new_id.path().size() - 2);
+                }
+
                 // this is an alias
                 // e.g.
                 //   res -> pt.x becomes pt.x
@@ -1366,11 +1378,13 @@ class toc final {
             ii.elem_path = id.path();
             ii.type_path = type_path;
             lea_path.resize(id.path().size());
-            // note: pad with "" to adjust for the variable accessor
+            // note: pad with empty for the remaining elements in the type path
+
             std::ranges::reverse(lea_path);
             // note: reverse it since it was constructed while traversing
             //       upwards in the frame stack but 'elem_path' and 'type_path'
             //       are ordered from the top down
+
             ii.lea_path = lea_path;
 
             if (not ii.type_ptr->is_built_in()) {
@@ -1399,12 +1413,16 @@ class toc final {
 
             // example of resulting data structure:
             //
-            // id path  |  type  |  lea          |
-            // ---------|--------|---------------|
-            // wld      | world  | -             |
-            // rooms[2] | room   | -             |
-            // name     | string | r15           |
-            // data     | i8     | r15 + 1       |
+            // type string { len : i8, data : i8[127] }
+            // type room { name : string, description : string, note : string }
+            // type world { rooms : room[128] }
+            //
+            // id path     |  type  |  lea          |
+            // ------------|--------|---------------|
+            // wld         | world  | -             |
+            // rooms[2]    | room   | r15           |
+            // description | string | -             |
+            // data        | i8     | r15 + 129     |
             //
 
             // the indexing in 'rooms' is done at runtime thus the memory
