@@ -192,8 +192,7 @@ class tokenizer final {
     auto move_back(size_t nchars) -> void {
         assert(char_ix_ >= nchars);
 
-        while (nchars) {
-            --nchars;
+        while (nchars--) {
             --char_ix_;
             if (src_[char_ix_] == '\n') {
                 --at_line_;

@@ -1399,8 +1399,7 @@ class toc final {
             // accessor relative to that
 
             size_t lea_index{ii.elem_path.size()};
-            while (lea_index) {
-                --lea_index;
+            while (lea_index--) {
                 if (not ii.lea_path[lea_index].empty()) {
                     ii.lea = ii.lea_path[lea_index];
                     break;
