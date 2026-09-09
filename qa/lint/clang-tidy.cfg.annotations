@@ -23,4 +23,5 @@ Checks: '
   -hicpp-static-assert,                                                          # same 
   -misc-static-assert,                                                           # same
   -clang-diagnostic-braced-scalar-init,                                          # all initialization done with braces
+  -readability-avoid-const-params-in-decls,                                      # allow making everything that can be const
 '
