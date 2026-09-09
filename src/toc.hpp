@@ -1426,7 +1426,7 @@ class toc final {
             //
 
             // the indexing in 'rooms' is done at runtime thus the memory
-            // location of 'rooms[2]' can no longer be deduced statically thus
+            // location of 'rooms[2]' can no longer be deduced statically, thus
             // the top most lea is the starting point when accessing identifiers
 
             // start from the lea address and calculate offset to referred field
