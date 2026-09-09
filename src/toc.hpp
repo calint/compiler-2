@@ -1372,13 +1372,9 @@ class toc final {
 
             const var_info& var{frm.get_var_const_ref(id.base())};
 
-            std::vector<const type*> type_path;
+            ident_info ii{
+                var.type_ptr->accessor(src_loc_tk, ident, id.path(), var)};
 
-            ident_info ii{var.type_ptr->accessor(src_loc_tk, ident, id.path(),
-                                                 var, type_path)};
-
-            ii.elem_path = id.path();
-            ii.type_path = type_path;
             lea_path.resize(id.path().size());
             // note: pad with empty for the remaining elements in the type path
 

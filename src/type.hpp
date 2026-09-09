@@ -68,12 +68,13 @@ class type final {
     }
 
     [[nodiscard]] auto accessor(const token& tk, const std::string_view ident,
-                                const std::span<const std::string> path,
-                                const var_info& var,
-                                std::vector<const type*>& type_path) const
-        -> ident_info {
+                                const std::vector<std::string>& path,
+                                const var_info& var) const -> ident_info {
+
+        std::vector<const type*> type_path;
 
         type_path.emplace_back(this);
+
         size_t offset{};
         bool is_array{var.is_array};
         size_t array_size{var.array_size};
@@ -114,8 +115,8 @@ class type final {
             .stack_ix{stack_idx},
             .array_size{array_size},
             .is_array{is_array},
-            .elem_path{},
-            .type_path{},
+            .elem_path{path},
+            .type_path{type_path},
             .lea_path{},
             .lea{},
             .ident_type{ident_info::ident_type::VAR},
