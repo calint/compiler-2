@@ -23,12 +23,15 @@ func main() {
     assert(o1.pos.x == 10)
     assert(o1.pos.y == 2)
     assert(o1.color == 0xff0000)
-    
+
     var p1 : point = {-x, -y}
+    assert(p1.x == -1)
+    assert(p1.y == -2)
+
     o1.pos[1] = p1
     assert(o1.pos[1].x == -1)
     assert(o1.pos[1].y == -2)
-    
+
     var o2 : object = o1
     assert(o2.pos[1].x == -1)
     assert(o2.pos[1].y == -2)

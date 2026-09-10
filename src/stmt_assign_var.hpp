@@ -81,11 +81,10 @@ class stmt_assign_var final : public statement {
 
         std::vector<std::string> lea_registers;
 
-        operand dst_operand{tc.get_lea_operand(os, indent, stmt_ident_,
-                                               dst_info, lea_registers)};
+        dst_info.operand = tc.get_lea_operand(os, indent, stmt_ident_, dst_info,
+                                              lea_registers);
 
-        dst_info.operand = dst_operand;
-        expr_.as_expr_type_value().compile(tc, os, indent, dst_info);
+        expr_.compile(tc, os, indent, dst_info);
 
         for (const std::string& reg : lea_registers | std::views::reverse) {
             tc.free_scratch_register(tok(), os, indent, reg);

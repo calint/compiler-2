@@ -6,7 +6,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <variant>
 #include <vector>
 
@@ -67,7 +66,7 @@ class expr_any final : public statement {
                     e.compile(tc, os, indent, dst_info);
                 },
                 [&]([[maybe_unused]] const expr_type_value& e) -> auto {
-                    std::unreachable();
+                    e.compile(tc, os, indent, dst_info);
                 },
                 [&](const expr_bool_ops_list& e) -> auto {
                     // if not expression assign to destination
