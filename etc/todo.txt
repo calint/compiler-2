@@ -14,13 +14,13 @@
 [o] a way to initiate a i8 array with a string:
     var hello : i8[] = "hello world"
     [x] on dat
-    [ ] on var
-[o] initializer for types that contain array does not work as intended:
+    [x] on var
+[x] initializer for types that contain array does not work as intended:
     var input_buffer : str = {0, 0} where second element is an array
     var pts : point[2] = { {x1, y1}, {x2, y2} }
     var pts : point[2] = { {x1, y1} } # zeroes the remaining uninitialized array
     [x] on dat
-    [ ] on var
+    [x] on var
 [x] incomplete initializer writes 0 to remaining fields
     => var pt : point = {1} # writes 0 to remaining fields
     [x] on dat
