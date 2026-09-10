@@ -23,4 +23,6 @@ func main() {
     mp[1] = { {}, {x} }
     assert(mp[1].pt.x == -1)
     assert(mp[1].pt.y == 0)
+
+    mp[2] = { }
 }
