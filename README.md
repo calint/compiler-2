@@ -280,7 +280,7 @@ func main() {
     )
     # `array_copy` is built-in and can use indexed positions
     # `array_size_of` is built-in
-    
+
     assert(worlds[0].locations[1] == 0xffee)
     assert(arrays_equal(
              worlds[0].locations,
