@@ -151,16 +151,28 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
+        if (is_array_) {
+            return false;
+        }
+
         return std::visit(
             [](const auto& e) -> bool { return e.is_expression(); }, vars_[0]);
     }
 
     [[nodiscard]] auto is_indexed() const -> bool override {
+        if (is_array_) {
+            return false;
+        }
+
         return std::visit([](const auto& e) -> bool { return e.is_indexed(); },
                           vars_[0]);
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
+        // if (is_array_) {
+        //     return "";
+        // }
+
         return std::visit(
             [](const auto& e) -> std::string_view { return e.identifier(); },
             vars_[0]);
@@ -168,12 +180,28 @@ class expr_any final : public statement {
 
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
+
+        if (is_array_) {
+            for (const expr_variant& el : vars_) {
+                std::visit(
+                    [&var](const auto& e) -> void {
+                        e.assert_var_not_used(var);
+                    },
+                    el);
+            }
+            return;
+        }
+
         std::visit(
             [&var](const auto& e) -> void { e.assert_var_not_used(var); },
             vars_[0]);
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
+        if (is_array_) {
+            return statement::get_unary_ops();
+        }
+
         return std::visit(
             [](const auto& e) -> const unary_ops& { return e.get_unary_ops(); },
             vars_[0]);
@@ -182,6 +210,10 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override {
+        if (is_array_) {
+            return false;
+        }
+
         return std::visit(
             [](const auto& e) -> bool { return e.is_identifier(); }, vars_[0]);
     }
