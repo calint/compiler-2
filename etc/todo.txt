@@ -5,6 +5,7 @@
 [ ] stmt_def_var: move rep stos logic to toc
 [ ] toc: heuristic aware rep stosb. switches from stosb to mov depending on
     number of bytes to be set (1 to 64 bytes unrolled)
+[ ] fix todo in sprinkled in the source
 [ ] regex is not performant. replace with hand-rolled string operations
     especially in `operand` which create regex in the constructor
 [x] fix the token string escaping
