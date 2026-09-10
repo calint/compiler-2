@@ -438,8 +438,8 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
 
         if (not tf.type_ptr->is_built_in()) {
             // a not-builtin statement is `expr_type_value`
-            const expr_type_value& expr{exp->as_expr_type_value()};
-            expr.compile_assign(tc, os, indent, *tf.type_ptr, dst_op);
+            const expr_type_value& e{exp->as_expr_type_value()};
+            e.compile_assign(tc, os, indent, *tf.type_ptr, dst_op);
             ++counter;
             continue;
         }
