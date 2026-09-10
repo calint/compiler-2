@@ -6,26 +6,16 @@ func exit(v : reg_rdi) {
 
 func assert(expr : bool) if not expr exit(1)
 
-type string { len : i8, data : i8[127] }
+type point {x, y}
 
-type link { name_id : i16, to : i16, pad : i16 }
-
-type room { name : string, description : string, note : string, links : link[6] }
-
-type world { rooms : room[128] }
-
-func f3(to : i16) {
-}
-
-func f2(link : link) {
-    f3(link.to)
-}
-
-func f1(room : room) {
-    f2(room.links[2])
-}
+type object {pos : point, color : i32}
 
 func main() {
-    var wld : world
-    f1(wld.rooms[1])
+    var x = 1
+    var y = 2
+
+    var o1 : object = {{x * 10, y}, 0xff0000}
+    assert(o1.pos.x == 10)
+    assert(o1.pos.y == 2)
+    assert(o1.color == 0xff0000)
 }

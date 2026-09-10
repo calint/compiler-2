@@ -416,16 +416,16 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             src_op = src_info.operand;
         }
 
-        const size_t nbytes{src_info.is_array
+        const size_t offset{src_info.is_array
                                 ? src_info.array_size * dst_type.size()
                                 : dst_type.size()};
 
         // todo: validate dst array size fits src array size
 
         tc.rep_movs(tok(), os, indent, src_op.address_str(),
-                    dst_op.address_str(), nbytes);
+                    dst_op.address_str(), offset);
 
-        dst_op.displacement += static_cast<int32_t>(nbytes);
+        dst_op.displacement += static_cast<int32_t>(offset);
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
@@ -453,6 +453,13 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         // built-in
 
         const expr_any& src{*exprs_[counter]};
+
+        if (src.is_array() and src.is_empty()) {
+            tc.rep_stos(tok(), os, indent, dst_op, tf.size, 0);
+            dst_op.displacement += static_cast<int32_t>(tf.size);
+            ++counter;
+            continue;
+        }
 
         const std::string dst_accessor{dst_op.str(tf.type_ptr->size())};
 

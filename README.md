@@ -51,10 +51,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    43           1610            831           7233
-C++                              1             96            111            582
+C/C++ Header                    43           1619            835           7257
+C++                              1             97            111            588
 -------------------------------------------------------------------------------
-SUM:                            44           1706            942           7815
+SUM:                            44           1716            946           7845
 -------------------------------------------------------------------------------
 ```
 
@@ -1463,17 +1463,17 @@ mov rsp, stk.end
 ;[11:1] # single statement blocks can ommit { ... }
 ;[36:1] # user types are defined using keyword `type`
 ;[38:1] # default type is `i64` and does not need to be specified
-;[40:1] point : 16B    fields: 
+;[40:1] point : 16 B    fields: 
 ;[40:1]       name :  offset :    size :  array? : array size
 ;[40:1]          x :       0 :       8 :      no :           
 ;[40:1]          y :       8 :       8 :      no :           
 
-;[42:1] object : 20B    fields: 
+;[42:1] object : 20 B    fields: 
 ;[42:1]       name :  offset :    size :  array? : array size
 ;[42:1]        pos :       0 :      16 :      no :           
 ;[42:1]      color :      16 :       4 :      no :           
 
-;[44:1] world : 64B    fields: 
+;[44:1] world : 64 B    fields: 
 ;[44:1]       name :  offset :    size :  array? : array size
 ;[44:1]  locations :       0 :      64 :     yes :          8
 
@@ -1481,7 +1481,7 @@ mov rsp, stk.end
 ;[53:1] # default argument type is `i64`
 ;[60:1] # return target is specified as a variable, in this case `res`
 ;[70:1] # array arguments are declared with type and []
-;[76:1] str : 128B    fields: 
+;[76:1] str : 128 B    fields: 
 ;[76:1]       name :  offset :    size :  array? : array size
 ;[76:1]        len :       0 :       1 :      no :           
 ;[76:1]       data :       1 :     127 :     yes :        127
@@ -1489,31 +1489,31 @@ mov rsp, stk.end
 ;[98:1] # constants are declared in global scope
 main:
 ;   [105:5] dat hello : i8[] = "hello world from baz\n"
-;   [105:11] hello: i8[21] (21B @ [rsp - 21])
+;   [105:11] hello: i8[21] (21 B @ [rsp - 21])
 ;   [106:5] dat prompt1 : i8[] = "enter name:\n"
-;   [106:9] prompt1: i8[12] (12B @ [rsp - 33])
+;   [106:9] prompt1: i8[12] (12 B @ [rsp - 33])
 ;   [107:5] dat prompt2 : i8[] = "that is not a name.\n"
-;   [107:9] prompt2: i8[20] (20B @ [rsp - 53])
+;   [107:9] prompt2: i8[20] (20 B @ [rsp - 53])
 ;   [108:5] dat prompt3 : i8[] = "hello "
-;   [108:9] prompt3: i8[6] (6B @ [rsp - 59])
+;   [108:9] prompt3: i8[6] (6 B @ [rsp - 59])
 ;   [109:5] dat dot : i8[] = "."
-;   [109:13] dot: i8[1] (1B @ [rsp - 60])
+;   [109:13] dot: i8[1] (1 B @ [rsp - 60])
 ;   [110:5] dat nl : i8[] = "\n"
-;   [110:14] nl: i8[1] (1B @ [rsp - 61])
+;   [110:14] nl: i8[1] (1 B @ [rsp - 61])
 ;   [112:5] dat s1 : str = { 3 }
-;   [112:14] s1: str (128B @ [rsp - 189])
+;   [112:14] s1: str (128 B @ [rsp - 189])
 ;   [113:5] # remaining uninitialized fields are zeroed
 ;   [115:5] # initial data declared before any variables and initialized with constants
 ;   [117:5] var arr : i32[4]
-;   [117:9] arr: i32[4] (16B @ [rsp - 205])
-;   [117:9] clear 4 * 4B = 16B
+;   [117:9] arr: i32[4] (16 B @ [rsp - 205])
+;   [117:9] clear 4 * 4 B = 16 B
 ;   [117:5] size <= 32 B, use mov
     mov qword [rsp - 205], 0
     mov qword [rsp - 197], 0
 ;   [118:5] # arrays are initialized to 0
 ;   [120:5] var answer
-;   [120:9] answer: i64 (8B @ [rsp - 213])
-;   [120:9] clear 1 * 8B = 8B
+;   [120:9] answer: i64 (8 B @ [rsp - 213])
+;   [120:9] clear 1 * 8 B = 8 B
 ;   [120:5] size <= 32 B, use mov
     mov qword [rsp - 213], 0
 ;   [121:5] assert(answer == 0)
@@ -1597,7 +1597,7 @@ main:
 ;       [125:5] free scratch register 'r15'
     assert_125_5_end:
 ;   [127:5] var ix = 1
-;   [127:9] ix: i64 (8B @ [rsp - 221])
+;   [127:9] ix: i64 (8 B @ [rsp - 221])
 ;   [127:9] ix = 1
 ;   [127:14] 1
     mov qword [rsp - 221], 1
@@ -1872,8 +1872,8 @@ main:
 ;       [137:5] free scratch register 'r15'
     assert_137_5_end:
 ;   [139:5] var arr1 : i32[8]
-;   [139:9] arr1: i32[8] (32B @ [rsp - 253])
-;   [139:9] clear 8 * 4B = 32B
+;   [139:9] arr1: i32[8] (32 B @ [rsp - 253])
+;   [139:9] clear 8 * 4 B = 32 B
 ;   [139:5] size <= 32 B, use mov
     mov qword [rsp - 253], 0
     mov qword [rsp - 245], 0
@@ -2286,7 +2286,7 @@ main:
 ;       [152:5] free scratch register 'r15'
     assert_152_5_end:
 ;   [154:5] var p : point = {0, 0}
-;   [154:9] p: point (16B @ [rsp - 269])
+;   [154:9] p: point (16 B @ [rsp - 269])
 ;   [154:9] p = {0, 0}
 ;   [154:21] copy field 'x'
     mov qword [rsp - 269], 0
@@ -2382,7 +2382,7 @@ main:
 ;       [157:5] free scratch register 'r15'
     assert_157_5_end:
 ;   [159:5] var q : point = p
-;   [159:9] q: point (16B @ [rsp - 285])
+;   [159:9] q: point (16 B @ [rsp - 285])
 ;   [159:9] q = p
 ;   [159:21] allocate named register 'rsi'
 ;   [159:21] allocate named register 'rdi'
@@ -2512,7 +2512,7 @@ main:
 ;       [165:5] free scratch register 'r15'
     assert_165_5_end:
 ;   [167:5] var i = 0
-;   [167:9] i: i64 (8B @ [rsp - 293])
+;   [167:9] i: i64 (8 B @ [rsp - 293])
 ;   [167:9] i = 0
 ;   [167:13] 0
     mov qword [rsp - 293], 0
@@ -2632,12 +2632,12 @@ main:
 ;       [173:5] free scratch register 'r15'
     assert_173_5_end:
 ;   [175:5] var j = 1
-;   [175:9] j: i64 (8B @ [rsp - 301])
+;   [175:9] j: i64 (8 B @ [rsp - 301])
 ;   [175:9] j = 1
 ;   [175:13] 1
     mov qword [rsp - 301], 1
 ;   [176:5] var k = baz(j)
-;   [176:9] k: i64 (8B @ [rsp - 309])
+;   [176:9] k: i64 (8 B @ [rsp - 309])
 ;   [176:9] k = baz(j)
 ;   [176:13] k = baz(j)
 ;   [176:13] = expression
@@ -2751,7 +2751,7 @@ main:
 ;       [180:5] free scratch register 'r15'
     assert_180_5_end:
 ;   [182:5] var p0 : point = {baz(2), 0}
-;   [182:9] p0: point (16B @ [rsp - 325])
+;   [182:9] p0: point (16 B @ [rsp - 325])
 ;   [182:9] p0 = {baz(2), 0}
 ;   [182:22] copy field 'x'
 ;   [182:23] qword [rsp - 325] = baz(2)
@@ -2812,17 +2812,17 @@ main:
 ;       [183:5] free scratch register 'r15'
     assert_183_5_end:
 ;   [185:5] var x = 1
-;   [185:9] x: i64 (8B @ [rsp - 333])
+;   [185:9] x: i64 (8 B @ [rsp - 333])
 ;   [185:9] x = 1
 ;   [185:13] 1
     mov qword [rsp - 333], 1
 ;   [186:5] var y = 2
-;   [186:9] y: i64 (8B @ [rsp - 341])
+;   [186:9] y: i64 (8 B @ [rsp - 341])
 ;   [186:9] y = 2
 ;   [186:13] 2
     mov qword [rsp - 341], 2
 ;   [188:5] var o1 : object = {{x * 10, y}, 0xff0000}
-;   [188:9] o1: object (20B @ [rsp - 361])
+;   [188:9] o1: object (20 B @ [rsp - 361])
 ;   [188:9] o1 = {{x * 10, y}, 0xff0000}
 ;   [188:23] copy field 'pos'
 ;   [188:24] copy field 'x'
@@ -2956,7 +2956,7 @@ main:
 ;       [191:5] free scratch register 'r15'
     assert_191_5_end:
 ;   [193:5] var p1 : point = {-x, -y}
-;   [193:9] p1: point (16B @ [rsp - 377])
+;   [193:9] p1: point (16 B @ [rsp - 377])
 ;   [193:9] p1 = {-x, -y}
 ;   [193:22] copy field 'x'
 ;   [193:23] allocate scratch register -> r15
@@ -3058,7 +3058,7 @@ main:
 ;       [196:5] free scratch register 'r15'
     assert_196_5_end:
 ;   [198:5] var o2 : object = o1
-;   [198:9] o2: object (20B @ [rsp - 397])
+;   [198:9] o2: object (20 B @ [rsp - 397])
 ;   [198:9] o2 = o1
 ;   [198:23] allocate named register 'rsi'
 ;   [198:23] allocate named register 'rdi'
@@ -3185,8 +3185,8 @@ main:
 ;       [201:5] free scratch register 'r15'
     assert_201_5_end:
 ;   [203:5] var o3 : object[1]
-;   [203:9] o3: object[1] (20B @ [rsp - 417])
-;   [203:9] clear 1 * 20B = 20B
+;   [203:9] o3: object[1] (20 B @ [rsp - 417])
+;   [203:9] clear 1 * 20 B = 20 B
 ;   [203:5] size <= 32 B, use mov
     mov qword [rsp - 417], 0
     mov qword [rsp - 409], 0
@@ -3255,8 +3255,8 @@ main:
 ;       [207:5] free scratch register 'r15'
     assert_207_5_end:
 ;   [209:5] var worlds : world[8]
-;   [209:9] worlds: world[8] (512B @ [rsp - 929])
-;   [209:9] clear 8 * 64B = 512B
+;   [209:9] worlds: world[8] (512 B @ [rsp - 929])
+;   [209:9] clear 8 * 64 B = 512 B
 ;   [209:5] allocate named register 'rcx'
 ;   [209:5] allocate named register 'rdi'
 ;   [209:5] allocate named register 'rax'
@@ -3667,8 +3667,8 @@ main:
 ;       [222:5] free scratch register 'r15'
     assert_222_5_end:
 ;   [228:5] var nm : str
-;   [228:9] nm: str (128B @ [rsp - 1057])
-;   [228:9] clear 1 * 128B = 128B
+;   [228:9] nm: str (128 B @ [rsp - 1057])
+;   [228:9] clear 1 * 128 B = 128 B
 ;   [228:5] allocate named register 'rcx'
 ;   [228:5] allocate named register 'rdi'
 ;   [228:5] allocate named register 'rax'

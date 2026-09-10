@@ -148,7 +148,7 @@ class stmt_def_var final : public statement {
         const size_t bytes_count{instance_count * dst_info.type_ptr->size()};
 
         tc.comment_start(name_tk_, os, indent);
-        std::println(os, "clear {} * {}B = {}B", instance_count,
+        std::println(os, "clear {} * {} B = {} B", instance_count,
                      dst_info.type_ptr->size(), bytes_count);
 
         if (bytes_count > threshold_for_rep_stos) {

@@ -150,9 +150,13 @@ class expr_any final : public statement {
         tc.rep_stos(tok(), os, indent, ii.operand, nbytes, 0);
     }
 
+    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+
+    [[nodiscard]] auto is_empty() const -> bool { return vars_.size() == 0; }
+
     [[nodiscard]] auto is_expression() const -> bool override {
         if (is_array_) {
-            return false;
+            return true;
         }
 
         return std::visit(
@@ -169,6 +173,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
+        // fix
         // if (is_array_) {
         //     return "";
         // }

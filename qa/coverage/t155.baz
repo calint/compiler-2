@@ -14,7 +14,7 @@ func main() {
     var x = -1
     var y = -2
 
-    var mp : msgpoint[] = { { {}, { x, y } } }
- #   assert(mp[0].pt.x == -1)
- #   assert(mp[0].pt.y == -2)
+    var mp : msgpoint[3] = { { {}, { x, y } } }
+    assert(mp[0].pt.x == -1)
+    assert(mp[0].pt.y == -2)
 }
