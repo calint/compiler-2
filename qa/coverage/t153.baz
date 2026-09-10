@@ -12,10 +12,8 @@ type room { name : string, description : string, note : string }
 
 type world { rooms : room[128] }
 
-func action_look(rm : room) {
-}
-
 func bar(i : i8) {
+    i = 1
 }
 
 func foo(str : i8[]) {
@@ -23,11 +21,14 @@ func foo(str : i8[]) {
 }
 
 func fuz(rm : room) {
+    rm.name.len = 2
     foo(rm.name.data)
 }
 
 func main() {
     var wld : world
-    action_look(wld.rooms[2])
     fuz(wld.rooms[2])
+
+    assert(wld.rooms[2].name.len == 2)
+    assert(wld.rooms[2].name.data[5] == 1)
 }
