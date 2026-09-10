@@ -380,6 +380,14 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
     ws2_.source_to(os);
 }
 
+auto expr_type_value::compile(toc& tc, std::ostream& os, size_t indent,
+                              const ident_info& dst_info) const -> void {
+
+    const type& tp{*dst_info.type_ptr};
+    operand op{dst_info.operand};
+    compile_assign(tc, os, indent, tp, op);
+}
+
 // declared in 'expr_type_value.hpp'
 // resolves circular reference: expr_type_value -> expr_any ->
 // expr_type_value

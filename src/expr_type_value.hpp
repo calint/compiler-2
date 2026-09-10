@@ -45,11 +45,8 @@ class expr_type_value final : public statement {
         // note: if token is empty then it is an expression of a type `{ ... }`
         //       otherwise e.g. `p = pt`
     }
-
-    // implemented in 'main.cpp' due to circular reference:
-    // expr_type_value -> expr_any -> expr_type_value
-    auto compile_assign(toc& tc, std::ostream& os, size_t indent,
-                        const type& dst_type, operand& op) const -> void;
+    auto compile(toc& tc, std::ostream& os, size_t indent,
+                 const ident_info& ident_info) const -> void override;
 
     // implemented in 'main.cpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
@@ -74,6 +71,11 @@ class expr_type_value final : public statement {
         -> operand override;
 
   private:
+    // implemented in 'main.cpp' due to circular reference:
+    // expr_type_value -> expr_any -> expr_type_value
+    auto compile_assign(toc& tc, std::ostream& os, size_t indent,
+                        const type& dst_type, operand& op) const -> void;
+
     // implemented in 'main.cpp'
     static auto validate_array_assignment(const token& tok,
                                           const type_field& fld,

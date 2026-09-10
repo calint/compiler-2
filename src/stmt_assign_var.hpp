@@ -84,8 +84,8 @@ class stmt_assign_var final : public statement {
         operand dst_operand{tc.get_lea_operand(os, indent, stmt_ident_,
                                                dst_info, lea_registers)};
 
-        expr_.as_expr_type_value().compile_assign(
-            tc, os, indent, *dst_info.type_ptr, dst_operand);
+        dst_info.operand = dst_operand;
+        expr_.as_expr_type_value().compile(tc, os, indent, dst_info);
 
         for (const std::string& reg : lea_registers | std::views::reverse) {
             tc.free_scratch_register(tok(), os, indent, reg);
