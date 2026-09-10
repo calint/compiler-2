@@ -274,15 +274,6 @@ auto main(const int argc, const char* argv[]) -> int {
     return std::make_unique<stmt_identifier>(tc, std::move(uops), tk, tz);
 }
 
-// declared in 'decouple.hpp'
-// solves circular reference: expr_type_value -> expr_any -> expr_type_value
-[[nodiscard]] inline auto create_expr_any(toc& tc, tokenizer& tz,
-                                          const type& tp, const bool in_args)
-    -> std::unique_ptr<expr_any> {
-
-    return std::make_unique<expr_any>(tc, tz, tp, in_args);
-}
-
 // declared in 'expr_type_value.hpp'
 // note: constructor and destructor is implemented in 'main.cpp' where the
 //       'expr_any' definition is known. clang++ -std=c++23 has required it
@@ -356,7 +347,8 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         }
         // create an expression that assigns to field
         // might recurse creating 'expr_type_value'
-        exprs_.emplace_back(create_expr_any(tc, tz, *tf.type_ptr, true));
+        exprs_.emplace_back(
+            std::make_unique<expr_any>(tc, tz, *tf.type_ptr, true));
     }
 }
 

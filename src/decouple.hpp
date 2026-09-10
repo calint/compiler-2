@@ -322,7 +322,3 @@ struct ident_info {
 [[nodiscard]] inline auto create_stmt_call(toc& tc, tokenizer& tz,
                                            const stmt_identifier& si)
     -> std::unique_ptr<statement>;
-
-[[nodiscard]] inline auto create_expr_any(toc& tc, tokenizer& tz,
-                                          const type& tp, bool in_args)
-    -> std::unique_ptr<expr_any>;
