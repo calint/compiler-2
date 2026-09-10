@@ -33,6 +33,20 @@ func main() {
 
     var ln3 : line = { }
 
+    var ln4 : line = { { -2 } , { 4 } }
+    assert(ln4.from.x == -2)
+    assert(ln4.from.y == 0)
+    assert(ln4.to.x == 4)
+    assert(ln4.to.y == 0)
+    ln4.from.x = -3
+    ln4.from.y = 5
+    ln4.to.x = 6
+    ln4.to.y = 7
+    assert(ln4.from.x == -3)
+    assert(ln4.from.y == 5)
+    assert(ln4.to.x == 6)
+    assert(ln4.to.y == 7)
+
     var msg1 : message = { 8 }
     assert(msg1.len == 8)
     msg1.subject[0] = 1

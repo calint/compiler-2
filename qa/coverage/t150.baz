@@ -49,6 +49,7 @@ func main() {
     dat  strs2 : string[] = { {"hello\n"} ,  {"world"} }
     dat    dds : i32[4]
     dat   str3 : i8[128] = ""
+    dat    ln1 : line = { { { -2 } , { 4 } } }
 
     assert(data_a == 0)
     data_a = 0xff
@@ -142,4 +143,17 @@ func main() {
     assert(strs2[0].data[0] == 104) # 'h'
     assert(strs2[0].data[5] == 10) # '\n'
     assert(strs2[1].data[0] == 119) # 'w'
+
+    assert(ln1.points[0].x == -2)
+    assert(ln1.points[0].y == 0)
+    assert(ln1.points[1].x == 4)
+    assert(ln1.points[1].y == 0)
+    ln1.points[0].x = -3
+    ln1.points[0].y = 5
+    ln1.points[1].x = 6
+    ln1.points[1].y = 7
+    assert(ln1.points[0].x == -3)
+    assert(ln1.points[0].y == 5)
+    assert(ln1.points[1].x == 6)
+    assert(ln1.points[1].y == 7)
 }
