@@ -46,7 +46,7 @@ class expr_type_value final : public statement {
         //       otherwise e.g. 'p = pt'
     }
     auto compile(toc& tc, std::ostream& os, size_t indent,
-                 const ident_info& ident_info) const -> void override;
+                 const ident_info& dst_info) const -> void override;
 
     // implemented in 'main.cpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value

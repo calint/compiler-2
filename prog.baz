@@ -125,7 +125,7 @@ func main() {
     assert(answer == -1)
 
     var ix = 1
-    # variables can have an initial value
+    # variables can have an initial value that can be an expression
 
     arr[ix] = 2
     arr[ix + 1] = arr[ix]
@@ -139,7 +139,7 @@ func main() {
     var arr1 : i32[8]
     array_copy(arr, arr1, 4)
     assert(arrays_equal(arr, arr1, 4))
-    # note: `arrays_equal` is built-in function
+    # `arrays_equal` is built-in function
 
     arr1[2] = -1
     assert(not arrays_equal(arr, arr1, 4))
@@ -158,8 +158,8 @@ func main() {
 
     var q : point = p
     assert(equal(p, q))
-    # note: `equal` is built-in function to compare user types for equality
-    #       or same size arrays
+    # `equal` is built-in function to compare user types for equality or same 
+    # size arrays
 
     q.x = 3
     assert(not equal(p, q))
@@ -201,8 +201,9 @@ func main() {
     assert(o2.color == 0xff0000)
 
     var o3 : object[1]
-    # index 0 in an array can be accessed without array index
     o3.pos.y = 73
+    # index 0 in an array can be accessed without array index
+
     assert(o3[0].pos.y == 73)
 
     var worlds : world[8]
@@ -214,8 +215,9 @@ func main() {
         worlds[0].locations,
         array_size_of(worlds.locations)
     )
-    # note: `array_copy` is built-in and can use indexed positions
-    #       `array_size_of` is built-in
+    # `array_copy` is built-in and can use indexed positions
+    # `array_size_of` is built-in
+    
     assert(worlds[0].locations[1] == 0xffee)
     assert(arrays_equal(
              worlds[0].locations,
