@@ -33,6 +33,7 @@ class expr_any final : public statement {
     bool is_array_{};
     bool is_array_indexed_{};
     bool has_braces_{};
+    bool is_identifier_{};
 
   public:
     expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args,
@@ -55,6 +56,7 @@ class expr_any final : public statement {
         if (tz.peek_char() != '{') {
             tz.put_back_token(tk);
             vars_.emplace_back(expr_type_value{tc, tz, tp});
+            is_identifier_ = true;
             return;
         }
         ws1_ = tk;
@@ -127,7 +129,7 @@ class expr_any final : public statement {
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        if (not is_array_) {
+        if (not is_array_ or is_identifier_) {
             compile_variant(tc, os, indent, dst_info, tok(), vars_[0]);
             return;
         }
