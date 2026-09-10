@@ -15,7 +15,10 @@
 #include "expr_type_value.hpp"
 
 class expr_any final : public statement {
-    std::variant<expr_ops_list, expr_bool_ops_list, expr_type_value> var_;
+    using expr_var =
+        std::variant<expr_ops_list, expr_bool_ops_list, expr_type_value>;
+
+    expr_var var_;
 
     // helper template for nicer handling of variants using overloaded lambdas
     template <class... Ts> struct overloaded : Ts... {
@@ -60,69 +63,8 @@ class expr_any final : public statement {
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const ident_info& dst_info) const -> void override {
-        std::visit(
-            overloaded{
-                [&](const expr_ops_list& e) -> auto {
-                    e.compile(tc, os, indent, dst_info);
-                },
-                [&]([[maybe_unused]] const expr_type_value& e) -> auto {
-                    e.compile(tc, os, indent, dst_info);
-                },
-                [&](const expr_bool_ops_list& e) -> auto {
-                    // if not expression assign to destination
-                    if (not e.is_expression()) {
-                        const ident_info& src_info{tc.make_ident_info(e)};
-                        if (src_info.is_const()) {
-                            tc.asm_cmd(tok(), os, indent, "mov",
-                                       dst_info.operand.str(),
-                                       std::to_string(src_info.const_value));
-                            return;
-                        }
-                        tc.asm_cmd(tok(), os, indent, "mov",
-                                   dst_info.operand.str(),
-                                   src_info.operand.str());
-                        return;
-                    }
 
-                    // expression - make unique labels considering in-lined
-                    // functions
-                    const std::string_view call_path{tc.get_call_path(tok())};
-                    const std::string src_loc{
-                        tc.source_location_for_use_in_label(tok())};
-
-                    // unique partial label for this assembler location
-                    const std::string postfix{std::format(
-                        "{}{}", src_loc,
-                        (call_path.empty() ? std::string{}
-                                           : std::format("_{}", call_path)))};
-
-                    // labels to jump to depending on the evaluation
-                    const std::string jmp_to_end{
-                        std::format("bool_end_{}", postfix)};
-
-                    // compile and possibly evaluate constant expression
-                    const std::optional<bool> const_eval{
-                        e.compile(tc, os, indent, jmp_to_end, jmp_to_end, false,
-                                  dst_info.operand.str())};
-
-                    // not constant evaluation
-                    toc::asm_label(os, indent, jmp_to_end);
-
-                    // did the evaluation result in a constant?
-                    if (const_eval) {
-                        // yes, constant evaluation
-                        if (*const_eval) {
-                            // constant evaluation is true
-                            tc.asm_cmd(tok(), os, indent, "mov",
-                                       dst_info.operand.str(), "1");
-                        } else {
-                            // constant evaluation is false
-                            tc.asm_cmd(tok(), os, indent, "mov",
-                                       dst_info.operand.str(), "0");
-                        }
-                    }
-                }},
-            var_);
+        compile_variant(tc, os, indent, dst_info, tok(), var_);
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
@@ -178,5 +120,74 @@ class expr_any final : public statement {
 
     [[nodiscard]] auto as_expr_type_value() const -> const expr_type_value& {
         return get<expr_type_value>(var_);
+    }
+
+  private:
+    static auto compile_variant(toc& tc, std::ostream& os, const size_t indent,
+                                const ident_info& dst_info, const token tk,
+                                const expr_var& exp) -> void {
+        std::visit(
+            overloaded{
+                [&](const expr_ops_list& e) -> auto {
+                    e.compile(tc, os, indent, dst_info);
+                },
+                [&]([[maybe_unused]] const expr_type_value& e) -> auto {
+                    e.compile(tc, os, indent, dst_info);
+                },
+                [&](const expr_bool_ops_list& e) -> auto {
+                    // if not expression assign to destination
+                    if (not e.is_expression()) {
+                        const ident_info& src_info{tc.make_ident_info(e)};
+                        if (src_info.is_const()) {
+                            tc.asm_cmd(tk, os, indent, "mov",
+                                       dst_info.operand.str(),
+                                       std::to_string(src_info.const_value));
+                            return;
+                        }
+                        tc.asm_cmd(tk, os, indent, "mov",
+                                   dst_info.operand.str(),
+                                   src_info.operand.str());
+                        return;
+                    }
+
+                    // expression - make unique labels considering in-lined
+                    // functions
+                    const std::string_view call_path{tc.get_call_path(tk)};
+                    const std::string src_loc{
+                        tc.source_location_for_use_in_label(tk)};
+
+                    // unique partial label for this assembler location
+                    const std::string postfix{std::format(
+                        "{}{}", src_loc,
+                        (call_path.empty() ? std::string{}
+                                           : std::format("_{}", call_path)))};
+
+                    // labels to jump to depending on the evaluation
+                    const std::string jmp_to_end{
+                        std::format("bool_end_{}", postfix)};
+
+                    // compile and possibly evaluate constant expression
+                    const std::optional<bool> const_eval{
+                        e.compile(tc, os, indent, jmp_to_end, jmp_to_end, false,
+                                  dst_info.operand.str())};
+
+                    // not constant evaluation
+                    toc::asm_label(os, indent, jmp_to_end);
+
+                    // did the evaluation result in a constant?
+                    if (const_eval) {
+                        // yes, constant evaluation
+                        if (*const_eval) {
+                            // constant evaluation is true
+                            tc.asm_cmd(tk, os, indent, "mov",
+                                       dst_info.operand.str(), "1");
+                        } else {
+                            // constant evaluation is false
+                            tc.asm_cmd(tk, os, indent, "mov",
+                                       dst_info.operand.str(), "0");
+                        }
+                    }
+                }},
+            exp);
     }
 };
