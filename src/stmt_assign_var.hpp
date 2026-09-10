@@ -66,26 +66,10 @@ class stmt_assign_var final : public statement {
                                    dst_info.const_value)};
         }
 
-        if (dst_info.type_ptr->is_built_in()) {
-            std::vector<std::string> lea_registers;
-            dst_info.operand = tc.get_lea_operand(os, indent, stmt_ident_,
-                                                  dst_info, lea_registers);
-            expr_.compile(tc, os, indent, dst_info);
-            for (const std::string& reg : lea_registers | std::views::reverse) {
-                tc.free_scratch_register(tok(), os, indent, reg);
-            }
-            return;
-        }
-
-        // not-builtin type
-
         std::vector<std::string> lea_registers;
-
         dst_info.operand = tc.get_lea_operand(os, indent, stmt_ident_, dst_info,
                                               lea_registers);
-
         expr_.compile(tc, os, indent, dst_info);
-
         for (const std::string& reg : lea_registers | std::views::reverse) {
             tc.free_scratch_register(tok(), os, indent, reg);
         }
