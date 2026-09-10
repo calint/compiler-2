@@ -42,8 +42,8 @@ class expr_type_value final : public statement {
 
     [[nodiscard]] auto is_make_copy() const -> bool {
         return not tok().text().empty();
-        // note: if token is empty then it is an expression of a type `{ ... }`
-        //       otherwise e.g. `p = pt`
+        // note: if token is empty then it is an expression of a type '{ ... }'
+        //       otherwise e.g. 'p = pt'
     }
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  const ident_info& ident_info) const -> void override;

@@ -463,7 +463,7 @@ class toc final {
                 return;
             }
 
-            // not both operands are memory references, `src_op` might be a
+            // not both operands are memory references, 'src_op' might be a
             // constant or a register or a constant
 
             indent(os, indnt);
@@ -492,7 +492,7 @@ class toc final {
             // not both of the operands are memory references
 
             if (op == "mov") {
-                // special case for `mov` which needs sign extended move
+                // special case for 'mov' which needs sign extended move
                 indent(os, indnt);
                 std::println(os, "movsx {}, {}", dst_op, src_op);
                 return;
@@ -506,7 +506,7 @@ class toc final {
                 return;
             }
 
-            // sign-extend `src_op` to scratch register, then do the op, then
+            // sign-extend 'src_op' to scratch register, then do the op, then
             // mov the sign-extended register to destination
 
             // note: when doing arithmetic between 2 memory locations, this code

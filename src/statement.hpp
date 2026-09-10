@@ -89,14 +89,14 @@ class statement {
     }
 
     // used in UB check
-    // returns true if `var` is set in this statement
+    // returns true if 'var' is set in this statement
     [[nodiscard]] virtual auto
     is_var_set([[maybe_unused]] const std::string_view var) const -> bool {
         return false;
     }
 
     // used in UB check
-    // throws if `var` is used in this statement
+    // throws if 'var' is used in this statement
     virtual auto assert_var_not_used(const std::string_view var) const -> void {
         if (identifier() == var) {
             throw compiler_exception{
@@ -107,7 +107,7 @@ class statement {
 
     // used in UB check
     // returns true if code after this statement is considered "dead code"
-    // applies to: `return`, `break`, `continue`
+    // applies to: 'return', 'break', 'continue'
     [[nodiscard]] virtual auto is_code_after_this_unreachable() const -> bool {
         return false;
     }

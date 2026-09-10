@@ -63,7 +63,7 @@ class stmt_if_branch final : public statement {
                 // yes, this branch code will execute
 
                 toc::asm_label(os, indent, jmp_to_if_true_lbl);
-                // note: label is necessary because of a `jmp` that gets
+                // note: label is necessary because of a 'jmp' that gets
                 //       optimized away
                 code_.compile(tc, os, indent, tc.make_ident_info_empty());
             }

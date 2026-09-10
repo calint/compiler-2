@@ -129,7 +129,7 @@ class stmt_builtin_equal final : public expression {
             if (lhs_info.array_size != rhs_info.array_size) {
                 throw compiler_exception(lhs_.tok(),
                                          "cannot compare arrays of different "
-                                         "sizes. see `arrays_equal`");
+                                         "sizes. see 'arrays_equal'");
             }
 
             rcx *= lhs_info.array_size;

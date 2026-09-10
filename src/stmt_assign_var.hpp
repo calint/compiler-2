@@ -24,9 +24,9 @@ class stmt_assign_var final : public statement {
     stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token ws1 = {})
         : statement{si.tok()}, stmt_ident_{std::move(si)}, ws1_{ws1} {
 
-        // note: ws1 is forwarded by `stmt_def_var` to make the `source_to`
-        //       accurate when `stmt_assign_var` is created within the context
-        //       of `stmt_def_var`
+        // note: ws1 is forwarded by 'stmt_def_var' to make the 'source_to'
+        //       accurate when 'stmt_assign_var' is created within the context
+        //       of 'stmt_def_var'
 
         const ident_info& dst_info{tc.make_ident_info(stmt_ident_)};
 
@@ -43,7 +43,7 @@ class stmt_assign_var final : public statement {
     auto operator=(stmt_assign_var&&) -> stmt_assign_var& = default;
 
     auto source_to(std::ostream& os) const -> void override {
-        // note: all the source info is in `stmt_ident_`
+        // note: all the source info is in 'stmt_ident_'
         // statement::source_to(os);
         stmt_ident_.source_to(os);
         std::print(os, "=");

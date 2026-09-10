@@ -154,7 +154,7 @@ class type final {
         return fields_;
     }
 
-    // note: duplicate responsibility with `toc` because of circular dependency
+    // note: duplicate responsibility with 'toc' because of circular dependency
 
     [[nodiscard]] static auto get_size_specifier(const token& tk,
                                                  const size_t size)

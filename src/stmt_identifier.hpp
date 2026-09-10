@@ -214,7 +214,7 @@ class stmt_identifier : public statement {
 
         // pick the last n elements from lea_path since it is a path to root
         // while elems might not be
-        //   e.g:`world.locations.links` while elems is `loc.link`
+        //   e.g:'world.locations.links' while elems is 'loc.link'
         std::vector<std::string> leas;
         leas.reserve(elems.size());
         const size_t n{lea_path.size()};

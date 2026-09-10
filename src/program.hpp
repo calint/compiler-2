@@ -39,7 +39,7 @@ class program final {
               bounds_check_with_line},
           stack_size_{stack_size} {
 
-        // create a placeholder token to use with `toc` functions
+        // create a placeholder token to use with 'toc' functions
         const token prgtk{};
 
         // add built-in assembler calls
