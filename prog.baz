@@ -12,7 +12,7 @@ func exit(v : reg_rdi) {
 
 func assert(expr : bool) if not expr exit(1)
 
-func print(len : reg_rdx, ptr : reg_rsi) {
+func sys_print(len : reg_rdx, ptr : reg_rsi) {
     mov(rax, 1)   # write system call
     mov(rdi, 0)   # file descriptor for standard out
     mov(rsi, ptr) # buffer address 
@@ -20,11 +20,11 @@ func print(len : reg_rdx, ptr : reg_rsi) {
     syscall()
 }
 
-func print_str(str : i8[]) {
-   print(array_size_of(str), address_of(str)) 
+func print(str : i8[]) {
+   sys_print(array_size_of(str), address_of(str)) 
 }
 
-func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+func sys_read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, ptr) # buffer address
@@ -224,20 +224,20 @@ func main() {
           ))
 
     var nm : str
-    print_str(hello)
+    print(hello)
     loop {
-        print_str(prompt1)
+        print(prompt1)
         str_in(nm)
         if nm.len == 0 {
             break
         } else if nm.len <= 4 {
-            print_str(prompt2)
+            print(prompt2)
             continue
         } else {
-            print_str(prompt3)
+            print(prompt3)
             str_out(nm)
-            print_str(dot)
-            print_str(nl)
+            print(dot)
+            print(nl)
         }
     }
 }
