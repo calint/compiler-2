@@ -225,8 +225,8 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override {
-        if (is_array_) {
-            return false;
+        if (is_identifier_) {
+            return true;
         }
 
         return std::visit(
@@ -253,6 +253,11 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto array_size() const -> size_t { return array_size_; }
+
+    [[nodiscard]] auto tok() const -> const token& {
+        return std::visit(
+            [&](const auto& e) -> const token& { return e.tok(); }, vars_[0]);
+    }
 
   private:
     [[nodiscard]] auto parse_variant(toc& tc, tokenizer& tz, const type& tp,
