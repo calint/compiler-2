@@ -58,11 +58,6 @@ class stmt_def_var final : public statement {
         // expect initialization
         const bool init_required{tz.is_next_char('=')};
 
-        if (init_required and is_array_) {
-            throw compiler_exception(
-                tz, "initialization of array is not supported");
-        }
-
         ws1_ = tz.next_whitespace_token();
 
         // add var to toc without causing output by passing a null stream
@@ -80,6 +75,9 @@ class stmt_def_var final : public statement {
             stmt_identifier si{tc, {}, name_tk_, tz};
             assign_var_ = std::make_unique<stmt_assign_var>(
                 tc, tz, std::move(si), ws1_, is_array_, array_size_);
+            if (array_size_ == 0) {
+                array_size_ = assign_var_->num_array_elements_defined();
+            }
         }
 
         assert_var_not_used(name_tk_.text());

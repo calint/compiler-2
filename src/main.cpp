@@ -285,7 +285,8 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     set_type(tp);
 
     // is it an identifier?
-    // note: token name would be empty at the "{x, y}" type of statement
+    // note: token name would be empty at the '{x, y}' type of statement
+
     if (not tok().text().empty()) {
         // yes, e.g. obj.pos = p
 
@@ -348,7 +349,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         // create an expression that assigns to field
         // might recurse creating 'expr_type_value'
         exprs_.emplace_back(std::make_unique<expr_any>(
-            tc, tz, *tf.type_ptr, true, tf.is_array, tf.array_size));
+            tc, tz, *tf.type_ptr, true, tf.is_array, tf.array_size, false));
     }
 }
 
@@ -405,6 +406,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                     "destination type '{}' does not match source type '{}'",
                     dst_type.name(), src_info.type_ptr->name())};
         }
+
         std::vector<std::string> allocated_registers;
         operand src_op;
         if (is_indexed() or src_info.has_lea()) {
@@ -413,9 +415,13 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         } else {
             src_op = src_info.operand;
         }
+
         const size_t nbytes{src_info.is_array
                                 ? src_info.array_size * dst_type.size()
                                 : dst_type.size()};
+
+        // todo: validate dst array size fits src array size
+
         tc.rep_movs(tok(), os, indent, src_op.address_str(),
                     dst_op.address_str(), nbytes);
 

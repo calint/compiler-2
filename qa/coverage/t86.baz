@@ -19,7 +19,7 @@ func main() {
     var x = 1
     var y = 2
 
-    var o1 : object = {0xff0000, {x * 10, y}}
+    var o1 : object = {0xff0000, {{x * 10, y}} }
     assert(o1.pos.x == 10)
     assert(o1.pos.y == 2)
     assert(o1.color == 0xff0000)

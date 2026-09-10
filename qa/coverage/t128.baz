@@ -90,7 +90,7 @@ func main() {
     var locations : location[128]
     var entities : entity[128]
     var exits : exit[1024]
-    
+
     locations[0].name.data[1] = 0x61
 
     foo(locations[0], locations[1])

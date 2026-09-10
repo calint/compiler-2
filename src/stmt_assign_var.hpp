@@ -19,20 +19,32 @@ class stmt_assign_var final : public statement {
     stmt_identifier stmt_ident_;
     expr_any expr_;
     token ws1_;
+    size_t num_array_elements_defined_{};
 
   public:
     stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token ws1,
                     const bool is_array, const size_t array_size)
         : statement{si.tok()}, stmt_ident_{std::move(si)}, ws1_{ws1} {
 
-        // note: ws1 is forwarded by 'stmt_def_var' to make the 'source_to'
+        // note: 'ws1' is forwarded by 'stmt_def_var' to make the 'source_to'
         //       accurate when 'stmt_assign_var' is created within the context
         //       of 'stmt_def_var'
 
         const ident_info& dst_info{tc.make_ident_info(stmt_ident_)};
 
         set_type(*dst_info.type_ptr);
-        expr_ = {tc, tz, *dst_info.type_ptr, false, is_array, array_size};
+
+        expr_ = {tc,
+                 tz,
+                 *dst_info.type_ptr,
+                 false,
+                 is_array,
+                 array_size,
+                 stmt_ident_.is_last_elem_indexed()};
+
+        if (array_size == 0) {
+            num_array_elements_defined_ = expr_.num_array_elements_defined();
+        }
     }
 
     ~stmt_assign_var() override = default;
@@ -87,5 +99,9 @@ class stmt_assign_var final : public statement {
         -> void override {
 
         expr_.assert_var_not_used(var);
+    }
+
+    [[nodiscard]] auto num_array_elements_defined() const -> size_t {
+        return num_array_elements_defined_;
     }
 };

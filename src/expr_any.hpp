@@ -6,6 +6,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -15,7 +16,7 @@
 #include "expr_type_value.hpp"
 
 class expr_any final : public statement {
-    using expr_var =
+    using expr_variant =
         std::variant<expr_ops_list, expr_bool_ops_list, expr_type_value>;
 
     // helper template for nicer handling of variants using overloaded lambdas
@@ -23,19 +24,71 @@ class expr_any final : public statement {
         using Ts::operator()...;
     };
 
-    std::vector<expr_var> vars_;
+    std::vector<expr_variant> vars_;
     size_t array_size_{};
+    token ws1_;
+    token ws2_;
+    token ws3_;
+    token ws4_;
+    size_t num_array_elements_defined_{};
     bool is_array_{};
+    bool is_array_indexed_{};
+    bool has_braces_{};
 
   public:
     expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args,
-             const bool is_array, const size_t array_size)
+             const bool is_array, const size_t array_size,
+             const bool is_array_indexed)
         : statement{tz.next_whitespace_token()}, array_size_{array_size},
-          is_array_{is_array} {
+          is_array_{is_array}, is_array_indexed_{is_array_indexed} {
 
         set_type(tp);
 
-        vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
+        if (not is_array or (is_array and is_array_indexed)) {
+            vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
+            return;
+        }
+
+        // array and destination is not indexed
+
+        // check if it is '{ ... }' or identifier e.g. 'str.data'
+        const token tk{tz.next_whitespace_token()};
+        if (tz.peek_char() != '{') {
+            tz.put_back_token(tk);
+            vars_.emplace_back(expr_type_value{tc, tz, tp});
+            return;
+        }
+        ws1_ = tk;
+
+        if (not tz.is_next_char('{')) {
+            std::unreachable();
+        }
+        ws2_ = tz.next_whitespace_token();
+
+        has_braces_ = true;
+
+        size_t counter{};
+        while (true) {
+            token t{tz.next_whitespace_token()};
+            if (tz.is_next_char('}')) {
+                ws3_ = t;
+                ws4_ = tz.next_whitespace_token();
+                break;
+            }
+            tz.put_back_token(t);
+
+            if (counter++) {
+                if (not tz.is_next_char(',')) {
+                    std::unreachable();
+                }
+            }
+            vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
+        }
+
+        if (array_size_ == 0) {
+            num_array_elements_defined_ = counter;
+            array_size_ = counter;
+        }
     }
 
     ~expr_any() override = default;
@@ -48,13 +101,55 @@ class expr_any final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        std::visit([&os](const auto& e) -> void { e.source_to(os); }, vars_[0]);
+        if (has_braces_) {
+            ws1_.source_to(os);
+            std::print(os, "{{");
+            ws2_.source_to(os);
+        }
+        size_t counter{};
+        for (const expr_variant& el : vars_) {
+            if (counter++) {
+                std::print(os, ",");
+            }
+            std::visit([&os](const auto& e) -> void { e.source_to(os); }, el);
+        }
+        if (has_braces_) {
+            ws3_.source_to(os);
+            std::print(os, "}}");
+            ws4_.source_to(os);
+        }
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        compile_variant(tc, os, indent, dst_info, tok(), vars_[0]);
+        if (not is_array_) {
+            compile_variant(tc, os, indent, dst_info, tok(), vars_[0]);
+            return;
+        }
+
+        ident_info ii{dst_info};
+
+        for (const expr_variant& el : vars_) {
+            compile_variant(tc, os, indent, ii, tok(), el);
+            ii.operand.displacement += ii.type_ptr->size();
+        }
+
+        if(not is_array_){
+            return;
+        }
+
+        if (vars_.size() == array_size_) {
+            return;
+        }
+
+        if(is_array_indexed_){
+            return;
+        }
+
+        const size_t nbytes{(array_size_ - vars_.size()) * ii.type_ptr->size()};
+
+        tc.rep_stos(tok(), os, indent, ii.operand, nbytes, 0);
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
@@ -112,9 +207,13 @@ class expr_any final : public statement {
         return get<expr_type_value>(vars_[0]);
     }
 
+    [[nodiscard]] auto num_array_elements_defined() const -> size_t {
+        return num_array_elements_defined_;
+    }
+
   private:
     [[nodiscard]] auto parse_variant(toc& tc, tokenizer& tz, const type& tp,
-                                     const bool in_args) -> expr_var {
+                                     const bool in_args) -> expr_variant {
 
         if (not tp.is_built_in()) {
             // destination is not a built-in (register) value
@@ -133,7 +232,7 @@ class expr_any final : public statement {
 
     static auto compile_variant(toc& tc, std::ostream& os, const size_t indent,
                                 const ident_info& dst_info, const token tk,
-                                const expr_var& exp) -> void {
+                                const expr_variant& exp) -> void {
         std::visit(
             overloaded{
                 [&](const expr_ops_list& e) -> auto {
