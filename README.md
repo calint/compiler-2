@@ -51,10 +51,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    43           1619            835           7257
-C++                              1             97            111            588
+C/C++ Header                    43           1618            831           7270
+C++                              1             97            115            591
 -------------------------------------------------------------------------------
-SUM:                            44           1716            946           7845
+SUM:                            44           1715            946           7861
 -------------------------------------------------------------------------------
 ```
 
@@ -1618,6 +1618,7 @@ main:
     cmovge rbp, r14
     jge panic_bounds
 ;   [130:9] free scratch register 'r14'
+;   [130:15] [0]
 ;   [130:15] 2
     mov dword [rsp + r15 * 4 - 205], 2
 ;   [130:5] free scratch register 'r15'
@@ -1639,6 +1640,7 @@ main:
     cmovge rbp, r14
     jge panic_bounds
 ;   [131:9] free scratch register 'r14'
+;   [131:19] [0]
 ;   [131:19] arr[ix]
 ;   [131:19] allocate scratch register -> r14
 ;   [131:23] set array index
@@ -2015,6 +2017,7 @@ main:
     cmovge rbp, r14
     jge panic_bounds
 ;   [144:10] free scratch register 'r14'
+;   [144:15] [0]
 ;   [144:16] -1
     mov dword [rsp + r15 * 4 - 253], -1
 ;   [144:5] free scratch register 'r15'
@@ -2118,6 +2121,7 @@ main:
     cmovge rbp, r14
     jge panic_bounds
 ;   [148:9] free scratch register 'r14'
+;   [148:15] [0]
 ;   [148:16] arr = ~inv(arr[ix - 1])
 ;   [148:16] = expression
 ;   [148:16] ~inv(arr[ix - 1])
@@ -2227,6 +2231,7 @@ main:
         cmovge rbp, r14
         jge panic_bounds
 ;       [73:9] free scratch register 'r14'
+;       [73:14] [0]
 ;       [73:14] 0xfe
         mov dword [rsp + r15 * 4 - 205], 254
 ;       [73:5] free scratch register 'r15'
@@ -3303,6 +3308,7 @@ main:
     cmovge rbp, r13
     jge panic_bounds
 ;   [210:25] free scratch register 'r13'
+;   [210:30] [0]
 ;   [210:30] 0xffee
     mov qword [r15 + r14 * 8], 65518
 ;   [210:5] free scratch register 'r14'

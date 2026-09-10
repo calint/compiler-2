@@ -455,6 +455,13 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         const expr_any& src{*exprs_[counter]};
 
         if (src.is_array() and src.is_empty()) {
+            // special case when empty array
+            // e.g.:
+            //   type msgpoint {  msg : i8[128], pt : point }
+            //   var mp : msgpoint[3] = { { {}, { x, y } } }
+            tc.comment_start(tok(), os, indent);
+            std::println(os, "zero empty field of type '{}[{}]'",
+                         tf.type_ptr->name(), tf.array_size);
             tc.rep_stos(tok(), os, indent, dst_op, tf.size, 0);
             dst_op.displacement += static_cast<int32_t>(tf.size);
             ++counter;
@@ -526,7 +533,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
     }
 
     tc.comment_start(tok(), os, indent);
-    std::println(os, "zero out remaining fields: {} bytes", nbytes);
+    std::println(os, "zero remaining fields: {} bytes", nbytes);
     tc.rep_stos(tok(), os, indent, dst_op, nbytes, 0);
     dst_op.displacement += static_cast<int32_t>(nbytes);
 }

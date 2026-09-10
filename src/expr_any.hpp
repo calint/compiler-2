@@ -6,10 +6,10 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <variant>
 #include <vector>
 
+#include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_bool_ops_list.hpp"
 #include "expr_ops_list.hpp"
@@ -60,7 +60,10 @@ class expr_any final : public statement {
         ws1_ = tk;
 
         if (not tz.is_next_char('{')) {
-            std::unreachable();
+            throw compiler_exception(
+                tz, std::format(
+                        "expected '{{' to open array initializer for type '{}'",
+                        tp.name()));
         }
         ws2_ = tz.next_whitespace_token();
 
@@ -78,7 +81,10 @@ class expr_any final : public statement {
 
             if (counter++) {
                 if (not tz.is_next_char(',')) {
-                    std::unreachable();
+                    throw compiler_exception(
+                        tz, std::format("expected ',' followed by initializer "
+                                        "for type '{}'",
+                                        tp.name()));
                 }
             }
             vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
@@ -128,7 +134,10 @@ class expr_any final : public statement {
 
         ident_info ii{dst_info};
 
+        size_t counter{};
         for (const expr_variant& el : vars_) {
+            tc.comment_start(tok(), os, indent);
+            std::println(os, "[{}]", counter++);
             compile_variant(tc, os, indent, ii, tok(), el);
             ii.operand.displacement += ii.type_ptr->size();
         }
@@ -137,16 +146,20 @@ class expr_any final : public statement {
             return;
         }
 
-        if (vars_.size() == array_size_) {
-            return;
-        }
-
         if (is_array_indexed_) {
             return;
         }
 
-        const size_t nbytes{(array_size_ - vars_.size()) * ii.type_ptr->size()};
+        if (vars_.size() == array_size_) {
+            return;
+        }
 
+        const size_t diff{(array_size_ - vars_.size())};
+        const size_t nbytes{diff * ii.type_ptr->size()};
+
+        tc.comment_start(tok(), os, indent);
+        std::println(os, "zero remaining {} element{}", diff,
+                     diff == 1 ? "" : "s");
         tc.rep_stos(tok(), os, indent, ii.operand, nbytes, 0);
     }
 
@@ -173,11 +186,6 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
-        // fix
-        // if (is_array_) {
-        //     return "";
-        // }
-
         return std::visit(
             [](const auto& e) -> std::string_view { return e.identifier(); },
             vars_[0]);
