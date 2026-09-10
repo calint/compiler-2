@@ -2,7 +2,7 @@
 [ ]: pending [o]: ongoing [x]: done [-]: not completed with reason specified
 --------------------------------------------------------------------------------
 [ ] a way to use character e.g. 'a' instead of ascii code
-[ ] stmt_def_var: move rep stos logic to toc
+[ ] stmt_def_var: move rep stos logic to toc::rep_stos
 [ ] toc: heuristic aware rep stosb. switches from stosb to mov depending on
     number of bytes to be set (1 to 64 bytes unrolled)
 [ ] fix todo in sprinkled in the source
@@ -12,7 +12,7 @@
 [x] stmt_def_dat: instead of writing to elem create and return in function
 [x] a way to define constants in global name space
     => e.g. const yes = 1
-[o] a way to initiate a i8 array with a string:
+[x] a way to initiate a i8 array with a string:
     var hello : i8[] = "hello world"
     [x] on dat
     [x] on var
