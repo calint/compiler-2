@@ -25,4 +25,8 @@ func main() {
     assert(mp[1].pt.y == 0)
 
     mp[2] = { }
+
+    mp[2] = { { 1, 8 }, { x } }
+    assert(mp[2].msg[0]==1)
+    assert(mp[2].msg[1]==8)
 }

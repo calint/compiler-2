@@ -475,9 +475,15 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             if (tf.is_array) {
                 // built-in, expression, array
                 const ident_info src_info{tc.make_ident_info(src)};
-                validate_array_assignment(src.tok(), tf, src_info);
-                tc.rep_movs(src.tok(), os, indent, src, src_info,
-                            dst_op.address_str(), tf.size);
+                if (src_info.is_array) {
+                    validate_array_assignment(src.tok(), tf, src_info);
+                    tc.rep_movs(src.tok(), os, indent, src, src_info,
+                                dst_op.address_str(), tf.size);
+                } else {
+                    const ident_info dst_info{
+                        tc.make_ident_info(src.tok(), dst_accessor)};
+                    src.compile(tc, os, indent, dst_info);
+                }
             } else {
                 // built-in, expression, not array
                 const ident_info dst_info{
