@@ -19,7 +19,7 @@ class stmt_assign_var final : public statement {
     stmt_identifier stmt_ident_;
     expr_any expr_;
     token ws1_;
-    size_t num_array_elements_defined_{};
+    size_t array_size_{};
 
   public:
     stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token ws1,
@@ -43,7 +43,7 @@ class stmt_assign_var final : public statement {
                  stmt_ident_.is_last_elem_indexed()};
 
         if (array_size == 0) {
-            num_array_elements_defined_ = expr_.num_array_elements_defined();
+            array_size_ = expr_.array_size();
         }
     }
 
@@ -101,7 +101,5 @@ class stmt_assign_var final : public statement {
         expr_.assert_var_not_used(var);
     }
 
-    [[nodiscard]] auto num_array_elements_defined() const -> size_t {
-        return num_array_elements_defined_;
-    }
+    [[nodiscard]] auto array_size() const -> size_t { return array_size_; }
 };

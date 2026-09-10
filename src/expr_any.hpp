@@ -25,12 +25,11 @@ class expr_any final : public statement {
     };
 
     std::vector<expr_variant> vars_;
-    size_t array_size_{};
     token ws1_;
     token ws2_;
     token ws3_;
     token ws4_;
-    size_t num_array_elements_defined_{};
+    size_t array_size_{};
     bool is_array_{};
     bool is_array_indexed_{};
     bool has_braces_{};
@@ -86,7 +85,6 @@ class expr_any final : public statement {
         }
 
         if (array_size_ == 0) {
-            num_array_elements_defined_ = counter;
             array_size_ = counter;
         }
     }
@@ -135,7 +133,7 @@ class expr_any final : public statement {
             ii.operand.displacement += ii.type_ptr->size();
         }
 
-        if(not is_array_){
+        if (not is_array_) {
             return;
         }
 
@@ -143,7 +141,7 @@ class expr_any final : public statement {
             return;
         }
 
-        if(is_array_indexed_){
+        if (is_array_indexed_) {
             return;
         }
 
@@ -207,9 +205,7 @@ class expr_any final : public statement {
         return get<expr_type_value>(vars_[0]);
     }
 
-    [[nodiscard]] auto num_array_elements_defined() const -> size_t {
-        return num_array_elements_defined_;
-    }
+    [[nodiscard]] auto array_size() const -> size_t { return array_size_; }
 
   private:
     [[nodiscard]] auto parse_variant(toc& tc, tokenizer& tz, const type& tp,

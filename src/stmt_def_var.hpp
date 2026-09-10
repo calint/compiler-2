@@ -76,7 +76,7 @@ class stmt_def_var final : public statement {
             assign_var_ = std::make_unique<stmt_assign_var>(
                 tc, tz, std::move(si), ws1_, is_array_, array_size_);
             if (array_size_ == 0) {
-                array_size_ = assign_var_->num_array_elements_defined();
+                array_size_ = assign_var_->array_size();
             }
         }
 
