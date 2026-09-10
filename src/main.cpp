@@ -347,8 +347,8 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         }
         // create an expression that assigns to field
         // might recurse creating 'expr_type_value'
-        exprs_.emplace_back(
-            std::make_unique<expr_any>(tc, tz, *tf.type_ptr, true));
+        exprs_.emplace_back(std::make_unique<expr_any>(
+            tc, tz, *tf.type_ptr, true, tf.is_array, tf.array_size));
     }
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <memory>
@@ -31,6 +32,8 @@ class stmt_identifier : public statement {
     token ws1_;
     token ws2_;
     std::string path_as_string_;
+    size_t array_size_{};
+    bool is_array_{};
 
   public:
     stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz)
@@ -55,10 +58,11 @@ class stmt_identifier : public statement {
             }
 
             if (tz.is_next_char('[')) {
-                elems_.emplace_back(tk,
-                                    std::make_unique<expr_any>(
-                                        tc, tz, tc.get_type_default(), false),
-                                    tz.next_whitespace_token());
+                elems_.emplace_back(
+                    tk,
+                    std::make_unique<expr_any>(tc, tz, tc.get_type_default(),
+                                               false, false, 0),
+                    tz.next_whitespace_token());
 
                 if (not tz.is_next_char(']')) {
                     throw compiler_exception{
@@ -85,6 +89,10 @@ class stmt_identifier : public statement {
             const ident_info ii{tc.make_ident_info(tk_prv, path_as_string_)};
 
             set_type(*ii.type_ptr);
+
+            is_array_ = ii.is_array;
+            array_size_ = ii.array_size;
+
             break;
         }
     }
@@ -204,6 +212,10 @@ class stmt_identifier : public statement {
                                          allocated_registers, reg_size,
                                          lea_path);
     }
+
+    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+
+    [[nodiscard]] auto array_size() const -> size_t { return array_size_; }
 
     [[nodiscard]] static auto compile_effective_address(
         const token& src_loc_tk, toc& tc, std::ostream& os, const size_t indent,

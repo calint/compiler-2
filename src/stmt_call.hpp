@@ -39,7 +39,7 @@ class stmt_call : public expression {
             const size_t n{func.params().size()};
             for (size_t i{}; const stmt_def_func_param& param : func.params()) {
 
-                args_.emplace_back(tc, tz, param.get_type(), true);
+                args_.emplace_back(tc, tz, param.get_type(), true, false, 0);
 
                 ++i;
                 if (i < n) {
@@ -69,7 +69,8 @@ class stmt_call : public expression {
                     break;
                 }
 
-                args_.emplace_back(tc, tz, tc.get_type_default(), true);
+                args_.emplace_back(tc, tz, tc.get_type_default(), true, false,
+                                   0);
 
                 expect_arg = tz.is_next_char(',');
             }

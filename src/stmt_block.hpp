@@ -102,7 +102,8 @@ class stmt_block final : public statement {
 
                 if (tz.is_next_char('=')) {
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(
-                        tc, tz, std::move(si)));
+                        tc, tz, std::move(si), token{}, si.is_array(),
+                        si.array_size()));
 
                 } else if (tz.is_peek_char('(')) {
                     // note: solves circular reference

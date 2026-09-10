@@ -40,10 +40,6 @@ class stmt_def_var final : public statement {
                         array_size_tk_, array_size_tk_.text())};
                     value) {
                     array_size_ = static_cast<size_t>(*value);
-                } else {
-                    throw compiler_exception{
-                        array_size_tk_,
-                        "expected array size as a positive constant"};
                 }
                 if (not tz.is_next_char(']')) {
                     throw compiler_exception{type_tk_,
@@ -82,8 +78,8 @@ class stmt_def_var final : public statement {
 
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
-            assign_var_ =
-                std::make_unique<stmt_assign_var>(tc, tz, std::move(si), ws1_);
+            assign_var_ = std::make_unique<stmt_assign_var>(
+                tc, tz, std::move(si), ws1_, is_array_, array_size_);
         }
 
         assert_var_not_used(name_tk_.text());

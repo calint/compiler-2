@@ -21,7 +21,8 @@ class stmt_assign_var final : public statement {
     token ws1_;
 
   public:
-    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token ws1 = {})
+    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token ws1,
+                    const bool is_array, const size_t array_size)
         : statement{si.tok()}, stmt_ident_{std::move(si)}, ws1_{ws1} {
 
         // note: ws1 is forwarded by 'stmt_def_var' to make the 'source_to'
@@ -31,7 +32,7 @@ class stmt_assign_var final : public statement {
         const ident_info& dst_info{tc.make_ident_info(stmt_ident_)};
 
         set_type(*dst_info.type_ptr);
-        expr_ = {tc, tz, *dst_info.type_ptr, false};
+        expr_ = {tc, tz, *dst_info.type_ptr, false, is_array, array_size};
     }
 
     ~stmt_assign_var() override = default;
