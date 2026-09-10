@@ -18,12 +18,12 @@ class expr_any final : public statement {
     using expr_var =
         std::variant<expr_ops_list, expr_bool_ops_list, expr_type_value>;
 
-    expr_var var_;
-
     // helper template for nicer handling of variants using overloaded lambdas
     template <class... Ts> struct overloaded : Ts... {
         using Ts::operator()...;
     };
+
+    expr_var var_;
 
   public:
     expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args)
