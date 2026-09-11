@@ -223,10 +223,10 @@ class stmt_def_dat final : public statement {
         size_t counter{};
         for (const elem& el : elroot.elems) {
             const type_field& tf{flds[counter]};
-            if (tf.type_ptr->is_built_in()) {
-                compile_data_builtin(os, tf.name, *tf.type_ptr, el);
+            if (tf.type().is_built_in()) {
+                compile_data_builtin(os, tf.name, tf.type(), el);
             } else {
-                compile_data_rec(tc, os, tf.name, *tf.type_ptr, el);
+                compile_data_rec(tc, os, tf.name, tf.type(), el);
             }
             ++counter;
         }
@@ -498,12 +498,12 @@ class stmt_def_dat final : public statement {
                         tz,
                         std::format("expected ',' and initializer for "
                                     "field '{}' in type '{}' of type '{}{}'",
-                                    tf.name, tp.name(), tf.type_ptr->name(),
+                                    tf.name, tp.name(), tf.type().name(),
                                     tf.is_array ? "[]" : ""));
                 }
             }
             el.elems.emplace_back(
-                parse_elem(tc, tz, *tf.type_ptr, tf.is_array, tf.array_size));
+                parse_elem(tc, tz, tf.type(), tf.is_array, tf.array_size));
         }
 
         return el;
@@ -597,7 +597,7 @@ class stmt_def_dat final : public statement {
     static auto print_source_field(std::ostream& os, const type_field& tf,
                                    const elem& elroot) -> void {
 
-        if (tf.type_ptr->is_built_in()) {
+        if (tf.type().is_built_in()) {
             if (not tf.is_array) {
                 elroot.uops.source_to(os);
                 elroot.tk.source_to(os);
@@ -636,6 +636,6 @@ class stmt_def_dat final : public statement {
 
         // user type
 
-        print_source_type(os, *tf.type_ptr, elroot);
+        print_source_type(os, tf.type(), elroot);
     }
 };

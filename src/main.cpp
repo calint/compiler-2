@@ -349,7 +349,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         // create an expression that assigns to field
         // might recurse creating 'expr_type_value'
         exprs_.emplace_back(std::make_unique<expr_any>(
-            tc, tz, *tf.type_ptr, true, tf.is_array, tf.array_size, false));
+            tc, tz, tf.type(), true, tf.is_array, tf.array_size, false));
     }
 }
 
@@ -443,10 +443,10 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         const type_field& tf{flds[counter]};
         std::println(os, "copy field '{}'", tf.name);
 
-        if (not tf.type_ptr->is_built_in()) {
+        if (not tf.type().is_built_in()) {
             // a not-builtin statement is 'expr_type_value'
             const expr_type_value& e{ea->as_expr_type_value()};
-            e.compile_assign(tc, os, indent, *tf.type_ptr, dst_op);
+            e.compile_assign(tc, os, indent, tf.type(), dst_op);
             ++counter;
             continue;
         }
@@ -462,7 +462,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             //   var mp : msgpoint[3] = { { {}, { x, y } } }
             tc.comment_start(tok(), os, indent);
             std::println(os, "zero empty field: {} * {} B = {} B",
-                         tf.array_size, tf.type_ptr->size(), tf.total_size);
+                         tf.array_size, tf.type().size(), tf.total_size);
             tc.rep_stos(tok(), os, indent, dst_op.address_str(), tf.total_size,
                         0);
             dst_op.displacement += static_cast<int32_t>(tf.total_size);
@@ -470,7 +470,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             continue;
         }
 
-        const std::string dst_accessor{dst_op.str(tf.type_ptr->size())};
+        const std::string dst_accessor{dst_op.str(tf.type().size())};
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
@@ -538,11 +538,11 @@ auto expr_type_value::validate_array_assignment(const token& tok,
     if (not src_info.is_array) {
         throw compiler_exception{tok, "source is not an array"};
     }
-    if (fld.type_ptr->name() != src_info.type().name()) {
+    if (fld.type().name() != src_info.type().name()) {
         throw compiler_exception{
             tok, std::format("destination type '{}' does not match "
                              "source type '{}'",
-                             fld.type_ptr->name(), src_info.type().name())};
+                             fld.type().name(), src_info.type().name())};
     }
     if (fld.array_size != src_info.array_size) {
         throw compiler_exception{

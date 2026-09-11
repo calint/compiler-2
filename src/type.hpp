@@ -22,6 +22,8 @@ struct type_field {
     size_t total_size{};    // total size in bytes of all elements
     size_t array_size{};    // array size in elements
     bool is_array{};        //
+
+    [[nodiscard]] auto type() const -> const type& { return *type_ptr; }
 };
 
 class type final {
