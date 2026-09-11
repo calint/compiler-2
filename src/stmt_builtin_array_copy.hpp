@@ -148,6 +148,8 @@ class stmt_builtin_array_copy final : public statement {
 
         // copy
         toc::asm_rep_movs(os, indent, 'b');
+        // note: toc::rep_movs does not work because rsi, rdi and rcx are
+        //       expresstion
 
         tc.free_named_register(tok(), os, indent, "rcx");
         tc.free_named_register(tok(), os, indent, "rdi");
