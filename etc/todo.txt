@@ -18,6 +18,7 @@
     => confusing. better is func init_points(pts : point[]) {...}
 [ ] regex is not performant. replace with hand-rolled string operations
     especially in `operand` which create regex in the constructor
+[ ] review the coverage and complete for coverage of all "happy paths"
 [ ] make an extensive comment file explaining lea, indexing array etc
 [ ] resolve issues with comments in expressions etc
     dat s : str = { 

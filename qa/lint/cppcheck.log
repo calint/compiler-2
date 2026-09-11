@@ -1,6 +1,21 @@
-Thu Sep 10 01:55:21 PM +07 2026
+Sat Sep 12 12:28:54 AM +07 2026
 Checking ../../src/main.cpp ...
-../../src/toc.hpp:1240:9: error: Found an exit path from function with non-void return type that has missing return statement [missingReturn]
+../../src/toc.hpp:1047:24: style: The member function 'toc::make_ident_info_empty' can be static. [functionStatic]
+    [[nodiscard]] auto make_ident_info_empty() const -> ident_info {
+                       ^
+../../src/expr_any.hpp:261:24: style: The member function 'expr_any::parse_variant' can be static. [functionStatic]
+    [[nodiscard]] auto parse_variant(toc& tc, tokenizer& tz, const type& tp,
+                       ^
+../../src/expr_any.hpp:255:24: warning: The class 'expr_any' defines member function with name 'tok' also defined in its parent class 'statement'. [duplInheritedMember]
+    [[nodiscard]] auto tok() const -> const token& {
+                       ^
+../../src/statement.hpp:50:24: note: Parent function 'statement::tok'
+    [[nodiscard]] auto tok() const -> const token& { return token_; }
+                       ^
+../../src/expr_any.hpp:255:24: note: Derived function 'expr_any::tok'
+    [[nodiscard]] auto tok() const -> const token& {
+                       ^
+../../src/toc.hpp:1310:9: error: Found an exit path from function with non-void return type that has missing return statement [missingReturn]
         }
         ^
 ../../src/expr_bool_op.hpp:363:9: error: Found an exit path from function with non-void return type that has missing return statement [missingReturn]
@@ -24,6 +39,9 @@ Checking ../../src/main.cpp ...
 ../../src/expr_bool_ops_list.hpp:31:59: performance: Function parameter 'not_token' should be passed by const reference. [passedByValue]
                        const bool enclosed = false, token not_token = {})
                                                           ^
+../../src/expr_any.hpp:280:73: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+                                const ident_info& dst_info, const token tk,
+                                                                        ^
 ../../src/stmt_break.hpp:12:37: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
     stmt_break(const toc& tc, token tk) : statement{tk} {
                                     ^
@@ -33,8 +51,8 @@ Checking ../../src/main.cpp ...
 ../../src/stmt_continue.hpp:9:40: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
     stmt_continue(const toc& tc, token tk) : statement{tk} {
                                        ^
-../../src/stmt_assign_var.hpp:24:71: performance: Function parameter 'ws1' should be passed by const reference. [passedByValue]
-    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token ws1 = {})
+../../src/stmt_assign_var.hpp:25:71: performance: Function parameter 'ws1' should be passed by const reference. [passedByValue]
+    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token ws1,
                                                                       ^
 ../../src/stmt_return.hpp:11:38: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
     stmt_return(const toc& tc, token tk) : statement{tk} {
@@ -72,22 +90,22 @@ Checking ../../src/main.cpp ...
 ../../src/main.cpp:201:70: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
                                                          const token tk)
                                                                      ^
-../../src/type.hpp:61:35: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/type.hpp:63:35: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (fld.name == name) {
                                   ^
 ../../src/toc.hpp:169:19: style: Consider using std::transform algorithm instead of a raw loop. [useStlAlgorithm]
             path_.emplace_back(part.begin(), part.end());
                   ^
-../../src/toc.hpp:730:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:732:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (frm.is_func()) {
                                ^
-../../src/toc.hpp:766:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:768:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (frm.is_func()) {
                                ^
-../../src/toc.hpp:1266:20: style: Consider using std::accumulate algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:1336:20: style: Consider using std::accumulate algorithm instead of a raw loop. [useStlAlgorithm]
             nbytes += frm.allocated_stack_size();
                    ^
-../../src/toc.hpp:1273:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+../../src/toc.hpp:1343:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
             if (frm.is_func()) {
                                ^
 ../../src/lut.hpp:37:32: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
