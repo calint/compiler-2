@@ -7,7 +7,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/baz",
             "args": [
-                "qa/coverage/t78.baz",
+                "qa/coverage/t157.baz",
                 //"prog.baz",
                 "--stack=131072",
                 //"--checks=upper,lower,line",
