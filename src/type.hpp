@@ -114,7 +114,7 @@ class type final {
             .id{ident},
             .elem_path{path},
             .type_path{type_path},
-            .lea_path{},
+            .lea_path{path.size(), ""},
             .operand{op},
             .stack_ix{stack_idx},
             .array_size{array_size},
