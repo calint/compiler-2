@@ -235,6 +235,7 @@ class toc final {
     static constexpr std::string_view def_data_dword{"dd"};
     static constexpr std::string_view def_data_word{"dw"};
     static constexpr std::string_view def_data_byte{"db"};
+    static constexpr size_t threshold_for_rep_stos{32};
 
     toc(const std::string_view source, const bool bounds_check_upper,
         const bool bounds_check_lower, const bool bounds_check_with_line)
@@ -1130,29 +1131,82 @@ class toc final {
 
         // todo: heuristics to use mov when less than 64 bytes
 
-        // mov al, byte_val        ; byte value to store (e.g., 0x00)
-        // mov rdi, dest_addr      ; destination pointer
-        // mov rcx, byte_count     ; number of bytes to write
-        // rep stosb               ; store al into [rdi], rcx times (rdi++)
+        if (bytes_count > threshold_for_rep_stos) {
+            // mov al, byte_val        ; byte value to store (e.g., 0x00)
+            // mov rdi, dest_addr      ; destination pointer
+            // mov rcx, byte_count     ; number of bytes to write
+            // rep stosb               ; store al into [rdi], rcx times (rdi++)
 
-        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rax");
-        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
-        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
+            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rax");
+            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
+            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
 
-        if (value == 0) {
-            toc::asm_cmd(src_loc_tk, os, indnt, "xor", "al", "al");
-        } else {
-            toc::asm_cmd(src_loc_tk, os, indnt, "mov", "al",
-                         std::format("{}", value));
+            if (value == 0) {
+                toc::asm_cmd(src_loc_tk, os, indnt, "xor", "al", "al");
+            } else {
+                toc::asm_cmd(src_loc_tk, os, indnt, "mov", "al",
+                             std::format("{}", value));
+            }
+            toc::asm_lea(os, indnt, "rdi", dst);
+            toc::asm_cmd(src_loc_tk, os, indnt, "mov", "rcx",
+                         std::format("{}", bytes_count));
+            toc::asm_rep_stos(os, indnt, 'b');
+
+            free_named_register(src_loc_tk, os, indnt, "rcx");
+            free_named_register(src_loc_tk, os, indnt, "rdi");
+            free_named_register(src_loc_tk, os, indnt, "rax");
+            return;
         }
-        toc::asm_lea(os, indnt, "rdi", dst);
-        toc::asm_cmd(src_loc_tk, os, indnt, "mov", "rcx",
-                     std::format("{}", bytes_count));
-        toc::asm_rep_stos(os, indnt, 'b');
 
-        free_named_register(src_loc_tk, os, indnt, "rcx");
-        free_named_register(src_loc_tk, os, indnt, "rdi");
-        free_named_register(src_loc_tk, os, indnt, "rax");
+        comment_start(src_loc_tk, os, indnt);
+        std::println(os, "size <= {} B, use mov", threshold_for_rep_stos);
+
+        const uint8_t byte_u8{static_cast<uint8_t>(value)};
+        const uint64_t val_qword{static_cast<uint64_t>(byte_u8) *
+                                 0x0101010101010101ull};
+        const uint32_t val_dword{static_cast<uint32_t>(val_qword)};
+        const uint16_t val_word{static_cast<uint16_t>(val_qword)};
+
+        const std::string str_qword{val_qword ? std::format("0x{:x}", val_qword)
+                                              : "0"};
+        const std::string str_dword{val_dword ? std::format("0x{:x}", val_dword)
+                                              : "0"};
+        const std::string str_word{val_word ? std::format("0x{:x}", val_word)
+                                            : "0"};
+        const std::string str_byte{byte_u8 ? std::format("0x{:x}", byte_u8)
+                                           : "0"};
+
+        size_t rest{bytes_count};
+        const size_t qword_movs{rest / toc::size_qword};
+
+        operand op{dst};
+
+        for (size_t i{}; i < qword_movs; ++i) {
+            asm_cmd(src_loc_tk, os, indnt, "mov", op.str(operand::size_qword),
+                    str_qword);
+            op.displacement += operand::size_qword;
+            rest -= operand::size_qword;
+        }
+
+        // mov the reminder
+        if ((rest / toc::size_dword) != 0) {
+            asm_cmd(src_loc_tk, os, indnt, "mov", op.str(operand::size_dword),
+                    str_dword);
+            op.displacement += operand::size_dword;
+            rest -= operand::size_dword;
+        }
+
+        if ((rest / toc::size_word) != 0) {
+            asm_cmd(src_loc_tk, os, indnt, "mov", op.str(operand::size_word),
+                    str_word);
+            op.displacement += operand::size_word;
+            rest -= operand::size_word;
+        }
+
+        if (rest) {
+            asm_cmd(src_loc_tk, os, indnt, "mov", op.str(operand::size_byte),
+                    str_byte);
+        }
     }
 
     [[nodiscard]] auto regex_ws() const -> const std::regex& {

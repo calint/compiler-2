@@ -145,52 +145,10 @@ class stmt_def_var final : public statement {
         std::println(os, "zero {} * {} B = {} B", instance_count,
                      dst_info.type_ptr->size(), bytes_count);
 
-        if (bytes_count > threshold_for_rep_stos) {
-            std::string dst_addr{std::format("rsp - {}", -dst_info.stack_ix)};
-            // note: -dst_info.stack_ix for nicer source formatting; is always
-            //       negative
-            tc.rep_stos(tok(), os, indent, dst_addr, bytes_count, 0);
-            return;
-        }
-
-        // mov less than a threshold for rep stos
-
-        tc.comment_start(tok(), os, indent);
-        std::println(os, "size <= {} B, use mov", threshold_for_rep_stos);
-
-        size_t rest{bytes_count};
-        const size_t qword_movs{rest / toc::size_qword};
-
-        operand op;
-        op.base_register = "rsp";
-        op.displacement = dst_info.stack_ix;
-
-        for (size_t i{}; i < qword_movs; ++i) {
-            tc.asm_cmd(tok(), os, indent, "mov", op.str(operand::size_qword),
-                       "0");
-            op.displacement += operand::size_qword;
-            rest -= operand::size_qword;
-        }
-
-        // mov the reminder
-        if ((rest / toc::size_dword) != 0) {
-            tc.asm_cmd(tok(), os, indent, "mov", op.str(operand::size_dword),
-                       "0");
-            op.displacement += operand::size_dword;
-            rest -= operand::size_dword;
-        }
-
-        if ((rest / toc::size_word) != 0) {
-            tc.asm_cmd(tok(), os, indent, "mov", op.str(operand::size_word),
-                       "0");
-            op.displacement += operand::size_word;
-            rest -= operand::size_word;
-        }
-
-        if (rest) {
-            tc.asm_cmd(tok(), os, indent, "mov", op.str(operand::size_byte),
-                       "0");
-        }
+        std::string dst_addr{std::format("rsp - {}", -dst_info.stack_ix)};
+        // note: -dst_info.stack_ix for nicer source formatting; is always
+        //       negative
+        tc.rep_stos(tok(), os, indent, dst_addr, bytes_count, 0);
     }
 
     auto assert_var_not_used(const std::string_view var) const

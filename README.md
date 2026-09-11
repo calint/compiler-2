@@ -51,10 +51,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    43           1611            829           7254
+C/C++ Header                    43           1609            823           7260
 C++                              1             97            113            584
 -------------------------------------------------------------------------------
-SUM:                            44           1708            942           7838
+SUM:                            44           1706            936           7844
 -------------------------------------------------------------------------------
 ```
 
@@ -1085,9 +1085,9 @@ main:
             exit_13_38_207_5_end:
         if_13_26_207_5_end:
     assert_207_5_end:
-    mov rcx, 512
+    xor al, al
     lea rdi, [rsp - 929]
-    xor rax, rax
+    mov rcx, 512
     rep stosb
     lea r15, [rsp - 929]
     mov r14, 1
@@ -1281,9 +1281,9 @@ main:
             exit_13_38_222_5_end:
         if_13_26_222_5_end:
     assert_222_5_end:
-    mov rcx, 128
+    xor al, al
     lea rdi, [rsp - 1057]
-    xor rax, rax
+    mov rcx, 128
     rep stosb
     print_229_5:
         mov rdx, 21
@@ -3257,16 +3257,16 @@ main:
 ;   [209:5] var worlds : world[8]
 ;   [209:9] worlds: world[8] (512 B @ [rsp - 929])
 ;   [209:9] zero 8 * 64 B = 512 B
-;   [209:5] allocate named register 'rcx'
-;   [209:5] allocate named register 'rdi'
 ;   [209:5] allocate named register 'rax'
-    mov rcx, 512
+;   [209:5] allocate named register 'rdi'
+;   [209:5] allocate named register 'rcx'
+    xor al, al
     lea rdi, [rsp - 929]
-    xor rax, rax
+    mov rcx, 512
     rep stosb
-;   [209:5] free named register 'rax'
-;   [209:5] free named register 'rdi'
 ;   [209:5] free named register 'rcx'
+;   [209:5] free named register 'rdi'
+;   [209:5] free named register 'rax'
 ;   [210:5] worlds[1].locations[1] = 0xffee
 ;   [210:5] allocate scratch register -> r15
     lea r15, [rsp - 929]
@@ -3669,16 +3669,16 @@ main:
 ;   [228:5] var nm : str
 ;   [228:9] nm: str (128 B @ [rsp - 1057])
 ;   [228:9] zero 1 * 128 B = 128 B
-;   [228:5] allocate named register 'rcx'
-;   [228:5] allocate named register 'rdi'
 ;   [228:5] allocate named register 'rax'
-    mov rcx, 128
+;   [228:5] allocate named register 'rdi'
+;   [228:5] allocate named register 'rcx'
+    xor al, al
     lea rdi, [rsp - 1057]
-    xor rax, rax
+    mov rcx, 128
     rep stosb
-;   [228:5] free named register 'rax'
-;   [228:5] free named register 'rdi'
 ;   [228:5] free named register 'rcx'
+;   [228:5] free named register 'rdi'
+;   [228:5] free named register 'rax'
 ;   [229:5] print(hello)
 ;   [23:6] print(str : i8[]) 
     print_229_5:
