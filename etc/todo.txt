@@ -5,7 +5,7 @@
     var s1: i8[]  = "hello world"
 [ ] ub? 
     mp[1] = { mp[2].msg } see t155.baz
-[ ] stmt_def_var: move rep stos logic to toc::rep_stos
+[x] stmt_def_var: move rep stos logic to toc::rep_stos
 [ ] toc: heuristic aware rep stosb. switches from stosb to mov depending on
     number of bytes to be set (1 to 64 bytes unrolled)
 [ ] a way to use character e.g. 'a' instead of ascii code
