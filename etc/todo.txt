@@ -102,6 +102,25 @@
     constructor(os data,os code,indent)
 [ ] rv32i backend
 [ ] simple LSP supporting rename
+[ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
+[ ] func f(p : point copy) copies point to callee stack
+[ ] func f(p : point const) const is default. same as "func f(p : point)"
+[ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
+[ ] func foo(object& self, arg) can be called with o.foo(arg)
+[-] string type
+      var str = "hello world"
+      var len = str.len
+[ ] points.len
+      => array_elements_count(points)
+[ ] expr_any: deduce expression type to bool or numbers
+[ ]   is_const, is_bool_expression, is_number_expression
+[ ] let i=1 creates a constant
+[ ] post processing optimization for: var b=-(-a*-a)
+      mov r15,qword[rbp-8]
+      neg r15
+      neg r15
+      mov qword[rbp-16],r15
+[ ] why is the binary so big although in-line is turned off in make.sh?
 
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
@@ -869,40 +888,20 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 [x] stmt_assign_var.compile
       -> try evaluation with scratch register and evaluation without scratch register
          select the one that generates fewest instructions
-         
--------------------------------------------------------------------------------
-stage 5
--------------------------------------------------------------------------------
-[ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
-[ ] func f(p : point copy) copies point to callee stack
-[ ] func f(p : point const) const is default. same as "func f(p : point)"
-[ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
-[ ] func foo(object& self, arg) can be called with o.foo(arg)
-[ ] string type
-[ ]   var str = "hello world"
-[ ]   var len = str.len
-[ ] var points : point[10] = {{1, 2}, {3, 4}}
-[ ]   points[1].x = 1
-[ ]   points.len
-[ ] multiple return values: func f() : point pos, point vel { ... }
-[ ]    var p,v = f()
-[x] consider cmovxx when evaluating a boolean expression
-    => used setxx
-[ ] floating point numbers
-[ ] func f(p : point) {} ... f({x, y})
-[ ] expr_any: deduce expression type to bool or numbers
-[ ]   is_const, is_bool_expression, is_number_expression
-[ ] let i=1 creates a constant
+[-] inlined function call: if a named register is not available: push/pop?
+    => all functions are inlined
+[-] include source file: i.e. "include io" includes io.baz
+    => 1 file source by design
+[x] token.compile assumes is_str is field (db)
+[x]   review fragile implementation
 [x] def table{x,y,z}
     => implemented by `type`
-[ ] token.compile assumes is_str is field (db)
-[ ]   review fragile implementation
-[ ] include source file: i.e. "include io" includes io.baz
-[ ] inlined function call: if a named register is not available: push/pop?
-[ ] post processing optimization for: var b=-(-a*-a)
-      mov r15,qword[rbp-8]
-      neg r15
-      neg r15
-      mov qword[rbp-16],r15
-[ ] why is the binary so big although in-line is turned off in make.sh?
-
+[x] var points : point[10] = {{1, 2}, {3, 4}}
+[x]   points[1].x = 1
+[-] multiple return values: func f() : point pos, point vel { ... }
+       var p,v = f()
+    => breaks to much of existing code
+[x] consider cmovxx when evaluating a boolean expression
+    => used setxx
+[-] func f(p : point) {} ... f({x, y})
+    => not possible since inline only functions
