@@ -95,6 +95,11 @@ func str_out(s : str) {
     syscall()
 } 
 
+func point_init() : point res {
+    res.x = -1
+    res.y = -2
+}
+
 # constants are declared in global scope
 
 const yes = 1
@@ -181,6 +186,10 @@ func main() {
 
     var p0 : point = {baz(2), 0}
     assert(p0.x == 4)
+
+    var pt : point = point_init()
+    assert(pt.x == -1)
+    assert(pt.y == -2)
 
     var x = 1
     var y = 2
