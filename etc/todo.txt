@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 [ ]: pending [o]: ongoing [x]: done [-]: not completed with reason specified
 --------------------------------------------------------------------------------
+[x] unroll rep_movs when number of bytes is above a certain threshold
 [ ] does not work:
     var s1: i8[]  = "hello world"
 [ ] ub? 

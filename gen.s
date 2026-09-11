@@ -954,16 +954,13 @@ main:
 ;   [159:5] var q : point = p
 ;   [159:9] q: point (16 B @ [rsp - 285])
 ;   [159:9] q = p
-;   [159:21] allocate named register 'rsi'
-;   [159:21] allocate named register 'rdi'
-;   [159:21] allocate named register 'rcx'
-    lea rsi, [rsp - 269]
-    lea rdi, [rsp - 285]
-    mov rcx, 16
-    rep movsb
-;   [159:21] free named register 'rcx'
-;   [159:21] free named register 'rdi'
-;   [159:21] free named register 'rsi'
+;   [159:21] size <= 16 B, use mov
+;   [159:21] allocate named register 'rax'
+    mov rax, qword [rsp - 269]
+    mov qword [rsp - 285], rax
+    mov rax, qword [rsp - 261]
+    mov qword [rsp - 277], rax
+;   [159:21] free named register 'rax'
 ;   [160:5] assert(equal(p, q))
 ;   [160:12] allocate scratch register -> r15
 ;   [160:12] ? equal(p, q)
@@ -1541,16 +1538,13 @@ main:
 ;   [193:27] free scratch register 'r15'
     neg qword [rsp - 369]
 ;   [194:5] o1.pos = p1
-;   [194:14] allocate named register 'rsi'
-;   [194:14] allocate named register 'rdi'
-;   [194:14] allocate named register 'rcx'
-    lea rsi, [rsp - 377]
-    lea rdi, [rsp - 361]
-    mov rcx, 16
-    rep movsb
-;   [194:14] free named register 'rcx'
-;   [194:14] free named register 'rdi'
-;   [194:14] free named register 'rsi'
+;   [194:14] size <= 16 B, use mov
+;   [194:14] allocate named register 'rax'
+    mov rax, qword [rsp - 377]
+    mov qword [rsp - 361], rax
+    mov rax, qword [rsp - 369]
+    mov qword [rsp - 353], rax
+;   [194:14] free named register 'rax'
 ;   [195:5] assert(o1.pos.x == -1)
 ;   [195:12] allocate scratch register -> r15
 ;   [195:12] ? o1.pos.x == -1

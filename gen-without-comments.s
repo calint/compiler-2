@@ -409,10 +409,10 @@ main:
             exit_13_38_157_5_end:
         if_13_26_157_5_end:
     assert_157_5_end:
-    lea rsi, [rsp - 269]
-    lea rdi, [rsp - 285]
-    mov rcx, 16
-    rep movsb
+    mov rax, qword [rsp - 269]
+    mov qword [rsp - 285], rax
+    mov rax, qword [rsp - 261]
+    mov qword [rsp - 277], rax
     cmp_160_12:
         lea rsi, [rsp - 269]
         lea rdi, [rsp - 285]
@@ -647,10 +647,10 @@ main:
     mov r15, qword [rsp - 341]
     mov qword [rsp - 369], r15
     neg qword [rsp - 369]
-    lea rsi, [rsp - 377]
-    lea rdi, [rsp - 361]
-    mov rcx, 16
-    rep movsb
+    mov rax, qword [rsp - 377]
+    mov qword [rsp - 361], rax
+    mov rax, qword [rsp - 369]
+    mov qword [rsp - 353], rax
     cmp_195_12:
     cmp qword [rsp - 361], -1
     sete r15b

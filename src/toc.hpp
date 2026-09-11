@@ -236,6 +236,7 @@ class toc final {
     static constexpr std::string_view def_data_word{"dw"};
     static constexpr std::string_view def_data_byte{"db"};
     static constexpr size_t threshold_for_rep_stos{32};
+    static constexpr size_t threshold_for_rep_movs{16};
 
     toc(const std::string_view source, const bool bounds_check_upper,
         const bool bounds_check_lower, const bool bounds_check_with_line)
@@ -1075,31 +1076,76 @@ class toc final {
     }
 
     auto rep_movs(const token& src_loc_tk, std::ostream& os, const size_t indnt,
-                  const std::string_view src, std::string_view dst,
+                  const std::string_view& src, const std::string_view& dst,
                   const size_t bytes_count) -> void {
 
-        // note: movs in x86_64 is optimized for bytes, no need for further
-        //       optimization
+        if (bytes_count > threshold_for_rep_movs) {
+            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rsi");
+            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
+            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
 
-        // ; Copy RCX bytes from RSI to RDI
-        // mov rsi, source_addr    ; source pointer
-        // mov rdi, dest_addr      ; destination pointer
-        // mov rcx, byte_count     ; number of bytes
-        // rep movsb               ; repeat: copy byte [RSI++] to [RDI++]
+            toc::asm_lea(os, indnt, "rsi", src);
+            toc::asm_lea(os, indnt, "rdi", dst);
+            toc::asm_cmd(src_loc_tk, os, indnt, "mov", "rcx",
+                         std::format("{}", bytes_count));
+            toc::asm_rep_movs(os, indnt, 'b');
 
-        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rsi");
-        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
-        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
+            free_named_register(src_loc_tk, os, indnt, "rcx");
+            free_named_register(src_loc_tk, os, indnt, "rdi");
+            free_named_register(src_loc_tk, os, indnt, "rsi");
+            return;
+        }
 
-        asm_lea(os, indnt, "rsi", src);
-        asm_lea(os, indnt, "rdi", dst);
-        asm_cmd(src_loc_tk, os, indnt, "mov", "rcx",
-                std::format("{}", bytes_count));
-        toc::asm_rep_movs(os, indnt, 'b');
+        comment_start(src_loc_tk, os, indnt);
+        std::println(os, "size <= {} B, use mov", threshold_for_rep_movs);
 
-        free_named_register(src_loc_tk, os, indnt, "rcx");
-        free_named_register(src_loc_tk, os, indnt, "rdi");
-        free_named_register(src_loc_tk, os, indnt, "rsi");
+        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rax");
+
+        size_t rest{bytes_count};
+        const size_t qword_movs{rest / toc::size_qword};
+
+        operand op_src{src};
+        operand op_dst{dst};
+
+        for (size_t i{}; i < qword_movs; ++i) {
+            asm_cmd(src_loc_tk, os, indnt, "mov", "rax",
+                    op_src.str(operand::size_qword));
+            asm_cmd(src_loc_tk, os, indnt, "mov",
+                    op_dst.str(operand::size_qword), "rax");
+            op_src.displacement += operand::size_qword;
+            op_dst.displacement += operand::size_qword;
+            rest -= operand::size_qword;
+        }
+
+        // mov the reminder
+        if ((rest / toc::size_dword) != 0) {
+            asm_cmd(src_loc_tk, os, indnt, "mov", "eax",
+                    op_src.str(operand::size_dword));
+            asm_cmd(src_loc_tk, os, indnt, "mov",
+                    op_dst.str(operand::size_dword), "eax");
+            op_src.displacement += operand::size_dword;
+            op_dst.displacement += operand::size_dword;
+            rest -= operand::size_dword;
+        }
+
+        if ((rest / toc::size_word) != 0) {
+            asm_cmd(src_loc_tk, os, indnt, "mov", "ax",
+                    op_src.str(operand::size_word));
+            asm_cmd(src_loc_tk, os, indnt, "mov",
+                    op_dst.str(operand::size_word), "ax");
+            op_src.displacement += operand::size_word;
+            op_dst.displacement += operand::size_word;
+            rest -= operand::size_word;
+        }
+
+        if (rest) {
+            asm_cmd(src_loc_tk, os, indnt, "mov", "al",
+                    op_src.str(operand::size_byte));
+            asm_cmd(src_loc_tk, os, indnt, "mov",
+                    op_dst.str(operand::size_byte), "al");
+        }
+
+        free_named_register(src_loc_tk, os, indnt, "rax");
     }
 
     auto rep_movs(const token& src_loc_tk, std::ostream& os, const size_t indnt,
