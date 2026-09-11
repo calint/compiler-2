@@ -6,6 +6,10 @@
 [ ] does not work: var s1: i8[]  = "hello world"
 [ ] ub? mp[1] = { mp[2].msg } see t155.baz:44
 [ ] a way to use characters e.g. 'a' instead of ascii code
+[ ] function return of non-register passable type
+      var pos : point = foo()
+      where 
+      func foo() : point res
 [ ] fix todo sprinkled in the source
 [ ] regex is not performant. replace with hand-rolled string operations
     especially in `operand` which create regex in the constructor
@@ -47,8 +51,6 @@
       func inv(i) res {
 [ ] built-in: mov and syscall functions to statements and remove special
     built-in functions declared in program
-[ ] function return of non-register passable type
-      var pos : point = foo()
 [ ] ponder an iterator of elements in array that does not require bounds
     checking:
       for(e : arr) {
@@ -107,7 +109,7 @@
 [ ] func f(p : point const) const is default. same as "func f(p : point)"
 [ ] func object(self : object inout, pos, vel, color) called when 'var o : object = {...}'
 [ ] func foo(object& self, arg) can be called with o.foo(arg)
-[-] string type
+[ ] string type
       var str = "hello world"
       var len = str.len
 [ ] points.len
