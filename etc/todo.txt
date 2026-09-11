@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-[ ]: pending [o]: ongoing [x]: done [-]: not completed with reason specified
+[ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [ ] does not work: var s1: i8[]  = "hello world"
 [ ] a way to use characters e.g. 'a' instead of ascii code
