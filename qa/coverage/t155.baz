@@ -10,6 +10,8 @@ type point { x, y }
 
 type msgpoint {  msg : i8[128], pt : point }
 
+type message { subject : i8[64], is_read : bool, checks : bool[4] }
+
 func main() {
     var x = -1
     var y = -2
@@ -50,4 +52,15 @@ func main() {
     assert(s2[1] == 13)
     assert(s2[2] == 1)
 
+    var msg : message = { { }, true, { false, true, true } }
+    assert(msg.is_read == true)
+    assert(msg.checks[0] == false)
+    assert(msg.checks[1] == true)
+    assert(msg.checks[2] == true)
+
+    var msg1 : message[2] = { { }, { { }, true, { false, true, true } } }
+    assert(msg1[1].is_read == true)
+    assert(msg1[1].checks[0] == false)
+    assert(msg1[1].checks[1] == true)
+    assert(msg1[1].checks[2] == true)
 }
