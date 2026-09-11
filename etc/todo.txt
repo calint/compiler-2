@@ -1,7 +1,6 @@
 --------------------------------------------------------------------------------
 [ ]: pending [o]: ongoing [x]: done [-]: not completed with reason specified
 --------------------------------------------------------------------------------
-[x] unroll rep_movs when number of bytes is above a certain threshold
 [ ] does not work:
     var s1: i8[]  = "hello world"
 [ ] ub? 
@@ -117,6 +116,7 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] unroll rep_movs when number of bytes is above a certain threshold
 [x] stmt_def_var: move rep stos logic to toc::rep_stos
 [x] toc: heuristic aware rep stosb. switches from stosb to mov depending on
     number of bytes to be set (1 to 64 bytes unrolled)
