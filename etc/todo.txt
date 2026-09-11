@@ -1,23 +1,14 @@
 --------------------------------------------------------------------------------
 [ ]: pending [o]: ongoing [x]: done [-]: not completed with reason specified
 --------------------------------------------------------------------------------
-[ ] does not work:
-    var s1: i8[]  = "hello world"
-[ ] ub? 
-    mp[1] = { mp[2].msg } see t155.baz:44
+[ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
+    if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
+[ ] does not work: var s1: i8[]  = "hello world"
+[ ] ub? mp[1] = { mp[2].msg } see t155.baz:44
 [ ] a way to use characters e.g. 'a' instead of ascii code
-[ ] fix todo in sprinkled in the source
+[ ] fix todo sprinkled in the source
 [ ] regex is not performant. replace with hand-rolled string operations
     especially in `operand` which create regex in the constructor
-[o] stmt_assign_var::compile: unified way of determining the effective address
-    of an identifier including indexing, type offset navigation etc
-    => make_ident_info should do that and then passed around instead of
-       destination as a string
-       => resolving operand might involve allocating registers to resolve lea
-       => instead of string for operand use toc `operand`
-[o] consolidate the various initiations of rep stosX into common code in toc
-    implementing heuristics of when to switch from mov to rep
-    => toc::rep_stos
 [ ] make an extensive comment file explaining lea, indexing array etc
 [ ] resolve issues with comments in expressions etc
     dat s : str = { 
@@ -45,9 +36,7 @@
     to unspecified register size with sign extension
     => 255 is outside the range of i8: -128 -> 127
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
-[ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
-    if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
-[ ] toc::rep_movs: heuristics around when to switch from movs to rep
+[x] toc::rep_movs: heuristics around when to switch from movs to rep
 [ ] handle case where x86_64 cannot load immediate 64 bit value to memory
 [ ] function call of type lst.add(x) that calls list_add(self, x)
 [ ] consider changing function signatures from
@@ -116,6 +105,15 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] stmt_assign_var::compile: unified way of determining the effective address
+    of an identifier including indexing, type offset navigation etc
+    => make_ident_info should do that and then passed around instead of
+       destination as a string
+       => resolving operand might involve allocating registers to resolve lea
+       => instead of string for operand use toc `operand`
+[x] consolidate the various initiations of rep stosX into common code in toc
+    implementing heuristics of when to switch from mov to rep
+    => toc::rep_stos
 [x] unroll rep_movs when number of bytes is above a certain threshold
 [x] stmt_def_var: move rep stos logic to toc::rep_stos
 [x] toc: heuristic aware rep stosb. switches from stosb to mov depending on
