@@ -100,6 +100,10 @@ func point_init() : point res {
     res.y = -2
 }
 
+func object_init() : object res {
+    res.pos.y = 74
+}
+
 # constants are declared in global scope
 
 const yes = 1
@@ -209,11 +213,14 @@ func main() {
     assert(o2.pos.y == -2)
     assert(o2.color == 0xff0000)
 
-    var o3 : object[1]
+    var o3 : object[2]
     o3.pos.y = 73
     # index 0 in an array can be accessed without array index
 
     assert(o3[0].pos.y == 73)
+
+    o3[1] = object_init()
+    assert(o3[1].pos.y == 74)
 
     var worlds : world[8]
     worlds[1].locations[1] = 0xffee
