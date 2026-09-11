@@ -346,12 +346,12 @@ class toc final {
         const ident_info& name_info{make_ident_info(src_loc_tk, var.name)};
 
         comment_start(src_loc_tk, os, indnt);
-        std::print(os, "{}: {}", var.name, name_info.type_ptr->name());
+        std::print(os, "{}: {}", var.name, name_info.type().name());
         if (var.array_size) {
             std::print(os, "[{}]", var.array_size);
         }
         std::println(os, " ({} B @ [{}])",
-                     name_info.type_ptr->size() *
+                     name_info.type().size() *
                          (name_info.is_array ? name_info.array_size : 1),
                      name_info.operand.address_str());
     }
@@ -798,7 +798,7 @@ class toc final {
 
         operand op{src.compile_lea(src.tok(), *this, os, indent, lea_registers,
                                    "", src_info.lea_path)};
-        op.size = src_info.type_ptr->size();
+        op.size = src_info.type().size();
         return op;
     }
 
@@ -1066,7 +1066,6 @@ class toc final {
             .elem_path{std::string{reg}},
             .type_path{&tpe},
             .lea_path{},
-            .type_ptr{&tpe},
             .operand{reg},
             .ident_type{ident_info::ident_type::REGISTER},
         };
@@ -1457,7 +1456,7 @@ class toc final {
 
             ii.lea_path = lea_path;
 
-            if (not ii.type_ptr->is_built_in()) {
+            if (not ii.type().is_built_in()) {
                 return ii;
             }
 
@@ -1510,7 +1509,7 @@ class toc final {
             if (offset != 0) {
                 ii.operand.displacement += static_cast<int>(offset);
             }
-            ii.operand.size = ii.type_ptr->size();
+            ii.operand.size = ii.type().size();
 
             return ii;
         }
@@ -1525,7 +1524,6 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&tpe},
                 .lea_path{},
-                .type_ptr{&tpe},
                 .operand{id.str()},
                 .ident_type{ident_info::ident_type::REGISTER},
             };
@@ -1537,9 +1535,8 @@ class toc final {
             return {
                 .id{ident},
                 .elem_path{id.str()},
-                .type_path{&get_type_default()},
+                .type_path{&get_builtin_type_for_operand(src_loc_tk, id.str())},
                 .lea_path{},
-                .type_ptr{&get_builtin_type_for_operand(src_loc_tk, id.str())},
                 .operand{id.str()},
                 .ident_type{ident_info::ident_type::VAR},
             };
@@ -1562,7 +1559,6 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
-                .type_ptr{&get_type_default()},
                 .operand{id.str(), true},
                 .const_value{*value},
                 .ident_type{ident_info::ident_type::CONST},
@@ -1576,7 +1572,6 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
-                .type_ptr{&get_type_bool()},
                 .operand{"true", true},
                 .const_value{1},
                 .ident_type{ident_info::ident_type::CONST},
@@ -1589,7 +1584,6 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
-                .type_ptr{&get_type_bool()},
                 .operand{"false", true},
                 .const_value{},
                 .ident_type{ident_info::ident_type::CONST},
@@ -1604,7 +1598,6 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
-                .type_ptr{&get_type_default()},
                 .operand{id.str(), true},
                 .const_value{c.value},
                 .ident_type{ident_info::ident_type::CONST},
@@ -1612,13 +1605,7 @@ class toc final {
         }
 
         // not resolved, return empty info
-        return {.id{},
-                .elem_path{},
-                .type_path{},
-                .lea_path{},
-                .type_ptr{},
-                .operand{},
-                .ident_type{}};
+        return {.id{}, .elem_path{}, .type_path{}, .lea_path{}, .operand{}};
     }
 
     // helper: call make_ident_info_or_empty and throw if unresolved

@@ -431,7 +431,7 @@ class expr_bool_op final : public statement {
             const operand op{expr.compile_lea(expr.tok(), tc, os, indent,
                                               allocated_registers, "",
                                               expr_info.lea_path)};
-            return op.str(expr_info.type_ptr->size());
+            return op.str(expr_info.type().size());
         }
 
         if (expr.is_expression()) {

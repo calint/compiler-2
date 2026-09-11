@@ -88,7 +88,7 @@ class stmt_identifier : public statement {
 
             const ident_info ii{tc.make_ident_info(tk_prv, path_as_string_)};
 
-            set_type(*ii.type_ptr);
+            set_type(ii.type());
 
             is_array_ = ii.is_array;
             array_size_ = ii.array_size;
@@ -196,7 +196,7 @@ class stmt_identifier : public statement {
             src_info.lea_path)};
 
         tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(),
-                   op.str(src_info.type_ptr->size()));
+                   op.str(src_info.type().size()));
 
         get_unary_ops().compile(tc, os, indent, dst_info.operand.str());
 
@@ -261,7 +261,7 @@ class stmt_identifier : public statement {
         for (size_t i{elem_index_with_lea}; i < elems_size; ++i) {
             const ident_elem& curr_elem{elems[i]};
             const ident_info curr_info{tc.make_ident_info(src_loc_tk, path)};
-            const size_t type_size{curr_info.type_ptr->size()};
+            const size_t type_size{curr_info.type().size()};
             const bool is_last{i == elems_size - 1};
 
             // handle array access without indexing
@@ -277,7 +277,7 @@ class stmt_identifier : public statement {
                     const ident_elem& next_elem{elems[i + 1]};
                     accum_offset +=
                         static_cast<int32_t>(toc::get_field_offset_in_type(
-                            src_loc_tk, *curr_info.type_ptr,
+                            src_loc_tk, curr_info.type(),
                             next_elem.name_tk.text()));
                     path.push_back('.');
                     path += next_elem.name_tk.text();
@@ -403,10 +403,9 @@ class stmt_identifier : public statement {
             // accumulate field offsets
             if (i + 1 < elems_size) {
                 const ident_elem& next_elem{elems[i + 1]};
-                accum_offset +=
-                    static_cast<int32_t>(toc::get_field_offset_in_type(
-                        src_loc_tk, *curr_info.type_ptr,
-                        next_elem.name_tk.text()));
+                accum_offset += static_cast<int32_t>(
+                    toc::get_field_offset_in_type(src_loc_tk, curr_info.type(),
+                                                  next_elem.name_tk.text()));
                 path.push_back('.');
                 path += next_elem.name_tk.text();
             }

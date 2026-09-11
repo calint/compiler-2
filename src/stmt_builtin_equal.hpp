@@ -109,15 +109,15 @@ class stmt_builtin_equal final : public expression {
             tc.free_scratch_register(tok(), os, indent, reg);
         }
 
-        if (lhs_info.type_ptr->name() != rhs_info.type_ptr->name()) {
+        if (lhs_info.type().name() != rhs_info.type().name()) {
             throw compiler_exception{
-                tok(), std::format("source and destination types are not the "
-                                   "same. source is '{}' vs destination '{}'",
-                                   lhs_info.type_ptr->name(),
-                                   rhs_info.type_ptr->name())};
+                tok(),
+                std::format("source and destination types are not the "
+                            "same. source is '{}' vs destination '{}'",
+                            lhs_info.type().name(), rhs_info.type().name())};
         }
 
-        const size_t type_size{lhs_info.type_ptr->size()};
+        const size_t type_size{lhs_info.type().size()};
 
         char rep_size{'b'};
         size_t rcx{type_size};

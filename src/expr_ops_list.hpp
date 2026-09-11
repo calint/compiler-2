@@ -226,7 +226,7 @@ class expr_ops_list final : public expression {
         std::stringstream ss2;
         const std::string reg{tc.alloc_scratch_register(tok(), ss2, indent)};
         const std::string reg_sized{
-            tc.get_sized_register_operand(reg, dst_info.type_ptr->size())};
+            tc.get_sized_register_operand(reg, dst_info.type().size())};
         // note: sized register to propagate operation to destination size
         const ident_info dst_reg_info{
             tc.make_ident_info_for_register(reg_sized)};
@@ -467,7 +467,7 @@ class expr_ops_list final : public expression {
                            const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.type_ptr->size()};
+        const size_t dst_size{dst_info.type().size()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -655,7 +655,7 @@ class expr_ops_list final : public expression {
                                const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.type_ptr->size()};
+        const size_t dst_size{dst_info.type().size()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -720,7 +720,7 @@ class expr_ops_list final : public expression {
                                const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.type_ptr->size()};
+        const size_t dst_size{dst_info.type().size()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -775,7 +775,7 @@ class expr_ops_list final : public expression {
                              const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.type_ptr->size()};
+        const size_t dst_size{dst_info.type().size()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -897,7 +897,7 @@ class expr_ops_list final : public expression {
                            const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.type_ptr->size()};
+        const size_t dst_size{dst_info.type().size()};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {

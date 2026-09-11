@@ -32,11 +32,11 @@ class stmt_assign_var final : public statement {
 
         const ident_info& dst_info{tc.make_ident_info(stmt_ident_)};
 
-        set_type(*dst_info.type_ptr);
+        set_type(dst_info.type());
 
         expr_ = {tc,
                  tz,
-                 *dst_info.type_ptr,
+                 dst_info.type(),
                  false,
                  is_array,
                  array_size,

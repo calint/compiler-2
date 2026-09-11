@@ -113,7 +113,6 @@ class type final {
             .elem_path{path},
             .type_path{type_path},
             .lea_path{},
-            .type_ptr{tp},
             .operand{op},
             .stack_ix{stack_idx},
             .array_size{array_size},

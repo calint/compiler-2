@@ -302,12 +302,12 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         // check that an identifier type matches the expected type
         const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
 
-        if (tp.name() != src_info.type_ptr->name()) {
+        if (tp.name() != src_info.type().name()) {
             // note: checked a source location report ok
             throw compiler_exception{
                 tok(),
                 std::format("type '{}' does not match expected type '{}'",
-                            src_info.type_ptr->name(), tp.name())};
+                            src_info.type().name(), tp.name())};
         }
 
         return;
@@ -384,7 +384,7 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
 auto expr_type_value::compile(toc& tc, std::ostream& os, size_t indent,
                               const ident_info& dst_info) const -> void {
 
-    const type& tp{*dst_info.type_ptr};
+    const type& tp{dst_info.type()};
     operand op{dst_info.operand};
     compile_assign(tc, os, indent, tp, op);
 }
@@ -399,12 +399,12 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
     // is it e.g. pt1 = pt2?
     if (is_identifier()) {
         const ident_info src_info{tc.make_ident_info(*this)};
-        if (dst_type.name() != src_info.type_ptr->name()) {
+        if (dst_type.name() != src_info.type().name()) {
             throw compiler_exception{
                 tok(),
                 std::format(
                     "destination type '{}' does not match source type '{}'",
-                    dst_type.name(), src_info.type_ptr->name())};
+                    dst_type.name(), src_info.type().name())};
         }
 
         std::vector<std::string> allocated_registers;
@@ -537,11 +537,11 @@ auto expr_type_value::validate_array_assignment(const token& tok,
     if (not src_info.is_array) {
         throw compiler_exception{tok, "source is not an array"};
     }
-    if (fld.type_ptr->name() != src_info.type_ptr->name()) {
+    if (fld.type_ptr->name() != src_info.type().name()) {
         throw compiler_exception{
             tok, std::format("destination type '{}' does not match "
                              "source type '{}'",
-                             fld.type_ptr->name(), src_info.type_ptr->name())};
+                             fld.type_ptr->name(), src_info.type().name())};
     }
     if (fld.array_size != src_info.array_size) {
         throw compiler_exception{

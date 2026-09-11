@@ -9,6 +9,7 @@
 #include <memory>
 #include <utility>
 
+#include "panic_exception.hpp"
 #include "token.hpp"
 
 class toc;
@@ -275,7 +276,6 @@ struct ident_info {
     std::vector<std::string> elem_path;
     std::vector<const type*> type_path;
     std::vector<std::string> lea_path;
-    const type* type_ptr{};
     operand operand; // nasm valid source
     int32_t stack_ix{};
     int64_t const_value{};
@@ -303,6 +303,13 @@ struct ident_info {
         return std::ranges::any_of(lea_path, [](const std::string& s) -> bool {
             return not s.empty();
         });
+    }
+
+    [[nodiscard]] auto type() const -> const type& {
+        if (type_path.empty()) {
+            throw panic_exception("1");
+        }
+        return *type_path.back();
     }
 };
 

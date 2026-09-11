@@ -68,7 +68,7 @@ class stmt_builtin_address_of final : public expression {
                                      "destination cannot be a constant"};
         }
 
-        if (dst_info.type_ptr->name() != tc.get_type_default().name()) {
+        if (dst_info.type().name() != tc.get_type_default().name()) {
             throw compiler_exception{tok(), "destination must be type i64"};
         }
 

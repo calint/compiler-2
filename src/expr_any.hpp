@@ -146,7 +146,7 @@ class expr_any final : public statement {
             tc.comment_start(tok(), os, indent);
             std::println(os, "[{}]", counter++);
             compile_variant(tc, os, indent, ii, tok(), el);
-            ii.operand.displacement += ii.type_ptr->size();
+            ii.operand.displacement += ii.type().size();
         }
 
         const size_t diff{(array_size_ - vars_.size())};
@@ -154,11 +154,11 @@ class expr_any final : public statement {
             return;
         }
 
-        const size_t nbytes{diff * ii.type_ptr->size()};
+        const size_t nbytes{diff * ii.type().size()};
 
         tc.comment_start(tok(), os, indent);
         std::println(os, "zero remaining elements: {} * {} B = {} B", diff,
-                     ii.type_ptr->size(), nbytes);
+                     ii.type().size(), nbytes);
         tc.rep_stos(tok(), os, indent, ii.operand.address_str(), nbytes, 0);
     }
 
