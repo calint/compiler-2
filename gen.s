@@ -33,17 +33,17 @@ mov rsp, stk.end
 ;[11:1] # single statement blocks can ommit { ... }
 ;[36:1] # user types are defined using keyword `type`
 ;[38:1] # default type is `i64` and does not need to be specified
-;[40:1] point : 16 B    fields: 
+;[40:1] point : 16 B    fields:
 ;[40:1]       name :  offset :    size :  array? : array size
 ;[40:1]          x :       0 :       8 :      no :           
 ;[40:1]          y :       8 :       8 :      no :           
 
-;[42:1] object : 20 B    fields: 
+;[42:1] object : 20 B    fields:
 ;[42:1]       name :  offset :    size :  array? : array size
 ;[42:1]        pos :       0 :      16 :      no :           
 ;[42:1]      color :      16 :       4 :      no :           
 
-;[44:1] world : 64 B    fields: 
+;[44:1] world : 64 B    fields:
 ;[44:1]       name :  offset :    size :  array? : array size
 ;[44:1]  locations :       0 :      64 :     yes :          8
 
@@ -51,7 +51,7 @@ mov rsp, stk.end
 ;[53:1] # default argument type is `i64`
 ;[60:1] # return target is specified as a variable, in this case `res`
 ;[70:1] # array arguments are declared with type and []
-;[76:1] str : 128 B    fields: 
+;[76:1] str : 128 B    fields:
 ;[76:1]       name :  offset :    size :  array? : array size
 ;[76:1]        len :       0 :       1 :      no :           
 ;[76:1]       data :       1 :     127 :     yes :        127
@@ -76,14 +76,14 @@ main:
 ;   [115:5] # initial data declared before any variables and initialized with constants
 ;   [117:5] var arr : i32[4]
 ;   [117:9] arr: i32[4] (16 B @ [rsp - 205])
-;   [117:9] clear 4 * 4 B = 16 B
+;   [117:9] zero 4 * 4 B = 16 B
 ;   [117:5] size <= 32 B, use mov
     mov qword [rsp - 205], 0
     mov qword [rsp - 197], 0
 ;   [118:5] # arrays are initialized to 0
 ;   [120:5] var answer
 ;   [120:9] answer: i64 (8 B @ [rsp - 213])
-;   [120:9] clear 1 * 8 B = 8 B
+;   [120:9] zero 1 * 8 B = 8 B
 ;   [120:5] size <= 32 B, use mov
     mov qword [rsp - 213], 0
 ;   [121:5] assert(answer == 0)
@@ -443,7 +443,7 @@ main:
     assert_137_5_end:
 ;   [139:5] var arr1 : i32[8]
 ;   [139:9] arr1: i32[8] (32 B @ [rsp - 253])
-;   [139:9] clear 8 * 4 B = 32 B
+;   [139:9] zero 8 * 4 B = 32 B
 ;   [139:5] size <= 32 B, use mov
     mov qword [rsp - 253], 0
     mov qword [rsp - 245], 0
@@ -1756,7 +1756,7 @@ main:
     assert_201_5_end:
 ;   [203:5] var o3 : object[1]
 ;   [203:9] o3: object[1] (20 B @ [rsp - 417])
-;   [203:9] clear 1 * 20 B = 20 B
+;   [203:9] zero 1 * 20 B = 20 B
 ;   [203:5] size <= 32 B, use mov
     mov qword [rsp - 417], 0
     mov qword [rsp - 409], 0
@@ -1826,7 +1826,7 @@ main:
     assert_207_5_end:
 ;   [209:5] var worlds : world[8]
 ;   [209:9] worlds: world[8] (512 B @ [rsp - 929])
-;   [209:9] clear 8 * 64 B = 512 B
+;   [209:9] zero 8 * 64 B = 512 B
 ;   [209:5] allocate named register 'rcx'
 ;   [209:5] allocate named register 'rdi'
 ;   [209:5] allocate named register 'rax'
@@ -2238,7 +2238,7 @@ main:
     assert_222_5_end:
 ;   [228:5] var nm : str
 ;   [228:9] nm: str (128 B @ [rsp - 1057])
-;   [228:9] clear 1 * 128 B = 128 B
+;   [228:9] zero 1 * 128 B = 128 B
 ;   [228:5] allocate named register 'rcx'
 ;   [228:5] allocate named register 'rdi'
 ;   [228:5] allocate named register 'rax'

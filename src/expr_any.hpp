@@ -56,6 +56,7 @@ class expr_any final : public statement {
         const token tk{tz.next_whitespace_token()};
         if (tz.peek_char() != '{') {
             tz.put_back_token(tk);
+            // todo: comment why expr_type_value
             vars_.emplace_back(expr_type_value{tc, tz, tp});
             is_identifier_ = true;
             return;
@@ -130,10 +131,13 @@ class expr_any final : public statement {
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        if (not is_array_ or is_array_indexed_ or is_identifier_) {
+        // the base case
+        if (is_identifier_ or is_array_indexed_ or not is_array_) {
             compile_variant(tc, os, indent, dst_info, tok(), vars_[0]);
             return;
         }
+
+        // assign array elements
 
         ident_info ii{dst_info};
 
@@ -146,11 +150,15 @@ class expr_any final : public statement {
         }
 
         const size_t diff{(array_size_ - vars_.size())};
+        if (diff == 0) {
+            return;
+        }
+
         const size_t nbytes{diff * ii.type_ptr->size()};
 
         tc.comment_start(tok(), os, indent);
-        std::println(os, "zero remaining {} element{}", diff,
-                     diff == 1 ? "" : "s");
+        std::println(os, "zero remaining elements: {} * {} B = {} B", diff,
+                     ii.type_ptr->size(), nbytes);
         tc.rep_stos(tok(), os, indent, ii.operand, nbytes, 0);
     }
 
