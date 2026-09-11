@@ -710,7 +710,7 @@ main:
 ;   [148:24] free scratch register 'r13'
 ;   [62:6] inv(i : i32) : i32 res 
     inv_148_16:
-;       [148:16] alias res -> dword [rsp + r15 * 4 - 205]  (lea: )
+;       [148:16] alias res -> arr  (lea: rsp + r15 * 4 - 205)
 ;       [148:16] alias i -> arr  (lea: rsp + r14 * 4 - 205)
 ;       [63:5] res = ~i
 ;       [63:12] ~i
@@ -1211,7 +1211,7 @@ main:
 ;   [176:13] baz(j)
 ;   [66:6] baz(arg) : i64 res 
     baz_176_13:
-;       [176:13] alias res -> qword [rsp - 309]  (lea: )
+;       [176:13] alias res -> k  (lea: rsp - 309)
 ;       [176:13] alias arg -> j  (lea: )
 ;       [67:5] res = arg * 2
 ;       [67:11] allocate scratch register -> r15
@@ -1267,7 +1267,7 @@ main:
 ;   [179:9] baz(1)
 ;   [66:6] baz(arg) : i64 res 
     baz_179_9:
-;       [179:9] alias res -> qword [rsp - 309]  (lea: )
+;       [179:9] alias res -> k  (lea: rsp - 309)
 ;       [179:9] alias arg -> 1  (lea: )
 ;       [67:5] res = arg * 2
 ;       [67:11] allocate scratch register -> r15
@@ -1326,7 +1326,7 @@ main:
 ;   [182:23] baz(2)
 ;   [66:6] baz(arg) : i64 res 
     baz_182_23:
-;       [182:23] alias res -> qword [rsp - 325]  (lea: )
+;       [182:23] alias res -> qword [rsp - 325]  (lea: rsp - 325)
 ;       [182:23] alias arg -> 2  (lea: )
 ;       [67:5] res = arg * 2
 ;       [67:11] allocate scratch register -> r15

@@ -174,7 +174,7 @@ class stmt_call : public expression {
 
             // alias return identifier to 'dst_info'
             aliases_to_add.emplace_back(std::string{ret->ident_tk.text()},
-                                        dst_info.operand.str(), "",
+                                        dst_info.id, dst_info.operand.address_str(),
                                         ret->type_ptr);
 
         } else if (ret) {

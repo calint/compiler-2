@@ -290,14 +290,14 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     if (not tok().text().empty()) {
         // yes, e.g. obj.pos = p
 
+        if (tz.peek_char() == '(') {
+            stmt_call_ =
+                std::make_shared<stmt_call>(tc, unary_ops{}, tok(), tz);
+            return;
+        }
+
         stmt_ident_ =
             std::make_shared<stmt_identifier>(tc, unary_ops{}, tok(), tz);
-
-        if (tz.is_next_char('(')) {
-            throw compiler_exception{tok(),
-                                     "did not expect function call, but what "
-                                     "to copy or initializer using '{...}'"};
-        }
 
         // check that an identifier type matches the expected type
         const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
@@ -359,6 +359,11 @@ expr_type_value::~expr_type_value() = default;
 // resolves circular reference: expr_type_value -> expr_any ->
 // expr_type_value
 inline auto expr_type_value::source_to(std::ostream& os) const -> void {
+    if (stmt_call_) {
+        stmt_call_->source_to(os);
+        return;
+    }
+
     // is it an identifier? because statement printed that
     if (is_make_copy()) {
         stmt_ident_->source_to(os);
@@ -383,6 +388,11 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
 
 auto expr_type_value::compile(toc& tc, std::ostream& os, size_t indent,
                               const ident_info& dst_info) const -> void {
+
+    if (stmt_call_) {
+        stmt_call_->compile(tc, os, indent, dst_info);
+        return;
+    }
 
     const type& tp{dst_info.type()};
     operand op{dst_info.operand};

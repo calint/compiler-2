@@ -56,11 +56,6 @@ class stmt_def_func final : public statement {
 
             const type& tp{tc.get_type_or_throw(type_tk, type_tk.text())};
 
-            if (not tp.is_built_in()) {
-                throw compiler_exception{
-                    type_tk, "only built-in types allowed as return"};
-            }
-
             returns_.emplace(type_tk, ident_tk, &tp);
 
             // set function type to first return type

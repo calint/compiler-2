@@ -24,7 +24,7 @@ func main() {
     var ix = 3
     arr[ix] = ~arr[ix - 1]
     assert(arr[ix] == ~2)
-    
+
     arr[ix-2] = inv(arr[ix])
     assert(arr[ix-2] == 2)
 }

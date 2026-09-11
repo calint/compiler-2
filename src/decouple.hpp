@@ -311,6 +311,15 @@ struct ident_info {
         }
         return *type_path.back();
     }
+
+    [[nodiscard]] auto lea() const -> std::string {
+        for (const std::string& s : lea_path | std::views::reverse) {
+            if (not s.empty()) {
+                return s;
+            }
+        }
+        return "";
+    }
 };
 
 //
