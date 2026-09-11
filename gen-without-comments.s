@@ -772,9 +772,9 @@ main:
             exit_13_38_207_5_end:
         if_13_26_207_5_end:
     assert_207_5_end:
-    mov rcx, 512
+    xor al, al
     lea rdi, [rsp - 929]
-    xor rax, rax
+    mov rcx, 512
     rep stosb
     lea r15, [rsp - 929]
     mov r14, 1
@@ -968,9 +968,9 @@ main:
             exit_13_38_222_5_end:
         if_13_26_222_5_end:
     assert_222_5_end:
-    mov rcx, 128
+    xor al, al
     lea rdi, [rsp - 1057]
-    xor rax, rax
+    mov rcx, 128
     rep stosb
     print_229_5:
         mov rdx, 21

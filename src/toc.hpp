@@ -1139,8 +1139,12 @@ class toc final {
         alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
         alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
 
-        toc::asm_cmd(src_loc_tk, os, indnt, "mov", "al",
-                     std::format("{}", value));
+        if (value == 0) {
+            toc::asm_cmd(src_loc_tk, os, indnt, "xor", "al", "al");
+        } else {
+            toc::asm_cmd(src_loc_tk, os, indnt, "mov", "al",
+                         std::format("{}", value));
+        }
         toc::asm_lea(os, indnt, "rdi", dst);
         toc::asm_cmd(src_loc_tk, os, indnt, "mov", "rcx",
                      std::format("{}", bytes_count));

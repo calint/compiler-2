@@ -152,22 +152,11 @@ class stmt_def_var final : public statement {
                      dst_info.type_ptr->size(), bytes_count);
 
         if (bytes_count > threshold_for_rep_stos) {
-            tc.alloc_named_register_or_throw(tok(), os, indent, "rcx");
-            tc.alloc_named_register_or_throw(tok(), os, indent, "rdi");
-            tc.alloc_named_register_or_throw(tok(), os, indent, "rax");
-
-            tc.asm_cmd(tok(), os, indent, "mov", "rcx",
-                       std::to_string(bytes_count));
-            toc::asm_lea(os, indent, "rdi",
-                         std::format("rsp - {}", -dst_info.stack_ix));
+            std::string dst_addr{std::format("rsp - {}", -dst_info.stack_ix)};
             // note: -dst_info.stack_ix for nicer source formatting; is always
             //       negative
-            tc.asm_cmd(name_tk_, os, indent, "xor", "rax", "rax");
-            toc::asm_rep_stos(os, indent, 'b');
-
-            tc.free_named_register(tok(), os, indent, "rax");
-            tc.free_named_register(tok(), os, indent, "rdi");
-            tc.free_named_register(tok(), os, indent, "rcx");
+            tc.rep_stos(tok(), os, indent, dst_addr, bytes_count,
+                        0);
             return;
         }
 
