@@ -240,7 +240,7 @@ class stmt_def_dat final : public statement {
         }
         size_t nbytes{};
         for (size_t i{counter}; i < n; ++i) {
-            nbytes += flds[i].size;
+            nbytes += flds[i].total_size;
         }
         std::println(os, "; zero remaining fields");
         std::println(os, "times {} db 0", nbytes);

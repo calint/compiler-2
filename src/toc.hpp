@@ -1747,7 +1747,7 @@ class toc final {
             if (f.name == field_name) {
                 return accum;
             }
-            accum += f.size;
+            accum += f.total_size;
         }
 
         throw compiler_exception(

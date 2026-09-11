@@ -18,10 +18,10 @@ class type;
 struct type_field {
     std::string name;       //
     const type* type_ptr{}; // element type
-    size_t size{};          // total size in bytes of all elements
+    size_t offset{};        // offset relative to instance address
+    size_t total_size{};    // total size in bytes of all elements
     size_t array_size{};    // array size in elements
     bool is_array{};        //
-    size_t offset{};        // offset relative to instance address
 };
 
 class type final {
@@ -46,10 +46,10 @@ class type final {
                    const std::string_view name, const type& tp,
                    const bool is_array, const size_t array_size) -> void {
 
-        const size_t size{tp.size_ * (is_array ? array_size : 1)};
+        const size_t total_size{tp.size_ * (is_array ? array_size : 1)};
 
-        fields_.emplace_back(std::string{name}, &tp, size, array_size, is_array,
-                             size_);
+        fields_.emplace_back(std::string{name}, &tp, size_, total_size,
+                             array_size, is_array);
 
         size_ += tp.size_ * (is_array ? array_size : 1);
     }

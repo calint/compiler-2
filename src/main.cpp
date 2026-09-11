@@ -462,9 +462,10 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             //   var mp : msgpoint[3] = { { {}, { x, y } } }
             tc.comment_start(tok(), os, indent);
             std::println(os, "zero empty field: {} * {} B = {} B",
-                         tf.array_size, tf.type_ptr->size(), tf.size);
-            tc.rep_stos(tok(), os, indent, dst_op.address_str(), tf.size, 0);
-            dst_op.displacement += static_cast<int32_t>(tf.size);
+                         tf.array_size, tf.type_ptr->size(), tf.total_size);
+            tc.rep_stos(tok(), os, indent, dst_op.address_str(), tf.total_size,
+                        0);
+            dst_op.displacement += static_cast<int32_t>(tf.total_size);
             ++counter;
             continue;
         }
@@ -493,7 +494,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                     validate_array_assignment(src.tok(), tf, src_info);
                     tc.rep_movs(src.tok(), os, indent,
                                 src_info.operand.address_str(),
-                                dst_op.address_str(), tf.size);
+                                dst_op.address_str(), tf.total_size);
                 } else {
                     // built-in, not expression, not constant, not array
                     tc.asm_cmd(src.tok(), os, indent, "mov", dst_accessor,
@@ -502,7 +503,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                 }
             }
         }
-        dst_op.displacement += static_cast<int32_t>(tf.size);
+        dst_op.displacement += static_cast<int32_t>(tf.total_size);
         ++counter;
     }
 
@@ -520,7 +521,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
     const size_t n{flds.size()};
     size_t nbytes{};
     for (size_t i{counter}; i < n; ++i) {
-        nbytes += flds[i].size;
+        nbytes += flds[i].total_size;
     }
 
     tc.comment_start(tok(), os, indent);
