@@ -44,7 +44,8 @@ class expr_any final : public statement {
 
         set_type(tp);
 
-        if (not is_array or (is_array and is_array_indexed)) {
+        // the basic case
+        if (not is_array or is_array_indexed) {
             vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
             return;
         }
@@ -129,7 +130,7 @@ class expr_any final : public statement {
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        if (not is_array_ or is_identifier_) {
+        if (not is_array_ or is_array_indexed_ or is_identifier_) {
             compile_variant(tc, os, indent, dst_info, tok(), vars_[0]);
             return;
         }
@@ -142,18 +143,6 @@ class expr_any final : public statement {
             std::println(os, "[{}]", counter++);
             compile_variant(tc, os, indent, ii, tok(), el);
             ii.operand.displacement += ii.type_ptr->size();
-        }
-
-        if (not is_array_) {
-            return;
-        }
-
-        if (is_array_indexed_) {
-            return;
-        }
-
-        if (vars_.size() == array_size_) {
-            return;
         }
 
         const size_t diff{(array_size_ - vars_.size())};
@@ -188,6 +177,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
+        // todo: comment about why this can't happen if empty
         return std::visit(
             [](const auto& e) -> std::string_view { return e.identifier(); },
             vars_[0]);
