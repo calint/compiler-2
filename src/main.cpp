@@ -356,8 +356,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 expr_type_value::~expr_type_value() = default;
 
 // declared in 'expr_type_value.hpp'
-// resolves circular reference: expr_type_value -> expr_any ->
-// expr_type_value
+// solves circular reference: expr_type_value -> expr_any -> expr_type_value
 inline auto expr_type_value::source_to(std::ostream& os) const -> void {
     if (stmt_call_) {
         stmt_call_->source_to(os);
@@ -386,6 +385,8 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
     ws2_.source_to(os);
 }
 
+// declared in 'expr_type_value.hpp'
+// solves circular reference: expr_type_value -> expr_any -> expr_type_value
 auto expr_type_value::compile(toc& tc, std::ostream& os, size_t indent,
                               const ident_info& dst_info) const -> void {
 
@@ -400,8 +401,7 @@ auto expr_type_value::compile(toc& tc, std::ostream& os, size_t indent,
 }
 
 // declared in 'expr_type_value.hpp'
-// resolves circular reference: expr_type_value -> expr_any ->
-// expr_type_value
+// solves circular reference: expr_type_value -> expr_any -> expr_type_value
 auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                      const type& dst_type,
                                      operand& dst_op) const -> void {
@@ -540,6 +540,8 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
     dst_op.displacement += static_cast<int32_t>(nbytes);
 }
 
+// declared in 'expr_type_value.hpp'
+// solves circular reference: expr_type_value -> expr_any -> expr_type_value
 auto expr_type_value::validate_array_assignment(const token& tok,
                                                 const type_field& fld,
                                                 const ident_info& src_info)
@@ -563,8 +565,7 @@ auto expr_type_value::validate_array_assignment(const token& tok,
 }
 
 // declared in 'expr_type_value.hpp'
-// resolves circular reference: expr_type_value -> expr_any ->
-// expr_type_values
+// solves circular reference: expr_type_value -> expr_any -> expr_type_values
 auto expr_type_value::assert_var_not_used(const std::string_view var) const
     -> void {
 
@@ -573,6 +574,8 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
     }
 }
 
+// declared in 'expr_type_value.hpp'
+// solves circular reference: expr_type_value -> expr_any -> expr_type_value
 [[nodiscard]] auto expr_type_value::compile_lea(
     const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
     std::vector<std::string>& allocated_registers, const std::string& reg_size,
@@ -582,6 +585,8 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
                                     allocated_registers, reg_size, lea_path);
 }
 
+// declared in 'expr_type_value.hpp'
+// solves circular reference: expr_type_value -> expr_any -> expr_type_value
 [[nodiscard]] auto expr_type_value::identifier() const -> std::string_view {
     if (stmt_ident_) {
         return stmt_ident_->identifier();
@@ -589,6 +594,8 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
     return statement::identifier();
 }
 
+// declared in 'expr_type_value.hpp'
+// solves circular reference: expr_type_value -> expr_any -> expr_type_value
 [[nodiscard]] auto expr_type_value::is_indexed() const -> bool {
     return stmt_ident_ and stmt_ident_->is_indexed();
 }

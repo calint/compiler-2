@@ -1,6 +1,9 @@
 --------------------------------------------------------------------------------
 [ ]: pending [o]: ongoing [x]: done [-]: not completed with reason specified
 --------------------------------------------------------------------------------
+[ ] expr_type_value has mixed responsibilities
+    expr_ops_list: handles expressions that writes the result with one mov
+    expr_bool_ops_list: handles boolean expressions
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
     if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] does not work: var s1: i8[]  = "hello world"
