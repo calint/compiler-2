@@ -110,14 +110,14 @@ class type final {
 
         return {
             .id{ident},
-            .operand{op},
-            .type_ptr{tp},
-            .stack_ix{stack_idx},
-            .array_size{array_size},
-            .is_array{is_array},
             .elem_path{path},
             .type_path{type_path},
             .lea_path{},
+            .type_ptr{tp},
+            .operand{op},
+            .stack_ix{stack_idx},
+            .array_size{array_size},
+            .is_array{is_array},
             .ident_type{ident_info::ident_type::VAR},
         };
     }

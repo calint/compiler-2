@@ -272,15 +272,15 @@ struct ident_info {
     enum class ident_type : uint8_t { CONST, VAR, REGISTER };
 
     std::string id;
-    operand operand; // nasm valid source
-    int64_t const_value{};
-    const type* type_ptr{};
-    int32_t stack_ix{};
-    size_t array_size{};
-    bool is_array{};
     std::vector<std::string> elem_path;
     std::vector<const type*> type_path;
     std::vector<std::string> lea_path;
+    const type* type_ptr{};
+    operand operand; // nasm valid source
+    int32_t stack_ix{};
+    int64_t const_value{};
+    size_t array_size{};
+    bool is_array{};
     ident_type ident_type{};
 
     [[nodiscard]] auto is_const() const -> bool {

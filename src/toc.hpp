@@ -1047,11 +1047,10 @@ class toc final {
     [[nodiscard]] auto make_ident_info_empty() const -> ident_info {
         return {
             .id{},
-            .operand{},
-            .type_ptr{},
             .elem_path{},
             .type_path{},
             .lea_path{},
+            .operand{},
         };
     }
 
@@ -1064,11 +1063,11 @@ class toc final {
         //? unary ops?
         return {
             .id{reg},
-            .operand{reg},
-            .type_ptr{&tpe},
             .elem_path{std::string{reg}},
             .type_path{&tpe},
             .lea_path{},
+            .type_ptr{&tpe},
+            .operand{reg},
             .ident_type{ident_info::ident_type::REGISTER},
         };
     }
@@ -1523,11 +1522,11 @@ class toc final {
             //? unary ops?
             return {
                 .id{ident},
-                .operand{id.str()},
-                .type_ptr{&tpe},
                 .elem_path{id.str()},
                 .type_path{&tpe},
                 .lea_path{},
+                .type_ptr{&tpe},
+                .operand{id.str()},
                 .ident_type{ident_info::ident_type::REGISTER},
             };
         }
@@ -1537,11 +1536,11 @@ class toc final {
             // get the size: e.g. "dword [r15]"
             return {
                 .id{ident},
-                .operand{id.str()},
-                .type_ptr{&get_builtin_type_for_operand(src_loc_tk, id.str())},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
+                .type_ptr{&get_builtin_type_for_operand(src_loc_tk, id.str())},
+                .operand{id.str()},
                 .ident_type{ident_info::ident_type::VAR},
             };
         }
@@ -1560,12 +1559,12 @@ class toc final {
             value) {
             return {
                 .id{ident},
-                .operand{id.str(), true},
-                .const_value{*value},
-                .type_ptr{&get_type_default()},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
+                .type_ptr{&get_type_default()},
+                .operand{id.str(), true},
+                .const_value{*value},
                 .ident_type{ident_info::ident_type::CONST},
             };
         }
@@ -1574,12 +1573,12 @@ class toc final {
         if (id.base() == "true") {
             return {
                 .id{ident},
-                .operand{"true", true},
-                .const_value{1},
-                .type_ptr{&get_type_bool()},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
+                .type_ptr{&get_type_bool()},
+                .operand{"true", true},
+                .const_value{1},
                 .ident_type{ident_info::ident_type::CONST},
             };
         }
@@ -1587,12 +1586,12 @@ class toc final {
         if (id.base() == "false") {
             return {
                 .id{ident},
-                .operand{"false", true},
-                .const_value{},
-                .type_ptr{&get_type_bool()},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
+                .type_ptr{&get_type_bool()},
+                .operand{"false", true},
+                .const_value{},
                 .ident_type{ident_info::ident_type::CONST},
             };
         }
@@ -1602,23 +1601,23 @@ class toc final {
             const constant& c{constants_.get_const_ref(id.str())};
             return {
                 .id{ident},
-                .operand{id.str(), true},
-                .const_value{c.value},
-                .type_ptr{&get_type_default()},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
+                .type_ptr{&get_type_default()},
+                .operand{id.str(), true},
+                .const_value{c.value},
                 .ident_type{ident_info::ident_type::CONST},
             };
         }
 
         // not resolved, return empty info
         return {.id{},
-                .operand{},
-                .type_ptr{&get_type_void()},
                 .elem_path{},
                 .type_path{},
                 .lea_path{},
+                .type_ptr{},
+                .operand{},
                 .ident_type{}};
     }
 
