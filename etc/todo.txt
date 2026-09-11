@@ -13,6 +13,8 @@
     expr_ops_list: handles expressions that writes the result with one mov
     expr_bool_ops_list: handles boolean expressions
 [ ] fix todo sprinkled in the source
+[ ] consider result being an array
+    func make_points() : point[] res
 [ ] regex is not performant. replace with hand-rolled string operations
     especially in `operand` which create regex in the constructor
 [ ] make an extensive comment file explaining lea, indexing array etc
