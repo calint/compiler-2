@@ -5,31 +5,10 @@
     var s1: i8[]  = "hello world"
 [ ] ub? 
     mp[1] = { mp[2].msg } see t155.baz
-[x] stmt_def_var: move rep stos logic to toc::rep_stos
-[x] toc: heuristic aware rep stosb. switches from stosb to mov depending on
-    number of bytes to be set (1 to 64 bytes unrolled)
 [ ] a way to use characters e.g. 'a' instead of ascii code
 [ ] fix todo in sprinkled in the source
 [ ] regex is not performant. replace with hand-rolled string operations
     especially in `operand` which create regex in the constructor
-[x] fix the token string escaping
-[x] stmt_def_dat: instead of writing to elem create and return in function
-[x] a way to define constants in global name space
-    => e.g. const yes = 1
-[x] a way to initiate a i8 array with a string:
-    var hello : i8[] = "hello world"
-    [x] on dat
-    [x] on var
-[x] initializer for types that contain array does not work as intended:
-    var input_buffer : str = {0, 0} where second element is an array
-    var pts : point[2] = { {x1, y1}, {x2, y2} }
-    var pts : point[2] = { {x1, y1} } # zeroes the remaining uninitialized array
-    [x] on dat
-    [x] on var
-[x] incomplete initializer writes 0 to remaining fields
-    => var pt : point = {1} # writes 0 to remaining fields
-    [x] on dat
-    [x] on var
 [o] stmt_assign_var::compile: unified way of determining the effective address
     of an identifier including indexing, type offset navigation etc
     => make_ident_info should do that and then passed around instead of
@@ -87,8 +66,6 @@
       }
 [ ] const allowed in function declaration and code
     foo(ix : const i32) { const x = ix }
-[x] array implicit identifiers. var ar[10] ar.len
-    => array_size_of(...)
 [ ] a return reference might be used as an argument to a function that set it.
     current UB detection does not allow that
 [ ] stmt_identifier: 357: if register will be just offset without indexing
@@ -139,6 +116,29 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] stmt_def_var: move rep stos logic to toc::rep_stos
+[x] toc: heuristic aware rep stosb. switches from stosb to mov depending on
+    number of bytes to be set (1 to 64 bytes unrolled)
+[x] fix the token string escaping
+[x] stmt_def_dat: instead of writing to elem create and return in function
+[x] a way to define constants in global name space
+    => e.g. const yes = 1
+[x] a way to initiate a i8 array with a string:
+    var hello : i8[] = "hello world"
+    [x] on dat
+    [x] on var
+[x] initializer for types that contain array does not work as intended:
+    var input_buffer : str = {0, 0} where second element is an array
+    var pts : point[2] = { {x1, y1}, {x2, y2} }
+    var pts : point[2] = { {x1, y1} } # zeroes the remaining uninitialized array
+    [x] on dat
+    [x] on var
+[x] incomplete initializer writes 0 to remaining fields
+    => var pt : point = {1} # writes 0 to remaining fields
+    [x] on dat
+    [x] on var
+[x] array implicit identifiers. var ar[10] ar.len
+    => array_size_of(...)
 [x] constant initialized variables in "main" have the initial data directly
     written by the compiler into the stack prepared for execution removing
     initiation stage using code and removing "field"
