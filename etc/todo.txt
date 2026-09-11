@@ -47,6 +47,8 @@
       func inv(i) res {
 [ ] built-in: mov and syscall functions to statements and remove special
     built-in functions declared in program
+[ ] function return of non-register passable type
+      var pos : point = foo()
 [ ] ponder an iterator of elements in array that does not require bounds
     checking:
       for(e : arr) {
@@ -871,8 +873,6 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 -------------------------------------------------------------------------------
 stage 5
 -------------------------------------------------------------------------------
-[ ] function return of non-register passable type
-[ ]     var pos : point = foo()
 [ ] func f(p : point inout) { p.x = 1 } writes to caller 'p'
 [ ] func f(p : point copy) copies point to callee stack
 [ ] func f(p : point const) const is default. same as "func f(p : point)"
