@@ -1048,11 +1048,10 @@ class toc final {
         return {
             .id{},
             .operand{},
-            .type_ptr{&get_type_void()},
+            .type_ptr{},
             .elem_path{},
             .type_path{},
             .lea_path{},
-            .lea{},
         };
     }
 
@@ -1070,7 +1069,6 @@ class toc final {
             .elem_path{std::string{reg}},
             .type_path{&tpe},
             .lea_path{},
-            .lea{},
             .ident_type{ident_info::ident_type::REGISTER},
         };
     }
@@ -1469,15 +1467,16 @@ class toc final {
             // find the first element from the top that has a 'lea' and get
             // accessor relative to that
 
+            std::string lea;
             size_t lea_index{ii.elem_path.size()};
             while (lea_index--) {
                 if (not ii.lea_path[lea_index].empty()) {
-                    ii.lea = ii.lea_path[lea_index];
+                    lea = ii.lea_path[lea_index];
                     break;
                 }
             }
 
-            if (ii.lea.empty()) {
+            if (lea.empty()) {
                 return ii;
             }
 
@@ -1508,7 +1507,7 @@ class toc final {
             const size_t offset{ii.type_path[lea_index]->field_offset(
                 src_loc_tk, elem_path_from_lea)};
 
-            ii.operand = operand{ii.lea};
+            ii.operand = operand{lea};
             if (offset != 0) {
                 ii.operand.displacement += static_cast<int>(offset);
             }
@@ -1529,7 +1528,6 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&tpe},
                 .lea_path{},
-                .lea{},
                 .ident_type{ident_info::ident_type::REGISTER},
             };
         }
@@ -1544,7 +1542,6 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
-                .lea{},
                 .ident_type{ident_info::ident_type::VAR},
             };
         }
@@ -1569,7 +1566,6 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
-                .lea{},
                 .ident_type{ident_info::ident_type::CONST},
             };
         }
@@ -1584,7 +1580,6 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
-                .lea{},
                 .ident_type{ident_info::ident_type::CONST},
             };
         }
@@ -1598,7 +1593,6 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
-                .lea{},
                 .ident_type{ident_info::ident_type::CONST},
             };
         }
@@ -1614,21 +1608,18 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{},
-                .lea{},
                 .ident_type{ident_info::ident_type::CONST},
             };
         }
 
         // not resolved, return empty info
-        return {
-            .id{},
-            .operand{},
-            .type_ptr{&get_type_void()},
-            .elem_path{},
-            .type_path{},
-            .lea_path{},
-            .lea{},
-        };
+        return {.id{},
+                .operand{},
+                .type_ptr{&get_type_void()},
+                .elem_path{},
+                .type_path{},
+                .lea_path{},
+                .ident_type{}};
     }
 
     // helper: call make_ident_info_or_empty and throw if unresolved
