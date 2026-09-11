@@ -35,7 +35,19 @@ func main() {
     assert(mp[1].msg[1] == 2)
 
     var s : i8[128] = {11, 22}
-    mp[2] = { s }
-    assert(mp[2].msg[0] == 11)
-    assert(mp[2].msg[1] == 22)
+    mp[1] = { s }
+    assert(mp[1].msg[0] == 11)
+    assert(mp[1].msg[1] == 22)
+
+    mp[1] = { mp[2].msg }
+    assert(mp[1].msg[0] == 1)
+    assert(mp[1].msg[1] == 8)
+
+    var s1: i8[]  = { 12, 13, mp[1].msg[0] }
+    var s2 : i8[3]
+    s2 = s1
+    assert(s2[0] == 12)
+    assert(s2[1] == 13)
+    assert(s2[2] == 1)
+
 }

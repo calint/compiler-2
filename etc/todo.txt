@@ -1,6 +1,10 @@
 --------------------------------------------------------------------------------
 [ ]: pending [o]: ongoing [x]: done [-]: not completed with reason specified
 --------------------------------------------------------------------------------
+[ ] does not work:
+    var s1: i8[]  = "hello world"
+[ ] ub? 
+    mp[1] = { mp[2].msg } see t155.baz
 [ ] a way to use character e.g. 'a' instead of ascii code
 [ ] stmt_def_var: move rep stos logic to toc::rep_stos
 [ ] toc: heuristic aware rep stosb. switches from stosb to mov depending on
