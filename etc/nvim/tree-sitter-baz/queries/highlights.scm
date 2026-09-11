@@ -35,7 +35,9 @@
 (member_field name: (identifier) @variable.member)
 (member_field ":" type: (_) @type)
 (parameter name: (identifier) @variable.parameter)
-(return_annotation name: (identifier) @variable.parameter)
+(return_annotation
+  type: (identifier) @type
+  name: (identifier) @variable.parameter)
 
 (parameter
   name: (identifier) @variable.parameter
@@ -45,6 +47,10 @@
   destination: (identifier) @variable
   type: (identifier)? @type
   initializer: (_)? @variable)
+
+(data_declaration
+  destination: (identifier) @variable
+  type: (identifier)? @type)
 
 (sized_array_type type: (identifier) @type)
 
