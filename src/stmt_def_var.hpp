@@ -138,12 +138,6 @@ class stmt_def_var final : public statement {
 
         // zero the variable data
 
-        // zero out the array
-        // ; RDI = destination pointer
-        // ; RCX = number of bytes
-        // xor eax, eax        ; Zero out RAX (value to store)
-        // rep stosb           ; Repeat store byte [RDI] = AL, RCX times
-
         const size_t instance_count{array_size_ ? array_size_ : 1};
         const size_t bytes_count{instance_count * dst_info.type_ptr->size()};
 
@@ -155,8 +149,7 @@ class stmt_def_var final : public statement {
             std::string dst_addr{std::format("rsp - {}", -dst_info.stack_ix)};
             // note: -dst_info.stack_ix for nicer source formatting; is always
             //       negative
-            tc.rep_stos(tok(), os, indent, dst_addr, bytes_count,
-                        0);
+            tc.rep_stos(tok(), os, indent, dst_addr, bytes_count, 0);
             return;
         }
 
