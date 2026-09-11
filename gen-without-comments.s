@@ -411,8 +411,8 @@ main:
     assert_157_5_end:
     lea rsi, [rsp - 269]
     lea rdi, [rsp - 285]
-    mov rcx, 2
-    rep movsq
+    mov rcx, 16
+    rep movsb
     cmp_160_12:
         lea rsi, [rsp - 269]
         lea rdi, [rsp - 285]
@@ -649,8 +649,8 @@ main:
     neg qword [rsp - 369]
     lea rsi, [rsp - 377]
     lea rdi, [rsp - 361]
-    mov rcx, 2
-    rep movsq
+    mov rcx, 16
+    rep movsb
     cmp_195_12:
     cmp qword [rsp - 361], -1
     sete r15b

@@ -51,10 +51,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    43           1618            836           7270
+C/C++ Header                    43           1611            829           7254
 C++                              1             97            113            584
 -------------------------------------------------------------------------------
-SUM:                            44           1715            949           7854
+SUM:                            44           1708            942           7838
 -------------------------------------------------------------------------------
 ```
 
@@ -724,8 +724,8 @@ main:
     assert_157_5_end:
     lea rsi, [rsp - 269]
     lea rdi, [rsp - 285]
-    mov rcx, 2
-    rep movsq
+    mov rcx, 16
+    rep movsb
     cmp_160_12:
         lea rsi, [rsp - 269]
         lea rdi, [rsp - 285]
@@ -962,8 +962,8 @@ main:
     neg qword [rsp - 369]
     lea rsi, [rsp - 377]
     lea rdi, [rsp - 361]
-    mov rcx, 2
-    rep movsq
+    mov rcx, 16
+    rep movsb
     cmp_195_12:
     cmp qword [rsp - 361], -1
     sete r15b
@@ -2389,8 +2389,8 @@ main:
 ;   [159:21] allocate named register 'rcx'
     lea rsi, [rsp - 269]
     lea rdi, [rsp - 285]
-    mov rcx, 2
-    rep movsq
+    mov rcx, 16
+    rep movsb
 ;   [159:21] free named register 'rcx'
 ;   [159:21] free named register 'rdi'
 ;   [159:21] free named register 'rsi'
@@ -2976,8 +2976,8 @@ main:
 ;   [194:14] allocate named register 'rcx'
     lea rsi, [rsp - 377]
     lea rdi, [rsp - 361]
-    mov rcx, 2
-    rep movsq
+    mov rcx, 16
+    rep movsb
 ;   [194:14] free named register 'rcx'
 ;   [194:14] free named register 'rdi'
 ;   [194:14] free named register 'rsi'

@@ -959,8 +959,8 @@ main:
 ;   [159:21] allocate named register 'rcx'
     lea rsi, [rsp - 269]
     lea rdi, [rsp - 285]
-    mov rcx, 2
-    rep movsq
+    mov rcx, 16
+    rep movsb
 ;   [159:21] free named register 'rcx'
 ;   [159:21] free named register 'rdi'
 ;   [159:21] free named register 'rsi'
@@ -1546,8 +1546,8 @@ main:
 ;   [194:14] allocate named register 'rcx'
     lea rsi, [rsp - 377]
     lea rdi, [rsp - 361]
-    mov rcx, 2
-    rep movsq
+    mov rcx, 16
+    rep movsb
 ;   [194:14] free named register 'rcx'
 ;   [194:14] free named register 'rdi'
 ;   [194:14] free named register 'rsi'

@@ -1077,7 +1077,7 @@ class toc final {
                   const std::string_view src, std::string_view dst,
                   const size_t bytes_count) -> void {
 
-        // todo: movs in x86_64 is optimized for bytes, no need for further
+        // note: movs in x86_64 is optimized for bytes, no need for further
         //       optimization
 
         // ; Copy RCX bytes from RSI to RDI
@@ -1091,18 +1091,10 @@ class toc final {
         alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
 
         asm_lea(os, indnt, "rsi", src);
-        toc::asm_lea(os, indnt, "rdi", dst);
-
-        // try moving qwords
-        const size_t qword_count{bytes_count / toc::size_qword};
-        const size_t rest_bytes_count{bytes_count -
-                                      (qword_count * toc::size_qword)};
-        const size_t reps{rest_bytes_count == 0 ? qword_count : bytes_count};
-        const char rep_size{rest_bytes_count ? 'b' : 'q'};
-
-        asm_cmd(src_loc_tk, os, indnt, "mov", "rcx", std::format("{}", reps));
-
-        toc::asm_rep_movs(os, indnt, rep_size);
+        asm_lea(os, indnt, "rdi", dst);
+        asm_cmd(src_loc_tk, os, indnt, "mov", "rcx",
+                std::format("{}", bytes_count));
+        toc::asm_rep_movs(os, indnt, 'b');
 
         free_named_register(src_loc_tk, os, indnt, "rcx");
         free_named_register(src_loc_tk, os, indnt, "rdi");
@@ -1110,52 +1102,30 @@ class toc final {
     }
 
     auto rep_movs(const token& src_loc_tk, std::ostream& os, const size_t indnt,
-                  const statement& src, const ident_info& src_info,
+                  const statement& src_stmt, const ident_info& src_info,
                   std::string_view dst, const size_t bytes_count) -> void {
 
-        // ; Copy RCX bytes from RSI to RDI
-        // mov rsi, source_addr    ; source pointer
-        // mov rdi, dest_addr      ; destination pointer
-        // mov rcx, byte_count     ; number of bytes
-        // rep movsb               ; repeat: copy byte [RSI++] to [RDI++]
-
-        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rsi");
-        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
-        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
-
         std::vector<std::string> allocated_registers;
-        if (src.is_indexed() or src_info.has_lea()) {
-            const operand addr{src.compile_lea(src_loc_tk, *this, os, indnt,
-                                               allocated_registers, "",
-                                               src_info.lea_path)};
-            toc::asm_lea(os, indnt, "rsi", addr.address_str());
+        std::string src;
+        if (src_stmt.is_indexed() or src_info.has_lea()) {
+            const operand addr{src_stmt.compile_lea(src_loc_tk, *this, os,
+                                                    indnt, allocated_registers,
+                                                    "", src_info.lea_path)};
+            src = addr.address_str();
         } else {
-            toc::asm_lea(os, indnt, "rsi", src_info.operand.address_str());
+            src = src_info.operand.address_str();
         }
-        toc::asm_lea(os, indnt, "rdi", dst);
 
-        // try moving qwords
-        const size_t qword_count{bytes_count / toc::size_qword};
-        const size_t rest_bytes_count{bytes_count -
-                                      (qword_count * toc::size_qword)};
-        const size_t reps{rest_bytes_count == 0 ? qword_count : bytes_count};
-        const char rep_size{rest_bytes_count ? 'b' : 'q'};
-
-        asm_cmd(src_loc_tk, os, indnt, "mov", "rcx", std::format("{}", reps));
-
-        toc::asm_rep_movs(os, indnt, rep_size);
+        rep_movs(src_loc_tk, os, indnt, src, dst, bytes_count);
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
             free_scratch_register(src_loc_tk, os, indnt, reg);
         }
-        free_named_register(src_loc_tk, os, indnt, "rcx");
-        free_named_register(src_loc_tk, os, indnt, "rdi");
-        free_named_register(src_loc_tk, os, indnt, "rsi");
     }
 
     auto rep_stos(const token& src_loc_tk, std::ostream& os, const size_t indnt,
-                  const operand& dst_op, const size_t bytes_count,
+                  const std::string_view& dst, const size_t bytes_count,
                   const int8_t value) -> void {
 
         // todo: heuristics to use mov when less than 64 bytes
@@ -1171,7 +1141,7 @@ class toc final {
 
         toc::asm_cmd(src_loc_tk, os, indnt, "mov", "al",
                      std::format("{}", value));
-        toc::asm_lea(os, indnt, "rdi", dst_op.address_str());
+        toc::asm_lea(os, indnt, "rdi", dst);
         toc::asm_cmd(src_loc_tk, os, indnt, "mov", "rcx",
                      std::format("{}", bytes_count));
         toc::asm_rep_stos(os, indnt, 'b');

@@ -463,7 +463,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             tc.comment_start(tok(), os, indent);
             std::println(os, "zero empty field: {} * {} B = {} B",
                          tf.array_size, tf.type_ptr->size(), tf.size);
-            tc.rep_stos(tok(), os, indent, dst_op, tf.size, 0);
+            tc.rep_stos(tok(), os, indent, dst_op.address_str(), tf.size, 0);
             dst_op.displacement += static_cast<int32_t>(tf.size);
             ++counter;
             continue;
@@ -525,7 +525,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
 
     tc.comment_start(tok(), os, indent);
     std::println(os, "zero remaining fields: {} B", nbytes);
-    tc.rep_stos(tok(), os, indent, dst_op, nbytes, 0);
+    tc.rep_stos(tok(), os, indent, dst_op.address_str(), nbytes, 0);
     dst_op.displacement += static_cast<int32_t>(nbytes);
 }
 
