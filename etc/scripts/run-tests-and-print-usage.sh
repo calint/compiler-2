@@ -2,9 +2,9 @@
 set -e
 cd $(dirname "$0")
 
-cd ..
+cd ../..
 
 for file in qa/coverage/*.baz; do
-  echo "File: $file"
-  ./baz "$file" 2>/dev/null | tail -n 5
+    echo "File: $file"
+    ./baz "$file" 2>/dev/null | tail -n 5
 done

@@ -47,7 +47,7 @@ class statement {
         token_.source_to(os);
     }
 
-    [[nodiscard]] auto tok() const -> const token& { return token_; }
+    [[nodiscard]] virtual auto tok() const -> const token& { return token_; }
 
     auto set_type(const type& tp) -> void { type_ = &tp; }
 

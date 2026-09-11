@@ -1,20 +1,5 @@
-Sat Sep 12 12:28:54 AM +07 2026
+Sat Sep 12 01:20:06 AM +07 2026
 Checking ../../src/main.cpp ...
-../../src/toc.hpp:1047:24: style: The member function 'toc::make_ident_info_empty' can be static. [functionStatic]
-    [[nodiscard]] auto make_ident_info_empty() const -> ident_info {
-                       ^
-../../src/expr_any.hpp:261:24: style: The member function 'expr_any::parse_variant' can be static. [functionStatic]
-    [[nodiscard]] auto parse_variant(toc& tc, tokenizer& tz, const type& tp,
-                       ^
-../../src/expr_any.hpp:255:24: warning: The class 'expr_any' defines member function with name 'tok' also defined in its parent class 'statement'. [duplInheritedMember]
-    [[nodiscard]] auto tok() const -> const token& {
-                       ^
-../../src/statement.hpp:50:24: note: Parent function 'statement::tok'
-    [[nodiscard]] auto tok() const -> const token& { return token_; }
-                       ^
-../../src/expr_any.hpp:255:24: note: Derived function 'expr_any::tok'
-    [[nodiscard]] auto tok() const -> const token& {
-                       ^
 ../../src/toc.hpp:1310:9: error: Found an exit path from function with non-void return type that has missing return statement [missingReturn]
         }
         ^
@@ -39,7 +24,7 @@ Checking ../../src/main.cpp ...
 ../../src/expr_bool_ops_list.hpp:31:59: performance: Function parameter 'not_token' should be passed by const reference. [passedByValue]
                        const bool enclosed = false, token not_token = {})
                                                           ^
-../../src/expr_any.hpp:280:73: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
+../../src/expr_any.hpp:281:73: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]
                                 const ident_info& dst_info, const token tk,
                                                                         ^
 ../../src/stmt_break.hpp:12:37: performance: Function parameter 'tk' should be passed by const reference. [passedByValue]

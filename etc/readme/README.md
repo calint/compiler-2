@@ -51,10 +51,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    43           1617            819           7283
+C/C++ Header                    43           1617            820           7284
 C++                              1             99            120            593
 -------------------------------------------------------------------------------
-SUM:                            44           1716            939           7876
+SUM:                            44           1716            940           7877
 -------------------------------------------------------------------------------
 ```
 
@@ -3665,7 +3665,7 @@ main:
 ;   [231:5] allocate named register 'rsi'
 ;   [231:5] allocate named register 'rdi'
 ;   [231:5] allocate named register 'rcx'
-;   [233:9] array_size_of(worlds.locations)
+;   [234:9] array_size_of(worlds.locations)
 ;   [234:9] rcx = array_size_of(worlds.locations)
 ;   [234:9] = expression
 ;   [234:9] array_size_of(worlds.locations)
@@ -3832,7 +3832,7 @@ main:
 ;       [240:12] allocate named register 'rsi'
 ;       [240:12] allocate named register 'rdi'
 ;       [240:12] allocate named register 'rcx'
-;       [242:14] array_size_of(worlds.locations)
+;       [243:14] array_size_of(worlds.locations)
 ;       [243:14] rcx = array_size_of(worlds.locations)
 ;       [243:14] = expression
 ;       [243:14] array_size_of(worlds.locations)

@@ -125,14 +125,14 @@ class program final {
                          "program\n;\n");
 
         for (const auto& st : statements_) {
-            st->compile(tc, os, indent, tc.make_ident_info_empty());
+            st->compile(tc, os, indent, toc::make_ident_info_empty());
         }
 
         // get the main function and compile
         const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
         std::println(os, "main:"); // note: not necessary
         tc.enter_func("main", {});
-        func_main.code().compile(tc, os, indent, tc.make_ident_info_empty());
+        func_main.code().compile(tc, os, indent, toc::make_ident_info_empty());
         tc.exit_func("main");
         std::println(os, "    ; system call: exit 0");
         std::println(os, "    mov rax, 60");

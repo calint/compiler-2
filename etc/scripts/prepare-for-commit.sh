@@ -2,7 +2,7 @@
 set -e
 cd $(dirname "$0")
 
-cd ..
+cd ../..
 
 clang-format -i src/*
 qa/coverage/run-tests.sh

@@ -1044,16 +1044,6 @@ class toc final {
         return make_ident_info_or_throw(src_loc_tk, ident);
     }
 
-    [[nodiscard]] auto make_ident_info_empty() const -> ident_info {
-        return {
-            .id{},
-            .elem_path{},
-            .type_path{},
-            .lea_path{},
-            .operand{},
-        };
-    }
-
     [[nodiscard]] auto
     make_ident_info_for_register(const std::string_view reg) const
         -> ident_info {
@@ -1205,7 +1195,7 @@ class toc final {
 
         const uint8_t byte_u8{static_cast<uint8_t>(value)};
         const uint64_t val_qword{static_cast<uint64_t>(byte_u8) *
-                                 0x0101010101010101ull};
+                                 0x0101010101010101ULL};
         const uint32_t val_dword{static_cast<uint32_t>(val_qword)};
         const uint16_t val_word{static_cast<uint16_t>(val_qword)};
 
@@ -1283,6 +1273,16 @@ class toc final {
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}:{}", line, col);
+    }
+
+    [[nodiscard]] static auto make_ident_info_empty() -> ident_info {
+        return {
+            .id{},
+            .elem_path{},
+            .type_path{},
+            .lea_path{},
+            .operand{},
+        };
     }
 
   private:
@@ -1495,7 +1495,8 @@ class toc final {
             //
             // the indexing in 'rooms' is done at runtime thus the memory
             // location of 'rooms[2]' cannot  be deduced statically, thus the
-            // top most lea is the starting point when accessing identifiers
+            // last lea encountered is the starting point when accessing
+            // identifiers
 
             // start from the lea address and calculate offset to referred field
             const std::span<std::string> elem_path_from_lea{

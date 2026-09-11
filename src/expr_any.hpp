@@ -75,7 +75,7 @@ class expr_any final : public statement {
 
         size_t counter{};
         while (true) {
-            token t{tz.next_whitespace_token()};
+            const token t{tz.next_whitespace_token()};
             if (tz.is_next_char('}')) {
                 ws3_ = t;
                 ws4_ = tz.next_whitespace_token();
@@ -146,7 +146,7 @@ class expr_any final : public statement {
             tc.comment_start(tok(), os, indent);
             std::println(os, "[{}]", counter++);
             compile_variant(tc, os, indent, ii, tok(), el);
-            ii.operand.displacement += ii.type().size();
+            ii.operand.displacement += static_cast<int32_t>(ii.type().size());
         }
 
         const size_t diff{(array_size_ - vars_.size())};
@@ -164,7 +164,7 @@ class expr_any final : public statement {
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
 
-    [[nodiscard]] auto is_empty() const -> bool { return vars_.size() == 0; }
+    [[nodiscard]] auto is_empty() const -> bool { return vars_.empty(); }
 
     [[nodiscard]] auto is_expression() const -> bool override {
         if (is_array_) {
@@ -252,14 +252,15 @@ class expr_any final : public statement {
 
     [[nodiscard]] auto array_size() const -> size_t { return array_size_; }
 
-    [[nodiscard]] auto tok() const -> const token& {
+    [[nodiscard]] auto tok() const -> const token& override {
         return std::visit(
             [&](const auto& e) -> const token& { return e.tok(); }, vars_[0]);
     }
 
   private:
-    [[nodiscard]] auto parse_variant(toc& tc, tokenizer& tz, const type& tp,
-                                     const bool in_args) -> expr_variant {
+    [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
+                                            const type& tp, const bool in_args)
+        -> expr_variant {
 
         if (not tp.is_built_in()) {
             // destination is not a built-in (register) value

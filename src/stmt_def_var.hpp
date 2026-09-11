@@ -145,7 +145,7 @@ class stmt_def_var final : public statement {
         std::println(os, "zero {} * {} B = {} B", instance_count,
                      dst_info.type().size(), bytes_count);
 
-        std::string dst_addr{std::format("rsp - {}", -dst_info.stack_ix)};
+        const std::string dst_addr{std::format("rsp - {}", -dst_info.stack_ix)};
         // note: -dst_info.stack_ix for nicer source formatting; is always
         //       negative
         tc.rep_stos(tok(), os, indent, dst_addr, bytes_count, 0);
