@@ -4,7 +4,7 @@
 [ ] does not work:
     var s1: i8[]  = "hello world"
 [ ] ub? 
-    mp[1] = { mp[2].msg } see t155.baz
+    mp[1] = { mp[2].msg } see t155.baz:44
 [ ] a way to use characters e.g. 'a' instead of ascii code
 [ ] fix todo in sprinkled in the source
 [ ] regex is not performant. replace with hand-rolled string operations
