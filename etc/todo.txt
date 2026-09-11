@@ -1,25 +1,17 @@
 --------------------------------------------------------------------------------
 [ ]: pending [o]: ongoing [x]: done [-]: not completed with reason specified
 --------------------------------------------------------------------------------
+[ ] does not work: var s1: i8[]  = "hello world"
+[ ] a way to use characters e.g. 'a' instead of ascii code
+[ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
+    if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
+[ ] review the ub checks
+[ ] ub? mp[1] = { mp[2].msg } see t155.baz:44
+[ ] when "returning" a user defined type all fields have to be set or UB
+    => init to zero prior call
 [ ] expr_type_value has mixed responsibilities
     expr_ops_list: handles expressions that writes the result with one mov
     expr_bool_ops_list: handles boolean expressions
-[ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
-    if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
-[ ] does not work: var s1: i8[]  = "hello world"
-[ ] ub? mp[1] = { mp[2].msg } see t155.baz:44
-[ ] a way to use characters e.g. 'a' instead of ascii code
-[x] function return of non-register passable type
-      func foo() : point res {
-        res.x = 1
-        res.y = 2
-      }
-      ...
-      var pos : point = foo()
-      pos = foo()
-      ...
-[ ] when "returning" a user defined type all fields have to be set or UB
-    => init to zero prior call
 [ ] fix todo sprinkled in the source
 [ ] regex is not performant. replace with hand-rolled string operations
     especially in `operand` which create regex in the constructor
@@ -28,14 +20,6 @@
     dat s : str = { 
         3 # comment 
     }
-[ ] consider making '}' a token to not have to do:
-        token tk{tz.next_whitespace_token()};
-        if (tz.is_next_char('}')) {
-            ws0_ = tk;
-            ws1_ = tz.next_whitespace_token();
-            break;
-        }
-        tz.put_back_token(tk);
 [ ] allow trailing comma at type definition. e.g.,
     type object {
         pos : point,
@@ -44,6 +28,14 @@
 [ ] parsing comments in single statement block fails:
         if nibble > 9 nibble = nibble + 0x41 # 0 through 9
         else nibble = nibble + 0x30
+[ ] consider making '}' a token to not have to do:
+        token tk{tz.next_whitespace_token()};
+        if (tz.is_next_char('}')) {
+            ws0_ = tk;
+            ws1_ = tz.next_whitespace_token();
+            break;
+        }
+        tz.put_back_token(tk);
 [ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
     sign-extends loads
 [ ] numbers such as i8 : 255 cause problems when cmp because value is moved
@@ -137,6 +129,15 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] function return of non-register passable type
+      func foo() : point res {
+        res.x = 1
+        res.y = 2
+      }
+      ...
+      var pos : point = foo()
+      pos = foo()
+      ...
 [x] toc::rep_movs: heuristics around when to switch from movs to rep
 [x] stmt_assign_var::compile: unified way of determining the effective address
     of an identifier including indexing, type offset navigation etc
