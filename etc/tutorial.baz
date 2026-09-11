@@ -12,7 +12,7 @@ func exit(v : reg_rdi) {
 
 func assert(expr : bool) if not expr exit(1)
 
-func print(len : reg_rdx, ptr : reg_rsi) {
+func sys_print(len : reg_rdx, ptr : reg_rsi) {
     mov(rax, 1)   # write system call
     mov(rdi, 0)   # file descriptor for standard out
     mov(rsi, ptr) # buffer address 
@@ -20,11 +20,11 @@ func print(len : reg_rdx, ptr : reg_rsi) {
     syscall()
 }
 
-func print_str(str : i8[]) {
-   print(array_size_of(str), address_of(str)) 
+func print(str : i8[]) {
+   sys_print(array_size_of(str), address_of(str)) 
 }
 
-func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
+func sys_read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(rax, 0)   # read system call
     mov(rdi, 0)   # file descriptor for standard input
     mov(rsi, ptr) # buffer address
@@ -95,18 +95,48 @@ func str_out(s : str) {
     syscall()
 } 
 
+# return variable is a mutable reference to destination
+
+func point_init() : point res {
+    res.x = -1
+    res.y = -2
+}
+
+func object_init() : object res {
+    res.pos.y = 74
+}
+
+# constants are declared in global scope
+
+const yes = 1
+const no = 0
+const maybe = -1
+
 func main() {
-    dat hello : i8[] = "hello world from baz\n"
+    dat   hello : i8[] = "hello world from baz\n"
     dat prompt1 : i8[] = "enter name:\n"
     dat prompt2 : i8[] = "that is not a name.\n"
     dat prompt3 : i8[] = "hello "
-    dat dot : i8[] = "."
-    dat nl : i8[] = "\n"
+    dat     dot : i8[] = "."
+    dat      nl : i8[] = "\n"
+
+    dat      s1 : str = { 3 }
+    # remaining uninitialized fields are zeroed
+
+    # initial data declared before any variables and initialized with constants
 
     var arr : i32[4]
     # arrays are initialized to 0
 
+    var answer
+    assert(answer == 0)
+    # variables without initializer are zeroed
+
+    answer = maybe
+    assert(answer == -1)
+
     var ix = 1
+    # variables can have an initial value that can be an expression
 
     arr[ix] = 2
     arr[ix + 1] = arr[ix]
@@ -120,7 +150,7 @@ func main() {
     var arr1 : i32[8]
     array_copy(arr, arr1, 4)
     assert(arrays_equal(arr, arr1, 4))
-    # note: `arrays_equal` is built-in function
+    # `arrays_equal` is built-in function
 
     arr1[2] = -1
     assert(not arrays_equal(arr, arr1, 4))
@@ -139,8 +169,8 @@ func main() {
 
     var q : point = p
     assert(equal(p, q))
-    # note: `equal` is built-in function to compare user types for equality
-    #       or same size arrays
+    # `equal` is built-in function to compare user types for equality or same 
+    # size arrays
 
     q.x = 3
     assert(not equal(p, q))
@@ -163,6 +193,10 @@ func main() {
     var p0 : point = {baz(2), 0}
     assert(p0.x == 4)
 
+    var pt : point = point_init()
+    assert(pt.x == -1)
+    assert(pt.y == -2)
+
     var x = 1
     var y = 2
 
@@ -170,7 +204,7 @@ func main() {
     assert(o1.pos.x == 10)
     assert(o1.pos.y == 2)
     assert(o1.color == 0xff0000)
-    
+
     var p1 : point = {-x, -y}
     o1.pos = p1
     assert(o1.pos.x == -1)
@@ -181,10 +215,14 @@ func main() {
     assert(o2.pos.y == -2)
     assert(o2.color == 0xff0000)
 
-    var o3 : object[1]
-    # index 0 in an array can be accessed without array index
+    var o3 : object[2]
     o3.pos.y = 73
+    # index 0 in an array can be accessed without array index
+
     assert(o3[0].pos.y == 73)
+
+    o3[1] = object_init()
+    assert(o3[1].pos.y == 74)
 
     var worlds : world[8]
     worlds[1].locations[1] = 0xffee
@@ -195,8 +233,9 @@ func main() {
         worlds[0].locations,
         array_size_of(worlds.locations)
     )
-    # note: `array_copy` is built-in and can use indexed positions
-    #       `array_size_of` is built-in
+    # `array_copy` is built-in and can use indexed positions
+    # `array_size_of` is built-in
+
     assert(worlds[0].locations[1] == 0xffee)
     assert(arrays_equal(
              worlds[0].locations,
@@ -205,20 +244,20 @@ func main() {
           ))
 
     var nm : str
-    print_str(hello)
+    print(hello)
     loop {
-        print_str(prompt1)
+        print(prompt1)
         str_in(nm)
         if nm.len == 0 {
             break
         } else if nm.len <= 4 {
-            print_str(prompt2)
+            print(prompt2)
             continue
         } else {
-            print_str(prompt3)
+            print(prompt3)
             str_out(nm)
-            print_str(dot)
-            print_str(nl)
+            print(dot)
+            print(nl)
         }
     }
 }
