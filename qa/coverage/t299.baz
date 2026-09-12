@@ -1,0 +1,1 @@
+func main() { var x : i64[2] = 1 }

@@ -31,32 +31,7 @@ class token final {
             return;
         }
 
-        std::string escaped;
-        escaped.reserve(text_.size());
-        for (const char ch : text_) {
-            switch (ch) {
-            case '\t':
-                escaped.append("\\t");
-                break;
-            case '\n':
-                escaped.append("\\n");
-                break;
-            case '\r':
-                escaped.append("\\r");
-                break;
-            case '\v':
-                escaped.append("\\v");
-                break;
-            case '\f':
-                escaped.append("\\f");
-                break;
-            default:
-                escaped.push_back(ch);
-                break;
-            }
-        }
-
-        std::print(os, "{}\"{}\"{}", ws_left_, escaped, ws_right_);
+        std::print(os, "{}\"{}\"{}", ws_left_, text_, ws_right_);
     }
 
     auto compile_to(std::ostream& os) const -> void {

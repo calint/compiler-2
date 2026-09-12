@@ -1,0 +1,5 @@
+const p = 1
+func main() {
+    var x : i8
+    mov(p, address_of(x))
+}

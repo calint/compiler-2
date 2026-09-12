@@ -103,18 +103,6 @@ class stmt_call : public expression {
         const stmt_def_func& func{
             tc.get_func_or_throw(tok(), statement::identifier())};
 
-        // validate argument count
-
-        if (func.params().size() != args_.size()) {
-            throw compiler_exception{
-                tok(),
-                std::format(
-                    "function '{}' expects {} argument{} but {} {} provided",
-                    func.name(), func.params().size(),
-                    (func.params().size() == 1 ? "" : "s"), args_.size(),
-                    (args_.size() == 1 ? "is" : "are"))};
-        }
-
         // validate argument types
 
         const size_t n{args_.size()};

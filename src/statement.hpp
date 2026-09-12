@@ -52,10 +52,7 @@ class statement {
     auto set_type(const type& tp) -> void { type_ = &tp; }
 
     [[nodiscard]] auto get_type() const -> const type& {
-        if (type_ == nullptr) {
-            throw compiler_exception{token_,
-                                     "internal error: statement type not set"};
-        }
+        assert(type_ != nullptr);
         return *type_;
     }
 

@@ -46,7 +46,7 @@ class stmt_builtin_array_copy final : public statement {
         count_ = {tc, tz, tc.get_type_default(), true, false, 0, false};
 
         if (not tz.is_next_char(')')) {
-            throw compiler_exception{tok(), "expected ')' after the argument"};
+            throw compiler_exception{tz, "expected ')' after the argument"};
         }
 
         ws1_ = tz.next_whitespace_token();

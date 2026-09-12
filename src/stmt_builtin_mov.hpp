@@ -30,23 +30,7 @@ class stmt_builtin_mov final : public stmt_call {
         const ident_info dst_info{tc.make_ident_info(argument(0))};
 
         const statement& src_arg{argument(1)};
-        if (src_arg.is_expression() or src_arg.is_identifier()) {
-            src_arg.compile(tc, os, indent + 1, dst_info);
-            return;
-        }
-
-        // 'src_arg' is not an expression
-        const ident_info src_info{tc.make_ident_info(src_arg)};
-        if (src_info.is_const()) {
-            tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(),
-                       std::format("{}{}", src_arg.get_unary_ops().to_string(),
-                                   src_info.const_value));
-            return;
-        }
-        // variable, register or field
-        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(),
-                   src_info.operand.str());
-        src_arg.get_unary_ops().compile(tc, os, indent, dst_info.operand.str());
+        src_arg.compile(tc, os, indent + 1, dst_info);
     }
 
     auto assert_var_not_used(const std::string_view var) const

@@ -63,6 +63,9 @@ class stmt_block final : public statement {
 
             // no more tokens in the block?
             if (tk.is_empty()) {
+                if (not is_one_statement_) {
+                    throw compiler_exception{tz, "expected '}' to close block"};
+                }
                 break;
             }
 
