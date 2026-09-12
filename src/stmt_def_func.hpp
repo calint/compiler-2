@@ -214,7 +214,7 @@ class stmt_def_func final : public statement {
         const std::span<const std::string> registers) -> void {
 
         // free allocated named register in reverse order
-        for (const auto& reg : registers | std::views::reverse) {
+        for (const std::string& reg : registers | std::views::reverse) {
             tc.free_named_register(src_loc_tk, os, indent + 1, reg);
         }
     }

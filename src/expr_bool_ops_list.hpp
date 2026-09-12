@@ -130,7 +130,7 @@ class expr_bool_ops_list final : public statement {
         }
         const size_t n{bools_.size()};
         for (size_t i{}; i < n; ++i) {
-            std::visit([&](const auto& e) -> auto { e.source_to(os); },
+            std::visit([&](const auto& e) -> void { e.source_to(os); },
                        bools_[i]);
             if (i < n - 1) {
                 ops_[i].source_to(os);
@@ -384,14 +384,15 @@ class expr_bool_ops_list final : public statement {
         // 1 expression in the list
 
         return std::visit(
-            [](const auto& e) -> auto { return e.is_expression(); }, bools_[0]);
+            [](const auto& e) -> bool { return e.is_expression(); }, bools_[0]);
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
         assert(bools_.size() == 1);
 
-        return std::visit([](const auto& e) -> auto { return e.identifier(); },
-                          bools_[0]);
+        return std::visit(
+            [](const auto& e) -> std::string_view { return e.identifier(); },
+            bools_[0]);
     }
 
     auto assert_var_not_used(const std::string_view var) const
@@ -423,7 +424,9 @@ class expr_bool_ops_list final : public statement {
         -> std::string {
 
         return std::visit(
-            [&](const auto& e) -> auto { return e.create_cmp_bgn_label(tc); },
+            [&](const auto& e) -> std::string {
+                return e.create_cmp_bgn_label(tc);
+            },
             var);
     }
 };

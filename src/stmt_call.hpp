@@ -349,7 +349,7 @@ class stmt_call : public expression {
         func.code().compile(tc, os, indent, dst_info);
 
         // free allocated registers in reverse order
-        for (const auto& reg :
+        for (const std::string& reg :
              allocated_registers_in_order | std::views::reverse) {
 
             if (std::ranges::contains(allocated_scratch_registers, reg)) {

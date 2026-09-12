@@ -76,7 +76,7 @@ class type final {
         size_t array_size{var.array_size};
         const type* tp{this};
 
-        for (const auto& field_name : path | std::views::drop(1)) {
+        for (const std::string& field_name : path | std::views::drop(1)) {
             // note: drop 1 because the first element is retrieved outside the
             //       loop
 
@@ -124,7 +124,7 @@ class type final {
         size_t offset{};
         const type* tp{this};
 
-        for (const auto& field_name : path | std::views::drop(1)) {
+        for (const std::string& field_name : path | std::views::drop(1)) {
             // note: drop 1 because the first element is retrieved outside the
             //       loop
 

@@ -94,7 +94,7 @@ class program final {
     }
 
     auto source_to(std::ostream& os) const -> void {
-        for (const auto& st : statements_) {
+        for (const std::unique_ptr<statement>& st : statements_) {
             st->source_to(os);
         }
         ws1_.source_to(os);
@@ -116,7 +116,7 @@ class program final {
         std::println(os, "; initialize stack pointer\nmov rsp, stk.end\n\n;\n; "
                          "program\n;\n");
 
-        for (const auto& st : statements_) {
+        for (const std::unique_ptr<statement>& st : statements_) {
             st->compile(tc, os, indent, toc::make_ident_info_empty());
         }
 

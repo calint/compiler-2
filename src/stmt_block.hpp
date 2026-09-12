@@ -130,7 +130,7 @@ class stmt_block final : public statement {
             std::print(os, "{{");
         }
         ws1_.source_to(os);
-        for (const auto& s : stms_) {
+        for (const std::unique_ptr<statement>& s : stms_) {
             s->source_to(os);
         }
         if (not is_one_statement_) {
@@ -145,7 +145,7 @@ class stmt_block final : public statement {
         -> void override {
 
         tc.enter_block();
-        for (const auto& s : stms_) {
+        for (const std::unique_ptr<statement>& s : stms_) {
             s->compile(tc, os, indent + 1, dst_info);
         }
         tc.exit_block();

@@ -20,6 +20,7 @@
     => confusing. better is func init_points(pts : point[]) {...}
 [ ] review the coverage and complete for coverage of all "happy paths"
 [ ] make an extensive comment file explaining lea, indexing array etc
+[ ] examine NOLINTNEXTLINE annotations and try to fix
 [ ] resolve issues with comments in expressions etc
     dat s : str = { 
         3 # comment 

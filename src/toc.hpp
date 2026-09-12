@@ -2,6 +2,7 @@
 // review: 2025-09-29
 
 #include <algorithm>
+#include <charconv>
 #include <cstdint>
 #include <format>
 #include <optional>
@@ -608,7 +609,9 @@ class toc final {
 
         const auto [line, col]{line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
+
         indent(os, indnt, true);
+
         std::print(os, "[{}:{}] ", line, col);
     }
 
@@ -795,7 +798,7 @@ class toc final {
     [[nodiscard]] auto get_loop_label_or_throw(const token& src_loc_tk) const
         -> std::string_view {
 
-        for (const auto& frm : frames_ | std::views::reverse) {
+        for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.is_loop()) {
                 return frm.name();
             }
@@ -1322,14 +1325,14 @@ class toc final {
 
     [[nodiscard]] auto get_stack_size() const -> size_t {
         size_t nbytes{};
-        for (const auto& frm : frames_) {
+        for (const frame& frm : frames_) {
             nbytes += frm.allocated_stack_size();
         }
         return nbytes;
     }
 
     [[nodiscard]] auto is_in_main() const -> bool {
-        for (const auto& frm : frames_ | std::views::reverse) {
+        for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.is_func()) {
                 return frm.name() == "main";
             }
@@ -1784,7 +1787,10 @@ class toc final {
 
     [[nodiscard]] static auto
     is_operand_indirect_addressing(const std::string_view op) -> bool {
-        if (auto expr{toc::get_text_between_brackets(op)}; expr) {
+        if (const std::optional<std::string_view> expr{
+                toc::get_text_between_brackets(op)};
+            expr) {
+
             return true;
         }
 
@@ -1829,14 +1835,14 @@ class toc final {
         // is it hex?
         if (str.starts_with("0x") or str.starts_with("0X")) {
             constexpr size_t base_hex{16};
-            // hex
-            int64_t value{};
+
             std::string_view sv{str};
             sv.remove_prefix(2); // skip "0x" or "0X"
 
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            auto result{std::from_chars(sv.data(), sv.data() + sv.size(), value,
-                                        base_hex)};
+            int64_t value{};
+            const std::from_chars_result result{std::from_chars(
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                sv.data(), sv.data() + sv.size(), value, base_hex)};
 
             if (result.ec == std::errc::result_out_of_range) {
                 throw compiler_exception{
@@ -1854,14 +1860,14 @@ class toc final {
         // is it binary?
         if (str.starts_with("0b") or str.starts_with("0B")) {
             constexpr size_t base_binary{2};
-            // binary
-            int64_t value{};
+
             std::string_view sv{str};
             sv.remove_prefix(2); // skip "0b" or "0B"
 
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            auto result{std::from_chars(sv.data(), sv.data() + sv.size(), value,
-                                        base_binary)};
+            int64_t value{};
+            const std::from_chars_result result{std::from_chars(
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                sv.data(), sv.data() + sv.size(), value, base_binary)};
 
             if (result.ec == std::errc::result_out_of_range) {
                 throw compiler_exception{
@@ -1878,13 +1884,13 @@ class toc final {
 
         // try decimal digit
         {
-            int64_t value{};
             const std::string_view sv{str};
             // note: using 'std::string_view' for 'clang-tidy' to not
             // trigger the warning
             // 'cppcoreguidelines-pro-bounds-pointer-arithmetic'
 
-            auto result{
+            int64_t value{};
+            const std::from_chars_result result{
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 std::from_chars(sv.data(), sv.data() + sv.size(), value)};
 
@@ -1994,12 +2000,12 @@ class toc final {
     get_text_between_brackets(const std::string_view str)
         -> std::optional<std::string_view> {
 
-        auto start{str.find('[')};
+        const size_t start{str.find('[')};
         if (start == std::string_view::npos) {
             return std::nullopt;
         }
 
-        auto end{str.find(']', start)};
+        const size_t end{str.find(']', start)};
         if (end == std::string_view::npos) {
             return std::nullopt;
         }
