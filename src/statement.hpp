@@ -29,8 +29,6 @@ class statement {
 
     statement() = default;
     statement(statement&&) = default;
-    statement(const statement&) = default;
-    auto operator=(const statement&) -> statement& = default;
     auto operator=(statement&&) -> statement& = default;
 
     virtual auto compile([[maybe_unused]] toc& tc,
