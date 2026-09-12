@@ -1842,7 +1842,11 @@ class toc final {
                     src_loc_tk,
                     std::format("constant '{}' is out of range", str)};
             }
-            if (result.ec == std::errc{}) {
+            const std::string_view remainder{
+                result.ptr,
+                static_cast<size_t>(sv.data() + sv.size() - result.ptr)};
+            if (result.ec == std::errc{} and
+                (remainder.empty() or remainder == ";")) {
                 return value;
             }
         }
@@ -1863,7 +1867,11 @@ class toc final {
                     src_loc_tk,
                     std::format("constant '{}' is out of range", str)};
             }
-            if (result.ec == std::errc{}) {
+            const std::string_view remainder{
+                result.ptr,
+                static_cast<size_t>(sv.data() + sv.size() - result.ptr)};
+            if (result.ec == std::errc{} and
+                (remainder.empty() or remainder == ";")) {
                 return value;
             }
         }
@@ -1884,7 +1892,11 @@ class toc final {
                     src_loc_tk,
                     std::format("constant '{}' is out of range", str)};
             }
-            if (result.ec == std::errc{}) {
+            const std::string_view remainder{
+                result.ptr,
+                static_cast<size_t>(sv.data() + sv.size() - result.ptr)};
+            if (result.ec == std::errc{} and
+                (remainder.empty() or remainder == ";")) {
                 return value;
             }
         }

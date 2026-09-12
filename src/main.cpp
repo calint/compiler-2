@@ -104,8 +104,16 @@ auto main(const int argc, const char* argv[]) -> int {
         constexpr std::string_view nopt_option{"--nopt"};
         if (arg.starts_with(stack_option)) {
             try {
-                stack_size = std::stoul(
-                    std::string{arg.substr(stack_option.size())}, nullptr, 0);
+                const std::string stack_text{arg.substr(stack_option.size())};
+                size_t chars_read{};
+                const unsigned long long parsed_size{
+                    std::stoull(stack_text, &chars_read, 0)};
+                if (stack_text.empty() or stack_text.starts_with('-') or
+                    chars_read != stack_text.size() or parsed_size == 0 or
+                    not std::in_range<size_t>(parsed_size)) {
+                    throw std::invalid_argument{"invalid stack size"};
+                }
+                stack_size = static_cast<size_t>(parsed_size);
             } catch (...) {
                 std::println(stderr, "Could not parse stack size: \"{}\"",
                              arg.substr(stack_option.size()));
