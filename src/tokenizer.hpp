@@ -3,7 +3,6 @@
 // refactored: pointer-free implementation
 
 #include <cassert>
-#include <cctype>
 #include <string_view>
 
 #include "token.hpp"
@@ -160,7 +159,7 @@ class tokenizer final {
         const size_t bgn_ix{char_ix_};
         while (not is_eos()) {
             const char ch{src_[char_ix_]};
-            if (not std::isspace(ch)) {
+            if (not std::string_view{" \t\r\n"}.contains(ch)) {
                 break;
             }
             if (ch == '\n') {

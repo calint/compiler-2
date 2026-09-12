@@ -37,6 +37,7 @@ class stmt_call : public expression {
                 tc.get_func_or_throw(tok(), statement::identifier())};
 
             const size_t n{func.params().size()};
+            args_.reserve(n);
             for (size_t i{}; const stmt_def_func_param& param : func.params()) {
 
                 args_.emplace_back(tc, tz, param.get_type(), true, false, 0,

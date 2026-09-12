@@ -17,9 +17,9 @@ class stmt_call;
 class expr_type_value final : public statement {
     std::shared_ptr<stmt_identifier> stmt_ident_;
     std::shared_ptr<stmt_call> stmt_call_;
-    std::vector<std::unique_ptr<expr_any>> exprs_;
     // note: 'shared_ptr' because 'unique_ptr' poses compilation issues
     //       regarding circular references
+    std::vector<std::unique_ptr<expr_any>> exprs_;
     token ws1_; // before '}'
     token ws2_; // after '}'
 

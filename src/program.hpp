@@ -191,9 +191,8 @@ class program final {
         }
 
         // data section
-        std::vector<const statement*> data{tc.get_data()};
         std::println(os, "\nsection .rodata\ndat:");
-        for (const auto* stmt : data | std::views::reverse) {
+        for (const statement* stmt : tc.get_data() | std::views::reverse) {
             stmt->compile_data(tc, os);
         }
         std::println(os, "dat.len equ $ - dat");

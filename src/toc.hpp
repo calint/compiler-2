@@ -188,6 +188,11 @@ class ident_path final {
 };
 
 class toc final {
+    struct allocated_register {
+        std::string name;
+        std::string source_location;
+    };
+
     std::string_view source_;
     std::vector<frame> frames_;
     std::vector<std::string> all_registers_{
@@ -200,8 +205,7 @@ class toc final {
     std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r11",
                                                 "r12", "r13", "r14", "r15"};
     size_t scratch_registers_initial_size_{scratch_registers_.size()};
-    std::vector<std::string> allocated_registers_;
-    std::vector<std::string> allocated_registers_src_locs_; // source locations
+    std::vector<allocated_register> allocated_registers_;
     std::vector<const stmt_def_func*> func_defs_;
     lut<func_info> funcs_;
     lut<const type*> types_;
@@ -372,9 +376,8 @@ class toc final {
 
         std::println(os, "");
 
-        allocated_registers_.emplace_back(std::move(*reg_iter));
-        allocated_registers_src_locs_.emplace_back(
-            source_location_hr(src_loc_tk));
+        allocated_registers_.emplace_back(std::move(*reg_iter),
+                                          source_location_hr(src_loc_tk));
         named_registers_.erase(reg_iter);
 
         return true;
@@ -391,12 +394,10 @@ class toc final {
         if (reg_iter == named_registers_.end()) {
             // not found
             std::string loc;
-            const size_t n{allocated_registers_.size()};
-            for (size_t i{}; i < n; ++i) {
-                if (allocated_registers_[i] == reg) {
-                    loc = allocated_registers_src_locs_[i];
-                    break;
-                }
+            const auto allocated{std::ranges::find(allocated_registers_, reg,
+                                                   &allocated_register::name)};
+            if (allocated != allocated_registers_.end()) {
+                loc = allocated->source_location;
             }
             throw compiler_exception{
                 src_loc_tk, std::format("cannot allocate register '{}' because "
@@ -404,9 +405,8 @@ class toc final {
                                         reg, loc)};
         }
 
-        allocated_registers_.emplace_back(std::move(*reg_iter));
-        allocated_registers_src_locs_.emplace_back(
-            source_location_hr(src_loc_tk));
+        allocated_registers_.emplace_back(std::move(*reg_iter),
+                                          source_location_hr(src_loc_tk));
         named_registers_.erase(reg_iter);
     }
 
@@ -431,11 +431,10 @@ class toc final {
                        scratch_registers_.size()};
         usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
 
-        allocated_registers_.emplace_back(std::move(reg));
-        allocated_registers_src_locs_.emplace_back(
-            source_location_hr(src_loc_tk));
+        allocated_registers_.emplace_back(std::move(reg),
+                                          source_location_hr(src_loc_tk));
 
-        return allocated_registers_.back();
+        return allocated_registers_.back().name;
     }
 
     auto asm_cmd(const token& src_loc_tk, std::ostream& os, const size_t indnt,
@@ -689,7 +688,6 @@ class toc final {
                      usage_max_stack_size_);
         assert(all_registers_.size() == all_registers_initial_size_);
         assert(allocated_registers_.empty());
-        assert(allocated_registers_src_locs_.empty());
         assert(frames_.empty());
         assert(named_registers_.size() == named_registers_initial_size_);
         assert(scratch_registers_.size() == scratch_registers_initial_size_);
@@ -704,11 +702,11 @@ class toc final {
         comment_start(src_loc_tk, os, indnt);
         std::println(os, "free named register '{}'", reg);
 
-        assert(allocated_registers_.back() == reg);
+        assert(allocated_registers_.back().name == reg);
 
-        named_registers_.emplace_back(std::move(allocated_registers_.back()));
+        named_registers_.emplace_back(
+            std::move(allocated_registers_.back().name));
         allocated_registers_.pop_back();
-        allocated_registers_src_locs_.pop_back();
     }
 
     auto free_scratch_register(const token& src_loc_tk, std::ostream& os,
@@ -718,11 +716,11 @@ class toc final {
         comment_start(src_loc_tk, os, indnt);
         std::println(os, "free scratch register '{}'", reg);
 
-        assert(allocated_registers_.back() == reg);
+        assert(allocated_registers_.back().name == reg);
 
-        scratch_registers_.emplace_back(std::move(allocated_registers_.back()));
+        scratch_registers_.emplace_back(
+            std::move(allocated_registers_.back().name));
         allocated_registers_.pop_back();
-        allocated_registers_src_locs_.pop_back();
     }
 
     [[nodiscard]] auto get_call_path(const token& src_loc_tk) const

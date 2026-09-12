@@ -188,15 +188,14 @@ class expr_ops_list final : public expression {
         }
         expression::source_to(os); // whitespace
         exprs_[0]->source_to(os);
-        const size_t n{ops_.size()};
-        for (size_t i{}; i < n; ++i) {
-            const char op{ops_[i]};
+        for (const auto [op, expr] :
+             std::views::zip(ops_, exprs_ | std::views::drop(1))) {
             std::print(os, "{}", op);
             if (op == '<' or op == '>') {
                 // handle case << and >>
                 std::print(os, "{}", op);
             }
-            exprs_[i + 1]->source_to(os);
+            expr->source_to(os);
         }
 
         if (enclosed_) {
@@ -329,10 +328,10 @@ class expr_ops_list final : public expression {
         }
 
         // remaining elements are +,-,*,/,%,|,&,^,<<,>>
-        const size_t n{ops_.size()};
-        for (size_t i{}; i < n; ++i) {
-            const statement& st{*exprs_[i + 1]};
-            asm_op(tc, os, indent, ops_[i], dst_info, st);
+        for (const auto [op, expr] :
+             std::views::zip(ops_, exprs_ | std::views::drop(1))) {
+            const statement& st{*expr};
+            asm_op(tc, os, indent, op, dst_info, st);
         }
 
         // apply unary expressions on destination
