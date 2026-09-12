@@ -73,7 +73,7 @@ class stmt_assign_var final : public statement {
                                    dst_info.const_value)};
         }
 
-        // todo: fix this
+        // todo: fix this to be easier read
 
         if (expr_.is_array_identifier() and
             not stmt_ident_.is_last_elem_indexed()) {
