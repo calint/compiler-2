@@ -6,26 +6,27 @@ func exit(v : reg_rdi) {
 
 func assert(expr : bool) if not expr exit(1)
 
-type string { len : i8, data : i8[127] }
+type point {x, y}
 
-type link { name_id : i16, to : i16, pad : i16 }
-
-type room { name : string, description : string, note : string, links : link[6] }
-
-type world { rooms : room[128] }
-
-func f3(to : i16) {
+func point_init() : point res {
+    res.x = -1
+    res.y = -2
 }
 
-func f2(link : link) {
-    f3(link.to)
-}
-
-func f1(room : room) {
-    f2(room.links[2])
+func point_foo(pt : point) : point res{
+    res = pt.x * 2
+    res = pt.y * 2
 }
 
 func main() {
-    var wld : world
-    f1(wld.rooms[1])
+    var pt : point
+    pt = point_init()
+    assert(pt.x == -1)
+    assert(pt.y == -2)
+
+    var pt1 : point = point_init()
+    assert(pt1.x == -1)
+    assert(pt1.y == -2)
+
+    var pt2 : point = point_foo(point_init())
 }
