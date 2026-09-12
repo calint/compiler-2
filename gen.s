@@ -47,7 +47,7 @@ mov rsp, stk.end
 ;[44:1]       name :  offset :    size :  array? : array size
 ;[44:1]  locations :       0 :      64 :     yes :          8
 
-;[46:1] # function arguments are equivalent to mutable references
+;[46:1] # function arguments and return are equivalent to mutable references
 ;[53:1] # default argument type is `i64`
 ;[60:1] # return target is specified as a variable, in this case `res`
 ;[70:1] # array arguments are declared with type and []

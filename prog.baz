@@ -43,7 +43,7 @@ type object {pos : point, color : i32}
 
 type world { locations : i64[8] }
 
-# function arguments are equivalent to mutable references
+# function arguments and return are equivalent to mutable references
 
 func foo(pt : point) {
     pt.x = 0b10    # binary value 2
