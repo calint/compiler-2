@@ -2,7 +2,7 @@
 [ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [ ] token: source_to can remove the escape because the string is already escaped
-[ ] stmt_assign_var: validate array sizes (t167)
+[x] stmt_assign_var: validate array sizes (t167)
 [ ] expr_type_value: validate array sizes (t168)
 [ ] a way to use characters e.g. 'a' instead of ascii code
 [ ] does not work: var s1: i8[]  = "hello world"
