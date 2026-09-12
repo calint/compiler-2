@@ -19,6 +19,7 @@
 [o] regex is not performant. replace with hand-rolled string operations
     especially in `operand` which create regex in the constructor
     [x] operand
+    [x] token
     [ ] toc
     [ ] expr_ops_list
     [ ] stmt_def_func
