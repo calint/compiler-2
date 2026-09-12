@@ -114,9 +114,8 @@ class expr_any final : public statement {
             std::print(os, "{{");
             ws2_.source_to(os);
         }
-        size_t counter{};
-        for (const expr_variant& el : vars_) {
-            if (counter++) {
+        for (const auto [i, el] : std::views::enumerate(vars_)) {
+            if (i != 0) {
                 std::print(os, ",");
             }
             std::visit([&os](const auto& e) -> void { e.source_to(os); }, el);
@@ -141,10 +140,9 @@ class expr_any final : public statement {
 
         ident_info ii{dst_info};
 
-        size_t counter{};
-        for (const expr_variant& el : vars_) {
+        for (const auto [i, el] : std::views::enumerate(vars_)) {
             tc.comment_start(tok(), os, indent);
-            std::println(os, "[{}]", counter++);
+            std::println(os, "[{}]", i);
             compile_variant(tc, os, indent, ii, tok(), el);
             ii.operand.displacement += static_cast<int32_t>(ii.type().size());
         }

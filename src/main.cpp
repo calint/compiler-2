@@ -373,8 +373,8 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
 
     // not an identifier
     std::print(os, "{{");
-    for (size_t counter{}; const std::unique_ptr<expr_any>& ea : exprs_) {
-        if (counter++) {
+    for (const auto [i, ea] : std::views::enumerate(exprs_)) {
+        if (i != 0) {
             std::print(os, ",");
         }
         ea->source_to(os);

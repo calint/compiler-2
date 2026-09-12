@@ -290,8 +290,8 @@ class stmt_def_dat final : public statement {
 
         // initializer
         std::print(os, "{} ", dd);
-        for (size_t counter{}; const elem& e : elroot.elems) {
-            if (counter++) {
+        for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
+            if (i != 0) {
                 std::print(os, ", ");
             }
             e.uops.source_to_without_whitespace(os);
@@ -562,11 +562,11 @@ class stmt_def_dat final : public statement {
             elroot.ws2.source_to(os);
 
             const std::span<const type_field>& flds{tp.fields()};
-            for (size_t counter{}; const elem& e : elroot.elems) {
-                if (counter++) {
+            for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
+                if (i != 0) {
                     std::print(os, ",");
                 }
-                print_source_field(os, flds[counter - 1], e);
+                print_source_field(os, flds[static_cast<size_t>(i)], e);
             }
 
             elroot.ws3.source_to(os);
@@ -582,8 +582,8 @@ class stmt_def_dat final : public statement {
         std::print(os, "{{");
         elroot.ws2.source_to(os);
 
-        for (size_t counter{}; const elem& e : elroot.elems) {
-            if (counter++) {
+        for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
+            if (i != 0) {
                 std::print(os, ",");
             }
             print_source_elem(os, tp, e);
@@ -619,8 +619,8 @@ class stmt_def_dat final : public statement {
             std::print(os, "{{");
             elroot.ws2.source_to(os);
 
-            for (size_t counter{}; const elem& e : elroot.elems) {
-                if (counter++) {
+            for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
+                if (i != 0) {
                     std::print(os, ",");
                 }
                 e.uops.source_to(os);

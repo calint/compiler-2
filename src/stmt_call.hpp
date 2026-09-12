@@ -38,16 +38,15 @@ class stmt_call : public expression {
 
             const size_t n{func.params().size()};
             args_.reserve(n);
-            for (size_t i{}; const stmt_def_func_param& param : func.params()) {
+            for (const auto [i, param] : std::views::enumerate(func.params())) {
 
                 args_.emplace_back(tc, tz, param.get_type(), true, false, 0,
                                    false);
 
-                ++i;
-                if (i < n) {
+                if (static_cast<size_t>(i) + 1 < n) {
                     if (not tz.is_next_char(',')) {
                         throw compiler_exception{
-                            tz, std::format("expected argument {} '{}'", i + 1,
+                            tz, std::format("expected argument {} '{}'", i + 2,
                                             param.name())};
                     }
                 }
@@ -91,8 +90,8 @@ class stmt_call : public expression {
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
         std::print(os, "(");
-        for (size_t counter{}; const expr_any& e : args_) {
-            if (counter++) {
+        for (const auto [i, e] : std::views::enumerate(args_)) {
+            if (i != 0) {
                 std::print(os, ",");
             }
             e.source_to(os);
