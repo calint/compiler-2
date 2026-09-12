@@ -1,0 +1,4 @@
+func main() {
+    var y = 1
+    dat x : i8 = y
+}

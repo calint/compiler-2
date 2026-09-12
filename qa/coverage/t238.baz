@@ -1,0 +1,2 @@
+func f() : i64 { }
+func main() {}

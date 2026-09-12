@@ -1,0 +1,2 @@
+type x { a : nope }
+func main() {}

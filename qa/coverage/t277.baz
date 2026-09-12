@@ -1,0 +1,1 @@
+func main() { var a : i8[] = {} }

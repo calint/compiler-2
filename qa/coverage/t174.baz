@@ -1,0 +1,4 @@
+const x = 1
+func main() {
+    var p = address_of(x)
+}

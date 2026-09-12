@@ -1,0 +1,2 @@
+type p { x }
+func main() { dat x : p[1] = {{1},{2}} }

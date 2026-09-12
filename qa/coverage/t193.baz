@@ -1,0 +1,3 @@
+func main() {
+    var z = equal(1 2)
+}

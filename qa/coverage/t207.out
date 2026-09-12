@@ -1,0 +1,2 @@
+
+t207.baz:1:34: expected '}' to close array initializer for 'i8'

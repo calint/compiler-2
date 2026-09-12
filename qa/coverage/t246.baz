@@ -1,0 +1,10 @@
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(x : bool) if not x exit(1)
+func main() {
+    var a : i8[4]
+    var b : i8[4]
+    a[1] = 1
+    b[1] = 1
+    var z = arrays_equal(a[1],b[1],1)
+    assert(z)
+}

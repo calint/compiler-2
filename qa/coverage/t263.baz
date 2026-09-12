@@ -1,0 +1,9 @@
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(x : bool) if not x exit(1)
+func main() {
+    var a : i32[2]
+    var b : i32[2]
+    a[0] = 3
+    b[0] = 3
+    assert(arrays_equal(a,b,2))
+}

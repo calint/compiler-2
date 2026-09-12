@@ -1,0 +1,1 @@
+func main() { syscall(1) }

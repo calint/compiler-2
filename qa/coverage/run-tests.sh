@@ -118,6 +118,22 @@ COMPERR() {
     check_output "${SRC%.*}.out"
 }
 
+# Test a compiler command-line path by exit code
+CLI() {
+    echo -n "cli $1: "
+    set +e
+    LLVM_PROFILE_FILE="cli-$1.profraw" $BIN "$1" >/dev/null 2>err
+    local exit_code=$?
+    set -e
+
+    if [ $exit_code -eq "$2" ]; then
+        echo ok
+    else
+        echo "FAILED. expected $2 got $exit_code"
+        exit 1
+    fi
+}
+
 # Run all test cases
 source "$SCRIPT_DIR/run-tests-cases.sh"
 

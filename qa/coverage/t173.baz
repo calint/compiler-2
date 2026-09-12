@@ -1,0 +1,4 @@
+func main() {
+    var x = 1
+    var n = array_size_of(x)
+}

@@ -1,0 +1,2 @@
+
+t178.baz:4:13: source and destination types are not the same. source is 'i8' vs destination 'i16'

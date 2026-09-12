@@ -1,0 +1,6 @@
+type p { data : i8[2] }
+type q { data : i16[2] }
+func main() {
+    var q1 : q
+    var p1 : p = {q1.data}
+}

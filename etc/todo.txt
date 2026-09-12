@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 [ ] stmt_assign_var: validate array sizes (t167)
 [ ] expr_type_value: validate array sizes (t168)
+[ ] expr_ops_list: fix rcx save/restore when pushing changes rsp (t286)
 [ ] a way to use characters e.g. 'a' instead of ascii code
 [ ] does not work: var s1: i8[]  = "hello world"
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword

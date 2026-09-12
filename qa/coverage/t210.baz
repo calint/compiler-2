@@ -1,0 +1,1 @@
+func main() { dat x : bool = 2 }

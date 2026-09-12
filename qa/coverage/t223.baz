@@ -1,0 +1,4 @@
+func main() {
+    var x : i8
+    var p = address_of x
+}

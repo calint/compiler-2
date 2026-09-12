@@ -1,0 +1,2 @@
+
+t287.baz:2:30: expected ',' and initializer for field 'y' in type 'p' of type 'i64'

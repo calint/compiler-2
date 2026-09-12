@@ -1,0 +1,13 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+func assert(x : bool) if not x exit(1)
+func f(x : reg_rcx, y) : i64 res {
+    res = x << (y + 1)
+}
+func main() {
+    var z = f(2,3)
+    assert(z == 32)
+}

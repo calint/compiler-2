@@ -1,0 +1,2 @@
+func f(x : i8[2) {}
+func main() {}

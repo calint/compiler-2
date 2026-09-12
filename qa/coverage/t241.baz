@@ -1,0 +1,2 @@
+type p { x }
+func main() { var p1 : p = {1,2} }

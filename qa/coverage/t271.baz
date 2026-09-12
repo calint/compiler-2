@@ -1,0 +1,4 @@
+func main() {
+    var a : i8[2]
+    var z = equal(a,1)
+}

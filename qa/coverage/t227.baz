@@ -1,0 +1,4 @@
+func main() {
+    var a : i8[2]
+    array_copy(a,a)
+}
