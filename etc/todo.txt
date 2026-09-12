@@ -19,6 +19,10 @@
 [o] regex is not performant. replace with hand-rolled string operations
     especially in `operand` which create regex in the constructor
     [x] operand
+    [ ] toc
+    [ ] expr_ops_list
+    [ ] stmt_def_func
+    [ ] main
 [ ] review the coverage and complete for coverage of all "happy paths"
 [ ] make an extensive comment file explaining lea, indexing array etc
 [ ] resolve issues with comments in expressions etc
