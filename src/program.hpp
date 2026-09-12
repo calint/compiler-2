@@ -94,8 +94,8 @@ class program final {
     }
 
     program() = delete;
-    program(const program&) = default;
-    program(program&&) = default;
+    program(const program&) = delete;
+    program(program&&) = delete;
     auto operator=(const program&) -> program& = delete;
     auto operator=(program&&) -> program& = delete;
 
