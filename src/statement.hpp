@@ -28,8 +28,10 @@ class statement {
     virtual ~statement() = default;
 
     statement() = default;
+    statement(statement&) = default;
     statement(statement&&) = default;
     auto operator=(statement&&) -> statement& = default;
+    auto operator=(statement const&) -> statement& = default;
 
     virtual auto compile([[maybe_unused]] toc& tc,
                          [[maybe_unused]] std::ostream& os,
