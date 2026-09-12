@@ -33,7 +33,7 @@ x86_64 assembly on Linux.
   * optional parameters: _stack size_, _bounds check_, with _line number
     information_ and _jump optimizations_ in boolean expression e.g:
     * `./run-baz.sh myprogram.baz --stack=262144`: stack size, no runtime checks
-    * `./run-baz.sh myprogram.baz --stack=262144 --check=upper`: checks upper
+    * `./run-baz.sh myprogram.baz --stack=262144 --checks=upper`: checks upper
       bounds without line number information and is often enough to ensure
       catching negative values (faster)
     * `./run-baz.sh myprogram.baz --stack=262144 --checks=upper,line`: checks
@@ -51,10 +51,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    43           1613            819           7263
+C/C++ Header                    43           1614            819           7258
 C++                              1             99            120            592
 -------------------------------------------------------------------------------
-SUM:                            44           1712            939           7855
+SUM:                            44           1713            939           7850
 -------------------------------------------------------------------------------
 ```
 
