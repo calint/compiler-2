@@ -51,7 +51,7 @@ check_output() {
     if cmp -s out "$expected"; then
         echo ok
     else
-        echo "FAILED. output differs. see: diff $expected out"
+        echo "FAILED. output differs. see: diff out $expected"
         exit 1
     fi
 }

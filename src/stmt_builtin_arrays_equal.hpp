@@ -122,8 +122,8 @@ class stmt_builtin_arrays_equal final : public expression {
         if (from_info.type().name() != to_info.type().name()) {
             throw compiler_exception{
                 tok(),
-                std::format("source and destination types are not the "
-                            "same. source is '{}' vs destination '{}'",
+                std::format("source and compare argument types are not the "
+                            "same. source is '{}' and compare is '{}'",
                             from_info.type().name(), to_info.type().name())};
         }
 

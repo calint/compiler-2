@@ -1,2 +1,2 @@
 
-t257.baz:4:1: expected '[' to close array index expression
+t257.baz:4:1: expected ']' to close array index expression

@@ -164,6 +164,12 @@ class stmt_def_func final : public statement {
         if (returns_) {
             // yes, declare variable for the return
             const token& ret_tk{returns_->ident_tk};
+
+            if (ret_tk.text().empty()) {
+                throw compiler_exception(ret_tk,
+                                         "missing return reference name");
+            }
+
             const var_info var{
                 .name{ret_tk.text()},
                 .type_ptr{&get_type()},

@@ -106,8 +106,8 @@ class stmt_builtin_equal final : public expression {
         if (lhs_info.type().name() != rhs_info.type().name()) {
             throw compiler_exception{
                 tok(),
-                std::format("source and destination types are not the "
-                            "same. source is '{}' vs destination '{}'",
+                std::format("source and compare types are not the "
+                            "same. source is '{}' and compare is '{}'",
                             lhs_info.type().name(), rhs_info.type().name())};
         }
 
@@ -123,7 +123,7 @@ class stmt_builtin_equal final : public expression {
             if (lhs_info.array_size != rhs_info.array_size) {
                 throw compiler_exception(lhs_.tok(),
                                          "cannot compare arrays of different "
-                                         "sizes. see 'arrays_equal'");
+                                         "sizes");
             }
 
             rcx *= lhs_info.array_size;

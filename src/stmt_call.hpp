@@ -46,7 +46,7 @@ class stmt_call : public expression {
                 if (static_cast<size_t>(i) + 1 < n) {
                     if (not tz.is_next_char(',')) {
                         throw compiler_exception{
-                            tz, std::format("expected argument {} '{}'", i + 2,
+                            tz, std::format("expected argument {} named '{}'", i + 2,
                                             param.name())};
                     }
                 }
@@ -221,7 +221,7 @@ class stmt_call : public expression {
                 if (not arg.get_unary_ops().is_empty()) {
                     throw compiler_exception(
                         arg.tok(),
-                        "unary operations not allowed on references");
+                        "unary operations not allowed on references to types");
                 }
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},

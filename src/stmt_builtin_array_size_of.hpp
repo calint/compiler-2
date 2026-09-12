@@ -27,13 +27,13 @@ class stmt_builtin_array_size_of final : public expression {
         }
 
         if (not tz.is_next_char('(')) {
-            throw compiler_exception{tok(), "expected '(' and identifier"};
+            throw compiler_exception{tz, "expected '(' and identifier"};
         }
 
         stmt_ident_ = {tc, {}, tz.next_token(), tz};
 
         if (not tz.is_next_char(')')) {
-            throw compiler_exception{tok(), "expected ')' after the argument"};
+            throw compiler_exception{tz, "expected ')' after the argument"};
         }
 
         ws1_ = tz.next_whitespace_token();
@@ -59,7 +59,7 @@ class stmt_builtin_array_size_of final : public expression {
         }
 
         if (dst_info.type().name() != tc.get_type_default().name()) {
-            throw compiler_exception{tok(), "destination must be type i64"};
+            throw compiler_exception{tok(), "destination type must be 'i64'"};
         }
 
         const ident_info src_info{tc.make_ident_info(stmt_ident_)};

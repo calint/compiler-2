@@ -1,2 +1,2 @@
 
-t177.baz:4:5: source and destination types are not the same. source is 'i8' vs destination 'i16'
+t177.baz:4:5: source and destination types are not the same. source is 'i8' and destination is 'i16'

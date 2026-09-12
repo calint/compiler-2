@@ -1,2 +1,2 @@
 
-t221.baz:4:19: cannot compare arrays of different sizes. see 'arrays_equal'
+t221.baz:4:19: cannot compare arrays of different sizes

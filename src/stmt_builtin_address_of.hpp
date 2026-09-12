@@ -61,7 +61,7 @@ class stmt_builtin_address_of final : public expression {
         }
 
         if (dst_info.type().name() != tc.get_type_default().name()) {
-            throw compiler_exception{tok(), "destination must be type i64"};
+            throw compiler_exception{tok(), "destination must be type 'i64'"};
         }
 
         const ident_info src_info{tc.make_ident_info(stmt_ident_)};

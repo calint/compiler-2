@@ -117,7 +117,7 @@ class stmt_builtin_array_copy final : public statement {
             throw compiler_exception{
                 tok(),
                 std::format("source and destination types are not the "
-                            "same. source is '{}' vs destination '{}'",
+                            "same. source is '{}' and destination is '{}'",
                             from_info.type().name(), to_info.type().name())};
         }
 

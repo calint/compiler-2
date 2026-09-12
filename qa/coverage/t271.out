@@ -1,2 +1,2 @@
 
-t271.baz:3:13: source and destination types are not the same. source is 'i8' vs destination 'i64'
+t271.baz:3:13: source and compare types are not the same. source is 'i8' and compare is 'i64'

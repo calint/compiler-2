@@ -1,2 +1,2 @@
 
-t222.baz:3:18: destination must be type i64
+t222.baz:3:18: destination type must be 'i64'

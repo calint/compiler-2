@@ -66,7 +66,7 @@ class stmt_identifier : public statement {
 
                 if (not tz.is_next_char(']')) {
                     throw compiler_exception{
-                        tz, "expected '[' to close array index expression"};
+                        tz, "expected ']' to close array index expression"};
                 }
             } else {
                 elems_.emplace_back(tk, nullptr, tz.next_whitespace_token());

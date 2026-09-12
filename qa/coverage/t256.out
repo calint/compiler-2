@@ -1,2 +1,2 @@
 
-t256.baz:2:19: expected argument 2 'x'
+t256.baz:2:19: expected argument 2 named 'x'
