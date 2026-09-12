@@ -50,10 +50,6 @@ class stmt_def_const final : public statement {
     }
 
     stmt_def_const() = default;
-    stmt_def_const(const stmt_def_const&) = default;
-    stmt_def_const(stmt_def_const&&) = default;
-    auto operator=(const stmt_def_const&) -> stmt_def_const& = default;
-    auto operator=(stmt_def_const&&) -> stmt_def_const& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

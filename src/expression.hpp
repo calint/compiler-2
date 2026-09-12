@@ -9,10 +9,6 @@ class expression : public statement {
         : statement{tk, std::move(uops)} {}
 
     expression() = default;
-    expression(const expression&) = default;
-    expression(expression&&) = default;
-    auto operator=(const expression&) -> expression& = default;
-    auto operator=(expression&&) -> expression& = default;
 
     [[nodiscard]] auto is_expression() const -> bool override { return true; }
 };

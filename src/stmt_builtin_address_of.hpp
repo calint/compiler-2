@@ -41,12 +41,6 @@ class stmt_builtin_address_of final : public expression {
     }
 
     stmt_builtin_address_of() = default;
-    stmt_builtin_address_of(const stmt_builtin_address_of&) = default;
-    stmt_builtin_address_of(stmt_builtin_address_of&&) = default;
-    auto operator=(const stmt_builtin_address_of&)
-        -> stmt_builtin_address_of& = default;
-    auto operator=(stmt_builtin_address_of&&)
-        -> stmt_builtin_address_of& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);

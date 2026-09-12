@@ -40,12 +40,6 @@ class stmt_builtin_array_size_of final : public expression {
     }
 
     stmt_builtin_array_size_of() = default;
-    stmt_builtin_array_size_of(const stmt_builtin_array_size_of&) = default;
-    stmt_builtin_array_size_of(stmt_builtin_array_size_of&&) = default;
-    auto operator=(const stmt_builtin_array_size_of&)
-        -> stmt_builtin_array_size_of& = default;
-    auto operator=(stmt_builtin_array_size_of&&)
-        -> stmt_builtin_array_size_of& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);

@@ -13,11 +13,6 @@ class stmt_builtin_syscall final : public stmt_call {
     }
 
     stmt_builtin_syscall() = default;
-    stmt_builtin_syscall(const stmt_builtin_syscall&) = default;
-    stmt_builtin_syscall(stmt_builtin_syscall&&) = default;
-    auto operator=(const stmt_builtin_syscall&)
-        -> stmt_builtin_syscall& = default;
-    auto operator=(stmt_builtin_syscall&&) -> stmt_builtin_syscall& = default;
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const

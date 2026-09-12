@@ -30,10 +30,6 @@ class expr_type_value final : public statement {
     inline expr_type_value(toc& tc, tokenizer& tz, const type& tp);
 
     expr_type_value() = default;
-    expr_type_value(const expr_type_value&) = default;
-    expr_type_value(expr_type_value&&) = default;
-    auto operator=(const expr_type_value&) -> expr_type_value& = default;
-    auto operator=(expr_type_value&&) -> expr_type_value& = default;
     // note: copy and assignment constructor will not compile if used
 
     // implemented in 'main.cpp' due to circular reference:

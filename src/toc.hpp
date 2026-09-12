@@ -248,14 +248,6 @@ class toc final {
           bounds_check_with_line_{bounds_check_with_line},
           bounds_check_lower_{bounds_check_lower} {}
 
-    ~toc() = default;
-
-    toc() = default;
-    toc(const toc&) = default;
-    toc(toc&&) = default;
-    auto operator=(const toc&) -> toc& = default;
-    auto operator=(toc&&) -> toc& = default;
-
     // -------------------------------------------------------------------------
     // public non-special functions (sorted alphabetically)
     // -------------------------------------------------------------------------

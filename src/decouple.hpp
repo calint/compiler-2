@@ -57,7 +57,7 @@ struct operand {
 
         size_t pos{};
 
-        const auto skip_space = [&] {
+        const auto skip_space = [&] -> void {
             while (pos < operand_sv.size() and
                    std::isspace(static_cast<unsigned char>(operand_sv[pos]))) {
                 ++pos;
@@ -81,7 +81,7 @@ struct operand {
             return true;
         };
 
-        const auto invalid_operand = [&] [[noreturn]] {
+        const auto invalid_operand = [&] [[noreturn]] -> void {
             throw std::invalid_argument(
                 std::format("invalid NASM operand format: {}", operand_sv));
         };
@@ -166,7 +166,8 @@ struct operand {
             int64_t magnitude{};
             for (size_t ix{begin}; ix < pos; ++ix) {
                 const int64_t digit{operand_sv[ix] - '0'};
-                magnitude = magnitude * 10 + digit;
+                constexpr int64_t decimal_radix{10};
+                magnitude = (magnitude * decimal_radix) + digit;
             }
 
             displacement =
@@ -176,9 +177,10 @@ struct operand {
         skip_space();
 
         if (bracketed) {
-            if (pos == operand_sv.size() or operand_sv[pos++] != ']') {
+            if (pos == operand_sv.size() or operand_sv[pos] != ']') {
                 invalid_operand();
             }
+            ++pos;
 
             skip_space();
         }

@@ -15,10 +15,6 @@ class stmt_builtin_mov final : public stmt_call {
     }
 
     stmt_builtin_mov() = default;
-    stmt_builtin_mov(const stmt_builtin_mov&) = default;
-    stmt_builtin_mov(stmt_builtin_mov&&) = default;
-    auto operator=(const stmt_builtin_mov&) -> stmt_builtin_mov& = default;
-    auto operator=(stmt_builtin_mov&&) -> stmt_builtin_mov& = default;
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const

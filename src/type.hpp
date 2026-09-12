@@ -37,10 +37,6 @@ class type final {
         : name_{name}, size_{size}, is_built_in_{is_built_in} {}
 
     type() = default;
-    type(const type&) = default;
-    type(type&&) = default;
-    auto operator=(const type&) -> type& = default;
-    auto operator=(type&&) -> type& = default;
 
     auto add_field([[maybe_unused]] const token& tk,
                    const std::string_view name, const type& tp,

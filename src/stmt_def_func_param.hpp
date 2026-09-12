@@ -40,11 +40,6 @@ class stmt_def_func_param final : public statement {
     }
 
     stmt_def_func_param() = default;
-    stmt_def_func_param(const stmt_def_func_param&) = default;
-    stmt_def_func_param(stmt_def_func_param&&) = default;
-    auto operator=(const stmt_def_func_param&)
-        -> stmt_def_func_param& = default;
-    auto operator=(stmt_def_func_param&&) -> stmt_def_func_param& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

@@ -17,10 +17,6 @@ class stmt_comment final : public statement {
     }
 
     stmt_comment() = default;
-    stmt_comment(const stmt_comment&) = default;
-    stmt_comment(stmt_comment&&) = default;
-    auto operator=(const stmt_comment&) -> stmt_comment& = default;
-    auto operator=(stmt_comment&&) -> stmt_comment& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         uops_.source_to(os);

@@ -50,10 +50,6 @@ class stmt_builtin_equal final : public expression {
     }
 
     stmt_builtin_equal() = default;
-    stmt_builtin_equal(const stmt_builtin_equal&) = default;
-    stmt_builtin_equal(stmt_builtin_equal&&) = default;
-    auto operator=(const stmt_builtin_equal&) -> stmt_builtin_equal& = default;
-    auto operator=(stmt_builtin_equal&&) -> stmt_builtin_equal& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

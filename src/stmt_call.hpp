@@ -81,10 +81,6 @@ class stmt_call : public expression {
     }
 
     stmt_call() = default;
-    stmt_call(const stmt_call&) = default;
-    stmt_call(stmt_call&&) = default;
-    auto operator=(const stmt_call&) -> stmt_call& = default;
-    auto operator=(stmt_call&&) -> stmt_call& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);

@@ -100,10 +100,6 @@ class expr_any final : public statement {
     }
 
     expr_any() = default;
-    expr_any(const expr_any&) = default;
-    expr_any(expr_any&&) = default;
-    auto operator=(const expr_any&) -> expr_any& = default;
-    auto operator=(expr_any&&) -> expr_any& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

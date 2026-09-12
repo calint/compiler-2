@@ -124,10 +124,6 @@ class stmt_block final : public statement {
     }
 
     stmt_block() = default;
-    stmt_block(const stmt_block&) = default;
-    stmt_block(stmt_block&&) = default;
-    auto operator=(const stmt_block&) -> stmt_block& = default;
-    auto operator=(stmt_block&&) -> stmt_block& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         if (not is_one_statement_) {

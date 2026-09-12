@@ -93,12 +93,6 @@ class program final {
         assert_functions_set_return_value(tc_.get_func_defs());
     }
 
-    program() = delete;
-    program(const program&) = delete;
-    program(program&&) = delete;
-    auto operator=(const program&) -> program& = delete;
-    auto operator=(program&&) -> program& = delete;
-
     auto source_to(std::ostream& os) const -> void {
         for (const auto& st : statements_) {
             st->source_to(os);

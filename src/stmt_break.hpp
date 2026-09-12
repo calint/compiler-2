@@ -14,10 +14,6 @@ class stmt_break final : public statement {
     }
 
     stmt_break() = default;
-    stmt_break(const stmt_break&) = default;
-    stmt_break(stmt_break&&) = default;
-    auto operator=(const stmt_break&) -> stmt_break& = default;
-    auto operator=(stmt_break&&) -> stmt_break& = default;
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const

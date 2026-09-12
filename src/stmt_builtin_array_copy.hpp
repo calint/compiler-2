@@ -53,12 +53,6 @@ class stmt_builtin_array_copy final : public statement {
     }
 
     stmt_builtin_array_copy() = default;
-    stmt_builtin_array_copy(const stmt_builtin_array_copy&) = default;
-    stmt_builtin_array_copy(stmt_builtin_array_copy&&) = default;
-    auto operator=(const stmt_builtin_array_copy&)
-        -> stmt_builtin_array_copy& = default;
-    auto operator=(stmt_builtin_array_copy&&)
-        -> stmt_builtin_array_copy& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

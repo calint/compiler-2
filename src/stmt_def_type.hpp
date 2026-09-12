@@ -50,10 +50,6 @@ class stmt_def_type final : public statement {
     }
 
     stmt_def_type() = default;
-    stmt_def_type(const stmt_def_type&) = default;
-    stmt_def_type(stmt_def_type&&) = default;
-    auto operator=(const stmt_def_type&) -> stmt_def_type& = default;
-    auto operator=(stmt_def_type&&) -> stmt_def_type& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

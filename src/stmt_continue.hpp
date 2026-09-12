@@ -11,10 +11,6 @@ class stmt_continue final : public statement {
     }
 
     stmt_continue() = default;
-    stmt_continue(const stmt_continue&) = default;
-    stmt_continue(stmt_continue&&) = default;
-    auto operator=(const stmt_continue&) -> stmt_continue& = default;
-    auto operator=(stmt_continue&&) -> stmt_continue& = default;
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const

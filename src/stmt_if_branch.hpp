@@ -20,10 +20,6 @@ class stmt_if_branch final : public statement {
     }
 
     stmt_if_branch() = default;
-    stmt_if_branch(const stmt_if_branch&) = default;
-    stmt_if_branch(stmt_if_branch&&) = default;
-    auto operator=(const stmt_if_branch&) -> stmt_if_branch& = default;
-    auto operator=(stmt_if_branch&&) -> stmt_if_branch& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

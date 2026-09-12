@@ -60,12 +60,6 @@ class stmt_builtin_arrays_equal final : public expression {
     }
 
     stmt_builtin_arrays_equal() = default;
-    stmt_builtin_arrays_equal(const stmt_builtin_arrays_equal&) = default;
-    stmt_builtin_arrays_equal(stmt_builtin_arrays_equal&&) = default;
-    auto operator=(const stmt_builtin_arrays_equal&)
-        -> stmt_builtin_arrays_equal& = default;
-    auto operator=(stmt_builtin_arrays_equal&&)
-        -> stmt_builtin_arrays_equal& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);

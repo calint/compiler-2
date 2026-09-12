@@ -25,10 +25,6 @@ class token final {
           ws_right_{ws_right}, at_line_{at_line}, is_str_{is_str} {}
 
     token() = default;
-    token(const token&) = default;
-    token(token&&) = default;
-    auto operator=(const token&) -> token& = default;
-    auto operator=(token&&) -> token& = default;
 
     auto source_to(std::ostream& os) const -> void {
         if (not is_str_) {

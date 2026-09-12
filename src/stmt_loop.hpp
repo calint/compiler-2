@@ -18,10 +18,6 @@ class stmt_loop final : public statement {
     }
 
     stmt_loop() = default;
-    stmt_loop(const stmt_loop&) = default;
-    stmt_loop(stmt_loop&&) = default;
-    auto operator=(const stmt_loop&) -> stmt_loop& = default;
-    auto operator=(stmt_loop&&) -> stmt_loop& = default;
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const

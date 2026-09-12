@@ -13,10 +13,6 @@ class stmt_return final : public statement {
     }
 
     stmt_return() = default;
-    stmt_return(const stmt_return&) = default;
-    stmt_return(stmt_return&&) = default;
-    auto operator=(const stmt_return&) -> stmt_return& = default;
-    auto operator=(stmt_return&&) -> stmt_return& = default;
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const

@@ -19,12 +19,6 @@ class tokenizer final {
     explicit tokenizer(const std::string_view src_str)
         : src_str_{src_str}, src_{src_str_} {}
 
-    tokenizer() = default;
-    tokenizer(const tokenizer&) = default;
-    tokenizer(tokenizer&&) = default;
-    auto operator=(const tokenizer&) -> tokenizer& = default;
-    auto operator=(tokenizer&&) -> tokenizer& = default;
-
     [[nodiscard]] auto is_eos() const -> bool {
         return char_ix_ >= src_.size();
     }
