@@ -180,6 +180,12 @@ auto main(const int argc, const char* argv[]) -> int {
             toc::line_and_col_num_for_char_index(e.line, e.start_index, src)};
         std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col, e.msg);
         return 1;
+    } catch (const tokenizer_exception& e) {
+        const auto [line, col]{
+            toc::line_and_col_num_for_char_index(e.line, e.start_index, src)};
+        std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col,
+                     e.what());
+        return 1;
     } catch (const panic_exception& e) {
         std::println(stderr, "\npanic: {}", e.what());
         return 2;

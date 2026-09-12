@@ -483,6 +483,12 @@ class stmt_def_dat final : public statement {
             }
             tz.put_back_token(tk);
 
+            if (counter == flds.size()) {
+                throw compiler_exception{
+                    tz, std::format("too many initializers for type '{}'",
+                                    tp.name())};
+            }
+
             const type_field& tf{flds[counter]};
 
             // for (const type_field& tf : tp.fields()) {

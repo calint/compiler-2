@@ -3,9 +3,28 @@
 // refactored: pointer-free implementation
 
 #include <cassert>
+#include <exception>
+#include <string>
 #include <string_view>
+#include <utility>
 
 #include "token.hpp"
+
+class tokenizer_exception final : public std::exception {
+    std::string message_;
+
+  public:
+    const size_t line;
+    const size_t start_index;
+
+    tokenizer_exception(const size_t line_number, const size_t index,
+                        std::string message)
+        : message_{std::move(message)}, line{line_number}, start_index{index} {}
+
+    [[nodiscard]] auto what() const noexcept -> const char* override {
+        return message_.c_str();
+    }
+};
 
 class tokenizer final {
     std::string_view src_str_; // used for easier debugging with 'pos'
@@ -33,6 +52,10 @@ class tokenizer final {
             while (true) {
                 if (is_next_char('\\')) {
                     // read the escaped character
+                    if (is_eos()) {
+                        throw tokenizer_exception{at_line_, char_ix_,
+                                                  "unterminated string"};
+                    }
                     (void)next_char();
                     continue;
                 }
@@ -48,6 +71,10 @@ class tokenizer final {
                                  true};
                     // note: +1 and -2 does not include the leading and trailing
                     // quotation
+                }
+                if (is_eos()) {
+                    throw tokenizer_exception{at_line_, char_ix_,
+                                              "unterminated string"};
                 }
                 (void)next_char();
             }
@@ -121,7 +148,7 @@ class tokenizer final {
             ++char_ix_; // skip the '\n'
             ++at_line_;
         }
-        pos_ = &src_str_[char_ix_];
+        pos_ = src_str_.substr(char_ix_);
         return src_.substr(bgn, len);
     }
 
@@ -133,7 +160,7 @@ class tokenizer final {
         if (ch == '\n') {
             ++at_line_;
         }
-        pos_ = &src_str_[char_ix_];
+        pos_ = src_str_.substr(char_ix_);
         return ch;
     }
 
@@ -190,6 +217,6 @@ class tokenizer final {
             }
         }
 
-        pos_ = &src_str_[char_ix_];
+        pos_ = src_str_.substr(char_ix_);
     }
 };

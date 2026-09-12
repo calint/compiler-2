@@ -1,0 +1,2 @@
+type point { x }
+func main() { dat p : point = { 1, 2 } }
