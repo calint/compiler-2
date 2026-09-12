@@ -5,8 +5,14 @@
 // reviewed: 2025-09-28
 
 #include <algorithm>
+#include <array>
+#include <cctype>
 #include <cstdint>
+#include <format>
+#include <limits>
 #include <memory>
+#include <stdexcept>
+#include <string>
 #include <utility>
 
 #include "panic_exception.hpp"
@@ -49,138 +55,136 @@ struct operand {
             return;
         }
 
-        // note: regex handles only "base + index * scale +/- displacement" with
-        //       optional index, scale and displacement
-        const std::regex pattern_with_brackets{
-            // whitespace and size specifier
-            R"(^\s*(?:(byte|word|dword|qword)\s*)?)"
-            // opening bracket
-            R"(\[)"
-            // base register (must start with a letter)
-            R"(([a-z][a-z0-9]*)?)"
-            // +index (must start with a letter)
-            R"((?:\s*\+\s*([a-z][a-z0-9]*?))?)"
-            // *scale
-            R"((?:\s*\*\s*([1248]))?)"
-            // +/- displacement
-            R"((?:\s*([+-])\s*(\d+))?)"
-            // closing bracket
-            R"(\]\s*$)"};
+        size_t pos{};
 
-        const std::regex pattern_without_brackets{
-            // whitespace and size specifier
-            R"(^\s*(?:(byte|word|dword|qword)\s*)?)"
-            // base register (must start with a letter)
-            R"(([a-z][a-z0-9]*)?)"
-            // +index (must start with a letter)
-            R"((?:\s*\+\s*([a-z][a-z0-9]*?))?)"
-            // *scale
-            R"((?:\s*\*\s*([1248]))?)"
-            // +/- displacement
-            R"((?:\s*([+-])\s*(\d+))?)"
-            // whitespace
-            R"(\s*$)"};
+        const auto skip_space = [&] {
+            while (pos < operand_sv.size() and
+                   std::isspace(static_cast<unsigned char>(operand_sv[pos]))) {
+                ++pos;
+            }
+        };
 
-        constexpr size_t match_size{1};
-        constexpr size_t match_base_register{2};
-        constexpr size_t match_index_register{3};
-        constexpr size_t match_scale{4};
-        constexpr size_t match_displacement_op{5};
-        constexpr size_t match_displacement{6};
+        const auto parse_identifier = [&](std::string& destination) -> bool {
+            if (pos == operand_sv.size() or operand_sv[pos] < 'a' or
+                operand_sv[pos] > 'z') {
+                return false;
+            }
 
-        std::smatch matches;
-        const std::string operand_str{operand_sv};
-        if (std::regex_match(operand_str, matches, pattern_with_brackets)) {
-            // handle pattern with brackets
-            if (matches[match_size].matched) {
-                const auto size_str{matches[match_size].str()};
-                if (size_str == "byte") {
-                    size = size_byte;
-                } else if (size_str == "word") {
-                    size = size_word;
-                } else if (size_str == "dword") {
-                    size = size_dword;
-                } else if (size_str == "qword") {
-                    size = size_qword;
+            const size_t begin{pos++};
+            while (pos < operand_sv.size() and
+                   ((operand_sv[pos] >= 'a' and operand_sv[pos] <= 'z') or
+                    (operand_sv[pos] >= '0' and operand_sv[pos] <= '9'))) {
+                ++pos;
+            }
+
+            destination = operand_sv.substr(begin, pos - begin);
+            return true;
+        };
+
+        const auto invalid_operand = [&] [[noreturn]] {
+            throw std::invalid_argument(
+                std::format("invalid NASM operand format: {}", operand_sv));
+        };
+
+        skip_space();
+
+        constexpr std::array<std::pair<std::string_view, size_t>, 4> sizes{
+            {std::pair{"byte", size_byte}, std::pair{"word", size_word},
+             std::pair{"dword", size_dword}, std::pair{"qword", size_qword}}};
+
+        for (const auto [name, operand_size] : sizes) {
+            if (operand_sv.substr(pos).starts_with(name)) {
+                const size_t end{pos + name.size()};
+                if (end == operand_sv.size() or
+                    std::isspace(static_cast<unsigned char>(operand_sv[end])) or
+                    operand_sv[end] == '[') {
+                    size = operand_size;
+                    pos = end;
+                    break;
                 }
             }
+        }
 
-            if (matches[match_base_register].matched) {
-                base_register = matches[match_base_register].str();
-            }
+        skip_space();
 
-            if (matches[match_index_register].matched) {
-                index_register = matches[match_index_register].str();
-            }
+        const bool bracketed{pos < operand_sv.size() and
+                             operand_sv[pos] == '['};
 
-            if (matches[match_scale].matched) {
-                scale =
-                    static_cast<uint8_t>(std::stoi(matches[match_scale].str()));
-            }
+        if (bracketed) {
+            ++pos;
+            skip_space();
+        }
 
-            if (matches[match_displacement_op].matched and
-                matches[match_displacement].matched) {
+        parse_identifier(base_register);
 
-                const int disp_value =
-                    std::stoi(matches[match_displacement].str());
-                if (matches[match_displacement_op].str() == "-") {
-                    displacement = -disp_value;
-                } else {
-                    displacement = disp_value;
-                }
-            }
-        } else if (std::regex_match(operand_str, matches,
-                                    pattern_without_brackets)) {
-            // handle pattern without brackets
-            if (matches[match_size].matched) {
-                const auto size_str{matches[match_size].str()};
-                if (size_str == "byte") {
-                    size = size_byte;
-                } else if (size_str == "word") {
-                    size = size_word;
-                } else if (size_str == "dword") {
-                    size = size_dword;
-                } else if (size_str == "qword") {
-                    size = size_qword;
-                }
-            }
+        skip_space();
 
-            if (matches[match_base_register].matched) {
-                if (matches[match_index_register].matched) {
-                    base_register = matches[match_base_register].str();
-                    index_register = matches[match_index_register].str();
-                } else {
-                    base_register = matches[match_base_register].str();
-                }
-            }
+        if (pos < operand_sv.size() and operand_sv[pos] == '+') {
+            const size_t plus{pos};
+            ++pos;
 
-            if (matches[match_scale].matched) {
-                scale =
-                    static_cast<uint8_t>(std::stoi(matches[match_scale].str()));
-            }
+            skip_space();
 
-            if (matches[match_displacement_op].matched and
-                matches[match_displacement].matched) {
-
-                const int disp_value =
-                    std::stoi(matches[match_displacement].str());
-                if (matches[match_displacement_op].str() == "-") {
-                    displacement = -disp_value;
-                } else {
-                    displacement = disp_value;
-                }
-            }
-        } else {
-            // try to match a standalone register
-            const std::regex register_pattern{R"(^\s*([a-z][a-z0-9]*)\s*$)"};
-            std::smatch register_match;
-            if (std::regex_match(operand_str, register_match,
-                                 register_pattern)) {
-                base_register = register_match[1].str();
+            if (not parse_identifier(index_register)) {
+                pos = plus;
             } else {
-                throw std::invalid_argument(std::format(
-                    "invalid NASM operand format: {}", operand_str));
+                skip_space();
+
+                if (pos < operand_sv.size() and operand_sv[pos] == '*') {
+                    ++pos;
+                    skip_space();
+                    if (pos == operand_sv.size() or
+                        not std::string_view{"1248"}.contains(
+                            operand_sv[pos])) {
+                        invalid_operand();
+                    }
+
+                    scale = static_cast<uint8_t>(operand_sv[pos] - '0');
+                    ++pos;
+                }
             }
+        }
+
+        skip_space();
+
+        if (pos < operand_sv.size() and
+            (operand_sv[pos] == '+' or operand_sv[pos] == '-')) {
+            const bool negative{operand_sv[pos++] == '-'};
+
+            skip_space();
+
+            const size_t begin{pos};
+            while (pos < operand_sv.size() and operand_sv[pos] >= '0' and
+                   operand_sv[pos] <= '9') {
+                ++pos;
+            }
+
+            if (begin == pos) {
+                invalid_operand();
+            }
+
+            int64_t magnitude{};
+            for (size_t ix{begin}; ix < pos; ++ix) {
+                const int64_t digit{operand_sv[ix] - '0'};
+                magnitude = magnitude * 10 + digit;
+            }
+
+            displacement =
+                static_cast<int32_t>(negative ? -magnitude : magnitude);
+        }
+
+        skip_space();
+
+        if (bracketed) {
+            if (pos == operand_sv.size() or operand_sv[pos++] != ']') {
+                invalid_operand();
+            }
+
+            skip_space();
+        }
+
+        if (pos != operand_sv.size()) {
+            invalid_operand();
         }
     }
 
