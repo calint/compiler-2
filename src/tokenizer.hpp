@@ -11,18 +11,17 @@
 #include "token.hpp"
 
 class tokenizer_exception final : public std::exception {
-    std::string message_;
-
   public:
-    const size_t line;
-    const size_t start_index;
+    std::string msg;
+    size_t line;
+    size_t start_index;
 
     tokenizer_exception(const size_t line_number, const size_t index,
                         std::string message)
-        : message_{std::move(message)}, line{line_number}, start_index{index} {}
+        : msg{std::move(message)}, line{line_number}, start_index{index} {}
 
     [[nodiscard]] auto what() const noexcept -> const char* override {
-        return message_.c_str();
+        return msg.c_str();
     }
 };
 

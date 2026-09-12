@@ -1837,16 +1837,16 @@ class toc final {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             auto result{std::from_chars(sv.data(), sv.data() + sv.size(), value,
                                         base_hex)};
+
             if (result.ec == std::errc::result_out_of_range) {
                 throw compiler_exception{
                     src_loc_tk,
                     std::format("constant '{}' is out of range", str)};
             }
-            const std::string_view remainder{
-                result.ptr,
-                static_cast<size_t>(sv.data() + sv.size() - result.ptr)};
+
             if (result.ec == std::errc{} and
-                (remainder.empty() or remainder == ";")) {
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                result.ptr == sv.data() + sv.size()) {
                 return value;
             }
         }
@@ -1862,16 +1862,16 @@ class toc final {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             auto result{std::from_chars(sv.data(), sv.data() + sv.size(), value,
                                         base_binary)};
+
             if (result.ec == std::errc::result_out_of_range) {
                 throw compiler_exception{
                     src_loc_tk,
                     std::format("constant '{}' is out of range", str)};
             }
-            const std::string_view remainder{
-                result.ptr,
-                static_cast<size_t>(sv.data() + sv.size() - result.ptr)};
+
             if (result.ec == std::errc{} and
-                (remainder.empty() or remainder == ";")) {
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                result.ptr == sv.data() + sv.size()) {
                 return value;
             }
         }
@@ -1887,16 +1887,16 @@ class toc final {
             auto result{
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 std::from_chars(sv.data(), sv.data() + sv.size(), value)};
+
             if (result.ec == std::errc::result_out_of_range) {
                 throw compiler_exception{
                     src_loc_tk,
                     std::format("constant '{}' is out of range", str)};
             }
-            const std::string_view remainder{
-                result.ptr,
-                static_cast<size_t>(sv.data() + sv.size() - result.ptr)};
+
             if (result.ec == std::errc{} and
-                (remainder.empty() or remainder == ";")) {
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                result.ptr == sv.data() + sv.size()) {
                 return value;
             }
         }

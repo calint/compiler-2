@@ -6,7 +6,7 @@ func exit(v : reg_rdi) {
 
 func assert(expr : bool) if not expr exit(1)
 
-func f1(state) : i64 res { state = state + 1; res = state }
+func f1(state) : i64 res { state = state + 1 res = state }
 func f2(x) : i64 res { res = x * 2 }
 func f3(x) : i64 res { res = x + 10 }
 

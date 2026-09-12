@@ -106,7 +106,7 @@ auto main(const int argc, const char* argv[]) -> int {
             try {
                 const std::string stack_text{arg.substr(stack_option.size())};
                 size_t chars_read{};
-                const unsigned long long parsed_size{
+                const uint64_t parsed_size{
                     std::stoull(stack_text, &chars_read, 0)};
                 if (stack_text.empty() or stack_text.starts_with('-') or
                     chars_read != stack_text.size() or parsed_size == 0 or
