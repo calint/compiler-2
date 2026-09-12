@@ -19,7 +19,7 @@ struct type_field {
     std::string name;       //
     const type* type_ptr{}; // element type
     size_t offset{};        // offset relative to instance address
-    size_t total_size{};    // total size in bytes of all elements
+    size_t size{};          // total size in bytes of all elements
     size_t array_size{};    // array size in elements
     bool is_array{};        //
 
@@ -152,31 +152,5 @@ class type final {
 
     [[nodiscard]] auto fields() const -> std::span<const type_field> {
         return fields_;
-    }
-
-    // note: duplicate responsibility with 'toc' because of circular dependency
-
-    [[nodiscard]] static auto get_size_specifier(const token& tk,
-                                                 const size_t size)
-        -> std::string_view {
-
-        constexpr size_t size_qword{8};
-        constexpr size_t size_dword{4};
-        constexpr size_t size_word{2};
-        constexpr size_t size_byte{1};
-
-        switch (size) {
-        case size_qword:
-            return "qword";
-        case size_dword:
-            return "dword";
-        case size_word:
-            return "word";
-        case size_byte:
-            return "byte";
-        default:
-            throw compiler_exception{
-                tk, std::format("illegal size for memory operand: {}", size)};
-        }
     }
 };
