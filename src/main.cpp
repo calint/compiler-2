@@ -353,8 +353,6 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     }
 }
 
-expr_type_value::~expr_type_value() = default;
-
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 inline auto expr_type_value::source_to(std::ostream& os) const -> void {

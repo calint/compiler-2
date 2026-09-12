@@ -47,8 +47,6 @@ class stmt_assign_var final : public statement {
         }
     }
 
-    ~stmt_assign_var() override = default;
-
     stmt_assign_var() = default;
     stmt_assign_var(const stmt_assign_var&) = default;
     stmt_assign_var(stmt_assign_var&&) = default;

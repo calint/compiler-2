@@ -99,8 +99,6 @@ class expr_any final : public statement {
         }
     }
 
-    ~expr_any() override = default;
-
     expr_any() = default;
     expr_any(const expr_any&) = default;
     expr_any(expr_any&&) = default;

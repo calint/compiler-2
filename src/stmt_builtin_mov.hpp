@@ -14,8 +14,6 @@ class stmt_builtin_mov final : public stmt_call {
         set_type(tc.get_type_void());
     }
 
-    ~stmt_builtin_mov() override = default;
-
     stmt_builtin_mov() = default;
     stmt_builtin_mov(const stmt_builtin_mov&) = default;
     stmt_builtin_mov(stmt_builtin_mov&&) = default;

@@ -173,8 +173,6 @@ class expr_ops_list final : public expression {
         }
     }
 
-    ~expr_ops_list() override = default;
-
     expr_ops_list() = default;
     expr_ops_list(const expr_ops_list&) = default;
     expr_ops_list(expr_ops_list&&) = default;

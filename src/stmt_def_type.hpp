@@ -49,8 +49,6 @@ class stmt_def_type final : public statement {
         tc.add_type(name_tk_, type_);
     }
 
-    ~stmt_def_type() override = default;
-
     stmt_def_type() = default;
     stmt_def_type(const stmt_def_type&) = default;
     stmt_def_type(stmt_def_type&&) = default;

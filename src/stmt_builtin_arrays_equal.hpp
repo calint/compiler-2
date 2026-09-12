@@ -59,8 +59,6 @@ class stmt_builtin_arrays_equal final : public expression {
         ws1_ = tz.next_whitespace_token();
     }
 
-    ~stmt_builtin_arrays_equal() override = default;
-
     stmt_builtin_arrays_equal() = default;
     stmt_builtin_arrays_equal(const stmt_builtin_arrays_equal&) = default;
     stmt_builtin_arrays_equal(stmt_builtin_arrays_equal&&) = default;

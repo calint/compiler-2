@@ -49,8 +49,6 @@ class stmt_builtin_equal final : public expression {
         ws1_ = tz.next_whitespace_token();
     }
 
-    ~stmt_builtin_equal() override = default;
-
     stmt_builtin_equal() = default;
     stmt_builtin_equal(const stmt_builtin_equal&) = default;
     stmt_builtin_equal(stmt_builtin_equal&&) = default;

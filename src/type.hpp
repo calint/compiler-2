@@ -36,8 +36,6 @@ class type final {
     type(const std::string_view name, const size_t size, const bool is_built_in)
         : name_{name}, size_{size}, is_built_in_{is_built_in} {}
 
-    ~type() = default;
-
     type() = default;
     type(const type&) = default;
     type(type&&) = default;

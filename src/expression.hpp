@@ -14,7 +14,5 @@ class expression : public statement {
     auto operator=(const expression&) -> expression& = default;
     auto operator=(expression&&) -> expression& = default;
 
-    ~expression() override = default;
-
     [[nodiscard]] auto is_expression() const -> bool override { return true; }
 };

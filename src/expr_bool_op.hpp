@@ -74,8 +74,6 @@ class expr_bool_op final : public statement {
         resolve_if_op_is_expression();
     }
 
-    ~expr_bool_op() override = default;
-
     expr_bool_op() = default;
     expr_bool_op(const expr_bool_op&) = default;
     expr_bool_op(expr_bool_op&&) = default;

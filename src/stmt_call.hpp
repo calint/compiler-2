@@ -80,7 +80,6 @@ class stmt_call : public expression {
         ws1_ = tz.next_whitespace_token();
     }
 
-    ~stmt_call() override = default;
     stmt_call() = default;
     stmt_call(const stmt_call&) = default;
     stmt_call(stmt_call&&) = default;

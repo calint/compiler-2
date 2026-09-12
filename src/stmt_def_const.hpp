@@ -3,7 +3,6 @@
 
 #include <optional>
 #include <string>
-#include <string_view>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -11,7 +10,6 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-#include "type.hpp"
 #include "unary_ops.hpp"
 
 class stmt_def_const final : public statement {
@@ -50,8 +48,6 @@ class stmt_def_const final : public statement {
 
         tc.add_const(name_tk_, name_tk_.text(), value);
     }
-
-    ~stmt_def_const() override = default;
 
     stmt_def_const() = default;
     stmt_def_const(const stmt_def_const&) = delete;

@@ -16,8 +16,6 @@ class stmt_comment final : public statement {
         set_type(tc.get_type_void());
     }
 
-    ~stmt_comment() override = default;
-
     stmt_comment() = default;
     stmt_comment(const stmt_comment&) = default;
     stmt_comment(stmt_comment&&) = default;

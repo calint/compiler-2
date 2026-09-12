@@ -102,8 +102,6 @@ class stmt_def_dat final : public statement {
         tc.add_dat(this);
     }
 
-    ~stmt_def_dat() override = default;
-
     stmt_def_dat() = default;
     stmt_def_dat(const stmt_def_dat&) = delete;
     stmt_def_dat(stmt_def_dat&&) = default;

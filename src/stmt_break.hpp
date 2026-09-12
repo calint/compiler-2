@@ -13,8 +13,6 @@ class stmt_break final : public statement {
         set_type(tc.get_type_void());
     }
 
-    ~stmt_break() override = default;
-
     stmt_break() = default;
     stmt_break(const stmt_break&) = default;
     stmt_break(stmt_break&&) = default;

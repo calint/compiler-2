@@ -31,8 +31,6 @@ class unary_ops final {
         }
     }
 
-    ~unary_ops() = default;
-
     unary_ops() = default;
     unary_ops(const unary_ops&) = default;
     unary_ops(unary_ops&&) = default;

@@ -99,8 +99,6 @@ class program final {
     auto operator=(const program&) -> program& = delete;
     auto operator=(program&&) -> program& = delete;
 
-    ~program() = default;
-
     auto source_to(std::ostream& os) const -> void {
         for (const auto& st : statements_) {
             st->source_to(os);

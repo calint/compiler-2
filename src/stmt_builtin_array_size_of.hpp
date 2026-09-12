@@ -39,8 +39,6 @@ class stmt_builtin_array_size_of final : public expression {
         ws1_ = tz.next_whitespace_token();
     }
 
-    ~stmt_builtin_array_size_of() override = default;
-
     stmt_builtin_array_size_of() = default;
     stmt_builtin_array_size_of(const stmt_builtin_array_size_of&) = default;
     stmt_builtin_array_size_of(stmt_builtin_array_size_of&&) = default;

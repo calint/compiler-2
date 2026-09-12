@@ -50,8 +50,6 @@ class stmt_if final : public statement {
         }
     }
 
-    ~stmt_if() override = default;
-
     stmt_if() = default;
     stmt_if(const stmt_if&) = default;
     stmt_if(stmt_if&&) = default;

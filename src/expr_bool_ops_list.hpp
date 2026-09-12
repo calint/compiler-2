@@ -120,8 +120,6 @@ class expr_bool_ops_list final : public statement {
         }
     }
 
-    ~expr_bool_ops_list() override = default;
-
     expr_bool_ops_list() = default;
     expr_bool_ops_list(const expr_bool_ops_list&) = default;
     expr_bool_ops_list(expr_bool_ops_list&&) = default;

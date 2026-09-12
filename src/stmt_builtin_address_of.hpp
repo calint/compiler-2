@@ -40,8 +40,6 @@ class stmt_builtin_address_of final : public expression {
         ws1_ = tz.next_whitespace_token();
     }
 
-    ~stmt_builtin_address_of() override = default;
-
     stmt_builtin_address_of() = default;
     stmt_builtin_address_of(const stmt_builtin_address_of&) = default;
     stmt_builtin_address_of(stmt_builtin_address_of&&) = default;

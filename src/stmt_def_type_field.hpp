@@ -52,8 +52,6 @@ class stmt_def_type_field final : public statement {
         }
     }
 
-    ~stmt_def_type_field() override = default;
-
     stmt_def_type_field() = default;
     stmt_def_type_field(const stmt_def_type_field&) = default;
     stmt_def_type_field(stmt_def_type_field&&) = default;

@@ -85,8 +85,6 @@ class stmt_def_var final : public statement {
         //       initialization
     }
 
-    ~stmt_def_var() override = default;
-
     stmt_def_var() = default;
     stmt_def_var(const stmt_def_var&) = delete;
     stmt_def_var(stmt_def_var&&) = default;

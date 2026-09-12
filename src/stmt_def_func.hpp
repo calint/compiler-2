@@ -78,8 +78,6 @@ class stmt_def_func final : public statement {
         tc.exit_func(name());
     }
 
-    ~stmt_def_func() override = default;
-
     stmt_def_func() = default;
     stmt_def_func(const stmt_def_func&) = default;
     stmt_def_func(stmt_def_func&&) = default;

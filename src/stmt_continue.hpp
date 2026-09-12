@@ -10,8 +10,6 @@ class stmt_continue final : public statement {
         set_type(tc.get_type_void());
     }
 
-    ~stmt_continue() override = default;
-
     stmt_continue() = default;
     stmt_continue(const stmt_continue&) = default;
     stmt_continue(stmt_continue&&) = default;

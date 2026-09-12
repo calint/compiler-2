@@ -19,8 +19,6 @@ class tokenizer final {
     explicit tokenizer(const std::string_view src_str)
         : src_str_{src_str}, src_{src_str_} {}
 
-    ~tokenizer() = default;
-
     tokenizer() = delete;
     tokenizer(const tokenizer&) = default;
     tokenizer(tokenizer&&) = default;

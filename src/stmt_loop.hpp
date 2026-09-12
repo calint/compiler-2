@@ -17,8 +17,6 @@ class stmt_loop final : public statement {
         tc.exit_loop(lbl);
     }
 
-    ~stmt_loop() override = default;
-
     stmt_loop() = default;
     stmt_loop(const stmt_loop&) = default;
     stmt_loop(stmt_loop&&) = default;

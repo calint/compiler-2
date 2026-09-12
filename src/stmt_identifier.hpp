@@ -97,8 +97,6 @@ class stmt_identifier : public statement {
         }
     }
 
-    ~stmt_identifier() override = default;
-
     stmt_identifier() = default;
     stmt_identifier(const stmt_identifier&) = default;
     stmt_identifier(stmt_identifier&&) = default;

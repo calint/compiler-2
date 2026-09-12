@@ -29,8 +29,6 @@ class expr_type_value final : public statement {
     //       since changes to handling of unique_ptr to incomplete types
     inline expr_type_value(toc& tc, tokenizer& tz, const type& tp);
 
-    inline ~expr_type_value() override;
-
     expr_type_value() = default;
     expr_type_value(const expr_type_value&) = default;
     expr_type_value(expr_type_value&&) = default;

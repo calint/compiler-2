@@ -123,8 +123,6 @@ class stmt_block final : public statement {
         tc.exit_block();
     }
 
-    ~stmt_block() override = default;
-
     stmt_block() = default;
     stmt_block(const stmt_block&) = default;
     stmt_block(stmt_block&&) = default;

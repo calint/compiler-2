@@ -12,8 +12,6 @@ class stmt_builtin_syscall final : public stmt_call {
         set_type(tc.get_type_void());
     }
 
-    ~stmt_builtin_syscall() override = default;
-
     stmt_builtin_syscall() = default;
     stmt_builtin_syscall(const stmt_builtin_syscall&) = default;
     stmt_builtin_syscall(stmt_builtin_syscall&&) = default;

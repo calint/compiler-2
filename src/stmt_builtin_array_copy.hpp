@@ -52,8 +52,6 @@ class stmt_builtin_array_copy final : public statement {
         ws1_ = tz.next_whitespace_token();
     }
 
-    ~stmt_builtin_array_copy() override = default;
-
     stmt_builtin_array_copy() = default;
     stmt_builtin_array_copy(const stmt_builtin_array_copy&) = default;
     stmt_builtin_array_copy(stmt_builtin_array_copy&&) = default;
