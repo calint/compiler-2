@@ -73,6 +73,21 @@ class stmt_assign_var final : public statement {
                                    dst_info.const_value)};
         }
 
+        // todo: fix this
+
+        if (expr_.is_array_identifier() and
+            not stmt_ident_.is_last_elem_indexed()) {
+
+            const ident_info src_info{tc.make_ident_info(expr_)};
+            if (src_info.is_var() and dst_info.is_array and
+                (not src_info.is_array or
+                 src_info.array_size != dst_info.array_size)) {
+
+                throw compiler_exception{
+                    tok(), "source and destination array sizes do not match"};
+            }
+        }
+
         std::vector<std::string> lea_registers;
         dst_info.operand = tc.get_lea_operand(os, indent, stmt_ident_, dst_info,
                                               lea_registers);

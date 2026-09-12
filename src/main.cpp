@@ -491,6 +491,11 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             continue;
         }
 
+        if (tf.is_array and src.is_array_identifier()) {
+            validate_array_assignment(src.tok(), tf,
+                                     tc.make_ident_info(src));
+        }
+
         const std::string dst_accessor{dst_op.str(tf.type().size())};
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
@@ -569,8 +574,8 @@ auto expr_type_value::validate_array_assignment(const token& tok,
     }
     if (fld.array_size != src_info.array_size) {
         throw compiler_exception{
-            tok, std::format("destination array size ({}) does not "
-                             "match source array size ({})",
+            tok, std::format("destination array of size {} does not "
+                             "match source array of size {}",
                              fld.array_size, src_info.array_size)};
     }
 }

@@ -124,6 +124,13 @@ class expr_any final : public statement {
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
+        if (is_array_identifier()) {
+            const ident_info src_info{tc.make_ident_info(*this)};
+            if (not src_info.is_array) {
+                throw compiler_exception{tok(), "source is not an array"};
+            }
+        }
+
         // the base case
         if (is_identifier_ or is_array_indexed_ or not is_array_) {
             compile_variant(tc, os, indent, dst_info, tok(), vars_[0]);
@@ -155,6 +162,10 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+
+    [[nodiscard]] auto is_array_identifier() const -> bool {
+        return is_array_ and is_identifier_;
+    }
 
     [[nodiscard]] auto is_empty() const -> bool { return vars_.empty(); }
 
@@ -245,6 +256,10 @@ class expr_any final : public statement {
     [[nodiscard]] auto array_size() const -> size_t { return array_size_; }
 
     [[nodiscard]] auto tok() const -> const token& override {
+        if (vars_.empty()) {
+            return statement::tok();
+        }
+
         return std::visit(
             [&](const auto& e) -> const token& { return e.tok(); }, vars_[0]);
     }
