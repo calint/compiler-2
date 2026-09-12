@@ -24,4 +24,5 @@ Checks: '
   -misc-static-assert,                                                           # same
   -clang-diagnostic-braced-scalar-init,                                          # all initialization done with braces
   -readability-avoid-const-params-in-decls,                                      # allow making everything that can be const
+  -bugprone-exception-escape,                                                    # it is incredibly slow, consumes 99.9 % of user time
 '
