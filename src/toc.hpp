@@ -250,11 +250,11 @@ class toc final {
 
     ~toc() = default;
 
-    toc() = delete;
+    toc() = default;
     toc(const toc&) = default;
     toc(toc&&) = default;
-    auto operator=(const toc&) -> toc& = delete;
-    auto operator=(toc&&) -> toc& = delete;
+    auto operator=(const toc&) -> toc& = default;
+    auto operator=(toc&&) -> toc& = default;
 
     // -------------------------------------------------------------------------
     // public non-special functions (sorted alphabetically)

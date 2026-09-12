@@ -103,9 +103,9 @@ class stmt_def_dat final : public statement {
     }
 
     stmt_def_dat() = default;
-    stmt_def_dat(const stmt_def_dat&) = delete;
+    stmt_def_dat(const stmt_def_dat&) = default;
     stmt_def_dat(stmt_def_dat&&) = default;
-    auto operator=(const stmt_def_dat&) -> stmt_def_dat& = delete;
+    auto operator=(const stmt_def_dat&) -> stmt_def_dat& = default;
     auto operator=(stmt_def_dat&&) -> stmt_def_dat& = default;
 
     auto source_to(std::ostream& os) const -> void override {

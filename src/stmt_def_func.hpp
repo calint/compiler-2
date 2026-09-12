@@ -81,8 +81,8 @@ class stmt_def_func final : public statement {
     stmt_def_func() = default;
     stmt_def_func(const stmt_def_func&) = default;
     stmt_def_func(stmt_def_func&&) = default;
-    auto operator=(const stmt_def_func&) -> stmt_def_func& = delete;
-    auto operator=(stmt_def_func&&) -> stmt_def_func& = delete;
+    auto operator=(const stmt_def_func&) -> stmt_def_func& = default;
+    auto operator=(stmt_def_func&&) -> stmt_def_func& = default;
 
     auto source_to(std::ostream& os) const -> void override {
         source_def_to(os, false);
