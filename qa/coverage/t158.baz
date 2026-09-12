@@ -18,6 +18,10 @@ func point_foo(pt : point) : point res{
     res.y = pt.y * 2
 }
 
+func point_bar() : point res{
+    res = { -9, 10 }
+}
+
 func main() {
     var pt : point
     pt = point_init()
@@ -31,4 +35,9 @@ func main() {
 
     var pt2 : point = point_foo(pt2)
     # this is ub because argument and result is same
+
+    var pts : point[3]
+    pts[1] = point_bar()
+    assert(pts[1].x == -9)
+    assert(pts[1].y == 10)
 }
