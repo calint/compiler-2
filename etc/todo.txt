@@ -64,6 +64,12 @@
     foo(ix : const i32) { const x = ix }
 [ ] a return reference might be used as an argument to a function that set it.
     current UB detection does not allow that
+[ ] ub detection:
+    [ ] a tree of possible paths for code labeled as "maybe" or "always"
+        make sure that each possible path results in all fields of type
+        initialized
+    [ ] data that is about to be assigned is not allowed to be read while
+        initiating it
 [ ] stmt_identifier: 357: if register will be just offset without indexing
     register then that can be calculated in init_reg_offset
 [ ] expr_*: pre-calculate consts

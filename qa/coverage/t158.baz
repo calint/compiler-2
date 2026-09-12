@@ -14,13 +14,14 @@ func point_init() : point res {
 }
 
 func point_foo(pt : point) : point res{
-    res = pt.x * 2
-    res = pt.y * 2
+    res.x = pt.x * 2
+    res.y = pt.y * 2
 }
 
 func main() {
     var pt : point
     pt = point_init()
+    # this is ub because it is not guranteed that all of 'p' is initialized
     assert(pt.x == -1)
     assert(pt.y == -2)
 
@@ -28,5 +29,6 @@ func main() {
     assert(pt1.x == -1)
     assert(pt1.y == -2)
 
-    var pt2 : point = point_foo(point_init())
+    var pt2 : point = point_foo(pt2)
+    # this is ub because argument and result is same
 }
