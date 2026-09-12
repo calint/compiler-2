@@ -31,21 +31,19 @@ class expr_any final : public statement {
     token ws4_;
     size_t array_size_{};
     bool is_array_{};
-    bool is_array_indexed_{};
     bool has_braces_{};
     bool is_identifier_{};
 
   public:
     expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args,
-             const bool is_array, const size_t array_size,
-             const bool is_array_indexed)
+             const bool is_array, const size_t array_size)
         : statement{tz.next_whitespace_token()}, array_size_{array_size},
-          is_array_{is_array}, is_array_indexed_{is_array_indexed} {
+          is_array_{is_array} {
 
         set_type(tp);
 
         // the basic case
-        if (not is_array or is_array_indexed) {
+        if (not is_array) {
             vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
             return;
         }
@@ -132,7 +130,7 @@ class expr_any final : public statement {
         }
 
         // the base case
-        if (is_identifier_ or is_array_indexed_ or not is_array_) {
+        if (is_identifier_ or not is_array_) {
             compile_variant(tc, os, indent, dst_info, tok(), vars_[0]);
             return;
         }

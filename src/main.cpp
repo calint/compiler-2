@@ -363,7 +363,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         // create an expression that assigns to field
         // might recurse creating 'expr_type_value'
         exprs_.emplace_back(std::make_unique<expr_any>(
-            tc, tz, tf.type(), true, tf.is_array, tf.array_size, false));
+            tc, tz, tf.type(), true, tf.is_array, tf.array_size));
     }
 }
 
@@ -492,8 +492,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         }
 
         if (tf.is_array and src.is_array_identifier()) {
-            validate_array_assignment(src.tok(), tf,
-                                     tc.make_ident_info(src));
+            validate_array_assignment(src.tok(), tf, tc.make_ident_info(src));
         }
 
         const std::string dst_accessor{dst_op.str(tf.type().size())};

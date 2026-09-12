@@ -40,14 +40,13 @@ class stmt_call : public expression {
             args_.reserve(n);
             for (const auto [i, param] : std::views::enumerate(func.params())) {
 
-                args_.emplace_back(tc, tz, param.get_type(), true, false, 0,
-                                   false);
+                args_.emplace_back(tc, tz, param.get_type(), true, false, 0);
 
                 if (static_cast<size_t>(i) + 1 < n) {
                     if (not tz.is_next_char(',')) {
                         throw compiler_exception{
-                            tz, std::format("expected argument {} named '{}'", i + 2,
-                                            param.name())};
+                            tz, std::format("expected argument {} named '{}'",
+                                            i + 2, param.name())};
                     }
                 }
             }
@@ -71,7 +70,7 @@ class stmt_call : public expression {
                 }
 
                 args_.emplace_back(tc, tz, tc.get_type_default(), true, false,
-                                   0, false);
+                                   0);
 
                 expect_arg = tz.is_next_char(',');
             }

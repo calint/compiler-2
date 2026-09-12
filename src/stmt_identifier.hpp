@@ -61,7 +61,7 @@ class stmt_identifier : public statement {
                 elems_.emplace_back(
                     tk,
                     std::make_unique<expr_any>(tc, tz, tc.get_type_default(),
-                                               false, false, 0, false),
+                                               false, false, 0),
                     tz.next_whitespace_token());
 
                 if (not tz.is_next_char(']')) {
@@ -90,6 +90,12 @@ class stmt_identifier : public statement {
 
             set_type(ii.type());
 
+            if (elems_.back().array_index_expr != nullptr) {
+                // if last element has index expression then this is technically
+                // no longer an array but a element
+                break;
+            }
+
             is_array_ = ii.is_array;
             array_size_ = ii.array_size;
 
@@ -115,10 +121,6 @@ class stmt_identifier : public statement {
         return std::ranges::any_of(elems_, [](const ident_elem& e) -> bool {
             return e.array_index_expr != nullptr;
         });
-    }
-
-    [[nodiscard]] auto is_last_elem_indexed() const -> bool {
-        return elems_.back().array_index_expr != nullptr;
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override { return true; }

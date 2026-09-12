@@ -34,13 +34,7 @@ class stmt_assign_var final : public statement {
 
         set_type(dst_info.type());
 
-        expr_ = {tc,
-                 tz,
-                 dst_info.type(),
-                 false,
-                 is_array,
-                 array_size,
-                 stmt_ident_.is_last_elem_indexed()};
+        expr_ = {tc, tz, dst_info.type(), false, is_array, array_size};
 
         if (array_size == 0) {
             array_size_ = expr_.array_size();
@@ -75,9 +69,7 @@ class stmt_assign_var final : public statement {
 
         // todo: fix this to be easier read
 
-        if (expr_.is_array_identifier() and
-            not stmt_ident_.is_last_elem_indexed()) {
-
+        if (expr_.is_array_identifier()) {
             const ident_info src_info{tc.make_ident_info(expr_)};
             if (src_info.is_var() and dst_info.is_array and
                 (not src_info.is_array or
