@@ -24,8 +24,9 @@
 class stmt_identifier : public statement {
     struct ident_elem {
         token name_tk;
+        token open_bracket_tk;
         std::unique_ptr<expr_any> array_index_expr;
-        token ws1;
+        token close_bracket_tk;
     };
 
     std::vector<ident_elem> elems_;
@@ -57,19 +58,23 @@ class stmt_identifier : public statement {
                 }
             }
 
-            if (tz.is_next_char('[')) {
+            token open_bracket_tk{tz.next_char_token('[')};
+            if (not open_bracket_tk.is_empty()) {
                 elems_.emplace_back(
-                    tk,
+                    tk, token{},
                     std::make_unique<expr_any>(tc, tz, tc.get_type_default(),
                                                false, false, 0),
-                    tz.next_whitespace_token());
+                    token{});
 
-                if (not tz.is_next_char(']')) {
+                token close_bracket_tk{tz.next_char_token(']')};
+                if (close_bracket_tk.is_empty()) {
                     throw compiler_exception{
                         tz, "expected ']' to close array index expression"};
                 }
+                elems_.back().open_bracket_tk = open_bracket_tk;
+                elems_.back().close_bracket_tk = close_bracket_tk;
             } else {
-                elems_.emplace_back(tk, nullptr, tz.next_whitespace_token());
+                elems_.emplace_back(tk, token{}, nullptr, token{});
             }
 
             if (tz.is_next_char('.')) {
@@ -91,8 +96,8 @@ class stmt_identifier : public statement {
             set_type(ii.type());
 
             if (elems_.back().array_index_expr != nullptr) {
-                // if last element has index expression then this is technically
-                // no longer an array but a element
+                // if last element has index expression then this is
+                // technically no longer an array but a element
                 break;
             }
 
@@ -134,11 +139,10 @@ class stmt_identifier : public statement {
             }
             e.name_tk.source_to(os);
             if (e.array_index_expr) {
-                std::print(os, "[");
+                e.open_bracket_tk.source_to(os);
                 e.array_index_expr->source_to(os);
-                std::print(os, "]");
+                e.close_bracket_tk.source_to(os);
             }
-            e.ws1.source_to(os);
         }
         ws2_.source_to(os);
     }
@@ -155,10 +159,12 @@ class stmt_identifier : public statement {
         tc.comment_source(*this, os, indent);
 
         // DEBUG
-        // std::println(std::cerr, "[{}] identifier path: {}", tok().at_line(),
+        // std::println(std::cerr, "[{}] identifier path: {}",
+        // tok().at_line(),
         //              dst_info.id);
         // for (size_t i = 0; i < dst_info.elem_path.size(); i++) {
-        //     std::println(std::cerr, "  {} ; {} ; {}", dst_info.elem_path[i],
+        //     std::println(std::cerr, "  {} ; {} ; {}",
+        //     dst_info.elem_path[i],
         //                  dst_info.type_path[i]->name(),
         //                  dst_info.lea_path[i]);
         // }
@@ -234,8 +240,8 @@ class stmt_identifier : public statement {
             leas.push_back(lea_path[i]);
         }
 
-        // find the first element from the top that has a 'lea' and get accessor
-        // relative to that 'lea'
+        // find the first element from the top that has a 'lea' and get
+        // accessor relative to that 'lea'
         size_t elem_index_with_lea{leas.size()};
         std::string lea;
         while (elem_index_with_lea) {
@@ -319,7 +325,8 @@ class stmt_identifier : public statement {
                             : accum_offset};
                     const char op{(reg_offset == "rsp") ? '-' : '+'};
 
-                    // make nice output with unnecessary assembler such as * 1
+                    // make nice output with unnecessary assembler such as *
+                    // 1
                     // + 0 etc
                     if (type_size == 1) {
                         if (offset != 0) {
