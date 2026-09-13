@@ -21,9 +21,12 @@ class expr_ops_list final : public expression {
     token open_paren_tk_;   // when 'enclosed' the '(' token
     token close_paren_tk_;  // when 'enclosed' the ')' token
     bool enclosed_{};       // (a+b) vs a+b
-    bool is_implied_subexpression_{}; // true when algorithm creates a
-                                      // subexpression although the source does
-                                      // not
+
+    // true when algorithm creates a sub-expression due to operator precedence
+    // change
+    //   e.g:
+    //   1 + 2 * 3 + 4  => 2 * 3 will be implied
+    bool is_implied_subexpression_{};
 
   public:
     expr_ops_list(toc& tc, tokenizer& tz, const bool in_args = false,
