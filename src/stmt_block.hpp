@@ -2,7 +2,6 @@
 // reviewed: 2025-09-28
 
 #include <ostream>
-#include <print>
 #include <string_view>
 #include <vector>
 
@@ -21,22 +20,24 @@
 #include <memory>
 
 class stmt_block final : public statement {
-    bool is_one_statement_{};
+    token open_block_tk_;
     std::vector<std::unique_ptr<statement>> stms_;
-    token ws1_; // leading whitespace
-    token ws2_; // end of block additional whitespace
-    token ws3_; // whitespace after '}'
+    token close_block_tk_;
+    token ws2_;
+    bool is_one_statement_{};
 
   public:
     // note: parser assumes the tokenizer is at a '{' or it is considered a
     // single statement block
     stmt_block(toc& tc, tokenizer& tz)
-        : statement{tz.current_position_token()},
-          is_one_statement_{not tz.is_next_char('{')} {
+        : statement{tz.current_position_token()} {
 
         set_type(tc.get_type_void());
 
-        ws1_ = tz.next_whitespace_token();
+        open_block_tk_ = tz.next_char_token('{');
+        if (open_block_tk_.is_empty()) {
+            is_one_statement_ = true;
+        }
 
         tc.enter_block();
         while (true) {
@@ -44,17 +45,20 @@ class stmt_block final : public statement {
             bool last_statement_considered_no_statement{};
 
             // is it the end of the block?
-            if (tz.is_next_char('}')) {
+            close_block_tk_ = tz.next_char_token('}');
+            if (not close_block_tk_.is_empty()) {
                 if (not is_one_statement_) {
-                    ws3_ = tz.next_whitespace_token();
                     break;
                 }
                 throw compiler_exception{
-                    tz, "unexpected '}' in single statement block"};
+                    close_block_tk_,
+                    "unexpected '}' in single statement block"};
             }
 
             // is it a subblock?
-            if (tz.peek_char() == '{') {
+            token sub_block_open_tk_ = tz.next_char_token('{');
+            if (not sub_block_open_tk_.is_empty()) {
+                tz.put_back_token(sub_block_open_tk_);
                 stms_.emplace_back(std::make_unique<stmt_block>(tc, tz));
                 continue;
             }
@@ -130,15 +134,13 @@ class stmt_block final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         if (not is_one_statement_) {
-            std::print(os, "{{");
+            open_block_tk_.source_to(os);
         }
-        ws1_.source_to(os);
         for (const std::unique_ptr<statement>& s : stms_) {
             s->source_to(os);
         }
         if (not is_one_statement_) {
-            std::print(os, "}}");
-            ws3_.source_to(os);
+            close_block_tk_.source_to(os);
         }
         ws2_.source_to(os);
     }
