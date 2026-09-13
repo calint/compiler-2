@@ -7,15 +7,18 @@
 #include "toc.hpp"
 
 class stmt_def_func_param final : public statement {
+    token type_delim_tk_;
     token type_tk_;
+    token open_array_tk_;
+    token close_array_tk_;
     bool is_array_{};
 
   public:
     stmt_def_func_param(const toc& tc, tokenizer& tz)
-        : statement{tz.next_token()} {
+        : statement{tz.next_token()}, type_delim_tk_(tz.next_char_token(':')) {
         assert(not tok().text().empty());
 
-        if (not tz.is_next_char(':')) {
+        if (type_delim_tk_.is_empty()) {
             // no type defined, set default
             set_type(tc.get_type_default());
             return;
@@ -31,8 +34,10 @@ class stmt_def_func_param final : public statement {
 
         set_type(tc.get_type_or_throw(type_tk_, type_tk_.text()));
 
-        if (tz.is_next_char('[')) {
-            if (not tz.is_next_char(']')) {
+        open_array_tk_ = tz.next_char_token('[');
+        if (not open_array_tk_.is_empty()) {
+            close_array_tk_ = tz.next_char_token(']');
+            if (close_array_tk_.is_empty()) {
                 throw compiler_exception{tz, "expected ']'"};
             }
             is_array_ = true;
@@ -46,10 +51,11 @@ class stmt_def_func_param final : public statement {
         if (type_tk_.text().empty()) {
             return;
         }
-        std::print(os, ":");
+        type_delim_tk_.source_to(os);
         type_tk_.source_to(os);
         if (is_array_) {
-            std::print(os, "[]");
+            open_array_tk_.source_to(os);
+            close_array_tk_.source_to(os);
         }
     }
 
