@@ -18,6 +18,7 @@ class stmt_def_func final : public statement {
     token name_tk_;
     token open_paren_tk_;
     std::vector<stmt_def_func_param> params_;
+    std::vector<token> params_delim_tks_;
     token close_parent_tk_;
     token returns_delim_tk_;
     std::optional<func_return_info> returns_;
@@ -42,12 +43,14 @@ class stmt_def_func final : public statement {
             }
 
             if (counter++) {
-                if (not tz.is_next_char(',')) {
+                token param_delim_tk_ = tz.next_char_token(',');
+                if (param_delim_tk_.is_empty()) {
                     throw compiler_exception{
                         tz,
                         std::format("expected ',' or ')' after parameter '{}'",
                                     params_.back().tok().text())};
                 }
+                params_delim_tks_.emplace_back(param_delim_tk_);
             }
 
             params_.emplace_back(tc, tz);
@@ -58,12 +61,8 @@ class stmt_def_func final : public statement {
             // function returns
             const token type_tk{tz.next_token()};
             const token ident_tk{tz.next_token()};
-
             const type& tp{tc.get_type_or_throw(type_tk, type_tk.text())};
-
             returns_.emplace(type_tk, ident_tk, &tp);
-
-            // set function type to first return type
             set_type(tp);
         } else {
             // no return, set type to 'void'
@@ -96,13 +95,14 @@ class stmt_def_func final : public statement {
         }
         name_tk_.source_to(os);
         open_paren_tk_.source_to(os);
-        size_t i{};
+        const size_t n{params_.size()};
+        size_t counter{};
         for (const stmt_def_func_param& p : params_) {
-            if (i) {
-                std::print(os, ",");
-            }
-            ++i;
             p.source_to(os);
+            ++counter;
+            if (counter != n) {
+                params_delim_tks_[counter - 1].source_to(os);
+            }
         }
         close_parent_tk_.source_to(os);
         if (returns_) {
