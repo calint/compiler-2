@@ -25,13 +25,10 @@ class expr_any final : public statement {
     };
 
     std::vector<expr_variant> vars_;
-    token ws1_;
-    token ws2_;
-    token ws3_;
-    token ws4_;
+    token open_brace_tk_;
+    token close_brace_tk_;
     size_t array_size_{};
     bool is_array_{};
-    bool has_braces_{};
     bool is_identifier_{};
 
   public:
@@ -51,35 +48,21 @@ class expr_any final : public statement {
         // array and destination is not indexed
 
         // check if it is '{ ... }' or identifier e.g. 'str.data'
-        const token tk{tz.next_whitespace_token()};
-        if (tz.peek_char() != '{') {
-            tz.put_back_token(tk);
+
+        open_brace_tk_ = tz.next_char_token('{');
+        if (open_brace_tk_.is_empty()) {
             // todo: comment why expr_type_value
             vars_.emplace_back(expr_type_value{tc, tz, tp});
             is_identifier_ = true;
             return;
         }
-        ws1_ = tk;
-
-        if (not tz.is_next_char('{')) {
-            throw compiler_exception(
-                tz, std::format(
-                        "expected '{{' to open array initializer for type '{}'",
-                        tp.name()));
-        }
-        ws2_ = tz.next_whitespace_token();
-
-        has_braces_ = true;
 
         size_t counter{};
         while (true) {
-            const token t{tz.next_whitespace_token()};
-            if (tz.is_next_char('}')) {
-                ws3_ = t;
-                ws4_ = tz.next_whitespace_token();
+            close_brace_tk_ = tz.next_char_token('}');
+            if (not close_brace_tk_.is_empty()) {
                 break;
             }
-            tz.put_back_token(t);
 
             if (counter++) {
                 if (not tz.is_next_char(',')) {
@@ -101,22 +84,14 @@ class expr_any final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        if (has_braces_) {
-            ws1_.source_to(os);
-            std::print(os, "{{");
-            ws2_.source_to(os);
-        }
+        open_brace_tk_.source_to(os);
         for (const auto [i, el] : std::views::enumerate(vars_)) {
             if (i != 0) {
                 std::print(os, ",");
             }
             std::visit([&os](const auto& e) -> void { e.source_to(os); }, el);
         }
-        if (has_braces_) {
-            ws3_.source_to(os);
-            std::print(os, "}}");
-            ws4_.source_to(os);
-        }
+        close_brace_tk_.source_to(os);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
