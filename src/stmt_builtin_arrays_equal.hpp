@@ -3,7 +3,6 @@
 #include <format>
 #include <optional>
 #include <ostream>
-#include <print>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -17,10 +16,14 @@
 #include "unary_ops.hpp"
 
 class stmt_builtin_arrays_equal final : public expression {
+    token open_paren_tk_;
     stmt_identifier from_;
+    token from_delim_tk_;
     stmt_identifier to_;
+    token to_delim_tk_;
     expr_any count_;
-    token ws1_; // whitespace after ')'
+    token close_paren_tk_;
+
   public:
     stmt_builtin_arrays_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : expression{tk, std::move(uops)} {
@@ -32,45 +35,46 @@ class stmt_builtin_arrays_equal final : public expression {
                                             "on this built-in function"};
         }
 
-        if (not tz.is_next_char('(')) {
+        open_paren_tk_ = tz.next_char_token('(');
+        if (open_paren_tk_.is_empty()) {
             throw compiler_exception{
                 tz, "expected '(' then 'source', 'compare' and 'count'"};
         }
 
         from_ = {tc, {}, tz.next_token(), tz};
 
-        if (not tz.is_next_char(',')) {
+        from_delim_tk_ = tz.next_char_token(',');
+        if (from_delim_tk_.is_empty()) {
             throw compiler_exception{tz,
                                      "expected ',' then 'compare' and 'count'"};
         }
 
         to_ = {tc, {}, tz.next_token(), tz};
 
-        if (not tz.is_next_char(',')) {
+        to_delim_tk_ = tz.next_char_token(',');
+        if (to_delim_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ',' then 'count'"};
         }
 
         count_ = {tc, tz, tc.get_type_default(), true, false, 0};
 
-        if (not tz.is_next_char(')')) {
+        close_paren_tk_ = tz.next_char_token(')');
+        if (close_paren_tk_.is_empty()) {
             throw compiler_exception{tok(), "expected ')' after the argument"};
         }
-
-        ws1_ = tz.next_whitespace_token();
     }
 
     stmt_builtin_arrays_equal() = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        std::print(os, "(");
+        open_paren_tk_.source_to(os);
         from_.source_to(os);
-        std::print(os, ",");
+        from_delim_tk_.source_to(os);
         to_.source_to(os);
-        std::print(os, ",");
+        to_delim_tk_.source_to(os);
         count_.source_to(os);
-        std::print(os, ")");
-        ws1_.source_to(os);
+        close_paren_tk_.source_to(os);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
