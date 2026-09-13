@@ -23,10 +23,8 @@ class stmt_def_dat final : public statement {
         unary_ops uops;
         token tk;
         int64_t value{};
-        token ws1; // whitespace before '{'
-        token ws2; // whitespace after '{'
-        token ws3; // whitespace before '}'
-        token ws4; // whitespace after '}'
+        token open_brace_tk_;
+        token close_brace_tk_;
         bool is_array{};
         size_t array_size{};
         std::vector<elem> elems;
@@ -353,14 +351,13 @@ class stmt_def_dat final : public statement {
 
             // normal case
 
-            el.ws1 = tz.next_whitespace_token();
-            if (not tz.is_next_char('{')) {
+            el.open_brace_tk_ = tz.next_char_token('{');
+            if (el.open_brace_tk_.is_empty()) {
                 throw compiler_exception(
                     tz, std::format(
                             "expected '{{' to open array initializer for '{}'",
                             tp.name()));
             }
-            el.ws2 = tz.next_whitespace_token();
 
             size_t counter{};
             while (true) {
@@ -371,14 +368,13 @@ class stmt_def_dat final : public statement {
                 }
             }
 
-            el.ws3 = tz.next_whitespace_token();
-            if (not tz.is_next_char('}')) {
+            el.close_brace_tk_ = tz.next_char_token('}');
+            if (el.close_brace_tk_.is_empty()) {
                 throw compiler_exception(
                     tz, std::format(
                             "expected '}}' to close array initializer for '{}'",
                             tp.name()));
             }
-            el.ws4 = tz.next_whitespace_token();
 
             if (el.array_size != 0 and el.elems.size() > el.array_size) {
                 throw compiler_exception(
@@ -396,14 +392,13 @@ class stmt_def_dat final : public statement {
 
         // user type array
 
-        el.ws1 = tz.next_whitespace_token();
-        if (not tz.is_next_char('{')) {
+        el.open_brace_tk_ = tz.next_char_token('{');
+        if (el.open_brace_tk_.is_empty()) {
             throw compiler_exception(
                 tz,
                 std::format("expected '{{' to open array initializer for '{}'",
                             tp.name()));
         }
-        el.ws2 = tz.next_whitespace_token();
 
         size_t counter{};
         while (true) {
@@ -414,14 +409,13 @@ class stmt_def_dat final : public statement {
             }
         }
 
-        el.ws3 = tz.next_whitespace_token();
-        if (not tz.is_next_char('}')) {
+        el.close_brace_tk_ = tz.next_char_token('}');
+        if (el.close_brace_tk_.is_empty()) {
             throw compiler_exception(
                 tz,
                 std::format("expected '}}' to close array initializer for '{}'",
                             tp.name()));
         }
-        el.ws4 = tz.next_whitespace_token();
 
         if (array_size != 0 and el.elems.size() > el.array_size) {
             throw compiler_exception(
@@ -470,25 +464,21 @@ class stmt_def_dat final : public statement {
 
         elem el{};
 
-        el.ws1 = tz.next_whitespace_token();
-        if (not tz.is_next_char('{')) {
+        el.open_brace_tk_ = tz.next_char_token('{');
+        if (el.open_brace_tk_.is_empty()) {
             throw compiler_exception(
                 tz,
                 std::format("expected '{{' to open type initializer for '{}'",
                             tp.name()));
         }
-        el.ws2 = tz.next_whitespace_token();
 
         const std::span<const type_field> flds{tp.fields()};
         size_t counter{};
         while (true) {
-            const token tk = tz.next_whitespace_token();
-            if (tz.is_next_char('}')) {
-                el.ws3 = tk;
-                el.ws4 = tz.next_whitespace_token();
+            el.close_brace_tk_ = tz.next_char_token('}');
+            if (not el.close_brace_tk_.is_empty()) {
                 break;
             }
-            tz.put_back_token(tk);
 
             if (counter == flds.size()) {
                 throw compiler_exception{
@@ -535,23 +525,17 @@ class stmt_def_dat final : public statement {
         // array
 
         if (tp.is_built_in()) {
-            elroot.ws1.source_to(os);
-            std::print(os, "{{");
-            elroot.ws2.source_to(os);
+            elroot.open_brace_tk_.source_to(os);
 
             for (size_t counter{}; const elem& e : elroot.elems) {
                 if (counter++) {
                     std::print(os, ",");
                 }
-                e.ws2.source_to(os);
                 e.uops.source_to(os);
                 e.tk.source_to(os);
-                e.ws3.source_to(os);
             }
 
-            elroot.ws3.source_to(os);
-            std::print(os, "}}");
-            elroot.ws4.source_to(os);
+            elroot.close_brace_tk_.source_to(os);
             return;
         }
 
@@ -564,9 +548,7 @@ class stmt_def_dat final : public statement {
                                   const elem& elroot) -> void {
 
         if (not elroot.is_array) {
-            elroot.ws1.source_to(os);
-            std::print(os, "{{");
-            elroot.ws2.source_to(os);
+            elroot.open_brace_tk_.source_to(os);
 
             const std::span<const type_field>& flds{tp.fields()};
             for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
@@ -576,18 +558,14 @@ class stmt_def_dat final : public statement {
                 print_source_field(os, flds[static_cast<size_t>(i)], e);
             }
 
-            elroot.ws3.source_to(os);
-            std::print(os, "}}");
-            elroot.ws4.source_to(os);
+            elroot.close_brace_tk_.source_to(os);
 
             return;
         }
 
         // array
 
-        elroot.ws1.source_to(os);
-        std::print(os, "{{");
-        elroot.ws2.source_to(os);
+        elroot.open_brace_tk_.source_to(os);
 
         for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
             if (i != 0) {
@@ -596,9 +574,7 @@ class stmt_def_dat final : public statement {
             print_source_elem(os, tp, e);
         }
 
-        elroot.ws3.source_to(os);
-        std::print(os, "}}");
-        elroot.ws4.source_to(os);
+        elroot.close_brace_tk_.source_to(os);
     }
 
     static auto print_source_field(std::ostream& os, const type_field& tf,
@@ -622,9 +598,7 @@ class stmt_def_dat final : public statement {
 
             // normal case
 
-            elroot.ws1.source_to(os);
-            std::print(os, "{{");
-            elroot.ws2.source_to(os);
+            elroot.open_brace_tk_.source_to(os);
 
             for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
                 if (i != 0) {
@@ -634,9 +608,7 @@ class stmt_def_dat final : public statement {
                 e.tk.source_to(os);
             }
 
-            elroot.ws3.source_to(os);
-            std::print(os, "}}");
-            elroot.ws4.source_to(os);
+            elroot.close_brace_tk_.source_to(os);
 
             return;
         }
