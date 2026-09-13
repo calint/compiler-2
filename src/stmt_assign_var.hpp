@@ -2,7 +2,6 @@
 // reviewed: 2025-09-28
 
 #include <format>
-#include <print>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -18,13 +17,14 @@
 class stmt_assign_var final : public statement {
     stmt_identifier stmt_ident_;
     expr_any expr_;
-    token ws1_;
+    token equals_tk_;
     size_t array_size_{};
 
   public:
-    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token ws1,
+    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si, token equals_tk,
                     const bool is_array, const size_t array_size)
-        : statement{si.tok()}, stmt_ident_{std::move(si)}, ws1_{ws1} {
+        : statement{si.tok()}, stmt_ident_{std::move(si)},
+          equals_tk_{equals_tk} {
 
         // note: 'ws1' is forwarded by 'stmt_def_var' to make the 'source_to'
         //       accurate when 'stmt_assign_var' is created within the context
@@ -47,8 +47,7 @@ class stmt_assign_var final : public statement {
         // note: all the source info is in 'stmt_ident_'
         // statement::source_to(os);
         stmt_ident_.source_to(os);
-        std::print(os, "=");
-        ws1_.source_to(os);
+        equals_tk_.source_to(os);
         expr_.source_to(os);
     }
 

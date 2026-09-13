@@ -13,28 +13,33 @@
 #include "stmt_assign_var.hpp"
 #include "stmt_const.hpp"
 #include "stmt_identifier.hpp"
+#include "token.hpp"
 #include "type.hpp"
 
 class stmt_def_var final : public statement {
     static constexpr size_t threshold_for_rep_stos{32};
 
     token name_tk_;
+    token type_delim_tk_;
     token type_tk_;
+    token open_bracket_tk_;
     stmt_const array_size_const_;
-    std::unique_ptr<stmt_assign_var> assign_var_;
     size_t array_size_{};
-    token ws1_; // whitespace after '='
-    token ws2_; // whitespace after ']'
+    token close_bracket_tk_;
+    token equals_tk_;
+    std::unique_ptr<stmt_assign_var> assign_var_;
     bool is_array_{};
 
   public:
     stmt_def_var(toc& tc, token tk, tokenizer& tz)
-        : statement{tk}, name_tk_{tz.next_token()} {
+        : statement{tk}, name_tk_{tz.next_token()},
+          type_delim_tk_{tz.next_char_token(':')} {
 
         // check if type declared
-        if (tz.is_next_char(':')) {
+        if (not type_delim_tk_.is_empty()) {
             type_tk_ = tz.next_token();
-            if (tz.is_next_char('[')) {
+            open_bracket_tk_ = tz.next_char_token('[');
+            if (not open_bracket_tk_.is_empty()) {
                 is_array_ = true;
 
                 array_size_const_ = {tc, tz, 0};
@@ -49,12 +54,10 @@ class stmt_def_var final : public statement {
                         static_cast<size_t>(array_size_const_.value());
                 }
 
-                if (not tz.is_next_char(']')) {
-                    throw compiler_exception{type_tk_,
-                                             "expected array size and ']'"};
+                close_bracket_tk_ = tz.next_char_token(']');
+                if (close_bracket_tk_.is_empty()) {
+                    throw compiler_exception{tz, "expected array size and ']'"};
                 }
-
-                ws2_ = tz.next_whitespace_token();
             }
         }
 
@@ -65,9 +68,8 @@ class stmt_def_var final : public statement {
         set_type(tp);
 
         // expect initialization
-        const bool init_required{tz.is_next_char('=')};
-
-        ws1_ = tz.next_whitespace_token();
+        equals_tk_ = tz.next_char_token('=');
+        const bool init_required{not equals_tk_.is_empty()};
 
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
@@ -83,7 +85,7 @@ class stmt_def_var final : public statement {
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
             assign_var_ = std::make_unique<stmt_assign_var>(
-                tc, tz, std::move(si), ws1_, is_array_, array_size_);
+                tc, tz, std::move(si), equals_tk_, is_array_, array_size_);
             if (array_size_ == 0) {
                 array_size_ = assign_var_->array_size();
             }
@@ -100,18 +102,16 @@ class stmt_def_var final : public statement {
         statement::source_to(os);
         name_tk_.source_to(os);
         if (not type_tk_.is_empty()) {
-            std::print(os, ":");
+            type_delim_tk_.source_to(os);
             type_tk_.source_to(os);
             if (is_array_) {
-                std::print(os, "[");
+                open_bracket_tk_.source_to(os);
                 array_size_const_.source_to(os);
-                std::print(os, "]");
-                ws2_.source_to(os);
+                close_bracket_tk_.source_to(os);
             }
         }
         if (assign_var_) {
-            std::print(os, "=");
-            ws1_.source_to(os);
+            equals_tk_.source_to(os);
             assign_var_->expression().source_to(os);
         }
     }

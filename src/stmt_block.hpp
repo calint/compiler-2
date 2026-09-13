@@ -100,9 +100,10 @@ class stmt_block final : public statement {
                 // note: 'unary_ops' not allowed before destination identifier
                 stmt_identifier si{tc, {}, tk, tz};
 
-                if (tz.is_next_char('=')) {
+                token equals_tk{tz.next_char_token('=')};
+                if (not equals_tk.is_empty()) {
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(
-                        tc, tz, std::move(si), token{}, si.is_array(),
+                        tc, tz, std::move(si), equals_tk, si.is_array(),
                         si.array_size()));
 
                 } else if (tz.is_peek_char('(')) {
