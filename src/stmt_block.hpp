@@ -23,7 +23,6 @@ class stmt_block final : public statement {
     token open_block_tk_;
     std::vector<std::unique_ptr<statement>> stms_;
     token close_block_tk_;
-    token ws2_;
     bool is_one_statement_{};
 
   public:
@@ -97,12 +96,6 @@ class stmt_block final : public statement {
                 //       'mov' and 'syscall' are 'stmt_call'
                 stms_.emplace_back(create_statement_in_stmt_block(tc, tz, tk));
             } else {
-                // is it at end of block and there is whitespace before '}'?
-                if (tk.text().empty()) {
-                    // yes, save it as this block whitespace
-                    ws2_ = tk;
-                    continue;
-                }
                 // resolve identifier
                 // note: 'unary_ops' not allowed before destination identifier
                 stmt_identifier si{tc, {}, tk, tz};
@@ -142,7 +135,6 @@ class stmt_block final : public statement {
         if (not is_one_statement_) {
             close_block_tk_.source_to(os);
         }
-        ws2_.source_to(os);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
