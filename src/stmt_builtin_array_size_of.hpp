@@ -12,8 +12,9 @@
 #include "unary_ops.hpp"
 
 class stmt_builtin_array_size_of final : public expression {
+    token open_paren_tk_;
     stmt_identifier stmt_ident_;
-    token ws1_; // whitespace after ')'
+    token close_paren_tk_;
 
   public:
     stmt_builtin_array_size_of(toc& tc, unary_ops uops, token tk, tokenizer& tz)
@@ -26,27 +27,26 @@ class stmt_builtin_array_size_of final : public expression {
                                             "on this built-in function"};
         }
 
-        if (not tz.is_next_char('(')) {
+        open_paren_tk_ = tz.next_char_token('(');
+        if (open_paren_tk_.is_empty()) {
             throw compiler_exception{tz, "expected '(' and identifier"};
         }
 
         stmt_ident_ = {tc, {}, tz.next_token(), tz};
 
-        if (not tz.is_next_char(')')) {
+        close_paren_tk_ = tz.next_char_token(')');
+        if (close_paren_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ')' after the argument"};
         }
-
-        ws1_ = tz.next_whitespace_token();
     }
 
     stmt_builtin_array_size_of() = default;
 
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
-        std::print(os, "(");
+        open_paren_tk_.source_to(os);
         stmt_ident_.source_to(os);
-        std::print(os, ")");
-        ws1_.source_to(os);
+        close_paren_tk_.source_to(os);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
