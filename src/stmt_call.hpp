@@ -17,6 +17,7 @@
 class stmt_call : public expression {
     token open_paren_tk_;
     std::vector<expr_any> args_;
+    std::vector<token> args_delims_tk_;
     token close_paren_tk_;
 
   public:
@@ -41,15 +42,18 @@ class stmt_call : public expression {
             const size_t n{func.params().size()};
             args_.reserve(n);
             for (const auto [i, param] : std::views::enumerate(func.params())) {
-
                 args_.emplace_back(tc, tz, param.get_type(), true, false, 0);
 
                 if (static_cast<size_t>(i) + 1 < n) {
-                    if (not tz.is_next_char(',')) {
+                    token delim_tk{tz.next_char_token(',')};
+                    if (delim_tk.is_empty()) {
                         throw compiler_exception{
                             tz, std::format("expected argument {} named '{}'",
                                             i + 2, param.name())};
+                        // note: +2 because first argument is 0 and next
+                        //       argument is +1
                     }
+                    args_delims_tk_.emplace_back(delim_tk);
                 }
             }
 
@@ -74,7 +78,11 @@ class stmt_call : public expression {
                 break;
             }
             args_.emplace_back(tc, tz, tc.get_type_default(), true, false, 0);
-            expect_arg = tz.is_next_char(',');
+            token delim_tk{tz.next_char_token(',')};
+            expect_arg = not delim_tk.is_empty();
+            if (expect_arg) {
+                args_delims_tk_.emplace_back(delim_tk);
+            }
         }
     }
 
@@ -85,7 +93,7 @@ class stmt_call : public expression {
         open_paren_tk_.source_to(os);
         for (const auto [i, e] : std::views::enumerate(args_)) {
             if (i != 0) {
-                std::print(os, ",");
+                args_delims_tk_[static_cast<size_t>(i - 1)].source_to(os);
             }
             e.source_to(os);
         }
