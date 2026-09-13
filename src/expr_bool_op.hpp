@@ -12,12 +12,13 @@
 class expr_bool_op final : public statement {
     std::vector<token> nots_;
     expr_ops_list lhs_;
+    token ws_pre_op_;
     std::string op_; // '<', '<=', '>', '>=', '==', '!='
+    token ws_post_op_;
     expr_ops_list rhs_;
     bool is_not_{};       // e.g. if not a == b ...
     bool is_shorthand_{}; // e.g. if a ...
     bool is_expression_{};
-    token ws1_;
 
   public:
     expr_bool_op(toc& tc, tokenizer& tz)
@@ -39,7 +40,7 @@ class expr_bool_op final : public statement {
 
         lhs_ = {tc, tz, true};
 
-        ws1_ = tz.next_whitespace_token();
+        ws_pre_op_ = tz.next_whitespace_token();
 
         if (tz.is_next_char('=')) {
             if (not tz.is_next_char('=')) {
@@ -70,6 +71,8 @@ class expr_bool_op final : public statement {
             return;
         }
 
+        ws_post_op_ = tz.next_whitespace_token();
+
         rhs_ = {tc, tz, true};
         resolve_if_op_is_expression();
     }
@@ -82,11 +85,12 @@ class expr_bool_op final : public statement {
             e.source_to(os);
         }
         lhs_.source_to(os);
-        ws1_.source_to(os);
+        ws_pre_op_.source_to(os);
         if (is_shorthand_) {
             return;
         }
         std::print(os, "{}", op_);
+        ws_post_op_.source_to(os);
         rhs_.source_to(os);
     }
 
