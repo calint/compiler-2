@@ -31,8 +31,6 @@ class stmt_identifier : public statement {
 
     std::vector<ident_elem> elems_;
     std::vector<token> elems_delim_tk_;
-    token ws1_;
-    token ws2_;
     std::string path_as_string_;
     size_t array_size_{};
     bool is_array_{};
@@ -87,8 +85,6 @@ class stmt_identifier : public statement {
                 path_as_string_ += tk.text();
                 continue;
             }
-
-            ws2_ = tz.next_whitespace_token();
 
             if (tc.is_func(path_as_string_)) {
                 break;
@@ -149,7 +145,6 @@ class stmt_identifier : public statement {
                 e.close_bracket_tk.source_to(os);
             }
         }
-        ws2_.source_to(os);
     }
 
     // auto compile(toc& tc, std::ostream& os, const size_t indent,
