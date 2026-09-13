@@ -11,6 +11,7 @@
 #include "decouple.hpp"
 #include "null_stream.hpp"
 #include "stmt_assign_var.hpp"
+#include "stmt_const.hpp"
 #include "stmt_identifier.hpp"
 #include "type.hpp"
 
@@ -19,7 +20,7 @@ class stmt_def_var final : public statement {
 
     token name_tk_;
     token type_tk_;
-    token array_size_tk_;
+    stmt_const array_size_const_;
     std::unique_ptr<stmt_assign_var> assign_var_;
     size_t array_size_{};
     token ws1_; // whitespace after '='
@@ -35,16 +36,24 @@ class stmt_def_var final : public statement {
             type_tk_ = tz.next_token();
             if (tz.is_next_char('[')) {
                 is_array_ = true;
-                array_size_tk_ = tz.next_token();
-                if (const std::optional<int64_t> value{toc::parse_constant(
-                        array_size_tk_, array_size_tk_.text())};
-                    value) {
-                    array_size_ = static_cast<size_t>(*value);
+
+                array_size_const_ = {tc, tz, 0};
+
+                if (array_size_const_.has_value()) {
+                    if (array_size_const_.value() < 0) {
+                        throw compiler_exception{
+                            array_size_const_.tok(),
+                            "expected array size as constant greater than 0"};
+                    }
+                    array_size_ =
+                        static_cast<size_t>(array_size_const_.value());
                 }
+
                 if (not tz.is_next_char(']')) {
                     throw compiler_exception{type_tk_,
                                              "expected array size and ']'"};
                 }
+
                 ws2_ = tz.next_whitespace_token();
             }
         }
@@ -95,7 +104,7 @@ class stmt_def_var final : public statement {
             type_tk_.source_to(os);
             if (is_array_) {
                 std::print(os, "[");
-                array_size_tk_.source_to(os);
+                array_size_const_.source_to(os);
                 std::print(os, "]");
                 ws2_.source_to(os);
             }

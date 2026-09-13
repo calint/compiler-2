@@ -68,6 +68,10 @@ class token final {
         return ws_left_.empty() and text_.empty() and ws_right_.empty();
     }
 
+    [[nodiscard]] auto has_whitespace_before() const -> bool {
+        return not ws_left_.empty();
+    }
+
     [[nodiscard]] auto total_length_in_chars() const -> size_t {
         return ws_left_.length() + text_.length() + ws_right_.length();
     }

@@ -243,6 +243,11 @@ func main() {
              array_size_of(worlds.locations)
           ))
 
+    var arr2 : i64[] = { -1, 2 }
+    assert(array_size_of(arr2) == 2)
+    assert(arr2[0] == -1)
+    assert(arr2[1] == 2)
+
     var nm : str
     print(hello)
     loop {

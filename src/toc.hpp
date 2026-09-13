@@ -1278,6 +1278,16 @@ class toc final {
         return std::format("{}:{}", line, col);
     }
 
+    [[nodiscard]] auto get_const(const std::string_view& name) const
+        -> int64_t {
+
+        return constants_.get_const_ref(name).value;
+    }
+
+    [[nodiscard]] auto has_const(const std::string_view& name) const -> bool {
+        return constants_.has(name);
+    }
+
   private:
     // -------------------------------------------------------------------------
     // private non-special functions (sorted alphabetically)

@@ -6,12 +6,13 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "statement.hpp"
+#include "stmt_const.hpp"
 #include "toc.hpp"
 
 class stmt_def_type_field final : public statement {
     token type_tk_;
-    token array_size_tk_;
-    token ws1_;
+    stmt_const array_size_const_;
+    token ws1_; // whitespace after ']'
     size_t array_size_{};
     bool is_array_{};
 
@@ -24,30 +25,36 @@ class stmt_def_type_field final : public statement {
         if (tk.text().empty()) {
             throw compiler_exception{tk, "expected field name"};
         }
+
         // is the type specified?
         if (not tz.is_next_char(':')) {
             // it is not
             return;
         }
+
         // get type name
         type_tk_ = tz.next_token();
+
+        // array?
         if (tz.is_next_char('[')) {
             is_array_ = true;
-            array_size_tk_ = tz.next_token();
 
-            if (const std::optional<int64_t> value{
-                    toc::parse_constant(array_size_tk_, array_size_tk_.text())};
-                value) {
-                array_size_ = static_cast<size_t>(*value);
-            } else {
-                throw compiler_exception{array_size_tk_,
-                                         "expected array size as constant"};
+            array_size_const_ = {tc, tz, 0};
+
+            if (not array_size_const_.has_value() or
+                array_size_const_.value() < 1) {
+                throw compiler_exception{
+                    array_size_const_.tok(),
+                    "expected array size as constant greater than 0"};
             }
+
+            array_size_ = static_cast<size_t>(array_size_const_.value());
 
             if (not tz.is_next_char(']')) {
-                throw compiler_exception{array_size_tk_,
+                throw compiler_exception{array_size_const_.tok(),
                                          "expected ']' after array size"};
             }
+
             ws1_ = tz.next_whitespace_token();
         }
     }
@@ -63,7 +70,7 @@ class stmt_def_type_field final : public statement {
         type_tk_.source_to(os);
         if (is_array_) {
             std::print(os, "[");
-            array_size_tk_.source_to(os);
+            array_size_const_.source_to(os);
             std::print(os, "]");
             ws1_.source_to(os);
         }

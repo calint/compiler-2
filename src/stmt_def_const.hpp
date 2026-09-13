@@ -1,12 +1,12 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include <optional>
 #include <string>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "statement.hpp"
+#include "stmt_const.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
@@ -14,8 +14,7 @@
 
 class stmt_def_const final : public statement {
     token name_tk_;
-    unary_ops uops_;
-    token value_tk_;
+    stmt_const const_;
 
   public:
     stmt_def_const(toc& tc, token tk, tokenizer& tz)
@@ -30,23 +29,15 @@ class stmt_def_const final : public statement {
                                      "expected '=' and constant value");
         }
 
-        uops_ = unary_ops{tz};
-        value_tk_ = tz.next_token();
-        std::string num_str{uops_.to_string()};
-        num_str += value_tk_.text();
+        const_ = {tc, tz, 0};
 
-        int64_t value{};
-        if (std::optional<int64_t> num{
-                toc::parse_constant(value_tk_, num_str)}) {
-            value = *num;
-        } else {
-            throw compiler_exception(
-                value_tk_, std::format("cannot parse constant '{}'", num_str));
+        if (not const_.has_value()) {
+            throw compiler_exception(const_.tok(), "expected constant value");
         }
 
-        set_type(tc.get_type_default());
+        set_type(tc.get_type_void());
 
-        tc.add_const(name_tk_, name_tk_.text(), value);
+        tc.add_const(name_tk_, name_tk_.text(), const_.value());
     }
 
     stmt_def_const() = default;
@@ -55,8 +46,7 @@ class stmt_def_const final : public statement {
         statement::source_to(os);
         name_tk_.source_to(os);
         std::print(os, "=");
-        uops_.source_to(os);
-        value_tk_.source_to(os);
+        const_.source_to(os);
     }
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,

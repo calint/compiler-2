@@ -1049,99 +1049,169 @@ main:
             exit_13_38_240_5_end:
         if_13_26_240_5_end:
     assert_240_5_end:
+    mov qword [rsp - 981], -1
+    mov qword [rsp - 973], 2
+    cmp_247_12:
+        mov r14, 2
+    cmp r14, 2
+    sete r15b
+    bool_end_247_12:
+    assert_247_5:
+        if_13_29_247_5:
+        cmp_13_29_247_5:
+        cmp r15b, 0
+        jne if_13_26_247_5_end
+        if_13_29_247_5_code:
+            mov rdi, 1
+            exit_13_38_247_5:
+                    mov rax, 60
+                syscall
+            exit_13_38_247_5_end:
+        if_13_26_247_5_end:
+    assert_247_5_end:
+    cmp_248_12:
+    mov r14, 0
+    mov r13, 248
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 2
+    cmovge rbp, r13
+    jge panic_bounds
+    cmp qword [rsp + r14 * 8 - 981], -1
+    sete r15b
+    bool_end_248_12:
+    assert_248_5:
+        if_13_29_248_5:
+        cmp_13_29_248_5:
+        cmp r15b, 0
+        jne if_13_26_248_5_end
+        if_13_29_248_5_code:
+            mov rdi, 1
+            exit_13_38_248_5:
+                    mov rax, 60
+                syscall
+            exit_13_38_248_5_end:
+        if_13_26_248_5_end:
+    assert_248_5_end:
+    cmp_249_12:
+    mov r14, 1
+    mov r13, 249
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 2
+    cmovge rbp, r13
+    jge panic_bounds
+    cmp qword [rsp + r14 * 8 - 981], 2
+    sete r15b
+    bool_end_249_12:
+    assert_249_5:
+        if_13_29_249_5:
+        cmp_13_29_249_5:
+        cmp r15b, 0
+        jne if_13_26_249_5_end
+        if_13_29_249_5_code:
+            mov rdi, 1
+            exit_13_38_249_5:
+                    mov rax, 60
+                syscall
+            exit_13_38_249_5_end:
+        if_13_26_249_5_end:
+    assert_249_5_end:
     xor al, al
-    lea rdi, [rsp - 1093]
+    lea rdi, [rsp - 1109]
     mov rcx, 128
     rep stosb
-    print_247_5:
+    print_252_5:
         mov rdx, 21
         lea rsi, [rsp - 21]
-        sys_print_24_4_247_5:
+        sys_print_24_4_252_5:
                 mov rax, 1
                 mov rdi, 0
             syscall
-        sys_print_24_4_247_5_end:
-    print_247_5_end:
-    loop_248_5:
-        print_249_9:
+        sys_print_24_4_252_5_end:
+    print_252_5_end:
+    loop_253_5:
+        print_254_9:
             mov rdx, 12
             lea rsi, [rsp - 33]
-            sys_print_24_4_249_9:
+            sys_print_24_4_254_9:
                     mov rax, 1
                     mov rdi, 0
                 syscall
-            sys_print_24_4_249_9_end:
-        print_249_9_end:
-        str_in_250_9:
+            sys_print_24_4_254_9_end:
+        print_254_9_end:
+        str_in_255_9:
                 mov rax, 0
                 mov rdi, 0
-                lea rsi, [rsp - 1092]
+                lea rsi, [rsp - 1108]
                 mov rdx, 127
             syscall
-                mov byte [rsp - 1093], al
-                sub byte [rsp - 1093], 1
-        str_in_250_9_end:
-        if_251_12:
-        cmp_251_12:
-        cmp byte [rsp - 1093], 0
-        jne if_253_19
-        if_251_12_code:
-            jmp loop_248_5_end
-        jmp if_251_9_end
-        if_253_19:
-        cmp_253_19:
-        cmp byte [rsp - 1093], 4
-        jg if_else_251_9
-        if_253_19_code:
-            print_254_13:
+                mov byte [rsp - 1109], al
+                sub byte [rsp - 1109], 1
+        str_in_255_9_end:
+        if_256_12:
+        cmp_256_12:
+        cmp byte [rsp - 1109], 0
+        jne if_258_19
+        if_256_12_code:
+            jmp loop_253_5_end
+        jmp if_256_9_end
+        if_258_19:
+        cmp_258_19:
+        cmp byte [rsp - 1109], 4
+        jg if_else_256_9
+        if_258_19_code:
+            print_259_13:
                 mov rdx, 20
                 lea rsi, [rsp - 53]
-                sys_print_24_4_254_13:
-                        mov rax, 1
-                        mov rdi, 0
-                    syscall
-                sys_print_24_4_254_13_end:
-            print_254_13_end:
-            jmp loop_248_5
-        jmp if_251_9_end
-        if_else_251_9:
-            print_257_13:
-                mov rdx, 6
-                lea rsi, [rsp - 59]
-                sys_print_24_4_257_13:
-                        mov rax, 1
-                        mov rdi, 0
-                    syscall
-                sys_print_24_4_257_13_end:
-            print_257_13_end:
-            str_out_258_13:
-                    mov rax, 1
-                    mov rdi, 0
-                    lea rsi, [rsp - 1092]
-                    movsx rdx, byte [rsp - 1093]
-                syscall
-            str_out_258_13_end:
-            print_259_13:
-                mov rdx, 1
-                lea rsi, [rsp - 60]
                 sys_print_24_4_259_13:
                         mov rax, 1
                         mov rdi, 0
                     syscall
                 sys_print_24_4_259_13_end:
             print_259_13_end:
-            print_260_13:
-                mov rdx, 1
-                lea rsi, [rsp - 61]
-                sys_print_24_4_260_13:
+            jmp loop_253_5
+        jmp if_256_9_end
+        if_else_256_9:
+            print_262_13:
+                mov rdx, 6
+                lea rsi, [rsp - 59]
+                sys_print_24_4_262_13:
                         mov rax, 1
                         mov rdi, 0
                     syscall
-                sys_print_24_4_260_13_end:
-            print_260_13_end:
-        if_251_9_end:
-    jmp loop_248_5
-    loop_248_5_end:
+                sys_print_24_4_262_13_end:
+            print_262_13_end:
+            str_out_263_13:
+                    mov rax, 1
+                    mov rdi, 0
+                    lea rsi, [rsp - 1108]
+                    movsx rdx, byte [rsp - 1109]
+                syscall
+            str_out_263_13_end:
+            print_264_13:
+                mov rdx, 1
+                lea rsi, [rsp - 60]
+                sys_print_24_4_264_13:
+                        mov rax, 1
+                        mov rdi, 0
+                    syscall
+                sys_print_24_4_264_13_end:
+            print_264_13_end:
+            print_265_13:
+                mov rdx, 1
+                lea rsi, [rsp - 61]
+                sys_print_24_4_265_13:
+                        mov rax, 1
+                        mov rdi, 0
+                    syscall
+                sys_print_24_4_265_13_end:
+            print_265_13_end:
+        if_256_9_end:
+    jmp loop_253_5
+    loop_253_5_end:
     mov rax, 60
     mov rdi, 0
     syscall

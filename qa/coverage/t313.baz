@@ -1,0 +1,12 @@
+const n = -1
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+func assert(x : bool) if not x exit(1)
+func main() {
+    var values : i8[-n]
+    values[0] = 7
+    assert(values[0] == 7)
+}

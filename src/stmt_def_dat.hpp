@@ -2,7 +2,6 @@
 // reviewed: 2025-09-28
 
 #include <format>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -11,6 +10,7 @@
 #include "decouple.hpp"
 #include "null_stream.hpp"
 #include "statement.hpp"
+#include "stmt_const.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
@@ -34,7 +34,7 @@ class stmt_def_dat final : public statement {
 
     token name_tk_;
     token type_tk_;
-    token array_size_tk_;
+    stmt_const array_size_const_;
     token ws1_; // whitespace after ']'
     token ws2_; // whitespace after '='
     elem elroot_;
@@ -56,16 +56,22 @@ class stmt_def_dat final : public statement {
             type_tk_ = tz.next_token();
             if (tz.is_next_char('[')) {
                 is_array = true;
-                array_size_tk_ = tz.next_token();
-                if (const std::optional<int64_t> value{toc::parse_constant(
-                        array_size_tk_, array_size_tk_.text())};
-                    value) {
-                    array_size = static_cast<size_t>(*value);
+
+                array_size_const_ = {tc, tz, 0};
+
+                if (array_size_const_.value() < 0) {
+                    throw compiler_exception{
+                        array_size_const_.tok(),
+                        "expected array size to be greater than 0"};
                 }
+
+                array_size = static_cast<size_t>(array_size_const_.value());
+
                 if (not tz.is_next_char(']')) {
                     throw compiler_exception{type_tk_,
                                              "expected array size and ']'"};
                 }
+
                 ws1_ = tz.next_whitespace_token();
             }
         }
@@ -112,7 +118,7 @@ class stmt_def_dat final : public statement {
             type_tk_.source_to(os);
             if (elroot_.is_array) {
                 std::print(os, "[");
-                array_size_tk_.source_to(os);
+                array_size_const_.source_to(os);
                 std::print(os, "]");
                 ws1_.source_to(os);
             }
@@ -165,6 +171,7 @@ class stmt_def_dat final : public statement {
                                  const elem& elroot) -> void {
 
         if (not elroot.is_array) {
+            std::println(os, "; {}: {}", nm, tp.name());
             compile_data_elem(tc, os, nm, tp, elroot);
             return;
         }
