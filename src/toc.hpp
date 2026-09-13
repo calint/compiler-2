@@ -273,12 +273,12 @@ class toc final {
 
     auto add_dat(const statement* stmt) -> void {
         if (not is_in_main()) {
-            throw compiler_exception(stmt->tok(),
-                                     "dat can only be added in function main");
+            throw compiler_exception(
+                stmt->tok(), "'dat' can only be added in function 'main'");
         }
         if (frames_.back().has_non_data_var_been_added()) {
-            throw compiler_exception(stmt->tok(),
-                                     "dat can only be added before any var");
+            throw compiler_exception(
+                stmt->tok(), "'dat' can only be added before any 'var'");
         }
         data_.emplace_back(stmt);
     }
