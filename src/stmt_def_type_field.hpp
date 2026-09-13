@@ -10,7 +10,10 @@
 #include "toc.hpp"
 
 class stmt_def_type_field final : public statement {
+    token type_delim_tk_;
     token type_tk_;
+    token open_bracket_tk_;
+    token close_bracket_tk_;
     stmt_const array_size_const_;
     token ws1_; // whitespace after ']'
     size_t array_size_{};
@@ -27,7 +30,8 @@ class stmt_def_type_field final : public statement {
         }
 
         // is the type specified?
-        if (not tz.is_next_char(':')) {
+        type_delim_tk_ = tz.next_char_token(':');
+        if (type_delim_tk_.is_empty()) {
             // it is not
             return;
         }
@@ -36,7 +40,8 @@ class stmt_def_type_field final : public statement {
         type_tk_ = tz.next_token();
 
         // array?
-        if (tz.is_next_char('[')) {
+        open_bracket_tk_ = tz.next_char_token('[');
+        if (not open_bracket_tk_.is_empty()) {
             is_array_ = true;
 
             array_size_const_ = {tc, tz, 0};
@@ -50,12 +55,11 @@ class stmt_def_type_field final : public statement {
 
             array_size_ = static_cast<size_t>(array_size_const_.value());
 
-            if (not tz.is_next_char(']')) {
+            close_bracket_tk_ = tz.next_char_token(']');
+            if (close_bracket_tk_.is_empty()) {
                 throw compiler_exception{array_size_const_.tok(),
                                          "expected ']' after array size"};
             }
-
-            ws1_ = tz.next_whitespace_token();
         }
     }
 
@@ -66,12 +70,12 @@ class stmt_def_type_field final : public statement {
         if (type_tk_.is_empty()) {
             return;
         }
-        std::print(os, ":");
+        type_delim_tk_.source_to(os);
         type_tk_.source_to(os);
         if (is_array_) {
-            std::print(os, "[");
+            open_bracket_tk_.source_to(os);
             array_size_const_.source_to(os);
-            std::print(os, "]");
+            close_bracket_tk_.source_to(os);
             ws1_.source_to(os);
         }
     }
