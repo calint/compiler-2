@@ -15,7 +15,6 @@ class stmt_def_type_field final : public statement {
     token open_bracket_tk_;
     token close_bracket_tk_;
     stmt_const array_size_const_;
-    token ws1_; // whitespace after ']'
     size_t array_size_{};
     bool is_array_{};
 
@@ -76,7 +75,6 @@ class stmt_def_type_field final : public statement {
             open_bracket_tk_.source_to(os);
             array_size_const_.source_to(os);
             close_bracket_tk_.source_to(os);
-            ws1_.source_to(os);
         }
     }
 
