@@ -57,7 +57,7 @@ class stmt_identifier : public statement {
                 }
             }
 
-            token open_bracket_tk{tz.next_char_token('[')};
+            const token open_bracket_tk{tz.next_char_token('[')};
             if (not open_bracket_tk.is_empty()) {
                 elems_.emplace_back(
                     tk, token{},
@@ -65,7 +65,7 @@ class stmt_identifier : public statement {
                                                false, false, 0),
                     token{});
 
-                token close_bracket_tk{tz.next_char_token(']')};
+                const token close_bracket_tk{tz.next_char_token(']')};
                 if (close_bracket_tk.is_empty()) {
                     throw compiler_exception{
                         tz, "expected ']' to close array index expression"};
@@ -76,7 +76,7 @@ class stmt_identifier : public statement {
                 elems_.emplace_back(tk, token{}, nullptr, token{});
             }
 
-            token delim_tk{tz.next_char_token('.')};
+            const token delim_tk{tz.next_char_token('.')};
             if (not delim_tk.is_empty()) {
                 elems_delim_tk_.emplace_back(delim_tk);
                 tk_prv = tk;

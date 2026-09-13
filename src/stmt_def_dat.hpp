@@ -364,7 +364,7 @@ class stmt_def_dat final : public statement {
             while (true) {
                 el.elems.emplace_back(parse_builtin(tc, tz, tp));
                 ++counter;
-                token tk{tz.next_char_token(',')};
+                const token tk{tz.next_char_token(',')};
                 if (tk.is_empty()) {
                     break;
                 }
@@ -407,7 +407,7 @@ class stmt_def_dat final : public statement {
         while (true) {
             el.elems.emplace_back(parse_type(tc, tz, tp));
             ++counter;
-            token tk{tz.next_char_token(',')};
+            const token tk{tz.next_char_token(',')};
             if (tk.is_empty()) {
                 break;
             }
@@ -494,7 +494,7 @@ class stmt_def_dat final : public statement {
             const type_field& tf{flds[counter]};
 
             if (counter++) {
-                token tk{tz.next_char_token(',')};
+                const token tk{tz.next_char_token(',')};
                 if (tk.is_empty()) {
                     throw compiler_exception(
                         tz,

@@ -43,7 +43,7 @@ class stmt_def_func final : public statement {
             }
 
             if (counter++) {
-                token param_delim_tk_ = tz.next_char_token(',');
+                const token param_delim_tk_ = tz.next_char_token(',');
                 if (param_delim_tk_.is_empty()) {
                     throw compiler_exception{
                         tz,

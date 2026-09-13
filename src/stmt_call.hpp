@@ -45,7 +45,7 @@ class stmt_call : public expression {
                 args_.emplace_back(tc, tz, param.get_type(), true, false, 0);
 
                 if (static_cast<size_t>(i) + 1 < n) {
-                    token delim_tk{tz.next_char_token(',')};
+                    const token delim_tk{tz.next_char_token(',')};
                     if (delim_tk.is_empty()) {
                         throw compiler_exception{
                             tz, std::format("expected argument {} named '{}'",
@@ -78,7 +78,7 @@ class stmt_call : public expression {
                 break;
             }
             args_.emplace_back(tc, tz, tc.get_type_default(), true, false, 0);
-            token delim_tk{tz.next_char_token(',')};
+            const token delim_tk{tz.next_char_token(',')};
             expect_arg = not delim_tk.is_empty();
             if (expect_arg) {
                 args_delims_tk_.emplace_back(delim_tk);

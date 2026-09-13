@@ -30,7 +30,7 @@ class stmt_def_type final : public statement {
             if (not close_brace_tk_.is_empty()) {
                 break;
             }
-            token delim_tk{tz.next_char_token(',')};
+            const token delim_tk{tz.next_char_token(',')};
             if (delim_tk.is_empty()) {
                 throw compiler_exception{
                     tz, std::format("expected ',' and more fields in type '{}'",

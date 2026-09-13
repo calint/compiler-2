@@ -55,7 +55,7 @@ class stmt_block final : public statement {
             }
 
             // is it a subblock?
-            token sub_block_open_tk_ = tz.next_char_token('{');
+            const token sub_block_open_tk_ = tz.next_char_token('{');
             if (not sub_block_open_tk_.is_empty()) {
                 tz.put_back_token(sub_block_open_tk_);
                 stms_.emplace_back(std::make_unique<stmt_block>(tc, tz));
@@ -100,7 +100,7 @@ class stmt_block final : public statement {
                 // note: 'unary_ops' not allowed before destination identifier
                 stmt_identifier si{tc, {}, tk, tz};
 
-                token equals_tk{tz.next_char_token('=')};
+                const token equals_tk{tz.next_char_token('=')};
                 if (not equals_tk.is_empty()) {
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(
                         tc, tz, std::move(si), equals_tk, si.is_array(),

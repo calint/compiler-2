@@ -100,7 +100,7 @@ class tokenizer final {
 
         const size_t at_line{at_line_};
         const size_t bgn_ix{char_ix_};
-        std::string_view txt{src_.substr(char_ix_, 1)};
+        const std::string_view txt{src_.substr(char_ix_, 1)};
         ++char_ix_;
         const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_whitespace()};
