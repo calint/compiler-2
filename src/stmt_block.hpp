@@ -20,9 +20,9 @@
 #include <memory>
 
 class stmt_block final : public statement {
-    token open_block_tk_;
+    token open_brace_tk_;
     std::vector<std::unique_ptr<statement>> stms_;
-    token close_block_tk_;
+    token close_brace_tk_;
     bool is_one_statement_{};
 
   public:
@@ -33,8 +33,8 @@ class stmt_block final : public statement {
 
         set_type(tc.get_type_void());
 
-        open_block_tk_ = tz.next_char_token('{');
-        if (open_block_tk_.is_empty()) {
+        open_brace_tk_ = tz.next_char_token('{');
+        if (open_brace_tk_.is_empty()) {
             is_one_statement_ = true;
         }
 
@@ -44,13 +44,13 @@ class stmt_block final : public statement {
             bool last_statement_considered_no_statement{};
 
             // is it the end of the block?
-            close_block_tk_ = tz.next_char_token('}');
-            if (not close_block_tk_.is_empty()) {
+            close_brace_tk_ = tz.next_char_token('}');
+            if (not close_brace_tk_.is_empty()) {
                 if (not is_one_statement_) {
                     break;
                 }
                 throw compiler_exception{
-                    close_block_tk_,
+                    close_brace_tk_,
                     "unexpected '}' in single statement block"};
             }
 
@@ -128,13 +128,13 @@ class stmt_block final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         if (not is_one_statement_) {
-            open_block_tk_.source_to(os);
+            open_brace_tk_.source_to(os);
         }
         for (const std::unique_ptr<statement>& s : stms_) {
             s->source_to(os);
         }
         if (not is_one_statement_) {
-            close_block_tk_.source_to(os);
+            close_brace_tk_.source_to(os);
         }
     }
 
