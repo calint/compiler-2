@@ -58,10 +58,6 @@ class stmt_def_func final : public statement {
             // function returns
             const token type_tk{tz.next_token()};
             const token ident_tk{tz.next_token()};
-            if (tz.is_next_char('.')) {
-                throw compiler_exception{
-                    ident_tk, "return variable name may not contain '.'"};
-            }
 
             const type& tp{tc.get_type_or_throw(type_tk, type_tk.text())};
 
@@ -110,7 +106,6 @@ class stmt_def_func final : public statement {
         }
         close_parent_tk_.source_to(os);
         if (returns_) {
-            // return parameters
             returns_delim_tk_.source_to(os);
             returns_->type_tk.source_to(os);
             returns_->ident_tk.source_to(os);
