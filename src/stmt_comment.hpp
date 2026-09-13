@@ -7,12 +7,11 @@
 class stmt_comment final : public statement {
     unary_ops uops_;
     std::string_view line_;
-    token ws1_;
 
   public:
     stmt_comment(const toc& tc, unary_ops uops, token tk, tokenizer& tz)
-        : statement{tk}, uops_{std::move(uops)}, line_{tz.read_rest_of_line()},
-          ws1_{tz.next_whitespace_token()} {
+        : statement{tk}, uops_{std::move(uops)}, line_{tz.read_rest_of_line()} {
+
         set_type(tc.get_type_void());
     }
 
@@ -22,7 +21,6 @@ class stmt_comment final : public statement {
         uops_.source_to(os);
         statement::source_to(os);
         std::println(os, "{}", line_);
-        ws1_.source_to(os);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
