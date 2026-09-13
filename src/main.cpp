@@ -328,7 +328,8 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     }
 
     // e.g. obj.pos = {x, y}
-    if (not tz.is_next_char('{')) {
+    open_brace_tk_ = tz.next_char_token('{');
+    if (open_brace_tk_.is_empty()) {
         throw compiler_exception{
             tz,
             std::format("expected '{{' to open assign type '{}'", tp.name())};
@@ -338,13 +339,10 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     const size_t nflds{flds.size()};
     size_t counter{};
     while (true) {
-        const token tk{tz.next_whitespace_token()};
-        if (tz.is_next_char('}')) {
-            ws1_ = tk;
-            ws2_ = tz.next_whitespace_token();
+        close_brace_tk_ = tz.next_char_token('}');
+        if (not close_brace_tk_.is_empty()) {
             break;
         }
-        tz.put_back_token(tk);
 
         if (counter == nflds) {
             throw compiler_exception{
@@ -384,7 +382,7 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
     statement::source_to(os);
 
     // not an identifier
-    std::print(os, "{{");
+    open_brace_tk_.source_to(os);
     for (const auto [i, ea] : std::views::enumerate(exprs_)) {
         if (i != 0) {
             std::print(os, ",");
@@ -392,9 +390,7 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
         ea->source_to(os);
     }
 
-    ws1_.source_to(os);
-    std::print(os, "}}");
-    ws2_.source_to(os);
+    close_brace_tk_.source_to(os);
 }
 
 // declared in 'expr_type_value.hpp'
