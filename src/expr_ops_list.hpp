@@ -16,11 +16,11 @@
 // note: quirky parsing but trivial compilation
 class expr_ops_list final : public expression {
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
-    std::vector<char> ops_; // operators between elements in the vector
-    unary_ops uops_;        // unary ops for all result e.g. ~(a+b)
-    token open_paren_tk_;
-    token close_paren_tk_;
-    bool enclosed_{};           //  (a+b) vs a+b
+    std::vector<char> ops_;     // operators between elements in the vector
+    unary_ops uops_;            // unary ops for all result e.g. ~(a+b)
+    token open_paren_tk_;       // when 'enclosed' the '(' token
+    token close_paren_tk_;      // when 'enclosed' the ')' token
+    bool enclosed_{};           // (a+b) vs a+b
     bool is_base_expression_{}; // false when in implied sub-expressions
 
   public:
