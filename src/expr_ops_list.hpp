@@ -16,22 +16,25 @@
 // note: quirky parsing but trivial compilation
 class expr_ops_list final : public expression {
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
-    std::vector<char> ops_;     // operators between elements in the vector
-    unary_ops uops_;            // unary ops for all result e.g. ~(a+b)
-    token open_paren_tk_;       // when 'enclosed' the '(' token
-    token close_paren_tk_;      // when 'enclosed' the ')' token
-    bool enclosed_{};           // (a+b) vs a+b
-    bool is_base_expression_{}; // false when in implied sub-expressions
+    std::vector<char> ops_; // operators between elements in the vector
+    unary_ops uops_;        // unary ops for all result e.g. ~(a+b)
+    token open_paren_tk_;   // when 'enclosed' the '(' token
+    token close_paren_tk_;  // when 'enclosed' the ')' token
+    bool enclosed_{};       // (a+b) vs a+b
+    bool is_implied_subexpression_{}; // true when algorithm creates a
+                                      // subexpression although the source does
+                                      // not
 
   public:
     expr_ops_list(toc& tc, tokenizer& tz, const bool in_args = false,
                   const bool enclosed = false, token open_paren_tk = {},
-                  const bool is_base_expression = true, unary_ops uops = {},
+                  const bool is_implied_subexpression = false,
+                  unary_ops uops = {},
                   const uint8_t first_op_precedence = initial_precedence,
                   std::unique_ptr<statement> first_expression = {})
         : expression{tz.current_position_token()}, uops_{std::move(uops)},
           open_paren_tk_{open_paren_tk}, enclosed_{enclosed},
-          is_base_expression_{is_base_expression} {
+          is_implied_subexpression_{is_implied_subexpression} {
 
         // is this in a recursion?
         if (first_expression) {
@@ -47,10 +50,9 @@ class expr_ops_list final : public expression {
             if (not opt.is_empty()) {
                 // yes, recurse with unary ops
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
-                    tc, tz, in_args, true, opt, true, std::move(uo)));
+                    tc, tz, in_args, true, opt, false, std::move(uo)));
             } else {
-                // no, push back the unary ops to be attached to the
-                // statement
+                // no, push back the unary ops to be parsed by the statement
                 uo.put_back(tz);
                 exprs_.emplace_back(create_statement_in_expr_ops_list(tc, tz));
             }
@@ -120,7 +122,7 @@ class expr_ops_list final : public expression {
                 exprs_.pop_back();
                 // start new recursion
                 exprs_.emplace_back(make_unique<expr_ops_list>(
-                    tc, tz, in_args, false, token{}, false, unary_ops{},
+                    tc, tz, in_args, false, token{}, true, unary_ops{},
                     next_precedence, std::move(last_stmt_in_expr)));
                 // continue parsing expression starting with next operation
                 continue;
@@ -128,7 +130,7 @@ class expr_ops_list final : public expression {
             // is this in an implied sub-expression and precedence has gone
             // lower?
             if (precedence != initial_precedence and
-                next_precedence < precedence and not is_base_expression_) {
+                next_precedence < precedence and is_implied_subexpression_) {
                 // yes, return to the parent expression
                 // e.g., a-b*c+3 => becomes a-(b*c+3) otherwise
                 ops_.pop_back();
@@ -157,7 +159,7 @@ class expr_ops_list final : public expression {
                 // yes, recurse and forward the unary ops to be applied on the
                 // whole sub-expression
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
-                    tc, tz, in_args, true, opt, true, std::move(uo)));
+                    tc, tz, in_args, true, opt, false, std::move(uo)));
                 continue;
             }
 
