@@ -17,9 +17,10 @@
 class expr_bool_ops_list final : public statement {
     std::vector<std::variant<expr_bool_op, expr_bool_ops_list>> bools_;
     std::vector<token> ops_; // 'and' or 'or' ops between element in 'bools_'
-    bool enclosed_{};        // e.g. (a==b and c==d) vs a==b and c==d
     token not_token_;        // e.g. not (a==b and c==d)
-    token ws1_;              // whitespace after parenthesis
+    token open_paren_tk_;
+    token close_paren_tk_;
+    bool enclosed_{}; // e.g. (a==b and c==d) vs a==b and c==d
 
     // helper template for nicer handling of variants using overloaded lambdas
     template <class... Ts> struct overloaded : Ts... {
@@ -28,8 +29,10 @@ class expr_bool_ops_list final : public statement {
 
   public:
     expr_bool_ops_list(toc& tc, token tk, tokenizer& tz,
-                       const bool enclosed = false, token not_token = {})
-        : statement{tk}, enclosed_{enclosed}, not_token_{not_token} {
+                       const bool enclosed = false, token not_token = {},
+                       token open_paren_tk = {})
+        : statement{tk}, not_token_{not_token}, open_paren_tk_{open_paren_tk},
+          enclosed_{enclosed} {
 
         set_type(tc.get_type_bool());
 
@@ -52,11 +55,12 @@ class expr_bool_ops_list final : public statement {
             // of expression
             const token pos_tk{tz.current_position_token()};
             // is it start of new sub-expression?
-            if (tz.is_next_char('(')) {
+            token opt{tz.next_char_token('(')};
+            if (not opt.is_empty()) {
                 // yes, try as 'expr_bool_ops_list' but it might not be that
                 // e.g.: (t1 + t2) > 3 is not but will compile so further checks
                 // are necessary after the parsing
-                expr_bool_ops_list bol{tc, pos_tk, tz, true, maybe_not_tk};
+                expr_bool_ops_list bol{tc, pos_tk, tz, true, maybe_not_tk, opt};
                 // check if 'expr_bool_ops_list' parsed an expression,
                 // wrongfully, as the shorthand boolean expression
                 //   e.g., not ((t1 + t2) > 2)
@@ -79,10 +83,12 @@ class expr_bool_ops_list final : public statement {
             }
 
             // end of '(...)' enclosed expression?
-            if (enclosed_ and tz.is_next_char(')')) {
-                // yes, done
-                ws1_ = tz.next_whitespace_token();
-                return;
+            if (enclosed_) {
+                close_paren_tk_ = tz.next_char_token(')');
+                if (not close_paren_tk_.is_empty()) {
+                    // yes, done
+                    return;
+                }
             }
 
             // read 'and' or 'or'
@@ -126,7 +132,7 @@ class expr_bool_ops_list final : public statement {
         statement::source_to(os);
         not_token_.source_to(os);
         if (enclosed_) {
-            std::print(os, "(");
+            open_paren_tk_.source_to(os);
         }
         const size_t n{bools_.size()};
         for (size_t i{}; i < n; ++i) {
@@ -137,8 +143,7 @@ class expr_bool_ops_list final : public statement {
             }
         }
         if (enclosed_) {
-            std::print(os, ")");
-            ws1_.source_to(os);
+            close_paren_tk_.source_to(os);
         }
     }
 
