@@ -27,8 +27,7 @@ class program final {
     type type_bool{"bool", toc::size_byte, true};
 
     std::vector<std::unique_ptr<statement>> statements_;
-    toc tc_;    // table of contents
-    token ws1_; // whitespace
+    toc tc_; // table of contents
     size_t stack_size_{};
 
   public:
@@ -80,10 +79,6 @@ class program final {
             } else if (tk.text().starts_with("#")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_comment>(tc_, unary_ops{}, tk, tz));
-            } else if (tk.text().empty()) {
-                // empty space at the end of the file; necessary for source
-                // reproduction to be identical
-                ws1_ = tk;
             } else {
                 throw compiler_exception{
                     tk, std::format("unexpected keyword '{}'", tk.text())};
@@ -97,7 +92,6 @@ class program final {
         for (const std::unique_ptr<statement>& st : statements_) {
             st->source_to(os);
         }
-        ws1_.source_to(os);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent) const -> void {
