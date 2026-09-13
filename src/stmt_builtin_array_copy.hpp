@@ -29,7 +29,7 @@ class stmt_builtin_array_copy final : public statement {
 
         set_type(tc.get_type_void());
 
-        open_paren_tk_ = tz.next_char_token('(');
+        open_paren_tk_ = tz.is_next_char_token('(');
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{
                 tz, "expected '(' and 'from', 'to' and 'count'"};
@@ -37,21 +37,21 @@ class stmt_builtin_array_copy final : public statement {
 
         from_ = {tc, {}, tz.next_token(), tz};
 
-        from_delim_tk_ = tz.next_char_token(',');
+        from_delim_tk_ = tz.is_next_char_token(',');
         if (from_delim_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ',' then 'to' and 'count'"};
         }
 
         to_ = {tc, {}, tz.next_token(), tz};
 
-        to_delim_tk_ = tz.next_char_token(',');
+        to_delim_tk_ = tz.is_next_char_token(',');
         if (to_delim_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ',' then 'count'"};
         }
 
         count_ = {tc, tz, tc.get_type_default(), true, false, 0};
 
-        close_paren_tk_ = tz.next_char_token(')');
+        close_paren_tk_ = tz.is_next_char_token(')');
         if (close_paren_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ')' after the argument"};
         }

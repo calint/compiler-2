@@ -14,6 +14,7 @@
 
 class stmt_def_const final : public statement {
     token name_tk_;
+    token equals_tk_;
     stmt_const const_;
 
   public:
@@ -24,7 +25,8 @@ class stmt_def_const final : public statement {
             throw compiler_exception(name_tk_, "expected name of constant");
         }
 
-        if (not tz.is_next_char('=')) {
+        equals_tk_ = tz.is_next_char_token('=');
+        if (equals_tk_.is_empty()) {
             throw compiler_exception(name_tk_,
                                      "expected '=' and constant value");
         }
@@ -45,7 +47,7 @@ class stmt_def_const final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         name_tk_.source_to(os);
-        std::print(os, "=");
+        equals_tk_.source_to(os);
         const_.source_to(os);
     }
 

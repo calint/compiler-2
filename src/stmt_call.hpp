@@ -27,7 +27,7 @@ class stmt_call : public expression {
         set_type(
             tc.get_func_return_type_or_throw(tok(), statement::identifier()));
 
-        open_paren_tk_ = tz.next_char_token('(');
+        open_paren_tk_ = tz.is_next_char_token('(');
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{tok(), "expected '(' after function name"};
         }
@@ -45,7 +45,7 @@ class stmt_call : public expression {
                 args_.emplace_back(tc, tz, param.get_type(), true, false, 0);
 
                 if (static_cast<size_t>(i) + 1 < n) {
-                    const token delim_tk{tz.next_char_token(',')};
+                    const token delim_tk{tz.is_next_char_token(',')};
                     if (delim_tk.is_empty()) {
                         throw compiler_exception{
                             tz, std::format("expected argument {} named '{}'",
@@ -57,7 +57,7 @@ class stmt_call : public expression {
                 }
             }
 
-            close_paren_tk_ = tz.next_char_token(')');
+            close_paren_tk_ = tz.is_next_char_token(')');
             if (close_paren_tk_.is_empty()) {
                 throw compiler_exception{tz, "expected ')' after arguments"};
             }
@@ -69,7 +69,7 @@ class stmt_call : public expression {
 
         bool expect_arg{};
         while (true) {
-            close_paren_tk_ = tz.next_char_token(')');
+            close_paren_tk_ = tz.is_next_char_token(')');
             if (not close_paren_tk_.is_empty()) {
                 if (expect_arg) {
                     throw compiler_exception(close_paren_tk_,
@@ -78,7 +78,7 @@ class stmt_call : public expression {
                 break;
             }
             args_.emplace_back(tc, tz, tc.get_type_default(), true, false, 0);
-            const token delim_tk{tz.next_char_token(',')};
+            const token delim_tk{tz.is_next_char_token(',')};
             expect_arg = not delim_tk.is_empty();
             if (expect_arg) {
                 args_delims_tk_.emplace_back(delim_tk);

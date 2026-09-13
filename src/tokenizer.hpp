@@ -91,7 +91,7 @@ class tokenizer final {
         return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line};
     }
 
-    [[nodiscard]] auto next_char_token(const char ch) -> token {
+    [[nodiscard]] auto is_next_char_token(const char ch) -> token {
         const std::string_view ws_before{next_whitespace()};
         if (is_eos() or src_[char_ix_] != ch) {
             move_back(ws_before.size());

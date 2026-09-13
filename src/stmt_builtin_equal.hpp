@@ -31,7 +31,7 @@ class stmt_builtin_equal final : public expression {
                                             "on this built-in function"};
         }
 
-        open_paren_tk_ = tz.next_char_token('(');
+        open_paren_tk_ = tz.is_next_char_token('(');
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{
                 tz, "expected '(' then 'source' and 'compare'"};
@@ -39,14 +39,14 @@ class stmt_builtin_equal final : public expression {
 
         lhs_ = {tc, {}, tz.next_token(), tz};
 
-        lhs_delim_tk_ = tz.next_char_token(',');
+        lhs_delim_tk_ = tz.is_next_char_token(',');
         if (lhs_delim_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ',' then 'compare'"};
         }
 
         rhs_ = {tc, {}, tz.next_token(), tz};
 
-        close_paren_tk_ = tz.next_char_token(')');
+        close_paren_tk_ = tz.is_next_char_token(')');
         if (close_paren_tk_.is_empty()) {
             throw compiler_exception{tok(), "expected ')' after the argument"};
         }

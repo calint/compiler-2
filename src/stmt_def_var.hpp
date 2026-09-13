@@ -33,12 +33,12 @@ class stmt_def_var final : public statement {
   public:
     stmt_def_var(toc& tc, token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()},
-          type_delim_tk_{tz.next_char_token(':')} {
+          type_delim_tk_{tz.is_next_char_token(':')} {
 
         // check if type declared
         if (not type_delim_tk_.is_empty()) {
             type_tk_ = tz.next_token();
-            open_bracket_tk_ = tz.next_char_token('[');
+            open_bracket_tk_ = tz.is_next_char_token('[');
             if (not open_bracket_tk_.is_empty()) {
                 is_array_ = true;
 
@@ -54,7 +54,7 @@ class stmt_def_var final : public statement {
                         static_cast<size_t>(array_size_const_.value());
                 }
 
-                close_bracket_tk_ = tz.next_char_token(']');
+                close_bracket_tk_ = tz.is_next_char_token(']');
                 if (close_bracket_tk_.is_empty()) {
                     throw compiler_exception{tz, "expected array size and ']'"};
                 }
@@ -68,7 +68,7 @@ class stmt_def_var final : public statement {
         set_type(tp);
 
         // expect initialization
-        equals_tk_ = tz.next_char_token('=');
+        equals_tk_ = tz.is_next_char_token('=');
         const bool init_required{not equals_tk_.is_empty()};
 
         // add var to toc without causing output by passing a null stream

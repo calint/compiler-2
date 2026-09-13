@@ -15,7 +15,8 @@ class stmt_def_func_param final : public statement {
 
   public:
     stmt_def_func_param(const toc& tc, tokenizer& tz)
-        : statement{tz.next_token()}, type_delim_tk_(tz.next_char_token(':')) {
+        : statement{tz.next_token()},
+          type_delim_tk_(tz.is_next_char_token(':')) {
         assert(not tok().text().empty());
 
         if (type_delim_tk_.is_empty()) {
@@ -34,9 +35,9 @@ class stmt_def_func_param final : public statement {
 
         set_type(tc.get_type_or_throw(type_tk_, type_tk_.text()));
 
-        open_array_tk_ = tz.next_char_token('[');
+        open_array_tk_ = tz.is_next_char_token('[');
         if (not open_array_tk_.is_empty()) {
-            close_array_tk_ = tz.next_char_token(']');
+            close_array_tk_ = tz.is_next_char_token(']');
             if (close_array_tk_.is_empty()) {
                 throw compiler_exception{tz, "expected ']'"};
             }

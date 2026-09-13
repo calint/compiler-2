@@ -28,14 +28,14 @@ class stmt_builtin_address_of final : public expression {
                                             "on this built-in function"};
         }
 
-        open_paren_tk_ = tz.next_char_token('(');
+        open_paren_tk_ = tz.is_next_char_token('(');
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{tz, "expected '(' and identifier"};
         }
 
         stmt_ident_ = {tc, {}, tz.next_token(), tz};
 
-        close_paren_tk_ = tz.next_char_token(')');
+        close_paren_tk_ = tz.is_next_char_token(')');
         if (close_paren_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ')' after the argument"};
         }

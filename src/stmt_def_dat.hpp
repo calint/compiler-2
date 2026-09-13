@@ -44,7 +44,7 @@ class stmt_def_dat final : public statement {
   public:
     stmt_def_dat(toc& tc, token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()},
-          type_delim_tk_{tz.next_char_token(':')} {
+          type_delim_tk_{tz.is_next_char_token(':')} {
 
         if (name_tk_.is_empty()) {
             throw compiler_exception(name_tk_, "expected name of data");
@@ -57,7 +57,7 @@ class stmt_def_dat final : public statement {
         if (not type_delim_tk_.is_empty()) {
             type_tk_ = tz.next_token();
 
-            open_bracket_tk_ = tz.next_char_token('[');
+            open_bracket_tk_ = tz.is_next_char_token('[');
             if (not open_bracket_tk_.is_empty()) {
                 is_array = true;
 
@@ -71,7 +71,7 @@ class stmt_def_dat final : public statement {
 
                 array_size = static_cast<size_t>(array_size_const_.value());
 
-                close_bracket_tk_ = tz.next_char_token(']');
+                close_bracket_tk_ = tz.is_next_char_token(']');
                 if (close_bracket_tk_.is_empty()) {
                     throw compiler_exception{type_tk_,
                                              "expected array size and ']'"};
@@ -86,7 +86,7 @@ class stmt_def_dat final : public statement {
         set_type(tp);
 
         // expect initialization
-        equals_tk_ = tz.next_char_token('=');
+        equals_tk_ = tz.is_next_char_token('=');
         has_init_ = {not equals_tk_.is_empty()};
 
         // add var to toc without causing output by passing a null stream
@@ -352,7 +352,7 @@ class stmt_def_dat final : public statement {
 
             // normal case
 
-            el.open_brace_tk_ = tz.next_char_token('{');
+            el.open_brace_tk_ = tz.is_next_char_token('{');
             if (el.open_brace_tk_.is_empty()) {
                 throw compiler_exception(
                     tz, std::format(
@@ -364,14 +364,14 @@ class stmt_def_dat final : public statement {
             while (true) {
                 el.elems.emplace_back(parse_builtin(tc, tz, tp));
                 ++counter;
-                const token tk{tz.next_char_token(',')};
+                const token tk{tz.is_next_char_token(',')};
                 if (tk.is_empty()) {
                     break;
                 }
                 el.elems_delim_tk_.emplace_back(tk);
             }
 
-            el.close_brace_tk_ = tz.next_char_token('}');
+            el.close_brace_tk_ = tz.is_next_char_token('}');
             if (el.close_brace_tk_.is_empty()) {
                 throw compiler_exception(
                     tz, std::format(
@@ -395,7 +395,7 @@ class stmt_def_dat final : public statement {
 
         // user type array
 
-        el.open_brace_tk_ = tz.next_char_token('{');
+        el.open_brace_tk_ = tz.is_next_char_token('{');
         if (el.open_brace_tk_.is_empty()) {
             throw compiler_exception(
                 tz,
@@ -407,14 +407,14 @@ class stmt_def_dat final : public statement {
         while (true) {
             el.elems.emplace_back(parse_type(tc, tz, tp));
             ++counter;
-            const token tk{tz.next_char_token(',')};
+            const token tk{tz.is_next_char_token(',')};
             if (tk.is_empty()) {
                 break;
             }
             el.elems_delim_tk_.emplace_back(tk);
         }
 
-        el.close_brace_tk_ = tz.next_char_token('}');
+        el.close_brace_tk_ = tz.is_next_char_token('}');
         if (el.close_brace_tk_.is_empty()) {
             throw compiler_exception(
                 tz,
@@ -469,7 +469,7 @@ class stmt_def_dat final : public statement {
 
         elem el{};
 
-        el.open_brace_tk_ = tz.next_char_token('{');
+        el.open_brace_tk_ = tz.is_next_char_token('{');
         if (el.open_brace_tk_.is_empty()) {
             throw compiler_exception(
                 tz,
@@ -480,7 +480,7 @@ class stmt_def_dat final : public statement {
         const std::span<const type_field> flds{tp.fields()};
         size_t counter{};
         while (true) {
-            el.close_brace_tk_ = tz.next_char_token('}');
+            el.close_brace_tk_ = tz.is_next_char_token('}');
             if (not el.close_brace_tk_.is_empty()) {
                 break;
             }
@@ -494,7 +494,7 @@ class stmt_def_dat final : public statement {
             const type_field& tf{flds[counter]};
 
             if (counter++) {
-                const token tk{tz.next_char_token(',')};
+                const token tk{tz.is_next_char_token(',')};
                 if (tk.is_empty()) {
                     throw compiler_exception(
                         tz,

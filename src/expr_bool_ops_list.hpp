@@ -55,7 +55,7 @@ class expr_bool_ops_list final : public statement {
             // of expression
             const token pos_tk{tz.current_position_token()};
             // is it start of new sub-expression?
-            const token opt{tz.next_char_token('(')};
+            const token opt{tz.is_next_char_token('(')};
             if (not opt.is_empty()) {
                 // yes, try as 'expr_bool_ops_list' but it might not be that
                 // e.g.: (t1 + t2) > 3 is not but will compile so further checks
@@ -84,7 +84,7 @@ class expr_bool_ops_list final : public statement {
 
             // end of '(...)' enclosed expression?
             if (enclosed_) {
-                close_paren_tk_ = tz.next_char_token(')');
+                close_paren_tk_ = tz.is_next_char_token(')');
                 if (not close_paren_tk_.is_empty()) {
                     // yes, done
                     return;

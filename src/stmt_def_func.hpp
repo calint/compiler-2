@@ -27,7 +27,7 @@ class stmt_def_func final : public statement {
   public:
     stmt_def_func(toc& tc, token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()},
-          open_paren_tk_(tz.next_char_token('(')) {
+          open_paren_tk_(tz.is_next_char_token('(')) {
 
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{name_tk_,
@@ -37,13 +37,13 @@ class stmt_def_func final : public statement {
         // read parameters definition
         size_t counter{};
         while (true) {
-            close_parent_tk_ = tz.next_char_token(')');
+            close_parent_tk_ = tz.is_next_char_token(')');
             if (not close_parent_tk_.is_empty()) {
                 break;
             }
 
             if (counter++) {
-                const token param_delim_tk_ = tz.next_char_token(',');
+                const token param_delim_tk_ = tz.is_next_char_token(',');
                 if (param_delim_tk_.is_empty()) {
                     throw compiler_exception{
                         tz,
@@ -56,7 +56,7 @@ class stmt_def_func final : public statement {
             params_.emplace_back(tc, tz);
         }
 
-        returns_delim_tk_ = tz.next_char_token(':');
+        returns_delim_tk_ = tz.is_next_char_token(':');
         if (not returns_delim_tk_.is_empty()) {
             // function returns
             const token type_tk{tz.next_token()};

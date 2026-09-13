@@ -328,7 +328,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     }
 
     // e.g. obj.pos = {x, y}
-    open_brace_tk_ = tz.next_char_token('{');
+    open_brace_tk_ = tz.is_next_char_token('{');
     if (open_brace_tk_.is_empty()) {
         throw compiler_exception{
             tz,
@@ -339,7 +339,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     const size_t nflds{flds.size()};
     size_t counter{};
     while (true) {
-        close_brace_tk_ = tz.next_char_token('}');
+        close_brace_tk_ = tz.is_next_char_token('}');
         if (not close_brace_tk_.is_empty()) {
             break;
         }
@@ -351,12 +351,14 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         }
         const type_field& tf{flds[counter]};
         if (counter++) {
-            if (not tz.is_next_char(',')) {
+            const token dt{tz.is_next_char_token(',')};
+            if (dt.is_empty()) {
                 throw compiler_exception{
                     tz, std::format(
                             "expected ',' and value of field '{}' in type '{}'",
                             flds[counter].name, tp.name())};
             }
+            exprs_delims_tk_.emplace_back(dt);
         }
         // create an expression that assigns to field
         // might recurse creating 'expr_type_value'
@@ -385,7 +387,7 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
     open_brace_tk_.source_to(os);
     for (const auto [i, ea] : std::views::enumerate(exprs_)) {
         if (i != 0) {
-            std::print(os, ",");
+            exprs_delims_tk_[static_cast<size_t>(i - 1)].source_to(os);
         }
         ea->source_to(os);
     }

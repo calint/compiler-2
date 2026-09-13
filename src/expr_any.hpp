@@ -49,7 +49,7 @@ class expr_any final : public statement {
 
         // check if it is '{ ... }' or identifier e.g. 'str.data'
 
-        open_brace_tk_ = tz.next_char_token('{');
+        open_brace_tk_ = tz.is_next_char_token('{');
         if (open_brace_tk_.is_empty()) {
             // todo: comment why expr_type_value
             vars_.emplace_back(expr_type_value{tc, tz, tp});
@@ -59,7 +59,7 @@ class expr_any final : public statement {
 
         size_t counter{};
         while (true) {
-            close_brace_tk_ = tz.next_char_token('}');
+            close_brace_tk_ = tz.is_next_char_token('}');
             if (not close_brace_tk_.is_empty()) {
                 break;
             }

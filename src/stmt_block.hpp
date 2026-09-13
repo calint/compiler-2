@@ -33,7 +33,7 @@ class stmt_block final : public statement {
 
         set_type(tc.get_type_void());
 
-        open_brace_tk_ = tz.next_char_token('{');
+        open_brace_tk_ = tz.is_next_char_token('{');
         if (open_brace_tk_.is_empty()) {
             is_one_statement_ = true;
         }
@@ -44,7 +44,7 @@ class stmt_block final : public statement {
             bool last_statement_considered_no_statement{};
 
             // is it the end of the block?
-            close_brace_tk_ = tz.next_char_token('}');
+            close_brace_tk_ = tz.is_next_char_token('}');
             if (not close_brace_tk_.is_empty()) {
                 if (not is_one_statement_) {
                     break;
@@ -55,7 +55,7 @@ class stmt_block final : public statement {
             }
 
             // is it a subblock?
-            const token sub_block_open_tk_ = tz.next_char_token('{');
+            const token sub_block_open_tk_ = tz.is_next_char_token('{');
             if (not sub_block_open_tk_.is_empty()) {
                 tz.put_back_token(sub_block_open_tk_);
                 stms_.emplace_back(std::make_unique<stmt_block>(tc, tz));
@@ -64,8 +64,8 @@ class stmt_block final : public statement {
 
             const token tk{tz.next_token()};
 
-            // no more tokens in the block?
             if (tk.is_empty()) {
+                // no more tokens in the block?
                 if (not is_one_statement_) {
                     throw compiler_exception{tz, "expected '}' to close block"};
                 }
@@ -100,7 +100,7 @@ class stmt_block final : public statement {
                 // note: 'unary_ops' not allowed before destination identifier
                 stmt_identifier si{tc, {}, tk, tz};
 
-                const token equals_tk{tz.next_char_token('=')};
+                const token equals_tk{tz.is_next_char_token('=')};
                 if (not equals_tk.is_empty()) {
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(
                         tc, tz, std::move(si), equals_tk, si.is_array(),

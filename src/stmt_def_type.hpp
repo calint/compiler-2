@@ -16,7 +16,7 @@ class stmt_def_type final : public statement {
   public:
     stmt_def_type(toc& tc, token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()},
-          open_brace_tk_{tz.next_char_token('{')} {
+          open_brace_tk_{tz.is_next_char_token('{')} {
 
         if (open_brace_tk_.is_empty()) {
             throw compiler_exception{
@@ -26,11 +26,11 @@ class stmt_def_type final : public statement {
         while (true) {
             // read field definition with the next token being the name
             fields_.emplace_back(tc, tz.next_token(), tz);
-            close_brace_tk_ = tz.next_char_token('}');
+            close_brace_tk_ = tz.is_next_char_token('}');
             if (not close_brace_tk_.is_empty()) {
                 break;
             }
-            const token delim_tk{tz.next_char_token(',')};
+            const token delim_tk{tz.is_next_char_token(',')};
             if (delim_tk.is_empty()) {
                 throw compiler_exception{
                     tz, std::format("expected ',' and more fields in type '{}'",
