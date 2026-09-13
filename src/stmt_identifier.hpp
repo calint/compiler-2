@@ -30,6 +30,7 @@ class stmt_identifier : public statement {
     };
 
     std::vector<ident_elem> elems_;
+    std::vector<token> elems_delim_tk_;
     token ws1_;
     token ws2_;
     std::string path_as_string_;
@@ -77,7 +78,9 @@ class stmt_identifier : public statement {
                 elems_.emplace_back(tk, token{}, nullptr, token{});
             }
 
-            if (tz.is_next_char('.')) {
+            token delim_tk{tz.next_char_token('.')};
+            if (not delim_tk.is_empty()) {
+                elems_delim_tk_.emplace_back(delim_tk);
                 tk_prv = tk;
                 tk = tz.next_token();
                 path_as_string_.push_back('.');
@@ -132,10 +135,12 @@ class stmt_identifier : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         get_unary_ops().source_to(os);
-        int counter{};
+        size_t counter{};
         for (const ident_elem& e : elems_) {
             if (counter++) {
-                std::print(os, ".");
+                elems_delim_tk_[counter - 2].source_to(os);
+                // note: -2 because counter was incremented and delimiter after
+                //       first element is at 0
             }
             e.name_tk.source_to(os);
             if (e.array_index_expr) {
