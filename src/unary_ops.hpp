@@ -15,11 +15,11 @@
 class toc;
 
 class unary_ops final {
-    token ws1_;             // whitespace before the ops
+    token ws_pre_;          // whitespace before the ops
     std::vector<char> ops_; // the unary ops as character
 
   public:
-    explicit unary_ops(tokenizer& tz) : ws1_{tz.next_whitespace_token()} {
+    explicit unary_ops(tokenizer& tz) : ws_pre_{tz.next_whitespace_token()} {
         while (true) {
             if (tz.is_next_char('~')) {
                 ops_.emplace_back('~');
@@ -42,11 +42,11 @@ class unary_ops final {
         for (const char op : ops_ | std::views::reverse) {
             tz.put_back_char(op);
         }
-        tz.put_back_token(ws1_);
+        tz.put_back_token(ws_pre_);
     }
 
     auto source_to(std::ostream& os) const -> void {
-        ws1_.source_to(os);
+        ws_pre_.source_to(os);
         source_to_without_whitespace(os);
     }
 

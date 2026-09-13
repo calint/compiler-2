@@ -33,16 +33,19 @@ class stmt_def_dat final : public statement {
     };
 
     token name_tk_;
+    token type_delim_tk_;
     token type_tk_;
+    token open_bracket_tk_;
     stmt_const array_size_const_;
-    token ws1_; // whitespace after ']'
-    token ws2_; // whitespace after '='
+    token close_bracket_tk_;
+    token equals_tk_;
     elem elroot_;
     bool has_init_{};
 
   public:
     stmt_def_dat(toc& tc, token tk, tokenizer& tz)
-        : statement{tk}, name_tk_{tz.next_token()} {
+        : statement{tk}, name_tk_{tz.next_token()},
+          type_delim_tk_{tz.next_char_token(':')} {
 
         if (name_tk_.is_empty()) {
             throw compiler_exception(name_tk_, "expected name of data");
@@ -52,9 +55,11 @@ class stmt_def_dat final : public statement {
         size_t array_size{};
 
         // check if type declared
-        if (tz.is_next_char(':')) {
+        if (not type_delim_tk_.is_empty()) {
             type_tk_ = tz.next_token();
-            if (tz.is_next_char('[')) {
+
+            open_bracket_tk_ = tz.next_char_token('[');
+            if (not open_bracket_tk_.is_empty()) {
                 is_array = true;
 
                 array_size_const_ = {tc, tz, 0};
@@ -67,12 +72,11 @@ class stmt_def_dat final : public statement {
 
                 array_size = static_cast<size_t>(array_size_const_.value());
 
-                if (not tz.is_next_char(']')) {
+                close_bracket_tk_ = tz.next_char_token(']');
+                if (close_bracket_tk_.is_empty()) {
                     throw compiler_exception{type_tk_,
                                              "expected array size and ']'"};
                 }
-
-                ws1_ = tz.next_whitespace_token();
             }
         }
 
@@ -83,9 +87,8 @@ class stmt_def_dat final : public statement {
         set_type(tp);
 
         // expect initialization
-        has_init_ = {tz.is_next_char('=')};
-
-        ws2_ = tz.next_whitespace_token();
+        equals_tk_ = tz.next_char_token('=');
+        has_init_ = {not equals_tk_.is_empty()};
 
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
@@ -114,21 +117,19 @@ class stmt_def_dat final : public statement {
         statement::source_to(os);
         name_tk_.source_to(os);
         if (not type_tk_.is_empty()) {
-            std::print(os, ":");
+            type_delim_tk_.source_to(os);
             type_tk_.source_to(os);
             if (elroot_.is_array) {
-                std::print(os, "[");
+                open_bracket_tk_.source_to(os);
                 array_size_const_.source_to(os);
-                std::print(os, "]");
-                ws1_.source_to(os);
+                close_bracket_tk_.source_to(os);
             }
         }
 
         // special case for string
 
         if (elroot_.tk.is_string()) {
-            std::print(os, "=");
-            ws2_.source_to(os);
+            equals_tk_.source_to(os);
             elroot_.tk.source_to(os);
             return;
         }
@@ -139,10 +140,9 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        const type& tp{get_type()};
-        std::print(os, "=");
-        ws2_.source_to(os);
+        equals_tk_.source_to(os);
 
+        const type& tp{get_type()};
         print_source_elem(os, tp, elroot_);
     }
 
