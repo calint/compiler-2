@@ -3,7 +3,6 @@
 
 #include <memory>
 #include <ostream>
-#include <ranges>
 #include <span>
 #include <sstream>
 #include <utility>
@@ -17,20 +16,22 @@
 // note: quirky parsing but trivial compilation
 class expr_ops_list final : public expression {
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
-    std::vector<char> ops_;     // operators between elements in the vector
-    unary_ops uops_;            // unary ops for all result e.g. ~(a+b)
-    token ws1_;                 // whitespace after parenthesis when enclosed
+    std::vector<char> ops_; // operators between elements in the vector
+    unary_ops uops_;        // unary ops for all result e.g. ~(a+b)
+    token open_paren_tk_;
+    token close_paren_tk_;
     bool enclosed_{};           //  (a+b) vs a+b
     bool is_base_expression_{}; // false when in implied sub-expressions
 
   public:
     expr_ops_list(toc& tc, tokenizer& tz, const bool in_args = false,
-                  const bool enclosed = false,
+                  const bool enclosed = false, token open_paren_tk = {},
                   const bool is_base_expression = true, unary_ops uops = {},
                   const uint8_t first_op_precedence = initial_precedence,
                   std::unique_ptr<statement> first_expression = {})
-        : expression{tz.next_whitespace_token()}, uops_{std::move(uops)},
-          enclosed_{enclosed}, is_base_expression_{is_base_expression} {
+        : expression{tz.current_position_token()}, uops_{std::move(uops)},
+          open_paren_tk_{open_paren_tk}, enclosed_{enclosed},
+          is_base_expression_{is_base_expression} {
 
         // is this in a recursion?
         if (first_expression) {
@@ -40,11 +41,13 @@ class expr_ops_list final : public expression {
             // no, read the first expression or start a new recursion
             // e.g. =-(-(b+c)+d)
             unary_ops uo{tz};
+
             // is next a sub-expression?
-            if (tz.is_next_char('(')) {
+            token opt{tz.next_char_token('(')};
+            if (not opt.is_empty()) {
                 // yes, recurse with unary ops
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
-                    tc, tz, in_args, true, true, std::move(uo)));
+                    tc, tz, in_args, true, opt, true, std::move(uo)));
             } else {
                 // no, push back the unary ops to be attached to the
                 // statement
@@ -58,17 +61,18 @@ class expr_ops_list final : public expression {
 
         while (true) { // +a +3
             // if the end of sub-expression
-            if (enclosed_ and tz.is_next_char(')')) {
-                // return from recursion
-                ws1_ = tz.next_whitespace_token();
-                return;
+            if (enclosed_) {
+                close_paren_tk_ = tz.next_char_token(')');
+                if (not close_paren_tk_.is_empty()) {
+                    // return from recursion
+                    return;
+                }
             }
 
             // is it parsed within a function argument?
             if (in_args) {
                 // yes, exit when ',' or ')' is found
                 if (tz.is_peek_char(',') or tz.is_peek_char(')')) {
-                    ws1_ = tz.next_whitespace_token();
                     return;
                 }
             }
@@ -116,8 +120,8 @@ class expr_ops_list final : public expression {
                 exprs_.pop_back();
                 // start new recursion
                 exprs_.emplace_back(make_unique<expr_ops_list>(
-                    tc, tz, in_args, false, false, unary_ops{}, next_precedence,
-                    std::move(last_stmt_in_expr)));
+                    tc, tz, in_args, false, token{}, false, unary_ops{},
+                    next_precedence, std::move(last_stmt_in_expr)));
                 // continue parsing expression starting with next operation
                 continue;
             }
@@ -148,11 +152,12 @@ class expr_ops_list final : public expression {
             unary_ops uo{tz}; // read the unary ops, in this case '-'
 
             // is it a sub-expression?
-            if (tz.is_next_char('(')) {
+            token opt{tz.next_char_token('(')};
+            if (not opt.is_empty()) {
                 // yes, recurse and forward the unary ops to be applied on the
                 // whole sub-expression
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
-                    tc, tz, in_args, true, true, std::move(uo)));
+                    tc, tz, in_args, true, opt, true, std::move(uo)));
                 continue;
             }
 
@@ -173,7 +178,7 @@ class expr_ops_list final : public expression {
     auto source_to(std::ostream& os) const -> void override {
         uops_.source_to(os);
         if (enclosed_) {
-            std::print(os, "(");
+            open_paren_tk_.source_to(os);
         }
         expression::source_to(os); // whitespace
         exprs_[0]->source_to(os);
@@ -188,8 +193,7 @@ class expr_ops_list final : public expression {
         }
 
         if (enclosed_) {
-            std::print(os, ")");
-            ws1_.source_to(os);
+            close_paren_tk_.source_to(os);
         }
     }
 
