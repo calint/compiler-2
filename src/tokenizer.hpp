@@ -31,7 +31,11 @@ class tokenizer final {
     size_t char_ix_{};         // current char index in 'src_'
     std::string_view pos_;     // position in string used for easier debugging
     size_t at_line_{1};
-    std::string_view delimiters_{" \t\r\n(){}[]=,.:+-*/%&|^<>!\0"};
+
+    static constexpr std::string_view delimiters_{
+        " \t\r\n(){}[]=,.:+-*/%&|^<>!\0"};
+
+    static constexpr std::string_view structurals_{"={}[],:"};
 
   public:
     explicit tokenizer(const std::string_view src_str)
@@ -78,8 +82,26 @@ class tokenizer final {
                 (void)next_char();
             }
         }
+
         // not a string
+
         const std::string_view txt{next_token_str()};
+        const size_t end_ix{char_ix_};
+        const std::string_view ws_after{next_whitespace()};
+        return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line};
+    }
+
+    [[nodiscard]] auto next_char_token(const char ch) -> token {
+        const std::string_view ws_before{next_whitespace()};
+        if (src_[char_ix_] != ch) {
+            move_back(ws_before.size());
+            return {};
+        }
+
+        const size_t at_line{at_line_};
+        const size_t bgn_ix{char_ix_};
+        std::string_view txt{src_.substr(char_ix_, 1)};
+        ++char_ix_;
         const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_whitespace()};
         return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line};
@@ -194,6 +216,7 @@ class tokenizer final {
         if (is_eos()) {
             return "";
         }
+
         const size_t bgn_ix{char_ix_};
         while (not is_eos()) {
             const char ch{src_[char_ix_]};

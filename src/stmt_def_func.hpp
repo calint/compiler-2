@@ -16,36 +16,45 @@
 
 class stmt_def_func final : public statement {
     token name_tk_;
+    token open_paren_tk_;
     std::vector<stmt_def_func_param> params_;
-    token ws_after_params_; // whitespace after ')'
+    token close_parent_tk_;
+    token returns_delim_tk_;
     std::optional<func_return_info> returns_;
     stmt_block code_;
 
   public:
     stmt_def_func(toc& tc, token tk, tokenizer& tz)
-        : statement{tk}, name_tk_{tz.next_token()} {
+        : statement{tk}, name_tk_{tz.next_token()},
+          open_paren_tk_(tz.next_char_token('(')) {
 
-        if (not tz.is_next_char('(')) {
+        if (open_paren_tk_.is_empty()) {
             throw compiler_exception{name_tk_,
                                      "expected '(' after function name"};
         }
+
         // read parameters definition
+        size_t counter{};
         while (true) {
-            if (tz.is_next_char(')')) {
+            close_parent_tk_ = tz.next_char_token(')');
+            if (not close_parent_tk_.is_empty()) {
                 break;
             }
-            params_.emplace_back(tc, tz);
-            if (tz.is_next_char(')')) {
-                break;
-            }
-            if (not tz.is_next_char(',')) {
-                throw compiler_exception{
-                    tz, std::format("expected ',' or ')' after parameter '{}'",
+
+            if (counter++) {
+                if (not tz.is_next_char(',')) {
+                    throw compiler_exception{
+                        tz,
+                        std::format("expected ',' or ')' after parameter '{}'",
                                     params_.back().tok().text())};
+                }
             }
+
+            params_.emplace_back(tc, tz);
         }
-        ws_after_params_ = tz.next_whitespace_token();
-        if (tz.is_next_char(':')) {
+
+        returns_delim_tk_ = tz.next_char_token(':');
+        if (not returns_delim_tk_.is_empty()) {
             // function returns
             const token type_tk{tz.next_token()};
             const token ident_tk{tz.next_token()};
@@ -90,23 +99,19 @@ class stmt_def_func final : public statement {
             statement::source_to(os);
         }
         name_tk_.source_to(os);
-        // function has parameters
-        std::print(os, "(");
-        {
-            size_t i{};
-            for (const stmt_def_func_param& p : params_) {
-                if (i) {
-                    std::print(os, ",");
-                }
-                ++i;
-                p.source_to(os);
+        open_paren_tk_.source_to(os);
+        size_t i{};
+        for (const stmt_def_func_param& p : params_) {
+            if (i) {
+                std::print(os, ",");
             }
+            ++i;
+            p.source_to(os);
         }
-        std::print(os, ")");
-        ws_after_params_.source_to(os);
+        close_parent_tk_.source_to(os);
         if (returns_) {
             // return parameters
-            std::print(os, ":");
+            returns_delim_tk_.source_to(os);
             returns_->type_tk.source_to(os);
             returns_->ident_tk.source_to(os);
         }
