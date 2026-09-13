@@ -15,8 +15,9 @@
 #include "stmt_def_func.hpp"
 
 class stmt_call : public expression {
+    token open_paren_tk_;
     std::vector<expr_any> args_;
-    token ws1_;
+    token close_paren_tk_;
 
   public:
     stmt_call(toc& tc, unary_ops uops, token tk, tokenizer& tz)
@@ -25,7 +26,8 @@ class stmt_call : public expression {
         set_type(
             tc.get_func_return_type_or_throw(tok(), statement::identifier()));
 
-        if (not tz.is_next_char('(')) {
+        open_paren_tk_ = tz.next_char_token('(');
+        if (open_paren_tk_.is_empty()) {
             throw compiler_exception{tok(), "expected '(' after function name"};
         }
 
@@ -51,47 +53,43 @@ class stmt_call : public expression {
                 }
             }
 
-            if (not tz.is_next_char(')')) {
+            close_paren_tk_ = tz.next_char_token(')');
+            if (close_paren_tk_.is_empty()) {
                 throw compiler_exception{tz, "expected ')' after arguments"};
             }
 
-        } else {
-
-            // built-in function
-
-            bool expect_arg{};
-            while (true) {
-                if (tz.is_next_char(')')) {
-                    if (expect_arg) {
-                        throw compiler_exception{tz,
-                                                 "expected argument after ','"};
-                    }
-                    break;
-                }
-
-                args_.emplace_back(tc, tz, tc.get_type_default(), true, false,
-                                   0);
-
-                expect_arg = tz.is_next_char(',');
-            }
+            return;
         }
 
-        ws1_ = tz.next_whitespace_token();
+        // built-in function
+
+        bool expect_arg{};
+        while (true) {
+            close_paren_tk_ = tz.next_char_token(')');
+            if (not close_paren_tk_.is_empty()) {
+                if (expect_arg) {
+                    throw compiler_exception(close_paren_tk_,
+                                             "expected argument after ','");
+                }
+                break;
+            }
+            args_.emplace_back(tc, tz, tc.get_type_default(), true, false, 0);
+            expect_arg = tz.is_next_char(',');
+        }
     }
 
     stmt_call() = default;
 
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
-        std::print(os, "(");
+        open_paren_tk_.source_to(os);
         for (const auto [i, e] : std::views::enumerate(args_)) {
             if (i != 0) {
                 std::print(os, ",");
             }
             e.source_to(os);
         }
-        std::print(os, ")");
-        ws1_.source_to(os);
+        close_paren_tk_.source_to(os);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
