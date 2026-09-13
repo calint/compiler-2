@@ -28,6 +28,7 @@ class stmt_def_dat final : public statement {
         bool is_array{};
         size_t array_size{};
         std::vector<elem> elems;
+        std::vector<token> elems_delim_tk_;
     };
 
     token name_tk_;
@@ -363,9 +364,11 @@ class stmt_def_dat final : public statement {
             while (true) {
                 el.elems.emplace_back(parse_builtin(tc, tz, tp));
                 ++counter;
-                if (not tz.is_next_char(',')) {
+                token tk{tz.next_char_token(',')};
+                if (tk.is_empty()) {
                     break;
                 }
+                el.elems_delim_tk_.emplace_back(tk);
             }
 
             el.close_brace_tk_ = tz.next_char_token('}');
@@ -404,9 +407,11 @@ class stmt_def_dat final : public statement {
         while (true) {
             el.elems.emplace_back(parse_type(tc, tz, tp));
             ++counter;
-            if (not tz.is_next_char(',')) {
+            token tk{tz.next_char_token(',')};
+            if (tk.is_empty()) {
                 break;
             }
+            el.elems_delim_tk_.emplace_back(tk);
         }
 
         el.close_brace_tk_ = tz.next_char_token('}');
@@ -488,9 +493,9 @@ class stmt_def_dat final : public statement {
 
             const type_field& tf{flds[counter]};
 
-            // for (const type_field& tf : tp.fields()) {
             if (counter++) {
-                if (not tz.is_next_char(',')) {
+                token tk{tz.next_char_token(',')};
+                if (tk.is_empty()) {
                     throw compiler_exception(
                         tz,
                         std::format("expected ',' and initializer for "
@@ -498,6 +503,7 @@ class stmt_def_dat final : public statement {
                                     tf.name, tp.name(), tf.type().name(),
                                     tf.is_array ? "[]" : ""));
                 }
+                el.elems_delim_tk_.emplace_back(tk);
             }
             el.elems.emplace_back(
                 parse_elem(tc, tz, tf.type(), tf.is_array, tf.array_size));
@@ -529,7 +535,9 @@ class stmt_def_dat final : public statement {
 
             for (size_t counter{}; const elem& e : elroot.elems) {
                 if (counter++) {
-                    std::print(os, ",");
+                    elroot.elems_delim_tk_[counter - 2].source_to(os);
+                    // note: -2 because counter has been incremeneted and first
+                    //       delimiter is after first element
                 }
                 e.uops.source_to(os);
                 e.tk.source_to(os);
@@ -553,7 +561,8 @@ class stmt_def_dat final : public statement {
             const std::span<const type_field>& flds{tp.fields()};
             for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
                 if (i != 0) {
-                    std::print(os, ",");
+                    elroot.elems_delim_tk_[static_cast<size_t>(i - 1)]
+                        .source_to(os);
                 }
                 print_source_field(os, flds[static_cast<size_t>(i)], e);
             }
@@ -569,7 +578,8 @@ class stmt_def_dat final : public statement {
 
         for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
             if (i != 0) {
-                std::print(os, ",");
+                elroot.elems_delim_tk_[static_cast<size_t>(i - 1)].source_to(
+                    os);
             }
             print_source_elem(os, tp, e);
         }
@@ -602,7 +612,8 @@ class stmt_def_dat final : public statement {
 
             for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
                 if (i != 0) {
-                    std::print(os, ",");
+                    elroot.elems_delim_tk_[static_cast<size_t>(i - 1)]
+                        .source_to(os);
                 }
                 e.uops.source_to(os);
                 e.tk.source_to(os);
