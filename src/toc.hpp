@@ -1037,6 +1037,16 @@ class toc final {
         return make_ident_info_or_throw(src_loc_tk, ident);
     }
 
+    [[nodiscard]] static auto make_ident_info_empty() -> ident_info {
+        return {
+            .id{},
+            .elem_path{},
+            .type_path{},
+            .lea_path{},
+            .operand{},
+        };
+    }
+
     [[nodiscard]] auto
     make_ident_info_for_register(const std::string_view reg) const
         -> ident_info {
@@ -1266,16 +1276,6 @@ class toc final {
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}:{}", line, col);
-    }
-
-    [[nodiscard]] static auto make_ident_info_empty() -> ident_info {
-        return {
-            .id{},
-            .elem_path{},
-            .type_path{},
-            .lea_path{},
-            .operand{},
-        };
     }
 
   private:
