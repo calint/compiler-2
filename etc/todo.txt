@@ -1,11 +1,9 @@
 --------------------------------------------------------------------------------
 [ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] stmt_def_type_field: array size specifier to be able to be a const value
+[x] stmt_def_type_field: array size specifier to be able to be a const value
     or numerical
 [ ] token: source_to can remove the escape because the string is already escaped
-[x] stmt_assign_var: validate array sizes (t167)
-[ ] expr_type_value: validate array sizes (t168)
 [ ] reject or handle division by zero
 [ ] validate constants against declared integer width (e.g. i8 argument 300)
 [ ] a way to use characters e.g. 'a' instead of ascii code
@@ -145,6 +143,8 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] stmt_assign_var: validate array sizes (t167)
+[x] expr_type_value: validate array sizes (t168)
 [x] expr_ops_list: remove rsp-changing register save fallback (t286)
 [x] fix empty-array initializer crashes (t275, t277, t278, t279)
 [x] regex is not performant. replace with hand-rolled string operations

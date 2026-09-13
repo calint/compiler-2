@@ -1,0 +1,5 @@
+type person {
+    name : i8[-1]
+}
+
+func main() {}
