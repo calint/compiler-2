@@ -37,7 +37,7 @@ class stmt_def_const final : public statement {
 
         int64_t value{};
         if (std::optional<int64_t> num{
-                toc::parse_to_constant(value_tk_, num_str)}) {
+                toc::parse_constant(value_tk_, num_str)}) {
             value = *num;
         } else {
             throw compiler_exception(

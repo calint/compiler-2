@@ -1546,7 +1546,7 @@ class toc final {
 
         // is 'id' an integer?
         if (const std::optional<int64_t> value{
-                parse_to_constant(src_loc_tk, id.str())};
+                parse_constant(src_loc_tk, id.str())};
             value) {
             return {
                 .id{ident},
@@ -1828,8 +1828,8 @@ class toc final {
 // 'std::from_chars' requiring pointers
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-    [[nodiscard]] static auto parse_to_constant(const token& src_loc_tk,
-                                                const std::string_view str)
+    [[nodiscard]] static auto parse_constant(const token& src_loc_tk,
+                                             const std::string_view str)
         -> std::optional<int64_t> {
 
         // is it hex?

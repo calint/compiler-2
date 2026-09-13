@@ -36,7 +36,7 @@ class stmt_def_var final : public statement {
             if (tz.is_next_char('[')) {
                 is_array_ = true;
                 array_size_tk_ = tz.next_token();
-                if (const std::optional<int64_t> value{toc::parse_to_constant(
+                if (const std::optional<int64_t> value{toc::parse_constant(
                         array_size_tk_, array_size_tk_.text())};
                     value) {
                     array_size_ = static_cast<size_t>(*value);

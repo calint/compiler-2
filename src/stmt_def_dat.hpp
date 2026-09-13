@@ -36,7 +36,7 @@ class stmt_def_dat final : public statement {
     token type_tk_;
     token array_size_tk_;
     token ws1_; // whitespace after ']'
-    token ws2;  // whitespace after '='
+    token ws2_; // whitespace after '='
     elem elroot_;
     bool has_init_{};
 
@@ -57,7 +57,7 @@ class stmt_def_dat final : public statement {
             if (tz.is_next_char('[')) {
                 is_array = true;
                 array_size_tk_ = tz.next_token();
-                if (const std::optional<int64_t> value{toc::parse_to_constant(
+                if (const std::optional<int64_t> value{toc::parse_constant(
                         array_size_tk_, array_size_tk_.text())};
                     value) {
                     array_size = static_cast<size_t>(*value);
@@ -79,7 +79,7 @@ class stmt_def_dat final : public statement {
         // expect initialization
         has_init_ = {tz.is_next_char('=')};
 
-        ws2 = tz.next_whitespace_token();
+        ws2_ = tz.next_whitespace_token();
 
         // add var to toc without causing output by passing a null stream
         null_stream null_strm;
@@ -122,7 +122,7 @@ class stmt_def_dat final : public statement {
 
         if (elroot_.tk.is_string()) {
             std::print(os, "=");
-            ws2.source_to(os);
+            ws2_.source_to(os);
             elroot_.tk.source_to(os);
             return;
         }
@@ -135,7 +135,7 @@ class stmt_def_dat final : public statement {
 
         const type& tp{get_type()};
         std::print(os, "=");
-        ws2.source_to(os);
+        ws2_.source_to(os);
 
         print_source_elem(os, tp, elroot_);
     }
