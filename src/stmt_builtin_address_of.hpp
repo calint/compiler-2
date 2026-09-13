@@ -1,7 +1,6 @@
 #pragma once
 
 #include <ostream>
-#include <print>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -15,7 +14,9 @@
 
 class stmt_builtin_address_of final : public expression {
     stmt_identifier stmt_ident_;
-    token ws1_; // whitespace after ')'
+    token open_paren_tk_;
+    token close_paren_tk_;
+
   public:
     stmt_builtin_address_of(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : expression{tk, std::move(uops)} {
@@ -27,27 +28,26 @@ class stmt_builtin_address_of final : public expression {
                                             "on this built-in function"};
         }
 
-        if (not tz.is_next_char('(')) {
-            throw compiler_exception{tok(), "expected '(' and identifier"};
+        open_paren_tk_ = tz.next_char_token('(');
+        if (open_paren_tk_.is_empty()) {
+            throw compiler_exception{tz, "expected '(' and identifier"};
         }
 
         stmt_ident_ = {tc, {}, tz.next_token(), tz};
 
-        if (not tz.is_next_char(')')) {
-            throw compiler_exception{tok(), "expected ')' after the argument"};
+        close_paren_tk_ = tz.next_char_token(')');
+        if (close_paren_tk_.is_empty()) {
+            throw compiler_exception{tz, "expected ')' after the argument"};
         }
-
-        ws1_ = tz.next_whitespace_token();
     }
 
     stmt_builtin_address_of() = default;
 
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
-        std::print(os, "(");
+        open_paren_tk_.source_to(os);
         stmt_ident_.source_to(os);
-        std::print(os, ")");
-        ws1_.source_to(os);
+        close_paren_tk_.source_to(os);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
