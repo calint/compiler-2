@@ -2,7 +2,6 @@
 
 #include <format>
 #include <ostream>
-#include <print>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -15,9 +14,12 @@
 #include "unary_ops.hpp"
 
 class stmt_builtin_equal final : public expression {
+    token open_paren_tk_;
     stmt_identifier lhs_;
+    token lhs_delim_tk_;
     stmt_identifier rhs_;
-    token ws1_; // whitespace after ')'
+    token close_paren_tk_;
+
   public:
     stmt_builtin_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : expression{tk, std::move(uops)} {
@@ -29,36 +31,36 @@ class stmt_builtin_equal final : public expression {
                                             "on this built-in function"};
         }
 
-        if (not tz.is_next_char('(')) {
+        open_paren_tk_ = tz.next_char_token('(');
+        if (open_paren_tk_.is_empty()) {
             throw compiler_exception{
                 tz, "expected '(' then 'source' and 'compare'"};
         }
 
         lhs_ = {tc, {}, tz.next_token(), tz};
 
-        if (not tz.is_next_char(',')) {
+        lhs_delim_tk_ = tz.next_char_token(',');
+        if (lhs_delim_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ',' then 'compare'"};
         }
 
         rhs_ = {tc, {}, tz.next_token(), tz};
 
-        if (not tz.is_next_char(')')) {
+        close_paren_tk_ = tz.next_char_token(')');
+        if (close_paren_tk_.is_empty()) {
             throw compiler_exception{tok(), "expected ')' after the argument"};
         }
-
-        ws1_ = tz.next_whitespace_token();
     }
 
     stmt_builtin_equal() = default;
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        std::print(os, "(");
+        open_paren_tk_.source_to(os);
         lhs_.source_to(os);
-        std::print(os, ",");
+        lhs_delim_tk_.source_to(os);
         rhs_.source_to(os);
-        std::print(os, ")");
-        ws1_.source_to(os);
+        close_paren_tk_.source_to(os);
     }
 
     auto compile(toc& tc, std::ostream& os, const size_t indent,
