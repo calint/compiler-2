@@ -303,7 +303,6 @@ class stmt_def_dat final : public statement {
             e.uops.source_to_without_whitespace(os);
             std::print(os, "{}", e.value);
         }
-
         std::println(os);
 
         // pad remaining array with 0
@@ -571,9 +570,7 @@ class stmt_def_dat final : public statement {
                 }
                 print_source_field(os, flds[static_cast<size_t>(i)], e);
             }
-
             elroot.close_brace_tk_.source_to(os);
-
             return;
         }
 
@@ -614,7 +611,6 @@ class stmt_def_dat final : public statement {
             // normal case
 
             elroot.open_brace_tk_.source_to(os);
-
             if (not elroot.elems.empty()) {
                 elroot.elems.front().source_to(os);
                 for (const auto [d, e] :
@@ -625,7 +621,6 @@ class stmt_def_dat final : public statement {
                 }
             }
             elroot.close_brace_tk_.source_to(os);
-
             return;
         }
 

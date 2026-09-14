@@ -104,6 +104,7 @@ class stmt_def_func final : public statement {
             }
         }
         close_parent_tk_.source_to(os);
+
         if (returns_) {
             returns_delim_tk_.source_to(os);
             returns_->type_tk.source_to(os);
