@@ -144,27 +144,10 @@ class stmt_identifier : public statement {
         }
     }
 
-    // auto compile(toc& tc, std::ostream& os, const size_t indent,
-    //              const std::string_view dst) const -> void override {
-    //
-    //     std::unreachable();
-    // }
-
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
         tc.comment_source(*this, os, indent);
-
-        // DEBUG
-        // std::println(std::cerr, "[{}] identifier path: {}",
-        // tok().at_line(),
-        //              dst_info.id);
-        // for (size_t i = 0; i < dst_info.elem_path.size(); i++) {
-        //     std::println(std::cerr, "  {} ; {} ; {}",
-        //     dst_info.elem_path[i],
-        //                  dst_info.type_path[i]->name(),
-        //                  dst_info.lea_path[i]);
-        // }
 
         const ident_info src_info{tc.make_ident_info(*this)};
 
