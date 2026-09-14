@@ -43,13 +43,6 @@ class expr_any final : public statement {
         // the basic case
         if (not is_array) {
             vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
-            std::visit(overloaded{
-                           [this](const expr_type_value& expression) -> void {
-                               set_type(expression.get_type());
-                           },
-                           [](const auto&) -> void {},
-                       },
-                       vars_.back());
             return;
         }
 
