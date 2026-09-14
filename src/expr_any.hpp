@@ -287,15 +287,11 @@ class expr_any final : public statement {
                     // if not expression assign to destination
                     if (not e.is_expression()) {
                         const ident_info& src_info{tc.make_ident_info(e)};
-                        if (src_info.is_const()) {
-                            tc.asm_cmd(tk, os, indent, "mov",
-                                       dst_info.operand.str(),
-                                       std::to_string(src_info.const_value));
-                            return;
+                        if (not src_info.is_const()) {
+                            std::unreachable();
                         }
-                        tc.asm_cmd(tk, os, indent, "mov",
-                                   dst_info.operand.str(),
-                                   src_info.operand.str());
+                        tc.asm_cmd(tk, os, indent, "mov", dst_info.operand.str(),
+                                   std::format("{}", src_info.const_value));
                         return;
                     }
 
