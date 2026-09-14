@@ -534,7 +534,7 @@ class stmt_def_dat final : public statement {
         if (tp.is_built_in()) {
             elroot.open_brace_tk_.source_to(os);
 
-            for (auto [i, e] : std::views::enumerate(elroot.elems)) {
+            for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
                 if (i != 0) {
                     elroot.elems_delim_tk_[static_cast<size_t>(i - 1)]
                         .source_to(os);

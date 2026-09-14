@@ -129,7 +129,7 @@ class stmt_identifier : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         get_unary_ops().source_to(os);
-        for (auto [i, e] : std::views::enumerate(elems_)) {
+        for (const auto [i, e] : std::views::enumerate(elems_)) {
             if (i != 0) {
                 elems_delim_tk_[static_cast<size_t>(i - 1)].source_to(os);
                 // note: -1 because 'i' is starts at 0 and delimeter after first
