@@ -387,15 +387,14 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
 
     // not an identifier
     open_brace_tk_.source_to(os);
-    for (const auto [i, ea] : std::views::enumerate(exprs_)) {
-        if (i != 0) {
-            exprs_delims_tk_[static_cast<size_t>(i - 1)].source_to(os);
-            // note: -1 because 'i' is starts at 0 and delimeter after first
-            //       element is at index 0
+    if (not exprs_.empty()) {
+        exprs_.front()->source_to(os);
+        for (const auto [d, e] :
+             std::views::zip(exprs_delims_tk_, exprs_ | std::views::drop(1))) {
+            d.source_to(os);
+            e->source_to(os);
         }
-        ea->source_to(os);
     }
-
     close_brace_tk_.source_to(os);
 }
 

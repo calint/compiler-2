@@ -27,6 +27,15 @@ class stmt_identifier : public statement {
         token open_bracket_tk;
         std::unique_ptr<expr_any> array_index_expr;
         token close_bracket_tk;
+
+        auto source_to(std::ostream& os) const -> void {
+            name_tk.source_to(os);
+            if (array_index_expr) {
+                open_bracket_tk.source_to(os);
+                array_index_expr->source_to(os);
+                close_bracket_tk.source_to(os);
+            }
+        }
     };
 
     std::vector<ident_elem> elems_;
@@ -129,17 +138,12 @@ class stmt_identifier : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         get_unary_ops().source_to(os);
-        for (const auto [i, e] : std::views::enumerate(elems_)) {
-            if (i != 0) {
-                elems_delim_tk_[static_cast<size_t>(i - 1)].source_to(os);
-                // note: -1 because 'i' is starts at 0 and delimeter after first
-                //       element is at index 0
-            }
-            e.name_tk.source_to(os);
-            if (e.array_index_expr) {
-                e.open_bracket_tk.source_to(os);
-                e.array_index_expr->source_to(os);
-                e.close_bracket_tk.source_to(os);
+        if (not elems_.empty()) {
+            elems_.front().source_to(os);
+            for (const auto [d, e] : std::views::zip(
+                     elems_delim_tk_, elems_ | std::views::drop(1))) {
+                d.source_to(os);
+                e.source_to(os);
             }
         }
     }

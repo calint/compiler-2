@@ -95,13 +95,13 @@ class stmt_def_func final : public statement {
         }
         name_tk_.source_to(os);
         open_paren_tk_.source_to(os);
-        for (const auto [i, p] : std::views::enumerate(params_)) {
-            if (i != 0) {
-                params_delim_tks_[static_cast<size_t>(i - 1)].source_to(os);
-                // note: -1 because 'i' is starts at 0 and delimeter after first
-                //       element is at index 0
+        if (not params_.empty()) {
+            params_.front().source_to(os);
+            for (const auto [d, e] : std::views::zip(
+                     params_delim_tks_, params_ | std::views::drop(1))) {
+                d.source_to(os);
+                e.source_to(os);
             }
-            p.source_to(os);
         }
         close_parent_tk_.source_to(os);
         if (returns_) {

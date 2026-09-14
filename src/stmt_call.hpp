@@ -89,13 +89,13 @@ class stmt_call : public expression {
     auto source_to(std::ostream& os) const -> void override {
         expression::source_to(os);
         open_paren_tk_.source_to(os);
-        for (const auto [i, e] : std::views::enumerate(args_)) {
-            if (i != 0) {
-                args_delims_tk_[static_cast<size_t>(i - 1)].source_to(os);
-                // note: -1 because 'i' is starts at 0 and delimeter after first
-                //       element is at index 0
+        if (not args_.empty()) {
+            args_.front().source_to(os);
+            for (const auto [d, e] : std::views::zip(
+                     args_delims_tk_, args_ | std::views::drop(1))) {
+                d.source_to(os);
+                e.source_to(os);
             }
-            e.source_to(os);
         }
         close_paren_tk_.source_to(os);
     }

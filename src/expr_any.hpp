@@ -88,13 +88,15 @@ class expr_any final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         open_brace_tk_.source_to(os);
-        for (const auto [i, el] : std::views::enumerate(vars_)) {
-            if (i != 0) {
-                vars_delims_tk_[static_cast<size_t>(i - 1)].source_to(os);
-                // note: -1 because 'i' is starts at 0 and delimeter after first
-                //       element is at index 0
+        if (not vars_.empty()) {
+            std::visit([&os](const auto& e) -> void { e.source_to(os); },
+                       vars_.front());
+            for (const auto [d, e] : std::views::zip(
+                     vars_delims_tk_, vars_ | std::views::drop(1))) {
+                d.source_to(os);
+                std::visit([&os](const auto& el) -> void { el.source_to(os); },
+                           e);
             }
-            std::visit([&os](const auto& e) -> void { e.source_to(os); }, el);
         }
         close_brace_tk_.source_to(os);
     }
