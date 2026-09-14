@@ -117,7 +117,8 @@ class stmt_def_dat final : public statement {
             if (elroot_.is_array and elroot_.array_size == 0 and
                 not elroot_.tk.is_string() and elroot_.elems.empty()) {
                 throw compiler_exception{name_tk_,
-                                         "expected array size greater than 0"};
+                                         "empty arrays require a specified "
+                                         "size"};
             }
         } else {
             elroot_.is_array = is_array;
@@ -350,7 +351,8 @@ class stmt_def_dat final : public statement {
                 const size_t strsz{el.tk.string_size_bytes()};
                 if (strsz == 0 and el.array_size == 0) {
                     throw compiler_exception{
-                        el.tk, "an empty string is not a valid initializer"};
+                        el.tk, "an empty string is not valid for an array "
+                               "with unspecified size"};
                 }
                 if (el.array_size == 0) {
                     el.array_size = strsz;
@@ -382,29 +384,33 @@ class stmt_def_dat final : public statement {
             }
 
             size_t counter{};
-            while (true) {
-                el.elems.emplace_back(parse_builtin(tc, tz, tp));
-                ++counter;
-                const token t{tz.is_next_char_token(',')};
-                if (t.is_empty()) {
-                    break;
+            el.close_brace_tk_ = tz.is_next_char_token('}');
+            if (el.close_brace_tk_.is_empty()) {
+                while (true) {
+                    el.elems.emplace_back(parse_builtin(tc, tz, tp));
+                    ++counter;
+                    const token t{tz.is_next_char_token(',')};
+                    if (t.is_empty()) {
+                        el.close_brace_tk_ = tz.is_next_char_token('}');
+                        break;
+                    }
+                    if (el.array_size != 0 and counter == el.array_size) {
+                        throw compiler_exception{
+                            t,
+                            std::format("expected '}}' after {} element{} in "
+                                        "array of size {}",
+                                        counter, counter == 1 ? "" : "s",
+                                        el.array_size)};
+                    }
+                    el.elems_delim_tk_.emplace_back(t);
                 }
-                el.elems_delim_tk_.emplace_back(t);
             }
 
-            el.close_brace_tk_ = tz.is_next_char_token('}');
             if (el.close_brace_tk_.is_empty()) {
                 throw compiler_exception(
                     tz, std::format(
                             "expected '}}' to close array initializer for '{}'",
                             tp.name()));
-            }
-
-            if (el.array_size != 0 and el.elems.size() > el.array_size) {
-                throw compiler_exception(
-                    tz,
-                    std::format("array size is {} but contains {} initializers",
-                                el.array_size, el.elems.size()));
             }
 
             if (el.array_size == 0) {
@@ -432,6 +438,13 @@ class stmt_def_dat final : public statement {
             if (tk.is_empty()) {
                 break;
             }
+            if (array_size != 0 and counter == array_size) {
+                throw compiler_exception{
+                    tk,
+                    std::format("expected '}}' after {} element{} in array of "
+                                "size {}",
+                                counter, counter == 1 ? "" : "s", array_size)};
+            }
             el.elems_delim_tk_.emplace_back(tk);
         }
 
@@ -441,12 +454,6 @@ class stmt_def_dat final : public statement {
                 tz,
                 std::format("expected '}}' to close array initializer for '{}'",
                             tp.name()));
-        }
-
-        if (array_size != 0 and el.elems.size() > el.array_size) {
-            throw compiler_exception(
-                tz, std::format("array size is {} but contains {} initializers",
-                                array_size, el.elems.size()));
         }
 
         if (array_size == 0) {

@@ -1,2 +1,2 @@
 
-t208.baz:3:37: array size is 1 but contains 2 initializers
+t208.baz:3:33: expected '}' after 1 element in array of size 1

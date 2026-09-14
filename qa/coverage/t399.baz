@@ -1,0 +1,5 @@
+# too many data array elements are rejected before parsing the next element
+
+func main() {
+    dat values : i8[2] = { 1, 2, 3 }
+}
