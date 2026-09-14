@@ -83,9 +83,12 @@ class stmt_builtin_arrays_equal final : public expression {
         tc.comment_source(*this, os, indent);
 
         // allocate the register for rep movs
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rsi");
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rdi");
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rcx");
+        tc.alloc_named_register_or_throw(tok(), os, indent, "rsi",
+                         tc.get_type_default());
+        tc.alloc_named_register_or_throw(tok(), os, indent, "rdi",
+                         tc.get_type_default());
+        tc.alloc_named_register_or_throw(tok(), os, indent, "rcx",
+                         tc.get_type_default());
 
         std::vector<std::string> allocated_scratch_registers;
 
@@ -131,8 +134,7 @@ class stmt_builtin_arrays_equal final : public expression {
                             from_info.type().name(), to_info.type().name())};
         }
 
-        if (not dst_info.is_register() and
-            dst_info.type().name() != get_type().name()) {
+        if (dst_info.type().name() != get_type().name()) {
             throw compiler_exception{
                 tok(), std::format("destination must be type '{}', got '{}'",
                                    get_type().name(), dst_info.type().name())};

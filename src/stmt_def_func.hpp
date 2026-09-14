@@ -202,7 +202,7 @@ class stmt_def_func final : public statement {
             std::println(os, "{}: {}", prm_name, prm_reg);
 
             tc.alloc_named_register_or_throw(prm.tok(), os, indent + 1,
-                                             prm_reg);
+                                             prm_reg, prm_type);
             tc.add_alias({
                 .from{prm_name},
                 .to{prm_reg},

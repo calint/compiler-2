@@ -1,0 +1,10 @@
+# boolean arrays_equal result used in non-boolean arithmetic argument
+
+func take(value : i64) {
+}
+
+func main() {
+    var src : i8[2]
+    var cmp : i8[2]
+    take(arrays_equal(src, cmp, 2))
+}

@@ -192,6 +192,7 @@ class toc final {
     struct allocated_register {
         std::string name;
         std::string source_location;
+        const type* type_ptr;
     };
 
     std::string_view source_;
@@ -355,7 +356,8 @@ class toc final {
 
     auto alloc_named_register_or_throw(const token& src_loc_tk,
                                        std::ostream& os, const size_t indnt,
-                                       const std::string_view reg) -> void {
+                                       const std::string_view reg,
+                                       const type& type_ref) -> void {
 
         comment_start(src_loc_tk, os, indnt);
         std::println(os, "allocate named register '{}'", reg);
@@ -375,14 +377,15 @@ class toc final {
                                         reg, loc)};
         }
 
-        allocated_registers_.emplace_back(std::move(*reg_iter),
-                                          source_location_hr(src_loc_tk));
+        allocated_registers_.emplace_back(
+            std::move(*reg_iter), source_location_hr(src_loc_tk), &type_ref);
         named_registers_.erase(reg_iter);
     }
 
     [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
                                               std::ostream& os,
-                                              const size_t indnt)
+                                              const size_t indnt,
+                                              const type& type_ref)
         -> std::string {
 
         if (scratch_registers_.empty()) {
@@ -401,8 +404,8 @@ class toc final {
                        scratch_registers_.size()};
         usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
 
-        allocated_registers_.emplace_back(std::move(reg),
-                                          source_location_hr(src_loc_tk));
+        allocated_registers_.emplace_back(
+            std::move(reg), source_location_hr(src_loc_tk), &type_ref);
 
         return allocated_registers_.back().name;
     }
@@ -423,7 +426,8 @@ class toc final {
                 // both operands are memory references
                 // use scratch register for transfer
                 const std::string reg{
-                    alloc_scratch_register(src_loc_tk, os, indnt)};
+                    alloc_scratch_register(src_loc_tk, os, indnt,
+                                           get_type_default())};
                 const std::string reg_sized{
                     get_sized_register_operand(reg, dst_size)};
                 indent(os, indnt);
@@ -449,7 +453,8 @@ class toc final {
                 // both operands refer to memory
                 // use in-between scratch register
                 const std::string reg{
-                    alloc_scratch_register(src_loc_tk, os, indnt)};
+                    alloc_scratch_register(src_loc_tk, os, indnt,
+                                           get_type_default())};
                 const std::string reg_sized{
                     get_sized_register_operand(reg, dst_size)};
                 indent(os, indnt);
@@ -485,7 +490,8 @@ class toc final {
             //       register
 
             const std::string reg_sx{
-                alloc_scratch_register(src_loc_tk, os, indnt)};
+                alloc_scratch_register(src_loc_tk, os, indnt,
+                                       get_type_default())};
 
             indent(os, indnt);
             std::println(os, "movsx {}, {}", reg_sx, src_op);
@@ -504,7 +510,8 @@ class toc final {
             // both operands are memory references
             // use scratch register for transfer
             const std::string reg{
-                alloc_scratch_register(src_loc_tk, os, indnt)};
+                alloc_scratch_register(src_loc_tk, os, indnt,
+                                       get_type_default())};
             const std::string reg_sized{
                 get_sized_register_operand(reg, dst_size)};
             indent(os, indnt);
@@ -852,6 +859,8 @@ class toc final {
                 return "ebp";
             case size_word:
                 return "bp";
+            case size_byte:
+                return "bpl";
             default:
                 std::unreachable();
             }
@@ -864,6 +873,8 @@ class toc final {
                 return "esi";
             case size_word:
                 return "si";
+            case size_byte:
+                return "sil";
             default:
                 std::unreachable();
             }
@@ -876,6 +887,8 @@ class toc final {
                 return "edi";
             case size_word:
                 return "di";
+            case size_byte:
+                return "dil";
             default:
                 std::unreachable();
             }
@@ -888,6 +901,8 @@ class toc final {
                 return "esp";
             case size_word:
                 return "sp";
+            case size_byte:
+                return "spl";
             default:
                 std::unreachable();
             }
@@ -1014,13 +1029,11 @@ class toc final {
     make_ident_info_for_register(const std::string_view reg) const
         -> ident_info {
 
-        const size_t reg_size{get_size_from_register_operand(reg)};
-        const type& tpe{get_builtin_type_for_size(reg_size)};
         //? unary ops?
         return {
             .id{reg},
             .elem_path{std::string{reg}},
-            .type_path{&tpe},
+            .type_path{&get_allocated_register_type(reg)},
             .lea_path{""},
             .operand{reg},
             .ident_type{ident_info::ident_type::REGISTER},
@@ -1032,9 +1045,12 @@ class toc final {
                   const size_t bytes_count) -> void {
 
         if (bytes_count > threshold_for_rep_movs) {
-            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rsi");
-            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
-            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
+            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rsi",
+                                          get_type_default());
+            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi",
+                                          get_type_default());
+            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx",
+                                          get_type_default());
 
             toc::asm_lea(os, indnt, "rsi", src);
             toc::asm_lea(os, indnt, "rdi", dst);
@@ -1051,7 +1067,8 @@ class toc final {
         comment_start(src_loc_tk, os, indnt);
         std::println(os, "size <= {} B, use mov", threshold_for_rep_movs);
 
-        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rax");
+        alloc_named_register_or_throw(src_loc_tk, os, indnt, "rax",
+                          get_type_default());
 
         size_t rest{bytes_count};
         const size_t qword_movs{rest / toc::size_qword};
@@ -1110,9 +1127,12 @@ class toc final {
             // mov rcx, byte_count     ; number of bytes to write
             // rep stosb               ; store al into [rdi], rcx times (rdi++)
 
-            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rax");
-            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi");
-            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx");
+            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rax",
+                                          get_type_default());
+            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rdi",
+                                          get_type_default());
+            alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx",
+                                          get_type_default());
 
             if (value == 0) {
                 toc::asm_cmd(src_loc_tk, os, indnt, "xor", "al", "al");
@@ -1230,6 +1250,32 @@ class toc final {
     // -------------------------------------------------------------------------
     // private non-special functions (sorted alphabetically)
     // -------------------------------------------------------------------------
+
+    [[nodiscard]] auto
+    get_allocated_register_type(const std::string_view reg) const
+        -> const type& {
+
+        for (const allocated_register& allocated : allocated_registers_) {
+            if (reg == allocated.name) {
+                return *allocated.type_ptr;
+            }
+        }
+
+        return get_builtin_type_for_size(get_size_from_register_operand(reg));
+    }
+
+    [[nodiscard]] auto
+    is_register_alias(const std::string_view reg,
+                      const std::string_view allocated) const -> bool {
+
+        if (reg == allocated or
+            reg == get_sized_register_operand(allocated, size_word) or
+            reg == get_sized_register_operand(allocated, size_dword)) {
+            return true;
+        }
+
+        return reg == get_sized_register_operand(allocated, size_byte);
+    }
 
     [[nodiscard]] auto
     get_builtin_type_for_operand(const token& src_loc_tk,
@@ -1459,7 +1505,7 @@ class toc final {
         // is it a register?
         if (const size_t reg_size{get_size_from_register_operand(id.str())};
             reg_size != 0) {
-            const type& tpe{get_builtin_type_for_size(reg_size)};
+            const type& tpe{get_allocated_register_type(id.str())};
             //? unary ops?
             return {
                 .id{ident},

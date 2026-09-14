@@ -178,7 +178,7 @@ class stmt_call : public expression {
 
             if (not arg_reg.empty()) {
                 tc.alloc_named_register_or_throw(arg.tok(), os, indent,
-                                                 arg_reg);
+                                                 arg_reg, param.get_type());
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
@@ -222,7 +222,8 @@ class stmt_call : public expression {
             if (arg.is_expression()) {
                 if (arg_reg.empty()) {
                     // no particular register requested
-                    arg_reg = tc.alloc_scratch_register(arg.tok(), os, indent);
+                    arg_reg = tc.alloc_scratch_register(
+                        arg.tok(), os, indent, param.get_type());
                     allocated_scratch_registers.emplace_back(arg_reg);
                     allocated_registers_in_order.emplace_back(arg_reg);
                 }
@@ -266,7 +267,8 @@ class stmt_call : public expression {
                     // identifier with unary ops
 
                     const std::string scratch_reg{
-                        tc.alloc_scratch_register(arg.tok(), os, indent)};
+                        tc.alloc_scratch_register(
+                            arg.tok(), os, indent, param.get_type())};
 
                     allocated_registers_in_order.emplace_back(scratch_reg);
                     allocated_scratch_registers.emplace_back(scratch_reg);

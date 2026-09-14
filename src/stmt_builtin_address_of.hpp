@@ -82,7 +82,8 @@ class stmt_builtin_address_of final : public expression {
                          oper.address_str());
         } else {
             // destination is memory location
-            const std::string reg{tc.alloc_scratch_register(tok(), os, indent)};
+            const std::string reg{tc.alloc_scratch_register(
+                tok(), os, indent, tc.get_type_default())};
             toc::asm_lea(os, indent, reg, oper.address_str());
             tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(), reg);
             tc.free_scratch_register(tok(), os, indent, reg);

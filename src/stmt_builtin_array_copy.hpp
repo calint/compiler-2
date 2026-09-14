@@ -80,9 +80,12 @@ class stmt_builtin_array_copy final : public statement {
         const ident_info to_info{tc.make_ident_info(to_)};
 
         // allocate the register for rep movs
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rsi");
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rdi");
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rcx");
+        tc.alloc_named_register_or_throw(tok(), os, indent, "rsi",
+                         tc.get_type_default());
+        tc.alloc_named_register_or_throw(tok(), os, indent, "rdi",
+                         tc.get_type_default());
+        tc.alloc_named_register_or_throw(tok(), os, indent, "rcx",
+                         tc.get_type_default());
 
         std::vector<std::string> allocated_scratch_registers;
 
