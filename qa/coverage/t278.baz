@@ -1,2 +1,4 @@
+# fixed-size array may use an empty initializer
+
 type p { data : i8[2] }
 func main() { var a : p[2] = {} }
