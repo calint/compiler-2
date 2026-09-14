@@ -1,0 +1,13 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func main() {
+    var arr : i8[1]
+    arr[0] = 1
+    assert(arr[0] == 1)
+}

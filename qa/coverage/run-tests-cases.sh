@@ -326,6 +326,22 @@ SRC=t347 && EXP=255 && RUN_ERR
 SRC=t348 && EXP=255 && RUN_ERR_OPTS "--stack=65536 --checks=lower,line"
 SRC=t349 && EXP=255 && RUN_ERR_OPTS "--stack=65536 --checks=upper,line"
 SRC=t350 && EXP=255 && RUN_ERR
+SRC=t351 && EXP=0 && RUN
+SRC=t352 && EXP=255 && RUN_ERR
+SRC=t353 && EXP=255 && RUN_ERR
+# SRC=t354 && EXP=255 && RUN_ERR  # extreme index generates nasm number-overflow warning
+SRC=t355 && EXP=255 && RUN_ERR
+SRC=t356 && EXP=0 && RUN
+SRC=t357 && EXP=255 && RUN_ERR_OPTS "--stack=65536 --checks=lower"
+SRC=t358 && EXP=255 && RUN_ERR_OPTS "--stack=65536 --checks=upper"
+SRC=t359 && EXP=255 && RUN_ERR
+SRC=t360 && EXP=255 && RUN_ERR
+SRC=t361 && EXP=255 && RUN_ERR
+SRC=t362 && EXP=255 && RUN_ERR
+SRC=t363 && EXP=255 && RUN_ERR
+SRC=t364 && EXP=255 && RUN_ERR
+SRC=t365 && EXP=255 && RUN_ERR
+SRC=t366 && EXP=255 && RUN_ERR
 SRC=t334 && COMPERR
 SRC=t335 && EXP=0 && RUN
 SRC=t336 && EXP=0 && RUN
