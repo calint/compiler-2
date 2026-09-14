@@ -25,6 +25,7 @@ class expr_any final : public statement {
     };
 
     std::vector<expr_variant> vars_;
+    std::vector<token> vars_delims_tk_;
     token open_brace_tk_;
     token close_brace_tk_;
     size_t array_size_{};
@@ -65,12 +66,14 @@ class expr_any final : public statement {
             }
 
             if (counter++) {
-                if (not tz.is_next_char(',')) {
+                const token t{tz.is_next_char_token(',')};
+                if (t.is_empty()) {
                     throw compiler_exception(
                         tz, std::format("expected ',' followed by initializer "
                                         "for type '{}'",
                                         tp.name()));
                 }
+                vars_delims_tk_.emplace_back(t);
             }
             vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
         }
@@ -87,7 +90,7 @@ class expr_any final : public statement {
         open_brace_tk_.source_to(os);
         for (const auto [i, el] : std::views::enumerate(vars_)) {
             if (i != 0) {
-                std::print(os, ",");
+                vars_delims_tk_[static_cast<size_t>(i - 1)].source_to(os);
             }
             std::visit([&os](const auto& e) -> void { e.source_to(os); }, el);
         }
