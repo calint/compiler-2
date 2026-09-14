@@ -1,0 +1,6 @@
+type point { x }
+
+func main() {
+    var p : point
+    p.y = 1
+}

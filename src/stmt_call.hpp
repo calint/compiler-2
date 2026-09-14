@@ -32,7 +32,7 @@ class stmt_call : public expression {
             throw compiler_exception{tok(), "expected '(' after function name"};
         }
 
-        if (not tc.is_func_builtin(tok(), statement::identifier())) {
+        if (not tc.is_func_builtin(statement::identifier())) {
 
             // user defined function
 

@@ -353,29 +353,6 @@ class toc final {
                      name_info.operand.address_str());
     }
 
-    [[nodiscard]] auto
-    alloc_named_register(const token& src_loc_tk, std::ostream& os,
-                         const size_t indnt, const std::string_view reg)
-        -> bool {
-
-        comment_start(src_loc_tk, os, indnt);
-        std::print(os, "allocate named register '{}'", reg);
-
-        auto reg_iter{std::ranges::find(named_registers_, reg)};
-        if (reg_iter == named_registers_.end()) {
-            std::println(os, ": not available");
-            return false;
-        }
-
-        std::println(os, "");
-
-        allocated_registers_.emplace_back(std::move(*reg_iter),
-                                          source_location_hr(src_loc_tk));
-        named_registers_.erase(reg_iter);
-
-        return true;
-    }
-
     auto alloc_named_register_or_throw(const token& src_loc_tk,
                                        std::ostream& os, const size_t indnt,
                                        const std::string_view reg) -> void {
@@ -1004,14 +981,8 @@ class toc final {
         return funcs_.has(name);
     }
 
-    [[nodiscard]] auto is_func_builtin(const token& src_loc_tk,
-                                       const std::string_view name) const
+    [[nodiscard]] auto is_func_builtin(const std::string_view name) const
         -> bool {
-
-        if (not funcs_.has(name)) {
-            throw compiler_exception{
-                src_loc_tk, std::format("function '{}' not found", name)};
-        }
 
         return funcs_.get_const_ref(name).def == nullptr;
     }
@@ -1127,29 +1098,6 @@ class toc final {
         }
 
         free_named_register(src_loc_tk, os, indnt, "rax");
-    }
-
-    auto rep_movs(const token& src_loc_tk, std::ostream& os, const size_t indnt,
-                  const statement& src_stmt, const ident_info& src_info,
-                  std::string_view dst, const size_t bytes_count) -> void {
-
-        std::vector<std::string> allocated_registers;
-        std::string src;
-        if (src_stmt.is_indexed() or src_info.has_lea()) {
-            const operand addr{src_stmt.compile_lea(src_loc_tk, *this, os,
-                                                    indnt, allocated_registers,
-                                                    "", src_info.lea_path)};
-            src = addr.address_str();
-        } else {
-            src = src_info.operand.address_str();
-        }
-
-        rep_movs(src_loc_tk, os, indnt, src, dst, bytes_count);
-
-        for (const std::string& reg :
-             allocated_registers | std::views::reverse) {
-            free_scratch_register(src_loc_tk, os, indnt, reg);
-        }
     }
 
     auto rep_stos(const token& src_loc_tk, std::ostream& os, const size_t indnt,
