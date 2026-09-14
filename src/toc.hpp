@@ -803,7 +803,7 @@ class toc final {
             }
         }
 
-        throw compiler_exception{src_loc_tk, "unexpected frames"};
+        std::unreachable();
     }
 
     [[nodiscard]] auto
@@ -1342,7 +1342,7 @@ class toc final {
             }
         }
 
-        return false;
+        std::unreachable();
     }
 
     // reviewed: 2026-09-09
@@ -1672,20 +1672,6 @@ class toc final {
 
         indent(os, indnt);
         std::println(os, "not {}", operand);
-    }
-
-    static auto asm_pop(std::ostream& os, const size_t indnt,
-                        const std::string_view operand) -> void {
-
-        indent(os, indnt);
-        std::println(os, "pop {}", operand);
-    }
-
-    static auto asm_push(std::ostream& os, const size_t indnt,
-                         const std::string_view operand) -> void {
-
-        indent(os, indnt);
-        std::println(os, "push {}", operand);
     }
 
     // size: b, w, d, q for different sizings
