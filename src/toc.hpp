@@ -1950,10 +1950,11 @@ class toc final {
 
         if (operand == "al" || operand == "ah" || operand == "bl" ||
             operand == "bh" || operand == "cl" || operand == "ch" ||
-            operand == "dl" || operand == "dh" || operand == "r8b" ||
-            operand == "r9b" || operand == "r10b" || operand == "r11b" ||
-            operand == "r12b" || operand == "r13b" || operand == "r14b" ||
-            operand == "r15b") {
+            operand == "dl" || operand == "dh" || operand == "spl" ||
+            operand == "bpl" || operand == "sil" || operand == "dil" ||
+            operand == "r8b" || operand == "r9b" || operand == "r10b" ||
+            operand == "r11b" || operand == "r12b" || operand == "r13b" ||
+            operand == "r14b" || operand == "r15b") {
             return size_byte;
         }
 
