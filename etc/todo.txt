@@ -3,8 +3,9 @@
 --------------------------------------------------------------------------------
 [ ] t294 t76 should pass
 [o] t178 should fail because var not bool
-    => fixed but show be better looked at when allocating register specify the
-       type for the dest_info?
+    => fixed but should be better
+    [ ] looked at when allocating register specify the type that becomes
+        dst_info
 [ ] const should be allowed on top level and in scoped blocks
 [x] t160 set the value and assert it
 [x] stmt_def_type_field: array size specifier to be able to be a const value
