@@ -3,28 +3,23 @@
 --------------------------------------------------------------------------------
 [ ] t389 bools should not be used in arithmetics
 [ ] t158 is ub
-[ ] add rbp, rbx to scratch registers
-    => rax, rcx, rdx, rsi, rdi, rsp are used by the compiler
-    [ ] update t321
-[ ] const should be allowed on top level and in scoped blocks
-[ ] reject or handle division by zero
-[ ] a way to use characters e.g. 'a' instead of ascii code
-[ ] does not work: var s1: i8[]  = "hello world"
-[ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
-    if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
-[ ] review the ub checks
 [ ] ub? mp[1] = { mp[2].msg } see t155.baz:44
+[ ] review the ub checks
+[ ] a return reference might be used as an argument to a function that set it.
+    current ub detection does not allow that
+[ ] ub detection:
+    [ ] a tree of possible paths for code labeled as "maybe" or "always"
+        make sure that each possible path results in all fields of type
+        initialized
+    [ ] data that is about to be assigned is not allowed to be read while
+        initiating it
 [ ] when "returning" a user defined type all fields have to be set or UB
-    => init to zero prior call?
-[ ] expr_type_value has mixed responsibilities, ok?
-    expr_ops_list: handles expressions that writes the result with one mov
-    expr_bool_ops_list: handles boolean expressions and also results in one mov
-[ ] fix todo sprinkled in the source
-[ ] consider result being an array
-    func make_points() : point[] res {...}
-    => confusing. better is func init_points(pts : point[]) {...}
-[ ] make an extensive comment file explaining lea, indexing array etc
-[ ] examine NOLINTNEXTLINE annotations and try to fix
+[ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
+    sign-extends loads
+[ ] numbers such as i8 : 255 cause problems when cmp because value is moved
+    to unspecified register size with sign extension
+    => 255 is outside the range of i8: -128 -> 127
+[ ] handle case where x86_64 cannot load immediate 64 bit value to memory
 [ ] resolve issues with comments in expressions etc
     dat s : str = { 
         3 # comment 
@@ -37,31 +32,36 @@
 [ ] parsing comments in single statement block fails:
         if nibble > 9 nibble = nibble + 0x41 # 0 through 9
         else nibble = nibble + 0x30
-[ ] catch edge cases when dealing with constant. byte -128 - 127 etc since cmp
-    sign-extends loads
-[ ] numbers such as i8 : 255 cause problems when cmp because value is moved
-    to unspecified register size with sign extension
-    => 255 is outside the range of i8: -128 -> 127
+[ ] add rbp, rbx to scratch registers
+    => rax, rcx, rdx, rsi, rdi, rsp are used by the compiler
+    [ ] update t321
+[ ] const should be allowed on top level and in scoped blocks
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
-[ ] handle case where x86_64 cannot load immediate 64 bit value to memory
-[ ] function call of type lst.add(x) that calls list_add(self, x)
-[ ] built-in: mov and syscall functions to statements and remove special
-    built-in functions declared in program
+[ ] does not work: var s1: i8[]  = "hello world"
+[ ] a way to use characters e.g. 'a' instead of ascii code
+[ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
+    if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
+[ ] expr_type_value has mixed responsibilities, ok?
+    expr_ops_list: handles expressions that writes the result with one mov
+    expr_bool_ops_list: handles boolean expressions and also results in one mov
+[ ] fix todo sprinkled in the source
+[ ] consider result being an array
+    func make_points() : point[] res {...}
+    => confusing. better is func init_points(pts : point[]) {...}
+[ ] make an extensive comment file explaining lea, indexing array etc
 [ ] ponder an iterator of elements in array that does not require bounds
     checking on each element:
       for(e : arr) {
         e = 0
       }
+[ ] examine NOLINTNEXTLINE annotations and try to fix
+[ ] reject or handle division by zero
+    => init to zero prior call?
+[ ] function call of type lst.add(x) that calls list_add(self, x)
+[ ] built-in: mov and syscall functions to statements and remove special
+    built-in functions declared in program
 [ ] const allowed in function declaration and code
     foo(ix : const i32) { const x = ix }
-[ ] a return reference might be used as an argument to a function that set it.
-    current UB detection does not allow that
-[ ] ub detection:
-    [ ] a tree of possible paths for code labeled as "maybe" or "always"
-        make sure that each possible path results in all fields of type
-        initialized
-    [ ] data that is about to be assigned is not allowed to be read while
-        initiating it
 [ ] stmt_identifier: 357: if register will be just offset without indexing
     register then that can be calculated in init_reg_offset
 [ ] expr_*: pre-calculate consts
