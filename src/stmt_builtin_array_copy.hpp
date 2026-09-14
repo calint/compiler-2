@@ -25,15 +25,15 @@ class stmt_builtin_array_copy final : public statement {
     token close_paren_tk_;
 
   public:
-    stmt_builtin_array_copy(toc& tc, token tk, tokenizer& tz) : statement{tk} {
+    stmt_builtin_array_copy(toc& tc, token tk, tokenizer& tz)
+        : statement{tk}, open_paren_tk_{tz.is_next_char_token('(')} {
 
-        set_type(tc.get_type_void());
-
-        open_paren_tk_ = tz.is_next_char_token('(');
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{
                 tz, "expected '(' and 'from', 'to' and 'count'"};
         }
+
+        set_type(tc.get_type_void());
 
         from_ = {tc, {}, tz.next_token(), tz};
 

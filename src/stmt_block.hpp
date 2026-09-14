@@ -29,11 +29,11 @@ class stmt_block final : public statement {
     // note: parser assumes the tokenizer is at a '{' or it is considered a
     // single statement block
     stmt_block(toc& tc, tokenizer& tz)
-        : statement{tz.current_position_token()} {
+        : statement{tz.current_position_token()},
+          open_brace_tk_{tz.is_next_char_token('{')} {
 
         set_type(tc.get_type_void());
 
-        open_brace_tk_ = tz.is_next_char_token('{');
         if (open_brace_tk_.is_empty()) {
             is_one_statement_ = true;
         }

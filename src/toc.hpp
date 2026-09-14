@@ -164,7 +164,7 @@ class ident_path final {
     std::string id_;
     std::vector<std::string> path_;
 
-    auto refresh_path() {
+    auto refresh_path() -> void {
         path_.clear();
         for (auto part : id_ | std::views::split('.')) {
             path_.emplace_back(part.begin(), part.end());
@@ -182,7 +182,7 @@ class ident_path final {
 
     [[nodiscard]] auto str() const -> const std::string& { return id_; }
 
-    auto append(const std::string_view path_elem) {
+    auto append(const std::string_view path_elem) -> void {
         id_ = std::format("{}.{}", id_, path_elem);
         refresh_path();
     }

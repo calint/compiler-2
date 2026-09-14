@@ -69,8 +69,8 @@ class stmt_assign_var final : public statement {
         // todo: fix this to be easier read
 
         if (expr_.is_array_identifier()) {
-            const ident_info src_info{tc.make_ident_info(expr_)};
-            if (src_info.is_var() and dst_info.is_array and
+            if (const ident_info src_info{tc.make_ident_info(expr_)};
+                src_info.is_var() and dst_info.is_array and
                 (not src_info.is_array or
                  src_info.array_size != dst_info.array_size)) {
 

@@ -27,7 +27,7 @@ class stmt_def_func final : public statement {
   public:
     stmt_def_func(toc& tc, token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()},
-          open_paren_tk_(tz.is_next_char_token('(')) {
+          open_paren_tk_{tz.is_next_char_token('(')} {
 
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{name_tk_,

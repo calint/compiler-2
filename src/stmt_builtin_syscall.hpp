@@ -9,6 +9,10 @@ class stmt_builtin_syscall final : public stmt_call {
     stmt_builtin_syscall(toc& tc, token tk, tokenizer& tz)
         : stmt_call{tc, {}, tk, tz.is_next_char_token('('), tz} {
 
+        if (arguments_size() != 0) {
+            throw compiler_exception{tok(), "didn't expect arguments"};
+        }
+
         set_type(tc.get_type_void());
     }
 
@@ -19,11 +23,6 @@ class stmt_builtin_syscall final : public stmt_call {
         -> void override {
 
         tc.comment_source(*this, os, indent);
-
-        if (arguments_size() != 0) {
-            throw compiler_exception{tok(), "didn't expect arguments"};
-        }
-
         toc::indent(os, indent);
         std::println(os, "syscall");
     }

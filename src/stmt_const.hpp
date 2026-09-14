@@ -1,6 +1,7 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstdint>
 #include <optional>
 #include <string>
 
@@ -67,7 +68,7 @@ class stmt_const final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {}
 
-    [[nodiscard]] auto value() const { return value_; }
+    [[nodiscard]] auto value() const -> int64_t { return value_; }
 
-    [[nodiscard]] auto has_value() const { return has_value_; }
+    [[nodiscard]] auto has_value() const -> bool { return has_value_; }
 };

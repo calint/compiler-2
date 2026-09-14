@@ -22,16 +22,16 @@ class stmt_builtin_equal final : public expression {
 
   public:
     stmt_builtin_equal(toc& tc, unary_ops uops, token tk, tokenizer& tz)
-        : expression{tk, std::move(uops)} {
-
-        set_type(tc.get_type_bool());
+        : expression{tk, std::move(uops)},
+          open_paren_tk_{tz.is_next_char_token('(')} {
 
         if (not statement::get_unary_ops().is_empty()) {
             throw compiler_exception{tok(), "unary operations are not allowed "
                                             "on this built-in function"};
         }
 
-        open_paren_tk_ = tz.is_next_char_token('(');
+        set_type(tc.get_type_bool());
+
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{
                 tz, "expected '(' then 'source' and 'compare'"};

@@ -16,7 +16,8 @@ class stmt_def_func_param final : public statement {
   public:
     stmt_def_func_param(const toc& tc, tokenizer& tz)
         : statement{tz.next_token()},
-          type_delim_tk_(tz.is_next_char_token(':')) {
+          type_delim_tk_{tz.is_next_char_token(':')} {
+
         assert(not tok().text().empty());
 
         if (type_delim_tk_.is_empty()) {
