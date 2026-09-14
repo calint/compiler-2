@@ -1,3 +1,5 @@
+# valid eight-byte element scaling
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)

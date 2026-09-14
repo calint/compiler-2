@@ -1,3 +1,5 @@
+# signed eight-bit index remains negative
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)

@@ -1,3 +1,5 @@
+# indexing a non-array field must fail
+
 type point { x, y }
 
 func main() {

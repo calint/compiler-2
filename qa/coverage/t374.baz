@@ -1,3 +1,5 @@
+# valid index returned by a function
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)

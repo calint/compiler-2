@@ -1,3 +1,5 @@
+# extreme index exposes NASM overflow
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)

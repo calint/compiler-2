@@ -1,3 +1,5 @@
+# dotted field used as an array index
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)

@@ -1,3 +1,5 @@
+# valid upper boundary through an array parameter
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)

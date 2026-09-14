@@ -1,3 +1,5 @@
+# valid upper boundary through address_of
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)

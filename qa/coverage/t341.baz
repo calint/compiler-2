@@ -1,3 +1,5 @@
+# valid lower array boundary
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)

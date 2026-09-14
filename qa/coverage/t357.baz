@@ -1,3 +1,5 @@
+# one-element lower failure without line output
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)
