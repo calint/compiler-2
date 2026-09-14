@@ -162,8 +162,4 @@ class stmt_def_var final : public statement {
             assign_var_->assert_var_not_used(var);
         }
     }
-
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        std::unreachable();
-    }
 };
