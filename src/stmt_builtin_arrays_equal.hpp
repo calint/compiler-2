@@ -131,6 +131,13 @@ class stmt_builtin_arrays_equal final : public expression {
                             from_info.type().name(), to_info.type().name())};
         }
 
+        if (not dst_info.is_register() and
+            dst_info.type().name() != get_type().name()) {
+            throw compiler_exception{
+                tok(), std::format("destination must be type '{}', got '{}'",
+                                   get_type().name(), dst_info.type().name())};
+        }
+
         const size_t type_size{from_info.type().size()};
 
         if (type_size > 1) {

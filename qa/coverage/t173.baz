@@ -1,4 +1,4 @@
-# array_size_of requires an array
+# array_size_of requires an array argument
 
 func main() {
     var x = 1

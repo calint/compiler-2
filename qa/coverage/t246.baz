@@ -7,6 +7,6 @@ func main() {
     var b : i8[4]
     a[1] = 1
     b[1] = 1
-    var z = arrays_equal(a[1],b[1],1)
+    var z : bool = arrays_equal(a[1],b[1],1)
     assert(z)
 }
