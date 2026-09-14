@@ -72,6 +72,10 @@ class stmt_call : public expression {
                                         index)};
                     }
                 }
+
+                // note: the types have been checked prior to getting here so
+                //       only if both arg and parameter are arrays need to be
+                //       checked
             }
 
             return;
