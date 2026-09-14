@@ -1869,9 +1869,6 @@ class toc final {
         if (operand.starts_with("byte")) {
             return size_byte;
         }
-        if (is_operand_register(operand)) {
-            return get_size_from_register_operand(operand);
-        }
         if (const size_t reg_size{get_size_from_register_operand(operand)}) {
             return reg_size;
         }

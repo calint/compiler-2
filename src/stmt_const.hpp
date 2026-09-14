@@ -63,11 +63,6 @@ class stmt_const final : public statement {
         literal_tk_.source_to(os);
     }
 
-    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
-                 [[maybe_unused]] const size_t indent,
-                 [[maybe_unused]] const ident_info& dst) const
-        -> void override {}
-
     [[nodiscard]] auto value() const -> int64_t { return value_; }
 
     [[nodiscard]] auto has_value() const -> bool { return has_value_; }
