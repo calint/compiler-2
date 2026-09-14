@@ -1,2 +1,2 @@
 
-t228.baz:5:30: expected ',' then 'count'
+t228.baz:5:30: expected ',' followed by 'count'

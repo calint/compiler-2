@@ -49,7 +49,7 @@ class stmt_def_var final : public statement {
                     if (array_size_const_.value() <= 0) {
                         throw compiler_exception{
                             array_size_const_.tok(),
-                            "expected array size as constant greater than 0"};
+                            "expected a constant array size greater than 0"};
                     }
                     array_size_ =
                         static_cast<size_t>(array_size_const_.value());
@@ -57,7 +57,8 @@ class stmt_def_var final : public statement {
 
                 close_bracket_tk_ = tz.is_next_char_token(']');
                 if (close_bracket_tk_.is_empty()) {
-                    throw compiler_exception{tz, "expected array size and ']'"};
+                    throw compiler_exception{tz,
+                                             "expected ']' after array size"};
                 }
             }
         }

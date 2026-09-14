@@ -1,2 +1,2 @@
 
-t312.baz:5:21: expected array size as constant greater than 0
+t312.baz:5:21: expected a constant array size greater than 0

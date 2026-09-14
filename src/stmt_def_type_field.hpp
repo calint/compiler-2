@@ -49,7 +49,7 @@ class stmt_def_type_field final : public statement {
                 array_size_const_.value() < 1) {
                 throw compiler_exception{
                     array_size_const_.tok(),
-                    "expected array size as constant greater than 0"};
+                    "expected a constant array size greater than 0"};
             }
 
             array_size_ = static_cast<size_t>(array_size_const_.value());

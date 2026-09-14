@@ -1,0 +1,10 @@
+# user types with identical fields are still incompatible
+
+type left { value }
+type right { value }
+
+func main() {
+    var lhs : left
+    var rhs : right
+    lhs = rhs
+}

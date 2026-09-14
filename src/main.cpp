@@ -312,9 +312,8 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
             if (tp.name() != stmt_call_->get_type().name()) {
                 throw compiler_exception{
                     tok(),
-                    std::format("function return type '{}' does not match "
-                                "expected type '{}'",
-                                stmt_call_->get_type().name(), tp.name())};
+                    std::format("expected return type '{}', got '{}'",
+                                tp.name(), stmt_call_->get_type().name())};
             }
 
             return;
@@ -329,9 +328,8 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         if (tp.name() != src_info.type().name()) {
             // note: checked a source location report ok
             throw compiler_exception{
-                tok(),
-                std::format("type '{}' does not match expected type '{}'",
-                            src_info.type().name(), tp.name())};
+                tok(), std::format("expected type '{}', got '{}'", tp.name(),
+                                   src_info.type().name())};
         }
 
         return;
@@ -365,8 +363,9 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
             if (t.is_empty()) {
                 throw compiler_exception{
                     tz, std::format(
-                            "expected ',' and value of field '{}' in type '{}'",
-                            flds[counter].name, tp.name())};
+                            "expected ',' followed by a value for field '{}' "
+                            "in type '{}'",
+                            flds[counter - 1].name, tp.name())};
             }
             exprs_delims_tk_.emplace_back(t);
         }
@@ -432,10 +431,8 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         const ident_info src_info{tc.make_ident_info(*this)};
         if (dst_type.name() != src_info.type().name()) {
             throw compiler_exception{
-                tok(),
-                std::format(
-                    "destination type '{}' does not match source type '{}'",
-                    dst_type.name(), src_info.type().name())};
+                tok(), std::format("expected destination type '{}', got '{}'",
+                                   dst_type.name(), src_info.type().name())};
         }
 
         std::vector<std::string> allocated_registers;
@@ -572,18 +569,17 @@ auto expr_type_value::validate_array_assignment(const token& tok,
     -> void {
 
     if (not src_info.is_array) {
-        throw compiler_exception{tok, "source is not an array"};
+        throw compiler_exception{tok, "source must be an array"};
     }
     if (fld.type().name() != src_info.type().name()) {
         throw compiler_exception{
-            tok, std::format("destination type '{}' does not match "
-                             "source type '{}'",
+            tok, std::format("expected destination type '{}', got '{}'",
                              fld.type().name(), src_info.type().name())};
     }
     if (fld.array_size != src_info.array_size) {
         throw compiler_exception{
-            tok, std::format("destination array of size {} does not "
-                             "match source array of size {}",
+            tok, std::format("destination array size {} does not match "
+                             "source size {}",
                              fld.array_size, src_info.array_size)};
     }
 }

@@ -86,7 +86,7 @@ class stmt_def_dat final : public statement {
                 close_bracket_tk_ = tz.is_next_char_token(']');
                 if (close_bracket_tk_.is_empty()) {
                     throw compiler_exception{type_tk_,
-                                             "expected array size and ']'"};
+                                             "expected ']' after array size"};
                 }
             }
         }
@@ -350,7 +350,7 @@ class stmt_def_dat final : public statement {
                 const size_t strsz{el.tk.string_size_bytes()};
                 if (strsz == 0 and el.array_size == 0) {
                     throw compiler_exception{
-                        el.tk, "empty string is not a valid initializer"};
+                        el.tk, "an empty string is not a valid initializer"};
                 }
                 if (el.array_size == 0) {
                     el.array_size = strsz;
@@ -366,7 +366,8 @@ class stmt_def_dat final : public statement {
                     return el;
                 }
                 throw compiler_exception(el.tk,
-                                         "only 'i8' arrays can be strings");
+                                         "only arrays of type 'i8' can be "
+                                         "initialized with strings");
             }
             tz.put_back_token(el.tk);
 
@@ -469,7 +470,7 @@ class stmt_def_dat final : public statement {
             } else {
                 throw compiler_exception(
                     el.tk,
-                    std::format("boolean field '{}' must be true or false",
+                    std::format("boolean field '{}' must be 'true' or 'false'",
                                 tp.name()));
             }
             return el;
@@ -478,7 +479,7 @@ class stmt_def_dat final : public statement {
         const ident_info ii{tc.make_ident_info(el.tk, el.tk.text())};
         if (not ii.is_const()) {
             throw compiler_exception(
-                el.tk, std::format("'{}' is not a constant", el.tk.text()));
+                el.tk, std::format("'{}' must be a constant", el.tk.text()));
         }
         el.value = ii.const_value;
         return el;
@@ -517,11 +518,11 @@ class stmt_def_dat final : public statement {
                 const token tk{tz.is_next_char_token(',')};
                 if (tk.is_empty()) {
                     throw compiler_exception(
-                        tz,
-                        std::format("expected ',' and initializer for "
-                                    "field '{}' in type '{}' of type '{}{}'",
-                                    tf.name, tp.name(), tf.type().name(),
-                                    tf.is_array ? "[]" : ""));
+                        tz, std::format(
+                                "expected ',' followed by an initializer "
+                                "for field '{}' of type '{}{}' in type '{}'",
+                                tf.name, tf.type().name(),
+                                tf.is_array ? "[]" : "", tp.name()));
                 }
                 el.elems_delim_tk_.emplace_back(tk);
             }

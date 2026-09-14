@@ -1,9 +1,9 @@
 # mixed arithmetic and bitwise precedence
 
 func exit(v:reg_rdi){
-	mov(rax,60) # exit system call
-	mov(rdi,v)  # return code
-	syscall()
+    mov(rax,60) # exit system call
+    mov(rdi,v)  # return code
+    syscall()
 }
 
 func main(){

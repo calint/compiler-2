@@ -10,7 +10,7 @@ class stmt_builtin_syscall final : public stmt_call {
         : stmt_call{tc, {}, tk, tz.is_next_char_token('('), tz} {
 
         if (arguments_size() != 0) {
-            throw compiler_exception{tok(), "didn't expect arguments"};
+            throw compiler_exception{tok(), "unexpected arguments"};
         }
 
         set_type(tc.get_type_void());

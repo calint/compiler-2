@@ -26,29 +26,30 @@ class stmt_builtin_equal final : public expression {
           open_paren_tk_{tz.is_next_char_token('(')} {
 
         if (not statement::get_unary_ops().is_empty()) {
-            throw compiler_exception{tok(), "unary operations are not allowed "
-                                            "on this built-in function"};
+            throw compiler_exception{
+                tok(),
+                "this built-in function does not accept unary operations"};
         }
 
         set_type(tc.get_type_bool());
 
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{
-                tz, "expected '(' then 'source' and 'compare'"};
+                tz, "expected '(', 'source', 'compare', and ')'"};
         }
 
         lhs_ = {tc, {}, tz.next_token(), tz};
 
         lhs_delim_tk_ = tz.is_next_char_token(',');
         if (lhs_delim_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ',' then 'compare'"};
+            throw compiler_exception{tz, "expected ',' followed by 'compare'"};
         }
 
         rhs_ = {tc, {}, tz.next_token(), tz};
 
         close_paren_tk_ = tz.is_next_char_token(')');
         if (close_paren_tk_.is_empty()) {
-            throw compiler_exception{tok(), "expected ')' after the argument"};
+            throw compiler_exception{tok(), "expected ')' after the arguments"};
         }
     }
 

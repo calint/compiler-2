@@ -1,2 +1,2 @@
 
-t218.baz:5:13: 'x' is not an array
+t218.baz:5:13: cannot index non-array 'x'

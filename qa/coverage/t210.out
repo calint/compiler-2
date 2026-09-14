@@ -1,2 +1,2 @@
 
-t210.baz:3:30: boolean field 'bool' must be true or false
+t210.baz:3:30: boolean field 'bool' must be 'true' or 'false'

@@ -112,7 +112,7 @@ class stmt_block final : public statement {
 
                 } else {
                     throw compiler_exception{
-                        tz, "unexpected character. expected '=' for assignment "
+                        tz, "unexpected character; expected '=' for assignment "
                             "or '(' for function call"};
                 }
             }

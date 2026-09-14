@@ -1,2 +1,2 @@
 
-t209.baz:5:18: 'y' is not a constant
+t209.baz:5:18: 'y' must be a constant

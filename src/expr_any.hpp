@@ -107,7 +107,7 @@ class expr_any final : public statement {
         if (is_array_identifier()) {
             const ident_info src_info{tc.make_ident_info(*this)};
             if (not src_info.is_array) {
-                throw compiler_exception{tok(), "source is not an array"};
+                throw compiler_exception{tok(), "source must be an array"};
             }
         }
 

@@ -815,8 +815,8 @@ class expr_ops_list final : public expression {
 
         if (src_info.operand.str() == "rcx") {
             throw compiler_exception{
-                src.tok(), "cannot use 'rcx' as operand in shift because "
-                           "that registers is used"};
+                src.tok(), "cannot use 'rcx' as a shift operand; it is "
+                           "reserved for the count"};
         }
 
         // 'src' is not a constant
@@ -944,8 +944,8 @@ class expr_ops_list final : public expression {
         if (src_info.operand.str() == "rdx" or
             src_info.operand.str() == "rax") {
             throw compiler_exception{
-                src.tok(), "cannot use 'rdx' or 'rax' as operands in "
-                           "division because those registers are used"};
+                src.tok(), "cannot use 'rdx' or 'rax' for division; they are "
+                           "reserved"};
         }
 
         // 'src' is not an expression and not a constant

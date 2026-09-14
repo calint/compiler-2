@@ -1,2 +1,2 @@
 
-t223.baz:5:24: expected '(' and identifier
+t223.baz:5:24: expected '(' followed by an identifier

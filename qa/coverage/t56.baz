@@ -1,30 +1,30 @@
 # mixed-width function parameters
 
 func exit(v:reg_rdi){
-	mov(rax,60) # exit system call
-	mov(rdi,v)  # return code
-	syscall()
+    mov(rax,60) # exit system call
+    mov(rdi,v)  # return code
+    syscall()
 }
 
 func f1(b:i8,w:i16,d:i32,q:i64):i64 res{
-	res=b+w+d+q
+    res=b+w+d+q
 }
 
 func f2(b:i8,w:i16,d:i32,q:i64):i64 res{
-	res=b+w+d+q
+    res=b+w+d+q
 }
 
 func main(){
-	var b:i8=-1
-	var w:i16=-2
-	var d:i32=-3
-	var q:i64=-4
+    var b:i8=-1
+    var w:i16=-2
+    var d:i32=-3
+    var q:i64=-4
 
-	var r=f1(b,w,d,q)
-	if not r==-10 exit(1)
-	
-	r=f2(b,w,d,q)
-	if not r==-10 exit(2)
-	
-	exit(0)
+    var r=f1(b,w,d,q)
+    if not r==-10 exit(1)
+    
+    r=f2(b,w,d,q)
+    if not r==-10 exit(2)
+    
+    exit(0)
 }

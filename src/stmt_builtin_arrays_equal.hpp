@@ -30,15 +30,16 @@ class stmt_builtin_arrays_equal final : public expression {
           open_paren_tk_{tz.is_next_char_token('(')} {
 
         if (not statement::get_unary_ops().is_empty()) {
-            throw compiler_exception{tok(), "unary operations are not allowed "
-                                            "on this built-in function"};
+            throw compiler_exception{
+                tok(),
+                "this built-in function does not accept unary operations"};
         }
 
         set_type(tc.get_type_bool());
 
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{
-                tz, "expected '(' then 'source', 'compare' and 'count'"};
+                tz, "expected '(', 'source', 'compare', 'count', and ')'"};
         }
 
         from_ = {tc, {}, tz.next_token(), tz};
@@ -53,14 +54,14 @@ class stmt_builtin_arrays_equal final : public expression {
 
         to_delim_tk_ = tz.is_next_char_token(',');
         if (to_delim_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ',' then 'count'"};
+            throw compiler_exception{tz, "expected ',' followed by 'count'"};
         }
 
         count_ = {tc, tz, tc.get_type_default(), true, false, 0};
 
         close_paren_tk_ = tz.is_next_char_token(')');
         if (close_paren_tk_.is_empty()) {
-            throw compiler_exception{tok(), "expected ')' after the argument"};
+            throw compiler_exception{tok(), "expected ')' after the arguments"};
         }
     }
 
@@ -129,14 +130,13 @@ class stmt_builtin_arrays_equal final : public expression {
         if (from_info.type().name() != to_info.type().name()) {
             throw compiler_exception{
                 tok(),
-                std::format("source and compare argument types are not the "
-                            "same. source is '{}' and compare is '{}'",
+                std::format("source type '{}' does not match compare type '{}'",
                             from_info.type().name(), to_info.type().name())};
         }
 
         if (dst_info.type().name() != get_type().name()) {
             throw compiler_exception{
-                tok(), std::format("destination must be type '{}', got '{}'",
+                tok(), std::format("destination type must be '{}', not '{}'",
                                    get_type().name(), dst_info.type().name())};
         }
 

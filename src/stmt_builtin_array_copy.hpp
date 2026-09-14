@@ -30,7 +30,7 @@ class stmt_builtin_array_copy final : public statement {
 
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{
-                tz, "expected '(' and 'from', 'to' and 'count'"};
+                tz, "expected '(', 'from', 'to', 'count', and ')'"};
         }
 
         set_type(tc.get_type_void());
@@ -39,21 +39,22 @@ class stmt_builtin_array_copy final : public statement {
 
         from_delim_tk_ = tz.is_next_char_token(',');
         if (from_delim_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ',' then 'to' and 'count'"};
+            throw compiler_exception{
+                tz, "expected ',' followed by 'to' and 'count'"};
         }
 
         to_ = {tc, {}, tz.next_token(), tz};
 
         to_delim_tk_ = tz.is_next_char_token(',');
         if (to_delim_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ',' then 'count'"};
+            throw compiler_exception{tz, "expected ',' followed by 'count'"};
         }
 
         count_ = {tc, tz, tc.get_type_default(), true, false, 0};
 
         close_paren_tk_ = tz.is_next_char_token(')');
         if (close_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ')' after the argument"};
+            throw compiler_exception{tz, "expected ')' after the arguments"};
         }
     }
 
@@ -123,8 +124,8 @@ class stmt_builtin_array_copy final : public statement {
         if (from_info.type().name() != to_info.type().name()) {
             throw compiler_exception{
                 tok(),
-                std::format("source and destination types are not the "
-                            "same. source is '{}' and destination is '{}'",
+                std::format("source type '{}' does not match destination "
+                            "type '{}'",
                             from_info.type().name(), to_info.type().name())};
         }
 

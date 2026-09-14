@@ -57,8 +57,8 @@ class stmt_identifier : public statement {
 
                 if (tz.peek_char() == '[' and not curr_ident_info.is_array) {
                     throw compiler_exception{
-                        tk,
-                        std::format("'{}' is not an array", path_as_string_)};
+                        tk, std::format("cannot index non-array '{}'",
+                                        path_as_string_)};
                 }
             }
 

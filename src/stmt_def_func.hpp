@@ -167,7 +167,7 @@ class stmt_def_func final : public statement {
 
             if (ret_tk.text().empty()) {
                 throw compiler_exception(ret_tk,
-                                         "missing return reference name");
+                                         "expected return reference name");
             }
 
             const var_info var{

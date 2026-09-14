@@ -1,2 +1,2 @@
 
-t327.baz:13:10: function return type 'right' does not match expected type 'left'
+t327.baz:13:10: expected return type 'left', got 'right'

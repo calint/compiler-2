@@ -217,6 +217,10 @@ rm -f gen gen.o gen.s diff.baz out err
 
 echo $SEP
 
+if [[ "$1" == "nomake" ]]; then
+    exit 0
+fi
+
 # Process coverage data
 llvm-profdata merge -o baz.profdata -sparse $(ls *.profraw)
 llvm-cov show -format=html -output-dir=report/ -instr-profile=baz.profdata -object=$BIN

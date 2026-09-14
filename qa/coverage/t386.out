@@ -1,2 +1,2 @@
 
-t386.baz:4:24: empty string is not a valid initializer
+t386.baz:4:24: an empty string is not a valid initializer

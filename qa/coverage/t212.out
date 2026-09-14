@@ -1,2 +1,2 @@
 
-t212.baz:3:12: expected ',' and more fields in type 'x'
+t212.baz:3:12: expected ',' followed by another field in type 'x'

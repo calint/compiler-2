@@ -1,2 +1,2 @@
 
-t248.baz:6:7: unary operations not allowed on references to types
+t248.baz:6:7: unary operations are not allowed on references to types

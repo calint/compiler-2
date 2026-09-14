@@ -23,14 +23,16 @@ class stmt_builtin_address_of final : public expression {
           open_paren_tk_{tz.is_next_char_token('(')} {
 
         if (not statement::get_unary_ops().is_empty()) {
-            throw compiler_exception{tok(), "unary operations are not allowed "
-                                            "on this built-in function"};
+            throw compiler_exception{
+                tok(),
+                "this built-in function does not accept unary operations"};
         }
 
         set_type(tc.get_type_default());
 
         if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected '(' and identifier"};
+            throw compiler_exception{tz,
+                                     "expected '(' followed by an identifier"};
         }
 
         stmt_ident_ = {tc, {}, tz.next_token(), tz};
@@ -61,7 +63,7 @@ class stmt_builtin_address_of final : public expression {
         }
 
         if (dst_info.type().name() != tc.get_type_default().name()) {
-            throw compiler_exception{tok(), "destination must be type 'i64'"};
+            throw compiler_exception{tok(), "destination must be an 'i64'"};
         }
 
         const ident_info src_info{tc.make_ident_info(stmt_ident_)};

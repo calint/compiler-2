@@ -1,2 +1,2 @@
 
-t193.baz:4:21: expected ',' then 'compare'
+t193.baz:4:21: expected ',' followed by 'compare'

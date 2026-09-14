@@ -33,7 +33,8 @@ class stmt_def_type final : public statement {
             const token t{tz.is_next_char_token(',')};
             if (t.is_empty()) {
                 throw compiler_exception{
-                    tz, std::format("expected ',' and more fields in type '{}'",
+                    tz, std::format("expected ',' followed by another field "
+                                    "in type '{}'",
                                     name_tk_.text())};
             }
             fields_delim_tk_.emplace_back(t);

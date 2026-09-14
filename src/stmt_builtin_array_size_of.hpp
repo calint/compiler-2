@@ -23,7 +23,8 @@ class stmt_builtin_array_size_of final : public expression {
         set_type(tc.get_type_default());
 
         if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected '(' and identifier"};
+            throw compiler_exception{tz,
+                                     "expected '(' followed by an identifier"};
         }
 
         stmt_ident_ = {tc, {}, tz.next_token(), tz};
@@ -53,19 +54,19 @@ class stmt_builtin_array_size_of final : public expression {
         }
 
         if (dst_info.type().name() != tc.get_type_default().name()) {
-            throw compiler_exception{tok(), "destination type must be 'i64'"};
+            throw compiler_exception{tok(), "destination must be an 'i64'"};
         }
 
         const ident_info src_info{tc.make_ident_info(stmt_ident_)};
 
         if (not src_info.is_var()) {
             throw compiler_exception{stmt_ident_.first_token(),
-                                     "argument is not a variable"};
+                                     "argument must be a variable"};
         }
 
         if (not src_info.is_array) {
             throw compiler_exception{stmt_ident_.first_token(),
-                                     "argument is not an array"};
+                                     "argument must refer to an array"};
         }
 
         // variable, register or field

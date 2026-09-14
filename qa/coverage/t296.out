@@ -1,2 +1,2 @@
 
-t296.baz:4:27: argument is not a variable
+t296.baz:4:27: argument must be a variable

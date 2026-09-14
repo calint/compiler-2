@@ -149,7 +149,7 @@ class stmt_call : public expression {
 
             if (not ret) {
                 throw compiler_exception{tok(),
-                                         "function does not return value"};
+                                         "function does not return a value"};
             }
 
             // alias return identifier to 'dst_info'
@@ -206,7 +206,8 @@ class stmt_call : public expression {
                 if (not arg.get_unary_ops().is_empty()) {
                     throw compiler_exception(
                         arg.tok(),
-                        "unary operations not allowed on references to types");
+                        "unary operations are not allowed on references to "
+                        "types");
                 }
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
