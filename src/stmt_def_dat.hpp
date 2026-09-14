@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <format>
+#include <ostream>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -19,8 +20,7 @@
 #include "unary_ops.hpp"
 
 class stmt_def_dat final : public statement {
-    class elem {
-      public:
+    struct elem {
         unary_ops uops;
         token tk;
         int64_t value{};
@@ -30,6 +30,11 @@ class stmt_def_dat final : public statement {
         size_t array_size{};
         std::vector<elem> elems;
         std::vector<token> elems_delim_tk_;
+
+        auto source_to(std::ostream& os) const -> void {
+            uops.source_to(os);
+            tk.source_to(os);
+        }
     };
 
     token name_tk_;
@@ -533,18 +538,15 @@ class stmt_def_dat final : public statement {
 
         if (tp.is_built_in()) {
             elroot.open_brace_tk_.source_to(os);
-
-            for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
-                if (i != 0) {
-                    elroot.elems_delim_tk_[static_cast<size_t>(i - 1)]
-                        .source_to(os);
-                    // note: -1 because 'i' is starts at 0 and delimeter after
-                    //       first element is at index 0
+            if (not elroot.elems.empty()) {
+                elroot.elems.front().source_to(os);
+                for (const auto [d, e] :
+                     std::views::zip(elroot.elems_delim_tk_,
+                                     elroot.elems | std::views::drop(1))) {
+                    d.source_to(os);
+                    e.source_to(os);
                 }
-                e.uops.source_to(os);
-                e.tk.source_to(os);
             }
-
             elroot.close_brace_tk_.source_to(os);
             return;
         }
@@ -559,7 +561,6 @@ class stmt_def_dat final : public statement {
 
         if (not elroot.is_array) {
             elroot.open_brace_tk_.source_to(os);
-
             const std::span<const type_field>& flds{tp.fields()};
             for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
                 if (i != 0) {
@@ -579,17 +580,15 @@ class stmt_def_dat final : public statement {
         // array
 
         elroot.open_brace_tk_.source_to(os);
-
-        for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
-            if (i != 0) {
-                elroot.elems_delim_tk_[static_cast<size_t>(i - 1)].source_to(
-                    os);
-                // note: -1 because 'i' is starts at 0 and delimeter after first
-                //       element is at index 0
+        if (not elroot.elems.empty()) {
+            print_source_elem(os, tp, elroot.elems.front());
+            for (const auto [d, e] :
+                 std::views::zip(elroot.elems_delim_tk_,
+                                 elroot.elems | std::views::drop(1))) {
+                d.source_to(os);
+                print_source_elem(os, tp, e);
             }
-            print_source_elem(os, tp, e);
         }
-
         elroot.close_brace_tk_.source_to(os);
     }
 
@@ -616,17 +615,15 @@ class stmt_def_dat final : public statement {
 
             elroot.open_brace_tk_.source_to(os);
 
-            for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
-                if (i != 0) {
-                    elroot.elems_delim_tk_[static_cast<size_t>(i - 1)]
-                        .source_to(os);
-                    // note: -1 because 'i' is starts at 0 and delimeter after
-                    //       first element is at index 0
+            if (not elroot.elems.empty()) {
+                elroot.elems.front().source_to(os);
+                for (const auto [d, e] :
+                     std::views::zip(elroot.elems_delim_tk_,
+                                     elroot.elems | std::views::drop(1))) {
+                    d.source_to(os);
+                    e.source_to(os);
                 }
-                e.uops.source_to(os);
-                e.tk.source_to(os);
             }
-
             elroot.close_brace_tk_.source_to(os);
 
             return;
