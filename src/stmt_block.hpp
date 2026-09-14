@@ -55,9 +55,8 @@ class stmt_block final : public statement {
             }
 
             // is it a subblock?
-            const token sub_block_open_tk_ = tz.is_next_char_token('{');
-            if (not sub_block_open_tk_.is_empty()) {
-                tz.put_back_token(sub_block_open_tk_);
+            if (const token t = tz.is_next_char_token('{'); not t.is_empty()) {
+                tz.put_back_token(t);
                 stms_.emplace_back(std::make_unique<stmt_block>(tc, tz));
                 continue;
             }
@@ -100,15 +99,16 @@ class stmt_block final : public statement {
                 // note: 'unary_ops' not allowed before destination identifier
                 stmt_identifier si{tc, {}, tk, tz};
 
-                const token equals_tk{tz.is_next_char_token('=')};
-                if (not equals_tk.is_empty()) {
+                if (const token t{tz.is_next_char_token('=')};
+                    not t.is_empty()) {
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(
-                        tc, tz, std::move(si), equals_tk, si.is_array(),
+                        tc, tz, std::move(si), t, si.is_array(),
                         si.array_size()));
 
-                } else if (tz.is_peek_char('(')) {
+                } else if (const token tt{tz.is_next_char_token('(')};
+                           not tt.is_empty()) {
                     // note: solves circular reference
-                    stms_.emplace_back(create_stmt_call(tc, tz, si));
+                    stms_.emplace_back(create_stmt_call(tc, tz, si, tt));
 
                 } else {
                     throw compiler_exception{

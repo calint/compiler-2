@@ -21,13 +21,13 @@ class stmt_call : public expression {
     token close_paren_tk_;
 
   public:
-    stmt_call(toc& tc, unary_ops uops, token tk, tokenizer& tz)
-        : expression{tk, std::move(uops)} {
+    stmt_call(toc& tc, unary_ops uops, token tk, token open_paren_tk,
+              tokenizer& tz)
+        : expression{tk, std::move(uops)}, open_paren_tk_{open_paren_tk} {
 
         set_type(
             tc.get_func_return_type_or_throw(tok(), statement::identifier()));
 
-        open_paren_tk_ = tz.is_next_char_token('(');
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{tok(), "expected '(' after function name"};
         }

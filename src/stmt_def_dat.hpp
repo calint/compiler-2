@@ -364,11 +364,11 @@ class stmt_def_dat final : public statement {
             while (true) {
                 el.elems.emplace_back(parse_builtin(tc, tz, tp));
                 ++counter;
-                const token tk{tz.is_next_char_token(',')};
-                if (tk.is_empty()) {
+                const token t{tz.is_next_char_token(',')};
+                if (t.is_empty()) {
                     break;
                 }
-                el.elems_delim_tk_.emplace_back(tk);
+                el.elems_delim_tk_.emplace_back(t);
             }
 
             el.close_brace_tk_ = tz.is_next_char_token('}');

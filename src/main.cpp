@@ -235,7 +235,8 @@ auto main(const int argc, const char* argv[]) -> int {
 // declared in 'decouple.hpp'
 // called from 'stmt_block'
 [[nodiscard]] inline auto create_stmt_call(toc& tc, tokenizer& tz,
-                                           const stmt_identifier& si)
+                                           const stmt_identifier& si,
+                                           token open_paren_tk)
     -> std::unique_ptr<statement> {
 
     if (si.elems().size() != 1) {
@@ -244,7 +245,7 @@ auto main(const int argc, const char* argv[]) -> int {
     }
 
     return std::make_unique<stmt_call>(tc, si.get_unary_ops(), si.first_token(),
-                                       tz);
+                                       open_paren_tk, tz);
 }
 
 // declared in 'decouple.hpp'
@@ -280,11 +281,12 @@ auto main(const int argc, const char* argv[]) -> int {
         return std::make_unique<stmt_builtin_equal>(tc, std::move(uops), tk,
                                                     tz);
     }
-    if (tz.is_peek_char('(')) {
+
+    if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
         // e.g.  foo(...)
-        return std::make_unique<stmt_call>(tc, std::move(uops), tk, tz);
+        return std::make_unique<stmt_call>(tc, std::move(uops), tk, t, tz);
     }
-    // e.g. 0x80, rax, identifiers
+    // e.g. 0x80, rax, identifiers, constants
     return std::make_unique<stmt_identifier>(tc, std::move(uops), tk, tz);
 }
 
@@ -304,9 +306,9 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     if (not tok().text().empty()) {
         // yes, e.g. obj.pos = p
 
-        if (tz.peek_char() == '(') {
+        if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
             stmt_call_ =
-                std::make_shared<stmt_call>(tc, unary_ops{}, tok(), tz);
+                std::make_shared<stmt_call>(tc, unary_ops{}, tok(), t, tz);
             return;
         }
 
@@ -351,14 +353,14 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         }
         const type_field& tf{flds[counter]};
         if (counter++) {
-            const token dt{tz.is_next_char_token(',')};
-            if (dt.is_empty()) {
+            const token t{tz.is_next_char_token(',')};
+            if (t.is_empty()) {
                 throw compiler_exception{
                     tz, std::format(
                             "expected ',' and value of field '{}' in type '{}'",
                             flds[counter].name, tp.name())};
             }
-            exprs_delims_tk_.emplace_back(dt);
+            exprs_delims_tk_.emplace_back(t);
         }
         // create an expression that assigns to field
         // might recurse creating 'expr_type_value'

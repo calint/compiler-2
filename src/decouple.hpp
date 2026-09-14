@@ -332,5 +332,6 @@ struct ident_info {
     -> std::unique_ptr<statement>;
 
 [[nodiscard]] inline auto create_stmt_call(toc& tc, tokenizer& tz,
-                                           const stmt_identifier& si)
+                                           const stmt_identifier& si,
+                                           token open_paren_tk)
     -> std::unique_ptr<statement>;

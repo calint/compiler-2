@@ -57,21 +57,20 @@ class stmt_identifier : public statement {
                 }
             }
 
-            const token open_bracket_tk{tz.is_next_char_token('[')};
-            if (not open_bracket_tk.is_empty()) {
+            if (const token t{tz.is_next_char_token('[')}; not t.is_empty()) {
                 elems_.emplace_back(
                     tk, token{},
                     std::make_unique<expr_any>(tc, tz, tc.get_type_default(),
                                                false, false, 0),
                     token{});
 
-                const token close_bracket_tk{tz.is_next_char_token(']')};
-                if (close_bracket_tk.is_empty()) {
+                const token tt{tz.is_next_char_token(']')};
+                if (tt.is_empty()) {
                     throw compiler_exception{
                         tz, "expected ']' to close array index expression"};
                 }
-                elems_.back().open_bracket_tk = open_bracket_tk;
-                elems_.back().close_bracket_tk = close_bracket_tk;
+                elems_.back().open_bracket_tk = t;
+                elems_.back().close_bracket_tk = tt;
             } else {
                 elems_.emplace_back(tk, token{}, nullptr, token{});
             }

@@ -49,11 +49,10 @@ class expr_ops_list final : public expression {
             unary_ops uo{tz};
 
             // is next a sub-expression?
-            const token opt{tz.is_next_char_token('(')};
-            if (not opt.is_empty()) {
+            if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
                 // yes, recurse with unary ops
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
-                    tc, tz, in_args, true, opt, false, std::move(uo)));
+                    tc, tz, in_args, true, t, false, std::move(uo)));
             } else {
                 // no, push back the unary ops to be parsed by the statement
                 uo.put_back(tz);
@@ -157,12 +156,11 @@ class expr_ops_list final : public expression {
             unary_ops uo{tz}; // read the unary ops, in this case '-'
 
             // is it a sub-expression?
-            const token opt{tz.is_next_char_token('(')};
-            if (not opt.is_empty()) {
+            if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
                 // yes, recurse and forward the unary ops to be applied on the
                 // whole sub-expression
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
-                    tc, tz, in_args, true, opt, false, std::move(uo)));
+                    tc, tz, in_args, true, t, false, std::move(uo)));
                 continue;
             }
 

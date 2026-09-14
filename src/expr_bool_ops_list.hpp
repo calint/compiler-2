@@ -55,12 +55,11 @@ class expr_bool_ops_list final : public statement {
             // of expression
             const token pos_tk{tz.current_position_token()};
             // is it start of new sub-expression?
-            const token opt{tz.is_next_char_token('(')};
-            if (not opt.is_empty()) {
+            if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
                 // yes, try as 'expr_bool_ops_list' but it might not be that
                 // e.g.: (t1 + t2) > 3 is not but will compile so further checks
                 // are necessary after the parsing
-                expr_bool_ops_list bol{tc, pos_tk, tz, true, maybe_not_tk, opt};
+                expr_bool_ops_list bol{tc, pos_tk, tz, true, maybe_not_tk, t};
                 // check if 'expr_bool_ops_list' parsed an expression,
                 // wrongfully, as the shorthand boolean expression
                 //   e.g., not ((t1 + t2) > 2)
