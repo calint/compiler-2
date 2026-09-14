@@ -127,14 +127,6 @@ class stmt_call : public expression {
             }
 
             if (arg_type.is_built_in() and param_type.is_built_in()) {
-                if (param_type.size() < arg_type.size()) {
-                    throw compiler_exception{
-                        arg.tok(),
-                        std::format(
-                            "argument {} of type '{}' would be truncated when "
-                            "passed to parameter of type '{}'",
-                            i + 1, arg_type.name(), param_type.name())};
-                }
                 continue;
             }
 
@@ -361,15 +353,12 @@ class stmt_call : public expression {
         // apply unary ops to result if present
 
         if (not get_unary_ops().is_empty()) {
-
             if (not func.returns()) {
-                throw compiler_exception{tok(),
-                                         "function call has unary operations "
-                                         "but it does not return a value"};
+                std::unreachable();
             }
-
+            const func_return_info& return_info{*func.returns()};
             const ident_info& ret_info{
-                tc.make_ident_info(tok(), func.returns()->ident_tk.text())};
+                tc.make_ident_info(tok(), return_info.ident_tk.text())};
 
             get_unary_ops().compile(tc, os, indent, ret_info.operand.str());
         }

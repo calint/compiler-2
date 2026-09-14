@@ -1,0 +1,32 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+type point { x, y }
+type rectangle { top_left : point, bottom_right : point }
+
+func make_point() : point result {
+    result = { 3, 4 }
+}
+
+func scale_point(source : point) : point result {
+    result.x = source.x * 2
+    result.y = source.y * 3
+}
+
+func make_rectangle() : rectangle result {
+    result.top_left = make_point()
+    result.bottom_right = scale_point(result.top_left)
+}
+
+func main() {
+    var rectangle_value : rectangle = make_rectangle()
+    assert(rectangle_value.top_left.x == 3)
+    assert(rectangle_value.top_left.y == 4)
+    assert(rectangle_value.bottom_right.x == 6)
+    assert(rectangle_value.bottom_right.y == 12)
+}

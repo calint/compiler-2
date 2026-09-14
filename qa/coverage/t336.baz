@@ -1,0 +1,37 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+type record { first, second, third, fourth }
+
+func main() {
+    {
+        var dirty_values : i64[4] = { 11, 22, 33, 44 }
+        assert(dirty_values[3] == 44)
+    }
+
+    {
+        var zeroed_values : i64[4] = { 99 }
+        assert(zeroed_values[0] == 99)
+        assert(zeroed_values[1] == 0)
+        assert(zeroed_values[2] == 0)
+        assert(zeroed_values[3] == 0)
+    }
+
+    {
+        var dirty_record : record = { 1, 2, 3, 4 }
+        assert(dirty_record.fourth == 4)
+    }
+
+    {
+        var zeroed_record : record = { 77 }
+        assert(zeroed_record.first == 77)
+        assert(zeroed_record.second == 0)
+        assert(zeroed_record.third == 0)
+        assert(zeroed_record.fourth == 0)
+    }
+}

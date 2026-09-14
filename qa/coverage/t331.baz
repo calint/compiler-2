@@ -1,0 +1,21 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+type point { x, y }
+type box { point_value : point, tag : i64 }
+
+func make_point() : point result {
+    result = { 8, -3 }
+}
+
+func main() {
+    var container : box
+    container.point_value = make_point()
+    assert(container.point_value.x == 8)
+    assert(container.point_value.y == -3)
+}

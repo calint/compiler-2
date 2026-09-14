@@ -308,6 +308,7 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
             stmt_call_ =
                 std::make_shared<stmt_call>(tc, unary_ops{}, tok(), t, tz);
+            set_type(stmt_call_->get_type());
             return;
         }
 

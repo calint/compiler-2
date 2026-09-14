@@ -1,0 +1,21 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func take(value : i8) : i8 result {
+    result = value
+}
+
+func main() {
+    var bigger : i64 = 0x123
+    var smaller : i8 = take(bigger)
+    assert(smaller == 0x23)
+
+    var bigger_again : i64 = 0x1234
+    var smaller_again : i8 = take(bigger_again)
+    assert(smaller_again == 0x34)
+}

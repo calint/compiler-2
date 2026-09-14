@@ -154,6 +154,7 @@ SRC=t154 && EXP=0 && RUN
 SRC=t155 && EXP=0 && RUN
 SRC=t156 && EXP=0 && RUN
 SRC=t157 && EXP=0 && RUN
+# SRC=t158 && EXP=0 && RUN  # UB: reads uninitialized value; UB detection is not implemented yet
 SRC=t161 && COMPERR
 SRC=t162 && COMPERR
 SRC=t163 && COMPERR
@@ -304,3 +305,13 @@ SRC=t322 && COMPERR
 SRC=t323 && COMPERR
 SRC=t324 && EXP=0 && RUN
 SRC=t325 && EXP=0 && RUN_NO_CHECKS
+SRC=t326 && EXP=0 && RUN
+SRC=t327 && COMPERR
+SRC=t328 && EXP=0 && RUN
+SRC=t329 && EXP=0 && RUN
+SRC=t330 && EXP=0 && RUN
+SRC=t331 && EXP=0 && RUN
+SRC=t332 && EXP=0 && RUN
+SRC=t333 && EXP=0 && RUN
+SRC=t334 && COMPERR
+SRC=t335 && EXP=0 && RUN

@@ -1,0 +1,15 @@
+type world { locations : i64[2] }
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func main() {
+    var worlds : world[2]
+    worlds[1].locations[1] = 0xffee
+    assert(worlds[1].locations[1] == 0xffee)
+}

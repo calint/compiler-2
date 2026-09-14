@@ -1,0 +1,21 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+type point { x, y }
+type collection { points : point[3] }
+
+func make_point() : point result {
+    result = { 6, 9 }
+}
+
+func main() {
+    var values : collection
+    values.points[2] = make_point()
+    assert(values.points[2].x == 6)
+    assert(values.points[2].y == 9)
+}
