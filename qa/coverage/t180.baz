@@ -1,1 +1,3 @@
+# syscall rejects unexpected arguments
+
 func main() { syscall(1) }

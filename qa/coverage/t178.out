@@ -1,2 +1,2 @@
 
-t178.baz:4:13: source and compare argument types are not the same. source is 'i8' and compare is 'i16'
+t178.baz:6:13: source and compare argument types are not the same. source is 'i8' and compare is 'i16'

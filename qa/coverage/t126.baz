@@ -1,3 +1,5 @@
+# continue skips the required result assignment
+
 func foo(i) : i64 res {
     loop {
         continue

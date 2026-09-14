@@ -1,3 +1,5 @@
+# variable cannot initialize itself
+
 func main() {
     var x = x + 1
 }

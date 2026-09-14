@@ -1,3 +1,5 @@
+# negative constant array size is rejected
+
 const n = -1
 func main() {
     var values : i8[n]

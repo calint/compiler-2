@@ -1,3 +1,5 @@
+# indexed struct field receives a function result
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)

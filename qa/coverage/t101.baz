@@ -1,3 +1,5 @@
+# conditional return assignment is not guaranteed
+
 func foo(i) : i64 res {
     if i == 3 res = 2
 }

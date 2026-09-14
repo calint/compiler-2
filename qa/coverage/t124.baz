@@ -1,3 +1,5 @@
+# return skips the required result assignment
+
 func foo(i) : i64 res {
     return
     res = i * 2

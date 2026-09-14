@@ -1,3 +1,5 @@
+# nested array and field indexing
+
 type world { locations : i64[2] }
 
 func exit(v : reg_rdi) {

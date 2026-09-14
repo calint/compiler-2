@@ -1,2 +1,2 @@
 
-t319.baz:2:6: function 'foo' already defined at 1:6
+t319.baz:4:6: function 'foo' already defined at 3:6

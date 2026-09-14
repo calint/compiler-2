@@ -1,2 +1,2 @@
 
-t272.baz:3:26: expected '(' then 'source', 'compare' and 'count'
+t272.baz:5:26: expected '(' then 'source', 'compare' and 'count'

@@ -1,1 +1,3 @@
+# malformed decimal literal is rejected
+
 func main() { var x = 123abc }

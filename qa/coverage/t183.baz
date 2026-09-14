@@ -1,3 +1,5 @@
+# duplicate type declarations are rejected
+
 type x { a }
 type x { b }
 func main() {}

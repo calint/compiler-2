@@ -1,3 +1,5 @@
+# function returns a constructed value
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)

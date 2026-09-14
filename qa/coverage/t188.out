@@ -1,2 +1,2 @@
 
-t188.baz:1:10: expected ',' or ')' after parameter 'x'
+t188.baz:3:10: expected ',' or ')' after parameter 'x'

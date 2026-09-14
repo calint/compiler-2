@@ -1,1 +1,3 @@
+# continue is only valid inside a loop
+
 func main() { continue }

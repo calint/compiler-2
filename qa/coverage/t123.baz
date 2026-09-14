@@ -1,3 +1,5 @@
+# recursive initialization is rejected
+
 func foo(i) {
 
 }

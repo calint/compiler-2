@@ -1,3 +1,5 @@
+# address_of requires an i64 destination
+
 func main() {
     var x : i8
     var p : i8 = address_of(x)

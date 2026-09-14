@@ -1,3 +1,5 @@
+# unknown field access is rejected
+
 type p { x }
 func main() {
     var p1 : p

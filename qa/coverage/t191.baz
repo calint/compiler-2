@@ -1,3 +1,5 @@
+# array_size_of requires a closing parenthesis
+
 func main() {
     var x : i8[2]
     var n = array_size_of(x

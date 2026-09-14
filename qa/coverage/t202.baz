@@ -1,2 +1,4 @@
+# void function cannot produce a value
+
 func f() {}
 func main() { var x = f() }

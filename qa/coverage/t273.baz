@@ -1,3 +1,5 @@
+# arrays_equal requires a closing parenthesis
+
 func main() {
     var a : i8[2]
     var z = arrays_equal(a,a,1

@@ -1,1 +1,3 @@
+# variable array initializers require commas
+
 func main() { var x : i8[2] = {1 2} }

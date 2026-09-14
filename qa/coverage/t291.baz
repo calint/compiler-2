@@ -1,3 +1,5 @@
+# string escape decoding
+
 func print(len : reg_rdx, ptr : reg_rsi) {
     mov(rax, 1)
     mov(rdi, 1)

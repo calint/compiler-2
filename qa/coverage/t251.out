@@ -1,2 +1,2 @@
 
-t251.baz:1:27: cannot use 'rdx' or 'rax' as operands in division because those registers are used
+t251.baz:3:27: cannot use 'rdx' or 'rax' as operands in division because those registers are used

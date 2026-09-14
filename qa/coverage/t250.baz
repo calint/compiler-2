@@ -1,1 +1,3 @@
+# shift count must be an immediate or valid expression
+
 func main() { var x = 1 << rcx }

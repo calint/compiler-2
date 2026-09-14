@@ -1,3 +1,5 @@
+# duplicate constant declarations are rejected
+
 const x = 1
 const x = 2
 func main() {}

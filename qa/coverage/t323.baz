@@ -1,3 +1,5 @@
+# negative type-level array size is rejected
+
 func main() {
     dat values : i8[-1]
 }

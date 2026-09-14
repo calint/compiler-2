@@ -1,2 +1,4 @@
+# decimal constants must fit in i64
+
 const x = 9223372036854775808
 func main() {}

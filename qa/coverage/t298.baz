@@ -1,1 +1,3 @@
+# scalar initializer cannot initialize a data array
+
 func main() { dat x : i8[2] = 1 }

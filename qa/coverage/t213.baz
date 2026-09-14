@@ -1,2 +1,4 @@
+# type fields require known types
+
 type x { a : nope }
 func main() {}

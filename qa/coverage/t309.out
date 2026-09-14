@@ -1,2 +1,2 @@
 
-t309.baz:1:12: 'dat' can only be added in function 'main'
+t309.baz:3:12: 'dat' can only be added in function 'main'

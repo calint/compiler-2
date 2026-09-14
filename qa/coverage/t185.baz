@@ -1,1 +1,3 @@
+# break is only valid inside a loop
+
 func main() { break }

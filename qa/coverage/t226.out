@@ -1,2 +1,2 @@
 
-t226.baz:3:18: expected ',' then 'to' and 'count'
+t226.baz:5:18: expected ',' then 'to' and 'count'

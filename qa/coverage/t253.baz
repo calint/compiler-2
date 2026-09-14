@@ -1,1 +1,3 @@
+# incomplete addition is rejected
+
 func main() { var x = 1 + }

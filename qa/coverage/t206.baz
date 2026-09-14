@@ -1,1 +1,3 @@
+# data array type requires a closing bracket
+
 func main() { dat x : i8[2 = {1,2} }

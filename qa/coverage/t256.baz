@@ -1,2 +1,4 @@
+# function arguments require commas
+
 func f(x,y) {}
 func main() { f(1 2) }

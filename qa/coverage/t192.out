@@ -1,2 +1,2 @@
 
-t192.baz:3:28: expected ',' then 'compare' and 'count'
+t192.baz:5:28: expected ',' then 'compare' and 'count'

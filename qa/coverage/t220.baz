@@ -1,3 +1,5 @@
+# conditional expression requires a closing parenthesis
+
 func main() {
     var x = 1
     if (x == 1 {}

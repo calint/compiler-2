@@ -1,3 +1,5 @@
+# distinct user types cannot be passed to a function
+
 type p { x }
 type q { x }
 func f(x : p) {}

@@ -1,2 +1,4 @@
+# constant values require known identifiers
+
 const x = nope
 func main() {}

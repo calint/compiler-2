@@ -1,3 +1,5 @@
+# unknown field access is rejected
+
 type point { x }
 
 func main() {

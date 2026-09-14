@@ -1,2 +1,4 @@
+# type fields require a name
+
 type x { : i8 }
 func main() {}

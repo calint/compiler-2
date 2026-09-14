@@ -1,3 +1,5 @@
+# unary operations are forbidden on arrays_equal
+
 func main() {
     var a : i8[2]
     var z = -arrays_equal(a,a,1)

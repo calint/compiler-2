@@ -1,3 +1,5 @@
+# incompatible user types cannot be passed
+
 type left { value }
 type right { value }
 

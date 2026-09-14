@@ -1,2 +1,4 @@
+# type declarations require fields
+
 type x
 func main() {}

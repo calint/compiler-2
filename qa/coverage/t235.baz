@@ -1,2 +1,4 @@
+# hexadecimal constants must fit in i64
+
 const x = 0x10000000000000000
 func main() {}

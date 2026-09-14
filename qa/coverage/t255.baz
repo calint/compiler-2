@@ -1,2 +1,4 @@
+# function calls reject a trailing comma
+
 func f(x) {}
 func main() { f(1,) }

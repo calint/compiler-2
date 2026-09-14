@@ -1,3 +1,5 @@
+# arrays_equal requires matching array types
+
 func main() {
     var a : i8[2]
     var b : i16[2]

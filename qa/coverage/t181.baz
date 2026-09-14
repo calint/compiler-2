@@ -1,2 +1,4 @@
+# function argument count must match
+
 func f(x) {}
 func main() { f(1,2) }

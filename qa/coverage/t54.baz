@@ -1,3 +1,5 @@
+# nested struct fields and address calculations
+
 func exit(v:reg_rdi){
 	mov(rax,60) # exit system call
 	mov(rdi,v)  # return code

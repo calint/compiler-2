@@ -1,2 +1,4 @@
+# type field array requires a closing bracket
+
 type x { a : i8[2 }
 func main() {}

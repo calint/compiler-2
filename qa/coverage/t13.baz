@@ -1,3 +1,5 @@
+# mutable data declaration
+
 func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code

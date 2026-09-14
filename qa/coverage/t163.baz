@@ -1,1 +1,3 @@
+# unterminated escaped string is rejected
+
 func main() { dat x : i8[] = "abc\

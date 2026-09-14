@@ -1,3 +1,5 @@
+# constant-sized array declaration
+
 const n = 3
 func exit(v : reg_rdi) {
     mov(rax, 60)

@@ -1,1 +1,3 @@
+# scalar initializer cannot initialize a variable array
+
 func main() { var x : i64[2] = 1 }

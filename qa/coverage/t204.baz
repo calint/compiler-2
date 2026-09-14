@@ -1,1 +1,3 @@
+# dat requires a declared name
+
 func main() { dat = 1 }

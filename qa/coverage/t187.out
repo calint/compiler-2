@@ -1,2 +1,2 @@
 
-t187.baz:1:1: unexpected keyword 'dat'
+t187.baz:3:1: unexpected keyword 'dat'

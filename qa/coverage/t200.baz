@@ -1,1 +1,3 @@
+# unknown function calls are rejected
+
 func main() { var x = nope(1) }

@@ -1,3 +1,5 @@
+# nested user-type array fields must match
+
 type p { data : i8[2] }
 type q { data : i16[2] }
 func main() {

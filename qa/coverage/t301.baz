@@ -1,1 +1,3 @@
+# malformed single-line function block
+
 func main() if true }

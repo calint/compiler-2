@@ -1,2 +1,4 @@
+# void function results cannot be negated
+
 func f() {}
 func main() { var x = -f() }

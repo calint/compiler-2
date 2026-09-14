@@ -1,3 +1,5 @@
+# array_size_of requires an array
+
 func main() {
     var n = array_size_of(1)
 }

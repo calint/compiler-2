@@ -1,3 +1,5 @@
+# distinct user types cannot be assigned
+
 type p { x }
 type q { x }
 func main() {

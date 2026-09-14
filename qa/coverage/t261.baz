@@ -1,2 +1,4 @@
+# user-type fields require structured initializers
+
 type p { x }
 func main() { dat x : p[2] = {1,2} }

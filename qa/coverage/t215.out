@@ -1,2 +1,2 @@
 
-t215.baz:1:12: type 'nope' not found
+t215.baz:3:12: type 'nope' not found

@@ -1,3 +1,5 @@
+# scalar value cannot satisfy an array parameter
+
 func f(x : i8[]) {}
 func main() {
     var x : i8

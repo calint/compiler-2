@@ -1,3 +1,5 @@
+# partial array and record initializers zero-fill the rest
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)

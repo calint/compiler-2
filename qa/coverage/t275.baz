@@ -1,3 +1,5 @@
+# fixed-size arrays accept empty initializers
+
 func main() {
     var a : i8[2] = {}
 }

@@ -1,1 +1,3 @@
+# data array cannot exceed its declared size
+
 func main() { dat x : i8[1] = {1,2} }

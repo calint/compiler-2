@@ -1,2 +1,4 @@
+# constant declarations require an equals sign
+
 const x 1
 func main() {}

@@ -1,2 +1,4 @@
+# constant declarations require a name
+
 const = 1
 func main() {}

@@ -1,3 +1,5 @@
+# assignments across data and variable declarations
+
 func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code

@@ -1,2 +1,4 @@
+# duplicate function definitions are rejected
+
 func foo() {}
 func foo() {}

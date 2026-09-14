@@ -1,3 +1,5 @@
+# array index expression requires a closing bracket
+
 func main() {
     var x : i8[2]
     var y = x[

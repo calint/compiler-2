@@ -1,2 +1,2 @@
 
-t303.baz:2:0: expected '}' to close array initializer for 'p'
+t303.baz:4:0: expected '}' to close array initializer for 'p'

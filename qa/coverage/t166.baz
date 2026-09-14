@@ -1,1 +1,3 @@
+# malformed binary literal is rejected
+
 func main() { var x = 0b102 }

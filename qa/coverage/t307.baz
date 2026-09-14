@@ -1,1 +1,3 @@
+# mov requires arguments
+
 func main() { mov }

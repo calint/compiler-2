@@ -1,3 +1,5 @@
+# address_of requires a closing parenthesis
+
 func main() {
     var x : i8
     var p = address_of(x

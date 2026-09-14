@@ -1,3 +1,5 @@
+# function argument cannot read its own uninitialized caller variable
+
 func foo(i) : i64 res {
     res = 1
 }

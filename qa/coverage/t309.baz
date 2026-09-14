@@ -1,2 +1,4 @@
+# data declarations are not allowed inside functions
+
 func f() { dat x = 1 }
 func main() {}

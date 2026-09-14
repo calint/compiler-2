@@ -1,2 +1,4 @@
+# type fields require delimiters
+
 type x { a b }
 func main() {}
