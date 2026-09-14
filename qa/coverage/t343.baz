@@ -1,0 +1,11 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func main() {
+    var arr : i8[8]
+    var index = 8
+    arr[index] = 0x61
+}

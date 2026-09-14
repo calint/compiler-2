@@ -1,0 +1,20 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+type point { x, y }
+type holder { points : point[2] }
+
+func set_x(p : point) {
+    p.x = 9
+}
+
+func main() {
+    var h : holder
+    set_x(h.points[1])
+    assert(h.points[1].x == 9)
+}

@@ -51,6 +51,17 @@ compile_and_build_no_checks() {
     ld -s -o gen gen.o
 }
 
+compile_and_build_with_opts() {
+    local opts="$1"
+    LLVM_PROFILE_FILE="${SRC%.*}.profraw" $BIN "$SRC.baz" $opts 2>err >gen.s
+    if [ $? -ne 0 ]; then
+        echo "compiler failed. see 'err' and 'gen.s'" >&2
+        exit 1
+    fi
+    nasm -f elf64 gen.s
+    ld -s -o gen gen.o
+}
+
 # Common: compile and assemble
 compile_expect_error() {
     set +e
@@ -85,6 +96,40 @@ RUN() {
         echo "FAILED. expected $EXP got $exit_code"
         exit 1
     fi
+}
+
+RUN_ERR() {
+    echo -n "$SRC: "
+    compile_and_build
+
+    set +e
+    ./gen 2>out
+    local exit_code=$?
+    set -e
+
+    if [ $exit_code -ne $EXP ]; then
+        echo "FAILED. expected $EXP got $exit_code"
+        exit 1
+    fi
+
+    check_output "${SRC%.*}.out"
+}
+
+RUN_ERR_OPTS() {
+    echo -n "$SRC: "
+    compile_and_build_with_opts "$1"
+
+    set +e
+    ./gen 2>out
+    local exit_code=$?
+    set -e
+
+    if [ $exit_code -ne $EXP ]; then
+        echo "FAILED. expected $EXP got $exit_code"
+        exit 1
+    fi
+
+    check_output "${SRC%.*}.out"
 }
 
 RUN_NO_CHECKS() {

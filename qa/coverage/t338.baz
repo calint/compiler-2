@@ -1,0 +1,17 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+type position { index }
+
+func main() {
+    var values : i64[4]
+    var pos : position
+    pos.index = 2
+    values[pos.index] = 7
+    assert(values[2] == 7)
+}
