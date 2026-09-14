@@ -42,19 +42,17 @@ class stmt_call : public expression {
             const size_t n{func.params().size()};
             args_.reserve(n);
             for (const auto [i, param] : std::views::enumerate(func.params())) {
-                args_.emplace_back(tc, tz, param.get_type(), true, false, 0);
-
-                if (static_cast<size_t>(i) + 1 < n) {
+                if (i != 0) {
                     const token t{tz.is_next_char_token(',')};
                     if (t.is_empty()) {
                         throw compiler_exception{
                             tz, std::format("expected argument {} named '{}'",
-                                            i + 2, param.name())};
-                        // note: +2 because first argument is 0 and next
-                        //       argument is +1
+                                            i + 1, param.name())};
+                        // note: +1 because 'i' starts at 0
                     }
                     args_delims_tk_.emplace_back(t);
                 }
+                args_.emplace_back(tc, tz, param.get_type(), true, false, 0);
             }
 
             close_paren_tk_ = tz.is_next_char_token(')');
