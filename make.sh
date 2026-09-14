@@ -68,9 +68,12 @@ for arg in "$@"; do
     build)
         BUILD_ONLY=1
         ;;
+    -O3)
+        OPT=-O3
+        ;;
     *)
         echo "unknown parameter: $arg"
-        echo "usage: $0 [asan|msan|tsan] [prof] [build]"
+        echo "usage: $0 [asan|msan|tsan] [prof] [-O3] [build]"
         echo ""
         echo "sanitizers (choose one option):"
         echo "  asan - AddressSanitizer + UndefinedBehaviorSanitizer"
@@ -79,6 +82,7 @@ for arg in "$@"; do
         echo ""
         echo "options:"
         echo "  prof  - enable profiling/coverage"
+        echo "  -O3   - optimize for faster execution"
         echo "  build - build only, don't run"
         exit 1
         ;;

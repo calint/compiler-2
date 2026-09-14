@@ -259,8 +259,7 @@ class stmt_identifier : public statement {
                     const ident_elem& next_elem{elems[i + 1]};
                     accum_offset +=
                         static_cast<int32_t>(toc::get_field_offset_in_type(
-                            src_loc_tk, curr_info.type(),
-                            next_elem.name_tk.text()));
+                            curr_info.type(), next_elem.name_tk.text()));
                     path.push_back('.');
                     path += next_elem.name_tk.text();
                 }
@@ -388,9 +387,9 @@ class stmt_identifier : public statement {
             // accumulate field offsets
             if (i + 1 < elems_size) {
                 const ident_elem& next_elem{elems[i + 1]};
-                accum_offset += static_cast<int32_t>(
-                    toc::get_field_offset_in_type(src_loc_tk, curr_info.type(),
-                                                  next_elem.name_tk.text()));
+                accum_offset +=
+                    static_cast<int32_t>(toc::get_field_offset_in_type(
+                        curr_info.type(), next_elem.name_tk.text()));
                 path.push_back('.');
                 path += next_elem.name_tk.text();
             }

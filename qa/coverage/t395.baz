@@ -1,0 +1,5 @@
+# dotted function names are rejected
+
+func main() {
+    object.method()
+}

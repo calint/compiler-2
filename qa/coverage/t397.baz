@@ -1,0 +1,7 @@
+# unknown field after array indexing is rejected
+
+type point { x }
+func main() {
+    var points : point[1]
+    var value = points[0].y
+}

@@ -138,7 +138,7 @@ class expr_any final : public statement {
         tc.comment_start(tok(), os, indent);
         std::println(os, "zero remaining elements: {} * {} B = {} B", diff,
                      ii.type().size(), nbytes);
-        tc.rep_stos(tok(), os, indent, ii.operand.address_str(), nbytes, 0);
+        tc.rep_stos_zero(tok(), os, indent, ii.operand.address_str(), nbytes);
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }

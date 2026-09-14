@@ -1,2 +1,2 @@
 
-t253.baz:3:27: expected constant, identifier or function call
+t253.baz:3:27: expected constant, identifier, or function call

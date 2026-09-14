@@ -1,2 +1,5 @@
-Tue Sep 15 12:27:11 AM +07 2026
-Tue Sep 15 12:27:36 AM +07 2026
+Tue Sep 15 01:43:01 AM +07 2026
+/home/c/w/compiler-2/qa/lint/../../src/main.cpp:428:9: warning: no header providing "assert" is directly included [misc-include-cleaner]
+    3 |         assert(dst_type.name() == src_info.type().name());
+      |         ^
+Tue Sep 15 01:43:26 AM +07 2026

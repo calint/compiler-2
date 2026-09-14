@@ -74,6 +74,7 @@ class expr_ops_list final : public expression {
                 close_paren_tk_ = tz.is_next_char_token(')');
                 if (not close_paren_tk_.is_empty()) {
                     // return from recursion
+                    validate_arithmetic_operands(tc);
                     return;
                 }
             }
@@ -82,6 +83,7 @@ class expr_ops_list final : public expression {
             if (in_args) {
                 // yes, exit when ',' or ')' is found
                 if (tz.is_peek_char(',') or tz.is_peek_char(')')) {
+                    validate_arithmetic_operands(tc);
                     return;
                 }
             }
@@ -109,6 +111,7 @@ class expr_ops_list final : public expression {
                 ops_.emplace_back('>');
             } else {
                 // no more operations, return
+                validate_arithmetic_operands(tc);
                 return;
             }
 
@@ -141,6 +144,7 @@ class expr_ops_list final : public expression {
                 // yes, return to the parent expression
                 // e.g., a-b*c+3 => becomes a-(b*c+3) otherwise
                 ops_.pop_back();
+                validate_arithmetic_operands(tc);
                 return;
             }
 
@@ -318,6 +322,23 @@ class expr_ops_list final : public expression {
     }
 
   private:
+    auto validate_arithmetic_operands(const toc& tc) const -> void {
+        if (ops_.empty()) {
+            return;
+        }
+
+        for (const std::unique_ptr<statement>& expr : exprs_) {
+            const type& expr_type{expr->is_identifier()
+                                      ? tc.make_ident_info(*expr).type()
+                                      : expr->get_type()};
+            if (expr_type.name() == tc.get_type_bool().name()) {
+                throw compiler_exception{
+                    expr->tok(),
+                    "boolean values cannot be arithmetic operands"};
+            }
+        }
+    }
+
     auto do_compile(toc& tc, std::ostream& os, const size_t indent,
                     const ident_info& dst_info) const -> void {
 

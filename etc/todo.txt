@@ -2,6 +2,8 @@
 [ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [ ] t389 bools should not be used in arithmetics
+[ ] support string initializers for variable
+[ ] unspecified array size var with empty string not supported
 [ ] t158 is ub
 [ ] ub? mp[1] = { mp[2].msg } see t155.baz:44
 [ ] review the ub checks

@@ -238,12 +238,6 @@ auto main(const int argc, const char* argv[]) -> int {
                                     const stmt_identifier& si,
                                     token open_paren_tk)
     -> std::unique_ptr<statement> {
-
-    if (si.elems().size() != 1) {
-        throw compiler_exception{si.first_token(),
-                                 "did not expect '.' in function name"};
-    }
-
     return std::make_unique<stmt_call>(tc, si.get_unary_ops(), si.first_token(),
                                        open_paren_tk, tz);
 }
@@ -259,7 +253,7 @@ auto main(const int argc, const char* argv[]) -> int {
     const token tk{tz.next_token()};
     if (tk.text().empty()) {
         throw compiler_exception{
-            tk, "expected constant, identifier or function call"};
+            tk, "expected constant, identifier, or function call"};
     }
     if (tk.text().starts_with("#")) {
         throw compiler_exception{tk, "unexpected comment in expression"};
@@ -339,8 +333,8 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     open_brace_tk_ = tz.is_next_char_token('{');
     if (open_brace_tk_.is_empty()) {
         throw compiler_exception{
-            tz,
-            std::format("expected '{{' to open assign type '{}'", tp.name())};
+            tz, std::format("expected '{{' to begin a value of type '{}'",
+                            tp.name())};
     }
 
     const std::span<const type_field> flds{tp.fields()};
@@ -429,11 +423,9 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
     // is it e.g. pt1 = pt2?
     if (is_identifier()) {
         const ident_info src_info{tc.make_ident_info(*this)};
-        if (dst_type.name() != src_info.type().name()) {
-            throw compiler_exception{
-                tok(), std::format("expected destination type '{}', got '{}'",
-                                   dst_type.name(), src_info.type().name())};
-        }
+
+        // 'expr_type_value' validates the source type before entering here
+        assert(dst_type.name() == src_info.type().name());
 
         std::vector<std::string> allocated_registers;
         operand src_op;
@@ -491,7 +483,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             tc.comment_start(tok(), os, indent);
             std::println(os, "zero empty field: {} * {} B = {} B",
                          tf.array_size, tf.type().size(), tf.size);
-            tc.rep_stos(tok(), os, indent, dst_op.address_str(), tf.size, 0);
+            tc.rep_stos_zero(tok(), os, indent, dst_op.address_str(), tf.size);
             dst_op.displacement += static_cast<int32_t>(tf.size);
             ++counter;
             continue;
@@ -557,7 +549,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
 
     tc.comment_start(tok(), os, indent);
     std::println(os, "zero remaining fields: {} B", nbytes);
-    tc.rep_stos(tok(), os, indent, dst_op.address_str(), nbytes, 0);
+    tc.rep_stos_zero(tok(), os, indent, dst_op.address_str(), nbytes);
     dst_op.displacement += static_cast<int32_t>(nbytes);
 }
 
@@ -571,11 +563,10 @@ auto expr_type_value::validate_array_assignment(const token& tok,
     if (not src_info.is_array) {
         throw compiler_exception{tok, "source must be an array"};
     }
-    if (fld.type().name() != src_info.type().name()) {
-        throw compiler_exception{
-            tok, std::format("expected destination type '{}', got '{}'",
-                             fld.type().name(), src_info.type().name())};
-    }
+
+    // 'expr_any' validates the source element type before entering here
+    assert(fld.type().name() == src_info.type().name());
+
     if (fld.array_size != src_info.array_size) {
         throw compiler_exception{
             tok, std::format("destination array size {} does not match "

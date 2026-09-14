@@ -1112,12 +1112,12 @@ class toc final {
         free_named_register(src_loc_tk, os, indnt, "rax");
     }
 
-    auto rep_stos(const token& src_loc_tk, std::ostream& os, const size_t indnt,
-                  const std::string_view& dst, const size_t bytes_count,
-                  const int8_t value) -> void {
+    auto rep_stos_zero(const token& src_loc_tk, std::ostream& os,
+                       const size_t indnt, const std::string_view& dst,
+                       const size_t bytes_count) -> void {
 
         if (bytes_count > threshold_for_rep_stos) {
-            // mov al, byte_val        ; byte value to store (e.g., 0x00)
+            // xor al, al              ; byte value to store (0x00)
             // mov rdi, dest_addr      ; destination pointer
             // mov rcx, byte_count     ; number of bytes to write
             // rep stosb               ; store al into [rdi], rcx times (rdi++)
@@ -1129,12 +1129,7 @@ class toc final {
             alloc_named_register_or_throw(src_loc_tk, os, indnt, "rcx",
                                           get_type_default());
 
-            if (value == 0) {
-                toc::asm_cmd(src_loc_tk, os, indnt, "xor", "al", "al");
-            } else {
-                toc::asm_cmd(src_loc_tk, os, indnt, "mov", "al",
-                             std::format("{}", value));
-            }
+            toc::asm_cmd(src_loc_tk, os, indnt, "xor", "al", "al");
             toc::asm_lea(os, indnt, "rdi", dst);
             toc::asm_cmd(src_loc_tk, os, indnt, "mov", "rcx",
                          std::format("{}", bytes_count));
@@ -1149,21 +1144,6 @@ class toc final {
         comment_start(src_loc_tk, os, indnt);
         std::println(os, "size <= {} B, use mov", threshold_for_rep_stos);
 
-        const uint8_t byte_u8{static_cast<uint8_t>(value)};
-        const uint64_t val_qword{static_cast<uint64_t>(byte_u8) *
-                                 0x0101010101010101ULL};
-        const uint32_t val_dword{static_cast<uint32_t>(val_qword)};
-        const uint16_t val_word{static_cast<uint16_t>(val_qword)};
-
-        const std::string str_qword{val_qword ? std::format("0x{:x}", val_qword)
-                                              : "0"};
-        const std::string str_dword{val_dword ? std::format("0x{:x}", val_dword)
-                                              : "0"};
-        const std::string str_word{val_word ? std::format("0x{:x}", val_word)
-                                            : "0"};
-        const std::string str_byte{byte_u8 ? std::format("0x{:x}", byte_u8)
-                                           : "0"};
-
         size_t rest{bytes_count};
         const size_t qword_movs{rest / toc::size_qword};
 
@@ -1171,7 +1151,7 @@ class toc final {
 
         for (size_t i{}; i < qword_movs; ++i) {
             asm_cmd(src_loc_tk, os, indnt, "mov", op.str(operand::size_qword),
-                    str_qword);
+                    "0");
             op.displacement += operand::size_qword;
             rest -= operand::size_qword;
         }
@@ -1179,21 +1159,21 @@ class toc final {
         // mov the reminder
         if ((rest / toc::size_dword) != 0) {
             asm_cmd(src_loc_tk, os, indnt, "mov", op.str(operand::size_dword),
-                    str_dword);
+                    "0");
             op.displacement += operand::size_dword;
             rest -= operand::size_dword;
         }
 
         if ((rest / toc::size_word) != 0) {
             asm_cmd(src_loc_tk, os, indnt, "mov", op.str(operand::size_word),
-                    str_word);
+                    "0");
             op.displacement += operand::size_word;
             rest -= operand::size_word;
         }
 
         if (rest) {
             asm_cmd(src_loc_tk, os, indnt, "mov", op.str(operand::size_byte),
-                    str_byte);
+                    "0");
         }
     }
 
@@ -1257,19 +1237,6 @@ class toc final {
         }
 
         return get_builtin_type_for_size(get_size_from_register_operand(reg));
-    }
-
-    [[nodiscard]] auto is_register_alias(const std::string_view reg,
-                                         const std::string_view allocated) const
-        -> bool {
-
-        if (reg == allocated or
-            reg == get_sized_register_operand(allocated, size_word) or
-            reg == get_sized_register_operand(allocated, size_dword)) {
-            return true;
-        }
-
-        return reg == get_sized_register_operand(allocated, size_byte);
     }
 
     [[nodiscard]] auto
@@ -1700,8 +1667,8 @@ class toc final {
     }
 
     [[nodiscard]] static auto
-    get_field_offset_in_type(const token& src_loc_tk, const type& tp,
-                             const std::string_view field_name) -> size_t {
+    get_field_offset_in_type(const type& tp, const std::string_view field_name)
+        -> size_t {
 
         size_t accum{};
         for (const type_field& f : tp.fields()) {
@@ -1711,9 +1678,7 @@ class toc final {
             accum += f.size;
         }
 
-        throw compiler_exception(
-            src_loc_tk, std::format("field '{}' not found in type '{}'",
-                                    field_name, tp.name()));
+        std::unreachable();
     }
 
     [[nodiscard]] static auto get_size_specifier(const size_t size)
