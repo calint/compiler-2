@@ -1,5 +1,6 @@
 // review: 2025-09-29
 
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <format>

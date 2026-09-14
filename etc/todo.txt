@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 [ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] consider dropping the visitor pattern in expr_any because lcov does not
+    handle it
 [ ] UB analysis and path-sensitive initialization checks
 [ ] support variable string initializers
 [ ] support boolean expression results directly in memory destinations

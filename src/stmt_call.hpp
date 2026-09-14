@@ -60,6 +60,20 @@ class stmt_call : public expression {
                 throw compiler_exception{tz, "expected ')' after arguments"};
             }
 
+            for (const auto [index, arg, param] :
+                 std::views::zip(std::views::iota(1), args_, func.params())) {
+
+                if (param.is_array()) {
+                    const ident_info arg_info{tc.make_ident_info(arg)};
+                    if (not arg_info.is_array) {
+                        throw compiler_exception{
+                            arg.tok(),
+                            std::format("parameter {} expected an array",
+                                        index)};
+                    }
+                }
+            }
+
             return;
         }
 
@@ -107,37 +121,6 @@ class stmt_call : public expression {
 
         const stmt_def_func& func{
             tc.get_func_or_throw(tok(), statement::identifier())};
-
-        // validate argument types
-
-        const size_t n{args_.size()};
-        for (size_t i{}; i < n; ++i) {
-            const expr_any& arg{args_[i]};
-            const stmt_def_func_param& param{func.param(i)};
-            const type& arg_type{arg.get_type()};
-            const type& param_type{param.get_type()};
-
-            if (param.is_array()) {
-                const ident_info arg_info{tc.make_ident_info(arg)};
-                if (not arg_info.is_array) {
-                    throw compiler_exception{
-                        arg.tok(),
-                        std::format("parameter {} expected an array", i + 1)};
-                }
-            }
-
-            if (arg_type.is_built_in() and param_type.is_built_in()) {
-                continue;
-            }
-
-            if (arg_type.name() != param_type.name()) {
-                throw compiler_exception{
-                    arg.tok(),
-                    std::format("argument {} of type '{}' does not match "
-                                "parameter of type '{}'",
-                                i + 1, arg_type.name(), param_type.name())};
-            }
-        }
 
         // buffer the aliases of arguments and function return
         std::vector<alias_info> aliases_to_add;
