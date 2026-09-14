@@ -626,7 +626,7 @@ class toc final {
                                            const std::string_view prefix) const
         -> std::string {
 
-        const std::string_view call_path{get_call_path(tk)};
+        const std::string_view call_path{get_call_path()};
         const std::string src_loc{source_location_for_use_in_label(tk)};
         const std::string lbl{
             std::format("{}_{}{}", prefix, src_loc,
@@ -718,8 +718,7 @@ class toc final {
         allocated_registers_.pop_back();
     }
 
-    [[nodiscard]] auto get_call_path(const token& src_loc_tk) const
-        -> std::string_view {
+    [[nodiscard]] auto get_call_path() const -> std::string_view {
 
         for (const auto& frm : frames_ | std::views::reverse) {
             if (frm.is_func()) {
@@ -727,7 +726,7 @@ class toc final {
             }
         }
 
-        throw compiler_exception{src_loc_tk, "not in a function"};
+        std::unreachable();
     }
 
     [[nodiscard]] auto get_data() const
@@ -753,17 +752,14 @@ class toc final {
         return *funcs_.get_const_ref(name).def;
     }
 
-    [[nodiscard]] auto
-    get_func_return_label_or_throw(const token& src_loc_tk) const
-        -> std::string_view {
-
+    [[nodiscard]] auto get_func_return_label() const -> std::string_view {
         for (const auto& frm : frames_ | std::views::reverse) {
             if (frm.is_func()) {
                 return frm.func_ret_label();
             }
         }
 
-        throw compiler_exception{src_loc_tk, "not in a function"};
+        std::unreachable();
     }
 
     [[nodiscard]] auto

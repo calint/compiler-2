@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cctype>
 #include <cstdint>
 #include <format>
@@ -15,7 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "panic_exception.hpp"
 #include "token.hpp"
 
 class toc;
@@ -312,9 +312,7 @@ struct ident_info {
     }
 
     [[nodiscard]] auto type() const -> const type& {
-        if (type_path.empty()) {
-            throw panic_exception("1");
-        }
+        assert(not type_path.empty());
         return *type_path.back();
     }
 };

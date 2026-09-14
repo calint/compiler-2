@@ -78,7 +78,7 @@ class stmt_if final : public statement {
         -> void override {
 
         // make unique labels considering in-lined functions
-        const std::string_view call_path{tc.get_call_path(tok())};
+        const std::string_view call_path{tc.get_call_path()};
         const std::string src_loc{tc.source_location_for_use_in_label(tok())};
         const std::string label_after_if{
             call_path.empty()

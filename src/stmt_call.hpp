@@ -312,7 +312,7 @@ class stmt_call : public expression {
         }
 
         // create unique labels for in-lined functions
-        const std::string_view call_path{tc.get_call_path(tok())};
+        const std::string_view call_path{tc.get_call_path()};
         const std::string src_loc{tc.source_location_for_use_in_label(tok())};
         const std::string new_call_path{
             call_path.empty() ? src_loc

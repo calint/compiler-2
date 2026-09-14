@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -163,6 +164,6 @@ class stmt_def_var final : public statement {
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
-        return name_tk_.text();
+        std::unreachable();
     }
 };

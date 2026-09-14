@@ -3,7 +3,6 @@
 
 #include <ostream>
 #include <print>
-#include <string>
 #include <string_view>
 
 class token final {
@@ -94,8 +93,4 @@ class token final {
         }
         return len;
     }
-
-    [[nodiscard]] auto is_open_block() const -> bool { return is_text("{"); }
-
-    [[nodiscard]] auto is_close_block() const -> bool { return is_text("}"); }
 };

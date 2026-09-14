@@ -415,11 +415,10 @@ class expr_bool_ops_list final : public statement {
     [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
         -> std::string {
 
-        const std::string_view call_path{tc.get_call_path(tok())};
-        return std::format("cmp_{}{}",
-                           tc.source_location_for_use_in_label(tok()),
-                           (call_path.empty() ? std::string{}
-                                              : std::format("_{}", call_path)));
+        const std::string_view call_path{tc.get_call_path()};
+        return std::format(
+            "cmp_{}{}", tc.source_location_for_use_in_label(tok()),
+            (call_path.empty() ? "" : std::format("_{}", call_path)));
     }
 
     [[nodiscard]] static auto create_cmp_label_from(

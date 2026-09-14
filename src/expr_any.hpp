@@ -293,7 +293,7 @@ class expr_any final : public statement {
 
                     // expression - make unique labels considering in-lined
                     // functions
-                    const std::string_view call_path{tc.get_call_path(tk)};
+                    const std::string_view call_path{tc.get_call_path()};
                     const std::string src_loc{
                         tc.source_location_for_use_in_label(tk)};
 

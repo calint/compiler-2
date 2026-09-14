@@ -280,7 +280,7 @@ class expr_bool_op final : public statement {
     [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
         -> std::string {
 
-        const std::string_view call_path{tc.get_call_path(tok())};
+        const std::string_view call_path{tc.get_call_path()};
         return std::format("cmp_{}{}",
                            tc.source_location_for_use_in_label(tok()),
                            (call_path.empty() ? std::string{}
