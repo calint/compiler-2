@@ -1164,8 +1164,6 @@ class toc final {
                   const std::string_view& dst, const size_t bytes_count,
                   const int8_t value) -> void {
 
-        // todo: heuristics to use mov when less than 64 bytes
-
         if (bytes_count > threshold_for_rep_stos) {
             // mov al, byte_val        ; byte value to store (e.g., 0x00)
             // mov rdi, dest_addr      ; destination pointer
