@@ -35,6 +35,11 @@ class stmt_def_dat final : public statement {
             uops.source_to(os);
             tk.source_to(os);
         }
+
+        auto compile(std::ostream& os) const -> void {
+            uops.source_to_without_whitespace(os);
+            std::print(os, "{}", value);
+        }
     };
 
     token name_tk_;
@@ -296,12 +301,12 @@ class stmt_def_dat final : public statement {
 
         // initializer
         std::print(os, "{} ", dd);
-        for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
-            if (i != 0) {
+        if (not elroot.elems.empty()) {
+            elroot.elems.front().compile(os);
+            for (const elem& e : elroot.elems | std::views::drop(1)) {
                 std::print(os, ", ");
+                e.compile(os);
             }
-            e.uops.source_to_without_whitespace(os);
-            std::print(os, "{}", e.value);
         }
         std::println(os);
 
@@ -560,15 +565,16 @@ class stmt_def_dat final : public statement {
 
         if (not elroot.is_array) {
             elroot.open_brace_tk_.source_to(os);
-            const std::span<const type_field>& flds{tp.fields()};
-            for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
-                if (i != 0) {
-                    elroot.elems_delim_tk_[static_cast<size_t>(i - 1)]
-                        .source_to(os);
-                    // note: -1 because 'i' is starts at 0 and delimeter after
-                    //       first element is at index 0
+            if (not elroot.elems.empty()) {
+                print_source_field(os, tp.fields().front(),
+                                   elroot.elems.front());
+                for (const auto [d, e, f] :
+                     std::views::zip(elroot.elems_delim_tk_,
+                                     elroot.elems | std::views::drop(1),
+                                     tp.fields() | std::views::drop(1))) {
+                    d.source_to(os);
+                    print_source_field(os, f, e);
                 }
-                print_source_field(os, flds[static_cast<size_t>(i)], e);
             }
             elroot.close_brace_tk_.source_to(os);
             return;
