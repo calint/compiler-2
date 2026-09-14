@@ -985,7 +985,7 @@ class toc final {
             }
         }
 
-        return false;
+        std::unreachable();
     }
 
     [[nodiscard]] auto is_bounds_check_upper() const -> bool {
@@ -1538,14 +1538,6 @@ class toc final {
                 .operand{id.str()},
                 .ident_type{ident_info::ident_type::VAR},
             };
-        }
-
-        // if ident is "bracketed" extract the contents between the brackets
-        std::optional<std::string> ident_bracketed{
-            get_text_between_brackets(ident)};
-
-        if (ident_bracketed) {
-            id = ident_path{*ident_bracketed};
         }
 
         // is 'id' an integer?
