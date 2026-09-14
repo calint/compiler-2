@@ -116,8 +116,8 @@ class stmt_def_dat final : public statement {
             elroot_ = parse_elem(tc, tz, tp, is_array, array_size);
             if (elroot_.is_array and elroot_.array_size == 0 and
                 not elroot_.tk.is_string() and elroot_.elems.empty()) {
-                throw compiler_exception{
-                    name_tk_, "expected array size greater than 0"};
+                throw compiler_exception{name_tk_,
+                                         "expected array size greater than 0"};
             }
         } else {
             elroot_.is_array = is_array;
