@@ -92,6 +92,8 @@ class stmt_call : public expression {
         for (const auto [i, e] : std::views::enumerate(args_)) {
             if (i != 0) {
                 args_delims_tk_[static_cast<size_t>(i - 1)].source_to(os);
+                // note: -1 because 'i' is starts at 0 and delimeter after first
+                //       element is at index 0
             }
             e.source_to(os);
         }

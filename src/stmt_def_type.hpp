@@ -62,11 +62,11 @@ class stmt_def_type final : public statement {
         statement::source_to(os);
         name_tk_.source_to(os);
         open_brace_tk_.source_to(os);
-        size_t counter{};
-        for (const stmt_def_type_field& fld : fields_) {
-            if (counter++) {
-                fields_delim_tk_[counter - 2].source_to(os);
-                // note: -2 because of counter increment
+        for (const auto [i, fld] : std::views::enumerate(fields_)) {
+            if (i != 0) {
+                fields_delim_tk_[static_cast<size_t>(i - 1)].source_to(os);
+                // note: -1 because 'i' is starts at 0 and delimeter after first
+                //       element is at index 0
             }
             fld.source_to(os);
         }

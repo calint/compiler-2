@@ -129,12 +129,11 @@ class stmt_identifier : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         get_unary_ops().source_to(os);
-        size_t counter{};
-        for (const ident_elem& e : elems_) {
-            if (counter++) {
-                elems_delim_tk_[counter - 2].source_to(os);
-                // note: -2 because counter was incremented and delimiter after
-                //       first element is at 0
+        for (auto [i, e] : std::views::enumerate(elems_)) {
+            if (i != 0) {
+                elems_delim_tk_[static_cast<size_t>(i - 1)].source_to(os);
+                // note: -1 because 'i' is starts at 0 and delimeter after first
+                //       element is at index 0
             }
             e.name_tk.source_to(os);
             if (e.array_index_expr) {

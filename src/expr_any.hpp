@@ -91,6 +91,8 @@ class expr_any final : public statement {
         for (const auto [i, el] : std::views::enumerate(vars_)) {
             if (i != 0) {
                 vars_delims_tk_[static_cast<size_t>(i - 1)].source_to(os);
+                // note: -1 because 'i' is starts at 0 and delimeter after first
+                //       element is at index 0
             }
             std::visit([&os](const auto& e) -> void { e.source_to(os); }, el);
         }

@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <format>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -533,11 +534,12 @@ class stmt_def_dat final : public statement {
         if (tp.is_built_in()) {
             elroot.open_brace_tk_.source_to(os);
 
-            for (size_t counter{}; const elem& e : elroot.elems) {
-                if (counter++) {
-                    elroot.elems_delim_tk_[counter - 2].source_to(os);
-                    // note: -2 because counter has been incremeneted and first
-                    //       delimiter is after first element
+            for (auto [i, e] : std::views::enumerate(elroot.elems)) {
+                if (i != 0) {
+                    elroot.elems_delim_tk_[static_cast<size_t>(i - 1)]
+                        .source_to(os);
+                    // note: -1 because 'i' is starts at 0 and delimeter after
+                    //       first element is at index 0
                 }
                 e.uops.source_to(os);
                 e.tk.source_to(os);
@@ -563,6 +565,8 @@ class stmt_def_dat final : public statement {
                 if (i != 0) {
                     elroot.elems_delim_tk_[static_cast<size_t>(i - 1)]
                         .source_to(os);
+                    // note: -1 because 'i' is starts at 0 and delimeter after
+                    //       first element is at index 0
                 }
                 print_source_field(os, flds[static_cast<size_t>(i)], e);
             }
@@ -580,6 +584,8 @@ class stmt_def_dat final : public statement {
             if (i != 0) {
                 elroot.elems_delim_tk_[static_cast<size_t>(i - 1)].source_to(
                     os);
+                // note: -1 because 'i' is starts at 0 and delimeter after first
+                //       element is at index 0
             }
             print_source_elem(os, tp, e);
         }
@@ -614,6 +620,8 @@ class stmt_def_dat final : public statement {
                 if (i != 0) {
                     elroot.elems_delim_tk_[static_cast<size_t>(i - 1)]
                         .source_to(os);
+                    // note: -1 because 'i' is starts at 0 and delimeter after
+                    //       first element is at index 0
                 }
                 e.uops.source_to(os);
                 e.tk.source_to(os);

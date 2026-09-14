@@ -390,6 +390,8 @@ inline auto expr_type_value::source_to(std::ostream& os) const -> void {
     for (const auto [i, ea] : std::views::enumerate(exprs_)) {
         if (i != 0) {
             exprs_delims_tk_[static_cast<size_t>(i - 1)].source_to(os);
+            // note: -1 because 'i' is starts at 0 and delimeter after first
+            //       element is at index 0
         }
         ea->source_to(os);
     }

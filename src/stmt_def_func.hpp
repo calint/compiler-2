@@ -95,14 +95,13 @@ class stmt_def_func final : public statement {
         }
         name_tk_.source_to(os);
         open_paren_tk_.source_to(os);
-        const size_t n{params_.size()};
-        size_t counter{};
-        for (const stmt_def_func_param& p : params_) {
-            p.source_to(os);
-            ++counter;
-            if (counter != n) {
-                params_delim_tks_[counter - 1].source_to(os);
+        for (auto [i, p] : std::views::enumerate(params_)) {
+            if (i != 0) {
+                params_delim_tks_[static_cast<size_t>(i - 1)].source_to(os);
+                // note: -1 because 'i' is starts at 0 and delimeter after first
+                //       element is at index 0
             }
+            p.source_to(os);
         }
         close_parent_tk_.source_to(os);
         if (returns_) {
