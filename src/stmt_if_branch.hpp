@@ -1,8 +1,6 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include <utility>
-
 #include "decouple.hpp"
 #include "expr_bool_ops_list.hpp"
 #include "stmt_block.hpp"

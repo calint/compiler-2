@@ -346,6 +346,7 @@ class stmt_identifier : public statement {
                         oper.displacement = op == '-' ? -offset : offset;
                         return oper;
                     }
+
                     operand oper;
                     oper.base_register = reg_offset;
                     oper.index_register = reg_idx;
