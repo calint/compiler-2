@@ -1346,10 +1346,6 @@ class toc final {
     make_ident_info_or_empty(const token& src_loc_tk,
                              const std::string_view ident) const -> ident_info {
 
-        if (ident.empty()) {
-            throw compiler_exception(src_loc_tk, "identifier is empty");
-        }
-
         ident_path id{std::string{ident}};
 
         // get the base of the identifier: e.g. lnks[1].pos.y -> lnks
