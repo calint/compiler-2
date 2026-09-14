@@ -4,9 +4,7 @@ func exit(v : reg_rdi) {
     syscall()
 }
 
-type group { values : i8[2] }
-
 func main() {
-    var groups : group[2]
-    groups[2].values[0] = 1
+    var values : i8[8]
+    values[~0] = 1
 }

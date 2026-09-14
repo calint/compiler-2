@@ -1,0 +1,17 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func write(values : i8[]) {
+    values[7] = 1
+}
+
+func main() {
+    var values : i8[8]
+    write(values)
+    assert(values[7] == 1)
+}

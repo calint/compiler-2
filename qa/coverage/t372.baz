@@ -1,0 +1,13 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func main() {
+    var values : i8[8]
+    var address = address_of(values[7])
+    assert(address != 0)
+}

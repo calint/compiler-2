@@ -46,7 +46,7 @@ class stmt_def_var final : public statement {
                 array_size_const_ = {tc, tz, 0};
 
                 if (array_size_const_.has_value()) {
-                    if (array_size_const_.value() < 0) {
+                    if (array_size_const_.value() <= 0) {
                         throw compiler_exception{
                             array_size_const_.tok(),
                             "expected array size as constant greater than 0"};
@@ -87,8 +87,12 @@ class stmt_def_var final : public statement {
             stmt_identifier si{tc, {}, name_tk_, tz};
             assign_var_ = std::make_unique<stmt_assign_var>(
                 tc, tz, std::move(si), equals_tk_, is_array_, array_size_);
-            if (array_size_ == 0) {
+            if (is_array_ and array_size_ == 0) {
                 array_size_ = assign_var_->array_size();
+                if (array_size_ == 0) {
+                    throw compiler_exception{
+                        name_tk_, "expected array size greater than 0"};
+                }
             }
         }
 

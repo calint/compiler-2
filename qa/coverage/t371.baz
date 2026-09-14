@@ -8,5 +8,7 @@ type group { values : i8[2] }
 
 func main() {
     var groups : group[2]
-    groups[0].values[2] = 1
+    var outer = 0
+    var inner = 2
+    groups[outer].values[inner] = 1
 }

@@ -1,0 +1,13 @@
+# minimum signed narrow index must remain negative
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func main() {
+    var values : i8[8]
+    var index : i8 = -128
+    values[index] = 1
+}

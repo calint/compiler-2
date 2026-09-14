@@ -1,0 +1,12 @@
+# address calculation must reject an empty-array element
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func main() {
+    var values : i8[] = {}
+    var address = address_of(values[0])
+}
