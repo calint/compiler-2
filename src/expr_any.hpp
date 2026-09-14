@@ -201,6 +201,7 @@ class expr_any final : public statement {
         return std::visit(
             [](const auto& e) -> const unary_ops& { return e.get_unary_ops(); },
             vars_[0]);
+
         // note: 'expr_type_value' does not have 'unary_ops' and cannot be
         //       an argument in call
     }
