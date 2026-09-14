@@ -366,5 +366,5 @@ SRC=t385 && COMPERR
 SRC=t386 && COMPERR
 SRC=t387 && COMPERR
 SRC=t388 && EXP=0 && RUN
-# SRC=t389 && COMPERR  # TODO: reject bool operands in arithmetic expressions
+# SRC=t389 && COMPERR  # todo: reject bool operands in arithmetic expressions
 SRC=t390 && COMPERR

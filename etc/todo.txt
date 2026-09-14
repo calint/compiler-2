@@ -3,9 +3,6 @@
 --------------------------------------------------------------------------------
 [ ] t389 bools should not be used in arithmetics
 [ ] t158 is ub
-[o] t178 should fail because var is not bool
-    => fixed but should be better
-    [x] when allocating register specify the type that becomes dst_info
 [ ] add rbp, rbx to scratch registers
     => rax, rcx, rdx, rsi, rdi, rsp are used by the compiler
     [ ] update t321
@@ -128,6 +125,9 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] t178 should fail because var is not bool
+    => fixed but should be better
+    [x] when allocating register specify the type that becomes dst_info
 [x] t390 bool argument from expression that allocates scratch register should
     not compile for other parameter type than bool
 [x] t294 should pass
