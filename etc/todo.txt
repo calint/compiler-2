@@ -2,7 +2,7 @@
 [ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [ ] t389 bools should not be used in arithmetics
-[ ] t390 bool argument from expression that allocates scratch register should
+[x] t390 bool argument from expression that allocates scratch register should
     not compile for other parameter type than bool
 [ ] t158 is ub
 [x] t294 should pass
