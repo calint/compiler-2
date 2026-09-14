@@ -274,9 +274,8 @@ class stmt_identifier : public statement {
                 const bool is_encodable{type_size == 1 or type_size == 2 or
                                         type_size == 4 or type_size == 8};
                 if (is_encodable) {
-                    const std::string reg_idx{
-                        tc.alloc_scratch_register(
-                            src_loc_tk, os, indent, tc.get_type_default())};
+                    const std::string reg_idx{tc.alloc_scratch_register(
+                        src_loc_tk, os, indent, tc.get_type_default())};
                     allocated_registers.push_back(reg_idx);
 
                     tc.comment_start(curr_elem.array_index_expr->tok(), os,
@@ -347,17 +346,16 @@ class stmt_identifier : public statement {
             }
 
             if (reg_offset == "rsp") {
-                reg_offset = tc.alloc_scratch_register(
-                    src_loc_tk, os, indent, tc.get_type_default());
+                reg_offset = tc.alloc_scratch_register(src_loc_tk, os, indent,
+                                                       tc.get_type_default());
                 allocated_registers.push_back(reg_offset);
                 toc::asm_lea(os, indent, reg_offset,
                              std::format("rsp - {}", -base_info.stack_ix));
             }
 
             // calculate array index
-            const std::string reg_idx{
-                tc.alloc_scratch_register(
-                    src_loc_tk, os, indent, tc.get_type_default())};
+            const std::string reg_idx{tc.alloc_scratch_register(
+                src_loc_tk, os, indent, tc.get_type_default())};
 
             tc.comment_start(curr_elem.array_index_expr->tok(), os, indent);
             std::println(os, "set array index");
@@ -447,8 +445,8 @@ class stmt_identifier : public statement {
         // Allocate line number register once if needed
         std::string reg_line_num;
         if (tc.is_bounds_check_with_line()) {
-            reg_line_num = tc.alloc_scratch_register(
-                tk, os, indent, tc.get_type_default());
+            reg_line_num = tc.alloc_scratch_register(tk, os, indent,
+                                                     tc.get_type_default());
             tc.comment_start(tk, os, indent);
             std::println(os, "line number");
             tc.asm_cmd(tk, os, indent, "mov", reg_line_num,
@@ -466,9 +464,8 @@ class stmt_identifier : public statement {
 
         if (tc.is_bounds_check_upper()) {
             if (not reg_size.empty()) {
-                const std::string reg_top_idx =
-                    tc.alloc_scratch_register(
-                        tk, os, indent, tc.get_type_default());
+                const std::string reg_top_idx = tc.alloc_scratch_register(
+                    tk, os, indent, tc.get_type_default());
                 tc.asm_cmd(tk, os, indent, "mov", reg_top_idx, reg_size);
                 tc.asm_cmd(tk, os, indent, "add", reg_top_idx, reg_to_check);
                 tc.asm_cmd(tk, os, indent, "cmp", reg_top_idx,
@@ -507,9 +504,8 @@ class stmt_identifier : public statement {
                 return lea;
             }
 
-            const std::string index_reg{
-                    tc.alloc_scratch_register(
-                        src_loc_tk, os, indent, tc.get_type_default())};
+            const std::string index_reg{tc.alloc_scratch_register(
+                src_loc_tk, os, indent, tc.get_type_default())};
             allocated_registers.push_back(index_reg);
             const operand op{lea};
 

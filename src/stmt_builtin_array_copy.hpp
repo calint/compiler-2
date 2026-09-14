@@ -81,11 +81,11 @@ class stmt_builtin_array_copy final : public statement {
 
         // allocate the register for rep movs
         tc.alloc_named_register_or_throw(tok(), os, indent, "rsi",
-                         tc.get_type_default());
+                                         tc.get_type_default());
         tc.alloc_named_register_or_throw(tok(), os, indent, "rdi",
-                         tc.get_type_default());
+                                         tc.get_type_default());
         tc.alloc_named_register_or_throw(tok(), os, indent, "rcx",
-                         tc.get_type_default());
+                                         tc.get_type_default());
 
         std::vector<std::string> allocated_scratch_registers;
 

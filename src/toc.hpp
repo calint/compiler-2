@@ -382,10 +382,9 @@ class toc final {
         named_registers_.erase(reg_iter);
     }
 
-    [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
-                                              std::ostream& os,
-                                              const size_t indnt,
-                                              const type& type_ref)
+    [[nodiscard]] auto
+    alloc_scratch_register(const token& src_loc_tk, std::ostream& os,
+                           const size_t indnt, const type& type_ref)
         -> std::string {
 
         if (scratch_registers_.empty()) {
@@ -425,9 +424,8 @@ class toc final {
             if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
                 // both operands are memory references
                 // use scratch register for transfer
-                const std::string reg{
-                    alloc_scratch_register(src_loc_tk, os, indnt,
-                                           get_type_default())};
+                const std::string reg{alloc_scratch_register(
+                    src_loc_tk, os, indnt, get_type_default())};
                 const std::string reg_sized{
                     get_sized_register_operand(reg, dst_size)};
                 indent(os, indnt);
@@ -452,9 +450,8 @@ class toc final {
             if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
                 // both operands refer to memory
                 // use in-between scratch register
-                const std::string reg{
-                    alloc_scratch_register(src_loc_tk, os, indnt,
-                                           get_type_default())};
+                const std::string reg{alloc_scratch_register(
+                    src_loc_tk, os, indnt, get_type_default())};
                 const std::string reg_sized{
                     get_sized_register_operand(reg, dst_size)};
                 indent(os, indnt);
@@ -489,9 +486,8 @@ class toc final {
             //       path is triggered by the use of an in-between scratch
             //       register
 
-            const std::string reg_sx{
-                alloc_scratch_register(src_loc_tk, os, indnt,
-                                       get_type_default())};
+            const std::string reg_sx{alloc_scratch_register(
+                src_loc_tk, os, indnt, get_type_default())};
 
             indent(os, indnt);
             std::println(os, "movsx {}, {}", reg_sx, src_op);
@@ -509,9 +505,8 @@ class toc final {
         if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
             // both operands are memory references
             // use scratch register for transfer
-            const std::string reg{
-                alloc_scratch_register(src_loc_tk, os, indnt,
-                                       get_type_default())};
+            const std::string reg{alloc_scratch_register(src_loc_tk, os, indnt,
+                                                         get_type_default())};
             const std::string reg_sized{
                 get_sized_register_operand(reg, dst_size)};
             indent(os, indnt);
@@ -1068,7 +1063,7 @@ class toc final {
         std::println(os, "size <= {} B, use mov", threshold_for_rep_movs);
 
         alloc_named_register_or_throw(src_loc_tk, os, indnt, "rax",
-                          get_type_default());
+                                      get_type_default());
 
         size_t rest{bytes_count};
         const size_t qword_movs{rest / toc::size_qword};
@@ -1264,9 +1259,9 @@ class toc final {
         return get_builtin_type_for_size(get_size_from_register_operand(reg));
     }
 
-    [[nodiscard]] auto
-    is_register_alias(const std::string_view reg,
-                      const std::string_view allocated) const -> bool {
+    [[nodiscard]] auto is_register_alias(const std::string_view reg,
+                                         const std::string_view allocated) const
+        -> bool {
 
         if (reg == allocated or
             reg == get_sized_register_operand(allocated, size_word) or

@@ -62,8 +62,8 @@ class expr_ops_list final : public expression {
 
         const statement& first_expr{*exprs_.front()};
         set_type(first_expr.is_identifier()
-                 ? tc.make_ident_info(first_expr).type()
-                 : first_expr.get_type());
+                     ? tc.make_ident_info(first_expr).type()
+                     : first_expr.get_type());
 
         // start with provided precedence
         uint8_t precedence{first_op_precedence};
@@ -224,8 +224,8 @@ class expr_ops_list final : public expression {
 
         // with scratch register
         std::stringstream ss2;
-        const std::string reg{tc.alloc_scratch_register(
-            tok(), ss2, indent, tc.get_type_default())};
+        const std::string reg{tc.alloc_scratch_register(tok(), ss2, indent,
+                                                        tc.get_type_default())};
         const std::string reg_sized{
             tc.get_sized_register_operand(reg, dst_info.type().size())};
         // note: sized register to propagate operation to destination size
@@ -473,9 +473,8 @@ class expr_ops_list final : public expression {
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             // yes, compile it to a scratch register
-            const std::string reg{
-                tc.alloc_scratch_register(
-                    src.tok(), os, indent, tc.get_type_default())};
+            const std::string reg{tc.alloc_scratch_register(
+                src.tok(), os, indent, tc.get_type_default())};
             // make register sized to destination
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
@@ -516,12 +515,10 @@ class expr_ops_list final : public expression {
             const operand src_operand{
                 tc.get_lea_operand(os, indent, src, src_info, lea_registers)};
             const unary_ops& uops{src.get_unary_ops()};
-            const std::string r1{
-                tc.alloc_scratch_register(
-                    src.tok(), os, indent, tc.get_type_default())};
-            const std::string r2{
-                tc.alloc_scratch_register(
-                    src.tok(), os, indent, tc.get_type_default())};
+            const std::string r1{tc.alloc_scratch_register(
+                src.tok(), os, indent, tc.get_type_default())};
+            const std::string r2{tc.alloc_scratch_register(
+                src.tok(), os, indent, tc.get_type_default())};
 
             tc.asm_cmd(src.tok(), os, indent, "mov", r1,
                        dst_info.operand.str());
@@ -577,9 +574,8 @@ class expr_ops_list final : public expression {
 
             tc.comment_start(src.tok(), os, indent);
             std::println(os, "dst is reg, src is not const, uops");
-            const std::string reg{
-                tc.alloc_scratch_register(
-                    src.tok(), os, indent, tc.get_type_default())};
+            const std::string reg{tc.alloc_scratch_register(
+                src.tok(), os, indent, tc.get_type_default())};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
             tc.asm_cmd(src.tok(), os, indent, "mov", reg_sized,
@@ -597,9 +593,8 @@ class expr_ops_list final : public expression {
         if (src_info.is_const()) {
             tc.comment_start(src.tok(), os, indent);
             std::println(os, "dst is not reg, src is const");
-            const std::string reg{
-                tc.alloc_scratch_register(
-                    src.tok(), os, indent, tc.get_type_default())};
+            const std::string reg{tc.alloc_scratch_register(
+                src.tok(), os, indent, tc.get_type_default())};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
             tc.asm_cmd(src.tok(), os, indent, "mov", reg_sized,
@@ -623,9 +618,8 @@ class expr_ops_list final : public expression {
         if (uops.is_empty()) {
             tc.comment_start(src.tok(), os, indent);
             std::println(os, "dst is not reg, src is not const, no uops");
-            const std::string reg{
-                tc.alloc_scratch_register(
-                    src.tok(), os, indent, tc.get_type_default())};
+            const std::string reg{tc.alloc_scratch_register(
+                src.tok(), os, indent, tc.get_type_default())};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
             tc.asm_cmd(src.tok(), os, indent, "mov", reg_sized,
@@ -643,8 +637,8 @@ class expr_ops_list final : public expression {
 
         tc.comment_start(src.tok(), os, indent);
         std::println(os, "dst is not reg, src is not const, uops");
-        const std::string reg{tc.alloc_scratch_register(
-            src.tok(), os, indent, tc.get_type_default())};
+        const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent,
+                                                        tc.get_type_default())};
         const std::string reg_sized{
             tc.get_sized_register_operand(reg, dst_size)};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg_sized, src_operand.str());
@@ -667,9 +661,8 @@ class expr_ops_list final : public expression {
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
-            const std::string reg{
-                tc.alloc_scratch_register(
-                    src.tok(), os, indent, tc.get_type_default())};
+            const std::string reg{tc.alloc_scratch_register(
+                src.tok(), os, indent, tc.get_type_default())};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
             src.compile(tc, os, indent,
@@ -716,8 +709,8 @@ class expr_ops_list final : public expression {
 
         // multiple unary ops
 
-        const std::string reg{tc.alloc_scratch_register(
-            src.tok(), os, indent, tc.get_type_default())};
+        const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent,
+                                                        tc.get_type_default())};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_operand.str());
         uops.compile(tc, os, indent, reg);
         tc.asm_cmd(src.tok(), os, indent, op, dst_info.operand.str(), reg);
@@ -734,9 +727,8 @@ class expr_ops_list final : public expression {
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
-            const std::string reg{
-                tc.alloc_scratch_register(
-                    src.tok(), os, indent, tc.get_type_default())};
+            const std::string reg{tc.alloc_scratch_register(
+                src.tok(), os, indent, tc.get_type_default())};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
             src.compile(tc, os, indent,
@@ -773,8 +765,8 @@ class expr_ops_list final : public expression {
 
         // 'src' is not an expression and not a constant and has unary ops
 
-        const std::string reg{tc.alloc_scratch_register(
-            src.tok(), os, indent, tc.get_type_default())};
+        const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent,
+                                                        tc.get_type_default())};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg, src_operand.str());
         uops.compile(tc, os, indent, reg);
         tc.asm_cmd(src.tok(), os, indent, op, dst_info.operand.str(), reg);
@@ -797,8 +789,8 @@ class expr_ops_list final : public expression {
             // todo: BMI2 (Bit Manipulation Instruction Set 2)
             //       look at shlx/shrx/sarx which can use any register for the
             //       shift amount
-            tc.alloc_named_register_or_throw(
-                src.tok(), os, indent, "rcx", tc.get_type_default());
+            tc.alloc_named_register_or_throw(src.tok(), os, indent, "rcx",
+                                             tc.get_type_default());
             const std::string rcx_sized{
                 tc.get_sized_register_operand("rcx", dst_size)};
             // the number of bits to shift is an expression, compile it to 'rcx'
@@ -838,8 +830,8 @@ class expr_ops_list final : public expression {
             tc.comment_start(src.tok(), os, indent);
             std::println(os, "shf: not const, no uops");
             // the operand must be stored in CL (see note above about BMI2)
-            tc.alloc_named_register_or_throw(
-                src.tok(), os, indent, "rcx", tc.get_type_default());
+            tc.alloc_named_register_or_throw(src.tok(), os, indent, "rcx",
+                                             tc.get_type_default());
             const std::string rcx_sized{
                 tc.get_sized_register_operand("rcx", dst_size)};
             tc.asm_cmd(src.tok(), os, indent, "mov", rcx_sized,
@@ -855,8 +847,8 @@ class expr_ops_list final : public expression {
         tc.comment_start(src.tok(), os, indent);
         std::println(os, "shf: not const, uops");
 
-        tc.alloc_named_register_or_throw(
-            src.tok(), os, indent, "rcx", tc.get_type_default());
+        tc.alloc_named_register_or_throw(src.tok(), os, indent, "rcx",
+                                         tc.get_type_default());
         const std::string rcx_sized{
             tc.get_sized_register_operand("rcx", dst_size)};
         tc.asm_cmd(src.tok(), os, indent, "mov", "rcx", src_operand.str());
@@ -894,20 +886,19 @@ class expr_ops_list final : public expression {
         if (src.is_expression()) {
             tc.comment_start(src.tok(), os, indent);
             std::println(os, "div expression");
-            const std::string reg{
-                tc.alloc_scratch_register(
-                    src.tok(), os, indent, tc.get_type_default())};
+            const std::string reg{tc.alloc_scratch_register(
+                src.tok(), os, indent, tc.get_type_default())};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
             src.compile(tc, os, indent,
                         tc.make_ident_info_for_register(reg_sized));
-            tc.alloc_named_register_or_throw(
-                src.tok(), os, indent, "rax", tc.get_type_default());
+            tc.alloc_named_register_or_throw(src.tok(), os, indent, "rax",
+                                             tc.get_type_default());
             tc.asm_cmd(src.tok(), os, indent, "mov",
                        tc.get_sized_register_operand("rax", dst_size),
                        dst_info.operand.str());
-            tc.alloc_named_register_or_throw(
-                src.tok(), os, indent, "rdx", tc.get_type_default());
+            tc.alloc_named_register_or_throw(src.tok(), os, indent, "rdx",
+                                             tc.get_type_default());
             toc::indent(os, indent, false);
             std::println(os, "{}", asm_op_div_reg_ext(dst_size));
             toc::indent(os, indent, false);
@@ -926,18 +917,17 @@ class expr_ops_list final : public expression {
         if (src_info.is_const()) {
             tc.comment_start(src.tok(), os, indent);
             std::println(os, "div const");
-            tc.alloc_named_register_or_throw(
-                src.tok(), os, indent, "rax", tc.get_type_default());
+            tc.alloc_named_register_or_throw(src.tok(), os, indent, "rax",
+                                             tc.get_type_default());
             tc.asm_cmd(src.tok(), os, indent, "mov",
                        tc.get_sized_register_operand("rax", dst_size),
                        dst_info.operand.str());
-            tc.alloc_named_register_or_throw(
-                src.tok(), os, indent, "rdx", tc.get_type_default());
+            tc.alloc_named_register_or_throw(src.tok(), os, indent, "rdx",
+                                             tc.get_type_default());
             toc::indent(os, indent, false);
             std::println(os, "{}", asm_op_div_reg_ext(dst_size));
-            const std::string scratch_reg{
-                tc.alloc_scratch_register(
-                    src.tok(), os, indent, tc.get_type_default())};
+            const std::string scratch_reg{tc.alloc_scratch_register(
+                src.tok(), os, indent, tc.get_type_default())};
             tc.asm_cmd(src.tok(), os, indent, "mov", scratch_reg,
                        std::format("{}{}", src.get_unary_ops().to_string(),
                                    src_info.const_value));
@@ -968,13 +958,13 @@ class expr_ops_list final : public expression {
         if (uops.is_empty()) {
             tc.comment_start(src.tok(), os, indent);
             std::println(os, "div not const, no uops");
-            tc.alloc_named_register_or_throw(
-                src.tok(), os, indent, "rax", tc.get_type_default());
+            tc.alloc_named_register_or_throw(src.tok(), os, indent, "rax",
+                                             tc.get_type_default());
             tc.asm_cmd(src.tok(), os, indent, "mov",
                        tc.get_sized_register_operand("rax", dst_size),
                        dst_info.operand.str());
-            tc.alloc_named_register_or_throw(
-                src.tok(), os, indent, "rdx", tc.get_type_default());
+            tc.alloc_named_register_or_throw(src.tok(), os, indent, "rdx",
+                                             tc.get_type_default());
             toc::indent(os, indent, false);
             std::println(os, "{}", asm_op_div_reg_ext(dst_size));
             toc::indent(os, indent, false);
@@ -992,19 +982,19 @@ class expr_ops_list final : public expression {
 
         tc.comment_start(src.tok(), os, indent);
         std::println(os, "div not const, uops");
-        const std::string reg{tc.alloc_scratch_register(
-            src.tok(), os, indent, tc.get_type_default())};
+        const std::string reg{tc.alloc_scratch_register(src.tok(), os, indent,
+                                                        tc.get_type_default())};
         const std::string reg_sized{
             tc.get_sized_register_operand(reg, dst_size)};
         tc.asm_cmd(src.tok(), os, indent, "mov", reg_sized, src_operand.str());
         uops.compile(tc, os, indent, reg_sized);
-        tc.alloc_named_register_or_throw(
-            src.tok(), os, indent, "rax", tc.get_type_default());
+        tc.alloc_named_register_or_throw(src.tok(), os, indent, "rax",
+                                         tc.get_type_default());
         tc.asm_cmd(src.tok(), os, indent, "mov",
                    tc.get_sized_register_operand("rax", dst_size),
                    dst_info.operand.str());
-        tc.alloc_named_register_or_throw(
-            src.tok(), os, indent, "rdx", tc.get_type_default());
+        tc.alloc_named_register_or_throw(src.tok(), os, indent, "rdx",
+                                         tc.get_type_default());
         toc::indent(os, indent, false);
         std::println(os, "{}", asm_op_div_reg_ext(dst_size));
         toc::indent(os, indent, false);

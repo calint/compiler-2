@@ -441,9 +441,8 @@ class expr_bool_op final : public statement {
         }
 
         if (expr.is_expression()) {
-            const std::string reg{
-                tc.alloc_scratch_register(expr.tok(), os, indent,
-                                          expr.get_type())};
+            const std::string reg{tc.alloc_scratch_register(
+                expr.tok(), os, indent, expr.get_type())};
             allocated_registers.emplace_back(reg);
             expr.compile(tc, os, indent + 1,
                          tc.make_ident_info_for_register(reg));
@@ -454,9 +453,8 @@ class expr_bool_op final : public statement {
         const ident_info expr_info{tc.make_ident_info(expr)};
         if (expr_info.is_const()) {
             if (is_lhs) {
-                const std::string reg{
-                    tc.alloc_scratch_register(expr.tok(), os, indent,
-                                              tc.get_type_default())};
+                const std::string reg{tc.alloc_scratch_register(
+                    expr.tok(), os, indent, tc.get_type_default())};
                 allocated_registers.emplace_back(reg);
                 expr.compile(tc, os, indent + 1,
                              tc.make_ident_info_for_register(reg));
@@ -472,9 +470,8 @@ class expr_bool_op final : public statement {
         }
 
         // 'expr' is not an expression and has unary ops
-        const std::string reg{
-            tc.alloc_scratch_register(expr.tok(), os, indent,
-                                      tc.get_type_default())};
+        const std::string reg{tc.alloc_scratch_register(expr.tok(), os, indent,
+                                                        tc.get_type_default())};
         allocated_registers.emplace_back(reg);
         tc.asm_cmd(expr.tok(), os, indent, "mov", reg, expr_info.operand.str());
         expr.get_unary_ops().compile(tc, os, indent, reg);
