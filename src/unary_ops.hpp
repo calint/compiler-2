@@ -58,8 +58,8 @@ class unary_ops final {
 
     // implemented in 'main.cpp'
     // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-    inline auto compile(toc& tc, std::ostream& os, const size_t indnt,
-                        const std::string_view dst_info) const -> void;
+    auto compile(toc& tc, std::ostream& os, const size_t indnt,
+                 const std::string_view dst_info) const -> void;
 
     [[nodiscard]] auto is_empty() const -> bool { return ops_.empty(); }
 

@@ -211,8 +211,8 @@ auto main(const int argc, const char* argv[]) -> int {
 // declared in 'decouple.hpp'
 // called from 'stmt_block' to solve circular dependencies with 'loop',
 // 'if', 'mov', 'syscall'
-[[nodiscard]] inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
-                                                         const token tk)
+[[nodiscard]] auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
+                                                  const token tk)
     -> std::unique_ptr<statement> {
 
     // note: no 'std:move' on 'tk' because it is trivially copyable
@@ -234,9 +234,9 @@ auto main(const int argc, const char* argv[]) -> int {
 
 // declared in 'decouple.hpp'
 // called from 'stmt_block'
-[[nodiscard]] inline auto create_stmt_call(toc& tc, tokenizer& tz,
-                                           const stmt_identifier& si,
-                                           token open_paren_tk)
+[[nodiscard]] auto create_stmt_call(toc& tc, tokenizer& tz,
+                                    const stmt_identifier& si,
+                                    token open_paren_tk)
     -> std::unique_ptr<statement> {
 
     if (si.elems().size() != 1) {
@@ -251,8 +251,7 @@ auto main(const int argc, const char* argv[]) -> int {
 // declared in 'decouple.hpp'
 // called from 'expr_ops_list' to solve circular dependencies with function
 // calls
-[[nodiscard]] inline auto create_statement_in_expr_ops_list(toc& tc,
-                                                            tokenizer& tz)
+[[nodiscard]] auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     // note: no 'std::move' on 'tk' because it is trivially copyable
@@ -295,7 +294,7 @@ auto main(const int argc, const char* argv[]) -> int {
 //       'expr_any' definition is known. clang++ -std=c++23 has required it
 //       since changes to handling of unique_ptr to incomplete types
 
-inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
+expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     : statement{tz.next_token()} {
 
     set_type(tp);
@@ -371,7 +370,7 @@ inline expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-inline auto expr_type_value::source_to(std::ostream& os) const -> void {
+auto expr_type_value::source_to(std::ostream& os) const -> void {
     if (stmt_call_) {
         stmt_call_->source_to(os);
         return;
@@ -618,9 +617,9 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 
 // declared in 'unary_ops.hpp'
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-inline auto unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
-                               const size_t indnt,
-                               const std::string_view dst_info) const -> void {
+auto unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
+                        const size_t indnt,
+                        const std::string_view dst_info) const -> void {
 
     for (const char op : ops_ | std::views::reverse) {
         switch (op) {
