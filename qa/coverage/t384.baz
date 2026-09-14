@@ -1,0 +1,5 @@
+# empty string is not a valid dat initializer
+
+func main() {
+    dat value : i8[8] = ""
+}

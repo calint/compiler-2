@@ -1,0 +1,5 @@
+# empty string is not a valid var initializer
+
+func main() {
+    var value : i8[8] = ""
+}

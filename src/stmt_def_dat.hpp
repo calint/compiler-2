@@ -348,6 +348,10 @@ class stmt_def_dat final : public statement {
             el.tk = tz.next_token();
             if (el.tk.is_string()) {
                 const size_t strsz{el.tk.string_size_bytes()};
+                if (strsz == 0 and el.array_size == 0) {
+                    throw compiler_exception{
+                        el.tk, "empty string is not a valid initializer"};
+                }
                 if (el.array_size == 0) {
                     el.array_size = strsz;
                 } else {
