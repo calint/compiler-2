@@ -20,11 +20,6 @@ class stmt_builtin_array_size_of final : public expression {
         : expression{tk, std::move(uops)},
           open_paren_tk_{tz.is_next_char_token('(')} {
 
-        if (not statement::get_unary_ops().is_empty()) {
-            throw compiler_exception{tok(), "unary operations are not allowed "
-                                            "on this built-in function"};
-        }
-
         set_type(tc.get_type_default());
 
         if (open_paren_tk_.is_empty()) {
@@ -74,7 +69,10 @@ class stmt_builtin_array_size_of final : public expression {
         }
 
         // variable, register or field
-        tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(),
+        const std::string dst_op{dst_info.operand.str()};
+        tc.asm_cmd(tok(), os, indent, "mov", dst_op,
                    std::format("{}", src_info.array_size));
+
+        get_unary_ops().compile(tc, os, indent, dst_op);
     }
 };

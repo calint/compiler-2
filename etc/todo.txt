@@ -2,7 +2,7 @@
 [ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [ ] t158 is ub
-[ ] t294 should pass
+[x] t294 should pass
 [o] t178 should fail because var is not bool
     => fixed but should be better
     [ ] when allocating register specify the type that becomes dst_info
