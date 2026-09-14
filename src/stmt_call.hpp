@@ -74,8 +74,7 @@ class stmt_call : public expression {
                 }
 
                 // note: the types have been checked prior to getting here so
-                //       only if both arg and parameter are arrays need to be
-                //       checked
+                //       only check if both argument and parameter are arrays
             }
 
             return;
