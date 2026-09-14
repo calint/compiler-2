@@ -1,0 +1,18 @@
+# arrays_equal writes its result to a memory field
+
+type result { equal : bool }
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(expr : bool) if not expr exit(1)
+
+func main() {
+    var source : i8[2] = { 1, 2 }
+    var compare : i8[2] = { 1, 2 }
+    var result_value : result = { arrays_equal(source, compare, 2) }
+    assert(result_value.equal)
+}

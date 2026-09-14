@@ -166,16 +166,15 @@ class stmt_builtin_arrays_equal final : public expression {
 
         // set true if equal
 
-        if (dst_info.operand.is_memory()) {
+        if (dst_info.is_register()) {
             toc::asm_setcc(os, indent, "e",
-                           dst_info.operand.str(operand::size_byte));
+                           tc.get_sized_register_operand(dst_info.operand.str(),
+                                                         operand::size_byte));
             return;
         }
 
-        // assumed register
+        // memory operand does not happen in current bool implementation
 
-        toc::asm_setcc(os, indent, "e",
-                       tc.get_sized_register_operand(dst_info.operand.str(),
-                                                     operand::size_byte));
+        std::unreachable();
     }
 };
