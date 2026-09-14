@@ -1,0 +1,40 @@
+# mixed width values and indexed addressing
+
+func exit(v:reg_rdi){
+    mov(rax,60) # exit system call
+    mov(rdi,v)  # return code
+    syscall()
+}
+
+func assert(expr:bool) if not expr exit(1)
+
+func main(){
+    var b8:i8 = -7
+    var b16:i16 = -11
+    var b32:i32 = -13
+    var b64:i64 = -17
+
+    var arr : i64[8]
+    arr[0] = b8
+    arr[1] = b16
+    arr[2] = b32
+    arr[3] = b64
+
+    assert(arr[0] == -7)
+    assert(arr[1] == -11)
+    assert(arr[2] == -13)
+    assert(arr[3] == -17)
+
+    var ptr : i64[4]
+    ptr[0] = -1
+    ptr[1] = -2
+    ptr[2] = -3
+    ptr[3] = -4
+
+    var sum = ptr[0] + ptr[1] + ptr[2] + ptr[3]
+    assert(sum == -10)
+
+    var disp = ptr[2] * 3 + arr[3] - arr[0]
+    assert(disp == -19)
+    assert(disp < 0 and disp > -100)
+}
