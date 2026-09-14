@@ -30,13 +30,13 @@ class stmt_def_type final : public statement {
             if (not close_brace_tk_.is_empty()) {
                 break;
             }
-            const token delim_tk{tz.is_next_char_token(',')};
-            if (delim_tk.is_empty()) {
+            const token t{tz.is_next_char_token(',')};
+            if (t.is_empty()) {
                 throw compiler_exception{
                     tz, std::format("expected ',' and more fields in type '{}'",
                                     name_tk_.text())};
             }
-            fields_delim_tk_.emplace_back(delim_tk);
+            fields_delim_tk_.emplace_back(t);
         }
         // initiate the type definitions
         type_.set_name(name_tk_.text());

@@ -75,9 +75,8 @@ class stmt_identifier : public statement {
                 elems_.emplace_back(tk, token{}, nullptr, token{});
             }
 
-            const token delim_tk{tz.is_next_char_token('.')};
-            if (not delim_tk.is_empty()) {
-                elems_delim_tk_.emplace_back(delim_tk);
+            if (const token t{tz.is_next_char_token('.')}; not t.is_empty()) {
+                elems_delim_tk_.emplace_back(t);
                 tk_prv = tk;
                 tk = tz.next_token();
                 path_as_string_.push_back('.');

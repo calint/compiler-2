@@ -28,13 +28,13 @@ class expr_bool_op final : public statement {
         bool is_not{};
         // e.g. if not a == 3 ...
         while (true) {
-            const token tk{tz.next_token()};
-            if (not tk.is_text("not")) {
-                tz.put_back_token(tk);
+            const token t{tz.next_token()};
+            if (not t.is_text("not")) {
+                tz.put_back_token(t);
                 break;
             }
             is_not = not is_not;
-            nots_.emplace_back(tk);
+            nots_.emplace_back(t);
         }
         is_not_ = is_not;
 

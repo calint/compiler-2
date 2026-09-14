@@ -43,14 +43,14 @@ class stmt_def_func final : public statement {
             }
 
             if (counter++) {
-                const token param_delim_tk_ = tz.is_next_char_token(',');
-                if (param_delim_tk_.is_empty()) {
+                const token t = tz.is_next_char_token(',');
+                if (t.is_empty()) {
                     throw compiler_exception{
                         tz,
                         std::format("expected ',' or ')' after parameter '{}'",
                                     params_.back().tok().text())};
                 }
-                params_delim_tks_.emplace_back(param_delim_tk_);
+                params_delim_tks_.emplace_back(t);
             }
 
             params_.emplace_back(tc, tz);

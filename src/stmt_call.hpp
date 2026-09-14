@@ -45,15 +45,15 @@ class stmt_call : public expression {
                 args_.emplace_back(tc, tz, param.get_type(), true, false, 0);
 
                 if (static_cast<size_t>(i) + 1 < n) {
-                    const token delim_tk{tz.is_next_char_token(',')};
-                    if (delim_tk.is_empty()) {
+                    const token t{tz.is_next_char_token(',')};
+                    if (t.is_empty()) {
                         throw compiler_exception{
                             tz, std::format("expected argument {} named '{}'",
                                             i + 2, param.name())};
                         // note: +2 because first argument is 0 and next
                         //       argument is +1
                     }
-                    args_delims_tk_.emplace_back(delim_tk);
+                    args_delims_tk_.emplace_back(t);
                 }
             }
 
