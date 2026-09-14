@@ -6,6 +6,9 @@
 [o] t178 should fail because var is not bool
     => fixed but should be better
     [ ] when allocating register specify the type that becomes dst_info
+[ ] add rbp, rbx to scratch registers
+    => rax, rdx, rsi, rdi, rcx are used by the compiler
+    [ ] update t321
 [ ] const should be allowed on top level and in scoped blocks
 [x] t160 set the value and assert it
 [x] stmt_def_type_field: array size specifier to be able to be a const value
