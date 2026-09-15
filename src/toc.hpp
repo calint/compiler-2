@@ -1443,82 +1443,95 @@ class toc final {
         -> ident_info {
 
         if (frm.has_var(id.base())) {
-
             const var_info& var{frm.get_var_const_ref(id.base())};
+            return make_ident_info_from_var_info(src_loc_tk, ident, id, var,
+                                                 std::move(lea_path));
+        }
 
-            ident_info ii{
-                var.type_ptr->accessor(src_loc_tk, ident, id.path(), var)};
+        // finally try root frame
+        if (not frames_.front().has_var(id.base())) {
+            return make_ident_info_regs_and_const(src_loc_tk, ident, id);
+        }
 
-            lea_path.resize(id.path().size());
-            // note: pad with empty for the remaining elements in the id path
+        const var_info& var{frames_.front().get_var_const_ref(id.base())};
+        return make_ident_info_from_var_info(src_loc_tk, ident, id, var,
+                                             lea_path);
+    }
 
-            std::ranges::reverse(lea_path);
-            // note: reverse it since it was constructed while traversing
-            //       upwards in the frame stack but 'elem_path' and 'type_path'
-            //       are ordered from the top down
+    [[nodiscard]] auto make_ident_info_from_var_info(
+        const token& src_loc_tk, const std::string_view& ident,
+        const ident_path& id, const var_info& var,
+        std::vector<std::string> lea_path) const -> ident_info {
+        ident_info ii{
+            var.type_ptr->accessor(src_loc_tk, ident, id.path(), var)};
 
-            ii.lea_path = lea_path;
+        lea_path.resize(id.path().size());
+        // note: pad with empty for the remaining elements in the id path
 
-            if (not ii.type().is_built_in()) {
-                return ii;
-            }
+        std::ranges::reverse(lea_path);
+        // note: reverse it since it was constructed while traversing
+        //       upwards in the frame stack but 'elem_path' and 'type_path'
+        //       are ordered from the top down
 
-            // identifier is built-in type
+        ii.lea_path = lea_path;
 
-            // find the first element from the top that has a 'lea' and get
-            // accessor relative to that
-
-            std::string lea;
-            size_t lea_index{ii.elem_path.size()};
-            while (lea_index--) {
-                if (not ii.lea_path[lea_index].empty()) {
-                    lea = ii.lea_path[lea_index];
-                    break;
-                }
-            }
-
-            if (lea.empty()) {
-                return ii;
-            }
-
-            // identifier has lea, construct operand
-
-            // example of resulting data structure:
-            //
-            // type string { len : i8, data : i8[127] }
-            // type room { name : string, description : string, note : string }
-            // type world { rooms : room[128] }
-            //
-            // id path     |  type  |  lea          |
-            // ------------|--------|---------------|
-            // wld         | world  | -             |
-            // rooms[2]    | room   | r15           |
-            // description | string | -             |
-            // data        | i8     | r15 + 129     |
-            //
-            // the indexing in 'rooms' is done at runtime thus the memory
-            // location of 'rooms[2]' cannot  be deduced statically, thus the
-            // last lea encountered is the starting point when accessing
-            // identifiers
-
-            // start from the lea address and calculate offset to referred field
-            const std::span<std::string> elem_path_from_lea{
-                std::span{ii.elem_path}.subspan(lea_index)};
-
-            // navigate to referred element and get offset
-            const size_t offset{ii.type_path[lea_index]->field_offset(
-                src_loc_tk, elem_path_from_lea)};
-
-            ii.operand = operand{lea};
-            if (offset != 0) {
-                ii.operand.displacement += static_cast<int>(offset);
-            }
-            ii.operand.size = ii.type().size();
-
+        if (not ii.type().is_built_in()) {
             return ii;
         }
 
-        return make_ident_info_regs_and_const(src_loc_tk, ident, id);
+        // identifier is built-in type
+
+        // find the first element from the top that has a 'lea' and get
+        // accessor relative to that
+
+        std::string lea;
+        size_t lea_index{ii.elem_path.size()};
+        while (lea_index--) {
+            if (not ii.lea_path[lea_index].empty()) {
+                lea = ii.lea_path[lea_index];
+                break;
+            }
+        }
+
+        if (lea.empty()) {
+            return ii;
+        }
+
+        // identifier has lea, construct operand
+
+        // example of resulting data structure:
+        //
+        // type string { len : i8, data : i8[127] }
+        // type room { name : string, description : string, note : string }
+        // type world { rooms : room[128] }
+        //
+        // id path     |  type  |  lea          |
+        // ------------|--------|---------------|
+        // wld         | world  | -             |
+        // rooms[2]    | room   | r15           |
+        // description | string | -             |
+        // data        | i8     | r15 + 129     |
+        //
+        // the indexing in 'rooms' is done at runtime thus the memory
+        // location of 'rooms[2]' cannot  be deduced statically, thus the
+        // last lea encountered is the starting point when accessing
+        // identifiers
+
+        // start from the lea address and calculate offset to referred field
+        const std::span<std::string> elem_path_from_lea{
+            std::span{ii.elem_path}.subspan(lea_index)};
+
+        // navigate to referred element and get offset
+        const size_t offset{ii.type_path[lea_index]->field_offset(
+            src_loc_tk, elem_path_from_lea)};
+
+        ii.operand = operand{lea};
+        if (offset != 0) {
+            ii.operand.displacement += static_cast<int>(offset);
+        }
+        ii.operand.size = ii.type().size();
+
+        return ii;
     }
 
     [[nodiscard]] auto
