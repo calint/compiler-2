@@ -1608,14 +1608,13 @@ class toc final {
 
         // is 'id' a constant?
         if (has_const(id.str())) {
-            int64_t value{get_const(id.str())};
             return {
                 .id{ident},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
                 .operand{id.str(), true},
-                .const_value{value},
+                .const_value{get_const(id.str())},
                 .ident_type{ident_info::ident_type::CONST},
             };
         }

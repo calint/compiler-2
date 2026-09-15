@@ -5,7 +5,7 @@
 default rel
 
 section .bss
-stk resd 65536
+stk resd 131072
 stk.end:
 
 section .text
@@ -255,6 +255,17 @@ mov rsp, stk.end
 ;   [148:9] set array index
 ;   [148:9] ix
     mov r15, qword [rsp - 221]
+;   [148:9] bounds check
+;   [148:9] allocate scratch register -> r14
+;   [148:9] line number
+    mov r14, 148
+    test r15, r15
+    cmovs rbp, r14
+    js panic_bounds
+    cmp r15, 4
+    cmovge rbp, r14
+    jge panic_bounds
+;   [148:9] free scratch register 'r14'
 ;   [148:15] 2
     mov dword [rsp + r15 * 4 - 205], 2
 ;   [148:5] free scratch register 'r15'
@@ -265,11 +276,33 @@ mov rsp, stk.end
     mov r15, qword [rsp - 221]
 ;   [149:14] r15 + 1
     add r15, 1
+;   [149:9] bounds check
+;   [149:9] allocate scratch register -> r14
+;   [149:9] line number
+    mov r14, 149
+    test r15, r15
+    cmovs rbp, r14
+    js panic_bounds
+    cmp r15, 4
+    cmovge rbp, r14
+    jge panic_bounds
+;   [149:9] free scratch register 'r14'
 ;   [149:19] arr[ix]
 ;   [149:19] allocate scratch register -> r14
 ;   [149:23] set array index
 ;   [149:23] ix
     mov r14, qword [rsp - 221]
+;   [149:23] bounds check
+;   [149:23] allocate scratch register -> r13
+;   [149:23] line number
+    mov r13, 149
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+;   [149:23] free scratch register 'r13'
 ;   [149:19] allocate scratch register -> r13
     mov r13d, dword [rsp + r14 * 4 - 205]
     mov dword [rsp + r15 * 4 - 205], r13d
@@ -285,6 +318,17 @@ mov rsp, stk.end
 ;   [150:16] set array index
 ;   [150:16] 1
     mov r14, 1
+;   [150:16] bounds check
+;   [150:16] allocate scratch register -> r13
+;   [150:16] line number
+    mov r13, 150
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+;   [150:16] free scratch register 'r13'
     cmp dword [rsp + r14 * 4 - 205], 2
 ;   [150:12] free scratch register 'r14'
     sete r15b
@@ -328,6 +372,17 @@ mov rsp, stk.end
 ;   [151:16] set array index
 ;   [151:16] 2
     mov r14, 2
+;   [151:16] bounds check
+;   [151:16] allocate scratch register -> r13
+;   [151:16] line number
+    mov r13, 151
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+;   [151:16] free scratch register 'r13'
     cmp dword [rsp + r14 * 4 - 205], 2
 ;   [151:12] free scratch register 'r14'
     sete r15b
@@ -374,9 +429,35 @@ mov rsp, stk.end
 ;   [153:20] set array index
 ;   [153:20] 2
     mov r15, 2
+;   [153:20] bounds check
+;   [153:20] allocate scratch register -> r14
+;   [153:20] line number
+    mov r14, 153
+    test r15, r15
+    cmovs rbp, r14
+    js panic_bounds
+;   [153:20] allocate scratch register -> r13
+    mov r13, rcx
+    add r13, r15
+    cmp r13, 4
+;   [153:20] free scratch register 'r13'
+    cmovg rbp, r14
+    jg panic_bounds
+;   [153:20] free scratch register 'r14'
     lea rsi, [rsp + r15 * 4 - 205]
 ;   [153:5] free scratch register 'r15'
 ;   [153:24] arr
+;   [153:24] bounds check
+;   [153:24] allocate scratch register -> r15
+;   [153:24] line number
+    mov r15, 153
+    test rcx, rcx
+    cmovs rbp, r15
+    js panic_bounds
+    cmp rcx, 4
+    cmovg rbp, r15
+    jg panic_bounds
+;   [153:24] free scratch register 'r15'
     lea rdi, [rsp - 205]
     shl rcx, 2
     rep movsb
@@ -393,6 +474,17 @@ mov rsp, stk.end
 ;   [155:16] set array index
 ;   [155:16] 0
     mov r14, 0
+;   [155:16] bounds check
+;   [155:16] allocate scratch register -> r13
+;   [155:16] line number
+    mov r13, 155
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+;   [155:16] free scratch register 'r13'
     cmp dword [rsp + r14 * 4 - 205], 2
 ;   [155:12] free scratch register 'r14'
     sete r15b
@@ -443,8 +535,30 @@ mov rsp, stk.end
 ;   [158:27] 4
     mov rcx, 4
 ;   [158:16] arr
+;   [158:16] bounds check
+;   [158:16] allocate scratch register -> r15
+;   [158:16] line number
+    mov r15, 158
+    test rcx, rcx
+    cmovs rbp, r15
+    js panic_bounds
+    cmp rcx, 4
+    cmovg rbp, r15
+    jg panic_bounds
+;   [158:16] free scratch register 'r15'
     lea rsi, [rsp - 205]
 ;   [158:21] arr1
+;   [158:21] bounds check
+;   [158:21] allocate scratch register -> r15
+;   [158:21] line number
+    mov r15, 158
+    test rcx, rcx
+    cmovs rbp, r15
+    js panic_bounds
+    cmp rcx, 8
+    cmovg rbp, r15
+    jg panic_bounds
+;   [158:21] free scratch register 'r15'
     lea rdi, [rsp - 253]
     shl rcx, 2
     rep movsb
@@ -467,8 +581,30 @@ mov rsp, stk.end
 ;       [159:36] 4
         mov rcx, 4
 ;       [159:25] arr
+;       [159:25] bounds check
+;       [159:25] allocate scratch register -> r13
+;       [159:25] line number
+        mov r13, 159
+        test rcx, rcx
+        cmovs rbp, r13
+        js panic_bounds
+        cmp rcx, 4
+        cmovg rbp, r13
+        jg panic_bounds
+;       [159:25] free scratch register 'r13'
         lea rsi, [rsp - 205]
 ;       [159:30] arr1
+;       [159:30] bounds check
+;       [159:30] allocate scratch register -> r13
+;       [159:30] line number
+        mov r13, 159
+        test rcx, rcx
+        cmovs rbp, r13
+        js panic_bounds
+        cmp rcx, 8
+        cmovg rbp, r13
+        jg panic_bounds
+;       [159:30] free scratch register 'r13'
         lea rdi, [rsp - 253]
         shl rcx, 2
         repe cmpsb
@@ -516,6 +652,17 @@ mov rsp, stk.end
 ;   [162:10] set array index
 ;   [162:10] 2
     mov r15, 2
+;   [162:10] bounds check
+;   [162:10] allocate scratch register -> r14
+;   [162:10] line number
+    mov r14, 162
+    test r15, r15
+    cmovs rbp, r14
+    js panic_bounds
+    cmp r15, 8
+    cmovge rbp, r14
+    jge panic_bounds
+;   [162:10] free scratch register 'r14'
 ;   [162:16] -1
     mov dword [rsp + r15 * 4 - 253], -1
 ;   [162:5] free scratch register 'r15'
@@ -535,8 +682,30 @@ mov rsp, stk.end
 ;       [163:40] 4
         mov rcx, 4
 ;       [163:29] arr
+;       [163:29] bounds check
+;       [163:29] allocate scratch register -> r13
+;       [163:29] line number
+        mov r13, 163
+        test rcx, rcx
+        cmovs rbp, r13
+        js panic_bounds
+        cmp rcx, 4
+        cmovg rbp, r13
+        jg panic_bounds
+;       [163:29] free scratch register 'r13'
         lea rsi, [rsp - 205]
 ;       [163:34] arr1
+;       [163:34] bounds check
+;       [163:34] allocate scratch register -> r13
+;       [163:34] line number
+        mov r13, 163
+        test rcx, rcx
+        cmovs rbp, r13
+        js panic_bounds
+        cmp rcx, 8
+        cmovg rbp, r13
+        jg panic_bounds
+;       [163:34] free scratch register 'r13'
         lea rdi, [rsp - 253]
         shl rcx, 2
         repe cmpsb
@@ -586,6 +755,17 @@ mov rsp, stk.end
 ;   [166:9] set array index
 ;   [166:9] ix
     mov r15, qword [rsp - 221]
+;   [166:9] bounds check
+;   [166:9] allocate scratch register -> r14
+;   [166:9] line number
+    mov r14, 166
+    test r15, r15
+    cmovs rbp, r14
+    js panic_bounds
+    cmp r15, 4
+    cmovge rbp, r14
+    jge panic_bounds
+;   [166:9] free scratch register 'r14'
 ;   [166:16] arr = ~inv(arr[ix - 1])
 ;   [166:16] = expression
 ;   [166:16] ~inv(arr[ix - 1])
@@ -595,6 +775,17 @@ mov rsp, stk.end
     mov r14, qword [rsp - 221]
 ;   [166:29] r14 - 1
     sub r14, 1
+;   [166:24] bounds check
+;   [166:24] allocate scratch register -> r13
+;   [166:24] line number
+    mov r13, 166
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+;   [166:24] free scratch register 'r13'
 ;   [79:6] inv(i : i32) : i32 res 
     inv_166_16:
 ;       [166:16] alias res -> arr  (lea: rsp + r15 * 4 - 205)
@@ -619,6 +810,17 @@ mov rsp, stk.end
 ;   [167:16] set array index
 ;   [167:16] ix
     mov r14, qword [rsp - 221]
+;   [167:16] bounds check
+;   [167:16] allocate scratch register -> r13
+;   [167:16] line number
+    mov r13, 167
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+;   [167:16] free scratch register 'r13'
     cmp dword [rsp + r14 * 4 - 205], 2
 ;   [167:12] free scratch register 'r14'
     sete r15b
@@ -662,6 +864,17 @@ mov rsp, stk.end
 ;       [90:9] set array index
 ;       [90:9] 1
         mov r15, 1
+;       [90:9] bounds check
+;       [90:9] allocate scratch register -> r14
+;       [90:9] line number
+        mov r14, 90
+        test r15, r15
+        cmovs rbp, r14
+        js panic_bounds
+        cmp r15, 4
+        cmovge rbp, r14
+        jge panic_bounds
+;       [90:9] free scratch register 'r14'
 ;       [90:14] 0xfe
         mov dword [rsp + r15 * 4 - 205], 254
 ;       [90:5] free scratch register 'r15'
@@ -675,6 +888,17 @@ mov rsp, stk.end
 ;   [170:16] set array index
 ;   [170:16] 1
     mov r14, 1
+;   [170:16] bounds check
+;   [170:16] allocate scratch register -> r13
+;   [170:16] line number
+    mov r13, 170
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 4
+    cmovge rbp, r13
+    jge panic_bounds
+;   [170:16] free scratch register 'r13'
     cmp dword [rsp + r14 * 4 - 205], 254
 ;   [170:12] free scratch register 'r14'
     sete r15b
@@ -1720,6 +1944,17 @@ mov rsp, stk.end
 ;   [229:15] set array index
 ;   [229:15] 0
     mov r13, 0
+;   [229:15] bounds check
+;   [229:15] allocate scratch register -> r12
+;   [229:15] line number
+    mov r12, 229
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 2
+    cmovge rbp, r12
+    jge panic_bounds
+;   [229:15] free scratch register 'r12'
     imul r13, 20
     add r14, r13
 ;   [229:12] free scratch register 'r13'
@@ -1764,6 +1999,17 @@ mov rsp, stk.end
 ;   [231:8] set array index
 ;   [231:8] 1
     mov r14, 1
+;   [231:8] bounds check
+;   [231:8] allocate scratch register -> r13
+;   [231:8] line number
+    mov r13, 231
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 2
+    cmovge rbp, r13
+    jge panic_bounds
+;   [231:8] free scratch register 'r13'
     imul r14, 20
     add r15, r14
 ;   [231:5] free scratch register 'r14'
@@ -1787,6 +2033,17 @@ mov rsp, stk.end
 ;   [232:15] set array index
 ;   [232:15] 1
     mov r13, 1
+;   [232:15] bounds check
+;   [232:15] allocate scratch register -> r12
+;   [232:15] line number
+    mov r12, 232
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 2
+    cmovge rbp, r12
+    jge panic_bounds
+;   [232:15] free scratch register 'r12'
     imul r13, 20
     add r14, r13
 ;   [232:12] free scratch register 'r13'
@@ -1844,6 +2101,17 @@ mov rsp, stk.end
 ;   [235:12] set array index
 ;   [235:12] 1
     mov r14, 1
+;   [235:12] bounds check
+;   [235:12] allocate scratch register -> r13
+;   [235:12] line number
+    mov r13, 235
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 8
+    cmovge rbp, r13
+    jge panic_bounds
+;   [235:12] free scratch register 'r13'
     shl r14, 6
     add r15, r14
 ;   [235:5] free scratch register 'r14'
@@ -1851,6 +2119,17 @@ mov rsp, stk.end
 ;   [235:25] set array index
 ;   [235:25] 1
     mov r14, 1
+;   [235:25] bounds check
+;   [235:25] allocate scratch register -> r13
+;   [235:25] line number
+    mov r13, 235
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 8
+    cmovge rbp, r13
+    jge panic_bounds
+;   [235:25] free scratch register 'r13'
 ;   [235:30] 0xffee
     mov qword [r15 + r14 * 8], 65518
 ;   [235:5] free scratch register 'r14'
@@ -1866,6 +2145,17 @@ mov rsp, stk.end
 ;   [236:19] set array index
 ;   [236:19] 1
     mov r13, 1
+;   [236:19] bounds check
+;   [236:19] allocate scratch register -> r12
+;   [236:19] line number
+    mov r12, 236
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+;   [236:19] free scratch register 'r12'
     shl r13, 6
     add r14, r13
 ;   [236:12] free scratch register 'r13'
@@ -1873,6 +2163,17 @@ mov rsp, stk.end
 ;   [236:32] set array index
 ;   [236:32] 1
     mov r13, 1
+;   [236:32] bounds check
+;   [236:32] allocate scratch register -> r12
+;   [236:32] line number
+    mov r12, 236
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+;   [236:32] free scratch register 'r12'
     cmp qword [r14 + r13 * 8], 65518
 ;   [236:12] free scratch register 'r13'
 ;   [236:12] free scratch register 'r14'
@@ -1924,8 +2225,30 @@ mov rsp, stk.end
 ;   [239:16] set array index
 ;   [239:16] 1
     mov r14, 1
+;   [239:16] bounds check
+;   [239:16] allocate scratch register -> r13
+;   [239:16] line number
+    mov r13, 239
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 8
+    cmovge rbp, r13
+    jge panic_bounds
+;   [239:16] free scratch register 'r13'
     shl r14, 6
     add r15, r14
+;   [239:9] free scratch register 'r14'
+;   [239:9] bounds check
+;   [239:9] allocate scratch register -> r14
+;   [239:9] line number
+    mov r14, 239
+    test rcx, rcx
+    cmovs rbp, r14
+    js panic_bounds
+    cmp rcx, 8
+    cmovg rbp, r14
+    jg panic_bounds
 ;   [239:9] free scratch register 'r14'
     lea rsi, [r15]
 ;   [238:5] free scratch register 'r15'
@@ -1936,8 +2259,30 @@ mov rsp, stk.end
 ;   [240:16] set array index
 ;   [240:16] 0
     mov r14, 0
+;   [240:16] bounds check
+;   [240:16] allocate scratch register -> r13
+;   [240:16] line number
+    mov r13, 240
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 8
+    cmovge rbp, r13
+    jge panic_bounds
+;   [240:16] free scratch register 'r13'
     shl r14, 6
     add r15, r14
+;   [240:9] free scratch register 'r14'
+;   [240:9] bounds check
+;   [240:9] allocate scratch register -> r14
+;   [240:9] line number
+    mov r14, 240
+    test rcx, rcx
+    cmovs rbp, r14
+    js panic_bounds
+    cmp rcx, 8
+    cmovg rbp, r14
+    jg panic_bounds
 ;   [240:9] free scratch register 'r14'
     lea rdi, [r15]
 ;   [238:5] free scratch register 'r15'
@@ -1959,6 +2304,17 @@ mov rsp, stk.end
 ;   [246:19] set array index
 ;   [246:19] 0
     mov r13, 0
+;   [246:19] bounds check
+;   [246:19] allocate scratch register -> r12
+;   [246:19] line number
+    mov r12, 246
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+;   [246:19] free scratch register 'r12'
     shl r13, 6
     add r14, r13
 ;   [246:12] free scratch register 'r13'
@@ -1966,6 +2322,17 @@ mov rsp, stk.end
 ;   [246:32] set array index
 ;   [246:32] 1
     mov r13, 1
+;   [246:32] bounds check
+;   [246:32] allocate scratch register -> r12
+;   [246:32] line number
+    mov r12, 246
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+;   [246:32] free scratch register 'r12'
     cmp qword [r14 + r13 * 8], 65518
 ;   [246:12] free scratch register 'r13'
 ;   [246:12] free scratch register 'r14'
@@ -2025,8 +2392,30 @@ mov rsp, stk.end
 ;       [248:21] set array index
 ;       [248:21] 0
         mov r12, 0
+;       [248:21] bounds check
+;       [248:21] allocate scratch register -> r11
+;       [248:21] line number
+        mov r11, 248
+        test r12, r12
+        cmovs rbp, r11
+        js panic_bounds
+        cmp r12, 8
+        cmovge rbp, r11
+        jge panic_bounds
+;       [248:21] free scratch register 'r11'
         shl r12, 6
         add r13, r12
+;       [248:14] free scratch register 'r12'
+;       [248:14] bounds check
+;       [248:14] allocate scratch register -> r12
+;       [248:14] line number
+        mov r12, 248
+        test rcx, rcx
+        cmovs rbp, r12
+        js panic_bounds
+        cmp rcx, 8
+        cmovg rbp, r12
+        jg panic_bounds
 ;       [248:14] free scratch register 'r12'
         lea rsi, [r13]
 ;       [247:12] free scratch register 'r13'
@@ -2037,8 +2426,30 @@ mov rsp, stk.end
 ;       [249:21] set array index
 ;       [249:21] 1
         mov r12, 1
+;       [249:21] bounds check
+;       [249:21] allocate scratch register -> r11
+;       [249:21] line number
+        mov r11, 249
+        test r12, r12
+        cmovs rbp, r11
+        js panic_bounds
+        cmp r12, 8
+        cmovge rbp, r11
+        jge panic_bounds
+;       [249:21] free scratch register 'r11'
         shl r12, 6
         add r13, r12
+;       [249:14] free scratch register 'r12'
+;       [249:14] bounds check
+;       [249:14] allocate scratch register -> r12
+;       [249:14] line number
+        mov r12, 249
+        test rcx, rcx
+        cmovs rbp, r12
+        js panic_bounds
+        cmp rcx, 8
+        cmovg rbp, r12
+        jg panic_bounds
 ;       [249:14] free scratch register 'r12'
         lea rdi, [r13]
 ;       [247:12] free scratch register 'r13'
@@ -2144,6 +2555,17 @@ mov rsp, stk.end
 ;   [255:17] set array index
 ;   [255:17] 0
     mov r14, 0
+;   [255:17] bounds check
+;   [255:17] allocate scratch register -> r13
+;   [255:17] line number
+    mov r13, 255
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 2
+    cmovge rbp, r13
+    jge panic_bounds
+;   [255:17] free scratch register 'r13'
     cmp qword [rsp + r14 * 8 - 981], -1
 ;   [255:12] free scratch register 'r14'
     sete r15b
@@ -2187,6 +2609,17 @@ mov rsp, stk.end
 ;   [256:17] set array index
 ;   [256:17] 1
     mov r14, 1
+;   [256:17] bounds check
+;   [256:17] allocate scratch register -> r13
+;   [256:17] line number
+    mov r13, 256
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 2
+    cmovge rbp, r13
+    jge panic_bounds
+;   [256:17] free scratch register 'r13'
     cmp qword [rsp + r14 * 8 - 981], 2
 ;   [256:12] free scratch register 'r14'
     sete r15b
@@ -2557,6 +2990,45 @@ mov rsp, stk.end
     mov rdi, 0
     syscall
 
+panic_bounds:
+;   print message to stderr
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [msg_panic]
+    mov rdx, msg_panic_len
+    syscall
+;   line number is in `rbp`
+    mov rax, rbp
+;   convert to string
+    lea rdi, [num_buffer + 19]
+    mov byte [rdi], 10
+    dec rdi
+    mov rcx, 10
+.convert_loop:
+    xor rdx, rdx
+    div rcx
+    add dl, '0'
+    mov [rdi], dl
+    dec rdi
+    test rax, rax
+    jnz .convert_loop
+    inc rdi
+;   print line number to stderr
+    mov rax, 1
+    mov rsi, rdi
+    lea rdx, [num_buffer + 20]
+    sub rdx, rdi
+    mov rdi, 2
+    syscall
+;   exit with error code 255
+    mov rax, 60
+    mov rdi, 255
+    syscall
+section .rodata
+    msg_panic: db 'panic: bounds at line '
+    msg_panic_len equ $ - msg_panic
+section .bss
+    num_buffer: resb 21
 
 section .rodata
 dat:
@@ -2579,7 +3051,7 @@ db `enter name:\n`
 db `hello world from baz\n`
 dat.len equ $ - dat
 
-; max scratch registers in use: 4
+; max scratch registers in use: 5
 ;            max frames in use: 10
 ;               max stack size: 1109 B
 ;          optimization pass 1: 114

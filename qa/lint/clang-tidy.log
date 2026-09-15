@@ -1,2 +1,10 @@
-Tue Sep 15 09:25:38 AM +07 2026
-Tue Sep 15 09:26:05 AM +07 2026
+Tue Sep 15 12:29:16 PM +07 2026
+/home/c/w/compiler-2/qa/lint/../../src/toc.hpp:1461:24: warning: method 'make_ident_info_from_var_info' can be made static [readability-convert-member-functions-to-static]
+ 1461 |     [[nodiscard]] auto make_ident_info_from_var_info(
+      |                        ^
+      |     static 
+ 1462 |         const token& src_loc_tk, const std::string_view& ident,
+ 1463 |         const ident_path& id, const var_info& var,
+ 1464 |         std::vector<std::string> lea_path) const -> ident_info {
+      |                                            ~~~~~
+Tue Sep 15 12:29:39 PM +07 2026

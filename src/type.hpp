@@ -122,8 +122,8 @@ class type final {
                  const std::span<const std::string> path) const -> size_t {
 
         size_t offset{};
-        const type* tp{this};
 
+        const type* tp{this};
         for (const std::string& field_name : path | std::views::drop(1)) {
             // note: drop 1 because the first element is retrieved outside the
             //       loop
