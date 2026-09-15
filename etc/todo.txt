@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] ponder an iterator of elements in array that does not require bounds
+    checking on each element:
+      foo(arr) {
+        # implied 'e' for array element and 'i' for counter
+        e = 0
+      }
 [ ] consider dropping the visitor pattern in expr_any because lcov does not
     handle it
 [ ] UB analysis and path-sensitive initialization checks
@@ -52,11 +58,6 @@
     func make_points() : point[] res {...}
     => confusing. better is func init_points(pts : point[]) {...}
 [ ] make an extensive comment file explaining lea, indexing array etc
-[ ] ponder an iterator of elements in array that does not require bounds
-    checking on each element:
-      for(e : arr) {
-        e = 0
-      }
 [ ] examine NOLINTNEXTLINE annotations and try to fix
 [ ] reject or handle division by zero
     => init to zero prior call?
