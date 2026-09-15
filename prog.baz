@@ -15,7 +15,7 @@ type str {
     data : i8[127]
 }
 
-# initial data declared before any variables and initialized with constants
+# initial data is initialized before variables
 
 dat   hello : i8[] = "hello world from baz\n"
 dat prompt1 : i8[] = "enter name:\n"
@@ -38,7 +38,7 @@ func exit(v : reg_rdi) {
 
 # single statement blocks can ommit { ... }
 
-func assert(expr : bool) if not expr exit(1)
+func assert(x : bool) if not x exit(1)
 
 func sys_print(len : reg_rdx, ptr : reg_rsi) {
     mov(rax, 1)   # write system call
@@ -77,6 +77,8 @@ func bar(arg) {
 
 # return target is specified as a variable, in this case `res`
 
+# return variable is a mutable reference to destination
+
 func inv(i : i32) : i32 res {
     res = ~i
 }
@@ -92,23 +94,21 @@ func faz(arg : i32[]) {
 }
 
 func str_in(s : str) {
-    mov(rax, 0)   # read system call
-    mov(rdi, 0)   # file descriptor for standard input
-    mov(rsi, address_of(s.data)) # buffer address
+    mov(rax, 0)                     # read system call
+    mov(rdi, 0)                     # file descriptor for standard input
+    mov(rsi, address_of(s.data))    # buffer address
     mov(rdx, array_size_of(s.data)) # buffer size
     syscall()
     mov(s.len, rax - 1) # return value
 } 
 
 func str_out(s : str) {
-    mov(rax, 1)   # write system call
-    mov(rdi, 0)   # file descriptor for standard out
+    mov(rax, 1)                  # write system call
+    mov(rdi, 0)                  # file descriptor for standard out
     mov(rsi, address_of(s.data)) # buffer address 
-    mov(rdx, s.len) # buffer size
+    mov(rdx, s.len)              # buffer size
     syscall()
 } 
-
-# return variable is a mutable reference to destination
 
 func point_init() : point res {
     res.x = -1
@@ -123,7 +123,7 @@ const yes = 1
 const no = 0
 const maybe = -1
 
-# constants can be declared in any scope and shadow outer declarations.
+# constants can be declared in any scope and shadow outer declarations
 
 func main() {
     var arr : i32[4]
