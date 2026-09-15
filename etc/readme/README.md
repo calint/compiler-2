@@ -51,10 +51,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    44           1652            814           7152
+C/C++ Header                    44           1652            814           7153
 C++                              1            102            122            600
 -------------------------------------------------------------------------------
-SUM:                            45           1754            936           7752
+SUM:                            45           1754            936           7753
 -------------------------------------------------------------------------------
 ```
 
@@ -356,6 +356,7 @@ mov rcx, dat.len
 cld
 rep movsb
 mov rsp, stk.end
+main:
     mov qword [rsp - 205], 0
     mov qword [rsp - 197], 0
     mov qword [rsp - 213], 0
@@ -1717,7 +1718,8 @@ mov rsp, stk.end
 ;[87:1] # array arguments are declared with type and []
 ;[110:1] # return variable is a mutable reference to destination
 ;[125:1] # constants can be declared in any scope and shadow outer declarations.
-; main
+
+main:
 ;   [128:5] var arr : i32[4]
 ;   [128:9] arr: i32[4] (16 B @ [rsp - 205])
 ;   [128:9] zero 4 * 4 B = 16 B

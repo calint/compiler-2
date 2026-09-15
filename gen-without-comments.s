@@ -13,6 +13,7 @@ mov rcx, dat.len
 cld
 rep movsb
 mov rsp, stk.end
+main:
     mov qword [rsp - 205], 0
     mov qword [rsp - 197], 0
     mov qword [rsp - 213], 0
