@@ -16,6 +16,10 @@
         # injected variables: 'e', 'i', injected const 'n': array size
         e = 0
       }
+      foo(arr1, arr2, ...) {
+        # injected variable 'e1', 'e2', 'e...': current array elements
+        e1 = e2
+      }
 [x] consider allowing globals by inserting a base frame and when looking for
     vars or consts traverse to first frame
 [ ] consider dropping the visitor pattern in expr_any because lcov does not
