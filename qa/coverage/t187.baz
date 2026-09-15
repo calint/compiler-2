@@ -1,4 +1,0 @@
-# data declarations require the main function
-
-dat x = 1
-func main() {}

@@ -5,7 +5,9 @@ func print(len : reg_rdx, ptr : reg_rsi) {
     mov(rdi, 1)
     syscall()
 }
+
+dat letter : i8[] = "\x41"
+
 func main() {
-    dat letter : i8[] = "\x41"
     print(array_size_of(letter), address_of(letter))
 }

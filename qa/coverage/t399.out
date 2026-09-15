@@ -1,2 +1,2 @@
 
-t399.baz:4:32: expected '}' after 2 elements in array of size 2
+t399.baz:3:28: expected '}' after 2 elements in array of size 2

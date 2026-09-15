@@ -1,5 +1,16 @@
-# empty string is not a valid dat initializer
+# empty string fills a sized dat array with zeros
+
+dat value : i8[8] = ""
+
+func exit(v : reg_rdi) {
+	mov(rax, 60)
+	mov(rdi, v)
+	syscall()
+}
+
+func assert(x : bool) if not x exit(1)
 
 func main() {
-    dat value : i8[8] = ""
+	assert(value[0] == 0)
+	assert(value[7] == 0)
 }

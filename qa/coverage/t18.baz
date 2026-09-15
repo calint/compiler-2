@@ -1,3 +1,6 @@
+dat hello:i8[]="hello\n"
+dat world:i8[]="world\n"
+
 func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
@@ -34,9 +37,6 @@ func f(x):i64 res{
 }
 
 func main(){
-    dat hello:i8[]="hello\n"
-    dat world:i8[]="world\n"
-
     print(array_size_of(hello),address_of(hello))
     var a=2
     foo(world)

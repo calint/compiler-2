@@ -1,5 +1,8 @@
 # nested struct fields and address calculations
 
+dat fld=42
+dat str:i8[]="hello world"
+
 func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
@@ -27,9 +30,6 @@ func f(str:i8[],fld){
 }
 
 func main(){
-    dat fld=42
-    dat str:i8[]="hello world"
-
     var obj:object={{1,0},{0,0},0}
     if not obj.pos.x==1 exit(1)
     obj.pos.x=1

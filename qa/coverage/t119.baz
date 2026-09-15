@@ -12,8 +12,9 @@ func f1(state) : i64 res { state = state + 1 res = state }
 func f2(x) : i64 res { res = x * 2 }
 func f3(x) : i64 res { res = x + 10 }
 
+dat state = 0
+
 func main() {
-    dat state = 0
     var r = f3(f2(f1(state)))
     # f1() returns 1, state = 1
     # f2(1) returns 2

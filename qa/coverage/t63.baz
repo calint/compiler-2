@@ -4,6 +4,7 @@ func exit(v : reg_rdi) {
     syscall()
 }
 
+
 func print(len : reg_rdx, ptr : reg_rsi) {
     mov(rax, 1)   # write system call
     mov(rdi, 1)   # file descriptor for standard out
@@ -21,14 +22,15 @@ func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(nbytes, rax) # return value
 }
 
+dat   hello:i8[] = "hello world from baz\n"
+dat   input:i8[] = "............................................................"
+dat prompt1:i8[] = "enter name:\n"
+dat prompt2:i8[] = "that is not a name.\n"
+dat prompt3:i8[] = "hello "
+dat     dot:i8[] = "."
+dat      nl:i8[] = "\n"
+
 func main(){
-    dat   hello:i8[] = "hello world from baz\n"
-    dat   input:i8[] = "............................................................"
-    dat prompt1:i8[] = "enter name:\n"
-    dat prompt2:i8[] = "that is not a name.\n"
-    dat prompt3:i8[] = "hello "
-    dat     dot:i8[] = "."
-    dat      nl:i8[] = "\n"
 
     print(array_size_of(hello), address_of(hello))
     loop {

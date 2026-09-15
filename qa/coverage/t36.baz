@@ -1,3 +1,5 @@
+dat name:i8[]="............................................................"
+
 func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
@@ -22,7 +24,6 @@ func read(len:reg_rdx,ptr:reg_rsi):i64 nbytes_read{
 }
 
 func main(){
-    dat name:i8[]="............................................................"
     var len=read(array_size_of(name),address_of(name))-1 # remove the \n
     print(len,address_of(name))
     exit(0)

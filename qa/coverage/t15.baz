@@ -1,3 +1,5 @@
+dat hello:i8[]="hello\n"
+
 func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
@@ -17,7 +19,6 @@ func bar(hello:i8[]){
 }
 
 func main(){
-    dat hello:i8[]="hello\n"
     var a=3
     var b=2
     loop{

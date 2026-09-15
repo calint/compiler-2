@@ -1,5 +1,7 @@
 # mutable data declaration
 
+dat x = 1
+
 func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
@@ -7,7 +9,6 @@ func exit(v:reg_rdi){
 }
 
 func main(){
-    dat x = 1
     x=2
     exit(x)
 }

@@ -1,0 +1,6 @@
+# global dat must precede global vars
+
+var value = 1
+dat data = 2
+
+func main() {}

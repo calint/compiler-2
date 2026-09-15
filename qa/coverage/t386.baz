@@ -1,5 +1,5 @@
 # empty string is invalid without an explicit array size
 
-func main() {
-    dat value : i8[] = ""
-}
+dat value : i8[] = ""
+
+func main() {}

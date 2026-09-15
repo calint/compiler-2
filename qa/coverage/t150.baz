@@ -18,39 +18,39 @@ type string { data : i8[128] }
 
 type entity { messages : string[8] }
 
+dat    pt0 : point = { -1 }
+dat    pt1 : point = {  }
+dat    pt2 : point[2] = { {-1} }
+dat   wld0 : world = {}
+
+dat data_a
+dat data_b : i32 = 32
+dat data_c : i16[4] = { 1, 2, 3, 4 }
+dat data_e : i8
+dat data_f : bool = true
+dat data_g : i16[] = {  1  , 2  ,  3  }
+dat data_h : i16[5] = {1,2}
+dat data_i : i8[128]
+dat data_j : bool = false
+dat data_k : bool[] = {true, false}
+dat data_l : i8[] = "hello world\n"
+dat data_m : i8[10] = "a"
+dat data_n : i8[4] = { -1, 2 }
+dat data_o : bool[2] = { true, false }
+
+dat  point : point = { -1, -2 }
+dat  world : world = {  {-1,   2}    }
+dat  exits : exits =  {   {    1 ,  2   }  ,  {  3  ,  4  }  }
+dat  lines : line[2] = { {  { {-1,-2}, {4,5} } } }
+dat    str : string = {   "hello world\n"   }
+dat   hero : entity = { {  {   "msg1"    }     ,      {       "msg2"        }         }          }
+dat   strs : string[4] = { {"hello\n"} ,  {"world"} }
+dat  strs2 : string[] = { {"hello\n"} ,  {"world"} }
+dat    dds : i32[4]
+dat   str3 : i8[128] = ""
+dat    ln1 : line = { { { -2 } , { 4 } } }
+
 func main() {
-    dat    pt0 : point = { -1 }
-    dat    pt1 : point = {  }
-    dat    pt2 : point[2] = { {-1} }
-    dat   wld0 : world = {}
-
-    dat data_a
-    dat data_b : i32 = 32
-    dat data_c : i16[4] = { 1, 2, 3, 4 }
-    dat data_e : i8
-    dat data_f : bool = true
-    dat data_g : i16[] = {  1  , 2  ,  3  }
-    dat data_h : i16[5] = {1,2}
-    dat data_i : i8[128]
-    dat data_j : bool = false
-    dat data_k : bool[] = {true, false}
-    dat data_l : i8[] = "hello world\n"
-    dat data_m : i8[10] = "a"
-    dat data_n : i8[4] = { -1, 2 }
-    dat data_o : bool[2] = { true, false }
-
-    dat  point : point = { -1, -2 }
-    dat  world : world = {  {-1,   2}    }
-    dat  exits : exits =  {   {    1 ,  2   }  ,  {  3  ,  4  }  }
-    dat  lines : line[2] = { {  { {-1,-2}, {4,5} } } }
-    dat    str : string = {   "hello world\n"   }
-    dat   hero : entity = { {  {   "msg1"    }     ,      {       "msg2"        }         }          }
-    dat   strs : string[4] = { {"hello\n"} ,  {"world"} }
-    dat  strs2 : string[] = { {"hello\n"} ,  {"world"} }
-    dat    dds : i32[4]
-    dat   str3 : i8[128] = ""
-    dat    ln1 : line = { { { -2 } , { 4 } } }
-
     assert(data_a == 0)
     data_a = 0xff
     assert(data_a == 0xff)

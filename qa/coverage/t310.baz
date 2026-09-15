@@ -1,6 +1,0 @@
-# data declarations are not allowed after local variables
-
-func main() {
-    var x
-    dat y = 1
-}

@@ -1,4 +1,7 @@
 # data array initializer closes each element
 
 type p { x }
-func main() { dat x : p[2] = {{1},{2} }
+
+dat x : p[2] = {{1},{2} }
+
+func main() {}

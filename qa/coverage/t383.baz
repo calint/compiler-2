@@ -1,5 +1,5 @@
 # explicit zero-sized data arrays are invalid
 
-func main() {
-    dat values : i8[0] = {}
-}
+dat values : i8[0] = {}
+
+func main() {}

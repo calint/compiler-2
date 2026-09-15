@@ -78,6 +78,9 @@ class program final {
             } else if (tk.is_text("const")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_def_const>(tc_, tk, tz));
+            } else if (tk.is_text("dat")) {
+                statements_.emplace_back(
+                    std::make_unique<stmt_def_dat>(tc_, tk, tz));
             } else if (tk.is_text("var")) {
                 statements_.emplace_back(
                     std::make_unique<stmt_def_var>(tc_, tk, tz));

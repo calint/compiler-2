@@ -1,6 +1,9 @@
 # constant-sized array declaration
 
 const n = 3
+
+dat values : i8[n] = {1,2,3}
+
 func exit(v : reg_rdi) {
     mov(rax, 60)
     mov(rdi, v)
@@ -8,7 +11,6 @@ func exit(v : reg_rdi) {
 }
 func assert(x : bool) if not x exit(1)
 func main() {
-    dat values : i8[n] = {1,2,3}
     var copy : i8[n]
     copy[0] = values[0]
     copy[1] = values[1]

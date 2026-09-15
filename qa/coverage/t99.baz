@@ -25,9 +25,9 @@ func read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(nbytes, rax) # return value
 }
 
-func main() {
-    dat ok : i8[] = "ok\n"
+dat ok : i8[] = "ok\n"
 
+func main() {
     var word1 : i8[64]
     var word2 : i8[64]
 

@@ -1,3 +1,32 @@
+# user types are defined using keyword `type`
+
+# built-in types are i63, i32, i16, i8 and bool
+
+# default type is `i64` and does not need to be specified
+
+type point {x, y}
+
+type object {pos : point, color : i32}
+
+type world { locations : i64[8] }
+
+type str {
+    len : i8,
+    data : i8[127]
+}
+
+# initial data declared before any variables and initialized with constants
+
+dat   hello : i8[] = "hello world from baz\n"
+dat prompt1 : i8[] = "enter name:\n"
+dat prompt2 : i8[] = "that is not a name.\n"
+dat prompt3 : i8[] = "hello "
+dat     dot : i8[] = "."
+dat      nl : i8[] = "\n"
+dat      s1 : str = { 3 }
+
+# remaining uninitialized fields are zeroed
+
 # all functions are inlined
 
 # arguments can be placed in specified register using `reg_...` syntax
@@ -33,16 +62,6 @@ func sys_read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
     mov(nbytes, rax) # return value
 }
 
-# user types are defined using keyword `type`
-
-# default type is `i64` and does not need to be specified
-
-type point {x, y}
-
-type object {pos : point, color : i32}
-
-type world { locations : i64[8] }
-
 # function arguments and return are equivalent to mutable references
 
 func foo(pt : point) {
@@ -71,11 +90,6 @@ func baz(arg) : i64 res {
 
 func faz(arg : i32[]) {
     arg[1] = 0xfe
-}
-
-type str {
-    len : i8,
-    data : i8[127]
 }
 
 func str_in(s : str) {
@@ -113,18 +127,6 @@ const no = 0
 const maybe = -1
 
 func main() {
-    dat   hello : i8[] = "hello world from baz\n"
-    dat prompt1 : i8[] = "enter name:\n"
-    dat prompt2 : i8[] = "that is not a name.\n"
-    dat prompt3 : i8[] = "hello "
-    dat     dot : i8[] = "."
-    dat      nl : i8[] = "\n"
-
-    dat      s1 : str = { 3 }
-    # remaining uninitialized fields are zeroed
-
-    # initial data declared before any variables and initialized with constants
-
     var arr : i32[4]
     # arrays are initialized to 0
 

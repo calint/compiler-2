@@ -1,5 +1,7 @@
 # complement with arithmetic precedence
 
+dat len=-2
+
 func exit(v:reg_rdi){
     mov(rax,60) # exit system call
     mov(rdi,v)  # return code
@@ -15,7 +17,6 @@ func bar(x):i64 res{
 }
 
 func main(){
-    dat len=-2
     var a=-1
     var b=~-foo(-a)
     var c=~-(len)

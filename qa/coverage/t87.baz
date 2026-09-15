@@ -30,6 +30,8 @@ type location {
     name_len
 }
 
+dat nl_str : i8[] = "\n"
+
 func nl(nl_str : i8[]) {
     print(array_size_of(nl_str), address_of(nl_str))
 }
@@ -64,8 +66,6 @@ func pn(num) {
 }
 
 func main() {
-    dat nl_str : i8[] = "\n"
-
     var locations : location[4]
 
     var i = 0

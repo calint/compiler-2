@@ -6,8 +6,9 @@ func print(len : reg_rdx, ptr : reg_rsi) {
     syscall()
 }
 
+dat escapes : i8[] = "\t\r\v\f`"
+dat output : i8[] = "token escapes\n"
+
 func main() {
-    dat escapes : i8[] = "\t\r\v\f`"
-    dat output : i8[] = "token escapes\n"
     print(array_size_of(output), address_of(output))
 }

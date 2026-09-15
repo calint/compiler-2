@@ -18,7 +18,8 @@ func print(len : reg_rdx, ptr : reg_rsi) {
     syscall()
 }
 
+dat hello : i8[] = "hello \"world\" \n from 'baz'\n  "
+
 func main() {
-    dat hello : i8[] = "hello \"world\" \n from 'baz'\n  "
     print(array_size_of(hello), address_of(hello))
 }

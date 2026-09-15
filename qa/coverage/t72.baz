@@ -14,8 +14,9 @@ func foo(i) {
     i = 0xfe5e + 1
 }
 
+dat count = 1
+
 func main() {
-    dat count = 1
     assert(count == 1)
     foo(count)
     assert(count == 0xfe5f)
