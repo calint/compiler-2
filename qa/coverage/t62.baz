@@ -6,7 +6,7 @@ func exit(v:reg_rdi){
     syscall()
 }
 
-func foo(x){
+func foozi(x){
    x=x+1
 }
 
@@ -17,7 +17,7 @@ func bar(x){
 
 func main(){
     var a=0
-    foo(a)
+    foozi(a)
     if not a==1 exit(1)
 
     bar(a)

@@ -1,27 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[x] const should be allowed on top level and in scoped blocks
-[ ] ponder an iterator of elements in array that does not require bounds
+[o] ponder an iterator of elements in array that does not require bounds
     checking on each element:
-      foo(arr) {
-        # injected variable 'e': current array element
-        e = 0
-      }
-      fooi(arr) {
-        # injected variables: 'e', 'i': counter
-        e = i
-      }
-      fooin(arr) {
-        # injected variables: 'e', 'i', injected const 'n': array size
-        e = 0
-      }
-      foo(arr1, arr2, ...) {
-        # injected variable 'e1', 'e2', 'e...': current array elements
-        e1 = e2
-      }
-[x] consider allowing globals by inserting a base frame and when looking for
-    vars or consts traverse to first frame
+[o] foo(arr) {
+      # injected variable 'e': current array element
+      e = 0
+    }
+[ ] fooi(arr) {
+      # injected variables: 'e', 'i': counter
+      e = i
+    }
+    fooin(arr) {
+      # injected variables: 'e', 'i', injected const 'n': array size
+      e = 0
+    }
+    foo(arr1, arr2, ...) {
+      # injected variable 'e1', 'e2', 'e...': current array elements
+      e1 = e2
+    }
 [ ] consider dropping the visitor pattern in expr_any because lcov does not
     handle it
 [ ] UB analysis and path-sensitive initialization checks
@@ -143,6 +140,9 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] const should be allowed on top level and in scoped blocks
+[x] consider allowing globals by inserting a base frame and when looking for
+    vars or consts traverse to first frame
 [x] t389 bools should not be used in arithmetics
 [x] unspecified array size var with empty string not supported
 [x] t178 should fail because var is not bool

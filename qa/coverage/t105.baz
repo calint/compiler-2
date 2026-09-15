@@ -26,15 +26,15 @@ type world {
     locations : location[7]
 }
 
-func foo(lnk : link){
+func foozi(lnk : link){
     lnk.loc = 2
     lnk.name_len = 1
     lnk.name[0] = 0x61 # 'a'
 }
 
 func bar(locs : location[]) {
-    foo(locs[2].links[1])
-    foo(locs[3].links[5])
+    foozi(locs[2].links[1])
+    foozi(locs[3].links[5])
 }
 
 func baz(wld : world[]) {

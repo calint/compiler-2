@@ -1,9 +1,9 @@
 # function argument cannot read its own uninitialized caller variable
 
-func foo(i) : i64 res {
+func foozi(i) : i64 res {
     res = 1
 }
 
 func main() {
-    var x = foo(x)
+    var x = foozi(x)
 }

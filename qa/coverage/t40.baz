@@ -4,7 +4,7 @@ func exit(v:reg_rdi){
     syscall()
 }
 
-func foo(x):i64 res{
+func foozi(x):i64 res{
     res=-x*2
 }
 
@@ -14,7 +14,7 @@ func bar(y):i64 res{
 
 func main(){
     var a=1
-    var b=-foo(-bar(-a))
+    var b=-foozi(-bar(-a))
     if(b==-2)
         exit(0)
     exit(1)

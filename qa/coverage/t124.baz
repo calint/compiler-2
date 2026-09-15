@@ -1,10 +1,10 @@
 # return skips the required result assignment
 
-func foo(i) : i64 res {
+func foozi(i) : i64 res {
     return
     res = i * 2
 }
 
 func main() {
-    var x = foo(2)
+    var x = foozi(2)
 }

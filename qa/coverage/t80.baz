@@ -11,7 +11,7 @@ type point {x, y}
 type object {pos : point, color : i32}
 
 # function arguments are equivalent to mutable references
-func foo(pt : point) {
+func foozi(pt : point) {
     pt.x = 0b10    # binary value 2
     pt.y = 0xb     # hex value 11
 }

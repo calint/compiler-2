@@ -10,7 +10,7 @@ func assert(expr : bool) {
     if not expr exit(1)
 }
 
-func foo(i) {
+func foozi(i) {
     i = 0xfe5e + 1
 }
 
@@ -18,6 +18,6 @@ dat count = 1
 
 func main() {
     assert(count == 1)
-    foo(count)
+    foozi(count)
     assert(count == 0xfe5f)
 }

@@ -19,7 +19,7 @@ type point {x, y}
 type object {pos : point, color : i32}
 
 # function arguments are equivalent to mutable references
-func foo(pt : point) {
+func foozi(pt : point) {
     pt.x = 0b10    # binary value 2
     pt.y = 0xb     # hex value 11
 }
@@ -37,7 +37,7 @@ func baz(arg) : i64 res {
 
 func main() {
     var p : point = {0, 0}
-    foo(p)
+    foozi(p)
     assert(p.x == 2)
     assert(p.y == 0xb)
 

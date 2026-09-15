@@ -29,6 +29,7 @@
 #include "stmt_builtin_array_size_of.hpp"
 #include "stmt_builtin_arrays_equal.hpp"
 #include "stmt_builtin_equal.hpp"
+#include "stmt_builtin_foo.hpp"
 #include "stmt_builtin_mov.hpp"
 #include "stmt_builtin_syscall.hpp"
 #include "stmt_call.hpp"
@@ -228,6 +229,9 @@ auto main(const int argc, const char* argv[]) -> int {
     }
     if (tk.is_text("syscall")) {
         return std::make_unique<stmt_builtin_syscall>(tc, tk, tz);
+    }
+    if (tk.is_text("foo")) {
+        return std::make_unique<stmt_builtin_foo>(tc, tk, tz);
     }
 
     std::unreachable();

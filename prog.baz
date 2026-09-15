@@ -63,7 +63,7 @@ func sys_read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
 
 # function arguments and return are equivalent to mutable references
 
-func foo(pt : point) {
+func fooz(pt : point) {
     pt.x = 0b10    # binary value 2
     pt.y = 0xb     # hex value 11
 }
@@ -171,7 +171,7 @@ func main() {
     assert(arr[1] == 0xfe)
 
     var p : point = {0, 0}
-    foo(p)
+    fooz(p)
     assert(p.x == 2)
     assert(p.y == 0xb)
 

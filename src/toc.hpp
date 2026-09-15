@@ -79,7 +79,7 @@ class frame final {
     bool non_dat_var_has_been_added_{};
 
   public:
-    enum class frame_type : uint8_t { FUNC, BLOCK, LOOP };
+    enum class frame_type : uint8_t { FUNC, BLOCK, LOOP, FOO };
 
   private:
     frame_type type_{frame_type::FUNC}; // frame type
@@ -311,6 +311,12 @@ class toc final {
                   const type& return_type, const stmt_def_func* func_def)
         -> void {
 
+        if (name == "foo") {
+            throw compiler_exception(src_loc_tk,
+                                     "cannot name function 'foo' because it is "
+                                     "a builtin iterator function");
+        }
+
         if (funcs_.has(name)) {
             const func_info& fn{funcs_.get_const_ref(name)};
             throw compiler_exception{
@@ -357,6 +363,7 @@ class toc final {
             (var.type_ptr->size() * (var.is_array ? var.array_size : 1)))};
 
         var.stack_idx = -stack_idx;
+
         frames_.back().add_var(var, is_dat);
 
         const size_t total_stack_size{get_stack_size()};
@@ -370,6 +377,10 @@ class toc final {
         std::print(os, "{}: {}", var.name, name_info.type().name());
         if (var.array_size) {
             std::print(os, "[{}]", var.array_size);
+        }
+        if (not var.reg.empty()) {
+            std::println(os, " ({})", var.reg);
+            return;
         }
         std::println(os, " ({} B @ [{}])",
                      name_info.type().size() *
@@ -641,6 +652,13 @@ class toc final {
         frames_.emplace_back("", frame::frame_type::BLOCK);
         refresh_usage();
     }
+
+    auto enter_foo(const std::string& label) -> void {
+        frames_.emplace_back(label, frame::frame_type::BLOCK);
+        refresh_usage();
+    }
+
+    auto exit_foo() -> void { exit_block(); }
 
     auto enter_func(std::string_view name,
                     const std::optional<func_return_info>& returns,
@@ -1269,6 +1287,14 @@ class toc final {
         return std::format("{}:{}", line, col);
     }
 
+    [[nodiscard]] auto get_stack_size() const -> size_t {
+        size_t nbytes{};
+        for (const frame& frm : frames_) {
+            nbytes += frm.allocated_stack_size();
+        }
+        return nbytes;
+    }
+
   private:
     // -------------------------------------------------------------------------
     // private non-special functions (sorted alphabetically)
@@ -1325,14 +1351,6 @@ class toc final {
         default:
             std::unreachable();
         }
-    }
-
-    [[nodiscard]] auto get_stack_size() const -> size_t {
-        size_t nbytes{};
-        for (const frame& frm : frames_) {
-            nbytes += frm.allocated_stack_size();
-        }
-        return nbytes;
     }
 
     [[nodiscard]] auto is_in_main() const -> bool {
@@ -1458,12 +1476,19 @@ class toc final {
         return make_ident_info_regs_and_const(src_loc_tk, ident, id);
     }
 
-    [[nodiscard]] auto make_ident_info_from_var_info(
+    [[nodiscard]] static auto make_ident_info_from_var_info(
         const token& src_loc_tk, const std::string_view& ident,
         const ident_path& id, const var_info& var,
-        std::vector<std::string> lea_path) const -> ident_info {
+        std::vector<std::string> lea_path) -> ident_info {
+
         ident_info ii{
             var.type_ptr->accessor(src_loc_tk, ident, id.path(), var)};
+
+        if (not var.reg.empty()) {
+            ii.lea_path = {var.reg};
+            ii.elem_path = {var.reg};
+            return ii;
+        }
 
         lea_path.resize(id.path().size());
         // note: pad with empty for the remaining elements in the id path
@@ -1647,6 +1672,22 @@ class toc final {
     // public statics (sorted alphabetically)
     // -------------------------------------------------------------------------
 
+    static auto asm_add(std::ostream& os, const size_t indnt,
+                        const std::string_view dst, const std::string_view src)
+        -> void {
+
+        indent(os, indnt);
+        std::println(os, "add {}, {}", dst, src);
+    }
+
+    static auto asm_cmp(std::ostream& os, const size_t indnt,
+                        const std::string_view dst, const std::string_view src)
+        -> void {
+
+        indent(os, indnt);
+        std::println(os, "cmp {}, {}", dst, src);
+    }
+
     static auto asm_jmp(std::ostream& os, const size_t indnt,
                         const std::string_view label) -> void {
 
@@ -1660,6 +1701,20 @@ class toc final {
 
         indent(os, indnt);
         std::println(os, "j{} {}", comparison, label);
+    }
+
+    static auto asm_je(std::ostream& os, const size_t indnt,
+                       const std::string_view label) -> void {
+
+        indent(os, indnt);
+        std::println(os, "je {}", label);
+    }
+
+    static auto asm_jne(std::ostream& os, const size_t indnt,
+                        const std::string_view label) -> void {
+
+        indent(os, indnt);
+        std::println(os, "jne {}", label);
     }
 
     static auto asm_label(std::ostream& os, const size_t indnt,
@@ -1721,6 +1776,14 @@ class toc final {
 
         indent(os, indnt);
         std::println(os, "set{} {}", comparison, operand);
+    }
+
+    static auto asm_xor(std::ostream& os, const size_t indnt,
+                        const std::string_view dst, const std::string_view src)
+        -> void {
+
+        indent(os, indnt);
+        std::println(os, "xor {}, {}", dst, src);
     }
 
     [[nodiscard]] static auto get_data_def(const size_t size)

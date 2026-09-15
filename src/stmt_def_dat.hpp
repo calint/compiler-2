@@ -109,6 +109,7 @@ class stmt_def_dat final : public statement {
             .declared_at_tk{name_tk_},
             .is_array{is_array},
             .array_size{array_size},
+            .reg{},
         };
         tc.add_var(name_tk_, null_strm, 0, var, true);
 
@@ -174,6 +175,7 @@ class stmt_def_dat final : public statement {
             .declared_at_tk{name_tk_},
             .is_array{elroot_.is_array},
             .array_size{elroot_.array_size},
+            .reg{},
         };
         tc.add_var(name_tk_, os, indent, var, true);
     }

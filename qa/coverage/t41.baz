@@ -8,13 +8,13 @@ func exit(v:reg_rdi){
     syscall()
 }
 
-func foo(x):i64 res{
+func foozi(x):i64 res{
     res=-x
 }
 
 func main(){
     var a=-1
-    var b=~-foo(-a)
+    var b=~-foozi(-a)
     var c=~-(len)
     if ~-0b1 != 0 exit(2)
     if a==-1 and b==~1 and c==~2

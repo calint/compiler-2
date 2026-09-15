@@ -1,6 +1,6 @@
 # break skips the required result assignment
 
-func foo(i) : i64 res {
+func foozi(i) : i64 res {
     loop {
         break
         res = i * 2
@@ -8,5 +8,5 @@ func foo(i) : i64 res {
 }
 
 func main() {
-    var x = foo(2)
+    var x = foozi(2)
 }

@@ -6,12 +6,12 @@ func exit(v : reg_rdi) {
     syscall()
 }
 
-func foo(i) {
+func foozi(i) {
     exit(i)
 }
 
 func main() {
     if true {
-       foo(5)
+    foozi(5)
     }
 }

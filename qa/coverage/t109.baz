@@ -19,7 +19,7 @@ type world {
     flgs : flags[4]
 }
 
-func foo(data : i8[]) {
+func foozi(data : i8[]) {
     assert(array_size_of(data) == 8)
 }
 
@@ -29,7 +29,7 @@ func bar(flg : flags) {
 
 func main() {
     var worlds : world[2]
-    foo(worlds[1].flgs[2].data)
+    foozi(worlds[1].flgs[2].data)
     bar(worlds[1].flgs[1])
 }
 

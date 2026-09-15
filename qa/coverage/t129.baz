@@ -13,7 +13,7 @@ type pair {
     value : i16
 }
 
-func foo(kv : pair) {
+func foozi(kv : pair) {
     kv.value = 0x50
 }
 
@@ -22,6 +22,6 @@ func main() {
     lut[0] = {1, 0x20}
     lut[1] = {2, 0x40}
 
-    foo(lut[1])
+    foozi(lut[1])
     assert(lut[1].value == 0x50)
 }

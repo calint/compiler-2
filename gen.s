@@ -944,9 +944,9 @@ main:
     mov qword [rsp - 301], 0
 ;   [173:21] copy field 'y'
     mov qword [rsp - 293], 0
-;   [174:5] foo(p)
-;   [66:6] foo(pt : point) 
-    foo_174_5:
+;   [174:5] fooz(p)
+;   [66:6] fooz(pt : point) 
+    fooz_174_5:
 ;       [174:5] alias pt -> p  (lea: )
 ;       [67:5] pt.x = 0b10
 ;       [67:12] 0b10
@@ -956,7 +956,7 @@ main:
 ;       [68:12] 0xb
         mov qword [rsp - 293], 11
 ;       [68:20] # hex value 11
-    foo_174_5_end:
+    fooz_174_5_end:
 ;   [175:5] assert(p.x == 2)
 ;   [175:12] allocate scratch register -> r15
 ;   [175:12] ? p.x == 2

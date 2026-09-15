@@ -59,7 +59,7 @@ type world {
     note : str
 }
 
-func foo(w1 : world, w2 : world){
+func foozi(w1 : world, w2 : world){
     assert(w1.note.size + w2.note.size == 3)
 }
 
@@ -68,5 +68,5 @@ func main() {
     wlds[0].note.size = 1
     wlds[1].note.size = 2
  
-    foo(wlds[0], wlds[1])
+    foozi(wlds[0], wlds[1])
 }

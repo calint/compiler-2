@@ -54,10 +54,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    44           1652            814           7153
-C++                              1            102            122            600
+C/C++ Header                    45           1697            818           7282
+C++                              1            102            122            604
 -------------------------------------------------------------------------------
-SUM:                            45           1754            936           7753
+SUM:                            46           1799            940           7886
 -------------------------------------------------------------------------------
 ```
 
@@ -129,7 +129,7 @@ func sys_read(len : reg_rdx, ptr : reg_rsi) : i64 nbytes {
 
 # function arguments and return are equivalent to mutable references
 
-func foo(pt : point) {
+func fooz(pt : point) {
     pt.x = 0b10    # binary value 2
     pt.y = 0xb     # hex value 11
 }
@@ -237,7 +237,7 @@ func main() {
     assert(arr[1] == 0xfe)
 
     var p : point = {0, 0}
-    foo(p)
+    fooz(p)
     assert(p.x == 2)
     assert(p.y == 0xb)
 
@@ -750,10 +750,10 @@ main:
     assert_171_5_end:
     mov qword [rsp - 301], 0
     mov qword [rsp - 293], 0
-    foo_174_5:
+    fooz_174_5:
         mov qword [rsp - 301], 2
         mov qword [rsp - 293], 11
-    foo_174_5_end:
+    fooz_174_5_end:
     cmp_175_12:
     cmp qword [rsp - 301], 2
     sete r15b
@@ -2593,9 +2593,9 @@ main:
     mov qword [rsp - 301], 0
 ;   [173:21] copy field 'y'
     mov qword [rsp - 293], 0
-;   [174:5] foo(p)
-;   [66:6] foo(pt : point) 
-    foo_174_5:
+;   [174:5] fooz(p)
+;   [66:6] fooz(pt : point) 
+    fooz_174_5:
 ;       [174:5] alias pt -> p  (lea: )
 ;       [67:5] pt.x = 0b10
 ;       [67:12] 0b10
@@ -2605,7 +2605,7 @@ main:
 ;       [68:12] 0xb
         mov qword [rsp - 293], 11
 ;       [68:20] # hex value 11
-    foo_174_5_end:
+    fooz_174_5_end:
 ;   [175:5] assert(p.x == 2)
 ;   [175:12] allocate scratch register -> r15
 ;   [175:12] ? p.x == 2

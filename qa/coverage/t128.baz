@@ -81,7 +81,7 @@ type location {
     exits : list
 }
 
-func foo(src : location, dst : location) {
+func foozi(src : location, dst : location) {
     dst.name = {src.name.len, src.name.data}
     dst.note = src.note
 }
@@ -93,7 +93,7 @@ func main() {
 
     locations[0].name.data[1] = 0x61
 
-    foo(locations[0], locations[1])
+    foozi(locations[0], locations[1])
     assert(locations[1].name.data[1] == 0x61)
 
 }

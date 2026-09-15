@@ -18,13 +18,13 @@ func bar(i : i8) {
     i = 1
 }
 
-func foo(str : i8[]) {
+func foozi(str : i8[]) {
     bar(str[5])
 }
 
 func fuz(rm : room) {
     rm.name.len = 2
-    foo(rm.name.data)
+    foozi(rm.name.data)
 }
 
 func main() {

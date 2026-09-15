@@ -22,6 +22,7 @@ class toc;
 class tokenizer;
 class statement;
 class stmt_identifier;
+class stmt_block;
 class type;
 class expr_any;
 
@@ -273,6 +274,7 @@ struct var_info {
     int32_t stack_idx{};  // location relative to register rsp
     bool is_array{};
     size_t array_size{};
+    std::string reg;
 };
 
 struct ident_info {

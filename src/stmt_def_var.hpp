@@ -81,6 +81,7 @@ class stmt_def_var final : public statement {
             .declared_at_tk{name_tk_},
             .is_array{is_array_},
             .array_size{array_size_},
+            .reg{},
         };
         tc.add_var(name_tk_, null_strm, 0, var, false);
 
@@ -134,6 +135,7 @@ class stmt_def_var final : public statement {
             .declared_at_tk{name_tk_},
             .is_array{is_array_},
             .array_size{array_size_},
+            .reg{},
         };
         tc.add_var(name_tk_, os, indent, var, false);
 

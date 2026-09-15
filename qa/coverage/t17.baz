@@ -15,7 +15,7 @@ func print(len:reg_rdx,ptr:reg_rsi){
     syscall()
 }
 
-func foo(world:i8[]){
+func foozi(world:i8[]){
     var len=array_size_of(world)
     print(len-1,address_of(world))
 }
@@ -34,7 +34,7 @@ func bar(n,hello:i8[]){
 
 func main(){
     var a=2
-    foo(world)
+    foozi(world)
     bar(a+2,hello)
     exit(0)
 }

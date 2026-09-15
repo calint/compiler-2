@@ -403,10 +403,10 @@ main:
     assert_171_5_end:
     mov qword [rsp - 301], 0
     mov qword [rsp - 293], 0
-    foo_174_5:
+    fooz_174_5:
         mov qword [rsp - 301], 2
         mov qword [rsp - 293], 11
-    foo_174_5_end:
+    fooz_174_5_end:
     cmp_175_12:
     cmp qword [rsp - 301], 2
     sete r15b

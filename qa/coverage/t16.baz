@@ -23,7 +23,7 @@ func bar(a,b,hello:i8[]){
     }
 }
 
-func foo(world:i8[]){
+func foozi(world:i8[]){
     print(array_size_of(world),address_of(world))
 }
 
@@ -32,6 +32,6 @@ func main(){
     var b=2
     var c=3
     bar(a,b,hello)
-    foo(world)
+    foozi(world)
     exit(0)
 }

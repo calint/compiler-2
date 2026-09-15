@@ -174,6 +174,7 @@ class stmt_def_func final : public statement {
                 .name{ret_tk.text()},
                 .type_ptr{&get_type()},
                 .declared_at_tk{ret_tk},
+                .reg{},
             };
             tc.add_var(ret_tk, os, indent + 1, var, false);
         }
@@ -192,6 +193,7 @@ class stmt_def_func final : public statement {
                     .type_ptr{&prm_type},
                     .declared_at_tk{prm.tok()},
                     .is_array{prm.is_array()},
+                    .reg{},
                 };
                 tc.add_var(tok(), os, indent + 1, var, false);
                 continue;

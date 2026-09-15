@@ -1,10 +1,10 @@
 # conditional return assignment is not guaranteed
 
-func foo(i) : i64 res {
+func foozi(i) : i64 res {
     if i == 3 res = 2
 }
 
 func main() {
     var x = 1
-    var y = foo(x)
+    var y = foozi(x)
 }

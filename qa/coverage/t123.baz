@@ -1,9 +1,9 @@
 # recursive initialization is rejected
 
-func foo(i) {
+func foozi(i) {
 
 }
 
 func main() {
-    var x = foo(x)
+    var x = foozi(x)
 }
