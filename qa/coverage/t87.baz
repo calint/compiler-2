@@ -32,7 +32,7 @@ type location {
 
 dat nl_str : i8[] = "\n"
 
-func nl(nl_str : i8[]) {
+func nl() {
     print(array_size_of(nl_str), address_of(nl_str))
 }
 
@@ -72,9 +72,9 @@ func main() {
     loop {
       locations[i].name_len = read(array_size_of(locations[i].name), address_of(locations[i].name))
       pn(locations[i].name_len)
-      nl(nl_str)
+      nl()
       print(locations[i].name_len, address_of(locations[i].name))
-      nl(nl_str)
+      nl()
       i = i + 1
       if i == 4 break
     }
@@ -82,9 +82,9 @@ func main() {
     i = 0
     loop {
       pn(locations[i].name_len)
-      nl(nl_str)
+      nl()
       print(locations[i].name_len, address_of(locations[i].name))
-      nl(nl_str)
+      nl()
       i = i + 1
       if i == 4 break
     }
