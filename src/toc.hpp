@@ -1372,34 +1372,33 @@ class toc final {
         lea_path.insert(lea_path.end(), id.path().size() - 1, "");
         // note: -1 to exclude the first element
 
-        for (const auto [i, frm] :
-             frames_ | std::views::enumerate | std::views::reverse) {
+        for (const frame& f : frames_ | std::views::reverse) {
 
             // does this frame contain the variable?
-            if (frm.has_var(id.base())) {
-                return make_ident_info_from_frame(frm, src_loc_tk, ident, id,
+            if (f.has_var(id.base())) {
+                return make_ident_info_from_frame(f, src_loc_tk, ident, id,
                                                   std::move(lea_path));
             }
 
-            if (frm.is_func()) {
+            if (f.is_func()) {
 
                 // root frame of the function
                 // from here on aliases are followed to the actual variable
                 // referred to
 
-                if (not frm.has_alias(id.base())) {
+                if (not f.has_alias(id.base())) {
                     // is not an alias
 
                     // add an empty
                     lea_path.emplace_back("");
-                    return make_ident_info_from_frame(frm, src_loc_tk, ident,
-                                                      id, std::move(lea_path));
+                    return make_ident_info_from_frame(f, src_loc_tk, ident, id,
+                                                      std::move(lea_path));
                 }
 
                 // this is an alias, continue resolving until it is a variable,
                 // register or constant
 
-                const alias_info& alias{frm.get_alias(id.base())};
+                const alias_info& alias{f.get_alias(id.base())};
 
                 lea_path.emplace_back(alias.lea);
 
@@ -1442,20 +1441,21 @@ class toc final {
         const ident_path& id, std::vector<std::string> lea_path) const
         -> ident_info {
 
+        // try function scope
         if (frm.has_var(id.base())) {
-            const var_info& var{frm.get_var_const_ref(id.base())};
-            return make_ident_info_from_var_info(src_loc_tk, ident, id, var,
-                                                 std::move(lea_path));
+            return make_ident_info_from_var_info(
+                src_loc_tk, ident, id, frm.get_var_const_ref(id.base()),
+                std::move(lea_path));
         }
 
-        // finally try root frame
-        if (not frames_.front().has_var(id.base())) {
-            return make_ident_info_regs_and_const(src_loc_tk, ident, id);
+        // try global scope
+        if (frames_.front().has_var(id.base())) {
+            return make_ident_info_from_var_info(
+                src_loc_tk, ident, id,
+                frames_.front().get_var_const_ref(id.base()), lea_path);
         }
 
-        const var_info& var{frames_.front().get_var_const_ref(id.base())};
-        return make_ident_info_from_var_info(src_loc_tk, ident, id, var,
-                                             lea_path);
+        return make_ident_info_regs_and_const(src_loc_tk, ident, id);
     }
 
     [[nodiscard]] auto make_ident_info_from_var_info(
