@@ -23,9 +23,7 @@ dat prompt2 : i8[] = "that is not a name.\n"
 dat prompt3 : i8[] = "hello "
 dat     dot : i8[] = "."
 dat      nl : i8[] = "\n"
-dat      s1 : str = { 3 }
-
-# remaining uninitialized fields are zeroed
+dat      s1 : str = { 3 } # remaining uninitialized fields are zeroed
 
 # all functions are inlined
 
@@ -120,11 +118,11 @@ func object_init() : object res {
     res.pos.y = 74
 }
 
-# constants are declared in global scope
-
 const yes = 1
 const no = 0
 const maybe = -1
+
+# constants can be declared in any scope and shadow outer declarations.
 
 func main() {
     var arr : i32[4]
@@ -136,6 +134,13 @@ func main() {
 
     answer = maybe
     assert(answer == -1)
+
+    {
+        const maybe = 33
+        assert(maybe == 33)
+    }
+
+    assert(maybe == -1)
 
     var ix = 1
     # variables can have an initial value that can be an expression
