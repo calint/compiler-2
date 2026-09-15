@@ -12,20 +12,27 @@
 #include "expression.hpp"
 #include "toc.hpp"
 
-// a list of elements / lists connected by operators instead of tree
-// note: quirky parsing but trivial compilation
+//
+// a flat list of elements and nested lists instead of a binary tree
+//
+//   a + b * c - d
+//
+//   exprs: [a] [b * c] [d]
+//   ops:      +       -
+//
+// same-precedence operations stay flat; higher-precedence operations become
+// nested lists
+//
 class expr_ops_list final : public expression {
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
     std::vector<char> ops_; // operators between elements in the vector
     unary_ops uops_;        // unary ops for all result e.g. ~(a+b)
     token open_paren_tk_;   // when 'enclosed' the '(' token
     token close_paren_tk_;  // when 'enclosed' the ')' token
-    bool enclosed_{};       // (a+b) vs a+b
+    bool enclosed_{};       // (a + b)  vs  a + b
 
-    // true when algorithm creates a sub-expression due to operator precedence
-    // change
-    //   e.g:
-    //   1 + 2 * 3 + 4  => 2 * 3 will be implied
+    // true when this list was created because of a higher-precedence operation
+    //   1 + 2 * 3 + 4  => 1 + [2 * 3] + 4
     bool is_implied_subexpression_{};
 
   public:
@@ -39,42 +46,58 @@ class expr_ops_list final : public expression {
           open_paren_tk_{open_paren_tk}, enclosed_{enclosed},
           is_implied_subexpression_{is_implied_subexpression} {
 
-        // is this in a recursion?
+        // a recursive call might have supplied the first element it already
+        // parsed
+
         if (first_expression) {
-            // yes, add provided first expression
+            // it did, add provided first expression as first element in the
+            // list
             exprs_.emplace_back(std::move(first_expression));
         } else {
-            // no, read the first expression or start a new recursion
-            // e.g. =-(-(b+c)+d)
+            // it did not, check if it is a element or the start of a new
+            // sub-expression
+            //   -(a + b)  vs  -a
+
+            // read the unary ops before checking for open parenthesis
             unary_ops uo{tz};
 
-            // is next a sub-expression?
+            // parenthesized expressions become nested lists
             if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
-                // yes, recurse with unary ops
+                // move the unary ops to be applied on the whole sub-expression
                 exprs_.emplace_back(std::make_unique<expr_ops_list>(
                     tc, tz, in_args, true, t, false, std::move(uo)));
             } else {
-                // no, push back the unary ops to be parsed by the statement
+                // non-parenthesized unary ops belong to the next expression
+                // push back for so the element attaches it as its own
                 uo.put_back(tz);
                 exprs_.emplace_back(create_statement_in_expr_ops_list(tc, tz));
             }
         }
 
+        // set the type of this list same as first element
+
         const statement& first_expr{*exprs_.front()};
+
         set_type(first_expr.is_identifier()
                      ? tc.make_ident_info(first_expr).type()
                      : first_expr.get_type());
 
+        // start the loop of arithmetic operator and element
+
         // start with provided precedence
         uint8_t precedence{first_op_precedence};
 
-        while (true) { // +a +3
-            // if the end of sub-expression
+        while (true) {
+
             if (enclosed_) {
+                // this is a sub-expression, check if it is closed
                 close_paren_tk_ = tz.is_next_char_token(')');
                 if (not close_paren_tk_.is_empty()) {
-                    // return from recursion
+                    // it is closed
+                    // validate that it is arithmetic containing no bools
                     validate_arithmetic_operands(tc);
+
+                    // return from recursion
                     return;
                 }
             }
@@ -88,7 +111,8 @@ class expr_ops_list final : public expression {
                 }
             }
 
-            // next operation
+            // next arithmetic operation
+
             if (tz.is_peek_char('+')) {
                 ops_.emplace_back('+');
             } else if (tz.is_peek_char('-')) {
@@ -115,42 +139,57 @@ class expr_ops_list final : public expression {
                 return;
             }
 
-            // is next operation precedence higher than current?
-            // if so, the implied sub-expression is added to the list with
-            // the last expression in this list being the first expression in
-            // the sub-expression
+            // check if precedence increased in which case open an implied
+            // sub-expression
+            //   a + b * c  ->  [a] + [b * c]
+
             const uint8_t next_precedence{precedence_for_op(ops_.back())};
             if (next_precedence > precedence) {
-                // e.g. =a+b*c+1 where the peeked char is '*'
-                // next operation has higher precedence than the current
-                // list is now =[(=a)(+b)]
-                // move last expression (+b) to sub-expression
-                //   =[(=a) +[(=b)(*c)(+1)]]
+                // last read operator has higher precedence than previous
+                // create an implied sub-expression
+                // move the last element to be the first element of the
+                // sub-expression
+
+                // remove the operator which has higher precedence, it will be
+                // parsed in the sub-expression before the second element
                 ops_.pop_back();
-                std::unique_ptr<statement> last_stmt_in_expr{
+
+                // move the last element out of the list
+                std::unique_ptr<statement> last_elem_in_list{
                     std::move(exprs_.back())};
                 exprs_.pop_back();
-                // start new recursion
+
+                // forward it to the sub-expression including its precedence
                 exprs_.emplace_back(make_unique<expr_ops_list>(
                     tc, tz, in_args, false, token{}, true, unary_ops{},
-                    next_precedence, std::move(last_stmt_in_expr)));
-                // continue parsing expression starting with next operation
+                    next_precedence, std::move(last_elem_in_list)));
+
+                // continue parsing when the precedence has been lowered
                 continue;
             }
+
             // is this in an implied sub-expression and precedence has gone
             // lower?
+
             if (precedence != initial_precedence and
                 next_precedence < precedence and is_implied_subexpression_) {
-                // yes, return to the parent expression
-                // e.g., a-b*c+3 => becomes a-(b*c+3) otherwise
+                // lower precedence returns to the parent list
+                //   want:  a - b * c + 3  ->  [a] - [b * c] + [3]
+                //   if not returning then becomes: a - [b * c + 3]
+
+                // remove the operator that has lower precedence, it will be
+                // parsed by the parent expression
                 ops_.pop_back();
+
                 validate_arithmetic_operands(tc);
+
                 return;
             }
 
+            // possible new lower or same precedence
             precedence = next_precedence;
 
-            // read the peeked operator
+            // consume the peeked operator
             const char ch{tz.next_char()};
 
             // consume the second character of a previously recognized shift
@@ -161,8 +200,11 @@ class expr_ops_list final : public expression {
 
             // check if the next statement is a sub-expression or an expression
             // element
-            // e.g. -(a + b)
-            unary_ops uo{tz}; // read the unary ops, in this case '-'
+            //   -(a + b)  vs  -a
+
+            // read the unary ops before checking if parenthesis opens
+            // sub-expression
+            unary_ops uo{tz};
 
             // is it a sub-expression?
             if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
@@ -175,13 +217,13 @@ class expr_ops_list final : public expression {
 
             // not sub-expression, push back unary ops because those belong to
             // the next element
-            // e.g. -a+b
+            // e.g. [-a] + b
             uo.put_back(tz);
 
             // read the next element
             exprs_.emplace_back(create_statement_in_expr_ops_list(tc, tz));
 
-            // continue to next op + element or sub-expression
+            // continue to next arithmetic op + element
         }
     }
 

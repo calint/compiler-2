@@ -1,0 +1,3 @@
+# nested empty arithmetic parentheses
+
+func main() { var x = (()) }
