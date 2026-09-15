@@ -1,0 +1,6 @@
+# duplicate constants in one block are rejected
+
+func main() {
+    const x = 1
+    const x = 2
+}

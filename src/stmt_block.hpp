@@ -11,6 +11,7 @@
 #include "stmt_builtin_array_copy.hpp"
 #include "stmt_comment.hpp"
 #include "stmt_continue.hpp"
+#include "stmt_def_const.hpp"
 #include "stmt_def_dat.hpp"
 #include "stmt_def_var.hpp"
 #include "stmt_identifier.hpp"
@@ -77,6 +78,9 @@ class stmt_block final : public statement {
                 last_statement_considered_no_statement = true;
             } else if (tk.is_text("var")) {
                 stms_.emplace_back(std::make_unique<stmt_def_var>(tc, tk, tz));
+            } else if (tk.is_text("const")) {
+                stms_.emplace_back(
+                    std::make_unique<stmt_def_const>(tc, tk, tz));
             } else if (tk.is_text("dat")) {
                 stms_.emplace_back(std::make_unique<stmt_def_dat>(tc, tk, tz));
             } else if (tk.is_text("break")) {

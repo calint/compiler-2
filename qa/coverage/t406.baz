@@ -1,0 +1,20 @@
+# constants shadow across nested blocks
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(x : bool) if not x exit(1)
+
+const value = 1
+
+func main() {
+    assert(value == 1)
+    {
+        const value = 2
+        assert(value == 2)
+    }
+    assert(value == 1)
+}

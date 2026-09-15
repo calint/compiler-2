@@ -56,7 +56,7 @@ class stmt_def_const final : public statement {
                  [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
-        // note: constant is added to toc at constructor
-        //       no further actions necessary
+
+        tc.add_const(name_tk_, name_tk_.text(), const_.value());
     }
 };

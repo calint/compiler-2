@@ -58,6 +58,8 @@ class program final {
         tc_.set_type_bool(type_bool);
         tc_.set_type_default(type_i64);
 
+        tc_.enter_block();
+
         tokenizer tz{source};
         while (true) {
             const token tk{tz.next_token()};
@@ -85,6 +87,8 @@ class program final {
             }
         }
 
+        tc_.exit_block();
+
         assert_functions_set_return_value(tc_.get_func_defs());
     }
 
@@ -110,16 +114,17 @@ class program final {
         std::println(os, "; initialize stack pointer\nmov rsp, stk.end\n\n;\n; "
                          "program\n;\n");
 
+        tc.enter_block();
         for (const std::unique_ptr<statement>& st : statements_) {
             st->compile(tc, os, indent, toc::make_ident_info_empty());
         }
-
-        // get the main function and compile
         const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
-        std::println(os, "main:"); // note: not necessary
+        std::println(os, "; main");
         tc.enter_func("main", {});
         func_main.code().compile(tc, os, indent, toc::make_ident_info_empty());
         tc.exit_func("main");
+        tc.exit_block();
+
         std::println(os, "    ; system call: exit 0");
         std::println(os, "    mov rax, 60");
         std::println(os, "    mov rdi, 0");

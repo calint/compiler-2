@@ -26,8 +26,8 @@ class stmt_def_field;
 class stmt_def_type;
 
 struct func_info {
-    const stmt_def_func* def{}; // null if built-in function
     token declared_at_tk;       // token for position in the source
+    const stmt_def_func* def{}; // null if built-in function
     const type* type_ptr{};     // return type or void
 };
 
@@ -44,6 +44,11 @@ struct alias_info {
     const type* type_ptr{};
 };
 
+struct const_info {
+    token declared_at_tk; // token for position in the source
+    int64_t value;
+};
+
 class frame final {
     // optional name
     std::string_view name_;
@@ -53,6 +58,9 @@ class frame final {
 
     // number of bytes used on the stack by this frame
     size_t allocated_stack_{};
+
+    // constants
+    lut<const_info> consts_;
 
     // variables declared in this frame
     lut<var_info> vars_;
@@ -91,6 +99,10 @@ class frame final {
         aliases_.put(std::string{ai.from}, ai);
     }
 
+    auto add_const(const std::string_view name, const const_info& ci) -> void {
+        consts_.put(std::string{name}, ci);
+    }
+
     auto add_var(const var_info& var, bool is_data = false) -> void {
         if (var.stack_idx < 0) {
             // variable, increase allocated stack size
@@ -123,6 +135,12 @@ class frame final {
         return aliases_.get_const_ref(name);
     }
 
+    [[nodiscard]] auto get_const(const std::string_view name) const
+        -> const const_info& {
+
+        return consts_.get_const_ref(name);
+    }
+
     [[nodiscard]] auto get_var_const_ref(const std::string_view name) const
         -> const var_info& {
 
@@ -131,6 +149,10 @@ class frame final {
 
     [[nodiscard]] auto has_alias(const std::string_view name) const -> bool {
         return aliases_.has(name);
+    }
+
+    [[nodiscard]] auto has_const(const std::string_view name) const -> bool {
+        return consts_.has(name);
     }
 
     [[nodiscard]] auto has_non_data_var_been_added() const -> bool {
@@ -225,7 +247,6 @@ class toc final {
         token src_loc_tk;
         int64_t value{};
     };
-    lut<constant> constants_;
 
     std::regex regex_ws_{R"(\s+)"};
     std::regex regex_trim_{R"(^\s+|\s+$)"};
@@ -261,15 +282,16 @@ class toc final {
     auto add_const(const token& src_loc_tk, const std::string_view name,
                    const int64_t value) {
 
-        if (constants_.has(name)) {
-            const constant c{constants_.get_const_ref(name)};
+        if (has_const_in_current_block(name)) {
+            const const_info& c{frames_.back().get_const(name)};
             throw compiler_exception(
                 src_loc_tk,
-                std::format("constant '{}' already defined at {}", name,
-                            source_location_hr(c.src_loc_tk)));
+                std::format("constant '{}' already defined in this block at {}",
+                            name, source_location_hr(c.declared_at_tk)));
         }
-        constants_.put(std::string{name},
-                       {.src_loc_tk{src_loc_tk}, .value{value}});
+
+        frames_.back().add_const(name,
+                                 {.declared_at_tk{src_loc_tk}, .value{value}});
     }
 
     auto add_dat(const statement* stmt) -> void {
@@ -296,8 +318,8 @@ class toc final {
                             source_location_hr(fn.declared_at_tk))};
         }
 
-        funcs_.put(std::move(name), {.def{func_def},
-                                     .declared_at_tk{src_loc_tk},
+        funcs_.put(std::move(name), {.declared_at_tk{src_loc_tk},
+                                     .def{func_def},
                                      .type_ptr{&return_type}});
 
         if (func_def) {
@@ -708,6 +730,24 @@ class toc final {
         std::unreachable();
     }
 
+    [[nodiscard]] auto get_const(const std::string_view name) const -> int64_t {
+
+        for (const frame& f : frames_ | std::views::reverse) {
+            if (f.has_const(name)) {
+                return f.get_const(name).value;
+            }
+            if (f.is_func()) {
+                break;
+            }
+        }
+
+        if (frames_.front().has_const(name)) {
+            return frames_.front().get_const(name).value;
+        }
+
+        std::unreachable();
+    }
+
     [[nodiscard]] auto get_data() const
         -> const std::vector<const statement*>& {
         return data_;
@@ -947,6 +987,23 @@ class toc final {
 
     [[nodiscard]] auto get_type_void() const -> const type& {
         return *type_void_;
+    }
+
+    [[nodiscard]] auto has_const(const std::string_view name) const -> int64_t {
+        for (const frame& f : frames_ | std::views::reverse) {
+            if (f.has_const(name)) {
+                return true;
+            }
+            if (f.is_func()) {
+                break;
+            }
+        }
+        return frames_.front().has_const(name);
+    }
+
+    [[nodiscard]] auto
+    has_const_in_current_block(const std::string_view name) const -> int64_t {
+        return frames_.back().has_const(name);
     }
 
     [[nodiscard]] auto has_lea(const statement& st) const -> bool {
@@ -1209,16 +1266,6 @@ class toc final {
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}:{}", line, col);
-    }
-
-    [[nodiscard]] auto get_const(const std::string_view& name) const
-        -> int64_t {
-
-        return constants_.get_const_ref(name).value;
-    }
-
-    [[nodiscard]] auto has_const(const std::string_view& name) const -> bool {
-        return constants_.has(name);
     }
 
   private:
@@ -1533,15 +1580,15 @@ class toc final {
         }
 
         // is 'id' a constant?
-        if (constants_.has(id.str())) {
-            const constant& c{constants_.get_const_ref(id.str())};
+        if (has_const(id.str())) {
+            int64_t value{get_const(id.str())};
             return {
                 .id{ident},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
                 .operand{id.str(), true},
-                .const_value{c.value},
+                .const_value{value},
                 .ident_type{ident_info::ident_type::CONST},
             };
         }
