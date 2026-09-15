@@ -217,7 +217,7 @@ class expr_ops_list final : public expression {
 
             // not sub-expression, push back unary ops because those belong to
             // the next element
-            // e.g. [-a] + b
+            //   [-a] + b
             uo.put_back(tz);
 
             // read the next element
