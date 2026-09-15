@@ -16,7 +16,7 @@
         # injected variables: 'e', 'i', const 'n': array size
         e = 0
       }
-[ ] consider allowing globals by inserting a base frame and when looking for
+[x] consider allowing globals by inserting a base frame and when looking for
     vars or consts traverse to first frame
 [ ] consider dropping the visitor pattern in expr_any because lcov does not
     handle it
