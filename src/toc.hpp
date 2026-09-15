@@ -12,6 +12,7 @@
 #include <regex>
 #include <span>
 #include <sstream>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -1371,15 +1372,13 @@ class toc final {
         lea_path.insert(lea_path.end(), id.path().size() - 1, "");
         // note: -1 to exclude the first element
 
-        size_t i{frames_.size()};
-        while (i) {
-            --i;
-
-            const frame& frm{frames_[i]};
+        for (const auto [i, frm] :
+             frames_ | std::views::enumerate | std::views::reverse) {
 
             // does this frame contain the variable?
             if (frm.has_var(id.base())) {
-                break;
+                return make_ident_info_from_frame(frm, src_loc_tk, ident, id,
+                                                  std::move(lea_path));
             }
 
             if (frm.is_func()) {
@@ -1389,9 +1388,12 @@ class toc final {
                 // referred to
 
                 if (not frm.has_alias(id.base())) {
+                    // is not an alias
+
                     // add an empty
                     lea_path.emplace_back("");
-                    break;
+                    return make_ident_info_from_frame(frm, src_loc_tk, ident,
+                                                      id, std::move(lea_path));
                 }
 
                 // this is an alias, continue resolving until it is a variable,
@@ -1427,13 +1429,18 @@ class toc final {
                 for (const std::string& s : id.path() | std::views::drop(1)) {
                     new_id.append(s);
                 }
-                id = new_id;
 
-                continue;
+                id = new_id;
             }
         }
 
-        const frame& frm{frames_[i]};
+        return make_ident_info_regs_and_const(src_loc_tk, ident, id);
+    }
+
+    [[nodiscard]] auto make_ident_info_from_frame(
+        const frame& frm, const token& src_loc_tk, const std::string_view ident,
+        const ident_path& id, std::vector<std::string> lea_path) const
+        -> ident_info {
 
         if (frm.has_var(id.base())) {
 
@@ -1511,6 +1518,13 @@ class toc final {
             return ii;
         }
 
+        return make_ident_info_regs_and_const(src_loc_tk, ident, id);
+    }
+
+    [[nodiscard]] auto
+    make_ident_info_regs_and_const(const token& src_loc_tk,
+                                   const std::string_view& ident,
+                                   const ident_path& id) const -> ident_info {
         // is it a register?
         if (const size_t reg_size{get_size_from_register_operand(id.str())};
             reg_size != 0) {
