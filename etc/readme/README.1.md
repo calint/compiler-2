@@ -15,6 +15,9 @@ x86_64 assembly on Linux.
 * built-in integer types (64, 32, 16, 8 bit)
 * built-in boolean type
 * user defined types
+* data
+* variables
+* constants
 * arrays
 * optional bounds checking at runtime
   * optional line number
