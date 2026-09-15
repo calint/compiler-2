@@ -1,6 +1,6 @@
 # user types are defined using keyword `type`
 
-# built-in types are i63, i32, i16, i8 and bool
+# built-in types are `i63`, `i32`, `i16`, `i8` and `bool`
 
 # default type is `i64` and does not need to be specified
 
@@ -23,7 +23,8 @@ dat prompt2 : i8[] = "that is not a name.\n"
 dat prompt3 : i8[] = "hello "
 dat     dot : i8[] = "."
 dat      nl : i8[] = "\n"
-dat      s1 : str = { 3 } # remaining uninitialized fields are zeroed
+dat    nums : i64[4] = { 1 } # remaining elements are zeroed
+dat      s1 : str = { 3 } # remaining fields are zeroed
 
 # all functions are inlined
 
