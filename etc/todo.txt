@@ -13,7 +13,7 @@
         e = i
       }
       fooin(arr) {
-        # injected variables: 'e', 'i', const 'n': array size
+        # injected variables: 'e', 'i', injected const 'n': array size
         e = 0
       }
 [x] consider allowing globals by inserting a base frame and when looking for
