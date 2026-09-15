@@ -23,6 +23,8 @@
 // same-precedence operations stay flat; higher-precedence operations become
 // nested lists
 //
+// note: a bit quirky parsing but compilation is trivial and register efficient
+//
 class expr_ops_list final : public expression {
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
     std::vector<char> ops_; // operators between elements in the vector
