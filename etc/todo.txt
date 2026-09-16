@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-[ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
+[ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [ ] support variable string initializers
 [ ] resolve issues with comments in expressions etc
