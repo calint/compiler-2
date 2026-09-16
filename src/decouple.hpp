@@ -1,8 +1,8 @@
 #pragma once
-// solves circular references
-// implemented in 'main.cpp'
-
 // reviewed: 2025-09-28
+
+// solves circular references
+// implemented in 'decouple_impl.hpp'
 
 #include <algorithm>
 #include <array>
@@ -320,7 +320,8 @@ struct ident_info {
 };
 
 //
-// functions necessary to solve circular references implemented in 'main.cpp'
+// functions necessary to solve circular references, implemented in
+// 'decouple_impl.hpp'
 //
 
 [[nodiscard]] auto create_statement_in_expr_ops_list(toc& tc, tokenizer& tz)

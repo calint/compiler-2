@@ -56,7 +56,7 @@ class unary_ops final {
         }
     }
 
-    // implemented in 'main.cpp'
+    // implemented in 'decouple_impl.hpp'
     // solves circular reference: unary_ops -> toc -> statement -> unary_ops
     auto compile(toc& tc, std::ostream& os, const size_t indnt,
                  const std::string_view dst_info) const -> void;

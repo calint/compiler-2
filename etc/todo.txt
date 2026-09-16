@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 [ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] ponder about function calls that pass arguments and return through the stack
+[ ] consider function calls that pass arguments and return through the stack
     when passing array: pass the address of the array as lea and size as argument
     return values are then no longer references
 [ ] a ways to specify a range in the array: foo(arr, bgn, len)

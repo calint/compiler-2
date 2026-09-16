@@ -9,6 +9,8 @@ if [ "$1" == "fix" ]; then
 fi
 
 date | tee clang-tidy.log
-clang-tidy $FIX --config-file=clang-tidy.cfg --header-filter='^.*/src/.*' --enable-check-profile \
+clang-tidy $FIX --config-file=clang-tidy.cfg --header-filter='^.*/src/.*' \
     $SRC -- -std=c++26 | tee -a clang-tidy.log
 date | tee -a clang-tidy.log
+
+# --enable-check-profile to show time usage of the linters
