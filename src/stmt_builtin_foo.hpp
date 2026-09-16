@@ -72,8 +72,23 @@ class stmt_builtin_foo final : public statement {
 
         tc.add_var(tok(), os, indent, e, false);
 
-        // load address of variable into reg_iter
-        toc::asm_lea(os, indent, reg_iter, ii.operand.address_str());
+        // load address of referenced array into 'reg_iter'
+        if (ident_.is_indexed()) {
+            std::vector<std::string> allocated_registers;
+
+            const operand op{stmt_identifier::compile_effective_address(
+                tok(), tc, os, indent, ident_.elems(), allocated_registers, "",
+                ii.lea_path)};
+
+            toc::asm_lea(os, indent, reg_iter, op.address_str());
+
+            for (const std::string& reg :
+                 allocated_registers | std::views::reverse) {
+                tc.free_scratch_register(tok(), os, indent, reg);
+            }
+        } else {
+            toc::asm_lea(os, indent, reg_iter, ii.operand.address_str());
+        }
 
         // add a constant for array size
         tc.add_const(tok(), os, indent, "n",
