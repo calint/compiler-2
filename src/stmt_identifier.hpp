@@ -494,12 +494,14 @@ class stmt_identifier : public statement {
             // if no change is done to the lea register, just return it
             if (no_changes_to_reg_offset_after_this and
                 not(will_be_indirect_indexed and operand{lea}.is_indexed())) {
+
                 return lea;
             }
 
             const std::string index_reg{tc.alloc_scratch_register(
                 src_loc_tk, os, indent, tc.get_type_default())};
             allocated_registers.push_back(index_reg);
+
             const operand op{lea};
 
             // changes will be made to the register so return an allocated
@@ -509,6 +511,7 @@ class stmt_identifier : public statement {
             } else {
                 tc.asm_cmd(src_loc_tk, os, indent, "mov", index_reg, lea);
             }
+
             return index_reg;
         }
 
