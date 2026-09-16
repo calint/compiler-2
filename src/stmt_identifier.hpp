@@ -406,7 +406,9 @@ class stmt_identifier : public statement {
             return oper;
         }
 
-        return operand{reg_offset};
+        operand oper;
+        oper.base_register = reg_offset;
+        return oper;
     }
 
     [[nodiscard]] static auto get_shift_amount(const uint64_t value)
