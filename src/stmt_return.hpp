@@ -1,10 +1,9 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include <print>
-
 #include "statement.hpp"
 #include "toc.hpp"
+#include "x86.hpp"
 
 class stmt_return final : public statement {
   public:
@@ -18,19 +17,21 @@ class stmt_return final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        tc.comment_source(*this, os, indent);
+        x86::comment_source(tc, *this, os, indent);
 
         // get the jump target to exit function
         const std::string_view ret_lbl{tc.get_func_return_label()};
 
         if (ret_lbl.empty()) {
             // note: return from 'main' is exiting
-            std::println(os, "mov rdi, 0\nmov rax, 60\nsyscall");
+            x86::mov(tc, tok(), os, indent, "rdi", "0");
+            x86::mov(tc, tok(), os, indent, "rax", "60");
+            x86::syscall(tc, os, indent);
             return;
         }
 
         // jump to return labels
-        toc::asm_jmp(os, indent, ret_lbl);
+        x86::jmp(tc, os, indent, ret_lbl);
     }
 
     [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {

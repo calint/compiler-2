@@ -119,7 +119,7 @@ class stmt_def_func final : public statement {
         source_def_to(ss, true);
         // make comment friendly string replacing consecutive with one space
         const std::string res{std::regex_replace(ss.str(), tc.regex_ws(), " ")};
-        tc.comment_start(name_tk_, os, indent);
+        x86::comment_start(tc, name_tk_, os, indent);
         std::println(os, "{}", res);
     }
 
@@ -195,7 +195,7 @@ class stmt_def_func final : public statement {
             }
 
             // argument passed as a named register
-            toc::indent(os, indent + 1, true);
+            x86::comment_indent(os, indent + 1);
             std::println(os, "{}: {}", prm_name, prm_reg);
 
             tc.alloc_named_register_or_throw(prm.tok(), os, indent + 1, prm_reg,

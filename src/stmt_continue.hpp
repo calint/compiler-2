@@ -3,6 +3,7 @@
 
 #include "statement.hpp"
 #include "toc.hpp"
+#include "x86.hpp"
 
 class stmt_continue final : public statement {
   public:
@@ -16,18 +17,18 @@ class stmt_continue final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        tc.comment_source(*this, os, indent);
+        x86::comment_source(tc, *this, os, indent);
 
         // get current loop start labels
         const std::string_view loop_label{tc.get_looping_label_or_throw(tok())};
 
         if (tc.is_in_loop_block()) {
-            toc::asm_jmp(os, indent, loop_label);
+            x86::jmp(tc, os, indent, loop_label);
             return;
         }
 
         // is in foo block
-        toc::asm_jmp(os, indent, std::string{loop_label} + "_continue");
+        x86::jmp(tc, os, indent, std::string{loop_label} + "_continue");
     }
 
     [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {

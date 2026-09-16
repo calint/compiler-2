@@ -75,7 +75,7 @@ class stmt_builtin_array_copy final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        tc.comment_source(*this, os, indent);
+        x86::comment_source(tc, *this, os, indent);
 
         const ident_info from_info{tc.make_ident_info(from_)};
         const ident_info to_info{tc.make_ident_info(to_)};
@@ -91,16 +91,16 @@ class stmt_builtin_array_copy final : public statement {
         std::vector<std::string> allocated_scratch_registers;
 
         // size to 'rcx'
-        tc.comment_source(count_, os, indent);
+        x86::comment_source(tc, count_, os, indent);
         count_.compile(tc, os, indent, tc.make_ident_info_for_register("rcx"));
 
         // from operand to rsi
-        tc.comment_source(from_, os, indent);
+        x86::comment_source(tc, from_, os, indent);
         const operand from_operand{stmt_identifier::compile_effective_address(
             from_.first_token(), tc, os, indent, from_.elems(),
             allocated_scratch_registers, "rcx", from_info.lea_path)};
 
-        toc::asm_lea(os, indent, "rsi", from_operand.address_str());
+        x86::lea(tc, os, indent, "rsi", from_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -109,12 +109,12 @@ class stmt_builtin_array_copy final : public statement {
 
         // to operand to 'rdi'
         allocated_scratch_registers.clear();
-        tc.comment_source(to_, os, indent);
+        x86::comment_source(tc, to_, os, indent);
         const operand to_operand{stmt_identifier::compile_effective_address(
             to_.first_token(), tc, os, indent, to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};
 
-        toc::asm_lea(os, indent, "rdi", to_operand.address_str());
+        x86::lea(tc, os, indent, "rdi", to_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -138,16 +138,16 @@ class stmt_builtin_array_copy final : public statement {
                     stmt_identifier::get_shift_amount(type_size)};
                 shl) {
 
-                tc.asm_cmd(tok(), os, indent, "shl", "rcx",
-                           std::format("{}", *shl));
+                x86::op(tc, tok(), os, indent, "shl", "rcx",
+                        std::format("{}", *shl));
             } else {
-                tc.asm_cmd(tok(), os, indent, "imul", "rcx",
-                           std::format("{}", type_size));
+                x86::op(tc, tok(), os, indent, "imul", "rcx",
+                        std::format("{}", type_size));
             }
         }
 
         // copy
-        toc::asm_rep_movs(os, indent, 'b');
+        x86::rep_movs(tc, os, indent, 'b');
         // note: toc::rep_movs does not work because rsi, rdi and rcx are
         //       expresstion
 

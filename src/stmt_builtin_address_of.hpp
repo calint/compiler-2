@@ -55,7 +55,7 @@ class stmt_builtin_address_of final : public expression {
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        tc.comment_source(*this, os, indent);
+        x86::comment_source(tc, *this, os, indent);
 
         if (dst_info.is_const()) {
             throw compiler_exception{stmt_ident_.first_token(),
@@ -80,14 +80,14 @@ class stmt_builtin_address_of final : public expression {
             allocated_registers, "", src_info.lea_path)};
 
         if (dst_info.is_register()) {
-            toc::asm_lea(os, indent, dst_info.operand.address_str(),
-                         oper.address_str());
+            x86::lea(tc, os, indent, dst_info.operand.address_str(),
+                     oper.address_str());
         } else {
             // destination is memory location
             const std::string reg{tc.alloc_scratch_register(
                 tok(), os, indent, tc.get_type_default())};
-            toc::asm_lea(os, indent, reg, oper.address_str());
-            tc.asm_cmd(tok(), os, indent, "mov", dst_info.operand.str(), reg);
+            x86::lea(tc, os, indent, reg, oper.address_str());
+            x86::mov(tc, tok(), os, indent, dst_info.operand.str(), reg);
             tc.free_scratch_register(tok(), os, indent, reg);
         }
 

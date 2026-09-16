@@ -67,7 +67,7 @@ class stmt_builtin_foo final : public statement {
         -> void override {
 
         // one line trimmed comment for the definition
-        tc.comment_start(tok(), os, indent);
+        x86::comment_start(tc, tok(), os, indent);
         std::stringstream ss;
         ident_.source_to(ss);
         // make comment friendly string replacing consecutive with one space
@@ -113,31 +113,31 @@ class stmt_builtin_foo final : public statement {
                 tok(), tc, os, indent, ident_.elems(), allocated_registers, "",
                 ii.lea_path)};
 
-            toc::asm_lea(os, indent, reg_iter, op.address_str());
+            x86::lea(tc, os, indent, reg_iter, op.address_str());
 
             for (const std::string& reg :
                  allocated_registers | std::views::reverse) {
                 tc.free_scratch_register(tok(), os, indent, reg);
             }
         } else {
-            toc::asm_lea(os, indent, reg_iter, ii.operand.address_str());
+            x86::lea(tc, os, indent, reg_iter, ii.operand.address_str());
         }
 
         // add a constant for array size
         tc.add_const(tok(), os, indent, "n",
                      static_cast<int64_t>(ii.array_size));
 
-        tc.asm_cmd(tok(), os, indent, "mov", var_i_addr_op, "0");
-        toc::asm_label(os, indent, loop_label);
+        x86::mov(tc, tok(), os, indent, var_i_addr_op, "0");
+        x86::label(tc, os, indent, loop_label);
         code_.compile(tc, os, indent, toc::make_ident_info_empty());
-        toc::asm_label(os, indent + 1, loop_label + "_continue");
-        toc::asm_add(os, indent + 2, reg_iter,
-                     std::format("{}", ii.type().size()));
-        toc::asm_inc(os, indent + 2, var_i_addr_op);
-        toc::asm_cmp(os, indent + 2, var_i_addr_op,
-                     std::format("{}", ii.array_size));
-        toc::asm_jne(os, indent + 2, loop_label);
-        toc::asm_label(os, indent, loop_label + "_end");
+        x86::label(tc, os, indent + 1, loop_label + "_continue");
+        x86::add(tc, os, indent + 2, reg_iter,
+                 std::format("{}", ii.type().size()));
+        x86::inc(tc, os, indent + 2, var_i_addr_op);
+        x86::cmp(tc, os, indent + 2, var_i_addr_op,
+                 std::format("{}", ii.array_size));
+        x86::jne(tc, os, indent + 2, loop_label);
+        x86::label(tc, os, indent, loop_label + "_end");
 
         tc.free_scratch_register(tok(), os, indent, reg_iter);
 

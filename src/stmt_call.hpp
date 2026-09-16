@@ -120,7 +120,7 @@ class stmt_call : public expression {
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        tc.comment_source(*this, os, indent);
+        x86::comment_source(tc, *this, os, indent);
 
         const stmt_def_func& func{
             tc.get_func_or_throw(tok(), statement::identifier())};
@@ -259,8 +259,8 @@ class stmt_call : public expression {
                     allocated_registers_in_order.emplace_back(scratch_reg);
                     allocated_scratch_registers.emplace_back(scratch_reg);
 
-                    tc.asm_cmd(param.tok(), os, indent, "mov", scratch_reg,
-                               arg_info.operand.str());
+                    x86::mov(tc, param.tok(), os, indent, scratch_reg,
+                             arg_info.operand.str());
 
                     // apply unary ops
                     arg.get_unary_ops().compile(tc, os, indent, scratch_reg);
@@ -281,12 +281,12 @@ class stmt_call : public expression {
             const ident_info& arg_info{tc.make_ident_info(arg)};
 
             if (arg_info.is_const()) {
-                tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
-                           std::format("{}{}", arg.get_unary_ops().to_string(),
-                                       arg_info.const_value));
+                x86::mov(tc, param.tok(), os, indent, arg_reg,
+                         std::format("{}{}", arg.get_unary_ops().to_string(),
+                                     arg_info.const_value));
             } else {
-                tc.asm_cmd(param.tok(), os, indent, "mov", arg_reg,
-                           arg_info.operand.str());
+                x86::mov(tc, param.tok(), os, indent, arg_reg,
+                         arg_info.operand.str());
                 arg.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
             }
         }
@@ -302,8 +302,8 @@ class stmt_call : public expression {
 
         func.source_def_comment_to(tc, os, indent);
 
-        toc::asm_label(os, indent,
-                       std::format("{}_{}", func.name(), new_call_path));
+        x86::label(tc, os, indent,
+                   std::format("{}_{}", func.name(), new_call_path));
 
         // enter function scope
 
@@ -312,7 +312,7 @@ class stmt_call : public expression {
 
         // add aliases
         for (const alias_info& e : aliases_to_add) {
-            tc.comment_start(tok(), os, indent + 1);
+            x86::comment_start(tc, tok(), os, indent + 1);
 
             std::print(os, "alias {} -> {}", e.from, e.to);
             if (not e.lea.empty()) {
@@ -340,7 +340,7 @@ class stmt_call : public expression {
 
         // provide the exit label for 'return' to jump to
 
-        toc::asm_label(os, indent, ret_jmp_label);
+        x86::label(tc, os, indent, ret_jmp_label);
 
         // apply unary ops to result if present
 

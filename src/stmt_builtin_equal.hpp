@@ -67,7 +67,7 @@ class stmt_builtin_equal final : public expression {
     auto compile(toc& tc, std::ostream& os, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        tc.comment_source(*this, os, indent);
+        x86::comment_source(tc, *this, os, indent);
 
         // allocate the register for rep movs
         tc.alloc_named_register_or_throw(tok(), os, indent, "rsi",
@@ -89,12 +89,12 @@ class stmt_builtin_equal final : public expression {
         }
 
         // from operand to rsi
-        tc.comment_source(lhs_, os, indent);
+        x86::comment_source(tc, lhs_, os, indent);
         const operand lhs_operand{stmt_identifier::compile_effective_address(
             lhs_.first_token(), tc, os, indent, lhs_.elems(),
             allocated_scratch_registers, "", lhs_info.lea_path)};
 
-        toc::asm_lea(os, indent, "rsi", lhs_operand.address_str());
+        x86::lea(tc, os, indent, "rsi", lhs_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -103,12 +103,12 @@ class stmt_builtin_equal final : public expression {
 
         // to operand to 'rdi'
         allocated_scratch_registers.clear();
-        tc.comment_source(rhs_, os, indent);
+        x86::comment_source(tc, rhs_, os, indent);
         const operand rhs_operand{stmt_identifier::compile_effective_address(
             rhs_.first_token(), tc, os, indent, rhs_.elems(),
             allocated_scratch_registers, "", rhs_info.lea_path)};
 
-        toc::asm_lea(os, indent, "rdi", rhs_operand.address_str());
+        x86::lea(tc, os, indent, "rdi", rhs_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -151,10 +151,10 @@ class stmt_builtin_equal final : public expression {
             rep_size = 'w';
             rcx /= toc::size_word;
         }
-        tc.asm_cmd(tok(), os, indent, "mov", "rcx", std::to_string(rcx));
+        x86::mov(tc, tok(), os, indent, "rcx", std::to_string(rcx));
 
         // copy
-        toc::asm_repe_cmps(os, indent, rep_size);
+        x86::repe_cmps(tc, os, indent, rep_size);
 
         tc.free_named_register(tok(), os, indent, "rcx");
         tc.free_named_register(tok(), os, indent, "rdi");
@@ -163,15 +163,15 @@ class stmt_builtin_equal final : public expression {
         // set true if equal
 
         if (dst_info.operand.is_memory()) {
-            toc::asm_setcc(os, indent, "e",
-                           dst_info.operand.str(operand::size_byte));
+            x86::setcc(tc, os, indent, "e",
+                       dst_info.operand.str(operand::size_byte));
             return;
         }
 
         // assumed register
 
-        toc::asm_setcc(os, indent, "e",
-                       tc.get_sized_register_operand(dst_info.operand.str(),
-                                                     operand::size_byte));
+        x86::setcc(tc, os, indent, "e",
+                   tc.get_sized_register_operand(dst_info.operand.str(),
+                                                 operand::size_byte));
     }
 };

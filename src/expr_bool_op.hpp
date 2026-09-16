@@ -102,9 +102,9 @@ class expr_bool_op final : public statement {
                const std::string_view dst) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
-        tc.comment_source(*this, os, indent, "?",
-                          inverted ? " 'or' inverted: " : " ");
-        toc::asm_label(os, indent, create_cmp_bgn_label(tc));
+        x86::comment_source(tc, *this, os, indent, "?",
+                            inverted ? " 'or' inverted: " : " ");
+        x86::label(tc, os, indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // is 'lhs' a constant?
             if (not lhs_.is_expression()) {
@@ -117,13 +117,13 @@ class expr_bool_op final : public statement {
                     if (invert) {
                         const_eval = not const_eval;
                     }
-                    toc::indent(os, indent, true);
+                    x86::comment_indent(os, indent);
                     std::println(os, "const eval to {}",
                                  (const_eval ? "true" : "false"));
                     if (const_eval) {
                         // since it is an 'or' chain short-circuit
                         // expression and jump to label for true
-                        toc::asm_jmp(os, indent, jmp_to_if_true);
+                        x86::jmp(tc, os, indent, jmp_to_if_true);
                     }
                     return const_eval;
                 }
@@ -134,10 +134,10 @@ class expr_bool_op final : public statement {
             // note: compares with 0
 
             if (not dst.empty()) {
-                toc::asm_setcc(os, indent, asm_cc_for_op("!=", invert), dst);
+                x86::setcc(tc, os, indent, asm_cc_for_op("!=", invert), dst);
             }
-            toc::asm_jcc(os, indent, asm_cc_for_op("!=", invert),
-                         jmp_to_if_true);
+            x86::jcc(tc, os, indent, asm_cc_for_op("!=", invert),
+                     jmp_to_if_true);
 
             return std::nullopt;
         }
@@ -158,13 +158,13 @@ class expr_bool_op final : public statement {
                 if (invert) {
                     const_eval = not const_eval;
                 }
-                toc::indent(os, indent, true);
+                x86::comment_indent(os, indent);
                 std::println(os, "const eval to {}",
                              (const_eval ? "true" : "false"));
                 if (const_eval) {
                     // expression evaluated at compile time and true so
                     // short-circuit and jump to true
-                    toc::asm_jmp(os, indent, jmp_to_if_true);
+                    x86::jmp(tc, os, indent, jmp_to_if_true);
                 }
                 return const_eval;
             }
@@ -177,9 +177,9 @@ class expr_bool_op final : public statement {
         resolve_cmp(tc, os, indent, lhs_, rhs_);
 
         if (not dst.empty()) {
-            toc::asm_setcc(os, indent, asm_cc_for_op(op_, invert), dst);
+            x86::setcc(tc, os, indent, asm_cc_for_op(op_, invert), dst);
         }
-        toc::asm_jcc(os, indent, asm_cc_for_op(op_, invert), jmp_to_if_true);
+        x86::jcc(tc, os, indent, asm_cc_for_op(op_, invert), jmp_to_if_true);
 
         return std::nullopt;
     }
@@ -190,9 +190,9 @@ class expr_bool_op final : public statement {
                 const std::string_view dst) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
-        tc.comment_source(*this, os, indent, "?",
-                          inverted ? " 'and' inverted: " : " ");
-        toc::asm_label(os, indent, create_cmp_bgn_label(tc));
+        x86::comment_source(tc, *this, os, indent, "?",
+                            inverted ? " 'and' inverted: " : " ");
+        x86::label(tc, os, indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // check case when operand is constant
             if (not lhs_.is_expression()) {
@@ -203,13 +203,13 @@ class expr_bool_op final : public statement {
                     if (invert) {
                         const_eval = not const_eval;
                     }
-                    toc::indent(os, indent, true);
+                    x86::comment_indent(os, indent);
                     std::println(os, "const eval to {}",
                                  (const_eval ? "true" : "false"));
                     if (not const_eval) {
                         // since it is an 'and' chain short-circuit
                         // expression and jump to label for false
-                        toc::asm_jmp(os, indent, jmp_to_if_false);
+                        x86::jmp(tc, os, indent, jmp_to_if_false);
                     }
                     return const_eval;
                 }
@@ -220,10 +220,10 @@ class expr_bool_op final : public statement {
             // note: compares with 0
 
             if (not dst.empty()) {
-                toc::asm_setcc(os, indent, asm_cc_for_op("!=", invert), dst);
+                x86::setcc(tc, os, indent, asm_cc_for_op("!=", invert), dst);
             }
-            toc::asm_jcc(os, indent, asm_cc_for_op("==", invert),
-                         jmp_to_if_false);
+            x86::jcc(tc, os, indent, asm_cc_for_op("==", invert),
+                     jmp_to_if_false);
             // note: '==' because it jumps to 'if false' label
 
             return std::nullopt;
@@ -244,12 +244,12 @@ class expr_bool_op final : public statement {
                 if (invert) {
                     const_eval = not const_eval;
                 }
-                toc::indent(os, indent, true);
+                x86::comment_indent(os, indent);
                 std::println(os, "const eval to {}",
                              (const_eval ? "true" : "false"));
                 if (not const_eval) {
                     // short circuit 'and' chain
-                    toc::asm_jmp(os, indent, jmp_to_if_false);
+                    x86::jmp(tc, os, indent, jmp_to_if_false);
                 }
                 return const_eval;
             }
@@ -268,10 +268,10 @@ class expr_bool_op final : public statement {
 
         resolve_cmp(tc, os, indent, lhs_, rhs_);
         if (not dst.empty()) {
-            toc::asm_setcc(os, indent, asm_cc_for_op(op_, invert), dst);
+            x86::setcc(tc, os, indent, asm_cc_for_op(op_, invert), dst);
         }
-        toc::asm_jcc(os, indent, asm_cc_for_op(op_, not invert),
-                     jmp_to_if_false);
+        x86::jcc(tc, os, indent, asm_cc_for_op(op_, not invert),
+                 jmp_to_if_false);
         // note: 'not invert' because it jumps to 'if false' label
 
         return std::nullopt;
@@ -399,7 +399,7 @@ class expr_bool_op final : public statement {
         const std::string src{
             resolve_expr(tc, os, indent, rhs, false, allocated_registers)};
 
-        tc.asm_cmd(tok(), os, indent, "cmp", dst, src);
+        x86::cmp(tc, tok(), os, indent, dst, src);
 
         // free allocated registers in reverse order
         for (const std::string& reg :
@@ -417,7 +417,7 @@ class expr_bool_op final : public statement {
         const std::string dst{
             resolve_expr(tc, os, indent, lhs, true, allocated_registers)};
 
-        tc.asm_cmd(tok(), os, indent, "cmp", dst, "0");
+        x86::cmp(tc, tok(), os, indent, dst, "0");
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
@@ -473,7 +473,7 @@ class expr_bool_op final : public statement {
         const std::string reg{tc.alloc_scratch_register(expr.tok(), os, indent,
                                                         tc.get_type_default())};
         allocated_registers.emplace_back(reg);
-        tc.asm_cmd(expr.tok(), os, indent, "mov", reg, expr_info.operand.str());
+        x86::mov(tc, expr.tok(), os, indent, reg, expr_info.operand.str());
         expr.get_unary_ops().compile(tc, os, indent, reg);
         return reg;
     }

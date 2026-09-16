@@ -122,7 +122,7 @@ class expr_any final : public statement {
         ident_info ii{dst_info};
 
         for (const auto [i, el] : std::views::enumerate(vars_)) {
-            tc.comment_start(tok(), os, indent);
+            x86::comment_start(tc, tok(), os, indent);
             std::println(os, "[{}]", i);
             compile_variant(tc, os, indent, ii, tok(), el);
             ii.operand.displacement += static_cast<int32_t>(ii.type().size());
@@ -135,10 +135,10 @@ class expr_any final : public statement {
 
         const size_t nbytes{diff * ii.type().size()};
 
-        tc.comment_start(tok(), os, indent);
+        x86::comment_start(tc, tok(), os, indent);
         std::println(os, "zero remaining elements: {} * {} B = {} B", diff,
                      ii.type().size(), nbytes);
-        tc.rep_stos_zero(tok(), os, indent, ii.operand.address_str(), nbytes);
+        x86::zero(tc, tok(), os, indent, ii.operand.address_str(), nbytes);
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
@@ -283,9 +283,8 @@ class expr_any final : public statement {
                         if (not src_info.is_const()) {
                             std::unreachable();
                         }
-                        tc.asm_cmd(tk, os, indent, "mov",
-                                   dst_info.operand.str(),
-                                   std::format("{}", src_info.const_value));
+                        x86::mov(tc, tk, os, indent, dst_info.operand.str(),
+                                 std::format("{}", src_info.const_value));
                         return;
                     }
 
@@ -311,19 +310,19 @@ class expr_any final : public statement {
                                   dst_info.operand.str())};
 
                     // not constant evaluation
-                    toc::asm_label(os, indent, jmp_to_end);
+                    x86::label(tc, os, indent, jmp_to_end);
 
                     // did the evaluation result in a constant?
                     if (const_eval) {
                         // yes, constant evaluation
                         if (*const_eval) {
                             // constant evaluation is true
-                            tc.asm_cmd(tk, os, indent, "mov",
-                                       dst_info.operand.str(), "1");
+                            x86::mov(tc, tk, os, indent, dst_info.operand.str(),
+                                     "1");
                         } else {
                             // constant evaluation is false
-                            tc.asm_cmd(tk, os, indent, "mov",
-                                       dst_info.operand.str(), "0");
+                            x86::mov(tc, tk, os, indent, dst_info.operand.str(),
+                                     "0");
                         }
                     }
                 }},

@@ -23,14 +23,14 @@ class stmt_loop final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        tc.comment_token(tok(), os, indent);
+        x86::comment_token(tc, tok(), os, indent);
 
         const std::string lbl{tc.create_unique_label(tok(), "loop")};
-        toc::asm_label(os, indent, lbl);
+        x86::label(tc, os, indent, lbl);
         tc.enter_loop(lbl);
         code_.compile(tc, os, indent, dst_info);
-        toc::asm_jmp(os, indent, lbl);
-        toc::asm_label(os, indent, std::format("{}_end", lbl));
+        x86::jmp(tc, os, indent, lbl);
+        x86::label(tc, os, indent, std::format("{}_end", lbl));
         tc.exit_loop(lbl);
     }
 

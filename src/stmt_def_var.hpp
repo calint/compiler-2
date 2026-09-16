@@ -1,5 +1,4 @@
-#pragma once
-// reviewed: 2025-09-28
+#pragma once // reviewed: 2025-09-28
 //           2026-09-09
 
 #include <format>
@@ -127,7 +126,7 @@ class stmt_def_var final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        tc.comment_source(*this, os, indent);
+        x86::comment_source(tc, *this, os, indent);
 
         const var_info var{
             .name{name_tk_.text()},
@@ -152,14 +151,14 @@ class stmt_def_var final : public statement {
         const size_t instance_count{array_size_ ? array_size_ : 1};
         const size_t bytes_count{instance_count * dst_info.type().size()};
 
-        tc.comment_start(name_tk_, os, indent);
+        x86::comment_start(tc, name_tk_, os, indent);
         std::println(os, "zero {} * {} B = {} B", instance_count,
                      dst_info.type().size(), bytes_count);
 
         const std::string dst_addr{std::format("rsp - {}", -dst_info.stack_ix)};
         // note: -dst_info.stack_ix for nicer source formatting; is always
         //       negative
-        tc.rep_stos_zero(tok(), os, indent, dst_addr, bytes_count);
+        x86::zero(tc, tok(), os, indent, dst_addr, bytes_count);
     }
 
     auto assert_var_not_used(const std::string_view var) const

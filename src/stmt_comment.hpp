@@ -27,6 +27,6 @@ class stmt_comment final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        tc.comment_source(*this, os, indent);
+        x86::comment_source(tc, *this, os, indent);
     }
 };

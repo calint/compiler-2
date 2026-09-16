@@ -22,8 +22,7 @@ class stmt_builtin_syscall final : public stmt_call {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        tc.comment_source(*this, os, indent);
-        toc::indent(os, indent);
-        std::println(os, "syscall");
+        x86::comment_source(tc, *this, os, indent);
+        x86::syscall(tc, os, indent);
     }
 };

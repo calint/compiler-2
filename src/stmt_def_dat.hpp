@@ -168,7 +168,7 @@ class stmt_def_dat final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        tc.comment_source(*this, os, indent);
+        x86::comment_source(tc, *this, os, indent);
         const var_info var{
             .name{name_tk_.text()},
             .type_ptr{&get_type()},

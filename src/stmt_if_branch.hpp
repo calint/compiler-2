@@ -35,7 +35,7 @@ class stmt_if_branch final : public statement {
         const std::string jmp_to_if_true_lbl{
             std::format("{}_code", if_bgn_lbl)};
         // the beginning of this branch
-        toc::asm_label(os, indent, if_bgn_lbl);
+        x86::label(tc, os, indent, if_bgn_lbl);
         // compile the boolean ops list
         if (const std::optional<bool> const_eval{
                 bol_.compile(tc, os, indent, jmp_to_if_false_label,
@@ -46,7 +46,7 @@ class stmt_if_branch final : public statement {
             if (*const_eval) {
                 // yes, this branch code will execute
 
-                toc::asm_label(os, indent, jmp_to_if_true_lbl);
+                x86::label(tc, os, indent, jmp_to_if_true_lbl);
                 // note: label is necessary because of a 'jmp' that gets
                 //       optimized away
                 code_.compile(tc, os, indent, toc::make_ident_info_empty());
@@ -54,7 +54,7 @@ class stmt_if_branch final : public statement {
             return *const_eval;
         }
         // the label where to jump if evaluation of the condition is true
-        toc::asm_label(os, indent, jmp_to_if_true_lbl);
+        x86::label(tc, os, indent, jmp_to_if_true_lbl);
         // the code of the branch
         code_.compile(tc, os, indent, toc::make_ident_info_empty());
         // after the code of the branch is executed, jump to the end of the 'if
@@ -62,7 +62,7 @@ class stmt_if_branch final : public statement {
         // if the jump label is not provided, then there is no 'else' and this
         // is the last 'if' so just continue execution
         if (not jmp_to_after_code_label.empty()) {
-            toc::asm_jmp(os, indent, jmp_to_after_code_label);
+            x86::jmp(tc, os, indent, jmp_to_after_code_label);
         }
         return std::nullopt;
     }
