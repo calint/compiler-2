@@ -12,7 +12,7 @@
 [ ] consider function calls that pass arguments and return through the stack
     when passing array: pass the address of the array as lea and size as argument
     return values are then no longer references
-[ ] a ways to specify a range in the array: foo(arr, bgn, len)
+[ ] a ways to specify a range in the array: foo arr(from, len, start_index)
 [ ] foo arr1, arr2, ... {
       # injected variable 'e1', 'e2', 'e...': current array elements
       e1 = e2
