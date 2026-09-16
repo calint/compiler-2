@@ -121,7 +121,7 @@ auto main(const int argc, const char* argv[]) -> int {
                                  "options are: upper, lower, line.",
                                  option);
                     std::println(stderr, "Use --help for usage information");
-                    return 1;
+                    return 2;
                 }
             }
         } else if (arg == nopt_option) {
@@ -132,7 +132,7 @@ auto main(const int argc, const char* argv[]) -> int {
         } else {
             std::println(stderr, "Error: Unknown option: {}", arg);
             std::println(stderr, "Use --help for usage information");
-            return 1;
+            return 3;
         }
     }
 
@@ -164,19 +164,19 @@ auto main(const int argc, const char* argv[]) -> int {
         const auto [line, col]{
             toc::line_and_col_num_for_char_index(e.line, e.start_index, src)};
         std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col, e.msg);
-        return 1;
+        return 4;
     } catch (const tokenizer_exception& e) {
         const auto [line, col]{
             toc::line_and_col_num_for_char_index(e.line, e.start_index, src)};
         std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col,
                      e.what());
-        return 1;
+        return 5;
     } catch (const panic_exception& e) {
         std::println(stderr, "\npanic: {}", e.what());
-        return 2;
+        return 6;
     } catch (...) {
         std::println(stderr, "\nunknown exception");
-        return 3;
+        return 7;
     }
 }
 
