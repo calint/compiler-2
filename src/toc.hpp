@@ -222,6 +222,11 @@ class toc final {
         const type* type_ptr;
     };
 
+    struct type_info {
+        token declared_at_tk;
+        const type* type_ptr;
+    };
+
     std::string_view source_;
     std::vector<frame> frames_;
     std::vector<std::string> all_registers_{
@@ -237,7 +242,7 @@ class toc final {
     std::vector<allocated_register> allocated_registers_;
     std::vector<const stmt_def_func*> func_defs_;
     lut<func_info> funcs_;
-    lut<const type*> types_;
+    lut<type_info> types_;
     const type* type_void_{};
     const type* type_default_{};
     const type* type_bool_{};
@@ -248,10 +253,6 @@ class toc final {
     bool bounds_check_with_line_{};
     bool bounds_check_lower_{};
     std::vector<const statement*> data_;
-    struct constant {
-        token src_loc_tk;
-        int64_t value{};
-    };
 
     std::regex regex_ws_{R"(\s+)"};
     std::regex regex_trim_{R"(^\s+|\s+$)"};
@@ -343,13 +344,18 @@ class toc final {
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
         if (types_.has(tpe.name())) {
-            // todo: specify where the type has been defined
             throw compiler_exception{
                 src_loc_tk,
-                std::format("type '{}' already defined", tpe.name())};
+                std::format(
+                    "type '{}' already defined at {}", tpe.name(),
+                    source_location_hr(
+                        types_.get_const_ref(tpe.name()).declared_at_tk))};
         }
 
-        types_.put(tpe.name(), &tpe);
+        types_.put(tpe.name(), {
+                                   .declared_at_tk{src_loc_tk},
+                                   .type_ptr{&tpe},
+                               });
     }
 
     auto add_var(const token& src_loc_tk, std::ostream& os, const size_t indnt,
@@ -1037,7 +1043,7 @@ class toc final {
                                      std::format("type '{}' not found", name)};
         }
 
-        return *types_.get_const_ref(name_str);
+        return *types_.get_const_ref(name_str).type_ptr;
     }
 
     [[nodiscard]] auto get_type_void() const -> const type& {
@@ -1377,13 +1383,13 @@ class toc final {
 
         switch (size) {
         case size_qword:
-            return *types_.get_const_ref("i64");
+            return *types_.get_const_ref("i64").type_ptr;
         case size_dword:
-            return *types_.get_const_ref("i32");
+            return *types_.get_const_ref("i32").type_ptr;
         case size_word:
-            return *types_.get_const_ref("i16");
+            return *types_.get_const_ref("i16").type_ptr;
         case size_byte:
-            return *types_.get_const_ref("i8");
+            return *types_.get_const_ref("i8").type_ptr;
         default:
             std::unreachable();
         }
