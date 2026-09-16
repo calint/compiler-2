@@ -80,7 +80,13 @@ class stmt_builtin_equal final : public expression {
         std::vector<std::string> allocated_scratch_registers;
 
         const ident_info lhs_info{tc.make_ident_info(lhs_)};
+        if (lhs_info.is_const()) {
+            throw compiler_exception{lhs_.tok(), "constant not supported"};
+        }
         const ident_info rhs_info{tc.make_ident_info(rhs_)};
+        if (rhs_info.is_const()) {
+            throw compiler_exception{rhs_.tok(), "constant not supported"};
+        }
 
         // from operand to rsi
         tc.comment_source(lhs_, os, indent);

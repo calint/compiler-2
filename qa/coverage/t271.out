@@ -1,2 +1,2 @@
 
-t271.baz:5:13: source and compare types are not the same. source is 'i8' and compare is 'i64'
+t271.baz:5:21: constant not supported

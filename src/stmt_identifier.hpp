@@ -295,7 +295,8 @@ class stmt_identifier : public statement {
                     if (reg_offset.empty()) {
                         reg_offset =
                             init_reg_offset(src_loc_tk, tc, os, indent, lea,
-                                            allocated_registers, true, true);
+                                            allocated_registers, true, true,
+                                            base_info.operand.base_register);
                     }
 
                     const int32_t offset{
@@ -341,7 +342,8 @@ class stmt_identifier : public statement {
 
             if (reg_offset.empty()) {
                 reg_offset = init_reg_offset(src_loc_tk, tc, os, indent, lea,
-                                             allocated_registers, false, true);
+                                             allocated_registers, false, true,
+                                             base_info.operand.base_register);
             }
 
             if (reg_offset == "rsp") {
@@ -350,6 +352,13 @@ class stmt_identifier : public statement {
                 allocated_registers.push_back(reg_offset);
                 toc::asm_lea(os, indent, reg_offset,
                              std::format("rsp - {}", -base_info.stack_ix));
+            } else if (reg_offset == base_info.operand.base_register) {
+                reg_offset = tc.alloc_scratch_register(src_loc_tk, os, indent,
+                                                       tc.get_type_default());
+                allocated_registers.push_back(reg_offset);
+                toc::asm_lea(
+                    os, indent, reg_offset,
+                    std::format("{}", base_info.operand.base_register));
             }
 
             // calculate array index
@@ -397,7 +406,8 @@ class stmt_identifier : public statement {
 
         if (reg_offset.empty()) {
             reg_offset = init_reg_offset(src_loc_tk, tc, os, indent, lea,
-                                         allocated_registers, true, false);
+                                         allocated_registers, true, false,
+                                         base_info.operand.base_register);
         }
 
         if (reg_offset == "rsp") {
@@ -494,7 +504,8 @@ class stmt_identifier : public statement {
                     const size_t indent, const std::string& lea,
                     std::vector<std::string>& allocated_registers,
                     const bool no_changes_to_reg_offset_after_this,
-                    const bool will_be_indirect_indexed) -> std::string {
+                    const bool will_be_indirect_indexed,
+                    const std::string& base_register) -> std::string {
 
         if (not lea.empty()) {
             // if no change is done to the lea register, just return it
@@ -518,6 +529,6 @@ class stmt_identifier : public statement {
             return index_reg;
         }
 
-        return "rsp";
+        return base_register;
     }
 };
