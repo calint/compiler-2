@@ -16,7 +16,6 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
-#include "expr_array_assign.hpp"
 #include "expr_type_value.hpp"
 #include "stmt_builtin_address_of.hpp"
 #include "stmt_builtin_array_size_of.hpp"
@@ -455,62 +454,6 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 [[nodiscard]] auto expr_type_value::is_indexed() const -> bool {
     return stmt_ident_ and stmt_ident_->is_indexed();
-}
-
-// declared in 'expr_array_assign.hpp'
-expr_array_assign::expr_array_assign(toc& tc, tokenizer& tz, token tk,
-                                     const type& tp)
-    : statement{tk} {
-
-    set_type(tp);
-
-    ident_or_call_parts parts{parse_ident_or_call(tc, tk, tz, tp)};
-    stmt_ident_ = std::move(parts.ident);
-    stmt_call_ = std::move(parts.call);
-}
-
-// declared in 'expr_array_assign.hpp'
-auto expr_array_assign::source_to(std::ostream& os) const -> void {
-    if (stmt_call_) {
-        stmt_call_->source_to(os);
-        return;
-    }
-    stmt_ident_->source_to(os);
-}
-
-// declared in 'expr_array_assign.hpp'
-auto expr_array_assign::compile(toc& tc, std::ostream& os, size_t indent,
-                                const ident_info& dst_info) const -> void {
-    if (stmt_call_) {
-        stmt_call_->compile(tc, os, indent, dst_info);
-        return;
-    }
-
-    operand op{dst_info.operand};
-    copy_ident_bytes(tc, os, indent, *this, dst_info.type(), op);
-}
-
-// declared in 'expr_array_assign.hpp'
-[[nodiscard]] auto expr_array_assign::is_indexed() const -> bool {
-    return stmt_ident_ and stmt_ident_->is_indexed();
-}
-
-// declared in 'expr_array_assign.hpp'
-[[nodiscard]] auto expr_array_assign::identifier() const -> std::string_view {
-    if (stmt_ident_) {
-        return stmt_ident_->identifier();
-    }
-    return statement::identifier();
-}
-
-// declared in 'expr_array_assign.hpp'
-[[nodiscard]] auto expr_array_assign::compile_lea(
-    const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
-    std::vector<std::string>& allocated_registers, const std::string& reg_size,
-    const std::span<const std::string> lea_path) const -> operand {
-
-    return stmt_ident_->compile_lea(src_loc_tk, tc, os, indent,
-                                    allocated_registers, reg_size, lea_path);
 }
 
 // declared in 'unary_ops.hpp'

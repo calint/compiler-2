@@ -11,14 +11,13 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
-#include "expr_array_assign.hpp"
 #include "expr_bool_ops_list.hpp"
 #include "expr_ops_list.hpp"
 #include "expr_type_value.hpp"
 
 class expr_any final : public statement {
-    using expr_variant = std::variant<expr_ops_list, expr_bool_ops_list,
-                                      expr_type_value, expr_array_assign>;
+    using expr_variant =
+        std::variant<expr_ops_list, expr_bool_ops_list, expr_type_value>;
 
     // helper template for nicer handling of variants using overloaded lambdas
     template <class... Ts> struct overloaded : Ts... {
@@ -53,34 +52,7 @@ class expr_any final : public statement {
 
         open_brace_tk_ = tz.is_next_char_token('{');
         if (open_brace_tk_.is_empty()) {
-            // whole-array source is an identifier or a call, e.g.
-            // 'arr2 = arr1' or 'arr2 = f()'
-
-            if (tp.is_built_in()) {
-                const token tk{tz.next_token()};
-
-                if (tk.is_string()) {
-                    throw compiler_exception{
-                        tk,
-                        std::format("strings not supported here", tp.name())};
-                }
-
-                if (tk.text().empty()) {
-                    throw compiler_exception{
-                        tz,
-                        std::format("expected an identifier of type '{}[]' or "
-                                    "a function call",
-                                    tp.name())};
-                }
-
-                vars_.emplace_back(expr_array_assign{tc, tz, tk, tp});
-                is_identifier_ = true;
-                return;
-            }
-
-            // user type
-
-            // e.g. obj.points = pts
+            // todo: explain why expr_type_value has multiple responsibilities
             vars_.emplace_back(expr_type_value{tc, tz, tp});
             is_identifier_ = true;
             return;
@@ -302,9 +274,6 @@ class expr_any final : public statement {
                     e.compile(tc, os, indent, dst_info);
                 },
                 [&]([[maybe_unused]] const expr_type_value& e) -> void {
-                    e.compile(tc, os, indent, dst_info);
-                },
-                [&]([[maybe_unused]] const expr_array_assign& e) -> void {
                     e.compile(tc, os, indent, dst_info);
                 },
                 [&](const expr_bool_ops_list& e) -> void {
