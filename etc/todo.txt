@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] support variable string initializers
+[ ] resolve issues with comments in expressions etc
+    dat s : str = { 
+        3 # comment 
+    }
+[ ] parsing comments in single statement block fails:
+        if nibble > 9 nibble = nibble + 0x41 # 0 through 9
+        else nibble = nibble + 0x30
 [ ] consider function calls that pass arguments and return through the stack
     when passing array: pass the address of the array as lea and size as argument
     return values are then no longer references
@@ -12,7 +20,6 @@
 [ ] consider dropping the visitor pattern in expr_any because lcov does not
     handle it
 [ ] UB analysis and path-sensitive initialization checks
-[ ] support variable string initializers
 [ ] support boolean expression results directly in memory destinations
 [ ] t158 is ub
 [ ] ub? mp[1] = { mp[2].msg } see t155.baz:44
@@ -31,18 +38,11 @@
     to unspecified register size with sign extension
     => 255 is outside the range of i8: -128 -> 127
 [ ] handle case where x86_64 cannot load immediate 64 bit value to memory
-[ ] resolve issues with comments in expressions etc
-    dat s : str = { 
-        3 # comment 
-    }
 [ ] allow trailing comma at type definition. e.g.,
     type object {
         pos : point,
         color : i32,
     }
-[ ] parsing comments in single statement block fails:
-        if nibble > 9 nibble = nibble + 0x41 # 0 through 9
-        else nibble = nibble + 0x30
 [ ] add rbp, rbx to scratch registers
     => rax, rcx, rdx, rsi, rdi, rsp are used by the compiler
     [ ] update t321
