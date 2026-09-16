@@ -401,181 +401,178 @@ main:
             exit_41_32_171_5_end:
         if_41_23_171_5_end:
     assert_171_5_end:
-    mov qword [rsp - 301], 0
-    mov qword [rsp - 293], 0
-    fooz_174_5:
-        mov qword [rsp - 301], 2
-        mov qword [rsp - 293], 11
-    fooz_174_5_end:
-    cmp_175_12:
-    cmp qword [rsp - 301], 2
+    mov qword [rsp - 301], 3
+    mov qword [rsp - 293], 5
+    lea r15, [rsp - 301]
+    mov qword [rsp - 317], 0
+    foo_174_5:
+        mov r14, qword [rsp - 317]
+        add qword [r15], r14
+        add qword [r15], 2
+        foo_174_5_continue:
+            add r15, 8
+            inc qword [rsp - 317]
+            cmp qword [rsp - 317], 2
+            jne foo_174_5
+    foo_174_5_end:
+    cmp_177_12:
+    mov r14, 0
+    mov r13, 177
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 2
+    cmovge rbp, r13
+    jge panic_bounds
+        mov r13, 3
+        add r13, 0
+        add r13, 2
+    cmp qword [rsp + r14 * 8 - 301], r13
     sete r15b
-    bool_end_175_12:
-    assert_175_5:
-        if_41_26_175_5:
-        cmp_41_26_175_5:
+    bool_end_177_12:
+    assert_177_5:
+        if_41_26_177_5:
+        cmp_41_26_177_5:
         cmp r15b, 0
-        jne if_41_23_175_5_end
-        if_41_26_175_5_code:
+        jne if_41_23_177_5_end
+        if_41_26_177_5_code:
             mov rdi, 1
-            exit_41_32_175_5:
+            exit_41_32_177_5:
                     mov rax, 60
                 syscall
-            exit_41_32_175_5_end:
-        if_41_23_175_5_end:
-    assert_175_5_end:
-    cmp_176_12:
-    cmp qword [rsp - 293], 11
+            exit_41_32_177_5_end:
+        if_41_23_177_5_end:
+    assert_177_5_end:
+    cmp_178_12:
+    mov r14, 1
+    mov r13, 178
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 2
+    cmovge rbp, r13
+    jge panic_bounds
+        mov r13, 5
+        add r13, 1
+        add r13, 2
+    cmp qword [rsp + r14 * 8 - 301], r13
     sete r15b
-    bool_end_176_12:
-    assert_176_5:
-        if_41_26_176_5:
-        cmp_41_26_176_5:
+    bool_end_178_12:
+    assert_178_5:
+        if_41_26_178_5:
+        cmp_41_26_178_5:
         cmp r15b, 0
-        jne if_41_23_176_5_end
-        if_41_26_176_5_code:
+        jne if_41_23_178_5_end
+        if_41_26_178_5_code:
             mov rdi, 1
-            exit_41_32_176_5:
+            exit_41_32_178_5:
                     mov rax, 60
                 syscall
-            exit_41_32_176_5_end:
-        if_41_23_176_5_end:
-    assert_176_5_end:
-    mov rax, qword [rsp - 301]
-    mov qword [rsp - 317], rax
-    mov rax, qword [rsp - 293]
-    mov qword [rsp - 309], rax
-    cmp_179_12:
-        lea rsi, [rsp - 301]
-        lea rdi, [rsp - 317]
+            exit_41_32_178_5_end:
+        if_41_23_178_5_end:
+    assert_178_5_end:
+    mov qword [rsp - 317], 0
+    mov qword [rsp - 309], 0
+    fooz_185_5:
+        mov qword [rsp - 317], 2
+        mov qword [rsp - 309], 11
+    fooz_185_5_end:
+    cmp_186_12:
+    cmp qword [rsp - 317], 2
+    sete r15b
+    bool_end_186_12:
+    assert_186_5:
+        if_41_26_186_5:
+        cmp_41_26_186_5:
+        cmp r15b, 0
+        jne if_41_23_186_5_end
+        if_41_26_186_5_code:
+            mov rdi, 1
+            exit_41_32_186_5:
+                    mov rax, 60
+                syscall
+            exit_41_32_186_5_end:
+        if_41_23_186_5_end:
+    assert_186_5_end:
+    cmp_187_12:
+    cmp qword [rsp - 309], 11
+    sete r15b
+    bool_end_187_12:
+    assert_187_5:
+        if_41_26_187_5:
+        cmp_41_26_187_5:
+        cmp r15b, 0
+        jne if_41_23_187_5_end
+        if_41_26_187_5_code:
+            mov rdi, 1
+            exit_41_32_187_5:
+                    mov rax, 60
+                syscall
+            exit_41_32_187_5_end:
+        if_41_23_187_5_end:
+    assert_187_5_end:
+    mov rax, qword [rsp - 317]
+    mov qword [rsp - 333], rax
+    mov rax, qword [rsp - 309]
+    mov qword [rsp - 325], rax
+    cmp_190_12:
+        lea rsi, [rsp - 317]
+        lea rdi, [rsp - 333]
         mov rcx, 2
         repe cmpsq
         sete r14b
     cmp r14, 0
     setne r15b
-    bool_end_179_12:
-    assert_179_5:
-        if_41_26_179_5:
-        cmp_41_26_179_5:
+    bool_end_190_12:
+    assert_190_5:
+        if_41_26_190_5:
+        cmp_41_26_190_5:
         cmp r15b, 0
-        jne if_41_23_179_5_end
-        if_41_26_179_5_code:
+        jne if_41_23_190_5_end
+        if_41_26_190_5_code:
             mov rdi, 1
-            exit_41_32_179_5:
+            exit_41_32_190_5:
                     mov rax, 60
                 syscall
-            exit_41_32_179_5_end:
-        if_41_23_179_5_end:
-    assert_179_5_end:
-    mov qword [rsp - 317], 3
-    cmp_184_12:
-        lea rsi, [rsp - 301]
-        lea rdi, [rsp - 317]
+            exit_41_32_190_5_end:
+        if_41_23_190_5_end:
+    assert_190_5_end:
+    mov qword [rsp - 333], 3
+    cmp_195_12:
+        lea rsi, [rsp - 317]
+        lea rdi, [rsp - 333]
         mov rcx, 2
         repe cmpsq
         sete r14b
     cmp r14, 0
     sete r15b
-    bool_end_184_12:
-    assert_184_5:
-        if_41_26_184_5:
-        cmp_41_26_184_5:
+    bool_end_195_12:
+    assert_195_5:
+        if_41_26_195_5:
+        cmp_41_26_195_5:
         cmp r15b, 0
-        jne if_41_23_184_5_end
-        if_41_26_184_5_code:
+        jne if_41_23_195_5_end
+        if_41_26_195_5_code:
             mov rdi, 1
-            exit_41_32_184_5:
+            exit_41_32_195_5:
                     mov rax, 60
                 syscall
-            exit_41_32_184_5_end:
-        if_41_23_184_5_end:
-    assert_184_5_end:
-    mov qword [rsp - 325], 0
-    bar_187_5:
-        if_74_8_187_5:
-        cmp_74_8_187_5:
-        cmp qword [rsp - 325], 0
-        jne if_74_5_187_5_end
-        if_74_8_187_5_code:
-            jmp bar_187_5_end
-        if_74_5_187_5_end:
-        mov qword [rsp - 325], 255
-    bar_187_5_end:
-    cmp_188_12:
-    cmp qword [rsp - 325], 0
-    sete r15b
-    bool_end_188_12:
-    assert_188_5:
-        if_41_26_188_5:
-        cmp_41_26_188_5:
-        cmp r15b, 0
-        jne if_41_23_188_5_end
-        if_41_26_188_5_code:
-            mov rdi, 1
-            exit_41_32_188_5:
-                    mov rax, 60
-                syscall
-            exit_41_32_188_5_end:
-        if_41_23_188_5_end:
-    assert_188_5_end:
-    mov qword [rsp - 325], 1
-    bar_191_5:
-        if_74_8_191_5:
-        cmp_74_8_191_5:
-        cmp qword [rsp - 325], 0
-        jne if_74_5_191_5_end
-        if_74_8_191_5_code:
-            jmp bar_191_5_end
-        if_74_5_191_5_end:
-        mov qword [rsp - 325], 255
-    bar_191_5_end:
-    cmp_192_12:
-    cmp qword [rsp - 325], 255
-    sete r15b
-    bool_end_192_12:
-    assert_192_5:
-        if_41_26_192_5:
-        cmp_41_26_192_5:
-        cmp r15b, 0
-        jne if_41_23_192_5_end
-        if_41_26_192_5_code:
-            mov rdi, 1
-            exit_41_32_192_5:
-                    mov rax, 60
-                syscall
-            exit_41_32_192_5_end:
-        if_41_23_192_5_end:
-    assert_192_5_end:
-    mov qword [rsp - 333], 1
-    baz_195_13:
-        mov r15, qword [rsp - 333]
-        imul r15, 2
-        mov qword [rsp - 341], r15
-    baz_195_13_end:
-    cmp_196_12:
-    cmp qword [rsp - 341], 2
-    sete r15b
-    bool_end_196_12:
-    assert_196_5:
-        if_41_26_196_5:
-        cmp_41_26_196_5:
-        cmp r15b, 0
-        jne if_41_23_196_5_end
-        if_41_26_196_5_code:
-            mov rdi, 1
-            exit_41_32_196_5:
-                    mov rax, 60
-                syscall
-            exit_41_32_196_5_end:
-        if_41_23_196_5_end:
-    assert_196_5_end:
-    baz_198_9:
-        mov r15, 1
-        imul r15, 2
-        mov qword [rsp - 341], r15
-    baz_198_9_end:
+            exit_41_32_195_5_end:
+        if_41_23_195_5_end:
+    assert_195_5_end:
+    mov qword [rsp - 341], 0
+    bar_198_5:
+        if_74_8_198_5:
+        cmp_74_8_198_5:
+        cmp qword [rsp - 341], 0
+        jne if_74_5_198_5_end
+        if_74_8_198_5_code:
+            jmp bar_198_5_end
+        if_74_5_198_5_end:
+        mov qword [rsp - 341], 255
+    bar_198_5_end:
     cmp_199_12:
-    cmp qword [rsp - 341], 2
+    cmp qword [rsp - 341], 0
     sete r15b
     bool_end_199_12:
     assert_199_5:
@@ -591,94 +588,87 @@ main:
             exit_41_32_199_5_end:
         if_41_23_199_5_end:
     assert_199_5_end:
-    baz_201_23:
-        mov r15, 2
+    mov qword [rsp - 341], 1
+    bar_202_5:
+        if_74_8_202_5:
+        cmp_74_8_202_5:
+        cmp qword [rsp - 341], 0
+        jne if_74_5_202_5_end
+        if_74_8_202_5_code:
+            jmp bar_202_5_end
+        if_74_5_202_5_end:
+        mov qword [rsp - 341], 255
+    bar_202_5_end:
+    cmp_203_12:
+    cmp qword [rsp - 341], 255
+    sete r15b
+    bool_end_203_12:
+    assert_203_5:
+        if_41_26_203_5:
+        cmp_41_26_203_5:
+        cmp r15b, 0
+        jne if_41_23_203_5_end
+        if_41_26_203_5_code:
+            mov rdi, 1
+            exit_41_32_203_5:
+                    mov rax, 60
+                syscall
+            exit_41_32_203_5_end:
+        if_41_23_203_5_end:
+    assert_203_5_end:
+    mov qword [rsp - 349], 1
+    baz_206_13:
+        mov r15, qword [rsp - 349]
         imul r15, 2
         mov qword [rsp - 357], r15
-    baz_201_23_end:
-    mov qword [rsp - 349], 0
-    cmp_202_12:
-    cmp qword [rsp - 357], 4
+    baz_206_13_end:
+    cmp_207_12:
+    cmp qword [rsp - 357], 2
     sete r15b
-    bool_end_202_12:
-    assert_202_5:
-        if_41_26_202_5:
-        cmp_41_26_202_5:
+    bool_end_207_12:
+    assert_207_5:
+        if_41_26_207_5:
+        cmp_41_26_207_5:
         cmp r15b, 0
-        jne if_41_23_202_5_end
-        if_41_26_202_5_code:
+        jne if_41_23_207_5_end
+        if_41_26_207_5_code:
             mov rdi, 1
-            exit_41_32_202_5:
+            exit_41_32_207_5:
                     mov rax, 60
                 syscall
-            exit_41_32_202_5_end:
-        if_41_23_202_5_end:
-    assert_202_5_end:
-    point_init_204_22:
-        mov qword [rsp - 373], -1
-        mov qword [rsp - 365], -2
-    point_init_204_22_end:
-    cmp_205_12:
-    cmp qword [rsp - 373], -1
+            exit_41_32_207_5_end:
+        if_41_23_207_5_end:
+    assert_207_5_end:
+    baz_209_9:
+        mov r15, 1
+        imul r15, 2
+        mov qword [rsp - 357], r15
+    baz_209_9_end:
+    cmp_210_12:
+    cmp qword [rsp - 357], 2
     sete r15b
-    bool_end_205_12:
-    assert_205_5:
-        if_41_26_205_5:
-        cmp_41_26_205_5:
+    bool_end_210_12:
+    assert_210_5:
+        if_41_26_210_5:
+        cmp_41_26_210_5:
         cmp r15b, 0
-        jne if_41_23_205_5_end
-        if_41_26_205_5_code:
+        jne if_41_23_210_5_end
+        if_41_26_210_5_code:
             mov rdi, 1
-            exit_41_32_205_5:
+            exit_41_32_210_5:
                     mov rax, 60
                 syscall
-            exit_41_32_205_5_end:
-        if_41_23_205_5_end:
-    assert_205_5_end:
-    cmp_206_12:
-    cmp qword [rsp - 365], -2
-    sete r15b
-    bool_end_206_12:
-    assert_206_5:
-        if_41_26_206_5:
-        cmp_41_26_206_5:
-        cmp r15b, 0
-        jne if_41_23_206_5_end
-        if_41_26_206_5_code:
-            mov rdi, 1
-            exit_41_32_206_5:
-                    mov rax, 60
-                syscall
-            exit_41_32_206_5_end:
-        if_41_23_206_5_end:
-    assert_206_5_end:
-    mov qword [rsp - 381], 1
-    mov qword [rsp - 389], 2
-    mov r15, qword [rsp - 381]
-    imul r15, 10
-    mov qword [rsp - 409], r15
-    mov r15, qword [rsp - 389]
-    mov qword [rsp - 401], r15
-    mov dword [rsp - 393], 16711680
-    cmp_212_12:
-    cmp qword [rsp - 409], 10
-    sete r15b
-    bool_end_212_12:
-    assert_212_5:
-        if_41_26_212_5:
-        cmp_41_26_212_5:
-        cmp r15b, 0
-        jne if_41_23_212_5_end
-        if_41_26_212_5_code:
-            mov rdi, 1
-            exit_41_32_212_5:
-                    mov rax, 60
-                syscall
-            exit_41_32_212_5_end:
-        if_41_23_212_5_end:
-    assert_212_5_end:
+            exit_41_32_210_5_end:
+        if_41_23_210_5_end:
+    assert_210_5_end:
+    baz_212_23:
+        mov r15, 2
+        imul r15, 2
+        mov qword [rsp - 373], r15
+    baz_212_23_end:
+    mov qword [rsp - 365], 0
     cmp_213_12:
-    cmp qword [rsp - 401], 2
+    cmp qword [rsp - 373], 4
     sete r15b
     bool_end_213_12:
     assert_213_5:
@@ -694,90 +684,54 @@ main:
             exit_41_32_213_5_end:
         if_41_23_213_5_end:
     assert_213_5_end:
-    cmp_214_12:
-    cmp dword [rsp - 393], 16711680
+    point_init_215_22:
+        mov qword [rsp - 389], -1
+        mov qword [rsp - 381], -2
+    point_init_215_22_end:
+    cmp_216_12:
+    cmp qword [rsp - 389], -1
     sete r15b
-    bool_end_214_12:
-    assert_214_5:
-        if_41_26_214_5:
-        cmp_41_26_214_5:
+    bool_end_216_12:
+    assert_216_5:
+        if_41_26_216_5:
+        cmp_41_26_216_5:
         cmp r15b, 0
-        jne if_41_23_214_5_end
-        if_41_26_214_5_code:
+        jne if_41_23_216_5_end
+        if_41_26_216_5_code:
             mov rdi, 1
-            exit_41_32_214_5:
+            exit_41_32_216_5:
                     mov rax, 60
                 syscall
-            exit_41_32_214_5_end:
-        if_41_23_214_5_end:
-    assert_214_5_end:
-    mov r15, qword [rsp - 381]
+            exit_41_32_216_5_end:
+        if_41_23_216_5_end:
+    assert_216_5_end:
+    cmp_217_12:
+    cmp qword [rsp - 381], -2
+    sete r15b
+    bool_end_217_12:
+    assert_217_5:
+        if_41_26_217_5:
+        cmp_41_26_217_5:
+        cmp r15b, 0
+        jne if_41_23_217_5_end
+        if_41_26_217_5_code:
+            mov rdi, 1
+            exit_41_32_217_5:
+                    mov rax, 60
+                syscall
+            exit_41_32_217_5_end:
+        if_41_23_217_5_end:
+    assert_217_5_end:
+    mov qword [rsp - 397], 1
+    mov qword [rsp - 405], 2
+    mov r15, qword [rsp - 397]
+    imul r15, 10
     mov qword [rsp - 425], r15
-    neg qword [rsp - 425]
-    mov r15, qword [rsp - 389]
+    mov r15, qword [rsp - 405]
     mov qword [rsp - 417], r15
-    neg qword [rsp - 417]
-    mov rax, qword [rsp - 425]
-    mov qword [rsp - 409], rax
-    mov rax, qword [rsp - 417]
-    mov qword [rsp - 401], rax
-    cmp_218_12:
-    cmp qword [rsp - 409], -1
-    sete r15b
-    bool_end_218_12:
-    assert_218_5:
-        if_41_26_218_5:
-        cmp_41_26_218_5:
-        cmp r15b, 0
-        jne if_41_23_218_5_end
-        if_41_26_218_5_code:
-            mov rdi, 1
-            exit_41_32_218_5:
-                    mov rax, 60
-                syscall
-            exit_41_32_218_5_end:
-        if_41_23_218_5_end:
-    assert_218_5_end:
-    cmp_219_12:
-    cmp qword [rsp - 401], -2
-    sete r15b
-    bool_end_219_12:
-    assert_219_5:
-        if_41_26_219_5:
-        cmp_41_26_219_5:
-        cmp r15b, 0
-        jne if_41_23_219_5_end
-        if_41_26_219_5_code:
-            mov rdi, 1
-            exit_41_32_219_5:
-                    mov rax, 60
-                syscall
-            exit_41_32_219_5_end:
-        if_41_23_219_5_end:
-    assert_219_5_end:
-    lea rsi, [rsp - 409]
-    lea rdi, [rsp - 445]
-    mov rcx, 20
-    rep movsb
-    cmp_222_12:
-    cmp qword [rsp - 445], -1
-    sete r15b
-    bool_end_222_12:
-    assert_222_5:
-        if_41_26_222_5:
-        cmp_41_26_222_5:
-        cmp r15b, 0
-        jne if_41_23_222_5_end
-        if_41_26_222_5_code:
-            mov rdi, 1
-            exit_41_32_222_5:
-                    mov rax, 60
-                syscall
-            exit_41_32_222_5_end:
-        if_41_23_222_5_end:
-    assert_222_5_end:
+    mov dword [rsp - 409], 16711680
     cmp_223_12:
-    cmp qword [rsp - 437], -2
+    cmp qword [rsp - 425], 10
     sete r15b
     bool_end_223_12:
     assert_223_5:
@@ -794,7 +748,7 @@ main:
         if_41_23_223_5_end:
     assert_223_5_end:
     cmp_224_12:
-    cmp dword [rsp - 429], 16711680
+    cmp qword [rsp - 417], 2
     sete r15b
     bool_end_224_12:
     assert_224_5:
@@ -810,24 +764,52 @@ main:
             exit_41_32_224_5_end:
         if_41_23_224_5_end:
     assert_224_5_end:
-    xor al, al
-    lea rdi, [rsp - 485]
-    mov rcx, 40
-    rep stosb
-    mov qword [rsp - 477], 73
+    cmp_225_12:
+    cmp dword [rsp - 409], 16711680
+    sete r15b
+    bool_end_225_12:
+    assert_225_5:
+        if_41_26_225_5:
+        cmp_41_26_225_5:
+        cmp r15b, 0
+        jne if_41_23_225_5_end
+        if_41_26_225_5_code:
+            mov rdi, 1
+            exit_41_32_225_5:
+                    mov rax, 60
+                syscall
+            exit_41_32_225_5_end:
+        if_41_23_225_5_end:
+    assert_225_5_end:
+    mov r15, qword [rsp - 397]
+    mov qword [rsp - 441], r15
+    neg qword [rsp - 441]
+    mov r15, qword [rsp - 405]
+    mov qword [rsp - 433], r15
+    neg qword [rsp - 433]
+    mov rax, qword [rsp - 441]
+    mov qword [rsp - 425], rax
+    mov rax, qword [rsp - 433]
+    mov qword [rsp - 417], rax
+    cmp_229_12:
+    cmp qword [rsp - 425], -1
+    sete r15b
+    bool_end_229_12:
+    assert_229_5:
+        if_41_26_229_5:
+        cmp_41_26_229_5:
+        cmp r15b, 0
+        jne if_41_23_229_5_end
+        if_41_26_229_5_code:
+            mov rdi, 1
+            exit_41_32_229_5:
+                    mov rax, 60
+                syscall
+            exit_41_32_229_5_end:
+        if_41_23_229_5_end:
+    assert_229_5_end:
     cmp_230_12:
-    lea r14, [rsp - 485]
-    mov r13, 0
-    mov r12, 230
-    test r13, r13
-    cmovs rbp, r12
-    js panic_bounds
-    cmp r13, 2
-    cmovge rbp, r12
-    jge panic_bounds
-    imul r13, 20
-    add r14, r13
-    cmp qword [r14 + 8], 73
+    cmp qword [rsp - 417], -2
     sete r15b
     bool_end_230_12:
     assert_230_5:
@@ -843,33 +825,12 @@ main:
             exit_41_32_230_5_end:
         if_41_23_230_5_end:
     assert_230_5_end:
-    lea r15, [rsp - 485]
-    mov r14, 1
-    mov r13, 232
-    test r14, r14
-    cmovs rbp, r13
-    js panic_bounds
-    cmp r14, 2
-    cmovge rbp, r13
-    jge panic_bounds
-    imul r14, 20
-    add r15, r14
-    object_init_232_13:
-        mov qword [r15 + 8], 74
-    object_init_232_13_end:
+    lea rsi, [rsp - 425]
+    lea rdi, [rsp - 461]
+    mov rcx, 20
+    rep movsb
     cmp_233_12:
-    lea r14, [rsp - 485]
-    mov r13, 1
-    mov r12, 233
-    test r13, r13
-    cmovs rbp, r12
-    js panic_bounds
-    cmp r13, 2
-    cmovge rbp, r12
-    jge panic_bounds
-    imul r13, 20
-    add r14, r13
-    cmp qword [r14 + 8], 74
+    cmp qword [rsp - 461], -1
     sete r15b
     bool_end_233_12:
     assert_233_5:
@@ -885,13 +846,122 @@ main:
             exit_41_32_233_5_end:
         if_41_23_233_5_end:
     assert_233_5_end:
+    cmp_234_12:
+    cmp qword [rsp - 453], -2
+    sete r15b
+    bool_end_234_12:
+    assert_234_5:
+        if_41_26_234_5:
+        cmp_41_26_234_5:
+        cmp r15b, 0
+        jne if_41_23_234_5_end
+        if_41_26_234_5_code:
+            mov rdi, 1
+            exit_41_32_234_5:
+                    mov rax, 60
+                syscall
+            exit_41_32_234_5_end:
+        if_41_23_234_5_end:
+    assert_234_5_end:
+    cmp_235_12:
+    cmp dword [rsp - 445], 16711680
+    sete r15b
+    bool_end_235_12:
+    assert_235_5:
+        if_41_26_235_5:
+        cmp_41_26_235_5:
+        cmp r15b, 0
+        jne if_41_23_235_5_end
+        if_41_26_235_5_code:
+            mov rdi, 1
+            exit_41_32_235_5:
+                    mov rax, 60
+                syscall
+            exit_41_32_235_5_end:
+        if_41_23_235_5_end:
+    assert_235_5_end:
     xor al, al
-    lea rdi, [rsp - 997]
+    lea rdi, [rsp - 501]
+    mov rcx, 40
+    rep stosb
+    mov qword [rsp - 493], 73
+    cmp_241_12:
+    lea r14, [rsp - 501]
+    mov r13, 0
+    mov r12, 241
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 2
+    cmovge rbp, r12
+    jge panic_bounds
+    imul r13, 20
+    add r14, r13
+    cmp qword [r14 + 8], 73
+    sete r15b
+    bool_end_241_12:
+    assert_241_5:
+        if_41_26_241_5:
+        cmp_41_26_241_5:
+        cmp r15b, 0
+        jne if_41_23_241_5_end
+        if_41_26_241_5_code:
+            mov rdi, 1
+            exit_41_32_241_5:
+                    mov rax, 60
+                syscall
+            exit_41_32_241_5_end:
+        if_41_23_241_5_end:
+    assert_241_5_end:
+    lea r15, [rsp - 501]
+    mov r14, 1
+    mov r13, 243
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 2
+    cmovge rbp, r13
+    jge panic_bounds
+    imul r14, 20
+    add r15, r14
+    object_init_243_13:
+        mov qword [r15 + 8], 74
+    object_init_243_13_end:
+    cmp_244_12:
+    lea r14, [rsp - 501]
+    mov r13, 1
+    mov r12, 244
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 2
+    cmovge rbp, r12
+    jge panic_bounds
+    imul r13, 20
+    add r14, r13
+    cmp qword [r14 + 8], 74
+    sete r15b
+    bool_end_244_12:
+    assert_244_5:
+        if_41_26_244_5:
+        cmp_41_26_244_5:
+        cmp r15b, 0
+        jne if_41_23_244_5_end
+        if_41_26_244_5_code:
+            mov rdi, 1
+            exit_41_32_244_5:
+                    mov rax, 60
+                syscall
+            exit_41_32_244_5_end:
+        if_41_23_244_5_end:
+    assert_244_5_end:
+    xor al, al
+    lea rdi, [rsp - 1013]
     mov rcx, 512
     rep stosb
-    lea r15, [rsp - 997]
+    lea r15, [rsp - 1013]
     mov r14, 1
-    mov r13, 236
+    mov r13, 247
     test r14, r14
     cmovs rbp, r13
     js panic_bounds
@@ -901,7 +971,7 @@ main:
     shl r14, 6
     add r15, r14
     mov r14, 1
-    mov r13, 236
+    mov r13, 247
     test r14, r14
     cmovs rbp, r13
     js panic_bounds
@@ -909,164 +979,28 @@ main:
     cmovge rbp, r13
     jge panic_bounds
     mov qword [r15 + r14 * 8], 65518
-    cmp_237_12:
-    lea r14, [rsp - 997]
-    mov r13, 1
-    mov r12, 237
-    test r13, r13
-    cmovs rbp, r12
-    js panic_bounds
-    cmp r13, 8
-    cmovge rbp, r12
-    jge panic_bounds
-    shl r13, 6
-    add r14, r13
-    mov r13, 1
-    mov r12, 237
-    test r13, r13
-    cmovs rbp, r12
-    js panic_bounds
-    cmp r13, 8
-    cmovge rbp, r12
-    jge panic_bounds
-    cmp qword [r14 + r13 * 8], 65518
-    sete r15b
-    bool_end_237_12:
-    assert_237_5:
-        if_41_26_237_5:
-        cmp_41_26_237_5:
-        cmp r15b, 0
-        jne if_41_23_237_5_end
-        if_41_26_237_5_code:
-            mov rdi, 1
-            exit_41_32_237_5:
-                    mov rax, 60
-                syscall
-            exit_41_32_237_5_end:
-        if_41_23_237_5_end:
-    assert_237_5_end:
-    mov rcx, 8
-    lea r15, [rsp - 997]
-    mov r14, 1
-    mov r13, 240
-    test r14, r14
-    cmovs rbp, r13
-    js panic_bounds
-    cmp r14, 8
-    cmovge rbp, r13
-    jge panic_bounds
-    shl r14, 6
-    add r15, r14
-    mov r14, 240
-    test rcx, rcx
-    cmovs rbp, r14
-    js panic_bounds
-    cmp rcx, 8
-    cmovg rbp, r14
-    jg panic_bounds
-    lea rsi, [r15]
-    lea r15, [rsp - 997]
-    mov r14, 0
-    mov r13, 241
-    test r14, r14
-    cmovs rbp, r13
-    js panic_bounds
-    cmp r14, 8
-    cmovge rbp, r13
-    jge panic_bounds
-    shl r14, 6
-    add r15, r14
-    mov r14, 241
-    test rcx, rcx
-    cmovs rbp, r14
-    js panic_bounds
-    cmp rcx, 8
-    cmovg rbp, r14
-    jg panic_bounds
-    lea rdi, [r15]
-    shl rcx, 3
-    rep movsb
-    cmp_247_12:
-    lea r14, [rsp - 997]
-    mov r13, 0
-    mov r12, 247
-    test r13, r13
-    cmovs rbp, r12
-    js panic_bounds
-    cmp r13, 8
-    cmovge rbp, r12
-    jge panic_bounds
-    shl r13, 6
-    add r14, r13
-    mov r13, 1
-    mov r12, 247
-    test r13, r13
-    cmovs rbp, r12
-    js panic_bounds
-    cmp r13, 8
-    cmovge rbp, r12
-    jge panic_bounds
-    cmp qword [r14 + r13 * 8], 65518
-    sete r15b
-    bool_end_247_12:
-    assert_247_5:
-        if_41_26_247_5:
-        cmp_41_26_247_5:
-        cmp r15b, 0
-        jne if_41_23_247_5_end
-        if_41_26_247_5_code:
-            mov rdi, 1
-            exit_41_32_247_5:
-                    mov rax, 60
-                syscall
-            exit_41_32_247_5_end:
-        if_41_23_247_5_end:
-    assert_247_5_end:
     cmp_248_12:
-        mov rcx, 8
-        lea r13, [rsp - 997]
-        mov r12, 0
-        mov r11, 249
-        test r12, r12
-        cmovs rbp, r11
-        js panic_bounds
-        cmp r12, 8
-        cmovge rbp, r11
-        jge panic_bounds
-        shl r12, 6
-        add r13, r12
-        mov r12, 249
-        test rcx, rcx
-        cmovs rbp, r12
-        js panic_bounds
-        cmp rcx, 8
-        cmovg rbp, r12
-        jg panic_bounds
-        lea rsi, [r13]
-        lea r13, [rsp - 997]
-        mov r12, 1
-        mov r11, 250
-        test r12, r12
-        cmovs rbp, r11
-        js panic_bounds
-        cmp r12, 8
-        cmovge rbp, r11
-        jge panic_bounds
-        shl r12, 6
-        add r13, r12
-        mov r12, 250
-        test rcx, rcx
-        cmovs rbp, r12
-        js panic_bounds
-        cmp rcx, 8
-        cmovg rbp, r12
-        jg panic_bounds
-        lea rdi, [r13]
-        shl rcx, 3
-        repe cmpsb
-        sete r14b
-    cmp r14, 0
-    setne r15b
+    lea r14, [rsp - 1013]
+    mov r13, 1
+    mov r12, 248
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+    shl r13, 6
+    add r14, r13
+    mov r13, 1
+    mov r12, 248
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+    cmp qword [r14 + r13 * 8], 65518
+    sete r15b
     bool_end_248_12:
     assert_248_5:
         if_41_26_248_5:
@@ -1081,169 +1015,305 @@ main:
             exit_41_32_248_5_end:
         if_41_23_248_5_end:
     assert_248_5_end:
-    mov qword [rsp - 1013], -1
-    mov qword [rsp - 1005], 2
-    cmp_255_12:
+    mov rcx, 8
+    lea r15, [rsp - 1013]
+    mov r14, 1
+    mov r13, 251
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 8
+    cmovge rbp, r13
+    jge panic_bounds
+    shl r14, 6
+    add r15, r14
+    mov r14, 251
+    test rcx, rcx
+    cmovs rbp, r14
+    js panic_bounds
+    cmp rcx, 8
+    cmovg rbp, r14
+    jg panic_bounds
+    lea rsi, [r15]
+    lea r15, [rsp - 1013]
+    mov r14, 0
+    mov r13, 252
+    test r14, r14
+    cmovs rbp, r13
+    js panic_bounds
+    cmp r14, 8
+    cmovge rbp, r13
+    jge panic_bounds
+    shl r14, 6
+    add r15, r14
+    mov r14, 252
+    test rcx, rcx
+    cmovs rbp, r14
+    js panic_bounds
+    cmp rcx, 8
+    cmovg rbp, r14
+    jg panic_bounds
+    lea rdi, [r15]
+    shl rcx, 3
+    rep movsb
+    cmp_258_12:
+    lea r14, [rsp - 1013]
+    mov r13, 0
+    mov r12, 258
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+    shl r13, 6
+    add r14, r13
+    mov r13, 1
+    mov r12, 258
+    test r13, r13
+    cmovs rbp, r12
+    js panic_bounds
+    cmp r13, 8
+    cmovge rbp, r12
+    jge panic_bounds
+    cmp qword [r14 + r13 * 8], 65518
+    sete r15b
+    bool_end_258_12:
+    assert_258_5:
+        if_41_26_258_5:
+        cmp_41_26_258_5:
+        cmp r15b, 0
+        jne if_41_23_258_5_end
+        if_41_26_258_5_code:
+            mov rdi, 1
+            exit_41_32_258_5:
+                    mov rax, 60
+                syscall
+            exit_41_32_258_5_end:
+        if_41_23_258_5_end:
+    assert_258_5_end:
+    cmp_259_12:
+        mov rcx, 8
+        lea r13, [rsp - 1013]
+        mov r12, 0
+        mov r11, 260
+        test r12, r12
+        cmovs rbp, r11
+        js panic_bounds
+        cmp r12, 8
+        cmovge rbp, r11
+        jge panic_bounds
+        shl r12, 6
+        add r13, r12
+        mov r12, 260
+        test rcx, rcx
+        cmovs rbp, r12
+        js panic_bounds
+        cmp rcx, 8
+        cmovg rbp, r12
+        jg panic_bounds
+        lea rsi, [r13]
+        lea r13, [rsp - 1013]
+        mov r12, 1
+        mov r11, 261
+        test r12, r12
+        cmovs rbp, r11
+        js panic_bounds
+        cmp r12, 8
+        cmovge rbp, r11
+        jge panic_bounds
+        shl r12, 6
+        add r13, r12
+        mov r12, 261
+        test rcx, rcx
+        cmovs rbp, r12
+        js panic_bounds
+        cmp rcx, 8
+        cmovg rbp, r12
+        jg panic_bounds
+        lea rdi, [r13]
+        shl rcx, 3
+        repe cmpsb
+        sete r14b
+    cmp r14, 0
+    setne r15b
+    bool_end_259_12:
+    assert_259_5:
+        if_41_26_259_5:
+        cmp_41_26_259_5:
+        cmp r15b, 0
+        jne if_41_23_259_5_end
+        if_41_26_259_5_code:
+            mov rdi, 1
+            exit_41_32_259_5:
+                    mov rax, 60
+                syscall
+            exit_41_32_259_5_end:
+        if_41_23_259_5_end:
+    assert_259_5_end:
+    mov qword [rsp - 1029], -1
+    mov qword [rsp - 1021], 2
+    cmp_266_12:
         mov r14, 2
     cmp r14, 2
     sete r15b
-    bool_end_255_12:
-    assert_255_5:
-        if_41_26_255_5:
-        cmp_41_26_255_5:
+    bool_end_266_12:
+    assert_266_5:
+        if_41_26_266_5:
+        cmp_41_26_266_5:
         cmp r15b, 0
-        jne if_41_23_255_5_end
-        if_41_26_255_5_code:
+        jne if_41_23_266_5_end
+        if_41_26_266_5_code:
             mov rdi, 1
-            exit_41_32_255_5:
+            exit_41_32_266_5:
                     mov rax, 60
                 syscall
-            exit_41_32_255_5_end:
-        if_41_23_255_5_end:
-    assert_255_5_end:
-    cmp_256_12:
+            exit_41_32_266_5_end:
+        if_41_23_266_5_end:
+    assert_266_5_end:
+    cmp_267_12:
     mov r14, 0
-    mov r13, 256
+    mov r13, 267
     test r14, r14
     cmovs rbp, r13
     js panic_bounds
     cmp r14, 2
     cmovge rbp, r13
     jge panic_bounds
-    cmp qword [rsp + r14 * 8 - 1013], -1
+    cmp qword [rsp + r14 * 8 - 1029], -1
     sete r15b
-    bool_end_256_12:
-    assert_256_5:
-        if_41_26_256_5:
-        cmp_41_26_256_5:
+    bool_end_267_12:
+    assert_267_5:
+        if_41_26_267_5:
+        cmp_41_26_267_5:
         cmp r15b, 0
-        jne if_41_23_256_5_end
-        if_41_26_256_5_code:
+        jne if_41_23_267_5_end
+        if_41_26_267_5_code:
             mov rdi, 1
-            exit_41_32_256_5:
+            exit_41_32_267_5:
                     mov rax, 60
                 syscall
-            exit_41_32_256_5_end:
-        if_41_23_256_5_end:
-    assert_256_5_end:
-    cmp_257_12:
+            exit_41_32_267_5_end:
+        if_41_23_267_5_end:
+    assert_267_5_end:
+    cmp_268_12:
     mov r14, 1
-    mov r13, 257
+    mov r13, 268
     test r14, r14
     cmovs rbp, r13
     js panic_bounds
     cmp r14, 2
     cmovge rbp, r13
     jge panic_bounds
-    cmp qword [rsp + r14 * 8 - 1013], 2
+    cmp qword [rsp + r14 * 8 - 1029], 2
     sete r15b
-    bool_end_257_12:
-    assert_257_5:
-        if_41_26_257_5:
-        cmp_41_26_257_5:
+    bool_end_268_12:
+    assert_268_5:
+        if_41_26_268_5:
+        cmp_41_26_268_5:
         cmp r15b, 0
-        jne if_41_23_257_5_end
-        if_41_26_257_5_code:
+        jne if_41_23_268_5_end
+        if_41_26_268_5_code:
             mov rdi, 1
-            exit_41_32_257_5:
+            exit_41_32_268_5:
                     mov rax, 60
                 syscall
-            exit_41_32_257_5_end:
-        if_41_23_257_5_end:
-    assert_257_5_end:
+            exit_41_32_268_5_end:
+        if_41_23_268_5_end:
+    assert_268_5_end:
     xor al, al
-    lea rdi, [rsp - 1141]
+    lea rdi, [rsp - 1157]
     mov rcx, 128
     rep stosb
-    print_260_5:
+    print_271_5:
         mov rdx, 21
         lea rsi, [rsp - 21]
-        sys_print_52_4_260_5:
+        sys_print_52_4_271_5:
                 mov rax, 1
                 mov rdi, 0
             syscall
-        sys_print_52_4_260_5_end:
-    print_260_5_end:
-    loop_261_5:
-        print_262_9:
+        sys_print_52_4_271_5_end:
+    print_271_5_end:
+    loop_272_5:
+        print_273_9:
             mov rdx, 12
             lea rsi, [rsp - 33]
-            sys_print_52_4_262_9:
+            sys_print_52_4_273_9:
                     mov rax, 1
                     mov rdi, 0
                 syscall
-            sys_print_52_4_262_9_end:
-        print_262_9_end:
-        str_in_263_9:
+            sys_print_52_4_273_9_end:
+        print_273_9_end:
+        str_in_274_9:
                 mov rax, 0
                 mov rdi, 0
-                lea rsi, [rsp - 1140]
+                lea rsi, [rsp - 1156]
                 mov rdx, 127
             syscall
-                mov byte [rsp - 1141], al
-                sub byte [rsp - 1141], 1
-        str_in_263_9_end:
-        if_264_12:
-        cmp_264_12:
-        cmp byte [rsp - 1141], 0
-        jne if_266_19
-        if_264_12_code:
-            jmp loop_261_5_end
-        jmp if_264_9_end
-        if_266_19:
-        cmp_266_19:
-        cmp byte [rsp - 1141], 4
-        jg if_else_264_9
-        if_266_19_code:
-            print_267_13:
+                mov byte [rsp - 1157], al
+                sub byte [rsp - 1157], 1
+        str_in_274_9_end:
+        if_275_12:
+        cmp_275_12:
+        cmp byte [rsp - 1157], 0
+        jne if_277_19
+        if_275_12_code:
+            jmp loop_272_5_end
+        jmp if_275_9_end
+        if_277_19:
+        cmp_277_19:
+        cmp byte [rsp - 1157], 4
+        jg if_else_275_9
+        if_277_19_code:
+            print_278_13:
                 mov rdx, 20
                 lea rsi, [rsp - 53]
-                sys_print_52_4_267_13:
+                sys_print_52_4_278_13:
                         mov rax, 1
                         mov rdi, 0
                     syscall
-                sys_print_52_4_267_13_end:
-            print_267_13_end:
-            jmp loop_261_5
-        jmp if_264_9_end
-        if_else_264_9:
-            print_270_13:
+                sys_print_52_4_278_13_end:
+            print_278_13_end:
+            jmp loop_272_5
+        jmp if_275_9_end
+        if_else_275_9:
+            print_281_13:
                 mov rdx, 6
                 lea rsi, [rsp - 59]
-                sys_print_52_4_270_13:
+                sys_print_52_4_281_13:
                         mov rax, 1
                         mov rdi, 0
                     syscall
-                sys_print_52_4_270_13_end:
-            print_270_13_end:
-            str_out_271_13:
+                sys_print_52_4_281_13_end:
+            print_281_13_end:
+            str_out_282_13:
                     mov rax, 1
                     mov rdi, 0
-                    lea rsi, [rsp - 1140]
-                    movsx rdx, byte [rsp - 1141]
+                    lea rsi, [rsp - 1156]
+                    movsx rdx, byte [rsp - 1157]
                 syscall
-            str_out_271_13_end:
-            print_272_13:
+            str_out_282_13_end:
+            print_283_13:
                 mov rdx, 1
                 lea rsi, [rsp - 60]
-                sys_print_52_4_272_13:
+                sys_print_52_4_283_13:
                         mov rax, 1
                         mov rdi, 0
                     syscall
-                sys_print_52_4_272_13_end:
-            print_272_13_end:
-            print_273_13:
+                sys_print_52_4_283_13_end:
+            print_283_13_end:
+            print_284_13:
                 mov rdx, 1
                 lea rsi, [rsp - 61]
-                sys_print_52_4_273_13:
+                sys_print_52_4_284_13:
                         mov rax, 1
                         mov rdi, 0
                     syscall
-                sys_print_52_4_273_13_end:
-            print_273_13_end:
-        if_264_9_end:
-    jmp loop_261_5
-    loop_261_5_end:
+                sys_print_52_4_284_13_end:
+            print_284_13_end:
+        if_275_9_end:
+    jmp loop_272_5
+    loop_272_5_end:
     mov rax, 60
     mov rdi, 0
     syscall

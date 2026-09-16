@@ -170,6 +170,17 @@ func main() {
     faz(arr)
     assert(arr[1] == 0xfe)
 
+    var arr3 : i64[2] = { 3, 5 }
+    foo arr3 {
+        e = e + i + n
+    }
+    assert(arr3[0] == 3 + 0 + 2)
+    assert(arr3[1] == 5 + 1 + 2)
+    # `foo` is a language that iterates over an array injecting:
+    #   `e` current element
+    #   `i` index starting at 0
+    #   `n` constant array size
+
     var p : point = {0, 0}
     fooz(p)
     assert(p.x == 2)
