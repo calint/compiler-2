@@ -180,7 +180,6 @@ func main() {
     #   `e` current element
     #   `i` index starting at 0
     #   `n` constant array size
-    # note: bypasses bounds checking
 
     var p : point = {0, 0}
     fooz(p)
