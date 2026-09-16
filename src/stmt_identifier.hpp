@@ -303,41 +303,20 @@ class stmt_identifier : public statement {
                                             base_info.operand.base_register);
                     }
 
-                    const int32_t offset{
-                        (reg_offset == "rsp")
-                            ? -(base_info.stack_ix + accum_offset)
-                            : accum_offset};
-                    const char op{(reg_offset == "rsp") ? '-' : '+'};
+                    const bool is_rsp{reg_offset == "rsp"};
 
-                    // make nice output with unnecessary assembler such as *
-                    // 1
-                    // + 0 etc
-                    if (type_size == 1) {
-                        if (offset != 0) {
-                            operand oper;
-                            oper.base_register = reg_offset;
-                            oper.index_register = reg_idx;
-                            oper.displacement = op == '-' ? -offset : offset;
-                            return oper;
-                        }
-                        operand oper;
-                        oper.base_register = reg_offset;
-                        oper.index_register = reg_idx;
-                        return oper;
-                    }
-                    if (offset != 0) {
-                        operand oper;
-                        oper.base_register = reg_offset;
-                        oper.index_register = reg_idx;
-                        oper.scale = static_cast<uint8_t>(type_size);
-                        oper.displacement = op == '-' ? -offset : offset;
-                        return oper;
-                    }
+                    // offsets depends on if base register is rsp
+                    const int32_t offset{
+                        is_rsp ? -(base_info.stack_ix + accum_offset)
+                               : accum_offset};
 
                     operand oper;
                     oper.base_register = reg_offset;
                     oper.index_register = reg_idx;
-                    oper.scale = static_cast<uint8_t>(type_size);
+                    if (type_size != 1) {
+                        oper.scale = static_cast<uint8_t>(type_size);
+                    }
+                    oper.displacement = is_rsp ? -offset : offset;
                     return oper;
                 }
             }
