@@ -1,2 +1,2 @@
 
-t385.baz:5:1: expected '{' to begin a value of type 'i8'
+t385.baz:4:25: strings not supported here

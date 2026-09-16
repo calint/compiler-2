@@ -4,6 +4,7 @@ SRC=t3 && EXP=7 && RUN
 SRC=t4 && EXP=0 && RUN
 SRC=t5 && EXP=0 && RUN
 SRC=t6 && EXP=0 && RUN
+SRC=t434 && EXP=0 && RUN
 SRC=t7 && EXP=0 && RUN
 SRC=t8 && EXP=0 && RUN
 SRC=t9 && EXP=0 && RUN
@@ -400,3 +401,5 @@ SRC=t429 && EXP=0 && RUN
 SRC=t430 && EXP=0 && RUN
 SRC=t431 && EXP=0 && RUN
 SRC=t432 && EXP=0 && RUN
+SRC=t433 && EXP=0 && RUN
+SRC=t434 && EXP=0 && RUN

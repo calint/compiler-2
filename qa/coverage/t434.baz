@@ -1,0 +1,18 @@
+# array variable assignment
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(x : bool) if not x exit(1)
+
+func main() {
+    var source : i64[3] = { 10, 20, 30 }
+    var destination : i64[3]
+    destination = source
+    assert(destination[0] == 10)
+    assert(destination[1] == 20)
+    assert(destination[2] == 30)
+}

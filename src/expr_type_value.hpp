@@ -11,9 +11,6 @@
 #include "statement.hpp"
 #include "toc.hpp"
 
-class stmt_identifier;
-class stmt_call;
-
 class expr_type_value final : public statement {
     std::shared_ptr<stmt_identifier> stmt_ident_;
     std::shared_ptr<stmt_call> stmt_call_;

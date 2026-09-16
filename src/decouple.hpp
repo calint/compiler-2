@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <format>
 #include <memory>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -22,6 +23,7 @@ class toc;
 class tokenizer;
 class statement;
 class stmt_identifier;
+class stmt_call;
 class stmt_block;
 class type;
 class expr_any;
@@ -335,3 +337,26 @@ struct ident_info {
                                     const stmt_identifier& si,
                                     token open_paren_tk)
     -> std::unique_ptr<statement>;
+
+// either 'ident' or 'call' is set, never both; result of parsing a source
+// that must be either an identifier or a function call, e.g. 'p = pt' or
+// 'p = f()'. shared by 'expr_type_value' and 'expr_array_assign' since
+// neither cares whether the expected type is a user type or a built-in
+// array.
+struct ident_or_call_parts {
+    std::shared_ptr<stmt_identifier> ident;
+    std::shared_ptr<stmt_call> call;
+};
+
+// parses either an identifier or a function call starting at 'tk', and
+// validates its type matches 'tp'
+[[nodiscard]] auto parse_ident_or_call(toc& tc, token tk, tokenizer& tz,
+                                       const type& tp) -> ident_or_call_parts;
+
+// copies the identifier referred to by 'self' (via its 'identifier()',
+// 'is_indexed()' and 'compile_lea()') into 'dst_op', advancing it by the
+// number of bytes copied. only valid when 'self' represents an identifier,
+// not a call.
+auto copy_ident_bytes(toc& tc, std::ostream& os, size_t indent,
+                      const statement& self, const type& dst_type,
+                      operand& dst_op) -> void;

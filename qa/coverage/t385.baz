@@ -1,4 +1,4 @@
-# empty string is not a valid var initializer
+# assign string to array variable
 
 func main() {
     var value : i8[8] = ""

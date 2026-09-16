@@ -16,6 +16,7 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
+#include "expr_array_assign.hpp"
 #include "expr_type_value.hpp"
 #include "stmt_builtin_address_of.hpp"
 #include "stmt_builtin_array_size_of.hpp"
@@ -115,6 +116,74 @@
     return std::make_unique<stmt_identifier>(tc, std::move(uops), tk, tz);
 }
 
+// declared in 'decouple.hpp'
+// shared by 'expr_type_value' and 'expr_array_assign'
+[[nodiscard]] auto parse_ident_or_call(toc& tc, token tk, tokenizer& tz,
+                                       const type& tp) -> ident_or_call_parts {
+
+    if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
+        auto call{std::make_shared<stmt_call>(tc, unary_ops{}, tk, t, tz)};
+
+        if (tp.name() != call->get_type().name()) {
+            throw compiler_exception{
+                tk, std::format("expected return type '{}', got '{}'",
+                                tp.name(), call->get_type().name())};
+        }
+
+        return {.ident{}, .call{std::move(call)}};
+    }
+
+    auto ident{std::make_shared<stmt_identifier>(tc, unary_ops{}, tk, tz)};
+
+    // check that an identifier type matches the expected type
+    const ident_info src_info{tc.make_ident_info(*ident)};
+
+    if (tp.name() != src_info.type().name()) {
+        // note: checked a source location report ok
+        throw compiler_exception{tk, std::format("expected type '{}', got '{}'",
+                                                 tp.name(),
+                                                 src_info.type().name())};
+    }
+
+    return {.ident{std::move(ident)}, .call{}};
+}
+
+// declared in 'decouple.hpp'
+// shared by 'expr_type_value' and 'expr_array_assign'
+auto copy_ident_bytes(toc& tc, std::ostream& os, size_t indent,
+                      const statement& self, const type& dst_type,
+                      operand& dst_op) -> void {
+
+    const ident_info src_info{tc.make_ident_info(self)};
+
+    // caller validates the source type before entering here
+    assert(dst_type.name() == src_info.type().name());
+
+    std::vector<std::string> allocated_registers;
+    operand src_op;
+    if (self.is_indexed() or src_info.has_lea()) {
+        src_op = self.compile_lea(self.tok(), tc, os, indent,
+                                  allocated_registers, "", src_info.lea_path);
+    } else {
+        src_op = src_info.operand;
+    }
+
+    const size_t nbytes{src_info.is_array
+                            ? src_info.array_size * dst_type.size()
+                            : dst_type.size()};
+
+    // todo: validate dst array size fits src array size
+
+    tc.rep_movs(self.tok(), os, indent, src_op.address_str(),
+                dst_op.address_str(), nbytes);
+
+    dst_op.displacement += static_cast<int32_t>(nbytes);
+
+    for (const std::string& reg : allocated_registers | std::views::reverse) {
+        tc.free_scratch_register(self.tok(), os, indent, reg);
+    }
+}
+
 // declared in 'expr_type_value.hpp'
 // note: constructor is implemented here (rather than in the header) because
 //       it needs the 'expr_any' definition, which would otherwise create a
@@ -124,39 +193,14 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
 
     set_type(tp);
 
-    // is it an identifier?
+    // is it an identifier or a function call?
     // note: token name would be empty at the '{x, y}' type of statement
 
     if (not tok().text().empty()) {
-        // yes, e.g. obj.pos = p
-
-        if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
-            stmt_call_ =
-                std::make_shared<stmt_call>(tc, unary_ops{}, tok(), t, tz);
-
-            if (tp.name() != stmt_call_->get_type().name()) {
-                throw compiler_exception{
-                    tok(),
-                    std::format("expected return type '{}', got '{}'",
-                                tp.name(), stmt_call_->get_type().name())};
-            }
-
-            return;
-        }
-
-        stmt_ident_ =
-            std::make_shared<stmt_identifier>(tc, unary_ops{}, tok(), tz);
-
-        // check that an identifier type matches the expected type
-        const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
-
-        if (tp.name() != src_info.type().name()) {
-            // note: checked a source location report ok
-            throw compiler_exception{
-                tok(), std::format("expected type '{}', got '{}'", tp.name(),
-                                   src_info.type().name())};
-        }
-
+        // yes, e.g. obj.pos = p, or obj.pos = f()
+        ident_or_call_parts parts{parse_ident_or_call(tc, tok(), tz, tp)};
+        stmt_ident_ = std::move(parts.ident);
+        stmt_call_ = std::move(parts.call);
         return;
     }
 
@@ -251,38 +295,9 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                                      const type& dst_type,
                                      operand& dst_op) const -> void {
 
-    // is it e.g. pt1 = pt2?
+    // is it e.g. pt1 = pt2, or pt1 = f()?
     if (is_identifier()) {
-        const ident_info src_info{tc.make_ident_info(*this)};
-
-        // 'expr_type_value' validates the source type before entering here
-        assert(dst_type.name() == src_info.type().name());
-
-        std::vector<std::string> allocated_registers;
-        operand src_op;
-        if (is_indexed() or src_info.has_lea()) {
-            src_op = compile_lea(tok(), tc, os, indent, allocated_registers, "",
-                                 src_info.lea_path);
-        } else {
-            src_op = src_info.operand;
-        }
-
-        const size_t nbytes{src_info.is_array
-                                ? src_info.array_size * dst_type.size()
-                                : dst_type.size()};
-
-        // todo: validate dst array size fits src array size
-
-        tc.rep_movs(tok(), os, indent, src_op.address_str(),
-                    dst_op.address_str(), nbytes);
-
-        dst_op.displacement += static_cast<int32_t>(nbytes);
-
-        for (const std::string& reg :
-             allocated_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), os, indent, reg);
-        }
-
+        copy_ident_bytes(tc, os, indent, *this, dst_type, dst_op);
         return;
     }
 
@@ -440,6 +455,62 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 [[nodiscard]] auto expr_type_value::is_indexed() const -> bool {
     return stmt_ident_ and stmt_ident_->is_indexed();
+}
+
+// declared in 'expr_array_assign.hpp'
+expr_array_assign::expr_array_assign(toc& tc, tokenizer& tz, token tk,
+                                     const type& tp)
+    : statement{tk} {
+
+    set_type(tp);
+
+    ident_or_call_parts parts{parse_ident_or_call(tc, tk, tz, tp)};
+    stmt_ident_ = std::move(parts.ident);
+    stmt_call_ = std::move(parts.call);
+}
+
+// declared in 'expr_array_assign.hpp'
+auto expr_array_assign::source_to(std::ostream& os) const -> void {
+    if (stmt_call_) {
+        stmt_call_->source_to(os);
+        return;
+    }
+    stmt_ident_->source_to(os);
+}
+
+// declared in 'expr_array_assign.hpp'
+auto expr_array_assign::compile(toc& tc, std::ostream& os, size_t indent,
+                                const ident_info& dst_info) const -> void {
+    if (stmt_call_) {
+        stmt_call_->compile(tc, os, indent, dst_info);
+        return;
+    }
+
+    operand op{dst_info.operand};
+    copy_ident_bytes(tc, os, indent, *this, dst_info.type(), op);
+}
+
+// declared in 'expr_array_assign.hpp'
+[[nodiscard]] auto expr_array_assign::is_indexed() const -> bool {
+    return stmt_ident_ and stmt_ident_->is_indexed();
+}
+
+// declared in 'expr_array_assign.hpp'
+[[nodiscard]] auto expr_array_assign::identifier() const -> std::string_view {
+    if (stmt_ident_) {
+        return stmt_ident_->identifier();
+    }
+    return statement::identifier();
+}
+
+// declared in 'expr_array_assign.hpp'
+[[nodiscard]] auto expr_array_assign::compile_lea(
+    const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
+    std::vector<std::string>& allocated_registers, const std::string& reg_size,
+    const std::span<const std::string> lea_path) const -> operand {
+
+    return stmt_ident_->compile_lea(src_loc_tk, tc, os, indent,
+                                    allocated_registers, reg_size, lea_path);
 }
 
 // declared in 'unary_ops.hpp'
