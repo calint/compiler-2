@@ -3,11 +3,15 @@
 --------------------------------------------------------------------------------
 [o] ponder an iterator of elements in array that does not require bounds
     checking on each element:
-[o] foo(arr) {
+[x] foo(arr) {
       # injected variable 'e': current array element
       e = 0
     }
-[ ] fooi(arr) {
+    => injects variable 'i' for loop index and constant 'n' for array size
+[x] uses 2 register, make the counter a regular variable on the stack to only
+    use register for the iterator
+    => 1 register for iterator and a regular stack variable for counter
+[-] fooi(arr) {
       # injected variables: 'e', 'i': counter
       e = i
     }
@@ -15,7 +19,8 @@
       # injected variables: 'e', 'i', injected const 'n': array size
       e = 0
     }
-    foo(arr1, arr2, ...) {
+    => foo(arr) injects both counter and array size as constant
+[ ] foo(arr1, arr2, ...) {
       # injected variable 'e1', 'e2', 'e...': current array elements
       e1 = e2
     }

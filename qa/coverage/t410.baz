@@ -11,16 +11,13 @@ func exit(v : reg_rdi) {
 func assert(x : bool) if not x exit(1)
 
 func main() {
-    var i
     foo(data) {
         assert(n == 5)
-        i = i + 1
-        if(i == 3) continue
-        if(i == 5) break
+        if(i == 2) continue
+        if(i == 4) break
         e = e + n
     }
 
-    assert(i == 5)
     assert(data[0] == 4)
     assert(data[1] == 6)
     assert(data[2] == 3)
