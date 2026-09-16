@@ -400,14 +400,8 @@ class stmt_identifier : public statement {
             return oper;
         }
 
-        if (accum_offset != 0) {
-            operand oper{reg_offset};
-            oper.displacement += accum_offset;
-            return oper;
-        }
-
-        operand oper;
-        oper.base_register = reg_offset;
+        operand oper{reg_offset};
+        oper.displacement += accum_offset;
         return oper;
     }
 
