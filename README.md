@@ -19,7 +19,7 @@ x86_64 assembly on Linux.
 * variables
 * constants
 * arrays
-* iteration over array
+* array iteration
 * optional bounds checking at runtime
   * optional line number
 * inlined functions
