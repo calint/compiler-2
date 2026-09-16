@@ -1,25 +1,6 @@
 --------------------------------------------------------------------------------
 [ ] open    [o] ongoing    [x] done    [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[o] ponder an iterator of elements in array that does not require bounds
-    checking on each element:
-[x] foo(arr) {
-      # injected variable 'e': current array element
-      e = 0
-    }
-    => injects variable 'i' for loop index and constant 'n' for array size
-[x] uses 2 register, make the counter a regular variable on the stack to only
-    use register for the iterator
-    => 1 register for iterator and a regular stack variable for counter
-[-] fooi(arr) {
-      # injected variables: 'e', 'i': counter
-      e = i
-    }
-    fooin(arr) {
-      # injected variables: 'e', 'i', injected const 'n': array size
-      e = 0
-    }
-    => foo(arr) injects both counter and array size as constant
 [ ] a ways to specify a range in the array: foo(arr, bgn, len)
 [ ] foo(arr1, arr2, ...) {
       # injected variable 'e1', 'e2', 'e...': current array elements
@@ -146,6 +127,25 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] ponder an iterator of elements in array that does not require bounds
+    checking on each element:
+[x] foo(arr) {
+      # injected variable 'e': current array element
+      e = 0
+    }
+    => injects variable 'i' for loop index and constant 'n' for array size
+[x] uses 2 register, make the counter a regular variable on the stack to only
+    use register for the iterator
+    => 1 register for iterator and a regular stack variable for counter
+[-] fooi(arr) {
+      # injected variables: 'e', 'i': counter
+      e = i
+    }
+    fooin(arr) {
+      # injected variables: 'e', 'i', injected const 'n': array size
+      e = 0
+    }
+    => foo(arr) injects both counter and array size as constant
 [x] const should be allowed on top level and in scoped blocks
 [x] consider allowing globals by inserting a base frame and when looking for
     vars or consts traverse to first frame
