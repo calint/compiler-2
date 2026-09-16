@@ -1,0 +1,35 @@
+# foo passes a user type field to a mutating function
+
+type point { x, y }
+type item { data : point }
+
+dat values : item[3] =
+    {
+        { {1, 2} },
+        { {3, 4} },
+        { {5, 6} }
+    }
+
+func increment(value : point) {
+    value.y = value.y + 10
+}
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(x : bool) if not x exit(1)
+
+func main() {
+    foo values {
+        increment(e.data)
+    }
+    assert(values[0].data.x == 1)
+    assert(values[0].data.y == 12)
+    assert(values[1].data.x == 3)
+    assert(values[1].data.y == 14)
+    assert(values[2].data.x == 5)
+    assert(values[2].data.y == 16)
+}
