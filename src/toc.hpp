@@ -1710,6 +1710,13 @@ class toc final {
         std::println(os, "add {}, {}", dst, src);
     }
 
+    static auto asm_inc(std::ostream& os, const size_t indnt,
+                        const std::string_view dst) -> void {
+
+        indent(os, indnt);
+        std::println(os, "inc {}", dst);
+    }
+
     static auto asm_cmp(std::ostream& os, const size_t indnt,
                         const std::string_view dst, const std::string_view src)
         -> void {

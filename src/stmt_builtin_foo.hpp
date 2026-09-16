@@ -106,7 +106,7 @@ class stmt_builtin_foo final : public statement {
 
         tc.add_var(tok(), os, indent, var_i, false);
 
-        ident_info var_i_info{tc.make_ident_info(tok(), "i")};
+        const ident_info var_i_info{tc.make_ident_info(tok(), "i")};
 
         const std::string& var_i_addr_op{
             var_i_info.operand.str(toc::size_qword)};
@@ -139,7 +139,7 @@ class stmt_builtin_foo final : public statement {
         toc::asm_label(os, indent + 1, loop_label + "_continue");
         toc::asm_add(os, indent + 2, reg_iter,
                      std::format("{}", ii.type().size()));
-        toc::asm_add(os, indent + 2, var_i_addr_op, "1");
+        toc::asm_inc(os, indent + 2, var_i_addr_op);
         toc::asm_cmp(os, indent + 2, var_i_addr_op,
                      std::format("{}", ii.array_size));
         toc::asm_jne(os, indent + 2, loop_label);
