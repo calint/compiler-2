@@ -1,0 +1,24 @@
+# local array initializes an array of types with array fields
+
+type point { x, y }
+type holder { points : point[2] }
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(x : bool) if not x exit(1)
+
+func main() {
+    var local_points : point[2] = { {1, 2}, {3, 4} }
+    var holders : holder[2] = { { local_points }, { local_points } }
+
+    assert(holders[0].points[0].x == 1)
+    assert(holders[0].points[0].y == 2)
+    assert(holders[0].points[1].x == 3)
+    assert(holders[0].points[1].y == 4)
+    assert(holders[1].points[0].x == 1)
+    assert(holders[1].points[1].y == 4)
+}
