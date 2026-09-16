@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <format>
 #include <memory>
 #include <optional>
@@ -393,15 +394,15 @@ class stmt_identifier : public statement {
                                          base_info.operand.base_register);
         }
 
-        if (reg_offset == "rsp") {
-            operand oper;
-            oper.base_register = "rsp";
-            oper.displacement = base_info.stack_ix + accum_offset;
-            return oper;
-        }
-
+        // note: 'reg_offset' might be e.g. "rsp + r15 * 8 + 16" so it needs to
+        // be parsed
         operand oper{reg_offset};
         oper.displacement += accum_offset;
+        if (reg_offset == "rsp") {
+            // case when the register has not been encoded optimizing addressing
+            // for last element indexing of types with size 1, 2, 4, 8
+            oper.displacement += base_info.stack_ix;
+        }
         return oper;
     }
 
