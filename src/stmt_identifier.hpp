@@ -282,9 +282,8 @@ class stmt_identifier : public statement {
                         src_loc_tk, os, indent, tc.get_type_default())};
                     allocated_registers.push_back(reg_idx);
 
-                    x86::comment_start(tc, curr_elem.array_index_expr->tok(),
-                                       os, indent);
-                    std::println(os, "set array index");
+                    x86::comment_line(tc, curr_elem.array_index_expr->tok(), os,
+                                      indent, "set array index");
 
                     curr_elem.array_index_expr->compile(
                         tc, os, indent,
@@ -348,9 +347,8 @@ class stmt_identifier : public statement {
             const std::string reg_idx{tc.alloc_scratch_register(
                 src_loc_tk, os, indent, tc.get_type_default())};
 
-            x86::comment_start(tc, curr_elem.array_index_expr->tok(), os,
-                               indent);
-            std::println(os, "set array index");
+            x86::comment_line(tc, curr_elem.array_index_expr->tok(), os, indent,
+                              "set array index");
 
             curr_elem.array_index_expr->compile(
                 tc, os, indent, tc.make_ident_info_for_register(reg_idx));
@@ -430,16 +428,14 @@ class stmt_identifier : public statement {
             return;
         }
 
-        x86::comment_start(tc, tk, os, indent);
-        std::println(os, "bounds check");
+        x86::comment_line(tc, tk, os, indent, "bounds check");
 
         // Allocate line number register once if needed
         std::string reg_line_num;
         if (tc.is_bounds_check_with_line()) {
             reg_line_num = tc.alloc_scratch_register(tk, os, indent,
                                                      tc.get_type_default());
-            x86::comment_start(tc, tk, os, indent);
-            std::println(os, "line number");
+            x86::comment_line(tc, tk, os, indent, "line number");
             x86::mov(tc, tk, os, indent, reg_line_num,
                      std::to_string(tk.at_line()));
         }

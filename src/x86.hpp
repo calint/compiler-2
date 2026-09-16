@@ -36,6 +36,15 @@ class x86 final {
     static auto comment_token(const toc& tc, const token& token,
                               std::ostream& os, size_t indent) -> void;
 
+    template <typename... args_t>
+    static auto comment_line(const toc& tc, const token& source_location,
+                             std::ostream& os, const size_t indent,
+                             const std::format_string<args_t...> format,
+                             args_t&&... args) -> void {
+        comment_start(tc, source_location, os, indent);
+        std::println(os, format, std::forward<args_t>(args)...);
+    }
+
     static auto comment_indent(std::ostream& os, const size_t indent) -> void {
         std::print(os, ";");
         if (indent != 0) {
@@ -44,6 +53,19 @@ class x86 final {
         for (size_t index{1}; index < indent; ++index) {
             std::print(os, "    ");
         }
+    }
+
+    template <typename... args_t>
+    static auto comment(std::ostream& os,
+                        const std::format_string<args_t...> format,
+                        args_t&&... args) -> void {
+        std::print(os, "; ");
+        std::println(os, format, std::forward<args_t>(args)...);
+    }
+
+    static auto emit_buffer(std::ostream& os, const std::string_view text)
+        -> void {
+        std::print(os, "{}", text);
     }
 
     template <typename... args_t>
@@ -210,10 +232,64 @@ class x86 final {
         asm_line(tc, os, indent, "syscall");
     }
 
+    static auto dat_begin(std::ostream& os, const size_t size) -> void {
+        switch (size) {
+        case size_qword:
+            std::print(os, "dq ");
+            return;
+        case size_dword:
+            std::print(os, "dd ");
+            return;
+        case size_word:
+            std::print(os, "dw ");
+            return;
+        case size_byte:
+            std::print(os, "db ");
+            return;
+        default:
+            std::unreachable();
+        }
+    }
+
+    static auto dat_separator(std::ostream& os) -> void {
+        std::print(os, ", ");
+    }
+
+    static auto dat_end(std::ostream& os) -> void { std::println(os); }
+
+    static auto dat_value(std::ostream& os, const std::string_view value)
+        -> void {
+        std::print(os, "{}", value);
+    }
+
+    static auto str_begin(std::ostream& os) -> void { std::print(os, "db `"); }
+
+    static auto str_end(std::ostream& os) -> void { std::println(os, "`"); }
+
+    static auto str_value(std::ostream& os, const std::string_view value)
+        -> void {
+        size_t position{};
+        while (position < value.size()) {
+            const size_t next{value.find('`', position)};
+            if (next == std::string_view::npos) {
+                dat_value(os, value.substr(position));
+                return;
+            }
+            std::print(os, "{}\\`", value.substr(position, next - position));
+            position = next + 1;
+        }
+    }
+
     static auto test(toc& tc, std::ostream& os, const size_t indent,
                      const std::string_view dst, const std::string_view src)
         -> void {
         asm_line(tc, os, indent, "test {}, {}", dst, src);
+    }
+
+    static auto times(std::ostream& os, const size_t count,
+                      const std::string_view directive,
+                      const std::string_view value) -> void {
+        std::println(os, "times {} {} {}", count, directive, value);
     }
 
     static auto xor_op(toc& tc, std::ostream& os, const size_t indent,

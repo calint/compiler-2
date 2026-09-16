@@ -33,26 +33,6 @@ class token final {
         std::print(os, "{}\"{}\"{}", ws_left_, text_, ws_right_);
     }
 
-    auto compile_to(std::ostream& os) const -> void {
-        if (not is_str_) {
-            std::print(os, "{}", text_);
-            return;
-        }
-        // NASM encoding of data as string
-        // using backticks for delimiter and escaping them
-        size_t pos{};
-        const size_t len{text_.size()};
-        while (pos < len) {
-            const size_t next{text_.find('`', pos)};
-            if (next == std::string_view::npos) {
-                std::print(os, "{}", text_.substr(pos));
-                break;
-            }
-            std::print(os, "{}\\`", text_.substr(pos, next - pos));
-            pos = next + 1;
-        }
-    }
-
     [[nodiscard]] auto is_text(std::string_view s) const -> bool {
         return text_ == s;
     }

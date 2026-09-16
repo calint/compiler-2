@@ -295,9 +295,9 @@ class expr_ops_list final : public expression {
 
         // select the version with the fewest instructions
         if (ss1_count <= ss2_count) {
-            std::print(os, "{}", ss1.str());
+            x86::emit_buffer(os, ss1.str());
         } else {
-            std::print(os, "{}", ss2.str());
+            x86::emit_buffer(os, ss2.str());
         }
     }
 

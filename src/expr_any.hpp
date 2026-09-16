@@ -122,8 +122,7 @@ class expr_any final : public statement {
         ident_info ii{dst_info};
 
         for (const auto [i, el] : std::views::enumerate(vars_)) {
-            x86::comment_start(tc, tok(), os, indent);
-            std::println(os, "[{}]", i);
+            x86::comment_line(tc, tok(), os, indent, "[{}]", i);
             compile_variant(tc, os, indent, ii, tok(), el);
             ii.operand.displacement += static_cast<int32_t>(ii.type().size());
         }
@@ -135,9 +134,9 @@ class expr_any final : public statement {
 
         const size_t nbytes{diff * ii.type().size()};
 
-        x86::comment_start(tc, tok(), os, indent);
-        std::println(os, "zero remaining elements: {} * {} B = {} B", diff,
-                     ii.type().size(), nbytes);
+        x86::comment_line(tc, tok(), os, indent,
+                          "zero remaining elements: {} * {} B = {} B", diff,
+                          ii.type().size(), nbytes);
         x86::zero(tc, tok(), os, indent, ii.operand.address_str(), nbytes);
     }
 
