@@ -3,6 +3,8 @@
 --------------------------------------------------------------------------------
 [ ] support variable string initializers
 [ ] resolve issues with comments in expressions etc
+    var x = 1 + # comment
+            2
     dat s : str = { 
         3 # comment 
     }
