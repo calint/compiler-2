@@ -388,3 +388,6 @@ SRC=t411 && EXP=0 && RUN
 SRC=t412 && EXP=0 && RUN
 SRC=t413 && EXP=0 && RUN
 SRC=t414 && EXP=0 && RUN
+SRC=t415 && EXP=0 && RUN
+SRC=t416 && EXP=0 && RUN
+SRC=t417 && EXP=0 && RUN

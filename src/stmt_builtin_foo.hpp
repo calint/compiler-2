@@ -73,7 +73,7 @@ class stmt_builtin_foo final : public statement {
         tc.add_var(tok(), os, indent, e, false);
 
         // load address of referenced array into 'reg_iter'
-        if (ident_.is_indexed()) {
+        if (ii.has_lea() or ident_.is_indexed()) {
             std::vector<std::string> allocated_registers;
 
             const operand op{stmt_identifier::compile_effective_address(
