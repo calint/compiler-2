@@ -41,6 +41,7 @@ class expr_type_value final : public statement {
         // note: if token is empty then it is an expression of a type '{ ... }'
         //       otherwise e.g. 'p = pt'
     }
+
     auto compile(toc& tc, std::ostream& os, size_t indent,
                  const ident_info& dst_info) const -> void override;
 
