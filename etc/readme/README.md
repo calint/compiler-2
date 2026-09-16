@@ -243,7 +243,7 @@ func main() {
     }
     assert(arr3[0] == 3 + 0 + 2)
     assert(arr3[1] == 5 + 1 + 2)
-    # `foo` is a language that iterates over an array injecting:
+    # `foo` is a language construct that iterates over an array injecting:
     #   `e` current element
     #   `i` index starting at 0
     #   `n` constant array size
