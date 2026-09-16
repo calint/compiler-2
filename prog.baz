@@ -170,7 +170,7 @@ func main() {
     faz(arr)
     assert(arr[1] == 0xfe)
 
-    var arr3 : i64[2] = { 3, 5 }
+    var arr3 : i64[] = { 3, 5 }
     foo arr3 {
         e = e + i + n
     }

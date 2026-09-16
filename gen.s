@@ -941,14 +941,14 @@ main:
         if_41_23_171_5_end:
 ;       [171:5] free scratch register 'r15'
     assert_171_5_end:
-;   [173:5] var arr3 : i64[2] = { 3, 5 }
+;   [173:5] var arr3 : i64[] = { 3, 5 }
 ;   [173:9] arr3: i64[2] (16 B @ [rsp - 301])
 ;   [173:9] arr3 = { 3, 5 }
-;   [173:27] [0]
-;   [173:27] 3
+;   [173:26] [0]
+;   [173:26] 3
     mov qword [rsp - 301], 3
-;   [173:27] [1]
-;   [173:30] 5
+;   [173:26] [1]
+;   [173:29] 5
     mov qword [rsp - 293], 5
 ;   [174:5] foo arr3 { e = e + i + n }
 ;   [174:5] allocate scratch register -> r15
