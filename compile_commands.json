@@ -12,7 +12,9 @@
       "-Wno-weak-vtables",
       "-Wno-padded",
       "-Wno-undefined-inline",
-      "-Wno-braced-scalar-init"
+      "-Wno-braced-scalar-init",
+      "-Wno-lifetime-safety-intra-tu-suggestions",
+      "-Wno-lifetime-safety-intra-tu-constructor-suggestions"
     ],
     "directory": "/home/c/w/compiler-2",
     "file": "src/main.cpp"

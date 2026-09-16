@@ -12,6 +12,7 @@
 (var_keyword) @keyword
 (if_keyword) @keyword.conditional
 (loop_keyword) @keyword.repeat
+(foo_keyword) @keyword.repeat
 (else_keyword) @keyword.conditional
 (else_if_keyword) @keyword.conditional
 (break_keyword) @keyword.control
@@ -57,6 +58,7 @@
 (unsized_array_type type: (identifier) @type)
 
 (function_call function: (identifier) @function.call)
+(foo_statement array: (identifier) @variable)
 
 (string_literal) @string
 (number_literal) @number

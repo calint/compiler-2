@@ -19,9 +19,15 @@ class stmt_continue final : public statement {
         tc.comment_source(*this, os, indent);
 
         // get current loop start labels
-        const std::string_view loop_label{tc.get_loop_label_or_throw(tok())};
-        // jump to it
-        toc::asm_jmp(os, indent, loop_label);
+        const std::string_view loop_label{tc.get_looping_label_or_throw(tok())};
+
+        if (tc.is_in_loop_block()) {
+            toc::asm_jmp(os, indent, loop_label);
+            return;
+        }
+
+        // is in foo block
+        toc::asm_jmp(os, indent, std::string{loop_label} + "_continue");
     }
 
     [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {

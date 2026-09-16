@@ -22,8 +22,9 @@ class stmt_break final : public statement {
         tc.comment_source(*this, os, indent);
 
         // get current loop exit label
-        const std::string_view loop_label{tc.get_loop_label_or_throw(tok())};
-        // jump out of the loop
+        const std::string_view loop_label{tc.get_looping_label_or_throw(tok())};
+
+        // jump out of the loop or foo
         toc::asm_jmp(os, indent, std::format("{}_end", loop_label));
     }
 

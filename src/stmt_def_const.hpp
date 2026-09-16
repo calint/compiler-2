@@ -5,6 +5,7 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "null_stream.hpp"
 #include "statement.hpp"
 #include "stmt_const.hpp"
 #include "toc.hpp"
@@ -40,7 +41,8 @@ class stmt_def_const final : public statement {
 
         set_type(tc.get_type_void());
 
-        tc.add_const(name_tk_, name_tk_.text(), const_.value());
+        null_stream os{};
+        tc.add_const(name_tk_, os, 0, name_tk_.text(), const_.value());
     }
 
     stmt_def_const() = default;
@@ -57,6 +59,6 @@ class stmt_def_const final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        tc.add_const(name_tk_, name_tk_.text(), const_.value());
+        tc.add_const(name_tk_, os, indent, name_tk_.text(), const_.value());
     }
 };

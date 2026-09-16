@@ -77,6 +77,9 @@ mov rsp, stk.end
 ;[78:1] # return target is specified as a variable, in this case `res`
 ;[80:1] # return variable is a mutable reference to destination
 ;[90:1] # array arguments are declared with type and []
+;[122:7] const yes = 1
+;[123:7] const no = 0
+;[124:7] const maybe = -1
 ;[126:1] # constants can be declared in any scope and shadow outer declarations
 
 main:
@@ -172,6 +175,7 @@ main:
         if_41_23_137_5_end:
 ;       [137:5] free scratch register 'r15'
     assert_137_5_end:
+;       [140:15] const maybe = 33
 ;       [141:9] assert(maybe == 33)
 ;       [141:16] allocate scratch register -> r15
 ;       [141:16] ? maybe == 33

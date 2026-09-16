@@ -29,13 +29,14 @@ class stmt_builtin_foo final : public statement {
 
         const ident_info ii{tc.make_ident_info(ident_)};
 
-        tc.enter_block();
+        tc.enter_foo("");
         const var_info e{
             .name{"e"}, .type_ptr{&ii.type()}, .declared_at_tk{tok()}, .reg{}};
-        null_stream ns;
-        tc.add_var(tok(), ns, 0, e, false);
+        null_stream os;
+        tc.add_var(tok(), os, 0, e, false);
+        tc.add_const(tok(), os, 0, "n", static_cast<int64_t>(ii.array_size));
         code_ = {tc, tz};
-        tc.exit_block();
+        tc.exit_foo("");
     }
 
     stmt_builtin_foo() = default;
@@ -54,12 +55,7 @@ class stmt_builtin_foo final : public statement {
 
         tc.comment_source(*this, os, indent);
 
-        // make a loop label
-        const std::string_view call_path{tc.get_call_path()};
-        const std::string loop_label{
-            std::format("foo_{}{}", tc.source_location_for_use_in_label(tok()),
-                        (call_path.empty() ? std::string{}
-                                           : std::format("_{}", call_path)))};
+        const std::string loop_label{tc.get_call_path_extend(tok(), "foo")};
         tc.enter_foo(loop_label);
 
         const std::string reg_iter{tc.alloc_scratch_register(
@@ -80,27 +76,22 @@ class stmt_builtin_foo final : public statement {
         toc::asm_lea(os, indent, reg_iter, ii.operand.address_str());
 
         // add a constant for array size
-        tc.add_const(tok(), "n", static_cast<int64_t>(ii.array_size));
+        tc.add_const(tok(), os, indent, "n",
+                     static_cast<int64_t>(ii.array_size));
 
         toc::asm_xor(os, indent, reg_idx, reg_idx);
-
         toc::asm_label(os, indent, loop_label);
-
         code_.compile(tc, os, indent, toc::make_ident_info_empty());
-
+        toc::asm_label(os, indent, loop_label + "_continue");
         toc::asm_add(os, indent, e.reg, std::format("{}", ii.type().size()));
-
         toc::asm_add(os, indent, reg_idx, "1");
-
         toc::asm_cmp(os, indent, reg_idx, std::format("{}", ii.array_size));
-
         toc::asm_jne(os, indent, loop_label);
-
         toc::asm_label(os, indent, loop_label + "_end");
 
         tc.free_scratch_register(tok(), os, indent, reg_idx);
         tc.free_scratch_register(tok(), os, indent, reg_iter);
 
-        tc.exit_foo();
+        tc.exit_foo(loop_label);
     }
 };

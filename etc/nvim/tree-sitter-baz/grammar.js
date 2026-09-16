@@ -42,6 +42,7 @@ module.exports = grammar({
       // Structural Block
       $.block,
       // State Management
+      $.const_definition,
       $.data_declaration,
       $.variable_declaration,
       $.assignment_statement,
@@ -51,6 +52,7 @@ module.exports = grammar({
       // Control Flow
       $.if_statement,
       $.loop_statement,
+      $.foo_statement,
       // Loop Control
       $.break_statement,
       $.continue_statement,
@@ -237,6 +239,15 @@ module.exports = grammar({
       field('body', $._body),
     ),
 
+    // foo ( expression ) body
+    foo_statement: $ => seq(
+      $.foo_keyword,
+      '(',
+      field('array', $._access_chain),
+      ')',
+      field('body', $._body),
+    ),
+
     // -------------------------------------------------------------------------
     // 5. EXPRESSIONS & OPERATOR PRECEDENCE (Highest to Lowest)
     // -------------------------------------------------------------------------
@@ -420,6 +431,7 @@ module.exports = grammar({
     return_keyword: $ => 'return',
     if_keyword: $ => 'if',
     loop_keyword: $ => 'loop',
+    foo_keyword: $ => 'foo',
 
     // Flow Control Keywords
     // Use prec(1) on this rule to define the 'else if' token

@@ -14,7 +14,8 @@ CW="-Weverything \
     -Wno-c++98-compat-pedantic \
     -Wno-pre-c++20-compat-pedantic \
     -Wno-weak-vtables -Wno-padded \
-    -Wno-braced-scalar-init"
+    -Wno-braced-scalar-init \
+    -Wno-experimental-lifetime-safety-intra-tu-suggestions"
 
 #CC="g++ -std=c++23"
 #CW="-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow"

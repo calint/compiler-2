@@ -176,6 +176,10 @@ class frame final {
         return type_ == frame_type::LOOP;
     }
 
+    [[nodiscard]] auto is_foo() const -> bool {
+        return type_ == frame_type::FOO;
+    }
+
     [[nodiscard]] auto is_name(const std::string_view name) const -> bool {
         return name_ == name;
     }
@@ -280,7 +284,8 @@ class toc final {
         frames_.back().add_alias(ai);
     }
 
-    auto add_const(const token& src_loc_tk, const std::string_view name,
+    auto add_const(const token& src_loc_tk, std::ostream& os,
+                   const size_t indnt, const std::string_view name,
                    const int64_t value) {
 
         if (has_const_in_current_block(name)) {
@@ -291,6 +296,8 @@ class toc final {
                             name, source_location_hr(c.declared_at_tk)));
         }
 
+        comment_start(src_loc_tk, os, indnt);
+        std::println(os, "const {} = {}", name, value);
         frames_.back().add_const(name,
                                  {.declared_at_tk{src_loc_tk}, .value{value}});
     }
@@ -653,13 +660,6 @@ class toc final {
         refresh_usage();
     }
 
-    auto enter_foo(const std::string& label) -> void {
-        frames_.emplace_back(label, frame::frame_type::BLOCK);
-        refresh_usage();
-    }
-
-    auto exit_foo() -> void { exit_block(); }
-
     auto enter_func(std::string_view name,
                     const std::optional<func_return_info>& returns,
                     const std::string_view call_path = {},
@@ -674,6 +674,17 @@ class toc final {
     auto enter_loop(const std::string_view name) -> void {
         frames_.emplace_back(name, frame::frame_type::LOOP);
         refresh_usage();
+    }
+
+    auto enter_foo(const std::string_view name) -> void {
+        frames_.emplace_back(name, frame::frame_type::FOO);
+        refresh_usage();
+    }
+
+    auto exit_foo(const std::string_view name) -> void {
+        const frame& frm{frames_.back()};
+        assert(frm.is_foo() and frm.is_name(name));
+        frames_.pop_back();
     }
 
     auto exit_block() -> void {
@@ -747,6 +758,17 @@ class toc final {
         }
 
         std::unreachable();
+    }
+
+    [[nodiscard]] auto get_call_path_extend(const token& src_loc_tk,
+                                            const std::string& name) const
+        -> std::string {
+
+        const std::string_view call_path{get_call_path()};
+        return std::format("{}_{}{}", name,
+                           source_location_for_use_in_label(src_loc_tk),
+                           (call_path.empty() ? std::string{}
+                                              : std::format("_{}", call_path)));
     }
 
     [[nodiscard]] auto get_const(const std::string_view name) const -> int64_t {
@@ -829,15 +851,29 @@ class toc final {
         return op;
     }
 
-    [[nodiscard]] auto get_loop_label_or_throw(const token& src_loc_tk) const
+    [[nodiscard]] auto get_looping_label_or_throw(const token& src_loc_tk) const
         -> std::string_view {
 
         for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_loop()) {
+            if (frm.is_loop() or frm.is_foo()) {
                 return frm.name();
             }
             if (frm.is_func()) {
                 throw compiler_exception{src_loc_tk, "not in a loop"};
+            }
+        }
+
+        std::unreachable();
+    }
+
+    [[nodiscard]] auto is_in_loop_block() const -> bool {
+
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.is_foo()) {
+                return false;
+            }
+            if (frm.is_loop()) {
+                return true;
             }
         }
 

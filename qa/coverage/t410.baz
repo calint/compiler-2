@@ -1,79 +1,63 @@
 dat data : i64[] = { -1, 1, 3, 7, 11 }
-dat hello : i8[] = "hello\n"
-dat nl : i8[] = "\n"
+dat inner_data : i64[] = { 1, 2, 3 }
+dat outer_data : i64[] = { 1, 2 }
 
 func exit(v : reg_rdi) {
-    mov(rax, 60)  # exit system call
-    mov(rdi, v)   # return code
+    mov(rax, 60)
+    mov(rdi, v)
     syscall()
 }
 
 func assert(x : bool) if not x exit(1)
 
-func print(len : reg_rdx, ptr : reg_rsi) {
-    mov(rax, 1)   # write system call
-    mov(rdi, 1)   # file descriptor for standard out
-    mov(rsi, ptr) # buffer address 
-    mov(rdx, len) # buffer size
-    syscall()
-}
-
-func nl() {
-    print(array_size_of(nl), address_of(nl))
-}
-
-func print_num(num) {
-    var buf : i8[20]
-    var n = num
-    var is_negative : bool = false
-  
-    if n < 0 {
-        is_negative = true
-        n = -n
-    }
- 
-    var i = 20
-    loop {
-        i = i - 1
-        var ascii = 48 + (n % 10)
-        # note: not buf[i] = 48 + ... because expression will be executed as byte sized and n overflows
-        buf[i] = ascii 
-        n = n / 10
-        if n == 0 break
-    }
- 
-    if is_negative {
-        i = i - 1
-        buf[i] = 45
-    }
- 
-    var write_pos = 0
-    loop {
-        buf[write_pos] = buf[i]
-        write_pos = write_pos + 1
-        i = i + 1
-        if i == 20 break
-    }
- 
-    print(write_pos, address_of(buf))
-}
-
 func main() {
+    var i
     foo(data) {
-        print_num(e)
-        nl()
-        e = e + 1
+        assert(n == 5)
+        i = i + 1
+        if(i == 3) continue
+        if(i == 5) break
+        e = e + n
     }
-    
-    assert(data[0] == 0)
-    assert(data[1] == 2)
-    assert(data[2] == 4)
-    assert(data[3] == 8)
-    assert(data[4] == 12)
 
-    foo(data) {
-        print_num(e)
-        nl()
-        e = e + 1
+    assert(i == 5)
+    assert(data[0] == 4)
+    assert(data[1] == 6)
+    assert(data[2] == 3)
+    assert(data[3] == 12)
+
+    var inner_seen
+
+    foo(inner_data) {
+        var j
+        const n2 = n
+        loop {
+            j = j + 1
+            if j == 2 continue
+            inner_seen = inner_seen + 1
+            if j == 3 break
+        }
+        e = e + n
     }
+
+    assert(inner_seen == 6)
+    assert(inner_data[0] == 4)
+    assert(inner_data[1] == 5)
+    assert(inner_data[2] == 6)
+
+    var outer_count
+
+    loop {
+        outer_count = outer_count + 1
+        foo(outer_data) {
+            e = e + n
+        }
+        if outer_count == 2 break
+    }
+
+    assert(outer_count == 2)
+    assert(outer_data[0] == 5)
+    assert(outer_data[1] == 6)
+
+    assert(data[4] == 11)
 }
