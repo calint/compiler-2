@@ -399,3 +399,4 @@ SRC=t428 && EXP=0 && RUN
 SRC=t429 && EXP=0 && RUN
 SRC=t430 && EXP=0 && RUN
 SRC=t431 && EXP=0 && RUN
+SRC=t432 && EXP=0 && RUN

@@ -1,0 +1,26 @@
+# variable array initialization for built-in and user types
+
+type point { x, y }
+
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(x : bool) if not x exit(1)
+
+func main() {
+    var x = 10
+    var y = 4
+    var numbers : i64[3] = { x, 20, 30 }
+    var points : point[2] = { {1, 2}, {3, y} }
+
+    assert(numbers[0] == 10)
+    assert(numbers[1] == 20)
+    assert(numbers[2] == 30)
+    assert(points[0].x == 1)
+    assert(points[0].y == 2)
+    assert(points[1].x == 3)
+    assert(points[1].y == 4)
+}
