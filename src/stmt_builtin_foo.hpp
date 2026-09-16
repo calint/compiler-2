@@ -67,12 +67,11 @@ class stmt_builtin_foo final : public statement {
         -> void override {
 
         // one line trimmed comment for the definition
-        x86::comment_start(tc, tok(), os, indent);
         std::stringstream ss;
         ident_.source_to(ss);
         // make comment friendly string replacing consecutive with one space
-        std::println(os, "foo {}",
-                     std::regex_replace(ss.str(), tc.regex_ws(), " "));
+        x86::comment_line(tc, tok(), os, indent, "foo {}",
+                          std::regex_replace(ss.str(), tc.regex_ws(), " "));
 
         const std::string loop_label{tc.get_call_path_extend(tok(), "foo")};
         tc.enter_foo(loop_label);

@@ -20,8 +20,28 @@ class x86 final {
     static constexpr size_t size_dword{4};
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
+    static constexpr std::string_view data_qword{"dq"};
+    static constexpr std::string_view data_dword{"dd"};
+    static constexpr std::string_view data_word{"dw"};
+    static constexpr std::string_view data_byte{"db"};
 
   public:
+    [[nodiscard]] static auto get_data_def(const size_t size)
+        -> std::string_view {
+        switch (size) {
+        case size_qword:
+            return data_qword;
+        case size_dword:
+            return data_dword;
+        case size_word:
+            return data_word;
+        case size_byte:
+            return data_byte;
+        default:
+            std::unreachable();
+        }
+    }
+
     static auto comment_source(const toc& tc, const statement& statement,
                                std::ostream& os, size_t indent) -> void;
 
@@ -42,6 +62,14 @@ class x86 final {
                              const std::format_string<args_t...> format,
                              args_t&&... args) -> void {
         comment_start(tc, source_location, os, indent);
+        std::println(os, format, std::forward<args_t>(args)...);
+    }
+
+    template <typename... args_t>
+    static auto comment_line(std::ostream& os, const size_t indent,
+                             const std::format_string<args_t...> format,
+                             args_t&&... args) -> void {
+        comment_indent(os, indent);
         std::println(os, format, std::forward<args_t>(args)...);
     }
 

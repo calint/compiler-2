@@ -270,7 +270,7 @@ class stmt_def_dat final : public statement {
         -> void {
 
         // nasm define data token
-        std::string_view dd{toc::get_data_def(tp.size())};
+        const std::string_view dd{x86::get_data_def(tp.size())};
         if (not elroot.is_array) {
             x86::comment(os, "{}: {}", fldnm, tp.name());
             if (elroot.tk.text().empty()) {

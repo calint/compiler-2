@@ -117,9 +117,8 @@ class expr_bool_op final : public statement {
                     if (invert) {
                         const_eval = not const_eval;
                     }
-                    x86::comment_indent(os, indent);
-                    std::println(os, "const eval to {}",
-                                 (const_eval ? "true" : "false"));
+                    x86::comment_line(os, indent, "const eval to {}",
+                                      (const_eval ? "true" : "false"));
                     if (const_eval) {
                         // since it is an 'or' chain short-circuit
                         // expression and jump to label for true
@@ -158,9 +157,8 @@ class expr_bool_op final : public statement {
                 if (invert) {
                     const_eval = not const_eval;
                 }
-                x86::comment_indent(os, indent);
-                std::println(os, "const eval to {}",
-                             (const_eval ? "true" : "false"));
+                x86::comment_line(os, indent, "const eval to {}",
+                                  (const_eval ? "true" : "false"));
                 if (const_eval) {
                     // expression evaluated at compile time and true so
                     // short-circuit and jump to true
@@ -203,9 +201,8 @@ class expr_bool_op final : public statement {
                     if (invert) {
                         const_eval = not const_eval;
                     }
-                    x86::comment_indent(os, indent);
-                    std::println(os, "const eval to {}",
-                                 (const_eval ? "true" : "false"));
+                    x86::comment_line(os, indent, "const eval to {}",
+                                      (const_eval ? "true" : "false"));
                     if (not const_eval) {
                         // since it is an 'and' chain short-circuit
                         // expression and jump to label for false
@@ -244,9 +241,8 @@ class expr_bool_op final : public statement {
                 if (invert) {
                     const_eval = not const_eval;
                 }
-                x86::comment_indent(os, indent);
-                std::println(os, "const eval to {}",
-                             (const_eval ? "true" : "false"));
+                x86::comment_line(os, indent, "const eval to {}",
+                                  (const_eval ? "true" : "false"));
                 if (not const_eval) {
                     // short circuit 'and' chain
                     x86::jmp(tc, os, indent, jmp_to_if_false);

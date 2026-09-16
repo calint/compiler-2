@@ -266,10 +266,6 @@ class toc final {
     static constexpr size_t size_dword{4};
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
-    static constexpr std::string_view def_data_qword{"dq"};
-    static constexpr std::string_view def_data_dword{"dd"};
-    static constexpr std::string_view def_data_word{"dw"};
-    static constexpr std::string_view def_data_byte{"db"};
     static constexpr size_t threshold_for_rep_stos{32};
     static constexpr size_t threshold_for_rep_movs{16};
 
@@ -1378,22 +1374,6 @@ class toc final {
     }
 
   public:
-    [[nodiscard]] static auto get_data_def(const size_t size)
-        -> std::string_view {
-        switch (size) {
-        case size_qword:
-            return def_data_qword;
-        case size_dword:
-            return def_data_dword;
-        case size_word:
-            return def_data_word;
-        case size_byte:
-            return def_data_byte;
-        default:
-            std::unreachable();
-        }
-    }
-
     [[nodiscard]] static auto
     get_field_offset_in_type(const type& tp, const std::string_view field_name)
         -> size_t {

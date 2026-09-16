@@ -468,10 +468,10 @@ auto x86::comment_source(const toc& tc, const statement& statement,
     comment_start(tc, statement.tok(), os, indent);
     std::stringstream source;
     statement.source_to(source);
-    std::println(os, "{}",
-                 std::regex_replace(
-                     std::regex_replace(source.str(), tc.regex_trim(), ""),
-                     tc.regex_ws(), " "));
+    const std::string text{std::regex_replace(
+        std::regex_replace(source.str(), tc.regex_trim(), ""), tc.regex_ws(),
+        " ")};
+    x86::comment_line(os, indent, "{}", text);
 }
 
 auto x86::comment_source(const toc& tc, const statement& statement,
@@ -486,7 +486,7 @@ auto x86::comment_source(const toc& tc, const statement& statement,
     if (not text.empty() and text.back() == ' ') {
         text.pop_back();
     }
-    std::println(os, "{}", text);
+    x86::comment_line(os, indent, "{}", text);
 }
 
 auto x86::comment_start(const toc& tc, const token& source_location,

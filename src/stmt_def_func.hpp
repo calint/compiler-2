@@ -93,6 +93,7 @@ class stmt_def_func final : public statement {
         if (not summary) {
             statement::source_to(os);
         }
+
         name_tk_.source_to(os);
         open_paren_tk_.source_to(os);
         if (not params_.empty()) {
@@ -119,8 +120,7 @@ class stmt_def_func final : public statement {
         source_def_to(ss, true);
         // make comment friendly string replacing consecutive with one space
         const std::string res{std::regex_replace(ss.str(), tc.regex_ws(), " ")};
-        x86::comment_start(tc, name_tk_, os, indent);
-        std::println(os, "{}", res);
+        x86::comment_line(tc, name_tk_, os, indent, "{}", res);
     }
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
