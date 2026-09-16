@@ -394,16 +394,19 @@ class stmt_identifier : public statement {
                                          base_info.operand.base_register);
         }
 
+        operand op{reg_offset};
         // note: 'reg_offset' might be e.g. "rsp + r15 * 8 + 16" so it needs to
         // be parsed
-        operand oper{reg_offset};
-        oper.displacement += accum_offset;
+
+        op.displacement += accum_offset;
+
         if (reg_offset == "rsp") {
-            // case when the register has not been encoded optimizing addressing
-            // for last element indexing of types with size 1, 2, 4, 8
-            oper.displacement += base_info.stack_ix;
+            // register is not optimally encoded for trailing elements of size
+            // 1, 2, 4, or 8
+            op.displacement += base_info.stack_ix;
         }
-        return oper;
+
+        return op;
     }
 
     [[nodiscard]] static auto get_shift_amount(const uint64_t value)
