@@ -117,13 +117,8 @@ class stmt_def_func final : public statement {
 
         std::stringstream ss;
         source_def_to(ss, true);
-        std::println(ss, "");
-
-        const std::string src{ss.str()};
-
         // make comment friendly string replacing consecutive with one space
-        const std::string res{std::regex_replace(src, tc.regex_ws(), " ")};
-
+        const std::string res{std::regex_replace(ss.str(), tc.regex_ws(), " ")};
         tc.comment_start(name_tk_, os, indent);
         std::println(os, "{}", res);
     }

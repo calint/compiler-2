@@ -22,6 +22,10 @@
 (and_keyword) @keyword.operator
 (or_keyword) @keyword.operator
 
+(const_definition
+  destination: (identifier) @constant
+  initializer: (_)? @constant)
+
 (bool_type) @type
 (i8_type) @type
 (i16_type) @type
@@ -59,6 +63,12 @@
 
 (function_call function: (identifier) @function.call)
 (foo_statement array: (identifier) @variable)
+
+(foo_statement
+  array: (identifier) @variable)
+
+(function_definition name: (identifier) @function)
+(type_definition name: (identifier) @type.definition)
 
 (string_literal) @string
 (number_literal) @number

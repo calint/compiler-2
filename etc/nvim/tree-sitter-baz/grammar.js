@@ -66,6 +66,8 @@ module.exports = grammar({
       $.function_definition,
       $.type_definition,
       $.const_definition,
+      $.data_declaration,
+      $.variable_declaration,
     ),
 
     // func identifier ( parameters ) return_annotation body
@@ -239,12 +241,10 @@ module.exports = grammar({
       field('body', $._body),
     ),
 
-    // foo ( expression ) body
+    // foo array body
     foo_statement: $ => seq(
       $.foo_keyword,
-      '(',
       field('array', $._access_chain),
-      ')',
       field('body', $._body),
     ),
 

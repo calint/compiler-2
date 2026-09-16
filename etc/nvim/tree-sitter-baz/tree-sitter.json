@@ -1,5 +1,14 @@
 {
-  "abi_version": 15,
+  "grammars": [
+    {
+      "name": "baz",
+      "scope": "source.baz",
+      "path": ".",
+      "file-types": ["baz"],
+      "highlights": "queries/highlights.scm",
+      "injection-regex": "^baz$"
+    }
+  ],
   "metadata": {
     "version": "0.1.0",
     "license": "MIT",

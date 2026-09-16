@@ -66,7 +66,13 @@ class stmt_builtin_foo final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        tc.comment_source(*this, os, indent);
+        // one line trimmed comment for the definition
+        tc.comment_start(tok(), os, indent);
+        std::stringstream ss;
+        ident_.source_to(ss);
+        // make comment friendly string replacing consecutive with one space
+        std::println(os, "foo {}",
+                     std::regex_replace(ss.str(), tc.regex_ws(), " "));
 
         const std::string loop_label{tc.get_call_path_extend(tok(), "foo")};
         tc.enter_foo(loop_label);
