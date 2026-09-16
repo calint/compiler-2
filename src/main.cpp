@@ -121,7 +121,7 @@ auto main(const int argc, const char* argv[]) -> int {
                                  "options are: upper, lower, line.",
                                  option);
                     std::println(stderr, "Use --help for usage information");
-                    return 1; // or some other error handling mechanism
+                    return 1;
                 }
             }
         } else if (arg == nopt_option) {
@@ -141,9 +141,7 @@ auto main(const int argc, const char* argv[]) -> int {
         src = read_file_to_string(src_file_name);
         program prg{src, stack_size, checks_upper, checks_lower,
                     checks_show_line};
-        // prg.source_to(std::cerr);
         std::ofstream reproduced_source{"diff.baz"};
-        // reproduced_source << std::unitbuf;
         prg.source_to(reproduced_source);
         reproduced_source.close();
         if (src != read_file_to_string("diff.baz")) {
