@@ -74,8 +74,8 @@ class type final {
         size_t offset{};
         bool is_array{var.is_array};
         size_t array_size{var.array_size};
-        const type* tp{this};
 
+        const type* tp{this};
         for (const std::string& field_name : path | std::views::drop(1)) {
             // note: drop 1 because the first element is retrieved outside the
             //       loop
@@ -88,20 +88,21 @@ class type final {
             type_path.emplace_back(tp);
         }
 
-        const int stack_idx{var.stack_idx + static_cast<int>(offset)};
+        const int stack_idx{var.reg.empty()
+                                ? var.stack_idx + static_cast<int>(offset)
+                                : static_cast<int>(offset)};
 
         // find the first built-in type to have a valid operand size for the
         // address
 
         const type* tp_first_field{tp};
-
         while (not tp_first_field->is_built_in()) {
             tp_first_field = tp_first_field->fields_[0].type_ptr;
         }
 
         operand op;
         op.size = tp_first_field->size();
-        op.base_register = "rsp";
+        op.base_register = var.reg.empty() ? "rsp" : var.reg;
         op.displacement = stack_idx;
 
         return {

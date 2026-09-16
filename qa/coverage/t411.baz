@@ -14,9 +14,9 @@ func assert(x : bool) if not x exit(1)
 
 func main() {
     foo(points) {
-        e.x = e.x + 10
+        e.y = e.y + 10
     }
-    assert(points[0].x == 11)
-    assert(points[1].x == 13)
-    assert(points[2].x == 15)
+    assert(points[0].y == 12)
+    assert(points[1].y == 14)
+    assert(points[2].y == 16)
 }

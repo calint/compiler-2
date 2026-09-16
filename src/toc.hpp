@@ -1520,12 +1520,6 @@ class toc final {
         ident_info ii{
             var.type_ptr->accessor(src_loc_tk, ident, id.path(), var)};
 
-        if (not var.reg.empty()) {
-            ii.lea_path = {var.reg};
-            ii.elem_path = {var.reg};
-            return ii;
-        }
-
         lea_path.resize(id.path().size());
         // note: pad with empty for the remaining elements in the id path
 
