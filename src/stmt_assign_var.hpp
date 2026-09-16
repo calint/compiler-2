@@ -66,13 +66,11 @@ class stmt_assign_var final : public statement {
                                    dst_info.const_value)};
         }
 
-        // todo: fix this to be easier read
-
         if (expr_.is_array_identifier()) {
             if (const ident_info src_info{tc.make_ident_info(expr_)};
-                src_info.is_var() and dst_info.is_array and
-                (not src_info.is_array or
-                 src_info.array_size != dst_info.array_size)) {
+
+                src_info.is_array and dst_info.is_array and
+                src_info.array_size != dst_info.array_size) {
 
                 throw compiler_exception{
                     tok(), "source and destination array sizes do not match"};
