@@ -796,8 +796,8 @@ main:
 ;   [167:24] free scratch register 'r13'
 ;   [82:6] inv(i : i32) : i32 res 
     inv_167_16:
-;       [167:16] alias res -> arr(lea: rsp + r15 * 4 - 237)
-;       [167:16] alias i -> arr(lea: rsp + r14 * 4 - 237)
+;       [167:16] alias res -> arr (lea: rsp + r15 * 4 - 237)
+;       [167:16] alias i -> arr (lea: rsp + r14 * 4 - 237)
 ;       [83:5] res = ~i
 ;       [83:12] ~i
 ;       [83:12] allocate scratch register -> r13
@@ -1459,7 +1459,7 @@ main:
 ;   [207:13] baz(j)
 ;   [86:6] baz(arg) : i64 res 
     baz_207_13:
-;       [207:13] alias res -> k(lea: rsp - 357)
+;       [207:13] alias res -> k (lea: rsp - 357)
 ;       [207:13] alias arg -> j
 ;       [87:5] res = arg * 2
 ;       [87:11] allocate scratch register -> r15
@@ -1515,7 +1515,7 @@ main:
 ;   [210:9] baz(1)
 ;   [86:6] baz(arg) : i64 res 
     baz_210_9:
-;       [210:9] alias res -> k(lea: rsp - 357)
+;       [210:9] alias res -> k (lea: rsp - 357)
 ;       [210:9] alias arg -> 1
 ;       [87:5] res = arg * 2
 ;       [87:11] allocate scratch register -> r15
@@ -1574,7 +1574,7 @@ main:
 ;   [213:23] baz(2)
 ;   [86:6] baz(arg) : i64 res 
     baz_213_23:
-;       [213:23] alias res -> qword [rsp - 373](lea: rsp - 373)
+;       [213:23] alias res -> qword [rsp - 373] (lea: rsp - 373)
 ;       [213:23] alias arg -> 2
 ;       [87:5] res = arg * 2
 ;       [87:11] allocate scratch register -> r15
@@ -1632,7 +1632,7 @@ main:
 ;   [216:22] point_init()
 ;   [113:6] point_init() : point res 
     point_init_216_22:
-;       [216:22] alias res -> pt(lea: rsp - 389)
+;       [216:22] alias res -> pt (lea: rsp - 389)
 ;       [114:5] res.x = -1
 ;       [114:14] -1
         mov qword [rsp - 389], -1
@@ -2186,7 +2186,7 @@ main:
 ;   [244:13] object_init()
 ;   [118:6] object_init() : object res 
     object_init_244_13:
-;       [244:13] alias res -> o3(lea: r15)
+;       [244:13] alias res -> o3 (lea: r15)
 ;       [119:5] res.pos.y = 74
 ;       [119:17] 74
         mov qword [r15 + 8], 74

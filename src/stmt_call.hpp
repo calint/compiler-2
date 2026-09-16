@@ -316,7 +316,7 @@ class stmt_call : public expression {
 
             std::print(os, "alias {} -> {}", e.from, e.to);
             if (not e.lea.empty()) {
-                std::print(os, "(lea: {})", e.lea);
+                std::print(os, " (lea: {})", e.lea);
             }
             std::println(os);
             tc.add_alias(e);
