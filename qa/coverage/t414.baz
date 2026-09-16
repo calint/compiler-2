@@ -18,7 +18,7 @@ func exit(v : reg_rdi) {
 func assert(x : bool) if not x exit(1)
 
 func main() {
-    foo(holders[1].points) {
+    foo holders[1].points {
         e.y = e.y + 10
     }
     assert(holders[0].points[0].x == 1)

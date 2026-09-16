@@ -13,9 +13,7 @@
 #include "unary_ops.hpp"
 
 class stmt_builtin_foo final : public statement {
-    token open_paren_tk_;
     stmt_identifier ident_;
-    token close_paren_tk_;
     stmt_block code_;
 
   public:
@@ -24,17 +22,9 @@ class stmt_builtin_foo final : public statement {
 
         set_type(tc.get_type_void());
 
-        open_paren_tk_ = tz.is_next_char_token('(');
-        if (open_paren_tk_.is_empty()) {
-            throw compiler_exception(tz, "expected '('");
-        }
         ident_ = {tc, unary_ops{}, tz.next_token(), tz};
         if (not ident_.is_array()) {
             throw compiler_exception(ident_.tok(), "expected an array");
-        }
-        close_paren_tk_ = tz.is_next_char_token(')');
-        if (close_paren_tk_.is_empty()) {
-            throw compiler_exception(tz, "expected ')'");
         }
 
         // static dry compilation
@@ -68,9 +58,7 @@ class stmt_builtin_foo final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        open_paren_tk_.source_to(os);
         ident_.source_to(os);
-        close_paren_tk_.source_to(os);
         code_.source_to(os);
     }
 

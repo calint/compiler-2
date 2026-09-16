@@ -1,5 +1,0 @@
-# foo requires an opening parenthesis
-
-func main() {
-    foo data {}
-}

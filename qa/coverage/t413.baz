@@ -22,7 +22,7 @@ func exit(v : reg_rdi) {
 func assert(x : bool) if not x exit(1)
 
 func main() {
-    foo(holders) {
+    foo holders {
         e.points[1].y = e.points[1].y + 10
     }
     assert(holders[0].points[1].x == 3)

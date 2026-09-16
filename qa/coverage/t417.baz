@@ -101,7 +101,7 @@ func exit(v : reg_rdi) {
 func assert(x : bool) if not x exit(1)
 
 func update(h : holder) {
-    foo(h.cols[2].points) {
+    foo h.cols[2].points  {
         e.y = e.y + 10
     }
 }

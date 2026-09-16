@@ -1,5 +1,0 @@
-# foo requires an array argument
-
-func main() {
-    foo()
-}

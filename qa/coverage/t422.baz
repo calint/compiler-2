@@ -1,7 +1,5 @@
 # foo requires an array identifier
 
-var value = 1
-
 func main() {
-    foo value {}
+    foo {}
 }

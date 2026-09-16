@@ -11,7 +11,7 @@ func exit(v : reg_rdi) {
 func assert(x : bool) if not x exit(1)
 
 func main() {
-    foo(data) {
+    foo data {
         assert(n == 5)
         if(i == 2) continue
         if(i == 4) break
@@ -25,7 +25,7 @@ func main() {
 
     var inner_seen
 
-    foo(inner_data) {
+    foo inner_data {
         var j
         const n2 = n
         loop {
@@ -46,7 +46,7 @@ func main() {
 
     loop {
         outer_count = outer_count + 1
-        foo(outer_data) {
+        foo outer_data {
             e = e + n
         }
         if outer_count == 2 break

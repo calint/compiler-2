@@ -1,7 +1,0 @@
-# foo requires a closing parenthesis
-
-dat values : i64[] = {1, 2}
-
-func main() {
-    foo(values {}
-}

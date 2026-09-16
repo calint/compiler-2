@@ -13,7 +13,7 @@ func exit(v : reg_rdi) {
 func assert(x : bool) if not x exit(1)
 
 func main() {
-    foo(holders) {
+    foo holders {
         e.values[0] = e.values[0] + 10
     }
     assert(holders[0].values[0] == 11)
