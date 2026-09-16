@@ -29,6 +29,9 @@ class stmt_builtin_foo final : public statement {
             throw compiler_exception(tz, "expected '('");
         }
         ident_ = {tc, unary_ops{}, tz.next_token(), tz};
+        if (not ident_.is_array()) {
+            throw compiler_exception(ident_.tok(), "expected an array");
+        }
         close_paren_tk_ = tz.is_next_char_token(')');
         if (close_paren_tk_.is_empty()) {
             throw compiler_exception(tz, "expected ')'");
