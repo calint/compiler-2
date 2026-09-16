@@ -3,6 +3,7 @@
 
 #include <string_view>
 
+#include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "null_stream.hpp"
 #include "statement.hpp"
@@ -24,11 +25,17 @@ class stmt_builtin_foo final : public statement {
         set_type(tc.get_type_void());
 
         open_paren_tk_ = tz.is_next_char_token('(');
+        if (open_paren_tk_.is_empty()) {
+            throw compiler_exception(tz, "expected '('");
+        }
         ident_ = {tc, unary_ops{}, tz.next_token(), tz};
         close_paren_tk_ = tz.is_next_char_token(')');
+        if (close_paren_tk_.is_empty()) {
+            throw compiler_exception(tz, "expected ')'");
+        }
 
+        // static dry compilation
         const ident_info ii{tc.make_ident_info(ident_)};
-
         tc.enter_foo("");
         const var_info e{
             .name{"e"}, .type_ptr{&ii.type()}, .declared_at_tk{tok()}, .reg{}};

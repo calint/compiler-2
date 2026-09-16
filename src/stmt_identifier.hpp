@@ -48,6 +48,10 @@ class stmt_identifier : public statement {
     stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : statement{tk, std::move(uops)}, path_as_string_{tk.text()} {
 
+        if (tk.is_empty()) {
+            throw compiler_exception(tz, "expected an identifier");
+        }
+
         token tk_prv{tk};
 
         while (true) {
