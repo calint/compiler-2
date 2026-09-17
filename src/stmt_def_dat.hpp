@@ -189,7 +189,7 @@ class stmt_def_dat final : public statement {
                                  const elem& elroot) -> void {
 
         if (not elroot.is_array) {
-            x86::comment(x.os, "{}: {}", nm, tp.name());
+            x.comment("{}: {}", nm, tp.name());
             compile_data_elem(tc, x, nm, tp, elroot);
             return;
         }
@@ -206,10 +206,10 @@ class stmt_def_dat final : public statement {
 
         // regular arrays
 
-        x86::comment(x.os, "{}: {}[{}]", nm, tp.name(), elroot.array_size);
+        x.comment("{}: {}[{}]", nm, tp.name(), elroot.array_size);
         size_t counter{};
         for (const elem& el : elroot.elems) {
-            x86::comment(x.os, "[{}]", counter);
+            x.comment("[{}]", counter);
             compile_data_elem(tc, x, nm, tp, el);
             ++counter;
         }
@@ -222,7 +222,7 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        x86::comment(x.os, "pad {} '{}' of size {}", diff, tp.name(), tp.size());
+        x.comment("pad {} '{}' of size {}", diff, tp.name(), tp.size());
         x.times(diff * tp.size(), "db", "0");
     }
 
@@ -260,7 +260,7 @@ class stmt_def_dat final : public statement {
         for (size_t i{counter}; i < n; ++i) {
             nbytes += flds[i].size;
         }
-        x86::comment(x.os, "zero remaining fields");
+        x.comment("zero remaining fields");
         x.times(nbytes, "db", "0");
     }
 
@@ -272,7 +272,7 @@ class stmt_def_dat final : public statement {
         // nasm define data token
         const std::string_view dd{x86::get_data_def(tp.size())};
         if (not elroot.is_array) {
-            x86::comment(x.os, "{}: {}", fldnm, tp.name());
+            x.comment("{}: {}", fldnm, tp.name());
             if (elroot.tk.text().empty()) {
                 x86::dat_begin(x.os, tp.size());
                 x86::dat_value(x.os, "0");
@@ -289,7 +289,7 @@ class stmt_def_dat final : public statement {
 
         // array of built-ins
 
-        x86::comment(x.os, "{}: {}[{}]", fldnm, tp.name(), elroot.array_size);
+        x.comment("{}: {}[{}]", fldnm, tp.name(), elroot.array_size);
 
         // special case for string
         // note: only i8[] can be initialized with string token
@@ -301,7 +301,7 @@ class stmt_def_dat final : public statement {
             const size_t sz{elroot.tk.string_size_bytes()};
             // pad remaining array with 0
             if (elroot.array_size != 0 and sz < elroot.array_size) {
-                x86::comment(x.os, "zero remaining array");
+                x.comment("zero remaining array");
                 x.times(elroot.array_size - sz, dd, "0");
             }
             return;

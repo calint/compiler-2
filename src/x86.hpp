@@ -120,11 +120,10 @@ class x86 final {
     }
 
     template <typename... args_t>
-    static auto comment(std::ostream& os,
-                        const std::format_string<args_t...> format,
-                        args_t&&... args) -> void {
-        std::print(os, "; ");
-        std::println(os, format, std::forward<args_t>(args)...);
+    auto comment(const std::format_string<args_t...> format, args_t&&... args)
+        -> void {
+        print("; ");
+        println(format, std::forward<args_t>(args)...);
     }
 
     auto emit_buffer(const std::string_view text) -> void {
