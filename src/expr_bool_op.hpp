@@ -133,7 +133,7 @@ class expr_bool_op final : public statement {
             // note: compares with 0
 
             if (not dst.empty()) {
-                x86::setcc(tc, x.os, indent, asm_cc_for_op("!=", invert), dst);
+                x.setcc(tc, indent, asm_cc_for_op("!=", invert), dst);
             }
             x.jcc(tc, indent, asm_cc_for_op("!=", invert),
                      jmp_to_if_true);
@@ -175,7 +175,7 @@ class expr_bool_op final : public statement {
         resolve_cmp(tc, x, indent, lhs_, rhs_);
 
         if (not dst.empty()) {
-            x86::setcc(tc, x.os, indent, asm_cc_for_op(op_, invert), dst);
+            x.setcc(tc, indent, asm_cc_for_op(op_, invert), dst);
         }
         x.jcc(tc, indent, asm_cc_for_op(op_, invert), jmp_to_if_true);
 
@@ -217,7 +217,7 @@ class expr_bool_op final : public statement {
             // note: compares with 0
 
             if (not dst.empty()) {
-                x86::setcc(tc, x.os, indent, asm_cc_for_op("!=", invert), dst);
+                x.setcc(tc, indent, asm_cc_for_op("!=", invert), dst);
             }
             x.jcc(tc, indent, asm_cc_for_op("==", invert),
                      jmp_to_if_false);
@@ -264,7 +264,7 @@ class expr_bool_op final : public statement {
 
         resolve_cmp(tc, x, indent, lhs_, rhs_);
         if (not dst.empty()) {
-            x86::setcc(tc, x.os, indent, asm_cc_for_op(op_, invert), dst);
+            x.setcc(tc, indent, asm_cc_for_op(op_, invert), dst);
         }
         x.jcc(tc, indent, asm_cc_for_op(op_, not invert),
                  jmp_to_if_false);

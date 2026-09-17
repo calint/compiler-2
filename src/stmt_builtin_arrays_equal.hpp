@@ -167,7 +167,7 @@ class stmt_builtin_arrays_equal final : public expression {
         // set true if equal
 
         if (dst_info.is_register()) {
-            x86::setcc(tc, x.os, indent, "e",
+            x.setcc(tc, indent, "e",
                        tc.get_sized_register_operand(dst_info.operand.str(),
                                                      operand::size_byte));
             return;

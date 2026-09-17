@@ -163,14 +163,14 @@ class stmt_builtin_equal final : public expression {
         // set true if equal
 
         if (dst_info.operand.is_memory()) {
-            x86::setcc(tc, x.os, indent, "e",
+            x.setcc(tc, indent, "e",
                        dst_info.operand.str(operand::size_byte));
             return;
         }
 
         // assumed register
 
-        x86::setcc(tc, x.os, indent, "e",
+        x.setcc(tc, indent, "e",
                    tc.get_sized_register_operand(dst_info.operand.str(),
                                                  operand::size_byte));
     }

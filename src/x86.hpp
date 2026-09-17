@@ -273,10 +273,9 @@ class x86 final {
         asm_line(tc, os, indent, "repe cmps{}", size);
     }
 
-    static auto setcc(toc& tc, std::ostream& os, const size_t indent,
-                      const std::string_view comparison,
-                      const std::string_view operand) -> void {
-        asm_line(tc, os, indent, "set{} {}", comparison, operand);
+    auto setcc(toc& tc, const size_t indent, const std::string_view comparison,
+              const std::string_view operand) -> void {
+        asm_line(tc, os.get(), indent, "set{} {}", comparison, operand);
     }
 
     static auto shl(toc& tc, std::ostream& os, const size_t indent,
