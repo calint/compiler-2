@@ -264,8 +264,7 @@ class stmt_def_dat final : public statement {
         x.times(nbytes, "db", "0");
     }
 
-    static auto compile_data_builtin(x86& x,
-                                     const std::string_view fldnm,
+    static auto compile_data_builtin(x86& x, const std::string_view fldnm,
                                      const type& tp, const elem& elroot)
         -> void {
 

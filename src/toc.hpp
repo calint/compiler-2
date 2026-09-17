@@ -693,8 +693,7 @@ class toc final {
 
     [[nodiscard]] auto
     make_ident_info_parsing(const token& src_loc_tk,
-                            const std::string_view ident) const
-        -> ident_info {
+                            const std::string_view ident) const -> ident_info {
 
         return make_ident_info_or_throw(nullptr, src_loc_tk, ident);
     }
@@ -709,8 +708,8 @@ class toc final {
         };
     }
 
-    [[nodiscard]] auto
-    make_ident_info_for_register(const x86& x, const std::string_view reg) const
+    [[nodiscard]] static auto
+    make_ident_info_for_register(const x86& x, const std::string_view reg)
         -> ident_info {
 
         //? unary ops?
@@ -861,8 +860,8 @@ class toc final {
 
                     // add an empty
                     lea_path.emplace_back("");
-                    return make_ident_info_from_frame(x, f, src_loc_tk, ident, id,
-                                                      std::move(lea_path));
+                    return make_ident_info_from_frame(x, f, src_loc_tk, ident,
+                                                      id, std::move(lea_path));
                 }
 
                 // this is an alias, continue resolving until it is a variable,
@@ -1017,11 +1016,9 @@ class toc final {
         return ii;
     }
 
-    [[nodiscard]] auto
-    make_ident_info_register_or_empty(const x86* x, const token& src_loc_tk,
-                                      const std::string_view& ident,
-                                      const ident_path& id) const
-        -> ident_info {
+    [[nodiscard]] auto make_ident_info_register_or_empty(
+        const x86* x, const token& src_loc_tk, const std::string_view& ident,
+        const ident_path& id) const -> ident_info {
         // is it a register?
         if (const size_t reg_size{utils::register_size(id.str())};
             reg_size != 0) {
@@ -1121,7 +1118,8 @@ class toc final {
     make_ident_info_or_throw(const x86* x, const token& src_loc_tk,
                              const std::string_view ident) const -> ident_info {
 
-        const ident_info id_info{make_ident_info_or_empty(x, src_loc_tk, ident)};
+        const ident_info id_info{
+            make_ident_info_or_empty(x, src_loc_tk, ident)};
         if (not id_info.id.empty()) {
             return id_info;
         }

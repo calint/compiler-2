@@ -152,8 +152,8 @@ class stmt_def_var final : public statement {
         const size_t bytes_count{instance_count * dst_info.type().size()};
 
         x.comment_start(name_tk_, indent);
-        x.println( "zero {} * {} B = {} B", instance_count,
-                     dst_info.type().size(), bytes_count);
+        x.println("zero {} * {} B = {} B", instance_count,
+                  dst_info.type().size(), bytes_count);
 
         const std::string dst_addr{std::format("rsp - {}", -dst_info.stack_ix)};
         // note: -dst_info.stack_ix for nicer source formatting; is always

@@ -85,17 +85,19 @@ class stmt_builtin_arrays_equal final : public expression {
 
         // allocate the register for rep movs
         x.alloc_named_register_or_throw(tok(), indent, "rsi",
-                                         tc.get_type_default());
+                                        tc.get_type_default());
         x.alloc_named_register_or_throw(tok(), indent, "rdi",
-                                         tc.get_type_default());
+                                        tc.get_type_default());
         x.alloc_named_register_or_throw(tok(), indent, "rcx",
-                                         tc.get_type_default());
+                                        tc.get_type_default());
 
         std::vector<std::string> allocated_scratch_registers;
 
         // size to 'rcx'
-        x.comment_source(count_.tok(), indent, statement::trimmed_source(count_));
-        count_.compile(tc, x, indent, tc.make_ident_info_for_register(x, "rcx"));
+        x.comment_source(count_.tok(), indent,
+                         statement::trimmed_source(count_));
+        count_.compile(tc, x, indent,
+                       toc::make_ident_info_for_register(x, "rcx"));
 
         const ident_info from_info{tc.make_ident_info(x, from_)};
         const ident_info to_info{tc.make_ident_info(x, to_)};
@@ -106,7 +108,7 @@ class stmt_builtin_arrays_equal final : public expression {
             from_.first_token(), tc, x, indent, from_.elems(),
             allocated_scratch_registers, "rcx", from_info.lea_path)};
 
-        x.lea( indent, "rsi", from_operand.address_str());
+        x.lea(indent, "rsi", from_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -120,7 +122,7 @@ class stmt_builtin_arrays_equal final : public expression {
             to_.first_token(), tc, x, indent, to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};
 
-        x.lea( indent, "rdi", to_operand.address_str());
+        x.lea(indent, "rdi", to_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -149,16 +151,15 @@ class stmt_builtin_arrays_equal final : public expression {
                     stmt_identifier::get_shift_amount(type_size)};
                 shl) {
 
-                x.op(tok(), indent, "shl", "rcx",
-                        std::format("{}", *shl));
+                x.op(tok(), indent, "shl", "rcx", std::format("{}", *shl));
             } else {
                 x.op(tok(), indent, "imul", "rcx",
-                        std::format("{}", type_size));
+                     std::format("{}", type_size));
             }
         }
 
         // copy
-        x.repe_cmps( indent, 'b');
+        x.repe_cmps(indent, 'b');
 
         x.free_named_register(tok(), indent, "rcx");
         x.free_named_register(tok(), indent, "rdi");
@@ -167,9 +168,9 @@ class stmt_builtin_arrays_equal final : public expression {
         // set true if equal
 
         if (dst_info.is_register()) {
-            x.setcc( indent, "e",
-                       x.get_sized_register_operand(dst_info.operand.str(),
-                                                     operand::size_byte));
+            x.setcc(indent, "e",
+                    x.get_sized_register_operand(dst_info.operand.str(),
+                                                 operand::size_byte));
             return;
         }
 

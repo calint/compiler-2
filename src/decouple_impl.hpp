@@ -7,9 +7,7 @@
 #include <memory>
 #include <ostream>
 #include <ranges>
-#include <regex>
 #include <span>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -275,8 +273,8 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
         // todo: validate dst array size fits src array size
 
-        x.copy(tok(), indent, src_op.address_str(),
-                  dst_op.address_str(), nbytes);
+        x.copy(tok(), indent, src_op.address_str(), dst_op.address_str(),
+               nbytes);
 
         dst_op.displacement += static_cast<int32_t>(nbytes);
 
@@ -294,7 +292,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
     for (const std::unique_ptr<expr_any>& ea : exprs_) {
         x.comment_start(tok(), indent);
         const type_field& tf{flds[counter]};
-        x.println( "copy field '{}'", tf.name);
+        x.println("copy field '{}'", tf.name);
 
         if (not tf.type().is_built_in()) {
             // a not-builtin statement is 'expr_type_value'
@@ -314,8 +312,8 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
             //   type msgpoint {  msg : i8[128], pt : point }
             //   var mp : msgpoint[3] = { { {}, { x, y } } }
             x.comment_start(tok(), indent);
-            x.println( "zero empty field: {} * {} B = {} B",
-                         tf.array_size, tf.type().size(), tf.size);
+            x.println("zero empty field: {} * {} B = {} B", tf.array_size,
+                      tf.type().size(), tf.size);
             x.zero(tok(), indent, dst_op.address_str(), tf.size);
             dst_op.displacement += static_cast<int32_t>(tf.size);
             ++counter;
@@ -323,7 +321,8 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         }
 
         if (tf.is_array and src.is_array_identifier()) {
-            validate_array_assignment(src.tok(), tf, tc.make_ident_info(x, src));
+            validate_array_assignment(src.tok(), tf,
+                                      tc.make_ident_info(x, src));
         }
 
         const std::string dst_accessor{dst_op.str(tf.type().size())};
@@ -339,8 +338,8 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
             if (src_info.is_const()) {
                 // built-in, not expression, constant
                 x.mov(src.tok(), indent, dst_accessor,
-                         std::format("{}{}", src.get_unary_ops().to_string(),
-                                     src_info.const_value));
+                      std::format("{}{}", src.get_unary_ops().to_string(),
+                                  src_info.const_value));
             } else {
                 // built-in, not expression, not constant
                 if (tf.is_array) {
@@ -348,13 +347,12 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
                     //       trigger it
                     // built-in, not expression, not constant, array
                     validate_array_assignment(src.tok(), tf, src_info);
-                    x.copy(src.tok(), indent,
-                              src_info.operand.address_str(),
-                              dst_op.address_str(), tf.size);
+                    x.copy(src.tok(), indent, src_info.operand.address_str(),
+                           dst_op.address_str(), tf.size);
                 } else {
                     // built-in, not expression, not constant, not array
                     x.mov(src.tok(), indent, dst_accessor,
-                             src_info.operand.str());
+                          src_info.operand.str());
                     src.get_unary_ops().compile(tc, x, indent, dst_accessor);
                 }
             }
@@ -381,7 +379,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
     }
 
     x.comment_start(tok(), indent);
-    x.println( "zero remaining fields: {} B", nbytes);
+    x.println("zero remaining fields: {} B", nbytes);
     x.zero(tok(), indent, dst_op.address_str(), nbytes);
     dst_op.displacement += static_cast<int32_t>(nbytes);
 }
@@ -452,10 +450,10 @@ auto unary_ops::compile([[maybe_unused]] toc& tc, x86& x, const size_t indnt,
     for (const char op : ops_ | std::views::reverse) {
         switch (op) {
         case '~':
-            x.not_op( indnt, dst_info);
+            x.not_op(indnt, dst_info);
             break;
         case '-':
-            x.neg( indnt, dst_info);
+            x.neg(indnt, dst_info);
             break;
         default:
             std::unreachable();
@@ -519,16 +517,15 @@ auto x86::copy(const token& src_loc_tk, const size_t indent,
                const size_t bytes_count) -> void {
     if (bytes_count > toc::threshold_for_rep_movs) {
         alloc_named_register_or_throw(src_loc_tk, indent, "rsi",
-                                         *default_type_);
+                                      *default_type_);
         alloc_named_register_or_throw(src_loc_tk, indent, "rdi",
-                                         *default_type_);
+                                      *default_type_);
         alloc_named_register_or_throw(src_loc_tk, indent, "rcx",
-                                         *default_type_);
+                                      *default_type_);
         lea(indent, "rsi", src);
         lea(indent, "rdi", dst);
-        mov(src_loc_tk, indent, "rcx",
-            std::format("{}", bytes_count));
-        rep_movs( indent, 'b');
+        mov(src_loc_tk, indent, "rcx", std::format("{}", bytes_count));
+        rep_movs(indent, 'b');
         free_named_register(src_loc_tk, indent, "rcx");
         free_named_register(src_loc_tk, indent, "rdi");
         free_named_register(src_loc_tk, indent, "rsi");
@@ -536,44 +533,37 @@ auto x86::copy(const token& src_loc_tk, const size_t indent,
     }
 
     comment_start(src_loc_tk, indent);
-    std::println(os.get(), "size <= {} B, use mov", toc::threshold_for_rep_movs);
+    std::println(os.get(), "size <= {} B, use mov",
+                 toc::threshold_for_rep_movs);
     alloc_named_register_or_throw(src_loc_tk, indent, "rax", *default_type_);
     size_t rest{bytes_count};
     const size_t qword_movs{rest / operand::size_qword};
     operand src_operand{src};
     operand dst_operand{dst};
     for (size_t index{}; index < qword_movs; ++index) {
-        mov(src_loc_tk, indent, "rax",
-            src_operand.str(operand::size_qword));
-        mov(src_loc_tk, indent, dst_operand.str(operand::size_qword),
-            "rax");
+        mov(src_loc_tk, indent, "rax", src_operand.str(operand::size_qword));
+        mov(src_loc_tk, indent, dst_operand.str(operand::size_qword), "rax");
         src_operand.displacement += operand::size_qword;
         dst_operand.displacement += operand::size_qword;
         rest -= operand::size_qword;
     }
     if ((rest / operand::size_dword) != 0) {
-        mov(src_loc_tk, indent, "eax",
-            src_operand.str(operand::size_dword));
-        mov(src_loc_tk, indent, dst_operand.str(operand::size_dword),
-            "eax");
+        mov(src_loc_tk, indent, "eax", src_operand.str(operand::size_dword));
+        mov(src_loc_tk, indent, dst_operand.str(operand::size_dword), "eax");
         src_operand.displacement += operand::size_dword;
         dst_operand.displacement += operand::size_dword;
         rest -= operand::size_dword;
     }
     if ((rest / operand::size_word) != 0) {
-        mov(src_loc_tk, indent, "ax",
-            src_operand.str(operand::size_word));
-        mov(src_loc_tk, indent, dst_operand.str(operand::size_word),
-            "ax");
+        mov(src_loc_tk, indent, "ax", src_operand.str(operand::size_word));
+        mov(src_loc_tk, indent, dst_operand.str(operand::size_word), "ax");
         src_operand.displacement += operand::size_word;
         dst_operand.displacement += operand::size_word;
         rest -= operand::size_word;
     }
     if (rest != 0) {
-        mov(src_loc_tk, indent, "al",
-            src_operand.str(operand::size_byte));
-        mov(src_loc_tk, indent, dst_operand.str(operand::size_byte),
-            "al");
+        mov(src_loc_tk, indent, "al", src_operand.str(operand::size_byte));
+        mov(src_loc_tk, indent, dst_operand.str(operand::size_byte), "al");
     }
     free_named_register(src_loc_tk, indent, "rax");
 }
@@ -582,16 +572,15 @@ auto x86::zero(const token& src_loc_tk, const size_t indent,
                const std::string_view dst, const size_t bytes_count) -> void {
     if (bytes_count > toc::threshold_for_rep_stos) {
         alloc_named_register_or_throw(src_loc_tk, indent, "rax",
-                                         *default_type_);
+                                      *default_type_);
         alloc_named_register_or_throw(src_loc_tk, indent, "rdi",
-                                         *default_type_);
+                                      *default_type_);
         alloc_named_register_or_throw(src_loc_tk, indent, "rcx",
-                                         *default_type_);
-        xor_op( indent, "al", "al");
+                                      *default_type_);
+        xor_op(indent, "al", "al");
         lea(indent, "rdi", dst);
-        mov(src_loc_tk, indent, "rcx",
-            std::format("{}", bytes_count));
-        rep_stos( indent, 'b');
+        mov(src_loc_tk, indent, "rcx", std::format("{}", bytes_count));
+        rep_stos(indent, 'b');
         free_named_register(src_loc_tk, indent, "rcx");
         free_named_register(src_loc_tk, indent, "rdi");
         free_named_register(src_loc_tk, indent, "rax");
@@ -599,31 +588,28 @@ auto x86::zero(const token& src_loc_tk, const size_t indent,
     }
 
     comment_start(src_loc_tk, indent);
-    std::println(os.get(), "size <= {} B, use mov", toc::threshold_for_rep_stos);
+    std::println(os.get(), "size <= {} B, use mov",
+                 toc::threshold_for_rep_stos);
     size_t rest{bytes_count};
     const size_t qword_movs{rest / operand::size_qword};
     operand dst_operand{dst};
     for (size_t index{}; index < qword_movs; ++index) {
-        mov(src_loc_tk, indent, dst_operand.str(operand::size_qword),
-            "0");
+        mov(src_loc_tk, indent, dst_operand.str(operand::size_qword), "0");
         dst_operand.displacement += operand::size_qword;
         rest -= operand::size_qword;
     }
     if ((rest / operand::size_dword) != 0) {
-        mov(src_loc_tk, indent, dst_operand.str(operand::size_dword),
-            "0");
+        mov(src_loc_tk, indent, dst_operand.str(operand::size_dword), "0");
         dst_operand.displacement += operand::size_dword;
         rest -= operand::size_dword;
     }
     if ((rest / operand::size_word) != 0) {
-        mov(src_loc_tk, indent, dst_operand.str(operand::size_word),
-            "0");
+        mov(src_loc_tk, indent, dst_operand.str(operand::size_word), "0");
         dst_operand.displacement += operand::size_word;
         rest -= operand::size_word;
     }
     if (rest != 0) {
-        mov(src_loc_tk, indent, dst_operand.str(operand::size_byte),
-            "0");
+        mov(src_loc_tk, indent, dst_operand.str(operand::size_byte), "0");
     }
 }
 
@@ -684,8 +670,7 @@ auto x86::alloc_named_register_or_throw(const token& src_loc_tk,
     comment_start(src_loc_tk, indnt);
     println("allocate scratch register -> {}", reg);
 
-    const size_t n{scratch_registers_initial_size_ -
-                   scratch_registers_.size()};
+    const size_t n{scratch_registers_initial_size_ - scratch_registers_.size()};
     usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
 
     allocated_registers_.emplace_back(
@@ -702,8 +687,7 @@ auto x86::free_named_register(const token& src_loc_tk, const size_t indnt,
 
     assert(allocated_registers_.back().name == reg);
 
-    named_registers_.emplace_back(
-        std::move(allocated_registers_.back().name));
+    named_registers_.emplace_back(std::move(allocated_registers_.back().name));
     allocated_registers_.pop_back();
 }
 
@@ -729,8 +713,9 @@ auto x86::finish() -> void {
     usage_max_scratch_regs_ = 0;
 }
 
-[[nodiscard]] auto x86::get_allocated_register_type(
-    const std::string_view reg) const -> const type& {
+[[nodiscard]] auto
+x86::get_allocated_register_type(const std::string_view reg) const
+    -> const type& {
 
     for (const allocated_register& allocated : allocated_registers_) {
         if (reg == allocated.name) {
@@ -779,7 +764,8 @@ auto x86::op(const token& src_loc_tk, const size_t indent,
 
     if (dst_size == src_size) {
         if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
-            const std::string reg{alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+            const std::string reg{
+                alloc_scratch_register(src_loc_tk, indent, *default_type_)};
             const std::string reg_sized{
                 get_sized_register_operand(reg, dst_size)};
             asm_line(indent, "mov {}, {}", reg_sized, src_op);
@@ -793,7 +779,8 @@ auto x86::op(const token& src_loc_tk, const size_t indent,
 
     if (dst_size > src_size) {
         if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
-            const std::string reg{alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+            const std::string reg{
+                alloc_scratch_register(src_loc_tk, indent, *default_type_)};
             const std::string reg_sized{
                 get_sized_register_operand(reg, dst_size)};
             asm_line(indent, "movsx {}, {}", reg_sized, src_op);
@@ -809,7 +796,8 @@ auto x86::op(const token& src_loc_tk, const size_t indent,
             asm_line(indent, "{} {}, {}", op, dst_op, src_op);
             return;
         }
-        const std::string reg_sx{alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+        const std::string reg_sx{
+            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
         asm_line(indent, "movsx {}, {}", reg_sx, src_op);
         asm_line(indent, "{} {}, {}", op, dst_op, reg_sx);
         free_scratch_register(src_loc_tk, indent, reg_sx);
@@ -817,10 +805,9 @@ auto x86::op(const token& src_loc_tk, const size_t indent,
     }
 
     if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
-        const std::string reg{alloc_scratch_register(src_loc_tk, indent,
-                                                        *default_type_)};
-        const std::string reg_sized{
-            get_sized_register_operand(reg, dst_size)};
+        const std::string reg{
+            alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+        const std::string reg_sized{get_sized_register_operand(reg, dst_size)};
         asm_line(indent, "mov {}, {}", reg_sized,
                  sized_memory_operand(src_op, dst_size));
         asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);

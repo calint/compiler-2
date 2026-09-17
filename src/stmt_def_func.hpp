@@ -74,7 +74,7 @@ class stmt_def_func final : public statement {
                     statement::get_type(), this);
         // dry-run compilation to catch errors before called
         tc.enter_func(name(), returns_);
-        std::vector<std::string> allocated_named_registers;
+        std::vector<std::string> const allocated_named_registers;
         null_stream os; // don't make output
         if (returns_) {
             // yes, declare variable for the return
@@ -97,7 +97,6 @@ class stmt_def_func final : public statement {
         for (const stmt_def_func_param& prm : params_) {
             const type& prm_type{prm.get_type()};
             const std::string_view prm_name{prm.name()};
-            const std::string prm_reg{prm.get_register_name_or_empty()};
 
             const var_info var{
                 .name{prm_name},

@@ -60,8 +60,7 @@ class expr_type_value final : public statement {
     [[nodiscard]] auto identifier() const -> std::string_view override;
 
     // implemented in 'decouple_impl.hpp' due to circular reference
-    auto compile_lea(const token& src_loc_tk, toc& tc, x86& x,
-                     size_t indent,
+    auto compile_lea(const token& src_loc_tk, toc& tc, x86& x, size_t indent,
                      std::vector<std::string>& allocated_registers,
                      const std::string& reg_size,
                      std::span<const std::string> lea) const
@@ -70,8 +69,8 @@ class expr_type_value final : public statement {
   private:
     // implemented in 'decouple_impl.hpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
-    auto compile_assign(toc& tc, x86& x, size_t indent,
-                        const type& dst_type, operand& op) const -> void;
+    auto compile_assign(toc& tc, x86& x, size_t indent, const type& dst_type,
+                        operand& op) const -> void;
 
     // implemented in 'decouple_impl.hpp'
     static auto validate_array_assignment(const token& tok,

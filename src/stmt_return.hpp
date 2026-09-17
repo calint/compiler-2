@@ -26,12 +26,12 @@ class stmt_return final : public statement {
             // note: return from 'main' is exiting
             x.mov(tok(), indent, "rdi", "0");
             x.mov(tok(), indent, "rax", "60");
-            x.syscall( indent);
+            x.syscall(indent);
             return;
         }
 
         // jump to return labels
-        x.jmp( indent, ret_lbl);
+        x.jmp(indent, ret_lbl);
     }
 
     [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {

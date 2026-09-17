@@ -100,8 +100,7 @@ class statement {
     [[nodiscard]] virtual auto is_indexed() const -> bool { return false; }
 
     virtual auto compile_data([[maybe_unused]] const toc& tc,
-                              [[maybe_unused]] x86& x) const -> void {
-    }
+                              [[maybe_unused]] x86& x) const -> void {}
 
     [[nodiscard]] virtual auto compile_lea(
         [[maybe_unused]] const token& src_loc_tk, [[maybe_unused]] toc& tc,

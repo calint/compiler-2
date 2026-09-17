@@ -135,8 +135,8 @@ class expr_any final : public statement {
         const size_t nbytes{diff * ii.type().size()};
 
         x.comment_line(tok(), indent,
-                          "zero remaining elements: {} * {} B = {} B", diff,
-                          ii.type().size(), nbytes);
+                       "zero remaining elements: {} * {} B = {} B", diff,
+                       ii.type().size(), nbytes);
         x.zero(tok(), indent, ii.operand.address_str(), nbytes);
     }
 
@@ -215,8 +215,8 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto
-    compile_lea(const token& src_loc_tk, toc& tc, x86& x,
-                size_t indent, std::vector<std::string>& allocated_registers,
+    compile_lea(const token& src_loc_tk, toc& tc, x86& x, size_t indent,
+                std::vector<std::string>& allocated_registers,
                 const std::string& reg_size,
                 const std::span<const std::string> lea_path) const
         -> operand override {
@@ -283,7 +283,7 @@ class expr_any final : public statement {
                             std::unreachable();
                         }
                         x.mov(tk, indent, dst_info.operand.str(),
-                                 std::format("{}", src_info.const_value));
+                              std::format("{}", src_info.const_value));
                         return;
                     }
 
@@ -309,19 +309,17 @@ class expr_any final : public statement {
                                   dst_info.operand.str())};
 
                     // not constant evaluation
-                    x.label( indent, jmp_to_end);
+                    x.label(indent, jmp_to_end);
 
                     // did the evaluation result in a constant?
                     if (const_eval) {
                         // yes, constant evaluation
                         if (*const_eval) {
                             // constant evaluation is true
-                            x.mov(tk, indent, dst_info.operand.str(),
-                                     "1");
+                            x.mov(tk, indent, dst_info.operand.str(), "1");
                         } else {
                             // constant evaluation is false
-                            x.mov(tk, indent, dst_info.operand.str(),
-                                     "0");
+                            x.mov(tk, indent, dst_info.operand.str(), "0");
                         }
                     }
                 }},

@@ -146,8 +146,7 @@ class expr_bool_ops_list final : public statement {
         }
     }
 
-    [[noreturn]] auto compile([[maybe_unused]] toc& tc,
-                              [[maybe_unused]] x86& x,
+    [[noreturn]] auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] x86& x,
                               [[maybe_unused]] const size_t indent,
                               [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
@@ -163,8 +162,8 @@ class expr_bool_ops_list final : public statement {
         -> std::optional<bool> {
 
         x.comment_source(tok(), indent,
-                            statement::trimmed_source(*this, "?",
-                                                     inverted ? " inverted: " : " "));
+                         statement::trimmed_source(
+                             *this, "?", inverted ? " inverted: " : " "));
         // invert, according to De Morgan's laws
         const bool invert{inverted ? not not_token_.is_text("not")
                                    : not_token_.is_text("not")};
@@ -173,7 +172,7 @@ class expr_bool_ops_list final : public statement {
             if (std::holds_alternative<expr_bool_ops_list>(bools_[i])) {
                 const expr_bool_ops_list& el{
                     get<expr_bool_ops_list>(bools_[i])};
-                x.label( indent, el.create_cmp_bgn_label(tc));
+                x.label(indent, el.create_cmp_bgn_label(tc));
                 std::string jmp_false{jmp_to_if_false};
                 std::string jmp_true{jmp_to_if_true};
                 if (i < n - 1) {
@@ -333,7 +332,7 @@ class expr_bool_ops_list final : public statement {
                         return *const_eval;
                     }
                     // if not yet jumped to false, then jump to true
-                    x.jmp( indent, jmp_to_if_true);
+                    x.jmp(indent, jmp_to_if_true);
                 }
             } else {
                 // inverted according to De Morgan's laws
@@ -369,7 +368,7 @@ class expr_bool_ops_list final : public statement {
                         return *const_eval;
                     }
                     // if not yet jumped to false, then jump to true
-                    x.jmp( indent, jmp_to_if_true);
+                    x.jmp(indent, jmp_to_if_true);
                 }
             }
         }

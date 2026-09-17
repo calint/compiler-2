@@ -62,6 +62,7 @@ class x86 final {
     // the assembler output stream for the current compile pass; rebindable
     // via 'use_stream' so trial-compiles can target a scratch buffer while
     // keeping this same instance (and its register-allocation state)
+    // NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
     std::reference_wrapper<std::ostream> os;
 
     explicit x86(std::ostream& os_ref) : os{os_ref} {}
@@ -102,7 +103,7 @@ class x86 final {
         std::println(os.get(), format, std::forward<args_t>(args)...);
     }
 
-    auto println() -> void { std::println(os.get()); }
+    auto println() const -> void { std::println(os.get()); }
 
     [[nodiscard]] static auto get_data_def(const size_t size)
         -> std::string_view {
@@ -121,7 +122,7 @@ class x86 final {
     }
 
     auto comment_source(const token& source_location, size_t indent,
-                       std::string_view text) -> void;
+                        std::string_view text) -> void;
 
     static auto comment_start(std::string_view source,
                               const token& source_location, std::ostream& os,
@@ -149,7 +150,7 @@ class x86 final {
         println(format, std::forward<args_t>(args)...);
     }
 
-    auto comment_indent(const size_t indent) -> void {
+    auto comment_indent(const size_t indent) const -> void {
         comment_indent(os.get(), indent);
     }
 
@@ -173,13 +174,13 @@ class x86 final {
         println(format, std::forward<args_t>(args)...);
     }
 
-    auto emit_buffer(const std::string_view text) -> void {
+    auto emit_buffer(const std::string_view text) const -> void {
         std::print(os.get(), "{}", text);
     }
 
     template <typename... args_t>
     auto asm_line(const size_t indent,
-                 const std::format_string<args_t...> format, args_t&&... args)
+                  const std::format_string<args_t...> format, args_t&&... args)
         -> void {
 
         for (size_t index{}; index < indent; ++index) {
@@ -189,7 +190,7 @@ class x86 final {
     }
 
     auto imul(const token& src_loc_tk, size_t indent, std::string_view dst_op,
-            std::string_view src_op) -> void;
+              std::string_view src_op) -> void;
 
     auto alloc_named_register_or_throw(const token& src_loc_tk, size_t indnt,
                                        std::string_view reg,
@@ -217,38 +218,36 @@ class x86 final {
     auto finish() -> void;
 
     auto mov(const token& src_loc_tk, size_t indent, std::string_view dst_op,
-            std::string_view src_op) -> void;
+             std::string_view src_op) -> void;
 
     auto op(const token& src_loc_tk, size_t indent, std::string_view op,
-          std::string_view dst_op, std::string_view src_op) -> void;
+            std::string_view dst_op, std::string_view src_op) -> void;
 
     auto cmp(const token& src_loc_tk, size_t indent, std::string_view dst_op,
-            std::string_view src_op) -> void;
+             std::string_view src_op) -> void;
 
     auto copy(const token& src_loc_tk, size_t indent, std::string_view src,
-            std::string_view dst, size_t bytes_count)
-        -> void;
+              std::string_view dst, size_t bytes_count) -> void;
 
     auto zero(const token& src_loc_tk, size_t indent, std::string_view dst,
-            size_t bytes_count) -> void;
+              size_t bytes_count) -> void;
 
     auto add(const size_t indent, const std::string_view dst,
-            const std::string_view src) -> void {
+             const std::string_view src) -> void {
         asm_line(indent, "add {}, {}", dst, src);
     }
 
     auto cmp(const size_t indent, const std::string_view dst,
-            const std::string_view src) -> void {
+             const std::string_view src) -> void {
         asm_line(indent, "cmp {}, {}", dst, src);
     }
 
     auto cmovs(const size_t indent, const std::string_view dst,
-                      const std::string_view src) -> void {
+               const std::string_view src) -> void {
         asm_line(indent, "cmovs {}, {}", dst, src);
     }
 
-    auto div_reg_ext(const size_t indent, const size_t operand_size)
-        -> void {
+    auto div_reg_ext(const size_t indent, const size_t operand_size) -> void {
         switch (operand_size) {
         case size_qword:
             asm_line(indent, "cqo");
@@ -267,80 +266,67 @@ class x86 final {
         }
     }
 
-    auto idiv(const size_t indent, const std::string_view operand)
-        -> void {
+    auto idiv(const size_t indent, const std::string_view operand) -> void {
         asm_line(indent, "idiv {}", operand);
     }
 
-
-    auto inc(const size_t indent, const std::string_view dst)
-        -> void {
+    auto inc(const size_t indent, const std::string_view dst) -> void {
         asm_line(indent, "inc {}", dst);
     }
 
     auto jcc(const size_t indent, const std::string_view comparison,
-            const std::string_view label) -> void {
+             const std::string_view label) -> void {
         asm_line(indent, "j{} {}", comparison, label);
     }
 
-    auto jmp(const size_t indent, const std::string_view label)
-        -> void {
+    auto jmp(const size_t indent, const std::string_view label) -> void {
         asm_line(indent, "jmp {}", label);
     }
 
-    auto jne(const size_t indent, const std::string_view label)
-        -> void {
+    auto jne(const size_t indent, const std::string_view label) -> void {
         asm_line(indent, "jne {}", label);
     }
 
-    auto label(const size_t indent, const std::string_view label)
-        -> void {
+    auto label(const size_t indent, const std::string_view label) -> void {
         asm_line(indent, "{}:", label);
     }
 
     auto lea(const size_t indent, const std::string_view dst,
-            const std::string_view operand) -> void {
+             const std::string_view operand) -> void {
         asm_line(indent, "lea {}, [{}]", dst, operand);
     }
 
-    auto neg(const size_t indent, const std::string_view operand)
-        -> void {
+    auto neg(const size_t indent, const std::string_view operand) -> void {
         asm_line(indent, "neg {}", operand);
     }
 
-    auto not_op(const size_t indent, const std::string_view operand)
-        -> void {
+    auto not_op(const size_t indent, const std::string_view operand) -> void {
         asm_line(indent, "not {}", operand);
     }
 
-    auto rep_movs(const size_t indent, const char size_suffix)
-        -> void {
+    auto rep_movs(const size_t indent, const char size_suffix) -> void {
         asm_line(indent, "rep movs{}", size_suffix);
     }
 
-    auto rep_stos(const size_t indent, const char size_suffix)
-        -> void {
+    auto rep_stos(const size_t indent, const char size_suffix) -> void {
         asm_line(indent, "rep stos{}", size_suffix);
     }
 
-    auto repe_cmps(const size_t indent, const char size_suffix)
-        -> void {
+    auto repe_cmps(const size_t indent, const char size_suffix) -> void {
         asm_line(indent, "repe cmps{}", size_suffix);
     }
 
     auto setcc(const size_t indent, const std::string_view comparison,
-              const std::string_view operand) -> void {
+               const std::string_view operand) -> void {
         asm_line(indent, "set{} {}", comparison, operand);
     }
 
     auto shl(const size_t indent, const std::string_view dst,
-            const std::string_view src) -> void {
+             const std::string_view src) -> void {
         asm_line(indent, "shl {}, {}", dst, src);
     }
 
-    auto syscall(const size_t indent) -> void {
-        asm_line(indent, "syscall");
-    }
+    auto syscall(const size_t indent) -> void { asm_line(indent, "syscall"); }
 
     auto dat_begin(const size_t size) -> void {
         switch (size) {
@@ -363,11 +349,9 @@ class x86 final {
 
     auto dat_separator() -> void { print(", "); }
 
-    auto dat_end() -> void { println(); }
+    auto dat_end() const -> void { println(); }
 
-    auto dat_value(const std::string_view value) -> void {
-        print("{}", value);
-    }
+    auto dat_value(const std::string_view value) -> void { print("{}", value); }
 
     auto str_begin() -> void { print("db `"); }
 
@@ -387,17 +371,17 @@ class x86 final {
     }
 
     auto test(const size_t indent, const std::string_view dst,
-            const std::string_view src) -> void {
+              const std::string_view src) -> void {
         asm_line(indent, "test {}, {}", dst, src);
     }
 
     auto times(const size_t count, const std::string_view directive,
-              const std::string_view value) -> void {
+               const std::string_view value) const -> void {
         std::println(os.get(), "times {} {} {}", count, directive, value);
     }
 
     auto xor_op(const size_t indent, const std::string_view dst,
-              const std::string_view src) -> void {
+                const std::string_view src) -> void {
         asm_line(indent, "xor {}, {}", dst, src);
     }
 

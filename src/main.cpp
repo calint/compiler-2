@@ -19,6 +19,7 @@
 #include "panic_exception.hpp"
 #include "program.hpp"
 #include "tokenizer.hpp"
+#include "utils.hpp"
 
 namespace {
 [[nodiscard]] auto read_file_to_string(const char* file_name) -> std::string;

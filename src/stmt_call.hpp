@@ -164,7 +164,7 @@ class stmt_call : public expression {
 
             if (not arg_reg.empty()) {
                 x.alloc_named_register_or_throw(arg.tok(), indent, arg_reg,
-                                                 param.get_type());
+                                                param.get_type());
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
@@ -180,9 +180,8 @@ class stmt_call : public expression {
 
                 std::vector<std::string> regs_lea;
 
-                const operand lea{arg.compile_lea(arg.tok(), tc, x, indent,
-                                                  regs_lea, "",
-                                                  arg_info.lea_path)};
+                const operand lea{arg.compile_lea(
+                    arg.tok(), tc, x, indent, regs_lea, "", arg_info.lea_path)};
 
                 for (const std::string& r : regs_lea) {
                     allocated_scratch_registers.emplace_back(r);
@@ -210,7 +209,7 @@ class stmt_call : public expression {
                 if (arg_reg.empty()) {
                     // no particular register requested
                     arg_reg = x.alloc_scratch_register(arg.tok(), indent,
-                                                        param.get_type());
+                                                       param.get_type());
                     allocated_scratch_registers.emplace_back(arg_reg);
                     allocated_registers_in_order.emplace_back(arg_reg);
                 }
@@ -219,7 +218,7 @@ class stmt_call : public expression {
                     arg_reg, param.get_type().size())};
 
                 arg.compile(tc, x, indent,
-                            tc.make_ident_info_for_register(x, reg_sized));
+                            toc::make_ident_info_for_register(x, reg_sized));
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             reg_sized, "", &param.get_type());
@@ -253,13 +252,14 @@ class stmt_call : public expression {
                 } else {
                     // identifier with unary ops
 
-                    const std::string scratch_reg{x.alloc_scratch_register(arg.tok(), indent, param.get_type())};
+                    const std::string scratch_reg{x.alloc_scratch_register(
+                        arg.tok(), indent, param.get_type())};
 
                     allocated_registers_in_order.emplace_back(scratch_reg);
                     allocated_scratch_registers.emplace_back(scratch_reg);
 
                     x.mov(param.tok(), indent, scratch_reg,
-                             arg_info.operand.str());
+                          arg_info.operand.str());
 
                     // apply unary ops
                     arg.get_unary_ops().compile(tc, x, indent, scratch_reg);
@@ -281,11 +281,10 @@ class stmt_call : public expression {
 
             if (arg_info.is_const()) {
                 x.mov(param.tok(), indent, arg_reg,
-                         std::format("{}{}", arg.get_unary_ops().to_string(),
-                                     arg_info.const_value));
+                      std::format("{}{}", arg.get_unary_ops().to_string(),
+                                  arg_info.const_value));
             } else {
-                x.mov(param.tok(), indent, arg_reg,
-                         arg_info.operand.str());
+                x.mov(param.tok(), indent, arg_reg, arg_info.operand.str());
                 arg.get_unary_ops().compile(tc, x, indent + 1, arg_reg);
             }
         }
@@ -301,8 +300,7 @@ class stmt_call : public expression {
 
         func.source_def_comment_to(x, indent);
 
-        x.label( indent,
-                   std::format("{}_{}", func.name(), new_call_path));
+        x.label(indent, std::format("{}_{}", func.name(), new_call_path));
 
         // enter function scope
 
@@ -313,9 +311,9 @@ class stmt_call : public expression {
         for (const alias_info& e : aliases_to_add) {
             x.comment_start(tok(), indent + 1);
 
-            x.print( "alias {} -> {}", e.from, e.to);
+            x.print("alias {} -> {}", e.from, e.to);
             if (not e.lea.empty()) {
-                x.print( " (lea: {})", e.lea);
+                x.print(" (lea: {})", e.lea);
             }
             x.println();
             tc.add_alias(e);
@@ -339,7 +337,7 @@ class stmt_call : public expression {
 
         // provide the exit label for 'return' to jump to
 
-        x.label( indent, ret_jmp_label);
+        x.label(indent, ret_jmp_label);
 
         // apply unary ops to result if present
 

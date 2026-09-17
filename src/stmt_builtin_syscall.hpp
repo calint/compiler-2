@@ -23,6 +23,6 @@ class stmt_builtin_syscall final : public stmt_call {
         -> void override {
 
         x.comment_source(tok(), indent, statement::trimmed_source(*this));
-        x.syscall( indent);
+        x.syscall(indent);
     }
 };

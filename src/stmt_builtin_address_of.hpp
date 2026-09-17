@@ -80,12 +80,12 @@ class stmt_builtin_address_of final : public expression {
             allocated_registers, "", src_info.lea_path)};
 
         if (dst_info.is_register()) {
-            x.lea( indent, dst_info.operand.address_str(),
-                     oper.address_str());
+            x.lea(indent, dst_info.operand.address_str(), oper.address_str());
         } else {
             // destination is memory location
-            const std::string reg{x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
-            x.lea( indent, reg, oper.address_str());
+            const std::string reg{
+                x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
+            x.lea(indent, reg, oper.address_str());
             x.mov(tok(), indent, dst_info.operand.str(), reg);
             x.free_scratch_register(tok(), indent, reg);
         }

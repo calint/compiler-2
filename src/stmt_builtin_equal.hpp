@@ -71,11 +71,11 @@ class stmt_builtin_equal final : public expression {
 
         // allocate the register for rep movs
         x.alloc_named_register_or_throw(tok(), indent, "rsi",
-                                         tc.get_type_default());
+                                        tc.get_type_default());
         x.alloc_named_register_or_throw(tok(), indent, "rdi",
-                                         tc.get_type_default());
+                                        tc.get_type_default());
         x.alloc_named_register_or_throw(tok(), indent, "rcx",
-                                         tc.get_type_default());
+                                        tc.get_type_default());
 
         std::vector<std::string> allocated_scratch_registers;
 
@@ -94,7 +94,7 @@ class stmt_builtin_equal final : public expression {
             lhs_.first_token(), tc, x, indent, lhs_.elems(),
             allocated_scratch_registers, "", lhs_info.lea_path)};
 
-        x.lea( indent, "rsi", lhs_operand.address_str());
+        x.lea(indent, "rsi", lhs_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -108,7 +108,7 @@ class stmt_builtin_equal final : public expression {
             rhs_.first_token(), tc, x, indent, rhs_.elems(),
             allocated_scratch_registers, "", rhs_info.lea_path)};
 
-        x.lea( indent, "rdi", rhs_operand.address_str());
+        x.lea(indent, "rdi", rhs_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -154,7 +154,7 @@ class stmt_builtin_equal final : public expression {
         x.mov(tok(), indent, "rcx", std::to_string(rcx));
 
         // copy
-        x.repe_cmps( indent, rep_size);
+        x.repe_cmps(indent, rep_size);
 
         x.free_named_register(tok(), indent, "rcx");
         x.free_named_register(tok(), indent, "rdi");
@@ -163,15 +163,14 @@ class stmt_builtin_equal final : public expression {
         // set true if equal
 
         if (dst_info.operand.is_memory()) {
-            x.setcc( indent, "e",
-                       dst_info.operand.str(operand::size_byte));
+            x.setcc(indent, "e", dst_info.operand.str(operand::size_byte));
             return;
         }
 
         // assumed register
 
-        x.setcc( indent, "e",
-                   x.get_sized_register_operand(dst_info.operand.str(),
-                                                 operand::size_byte));
+        x.setcc(indent, "e",
+                x.get_sized_register_operand(dst_info.operand.str(),
+                                             operand::size_byte));
     }
 };
