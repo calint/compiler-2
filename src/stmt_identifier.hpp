@@ -153,12 +153,12 @@ class stmt_identifier : public statement {
     auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x.comment_source(tc, *this, indent);
+        x.comment_source(*this, indent);
 
         const ident_info src_info{tc.make_ident_info(x, *this)};
 
         if (src_info.is_const()) {
-            x.mov(tc, tok(), indent, dst_info.operand.str(),
+            x.mov(tok(), indent, dst_info.operand.str(),
                      std::format("{}{}", get_unary_ops().to_string(),
                                  src_info.const_value));
             return;
@@ -169,7 +169,7 @@ class stmt_identifier : public statement {
         if (not is_indexed() and not src_info.has_lea()) {
             // note: contains no array indexing and is not relative a lea,
             //       e.g. world.location.link
-            x.mov(tc, tok(), indent, dst_info.operand.str(),
+            x.mov(tok(), indent, dst_info.operand.str(),
                      src_info.operand.str());
             get_unary_ops().compile(tc, x, indent, dst_info.operand.str());
             return;
@@ -183,14 +183,14 @@ class stmt_identifier : public statement {
             tok(), tc, x, indent, elems(), allocated_registers, "",
             src_info.lea_path)};
 
-        x.mov(tc, tok(), indent, dst_info.operand.str(),
+        x.mov(tok(), indent, dst_info.operand.str(),
                  op.str(src_info.type().size()));
 
         get_unary_ops().compile(tc, x, indent, dst_info.operand.str());
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
-            x.free_scratch_register(tc, tok(), indent, reg);
+            x.free_scratch_register(tok(), indent, reg);
         }
     }
 
@@ -279,10 +279,10 @@ class stmt_identifier : public statement {
                 const bool is_encodable{type_size == 1 or type_size == 2 or
                                         type_size == 4 or type_size == 8};
                 if (is_encodable) {
-                    const std::string reg_idx{x.alloc_scratch_register(tc, src_loc_tk, indent, tc.get_type_default())};
+                    const std::string reg_idx{x.alloc_scratch_register(src_loc_tk, indent, tc.get_type_default())};
                     allocated_registers.push_back(reg_idx);
 
-                    x.comment_line(tc, curr_elem.array_index_expr->tok(),
+                    x.comment_line(curr_elem.array_index_expr->tok(),
                                       indent, "set array index");
 
                     curr_elem.array_index_expr->compile(
@@ -330,13 +330,13 @@ class stmt_identifier : public statement {
             }
 
             if (reg_offset == "rsp") {
-                reg_offset = x.alloc_scratch_register(tc, src_loc_tk, indent,
+                reg_offset = x.alloc_scratch_register(src_loc_tk, indent,
                                                        tc.get_type_default());
                 allocated_registers.push_back(reg_offset);
                 x.lea( indent, reg_offset,
                          std::format("rsp - {}", -base_info.stack_ix));
             } else if (reg_offset == base_info.operand.base_register) {
-                reg_offset = x.alloc_scratch_register(tc, src_loc_tk, indent,
+                reg_offset = x.alloc_scratch_register(src_loc_tk, indent,
                                                        tc.get_type_default());
                 allocated_registers.push_back(reg_offset);
                 x.lea( indent, reg_offset,
@@ -344,9 +344,9 @@ class stmt_identifier : public statement {
             }
 
             // calculate array index
-            const std::string reg_idx{x.alloc_scratch_register(tc, src_loc_tk, indent, tc.get_type_default())};
+            const std::string reg_idx{x.alloc_scratch_register(src_loc_tk, indent, tc.get_type_default())};
 
-            x.comment_line(tc, curr_elem.array_index_expr->tok(), indent,
+            x.comment_line(curr_elem.array_index_expr->tok(), indent,
                               "set array index");
 
             curr_elem.array_index_expr->compile(
@@ -364,14 +364,14 @@ class stmt_identifier : public statement {
                 if (std::optional<int> shl{get_shift_amount(type_size)}; shl) {
                     x.shl( indent, reg_idx, std::format("{}", *shl));
                 } else {
-                    x.imul(tc, tk, indent, reg_idx,
+                    x.imul(tk, indent, reg_idx,
                               std::format("{}", type_size));
                 }
             }
 
             // add index offset to base register
-            x.op(tc, src_loc_tk, indent, "add", reg_offset, reg_idx);
-            x.free_scratch_register(tc, src_loc_tk, indent, reg_idx);
+            x.op(src_loc_tk, indent, "add", reg_offset, reg_idx);
+            x.free_scratch_register(src_loc_tk, indent, reg_idx);
 
             // accumulate field offsets
             if (i + 1 < elems_size) {
@@ -427,15 +427,15 @@ class stmt_identifier : public statement {
             return;
         }
 
-        x.comment_line(tc, tk, indent, "bounds check");
+        x.comment_line(tk, indent, "bounds check");
 
         // Allocate line number register once if needed
         std::string reg_line_num;
         if (tc.is_bounds_check_with_line()) {
-            reg_line_num = x.alloc_scratch_register(tc, tk, indent,
+            reg_line_num = x.alloc_scratch_register(tk, indent,
                                                      tc.get_type_default());
-            x.comment_line(tc, tk, indent, "line number");
-            x.mov(tc, tk, indent, reg_line_num,
+            x.comment_line(tk, indent, "line number");
+            x.mov(tk, indent, reg_line_num,
                      std::to_string(tk.at_line()));
         }
 
@@ -450,18 +450,18 @@ class stmt_identifier : public statement {
 
         if (tc.is_bounds_check_upper()) {
             if (not reg_size.empty()) {
-                const std::string reg_top_idx = x.alloc_scratch_register(tc, tk, indent, tc.get_type_default());
-                x.mov(tc, tk, indent, reg_top_idx, reg_size);
+                const std::string reg_top_idx = x.alloc_scratch_register(tk, indent, tc.get_type_default());
+                x.mov(tk, indent, reg_top_idx, reg_size);
                 x.add( indent, reg_top_idx, reg_to_check);
                 x.cmp(indent, reg_top_idx,
                          std::to_string(array_size));
-                x.free_scratch_register(tc, tk, indent, reg_top_idx);
+                x.free_scratch_register(tk, indent, reg_top_idx);
             } else {
                 x.cmp(indent, reg_to_check,
                          std::to_string(array_size));
             }
             if (tc.is_bounds_check_with_line()) {
-                x.op(tc, tk, indent, std::format("cmov{}", comparison),
+                x.op(tk, indent, std::format("cmov{}", comparison),
                         "rbp", reg_line_num);
             }
             if (tc.is_bounds_check_upper()) {
@@ -471,7 +471,7 @@ class stmt_identifier : public statement {
 
         // free line number register if allocated
         if (tc.is_bounds_check_with_line()) {
-            x.free_scratch_register(tc, tk, indent, reg_line_num);
+            x.free_scratch_register(tk, indent, reg_line_num);
         }
     }
 
@@ -491,7 +491,7 @@ class stmt_identifier : public statement {
                 return lea;
             }
 
-            const std::string index_reg{x.alloc_scratch_register(tc, src_loc_tk, indent, tc.get_type_default())};
+            const std::string index_reg{x.alloc_scratch_register(src_loc_tk, indent, tc.get_type_default())};
             allocated_registers.push_back(index_reg);
 
             const operand op{lea};
@@ -501,7 +501,7 @@ class stmt_identifier : public statement {
             if (not op.index_register.empty() or op.displacement != 0) {
                 x.lea( indent, index_reg, lea);
             } else {
-                x.mov(tc, src_loc_tk, indent, index_reg, lea);
+                x.mov(src_loc_tk, indent, index_reg, lea);
             }
 
             return index_reg;

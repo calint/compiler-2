@@ -67,14 +67,14 @@ class stmt_builtin_equal final : public expression {
     auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x.comment_source(tc, *this, indent);
+        x.comment_source(*this, indent);
 
         // allocate the register for rep movs
-        x.alloc_named_register_or_throw(tc, tok(), indent, "rsi",
+        x.alloc_named_register_or_throw(tok(), indent, "rsi",
                                          tc.get_type_default());
-        x.alloc_named_register_or_throw(tc, tok(), indent, "rdi",
+        x.alloc_named_register_or_throw(tok(), indent, "rdi",
                                          tc.get_type_default());
-        x.alloc_named_register_or_throw(tc, tok(), indent, "rcx",
+        x.alloc_named_register_or_throw(tok(), indent, "rcx",
                                          tc.get_type_default());
 
         std::vector<std::string> allocated_scratch_registers;
@@ -89,7 +89,7 @@ class stmt_builtin_equal final : public expression {
         }
 
         // from operand to rsi
-        x.comment_source(tc, lhs_, indent);
+        x.comment_source(lhs_, indent);
         const operand lhs_operand{stmt_identifier::compile_effective_address(
             lhs_.first_token(), tc, x, indent, lhs_.elems(),
             allocated_scratch_registers, "", lhs_info.lea_path)};
@@ -98,12 +98,12 @@ class stmt_builtin_equal final : public expression {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            x.free_scratch_register(tc, tok(), indent, reg);
+            x.free_scratch_register(tok(), indent, reg);
         }
 
         // to operand to 'rdi'
         allocated_scratch_registers.clear();
-        x.comment_source(tc, rhs_, indent);
+        x.comment_source(rhs_, indent);
         const operand rhs_operand{stmt_identifier::compile_effective_address(
             rhs_.first_token(), tc, x, indent, rhs_.elems(),
             allocated_scratch_registers, "", rhs_info.lea_path)};
@@ -112,7 +112,7 @@ class stmt_builtin_equal final : public expression {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            x.free_scratch_register(tc, tok(), indent, reg);
+            x.free_scratch_register(tok(), indent, reg);
         }
 
         if (lhs_info.type().name() != rhs_info.type().name()) {
@@ -151,14 +151,14 @@ class stmt_builtin_equal final : public expression {
             rep_size = 'w';
             rcx /= toc::size_word;
         }
-        x.mov(tc, tok(), indent, "rcx", std::to_string(rcx));
+        x.mov(tok(), indent, "rcx", std::to_string(rcx));
 
         // copy
         x.repe_cmps( indent, rep_size);
 
-        x.free_named_register(tc, tok(), indent, "rcx");
-        x.free_named_register(tc, tok(), indent, "rdi");
-        x.free_named_register(tc, tok(), indent, "rsi");
+        x.free_named_register(tok(), indent, "rcx");
+        x.free_named_register(tok(), indent, "rdi");
+        x.free_named_register(tok(), indent, "rsi");
 
         // set true if equal
 

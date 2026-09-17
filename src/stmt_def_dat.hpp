@@ -167,7 +167,7 @@ class stmt_def_dat final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x.comment_source(tc, *this, indent);
+        x.comment_source(*this, indent);
         const var_info var{
             .name{name_tk_.text()},
             .type_ptr{&get_type()},

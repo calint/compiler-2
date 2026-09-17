@@ -18,11 +18,11 @@ class stmt_builtin_syscall final : public stmt_call {
 
     stmt_builtin_syscall() = default;
 
-    auto compile(toc& tc, x86& x, const size_t indent,
+    auto compile([[maybe_unused]] toc& tc, x86& x, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        x.comment_source(tc, *this, indent);
+        x.comment_source(*this, indent);
         x.syscall( indent);
     }
 };

@@ -271,7 +271,7 @@ class toc final {
                             name, source_location_hr(c.declared_at_tk)));
         }
 
-        x86::comment_start(*this, src_loc_tk, os, indnt);
+        x86::comment_start(source_, src_loc_tk, os, indnt);
         std::println(os, "const {} = {}", name, value);
         frames_.back().add_const(name,
                                  {.declared_at_tk{src_loc_tk}, .value{value}});
@@ -361,7 +361,7 @@ class toc final {
         const ident_info& name_info{
             make_ident_info_parsing(src_loc_tk, var.name)};
 
-        x86::comment_start(*this, src_loc_tk, os, indnt);
+        x86::comment_start(source_, src_loc_tk, os, indnt);
         std::print(os, "{}: {}", var.name, name_info.type().name());
         if (var.array_size) {
             std::print(os, "[{}]", var.array_size);
@@ -717,7 +717,7 @@ class toc final {
         return {
             .id{reg},
             .elem_path{std::string{reg}},
-            .type_path{&x.get_allocated_register_type(*this, reg)},
+            .type_path{&x.get_allocated_register_type(reg)},
             .lea_path{""},
             .operand{reg},
             .ident_type{ident_info::ident_type::REGISTER},
@@ -736,7 +736,7 @@ class toc final {
     source_location_for_use_in_label(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{line_and_col_num_for_char_index(
+        const auto [line, col]{utils::line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}_{}", line, col);
@@ -746,7 +746,7 @@ class toc final {
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
 
-        const auto [line, col]{line_and_col_num_for_char_index(
+        const auto [line, col]{utils::line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         return std::format("{}:{}", line, col);
@@ -1025,7 +1025,7 @@ class toc final {
         // is it a register?
         if (const size_t reg_size{utils::register_size(id.str())};
             reg_size != 0) {
-            const type& tpe{x ? x->get_allocated_register_type(*this, id.str())
+            const type& tpe{x ? x->get_allocated_register_type(id.str())
                               : get_builtin_type_for_size(reg_size)};
             //? unary ops?
             return {
@@ -1149,26 +1149,6 @@ class toc final {
         }
 
         std::unreachable();
-    }
-
-    [[nodiscard]] static auto line_and_col_num_for_char_index(
-        const size_t at_line, size_t char_index_in_source,
-        const std::string_view src) -> std::pair<size_t, size_t> {
-
-        if (char_index_in_source >= src.size()) {
-            return {at_line, 0};
-        }
-
-        size_t at_col{};
-        while (src[char_index_in_source] != '\n') {
-            ++at_col;
-            if (char_index_in_source == 0) {
-                break;
-            }
-            --char_index_in_source;
-        }
-
-        return {at_line, at_col};
     }
 
 // pragma below for clang++ to not generate warning stemming from

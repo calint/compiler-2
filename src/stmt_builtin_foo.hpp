@@ -71,13 +71,13 @@ class stmt_builtin_foo final : public statement {
         std::stringstream ss;
         ident_.source_to(ss);
         // make comment friendly string replacing consecutive with one space
-        x.comment_line(tc, tok(), indent, "foo {}",
+        x.comment_line(tok(), indent, "foo {}",
                           std::regex_replace(ss.str(), utils::regex_ws(), " "));
 
         const std::string loop_label{tc.get_call_path_extend(tok(), "foo")};
         tc.enter_foo(loop_label);
 
-        const std::string reg_iter{x.alloc_scratch_register(tc, tok(), indent, tc.get_type_default())};
+        const std::string reg_iter{x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
 
         const ident_info ii{tc.make_ident_info(x, ident_)};
 
@@ -116,7 +116,7 @@ class stmt_builtin_foo final : public statement {
 
             for (const std::string& reg :
                  allocated_registers | std::views::reverse) {
-                x.free_scratch_register(tc, tok(), indent, reg);
+                x.free_scratch_register(tok(), indent, reg);
             }
         } else {
             x.lea( indent, reg_iter, ii.operand.address_str());
@@ -126,7 +126,7 @@ class stmt_builtin_foo final : public statement {
         tc.add_const(tok(), x.os, indent, "n",
                      static_cast<int64_t>(ii.array_size));
 
-        x.mov(tc, tok(), indent, var_i_addr_op, "0");
+        x.mov(tok(), indent, var_i_addr_op, "0");
         x.label( indent, loop_label);
         code_.compile(tc, x, indent, toc::make_ident_info_empty());
         x.label( indent + 1, loop_label + "_continue");
@@ -138,7 +138,7 @@ class stmt_builtin_foo final : public statement {
         x.jne( indent + 2, loop_label);
         x.label( indent, loop_label + "_end");
 
-        x.free_scratch_register(tc, tok(), indent, reg_iter);
+        x.free_scratch_register(tok(), indent, reg_iter);
 
         tc.exit_foo(loop_label);
     }

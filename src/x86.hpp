@@ -14,7 +14,6 @@
 
 #include "utils.hpp"
 
-class toc;
 class token;
 class statement;
 class type;
@@ -50,6 +49,16 @@ class x86 final {
 
     std::regex regex_nasm_number_register_{R"(r(\d+))"};
 
+    // cached data that would otherwise require a 'toc&' per call; set once
+    // via the setters below before compiling starts
+    std::string_view source_;
+    const type* default_type_{};
+    const type* type_bool_{};
+    const type* type_i64_{};
+    const type* type_i32_{};
+    const type* type_i16_{};
+    const type* type_i8_{};
+
   public:
     // the assembler output stream for the current compile pass; rebindable
     // via 'use_stream' so trial-compiles can target a scratch buffer while
@@ -57,6 +66,22 @@ class x86 final {
     std::reference_wrapper<std::ostream> os;
 
     explicit x86(std::ostream& os_ref) : os{os_ref} {}
+
+    // called once by 'program' before compiling starts; provides the pieces
+    // of 'toc' state 'x86' needs without holding a 'toc&'
+    auto set_source(const std::string_view source) -> void { source_ = source; }
+
+    auto set_type_default(const type& tpe) -> void { default_type_ = &tpe; }
+
+    auto set_builtin_types(const type& t_i64, const type& t_i32,
+                           const type& t_i16, const type& t_i8,
+                           const type& t_bool) -> void {
+        type_i64_ = &t_i64;
+        type_i32_ = &t_i32;
+        type_i16_ = &t_i16;
+        type_i8_ = &t_i8;
+        type_bool_ = &t_bool;
+    }
 
     // redirects output to 'new_stream', returning the previously used stream
     // so the caller can restore it later
@@ -96,29 +121,26 @@ class x86 final {
         }
     }
 
-    auto comment_source(const toc& tc, const statement& statement,
-                       size_t indent) -> void;
+    auto comment_source(const statement& statement, size_t indent) -> void;
 
-    auto comment_source(const toc& tc, const statement& statement,
-                       size_t indent, std::string_view dst,
-                       std::string_view op) -> void;
+    auto comment_source(const statement& statement, size_t indent,
+                       std::string_view dst, std::string_view op) -> void;
 
-    static auto comment_start(const toc& tc, const token& source_location,
-                              std::ostream& os, size_t indent) -> void;
+    static auto comment_start(std::string_view source,
+                              const token& source_location, std::ostream& os,
+                              size_t indent) -> void;
 
-    // member form: uses this instance's own print/os instead of taking one
-    auto comment_start(const toc& tc, const token& source_location,
-                       size_t indent) -> void;
+    // member form: uses this instance's own print/os/source instead of
+    // taking them
+    auto comment_start(const token& source_location, size_t indent) -> void;
 
-    auto comment_token(const toc& tc, const token& token, size_t indent)
-        -> void;
+    auto comment_token(const token& token, size_t indent) -> void;
 
     template <typename... args_t>
-    auto comment_line(const toc& tc, const token& source_location,
-                      const size_t indent,
+    auto comment_line(const token& source_location, const size_t indent,
                       const std::format_string<args_t...> format,
                       args_t&&... args) -> void {
-        comment_start(tc, source_location, indent);
+        comment_start(source_location, indent);
         println(format, std::forward<args_t>(args)...);
     }
 
@@ -130,22 +152,13 @@ class x86 final {
         println(format, std::forward<args_t>(args)...);
     }
 
-    // static form: needed by the still-static 'comment_source' overloads,
-    // which are used directly by 'toc' (not yet converted to hold an 'x86&')
-    template <typename... args_t>
-    static auto comment_line(std::ostream& os, const size_t indent,
-                             const std::format_string<args_t...> format,
-                             args_t&&... args) -> void {
-        comment_indent(os, indent);
-        std::println(os, format, std::forward<args_t>(args)...);
-    }
-
     auto comment_indent(const size_t indent) -> void {
         comment_indent(os.get(), indent);
     }
 
     // static form: needed by the static 'comment_start' overload, which is
-    // still used directly by 'toc' (not yet converted to hold an 'x86&')
+    // used directly by 'toc' (which has no 'x86&' available in its own
+    // 'add_const'/'add_var' methods)
     static auto comment_indent(std::ostream& os, const size_t indent) -> void {
         std::print(os, ";");
         if (indent != 0) {
@@ -178,52 +191,49 @@ class x86 final {
         println(format, std::forward<args_t>(args)...);
     }
 
-    auto imul(toc& tc, const token& src_loc_tk, size_t indent,
-            std::string_view dst_op, std::string_view src_op) -> void;
+    auto imul(const token& src_loc_tk, size_t indent, std::string_view dst_op,
+            std::string_view src_op) -> void;
 
-    auto alloc_named_register_or_throw(const toc& tc, const token& src_loc_tk,
-                                       size_t indnt, std::string_view reg,
+    auto alloc_named_register_or_throw(const token& src_loc_tk, size_t indnt,
+                                       std::string_view reg,
                                        const type& type_ref) -> void;
 
-    [[nodiscard]] auto alloc_scratch_register(const toc& tc,
-                                              const token& src_loc_tk,
+    [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
                                               size_t indnt,
                                               const type& type_ref)
         -> std::string;
 
-    auto free_named_register(const toc& tc, const token& src_loc_tk,
-                             size_t indnt, std::string_view reg) -> void;
+    auto free_named_register(const token& src_loc_tk, size_t indnt,
+                             std::string_view reg) -> void;
 
-    auto free_scratch_register(const toc& tc, const token& src_loc_tk,
-                               size_t indnt, std::string_view reg) -> void;
+    auto free_scratch_register(const token& src_loc_tk, size_t indnt,
+                               std::string_view reg) -> void;
 
     // returns the type a currently allocated register holds, falling back to
     // a builtin type inferred from the register's width if it isn't (or is
     // no longer) allocated
-    [[nodiscard]] auto get_allocated_register_type(const toc& tc,
-                                                   std::string_view reg) const
+    [[nodiscard]] auto get_allocated_register_type(std::string_view reg) const
         -> const type&;
 
     // asserts register pools are balanced and prints usage stats; called
     // once at the end of the compile pass
     auto finish() -> void;
 
-    auto mov(toc& tc, const token& src_loc_tk, size_t indent,
-            std::string_view dst_op, std::string_view src_op) -> void;
+    auto mov(const token& src_loc_tk, size_t indent, std::string_view dst_op,
+            std::string_view src_op) -> void;
 
-    auto op(toc& tc, const token& src_loc_tk, size_t indent,
-          std::string_view op, std::string_view dst_op,
-          std::string_view src_op) -> void;
+    auto op(const token& src_loc_tk, size_t indent, std::string_view op,
+          std::string_view dst_op, std::string_view src_op) -> void;
 
-    auto cmp(toc& tc, const token& src_loc_tk, size_t indent,
-            std::string_view dst_op, std::string_view src_op) -> void;
+    auto cmp(const token& src_loc_tk, size_t indent, std::string_view dst_op,
+            std::string_view src_op) -> void;
 
-    auto copy(toc& tc, const token& src_loc_tk, size_t indent,
-            std::string_view src, std::string_view dst, size_t bytes_count)
+    auto copy(const token& src_loc_tk, size_t indent, std::string_view src,
+            std::string_view dst, size_t bytes_count)
         -> void;
 
-    auto zero(toc& tc, const token& src_loc_tk, size_t indent,
-            std::string_view dst, size_t bytes_count) -> void;
+    auto zero(const token& src_loc_tk, size_t indent, std::string_view dst,
+            size_t bytes_count) -> void;
 
     auto add(const size_t indent, const std::string_view dst,
             const std::string_view src) -> void {
@@ -534,8 +544,15 @@ class x86 final {
     }
 
   private:
-    [[nodiscard]] static auto operand_size(const type& default_type,
-                                           std::string_view operand) -> size_t;
+    [[nodiscard]] auto operand_size(std::string_view operand) const -> size_t;
+
+    // human-readable "line:col" for a token, using the cached source text
+    [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
+        -> std::string;
+
+    // returns the cached builtin type (i64/i32/i16/i8) matching 'size'
+    [[nodiscard]] auto get_builtin_type_for_size(size_t size) const
+        -> const type&;
 
     [[nodiscard]] static auto is_memory_operand(const std::string_view operand)
         -> bool {

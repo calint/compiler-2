@@ -122,7 +122,7 @@ class expr_any final : public statement {
         ident_info ii{dst_info};
 
         for (const auto [i, el] : std::views::enumerate(vars_)) {
-            x.comment_line(tc, tok(), indent, "[{}]", i);
+            x.comment_line(tok(), indent, "[{}]", i);
             compile_variant(tc, x, indent, ii, tok(), el);
             ii.operand.displacement += static_cast<int32_t>(ii.type().size());
         }
@@ -134,10 +134,10 @@ class expr_any final : public statement {
 
         const size_t nbytes{diff * ii.type().size()};
 
-        x.comment_line(tc, tok(), indent,
+        x.comment_line(tok(), indent,
                           "zero remaining elements: {} * {} B = {} B", diff,
                           ii.type().size(), nbytes);
-        x.zero(tc, tok(), indent, ii.operand.address_str(), nbytes);
+        x.zero(tok(), indent, ii.operand.address_str(), nbytes);
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
@@ -282,7 +282,7 @@ class expr_any final : public statement {
                         if (not src_info.is_const()) {
                             std::unreachable();
                         }
-                        x.mov(tc, tk, indent, dst_info.operand.str(),
+                        x.mov(tk, indent, dst_info.operand.str(),
                                  std::format("{}", src_info.const_value));
                         return;
                     }
@@ -316,11 +316,11 @@ class expr_any final : public statement {
                         // yes, constant evaluation
                         if (*const_eval) {
                             // constant evaluation is true
-                            x.mov(tc, tk, indent, dst_info.operand.str(),
+                            x.mov(tk, indent, dst_info.operand.str(),
                                      "1");
                         } else {
                             // constant evaluation is false
-                            x.mov(tc, tk, indent, dst_info.operand.str(),
+                            x.mov(tk, indent, dst_info.operand.str(),
                                      "0");
                         }
                     }

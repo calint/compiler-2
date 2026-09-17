@@ -55,7 +55,7 @@ class stmt_builtin_address_of final : public expression {
     auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x.comment_source(tc, *this, indent);
+        x.comment_source(*this, indent);
 
         if (dst_info.is_const()) {
             throw compiler_exception{stmt_ident_.first_token(),
@@ -84,15 +84,15 @@ class stmt_builtin_address_of final : public expression {
                      oper.address_str());
         } else {
             // destination is memory location
-            const std::string reg{x.alloc_scratch_register(tc, tok(), indent, tc.get_type_default())};
+            const std::string reg{x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
             x.lea( indent, reg, oper.address_str());
-            x.mov(tc, tok(), indent, dst_info.operand.str(), reg);
-            x.free_scratch_register(tc, tok(), indent, reg);
+            x.mov(tok(), indent, dst_info.operand.str(), reg);
+            x.free_scratch_register(tok(), indent, reg);
         }
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
-            x.free_scratch_register(tc, tok(), indent, reg);
+            x.free_scratch_register(tok(), indent, reg);
         }
     }
 };

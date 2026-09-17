@@ -198,7 +198,11 @@ class program final {
 
     auto build(std::ostream& os) -> void {
         x86 x{os};
+        x.set_source(tc_.source());
+        x.set_type_default(type_i64);
+        x.set_builtin_types(type_i64, type_i32, type_i16, type_i8, type_bool);
         compile(tc_, x, 0);
+        x.finish();
         tc_.finish(os);
     }
 

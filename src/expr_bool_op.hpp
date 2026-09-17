@@ -102,7 +102,7 @@ class expr_bool_op final : public statement {
                const std::string_view dst) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
-        x.comment_source(tc, *this, indent, "?",
+        x.comment_source(*this, indent, "?",
                             inverted ? " 'or' inverted: " : " ");
         x.label( indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
@@ -188,7 +188,7 @@ class expr_bool_op final : public statement {
                 const std::string_view dst) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
-        x.comment_source(tc, *this, indent, "?",
+        x.comment_source(*this, indent, "?",
                             inverted ? " 'and' inverted: " : " ");
         x.label( indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
@@ -395,13 +395,13 @@ class expr_bool_op final : public statement {
         const std::string src{
             resolve_expr(tc, x, indent, rhs, false, allocated_registers)};
 
-        x.cmp(tc, tok(), indent, dst, src);
+        x.cmp(tok(), indent, dst, src);
 
         // free allocated registers in reverse order
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
 
-            x.free_scratch_register(tc, tok(), indent, reg);
+            x.free_scratch_register(tok(), indent, reg);
         }
     }
 
@@ -413,12 +413,12 @@ class expr_bool_op final : public statement {
         const std::string dst{
             resolve_expr(tc, x, indent, lhs, true, allocated_registers)};
 
-        x.cmp(tc, tok(), indent, dst, "0");
+        x.cmp(tok(), indent, dst, "0");
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
 
-            x.free_scratch_register(tc, tok(), indent, reg);
+            x.free_scratch_register(tok(), indent, reg);
         }
     }
 
@@ -437,7 +437,7 @@ class expr_bool_op final : public statement {
         }
 
         if (expr.is_expression()) {
-            const std::string reg{x.alloc_scratch_register(tc, expr.tok(), indent, expr.get_type())};
+            const std::string reg{x.alloc_scratch_register(expr.tok(), indent, expr.get_type())};
             allocated_registers.emplace_back(reg);
             expr.compile(tc, x, indent + 1,
                          tc.make_ident_info_for_register(x, reg));
@@ -448,7 +448,7 @@ class expr_bool_op final : public statement {
         const ident_info expr_info{tc.make_ident_info(x, expr)};
         if (expr_info.is_const()) {
             if (is_lhs) {
-                const std::string reg{x.alloc_scratch_register(tc, expr.tok(), indent, tc.get_type_default())};
+                const std::string reg{x.alloc_scratch_register(expr.tok(), indent, tc.get_type_default())};
                 allocated_registers.emplace_back(reg);
                 expr.compile(tc, x, indent + 1,
                              tc.make_ident_info_for_register(x, reg));
@@ -464,10 +464,10 @@ class expr_bool_op final : public statement {
         }
 
         // 'expr' is not an expression and has unary ops
-        const std::string reg{x.alloc_scratch_register(tc, expr.tok(), indent,
+        const std::string reg{x.alloc_scratch_register(expr.tok(), indent,
                                                         tc.get_type_default())};
         allocated_registers.emplace_back(reg);
-        x.mov(tc, expr.tok(), indent, reg, expr_info.operand.str());
+        x.mov(expr.tok(), indent, reg, expr_info.operand.str());
         expr.get_unary_ops().compile(tc, x, indent, reg);
         return reg;
     }

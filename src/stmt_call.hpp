@@ -120,7 +120,7 @@ class stmt_call : public expression {
     auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x.comment_source(tc, *this, indent);
+        x.comment_source(*this, indent);
 
         const stmt_def_func& func{
             tc.get_func_or_throw(tok(), statement::identifier())};
@@ -163,7 +163,7 @@ class stmt_call : public expression {
             std::string arg_reg{param.get_register_name_or_empty()};
 
             if (not arg_reg.empty()) {
-                x.alloc_named_register_or_throw(tc, arg.tok(), indent, arg_reg,
+                x.alloc_named_register_or_throw(arg.tok(), indent, arg_reg,
                                                  param.get_type());
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
@@ -209,7 +209,7 @@ class stmt_call : public expression {
             if (arg.is_expression()) {
                 if (arg_reg.empty()) {
                     // no particular register requested
-                    arg_reg = x.alloc_scratch_register(tc, arg.tok(), indent,
+                    arg_reg = x.alloc_scratch_register(arg.tok(), indent,
                                                         param.get_type());
                     allocated_scratch_registers.emplace_back(arg_reg);
                     allocated_registers_in_order.emplace_back(arg_reg);
@@ -253,12 +253,12 @@ class stmt_call : public expression {
                 } else {
                     // identifier with unary ops
 
-                    const std::string scratch_reg{x.alloc_scratch_register(tc, arg.tok(), indent, param.get_type())};
+                    const std::string scratch_reg{x.alloc_scratch_register(arg.tok(), indent, param.get_type())};
 
                     allocated_registers_in_order.emplace_back(scratch_reg);
                     allocated_scratch_registers.emplace_back(scratch_reg);
 
-                    x.mov(tc, param.tok(), indent, scratch_reg,
+                    x.mov(param.tok(), indent, scratch_reg,
                              arg_info.operand.str());
 
                     // apply unary ops
@@ -280,11 +280,11 @@ class stmt_call : public expression {
             const ident_info& arg_info{tc.make_ident_info(x, arg)};
 
             if (arg_info.is_const()) {
-                x.mov(tc, param.tok(), indent, arg_reg,
+                x.mov(param.tok(), indent, arg_reg,
                          std::format("{}{}", arg.get_unary_ops().to_string(),
                                      arg_info.const_value));
             } else {
-                x.mov(tc, param.tok(), indent, arg_reg,
+                x.mov(param.tok(), indent, arg_reg,
                          arg_info.operand.str());
                 arg.get_unary_ops().compile(tc, x, indent + 1, arg_reg);
             }
@@ -299,7 +299,7 @@ class stmt_call : public expression {
         const std::string ret_jmp_label{
             std::format("{}_{}_end", func.name(), new_call_path)};
 
-        func.source_def_comment_to(tc, x, indent);
+        func.source_def_comment_to(x, indent);
 
         x.label( indent,
                    std::format("{}_{}", func.name(), new_call_path));
@@ -311,7 +311,7 @@ class stmt_call : public expression {
 
         // add aliases
         for (const alias_info& e : aliases_to_add) {
-            x.comment_start(tc, tok(), indent + 1);
+            x.comment_start(tok(), indent + 1);
 
             x.print( "alias {} -> {}", e.from, e.to);
             if (not e.lea.empty()) {
@@ -329,9 +329,9 @@ class stmt_call : public expression {
              allocated_registers_in_order | std::views::reverse) {
 
             if (std::ranges::contains(allocated_scratch_registers, reg)) {
-                x.free_scratch_register(tc, tok(), indent + 1, reg);
+                x.free_scratch_register(tok(), indent + 1, reg);
             } else if (std::ranges::contains(allocated_named_registers, reg)) {
-                x.free_named_register(tc, tok(), indent + 1, reg);
+                x.free_named_register(tok(), indent + 1, reg);
             } else {
                 std::unreachable();
             }

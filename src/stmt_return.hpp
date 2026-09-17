@@ -17,15 +17,15 @@ class stmt_return final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        x.comment_source(tc, *this, indent);
+        x.comment_source(*this, indent);
 
         // get the jump target to exit function
         const std::string_view ret_lbl{tc.get_func_return_label()};
 
         if (ret_lbl.empty()) {
             // note: return from 'main' is exiting
-            x.mov(tc, tok(), indent, "rdi", "0");
-            x.mov(tc, tok(), indent, "rax", "60");
+            x.mov(tok(), indent, "rdi", "0");
+            x.mov(tok(), indent, "rax", "60");
             x.syscall( indent);
             return;
         }

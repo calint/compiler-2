@@ -46,7 +46,7 @@ class stmt_builtin_array_size_of final : public expression {
     auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x.comment_source(tc, *this, indent);
+        x.comment_source(*this, indent);
 
         if (dst_info.is_const()) {
             throw compiler_exception{tok(), "destination cannot be a constant"};
@@ -70,7 +70,7 @@ class stmt_builtin_array_size_of final : public expression {
 
         // variable, register or field
         const std::string dst_op{dst_info.operand.str()};
-        x.mov(tc, tok(), indent, dst_op,
+        x.mov(tok(), indent, dst_op,
                  std::format("{}", src_info.array_size));
 
         get_unary_ops().compile(tc, x, indent, dst_op);

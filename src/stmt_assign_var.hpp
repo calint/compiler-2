@@ -55,7 +55,7 @@ class stmt_assign_var final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x.comment_source(tc, *this, indent);
+        x.comment_source(*this, indent);
 
         // get information about the destination of the compilation
         ident_info dst_info{tc.make_ident_info(x, stmt_ident_)};
@@ -82,7 +82,7 @@ class stmt_assign_var final : public statement {
                                               lea_registers);
         expr_.compile(tc, x, indent, dst_info);
         for (const std::string& reg : lea_registers | std::views::reverse) {
-            x.free_scratch_register(tc, tok(), indent, reg);
+            x.free_scratch_register(tok(), indent, reg);
         }
     }
 

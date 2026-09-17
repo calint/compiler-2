@@ -126,7 +126,7 @@ class stmt_def_var final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x.comment_source(tc, *this, indent);
+        x.comment_source(*this, indent);
 
         const var_info var{
             .name{name_tk_.text()},
@@ -151,14 +151,14 @@ class stmt_def_var final : public statement {
         const size_t instance_count{array_size_ ? array_size_ : 1};
         const size_t bytes_count{instance_count * dst_info.type().size()};
 
-        x.comment_start(tc, name_tk_, indent);
+        x.comment_start(name_tk_, indent);
         x.println( "zero {} * {} B = {} B", instance_count,
                      dst_info.type().size(), bytes_count);
 
         const std::string dst_addr{std::format("rsp - {}", -dst_info.stack_ix)};
         // note: -dst_info.stack_ix for nicer source formatting; is always
         //       negative
-        x.zero(tc, tok(), indent, dst_addr, bytes_count);
+        x.zero(tok(), indent, dst_addr, bytes_count);
     }
 
     auto assert_var_not_used(const std::string_view var) const

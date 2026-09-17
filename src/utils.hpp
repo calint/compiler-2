@@ -21,6 +21,10 @@ constexpr size_t size_byte{1};
 [[nodiscard]] auto regex_ws() -> const std::regex&;
 [[nodiscard]] auto regex_trim() -> const std::regex&;
 [[nodiscard]] auto regex_nasm_comment() -> const std::regex&;
+[[nodiscard]] auto line_and_col_num_for_char_index(size_t at_line,
+                                                   size_t char_index_in_source,
+                                                   std::string_view src)
+    -> std::pair<size_t, size_t>;
 
 // NOLINTBEGIN(misc-definitions-in-headers)
 
@@ -117,6 +121,26 @@ constexpr size_t size_byte{1};
     return re;
 }
 #pragma clang diagnostic pop
+
+[[nodiscard]] auto line_and_col_num_for_char_index(
+    const size_t at_line, size_t char_index_in_source,
+    const std::string_view src) -> std::pair<size_t, size_t> {
+
+    if (char_index_in_source >= src.size()) {
+        return {at_line, 0};
+    }
+
+    size_t at_col{};
+    while (src[char_index_in_source] != '\n') {
+        ++at_col;
+        if (char_index_in_source == 0) {
+            break;
+        }
+        --char_index_in_source;
+    }
+
+    return {at_line, at_col};
+}
 
 // NOLINTEND(misc-definitions-in-headers)
 } // namespace utils
