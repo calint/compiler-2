@@ -471,7 +471,7 @@ auto x86::comment_source(const statement& statement, const size_t indent)
     const std::string text{std::regex_replace(
         std::regex_replace(source.str(), utils::regex_trim(), ""),
         utils::regex_ws(), " ")};
-    comment_line(indent, "{}", text);
+    println("{}", text);
 }
 
 auto x86::comment_source(const statement& statement, const size_t indent,
@@ -485,7 +485,7 @@ auto x86::comment_source(const statement& statement, const size_t indent,
     if (not text.empty() and text.back() == ' ') {
         text.pop_back();
     }
-    comment_line(indent, "{}", text);
+    println("{}", text);
 }
 
 auto x86::comment_start(const std::string_view source,
