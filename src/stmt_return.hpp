@@ -24,8 +24,8 @@ class stmt_return final : public statement {
 
         if (ret_lbl.empty()) {
             // note: return from 'main' is exiting
-            x86::mov(tc, tok(), x.os, indent, "rdi", "0");
-            x86::mov(tc, tok(), x.os, indent, "rax", "60");
+            x.mov(tc, tok(), indent, "rdi", "0");
+            x.mov(tc, tok(), indent, "rax", "60");
             x.syscall(tc, indent);
             return;
         }

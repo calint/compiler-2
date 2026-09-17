@@ -157,7 +157,7 @@ class stmt_identifier : public statement {
         const ident_info src_info{tc.make_ident_info(*this)};
 
         if (src_info.is_const()) {
-            x86::mov(tc, tok(), x.os, indent, dst_info.operand.str(),
+            x.mov(tc, tok(), indent, dst_info.operand.str(),
                      std::format("{}{}", get_unary_ops().to_string(),
                                  src_info.const_value));
             return;
@@ -168,7 +168,7 @@ class stmt_identifier : public statement {
         if (not is_indexed() and not src_info.has_lea()) {
             // note: contains no array indexing and is not relative a lea,
             //       e.g. world.location.link
-            x86::mov(tc, tok(), x.os, indent, dst_info.operand.str(),
+            x.mov(tc, tok(), indent, dst_info.operand.str(),
                      src_info.operand.str());
             get_unary_ops().compile(tc, x, indent, dst_info.operand.str());
             return;
@@ -182,7 +182,7 @@ class stmt_identifier : public statement {
             tok(), tc, x, indent, elems(), allocated_registers, "",
             src_info.lea_path)};
 
-        x86::mov(tc, tok(), x.os, indent, dst_info.operand.str(),
+        x.mov(tc, tok(), indent, dst_info.operand.str(),
                  op.str(src_info.type().size()));
 
         get_unary_ops().compile(tc, x, indent, dst_info.operand.str());
@@ -436,7 +436,7 @@ class stmt_identifier : public statement {
             reg_line_num = tc.alloc_scratch_register(tk, x.os, indent,
                                                      tc.get_type_default());
             x86::comment_line(tc, tk, x.os, indent, "line number");
-            x86::mov(tc, tk, x.os, indent, reg_line_num,
+            x.mov(tc, tk, indent, reg_line_num,
                      std::to_string(tk.at_line()));
         }
 
@@ -453,7 +453,7 @@ class stmt_identifier : public statement {
             if (not reg_size.empty()) {
                 const std::string reg_top_idx = tc.alloc_scratch_register(
                     tk, x.os, indent, tc.get_type_default());
-                x86::mov(tc, tk, x.os, indent, reg_top_idx, reg_size);
+                x.mov(tc, tk, indent, reg_top_idx, reg_size);
                 x.add(tc, indent, reg_top_idx, reg_to_check);
                 x.cmp(tc, indent, reg_top_idx,
                          std::to_string(array_size));
@@ -504,7 +504,7 @@ class stmt_identifier : public statement {
             if (not op.index_register.empty() or op.displacement != 0) {
                 x.lea(tc, indent, index_reg, lea);
             } else {
-                x86::mov(tc, src_loc_tk, x.os, indent, index_reg, lea);
+                x.mov(tc, src_loc_tk, indent, index_reg, lea);
             }
 
             return index_reg;

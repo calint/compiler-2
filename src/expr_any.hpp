@@ -282,7 +282,7 @@ class expr_any final : public statement {
                         if (not src_info.is_const()) {
                             std::unreachable();
                         }
-                        x86::mov(tc, tk, x.os, indent, dst_info.operand.str(),
+                        x.mov(tc, tk, indent, dst_info.operand.str(),
                                  std::format("{}", src_info.const_value));
                         return;
                     }
@@ -316,11 +316,11 @@ class expr_any final : public statement {
                         // yes, constant evaluation
                         if (*const_eval) {
                             // constant evaluation is true
-                            x86::mov(tc, tk, x.os, indent, dst_info.operand.str(),
+                            x.mov(tc, tk, indent, dst_info.operand.str(),
                                      "1");
                         } else {
                             // constant evaluation is false
-                            x86::mov(tc, tk, x.os, indent, dst_info.operand.str(),
+                            x.mov(tc, tk, indent, dst_info.operand.str(),
                                      "0");
                         }
                     }

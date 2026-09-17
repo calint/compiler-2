@@ -259,7 +259,7 @@ class stmt_call : public expression {
                     allocated_registers_in_order.emplace_back(scratch_reg);
                     allocated_scratch_registers.emplace_back(scratch_reg);
 
-                    x86::mov(tc, param.tok(), x.os, indent, scratch_reg,
+                    x.mov(tc, param.tok(), indent, scratch_reg,
                              arg_info.operand.str());
 
                     // apply unary ops
@@ -281,11 +281,11 @@ class stmt_call : public expression {
             const ident_info& arg_info{tc.make_ident_info(arg)};
 
             if (arg_info.is_const()) {
-                x86::mov(tc, param.tok(), x.os, indent, arg_reg,
+                x.mov(tc, param.tok(), indent, arg_reg,
                          std::format("{}{}", arg.get_unary_ops().to_string(),
                                      arg_info.const_value));
             } else {
-                x86::mov(tc, param.tok(), x.os, indent, arg_reg,
+                x.mov(tc, param.tok(), indent, arg_reg,
                          arg_info.operand.str());
                 arg.get_unary_ops().compile(tc, x, indent + 1, arg_reg);
             }

@@ -151,7 +151,7 @@ class stmt_builtin_equal final : public expression {
             rep_size = 'w';
             rcx /= toc::size_word;
         }
-        x86::mov(tc, tok(), x.os, indent, "rcx", std::to_string(rcx));
+        x.mov(tc, tok(), indent, "rcx", std::to_string(rcx));
 
         // copy
         x.repe_cmps(tc, indent, rep_size);

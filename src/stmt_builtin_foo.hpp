@@ -126,7 +126,7 @@ class stmt_builtin_foo final : public statement {
         tc.add_const(tok(), x.os, indent, "n",
                      static_cast<int64_t>(ii.array_size));
 
-        x86::mov(tc, tok(), x.os, indent, var_i_addr_op, "0");
+        x.mov(tc, tok(), indent, var_i_addr_op, "0");
         x.label(tc, indent, loop_label);
         code_.compile(tc, x, indent, toc::make_ident_info_empty());
         x.label(tc, indent + 1, loop_label + "_continue");

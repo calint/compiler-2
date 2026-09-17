@@ -145,9 +145,8 @@ class x86 final {
     auto imul(toc& tc, const token& src_loc_tk, size_t indent,
             std::string_view dst_op, std::string_view src_op) -> void;
 
-    static auto mov(toc& tc, const token& src_loc_tk, std::ostream& os,
-                    size_t indent, std::string_view dst_op,
-                    std::string_view src_op) -> void;
+    auto mov(toc& tc, const token& src_loc_tk, size_t indent,
+            std::string_view dst_op, std::string_view src_op) -> void;
 
     static auto op(toc& tc, const token& src_loc_tk, std::ostream& os,
                    size_t indent, std::string_view op, std::string_view dst_op,

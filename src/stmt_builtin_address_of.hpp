@@ -87,7 +87,7 @@ class stmt_builtin_address_of final : public expression {
             const std::string reg{tc.alloc_scratch_register(
                 tok(), x.os, indent, tc.get_type_default())};
             x.lea(tc, indent, reg, oper.address_str());
-            x86::mov(tc, tok(), x.os, indent, dst_info.operand.str(), reg);
+            x.mov(tc, tok(), indent, dst_info.operand.str(), reg);
             tc.free_scratch_register(tok(), x.os, indent, reg);
         }
 

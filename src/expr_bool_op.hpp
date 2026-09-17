@@ -469,7 +469,7 @@ class expr_bool_op final : public statement {
         const std::string reg{tc.alloc_scratch_register(expr.tok(), x.os, indent,
                                                         tc.get_type_default())};
         allocated_registers.emplace_back(reg);
-        x86::mov(tc, expr.tok(), x.os, indent, reg, expr_info.operand.str());
+        x.mov(tc, expr.tok(), indent, reg, expr_info.operand.str());
         expr.get_unary_ops().compile(tc, x, indent, reg);
         return reg;
     }
