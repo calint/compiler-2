@@ -112,14 +112,14 @@ class stmt_builtin_foo final : public statement {
                 tok(), tc, x, indent, ident_.elems(), allocated_registers, "",
                 ii.lea_path)};
 
-            x.lea(tc, indent, reg_iter, op.address_str());
+            x.lea( indent, reg_iter, op.address_str());
 
             for (const std::string& reg :
                  allocated_registers | std::views::reverse) {
                 tc.free_scratch_register(tok(), x.os, indent, reg);
             }
         } else {
-            x.lea(tc, indent, reg_iter, ii.operand.address_str());
+            x.lea( indent, reg_iter, ii.operand.address_str());
         }
 
         // add a constant for array size
@@ -127,16 +127,16 @@ class stmt_builtin_foo final : public statement {
                      static_cast<int64_t>(ii.array_size));
 
         x.mov(tc, tok(), indent, var_i_addr_op, "0");
-        x.label(tc, indent, loop_label);
+        x.label( indent, loop_label);
         code_.compile(tc, x, indent, toc::make_ident_info_empty());
-        x.label(tc, indent + 1, loop_label + "_continue");
-        x.add(tc, indent + 2, reg_iter,
+        x.label( indent + 1, loop_label + "_continue");
+        x.add( indent + 2, reg_iter,
                  std::format("{}", ii.type().size()));
-        x.inc(tc, indent + 2, var_i_addr_op);
-        x.cmp(tc, indent + 2, var_i_addr_op,
+        x.inc( indent + 2, var_i_addr_op);
+        x.cmp(indent + 2, var_i_addr_op,
               std::format("{}", ii.array_size));
-        x.jne(tc, indent + 2, loop_label);
-        x.label(tc, indent, loop_label + "_end");
+        x.jne( indent + 2, loop_label);
+        x.label( indent, loop_label + "_end");
 
         tc.free_scratch_register(tok(), x.os, indent, reg_iter);
 

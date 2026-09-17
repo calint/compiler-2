@@ -104,7 +104,7 @@ class expr_bool_op final : public statement {
         const bool invert{inverted ? not is_not_ : is_not_};
         x86::comment_source(tc, *this, x.os, indent, "?",
                             inverted ? " 'or' inverted: " : " ");
-        x.label(tc, indent, create_cmp_bgn_label(tc));
+        x.label( indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // is 'lhs' a constant?
             if (not lhs_.is_expression()) {
@@ -122,7 +122,7 @@ class expr_bool_op final : public statement {
                     if (const_eval) {
                         // since it is an 'or' chain short-circuit
                         // expression and jump to label for true
-                        x.jmp(tc, indent, jmp_to_if_true);
+                        x.jmp( indent, jmp_to_if_true);
                     }
                     return const_eval;
                 }
@@ -133,9 +133,9 @@ class expr_bool_op final : public statement {
             // note: compares with 0
 
             if (not dst.empty()) {
-                x.setcc(tc, indent, asm_cc_for_op("!=", invert), dst);
+                x.setcc( indent, asm_cc_for_op("!=", invert), dst);
             }
-            x.jcc(tc, indent, asm_cc_for_op("!=", invert),
+            x.jcc( indent, asm_cc_for_op("!=", invert),
                      jmp_to_if_true);
 
             return std::nullopt;
@@ -162,7 +162,7 @@ class expr_bool_op final : public statement {
                 if (const_eval) {
                     // expression evaluated at compile time and true so
                     // short-circuit and jump to true
-                    x.jmp(tc, indent, jmp_to_if_true);
+                    x.jmp( indent, jmp_to_if_true);
                 }
                 return const_eval;
             }
@@ -175,9 +175,9 @@ class expr_bool_op final : public statement {
         resolve_cmp(tc, x, indent, lhs_, rhs_);
 
         if (not dst.empty()) {
-            x.setcc(tc, indent, asm_cc_for_op(op_, invert), dst);
+            x.setcc( indent, asm_cc_for_op(op_, invert), dst);
         }
-        x.jcc(tc, indent, asm_cc_for_op(op_, invert), jmp_to_if_true);
+        x.jcc( indent, asm_cc_for_op(op_, invert), jmp_to_if_true);
 
         return std::nullopt;
     }
@@ -190,7 +190,7 @@ class expr_bool_op final : public statement {
         const bool invert{inverted ? not is_not_ : is_not_};
         x86::comment_source(tc, *this, x.os, indent, "?",
                             inverted ? " 'and' inverted: " : " ");
-        x.label(tc, indent, create_cmp_bgn_label(tc));
+        x.label( indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // check case when operand is constant
             if (not lhs_.is_expression()) {
@@ -206,7 +206,7 @@ class expr_bool_op final : public statement {
                     if (not const_eval) {
                         // since it is an 'and' chain short-circuit
                         // expression and jump to label for false
-                        x.jmp(tc, indent, jmp_to_if_false);
+                        x.jmp( indent, jmp_to_if_false);
                     }
                     return const_eval;
                 }
@@ -217,9 +217,9 @@ class expr_bool_op final : public statement {
             // note: compares with 0
 
             if (not dst.empty()) {
-                x.setcc(tc, indent, asm_cc_for_op("!=", invert), dst);
+                x.setcc( indent, asm_cc_for_op("!=", invert), dst);
             }
-            x.jcc(tc, indent, asm_cc_for_op("==", invert),
+            x.jcc( indent, asm_cc_for_op("==", invert),
                      jmp_to_if_false);
             // note: '==' because it jumps to 'if false' label
 
@@ -245,7 +245,7 @@ class expr_bool_op final : public statement {
                                   (const_eval ? "true" : "false"));
                 if (not const_eval) {
                     // short circuit 'and' chain
-                    x.jmp(tc, indent, jmp_to_if_false);
+                    x.jmp( indent, jmp_to_if_false);
                 }
                 return const_eval;
             }
@@ -264,9 +264,9 @@ class expr_bool_op final : public statement {
 
         resolve_cmp(tc, x, indent, lhs_, rhs_);
         if (not dst.empty()) {
-            x.setcc(tc, indent, asm_cc_for_op(op_, invert), dst);
+            x.setcc( indent, asm_cc_for_op(op_, invert), dst);
         }
-        x.jcc(tc, indent, asm_cc_for_op(op_, not invert),
+        x.jcc( indent, asm_cc_for_op(op_, not invert),
                  jmp_to_if_false);
         // note: 'not invert' because it jumps to 'if false' label
 

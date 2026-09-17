@@ -106,7 +106,7 @@ class stmt_builtin_arrays_equal final : public expression {
             from_.first_token(), tc, x, indent, from_.elems(),
             allocated_scratch_registers, "rcx", from_info.lea_path)};
 
-        x.lea(tc, indent, "rsi", from_operand.address_str());
+        x.lea( indent, "rsi", from_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -120,7 +120,7 @@ class stmt_builtin_arrays_equal final : public expression {
             to_.first_token(), tc, x, indent, to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};
 
-        x.lea(tc, indent, "rdi", to_operand.address_str());
+        x.lea( indent, "rdi", to_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -158,7 +158,7 @@ class stmt_builtin_arrays_equal final : public expression {
         }
 
         // copy
-        x.repe_cmps(tc, indent, 'b');
+        x.repe_cmps( indent, 'b');
 
         tc.free_named_register(tok(), x.os, indent, "rcx");
         tc.free_named_register(tok(), x.os, indent, "rdi");
@@ -167,7 +167,7 @@ class stmt_builtin_arrays_equal final : public expression {
         // set true if equal
 
         if (dst_info.is_register()) {
-            x.setcc(tc, indent, "e",
+            x.setcc( indent, "e",
                        tc.get_sized_register_operand(dst_info.operand.str(),
                                                      operand::size_byte));
             return;

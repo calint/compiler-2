@@ -100,7 +100,7 @@ class stmt_builtin_array_copy final : public statement {
             from_.first_token(), tc, x, indent, from_.elems(),
             allocated_scratch_registers, "rcx", from_info.lea_path)};
 
-        x.lea(tc, indent, "rsi", from_operand.address_str());
+        x.lea( indent, "rsi", from_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -114,7 +114,7 @@ class stmt_builtin_array_copy final : public statement {
             to_.first_token(), tc, x, indent, to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};
 
-        x.lea(tc, indent, "rdi", to_operand.address_str());
+        x.lea( indent, "rdi", to_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -147,7 +147,7 @@ class stmt_builtin_array_copy final : public statement {
         }
 
         // copy
-        x.rep_movs(tc, indent, 'b');
+        x.rep_movs( indent, 'b');
         // note: toc::rep_movs does not work because rsi, rdi and rcx are
         //       expresstion
 

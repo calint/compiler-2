@@ -126,7 +126,7 @@ class program final {
         }
         const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
         x.println();
-        x.label(tc, 0, "main");
+        x.label( 0, "main");
         tc.enter_func("main", {});
         func_main.code().compile(tc, x, indent, toc::make_ident_info_empty());
         tc.exit_func("main");

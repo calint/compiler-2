@@ -26,11 +26,11 @@ class stmt_loop final : public statement {
         x86::comment_token(tc, tok(), x.os, indent);
 
         const std::string lbl{tc.create_unique_label(tok(), "loop")};
-        x.label(tc, indent, lbl);
+        x.label( indent, lbl);
         tc.enter_loop(lbl);
         code_.compile(tc, x, indent, dst_info);
-        x.jmp(tc, indent, lbl);
-        x.label(tc, indent, std::format("{}_end", lbl));
+        x.jmp( indent, lbl);
+        x.label( indent, std::format("{}_end", lbl));
         tc.exit_loop(lbl);
     }
 

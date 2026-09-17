@@ -451,10 +451,10 @@ auto unary_ops::compile([[maybe_unused]] toc& tc, x86& x, const size_t indnt,
     for (const char op : ops_ | std::views::reverse) {
         switch (op) {
         case '~':
-            x.not_op(tc, indnt, dst_info);
+            x.not_op( indnt, dst_info);
             break;
         case '-':
-            x.neg(tc, indnt, dst_info);
+            x.neg( indnt, dst_info);
             break;
         default:
             std::unreachable();
@@ -514,11 +514,11 @@ auto x86::copy(toc& tc, const token& src_loc_tk, const size_t indent,
                                          tc.get_type_default());
         tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rcx",
                                          tc.get_type_default());
-        lea(tc, indent, "rsi", src);
-        lea(tc, indent, "rdi", dst);
+        lea(indent, "rsi", src);
+        lea(indent, "rdi", dst);
         mov(tc, src_loc_tk, indent, "rcx",
             std::format("{}", bytes_count));
-        rep_movs(tc, indent, 'b');
+        rep_movs( indent, 'b');
         tc.free_named_register(src_loc_tk, os.get(), indent, "rcx");
         tc.free_named_register(src_loc_tk, os.get(), indent, "rdi");
         tc.free_named_register(src_loc_tk, os.get(), indent, "rsi");
@@ -578,11 +578,11 @@ auto x86::zero(toc& tc, const token& src_loc_tk, const size_t indent,
                                          tc.get_type_default());
         tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rcx",
                                          tc.get_type_default());
-        xor_op(tc, indent, "al", "al");
-        lea(tc, indent, "rdi", dst);
+        xor_op( indent, "al", "al");
+        lea(indent, "rdi", dst);
         mov(tc, src_loc_tk, indent, "rcx",
             std::format("{}", bytes_count));
-        rep_stos(tc, indent, 'b');
+        rep_stos( indent, 'b');
         tc.free_named_register(src_loc_tk, os.get(), indent, "rcx");
         tc.free_named_register(src_loc_tk, os.get(), indent, "rdi");
         tc.free_named_register(src_loc_tk, os.get(), indent, "rax");
@@ -672,12 +672,12 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
                 src_loc_tk, os.get(), indent, tc.get_type_default())};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
-            asm_line(tc, indent, "mov {}, {}", reg_sized, src_op);
-            asm_line(tc, indent, "{} {}, {}", op, dst_op, reg_sized);
+            asm_line(indent, "mov {}, {}", reg_sized, src_op);
+            asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
             tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
             return;
         }
-        asm_line(tc, indent, "{} {}, {}", op, dst_op, src_op);
+        asm_line(indent, "{} {}, {}", op, dst_op, src_op);
         return;
     }
 
@@ -687,23 +687,23 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
                 src_loc_tk, os.get(), indent, tc.get_type_default())};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
-            asm_line(tc, indent, "movsx {}, {}", reg_sized, src_op);
-            asm_line(tc, indent, "{} {}, {}", op, dst_op, reg_sized);
+            asm_line(indent, "movsx {}, {}", reg_sized, src_op);
+            asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
             tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
             return;
         }
         if (op == "mov") {
-            asm_line(tc, indent, "movsx {}, {}", dst_op, src_op);
+            asm_line(indent, "movsx {}, {}", dst_op, src_op);
             return;
         }
         if (op == "sal" or op == "sar") {
-            asm_line(tc, indent, "{} {}, {}", op, dst_op, src_op);
+            asm_line(indent, "{} {}, {}", op, dst_op, src_op);
             return;
         }
         const std::string reg_sx{tc.alloc_scratch_register(
             src_loc_tk, os.get(), indent, tc.get_type_default())};
-        asm_line(tc, indent, "movsx {}, {}", reg_sx, src_op);
-        asm_line(tc, indent, "{} {}, {}", op, dst_op, reg_sx);
+        asm_line(indent, "movsx {}, {}", reg_sx, src_op);
+        asm_line(indent, "{} {}, {}", op, dst_op, reg_sx);
         tc.free_scratch_register(src_loc_tk, os.get(), indent, reg_sx);
         return;
     }
@@ -713,9 +713,9 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
                                                         tc.get_type_default())};
         const std::string reg_sized{
             tc.get_sized_register_operand(reg, dst_size)};
-        asm_line(tc, indent, "mov {}, {}", reg_sized,
+        asm_line(indent, "mov {}, {}", reg_sized,
                  sized_memory_operand(src_op, dst_size));
-        asm_line(tc, indent, "{} {}, {}", op, dst_op, reg_sized);
+        asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
         tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
         return;
     }
@@ -723,23 +723,23 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
     const bool dst_is_reg{is_register_operand(dst_op)};
     const bool src_is_reg{is_register_operand(src_op)};
     if (dst_is_reg and src_is_reg) {
-        asm_line(tc, indent, "{} {}, {}", op, dst_op,
+        asm_line(indent, "{} {}, {}", op, dst_op,
                  tc.get_sized_register_operand(src_op, dst_size));
         return;
     }
     if (dst_is_reg) {
-        asm_line(tc, indent, "{} {}, {}", op, dst_op,
+        asm_line(indent, "{} {}, {}", op, dst_op,
                  is_memory_operand(src_op)
                      ? sized_memory_operand(src_op, dst_size)
                      : src_op);
         return;
     }
     if (src_is_reg) {
-        asm_line(tc, indent, "{} {}, {}", op, dst_op,
+        asm_line(indent, "{} {}, {}", op, dst_op,
                  tc.get_sized_register_operand(src_op, dst_size));
         return;
     }
-    asm_line(tc, indent, "{} {}, {}", op, dst_op, src_op);
+    asm_line(indent, "{} {}, {}", op, dst_op, src_op);
 }
 
 // NOLINTEND(misc-definitions-in-headers)

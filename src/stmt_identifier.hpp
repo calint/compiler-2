@@ -333,13 +333,13 @@ class stmt_identifier : public statement {
                 reg_offset = tc.alloc_scratch_register(src_loc_tk, x.os, indent,
                                                        tc.get_type_default());
                 allocated_registers.push_back(reg_offset);
-                x.lea(tc, indent, reg_offset,
+                x.lea( indent, reg_offset,
                          std::format("rsp - {}", -base_info.stack_ix));
             } else if (reg_offset == base_info.operand.base_register) {
                 reg_offset = tc.alloc_scratch_register(src_loc_tk, x.os, indent,
                                                        tc.get_type_default());
                 allocated_registers.push_back(reg_offset);
-                x.lea(tc, indent, reg_offset,
+                x.lea( indent, reg_offset,
                          std::format("{}", base_info.operand.base_register));
             }
 
@@ -363,7 +363,7 @@ class stmt_identifier : public statement {
             // scale the index
             if (type_size > 1) {
                 if (std::optional<int> shl{get_shift_amount(type_size)}; shl) {
-                    x.shl(tc, indent, reg_idx, std::format("{}", *shl));
+                    x.shl( indent, reg_idx, std::format("{}", *shl));
                 } else {
                     x.imul(tc, tk, indent, reg_idx,
                               std::format("{}", type_size));
@@ -442,11 +442,11 @@ class stmt_identifier : public statement {
 
         // check for negative index (optional lower bounds check)
         if (tc.is_bounds_check_lower()) {
-            x.test(tc, indent, reg_to_check, reg_to_check);
+            x.test( indent, reg_to_check, reg_to_check);
             if (tc.is_bounds_check_with_line()) {
-                x.cmovs(tc, indent, "rbp", reg_line_num);
+                x.cmovs( indent, "rbp", reg_line_num);
             }
-            x.jcc(tc, indent, "s", "panic_bounds");
+            x.jcc( indent, "s", "panic_bounds");
         }
 
         if (tc.is_bounds_check_upper()) {
@@ -454,12 +454,12 @@ class stmt_identifier : public statement {
                 const std::string reg_top_idx = tc.alloc_scratch_register(
                     tk, x.os, indent, tc.get_type_default());
                 x.mov(tc, tk, indent, reg_top_idx, reg_size);
-                x.add(tc, indent, reg_top_idx, reg_to_check);
-                x.cmp(tc, indent, reg_top_idx,
+                x.add( indent, reg_top_idx, reg_to_check);
+                x.cmp(indent, reg_top_idx,
                          std::to_string(array_size));
                 tc.free_scratch_register(tk, x.os, indent, reg_top_idx);
             } else {
-                x.cmp(tc, indent, reg_to_check,
+                x.cmp(indent, reg_to_check,
                          std::to_string(array_size));
             }
             if (tc.is_bounds_check_with_line()) {
@@ -467,7 +467,7 @@ class stmt_identifier : public statement {
                         "rbp", reg_line_num);
             }
             if (tc.is_bounds_check_upper()) {
-                x.jcc(tc, indent, comparison, "panic_bounds");
+                x.jcc( indent, comparison, "panic_bounds");
             }
         }
 
@@ -502,7 +502,7 @@ class stmt_identifier : public statement {
             // changes will be made to the register so return an allocated
             // register
             if (not op.index_register.empty() or op.displacement != 0) {
-                x.lea(tc, indent, index_reg, lea);
+                x.lea( indent, index_reg, lea);
             } else {
                 x.mov(tc, src_loc_tk, indent, index_reg, lea);
             }
