@@ -168,7 +168,7 @@ class stmt_builtin_arrays_equal final : public expression {
 
         if (dst_info.is_register()) {
             x.setcc( indent, "e",
-                       tc.get_sized_register_operand(dst_info.operand.str(),
+                       x.get_sized_register_operand(dst_info.operand.str(),
                                                      operand::size_byte));
             return;
         }

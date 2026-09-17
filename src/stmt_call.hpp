@@ -215,7 +215,7 @@ class stmt_call : public expression {
                     allocated_registers_in_order.emplace_back(arg_reg);
                 }
 
-                const std::string& reg_sized{tc.get_sized_register_operand(
+                const std::string& reg_sized{x.get_sized_register_operand(
                     arg_reg, param.get_type().size())};
 
                 arg.compile(tc, x, indent,

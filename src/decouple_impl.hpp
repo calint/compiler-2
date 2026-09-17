@@ -671,7 +671,7 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
             const std::string reg{tc.alloc_scratch_register(
                 src_loc_tk, os.get(), indent, tc.get_type_default())};
             const std::string reg_sized{
-                tc.get_sized_register_operand(reg, dst_size)};
+                get_sized_register_operand(reg, dst_size)};
             asm_line(indent, "mov {}, {}", reg_sized, src_op);
             asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
             tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
@@ -686,7 +686,7 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
             const std::string reg{tc.alloc_scratch_register(
                 src_loc_tk, os.get(), indent, tc.get_type_default())};
             const std::string reg_sized{
-                tc.get_sized_register_operand(reg, dst_size)};
+                get_sized_register_operand(reg, dst_size)};
             asm_line(indent, "movsx {}, {}", reg_sized, src_op);
             asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
             tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
@@ -712,7 +712,7 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
         const std::string reg{tc.alloc_scratch_register(src_loc_tk, os.get(), indent,
                                                         tc.get_type_default())};
         const std::string reg_sized{
-            tc.get_sized_register_operand(reg, dst_size)};
+            get_sized_register_operand(reg, dst_size)};
         asm_line(indent, "mov {}, {}", reg_sized,
                  sized_memory_operand(src_op, dst_size));
         asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
@@ -724,7 +724,7 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
     const bool src_is_reg{is_register_operand(src_op)};
     if (dst_is_reg and src_is_reg) {
         asm_line(indent, "{} {}, {}", op, dst_op,
-                 tc.get_sized_register_operand(src_op, dst_size));
+                 get_sized_register_operand(src_op, dst_size));
         return;
     }
     if (dst_is_reg) {
@@ -736,7 +736,7 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
     }
     if (src_is_reg) {
         asm_line(indent, "{} {}, {}", op, dst_op,
-                 tc.get_sized_register_operand(src_op, dst_size));
+                 get_sized_register_operand(src_op, dst_size));
         return;
     }
     asm_line(indent, "{} {}, {}", op, dst_op, src_op);

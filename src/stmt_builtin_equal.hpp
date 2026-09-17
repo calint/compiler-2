@@ -171,7 +171,7 @@ class stmt_builtin_equal final : public expression {
         // assumed register
 
         x.setcc( indent, "e",
-                   tc.get_sized_register_operand(dst_info.operand.str(),
+                   x.get_sized_register_operand(dst_info.operand.str(),
                                                  operand::size_byte));
     }
 };

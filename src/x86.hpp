@@ -6,6 +6,7 @@
 #include <functional>
 #include <ostream>
 #include <print>
+#include <regex>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -25,6 +26,8 @@ class x86 final {
     static constexpr std::string_view data_dword{"dd"};
     static constexpr std::string_view data_word{"dw"};
     static constexpr std::string_view data_byte{"db"};
+
+    std::regex regex_nasm_number_register_{R"(r(\d+))"};
 
   public:
     // the assembler output stream for the current compile pass; rebindable
@@ -344,6 +347,145 @@ class x86 final {
     auto xor_op(const size_t indent, const std::string_view dst,
               const std::string_view src) -> void {
         asm_line(indent, "xor {}, {}", dst, src);
+    }
+
+    [[nodiscard]] auto
+    get_sized_register_operand(const std::string_view operand,
+                               const size_t size) -> std::string {
+
+        //? sort of ugly
+        if (operand == "rax") {
+            switch (size) {
+            case size_qword:
+                return "rax";
+            case size_dword:
+                return "eax";
+            case size_word:
+                return "ax";
+            case size_byte:
+                return "al";
+            default:
+                std::unreachable();
+            }
+        }
+        if (operand == "rbx") {
+            switch (size) {
+            case size_qword:
+                return "rbx";
+            case size_dword:
+                return "ebx";
+            case size_word:
+                return "bx";
+            case size_byte:
+                return "bl";
+            default:
+                std::unreachable();
+            }
+        }
+        if (operand == "rcx") {
+            switch (size) {
+            case size_qword:
+                return "rcx";
+            case size_dword:
+                return "ecx";
+            case size_word:
+                return "cx";
+            case size_byte:
+                return "cl";
+            default:
+                std::unreachable();
+            }
+        }
+        if (operand == "rdx") {
+            switch (size) {
+            case size_qword:
+                return "rdx";
+            case size_dword:
+                return "edx";
+            case size_word:
+                return "dx";
+            case size_byte:
+                return "dl";
+            default:
+                std::unreachable();
+            }
+        }
+        if (operand == "rbp") {
+            switch (size) {
+            case size_qword:
+                return "rbp";
+            case size_dword:
+                return "ebp";
+            case size_word:
+                return "bp";
+            case size_byte:
+                return "bpl";
+            default:
+                std::unreachable();
+            }
+        }
+        if (operand == "rsi") {
+            switch (size) {
+            case size_qword:
+                return "rsi";
+            case size_dword:
+                return "esi";
+            case size_word:
+                return "si";
+            case size_byte:
+                return "sil";
+            default:
+                std::unreachable();
+            }
+        }
+        if (operand == "rdi") {
+            switch (size) {
+            case size_qword:
+                return "rdi";
+            case size_dword:
+                return "edi";
+            case size_word:
+                return "di";
+            case size_byte:
+                return "dil";
+            default:
+                std::unreachable();
+            }
+        }
+        if (operand == "rsp") {
+            switch (size) {
+            case size_qword:
+                return "rsp";
+            case size_dword:
+                return "esp";
+            case size_word:
+                return "sp";
+            case size_byte:
+                return "spl";
+            default:
+                std::unreachable();
+            }
+        }
+
+        std::smatch match;
+        const std::string operand_str{operand};
+        if (not std::regex_search(operand_str, match,
+                                  regex_nasm_number_register_)) {
+            std::unreachable();
+        }
+        const std::string rnbr{match[1]};
+        switch (size) {
+        case size_qword:
+            return std::format("r{}", rnbr);
+        case size_dword:
+            return std::format("r{}d", rnbr);
+        case size_word:
+            return std::format("r{}w", rnbr);
+        case size_byte:
+            return std::format("r{}b", rnbr);
+        default:
+            std::unreachable();
+        }
     }
 
   private:
