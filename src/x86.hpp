@@ -332,10 +332,9 @@ class x86 final {
         asm_line(tc, os.get(), indent, "test {}, {}", dst, src);
     }
 
-    static auto times(std::ostream& os, const size_t count,
-                      const std::string_view directive,
-                      const std::string_view value) -> void {
-        std::println(os, "times {} {} {}", count, directive, value);
+    auto times(const size_t count, const std::string_view directive,
+              const std::string_view value) -> void {
+        std::println(os.get(), "times {} {} {}", count, directive, value);
     }
 
     auto xor_op(toc& tc, const size_t indent, const std::string_view dst,

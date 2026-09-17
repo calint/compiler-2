@@ -180,17 +180,17 @@ class stmt_def_dat final : public statement {
     }
 
     auto compile_data(const toc& tc, x86& x) const -> void override {
-        compile_data_rec(tc, x.os, name_tk_.text(), get_type(), elroot_);
+        compile_data_rec(tc, x, name_tk_.text(), get_type(), elroot_);
     }
 
   private:
-    static auto compile_data_rec(const toc& tc, std::ostream& os,
+    static auto compile_data_rec(const toc& tc, x86& x,
                                  const std::string_view nm, const type& tp,
                                  const elem& elroot) -> void {
 
         if (not elroot.is_array) {
-            x86::comment(os, "{}: {}", nm, tp.name());
-            compile_data_elem(tc, os, nm, tp, elroot);
+            x86::comment(x.os, "{}: {}", nm, tp.name());
+            compile_data_elem(tc, x, nm, tp, elroot);
             return;
         }
 
@@ -200,17 +200,17 @@ class stmt_def_dat final : public statement {
         // note: only i8[] can be initialized with string token
 
         if (elroot.tk.is_string()) {
-            compile_data_builtin(os, nm, tp, elroot);
+            compile_data_builtin(x, nm, tp, elroot);
             return;
         }
 
         // regular arrays
 
-        x86::comment(os, "{}: {}[{}]", nm, tp.name(), elroot.array_size);
+        x86::comment(x.os, "{}: {}[{}]", nm, tp.name(), elroot.array_size);
         size_t counter{};
         for (const elem& el : elroot.elems) {
-            x86::comment(os, "[{}]", counter);
-            compile_data_elem(tc, os, nm, tp, el);
+            x86::comment(x.os, "[{}]", counter);
+            compile_data_elem(tc, x, nm, tp, el);
             ++counter;
         }
 
@@ -222,16 +222,16 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        x86::comment(os, "pad {} '{}' of size {}", diff, tp.name(), tp.size());
-        x86::times(os, diff * tp.size(), "db", "0");
+        x86::comment(x.os, "pad {} '{}' of size {}", diff, tp.name(), tp.size());
+        x.times(diff * tp.size(), "db", "0");
     }
 
-    static auto compile_data_elem(const toc& tc, std::ostream& os,
+    static auto compile_data_elem(const toc& tc, x86& x,
                                   const std::string_view& nm, const type& tp,
                                   const elem& elroot) -> void {
 
         if (tp.is_built_in()) {
-            compile_data_builtin(os, nm, tp, elroot);
+            compile_data_builtin(x, nm, tp, elroot);
             return;
         }
 
@@ -242,9 +242,9 @@ class stmt_def_dat final : public statement {
         for (const elem& el : elroot.elems) {
             const type_field& tf{flds[counter]};
             if (tf.type().is_built_in()) {
-                compile_data_builtin(os, tf.name, tf.type(), el);
+                compile_data_builtin(x, tf.name, tf.type(), el);
             } else {
-                compile_data_rec(tc, os, tf.name, tf.type(), el);
+                compile_data_rec(tc, x, tf.name, tf.type(), el);
             }
             ++counter;
         }
@@ -260,11 +260,11 @@ class stmt_def_dat final : public statement {
         for (size_t i{counter}; i < n; ++i) {
             nbytes += flds[i].size;
         }
-        x86::comment(os, "zero remaining fields");
-        x86::times(os, nbytes, "db", "0");
+        x86::comment(x.os, "zero remaining fields");
+        x.times(nbytes, "db", "0");
     }
 
-    static auto compile_data_builtin(std::ostream& os,
+    static auto compile_data_builtin(x86& x,
                                      const std::string_view fldnm,
                                      const type& tp, const elem& elroot)
         -> void {
@@ -272,37 +272,37 @@ class stmt_def_dat final : public statement {
         // nasm define data token
         const std::string_view dd{x86::get_data_def(tp.size())};
         if (not elroot.is_array) {
-            x86::comment(os, "{}: {}", fldnm, tp.name());
+            x86::comment(x.os, "{}: {}", fldnm, tp.name());
             if (elroot.tk.text().empty()) {
-                x86::dat_begin(os, tp.size());
-                x86::dat_value(os, "0");
-                x86::dat_end(os);
+                x86::dat_begin(x.os, tp.size());
+                x86::dat_value(x.os, "0");
+                x86::dat_end(x.os);
                 return;
             }
 
-            x86::dat_begin(os, tp.size());
+            x86::dat_begin(x.os, tp.size());
             x86::dat_value(
-                os, std::format("{}{}", elroot.uops.to_string(), elroot.value));
-            x86::dat_end(os);
+                x.os, std::format("{}{}", elroot.uops.to_string(), elroot.value));
+            x86::dat_end(x.os);
             return;
         }
 
         // array of built-ins
 
-        x86::comment(os, "{}: {}[{}]", fldnm, tp.name(), elroot.array_size);
+        x86::comment(x.os, "{}: {}[{}]", fldnm, tp.name(), elroot.array_size);
 
         // special case for string
         // note: only i8[] can be initialized with string token
 
         if (elroot.tk.is_string()) {
-            x86::str_begin(os);
-            x86::str_value(os, elroot.tk.text());
-            x86::str_end(os);
+            x86::str_begin(x.os);
+            x86::str_value(x.os, elroot.tk.text());
+            x86::str_end(x.os);
             const size_t sz{elroot.tk.string_size_bytes()};
             // pad remaining array with 0
             if (elroot.array_size != 0 and sz < elroot.array_size) {
-                x86::comment(os, "zero remaining array");
-                x86::times(os, elroot.array_size - sz, dd, "0");
+                x86::comment(x.os, "zero remaining array");
+                x.times(elroot.array_size - sz, dd, "0");
             }
             return;
         }
@@ -310,19 +310,19 @@ class stmt_def_dat final : public statement {
         // normal case
 
         // initializer
-        x86::dat_begin(os, tp.size());
+        x86::dat_begin(x.os, tp.size());
         if (not elroot.elems.empty()) {
-            elroot.elems.front().compile(os);
+            elroot.elems.front().compile(x.os);
             for (const elem& e : elroot.elems | std::views::drop(1)) {
-                x86::dat_separator(os);
-                e.compile(os);
+                x86::dat_separator(x.os);
+                e.compile(x.os);
             }
         }
-        x86::dat_end(os);
+        x86::dat_end(x.os);
 
         // pad remaining array with 0
         if (elroot.array_size != elroot.elems.size()) {
-            x86::times(os, elroot.array_size - elroot.elems.size(), dd, "0");
+            x.times(elroot.array_size - elroot.elems.size(), dd, "0");
         }
     }
 
