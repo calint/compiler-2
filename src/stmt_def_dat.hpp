@@ -36,8 +36,8 @@ class stmt_def_dat final : public statement {
             tk.source_to(os);
         }
 
-        auto compile(std::ostream& os) const -> void {
-            x86::dat_value(os, std::format("{}{}", uops.to_string(), value));
+        auto compile(x86& x) const -> void {
+            x.dat_value(std::format("{}{}", uops.to_string(), value));
         }
     };
 
@@ -274,16 +274,16 @@ class stmt_def_dat final : public statement {
         if (not elroot.is_array) {
             x.comment("{}: {}", fldnm, tp.name());
             if (elroot.tk.text().empty()) {
-                x86::dat_begin(x.os, tp.size());
-                x86::dat_value(x.os, "0");
-                x86::dat_end(x.os);
+                x.dat_begin(tp.size());
+                x.dat_value("0");
+                x.dat_end();
                 return;
             }
 
-            x86::dat_begin(x.os, tp.size());
-            x86::dat_value(
-                x.os, std::format("{}{}", elroot.uops.to_string(), elroot.value));
-            x86::dat_end(x.os);
+            x.dat_begin(tp.size());
+            x.dat_value(
+                std::format("{}{}", elroot.uops.to_string(), elroot.value));
+            x.dat_end();
             return;
         }
 
@@ -295,9 +295,9 @@ class stmt_def_dat final : public statement {
         // note: only i8[] can be initialized with string token
 
         if (elroot.tk.is_string()) {
-            x86::str_begin(x.os);
-            x86::str_value(x.os, elroot.tk.text());
-            x86::str_end(x.os);
+            x.str_begin();
+            x.str_value(elroot.tk.text());
+            x.str_end();
             const size_t sz{elroot.tk.string_size_bytes()};
             // pad remaining array with 0
             if (elroot.array_size != 0 and sz < elroot.array_size) {
@@ -310,15 +310,15 @@ class stmt_def_dat final : public statement {
         // normal case
 
         // initializer
-        x86::dat_begin(x.os, tp.size());
+        x.dat_begin(tp.size());
         if (not elroot.elems.empty()) {
-            elroot.elems.front().compile(x.os);
+            elroot.elems.front().compile(x);
             for (const elem& e : elroot.elems | std::views::drop(1)) {
-                x86::dat_separator(x.os);
-                e.compile(x.os);
+                x.dat_separator();
+                e.compile(x);
             }
         }
-        x86::dat_end(x.os);
+        x.dat_end();
 
         // pad remaining array with 0
         if (elroot.array_size != elroot.elems.size()) {

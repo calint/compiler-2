@@ -278,50 +278,46 @@ class x86 final {
         asm_line(tc, os.get(), indent, "syscall");
     }
 
-    static auto dat_begin(std::ostream& os, const size_t size) -> void {
+    auto dat_begin(const size_t size) -> void {
         switch (size) {
         case size_qword:
-            std::print(os, "dq ");
+            print("dq ");
             return;
         case size_dword:
-            std::print(os, "dd ");
+            print("dd ");
             return;
         case size_word:
-            std::print(os, "dw ");
+            print("dw ");
             return;
         case size_byte:
-            std::print(os, "db ");
+            print("db ");
             return;
         default:
             std::unreachable();
         }
     }
 
-    static auto dat_separator(std::ostream& os) -> void {
-        std::print(os, ", ");
+    auto dat_separator() -> void { print(", "); }
+
+    auto dat_end() -> void { println(); }
+
+    auto dat_value(const std::string_view value) -> void {
+        print("{}", value);
     }
 
-    static auto dat_end(std::ostream& os) -> void { std::println(os); }
+    auto str_begin() -> void { print("db `"); }
 
-    static auto dat_value(std::ostream& os, const std::string_view value)
-        -> void {
-        std::print(os, "{}", value);
-    }
+    auto str_end() -> void { println("`"); }
 
-    static auto str_begin(std::ostream& os) -> void { std::print(os, "db `"); }
-
-    static auto str_end(std::ostream& os) -> void { std::println(os, "`"); }
-
-    static auto str_value(std::ostream& os, const std::string_view value)
-        -> void {
+    auto str_value(const std::string_view value) -> void {
         size_t position{};
         while (position < value.size()) {
             const size_t next{value.find('`', position)};
             if (next == std::string_view::npos) {
-                dat_value(os, value.substr(position));
+                dat_value(value.substr(position));
                 return;
             }
-            std::print(os, "{}\\`", value.substr(position, next - position));
+            print("{}\\`", value.substr(position, next - position));
             position = next + 1;
         }
     }
