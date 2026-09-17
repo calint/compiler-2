@@ -177,10 +177,9 @@ class x86 final {
         asm_line(tc, os.get(), indent, "cmp {}, {}", dst, src);
     }
 
-    static auto cmovs(toc& tc, std::ostream& os, const size_t indent,
-                      const std::string_view dst, const std::string_view src)
-        -> void {
-        asm_line(tc, os, indent, "cmovs {}, {}", dst, src);
+    auto cmovs(toc& tc, const size_t indent, const std::string_view dst,
+                      const std::string_view src) -> void {
+        asm_line(tc, os.get(), indent, "cmovs {}, {}", dst, src);
     }
 
     static auto div_reg_ext(toc& tc, std::ostream& os, const size_t indent,
@@ -339,10 +338,9 @@ class x86 final {
         }
     }
 
-    static auto test(toc& tc, std::ostream& os, const size_t indent,
-                     const std::string_view dst, const std::string_view src)
-        -> void {
-        asm_line(tc, os, indent, "test {}, {}", dst, src);
+    auto test(toc& tc, const size_t indent, const std::string_view dst,
+            const std::string_view src) -> void {
+        asm_line(tc, os.get(), indent, "test {}, {}", dst, src);
     }
 
     static auto times(std::ostream& os, const size_t count,

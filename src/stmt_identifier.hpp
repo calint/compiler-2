@@ -442,9 +442,9 @@ class stmt_identifier : public statement {
 
         // check for negative index (optional lower bounds check)
         if (tc.is_bounds_check_lower()) {
-            x86::test(tc, x.os, indent, reg_to_check, reg_to_check);
+            x.test(tc, indent, reg_to_check, reg_to_check);
             if (tc.is_bounds_check_with_line()) {
-                x86::cmovs(tc, x.os, indent, "rbp", reg_line_num);
+                x.cmovs(tc, indent, "rbp", reg_line_num);
             }
             x86::jcc(tc, x.os, indent, "s", "panic_bounds");
         }
