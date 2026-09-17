@@ -604,7 +604,7 @@ class expr_ops_list final : public expression {
                 uops.compile(tc, x, indent, r2);
             }
 
-            x86::imul(tc, src.tok(), x.os, indent, r1, r2);
+            x.imul(tc, src.tok(), indent, r1, r2);
             x86::mov(tc, src.tok(), x.os, indent, dst_info.operand.str(), r1);
 
             tc.free_scratch_register(src.tok(), x.os, indent, r2);
@@ -618,7 +618,7 @@ class expr_ops_list final : public expression {
             if (src_info.is_const()) {
                 x.comment_start(tc, src.tok(), indent);
                 x.println( "dst is reg, src is const");
-                x86::imul(tc, src.tok(), x.os, indent, dst_info.operand.str(),
+                x.imul(tc, src.tok(), indent, dst_info.operand.str(),
                           std::format("{}{}", src.get_unary_ops().to_string(),
                                       src_info.const_value));
                 return;
@@ -646,7 +646,7 @@ class expr_ops_list final : public expression {
                 tc.get_sized_register_operand(reg, dst_size)};
             x86::mov(tc, src.tok(), x.os, indent, reg_sized, src_operand.str());
             uops.compile(tc, x, indent, reg_sized);
-            x86::imul(tc, src.tok(), x.os, indent, dst_info.operand.str(),
+            x.imul(tc, src.tok(), indent, dst_info.operand.str(),
                       reg_sized);
             tc.free_scratch_register(src.tok(), x.os, indent, reg);
             free_registers(src, tc, x, indent, lea_registers);
@@ -664,7 +664,7 @@ class expr_ops_list final : public expression {
                 tc.get_sized_register_operand(reg, dst_size)};
             x86::mov(tc, src.tok(), x.os, indent, reg_sized,
                      dst_info.operand.str());
-            x86::imul(tc, src.tok(), x.os, indent, reg_sized,
+            x.imul(tc, src.tok(), indent, reg_sized,
                       std::format("{}{}", src.get_unary_ops().to_string(),
                                   src_info.const_value));
             x86::mov(tc, src.tok(), x.os, indent, dst_info.operand.str(),
@@ -689,7 +689,7 @@ class expr_ops_list final : public expression {
                 tc.get_sized_register_operand(reg, dst_size)};
             x86::mov(tc, src.tok(), x.os, indent, reg_sized,
                      dst_info.operand.str());
-            x86::imul(tc, src.tok(), x.os, indent, reg_sized, src_operand.str());
+            x.imul(tc, src.tok(), indent, reg_sized, src_operand.str());
             x86::mov(tc, src.tok(), x.os, indent, dst_info.operand.str(),
                      reg_sized);
             tc.free_scratch_register(src.tok(), x.os, indent, reg);
@@ -707,7 +707,7 @@ class expr_ops_list final : public expression {
             tc.get_sized_register_operand(reg, dst_size)};
         x86::mov(tc, src.tok(), x.os, indent, reg_sized, src_operand.str());
         uops.compile(tc, x, indent, reg_sized);
-        x86::imul(tc, src.tok(), x.os, indent, reg_sized, dst_info.operand.str());
+        x.imul(tc, src.tok(), indent, reg_sized, dst_info.operand.str());
         x86::mov(tc, src.tok(), x.os, indent, dst_info.operand.str(), reg_sized);
         tc.free_scratch_register(src.tok(), x.os, indent, reg);
         free_registers(src, tc, x, indent, lea_registers);

@@ -144,9 +144,8 @@ class x86 final {
         std::println(os, format, std::forward<args_t>(args)...);
     }
 
-    static auto imul(toc& tc, const token& src_loc_tk, std::ostream& os,
-                     size_t indent, std::string_view dst_op,
-                     std::string_view src_op) -> void;
+    auto imul(toc& tc, const token& src_loc_tk, size_t indent,
+            std::string_view dst_op, std::string_view src_op) -> void;
 
     static auto mov(toc& tc, const token& src_loc_tk, std::ostream& os,
                     size_t indent, std::string_view dst_op,
@@ -207,10 +206,9 @@ class x86 final {
         asm_line(tc, os, indent, "idiv {}", operand);
     }
 
-    static auto imul(toc& tc, std::ostream& os, const size_t indent,
-                     const std::string_view dst, const std::string_view src)
-        -> void {
-        asm_line(tc, os, indent, "imul {}, {}", dst, src);
+    auto imul(toc& tc, const size_t indent, const std::string_view dst,
+            const std::string_view src) -> void {
+        asm_line(tc, os.get(), indent, "imul {}, {}", dst, src);
     }
 
     static auto inc(toc& tc, std::ostream& os, const size_t indent,

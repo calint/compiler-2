@@ -624,10 +624,10 @@ auto x86::mov(toc& tc, const token& src_loc_tk, std::ostream& os,
     op(tc, src_loc_tk, os, indent, "mov", dst_op, src_op);
 }
 
-auto x86::imul(toc& tc, const token& src_loc_tk, std::ostream& os,
-               const size_t indent, const std::string_view dst_op,
-               const std::string_view src_op) -> void {
-    op(tc, src_loc_tk, os, indent, "imul", dst_op, src_op);
+auto x86::imul(toc& tc, const token& src_loc_tk, const size_t indent,
+               const std::string_view dst_op, const std::string_view src_op)
+    -> void {
+    op(tc, src_loc_tk, os.get(), indent, "imul", dst_op, src_op);
 }
 
 auto x86::cmp(toc& tc, const token& src_loc_tk, const size_t indent,

@@ -365,7 +365,7 @@ class stmt_identifier : public statement {
                 if (std::optional<int> shl{get_shift_amount(type_size)}; shl) {
                     x86::shl(tc, x.os, indent, reg_idx, std::format("{}", *shl));
                 } else {
-                    x86::imul(tc, x.os, indent, reg_idx,
+                    x.imul(tc, indent, reg_idx,
                               std::format("{}", type_size));
                 }
             }
