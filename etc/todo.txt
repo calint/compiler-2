@@ -4,6 +4,8 @@
 [x] refactor to split "god" object toc in a compile time part (x86) and a
     parsing and compile part (toc)
     => better but still doesn't feel right
+    [ ] still issues at add var and const not having access to x86 in parse
+        phase
 [ ] don't allow a variable to have a register name
 [ ] support variable string initializers
 [ ] resolve issues with comments in expressions etc
