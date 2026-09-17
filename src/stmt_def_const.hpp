@@ -41,8 +41,11 @@ class stmt_def_const final : public statement {
 
         set_type(tc.get_type_void());
 
-        null_stream os{};
-        tc.add_const(name_tk_, os, 0, name_tk_.text(), const_.value());
+        // add var to toc without causing output by passing a null x86
+        null_stream null_strm;
+        x86 x{null_strm, tc.source()};
+
+        tc.add_const(x, name_tk_, 0, name_tk_.text(), const_.value());
     }
 
     stmt_def_const() = default;
@@ -59,6 +62,6 @@ class stmt_def_const final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        tc.add_const(name_tk_, x.os, indent, name_tk_.text(), const_.value());
+        tc.add_const(x, name_tk_, indent, name_tk_.text(), const_.value());
     }
 };

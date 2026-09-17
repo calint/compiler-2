@@ -73,11 +73,8 @@ class x86 final {
     // NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
     std::reference_wrapper<std::ostream> os;
 
-    explicit x86(std::ostream& os_ref) : os{os_ref} {}
-
-    // called once by 'program' before compiling starts; provides the pieces
-    // of 'toc' state 'x86' needs without holding a 'toc&'
-    auto set_source(const std::string_view source) -> void { source_ = source; }
+    explicit x86(std::ostream& os_ref, std::string_view source)
+        : source_{source}, os{os_ref} {}
 
     auto set_type_default(const type& tpe) -> void { default_type_ = &tpe; }
 
@@ -112,37 +109,6 @@ class x86 final {
     }
 
     auto println() const -> void { std::println(os.get()); }
-
-    [[nodiscard]] static auto get_data_def(const size_t size)
-        -> std::string_view {
-        switch (size) {
-        case size_qword:
-            return data_qword;
-        case size_dword:
-            return data_dword;
-        case size_word:
-            return data_word;
-        case size_byte:
-            return data_byte;
-        default:
-            std::unreachable();
-        }
-    }
-
-    auto comment_source(const token& source_location, const size_t indent,
-                        const std::string_view text) -> void {
-        comment_start(source_location, indent);
-        println("{}", text);
-    }
-
-    static auto comment_start(const std::string_view source,
-                              const token& source_location, std::ostream& os,
-                              const size_t indent) -> void {
-        const auto [line, column]{utils::line_and_col_num_for_char_index(
-            source_location.at_line(), source_location.start_index(), source)};
-        comment_indent(os, indent);
-        std::print(os, "[{}:{}] ", line, column);
-    }
 
     // member form: uses this instance's own print/os/source instead of
     // taking them
@@ -821,6 +787,37 @@ class x86 final {
         default:
             std::unreachable();
         }
+    }
+
+    [[nodiscard]] static auto get_data_def(const size_t size)
+        -> std::string_view {
+        switch (size) {
+        case size_qword:
+            return data_qword;
+        case size_dword:
+            return data_dword;
+        case size_word:
+            return data_word;
+        case size_byte:
+            return data_byte;
+        default:
+            std::unreachable();
+        }
+    }
+
+    auto comment_source(const token& source_location, const size_t indent,
+                        const std::string_view text) -> void {
+        comment_start(source_location, indent);
+        println("{}", text);
+    }
+
+    static auto comment_start(const std::string_view source,
+                              const token& source_location, std::ostream& os,
+                              const size_t indent) -> void {
+        const auto [line, column]{utils::line_and_col_num_for_char_index(
+            source_location.at_line(), source_location.start_index(), source)};
+        comment_indent(os, indent);
+        std::print(os, "[{}:{}] ", line, column);
     }
 
   private:

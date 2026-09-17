@@ -100,8 +100,10 @@ class stmt_def_dat final : public statement {
         equals_tk_ = tz.is_next_char_token('=');
         has_init_ = {not equals_tk_.is_empty()};
 
-        // add var to toc without causing output by passing a null stream
+        // add var to toc without causing output by passing a null x86
         null_stream null_strm;
+        x86 x{null_strm, tc.source()};
+
         const var_info var{
             .name{name_tk_.text()},
             .type_ptr{&tp},
@@ -110,7 +112,7 @@ class stmt_def_dat final : public statement {
             .array_size{array_size},
             .reg{},
         };
-        tc.add_var(name_tk_, null_strm, 0, var, true);
+        tc.add_var(x, name_tk_, 0, var, true);
 
         if (has_init_) {
             elroot_ = parse_elem(tc, tz, tp, is_array, array_size);
@@ -176,7 +178,7 @@ class stmt_def_dat final : public statement {
             .array_size{elroot_.array_size},
             .reg{},
         };
-        tc.add_var(name_tk_, x.os, indent, var, true);
+        tc.add_var(x, name_tk_, indent, var, true);
     }
 
     auto compile_data(const toc& tc, x86& x) const -> void override {

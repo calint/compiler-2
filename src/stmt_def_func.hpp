@@ -75,7 +75,11 @@ class stmt_def_func final : public statement {
         // dry-run compilation to catch errors before called
         tc.enter_func(name(), returns_);
         std::vector<std::string> const allocated_named_registers;
-        null_stream os; // don't make output
+
+        // add var to toc without causing output by passing a null x86
+        null_stream null_strm;
+        x86 x{null_strm, tc.source()};
+
         if (returns_) {
             // yes, declare variable for the return
             const token& ret_tk{returns_->ident_tk};
@@ -91,8 +95,9 @@ class stmt_def_func final : public statement {
                 .declared_at_tk{ret_tk},
                 .reg{},
             };
-            tc.add_var(ret_tk, os, 0, var, false);
+            tc.add_var(x, ret_tk, 0, var, false);
         }
+
         // functions get arguments as aliases
         for (const stmt_def_func_param& prm : params_) {
             const type& prm_type{prm.get_type()};
@@ -105,7 +110,7 @@ class stmt_def_func final : public statement {
                 .is_array{prm.is_array()},
                 .reg{},
             };
-            tc.add_var(tok(), os, 0, var, false);
+            tc.add_var(x, tok(), 0, var, false);
         }
         code_ = {tc, tz};
         tc.exit_func(name());

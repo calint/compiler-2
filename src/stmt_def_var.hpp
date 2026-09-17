@@ -72,8 +72,10 @@ class stmt_def_var final : public statement {
         equals_tk_ = tz.is_next_char_token('=');
         const bool init_required{not equals_tk_.is_empty()};
 
-        // add var to toc without causing output by passing a null stream
+        // add var to toc without causing output by passing a null x86
         null_stream null_strm;
+        x86 x{null_strm, tc.source()};
+
         const var_info var{
             .name{name_tk_.text()},
             .type_ptr{&tp},
@@ -82,7 +84,7 @@ class stmt_def_var final : public statement {
             .array_size{array_size_},
             .reg{},
         };
-        tc.add_var(name_tk_, null_strm, 0, var, false);
+        tc.add_var(x, name_tk_, 0, var, false);
 
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
@@ -136,7 +138,7 @@ class stmt_def_var final : public statement {
             .array_size{array_size_},
             .reg{},
         };
-        tc.add_var(name_tk_, x.os, indent, var, false);
+        tc.add_var(x, name_tk_, indent, var, false);
 
         const ident_info& dst_info{
             tc.make_ident_info(x, name_tk_, name_tk_.text())};

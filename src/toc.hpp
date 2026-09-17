@@ -257,9 +257,8 @@ class toc final {
         frames_.back().add_alias(ai);
     }
 
-    auto add_const(const token& src_loc_tk, std::ostream& os,
-                   const size_t indnt, const std::string_view name,
-                   const int64_t value) {
+    auto add_const(x86& x, const token& src_loc_tk, const size_t indent,
+                   std::string_view name, const int64_t value) {
 
         if (has_const_in_current_block(name)) {
             const const_info& c{frames_.back().get_const(name)};
@@ -269,8 +268,7 @@ class toc final {
                             name, source_location_hr(c.declared_at_tk)));
         }
 
-        x86::comment_start(source_, src_loc_tk, os, indnt);
-        std::println(os, "const {} = {}", name, value);
+        x.comment_line(src_loc_tk, indent, "const {} = {}", name, value);
         frames_.back().add_const(name,
                                  {.declared_at_tk{src_loc_tk}, .value{value}});
     }
@@ -330,7 +328,7 @@ class toc final {
                                });
     }
 
-    auto add_var(const token& src_loc_tk, std::ostream& os, const size_t indnt,
+    auto add_var(x86& x, const token& src_loc_tk, const size_t indent,
                  var_info var, bool is_dat) -> void {
 
         // check if the variable is already declared in this scope
@@ -359,19 +357,19 @@ class toc final {
         const ident_info& name_info{
             make_ident_info_parsing(src_loc_tk, var.name)};
 
-        x86::comment_start(source_, src_loc_tk, os, indnt);
-        std::print(os, "{}: {}", var.name, name_info.type().name());
+        x.comment_start(src_loc_tk, indent);
+        x.print("{}: {}", var.name, name_info.type().name());
         if (var.array_size) {
-            std::print(os, "[{}]", var.array_size);
+            x.print("[{}]", var.array_size);
         }
         if (not var.reg.empty()) {
-            std::println(os, " ({})", var.reg);
+            x.print(" ({})", var.reg);
             return;
         }
-        std::println(os, " ({} B @ [{}])",
-                     name_info.type().size() *
-                         (name_info.is_array ? name_info.array_size : 1),
-                     name_info.operand.address_str());
+        x.println(" ({} B @ [{}])",
+                  name_info.type().size() *
+                      (name_info.is_array ? name_info.array_size : 1),
+                  name_info.operand.address_str());
     }
 
     [[nodiscard]] auto create_unique_label(const token& tk,

@@ -28,19 +28,19 @@ class stmt_builtin_foo final : public statement {
             throw compiler_exception(ident_.tok(), "expected an array");
         }
 
-        // static dry compilation
-
-        null_stream os;
+        // add var to toc without causing output by passing a null x86
+        null_stream null_strm;
+        x86 x{null_strm, tc.source()};
 
         const ident_info ii{tc.make_ident_info_parsing(ident_)};
         tc.enter_foo("");
-        const var_info e{
+        const var_info var_e{
             .name{"e"},
             .type_ptr{&ii.type()},
             .declared_at_tk{},
             .reg{},
         };
-        tc.add_var(tok(), os, 0, e, false);
+        tc.add_var(x, token{}, 0, var_e, false);
 
         const var_info var_i{
             .name{"i"},
@@ -48,9 +48,9 @@ class stmt_builtin_foo final : public statement {
             .declared_at_tk{},
             .reg{},
         };
-        tc.add_var(tok(), os, 0, var_i, false);
+        tc.add_var(x, token{}, 0, var_i, false);
 
-        tc.add_const(tok(), os, 0, "n", static_cast<int64_t>(ii.array_size));
+        tc.add_const(x, token{}, 0, "n", static_cast<int64_t>(ii.array_size));
         code_ = {tc, tz};
         tc.exit_foo("");
     }
@@ -89,7 +89,7 @@ class stmt_builtin_foo final : public statement {
             .reg{reg_iter},
         };
 
-        tc.add_var(tok(), x.os, indent, var_e, false);
+        tc.add_var(x, ident_.tok(), indent, var_e, false);
 
         const var_info var_i{
             .name{"i"},
@@ -98,7 +98,7 @@ class stmt_builtin_foo final : public statement {
             .reg{},
         };
 
-        tc.add_var(tok(), x.os, indent, var_i, false);
+        tc.add_var(x, ident_.tok(), indent, var_i, false);
 
         const ident_info var_i_info{tc.make_ident_info(x, tok(), "i")};
 
@@ -124,7 +124,7 @@ class stmt_builtin_foo final : public statement {
         }
 
         // add a constant for array size
-        tc.add_const(tok(), x.os, indent, "n",
+        tc.add_const(x, ident_.tok(), indent, "n",
                      static_cast<int64_t>(ii.array_size));
 
         x.mov(tok(), indent, var_i_addr_op, "0");
