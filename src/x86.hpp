@@ -243,9 +243,9 @@ class x86 final {
         asm_line(tc, os, indent, "jne {}", label);
     }
 
-    static auto label(toc& tc, std::ostream& os, const size_t indent,
-                      const std::string_view label) -> void {
-        asm_line(tc, os, indent, "{}:", label);
+    auto label(toc& tc, const size_t indent, const std::string_view label)
+        -> void {
+        asm_line(tc, os.get(), indent, "{}:", label);
     }
 
     static auto lea(toc& tc, std::ostream& os, const size_t indent,

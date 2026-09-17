@@ -127,16 +127,16 @@ class stmt_builtin_foo final : public statement {
                      static_cast<int64_t>(ii.array_size));
 
         x86::mov(tc, tok(), x.os, indent, var_i_addr_op, "0");
-        x86::label(tc, x.os, indent, loop_label);
+        x.label(tc, indent, loop_label);
         code_.compile(tc, x, indent, toc::make_ident_info_empty());
-        x86::label(tc, x.os, indent + 1, loop_label + "_continue");
+        x.label(tc, indent + 1, loop_label + "_continue");
         x86::add(tc, x.os, indent + 2, reg_iter,
                  std::format("{}", ii.type().size()));
         x86::inc(tc, x.os, indent + 2, var_i_addr_op);
         x86::cmp(tc, x.os, indent + 2, var_i_addr_op,
                  std::format("{}", ii.array_size));
         x86::jne(tc, x.os, indent + 2, loop_label);
-        x86::label(tc, x.os, indent, loop_label + "_end");
+        x.label(tc, indent, loop_label + "_end");
 
         tc.free_scratch_register(tok(), x.os, indent, reg_iter);
 

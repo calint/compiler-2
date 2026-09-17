@@ -104,7 +104,7 @@ class expr_bool_op final : public statement {
         const bool invert{inverted ? not is_not_ : is_not_};
         x86::comment_source(tc, *this, x.os, indent, "?",
                             inverted ? " 'or' inverted: " : " ");
-        x86::label(tc, x.os, indent, create_cmp_bgn_label(tc));
+        x.label(tc, indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // is 'lhs' a constant?
             if (not lhs_.is_expression()) {
@@ -190,7 +190,7 @@ class expr_bool_op final : public statement {
         const bool invert{inverted ? not is_not_ : is_not_};
         x86::comment_source(tc, *this, x.os, indent, "?",
                             inverted ? " 'and' inverted: " : " ");
-        x86::label(tc, x.os, indent, create_cmp_bgn_label(tc));
+        x.label(tc, indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // check case when operand is constant
             if (not lhs_.is_expression()) {

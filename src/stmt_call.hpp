@@ -302,7 +302,7 @@ class stmt_call : public expression {
 
         func.source_def_comment_to(tc, x, indent);
 
-        x86::label(tc, x.os, indent,
+        x.label(tc, indent,
                    std::format("{}_{}", func.name(), new_call_path));
 
         // enter function scope
@@ -340,7 +340,7 @@ class stmt_call : public expression {
 
         // provide the exit label for 'return' to jump to
 
-        x86::label(tc, x.os, indent, ret_jmp_label);
+        x.label(tc, indent, ret_jmp_label);
 
         // apply unary ops to result if present
 

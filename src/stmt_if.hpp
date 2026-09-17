@@ -119,12 +119,12 @@ class stmt_if final : public statement {
         // code
         if (not branch_evaluated_to_true) {
             if (not else_code_.is_empty()) {
-                x86::label(tc, x.os, indent, label_else_branch);
+                x.label(tc, indent, label_else_branch);
                 else_code_.compile(tc, x, indent, dst_info);
             }
         }
 
-        x86::label(tc, x.os, indent, label_after_if);
+        x.label(tc, indent, label_after_if);
     }
 
     [[nodiscard]] auto else_block() const -> const stmt_block& {
