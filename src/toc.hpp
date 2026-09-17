@@ -747,7 +747,7 @@ class toc final {
         return nbytes;
     }
 
-    // TODO: formalize this
+    // todo: formalize this
     [[nodiscard]] auto get_builtin_type_for_size(const size_t size) const
         -> const type& {
 

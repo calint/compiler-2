@@ -270,7 +270,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
                                 ? src_info.array_size * dst_type.size()
                                 : dst_type.size()};
 
-        // TODO: validate dst array size fits src array size
+        // todo: validate dst array size fits src array size
 
         x.copy(tok(), indent, src_op.address_str(), dst_op.address_str(),
                nbytes);
@@ -342,7 +342,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
             } else {
                 // built-in, not expression, not constant
                 if (tf.is_array) {
-                    // TODO: this code is not covered by the tests, find how to
+                    // todo: this code is not covered by the tests, find how to
                     //       trigger it
                     // built-in, not expression, not constant, array
                     validate_array_assignment(src.tok(), tf, src_info);

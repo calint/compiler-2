@@ -195,8 +195,7 @@ class stmt_identifier : public statement {
     }
 
     [[nodiscard]] auto
-    compile_lea(toc& tc, x86& x, const size_t indent,
-                const token& src_loc_tk,
+    compile_lea(toc& tc, x86& x, const size_t indent, const token& src_loc_tk,
                 std::vector<std::string>& allocated_registers,
                 const std::string& reg_size,
                 const std::span<const std::string> lea_path) const

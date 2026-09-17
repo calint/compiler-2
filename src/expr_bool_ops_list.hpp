@@ -257,7 +257,7 @@ class expr_bool_ops_list final : public statement {
                     // the last bool op in the list
                     // 'jmp_false' is the next bool ops list
                     // did expression evaluate to a constant?
-                        // single-element case: result is definitively true/false
+                    // single-element case: result is definitively true/false
                     if (const std::optional<bool> const_eval{
                             el.compile(tc, x, indent, jmp_to_if_false,
                                        jmp_to_if_true, invert, dst)};
