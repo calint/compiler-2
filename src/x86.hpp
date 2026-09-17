@@ -250,14 +250,14 @@ class x86 final {
         asm_line(tc, os.get(), indent, "lea {}, [{}]", dst, operand);
     }
 
-    static auto neg(toc& tc, std::ostream& os, const size_t indent,
-                    const std::string_view operand) -> void {
-        asm_line(tc, os, indent, "neg {}", operand);
+    auto neg(toc& tc, const size_t indent, const std::string_view operand)
+        -> void {
+        asm_line(tc, os.get(), indent, "neg {}", operand);
     }
 
-    static auto not_op(toc& tc, std::ostream& os, const size_t indent,
-                       const std::string_view operand) -> void {
-        asm_line(tc, os, indent, "not {}", operand);
+    auto not_op(toc& tc, const size_t indent, const std::string_view operand)
+        -> void {
+        asm_line(tc, os.get(), indent, "not {}", operand);
     }
 
     static auto rep_movs(toc& tc, std::ostream& os, const size_t indent,

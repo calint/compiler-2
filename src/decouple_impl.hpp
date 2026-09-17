@@ -451,10 +451,10 @@ auto unary_ops::compile([[maybe_unused]] toc& tc, x86& x, const size_t indnt,
     for (const char op : ops_ | std::views::reverse) {
         switch (op) {
         case '~':
-            x86::not_op(tc, x.os, indnt, dst_info);
+            x.not_op(tc, indnt, dst_info);
             break;
         case '-':
-            x86::neg(tc, x.os, indnt, dst_info);
+            x.neg(tc, indnt, dst_info);
             break;
         default:
             std::unreachable();
