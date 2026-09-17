@@ -11,7 +11,6 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-#include "unary_ops.hpp"
 
 class stmt_def_const final : public statement {
     token name_tk_;
@@ -33,7 +32,7 @@ class stmt_def_const final : public statement {
                                      "value");
         }
 
-        const_ = {tc, tz, 0};
+        const_ = stmt_const{tc, tz, 0};
 
         if (not const_.has_value()) {
             throw compiler_exception(const_.tok(), "expected constant value");
@@ -41,7 +40,7 @@ class stmt_def_const final : public statement {
 
         set_type(tc.get_type_void());
 
-        // add var to toc without causing output by passing a null x86
+        // add const to toc without emitting output by using a null stream
         null_stream null_strm;
         x86 x{null_strm, tc.source()};
 
@@ -61,7 +60,6 @@ class stmt_def_const final : public statement {
                  [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
-
         tc.add_const(x, name_tk_, indent, name_tk_.text(), const_.value());
     }
 };

@@ -840,7 +840,7 @@ class expr_ops_list final : public expression {
             x.comment_start(src.tok(), indent);
             x.println("shf: expr");
             // the operand must be stored in register 'CL'
-            // todo: BMI2 (Bit Manipulation Instruction Set 2)
+            // TODO: BMI2 (Bit Manipulation Instruction Set 2)
             //       look at shlx/shrx/sarx which can use any register for the
             //       shift amount
             x.alloc_named_register(src.tok(), indent, "rcx",

@@ -208,7 +208,7 @@ auto expr_type_value::source_to(std::ostream& os) const -> void {
         return;
     }
 
-    // is it an identifier? because statement printed that
+    // identifier case: base statement already emitted token text
     if (is_make_copy()) {
         stmt_ident_->source_to(os);
         return;
@@ -270,7 +270,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
                                 ? src_info.array_size * dst_type.size()
                                 : dst_type.size()};
 
-        // todo: validate dst array size fits src array size
+        // TODO: validate dst array size fits src array size
 
         x.copy(tok(), indent, src_op.address_str(), dst_op.address_str(),
                nbytes);
@@ -342,7 +342,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
             } else {
                 // built-in, not expression, not constant
                 if (tf.is_array) {
-                    // todo: this code is not covered by the tests, find how to
+                    // TODO: this code is not covered by the tests, find how to
                     //       trigger it
                     // built-in, not expression, not constant, array
                     validate_array_assignment(src.tok(), tf, src_info);

@@ -23,12 +23,12 @@ class stmt_builtin_foo final : public statement {
 
         set_type(tc.get_type_void());
 
-        ident_ = {tc, unary_ops{}, tz.next_token(), tz};
+        ident_ = stmt_identifier{tc, unary_ops{}, tz.next_token(), tz};
         if (not ident_.is_array()) {
             throw compiler_exception(ident_.tok(), "expected an array");
         }
 
-        // add var to toc without causing output by passing a null x86
+        // add var to toc without emitting output by using a null stream
         null_stream null_strm;
         x86 x{null_strm, tc.source()};
 
@@ -70,7 +70,7 @@ class stmt_builtin_foo final : public statement {
         // one line trimmed comment for the definition
         std::stringstream ss;
         ident_.source_to(ss);
-        // make comment friendly string replacing consecutive with one space
+        // make a comment-friendly string by collapsing whitespace
         x.comment_line(tok(), indent, "foo {}",
                        std::regex_replace(ss.str(), utils::regex_ws(), " "));
 

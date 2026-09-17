@@ -257,7 +257,7 @@ class expr_bool_ops_list final : public statement {
                     // the last bool op in the list
                     // 'jmp_false' is the next bool ops list
                     // did expression evaluate to a constant?
-                    // is it only an element? then it is sure true or false
+                        // single-element case: result is definitively true/false
                     if (const std::optional<bool> const_eval{
                             el.compile(tc, x, indent, jmp_to_if_false,
                                        jmp_to_if_true, invert, dst)};
@@ -375,7 +375,7 @@ class expr_bool_ops_list final : public statement {
         return std::nullopt;
     }
 
-    //? assumes it is not an expression
+    // assumes callers only query this when expression status is relevant
     [[nodiscard]] auto is_expression() const -> bool override {
         // is there more than 1 bool in the list?
         if (bools_.size() > 1) {

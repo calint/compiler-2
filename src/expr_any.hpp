@@ -52,7 +52,7 @@ class expr_any final : public statement {
 
         open_brace_tk_ = tz.is_next_char_token('{');
         if (open_brace_tk_.is_empty()) {
-            // todo: explain why expr_type_value has multiple responsibilities
+            // TODO: explain why expr_type_value has multiple responsibilities
             vars_.emplace_back(expr_type_value{tc, tz, tp});
             is_identifier_ = true;
             return;
@@ -167,7 +167,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
-        // todo: comment about why this can't happen if empty
+        // TODO: explain why this cannot be empty at this point
         return std::visit(
             [](const auto& e) -> std::string_view { return e.identifier(); },
             vars_[0]);

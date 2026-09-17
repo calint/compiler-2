@@ -73,7 +73,7 @@ class x86 final {
     // NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
     std::reference_wrapper<std::ostream> os;
 
-    explicit x86(std::ostream& os_ref, std::string_view source)
+    explicit x86(std::ostream& os_ref, const std::string_view source)
         : source_{source}, os{os_ref} {}
 
     auto set_type_default(const type& tpe) -> void { default_type_ = &tpe; }
@@ -627,7 +627,7 @@ class x86 final {
     get_sized_register_operand(const std::string_view operand,
                                const size_t size) -> std::string {
 
-        //? sort of ugly
+        // map canonical 64-bit register names to size-specific aliases
         if (operand == "rax") {
             switch (size) {
             case size_qword:

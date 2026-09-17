@@ -44,7 +44,7 @@ class stmt_def_func final : public statement {
             }
 
             if (counter++) {
-                const token t = tz.is_next_char_token(',');
+                const token t{tz.is_next_char_token(',')};
                 if (t.is_empty()) {
                     throw compiler_exception{
                         tz,
@@ -74,14 +74,13 @@ class stmt_def_func final : public statement {
                     statement::get_type(), this);
         // dry-run compilation to catch errors before called
         tc.enter_func(name(), returns_);
-        std::vector<std::string> const allocated_named_registers;
 
-        // add var to toc without causing output by passing a null x86
+        // add var to toc without emitting output by using a null stream
         null_stream null_strm;
         x86 x{null_strm, tc.source()};
 
         if (returns_) {
-            // yes, declare variable for the return
+            // declare variable for the return
             const token& ret_tk{returns_->ident_tk};
 
             if (ret_tk.text().empty()) {
@@ -110,7 +109,7 @@ class stmt_def_func final : public statement {
                 .is_array{prm.is_array()},
                 .reg{},
             };
-            tc.add_var(x, tok(), 0, var, false);
+            tc.add_var(x, prm.tok(), 0, var, false);
         }
         code_ = {tc, tz};
         tc.exit_func(name());
@@ -148,10 +147,9 @@ class stmt_def_func final : public statement {
     }
 
     auto source_def_comment_to(x86& x, const size_t indent) const -> void {
-
         std::stringstream ss;
         source_def_to(ss, true);
-        // make comment friendly string replacing consecutive with one space
+        // make a comment-friendly string by collapsing whitespace
         const std::string res{
             std::regex_replace(ss.str(), utils::regex_ws(), " ")};
         x.comment_line(name_tk_, indent, "{}", res);
@@ -164,7 +162,6 @@ class stmt_def_func final : public statement {
 
     [[nodiscard]] auto returns() const
         -> const std::optional<func_return_info>& {
-
         return returns_;
     }
 
@@ -182,6 +179,4 @@ class stmt_def_func final : public statement {
     [[nodiscard]] auto name() const -> std::string_view {
         return name_tk_.text();
     }
-
-  private:
 };

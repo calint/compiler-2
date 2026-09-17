@@ -63,7 +63,7 @@ class stmt_def_dat final : public statement {
         bool is_array{};
         size_t array_size{};
 
-        // check if type declared
+        // check whether type is declared
         if (not type_delim_tk_.is_empty()) {
             type_tk_ = tz.next_token();
 
@@ -71,7 +71,7 @@ class stmt_def_dat final : public statement {
             if (not open_bracket_tk_.is_empty()) {
                 is_array = true;
 
-                array_size_const_ = {tc, tz, 0};
+                array_size_const_ = stmt_const{tc, tz, 0};
 
                 if (array_size_const_.has_value() and
                     array_size_const_.value() <= 0) {
@@ -98,9 +98,9 @@ class stmt_def_dat final : public statement {
 
         // expect initialization
         equals_tk_ = tz.is_next_char_token('=');
-        has_init_ = {not equals_tk_.is_empty()};
+        has_init_ = not equals_tk_.is_empty();
 
-        // add var to toc without causing output by passing a null x86
+        // add var to toc without emitting output by using a null stream
         null_stream null_strm;
         x86 x{null_strm, tc.source()};
 

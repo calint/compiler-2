@@ -1,5 +1,5 @@
 #pragma once
-// review: 2025-09-29
+// reviewed: 2025-09-29
 
 #include <algorithm>
 #include <charconv>
@@ -91,10 +91,6 @@ class frame final {
         : name_{name}, call_path_{std::move(call_path)},
           func_ret_label_{std::move(func_ret_label)}, func_ret_{func_ret_info},
           type_{frm_type} {}
-
-    // -------------------------------------------------------------------------
-    // public non-special functions (sorted alphabetically)
-    // -------------------------------------------------------------------------
 
     auto add_alias(const alias_info& ai) -> void {
         aliases_.put(std::string{ai.from}, ai);
@@ -248,10 +244,6 @@ class toc final {
         : source_{source}, bounds_check_upper_{bounds_check_upper},
           bounds_check_with_line_{bounds_check_with_line},
           bounds_check_lower_{bounds_check_lower} {}
-
-    // -------------------------------------------------------------------------
-    // public non-special functions (sorted alphabetically)
-    // -------------------------------------------------------------------------
 
     auto add_alias(const alias_info& ai) -> void {
         frames_.back().add_alias(ai);
@@ -600,7 +592,7 @@ class toc final {
         return *type_void_;
     }
 
-    [[nodiscard]] auto has_const(const std::string_view name) const -> int64_t {
+    [[nodiscard]] auto has_const(const std::string_view name) const -> bool {
         for (const frame& f : frames_ | std::views::reverse) {
             if (f.has_const(name)) {
                 return true;
@@ -613,7 +605,7 @@ class toc final {
     }
 
     [[nodiscard]] auto
-    has_const_in_current_block(const std::string_view name) const -> int64_t {
+    has_const_in_current_block(const std::string_view name) const -> bool {
         return frames_.back().has_const(name);
     }
 
@@ -708,7 +700,7 @@ class toc final {
     make_ident_info_for_register(const x86& x, const std::string_view reg)
         -> ident_info {
 
-        //? unary ops?
+        // unary ops are applied by callers where relevant
         return {
             .id{reg},
             .elem_path{std::string{reg}},
@@ -755,7 +747,7 @@ class toc final {
         return nbytes;
     }
 
-    // todo: formalize this
+    // TODO: formalize this
     [[nodiscard]] auto get_builtin_type_for_size(const size_t size) const
         -> const type& {
 
@@ -773,363 +765,6 @@ class toc final {
         }
     }
 
-  private:
-    // -------------------------------------------------------------------------
-    // private non-special functions (sorted alphabetically)
-    // -------------------------------------------------------------------------
-
-    [[nodiscard]] auto
-    get_builtin_type_for_operand(const token& src_loc_tk,
-                                 const std::string_view op) const
-        -> const type& {
-
-        //? sort of ugly
-        if (op.starts_with("qword")) {
-            return get_type_or_throw(src_loc_tk, "i64");
-        }
-        if (op.starts_with("dword")) {
-            return get_type_or_throw(src_loc_tk, "i32");
-        }
-        if (op.starts_with("word")) {
-            return get_type_or_throw(src_loc_tk, "i16");
-        }
-        if (op.starts_with("byte")) {
-            return get_type_or_throw(src_loc_tk, "i8");
-        }
-
-        std::unreachable();
-    }
-
-    [[nodiscard]] auto is_in_main() const -> bool {
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_func()) {
-                return frm.name() == "main";
-            }
-        }
-
-        std::unreachable();
-    }
-
-    // reviewed: 2026-09-09
-    [[nodiscard]] auto
-    make_ident_info_or_empty(const x86* x, const token& src_loc_tk,
-                             const std::string_view ident) const -> ident_info {
-
-        ident_path id{std::string{ident}};
-
-        // get the base of the identifier: e.g. lnks[1].pos.y -> lnks
-        // traverse the frames and resolve to a variable, register or constant
-
-        std::vector<std::string> lea_path;
-        // note: 'lea' is a register operand pointing to the data of the
-        //       identifier combined which combined assembler instruction 'lea'
-        //       to loads the effective address of that data
-        //       'lea_path' elements will match components of the identifier
-        //       using the top most being the most recent in the call stack
-
-        // ignore the elements after the first element:
-        //  e.g.: lnks[1].pos.y
-        //   ignore pos.y since those cannot have a lea
-        //   add empty leas for those
-        //   note: 'lea_path' will be reversed when complete so that
-        //          'ident_path' elements have corresponding lea
-
-        lea_path.insert(lea_path.end(), id.path().size() - 1, "");
-        // note: -1 to exclude the first element
-
-        for (const frame& f : frames_ | std::views::reverse) {
-
-            // does this frame contain the variable?
-            if (f.has_var(id.base())) {
-                return make_ident_info_from_frame(x, f, src_loc_tk, ident, id,
-                                                  std::move(lea_path));
-            }
-
-            if (f.is_func()) {
-
-                // root frame of the function
-                // from here on aliases are followed to the actual variable
-                // referred to
-
-                if (not f.has_alias(id.base())) {
-                    // is not an alias
-
-                    // add an empty
-                    lea_path.emplace_back("");
-                    return make_ident_info_from_frame(x, f, src_loc_tk, ident,
-                                                      id, std::move(lea_path));
-                }
-
-                // this is an alias, continue resolving until it is a variable,
-                // register or constant
-
-                const alias_info& alias{f.get_alias(id.base())};
-
-                lea_path.emplace_back(alias.lea);
-
-                ident_path new_id{std::string{alias.to}};
-
-                // big note: the fishy resizing of the 'lea_path' happens when
-                //           the 'new_id' extended past fields that do not need
-                //           lea
-                //           if 'lea_path' is not extended then the types, id
-                //           path elements and lea path vectors are not in sync
-
-                const size_t nid_sz{new_id.path().size()};
-                const size_t lea_sz{lea_path.size()};
-                if ((nid_sz > lea_sz) and (nid_sz - lea_sz > 1)) {
-                    lea_path.resize(lea_path.size() + new_id.path().size() - 2);
-                    // note: -2 because last element is current element and
-                    //       first will be processed
-                }
-
-                // this is an alia
-                // e.g.
-                //   res -> pt.x becomes pt.x
-                //   pt.x -> p becomes p.x
-                //   lnk.count -> world.roome.link becomes
-                //   world.roome.link.count
-
-                for (const std::string& s : id.path() | std::views::drop(1)) {
-                    new_id.append(s);
-                }
-
-                id = new_id;
-            }
-        }
-
-        if (const ident_info reg_info{
-                make_ident_info_register_or_empty(x, src_loc_tk, ident, id)};
-            not reg_info.id.empty()) {
-            return reg_info;
-        }
-
-        return make_ident_info_const_or_empty(src_loc_tk, ident, id);
-    }
-
-    [[nodiscard]] auto make_ident_info_from_frame(
-        const x86* x, const frame& frm, const token& src_loc_tk,
-        const std::string_view ident, const ident_path& id,
-        std::vector<std::string> lea_path) const -> ident_info {
-
-        // try function scope
-        if (frm.has_var(id.base())) {
-            return make_ident_info_from_var_info(
-                src_loc_tk, ident, id, frm.get_var_const_ref(id.base()),
-                std::move(lea_path));
-        }
-
-        // try global scope
-        if (frames_.front().has_var(id.base())) {
-            return make_ident_info_from_var_info(
-                src_loc_tk, ident, id,
-                frames_.front().get_var_const_ref(id.base()), lea_path);
-        }
-
-        if (const ident_info reg_info{
-                make_ident_info_register_or_empty(x, src_loc_tk, ident, id)};
-            not reg_info.id.empty()) {
-            return reg_info;
-        }
-
-        return make_ident_info_const_or_empty(src_loc_tk, ident, id);
-    }
-
-    [[nodiscard]] static auto make_ident_info_from_var_info(
-        const token& src_loc_tk, const std::string_view& ident,
-        const ident_path& id, const var_info& var,
-        std::vector<std::string> lea_path) -> ident_info {
-
-        ident_info ii{
-            var.type_ptr->accessor(src_loc_tk, ident, id.path(), var)};
-
-        lea_path.resize(id.path().size());
-        // note: pad with empty for the remaining elements in the id path
-
-        std::ranges::reverse(lea_path);
-        // note: reverse it since it was constructed while traversing
-        //       upwards in the frame stack but 'elem_path' and 'type_path'
-        //       are ordered from the top down
-
-        ii.lea_path = lea_path;
-
-        if (not ii.type().is_built_in()) {
-            return ii;
-        }
-
-        // identifier is built-in type
-
-        // find the first element from the top that has a 'lea' and get
-        // accessor relative to that
-
-        std::string lea;
-        size_t lea_index{ii.elem_path.size()};
-        while (lea_index--) {
-            if (not ii.lea_path[lea_index].empty()) {
-                lea = ii.lea_path[lea_index];
-                break;
-            }
-        }
-
-        if (lea.empty()) {
-            return ii;
-        }
-
-        // identifier has lea, construct operand
-
-        // example of resulting data structure:
-        //
-        // type string { len : i8, data : i8[127] }
-        // type room { name : string, description : string, note : string }
-        // type world { rooms : room[128] }
-        //
-        // id path     |  type  |  lea          |
-        // ------------|--------|---------------|
-        // wld         | world  | -             |
-        // rooms[2]    | room   | r15           |
-        // description | string | -             |
-        // data        | i8     | r15 + 129     |
-        //
-        // the indexing in 'rooms' is done at runtime thus the memory
-        // location of 'rooms[2]' cannot  be deduced statically, thus the
-        // last lea encountered is the starting point when accessing
-        // identifiers
-
-        // start from the lea address and calculate offset to referred field
-        const std::span<std::string> elem_path_from_lea{
-            std::span{ii.elem_path}.subspan(lea_index)};
-
-        // navigate to referred element and get offset
-        const size_t offset{ii.type_path[lea_index]->field_offset(
-            src_loc_tk, elem_path_from_lea)};
-
-        ii.operand = operand{lea};
-        if (offset != 0) {
-            ii.operand.displacement += static_cast<int>(offset);
-        }
-        ii.operand.size = ii.type().size();
-
-        return ii;
-    }
-
-    [[nodiscard]] auto make_ident_info_register_or_empty(
-        const x86* x, const token& src_loc_tk, const std::string_view& ident,
-        const ident_path& id) const -> ident_info {
-        // is it a register?
-        if (const size_t reg_size{utils::register_size(id.str())};
-            reg_size != 0) {
-            const type& tpe{x ? x->get_allocated_register_type(id.str())
-                              : get_builtin_type_for_size(reg_size)};
-            //? unary ops?
-            return {
-                .id{ident},
-                .elem_path{id.str()},
-                .type_path{&tpe},
-                .lea_path{""},
-                .operand{id.str()},
-                .ident_type{ident_info::ident_type::REGISTER},
-            };
-        }
-
-        // is it a register reference to memory?
-        if (utils::get_text_between_brackets(id.str())) {
-            // get the size: e.g. "dword [r15]"
-            return {
-                .id{ident},
-                .elem_path{id.str()},
-                .type_path{&get_builtin_type_for_operand(src_loc_tk, id.str())},
-                .lea_path{""},
-                .operand{id.str()},
-                .ident_type{ident_info::ident_type::VAR},
-            };
-        }
-
-        // not resolved, return empty info
-        return {.id{}, .elem_path{}, .type_path{}, .lea_path{}, .operand{}};
-    }
-
-    [[nodiscard]] auto
-    make_ident_info_const_or_empty(const token& src_loc_tk,
-                                   const std::string_view& ident,
-                                   const ident_path& id) const -> ident_info {
-        // is 'id' an integer?
-        if (const std::optional<int64_t> value{
-                parse_constant(src_loc_tk, id.str())};
-            value) {
-            return {
-                .id{ident},
-                .elem_path{id.str()},
-                .type_path{&get_type_default()},
-                .lea_path{""},
-                .operand{id.str(), true},
-                .const_value{*value},
-                .ident_type{ident_info::ident_type::CONST},
-            };
-        }
-
-        // is it a boolean constant?
-        if (id.base() == "true") {
-            return {
-                .id{ident},
-                .elem_path{id.str()},
-                .type_path{&get_type_default()},
-                .lea_path{""},
-                .operand{"true", true},
-                .const_value{1},
-                .ident_type{ident_info::ident_type::CONST},
-            };
-        }
-
-        if (id.base() == "false") {
-            return {
-                .id{ident},
-                .elem_path{id.str()},
-                .type_path{&get_type_default()},
-                .lea_path{""},
-                .operand{"false", true},
-                .const_value{},
-                .ident_type{ident_info::ident_type::CONST},
-            };
-        }
-
-        // is 'id' a constant?
-        if (has_const(id.str())) {
-            return {
-                .id{ident},
-                .elem_path{id.str()},
-                .type_path{&get_type_default()},
-                .lea_path{""},
-                .operand{id.str(), true},
-                .const_value{get_const(id.str())},
-                .ident_type{ident_info::ident_type::CONST},
-            };
-        }
-
-        // not resolved, return empty info
-        return {.id{}, .elem_path{}, .type_path{}, .lea_path{}, .operand{}};
-    }
-
-    // helper: call make_ident_info_or_empty and throw if unresolved
-    [[nodiscard]] auto
-    make_ident_info_or_throw(const x86* x, const token& src_loc_tk,
-                             const std::string_view ident) const -> ident_info {
-
-        const ident_info id_info{
-            make_ident_info_or_empty(x, src_loc_tk, ident)};
-        if (not id_info.id.empty()) {
-            return id_info;
-        }
-
-        throw compiler_exception{
-            src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
-    }
-
-    auto refresh_usage() -> void {
-        usage_max_frame_count_ =
-            std::max(frames_.size(), usage_max_frame_count_);
-    }
-
-  public:
     [[nodiscard]] static auto
     get_field_offset_in_type(const type& tp, const std::string_view field_name)
         -> size_t {
@@ -1230,5 +865,358 @@ class toc final {
 
         return std::nullopt;
     }
+
+  private:
+    [[nodiscard]] auto
+    get_builtin_type_for_operand(const token& src_loc_tk,
+                                 const std::string_view op) const
+        -> const type& {
+
+        // explicit prefix checks keep this path direct for common operands
+        if (op.starts_with("qword")) {
+            return get_type_or_throw(src_loc_tk, "i64");
+        }
+        if (op.starts_with("dword")) {
+            return get_type_or_throw(src_loc_tk, "i32");
+        }
+        if (op.starts_with("word")) {
+            return get_type_or_throw(src_loc_tk, "i16");
+        }
+        if (op.starts_with("byte")) {
+            return get_type_or_throw(src_loc_tk, "i8");
+        }
+
+        std::unreachable();
+    }
+
+    [[nodiscard]] auto is_in_main() const -> bool {
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.is_func()) {
+                return frm.name() == "main";
+            }
+        }
+
+        std::unreachable();
+    }
+
+    // reviewed: 2026-09-09
+    [[nodiscard]] auto
+    make_ident_info_or_empty(const x86* x, const token& src_loc_tk,
+                             const std::string_view ident) const -> ident_info {
+
+        ident_path id{std::string{ident}};
+
+        // get the base of the identifier: e.g. lnks[1].pos.y -> lnks
+        // traverse the frames and resolve to a variable, register or constant
+
+        std::vector<std::string> lea_path;
+        // note: 'lea' is a register operand pointing to the data of the
+        //       identifier combined which combined assembler instruction 'lea'
+        //       to loads the effective address of that data
+        //       'lea_path' elements will match components of the identifier
+        //       using the top most being the most recent in the call stack
+
+        // ignore the elements after the first element:
+        //  e.g.: lnks[1].pos.y
+        //   ignore pos.y since those cannot have a lea
+        //   add empty leas for those
+        //   note: 'lea_path' will be reversed when complete so that
+        //          'ident_path' elements have corresponding lea
+
+        lea_path.insert(lea_path.end(), id.path().size() - 1, "");
+        // note: -1 to exclude the first element
+
+        for (const frame& f : frames_ | std::views::reverse) {
+
+            // does this frame contain the variable?
+            if (f.has_var(id.base())) {
+                return make_ident_info_from_frame(x, f, src_loc_tk, ident, id,
+                                                  std::move(lea_path));
+            }
+
+            if (f.is_func()) {
+
+                // root frame of the function
+                // from here on aliases are followed to the actual variable
+                // referred to
+
+                if (not f.has_alias(id.base())) {
+                    // is not an alias
+
+                    // add an empty
+                    lea_path.emplace_back("");
+                    return make_ident_info_from_frame(x, f, src_loc_tk, ident,
+                                                      id, std::move(lea_path));
+                }
+
+                // this is an alias, continue resolving until it is a variable,
+                // register or constant
+
+                const alias_info& alias{f.get_alias(id.base())};
+
+                lea_path.emplace_back(alias.lea);
+
+                ident_path new_id{std::string{alias.to}};
+
+                // big note: the fishy resizing of the 'lea_path' happens when
+                //           the 'new_id' extended past fields that do not need
+                //           lea
+                //           if 'lea_path' is not extended then the types, id
+                //           path elements and lea path vectors are not in sync
+
+                const size_t nid_sz{new_id.path().size()};
+                const size_t lea_sz{lea_path.size()};
+                if ((nid_sz > lea_sz) and (nid_sz - lea_sz > 1)) {
+                    lea_path.resize(lea_path.size() + new_id.path().size() - 2);
+                    // note: -2 because last element is current element and
+                    //       first will be processed
+                }
+
+                // this is an alias
+                // e.g.
+                //   res -> pt.x becomes pt.x
+                //   pt.x -> p becomes p.x
+                //   lnk.count -> world.room.link becomes
+                //   world.room.link.count
+
+                for (const std::string& s : id.path() | std::views::drop(1)) {
+                    new_id.append(s);
+                }
+
+                id = new_id;
+            }
+        }
+
+        if (const ident_info reg_info{
+                make_ident_info_register_or_empty(x, src_loc_tk, ident, id)};
+            not reg_info.id.empty()) {
+            return reg_info;
+        }
+
+        return make_ident_info_const_or_empty(src_loc_tk, ident, id);
+    }
+
+    [[nodiscard]] auto make_ident_info_from_frame(
+        const x86* x, const frame& frm, const token& src_loc_tk,
+        const std::string_view ident, const ident_path& id,
+        std::vector<std::string> lea_path) const -> ident_info {
+
+        // try function scope
+        if (frm.has_var(id.base())) {
+            return make_ident_info_from_var_info(
+                src_loc_tk, ident, id, frm.get_var_const_ref(id.base()),
+                std::move(lea_path));
+        }
+
+        // try global scope
+        if (frames_.front().has_var(id.base())) {
+            return make_ident_info_from_var_info(
+                src_loc_tk, ident, id,
+                frames_.front().get_var_const_ref(id.base()), lea_path);
+        }
+
+        if (const ident_info reg_info{
+                make_ident_info_register_or_empty(x, src_loc_tk, ident, id)};
+            not reg_info.id.empty()) {
+            return reg_info;
+        }
+
+        return make_ident_info_const_or_empty(src_loc_tk, ident, id);
+    }
+
+    [[nodiscard]] static auto make_ident_info_from_var_info(
+        const token& src_loc_tk, const std::string_view ident,
+        const ident_path& id, const var_info& var,
+        std::vector<std::string> lea_path) -> ident_info {
+
+        ident_info ii{
+            var.type_ptr->accessor(src_loc_tk, ident, id.path(), var)};
+
+        lea_path.resize(id.path().size());
+        // note: pad with empty for the remaining elements in the id path
+
+        std::ranges::reverse(lea_path);
+        // note: reverse it since it was constructed while traversing
+        //       upwards in the frame stack but 'elem_path' and 'type_path'
+        //       are ordered from the top down
+
+        ii.lea_path = lea_path;
+
+        if (not ii.type().is_built_in()) {
+            return ii;
+        }
+
+        // identifier is built-in type
+
+        // find the first element from the top that has a 'lea' and get
+        // accessor relative to that
+
+        std::string lea;
+        size_t lea_index{ii.elem_path.size()};
+        while (lea_index--) {
+            if (not ii.lea_path[lea_index].empty()) {
+                lea = ii.lea_path[lea_index];
+                break;
+            }
+        }
+
+        if (lea.empty()) {
+            return ii;
+        }
+
+        // identifier has lea, construct operand
+
+        // example of resulting data structure:
+        //
+        // type string { len : i8, data : i8[127] }
+        // type room { name : string, description : string, note : string }
+        // type world { rooms : room[128] }
+        //
+        // id path     |  type  |  lea          |
+        // ------------|--------|---------------|
+        // wld         | world  | -             |
+        // rooms[2]    | room   | r15           |
+        // description | string | -             |
+        // data        | i8     | r15 + 129     |
+        //
+        // the indexing in 'rooms' is done at runtime thus the memory
+        // location of 'rooms[2]' cannot be deduced statically, thus the
+        // last lea encountered is the starting point when accessing
+        // identifiers
+
+        // start from the lea address and calculate offset to referred field
+        const std::span<std::string> elem_path_from_lea{
+            std::span{ii.elem_path}.subspan(lea_index)};
+
+        // navigate to referred element and get offset
+        const size_t offset{ii.type_path[lea_index]->field_offset(
+            src_loc_tk, elem_path_from_lea)};
+
+        ii.operand = operand{lea};
+        if (offset != 0) {
+            ii.operand.displacement += static_cast<int>(offset);
+        }
+        ii.operand.size = ii.type().size();
+
+        return ii;
+    }
+
+    [[nodiscard]] auto make_ident_info_register_or_empty(
+        const x86* x, const token& src_loc_tk, const std::string_view ident,
+        const ident_path& id) const -> ident_info {
+        // is it a register?
+        if (const size_t reg_size{utils::register_size(id.str())};
+            reg_size != 0) {
+            const type& tpe{x ? x->get_allocated_register_type(id.str())
+                              : get_builtin_type_for_size(reg_size)};
+            // unary ops are applied by callers where relevant
+            return {
+                .id{ident},
+                .elem_path{id.str()},
+                .type_path{&tpe},
+                .lea_path{""},
+                .operand{id.str()},
+                .ident_type{ident_info::ident_type::REGISTER},
+            };
+        }
+
+        // is it a register reference to memory?
+        if (utils::get_text_between_brackets(id.str())) {
+            // get the size: e.g. "dword [r15]"
+            return {
+                .id{ident},
+                .elem_path{id.str()},
+                .type_path{&get_builtin_type_for_operand(src_loc_tk, id.str())},
+                .lea_path{""},
+                .operand{id.str()},
+                .ident_type{ident_info::ident_type::VAR},
+            };
+        }
+
+        // not resolved, return empty info
+        return {.id{}, .elem_path{}, .type_path{}, .lea_path{}, .operand{}};
+    }
+
+    [[nodiscard]] auto
+    make_ident_info_const_or_empty(const token& src_loc_tk,
+                                   const std::string_view ident,
+                                   const ident_path& id) const -> ident_info {
+        // is 'id' an integer?
+        if (const std::optional<int64_t> value{
+                parse_constant(src_loc_tk, id.str())};
+            value) {
+            return {
+                .id{ident},
+                .elem_path{id.str()},
+                .type_path{&get_type_default()},
+                .lea_path{""},
+                .operand{id.str(), true},
+                .const_value{*value},
+                .ident_type{ident_info::ident_type::CONST},
+            };
+        }
+
+        // is it a boolean constant?
+        if (id.base() == "true") {
+            return {
+                .id{ident},
+                .elem_path{id.str()},
+                .type_path{&get_type_default()},
+                .lea_path{""},
+                .operand{"true", true},
+                .const_value{1},
+                .ident_type{ident_info::ident_type::CONST},
+            };
+        }
+
+        if (id.base() == "false") {
+            return {
+                .id{ident},
+                .elem_path{id.str()},
+                .type_path{&get_type_default()},
+                .lea_path{""},
+                .operand{"false", true},
+                .const_value{},
+                .ident_type{ident_info::ident_type::CONST},
+            };
+        }
+
+        // is 'id' a constant?
+        if (has_const(id.str())) {
+            return {
+                .id{ident},
+                .elem_path{id.str()},
+                .type_path{&get_type_default()},
+                .lea_path{""},
+                .operand{id.str(), true},
+                .const_value{get_const(id.str())},
+                .ident_type{ident_info::ident_type::CONST},
+            };
+        }
+
+        // not resolved, return empty info
+        return {.id{}, .elem_path{}, .type_path{}, .lea_path{}, .operand{}};
+    }
+
+    // helper: call make_ident_info_or_empty and throw if unresolved
+    [[nodiscard]] auto
+    make_ident_info_or_throw(const x86* x, const token& src_loc_tk,
+                             const std::string_view ident) const -> ident_info {
+
+        const ident_info id_info{
+            make_ident_info_or_empty(x, src_loc_tk, ident)};
+        if (not id_info.id.empty()) {
+            return id_info;
+        }
+
+        throw compiler_exception{
+            src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
+    }
+
+    auto refresh_usage() -> void {
+        usage_max_frame_count_ =
+            std::max(frames_.size(), usage_max_frame_count_);
+    }
+
 #pragma clang diagnostic pop
 };

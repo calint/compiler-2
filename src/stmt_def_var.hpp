@@ -35,14 +35,14 @@ class stmt_def_var final : public statement {
         : statement{tk}, name_tk_{tz.next_token()},
           type_delim_tk_{tz.is_next_char_token(':')} {
 
-        // check if type declared
+        // check whether type is declared
         if (not type_delim_tk_.is_empty()) {
             type_tk_ = tz.next_token();
             open_bracket_tk_ = tz.is_next_char_token('[');
             if (not open_bracket_tk_.is_empty()) {
                 is_array_ = true;
 
-                array_size_const_ = {tc, tz, 0};
+                array_size_const_ = stmt_const{tc, tz, 0};
 
                 if (array_size_const_.has_value()) {
                     if (array_size_const_.value() <= 0) {
@@ -72,7 +72,7 @@ class stmt_def_var final : public statement {
         equals_tk_ = tz.is_next_char_token('=');
         const bool init_required{not equals_tk_.is_empty()};
 
-        // add var to toc without causing output by passing a null x86
+        // add var to toc without emitting output by using a null stream
         null_stream null_strm;
         x86 x{null_strm, tc.source()};
 
@@ -165,7 +165,6 @@ class stmt_def_var final : public statement {
 
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
-
         if (assign_var_) {
             assign_var_->assert_var_not_used(var);
         }

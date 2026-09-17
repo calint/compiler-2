@@ -43,7 +43,7 @@ class stmt_def_type_field final : public statement {
         if (not open_bracket_tk_.is_empty()) {
             is_array_ = true;
 
-            array_size_const_ = {tc, tz, 0};
+            array_size_const_ = stmt_const{tc, tz, 0};
 
             if (not array_size_const_.has_value() or
                 array_size_const_.value() < 1) {
