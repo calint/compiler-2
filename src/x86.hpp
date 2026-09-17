@@ -181,29 +181,29 @@ class x86 final {
         asm_line(tc, os.get(), indent, "cmovs {}, {}", dst, src);
     }
 
-    static auto div_reg_ext(toc& tc, std::ostream& os, const size_t indent,
-                            const size_t operand_size) -> void {
+    auto div_reg_ext(toc& tc, const size_t indent, const size_t operand_size)
+        -> void {
         switch (operand_size) {
         case size_qword:
-            asm_line(tc, os, indent, "cqo");
+            asm_line(tc, os.get(), indent, "cqo");
             return;
         case size_dword:
-            asm_line(tc, os, indent, "cdq");
+            asm_line(tc, os.get(), indent, "cdq");
             return;
         case size_word:
-            asm_line(tc, os, indent, "cwde");
+            asm_line(tc, os.get(), indent, "cwde");
             return;
         case size_byte:
-            asm_line(tc, os, indent, "cbw");
+            asm_line(tc, os.get(), indent, "cbw");
             return;
         default:
             std::unreachable();
         }
     }
 
-    static auto idiv(toc& tc, std::ostream& os, const size_t indent,
-                     const std::string_view operand) -> void {
-        asm_line(tc, os, indent, "idiv {}", operand);
+    auto idiv(toc& tc, const size_t indent, const std::string_view operand)
+        -> void {
+        asm_line(tc, os.get(), indent, "idiv {}", operand);
     }
 
 

@@ -947,8 +947,8 @@ class expr_ops_list final : public expression {
                      dst_info.operand.str());
             tc.alloc_named_register_or_throw(src.tok(), x.os, indent, "rdx",
                                              tc.get_type_default());
-            x86::div_reg_ext(tc, x.os, indent, dst_size);
-            x86::idiv(tc, x.os, indent, reg);
+            x.div_reg_ext(tc, indent, dst_size);
+            x.idiv(tc, indent, reg);
             x86::mov(tc, src.tok(), x.os, indent, dst_info.operand.str(), op);
             tc.free_named_register(src.tok(), x.os, indent, "rdx");
             tc.free_named_register(src.tok(), x.os, indent, "rax");
@@ -969,13 +969,13 @@ class expr_ops_list final : public expression {
                      dst_info.operand.str());
             tc.alloc_named_register_or_throw(src.tok(), x.os, indent, "rdx",
                                              tc.get_type_default());
-            x86::div_reg_ext(tc, x.os, indent, dst_size);
+            x.div_reg_ext(tc, indent, dst_size);
             const std::string scratch_reg{tc.alloc_scratch_register(
                 src.tok(), x.os, indent, tc.get_type_default())};
             x86::mov(tc, src.tok(), x.os, indent, scratch_reg,
                      std::format("{}{}", src.get_unary_ops().to_string(),
                                  src_info.const_value));
-            x86::idiv(tc, x.os, indent, scratch_reg);
+            x.idiv(tc, indent, scratch_reg);
             tc.free_scratch_register(src.tok(), x.os, indent, scratch_reg);
             x86::mov(tc, src.tok(), x.os, indent, dst_info.operand.str(), op);
             tc.free_named_register(src.tok(), x.os, indent, "rdx");
@@ -1007,8 +1007,8 @@ class expr_ops_list final : public expression {
                      dst_info.operand.str());
             tc.alloc_named_register_or_throw(src.tok(), x.os, indent, "rdx",
                                              tc.get_type_default());
-            x86::div_reg_ext(tc, x.os, indent, dst_size);
-            x86::idiv(tc, x.os, indent, src_operand.str());
+            x.div_reg_ext(tc, indent, dst_size);
+            x.idiv(tc, indent, src_operand.str());
             // op is either 'rax' for the quotient or 'rdx' for the reminder
             x86::mov(tc, src.tok(), x.os, indent, dst_info.operand.str(), op);
             tc.free_named_register(src.tok(), x.os, indent, "rdx");
@@ -1034,8 +1034,8 @@ class expr_ops_list final : public expression {
                  dst_info.operand.str());
         tc.alloc_named_register_or_throw(src.tok(), x.os, indent, "rdx",
                                          tc.get_type_default());
-        x86::div_reg_ext(tc, x.os, indent, dst_size);
-        x86::idiv(tc, x.os, indent, reg_sized);
+        x.div_reg_ext(tc, indent, dst_size);
+        x.idiv(tc, indent, reg_sized);
         x86::mov(tc, src.tok(), x.os, indent, dst_info.operand.str(), op);
         tc.free_named_register(src.tok(), x.os, indent, "rdx");
         tc.free_named_register(src.tok(), x.os, indent, "rax");
