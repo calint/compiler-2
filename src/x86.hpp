@@ -218,10 +218,9 @@ class x86 final {
         asm_line(tc, os, indent, "inc {}", dst);
     }
 
-    static auto jcc(toc& tc, std::ostream& os, const size_t indent,
-                    const std::string_view comparison,
-                    const std::string_view label) -> void {
-        asm_line(tc, os, indent, "j{} {}", comparison, label);
+    auto jcc(toc& tc, const size_t indent, const std::string_view comparison,
+            const std::string_view label) -> void {
+        asm_line(tc, os.get(), indent, "j{} {}", comparison, label);
     }
 
     static auto je(toc& tc, std::ostream& os, const size_t indent,

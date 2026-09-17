@@ -446,7 +446,7 @@ class stmt_identifier : public statement {
             if (tc.is_bounds_check_with_line()) {
                 x.cmovs(tc, indent, "rbp", reg_line_num);
             }
-            x86::jcc(tc, x.os, indent, "s", "panic_bounds");
+            x.jcc(tc, indent, "s", "panic_bounds");
         }
 
         if (tc.is_bounds_check_upper()) {
@@ -467,7 +467,7 @@ class stmt_identifier : public statement {
                         "rbp", reg_line_num);
             }
             if (tc.is_bounds_check_upper()) {
-                x86::jcc(tc, x.os, indent, comparison, "panic_bounds");
+                x.jcc(tc, indent, comparison, "panic_bounds");
             }
         }
 

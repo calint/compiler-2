@@ -135,7 +135,7 @@ class expr_bool_op final : public statement {
             if (not dst.empty()) {
                 x86::setcc(tc, x.os, indent, asm_cc_for_op("!=", invert), dst);
             }
-            x86::jcc(tc, x.os, indent, asm_cc_for_op("!=", invert),
+            x.jcc(tc, indent, asm_cc_for_op("!=", invert),
                      jmp_to_if_true);
 
             return std::nullopt;
@@ -177,7 +177,7 @@ class expr_bool_op final : public statement {
         if (not dst.empty()) {
             x86::setcc(tc, x.os, indent, asm_cc_for_op(op_, invert), dst);
         }
-        x86::jcc(tc, x.os, indent, asm_cc_for_op(op_, invert), jmp_to_if_true);
+        x.jcc(tc, indent, asm_cc_for_op(op_, invert), jmp_to_if_true);
 
         return std::nullopt;
     }
@@ -219,7 +219,7 @@ class expr_bool_op final : public statement {
             if (not dst.empty()) {
                 x86::setcc(tc, x.os, indent, asm_cc_for_op("!=", invert), dst);
             }
-            x86::jcc(tc, x.os, indent, asm_cc_for_op("==", invert),
+            x.jcc(tc, indent, asm_cc_for_op("==", invert),
                      jmp_to_if_false);
             // note: '==' because it jumps to 'if false' label
 
@@ -266,7 +266,7 @@ class expr_bool_op final : public statement {
         if (not dst.empty()) {
             x86::setcc(tc, x.os, indent, asm_cc_for_op(op_, invert), dst);
         }
-        x86::jcc(tc, x.os, indent, asm_cc_for_op(op_, not invert),
+        x.jcc(tc, indent, asm_cc_for_op(op_, not invert),
                  jmp_to_if_false);
         // note: 'not invert' because it jumps to 'if false' label
 
