@@ -57,9 +57,8 @@ class x86 final {
 
     std::regex regex_nasm_number_register_{R"(r(\d+))"};
 
-    // cached data that would otherwise require a 'toc&' per call; set once
-    // via the setters below before compiling starts
     std::string_view source_;
+
     const type* default_type_{};
     const type* type_bool_{};
     const type* type_i64_{};
