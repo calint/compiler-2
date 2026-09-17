@@ -70,7 +70,7 @@ class stmt_builtin_foo final : public statement {
         std::stringstream ss;
         ident_.source_to(ss);
         // make comment friendly string replacing consecutive with one space
-        x86::comment_line(tc, tok(), x.os, indent, "foo {}",
+        x.comment_line(tc, tok(), indent, "foo {}",
                           std::regex_replace(ss.str(), tc.regex_ws(), " "));
 
         const std::string loop_label{tc.get_call_path_extend(tok(), "foo")};
@@ -135,7 +135,7 @@ class stmt_builtin_foo final : public statement {
         x.inc(tc, indent + 2, var_i_addr_op);
         x.cmp(tc, indent + 2, var_i_addr_op,
               std::format("{}", ii.array_size));
-        x86::jne(tc, x.os, indent + 2, loop_label);
+        x.jne(tc, indent + 2, loop_label);
         x.label(tc, indent, loop_label + "_end");
 
         tc.free_scratch_register(tok(), x.os, indent, reg_iter);

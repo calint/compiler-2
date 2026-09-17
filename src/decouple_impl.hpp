@@ -672,12 +672,12 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
                 src_loc_tk, os.get(), indent, tc.get_type_default())};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
-            asm_line(tc, os.get(), indent, "mov {}, {}", reg_sized, src_op);
-            asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, reg_sized);
+            asm_line(tc, indent, "mov {}, {}", reg_sized, src_op);
+            asm_line(tc, indent, "{} {}, {}", op, dst_op, reg_sized);
             tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
             return;
         }
-        asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, src_op);
+        asm_line(tc, indent, "{} {}, {}", op, dst_op, src_op);
         return;
     }
 
@@ -687,23 +687,23 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
                 src_loc_tk, os.get(), indent, tc.get_type_default())};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
-            asm_line(tc, os.get(), indent, "movsx {}, {}", reg_sized, src_op);
-            asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, reg_sized);
+            asm_line(tc, indent, "movsx {}, {}", reg_sized, src_op);
+            asm_line(tc, indent, "{} {}, {}", op, dst_op, reg_sized);
             tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
             return;
         }
         if (op == "mov") {
-            asm_line(tc, os.get(), indent, "movsx {}, {}", dst_op, src_op);
+            asm_line(tc, indent, "movsx {}, {}", dst_op, src_op);
             return;
         }
         if (op == "sal" or op == "sar") {
-            asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, src_op);
+            asm_line(tc, indent, "{} {}, {}", op, dst_op, src_op);
             return;
         }
         const std::string reg_sx{tc.alloc_scratch_register(
             src_loc_tk, os.get(), indent, tc.get_type_default())};
-        asm_line(tc, os.get(), indent, "movsx {}, {}", reg_sx, src_op);
-        asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, reg_sx);
+        asm_line(tc, indent, "movsx {}, {}", reg_sx, src_op);
+        asm_line(tc, indent, "{} {}, {}", op, dst_op, reg_sx);
         tc.free_scratch_register(src_loc_tk, os.get(), indent, reg_sx);
         return;
     }
@@ -713,9 +713,9 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
                                                         tc.get_type_default())};
         const std::string reg_sized{
             tc.get_sized_register_operand(reg, dst_size)};
-        asm_line(tc, os.get(), indent, "mov {}, {}", reg_sized,
+        asm_line(tc, indent, "mov {}, {}", reg_sized,
                  sized_memory_operand(src_op, dst_size));
-        asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, reg_sized);
+        asm_line(tc, indent, "{} {}, {}", op, dst_op, reg_sized);
         tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
         return;
     }
@@ -723,23 +723,23 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
     const bool dst_is_reg{is_register_operand(dst_op)};
     const bool src_is_reg{is_register_operand(src_op)};
     if (dst_is_reg and src_is_reg) {
-        asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op,
+        asm_line(tc, indent, "{} {}, {}", op, dst_op,
                  tc.get_sized_register_operand(src_op, dst_size));
         return;
     }
     if (dst_is_reg) {
-        asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op,
+        asm_line(tc, indent, "{} {}, {}", op, dst_op,
                  is_memory_operand(src_op)
                      ? sized_memory_operand(src_op, dst_size)
                      : src_op);
         return;
     }
     if (src_is_reg) {
-        asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op,
+        asm_line(tc, indent, "{} {}, {}", op, dst_op,
                  tc.get_sized_register_operand(src_op, dst_size));
         return;
     }
-    asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, src_op);
+    asm_line(tc, indent, "{} {}, {}", op, dst_op, src_op);
 }
 
 // NOLINTEND(misc-definitions-in-headers)

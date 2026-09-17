@@ -117,7 +117,7 @@ class expr_bool_op final : public statement {
                     if (invert) {
                         const_eval = not const_eval;
                     }
-                    x86::comment_line(x.os, indent, "const eval to {}",
+                    x.comment_line(indent, "const eval to {}",
                                       (const_eval ? "true" : "false"));
                     if (const_eval) {
                         // since it is an 'or' chain short-circuit
@@ -157,7 +157,7 @@ class expr_bool_op final : public statement {
                 if (invert) {
                     const_eval = not const_eval;
                 }
-                x86::comment_line(x.os, indent, "const eval to {}",
+                x.comment_line(indent, "const eval to {}",
                                   (const_eval ? "true" : "false"));
                 if (const_eval) {
                     // expression evaluated at compile time and true so
@@ -201,7 +201,7 @@ class expr_bool_op final : public statement {
                     if (invert) {
                         const_eval = not const_eval;
                     }
-                    x86::comment_line(x.os, indent, "const eval to {}",
+                    x.comment_line(indent, "const eval to {}",
                                       (const_eval ? "true" : "false"));
                     if (not const_eval) {
                         // since it is an 'and' chain short-circuit
@@ -241,7 +241,7 @@ class expr_bool_op final : public statement {
                 if (invert) {
                     const_eval = not const_eval;
                 }
-                x86::comment_line(x.os, indent, "const eval to {}",
+                x.comment_line(indent, "const eval to {}",
                                   (const_eval ? "true" : "false"));
                 if (not const_eval) {
                     // short circuit 'and' chain

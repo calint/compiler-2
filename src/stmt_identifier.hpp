@@ -282,7 +282,7 @@ class stmt_identifier : public statement {
                         src_loc_tk, x.os, indent, tc.get_type_default())};
                     allocated_registers.push_back(reg_idx);
 
-                    x86::comment_line(tc, curr_elem.array_index_expr->tok(), x.os,
+                    x.comment_line(tc, curr_elem.array_index_expr->tok(),
                                       indent, "set array index");
 
                     curr_elem.array_index_expr->compile(
@@ -347,7 +347,7 @@ class stmt_identifier : public statement {
             const std::string reg_idx{tc.alloc_scratch_register(
                 src_loc_tk, x.os, indent, tc.get_type_default())};
 
-            x86::comment_line(tc, curr_elem.array_index_expr->tok(), x.os, indent,
+            x.comment_line(tc, curr_elem.array_index_expr->tok(), indent,
                               "set array index");
 
             curr_elem.array_index_expr->compile(
@@ -428,14 +428,14 @@ class stmt_identifier : public statement {
             return;
         }
 
-        x86::comment_line(tc, tk, x.os, indent, "bounds check");
+        x.comment_line(tc, tk, indent, "bounds check");
 
         // Allocate line number register once if needed
         std::string reg_line_num;
         if (tc.is_bounds_check_with_line()) {
             reg_line_num = tc.alloc_scratch_register(tk, x.os, indent,
                                                      tc.get_type_default());
-            x86::comment_line(tc, tk, x.os, indent, "line number");
+            x.comment_line(tc, tk, indent, "line number");
             x.mov(tc, tk, indent, reg_line_num,
                      std::to_string(tk.at_line()));
         }

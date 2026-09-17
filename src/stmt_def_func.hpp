@@ -149,7 +149,7 @@ class stmt_def_func final : public statement {
         source_def_to(ss, true);
         // make comment friendly string replacing consecutive with one space
         const std::string res{std::regex_replace(ss.str(), tc.regex_ws(), " ")};
-        x86::comment_line(tc, name_tk_, x.os, indent, "{}", res);
+        x.comment_line(tc, name_tk_, indent, "{}", res);
     }
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] x86& x,
