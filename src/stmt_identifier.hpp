@@ -455,11 +455,11 @@ class stmt_identifier : public statement {
                     tk, x.os, indent, tc.get_type_default());
                 x86::mov(tc, tk, x.os, indent, reg_top_idx, reg_size);
                 x86::add(tc, x.os, indent, reg_top_idx, reg_to_check);
-                x86::cmp(tc, x.os, indent, reg_top_idx,
+                x.cmp(tc, indent, reg_top_idx,
                          std::to_string(array_size));
                 tc.free_scratch_register(tk, x.os, indent, reg_top_idx);
             } else {
-                x86::cmp(tc, x.os, indent, reg_to_check,
+                x.cmp(tc, indent, reg_to_check,
                          std::to_string(array_size));
             }
             if (tc.is_bounds_check_with_line()) {

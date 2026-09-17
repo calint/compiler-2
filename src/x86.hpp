@@ -156,9 +156,8 @@ class x86 final {
                    size_t indent, std::string_view op, std::string_view dst_op,
                    std::string_view src_op) -> void;
 
-    static auto cmp(toc& tc, const token& src_loc_tk, std::ostream& os,
-                    size_t indent, std::string_view dst_op,
-                    std::string_view src_op) -> void;
+    auto cmp(toc& tc, const token& src_loc_tk, size_t indent,
+            std::string_view dst_op, std::string_view src_op) -> void;
 
     static auto copy(toc& tc, const token& src_loc_tk, std::ostream& os,
                      size_t indent, std::string_view src, std::string_view dst,
@@ -174,10 +173,9 @@ class x86 final {
         asm_line(tc, os, indent, "add {}, {}", dst, src);
     }
 
-    static auto cmp(toc& tc, std::ostream& os, const size_t indent,
-                    const std::string_view dst, const std::string_view src)
-        -> void {
-        asm_line(tc, os, indent, "cmp {}, {}", dst, src);
+    auto cmp(toc& tc, const size_t indent, const std::string_view dst,
+            const std::string_view src) -> void {
+        asm_line(tc, os.get(), indent, "cmp {}, {}", dst, src);
     }
 
     static auto cmovs(toc& tc, std::ostream& os, const size_t indent,

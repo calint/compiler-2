@@ -395,7 +395,7 @@ class expr_bool_op final : public statement {
         const std::string src{
             resolve_expr(tc, x, indent, rhs, false, allocated_registers)};
 
-        x86::cmp(tc, tok(), x.os, indent, dst, src);
+        x.cmp(tc, tok(), indent, dst, src);
 
         // free allocated registers in reverse order
         for (const std::string& reg :
@@ -413,7 +413,7 @@ class expr_bool_op final : public statement {
         const std::string dst{
             resolve_expr(tc, x, indent, lhs, true, allocated_registers)};
 
-        x86::cmp(tc, tok(), x.os, indent, dst, "0");
+        x.cmp(tc, tok(), indent, dst, "0");
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
