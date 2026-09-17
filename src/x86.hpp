@@ -253,18 +253,18 @@ class x86 final {
     }
 
     static auto rep_movs(toc& tc, std::ostream& os, const size_t indent,
-                         const char size) -> void {
-        asm_line(tc, os, indent, "rep movs{}", size);
+                         const char size_suffix) -> void {
+        asm_line(tc, os, indent, "rep movs{}", size_suffix);
     }
 
-    static auto rep_stos(toc& tc, std::ostream& os, const size_t indent,
-                         const char size) -> void {
-        asm_line(tc, os, indent, "rep stos{}", size);
+    auto rep_stos(toc& tc, const size_t indent, const char size_suffix)
+        -> void {
+        asm_line(tc, os.get(), indent, "rep stos{}", size_suffix);
     }
 
     static auto repe_cmps(toc& tc, std::ostream& os, const size_t indent,
-                          const char size) -> void {
-        asm_line(tc, os, indent, "repe cmps{}", size);
+                          const char size_suffix) -> void {
+        asm_line(tc, os, indent, "repe cmps{}", size_suffix);
     }
 
     auto setcc(toc& tc, const size_t indent, const std::string_view comparison,
@@ -341,10 +341,9 @@ class x86 final {
         std::println(os, "times {} {} {}", count, directive, value);
     }
 
-    static auto xor_op(toc& tc, std::ostream& os, const size_t indent,
-                       const std::string_view dst, const std::string_view src)
-        -> void {
-        asm_line(tc, os, indent, "xor {}, {}", dst, src);
+    auto xor_op(toc& tc, const size_t indent, const std::string_view dst,
+              const std::string_view src) -> void {
+        asm_line(tc, os.get(), indent, "xor {}, {}", dst, src);
     }
 
   private:

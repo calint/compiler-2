@@ -578,11 +578,11 @@ auto x86::zero(toc& tc, const token& src_loc_tk, const size_t indent,
                                          tc.get_type_default());
         tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rcx",
                                          tc.get_type_default());
-        xor_op(tc, os.get(), indent, "al", "al");
+        xor_op(tc, indent, "al", "al");
         lea(tc, indent, "rdi", dst);
         mov(tc, src_loc_tk, os.get(), indent, "rcx",
             std::format("{}", bytes_count));
-        rep_stos(tc, os.get(), indent, 'b');
+        rep_stos(tc, indent, 'b');
         tc.free_named_register(src_loc_tk, os.get(), indent, "rcx");
         tc.free_named_register(src_loc_tk, os.get(), indent, "rdi");
         tc.free_named_register(src_loc_tk, os.get(), indent, "rax");
