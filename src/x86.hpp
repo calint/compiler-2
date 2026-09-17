@@ -141,20 +141,14 @@ class x86 final {
         println(format, std::forward<args_t>(args)...);
     }
 
-    auto comment_indent(const size_t indent) const -> void {
-        comment_indent(os.get(), indent);
-    }
+    auto comment_indent(const size_t indent) -> void {
+        print(";");
 
-    // static form: needed by the static 'comment_start' overload, which is
-    // used directly by 'toc' (which has no 'x86&' available in its own
-    // 'add_const'/'add_var' methods)
-    static auto comment_indent(std::ostream& os, const size_t indent) -> void {
-        std::print(os, ";");
         if (indent != 0) {
-            std::print(os, "   ");
+            print("   ");
         }
         for (size_t index{1}; index < indent; ++index) {
-            std::print(os, "    ");
+            print("    ");
         }
     }
 
@@ -811,12 +805,14 @@ class x86 final {
         println("{}", text);
     }
 
-    static auto comment_start(const std::string_view source,
-                              const token& source_location, std::ostream& os,
-                              const size_t indent) -> void {
+    auto comment_start(const std::string_view source,
+                       const token& source_location, const size_t indent)
+        -> void {
+
         const auto [line, column]{utils::line_and_col_num_for_char_index(
             source_location.at_line(), source_location.start_index(), source)};
-        comment_indent(os, indent);
+
+        comment_indent(indent);
         std::print(os, "[{}:{}] ", line, column);
     }
 
@@ -824,16 +820,16 @@ class x86 final {
     [[nodiscard]] auto operand_size(const std::string_view operand) const
         -> size_t {
         if (operand.starts_with("qword")) {
-            return operand::size_qword;
+            return size_qword;
         }
         if (operand.starts_with("dword")) {
-            return operand::size_dword;
+            return size_dword;
         }
         if (operand.starts_with("word")) {
-            return operand::size_word;
+            return size_word;
         }
         if (operand.starts_with("byte")) {
-            return operand::size_byte;
+            return size_byte;
         }
         if (const size_t size{utils::register_size(operand)}) {
             return size;
