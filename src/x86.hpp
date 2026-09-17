@@ -127,9 +127,8 @@ class x86 final {
         std::println(os, format, std::forward<args_t>(args)...);
     }
 
-    static auto emit_buffer(std::ostream& os, const std::string_view text)
-        -> void {
-        std::print(os, "{}", text);
+    auto emit_buffer(const std::string_view text) -> void {
+        std::print(os.get(), "{}", text);
     }
 
     template <typename... args_t>
