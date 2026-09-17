@@ -920,7 +920,13 @@ class toc final {
             }
         }
 
-        return make_ident_info_regs_and_const(x, src_loc_tk, ident, id);
+        if (const ident_info reg_info{
+                make_ident_info_register_or_empty(x, src_loc_tk, ident, id)};
+            not reg_info.id.empty()) {
+            return reg_info;
+        }
+
+        return make_ident_info_const_or_empty(src_loc_tk, ident, id);
     }
 
     [[nodiscard]] auto make_ident_info_from_frame(
@@ -942,7 +948,13 @@ class toc final {
                 frames_.front().get_var_const_ref(id.base()), lea_path);
         }
 
-        return make_ident_info_regs_and_const(x, src_loc_tk, ident, id);
+        if (const ident_info reg_info{
+                make_ident_info_register_or_empty(x, src_loc_tk, ident, id)};
+            not reg_info.id.empty()) {
+            return reg_info;
+        }
+
+        return make_ident_info_const_or_empty(src_loc_tk, ident, id);
     }
 
     [[nodiscard]] static auto make_ident_info_from_var_info(
@@ -1023,9 +1035,10 @@ class toc final {
     }
 
     [[nodiscard]] auto
-    make_ident_info_regs_and_const(const x86* x, const token& src_loc_tk,
-                                   const std::string_view& ident,
-                                   const ident_path& id) const -> ident_info {
+    make_ident_info_register_or_empty(const x86* x, const token& src_loc_tk,
+                                      const std::string_view& ident,
+                                      const ident_path& id) const
+        -> ident_info {
         // is it a register?
         if (const size_t reg_size{utils::register_size(id.str())};
             reg_size != 0) {
@@ -1055,6 +1068,14 @@ class toc final {
             };
         }
 
+        // not resolved, return empty info
+        return {.id{}, .elem_path{}, .type_path{}, .lea_path{}, .operand{}};
+    }
+
+    [[nodiscard]] auto
+    make_ident_info_const_or_empty(const token& src_loc_tk,
+                                   const std::string_view& ident,
+                                   const ident_path& id) const -> ident_info {
         // is 'id' an integer?
         if (const std::optional<int64_t> value{
                 parse_constant(src_loc_tk, id.str())};
