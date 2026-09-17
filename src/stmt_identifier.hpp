@@ -454,7 +454,7 @@ class stmt_identifier : public statement {
                 const std::string reg_top_idx = tc.alloc_scratch_register(
                     tk, x.os, indent, tc.get_type_default());
                 x86::mov(tc, tk, x.os, indent, reg_top_idx, reg_size);
-                x86::add(tc, x.os, indent, reg_top_idx, reg_to_check);
+                x.add(tc, indent, reg_top_idx, reg_to_check);
                 x.cmp(tc, indent, reg_top_idx,
                          std::to_string(array_size));
                 tc.free_scratch_register(tk, x.os, indent, reg_top_idx);

@@ -165,10 +165,9 @@ class x86 final {
     auto zero(toc& tc, const token& src_loc_tk, size_t indent,
             std::string_view dst, size_t bytes_count) -> void;
 
-    static auto add(toc& tc, std::ostream& os, const size_t indent,
-                    const std::string_view dst, const std::string_view src)
-        -> void {
-        asm_line(tc, os, indent, "add {}, {}", dst, src);
+    auto add(toc& tc, const size_t indent, const std::string_view dst,
+            const std::string_view src) -> void {
+        asm_line(tc, os.get(), indent, "add {}, {}", dst, src);
     }
 
     auto cmp(toc& tc, const size_t indent, const std::string_view dst,

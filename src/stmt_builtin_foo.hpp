@@ -130,7 +130,7 @@ class stmt_builtin_foo final : public statement {
         x.label(tc, indent, loop_label);
         code_.compile(tc, x, indent, toc::make_ident_info_empty());
         x.label(tc, indent + 1, loop_label + "_continue");
-        x86::add(tc, x.os, indent + 2, reg_iter,
+        x.add(tc, indent + 2, reg_iter,
                  std::format("{}", ii.type().size()));
         x.inc(tc, indent + 2, var_i_addr_op);
         x.cmp(tc, indent + 2, var_i_addr_op,
