@@ -62,7 +62,7 @@ class stmt_builtin_foo final : public statement {
         code_.source_to(os);
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
+    auto compile(toc& tc, x86& x, const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
@@ -70,14 +70,14 @@ class stmt_builtin_foo final : public statement {
         std::stringstream ss;
         ident_.source_to(ss);
         // make comment friendly string replacing consecutive with one space
-        x86::comment_line(tc, tok(), os, indent, "foo {}",
+        x86::comment_line(tc, tok(), x.os, indent, "foo {}",
                           std::regex_replace(ss.str(), tc.regex_ws(), " "));
 
         const std::string loop_label{tc.get_call_path_extend(tok(), "foo")};
         tc.enter_foo(loop_label);
 
         const std::string reg_iter{tc.alloc_scratch_register(
-            tok(), os, indent, tc.get_type_default())};
+            tok(), x.os, indent, tc.get_type_default())};
 
         const ident_info ii{tc.make_ident_info(ident_)};
 
@@ -88,7 +88,7 @@ class stmt_builtin_foo final : public statement {
             .reg{reg_iter},
         };
 
-        tc.add_var(tok(), os, indent, var_e, false);
+        tc.add_var(tok(), x.os, indent, var_e, false);
 
         const var_info var_i{
             .name{"i"},
@@ -97,7 +97,7 @@ class stmt_builtin_foo final : public statement {
             .reg{},
         };
 
-        tc.add_var(tok(), os, indent, var_i, false);
+        tc.add_var(tok(), x.os, indent, var_i, false);
 
         const ident_info var_i_info{tc.make_ident_info(tok(), "i")};
 
@@ -109,36 +109,36 @@ class stmt_builtin_foo final : public statement {
             std::vector<std::string> allocated_registers;
 
             const operand op{stmt_identifier::compile_effective_address(
-                tok(), tc, os, indent, ident_.elems(), allocated_registers, "",
+                tok(), tc, x, indent, ident_.elems(), allocated_registers, "",
                 ii.lea_path)};
 
-            x86::lea(tc, os, indent, reg_iter, op.address_str());
+            x86::lea(tc, x.os, indent, reg_iter, op.address_str());
 
             for (const std::string& reg :
                  allocated_registers | std::views::reverse) {
-                tc.free_scratch_register(tok(), os, indent, reg);
+                tc.free_scratch_register(tok(), x.os, indent, reg);
             }
         } else {
-            x86::lea(tc, os, indent, reg_iter, ii.operand.address_str());
+            x86::lea(tc, x.os, indent, reg_iter, ii.operand.address_str());
         }
 
         // add a constant for array size
-        tc.add_const(tok(), os, indent, "n",
+        tc.add_const(tok(), x.os, indent, "n",
                      static_cast<int64_t>(ii.array_size));
 
-        x86::mov(tc, tok(), os, indent, var_i_addr_op, "0");
-        x86::label(tc, os, indent, loop_label);
-        code_.compile(tc, os, indent, toc::make_ident_info_empty());
-        x86::label(tc, os, indent + 1, loop_label + "_continue");
-        x86::add(tc, os, indent + 2, reg_iter,
+        x86::mov(tc, tok(), x.os, indent, var_i_addr_op, "0");
+        x86::label(tc, x.os, indent, loop_label);
+        code_.compile(tc, x, indent, toc::make_ident_info_empty());
+        x86::label(tc, x.os, indent + 1, loop_label + "_continue");
+        x86::add(tc, x.os, indent + 2, reg_iter,
                  std::format("{}", ii.type().size()));
-        x86::inc(tc, os, indent + 2, var_i_addr_op);
-        x86::cmp(tc, os, indent + 2, var_i_addr_op,
+        x86::inc(tc, x.os, indent + 2, var_i_addr_op);
+        x86::cmp(tc, x.os, indent + 2, var_i_addr_op,
                  std::format("{}", ii.array_size));
-        x86::jne(tc, os, indent + 2, loop_label);
-        x86::label(tc, os, indent, loop_label + "_end");
+        x86::jne(tc, x.os, indent + 2, loop_label);
+        x86::label(tc, x.os, indent, loop_label + "_end");
 
-        tc.free_scratch_register(tok(), os, indent, reg_iter);
+        tc.free_scratch_register(tok(), x.os, indent, reg_iter);
 
         tc.exit_foo(loop_label);
     }

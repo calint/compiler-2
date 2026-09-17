@@ -64,17 +64,17 @@ class stmt_builtin_equal final : public expression {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
+    auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x86::comment_source(tc, *this, os, indent);
+        x86::comment_source(tc, *this, x.os, indent);
 
         // allocate the register for rep movs
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rsi",
+        tc.alloc_named_register_or_throw(tok(), x.os, indent, "rsi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rdi",
+        tc.alloc_named_register_or_throw(tok(), x.os, indent, "rdi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rcx",
+        tc.alloc_named_register_or_throw(tok(), x.os, indent, "rcx",
                                          tc.get_type_default());
 
         std::vector<std::string> allocated_scratch_registers;
@@ -89,30 +89,30 @@ class stmt_builtin_equal final : public expression {
         }
 
         // from operand to rsi
-        x86::comment_source(tc, lhs_, os, indent);
+        x86::comment_source(tc, lhs_, x.os, indent);
         const operand lhs_operand{stmt_identifier::compile_effective_address(
-            lhs_.first_token(), tc, os, indent, lhs_.elems(),
+            lhs_.first_token(), tc, x, indent, lhs_.elems(),
             allocated_scratch_registers, "", lhs_info.lea_path)};
 
-        x86::lea(tc, os, indent, "rsi", lhs_operand.address_str());
+        x86::lea(tc, x.os, indent, "rsi", lhs_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), os, indent, reg);
+            tc.free_scratch_register(tok(), x.os, indent, reg);
         }
 
         // to operand to 'rdi'
         allocated_scratch_registers.clear();
-        x86::comment_source(tc, rhs_, os, indent);
+        x86::comment_source(tc, rhs_, x.os, indent);
         const operand rhs_operand{stmt_identifier::compile_effective_address(
-            rhs_.first_token(), tc, os, indent, rhs_.elems(),
+            rhs_.first_token(), tc, x, indent, rhs_.elems(),
             allocated_scratch_registers, "", rhs_info.lea_path)};
 
-        x86::lea(tc, os, indent, "rdi", rhs_operand.address_str());
+        x86::lea(tc, x.os, indent, "rdi", rhs_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), os, indent, reg);
+            tc.free_scratch_register(tok(), x.os, indent, reg);
         }
 
         if (lhs_info.type().name() != rhs_info.type().name()) {
@@ -151,26 +151,26 @@ class stmt_builtin_equal final : public expression {
             rep_size = 'w';
             rcx /= toc::size_word;
         }
-        x86::mov(tc, tok(), os, indent, "rcx", std::to_string(rcx));
+        x86::mov(tc, tok(), x.os, indent, "rcx", std::to_string(rcx));
 
         // copy
-        x86::repe_cmps(tc, os, indent, rep_size);
+        x86::repe_cmps(tc, x.os, indent, rep_size);
 
-        tc.free_named_register(tok(), os, indent, "rcx");
-        tc.free_named_register(tok(), os, indent, "rdi");
-        tc.free_named_register(tok(), os, indent, "rsi");
+        tc.free_named_register(tok(), x.os, indent, "rcx");
+        tc.free_named_register(tok(), x.os, indent, "rdi");
+        tc.free_named_register(tok(), x.os, indent, "rsi");
 
         // set true if equal
 
         if (dst_info.operand.is_memory()) {
-            x86::setcc(tc, os, indent, "e",
+            x86::setcc(tc, x.os, indent, "e",
                        dst_info.operand.str(operand::size_byte));
             return;
         }
 
         // assumed register
 
-        x86::setcc(tc, os, indent, "e",
+        x86::setcc(tc, x.os, indent, "e",
                    tc.get_sized_register_operand(dst_info.operand.str(),
                                                  operand::size_byte));
     }

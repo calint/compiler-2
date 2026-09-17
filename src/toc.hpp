@@ -647,7 +647,7 @@ class toc final {
         return *funcs_.get_const_ref(name).type_ptr;
     }
 
-    [[nodiscard]] auto get_lea_operand(std::ostream& os, const size_t indent,
+    [[nodiscard]] auto get_lea_operand(x86& x, const size_t indent,
                                        const statement& src,
                                        const ident_info& src_info,
                                        std::vector<std::string>& lea_registers)
@@ -657,7 +657,7 @@ class toc final {
             return src_info.operand;
         }
 
-        operand op{src.compile_lea(src.tok(), *this, os, indent, lea_registers,
+        operand op{src.compile_lea(src.tok(), *this, x, indent, lea_registers,
                                    "", src_info.lea_path)};
         op.size = src_info.type().size();
         return op;

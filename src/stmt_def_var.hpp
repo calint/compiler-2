@@ -122,11 +122,11 @@ class stmt_def_var final : public statement {
         }
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
+    auto compile(toc& tc, x86& x, const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x86::comment_source(tc, *this, os, indent);
+        x86::comment_source(tc, *this, x.os, indent);
 
         const var_info var{
             .name{name_tk_.text()},
@@ -136,13 +136,13 @@ class stmt_def_var final : public statement {
             .array_size{array_size_},
             .reg{},
         };
-        tc.add_var(name_tk_, os, indent, var, false);
+        tc.add_var(name_tk_, x.os, indent, var, false);
 
         const ident_info& dst_info{
             tc.make_ident_info(name_tk_, name_tk_.text())};
 
         if (assign_var_) {
-            assign_var_->compile(tc, os, indent, dst_info);
+            assign_var_->compile(tc, x, indent, dst_info);
             return;
         }
 
@@ -151,14 +151,14 @@ class stmt_def_var final : public statement {
         const size_t instance_count{array_size_ ? array_size_ : 1};
         const size_t bytes_count{instance_count * dst_info.type().size()};
 
-        x86::comment_start(tc, name_tk_, os, indent);
-        std::println(os, "zero {} * {} B = {} B", instance_count,
+        x86::comment_start(tc, name_tk_, x.os, indent);
+        std::println(x.os, "zero {} * {} B = {} B", instance_count,
                      dst_info.type().size(), bytes_count);
 
         const std::string dst_addr{std::format("rsp - {}", -dst_info.stack_ix)};
         // note: -dst_info.stack_ix for nicer source formatting; is always
         //       negative
-        x86::zero(tc, tok(), os, indent, dst_addr, bytes_count);
+        x86::zero(tc, tok(), x.os, indent, dst_addr, bytes_count);
     }
 
     auto assert_var_not_used(const std::string_view var) const

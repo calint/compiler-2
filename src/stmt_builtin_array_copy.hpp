@@ -71,54 +71,54 @@ class stmt_builtin_array_copy final : public statement {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
+    auto compile(toc& tc, x86& x, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        x86::comment_source(tc, *this, os, indent);
+        x86::comment_source(tc, *this, x.os, indent);
 
         const ident_info from_info{tc.make_ident_info(from_)};
         const ident_info to_info{tc.make_ident_info(to_)};
 
         // allocate the register for rep movs
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rsi",
+        tc.alloc_named_register_or_throw(tok(), x.os, indent, "rsi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rdi",
+        tc.alloc_named_register_or_throw(tok(), x.os, indent, "rdi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(tok(), os, indent, "rcx",
+        tc.alloc_named_register_or_throw(tok(), x.os, indent, "rcx",
                                          tc.get_type_default());
 
         std::vector<std::string> allocated_scratch_registers;
 
         // size to 'rcx'
-        x86::comment_source(tc, count_, os, indent);
-        count_.compile(tc, os, indent, tc.make_ident_info_for_register("rcx"));
+        x86::comment_source(tc, count_, x.os, indent);
+        count_.compile(tc, x, indent, tc.make_ident_info_for_register("rcx"));
 
         // from operand to rsi
-        x86::comment_source(tc, from_, os, indent);
+        x86::comment_source(tc, from_, x.os, indent);
         const operand from_operand{stmt_identifier::compile_effective_address(
-            from_.first_token(), tc, os, indent, from_.elems(),
+            from_.first_token(), tc, x, indent, from_.elems(),
             allocated_scratch_registers, "rcx", from_info.lea_path)};
 
-        x86::lea(tc, os, indent, "rsi", from_operand.address_str());
+        x86::lea(tc, x.os, indent, "rsi", from_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), os, indent, reg);
+            tc.free_scratch_register(tok(), x.os, indent, reg);
         }
 
         // to operand to 'rdi'
         allocated_scratch_registers.clear();
-        x86::comment_source(tc, to_, os, indent);
+        x86::comment_source(tc, to_, x.os, indent);
         const operand to_operand{stmt_identifier::compile_effective_address(
-            to_.first_token(), tc, os, indent, to_.elems(),
+            to_.first_token(), tc, x, indent, to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};
 
-        x86::lea(tc, os, indent, "rdi", to_operand.address_str());
+        x86::lea(tc, x.os, indent, "rdi", to_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), os, indent, reg);
+            tc.free_scratch_register(tok(), x.os, indent, reg);
         }
 
         if (from_info.type().name() != to_info.type().name()) {
@@ -138,21 +138,21 @@ class stmt_builtin_array_copy final : public statement {
                     stmt_identifier::get_shift_amount(type_size)};
                 shl) {
 
-                x86::op(tc, tok(), os, indent, "shl", "rcx",
+                x86::op(tc, tok(), x.os, indent, "shl", "rcx",
                         std::format("{}", *shl));
             } else {
-                x86::op(tc, tok(), os, indent, "imul", "rcx",
+                x86::op(tc, tok(), x.os, indent, "imul", "rcx",
                         std::format("{}", type_size));
             }
         }
 
         // copy
-        x86::rep_movs(tc, os, indent, 'b');
+        x86::rep_movs(tc, x.os, indent, 'b');
         // note: toc::rep_movs does not work because rsi, rdi and rcx are
         //       expresstion
 
-        tc.free_named_register(tok(), os, indent, "rcx");
-        tc.free_named_register(tok(), os, indent, "rdi");
-        tc.free_named_register(tok(), os, indent, "rsi");
+        tc.free_named_register(tok(), x.os, indent, "rcx");
+        tc.free_named_register(tok(), x.os, indent, "rdi");
+        tc.free_named_register(tok(), x.os, indent, "rsi");
     }
 };

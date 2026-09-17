@@ -163,11 +163,11 @@ class stmt_def_dat final : public statement {
         print_source_elem(os, tp, elroot_);
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
+    auto compile(toc& tc, x86& x, const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x86::comment_source(tc, *this, os, indent);
+        x86::comment_source(tc, *this, x.os, indent);
         const var_info var{
             .name{name_tk_.text()},
             .type_ptr{&get_type()},
@@ -176,11 +176,11 @@ class stmt_def_dat final : public statement {
             .array_size{elroot_.array_size},
             .reg{},
         };
-        tc.add_var(name_tk_, os, indent, var, true);
+        tc.add_var(name_tk_, x.os, indent, var, true);
     }
 
-    auto compile_data(const toc& tc, std::ostream& os) const -> void override {
-        compile_data_rec(tc, os, name_tk_.text(), get_type(), elroot_);
+    auto compile_data(const toc& tc, x86& x) const -> void override {
+        compile_data_rec(tc, x.os, name_tk_.text(), get_type(), elroot_);
     }
 
   private:

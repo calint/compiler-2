@@ -73,7 +73,7 @@ class stmt_if final : public statement {
         }
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
+    auto compile(toc& tc, x86& x, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
@@ -108,7 +108,7 @@ class stmt_if final : public statement {
             // compile the condition which might return that the condition was a
             // constant evaluation
             if (const std::optional<bool> const_eval{if_branch.compile_branch(
-                    tc, os, indent, jmp_if_false, jmp_if_done)};
+                    tc, x, indent, jmp_if_false, jmp_if_done)};
                 const_eval and *const_eval) {
 
                 branch_evaluated_to_true = true;
@@ -119,12 +119,12 @@ class stmt_if final : public statement {
         // code
         if (not branch_evaluated_to_true) {
             if (not else_code_.is_empty()) {
-                x86::label(tc, os, indent, label_else_branch);
-                else_code_.compile(tc, os, indent, dst_info);
+                x86::label(tc, x.os, indent, label_else_branch);
+                else_code_.compile(tc, x, indent, dst_info);
             }
         }
 
-        x86::label(tc, os, indent, label_after_if);
+        x86::label(tc, x.os, indent, label_after_if);
     }
 
     [[nodiscard]] auto else_block() const -> const stmt_block& {

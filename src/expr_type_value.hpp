@@ -42,7 +42,7 @@ class expr_type_value final : public statement {
         //       otherwise e.g. 'p = pt'
     }
 
-    auto compile(toc& tc, std::ostream& os, size_t indent,
+    auto compile(toc& tc, x86& x, size_t indent,
                  const ident_info& dst_info) const -> void override;
 
     // implemented in 'decouple_impl.hpp' due to circular reference:
@@ -60,7 +60,7 @@ class expr_type_value final : public statement {
     [[nodiscard]] auto identifier() const -> std::string_view override;
 
     // implemented in 'decouple_impl.hpp' due to circular reference
-    auto compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
+    auto compile_lea(const token& src_loc_tk, toc& tc, x86& x,
                      size_t indent,
                      std::vector<std::string>& allocated_registers,
                      const std::string& reg_size,
@@ -70,7 +70,7 @@ class expr_type_value final : public statement {
   private:
     // implemented in 'decouple_impl.hpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
-    auto compile_assign(toc& tc, std::ostream& os, size_t indent,
+    auto compile_assign(toc& tc, x86& x, size_t indent,
                         const type& dst_type, operand& op) const -> void;
 
     // implemented in 'decouple_impl.hpp'

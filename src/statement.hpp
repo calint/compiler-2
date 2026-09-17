@@ -15,6 +15,7 @@
 
 class toc;
 class type;
+class x86;
 
 class statement {
     token token_;
@@ -33,8 +34,7 @@ class statement {
     auto operator=(statement&&) -> statement& = default;
     auto operator=(statement const&) -> statement& = default;
 
-    virtual auto compile([[maybe_unused]] toc& tc,
-                         [[maybe_unused]] std::ostream& os,
+    virtual auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] x86& x,
                          [[maybe_unused]] size_t indent,
                          [[maybe_unused]] const ident_info& ident_info) const
         -> void {
@@ -71,12 +71,12 @@ class statement {
     [[nodiscard]] virtual auto is_indexed() const -> bool { return false; }
 
     virtual auto compile_data([[maybe_unused]] const toc& tc,
-                              [[maybe_unused]] std::ostream& os) const -> void {
+                              [[maybe_unused]] x86& x) const -> void {
     }
 
     [[nodiscard]] virtual auto compile_lea(
         [[maybe_unused]] const token& src_loc_tk, [[maybe_unused]] toc& tc,
-        [[maybe_unused]] std::ostream& os, [[maybe_unused]] const size_t indent,
+        [[maybe_unused]] x86& x, [[maybe_unused]] const size_t indent,
         [[maybe_unused]] std::vector<std::string>& allocated_registers,
         [[maybe_unused]] const std::string& reg_size,
         [[maybe_unused]] const std::span<const std::string> lea_path) const

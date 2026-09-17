@@ -51,11 +51,11 @@ class stmt_assign_var final : public statement {
         expr_.source_to(os);
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
+    auto compile(toc& tc, x86& x, const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x86::comment_source(tc, *this, os, indent);
+        x86::comment_source(tc, *this, x.os, indent);
 
         // get information about the destination of the compilation
         ident_info dst_info{tc.make_ident_info(stmt_ident_)};
@@ -78,11 +78,11 @@ class stmt_assign_var final : public statement {
         }
 
         std::vector<std::string> lea_registers;
-        dst_info.operand = tc.get_lea_operand(os, indent, stmt_ident_, dst_info,
+        dst_info.operand = tc.get_lea_operand(x, indent, stmt_ident_, dst_info,
                                               lea_registers);
-        expr_.compile(tc, os, indent, dst_info);
+        expr_.compile(tc, x, indent, dst_info);
         for (const std::string& reg : lea_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), os, indent, reg);
+            tc.free_scratch_register(tok(), x.os, indent, reg);
         }
     }
 

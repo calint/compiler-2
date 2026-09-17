@@ -117,10 +117,10 @@ class stmt_call : public expression {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
+    auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x86::comment_source(tc, *this, os, indent);
+        x86::comment_source(tc, *this, x.os, indent);
 
         const stmt_def_func& func{
             tc.get_func_or_throw(tok(), statement::identifier())};
@@ -163,7 +163,7 @@ class stmt_call : public expression {
             std::string arg_reg{param.get_register_name_or_empty()};
 
             if (not arg_reg.empty()) {
-                tc.alloc_named_register_or_throw(arg.tok(), os, indent, arg_reg,
+                tc.alloc_named_register_or_throw(arg.tok(), x.os, indent, arg_reg,
                                                  param.get_type());
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
@@ -180,7 +180,7 @@ class stmt_call : public expression {
 
                 std::vector<std::string> regs_lea;
 
-                const operand lea{arg.compile_lea(arg.tok(), tc, os, indent,
+                const operand lea{arg.compile_lea(arg.tok(), tc, x, indent,
                                                   regs_lea, "",
                                                   arg_info.lea_path)};
 
@@ -209,7 +209,7 @@ class stmt_call : public expression {
             if (arg.is_expression()) {
                 if (arg_reg.empty()) {
                     // no particular register requested
-                    arg_reg = tc.alloc_scratch_register(arg.tok(), os, indent,
+                    arg_reg = tc.alloc_scratch_register(arg.tok(), x.os, indent,
                                                         param.get_type());
                     allocated_scratch_registers.emplace_back(arg_reg);
                     allocated_registers_in_order.emplace_back(arg_reg);
@@ -218,7 +218,7 @@ class stmt_call : public expression {
                 const std::string& reg_sized{tc.get_sized_register_operand(
                     arg_reg, param.get_type().size())};
 
-                arg.compile(tc, os, indent,
+                arg.compile(tc, x, indent,
                             tc.make_ident_info_for_register(reg_sized));
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
@@ -254,16 +254,16 @@ class stmt_call : public expression {
                     // identifier with unary ops
 
                     const std::string scratch_reg{tc.alloc_scratch_register(
-                        arg.tok(), os, indent, param.get_type())};
+                        arg.tok(), x.os, indent, param.get_type())};
 
                     allocated_registers_in_order.emplace_back(scratch_reg);
                     allocated_scratch_registers.emplace_back(scratch_reg);
 
-                    x86::mov(tc, param.tok(), os, indent, scratch_reg,
+                    x86::mov(tc, param.tok(), x.os, indent, scratch_reg,
                              arg_info.operand.str());
 
                     // apply unary ops
-                    arg.get_unary_ops().compile(tc, os, indent, scratch_reg);
+                    arg.get_unary_ops().compile(tc, x, indent, scratch_reg);
 
                     aliases_to_add.emplace_back(std::string{param.identifier()},
                                                 scratch_reg, "",
@@ -281,13 +281,13 @@ class stmt_call : public expression {
             const ident_info& arg_info{tc.make_ident_info(arg)};
 
             if (arg_info.is_const()) {
-                x86::mov(tc, param.tok(), os, indent, arg_reg,
+                x86::mov(tc, param.tok(), x.os, indent, arg_reg,
                          std::format("{}{}", arg.get_unary_ops().to_string(),
                                      arg_info.const_value));
             } else {
-                x86::mov(tc, param.tok(), os, indent, arg_reg,
+                x86::mov(tc, param.tok(), x.os, indent, arg_reg,
                          arg_info.operand.str());
-                arg.get_unary_ops().compile(tc, os, indent + 1, arg_reg);
+                arg.get_unary_ops().compile(tc, x, indent + 1, arg_reg);
             }
         }
 
@@ -300,9 +300,9 @@ class stmt_call : public expression {
         const std::string ret_jmp_label{
             std::format("{}_{}_end", func.name(), new_call_path)};
 
-        func.source_def_comment_to(tc, os, indent);
+        func.source_def_comment_to(tc, x, indent);
 
-        x86::label(tc, os, indent,
+        x86::label(tc, x.os, indent,
                    std::format("{}_{}", func.name(), new_call_path));
 
         // enter function scope
@@ -312,27 +312,27 @@ class stmt_call : public expression {
 
         // add aliases
         for (const alias_info& e : aliases_to_add) {
-            x86::comment_start(tc, tok(), os, indent + 1);
+            x86::comment_start(tc, tok(), x.os, indent + 1);
 
-            std::print(os, "alias {} -> {}", e.from, e.to);
+            std::print(x.os, "alias {} -> {}", e.from, e.to);
             if (not e.lea.empty()) {
-                std::print(os, " (lea: {})", e.lea);
+                std::print(x.os, " (lea: {})", e.lea);
             }
-            std::println(os);
+            std::println(x.os);
             tc.add_alias(e);
         }
 
         // compile in-lined code
-        func.code().compile(tc, os, indent, dst_info);
+        func.code().compile(tc, x, indent, dst_info);
 
         // free allocated registers in reverse order
         for (const std::string& reg :
              allocated_registers_in_order | std::views::reverse) {
 
             if (std::ranges::contains(allocated_scratch_registers, reg)) {
-                tc.free_scratch_register(tok(), os, indent + 1, reg);
+                tc.free_scratch_register(tok(), x.os, indent + 1, reg);
             } else if (std::ranges::contains(allocated_named_registers, reg)) {
-                tc.free_named_register(tok(), os, indent + 1, reg);
+                tc.free_named_register(tok(), x.os, indent + 1, reg);
             } else {
                 std::unreachable();
             }
@@ -340,7 +340,7 @@ class stmt_call : public expression {
 
         // provide the exit label for 'return' to jump to
 
-        x86::label(tc, os, indent, ret_jmp_label);
+        x86::label(tc, x.os, indent, ret_jmp_label);
 
         // apply unary ops to result if present
 
@@ -352,7 +352,7 @@ class stmt_call : public expression {
             const ident_info& ret_info{
                 tc.make_ident_info(tok(), return_info.ident_tk.text())};
 
-            get_unary_ops().compile(tc, os, indent, ret_info.operand.str());
+            get_unary_ops().compile(tc, x, indent, ret_info.operand.str());
         }
 
         tc.exit_func(func.name());

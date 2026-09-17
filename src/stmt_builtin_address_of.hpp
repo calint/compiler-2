@@ -52,10 +52,10 @@ class stmt_builtin_address_of final : public expression {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
+    auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x86::comment_source(tc, *this, os, indent);
+        x86::comment_source(tc, *this, x.os, indent);
 
         if (dst_info.is_const()) {
             throw compiler_exception{stmt_ident_.first_token(),
@@ -76,24 +76,24 @@ class stmt_builtin_address_of final : public expression {
         std::vector<std::string> allocated_registers;
 
         const operand oper{stmt_identifier::compile_effective_address(
-            stmt_ident_.first_token(), tc, os, indent, stmt_ident_.elems(),
+            stmt_ident_.first_token(), tc, x, indent, stmt_ident_.elems(),
             allocated_registers, "", src_info.lea_path)};
 
         if (dst_info.is_register()) {
-            x86::lea(tc, os, indent, dst_info.operand.address_str(),
+            x86::lea(tc, x.os, indent, dst_info.operand.address_str(),
                      oper.address_str());
         } else {
             // destination is memory location
             const std::string reg{tc.alloc_scratch_register(
-                tok(), os, indent, tc.get_type_default())};
-            x86::lea(tc, os, indent, reg, oper.address_str());
-            x86::mov(tc, tok(), os, indent, dst_info.operand.str(), reg);
-            tc.free_scratch_register(tok(), os, indent, reg);
+                tok(), x.os, indent, tc.get_type_default())};
+            x86::lea(tc, x.os, indent, reg, oper.address_str());
+            x86::mov(tc, tok(), x.os, indent, dst_info.operand.str(), reg);
+            tc.free_scratch_register(tok(), x.os, indent, reg);
         }
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), os, indent, reg);
+            tc.free_scratch_register(tok(), x.os, indent, reg);
         }
     }
 };

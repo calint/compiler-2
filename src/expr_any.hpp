@@ -101,7 +101,7 @@ class expr_any final : public statement {
         close_brace_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
+    auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
         if (is_array_identifier()) {
@@ -113,7 +113,7 @@ class expr_any final : public statement {
 
         // the base case
         if (is_identifier_ or not is_array_) {
-            compile_variant(tc, os, indent, dst_info, tok(), vars_[0]);
+            compile_variant(tc, x, indent, dst_info, tok(), vars_[0]);
             return;
         }
 
@@ -122,8 +122,8 @@ class expr_any final : public statement {
         ident_info ii{dst_info};
 
         for (const auto [i, el] : std::views::enumerate(vars_)) {
-            x86::comment_line(tc, tok(), os, indent, "[{}]", i);
-            compile_variant(tc, os, indent, ii, tok(), el);
+            x86::comment_line(tc, tok(), x.os, indent, "[{}]", i);
+            compile_variant(tc, x, indent, ii, tok(), el);
             ii.operand.displacement += static_cast<int32_t>(ii.type().size());
         }
 
@@ -134,10 +134,10 @@ class expr_any final : public statement {
 
         const size_t nbytes{diff * ii.type().size()};
 
-        x86::comment_line(tc, tok(), os, indent,
+        x86::comment_line(tc, tok(), x.os, indent,
                           "zero remaining elements: {} * {} B = {} B", diff,
                           ii.type().size(), nbytes);
-        x86::zero(tc, tok(), os, indent, ii.operand.address_str(), nbytes);
+        x86::zero(tc, tok(), x.os, indent, ii.operand.address_str(), nbytes);
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
@@ -215,7 +215,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto
-    compile_lea(const token& src_loc_tk, toc& tc, std::ostream& os,
+    compile_lea(const token& src_loc_tk, toc& tc, x86& x,
                 size_t indent, std::vector<std::string>& allocated_registers,
                 const std::string& reg_size,
                 const std::span<const std::string> lea_path) const
@@ -223,7 +223,7 @@ class expr_any final : public statement {
 
         return std::visit(
             [&](const auto& e) -> operand {
-                return e.compile_lea(src_loc_tk, tc, os, indent,
+                return e.compile_lea(src_loc_tk, tc, x, indent,
                                      allocated_registers, reg_size, lea_path);
             },
             vars_[0]);
@@ -264,16 +264,16 @@ class expr_any final : public statement {
         return expr_ops_list{tc, tz, in_args};
     }
 
-    static auto compile_variant(toc& tc, std::ostream& os, const size_t indent,
+    static auto compile_variant(toc& tc, x86& x, const size_t indent,
                                 const ident_info& dst_info, const token tk,
                                 const expr_variant& exp) -> void {
         std::visit(
             overloaded{
                 [&](const expr_ops_list& e) -> void {
-                    e.compile(tc, os, indent, dst_info);
+                    e.compile(tc, x, indent, dst_info);
                 },
                 [&]([[maybe_unused]] const expr_type_value& e) -> void {
-                    e.compile(tc, os, indent, dst_info);
+                    e.compile(tc, x, indent, dst_info);
                 },
                 [&](const expr_bool_ops_list& e) -> void {
                     // if not expression assign to destination
@@ -282,7 +282,7 @@ class expr_any final : public statement {
                         if (not src_info.is_const()) {
                             std::unreachable();
                         }
-                        x86::mov(tc, tk, os, indent, dst_info.operand.str(),
+                        x86::mov(tc, tk, x.os, indent, dst_info.operand.str(),
                                  std::format("{}", src_info.const_value));
                         return;
                     }
@@ -305,22 +305,22 @@ class expr_any final : public statement {
 
                     // compile and possibly evaluate constant expression
                     const std::optional<bool> const_eval{
-                        e.compile(tc, os, indent, jmp_to_end, jmp_to_end, false,
+                        e.compile(tc, x, indent, jmp_to_end, jmp_to_end, false,
                                   dst_info.operand.str())};
 
                     // not constant evaluation
-                    x86::label(tc, os, indent, jmp_to_end);
+                    x86::label(tc, x.os, indent, jmp_to_end);
 
                     // did the evaluation result in a constant?
                     if (const_eval) {
                         // yes, constant evaluation
                         if (*const_eval) {
                             // constant evaluation is true
-                            x86::mov(tc, tk, os, indent, dst_info.operand.str(),
+                            x86::mov(tc, tk, x.os, indent, dst_info.operand.str(),
                                      "1");
                         } else {
                             // constant evaluation is false
-                            x86::mov(tc, tk, os, indent, dst_info.operand.str(),
+                            x86::mov(tc, tk, x.os, indent, dst_info.operand.str(),
                                      "0");
                         }
                     }

@@ -233,22 +233,22 @@ auto expr_type_value::source_to(std::ostream& os) const -> void {
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::compile(toc& tc, std::ostream& os, size_t indent,
+auto expr_type_value::compile(toc& tc, x86& x, size_t indent,
                               const ident_info& dst_info) const -> void {
 
     if (stmt_call_) {
-        stmt_call_->compile(tc, os, indent, dst_info);
+        stmt_call_->compile(tc, x, indent, dst_info);
         return;
     }
 
     const type& tp{dst_info.type()};
     operand op{dst_info.operand};
-    compile_assign(tc, os, indent, tp, op);
+    compile_assign(tc, x, indent, tp, op);
 }
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
+auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
                                      const type& dst_type,
                                      operand& dst_op) const -> void {
 
@@ -262,7 +262,7 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         std::vector<std::string> allocated_registers;
         operand src_op;
         if (is_indexed() or src_info.has_lea()) {
-            src_op = compile_lea(tok(), tc, os, indent, allocated_registers, "",
+            src_op = compile_lea(tok(), tc, x, indent, allocated_registers, "",
                                  src_info.lea_path);
         } else {
             src_op = src_info.operand;
@@ -274,14 +274,14 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
 
         // todo: validate dst array size fits src array size
 
-        x86::copy(tc, tok(), os, indent, src_op.address_str(),
+        x86::copy(tc, tok(), x.os, indent, src_op.address_str(),
                   dst_op.address_str(), nbytes);
 
         dst_op.displacement += static_cast<int32_t>(nbytes);
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), os, indent, reg);
+            tc.free_scratch_register(tok(), x.os, indent, reg);
         }
 
         return;
@@ -291,14 +291,14 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
     size_t counter{};
     const std::span<const type_field>& flds{dst_type.fields()};
     for (const std::unique_ptr<expr_any>& ea : exprs_) {
-        x86::comment_start(tc, tok(), os, indent);
+        x86::comment_start(tc, tok(), x.os, indent);
         const type_field& tf{flds[counter]};
-        std::println(os, "copy field '{}'", tf.name);
+        std::println(x.os, "copy field '{}'", tf.name);
 
         if (not tf.type().is_built_in()) {
             // a not-builtin statement is 'expr_type_value'
             const expr_type_value& e{ea->as_expr_type_value()};
-            e.compile_assign(tc, os, indent, tf.type(), dst_op);
+            e.compile_assign(tc, x, indent, tf.type(), dst_op);
             ++counter;
             continue;
         }
@@ -312,10 +312,10 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             // e.g.:
             //   type msgpoint {  msg : i8[128], pt : point }
             //   var mp : msgpoint[3] = { { {}, { x, y } } }
-            x86::comment_start(tc, tok(), os, indent);
-            std::println(os, "zero empty field: {} * {} B = {} B",
+            x86::comment_start(tc, tok(), x.os, indent);
+            std::println(x.os, "zero empty field: {} * {} B = {} B",
                          tf.array_size, tf.type().size(), tf.size);
-            x86::zero(tc, tok(), os, indent, dst_op.address_str(), tf.size);
+            x86::zero(tc, tok(), x.os, indent, dst_op.address_str(), tf.size);
             dst_op.displacement += static_cast<int32_t>(tf.size);
             ++counter;
             continue;
@@ -331,13 +331,13 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
             // built-in, expression
             const ident_info dst_info{
                 tc.make_ident_info(src.tok(), dst_accessor)};
-            src.compile(tc, os, indent, dst_info);
+            src.compile(tc, x, indent, dst_info);
         } else {
             // built-in, not expression
             const ident_info src_info{tc.make_ident_info(src)};
             if (src_info.is_const()) {
                 // built-in, not expression, constant
-                x86::mov(tc, src.tok(), os, indent, dst_accessor,
+                x86::mov(tc, src.tok(), x.os, indent, dst_accessor,
                          std::format("{}{}", src.get_unary_ops().to_string(),
                                      src_info.const_value));
             } else {
@@ -347,14 +347,14 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
                     //       trigger it
                     // built-in, not expression, not constant, array
                     validate_array_assignment(src.tok(), tf, src_info);
-                    x86::copy(tc, src.tok(), os, indent,
+                    x86::copy(tc, src.tok(), x.os, indent,
                               src_info.operand.address_str(),
                               dst_op.address_str(), tf.size);
                 } else {
                     // built-in, not expression, not constant, not array
-                    x86::mov(tc, src.tok(), os, indent, dst_accessor,
+                    x86::mov(tc, src.tok(), x.os, indent, dst_accessor,
                              src_info.operand.str());
-                    src.get_unary_ops().compile(tc, os, indent, dst_accessor);
+                    src.get_unary_ops().compile(tc, x, indent, dst_accessor);
                 }
             }
         }
@@ -379,9 +379,9 @@ auto expr_type_value::compile_assign(toc& tc, std::ostream& os, size_t indent,
         nbytes += flds[i].size;
     }
 
-    x86::comment_start(tc, tok(), os, indent);
-    std::println(os, "zero remaining fields: {} B", nbytes);
-    x86::zero(tc, tok(), os, indent, dst_op.address_str(), nbytes);
+    x86::comment_start(tc, tok(), x.os, indent);
+    std::println(x.os, "zero remaining fields: {} B", nbytes);
+    x86::zero(tc, tok(), x.os, indent, dst_op.address_str(), nbytes);
     dst_op.displacement += static_cast<int32_t>(nbytes);
 }
 
@@ -420,11 +420,11 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 [[nodiscard]] auto expr_type_value::compile_lea(
-    const token& src_loc_tk, toc& tc, std::ostream& os, size_t indent,
+    const token& src_loc_tk, toc& tc, x86& x, size_t indent,
     std::vector<std::string>& allocated_registers, const std::string& reg_size,
     const std::span<const std::string> lea_path) const -> operand {
 
-    return stmt_ident_->compile_lea(src_loc_tk, tc, os, indent,
+    return stmt_ident_->compile_lea(src_loc_tk, tc, x, indent,
                                     allocated_registers, reg_size, lea_path);
 }
 
@@ -445,17 +445,16 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 
 // declared in 'unary_ops.hpp'
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-auto unary_ops::compile([[maybe_unused]] toc& tc, std::ostream& os,
-                        const size_t indnt,
+auto unary_ops::compile([[maybe_unused]] toc& tc, x86& x, const size_t indnt,
                         const std::string_view dst_info) const -> void {
 
     for (const char op : ops_ | std::views::reverse) {
         switch (op) {
         case '~':
-            x86::not_op(tc, os, indnt, dst_info);
+            x86::not_op(tc, x.os, indnt, dst_info);
             break;
         case '-':
-            x86::neg(tc, os, indnt, dst_info);
+            x86::neg(tc, x.os, indnt, dst_info);
             break;
         default:
             std::unreachable();

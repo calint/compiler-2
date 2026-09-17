@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstddef>
 #include <format>
+#include <functional>
 #include <ostream>
 #include <print>
 #include <string>
@@ -26,6 +27,21 @@ class x86 final {
     static constexpr std::string_view data_byte{"db"};
 
   public:
+    // the assembler output stream for the current compile pass; rebindable
+    // via 'use_stream' so trial-compiles can target a scratch buffer while
+    // keeping this same instance (and its register-allocation state)
+    std::reference_wrapper<std::ostream> os;
+
+    explicit x86(std::ostream& os_ref) : os{os_ref} {}
+
+    // redirects output to 'new_stream', returning the previously used stream
+    // so the caller can restore it later
+    auto use_stream(std::ostream& new_stream) -> std::ostream& {
+        std::ostream& prev{os.get()};
+        os = new_stream;
+        return prev;
+    }
+
     [[nodiscard]] static auto get_data_def(const size_t size)
         -> std::string_view {
         switch (size) {

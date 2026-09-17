@@ -54,11 +54,11 @@ class stmt_def_const final : public statement {
         const_.source_to(os);
     }
 
-    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
+    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] x86& x,
                  [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        tc.add_const(name_tk_, os, indent, name_tk_.text(), const_.value());
+        tc.add_const(name_tk_, x.os, indent, name_tk_.text(), const_.value());
     }
 };

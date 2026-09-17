@@ -142,17 +142,17 @@ class stmt_def_func final : public statement {
         }
     }
 
-    auto source_def_comment_to(const toc& tc, std::ostream& os,
+    auto source_def_comment_to(const toc& tc, x86& x,
                                const size_t indent) const -> void {
 
         std::stringstream ss;
         source_def_to(ss, true);
         // make comment friendly string replacing consecutive with one space
         const std::string res{std::regex_replace(ss.str(), tc.regex_ws(), " ")};
-        x86::comment_line(tc, name_tk_, os, indent, "{}", res);
+        x86::comment_line(tc, name_tk_, x.os, indent, "{}", res);
     }
 
-    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] std::ostream& os,
+    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] x86& x,
                  [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {}

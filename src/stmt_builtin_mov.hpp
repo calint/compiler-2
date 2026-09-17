@@ -16,11 +16,11 @@ class stmt_builtin_mov final : public stmt_call {
 
     stmt_builtin_mov() = default;
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
+    auto compile(toc& tc, x86& x, const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x86::comment_source(tc, *this, os, indent);
+        x86::comment_source(tc, *this, x.os, indent);
 
         if (arguments_size() != 2) {
             throw compiler_exception{tok(), "expected 2 arguments"};
@@ -30,7 +30,7 @@ class stmt_builtin_mov final : public stmt_call {
         const ident_info dst_info{tc.make_ident_info(argument(0))};
 
         const statement& src_arg{argument(1)};
-        src_arg.compile(tc, os, indent + 1, dst_info);
+        src_arg.compile(tc, x, indent + 1, dst_info);
     }
 
     auto assert_var_not_used(const std::string_view var) const

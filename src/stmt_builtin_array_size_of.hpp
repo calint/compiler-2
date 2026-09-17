@@ -43,10 +43,10 @@ class stmt_builtin_array_size_of final : public expression {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, std::ostream& os, const size_t indent,
+    auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x86::comment_source(tc, *this, os, indent);
+        x86::comment_source(tc, *this, x.os, indent);
 
         if (dst_info.is_const()) {
             throw compiler_exception{tok(), "destination cannot be a constant"};
@@ -70,9 +70,9 @@ class stmt_builtin_array_size_of final : public expression {
 
         // variable, register or field
         const std::string dst_op{dst_info.operand.str()};
-        x86::mov(tc, tok(), os, indent, dst_op,
+        x86::mov(tc, tok(), x.os, indent, dst_op,
                  std::format("{}", src_info.array_size));
 
-        get_unary_ops().compile(tc, os, indent, dst_op);
+        get_unary_ops().compile(tc, x, indent, dst_op);
     }
 };
