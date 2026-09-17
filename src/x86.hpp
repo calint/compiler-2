@@ -10,12 +10,14 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "utils.hpp"
 
 class toc;
 class token;
 class statement;
+class type;
 
 class x86 final {
     static constexpr size_t size_qword{8};
@@ -26,6 +28,25 @@ class x86 final {
     static constexpr std::string_view data_dword{"dd"};
     static constexpr std::string_view data_word{"dw"};
     static constexpr std::string_view data_byte{"db"};
+
+    struct allocated_register {
+        std::string name;
+        std::string source_location;
+        const type* type_ptr;
+    };
+
+    std::vector<std::string> all_registers_{
+        "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
+        "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"};
+    size_t all_registers_initial_size_{all_registers_.size()};
+    std::vector<std::string> named_registers_{"rax", "rbx", "rcx", "rdx",
+                                              "rsi", "rdi", "rbp"};
+    size_t named_registers_initial_size_{named_registers_.size()};
+    std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r11",
+                                                "r12", "r13", "r14", "r15"};
+    size_t scratch_registers_initial_size_{scratch_registers_.size()};
+    std::vector<allocated_register> allocated_registers_;
+    size_t usage_max_scratch_regs_{};
 
     std::regex regex_nasm_number_register_{R"(r(\d+))"};
 
@@ -162,6 +183,33 @@ class x86 final {
 
     auto imul(toc& tc, const token& src_loc_tk, size_t indent,
             std::string_view dst_op, std::string_view src_op) -> void;
+
+    auto alloc_named_register_or_throw(const toc& tc, const token& src_loc_tk,
+                                       size_t indnt, std::string_view reg,
+                                       const type& type_ref) -> void;
+
+    [[nodiscard]] auto alloc_scratch_register(const toc& tc,
+                                              const token& src_loc_tk,
+                                              size_t indnt,
+                                              const type& type_ref)
+        -> std::string;
+
+    auto free_named_register(const toc& tc, const token& src_loc_tk,
+                             size_t indnt, std::string_view reg) -> void;
+
+    auto free_scratch_register(const toc& tc, const token& src_loc_tk,
+                               size_t indnt, std::string_view reg) -> void;
+
+    // returns the type a currently allocated register holds, falling back to
+    // a builtin type inferred from the register's width if it isn't (or is
+    // no longer) allocated
+    [[nodiscard]] auto get_allocated_register_type(const toc& tc,
+                                                   std::string_view reg) const
+        -> const type&;
+
+    // asserts register pools are balanced and prints usage stats; called
+    // once at the end of the compile pass
+    auto finish() -> void;
 
     auto mov(toc& tc, const token& src_loc_tk, size_t indent,
             std::string_view dst_op, std::string_view src_op) -> void;

@@ -139,7 +139,7 @@ class stmt_def_var final : public statement {
         tc.add_var(name_tk_, x.os, indent, var, false);
 
         const ident_info& dst_info{
-            tc.make_ident_info(name_tk_, name_tk_.text())};
+            tc.make_ident_info(x, name_tk_, name_tk_.text())};
 
         if (assign_var_) {
             assign_var_->compile(tc, x, indent, dst_info);

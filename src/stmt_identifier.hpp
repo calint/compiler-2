@@ -58,7 +58,7 @@ class stmt_identifier : public statement {
         while (true) {
             if (not tc.is_func(path_as_string_)) {
                 const ident_info curr_ident_info{
-                    tc.make_ident_info(tk, path_as_string_)};
+                    tc.make_ident_info_parsing(tk, path_as_string_)};
 
                 if (tz.peek_char() == '[' and not curr_ident_info.is_array) {
                     throw compiler_exception{
@@ -98,7 +98,8 @@ class stmt_identifier : public statement {
                 break;
             }
 
-            const ident_info ii{tc.make_ident_info(tk_prv, path_as_string_)};
+            const ident_info ii{
+                tc.make_ident_info_parsing(tk_prv, path_as_string_)};
 
             set_type(ii.type());
 
@@ -154,7 +155,7 @@ class stmt_identifier : public statement {
 
         x86::comment_source(tc, *this, x.os, indent);
 
-        const ident_info src_info{tc.make_ident_info(*this)};
+        const ident_info src_info{tc.make_ident_info(x, *this)};
 
         if (src_info.is_const()) {
             x.mov(tc, tok(), indent, dst_info.operand.str(),
@@ -189,7 +190,7 @@ class stmt_identifier : public statement {
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), x.os, indent, reg);
+            x.free_scratch_register(tc, tok(), indent, reg);
         }
     }
 
@@ -239,7 +240,7 @@ class stmt_identifier : public statement {
 
         // start at an element with 'lea' or 0 when no 'lea' found
         std::string path{elems[elem_index_with_lea].name_tk.text()};
-        const ident_info base_info{tc.make_ident_info(src_loc_tk, path)};
+        const ident_info base_info{tc.make_ident_info(x, src_loc_tk, path)};
 
         std::string reg_offset;
         int32_t accum_offset{};
@@ -247,7 +248,7 @@ class stmt_identifier : public statement {
 
         for (size_t i{elem_index_with_lea}; i < elems_size; ++i) {
             const ident_elem& curr_elem{elems[i]};
-            const ident_info curr_info{tc.make_ident_info(src_loc_tk, path)};
+            const ident_info curr_info{tc.make_ident_info(x, src_loc_tk, path)};
             const size_t type_size{curr_info.type().size()};
             const bool is_last{i == elems_size - 1};
 
@@ -278,8 +279,7 @@ class stmt_identifier : public statement {
                 const bool is_encodable{type_size == 1 or type_size == 2 or
                                         type_size == 4 or type_size == 8};
                 if (is_encodable) {
-                    const std::string reg_idx{tc.alloc_scratch_register(
-                        src_loc_tk, x.os, indent, tc.get_type_default())};
+                    const std::string reg_idx{x.alloc_scratch_register(tc, src_loc_tk, indent, tc.get_type_default())};
                     allocated_registers.push_back(reg_idx);
 
                     x.comment_line(tc, curr_elem.array_index_expr->tok(),
@@ -287,7 +287,7 @@ class stmt_identifier : public statement {
 
                     curr_elem.array_index_expr->compile(
                         tc, x, indent,
-                        tc.make_ident_info_for_register(reg_idx));
+                        tc.make_ident_info_for_register(x, reg_idx));
 
                     const token& tk{curr_elem.array_index_expr->tok()};
                     const bool use_reg_size{not reg_size.empty()};
@@ -330,13 +330,13 @@ class stmt_identifier : public statement {
             }
 
             if (reg_offset == "rsp") {
-                reg_offset = tc.alloc_scratch_register(src_loc_tk, x.os, indent,
+                reg_offset = x.alloc_scratch_register(tc, src_loc_tk, indent,
                                                        tc.get_type_default());
                 allocated_registers.push_back(reg_offset);
                 x.lea( indent, reg_offset,
                          std::format("rsp - {}", -base_info.stack_ix));
             } else if (reg_offset == base_info.operand.base_register) {
-                reg_offset = tc.alloc_scratch_register(src_loc_tk, x.os, indent,
+                reg_offset = x.alloc_scratch_register(tc, src_loc_tk, indent,
                                                        tc.get_type_default());
                 allocated_registers.push_back(reg_offset);
                 x.lea( indent, reg_offset,
@@ -344,14 +344,13 @@ class stmt_identifier : public statement {
             }
 
             // calculate array index
-            const std::string reg_idx{tc.alloc_scratch_register(
-                src_loc_tk, x.os, indent, tc.get_type_default())};
+            const std::string reg_idx{x.alloc_scratch_register(tc, src_loc_tk, indent, tc.get_type_default())};
 
             x.comment_line(tc, curr_elem.array_index_expr->tok(), indent,
                               "set array index");
 
             curr_elem.array_index_expr->compile(
-                tc, x, indent, tc.make_ident_info_for_register(reg_idx));
+                tc, x, indent, tc.make_ident_info_for_register(x, reg_idx));
 
             // bounds check
             const token& tk{curr_elem.array_index_expr->tok()};
@@ -372,7 +371,7 @@ class stmt_identifier : public statement {
 
             // add index offset to base register
             x.op(tc, src_loc_tk, indent, "add", reg_offset, reg_idx);
-            tc.free_scratch_register(src_loc_tk, x.os, indent, reg_idx);
+            x.free_scratch_register(tc, src_loc_tk, indent, reg_idx);
 
             // accumulate field offsets
             if (i + 1 < elems_size) {
@@ -433,7 +432,7 @@ class stmt_identifier : public statement {
         // Allocate line number register once if needed
         std::string reg_line_num;
         if (tc.is_bounds_check_with_line()) {
-            reg_line_num = tc.alloc_scratch_register(tk, x.os, indent,
+            reg_line_num = x.alloc_scratch_register(tc, tk, indent,
                                                      tc.get_type_default());
             x.comment_line(tc, tk, indent, "line number");
             x.mov(tc, tk, indent, reg_line_num,
@@ -451,13 +450,12 @@ class stmt_identifier : public statement {
 
         if (tc.is_bounds_check_upper()) {
             if (not reg_size.empty()) {
-                const std::string reg_top_idx = tc.alloc_scratch_register(
-                    tk, x.os, indent, tc.get_type_default());
+                const std::string reg_top_idx = x.alloc_scratch_register(tc, tk, indent, tc.get_type_default());
                 x.mov(tc, tk, indent, reg_top_idx, reg_size);
                 x.add( indent, reg_top_idx, reg_to_check);
                 x.cmp(indent, reg_top_idx,
                          std::to_string(array_size));
-                tc.free_scratch_register(tk, x.os, indent, reg_top_idx);
+                x.free_scratch_register(tc, tk, indent, reg_top_idx);
             } else {
                 x.cmp(indent, reg_to_check,
                          std::to_string(array_size));
@@ -473,7 +471,7 @@ class stmt_identifier : public statement {
 
         // free line number register if allocated
         if (tc.is_bounds_check_with_line()) {
-            tc.free_scratch_register(tk, x.os, indent, reg_line_num);
+            x.free_scratch_register(tc, tk, indent, reg_line_num);
         }
     }
 
@@ -493,8 +491,7 @@ class stmt_identifier : public statement {
                 return lea;
             }
 
-            const std::string index_reg{tc.alloc_scratch_register(
-                src_loc_tk, x.os, indent, tc.get_type_default())};
+            const std::string index_reg{x.alloc_scratch_register(tc, src_loc_tk, indent, tc.get_type_default())};
             allocated_registers.push_back(index_reg);
 
             const operand op{lea};

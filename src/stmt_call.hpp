@@ -64,7 +64,7 @@ class stmt_call : public expression {
                  std::views::zip(std::views::iota(1), args_, func.params())) {
 
                 if (param.is_array()) {
-                    const ident_info arg_info{tc.make_ident_info(arg)};
+                    const ident_info arg_info{tc.make_ident_info_parsing(arg)};
                     if (not arg_info.is_array) {
                         throw compiler_exception{
                             arg.tok(),
@@ -163,7 +163,7 @@ class stmt_call : public expression {
             std::string arg_reg{param.get_register_name_or_empty()};
 
             if (not arg_reg.empty()) {
-                tc.alloc_named_register_or_throw(arg.tok(), x.os, indent, arg_reg,
+                x.alloc_named_register_or_throw(tc, arg.tok(), indent, arg_reg,
                                                  param.get_type());
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
@@ -176,7 +176,7 @@ class stmt_call : public expression {
             if (not arg.is_expression() and
                 (arg.is_indexed() or tc.has_lea(arg))) {
 
-                const ident_info arg_info{tc.make_ident_info(arg)};
+                const ident_info arg_info{tc.make_ident_info(x, arg)};
 
                 std::vector<std::string> regs_lea;
 
@@ -209,7 +209,7 @@ class stmt_call : public expression {
             if (arg.is_expression()) {
                 if (arg_reg.empty()) {
                     // no particular register requested
-                    arg_reg = tc.alloc_scratch_register(arg.tok(), x.os, indent,
+                    arg_reg = x.alloc_scratch_register(tc, arg.tok(), indent,
                                                         param.get_type());
                     allocated_scratch_registers.emplace_back(arg_reg);
                     allocated_registers_in_order.emplace_back(arg_reg);
@@ -219,7 +219,7 @@ class stmt_call : public expression {
                     arg_reg, param.get_type().size())};
 
                 arg.compile(tc, x, indent,
-                            tc.make_ident_info_for_register(reg_sized));
+                            tc.make_ident_info_for_register(x, reg_sized));
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             reg_sized, "", &param.get_type());
@@ -239,7 +239,7 @@ class stmt_call : public expression {
             // handle non-expression with unary ops but no register
 
             if (arg_reg.empty()) {
-                const ident_info& arg_info{tc.make_ident_info(arg)};
+                const ident_info& arg_info{tc.make_ident_info(x, arg)};
 
                 if (arg_info.is_const()) {
                     // identifier is constant
@@ -253,8 +253,7 @@ class stmt_call : public expression {
                 } else {
                     // identifier with unary ops
 
-                    const std::string scratch_reg{tc.alloc_scratch_register(
-                        arg.tok(), x.os, indent, param.get_type())};
+                    const std::string scratch_reg{x.alloc_scratch_register(tc, arg.tok(), indent, param.get_type())};
 
                     allocated_registers_in_order.emplace_back(scratch_reg);
                     allocated_scratch_registers.emplace_back(scratch_reg);
@@ -278,7 +277,7 @@ class stmt_call : public expression {
             aliases_to_add.emplace_back(std::string{param.identifier()},
                                         arg_reg, "", &param.get_type());
 
-            const ident_info& arg_info{tc.make_ident_info(arg)};
+            const ident_info& arg_info{tc.make_ident_info(x, arg)};
 
             if (arg_info.is_const()) {
                 x.mov(tc, param.tok(), indent, arg_reg,
@@ -330,9 +329,9 @@ class stmt_call : public expression {
              allocated_registers_in_order | std::views::reverse) {
 
             if (std::ranges::contains(allocated_scratch_registers, reg)) {
-                tc.free_scratch_register(tok(), x.os, indent + 1, reg);
+                x.free_scratch_register(tc, tok(), indent + 1, reg);
             } else if (std::ranges::contains(allocated_named_registers, reg)) {
-                tc.free_named_register(tok(), x.os, indent + 1, reg);
+                x.free_named_register(tc, tok(), indent + 1, reg);
             } else {
                 std::unreachable();
             }
@@ -350,7 +349,7 @@ class stmt_call : public expression {
             }
             const func_return_info& return_info{*func.returns()};
             const ident_info& ret_info{
-                tc.make_ident_info(tok(), return_info.ident_tk.text())};
+                tc.make_ident_info(x, tok(), return_info.ident_tk.text())};
 
             get_unary_ops().compile(tc, x, indent, ret_info.operand.str());
         }

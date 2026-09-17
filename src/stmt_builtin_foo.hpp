@@ -31,7 +31,7 @@ class stmt_builtin_foo final : public statement {
 
         null_stream os;
 
-        const ident_info ii{tc.make_ident_info(ident_)};
+        const ident_info ii{tc.make_ident_info_parsing(ident_)};
         tc.enter_foo("");
         const var_info e{
             .name{"e"},
@@ -76,10 +76,9 @@ class stmt_builtin_foo final : public statement {
         const std::string loop_label{tc.get_call_path_extend(tok(), "foo")};
         tc.enter_foo(loop_label);
 
-        const std::string reg_iter{tc.alloc_scratch_register(
-            tok(), x.os, indent, tc.get_type_default())};
+        const std::string reg_iter{x.alloc_scratch_register(tc, tok(), indent, tc.get_type_default())};
 
-        const ident_info ii{tc.make_ident_info(ident_)};
+        const ident_info ii{tc.make_ident_info(x, ident_)};
 
         const var_info var_e{
             .name{"e"},
@@ -99,7 +98,7 @@ class stmt_builtin_foo final : public statement {
 
         tc.add_var(tok(), x.os, indent, var_i, false);
 
-        const ident_info var_i_info{tc.make_ident_info(tok(), "i")};
+        const ident_info var_i_info{tc.make_ident_info(x, tok(), "i")};
 
         const std::string& var_i_addr_op{
             var_i_info.operand.str(toc::size_qword)};
@@ -116,7 +115,7 @@ class stmt_builtin_foo final : public statement {
 
             for (const std::string& reg :
                  allocated_registers | std::views::reverse) {
-                tc.free_scratch_register(tok(), x.os, indent, reg);
+                x.free_scratch_register(tc, tok(), indent, reg);
             }
         } else {
             x.lea( indent, reg_iter, ii.operand.address_str());
@@ -138,7 +137,7 @@ class stmt_builtin_foo final : public statement {
         x.jne( indent + 2, loop_label);
         x.label( indent, loop_label + "_end");
 
-        tc.free_scratch_register(tok(), x.os, indent, reg_iter);
+        x.free_scratch_register(tc, tok(), indent, reg_iter);
 
         tc.exit_foo(loop_label);
     }

@@ -66,7 +66,7 @@ class stmt_builtin_address_of final : public expression {
             throw compiler_exception{tok(), "destination must be an 'i64'"};
         }
 
-        const ident_info src_info{tc.make_ident_info(stmt_ident_)};
+        const ident_info src_info{tc.make_ident_info(x, stmt_ident_)};
 
         if (not src_info.is_var()) {
             throw compiler_exception{stmt_ident_.first_token(),
@@ -84,16 +84,15 @@ class stmt_builtin_address_of final : public expression {
                      oper.address_str());
         } else {
             // destination is memory location
-            const std::string reg{tc.alloc_scratch_register(
-                tok(), x.os, indent, tc.get_type_default())};
+            const std::string reg{x.alloc_scratch_register(tc, tok(), indent, tc.get_type_default())};
             x.lea( indent, reg, oper.address_str());
             x.mov(tc, tok(), indent, dst_info.operand.str(), reg);
-            tc.free_scratch_register(tok(), x.os, indent, reg);
+            x.free_scratch_register(tc, tok(), indent, reg);
         }
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), x.os, indent, reg);
+            x.free_scratch_register(tc, tok(), indent, reg);
         }
     }
 };

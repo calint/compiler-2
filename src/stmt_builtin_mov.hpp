@@ -27,7 +27,7 @@ class stmt_builtin_mov final : public stmt_call {
         }
 
         // the assembler command might not need to resolve expressions
-        const ident_info dst_info{tc.make_ident_info(argument(0))};
+        const ident_info dst_info{tc.make_ident_info(x, argument(0))};
 
         const statement& src_arg{argument(1)};
         src_arg.compile(tc, x, indent + 1, dst_info);

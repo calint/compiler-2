@@ -110,7 +110,7 @@ class expr_bool_op final : public statement {
             if (not lhs_.is_expression()) {
                 // yes, the left-hand-side is not an expression, either a
                 // constant or an identifier
-                const ident_info& lhs_info{tc.make_ident_info(lhs_)};
+                const ident_info& lhs_info{tc.make_ident_info(x, lhs_)};
                 if (lhs_info.is_const()) {
                     bool const_eval{lhs_.get_unary_ops().evaluate_constant(
                                         lhs_info.const_value) != 0};
@@ -145,8 +145,8 @@ class expr_bool_op final : public statement {
 
         // check case when both operands are constants
         if (not lhs_.is_expression() and not rhs_.is_expression()) {
-            const ident_info& lhs_info{tc.make_ident_info(lhs_)};
-            const ident_info& rhs_info{tc.make_ident_info(rhs_)};
+            const ident_info& lhs_info{tc.make_ident_info(x, lhs_)};
+            const ident_info& rhs_info{tc.make_ident_info(x, rhs_)};
             if (lhs_info.is_const() and rhs_info.is_const()) {
                 bool const_eval{
                     eval_constant(lhs_.get_unary_ops().evaluate_constant(
@@ -194,7 +194,7 @@ class expr_bool_op final : public statement {
         if (is_shorthand_) {
             // check case when operand is constant
             if (not lhs_.is_expression()) {
-                const ident_info& lhs_info{tc.make_ident_info(lhs_)};
+                const ident_info& lhs_info{tc.make_ident_info(x, lhs_)};
                 if (lhs_info.is_const()) {
                     bool const_eval{lhs_.get_unary_ops().evaluate_constant(
                                         lhs_info.const_value) != 0};
@@ -229,8 +229,8 @@ class expr_bool_op final : public statement {
         // not shorthand expression
         // check the case when both operands are constants
         if (not lhs_.is_expression() and not rhs_.is_expression()) {
-            const ident_info& lhs_info{tc.make_ident_info(lhs_)};
-            const ident_info& rhs_info{tc.make_ident_info(rhs_)};
+            const ident_info& lhs_info{tc.make_ident_info(x, lhs_)};
+            const ident_info& rhs_info{tc.make_ident_info(x, rhs_)};
             if (lhs_info.is_const() and rhs_info.is_const()) {
                 bool const_eval{
                     eval_constant(lhs_.get_unary_ops().evaluate_constant(
@@ -254,7 +254,7 @@ class expr_bool_op final : public statement {
         // don't allow left-hand-side to be constant because generated
         // assembler does not compile
         // if (not lhs_.is_expression()) {
-        //     const ident_info& lhs_info{tc.make_ident_info(lhs_, false)};
+        //     const ident_info& lhs_info{tc.make_ident_info(x, lhs_, false)};
         //     if (lhs_info.is_const()) {
         //         throw compiler_exception(
         //             lhs_.tok(),
@@ -401,7 +401,7 @@ class expr_bool_op final : public statement {
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
 
-            tc.free_scratch_register(tok(), x.os, indent, reg);
+            x.free_scratch_register(tc, tok(), indent, reg);
         }
     }
 
@@ -418,7 +418,7 @@ class expr_bool_op final : public statement {
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
 
-            tc.free_scratch_register(tok(), x.os, indent, reg);
+            x.free_scratch_register(tc, tok(), indent, reg);
         }
     }
 
@@ -429,7 +429,7 @@ class expr_bool_op final : public statement {
 
         if (not expr.is_expression() and
             (expr.is_indexed() or tc.has_lea(expr))) {
-            const ident_info expr_info{tc.make_ident_info(expr)};
+            const ident_info expr_info{tc.make_ident_info(x, expr)};
             const operand op{expr.compile_lea(expr.tok(), tc, x, indent,
                                               allocated_registers, "",
                                               expr_info.lea_path)};
@@ -437,23 +437,21 @@ class expr_bool_op final : public statement {
         }
 
         if (expr.is_expression()) {
-            const std::string reg{tc.alloc_scratch_register(
-                expr.tok(), x.os, indent, expr.get_type())};
+            const std::string reg{x.alloc_scratch_register(tc, expr.tok(), indent, expr.get_type())};
             allocated_registers.emplace_back(reg);
             expr.compile(tc, x, indent + 1,
-                         tc.make_ident_info_for_register(reg));
+                         tc.make_ident_info_for_register(x, reg));
             return reg;
         }
 
         // 'expr' is not an expression
-        const ident_info expr_info{tc.make_ident_info(expr)};
+        const ident_info expr_info{tc.make_ident_info(x, expr)};
         if (expr_info.is_const()) {
             if (is_lhs) {
-                const std::string reg{tc.alloc_scratch_register(
-                    expr.tok(), x.os, indent, tc.get_type_default())};
+                const std::string reg{x.alloc_scratch_register(tc, expr.tok(), indent, tc.get_type_default())};
                 allocated_registers.emplace_back(reg);
                 expr.compile(tc, x, indent + 1,
-                             tc.make_ident_info_for_register(reg));
+                             tc.make_ident_info_for_register(x, reg));
                 return reg;
             }
             return std::format("{}{}", expr.get_unary_ops().to_string(),
@@ -466,7 +464,7 @@ class expr_bool_op final : public statement {
         }
 
         // 'expr' is not an expression and has unary ops
-        const std::string reg{tc.alloc_scratch_register(expr.tok(), x.os, indent,
+        const std::string reg{x.alloc_scratch_register(tc, expr.tok(), indent,
                                                         tc.get_type_default())};
         allocated_registers.emplace_back(reg);
         x.mov(tc, expr.tok(), indent, reg, expr_info.operand.str());

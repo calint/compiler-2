@@ -56,7 +56,7 @@ class stmt_builtin_array_size_of final : public expression {
             throw compiler_exception{tok(), "destination must be an 'i64'"};
         }
 
-        const ident_info src_info{tc.make_ident_info(stmt_ident_)};
+        const ident_info src_info{tc.make_ident_info(x, stmt_ident_)};
 
         if (not src_info.is_var()) {
             throw compiler_exception{stmt_ident_.first_token(),

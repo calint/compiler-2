@@ -105,7 +105,7 @@ class expr_any final : public statement {
                  const ident_info& dst_info) const -> void override {
 
         if (is_array_identifier()) {
-            const ident_info src_info{tc.make_ident_info(*this)};
+            const ident_info src_info{tc.make_ident_info(x, *this)};
             if (not src_info.is_array) {
                 throw compiler_exception{tok(), "source must be an array"};
             }
@@ -278,7 +278,7 @@ class expr_any final : public statement {
                 [&](const expr_bool_ops_list& e) -> void {
                     // if not expression assign to destination
                     if (not e.is_expression()) {
-                        const ident_info& src_info{tc.make_ident_info(e)};
+                        const ident_info& src_info{tc.make_ident_info(x, e)};
                         if (not src_info.is_const()) {
                             std::unreachable();
                         }

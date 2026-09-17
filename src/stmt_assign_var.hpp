@@ -30,7 +30,7 @@ class stmt_assign_var final : public statement {
         //       accurate when 'stmt_assign_var' is created within the context
         //       of 'stmt_def_var'
 
-        const ident_info& dst_info{tc.make_ident_info(stmt_ident_)};
+        const ident_info& dst_info{tc.make_ident_info_parsing(stmt_ident_)};
 
         set_type(dst_info.type());
 
@@ -58,7 +58,7 @@ class stmt_assign_var final : public statement {
         x86::comment_source(tc, *this, x.os, indent);
 
         // get information about the destination of the compilation
-        ident_info dst_info{tc.make_ident_info(stmt_ident_)};
+        ident_info dst_info{tc.make_ident_info(x, stmt_ident_)};
 
         if (dst_info.is_const()) {
             throw compiler_exception{
@@ -67,7 +67,7 @@ class stmt_assign_var final : public statement {
         }
 
         if (expr_.is_array_identifier()) {
-            if (const ident_info src_info{tc.make_ident_info(expr_)};
+            if (const ident_info src_info{tc.make_ident_info(x, expr_)};
 
                 src_info.is_array and dst_info.is_array and
                 src_info.array_size != dst_info.array_size) {
@@ -82,7 +82,7 @@ class stmt_assign_var final : public statement {
                                               lea_registers);
         expr_.compile(tc, x, indent, dst_info);
         for (const std::string& reg : lea_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), x.os, indent, reg);
+            x.free_scratch_register(tc, tok(), indent, reg);
         }
     }
 

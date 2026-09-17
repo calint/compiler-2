@@ -77,22 +77,22 @@ class stmt_builtin_array_copy final : public statement {
 
         x86::comment_source(tc, *this, x.os, indent);
 
-        const ident_info from_info{tc.make_ident_info(from_)};
-        const ident_info to_info{tc.make_ident_info(to_)};
+        const ident_info from_info{tc.make_ident_info(x, from_)};
+        const ident_info to_info{tc.make_ident_info(x, to_)};
 
         // allocate the register for rep movs
-        tc.alloc_named_register_or_throw(tok(), x.os, indent, "rsi",
+        x.alloc_named_register_or_throw(tc, tok(), indent, "rsi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(tok(), x.os, indent, "rdi",
+        x.alloc_named_register_or_throw(tc, tok(), indent, "rdi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(tok(), x.os, indent, "rcx",
+        x.alloc_named_register_or_throw(tc, tok(), indent, "rcx",
                                          tc.get_type_default());
 
         std::vector<std::string> allocated_scratch_registers;
 
         // size to 'rcx'
         x86::comment_source(tc, count_, x.os, indent);
-        count_.compile(tc, x, indent, tc.make_ident_info_for_register("rcx"));
+        count_.compile(tc, x, indent, tc.make_ident_info_for_register(x, "rcx"));
 
         // from operand to rsi
         x86::comment_source(tc, from_, x.os, indent);
@@ -104,7 +104,7 @@ class stmt_builtin_array_copy final : public statement {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), x.os, indent, reg);
+            x.free_scratch_register(tc, tok(), indent, reg);
         }
 
         // to operand to 'rdi'
@@ -118,7 +118,7 @@ class stmt_builtin_array_copy final : public statement {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), x.os, indent, reg);
+            x.free_scratch_register(tc, tok(), indent, reg);
         }
 
         if (from_info.type().name() != to_info.type().name()) {
@@ -151,8 +151,8 @@ class stmt_builtin_array_copy final : public statement {
         // note: toc::rep_movs does not work because rsi, rdi and rcx are
         //       expresstion
 
-        tc.free_named_register(tok(), x.os, indent, "rcx");
-        tc.free_named_register(tok(), x.os, indent, "rdi");
-        tc.free_named_register(tok(), x.os, indent, "rsi");
+        x.free_named_register(tc, tok(), indent, "rcx");
+        x.free_named_register(tc, tok(), indent, "rdi");
+        x.free_named_register(tc, tok(), indent, "rsi");
     }
 };

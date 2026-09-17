@@ -218,12 +218,6 @@ class ident_path final {
 
 class toc final {
 
-    struct allocated_register {
-        std::string name;
-        std::string source_location;
-        const type* type_ptr;
-    };
-
     struct type_info {
         token declared_at_tk;
         const type* type_ptr;
@@ -231,24 +225,12 @@ class toc final {
 
     std::string_view source_;
     std::vector<frame> frames_;
-    std::vector<std::string> all_registers_{
-        "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
-        "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"};
-    size_t all_registers_initial_size_{all_registers_.size()};
-    std::vector<std::string> named_registers_{"rax", "rbx", "rcx", "rdx",
-                                              "rsi", "rdi", "rbp"};
-    size_t named_registers_initial_size_{named_registers_.size()};
-    std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r11",
-                                                "r12", "r13", "r14", "r15"};
-    size_t scratch_registers_initial_size_{scratch_registers_.size()};
-    std::vector<allocated_register> allocated_registers_;
     std::vector<const stmt_def_func*> func_defs_;
     lut<func_info> funcs_;
     lut<type_info> types_;
     const type* type_void_{};
     const type* type_default_{};
     const type* type_bool_{};
-    size_t usage_max_scratch_regs_{};
     size_t usage_max_frame_count_{};
     size_t usage_max_stack_size_{};
     bool bounds_check_upper_{};
@@ -381,7 +363,8 @@ class toc final {
             std::max(total_stack_size, usage_max_stack_size_);
 
         // comment the resolved name
-        const ident_info& name_info{make_ident_info(src_loc_tk, var.name)};
+        const ident_info& name_info{
+            make_ident_info_parsing(src_loc_tk, var.name)};
 
         x86::comment_start(*this, src_loc_tk, os, indnt);
         std::print(os, "{}: {}", var.name, name_info.type().name());
@@ -396,61 +379,6 @@ class toc final {
                      name_info.type().size() *
                          (name_info.is_array ? name_info.array_size : 1),
                      name_info.operand.address_str());
-    }
-
-    auto alloc_named_register_or_throw(const token& src_loc_tk,
-                                       std::ostream& os, const size_t indnt,
-                                       const std::string_view reg,
-                                       const type& type_ref) -> void {
-
-        x86::comment_start(*this, src_loc_tk, os, indnt);
-        std::println(os, "allocate named register '{}'", reg);
-
-        auto reg_iter{std::ranges::find(named_registers_, reg)};
-        if (reg_iter == named_registers_.end()) {
-            // not found
-            std::string loc;
-            const auto allocated{std::ranges::find(allocated_registers_, reg,
-                                                   &allocated_register::name)};
-            if (allocated != allocated_registers_.end()) {
-                loc = allocated->source_location;
-            }
-            throw compiler_exception{
-                src_loc_tk, std::format("cannot allocate register '{}' because "
-                                        "it was allocated at {}",
-                                        reg, loc)};
-        }
-
-        allocated_registers_.emplace_back(
-            std::move(*reg_iter), source_location_hr(src_loc_tk), &type_ref);
-        named_registers_.erase(reg_iter);
-    }
-
-    [[nodiscard]] auto
-    alloc_scratch_register(const token& src_loc_tk, std::ostream& os,
-                           const size_t indnt, const type& type_ref)
-        -> std::string {
-
-        if (scratch_registers_.empty()) {
-            throw compiler_exception{src_loc_tk,
-                                     "out of scratch registers. try to reduce "
-                                     "expression complexity"};
-        }
-
-        std::string reg{std::move(scratch_registers_.back())};
-        scratch_registers_.pop_back();
-
-        x86::comment_start(*this, src_loc_tk, os, indnt);
-        std::println(os, "allocate scratch register -> {}", reg);
-
-        const size_t n{scratch_registers_initial_size_ -
-                       scratch_registers_.size()};
-        usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
-
-        allocated_registers_.emplace_back(
-            std::move(reg), source_location_hr(src_loc_tk), &type_ref);
-
-        return allocated_registers_.back().name;
     }
 
     [[nodiscard]] auto create_unique_label(const token& tk,
@@ -517,47 +445,12 @@ class toc final {
     }
 
     auto finish(std::ostream& os) -> void {
-        std::println(os, "\n; max scratch registers in use: {}",
-                     usage_max_scratch_regs_);
         std::println(os, ";            max frames in use: {}",
                      usage_max_frame_count_);
         std::println(os, ";               max stack size: {} B",
                      usage_max_stack_size_);
-        assert(all_registers_.size() == all_registers_initial_size_);
-        assert(allocated_registers_.empty());
         assert(frames_.empty());
-        assert(named_registers_.size() == named_registers_initial_size_);
-        assert(scratch_registers_.size() == scratch_registers_initial_size_);
         usage_max_frame_count_ = 0;
-        usage_max_scratch_regs_ = 0;
-    }
-
-    auto free_named_register(const token& src_loc_tk, std::ostream& os,
-                             const size_t indnt, const std::string_view reg)
-        -> void {
-
-        x86::comment_start(*this, src_loc_tk, os, indnt);
-        std::println(os, "free named register '{}'", reg);
-
-        assert(allocated_registers_.back().name == reg);
-
-        named_registers_.emplace_back(
-            std::move(allocated_registers_.back().name));
-        allocated_registers_.pop_back();
-    }
-
-    auto free_scratch_register(const token& src_loc_tk, std::ostream& os,
-                               const size_t indnt, const std::string_view reg)
-        -> void {
-
-        x86::comment_start(*this, src_loc_tk, os, indnt);
-        std::println(os, "free scratch register '{}'", reg);
-
-        assert(allocated_registers_.back().name == reg);
-
-        scratch_registers_.emplace_back(
-            std::move(allocated_registers_.back().name));
-        allocated_registers_.pop_back();
     }
 
     [[nodiscard]] auto get_call_path() const -> std::string_view {
@@ -781,17 +674,34 @@ class toc final {
         return funcs_.get_const_ref(name).def == nullptr;
     }
 
-    [[nodiscard]] auto make_ident_info(const statement& st) const
+    [[nodiscard]] auto make_ident_info(const x86& x, const statement& st) const
         -> ident_info {
 
-        return make_ident_info_or_throw(st.tok(), st.identifier());
+        return make_ident_info_or_throw(&x, st.tok(), st.identifier());
     }
 
-    [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
+    [[nodiscard]] auto make_ident_info(const x86& x, const token& src_loc_tk,
                                        const std::string_view ident) const
         -> ident_info {
 
-        return make_ident_info_or_throw(src_loc_tk, ident);
+        return make_ident_info_or_throw(&x, src_loc_tk, ident);
+    }
+
+    // parse-time identifier resolution: no register has ever been allocated
+    // yet at this point, so a register-named identifier always resolves via
+    // size-inference (never via a precise, currently-allocated type)
+    [[nodiscard]] auto make_ident_info_parsing(const statement& st) const
+        -> ident_info {
+
+        return make_ident_info_or_throw(nullptr, st.tok(), st.identifier());
+    }
+
+    [[nodiscard]] auto
+    make_ident_info_parsing(const token& src_loc_tk,
+                            const std::string_view ident) const
+        -> ident_info {
+
+        return make_ident_info_or_throw(nullptr, src_loc_tk, ident);
     }
 
     [[nodiscard]] static auto make_ident_info_empty() -> ident_info {
@@ -805,14 +715,14 @@ class toc final {
     }
 
     [[nodiscard]] auto
-    make_ident_info_for_register(const std::string_view reg) const
+    make_ident_info_for_register(const x86& x, const std::string_view reg) const
         -> ident_info {
 
         //? unary ops?
         return {
             .id{reg},
             .elem_path{std::string{reg}},
-            .type_path{&get_allocated_register_type(reg)},
+            .type_path{&x.get_allocated_register_type(*this, reg)},
             .lea_path{""},
             .operand{reg},
             .ident_type{ident_info::ident_type::REGISTER},
@@ -867,23 +777,28 @@ class toc final {
         return nbytes;
     }
 
+    // todo: formalize this
+    [[nodiscard]] auto get_builtin_type_for_size(const size_t size) const
+        -> const type& {
+
+        switch (size) {
+        case size_qword:
+            return *types_.get_const_ref("i64").type_ptr;
+        case size_dword:
+            return *types_.get_const_ref("i32").type_ptr;
+        case size_word:
+            return *types_.get_const_ref("i16").type_ptr;
+        case size_byte:
+            return *types_.get_const_ref("i8").type_ptr;
+        default:
+            std::unreachable();
+        }
+    }
+
   private:
     // -------------------------------------------------------------------------
     // private non-special functions (sorted alphabetically)
     // -------------------------------------------------------------------------
-
-    [[nodiscard]] auto
-    get_allocated_register_type(const std::string_view reg) const
-        -> const type& {
-
-        for (const allocated_register& allocated : allocated_registers_) {
-            if (reg == allocated.name) {
-                return *allocated.type_ptr;
-            }
-        }
-
-        return get_builtin_type_for_size(utils::register_size(reg));
-    }
 
     [[nodiscard]] auto
     get_builtin_type_for_operand(const token& src_loc_tk,
@@ -907,24 +822,6 @@ class toc final {
         std::unreachable();
     }
 
-    // todo: formalize this
-    [[nodiscard]] auto get_builtin_type_for_size(const size_t size) const
-        -> const type& {
-
-        switch (size) {
-        case size_qword:
-            return *types_.get_const_ref("i64").type_ptr;
-        case size_dword:
-            return *types_.get_const_ref("i32").type_ptr;
-        case size_word:
-            return *types_.get_const_ref("i16").type_ptr;
-        case size_byte:
-            return *types_.get_const_ref("i8").type_ptr;
-        default:
-            std::unreachable();
-        }
-    }
-
     [[nodiscard]] auto is_in_main() const -> bool {
         for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.is_func()) {
@@ -937,7 +834,7 @@ class toc final {
 
     // reviewed: 2026-09-09
     [[nodiscard]] auto
-    make_ident_info_or_empty(const token& src_loc_tk,
+    make_ident_info_or_empty(const x86* x, const token& src_loc_tk,
                              const std::string_view ident) const -> ident_info {
 
         ident_path id{std::string{ident}};
@@ -966,7 +863,7 @@ class toc final {
 
             // does this frame contain the variable?
             if (f.has_var(id.base())) {
-                return make_ident_info_from_frame(f, src_loc_tk, ident, id,
+                return make_ident_info_from_frame(x, f, src_loc_tk, ident, id,
                                                   std::move(lea_path));
             }
 
@@ -981,7 +878,7 @@ class toc final {
 
                     // add an empty
                     lea_path.emplace_back("");
-                    return make_ident_info_from_frame(f, src_loc_tk, ident, id,
+                    return make_ident_info_from_frame(x, f, src_loc_tk, ident, id,
                                                       std::move(lea_path));
                 }
 
@@ -1023,13 +920,13 @@ class toc final {
             }
         }
 
-        return make_ident_info_regs_and_const(src_loc_tk, ident, id);
+        return make_ident_info_regs_and_const(x, src_loc_tk, ident, id);
     }
 
     [[nodiscard]] auto make_ident_info_from_frame(
-        const frame& frm, const token& src_loc_tk, const std::string_view ident,
-        const ident_path& id, std::vector<std::string> lea_path) const
-        -> ident_info {
+        const x86* x, const frame& frm, const token& src_loc_tk,
+        const std::string_view ident, const ident_path& id,
+        std::vector<std::string> lea_path) const -> ident_info {
 
         // try function scope
         if (frm.has_var(id.base())) {
@@ -1045,7 +942,7 @@ class toc final {
                 frames_.front().get_var_const_ref(id.base()), lea_path);
         }
 
-        return make_ident_info_regs_and_const(src_loc_tk, ident, id);
+        return make_ident_info_regs_and_const(x, src_loc_tk, ident, id);
     }
 
     [[nodiscard]] static auto make_ident_info_from_var_info(
@@ -1126,13 +1023,14 @@ class toc final {
     }
 
     [[nodiscard]] auto
-    make_ident_info_regs_and_const(const token& src_loc_tk,
+    make_ident_info_regs_and_const(const x86* x, const token& src_loc_tk,
                                    const std::string_view& ident,
                                    const ident_path& id) const -> ident_info {
         // is it a register?
         if (const size_t reg_size{utils::register_size(id.str())};
             reg_size != 0) {
-            const type& tpe{get_allocated_register_type(id.str())};
+            const type& tpe{x ? x->get_allocated_register_type(*this, id.str())
+                              : get_builtin_type_for_size(reg_size)};
             //? unary ops?
             return {
                 .id{ident},
@@ -1216,10 +1114,10 @@ class toc final {
 
     // helper: call make_ident_info_or_empty and throw if unresolved
     [[nodiscard]] auto
-    make_ident_info_or_throw(const token& src_loc_tk,
+    make_ident_info_or_throw(const x86* x, const token& src_loc_tk,
                              const std::string_view ident) const -> ident_info {
 
-        const ident_info id_info{make_ident_info_or_empty(src_loc_tk, ident)};
+        const ident_info id_info{make_ident_info_or_empty(x, src_loc_tk, ident)};
         if (not id_info.id.empty()) {
             return id_info;
         }

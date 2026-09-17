@@ -150,7 +150,7 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
             std::make_shared<stmt_identifier>(tc, unary_ops{}, tok(), tz);
 
         // check that an identifier type matches the expected type
-        const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
+        const ident_info src_info{tc.make_ident_info_parsing(*stmt_ident_)};
 
         if (tp.name() != src_info.type().name()) {
             // note: checked a source location report ok
@@ -254,7 +254,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
     // is it e.g. pt1 = pt2, or pt1 = f()?
     if (is_identifier()) {
-        const ident_info src_info{tc.make_ident_info(*this)};
+        const ident_info src_info{tc.make_ident_info(x, *this)};
 
         // 'expr_type_value' validates the source type before entering here
         assert(dst_type.name() == src_info.type().name());
@@ -281,7 +281,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), x.os, indent, reg);
+            x.free_scratch_register(tc, tok(), indent, reg);
         }
 
         return;
@@ -322,7 +322,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         }
 
         if (tf.is_array and src.is_array_identifier()) {
-            validate_array_assignment(src.tok(), tf, tc.make_ident_info(src));
+            validate_array_assignment(src.tok(), tf, tc.make_ident_info(x, src));
         }
 
         const std::string dst_accessor{dst_op.str(tf.type().size())};
@@ -330,11 +330,11 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
             const ident_info dst_info{
-                tc.make_ident_info(src.tok(), dst_accessor)};
+                tc.make_ident_info(x, src.tok(), dst_accessor)};
             src.compile(tc, x, indent, dst_info);
         } else {
             // built-in, not expression
-            const ident_info src_info{tc.make_ident_info(src)};
+            const ident_info src_info{tc.make_ident_info(x, src)};
             if (src_info.is_const()) {
                 // built-in, not expression, constant
                 x.mov(tc, src.tok(), indent, dst_accessor,
@@ -508,26 +508,26 @@ auto x86::copy(toc& tc, const token& src_loc_tk, const size_t indent,
                const std::string_view src, const std::string_view dst,
                const size_t bytes_count) -> void {
     if (bytes_count > toc::threshold_for_rep_movs) {
-        tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rsi",
+        alloc_named_register_or_throw(tc, src_loc_tk, indent, "rsi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rdi",
+        alloc_named_register_or_throw(tc, src_loc_tk, indent, "rdi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rcx",
+        alloc_named_register_or_throw(tc, src_loc_tk, indent, "rcx",
                                          tc.get_type_default());
         lea(indent, "rsi", src);
         lea(indent, "rdi", dst);
         mov(tc, src_loc_tk, indent, "rcx",
             std::format("{}", bytes_count));
         rep_movs( indent, 'b');
-        tc.free_named_register(src_loc_tk, os.get(), indent, "rcx");
-        tc.free_named_register(src_loc_tk, os.get(), indent, "rdi");
-        tc.free_named_register(src_loc_tk, os.get(), indent, "rsi");
+        free_named_register(tc, src_loc_tk, indent, "rcx");
+        free_named_register(tc, src_loc_tk, indent, "rdi");
+        free_named_register(tc, src_loc_tk, indent, "rsi");
         return;
     }
 
     x86::comment_start(tc, src_loc_tk, os.get(), indent);
     std::println(os.get(), "size <= {} B, use mov", toc::threshold_for_rep_movs);
-    tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rax",
+    alloc_named_register_or_throw(tc, src_loc_tk, indent, "rax",
                                      tc.get_type_default());
     size_t rest{bytes_count};
     const size_t qword_movs{rest / operand::size_qword};
@@ -566,26 +566,26 @@ auto x86::copy(toc& tc, const token& src_loc_tk, const size_t indent,
         mov(tc, src_loc_tk, indent, dst_operand.str(operand::size_byte),
             "al");
     }
-    tc.free_named_register(src_loc_tk, os.get(), indent, "rax");
+    free_named_register(tc, src_loc_tk, indent, "rax");
 }
 
 auto x86::zero(toc& tc, const token& src_loc_tk, const size_t indent,
                const std::string_view dst, const size_t bytes_count) -> void {
     if (bytes_count > toc::threshold_for_rep_stos) {
-        tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rax",
+        alloc_named_register_or_throw(tc, src_loc_tk, indent, "rax",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rdi",
+        alloc_named_register_or_throw(tc, src_loc_tk, indent, "rdi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rcx",
+        alloc_named_register_or_throw(tc, src_loc_tk, indent, "rcx",
                                          tc.get_type_default());
         xor_op( indent, "al", "al");
         lea(indent, "rdi", dst);
         mov(tc, src_loc_tk, indent, "rcx",
             std::format("{}", bytes_count));
         rep_stos( indent, 'b');
-        tc.free_named_register(src_loc_tk, os.get(), indent, "rcx");
-        tc.free_named_register(src_loc_tk, os.get(), indent, "rdi");
-        tc.free_named_register(src_loc_tk, os.get(), indent, "rax");
+        free_named_register(tc, src_loc_tk, indent, "rcx");
+        free_named_register(tc, src_loc_tk, indent, "rdi");
+        free_named_register(tc, src_loc_tk, indent, "rax");
         return;
     }
 
@@ -630,6 +630,113 @@ auto x86::imul(toc& tc, const token& src_loc_tk, const size_t indent,
     op(tc, src_loc_tk, indent, "imul", dst_op, src_op);
 }
 
+auto x86::alloc_named_register_or_throw(const toc& tc,
+                                        const token& src_loc_tk,
+                                        const size_t indnt,
+                                        const std::string_view reg,
+                                        const type& type_ref) -> void {
+
+    comment_start(tc, src_loc_tk, indnt);
+    println("allocate named register '{}'", reg);
+
+    auto reg_iter{std::ranges::find(named_registers_, reg)};
+    if (reg_iter == named_registers_.end()) {
+        // not found
+        std::string loc;
+        const auto allocated{std::ranges::find(allocated_registers_, reg,
+                                               &allocated_register::name)};
+        if (allocated != allocated_registers_.end()) {
+            loc = allocated->source_location;
+        }
+        throw compiler_exception{
+            src_loc_tk, std::format("cannot allocate register '{}' because "
+                                    "it was allocated at {}",
+                                    reg, loc)};
+    }
+
+    allocated_registers_.emplace_back(
+        std::move(*reg_iter), tc.source_location_hr(src_loc_tk), &type_ref);
+    named_registers_.erase(reg_iter);
+}
+
+[[nodiscard]] auto x86::alloc_scratch_register(const toc& tc,
+                                               const token& src_loc_tk,
+                                               const size_t indnt,
+                                               const type& type_ref)
+    -> std::string {
+
+    if (scratch_registers_.empty()) {
+        throw compiler_exception{src_loc_tk,
+                                 "out of scratch registers. try to reduce "
+                                 "expression complexity"};
+    }
+
+    std::string reg{std::move(scratch_registers_.back())};
+    scratch_registers_.pop_back();
+
+    comment_start(tc, src_loc_tk, indnt);
+    println("allocate scratch register -> {}", reg);
+
+    const size_t n{scratch_registers_initial_size_ -
+                   scratch_registers_.size()};
+    usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
+
+    allocated_registers_.emplace_back(
+        std::move(reg), tc.source_location_hr(src_loc_tk), &type_ref);
+
+    return allocated_registers_.back().name;
+}
+
+auto x86::free_named_register(const toc& tc, const token& src_loc_tk,
+                              const size_t indnt, const std::string_view reg)
+    -> void {
+
+    comment_start(tc, src_loc_tk, indnt);
+    println("free named register '{}'", reg);
+
+    assert(allocated_registers_.back().name == reg);
+
+    named_registers_.emplace_back(
+        std::move(allocated_registers_.back().name));
+    allocated_registers_.pop_back();
+}
+
+auto x86::free_scratch_register(const toc& tc, const token& src_loc_tk,
+                                const size_t indnt, const std::string_view reg)
+    -> void {
+
+    comment_start(tc, src_loc_tk, indnt);
+    println("free scratch register '{}'", reg);
+
+    assert(allocated_registers_.back().name == reg);
+
+    scratch_registers_.emplace_back(
+        std::move(allocated_registers_.back().name));
+    allocated_registers_.pop_back();
+}
+
+auto x86::finish() -> void {
+    println("\n; max scratch registers in use: {}", usage_max_scratch_regs_);
+    assert(all_registers_.size() == all_registers_initial_size_);
+    assert(allocated_registers_.empty());
+    assert(named_registers_.size() == named_registers_initial_size_);
+    assert(scratch_registers_.size() == scratch_registers_initial_size_);
+    usage_max_scratch_regs_ = 0;
+}
+
+[[nodiscard]] auto x86::get_allocated_register_type(const toc& tc,
+                                                    const std::string_view reg)
+    const -> const type& {
+
+    for (const allocated_register& allocated : allocated_registers_) {
+        if (reg == allocated.name) {
+            return *allocated.type_ptr;
+        }
+    }
+
+    return tc.get_builtin_type_for_size(utils::register_size(reg));
+}
+
 auto x86::cmp(toc& tc, const token& src_loc_tk, const size_t indent,
               const std::string_view dst_op, const std::string_view src_op)
     -> void {
@@ -668,13 +775,12 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
 
     if (dst_size == src_size) {
         if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
-            const std::string reg{tc.alloc_scratch_register(
-                src_loc_tk, os.get(), indent, tc.get_type_default())};
+            const std::string reg{alloc_scratch_register(tc, src_loc_tk, indent, tc.get_type_default())};
             const std::string reg_sized{
                 get_sized_register_operand(reg, dst_size)};
             asm_line(indent, "mov {}, {}", reg_sized, src_op);
             asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
-            tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
+            free_scratch_register(tc, src_loc_tk, indent, reg);
             return;
         }
         asm_line(indent, "{} {}, {}", op, dst_op, src_op);
@@ -683,13 +789,12 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
 
     if (dst_size > src_size) {
         if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
-            const std::string reg{tc.alloc_scratch_register(
-                src_loc_tk, os.get(), indent, tc.get_type_default())};
+            const std::string reg{alloc_scratch_register(tc, src_loc_tk, indent, tc.get_type_default())};
             const std::string reg_sized{
                 get_sized_register_operand(reg, dst_size)};
             asm_line(indent, "movsx {}, {}", reg_sized, src_op);
             asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
-            tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
+            free_scratch_register(tc, src_loc_tk, indent, reg);
             return;
         }
         if (op == "mov") {
@@ -700,23 +805,22 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
             asm_line(indent, "{} {}, {}", op, dst_op, src_op);
             return;
         }
-        const std::string reg_sx{tc.alloc_scratch_register(
-            src_loc_tk, os.get(), indent, tc.get_type_default())};
+        const std::string reg_sx{alloc_scratch_register(tc, src_loc_tk, indent, tc.get_type_default())};
         asm_line(indent, "movsx {}, {}", reg_sx, src_op);
         asm_line(indent, "{} {}, {}", op, dst_op, reg_sx);
-        tc.free_scratch_register(src_loc_tk, os.get(), indent, reg_sx);
+        free_scratch_register(tc, src_loc_tk, indent, reg_sx);
         return;
     }
 
     if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
-        const std::string reg{tc.alloc_scratch_register(src_loc_tk, os.get(), indent,
+        const std::string reg{alloc_scratch_register(tc, src_loc_tk, indent,
                                                         tc.get_type_default())};
         const std::string reg_sized{
             get_sized_register_operand(reg, dst_size)};
         asm_line(indent, "mov {}, {}", reg_sized,
                  sized_memory_operand(src_op, dst_size));
         asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
-        tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
+        free_scratch_register(tc, src_loc_tk, indent, reg);
         return;
     }
 

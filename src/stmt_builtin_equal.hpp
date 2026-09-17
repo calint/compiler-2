@@ -70,20 +70,20 @@ class stmt_builtin_equal final : public expression {
         x86::comment_source(tc, *this, x.os, indent);
 
         // allocate the register for rep movs
-        tc.alloc_named_register_or_throw(tok(), x.os, indent, "rsi",
+        x.alloc_named_register_or_throw(tc, tok(), indent, "rsi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(tok(), x.os, indent, "rdi",
+        x.alloc_named_register_or_throw(tc, tok(), indent, "rdi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(tok(), x.os, indent, "rcx",
+        x.alloc_named_register_or_throw(tc, tok(), indent, "rcx",
                                          tc.get_type_default());
 
         std::vector<std::string> allocated_scratch_registers;
 
-        const ident_info lhs_info{tc.make_ident_info(lhs_)};
+        const ident_info lhs_info{tc.make_ident_info(x, lhs_)};
         if (lhs_info.is_const()) {
             throw compiler_exception{lhs_.tok(), "constant not supported"};
         }
-        const ident_info rhs_info{tc.make_ident_info(rhs_)};
+        const ident_info rhs_info{tc.make_ident_info(x, rhs_)};
         if (rhs_info.is_const()) {
             throw compiler_exception{rhs_.tok(), "constant not supported"};
         }
@@ -98,7 +98,7 @@ class stmt_builtin_equal final : public expression {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), x.os, indent, reg);
+            x.free_scratch_register(tc, tok(), indent, reg);
         }
 
         // to operand to 'rdi'
@@ -112,7 +112,7 @@ class stmt_builtin_equal final : public expression {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
-            tc.free_scratch_register(tok(), x.os, indent, reg);
+            x.free_scratch_register(tc, tok(), indent, reg);
         }
 
         if (lhs_info.type().name() != rhs_info.type().name()) {
@@ -156,9 +156,9 @@ class stmt_builtin_equal final : public expression {
         // copy
         x.repe_cmps( indent, rep_size);
 
-        tc.free_named_register(tok(), x.os, indent, "rcx");
-        tc.free_named_register(tok(), x.os, indent, "rdi");
-        tc.free_named_register(tok(), x.os, indent, "rsi");
+        x.free_named_register(tc, tok(), indent, "rcx");
+        x.free_named_register(tc, tok(), indent, "rdi");
+        x.free_named_register(tc, tok(), indent, "rsi");
 
         // set true if equal
 
