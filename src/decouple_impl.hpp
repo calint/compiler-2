@@ -518,7 +518,7 @@ auto x86::copy(toc& tc, const token& src_loc_tk, const size_t indent,
         lea(tc, indent, "rdi", dst);
         mov(tc, src_loc_tk, os.get(), indent, "rcx",
             std::format("{}", bytes_count));
-        rep_movs(tc, os.get(), indent, 'b');
+        rep_movs(tc, indent, 'b');
         tc.free_named_register(src_loc_tk, os.get(), indent, "rcx");
         tc.free_named_register(src_loc_tk, os.get(), indent, "rdi");
         tc.free_named_register(src_loc_tk, os.get(), indent, "rsi");

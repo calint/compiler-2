@@ -158,7 +158,7 @@ class stmt_builtin_arrays_equal final : public expression {
         }
 
         // copy
-        x86::repe_cmps(tc, x.os, indent, 'b');
+        x.repe_cmps(tc, indent, 'b');
 
         tc.free_named_register(tok(), x.os, indent, "rcx");
         tc.free_named_register(tok(), x.os, indent, "rdi");

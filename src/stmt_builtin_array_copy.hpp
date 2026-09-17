@@ -147,7 +147,7 @@ class stmt_builtin_array_copy final : public statement {
         }
 
         // copy
-        x86::rep_movs(tc, x.os, indent, 'b');
+        x.rep_movs(tc, indent, 'b');
         // note: toc::rep_movs does not work because rsi, rdi and rcx are
         //       expresstion
 

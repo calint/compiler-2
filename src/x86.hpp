@@ -252,9 +252,9 @@ class x86 final {
         asm_line(tc, os.get(), indent, "not {}", operand);
     }
 
-    static auto rep_movs(toc& tc, std::ostream& os, const size_t indent,
-                         const char size_suffix) -> void {
-        asm_line(tc, os, indent, "rep movs{}", size_suffix);
+    auto rep_movs(toc& tc, const size_t indent, const char size_suffix)
+        -> void {
+        asm_line(tc, os.get(), indent, "rep movs{}", size_suffix);
     }
 
     auto rep_stos(toc& tc, const size_t indent, const char size_suffix)
@@ -262,9 +262,9 @@ class x86 final {
         asm_line(tc, os.get(), indent, "rep stos{}", size_suffix);
     }
 
-    static auto repe_cmps(toc& tc, std::ostream& os, const size_t indent,
-                          const char size_suffix) -> void {
-        asm_line(tc, os, indent, "repe cmps{}", size_suffix);
+    auto repe_cmps(toc& tc, const size_t indent, const char size_suffix)
+        -> void {
+        asm_line(tc, os.get(), indent, "repe cmps{}", size_suffix);
     }
 
     auto setcc(toc& tc, const size_t indent, const std::string_view comparison,

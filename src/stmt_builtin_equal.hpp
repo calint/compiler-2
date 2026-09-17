@@ -154,7 +154,7 @@ class stmt_builtin_equal final : public expression {
         x86::mov(tc, tok(), x.os, indent, "rcx", std::to_string(rcx));
 
         // copy
-        x86::repe_cmps(tc, x.os, indent, rep_size);
+        x.repe_cmps(tc, indent, rep_size);
 
         tc.free_named_register(tok(), x.os, indent, "rcx");
         tc.free_named_register(tok(), x.os, indent, "rdi");
