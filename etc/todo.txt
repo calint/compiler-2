@@ -1,6 +1,9 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] refactor to split "god" object toc in a compile time part (x86) and a
+    parsing and compile part (toc)
+[ ] don't allow a variable to have a register name
 [ ] support variable string initializers
 [ ] resolve issues with comments in expressions etc
     var x = 1 + # comment
