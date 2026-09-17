@@ -26,7 +26,7 @@ class stmt_return final : public statement {
             // note: return from 'main' is exiting
             x86::mov(tc, tok(), x.os, indent, "rdi", "0");
             x86::mov(tc, tok(), x.os, indent, "rax", "60");
-            x86::syscall(tc, x.os, indent);
+            x.syscall(tc, indent);
             return;
         }
 

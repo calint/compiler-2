@@ -23,6 +23,6 @@ class stmt_builtin_syscall final : public stmt_call {
         -> void override {
 
         x86::comment_source(tc, *this, x.os, indent);
-        x86::syscall(tc, x.os, indent);
+        x.syscall(tc, indent);
     }
 };

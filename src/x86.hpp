@@ -291,9 +291,8 @@ class x86 final {
         asm_line(tc, os, indent, "shl {}, {}", dst, src);
     }
 
-    static auto syscall(toc& tc, std::ostream& os, const size_t indent)
-        -> void {
-        asm_line(tc, os, indent, "syscall");
+    auto syscall(toc& tc, const size_t indent) -> void {
+        asm_line(tc, os.get(), indent, "syscall");
     }
 
     static auto dat_begin(std::ostream& os, const size_t size) -> void {
