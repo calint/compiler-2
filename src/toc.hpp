@@ -242,8 +242,6 @@ class toc final {
     static constexpr size_t size_dword{4};
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
-    static constexpr size_t threshold_for_rep_stos{32};
-    static constexpr size_t threshold_for_rep_movs{16};
 
     toc(const std::string_view source, const bool bounds_check_upper,
         const bool bounds_check_lower, const bool bounds_check_with_line)
