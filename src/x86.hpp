@@ -206,10 +206,6 @@ class x86 final {
         asm_line(tc, os, indent, "idiv {}", operand);
     }
 
-    auto imul(toc& tc, const size_t indent, const std::string_view dst,
-            const std::string_view src) -> void {
-        asm_line(tc, os.get(), indent, "imul {}, {}", dst, src);
-    }
 
     static auto inc(toc& tc, std::ostream& os, const size_t indent,
                     const std::string_view dst) -> void {
