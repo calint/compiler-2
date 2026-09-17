@@ -81,7 +81,7 @@ class stmt_builtin_arrays_equal final : public expression {
     auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x86::comment_source(tc, *this, x.os, indent);
+        x.comment_source(tc, *this, indent);
 
         // allocate the register for rep movs
         x.alloc_named_register_or_throw(tc, tok(), indent, "rsi",
@@ -94,14 +94,14 @@ class stmt_builtin_arrays_equal final : public expression {
         std::vector<std::string> allocated_scratch_registers;
 
         // size to 'rcx'
-        x86::comment_source(tc, count_, x.os, indent);
+        x.comment_source(tc, count_, indent);
         count_.compile(tc, x, indent, tc.make_ident_info_for_register(x, "rcx"));
 
         const ident_info from_info{tc.make_ident_info(x, from_)};
         const ident_info to_info{tc.make_ident_info(x, to_)};
 
         // from operand to rsi
-        x86::comment_source(tc, from_, x.os, indent);
+        x.comment_source(tc, from_, indent);
         const operand from_operand{stmt_identifier::compile_effective_address(
             from_.first_token(), tc, x, indent, from_.elems(),
             allocated_scratch_registers, "rcx", from_info.lea_path)};
@@ -115,7 +115,7 @@ class stmt_builtin_arrays_equal final : public expression {
 
         // to operand to 'rdi'
         allocated_scratch_registers.clear();
-        x86::comment_source(tc, to_, x.os, indent);
+        x.comment_source(tc, to_, indent);
         const operand to_operand{stmt_identifier::compile_effective_address(
             to_.first_token(), tc, x, indent, to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};

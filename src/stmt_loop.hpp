@@ -23,7 +23,7 @@ class stmt_loop final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        x86::comment_token(tc, tok(), x.os, indent);
+        x.comment_token(tc, tok(), indent);
 
         const std::string lbl{tc.create_unique_label(tok(), "loop")};
         x.label( indent, lbl);

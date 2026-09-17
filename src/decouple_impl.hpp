@@ -464,21 +464,21 @@ auto unary_ops::compile([[maybe_unused]] toc& tc, x86& x, const size_t indnt,
 }
 
 auto x86::comment_source(const toc& tc, const statement& statement,
-                         std::ostream& os, const size_t indent) -> void {
-    comment_start(tc, statement.tok(), os, indent);
+                         const size_t indent) -> void {
+    comment_start(tc, statement.tok(), indent);
     std::stringstream source;
     statement.source_to(source);
     const std::string text{std::regex_replace(
         std::regex_replace(source.str(), utils::regex_trim(), ""),
         utils::regex_ws(), " ")};
-    x86::comment_line(os, indent, "{}", text);
+    comment_line(indent, "{}", text);
 }
 
 auto x86::comment_source(const toc& tc, const statement& statement,
-                         std::ostream& os, const size_t indent,
+                         const size_t indent,
                          const std::string_view dst, const std::string_view op)
     -> void {
-    comment_start(tc, statement.tok(), os, indent);
+    comment_start(tc, statement.tok(), indent);
     std::stringstream source;
     std::print(source, "{} {} ", dst, op);
     statement.source_to(source);
@@ -486,7 +486,7 @@ auto x86::comment_source(const toc& tc, const statement& statement,
     if (not text.empty() and text.back() == ' ') {
         text.pop_back();
     }
-    x86::comment_line(os, indent, "{}", text);
+    comment_line(indent, "{}", text);
 }
 
 auto x86::comment_start(const toc& tc, const token& source_location,
@@ -497,10 +497,18 @@ auto x86::comment_start(const toc& tc, const token& source_location,
     std::print(os, "[{}:{}] ", line, column);
 }
 
-auto x86::comment_token(const toc& tc, const token& token, std::ostream& os,
+auto x86::comment_start(const toc& tc, const token& source_location,
                         const size_t indent) -> void {
-    comment_start(tc, token, os, indent);
-    std::println(os, "{}", token.text());
+    const auto [line, column]{toc::line_and_col_num_for_char_index(
+        source_location.at_line(), source_location.start_index(), tc.source())};
+    comment_indent(indent);
+    print("[{}:{}] ", line, column);
+}
+
+auto x86::comment_token(const toc& tc, const token& token, const size_t indent)
+    -> void {
+    comment_start(tc, token, indent);
+    println("{}", token.text());
 }
 
 // assembler definitions require complete toc and operand types
@@ -526,7 +534,7 @@ auto x86::copy(toc& tc, const token& src_loc_tk, const size_t indent,
         return;
     }
 
-    x86::comment_start(tc, src_loc_tk, os.get(), indent);
+    comment_start(tc, src_loc_tk, indent);
     std::println(os.get(), "size <= {} B, use mov", toc::threshold_for_rep_movs);
     alloc_named_register_or_throw(tc, src_loc_tk, indent, "rax",
                                      tc.get_type_default());
@@ -590,7 +598,7 @@ auto x86::zero(toc& tc, const token& src_loc_tk, const size_t indent,
         return;
     }
 
-    x86::comment_start(tc, src_loc_tk, os.get(), indent);
+    comment_start(tc, src_loc_tk, indent);
     std::println(os.get(), "size <= {} B, use mov", toc::threshold_for_rep_stos);
     size_t rest{bytes_count};
     const size_t qword_movs{rest / operand::size_qword};

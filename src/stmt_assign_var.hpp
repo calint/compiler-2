@@ -55,7 +55,7 @@ class stmt_assign_var final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x86::comment_source(tc, *this, x.os, indent);
+        x.comment_source(tc, *this, indent);
 
         // get information about the destination of the compilation
         ident_info dst_info{tc.make_ident_info(x, stmt_ident_)};

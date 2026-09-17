@@ -469,7 +469,7 @@ class expr_ops_list final : public expression {
             op_str.push_back('>');
         }
 
-        x86::comment_source(tc, src, x.os, indent, dst.id, op_str);
+        x.comment_source(tc, src, indent, dst.id, op_str);
 
         if (op == '=') {
             asm_op_mov(tc, x, indent, dst, src);

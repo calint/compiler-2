@@ -102,7 +102,7 @@ class expr_bool_op final : public statement {
                const std::string_view dst) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
-        x86::comment_source(tc, *this, x.os, indent, "?",
+        x.comment_source(tc, *this, indent, "?",
                             inverted ? " 'or' inverted: " : " ");
         x.label( indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
@@ -188,7 +188,7 @@ class expr_bool_op final : public statement {
                 const std::string_view dst) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
-        x86::comment_source(tc, *this, x.os, indent, "?",
+        x.comment_source(tc, *this, indent, "?",
                             inverted ? " 'and' inverted: " : " ");
         x.label( indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {

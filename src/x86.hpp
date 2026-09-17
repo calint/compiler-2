@@ -96,25 +96,22 @@ class x86 final {
         }
     }
 
-    static auto comment_source(const toc& tc, const statement& statement,
-                               std::ostream& os, size_t indent) -> void;
+    auto comment_source(const toc& tc, const statement& statement,
+                       size_t indent) -> void;
 
-    static auto comment_source(const toc& tc, const statement& statement,
-                               std::ostream& os, size_t indent,
-                               std::string_view dst, std::string_view op)
-        -> void;
+    auto comment_source(const toc& tc, const statement& statement,
+                       size_t indent, std::string_view dst,
+                       std::string_view op) -> void;
 
     static auto comment_start(const toc& tc, const token& source_location,
                               std::ostream& os, size_t indent) -> void;
 
-    // member form: uses this instance's own stream instead of taking one
+    // member form: uses this instance's own print/os instead of taking one
     auto comment_start(const toc& tc, const token& source_location,
-                       const size_t indent) -> void {
-        x86::comment_start(tc, source_location, os.get(), indent);
-    }
+                       size_t indent) -> void;
 
-    static auto comment_token(const toc& tc, const token& token,
-                              std::ostream& os, size_t indent) -> void;
+    auto comment_token(const toc& tc, const token& token, size_t indent)
+        -> void;
 
     template <typename... args_t>
     auto comment_line(const toc& tc, const token& source_location,

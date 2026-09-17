@@ -120,7 +120,7 @@ class stmt_call : public expression {
     auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x86::comment_source(tc, *this, x.os, indent);
+        x.comment_source(tc, *this, indent);
 
         const stmt_def_func& func{
             tc.get_func_or_throw(tok(), statement::identifier())};

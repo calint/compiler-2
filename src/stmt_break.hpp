@@ -20,7 +20,7 @@ class stmt_break final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        x86::comment_source(tc, *this, x.os, indent);
+        x.comment_source(tc, *this, indent);
 
         // get current loop exit label
         const std::string_view loop_label{tc.get_looping_label_or_throw(tok())};

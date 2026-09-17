@@ -20,7 +20,7 @@ class stmt_builtin_mov final : public stmt_call {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x86::comment_source(tc, *this, x.os, indent);
+        x.comment_source(tc, *this, indent);
 
         if (arguments_size() != 2) {
             throw compiler_exception{tok(), "expected 2 arguments"};

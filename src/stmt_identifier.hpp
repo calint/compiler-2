@@ -153,7 +153,7 @@ class stmt_identifier : public statement {
     auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x86::comment_source(tc, *this, x.os, indent);
+        x.comment_source(tc, *this, indent);
 
         const ident_info src_info{tc.make_ident_info(x, *this)};
 
