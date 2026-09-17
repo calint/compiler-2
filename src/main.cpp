@@ -18,7 +18,6 @@
 #include "jump_optimizer.hpp"
 #include "panic_exception.hpp"
 #include "program.hpp"
-#include "toc.hpp"
 #include "tokenizer.hpp"
 
 namespace {
