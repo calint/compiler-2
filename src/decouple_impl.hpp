@@ -621,19 +621,19 @@ auto x86::zero(toc& tc, const token& src_loc_tk, const size_t indent,
 auto x86::mov(toc& tc, const token& src_loc_tk, const size_t indent,
               const std::string_view dst_op, const std::string_view src_op)
     -> void {
-    op(tc, src_loc_tk, os.get(), indent, "mov", dst_op, src_op);
+    op(tc, src_loc_tk, indent, "mov", dst_op, src_op);
 }
 
 auto x86::imul(toc& tc, const token& src_loc_tk, const size_t indent,
                const std::string_view dst_op, const std::string_view src_op)
     -> void {
-    op(tc, src_loc_tk, os.get(), indent, "imul", dst_op, src_op);
+    op(tc, src_loc_tk, indent, "imul", dst_op, src_op);
 }
 
 auto x86::cmp(toc& tc, const token& src_loc_tk, const size_t indent,
               const std::string_view dst_op, const std::string_view src_op)
     -> void {
-    op(tc, src_loc_tk, os.get(), indent, "cmp", dst_op, src_op);
+    op(tc, src_loc_tk, indent, "cmp", dst_op, src_op);
 }
 
 auto x86::operand_size(const toc& tc, const std::string_view operand)
@@ -656,10 +656,9 @@ auto x86::operand_size(const toc& tc, const std::string_view operand)
     return tc.get_type_default().size();
 }
 
-auto x86::op(toc& tc, const token& src_loc_tk, std::ostream& os,
-             const size_t indent, const std::string_view op,
-             const std::string_view dst_op, const std::string_view src_op)
-    -> void {
+auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
+             const std::string_view op, const std::string_view dst_op,
+             const std::string_view src_op) -> void {
     if (op == "mov" and dst_op == src_op) {
         return;
     }
@@ -670,77 +669,77 @@ auto x86::op(toc& tc, const token& src_loc_tk, std::ostream& os,
     if (dst_size == src_size) {
         if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
             const std::string reg{tc.alloc_scratch_register(
-                src_loc_tk, os, indent, tc.get_type_default())};
+                src_loc_tk, os.get(), indent, tc.get_type_default())};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
-            asm_line(tc, os, indent, "mov {}, {}", reg_sized, src_op);
-            asm_line(tc, os, indent, "{} {}, {}", op, dst_op, reg_sized);
-            tc.free_scratch_register(src_loc_tk, os, indent, reg);
+            asm_line(tc, os.get(), indent, "mov {}, {}", reg_sized, src_op);
+            asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, reg_sized);
+            tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
             return;
         }
-        asm_line(tc, os, indent, "{} {}, {}", op, dst_op, src_op);
+        asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, src_op);
         return;
     }
 
     if (dst_size > src_size) {
         if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
             const std::string reg{tc.alloc_scratch_register(
-                src_loc_tk, os, indent, tc.get_type_default())};
+                src_loc_tk, os.get(), indent, tc.get_type_default())};
             const std::string reg_sized{
                 tc.get_sized_register_operand(reg, dst_size)};
-            asm_line(tc, os, indent, "movsx {}, {}", reg_sized, src_op);
-            asm_line(tc, os, indent, "{} {}, {}", op, dst_op, reg_sized);
-            tc.free_scratch_register(src_loc_tk, os, indent, reg);
+            asm_line(tc, os.get(), indent, "movsx {}, {}", reg_sized, src_op);
+            asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, reg_sized);
+            tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
             return;
         }
         if (op == "mov") {
-            asm_line(tc, os, indent, "movsx {}, {}", dst_op, src_op);
+            asm_line(tc, os.get(), indent, "movsx {}, {}", dst_op, src_op);
             return;
         }
         if (op == "sal" or op == "sar") {
-            asm_line(tc, os, indent, "{} {}, {}", op, dst_op, src_op);
+            asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, src_op);
             return;
         }
         const std::string reg_sx{tc.alloc_scratch_register(
-            src_loc_tk, os, indent, tc.get_type_default())};
-        asm_line(tc, os, indent, "movsx {}, {}", reg_sx, src_op);
-        asm_line(tc, os, indent, "{} {}, {}", op, dst_op, reg_sx);
-        tc.free_scratch_register(src_loc_tk, os, indent, reg_sx);
+            src_loc_tk, os.get(), indent, tc.get_type_default())};
+        asm_line(tc, os.get(), indent, "movsx {}, {}", reg_sx, src_op);
+        asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, reg_sx);
+        tc.free_scratch_register(src_loc_tk, os.get(), indent, reg_sx);
         return;
     }
 
     if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
-        const std::string reg{tc.alloc_scratch_register(src_loc_tk, os, indent,
+        const std::string reg{tc.alloc_scratch_register(src_loc_tk, os.get(), indent,
                                                         tc.get_type_default())};
         const std::string reg_sized{
             tc.get_sized_register_operand(reg, dst_size)};
-        asm_line(tc, os, indent, "mov {}, {}", reg_sized,
+        asm_line(tc, os.get(), indent, "mov {}, {}", reg_sized,
                  sized_memory_operand(src_op, dst_size));
-        asm_line(tc, os, indent, "{} {}, {}", op, dst_op, reg_sized);
-        tc.free_scratch_register(src_loc_tk, os, indent, reg);
+        asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, reg_sized);
+        tc.free_scratch_register(src_loc_tk, os.get(), indent, reg);
         return;
     }
 
     const bool dst_is_reg{is_register_operand(dst_op)};
     const bool src_is_reg{is_register_operand(src_op)};
     if (dst_is_reg and src_is_reg) {
-        asm_line(tc, os, indent, "{} {}, {}", op, dst_op,
+        asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op,
                  tc.get_sized_register_operand(src_op, dst_size));
         return;
     }
     if (dst_is_reg) {
-        asm_line(tc, os, indent, "{} {}, {}", op, dst_op,
+        asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op,
                  is_memory_operand(src_op)
                      ? sized_memory_operand(src_op, dst_size)
                      : src_op);
         return;
     }
     if (src_is_reg) {
-        asm_line(tc, os, indent, "{} {}, {}", op, dst_op,
+        asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op,
                  tc.get_sized_register_operand(src_op, dst_size));
         return;
     }
-    asm_line(tc, os, indent, "{} {}, {}", op, dst_op, src_op);
+    asm_line(tc, os.get(), indent, "{} {}, {}", op, dst_op, src_op);
 }
 
 // NOLINTEND(misc-definitions-in-headers)

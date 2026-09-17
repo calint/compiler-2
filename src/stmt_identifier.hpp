@@ -371,7 +371,7 @@ class stmt_identifier : public statement {
             }
 
             // add index offset to base register
-            x86::op(tc, src_loc_tk, x.os, indent, "add", reg_offset, reg_idx);
+            x.op(tc, src_loc_tk, indent, "add", reg_offset, reg_idx);
             tc.free_scratch_register(src_loc_tk, x.os, indent, reg_idx);
 
             // accumulate field offsets
@@ -463,7 +463,7 @@ class stmt_identifier : public statement {
                          std::to_string(array_size));
             }
             if (tc.is_bounds_check_with_line()) {
-                x86::op(tc, tk, x.os, indent, std::format("cmov{}", comparison),
+                x.op(tc, tk, indent, std::format("cmov{}", comparison),
                         "rbp", reg_line_num);
             }
             if (tc.is_bounds_check_upper()) {

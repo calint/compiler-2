@@ -138,10 +138,10 @@ class stmt_builtin_array_copy final : public statement {
                     stmt_identifier::get_shift_amount(type_size)};
                 shl) {
 
-                x86::op(tc, tok(), x.os, indent, "shl", "rcx",
+                x.op(tc, tok(), indent, "shl", "rcx",
                         std::format("{}", *shl));
             } else {
-                x86::op(tc, tok(), x.os, indent, "imul", "rcx",
+                x.op(tc, tok(), indent, "imul", "rcx",
                         std::format("{}", type_size));
             }
         }
