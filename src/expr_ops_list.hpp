@@ -469,7 +469,8 @@ class expr_ops_list final : public expression {
             op_str.push_back('>');
         }
 
-        x.comment_source(src, indent, dst.id, op_str);
+        x.comment_source(src.tok(), indent,
+                        statement::trimmed_source(src, dst.id, op_str));
 
         if (op == '=') {
             asm_op_mov(tc, x, indent, dst, src);

@@ -17,7 +17,7 @@ class stmt_return final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        x.comment_source(*this, indent);
+        x.comment_source(tok(), indent, statement::trimmed_source(*this));
 
         // get the jump target to exit function
         const std::string_view ret_lbl{tc.get_func_return_label()};

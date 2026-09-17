@@ -2,7 +2,9 @@
 // reviewed: 2025-09-28
 
 #include <format>
+#include <regex>
 #include <span>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -12,6 +14,7 @@
 #include "decouple.hpp"
 #include "token.hpp"
 #include "unary_ops.hpp"
+#include "utils.hpp"
 
 class toc;
 class type;
@@ -45,6 +48,32 @@ class statement {
     virtual auto source_to(std::ostream& os) const -> void {
         uops_.source_to(os);
         token_.source_to(os);
+    }
+
+    // one-line, whitespace-collapsed rendering of 'st's source, suitable for
+    // an assembler comment
+    [[nodiscard]] static auto trimmed_source(const statement& st)
+        -> std::string {
+        std::stringstream ss;
+        st.source_to(ss);
+        return std::regex_replace(
+            std::regex_replace(ss.str(), utils::regex_trim(), ""),
+            utils::regex_ws(), " ");
+    }
+
+    // same as above, with a "'dst' 'op' " prefix before the rendered source
+    [[nodiscard]] static auto trimmed_source(const statement& st,
+                                             const std::string_view dst,
+                                             const std::string_view op)
+        -> std::string {
+        std::stringstream ss;
+        std::print(ss, "{} {} ", dst, op);
+        st.source_to(ss);
+        std::string text{std::regex_replace(ss.str(), utils::regex_ws(), " ")};
+        if (not text.empty() and text.back() == ' ') {
+            text.pop_back();
+        }
+        return text;
     }
 
     [[nodiscard]] virtual auto tok() const -> const token& { return token_; }

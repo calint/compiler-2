@@ -22,7 +22,7 @@ class stmt_builtin_syscall final : public stmt_call {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        x.comment_source(*this, indent);
+        x.comment_source(tok(), indent, statement::trimmed_source(*this));
         x.syscall( indent);
     }
 };

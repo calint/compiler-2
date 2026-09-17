@@ -15,7 +15,6 @@
 #include "utils.hpp"
 
 class token;
-class statement;
 class type;
 
 class x86 final {
@@ -121,10 +120,8 @@ class x86 final {
         }
     }
 
-    auto comment_source(const statement& statement, size_t indent) -> void;
-
-    auto comment_source(const statement& statement, size_t indent,
-                       std::string_view dst, std::string_view op) -> void;
+    auto comment_source(const token& source_location, size_t indent,
+                       std::string_view text) -> void;
 
     static auto comment_start(std::string_view source,
                               const token& source_location, std::ostream& os,

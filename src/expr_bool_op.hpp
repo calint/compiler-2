@@ -102,8 +102,9 @@ class expr_bool_op final : public statement {
                const std::string_view dst) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
-        x.comment_source(*this, indent, "?",
-                            inverted ? " 'or' inverted: " : " ");
+        x.comment_source(tok(), indent,
+                            statement::trimmed_source(*this, "?",
+                                                     inverted ? " 'or' inverted: " : " "));
         x.label( indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // is 'lhs' a constant?
@@ -188,8 +189,9 @@ class expr_bool_op final : public statement {
                 const std::string_view dst) const -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
-        x.comment_source(*this, indent, "?",
-                            inverted ? " 'and' inverted: " : " ");
+        x.comment_source(tok(), indent,
+                            statement::trimmed_source(*this, "?",
+                                                     inverted ? " 'and' inverted: " : " "));
         x.label( indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // check case when operand is constant

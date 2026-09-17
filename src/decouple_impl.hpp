@@ -463,28 +463,9 @@ auto unary_ops::compile([[maybe_unused]] toc& tc, x86& x, const size_t indnt,
     }
 }
 
-auto x86::comment_source(const statement& statement, const size_t indent)
-    -> void {
-    comment_start(statement.tok(), indent);
-    std::stringstream source;
-    statement.source_to(source);
-    const std::string text{std::regex_replace(
-        std::regex_replace(source.str(), utils::regex_trim(), ""),
-        utils::regex_ws(), " ")};
-    println("{}", text);
-}
-
-auto x86::comment_source(const statement& statement, const size_t indent,
-                         const std::string_view dst, const std::string_view op)
-    -> void {
-    comment_start(statement.tok(), indent);
-    std::stringstream source;
-    std::print(source, "{} {} ", dst, op);
-    statement.source_to(source);
-    std::string text{std::regex_replace(source.str(), utils::regex_ws(), " ")};
-    if (not text.empty() and text.back() == ' ') {
-        text.pop_back();
-    }
+auto x86::comment_source(const token& source_location, const size_t indent,
+                         const std::string_view text) -> void {
+    comment_start(source_location, indent);
     println("{}", text);
 }
 

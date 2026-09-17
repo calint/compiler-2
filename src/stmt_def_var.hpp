@@ -126,7 +126,7 @@ class stmt_def_var final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x.comment_source(*this, indent);
+        x.comment_source(tok(), indent, statement::trimmed_source(*this));
 
         const var_info var{
             .name{name_tk_.text()},
