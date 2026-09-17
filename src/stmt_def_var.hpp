@@ -158,7 +158,7 @@ class stmt_def_var final : public statement {
         const std::string dst_addr{std::format("rsp - {}", -dst_info.stack_ix)};
         // note: -dst_info.stack_ix for nicer source formatting; is always
         //       negative
-        x86::zero(tc, tok(), x.os, indent, dst_addr, bytes_count);
+        x.zero(tc, tok(), indent, dst_addr, bytes_count);
     }
 
     auto assert_var_not_used(const std::string_view var) const

@@ -137,7 +137,7 @@ class expr_any final : public statement {
         x86::comment_line(tc, tok(), x.os, indent,
                           "zero remaining elements: {} * {} B = {} B", diff,
                           ii.type().size(), nbytes);
-        x86::zero(tc, tok(), x.os, indent, ii.operand.address_str(), nbytes);
+        x.zero(tc, tok(), indent, ii.operand.address_str(), nbytes);
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }

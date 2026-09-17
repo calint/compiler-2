@@ -112,14 +112,14 @@ class stmt_builtin_foo final : public statement {
                 tok(), tc, x, indent, ident_.elems(), allocated_registers, "",
                 ii.lea_path)};
 
-            x86::lea(tc, x.os, indent, reg_iter, op.address_str());
+            x.lea(tc, indent, reg_iter, op.address_str());
 
             for (const std::string& reg :
                  allocated_registers | std::views::reverse) {
                 tc.free_scratch_register(tok(), x.os, indent, reg);
             }
         } else {
-            x86::lea(tc, x.os, indent, reg_iter, ii.operand.address_str());
+            x.lea(tc, indent, reg_iter, ii.operand.address_str());
         }
 
         // add a constant for array size

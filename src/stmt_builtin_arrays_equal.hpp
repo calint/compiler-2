@@ -106,7 +106,7 @@ class stmt_builtin_arrays_equal final : public expression {
             from_.first_token(), tc, x, indent, from_.elems(),
             allocated_scratch_registers, "rcx", from_info.lea_path)};
 
-        x86::lea(tc, x.os, indent, "rsi", from_operand.address_str());
+        x.lea(tc, indent, "rsi", from_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
@@ -120,7 +120,7 @@ class stmt_builtin_arrays_equal final : public expression {
             to_.first_token(), tc, x, indent, to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};
 
-        x86::lea(tc, x.os, indent, "rdi", to_operand.address_str());
+        x.lea(tc, indent, "rdi", to_operand.address_str());
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {

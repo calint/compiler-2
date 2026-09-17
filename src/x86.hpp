@@ -159,13 +159,12 @@ class x86 final {
     auto cmp(toc& tc, const token& src_loc_tk, size_t indent,
             std::string_view dst_op, std::string_view src_op) -> void;
 
-    static auto copy(toc& tc, const token& src_loc_tk, std::ostream& os,
-                     size_t indent, std::string_view src, std::string_view dst,
-                     size_t bytes_count) -> void;
-
-    static auto zero(toc& tc, const token& src_loc_tk, std::ostream& os,
-                     size_t indent, std::string_view dst, size_t bytes_count)
+    auto copy(toc& tc, const token& src_loc_tk, size_t indent,
+            std::string_view src, std::string_view dst, size_t bytes_count)
         -> void;
+
+    auto zero(toc& tc, const token& src_loc_tk, size_t indent,
+            std::string_view dst, size_t bytes_count) -> void;
 
     static auto add(toc& tc, std::ostream& os, const size_t indent,
                     const std::string_view dst, const std::string_view src)
@@ -246,10 +245,9 @@ class x86 final {
         asm_line(tc, os.get(), indent, "{}:", label);
     }
 
-    static auto lea(toc& tc, std::ostream& os, const size_t indent,
-                    const std::string_view dst, const std::string_view operand)
-        -> void {
-        asm_line(tc, os, indent, "lea {}, [{}]", dst, operand);
+    auto lea(toc& tc, const size_t indent, const std::string_view dst,
+            const std::string_view operand) -> void {
+        asm_line(tc, os.get(), indent, "lea {}, [{}]", dst, operand);
     }
 
     static auto neg(toc& tc, std::ostream& os, const size_t indent,

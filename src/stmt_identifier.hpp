@@ -333,13 +333,13 @@ class stmt_identifier : public statement {
                 reg_offset = tc.alloc_scratch_register(src_loc_tk, x.os, indent,
                                                        tc.get_type_default());
                 allocated_registers.push_back(reg_offset);
-                x86::lea(tc, x.os, indent, reg_offset,
+                x.lea(tc, indent, reg_offset,
                          std::format("rsp - {}", -base_info.stack_ix));
             } else if (reg_offset == base_info.operand.base_register) {
                 reg_offset = tc.alloc_scratch_register(src_loc_tk, x.os, indent,
                                                        tc.get_type_default());
                 allocated_registers.push_back(reg_offset);
-                x86::lea(tc, x.os, indent, reg_offset,
+                x.lea(tc, indent, reg_offset,
                          std::format("{}", base_info.operand.base_register));
             }
 
@@ -502,7 +502,7 @@ class stmt_identifier : public statement {
             // changes will be made to the register so return an allocated
             // register
             if (not op.index_register.empty() or op.displacement != 0) {
-                x86::lea(tc, x.os, indent, index_reg, lea);
+                x.lea(tc, indent, index_reg, lea);
             } else {
                 x86::mov(tc, src_loc_tk, x.os, indent, index_reg, lea);
             }

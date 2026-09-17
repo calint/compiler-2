@@ -274,7 +274,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
         // todo: validate dst array size fits src array size
 
-        x86::copy(tc, tok(), x.os, indent, src_op.address_str(),
+        x.copy(tc, tok(), indent, src_op.address_str(),
                   dst_op.address_str(), nbytes);
 
         dst_op.displacement += static_cast<int32_t>(nbytes);
@@ -315,7 +315,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
             x.comment_start(tc, tok(), indent);
             x.println( "zero empty field: {} * {} B = {} B",
                          tf.array_size, tf.type().size(), tf.size);
-            x86::zero(tc, tok(), x.os, indent, dst_op.address_str(), tf.size);
+            x.zero(tc, tok(), indent, dst_op.address_str(), tf.size);
             dst_op.displacement += static_cast<int32_t>(tf.size);
             ++counter;
             continue;
@@ -347,7 +347,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
                     //       trigger it
                     // built-in, not expression, not constant, array
                     validate_array_assignment(src.tok(), tf, src_info);
-                    x86::copy(tc, src.tok(), x.os, indent,
+                    x.copy(tc, src.tok(), indent,
                               src_info.operand.address_str(),
                               dst_op.address_str(), tf.size);
                 } else {
@@ -381,7 +381,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
     x.comment_start(tc, tok(), indent);
     x.println( "zero remaining fields: {} B", nbytes);
-    x86::zero(tc, tok(), x.os, indent, dst_op.address_str(), nbytes);
+    x.zero(tc, tok(), indent, dst_op.address_str(), nbytes);
     dst_op.displacement += static_cast<int32_t>(nbytes);
 }
 
@@ -504,115 +504,116 @@ auto x86::comment_token(const toc& tc, const token& token, std::ostream& os,
 
 // assembler definitions require complete toc and operand types
 
-auto x86::copy(toc& tc, const token& src_loc_tk, std::ostream& os,
-               const size_t indent, const std::string_view src,
-               const std::string_view dst, const size_t bytes_count) -> void {
+auto x86::copy(toc& tc, const token& src_loc_tk, const size_t indent,
+               const std::string_view src, const std::string_view dst,
+               const size_t bytes_count) -> void {
     if (bytes_count > toc::threshold_for_rep_movs) {
-        tc.alloc_named_register_or_throw(src_loc_tk, os, indent, "rsi",
+        tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rsi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(src_loc_tk, os, indent, "rdi",
+        tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rdi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(src_loc_tk, os, indent, "rcx",
+        tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rcx",
                                          tc.get_type_default());
-        lea(tc, os, indent, "rsi", src);
-        lea(tc, os, indent, "rdi", dst);
-        mov(tc, src_loc_tk, os, indent, "rcx", std::format("{}", bytes_count));
-        rep_movs(tc, os, indent, 'b');
-        tc.free_named_register(src_loc_tk, os, indent, "rcx");
-        tc.free_named_register(src_loc_tk, os, indent, "rdi");
-        tc.free_named_register(src_loc_tk, os, indent, "rsi");
+        lea(tc, indent, "rsi", src);
+        lea(tc, indent, "rdi", dst);
+        mov(tc, src_loc_tk, os.get(), indent, "rcx",
+            std::format("{}", bytes_count));
+        rep_movs(tc, os.get(), indent, 'b');
+        tc.free_named_register(src_loc_tk, os.get(), indent, "rcx");
+        tc.free_named_register(src_loc_tk, os.get(), indent, "rdi");
+        tc.free_named_register(src_loc_tk, os.get(), indent, "rsi");
         return;
     }
 
-    x86::comment_start(tc, src_loc_tk, os, indent);
-    std::println(os, "size <= {} B, use mov", toc::threshold_for_rep_movs);
-    tc.alloc_named_register_or_throw(src_loc_tk, os, indent, "rax",
+    x86::comment_start(tc, src_loc_tk, os.get(), indent);
+    std::println(os.get(), "size <= {} B, use mov", toc::threshold_for_rep_movs);
+    tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rax",
                                      tc.get_type_default());
     size_t rest{bytes_count};
     const size_t qword_movs{rest / operand::size_qword};
     operand src_operand{src};
     operand dst_operand{dst};
     for (size_t index{}; index < qword_movs; ++index) {
-        mov(tc, src_loc_tk, os, indent, "rax",
+        mov(tc, src_loc_tk, os.get(), indent, "rax",
             src_operand.str(operand::size_qword));
-        mov(tc, src_loc_tk, os, indent, dst_operand.str(operand::size_qword),
+        mov(tc, src_loc_tk, os.get(), indent, dst_operand.str(operand::size_qword),
             "rax");
         src_operand.displacement += operand::size_qword;
         dst_operand.displacement += operand::size_qword;
         rest -= operand::size_qword;
     }
     if ((rest / operand::size_dword) != 0) {
-        mov(tc, src_loc_tk, os, indent, "eax",
+        mov(tc, src_loc_tk, os.get(), indent, "eax",
             src_operand.str(operand::size_dword));
-        mov(tc, src_loc_tk, os, indent, dst_operand.str(operand::size_dword),
+        mov(tc, src_loc_tk, os.get(), indent, dst_operand.str(operand::size_dword),
             "eax");
         src_operand.displacement += operand::size_dword;
         dst_operand.displacement += operand::size_dword;
         rest -= operand::size_dword;
     }
     if ((rest / operand::size_word) != 0) {
-        mov(tc, src_loc_tk, os, indent, "ax",
+        mov(tc, src_loc_tk, os.get(), indent, "ax",
             src_operand.str(operand::size_word));
-        mov(tc, src_loc_tk, os, indent, dst_operand.str(operand::size_word),
+        mov(tc, src_loc_tk, os.get(), indent, dst_operand.str(operand::size_word),
             "ax");
         src_operand.displacement += operand::size_word;
         dst_operand.displacement += operand::size_word;
         rest -= operand::size_word;
     }
     if (rest != 0) {
-        mov(tc, src_loc_tk, os, indent, "al",
+        mov(tc, src_loc_tk, os.get(), indent, "al",
             src_operand.str(operand::size_byte));
-        mov(tc, src_loc_tk, os, indent, dst_operand.str(operand::size_byte),
+        mov(tc, src_loc_tk, os.get(), indent, dst_operand.str(operand::size_byte),
             "al");
     }
-    tc.free_named_register(src_loc_tk, os, indent, "rax");
+    tc.free_named_register(src_loc_tk, os.get(), indent, "rax");
 }
 
-auto x86::zero(toc& tc, const token& src_loc_tk, std::ostream& os,
-               const size_t indent, const std::string_view dst,
-               const size_t bytes_count) -> void {
+auto x86::zero(toc& tc, const token& src_loc_tk, const size_t indent,
+               const std::string_view dst, const size_t bytes_count) -> void {
     if (bytes_count > toc::threshold_for_rep_stos) {
-        tc.alloc_named_register_or_throw(src_loc_tk, os, indent, "rax",
+        tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rax",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(src_loc_tk, os, indent, "rdi",
+        tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rdi",
                                          tc.get_type_default());
-        tc.alloc_named_register_or_throw(src_loc_tk, os, indent, "rcx",
+        tc.alloc_named_register_or_throw(src_loc_tk, os.get(), indent, "rcx",
                                          tc.get_type_default());
-        xor_op(tc, os, indent, "al", "al");
-        lea(tc, os, indent, "rdi", dst);
-        mov(tc, src_loc_tk, os, indent, "rcx", std::format("{}", bytes_count));
-        rep_stos(tc, os, indent, 'b');
-        tc.free_named_register(src_loc_tk, os, indent, "rcx");
-        tc.free_named_register(src_loc_tk, os, indent, "rdi");
-        tc.free_named_register(src_loc_tk, os, indent, "rax");
+        xor_op(tc, os.get(), indent, "al", "al");
+        lea(tc, indent, "rdi", dst);
+        mov(tc, src_loc_tk, os.get(), indent, "rcx",
+            std::format("{}", bytes_count));
+        rep_stos(tc, os.get(), indent, 'b');
+        tc.free_named_register(src_loc_tk, os.get(), indent, "rcx");
+        tc.free_named_register(src_loc_tk, os.get(), indent, "rdi");
+        tc.free_named_register(src_loc_tk, os.get(), indent, "rax");
         return;
     }
 
-    x86::comment_start(tc, src_loc_tk, os, indent);
-    std::println(os, "size <= {} B, use mov", toc::threshold_for_rep_stos);
+    x86::comment_start(tc, src_loc_tk, os.get(), indent);
+    std::println(os.get(), "size <= {} B, use mov", toc::threshold_for_rep_stos);
     size_t rest{bytes_count};
     const size_t qword_movs{rest / operand::size_qword};
     operand dst_operand{dst};
     for (size_t index{}; index < qword_movs; ++index) {
-        mov(tc, src_loc_tk, os, indent, dst_operand.str(operand::size_qword),
+        mov(tc, src_loc_tk, os.get(), indent, dst_operand.str(operand::size_qword),
             "0");
         dst_operand.displacement += operand::size_qword;
         rest -= operand::size_qword;
     }
     if ((rest / operand::size_dword) != 0) {
-        mov(tc, src_loc_tk, os, indent, dst_operand.str(operand::size_dword),
+        mov(tc, src_loc_tk, os.get(), indent, dst_operand.str(operand::size_dword),
             "0");
         dst_operand.displacement += operand::size_dword;
         rest -= operand::size_dword;
     }
     if ((rest / operand::size_word) != 0) {
-        mov(tc, src_loc_tk, os, indent, dst_operand.str(operand::size_word),
+        mov(tc, src_loc_tk, os.get(), indent, dst_operand.str(operand::size_word),
             "0");
         dst_operand.displacement += operand::size_word;
         rest -= operand::size_word;
     }
     if (rest != 0) {
-        mov(tc, src_loc_tk, os, indent, dst_operand.str(operand::size_byte),
+        mov(tc, src_loc_tk, os.get(), indent, dst_operand.str(operand::size_byte),
             "0");
     }
 }
