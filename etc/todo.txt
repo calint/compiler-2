@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] consider refactoring it into a 1 pass compiler
 [x] refactor to split "god" object toc in a compile time part (x86) and a
     parsing and compile part (toc)
     => better but still doesn't feel right
