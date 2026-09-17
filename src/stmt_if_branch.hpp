@@ -57,8 +57,8 @@ class stmt_if_branch final : public statement {
         x.label(indent, jmp_to_if_true_lbl);
         // the code of the branch
         code_.compile(tc, x, indent, toc::make_ident_info_empty());
-        // after the code of the branch is executed, jump to the end of the 'if
-        // ... else if ... else ...' block.
+        // after the branch code executes, jump to the end of the
+        // 'if ... else if ... else ...' block.
         // if the jump label is not provided, then there is no 'else' and this
         // is the last 'if' so just continue execution
         if (not jmp_to_after_code_label.empty()) {
@@ -67,7 +67,7 @@ class stmt_if_branch final : public statement {
         return std::nullopt;
     }
 
-    // returns the label where the if branch begins evaluating the boolean
+    // Returns the label where the if branch begins evaluating the boolean
     // expression
     [[nodiscard]] auto if_bgn_label(const toc& tc) const -> std::string {
         // construct a unique label considering in-lined functions

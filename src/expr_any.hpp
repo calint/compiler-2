@@ -215,7 +215,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto
-    compile_lea(const token& src_loc_tk, toc& tc, x86& x, size_t indent,
+    compile_lea(toc& tc, x86& x, size_t indent, const token& src_loc_tk,
                 std::vector<std::string>& allocated_registers,
                 const std::string& reg_size,
                 const std::span<const std::string> lea_path) const
@@ -223,7 +223,7 @@ class expr_any final : public statement {
 
         return std::visit(
             [&](const auto& e) -> operand {
-                return e.compile_lea(src_loc_tk, tc, x, indent,
+                return e.compile_lea(tc, x, indent, src_loc_tk,
                                      allocated_registers, reg_size, lea_path);
             },
             vars_[0]);

@@ -103,8 +103,9 @@ class statement {
                               [[maybe_unused]] x86& x) const -> void {}
 
     [[nodiscard]] virtual auto compile_lea(
-        [[maybe_unused]] const token& src_loc_tk, [[maybe_unused]] toc& tc,
-        [[maybe_unused]] x86& x, [[maybe_unused]] const size_t indent,
+        [[maybe_unused]] toc& tc, [[maybe_unused]] x86& x,
+        [[maybe_unused]] const size_t indent,
+        [[maybe_unused]] const token& src_loc_tk,
         [[maybe_unused]] std::vector<std::string>& allocated_registers,
         [[maybe_unused]] const std::string& reg_size,
         [[maybe_unused]] const std::span<const std::string> lea_path) const

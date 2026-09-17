@@ -63,7 +63,7 @@ class stmt_def_dat final : public statement {
         bool is_array{};
         size_t array_size{};
 
-        // check whether type is declared
+        // check whether a type is declared
         if (not type_delim_tk_.is_empty()) {
             type_tk_ = tz.next_token();
 
@@ -270,7 +270,7 @@ class stmt_def_dat final : public statement {
                                      const type& tp, const elem& elroot)
         -> void {
 
-        // nasm define data token
+        // NASM data directive for this element size
         const std::string_view dd{x86::get_data_def(tp.size())};
         if (not elroot.is_array) {
             x.comment("{}: {}", fldnm, tp.name());

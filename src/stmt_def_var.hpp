@@ -35,7 +35,7 @@ class stmt_def_var final : public statement {
         : statement{tk}, name_tk_{tz.next_token()},
           type_delim_tk_{tz.is_next_char_token(':')} {
 
-        // check whether type is declared
+        // check whether a type is declared
         if (not type_delim_tk_.is_empty()) {
             type_tk_ = tz.next_token();
             open_bracket_tk_ = tz.is_next_char_token('[');

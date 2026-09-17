@@ -260,7 +260,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         std::vector<std::string> allocated_registers;
         operand src_op;
         if (is_indexed() or src_info.has_lea()) {
-            src_op = compile_lea(tok(), tc, x, indent, allocated_registers, "",
+            src_op = compile_lea(tc, x, indent, tok(), allocated_registers, "",
                                  src_info.lea_path);
         } else {
             src_op = src_info.operand;
@@ -418,11 +418,11 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 [[nodiscard]] auto expr_type_value::compile_lea(
-    const token& src_loc_tk, toc& tc, x86& x, size_t indent,
+    toc& tc, x86& x, size_t indent, const token& src_loc_tk,
     std::vector<std::string>& allocated_registers, const std::string& reg_size,
     const std::span<const std::string> lea_path) const -> operand {
 
-    return stmt_ident_->compile_lea(src_loc_tk, tc, x, indent,
+    return stmt_ident_->compile_lea(tc, x, indent, src_loc_tk,
                                     allocated_registers, reg_size, lea_path);
 }
 

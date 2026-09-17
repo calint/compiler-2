@@ -104,8 +104,8 @@ class stmt_identifier : public statement {
             set_type(ii.type());
 
             if (elems_.back().array_index_expr != nullptr) {
-                // if last element has index expression then this is
-                // technically no longer an array but a element
+                // if the last element has an index expression then this is
+                // technically no longer an array but an element
                 break;
             }
 
@@ -167,7 +167,7 @@ class stmt_identifier : public statement {
         // simple identifier or is indexing in an array or relative to "lea"
 
         if (not is_indexed() and not src_info.has_lea()) {
-            // note: contains no array indexing and is not relative a lea,
+            // note: contains no array indexing and is not relative to a lea,
             //       e.g. world.location.link
             x.mov(tok(), indent, dst_info.operand.str(),
                   src_info.operand.str());
@@ -180,7 +180,7 @@ class stmt_identifier : public statement {
         std::vector<std::string> allocated_registers;
 
         const operand op{stmt_identifier::compile_effective_address(
-            tok(), tc, x, indent, elems(), allocated_registers, "",
+            tc, x, indent, tok(), elems(), allocated_registers, "",
             src_info.lea_path)};
 
         x.mov(tok(), indent, dst_info.operand.str(),
@@ -195,13 +195,14 @@ class stmt_identifier : public statement {
     }
 
     [[nodiscard]] auto
-    compile_lea(const token& src_loc_tk, toc& tc, x86& x, const size_t indent,
+    compile_lea(toc& tc, x86& x, const size_t indent,
+                const token& src_loc_tk,
                 std::vector<std::string>& allocated_registers,
                 const std::string& reg_size,
                 const std::span<const std::string> lea_path) const
         -> operand override {
 
-        return compile_effective_address(src_loc_tk, tc, x, indent, elems_,
+        return compile_effective_address(tc, x, indent, src_loc_tk, elems_,
                                          allocated_registers, reg_size,
                                          lea_path);
     }
@@ -211,7 +212,7 @@ class stmt_identifier : public statement {
     [[nodiscard]] auto array_size() const -> size_t { return array_size_; }
 
     [[nodiscard]] static auto compile_effective_address(
-        const token& src_loc_tk, toc& tc, x86& x, const size_t indent,
+        toc& tc, x86& x, const size_t indent, const token& src_loc_tk,
         const std::span<const ident_elem> elems,
         std::vector<std::string>& allocated_registers,
         const std::string_view reg_size,
@@ -257,7 +258,7 @@ class stmt_identifier : public statement {
             if (not curr_elem.array_index_expr) {
                 // bounds check for the last element without indexing
                 if (is_last and not reg_size.empty() and curr_info.is_array) {
-                    emit_bounds_check(src_loc_tk, tc, x, indent, reg_size,
+                    emit_bounds_check(tc, x, indent, src_loc_tk, reg_size,
                                       curr_info.array_size, "g");
                 }
 
@@ -293,20 +294,20 @@ class stmt_identifier : public statement {
 
                     const token& tk{curr_elem.array_index_expr->tok()};
                     const bool use_reg_size{not reg_size.empty()};
-                    emit_bounds_check(tk, tc, x, indent, reg_idx,
+                    emit_bounds_check(tc, x, indent, tk, reg_idx,
                                       curr_info.array_size,
                                       use_reg_size ? "g" : "ge",
                                       use_reg_size ? reg_size : "");
 
                     if (reg_offset.empty()) {
                         reg_offset = init_reg_offset(
-                            src_loc_tk, tc, x, indent, lea, allocated_registers,
+                            tc, x, indent, src_loc_tk, lea, allocated_registers,
                             true, true, base_info.operand.base_register);
                     }
 
                     const bool is_rsp{reg_offset == "rsp"};
 
-                    // offsets depends on if base register is rsp
+                    // offset depends on whether the base register is rsp
                     const int32_t offset{
                         is_rsp ? -(base_info.stack_ix + accum_offset)
                                : accum_offset};
@@ -325,7 +326,7 @@ class stmt_identifier : public statement {
             // convert 'rsp' to dedicated register
 
             if (reg_offset.empty()) {
-                reg_offset = init_reg_offset(src_loc_tk, tc, x, indent, lea,
+                reg_offset = init_reg_offset(tc, x, indent, src_loc_tk, lea,
                                              allocated_registers, false, true,
                                              base_info.operand.base_register);
             }
@@ -357,7 +358,7 @@ class stmt_identifier : public statement {
             // bounds check
             const token& tk{curr_elem.array_index_expr->tok()};
             const bool use_reg_size{is_last and not reg_size.empty()};
-            emit_bounds_check(tk, tc, x, indent, reg_idx, curr_info.array_size,
+            emit_bounds_check(tc, x, indent, tk, reg_idx, curr_info.array_size,
                               use_reg_size ? "g" : "ge",
                               use_reg_size ? reg_size : "");
 
@@ -386,7 +387,7 @@ class stmt_identifier : public statement {
         }
 
         if (reg_offset.empty()) {
-            reg_offset = init_reg_offset(src_loc_tk, tc, x, indent, lea,
+            reg_offset = init_reg_offset(tc, x, indent, src_loc_tk, lea,
                                          allocated_registers, true, false,
                                          base_info.operand.base_register);
         }
@@ -415,9 +416,9 @@ class stmt_identifier : public statement {
     }
 
   private:
-    // helper function to emit bound checking code
-    static auto emit_bounds_check(const token& tk, toc& tc, x86& x,
-                                  const size_t indent,
+    // helper function to emit bounds-checking code
+    static auto emit_bounds_check(toc& tc, x86& x, const size_t indent,
+                                  const token& tk,
                                   const std::string_view reg_to_check,
                                   const size_t array_size,
                                   const std::string_view comparison,
@@ -475,8 +476,8 @@ class stmt_identifier : public statement {
     }
 
     [[nodiscard]] static auto
-    init_reg_offset(const token& src_loc_tk, toc& tc, x86& x,
-                    const size_t indent, const std::string& lea,
+    init_reg_offset(toc& tc, x86& x, const size_t indent,
+                    const token& src_loc_tk, const std::string& lea,
                     std::vector<std::string>& allocated_registers,
                     const bool no_changes_to_reg_offset_after_this,
                     const bool will_be_indirect_indexed,

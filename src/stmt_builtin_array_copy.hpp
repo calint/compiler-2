@@ -96,7 +96,7 @@ class stmt_builtin_array_copy final : public statement {
         // from operand to rsi
         x.comment_source(from_.tok(), indent, statement::trimmed_source(from_));
         const operand from_operand{stmt_identifier::compile_effective_address(
-            from_.first_token(), tc, x, indent, from_.elems(),
+            tc, x, indent, from_.first_token(), from_.elems(),
             allocated_scratch_registers, "rcx", from_info.lea_path)};
 
         x.lea(indent, "rsi", from_operand.address_str());
@@ -110,7 +110,7 @@ class stmt_builtin_array_copy final : public statement {
         allocated_scratch_registers.clear();
         x.comment_source(to_.tok(), indent, statement::trimmed_source(to_));
         const operand to_operand{stmt_identifier::compile_effective_address(
-            to_.first_token(), tc, x, indent, to_.elems(),
+            tc, x, indent, to_.first_token(), to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};
 
         x.lea(indent, "rdi", to_operand.address_str());

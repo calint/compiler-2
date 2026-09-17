@@ -88,7 +88,7 @@ class stmt_builtin_equal final : public expression {
         // from operand to rsi
         x.comment_source(lhs_.tok(), indent, statement::trimmed_source(lhs_));
         const operand lhs_operand{stmt_identifier::compile_effective_address(
-            lhs_.first_token(), tc, x, indent, lhs_.elems(),
+            tc, x, indent, lhs_.first_token(), lhs_.elems(),
             allocated_scratch_registers, "", lhs_info.lea_path)};
 
         x.lea(indent, "rsi", lhs_operand.address_str());
@@ -102,7 +102,7 @@ class stmt_builtin_equal final : public expression {
         allocated_scratch_registers.clear();
         x.comment_source(rhs_.tok(), indent, statement::trimmed_source(rhs_));
         const operand rhs_operand{stmt_identifier::compile_effective_address(
-            rhs_.first_token(), tc, x, indent, rhs_.elems(),
+            tc, x, indent, rhs_.first_token(), rhs_.elems(),
             allocated_scratch_registers, "", rhs_info.lea_path)};
 
         x.lea(indent, "rdi", rhs_operand.address_str());

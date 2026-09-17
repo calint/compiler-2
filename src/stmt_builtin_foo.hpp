@@ -67,7 +67,7 @@ class stmt_builtin_foo final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        // one line trimmed comment for the definition
+        // emit a one-line trimmed comment for the definition
         std::stringstream ss;
         ident_.source_to(ss);
         // make a comment-friendly string by collapsing whitespace
@@ -110,7 +110,7 @@ class stmt_builtin_foo final : public statement {
             std::vector<std::string> allocated_registers;
 
             const operand op{stmt_identifier::compile_effective_address(
-                tok(), tc, x, indent, ident_.elems(), allocated_registers, "",
+                tc, x, indent, tok(), ident_.elems(), allocated_registers, "",
                 ii.lea_path)};
 
             x.lea(indent, reg_iter, op.address_str());

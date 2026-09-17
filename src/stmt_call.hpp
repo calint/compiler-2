@@ -181,7 +181,7 @@ class stmt_call : public expression {
                 std::vector<std::string> regs_lea;
 
                 const operand lea{arg.compile_lea(
-                    arg.tok(), tc, x, indent, regs_lea, "", arg_info.lea_path)};
+                    tc, x, indent, arg.tok(), regs_lea, "", arg_info.lea_path)};
 
                 for (const std::string& r : regs_lea) {
                     allocated_scratch_registers.emplace_back(r);

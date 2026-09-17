@@ -13,9 +13,9 @@ class stmt_if final : public statement {
   public:
     stmt_if(toc& tc, token tk, tokenizer& tz) : statement{tk} {
         set_type(tc.get_type_void());
-        // e.g. if a == b {x = 1} else if c == d {y = 2} else {z = 3} broken
-        // down in branches 'a == b {x = 1}', 'c == d {y = 2}' ending with an
-        // optional 'else' block
+        // e.g. if a == b {x = 1} else if c == d {y = 2} else {z = 3}, broken
+        // down into branches 'a == b {x = 1}', 'c == d {y = 2}', ending with
+        // an optional 'else' block
 
         // note: 'if' token has been read
 

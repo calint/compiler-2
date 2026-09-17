@@ -532,7 +532,7 @@ class toc final {
             return src_info.operand;
         }
 
-        operand op{src.compile_lea(src.tok(), *this, x, indent, lea_registers,
+        operand op{src.compile_lea(*this, x, indent, src.tok(), lea_registers,
                                    "", src_info.lea_path)};
         op.size = src_info.type().size();
         return op;

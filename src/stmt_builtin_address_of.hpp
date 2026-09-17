@@ -76,7 +76,7 @@ class stmt_builtin_address_of final : public expression {
         std::vector<std::string> allocated_registers;
 
         const operand oper{stmt_identifier::compile_effective_address(
-            stmt_ident_.first_token(), tc, x, indent, stmt_ident_.elems(),
+            tc, x, indent, stmt_ident_.first_token(), stmt_ident_.elems(),
             allocated_registers, "", src_info.lea_path)};
 
         if (dst_info.is_register()) {

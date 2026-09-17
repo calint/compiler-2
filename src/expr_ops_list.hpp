@@ -58,7 +58,7 @@ class expr_ops_list final : public expression {
             // list
             exprs_.emplace_back(std::move(first_expression));
         } else {
-            // it did not, check if it is a element or the start of a new
+            // it did not, check if it is an element or the start of a new
             // sub-expression
             //   -(a + b)  vs  -a
 
@@ -358,7 +358,7 @@ class expr_ops_list final : public expression {
     }
 
     [[nodiscard]] auto
-    compile_lea(const token& src_loc_tk, toc& tc, x86& x, size_t indent,
+    compile_lea(toc& tc, x86& x, size_t indent, const token& src_loc_tk,
                 std::vector<std::string>& allocated_registers,
                 const std::string& reg_size,
                 const std::span<const std::string> lea_path) const
@@ -366,7 +366,7 @@ class expr_ops_list final : public expression {
 
         assert(exprs_.size() == 1);
 
-        return exprs_[0]->compile_lea(src_loc_tk, tc, x, indent,
+        return exprs_[0]->compile_lea(tc, x, indent, src_loc_tk,
                                       allocated_registers, reg_size, lea_path);
     }
 
