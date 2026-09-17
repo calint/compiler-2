@@ -74,11 +74,40 @@ class stmt_def_func final : public statement {
         // dry-run compilation to catch errors before called
         tc.enter_func(name(), returns_);
         std::vector<std::string> allocated_named_registers;
-        null_stream null_strm; // don't make output
-        init_variables(tc, null_strm, 0, allocated_named_registers);
+        null_stream os; // don't make output
+        if (returns_) {
+            // yes, declare variable for the return
+            const token& ret_tk{returns_->ident_tk};
+
+            if (ret_tk.text().empty()) {
+                throw compiler_exception(ret_tk,
+                                         "expected return reference name");
+            }
+
+            const var_info var{
+                .name{ret_tk.text()},
+                .type_ptr{&get_type()},
+                .declared_at_tk{ret_tk},
+                .reg{},
+            };
+            tc.add_var(ret_tk, os, 0, var, false);
+        }
+        // functions get arguments as aliases
+        for (const stmt_def_func_param& prm : params_) {
+            const type& prm_type{prm.get_type()};
+            const std::string_view prm_name{prm.name()};
+            const std::string prm_reg{prm.get_register_name_or_empty()};
+
+            const var_info var{
+                .name{prm_name},
+                .type_ptr{&prm_type},
+                .declared_at_tk{prm.tok()},
+                .is_array{prm.is_array()},
+                .reg{},
+            };
+            tc.add_var(tok(), os, 0, var, false);
+        }
         code_ = {tc, tz};
-        free_allocated_named_registers(tc, null_strm, 0, tok(),
-                                       allocated_named_registers);
         tc.exit_func(name());
     }
 
