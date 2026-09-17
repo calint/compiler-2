@@ -29,7 +29,7 @@ class stmt_loop final : public statement {
         x.label(tc, indent, lbl);
         tc.enter_loop(lbl);
         code_.compile(tc, x, indent, dst_info);
-        x86::jmp(tc, x.os, indent, lbl);
+        x.jmp(tc, indent, lbl);
         x.label(tc, indent, std::format("{}_end", lbl));
         tc.exit_loop(lbl);
     }

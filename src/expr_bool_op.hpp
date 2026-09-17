@@ -122,7 +122,7 @@ class expr_bool_op final : public statement {
                     if (const_eval) {
                         // since it is an 'or' chain short-circuit
                         // expression and jump to label for true
-                        x86::jmp(tc, x.os, indent, jmp_to_if_true);
+                        x.jmp(tc, indent, jmp_to_if_true);
                     }
                     return const_eval;
                 }
@@ -162,7 +162,7 @@ class expr_bool_op final : public statement {
                 if (const_eval) {
                     // expression evaluated at compile time and true so
                     // short-circuit and jump to true
-                    x86::jmp(tc, x.os, indent, jmp_to_if_true);
+                    x.jmp(tc, indent, jmp_to_if_true);
                 }
                 return const_eval;
             }
@@ -206,7 +206,7 @@ class expr_bool_op final : public statement {
                     if (not const_eval) {
                         // since it is an 'and' chain short-circuit
                         // expression and jump to label for false
-                        x86::jmp(tc, x.os, indent, jmp_to_if_false);
+                        x.jmp(tc, indent, jmp_to_if_false);
                     }
                     return const_eval;
                 }
@@ -245,7 +245,7 @@ class expr_bool_op final : public statement {
                                   (const_eval ? "true" : "false"));
                 if (not const_eval) {
                     // short circuit 'and' chain
-                    x86::jmp(tc, x.os, indent, jmp_to_if_false);
+                    x.jmp(tc, indent, jmp_to_if_false);
                 }
                 return const_eval;
             }

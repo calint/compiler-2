@@ -31,7 +31,7 @@ class stmt_return final : public statement {
         }
 
         // jump to return labels
-        x86::jmp(tc, x.os, indent, ret_lbl);
+        x.jmp(tc, indent, ret_lbl);
     }
 
     [[nodiscard]] auto is_code_after_this_unreachable() const -> bool override {

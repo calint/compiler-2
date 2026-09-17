@@ -233,9 +233,9 @@ class x86 final {
         asm_line(tc, os, indent, "je {}", label);
     }
 
-    static auto jmp(toc& tc, std::ostream& os, const size_t indent,
-                    const std::string_view label) -> void {
-        asm_line(tc, os, indent, "jmp {}", label);
+    auto jmp(toc& tc, const size_t indent, const std::string_view label)
+        -> void {
+        asm_line(tc, os.get(), indent, "jmp {}", label);
     }
 
     static auto jne(toc& tc, std::ostream& os, const size_t indent,

@@ -332,7 +332,7 @@ class expr_bool_ops_list final : public statement {
                         return *const_eval;
                     }
                     // if not yet jumped to false, then jump to true
-                    x86::jmp(tc, x.os, indent, jmp_to_if_true);
+                    x.jmp(tc, indent, jmp_to_if_true);
                 }
             } else {
                 // inverted according to De Morgan's laws
@@ -368,7 +368,7 @@ class expr_bool_ops_list final : public statement {
                         return *const_eval;
                     }
                     // if not yet jumped to false, then jump to true
-                    x86::jmp(tc, x.os, indent, jmp_to_if_true);
+                    x.jmp(tc, indent, jmp_to_if_true);
                 }
             }
         }
