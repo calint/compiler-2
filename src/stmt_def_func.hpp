@@ -13,6 +13,7 @@
 #include "decouple.hpp"
 #include "stmt_block.hpp"
 #include "stmt_def_func_param.hpp"
+#include "utils.hpp"
 
 class stmt_def_func final : public statement {
     token name_tk_;
@@ -148,7 +149,8 @@ class stmt_def_func final : public statement {
         std::stringstream ss;
         source_def_to(ss, true);
         // make comment friendly string replacing consecutive with one space
-        const std::string res{std::regex_replace(ss.str(), tc.regex_ws(), " ")};
+        const std::string res{
+            std::regex_replace(ss.str(), utils::regex_ws(), " ")};
         x.comment_line(tc, name_tk_, indent, "{}", res);
     }
 

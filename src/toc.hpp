@@ -9,7 +9,6 @@
 #include <ostream>
 #include <print>
 #include <ranges>
-#include <regex>
 #include <span>
 #include <string>
 #include <string_view>
@@ -237,10 +236,6 @@ class toc final {
     bool bounds_check_with_line_{};
     bool bounds_check_lower_{};
     std::vector<const statement*> data_;
-
-    std::regex regex_ws_{R"(\s+)"};
-    std::regex regex_trim_{R"(^\s+|\s+$)"};
-    std::regex regex_nasm_comment_{R"(^\s*;.*$)"};
 
   public:
     static constexpr size_t size_qword{8};
@@ -727,18 +722,6 @@ class toc final {
             .operand{reg},
             .ident_type{ident_info::ident_type::REGISTER},
         };
-    }
-
-    [[nodiscard]] auto regex_ws() const -> const std::regex& {
-        return regex_ws_;
-    }
-
-    [[nodiscard]] auto regex_trim() const -> const std::regex& {
-        return regex_trim_;
-    }
-
-    [[nodiscard]] auto regex_nasm_comment() const -> const std::regex& {
-        return regex_nasm_comment_;
     }
 
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }

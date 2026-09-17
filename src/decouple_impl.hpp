@@ -35,6 +35,7 @@
 #include "tokenizer.hpp"
 #include "type.hpp"
 #include "unary_ops.hpp"
+#include "utils.hpp"
 
 // definitions are intentionally not 'inline': single translation unit build
 // NOLINTBEGIN(misc-definitions-in-headers)
@@ -468,8 +469,8 @@ auto x86::comment_source(const toc& tc, const statement& statement,
     std::stringstream source;
     statement.source_to(source);
     const std::string text{std::regex_replace(
-        std::regex_replace(source.str(), tc.regex_trim(), ""), tc.regex_ws(),
-        " ")};
+        std::regex_replace(source.str(), utils::regex_trim(), ""),
+        utils::regex_ws(), " ")};
     x86::comment_line(os, indent, "{}", text);
 }
 
@@ -481,7 +482,7 @@ auto x86::comment_source(const toc& tc, const statement& statement,
     std::stringstream source;
     std::print(source, "{} {} ", dst, op);
     statement.source_to(source);
-    std::string text{std::regex_replace(source.str(), tc.regex_ws(), " ")};
+    std::string text{std::regex_replace(source.str(), utils::regex_ws(), " ")};
     if (not text.empty() and text.back() == ' ') {
         text.pop_back();
     }
@@ -743,7 +744,7 @@ auto x86::cmp(toc& tc, const token& src_loc_tk, const size_t indent,
     op(tc, src_loc_tk, indent, "cmp", dst_op, src_op);
 }
 
-auto x86::operand_size(const toc& tc, const std::string_view operand)
+auto x86::operand_size(const type& default_type, const std::string_view operand)
     -> size_t {
     if (operand.starts_with("qword")) {
         return operand::size_qword;
@@ -760,7 +761,7 @@ auto x86::operand_size(const toc& tc, const std::string_view operand)
     if (const size_t size{utils::register_size(operand)}) {
         return size;
     }
-    return tc.get_type_default().size();
+    return default_type.size();
 }
 
 auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
@@ -770,8 +771,8 @@ auto x86::op(toc& tc, const token& src_loc_tk, const size_t indent,
         return;
     }
 
-    const size_t dst_size{operand_size(tc, dst_op)};
-    const size_t src_size{operand_size(tc, src_op)};
+    const size_t dst_size{operand_size(tc.get_type_default(), dst_op)};
+    const size_t src_size{operand_size(tc.get_type_default(), src_op)};
 
     if (dst_size == src_size) {
         if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {

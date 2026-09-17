@@ -537,7 +537,7 @@ class x86 final {
     }
 
   private:
-    [[nodiscard]] static auto operand_size(const toc& tc,
+    [[nodiscard]] static auto operand_size(const type& default_type,
                                            std::string_view operand) -> size_t;
 
     [[nodiscard]] static auto is_memory_operand(const std::string_view operand)

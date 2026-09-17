@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <regex>
 #include <string_view>
 #include <utility>
 
@@ -17,6 +18,9 @@ constexpr size_t size_byte{1};
 [[nodiscard]] auto get_text_between_brackets(std::string_view text)
     -> std::optional<std::string_view>;
 [[nodiscard]] auto register_size(std::string_view operand) -> size_t;
+[[nodiscard]] auto regex_ws() -> const std::regex&;
+[[nodiscard]] auto regex_trim() -> const std::regex&;
+[[nodiscard]] auto regex_nasm_comment() -> const std::regex&;
 
 // NOLINTBEGIN(misc-definitions-in-headers)
 
@@ -93,6 +97,26 @@ constexpr size_t size_byte{1};
     }
     return 0;
 }
+
+// pragma below: function-local statics below are only ever destroyed once,
+// at program exit, which is intentional and harmless here
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wexit-time-destructors"
+[[nodiscard]] auto regex_ws() -> const std::regex& {
+    const static std::regex re{R"(\s+)"};
+    return re;
+}
+
+[[nodiscard]] auto regex_trim() -> const std::regex& {
+    const static std::regex re{R"(^\s+|\s+$)"};
+    return re;
+}
+
+[[nodiscard]] auto regex_nasm_comment() -> const std::regex& {
+    const static std::regex re{R"(^\s*;.*$)"};
+    return re;
+}
+#pragma clang diagnostic pop
 
 // NOLINTEND(misc-definitions-in-headers)
 } // namespace utils

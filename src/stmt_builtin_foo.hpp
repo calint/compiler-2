@@ -11,6 +11,7 @@
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "unary_ops.hpp"
+#include "utils.hpp"
 
 class stmt_builtin_foo final : public statement {
     stmt_identifier ident_;
@@ -71,7 +72,7 @@ class stmt_builtin_foo final : public statement {
         ident_.source_to(ss);
         // make comment friendly string replacing consecutive with one space
         x.comment_line(tc, tok(), indent, "foo {}",
-                          std::regex_replace(ss.str(), tc.regex_ws(), " "));
+                          std::regex_replace(ss.str(), utils::regex_ws(), " "));
 
         const std::string loop_label{tc.get_call_path_extend(tok(), "foo")};
         tc.enter_foo(loop_label);
