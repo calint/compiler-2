@@ -37,8 +37,8 @@ class x86 final {
     static constexpr size_t threshold_for_rep_movs{16};
 
     struct allocated_register {
-        std::string name;
         std::string source_location;
+        std::string name;
         const type* type_ptr;
     };
 
@@ -180,10 +180,9 @@ class x86 final {
         op(src_loc_tk, indent, "imul", dst_op, src_op);
     }
 
-    auto alloc_named_register_or_throw(const token& src_loc_tk,
-                                       const size_t indnt,
-                                       const std::string_view reg,
-                                       const type& type_ref) -> void {
+    auto alloc_named_register(const token& src_loc_tk, const size_t indnt,
+                              const std::string_view reg, const type& type_ref)
+        -> void {
 
         comment_start(src_loc_tk, indnt);
         println("allocate named register '{}'", reg);
@@ -203,8 +202,9 @@ class x86 final {
                                         reg, loc)};
         }
 
-        allocated_registers_.emplace_back(
-            std::move(*reg_iter), source_location_hr(src_loc_tk), &type_ref);
+        allocated_registers_.emplace_back(source_location_hr(src_loc_tk),
+                                          std::move(*reg_iter), &type_ref);
+
         named_registers_.erase(reg_iter);
     }
 
@@ -229,8 +229,8 @@ class x86 final {
                        scratch_registers_.size()};
         usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
 
-        allocated_registers_.emplace_back(
-            std::move(reg), source_location_hr(src_loc_tk), &type_ref);
+        allocated_registers_.emplace_back(source_location_hr(src_loc_tk),
+                                          std::move(reg), &type_ref);
 
         return allocated_registers_.back().name;
     }
@@ -391,12 +391,9 @@ class x86 final {
               const std::string_view src, const std::string_view dst,
               const size_t bytes_count) -> void {
         if (bytes_count > threshold_for_rep_movs) {
-            alloc_named_register_or_throw(src_loc_tk, indent, "rsi",
-                                          *default_type_);
-            alloc_named_register_or_throw(src_loc_tk, indent, "rdi",
-                                          *default_type_);
-            alloc_named_register_or_throw(src_loc_tk, indent, "rcx",
-                                          *default_type_);
+            alloc_named_register(src_loc_tk, indent, "rsi", *default_type_);
+            alloc_named_register(src_loc_tk, indent, "rdi", *default_type_);
+            alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
             lea(indent, "rsi", src);
             lea(indent, "rdi", dst);
             mov(src_loc_tk, indent, "rcx", std::format("{}", bytes_count));
@@ -409,8 +406,7 @@ class x86 final {
 
         comment_start(src_loc_tk, indent);
         std::println(os.get(), "size <= {} B, use mov", threshold_for_rep_movs);
-        alloc_named_register_or_throw(src_loc_tk, indent, "rax",
-                                      *default_type_);
+        alloc_named_register(src_loc_tk, indent, "rax", *default_type_);
         size_t rest{bytes_count};
         const size_t qword_movs{rest / operand::size_qword};
         operand src_operand{src};
@@ -450,12 +446,9 @@ class x86 final {
     auto zero(const token& src_loc_tk, const size_t indent,
               const std::string_view dst, const size_t bytes_count) -> void {
         if (bytes_count > threshold_for_rep_stos) {
-            alloc_named_register_or_throw(src_loc_tk, indent, "rax",
-                                          *default_type_);
-            alloc_named_register_or_throw(src_loc_tk, indent, "rdi",
-                                          *default_type_);
-            alloc_named_register_or_throw(src_loc_tk, indent, "rcx",
-                                          *default_type_);
+            alloc_named_register(src_loc_tk, indent, "rax", *default_type_);
+            alloc_named_register(src_loc_tk, indent, "rdi", *default_type_);
+            alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
             xor_op(indent, "al", "al");
             lea(indent, "rdi", dst);
             mov(src_loc_tk, indent, "rcx", std::format("{}", bytes_count));

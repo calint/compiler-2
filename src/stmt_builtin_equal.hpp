@@ -70,12 +70,9 @@ class stmt_builtin_equal final : public expression {
         x.comment_source(tok(), indent, statement::trimmed_source(*this));
 
         // allocate the register for rep movs
-        x.alloc_named_register_or_throw(tok(), indent, "rsi",
-                                        tc.get_type_default());
-        x.alloc_named_register_or_throw(tok(), indent, "rdi",
-                                        tc.get_type_default());
-        x.alloc_named_register_or_throw(tok(), indent, "rcx",
-                                        tc.get_type_default());
+        x.alloc_named_register(tok(), indent, "rsi", tc.get_type_default());
+        x.alloc_named_register(tok(), indent, "rdi", tc.get_type_default());
+        x.alloc_named_register(tok(), indent, "rcx", tc.get_type_default());
 
         std::vector<std::string> allocated_scratch_registers;
 

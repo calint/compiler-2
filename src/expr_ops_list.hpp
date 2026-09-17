@@ -843,8 +843,8 @@ class expr_ops_list final : public expression {
             // todo: BMI2 (Bit Manipulation Instruction Set 2)
             //       look at shlx/shrx/sarx which can use any register for the
             //       shift amount
-            x.alloc_named_register_or_throw(src.tok(), indent, "rcx",
-                                            tc.get_type_default());
+            x.alloc_named_register(src.tok(), indent, "rcx",
+                                   tc.get_type_default());
             const std::string rcx_sized{
                 x.get_sized_register_operand("rcx", dst_size)};
             // the number of bits to shift is an expression, compile it to 'rcx'
@@ -884,8 +884,8 @@ class expr_ops_list final : public expression {
             x.comment_start(src.tok(), indent);
             x.println("shf: not const, no uops");
             // the operand must be stored in CL (see note above about BMI2)
-            x.alloc_named_register_or_throw(src.tok(), indent, "rcx",
-                                            tc.get_type_default());
+            x.alloc_named_register(src.tok(), indent, "rcx",
+                                   tc.get_type_default());
             const std::string rcx_sized{
                 x.get_sized_register_operand("rcx", dst_size)};
             x.mov(src.tok(), indent, rcx_sized, src_operand.str());
@@ -900,8 +900,7 @@ class expr_ops_list final : public expression {
         x.comment_start(src.tok(), indent);
         x.println("shf: not const, uops");
 
-        x.alloc_named_register_or_throw(src.tok(), indent, "rcx",
-                                        tc.get_type_default());
+        x.alloc_named_register(src.tok(), indent, "rcx", tc.get_type_default());
         const std::string rcx_sized{
             x.get_sized_register_operand("rcx", dst_size)};
         x.mov(src.tok(), indent, "rcx", src_operand.str());
@@ -930,13 +929,13 @@ class expr_ops_list final : public expression {
                 x.get_sized_register_operand(reg, dst_size)};
             src.compile(tc, x, indent,
                         toc::make_ident_info_for_register(x, reg_sized));
-            x.alloc_named_register_or_throw(src.tok(), indent, "rax",
-                                            tc.get_type_default());
+            x.alloc_named_register(src.tok(), indent, "rax",
+                                   tc.get_type_default());
             x.mov(src.tok(), indent,
                   x.get_sized_register_operand("rax", dst_size),
                   dst_info.operand.str());
-            x.alloc_named_register_or_throw(src.tok(), indent, "rdx",
-                                            tc.get_type_default());
+            x.alloc_named_register(src.tok(), indent, "rdx",
+                                   tc.get_type_default());
             x.div_reg_ext(indent, dst_size);
             x.idiv(indent, reg);
             x.mov(src.tok(), indent, dst_info.operand.str(), op);
@@ -952,13 +951,13 @@ class expr_ops_list final : public expression {
         if (src_info.is_const()) {
             x.comment_start(src.tok(), indent);
             x.println("div const");
-            x.alloc_named_register_or_throw(src.tok(), indent, "rax",
-                                            tc.get_type_default());
+            x.alloc_named_register(src.tok(), indent, "rax",
+                                   tc.get_type_default());
             x.mov(src.tok(), indent,
                   x.get_sized_register_operand("rax", dst_size),
                   dst_info.operand.str());
-            x.alloc_named_register_or_throw(src.tok(), indent, "rdx",
-                                            tc.get_type_default());
+            x.alloc_named_register(src.tok(), indent, "rdx",
+                                   tc.get_type_default());
             x.div_reg_ext(indent, dst_size);
             const std::string scratch_reg{x.alloc_scratch_register(
                 src.tok(), indent, tc.get_type_default())};
@@ -990,13 +989,13 @@ class expr_ops_list final : public expression {
         if (uops.is_empty()) {
             x.comment_start(src.tok(), indent);
             x.println("div not const, no uops");
-            x.alloc_named_register_or_throw(src.tok(), indent, "rax",
-                                            tc.get_type_default());
+            x.alloc_named_register(src.tok(), indent, "rax",
+                                   tc.get_type_default());
             x.mov(src.tok(), indent,
                   x.get_sized_register_operand("rax", dst_size),
                   dst_info.operand.str());
-            x.alloc_named_register_or_throw(src.tok(), indent, "rdx",
-                                            tc.get_type_default());
+            x.alloc_named_register(src.tok(), indent, "rdx",
+                                   tc.get_type_default());
             x.div_reg_ext(indent, dst_size);
             x.idiv(indent, src_operand.str());
             // op is either 'rax' for the quotient or 'rdx' for the reminder
@@ -1017,12 +1016,10 @@ class expr_ops_list final : public expression {
             x.get_sized_register_operand(reg, dst_size)};
         x.mov(src.tok(), indent, reg_sized, src_operand.str());
         uops.compile(tc, x, indent, reg_sized);
-        x.alloc_named_register_or_throw(src.tok(), indent, "rax",
-                                        tc.get_type_default());
+        x.alloc_named_register(src.tok(), indent, "rax", tc.get_type_default());
         x.mov(src.tok(), indent, x.get_sized_register_operand("rax", dst_size),
               dst_info.operand.str());
-        x.alloc_named_register_or_throw(src.tok(), indent, "rdx",
-                                        tc.get_type_default());
+        x.alloc_named_register(src.tok(), indent, "rdx", tc.get_type_default());
         x.div_reg_ext(indent, dst_size);
         x.idiv(indent, reg_sized);
         x.mov(src.tok(), indent, dst_info.operand.str(), op);

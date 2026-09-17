@@ -163,8 +163,8 @@ class stmt_call : public expression {
             std::string arg_reg{param.get_register_name_or_empty()};
 
             if (not arg_reg.empty()) {
-                x.alloc_named_register_or_throw(arg.tok(), indent, arg_reg,
-                                                param.get_type());
+                x.alloc_named_register(arg.tok(), indent, arg_reg,
+                                       param.get_type());
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
