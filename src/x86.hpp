@@ -96,20 +96,6 @@ class x86 final {
         return prev;
     }
 
-    template <typename... args_t>
-    auto print(const std::format_string<args_t...> format, args_t&&... args)
-        -> void {
-        std::print(os.get(), format, std::forward<args_t>(args)...);
-    }
-
-    template <typename... args_t>
-    auto println(const std::format_string<args_t...> format, args_t&&... args)
-        -> void {
-        std::println(os.get(), format, std::forward<args_t>(args)...);
-    }
-
-    auto println() const -> void { std::println(os.get()); }
-
     // member form: uses this instance's own print/os/source instead of
     // taking them
     auto comment_start(const token& source_location, const size_t indent)
@@ -808,6 +794,20 @@ class x86 final {
         comment_indent(indent);
         std::print(os, "[{}:{}] ", line, column);
     }
+
+    template <typename... args_t>
+    auto print(const std::format_string<args_t...> format, args_t&&... args)
+        -> void {
+        std::print(os.get(), format, std::forward<args_t>(args)...);
+    }
+
+    template <typename... args_t>
+    auto println(const std::format_string<args_t...> format, args_t&&... args)
+        -> void {
+        std::println(os.get(), format, std::forward<args_t>(args)...);
+    }
+
+    auto println() const -> void { std::println(os.get()); }
 
   private:
     [[nodiscard]] auto operand_size(const std::string_view operand) const
