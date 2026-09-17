@@ -27,12 +27,14 @@ class x86 final {
     static constexpr size_t size_dword{4};
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
-    static constexpr size_t threshold_for_rep_stos{32};
-    static constexpr size_t threshold_for_rep_movs{16};
+
     static constexpr std::string_view data_qword{"dq"};
     static constexpr std::string_view data_dword{"dd"};
     static constexpr std::string_view data_word{"dw"};
     static constexpr std::string_view data_byte{"db"};
+
+    static constexpr size_t threshold_for_rep_stos{32};
+    static constexpr size_t threshold_for_rep_movs{16};
 
     struct allocated_register {
         std::string name;
