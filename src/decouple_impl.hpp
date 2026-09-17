@@ -293,7 +293,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
     for (const std::unique_ptr<expr_any>& ea : exprs_) {
         x86::comment_start(tc, tok(), x.os, indent);
         const type_field& tf{flds[counter]};
-        std::println(x.os, "copy field '{}'", tf.name);
+        x.println( "copy field '{}'", tf.name);
 
         if (not tf.type().is_built_in()) {
             // a not-builtin statement is 'expr_type_value'
@@ -313,7 +313,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
             //   type msgpoint {  msg : i8[128], pt : point }
             //   var mp : msgpoint[3] = { { {}, { x, y } } }
             x86::comment_start(tc, tok(), x.os, indent);
-            std::println(x.os, "zero empty field: {} * {} B = {} B",
+            x.println( "zero empty field: {} * {} B = {} B",
                          tf.array_size, tf.type().size(), tf.size);
             x86::zero(tc, tok(), x.os, indent, dst_op.address_str(), tf.size);
             dst_op.displacement += static_cast<int32_t>(tf.size);
@@ -380,7 +380,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
     }
 
     x86::comment_start(tc, tok(), x.os, indent);
-    std::println(x.os, "zero remaining fields: {} B", nbytes);
+    x.println( "zero remaining fields: {} B", nbytes);
     x86::zero(tc, tok(), x.os, indent, dst_op.address_str(), nbytes);
     dst_op.displacement += static_cast<int32_t>(nbytes);
 }

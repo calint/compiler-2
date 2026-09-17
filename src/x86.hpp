@@ -42,6 +42,20 @@ class x86 final {
         return prev;
     }
 
+    template <typename... args_t>
+    auto print(const std::format_string<args_t...> format, args_t&&... args)
+        -> void {
+        std::print(os.get(), format, std::forward<args_t>(args)...);
+    }
+
+    template <typename... args_t>
+    auto println(const std::format_string<args_t...> format, args_t&&... args)
+        -> void {
+        std::println(os.get(), format, std::forward<args_t>(args)...);
+    }
+
+    auto println() -> void { std::println(os.get()); }
+
     [[nodiscard]] static auto get_data_def(const size_t size)
         -> std::string_view {
         switch (size) {

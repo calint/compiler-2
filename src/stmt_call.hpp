@@ -314,11 +314,11 @@ class stmt_call : public expression {
         for (const alias_info& e : aliases_to_add) {
             x86::comment_start(tc, tok(), x.os, indent + 1);
 
-            std::print(x.os, "alias {} -> {}", e.from, e.to);
+            x.print( "alias {} -> {}", e.from, e.to);
             if (not e.lea.empty()) {
-                std::print(x.os, " (lea: {})", e.lea);
+                x.print( " (lea: {})", e.lea);
             }
-            std::println(x.os);
+            x.println();
             tc.add_alias(e);
         }
 

@@ -83,18 +83,18 @@ class stmt_def_type final : public statement {
         const type& tp{tc.get_type_or_throw(tok(), name_tk_.text())};
 
         x86::comment_start(tc, tok(), x.os, indent);
-        std::println(x.os, "{} : {} B    fields:", name_tk_.text(), tp.size());
+        x.println( "{} : {} B    fields:", name_tk_.text(), tp.size());
 
         x86::comment_start(tc, tok(), x.os, indent);
-        std::println(x.os, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", "name",
+        x.println( "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", "name",
                      "offset", "size", "array?", "array size");
 
         for (const type_field& f : tp.fields()) {
             x86::comment_start(tc, tok(), x.os, indent);
-            std::println(x.os, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", f.name,
+            x.println( "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", f.name,
                          f.offset, f.size, f.is_array ? "yes" : "no",
                          f.is_array ? std::to_string(f.array_size) : "");
         }
-        std::println(x.os);
+        x.println();
     }
 };
