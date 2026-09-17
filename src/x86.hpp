@@ -83,6 +83,12 @@ class x86 final {
     static auto comment_start(const toc& tc, const token& source_location,
                               std::ostream& os, size_t indent) -> void;
 
+    // member form: uses this instance's own stream instead of taking one
+    auto comment_start(const toc& tc, const token& source_location,
+                       const size_t indent) -> void {
+        x86::comment_start(tc, source_location, os.get(), indent);
+    }
+
     static auto comment_token(const toc& tc, const token& token,
                               std::ostream& os, size_t indent) -> void;
 

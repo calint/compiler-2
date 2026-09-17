@@ -291,7 +291,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
     size_t counter{};
     const std::span<const type_field>& flds{dst_type.fields()};
     for (const std::unique_ptr<expr_any>& ea : exprs_) {
-        x86::comment_start(tc, tok(), x.os, indent);
+        x.comment_start(tc, tok(), indent);
         const type_field& tf{flds[counter]};
         x.println( "copy field '{}'", tf.name);
 
@@ -312,7 +312,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
             // e.g.:
             //   type msgpoint {  msg : i8[128], pt : point }
             //   var mp : msgpoint[3] = { { {}, { x, y } } }
-            x86::comment_start(tc, tok(), x.os, indent);
+            x.comment_start(tc, tok(), indent);
             x.println( "zero empty field: {} * {} B = {} B",
                          tf.array_size, tf.type().size(), tf.size);
             x86::zero(tc, tok(), x.os, indent, dst_op.address_str(), tf.size);
@@ -379,7 +379,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         nbytes += flds[i].size;
     }
 
-    x86::comment_start(tc, tok(), x.os, indent);
+    x.comment_start(tc, tok(), indent);
     x.println( "zero remaining fields: {} B", nbytes);
     x86::zero(tc, tok(), x.os, indent, dst_op.address_str(), nbytes);
     dst_op.displacement += static_cast<int32_t>(nbytes);

@@ -151,7 +151,7 @@ class stmt_def_var final : public statement {
         const size_t instance_count{array_size_ ? array_size_ : 1};
         const size_t bytes_count{instance_count * dst_info.type().size()};
 
-        x86::comment_start(tc, name_tk_, x.os, indent);
+        x.comment_start(tc, name_tk_, indent);
         x.println( "zero {} * {} B = {} B", instance_count,
                      dst_info.type().size(), bytes_count);
 

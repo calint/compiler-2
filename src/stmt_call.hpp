@@ -312,7 +312,7 @@ class stmt_call : public expression {
 
         // add aliases
         for (const alias_info& e : aliases_to_add) {
-            x86::comment_start(tc, tok(), x.os, indent + 1);
+            x.comment_start(tc, tok(), indent + 1);
 
             x.print( "alias {} -> {}", e.from, e.to);
             if (not e.lea.empty()) {
