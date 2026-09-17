@@ -363,7 +363,7 @@ class stmt_identifier : public statement {
             // scale the index
             if (type_size > 1) {
                 if (std::optional<int> shl{get_shift_amount(type_size)}; shl) {
-                    x86::shl(tc, x.os, indent, reg_idx, std::format("{}", *shl));
+                    x.shl(tc, indent, reg_idx, std::format("{}", *shl));
                 } else {
                     x.imul(tc, tk, indent, reg_idx,
                               std::format("{}", type_size));

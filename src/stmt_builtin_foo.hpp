@@ -132,7 +132,7 @@ class stmt_builtin_foo final : public statement {
         x.label(tc, indent + 1, loop_label + "_continue");
         x86::add(tc, x.os, indent + 2, reg_iter,
                  std::format("{}", ii.type().size()));
-        x86::inc(tc, x.os, indent + 2, var_i_addr_op);
+        x.inc(tc, indent + 2, var_i_addr_op);
         x.cmp(tc, indent + 2, var_i_addr_op,
               std::format("{}", ii.array_size));
         x86::jne(tc, x.os, indent + 2, loop_label);

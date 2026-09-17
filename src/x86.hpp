@@ -207,9 +207,9 @@ class x86 final {
     }
 
 
-    static auto inc(toc& tc, std::ostream& os, const size_t indent,
-                    const std::string_view dst) -> void {
-        asm_line(tc, os, indent, "inc {}", dst);
+    auto inc(toc& tc, const size_t indent, const std::string_view dst)
+        -> void {
+        asm_line(tc, os.get(), indent, "inc {}", dst);
     }
 
     auto jcc(toc& tc, const size_t indent, const std::string_view comparison,
@@ -272,10 +272,9 @@ class x86 final {
         asm_line(tc, os.get(), indent, "set{} {}", comparison, operand);
     }
 
-    static auto shl(toc& tc, std::ostream& os, const size_t indent,
-                    const std::string_view dst, const std::string_view src)
-        -> void {
-        asm_line(tc, os, indent, "shl {}, {}", dst, src);
+    auto shl(toc& tc, const size_t indent, const std::string_view dst,
+            const std::string_view src) -> void {
+        asm_line(tc, os.get(), indent, "shl {}, {}", dst, src);
     }
 
     auto syscall(toc& tc, const size_t indent) -> void {
