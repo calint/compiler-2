@@ -151,7 +151,6 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         const ident_info src_info{tc.make_ident_info_parsing(*stmt_ident_)};
 
         if (tp.name() != src_info.type().name()) {
-            // note: checked a source location report ok
             throw compiler_exception{
                 tok(), std::format("expected type '{}', got '{}'", tp.name(),
                                    src_info.type().name())};

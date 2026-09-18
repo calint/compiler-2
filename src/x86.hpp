@@ -66,15 +66,11 @@ class x86 final {
     const type* type_i16_{};
     const type* type_i8_{};
 
-  public:
-    // the assembler output stream for the current compile pass; rebindable
-    // via 'use_stream' so trial-compiles can target a scratch buffer while
-    // keeping this same instance (and its register-allocation state)
-    // NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
-    std::reference_wrapper<std::ostream> os;
+    std::reference_wrapper<std::ostream> os_;
 
+  public:
     explicit x86(std::ostream& os_ref, const std::string_view source)
-        : source_{source}, os{os_ref} {}
+        : source_{source}, os_{os_ref} {}
 
     auto set_type_default(const type& tpe) -> void { default_type_ = &tpe; }
 
@@ -91,8 +87,8 @@ class x86 final {
     // redirects output to 'new_stream', returning the previously used stream
     // so the caller can restore it later
     auto use_stream(std::ostream& new_stream) -> std::ostream& {
-        std::ostream& prev{os.get()};
-        os = new_stream;
+        std::ostream& prev{os_.get()};
+        os_ = new_stream;
         return prev;
     }
 
@@ -146,7 +142,7 @@ class x86 final {
     }
 
     auto emit_buffer(const std::string_view text) const -> void {
-        std::print(os.get(), "{}", text);
+        std::print(os_.get(), "{}", text);
     }
 
     template <typename... args_t>
@@ -391,7 +387,8 @@ class x86 final {
         }
 
         comment_start(src_loc_tk, indent);
-        std::println(os.get(), "size <= {} B, use mov", threshold_for_rep_movs);
+        std::println(os_.get(), "size <= {} B, use mov",
+                     threshold_for_rep_movs);
         alloc_named_register(src_loc_tk, indent, "rax", *default_type_);
         size_t rest{bytes_count};
         const size_t qword_movs{rest / operand::size_qword};
@@ -446,7 +443,8 @@ class x86 final {
         }
 
         comment_start(src_loc_tk, indent);
-        std::println(os.get(), "size <= {} B, use mov", threshold_for_rep_stos);
+        std::println(os_.get(), "size <= {} B, use mov",
+                     threshold_for_rep_stos);
         size_t rest{bytes_count};
         const size_t qword_movs{rest / operand::size_qword};
         operand dst_operand{dst};
@@ -615,7 +613,7 @@ class x86 final {
 
     auto times(const size_t count, const std::string_view directive,
                const std::string_view value) const -> void {
-        std::println(os.get(), "times {} {} {}", count, directive, value);
+        std::println(os_.get(), "times {} {} {}", count, directive, value);
     }
 
     auto xor_op(const size_t indent, const std::string_view dst,
@@ -792,22 +790,22 @@ class x86 final {
             source_location.at_line(), source_location.start_index(), source)};
 
         comment_indent(indent);
-        std::print(os, "[{}:{}] ", line, column);
+        std::print(os_, "[{}:{}] ", line, column);
     }
 
     template <typename... args_t>
     auto print(const std::format_string<args_t...> format, args_t&&... args)
         -> void {
-        std::print(os.get(), format, std::forward<args_t>(args)...);
+        std::print(os_.get(), format, std::forward<args_t>(args)...);
     }
 
     template <typename... args_t>
     auto println(const std::format_string<args_t...> format, args_t&&... args)
         -> void {
-        std::println(os.get(), format, std::forward<args_t>(args)...);
+        std::println(os_.get(), format, std::forward<args_t>(args)...);
     }
 
-    auto println() const -> void { std::println(os.get()); }
+    auto println() const -> void { std::println(os_.get()); }
 
   private:
     [[nodiscard]] auto operand_size(const std::string_view operand) const

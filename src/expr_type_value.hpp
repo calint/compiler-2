@@ -23,11 +23,11 @@ class expr_type_value final : public statement {
     token close_brace_tk_;
 
   public:
+    expr_type_value(toc& tc, tokenizer& tz, const type& tp);
     // note: constructor and destructor are implemented in 'decouple_impl.hpp'
     //       where the 'expr_any' definition is known. clang++ -std=c++23 has
     //       required it since changes to handling of unique_ptr to
     //       incomplete types
-    expr_type_value(toc& tc, tokenizer& tz, const type& tp);
 
     expr_type_value() = default;
     // note: copy and assignment constructor will not compile if used

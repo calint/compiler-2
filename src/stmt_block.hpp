@@ -95,14 +95,14 @@ class stmt_block final : public statement {
             } else if (tk.is_text("loop") or tk.is_text("if") or
                        tk.is_text("mov") or tk.is_text("syscall") ||
                        tk.is_text("foo")) {
+                stms_.emplace_back(create_statement_in_stmt_block(tc, tz, tk));
                 // note: solves circular reference problem
                 //       'loop' and 'if' uses this class
                 //       'mov' and 'syscall' are 'stmt_call'
-                stms_.emplace_back(create_statement_in_stmt_block(tc, tz, tk));
             } else {
                 // resolve identifier
-                // note: 'unary_ops' not allowed before destination identifier
                 stmt_identifier si{tc, {}, tk, tz};
+                // note: 'unary_ops' not allowed before destination identifier
 
                 if (const token t{tz.is_next_char_token('=')};
                     not t.is_empty()) {
@@ -112,8 +112,8 @@ class stmt_block final : public statement {
 
                 } else if (const token tt{tz.is_next_char_token('(')};
                            not tt.is_empty()) {
-                    // note: solves circular reference
                     stms_.emplace_back(create_stmt_call(tc, tz, si, tt));
+                    // note: solves circular reference
 
                 } else {
                     throw compiler_exception{
