@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 //           2026-09-09
 
+#include <cstdint>
 #include <format>
 #include <ranges>
 #include <span>
@@ -88,9 +89,9 @@ class type final {
             type_path.emplace_back(tp);
         }
 
-        const int stack_idx{var.reg.empty()
-                                ? var.stack_idx + static_cast<int>(offset)
-                                : static_cast<int>(offset)};
+        const int32_t stack_idx{
+            var.reg.empty() ? var.stack_idx + static_cast<int32_t>(offset)
+                            : static_cast<int32_t>(offset)};
 
         // find the first built-in type to have a valid operand size for the
         // address

@@ -4,8 +4,10 @@
 
 default rel
 
-section .bss
-stk resd 131072
+section .bss.stack nobits
+align 16
+stk:
+stk resb 131072
 stk.end:
 
 section .text
@@ -13,16 +15,8 @@ bits 64
 global _start
 _start:
 
-; copy data to stack
-lea rsi, [dat]
-lea rdi, [stk.end]
-sub rdi, dat.len
-mov rcx, dat.len
-cld
-rep movsb
-
 ; initialize stack pointer
-mov rsp, stk.end
+mov rsp, dat.end
 
 ;
 ; program
@@ -3236,7 +3230,8 @@ section .rodata
 section .bss
     num_buffer: resb 21
 
-section .rodata
+section .data
+align 16
 dat:
 ;[27:10] s1
 ;[27:23] i8
@@ -3268,7 +3263,7 @@ db `enter name:\n`
 ;[20:7] hello
 ;[20:22] i8[21]
 db `hello world from baz\n`
-dat.len equ $ - dat
+dat.end:
 
 ; max scratch registers in use: 5
 ;            max frames in use: 10

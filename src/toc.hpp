@@ -343,9 +343,11 @@ class toc final {
         }
 
         // increase stack index (is negative) to fit variable
-        const int stack_idx{static_cast<int>(
-            get_stack_size() +
-            (var.type_ptr->size() * (var.is_array ? var.array_size : 1)))};
+        const size_t var_size{var.type_ptr->size() *
+                              (var.is_array ? var.array_size : 1)};
+
+        const int32_t stack_idx{
+            static_cast<int32_t>(get_stack_size() + var_size)};
 
         var.stack_idx = -stack_idx;
 
@@ -1080,7 +1082,7 @@ class toc final {
 
         ii.operand = {lea, false};
         if (offset != 0) {
-            ii.operand.displacement += static_cast<int>(offset);
+            ii.operand.displacement += static_cast<int32_t>(offset);
         }
         ii.operand.size = ii.type_ref().size();
 

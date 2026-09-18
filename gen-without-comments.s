@@ -1,18 +1,14 @@
 default rel
-section .bss
-stk resd 131072
+section .bss.stack nobits
+align 16
+stk:
+stk resb 131072
 stk.end:
 section .text
 bits 64
 global _start
 _start:
-lea rsi, [dat]
-lea rdi, [stk.end]
-sub rdi, dat.len
-mov rcx, dat.len
-cld
-rep movsb
-mov rsp, stk.end
+mov rsp, dat.end
 main:
     mov qword [rsp - 237], 0
     mov qword [rsp - 229], 0
@@ -1351,7 +1347,8 @@ section .rodata
     msg_panic_len equ $ - msg_panic
 section .bss
     num_buffer: resb 21
-section .rodata
+section .data
+align 16
 dat:
 db 3
 times 127 db 0
@@ -1363,4 +1360,4 @@ db `hello `
 db `that is not a name.\n`
 db `enter name:\n`
 db `hello world from baz\n`
-dat.len equ $ - dat
+dat.end:

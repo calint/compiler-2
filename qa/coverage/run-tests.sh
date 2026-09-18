@@ -16,7 +16,7 @@ if [ "$1" != "nobuild" ]; then
 fi
 
 BIN="../../baz"
-OPTS="--stack=65536 --checks=upper,lower,line"
+OPTS="--stack=262144 --checks=upper,lower,line"
 
 rm -f gen.s out err
 
@@ -38,7 +38,7 @@ compile_and_build() {
         exit 1
     fi
     nasm -f elf64 gen.s
-    ld -s -o gen gen.o
+    ld -s -T ../../baz.ld -o gen gen.o
 }
 
 compile_and_build_no_checks() {
@@ -48,7 +48,7 @@ compile_and_build_no_checks() {
         exit 1
     fi
     nasm -f elf64 gen.s
-    ld -s -o gen gen.o
+    ld -s -T ../../baz.ld -o gen gen.o
 }
 
 compile_and_build_with_opts() {
@@ -59,7 +59,7 @@ compile_and_build_with_opts() {
         exit 1
     fi
     nasm -f elf64 gen.s
-    ld -s -o gen gen.o
+    ld -s -T ../../baz.ld -o gen gen.o
 }
 
 # Common: compile and assemble
