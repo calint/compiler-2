@@ -17,6 +17,7 @@ nasm -f elf64 gen.s
 ld -s -o gen gen.o
 ls --color -la gen.s gen-without-comments.s gen
 echo $SEP
+
 set +e # don't stop att errors
 ./gen
 RET=$?

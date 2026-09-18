@@ -156,7 +156,7 @@ class x86 final {
                               const std::string_view reg, const type& type_ref)
         -> void {
 
-        comment(src_loc_tk, indnt, "allocate named register '{}'", reg);
+        comment(src_loc_tk, indnt, "allocate named register {}", reg);
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
@@ -168,7 +168,7 @@ class x86 final {
                 loc = allocated->source_location;
             }
             throw compiler_exception{
-                src_loc_tk, std::format("cannot allocate register '{}' because "
+                src_loc_tk, std::format("cannot allocate register {} because "
                                         "it was allocated at {}",
                                         reg, loc)};
         }
@@ -208,7 +208,7 @@ class x86 final {
     auto free_named_register(const token& src_loc_tk, const size_t indnt,
                              const std::string_view reg) -> void {
 
-        comment(src_loc_tk, indnt, "free named register '{}'", reg);
+        comment(src_loc_tk, indnt, "free named register {}", reg);
 
         assert(allocated_registers_.back().name == reg);
 
@@ -220,7 +220,7 @@ class x86 final {
     auto free_scratch_register(const token& src_loc_tk, const size_t indnt,
                                const std::string_view reg) -> void {
 
-        comment(src_loc_tk, indnt, "free scratch register '{}'", reg);
+        comment(src_loc_tk, indnt, "free scratch register {}", reg);
 
         assert(allocated_registers_.back().name == reg);
 

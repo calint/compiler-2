@@ -127,6 +127,7 @@ class stmt_builtin_foo final : public statement {
         tc.add_const(x, ident_.tok(), indent, "n",
                      static_cast<int64_t>(ii.array_size));
 
+        x.comment(code_.tok(), indent, "initiate counter {} to 0", var_i.name);
         x.mov(tok(), indent, var_i_addr_op, "0");
         x.label(indent, loop_label);
         code_.compile(tc, x, indent, toc::make_ident_info_empty());
