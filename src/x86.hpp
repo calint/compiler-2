@@ -92,14 +92,34 @@ class x86 final {
         return prev;
     }
 
+    template <typename... args_t>
+    auto print(const std::format_string<args_t...> format, args_t&&... args)
+        -> void {
+        std::print(os_.get(), format, std::forward<args_t>(args)...);
+    }
+
+    template <typename... args_t>
+    auto println(const std::format_string<args_t...> format, args_t&&... args)
+        -> void {
+        std::println(os_.get(), format, std::forward<args_t>(args)...);
+    }
+
+    auto println() const -> void { std::println(os_.get()); }
+
     auto comment_start(const token& source_location, const size_t indent)
         -> void {
         const auto [line, column]{utils::line_and_col_num_for_char_index(
             source_location.at_line(), source_location.start_index(), source_)};
 
         comment_indent(indent);
-
         print("[{}:{}] ", line, column);
+    }
+
+    auto comment(const token& source_location, const size_t indent,
+                 const std::string_view text) -> void {
+
+        comment_start(source_location, indent);
+        println("{}", text);
     }
 
     template <typename... args_t>
@@ -108,15 +128,7 @@ class x86 final {
         -> void {
 
         comment_start(source_location, indent);
-
         println(format, std::forward<args_t>(args)...);
-    }
-
-    auto comment(const token& source_location, const size_t indent,
-                 const std::string_view text) -> void {
-
-        comment_start(source_location, indent);
-        println("{}", text);
     }
 
     auto emit_buffer(const std::string_view text) const -> void {
@@ -749,31 +761,6 @@ class x86 final {
             std::unreachable();
         }
     }
-
-    auto comment_start(const std::string_view source,
-                       const token& source_location, const size_t indent)
-        -> void {
-
-        const auto [line, column]{utils::line_and_col_num_for_char_index(
-            source_location.at_line(), source_location.start_index(), source)};
-
-        comment_indent(indent);
-        std::print(os_, "[{}:{}] ", line, column);
-    }
-
-    template <typename... args_t>
-    auto print(const std::format_string<args_t...> format, args_t&&... args)
-        -> void {
-        std::print(os_.get(), format, std::forward<args_t>(args)...);
-    }
-
-    template <typename... args_t>
-    auto println(const std::format_string<args_t...> format, args_t&&... args)
-        -> void {
-        std::println(os_.get(), format, std::forward<args_t>(args)...);
-    }
-
-    auto println() const -> void { std::println(os_.get()); }
 
   private:
     auto comment_indent(const size_t indent) -> void {

@@ -54,6 +54,7 @@ class statement {
     // an assembler comment
     [[nodiscard]] static auto trimmed_source(const statement& st)
         -> std::string {
+
         std::stringstream ss;
         st.source_to(ss);
         return std::regex_replace(
