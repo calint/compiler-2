@@ -135,6 +135,7 @@ main:
     assert_133_5_end:
 ;   [134:5] # variables without initializer are zeroed
 ;   [136:5] answer = maybe
+;   [136:14] instructions without scratch register 1, with 2
 ;   [136:14] maybe
     mov qword [rsp - 245], -1
 ;   [137:5] assert(answer == -1)
@@ -255,6 +256,7 @@ main:
 ;   [146:5] var ix = 1
 ;   [146:9] ix: i64 (8 B @ [rsp - 253])
 ;   [146:9] ix = 1
+;   [146:14] instructions without scratch register 1, with 2
 ;   [146:14] 1
     mov qword [rsp - 253], 1
 ;   [147:5] # variables can have an initial value that can be an expression
@@ -274,6 +276,7 @@ main:
     cmovge rbp, r14
     jge panic_bounds
 ;   [149:9] free scratch register r14
+;   [149:15] instructions without scratch register 1, with 2
 ;   [149:15] 2
     mov dword [rsp + r15 * 4 - 237], 2
 ;   [149:5] free scratch register r15
@@ -295,6 +298,7 @@ main:
     cmovge rbp, r14
     jge panic_bounds
 ;   [150:9] free scratch register r14
+;   [150:19] instructions without scratch register 10, with 10
 ;   [150:19] arr[ix]
 ;   [150:19] allocate scratch register -> r14
 ;   [150:23] set array index
@@ -671,6 +675,7 @@ main:
     cmovge rbp, r14
     jge panic_bounds
 ;   [163:10] free scratch register r14
+;   [163:15] instructions without scratch register 1, with 2
 ;   [163:16] -1
     mov dword [rsp + r15 * 4 - 285], -1
 ;   [163:5] free scratch register r15
@@ -756,6 +761,7 @@ main:
 ;       [164:5] free scratch register r15
     assert_164_5_end:
 ;   [166:5] ix = 3
+;   [166:10] instructions without scratch register 1, with 2
 ;   [166:10] 3
     mov qword [rsp - 253], 3
 ;   [167:5] arr[ix] = ~inv(arr[ix - 1])
@@ -774,6 +780,7 @@ main:
     cmovge rbp, r14
     jge panic_bounds
 ;   [167:9] free scratch register r14
+;   [167:15] instructions without scratch register 15, with 15
 ;   [167:16] arr = ~inv(arr[ix - 1])
 ;   [167:16] = expression
 ;   [167:16] ~inv(arr[ix - 1])
@@ -799,6 +806,7 @@ main:
 ;       [167:16] alias res -> arr (lea: rsp + r15 * 4 - 237)
 ;       [167:16] alias i -> arr (lea: rsp + r14 * 4 - 237)
 ;       [83:5] res = ~i
+;       [83:11] instructions without scratch register 3, with 3
 ;       [83:12] ~i
 ;       [83:12] allocate scratch register -> r13
         mov r13d, dword [rsp + r14 * 4 - 237]
@@ -883,6 +891,7 @@ main:
         cmovge rbp, r14
         jge panic_bounds
 ;       [93:9] free scratch register r14
+;       [93:14] instructions without scratch register 1, with 2
 ;       [93:14] 0xfe
         mov dword [rsp + r15 * 4 - 237], 254
 ;       [93:5] free scratch register r15
@@ -945,9 +954,11 @@ main:
 ;   [173:9] arr3: i64[2] (16 B @ [rsp - 301])
 ;   [173:9] arr3 = { 3, 5 }
 ;   [173:26] [0]
+;   [173:26] instructions without scratch register 1, with 2
 ;   [173:26] 3
     mov qword [rsp - 301], 3
 ;   [173:26] [1]
+;   [173:29] instructions without scratch register 1, with 2
 ;   [173:29] 5
     mov qword [rsp - 293], 5
 ;   [174:5] foo arr3 
@@ -959,6 +970,7 @@ main:
     mov qword [rsp - 317], 0
     foo_174_5:
 ;       [175:9] e = e + i + n
+;       [175:13] instructions without scratch register 3, with 4
 ;       [175:13] e
 ;       [175:17] e + i
 ;       [175:17] allocate scratch register -> r14
@@ -1114,10 +1126,12 @@ main:
     fooz_185_5:
 ;       [185:5] alias pt -> p
 ;       [67:5] pt.x = 0b10
+;       [67:12] instructions without scratch register 1, with 2
 ;       [67:12] 0b10
         mov qword [rsp - 317], 2
 ;       [67:20] # binary value 2
 ;       [68:5] pt.y = 0xb
+;       [68:12] instructions without scratch register 1, with 2
 ;       [68:12] 0xb
         mov qword [rsp - 309], 11
 ;       [68:20] # hex value 11
@@ -1267,6 +1281,7 @@ main:
 ;   [191:5] # `equal` is built-in function to compare user types for equality or same
 ;   [192:5] # size arrays
 ;   [194:5] q.x = 3
+;   [194:11] instructions without scratch register 1, with 2
 ;   [194:11] 3
     mov qword [rsp - 333], 3
 ;   [195:5] assert(not equal(p, q))
@@ -1328,6 +1343,7 @@ main:
 ;   [197:5] var i = 0
 ;   [197:9] i: i64 (8 B @ [rsp - 341])
 ;   [197:9] i = 0
+;   [197:13] instructions without scratch register 1, with 2
 ;   [197:13] 0
     mov qword [rsp - 341], 0
 ;   [198:5] bar(i)
@@ -1345,6 +1361,7 @@ main:
             jmp bar_198_5_end
         if_74_5_198_5_end:
 ;       [75:5] arg = 0xff
+;       [75:11] instructions without scratch register 1, with 2
 ;       [75:11] 0xff
         mov qword [rsp - 341], 255
     bar_198_5_end:
@@ -1387,6 +1404,7 @@ main:
 ;       [199:5] free scratch register r15
     assert_199_5_end:
 ;   [201:5] i = 1
+;   [201:9] instructions without scratch register 1, with 2
 ;   [201:9] 1
     mov qword [rsp - 341], 1
 ;   [202:5] bar(i)
@@ -1404,6 +1422,7 @@ main:
             jmp bar_202_5_end
         if_74_5_202_5_end:
 ;       [75:5] arg = 0xff
+;       [75:11] instructions without scratch register 1, with 2
 ;       [75:11] 0xff
         mov qword [rsp - 341], 255
     bar_202_5_end:
@@ -1448,11 +1467,13 @@ main:
 ;   [205:5] var j = 1
 ;   [205:9] j: i64 (8 B @ [rsp - 349])
 ;   [205:9] j = 1
+;   [205:13] instructions without scratch register 1, with 2
 ;   [205:13] 1
     mov qword [rsp - 349], 1
 ;   [206:5] var k = baz(j)
 ;   [206:9] k: i64 (8 B @ [rsp - 357])
 ;   [206:9] k = baz(j)
+;   [206:13] instructions without scratch register 5, with 5
 ;   [206:13] k = baz(j)
 ;   [206:13] = expression
 ;   [206:13] baz(j)
@@ -1461,6 +1482,7 @@ main:
 ;       [206:13] alias res -> k (lea: rsp - 357)
 ;       [206:13] alias arg -> j
 ;       [87:5] res = arg * 2
+;       [87:11] instructions without scratch register 5, with 3
 ;       [87:11] allocate scratch register -> r15
 ;       [87:11] arg
         mov r15, qword [rsp - 349]
@@ -1509,6 +1531,7 @@ main:
 ;       [207:5] free scratch register r15
     assert_207_5_end:
 ;   [209:5] k = baz(1)
+;   [209:9] instructions without scratch register 5, with 5
 ;   [209:9] k = baz(1)
 ;   [209:9] = expression
 ;   [209:9] baz(1)
@@ -1517,6 +1540,7 @@ main:
 ;       [209:9] alias res -> k (lea: rsp - 357)
 ;       [209:9] alias arg -> 1
 ;       [87:5] res = arg * 2
+;       [87:11] instructions without scratch register 4, with 3
 ;       [87:11] allocate scratch register -> r15
 ;       [87:11] arg
         mov r15, 1
@@ -1568,6 +1592,7 @@ main:
 ;   [212:9] p0: point (16 B @ [rsp - 373])
 ;   [212:9] p0 = {baz(3), 0}
 ;   [212:23] copy field 'x'
+;   [212:23] instructions without scratch register 5, with 5
 ;   [212:23] p0.x = baz(3)
 ;   [212:23] = expression
 ;   [212:23] baz(3)
@@ -1576,6 +1601,7 @@ main:
 ;       [212:23] alias res -> p0.x (lea: rsp - 373)
 ;       [212:23] alias arg -> 3
 ;       [87:5] res = arg * 2
+;       [87:11] instructions without scratch register 4, with 3
 ;       [87:11] allocate scratch register -> r15
 ;       [87:11] arg
         mov r15, 3
@@ -1633,9 +1659,11 @@ main:
     point_init_215_22:
 ;       [215:22] alias res -> pt (lea: rsp - 389)
 ;       [114:5] res.x = -1
+;       [114:13] instructions without scratch register 1, with 2
 ;       [114:14] -1
         mov qword [rsp - 389], -1
 ;       [115:5] res.y = -2
+;       [115:13] instructions without scratch register 1, with 2
 ;       [115:14] -2
         mov qword [rsp - 381], -2
     point_init_215_22_end:
@@ -1718,11 +1746,13 @@ main:
 ;   [219:5] var x = 1
 ;   [219:9] x: i64 (8 B @ [rsp - 397])
 ;   [219:9] x = 1
+;   [219:13] instructions without scratch register 1, with 2
 ;   [219:13] 1
     mov qword [rsp - 397], 1
 ;   [220:5] var y = 2
 ;   [220:9] y: i64 (8 B @ [rsp - 405])
 ;   [220:9] y = 2
+;   [220:13] instructions without scratch register 1, with 2
 ;   [220:13] 2
     mov qword [rsp - 405], 2
 ;   [222:5] var o1 : object = {{x * 10, y}, 0xff0000}
@@ -1730,6 +1760,7 @@ main:
 ;   [222:9] o1 = {{x * 10, y}, 0xff0000}
 ;   [222:24] copy field 'pos'
 ;   [222:25] copy field 'x'
+;   [222:25] instructions without scratch register 5, with 3
 ;   [222:25] allocate scratch register -> r15
 ;   [222:25] x
     mov r15, qword [rsp - 397]
@@ -2099,6 +2130,7 @@ main:
 ;   [237:5] free named register rdi
 ;   [237:5] free named register rax
 ;   [238:5] o3.pos.y = 73
+;   [238:16] instructions without scratch register 1, with 2
 ;   [238:16] 73
     mov qword [rsp - 493], 73
 ;   [239:5] # index 0 in an array can be accessed without array index
@@ -2187,6 +2219,7 @@ main:
     object_init_243_13:
 ;       [243:13] alias res -> o3 (lea: r15)
 ;       [119:5] res.pos.y = 74
+;       [119:17] instructions without scratch register 1, with 2
 ;       [119:17] 74
         mov qword [r15 + 8], 74
     object_init_243_13_end:
@@ -2299,6 +2332,7 @@ main:
     cmovge rbp, r13
     jge panic_bounds
 ;   [247:25] free scratch register r13
+;   [247:30] instructions without scratch register 1, with 2
 ;   [247:30] 0xffee
     mov qword [r15 + r14 * 8], 65518
 ;   [247:5] free scratch register r14
@@ -2666,9 +2700,11 @@ main:
 ;   [265:9] arr2: i64[2] (16 B @ [rsp - 1029])
 ;   [265:9] arr2 = { -1, 2 }
 ;   [265:26] [0]
+;   [265:26] instructions without scratch register 1, with 2
 ;   [265:27] -1
     mov qword [rsp - 1029], -1
 ;   [265:26] [1]
+;   [265:30] instructions without scratch register 1, with 2
 ;   [265:30] 2
     mov qword [rsp - 1021], 2
 ;   [266:5] assert(array_size_of(arr2) == 2)
@@ -2943,6 +2979,7 @@ main:
 ;           [101:5] syscall()
             syscall
 ;           [102:5] mov(s.len, rax - 1)
+;               [102:16] instructions without scratch register 2, with 3
 ;               [102:16] rax
                 mov byte [rsp - 1157], al
 ;               [102:22] s.len - 1

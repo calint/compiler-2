@@ -289,14 +289,13 @@ class expr_ops_list final : public expression {
         x.free_scratch_register(tok(), indent, reg);
         x.use_stream(prev2);
 
-        // std::println(std::cerr,
-        //              "---------\nwithout scratch register:\n{}\nwith scratch"
-        //              " register:\n{}\n---------\n",
-        //              ss1.str(), ss2.str());
-
         // compare instruction count
         const size_t ss1_count{count_instructions(ss1)};
         const size_t ss2_count{count_instructions(ss2)};
+
+        x.comment(tok(), indent,
+                  "instructions without scratch register {}, with {}",
+                  ss1_count, ss2_count);
 
         // select the version with the fewest instructions
         if (ss1_count <= ss2_count) {
