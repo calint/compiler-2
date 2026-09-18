@@ -1,0 +1,18 @@
+Top compiler symbols (flat, no-children):
+  0.25%  toc::make_ident_info_or_empty(x86 const*, token const&, std::basic_string_view<char, std::char_traits<char> >) const
+  0.17%  tokenizer::is_next_char_token(char)
+  0.13%  expr_bool_ops_list::compile(toc&, x86&, unsigned long, std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >, bool, std::basic_string_view<char, std::char_traits<char> >) const
+  0.11%  toc::source_location_for_use_in_label[abi:cxx11](token const&) const
+  0.10%  stmt_identifier::compile_lea(toc&, x86&, unsigned long, token const&, std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, 18446744073709551615ul>) const
+  0.08%  x86::zero(token const&, unsigned long, std::basic_string_view<char, std::char_traits<char> >, unsigned long)
+  0.08%  stmt_def_var::stmt_def_var(toc&, token, tokenizer&)
+  0.07%  tokenizer::next_token()
+  0.07%  expr_ops_list::operator=(expr_ops_list&&)
+  0.07%  expr_bool_op::expr_bool_op(toc&, tokenizer&)
+  0.05%  stmt_def_var::source_to(std::ostream&) const
+  0.05%  stmt_assign_var::stmt_assign_var(toc&, tokenizer&, stmt_identifier, token, bool, unsigned long)
+  0.04%  toc::make_ident_info_from_frame(x86 const*, frame const&, token const&, std::basic_string_view<char, std::char_traits<char> >, ident_path const&, std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >) const
+  0.03%  x86::op(token const&, unsigned long, std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >)
+  0.03%  stmt_identifier::~stmt_identifier()
+  0.03%  stmt_block::stmt_block(toc&, tokenizer&)
+  0.03%  expr_any::parse_variant(toc&, tokenizer&, type const&, bool)

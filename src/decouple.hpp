@@ -323,9 +323,9 @@ struct ident_info {
 
     void push(std::string path_elem, const type* tp, std::string lea) {
         id += "." + path_elem;
-        elem_path.emplace_back(path_elem);
+        elem_path.emplace_back(std::move(path_elem));
         type_path.emplace_back(tp);
-        lea_path.emplace_back(lea);
+        lea_path.emplace_back(std::move(lea));
     }
 
     void pop() {
@@ -339,12 +339,6 @@ struct ident_info {
         assert(stack_ix + n <= 0);
         stack_ix += n;
         operand.displacement += n;
-    }
-
-    void replace_back(std::string path_elem, const type* tp, std::string lea) {
-        elem_path.back() = path_elem;
-        type_path.back() = tp;
-        lea_path.back() = lea;
     }
 };
 

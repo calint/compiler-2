@@ -1,18 +1,2 @@
-Fri Sep 18 09:23:57 PM +07 2026
-/home/c/w/compiler-2/qa/lint/../../src/decouple.hpp:324:27: warning: the parameter 'path_elem' of type 'std::string' (aka 'basic_string<char>') is copied for each invocation but only used as a const reference; consider making it a const reference [performance-unnecessary-value-param]
-  324 |     void push(std::string path_elem, const type* tp, std::string lea) {
-      |                           ^
-      |               const      &
-/home/c/w/compiler-2/qa/lint/../../src/decouple.hpp:324:66: warning: the parameter 'lea' of type 'std::string' (aka 'basic_string<char>') is copied for each invocation but only used as a const reference; consider making it a const reference [performance-unnecessary-value-param]
-  324 |     void push(std::string path_elem, const type* tp, std::string lea) {
-      |                                                                  ^
-      |                                                      const      &
-/home/c/w/compiler-2/qa/lint/../../src/decouple.hpp:345:28: warning: parameter 'path_elem' of type 'std::string' (aka 'basic_string<char>') is passed by value and only copied once; consider moving it to avoid unnecessary copies [performance-unnecessary-value-param]
-  345 |         elem_path.back() = path_elem;
-      |                            ^        
-      |                            std::move( )
-/home/c/w/compiler-2/qa/lint/../../src/decouple.hpp:347:27: warning: parameter 'lea' of type 'std::string' (aka 'basic_string<char>') is passed by value and only copied once; consider moving it to avoid unnecessary copies [performance-unnecessary-value-param]
-  347 |         lea_path.back() = lea;
-      |                           ^  
-      |                           std::move( )
-Fri Sep 18 09:24:06 PM +07 2026
+Fri Sep 18 11:17:30 PM +07 2026
+Fri Sep 18 11:17:39 PM +07 2026

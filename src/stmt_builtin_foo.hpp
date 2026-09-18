@@ -72,11 +72,7 @@ class stmt_builtin_foo final : public statement {
         -> void override {
 
         // emit a one-line trimmed comment for the definition
-        std::stringstream ss;
-        ident_.source_to(ss);
-        // make a comment-friendly string by collapsing whitespace
-        x.comment(tok(), indent, "foo {}",
-                  std::regex_replace(ss.str(), utils::regex_ws(), " "));
+        x.comment(tok(), indent, "foo {}", statement::trimmed_source(ident_));
 
         const std::string loop_label{tc.get_call_path_extend(tok(), "foo")};
         tc.enter_foo(loop_label);

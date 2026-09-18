@@ -341,7 +341,6 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
-            // todo: fix this dst_info is not correct but works because operand
             cur_dst_info.operand = operand{dst_accessor, false};
             src.compile(tc, x, indent, cur_dst_info);
         } else {

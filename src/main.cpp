@@ -1,4 +1,4 @@
-// review: 2025-09-29
+// reviewed: 2025-09-29
 
 #include <cstddef>
 #include <cstdint>

@@ -1,8 +1,8 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cctype>
 #include <format>
-#include <regex>
 #include <span>
 #include <sstream>
 #include <string>
@@ -25,6 +25,42 @@ class statement {
     unary_ops uops_;
     const type* type_{};
 
+    [[nodiscard]] static auto collapse_whitespace(const std::string_view text)
+        -> std::string {
+
+        size_t start{};
+        while (start < text.size() and
+               std::isspace(static_cast<unsigned char>(text[start]))) {
+            ++start;
+        }
+
+        std::string out;
+        out.reserve(text.size() - start);
+
+        bool in_whitespace{};
+
+        for (size_t i{start}; i < text.size(); ++i) {
+            const char ch{text[i]};
+            if (std::isspace(static_cast<unsigned char>(ch))) {
+                if (in_whitespace) {
+                    continue;
+                }
+                out.push_back(' ');
+                in_whitespace = true;
+                continue;
+            }
+
+            out.push_back(ch);
+            in_whitespace = false;
+        }
+
+        while (not out.empty() and out.back() == ' ') {
+            out.pop_back();
+        }
+
+        return out;
+    }
+
   public:
     explicit statement(token tk, unary_ops uops = {})
         : token_{tk}, uops_{std::move(uops)} {}
@@ -32,7 +68,7 @@ class statement {
     virtual ~statement() = default;
 
     statement() = default;
-    statement(statement&) = default;
+    statement(const statement&) = default;
     statement(statement&&) = default;
     auto operator=(statement&&) -> statement& = default;
     auto operator=(statement const&) -> statement& = default;
@@ -52,14 +88,19 @@ class statement {
 
     // one-line, whitespace-collapsed rendering of 'st's source, suitable for
     // an assembler comment
+    [[nodiscard]] static auto trimmed_source(const std::string_view text)
+        -> std::string {
+        return collapse_whitespace(text);
+    }
+
+    // one-line, whitespace-collapsed rendering of 'st's source, suitable for
+    // an assembler comment
     [[nodiscard]] static auto trimmed_source(const statement& st)
         -> std::string {
 
         std::stringstream ss;
         st.source_to(ss);
-        return std::regex_replace(
-            std::regex_replace(ss.str(), utils::regex_trim(), ""),
-            utils::regex_ws(), " ");
+        return collapse_whitespace(ss.str());
     }
 
     // same as above, with a "'dst' 'op' " prefix before the rendered source
@@ -70,11 +111,7 @@ class statement {
         std::stringstream ss;
         std::print(ss, "{} {} ", dst, op);
         st.source_to(ss);
-        std::string text{std::regex_replace(ss.str(), utils::regex_ws(), " ")};
-        if (not text.empty() and text.back() == ' ') {
-            text.pop_back();
-        }
-        return text;
+        return collapse_whitespace(ss.str());
     }
 
     [[nodiscard]] virtual auto tok() const -> const token& { return token_; }
