@@ -17,8 +17,6 @@
 #include "type.hpp"
 
 class stmt_def_var final : public statement {
-    static constexpr size_t threshold_for_rep_stos{32};
-
     token name_tk_;
     token type_delim_tk_;
     token type_tk_;
