@@ -368,7 +368,7 @@ class toc final {
             x.print("[{}]", var.array_size);
         }
         if (not var.reg.empty()) {
-            x.print(" ({})", var.reg);
+            x.println(" ({})", var.reg);
             return;
         }
         x.println(" ({} B @ [{}])",
