@@ -75,7 +75,7 @@ class stmt_builtin_array_copy final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        x.comment_source(tok(), indent, statement::trimmed_source(*this));
+        x.comment_line(tok(), indent, statement::trimmed_source(*this));
 
         const ident_info from_info{tc.make_ident_info(x, from_)};
         const ident_info to_info{tc.make_ident_info(x, to_)};
@@ -88,13 +88,14 @@ class stmt_builtin_array_copy final : public statement {
         std::vector<std::string> allocated_scratch_registers;
 
         // size to 'rcx'
-        x.comment_source(count_.tok(), indent,
-                         statement::trimmed_source(count_));
+        x.comment_line(count_.tok(), indent, statement::trimmed_source(count_));
+
         count_.compile(tc, x, indent,
                        toc::make_ident_info_for_register(x, "rcx"));
 
         // from operand to rsi
-        x.comment_source(from_.tok(), indent, statement::trimmed_source(from_));
+        x.comment_line(from_.tok(), indent, statement::trimmed_source(from_));
+
         const operand from_operand{stmt_identifier::compile_effective_address(
             tc, x, indent, from_.first_token(), from_.elems(),
             allocated_scratch_registers, "rcx", from_info.lea_path)};
@@ -107,8 +108,10 @@ class stmt_builtin_array_copy final : public statement {
         }
 
         // to operand to 'rdi'
+        x.comment_line(to_.tok(), indent, statement::trimmed_source(to_));
+
         allocated_scratch_registers.clear();
-        x.comment_source(to_.tok(), indent, statement::trimmed_source(to_));
+
         const operand to_operand{stmt_identifier::compile_effective_address(
             tc, x, indent, to_.first_token(), to_.elems(),
             allocated_scratch_registers, "rcx", to_info.lea_path)};

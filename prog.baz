@@ -25,6 +25,8 @@ dat     dot : i8[] = "."
 dat      nl : i8[] = "\n"
 dat    nums : i64[4] = { 1 } # remaining elements are zeroed
 dat      s1 : str = { 3 } # remaining fields are zeroed
+dat     xyz : i64 = 1
+dat     bla : i8[3] = {1, 2}
 
 # all functions are inlined
 

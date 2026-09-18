@@ -103,9 +103,11 @@ class expr_bool_op final : public statement {
         -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
-        x.comment_source(tok(), indent,
-                         statement::trimmed_source(
-                             *this, "?", inverted ? " 'or' inverted: " : " "));
+
+        x.comment_line(tok(), indent,
+                       statement::trimmed_source(
+                           *this, "?", inverted ? " 'or' inverted: " : " "));
+
         x.label(indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // is 'lhs' a constant?
@@ -119,7 +121,7 @@ class expr_bool_op final : public statement {
                     if (invert) {
                         const_eval = not const_eval;
                     }
-                    x.comment_line(indent, "const eval to {}",
+                    x.comment_line(lhs_.tok(), indent, "const eval to {}",
                                    (const_eval ? "true" : "false"));
                     if (const_eval) {
                         // since it is an 'or' chain short-circuit
@@ -158,7 +160,7 @@ class expr_bool_op final : public statement {
                 if (invert) {
                     const_eval = not const_eval;
                 }
-                x.comment_line(indent, "const eval to {}",
+                x.comment_line(lhs_.tok(), indent, "const eval to {}",
                                (const_eval ? "true" : "false"));
                 if (const_eval) {
                     // expression evaluated at compile time and true so
@@ -190,9 +192,11 @@ class expr_bool_op final : public statement {
         -> std::optional<bool> {
 
         const bool invert{inverted ? not is_not_ : is_not_};
-        x.comment_source(tok(), indent,
-                         statement::trimmed_source(
-                             *this, "?", inverted ? " 'and' inverted: " : " "));
+
+        x.comment_line(tok(), indent,
+                       statement::trimmed_source(
+                           *this, "?", inverted ? " 'and' inverted: " : " "));
+
         x.label(indent, create_cmp_bgn_label(tc));
         if (is_shorthand_) {
             // check case when operand is constant
@@ -204,7 +208,7 @@ class expr_bool_op final : public statement {
                     if (invert) {
                         const_eval = not const_eval;
                     }
-                    x.comment_line(indent, "const eval to {}",
+                    x.comment_line(lhs_.tok(), indent, "const eval to {}",
                                    (const_eval ? "true" : "false"));
                     if (not const_eval) {
                         // since it is an 'and' chain short-circuit
@@ -243,7 +247,7 @@ class expr_bool_op final : public statement {
                 if (invert) {
                     const_eval = not const_eval;
                 }
-                x.comment_line(indent, "const eval to {}",
+                x.comment_line(lhs_.tok(), indent, "const eval to {}",
                                (const_eval ? "true" : "false"));
                 if (not const_eval) {
                     // short circuit 'and' chain

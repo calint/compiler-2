@@ -92,53 +92,31 @@ class x86 final {
         return prev;
     }
 
-    // member form: uses this instance's own print/os/source instead of
-    // taking them
     auto comment_start(const token& source_location, const size_t indent)
         -> void {
         const auto [line, column]{utils::line_and_col_num_for_char_index(
             source_location.at_line(), source_location.start_index(), source_)};
-        comment_indent(indent);
-        print("[{}:{}] ", line, column);
-    }
 
-    auto comment_token(const token& token, const size_t indent) -> void {
-        comment_start(token, indent);
-        println("{}", token.text());
+        comment_indent(indent);
+
+        print("[{}:{}] ", line, column);
     }
 
     template <typename... args_t>
     auto comment_line(const token& source_location, const size_t indent,
                       const std::format_string<args_t...> format,
                       args_t&&... args) -> void {
+
         comment_start(source_location, indent);
+
         println(format, std::forward<args_t>(args)...);
     }
 
-    template <typename... args_t>
-    auto comment_line(const size_t indent,
-                      const std::format_string<args_t...> format,
-                      args_t&&... args) -> void {
-        comment_indent(indent);
-        println(format, std::forward<args_t>(args)...);
-    }
+    auto comment_line(const token& source_location, const size_t indent,
+                      const std::string_view text) -> void {
 
-    auto comment_indent(const size_t indent) -> void {
-        print(";");
-
-        if (indent != 0) {
-            print("   ");
-        }
-        for (size_t index{1}; index < indent; ++index) {
-            print("    ");
-        }
-    }
-
-    template <typename... args_t>
-    auto comment(const std::format_string<args_t...> format, args_t&&... args)
-        -> void {
-        print("; ");
-        println(format, std::forward<args_t>(args)...);
+        comment_start(source_location, indent);
+        println("{}", text);
     }
 
     auto emit_buffer(const std::string_view text) const -> void {
@@ -166,8 +144,7 @@ class x86 final {
                               const std::string_view reg, const type& type_ref)
         -> void {
 
-        comment_start(src_loc_tk, indnt);
-        println("allocate named register '{}'", reg);
+        comment_line(src_loc_tk, indnt, "allocate named register '{}'", reg);
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
@@ -204,8 +181,7 @@ class x86 final {
         std::string reg{std::move(scratch_registers_.back())};
         scratch_registers_.pop_back();
 
-        comment_start(src_loc_tk, indnt);
-        println("allocate scratch register -> {}", reg);
+        comment_line(src_loc_tk, indnt, "allocate scratch register -> {}", reg);
 
         const size_t n{scratch_registers_initial_size_ -
                        scratch_registers_.size()};
@@ -220,8 +196,7 @@ class x86 final {
     auto free_named_register(const token& src_loc_tk, const size_t indnt,
                              const std::string_view reg) -> void {
 
-        comment_start(src_loc_tk, indnt);
-        println("free named register '{}'", reg);
+        comment_line(src_loc_tk, indnt, "free named register '{}'", reg);
 
         assert(allocated_registers_.back().name == reg);
 
@@ -233,8 +208,7 @@ class x86 final {
     auto free_scratch_register(const token& src_loc_tk, const size_t indnt,
                                const std::string_view reg) -> void {
 
-        comment_start(src_loc_tk, indnt);
-        println("free scratch register '{}'", reg);
+        comment_line(src_loc_tk, indnt, "free scratch register '{}'", reg);
 
         assert(allocated_registers_.back().name == reg);
 
@@ -386,9 +360,9 @@ class x86 final {
             return;
         }
 
-        comment_start(src_loc_tk, indent);
-        std::println(os_.get(), "size <= {} B, use mov",
+        comment_line(src_loc_tk, indent, "size <= {} B, use mov",
                      threshold_for_rep_movs);
+
         alloc_named_register(src_loc_tk, indent, "rax", *default_type_);
         size_t rest{bytes_count};
         const size_t qword_movs{rest / operand::size_qword};
@@ -442,9 +416,9 @@ class x86 final {
             return;
         }
 
-        comment_start(src_loc_tk, indent);
-        std::println(os_.get(), "size <= {} B, use mov",
+        comment_line(src_loc_tk, indent, "size <= {} B, use mov",
                      threshold_for_rep_stos);
+
         size_t rest{bytes_count};
         const size_t qword_movs{rest / operand::size_qword};
         operand dst_operand{dst};
@@ -776,12 +750,6 @@ class x86 final {
         }
     }
 
-    auto comment_source(const token& source_location, const size_t indent,
-                        const std::string_view text) -> void {
-        comment_start(source_location, indent);
-        println("{}", text);
-    }
-
     auto comment_start(const std::string_view source,
                        const token& source_location, const size_t indent)
         -> void {
@@ -808,6 +776,17 @@ class x86 final {
     auto println() const -> void { std::println(os_.get()); }
 
   private:
+    auto comment_indent(const size_t indent) -> void {
+        print(";");
+
+        if (indent != 0) {
+            print("   ");
+        }
+        for (size_t index{1}; index < indent; ++index) {
+            print("    ");
+        }
+    }
+
     [[nodiscard]] auto operand_size(const std::string_view operand) const
         -> size_t {
         if (operand.starts_with("qword")) {

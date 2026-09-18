@@ -55,7 +55,7 @@ class stmt_builtin_address_of final : public expression {
     auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x.comment_source(tok(), indent, statement::trimmed_source(*this));
+        x.comment_line(tok(), indent, statement::trimmed_source(*this));
 
         if (dst_info.is_const()) {
             throw compiler_exception{stmt_ident_.first_token(),

@@ -468,8 +468,8 @@ class expr_ops_list final : public expression {
             op_str.push_back('>');
         }
 
-        x.comment_source(src.tok(), indent,
-                         statement::trimmed_source(src, dst.id, op_str));
+        x.comment_line(src.tok(), indent,
+                       statement::trimmed_source(src, dst.id, op_str));
 
         if (op == '=') {
             asm_op_mov(tc, x, indent, dst, src);
@@ -521,10 +521,11 @@ class expr_ops_list final : public expression {
                            const ident_info& dst_info, const statement& src)
         -> void {
 
-        x.comment_start(src.tok(), indent);
+        x.comment_line(src.tok(), indent, "{}",
+                       src.is_expression() ? "= expression" : "");
+
         // does 'src' need to be compiled?
         if (src.is_expression()) {
-            x.println("= expression");
             // yes, compile with destination to 'dst'
             src.compile(tc, x, indent, dst_info);
             return;
@@ -553,13 +554,11 @@ class expr_ops_list final : public expression {
 
             // note: 'imul' destination must be a register
             if (dst_info.is_register() and not dst_info.is_memory_operand()) {
-                x.comment_start(src.tok(), indent);
-                x.println("imul: expr reg");
+                x.comment_line(src.tok(), indent, "imul: expr reg");
                 x.op(src.tok(), indent, "imul", dst_info.operand.str(),
                      reg_sized);
             } else {
-                x.comment_start(src.tok(), indent);
-                x.println("imul: expr not reg");
+                x.comment_line(src.tok(), indent, "imul: expr not reg");
                 // 'imul' destination is not a register
                 x.op(src.tok(), indent, "imul", reg_sized,
                      dst_info.operand.str());
@@ -591,14 +590,12 @@ class expr_ops_list final : public expression {
             x.mov(src.tok(), indent, r1, dst_info.operand.str());
 
             if (src_info.is_const()) {
-                x.comment_start(src.tok(), indent);
-                x.println("imul: byte const");
+                x.comment_line(src.tok(), indent, "imul: byte const");
                 x.mov(src.tok(), indent, r2,
                       std::format("{}{}", uops.to_string(),
                                   src_info.const_value));
             } else {
-                x.comment_start(src.tok(), indent);
-                x.println("imul: byte not const");
+                x.comment_line(src.tok(), indent, "imul: byte not const");
                 x.mov(src.tok(), indent, r2, src_operand.str());
                 uops.compile(tc, x, indent, r2);
             }
@@ -615,8 +612,7 @@ class expr_ops_list final : public expression {
         if (not dst_info.is_memory_operand()) {
             // destination is a register
             if (src_info.is_const()) {
-                x.comment_start(src.tok(), indent);
-                x.println("dst is reg, src is const");
+                x.comment_line(src.tok(), indent, "dst is reg, src is const");
                 x.imul(src.tok(), indent, dst_info.operand.str(),
                        std::format("{}{}", src.get_unary_ops().to_string(),
                                    src_info.const_value));
@@ -629,16 +625,16 @@ class expr_ops_list final : public expression {
 
             const unary_ops& uops{src.get_unary_ops()};
             if (uops.is_empty()) {
-                x.comment_start(src.tok(), indent);
-                x.println("dst is reg, src is not const, no uops");
+                x.comment_line(src.tok(), indent,
+                               "dst is reg, src is not const, no uops");
                 x.op(src.tok(), indent, "imul", dst_info.operand.str(),
                      src_operand.str());
                 free_registers(src, x, indent, lea_registers);
                 return;
             }
 
-            x.comment_start(src.tok(), indent);
-            x.println("dst is reg, src is not const, uops");
+            x.comment_line(src.tok(), indent,
+                           "dst is reg, src is not const, uops");
             const std::string reg{x.alloc_scratch_register(
                 src.tok(), indent, tc.get_type_default())};
             const std::string reg_sized{
@@ -654,8 +650,7 @@ class expr_ops_list final : public expression {
         // 'imul' destination is not a register
 
         if (src_info.is_const()) {
-            x.comment_start(src.tok(), indent);
-            x.println("dst is not reg, src is const");
+            x.comment_line(src.tok(), indent, "dst is not reg, src is const");
             const std::string reg{x.alloc_scratch_register(
                 src.tok(), indent, tc.get_type_default())};
             const std::string reg_sized{
@@ -677,8 +672,8 @@ class expr_ops_list final : public expression {
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
-            x.comment_start(src.tok(), indent);
-            x.println("dst is not reg, src is not const, no uops");
+            x.comment_line(src.tok(), indent,
+                           "dst is not reg, src is not const, no uops");
             const std::string reg{x.alloc_scratch_register(
                 src.tok(), indent, tc.get_type_default())};
             const std::string reg_sized{
@@ -693,8 +688,8 @@ class expr_ops_list final : public expression {
 
         // source is not a constant and unary ops need to be applied
 
-        x.comment_start(src.tok(), indent);
-        x.println("dst is not reg, src is not const, uops");
+        x.comment_line(src.tok(), indent,
+                       "dst is not reg, src is not const, uops");
         const std::string reg{
             x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
         const std::string reg_sized{
@@ -837,8 +832,7 @@ class expr_ops_list final : public expression {
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
-            x.comment_start(src.tok(), indent);
-            x.println("shf: expr");
+            x.comment_line(src.tok(), indent, "shf: expr");
             // the operand must be stored in register 'CL'
             // todo: BMI2 (Bit Manipulation Instruction Set 2)
             //       look at shlx/shrx/sarx which can use any register for the
@@ -859,8 +853,7 @@ class expr_ops_list final : public expression {
 
         const ident_info src_info{tc.make_ident_info(x, src)};
         if (src_info.is_const()) {
-            x.comment_start(src.tok(), indent);
-            x.println("shf: const");
+            x.comment_line(src.tok(), indent, "shf: const");
             x.op(src.tok(), indent, op, dst_info.operand.str(),
                  std::format("{}{}", src.get_unary_ops().to_string(),
                              src_info.const_value));
@@ -881,8 +874,7 @@ class expr_ops_list final : public expression {
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
-            x.comment_start(src.tok(), indent);
-            x.println("shf: not const, no uops");
+            x.comment_line(src.tok(), indent, "shf: not const, no uops");
             // the operand must be stored in CL (see note above about BMI2)
             x.alloc_named_register(src.tok(), indent, "rcx",
                                    tc.get_type_default());
@@ -897,8 +889,7 @@ class expr_ops_list final : public expression {
 
         // unary ops need to be applied on the argument src
 
-        x.comment_start(src.tok(), indent);
-        x.println("shf: not const, uops");
+        x.comment_line(src.tok(), indent, "shf: not const, uops");
 
         x.alloc_named_register(src.tok(), indent, "rcx", tc.get_type_default());
         const std::string rcx_sized{
@@ -921,8 +912,7 @@ class expr_ops_list final : public expression {
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
-            x.comment_start(src.tok(), indent);
-            x.println("div expression");
+            x.comment_line(src.tok(), indent, "div expression");
             const std::string reg{x.alloc_scratch_register(
                 src.tok(), indent, tc.get_type_default())};
             const std::string reg_sized{
@@ -949,8 +939,7 @@ class expr_ops_list final : public expression {
 
         const ident_info src_info{tc.make_ident_info(x, src)};
         if (src_info.is_const()) {
-            x.comment_start(src.tok(), indent);
-            x.println("div const");
+            x.comment_line(src.tok(), indent, "div const");
             x.alloc_named_register(src.tok(), indent, "rax",
                                    tc.get_type_default());
             x.mov(src.tok(), indent,
@@ -987,8 +976,7 @@ class expr_ops_list final : public expression {
 
         const unary_ops& uops{src.get_unary_ops()};
         if (uops.is_empty()) {
-            x.comment_start(src.tok(), indent);
-            x.println("div not const, no uops");
+            x.comment_line(src.tok(), indent, "div not const, no uops");
             x.alloc_named_register(src.tok(), indent, "rax",
                                    tc.get_type_default());
             x.mov(src.tok(), indent,
@@ -1008,8 +996,7 @@ class expr_ops_list final : public expression {
 
         // 'src' is not an expression and not a constant and has unary ops
 
-        x.comment_start(src.tok(), indent);
-        x.println("div not const, uops");
+        x.comment_line(src.tok(), indent, "div not const, uops");
         const std::string reg{
             x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
         const std::string reg_sized{

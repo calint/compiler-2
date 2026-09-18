@@ -254,6 +254,7 @@ class toc final {
 
         if (has_const_in_current_block(name)) {
             const const_info& c{frames_.back().get_const(name)};
+
             throw compiler_exception(
                 src_loc_tk,
                 std::format("constant '{}' already defined in this block at {}",
@@ -327,12 +328,14 @@ class toc final {
         if (frames_.back().has_var(var.name)) {
             const var_info& decl_var{
                 frames_.back().get_var_const_ref(var.name)};
+
             throw compiler_exception{
                 src_loc_tk,
                 std::format("variable '{}' already declared at {}", var.name,
                             source_location_hr(decl_var.declared_at_tk))};
         }
 
+        // increase stack index (is negative) to fit variable
         const int stack_idx{static_cast<int>(
             get_stack_size() +
             (var.type_ptr->size() * (var.is_array ? var.array_size : 1)))};
@@ -341,6 +344,7 @@ class toc final {
 
         frames_.back().add_var(var, is_dat);
 
+        // stats
         const size_t total_stack_size{get_stack_size()};
         usage_max_stack_size_ =
             std::max(total_stack_size, usage_max_stack_size_);
@@ -534,7 +538,9 @@ class toc final {
 
         operand op{src.compile_lea(*this, x, indent, src.tok(), lea_registers,
                                    "", src_info.lea_path)};
+
         op.size = src_info.type().size();
+
         return op;
     }
 

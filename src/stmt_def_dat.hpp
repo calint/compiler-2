@@ -115,7 +115,7 @@ class stmt_def_dat final : public statement {
         tc.add_var(x, name_tk_, 0, var, true);
 
         if (has_init_) {
-            elroot_ = parse_elem(tc, tz, tp, is_array, array_size);
+            elroot_ = parse_elem(tc, tz, name_tk_, tp, is_array, array_size);
             if (elroot_.is_array and elroot_.array_size == 0 and
                 not elroot_.tk.is_string() and elroot_.elems.empty()) {
                 throw compiler_exception{name_tk_,
@@ -169,7 +169,8 @@ class stmt_def_dat final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x.comment_source(tok(), indent, statement::trimmed_source(*this));
+        x.comment_line(tok(), indent, statement::trimmed_source(*this));
+
         const var_info var{
             .name{name_tk_.text()},
             .type_ptr{&get_type()},
@@ -182,17 +183,16 @@ class stmt_def_dat final : public statement {
     }
 
     auto compile_data(const toc& tc, x86& x) const -> void override {
-        compile_data_rec(tc, x, name_tk_.text(), get_type(), elroot_);
+        x.comment_line(name_tk_, 0, name_tk_.text());
+        compile_data_rec(tc, x, get_type(), elroot_);
     }
 
   private:
-    static auto compile_data_rec(const toc& tc, x86& x,
-                                 const std::string_view nm, const type& tp,
+    static auto compile_data_rec(const toc& tc, x86& x, const type& tp,
                                  const elem& elroot) -> void {
 
         if (not elroot.is_array) {
-            x.comment("{}: {}", nm, tp.name());
-            compile_data_elem(tc, x, nm, tp, elroot);
+            compile_data_elem(tc, x, tp, elroot);
             return;
         }
 
@@ -202,17 +202,18 @@ class stmt_def_dat final : public statement {
         // note: only i8[] can be initialized with string token
 
         if (elroot.tk.is_string()) {
-            compile_data_builtin(x, nm, tp, elroot);
+            compile_data_builtin(x, tp, elroot);
             return;
         }
 
         // regular arrays
 
-        x.comment("{}: {}[{}]", nm, tp.name(), elroot.array_size);
+        x.comment_line(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_size);
+
         size_t counter{};
         for (const elem& el : elroot.elems) {
-            x.comment("[{}]", counter);
-            compile_data_elem(tc, x, nm, tp, el);
+            x.comment_line(el.tk, 0, "[{}]", counter);
+            compile_data_elem(tc, x, tp, el);
             ++counter;
         }
 
@@ -224,16 +225,17 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        x.comment("pad {} '{}' of size {}", diff, tp.name(), tp.size());
+        x.comment_line(elroot.tk, 0, "pad {} '{}' of size {}", diff, tp.name(),
+                       tp.size());
+
         x.times(diff * tp.size(), "db", "0");
     }
 
-    static auto compile_data_elem(const toc& tc, x86& x,
-                                  const std::string_view& nm, const type& tp,
+    static auto compile_data_elem(const toc& tc, x86& x, const type& tp,
                                   const elem& elroot) -> void {
 
         if (tp.is_built_in()) {
-            compile_data_builtin(x, nm, tp, elroot);
+            compile_data_builtin(x, tp, elroot);
             return;
         }
 
@@ -244,9 +246,9 @@ class stmt_def_dat final : public statement {
         for (const elem& el : elroot.elems) {
             const type_field& tf{flds[counter]};
             if (tf.type().is_built_in()) {
-                compile_data_builtin(x, tf.name, tf.type(), el);
+                compile_data_builtin(x, tf.type(), el);
             } else {
-                compile_data_rec(tc, x, tf.name, tf.type(), el);
+                compile_data_rec(tc, x, tf.type(), el);
             }
             ++counter;
         }
@@ -262,18 +264,17 @@ class stmt_def_dat final : public statement {
         for (size_t i{counter}; i < n; ++i) {
             nbytes += flds[i].size;
         }
-        x.comment("zero remaining fields");
+        x.comment_line(elroot.tk, 0, "zero remaining fields");
         x.times(nbytes, "db", "0");
     }
 
-    static auto compile_data_builtin(x86& x, const std::string_view fldnm,
-                                     const type& tp, const elem& elroot)
+    static auto compile_data_builtin(x86& x, const type& tp, const elem& elroot)
         -> void {
 
         // NASM data directive for this element size
         const std::string_view dd{x86::get_data_def(tp.size())};
         if (not elroot.is_array) {
-            x.comment("{}: {}", fldnm, tp.name());
+            x.comment_line(elroot.tk, 0, "{}", tp.name());
             if (elroot.tk.text().empty()) {
                 x.dat_begin(tp.size());
                 x.dat_value("0");
@@ -290,7 +291,7 @@ class stmt_def_dat final : public statement {
 
         // array of built-ins
 
-        x.comment("{}: {}[{}]", fldnm, tp.name(), elroot.array_size);
+        x.comment_line(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_size);
 
         // special case for string
         // note: only i8[] can be initialized with string token
@@ -302,7 +303,7 @@ class stmt_def_dat final : public statement {
             const size_t sz{elroot.tk.string_size_bytes()};
             // pad remaining array with 0
             if (elroot.array_size != 0 and sz < elroot.array_size) {
-                x.comment("zero remaining array");
+                x.comment_line(elroot.tk, 0, "zero remaining array");
                 x.times(elroot.array_size - sz, dd, "0");
             }
             return;
@@ -327,9 +328,9 @@ class stmt_def_dat final : public statement {
         }
     }
 
-    static auto parse_elem(const toc& tc, tokenizer& tz, const type& tp,
-                           const bool is_array, const size_t array_size)
-        -> elem {
+    static auto parse_elem(const toc& tc, tokenizer& tz, const token src_lok_tk,
+                           const type& tp, const bool is_array,
+                           const size_t array_size) -> elem {
 
         if (not is_array) {
             if (tp.is_built_in()) {
@@ -377,6 +378,10 @@ class stmt_def_dat final : public statement {
             tz.put_back_token(el.tk);
 
             // normal case
+
+            el.tk = src_lok_tk;
+            // note: 'el.tk' is not part of data but is used for source location
+            //       at compile
 
             el.open_brace_tk_ = tz.is_next_char_token('{');
             if (el.open_brace_tk_.is_empty()) {
@@ -499,7 +504,7 @@ class stmt_def_dat final : public statement {
         -> elem {
 
         elem el{};
-
+        el.tk = tz.current_position_token();
         el.open_brace_tk_ = tz.is_next_char_token('{');
         if (el.open_brace_tk_.is_empty()) {
             throw compiler_exception(
@@ -536,8 +541,10 @@ class stmt_def_dat final : public statement {
                 }
                 el.elems_delim_tk_.emplace_back(tk);
             }
+
             el.elems.emplace_back(
-                parse_elem(tc, tz, tf.type(), tf.is_array, tf.array_size));
+                parse_elem(tc, tz, tz.current_position_token(), tf.type(),
+                           tf.is_array, tf.array_size));
         }
 
         return el;

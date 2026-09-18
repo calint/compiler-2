@@ -120,7 +120,7 @@ class stmt_call : public expression {
     auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x.comment_source(tok(), indent, statement::trimmed_source(*this));
+        x.comment_line(tok(), indent, statement::trimmed_source(*this));
 
         const stmt_def_func& func{
             tc.get_func_or_throw(tok(), statement::identifier())};
@@ -310,7 +310,6 @@ class stmt_call : public expression {
         // add aliases
         for (const alias_info& e : aliases_to_add) {
             x.comment_start(tok(), indent + 1);
-
             x.print("alias {} -> {}", e.from, e.to);
             if (not e.lea.empty()) {
                 x.print(" (lea: {})", e.lea);
