@@ -362,8 +362,25 @@ struct ident_info {
             return false;
         }
 
-        return elem_path.size() == type_path.size() and
-               elem_path.size() == lea_path.size();
+        if (elem_path.size() != type_path.size() or
+            elem_path.size() != lea_path.size()) {
+            return false;
+        }
+
+        if (is_const()) {
+            return operand.is_empty();
+        }
+
+        if (is_register()) {
+            return operand.is_base_register and not operand.base_register.empty() and
+                   operand.index_register.empty() and operand.displacement == 0;
+        }
+
+        if (is_var()) {
+            return true;
+        }
+
+        return false;
     }
 
     [[nodiscard]] auto is_const() const -> bool {

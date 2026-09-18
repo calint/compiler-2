@@ -195,9 +195,16 @@ class ident_path final {
     }
 
   public:
-    explicit ident_path(std::string id) : id_{std::move(id)} { refresh_path(); }
+    explicit ident_path(std::string id) : id_{std::move(id)} {
+        assert(not id_.empty());
+        refresh_path();
+        assert(not path_.empty());
+    }
 
-    [[nodiscard]] auto base() const -> std::string_view { return path_[0]; }
+    [[nodiscard]] auto base() const -> std::string_view {
+        assert(not path_.empty());
+        return path_[0];
+    }
 
     [[nodiscard]] auto path() const -> const std::vector<std::string>& {
         return path_;
@@ -861,28 +868,6 @@ class toc final {
     }
 
   private:
-    [[nodiscard]] auto
-    get_builtin_type_for_operand(const token& src_loc_tk,
-                                 const std::string_view op) const
-        -> const type& {
-
-        // explicit prefix checks keep this path direct for common operands
-        if (op.starts_with("qword")) {
-            return get_type_or_throw(src_loc_tk, "i64");
-        }
-        if (op.starts_with("dword")) {
-            return get_type_or_throw(src_loc_tk, "i32");
-        }
-        if (op.starts_with("word")) {
-            return get_type_or_throw(src_loc_tk, "i16");
-        }
-        if (op.starts_with("byte")) {
-            return get_type_or_throw(src_loc_tk, "i8");
-        }
-
-        std::unreachable();
-    }
-
     [[nodiscard]] auto is_in_main() const -> bool {
         for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.is_func()) {
@@ -898,7 +883,9 @@ class toc final {
     make_ident_info_or_empty(const x86* x, const token& src_loc_tk,
                              const std::string_view ident) const -> ident_info {
 
+        assert(not ident.empty());
         ident_path id{std::string{ident}};
+        assert(not id.path().empty());
 
         // get the base of the identifier: e.g. lnks[1].pos.y -> lnks
         // traverse the frames and resolve to a variable, register or constant
@@ -1123,8 +1110,9 @@ class toc final {
         if (const std::optional<int64_t> value{
                 parse_constant(src_loc_tk, id.str())};
             value) {
+                
             return ident_info::make_const(ident, id.str(), get_type_default(),
-                                          *value, operand{id.str(), true});
+                                          *value);
         }
 
         // is it a boolean constant?
@@ -1141,8 +1129,7 @@ class toc final {
         // is 'id' a constant?
         if (has_const(id.str())) {
             return ident_info::make_const(ident, id.str(), get_type_default(),
-                                          get_const(id.str()),
-                                          operand{id.str(), true});
+                                          get_const(id.str()));
         }
 
         // not resolved, return empty info
