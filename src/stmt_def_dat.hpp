@@ -328,7 +328,7 @@ class stmt_def_dat final : public statement {
         }
     }
 
-    static auto parse_elem(const toc& tc, tokenizer& tz, const token src_lok_tk,
+    static auto parse_elem(const toc& tc, tokenizer& tz, const token src_loc_tk,
                            const type& tp, const bool is_array,
                            const size_t array_size) -> elem {
 
@@ -379,7 +379,7 @@ class stmt_def_dat final : public statement {
 
             // normal case
 
-            el.tk = src_lok_tk;
+            el.tk = src_loc_tk;
             // note: 'el.tk' is not part of data but is used for source location
             //       at compile
 

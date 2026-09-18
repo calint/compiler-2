@@ -22,11 +22,40 @@
 [ ] consider function calls that pass arguments and return through the stack
     when passing array: pass the address of the array as lea and size as argument
     return values are then no longer references
-[ ] a ways to specify a range in the array: foo arr(bgn_index, len, i_start)
+[ ] a way to specify a range in the array: foo arr(bgn_index, len, i_start)
 [ ] foo arr1, arr2, ... {
       # injected variable 'e1', 'e2', 'e...': current array elements
       e1 = e2
     }
+[ ] transferred source todo items (2026-09-18)
+    [ ] formalize builtin type size mapping
+        class: toc
+        method: get_builtin_type_for_size
+        source: src/toc.hpp:756
+    [ ] evaluate BMI2 alternatives for variable-count shifts (shlx/shrx/sarx)
+        class: expr_ops_list
+        method: asm_op_shift
+        source: src/expr_ops_list.hpp:835
+    [ ] validate destination array size against source array size during type assignment copy
+        class: expr_type_value
+        method: compile_assign
+        source: src/decouple_impl.hpp:272
+    [ ] add test coverage for built-in/non-expression/non-constant array copy path in type assignment
+        class: expr_type_value
+        method: compile_assign
+        source: src/decouple_impl.hpp:343
+    [ ] document why expr_any routes non-braced array assignment to expr_type_value
+        class: expr_any
+        method: expr_any (constructor)
+        source: src/expr_any.hpp:55
+    [ ] document invariant that expr_any::identifier cannot be empty at call sites
+        class: expr_any
+        method: identifier
+        source: src/expr_any.hpp:169
+    [ ] validate that put_back_token argument matches source text before rewinding
+        class: tokenizer
+        method: put_back_token
+        source: src/tokenizer.hpp:126
 [ ] consider dropping the visitor pattern in expr_any because lcov does not
     handle it
 [ ] UB analysis and path-sensitive initialization checks

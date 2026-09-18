@@ -230,7 +230,7 @@ auto expr_type_value::source_to(std::ostream& os) const -> void {
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::compile(toc& tc, x86& x, size_t indent,
+auto expr_type_value::compile(toc& tc, x86& x, const size_t indent,
                               const ident_info& dst_info) const -> void {
 
     if (stmt_call_) {
@@ -268,8 +268,6 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         const size_t nbytes{src_info.is_array
                                 ? src_info.array_size * dst_type.size()
                                 : dst_type.size()};
-
-        // todo: validate dst array size fits src array size
 
         x.copy(tok(), indent, src_op.address_str(), dst_op.address_str(),
                nbytes);
@@ -340,8 +338,6 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
             } else {
                 // built-in, not expression, not constant
                 if (tf.is_array) {
-                    // todo: this code is not covered by the tests, find how to
-                    //       trigger it
                     // built-in, not expression, not constant, array
                     validate_array_assignment(src.tok(), tf, src_info);
                     x.copy(src.tok(), indent, src_info.operand.address_str(),

@@ -48,7 +48,7 @@ auto main(const int argc, const char* argv[]) -> int {
     for (size_t i{1}; i < args.size(); ++i) {
         const std::string_view arg{args[i]};
 
-        if (arg == "--help" || arg == "-h") {
+        if (arg == "--help" or arg == "-h") {
             const std::string_view prg{args[0]};
             std::println("Usage: {} [OPTIONS] [filename]", prg);
             std::println("");

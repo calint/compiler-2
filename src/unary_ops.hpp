@@ -35,7 +35,7 @@ class unary_ops final {
     unary_ops() = default;
 
     [[nodiscard]] auto is_only_negated() const -> bool {
-        return ops_.size() == 1 && ops_.back() == '-';
+        return ops_.size() == 1 and ops_.back() == '-';
     }
 
     auto put_back(tokenizer& tz) const -> void {

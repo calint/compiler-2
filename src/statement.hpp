@@ -38,7 +38,7 @@ class statement {
     auto operator=(statement const&) -> statement& = default;
 
     virtual auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] x86& x,
-                         [[maybe_unused]] size_t indent,
+                         [[maybe_unused]] const size_t indent,
                          [[maybe_unused]] const ident_info& ident_info) const
         -> void {
 

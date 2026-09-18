@@ -4,6 +4,7 @@
 #include <ostream>
 #include <string_view>
 #include <vector>
+#include <memory>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
@@ -18,7 +19,6 @@
 #include "stmt_return.hpp"
 #include "tokenizer.hpp"
 #include "unary_ops.hpp"
-#include <memory>
 
 class stmt_block final : public statement {
     token open_brace_tk_;
@@ -93,7 +93,7 @@ class stmt_block final : public statement {
                 stms_.emplace_back(
                     std::make_unique<stmt_builtin_array_copy>(tc, tk, tz));
             } else if (tk.is_text("loop") or tk.is_text("if") or
-                       tk.is_text("mov") or tk.is_text("syscall") ||
+                       tk.is_text("mov") or tk.is_text("syscall") or
                        tk.is_text("foo")) {
                 stms_.emplace_back(create_statement_in_stmt_block(tc, tz, tk));
                 // note: solves circular reference problem

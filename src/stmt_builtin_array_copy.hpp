@@ -150,7 +150,7 @@ class stmt_builtin_array_copy final : public statement {
         // copy
         x.rep_movs(indent, 'b');
         // note: toc::rep_movs does not work because rsi, rdi and rcx are
-        //       expresstion
+        //       expression
 
         x.free_named_register(tok(), indent, "rcx");
         x.free_named_register(tok(), indent, "rdi");
