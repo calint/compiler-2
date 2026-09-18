@@ -34,7 +34,7 @@ class stmt_assign_var final : public statement {
 
         set_type(dst_info.type());
 
-        expr_ = {tc, tz, dst_info.type(), false, is_array, array_size};
+        expr_ = expr_any{tc, tz, dst_info.type(), false, is_array, array_size};
 
         if (array_size == 0) {
             array_size_ = expr_.array_size();
