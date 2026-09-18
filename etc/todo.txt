@@ -5,6 +5,8 @@
     [ ] same for return result
     [ ] and function argument names
 [ ] consider passing a null os x86 to the constructor also for consistency
+[ ] if toc knows of x86 then it might as well contain it and access through
+    .x86()
 [ ] consider refactoring it into a 1 pass compiler
 [ ] support variable string initializers
 [ ] resolve issues with comments in expressions etc
