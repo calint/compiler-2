@@ -959,6 +959,7 @@ main:
 ;   [174:5] allocate scratch register -> r15
 ;   [174:9] e: i64 (r15)
 ;   [174:9] i: i64 (8 B @ [rsp - 317])
+;   [174:9] initiate iterator
     lea r15, [rsp - 301]
 ;   [174:9] const n = 2
 ;   [174:14] initiate counter i to 0

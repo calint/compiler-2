@@ -104,6 +104,8 @@ class stmt_builtin_foo final : public statement {
         const std::string& var_i_addr_op{
             var_i_info.operand.str(toc::size_qword)};
 
+        x.comment(ident_.tok(), indent, "initiate iterator");
+
         // load address of referenced array into 'reg_iter'
         if (ii.has_lea() or ident_.is_indexed()) {
             std::vector<std::string> allocated_registers;
