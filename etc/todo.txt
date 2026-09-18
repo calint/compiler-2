@@ -1,13 +1,9 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] consider refactoring it into a 1 pass compiler
-[x] refactor to split "god" object toc in a compile time part (x86) and a
-    parsing and compile part (toc)
-    => better but still doesn't feel right
-    [ ] still issues at add var and const not having access to x86 in parse
-        phase
 [ ] don't allow a variable to have a register name
+    [ ] same for return result
+[ ] consider refactoring it into a 1 pass compiler
 [ ] support variable string initializers
 [ ] resolve issues with comments in expressions etc
     var x = 1 + # comment
@@ -139,6 +135,12 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] refactor to split "god" object toc in a compile time part (x86) and a
+    parsing and compile part (toc)
+    => better but still doesn't feel right
+    [-] still issues at add var and const not having access to x86 in parse
+        phase
+        => specify issue
 [x] ponder whether it should be: foo arr { }  rather than foo(arr) { }
     => better, because it is not a function but a language construct
 [x] ponder an iterator of elements in array that does not require bounds
