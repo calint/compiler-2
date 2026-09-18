@@ -1,0 +1,28 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)
+    mov(rdi, v)
+    syscall()
+}
+
+func assert(err, x : bool) if not x exit(err)
+
+type point {x, y}
+
+func baz(i) : point res { 
+    res.x = i * 3
+    res.y = i * 4
+}
+
+func bazi() : point res {
+    res = {7, 13}
+}
+
+func main() {
+    var p : point = baz(2)
+    assert(1, p.x == 6)
+    assert(2, p.y == 8)
+
+    p = bazi()
+    assert(3, p.x == 7)
+    assert(4, p.y == 13)
+}

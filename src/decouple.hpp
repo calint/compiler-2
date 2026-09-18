@@ -291,6 +291,7 @@ struct ident_info {
     int64_t const_value{};
     size_t array_size{};
     bool is_array{};
+    bool is_indexed{};
     ident_type ident_type{};
 
     [[nodiscard]] auto is_const() const -> bool {

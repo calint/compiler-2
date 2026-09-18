@@ -141,9 +141,7 @@ class stmt_call : public expression {
         }
 
         if (ret) {
-            std::string dst_lea{(not dst_info.is_register() or
-                                 dst_info.has_lea() or
-                                 dst_info.operand.is_memory)
+            std::string dst_lea{dst_info.has_lea() or dst_info.is_indexed
                                     ? dst_info.operand.address_str()
                                     : ""};
 

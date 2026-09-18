@@ -8,7 +8,7 @@ func exit(v : reg_rdi) {
     syscall()
 }
 
-func assert(x : bool) if not x exit(1)
+func assert(code, x : bool) if not x exit(code)
 
 func fooz(v) : i64 res {
     res = v * 2
@@ -20,11 +20,11 @@ func main() {
     var numbers : i64[3] = { x, 20, 30 }
     var points : point[2] = { {1, 2}, {3, fooz(y) + 1} }
 
-    assert(numbers[0] == 10)
-    assert(numbers[1] == 20)
-    assert(numbers[2] == 30)
-    assert(points[0].x == 1)
-    assert(points[0].y == 2)
-    assert(points[1].x == 3)
-    assert(points[1].y == 9)
+    assert(1, numbers[0] == 10)
+    assert(2, numbers[1] == 20)
+    assert(3, numbers[2] == 30)
+    assert(4, points[0].x == 1)
+    assert(5, points[0].y == 2)
+    assert(6, points[1].x == 3)
+    assert(7, points[1].y == 9)
 }

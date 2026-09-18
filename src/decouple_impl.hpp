@@ -288,6 +288,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
     ident_info cur_dst_info{dst_info};
     cur_dst_info.operand = dst_op;
+    cur_dst_info.is_indexed = true;
 
     // add an element at the end of the list because elem and types will replace
     // them

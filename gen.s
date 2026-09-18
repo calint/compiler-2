@@ -1479,7 +1479,7 @@ main:
 ;   [206:13] baz(j)
 ;   [86:6] baz(arg) : i64 res 
     baz_206_13:
-;       [206:13] alias res -> k (lea: rsp - 357)
+;       [206:13] alias res -> k
 ;       [206:13] alias arg -> j
 ;       [87:5] res = arg * 2
 ;       [87:11] instructions without scratch register 5, with 3
@@ -1537,7 +1537,7 @@ main:
 ;   [209:9] baz(1)
 ;   [86:6] baz(arg) : i64 res 
     baz_209_9:
-;       [209:9] alias res -> k (lea: rsp - 357)
+;       [209:9] alias res -> k
 ;       [209:9] alias arg -> 1
 ;       [87:5] res = arg * 2
 ;       [87:11] instructions without scratch register 4, with 3
@@ -1657,7 +1657,7 @@ main:
 ;   [215:22] point_init()
 ;   [113:6] point_init() : point res 
     point_init_215_22:
-;       [215:22] alias res -> pt (lea: rsp - 389)
+;       [215:22] alias res -> pt
 ;       [114:5] res.x = -1
 ;       [114:13] instructions without scratch register 1, with 2
 ;       [114:14] -1

@@ -1,0 +1,26 @@
+func exit(v : reg_rdi) {
+    mov(rax, 60)  # exit system call
+    mov(rdi, v)   # return code
+    syscall()
+}
+
+func assert(exit, expr : bool) {
+    if not expr exit(exit)
+}
+
+func inv(i) : i32 res {
+    res = ~i
+}
+
+func main() {
+    var arr : i32[4]
+
+    arr[1] = ~2
+    arr[2] = ~arr[1]
+    arr[3] = 1
+
+    var ix = 3
+
+    arr[ix-2] = inv(arr[ix])
+    assert(1, arr[1] == ~1)
+}
