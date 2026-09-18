@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------
 [ ] don't allow a variable to have a register name
     [ ] same for return result
+    [ ] and function argument names
 [ ] consider refactoring it into a 1 pass compiler
 [ ] support variable string initializers
 [ ] resolve issues with comments in expressions etc
