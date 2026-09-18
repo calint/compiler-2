@@ -1,20 +1,8 @@
 Top compiler symbols (flat, no-children):
-  0.23%  toc::make_ident_info_or_empty(x86 const*, token const&, std::basic_string_view<char, std::char_traits<char> >) const
-  0.16%  stmt_def_func::stmt_def_func(toc&, token, tokenizer&)
-  0.16%  statement::collapse_whitespace[abi:cxx11](std::basic_string_view<char, std::char_traits<char> >)
-  0.12%  type::accessor(token const&, std::basic_string_view<char, std::char_traits<char> >, std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, var_info const&) const
-  0.12%  stmt_def_var::compile(toc&, x86&, unsigned long, ident_info const&) const
-  0.12%  stmt_comment::stmt_comment(toc const&, unary_ops, token, tokenizer&)
-  0.10%  expr_ops_list::asm_op_mul(toc&, x86&, unsigned long, ident_info const&, statement const&)
-  0.09%  tokenizer::next_whitespace_token()
-  0.09%  toc::make_ident_info_const_or_empty(token const&, std::basic_string_view<char, std::char_traits<char> >, ident_path const&) const
-  0.09%  stmt_identifier::stmt_identifier(toc&, unary_ops, token, tokenizer&)
-  0.08%  x86::comment_start(token const&, unsigned long)
-  0.08%  utils::register_size(std::basic_string_view<char, std::char_traits<char> >)
-  0.08%  toc::make_ident_info_or_throw(x86 const*, token const&, std::basic_string_view<char, std::char_traits<char> >) const
-  0.08%  toc::has_lea(statement const&) const
-  0.08%  program::program(std::basic_string_view<char, std::char_traits<char> >, unsigned long, bool, bool, bool)
-  0.07%  x86::x86(std::ostream&, std::basic_string_view<char, std::char_traits<char> >)
-  0.07%  stmt_block::stmt_block(toc&, tokenizer&)
-  0.06%  stmt_call::stmt_call(toc&, unary_ops, token, token, tokenizer&)
-  0.06%  jump_optimizer::pass1(std::istream&, std::ostream&)
+  0.87%  stmt_identifier::is_indexed() const
+  0.87%  stmt_call::compile(toc&, x86&, unsigned long, ident_info const&) const
+  0.83%  jump_optimizer::pass1(std::istream&, std::ostream&)
+  0.25%  toc::make_ident_info_or_empty(x86 const*, token const&, std::basic_string_view<char, std::char_traits<char> >) const
+  0.20%  tokenizer::is_next_char_token(char)
+  0.13%  type::accessor(token const&, std::basic_string_view<char, std::char_traits<char> >, std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, var_info const&) const
+  0.13%  toc::get_type_or_throw(token const&, std::basic_string_view<char, std::char_traits<char> >) const

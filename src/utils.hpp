@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <optional>
-#include <regex>
 #include <string_view>
 #include <utility>
 
@@ -19,7 +18,6 @@ constexpr size_t size_byte{1};
 [[nodiscard]] auto get_text_between_brackets(const std::string_view text)
     -> std::optional<std::string_view>;
 [[nodiscard]] auto register_size(const std::string_view operand) -> size_t;
-[[nodiscard]] auto regex_nasm_comment() -> const std::regex&;
 [[nodiscard]] auto line_and_col_num_for_char_index(size_t at_line,
                                                    size_t char_index_in_source,
                                                    const std::string_view src)
@@ -101,16 +99,6 @@ constexpr size_t size_byte{1};
     }
     return 0;
 }
-
-// pragma below: function-local statics below are only ever destroyed once,
-// at program exit, which is intentional and harmless here
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wexit-time-destructors"
-[[nodiscard]] auto regex_nasm_comment() -> const std::regex& {
-    const static std::regex re{R"(^\s*;.*$)"};
-    return re;
-}
-#pragma clang diagnostic pop
 
 [[nodiscard]] auto line_and_col_num_for_char_index(const size_t at_line,
                                                    size_t char_index_in_source,

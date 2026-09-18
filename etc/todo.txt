@@ -251,11 +251,11 @@ resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
        is ok
     [x] operand
     [x] token
-    [-] toc
+    [x] toc
         => constructed once
-    [-] expr_ops_list
+    [x] expr_ops_list
         => using constructed once regex
-    [-] stmt_def_func
+    [x] stmt_def_func
         => using constructed once regex
     [-] main
         => only create once since the optimizer passes happen only once per run

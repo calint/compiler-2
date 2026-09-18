@@ -416,12 +416,18 @@ class expr_ops_list final : public expression {
         std::string line;
         size_t n{};
         while (getline(ss, line)) {
-            if (std::regex_search(line, utils::regex_nasm_comment())) {
+            if (is_nasm_comment_line(line)) {
                 continue;
             }
             ++n;
         }
         return n;
+    }
+
+    [[nodiscard]] static auto is_nasm_comment_line(const std::string_view line)
+        -> bool {
+        const size_t first{line.find_first_not_of(" \t\n\r\f\v")};
+        return first != std::string_view::npos && line[first] == ';';
     }
 
     static constexpr char precedence_additive{1};
