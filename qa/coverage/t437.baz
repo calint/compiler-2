@@ -1,0 +1,41 @@
+# regression: ident_info field destination and alias lea propagation
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(x : bool) if not x exit(1)
+
+type str {
+    len : i8,
+    data : i8[4]
+}
+
+type location {
+    name : str,
+    note : str
+}
+
+func inv8(v : i8) : i8 out {
+    out = ~v
+}
+
+func copy_name(src : location, dst : location) {
+    dst.name = {src.name.len, src.name.data}
+}
+
+func main() {
+    var locations : location[2]
+
+    locations[0].name.len = 3
+    locations[0].name.data[1] = 0x61
+
+    copy_name(locations[0], locations[1])
+
+    assert(locations[1].name.len == 3)
+    assert(locations[1].name.data[1] == 0x61)
+
+    var z = equal(locations[1].name.data[1], locations[0].name.data[1])
+    assert(z)
+
+    var ix = 1
+    locations[ix].note.data[0] = inv8(locations[ix].name.data[1])
+    assert(locations[1].note.data[0] == ~0x61)
+}

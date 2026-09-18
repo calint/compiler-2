@@ -1,0 +1,54 @@
+# regression: nested destinations plus by-reference call semantics
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(x : bool) if not x exit(1)
+
+type bytepair {
+    a : i8,
+    b : i8
+}
+
+type wrap {
+    l : bytepair,
+    r : bytepair
+}
+
+func inv8(v : i8) : i8 out {
+    out = ~v
+}
+
+func triple(v) {
+    v = v * 3
+}
+
+func swap_into(src : bytepair, dst : bytepair) {
+    var src_a = src.a
+    var src_b = src.b
+    dst = {src_b, src_a}
+}
+
+func main() {
+    var ws : wrap[2]
+
+    ws[0].l = {1, 2}
+    swap_into(ws[0].l, ws[0].r)
+
+    if not (ws[0].r.a == 2 and ws[0].r.b == 1) exit(11)
+
+    var ix = 1
+    ws[ix].l = ws[0].r
+
+    if not equal(ws[ix].l.a, ws[0].r.a) exit(12)
+    if not equal(ws[ix].l.b, ws[0].r.b) exit(13)
+
+    ws[ix].r.a = inv8(ws[ix - 1].l.a)
+    ws[ix].r.b = inv8(ws[ix - 1].l.b)
+
+    if not (ws[1].r.a == ~1) exit(14)
+    if not (ws[1].r.b == ~2) exit(15)
+    if equal(ws[1].r.a, ws[1].r.b) exit(16)
+
+    var q = 4
+    triple(q)
+    if not (q == 12) exit(17)
+}

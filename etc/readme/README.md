@@ -55,10 +55,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    49           1815            900           7830
+C/C++ Header                    49           1818            898           7852
 C++                              1             15              7            170
 -------------------------------------------------------------------------------
-SUM:                            50           1830            907           8000
+SUM:                            50           1833            905           8022
 -------------------------------------------------------------------------------
 ```
 
@@ -613,7 +613,7 @@ main:
         shl rcx, 2
         repe cmpsb
         sete r14b
-    cmp r14, 0
+    cmp r14b, 0
     setne r15b
     bool_end_160_12:
     assert_160_5:
@@ -659,7 +659,7 @@ main:
         shl rcx, 2
         repe cmpsb
         sete r14b
-    cmp r14, 0
+    cmp r14b, 0
     sete r15b
     bool_end_164_12:
     assert_164_5:
@@ -880,7 +880,7 @@ main:
         mov rcx, 2
         repe cmpsq
         sete r14b
-    cmp r14, 0
+    cmp r14b, 0
     setne r15b
     bool_end_190_12:
     assert_190_5:
@@ -903,7 +903,7 @@ main:
         mov rcx, 2
         repe cmpsq
         sete r14b
-    cmp r14, 0
+    cmp r14b, 0
     sete r15b
     bool_end_195_12:
     assert_195_5:
@@ -1494,7 +1494,7 @@ main:
         shl rcx, 3
         repe cmpsb
         sete r14b
-    cmp r14, 0
+    cmp r14b, 0
     setne r15b
     bool_end_259_12:
     assert_259_5:
@@ -2351,7 +2351,7 @@ main:
 ;       [160:12] free named register rdi
 ;       [160:12] free named register rsi
         sete r14b
-    cmp r14, 0
+    cmp r14b, 0
 ;   [160:12] free scratch register r14
     setne r15b
     bool_end_160_12:
@@ -2452,7 +2452,7 @@ main:
 ;       [164:16] free named register rdi
 ;       [164:16] free named register rsi
         sete r14b
-    cmp r14, 0
+    cmp r14b, 0
 ;   [164:12] free scratch register r14
     sete r15b
     bool_end_164_12:
@@ -2961,7 +2961,7 @@ main:
 ;       [190:12] free named register rdi
 ;       [190:12] free named register rsi
         sete r14b
-    cmp r14, 0
+    cmp r14b, 0
 ;   [190:12] free scratch register r14
     setne r15b
     bool_end_190_12:
@@ -3022,7 +3022,7 @@ main:
 ;       [195:16] free named register rdi
 ;       [195:16] free named register rsi
         sete r14b
-    cmp r14, 0
+    cmp r14b, 0
 ;   [195:12] free scratch register r14
     sete r15b
     bool_end_195_12:
@@ -3299,12 +3299,12 @@ main:
 ;   [212:9] p0: point (16 B @ [rsp - 373])
 ;   [212:9] p0 = {baz(3), 0}
 ;   [212:23] copy field 'x'
-;   [212:23] qword [rsp - 373] = baz(3)
+;   [212:23] p0.x = baz(3)
 ;   [212:23] = expression
 ;   [212:23] baz(3)
 ;   [86:6] baz(arg) : i64 res 
     baz_212_23:
-;       [212:23] alias res -> qword [rsp - 373] (lea: rsp - 373)
+;       [212:23] alias res -> p0.x (lea: rsp - 373)
 ;       [212:23] alias arg -> 3
 ;       [87:5] res = arg * 2
 ;       [87:11] allocate scratch register -> r15
@@ -4359,7 +4359,7 @@ main:
 ;       [259:12] free named register rdi
 ;       [259:12] free named register rsi
         sete r14b
-    cmp r14, 0
+    cmp r14b, 0
 ;   [259:12] free scratch register r14
     setne r15b
     bool_end_259_12:

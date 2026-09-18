@@ -1,0 +1,25 @@
+# regression: shorthand bool checks must compare using scalar-width regs
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+
+func one8() : i8 r { r = 1 }
+func one16() : i16 r { r = 1 }
+func one32() : i32 r { r = 1 }
+func one64() : i64 r { r = 1 }
+
+func zero8() : i8 r { r = 0 }
+func zero16() : i16 r { r = 0 }
+func zero32() : i32 r { r = 0 }
+func zero64() : i64 r { r = 0 }
+
+func main() {
+    if not one8() exit(11)
+    if not one16() exit(12)
+    if not one32() exit(13)
+    if not one64() exit(14)
+
+    if zero8() exit(21)
+    if zero16() exit(22)
+    if zero32() exit(23)
+    if zero64() exit(24)
+}

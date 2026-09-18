@@ -141,11 +141,11 @@ class stmt_call : public expression {
         }
 
         if (ret) {
-            const std::string dst_lea{(not dst_info.is_register() or
-                                       dst_info.has_lea() or
-                                       dst_info.operand.is_memory)
-                                          ? dst_info.operand.address_str()
-                                          : ""};
+            std::string dst_lea{(not dst_info.is_register() or
+                                 dst_info.has_lea() or
+                                 dst_info.operand.is_memory)
+                                    ? dst_info.operand.address_str()
+                                    : ""};
 
             aliases_to_add.emplace_back(std::string{ret->ident_tk.text()},
                                         dst_info.id, std::move(dst_lea),

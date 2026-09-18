@@ -285,16 +285,36 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
     // initialize fields
     size_t counter{};
+
+    ident_info cur_dst_info{dst_info};
+    cur_dst_info.operand = dst_op;
+
+    // add an element at the end of the list because elem and types will replace
+    // them
+    cur_dst_info.elem_path.emplace_back("");
+    cur_dst_info.type_path.emplace_back(nullptr);
+    cur_dst_info.lea_path.emplace_back("");
+
     const std::span<const type_field>& flds{dst_type.fields()};
     for (const std::unique_ptr<expr_any>& ea : exprs_) {
         const type_field& tf{flds[counter]};
 
         x.comment(ea->tok(), indent, "copy field '{}'", tf.name);
 
+        cur_dst_info.id = dst_info.id + "." + tf.name;
+        cur_dst_info.elem_path.back() = tf.name;
+        cur_dst_info.type_path.back() = tf.type_ptr;
+        cur_dst_info.is_array = tf.is_array;
+        cur_dst_info.array_size = tf.array_size;
+
         if (not tf.type().is_built_in()) {
             // a not-builtin statement thus is 'expr_type_value'
             const expr_type_value& e{ea->as_expr_type_value()};
-            e.compile_assign(tc, x, indent, tf.type(), dst_info, dst_op);
+            e.compile_assign(tc, x, indent, tf.type(), cur_dst_info, dst_op);
+            const int32_t sz{static_cast<int32_t>(tf.size)};
+            // note: dst_op was mutated in the recursive call
+            cur_dst_info.stack_ix += sz;
+            cur_dst_info.operand.displacement += sz;
             ++counter;
             continue;
         }
@@ -311,7 +331,10 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
             x.comment(ea->tok(), indent, "zero empty field: {} * {} B = {} B",
                       tf.array_size, tf.type().size(), tf.size);
             x.zero(tok(), indent, dst_op.address_str(), tf.size);
-            dst_op.displacement += static_cast<int32_t>(tf.size);
+            const int32_t sz{static_cast<int32_t>(tf.size)};
+            dst_op.displacement += sz;
+            cur_dst_info.stack_ix += sz;
+            cur_dst_info.operand.displacement += sz;
             ++counter;
             continue;
         }
@@ -326,10 +349,6 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
             // todo: fix this dst_info is not correct but works because operand
-            ident_info cur_dst_info{dst_info};
-            cur_dst_info.type_path = {&tf.type()};
-            cur_dst_info.is_array = tf.is_array;
-            cur_dst_info.array_size = tf.array_size;
             cur_dst_info.operand = operand{dst_accessor, false};
             src.compile(tc, x, indent, cur_dst_info);
         } else {
@@ -355,7 +374,10 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
                 }
             }
         }
-        dst_op.displacement += static_cast<int32_t>(tf.size);
+        const int32_t sz{static_cast<int32_t>(tf.size)};
+        dst_op.displacement += sz;
+        cur_dst_info.stack_ix += sz;
+        cur_dst_info.operand.displacement += sz;
         ++counter;
     }
 
