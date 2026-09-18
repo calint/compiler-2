@@ -27,6 +27,9 @@ dat    nums : i64[4] = { 1 } # remaining elements are zeroed
 dat      s1 : str = { 3 } # remaining fields are zeroed
 dat     xyz : i64 = 1
 dat     bla : i8[3] = {1, 2}
+dat    pxy1 : point = {1, 2}
+dat    pxy2 : point[3] = {{1, 2}, {3,4} }
+
 
 # all functions are inlined
 

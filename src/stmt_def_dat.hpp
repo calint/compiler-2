@@ -115,7 +115,7 @@ class stmt_def_dat final : public statement {
         tc.add_var(x, name_tk_, 0, var, true);
 
         if (has_init_) {
-            elroot_ = parse_elem(tc, tz, name_tk_, tp, is_array, array_size);
+            elroot_ = parse_elem(tc, tz, type_tk_, tp, is_array, array_size);
             if (elroot_.is_array and elroot_.array_size == 0 and
                 not elroot_.tk.is_string() and elroot_.elems.empty()) {
                 throw compiler_exception{name_tk_,
@@ -429,6 +429,10 @@ class stmt_def_dat final : public statement {
         }
 
         // user type array
+
+        el.tk = src_lok_tk;
+        // note: 'el.tk' is not part of data but is used for source location
+        //       at compile
 
         el.open_brace_tk_ = tz.is_next_char_token('{');
         if (el.open_brace_tk_.is_empty()) {
