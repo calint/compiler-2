@@ -122,14 +122,14 @@ class program final {
             st->compile(tc, x, indent, ident_info::make_empty());
         }
         const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
-        
+
         x.println();
-        
+
         x.label(0, "main");
         tc.enter_func("main", {});
         func_main.code().compile(tc, x, indent, ident_info::make_empty());
         tc.exit_func("main");
-        
+
         tc.exit_block();
 
         x.println("    ; system call: exit 0");
@@ -191,7 +191,7 @@ class program final {
         // data section
         x.println("\nsection .data\nalign {}\ndat:",
                   std::format("{}", stack_and_data_alignment_));
-                  
+
         for (const statement* stmt : tc.get_data() | std::views::reverse) {
             stmt->compile_data(tc, x);
         }
