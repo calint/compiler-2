@@ -960,7 +960,7 @@ main:
 ;   [174:9] e: i64 (r15)
 ;   [174:9] i: i64 (8 B @ [rsp - 317])
 ;   [174:9] const n = 2
-;   [174:9] initiate iterator
+;   [174:9] initiate iterator e
     lea r15, [rsp - 301]
 ;   [174:9] initiate counter i
     mov qword [rsp - 317], 0

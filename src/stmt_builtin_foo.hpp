@@ -108,7 +108,7 @@ class stmt_builtin_foo final : public statement {
         tc.add_const(x, ident_.tok(), indent, "n",
                      static_cast<int64_t>(ii.array_size));
 
-        x.comment(ident_.tok(), indent, "initiate iterator");
+        x.comment(ident_.tok(), indent, "initiate iterator {}", var_e.name);
 
         // load address of referenced array into 'reg_iter'
         if (ii.has_lea() or ident_.is_indexed()) {
