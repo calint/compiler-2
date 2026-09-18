@@ -1,0 +1,26 @@
+# lea regression: built-in indexed src/dst aliases and index mutation
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+func mix(dst : i64, src : i64, ix : i64) {
+    ix = ix + 1
+    dst = src + ix
+    src = src + 10
+}
+
+func main() {
+    var srcs : i64[4] = {5, 6, 7, 8}
+    var dsts : i64[4] = {0, 0, 0, 0}
+
+    var di = 1
+    var si = 2
+
+    mix(dsts[di], srcs[si], di)
+
+    assert(1, di == 2)
+    assert(2, dsts[1] == 9)
+    assert(3, srcs[2] == 17)
+    assert(4, dsts[0] == 0)
+    assert(5, dsts[2] == 0)
+}

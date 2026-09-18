@@ -355,6 +355,11 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
                 // built-in, not expression, not constant
                 if (tf.is_array) {
                     // built-in, not expression, not constant, array
+
+                    // note: never reached because when 'src' is an array,
+                    //       'expr_any::is_expression()' returns true and takes
+                    //       the expression path above
+
                     validate_array_assignment(src.tok(), tf, src_info);
                     x.copy(src.tok(), indent, src_info.operand.address_str(),
                            dst_op.address_str(), tf.size);

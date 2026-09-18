@@ -1,0 +1,25 @@
+# branch coverage: built-in array field assigned from array identifier
+# targets compile_assign branches:
+#   if (tf.is_array and src.is_array_identifier()) validate_array_assignment
+#   if (tf.is_array) { validate_array_assignment; x.copy(...); }
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+type holder {
+    values : i64[2],
+    tag : i64
+}
+
+func main() {
+    var src_values : i64[2] = {31, 32}
+    var holders : holder[2]
+
+    var ix = 1
+    holders[ix] = {src_values, 9}
+
+    assert(1, ix == 1)
+    assert(2, holders[1].values[0] == 31)
+    assert(3, holders[1].values[1] == 32)
+    assert(4, holders[1].tag == 9)
+}

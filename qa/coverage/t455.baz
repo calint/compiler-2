@@ -1,0 +1,36 @@
+# resolver path: alias chain with lea + indexed user-type argument
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+type point {
+    x : i64,
+    y : i64
+}
+
+type node {
+    p : point
+}
+
+type world {
+    nodes : node[3]
+}
+
+func bump(a : node) {
+    a.p.y = a.p.y + 2
+}
+
+func main() {
+    var worlds : world[2]
+
+    worlds[1].nodes[2].p.y = 7
+
+    var wi = 1
+    var ni = 2
+
+    bump(worlds[wi].nodes[ni])
+
+    assert(1, wi == 1)
+    assert(2, ni == 2)
+    assert(3, worlds[1].nodes[2].p.y == 9)
+}

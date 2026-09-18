@@ -308,6 +308,8 @@ struct ident_info {
     [[nodiscard]] static auto make_register(const std::string_view ident,
                                             const std::string_view reg,
                                             const type& tp) -> ident_info {
+        assert(not ident.empty());
+        assert(not reg.empty());
         return {
             .id{ident},
             .elem_path{std::string{reg}},
@@ -318,16 +320,19 @@ struct ident_info {
         };
     }
 
-    [[nodiscard]] static auto
-    make_const(const std::string_view ident, const std::string_view elem,
-               const type& tp, const int64_t value, const ::operand& op = {})
+    [[nodiscard]] static auto make_const(const std::string_view ident,
+                                         const std::string_view elem,
+                                         const type& tp, const int64_t value)
         -> ident_info {
+        assert(not ident.empty());
+        assert(not elem.empty());
+
         return {
             .id{ident},
             .elem_path{std::string{elem}},
             .type_path{&tp},
             .lea_path{""}, // note: a single empty string element in vector
-            .operand{op},
+            .operand{},
             .const_value{value},
             .ident_type{ident_type::CONST},
         };
@@ -338,12 +343,17 @@ struct ident_info {
              std::vector<const type*> type_path, const ::operand& op,
              const int32_t stack_idx, const size_t array_size,
              const bool is_array) -> ident_info {
-        const size_t path_size{elem_path.size()};
+        assert(not ident.empty());
+        assert(not elem_path.empty());
+        assert(elem_path.size() == type_path.size());
+
+        const size_t lea_size{elem_path.size()};
+
         return {
             .id{std::move(ident)},
             .elem_path{std::move(elem_path)},
             .type_path{std::move(type_path)},
-            .lea_path{path_size, ""},
+            .lea_path{lea_size, ""},
             .operand{op},
             .stack_idx{stack_idx},
             .array_size{array_size},
@@ -368,11 +378,12 @@ struct ident_info {
         }
 
         if (is_const()) {
-            return operand.is_empty();
+            return elem_path.size() == 1 and operand.is_empty();
         }
 
         if (is_register()) {
-            return operand.is_base_register and not operand.base_register.empty() and
+            return elem_path.size() == 1 and operand.is_base_register and
+                   not operand.base_register.empty() and
                    operand.index_register.empty() and operand.displacement == 0;
         }
 

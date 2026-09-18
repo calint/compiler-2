@@ -1,0 +1,25 @@
+# register width inference path: rax/eax/ax/al
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+func main() {
+    mov(rax, 0x0000000012345678)
+
+    var q : i64 = rax
+    var d : i32 = rax
+    var w : i16 = rax
+    var b : i8 = rax
+
+    var d2 : i32 = eax
+    var w2 : i16 = ax
+    var b2 : i8 = al
+
+    assert(1, q == 0x0000000012345678)
+    assert(2, d == 0x12345678)
+    assert(3, w == 0x5678)
+    assert(4, b == 0x78)
+    assert(5, d2 == 0x12345678)
+    assert(6, w2 == 0x5678)
+    assert(7, b2 == 0x78)
+}

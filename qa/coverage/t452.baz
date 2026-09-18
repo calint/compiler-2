@@ -1,0 +1,28 @@
+# branch coverage: decouple_impl recursive assign for non-builtin fields
+# targets compile_assign branch:
+#   if (not tf.type().is_built_in()) e.compile_assign(...)
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+type pair {
+    x : i64,
+    y : i64
+}
+
+type outer {
+    p : pair,
+    tag : i64
+}
+
+func main() {
+    var data : outer[2]
+    var ix = 1
+
+    data[ix] = {{10, 20}, 7}
+
+    assert(1, ix == 1)
+    assert(2, data[1].p.x == 10)
+    assert(3, data[1].p.y == 20)
+    assert(4, data[1].tag == 7)
+}

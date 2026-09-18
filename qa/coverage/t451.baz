@@ -1,0 +1,19 @@
+# branch coverage: stmt_identifier bounds check on array without indexing
+# targets compile_effective_address branch:
+#   if (is_last and not reg_size.empty() and curr_info.is_array)
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+func main() {
+    var src : i64[4] = {1, 2, 3, 4}
+    var dst : i64[4] = {0, 0, 0, 0}
+
+    var n = 3
+    array_copy(src, dst, n)
+
+    assert(1, dst[0] == 1)
+    assert(2, dst[1] == 2)
+    assert(3, dst[2] == 3)
+    assert(4, dst[3] == 0)
+}

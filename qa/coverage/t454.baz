@@ -1,0 +1,33 @@
+# resolver path: alias chain with depth growth and no lea
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+type point {
+    x : i64,
+    y : i64
+}
+
+type node {
+    p : point
+}
+
+type world {
+    n : node
+}
+
+func bump(a : node) {
+    a.p.x = a.p.x + 1
+}
+
+func main() {
+    var w : world
+
+    w.n.p.x = 10
+    w.n.p.y = 20
+
+    bump(w.n)
+
+    assert(1, w.n.p.x == 11)
+    assert(2, w.n.p.y == 20)
+}

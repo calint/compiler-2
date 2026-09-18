@@ -965,12 +965,13 @@ class toc final {
                 }
 
                 id = new_id;
+                assert(not id.path().empty());
             }
         }
 
         if (const ident_info reg_info{
                 make_ident_info_register_or_empty(x, ident, id)};
-            not reg_info.id.empty()) {
+            not reg_info.is_empty()) {
 
             return reg_info;
         }
@@ -1000,7 +1001,7 @@ class toc final {
         // try register
         if (const ident_info reg_info{
                 make_ident_info_register_or_empty(x, ident, id)};
-            not reg_info.id.empty()) {
+            not reg_info.is_empty()) {
 
             return reg_info;
         }
@@ -1110,7 +1111,7 @@ class toc final {
         if (const std::optional<int64_t> value{
                 parse_constant(src_loc_tk, id.str())};
             value) {
-                
+
             return ident_info::make_const(ident, id.str(), get_type_default(),
                                           *value);
         }
@@ -1144,7 +1145,7 @@ class toc final {
         const ident_info id_info{
             make_ident_info_or_empty(x, src_loc_tk, ident)};
 
-        if (not id_info.id.empty()) {
+        if (not id_info.is_empty()) {
             return id_info;
         }
 

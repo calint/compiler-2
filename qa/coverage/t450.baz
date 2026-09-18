@@ -1,0 +1,36 @@
+# lea regression: user-type return assigned to indexed dst from indexed src
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+type pair {
+    x : i64,
+    y : i64
+}
+
+func mk_from(src : pair, delta : i64) : pair out {
+    out = {src.x + delta, src.y + delta}
+}
+
+func put(dst : pair, src : pair, j : i64) {
+    j = j + 1
+    dst = mk_from(src, j)
+}
+
+func main() {
+    var srcs : pair[3]
+    var dsts : pair[3]
+
+    srcs[0] = {1, 2}
+    srcs[1] = {30, 40}
+    srcs[2] = {5, 6}
+
+    var j = 1
+    put(dsts[j], srcs[j], j)
+
+    assert(1, j == 2)
+    assert(2, dsts[1].x == 32)
+    assert(3, dsts[1].y == 42)
+    assert(4, srcs[1].x == 30)
+    assert(5, srcs[1].y == 40)
+}

@@ -1,0 +1,34 @@
+# lea regression: user-type indexed args (non-encodable element size path)
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+type pair {
+    x : i64,
+    y : i64
+}
+
+func bump(dst : pair, src : pair, i : i64) {
+    i = i + 1
+    dst = {src.x + i, src.y + i}
+    src = {src.x + 100, src.y + 200}
+}
+
+func main() {
+    var srcs : pair[2]
+    var dsts : pair[2]
+
+    srcs[0] = {1, 2}
+    srcs[1] = {10, 20}
+
+    var di = 0
+    var si = 1
+
+    bump(dsts[di], srcs[si], di)
+
+    assert(1, di == 1)
+    assert(2, dsts[0].x == 11)
+    assert(3, dsts[0].y == 21)
+    assert(4, srcs[1].x == 110)
+    assert(5, srcs[1].y == 220)
+}

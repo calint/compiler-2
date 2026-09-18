@@ -1,0 +1,34 @@
+# lea regression: nested field writes through user-type alias with lea path
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+type pair {
+    x : i64,
+    y : i64
+}
+
+type box {
+    p : pair,
+    tag : i64
+}
+
+func set_fields(dst : box, v : i64, i : i64) {
+    i = i + 1
+    dst.p.x = v + i
+    dst.p.y = dst.p.x + 1
+    dst.tag = dst.p.x + dst.p.y
+}
+
+func main() {
+    var boxes : box[2]
+
+    var ix = 0
+    set_fields(boxes[ix], 40, ix)
+
+    assert(1, ix == 1)
+    assert(2, boxes[0].p.x == 41)
+    assert(3, boxes[0].p.y == 42)
+    assert(4, boxes[0].tag == 83)
+    assert(5, boxes[1].tag == 0)
+}

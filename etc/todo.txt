@@ -2,6 +2,7 @@
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [ ] cleanup: stmt_assign_var::compile formalize dst_info.is_indexed 
+[ ] consider replacing ident_info.use_operand bool with a destination-mode enum
 [ ] don't allow a variable to have a register name
     [ ] same for return result
     [ ] and function argument names
