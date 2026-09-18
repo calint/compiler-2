@@ -676,9 +676,6 @@ class toc final {
         return make_ident_info_or_throw(&x, src_loc_tk, ident);
     }
 
-    // parse-time identifier resolution: no register has ever been allocated
-    // yet at this point, so a register-named identifier always resolves via
-    // size-inference (never via a precise, currently-allocated type)
     [[nodiscard]] auto make_ident_info_parsing(const statement& st) const
         -> ident_info {
 
