@@ -261,7 +261,7 @@ class toc final {
                             name, source_location_hr(c.declared_at_tk)));
         }
 
-        x.comment_line(src_loc_tk, indent, "const {} = {}", name, value);
+        x.comment(src_loc_tk, indent, "const {} = {}", name, value);
         frames_.back().add_const(name,
                                  {.declared_at_tk{src_loc_tk}, .value{value}});
     }

@@ -17,7 +17,7 @@ class stmt_continue final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        x.comment_line(tok(), indent, statement::trimmed_source(*this));
+        x.comment(tok(), indent, statement::trimmed_source(*this));
 
         // get current loop start labels
         const std::string_view loop_label{tc.get_looping_label_or_throw(tok())};

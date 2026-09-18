@@ -103,17 +103,17 @@ class x86 final {
     }
 
     template <typename... args_t>
-    auto comment_line(const token& source_location, const size_t indent,
-                      const std::format_string<args_t...> format,
-                      args_t&&... args) -> void {
+    auto comment(const token& source_location, const size_t indent,
+                 const std::format_string<args_t...> format, args_t&&... args)
+        -> void {
 
         comment_start(source_location, indent);
 
         println(format, std::forward<args_t>(args)...);
     }
 
-    auto comment_line(const token& source_location, const size_t indent,
-                      const std::string_view text) -> void {
+    auto comment(const token& source_location, const size_t indent,
+                 const std::string_view text) -> void {
 
         comment_start(source_location, indent);
         println("{}", text);
@@ -144,7 +144,7 @@ class x86 final {
                               const std::string_view reg, const type& type_ref)
         -> void {
 
-        comment_line(src_loc_tk, indnt, "allocate named register '{}'", reg);
+        comment(src_loc_tk, indnt, "allocate named register '{}'", reg);
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
@@ -181,7 +181,7 @@ class x86 final {
         std::string reg{std::move(scratch_registers_.back())};
         scratch_registers_.pop_back();
 
-        comment_line(src_loc_tk, indnt, "allocate scratch register -> {}", reg);
+        comment(src_loc_tk, indnt, "allocate scratch register -> {}", reg);
 
         const size_t n{scratch_registers_initial_size_ -
                        scratch_registers_.size()};
@@ -196,7 +196,7 @@ class x86 final {
     auto free_named_register(const token& src_loc_tk, const size_t indnt,
                              const std::string_view reg) -> void {
 
-        comment_line(src_loc_tk, indnt, "free named register '{}'", reg);
+        comment(src_loc_tk, indnt, "free named register '{}'", reg);
 
         assert(allocated_registers_.back().name == reg);
 
@@ -208,7 +208,7 @@ class x86 final {
     auto free_scratch_register(const token& src_loc_tk, const size_t indnt,
                                const std::string_view reg) -> void {
 
-        comment_line(src_loc_tk, indnt, "free scratch register '{}'", reg);
+        comment(src_loc_tk, indnt, "free scratch register '{}'", reg);
 
         assert(allocated_registers_.back().name == reg);
 
@@ -360,8 +360,8 @@ class x86 final {
             return;
         }
 
-        comment_line(src_loc_tk, indent, "size <= {} B, use mov",
-                     threshold_for_rep_movs);
+        comment(src_loc_tk, indent, "size <= {} B, use mov",
+                threshold_for_rep_movs);
 
         alloc_named_register(src_loc_tk, indent, "rax", *default_type_);
         size_t rest{bytes_count};
@@ -416,8 +416,8 @@ class x86 final {
             return;
         }
 
-        comment_line(src_loc_tk, indent, "size <= {} B, use mov",
-                     threshold_for_rep_stos);
+        comment(src_loc_tk, indent, "size <= {} B, use mov",
+                threshold_for_rep_stos);
 
         size_t rest{bytes_count};
         const size_t qword_movs{rest / operand::size_qword};

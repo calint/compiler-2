@@ -55,7 +55,7 @@ class stmt_assign_var final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x.comment_line(tok(), indent, statement::trimmed_source(*this));
+        x.comment(tok(), indent, statement::trimmed_source(*this));
 
         // get information about the destination of the compilation
         ident_info dst_info{tc.make_ident_info(x, stmt_ident_)};

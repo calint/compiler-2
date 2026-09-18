@@ -153,7 +153,7 @@ class stmt_identifier : public statement {
     auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x.comment_line(tok(), indent, statement::trimmed_source(*this));
+        x.comment(tok(), indent, statement::trimmed_source(*this));
 
         const ident_info src_info{tc.make_ident_info(x, *this)};
 
@@ -284,8 +284,8 @@ class stmt_identifier : public statement {
                         src_loc_tk, indent, tc.get_type_default())};
                     allocated_registers.push_back(reg_idx);
 
-                    x.comment_line(curr_elem.array_index_expr->tok(), indent,
-                                   "set array index");
+                    x.comment(curr_elem.array_index_expr->tok(), indent,
+                              "set array index");
 
                     curr_elem.array_index_expr->compile(
                         tc, x, indent,
@@ -348,8 +348,8 @@ class stmt_identifier : public statement {
             const std::string reg_idx{x.alloc_scratch_register(
                 src_loc_tk, indent, tc.get_type_default())};
 
-            x.comment_line(curr_elem.array_index_expr->tok(), indent,
-                           "set array index");
+            x.comment(curr_elem.array_index_expr->tok(), indent,
+                      "set array index");
 
             curr_elem.array_index_expr->compile(
                 tc, x, indent, toc::make_ident_info_for_register(x, reg_idx));
@@ -428,14 +428,14 @@ class stmt_identifier : public statement {
             return;
         }
 
-        x.comment_line(tk, indent, "bounds check");
+        x.comment(tk, indent, "bounds check");
 
         // Allocate line number register once if needed
         std::string reg_line_num;
         if (tc.is_bounds_check_with_line()) {
             reg_line_num =
                 x.alloc_scratch_register(tk, indent, tc.get_type_default());
-            x.comment_line(tk, indent, "line number");
+            x.comment(tk, indent, "line number");
             x.mov(tk, indent, reg_line_num, std::to_string(tk.at_line()));
         }
 

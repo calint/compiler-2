@@ -169,7 +169,7 @@ class stmt_def_dat final : public statement {
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
 
-        x.comment_line(tok(), indent, statement::trimmed_source(*this));
+        x.comment(tok(), indent, statement::trimmed_source(*this));
 
         const var_info var{
             .name{name_tk_.text()},
@@ -183,7 +183,7 @@ class stmt_def_dat final : public statement {
     }
 
     auto compile_data(const toc& tc, x86& x) const -> void override {
-        x.comment_line(name_tk_, 0, name_tk_.text());
+        x.comment(name_tk_, 0, name_tk_.text());
         compile_data_rec(tc, x, get_type(), elroot_);
     }
 
@@ -208,11 +208,11 @@ class stmt_def_dat final : public statement {
 
         // regular arrays
 
-        x.comment_line(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_size);
+        x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_size);
 
         size_t counter{};
         for (const elem& el : elroot.elems) {
-            x.comment_line(el.tk, 0, "[{}]", counter);
+            x.comment(el.tk, 0, "[{}]", counter);
             compile_data_elem(tc, x, tp, el);
             ++counter;
         }
@@ -225,8 +225,8 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        x.comment_line(elroot.tk, 0, "pad {} '{}' of size {}", diff, tp.name(),
-                       tp.size());
+        x.comment(elroot.tk, 0, "pad {} '{}' of size {}", diff, tp.name(),
+                  tp.size());
 
         x.times(diff * tp.size(), "db", "0");
     }
@@ -264,7 +264,7 @@ class stmt_def_dat final : public statement {
         for (size_t i{counter}; i < n; ++i) {
             nbytes += flds[i].size;
         }
-        x.comment_line(elroot.tk, 0, "zero remaining fields");
+        x.comment(elroot.tk, 0, "zero remaining fields");
         x.times(nbytes, "db", "0");
     }
 
@@ -274,7 +274,7 @@ class stmt_def_dat final : public statement {
         // NASM data directive for this element size
         const std::string_view dd{x86::get_data_def(tp.size())};
         if (not elroot.is_array) {
-            x.comment_line(elroot.tk, 0, "{}", tp.name());
+            x.comment(elroot.tk, 0, "{}", tp.name());
             if (elroot.tk.text().empty()) {
                 x.dat_begin(tp.size());
                 x.dat_value("0");
@@ -291,7 +291,7 @@ class stmt_def_dat final : public statement {
 
         // array of built-ins
 
-        x.comment_line(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_size);
+        x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_size);
 
         // special case for string
         // note: only i8[] can be initialized with string token
@@ -303,7 +303,7 @@ class stmt_def_dat final : public statement {
             const size_t sz{elroot.tk.string_size_bytes()};
             // pad remaining array with 0
             if (elroot.array_size != 0 and sz < elroot.array_size) {
-                x.comment_line(elroot.tk, 0, "zero remaining array");
+                x.comment(elroot.tk, 0, "zero remaining array");
                 x.times(elroot.array_size - sz, dd, "0");
             }
             return;

@@ -67,7 +67,7 @@ class stmt_builtin_equal final : public expression {
     auto compile(toc& tc, x86& x, const size_t indent,
                  const ident_info& dst_info) const -> void override {
 
-        x.comment_line(tok(), indent, statement::trimmed_source(*this));
+        x.comment(tok(), indent, statement::trimmed_source(*this));
 
         // allocate the register for rep movs
         x.alloc_named_register(tok(), indent, "rsi", tc.get_type_default());
@@ -86,7 +86,7 @@ class stmt_builtin_equal final : public expression {
         }
 
         // from operand to rsi
-        x.comment_line(lhs_.tok(), indent, statement::trimmed_source(lhs_));
+        x.comment(lhs_.tok(), indent, statement::trimmed_source(lhs_));
 
         const operand lhs_operand{stmt_identifier::compile_effective_address(
             tc, x, indent, lhs_.first_token(), lhs_.elems(),
@@ -100,7 +100,7 @@ class stmt_builtin_equal final : public expression {
         }
 
         // to operand to 'rdi'
-        x.comment_line(rhs_.tok(), indent, statement::trimmed_source(rhs_));
+        x.comment(rhs_.tok(), indent, statement::trimmed_source(rhs_));
 
         allocated_scratch_registers.clear();
 

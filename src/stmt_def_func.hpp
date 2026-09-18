@@ -152,7 +152,7 @@ class stmt_def_func final : public statement {
         // make a comment-friendly string by collapsing whitespace
         const std::string res{
             std::regex_replace(ss.str(), utils::regex_ws(), " ")};
-        x.comment_line(name_tk_, indent, "{}", res);
+        x.comment(name_tk_, indent, "{}", res);
     }
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] x86& x,

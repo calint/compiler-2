@@ -161,9 +161,9 @@ class expr_bool_ops_list final : public statement {
                                const std::string_view dst) const
         -> std::optional<bool> {
 
-        x.comment_line(tok(), indent,
-                       statement::trimmed_source(
-                           *this, "?", inverted ? " inverted: " : " "));
+        x.comment(tok(), indent,
+                  statement::trimmed_source(*this, "?",
+                                            inverted ? " inverted: " : " "));
 
         // invert, according to De Morgan's laws
         const bool invert{inverted ? not not_token_.is_text("not")
