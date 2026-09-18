@@ -104,6 +104,10 @@ class stmt_builtin_foo final : public statement {
         const std::string& var_i_addr_op{
             var_i_info.operand.str(toc::size_qword)};
 
+        // add a constant for array size
+        tc.add_const(x, ident_.tok(), indent, "n",
+                     static_cast<int64_t>(ii.array_size));
+
         x.comment(ident_.tok(), indent, "initiate iterator");
 
         // load address of referenced array into 'reg_iter'
@@ -123,10 +127,6 @@ class stmt_builtin_foo final : public statement {
         } else {
             x.lea(indent, reg_iter, ii.operand.address_str());
         }
-
-        // add a constant for array size
-        tc.add_const(x, ident_.tok(), indent, "n",
-                     static_cast<int64_t>(ii.array_size));
 
         x.comment(ident_.tok(), indent, "initiate counter {} to 0", var_i.name);
         x.mov(tok(), indent, var_i_addr_op, "0");
