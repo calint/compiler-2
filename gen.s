@@ -962,7 +962,7 @@ main:
 ;   [174:9] initiate iterator
     lea r15, [rsp - 301]
 ;   [174:9] const n = 2
-;   [174:14] initiate counter i to 0
+;   [174:9] initiate counter i to 0
     mov qword [rsp - 317], 0
     foo_174_5:
 ;       [175:9] e = e + i + n
