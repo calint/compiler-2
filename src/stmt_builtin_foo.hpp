@@ -76,8 +76,8 @@ class stmt_builtin_foo final : public statement {
         const std::string loop_label{tc.get_call_path_extend(tok(), "foo")};
         tc.enter_foo(loop_label);
 
-        const std::string reg_iter{
-            x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
+        const std::string reg_iter{x.alloc_scratch_register(
+            ident_.tok(), indent, tc.get_type_default())};
 
         const ident_info ii{tc.make_ident_info(x, ident_)};
 

@@ -956,7 +956,7 @@ main:
 ;   [173:29] 5
     mov qword [rsp - 293], 5
 ;   [174:5] foo arr3
-;   [174:5] allocate scratch register -> r15
+;   [174:9] allocate scratch register -> r15
 ;   [174:9] e: i64 (r15)
 ;   [174:9] i: i64 (8 B @ [rsp - 317])
 ;   [174:9] initiate iterator
