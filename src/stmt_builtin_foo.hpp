@@ -11,7 +11,6 @@
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "unary_ops.hpp"
-#include "utils.hpp"
 
 class stmt_builtin_foo final : public statement {
     stmt_identifier ident_;
