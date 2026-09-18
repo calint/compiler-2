@@ -162,15 +162,13 @@ class stmt_builtin_equal final : public expression {
 
         // set true if equal
 
-        if (dst_info.operand.is_memory()) {
-            x.setcc(indent, "e", dst_info.operand.str(operand::size_byte));
+        if (dst_info.is_register()) {
+            x.setcc(indent, "e",
+                    x.get_sized_register_operand(dst_info.operand.str(),
+                                                 operand::size_byte));
             return;
         }
 
-        // assumed register
-
-        x.setcc(indent, "e",
-                x.get_sized_register_operand(dst_info.operand.str(),
-                                             operand::size_byte));
+        x.setcc(indent, "e", dst_info.operand.str(operand::size_byte));
     }
 };

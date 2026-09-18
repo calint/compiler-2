@@ -539,7 +539,7 @@ class toc final {
         operand op{src.compile_lea(*this, x, indent, src.tok(), lea_registers,
                                    "", src_info.lea_path)};
 
-        op.size = src_info.type().size();
+        op.size = src_info.operand.size;
 
         return op;
     }
@@ -699,6 +699,7 @@ class toc final {
             .type_path{},
             .lea_path{},
             .operand{},
+            .ident_type{ident_info::ident_type::EMPTY},
         };
     }
 
@@ -993,7 +994,7 @@ class toc final {
         }
 
         if (const ident_info reg_info{
-                make_ident_info_register_or_empty(x, src_loc_tk, ident, id)};
+                make_ident_info_register_or_empty(x, ident, id)};
             not reg_info.id.empty()) {
 
             return reg_info;
@@ -1023,7 +1024,7 @@ class toc final {
 
         // try register
         if (const ident_info reg_info{
-                make_ident_info_register_or_empty(x, src_loc_tk, ident, id)};
+                make_ident_info_register_or_empty(x, ident, id)};
             not reg_info.id.empty()) {
 
             return reg_info;
@@ -1111,8 +1112,8 @@ class toc final {
     }
 
     [[nodiscard]] auto make_ident_info_register_or_empty(
-        const x86* x, const token& src_loc_tk, const std::string_view ident,
-        const ident_path& id) const -> ident_info {
+        const x86* x, const std::string_view ident, const ident_path& id) const
+        -> ident_info {
 
         // is it a register?
         if (const size_t reg_size{utils::register_size(id.str())};
@@ -1130,22 +1131,8 @@ class toc final {
             };
         }
 
-        // is it a register reference to memory?
-        if (utils::get_text_between_brackets(id.str())) {
-            // get the size: e.g. "dword [r15]"
-            // note: assumes all memory operands do contain a base register
-            return {
-                .id{ident},
-                .elem_path{id.str()},
-                .type_path{&get_builtin_type_for_operand(src_loc_tk, id.str())},
-                .lea_path{""}, // note: a single empty string element in vector
-                .operand{id.str(), false},
-                .ident_type{ident_info::ident_type::VAR},
-            };
-        }
-
         // not resolved, return empty info
-        return {.id{}, .elem_path{}, .type_path{}, .lea_path{}, .operand{}};
+        return make_ident_info_empty();
     }
 
     [[nodiscard]] auto
@@ -1206,7 +1193,7 @@ class toc final {
         }
 
         // not resolved, return empty info
-        return {.id{}, .elem_path{}, .type_path{}, .lea_path{}, .operand{}};
+        return make_ident_info_empty();
     }
 
     // helper: call make_ident_info_or_empty and throw if unresolved

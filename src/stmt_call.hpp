@@ -130,22 +130,27 @@ class stmt_call : public expression {
 
         // validate return type
         const std::optional<func_return_info> ret{func.returns()};
-        if (not dst_info.operand.is_empty()) {
-            // expect return to write to 'dst_info'
 
-            if (not ret) {
-                throw compiler_exception{tok(),
-                                         "function does not return a value"};
-            }
-
-            // alias return identifier to 'dst_info'
-            aliases_to_add.emplace_back(
-                std::string{ret->ident_tk.text()}, dst_info.id,
-                dst_info.operand.address_str(), ret->type_ptr);
-
-        } else if (ret) {
+        if (ret and dst_info.is_empty()) {
             throw compiler_exception{tok(),
                                      "function returns but value is discarded"};
+        }
+
+        if (not ret and not dst_info.is_empty()) {
+            throw compiler_exception{tok(), "function does not return a value"};
+        }
+
+        if (ret) {
+            const std::string dst_lea{
+                (dst_info.has_lea() or
+                 (not dst_info.operand.is_base_register and
+                  not dst_info.operand.address_str().empty()))
+                    ? dst_info.operand.address_str()
+                    : ""};
+
+            aliases_to_add.emplace_back(std::string{ret->ident_tk.text()},
+                                        dst_info.id, std::move(dst_lea),
+                                        ret->type_ptr);
         }
 
         // track allocated registers

@@ -301,9 +301,11 @@ class expr_any final : public statement {
                         std::format("bool_end_{}", postfix)};
 
                     // compile and possibly evaluate constant expression
-                    const std::optional<bool> const_eval{
-                        e.compile(tc, x, indent, jmp_to_end, jmp_to_end, false,
-                                  dst_info.operand.str())};
+                    const std::string dst{dst_info.is_var()
+                                              ? dst_info.operand.str(1)
+                                              : dst_info.operand.str()};
+                    const std::optional<bool> const_eval{e.compile(
+                        tc, x, indent, jmp_to_end, jmp_to_end, false, dst)};
 
                     // not constant evaluation
                     x.label(indent, jmp_to_end);

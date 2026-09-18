@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "token.hpp"
+#include "utils.hpp"
 
 class toc;
 class tokenizer;
@@ -39,6 +40,7 @@ struct operand {
     uint8_t scale{1};
     size_t size{};
     bool is_base_register{};
+    bool is_memory{};
 
     operand() = default;
 
@@ -52,6 +54,7 @@ struct operand {
 
         if (operand_is_base_register) {
             base_register = operand_sv;
+            size = utils::register_size(operand_sv);
             return;
         }
 
@@ -98,7 +101,9 @@ struct operand {
                 if (end == operand_sv.size() or
                     std::isspace(static_cast<unsigned char>(operand_sv[end])) or
                     operand_sv[end] == '[') {
+
                     size = operand_size;
+                    is_memory = true;
                     pos = end;
                     break;
                 }
@@ -199,8 +204,6 @@ struct operand {
         return not index_register.empty() or displacement != 0;
     }
 
-    [[nodiscard]] auto is_memory() const -> bool { return size != 0; }
-
     [[nodiscard]] auto address_str() const -> std::string {
         std::string s;
 
@@ -277,7 +280,7 @@ struct var_info {
 };
 
 struct ident_info {
-    enum class ident_type : uint8_t { CONST, VAR, REGISTER };
+    enum class ident_type : uint8_t { CONST, VAR, REGISTER, EMPTY };
 
     std::string id;
     std::vector<std::string> elem_path;
@@ -302,8 +305,8 @@ struct ident_info {
         return ident_type == ident_type::VAR;
     }
 
-    [[nodiscard]] auto is_memory_operand() const -> bool {
-        return operand.is_memory();
+    [[nodiscard]] auto is_empty() const -> bool {
+        return ident_type == ident_type::EMPTY;
     }
 
     [[nodiscard]] auto has_lea() const -> bool {

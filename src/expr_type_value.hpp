@@ -71,7 +71,8 @@ class expr_type_value final : public statement {
     // implemented in 'decouple_impl.hpp' due to circular reference:
     // expr_type_value -> expr_any -> expr_type_value
     auto compile_assign(toc& tc, x86& x, const size_t indent,
-                        const type& dst_type, operand& op) const -> void;
+                        const type& dst_type, const ident_info& dst_info,
+                        operand& op) const -> void;
 
     // implemented in 'decouple_impl.hpp'
     static auto validate_array_assignment(const token& tok,

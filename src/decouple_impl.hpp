@@ -240,13 +240,14 @@ auto expr_type_value::compile(toc& tc, x86& x, const size_t indent,
 
     const type& tp{dst_info.type()};
     operand op{dst_info.operand};
-    compile_assign(tc, x, indent, tp, op);
+    compile_assign(tc, x, indent, tp, dst_info, op);
 }
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
                                      const type& dst_type,
+                                     const ident_info& dst_info,
                                      operand& dst_op) const -> void {
 
     // is it e.g. pt1 = pt2, or pt1 = f()?
@@ -293,7 +294,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         if (not tf.type().is_built_in()) {
             // a not-builtin statement thus is 'expr_type_value'
             const expr_type_value& e{ea->as_expr_type_value()};
-            e.compile_assign(tc, x, indent, tf.type(), dst_op);
+            e.compile_assign(tc, x, indent, tf.type(), dst_info, dst_op);
             ++counter;
             continue;
         }
@@ -324,9 +325,13 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
-            const ident_info dst_info{
-                tc.make_ident_info(x, src.tok(), dst_accessor)};
-            src.compile(tc, x, indent, dst_info);
+            // todo: fix this
+            ident_info cur_dst_info{dst_info};
+            cur_dst_info.type_path = {&tf.type()};
+            cur_dst_info.is_array = tf.is_array;
+            cur_dst_info.array_size = tf.array_size;
+            cur_dst_info.operand = operand{dst_accessor, false};
+            src.compile(tc, x, indent, cur_dst_info);
         } else {
             // built-in, not expression
             const ident_info src_info{tc.make_ident_info(x, src)};

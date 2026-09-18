@@ -280,7 +280,7 @@ class expr_ops_list final : public expression {
         const std::string reg{
             x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
         const std::string reg_sized{
-            x.get_sized_register_operand(reg, dst_info.type().size())};
+            x.get_sized_register_operand(reg, dst_info.operand.size)};
         // note: sized register to propagate operation to destination size
         const ident_info dst_reg_info{
             toc::make_ident_info_from_register(x, reg_sized)};
@@ -538,7 +538,7 @@ class expr_ops_list final : public expression {
                            const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.type().size()};
+        const size_t dst_size{dst_info.operand.size};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -553,7 +553,7 @@ class expr_ops_list final : public expression {
                         toc::make_ident_info_from_register(x, reg_sized));
 
             // note: 'imul' destination must be a register
-            if (dst_info.is_register() and not dst_info.is_memory_operand()) {
+            if (dst_info.is_register() and not dst_info.operand.is_memory) {
                 x.comment(src.tok(), indent, "imul: expr reg");
                 x.op(src.tok(), indent, "imul", dst_info.operand.str(),
                      reg_sized);
@@ -609,7 +609,7 @@ class expr_ops_list final : public expression {
             return;
         }
 
-        if (not dst_info.is_memory_operand()) {
+        if (dst_info.is_register()) {
             // destination is a register
             if (src_info.is_const()) {
                 x.comment(src.tok(), indent, "dst is reg, src is const");
@@ -706,7 +706,7 @@ class expr_ops_list final : public expression {
                                const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.type().size()};
+        const size_t dst_size{dst_info.operand.size};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -771,7 +771,7 @@ class expr_ops_list final : public expression {
                                const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.type().size()};
+        const size_t dst_size{dst_info.operand.size};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -826,7 +826,7 @@ class expr_ops_list final : public expression {
                              const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.type().size()};
+        const size_t dst_size{dst_info.operand.size};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
@@ -903,7 +903,7 @@ class expr_ops_list final : public expression {
                            const ident_info& dst_info, const statement& src)
         -> void {
 
-        const size_t dst_size{dst_info.type().size()};
+        const size_t dst_size{dst_info.operand.size};
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
