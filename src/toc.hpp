@@ -126,7 +126,7 @@ class frame final {
         return func_ret_label_;
     }
 
-    [[nodiscard]] auto get_alias(std::string_view name) const
+    [[nodiscard]] auto get_alias(const std::string_view name) const
         -> const alias_info& {
 
         return aliases_.get_const_ref(name);
@@ -250,7 +250,7 @@ class toc final {
     }
 
     auto add_const(x86& x, const token& src_loc_tk, const size_t indent,
-                   std::string_view name, const int64_t value) {
+                   const std::string_view name, const int64_t value) {
 
         if (has_const_in_current_block(name)) {
             const const_info& c{frames_.back().get_const(name)};
@@ -386,7 +386,7 @@ class toc final {
         refresh_usage();
     }
 
-    auto enter_func(std::string_view name,
+    auto enter_func(const std::string_view name,
                     const std::optional<func_return_info>& returns,
                     const std::string_view call_path = {},
                     const std::string_view return_jmp_label = {}) -> void {

@@ -824,8 +824,8 @@ class x86 final {
         return operand.contains('[');
     }
 
-    [[nodiscard]] static auto is_register_operand(std::string_view operand)
-        -> bool {
+    [[nodiscard]] static auto
+    is_register_operand(const std::string_view operand) -> bool {
         return utils::register_size(operand) != 0;
     }
 

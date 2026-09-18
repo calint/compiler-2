@@ -14,7 +14,7 @@ template <class T> class lut final {
         std::string key;
         T data;
 
-        [[nodiscard]] auto is_key(std::string_view k) const -> bool {
+        [[nodiscard]] auto is_key(const std::string_view k) const -> bool {
             return k == key;
         }
     };
@@ -22,7 +22,7 @@ template <class T> class lut final {
     std::vector<elem> elems_;
 
   public:
-    [[nodiscard]] auto has(std::string_view key) const -> bool {
+    [[nodiscard]] auto has(const std::string_view key) const -> bool {
         return std::ranges::any_of(
             elems_, [&key](const elem& e) -> bool { return e.is_key(key); });
     }
@@ -32,7 +32,8 @@ template <class T> class lut final {
     }
 
     // note: for clarity, get_const_ref instead of overloading get_ref
-    [[nodiscard]] auto get_const_ref(std::string_view key) const -> const T& {
+    [[nodiscard]] auto get_const_ref(const std::string_view key) const
+        -> const T& {
         for (const elem& e : elems_) {
             if (e.is_key(key)) {
                 return e.data;

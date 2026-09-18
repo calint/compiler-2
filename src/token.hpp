@@ -33,7 +33,7 @@ class token final {
         std::print(os, "{}\"{}\"{}", ws_left_, text_, ws_right_);
     }
 
-    [[nodiscard]] auto is_text(std::string_view s) const -> bool {
+    [[nodiscard]] auto is_text(const std::string_view s) const -> bool {
         return text_ == s;
     }
 

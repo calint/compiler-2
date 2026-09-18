@@ -13,17 +13,18 @@ constexpr size_t size_dword{4};
 constexpr size_t size_word{2};
 constexpr size_t size_byte{1};
 
-[[nodiscard]] auto get_before_dot(std::string_view text) -> std::string_view;
+[[nodiscard]] auto get_before_dot(const std::string_view text)
+    -> std::string_view;
 [[nodiscard]] auto get_size_specifier(size_t size) -> std::string_view;
-[[nodiscard]] auto get_text_between_brackets(std::string_view text)
+[[nodiscard]] auto get_text_between_brackets(const std::string_view text)
     -> std::optional<std::string_view>;
-[[nodiscard]] auto register_size(std::string_view operand) -> size_t;
+[[nodiscard]] auto register_size(const std::string_view operand) -> size_t;
 [[nodiscard]] auto regex_ws() -> const std::regex&;
 [[nodiscard]] auto regex_trim() -> const std::regex&;
 [[nodiscard]] auto regex_nasm_comment() -> const std::regex&;
 [[nodiscard]] auto line_and_col_num_for_char_index(size_t at_line,
                                                    size_t char_index_in_source,
-                                                   std::string_view src)
+                                                   const std::string_view src)
     -> std::pair<size_t, size_t>;
 
 // NOLINTBEGIN(misc-definitions-in-headers)
