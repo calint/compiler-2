@@ -189,6 +189,10 @@ class stmt_def_dat final : public statement {
         compile_data_rec(tc, x, get_type(), elroot_);
     }
 
+    [[nodiscard]] auto dat_size_bytes() const -> size_t override {
+        return get_type().size() * (elroot_.is_array ? elroot_.array_size : 1);
+    }
+
   private:
     static auto compile_data_rec(const toc& tc, x86& x, const type& tp,
                                  const elem& elroot) -> void {

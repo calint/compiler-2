@@ -21,3 +21,5 @@ func main() {
     # f3(2) returns 12
     assert(r == 12 and state == 1)
 }
+
+dat dat_padding : i8[8]

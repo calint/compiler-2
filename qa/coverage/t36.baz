@@ -28,3 +28,5 @@ func main(){
     print(len,address_of(name))
     exit(0)
 }
+
+dat dat_padding : i8[4]

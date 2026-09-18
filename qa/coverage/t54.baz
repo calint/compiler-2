@@ -48,3 +48,5 @@ func main(){
     f(str,fld)
     exit(0)
 }
+
+dat dat_padding : i8[13]

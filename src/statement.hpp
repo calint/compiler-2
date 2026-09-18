@@ -149,6 +149,8 @@ class statement {
     virtual auto compile_data([[maybe_unused]] const toc& tc,
                               [[maybe_unused]] x86& x) const -> void {}
 
+    [[nodiscard]] virtual auto dat_size_bytes() const -> size_t { return 0; }
+
     [[nodiscard]] virtual auto compile_lea(
         [[maybe_unused]] toc& tc, [[maybe_unused]] x86& x,
         [[maybe_unused]] const size_t indent,

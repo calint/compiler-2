@@ -25,3 +25,5 @@ func main(){
         exit(0)
     exit(1)
 }
+
+dat dat_padding : i8[8]

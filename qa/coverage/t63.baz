@@ -49,3 +49,5 @@ func main(){
         print(array_size_of(nl), address_of(nl))
     }
 }
+
+dat dat_padding : i8[7]
