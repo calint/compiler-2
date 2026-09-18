@@ -430,7 +430,7 @@ class stmt_def_dat final : public statement {
 
         // user type array
 
-        el.tk = src_lok_tk;
+        el.tk = src_loc_tk;
         // note: 'el.tk' is not part of data but is used for source location
         //       at compile
 

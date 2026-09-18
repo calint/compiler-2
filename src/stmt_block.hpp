@@ -1,10 +1,10 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <memory>
 #include <ostream>
 #include <string_view>
 #include <vector>
-#include <memory>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
