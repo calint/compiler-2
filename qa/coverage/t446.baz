@@ -1,0 +1,58 @@
+# regression: user-type return and user-type indexed argument aliasing
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+type pair {
+    x : i64,
+    y : i64
+}
+
+type container {
+    p : pair,
+    tag : i64
+}
+
+func mk_pair(base : i64) : pair out {
+    out = {base + 1, base + 2}
+}
+
+func sum_pair(src : pair) : i64 out {
+    out = src.x + src.y
+}
+
+func copy_pair(src : pair, dst : pair) {
+    dst = {src.x, src.y}
+}
+
+func main() {
+    var srcs : pair[3]
+    var dsts : pair[3]
+    var boxes : container[2]
+
+    srcs[0] = {10, 20}
+    srcs[1] = {30, 40}
+    srcs[2] = {50, 60}
+
+    var ri = 1
+    dsts[ri] = mk_pair(100)
+
+    assert(1, ri == 1)
+    assert(2, dsts[1].x == 101)
+    assert(3, dsts[1].y == 102)
+
+    var ai = 2
+    boxes[0].tag = sum_pair(srcs[ai])
+
+    assert(4, ai == 2)
+    assert(5, boxes[0].tag == 110)
+
+    var ci_src = 0
+    var ci_dst = 1
+    copy_pair(srcs[ci_src], boxes[ci_dst].p)
+
+    assert(6, ci_src == 0)
+    assert(7, ci_dst == 1)
+    assert(8, boxes[1].p.x == 10)
+    assert(9, boxes[1].p.y == 20)
+}
