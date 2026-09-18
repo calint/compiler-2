@@ -1099,9 +1099,9 @@ main:
 ;       [178:5] free scratch register r15
     assert_178_5_end:
 ;   [179:5] # `foo` is a language construct that iterates over an array injecting:
-;   [180:5] # `e` current element
-;   [181:5] # `i` index starting at 0
-;   [182:5] # `n` constant array size
+;   [180:5] # `e`: current element
+;   [181:5] # `i`: index starting at 0
+;   [182:5] # `n`: constant array size
 ;   [184:5] var p : point = {0, 0}
 ;   [184:9] p: point (16 B @ [rsp - 317])
 ;   [184:9] p = {0, 0}
