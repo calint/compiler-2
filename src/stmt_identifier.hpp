@@ -101,7 +101,7 @@ class stmt_identifier : public statement {
             const ident_info ii{
                 tc.make_ident_info_parsing(tk_prv, path_as_string_)};
 
-            set_type(ii.type());
+            set_type(ii.type_ref());
 
             if (elems_.back().array_index_expr != nullptr) {
                 // if the last element has an index expression then this is
@@ -184,7 +184,7 @@ class stmt_identifier : public statement {
             src_info.lea_path)};
 
         x.mov(tok(), indent, dst_info.operand.str(),
-              op.str(src_info.type().size()));
+              op.str(src_info.type_ref().size()));
 
         get_unary_ops().compile(tc, x, indent, dst_info.operand.str());
 
@@ -250,7 +250,7 @@ class stmt_identifier : public statement {
         for (size_t i{elem_index_with_lea}; i < elems_size; ++i) {
             const ident_elem& curr_elem{elems[i]};
             const ident_info curr_info{tc.make_ident_info(x, src_loc_tk, path)};
-            const size_t type_size{curr_info.type().size()};
+            const size_t type_size{curr_info.type_ref().size()};
             const bool is_last{i == elems_size - 1};
 
             // handle array access without indexing
@@ -266,7 +266,7 @@ class stmt_identifier : public statement {
                     const ident_elem& next_elem{elems[i + 1]};
                     accum_offset +=
                         static_cast<int32_t>(toc::get_field_offset_in_type(
-                            curr_info.type(), next_elem.name_tk.text()));
+                            curr_info.type_ref(), next_elem.name_tk.text()));
                     path.push_back('.');
                     path += next_elem.name_tk.text();
                 }
@@ -379,7 +379,7 @@ class stmt_identifier : public statement {
                 const ident_elem& next_elem{elems[i + 1]};
                 accum_offset +=
                     static_cast<int32_t>(toc::get_field_offset_in_type(
-                        curr_info.type(), next_elem.name_tk.text()));
+                        curr_info.type_ref(), next_elem.name_tk.text()));
                 path.push_back('.');
                 path += next_elem.name_tk.text();
             }

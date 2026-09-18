@@ -123,7 +123,8 @@ class expr_any final : public statement {
         for (const auto [i, el] : std::views::enumerate(vars_)) {
             x.comment(tok(), indent, "[{}]", i);
             compile_variant(tc, x, indent, ii, tok(), el);
-            ii.operand.displacement += static_cast<int32_t>(ii.type().size());
+            ii.operand.displacement +=
+                static_cast<int32_t>(ii.type_ref().size());
         }
 
         const size_t diff{(array_size_ - vars_.size())};
@@ -131,10 +132,10 @@ class expr_any final : public statement {
             return;
         }
 
-        const size_t nbytes{diff * ii.type().size()};
+        const size_t nbytes{diff * ii.type_ref().size()};
 
         x.comment(tok(), indent, "zero remaining elements: {} * {} B = {} B",
-                  diff, ii.type().size(), nbytes);
+                  diff, ii.type_ref().size(), nbytes);
         x.zero(tok(), indent, ii.operand.address_str(), nbytes);
     }
 

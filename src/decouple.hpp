@@ -291,7 +291,7 @@ struct ident_info {
     int64_t const_value{};
     size_t array_size{};
     bool is_array{};
-    bool is_indexed{};
+    bool use_operand{};
     ident_type ident_type{};
 
     [[nodiscard]] auto is_const() const -> bool {
@@ -316,9 +316,35 @@ struct ident_info {
         });
     }
 
-    [[nodiscard]] auto type() const -> const type& {
+    [[nodiscard]] auto type_ref() const -> const type& {
         assert(not type_path.empty());
         return *type_path.back();
+    }
+
+    void push(std::string path_elem, const type* tp, std::string lea) {
+        id += "." + path_elem;
+        elem_path.emplace_back(path_elem);
+        type_path.emplace_back(tp);
+        lea_path.emplace_back(lea);
+    }
+
+    void pop() {
+        id.resize(id.rfind('.'));
+        elem_path.pop_back();
+        type_path.pop_back();
+        lea_path.pop_back();
+    }
+
+    void increment_offset(const int32_t n) {
+        assert(stack_ix + n <= 0);
+        stack_ix += n;
+        operand.displacement += n;
+    }
+
+    void replace_back(std::string path_elem, const type* tp, std::string lea) {
+        elem_path.back() = path_elem;
+        type_path.back() = tp;
+        lea_path.back() = lea;
     }
 };
 

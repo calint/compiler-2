@@ -150,10 +150,10 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         // check that an identifier type matches the expected type
         const ident_info src_info{tc.make_ident_info_parsing(*stmt_ident_)};
 
-        if (tp.name() != src_info.type().name()) {
+        if (tp.name() != src_info.type_ref().name()) {
             throw compiler_exception{
                 tok(), std::format("expected type '{}', got '{}'", tp.name(),
-                                   src_info.type().name())};
+                                   src_info.type_ref().name())};
         }
 
         return;
@@ -238,7 +238,7 @@ auto expr_type_value::compile(toc& tc, x86& x, const size_t indent,
         return;
     }
 
-    const type& tp{dst_info.type()};
+    const type& tp{dst_info.type_ref()};
     operand op{dst_info.operand};
     compile_assign(tc, x, indent, tp, dst_info, op);
 }
@@ -255,7 +255,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         const ident_info src_info{tc.make_ident_info(x, *this)};
 
         // 'expr_type_value' validates the source type before entering here
-        assert(dst_type.name() == src_info.type().name());
+        assert(dst_type.name() == src_info.type_ref().name());
 
         std::vector<std::string> allocated_registers;
         operand src_op;
@@ -288,13 +288,10 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
     ident_info cur_dst_info{dst_info};
     cur_dst_info.operand = dst_op;
-    cur_dst_info.is_indexed = true;
+    cur_dst_info.use_operand = true;
 
-    // add an element at the end of the list because elem and types will replace
-    // them
-    cur_dst_info.elem_path.emplace_back("");
-    cur_dst_info.type_path.emplace_back(nullptr);
-    cur_dst_info.lea_path.emplace_back("");
+    // note: keeping a current 'dst_info' accurate by adjusting 'cur_dest_info'
+    // is not necessary but it looks nicer
 
     const std::span<const type_field>& flds{dst_type.fields()};
     for (const std::unique_ptr<expr_any>& ea : exprs_) {
@@ -302,20 +299,15 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
         x.comment(ea->tok(), indent, "copy field '{}'", tf.name);
 
-        cur_dst_info.id = dst_info.id + "." + tf.name;
-        cur_dst_info.elem_path.back() = tf.name;
-        cur_dst_info.type_path.back() = tf.type_ptr;
-        cur_dst_info.is_array = tf.is_array;
-        cur_dst_info.array_size = tf.array_size;
+        cur_dst_info.push(tf.name, tf.type_ptr, "");
 
         if (not tf.type().is_built_in()) {
             // a not-builtin statement thus is 'expr_type_value'
             const expr_type_value& e{ea->as_expr_type_value()};
             e.compile_assign(tc, x, indent, tf.type(), cur_dst_info, dst_op);
-            const int32_t sz{static_cast<int32_t>(tf.size)};
             // note: dst_op was mutated in the recursive call
-            cur_dst_info.stack_ix += sz;
-            cur_dst_info.operand.displacement += sz;
+            cur_dst_info.increment_offset(static_cast<int32_t>(tf.size));
+            cur_dst_info.pop();
             ++counter;
             continue;
         }
@@ -334,8 +326,8 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
             x.zero(tok(), indent, dst_op.address_str(), tf.size);
             const int32_t sz{static_cast<int32_t>(tf.size)};
             dst_op.displacement += sz;
-            cur_dst_info.stack_ix += sz;
-            cur_dst_info.operand.displacement += sz;
+            cur_dst_info.increment_offset(sz);
+            cur_dst_info.pop();
             ++counter;
             continue;
         }
@@ -377,8 +369,8 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
         }
         const int32_t sz{static_cast<int32_t>(tf.size)};
         dst_op.displacement += sz;
-        cur_dst_info.stack_ix += sz;
-        cur_dst_info.operand.displacement += sz;
+        cur_dst_info.increment_offset(sz);
+        cur_dst_info.pop();
         ++counter;
     }
 
@@ -416,7 +408,7 @@ auto expr_type_value::validate_array_assignment(const token& tok,
     }
 
     // 'expr_any' validates the source element type before entering here
-    assert(fld.type().name() == src_info.type().name());
+    assert(fld.type().name() == src_info.type_ref().name());
 
     if (fld.array_size != src_info.array_size) {
         throw compiler_exception{

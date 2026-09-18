@@ -38,7 +38,7 @@ class stmt_builtin_foo final : public statement {
         tc.enter_foo("");
         const var_info var_e{
             .name{"e"},
-            .type_ptr{&ii.type()},
+            .type_ptr{&ii.type_ref()},
             .declared_at_tk{},
             .reg{},
         };
@@ -88,7 +88,7 @@ class stmt_builtin_foo final : public statement {
 
         const var_info var_e{
             .name{"e"},
-            .type_ptr{&ii.type()},
+            .type_ptr{&ii.type_ref()},
             .declared_at_tk{tok()},
             .reg{reg_iter},
         };
@@ -136,7 +136,7 @@ class stmt_builtin_foo final : public statement {
         x.label(indent, loop_label);
         code_.compile(tc, x, indent, toc::make_ident_info_empty());
         x.label(indent + 1, loop_label + "_continue");
-        x.add(indent + 2, reg_iter, std::format("{}", ii.type().size()));
+        x.add(indent + 2, reg_iter, std::format("{}", ii.type_ref().size()));
         x.inc(indent + 2, var_i_addr_op);
         x.cmp(indent + 2, var_i_addr_op, std::format("{}", ii.array_size));
         x.jne(indent + 2, loop_label);

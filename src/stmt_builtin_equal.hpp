@@ -115,15 +115,15 @@ class stmt_builtin_equal final : public expression {
             x.free_scratch_register(tok(), indent, reg);
         }
 
-        if (lhs_info.type().name() != rhs_info.type().name()) {
+        if (lhs_info.type_ref().name() != rhs_info.type_ref().name()) {
             throw compiler_exception{
-                tok(),
-                std::format("source and compare types are not the "
-                            "same. source is '{}' and compare is '{}'",
-                            lhs_info.type().name(), rhs_info.type().name())};
+                tok(), std::format("source and compare types are not the "
+                                   "same. source is '{}' and compare is '{}'",
+                                   lhs_info.type_ref().name(),
+                                   rhs_info.type_ref().name())};
         }
 
-        const size_t type_size{lhs_info.type().size()};
+        const size_t type_size{lhs_info.type_ref().size()};
 
         char rep_size{'b'};
         size_t rcx{type_size};

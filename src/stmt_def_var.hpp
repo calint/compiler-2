@@ -152,10 +152,10 @@ class stmt_def_var final : public statement {
         // zero the variable data
 
         const size_t instance_count{array_size_ ? array_size_ : 1};
-        const size_t bytes_count{instance_count * dst_info.type().size()};
+        const size_t bytes_count{instance_count * dst_info.type_ref().size()};
 
         x.comment(name_tk_, indent, "zero {} * {} B = {} B", instance_count,
-                  dst_info.type().size(), bytes_count);
+                  dst_info.type_ref().size(), bytes_count);
 
         const std::string dst_addr{std::format("rsp - {}", -dst_info.stack_ix)};
         // note: -dst_info.stack_ix for nicer source formatting; is always

@@ -129,20 +129,22 @@ class stmt_builtin_arrays_equal final : public expression {
             x.free_scratch_register(tok(), indent, reg);
         }
 
-        if (from_info.type().name() != to_info.type().name()) {
+        if (from_info.type_ref().name() != to_info.type_ref().name()) {
             throw compiler_exception{
                 tok(),
                 std::format("source type '{}' does not match compare type '{}'",
-                            from_info.type().name(), to_info.type().name())};
+                            from_info.type_ref().name(),
+                            to_info.type_ref().name())};
         }
 
-        if (dst_info.type().name() != get_type().name()) {
+        if (dst_info.type_ref().name() != get_type().name()) {
             throw compiler_exception{
-                tok(), std::format("destination type must be '{}', not '{}'",
-                                   get_type().name(), dst_info.type().name())};
+                tok(),
+                std::format("destination type must be '{}', not '{}'",
+                            get_type().name(), dst_info.type_ref().name())};
         }
 
-        const size_t type_size{from_info.type().size()};
+        const size_t type_size{from_info.type_ref().size()};
 
         if (type_size > 1) {
             // check whether it is possible to shift left instead of

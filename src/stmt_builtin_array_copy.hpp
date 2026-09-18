@@ -123,15 +123,16 @@ class stmt_builtin_array_copy final : public statement {
             x.free_scratch_register(tok(), indent, reg);
         }
 
-        if (from_info.type().name() != to_info.type().name()) {
+        if (from_info.type_ref().name() != to_info.type_ref().name()) {
             throw compiler_exception{
                 tok(),
                 std::format("source type '{}' does not match destination "
                             "type '{}'",
-                            from_info.type().name(), to_info.type().name())};
+                            from_info.type_ref().name(),
+                            to_info.type_ref().name())};
         }
 
-        const size_t type_size{from_info.type().size()};
+        const size_t type_size{from_info.type_ref().size()};
 
         if (type_size > 1) {
             // check whether it is possible to shift left instead of

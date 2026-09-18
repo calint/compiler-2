@@ -354,7 +354,7 @@ class toc final {
             make_ident_info_parsing(src_loc_tk, var.name)};
 
         x.comment_start(src_loc_tk, indent);
-        x.print("{}: {}", var.name, name_info.type().name());
+        x.print("{}: {}", var.name, name_info.type_ref().name());
         if (var.array_size) {
             x.print("[{}]", var.array_size);
         }
@@ -363,7 +363,7 @@ class toc final {
             return;
         }
         x.println(" ({} B @ [{}])",
-                  name_info.type().size() *
+                  name_info.type_ref().size() *
                       (name_info.is_array ? name_info.array_size : 1),
                   name_info.operand.address_str());
     }
@@ -709,7 +709,7 @@ class toc final {
             .id{reg},
             .elem_path{std::string{reg}},
             .type_path{&x.get_allocated_register_type(reg)},
-            .lea_path{""},
+            .lea_path{""}, // note: a single empty string element in vector
             .operand{reg, true},
             .ident_type{ident_info::ident_type::REGISTER},
         };
@@ -1049,7 +1049,7 @@ class toc final {
 
         ii.lea_path = lea_path;
 
-        if (not ii.type().is_built_in()) {
+        if (not ii.type_ref().is_built_in()) {
             return ii;
         }
 
@@ -1103,7 +1103,7 @@ class toc final {
         if (offset != 0) {
             ii.operand.displacement += static_cast<int>(offset);
         }
-        ii.operand.size = ii.type().size();
+        ii.operand.size = ii.type_ref().size();
 
         return ii;
     }
@@ -1144,7 +1144,7 @@ class toc final {
                 .id{ident},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
-                .lea_path{""},
+                .lea_path{""}, // note: a single empty string element in vector
                 .operand{id.str(), true},
                 .const_value{*value},
                 .ident_type{ident_info::ident_type::CONST},
@@ -1157,7 +1157,7 @@ class toc final {
                 .id{ident},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
-                .lea_path{""},
+                .lea_path{""}, // note: a single empty string element in vector
                 .operand{},
                 .const_value{1},
                 .ident_type{ident_info::ident_type::CONST},
@@ -1169,7 +1169,7 @@ class toc final {
                 .id{ident},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
-                .lea_path{""},
+                .lea_path{""}, // note: a single empty string element in vector
                 .operand{},
                 .const_value{},
                 .ident_type{ident_info::ident_type::CONST},
@@ -1182,7 +1182,7 @@ class toc final {
                 .id{ident},
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
-                .lea_path{""},
+                .lea_path{""}, // note: a single empty string element in vector
                 .operand{id.str(), true},
                 .const_value{get_const(id.str())},
                 .ident_type{ident_info::ident_type::CONST},

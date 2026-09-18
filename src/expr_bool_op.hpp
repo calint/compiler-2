@@ -438,7 +438,7 @@ class expr_bool_op final : public statement {
             const operand op{expr.compile_lea(tc, x, indent, expr.tok(),
                                               allocated_registers, "",
                                               expr_info.lea_path)};
-            return op.str(expr_info.type().size());
+            return op.str(expr_info.type_ref().size());
         }
 
         if (expr.is_expression()) {
@@ -477,6 +477,6 @@ class expr_bool_op final : public statement {
         allocated_registers.emplace_back(reg);
         x.mov(expr.tok(), indent, reg, expr_info.operand.str());
         expr.get_unary_ops().compile(tc, x, indent, reg);
-        return x.get_sized_register_operand(reg, expr_info.type().size());
+        return x.get_sized_register_operand(reg, expr_info.type_ref().size());
     }
 };

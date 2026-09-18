@@ -83,7 +83,7 @@ class expr_ops_list final : public expression {
         const statement& first_expr{*exprs_.front()};
 
         set_type(first_expr.is_identifier()
-                     ? tc.make_ident_info_parsing(first_expr).type()
+                     ? tc.make_ident_info_parsing(first_expr).type_ref()
                      : first_expr.get_type());
 
         // start the loop of arithmetic operator and element
@@ -376,9 +376,10 @@ class expr_ops_list final : public expression {
         }
 
         for (const std::unique_ptr<statement>& expr : exprs_) {
-            const type& expr_type{expr->is_identifier()
-                                      ? tc.make_ident_info_parsing(*expr).type()
-                                      : expr->get_type()};
+            const type& expr_type{
+                expr->is_identifier()
+                    ? tc.make_ident_info_parsing(*expr).type_ref()
+                    : expr->get_type()};
             if (expr_type.name() == tc.get_type_bool().name()) {
                 throw compiler_exception{
                     expr->tok(),

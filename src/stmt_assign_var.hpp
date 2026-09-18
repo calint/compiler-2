@@ -32,9 +32,9 @@ class stmt_assign_var final : public statement {
 
         const ident_info& dst_info{tc.make_ident_info_parsing(stmt_ident_)};
 
-        set_type(dst_info.type());
+        set_type(dst_info.type_ref());
 
-        expr_ = {tc, tz, dst_info.type(), false, is_array, array_size};
+        expr_ = {tc, tz, dst_info.type_ref(), false, is_array, array_size};
 
         if (array_size == 0) {
             array_size_ = expr_.array_size();
@@ -78,7 +78,7 @@ class stmt_assign_var final : public statement {
         }
 
         std::vector<std::string> lea_registers;
-        dst_info.is_indexed = array_size_ > 0 or stmt_ident_.is_indexed();
+        dst_info.use_operand = array_size_ > 0 or stmt_ident_.is_indexed();
         dst_info.operand =
             tc.get_lea_operand(x, indent, stmt_ident_, dst_info, lea_registers);
         expr_.compile(tc, x, indent, dst_info);
