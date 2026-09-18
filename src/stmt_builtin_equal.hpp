@@ -164,8 +164,8 @@ class stmt_builtin_equal final : public expression {
 
         if (dst_info.is_register()) {
             x.setcc(indent, "e",
-                    x.get_sized_register_operand(dst_info.operand.str(),
-                                                 operand::size_byte));
+                    x86::get_sized_register_operand(dst_info.operand.str(),
+                                                    operand::size_byte));
             return;
         }
 

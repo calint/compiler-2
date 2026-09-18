@@ -7,7 +7,6 @@
 #include <functional>
 #include <ostream>
 #include <print>
-#include <regex>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -54,8 +53,6 @@ class x86 final {
     size_t scratch_registers_initial_size_{scratch_registers_.size()};
     std::vector<allocated_register> allocated_registers_;
     size_t usage_max_scratch_regs_{};
-
-    std::regex regex_nasm_number_register_{R"(r(\d+))"};
 
     std::string_view source_;
 
@@ -607,7 +604,7 @@ class x86 final {
         asm_line(indent, "xor {}, {}", dst, src);
     }
 
-    [[nodiscard]] auto
+    [[nodiscard]] static auto
     get_sized_register_operand(const std::string_view operand,
                                const size_t size) -> std::string {
 
@@ -725,13 +722,24 @@ class x86 final {
             }
         }
 
-        std::smatch match;
-        const std::string operand_str{operand};
-        if (not std::regex_search(operand_str, match,
-                                  regex_nasm_number_register_)) {
+        // numbered registers are accepted as rN/rNd/rNw/rNb
+        if (operand.size() < 2 || operand[0] != 'r') {
             std::unreachable();
         }
-        const std::string rnbr{match[1]};
+
+        const size_t digits_start{1};
+        size_t digits_end{digits_start};
+        while (digits_end < operand.size() && operand[digits_end] >= '0' &&
+               operand[digits_end] <= '9') {
+            ++digits_end;
+        }
+
+        if (digits_end == digits_start) {
+            std::unreachable();
+        }
+
+        const std::string_view rnbr{
+            operand.substr(digits_start, digits_end - digits_start)};
         switch (size) {
         case size_qword:
             return std::format("r{}", rnbr);
