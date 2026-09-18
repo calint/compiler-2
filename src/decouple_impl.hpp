@@ -325,7 +325,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
-            // todo: fix this
+            // todo: fix this dst_info is not correct but works because operand
             ident_info cur_dst_info{dst_info};
             cur_dst_info.type_path = {&tf.type()};
             cur_dst_info.is_array = tf.is_array;
