@@ -34,6 +34,7 @@ auto main(const int argc, const char* argv[]) -> int {
 #pragma clang diagnostic pop
 
     constexpr size_t default_stack_size{0x10000};
+    constexpr size_t stack_alignment{16};
     // note: to avoid "magic number" lint
 
     // default values
@@ -57,6 +58,8 @@ auto main(const int argc, const char* argv[]) -> int {
                          "0x10000/65536)");
             std::println(
                 "                      Supports decimal and hex (0x prefix) ");
+            std::println("                      Must be a multiple of {}",
+                         stack_alignment);
             std::println("  --checks=TYPE       Enable runtime checks:");
             std::println(
                 "                        upper - check upper array bounds");
@@ -92,6 +95,16 @@ auto main(const int argc, const char* argv[]) -> int {
                     not std::in_range<size_t>(parsed_size)) {
                     throw std::invalid_argument{"invalid stack size"};
                 }
+
+                if (parsed_size % stack_alignment != 0) {
+                    std::println(stderr,
+                                 "Invalid stack size: '{}' is not a multiple "
+                                 "of {}",
+                                 stack_text, stack_alignment);
+                    std::println(stderr, "Use --help for usage information");
+                    return 1;
+                }
+
                 stack_size = static_cast<size_t>(parsed_size);
             } catch (...) {
                 std::println(stderr, "Could not parse stack size: \"{}\"",
