@@ -18,7 +18,7 @@ class token final {
     token(const std::string_view ws_left, const size_t start_ix,
           const std::string_view name, const size_t end_ix,
           const std::string_view ws_right, const size_t at_line,
-          const bool is_str = false)
+          const bool is_str)
         : ws_left_{ws_left}, start_ix_{start_ix}, text_{name}, end_ix_{end_ix},
           ws_right_{ws_right}, at_line_{at_line}, is_str_{is_str} {}
 

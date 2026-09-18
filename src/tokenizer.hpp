@@ -88,7 +88,7 @@ class tokenizer final {
         const std::string_view txt{next_token_str()};
         const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_whitespace()};
-        return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line};
+        return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line, false};
     }
 
     [[nodiscard]] auto is_next_char_token(const char ch) -> token {
@@ -104,13 +104,13 @@ class tokenizer final {
         ++char_ix_;
         const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_whitespace()};
-        return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line};
+        return {ws_before, bgn_ix, txt, end_ix, ws_after, at_line, false};
     }
 
     // returns a token, which is a marker at the current position with empty
     // name and whitespaces
     [[nodiscard]] auto current_position_token() const -> token {
-        return {"", char_ix_, "", char_ix_, "", at_line_};
+        return {"", char_ix_, "", char_ix_, "", at_line_, false};
     }
 
     auto rewind_to_position(const token& pos_tk) -> void {
@@ -133,7 +133,7 @@ class tokenizer final {
 
     [[nodiscard]] auto next_whitespace_token() -> token {
         const size_t at_line{at_line_};
-        return {next_whitespace(), char_ix_, "", char_ix_, "", at_line};
+        return {next_whitespace(), char_ix_, "", char_ix_, "", at_line, false};
     }
 
     [[nodiscard]] auto is_next_char(const char ch) -> bool {

@@ -209,8 +209,8 @@ func main() {
     k = baz(1)
     assert(k == 2)
 
-    var p0 : point = {baz(2), 0}
-    assert(p0.x == 4)
+    var p0 : point = {baz(3), 0}
+    assert(p0.x == 6)
 
     var pt : point = point_init()
     assert(pt.x == -1)

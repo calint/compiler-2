@@ -91,7 +91,7 @@ class stmt_builtin_array_copy final : public statement {
         x.comment(count_.tok(), indent, statement::trimmed_source(count_));
 
         count_.compile(tc, x, indent,
-                       toc::make_ident_info_for_register(x, "rcx"));
+                       toc::make_ident_info_from_register(x, "rcx"));
 
         // from operand to rsi
         x.comment(from_.tok(), indent, statement::trimmed_source(from_));

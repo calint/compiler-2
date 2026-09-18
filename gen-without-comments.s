@@ -662,13 +662,13 @@ main:
         if_41_23_210_5_end:
     assert_210_5_end:
     baz_212_23:
-        mov r15, 2
+        mov r15, 3
         imul r15, 2
         mov qword [rsp - 373], r15
     baz_212_23_end:
     mov qword [rsp - 365], 0
     cmp_213_12:
-    cmp qword [rsp - 373], 4
+    cmp qword [rsp - 373], 6
     sete r15b
     bool_end_213_12:
     assert_213_5:

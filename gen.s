@@ -1564,21 +1564,21 @@ main:
         if_41_23_210_5_end:
 ;       [210:5] free scratch register r15
     assert_210_5_end:
-;   [212:5] var p0 : point = {baz(2), 0}
+;   [212:5] var p0 : point = {baz(3), 0}
 ;   [212:9] p0: point (16 B @ [rsp - 373])
-;   [212:9] p0 = {baz(2), 0}
+;   [212:9] p0 = {baz(3), 0}
 ;   [212:23] copy field 'x'
-;   [212:23] qword [rsp - 373] = baz(2)
+;   [212:23] qword [rsp - 373] = baz(3)
 ;   [212:23] = expression
-;   [212:23] baz(2)
+;   [212:23] baz(3)
 ;   [86:6] baz(arg) : i64 res 
     baz_212_23:
 ;       [212:23] alias res -> qword [rsp - 373] (lea: rsp - 373)
-;       [212:23] alias arg -> 2
+;       [212:23] alias arg -> 3
 ;       [87:5] res = arg * 2
 ;       [87:11] allocate scratch register -> r15
 ;       [87:11] arg
-        mov r15, 2
+        mov r15, 3
 ;       [87:17] r15 * 2
 ;       [87:17] dst is reg, src is const
         imul r15, 2
@@ -1587,12 +1587,12 @@ main:
     baz_212_23_end:
 ;   [212:31] copy field 'y'
     mov qword [rsp - 365], 0
-;   [213:5] assert(p0.x == 4)
+;   [213:5] assert(p0.x == 6)
 ;   [213:12] allocate scratch register -> r15
-;   [213:12] ? p0.x == 4
-;   [213:12] ? p0.x == 4
+;   [213:12] ? p0.x == 6
+;   [213:12] ? p0.x == 6
     cmp_213_12:
-    cmp qword [rsp - 373], 4
+    cmp qword [rsp - 373], 6
     sete r15b
     bool_end_213_12:
 ;   [41:6] assert(x : bool) 

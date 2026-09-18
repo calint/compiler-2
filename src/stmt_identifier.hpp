@@ -289,7 +289,7 @@ class stmt_identifier : public statement {
 
                     curr_elem.array_index_expr->compile(
                         tc, x, indent,
-                        toc::make_ident_info_for_register(x, reg_idx));
+                        toc::make_ident_info_from_register(x, reg_idx));
 
                     const token& tk{curr_elem.array_index_expr->tok()};
                     const bool use_reg_size{not reg_size.empty()};
@@ -352,7 +352,7 @@ class stmt_identifier : public statement {
                       "set array index");
 
             curr_elem.array_index_expr->compile(
-                tc, x, indent, toc::make_ident_info_for_register(x, reg_idx));
+                tc, x, indent, toc::make_ident_info_from_register(x, reg_idx));
 
             // bounds check
             const token& tk{curr_elem.array_index_expr->tok()};
@@ -391,7 +391,7 @@ class stmt_identifier : public statement {
                                          base_info.operand.base_register);
         }
 
-        operand op{reg_offset};
+        operand op{reg_offset, false};
         // note: 'reg_offset' might be e.g. "rsp + r15 * 8 + 16" so it needs to
         // be parsed
 
@@ -483,9 +483,11 @@ class stmt_identifier : public statement {
                     const std::string& base_register) -> std::string {
 
         if (not lea.empty()) {
+            const operand lea_op{lea, false};
+
             // if no change is done to the lea register, just return it
             if (no_changes_to_reg_offset_after_this and
-                not(will_be_indirect_indexed and operand{lea}.is_indexed())) {
+                not(will_be_indirect_indexed and lea_op.is_indexed())) {
 
                 return lea;
             }
@@ -494,11 +496,9 @@ class stmt_identifier : public statement {
                 src_loc_tk, indent, tc.get_type_default())};
             allocated_registers.push_back(index_reg);
 
-            const operand op{lea};
-
             // changes will be made to the register so return an allocated
             // register
-            if (not op.index_register.empty() or op.displacement != 0) {
+            if (not lea_op.index_register.empty() or lea_op.displacement != 0) {
                 x.lea(indent, index_reg, lea);
             } else {
                 x.mov(src_loc_tk, indent, index_reg, lea);

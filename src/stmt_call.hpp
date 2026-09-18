@@ -218,7 +218,7 @@ class stmt_call : public expression {
                     arg_reg, param.get_type().size())};
 
                 arg.compile(tc, x, indent,
-                            toc::make_ident_info_for_register(x, reg_sized));
+                            toc::make_ident_info_from_register(x, reg_sized));
 
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             reg_sized, "", &param.get_type());

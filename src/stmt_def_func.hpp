@@ -72,10 +72,13 @@ class stmt_def_func final : public statement {
 
         tc.add_func(name_tk_, std::string{name_tk_.text()},
                     statement::get_type(), this);
+
         // dry-run compilation to catch errors before called
         tc.enter_func(name(), returns_);
 
-        // add var to toc without emitting output by using a null stream
+        // add vars to toc without emitting output so that the function body can
+        // be parsed
+
         null_stream null_strm;
         x86 x{null_strm, tc.source()};
 
@@ -97,7 +100,6 @@ class stmt_def_func final : public statement {
             tc.add_var(x, ret_tk, 0, var, false);
         }
 
-        // functions get arguments as aliases
         for (const stmt_def_func_param& prm : params_) {
             const type& prm_type{prm.get_type()};
             const std::string_view prm_name{prm.name()};
@@ -111,7 +113,9 @@ class stmt_def_func final : public statement {
             };
             tc.add_var(x, prm.tok(), 0, var, false);
         }
+
         code_ = {tc, tz};
+
         tc.exit_func(name());
     }
 

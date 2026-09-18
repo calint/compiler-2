@@ -446,7 +446,7 @@ class expr_bool_op final : public statement {
                 x.alloc_scratch_register(expr.tok(), indent, expr.get_type())};
             allocated_registers.emplace_back(reg);
             expr.compile(tc, x, indent + 1,
-                         toc::make_ident_info_for_register(x, reg));
+                         toc::make_ident_info_from_register(x, reg));
             return reg;
         }
 
@@ -458,7 +458,7 @@ class expr_bool_op final : public statement {
                     expr.tok(), indent, tc.get_type_default())};
                 allocated_registers.emplace_back(reg);
                 expr.compile(tc, x, indent + 1,
-                             toc::make_ident_info_for_register(x, reg));
+                             toc::make_ident_info_from_register(x, reg));
                 return reg;
             }
             return std::format("{}{}", expr.get_unary_ops().to_string(),

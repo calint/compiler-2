@@ -703,7 +703,7 @@ class toc final {
     }
 
     [[nodiscard]] static auto
-    make_ident_info_for_register(const x86& x, const std::string_view reg)
+    make_ident_info_from_register(const x86& x, const std::string_view reg)
         -> ident_info {
 
         // unary ops are applied by callers where relevant
@@ -712,7 +712,7 @@ class toc final {
             .elem_path{std::string{reg}},
             .type_path{&x.get_allocated_register_type(reg)},
             .lea_path{""},
-            .operand{reg},
+            .operand{reg, true},
             .ident_type{ident_info::ident_type::REGISTER},
         };
     }
@@ -995,6 +995,7 @@ class toc final {
         if (const ident_info reg_info{
                 make_ident_info_register_or_empty(x, src_loc_tk, ident, id)};
             not reg_info.id.empty()) {
+
             return reg_info;
         }
 
@@ -1100,7 +1101,7 @@ class toc final {
         const size_t offset{ii.type_path[lea_index]->field_offset(
             src_loc_tk, elem_path_from_lea)};
 
-        ii.operand = operand{lea};
+        ii.operand = {lea, false};
         if (offset != 0) {
             ii.operand.displacement += static_cast<int>(offset);
         }
@@ -1112,6 +1113,7 @@ class toc final {
     [[nodiscard]] auto make_ident_info_register_or_empty(
         const x86* x, const token& src_loc_tk, const std::string_view ident,
         const ident_path& id) const -> ident_info {
+
         // is it a register?
         if (const size_t reg_size{utils::register_size(id.str())};
             reg_size != 0) {
@@ -1122,8 +1124,8 @@ class toc final {
                 .id{ident},
                 .elem_path{id.str()},
                 .type_path{&tpe},
-                .lea_path{},
-                .operand{id.str()},
+                .lea_path{""}, // note: a single empty string element in vector
+                .operand{id.str(), true},
                 .ident_type{ident_info::ident_type::REGISTER},
             };
         }
@@ -1131,12 +1133,13 @@ class toc final {
         // is it a register reference to memory?
         if (utils::get_text_between_brackets(id.str())) {
             // get the size: e.g. "dword [r15]"
+            // note: assumes all memory operands do contain a base register
             return {
                 .id{ident},
                 .elem_path{id.str()},
                 .type_path{&get_builtin_type_for_operand(src_loc_tk, id.str())},
-                .lea_path{},
-                .operand{id.str()},
+                .lea_path{""}, // note: a single empty string element in vector
+                .operand{id.str(), false},
                 .ident_type{ident_info::ident_type::VAR},
             };
         }
@@ -1171,7 +1174,7 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
-                .operand{"true", true},
+                .operand{},
                 .const_value{1},
                 .ident_type{ident_info::ident_type::CONST},
             };
@@ -1183,7 +1186,7 @@ class toc final {
                 .elem_path{id.str()},
                 .type_path{&get_type_default()},
                 .lea_path{""},
-                .operand{"false", true},
+                .operand{},
                 .const_value{},
                 .ident_type{ident_info::ident_type::CONST},
             };

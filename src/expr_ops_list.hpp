@@ -283,7 +283,7 @@ class expr_ops_list final : public expression {
             x.get_sized_register_operand(reg, dst_info.type().size())};
         // note: sized register to propagate operation to destination size
         const ident_info dst_reg_info{
-            toc::make_ident_info_for_register(x, reg_sized)};
+            toc::make_ident_info_from_register(x, reg_sized)};
         do_compile(tc, x, indent, dst_reg_info);
         x.mov(tok(), indent, dst_info.operand.str(), reg_sized);
         x.free_scratch_register(tok(), indent, reg);
@@ -550,7 +550,7 @@ class expr_ops_list final : public expression {
                 x.get_sized_register_operand(reg, dst_size)};
 
             src.compile(tc, x, indent,
-                        toc::make_ident_info_for_register(x, reg_sized));
+                        toc::make_ident_info_from_register(x, reg_sized));
 
             // note: 'imul' destination must be a register
             if (dst_info.is_register() and not dst_info.is_memory_operand()) {
@@ -715,7 +715,7 @@ class expr_ops_list final : public expression {
             const std::string reg_sized{
                 x.get_sized_register_operand(reg, dst_size)};
             src.compile(tc, x, indent,
-                        toc::make_ident_info_for_register(x, reg_sized));
+                        toc::make_ident_info_from_register(x, reg_sized));
             x.op(src.tok(), indent, op, dst_info.operand.str(), reg_sized);
             x.free_scratch_register(src.tok(), indent, reg);
             return;
@@ -780,7 +780,7 @@ class expr_ops_list final : public expression {
             const std::string reg_sized{
                 x.get_sized_register_operand(reg, dst_size)};
             src.compile(tc, x, indent,
-                        toc::make_ident_info_for_register(x, reg_sized));
+                        toc::make_ident_info_from_register(x, reg_sized));
             x.op(src.tok(), indent, op, dst_info.operand.str(), reg_sized);
             x.free_scratch_register(src.tok(), indent, reg);
             return;
@@ -838,7 +838,7 @@ class expr_ops_list final : public expression {
                 x.get_sized_register_operand("rcx", dst_size)};
             // the number of bits to shift is an expression, compile it to 'rcx'
             src.compile(tc, x, indent,
-                        toc::make_ident_info_for_register(x, rcx_sized));
+                        toc::make_ident_info_from_register(x, rcx_sized));
             x.op(src.tok(), indent, op, dst_info.operand.str(), "cl");
             x.free_named_register(src.tok(), indent, "rcx");
             return;
@@ -913,7 +913,7 @@ class expr_ops_list final : public expression {
             const std::string reg_sized{
                 x.get_sized_register_operand(reg, dst_size)};
             src.compile(tc, x, indent,
-                        toc::make_ident_info_for_register(x, reg_sized));
+                        toc::make_ident_info_from_register(x, reg_sized));
             x.alloc_named_register(src.tok(), indent, "rax",
                                    tc.get_type_default());
             x.mov(src.tok(), indent,

@@ -55,10 +55,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    49           1804            897           7830
+C/C++ Header                    49           1815            900           7830
 C++                              1             15              7            170
 -------------------------------------------------------------------------------
-SUM:                            50           1819            904           8000
+SUM:                            50           1830            907           8000
 -------------------------------------------------------------------------------
 ```
 
@@ -244,9 +244,9 @@ func main() {
     assert(arr3[0] == 3 + 0 + 2)
     assert(arr3[1] == 5 + 1 + 2)
     # `foo` is a language construct that iterates over an array injecting:
-    #   `e` current element
-    #   `i` index starting at 0
-    #   `n` constant array size
+    #   `e`: current element
+    #   `i`: index starting at 0
+    #   `n`: constant array size
 
     var p : point = {0, 0}
     fooz(p)
@@ -276,8 +276,8 @@ func main() {
     k = baz(1)
     assert(k == 2)
 
-    var p0 : point = {baz(2), 0}
-    assert(p0.x == 4)
+    var p0 : point = {baz(3), 0}
+    assert(p0.x == 6)
 
     var pt : point = point_init()
     assert(pt.x == -1)
@@ -1021,13 +1021,13 @@ main:
         if_41_23_210_5_end:
     assert_210_5_end:
     baz_212_23:
-        mov r15, 2
+        mov r15, 3
         imul r15, 2
         mov qword [rsp - 373], r15
     baz_212_23_end:
     mov qword [rsp - 365], 0
     cmp_213_12:
-    cmp qword [rsp - 373], 4
+    cmp qword [rsp - 373], 6
     sete r15b
     bool_end_213_12:
     assert_213_5:
@@ -2830,9 +2830,9 @@ main:
 ;       [178:5] free scratch register r15
     assert_178_5_end:
 ;   [179:5] # `foo` is a language construct that iterates over an array injecting:
-;   [180:5] # `e` current element
-;   [181:5] # `i` index starting at 0
-;   [182:5] # `n` constant array size
+;   [180:5] # `e`: current element
+;   [181:5] # `i`: index starting at 0
+;   [182:5] # `n`: constant array size
 ;   [184:5] var p : point = {0, 0}
 ;   [184:9] p: point (16 B @ [rsp - 317])
 ;   [184:9] p = {0, 0}
@@ -3295,21 +3295,21 @@ main:
         if_41_23_210_5_end:
 ;       [210:5] free scratch register r15
     assert_210_5_end:
-;   [212:5] var p0 : point = {baz(2), 0}
+;   [212:5] var p0 : point = {baz(3), 0}
 ;   [212:9] p0: point (16 B @ [rsp - 373])
-;   [212:9] p0 = {baz(2), 0}
+;   [212:9] p0 = {baz(3), 0}
 ;   [212:23] copy field 'x'
-;   [212:23] qword [rsp - 373] = baz(2)
+;   [212:23] qword [rsp - 373] = baz(3)
 ;   [212:23] = expression
-;   [212:23] baz(2)
+;   [212:23] baz(3)
 ;   [86:6] baz(arg) : i64 res 
     baz_212_23:
 ;       [212:23] alias res -> qword [rsp - 373] (lea: rsp - 373)
-;       [212:23] alias arg -> 2
+;       [212:23] alias arg -> 3
 ;       [87:5] res = arg * 2
 ;       [87:11] allocate scratch register -> r15
 ;       [87:11] arg
-        mov r15, 2
+        mov r15, 3
 ;       [87:17] r15 * 2
 ;       [87:17] dst is reg, src is const
         imul r15, 2
@@ -3318,12 +3318,12 @@ main:
     baz_212_23_end:
 ;   [212:31] copy field 'y'
     mov qword [rsp - 365], 0
-;   [213:5] assert(p0.x == 4)
+;   [213:5] assert(p0.x == 6)
 ;   [213:12] allocate scratch register -> r15
-;   [213:12] ? p0.x == 4
-;   [213:12] ? p0.x == 4
+;   [213:12] ? p0.x == 6
+;   [213:12] ? p0.x == 6
     cmp_213_12:
-    cmp qword [rsp - 373], 4
+    cmp qword [rsp - 373], 6
     sete r15b
     bool_end_213_12:
 ;   [41:6] assert(x : bool) 

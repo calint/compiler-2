@@ -378,8 +378,8 @@ class x86 final {
         alloc_named_register(src_loc_tk, indent, "rax", *default_type_);
         size_t rest{bytes_count};
         const size_t qword_movs{rest / operand::size_qword};
-        operand src_operand{src};
-        operand dst_operand{dst};
+        operand src_operand{src, false};
+        operand dst_operand{dst, false};
         for (size_t index{}; index < qword_movs; ++index) {
             mov(src_loc_tk, indent, "rax",
                 src_operand.str(operand::size_qword));
@@ -433,7 +433,7 @@ class x86 final {
 
         size_t rest{bytes_count};
         const size_t qword_movs{rest / operand::size_qword};
-        operand dst_operand{dst};
+        operand dst_operand{dst, false};
         for (size_t index{}; index < qword_movs; ++index) {
             mov(src_loc_tk, indent, dst_operand.str(operand::size_qword), "0");
             dst_operand.displacement += operand::size_qword;

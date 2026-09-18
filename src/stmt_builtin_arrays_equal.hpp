@@ -94,7 +94,7 @@ class stmt_builtin_arrays_equal final : public expression {
         x.comment(count_.tok(), indent, statement::trimmed_source(count_));
 
         count_.compile(tc, x, indent,
-                       toc::make_ident_info_for_register(x, "rcx"));
+                       toc::make_ident_info_from_register(x, "rcx"));
 
         const ident_info from_info{tc.make_ident_info(x, from_)};
         const ident_info to_info{tc.make_ident_info(x, to_)};

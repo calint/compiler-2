@@ -32,7 +32,7 @@ class stmt_def_const final : public statement {
                                      "value");
         }
 
-        const_ = stmt_const{tc, tz, 0};
+        const_ = {tc, tz, 0};
 
         if (not const_.has_value()) {
             throw compiler_exception(const_.tok(), "expected constant value");

@@ -38,21 +38,19 @@ struct operand {
     int32_t displacement{};
     uint8_t scale{1};
     size_t size{};
-    bool is_str{};
+    bool is_base_register{};
 
     operand() = default;
 
-    // note: when 'treat_as_string' then operand is assumed to be a constant or
-    //       an identifier
-    explicit operand(const std::string_view operand_sv,
-                     bool treat_as_string = false)
-        : is_str{treat_as_string} {
+    operand(const std::string_view operand_sv,
+            const bool operand_is_base_register)
+        : is_base_register{operand_is_base_register} {
 
         if (operand_sv.empty()) {
             return;
         }
 
-        if (treat_as_string) {
+        if (operand_is_base_register) {
             base_register = operand_sv;
             return;
         }
@@ -236,7 +234,7 @@ struct operand {
     }
 
     [[nodiscard]] auto str() const -> std::string {
-        return is_str ? base_register : str(size);
+        return is_base_register ? base_register : str(size);
     }
 
     [[nodiscard]] auto str(const size_t size_specifier) const -> std::string {

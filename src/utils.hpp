@@ -66,6 +66,7 @@ constexpr size_t size_byte{1};
     return text.substr(start + 1, end - start - 1);
 }
 
+// returns 0 if operand is not a register
 [[nodiscard]] auto register_size(const std::string_view operand) -> size_t {
     if (operand == "rax" || operand == "rbx" || operand == "rcx" ||
         operand == "rdx" || operand == "rbp" || operand == "rsi" ||

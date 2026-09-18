@@ -23,12 +23,14 @@ class stmt_builtin_foo final : public statement {
 
         set_type(tc.get_type_void());
 
-        ident_ = stmt_identifier{tc, unary_ops{}, tz.next_token(), tz};
+        ident_ = {tc, unary_ops{}, tz.next_token(), tz};
         if (not ident_.is_array()) {
             throw compiler_exception(ident_.tok(), "expected an array");
         }
 
-        // add var to toc without emitting output by using a null stream
+        // add vars to toc without emitting output so that the code block can be
+        // parsed
+
         null_stream null_strm;
         x86 x{null_strm, tc.source()};
 
@@ -51,7 +53,9 @@ class stmt_builtin_foo final : public statement {
         tc.add_var(x, token{}, 0, var_i, false);
 
         tc.add_const(x, token{}, 0, "n", static_cast<int64_t>(ii.array_size));
+
         code_ = {tc, tz};
+
         tc.exit_foo("");
     }
 

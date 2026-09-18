@@ -71,7 +71,7 @@ class stmt_def_dat final : public statement {
             if (not open_bracket_tk_.is_empty()) {
                 is_array = true;
 
-                array_size_const_ = stmt_const{tc, tz, 0};
+                array_size_const_ = {tc, tz, 0};
 
                 if (array_size_const_.has_value() and
                     array_size_const_.value() <= 0) {
@@ -100,7 +100,9 @@ class stmt_def_dat final : public statement {
         equals_tk_ = tz.is_next_char_token('=');
         has_init_ = not equals_tk_.is_empty();
 
-        // add var to toc without emitting output by using a null stream
+        // add var to toc without emitting output so the further parsing has the
+        // variable declared
+
         null_stream null_strm;
         x86 x{null_strm, tc.source()};
 
