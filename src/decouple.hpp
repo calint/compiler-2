@@ -287,12 +287,84 @@ struct ident_info {
     std::vector<const type*> type_path;
     std::vector<std::string> lea_path;
     operand operand; // nasm valid source
-    int32_t stack_ix{};
+    int32_t stack_idx{};
     int64_t const_value{};
     size_t array_size{};
     bool is_array{};
     bool use_operand{};
     ident_type ident_type{};
+
+    [[nodiscard]] static auto make_empty() -> ident_info {
+        return {
+            .id{},
+            .elem_path{},
+            .type_path{},
+            .lea_path{},
+            .operand{},
+            .ident_type{ident_type::EMPTY},
+        };
+    }
+
+    [[nodiscard]] static auto make_register(const std::string_view ident,
+                                            const std::string_view reg,
+                                            const type& tp) -> ident_info {
+        return {
+            .id{ident},
+            .elem_path{std::string{reg}},
+            .type_path{&tp},
+            .lea_path{""}, // note: a single empty string element in vector
+            .operand{reg, true},
+            .ident_type{ident_type::REGISTER},
+        };
+    }
+
+    [[nodiscard]] static auto
+    make_const(const std::string_view ident, const std::string_view elem,
+               const type& tp, const int64_t value, const ::operand& op = {})
+        -> ident_info {
+        return {
+            .id{ident},
+            .elem_path{std::string{elem}},
+            .type_path{&tp},
+            .lea_path{""}, // note: a single empty string element in vector
+            .operand{op},
+            .const_value{value},
+            .ident_type{ident_type::CONST},
+        };
+    }
+
+    [[nodiscard]] static auto
+    make_var(std::string ident, std::vector<std::string> elem_path,
+             std::vector<const type*> type_path, const ::operand& op,
+             const int32_t stack_idx, const size_t array_size,
+             const bool is_array) -> ident_info {
+        const size_t path_size{elem_path.size()};
+        return {
+            .id{std::move(ident)},
+            .elem_path{std::move(elem_path)},
+            .type_path{std::move(type_path)},
+            .lea_path{path_size, ""},
+            .operand{op},
+            .stack_idx{stack_idx},
+            .array_size{array_size},
+            .is_array{is_array},
+            .ident_type{ident_type::VAR},
+        };
+    }
+
+    [[nodiscard]] auto validate_invariants() const -> bool {
+        if (is_empty()) {
+            return id.empty() and elem_path.empty() and type_path.empty() and
+                   lea_path.empty();
+        }
+
+        if (id.empty() or elem_path.empty() or type_path.empty()) {
+            return false;
+        }
+
+        return elem_path.size() == type_path.size() and
+               elem_path.size() == lea_path.size();
+    }
 
     [[nodiscard]] auto is_const() const -> bool {
         return ident_type == ident_type::CONST;
@@ -317,28 +389,34 @@ struct ident_info {
     }
 
     [[nodiscard]] auto type_ref() const -> const type& {
-        assert(not type_path.empty());
+        assert(validate_invariants());
         return *type_path.back();
     }
 
     void push(std::string path_elem, const type* tp, std::string lea) {
+        assert(validate_invariants());
         id += "." + path_elem;
         elem_path.emplace_back(std::move(path_elem));
         type_path.emplace_back(tp);
         lea_path.emplace_back(std::move(lea));
+        assert(validate_invariants());
     }
 
     void pop() {
+        assert(validate_invariants());
         id.resize(id.rfind('.'));
         elem_path.pop_back();
         type_path.pop_back();
         lea_path.pop_back();
+        assert(validate_invariants());
     }
 
     void increment_offset(const int32_t n) {
-        assert(stack_ix + n <= 0);
-        stack_ix += n;
+        assert(validate_invariants());
+        assert(stack_idx + n <= 0);
+        stack_idx += n;
         operand.displacement += n;
+        assert(validate_invariants());
     }
 };
 

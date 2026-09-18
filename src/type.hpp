@@ -105,17 +105,9 @@ class type final {
         op.base_register = var.reg.empty() ? "rsp" : var.reg;
         op.displacement = stack_idx;
 
-        return {
-            .id{ident},
-            .elem_path{path},
-            .type_path{type_path},
-            .lea_path{path.size(), ""},
-            .operand{op},
-            .stack_ix{stack_idx},
-            .array_size{array_size},
-            .is_array{is_array},
-            .ident_type{ident_info::ident_type::VAR},
-        };
+        return ident_info::make_var(std::string{ident}, path,
+                                    std::move(type_path), op, stack_idx,
+                                    array_size, is_array);
     }
 
     [[nodiscard]] auto

@@ -49,14 +49,14 @@ class stmt_if_branch final : public statement {
                 x.label(indent, jmp_to_if_true_lbl);
                 // note: label is necessary because of a 'jmp' that gets
                 //       optimized away
-                code_.compile(tc, x, indent, toc::make_ident_info_empty());
+                code_.compile(tc, x, indent, ident_info::make_empty());
             }
             return *const_eval;
         }
         // the label where to jump if evaluation of the condition is true
         x.label(indent, jmp_to_if_true_lbl);
         // the code of the branch
-        code_.compile(tc, x, indent, toc::make_ident_info_empty());
+        code_.compile(tc, x, indent, ident_info::make_empty());
         // after the branch code executes, jump to the end of the
         // 'if ... else if ... else ...' block.
         // if the jump label is not provided, then there is no 'else' and this

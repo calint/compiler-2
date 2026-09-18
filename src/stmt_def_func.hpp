@@ -13,7 +13,6 @@
 #include "decouple.hpp"
 #include "stmt_block.hpp"
 #include "stmt_def_func_param.hpp"
-#include "utils.hpp"
 
 class stmt_def_func final : public statement {
     token name_tk_;

@@ -4,7 +4,6 @@
 
 // NOLINTBEGIN(misc-definitions-in-headers)
 
-#include <cctype>
 #include <istream>
 #include <optional>
 #include <ostream>
@@ -16,109 +15,150 @@
 namespace jump_optimizer {
 
 struct jump_info {
-    std::string mnemonic;
-    std::string label;
+    std::string_view mnemonic;
+    std::string_view label;
 };
+
+[[nodiscard]] static auto is_ascii_space(const char ch) -> bool {
+    return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' || ch == '\f' ||
+           ch == '\v';
+}
+
+[[nodiscard]] static auto is_ascii_lower(const char ch) -> bool {
+    return ch >= 'a' && ch <= 'z';
+}
+
+[[nodiscard]] static auto is_ascii_alpha(const char ch) -> bool {
+    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+}
+
+[[nodiscard]] static auto is_ascii_alnum(const char ch) -> bool {
+    return is_ascii_alpha(ch) || (ch >= '0' && ch <= '9');
+}
 
 [[nodiscard]] static auto leading_ws(const std::string_view line)
     -> std::string_view {
 
-    const size_t first{line.find_first_not_of(" \t\n\r\f\v")};
-    if (first == std::string_view::npos) {
+    size_t first{};
+    while (first < line.size() && is_ascii_space(line[first])) {
+        ++first;
+    }
+    if (first == line.size()) {
         return line;
     }
     return line.substr(0, first);
 }
 
-[[nodiscard]] static auto trim_ws(const std::string_view text)
-    -> std::string_view {
-
-    const size_t first{text.find_first_not_of(" \t\n\r\f\v")};
-    if (first == std::string_view::npos) {
-        return {};
-    }
-    const size_t last{text.find_last_not_of(" \t\n\r\f\v")};
-    return text.substr(first, last - first + 1);
-}
-
 [[nodiscard]] static auto parse_jump(const std::string_view line)
     -> std::optional<jump_info> {
 
-    const std::string_view trimmed{trim_ws(line)};
-    if (trimmed.size() < 3 || trimmed[0] != 'j') {
+    size_t i{};
+    while (i < line.size() && is_ascii_space(line[i])) {
+        ++i;
+    }
+    if (i == line.size() || line[i] != 'j') {
         return std::nullopt;
     }
 
-    size_t i{1};
+    const size_t mnemonic_start{i};
+    ++i;
     size_t mnemonic_letters{};
-    while (i < trimmed.size() &&
-           std::islower(static_cast<unsigned char>(trimmed[i])) &&
-           mnemonic_letters < 2) {
+    while (i < line.size() && mnemonic_letters < 2 && is_ascii_lower(line[i])) {
         ++i;
         ++mnemonic_letters;
     }
 
-    if (mnemonic_letters == 0 || i >= trimmed.size() ||
-        not std::isspace(static_cast<unsigned char>(trimmed[i]))) {
+    if (mnemonic_letters == 0 || i >= line.size() ||
+        not is_ascii_space(line[i])) {
         return std::nullopt;
     }
 
-    while (i < trimmed.size() &&
-           std::isspace(static_cast<unsigned char>(trimmed[i]))) {
+    const size_t mnemonic_end{i};
+
+    while (i < line.size() && is_ascii_space(line[i])) {
         ++i;
     }
-    if (i >= trimmed.size()) {
+    if (i >= line.size()) {
         return std::nullopt;
     }
 
-    const std::string_view label{trim_ws(trimmed.substr(i))};
-    if (label.empty()) {
+    const size_t label_start{i};
+    size_t label_end{line.size()};
+    while (label_end > label_start && is_ascii_space(line[label_end - 1])) {
+        --label_end;
+    }
+    if (label_start == label_end) {
         return std::nullopt;
     }
 
     return jump_info{
-        .mnemonic = std::string{trimmed.substr(0, 1 + mnemonic_letters)},
-        .label = std::string{label},
+        .mnemonic = line.substr(mnemonic_start, mnemonic_end - mnemonic_start),
+        .label = line.substr(label_start, label_end - label_start),
     };
 }
 
 [[nodiscard]] static auto parse_label_strict(const std::string_view line)
-    -> std::optional<std::string> {
+    -> std::optional<std::string_view> {
 
-    const std::string_view trimmed{trim_ws(line)};
-    const size_t colon{trimmed.find(':')};
-    if (colon == std::string_view::npos || colon + 1 != trimmed.size()) {
+    size_t i{};
+    while (i < line.size() && is_ascii_space(line[i])) {
+        ++i;
+    }
+    if (i == line.size()) {
         return std::nullopt;
     }
 
-    const std::string_view lbl{trimmed.substr(0, colon)};
-    if (lbl.empty()) {
-        return std::nullopt;
-    }
-    const unsigned char first{static_cast<unsigned char>(lbl.front())};
-    if (not std::isalpha(first) && lbl.front() != '_') {
+    const size_t label_start{i};
+    if (not is_ascii_alpha(line[i]) && line[i] != '_') {
         return std::nullopt;
     }
 
-    for (size_t i{1}; i < lbl.size(); ++i) {
-        const unsigned char ch{static_cast<unsigned char>(lbl[i])};
-        if (not std::isalnum(ch) && lbl[i] != '_') {
+    ++i;
+    while (i < line.size() && (is_ascii_alnum(line[i]) || line[i] == '_')) {
+        ++i;
+    }
+
+    if (i == line.size() || line[i] != ':') {
+        return std::nullopt;
+    }
+
+    const size_t label_end{i};
+    ++i;
+    while (i < line.size()) {
+        if (not is_ascii_space(line[i])) {
             return std::nullopt;
         }
+        ++i;
     }
 
-    return std::string{lbl};
+    return line.substr(label_start, label_end - label_start);
 }
 
 [[nodiscard]] static auto parse_label_any(const std::string_view line)
-    -> std::optional<std::string> {
+    -> std::optional<std::string_view> {
 
-    const std::string_view trimmed{trim_ws(line)};
-    const size_t colon{trimmed.find(':')};
-    if (colon == std::string_view::npos || colon == 0) {
+    size_t start{};
+    while (start < line.size() && is_ascii_space(line[start])) {
+        ++start;
+    }
+    if (start == line.size()) {
         return std::nullopt;
     }
-    return std::string{trim_ws(trimmed.substr(0, colon))};
+
+    const size_t colon{line.find(':', start)};
+    if (colon == std::string_view::npos) {
+        return std::nullopt;
+    }
+
+    size_t end{colon};
+    while (end > start && is_ascii_space(line[end - 1])) {
+        --end;
+    }
+    if (end == start) {
+        return std::nullopt;
+    }
+
+    return line.substr(start, end - start);
 }
 
 [[nodiscard]] static auto invert_jcc(const std::string_view jcc)
@@ -181,20 +221,21 @@ auto pass1(std::istream& is, std::ostream& os) -> void {
 
     std::string line;
     while (getline(is, line)) {
-        if (const auto jump{parse_jump(line)}) {
+        if (const std::optional<jump_info> jump{parse_jump(line)}) {
             // keep buffering only while jumps target the same label
             if (not pending_label || *pending_label == jump->label) {
                 pending_jumps.emplace_back(line);
-                pending_label = jump->label;
+                pending_label = std::string{jump->label};
                 continue;
             }
             flush_pending();
             pending_jumps.emplace_back(line);
-            pending_label = jump->label;
+            pending_label = std::string{jump->label};
             continue;
         }
 
-        if (const auto lbl{parse_label_strict(line)}) {
+        if (const std::optional<std::string_view> lbl{
+                parse_label_strict(line)}) {
             // target label reached: drop pending jumps, print label
             if (pending_label && *pending_label == *lbl) {
                 opts_count += pending_jumps.size();
@@ -243,14 +284,14 @@ auto pass2(std::istream& is, std::ostream& os) -> void {
 
     std::string first_line;
     while (getline(is, first_line)) {
-        const auto jcc_match{parse_jump(first_line)};
+        const std::optional<jump_info> jcc_match{parse_jump(first_line)};
         if (not jcc_match) {
             std::println(os, "{}", first_line);
             continue;
         }
 
-        const std::string jcc{jcc_match->mnemonic};
-        const std::string jcc_label{jcc_match->label};
+        const std::string_view jcc{jcc_match->mnemonic};
+        const std::string_view jcc_label{jcc_match->label};
 
         std::string second_line;
         if (not getline(is, second_line)) {
@@ -258,13 +299,13 @@ auto pass2(std::istream& is, std::ostream& os) -> void {
             return;
         }
 
-        const auto jmp_match{parse_jump(second_line)};
+        const std::optional<jump_info> jmp_match{parse_jump(second_line)};
         if (not jmp_match || jmp_match->mnemonic != "jmp") {
             print2(first_line, second_line);
             continue;
         }
 
-        const std::string jmp_label{jmp_match->label};
+        const std::string_view jmp_label{jmp_match->label};
 
         std::string third_line;
         if (not getline(is, third_line)) {
@@ -272,13 +313,14 @@ auto pass2(std::istream& is, std::ostream& os) -> void {
             return;
         }
 
-        const auto lbl_match{parse_label_any(third_line)};
+        const std::optional<std::string_view> lbl_match{
+            parse_label_any(third_line)};
         if (not lbl_match) {
             print3(first_line, second_line, third_line);
             continue;
         }
 
-        const std::string& label{*lbl_match};
+        const std::string_view label{*lbl_match};
 
         if (jcc_label != label) {
             print3(first_line, second_line, third_line);
@@ -288,7 +330,7 @@ auto pass2(std::istream& is, std::ostream& os) -> void {
         //   jne cmp_14_26
         //   jmp if_14_8_code
         //   cmp_14_26:
-        const auto inverted_jcc{invert_jcc(jcc)};
+        const std::optional<std::string_view> inverted_jcc{invert_jcc(jcc)};
         if (not inverted_jcc) {
             print3(first_line, second_line, third_line);
             continue;

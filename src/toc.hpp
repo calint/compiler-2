@@ -689,30 +689,21 @@ class toc final {
         return make_ident_info_or_throw(nullptr, src_loc_tk, ident);
     }
 
-    [[nodiscard]] static auto make_ident_info_empty() -> ident_info {
-        return {
-            .id{},
-            .elem_path{},
-            .type_path{},
-            .lea_path{},
-            .operand{},
-            .ident_type{ident_info::ident_type::EMPTY},
-        };
+    [[nodiscard]] static auto
+    make_ident_info_register(const std::string_view ident,
+                             const std::string_view reg, const type& tpe)
+        -> ident_info {
+
+        // unary ops are applied by callers where relevant
+        return ident_info::make_register(ident, reg, tpe);
     }
 
     [[nodiscard]] static auto
     make_ident_info_from_register(const x86& x, const std::string_view reg)
         -> ident_info {
 
-        // unary ops are applied by callers where relevant
-        return {
-            .id{reg},
-            .elem_path{std::string{reg}},
-            .type_path{&x.get_allocated_register_type(reg)},
-            .lea_path{""}, // note: a single empty string element in vector
-            .operand{reg, true},
-            .ident_type{ident_info::ident_type::REGISTER},
-        };
+        return make_ident_info_register(reg, reg,
+                                        x.get_allocated_register_type(reg));
     }
 
     auto set_type_bool(const type& tpe) -> void { type_bool_ = &tpe; }
@@ -1117,19 +1108,11 @@ class toc final {
             reg_size != 0) {
             const type& tpe{x ? x->get_allocated_register_type(id.str())
                               : get_builtin_type_for_size(reg_size)};
-            // unary ops are applied by callers where relevant
-            return {
-                .id{ident},
-                .elem_path{id.str()},
-                .type_path{&tpe},
-                .lea_path{""}, // note: a single empty string element in vector
-                .operand{id.str(), true},
-                .ident_type{ident_info::ident_type::REGISTER},
-            };
+            return make_ident_info_register(ident, id.str(), tpe);
         }
 
         // not resolved, return empty info
-        return make_ident_info_empty();
+        return ident_info::make_empty();
     }
 
     [[nodiscard]] auto
@@ -1140,57 +1123,30 @@ class toc final {
         if (const std::optional<int64_t> value{
                 parse_constant(src_loc_tk, id.str())};
             value) {
-            return {
-                .id{ident},
-                .elem_path{id.str()},
-                .type_path{&get_type_default()},
-                .lea_path{""}, // note: a single empty string element in vector
-                .operand{id.str(), true},
-                .const_value{*value},
-                .ident_type{ident_info::ident_type::CONST},
-            };
+            return ident_info::make_const(ident, id.str(), get_type_default(),
+                                          *value, operand{id.str(), true});
         }
 
         // is it a boolean constant?
         if (id.base() == "true") {
-            return {
-                .id{ident},
-                .elem_path{id.str()},
-                .type_path{&get_type_default()},
-                .lea_path{""}, // note: a single empty string element in vector
-                .operand{},
-                .const_value{1},
-                .ident_type{ident_info::ident_type::CONST},
-            };
+            return ident_info::make_const(ident, id.str(), get_type_default(),
+                                          1);
         }
 
         if (id.base() == "false") {
-            return {
-                .id{ident},
-                .elem_path{id.str()},
-                .type_path{&get_type_default()},
-                .lea_path{""}, // note: a single empty string element in vector
-                .operand{},
-                .const_value{},
-                .ident_type{ident_info::ident_type::CONST},
-            };
+            return ident_info::make_const(ident, id.str(), get_type_default(),
+                                          0);
         }
 
         // is 'id' a constant?
         if (has_const(id.str())) {
-            return {
-                .id{ident},
-                .elem_path{id.str()},
-                .type_path{&get_type_default()},
-                .lea_path{""}, // note: a single empty string element in vector
-                .operand{id.str(), true},
-                .const_value{get_const(id.str())},
-                .ident_type{ident_info::ident_type::CONST},
-            };
+            return ident_info::make_const(ident, id.str(), get_type_default(),
+                                          get_const(id.str()),
+                                          operand{id.str(), true});
         }
 
         // not resolved, return empty info
-        return make_ident_info_empty();
+        return ident_info::make_empty();
     }
 
     // helper: call make_ident_info_or_empty and throw if unresolved

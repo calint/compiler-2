@@ -130,7 +130,7 @@ class stmt_builtin_foo final : public statement {
         x.comment(code_.tok(), indent, "initiate counter {} to 0", var_i.name);
         x.mov(tok(), indent, var_i_addr_op, "0");
         x.label(indent, loop_label);
-        code_.compile(tc, x, indent, toc::make_ident_info_empty());
+        code_.compile(tc, x, indent, ident_info::make_empty());
         x.label(indent + 1, loop_label + "_continue");
         x.add(indent + 2, reg_iter, std::format("{}", ii.type_ref().size()));
         x.inc(indent + 2, var_i_addr_op);

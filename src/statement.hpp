@@ -1,7 +1,6 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include <cctype>
 #include <format>
 #include <span>
 #include <sstream>
@@ -14,7 +13,6 @@
 #include "decouple.hpp"
 #include "token.hpp"
 #include "unary_ops.hpp"
-#include "utils.hpp"
 
 class toc;
 class type;
@@ -25,13 +23,24 @@ class statement {
     unary_ops uops_;
     const type* type_{};
 
+    [[nodiscard]] static auto is_ascii_space(const char ch) -> bool {
+        return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' ||
+               ch == '\f' || ch == '\v';
+    }
+
     [[nodiscard]] static auto collapse_whitespace(const std::string_view text)
         -> std::string {
 
+        if (text.empty()) {
+            return {};
+        }
+
         size_t start{};
-        while (start < text.size() and
-               std::isspace(static_cast<unsigned char>(text[start]))) {
+        while (start < text.size() and is_ascii_space(text[start])) {
             ++start;
+        }
+        if (start == text.size()) {
+            return {};
         }
 
         std::string out;
@@ -41,7 +50,7 @@ class statement {
 
         for (size_t i{start}; i < text.size(); ++i) {
             const char ch{text[i]};
-            if (std::isspace(static_cast<unsigned char>(ch))) {
+            if (is_ascii_space(ch)) {
                 if (in_whitespace) {
                     continue;
                 }
@@ -54,7 +63,7 @@ class statement {
             in_whitespace = false;
         }
 
-        while (not out.empty() and out.back() == ' ') {
+        if (not out.empty() and out.back() == ' ') {
             out.pop_back();
         }
 

@@ -11,7 +11,6 @@
 #include "decouple.hpp"
 #include "expression.hpp"
 #include "toc.hpp"
-#include "utils.hpp"
 #include "x86.hpp"
 
 //

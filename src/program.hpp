@@ -122,13 +122,13 @@ class program final {
 
         tc.enter_block();
         for (const std::unique_ptr<statement>& st : statements_) {
-            st->compile(tc, x, indent, toc::make_ident_info_empty());
+            st->compile(tc, x, indent, ident_info::make_empty());
         }
         const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
         x.println();
         x.label(0, "main");
         tc.enter_func("main", {});
-        func_main.code().compile(tc, x, indent, toc::make_ident_info_empty());
+        func_main.code().compile(tc, x, indent, ident_info::make_empty());
         tc.exit_func("main");
         tc.exit_block();
 

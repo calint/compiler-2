@@ -1,9 +1,7 @@
 #pragma once
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
 #include <format>
 #include <memory>
 #include <optional>
@@ -44,6 +42,7 @@ class stmt_identifier : public statement {
     std::string path_as_string_;
     size_t array_size_{};
     bool is_array_{};
+    bool is_indexed_{};
 
   public:
     stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz)
@@ -68,6 +67,7 @@ class stmt_identifier : public statement {
             }
 
             if (const token t{tz.is_next_char_token('[')}; not t.is_empty()) {
+                is_indexed_ = true;
                 elems_.emplace_back(
                     tk, token{},
                     std::make_unique<expr_any>(tc, tz, tc.get_type_default(),
@@ -131,9 +131,7 @@ class stmt_identifier : public statement {
     }
 
     [[nodiscard]] auto is_indexed() const -> bool override {
-        return std::ranges::any_of(elems_, [](const ident_elem& e) -> bool {
-            return e.array_index_expr != nullptr;
-        });
+        return is_indexed_;
     }
 
     [[nodiscard]] auto is_identifier() const -> bool override { return true; }
@@ -308,7 +306,7 @@ class stmt_identifier : public statement {
 
                     // offset depends on whether the base register is rsp
                     const int32_t offset{
-                        is_rsp ? -(base_info.stack_ix + accum_offset)
+                        is_rsp ? -(base_info.stack_idx + accum_offset)
                                : accum_offset};
 
                     operand oper;
@@ -335,7 +333,7 @@ class stmt_identifier : public statement {
                                                       tc.get_type_default());
                 allocated_registers.push_back(reg_offset);
                 x.lea(indent, reg_offset,
-                      std::format("rsp - {}", -base_info.stack_ix));
+                      std::format("rsp - {}", -base_info.stack_idx));
             } else if (reg_offset == base_info.operand.base_register) {
                 reg_offset = x.alloc_scratch_register(src_loc_tk, indent,
                                                       tc.get_type_default());
@@ -400,7 +398,7 @@ class stmt_identifier : public statement {
         if (reg_offset == "rsp") {
             // register is not optimally encoded for trailing elements of size
             // 1, 2, 4, or 8
-            op.displacement += base_info.stack_ix;
+            op.displacement += base_info.stack_idx;
         }
 
         return op;
