@@ -410,3 +410,5 @@ SRC=t439 && EXP=0 && RUN
 SRC=t439 && EXP=0 && RUN
 SRC=t440 && EXP=0 && RUN
 SRC=t441 && EXP=0 && RUN
+SRC=t442 && EXP=0 && RUN
+SRC=t443 && EXP=0 && RUN

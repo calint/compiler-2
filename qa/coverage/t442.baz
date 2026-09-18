@@ -1,0 +1,23 @@
+# equal compares indexed i64 values (true and false paths)
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+func main() {
+    var a : i64[2]
+    var b : i64[2]
+
+    a[0] = 5
+    b[0] = 5
+    a[1] = 9
+    b[1] = 10
+
+    assert(1, equal(a[0], b[0]))
+    assert(2, not equal(a[1], b[1]))
+
+    var z = equal(a[1], b[1])
+    assert(3, not z)
+
+    var y = equal(a[0], b[0])
+    assert(4, y)
+}

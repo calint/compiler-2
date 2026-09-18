@@ -1,0 +1,34 @@
+# shorthand bool truthiness with unary '~' across scalar widths
+
+func exit(v : reg_rdi) { mov(rax, 60) mov(rdi, v) syscall() }
+func assert(err, expr : bool) if not expr exit(err)
+
+func main() {
+    var b8 : i8 = -1
+    assert(1, b8)
+    assert(2, not ~b8)
+
+    var c8 : i8 = 1
+    assert(3, ~c8)
+
+    var b16 : i16 = -1
+    assert(4, b16)
+    assert(5, not ~b16)
+
+    var c16 : i16 = 1
+    assert(6, ~c16)
+
+    var b32 : i32 = -1
+    assert(7, b32)
+    assert(8, not ~b32)
+
+    var c32 : i32 = 1
+    assert(9, ~c32)
+
+    var b64 : i64 = -1
+    assert(10, b64)
+    assert(11, not ~b64)
+
+    var c64 : i64 = 1
+    assert(12, ~c64)
+}
