@@ -141,7 +141,7 @@ class stmt_call : public expression {
         }
 
         if (ret) {
-            std::string dst_lea{dst_info.has_lea() or dst_info.is_indexed
+            std::string dst_lea{dst_info.is_indexed or dst_info.has_lea()
                                     ? dst_info.operand.address_str()
                                     : ""};
 
