@@ -1015,12 +1015,15 @@ class toc final {
                 frames_.front().get_var_const_ref(id.base()), lea_path);
         }
 
+        // try register
         if (const ident_info reg_info{
                 make_ident_info_register_or_empty(x, src_loc_tk, ident, id)};
             not reg_info.id.empty()) {
+
             return reg_info;
         }
 
+        // try constant
         return make_ident_info_const_or_empty(src_loc_tk, ident, id);
     }
 
@@ -1114,7 +1117,7 @@ class toc final {
                 .id{ident},
                 .elem_path{id.str()},
                 .type_path{&tpe},
-                .lea_path{""},
+                .lea_path{},
                 .operand{id.str()},
                 .ident_type{ident_info::ident_type::REGISTER},
             };
@@ -1127,7 +1130,7 @@ class toc final {
                 .id{ident},
                 .elem_path{id.str()},
                 .type_path{&get_builtin_type_for_operand(src_loc_tk, id.str())},
-                .lea_path{""},
+                .lea_path{},
                 .operand{id.str()},
                 .ident_type{ident_info::ident_type::VAR},
             };
@@ -1205,6 +1208,7 @@ class toc final {
 
         const ident_info id_info{
             make_ident_info_or_empty(x, src_loc_tk, ident)};
+
         if (not id_info.id.empty()) {
             return id_info;
         }
