@@ -128,7 +128,7 @@ class stmt_builtin_foo final : public statement {
             x.lea(indent, reg_iter, ii.operand.address_str());
         }
 
-        x.comment(ident_.tok(), indent, "initiate counter {} to 0", var_i.name);
+        x.comment(ident_.tok(), indent, "initiate counter {}", var_i.name);
         x.mov(tok(), indent, var_i_addr_op, "0");
         x.label(indent, loop_label);
         code_.compile(tc, x, indent, ident_info::make_empty());
