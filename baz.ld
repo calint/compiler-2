@@ -32,13 +32,18 @@ SECTIONS
   .bss.stack (NOLOAD) : ALIGN(16)
   {
     *(.bss.stack)
+    __stack_section_end = .;
   } :data
 
   /* initialized global dat payload; rsp starts at dat.end */
-  .data : ALIGN(16)
+  .data :
   {
+    __dat_section_start = .;
     *(.data .data.*)
   } :data
+
+  ASSERT(__stack_section_end == __dat_section_start,
+         "baz.ld: .bss.stack and .data must be adjacent")
 
   /* other zero-initialized writable storage (non-stack) */
   .bss (NOLOAD) : ALIGN(16)
