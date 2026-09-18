@@ -2,6 +2,8 @@
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
 [ ] cleanup: stmt_assign_var::compile formalize dst_info.is_indexed 
+[ ] consider allowing function definitions in functions
+[ ] consider a var type that can be viewed from enclosing functions
 [ ] consider replacing ident_info.use_operand bool with a destination-mode enum
 [ ] don't allow a variable to have a register name
     [ ] same for return result
