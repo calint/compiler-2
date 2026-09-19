@@ -16,7 +16,7 @@ global _start
 _start:
 
 ; initialize variable arena base
-lea rbp, [rel dat]
+lea rbp, [dat]
 
 ;
 ; program

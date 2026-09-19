@@ -113,9 +113,8 @@ class program final {
                   std::format("{}", stack_and_data_alignment_),
                   std::format("{}", stack_size_));
         x.println("\nsection .text\nbits 64\nglobal _start\n_start:\n");
-        x.println(
-            "; initialize variable arena base\nlea rbp, [rel dat]\n\n;\n; "
-            "program\n;\n");
+        x.println("; initialize variable arena base\nlea rbp, [dat]\n\n;\n; "
+                  "program\n;\n");
 
         tc.enter_block();
 

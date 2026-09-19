@@ -68,10 +68,10 @@ before exiting.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    49           1892            870           8061
+C/C++ Header                    49           1892            870           8060
 C++                              1             17              7            189
 -------------------------------------------------------------------------------
-SUM:                            50           1909            877           8250
+SUM:                            50           1909            877           8249
 -------------------------------------------------------------------------------
 ```
 
@@ -380,7 +380,7 @@ section .text
 bits 64
 global _start
 _start:
-lea rbp, [rel dat]
+lea rbp, [dat]
 main:
     mov qword [rbp + 224], 0
     mov qword [rbp + 232], 0
@@ -1757,7 +1757,7 @@ global _start
 _start:
 
 ; initialize variable arena base
-lea rbp, [rel dat]
+lea rbp, [dat]
 
 ;
 ; program

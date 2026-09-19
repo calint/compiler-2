@@ -8,7 +8,7 @@ section .text
 bits 64
 global _start
 _start:
-lea rbp, [rel dat]
+lea rbp, [dat]
 main:
     mov qword [rbp + 224], 0
     mov qword [rbp + 232], 0
