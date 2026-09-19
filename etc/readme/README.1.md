@@ -52,17 +52,6 @@ x86_64 assembly on Linux.
 * syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)
 * todo list of planned fixes and features in `etc/todo.txt`
 
-## Memory Layout
-
-Initialized `dat` objects are stored in declaration order in `.data`, followed
-by the 16-byte-aligned `.bss.stack` variable arena. `--stack` sets the arena's
-reserved size; its zero-filled storage does not occupy executable file bytes.
-Variables use positive offsets from `rbp`, which points to the start of data.
-The compiler reserves `rbp` (including `ebp`, `bp`, and `bpl`); these registers
-cannot be used directly or allocated to function parameters. `rsp` remains on
-the OS-provided stack. Bounds-error reporting may overwrite `rbp` immediately
-before exiting.
-
 ## Source
 
 ```text
