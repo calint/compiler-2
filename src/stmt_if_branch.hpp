@@ -72,6 +72,7 @@ class stmt_if_branch final : public statement {
 
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
+
         bol_.assert_var_not_used(var);
     }
 };

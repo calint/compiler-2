@@ -70,6 +70,7 @@ struct operand {
         const auto parse_identifier = [&](std::string& destination) -> bool {
             if (pos == operand_sv.size() or operand_sv[pos] < 'a' or
                 operand_sv[pos] > 'z') {
+
                 return false;
             }
 
@@ -141,6 +142,7 @@ struct operand {
                     if (pos == operand_sv.size() or
                         not std::string_view{"1248"}.contains(
                             operand_sv[pos])) {
+
                         invalid_operand();
                     }
 
@@ -154,6 +156,7 @@ struct operand {
 
         if (pos < operand_sv.size() and
             (operand_sv[pos] == '+' or operand_sv[pos] == '-')) {
+
             const bool negative{operand_sv[pos++] == '-'};
 
             skip_space();
@@ -308,6 +311,7 @@ struct ident_info {
     [[nodiscard]] static auto make_register(const std::string_view ident,
                                             const std::string_view reg,
                                             const type& tp) -> ident_info {
+
         assert(not ident.empty());
         assert(not reg.empty());
         return {
@@ -324,6 +328,7 @@ struct ident_info {
                                          const std::string_view elem,
                                          const type& tp, const int64_t value)
         -> ident_info {
+
         assert(not ident.empty());
         assert(not elem.empty());
 
@@ -343,6 +348,7 @@ struct ident_info {
              std::vector<const type*> type_path, const ::operand& op,
              const int32_t stack_idx, const size_t array_size,
              const bool is_array) -> ident_info {
+
         assert(not ident.empty());
         assert(not elem_path.empty());
         assert(elem_path.size() == type_path.size());
@@ -374,6 +380,7 @@ struct ident_info {
 
         if (elem_path.size() != type_path.size() or
             elem_path.size() != lea_path.size()) {
+
             return false;
         }
 

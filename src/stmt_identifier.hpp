@@ -403,6 +403,7 @@ class stmt_identifier : public statement {
 
     [[nodiscard]] static auto get_shift_amount(const uint64_t value)
         -> std::optional<int> {
+
         if (value == 0 or not std::has_single_bit(value)) {
             return std::nullopt;
         }

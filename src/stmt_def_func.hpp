@@ -162,11 +162,13 @@ class stmt_def_func final : public statement {
 
     [[nodiscard]] auto returns() const
         -> const std::optional<func_return_info>& {
+
         return returns_;
     }
 
     [[nodiscard]] auto param(const size_t ix) const
         -> const stmt_def_func_param& {
+
         return params_[ix];
     }
 

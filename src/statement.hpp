@@ -99,6 +99,7 @@ class statement {
     // an assembler comment
     [[nodiscard]] static auto trimmed_source(const std::string_view text)
         -> std::string {
+
         return collapse_whitespace(text);
     }
 
@@ -117,6 +118,7 @@ class statement {
                                              const std::string_view dst,
                                              const std::string_view op)
         -> std::string {
+
         std::stringstream ss;
         std::print(ss, "{} {} ", dst, op);
         st.source_to(ss);
@@ -167,6 +169,7 @@ class statement {
     // returns true if 'var' is set in this statement
     [[nodiscard]] virtual auto
     is_var_set([[maybe_unused]] const std::string_view var) const -> bool {
+
         return false;
     }
 

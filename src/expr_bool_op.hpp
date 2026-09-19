@@ -23,6 +23,7 @@ class expr_bool_op final : public statement {
   public:
     expr_bool_op(toc& tc, tokenizer& tz)
         : statement{tz.next_whitespace_token()} {
+
         set_type(tc.get_type_bool());
 
         bool is_not{};
@@ -434,6 +435,7 @@ class expr_bool_op final : public statement {
 
         if (not expr.is_expression() and
             (expr.is_indexed() or tc.has_lea(expr))) {
+
             const ident_info expr_info{tc.make_ident_info(x, expr)};
             const operand op{expr.compile_lea(tc, x, indent, expr.tok(),
                                               allocated_registers, "",

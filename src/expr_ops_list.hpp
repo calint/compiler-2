@@ -176,6 +176,7 @@ class expr_ops_list final : public expression {
 
             if (precedence != initial_precedence and
                 next_precedence < precedence and is_implied_subexpression_) {
+
                 // lower precedence returns to the parent list
                 //   want:  a - b * c + 3  ->  [a] - [b * c] + [3]
                 //   if not returning then becomes: a - [b * c + 3]
@@ -425,6 +426,7 @@ class expr_ops_list final : public expression {
 
     [[nodiscard]] static auto is_nasm_comment_line(const std::string_view line)
         -> bool {
+
         const size_t first{line.find_first_not_of(" \t\n\r\f\v")};
         return first != std::string_view::npos && line[first] == ';';
     }
@@ -963,6 +965,7 @@ class expr_ops_list final : public expression {
 
         if (src_info.operand.str() == "rdx" or
             src_info.operand.str() == "rax") {
+
             throw compiler_exception{
                 src.tok(), "cannot use 'rdx' or 'rax' for division; they are "
                            "reserved"};

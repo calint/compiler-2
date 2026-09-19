@@ -47,6 +47,7 @@ class stmt_def_type_field final : public statement {
 
             if (not array_size_const_.has_value() or
                 array_size_const_.value() < 1) {
+
                 throw compiler_exception{
                     array_size_const_.tok(),
                     "expected a constant array size greater than 0"};

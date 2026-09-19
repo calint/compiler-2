@@ -30,8 +30,10 @@ template <class T> class lut final {
     // note: for clarity, get_const_ref instead of overloading get_ref
     [[nodiscard]] auto get_const_ref(const std::string_view key) const
         -> const T& {
+
         if (const auto found{std::ranges::find(elems_, key, &elem::key)};
             found != elems_.end()) {
+
             return found->data;
         }
         throw panic_exception(std::format("element not found: {}", key));

@@ -267,6 +267,7 @@ class expr_bool_ops_list final : public statement {
                             // return evaluation if false
                             if (not *const_eval and
                                 ops_[i - 1].is_text("and")) {
+
                                 return *const_eval;
                             }
                             // if true and in an 'or' list short-circuit and

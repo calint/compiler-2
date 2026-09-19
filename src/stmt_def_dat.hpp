@@ -75,6 +75,7 @@ class stmt_def_dat final : public statement {
 
                 if (array_size_const_.has_value() and
                     array_size_const_.value() <= 0) {
+
                     throw compiler_exception{
                         array_size_const_.tok(),
                         "expected array size to be greater than 0"};
@@ -120,6 +121,7 @@ class stmt_def_dat final : public statement {
             elroot_ = parse_elem(tc, tz, type_tk_, tp, is_array, array_size);
             if (elroot_.is_array and elroot_.array_size == 0 and
                 not elroot_.tk.is_string() and elroot_.elems.empty()) {
+
                 throw compiler_exception{name_tk_,
                                          "empty arrays require a specified "
                                          "size"};

@@ -96,6 +96,7 @@ auto main(const int argc, const char* argv[]) -> int {
                 if (stack_text.empty() or stack_text.starts_with('-') or
                     chars_read != stack_text.size() or parsed_size == 0 or
                     not std::in_range<size_t>(parsed_size)) {
+
                     throw std::invalid_argument{"invalid stack size"};
                 }
 

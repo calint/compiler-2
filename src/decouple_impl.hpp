@@ -70,6 +70,7 @@
                                     const stmt_identifier& si,
                                     token open_paren_tk)
     -> std::unique_ptr<statement> {
+
     return std::make_unique<stmt_call>(tc, si.get_unary_ops(), si.first_token(),
                                        open_paren_tk, tz);
 }

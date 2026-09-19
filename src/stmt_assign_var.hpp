@@ -91,6 +91,7 @@ class stmt_assign_var final : public statement {
 
     [[nodiscard]] auto is_var_set(const std::string_view var) const
         -> bool override {
+
         return identifier() == var;
     }
 

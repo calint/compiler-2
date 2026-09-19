@@ -105,6 +105,7 @@ class frame final {
 
     auto add_var(const var_info& var, const size_t allocated_size,
                  bool is_data = false) -> void {
+
         allocated_stack_ += allocated_size;
 
         vars_.put(var.name, var);
@@ -531,6 +532,7 @@ class toc final {
 
     [[nodiscard]] auto get_data() const
         -> const std::vector<const statement*>& {
+
         return data_;
     }
 
@@ -661,6 +663,7 @@ class toc final {
 
     [[nodiscard]] auto
     has_const_in_current_block(const std::string_view name) const -> bool {
+
         return frames_.back().has_const(name);
     }
 
@@ -848,6 +851,7 @@ class toc final {
             if (result.ec == std::errc{} and
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 result.ptr == sv.data() + sv.size()) {
+
                 return value;
             }
         }
@@ -873,6 +877,7 @@ class toc final {
             if (result.ec == std::errc{} and
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 result.ptr == sv.data() + sv.size()) {
+
                 return value;
             }
         }
@@ -898,6 +903,7 @@ class toc final {
             if (result.ec == std::errc{} and
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 result.ptr == sv.data() + sv.size()) {
+
                 return value;
             }
         }
@@ -1136,6 +1142,7 @@ class toc final {
         // is it a register?
         if (const size_t reg_size{utils::register_size(id.str())};
             reg_size != 0) {
+
             const type& tpe{x ? x->get_allocated_register_type(id.str())
                               : get_builtin_type_for_size(reg_size)};
             return make_ident_info_register(ident, id.str(), tpe);
@@ -1149,6 +1156,7 @@ class toc final {
     make_ident_info_const_or_empty(const token& src_loc_tk,
                                    const std::string_view ident,
                                    const ident_path& id) const -> ident_info {
+
         // is 'id' an integer?
         if (const std::optional<int64_t> value{
                 parse_constant(src_loc_tk, id.str())};

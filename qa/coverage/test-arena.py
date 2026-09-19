@@ -133,7 +133,8 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
                     assert stack[3] == segment[3]
                 assert segment[5] == data_size
                 assert segment[6] >= stack[3] - segment[3] + stack_size
-                assert "lea rbp, [rel dat]" in result.stdout
+                assert "default rel" in result.stdout
+                assert "lea rbp, [dat]" in result.stdout
                 assert "mov rsp," not in result.stdout
                 measurements.append((executable.stat().st_size, segment[5], segment[6]))
             assert measurements[0][:2] == measurements[1][:2], measurements

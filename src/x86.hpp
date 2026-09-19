@@ -66,11 +66,6 @@ class x86 final {
     std::reference_wrapper<std::ostream> os_;
 
   public:
-    [[nodiscard]] static constexpr auto
-    is_arena_register(const std::string_view reg) -> bool {
-        return reg == "rbp" or reg == "ebp" or reg == "bp" or reg == "bpl";
-    }
-
     explicit x86(std::ostream& os_ref, const std::string_view source)
         : source_{source}, os_{os_ref} {}
 
@@ -79,6 +74,7 @@ class x86 final {
     auto set_builtin_types(const type& t_i64, const type& t_i32,
                            const type& t_i16, const type& t_i8,
                            const type& t_bool) -> void {
+
         type_i64_ = &t_i64;
         type_i32_ = &t_i32;
         type_i16_ = &t_i16;
@@ -97,12 +93,14 @@ class x86 final {
     template <typename... args_t>
     auto print(const std::format_string<args_t...> format, args_t&&... args)
         -> void {
+
         std::print(os_.get(), format, std::forward<args_t>(args)...);
     }
 
     template <typename... args_t>
     auto println(const std::format_string<args_t...> format, args_t&&... args)
         -> void {
+
         std::println(os_.get(), format, std::forward<args_t>(args)...);
     }
 
@@ -110,6 +108,7 @@ class x86 final {
 
     auto comment_start(const token& source_location, const size_t indent)
         -> void {
+
         const auto [line, column]{utils::line_and_col_num_for_char_index(
             source_location.at_line(), source_location.start_index(), source_)};
 
@@ -151,6 +150,7 @@ class x86 final {
     auto imul(const token& src_loc_tk, const size_t indent,
               const std::string_view dst_op, const std::string_view src_op)
         -> void {
+
         op(src_loc_tk, indent, "imul", dst_op, src_op);
     }
 
@@ -269,12 +269,14 @@ class x86 final {
     auto mov(const token& src_loc_tk, const size_t indent,
              const std::string_view dst_op, const std::string_view src_op)
         -> void {
+
         op(src_loc_tk, indent, "mov", dst_op, src_op);
     }
 
     auto op(const token& src_loc_tk, const size_t indent,
             const std::string_view op, const std::string_view dst_op,
             const std::string_view src_op) -> void {
+
         if (op == "mov" and dst_op == src_op) {
             return;
         }
@@ -361,12 +363,14 @@ class x86 final {
     auto cmp(const token& src_loc_tk, const size_t indent,
              const std::string_view dst_op, const std::string_view src_op)
         -> void {
+
         op(src_loc_tk, indent, "cmp", dst_op, src_op);
     }
 
     auto copy(const token& src_loc_tk, const size_t indent,
               const std::string_view src, const std::string_view dst,
               const size_t bytes_count) -> void {
+
         if (bytes_count > threshold_for_rep_movs) {
             alloc_named_register(src_loc_tk, indent, "rsi", *default_type_);
             alloc_named_register(src_loc_tk, indent, "rdi", *default_type_);
@@ -423,6 +427,7 @@ class x86 final {
 
     auto zero(const token& src_loc_tk, const size_t indent,
               const std::string_view dst, const size_t bytes_count) -> void {
+
         if (bytes_count > threshold_for_rep_stos) {
             alloc_named_register(src_loc_tk, indent, "rax", *default_type_);
             alloc_named_register(src_loc_tk, indent, "rdi", *default_type_);
@@ -465,16 +470,19 @@ class x86 final {
 
     auto add(const size_t indent, const std::string_view dst,
              const std::string_view src) -> void {
+
         asm_line(indent, "add {}, {}", dst, src);
     }
 
     auto cmp(const size_t indent, const std::string_view dst,
              const std::string_view src) -> void {
+
         asm_line(indent, "cmp {}, {}", dst, src);
     }
 
     auto cmovs(const size_t indent, const std::string_view dst,
                const std::string_view src) -> void {
+
         asm_line(indent, "cmovs {}, {}", dst, src);
     }
 
@@ -507,6 +515,7 @@ class x86 final {
 
     auto jcc(const size_t indent, const std::string_view comparison,
              const std::string_view label) -> void {
+
         asm_line(indent, "j{} {}", comparison, label);
     }
 
@@ -524,6 +533,7 @@ class x86 final {
 
     auto lea(const size_t indent, const std::string_view dst,
              const std::string_view operand) -> void {
+
         asm_line(indent, "lea {}, [{}]", dst, operand);
     }
 
@@ -549,11 +559,13 @@ class x86 final {
 
     auto setcc(const size_t indent, const std::string_view comparison,
                const std::string_view operand) -> void {
+
         asm_line(indent, "set{} {}", comparison, operand);
     }
 
     auto shl(const size_t indent, const std::string_view dst,
              const std::string_view src) -> void {
+
         asm_line(indent, "shl {}, {}", dst, src);
     }
 
@@ -603,16 +615,19 @@ class x86 final {
 
     auto test(const size_t indent, const std::string_view dst,
               const std::string_view src) -> void {
+
         asm_line(indent, "test {}, {}", dst, src);
     }
 
     auto times(const size_t count, const std::string_view directive,
                const std::string_view value) const -> void {
+
         std::println(os_.get(), "times {} {} {}", count, directive, value);
     }
 
     auto xor_op(const size_t indent, const std::string_view dst,
                 const std::string_view src) -> void {
+
         asm_line(indent, "xor {}, {}", dst, src);
     }
 
@@ -766,8 +781,15 @@ class x86 final {
         }
     }
 
+    [[nodiscard]] static auto is_arena_register(const std::string_view reg)
+        -> bool {
+
+        return reg == "rbp" or reg == "ebp" or reg == "bp" or reg == "bpl";
+    }
+
     [[nodiscard]] static auto get_data_def(const size_t size)
         -> std::string_view {
+
         switch (size) {
         case size_qword:
             return data_qword;
@@ -796,6 +818,7 @@ class x86 final {
 
     [[nodiscard]] auto operand_size(const std::string_view operand) const
         -> size_t {
+
         if (operand.starts_with("qword")) {
             return size_qword;
         }
@@ -817,6 +840,7 @@ class x86 final {
     // human-readable "line:col" for a token, using the cached source text
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
+
         const auto [line, col]{utils::line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
         return std::format("{}:{}", line, col);
@@ -825,6 +849,7 @@ class x86 final {
     // returns the cached builtin type (i64/i32/i16/i8) matching 'size'
     [[nodiscard]] auto get_builtin_type_for_size(const size_t size) const
         -> const type& {
+
         switch (size) {
         case size_qword:
             return *type_i64_;
@@ -841,17 +866,20 @@ class x86 final {
 
     [[nodiscard]] static auto is_memory_operand(const std::string_view operand)
         -> bool {
+
         return operand.contains('[');
     }
 
     [[nodiscard]] static auto
     is_register_operand(const std::string_view operand) -> bool {
+
         return utils::register_size(operand) != 0;
     }
 
     [[nodiscard]] static auto
     sized_memory_operand(const std::string_view operand, const size_t size)
         -> std::string {
+
         const size_t bracket{operand.find('[')};
         assert(bracket != std::string_view::npos);
         return std::format("{} {}", utils::get_size_specifier(size),

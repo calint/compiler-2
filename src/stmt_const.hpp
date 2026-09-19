@@ -47,6 +47,7 @@ class stmt_const final : public statement {
 
         if (std::optional<int64_t> num{
                 toc::parse_constant(literal_tk_, num_str)}) {
+
             value_ = *num;
         } else {
             throw compiler_exception(

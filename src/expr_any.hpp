@@ -268,6 +268,7 @@ class expr_any final : public statement {
     static auto compile_variant(toc& tc, x86& x, const size_t indent,
                                 const ident_info& dst_info, const token tk,
                                 const expr_variant& exp) -> void {
+
         exp.visit(overloaded{
             [&](const expr_ops_list& e) -> void {
                 e.compile(tc, x, indent, dst_info);

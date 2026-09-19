@@ -67,6 +67,7 @@ struct jump_info {
 
     if (mnemonic_letters == 0 || i >= line.size() ||
         not is_ascii_space(line[i])) {
+
         return std::nullopt;
     }
 
@@ -230,6 +231,7 @@ auto pass1(std::istream& is, std::ostream& os) -> void {
 
         if (const std::optional<std::string_view> lbl{
                 parse_label_strict(line)}) {
+
             // target label reached: drop pending jumps, print label
             if (pending_label && *pending_label == *lbl) {
                 opts_count += pending_jumps.size();

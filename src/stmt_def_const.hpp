@@ -60,6 +60,7 @@ class stmt_def_const final : public statement {
                  [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const ident_info& dst) const
         -> void override {
+
         tc.add_const(x, name_tk_, indent, name_tk_.text(), const_.value());
     }
 };

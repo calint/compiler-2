@@ -95,6 +95,7 @@ class stmt_block final : public statement {
             } else if (tk.is_text("loop") or tk.is_text("if") or
                        tk.is_text("mov") or tk.is_text("syscall") or
                        tk.is_text("foo")) {
+
                 stms_.emplace_back(create_statement_in_stmt_block(tc, tz, tk));
                 // note: solves circular reference problem
                 //       'loop' and 'if' uses this class
@@ -106,12 +107,14 @@ class stmt_block final : public statement {
 
                 if (const token t{tz.is_next_char_token('=')};
                     not t.is_empty()) {
+
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(
                         tc, tz, std::move(si), t, si.is_array(),
                         si.array_size()));
 
                 } else if (const token tt{tz.is_next_char_token('(')};
                            not tt.is_empty()) {
+
                     stms_.emplace_back(create_stmt_call(tc, tz, si, tt));
                     // note: solves circular reference
 
@@ -123,6 +126,7 @@ class stmt_block final : public statement {
             }
             if (is_one_statement_ and
                 not last_statement_considered_no_statement) {
+
                 break;
             }
         }

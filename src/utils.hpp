@@ -27,6 +27,7 @@ constexpr size_t size_byte{1};
 
 [[nodiscard]] auto get_before_dot(const std::string_view text)
     -> std::string_view {
+
     return text.substr(0, text.find('.'));
 }
 
@@ -47,6 +48,7 @@ constexpr size_t size_byte{1};
 
 [[nodiscard]] auto get_text_between_brackets(const std::string_view text)
     -> std::optional<std::string_view> {
+
     const size_t start{text.find('[')};
     if (start == std::string_view::npos) {
         return std::nullopt;
@@ -66,6 +68,7 @@ constexpr size_t size_byte{1};
         operand == "r9" || operand == "r10" || operand == "r11" ||
         operand == "r12" || operand == "r13" || operand == "r14" ||
         operand == "r15") {
+
         return size_qword;
     }
     if (operand == "eax" || operand == "ebx" || operand == "ecx" ||
@@ -74,6 +77,7 @@ constexpr size_t size_byte{1};
         operand == "r9d" || operand == "r10d" || operand == "r11d" ||
         operand == "r12d" || operand == "r13d" || operand == "r14d" ||
         operand == "r15d") {
+
         return size_dword;
     }
     if (operand == "ax" || operand == "bx" || operand == "cx" ||
@@ -82,6 +86,7 @@ constexpr size_t size_byte{1};
         operand == "r9w" || operand == "r10w" || operand == "r11w" ||
         operand == "r12w" || operand == "r13w" || operand == "r14w" ||
         operand == "r15w") {
+
         return size_word;
     }
     if (operand == "al" || operand == "ah" || operand == "bl" ||
@@ -91,6 +96,7 @@ constexpr size_t size_byte{1};
         operand == "r8b" || operand == "r9b" || operand == "r10b" ||
         operand == "r11b" || operand == "r12b" || operand == "r13b" ||
         operand == "r14b" || operand == "r15b") {
+
         return size_byte;
     }
     return 0;

@@ -162,6 +162,7 @@ class stmt_def_var final : public statement {
 
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
+
         if (assign_var_) {
             assign_var_->assert_var_not_used(var);
         }
