@@ -44,6 +44,7 @@ auto main(const int argc, const char* argv[]) -> int {
     bool checks_show_line{};
     bool checks_lower{};
     bool optimize_jumps{true};
+    bool reproduce_source{true};
 
     // parse arguments
     for (size_t i{1}; i < args.size(); ++i) {
@@ -68,6 +69,8 @@ auto main(const int argc, const char* argv[]) -> int {
             std::println("                         line - report line number");
             std::println("             upper,lower,line - all");
             std::println("  --nopt              No jump optimizations");
+            std::println("  --no-reproduce      Skip source reproduction and "
+                         "round-trip verification");
             std::println("  --help, -h          Show this help message");
             std::println("");
             std::println("Arguments:");
@@ -139,6 +142,8 @@ auto main(const int argc, const char* argv[]) -> int {
             }
         } else if (arg == nopt_option) {
             optimize_jumps = false;
+        } else if (arg == "--no-reproduce") {
+            reproduce_source = false;
         } else if (not arg.starts_with("--")) {
             // assume it's the filename
             src_file_name = args[i];
@@ -154,12 +159,15 @@ auto main(const int argc, const char* argv[]) -> int {
         src = read_file_to_string(src_file_name);
         program prg{src, stack_size, checks_upper, checks_lower,
                     checks_show_line};
-        std::ofstream reproduced_source{"diff.baz"};
-        prg.source_to(reproduced_source);
-        reproduced_source.close();
-        if (src != read_file_to_string("diff.baz")) {
-            throw panic_exception{std::format(
-                "generated source differs. diff {} diff.baz", src_file_name)};
+        if (reproduce_source) {
+            std::ofstream reproduced_source{"diff.baz"};
+            prg.source_to(reproduced_source);
+            reproduced_source.close();
+            if (src != read_file_to_string("diff.baz")) {
+                throw panic_exception{
+                    std::format("generated source differs. diff {} diff.baz",
+                                src_file_name)};
+            }
         }
 
         if (optimize_jumps) {

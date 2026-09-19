@@ -209,6 +209,20 @@ CLI() {
     fi
 }
 
+CLI_NO_REPRODUCE() {
+    echo -n "cli --no-reproduce: "
+    LLVM_PROFILE_FILE="cli-reproduce.profraw" $BIN t15.baz $OPTS >gen.s 2>err
+    cmp -s diff.baz t15.baz
+    rm -f diff.baz
+    LLVM_PROFILE_FILE="cli-no-reproduce.profraw" $BIN t15.baz $OPTS --no-reproduce >out 2>err
+    cmp -s gen.s out
+    [[ ! -e diff.baz ]]
+    cp t1.baz diff.baz
+    LLVM_PROFILE_FILE="cli-no-reproduce-nopt.profraw" $BIN --no-reproduce t15.baz --nopt >out 2>err
+    cmp -s diff.baz t1.baz
+    echo ok
+}
+
 # Run all test cases
 source "$SCRIPT_DIR/run-tests-cases.sh"
 

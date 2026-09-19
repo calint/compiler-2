@@ -109,7 +109,7 @@ class statement {
 
         std::stringstream ss;
         st.source_to(ss);
-        return collapse_whitespace(ss.str());
+        return collapse_whitespace(ss.view());
     }
 
     // same as above, with a "'dst' 'op' " prefix before the rendered source
@@ -120,7 +120,7 @@ class statement {
         std::stringstream ss;
         std::print(ss, "{} {} ", dst, op);
         st.source_to(ss);
-        return collapse_whitespace(ss.str());
+        return collapse_whitespace(ss.view());
     }
 
     [[nodiscard]] virtual auto tok() const -> const token& { return token_; }

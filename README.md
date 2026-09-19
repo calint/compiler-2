@@ -46,6 +46,8 @@ x86_64 assembly on Linux.
       bounds with line number information
     * option `--nopt` disables post processing jump optimizations in boolean
       expression
+    * option `--no-reproduce` skips writing and verifying `diff.baz`;
+      assembly source comments remain enabled
 * to run the tests `qa/coverage/run-tests.sh` and see coverage report in `qa/coverage/report/`
 * syntax highlighting support in neovim (see `etc/nvim/tree-sitter-baz/`)
 * todo list of planned fixes and features in `etc/todo.txt`
@@ -56,9 +58,9 @@ x86_64 assembly on Linux.
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
 C/C++ Header                    49           1897            883           8088
-C++                              1             17              7            181
+C++                              1             17              7            189
 -------------------------------------------------------------------------------
-SUM:                            50           1914            890           8269
+SUM:                            50           1914            890           8277
 -------------------------------------------------------------------------------
 ```
 

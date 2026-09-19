@@ -1,6 +1,0 @@
-Top compiler symbols (flat, no-children):
-  0.24%  x86::op(token const&, unsigned long, std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >)
-  0.19%  toc::source_location_for_use_in_label[abi:cxx11](token const&) const
-  0.13%  toc::parse_constant(token const&, std::basic_string_view<char, std::char_traits<char> >)
-  0.03%  toc::make_ident_info_or_empty(x86 const*, token const&, std::basic_string_view<char, std::char_traits<char> >) const
-  0.01%  void std::vector<x86::allocated_register, std::allocator<x86::allocated_register> >::_M_realloc_append<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, type const*>(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&&, type const*&&)

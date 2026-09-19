@@ -1,4 +1,4 @@
 *
 !.gitignore
-!update-report.sh
+!perf.sh
 !top-baz.txt
