@@ -27,11 +27,7 @@ constexpr size_t size_byte{1};
 
 [[nodiscard]] auto get_before_dot(const std::string_view text)
     -> std::string_view {
-    if (const size_t position{text.find('.')};
-        position != std::string_view::npos) {
-        return text.substr(0, position);
-    }
-    return text;
+    return text.substr(0, text.find('.'));
 }
 
 [[nodiscard]] auto get_size_specifier(const size_t size) -> std::string_view {

@@ -387,11 +387,7 @@ struct ident_info {
                    operand.index_register.empty() and operand.displacement == 0;
         }
 
-        if (is_var()) {
-            return true;
-        }
-
-        return false;
+        return is_var();
     }
 
     [[nodiscard]] auto is_const() const -> bool {

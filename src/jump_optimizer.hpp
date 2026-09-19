@@ -43,9 +43,6 @@ struct jump_info {
     while (first < line.size() && is_ascii_space(line[first])) {
         ++first;
     }
-    if (first == line.size()) {
-        return line;
-    }
     return line.substr(0, first);
 }
 
@@ -223,12 +220,9 @@ auto pass1(std::istream& is, std::ostream& os) -> void {
     while (getline(is, line)) {
         if (const std::optional<jump_info> jump{parse_jump(line)}) {
             // keep buffering only while jumps target the same label
-            if (not pending_label || *pending_label == jump->label) {
-                pending_jumps.emplace_back(line);
-                pending_label = std::string{jump->label};
-                continue;
+            if (pending_label and *pending_label != jump->label) {
+                flush_pending();
             }
-            flush_pending();
             pending_jumps.emplace_back(line);
             pending_label = std::string{jump->label};
             continue;

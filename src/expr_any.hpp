@@ -88,13 +88,15 @@ class expr_any final : public statement {
         statement::source_to(os);
         open_brace_tk_.source_to(os);
         if (not vars_.empty()) {
-            std::visit([&os](const auto& e) -> void { e.source_to(os); },
-                       vars_.front());
+            vars_.front().visit([&os](const auto& expression) -> void {
+                expression.source_to(os);
+            });
             for (const auto [d, e] : std::views::zip(
                      vars_delims_tk_, vars_ | std::views::drop(1))) {
                 d.source_to(os);
-                std::visit([&os](const auto& el) -> void { el.source_to(os); },
-                           e);
+                e.visit([&os](const auto& expression) -> void {
+                    expression.source_to(os);
+                });
             }
         }
         close_brace_tk_.source_to(os);
@@ -152,8 +154,9 @@ class expr_any final : public statement {
             return true;
         }
 
-        return std::visit(
-            [](const auto& e) -> bool { return e.is_expression(); }, vars_[0]);
+        return vars_[0].visit([](const auto& expression) -> bool {
+            return expression.is_expression();
+        });
     }
 
     [[nodiscard]] auto is_indexed() const -> bool override {
@@ -161,14 +164,15 @@ class expr_any final : public statement {
             return false;
         }
 
-        return std::visit([](const auto& e) -> bool { return e.is_indexed(); },
-                          vars_[0]);
+        return vars_[0].visit([](const auto& expression) -> bool {
+            return expression.is_indexed();
+        });
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
-        return std::visit(
-            [](const auto& e) -> std::string_view { return e.identifier(); },
-            vars_[0]);
+        return vars_[0].visit([](const auto& expression) -> std::string_view {
+            return expression.identifier();
+        });
     }
 
     auto assert_var_not_used(const std::string_view var) const
@@ -176,18 +180,16 @@ class expr_any final : public statement {
 
         if (is_array_) {
             for (const expr_variant& el : vars_) {
-                std::visit(
-                    [&var](const auto& e) -> void {
-                        e.assert_var_not_used(var);
-                    },
-                    el);
+                el.visit([&var](const auto& expression) -> void {
+                    expression.assert_var_not_used(var);
+                });
             }
             return;
         }
 
-        std::visit(
-            [&var](const auto& e) -> void { e.assert_var_not_used(var); },
-            vars_[0]);
+        vars_[0].visit([&var](const auto& expression) -> void {
+            expression.assert_var_not_used(var);
+        });
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
@@ -195,9 +197,9 @@ class expr_any final : public statement {
             return statement::get_unary_ops();
         }
 
-        return std::visit(
-            [](const auto& e) -> const unary_ops& { return e.get_unary_ops(); },
-            vars_[0]);
+        return vars_[0].visit([](const auto& expression) -> const unary_ops& {
+            return expression.get_unary_ops();
+        });
 
         // note: 'expr_type_value' does not have 'unary_ops' and cannot be
         //       an argument in call
@@ -208,8 +210,9 @@ class expr_any final : public statement {
             return true;
         }
 
-        return std::visit(
-            [](const auto& e) -> bool { return e.is_identifier(); }, vars_[0]);
+        return vars_[0].visit([](const auto& expression) -> bool {
+            return expression.is_identifier();
+        });
     }
 
     [[nodiscard]] auto
@@ -219,12 +222,11 @@ class expr_any final : public statement {
                 const std::span<const std::string> lea_path) const
         -> operand override {
 
-        return std::visit(
-            [&](const auto& e) -> operand {
-                return e.compile_lea(tc, x, indent, src_loc_tk,
-                                     allocated_registers, reg_size, lea_path);
-            },
-            vars_[0]);
+        return vars_[0].visit([&](const auto& expression) -> operand {
+            return expression.compile_lea(tc, x, indent, src_loc_tk,
+                                          allocated_registers, reg_size,
+                                          lea_path);
+        });
     }
 
     [[nodiscard]] auto as_expr_type_value() const -> const expr_type_value& {
@@ -238,8 +240,9 @@ class expr_any final : public statement {
             return statement::tok();
         }
 
-        return std::visit(
-            [&](const auto& e) -> const token& { return e.tok(); }, vars_[0]);
+        return vars_[0].visit([](const auto& expression) -> const token& {
+            return expression.tok();
+        });
     }
 
   private:
@@ -265,12 +268,12 @@ class expr_any final : public statement {
     static auto compile_variant(toc& tc, x86& x, const size_t indent,
                                 const ident_info& dst_info, const token tk,
                                 const expr_variant& exp) -> void {
-        std::visit(
+        exp.visit(
             overloaded{
                 [&](const expr_ops_list& e) -> void {
                     e.compile(tc, x, indent, dst_info);
                 },
-                [&]([[maybe_unused]] const expr_type_value& e) -> void {
+                [&](const expr_type_value& e) -> void {
                     e.compile(tc, x, indent, dst_info);
                 },
                 [&](const expr_bool_ops_list& e) -> void {
@@ -313,16 +316,9 @@ class expr_any final : public statement {
 
                     // did the evaluation result in a constant?
                     if (const_eval) {
-                        // yes, constant evaluation
-                        if (*const_eval) {
-                            // constant evaluation is true
-                            x.mov(tk, indent, dst_info.operand.str(), "1");
-                        } else {
-                            // constant evaluation is false
-                            x.mov(tk, indent, dst_info.operand.str(), "0");
-                        }
+                        x.mov(tk, indent, dst_info.operand.str(),
+                              *const_eval ? "1" : "0");
                     }
-                }},
-            exp);
+                }});
     }
 };

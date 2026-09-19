@@ -66,7 +66,7 @@ class stmt_def_func_param final : public statement {
     [[nodiscard]] auto get_register_name_or_empty() const -> std::string_view {
         const std::string_view type_name{type_tk_.text()};
         if (type_name.starts_with("reg_")) {
-            return type_name.substr(4, type_name.size() - 4);
+            return type_name.substr(4);
             // note: 4 is the length of "reg_"
         }
         return "";
