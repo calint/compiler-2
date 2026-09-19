@@ -5,11 +5,14 @@ cd "$SCRIPT_DIR"
 
 TREESITTER="../../../../tree-sitter-baz"
 
+echo generate
 tree-sitter generate
 cc -o baz.so -shared src/parser.c -I./node_modules/tree-sitter/lib/include -fPIC
 mv -f baz.so ~/.local/share/nvim/site/parser/
+echo copy to nvim config
 cp queries/highlights.scm ~/.local/share/nvim/site/queries/baz/highlights.scm
 # copy to `tree-sitter-baz` project
+echo copy to $(realpath $TREESITTER)
 cp grammar.js $TREESITTER/
 cp README.md $TREESITTER/
 cp queries/highlights.scm $TREESITTER/queries/
