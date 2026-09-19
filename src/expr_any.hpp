@@ -268,57 +268,56 @@ class expr_any final : public statement {
     static auto compile_variant(toc& tc, x86& x, const size_t indent,
                                 const ident_info& dst_info, const token tk,
                                 const expr_variant& exp) -> void {
-        exp.visit(
-            overloaded{
-                [&](const expr_ops_list& e) -> void {
-                    e.compile(tc, x, indent, dst_info);
-                },
-                [&](const expr_type_value& e) -> void {
-                    e.compile(tc, x, indent, dst_info);
-                },
-                [&](const expr_bool_ops_list& e) -> void {
-                    // if not expression assign to destination
-                    if (not e.is_expression()) {
-                        const ident_info& src_info{tc.make_ident_info(x, e)};
-                        if (not src_info.is_const()) {
-                            std::unreachable();
-                        }
-                        x.mov(tk, indent, dst_info.operand.str(),
-                              std::format("{}", src_info.const_value));
-                        return;
+        exp.visit(overloaded{
+            [&](const expr_ops_list& e) -> void {
+                e.compile(tc, x, indent, dst_info);
+            },
+            [&](const expr_type_value& e) -> void {
+                e.compile(tc, x, indent, dst_info);
+            },
+            [&](const expr_bool_ops_list& e) -> void {
+                // if not expression assign to destination
+                if (not e.is_expression()) {
+                    const ident_info& src_info{tc.make_ident_info(x, e)};
+                    if (not src_info.is_const()) {
+                        std::unreachable();
                     }
+                    x.mov(tk, indent, dst_info.operand.str(),
+                          std::format("{}", src_info.const_value));
+                    return;
+                }
 
-                    // expression - make unique labels considering in-lined
-                    // functions
-                    const std::string_view call_path{tc.get_call_path()};
-                    const std::string src_loc{
-                        tc.source_location_for_use_in_label(tk)};
+                // expression - make unique labels considering in-lined
+                // functions
+                const std::string_view call_path{tc.get_call_path()};
+                const std::string src_loc{
+                    tc.source_location_for_use_in_label(tk)};
 
-                    // unique partial label for this assembler location
-                    const std::string postfix{std::format(
-                        "{}{}", src_loc,
-                        (call_path.empty() ? std::string{}
-                                           : std::format("_{}", call_path)))};
+                // unique partial label for this assembler location
+                const std::string postfix{std::format(
+                    "{}{}", src_loc,
+                    (call_path.empty() ? std::string{}
+                                       : std::format("_{}", call_path)))};
 
-                    // labels to jump to depending on the evaluation
-                    const std::string jmp_to_end{
-                        std::format("bool_end_{}", postfix)};
+                // labels to jump to depending on the evaluation
+                const std::string jmp_to_end{
+                    std::format("bool_end_{}", postfix)};
 
-                    // compile and possibly evaluate constant expression
-                    const std::string dst{dst_info.is_var()
-                                              ? dst_info.operand.str(1)
-                                              : dst_info.operand.str()};
-                    const std::optional<bool> const_eval{e.compile(
-                        tc, x, indent, jmp_to_end, jmp_to_end, false, dst)};
+                // compile and possibly evaluate constant expression
+                const std::string dst{dst_info.is_var()
+                                          ? dst_info.operand.str(1)
+                                          : dst_info.operand.str()};
+                const std::optional<bool> const_eval{e.compile(
+                    tc, x, indent, jmp_to_end, jmp_to_end, false, dst)};
 
-                    // not constant evaluation
-                    x.label(indent, jmp_to_end);
+                // not constant evaluation
+                x.label(indent, jmp_to_end);
 
-                    // did the evaluation result in a constant?
-                    if (const_eval) {
-                        x.mov(tk, indent, dst_info.operand.str(),
-                              *const_eval ? "1" : "0");
-                    }
-                }});
+                // did the evaluation result in a constant?
+                if (const_eval) {
+                    x.mov(tk, indent, dst_info.operand.str(),
+                          *const_eval ? "1" : "0");
+                }
+            }});
     }
 };
