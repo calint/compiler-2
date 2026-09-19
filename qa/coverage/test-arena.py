@@ -103,6 +103,27 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
         "production": ["--no-reproduce"],
         "unoptimized": ["--checks=upper,lower,line", "--nopt"],
     }
+    for name, (data_source, _, data_size) in layouts.items():
+        for body, expected_size in (
+            ("", 0),
+            ("var local : i8[3]", 3),
+            ("var local : i8[3]\n{ var temporary : i8[5] }\n"
+             "{ var temporary : i8[2] }", 8),
+        ):
+            source = (data_source
+                      + "func unused() { var unused_local : i8[1024] }\n"
+                      + "func main() {\n" + body + "\n}\n")
+            result = compile_source(directory, source, 4096, [])
+            assert result.returncode == 0, result.stderr
+            statistics = {}
+            for line in result.stdout.splitlines():
+                if line.startswith(";") and ":" in line:
+                    label, value = line[1:].split(":", 1)
+                    statistics[label.strip()] = value.strip()
+            assert statistics["dat var padding"] == f"{(-data_size) % 16} B", statistics
+            assert statistics["max vars size"] == f"{expected_size} B", statistics
+        print(f"arena {name} statistics: ok", flush=True)
+
     for name, (data_source, checks, data_size) in layouts.items():
         source = data_source + COMMON + "func main() {\n" + BODY + checks + "}\n"
         for mode, options in modes.items():

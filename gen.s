@@ -3267,7 +3267,7 @@ vars resb 131072
 
 ; max scratch registers in use: 5
 ;            max frames in use: 10
-;          stack entry padding: 3 B
-;               max stack size: 1160 B
+;              dat var padding: 3 B
+;                max vars size: 936 B
 ;          optimization pass 1: 120
 ;          optimization pass 2: 0

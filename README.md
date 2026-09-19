@@ -57,10 +57,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    49           2150            870           8062
+C/C++ Header                    49           2152            870           8070
 C++                              1             33              7            189
 -------------------------------------------------------------------------------
-SUM:                            50           2183            877           8251
+SUM:                            50           2185            877           8259
 -------------------------------------------------------------------------------
 ```
 
@@ -4996,8 +4996,8 @@ vars resb 131072
 
 ; max scratch registers in use: 5
 ;            max frames in use: 10
-;          stack entry padding: 3 B
-;               max stack size: 1160 B
+;              dat var padding: 3 B
+;                max vars size: 936 B
 ;          optimization pass 1: 120
 ;          optimization pass 2: 0
 ```
