@@ -48,7 +48,7 @@ class type final {
         fields_.emplace_back(std::string{name}, &tp, size_, total_size,
                              array_size, is_array);
 
-        size_ += tp.size_ * (is_array ? array_size : 1);
+        size_ += total_size;
     }
 
     [[nodiscard]] auto field(const token& tk, const std::string_view name) const

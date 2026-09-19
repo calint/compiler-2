@@ -97,19 +97,17 @@ class stmt_if final : public statement {
             if (i < n - 1) {
                 // if branch is false jump to next if
                 jmp_if_false = branches_[i + 1].if_bgn_label(tc);
-            } else {
+            } else if (else_code_.is_empty()) {
                 // if the last branch and no 'else', then no need to jump to
                 // 'after_if' after the code of the branch has been executed.
                 // just continue
-                if (else_code_.is_empty()) {
-                    jmp_if_done = "";
-                }
+                jmp_if_done = "";
             }
             // compile the condition which might return that the condition was a
             // constant evaluation
             if (const std::optional<bool> const_eval{if_branch.compile_branch(
                     tc, x, indent, jmp_if_false, jmp_if_done)};
-                const_eval and *const_eval) {
+                const_eval.value_or(false)) {
 
                 branch_evaluated_to_true = true;
                 break;
@@ -117,11 +115,9 @@ class stmt_if final : public statement {
         }
         // if it wasn't a constant evaluation that was true, generate the else
         // code
-        if (not branch_evaluated_to_true) {
-            if (not else_code_.is_empty()) {
-                x.label(indent, label_else_branch);
-                else_code_.compile(tc, x, indent, dst_info);
-            }
+        if (not branch_evaluated_to_true and not else_code_.is_empty()) {
+            x.label(indent, label_else_branch);
+            else_code_.compile(tc, x, indent, dst_info);
         }
 
         x.label(indent, label_after_if);
