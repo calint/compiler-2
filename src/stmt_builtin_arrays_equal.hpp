@@ -99,6 +99,21 @@ class stmt_builtin_arrays_equal final : public expression {
         const ident_info from_info{tc.make_ident_info(x, from_)};
         const ident_info to_info{tc.make_ident_info(x, to_)};
 
+        if (from_info.type_ref().name() != to_info.type_ref().name()) {
+            throw compiler_exception{
+                tok(),
+                std::format("source type '{}' does not match compare type '{}'",
+                            from_info.type_ref().name(),
+                            to_info.type_ref().name())};
+        }
+
+        if (dst_info.type_ref().name() != get_type().name()) {
+            throw compiler_exception{
+                tok(),
+                std::format("destination type must be '{}', not '{}'",
+                            get_type().name(), dst_info.type_ref().name())};
+        }
+
         // from operand to rsi
         x.comment(from_.tok(), indent, statement::trimmed_source(from_));
 
@@ -127,21 +142,6 @@ class stmt_builtin_arrays_equal final : public expression {
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
             x.free_scratch_register(tok(), indent, reg);
-        }
-
-        if (from_info.type_ref().name() != to_info.type_ref().name()) {
-            throw compiler_exception{
-                tok(),
-                std::format("source type '{}' does not match compare type '{}'",
-                            from_info.type_ref().name(),
-                            to_info.type_ref().name())};
-        }
-
-        if (dst_info.type_ref().name() != get_type().name()) {
-            throw compiler_exception{
-                tok(),
-                std::format("destination type must be '{}', not '{}'",
-                            get_type().name(), dst_info.type_ref().name())};
         }
 
         const size_t type_size{from_info.type_ref().size()};
