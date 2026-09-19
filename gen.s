@@ -4,18 +4,11 @@
 
 default rel
 
-section .bss.stack nobits alloc write
-align 16
-stk:
-stk resb 131072
-stk.end:
 
 section .text
 bits 64
 global _start
 _start:
-
-; initialize variable arena base
 lea rbp, [dat]
 
 ;
@@ -3266,6 +3259,12 @@ db 3
 ;[27:21] zero remaining fields
 times 127 db 0
 dat.end:
+
+section .bss.stack nobits alloc write
+align 16
+stk:
+stk resb 131072
+stk.end:
 
 ; max scratch registers in use: 5
 ;            max frames in use: 10
