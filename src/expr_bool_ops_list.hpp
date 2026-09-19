@@ -22,11 +22,6 @@ class expr_bool_ops_list final : public statement {
     token close_paren_tk_;
     bool enclosed_{}; // e.g. (a==b and c==d) vs a==b and c==d
 
-    // helper template for nicer handling of variants using overloaded lambdas
-    template <class... Ts> struct overloaded : Ts... {
-        using Ts::operator()...;
-    };
-
   public:
     expr_bool_ops_list(toc& tc, token tk, tokenizer& tz,
                        const bool enclosed = false, token not_token = {},
@@ -135,8 +130,7 @@ class expr_bool_ops_list final : public statement {
         }
         const size_t n{bools_.size()};
         for (size_t i{}; i < n; ++i) {
-            std::visit([&](const auto& e) -> void { e.source_to(os); },
-                       bools_[i]);
+            bools_[i].visit([&os](const auto& e) -> void { e.source_to(os); });
             if (i < n - 1) {
                 ops_[i].source_to(os);
             }
@@ -388,27 +382,24 @@ class expr_bool_ops_list final : public statement {
 
         // 1 expression in the list
 
-        return std::visit(
-            [](const auto& e) -> bool { return e.is_expression(); }, bools_[0]);
+        return bools_[0].visit(
+            [](const auto& e) -> bool { return e.is_expression(); });
     }
 
     [[nodiscard]] auto identifier() const -> std::string_view override {
         assert(bools_.size() == 1);
 
-        return std::visit(
-            [](const auto& e) -> std::string_view { return e.identifier(); },
-            bools_[0]);
+        return bools_[0].visit(
+            [](const auto& e) -> std::string_view { return e.identifier(); });
     }
 
     auto assert_var_not_used(const std::string_view var) const
         -> void override {
 
         for (const auto& e : bools_) {
-            std::visit(
-                [&var](const auto& itm) -> void {
-                    itm.assert_var_not_used(var);
-                },
-                e);
+            e.visit([&var](const auto& item) -> void {
+                item.assert_var_not_used(var);
+            });
         }
     }
 
@@ -427,10 +418,8 @@ class expr_bool_ops_list final : public statement {
         const std::variant<expr_bool_op, expr_bool_ops_list>& var)
         -> std::string {
 
-        return std::visit(
-            [&](const auto& e) -> std::string {
-                return e.create_cmp_bgn_label(tc);
-            },
-            var);
+        return var.visit([&tc](const auto& e) -> std::string {
+            return e.create_cmp_bgn_label(tc);
+        });
     }
 };
