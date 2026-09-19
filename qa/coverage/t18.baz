@@ -44,4 +44,3 @@ func main(){
     bar(a+f(a),b,hello)
 }
 
-dat dat_padding : i8[4]

@@ -158,4 +158,3 @@ func main() {
     assert(ln1.points[1].y == 7)
 }
 
-dat dat_padding : i8[11]

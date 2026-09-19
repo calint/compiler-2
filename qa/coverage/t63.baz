@@ -50,4 +50,3 @@ func main(){
     }
 }
 
-dat dat_padding : i8[7]

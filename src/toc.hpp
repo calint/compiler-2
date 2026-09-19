@@ -60,6 +60,9 @@ class frame final {
     // number of bytes used on the stack by this frame
     size_t allocated_stack_{};
 
+    // stack padding assigned to this frame
+    size_t stack_padding_{};
+
     // constants
     lut<const_info> consts_;
 
@@ -115,7 +118,12 @@ class frame final {
     }
 
     [[nodiscard]] auto allocated_stack_size() const -> size_t {
-        return allocated_stack_;
+        return allocated_stack_ + stack_padding_;
+    }
+
+    auto set_stack_padding(const size_t nbytes) -> void {
+        assert(stack_padding_ == 0);
+        stack_padding_ = nbytes;
     }
 
     [[nodiscard]] auto call_path() const -> std::string_view {
@@ -235,10 +243,16 @@ class toc final {
     const type* type_bool_{};
     size_t usage_max_frame_count_{};
     size_t usage_max_stack_size_{};
+    size_t total_dat_size_bytes_{};
+    size_t stack_entry_gap_{};
+    size_t stack_size_bytes_{};
+    bool stack_entry_gap_applied_{};
     bool bounds_check_upper_{};
     bool bounds_check_with_line_{};
     bool bounds_check_lower_{};
     std::vector<const statement*> data_;
+
+    static constexpr size_t stack_alignment{16};
 
   public:
     static constexpr size_t size_qword{8};
@@ -283,6 +297,10 @@ class toc final {
                 stmt->tok(), "'dat' can only be added before any 'var'");
         }
         data_.emplace_back(stmt);
+        total_dat_size_bytes_ += stmt->dat_size_bytes();
+        stack_entry_gap_ =
+            (stack_alignment - (total_dat_size_bytes_ % stack_alignment)) %
+            stack_alignment;
     }
 
     auto add_func(const token& src_loc_tk, std::string name,
@@ -346,17 +364,25 @@ class toc final {
         const size_t var_size{var.type_ptr->size() *
                               (var.is_array ? var.array_size : 1)};
 
+        if (not is_dat and not stack_entry_gap_applied_) {
+            frames_.front().set_stack_padding(stack_entry_gap_);
+            stack_size_bytes_ += stack_entry_gap_;
+            stack_entry_gap_applied_ = true;
+        }
+
+        const size_t stack_idx_base{stack_size_bytes_};
+
         const int32_t stack_idx{
-            static_cast<int32_t>(get_stack_size() + var_size)};
+            static_cast<int32_t>(stack_idx_base + var_size)};
 
         var.stack_idx = -stack_idx;
 
         frames_.back().add_var(var, is_dat);
+        stack_size_bytes_ += var_size;
 
         // stats
-        const size_t total_stack_size{get_stack_size()};
         usage_max_stack_size_ =
-            std::max(total_stack_size, usage_max_stack_size_);
+            std::max(stack_size_bytes_, usage_max_stack_size_);
 
         // comment the resolved name
         const ident_info& name_info{
@@ -419,25 +445,45 @@ class toc final {
     auto exit_foo(const std::string_view name) -> void {
         const frame& frm{frames_.back()};
         assert(frm.is_foo() and frm.is_name(name));
+        stack_size_bytes_ -= frm.allocated_stack_size();
         frames_.pop_back();
+        if (frames_.empty()) {
+            assert(stack_size_bytes_ == 0);
+            stack_entry_gap_applied_ = false;
+        }
     }
 
     auto exit_block() -> void {
         const frame& frm{frames_.back()};
         assert(frm.is_block());
+        stack_size_bytes_ -= frm.allocated_stack_size();
         frames_.pop_back();
+        if (frames_.empty()) {
+            assert(stack_size_bytes_ == 0);
+            stack_entry_gap_applied_ = false;
+        }
     }
 
     auto exit_func(const std::string_view name) -> void {
         const frame& frm{frames_.back()};
         assert(frm.is_func() and frm.is_name(name));
+        stack_size_bytes_ -= frm.allocated_stack_size();
         frames_.pop_back();
+        if (frames_.empty()) {
+            assert(stack_size_bytes_ == 0);
+            stack_entry_gap_applied_ = false;
+        }
     }
 
     auto exit_loop(const std::string_view name) -> void {
         const frame& frm{frames_.back()};
         assert(frm.is_loop() and frm.is_name(name));
+        stack_size_bytes_ -= frm.allocated_stack_size();
         frames_.pop_back();
+        if (frames_.empty()) {
+            assert(stack_size_bytes_ == 0);
+            stack_entry_gap_applied_ = false;
+        }
     }
 
     auto finish(std::ostream& os) -> void {
@@ -446,6 +492,7 @@ class toc final {
         std::println(os, ";               max stack size: {} B",
                      usage_max_stack_size_);
         assert(frames_.empty());
+        assert(stack_size_bytes_ == 0);
         usage_max_frame_count_ = 0;
     }
 
@@ -744,11 +791,7 @@ class toc final {
     }
 
     [[nodiscard]] auto get_stack_size() const -> size_t {
-        size_t nbytes{};
-        for (const frame& frm : frames_) {
-            nbytes += frm.allocated_stack_size();
-        }
-        return nbytes;
+        return stack_size_bytes_;
     }
 
     [[nodiscard]] auto get_builtin_type_for_size(const size_t size) const

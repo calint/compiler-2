@@ -24,4 +24,3 @@ func main() {
     print(array_size_of(hello), address_of(hello))
 }
 
-dat dat_padding : i8[3]

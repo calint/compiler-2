@@ -12,4 +12,3 @@ func main() {
     print(array_size_of(letter), address_of(letter))
 }
 
-dat dat_padding : i8[15]

@@ -20,4 +20,3 @@ func main() {
     assert(copy[2] == 3)
 }
 
-dat dat_padding : i8[13]
