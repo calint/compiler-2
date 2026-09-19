@@ -63,6 +63,7 @@ struct operand {
         const auto skip_space = [&] -> void {
             while (pos < operand_sv.size() and
                    std::isspace(static_cast<unsigned char>(operand_sv[pos]))) {
+
                 ++pos;
             }
         };
@@ -78,6 +79,7 @@ struct operand {
             while (pos < operand_sv.size() and
                    ((operand_sv[pos] >= 'a' and operand_sv[pos] <= 'z') or
                     (operand_sv[pos] >= '0' and operand_sv[pos] <= '9'))) {
+
                 ++pos;
             }
 
@@ -164,6 +166,7 @@ struct operand {
             const size_t begin{pos};
             while (pos < operand_sv.size() and operand_sv[pos] >= '0' and
                    operand_sv[pos] <= '9') {
+
                 ++pos;
             }
 
@@ -414,9 +417,9 @@ struct ident_info {
     }
 
     [[nodiscard]] auto has_lea() const -> bool {
-        return std::ranges::any_of(lea_path, [](const std::string& s) -> bool {
-            return not s.empty();
-        });
+        return std::ranges::any_of(
+            lea_path,
+            [](const std::string& lea) -> bool { return not lea.empty(); });
     }
 
     [[nodiscard]] auto type_ref() const -> const type& {

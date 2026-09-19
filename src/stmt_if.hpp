@@ -84,6 +84,7 @@ class stmt_if final : public statement {
             call_path.empty()
                 ? std::format("if_{}_end", src_loc)
                 : std::format("if_{}_{}_end", src_loc, call_path)};
+
         const std::string label_else_branch{stmt_if::create_label_else_branch(
             else_code_, call_path, src_loc, label_after_if)};
 

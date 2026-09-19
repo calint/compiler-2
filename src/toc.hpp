@@ -405,6 +405,7 @@ class toc final {
             std::format("{}_{}{}", prefix, src_loc,
                         (call_path.empty() ? std::string{}
                                            : std::format("_{}", call_path)))};
+
         return lbl;
     }
 
@@ -421,6 +422,7 @@ class toc final {
         frames_.emplace_back(name, frame::frame_type::FUNC, returns,
                              std::string{call_path},
                              std::string{return_jmp_label});
+
         refresh_usage();
     }
 
@@ -481,10 +483,13 @@ class toc final {
     auto finish(std::ostream& os) -> void {
         std::println(os, ";            max frames in use: {}",
                      usage_max_frame_count_);
+
         std::println(os, ";          stack entry padding: {} B",
                      stack_entry_gap_);
+
         std::println(os, ";               max stack size: {} B",
                      usage_max_stack_size_);
+
         assert(frames_.empty());
         assert(stack_size_bytes_ == 0);
         usage_max_frame_count_ = 0;
@@ -1145,6 +1150,7 @@ class toc final {
 
             const type& tpe{x ? x->get_allocated_register_type(id.str())
                               : get_builtin_type_for_size(reg_size)};
+
             return make_ident_info_register(ident, id.str(), tpe);
         }
 

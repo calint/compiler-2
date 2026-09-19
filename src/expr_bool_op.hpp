@@ -119,11 +119,13 @@ class expr_bool_op final : public statement {
                 if (lhs_info.is_const()) {
                     bool const_eval{lhs_.get_unary_ops().evaluate_constant(
                                         lhs_info.const_value) != 0};
+
                     if (invert) {
                         const_eval = not const_eval;
                     }
                     x.comment(lhs_.tok(), indent, "const eval to {}",
                               (const_eval ? "true" : "false"));
+
                     if (const_eval) {
                         // since it is an 'or' chain short-circuit
                         // expression and jump to label for true
@@ -158,11 +160,13 @@ class expr_bool_op final : public statement {
                                   op_,
                                   rhs_.get_unary_ops().evaluate_constant(
                                       rhs_info.const_value))};
+
                 if (invert) {
                     const_eval = not const_eval;
                 }
                 x.comment(lhs_.tok(), indent, "const eval to {}",
                           (const_eval ? "true" : "false"));
+
                 if (const_eval) {
                     // expression evaluated at compile time and true so
                     // short-circuit and jump to true
@@ -206,11 +210,13 @@ class expr_bool_op final : public statement {
                 if (lhs_info.is_const()) {
                     bool const_eval{lhs_.get_unary_ops().evaluate_constant(
                                         lhs_info.const_value) != 0};
+
                     if (invert) {
                         const_eval = not const_eval;
                     }
                     x.comment(lhs_.tok(), indent, "const eval to {}",
                               (const_eval ? "true" : "false"));
+
                     if (not const_eval) {
                         // since it is an 'and' chain short-circuit
                         // expression and jump to label for false
@@ -245,11 +251,13 @@ class expr_bool_op final : public statement {
                                   op_,
                                   rhs_.get_unary_ops().evaluate_constant(
                                       rhs_info.const_value))};
+
                 if (invert) {
                     const_eval = not const_eval;
                 }
                 x.comment(lhs_.tok(), indent, "const eval to {}",
                           (const_eval ? "true" : "false"));
+
                 if (not const_eval) {
                     // short circuit 'and' chain
                     x.jmp(indent, jmp_to_if_false);
@@ -440,15 +448,18 @@ class expr_bool_op final : public statement {
             const operand op{expr.compile_lea(tc, x, indent, expr.tok(),
                                               allocated_registers, "",
                                               expr_info.lea_path)};
+
             return op.str(expr_info.type_ref().size());
         }
 
         if (expr.is_expression()) {
             const std::string reg{
                 x.alloc_scratch_register(expr.tok(), indent, expr.get_type())};
+
             allocated_registers.emplace_back(reg);
             expr.compile(tc, x, indent + 1,
                          toc::make_ident_info_from_register(x, reg));
+
             return x86::get_sized_register_operand(reg, expr.get_type().size());
         }
 
@@ -458,9 +469,11 @@ class expr_bool_op final : public statement {
             if (is_lhs) {
                 const std::string reg{x.alloc_scratch_register(
                     expr.tok(), indent, tc.get_type_default())};
+
                 allocated_registers.emplace_back(reg);
                 expr.compile(tc, x, indent + 1,
                              toc::make_ident_info_from_register(x, reg));
+
                 return x86::get_sized_register_operand(reg,
                                                        expr.get_type().size());
             }
@@ -476,6 +489,7 @@ class expr_bool_op final : public statement {
         // 'expr' is not an expression and has unary ops
         const std::string reg{x.alloc_scratch_register(expr.tok(), indent,
                                                        tc.get_type_default())};
+
         allocated_registers.emplace_back(reg);
         x.mov(expr.tok(), indent, reg, expr_info.operand.str());
         expr.get_unary_ops().compile(tc, x, indent, reg);

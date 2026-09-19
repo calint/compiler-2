@@ -104,6 +104,7 @@ class stmt_builtin_array_copy final : public statement {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
+
             x.free_scratch_register(tok(), indent, reg);
         }
 
@@ -120,6 +121,7 @@ class stmt_builtin_array_copy final : public statement {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
+
             x.free_scratch_register(tok(), indent, reg);
         }
 

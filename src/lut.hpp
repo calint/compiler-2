@@ -31,10 +31,10 @@ template <class T> class lut final {
     [[nodiscard]] auto get_const_ref(const std::string_view key) const
         -> const T& {
 
-        if (const auto found{std::ranges::find(elems_, key, &elem::key)};
-            found != elems_.end()) {
-
-            return found->data;
+        for (const elem& entry : elems_) {
+            if (entry.key == key) {
+                return entry.data;
+            }
         }
         throw panic_exception(std::format("element not found: {}", key));
     }

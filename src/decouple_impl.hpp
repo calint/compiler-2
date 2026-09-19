@@ -222,6 +222,7 @@ auto expr_type_value::source_to(std::ostream& os) const -> void {
         exprs_.front()->source_to(os);
         for (const auto [d, e] :
              std::views::zip(exprs_delims_tk_, exprs_ | std::views::drop(1))) {
+
             d.source_to(os);
             e->source_to(os);
         }
@@ -278,6 +279,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
+
             x.free_scratch_register(tok(), indent, reg);
         }
 
@@ -324,6 +326,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
             //   var mp : msgpoint[3] = { { {}, { x, y } } }
             x.comment(ea->tok(), indent, "zero empty field: {} * {} B = {} B",
                       tf.array_size, tf.type().size(), tf.size);
+
             x.zero(tok(), indent, dst_op.address_str(), tf.size);
             const int32_t sz{static_cast<int32_t>(tf.size)};
             dst_op.displacement += sz;
@@ -368,6 +371,7 @@ auto expr_type_value::compile_assign(toc& tc, x86& x, size_t indent,
                     // built-in, not expression, not constant, not array
                     x.mov(src.tok(), indent, dst_accessor,
                           src_info.operand.str());
+
                     src.get_unary_ops().compile(tc, x, indent, dst_accessor);
                 }
             }

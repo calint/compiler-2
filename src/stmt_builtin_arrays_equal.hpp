@@ -125,6 +125,7 @@ class stmt_builtin_arrays_equal final : public expression {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
+
             x.free_scratch_register(tok(), indent, reg);
         }
 
@@ -141,6 +142,7 @@ class stmt_builtin_arrays_equal final : public expression {
 
         for (const std::string& reg :
              allocated_scratch_registers | std::views::reverse) {
+
             x.free_scratch_register(tok(), indent, reg);
         }
 
@@ -173,6 +175,7 @@ class stmt_builtin_arrays_equal final : public expression {
             x.setcc(indent, "e",
                     x86::get_sized_register_operand(dst_info.operand.str(),
                                                     operand::size_byte));
+
             return;
         }
 

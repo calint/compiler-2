@@ -48,6 +48,7 @@ class stmt_call : public expression {
                         throw compiler_exception{
                             tz, std::format("expected argument {} named '{}'",
                                             i + 1, param.name())};
+
                         // note: +1 because 'i' starts at 0
                     }
                     args_delims_tk_.emplace_back(t);
@@ -110,6 +111,7 @@ class stmt_call : public expression {
             args_.front().source_to(os);
             for (const auto [d, e] : std::views::zip(
                      args_delims_tk_, args_ | std::views::drop(1))) {
+
                 d.source_to(os);
                 e.source_to(os);
             }
@@ -167,6 +169,7 @@ class stmt_call : public expression {
             if (not arg_reg.empty()) {
                 x.alloc_named_register(arg.tok(), indent, arg_reg,
                                        param.get_type());
+
                 allocated_named_registers.emplace_back(arg_reg);
                 allocated_registers_in_order.emplace_back(arg_reg);
             }
@@ -212,6 +215,7 @@ class stmt_call : public expression {
                     // no particular register requested
                     arg_reg = x.alloc_scratch_register(arg.tok(), indent,
                                                        param.get_type());
+
                     allocated_scratch_registers.emplace_back(arg_reg);
                     allocated_registers_in_order.emplace_back(arg_reg);
                 }
@@ -234,6 +238,7 @@ class stmt_call : public expression {
                 aliases_to_add.emplace_back(std::string{param.identifier()},
                                             std::string{arg.identifier()}, "",
                                             &param.get_type());
+
                 continue;
             }
 
@@ -297,6 +302,7 @@ class stmt_call : public expression {
         const std::string new_call_path{
             call_path.empty() ? src_loc
                               : std::format("{}_{}", src_loc, call_path)};
+
         const std::string ret_jmp_label{
             std::format("{}_{}_end", func.name(), new_call_path)};
 

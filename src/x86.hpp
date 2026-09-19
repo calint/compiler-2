@@ -44,12 +44,15 @@ class x86 final {
     std::vector<std::string> all_registers_{
         "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
         "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"};
+
     size_t all_registers_initial_size_{all_registers_.size()};
     std::vector<std::string> named_registers_{"rax", "rbx", "rcx",
                                               "rdx", "rsi", "rdi"};
+
     size_t named_registers_initial_size_{named_registers_.size()};
     std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r11",
                                                 "r12", "r13", "r14", "r15"};
+
     size_t scratch_registers_initial_size_{scratch_registers_.size()};
     std::vector<allocated_register> allocated_registers_;
     size_t usage_max_scratch_regs_{};
@@ -171,10 +174,11 @@ class x86 final {
         if (reg_iter == named_registers_.end()) {
             // not found
             std::string loc;
-            const auto allocated{std::ranges::find(allocated_registers_, reg,
-                                                   &allocated_register::name)};
-            if (allocated != allocated_registers_.end()) {
-                loc = allocated->source_location;
+            for (const allocated_register& allocated : allocated_registers_) {
+                if (allocated.name == reg) {
+                    loc = allocated.source_location;
+                    break;
+                }
             }
             throw compiler_exception{
                 src_loc_tk, std::format("cannot allocate register {} because "
@@ -206,6 +210,7 @@ class x86 final {
 
         const size_t n{scratch_registers_initial_size_ -
                        scratch_registers_.size()};
+
         usage_max_scratch_regs_ = std::max(n, usage_max_scratch_regs_);
 
         allocated_registers_.emplace_back(source_location_hr(src_loc_tk),
@@ -223,6 +228,7 @@ class x86 final {
 
         named_registers_.emplace_back(
             std::move(allocated_registers_.back().name));
+
         allocated_registers_.pop_back();
     }
 
@@ -235,6 +241,7 @@ class x86 final {
 
         scratch_registers_.emplace_back(
             std::move(allocated_registers_.back().name));
+
         allocated_registers_.pop_back();
     }
 
@@ -259,6 +266,7 @@ class x86 final {
     auto finish() -> void {
         println("\n; max scratch registers in use: {}",
                 usage_max_scratch_regs_);
+
         assert(all_registers_.size() == all_registers_initial_size_);
         assert(allocated_registers_.empty());
         assert(named_registers_.size() == named_registers_initial_size_);
@@ -288,8 +296,10 @@ class x86 final {
             if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
                 const std::string reg{
                     alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+
                 const std::string reg_sized{
                     get_sized_register_operand(reg, dst_size)};
+
                 asm_line(indent, "mov {}, {}", reg_sized, src_op);
                 asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
                 free_scratch_register(src_loc_tk, indent, reg);
@@ -303,8 +313,10 @@ class x86 final {
             if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
                 const std::string reg{
                     alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+
                 const std::string reg_sized{
                     get_sized_register_operand(reg, dst_size)};
+
                 asm_line(indent, "movsx {}, {}", reg_sized, src_op);
                 asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
                 free_scratch_register(src_loc_tk, indent, reg);
@@ -320,6 +332,7 @@ class x86 final {
             }
             const std::string reg_sx{
                 alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+
             asm_line(indent, "movsx {}, {}", reg_sx, src_op);
             asm_line(indent, "{} {}, {}", op, dst_op, reg_sx);
             free_scratch_register(src_loc_tk, indent, reg_sx);
@@ -329,10 +342,13 @@ class x86 final {
         if (is_memory_operand(dst_op) and is_memory_operand(src_op)) {
             const std::string reg{
                 alloc_scratch_register(src_loc_tk, indent, *default_type_)};
+
             const std::string reg_sized{
                 get_sized_register_operand(reg, dst_size)};
+
             asm_line(indent, "mov {}, {}", reg_sized,
                      sized_memory_operand(src_op, dst_size));
+
             asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
             free_scratch_register(src_loc_tk, indent, reg);
             return;
@@ -343,6 +359,7 @@ class x86 final {
         if (dst_is_reg and src_is_reg) {
             asm_line(indent, "{} {}, {}", op, dst_op,
                      get_sized_register_operand(src_op, dst_size));
+
             return;
         }
         if (dst_is_reg) {
@@ -350,11 +367,13 @@ class x86 final {
                      is_memory_operand(src_op)
                          ? sized_memory_operand(src_op, dst_size)
                          : src_op);
+
             return;
         }
         if (src_is_reg) {
             asm_line(indent, "{} {}, {}", op, dst_op,
                      get_sized_register_operand(src_op, dst_size));
+
             return;
         }
         asm_line(indent, "{} {}, {}", op, dst_op, src_op);
@@ -396,8 +415,10 @@ class x86 final {
         for (size_t index{}; index < qword_movs; ++index) {
             mov(src_loc_tk, indent, "rax",
                 src_operand.str(operand::size_qword));
+
             mov(src_loc_tk, indent, dst_operand.str(operand::size_qword),
                 "rax");
+
             src_operand.displacement += operand::size_qword;
             dst_operand.displacement += operand::size_qword;
             rest -= operand::size_qword;
@@ -405,8 +426,10 @@ class x86 final {
         if ((rest / operand::size_dword) != 0) {
             mov(src_loc_tk, indent, "eax",
                 src_operand.str(operand::size_dword));
+
             mov(src_loc_tk, indent, dst_operand.str(operand::size_dword),
                 "eax");
+
             src_operand.displacement += operand::size_dword;
             dst_operand.displacement += operand::size_dword;
             rest -= operand::size_dword;
@@ -758,6 +781,7 @@ class x86 final {
         size_t digits_end{digits_start};
         while (digits_end < operand.size() && operand[digits_end] >= '0' &&
                operand[digits_end] <= '9') {
+
             ++digits_end;
         }
 
@@ -767,6 +791,7 @@ class x86 final {
 
         const std::string_view rnbr{
             operand.substr(digits_start, digits_end - digits_start)};
+
         switch (size) {
         case size_qword:
             return std::format("r{}", rnbr);
@@ -843,6 +868,7 @@ class x86 final {
 
         const auto [line, col]{utils::line_and_col_num_for_char_index(
             src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
+
         return std::format("{}:{}", line, col);
     }
 

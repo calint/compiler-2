@@ -68,6 +68,7 @@ class stmt_def_type final : public statement {
             fields_.front().source_to(os);
             for (const auto [d, e] : std::views::zip(
                      fields_delim_tk_, fields_ | std::views::drop(1))) {
+
                 d.source_to(os);
                 e.source_to(os);
             }

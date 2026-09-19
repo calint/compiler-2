@@ -65,6 +65,7 @@ class stmt_def_var final : public statement {
         const type& tp{type_tk_.text().empty()
                            ? tc.get_type_default()
                            : tc.get_type_or_throw(type_tk_, type_tk_.text())};
+
         set_type(tp);
 
         // expect initialization
@@ -85,12 +86,14 @@ class stmt_def_var final : public statement {
             .array_size{array_size_},
             .reg{},
         };
+
         tc.add_var(x, name_tk_, 0, var, false);
 
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
             assign_var_ = std::make_unique<stmt_assign_var>(
                 tc, tz, std::move(si), equals_tk_, is_array_, array_size_);
+
             if (is_array_ and array_size_ == 0) {
                 array_size_ = assign_var_->array_size();
                 if (array_size_ == 0) {
@@ -139,6 +142,7 @@ class stmt_def_var final : public statement {
             .array_size{array_size_},
             .reg{},
         };
+
         tc.add_var(x, name_tk_, indent, var, false);
 
         const ident_info& dst_info{

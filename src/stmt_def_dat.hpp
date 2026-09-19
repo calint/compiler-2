@@ -95,6 +95,7 @@ class stmt_def_dat final : public statement {
         const type& tp{type_tk_.text().empty()
                            ? tc.get_type_default()
                            : tc.get_type_or_throw(type_tk_, type_tk_.text())};
+
         set_type(tp);
 
         // expect initialization
@@ -115,6 +116,7 @@ class stmt_def_dat final : public statement {
             .array_size{array_size},
             .reg{},
         };
+
         tc.add_var(x, name_tk_, 0, var, true);
 
         if (has_init_) {
@@ -183,6 +185,7 @@ class stmt_def_dat final : public statement {
             .array_size{elroot_.array_size},
             .reg{},
         };
+
         tc.add_var(x, name_tk_, indent, var, true);
     }
 
@@ -293,6 +296,7 @@ class stmt_def_dat final : public statement {
             x.dat_begin(tp.size());
             x.dat_value(
                 std::format("{}{}", elroot.uops.to_string(), elroot.value));
+
             x.dat_end();
             return;
         }
@@ -587,6 +591,7 @@ class stmt_def_dat final : public statement {
                 for (const auto [d, e] :
                      std::views::zip(elroot.elems_delim_tk_,
                                      elroot.elems | std::views::drop(1))) {
+
                     d.source_to(os);
                     e.source_to(os);
                 }
@@ -608,10 +613,12 @@ class stmt_def_dat final : public statement {
             if (not elroot.elems.empty()) {
                 print_source_field(os, tp.fields().front(),
                                    elroot.elems.front());
+
                 for (const auto [d, e, f] :
                      std::views::zip(elroot.elems_delim_tk_,
                                      elroot.elems | std::views::drop(1),
                                      tp.fields() | std::views::drop(1))) {
+
                     d.source_to(os);
                     print_source_field(os, f, e);
                 }
@@ -628,6 +635,7 @@ class stmt_def_dat final : public statement {
             for (const auto [d, e] :
                  std::views::zip(elroot.elems_delim_tk_,
                                  elroot.elems | std::views::drop(1))) {
+
                 d.source_to(os);
                 print_source_elem(os, tp, e);
             }
@@ -662,6 +670,7 @@ class stmt_def_dat final : public statement {
                 for (const auto [d, e] :
                      std::views::zip(elroot.elems_delim_tk_,
                                      elroot.elems | std::views::drop(1))) {
+
                     d.source_to(os);
                     e.source_to(os);
                 }

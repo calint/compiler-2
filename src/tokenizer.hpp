@@ -72,6 +72,7 @@ class tokenizer final {
                                  ws_after,
                                  at_line,
                                  true};
+
                     // note: +1 and -2 does not include the leading and trailing
                     // quotation
                 }

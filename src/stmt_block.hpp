@@ -75,6 +75,7 @@ class stmt_block final : public statement {
             if (tk.text().starts_with("#")) {
                 stms_.emplace_back(
                     std::make_unique<stmt_comment>(tc, unary_ops{}, tk, tz));
+
                 last_statement_considered_no_statement = true;
             } else if (tk.is_text("var")) {
                 stms_.emplace_back(std::make_unique<stmt_def_var>(tc, tk, tz));

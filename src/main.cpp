@@ -57,25 +57,32 @@ auto main(const int argc, const char* argv[]) -> int {
             std::println("Options:");
             std::println("  --stack=SIZE        Set stack size (default: "
                          "0x10000/65536)");
+
             std::println(
                 "                      Supports decimal and hex (0x prefix) ");
+
             std::println("                      Must be a multiple of {}",
                          stack_alignment);
+
             std::println("  --checks=TYPE       Enable runtime checks:");
             std::println(
                 "                        upper - check upper array bounds");
+
             std::println(
                 "                        lower - check lower array bounds");
+
             std::println("                         line - report line number");
             std::println("             upper,lower,line - all");
             std::println("  --nopt              No jump optimizations");
             std::println("  --no-reproduce      Skip source reproduction and "
                          "round-trip verification");
+
             std::println("  --help, -h          Show this help message");
             std::println("");
             std::println("Arguments:");
             std::println(
                 "  filename            Source file (default: prog.baz)");
+
             std::println("");
             std::println("Examples:");
             std::println("  {} myfile.baz", prg);
@@ -93,6 +100,7 @@ auto main(const int argc, const char* argv[]) -> int {
                 size_t chars_read{};
                 const uint64_t parsed_size{
                     std::stoull(stack_text, &chars_read, 0)};
+
                 if (stack_text.empty() or stack_text.starts_with('-') or
                     chars_read != stack_text.size() or parsed_size == 0 or
                     not std::in_range<size_t>(parsed_size)) {
@@ -105,6 +113,7 @@ auto main(const int argc, const char* argv[]) -> int {
                                  "Invalid stack size: '{}' is not a multiple "
                                  "of {}",
                                  stack_text, stack_alignment);
+
                     std::println(stderr, "Use --help for usage information");
                     return 1;
                 }
@@ -113,6 +122,7 @@ auto main(const int argc, const char* argv[]) -> int {
             } catch (...) {
                 std::println(stderr, "Could not parse stack size: \"{}\"",
                              arg.substr(stack_option.size()));
+
                 std::println(stderr, "Use --help for usage information");
                 return 1;
             }
@@ -137,6 +147,7 @@ auto main(const int argc, const char* argv[]) -> int {
                                  "Invalid --checks option: '{}'. Supported "
                                  "options are: upper, lower, line.",
                                  option);
+
                     std::println(stderr, "Use --help for usage information");
                     return 1;
                 }
@@ -160,6 +171,7 @@ auto main(const int argc, const char* argv[]) -> int {
         src = read_file_to_string(src_file_name);
         program prg{src, stack_size, checks_upper, checks_lower,
                     checks_show_line};
+
         if (reproduce_source) {
             std::ofstream reproduced_source{"diff.baz"};
             prg.source_to(reproduced_source);
@@ -185,13 +197,16 @@ auto main(const int argc, const char* argv[]) -> int {
     } catch (const compiler_exception& e) {
         const auto [line, col]{
             utils::line_and_col_num_for_char_index(e.line, e.start_index, src)};
+
         std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col, e.msg);
         return 1;
     } catch (const tokenizer_exception& e) {
         const auto [line, col]{
             utils::line_and_col_num_for_char_index(e.line, e.start_index, src)};
+
         std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col,
                      e.what());
+
         return 1;
     } catch (const panic_exception& e) {
         std::println(stderr, "\npanic: {}", e.what());

@@ -57,10 +57,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    49           1972            870           8060
-C++                              1             18              7            189
+C/C++ Header                    49           2150            870           8062
+C++                              1             33              7            189
 -------------------------------------------------------------------------------
-SUM:                            50           1990            877           8249
+SUM:                            50           2183            877           8251
 -------------------------------------------------------------------------------
 ```
 
@@ -360,11 +360,6 @@ func main() {
 
 ```nasm
 default rel
-section .bss.stack nobits alloc write
-align 16
-stk:
-stk resb 131072
-stk.end:
 section .text
 bits 64
 global _start
@@ -1722,6 +1717,11 @@ times 24 db 0
 db 3
 times 127 db 0
 dat.end:
+section .bss.stack nobits alloc write
+align 16
+stk:
+stk resb 131072
+stk.end:
 ```
 
 ## With comments
@@ -1734,18 +1734,11 @@ dat.end:
 
 default rel
 
-section .bss.stack nobits alloc write
-align 16
-stk:
-stk resb 131072
-stk.end:
 
 section .text
 bits 64
 global _start
 _start:
-
-; initialize variable arena base
 lea rbp, [dat]
 
 ;
@@ -4996,6 +4989,12 @@ db 3
 ;[27:21] zero remaining fields
 times 127 db 0
 dat.end:
+
+section .bss.stack nobits alloc write
+align 16
+stk:
+stk resb 131072
+stk.end:
 
 ; max scratch registers in use: 5
 ;            max frames in use: 10

@@ -41,6 +41,7 @@ class stmt_builtin_foo final : public statement {
             .declared_at_tk{},
             .reg{},
         };
+
         tc.add_var(x, token{}, 0, var_e, false);
 
         const var_info var_i{
@@ -49,6 +50,7 @@ class stmt_builtin_foo final : public statement {
             .declared_at_tk{},
             .reg{},
         };
+
         tc.add_var(x, token{}, 0, var_i, false);
 
         tc.add_const(x, token{}, 0, "n", static_cast<int64_t>(ii.array_size));
@@ -122,6 +124,7 @@ class stmt_builtin_foo final : public statement {
 
             for (const std::string& reg :
                  allocated_registers | std::views::reverse) {
+
                 x.free_scratch_register(tok(), indent, reg);
             }
         } else {

@@ -34,12 +34,14 @@ class stmt_if_branch final : public statement {
         const std::string if_bgn_lbl{if_bgn_label(tc)};
         const std::string jmp_to_if_true_lbl{
             std::format("{}_code", if_bgn_lbl)};
+
         // the beginning of this branch
         x.label(indent, if_bgn_lbl);
         // compile the boolean ops list
         const std::optional<bool> const_eval{
             bol_.compile(tc, x, indent, jmp_to_if_false_label,
                          jmp_to_if_true_lbl, false, "")};
+
         if (const_eval == false) {
             return false;
         }

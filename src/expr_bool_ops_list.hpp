@@ -162,11 +162,13 @@ class expr_bool_ops_list final : public statement {
         // invert, according to De Morgan's laws
         const bool invert{inverted ? not not_token_.is_text("not")
                                    : not_token_.is_text("not")};
+
         const size_t n{bools_.size()};
         for (size_t i{}; i < n; ++i) {
             if (std::holds_alternative<expr_bool_ops_list>(bools_[i])) {
                 const expr_bool_ops_list& el{
                     get<expr_bool_ops_list>(bools_[i])};
+
                 x.label(indent, el.create_cmp_bgn_label(tc));
                 std::string jmp_false{jmp_to_if_false};
                 std::string jmp_true{jmp_to_if_true};

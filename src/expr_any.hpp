@@ -91,8 +91,10 @@ class expr_any final : public statement {
             vars_.front().visit([&os](const auto& expression) -> void {
                 expression.source_to(os);
             });
+
             for (const auto [d, e] : std::views::zip(
                      vars_delims_tk_, vars_ | std::views::drop(1))) {
+
                 d.source_to(os);
                 e.visit([&os](const auto& expression) -> void {
                     expression.source_to(os);
@@ -138,6 +140,7 @@ class expr_any final : public statement {
 
         x.comment(tok(), indent, "zero remaining elements: {} * {} B = {} B",
                   diff, ii.type_ref().size(), nbytes);
+
         x.zero(tok(), indent, ii.operand.address_str(), nbytes);
     }
 
@@ -285,6 +288,7 @@ class expr_any final : public statement {
                     }
                     x.mov(tk, indent, dst_info.operand.str(),
                           std::format("{}", src_info.const_value));
+
                     return;
                 }
 
@@ -308,6 +312,7 @@ class expr_any final : public statement {
                 const std::string dst{dst_info.is_var()
                                           ? dst_info.operand.str(1)
                                           : dst_info.operand.str()};
+
                 const std::optional<bool> const_eval{e.compile(
                     tc, x, indent, jmp_to_end, jmp_to_end, false, dst)};
 

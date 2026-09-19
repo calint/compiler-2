@@ -96,6 +96,7 @@ class stmt_def_func final : public statement {
                 .declared_at_tk{ret_tk},
                 .reg{},
             };
+
             tc.add_var(x, ret_tk, 0, var, false);
         }
 
@@ -110,6 +111,7 @@ class stmt_def_func final : public statement {
                 .is_array{prm.is_array()},
                 .reg{},
             };
+
             tc.add_var(x, prm.tok(), 0, var, false);
         }
 
@@ -136,6 +138,7 @@ class stmt_def_func final : public statement {
             params_.front().source_to(os);
             for (const auto [d, e] : std::views::zip(
                      params_delim_tks_, params_ | std::views::drop(1))) {
+
                 d.source_to(os);
                 e.source_to(os);
             }

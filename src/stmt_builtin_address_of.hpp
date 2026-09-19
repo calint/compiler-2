@@ -85,6 +85,7 @@ class stmt_builtin_address_of final : public expression {
             // destination is memory location
             const std::string reg{
                 x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
+
             x.lea(indent, reg, oper.address_str());
             x.mov(tok(), indent, dst_info.operand.str(), reg);
             x.free_scratch_register(tok(), indent, reg);
@@ -92,6 +93,7 @@ class stmt_builtin_address_of final : public expression {
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
+
             x.free_scratch_register(tok(), indent, reg);
         }
     }

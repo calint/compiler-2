@@ -142,6 +142,7 @@ class stmt_identifier : public statement {
             elems_.front().source_to(os);
             for (const auto [d, e] : std::views::zip(
                      elems_delim_tk_, elems_ | std::views::drop(1))) {
+
                 d.source_to(os);
                 e.source_to(os);
             }
@@ -159,6 +160,7 @@ class stmt_identifier : public statement {
             x.mov(tok(), indent, dst_info.operand.str(),
                   std::format("{}{}", get_unary_ops().to_string(),
                               src_info.const_value));
+
             return;
         }
 
@@ -169,6 +171,7 @@ class stmt_identifier : public statement {
             //       e.g. world.location.link
             x.mov(tok(), indent, dst_info.operand.str(),
                   src_info.operand.str());
+
             get_unary_ops().compile(tc, x, indent, dst_info.operand.str());
             return;
         }
@@ -188,6 +191,7 @@ class stmt_identifier : public statement {
 
         for (const std::string& reg :
              allocated_registers | std::views::reverse) {
+
             x.free_scratch_register(tok(), indent, reg);
         }
     }
@@ -265,6 +269,7 @@ class stmt_identifier : public statement {
                     accum_offset +=
                         static_cast<int32_t>(toc::get_field_offset_in_type(
                             curr_info.type_ref(), next_elem.name_tk.text()));
+
                     path.push_back('.');
                     path += next_elem.name_tk.text();
                 }
@@ -277,9 +282,11 @@ class stmt_identifier : public statement {
             if (is_last) {
                 const bool is_encodable{type_size == 1 or type_size == 2 or
                                         type_size == 4 or type_size == 8};
+
                 if (is_encodable) {
                     const std::string reg_idx{x.alloc_scratch_register(
                         src_loc_tk, indent, tc.get_type_default())};
+
                     allocated_registers.push_back(reg_idx);
 
                     x.comment(curr_elem.array_index_expr->tok(), indent,
@@ -328,12 +335,14 @@ class stmt_identifier : public statement {
             if (reg_offset == "rbp") {
                 reg_offset = x.alloc_scratch_register(src_loc_tk, indent,
                                                       tc.get_type_default());
+
                 allocated_registers.push_back(reg_offset);
                 x.lea(indent, reg_offset,
                       std::format("rbp + {}", base_info.stack_idx));
             } else if (reg_offset == base_info.operand.base_register) {
                 reg_offset = x.alloc_scratch_register(src_loc_tk, indent,
                                                       tc.get_type_default());
+
                 allocated_registers.push_back(reg_offset);
                 x.lea(indent, reg_offset,
                       std::format("{}", base_info.operand.base_register));
@@ -375,6 +384,7 @@ class stmt_identifier : public statement {
                 accum_offset +=
                     static_cast<int32_t>(toc::get_field_offset_in_type(
                         curr_info.type_ref(), next_elem.name_tk.text()));
+
                 path.push_back('.');
                 path += next_elem.name_tk.text();
             }
@@ -431,6 +441,7 @@ class stmt_identifier : public statement {
         if (tc.is_bounds_check_with_line()) {
             reg_line_num =
                 x.alloc_scratch_register(tk, indent, tc.get_type_default());
+
             x.comment(tk, indent, "line number");
             x.mov(tk, indent, reg_line_num, std::to_string(tk.at_line()));
         }
@@ -448,6 +459,7 @@ class stmt_identifier : public statement {
             if (not reg_size.empty()) {
                 const std::string reg_top_idx =
                     x.alloc_scratch_register(tk, indent, tc.get_type_default());
+
                 x.mov(tk, indent, reg_top_idx, reg_size);
                 x.add(indent, reg_top_idx, reg_to_check);
                 x.cmp(indent, reg_top_idx, std::to_string(array_size));
@@ -490,6 +502,7 @@ class stmt_identifier : public statement {
 
             const std::string index_reg{x.alloc_scratch_register(
                 src_loc_tk, indent, tc.get_type_default())};
+
             allocated_registers.push_back(index_reg);
 
             // changes will be made to the register so return an allocated

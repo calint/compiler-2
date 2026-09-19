@@ -311,6 +311,7 @@ auto pass2(std::istream& is, std::ostream& os) -> void {
 
         const std::optional<std::string_view> lbl_match{
             parse_label_any(third_line)};
+
         if (not lbl_match) {
             print3(first_line, second_line, third_line);
             continue;
