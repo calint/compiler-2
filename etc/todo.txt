@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] cleanup: stmt_assign_var::compile formalize dst_info.is_indexed 
+[x] cleanup: stmt_assign_var::compile formalize dst_info.is_indexed 
+    => renamed to 'use_operand'
 [ ] consider allowing function definitions in functions
 [ ] consider a var type that can be viewed from enclosing functions
 [ ] consider padding to natural bounds: dat, var and type fields
@@ -21,11 +22,11 @@
     dat s : str = { 
         3 # comment 
     }
+    => remarkably difficult 
 [ ] parsing comments in single statement block fails:
         if nibble > 9 nibble = nibble + 0x41 # 0 through 9
         else nibble = nibble + 0x30
 [ ] consider function calls that pass arguments and return through the stack
-    when passing array: pass the address of the array as lea and size as argument
     return values are then no longer references
 [ ] a way to specify a range in the array: foo arr(bgn_index, len, i_start)
 [ ] foo arr1, arr2, ... {
