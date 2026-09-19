@@ -1356,8 +1356,7 @@ times 24 db 0
 db 3
 times 127 db 0
 dat.end:
-section .bss.stack nobits alloc write
+section .bss.vars nobits alloc write
 align 16
-stk:
-stk resb 131072
-stk.end:
+vars:
+vars resb 131072

@@ -121,18 +121,18 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
                 run = subprocess.run([str(executable)], capture_output=True)
                 assert run.returncode == 0, (name, mode, run.returncode, run.stderr)
                 sections, segment = elf_layout(executable)
-                stack = sections[".bss.stack"]
-                assert stack[1] == 8 and stack[2] & 3 == 3
-                assert stack[5] == stack_size
-                assert stack[3] % 16 == 0
+                variables = sections[".bss.vars"]
+                assert variables[1] == 8 and variables[2] & 3 == 3
+                assert variables[5] == stack_size
+                assert variables[3] % 16 == 0
                 if data_size:
                     data = sections[".data"]
                     assert data[5] == data_size
-                    assert stack[3] == (data[3] + data_size + 15) // 16 * 16
+                    assert variables[3] == (data[3] + data_size + 15) // 16 * 16
                 else:
-                    assert stack[3] == segment[3]
+                    assert variables[3] == segment[3]
                 assert segment[5] == data_size
-                assert segment[6] >= stack[3] - segment[3] + stack_size
+                assert segment[6] >= variables[3] - segment[3] + stack_size
                 assert "default rel" in result.stdout
                 assert "lea rbp, [dat]" in result.stdout
                 assert "mov rsp," not in result.stdout

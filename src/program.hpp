@@ -192,9 +192,9 @@ class program final {
             stmt->compile_data(tc, x);
         }
 
-        x.println("dat.end:\n\nsection .bss.stack nobits alloc write\nalign "
-                  "{}\nstk:\nstk "
-                  "resb {}\nstk.end:",
+        x.println("dat.end:\n\nsection .bss.vars nobits alloc write\nalign "
+                  "{}\nvars:\nvars "
+                  "resb {}",
                   std::format("{}", stack_and_data_alignment_),
                   std::format("{}", stack_size_));
     }

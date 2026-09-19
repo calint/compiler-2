@@ -37,16 +37,16 @@ SECTIONS
   } :data
 
   /* upward-growing variable arena, without file-backed storage */
-  .bss.stack (NOLOAD) : ALIGN(16)
+  .bss.vars (NOLOAD) : ALIGN(16)
   {
-    __stack_section_start = .;
-    *(.bss.stack)
+    __vars_section_start = .;
+    *(.bss.vars)
   } :data
 
-  ASSERT(__stack_section_start == ALIGN(__dat_section_end, 16),
-         "baz.ld: .bss.stack must follow .data with 16-byte alignment")
+  ASSERT(__vars_section_start == ALIGN(__dat_section_end, 16),
+         "baz.ld: .bss.vars must follow .data with 16-byte alignment")
 
-  /* other zero-initialized writable storage (non-stack) */
+  /* other zero-initialized writable storage */
   .bss (NOLOAD) : ALIGN(16)
   {
     *(.bss .bss.*)
