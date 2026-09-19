@@ -23,4 +23,3 @@ dat hello : i8[] = "hello \"world\" \n from 'baz'\n  "
 func main() {
     print(array_size_of(hello), address_of(hello))
 }
-

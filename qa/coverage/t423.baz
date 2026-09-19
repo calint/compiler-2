@@ -22,4 +22,3 @@ func main() {
     assert(values[1] == 12)
     assert(values[2] == 13)
 }
-

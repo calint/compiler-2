@@ -14,4 +14,3 @@ func main() {
 	assert(value[0] == 0)
 	assert(value[7] == 0)
 }
-

@@ -26,11 +26,6 @@ dat      nl : i8[] = "\n"
 dat    nums : i64[4] = { 1 } # remaining elements are zeroed
 dat      s1 : str = { 3 } # remaining fields are zeroed
 
-dat padding : i8[3]
-# total data size must be a multiple of 16
-# baz will message how much padding is missing if that is the case
-
-
 # all functions are inlined
 
 # arguments can be placed in specified register using `reg_...` syntax

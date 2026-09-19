@@ -489,6 +489,8 @@ class toc final {
     auto finish(std::ostream& os) -> void {
         std::println(os, ";            max frames in use: {}",
                      usage_max_frame_count_);
+        std::println(os, ";          stack entry padding: {} B",
+                     stack_entry_gap_);
         std::println(os, ";               max stack size: {} B",
                      usage_max_stack_size_);
         assert(frames_.empty());

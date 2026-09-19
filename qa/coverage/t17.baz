@@ -38,4 +38,3 @@ func main(){
     bar(a+2,hello)
     exit(0)
 }
-

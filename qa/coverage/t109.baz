@@ -32,4 +32,3 @@ func main() {
     foozi(worlds[1].flgs[2].data)
     bar(worlds[1].flgs[1])
 }
-

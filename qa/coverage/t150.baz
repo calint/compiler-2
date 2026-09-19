@@ -157,4 +157,3 @@ func main() {
     assert(ln1.points[1].x == 6)
     assert(ln1.points[1].y == 7)
 }
-

@@ -35,4 +35,3 @@ func main(){
     foozi(world)
     exit(0)
 }
-

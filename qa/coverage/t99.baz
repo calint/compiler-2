@@ -59,4 +59,3 @@ func main() {
 
     print(array_size_of(ok), address_of(ok))
 }
-

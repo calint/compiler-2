@@ -21,4 +21,3 @@ func main() {
     foozi(count)
     assert(count == 0xfe5f)
 }
-

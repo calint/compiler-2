@@ -34,4 +34,3 @@ func main() {
     assert(worlds[1].flgs[2].data[2] == 0x10)
     assert(worlds[1].flgs[1].data[3] == 0x20)
 }
-

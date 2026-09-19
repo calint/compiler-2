@@ -19,4 +19,3 @@ func main() {
     assert(copy[1] == 2)
     assert(copy[2] == 3)
 }
-

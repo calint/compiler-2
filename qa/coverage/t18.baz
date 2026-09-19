@@ -43,4 +43,3 @@ func main(){
     var b=3
     bar(a+f(a),b,hello)
 }
-

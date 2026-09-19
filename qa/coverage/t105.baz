@@ -51,4 +51,3 @@ func main() {
     assert(worlds[1].locations[3].links[5].name_len == 1)
     assert(worlds[1].locations[3].links[5].name[0] == 0x61)
 }
-

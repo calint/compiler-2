@@ -48,4 +48,3 @@ func main(){
     f(str,fld)
     exit(0)
 }
-

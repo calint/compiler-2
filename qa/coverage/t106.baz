@@ -41,4 +41,3 @@ func main() {
     assert(worlds[1].locations[2].links[4].loc == 0xba)
     assert(worlds[1].locations[2].links[4].pos.y == 0xab)
 }
-

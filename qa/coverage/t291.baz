@@ -12,4 +12,3 @@ dat output : i8[] = "token escapes\n"
 func main() {
     print(array_size_of(output), address_of(output))
 }
-

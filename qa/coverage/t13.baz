@@ -12,4 +12,3 @@ func main(){
     x=2
     exit(x)
 }
-

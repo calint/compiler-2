@@ -28,4 +28,3 @@ func main(){
     print(len,address_of(name))
     exit(0)
 }
-
