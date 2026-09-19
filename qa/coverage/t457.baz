@@ -1,0 +1,5 @@
+# rbp is reserved for the variable arena, not a writable source register
+
+func main() {
+    mov(rbp, 0)
+}
