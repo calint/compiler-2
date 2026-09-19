@@ -273,7 +273,7 @@ struct var_info {
     std::string name;
     const type* type_ptr{};
     token declared_at_tk; // token for position in the source
-    int32_t stack_idx{};  // location relative to register rsp
+    int32_t stack_idx{};  // location relative to register rbp
     bool is_array{};
     size_t array_size{};
     std::string reg;
@@ -437,7 +437,7 @@ struct ident_info {
 
     void increment_offset(const int32_t n) {
         assert(validate_invariants());
-        assert(stack_idx + n <= 0);
+        assert(stack_idx + n >= 0);
         stack_idx += n;
         operand.displacement += n;
         assert(validate_invariants());

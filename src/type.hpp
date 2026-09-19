@@ -103,7 +103,7 @@ class type final {
 
         operand op;
         op.size = tp_first_field->size();
-        op.base_register = var.reg.empty() ? "rsp" : var.reg;
+        op.base_register = var.reg.empty() ? "rbp" : var.reg;
         op.displacement = stack_idx;
 
         return ident_info::make_var(std::string{ident}, path,

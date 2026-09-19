@@ -225,6 +225,7 @@ CLI_NO_REPRODUCE() {
 
 # Run all test cases
 source "$SCRIPT_DIR/run-tests-cases.sh"
+python3 "$SCRIPT_DIR/test-arena.py"
 
 # Cleanup
 rm -f gen gen.o gen.s diff.baz out err

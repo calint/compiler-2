@@ -103,12 +103,9 @@ class frame final {
         consts_.put(std::string{name}, ci);
     }
 
-    auto add_var(const var_info& var, bool is_data = false) -> void {
-        if (var.stack_idx < 0) {
-            // variable, increase allocated stack size
-            allocated_stack_ +=
-                var.type_ptr->size() * (var.is_array ? var.array_size : 1);
-        }
+    auto add_var(const var_info& var, const size_t allocated_size,
+                 bool is_data = false) -> void {
+        allocated_stack_ += allocated_size;
 
         vars_.put(var.name, var);
 
@@ -360,7 +357,6 @@ class toc final {
                             source_location_hr(decl_var.declared_at_tk))};
         }
 
-        // increase stack index (is negative) to fit variable
         const size_t var_size{var.type_ptr->size() *
                               (var.is_array ? var.array_size : 1)};
 
@@ -370,14 +366,9 @@ class toc final {
             stack_entry_gap_applied_ = true;
         }
 
-        const size_t stack_idx_base{stack_size_bytes_};
+        var.stack_idx = static_cast<int32_t>(stack_size_bytes_);
 
-        const int32_t stack_idx{
-            static_cast<int32_t>(stack_idx_base + var_size)};
-
-        var.stack_idx = -stack_idx;
-
-        frames_.back().add_var(var, is_dat);
+        frames_.back().add_var(var, var_size, is_dat);
         stack_size_bytes_ += var_size;
 
         // stats
@@ -1137,6 +1128,10 @@ class toc final {
     [[nodiscard]] auto make_ident_info_register_or_empty(
         const x86* x, const std::string_view ident, const ident_path& id) const
         -> ident_info {
+
+        if (x86::is_arena_register(id.str())) {
+            return ident_info::make_empty();
+        }
 
         // is it a register?
         if (const size_t reg_size{utils::register_size(id.str())};

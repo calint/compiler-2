@@ -302,12 +302,9 @@ class stmt_identifier : public statement {
                             true, true, base_info.operand.base_register);
                     }
 
-                    const bool is_rsp{reg_offset == "rsp"};
-
-                    // offset depends on whether the base register is rsp
                     const int32_t offset{
-                        is_rsp ? -(base_info.stack_idx + accum_offset)
-                               : accum_offset};
+                        reg_offset == "rbp" ? base_info.stack_idx + accum_offset
+                                            : accum_offset};
 
                     operand oper;
                     oper.base_register = reg_offset;
@@ -315,12 +312,12 @@ class stmt_identifier : public statement {
                     if (type_size != 1) {
                         oper.scale = static_cast<uint8_t>(type_size);
                     }
-                    oper.displacement = is_rsp ? -offset : offset;
+                    oper.displacement = offset;
                     return oper;
                 }
             }
 
-            // convert 'rsp' to dedicated register
+            // convert 'rbp' to dedicated register
 
             if (reg_offset.empty()) {
                 reg_offset = init_reg_offset(tc, x, indent, src_loc_tk, lea,
@@ -328,12 +325,12 @@ class stmt_identifier : public statement {
                                              base_info.operand.base_register);
             }
 
-            if (reg_offset == "rsp") {
+            if (reg_offset == "rbp") {
                 reg_offset = x.alloc_scratch_register(src_loc_tk, indent,
                                                       tc.get_type_default());
                 allocated_registers.push_back(reg_offset);
                 x.lea(indent, reg_offset,
-                      std::format("rsp - {}", -base_info.stack_idx));
+                      std::format("rbp + {}", base_info.stack_idx));
             } else if (reg_offset == base_info.operand.base_register) {
                 reg_offset = x.alloc_scratch_register(src_loc_tk, indent,
                                                       tc.get_type_default());
@@ -390,12 +387,12 @@ class stmt_identifier : public statement {
         }
 
         operand op{reg_offset, false};
-        // note: 'reg_offset' might be e.g. "rsp + r15 * 8 + 16" so it needs to
+        // note: 'reg_offset' might be e.g. "rbp + r15 * 8 + 16" so it needs to
         // be parsed
 
         op.displacement += accum_offset;
 
-        if (reg_offset == "rsp") {
+        if (reg_offset == "rbp") {
             // register is not optimally encoded for trailing elements of size
             // 1, 2, 4, or 8
             op.displacement += base_info.stack_idx;

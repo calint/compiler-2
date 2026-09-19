@@ -173,7 +173,7 @@ class stmt_call : public expression {
 
             // if the argument is an identifier containing indexing, then save
             // the 'lea' address to access the argument
-            // examples: [rsp + r14 * 4 - 205] or [r15 + r14] or simply [r15]
+            // examples: [rbp + r14 * 4 + 205] or [r15 + r14] or simply [r15]
 
             if (not arg.is_expression() and
                 (arg.is_indexed() or tc.has_lea(arg))) {

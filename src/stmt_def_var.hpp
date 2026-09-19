@@ -157,11 +157,7 @@ class stmt_def_var final : public statement {
         x.comment(name_tk_, indent, "zero {} * {} B = {} B", instance_count,
                   dst_info.type_ref().size(), bytes_count);
 
-        const std::string dst_addr{
-            std::format("rsp - {}", -dst_info.stack_idx)};
-        // note: -dst_info.stack_idx for nicer source formatting; is always
-        //       negative
-        x.zero(tok(), indent, dst_addr, bytes_count);
+        x.zero(tok(), indent, dst_info.operand.address_str(), bytes_count);
     }
 
     auto assert_var_not_used(const std::string_view var) const

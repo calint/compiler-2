@@ -45,8 +45,8 @@ class x86 final {
         "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
         "r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15"};
     size_t all_registers_initial_size_{all_registers_.size()};
-    std::vector<std::string> named_registers_{"rax", "rbx", "rcx", "rdx",
-                                              "rsi", "rdi", "rbp"};
+    std::vector<std::string> named_registers_{"rax", "rbx", "rcx",
+                                              "rdx", "rsi", "rdi"};
     size_t named_registers_initial_size_{named_registers_.size()};
     std::vector<std::string> scratch_registers_{"r8",  "r9",  "r10", "r11",
                                                 "r12", "r13", "r14", "r15"};
@@ -66,6 +66,11 @@ class x86 final {
     std::reference_wrapper<std::ostream> os_;
 
   public:
+    [[nodiscard]] static constexpr auto
+    is_arena_register(const std::string_view reg) -> bool {
+        return reg == "rbp" or reg == "ebp" or reg == "bp" or reg == "bpl";
+    }
+
     explicit x86(std::ostream& os_ref, const std::string_view source)
         : source_{source}, os_{os_ref} {}
 
@@ -152,6 +157,13 @@ class x86 final {
     auto alloc_named_register(const token& src_loc_tk, const size_t indnt,
                               const std::string_view reg, const type& type_ref)
         -> void {
+
+        if (is_arena_register(reg)) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("register '{}' is reserved for the variable arena",
+                            reg)};
+        }
 
         comment(src_loc_tk, indnt, "allocate named register {}", reg);
 

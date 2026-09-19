@@ -28,22 +28,23 @@ SECTIONS
   /* start writable segment on a fresh page to avoid overlap with text */
   . = ALIGN(0x1000);
 
-  /* dedicated downward-growing stack arena used by rsp-relative slots */
-  .bss.stack (NOLOAD) : ALIGN(16)
-  {
-    *(.bss.stack)
-    __stack_section_end = .;
-  } :data
-
-  /* initialized global dat payload; rsp starts at dat.end */
+  /* initialized global dat payload; rbp points to dat */
   .data :
   {
     __dat_section_start = .;
     *(.data .data.*)
+    __dat_section_end = .;
   } :data
 
-  ASSERT(__stack_section_end == __dat_section_start,
-         "baz.ld: .bss.stack and .data must be adjacent")
+  /* upward-growing variable arena, without file-backed storage */
+  .bss.stack (NOLOAD) : ALIGN(16)
+  {
+    __stack_section_start = .;
+    *(.bss.stack)
+  } :data
+
+  ASSERT(__stack_section_start == ALIGN(__dat_section_end, 16),
+         "baz.ld: .bss.stack must follow .data with 16-byte alignment")
 
   /* other zero-initialized writable storage (non-stack) */
   .bss (NOLOAD) : ALIGN(16)
