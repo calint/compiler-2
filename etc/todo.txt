@@ -1,6 +1,9 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] refactor so data segment is first then bss.stack and rsp + offset instead of
+    -. big refactor. right now the program file is as big as the stack
+    specification + data. right now might as well have 1 data segment
 [x] cleanup: stmt_assign_var::compile formalize dst_info.is_indexed 
     => renamed to 'use_operand'
 [ ] consider allowing function definitions in functions
