@@ -3,10 +3,6 @@
 --------------------------------------------------------------------------------
 [ ] a way to use characters e.g. 'a' instead of ascii code
 [ ] support variable string initializers
-[x] check that the allocated vars section does not get overrun
-[x] syscall might clobber r11. does this affect read/write?
-    => it affects any value you hold in r11 across the syscall
-    [x] remove r11 from scratch registers
 [ ] read/write/exit builtin so that mov and register access can be removed
 [ ] consider allowing function definitions in functions
 [ ] consider a var type that can be viewed from enclosing functions
@@ -175,6 +171,10 @@
 --------------------------------------------------------------------------------
 resolved ([o]: ongoing [x]: done [-]: not completed with reason specified)
 --------------------------------------------------------------------------------
+[x] check that the allocated vars section does not get overrun
+[x] syscall might clobber r11. does this affect read/write?
+    => it affects any value you hold in r11 across the syscall
+    [x] remove r11 from scratch registers
 [x] don't allow a variable to have a register name
     [x] same for return result
     [x] and function argument names
