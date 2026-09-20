@@ -356,7 +356,7 @@ class toc final {
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
                  bool is_dat) -> void {
 
-        if (operand::register_size(var.name) != 0) {
+        if (x86::register_size(var.name) != 0) {
             throw compiler_exception{
                 src_loc_tk,
                 std::format("cannot use register name '{}' as a variable name",
@@ -1212,7 +1212,7 @@ class toc final {
         -> ident_info {
 
         // is it a register?
-        if (const size_t reg_size{operand::register_size(id.str())};
+        if (const size_t reg_size{x86::register_size(id.str())};
             reg_size != 0) {
 
             operand reg{operand::reg(id.str(), reg_size)};

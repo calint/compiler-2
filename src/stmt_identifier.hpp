@@ -454,12 +454,12 @@ class stmt_identifier : public statement {
                 x.address_of(src_loc_tk, indent, index_reg, lea);
             } else {
                 x.copy_value(src_loc_tk, indent, index_reg,
-                             operand::reg(lea.base_register));
+                             x86::reg(lea.base_register));
             }
 
             return index_reg;
         }
 
-        return operand::reg(base_register);
+        return x86::reg(base_register);
     }
 };
