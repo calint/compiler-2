@@ -20,7 +20,7 @@ class stmt_def_func final : public statement {
     std::vector<stmt_def_func_param> params_;
     std::vector<token> param_delims_tk_;
     token close_paren_tk_;
-    token returns_delim_tk_;
+    token return_delim_tk_;
     std::optional<func_return_info> returns_;
     stmt_block code_;
 
@@ -56,8 +56,8 @@ class stmt_def_func final : public statement {
             params_.emplace_back(tc, tz);
         }
 
-        returns_delim_tk_ = tz.is_next_char_token(':');
-        if (not returns_delim_tk_.is_empty()) {
+        return_delim_tk_ = tz.is_next_char_token(':');
+        if (not return_delim_tk_.is_empty()) {
             // function returns
             const token type_tk{tz.next_token()};
             const token ident_tk{tz.next_token()};
@@ -143,7 +143,7 @@ class stmt_def_func final : public statement {
         close_paren_tk_.source_to(os);
 
         if (returns_) {
-            returns_delim_tk_.source_to(os);
+            return_delim_tk_.source_to(os);
             returns_->type_tk.source_to(os);
             returns_->ident_tk.source_to(os);
         }

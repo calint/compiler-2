@@ -17,16 +17,16 @@
 class expr_bool_ops_list final : public statement {
     std::vector<std::variant<expr_bool_op, expr_bool_ops_list>> bools_;
     std::vector<token> ops_; // 'and' or 'or' ops between element in 'bools_'
-    token not_token_;        // e.g. not (a==b and c==d)
+    token not_tk_;           // e.g. not (a==b and c==d)
     token open_paren_tk_;
     token close_paren_tk_;
     bool enclosed_{}; // e.g. (a==b and c==d) vs a==b and c==d
 
   public:
     expr_bool_ops_list(toc& tc, token tk, tokenizer& tz,
-                       const bool enclosed = false, token not_token = {},
+                       const bool enclosed = false, token not_tk = {},
                        token open_paren_tk = {})
-        : statement{tk}, not_token_{not_token}, open_paren_tk_{open_paren_tk},
+        : statement{tk}, not_tk_{not_tk}, open_paren_tk_{open_paren_tk},
           enclosed_{enclosed} {
 
         set_type(tc.get_type_bool());
@@ -125,7 +125,7 @@ class expr_bool_ops_list final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        not_token_.source_to(os);
+        not_tk_.source_to(os);
         if (enclosed_) {
             open_paren_tk_.source_to(os);
         }
@@ -162,8 +162,8 @@ class expr_bool_ops_list final : public statement {
                                             inverted ? " inverted: " : " "));
 
         // invert, according to De Morgan's laws
-        const bool invert{inverted ? not not_token_.is_text("not")
-                                   : not_token_.is_text("not")};
+        const bool invert{inverted ? not not_tk_.is_text("not")
+                       : not_tk_.is_text("not")};
 
         const size_t n{bools_.size()};
         for (size_t i{}; i < n; ++i) {

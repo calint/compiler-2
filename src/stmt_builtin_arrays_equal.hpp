@@ -14,10 +14,10 @@
 
 class stmt_builtin_arrays_equal final : public expression {
     token open_paren_tk_;
-    stmt_identifier from_;
-    token from_delim_tk_;
-    stmt_identifier to_;
-    token to_delim_tk_;
+    stmt_identifier lhs_;
+    token lhs_delim_tk_;
+    stmt_identifier rhs_;
+    token rhs_delim_tk_;
     expr_any count_;
     token close_paren_tk_;
 
@@ -39,18 +39,18 @@ class stmt_builtin_arrays_equal final : public expression {
                 tz, "expected '(', 'source', 'compare', 'count', and ')'"};
         }
 
-        from_ = {tc, {}, tz.next_token(), tz};
+        lhs_ = {tc, {}, tz.next_token(), tz};
 
-        from_delim_tk_ = tz.is_next_char_token(',');
-        if (from_delim_tk_.is_empty()) {
+        lhs_delim_tk_ = tz.is_next_char_token(',');
+        if (lhs_delim_tk_.is_empty()) {
             throw compiler_exception{tz,
                                      "expected ',' then 'compare' and 'count'"};
         }
 
-        to_ = {tc, {}, tz.next_token(), tz};
+        rhs_ = {tc, {}, tz.next_token(), tz};
 
-        to_delim_tk_ = tz.is_next_char_token(',');
-        if (to_delim_tk_.is_empty()) {
+        rhs_delim_tk_ = tz.is_next_char_token(',');
+        if (rhs_delim_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ',' followed by 'count'"};
         }
 
@@ -67,10 +67,10 @@ class stmt_builtin_arrays_equal final : public expression {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         open_paren_tk_.source_to(os);
-        from_.source_to(os);
-        from_delim_tk_.source_to(os);
-        to_.source_to(os);
-        to_delim_tk_.source_to(os);
+        lhs_.source_to(os);
+        lhs_delim_tk_.source_to(os);
+        rhs_.source_to(os);
+        rhs_delim_tk_.source_to(os);
         count_.source_to(os);
         close_paren_tk_.source_to(os);
     }
@@ -82,15 +82,15 @@ class stmt_builtin_arrays_equal final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const ident_info from_info{tc.make_ident_info(from_)};
-        const ident_info to_info{tc.make_ident_info(to_)};
+        const ident_info lhs_info{tc.make_ident_info(lhs_)};
+        const ident_info rhs_info{tc.make_ident_info(rhs_)};
 
-        if (from_info.type_ref().name() != to_info.type_ref().name()) {
+        if (lhs_info.type_ref().name() != rhs_info.type_ref().name()) {
             throw compiler_exception{
                 tok(),
                 std::format("source type '{}' does not match compare type '{}'",
-                            from_info.type_ref().name(),
-                            to_info.type_ref().name())};
+                            lhs_info.type_ref().name(),
+                            rhs_info.type_ref().name())};
         }
 
         if (dst_info.type_ref().name() != get_type().name()) {
@@ -109,30 +109,30 @@ class stmt_builtin_arrays_equal final : public expression {
         count_.compile(tc, indent,
                        toc::make_ident_info_from_register(count_register));
 
-        x.comment(from_.tok(), indent, statement::trimmed_source(from_));
+        x.comment(lhs_.tok(), indent, statement::trimmed_source(lhs_));
 
-        const operand from_operand{from_.compile_lea(
-            tc, indent, from_.first_token(), allocated_scratch_registers,
-            count_register, from_info.lea_path)};
+        const operand lhs_operand{lhs_.compile_lea(
+            tc, indent, lhs_.first_token(), allocated_scratch_registers,
+            count_register, lhs_info.lea_path)};
 
-        x.set_memory_equal_left(indent, from_operand);
+        x.set_memory_equal_left(indent, lhs_operand);
 
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
-        x.comment(to_.tok(), indent, statement::trimmed_source(to_));
+        x.comment(rhs_.tok(), indent, statement::trimmed_source(rhs_));
 
         allocated_scratch_registers.clear();
 
-        const operand to_operand{to_.compile_lea(
-            tc, indent, to_.first_token(), allocated_scratch_registers,
-            count_register, to_info.lea_path)};
+        const operand rhs_operand{rhs_.compile_lea(
+            tc, indent, rhs_.first_token(), allocated_scratch_registers,
+            count_register, rhs_info.lea_path)};
 
-        x.set_memory_equal_right(indent, to_operand);
+        x.set_memory_equal_right(indent, rhs_operand);
 
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
         if (dst_info.is_register()) {
-            x.end_arrays_equal(tok(), indent, from_info.type_ref().size(),
+            x.end_arrays_equal(tok(), indent, lhs_info.type_ref().size(),
                                dst_info.operand);
 
             return;
