@@ -1014,7 +1014,8 @@ class machine_x86 final : public machine {
     }
 
     auto emit_zero_data(const size_t size_bytes) const -> void override {
-        emit_repeated_data(operand::size_byte, size_bytes, {});
+        const size_t count{size_bytes / operand::size_byte};
+        emit_repeated_data(operand::size_byte, count, {});
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,

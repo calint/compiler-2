@@ -39,8 +39,8 @@ class stmt_call : public expression {
             const stmt_def_func& func{
                 tc.get_func_or_throw(tok(), statement::identifier())};
 
-            const size_t n{func.params().size()};
-            args_.reserve(n);
+            const size_t param_count{func.params().size()};
+            args_.reserve(param_count);
             for (const auto [i, param] : std::views::enumerate(func.params())) {
                 if (i != 0) {
                     const token t{tz.is_next_char_token(',')};
@@ -61,7 +61,7 @@ class stmt_call : public expression {
                 throw compiler_exception{tz, "expected ')' after arguments"};
             }
 
-            for (const auto [index, arg, param] :
+            for (const auto [arg_number, arg, param] :
                  std::views::zip(std::views::iota(1), args_, func.params())) {
 
                 if (param.is_array()) {
@@ -70,7 +70,7 @@ class stmt_call : public expression {
                         throw compiler_exception{
                             arg.tok(),
                             std::format("parameter {} expected an array",
-                                        index)};
+                                        arg_number)};
                     }
                 }
 
@@ -363,8 +363,9 @@ class stmt_call : public expression {
         tc.exit_func(func.name());
     }
 
-    [[nodiscard]] auto argument(const size_t ix) const -> const statement& {
-        return args_[ix];
+    [[nodiscard]] auto argument(const size_t arg_index) const
+        -> const statement& {
+        return args_[arg_index];
     }
 
     [[nodiscard]] auto argument_count() const -> size_t { return args_.size(); }
