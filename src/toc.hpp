@@ -855,12 +855,16 @@ class toc final {
         switch (size) {
         case operand::size_qword:
             return *types_.get_const_ref("i64").type_ptr;
+
         case operand::size_dword:
             return *types_.get_const_ref("i32").type_ptr;
+
         case operand::size_word:
             return *types_.get_const_ref("i16").type_ptr;
+
         case operand::size_byte:
             return *types_.get_const_ref("i8").type_ptr;
+
         default:
             std::unreachable();
         }

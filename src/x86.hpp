@@ -529,16 +529,19 @@ class x86 final {
                format_operand(src));
 
             return;
+
         case '|':
             op(src_loc_tk, indent, "or", format_operand(dst),
                format_operand(src));
 
             return;
+
         case '^':
             op(src_loc_tk, indent, "xor", format_operand(dst),
                format_operand(src));
 
             return;
+
         default:
             std::unreachable();
         }
@@ -736,10 +739,12 @@ class x86 final {
             not_op(indent, format_operand(dst));
 
             return;
+
         case '-':
             neg(indent, format_operand(dst));
 
             return;
+
         default:
             std::unreachable();
         }
@@ -1037,12 +1042,16 @@ class x86 final {
         switch (size) {
         case operand::size_qword:
             return "qword";
+
         case operand::size_dword:
             return "dword";
+
         case operand::size_word:
             return "word";
+
         case operand::size_byte:
             return "byte";
+
         default:
             std::unreachable();
         }
@@ -1106,15 +1115,19 @@ class x86 final {
             case operand::size_byte:
                 s.append("byte");
                 break;
+
             case operand::size_word:
                 s.append("word");
                 break;
+
             case operand::size_dword:
                 s.append("dword");
                 break;
+
             case operand::size_qword:
                 s.append("qword");
                 break;
+
             default:
                 std::unreachable();
             }
@@ -1175,12 +1188,16 @@ class x86 final {
             switch (size) {
             case operand::size_qword:
                 return "rax";
+
             case operand::size_dword:
                 return "eax";
+
             case operand::size_word:
                 return "ax";
+
             case operand::size_byte:
                 return "al";
+
             default:
                 std::unreachable();
             }
@@ -1189,12 +1206,16 @@ class x86 final {
             switch (size) {
             case operand::size_qword:
                 return "rbx";
+
             case operand::size_dword:
                 return "ebx";
+
             case operand::size_word:
                 return "bx";
+
             case operand::size_byte:
                 return "bl";
+
             default:
                 std::unreachable();
             }
@@ -1203,12 +1224,16 @@ class x86 final {
             switch (size) {
             case operand::size_qword:
                 return "rcx";
+
             case operand::size_dword:
                 return "ecx";
+
             case operand::size_word:
                 return "cx";
+
             case operand::size_byte:
                 return "cl";
+
             default:
                 std::unreachable();
             }
@@ -1217,12 +1242,16 @@ class x86 final {
             switch (size) {
             case operand::size_qword:
                 return "rdx";
+
             case operand::size_dword:
                 return "edx";
+
             case operand::size_word:
                 return "dx";
+
             case operand::size_byte:
                 return "dl";
+
             default:
                 std::unreachable();
             }
@@ -1231,12 +1260,16 @@ class x86 final {
             switch (size) {
             case operand::size_qword:
                 return "rbp";
+
             case operand::size_dword:
                 return "ebp";
+
             case operand::size_word:
                 return "bp";
+
             case operand::size_byte:
                 return "bpl";
+
             default:
                 std::unreachable();
             }
@@ -1245,12 +1278,16 @@ class x86 final {
             switch (size) {
             case operand::size_qword:
                 return "rsi";
+
             case operand::size_dword:
                 return "esi";
+
             case operand::size_word:
                 return "si";
+
             case operand::size_byte:
                 return "sil";
+
             default:
                 std::unreachable();
             }
@@ -1259,12 +1296,16 @@ class x86 final {
             switch (size) {
             case operand::size_qword:
                 return "rdi";
+
             case operand::size_dword:
                 return "edi";
+
             case operand::size_word:
                 return "di";
+
             case operand::size_byte:
                 return "dil";
+
             default:
                 std::unreachable();
             }
@@ -1273,12 +1314,16 @@ class x86 final {
             switch (size) {
             case operand::size_qword:
                 return "rsp";
+
             case operand::size_dword:
                 return "esp";
+
             case operand::size_word:
                 return "sp";
+
             case operand::size_byte:
                 return "spl";
+
             default:
                 std::unreachable();
             }
@@ -1307,12 +1352,16 @@ class x86 final {
         switch (size) {
         case operand::size_qword:
             return std::format("r{}", rnbr);
+
         case operand::size_dword:
             return std::format("r{}d", rnbr);
+
         case operand::size_word:
             return std::format("r{}w", rnbr);
+
         case operand::size_byte:
             return std::format("r{}b", rnbr);
+
         default:
             std::unreachable();
         }
@@ -1589,18 +1638,22 @@ class x86 final {
             asm_line(indent, "cqo");
 
             return;
+
         case operand::size_dword:
             asm_line(indent, "cdq");
 
             return;
+
         case operand::size_word:
             asm_line(indent, "cwde");
 
             return;
+
         case operand::size_byte:
             asm_line(indent, "cbw");
 
             return;
+
         default:
             std::unreachable();
         }
@@ -1666,12 +1719,16 @@ class x86 final {
         switch (size) {
         case operand::size_qword:
             return data_qword;
+
         case operand::size_dword:
             return data_dword;
+
         case operand::size_word:
             return data_word;
+
         case operand::size_byte:
             return data_byte;
+
         default:
             std::unreachable();
         }
@@ -1756,12 +1813,16 @@ class x86 final {
         switch (size) {
         case operand::size_qword:
             return *type_i64_;
+
         case operand::size_dword:
             return *type_i32_;
+
         case operand::size_word:
             return *type_i16_;
+
         case operand::size_byte:
             return *type_i8_;
+
         default:
             std::unreachable();
         }

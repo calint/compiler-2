@@ -75,9 +75,11 @@ class unary_ops final {
             case '-':
                 v = -v;
                 break;
+
             case '~':
                 v = ~v; // NOLINT(hicpp-signed-bitwise)
                 break;
+
             default:
                 std::unreachable();
             }

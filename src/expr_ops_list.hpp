@@ -422,19 +422,25 @@ class expr_ops_list final : public expression {
         case '+':
         case '-':
             return precedence_additive;
+
         case '*':
         case '/':
         case '%':
             return precedence_multiplicative;
+
         case '|':
             return precedence_bitwise_or;
+
         case '&':
             return precedence_bitwise_and;
+
         case '^':
             return precedence_bitwise_xor;
+
         case '<': // shift left
         case '>': // shift right
             return precedence_shift;
+
         default:
             std::unreachable();
         }
