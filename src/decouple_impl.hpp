@@ -459,13 +459,13 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 
 // declared in 'unary_ops.hpp'
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-auto unary_ops::compile(toc& tc, const size_t indnt,
+auto unary_ops::compile(toc& tc, const size_t indent,
                         const operand& dst_info) const -> void {
 
     machine& x{tc.machine()};
 
     for (const char op : ops_ | std::views::reverse) {
-        x.unary(indnt, op, dst_info);
+        x.unary(indent, op, dst_info);
     }
 }
 

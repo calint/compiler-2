@@ -118,13 +118,13 @@ class frame final {
     }
 
     auto add_var(const var_info& var, const size_t allocated_size,
-                 bool is_data = false) -> void {
+                 bool is_dat = false) -> void {
 
         allocated_stack_ += allocated_size;
 
         vars_.put(var.name, var);
 
-        if (not is_data) {
+        if (not is_dat) {
             non_dat_var_has_been_added_ = true;
         }
     }
@@ -173,7 +173,7 @@ class frame final {
         return consts_.has(name);
     }
 
-    [[nodiscard]] auto has_non_data_var_been_added() const -> bool {
+    [[nodiscard]] auto has_non_dat_var_been_added() const -> bool {
         return non_dat_var_has_been_added_;
     }
 
@@ -314,7 +314,7 @@ class toc final {
             throw compiler_exception(stmt->tok(),
                                      "'dat' can only be added in global scope");
         }
-        if (frames_.front().has_non_data_var_been_added()) {
+        if (frames_.front().has_non_dat_var_been_added()) {
             throw compiler_exception(
                 stmt->tok(), "'dat' can only be added before any 'var'");
         }

@@ -248,7 +248,7 @@ class machine_x86 final : public machine {
     }
 
     [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
-                                              const size_t indnt,
+                                              const size_t indent,
                                               const type& type_ref)
         -> operand override {
 
@@ -261,7 +261,7 @@ class machine_x86 final : public machine {
         std::string reg{std::move(scratch_registers_.back())};
         scratch_registers_.pop_back();
 
-        comment(src_loc_tk, indnt, "allocate scratch register -> {}", reg);
+        comment(src_loc_tk, indent, "allocate scratch register -> {}", reg);
 
         const size_t n{scratch_registers_initial_size_ -
                        scratch_registers_.size()};
@@ -280,11 +280,11 @@ class machine_x86 final : public machine {
     }
 
     [[nodiscard]] auto
-    alloc_named_register(const token& src_loc_tk, const size_t indnt,
+    alloc_named_register(const token& src_loc_tk, const size_t indent,
                          const std::string_view reg, const type& type_ref)
         -> operand override {
 
-        reserve_named_register(src_loc_tk, indnt, reg);
+        reserve_named_register(src_loc_tk, indent, reg);
         operand result{sized_register(reg, type_ref.size())};
         result.allocation_register = reg;
         result.type_ptr = &type_ref;
@@ -292,20 +292,20 @@ class machine_x86 final : public machine {
         return result;
     }
 
-    auto free_named_register(const token& src_loc_tk, const size_t indnt,
+    auto free_named_register(const token& src_loc_tk, const size_t indent,
                              const operand& reg) -> void override {
 
         assert(reg.is_register() and not reg.allocation_register.empty());
 
-        release_named_register(src_loc_tk, indnt, reg.allocation_register);
+        release_named_register(src_loc_tk, indent, reg.allocation_register);
     }
 
-    auto free_scratch_register(const token& src_loc_tk, const size_t indnt,
+    auto free_scratch_register(const token& src_loc_tk, const size_t indent,
                                const operand& reg) -> void override {
 
         assert(reg.is_register() and not reg.allocation_register.empty());
 
-        comment(src_loc_tk, indnt, "free scratch register {}",
+        comment(src_loc_tk, indent, "free scratch register {}",
                 reg.allocation_register);
 
         assert(allocated_registers_.back().name == reg.allocation_register);
@@ -1215,10 +1215,10 @@ class machine_x86 final : public machine {
 
         return s;
     }
-    auto reserve_named_register(const token& src_loc_tk, const size_t indnt,
+    auto reserve_named_register(const token& src_loc_tk, const size_t indent,
                                 const std::string_view reg) -> void {
 
-        comment(src_loc_tk, indnt, "allocate named register {}", reg);
+        comment(src_loc_tk, indent, "allocate named register {}", reg);
 
         auto reg_iter{std::ranges::find(named_registers_, reg)};
         if (reg_iter == named_registers_.end()) {
@@ -1241,10 +1241,10 @@ class machine_x86 final : public machine {
         named_registers_.erase(reg_iter);
     }
 
-    auto release_named_register(const token& src_loc_tk, const size_t indnt,
+    auto release_named_register(const token& src_loc_tk, const size_t indent,
                                 const std::string_view reg) -> void {
 
-        comment(src_loc_tk, indnt, "free named register {}", reg);
+        comment(src_loc_tk, indent, "free named register {}", reg);
 
         assert(allocated_registers_.back().name == reg);
 

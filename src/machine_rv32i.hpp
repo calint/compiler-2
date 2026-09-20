@@ -53,7 +53,7 @@ class machine_rv32i final : public machine {
 
     [[nodiscard]] auto
     alloc_scratch_register([[maybe_unused]] const token& src_loc_tk,
-                           [[maybe_unused]] const size_t indnt,
+                           [[maybe_unused]] const size_t indent,
                            [[maybe_unused]] const type& type_ref)
         -> operand override {
         todo();
@@ -61,7 +61,7 @@ class machine_rv32i final : public machine {
 
     [[nodiscard]] auto
     alloc_named_register([[maybe_unused]] const token& src_loc_tk,
-                         [[maybe_unused]] const size_t indnt,
+                         [[maybe_unused]] const size_t indent,
                          [[maybe_unused]] const std::string_view reg,
                          [[maybe_unused]] const type& type_ref)
         -> operand override {
@@ -69,14 +69,14 @@ class machine_rv32i final : public machine {
     }
 
     auto free_named_register([[maybe_unused]] const token& src_loc_tk,
-                             [[maybe_unused]] const size_t indnt,
+                             [[maybe_unused]] const size_t indent,
                              [[maybe_unused]] const operand& reg)
         -> void override {
         todo();
     }
 
     auto free_scratch_register([[maybe_unused]] const token& src_loc_tk,
-                               [[maybe_unused]] const size_t indnt,
+                               [[maybe_unused]] const size_t indent,
                                [[maybe_unused]] const operand& reg)
         -> void override {
         todo();

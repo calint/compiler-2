@@ -19,7 +19,7 @@ class stmt_def_func final : public statement {
     token open_paren_tk_;
     std::vector<stmt_def_func_param> params_;
     std::vector<token> params_delim_tks_;
-    token close_parent_tk_;
+    token close_paren_tk_;
     token returns_delim_tk_;
     std::optional<func_return_info> returns_;
     stmt_block code_;
@@ -37,8 +37,8 @@ class stmt_def_func final : public statement {
         // read parameters definition
         size_t counter{};
         while (true) {
-            close_parent_tk_ = tz.is_next_char_token(')');
-            if (not close_parent_tk_.is_empty()) {
+            close_paren_tk_ = tz.is_next_char_token(')');
+            if (not close_paren_tk_.is_empty()) {
                 break;
             }
 
@@ -140,7 +140,7 @@ class stmt_def_func final : public statement {
                 e.source_to(os);
             }
         }
-        close_parent_tk_.source_to(os);
+        close_paren_tk_.source_to(os);
 
         if (returns_) {
             returns_delim_tk_.source_to(os);
