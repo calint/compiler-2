@@ -44,19 +44,19 @@ class program final {
           vars_size_{vars_size} {
 
         // create a placeholder token to use with 'toc' functions
-        const token prgtk{};
+        const token src_loc_tk{};
 
         // add built-in assembler calls
-        tc_.add_func(prgtk, "mov", type_void, nullptr);
-        tc_.add_func(prgtk, "syscall", type_void, nullptr);
+        tc_.add_func(src_loc_tk, "mov", type_void, nullptr);
+        tc_.add_func(src_loc_tk, "syscall", type_void, nullptr);
 
         // add built-in types
-        tc_.add_type(prgtk, type_i64);
-        tc_.add_type(prgtk, type_i32);
-        tc_.add_type(prgtk, type_i16);
-        tc_.add_type(prgtk, type_i8);
-        tc_.add_type(prgtk, type_bool);
-        tc_.add_type(prgtk, type_void);
+        tc_.add_type(src_loc_tk, type_i64);
+        tc_.add_type(src_loc_tk, type_i32);
+        tc_.add_type(src_loc_tk, type_i16);
+        tc_.add_type(src_loc_tk, type_i8);
+        tc_.add_type(src_loc_tk, type_bool);
+        tc_.add_type(src_loc_tk, type_void);
 
         // set defaults
         tc_.set_type_void(type_void);

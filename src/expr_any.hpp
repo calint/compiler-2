@@ -272,8 +272,9 @@ class expr_any final : public statement {
     }
 
     static auto compile_variant(toc& tc, const size_t indent,
-                                const ident_info& dst_info, const token tk,
-                                const expr_variant& exp) -> void {
+                                const ident_info& dst_info,
+                                const token src_loc_tk, const expr_variant& exp)
+        -> void {
 
         exp.visit(overloaded{
             [&](const expr_ops_list& e) -> void {
@@ -292,7 +293,7 @@ class expr_any final : public statement {
                         std::unreachable();
                     }
                     x.copy_value(
-                        tk, indent, dst_info.operand,
+                        src_loc_tk, indent, dst_info.operand,
                         operand::imm(std::format("{}", src_info.const_value),
                                      src_info.type_ref()));
 
@@ -303,7 +304,7 @@ class expr_any final : public statement {
                 // functions
                 const std::string_view call_path{tc.get_call_path()};
                 const std::string src_loc{
-                    tc.source_location_for_use_in_label(tk)};
+                    tc.source_location_for_use_in_label(src_loc_tk)};
 
                 // unique partial label for this assembler location
                 const std::string postfix{std::format(
@@ -326,7 +327,8 @@ class expr_any final : public statement {
 
                 // did the evaluation result in a constant?
                 if (const_eval) {
-                    x.store_boolean(tk, indent, dst_info.operand, *const_eval);
+                    x.store_boolean(src_loc_tk, indent, dst_info.operand,
+                                    *const_eval);
                 }
             }});
     }

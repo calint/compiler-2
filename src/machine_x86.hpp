@@ -214,14 +214,14 @@ class machine_x86 final : public machine {
 
     auto println() const -> void override { std::println(os_.get()); }
 
-    auto comment(const token& source_location, const size_t indent,
+    auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void override {
 
-        if (source_location.is_empty()) {
+        if (src_loc_tk.is_empty()) {
             comment_indent(indent);
             print(" ");
         } else {
-            comment_start(source_location, indent);
+            comment_start(src_loc_tk, indent);
         }
         println("{}", text);
     }
@@ -1399,11 +1399,10 @@ class machine_x86 final : public machine {
         std::println(os_.get(), format, std::forward<args_t>(args)...);
     }
 
-    auto comment_start(const token& source_location, const size_t indent)
-        -> void {
+    auto comment_start(const token& src_loc_tk, const size_t indent) -> void {
 
         const auto [line, column]{line_and_col_num_for_char_index(
-            source_location.at_line(), source_location.start_index(), source_)};
+            src_loc_tk.at_line(), src_loc_tk.start_index(), source_)};
 
         comment_indent(indent);
         print("[{}:{}] ", line, column);

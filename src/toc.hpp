@@ -25,7 +25,7 @@ class stmt_def_field;
 class stmt_def_type;
 
 struct func_info {
-    token declared_at_tk;       // token for position in the source
+    token src_loc_tk;           // token for position in the source
     const stmt_def_func* def{}; // null if built-in function
     const type* type_ptr{};     // return type or void
 };
@@ -60,7 +60,7 @@ struct alias_info {
 };
 
 struct const_info {
-    token declared_at_tk; // token for position in the source
+    token src_loc_tk; // token for position in the source
     int64_t value;
 };
 
@@ -245,7 +245,7 @@ class ident_path final {
 class toc final {
 
     struct type_info {
-        token declared_at_tk;
+        token src_loc_tk;
         const type* type_ptr;
     };
 
@@ -297,14 +297,16 @@ class toc final {
             throw compiler_exception(
                 src_loc_tk,
                 std::format("constant '{}' already defined in this block at {}",
-                            name, source_location_hr(c.declared_at_tk)));
+                            name, source_location_hr(c.src_loc_tk)));
         }
 
         ::machine& x{machine()};
 
         x.comment(src_loc_tk, indent, "const {} = {}", name, value);
-        frames_.back().add_const(name,
-                                 {.declared_at_tk{src_loc_tk}, .value{value}});
+        frames_.back().add_const(name, {
+                                           .src_loc_tk{src_loc_tk},
+                                           .value{value},
+                                       });
     }
 
     auto add_dat(const statement* stmt) -> void {
@@ -338,12 +340,14 @@ class toc final {
             throw compiler_exception{
                 src_loc_tk,
                 std::format("function '{}' already defined at {}", name,
-                            source_location_hr(fn.declared_at_tk))};
+                            source_location_hr(fn.src_loc_tk))};
         }
 
-        funcs_.put(std::move(name), {.declared_at_tk{src_loc_tk},
-                                     .def{func_def},
-                                     .type_ptr{&return_type}});
+        funcs_.put(std::move(name), {
+                                        .src_loc_tk{src_loc_tk},
+                                        .def{func_def},
+                                        .type_ptr{&return_type},
+                                    });
 
         if (func_def) {
             func_defs_.emplace_back(func_def);
@@ -354,14 +358,13 @@ class toc final {
         if (types_.has(tpe.name())) {
             throw compiler_exception{
                 src_loc_tk,
-                std::format(
-                    "type '{}' already defined at {}", tpe.name(),
-                    source_location_hr(
-                        types_.get_const_ref(tpe.name()).declared_at_tk))};
+                std::format("type '{}' already defined at {}", tpe.name(),
+                            source_location_hr(
+                                types_.get_const_ref(tpe.name()).src_loc_tk))};
         }
 
         types_.put(tpe.name(), {
-                                   .declared_at_tk{src_loc_tk},
+                                   .src_loc_tk{src_loc_tk},
                                    .type_ptr{&tpe},
                                });
     }
@@ -384,7 +387,7 @@ class toc final {
             throw compiler_exception{
                 src_loc_tk,
                 std::format("variable '{}' already declared at {}", var.name,
-                            source_location_hr(decl_var.declared_at_tk))};
+                            source_location_hr(decl_var.src_loc_tk))};
         }
 
         const size_t var_size{var.type_ptr->size() *
@@ -442,12 +445,12 @@ class toc final {
                            name_info.operand);
     }
 
-    [[nodiscard]] auto create_unique_label(const token& tk,
+    [[nodiscard]] auto create_unique_label(const token& src_loc_tk,
                                            const std::string_view prefix) const
         -> std::string {
 
         const std::string_view call_path{get_call_path()};
-        const std::string src_loc{source_location_for_use_in_label(tk)};
+        const std::string src_loc{source_location_for_use_in_label(src_loc_tk)};
         const std::string lbl{
             std::format("{}_{}{}", prefix, src_loc,
                         (call_path.empty() ? std::string{}

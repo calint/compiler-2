@@ -35,7 +35,7 @@ class machine_rv32i final : public machine {
 
     auto println() const -> void override { todo(); }
 
-    auto comment([[maybe_unused]] const token& source_location,
+    auto comment([[maybe_unused]] const token& src_loc_tk,
                  [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const std::string_view text)
         -> void override {

@@ -142,7 +142,7 @@ struct operand {
 struct var_info {
     std::string name;
     const type* type_ptr{};
-    token declared_at_tk; // token for position in the source
+    token src_loc_tk;     // token for position in the source
     int32_t stack_idx{};  // location relative to register rbp
     bool is_array{};
     size_t array_size{};

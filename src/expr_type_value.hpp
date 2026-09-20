@@ -71,7 +71,7 @@ class expr_type_value final : public statement {
                         const ident_info& dst_info, operand& op) const -> void;
 
     // implemented in 'decouple_impl.hpp'
-    static auto validate_array_assignment(const token& tok,
+    static auto validate_array_assignment(const token& src_loc_tk,
                                           const type_field& fld,
                                           const ident_info& src_info) -> void;
 };

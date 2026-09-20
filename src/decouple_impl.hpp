@@ -399,13 +399,13 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
 
 // declared in 'expr_type_value.hpp'
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
-auto expr_type_value::validate_array_assignment(const token& tok,
+auto expr_type_value::validate_array_assignment(const token& src_loc_tk,
                                                 const type_field& fld,
                                                 const ident_info& src_info)
     -> void {
 
     if (not src_info.is_array) {
-        throw compiler_exception{tok, "source must be an array"};
+        throw compiler_exception{src_loc_tk, "source must be an array"};
     }
 
     // 'expr_any' validates the source element type before entering here
@@ -414,9 +414,9 @@ auto expr_type_value::validate_array_assignment(const token& tok,
 
     if (fld.array_size != src_info.array_size) {
         throw compiler_exception{
-            tok, std::format("destination array size {} does not match "
-                             "source size {}",
-                             fld.array_size, src_info.array_size)};
+            src_loc_tk, std::format("destination array size {} does not match "
+                                    "source size {}",
+                                    fld.array_size, src_info.array_size)};
     }
 }
 

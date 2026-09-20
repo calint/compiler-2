@@ -103,7 +103,7 @@ class stmt_def_dat final : public statement {
         const var_info var{
             .name{name_tk_.text()},
             .type_ptr{&tp},
-            .declared_at_tk{name_tk_},
+            .src_loc_tk{name_tk_},
             .is_array{is_array},
             .array_size{array_size},
             .reg{},
@@ -175,7 +175,7 @@ class stmt_def_dat final : public statement {
         const var_info var{
             .name{name_tk_.text()},
             .type_ptr{&get_type()},
-            .declared_at_tk{name_tk_},
+            .src_loc_tk{name_tk_},
             .is_array{elroot_.is_array},
             .array_size{elroot_.array_size},
             .reg{},

@@ -90,7 +90,7 @@ class stmt_def_func final : public statement {
             const var_info var{
                 .name{ret_tk.text()},
                 .type_ptr{&get_type()},
-                .declared_at_tk{ret_tk},
+                .src_loc_tk{ret_tk},
                 .reg{},
             };
 
@@ -104,7 +104,7 @@ class stmt_def_func final : public statement {
             const var_info var{
                 .name{prm_name},
                 .type_ptr{&prm_type},
-                .declared_at_tk{prm.tok()},
+                .src_loc_tk{prm.tok()},
                 .is_array{prm.is_array()},
                 .reg{},
             };

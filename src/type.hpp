@@ -39,7 +39,7 @@ class type final {
 
     type() = default;
 
-    auto add_field([[maybe_unused]] const token& tk,
+    auto add_field([[maybe_unused]] const token& src_loc_tk,
                    const std::string_view name, const type& tp,
                    const bool is_array, const size_t array_size) -> void {
 
@@ -51,7 +51,8 @@ class type final {
         size_ += total_size;
     }
 
-    [[nodiscard]] auto field(const token& tk, const std::string_view name) const
+    [[nodiscard]] auto field(const token& src_loc_tk,
+                             const std::string_view name) const
         -> const type_field& {
 
         for (const type_field& fld : fields_) {
@@ -61,11 +62,12 @@ class type final {
         }
 
         throw compiler_exception{
-            tk, std::format("field '{}' not found in type '{}'", name, name_)};
+            src_loc_tk,
+            std::format("field '{}' not found in type '{}'", name, name_)};
     }
 
     [[nodiscard]] auto
-    accessor(const token& tk, const std::string_view ident,
+    accessor(const token& src_loc_tk, const std::string_view ident,
              const std::vector<std::string>& path, const var_info& var,
              const std::string_view variables_base_register) const
         -> ident_info {
@@ -83,7 +85,7 @@ class type final {
             // note: drop 1 because the first element is retrieved outside the
             //       loop
 
-            const type_field& tf{tp->field(tk, field_name)};
+            const type_field& tf{tp->field(src_loc_tk, field_name)};
             offset += tf.offset;
             tp = tf.type_ptr;
             is_array = tf.is_array;

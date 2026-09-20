@@ -55,7 +55,7 @@ class machine {
 
     virtual auto println() const -> void = 0;
 
-    virtual auto comment(const token& source_location, const size_t indent,
+    virtual auto comment(const token& src_loc_tk, const size_t indent,
                          const std::string_view text) -> void = 0;
 
     virtual auto emit_most_efficient(const token& src_loc_tk,
@@ -267,13 +267,13 @@ class machine {
         -> void = 0;
 
     template <typename... args_t>
-    auto comment(const token& source_location, const size_t indent,
+    auto comment(const token& src_loc_tk, const size_t indent,
                  const std::format_string<args_t...> format, args_t&&... args)
         -> void {
 
         const std::string text{
             std::format(format, std::forward<args_t>(args)...)};
-        comment(source_location, indent, std::string_view{text});
+        comment(src_loc_tk, indent, std::string_view{text});
     }
 
     template <std::ranges::input_range values_t>

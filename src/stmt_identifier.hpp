@@ -380,14 +380,15 @@ class stmt_identifier : public statement {
     }
 
     // helper function to emit bounds-checking code
-    static auto emit_bounds_check(toc& tc, const size_t indent, const token& tk,
+    static auto emit_bounds_check(toc& tc, const size_t indent,
+                                  const token& src_loc_tk,
                                   const operand& reg_to_check,
                                   const size_t array_size, const bool allow_end,
                                   const operand& reg_size = {}) -> void {
 
         machine& x{tc.machine()};
 
-        x.check_bounds(tk, indent, reg_to_check, array_size, allow_end,
+        x.check_bounds(src_loc_tk, indent, reg_to_check, array_size, allow_end,
                        reg_size,
                        {
                            .upper{tc.is_bounds_check_upper()},

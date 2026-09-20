@@ -34,7 +34,7 @@ class stmt_builtin_foo final : public statement {
         const var_info var_e{
             .name{"e"},
             .type_ptr{&ii.type_ref()},
-            .declared_at_tk{},
+            .src_loc_tk{},
             .reg{},
         };
 
@@ -43,7 +43,7 @@ class stmt_builtin_foo final : public statement {
         const var_info var_i{
             .name{"i"},
             .type_ptr{&tc.get_type_default()},
-            .declared_at_tk{},
+            .src_loc_tk{},
             .reg{},
         };
 
@@ -85,7 +85,7 @@ class stmt_builtin_foo final : public statement {
         const var_info var_e{
             .name{"e"},
             .type_ptr{&ii.type_ref()},
-            .declared_at_tk{tok()},
+            .src_loc_tk{tok()},
             .reg{reg_iter},
         };
 
@@ -94,7 +94,7 @@ class stmt_builtin_foo final : public statement {
         const var_info var_i{
             .name{"i"},
             .type_ptr{&tc.get_type_default()},
-            .declared_at_tk{tok()},
+            .src_loc_tk{tok()},
             .reg{},
         };
 

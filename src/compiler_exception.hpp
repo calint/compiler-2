@@ -14,9 +14,10 @@ class compiler_exception final : public std::exception {
     size_t start_index{};
     size_t end_index{};
 
-    compiler_exception(const token& tk, std::string message)
-        : msg{std::move(message)}, line{tk.at_line()},
-          start_index{tk.start_index()}, end_index{tk.end_index()} {}
+    compiler_exception(const token& src_loc_tk, std::string message)
+        : msg{std::move(message)}, line{src_loc_tk.at_line()},
+          start_index{src_loc_tk.start_index()},
+          end_index{src_loc_tk.end_index()} {}
 
     compiler_exception(const tokenizer& tz, std::string message)
         : msg{std::move(message)}, line{tz.current_line()},
