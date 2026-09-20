@@ -1,32 +1,38 @@
 Compiler-owned symbols: self % of baz samples, not suite time.
-  0.90%  [.] utils::register_size(std::basic_string_view<char, std::char_traits<char> >)
-  0.79%  [.] lut<var_info>::elem const& std::__invoke_impl<lut<var_info>::elem const&, std::identity&, lut<var_info>::elem const&>(std::__invoke_other, std::identity&, lut<var_info>::elem const&)
-  0.51%  [.] jump_optimizer::pass2(std::istream&, std::ostream&)
-  0.50%  [.] jump_optimizer::parse_label_strict(std::basic_string_view<char, std::char_traits<char> >)
-  0.36%  [.] ident_path::path[abi:cxx11]() const
-  0.34%  [.] expr_ops_list::source_to(std::ostream&) const
-  0.34%  [.] jump_optimizer::parse_jump(std::basic_string_view<char, std::char_traits<char> >)
-  0.33%  [.] statement::collapse_whitespace[abi:cxx11](std::basic_string_view<char, std::char_traits<char> >)
-  0.32%  [.] expr_any::source_to(std::ostream&) const
-  0.32%  [.] token::start_index() const
-  0.24%  [.] x86::comment_indent(unsigned long)
-  0.23%  [.] expr_ops_list::is_expression() const
-  0.15%  [.] toc::make_ident_info_or_empty(x86 const*, token const&, std::basic_string_view<char, std::char_traits<char> >) const
-  0.11%  [.] tokenizer::move_back(unsigned long)
-  0.08%  [.] utils::line_and_col_num_for_char_index(unsigned long, unsigned long, std::basic_string_view<char, std::char_traits<char> >)
-  0.07%  [.] type::name[abi:cxx11]() const
-  0.03%  [.] type::accessor(token const&, std::basic_string_view<char, std::char_traits<char> >, std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, var_info const&) const
-  0.00%  [.] token::token()
-  0.00%  [.] x86::label(unsigned long, std::basic_string_view<char, std::char_traits<char> >)
-  0.00%  [.] expr_bool_op::source_to(std::ostream&) const
-  0.00%  [.] expr_any::expr_any(toc&, tokenizer&, type const&, bool, bool, unsigned long)
-  0.00%  [.] program::program(std::basic_string_view<char, std::char_traits<char> >, unsigned long, bool, bool, bool)
-  0.00%  [.] stmt_def_var::stmt_def_var(toc&, token, tokenizer&)
-  0.00%  [.] tokenizer::next_token_str()
-  0.00%  [.] lut<func_info>::elem::is_key(std::basic_string_view<char, std::char_traits<char> >) const
-  0.00%  [.] lut<func_info>::get_const_ref(std::basic_string_view<char, std::char_traits<char> >) const
-  0.00%  [.] lut<toc::type_info>::has(std::basic_string_view<char, std::char_traits<char> >) const
-  0.00%  [.] statement::source_to(std::ostream&) const
-  0.00%  [.] toc::make_ident_info_from_frame(x86 const*, frame const&, token const&, std::basic_string_view<char, std::char_traits<char> >, ident_path const&, std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >) const
-  0.00%  [.] token::source_to(std::ostream&) const
-  0.00%  [.] tokenizer::next_whitespace()
+  0.48%  [.] token::token(std::basic_string_view<char, std::char_traits<char> >, unsigned long, std::basic_string_view<char, std::char_traits<char> >, unsigned long, std::basic_string_view<char, std::char_traits<char> >, unsigned long, bool)
+  0.46%  [.] jump_optimizer::is_ascii_space(char)
+  0.44%  [.] jump_optimizer::leading_ws(std::basic_string_view<char, std::char_traits<char> >)
+  0.36%  [.] jump_optimizer::parse_jump(std::basic_string_view<char, std::char_traits<char> >)
+  0.29%  [.] toc::make_ident_info_from_var_info(token const&, std::basic_string_view<char, std::char_traits<char> >, ident_path const&, var_info const&, std::vector<operand, std::allocator<operand> >) const
+  0.22%  [.] jump_optimizer::parse_label_strict(std::basic_string_view<char, std::char_traits<char> >)
+  0.15%  [.] jump_optimizer::is_ascii_alnum(char)
+  0.14%  [.] token::source_to(std::ostream&) const
+  0.14%  [.] stmt_assign_var::compile(toc&, unsigned long, ident_info const&) const
+  0.12%  [.] frame::has_var(std::basic_string_view<char, std::char_traits<char> >) const
+  0.10%  [.] jump_optimizer::is_ascii_alpha(char)
+  0.09%  [.] type::size_bytes() const
+  0.09%  [.] jump_optimizer::pass1(std::istream&, std::ostream&)::$_0::operator()() const
+  0.05%  [.] statement::collapse_whitespace[abi:cxx11](std::basic_string_view<char, std::char_traits<char> >)
+  0.04%  [.] tokenizer::is_next_char_token(char)
+  0.03%  [.] token::token()
+  0.03%  [.] tokenizer::is_eos() const
+  0.03%  [.] statement::is_ascii_space(char)
+  0.03%  [.] stmt_def_func::name() const
+  0.03%  [.] lut<func_info>::elem* std::__relocate_a<lut<func_info>::elem*, lut<func_info>::elem*, std::allocator<lut<func_info>::elem> >(lut<func_info>::elem*, lut<func_info>::elem*, lut<func_info>::elem*, std::allocator<lut<func_info>::elem>&)
+  0.03%  [.] stmt_def_func::stmt_def_func(toc&, token, tokenizer&)
+  0.03%  [.] toc::make_ident_info_or_throw(token const&, std::basic_string_view<char, std::char_traits<char> >) const
+  0.03%  [.] stmt_def_dat::elem::elem()
+  0.02%  [.] token::is_empty() const
+  0.00%  [.] toc::get_call_path() const
+  0.00%  [.] lut<var_info>::elem const& std::__invfwd<lut<var_info>::elem const&, lut<var_info>::elem const&>(std::remove_reference<lut<var_info>::elem const&>::type&)
+  0.00%  [.] ident_path::refresh_path()
+  0.00%  [.] stmt_call::source_to(std::ostream&) const
+  0.00%  [.] decltype(auto) std::variant<expr_ops_list, expr_bool_ops_list, expr_type_value>::visit<0, std::variant<expr_ops_list, expr_bool_ops_list, expr_type_value> const&, expr_any::assert_var_not_used(std::basic_string_view<char, std::char_traits<char> >) const::{lambda(auto:1 const&)#2}>(this std::variant<expr_ops_list, expr_bool_ops_list, expr_type_value> const&, expr_any::assert_var_not_used(std::basic_string_view<char, std::char_traits<char> >) const::{lambda(auto:1 const&)#2}&&)
+  0.00%  [.] statement::~statement()
+  0.00%  [.] expr_any::assert_var_not_used(std::basic_string_view<char, std::char_traits<char> >) const
+  0.00%  [.] jump_optimizer::pass2(std::istream&, std::ostream&)
+  0.00%  [.] lut<var_info>::get_const_ref(std::basic_string_view<char, std::char_traits<char> >) const
+  0.00%  [.] program::assert_functions_set_return_value(std::span<stmt_def_func const* const, 18446744073709551615ul> const&)
+  0.00%  [.] stmt_def_func::returns() const
+  0.00%  [.] toc::make_ident_info_or_empty(token const&, std::basic_string_view<char, std::char_traits<char> >) const
+  0.00%  [.] tokenizer::is_peek_char(char) const

@@ -116,7 +116,7 @@ if [[ "$MODE" != report ]]; then
             workload+=(--reproduce-source)
         fi
     else
-        workload=(../coverage/run-tests.sh nobuild)
+        workload=(../coverage/run-tests-coverage.sh nobuild)
     fi
     perf record -F "$PERF_FREQ" --call-graph dwarf -o "$DATA_FILE" -- "${workload[@]}"
 fi

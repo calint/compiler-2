@@ -7,5 +7,5 @@ cd ../..
 clang-format -i --style=file src/*
 qa/lint/clang-tidy.sh
 ./make.sh build
-qa/coverage/run-tests.sh nobuild
+qa/coverage/run-tests-coverage.sh nobuild
 etc/readme/make.sh
