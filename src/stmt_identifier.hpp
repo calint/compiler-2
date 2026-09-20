@@ -309,7 +309,7 @@ class stmt_identifier : public statement {
                             true, true, base_info.operand.base_register);
                     }
 
-                    const int32_t offset{x86::is_variable_base(reg_offset)
+                    const int32_t offset{x86::is_variables_base(reg_offset)
                                              ? base_info.stack_idx +
                                                    accum_offset
                                              : accum_offset};
@@ -333,7 +333,7 @@ class stmt_identifier : public statement {
                                              base_info.operand.base_register);
             }
 
-            if (x86::is_variable_base(reg_offset)) {
+            if (x86::is_variables_base(reg_offset)) {
                 reg_offset = x.alloc_scratch_register(src_loc_tk, indent,
                                                       tc.get_type_default());
 
@@ -397,7 +397,7 @@ class stmt_identifier : public statement {
 
         op.displacement += accum_offset;
 
-        if (x86::is_variable_base(reg_offset)) {
+        if (x86::is_variables_base(reg_offset)) {
             // register is not optimally encoded for trailing elements of size
             // 1, 2, 4, or 8
             op.displacement += base_info.stack_idx;

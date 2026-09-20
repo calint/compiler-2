@@ -158,9 +158,9 @@ class program final {
         x86& x{tc_.machine()};
 
         std::ostream& previous{x.use_stream(os)};
-        x.reserve_variable_base();
+        x.reserve_variables_base();
         compile(tc_, 0);
-        x.release_variable_base();
+        x.release_variables_base();
         x.finish();
         tc_.finish(os);
         x.use_stream(previous);

@@ -594,7 +594,7 @@ class x86 final {
         const std::string reg{
             alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
-        const std::string reg_sized{get_sized_register_operand(reg, dst.size)};
+        const std::string reg_sized{sized_register_operand(reg, dst.size)};
 
         mov(src_loc_tk, indent, reg_sized, dst.str());
         imul(src_loc_tk, indent, reg_sized, src);
@@ -616,14 +616,14 @@ class x86 final {
                      const size_t size) -> std::string {
 
         alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
-        return get_sized_register_operand("rcx", size);
+        return sized_register_operand("rcx", size);
     }
 
     auto load_shift_count(const token& src_loc_tk, const size_t indent,
                           const std::string_view count,
                           const size_t size = operand::size_qword) -> void {
 
-        mov(src_loc_tk, indent, get_sized_register_operand("rcx", size), count);
+        mov(src_loc_tk, indent, sized_register_operand("rcx", size), count);
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
@@ -659,7 +659,7 @@ class x86 final {
 
         assert(operation == '/' or operation == '%');
         alloc_named_register(src_loc_tk, indent, "rax", *default_type_);
-        mov(src_loc_tk, indent, get_sized_register_operand("rax", dst.size),
+        mov(src_loc_tk, indent, sized_register_operand("rax", dst.size),
             dst.str());
 
         alloc_named_register(src_loc_tk, indent, "rdx", *default_type_);
@@ -754,7 +754,7 @@ class x86 final {
         syscall(indent);
     }
 
-    [[nodiscard]] static auto is_variable_base(const std::string_view reg)
+    [[nodiscard]] static auto is_variables_base(const std::string_view reg)
         -> bool {
 
         return reg == "rbp";
@@ -767,11 +767,11 @@ class x86 final {
         address_of(src_loc_tk, indent, dst, std::format("rbp + {}", offset));
     }
 
-    auto reserve_variable_base() -> void {
+    auto reserve_variables_base() -> void {
         alloc_named_register(token{}, 0, "rbp", *type_i64_);
     }
 
-    auto release_variable_base() -> void {
+    auto release_variables_base() -> void {
         free_named_register(token{}, 0, "rbp");
     }
 
@@ -971,8 +971,8 @@ class x86 final {
     }
 
     [[nodiscard]] static auto
-    get_sized_register_operand(const std::string_view operand,
-                               const size_t size) -> std::string {
+    sized_register_operand(const std::string_view operand, const size_t size)
+        -> std::string {
 
         // map canonical 64-bit register names to size-specific aliases
         if (operand == "rax") {
@@ -1152,7 +1152,7 @@ class x86 final {
     auto store_equal_result(const size_t indent, const operand& dst) -> void {
         if (is_register_operand(dst.str())) {
             setcc(indent, "e",
-                  get_sized_register_operand(dst.str(), operand::size_byte));
+                  sized_register_operand(dst.str(), operand::size_byte));
             return;
         }
         setcc(indent, "e", dst.str(operand::size_byte));
@@ -1291,7 +1291,7 @@ class x86 final {
                     alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
                 const std::string reg_sized{
-                    get_sized_register_operand(reg, dst_size)};
+                    sized_register_operand(reg, dst_size)};
 
                 asm_line(indent, "mov {}, {}", reg_sized, src_op);
                 asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
@@ -1308,7 +1308,7 @@ class x86 final {
                     alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
                 const std::string reg_sized{
-                    get_sized_register_operand(reg, dst_size)};
+                    sized_register_operand(reg, dst_size)};
 
                 asm_line(indent, "movsx {}, {}", reg_sized, src_op);
                 asm_line(indent, "{} {}, {}", op, dst_op, reg_sized);
@@ -1336,8 +1336,7 @@ class x86 final {
             const std::string reg{
                 alloc_scratch_register(src_loc_tk, indent, *default_type_)};
 
-            const std::string reg_sized{
-                get_sized_register_operand(reg, dst_size)};
+            const std::string reg_sized{sized_register_operand(reg, dst_size)};
 
             asm_line(indent, "mov {}, {}", reg_sized,
                      sized_memory_operand(src_op, dst_size));
@@ -1351,7 +1350,7 @@ class x86 final {
         const bool src_is_reg{is_register_operand(src_op)};
         if (dst_is_reg and src_is_reg) {
             asm_line(indent, "{} {}, {}", op, dst_op,
-                     get_sized_register_operand(src_op, dst_size));
+                     sized_register_operand(src_op, dst_size));
 
             return;
         }
@@ -1365,7 +1364,7 @@ class x86 final {
         }
         if (src_is_reg) {
             asm_line(indent, "{} {}, {}", op, dst_op,
-                     get_sized_register_operand(src_op, dst_size));
+                     sized_register_operand(src_op, dst_size));
 
             return;
         }

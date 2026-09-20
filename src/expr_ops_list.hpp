@@ -287,7 +287,7 @@ class expr_ops_list final : public expression {
             x.alloc_scratch_register(tok(), indent, tc.get_type_default())};
 
         const std::string reg_sized{
-            x86::get_sized_register_operand(reg, dst_info.operand.size)};
+            x86::sized_register_operand(reg, dst_info.operand.size)};
 
         // note: sized register to propagate operation to destination size
         const ident_info dst_reg_info{
@@ -538,7 +538,7 @@ class expr_ops_list final : public expression {
 
             // make register sized to destination
             const std::string reg_sized{
-                x86::get_sized_register_operand(reg, dst_size)};
+                x86::sized_register_operand(reg, dst_size)};
 
             src.compile(tc, indent,
                         tc.make_ident_info_from_register(reg_sized));
@@ -617,7 +617,7 @@ class expr_ops_list final : public expression {
                 src.tok(), indent, tc.get_type_default())};
 
             const std::string reg_sized{
-                x86::get_sized_register_operand(reg, dst_size)};
+                x86::sized_register_operand(reg, dst_size)};
 
             x.copy_value(src.tok(), indent, reg_sized, src_operand.str());
             uops.compile(tc, indent, reg_sized);
@@ -659,8 +659,7 @@ class expr_ops_list final : public expression {
         const std::string reg{
             x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
 
-        const std::string reg_sized{
-            x86::get_sized_register_operand(reg, dst_size)};
+        const std::string reg_sized{x86::sized_register_operand(reg, dst_size)};
 
         x.copy_value(src.tok(), indent, reg_sized, src_operand.str());
         uops.compile(tc, indent, reg_sized);
@@ -683,7 +682,7 @@ class expr_ops_list final : public expression {
                 src.tok(), indent, tc.get_type_default())};
 
             const std::string reg_sized{
-                x86::get_sized_register_operand(reg, dst_size)};
+                x86::sized_register_operand(reg, dst_size)};
 
             src.compile(tc, indent,
                         tc.make_ident_info_from_register(reg_sized));
@@ -758,7 +757,7 @@ class expr_ops_list final : public expression {
                 src.tok(), indent, tc.get_type_default())};
 
             const std::string reg_sized{
-                x86::get_sized_register_operand(reg, dst_size)};
+                x86::sized_register_operand(reg, dst_size)};
 
             src.compile(tc, indent,
                         tc.make_ident_info_from_register(reg_sized));
@@ -886,7 +885,7 @@ class expr_ops_list final : public expression {
                 src.tok(), indent, tc.get_type_default())};
 
             const std::string reg_sized{
-                x86::get_sized_register_operand(reg, dst_size)};
+                x86::sized_register_operand(reg, dst_size)};
 
             src.compile(tc, indent,
                         tc.make_ident_info_from_register(reg_sized));
@@ -931,8 +930,7 @@ class expr_ops_list final : public expression {
         const std::string reg{
             x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
 
-        const std::string reg_sized{
-            x86::get_sized_register_operand(reg, dst_size)};
+        const std::string reg_sized{x86::sized_register_operand(reg, dst_size)};
 
         x.copy_value(src.tok(), indent, reg_sized, src_operand.str());
         uops.compile(tc, indent, reg_sized);

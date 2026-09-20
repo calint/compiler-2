@@ -440,7 +440,7 @@ class expr_bool_op final : public statement {
             allocated_registers.emplace_back(reg);
             expr.compile(tc, indent + 1, tc.make_ident_info_from_register(reg));
 
-            return x86::get_sized_register_operand(reg, expr.get_type().size());
+            return x86::sized_register_operand(reg, expr.get_type().size());
         }
 
         // 'expr' is not an expression
@@ -456,8 +456,7 @@ class expr_bool_op final : public statement {
                 expr.compile(tc, indent + 1,
                              tc.make_ident_info_from_register(reg));
 
-                return x86::get_sized_register_operand(reg,
-                                                       expr.get_type().size());
+                return x86::sized_register_operand(reg, expr.get_type().size());
             }
             return std::format("{}{}", expr.get_unary_ops().to_string(),
                                expr_info.const_value);
@@ -478,7 +477,6 @@ class expr_bool_op final : public statement {
         allocated_registers.emplace_back(reg);
         x.copy_value(expr.tok(), indent, reg, expr_info.operand.str());
         expr.get_unary_ops().compile(tc, indent, reg);
-        return x86::get_sized_register_operand(reg,
-                                               expr_info.type_ref().size());
+        return x86::sized_register_operand(reg, expr_info.type_ref().size());
     }
 };
