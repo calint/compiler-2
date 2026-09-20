@@ -290,7 +290,7 @@ class expr_any final : public statement {
                     if (not src_info.is_const()) {
                         std::unreachable();
                     }
-                    x.copy_value(tk, indent, dst_info.operand.str(),
+                    x.copy_value(tk, indent, dst_info.operand,
                                  std::format("{}", src_info.const_value));
 
                     return;

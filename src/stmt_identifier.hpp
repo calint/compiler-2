@@ -158,7 +158,7 @@ class stmt_identifier : public statement {
         const ident_info src_info{tc.make_ident_info(*this)};
 
         if (src_info.is_const()) {
-            x.copy_value(tok(), indent, dst_info.operand.str(),
+            x.copy_value(tok(), indent, dst_info.operand,
                          std::format("{}{}", get_unary_ops().to_string(),
                                      src_info.const_value));
 
@@ -170,8 +170,7 @@ class stmt_identifier : public statement {
         if (not is_indexed() and not src_info.has_lea()) {
             // note: contains no array indexing and is not relative to a lea,
             //       e.g. world.location.link
-            x.copy_value(tok(), indent, dst_info.operand.str(),
-                         src_info.operand.str());
+            x.copy_value(tok(), indent, dst_info.operand, src_info.operand);
 
             get_unary_ops().compile(tc, indent, dst_info.operand.str());
             return;
@@ -181,12 +180,12 @@ class stmt_identifier : public statement {
 
         std::vector<std::string> allocated_registers;
 
-        const operand op{stmt_identifier::compile_effective_address(
+        operand op{stmt_identifier::compile_effective_address(
             tc, indent, tok(), elems(), allocated_registers, "",
             src_info.lea_path)};
 
-        x.copy_value(tok(), indent, dst_info.operand.str(),
-                     op.str(src_info.type_ref().size()));
+        op.size = src_info.type_ref().size();
+        x.copy_value(tok(), indent, dst_info.operand, op);
 
         get_unary_ops().compile(tc, indent, dst_info.operand.str());
 
@@ -455,7 +454,8 @@ class stmt_identifier : public statement {
             if (not lea_op.index_register.empty() or lea_op.displacement != 0) {
                 x.address_of(src_loc_tk, indent, index_reg, lea);
             } else {
-                x.copy_value(src_loc_tk, indent, index_reg, lea);
+                x.copy_value(src_loc_tk, indent, operand{index_reg, true},
+                             operand{lea, true});
             }
 
             return index_reg;

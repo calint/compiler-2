@@ -240,10 +240,16 @@ class x86 final {
     }
 
     auto copy_value(const token& src_loc_tk, const size_t indent,
-                    const std::string_view dst, const std::string_view src)
+                    const operand& dst, const std::string_view constant)
         -> void {
 
-        mov(src_loc_tk, indent, dst, src);
+        mov(src_loc_tk, indent, dst.str(), constant);
+    }
+
+    auto copy_value(const token& src_loc_tk, const size_t indent,
+                    const operand& dst, const operand& src) -> void {
+
+        mov(src_loc_tk, indent, dst.str(), src.str());
     }
 
     struct comparison_action {

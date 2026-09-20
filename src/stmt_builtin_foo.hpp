@@ -102,8 +102,9 @@ class stmt_builtin_foo final : public statement {
 
         const ident_info var_i_info{tc.make_ident_info(tok(), "i")};
 
-        const std::string& var_i_addr_op{
-            var_i_info.operand.str(operand::size_qword)};
+        operand var_i_operand{var_i_info.operand};
+        var_i_operand.size = operand::size_qword;
+        const std::string var_i_addr_op{var_i_operand.str()};
 
         // add a constant for array size
         tc.add_const(ident_.tok(), indent, "n",
@@ -131,7 +132,7 @@ class stmt_builtin_foo final : public statement {
         }
 
         x.comment(ident_.tok(), indent, "initiate counter {}", var_i.name);
-        x.copy_value(tok(), indent, var_i_addr_op, "0");
+        x.copy_value(tok(), indent, var_i_operand, "0");
         x.label(indent, loop_label);
         code_.compile(tc, indent, ident_info::make_empty());
         x.label(indent + 1, loop_label + "_continue");

@@ -267,8 +267,8 @@ class stmt_call : public expression {
                     allocated_registers_in_order.emplace_back(scratch_reg);
                     allocated_scratch_registers.emplace_back(scratch_reg);
 
-                    x.copy_value(param.tok(), indent, scratch_reg,
-                                 arg_info.operand.str());
+                    x.copy_value(param.tok(), indent,
+                                 operand{scratch_reg, true}, arg_info.operand);
 
                     // apply unary ops
                     arg.get_unary_ops().compile(tc, indent, scratch_reg);
@@ -289,13 +289,13 @@ class stmt_call : public expression {
             const ident_info& arg_info{tc.make_ident_info(arg)};
 
             if (arg_info.is_const()) {
-                x.copy_value(param.tok(), indent, arg_reg,
+                x.copy_value(param.tok(), indent, operand{arg_reg, true},
                              std::format("{}{}",
                                          arg.get_unary_ops().to_string(),
                                          arg_info.const_value));
             } else {
-                x.copy_value(param.tok(), indent, arg_reg,
-                             arg_info.operand.str());
+                x.copy_value(param.tok(), indent, operand{arg_reg, true},
+                             arg_info.operand);
                 arg.get_unary_ops().compile(tc, indent + 1, arg_reg);
             }
         }

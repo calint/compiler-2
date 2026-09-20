@@ -345,7 +345,9 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
             validate_array_assignment(src.tok(), tf, tc.make_ident_info(src));
         }
 
-        const std::string dst_accessor{dst_op.str(tf.type().size())};
+        operand dst_operand{dst_op};
+        dst_operand.size = tf.type().size();
+        const std::string dst_accessor{dst_operand.str()};
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
@@ -356,7 +358,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
             const ident_info src_info{tc.make_ident_info(src)};
             if (src_info.is_const()) {
                 // built-in, not expression, constant
-                x.copy_value(src.tok(), indent, dst_accessor,
+                x.copy_value(src.tok(), indent, dst_operand,
                              std::format("{}{}",
                                          src.get_unary_ops().to_string(),
                                          src_info.const_value));
@@ -374,8 +376,8 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
                            dst_op.address_str(), tf.size);
                 } else {
                     // built-in, not expression, not constant, not array
-                    x.copy_value(src.tok(), indent, dst_accessor,
-                                 src_info.operand.str());
+                    x.copy_value(src.tok(), indent, dst_operand,
+                                 src_info.operand);
 
                     src.get_unary_ops().compile(tc, indent, dst_accessor);
                 }

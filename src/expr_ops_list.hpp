@@ -294,7 +294,7 @@ class expr_ops_list final : public expression {
             tc.make_ident_info_from_register(reg_sized)};
 
         do_compile(tc, indent, dst_reg_info);
-        x.copy_value(tok(), indent, dst_info.operand.str(), reg_sized);
+        x.copy_value(tok(), indent, dst_info.operand, operand{reg_sized, true});
         x.free_scratch_register(tok(), indent, reg);
         x.use_stream(prev2);
 
@@ -568,13 +568,13 @@ class expr_ops_list final : public expression {
 
             if (src_info.is_const()) {
                 x.comment(src.tok(), indent, "imul: byte const");
-                x.copy_value(src.tok(), indent, registers.right,
+                x.copy_value(src.tok(), indent, operand{registers.right, true},
                              std::format("{}{}", uops.to_string(),
                                          src_info.const_value));
             } else {
                 x.comment(src.tok(), indent, "imul: byte not const");
-                x.copy_value(src.tok(), indent, registers.right,
-                             src_operand.str());
+                x.copy_value(src.tok(), indent, operand{registers.right, true},
+                             src_operand);
                 uops.compile(tc, indent, registers.right);
             }
 
@@ -619,7 +619,8 @@ class expr_ops_list final : public expression {
             const std::string reg_sized{
                 x86::sized_register_operand(reg, dst_size)};
 
-            x.copy_value(src.tok(), indent, reg_sized, src_operand.str());
+            x.copy_value(src.tok(), indent, operand{reg_sized, true},
+                         src_operand);
             uops.compile(tc, indent, reg_sized);
             x.multiply(src.tok(), indent, dst_info.operand, reg_sized, true);
             x.free_scratch_register(src.tok(), indent, reg);
@@ -661,7 +662,7 @@ class expr_ops_list final : public expression {
 
         const std::string reg_sized{x86::sized_register_operand(reg, dst_size)};
 
-        x.copy_value(src.tok(), indent, reg_sized, src_operand.str());
+        x.copy_value(src.tok(), indent, operand{reg_sized, true}, src_operand);
         uops.compile(tc, indent, reg_sized);
         x.multiply(src.tok(), indent, dst_info.operand, reg_sized, true);
         x.free_scratch_register(src.tok(), indent, reg);
@@ -736,7 +737,7 @@ class expr_ops_list final : public expression {
         const std::string reg{
             x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
 
-        x.copy_value(src.tok(), indent, reg, src_operand.str());
+        x.copy_value(src.tok(), indent, operand{reg, true}, src_operand);
         uops.compile(tc, indent, reg);
         x.add_subtract(src.tok(), indent, op, dst_info.operand.str(), reg);
         x.free_scratch_register(src.tok(), indent, reg);
@@ -798,7 +799,7 @@ class expr_ops_list final : public expression {
         const std::string reg{
             x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
 
-        x.copy_value(src.tok(), indent, reg, src_operand.str());
+        x.copy_value(src.tok(), indent, operand{reg, true}, src_operand);
         uops.compile(tc, indent, reg);
         x.bitwise(src.tok(), indent, op, dst_info.operand.str(), reg);
         x.free_scratch_register(src.tok(), indent, reg);
@@ -932,7 +933,7 @@ class expr_ops_list final : public expression {
 
         const std::string reg_sized{x86::sized_register_operand(reg, dst_size)};
 
-        x.copy_value(src.tok(), indent, reg_sized, src_operand.str());
+        x.copy_value(src.tok(), indent, operand{reg_sized, true}, src_operand);
         uops.compile(tc, indent, reg_sized);
         x.divide(src.tok(), indent, op, dst_info.operand, reg_sized);
         x.free_scratch_register(src.tok(), indent, reg);

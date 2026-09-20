@@ -475,7 +475,7 @@ class expr_bool_op final : public statement {
                                                        tc.get_type_default())};
 
         allocated_registers.emplace_back(reg);
-        x.copy_value(expr.tok(), indent, reg, expr_info.operand.str());
+        x.copy_value(expr.tok(), indent, operand{reg, true}, expr_info.operand);
         expr.get_unary_ops().compile(tc, indent, reg);
         return x86::sized_register_operand(reg, expr_info.type_ref().size());
     }
