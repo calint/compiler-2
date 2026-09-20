@@ -44,7 +44,7 @@ auto main(const int argc, const char* argv[]) -> int {
     bool checks_show_line{};
     bool checks_lower{};
     bool optimize_jumps{true};
-    bool reproduce_source{false};
+    bool reproduce_source{};
 
     // parse arguments
     for (size_t i{1}; i < args.size(); ++i) {
