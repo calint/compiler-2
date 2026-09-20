@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] check that the allocated vars section does not get overrun
 [ ] syscall might clobber r11. does this affect read/write?
 [ ] read/write/exit builtin so that mov and register access can be removed
 [ ] consider allowing function definitions in functions
