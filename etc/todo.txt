@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
-[ ] toc: max stack meter includes dat and padding
+[ ] read/write builtin so that mov and register acess can be removed
+[x] toc: max stack meter includes dat and padding
 [x] refactor so data segment is first then bss.stack and rsp + offset instead of
     -. big refactor. right now the program file is as big as the stack
     specification + data. right now might as well have 1 data segment
