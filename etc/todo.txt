@@ -1,6 +1,8 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning
 --------------------------------------------------------------------------------
+[ ] a way to use characters e.g. 'a' instead of ascii code
+[ ] support variable string initializers
 [x] check that the allocated vars section does not get overrun
 [ ] syscall might clobber r11. does this affect read/write?
 [ ] read/write/exit builtin so that mov and register access can be removed
@@ -13,7 +15,6 @@
     .x86()
     [ ] decoupling toc from x86 would be better
 [ ] consider refactoring it into a 1 pass compiler
-[ ] support variable string initializers
 [ ] resolve issues with comments in expressions etc
     var x = 1 + # comment
             2
@@ -91,7 +92,6 @@
     [ ] update t321
 [ ] immediate value can maximum be 32 bit. handle that at initiation of var
 [ ] does not work: var s1: i8[]  = "hello world"
-[ ] a way to use characters e.g. 'a' instead of ascii code
 [ ] heuristics of "equal" rep cmpsq when more than 2 mov cmp qword
     if rep cmpsq then do the remaining mov cmp dword, mov cmp word etc
 [ ] expr_type_value has mixed responsibilities, ok?
