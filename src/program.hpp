@@ -31,15 +31,15 @@ class program final {
 
     std::vector<std::unique_ptr<statement>> statements_;
     toc tc_; // table of contents
-    size_t stack_size_{};
+    size_t vars_size_{};
 
   public:
-    program(const std::string_view source, const size_t stack_size,
+    program(const std::string_view source, const size_t vars_size,
             const bool bounds_check_upper, const bool bounds_check_lower,
             const bool bounds_check_with_line)
-        : tc_{source, bounds_check_upper, bounds_check_lower,
+        : tc_{source, vars_size, bounds_check_upper, bounds_check_lower,
               bounds_check_with_line},
-          stack_size_{stack_size} {
+          vars_size_{vars_size} {
 
         // create a placeholder token to use with 'toc' functions
         const token prgtk{};
@@ -199,7 +199,7 @@ class program final {
                   "{}\nvars:\nvars "
                   "resb {}",
                   std::format("{}", stack_and_data_alignment_),
-                  std::format("{}", stack_size_));
+                  std::format("{}", vars_size_));
     }
 
     auto build(std::ostream& os) -> void {

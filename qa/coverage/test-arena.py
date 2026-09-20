@@ -194,6 +194,14 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
                 assert statistics["max vars size"] == f"{expected_size} B", (context, statistics)
             print(f"arena {name} max vars size: ok", flush=True)
 
+    for count in (16, 17):
+        source = f"func main() {{ var buffer : i8[{count}] }}\n"
+        result = compile_source(directory, source, 16, [])
+        assert result.returncode == (0 if count == 16 else 1), result.stderr
+        if count == 17:
+            assert "variable 'buffer' would overflow allocated vars section" in result.stderr, result.stderr
+        print(f"arena capacity {count}: ok", flush=True)
+
     # 2. Assemble, link, and execute programs, then inspect their ELF layout.
     for name, (data_source, checks, data_size) in layouts.items():
         source = data_source + COMMON + "func main() {\n" + BODY + checks + "}\n"

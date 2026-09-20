@@ -244,6 +244,7 @@ class toc final {
     size_t total_dat_size_{};
     size_t vars_entry_gap_{};
     size_t vars_size_{};
+    size_t vars_capacity_;
     bool vars_entry_gap_applied_{};
     bool bounds_check_upper_{};
     bool bounds_check_with_line_{};
@@ -252,9 +253,11 @@ class toc final {
     static constexpr size_t stack_alignment{16};
 
   public:
-    toc(const std::string_view source, const bool bounds_check_upper,
-        const bool bounds_check_lower, const bool bounds_check_with_line)
-        : source_{source}, bounds_check_upper_{bounds_check_upper},
+    toc(const std::string_view source, const size_t vars_capacity,
+        const bool bounds_check_upper, const bool bounds_check_lower,
+        const bool bounds_check_with_line)
+        : source_{source}, vars_capacity_{vars_capacity},
+          bounds_check_upper_{bounds_check_upper},
           bounds_check_with_line_{bounds_check_with_line},
           bounds_check_lower_{bounds_check_lower} {}
 
@@ -366,6 +369,17 @@ class toc final {
             frames_.front().set_padding_between_dats_and_vars(vars_entry_gap_);
             vars_size_ += vars_entry_gap_;
             vars_entry_gap_applied_ = true;
+        }
+
+        if (not is_dat) {
+            const size_t used{vars_size_ - total_dat_size_ - vars_entry_gap_};
+            if (var_size > vars_capacity_ - used) {
+                throw compiler_exception{
+                    src_loc_tk,
+                    std::format("variable '{}' would overflow allocated vars "
+                                "section",
+                                var.name)};
+            }
         }
 
         var.stack_idx = static_cast<int32_t>(vars_size_);
