@@ -60,10 +60,10 @@ x86_64 assembly on Linux.
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    50           2584            792           8681
+C/C++ Header                    50           2582            792           8678
 C++                              1             45              7            220
 -------------------------------------------------------------------------------
-SUM:                            51           2629            799           8901
+SUM:                            51           2627            799           8898
 -------------------------------------------------------------------------------
 ```
 
@@ -1755,21 +1755,21 @@ lea rbp, [dat]
 ;[7:1]       name :  offset :    size :  array? : array size
 ;[7:1]          x :       0 :       8 :      no :           
 ;[7:1]          y :       8 :       8 :      no :           
-
+; 
 ;[9:1] object : 20 B    fields:
 ;[9:1]       name :  offset :    size :  array? : array size
 ;[9:1]        pos :       0 :      16 :      no :           
 ;[9:1]      color :      16 :       4 :      no :           
-
+; 
 ;[11:1] world : 64 B    fields:
 ;[11:1]       name :  offset :    size :  array? : array size
 ;[11:1]  locations :       0 :      64 :     yes :          8
-
+; 
 ;[13:1] str : 128 B    fields:
 ;[13:1]       name :  offset :    size :  array? : array size
 ;[13:1]        len :       0 :       1 :      no :           
 ;[13:1]       data :       1 :     127 :     yes :        127
-
+; 
 ;[18:1] # initial data is initialized before variables
 ;[20:1] dat hello : i8[] = "hello world from baz\n"
 ;[20:7] hello: i8[21] (21 B @ [rbp])
@@ -1801,7 +1801,7 @@ lea rbp, [dat]
 ;[123:7] const no = 0
 ;[124:7] const maybe = -1
 ;[126:1] # constants can be declared in any scope and shadow outer declarations
-
+; 
 main:
 ;   [129:5] var arr : i32[4]
 ;   [129:9] arr: i32[4] (16 B @ [rbp + 224])

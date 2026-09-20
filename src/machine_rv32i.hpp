@@ -33,8 +33,6 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto println() const -> void override { todo(); }
-
     auto comment([[maybe_unused]] const token& src_loc_tk,
                  [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const std::string_view text)
@@ -109,14 +107,13 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto compare_and_branch(
-        [[maybe_unused]] const token& src_loc_tk,
-        [[maybe_unused]] const size_t indent,
-        [[maybe_unused]] const operand& lhs,
-        [[maybe_unused]] const operand& rhs,
-        [[maybe_unused]] const comparison_action& action,
-        [[maybe_unused]] const std::span<const operand> scratch_registers_to_free)
-        -> void override {
+    auto compare_and_branch([[maybe_unused]] const token& src_loc_tk,
+                            [[maybe_unused]] const size_t indent,
+                            [[maybe_unused]] const operand& lhs,
+                            [[maybe_unused]] const operand& rhs,
+                            [[maybe_unused]] const comparison_action& action,
+                            [[maybe_unused]] const std::span<const operand>
+                                scratch_registers_to_free) -> void override {
         todo();
     }
 

@@ -53,8 +53,6 @@ class machine {
 
     virtual auto use_stream(std::ostream& new_stream) -> std::ostream& = 0;
 
-    virtual auto println() const -> void = 0;
-
     virtual auto comment(const token& src_loc_tk, const size_t indent,
                          const std::string_view text) -> void = 0;
 

@@ -218,8 +218,6 @@ class machine_x86 final : public machine {
         return prev;
     }
 
-    auto println() const -> void override { std::println(os_.get()); }
-
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void override {
 
@@ -363,10 +361,11 @@ class machine_x86 final : public machine {
         }
     }
 
-    auto compare_and_branch(const token& src_loc_tk, const size_t indent,
-                            const operand& lhs, const operand& rhs,
-                            const comparison_action& action,
-                            const std::span<const operand> scratch_registers_to_free)
+    auto
+    compare_and_branch(const token& src_loc_tk, const size_t indent,
+                       const operand& lhs, const operand& rhs,
+                       const comparison_action& action,
+                       const std::span<const operand> scratch_registers_to_free)
         -> void override {
 
         cmp(src_loc_tk, indent, lhs, rhs);
@@ -377,7 +376,7 @@ class machine_x86 final : public machine {
             store_comparison(indent, action.operation, action.inverted,
                              action.destination);
         }
-        
+
         branch_comparison(indent, action.operation,
                           action.branch_on_true ? action.inverted
                                                 : not action.inverted,
@@ -1350,9 +1349,8 @@ class machine_x86 final : public machine {
         for (const register_names& names : register_names_) {
             if (name != names.qword and name != names.dword and
                 name != names.word and name != names.byte and
-                (name.size() != 2 or name[1] != 'h' or
-                 names.byte.size() != 2 or names.byte[1] != 'l' or
-                 name[0] != names.byte[0])) {
+                (name.size() != 2 or name[1] != 'h' or names.byte.size() != 2 or
+                 names.byte[1] != 'l' or name[0] != names.byte[0])) {
                 continue;
             }
             switch (size_bytes) {
@@ -1458,6 +1456,8 @@ class machine_x86 final : public machine {
 
         std::println(os_.get(), format, std::forward<args_t>(args)...);
     }
+
+    auto println() const -> void { std::println(os_.get()); }
 
     auto comment_start(const token& src_loc_tk, const size_t indent) -> void {
 

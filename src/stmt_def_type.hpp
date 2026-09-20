@@ -96,6 +96,6 @@ class stmt_def_type final : public statement {
                       f.name, f.offset, f.size_bytes, f.is_array ? "yes" : "no",
                       f.is_array ? std::format("{}", f.array_count) : "");
         }
-        x.println();
+        x.comment({}, 0, "");
     }
 };

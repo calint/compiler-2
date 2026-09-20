@@ -128,7 +128,7 @@ class program final {
         }
         const stmt_def_func& func_main{tc.get_func_or_throw(token{}, "main")};
 
-        x.println();
+        x.comment({}, 0, "");
 
         x.label(0, "main");
         tc.enter_func("main", {});
