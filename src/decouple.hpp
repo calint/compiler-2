@@ -49,7 +49,6 @@ class expr_any;
 struct operand {
     enum class operand_kind : uint8_t { empty, reg, memory, immediate };
 
-  private:
     operand_kind kind_{operand_kind::empty};
 
   public:
@@ -57,6 +56,88 @@ struct operand {
     static constexpr size_t size_dword{4};
     static constexpr size_t size_word{2};
     static constexpr size_t size_byte{1};
+
+    // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
+    std::string allocation_register;
+    std::string base_register;
+    std::string index_register;
+    std::string immediate_expression;
+    int32_t displacement{};
+    uint8_t scale{1};
+    size_t size{};
+    const type* type_ptr{};
+    // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
+
+    operand() = default;
+
+    [[nodiscard]] static auto imm(std::string expression,
+                                  const type& value_type) -> operand {
+
+        if (expression.empty()) {
+            throw std::invalid_argument("operand text must not be empty");
+        }
+        operand result;
+        result.kind_ = operand_kind::immediate;
+        result.immediate_expression = std::move(expression);
+        result.type_ptr = &value_type;
+        return result;
+    }
+
+    [[nodiscard]] static auto reg(const std::string_view name,
+                                  const size_t operand_size) -> operand {
+
+        if (name.empty()) {
+            throw std::invalid_argument("operand text must not be empty");
+        }
+        operand result;
+        result.kind_ = operand_kind::reg;
+        result.base_register = name;
+        result.size = operand_size;
+        return result;
+    }
+
+    [[nodiscard]] static auto reg(const std::string_view name) -> operand {
+        return reg(name, register_size(name));
+    }
+
+    [[nodiscard]] static auto mem(const std::string_view base,
+                                  const std::string_view index,
+                                  const uint8_t index_scale,
+                                  const int32_t offset) -> operand {
+
+        if (base.empty() and index.empty() and offset == 0) {
+            throw std::invalid_argument("operand address must not be empty");
+        }
+        operand result;
+        result.kind_ = operand_kind::memory;
+        result.base_register = base;
+        result.index_register = index;
+        result.scale = index_scale;
+        result.displacement = offset;
+        return result;
+    }
+
+    [[nodiscard]] auto kind() const -> operand_kind { return kind_; }
+
+    [[nodiscard]] auto is_register() const -> bool {
+        return kind_ == operand_kind::reg;
+    }
+
+    [[nodiscard]] auto is_memory() const -> bool {
+        return kind_ == operand_kind::memory;
+    }
+
+    [[nodiscard]] auto is_immediate() const -> bool {
+        return kind_ == operand_kind::immediate;
+    }
+
+    [[nodiscard]] auto is_empty() const -> bool {
+        return kind_ == operand_kind::empty;
+    }
+
+    [[nodiscard]] auto is_indexed() const -> bool {
+        return not index_register.empty() or displacement != 0;
+    }
 
     // returns 0 if operand is not a register
     [[nodiscard]] static auto register_size(const std::string_view operand)
@@ -100,88 +181,6 @@ struct operand {
             return size_byte;
         }
         return 0;
-    }
-
-    // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
-    std::string allocation_register;
-    std::string base_register;
-    std::string index_register;
-    std::string immediate_expression;
-    int32_t displacement{};
-    uint8_t scale{1};
-    size_t size{};
-    const type* type_ptr{};
-    // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
-
-    operand() = default;
-
-    [[nodiscard]] static auto imm(std::string expression,
-                                  const type& value_type) -> operand {
-
-        if (expression.empty()) {
-            throw std::invalid_argument("operand text must not be empty");
-        }
-        operand result;
-        result.kind_ = operand_kind::immediate;
-        result.immediate_expression = std::move(expression);
-        result.type_ptr = &value_type;
-        return result;
-    }
-
-    [[nodiscard]] auto kind() const -> operand_kind { return kind_; }
-
-    [[nodiscard]] auto is_register() const -> bool {
-        return kind_ == operand_kind::reg;
-    }
-
-    [[nodiscard]] auto is_memory() const -> bool {
-        return kind_ == operand_kind::memory;
-    }
-
-    [[nodiscard]] auto is_immediate() const -> bool {
-        return kind_ == operand_kind::immediate;
-    }
-
-    [[nodiscard]] static auto reg(const std::string_view name,
-                                  const size_t operand_size) -> operand {
-
-        if (name.empty()) {
-            throw std::invalid_argument("operand text must not be empty");
-        }
-        operand result;
-        result.kind_ = operand_kind::reg;
-        result.base_register = name;
-        result.size = operand_size;
-        return result;
-    }
-
-    [[nodiscard]] static auto reg(const std::string_view name) -> operand {
-        return reg(name, register_size(name));
-    }
-
-    [[nodiscard]] static auto mem(const std::string_view base,
-                                  const std::string_view index,
-                                  const uint8_t index_scale,
-                                  const int32_t offset) -> operand {
-
-        if (base.empty() and index.empty() and offset == 0) {
-            throw std::invalid_argument("operand address must not be empty");
-        }
-        operand result;
-        result.kind_ = operand_kind::memory;
-        result.base_register = base;
-        result.index_register = index;
-        result.scale = index_scale;
-        result.displacement = offset;
-        return result;
-    }
-
-    [[nodiscard]] auto is_empty() const -> bool {
-        return kind_ == operand_kind::empty;
-    }
-
-    [[nodiscard]] auto is_indexed() const -> bool {
-        return not index_register.empty() or displacement != 0;
     }
 };
 
