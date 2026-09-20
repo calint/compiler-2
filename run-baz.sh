@@ -18,7 +18,7 @@ ld -s -T baz.ld -o gen gen.o
 ls --color -la gen.s gen-without-comments.s gen
 echo $SEP
 
-set +e # don't stop att errors
+set +e # don't stop at errors
 ./gen
 RET=$?
 echo $SEP
