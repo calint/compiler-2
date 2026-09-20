@@ -169,7 +169,7 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
     }
 
     const std::span<const type_field> flds{tp.fields()};
-    const size_t nflds{flds.size()};
+    const size_t field_count{flds.size()};
     size_t counter{};
     while (true) {
         close_brace_tk_ = tz.is_next_char_token('}');
@@ -177,7 +177,7 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
             break;
         }
 
-        if (counter == nflds) {
+        if (counter == field_count) {
             throw compiler_exception{
                 tz, std::format("too many fields specified for type '{}'",
                                 tp.name())};
@@ -197,7 +197,7 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
         // create an expression that assigns to field
         // might recurse creating 'expr_type_value'
         exprs_.emplace_back(std::make_unique<expr_any>(
-            tc, tz, tf.type(), true, tf.is_array, tf.array_size));
+            tc, tz, tf.type(), true, tf.is_array, tf.array_count));
     }
 }
 
@@ -273,15 +273,15 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
             src_op = src_info.operand;
         }
 
-        const size_t nbytes{src_info.is_array
-                                ? src_info.array_size * dst_type.size()
-                                : dst_type.size()};
+        const size_t size_bytes{src_info.is_array ? src_info.array_count *
+                                                        dst_type.size_bytes()
+                                                  : dst_type.size_bytes()};
 
         machine& x{tc.machine()};
 
-        x.copy(tok(), indent, src_op, dst_op, nbytes);
+        x.copy(tok(), indent, src_op, dst_op, size_bytes);
 
-        dst_op.displacement += static_cast<int32_t>(nbytes);
+        dst_op.displacement += static_cast<int32_t>(size_bytes);
 
         x.free_scratch_registers(tok(), indent, allocated_registers);
 
@@ -311,7 +311,8 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
             const expr_type_value& type_value{expr->as_expr_type_value()};
             type_value.compile_assign(tc, indent, field.type(), cur_dst_info, dst_op);
             // note: dst_op was mutated in the recursive call
-            cur_dst_info.increment_offset(static_cast<int32_t>(field.size));
+            cur_dst_info.increment_offset(
+                static_cast<int32_t>(field.size_bytes));
             cur_dst_info.pop();
             continue;
         }
@@ -326,12 +327,13 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
             //   type msgpoint {  msg : i8[128], pt : point }
             //   var mp : msgpoint[3] = { { {}, { x, y } } }
             x.comment(expr->tok(), indent, "zero empty field: {} * {} B = {} B",
-                      field.array_size, field.type().size(), field.size);
+                      field.array_count, field.type().size_bytes(),
+                      field.size_bytes);
 
-            x.zero(tok(), indent, dst_op, field.size);
-            const int32_t sz{static_cast<int32_t>(field.size)};
-            dst_op.displacement += sz;
-            cur_dst_info.increment_offset(sz);
+            x.zero(tok(), indent, dst_op, field.size_bytes);
+            const int32_t size_bytes{static_cast<int32_t>(field.size_bytes)};
+            dst_op.displacement += size_bytes;
+            cur_dst_info.increment_offset(size_bytes);
             cur_dst_info.pop();
             continue;
         }
@@ -341,7 +343,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
         }
 
         operand dst_operand{dst_op};
-        dst_operand.size = field.type().size();
+        dst_operand.size_bytes = field.type().size_bytes();
 
         if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
             // built-in, expression
@@ -365,7 +367,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
 
                     validate_array_assignment(src.tok(), field, src_info);
                     x.copy(src.tok(), indent, src_info.operand, dst_op,
-                           field.size);
+                           field.size_bytes);
                 } else {
                     // built-in, not expression, not constant, not array
                     x.copy_value(src.tok(), indent, dst_operand,
@@ -375,9 +377,9 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
                 }
             }
         }
-        const int32_t sz{static_cast<int32_t>(field.size)};
-        dst_op.displacement += sz;
-        cur_dst_info.increment_offset(sz);
+        const int32_t size_bytes{static_cast<int32_t>(field.size_bytes)};
+        dst_op.displacement += size_bytes;
+        cur_dst_info.increment_offset(size_bytes);
         cur_dst_info.pop();
     }
 
@@ -390,11 +392,12 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
 
     // calculate remaining bytes of the type to zero
 
-    const size_t nbytes{dst_type.remaining_fields_size(exprs_.size())};
+    const size_t size_bytes{
+        dst_type.remaining_fields_size_bytes(exprs_.size())};
 
-    x.comment(tok(), indent, "zero remaining fields: {} B", nbytes);
-    x.zero(tok(), indent, dst_op, nbytes);
-    dst_op.displacement += static_cast<int32_t>(nbytes);
+    x.comment(tok(), indent, "zero remaining fields: {} B", size_bytes);
+    x.zero(tok(), indent, dst_op, size_bytes);
+    dst_op.displacement += static_cast<int32_t>(size_bytes);
 }
 
 // declared in 'expr_type_value.hpp'
@@ -412,11 +415,11 @@ auto expr_type_value::validate_array_assignment(const token& src_loc_tk,
 
     assert(fld.type().name() == src_info.type_ref().name());
 
-    if (fld.array_size != src_info.array_size) {
+    if (fld.array_count != src_info.array_count) {
         throw compiler_exception{
             src_loc_tk, std::format("destination array size {} does not match "
                                     "source size {}",
-                                    fld.array_size, src_info.array_size)};
+                                    fld.array_count, src_info.array_count)};
     }
 }
 
@@ -434,11 +437,11 @@ auto expr_type_value::assert_var_not_used(const std::string_view var) const
 // solves circular reference: expr_type_value -> expr_any -> expr_type_value
 [[nodiscard]] auto expr_type_value::compile_lea(
     toc& tc, const size_t indent, const token& src_loc_tk,
-    std::vector<operand>& allocated_registers, const operand& reg_size,
+    std::vector<operand>& allocated_registers, const operand& reg_count,
     const std::span<const operand> lea_path) const -> operand {
 
     return stmt_ident_->compile_lea(tc, indent, src_loc_tk, allocated_registers,
-                                    reg_size, lea_path);
+                                    reg_count, lea_path);
 }
 
 // declared in 'expr_type_value.hpp'

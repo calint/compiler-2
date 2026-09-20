@@ -64,7 +64,7 @@ struct operand {
     std::string immediate;
     int32_t displacement{};
     uint8_t scale{1};
-    size_t size{};
+    size_t size_bytes{};
     const type* type_ptr{};
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
@@ -85,7 +85,7 @@ struct operand {
     }
 
     [[nodiscard]] static auto reg(const std::string_view name,
-                                  const size_t operand_size) -> operand {
+                                  const size_t operand_size_bytes) -> operand {
 
         if (name.empty()) {
             throw std::invalid_argument("operand text must not be empty");
@@ -93,7 +93,7 @@ struct operand {
         operand result;
         result.kind_ = operand_kind::reg;
         result.base_register = name;
-        result.size = operand_size;
+        result.size_bytes = operand_size_bytes;
 
         return result;
     }
@@ -145,7 +145,7 @@ struct var_info {
     token src_loc_tk;     // token for position in the source
     int32_t stack_idx{};  // location relative to register rbp
     bool is_array{};
-    size_t array_size{};
+    size_t array_count{};
     operand reg;
 };
 
@@ -159,7 +159,7 @@ struct ident_info {
     operand operand; // nasm valid source
     int32_t stack_idx{};
     int64_t const_value{};
-    size_t array_size{};
+    size_t array_count{};
     bool is_array{};
     bool use_operand{};
     ident_type ident_type{};
@@ -214,23 +214,23 @@ struct ident_info {
     [[nodiscard]] static auto
     make_var(std::string ident, std::vector<std::string> elem_path,
              std::vector<const type*> type_path, const ::operand& op,
-             const int32_t stack_idx, const size_t array_size,
+             const int32_t stack_idx, const size_t array_count,
              const bool is_array) -> ident_info {
 
         assert(not ident.empty());
         assert(not elem_path.empty());
         assert(elem_path.size() == type_path.size());
 
-        const size_t lea_size{elem_path.size()};
+        const size_t lea_count{elem_path.size()};
 
         return {
             .id{std::move(ident)},
             .elem_path{std::move(elem_path)},
             .type_path{std::move(type_path)},
-            .lea_path{lea_size, ::operand{}},
+            .lea_path{lea_count, ::operand{}},
             .operand{op},
             .stack_idx{stack_idx},
-            .array_size{array_size},
+            .array_count{array_count},
             .is_array{is_array},
             .ident_type{ident_type::VAR},
         };

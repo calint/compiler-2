@@ -40,14 +40,14 @@ auto main(const int argc, const char** const argv) -> int {
     const std::span<const char*> args{argv, static_cast<size_t>(argc)};
 #pragma clang diagnostic pop
 
-    constexpr size_t default_vars_size{0x10000};
+    constexpr size_t default_vars_size_bytes{0x10000};
     constexpr size_t vars_alignment{16};
     // note: to avoid "magic number" lint
 
     // default values
     const char* src_file_name{"prog.baz"};
     std::string_view target{"x86_64"};
-    size_t vars_size{default_vars_size};
+    size_t vars_size_bytes{default_vars_size_bytes};
     bool checks_upper{};
     bool checks_show_line{};
     bool checks_lower{};
@@ -111,18 +111,18 @@ auto main(const int argc, const char** const argv) -> int {
             try {
                 const std::string vars_text{arg.substr(vars_option.size())};
                 size_t chars_read{};
-                const uint64_t parsed_size{
+                const uint64_t parsed_size_bytes{
                     std::stoull(vars_text, &chars_read, 0)};
 
                 if (vars_text.empty() or vars_text.starts_with('-') or
-                    chars_read != vars_text.size() or parsed_size == 0 or
-                    not std::in_range<size_t>(parsed_size)) {
+                    chars_read != vars_text.size() or parsed_size_bytes == 0 or
+                    not std::in_range<size_t>(parsed_size_bytes)) {
 
                     throw std::invalid_argument{
                         "invalid variable storage size"};
                 }
 
-                if (parsed_size % vars_alignment != 0) {
+                if (parsed_size_bytes % vars_alignment != 0) {
                     std::println(stderr,
                                  "Invalid variable storage size: '{}' is not "
                                  "a multiple of {}",
@@ -133,7 +133,7 @@ auto main(const int argc, const char** const argv) -> int {
                     return 1;
                 }
 
-                vars_size = static_cast<size_t>(parsed_size);
+                vars_size_bytes = static_cast<size_t>(parsed_size_bytes);
             } catch (...) {
                 std::println(stderr,
                              "Could not parse variable storage size: \"{}\"",
@@ -207,7 +207,7 @@ auto main(const int argc, const char** const argv) -> int {
             backend = std::make_unique<machine_rv32i>();
         }
 
-        program prg{*backend,     src,          vars_size,
+        program prg{*backend,     src,          vars_size_bytes,
                     checks_upper, checks_lower, checks_show_line};
 
         if (reproduce_source) {

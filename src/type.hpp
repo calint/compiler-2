@@ -20,8 +20,8 @@ struct type_field {
     std::string name;       //
     const type* type_ptr{}; // element type
     size_t offset{};        // offset relative to instance address
-    size_t size{};          // total size in bytes of all elements
-    size_t array_size{};    // array size in elements
+    size_t size_bytes{};    // total size in bytes of all elements
+    size_t array_count{};   // array size in elements
     bool is_array{};        //
 
     [[nodiscard]] auto type() const -> const type& { return *type_ptr; }
@@ -29,26 +29,28 @@ struct type_field {
 
 class type final {
     std::string name_;
-    size_t size_{}; // total size of type in bytes
+    size_t size_bytes_{}; // total size of type in bytes
     std::vector<type_field> fields_;
     bool is_builtin_{};
 
   public:
-    type(const std::string_view name, const size_t size, const bool is_builtin)
-        : name_{name}, size_{size}, is_builtin_{is_builtin} {}
+    type(const std::string_view name, const size_t size_bytes,
+         const bool is_builtin)
+        : name_{name}, size_bytes_{size_bytes}, is_builtin_{is_builtin} {}
 
     type() = default;
 
     auto add_field([[maybe_unused]] const token& src_loc_tk,
                    const std::string_view name, const type& tp,
-                   const bool is_array, const size_t array_size) -> void {
+                   const bool is_array, const size_t array_count) -> void {
 
-        const size_t total_size{tp.size_ * (is_array ? array_size : 1)};
+        const size_t total_size_bytes{tp.size_bytes_ *
+                                      (is_array ? array_count : 1)};
 
-        fields_.emplace_back(std::string{name}, &tp, size_, total_size,
-                             array_size, is_array);
+        fields_.emplace_back(std::string{name}, &tp, size_bytes_,
+                             total_size_bytes, array_count, is_array);
 
-        size_ += total_size;
+        size_bytes_ += total_size_bytes;
     }
 
     [[nodiscard]] auto field(const token& src_loc_tk,
@@ -78,7 +80,7 @@ class type final {
 
         size_t offset{};
         bool is_array{var.is_array};
-        size_t array_size{var.array_size};
+        size_t array_count{var.array_count};
 
         const type* tp{this};
         for (const std::string& field_name : path | std::views::drop(1)) {
@@ -89,7 +91,7 @@ class type final {
             offset += tf.offset;
             tp = tf.type_ptr;
             is_array = tf.is_array;
-            array_size = tf.array_size;
+            array_count = tf.array_count;
             type_path.emplace_back(tp);
         }
 
@@ -108,12 +110,12 @@ class type final {
         operand op{operand::mem(var.reg.is_empty() ? variables_base_register
                                                    : var.reg.base_register,
                                 "", 1, stack_idx)};
-        op.size = tp_first_field->size();
+        op.size_bytes = tp_first_field->size_bytes();
         op.type_ptr = tp_first_field;
 
         return ident_info::make_var(std::string{ident}, path,
                                     std::move(type_path), op, stack_idx,
-                                    array_size, is_array);
+                                    array_count, is_array);
     }
 
     [[nodiscard]] auto
@@ -135,7 +137,7 @@ class type final {
         return offset;
     }
 
-    [[nodiscard]] auto size() const -> size_t { return size_; }
+    [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
 
@@ -147,14 +149,14 @@ class type final {
         return fields_;
     }
 
-    [[nodiscard]] auto remaining_fields_size(const size_t first) const
+    [[nodiscard]] auto remaining_fields_size_bytes(const size_t first) const
         -> size_t {
 
-        size_t bytes{};
+        size_t size_bytes{};
         for (const type_field& f : fields_ | std::views::drop(first)) {
-            bytes += f.size;
+            size_bytes += f.size_bytes;
         }
 
-        return bytes;
+        return size_bytes;
     }
 };

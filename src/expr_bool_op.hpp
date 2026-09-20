@@ -454,7 +454,7 @@ class expr_bool_op final : public statement {
                                         allocated_registers, {},
                                         expr_info.lea_path)};
 
-            op.size = expr_info.type_ref().size();
+            op.size_bytes = expr_info.type_ref().size_bytes();
             op.type_ptr = &expr_info.type_ref();
 
             return op;

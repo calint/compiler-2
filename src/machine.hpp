@@ -98,8 +98,8 @@ class machine {
 
     virtual auto comment_variable(const token& src_loc_tk, const size_t indent,
                                   const std::string_view text,
-                                  const size_t bytes, const operand& address)
-        -> void = 0;
+                                  const size_t size_bytes,
+                                  const operand& address) -> void = 0;
 
     virtual auto comment_alias(const token& src_loc_tk, const size_t indent,
                                const std::string_view from,
@@ -116,15 +116,14 @@ class machine {
 
     virtual auto invoke_syscall(const size_t indent) -> void = 0;
 
-    virtual auto
-    advance_array_iteration(const size_t indent, const operand& iterator,
-                            const operand& counter, const size_t element_size,
-                            const size_t array_size,
-                            const std::string_view loop_label) -> void = 0;
+    virtual auto advance_array_iteration(
+        const size_t indent, const operand& iterator, const operand& counter,
+        const size_t element_size_bytes, const size_t array_count,
+        const std::string_view loop_label) -> void = 0;
 
     virtual auto copy(const token& src_loc_tk, const size_t indent,
                       const operand& src, const operand& dst,
-                      const size_t bytes_count) -> void = 0;
+                      const size_t size_bytes) -> void = 0;
 
     [[nodiscard]] virtual auto begin_array_copy(const token& src_loc_tk,
                                                 const size_t indent)
@@ -137,7 +136,7 @@ class machine {
                                             const operand& address) -> void = 0;
 
     virtual auto end_array_copy(const token& src_loc_tk, const size_t indent,
-                                const size_t element_size) -> void = 0;
+                                const size_t element_size_bytes) -> void = 0;
 
     virtual auto begin_memory_equal(const token& src_loc_tk,
                                     const size_t indent) -> operand = 0;
@@ -149,15 +148,15 @@ class machine {
                                         const operand& address) -> void = 0;
 
     virtual auto end_memory_equal(const token& src_loc_tk, const size_t indent,
-                                  const size_t bytes_count, const operand& dst)
+                                  const size_t size_bytes, const operand& dst)
         -> void = 0;
 
     virtual auto end_arrays_equal(const token& src_loc_tk, const size_t indent,
-                                  const size_t element_size, const operand& dst)
-        -> void = 0;
+                                  const size_t element_size_bytes,
+                                  const operand& dst) -> void = 0;
 
     virtual auto zero(const token& src_loc_tk, const size_t indent,
-                      const operand& dst, const size_t bytes_count) -> void = 0;
+                      const operand& dst, const size_t size_bytes) -> void = 0;
 
     virtual auto add_subtract(const token& src_loc_tk, const size_t indent,
                               const char operation, const operand& dst,
@@ -200,12 +199,12 @@ class machine {
     virtual auto unary(const size_t indent, const char operation,
                        const operand& dst) -> void = 0;
 
-    [[nodiscard]] virtual auto can_encode_index_scale(const size_t size) const
-        -> bool = 0;
+    [[nodiscard]] virtual auto
+    can_encode_index_scale(const size_t size_bytes) const -> bool = 0;
 
     virtual auto scale_index(const token& src_loc_tk, const size_t indent,
-                             const operand& index, const size_t element_size)
-        -> void = 0;
+                             const operand& index,
+                             const size_t element_size_bytes) -> void = 0;
 
     virtual auto exit_process(const token& src_loc_tk, const size_t indent,
                               const int exit_code) -> void = 0;
@@ -230,8 +229,8 @@ class machine {
 
     virtual auto check_bounds(const token& src_loc_tk, const size_t indent,
                               const operand& reg_to_check,
-                              const size_t array_size, const bool allow_end,
-                              const operand& reg_size,
+                              const size_t array_count, const bool allow_end,
+                              const operand& reg_count,
                               const bounds_check_options& options) -> void = 0;
 
     virtual auto emit_bounds_failure_handler(const bool with_line) -> void = 0;
@@ -241,28 +240,28 @@ class machine {
     virtual auto begin_data(const size_t alignment) -> void = 0;
 
     virtual auto reserve_variables(const size_t alignment,
-                                   const size_t bytes_count) -> void = 0;
+                                   const size_t size_bytes) -> void = 0;
 
-    virtual auto emit_data(const size_t element_size,
+    virtual auto emit_data(const size_t element_size_bytes,
                            const data_initializer& value) -> void = 0;
 
     virtual auto emit_string_data(const std::string_view value) -> void = 0;
 
-    virtual auto emit_zero_data(const size_t bytes_count) const -> void = 0;
+    virtual auto emit_zero_data(const size_t size_bytes) const -> void = 0;
 
-    virtual auto emit_repeated_data(const size_t element_size,
+    virtual auto emit_repeated_data(const size_t element_size_bytes,
                                     const size_t count,
                                     const data_initializer& value) const
         -> void = 0;
 
     [[nodiscard]] virtual auto
-    register_size(const std::string_view name) const -> size_t = 0;
+    register_size_bytes(const std::string_view name) const -> size_t = 0;
 
     [[nodiscard]] virtual auto reg(const std::string_view name) const
         -> operand = 0;
 
     virtual auto
-    emit_data_array(const size_t element_size,
+    emit_data_array(const size_t element_size_bytes,
                     const std::function_ref<bool(data_initializer&)> next)
         -> void = 0;
 
@@ -277,7 +276,8 @@ class machine {
     }
 
     template <std::ranges::input_range values_t>
-    auto emit_data_array(const size_t element_size, values_t&& values) -> void {
+    auto emit_data_array(const size_t element_size_bytes, values_t&& values)
+        -> void {
         auto&& range{std::forward<values_t>(values)};
         auto current{std::ranges::begin(range)};
         const auto end{std::ranges::end(range)};
@@ -291,7 +291,7 @@ class machine {
             return true;
         }};
 
-        emit_data_array(element_size,
+        emit_data_array(element_size_bytes,
                         std::function_ref<bool(data_initializer&)>{next});
     }
 };

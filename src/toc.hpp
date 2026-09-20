@@ -72,10 +72,10 @@ class frame final {
     std::string call_path_;
 
     // number of bytes used on the stack by this frame
-    size_t allocated_stack_{};
+    size_t allocated_stack_size_bytes_{};
 
     // stack padding assigned to this frame
-    size_t stack_padding_{};
+    size_t stack_padding_size_bytes_{};
 
     // constants
     lut<const_info> consts_;
@@ -117,10 +117,10 @@ class frame final {
         consts_.put(std::string{name}, ci);
     }
 
-    auto add_var(const var_info& var, const size_t allocated_size,
+    auto add_var(const var_info& var, const size_t allocated_size_bytes,
                  const bool is_dat = false) -> void {
 
-        allocated_stack_ += allocated_size;
+        allocated_stack_size_bytes_ += allocated_size_bytes;
 
         vars_.put(var.name, var);
 
@@ -129,14 +129,14 @@ class frame final {
         }
     }
 
-    [[nodiscard]] auto allocated_stack_size() const -> size_t {
-        return allocated_stack_ + stack_padding_;
+    [[nodiscard]] auto allocated_stack_size_bytes() const -> size_t {
+        return allocated_stack_size_bytes_ + stack_padding_size_bytes_;
     }
 
-    auto set_padding_between_dats_and_vars(const size_t nbytes) -> void {
-        assert(stack_padding_ == 0);
+    auto set_padding_between_dats_and_vars(const size_t size_bytes) -> void {
+        assert(stack_padding_size_bytes_ == 0);
 
-        stack_padding_ = nbytes;
+        stack_padding_size_bytes_ = size_bytes;
     }
 
     [[nodiscard]] auto call_path() const -> std::string_view {
@@ -259,11 +259,11 @@ class toc final {
     const type* type_void_{};
     const type* type_bool_{};
     size_t usage_max_frame_count_{};
-    size_t usage_max_vars_size_{};
-    size_t total_dat_size_{};
+    size_t usage_max_vars_size_bytes_{};
+    size_t total_dat_size_bytes_{};
     size_t vars_entry_gap_{};
-    size_t vars_size_{};
-    size_t vars_capacity_;
+    size_t vars_size_bytes_{};
+    size_t vars_capacity_bytes_;
     bool vars_entry_gap_applied_{};
     bool bounds_check_upper_{};
     bool bounds_check_with_line_{};
@@ -271,9 +271,10 @@ class toc final {
 
   public:
     toc(::machine& backend, const std::string_view source,
-        const size_t vars_capacity, const bool bounds_check_upper,
+        const size_t vars_capacity_bytes, const bool bounds_check_upper,
         const bool bounds_check_lower, const bool bounds_check_with_line)
-        : machine_{backend}, source_{source}, vars_capacity_{vars_capacity},
+        : machine_{backend}, source_{source},
+          vars_capacity_bytes_{vars_capacity_bytes},
           bounds_check_upper_{bounds_check_upper},
           bounds_check_with_line_{bounds_check_with_line},
           bounds_check_lower_{bounds_check_lower} {}
@@ -319,10 +320,10 @@ class toc final {
                 stmt->tok(), "'dat' can only be added before any 'var'");
         }
         data_.emplace_back(stmt);
-        total_dat_size_ += stmt->dat_size_bytes();
+        total_dat_size_bytes_ += stmt->dat_size_bytes();
         const size_t alignment{machine_.get().data_alignment()};
         vars_entry_gap_ =
-            (alignment - (total_dat_size_ % alignment)) % alignment;
+            (alignment - (total_dat_size_bytes_ % alignment)) % alignment;
     }
 
     auto add_func(const token& src_loc_tk, std::string name,
@@ -372,7 +373,7 @@ class toc final {
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
                  const bool is_dat) -> void {
 
-        if (machine_.get().register_size(var.name) != 0) {
+        if (machine_.get().register_size_bytes(var.name) != 0) {
             throw compiler_exception{
                 src_loc_tk,
                 std::format("cannot use register name '{}' as a variable name",
@@ -390,18 +391,19 @@ class toc final {
                             source_location_hr(decl_var.src_loc_tk))};
         }
 
-        const size_t var_size{var.type_ptr->size() *
-                              (var.is_array ? var.array_size : 1)};
+        const size_t var_size_bytes{var.type_ptr->size_bytes() *
+                                    (var.is_array ? var.array_count : 1)};
 
         if (not is_dat and not vars_entry_gap_applied_) {
             frames_.front().set_padding_between_dats_and_vars(vars_entry_gap_);
-            vars_size_ += vars_entry_gap_;
+            vars_size_bytes_ += vars_entry_gap_;
             vars_entry_gap_applied_ = true;
         }
 
         if (not is_dat) {
-            const size_t used{vars_size_ - total_dat_size_ - vars_entry_gap_};
-            if (var_size > vars_capacity_ - used) {
+            const size_t used_size_bytes{
+                vars_size_bytes_ - total_dat_size_bytes_ - vars_entry_gap_};
+            if (var_size_bytes > vars_capacity_bytes_ - used_size_bytes) {
                 throw compiler_exception{
                     src_loc_tk,
                     std::format("variable '{}' would overflow allocated vars "
@@ -410,16 +412,16 @@ class toc final {
             }
         }
 
-        var.stack_idx = static_cast<int32_t>(vars_size_);
+        var.stack_idx = static_cast<int32_t>(vars_size_bytes_);
 
-        frames_.back().add_var(var, var_size, is_dat);
-        vars_size_ += var_size;
+        frames_.back().add_var(var, var_size_bytes, is_dat);
+        vars_size_bytes_ += var_size_bytes;
 
         // stats
         if (not is_dat) {
-            usage_max_vars_size_ =
-                std::max(vars_size_ - total_dat_size_ - vars_entry_gap_,
-                         usage_max_vars_size_);
+            usage_max_vars_size_bytes_ = std::max(
+                vars_size_bytes_ - total_dat_size_bytes_ - vars_entry_gap_,
+                usage_max_vars_size_bytes_);
         }
 
         // comment the resolved name
@@ -430,8 +432,8 @@ class toc final {
         std::string text{
             std::format("{}: {}", var.name, name_info.type_ref().name())};
 
-        if (var.array_size) {
-            text += std::format("[{}]", var.array_size);
+        if (var.array_count) {
+            text += std::format("[{}]", var.array_count);
         }
         if (not var.reg.is_empty()) {
             x.comment(src_loc_tk, indent, "{} ({})", text,
@@ -440,8 +442,8 @@ class toc final {
             return;
         }
         x.comment_variable(src_loc_tk, indent, text,
-                           name_info.type_ref().size() *
-                               (name_info.is_array ? name_info.array_size : 1),
+                           name_info.type_ref().size_bytes() *
+                               (name_info.is_array ? name_info.array_count : 1),
                            name_info.operand);
     }
 
@@ -491,11 +493,11 @@ class toc final {
 
         assert(frm.is_foo() and frm.is_name(name));
 
-        vars_size_ -= frm.allocated_stack_size();
+        vars_size_bytes_ -= frm.allocated_stack_size_bytes();
         frames_.pop_back();
         if (frames_.empty()) {
 
-            assert(vars_size_ == 0);
+            assert(vars_size_bytes_ == 0);
 
             vars_entry_gap_applied_ = false;
         }
@@ -506,11 +508,11 @@ class toc final {
 
         assert(frm.is_block());
 
-        vars_size_ -= frm.allocated_stack_size();
+        vars_size_bytes_ -= frm.allocated_stack_size_bytes();
         frames_.pop_back();
         if (frames_.empty()) {
 
-            assert(vars_size_ == 0);
+            assert(vars_size_bytes_ == 0);
 
             vars_entry_gap_applied_ = false;
         }
@@ -521,11 +523,11 @@ class toc final {
 
         assert(frm.is_func() and frm.is_name(name));
 
-        vars_size_ -= frm.allocated_stack_size();
+        vars_size_bytes_ -= frm.allocated_stack_size_bytes();
         frames_.pop_back();
         if (frames_.empty()) {
 
-            assert(vars_size_ == 0);
+            assert(vars_size_bytes_ == 0);
 
             vars_entry_gap_applied_ = false;
         }
@@ -536,11 +538,11 @@ class toc final {
 
         assert(frm.is_loop() and frm.is_name(name));
 
-        vars_size_ -= frm.allocated_stack_size();
+        vars_size_bytes_ -= frm.allocated_stack_size_bytes();
         frames_.pop_back();
         if (frames_.empty()) {
 
-            assert(vars_size_ == 0);
+            assert(vars_size_bytes_ == 0);
 
             vars_entry_gap_applied_ = false;
         }
@@ -548,10 +550,10 @@ class toc final {
 
     auto reset_usage() -> void {
         assert(frames_.empty());
-        assert(vars_size_ == 0);
+        assert(vars_size_bytes_ == 0);
 
         usage_max_frame_count_ = 0;
-        usage_max_vars_size_ = 0;
+        usage_max_vars_size_bytes_ = 0;
     }
 
     auto finish() -> void {
@@ -564,10 +566,10 @@ class toc final {
                   vars_entry_gap_);
 
         x.comment(token{}, 0, "               max vars size: {} B",
-                  usage_max_vars_size_);
+                  usage_max_vars_size_bytes_);
 
         assert(frames_.empty());
-        assert(vars_size_ == 0);
+        assert(vars_size_bytes_ == 0);
 
         usage_max_frame_count_ = 0;
     }
@@ -673,7 +675,7 @@ class toc final {
         operand op{src.compile_lea(*this, indent, src.tok(), lea_registers, {},
                                    src_info.lea_path)};
 
-        op.size = src_info.operand.size;
+        op.size_bytes = src_info.operand.size_bytes;
 
         return op;
     }
@@ -849,12 +851,15 @@ class toc final {
         return std::format("{}:{}", line, col);
     }
 
-    [[nodiscard]] auto get_stack_size() const -> size_t { return vars_size_; }
+    [[nodiscard]] auto get_stack_size_bytes() const -> size_t {
+        return vars_size_bytes_;
+    }
 
-    [[nodiscard]] auto get_builtin_type_for_size(const size_t size) const
+    [[nodiscard]] auto
+    get_builtin_type_for_size_bytes(const size_t size_bytes) const
         -> const type& {
 
-        switch (size) {
+        switch (size_bytes) {
         case operand::size_qword:
             return *types_.get_const_ref("i64").type_ptr;
 
@@ -969,34 +974,34 @@ class toc final {
         lea_path.insert(lea_path.end(), id.path().size() - 1, operand{});
         // note: -1 to exclude the first element
 
-        for (const frame& current_frame : frames_ | std::views::reverse) {
+        for (const frame& cur_frame : frames_ | std::views::reverse) {
 
             // does this frame contain the variable?
-            if (current_frame.has_var(id.base())) {
-                return make_ident_info_from_frame(current_frame, src_loc_tk, ident, id,
-                                                  std::move(lea_path));
+            if (cur_frame.has_var(id.base())) {
+                return make_ident_info_from_frame(cur_frame, src_loc_tk, ident,
+                                                  id, std::move(lea_path));
             }
 
-            if (current_frame.is_func()) {
+            if (cur_frame.is_func()) {
 
                 // root frame of the function
                 // from here on aliases are followed to the actual variable
                 // referred to
 
-                if (not current_frame.has_alias(id.base())) {
+                if (not cur_frame.has_alias(id.base())) {
                     // is not an alias
 
                     // add an empty
                     lea_path.emplace_back();
 
-                    return make_ident_info_from_frame(current_frame, src_loc_tk, ident, id,
-                                                      std::move(lea_path));
+                    return make_ident_info_from_frame(
+                        cur_frame, src_loc_tk, ident, id, std::move(lea_path));
                 }
 
                 // this is an alias, continue resolving until it is a variable,
                 // register or constant
 
-                const alias_info& alias{current_frame.get_alias(id.base())};
+                const alias_info& alias{cur_frame.get_alias(id.base())};
 
                 if (alias.register_operand.is_register() and
                     id.path().size() == 1) {
@@ -1014,9 +1019,10 @@ class toc final {
                 //           if 'lea_path' is not extended then the types, id
                 //           path elements and lea path vectors are not in sync
 
-                const size_t nid_sz{new_id.path().size()};
-                const size_t lea_sz{lea_path.size()};
-                if ((nid_sz > lea_sz) and (nid_sz - lea_sz > 1)) {
+                const size_t new_id_count{new_id.path().size()};
+                const size_t lea_count{lea_path.size()};
+                if ((new_id_count > lea_count) and
+                    (new_id_count - lea_count > 1)) {
                     lea_path.resize(lea_path.size() + new_id.path().size() - 2);
                     // note: -2 because last element is current element and
                     //       first will be processed
@@ -1153,7 +1159,7 @@ class toc final {
         if (offset != 0) {
             ii.operand.displacement += static_cast<int32_t>(offset);
         }
-        ii.operand.size = ii.type_ref().size();
+        ii.operand.size_bytes = ii.type_ref().size_bytes();
         ii.operand.type_ptr = &ii.type_ref();
 
         return ii;
@@ -1165,11 +1171,12 @@ class toc final {
         -> ident_info {
 
         // is it a register?
-        if (const size_t reg_size{machine_.get().register_size(id.str())};
-            reg_size != 0) {
+        if (const size_t reg_size_bytes{
+                machine_.get().register_size_bytes(id.str())};
+            reg_size_bytes != 0) {
 
-            operand reg{operand::reg(id.str(), reg_size)};
-            reg.type_ptr = &get_builtin_type_for_size(reg_size);
+            operand reg{operand::reg(id.str(), reg_size_bytes)};
+            reg.type_ptr = &get_builtin_type_for_size_bytes(reg_size_bytes);
 
             return ident_info::make_register(ident, reg);
         }

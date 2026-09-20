@@ -14,10 +14,10 @@
 
 class stmt_builtin_array_copy final : public statement {
     token open_paren_tk_;
-    stmt_identifier from_;
-    token from_delim_tk_;
-    stmt_identifier to_;
-    token to_delim_tk_;
+    stmt_identifier src_;
+    token src_delim_tk_;
+    stmt_identifier dst_;
+    token dst_delim_tk_;
     expr_any count_;
     token close_paren_tk_;
 
@@ -32,18 +32,18 @@ class stmt_builtin_array_copy final : public statement {
 
         set_type(tc.get_type_void());
 
-        from_ = {tc, {}, tz.next_token(), tz};
+        src_ = {tc, {}, tz.next_token(), tz};
 
-        from_delim_tk_ = tz.is_next_char_token(',');
-        if (from_delim_tk_.is_empty()) {
+        src_delim_tk_ = tz.is_next_char_token(',');
+        if (src_delim_tk_.is_empty()) {
             throw compiler_exception{
                 tz, "expected ',' followed by 'to' and 'count'"};
         }
 
-        to_ = {tc, {}, tz.next_token(), tz};
+        dst_ = {tc, {}, tz.next_token(), tz};
 
-        to_delim_tk_ = tz.is_next_char_token(',');
-        if (to_delim_tk_.is_empty()) {
+        dst_delim_tk_ = tz.is_next_char_token(',');
+        if (dst_delim_tk_.is_empty()) {
             throw compiler_exception{tz, "expected ',' followed by 'count'"};
         }
 
@@ -60,10 +60,10 @@ class stmt_builtin_array_copy final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         open_paren_tk_.source_to(os);
-        from_.source_to(os);
-        from_delim_tk_.source_to(os);
-        to_.source_to(os);
-        to_delim_tk_.source_to(os);
+        src_.source_to(os);
+        src_delim_tk_.source_to(os);
+        dst_.source_to(os);
+        dst_delim_tk_.source_to(os);
         count_.source_to(os);
         close_paren_tk_.source_to(os);
     }
@@ -76,16 +76,17 @@ class stmt_builtin_array_copy final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const ident_info from_info{tc.make_ident_info(from_)};
-        const ident_info to_info{tc.make_ident_info(to_)};
+        const ident_info array_src_info{tc.make_ident_info(src_)};
+        const ident_info array_dst_info{tc.make_ident_info(dst_)};
 
-        if (from_info.type_ref().name() != to_info.type_ref().name()) {
+        if (array_src_info.type_ref().name() !=
+            array_dst_info.type_ref().name()) {
             throw compiler_exception{
                 tok(),
                 std::format("source type '{}' does not match destination "
                             "type '{}'",
-                            from_info.type_ref().name(),
-                            to_info.type_ref().name())};
+                            array_src_info.type_ref().name(),
+                            array_dst_info.type_ref().name())};
         }
 
         const operand count_register{x.begin_array_copy(tok(), indent)};
@@ -97,28 +98,28 @@ class stmt_builtin_array_copy final : public statement {
         count_.compile(tc, indent,
                        toc::make_ident_info_from_register(count_register));
 
-        x.comment(from_.tok(), indent, statement::trimmed_source(from_));
+        x.comment(src_.tok(), indent, statement::trimmed_source(src_));
 
-        const operand from_operand{from_.compile_lea(
-            tc, indent, from_.first_token(), allocated_scratch_registers,
-            count_register, from_info.lea_path)};
+        const operand src_operand{src_.compile_lea(
+            tc, indent, src_.first_token(), allocated_scratch_registers,
+            count_register, array_src_info.lea_path)};
 
-        x.set_array_copy_source(indent, from_operand);
+        x.set_array_copy_source(indent, src_operand);
 
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
-        x.comment(to_.tok(), indent, statement::trimmed_source(to_));
+        x.comment(dst_.tok(), indent, statement::trimmed_source(dst_));
 
         allocated_scratch_registers.clear();
 
-        const operand to_operand{to_.compile_lea(
-            tc, indent, to_.first_token(), allocated_scratch_registers,
-            count_register, to_info.lea_path)};
+        const operand dst_operand{dst_.compile_lea(
+            tc, indent, dst_.first_token(), allocated_scratch_registers,
+            count_register, array_dst_info.lea_path)};
 
-        x.set_array_copy_destination(indent, to_operand);
+        x.set_array_copy_destination(indent, dst_operand);
 
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
-        x.end_array_copy(tok(), indent, from_info.type_ref().size());
+        x.end_array_copy(tok(), indent, array_src_info.type_ref().size_bytes());
     }
 };

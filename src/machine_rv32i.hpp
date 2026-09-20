@@ -94,7 +94,7 @@ class machine_rv32i final : public machine {
     auto comment_variable([[maybe_unused]] const token& src_loc_tk,
                           [[maybe_unused]] const size_t indent,
                           [[maybe_unused]] const std::string_view text,
-                          [[maybe_unused]] const size_t bytes,
+                          [[maybe_unused]] const size_t size_bytes,
                           [[maybe_unused]] const operand& address)
         -> void override {
         todo();
@@ -134,8 +134,8 @@ class machine_rv32i final : public machine {
     advance_array_iteration([[maybe_unused]] const size_t indent,
                             [[maybe_unused]] const operand& iterator,
                             [[maybe_unused]] const operand& counter,
-                            [[maybe_unused]] const size_t element_size,
-                            [[maybe_unused]] const size_t array_size,
+                            [[maybe_unused]] const size_t element_size_bytes,
+                            [[maybe_unused]] const size_t array_count,
                             [[maybe_unused]] const std::string_view loop_label)
         -> void override {
         todo();
@@ -145,7 +145,7 @@ class machine_rv32i final : public machine {
               [[maybe_unused]] const size_t indent,
               [[maybe_unused]] const operand& src,
               [[maybe_unused]] const operand& dst,
-              [[maybe_unused]] const size_t bytes_count) -> void override {
+              [[maybe_unused]] const size_t size_bytes) -> void override {
         todo();
     }
 
@@ -169,7 +169,7 @@ class machine_rv32i final : public machine {
 
     auto end_array_copy([[maybe_unused]] const token& src_loc_tk,
                         [[maybe_unused]] const size_t indent,
-                        [[maybe_unused]] const size_t element_size)
+                        [[maybe_unused]] const size_t element_size_bytes)
         -> void override {
         todo();
     }
@@ -194,7 +194,7 @@ class machine_rv32i final : public machine {
 
     auto end_memory_equal([[maybe_unused]] const token& src_loc_tk,
                           [[maybe_unused]] const size_t indent,
-                          [[maybe_unused]] const size_t bytes_count,
+                          [[maybe_unused]] const size_t size_bytes,
                           [[maybe_unused]] const operand& dst)
         -> void override {
         todo();
@@ -202,7 +202,7 @@ class machine_rv32i final : public machine {
 
     auto end_arrays_equal([[maybe_unused]] const token& src_loc_tk,
                           [[maybe_unused]] const size_t indent,
-                          [[maybe_unused]] const size_t element_size,
+                          [[maybe_unused]] const size_t element_size_bytes,
                           [[maybe_unused]] const operand& dst)
         -> void override {
         todo();
@@ -211,7 +211,7 @@ class machine_rv32i final : public machine {
     auto zero([[maybe_unused]] const token& src_loc_tk,
               [[maybe_unused]] const size_t indent,
               [[maybe_unused]] const operand& dst,
-              [[maybe_unused]] const size_t bytes_count) -> void override {
+              [[maybe_unused]] const size_t size_bytes) -> void override {
         todo();
     }
 
@@ -295,7 +295,7 @@ class machine_rv32i final : public machine {
     }
 
     [[nodiscard]] auto
-    can_encode_index_scale([[maybe_unused]] const size_t size) const
+    can_encode_index_scale([[maybe_unused]] const size_t size_bytes) const
         -> bool override {
         todo();
     }
@@ -303,7 +303,7 @@ class machine_rv32i final : public machine {
     auto scale_index([[maybe_unused]] const token& src_loc_tk,
                      [[maybe_unused]] const size_t indent,
                      [[maybe_unused]] const operand& index,
-                     [[maybe_unused]] const size_t element_size)
+                     [[maybe_unused]] const size_t element_size_bytes)
         -> void override {
         todo();
     }
@@ -345,9 +345,9 @@ class machine_rv32i final : public machine {
     auto check_bounds([[maybe_unused]] const token& src_loc_tk,
                       [[maybe_unused]] const size_t indent,
                       [[maybe_unused]] const operand& reg_to_check,
-                      [[maybe_unused]] const size_t array_size,
+                      [[maybe_unused]] const size_t array_count,
                       [[maybe_unused]] const bool allow_end,
-                      [[maybe_unused]] const operand& reg_size,
+                      [[maybe_unused]] const operand& reg_count,
                       [[maybe_unused]] const bounds_check_options& options)
         -> void override {
         todo();
@@ -365,12 +365,12 @@ class machine_rv32i final : public machine {
     }
 
     auto reserve_variables([[maybe_unused]] const size_t alignment,
-                           [[maybe_unused]] const size_t bytes_count)
+                           [[maybe_unused]] const size_t size_bytes)
         -> void override {
         todo();
     }
 
-    auto emit_data([[maybe_unused]] const size_t element_size,
+    auto emit_data([[maybe_unused]] const size_t element_size_bytes,
                    [[maybe_unused]] const data_initializer& value)
         -> void override {
         todo();
@@ -381,13 +381,13 @@ class machine_rv32i final : public machine {
         todo();
     }
 
-    auto emit_zero_data([[maybe_unused]] const size_t bytes_count) const
+    auto emit_zero_data([[maybe_unused]] const size_t size_bytes) const
         -> void override {
         todo();
     }
 
     auto
-    emit_repeated_data([[maybe_unused]] const size_t element_size,
+    emit_repeated_data([[maybe_unused]] const size_t element_size_bytes,
                        [[maybe_unused]] const size_t count,
                        [[maybe_unused]] const data_initializer& value) const
         -> void override {
@@ -395,7 +395,7 @@ class machine_rv32i final : public machine {
     }
 
     [[nodiscard]] auto
-    register_size([[maybe_unused]] const std::string_view name) const
+    register_size_bytes([[maybe_unused]] const std::string_view name) const
         -> size_t override {
         todo();
     }
@@ -406,7 +406,7 @@ class machine_rv32i final : public machine {
     }
 
     auto emit_data_array(
-        [[maybe_unused]] const size_t element_size,
+        [[maybe_unused]] const size_t element_size_bytes,
         [[maybe_unused]] const std::function_ref<bool(data_initializer&)> next)
         -> void override {
         todo();

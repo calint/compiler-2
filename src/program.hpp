@@ -29,19 +29,19 @@ class program final {
 
     std::vector<std::unique_ptr<statement>> statements_;
     toc tc_; // table of contents
-    size_t vars_size_{};
+    size_t vars_size_bytes_{};
 
   public:
     program(machine& backend, const std::string_view source,
-            const size_t vars_size, const bool bounds_check_upper,
+            const size_t vars_size_bytes, const bool bounds_check_upper,
             const bool bounds_check_lower, const bool bounds_check_with_line)
         : tc_{backend,
               source,
-              vars_size,
+              vars_size_bytes,
               bounds_check_upper,
               bounds_check_lower,
               bounds_check_with_line},
-          vars_size_{vars_size} {
+          vars_size_bytes_{vars_size_bytes} {
 
         // create a placeholder token to use with 'toc' functions
         const token src_loc_tk{};
@@ -149,7 +149,7 @@ class program final {
             s->compile_data(tc);
         }
 
-        x.reserve_variables(alignment, vars_size_);
+        x.reserve_variables(alignment, vars_size_bytes_);
     }
 
     auto build(std::ostream& os) -> void {

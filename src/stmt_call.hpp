@@ -367,7 +367,7 @@ class stmt_call : public expression {
         return args_[ix];
     }
 
-    [[nodiscard]] auto arguments_size() const -> size_t { return args_.size(); }
+    [[nodiscard]] auto argument_count() const -> size_t { return args_.size(); }
 
     auto assert_var_not_used(const std::string_view var) const
         -> void override {

@@ -86,19 +86,19 @@ class stmt_builtin_equal final : public expression {
                                    rhs_info.type_ref().name())};
         }
 
-        size_t bytes_count{lhs_info.type_ref().size()};
+        size_t size_bytes{lhs_info.type_ref().size_bytes()};
 
         // check comparing 2 arrays of the same size without indexing
         if (lhs_info.is_array and not lhs_.is_indexed() and
             rhs_info.is_array and not rhs_.is_indexed()) {
 
-            if (lhs_info.array_size != rhs_info.array_size) {
+            if (lhs_info.array_count != rhs_info.array_count) {
                 throw compiler_exception(lhs_.tok(),
                                          "cannot compare arrays of different "
                                          "sizes");
             }
 
-            bytes_count *= lhs_info.array_size;
+            size_bytes *= lhs_info.array_count;
         }
 
         x.begin_memory_equal(tok(), indent);
@@ -127,6 +127,6 @@ class stmt_builtin_equal final : public expression {
 
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
-        x.end_memory_equal(tok(), indent, bytes_count, dst_info.operand);
+        x.end_memory_equal(tok(), indent, size_bytes, dst_info.operand);
     }
 };

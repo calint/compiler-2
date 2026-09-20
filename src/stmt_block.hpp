@@ -30,7 +30,7 @@ class stmt_block final : public statement {
     // note: parser assumes the tokenizer is at a '{' or it is considered a
     // single statement block
     stmt_block(toc& tc, tokenizer& tz)
-        : statement{tz.current_position_token()},
+        : statement{tz.cur_position_token()},
           open_brace_tk_{tz.is_next_char_token('{')} {
 
         set_type(tc.get_type_void());
@@ -111,7 +111,7 @@ class stmt_block final : public statement {
 
                     stms_.emplace_back(std::make_unique<stmt_assign_var>(
                         tc, tz, std::move(si), t, si.is_array(),
-                        si.array_size()));
+                        si.array_count()));
 
                 } else if (const token tt{tz.is_next_char_token('(')};
                            not tt.is_empty()) {

@@ -17,12 +17,12 @@ class stmt_assign_var final : public statement {
     stmt_identifier stmt_ident_;
     expr_any expr_;
     token equals_tk_;
-    size_t array_size_{};
+    size_t array_count_{};
 
   public:
     stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si,
                     const token equals_tk, const bool is_array,
-                    const size_t array_size)
+                    const size_t array_count)
         : statement{si.tok()}, stmt_ident_{std::move(si)},
           equals_tk_{equals_tk} {
 
@@ -30,10 +30,10 @@ class stmt_assign_var final : public statement {
 
         set_type(dst_info.type_ref());
 
-        expr_ = {tc, tz, dst_info.type_ref(), false, is_array, array_size};
+        expr_ = {tc, tz, dst_info.type_ref(), false, is_array, array_count};
 
-        if (array_size == 0) {
-            array_size_ = expr_.array_size();
+        if (array_count == 0) {
+            array_count_ = expr_.array_count();
         }
     }
 
@@ -48,7 +48,7 @@ class stmt_assign_var final : public statement {
     }
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst) const
+                 [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -56,19 +56,19 @@ class stmt_assign_var final : public statement {
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
         // get information about the destination of the compilation
-        ident_info dst_info{tc.make_ident_info(stmt_ident_)};
+        ident_info var_dst_info{tc.make_ident_info(stmt_ident_)};
 
-        if (dst_info.is_const()) {
+        if (var_dst_info.is_const()) {
             throw compiler_exception{
                 tok(), std::format("cannot assign to constant '{}'",
-                                   dst_info.const_value)};
+                                   var_dst_info.const_value)};
         }
 
         if (expr_.is_array_identifier()) {
             if (const ident_info src_info{tc.make_ident_info(expr_)};
 
-                src_info.is_array and dst_info.is_array and
-                src_info.array_size != dst_info.array_size) {
+                src_info.is_array and var_dst_info.is_array and
+                src_info.array_count != var_dst_info.array_count) {
 
                 throw compiler_exception{
                     tok(), "source and destination array sizes do not match"};
@@ -76,11 +76,11 @@ class stmt_assign_var final : public statement {
         }
 
         std::vector<operand> lea_registers;
-        dst_info.use_operand = array_size_ > 0 or stmt_ident_.is_indexed();
-        dst_info.operand =
-            tc.get_lea_operand(indent, stmt_ident_, dst_info, lea_registers);
+        var_dst_info.use_operand = array_count_ > 0 or stmt_ident_.is_indexed();
+        var_dst_info.operand = tc.get_lea_operand(indent, stmt_ident_,
+                                                  var_dst_info, lea_registers);
 
-        expr_.compile(tc, indent, dst_info);
+        expr_.compile(tc, indent, var_dst_info);
         x.free_scratch_registers(tok(), indent, lea_registers);
     }
 
@@ -98,5 +98,5 @@ class stmt_assign_var final : public statement {
         expr_.assert_var_not_used(var);
     }
 
-    [[nodiscard]] auto array_size() const -> size_t { return array_size_; }
+    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 };

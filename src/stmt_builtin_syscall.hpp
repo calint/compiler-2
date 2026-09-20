@@ -9,7 +9,7 @@ class stmt_builtin_syscall final : public stmt_call {
     stmt_builtin_syscall(toc& tc, const token tk, tokenizer& tz)
         : stmt_call{tc, {}, tk, tz.is_next_char_token('('), tz} {
 
-        if (arguments_size() != 0) {
+        if (argument_count() != 0) {
             throw compiler_exception{tok(), "unexpected arguments"};
         }
 

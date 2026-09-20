@@ -44,7 +44,7 @@ class expr_ops_list final : public expression {
                   unary_ops uops = {},
                   const uint8_t first_op_precedence = initial_precedence,
                   std::unique_ptr<statement> first_expression = {})
-        : expression{tz.current_position_token()}, uops_{std::move(uops)},
+        : expression{tz.cur_position_token()}, uops_{std::move(uops)},
           open_paren_tk_{open_paren_tk}, enclosed_{enclosed},
           is_implied_subexpression_{is_implied_subexpression} {
 
@@ -352,13 +352,13 @@ class expr_ops_list final : public expression {
 
     [[nodiscard]] auto compile_lea(
         toc& tc, const size_t indent, const token& src_loc_tk,
-        std::vector<operand>& allocated_registers, const operand& reg_size,
+        std::vector<operand>& allocated_registers, const operand& reg_count,
         const std::span<const operand> lea_path) const -> operand override {
 
         assert(exprs_.size() == 1);
 
         return exprs_[0]->compile_lea(tc, indent, src_loc_tk,
-                                      allocated_registers, reg_size, lea_path);
+                                      allocated_registers, reg_count, lea_path);
     }
 
   private:

@@ -20,9 +20,9 @@ class compiler_exception final : public std::exception {
           end_index{src_loc_tk.end_index()} {}
 
     compiler_exception(const tokenizer& tz, std::string message)
-        : msg{std::move(message)}, line{tz.current_line()},
-          start_index{tz.current_char_index_in_source()},
-          end_index{tz.current_char_index_in_source()} {}
+        : msg{std::move(message)}, line{tz.cur_line()},
+          start_index{tz.cur_char_index_in_source()},
+          end_index{tz.cur_char_index_in_source()} {}
 
     [[nodiscard]] auto what() const noexcept -> const char* override {
         return msg.c_str();

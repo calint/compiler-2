@@ -14,8 +14,8 @@ class stmt_def_type_field final : public statement {
     token type_tk_;
     token open_bracket_tk_;
     token close_bracket_tk_;
-    stmt_const array_size_const_;
-    size_t array_size_{};
+    stmt_const array_count_const_;
+    size_t array_count_{};
     bool is_array_{};
 
   public:
@@ -43,21 +43,21 @@ class stmt_def_type_field final : public statement {
         if (not open_bracket_tk_.is_empty()) {
             is_array_ = true;
 
-            array_size_const_ = {tc, tz, 0};
+            array_count_const_ = {tc, tz, 0};
 
-            if (not array_size_const_.has_value() or
-                array_size_const_.value() < 1) {
+            if (not array_count_const_.has_value() or
+                array_count_const_.value() < 1) {
 
                 throw compiler_exception{
-                    array_size_const_.tok(),
+                    array_count_const_.tok(),
                     "expected a constant array size greater than 0"};
             }
 
-            array_size_ = static_cast<size_t>(array_size_const_.value());
+            array_count_ = static_cast<size_t>(array_count_const_.value());
 
             close_bracket_tk_ = tz.is_next_char_token(']');
             if (close_bracket_tk_.is_empty()) {
-                throw compiler_exception{array_size_const_.tok(),
+                throw compiler_exception{array_count_const_.tok(),
                                          "expected ']' after array size"};
             }
         }
@@ -74,7 +74,7 @@ class stmt_def_type_field final : public statement {
         type_tk_.source_to(os);
         if (is_array_) {
             open_bracket_tk_.source_to(os);
-            array_size_const_.source_to(os);
+            array_count_const_.source_to(os);
             close_bracket_tk_.source_to(os);
         }
     }
@@ -89,5 +89,5 @@ class stmt_def_type_field final : public statement {
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
 
-    [[nodiscard]] auto array_size() const -> size_t { return array_size_; }
+    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 };

@@ -26,7 +26,7 @@ class stmt_def_dat final : public statement {
         token open_brace_tk_;
         token close_brace_tk_;
         bool is_array{};
-        size_t array_size{};
+        size_t array_count{};
         std::vector<elem> elems;
         std::vector<token> elem_delims_tk_;
 
@@ -40,7 +40,7 @@ class stmt_def_dat final : public statement {
     token type_delim_tk_;
     token type_tk_;
     token open_bracket_tk_;
-    stmt_const array_size_const_;
+    stmt_const array_count_const_;
     token close_bracket_tk_;
     token equals_tk_;
     elem elroot_;
@@ -56,7 +56,7 @@ class stmt_def_dat final : public statement {
         }
 
         bool is_array{};
-        size_t array_size{};
+        size_t array_count{};
 
         // check whether a type is declared
         if (not type_delim_tk_.is_empty()) {
@@ -66,17 +66,17 @@ class stmt_def_dat final : public statement {
             if (not open_bracket_tk_.is_empty()) {
                 is_array = true;
 
-                array_size_const_ = {tc, tz, 0};
+                array_count_const_ = {tc, tz, 0};
 
-                if (array_size_const_.has_value() and
-                    array_size_const_.value() <= 0) {
+                if (array_count_const_.has_value() and
+                    array_count_const_.value() <= 0) {
 
                     throw compiler_exception{
-                        array_size_const_.tok(),
+                        array_count_const_.tok(),
                         "expected array size to be greater than 0"};
                 }
 
-                array_size = static_cast<size_t>(array_size_const_.value());
+                array_count = static_cast<size_t>(array_count_const_.value());
 
                 close_bracket_tk_ = tz.is_next_char_token(']');
                 if (close_bracket_tk_.is_empty()) {
@@ -105,15 +105,15 @@ class stmt_def_dat final : public statement {
             .type_ptr{&tp},
             .src_loc_tk{name_tk_},
             .is_array{is_array},
-            .array_size{array_size},
+            .array_count{array_count},
             .reg{},
         };
 
         tc.add_var(name_tk_, 0, var, true);
 
         if (has_init_) {
-            elroot_ = parse_elem(tc, tz, type_tk_, tp, is_array, array_size);
-            if (elroot_.is_array and elroot_.array_size == 0 and
+            elroot_ = parse_elem(tc, tz, type_tk_, tp, is_array, array_count);
+            if (elroot_.is_array and elroot_.array_count == 0 and
                 not elroot_.tk.is_string() and elroot_.elems.empty()) {
 
                 throw compiler_exception{name_tk_,
@@ -122,7 +122,7 @@ class stmt_def_dat final : public statement {
             }
         } else {
             elroot_.is_array = is_array;
-            elroot_.array_size = array_size;
+            elroot_.array_count = array_count;
         }
 
         tc.add_dat(this);
@@ -138,7 +138,7 @@ class stmt_def_dat final : public statement {
             type_tk_.source_to(os);
             if (elroot_.is_array) {
                 open_bracket_tk_.source_to(os);
-                array_size_const_.source_to(os);
+                array_count_const_.source_to(os);
                 close_bracket_tk_.source_to(os);
             }
         }
@@ -165,7 +165,7 @@ class stmt_def_dat final : public statement {
     }
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst) const
+                 [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -177,7 +177,7 @@ class stmt_def_dat final : public statement {
             .type_ptr{&get_type()},
             .src_loc_tk{name_tk_},
             .is_array{elroot_.is_array},
-            .array_size{elroot_.array_size},
+            .array_count{elroot_.array_count},
             .reg{},
         };
 
@@ -192,7 +192,8 @@ class stmt_def_dat final : public statement {
     }
 
     [[nodiscard]] auto dat_size_bytes() const -> size_t override {
-        return get_type().size() * (elroot_.is_array ? elroot_.array_size : 1);
+        return get_type().size_bytes() *
+               (elroot_.is_array ? elroot_.array_count : 1);
     }
 
   private:
@@ -220,7 +221,7 @@ class stmt_def_dat final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_size);
+        x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_count);
 
         for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
             x.comment(e.tk, 0, "[{}]", i);
@@ -229,16 +230,16 @@ class stmt_def_dat final : public statement {
 
         // zero out the remaining array elements
 
-        const size_t diff{elroot.array_size - elroot.elems.size()};
+        const size_t remaining_count{elroot.array_count - elroot.elems.size()};
 
-        if (diff == 0) {
+        if (remaining_count == 0) {
             return;
         }
 
-        x.comment(elroot.tk, 0, "pad {} '{}' of size {}", diff, tp.name(),
-                  tp.size());
+        x.comment(elroot.tk, 0, "pad {} '{}' of size {}", remaining_count,
+                  tp.name(), tp.size_bytes());
 
-        x.emit_zero_data(diff * tp.size());
+        x.emit_zero_data(remaining_count * tp.size_bytes());
     }
 
     static auto compile_data_elem(toc& tc, const type& tp, const elem& elroot)
@@ -266,12 +267,13 @@ class stmt_def_dat final : public statement {
         if (elroot.elems.size() == flds.size()) {
             return;
         }
-        const size_t nbytes{tp.remaining_fields_size(elroot.elems.size())};
+        const size_t size_bytes{
+            tp.remaining_fields_size_bytes(elroot.elems.size())};
 
         machine& x{tc.machine()};
 
         x.comment(elroot.tk, 0, "zero remaining fields");
-        x.emit_zero_data(nbytes);
+        x.emit_zero_data(size_bytes);
     }
 
     static auto compile_data_builtin(toc& tc, const type& tp,
@@ -282,33 +284,34 @@ class stmt_def_dat final : public statement {
         if (not elroot.is_array) {
             x.comment(elroot.tk, 0, "{}", tp.name());
             if (elroot.tk.text().empty()) {
-                x.emit_data(tp.size(), {});
+                x.emit_data(tp.size_bytes(), {});
 
                 return;
             }
 
-            x.emit_data(tp.size(), {
-                                       .value{elroot.value},
-                                       .uops{elroot.uops.to_string()},
-                                   });
+            x.emit_data(tp.size_bytes(), {
+                                             .value{elroot.value},
+                                             .uops{elroot.uops.to_string()},
+                                         });
 
             return;
         }
 
         // array of built-ins
 
-        x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_size);
+        x.comment(elroot.tk, 0, "{}[{}]", tp.name(), elroot.array_count);
 
         // special case for string
         // note: only i8[] can be initialized with string token
 
         if (elroot.tk.is_string()) {
             x.emit_string_data(elroot.tk.text());
-            const size_t sz{elroot.tk.string_size_bytes()};
+            const size_t size_bytes{elroot.tk.string_size_bytes()};
             // pad remaining array with 0
-            if (elroot.array_size != 0 and sz < elroot.array_size) {
+            if (elroot.array_count != 0 and size_bytes < elroot.array_count) {
                 x.comment(elroot.tk, 0, "zero remaining array");
-                x.emit_repeated_data(tp.size(), elroot.array_size - sz, {});
+                x.emit_repeated_data(tp.size_bytes(),
+                                     elroot.array_count - size_bytes, {});
             }
 
             return;
@@ -327,18 +330,18 @@ class stmt_def_dat final : public statement {
                     };
                 })};
 
-        x.emit_data_array(tp.size(), values);
+        x.emit_data_array(tp.size_bytes(), values);
 
         // pad remaining array with 0
-        if (elroot.array_size != elroot.elems.size()) {
-            x.emit_repeated_data(tp.size(),
-                                 elroot.array_size - elroot.elems.size(), {});
+        if (elroot.array_count != elroot.elems.size()) {
+            x.emit_repeated_data(tp.size_bytes(),
+                                 elroot.array_count - elroot.elems.size(), {});
         }
     }
 
     static auto parse_elem(const toc& tc, tokenizer& tz, const token src_loc_tk,
                            const type& tp, const bool is_array,
-                           const size_t array_size) -> elem {
+                           const size_t array_count) -> elem {
 
         if (not is_array) {
             if (tp.is_builtin()) {
@@ -354,26 +357,26 @@ class stmt_def_dat final : public statement {
 
         elem el{};
         el.is_array = is_array;
-        el.array_size = array_size;
+        el.array_count = array_count;
 
         if (tp.is_builtin()) {
             // special case for string
             el.tk = tz.next_token();
             if (el.tk.is_string()) {
                 const size_t strsz{el.tk.string_size_bytes()};
-                if (strsz == 0 and el.array_size == 0) {
+                if (strsz == 0 and el.array_count == 0) {
                     throw compiler_exception{
                         el.tk, "an empty string is not valid for an array "
                                "with unspecified size"};
                 }
-                if (el.array_size == 0) {
-                    el.array_size = strsz;
+                if (el.array_count == 0) {
+                    el.array_count = strsz;
                 } else {
-                    if (strsz > el.array_size) {
+                    if (strsz > el.array_count) {
                         throw compiler_exception(
                             el.tk, std::format(
                                        "string size {} overflows array size {}",
-                                       strsz, el.array_size));
+                                       strsz, el.array_count));
                     }
                 }
                 if (tp.name() == "i8") {
@@ -410,13 +413,13 @@ class stmt_def_dat final : public statement {
                         el.close_brace_tk_ = tz.is_next_char_token('}');
                         break;
                     }
-                    if (el.array_size != 0 and counter == el.array_size) {
+                    if (el.array_count != 0 and counter == el.array_count) {
                         throw compiler_exception{
                             t,
                             std::format("expected '}}' after {} element{} in "
                                         "array of size {}",
                                         counter, counter == 1 ? "" : "s",
-                                        el.array_size)};
+                                        el.array_count)};
                     }
                     el.elem_delims_tk_.emplace_back(t);
                 }
@@ -429,8 +432,8 @@ class stmt_def_dat final : public statement {
                             tp.name()));
             }
 
-            if (el.array_size == 0) {
-                el.array_size = counter;
+            if (el.array_count == 0) {
+                el.array_count = counter;
             }
 
             return el;
@@ -458,12 +461,12 @@ class stmt_def_dat final : public statement {
             if (tk.is_empty()) {
                 break;
             }
-            if (array_size != 0 and counter == array_size) {
+            if (array_count != 0 and counter == array_count) {
                 throw compiler_exception{
                     tk,
                     std::format("expected '}}' after {} element{} in array of "
                                 "size {}",
-                                counter, counter == 1 ? "" : "s", array_size)};
+                                counter, counter == 1 ? "" : "s", array_count)};
             }
             el.elem_delims_tk_.emplace_back(tk);
         }
@@ -476,8 +479,8 @@ class stmt_def_dat final : public statement {
                             tp.name()));
         }
 
-        if (array_size == 0) {
-            el.array_size = counter;
+        if (array_count == 0) {
+            el.array_count = counter;
         }
 
         return el;
@@ -518,7 +521,7 @@ class stmt_def_dat final : public statement {
         -> elem {
 
         elem el{};
-        el.tk = tz.current_position_token();
+        el.tk = tz.cur_position_token();
         el.open_brace_tk_ = tz.is_next_char_token('{');
         if (el.open_brace_tk_.is_empty()) {
             throw compiler_exception(
@@ -556,9 +559,9 @@ class stmt_def_dat final : public statement {
                 el.elem_delims_tk_.emplace_back(tk);
             }
 
-            el.elems.emplace_back(
-                parse_elem(tc, tz, tz.current_position_token(), tf.type(),
-                           tf.is_array, tf.array_size));
+            el.elems.emplace_back(parse_elem(tc, tz, tz.cur_position_token(),
+                                             tf.type(), tf.is_array,
+                                             tf.array_count));
         }
 
         return el;

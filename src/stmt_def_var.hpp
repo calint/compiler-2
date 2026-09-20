@@ -21,8 +21,8 @@ class stmt_def_var final : public statement {
     token type_delim_tk_;
     token type_tk_;
     token open_bracket_tk_;
-    stmt_const array_size_const_;
-    size_t array_size_{};
+    stmt_const array_count_const_;
+    size_t array_count_{};
     token close_bracket_tk_;
     token equals_tk_;
     std::unique_ptr<stmt_assign_var> assign_var_;
@@ -40,16 +40,16 @@ class stmt_def_var final : public statement {
             if (not open_bracket_tk_.is_empty()) {
                 is_array_ = true;
 
-                array_size_const_ = {tc, tz, 0};
+                array_count_const_ = {tc, tz, 0};
 
-                if (array_size_const_.has_value()) {
-                    if (array_size_const_.value() <= 0) {
+                if (array_count_const_.has_value()) {
+                    if (array_count_const_.value() <= 0) {
                         throw compiler_exception{
-                            array_size_const_.tok(),
+                            array_count_const_.tok(),
                             "expected a constant array size greater than 0"};
                     }
-                    array_size_ =
-                        static_cast<size_t>(array_size_const_.value());
+                    array_count_ =
+                        static_cast<size_t>(array_count_const_.value());
                 }
 
                 close_bracket_tk_ = tz.is_next_char_token(']');
@@ -79,7 +79,7 @@ class stmt_def_var final : public statement {
             .type_ptr{&tp},
             .src_loc_tk{name_tk_},
             .is_array{is_array_},
-            .array_size{array_size_},
+            .array_count{array_count_},
             .reg{},
         };
 
@@ -88,11 +88,11 @@ class stmt_def_var final : public statement {
         if (init_required) {
             stmt_identifier si{tc, {}, name_tk_, tz};
             assign_var_ = std::make_unique<stmt_assign_var>(
-                tc, tz, std::move(si), equals_tk_, is_array_, array_size_);
+                tc, tz, std::move(si), equals_tk_, is_array_, array_count_);
 
-            if (is_array_ and array_size_ == 0) {
-                array_size_ = assign_var_->array_size();
-                if (array_size_ == 0) {
+            if (is_array_ and array_count_ == 0) {
+                array_count_ = assign_var_->array_count();
+                if (array_count_ == 0) {
                     throw compiler_exception{
                         name_tk_, "expected array size greater than 0"};
                 }
@@ -114,7 +114,7 @@ class stmt_def_var final : public statement {
             type_tk_.source_to(os);
             if (is_array_) {
                 open_bracket_tk_.source_to(os);
-                array_size_const_.source_to(os);
+                array_count_const_.source_to(os);
                 close_bracket_tk_.source_to(os);
             }
         }
@@ -125,7 +125,7 @@ class stmt_def_var final : public statement {
     }
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst) const
+                 [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -137,30 +137,31 @@ class stmt_def_var final : public statement {
             .type_ptr{&get_type()},
             .src_loc_tk{name_tk_},
             .is_array{is_array_},
-            .array_size{array_size_},
+            .array_count{array_count_},
             .reg{},
         };
 
         tc.add_var(name_tk_, indent, var, false);
 
-        const ident_info& dst_info{
+        const ident_info& var_dst_info{
             tc.make_ident_info(name_tk_, name_tk_.text())};
 
         if (assign_var_) {
-            assign_var_->compile(tc, indent, dst_info);
+            assign_var_->compile(tc, indent, var_dst_info);
 
             return;
         }
 
         // zero the variable data
 
-        const size_t instance_count{array_size_ ? array_size_ : 1};
-        const size_t bytes_count{instance_count * dst_info.type_ref().size()};
+        const size_t instance_count{array_count_ ? array_count_ : 1};
+        const size_t size_bytes{instance_count *
+                                var_dst_info.type_ref().size_bytes()};
 
         x.comment(name_tk_, indent, "zero {} * {} B = {} B", instance_count,
-                  dst_info.type_ref().size(), bytes_count);
+                  var_dst_info.type_ref().size_bytes(), size_bytes);
 
-        x.zero(tok(), indent, dst_info.operand, bytes_count);
+        x.zero(tok(), indent, var_dst_info.operand, size_bytes);
     }
 
     auto assert_var_not_used(const std::string_view var) const

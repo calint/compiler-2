@@ -52,7 +52,7 @@ class stmt_def_const final : public statement {
     }
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
-                 [[maybe_unused]] const ident_info& dst) const
+                 [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
         tc.add_const(name_tk_, indent, name_tk_.text(), const_.value());

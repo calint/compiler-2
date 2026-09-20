@@ -133,7 +133,7 @@ class stmt_builtin_arrays_equal final : public expression {
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
 
         if (dst_info.is_register()) {
-            x.end_arrays_equal(tok(), indent, lhs_info.type_ref().size(),
+            x.end_arrays_equal(tok(), indent, lhs_info.type_ref().size_bytes(),
                                dst_info.operand);
 
             return;

@@ -114,7 +114,7 @@ class tokenizer final {
 
     // returns a token, which is a marker at the current position with empty
     // name and whitespace
-    [[nodiscard]] auto current_position_token() const -> token {
+    [[nodiscard]] auto cur_position_token() const -> token {
         return {"", char_ix_, "", char_ix_, "", at_line_, false};
     }
 
@@ -191,11 +191,11 @@ class tokenizer final {
         return ch;
     }
 
-    [[nodiscard]] auto current_char_index_in_source() const -> size_t {
+    [[nodiscard]] auto cur_char_index_in_source() const -> size_t {
         return char_ix_;
     }
 
-    [[nodiscard]] auto current_line() const -> size_t { return at_line_; }
+    [[nodiscard]] auto cur_line() const -> size_t { return at_line_; }
 
   private:
     [[nodiscard]] auto next_whitespace() -> std::string_view {

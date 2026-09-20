@@ -28,14 +28,14 @@ class expr_any final : public statement {
     std::vector<token> var_delims_tk_;
     token open_brace_tk_;
     token close_brace_tk_;
-    size_t array_size_{};
+    size_t array_count_{};
     bool is_array_{};
     bool is_identifier_{};
 
   public:
     expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args,
-             const bool is_array, const size_t array_size)
-        : statement{tz.next_whitespace_token()}, array_size_{array_size},
+             const bool is_array, const size_t array_count)
+        : statement{tz.next_whitespace_token()}, array_count_{array_count},
           is_array_{is_array} {
 
         set_type(tp);
@@ -78,8 +78,8 @@ class expr_any final : public statement {
             vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
         }
 
-        if (array_size_ == 0) {
-            array_size_ = vars_.size();
+        if (array_count_ == 0) {
+            array_count_ = vars_.size();
         }
     }
 
@@ -124,28 +124,30 @@ class expr_any final : public statement {
 
         // assign array elements
 
-        ident_info current_dst_info{dst_info};
+        ident_info cur_dst_info{dst_info};
 
         machine& x{tc.machine()};
 
         for (const auto [i, e] : std::views::enumerate(vars_)) {
             x.comment(tok(), indent, "[{}]", i);
-            compile_variant(tc, indent, current_dst_info, tok(), e);
-            current_dst_info.operand.displacement +=
-                static_cast<int32_t>(current_dst_info.type_ref().size());
+            compile_variant(tc, indent, cur_dst_info, tok(), e);
+            cur_dst_info.operand.displacement +=
+                static_cast<int32_t>(cur_dst_info.type_ref().size_bytes());
         }
 
-        const size_t diff{(array_size_ - vars_.size())};
-        if (diff == 0) {
+        const size_t remaining_count{(array_count_ - vars_.size())};
+        if (remaining_count == 0) {
             return;
         }
 
-        const size_t nbytes{diff * current_dst_info.type_ref().size()};
+        const size_t size_bytes{remaining_count *
+                                cur_dst_info.type_ref().size_bytes()};
 
         x.comment(tok(), indent, "zero remaining elements: {} * {} B = {} B",
-              diff, current_dst_info.type_ref().size(), nbytes);
+                  remaining_count, cur_dst_info.type_ref().size_bytes(),
+                  size_bytes);
 
-        x.zero(tok(), indent, current_dst_info.operand, nbytes);
+        x.zero(tok(), indent, cur_dst_info.operand, size_bytes);
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
@@ -225,12 +227,12 @@ class expr_any final : public statement {
 
     [[nodiscard]] auto compile_lea(
         toc& tc, const size_t indent, const token& src_loc_tk,
-        std::vector<operand>& allocated_registers, const operand& reg_size,
+        std::vector<operand>& allocated_registers, const operand& reg_count,
         const std::span<const operand> lea_path) const -> operand override {
 
         return vars_[0].visit([&](const auto& expression) -> operand {
             return expression.compile_lea(tc, indent, src_loc_tk,
-                                          allocated_registers, reg_size,
+                                          allocated_registers, reg_count,
                                           lea_path);
         });
     }
@@ -239,7 +241,7 @@ class expr_any final : public statement {
         return get<expr_type_value>(vars_[0]);
     }
 
-    [[nodiscard]] auto array_size() const -> size_t { return array_size_; }
+    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
     [[nodiscard]] auto tok() const -> const token& override {
         if (vars_.empty()) {

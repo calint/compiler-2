@@ -53,7 +53,7 @@ class stmt_def_type final : public statement {
                     : tc.get_type_or_throw(fld.type_token(), fld.type_str())};
 
             type_.add_field(fld.tok(), fld.name(), tp, fld.is_array(),
-                            fld.array_size());
+                            fld.array_count());
         }
 
         tc.add_type(name_tk_, type_);
@@ -86,15 +86,15 @@ class stmt_def_type final : public statement {
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, "{} : {} B    fields:", name_tk_.text(),
-                  tp.size());
+                  tp.size_bytes());
 
         x.comment(tok(), indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}",
                   "name", "offset", "size", "array?", "array size");
 
         for (const type_field& f : tp.fields()) {
             x.comment(tok(), indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}",
-                      f.name, f.offset, f.size, f.is_array ? "yes" : "no",
-                      f.is_array ? std::format("{}", f.array_size) : "");
+                      f.name, f.offset, f.size_bytes, f.is_array ? "yes" : "no",
+                      f.is_array ? std::format("{}", f.array_count) : "");
         }
         x.println();
     }

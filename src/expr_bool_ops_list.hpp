@@ -37,7 +37,7 @@ class expr_bool_ops_list final : public statement {
         while (true) {
             // place a marker at this location to be able to rewind if
             // speculative parsing failed
-            const token rewind_pos_tk{tz.current_position_token()};
+            const token rewind_pos_tk{tz.cur_position_token()};
             // this token may be "not"
             token maybe_not_tk{tz.next_token()};
             // is it "not"?
@@ -48,7 +48,7 @@ class expr_bool_ops_list final : public statement {
             }
             // place the position at the beginning of the parenthesis or start
             // of expression
-            const token pos_tk{tz.current_position_token()};
+            const token pos_tk{tz.cur_position_token()};
             // is it start of new sub-expression?
             if (const token t{tz.is_next_char_token('(')}; not t.is_empty()) {
                 // yes, try as 'expr_bool_ops_list' but it might not be that

@@ -97,19 +97,19 @@ class stmt_def_func final : public statement {
             tc.add_var(ret_tk, 0, var, false);
         }
 
-        for (const stmt_def_func_param& prm : params_) {
-            const type& prm_type{prm.get_type()};
-            const std::string_view prm_name{prm.name()};
+        for (const stmt_def_func_param& param : params_) {
+            const type& param_type{param.get_type()};
+            const std::string_view param_name{param.name()};
 
             const var_info var{
-                .name{prm_name},
-                .type_ptr{&prm_type},
-                .src_loc_tk{prm.tok()},
-                .is_array{prm.is_array()},
+                .name{param_name},
+                .type_ptr{&param_type},
+                .src_loc_tk{param.tok()},
+                .is_array{param.is_array()},
                 .reg{},
             };
 
-            tc.add_var(prm.tok(), 0, var, false);
+            tc.add_var(param.tok(), 0, var, false);
         }
 
         code_ = {tc, tz};
