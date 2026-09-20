@@ -237,9 +237,8 @@ class stmt_call : public expression {
                 arg.compile(tc, indent,
                             toc::make_ident_info_from_register(arg_reg));
 
-                aliases_to_add.emplace_back(std::string{param.identifier()},
-                                            arg_reg.base_register, operand{},
-                                            &param.get_type(), arg_reg);
+                aliases_to_add.push_back(alias_info::make_register(
+                    param.identifier(), param.get_type(), arg_reg));
 
                 continue;
             }
@@ -284,10 +283,8 @@ class stmt_call : public expression {
                     // apply unary ops
                     arg.get_unary_ops().compile(tc, indent, scratch_reg);
 
-                    aliases_to_add.emplace_back(std::string{param.identifier()},
-                                                scratch_reg.base_register,
-                                                operand{}, &param.get_type(),
-                                                scratch_reg);
+                    aliases_to_add.push_back(alias_info::make_register(
+                        param.identifier(), param.get_type(), scratch_reg));
                 }
 
                 continue;
@@ -295,9 +292,8 @@ class stmt_call : public expression {
 
             // handle non-expression with register
 
-            aliases_to_add.emplace_back(std::string{param.identifier()},
-                                        arg_reg.base_register, operand{},
-                                        &param.get_type(), arg_reg);
+            aliases_to_add.push_back(alias_info::make_register(
+                param.identifier(), param.get_type(), arg_reg));
 
             const ident_info& arg_info{tc.make_ident_info(arg)};
 

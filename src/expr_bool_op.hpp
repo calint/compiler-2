@@ -427,6 +427,21 @@ class expr_bool_op final : public statement {
     }
 
     [[nodiscard]] static auto
+    compile_to_scratch(toc& tc, const size_t indent, const expr_ops_list& expr,
+                       std::vector<operand>& allocated_registers) -> operand {
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(expr.tok(), indent, expr.get_type())};
+
+        allocated_registers.emplace_back(reg);
+        expr.compile(tc, indent + 1, toc::make_ident_info_from_register(reg));
+
+        return reg;
+    }
+
+    [[nodiscard]] static auto
     resolve_expr(toc& tc, const size_t indent, const expr_ops_list& expr,
                  const bool is_lhs, std::vector<operand>& allocated_registers)
         -> operand {
@@ -446,32 +461,15 @@ class expr_bool_op final : public statement {
         }
 
         if (expr.is_expression()) {
-            machine& x{tc.machine()};
-
-            const operand reg{
-                x.alloc_scratch_register(expr.tok(), indent, expr.get_type())};
-
-            allocated_registers.emplace_back(reg);
-            expr.compile(tc, indent + 1,
-                         toc::make_ident_info_from_register(reg));
-
-            return reg;
+            return compile_to_scratch(tc, indent, expr, allocated_registers);
         }
 
         // 'expr' is not an expression
         const ident_info expr_info{tc.make_ident_info(expr)};
         if (expr_info.is_const()) {
             if (is_lhs) {
-                machine& x{tc.machine()};
-
-                const operand reg{x.alloc_scratch_register(expr.tok(), indent,
-                                                           expr.get_type())};
-
-                allocated_registers.emplace_back(reg);
-                expr.compile(tc, indent + 1,
-                             toc::make_ident_info_from_register(reg));
-
-                return reg;
+                return compile_to_scratch(tc, indent, expr,
+                                          allocated_registers);
             }
 
             return expr.make_constant_operand(expr_info);

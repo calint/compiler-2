@@ -163,27 +163,18 @@ class stmt_identifier : public statement {
             return;
         }
 
-        // simple identifier or is indexing in an array or relative to "lea"
-
-        if (not is_indexed() and not src_info.has_lea()) {
-            // note: contains no array indexing and is not relative to a lea,
-            //       e.g. world.location.link
-            x.copy_value(tok(), indent, dst_info.operand, src_info.operand);
-
-            get_unary_ops().compile(tc, indent, dst_info.operand);
-
-            return;
-        }
-
-        // is indexing in an array or relative to "lea"
-
         std::vector<operand> allocated_registers;
 
-        operand op{stmt_identifier::compile_effective_address(
-            tc, indent, tok(), elems(), allocated_registers, {},
-            src_info.lea_path)};
+        operand op{src_info.operand};
 
-        op.size = src_info.type_ref().size();
+        if (is_indexed() or src_info.has_lea()) {
+            op = stmt_identifier::compile_effective_address(
+                tc, indent, tok(), elems(), allocated_registers, {},
+                src_info.lea_path);
+
+            op.size = src_info.type_ref().size();
+        }
+
         x.copy_value(tok(), indent, dst_info.operand, op);
 
         get_unary_ops().compile(tc, indent, dst_info.operand);

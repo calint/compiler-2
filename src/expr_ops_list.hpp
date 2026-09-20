@@ -535,6 +535,37 @@ class expr_ops_list final : public expression {
         std::unreachable();
     }
 
+    [[nodiscard]] static auto compile_to_scratch(toc& tc, const size_t indent,
+                                                 const statement& src,
+                                                 const type& register_type)
+        -> operand {
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(src.tok(), indent, register_type)};
+
+        src.compile(tc, indent, toc::make_ident_info_from_register(reg));
+
+        return reg;
+    }
+
+    [[nodiscard]] static auto
+    compile_unary_to_scratch(toc& tc, const size_t indent, const statement& src,
+                             const operand& src_operand,
+                             const type& register_type) -> operand {
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(src.tok(), indent, register_type)};
+
+        x.copy_value(src.tok(), indent, reg, src_operand);
+        src.get_unary_ops().compile(tc, indent, reg);
+
+        return reg;
+    }
+
     static auto asm_op_mul(toc& tc, const size_t indent,
                            const ident_info& dst_info, const statement& src)
         -> void {
@@ -544,10 +575,8 @@ class expr_ops_list final : public expression {
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             // yes, compile it to a scratch register
-            const operand reg{x.alloc_scratch_register(src.tok(), indent,
-                                                       dst_info.type_ref())};
-
-            src.compile(tc, indent, toc::make_ident_info_from_register(reg));
+            const operand reg{
+                compile_to_scratch(tc, indent, src, dst_info.type_ref())};
 
             if (dst_info.is_register() and not dst_info.operand.is_memory()) {
                 x.comment(src.tok(), indent, "imul: expr reg");
@@ -598,11 +627,9 @@ class expr_ops_list final : public expression {
         x.comment(src.tok(), indent, "dst is {}, src is not const, uops",
                   dst_kind);
 
-        const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, dst_info.type_ref())};
+        const operand reg{compile_unary_to_scratch(tc, indent, src, src_operand,
+                                                   dst_info.type_ref())};
 
-        x.copy_value(src.tok(), indent, reg, src_operand);
-        uops.compile(tc, indent, reg);
         x.multiply(src.tok(), indent, dst_info.operand, reg, true);
         x.free_scratch_register(src.tok(), indent, reg);
         x.free_scratch_registers(src.tok(), indent, lea_registers);
@@ -616,10 +643,8 @@ class expr_ops_list final : public expression {
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
-            const operand reg{x.alloc_scratch_register(src.tok(), indent,
-                                                       dst_info.type_ref())};
-
-            src.compile(tc, indent, toc::make_ident_info_from_register(reg));
+            const operand reg{
+                compile_to_scratch(tc, indent, src, dst_info.type_ref())};
 
             x.add_subtract(src.tok(), indent, op, dst_info.operand, reg);
 
@@ -668,11 +693,9 @@ class expr_ops_list final : public expression {
 
         // multiple unary ops
 
-        const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
+        const operand reg{compile_unary_to_scratch(tc, indent, src, src_operand,
+                                                   tc.get_type_default())};
 
-        x.copy_value(src.tok(), indent, reg, src_operand);
-        uops.compile(tc, indent, reg);
         x.add_subtract(src.tok(), indent, op, dst_info.operand, reg);
         x.free_scratch_register(src.tok(), indent, reg);
         x.free_scratch_registers(src.tok(), indent, lea_registers);
@@ -686,10 +709,8 @@ class expr_ops_list final : public expression {
 
         // does 'src' need to be compiled?
         if (src.is_expression()) {
-            const operand reg{x.alloc_scratch_register(src.tok(), indent,
-                                                       dst_info.type_ref())};
-
-            src.compile(tc, indent, toc::make_ident_info_from_register(reg));
+            const operand reg{
+                compile_to_scratch(tc, indent, src, dst_info.type_ref())};
 
             x.bitwise(src.tok(), indent, op, dst_info.operand, reg);
             x.free_scratch_register(src.tok(), indent, reg);
@@ -724,11 +745,9 @@ class expr_ops_list final : public expression {
 
         // 'src' is not an expression and not a constant and has unary ops
 
-        const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, tc.get_type_default())};
+        const operand reg{compile_unary_to_scratch(tc, indent, src, src_operand,
+                                                   tc.get_type_default())};
 
-        x.copy_value(src.tok(), indent, reg, src_operand);
-        uops.compile(tc, indent, reg);
         x.bitwise(src.tok(), indent, op, dst_info.operand, reg);
         x.free_scratch_register(src.tok(), indent, reg);
         x.free_scratch_registers(src.tok(), indent, lea_registers);
@@ -743,11 +762,8 @@ class expr_ops_list final : public expression {
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             x.comment(src.tok(), indent, "shf: expr");
-            const operand count_register{x.alloc_scratch_register(
-                src.tok(), indent, dst_info.type_ref())};
-
-            src.compile(tc, indent,
-                        toc::make_ident_info_from_register(count_register));
+            const operand count_register{
+                compile_to_scratch(tc, indent, src, dst_info.type_ref())};
 
             x.shift(src.tok(), indent, op, dst_info.operand, count_register);
             x.free_scratch_register(src.tok(), indent, count_register);
@@ -788,11 +804,9 @@ class expr_ops_list final : public expression {
 
         x.comment(src.tok(), indent, "shf: not const, uops");
 
-        const operand count_register{
-            x.alloc_scratch_register(src.tok(), indent, dst_info.type_ref())};
+        const operand count_register{compile_unary_to_scratch(
+            tc, indent, src, src_operand, dst_info.type_ref())};
 
-        x.copy_value(src.tok(), indent, count_register, src_operand);
-        uops.compile(tc, indent, count_register);
         x.shift(src.tok(), indent, op, dst_info.operand, count_register);
         x.free_scratch_register(src.tok(), indent, count_register);
         x.free_scratch_registers(src.tok(), indent, lea_registers);
@@ -807,10 +821,8 @@ class expr_ops_list final : public expression {
         // does 'src' need to be compiled?
         if (src.is_expression()) {
             x.comment(src.tok(), indent, "div expression");
-            const operand reg{x.alloc_scratch_register(src.tok(), indent,
-                                                       dst_info.type_ref())};
-
-            src.compile(tc, indent, toc::make_ident_info_from_register(reg));
+            const operand reg{
+                compile_to_scratch(tc, indent, src, dst_info.type_ref())};
 
             x.divide(src.tok(), indent, op, dst_info.operand, reg);
             x.free_scratch_register(src.tok(), indent, reg);
@@ -849,11 +861,9 @@ class expr_ops_list final : public expression {
         // 'src' is not an expression and not a constant and has unary ops
 
         x.comment(src.tok(), indent, "div not const, uops");
-        const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, dst_info.type_ref())};
+        const operand reg{compile_unary_to_scratch(tc, indent, src, src_operand,
+                                                   dst_info.type_ref())};
 
-        x.copy_value(src.tok(), indent, reg, src_operand);
-        uops.compile(tc, indent, reg);
         x.divide(src.tok(), indent, op, dst_info.operand, reg);
         x.free_scratch_register(src.tok(), indent, reg);
         x.free_scratch_registers(src.tok(), indent, lea_registers);

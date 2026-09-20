@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cassert>
 #include <concepts>
@@ -36,6 +37,112 @@ class machine_x86 final : public machine {
     static constexpr size_t threshold_for_rep_stos{32};
     static constexpr size_t threshold_for_rep_movs{16};
     static constexpr int syscall_exit{60};
+
+    struct register_names {
+        std::string_view qword;
+        std::string_view dword;
+        std::string_view word;
+        std::string_view byte;
+    };
+
+    static constexpr std::array<register_names, 16> register_names_{{
+        {
+            .qword{"rax"},
+            .dword{"eax"},
+            .word{"ax"},
+            .byte{"al"},
+        },
+        {
+            .qword{"rbx"},
+            .dword{"ebx"},
+            .word{"bx"},
+            .byte{"bl"},
+        },
+        {
+            .qword{"rcx"},
+            .dword{"ecx"},
+            .word{"cx"},
+            .byte{"cl"},
+        },
+        {
+            .qword{"rdx"},
+            .dword{"edx"},
+            .word{"dx"},
+            .byte{"dl"},
+        },
+        {
+            .qword{"rbp"},
+            .dword{"ebp"},
+            .word{"bp"},
+            .byte{"bpl"},
+        },
+        {
+            .qword{"rsi"},
+            .dword{"esi"},
+            .word{"si"},
+            .byte{"sil"},
+        },
+        {
+            .qword{"rdi"},
+            .dword{"edi"},
+            .word{"di"},
+            .byte{"dil"},
+        },
+        {
+            .qword{"rsp"},
+            .dword{"esp"},
+            .word{"sp"},
+            .byte{"spl"},
+        },
+        {
+            .qword{"r8"},
+            .dword{"r8d"},
+            .word{"r8w"},
+            .byte{"r8b"},
+        },
+        {
+            .qword{"r9"},
+            .dword{"r9d"},
+            .word{"r9w"},
+            .byte{"r9b"},
+        },
+        {
+            .qword{"r10"},
+            .dword{"r10d"},
+            .word{"r10w"},
+            .byte{"r10b"},
+        },
+        {
+            .qword{"r11"},
+            .dword{"r11d"},
+            .word{"r11w"},
+            .byte{"r11b"},
+        },
+        {
+            .qword{"r12"},
+            .dword{"r12d"},
+            .word{"r12w"},
+            .byte{"r12b"},
+        },
+        {
+            .qword{"r13"},
+            .dword{"r13d"},
+            .word{"r13w"},
+            .byte{"r13b"},
+        },
+        {
+            .qword{"r14"},
+            .dword{"r14d"},
+            .word{"r14w"},
+            .byte{"r14b"},
+        },
+        {
+            .qword{"r15"},
+            .dword{"r15d"},
+            .word{"r15w"},
+            .byte{"r15b"},
+        },
+    }};
 
     struct allocated_register {
         std::string source_location;
@@ -299,14 +406,15 @@ class machine_x86 final : public machine {
             reserve_named_register(src_loc_tk, indent, "rsi");
             reserve_named_register(src_loc_tk, indent, "rdi");
             reserve_named_register(src_loc_tk, indent, "rcx");
+
             lea(indent, machine_x86::reg("rsi"), src);
             lea(indent, machine_x86::reg("rdi"), dst);
             mov(src_loc_tk, indent, machine_x86::reg("rcx"),
                 immediate(bytes_count));
+
             rep_movs(indent, 'b');
-            release_named_register(src_loc_tk, indent, "rcx");
-            release_named_register(src_loc_tk, indent, "rdi");
-            release_named_register(src_loc_tk, indent, "rsi");
+
+            release_bulk_registers(src_loc_tk, indent);
 
             return;
         }
@@ -370,10 +478,7 @@ class machine_x86 final : public machine {
                                         const size_t indent)
         -> operand override {
 
-        reserve_named_register(src_loc_tk, indent, "rsi");
-        reserve_named_register(src_loc_tk, indent, "rdi");
-
-        return alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
+        return alloc_bulk_registers(src_loc_tk, indent);
     }
 
     auto set_array_copy_source(const size_t indent, const operand& address)
@@ -391,29 +496,17 @@ class machine_x86 final : public machine {
     auto end_array_copy(const token& src_loc_tk, const size_t indent,
                         const size_t element_size) -> void override {
 
-        if (element_size > 1) {
-            if (std::has_single_bit(element_size)) {
-                op(src_loc_tk, indent, "shl", machine_x86::reg("rcx"),
-                   immediate(std::countr_zero(element_size)));
-            } else {
-                op(src_loc_tk, indent, "imul", machine_x86::reg("rcx"),
-                   immediate(element_size));
-            }
-        }
+        scale_by_element_size(src_loc_tk, indent, machine_x86::reg("rcx"),
+                              element_size);
 
         rep_movs(indent, 'b');
-        release_named_register(src_loc_tk, indent, "rcx");
-        release_named_register(src_loc_tk, indent, "rdi");
-        release_named_register(src_loc_tk, indent, "rsi");
+        release_bulk_registers(src_loc_tk, indent);
     }
 
     auto begin_memory_equal(const token& src_loc_tk, const size_t indent)
         -> operand override {
 
-        reserve_named_register(src_loc_tk, indent, "rsi");
-        reserve_named_register(src_loc_tk, indent, "rdi");
-
-        return alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
+        return alloc_bulk_registers(src_loc_tk, indent);
     }
 
     auto set_memory_equal_left(const size_t indent, const operand& address)
@@ -446,9 +539,7 @@ class machine_x86 final : public machine {
         }
         mov(src_loc_tk, indent, machine_x86::reg("rcx"), immediate(count));
         repe_cmps(indent, rep_size);
-        release_named_register(src_loc_tk, indent, "rcx");
-        release_named_register(src_loc_tk, indent, "rdi");
-        release_named_register(src_loc_tk, indent, "rsi");
+        release_bulk_registers(src_loc_tk, indent);
         store_equal_result(indent, dst);
     }
 
@@ -456,20 +547,11 @@ class machine_x86 final : public machine {
                           const size_t element_size, const operand& dst)
         -> void override {
 
-        if (element_size > 1) {
-            if (std::has_single_bit(element_size)) {
-                op(src_loc_tk, indent, "shl", machine_x86::reg("rcx"),
-                   immediate(std::countr_zero(element_size)));
-            } else {
-                op(src_loc_tk, indent, "imul", machine_x86::reg("rcx"),
-                   immediate(element_size));
-            }
-        }
+        scale_by_element_size(src_loc_tk, indent, machine_x86::reg("rcx"),
+                              element_size);
 
         repe_cmps(indent, 'b');
-        release_named_register(src_loc_tk, indent, "rcx");
-        release_named_register(src_loc_tk, indent, "rdi");
-        release_named_register(src_loc_tk, indent, "rsi");
+        release_bulk_registers(src_loc_tk, indent);
         store_equal_result(indent, dst);
     }
 
@@ -734,15 +816,7 @@ class machine_x86 final : public machine {
                      const operand& index, const size_t element_size)
         -> void override {
 
-        if (element_size <= 1) {
-            return;
-        }
-        if (std::has_single_bit(element_size)) {
-            shl(indent, index, immediate(std::countr_zero(element_size)));
-
-            return;
-        }
-        imul(src_loc_tk, indent, index, immediate(element_size));
+        scale_by_element_size(src_loc_tk, indent, index, element_size);
     }
 
     auto exit_process(const token& src_loc_tk, const size_t indent,
@@ -988,40 +1062,22 @@ class machine_x86 final : public machine {
     [[nodiscard]] auto register_size(const std::string_view operand) const
         -> size_t override {
 
-        if (operand == "rax" or operand == "rbx" or operand == "rcx" or
-            operand == "rdx" or operand == "rbp" or operand == "rsi" or
-            operand == "rdi" or operand == "rsp" or operand == "r8" or
-            operand == "r9" or operand == "r10" or operand == "r11" or
-            operand == "r12" or operand == "r13" or operand == "r14" or
-            operand == "r15") {
-
-            return operand::size_qword;
+        for (const register_names& names : register_names_) {
+            if (operand == names.qword) {
+                return operand::size_qword;
+            }
+            if (operand == names.dword) {
+                return operand::size_dword;
+            }
+            if (operand == names.word) {
+                return operand::size_word;
+            }
+            if (operand == names.byte) {
+                return operand::size_byte;
+            }
         }
-        if (operand == "eax" or operand == "ebx" or operand == "ecx" or
-            operand == "edx" or operand == "ebp" or operand == "esi" or
-            operand == "edi" or operand == "esp" or operand == "r8d" or
-            operand == "r9d" or operand == "r10d" or operand == "r11d" or
-            operand == "r12d" or operand == "r13d" or operand == "r14d" or
-            operand == "r15d") {
-
-            return operand::size_dword;
-        }
-        if (operand == "ax" or operand == "bx" or operand == "cx" or
-            operand == "dx" or operand == "bp" or operand == "si" or
-            operand == "di" or operand == "sp" or operand == "r8w" or
-            operand == "r9w" or operand == "r10w" or operand == "r11w" or
-            operand == "r12w" or operand == "r13w" or operand == "r14w" or
-            operand == "r15w") {
-
-            return operand::size_word;
-        }
-        if (operand == "al" or operand == "ah" or operand == "bl" or
-            operand == "bh" or operand == "cl" or operand == "ch" or
-            operand == "dl" or operand == "dh" or operand == "spl" or
-            operand == "bpl" or operand == "sil" or operand == "dil" or
-            operand == "r8b" or operand == "r9b" or operand == "r10b" or
-            operand == "r11b" or operand == "r12b" or operand == "r13b" or
-            operand == "r14b" or operand == "r15b") {
+        if (operand == "ah" or operand == "bh" or operand == "ch" or
+            operand == "dh") {
 
             return operand::size_byte;
         }
@@ -1241,150 +1297,59 @@ class machine_x86 final : public machine {
         allocated_registers_.pop_back();
     }
 
+    [[nodiscard]] auto alloc_bulk_registers(const token& src_loc_tk,
+                                            const size_t indent) -> operand {
+
+        reserve_named_register(src_loc_tk, indent, "rsi");
+        reserve_named_register(src_loc_tk, indent, "rdi");
+
+        return alloc_named_register(src_loc_tk, indent, "rcx", *default_type_);
+    }
+
+    auto release_bulk_registers(const token& src_loc_tk, const size_t indent)
+        -> void {
+
+        release_named_register(src_loc_tk, indent, "rcx");
+        release_named_register(src_loc_tk, indent, "rdi");
+        release_named_register(src_loc_tk, indent, "rsi");
+    }
+
+    auto scale_by_element_size(const token& src_loc_tk, const size_t indent,
+                               const operand& value, const size_t element_size)
+        -> void {
+
+        if (element_size <= 1) {
+            return;
+        }
+        if (std::has_single_bit(element_size)) {
+            shl(indent, value, immediate(std::countr_zero(element_size)));
+
+            return;
+        }
+        imul(src_loc_tk, indent, value, immediate(element_size));
+    }
+
     [[nodiscard]] static auto
     sized_register_operand(const std::string_view operand, const size_t size)
         -> std::string {
 
         // map canonical 64-bit register names to size-specific aliases
-        if (operand == "rax") {
-            switch (size) {
-            case operand::size_qword:
-                return "rax";
-
-            case operand::size_dword:
-                return "eax";
-
-            case operand::size_word:
-                return "ax";
-
-            case operand::size_byte:
-                return "al";
-
-            default:
-                std::unreachable();
+        for (const register_names& names : register_names_) {
+            if (operand != names.qword) {
+                continue;
             }
-        }
-        if (operand == "rbx") {
             switch (size) {
             case operand::size_qword:
-                return "rbx";
+                return std::string{names.qword};
 
             case operand::size_dword:
-                return "ebx";
+                return std::string{names.dword};
 
             case operand::size_word:
-                return "bx";
+                return std::string{names.word};
 
             case operand::size_byte:
-                return "bl";
-
-            default:
-                std::unreachable();
-            }
-        }
-        if (operand == "rcx") {
-            switch (size) {
-            case operand::size_qword:
-                return "rcx";
-
-            case operand::size_dword:
-                return "ecx";
-
-            case operand::size_word:
-                return "cx";
-
-            case operand::size_byte:
-                return "cl";
-
-            default:
-                std::unreachable();
-            }
-        }
-        if (operand == "rdx") {
-            switch (size) {
-            case operand::size_qword:
-                return "rdx";
-
-            case operand::size_dword:
-                return "edx";
-
-            case operand::size_word:
-                return "dx";
-
-            case operand::size_byte:
-                return "dl";
-
-            default:
-                std::unreachable();
-            }
-        }
-        if (operand == "rbp") {
-            switch (size) {
-            case operand::size_qword:
-                return "rbp";
-
-            case operand::size_dword:
-                return "ebp";
-
-            case operand::size_word:
-                return "bp";
-
-            case operand::size_byte:
-                return "bpl";
-
-            default:
-                std::unreachable();
-            }
-        }
-        if (operand == "rsi") {
-            switch (size) {
-            case operand::size_qword:
-                return "rsi";
-
-            case operand::size_dword:
-                return "esi";
-
-            case operand::size_word:
-                return "si";
-
-            case operand::size_byte:
-                return "sil";
-
-            default:
-                std::unreachable();
-            }
-        }
-        if (operand == "rdi") {
-            switch (size) {
-            case operand::size_qword:
-                return "rdi";
-
-            case operand::size_dword:
-                return "edi";
-
-            case operand::size_word:
-                return "di";
-
-            case operand::size_byte:
-                return "dil";
-
-            default:
-                std::unreachable();
-            }
-        }
-        if (operand == "rsp") {
-            switch (size) {
-            case operand::size_qword:
-                return "rsp";
-
-            case operand::size_dword:
-                return "esp";
-
-            case operand::size_word:
-                return "sp";
-
-            case operand::size_byte:
-                return "spl";
+                return std::string{names.byte};
 
             default:
                 std::unreachable();
@@ -1592,21 +1557,30 @@ class machine_x86 final : public machine {
         const size_t dst_size{operand_size(dst_op)};
         const size_t src_size{operand_size(src_op)};
 
-        if (dst_size == src_size) {
-            if (dst_op.is_memory() and src_op.is_memory()) {
-                const operand reg{alloc_scratch_register(
-                    src_loc_tk, indent, builtin_type_for_size(dst_size))};
+        if (dst_op.is_memory() and src_op.is_memory()) {
+            const operand reg{alloc_scratch_register(
+                src_loc_tk, indent, builtin_type_for_size(dst_size))};
 
+            if (dst_size > src_size) {
+                asm_line(indent, "movsx {}, {}", format_operand(reg),
+                         format_operand(src_op));
+            } else if (dst_size < src_size) {
+                asm_line(indent, "mov {}, {}", format_operand(reg),
+                         format_operand(src_op, dst_size));
+            } else {
                 asm_line(indent, "mov {}, {}", format_operand(reg),
                          format_operand(src_op));
-
-                asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                         format_operand(reg));
-
-                free_scratch_register(src_loc_tk, indent, reg);
-
-                return;
             }
+
+            asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
+                     format_operand(reg));
+
+            free_scratch_register(src_loc_tk, indent, reg);
+
+            return;
+        }
+
+        if (dst_size == src_size) {
             asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
                      format_operand(src_op));
 
@@ -1614,20 +1588,6 @@ class machine_x86 final : public machine {
         }
 
         if (dst_size > src_size) {
-            if (dst_op.is_memory() and src_op.is_memory()) {
-                const operand reg{alloc_scratch_register(
-                    src_loc_tk, indent, builtin_type_for_size(dst_size))};
-
-                asm_line(indent, "movsx {}, {}", format_operand(reg),
-                         format_operand(src_op));
-
-                asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                         format_operand(reg));
-
-                free_scratch_register(src_loc_tk, indent, reg);
-
-                return;
-            }
             if (op == "mov") {
                 asm_line(indent, "movsx {}, {}", format_operand(dst_op),
                          format_operand(src_op));
@@ -1650,21 +1610,6 @@ class machine_x86 final : public machine {
                      format_operand(reg_sx));
 
             free_scratch_register(src_loc_tk, indent, reg_sx);
-
-            return;
-        }
-
-        if (dst_op.is_memory() and src_op.is_memory()) {
-            const operand reg{alloc_scratch_register(
-                src_loc_tk, indent, builtin_type_for_size(dst_size))};
-
-            asm_line(indent, "mov {}, {}", format_operand(reg),
-                     format_operand(src_op, dst_size));
-
-            asm_line(indent, "{} {}, {}", op, format_operand(dst_op),
-                     format_operand(reg));
-
-            free_scratch_register(src_loc_tk, indent, reg);
 
             return;
         }

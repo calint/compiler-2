@@ -42,6 +42,21 @@ struct alias_info {
     operand lea;
     const type* type_ptr{};
     operand register_operand;
+
+    [[nodiscard]] static auto make_register(const std::string_view name,
+                                            const type& alias_type,
+                                            const operand& reg) -> alias_info {
+
+        assert(reg.is_register());
+
+        return {
+            .from{std::string{name}},
+            .to{reg.base_register},
+            .lea{},
+            .type_ptr{&alias_type},
+            .register_operand{reg},
+        };
+    }
 };
 
 struct const_info {
