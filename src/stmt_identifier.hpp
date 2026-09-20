@@ -207,9 +207,8 @@ class stmt_identifier : public statement {
         //   e.g:'world.locations.links' while elems is 'loc.link'
         std::vector<operand> leas;
         leas.reserve(elems.size());
-        const size_t n{lea_path.size()};
-        for (size_t i{lea_path.size() - elems.size()}; i < n; ++i) {
-            leas.push_back(lea_path[i]);
+        for (const operand& address : lea_path.last(elems.size())) {
+            leas.push_back(address);
         }
 
         // find the first element from the top that has a 'lea' and get

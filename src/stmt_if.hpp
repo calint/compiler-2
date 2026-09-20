@@ -1,6 +1,8 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <ranges>
+
 #include "decouple.hpp"
 #include "stmt_block.hpp"
 #include "stmt_if_branch.hpp"
@@ -60,12 +62,14 @@ class stmt_if final : public statement {
         const stmt_if_branch& branch{branches_[0]};
         branch.source_to(os);
         // output the remaining 'else if' branches
-        const size_t n{branches_.size()};
-        for (size_t i{1}; i < n; ++i) {
-            const stmt_if_branch& else_if_branch{branches_[i]};
+        const auto else_if_branches{branches_ | std::views::drop(1)};
+        const auto token_pairs{else_if_tokens_ | std::views::chunk(2)};
+        for (const auto [else_if_branch, tokens] :
+             std::views::zip(else_if_branches, token_pairs)) {
+
             // 'else if' tokens as read from source
-            else_if_tokens_[(i - 1) << 1U].source_to(os);
-            else_if_tokens_[((i - 1) << 1U) + 1].source_to(os);
+            tokens[0].source_to(os);
+            tokens[1].source_to(os);
             else_if_branch.source_to(os);
         }
         // the 'else' code

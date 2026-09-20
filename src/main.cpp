@@ -8,6 +8,7 @@
 #include <iterator>
 #include <memory>
 #include <print>
+#include <ranges>
 #include <span>
 #include <sstream>
 #include <string>
@@ -53,8 +54,8 @@ auto main(const int argc, const char* argv[]) -> int {
     bool reproduce_source{};
 
     // parse arguments
-    for (size_t i{1}; i < args.size(); ++i) {
-        const std::string_view arg{args[i]};
+    for (const char* argument : args | std::views::drop(1)) {
+        const std::string_view arg{argument};
 
         if (arg == "--help" or arg == "-h") {
             const std::string_view prg{args[0]};
@@ -155,14 +156,13 @@ auto main(const int argc, const char* argv[]) -> int {
             }
         } else if (arg.starts_with(checks_option)) {
             const std::string_view checks{arg.substr(checks_option.size())};
-            std::istringstream iss{std::string{checks}};
 
             checks_upper = false;
             checks_lower = false;
             checks_show_line = false;
 
-            std::string option;
-            while (std::getline(iss, option, ',')) {
+            for (const auto part : checks | std::views::split(',')) {
+                const std::string_view option{part};
                 if (option == "upper") {
                     checks_upper = true;
                 } else if (option == "lower") {
@@ -186,7 +186,7 @@ auto main(const int argc, const char* argv[]) -> int {
             reproduce_source = true;
         } else if (not arg.starts_with("--")) {
             // assume it's the filename
-            src_file_name = args[i];
+            src_file_name = argument;
         } else {
             std::println(stderr, "Error: Unknown option: {}", arg);
             std::println(stderr, "Use --help for usage information");

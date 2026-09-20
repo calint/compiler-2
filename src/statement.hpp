@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <format>
+#include <ranges>
 #include <span>
 #include <sstream>
 #include <string>
@@ -48,8 +49,7 @@ class statement {
 
         bool in_whitespace{};
 
-        for (size_t i{start}; i < text.size(); ++i) {
-            const char ch{text[i]};
+        for (const char ch : text | std::views::drop(start)) {
             if (is_ascii_space(ch)) {
                 if (in_whitespace) {
                     continue;

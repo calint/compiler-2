@@ -11,6 +11,7 @@
 #include <functional>
 #include <ostream>
 #include <print>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -1412,19 +1413,15 @@ class machine_x86 final : public machine {
         std::print(os_.get(), "{}", text);
     }
 
-    [[nodiscard]] static auto count_instructions(std::string_view text)
+    [[nodiscard]] static auto count_instructions(const std::string_view text)
         -> size_t {
 
         size_t count{};
-        while (not text.empty()) {
-            const size_t newline{text.find('\n')};
-            if (not is_nasm_comment_or_empty_line(text.substr(0, newline))) {
+        for (const auto part : text | std::views::split('\n')) {
+            const std::string_view line{part};
+            if (not is_nasm_comment_or_empty_line(line)) {
                 ++count;
             }
-            if (newline == std::string_view::npos) {
-                break;
-            }
-            text.remove_prefix(newline + 1);
         }
 
         return count;

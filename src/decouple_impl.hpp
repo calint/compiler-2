@@ -289,7 +289,6 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
     }
 
     // initialize fields
-    size_t counter{};
 
     ident_info cur_dst_info{dst_info};
     cur_dst_info.operand = dst_op;
@@ -302,9 +301,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
 
     machine& x{tc.machine()};
 
-    for (const std::unique_ptr<expr_any>& ea : exprs_) {
-        const type_field& tf{flds[counter]};
-
+    for (const auto [ea, tf] : std::views::zip(exprs_, flds)) {
         x.comment(ea->tok(), indent, "copy field '{}'", tf.name);
 
         cur_dst_info.push(tf.name, tf.type_ptr, {});
@@ -316,13 +313,12 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
             // note: dst_op was mutated in the recursive call
             cur_dst_info.increment_offset(static_cast<int32_t>(tf.size));
             cur_dst_info.pop();
-            ++counter;
             continue;
         }
 
         // built-in
 
-        const expr_any& src{*exprs_[counter]};
+        const expr_any& src{*ea};
 
         if (src.is_array() and src.is_empty()) {
             // special case when empty array
@@ -337,7 +333,6 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
             dst_op.displacement += sz;
             cur_dst_info.increment_offset(sz);
             cur_dst_info.pop();
-            ++counter;
             continue;
         }
 
@@ -384,12 +379,11 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
         dst_op.displacement += sz;
         cur_dst_info.increment_offset(sz);
         cur_dst_info.pop();
-        ++counter;
     }
 
     // zero out the remaining fields
 
-    const size_t diff{dst_type.fields().size() - counter};
+    const size_t diff{dst_type.fields().size() - exprs_.size()};
 
     if (diff == 0) {
         // all fields have been assigned
@@ -398,7 +392,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
 
     // calculate remaining bytes of the type to zero
 
-    const size_t nbytes{dst_type.remaining_fields_size(counter)};
+    const size_t nbytes{dst_type.remaining_fields_size(exprs_.size())};
 
     x.comment(tok(), indent, "zero remaining fields: {} B", nbytes);
     x.zero(tok(), indent, dst_op, nbytes);
