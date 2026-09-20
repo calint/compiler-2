@@ -16,18 +16,18 @@ func main(){
 
 
     var ag = 10
-    var ah = 5
+    var ah_value = 5
     var ai = 3
-    var aj = -(-ag) + -(ah - ai) - (-ai)
+    var aj = -(-ag) + -(ah_value - ai) - (-ai)
 
     if (aj != 11) exit(12)
 
 
     var ak = 100
-    var al = 17
+    var al_value = 17
     var am = 4
     var an = 3
-    var ao = (ak % al) + (al / an) * am
+    var ao = (ak % al_value) + (al_value / an) * am
 
     if (ao != 35) exit(13)
 
@@ -44,9 +44,9 @@ func main(){
 
     var av = 100
     var aw = 10
-    var ax = 5
+    var ax_value = 5
     var ay = 2
-    var az = av / aw / ax * ay
+    var az = av / aw / ax_value * ay
 
     if (az != 4) exit(15)
 
@@ -62,21 +62,21 @@ func main(){
 
 
     var bg = 5
-    var bh = 20
+    var bh_value = 20
     var bi = 3
     var bj = 2
-    var bk = (bg - bh) * bi + bj * bj * bj
+    var bk = (bg - bh_value) * bi + bj * bj * bj
 
     if (bk != -37) exit(17)
 
 
-    var bl = 0
+    var bl_value = 0
     var bm = 15
     var bn = 3
     var bo = 5
-    var bp = bl + bm / bn * bo - bl * bn
+    var bp_value = bl_value + bm / bn * bo - bl_value * bn
 
-    if (bp != 25) exit(18)
+    if (bp_value != 25) exit(18)
 
 
     var bq = 144
@@ -90,10 +90,10 @@ func main(){
 
 
     var bw = 50
-    var bx = 7
+    var bx_value = 7
     var by = 4
     var bz = 3
-    var ca = (bw % bx) % by % bz
+    var ca = (bw % bx_value) % by % bz
 
     if (ca != 1) exit(20)
 
@@ -108,18 +108,18 @@ func main(){
 
 
     var cg = 8
-    var ch = 4
+    var ch_value = 4
     var ci = 2
-    var cj = -(cg * ch / ci) + cg + ch
+    var cj = -(cg * ch_value / ci) + cg + ch_value
 
     if (cj != -4) exit(22)
 
 
     var ck = 1000
-    var cl = 10
+    var cl_value = 10
     var cm = 5
     var cn = 2
-    var co = ck / cl / cm * cn * cn
+    var co = ck / cl_value / cm * cn * cn
 
     if (co != 80) exit(23)
 
@@ -136,9 +136,9 @@ func main(){
     var cu = 10
     var cv = 5
     var cw = 2
-    var cx = (((cu - cv) * cw) + (cv / cw)) - (cw % cw)
+    var cx_value = (((cu - cv) * cw) + (cv / cw)) - (cw % cw)
 
-    if (cx != 12) exit(25)
+    if (cx_value != 12) exit(25)
 
 
     var cy = 7
@@ -158,13 +158,13 @@ func main(){
     if (dg != 43) exit(27)
 
 
-    var dh = 48
-    var di = 6
+    var dh_value = 48
+    var di_value = 6
     var dj = 2
     var dk = 3
-    var dl = (dh / di) / dj + (di * dk) / dj
+    var dl_value = (dh_value / di_value) / dj + (di_value * dk) / dj
 
-    if (dl != 13) exit(28)
+    if (dl_value != 13) exit(28)
 
 
     var dm = 25

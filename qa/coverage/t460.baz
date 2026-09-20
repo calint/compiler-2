@@ -1,0 +1,2 @@
+func unused() : i64 rbp {}
+func main() {}

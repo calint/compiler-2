@@ -341,6 +341,13 @@ class toc final {
     auto add_var(x86& x, const token& src_loc_tk, const size_t indent,
                  var_info var, bool is_dat) -> void {
 
+        if (operand::register_size(var.name) != 0) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("cannot use register name '{}' as a variable name",
+                            var.name)};
+        }
+
         // check if the variable is already declared in this scope
         if (frames_.back().has_var(var.name)) {
             const var_info& decl_var{
