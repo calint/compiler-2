@@ -50,10 +50,7 @@ struct jump_info {
 [[nodiscard]] static auto parse_jump(const std::string_view line)
     -> std::optional<jump_info> {
 
-    size_t i{};
-    while (i < line.size() && is_ascii_space(line[i])) {
-        ++i;
-    }
+    size_t i{leading_ws(line).size()};
     if (i == line.size() || line[i] != 'j') {
         return std::nullopt;
     }
@@ -99,10 +96,7 @@ struct jump_info {
 [[nodiscard]] static auto parse_label_strict(const std::string_view line)
     -> std::optional<std::string_view> {
 
-    size_t i{};
-    while (i < line.size() && is_ascii_space(line[i])) {
-        ++i;
-    }
+    size_t i{leading_ws(line).size()};
     if (i == line.size()) {
         return std::nullopt;
     }
@@ -136,10 +130,7 @@ struct jump_info {
 [[nodiscard]] static auto parse_label_any(const std::string_view line)
     -> std::optional<std::string_view> {
 
-    size_t start{};
-    while (start < line.size() && is_ascii_space(line[start])) {
-        ++start;
-    }
+    const size_t start{leading_ws(line).size()};
     if (start == line.size()) {
         return std::nullopt;
     }

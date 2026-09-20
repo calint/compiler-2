@@ -273,10 +273,7 @@ class stmt_def_dat final : public statement {
         if (diff == 0) {
             return;
         }
-        size_t nbytes{};
-        for (size_t i{counter}; i < n; ++i) {
-            nbytes += flds[i].size;
-        }
+        const size_t nbytes{tp.remaining_fields_size(counter)};
 
         machine& x{tc.machine()};
 

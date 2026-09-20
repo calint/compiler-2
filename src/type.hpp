@@ -144,4 +144,15 @@ class type final {
     [[nodiscard]] auto fields() const -> std::span<const type_field> {
         return fields_;
     }
+
+    [[nodiscard]] auto remaining_fields_size(const size_t first) const
+        -> size_t {
+
+        size_t bytes{};
+        for (const type_field& field : fields_ | std::views::drop(first)) {
+            bytes += field.size;
+        }
+
+        return bytes;
+    }
 };

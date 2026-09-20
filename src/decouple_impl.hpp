@@ -398,11 +398,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
 
     // calculate remaining bytes of the type to zero
 
-    const size_t n{flds.size()};
-    size_t nbytes{};
-    for (size_t i{counter}; i < n; ++i) {
-        nbytes += flds[i].size;
-    }
+    const size_t nbytes{dst_type.remaining_fields_size(counter)};
 
     x.comment(tok(), indent, "zero remaining fields: {} B", nbytes);
     x.zero(tok(), indent, dst_op, nbytes);
