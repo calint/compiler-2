@@ -10,7 +10,6 @@
 
 #include "decouple.hpp"
 #include "expression.hpp"
-#include "machine.hpp"
 #include "toc.hpp"
 
 //
