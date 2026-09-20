@@ -11,7 +11,7 @@ class stmt_def_type final : public statement {
     token name_tk_;
     token open_brace_tk_;
     std::vector<stmt_def_type_field> fields_;
-    std::vector<token> fields_delim_tk_;
+    std::vector<token> field_delims_tk_;
     token close_brace_tk_;
     type type_;
 
@@ -39,7 +39,7 @@ class stmt_def_type final : public statement {
                                     "in type '{}'",
                                     name_tk_.text())};
             }
-            fields_delim_tk_.emplace_back(t);
+            field_delims_tk_.emplace_back(t);
         }
         // initiate the type definitions
         type_.set_name(name_tk_.text());
@@ -68,7 +68,7 @@ class stmt_def_type final : public statement {
         if (not fields_.empty()) {
             fields_.front().source_to(os);
             for (const auto [d, e] : std::views::zip(
-                     fields_delim_tk_, fields_ | std::views::drop(1))) {
+                     field_delims_tk_, fields_ | std::views::drop(1))) {
 
                 d.source_to(os);
                 e.source_to(os);

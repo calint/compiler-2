@@ -17,7 +17,7 @@
 class stmt_call : public expression {
     token open_paren_tk_;
     std::vector<expr_any> args_;
-    std::vector<token> args_delims_tk_;
+    std::vector<token> arg_delims_tk_;
     token close_paren_tk_;
 
   public:
@@ -51,7 +51,7 @@ class stmt_call : public expression {
 
                         // note: +1 because 'i' starts at 0
                     }
-                    args_delims_tk_.emplace_back(t);
+                    arg_delims_tk_.emplace_back(t);
                 }
                 args_.emplace_back(tc, tz, param.get_type(), true, false, 0);
             }
@@ -97,7 +97,7 @@ class stmt_call : public expression {
             const token delim_tk{tz.is_next_char_token(',')};
             expect_arg = not delim_tk.is_empty();
             if (expect_arg) {
-                args_delims_tk_.emplace_back(delim_tk);
+                arg_delims_tk_.emplace_back(delim_tk);
             }
         }
     }
@@ -110,7 +110,7 @@ class stmt_call : public expression {
         if (not args_.empty()) {
             args_.front().source_to(os);
             for (const auto [d, e] : std::views::zip(
-                     args_delims_tk_, args_ | std::views::drop(1))) {
+                     arg_delims_tk_, args_ | std::views::drop(1))) {
 
                 d.source_to(os);
                 e.source_to(os);

@@ -18,7 +18,7 @@ class expr_type_value final : public statement {
 
     token open_brace_tk_;
     std::vector<std::unique_ptr<expr_any>> exprs_;
-    std::vector<token> exprs_delims_tk_;
+    std::vector<token> expr_delims_tk_;
     token close_brace_tk_;
 
   public:

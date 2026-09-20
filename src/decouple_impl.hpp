@@ -192,7 +192,7 @@ expr_type_value::expr_type_value(toc& tc, tokenizer& tz, const type& tp)
                             "in type '{}'",
                             flds[counter - 1].name, tp.name())};
             }
-            exprs_delims_tk_.emplace_back(t);
+            expr_delims_tk_.emplace_back(t);
         }
         // create an expression that assigns to field
         // might recurse creating 'expr_type_value'
@@ -224,7 +224,7 @@ auto expr_type_value::source_to(std::ostream& os) const -> void {
     if (not exprs_.empty()) {
         exprs_.front()->source_to(os);
         for (const auto [d, e] :
-             std::views::zip(exprs_delims_tk_, exprs_ | std::views::drop(1))) {
+             std::views::zip(expr_delims_tk_, exprs_ | std::views::drop(1))) {
 
             d.source_to(os);
             e->source_to(os);
@@ -306,7 +306,7 @@ auto expr_type_value::compile_assign(toc& tc, size_t indent,
 
         cur_dst_info.push(tf.name, tf.type_ptr, {});
 
-        if (not tf.type().is_built_in()) {
+        if (not tf.type().is_builtin()) {
             // a not-builtin statement thus is 'expr_type_value'
             const expr_type_value& e{ea->as_expr_type_value()};
             e.compile_assign(tc, indent, tf.type(), cur_dst_info, dst_op);

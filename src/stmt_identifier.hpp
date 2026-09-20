@@ -37,7 +37,7 @@ class stmt_identifier : public statement {
     };
 
     std::vector<ident_elem> elems_;
-    std::vector<token> elems_delim_tk_;
+    std::vector<token> elem_delims_tk_;
     std::string path_as_string_;
     size_t array_size_{};
     bool is_array_{};
@@ -85,7 +85,7 @@ class stmt_identifier : public statement {
             }
 
             if (const token t{tz.is_next_char_token('.')}; not t.is_empty()) {
-                elems_delim_tk_.emplace_back(t);
+                elem_delims_tk_.emplace_back(t);
                 tk_prv = tk;
                 tk = tz.next_token();
                 path_as_string_.push_back('.');
@@ -139,7 +139,7 @@ class stmt_identifier : public statement {
         if (not elems_.empty()) {
             elems_.front().source_to(os);
             for (const auto [d, e] : std::views::zip(
-                     elems_delim_tk_, elems_ | std::views::drop(1))) {
+                     elem_delims_tk_, elems_ | std::views::drop(1))) {
 
                 d.source_to(os);
                 e.source_to(os);

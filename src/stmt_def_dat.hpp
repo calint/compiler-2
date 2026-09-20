@@ -28,7 +28,7 @@ class stmt_def_dat final : public statement {
         bool is_array{};
         size_t array_size{};
         std::vector<elem> elems;
-        std::vector<token> elems_delim_tk_;
+        std::vector<token> elem_delims_tk_;
 
         auto source_to(std::ostream& os) const -> void {
             uops.source_to(os);
@@ -244,7 +244,7 @@ class stmt_def_dat final : public statement {
     static auto compile_data_elem(toc& tc, const type& tp, const elem& elroot)
         -> void {
 
-        if (tp.is_built_in()) {
+        if (tp.is_builtin()) {
             compile_data_builtin(tc, tp, elroot);
 
             return;
@@ -254,7 +254,7 @@ class stmt_def_dat final : public statement {
 
         const std::span<const type_field> flds{tp.fields()};
         for (const auto [el, tf] : std::views::zip(elroot.elems, flds)) {
-            if (tf.type().is_built_in()) {
+            if (tf.type().is_builtin()) {
                 compile_data_builtin(tc, tf.type(), el);
             } else {
                 compile_data_rec(tc, tf.type(), el);
@@ -341,7 +341,7 @@ class stmt_def_dat final : public statement {
                            const size_t array_size) -> elem {
 
         if (not is_array) {
-            if (tp.is_built_in()) {
+            if (tp.is_builtin()) {
                 return parse_builtin(tc, tz, tp);
             }
 
@@ -356,7 +356,7 @@ class stmt_def_dat final : public statement {
         el.is_array = is_array;
         el.array_size = array_size;
 
-        if (tp.is_built_in()) {
+        if (tp.is_builtin()) {
             // special case for string
             el.tk = tz.next_token();
             if (el.tk.is_string()) {
@@ -418,7 +418,7 @@ class stmt_def_dat final : public statement {
                                         counter, counter == 1 ? "" : "s",
                                         el.array_size)};
                     }
-                    el.elems_delim_tk_.emplace_back(t);
+                    el.elem_delims_tk_.emplace_back(t);
                 }
             }
 
@@ -465,7 +465,7 @@ class stmt_def_dat final : public statement {
                                 "size {}",
                                 counter, counter == 1 ? "" : "s", array_size)};
             }
-            el.elems_delim_tk_.emplace_back(tk);
+            el.elem_delims_tk_.emplace_back(tk);
         }
 
         el.close_brace_tk_ = tz.is_next_char_token('}');
@@ -553,7 +553,7 @@ class stmt_def_dat final : public statement {
                                 tf.name, tf.type().name(),
                                 tf.is_array ? "[]" : "", tp.name()));
                 }
-                el.elems_delim_tk_.emplace_back(tk);
+                el.elem_delims_tk_.emplace_back(tk);
             }
 
             el.elems.emplace_back(
@@ -568,7 +568,7 @@ class stmt_def_dat final : public statement {
                                   const elem& elroot) -> void {
 
         if (not elroot.is_array) {
-            if (tp.is_built_in()) {
+            if (tp.is_builtin()) {
                 elroot.source_to(os);
 
                 return;
@@ -583,7 +583,7 @@ class stmt_def_dat final : public statement {
 
         // array
 
-        if (tp.is_built_in()) {
+        if (tp.is_builtin()) {
             print_source_builtin_array(os, elroot);
 
             return;
@@ -601,7 +601,7 @@ class stmt_def_dat final : public statement {
         if (not elroot.elems.empty()) {
             elroot.elems.front().source_to(os);
             for (const auto [d, e] :
-                 std::views::zip(elroot.elems_delim_tk_,
+                 std::views::zip(elroot.elem_delims_tk_,
                                  elroot.elems | std::views::drop(1))) {
 
                 d.source_to(os);
@@ -621,7 +621,7 @@ class stmt_def_dat final : public statement {
                                    elroot.elems.front());
 
                 for (const auto [d, e, f] :
-                     std::views::zip(elroot.elems_delim_tk_,
+                     std::views::zip(elroot.elem_delims_tk_,
                                      elroot.elems | std::views::drop(1),
                                      tp.fields() | std::views::drop(1))) {
 
@@ -640,7 +640,7 @@ class stmt_def_dat final : public statement {
         if (not elroot.elems.empty()) {
             print_source_elem(os, tp, elroot.elems.front());
             for (const auto [d, e] :
-                 std::views::zip(elroot.elems_delim_tk_,
+                 std::views::zip(elroot.elem_delims_tk_,
                                  elroot.elems | std::views::drop(1))) {
 
                 d.source_to(os);
@@ -653,7 +653,7 @@ class stmt_def_dat final : public statement {
     static auto print_source_field(std::ostream& os, const type_field& tf,
                                    const elem& elroot) -> void {
 
-        if (tf.type().is_built_in()) {
+        if (tf.type().is_builtin()) {
             if (not tf.is_array) {
                 elroot.source_to(os);
 

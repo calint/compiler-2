@@ -18,7 +18,7 @@ class stmt_def_func final : public statement {
     token name_tk_;
     token open_paren_tk_;
     std::vector<stmt_def_func_param> params_;
-    std::vector<token> params_delim_tks_;
+    std::vector<token> param_delims_tk_;
     token close_paren_tk_;
     token returns_delim_tk_;
     std::optional<func_return_info> returns_;
@@ -50,7 +50,7 @@ class stmt_def_func final : public statement {
                         std::format("expected ',' or ')' after parameter '{}'",
                                     params_.back().tok().text())};
                 }
-                params_delim_tks_.emplace_back(t);
+                param_delims_tk_.emplace_back(t);
             }
 
             params_.emplace_back(tc, tz);
@@ -134,7 +134,7 @@ class stmt_def_func final : public statement {
         if (not params_.empty()) {
             params_.front().source_to(os);
             for (const auto [d, e] : std::views::zip(
-                     params_delim_tks_, params_ | std::views::drop(1))) {
+                     param_delims_tk_, params_ | std::views::drop(1))) {
 
                 d.source_to(os);
                 e.source_to(os);

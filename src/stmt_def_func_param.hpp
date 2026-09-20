@@ -9,8 +9,8 @@
 class stmt_def_func_param final : public statement {
     token type_delim_tk_;
     token type_tk_;
-    token open_array_tk_;
-    token close_array_tk_;
+    token open_bracket_tk_;
+    token close_bracket_tk_;
     bool is_array_{};
 
   public:
@@ -38,10 +38,10 @@ class stmt_def_func_param final : public statement {
 
         set_type(tc.get_type_or_throw(type_tk_, type_tk_.text()));
 
-        open_array_tk_ = tz.is_next_char_token('[');
-        if (not open_array_tk_.is_empty()) {
-            close_array_tk_ = tz.is_next_char_token(']');
-            if (close_array_tk_.is_empty()) {
+        open_bracket_tk_ = tz.is_next_char_token('[');
+        if (not open_bracket_tk_.is_empty()) {
+            close_bracket_tk_ = tz.is_next_char_token(']');
+            if (close_bracket_tk_.is_empty()) {
                 throw compiler_exception{tz, "expected ']'"};
             }
             is_array_ = true;
@@ -58,8 +58,8 @@ class stmt_def_func_param final : public statement {
         type_delim_tk_.source_to(os);
         type_tk_.source_to(os);
         if (is_array_) {
-            open_array_tk_.source_to(os);
-            close_array_tk_.source_to(os);
+            open_bracket_tk_.source_to(os);
+            close_bracket_tk_.source_to(os);
         }
     }
 

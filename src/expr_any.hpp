@@ -25,7 +25,7 @@ class expr_any final : public statement {
     };
 
     std::vector<expr_variant> vars_;
-    std::vector<token> vars_delims_tk_;
+    std::vector<token> var_delims_tk_;
     token open_brace_tk_;
     token close_brace_tk_;
     size_t array_size_{};
@@ -73,7 +73,7 @@ class expr_any final : public statement {
                                         "for type '{}'",
                                         tp.name()));
                 }
-                vars_delims_tk_.emplace_back(t);
+                var_delims_tk_.emplace_back(t);
             }
             vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
         }
@@ -94,7 +94,7 @@ class expr_any final : public statement {
             });
 
             for (const auto [d, e] : std::views::zip(
-                     vars_delims_tk_, vars_ | std::views::drop(1))) {
+                     var_delims_tk_, vars_ | std::views::drop(1))) {
 
                 d.source_to(os);
                 e.visit([&os](const auto& expression) -> void {
@@ -256,7 +256,7 @@ class expr_any final : public statement {
                                             const type& tp, const bool in_args)
         -> expr_variant {
 
-        if (not tp.is_built_in()) {
+        if (not tp.is_builtin()) {
             // destination is not a built-in (register) value
             // assume assign type value
             return expr_type_value{tc, tz, tp};

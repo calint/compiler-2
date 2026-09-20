@@ -1099,7 +1099,7 @@ class toc final {
 
         ii.lea_path = lea_path;
 
-        if (not ii.type_ref().is_built_in()) {
+        if (not ii.type_ref().is_builtin()) {
             return ii;
         }
 

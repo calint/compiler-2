@@ -31,11 +31,11 @@ class type final {
     std::string name_;
     size_t size_{}; // total size of type in bytes
     std::vector<type_field> fields_;
-    bool is_built_in_{};
+    bool is_builtin_{};
 
   public:
-    type(const std::string_view name, const size_t size, const bool is_built_in)
-        : name_{name}, size_{size}, is_built_in_{is_built_in} {}
+    type(const std::string_view name, const size_t size, const bool is_builtin)
+        : name_{name}, size_{size}, is_builtin_{is_builtin} {}
 
     type() = default;
 
@@ -101,7 +101,7 @@ class type final {
         // address
 
         const type* tp_first_field{tp};
-        while (not tp_first_field->is_built_in()) {
+        while (not tp_first_field->is_builtin()) {
             tp_first_field = tp_first_field->fields_[0].type_ptr;
         }
 
@@ -141,7 +141,7 @@ class type final {
 
     auto set_name(const std::string_view nm) -> void { name_ = nm; }
 
-    [[nodiscard]] auto is_built_in() const -> bool { return is_built_in_; }
+    [[nodiscard]] auto is_builtin() const -> bool { return is_builtin_; }
 
     [[nodiscard]] auto fields() const -> std::span<const type_field> {
         return fields_;
