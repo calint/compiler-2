@@ -68,7 +68,7 @@ class frame final {
     // optional name
     std::string_view name_;
 
-    // a unique path of source locations of the in-lined call
+    // a unique path of source locations of the inlined call
     std::string call_path_;
 
     // number of bytes used on the stack by this frame
@@ -86,7 +86,7 @@ class frame final {
     // aliases that refer to previous frame(s) alias or variable
     lut<alias_info> aliases_;
 
-    // the label to jump to when exiting an in-lined function
+    // the label to jump to when exiting an inlined function
     std::string func_ret_label_;
 
     // info about the function return
@@ -953,11 +953,11 @@ class toc final {
         // traverse the frames and resolve to a variable, register or constant
 
         std::vector<operand> lea_path;
-        // note: 'lea' is a register operand pointing to the data of the
-        //       identifier combined which combined assembler instruction 'lea'
-        //       to loads the effective address of that data
-        //       'lea_path' elements will match components of the identifier
-        //       using the top most being the most recent in the call stack
+
+        // note: 'lea' describes the effective address of an identifier's data.
+        //       'lea_path' associates address operands with identifier
+        //       components; it is built while walking frames from the
+        //       innermost outwards and reversed before use
 
         // ignore the elements after the first element:
         //  e.g.: lnks[1].pos.y

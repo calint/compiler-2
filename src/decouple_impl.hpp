@@ -307,7 +307,7 @@ auto expr_type_value::compile_assign(toc& tc, const size_t indent,
         cur_dst_info.push(tf.name, tf.type_ptr, {});
 
         if (not tf.type().is_builtin()) {
-            // a not-builtin statement thus is 'expr_type_value'
+            // the field has a user-defined type, so the expression is 'expr_type_value'
             const expr_type_value& e{ea->as_expr_type_value()};
             e.compile_assign(tc, indent, tf.type(), cur_dst_info, dst_op);
             // note: dst_op was mutated in the recursive call

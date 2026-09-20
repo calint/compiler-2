@@ -83,7 +83,7 @@ class stmt_if final : public statement {
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        // make unique labels considering in-lined functions
+        // make unique labels considering inlined functions
         const std::string_view call_path{tc.get_call_path()};
         const std::string src_loc{tc.source_location_for_use_in_label(tok())};
         const std::string label_after_if{

@@ -34,7 +34,7 @@ class stmt_def_func final : public statement {
                                      "expected '(' after function name"};
         }
 
-        // read parameters definition
+        // read parameter definitions
         size_t counter{};
         while (true) {
             close_paren_tk_ = tz.is_next_char_token(')');
@@ -72,14 +72,14 @@ class stmt_def_func final : public statement {
         tc.add_func(name_tk_, std::string{name_tk_.text()},
                     statement::get_type(), this);
 
-        // dry-run compilation to catch errors before called
+        // establish the function scope before parsing its body
         tc.enter_func(name(), returns_);
 
-        // add vars to toc without emitting output so that the function body can
-        // be parsed
+        // register variables without emitting output so that the function body
+        // can be parsed
 
         if (returns_) {
-            // declare variable for the return
+            // declare the return variable
             const token& ret_tk{returns_->ident_tk};
 
             if (ret_tk.text().empty()) {

@@ -26,10 +26,6 @@ class stmt_assign_var final : public statement {
         : statement{si.tok()}, stmt_ident_{std::move(si)},
           equals_tk_{equals_tk} {
 
-        // note: 'ws1' is forwarded by 'stmt_def_var' to make the 'source_to'
-        //       accurate when 'stmt_assign_var' is created within the context
-        //       of 'stmt_def_var'
-
         const ident_info& dst_info{tc.make_ident_info(stmt_ident_)};
 
         set_type(dst_info.type_ref());

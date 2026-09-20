@@ -97,8 +97,8 @@ class stmt_def_dat final : public statement {
         equals_tk_ = tz.is_next_char_token('=');
         has_init_ = not equals_tk_.is_empty();
 
-        // add var to toc without emitting output so the further parsing has the
-        // variable declared
+        // register the variable without emitting output so it is available
+        // during subsequent parsing
 
         const var_info var{
             .name{name_tk_.text()},
@@ -143,7 +143,7 @@ class stmt_def_dat final : public statement {
             }
         }
 
-        // special case for string
+        // special case for a string
 
         if (elroot_.tk.is_string()) {
             equals_tk_.source_to(os);
@@ -207,8 +207,8 @@ class stmt_def_dat final : public statement {
 
         // array
 
-        // special case for string
-        // note: only i8[] can be initialized with string token
+        // special case for a string
+        // note: only i8[] can be initialized with a string token
 
         if (elroot.tk.is_string()) {
             compile_data_builtin(tc, tp, elroot);
@@ -227,7 +227,7 @@ class stmt_def_dat final : public statement {
             compile_data_elem(tc, tp, el);
         }
 
-        // zero out remaining array
+        // zero out the remaining array elements
 
         const size_t diff{elroot.array_size - elroot.elems.size()};
 
@@ -250,7 +250,7 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        // user type
+        // user-defined type
 
         const std::span<const type_field> flds{tp.fields()};
         for (const auto [el, tf] : std::views::zip(elroot.elems, flds)) {
@@ -345,7 +345,7 @@ class stmt_def_dat final : public statement {
                 return parse_builtin(tc, tz, tp);
             }
 
-            // user type
+            // user-defined type
 
             return parse_type(tc, tz, tp);
         }
@@ -436,7 +436,7 @@ class stmt_def_dat final : public statement {
             return el;
         }
 
-        // user type array
+        // array of a user-defined type
 
         el.tk = src_loc_tk;
         // note: 'el.tk' is not part of data but is used for source location
@@ -574,7 +574,7 @@ class stmt_def_dat final : public statement {
                 return;
             }
 
-            // user type
+            // user-defined type
 
             print_source_type(os, tp, elroot);
 
@@ -589,7 +589,7 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        // user type array
+        // array of a user-defined type
 
         print_source_type(os, tp, elroot);
     }
@@ -677,7 +677,7 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        // user type
+        // user-defined type
 
         print_source_type(os, tf.type(), elroot);
     }

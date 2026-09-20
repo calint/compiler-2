@@ -330,7 +330,7 @@ auto pass2(std::istream& is, std::ostream& os) -> void {
         //   je if_14_8_code
         //   cmp_14_26:
 
-        // get the whitespaces
+        // get the whitespace
         const std::string_view ws_before{leading_ws(first_line)};
 
         std::println(os, "{}{} {}", ws_before, *inverted_jcc, jmp_label);

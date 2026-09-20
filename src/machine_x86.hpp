@@ -1729,7 +1729,7 @@ class machine_x86 final : public machine {
         return std::format("{}:{}", line, col);
     }
 
-    // returns the cached builtin type (i64/i32/i16/i8) matching 'size'
+    // returns the cached built-in type (i64/i32/i16/i8) matching 'size'
     [[nodiscard]] auto builtin_type_for_size(const size_t size) const
         -> const type& {
 

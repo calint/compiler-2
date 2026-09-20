@@ -300,7 +300,7 @@ class expr_any final : public statement {
                     return;
                 }
 
-                // expression - make unique labels considering in-lined
+                // expression - make unique labels considering inlined
                 // functions
                 const std::string_view call_path{tc.get_call_path()};
                 const std::string src_loc{

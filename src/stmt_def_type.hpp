@@ -41,7 +41,7 @@ class stmt_def_type final : public statement {
             }
             field_delims_tk_.emplace_back(t);
         }
-        // initiate the type definitions
+        // initialize the type definition
         type_.set_name(name_tk_.text());
 
         // add the fields

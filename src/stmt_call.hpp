@@ -34,7 +34,7 @@ class stmt_call : public expression {
 
         if (not tc.is_func_builtin(statement::identifier())) {
 
-            // user defined function
+            // user-defined function
 
             const stmt_def_func& func{
                 tc.get_func_or_throw(tok(), statement::identifier())};
@@ -304,7 +304,7 @@ class stmt_call : public expression {
             }
         }
 
-        // create unique labels for in-lined functions
+        // create unique labels for inlined functions
         const std::string_view call_path{tc.get_call_path()};
         const std::string src_loc{tc.source_location_for_use_in_label(tok())};
         const std::string new_call_path{
@@ -329,7 +329,7 @@ class stmt_call : public expression {
             tc.add_alias(e);
         }
 
-        // compile in-lined code
+        // compile inlined code
         func.code().compile(tc, indent, dst_info);
 
         // free allocated registers in reverse order

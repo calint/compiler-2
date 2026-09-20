@@ -68,7 +68,7 @@ class stmt_if_branch final : public statement {
     // Returns the label where the if branch begins evaluating the boolean
     // expression
     [[nodiscard]] auto if_bgn_label(const toc& tc) const -> std::string {
-        // construct a unique label considering in-lined functions
+        // construct a unique label considering inlined functions
         const std::string_view call_path{tc.get_call_path()};
         const std::string src_loc{tc.source_location_for_use_in_label(tok())};
 

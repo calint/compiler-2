@@ -113,7 +113,7 @@ class tokenizer final {
     }
 
     // returns a token, which is a marker at the current position with empty
-    // name and whitespaces
+    // name and whitespace
     [[nodiscard]] auto current_position_token() const -> token {
         return {"", char_ix_, "", char_ix_, "", at_line_, false};
     }
